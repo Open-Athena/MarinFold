@@ -11,6 +11,13 @@ https://github.com/marin-community/marin/tree/protein-training-1b/experiments/pr
 
 Now, with the creation of this repo, we are renaming the project to MarinFold and working out of here. We want all data curation, evals, and model training to happen in the MarinFold repo.
 
+There are two other important repos to know about:
+
+https://github.com/marin-community/marin-experiments
+https://github.com/marin-community/marin
+
+We want to follow the marin-experiments repo in that we will have independent little experiments that depend on marin. We also need to be aware of and watching the marin repo as it has the underlying implementations of many components we will use - iris, levanter, zephyr, etc. In particular we want to reuse the "experiment" infrastructure that Marin has set up, where we use issues to track experiments that are checked in as code.
+
 ## Datasets
 So far we have been training entirely on AlphaFold Database (AFDB).
 
