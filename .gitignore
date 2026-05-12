@@ -1,3 +1,7 @@
+# Agent scratch space (used by the babysit-job / babysit-zephyr skills
+# for monitoring state files, and by debugging / TDD skills generally)
+scratch/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

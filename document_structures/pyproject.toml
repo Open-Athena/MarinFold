@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "marinfold-document-structures"
+version = "0.1.0"
+description = "MarinFold document_structures/ library — interface + local CLI for document-structure impls."
+requires-python = ">=3.11"
+# The interface + CLI is stdlib + pyarrow (for --out parquet). Specific
+# implementations bring their own deps (transformers, biopython, etc.).
+dependencies = [
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[project.scripts]
+"marinfold-document-structure" = "marinfold_document_structures.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["marinfold_document_structures"]

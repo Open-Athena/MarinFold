@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "marinfold-experiments"
+version = "0.1.0"
+description = "MarinFold experiment-tracking tooling: scaffold, itemize, graduate, history."
+requires-python = ">=3.11"
+# Stdlib + pyyaml (for the YAML frontmatter we parse on experiment
+# READMEs and history files). Individual experiment dirs that need
+# marin / levanter / transformers declare them in their own pyproject.
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# `marinfold history sync` and `marinfold history check` query the W&B
+# API. Install with
+#   uv sync --extra wandb
+# in this subproject before running them.
+wandb = ["wandb>=0.16"]
+
+[project.scripts]
+"marinfold" = "marinfold_experiments.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["marinfold_experiments"]
