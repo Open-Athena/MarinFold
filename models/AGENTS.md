@@ -38,11 +38,21 @@ only.
    revision. Bumping the revision is a conscious choice — don't
    drop the pin to "just get the latest".
 
-5. **Don't import from `experiments/`.** Library code cannot depend
+5. **Always save the tokenizer with the model.** When pushing a
+   checkpoint to HuggingFace — bucket or public `models` repo — the
+   tokenizer files (`tokenizer.json`, `tokenizer_config.json`,
+   `special_tokens_map.json`, …) go in the same repo / revision as
+   the weights. A model without its tokenizer is unloadable for
+   downstream eval, vLLM serving, and reproducibility checks.
+   `convert_checkpoint_to_hf_step` (used by every
+   `export_protein_*.py`) does this automatically when its
+   `tokenizer=` arg is set — keep it set.
+
+6. **Don't import from `experiments/`.** Library code cannot depend
    on experiment code; the dependency is one-way. If two experiments
    share a function, the function belongs here.
 
-6. **Don't dump a function here just because it might be reused.**
+7. **Don't dump a function here just because it might be reused.**
    The bar is "≥ 2 experiments would import it, and the abstraction
    is stable." Premature consolidation creates churn.
 

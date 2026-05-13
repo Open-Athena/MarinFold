@@ -141,6 +141,17 @@ Interesting checkpoints go to
 `https://huggingface.co/buckets/timodonnell/MarinFold`. Model names
 should embed the W&B run name so the two can be cross-referenced.
 
+**Always save the tokenizer with the model.** When pushing a model
+to HuggingFace — whether to the `buckets/timodonnell/MarinFold`
+bucket or to a public `models` repo — include the tokenizer files
+(`tokenizer.json`, `tokenizer_config.json`, `special_tokens_map.json`,
+etc.) in the same repo / revision as the model weights. A model
+without its tokenizer is unloadable for downstream eval, vLLM
+serving, and reproducibility checks. This applies even when the
+tokenizer is "well-known" and pinned by URL elsewhere (e.g.
+`timodonnell/protein-docs-tokenizer@<sha>`) — co-locate it so
+nothing breaks if the source tokenizer URL changes.
+
 ### Run history
 
 **Every W&B-logged run gets a history file under `history/runs/`.**
