@@ -5,7 +5,7 @@
 
 Vendored marin helpers (``default_train``, ``default_tokenize``,
 ``SimpleTrainConfig``) live here so experiments under
-``experiments/exp<N>_models_<slug>/`` can import them without each one
+``experiments/exp<N>_models_<name>/`` can import them without each one
 having to vendor its own copy.
 """
 

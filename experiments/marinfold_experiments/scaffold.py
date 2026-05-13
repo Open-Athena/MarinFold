@@ -6,10 +6,10 @@
 Usage::
 
     marinfold scaffold --issue 7 --kind models
-    marinfold scaffold --issue 7 --kind document_structures --slug my_slug
+    marinfold scaffold --issue 7 --kind document_structures --name my_name
 
-Reads the issue via ``gh api`` (must be authenticated), derives a slug
-from the title, and creates ``experiments/exp<N>_<kind>_<slug>/`` with
+Reads the issue via ``gh api`` (must be authenticated), derives a name
+from the title, and creates ``experiments/exp<N>_<kind>_<name>/`` with
 a README.md prefilled from the issue's prose.
 
 The ``--kind`` argument is required if the issue doesn't declare one
@@ -27,17 +27,17 @@ import sys
 from pathlib import Path
 
 from marinfold_experiments import KINDS
-from marinfold_experiments._repo import REPO_ROOT, git_repo_slug
+from marinfold_experiments._repo import REPO_ROOT, github_repo
 
 
-def fetch_issue(number: int, repo_slug: str) -> dict:
+def fetch_issue(number: int, github_repo: str) -> dict:
     out = subprocess.check_output(
-        ["gh", "api", f"/repos/{repo_slug}/issues/{number}"], text=True,
+        ["gh", "api", f"/repos/{github_repo}/issues/{number}"], text=True,
     )
     return json.loads(out)
 
 
-def title_to_slug(title: str) -> str:
+def title_to_name(title: str) -> str:
     t = title.strip()
     for prefix in ("exp:", "experiment:"):
         if t.lower().startswith(prefix):
@@ -86,7 +86,7 @@ def _kind_from_issue_body(body: str) -> str | None:
     return raw if raw in KINDS else None
 
 
-def render_readme(*, issue: dict, kind: str, slug: str, branch: str) -> str:
+def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
     body = issue.get("body") or ""
 
     question = extract_section(body, ["Question"]) or "_(Copy from the issue.)_"
@@ -135,20 +135,20 @@ def main(argv: list[str] | None = None) -> int:
             "the issue body."
         ),
     )
-    ap.add_argument("--slug", default=None, help="Override the auto-derived slug")
+    ap.add_argument("--name", default=None, help="Override the auto-derived name")
     ap.add_argument(
         "--branch", default="main",
-        help="Branch the experiment lives on (default: main; use exp/<N>-<slug> for speculative work)",
+        help="Branch the experiment lives on (default: main; use exp/<N>-<name> for speculative work)",
     )
     ap.add_argument(
         "--repo", default=None,
-        help="GitHub repo slug. Defaults to the origin remote, then Open-Athena/MarinFold.",
+        help="GitHub repo (owner/name). Defaults to the origin remote, then Open-Athena/MarinFold.",
     )
     ap.add_argument("--force", action="store_true", help="Clobber an existing README.md")
     args = ap.parse_args(argv)
 
-    repo_slug = args.repo or git_repo_slug()
-    issue = fetch_issue(args.issue, repo_slug)
+    repo = args.repo or github_repo()
+    issue = fetch_issue(args.issue, repo)
 
     kind = args.kind or _kind_from_issue_body(issue.get("body") or "")
     if not kind:
@@ -159,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    slug = args.slug or title_to_slug(issue["title"])
+    name = args.name or title_to_name(issue["title"])
 
     existing = sorted(
         p for p in (REPO_ROOT / "experiments").glob(f"exp{args.issue}_*")
@@ -171,14 +171,14 @@ def main(argv: list[str] | None = None) -> int:
         print("Re-run with --force to clobber README.md, or edit the existing dir.", file=sys.stderr)
         return 1
 
-    exp_dir = REPO_ROOT / "experiments" / f"exp{args.issue}_{kind}_{slug}"
+    exp_dir = REPO_ROOT / "experiments" / f"exp{args.issue}_{kind}_{name}"
     readme = exp_dir / "README.md"
 
     exp_dir.mkdir(parents=True, exist_ok=True)
     (exp_dir / "data").mkdir(exist_ok=True)
     (exp_dir / "plots").mkdir(exist_ok=True)
 
-    readme.write_text(render_readme(issue=issue, kind=kind, slug=slug, branch=args.branch))
+    readme.write_text(render_readme(issue=issue, kind=kind, name=name, branch=args.branch))
 
     rel = readme.relative_to(REPO_ROOT)
     print(f"Scaffolded {rel}")

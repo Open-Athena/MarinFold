@@ -4,17 +4,22 @@ One directory per experiment, keyed by GitHub issue number AND tagged
 with its **kind**. Each directory's `README.md` is the prose record —
 question, hypothesis, approach, results, conclusion.
 
-Directory naming: `experiments/exp<N>_<kind>_<slug>/` where:
+Directory naming: `experiments/exp<N>_<kind>_<name>/` where:
 
-- `<N>` is the GitHub issue number.
+- `<N>` **must equal the GitHub issue number.** One issue ⇄ one
+  experiment dir; the frontmatter's `issue:` field has to match.
 - `<kind>` is one of `models`, `evals`, `data`, `document_structures`.
-- `<slug>` is a snake_case descriptor (5–6 words max).
+- `<name>` is a snake_case descriptor (5–6 words max).
 
 Examples:
 - `exp10_models_train_1b`
 - `exp11_evals_foldbench`
 - `exp12_data_esm_metagenomic_atlas`
 - `exp13_document_structures_contacts_and_distances_v1`
+
+**Sentinel:** `exp0_*` is reserved for work that predates the
+experiment system (no real issue). Don't use it for new work — file
+an issue first.
 
 ## What each kind means
 
@@ -53,7 +58,7 @@ a `Kind:` line in the issue body if not passed explicitly.
    ```bash
    uv run marinfold scaffold --issue <N> --kind <models|evals|data|document_structures>
    ```
-   Creates `experiments/exp<N>_<kind>_<slug>/` with a README pre-filled
+   Creates `experiments/exp<N>_<kind>_<name>/` with a README pre-filled
    from the issue body.
 3. **Implement**. Add `.py` files in the experiment dir; if the
    experiment touches marin, add a `pyproject.toml` declaring a path
@@ -62,7 +67,7 @@ a `Kind:` line in the issue body if not passed explicitly.
    as the worked example.
 4. **Launch**. Marin's executor hash-caches step outputs:
    ```bash
-   cd experiments/exp<N>_<kind>_<slug>
+   cd experiments/exp<N>_<kind>_<name>
    uv sync
    uv run iris --config=... -- python -m <script>
    ```
@@ -79,8 +84,8 @@ a `Kind:` line in the issue body if not passed explicitly.
    important / high-quality enough to become a first-class object,
    symlink it into the kind dir:
    ```bash
-   uv run marinfold graduate exp<N>_<kind>_<slug>
-   # → models/<slug>/  (or evals/<slug>/, data/<slug>/, document_structures/<slug>/)
+   uv run marinfold graduate exp<N>_<kind>_<name>
+   # → models/<name>/  (or evals/<name>/, data/<name>/, document_structures/<name>/)
    ```
    The symlink drops the `exp<N>_<kind>_` prefix. The experiment dir
    stays where it is — graduation is non-destructive. The README's
@@ -88,7 +93,7 @@ a `Kind:` line in the issue body if not passed explicitly.
 
 ## Main vs. branch
 
-By default, experiments live on `main`. Branches (`exp/<N>-<slug>`)
+By default, experiments live on `main`. Branches (`exp/<N>-<name>`)
 are appropriate when an experiment needs speculative changes to the
 shared kind libraries that may not ship. Set
 `marinfold_experiment.branch` in the README frontmatter accordingly.
@@ -96,7 +101,7 @@ shared kind libraries that may not ship. Set
 ## Directory layout per experiment
 
 ```
-experiments/exp<N>_<kind>_<slug>/
+experiments/exp<N>_<kind>_<name>/
   README.md          # prose: question, hypothesis, approach, results,
                      # conclusion. Frontmatter (issue, title, kind, branch).
   pyproject.toml     # optional; needed if the experiment imports marin or a kind lib

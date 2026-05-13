@@ -7,7 +7,7 @@ Rules for agents working under `models/`. Layered on top of the root
 
 `models/` is the **library** for model-training experiments — not a
 collection of training scripts. Specific training pipelines live as
-experiments under `experiments/exp<N>_models_<slug>/` and import
+experiments under `experiments/exp<N>_models_<name>/` and import
 `marinfold_models.*` from here.
 
 Graduated experiments may also appear as symlinks under this
@@ -60,9 +60,9 @@ files in one PR — no compatibility shims.
 
 When an experiment is graduated (see
 [`experiments/AGENTS.md`](../experiments/AGENTS.md)), it gets a
-symlink here named after the experiment's slug (dropping the
+symlink here named after the experiment's name (dropping the
 `exp<N>_models_` prefix). Don't edit through the symlink — edit the
-real path at `experiments/exp<N>_models_<slug>/`.
+real path at `experiments/exp<N>_models_<name>/`.
 
 Tools that walk directories (pytest, mypy, ruff) may follow these
 symlinks and double-discover code. The fix: invoke the tool on

@@ -1,6 +1,6 @@
 ---
 marinfold_experiment:
-  issue: 1
+  issue: 0
   title: "Initial port of marin/protein-training-1b modeling experiments"
   kind: models
   branch: main
@@ -9,7 +9,7 @@ marinfold_experiment:
 
 # Initial port of marin/protein-training-1b modeling experiments
 
-**Issue:** [#1](https://github.com/Open-Athena/MarinFold/issues/1) · **Kind:** `models` · **Branch:** `main`
+**Issue:** _none (`exp0` is the sentinel for work that predates the experiment system)_ · **Kind:** `models` · **Branch:** `main`
 
 This is a bulk-port of the protein-docs modeling work that originated on
 the `marin/protein-training-1b` branch
@@ -20,7 +20,7 @@ all-doc-types mixture, continuation script, and all matching HF
 export scripts) is collected here as the starting state of MarinFold.
 
 Future experiments will fork off this — e.g. a single training
-recipe + analysis becomes its own `exp<N>_models_<slug>/`. The
+recipe + analysis becomes its own `exp<N>_models_<name>/`. The
 distogram benchmark plumbing (`protein_distogram_eval.py`) and the
 custom tokenizer (`create_protein_tokenizer.py`) are arguably
 document-structure / evaluation concerns and will move once those

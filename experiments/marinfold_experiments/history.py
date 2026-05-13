@@ -104,7 +104,7 @@ def _runs_by_id(files: list[RunFile]) -> dict[str, RunFile]:
 # -- Filename derivation -------------------------------------------------
 
 
-def _slugify_for_filename(s: str) -> str:
+def _sanitize_for_filename(s: str) -> str:
     """Lowercase, replace non [a-z0-9_] with underscores, collapse repeats."""
     s = re.sub(r"[^A-Za-z0-9_]+", "_", s).strip("_")
     return re.sub(r"_+", "_", s) or "unnamed"
@@ -112,7 +112,7 @@ def _slugify_for_filename(s: str) -> str:
 
 def _filename_for(*, launched_at: str, experiment: str, wandb_run_name: str) -> str:
     date = launched_at[:10].replace("-", "")  # YYYY-MM-DD → YYYYMMDD
-    return f"{date}_{experiment}_{_slugify_for_filename(wandb_run_name)}.md"
+    return f"{date}_{experiment}_{_sanitize_for_filename(wandb_run_name)}.md"
 
 
 # -- W&B URL parsing -----------------------------------------------------
@@ -373,7 +373,7 @@ def _wandb_iter_runs(entity: str, project: str, limit: int | None, since_iso: st
 def _experiment_from_wandb_run(run) -> str:
     """Best-effort: pull the experiment dir name out of a wandb run's metadata.
 
-    We look at config + tags + group. If none looks like ``exp<N>_<kind>_<slug>``,
+    We look at config + tags + group. If none looks like ``exp<N>_<kind>_<name>``,
     fall back to ``no_experiment``.
     """
     exp_re = re.compile(r"^exp\d+_[a-z_]+$")
@@ -393,7 +393,7 @@ def _kind_from_wandb_run(run, fallback_experiment: str) -> str:
     """Best-effort: prefer explicit ``config['kind']``, else derive from the experiment name.
 
     Since experiment kind and run kind now share the same taxonomy, a
-    run that lives in ``exp<N>_<kind>_<slug>`` defaults to ``<kind>``.
+    run that lives in ``exp<N>_<kind>_<name>`` defaults to ``<kind>``.
     Runs not tied to an experiment default to ``other``.
     """
     config = dict(run.config) if hasattr(run, "config") else {}
@@ -510,7 +510,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_new.add_argument(
         "--experiment", required=True,
-        help="Experiment dir name (exp<N>_<kind>_<slug>), or 'no_experiment'.",
+        help="Experiment dir name (exp<N>_<kind>_<name>), or 'no_experiment'.",
     )
     p_new.add_argument(
         "--kind", required=True, choices=sorted(RUN_KINDS),

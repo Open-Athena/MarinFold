@@ -12,7 +12,7 @@ MarinFold trains protein-structure language models on Marin
 infrastructure. Five concerns live at the repo root:
 
 - `experiments/` — one dir per GitHub issue tagged `experiment`.
-  All new work starts here as `exp<N>_<kind>_<slug>/`. Holds prose
+  All new work starts here as `exp<N>_<kind>_<name>/`. Holds prose
   READMEs, launchable `.py` files, and small artifacts (CSVs feeding
   plots, plots themselves). Also holds the `marinfold_experiments`
   package with the PM tools (`marinfold scaffold`,
@@ -154,7 +154,7 @@ URL is in hand). Use:
 ```bash
 marinfold history new \
     --wandb-url <url> --wandb-name <name> \
-    --experiment <exp<N>_<kind>_<slug>-or-no_experiment> \
+    --experiment <exp<N>_<kind>_<name>-or-no_experiment> \
     --kind <models|evals|data|document_structures|other> \
     --short "<one-line description>" \
     --iris-jobs <id1> [<id2> ...]

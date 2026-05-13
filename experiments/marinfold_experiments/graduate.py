@@ -7,15 +7,15 @@ Usage::
 
     marinfold graduate exp42_models_protein_1b_distance_masked
     marinfold graduate experiments/exp42_models_protein_1b_distance_masked
-    marinfold graduate --slug protein_1b_distance_masked_v2 exp42_models_protein_1b_distance_masked
+    marinfold graduate --name protein_1b_distance_masked_v2 exp42_models_protein_1b_distance_masked
 
 Resolves the experiment's kind from its directory name
-(``exp<N>_<kind>_<slug>``) and creates a symlink under the
-corresponding top-level dir. The symlink's name defaults to the slug
-(dropping the ``exp<N>_<kind>_`` prefix); ``--slug`` overrides it.
+(``exp<N>_<kind>_<name>``) and creates a symlink under the
+corresponding top-level dir. The symlink's name defaults to the name
+portion (dropping the ``exp<N>_<kind>_`` prefix); ``--name`` overrides it.
 
 Symlink target is the relative path
-``../experiments/exp<N>_<kind>_<slug>``. The experiment dir itself is
+``../experiments/exp<N>_<kind>_<name>``. The experiment dir itself is
 NOT moved or modified.
 
 Idempotent: re-running with the same arguments either confirms the
@@ -46,9 +46,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Experiment dir name (e.g. exp42_models_foo) or path.",
     )
     ap.add_argument(
-        "--slug", default=None,
+        "--name", default=None,
         help="Override the symlink name in the kind dir. Defaults to "
-             "the slug portion of the experiment dir name.",
+             "the name portion of the experiment dir name.",
     )
     ap.add_argument(
         "--force", action="store_true",
@@ -72,11 +72,11 @@ def main(argv: list[str] | None = None) -> int:
     if parsed is None:
         print(
             f"Could not parse experiment dir name {exp_path.name!r} — "
-            "expected exp<N>_<kind>_<slug>.",
+            "expected exp<N>_<kind>_<name>.",
             file=sys.stderr,
         )
         return 1
-    _n, kind, slug = parsed
+    _n, kind, name = parsed
 
     target_dir = REPO_ROOT / kind
     if not target_dir.is_dir():
@@ -87,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    link_name = args.slug or slug
+    link_name = args.name or name
     link_path = target_dir / link_name
     relative_target = Path("..") / "experiments" / exp_path.name
 

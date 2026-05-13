@@ -58,7 +58,7 @@ history file:
 ```bash
 marinfold history new \
     --wandb-url <URL> --wandb-name <NAME> \
-    --experiment <exp<N>_<kind>_<slug>-or-no_experiment> \
+    --experiment <exp<N>_<kind>_<name>-or-no_experiment> \
     --kind <models|evals|data|document_structures|other> \
     --short "<one-line description>" \
     --iris-jobs <JOB_ID>

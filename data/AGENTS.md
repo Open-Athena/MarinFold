@@ -8,7 +8,7 @@ Rules for agents working under `data/`. Layered on top of the root
 `data/` is the **library** for data-generation experiments — shared
 wrappers around zephyr pipelines that materialize training and eval
 corpora. Specific data pipelines live as experiments under
-`experiments/exp<N>_data_<slug>/`.
+`experiments/exp<N>_data_<name>/`.
 
 Graduated experiments may appear here as symlinks. Those are not
 part of the library; the library is `marinfold_data/` only.
@@ -33,6 +33,6 @@ part of the library; the library is `marinfold_data/` only.
 ## Graduated symlinks
 
 When a data experiment is graduated, it gets a symlink here named
-after the experiment's slug (dropping the `exp<N>_data_` prefix).
+after the experiment's name (dropping the `exp<N>_data_` prefix).
 Don't edit through the symlink — edit at
-`experiments/exp<N>_data_<slug>/`.
+`experiments/exp<N>_data_<name>/`.

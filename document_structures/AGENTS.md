@@ -9,7 +9,7 @@ of the root `AGENTS.md`.
 Protocol) and the **local-testing CLI**
 (`marinfold-document-structure`). Concrete document-structure
 implementations are experiments under
-`experiments/exp<N>_document_structures_<slug>/`.
+`experiments/exp<N>_document_structures_<name>/`.
 
 Graduated experiments may appear here as symlinks. Those are not
 part of the library; the library is `marinfold_document_structures/`
@@ -41,6 +41,6 @@ only.
 ## Graduated symlinks
 
 When a document-structure experiment is graduated, it gets a symlink
-here named after the experiment's slug (dropping the
+here named after the experiment's name (dropping the
 `exp<N>_document_structures_` prefix). Don't edit through the symlink
-— edit at `experiments/exp<N>_document_structures_<slug>/`.
+— edit at `experiments/exp<N>_document_structures_<name>/`.

@@ -14,7 +14,7 @@ The shape is captured by the
 [`DocumentStructure`](marinfold_document_structures/interface.py)
 Protocol. Each concrete structure (e.g. `contacts-and-distances-v1`)
 lives as an experiment under
-`experiments/exp<N>_document_structures_<slug>/`, and exposes a
+`experiments/exp<N>_document_structures_<name>/`, and exposes a
 `get_structure()` function returning a `DocumentStructure` instance.
 
 ## Layout
@@ -28,7 +28,7 @@ document_structures/
 │   ├── __init__.py
 │   ├── interface.py                        # DocumentStructure Protocol + load_structure
 │   └── cli.py                              # marinfold-document-structure CLI
-└── <graduated symlinks>                    # e.g. contacts_and_distances_v1/ → ../experiments/exp<N>_document_structures_<slug>/
+└── <graduated symlinks>                    # e.g. contacts_and_distances_v1/ → ../experiments/exp<N>_document_structures_<name>/
 ```
 
 ## Setup
@@ -47,7 +47,7 @@ local venv.
 ```bash
 # Smoke-test generate from input data:
 uv run marinfold-document-structure generate \
-    ../experiments/exp<N>_document_structures_<slug>/structure.py \
+    ../experiments/exp<N>_document_structures_<name>/structure.py \
     /path/to/input.parquet \
     --num-docs 100 \
     --context-length 8192 \
@@ -55,7 +55,7 @@ uv run marinfold-document-structure generate \
 
 # Run an eval locally:
 uv run marinfold-document-structure evaluate \
-    ../experiments/exp<N>_document_structures_<slug>/structure.py \
+    ../experiments/exp<N>_document_structures_<name>/structure.py \
     gs://marin-us-east5/checkpoints/.../hf/step-50000 \
     /path/to/ground_truth.jsonl \
     --out /tmp/eval-result.json
@@ -72,7 +72,7 @@ respectively — this CLI is local-testing-only.
 
 ## Authoring a document structure
 
-In your experiment dir (`experiments/exp<N>_document_structures_<slug>/`),
+In your experiment dir (`experiments/exp<N>_document_structures_<name>/`),
 create `structure.py`:
 
 ```python

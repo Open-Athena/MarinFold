@@ -1,6 +1,6 @@
 <!--
 Experiment README template. Copy this file to
-experiments/exp<N>_<kind>_<slug>/README.md and fill in. Prose only —
+experiments/exp<N>_<kind>_<name>/README.md and fill in. Prose only —
 launchable code lives as .py files alongside this README in the same
 directory.
 

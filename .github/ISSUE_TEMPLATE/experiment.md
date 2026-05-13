@@ -8,7 +8,7 @@ assignees: []
 
 <!--
 This template preregisters an experiment. Fill out every section. An
-experiment is a directory at experiments/exp<issue#>_<kind>_<slug>/ with a
+experiment is a directory at experiments/exp<issue#>_<kind>_<name>/ with a
 prose README (question, hypothesis, approach, results) and any
 launchable .py files. Library code lives in models/, evals/, data/,
 or document_structures/ at the repo root.

@@ -7,7 +7,7 @@ A *document structure* is a recipe for turning a protein structure
 (e.g. a PDB) into a string the LM can train on, plus a corresponding
 recipe for scoring a trained LM against ground-truth structures. Each
 concrete structure lives as an experiment under
-``experiments/exp<N>_document_structures_<slug>/`` and exposes a
+``experiments/exp<N>_document_structures_<name>/`` and exposes a
 ``get_structure()`` function returning a ``DocumentStructure``.
 
 Production data-gen and eval wrappers live in ``data/`` and ``evals/``

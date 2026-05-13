@@ -4,7 +4,7 @@ Shared library for MarinFold data-generation experiments.
 
 Individual data pipelines (e.g. AFDB → tokenizable docs, ESM
 metagenomic atlas ingestion, ProteinGym mirroring) live as experiments
-under `experiments/exp<N>_data_<slug>/`. This directory holds the
+under `experiments/exp<N>_data_<name>/`. This directory holds the
 **production wrappers** those experiments import to launch zephyr
 pipelines and publish datasets to GCS / HF, plus symlinks to graduated
 data experiments.
@@ -41,7 +41,7 @@ The git repo never holds large dataset files — see the root
 
 ## Importing from experiments
 
-A data experiment under `experiments/exp<N>_data_<slug>/` would
+A data experiment under `experiments/exp<N>_data_<name>/` would
 declare:
 
 ```toml

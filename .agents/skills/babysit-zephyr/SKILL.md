@@ -11,7 +11,7 @@ into MarinFold).
 
 Ported from `marin-community/marin/.agents/skills/babysit-zephyr/SKILL.md`.
 
-Most MarinFold zephyr pipelines will live under `experiments/exp<N>_data_<slug>/`
+Most MarinFold zephyr pipelines will live under `experiments/exp<N>_data_<name>/`
 (data-generation experiments) — see [`data/README.md`](../../../data/README.md).
 
 ## Zephyr Job Structure
@@ -51,7 +51,7 @@ Get the run command from the user. Typical MarinFold pattern (from a
 data-gen experiment dir):
 
 ```bash
-cd experiments/exp<N>_data_<slug>
+cd experiments/exp<N>_data_<name>
 uv run iris --config <CONFIG> job run --region <REGION> --no-wait \
     -- python -m <script>
 ```

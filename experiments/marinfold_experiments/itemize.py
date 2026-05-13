@@ -5,7 +5,7 @@
 
 Source of truth for WHICH experiments exist is
 ``gh issue list --label experiment``. Each experiment's dir is named
-``experiments/exp<N>_<kind>_<slug>/``, cross-referenced by issue
+``experiments/exp<N>_<kind>_<name>/``, cross-referenced by issue
 number. Per-experiment metadata (title, kind, branch) comes from the
 README's ``marinfold_experiment:`` frontmatter when present; falls
 back to the issue title.
@@ -22,17 +22,17 @@ from pathlib import Path
 
 from marinfold_experiments._repo import (
     REPO_ROOT,
-    git_repo_slug,
+    github_repo,
     parse_experiment_dir_name,
     read_frontmatter,
 )
 
 
-def list_experiment_issues(repo_slug: str) -> list[dict]:
+def list_experiment_issues(repo: str) -> list[dict]:
     out = subprocess.check_output(
         [
             "gh", "issue", "list",
-            "--repo", repo_slug,
+            "--repo", repo,
             "--label", "experiment",
             "--state", "all",
             "--limit", "200",
@@ -44,7 +44,7 @@ def list_experiment_issues(repo_slug: str) -> list[dict]:
 
 
 def scan_experiment_dirs() -> dict[int, Path]:
-    """Map issue number -> experiments/exp<N>_<kind>_<slug>/ directory."""
+    """Map issue number -> experiments/exp<N>_<kind>_<name>/ directory."""
     out: dict[int, Path] = {}
     exp_root = REPO_ROOT / "experiments"
     if not exp_root.is_dir():
@@ -55,24 +55,24 @@ def scan_experiment_dirs() -> dict[int, Path]:
         parsed = parse_experiment_dir_name(p.name)
         if parsed is None:
             continue
-        n, _kind, _slug = parsed
+        n, _kind, _name = parsed
         out[n] = p
     return out
 
 
-def _render_row(issue: dict, exp_dir: Path | None, repo_slug: str) -> str:
+def _render_row(issue: dict, exp_dir: Path | None, repo: str) -> str:
     number = issue["number"]
     issue_url = issue["url"]
     title = issue["title"].replace("|", "&#124;")
     if exp_dir is not None:
-        slug = exp_dir.name
-        nb_url = f"https://github.com/{repo_slug}/blob/main/experiments/{slug}/README.md"
+        dir_name = exp_dir.name
+        nb_url = f"https://github.com/{repo}/blob/main/experiments/{dir_name}/README.md"
         fm = read_frontmatter(exp_dir / "README.md") or {}
         branch = fm.get("branch") or "?"
         kind = fm.get("kind") or "?"
         fm_title = fm.get("title")
         display_title = fm_title or title
-        dir_cell = f"[`{slug}`]({nb_url})"
+        dir_cell = f"[`{dir_name}`]({nb_url})"
     else:
         display_title = title
         branch = "—"
@@ -81,35 +81,35 @@ def _render_row(issue: dict, exp_dir: Path | None, repo_slug: str) -> str:
     return f"| [#{number}]({issue_url}) | {display_title} | `{kind}` | `{branch}` | {dir_cell} |"
 
 
-def _render_orphan_row(exp_dir: Path, repo_slug: str) -> str:
-    slug = exp_dir.name
+def _render_orphan_row(exp_dir: Path, repo: str) -> str:
+    dir_name = exp_dir.name
     fm = read_frontmatter(exp_dir / "README.md") or {}
-    title = fm.get("title", slug)
+    title = fm.get("title", dir_name)
     issue_num = fm.get("issue")
     branch = fm.get("branch", "?")
     kind = fm.get("kind", "?")
-    nb_url = f"https://github.com/{repo_slug}/blob/main/experiments/{slug}/README.md"
+    nb_url = f"https://github.com/{repo}/blob/main/experiments/{dir_name}/README.md"
     issue_cell = f"#{issue_num}" if issue_num else "—"
-    return f"| {issue_cell} | {title} | `{kind}` | `{branch}` | [`{slug}`]({nb_url}) |"
+    return f"| {issue_cell} | {title} | `{kind}` | `{branch}` | [`{dir_name}`]({nb_url}) |"
 
 
 TABLE_HEADER = "| Issue | Title | Kind | Branch | Directory |\n|---|---|---|---|---|"
 
 
-def render_index(issues: list[dict], exp_dirs: dict[int, Path], repo_slug: str) -> str:
+def render_index(issues: list[dict], exp_dirs: dict[int, Path], repo: str) -> str:
     open_rows: list[str] = []
     closed_rows: list[str] = []
     matched: set[int] = set()
     for issue in sorted(issues, key=lambda i: -int(i["number"])):
         matched.add(issue["number"])
         exp_dir = exp_dirs.get(issue["number"])
-        row = _render_row(issue, exp_dir, repo_slug)
+        row = _render_row(issue, exp_dir, repo)
         if issue["state"].lower() == "open":
             open_rows.append(row)
         else:
             closed_rows.append(row)
     orphan_rows = [
-        _render_orphan_row(p, repo_slug)
+        _render_orphan_row(p, repo)
         for n, p in sorted(exp_dirs.items())
         if n not in matched
     ]
@@ -118,7 +118,7 @@ def render_index(issues: list[dict], exp_dirs: dict[int, Path], repo_slug: str) 
         "# Experiments",
         "",
         "Each row is a GitHub issue tagged `experiment`. The experiment's",
-        "dir lives at `experiments/exp<N>_<kind>_<slug>/`. `Kind` is one of",
+        "dir lives at `experiments/exp<N>_<kind>_<name>/`. `Kind` is one of",
         "`models`, `evals`, `data`, `document_structures`.",
         "",
         "_This page is regenerated by `marinfold itemize`._",
@@ -161,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument(
         "--repo", default=None,
-        help="GitHub repo slug. Defaults to the origin remote, then Open-Athena/MarinFold.",
+        help="GitHub repo (owner/name). Defaults to the origin remote, then Open-Athena/MarinFold.",
     )
     ap.add_argument(
         "--check", action="store_true",
@@ -169,10 +169,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
-    repo_slug = args.repo or git_repo_slug()
-    issues = list_experiment_issues(repo_slug)
+    repo = args.repo or github_repo()
+    issues = list_experiment_issues(repo)
     exp_dirs = scan_experiment_dirs()
-    content = render_index(issues, exp_dirs, repo_slug)
+    content = render_index(issues, exp_dirs, repo)
 
     if args.check:
         current = args.output.read_text() if args.output.exists() else ""

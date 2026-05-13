@@ -8,7 +8,7 @@ Rules for agents working under `evals/`. Layered on top of the root
 `evals/` is the **library** for eval experiments — shared
 production-wrapper code (iris job submission, result materialization,
 summary publishing) that eval experiments import. Specific eval
-pipelines live as experiments under `experiments/exp<N>_evals_<slug>/`.
+pipelines live as experiments under `experiments/exp<N>_evals_<name>/`.
 
 Graduated experiments may appear here as symlinks (e.g.
 `evals/foldbench/` → `../experiments/exp<N>_evals_foldbench/`). Those
@@ -31,6 +31,6 @@ are not part of the library; the library is `marinfold_evals/` only.
 ## Graduated symlinks
 
 When an eval experiment is graduated, it gets a symlink here named
-after the experiment's slug (dropping the `exp<N>_evals_` prefix).
+after the experiment's name (dropping the `exp<N>_evals_` prefix).
 Don't edit through the symlink — edit at
-`experiments/exp<N>_evals_<slug>/`.
+`experiments/exp<N>_evals_<name>/`.

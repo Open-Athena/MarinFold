@@ -12,7 +12,7 @@ A document structure has two responsibilities:
    metrics.
 
 Concrete implementations live as experiments under
-``experiments/exp<N>_document_structures_<slug>/``. The implementation
+``experiments/exp<N>_document_structures_<name>/``. The implementation
 module must expose a top-level ``get_structure()`` function that
 returns a ``DocumentStructure`` instance (or a ``STRUCTURE`` module-
 level attribute holding one). The CLI in ``cli.py`` loads modules by

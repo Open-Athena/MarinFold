@@ -3,7 +3,7 @@
 Shared library for MarinFold model-evaluation experiments.
 
 Individual eval pipelines (e.g. FoldBench, distogram benchmark,
-ProteinGym) live as experiments under `experiments/exp<N>_evals_<slug>/`.
+ProteinGym) live as experiments under `experiments/exp<N>_evals_<name>/`.
 This directory only holds the **production wrappers** those experiments
 import — code that submits iris jobs, materializes eval-result tables,
 publishes summaries to GCS / HF — plus symlinks to graduated eval
@@ -29,7 +29,7 @@ library before there's a real impl to inform the shape.
 
 ## Importing from experiments
 
-An eval experiment under `experiments/exp<N>_evals_<slug>/` would
+An eval experiment under `experiments/exp<N>_evals_<name>/` would
 declare:
 
 ```toml

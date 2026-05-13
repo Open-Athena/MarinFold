@@ -6,9 +6,9 @@ root `AGENTS.md`.
 ## Scope
 
 Each experiment is a directory at
-`experiments/exp<N>_<kind>_<slug>/`. `<N>` is the GitHub issue number,
+`experiments/exp<N>_<kind>_<name>/`. `<N>` is the GitHub issue number,
 `<kind>` is one of `models` / `evals` / `data` / `document_structures`,
-and `<slug>` is a snake_case descriptor (5–6 words max).
+and `<name>` is a snake_case descriptor (5–6 words max).
 
 The `README.md` is prose only — question, hypothesis, approach,
 results, plots, conclusion. **It is not an executable notebook.**
@@ -21,10 +21,17 @@ for jupyter or jupytext.
 
 ## Hard rules
 
-1. **One issue, one experiment dir, one kind.** Filename convention is
-   `exp<N>_<kind>_<slug>`. Don't create a second directory for the
-   same issue. If the slug needs to change, rename in place and
-   update the README frontmatter (including `kind` if it changed).
+1. **`<N>` is the GitHub issue number.** The dir is
+   `exp<N>_<kind>_<name>` where `<N>` is the integer issue ID and
+   the frontmatter's `issue:` field MUST match. One issue → one
+   experiment dir → one kind. Don't create a second dir for the
+   same issue. If the name needs to change, rename in place and
+   update the frontmatter (including `kind` if it changed).
+
+   The sole exception is **`exp0_*`**, reserved as a sentinel for
+   work that predates the experiment system (e.g.
+   `exp0_models_protein_docs_initial_port/`, the marin port). New
+   work always gets a real issue first.
 
 2. **Don't commit ad-hoc binaries.** Commit small CSVs to `data/` and
    plots to `plots/`. Large model weights, intermediate parquets,
@@ -86,12 +93,12 @@ Once results are important / high-quality enough to make this
 experiment a first-class artifact, run:
 
 ```bash
-uv run marinfold graduate exp<N>_<kind>_<slug>
+uv run marinfold graduate exp<N>_<kind>_<name>
 ```
 
 This symlinks the experiment dir into the corresponding kind dir
 under a name that drops the `exp<N>_<kind>_` prefix (override with
-`--slug`). The experiment itself stays put.
+`--name`). The experiment itself stays put.
 
 The symlink lets the kind dir present a clean view of "important
 work" without losing the historical record in `experiments/`. Don't

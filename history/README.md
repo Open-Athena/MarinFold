@@ -49,7 +49,7 @@ marinfold_run:
 
 Components:
 - `<YYYYMMDD>`: launch date, UTC.
-- `<experiment>`: the experiment dir name (`exp<N>_<kind>_<slug>`), or
+- `<experiment>`: the experiment dir name (`exp<N>_<kind>_<name>`), or
   `no_experiment` for runs outside any experiment.
 - `<wandb_run_name>`: the W&B-side display name.
 

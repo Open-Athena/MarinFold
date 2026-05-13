@@ -18,7 +18,7 @@ MarinFold/
 │   ├── README.md
 │   ├── AGENTS.md
 │   ├── TEMPLATE.md
-│   └── exp<N>_<kind>_<slug>/       # individual experiments
+│   └── exp<N>_<kind>_<name>/       # individual experiments
 ├── models/                 # library for model-training experiments
 ├── evals/                  # library for eval experiments
 ├── data/                   # library for data-generation experiments
@@ -30,12 +30,12 @@ Each top-level dir under the repo root is a **small library** for one
 kind of work. Concrete experimental work begins as an issue and a
 sub-directory under `experiments/` and may pull in helpers from the
 relevant library. Important / high-quality experiments get
-"graduated" — symlinked into the kind dir under a clean slug.
+"graduated" — symlinked into the kind dir.
 
 ## Experiment kinds
 
 Every experiment is one of four kinds, indicated by the second token
-in its directory name (`exp10_<kind>_<slug>`):
+in its directory name (`exp10_<kind>_<name>`):
 
 | Kind | What it does | Library lives in |
 |---|---|---|
@@ -65,7 +65,7 @@ generate or evaluate against a local implementation file (no
    uv sync                                                          # one-time setup
    uv run marinfold scaffold --issue <N> --kind <kind>
    ```
-   Creates `experiments/exp<N>_<kind>_<slug>/` with a README
+   Creates `experiments/exp<N>_<kind>_<name>/` with a README
    pre-filled from the issue body.
 3. **Implement.** Add `.py` files in the experiment dir. If the
    experiment imports marin, add a `pyproject.toml` declaring a path
@@ -75,7 +75,7 @@ generate or evaluate against a local implementation file (no
 4. **Launch.** Marin's executor hash-caches step outputs, so a rerun
    with no config changes is a no-op:
    ```bash
-   cd experiments/exp<N>_<kind>_<slug>
+   cd experiments/exp<N>_<kind>_<name>
    uv sync
    uv run iris --config=... -- python -m <script>
    ```
@@ -85,7 +85,7 @@ generate or evaluate against a local implementation file (no
 6. **Regenerate the index**: `uv run marinfold itemize`.
 7. **Close the issue** once the conclusion lands.
 
-Most work happens on `main`. Use a branch (`exp/<N>-<slug>`) only
+Most work happens on `main`. Use a branch (`exp/<N>-<name>`) only
 when an experiment needs speculative changes to a shared kind
 library.
 
@@ -95,11 +95,11 @@ When an experiment's results are important / high-quality enough to
 become a first-class object in the repo, **graduate** it:
 
 ```bash
-uv run marinfold graduate exp<N>_<kind>_<slug>
+uv run marinfold graduate exp<N>_<kind>_<name>
 ```
 
 This creates a symlink under the relevant top-level kind dir,
-named with the experiment's slug only (dropping the `exp<N>_<kind>_`
+named with the experiment's name only (dropping the `exp<N>_<kind>_`
 prefix). The experiment dir itself stays put — graduation is
 non-destructive and the historical record in `experiments/` is kept
 forever. The README's `marinfold_experiment.issue` frontmatter still
@@ -127,7 +127,7 @@ After `wandb.init()` returns and you have the W&B URL in hand:
 marinfold history new \
     --wandb-url https://wandb.ai/timodonnell/MarinFold/runs/<id> \
     --wandb-name <display-name> \
-    --experiment exp<N>_<kind>_<slug>   # or no_experiment
+    --experiment exp<N>_<kind>_<name>   # or no_experiment
     --kind <models|evals|data|document_structures|other> \
     --short "<one-line description>" \
     --iris-jobs <iris-job-id>
@@ -167,7 +167,7 @@ reason to be checked in.
 |---|---|
 | `marinfold scaffold --issue N --kind K` | Create an experiment dir from a GitHub issue |
 | `marinfold itemize` | Regenerate `experiments/index.md` |
-| `marinfold graduate exp<N>_<kind>_<slug>` | Symlink an experiment into its kind dir |
+| `marinfold graduate exp<N>_<kind>_<name>` | Symlink an experiment into its kind dir |
 | `marinfold history new ...` | Create a run history file for a W&B run |
 | `marinfold history add-iris-job ...` | Append an iris job ID (preemption / restart) |
 | `marinfold history sync` | Pull W&B runs; skeleton-file the missing ones (needs `wandb` extra) |

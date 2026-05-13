@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Shared helpers for the PM scripts: repo-root resolution, gh-slug detection,
+"""Shared helpers for the PM scripts: repo-root resolution, GitHub-repo detection,
 frontmatter parsing."""
 
 import re
@@ -17,13 +17,13 @@ from marinfold_experiments import KINDS
 REPO_ROOT = Path(__file__).resolve().parents[2]
 """Filesystem path to the MarinFold repo root."""
 
-REPO_SLUG_DEFAULT = "Open-Athena/MarinFold"
+DEFAULT_GITHUB_REPO = "Open-Athena/MarinFold"
 
 
-def git_repo_slug() -> str:
+def github_repo() -> str:
     """Best-effort: derive owner/name from the `origin` remote.
 
-    Falls back to ``REPO_SLUG_DEFAULT`` if origin isn't set or the URL
+    Falls back to ``DEFAULT_GITHUB_REPO`` if origin isn't set or the URL
     isn't a GitHub URL.
     """
     try:
@@ -32,19 +32,19 @@ def git_repo_slug() -> str:
             text=True,
         ).strip()
     except subprocess.CalledProcessError:
-        return REPO_SLUG_DEFAULT
+        return DEFAULT_GITHUB_REPO
     m = re.search(r"github\.com[:/]([^/]+)/([^/.]+)", url)
     if not m:
-        return REPO_SLUG_DEFAULT
+        return DEFAULT_GITHUB_REPO
     return f"{m.group(1)}/{m.group(2)}"
 
 
 def parse_experiment_dir_name(dir_name: str) -> tuple[int, str, str] | None:
-    """Parse ``exp<N>_<kind>_<slug>`` → ``(N, kind, slug)``.
+    """Parse ``exp<N>_<kind>_<name>`` → ``(N, kind, name)``.
 
     Returns None if the name doesn't match the convention. ``<kind>``
     must be one of the recognised kinds (see :data:`KINDS` in
-    ``__init__.py``); ``<slug>`` is everything after the kind token.
+    ``__init__.py``); ``<name>`` is everything after the kind token.
     """
     if not dir_name.startswith("exp"):
         return None
@@ -56,7 +56,7 @@ def parse_experiment_dir_name(dir_name: str) -> tuple[int, str, str] | None:
 
     # Longest-match against KINDS — `document_structures` contains an
     # underscore, so a simple split won't disambiguate it from a
-    # `models` experiment whose slug happens to start with `structures_`.
+    # `models` experiment whose name happens to start with `structures_`.
     for kind in sorted(KINDS, key=len, reverse=True):
         prefix = kind + "_"
         if after_num.startswith(prefix):
