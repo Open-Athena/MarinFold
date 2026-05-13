@@ -1,9 +1,11 @@
 # MarinFold
 
-Protein structure via next-token prediction. Trained on the
-[protein-docs](https://huggingface.co/datasets/timodonnell/protein-docs)
-dataset family using [Marin](https://github.com/marin-community/marin)
-infrastructure on TPU Research Cloud.
+Can a vanilla LLM predict protein structures if its training "documents" are structured
+in the right way? MarinFold is an exploratory project to answer this question. Our models are trained using
+[Marin](https://github.com/marin-community/marin) infrastructure on the TPU Research Cloud.
+
+This is a research codebase for an ongoing project. It is an experiment in open development.
+We do not currently have models that anyone should use!
 
 ## Layout
 
