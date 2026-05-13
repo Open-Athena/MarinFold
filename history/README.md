@@ -26,7 +26,7 @@ marinfold_run:
   kind: models                         # models | evals | data | document_structures | other
   short_description: "First 1B distance-masked run at v5p-32 scale"
   wandb:
-    url: https://wandb.ai/timodonnell/MarinFold/runs/abc123def
+    url: https://wandb.ai/open-athena/MarinFold/runs/abc123def
     entity: timodonnell
     project: MarinFold
     run_id: abc123def              # W&B's immutable internal ID — the uniqueness key
@@ -67,7 +67,7 @@ All subcommands live under `marinfold history` (installed by
 marinfold history new \
     --experiment exp13_models_train_1b \
     --kind models \
-    --wandb-url https://wandb.ai/timodonnell/MarinFold/runs/<id> \
+    --wandb-url https://wandb.ai/open-athena/MarinFold/runs/<id> \
     --short "First 1B at v5p-32 scale" \
     --iris-job <job-id>
 

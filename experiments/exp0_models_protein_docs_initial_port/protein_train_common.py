@@ -172,7 +172,7 @@ def build_distance_masked_train_step(
         train_seq_len=train_seq_len,
         steps_per_eval=steps_per_eval,
         steps_per_export=steps_per_export,
-        env_vars={"WANDB_ENTITY": "timodonnell"},
+        env_vars={"WANDB_ENTITY": "open-athena"},
     )
 
     protein_docs_data = LmDataConfig(

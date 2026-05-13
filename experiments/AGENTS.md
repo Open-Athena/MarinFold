@@ -54,13 +54,19 @@ for jupyter or jupytext.
    comments start with 🤖. Agent-opened PRs/issues carry the
    `agent-generated` label.
 
-6. **Library code stays in kind dirs, not experiments.** If an
+6. **Agents never close experiment issues.** Posting results, updating
+   the README's Conclusion, and marking the work done in the
+   experiment dir is fine — but the final `gh issue close` is a
+   human-only action. If you think an experiment is done, say so in
+   a final comment on the issue and stop there; let the user decide.
+
+7. **Library code stays in kind dirs, not experiments.** If an
    experiment's helper function would clearly be reused by future
    experiments, *that's a sign it should move to the kind library
    eventually* — but only after a second use case actually exists.
    Don't pre-emptively promote.
 
-7. **Every W&B-logged run gets a `history/runs/*.md`.** After
+8. **Every W&B-logged run gets a `history/runs/*.md`.** After
    `wandb.init()` returns and you have the URL, run
    `marinfold history new --wandb-url … --wandb-name … --experiment
    <this-experiment-dir-name> --kind … --short "…"`. Append iris job

@@ -129,7 +129,7 @@ train_config = SimpleTrainConfig(
     train_seq_len=8192,
     steps_per_eval=500,
     env_vars={
-        "WANDB_ENTITY": "timodonnell",
+        "WANDB_ENTITY": "open-athena",
     },
 )
 

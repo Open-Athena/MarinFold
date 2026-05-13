@@ -125,8 +125,8 @@ before introducing a workaround.
 
 ### W&B routing
 
-All training runs log to **`https://wandb.ai/timodonnell/MarinFold`**
-(`WANDB_PROJECT=MarinFold`, `WANDB_ENTITY=timodonnell`). Do not set
+All training runs log to **`https://wandb.ai/open-athena/MarinFold`**
+(`WANDB_PROJECT=MarinFold`, `WANDB_ENTITY=open-athena`). Do not set
 either env var to a different value when launching a run — single-
 project routing is what makes the leaderboard view (per-issue
 comparisons, x-axis sweeps) useful.

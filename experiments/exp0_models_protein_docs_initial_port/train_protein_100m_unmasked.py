@@ -78,7 +78,7 @@ train_config = SimpleTrainConfig(
     train_seq_len=8192,
     steps_per_eval=500,
     steps_per_export=5000,
-    env_vars={"WANDB_ENTITY": "timodonnell"},
+    env_vars={"WANDB_ENTITY": "open-athena"},
 )
 
 protein_model_100m_unmasked = default_train(

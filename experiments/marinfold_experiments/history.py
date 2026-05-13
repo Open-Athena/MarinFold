@@ -36,7 +36,7 @@ HISTORY_DIR = REPO_ROOT / "history"
 RUNS_DIR = HISTORY_DIR / "runs"
 RUNS_MD = HISTORY_DIR / "RUNS.md"
 
-DEFAULT_WANDB_ENTITY = "timodonnell"
+DEFAULT_WANDB_ENTITY = "open-athena"
 DEFAULT_WANDB_PROJECT = "MarinFold"
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n(.*)\Z", re.DOTALL)

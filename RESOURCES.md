@@ -44,6 +44,6 @@ After switching to Marin, runs are going here: [https://wandb.ai/timodonnell/mar
 
 Before Marin, I was sending runs to different projects for each experiment (names correspond to experiment dirs in the [LlamaFold-experiments](https://github.com/timodonnell/LlamaFold-experiments/tree/main) github repo): [exp4](https://wandb.ai/timodonnell/exp4?nw=nwusertimodonnell), [exp5](https://wandb.ai/timodonnell/exp5?nw=nwusertimodonnell), [exp6](https://wandb.ai/timodonnell/exp6?nw=nwusertimodonnell)
 
-After the rename to MarinFold, let's put runs at https://wandb.ai/timodonnell/MarinFold (will need to create the project first time it is used).
+After the rename to MarinFold, let's put runs at https://wandb.ai/open-athena/MarinFold (will need to create the project first time it is used).
 
 

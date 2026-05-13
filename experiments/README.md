@@ -52,8 +52,7 @@ a `Kind:` line in the issue body if not passed explicitly.
 
 1. **File an issue** with the `experiment` label using the
    [issue template](../.github/ISSUE_TEMPLATE/experiment.md). Fill in
-   question, hypothesis, approach, success criteria, compute estimate,
-   baselines, **and the kind**.
+   question, hypothesis, approach, success criteria, **and the kind**.
 2. **Scaffold** the experiment dir:
    ```bash
    uv run marinfold scaffold --issue <N> --kind <models|evals|data|document_structures>

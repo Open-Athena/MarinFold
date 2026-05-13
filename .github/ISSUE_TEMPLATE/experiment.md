@@ -50,14 +50,6 @@ See experiments/README.md for the full workflow.
      - Will reuse the protein-docs-tokenizer.
 -->
 
-## Compute estimate
-
-<!-- Rough hardware, count, and wall-clock hours. -->
-
-- Accelerator: <!-- e.g. TPU v5p-8 -->
-- Count / slice: <!-- e.g. 1 slice -->
-- Estimated wall hours: <!-- e.g. 12 -->
-
 ## Success criteria
 
 <!-- How will we know if the hypothesis held? Concrete metrics +
@@ -65,10 +57,6 @@ See experiments/README.md for the full workflow.
        - eval/protein_dist/macro_loss < <baseline> by >= 0.05
        - eval/protein-docs-cd-val/loss does not regress
 -->
-
-## Baselines
-
-<!-- Named prior runs or published numbers to compare against. -->
 
 ## Notes
 

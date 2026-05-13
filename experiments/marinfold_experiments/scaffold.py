@@ -93,9 +93,7 @@ def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
     hypothesis = extract_section(body, ["Hypothesis"]) or "_(Copy from the issue.)_"
     background = extract_section(body, ["Background"]) or ""
     approach = extract_section(body, ["Approach"]) or "_(Outline what the experiment will do.)_"
-    compute = extract_section(body, ["Compute estimate", "Compute"]) or ""
     success = extract_section(body, ["Success criteria"]) or "_(Concrete metrics + thresholds.)_"
-    baselines = extract_section(body, ["Baselines"]) or "_(Named prior runs or published numbers.)_"
 
     safe_title = issue["title"].replace('"', '\\"')
 
@@ -106,7 +104,6 @@ def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
     out.append(f"  title: \"{safe_title}\"\n")
     out.append(f"  kind: {kind}\n")
     out.append(f"  branch: {branch}\n")
-    out.append("  baselines: []\n")
     out.append("---\n\n")
     out.append(f"# {issue['title']}\n\n")
     out.append(f"**Issue:** [#{issue['number']}]({issue['html_url']}) · **Kind:** `{kind}` · **Branch:** `{branch}`\n\n")
@@ -115,10 +112,7 @@ def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
     if background:
         out.append("## Background\n\n" + background + "\n\n")
     out.append("## Approach\n\n" + approach + "\n\n")
-    if compute:
-        out.append("## Compute estimate\n\n" + compute + "\n\n")
     out.append("## Success criteria\n\n" + success + "\n\n")
-    out.append("## Baselines\n\n" + baselines + "\n\n")
     out.append("## Results\n\n_(Fill in after the run completes.)_\n\n")
     out.append("## Conclusion\n\n_(Fill in after results are in.)_\n")
     return "".join(out)

@@ -125,7 +125,7 @@ After `wandb.init()` returns and you have the W&B URL in hand:
 
 ```bash
 marinfold history new \
-    --wandb-url https://wandb.ai/timodonnell/MarinFold/runs/<id> \
+    --wandb-url https://wandb.ai/open-athena/MarinFold/runs/<id> \
     --wandb-name <display-name> \
     --experiment exp<N>_<kind>_<name>   # or no_experiment
     --kind <models|evals|data|document_structures|other> \
@@ -154,7 +154,7 @@ authoritative homes for non-source artifacts:
 - **GCS** (`gs://marin-us-east5/<...>`) — large intermediate
   artifacts produced by marin's executor (tokenized parquets,
   cached features, predictions).
-- **W&B** (`https://wandb.ai/timodonnell/MarinFold`) — training and
+- **W&B** (`https://wandb.ai/open-athena/MarinFold`) — training and
   eval metrics, run metadata.
 
 The repo holds source, prose, small CSVs that feed plots, and

@@ -63,7 +63,7 @@ train_config = SimpleTrainConfig(
     train_seq_len=8192,
     steps_per_eval=500,
     steps_per_export=5000,
-    env_vars={"WANDB_ENTITY": "timodonnell"},
+    env_vars={"WANDB_ENTITY": "open-athena"},
 )
 
 # Pin the output directory to the existing 7d355e dir so levanter's

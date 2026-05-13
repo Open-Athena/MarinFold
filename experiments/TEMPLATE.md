@@ -14,7 +14,6 @@ marinfold_experiment:
   title: "TEMPLATE: replace me"
   kind: models
   branch: main
-  baselines: []
 ---
 
 # TEMPLATE: replace this line with the experiment title

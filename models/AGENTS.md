@@ -19,7 +19,7 @@ only.
 ## Hard rules
 
 1. **W&B project is `MarinFold`.** Every run logs to
-   `https://wandb.ai/timodonnell/MarinFold`. Don't set
+   `https://wandb.ai/open-athena/MarinFold`. Don't set
    `WANDB_PROJECT` / `WANDB_ENTITY` to anything else. The vendored
    `marinfold_models.defaults.default_train` hardcodes `project="MarinFold"`.
 
