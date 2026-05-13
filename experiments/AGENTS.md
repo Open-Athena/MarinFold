@@ -86,7 +86,7 @@ marinfold-models = { path = "../../models" }
 ```
 
 Then the experiment can `from marinfold_models.defaults import default_train`.
-See `exp1_models_protein_docs_initial_port/pyproject.toml` for the
+See `exp0_models_protein_docs_initial_port/pyproject.toml` for the
 worked example (full marin wheel pins + the kind-library path dep).
 
 Pure-analysis experiments (no marin imports) don't need a pyproject

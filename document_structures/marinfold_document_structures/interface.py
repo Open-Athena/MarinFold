@@ -21,7 +21,7 @@ file path via ``importlib.util.spec_from_file_location`` — no
 
 The interface is intentionally minimal. As real implementations
 arrive (the first will be ``contacts-and-distances-v1`` ported from
-``experiments/exp1_models_protein_docs_initial_port/``), this file
+``experiments/exp0_models_protein_docs_initial_port/``), this file
 will gain typed argument shapes for ``input_record`` and
 ``ground_truth_record``. For now they're typed loosely so the first
 implementation can pick what makes sense.

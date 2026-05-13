@@ -48,11 +48,23 @@ only.
    `export_protein_*.py`) does this automatically when its
    `tokenizer=` arg is set — keep it set.
 
-6. **Don't import from `experiments/`.** Library code cannot depend
+6. **Checkpoint paths embed both the W&B run name and the step
+   number.** Canonical layout under
+   `buckets/open-athena/MarinFold/checkpoints/`:
+   `<wandb-run-name>/step-<N>/` for Levanter-native and
+   `<wandb-run-name>/hf/step-<N>/` for HF exports. Same shape applies
+   to GCS paths and to any string identifier we use for a checkpoint
+   (W&B artifact names, history file shorthand, paper writeups).
+   Never store "just `final/`" or "just `latest/`" — those obscure
+   which checkpoint a downstream eval actually ran against and are a
+   reproducibility hazard. See the root `AGENTS.md` "HF bucket"
+   section for the full policy.
+
+7. **Don't import from `experiments/`.** Library code cannot depend
    on experiment code; the dependency is one-way. If two experiments
    share a function, the function belongs here.
 
-7. **Don't dump a function here just because it might be reused.**
+8. **Don't dump a function here just because it might be reused.**
    The bar is "≥ 2 experiments would import it, and the abstraction
    is stable." Premature consolidation creates churn.
 

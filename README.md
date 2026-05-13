@@ -72,7 +72,7 @@ generate or evaluate against a local implementation file (no
 3. **Implement.** Add `.py` files in the experiment dir. If the
    experiment imports marin, add a `pyproject.toml` declaring a path
    dep on the relevant kind library; see
-   [`exp1_models_protein_docs_initial_port/pyproject.toml`](experiments/exp1_models_protein_docs_initial_port/pyproject.toml)
+   [`exp0_models_protein_docs_initial_port/pyproject.toml`](experiments/exp0_models_protein_docs_initial_port/pyproject.toml)
    as the worked example.
 4. **Launch.** Marin's executor hash-caches step outputs, so a rerun
    with no config changes is a no-op:
@@ -192,7 +192,7 @@ The `marinfold` command (and its subcommands) is installed by `uv sync` in
 Initial port (commit-level) from the
 [`marin/protein-training-1b`](https://github.com/marin-community/marin/tree/protein-training-1b/experiments/protein)
 branch. All training/export scripts live under
-[`experiments/exp1_models_protein_docs_initial_port/`](experiments/exp1_models_protein_docs_initial_port/);
+[`experiments/exp0_models_protein_docs_initial_port/`](experiments/exp0_models_protein_docs_initial_port/);
 shared marin glue is in [`models/marinfold_models/`](models/marinfold_models/).
 Evals, data-gen, and document_structures are scaffolded but empty —
 their first experiments will land soon.

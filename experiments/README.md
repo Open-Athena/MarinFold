@@ -44,9 +44,10 @@ uv run marinfold itemize                                  # regenerate index.md
 uv run marinfold graduate exp42_models_protein_1b_distance_masked
 ```
 
-The scaffolder pulls Question/Hypothesis/Approach/Compute/Success/
-Baselines sections from the GitHub issue body. It picks `--kind` from
-a `Kind:` line in the issue body if not passed explicitly.
+The scaffolder pulls Question / Hypothesis / Background / Approach /
+Success criteria sections from the GitHub issue body. It picks
+`--kind` from a `Kind:` line in the issue body if not passed
+explicitly.
 
 ## Flow
 
@@ -62,7 +63,7 @@ a `Kind:` line in the issue body if not passed explicitly.
 3. **Implement**. Add `.py` files in the experiment dir; if the
    experiment touches marin, add a `pyproject.toml` declaring a path
    dep on the relevant kind library (e.g. `marinfold-models`). See
-   [`exp1_models_protein_docs_initial_port/pyproject.toml`](exp1_models_protein_docs_initial_port/pyproject.toml)
+   [`exp0_models_protein_docs_initial_port/pyproject.toml`](exp0_models_protein_docs_initial_port/pyproject.toml)
    as the worked example.
 4. **Launch**. Marin's executor hash-caches step outputs:
    ```bash
@@ -121,8 +122,6 @@ marinfold_experiment:
   title: "Distance-masked vs unmasked at 100M scale"
   kind: models
   branch: main
-  baselines:
-    - protein-contacts-1b-3.5e-4-distance-masked-7d355e
 ---
 ```
 

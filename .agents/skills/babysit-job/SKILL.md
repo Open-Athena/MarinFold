@@ -28,7 +28,7 @@ from the upstream skill is dropped (MarinFold does not currently bundle
    include `--no-wait`**.
 4. For MarinFold TPU training jobs, use `--extra tpu` (the experiment's
    `pyproject.toml` declares the `[tpu]` extra; see e.g.
-   `experiments/exp1_models_protein_docs_initial_port/pyproject.toml`).
+   `experiments/exp0_models_protein_docs_initial_port/pyproject.toml`).
 5. For TPU jobs, the resubmit command must request TPU resources with
    `--tpu <variant>`. `--reserve <variant>` only holds capacity; it does not
    attach TPU devices to the task container.

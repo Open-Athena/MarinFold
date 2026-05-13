@@ -138,17 +138,40 @@ fork the project.
 ### HF bucket: `open-athena/MarinFold`
 
 We use a single HF bucket — `https://huggingface.co/buckets/open-athena/MarinFold` —
-for **both data artifacts and model checkpoints**. Inside the bucket
-use top-level `data/...` and `checkpoints/...` prefixes so the
-distinction is explicit. (First-class published datasets and
-released models live in their canonical HF dataset / model repos;
-the bucket holds the long tail — intermediate parquets, eval
-outputs, predicted structures, in-flight checkpoints.) The bucket
-may be split later if listing gets unwieldy or different
+for **both data artifacts and model checkpoints**. First-class
+published datasets and released models live in their canonical HF
+dataset / model repos; the bucket holds the long tail — intermediate
+parquets, eval outputs, predicted structures, in-flight checkpoints.
+The bucket may be split later if listing gets unwieldy or different
 retention/access policies are needed.
 
-Checkpoint names should embed the W&B run name so the two can be
-cross-referenced.
+**Inside the bucket, two top-level prefixes:**
+
+- `data/...` — data artifacts (intermediate parquets, predicted
+  structures, eval inputs, anything that isn't a model weight).
+- `checkpoints/...` — model weights (Levanter checkpoints, HF
+  exports, anything loadable as a model).
+
+**Checkpoint paths must include both the W&B run name AND the step
+number.** The canonical layout is
+
+```
+checkpoints/<wandb-run-name>/step-<N>/
+```
+
+so e.g. a Levanter-native checkpoint lands at
+`checkpoints/protein-contacts-1b-3.5e-4-distance-masked-7d355e/step-31337/`
+and the HF export at
+`checkpoints/protein-contacts-1b-3.5e-4-distance-masked-7d355e/hf/step-31337/`.
+
+Both the W&B run name (so you can cross-reference back to metrics)
+and the step number (so you can tell which point in training you
+loaded) need to be in the path. Don't store "just `final/`" or
+"just `latest/`" — those obscure which checkpoint a downstream eval
+actually ran against and are a reproducibility hazard. When
+referring to a checkpoint as a string identifier anywhere (W&B
+artifact names, history file shorthand, paper writeups), the same
+"`<wandb-run-name>-step-<N>`" format applies.
 
 **Always save the tokenizer with the model.** When pushing a model
 to HuggingFace — whether to the `buckets/open-athena/MarinFold`
