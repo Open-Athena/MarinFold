@@ -135,14 +135,23 @@ For one-off scratch work that shouldn't pollute the shared project,
 prefix the run name (`debug-cuda-oom`, `exp9-lrsweep-3e-4`) — don't
 fork the project.
 
-### Checkpoint storage
+### HF bucket: `open-athena/MarinFold`
 
-Interesting checkpoints go to
-`https://huggingface.co/buckets/timodonnell/MarinFold`. Model names
-should embed the W&B run name so the two can be cross-referenced.
+We use a single HF bucket — `https://huggingface.co/buckets/open-athena/MarinFold` —
+for **both data artifacts and model checkpoints**. Inside the bucket
+use top-level `data/...` and `checkpoints/...` prefixes so the
+distinction is explicit. (First-class published datasets and
+released models live in their canonical HF dataset / model repos;
+the bucket holds the long tail — intermediate parquets, eval
+outputs, predicted structures, in-flight checkpoints.) The bucket
+may be split later if listing gets unwieldy or different
+retention/access policies are needed.
+
+Checkpoint names should embed the W&B run name so the two can be
+cross-referenced.
 
 **Always save the tokenizer with the model.** When pushing a model
-to HuggingFace — whether to the `buckets/timodonnell/MarinFold`
+to HuggingFace — whether to the `buckets/open-athena/MarinFold`
 bucket or to a public `models` repo — include the tokenizer files
 (`tokenizer.json`, `tokenizer_config.json`, `special_tokens_map.json`,
 etc.) in the same repo / revision as the model weights. A model

@@ -36,7 +36,7 @@ For models that seem particularly good or interesting (both pre-Marin and after 
 
 Model names should include the wandb run name so we can connect the two.
 
-With the rename to MarinFold we should now put interesting checkpoints on [this](https://huggingface.co/buckets/timodonnell/MarinFold) bucket.
+With the rename to MarinFold we should now put interesting checkpoints on [this](https://huggingface.co/buckets/open-athena/MarinFold) bucket.
 
 **Weights and biases**
 

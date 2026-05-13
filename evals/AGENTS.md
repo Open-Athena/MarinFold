@@ -26,7 +26,7 @@ are not part of the library; the library is `marinfold_evals/` only.
    feed a plot in the experiment README are fine to commit (small).
    Full per-example score JSONs, predicted structures, etc. live on
    GCS (`gs://marin-us-east5/eval/...`) or HF (under
-   `buckets/timodonnell/MarinFold`).
+   `buckets/open-athena/MarinFold`).
 
 ## Graduated symlinks
 

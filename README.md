@@ -148,11 +148,15 @@ policy.
 We try hard to avoid committing large files into the repo. The
 authoritative homes for non-source artifacts:
 
-- **HuggingFace bucket** (`buckets/timodonnell/MarinFold`) — model
-  checkpoints. Model names should embed the W&B run name.
+- **HuggingFace bucket** (`buckets/open-athena/MarinFold`) — single
+  bucket for **both data artifacts and model checkpoints**. Inside,
+  use top-level `data/...` and `checkpoints/...` prefixes so the
+  distinction is explicit. Checkpoint names should embed the W&B
+  run name. (See `AGENTS.md` "HF bucket" for the splitting policy.)
 - **HuggingFace datasets** (`huggingface.co/datasets/timodonnell/<name>`)
-  — text / tokenized corpora that levanter loads via `hf://datasets/`
-  URIs.
+  — first-class published text / tokenized corpora that levanter
+  loads via `hf://datasets/` URIs. Long-tail / in-flight data
+  artifacts go to the bucket instead.
 - **GCS** (`gs://marin-us-east5/<...>`) — large intermediate
   artifacts produced by marin's executor (tokenized parquets,
   cached features, predictions).
