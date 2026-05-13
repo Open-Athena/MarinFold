@@ -1,8 +1,8 @@
 # MarinFold
 
 Can a vanilla LLM predict protein structures if its training "documents" are structured
-in the right way? MarinFold is an exploratory project to answer this question. Our models are trained using
-[Marin](https://github.com/marin-community/marin) infrastructure on the TPU Research Cloud.
+in the right way? MarinFold aims to answer this question. Our models are trained
+from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
 This is a research codebase for an ongoing project. It is an experiment in open development.
 We do not currently have models that anyone should use!
