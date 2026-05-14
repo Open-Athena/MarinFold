@@ -1,27 +1,35 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Standard interface + local-testing CLI for MarinFold document structures.
+"""Interfaces + local CLI for MarinFold document structures.
 
-A *document structure* declares its vocabulary via ``tokens()``,
-generates training documents from input structures
-(``generate_documents``), and scores models against ground-truth
-structures (``evaluate``). Each concrete structure lives as an
-experiment under ``experiments/exp<N>_document_structures_<name>/``
-and exposes a ``get_structure()`` function returning a
-``DocumentStructure``.
+A document structure is defined by **two files** under
+``experiments/exp<N>_document_structures_<name>/``:
 
-Production data-gen and eval wrappers live in ``data/`` and ``evals/``
-respectively; this library only defines the interface, the
-``build_tokenizer`` helper, and the local
-``marinfold-document-structure`` CLI for poking at an implementation.
+- ``generate.py`` — exports ``get_generator() -> Generator``.
+- ``inference.py`` — exports ``get_inference() -> Inference``.
+
+Both expose ``name``, ``context_length``, ``tokens()`` (they must
+agree on the vocab) and an ``add_args`` hook for adding their own
+CLI flags. The CLI subcommands ``generate``, ``infer``, ``evaluate``
+load the corresponding file and dispatch to its ``run`` / ``predict``
+/ ``evaluate`` method.
 """
 
 from marinfold_document_structures.interface import (
-    DocumentStructure,
     EvalResult,
+    Generator,
+    Inference,
     build_tokenizer,
-    load_structure,
+    load_generator,
+    load_inference,
 )
 
-__all__ = ["DocumentStructure", "EvalResult", "build_tokenizer", "load_structure"]
+__all__ = [
+    "EvalResult",
+    "Generator",
+    "Inference",
+    "build_tokenizer",
+    "load_generator",
+    "load_inference",
+]

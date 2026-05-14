@@ -1,34 +1,27 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""The ``DocumentStructure`` interface.
+"""Interfaces for MarinFold document structures.
 
-A document structure has three responsibilities:
+A *document structure* defines a protein-document format. Each
+concrete format lives as an experiment under
+``experiments/exp<N>_document_structures_<name>/`` and ships two
+public entry-point files at the experiment dir root:
 
-1. **Declare its vocabulary** — ``tokens()`` returns the canonical
-   ordered list of tokens that can appear in any document. The
-   tokenizer is built from this list; the implementation does not
-   own the tokenizer artifact, just its vocabulary.
-2. **Generate** training documents from input data (PDB / mmCIF /
-   parsed structures).
-3. **Evaluate** trained models against ground-truth structures.
+- ``generate.py`` — exports ``get_generator() -> Generator``.
+- ``inference.py`` — exports ``get_inference() -> Inference``.
 
-Concrete implementations live as experiments under
-``experiments/exp<N>_document_structures_<name>/``. The implementation
-module must expose a top-level ``get_structure()`` function that
-returns a ``DocumentStructure`` instance (or a ``STRUCTURE`` module-
-level attribute holding one). The CLI in ``cli.py`` loads modules by
-file path via ``importlib.util.spec_from_file_location`` — no
+Both Protocols expose ``name``, ``context_length``, ``tokens()``;
+they MUST agree on the vocab. Shared parsing / vocab code lives in
+private modules (``_vocab.py``, ``_parse.py``, …) inside the same
+experiment dir.
+
+The ``marinfold-document-structure`` CLI loads these modules by file
+path (``importlib.util.spec_from_file_location``) — no
 ``pip install`` of the implementation is needed.
-
-The interface is intentionally minimal. As real implementations
-arrive (the first being ``contacts-and-distances-v1`` under
-``experiments/exp1_document_structures_contacts_and_distances_v1/``)
-this file may grow typed argument shapes for ``input_record`` and
-``ground_truth_record``. For now they're typed loosely so each impl
-can pick what makes sense for its source data.
 """
 
+import argparse
 import importlib.util
 import sys
 from dataclasses import dataclass, field
@@ -36,9 +29,14 @@ from pathlib import Path
 from typing import Any, Iterator, Protocol, runtime_checkable
 
 
+# --------------------------------------------------------------------------
+# EvalResult
+# --------------------------------------------------------------------------
+
+
 @dataclass(frozen=True)
 class EvalResult:
-    """Output of ``DocumentStructure.evaluate``.
+    """Output of ``Inference.evaluate``.
 
     Attributes:
         metrics: scalar metrics keyed by name. Keys should be stable
@@ -58,129 +56,136 @@ class EvalResult:
     extras: dict[str, Any] = field(default_factory=dict)
 
 
-@runtime_checkable
-class DocumentStructure(Protocol):
-    """Standard interface for a MarinFold document structure.
+# --------------------------------------------------------------------------
+# Protocols
+# --------------------------------------------------------------------------
 
-    Implementations should be cheap to construct — heavy resources
-    (PDB caches, model loads, vllm engines) should be lazy or held
-    by the implementation's own state.
+
+@runtime_checkable
+class Generator(Protocol):
+    """Generate training documents from input structures.
+
+    Implementations live in ``<exp_dir>/generate.py`` and expose
+    ``get_generator() -> Generator``.
     """
 
     name: str
-    """Stable identifier, e.g. ``"contacts-and-distances-v1"``.
-    Matches the leading token in the corresponding training-doc
-    format (so a doc looks like
-    ``<contacts-and-distances-v1> <begin_sequence> ...``)."""
+    """Stable identifier, e.g. ``"contacts-and-distances-v1"``. Must
+    equal the corresponding ``Inference.name`` for the same format."""
 
     context_length: int
-    """Default maximum token length per generated document. The
-    ``generate`` CLI flag ``--context-length`` overrides this."""
+    """Default token-budget per document. The impl can override via
+    its own ``--context-length`` if it wants."""
 
     def tokens(self) -> list[str]:
-        """The full ordered list of domain tokens this structure uses.
+        """Canonical ordered domain vocabulary.
 
-        ``build_tokenizer(structure)`` (see :func:`build_tokenizer`)
-        constructs a ``PreTrainedTokenizerFast`` from this list by
-        prepending the standard ``<pad>`` and ``<eos>`` specials.
-
-        **Order is load-bearing.** New tokens must be APPENDED to the
-        list to keep existing token IDs stable across revisions — a
-        permutation would silently invalidate every checkpoint
-        trained against the prior order. If a token reordering is
-        ever genuinely required, the structure becomes a new
-        ``contacts-and-distances-v2`` (separate experiment, separate
-        graduation symlink) rather than a same-name update.
+        ``build_tokenizer(generator)`` constructs a
+        ``PreTrainedTokenizerFast`` from this list. Order is load-
+        bearing — appending is fine, reordering is a v2 event.
         """
         ...
 
-    def iter_inputs(self, path: Path) -> Iterator[Any]:
-        """Open a file or directory and yield records to feed ``generate_documents``.
+    def add_args(self, parser: argparse.ArgumentParser) -> None:
+        """Add the generator's args to ``parser``.
 
-        The shape of each yielded record is implementation-specific
-        (e.g. a ``ParsedChain`` dataclass, a dict, a raw structure
-        object). The ``marinfold-document-structure generate`` CLI
-        passes the result straight through to ``generate_documents``.
+        Called by the CLI before parsing. The impl owns every flag
+        except ``--out`` (which the CLI provides). Typical flags:
+        ``--input``, ``--num-docs``, ``--context-length``, plus any
+        generator-specific knobs (rank means, contact cutoffs, …).
         """
         ...
 
-    def iter_ground_truth(self, path: Path) -> Iterator[Any]:
-        """Same idea as ``iter_inputs`` but for ``evaluate``'s ground-truth side.
-
-        Many structures will share the same parsing code between
-        ``iter_inputs`` and ``iter_ground_truth``; they're separate
-        methods because eval-time records may carry extra fields
-        (e.g. ground-truth contact maps) that aren't needed for
-        doc generation.
-        """
-        ...
-
-    def generate_documents(
-        self,
-        input_records: Iterator[Any],
-        *,
-        context_length: int | None = None,
-        num_docs: int | None = None,
-    ) -> Iterator[str]:
-        """Yield training-document strings from ``input_records``.
-
-        Args:
-            input_records: iterator over impl-specific records.
-            context_length: maximum token length per produced
-                document; defaults to ``self.context_length``.
-            num_docs: optional cap. Implementations should stop
-                yielding when reached.
-        """
-        ...
-
-    def evaluate(
-        self,
-        *,
-        model_path: str,
-        ground_truth_records: Iterator[Any],
-    ) -> EvalResult:
-        """Run the model on ground-truth inputs and return metrics.
-
-        Args:
-            model_path: filesystem / GCS / HF reference to a trained
-                model (the implementation decides how to load it).
-            ground_truth_records: iterator over impl-specific
-                ground-truth records.
-        """
+    def run(self, args: argparse.Namespace) -> Iterator[str]:
+        """Yield training-document strings per the parsed args."""
         ...
 
 
-def build_tokenizer(structure: DocumentStructure):
-    """Construct a HuggingFace ``PreTrainedTokenizerFast`` from ``structure.tokens()``.
+@runtime_checkable
+class Inference(Protocol):
+    """Run a trained model on input structures (with or without ground truth).
 
-    Prepends the standard MarinFold specials in the canonical order:
+    Implementations live in ``<exp_dir>/inference.py`` and expose
+    ``get_inference() -> Inference``. Powers both the ``infer`` and
+    ``evaluate`` CLI subcommands:
+
+    - ``infer`` — given inputs only, return model predictions.
+    - ``evaluate`` — given inputs + ground truth, return metrics
+      computed against the predictions.
+
+    ``evaluate`` is expected to share code with ``predict`` (typically
+    by calling it internally), but exposing both as Protocol methods
+    keeps the two subcommands' CLI surfaces distinct.
+    """
+
+    name: str
+    context_length: int
+
+    def tokens(self) -> list[str]: ...
+
+    def add_args(
+        self, parser: argparse.ArgumentParser, *, subcommand: str
+    ) -> None:
+        """Add inference args. ``subcommand`` is ``'infer'`` or ``'evaluate'``.
+
+        Use the ``subcommand`` kwarg to register different flags for
+        each (e.g. ``--ground-truth`` only makes sense for evaluate).
+        """
+        ...
+
+    def predict(self, args: argparse.Namespace) -> Iterator[dict]:
+        """Run the model on inputs; yield one prediction record per input.
+
+        Each record is a JSON-serializable dict (e.g.
+        ``{"entry_id": ..., "expected_distances": [...]}``). Used by
+        the ``infer`` CLI subcommand.
+        """
+        ...
+
+    def evaluate(self, args: argparse.Namespace) -> EvalResult:
+        """Run the model + compare against ground truth; return metrics.
+
+        Used by the ``evaluate`` CLI subcommand. Internally typically
+        calls ``predict`` and scores the outputs.
+        """
+        ...
+
+
+# --------------------------------------------------------------------------
+# build_tokenizer (works on either Protocol)
+# --------------------------------------------------------------------------
+
+
+def build_tokenizer(component):
+    """Build a ``PreTrainedTokenizerFast`` from ``component.tokens()``.
+
+    Accepts either a ``Generator`` or an ``Inference`` — both expose
+    ``tokens()`` and must agree on the vocab.
+
+    Prepends the standard MarinFold specials:
 
     - ``<pad>`` at id 0
     - ``<eos>`` at id 1
-    - then ``structure.tokens()`` in order, starting at id 2
+    - then ``component.tokens()`` in order, starting at id 2
 
     The resulting tokenizer is WordLevel with whitespace pre-
-    tokenization, which matches the convention used by every
-    MarinFold doc structure to date: documents are space-separated
-    sequences of `<token>` strings and tokenize 1:1.
+    tokenization, which matches the convention every MarinFold doc
+    structure has used to date: documents are space-separated
+    sequences of ``<token>`` strings and tokenize 1:1.
 
-    Imports ``tokenizers`` / ``transformers`` lazily so callers that
-    only need the structure's ``tokens()`` list (e.g. the data
-    pipeline) don't pay the HF import cost.
+    ``tokenizers`` / ``transformers`` are imported lazily so callers
+    that only need ``tokens()`` don't pay the HF import cost.
     """
     from tokenizers import Tokenizer
     from tokenizers.models import WordLevel
     from tokenizers.pre_tokenizers import WhitespaceSplit
     from transformers import PreTrainedTokenizerFast
 
-    domain_tokens = list(structure.tokens())
+    domain_tokens = list(component.tokens())
     all_tokens = ["<pad>", "<eos>", *domain_tokens]
     vocab = {token: idx for idx, token in enumerate(all_tokens)}
 
-    if "<UNK>" in vocab:
-        unk_token = "<UNK>"
-    else:
-        unk_token = "<pad>"  # fall back to pad so unknown tokens at least don't crash
+    unk_token = "<UNK>" if "<UNK>" in vocab else "<pad>"
 
     tokenizer_model = WordLevel(vocab=vocab, unk_token=unk_token)
     tokenizer = Tokenizer(tokenizer_model)
@@ -194,22 +199,16 @@ def build_tokenizer(structure: DocumentStructure):
     )
 
 
-def load_structure(impl_path: Path | str) -> DocumentStructure:
-    """Load a ``DocumentStructure`` implementation from a file path.
+# --------------------------------------------------------------------------
+# Module-by-file-path loaders
+# --------------------------------------------------------------------------
 
-    The module is loaded under a synthetic package name based on the
-    file path (so two impls with the same module name in different
-    experiment dirs don't collide). The module must expose either
-    ``get_structure()`` (preferred) or a top-level ``STRUCTURE``
-    attribute.
 
-    Args:
-        impl_path: path to a Python file implementing the structure.
-    """
-    p = Path(impl_path).resolve()
+def _load_module_by_path(path: Path):
+    """Load a Python module by file path under a synthetic package name."""
+    p = Path(path).resolve()
     if not p.is_file():
-        raise FileNotFoundError(f"Document-structure implementation not found: {p}")
-
+        raise FileNotFoundError(f"Implementation file not found: {p}")
     mod_name = f"_marinfold_ds_{abs(hash(str(p)))}"
     spec = importlib.util.spec_from_file_location(mod_name, p)
     if spec is None or spec.loader is None:
@@ -217,22 +216,76 @@ def load_structure(impl_path: Path | str) -> DocumentStructure:
     module = importlib.util.module_from_spec(spec)
     sys.modules[mod_name] = module
     spec.loader.exec_module(module)
+    return module
 
-    if hasattr(module, "get_structure"):
-        structure = module.get_structure()
-    elif hasattr(module, "STRUCTURE"):
-        structure = module.STRUCTURE
-    else:
+
+def _impl_dir(path: Path | str) -> Path:
+    p = Path(path).resolve()
+    if not p.is_dir():
+        raise NotADirectoryError(
+            f"Document-structure impl dir not found: {p}. The CLI takes "
+            "the experiment dir (containing generate.py + inference.py), "
+            "not a specific file."
+        )
+    return p
+
+
+def load_generator(impl_dir: Path | str) -> Generator:
+    """Load the ``Generator`` from ``<impl_dir>/generate.py``.
+
+    The module must expose ``get_generator()`` returning a value
+    that satisfies the ``Generator`` Protocol.
+    """
+    dir_path = _impl_dir(impl_dir)
+    gen_path = dir_path / "generate.py"
+    if not gen_path.is_file():
+        raise FileNotFoundError(
+            f"{dir_path} does not contain a generate.py — the CLI's "
+            "`generate` subcommand requires one. See "
+            "document_structures/README.md for the layout."
+        )
+    module = _load_module_by_path(gen_path)
+    if not hasattr(module, "get_generator"):
         raise AttributeError(
-            f"{p} does not expose get_structure() or STRUCTURE — "
-            "the document-structure CLI requires one of them."
+            f"{gen_path} does not export get_generator(). Add a "
+            "top-level function returning a Generator-conforming object."
         )
-
-    if not isinstance(structure, DocumentStructure):
+    generator = module.get_generator()
+    if not isinstance(generator, Generator):
         raise TypeError(
-            f"{p} produced a {type(structure).__name__} that does not "
-            "satisfy the DocumentStructure protocol. Required attrs/"
-            "methods: name, context_length, tokens(), iter_inputs(), "
-            "iter_ground_truth(), generate_documents(), evaluate()."
+            f"{gen_path}:get_generator() returned a {type(generator).__name__} "
+            "that does not satisfy the Generator protocol. Required: "
+            "name, context_length, tokens(), add_args(parser), run(args)."
         )
-    return structure
+    return generator
+
+
+def load_inference(impl_dir: Path | str) -> Inference:
+    """Load the ``Inference`` from ``<impl_dir>/inference.py``.
+
+    The module must expose ``get_inference()`` returning a value
+    that satisfies the ``Inference`` Protocol.
+    """
+    dir_path = _impl_dir(impl_dir)
+    inf_path = dir_path / "inference.py"
+    if not inf_path.is_file():
+        raise FileNotFoundError(
+            f"{dir_path} does not contain an inference.py — the CLI's "
+            "`infer` / `evaluate` subcommands require one. See "
+            "document_structures/README.md for the layout."
+        )
+    module = _load_module_by_path(inf_path)
+    if not hasattr(module, "get_inference"):
+        raise AttributeError(
+            f"{inf_path} does not export get_inference(). Add a "
+            "top-level function returning an Inference-conforming object."
+        )
+    inference = module.get_inference()
+    if not isinstance(inference, Inference):
+        raise TypeError(
+            f"{inf_path}:get_inference() returned a {type(inference).__name__} "
+            "that does not satisfy the Inference protocol. Required: "
+            "name, context_length, tokens(), add_args(parser, subcommand=), "
+            "predict(args), evaluate(args)."
+        )
+    return inference
