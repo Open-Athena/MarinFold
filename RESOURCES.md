@@ -9,6 +9,9 @@ https://github.com/timodonnell/LlamaFold-experiments/tree/main
 Later, we switched to marin and worked in this branch and experiment dir:
 https://github.com/marin-community/marin/tree/protein-training-1b/experiments/protein
 
+The AFDB-to-documents pipeline (BigQuery selection, mmCIF download to parquet, Foldseek-based clusters, and the actual document generators for all three document formats — including the original `contacts_and_distances_v1.py` we are now porting into MarinFold) lives in:
+https://github.com/timodonnell/contactdoc
+
 Now, with the creation of this repo, we are renaming the project to MarinFold and working out of here. We want all data curation, evals, and model training to happen in the MarinFold repo.
 
 There are two other important repos to know about:

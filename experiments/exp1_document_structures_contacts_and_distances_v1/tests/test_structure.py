@@ -14,8 +14,9 @@ Run:
     uv run pytest tests/ -v
 """
 
-import os
+import math
 import sys
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -35,7 +36,11 @@ from structure import (  # noqa: E402
     PLDDT_BINS,
     UNK_TOKEN,
     ContactsAndDistancesV1,
+    ParsedStructure,
+    _distance_token,
+    _plddt_bin_token,
     get_structure,
+    parse_structure,
 )
 
 from marinfold_document_structures import (  # noqa: E402
@@ -44,7 +49,9 @@ from marinfold_document_structures import (  # noqa: E402
 )
 
 
-# -- Protocol conformance ----------------------------------------------------
+# ---------------------------------------------------------------------------
+# Protocol conformance + metadata
+# ---------------------------------------------------------------------------
 
 
 def test_get_structure_satisfies_protocol():
@@ -61,16 +68,13 @@ def test_structure_metadata():
     assert s.context_length == 8192
 
 
-# -- tokens() shape ----------------------------------------------------------
+# ---------------------------------------------------------------------------
+# tokens() shape
+# ---------------------------------------------------------------------------
 
 
 def test_tokens_count_matches_canonical_2838():
-    """Domain vocab is 2838 tokens; +2 specials = 2840 total.
-
-    Composition: 4 control + 3 contact-types + 1 distance-marker
-    + 64 distance-bins + 7 plddt-bins + 20 AAs + 37 atoms
-    + 2701 positions + 1 UNK = 2838.
-    """
+    """Domain vocab is 2838 tokens; +2 specials = 2840 total."""
     tokens = get_structure().tokens()
     n_expected = (
         len(CONTROL_TOKENS)
@@ -89,28 +93,19 @@ def test_tokens_count_matches_canonical_2838():
 
 def test_tokens_unique():
     tokens = get_structure().tokens()
-    assert len(tokens) == len(set(tokens)), "tokens() returned duplicates"
+    assert len(tokens) == len(set(tokens))
 
 
 def test_tokens_returns_a_copy():
-    """Mutating the caller's copy must not affect the cached canonical list."""
     s = ContactsAndDistancesV1()
     a = s.tokens()
     a.append("<broken>")
-    b = s.tokens()
-    assert "<broken>" not in b
+    assert "<broken>" not in s.tokens()
 
 
 def test_token_order_invariants():
-    """Spot-check critical positions in the canonical ordering.
-
-    These positions are baked into every checkpoint trained against
-    the v1 vocab. After accounting for the 2 specials (<pad>, <eos>)
-    prepended by build_tokenizer, the document-text tokens land at
-    these IDs in the published tokenizer.
-    """
+    """Spot-check positions baked into every v1 checkpoint."""
     tokens = get_structure().tokens()
-    # Domain-token list starts at id 2 after specials.
     assert tokens[0] == "<contacts-and-distances-v1>"
     assert tokens[1] == "<begin_sequence>"
     assert tokens[4] == "<long-range-contact>"
@@ -120,12 +115,13 @@ def test_token_order_invariants():
     assert tokens[-1] == "<UNK>"
 
 
-# -- build_tokenizer ---------------------------------------------------------
+# ---------------------------------------------------------------------------
+# build_tokenizer
+# ---------------------------------------------------------------------------
 
 
 def test_build_tokenizer_size():
     tok = build_tokenizer(get_structure())
-    # Domain 2838 + <pad> + <eos> = 2840.
     assert len(tok) == 2840
     assert tok.convert_tokens_to_ids("<pad>") == 0
     assert tok.convert_tokens_to_ids("<eos>") == 1
@@ -133,7 +129,6 @@ def test_build_tokenizer_size():
 
 
 def test_build_tokenizer_roundtrip_sample():
-    """Spot-check 1:1 tokenization on a tiny sample document fragment."""
     tok = build_tokenizer(get_structure())
     sample = (
         "<contacts-and-distances-v1> <begin_sequence> "
@@ -145,26 +140,11 @@ def test_build_tokenizer_roundtrip_sample():
     )
     ids = tok.encode(sample, add_special_tokens=False)
     decoded = tok.decode(ids)
-    # WordLevel + whitespace-split tokenizes 1:1 on space-separated
-    # tokens, so the count must match.
-    assert len(ids) == len(sample.split()), (
-        f"non-1:1 tokenization: {len(ids)} ids for {len(sample.split())} tokens"
-    )
-    # Every token must be in-vocab (id != UNK id, where UNK == "<UNK>"
-    # in our build).
+    assert len(ids) == len(sample.split())
     unk_id = tok.convert_tokens_to_ids("<UNK>")
-    assert unk_id not in ids, f"sample contained unknown tokens: {sample}"
-    # Round-trip should preserve the text exactly (modulo possible
-    # tokenizer-level whitespace normalization that is a no-op here).
+    assert unk_id not in ids
     assert decoded.strip().split() == sample.split()
 
-
-# -- Byte-identity vs the pinned published tokenizer -------------------------
-#
-# These checks require huggingface_hub + network access. Skipped with
-# ``pytest -m 'not network'``. They are how we guarantee that
-# tokens() + build_tokenizer reproduces the legacy 2840-vocab artifact
-# every existing v1 checkpoint was trained against.
 
 REVISION_PIN = "83f597d88e9b"
 
@@ -179,29 +159,19 @@ def test_published_tokenizer_vocab_matches():
         revision=REVISION_PIN,
     )
     local = build_tokenizer(get_structure())
-
     pub_vocab = published.get_vocab()
     loc_vocab = local.get_vocab()
-    assert pub_vocab.keys() == loc_vocab.keys(), (
-        f"vocab token set differs: "
-        f"only in published = {sorted(set(pub_vocab) - set(loc_vocab))[:10]}; "
-        f"only in local = {sorted(set(loc_vocab) - set(pub_vocab))[:10]}"
-    )
-    # Token IDs must agree for every shared token.
+    assert pub_vocab.keys() == loc_vocab.keys()
     mismatches = [
         (t, pub_vocab[t], loc_vocab[t])
         for t in pub_vocab
         if pub_vocab[t] != loc_vocab[t]
     ]
-    assert not mismatches, (
-        f"token-id mismatches against published tokenizer (first 5): "
-        f"{mismatches[:5]}"
-    )
+    assert not mismatches, f"first 5 mismatches: {mismatches[:5]}"
 
 
 @pytest.mark.network
 def test_published_tokenizer_encodes_identically():
-    """A non-trivial sample tokenizes to identical ID sequences."""
     pytest.importorskip("huggingface_hub")
     from transformers import AutoTokenizer
 
@@ -210,7 +180,6 @@ def test_published_tokenizer_encodes_identically():
         revision=REVISION_PIN,
     )
     local = build_tokenizer(get_structure())
-
     sample = (
         "<contacts-and-distances-v1> <begin_sequence> "
         "<MET> <LYS> <PHE> <CYS> <ASP> <TYR> <GLY> <LEU> "
@@ -227,13 +196,229 @@ def test_published_tokenizer_encodes_identically():
     )
 
 
-# -- generate / evaluate placeholders (raise NotImplementedError) ------------
+# ---------------------------------------------------------------------------
+# Bin / token helpers (pure-stdlib)
+# ---------------------------------------------------------------------------
 
 
-def test_generate_documents_not_implemented():
+@pytest.mark.parametrize("d, expected", [
+    (0.0, "d0.5"),         # clamped to lowest bin
+    (0.25, "d0.5"),
+    (0.5, "d0.5"),         # exactly on edge -> ceil(0.5/0.5)=1 -> d0.5
+    (0.51, "d1.0"),
+    (4.0, "d4.0"),
+    (4.5, "d4.5"),
+    (31.99, "d32.0"),
+    (32.0, "d32.0"),
+    (45.7, "d32.0"),       # clamped to top bin
+])
+def test_distance_token_bins(d, expected):
+    assert _distance_token(d) == expected
+
+
+@pytest.mark.parametrize("p, expected", [
+    (50.0, "plddt_lt70"),
+    (69.99, "plddt_lt70"),
+    (70.0, "plddt_70_75"),
+    (74.99, "plddt_70_75"),
+    (75.0, "plddt_75_80"),
+    (84.0, "plddt_80_85"),
+    (95.0, "plddt_95_100"),
+    (100.0, "plddt_95_100"),
+])
+def test_plddt_bin_token(p, expected):
+    edges = (70.0, 75.0, 80.0, 85.0, 90.0, 95.0)
+    assert _plddt_bin_token(p, edges) == expected
+
+
+# ---------------------------------------------------------------------------
+# Structure parsing + doc generation (use gemmi; skip if unavailable)
+# ---------------------------------------------------------------------------
+
+
+_HAS_GEMMI = True
+try:
+    import gemmi  # noqa: F401
+except ImportError:
+    _HAS_GEMMI = False
+
+
+_PDB_FIXTURE = textwrap.dedent("""\
+    HEADER    TEST PROTEIN                            01-JAN-26   TEST
+    ATOM      1  N   MET A   1      27.340  24.430   2.614  1.00 80.00           N
+    ATOM      2  CA  MET A   1      26.266  25.413   2.842  1.00 80.00           C
+    ATOM      3  C   MET A   1      26.913  26.639   3.531  1.00 80.00           C
+    ATOM      4  O   MET A   1      27.886  26.463   4.263  1.00 80.00           O
+    ATOM      5  CB  MET A   1      25.112  24.880   3.649  1.00 80.00           C
+    ATOM      6  CG  MET A   1      25.353  24.860   5.134  1.00 80.00           C
+    ATOM      7  SD  MET A   1      23.930  23.959   5.904  1.00 80.00           S
+    ATOM      8  CE  MET A   1      24.447  23.971   7.620  1.00 80.00           C
+    ATOM      9  N   ALA A   2      26.335  27.770   3.258  1.00 90.00           N
+    ATOM     10  CA  ALA A   2      26.881  29.013   3.793  1.00 90.00           C
+    ATOM     11  C   ALA A   2      27.183  28.992   5.282  1.00 90.00           C
+    ATOM     12  O   ALA A   2      28.250  28.583   5.713  1.00 90.00           O
+    ATOM     13  CB  ALA A   2      25.857  30.131   3.494  1.00 90.00           C
+    ATOM     14  N   GLY A   3      26.255  29.485   6.077  1.00 88.00           N
+    ATOM     15  CA  GLY A   3      26.444  29.581   7.515  1.00 88.00           C
+    ATOM     16  C   GLY A   3      26.999  28.293   8.075  1.00 88.00           C
+    ATOM     17  O   GLY A   3      28.038  28.300   8.745  1.00 88.00           O
+    ATOM     18  N   LYS A   4      26.301  27.187   7.838  1.00 75.00           N
+    ATOM     19  CA  LYS A   4      26.756  25.876   8.302  1.00 75.00           C
+    ATOM     20  C   LYS A   4      28.218  25.629   7.961  1.00 75.00           C
+    ATOM     21  O   LYS A   4      28.799  24.679   8.484  1.00 75.00           O
+    ATOM     22  CB  LYS A   4      25.901  24.752   7.701  1.00 75.00           C
+    ATOM     23  CG  LYS A   4      24.401  24.880   7.918  1.00 75.00           C
+    ATOM     24  CD  LYS A   4      23.610  23.681   7.395  1.00 75.00           C
+    ATOM     25  CE  LYS A   4      22.118  23.787   7.687  1.00 75.00           C
+    ATOM     26  NZ  LYS A   4      21.412  22.591   7.137  1.00 75.00           N
+    ATOM     27  N   PHE A   5      28.787  26.470   7.103  1.00 65.00           N
+    ATOM     28  CA  PHE A   5      30.181  26.282   6.681  1.00 65.00           C
+    ATOM     29  C   PHE A   5      30.350  26.395   5.169  1.00 65.00           C
+    ATOM     30  O   PHE A   5      31.444  26.246   4.622  1.00 65.00           O
+    ATOM     31  CB  PHE A   5      31.111  27.286   7.395  1.00 65.00           C
+    ATOM     32  CG  PHE A   5      32.589  27.156   7.114  1.00 65.00           C
+    END
+""")
+
+
+@pytest.fixture
+def tiny_pdb_path(tmp_path: Path) -> Path:
+    p = tmp_path / "tiny.pdb"
+    p.write_text(_PDB_FIXTURE)
+    return p
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_parse_tiny_pdb(tiny_pdb_path):
+    parsed = parse_structure(tiny_pdb_path)
+    assert isinstance(parsed, ParsedStructure)
+    assert parsed.sequence == ["MET", "ALA", "GLY", "LYS", "PHE"]
+    assert len(parsed.residues) == 5
+    # B-factors of MET (80) and PHE (65) — stored verbatim in
+    # residue.plddt (mean over heavy atoms).
+    plddts = {r.name: r.plddt for r in parsed.residues}
+    assert math.isclose(plddts["MET"], 80.0)
+    assert math.isclose(plddts["PHE"], 65.0)
+    # All atoms must be in our v1 atom vocab.
+    vocab = set(ATOM_NAMES)
+    for r in parsed.residues:
+        for name, *_ in r.atoms:
+            assert name in vocab, f"out-of-vocab atom: {name}"
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_parse_skips_hydrogens(tiny_pdb_path):
+    parsed = parse_structure(tiny_pdb_path)
+    for r in parsed.residues:
+        for name, *_ in r.atoms:
+            assert not name.startswith("H")
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_iter_inputs_directory_walk(tmp_path: Path):
+    """``iter_inputs`` walks subdirs and only picks up structure-shaped files."""
+    sub = tmp_path / "many"
+    sub.mkdir()
+    (sub / "a.pdb").write_text(_PDB_FIXTURE)
+    (sub / "b.pdb").write_text(_PDB_FIXTURE)
+    (sub / "ignore.txt").write_text("not a structure")
+    structures = list(get_structure().iter_inputs(sub))
+    assert len(structures) == 2
+    assert all(s.sequence == ["MET", "ALA", "GLY", "LYS", "PHE"] for s in structures)
+
+
+# ---------------------------------------------------------------------------
+# generate_documents
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_generate_documents_yields_one_per_input(tiny_pdb_path):
     s = get_structure()
-    with pytest.raises(NotImplementedError):
-        list(s.generate_documents(iter([])))
+    docs = list(s.generate_documents(s.iter_inputs(tiny_pdb_path)))
+    assert len(docs) == 1
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_generated_doc_well_formed(tiny_pdb_path):
+    s = get_structure()
+    doc = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
+
+    parts = doc.split()
+    assert parts[0] == "<contacts-and-distances-v1>"
+    assert parts[1] == "<begin_sequence>"
+    assert "<begin_statements>" in parts
+    assert parts[-1] == "<end>"
+
+    seq_start = parts.index("<begin_sequence>") + 1
+    stmts_start = parts.index("<begin_statements>")
+    assert parts[seq_start:stmts_start] == ["<MET>", "<ALA>", "<GLY>", "<LYS>", "<PHE>"]
+
+    # Exactly one pLDDT bin token in the statements/post-statements
+    # region (the algorithm places it either mid-statements or at the
+    # very end).
+    plddt_tokens = [t for t in parts[stmts_start:] if t.startswith("<plddt_")]
+    assert len(plddt_tokens) == 1
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_generated_doc_is_in_vocab(tiny_pdb_path):
+    """Every emitted token must be in the v1 vocabulary (no UNK)."""
+    s = get_structure()
+    doc = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
+    tok = build_tokenizer(s)
+    unk_id = tok.convert_tokens_to_ids("<UNK>")
+    ids = tok.encode(doc, add_special_tokens=False)
+    assert unk_id not in ids, (
+        f"document contains out-of-vocab tokens; doc head: {doc[:200]!r}"
+    )
+    # WordLevel + whitespace-split = 1:1.
+    assert len(ids) == len(doc.split())
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_generation_is_deterministic(tiny_pdb_path):
+    """Same input → same output (seed is sha1(entry_id))."""
+    s = get_structure()
+    doc1 = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
+    doc2 = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
+    assert doc1 == doc2
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_generate_num_docs_cap(tmp_path: Path):
+    """``num_docs`` caps the output even when there are more inputs."""
+    sub = tmp_path / "many"
+    sub.mkdir()
+    for i in range(5):
+        (sub / f"copy{i}.pdb").write_text(_PDB_FIXTURE)
+    s = get_structure()
+    docs = list(s.generate_documents(s.iter_inputs(sub), num_docs=3))
+    assert len(docs) == 3
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_generate_skips_when_sequence_exceeds_budget(tiny_pdb_path):
+    """A ``context_length`` smaller than ``5 + sequence_length`` skips the doc."""
+    s = get_structure()
+    docs = list(s.generate_documents(s.iter_inputs(tiny_pdb_path), context_length=4))
+    assert docs == []
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_iter_ground_truth_shares_parser(tiny_pdb_path):
+    """``iter_ground_truth`` yields the same parses as ``iter_inputs``."""
+    s = get_structure()
+    a = list(s.iter_inputs(tiny_pdb_path))
+    b = list(s.iter_ground_truth(tiny_pdb_path))
+    assert len(a) == len(b) == 1
+    assert a[0].sequence == b[0].sequence
+    assert a[0].entry_id == b[0].entry_id
+
+
+# ---------------------------------------------------------------------------
+# evaluate placeholder
+# ---------------------------------------------------------------------------
 
 
 def test_evaluate_not_implemented():
