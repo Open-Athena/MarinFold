@@ -1,0 +1,41 @@
+[project]
+name = "exp1-document-structures-contacts-and-distances-v1"
+version = "0.1.0"
+description = "Port the contacts-and-distances-v1 document structure into the MarinFold DocumentStructure Protocol."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold-document-structures",
+    "gemmi>=0.6",       # mmCIF / PDB parsing for AFDB inputs
+    "numpy",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+# vllm pulls torch + cuda libs and is only needed for evaluate().
+# Install with `uv sync --extra eval`.
+eval = ["vllm>=0.6"]
+# Network-dependent tests (byte-identity check against
+# huggingface.co/timodonnell/protein-docs-tokenizer@<sha>) need
+# huggingface_hub installed. pytest is for running tests in general.
+test = ["pytest>=8", "huggingface_hub>=0.24"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Not a package — only used for venv + dep resolution.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold-document-structures = { path = "../../document_structures" }
+
+[tool.pytest.ini_options]
+markers = [
+    "network: tests that require internet (e.g. byte-identity check against the published tokenizer on HF Hub). Skip with `pytest -m 'not network'`.",
+]
