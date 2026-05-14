@@ -620,6 +620,383 @@ def _generate_one(
 
 
 # --------------------------------------------------------------------------
+# Evaluation
+# --------------------------------------------------------------------------
+#
+# Distance-MAE eval. For each ground-truth structure:
+#   1. Compute the GT distance matrix at the query atom pair.
+#   2. Optionally seed the prompt with N true long-range contacts
+#      (CB-CB ≤ 8 Å, sep ≥ 24) — taken from the GT structure, sorted
+#      by (i, j) ascending to match the training convention.
+#   3. For every pair (i, j) with i < j, query the model for one
+#      next-token distribution over `<d_X.X>` bins and read out the
+#      expected distance.
+#   4. Aggregate |expected - GT| per structure.
+#
+# When `seed_n_values = (0, 5, 20, 50)` (or any tuple), each value is
+# evaluated independently against the same GT; the eval result holds
+# `mae_at_n=<N>` metrics for each N. Phase-7c-style ("a few GT
+# contacts as hints") shows up as N > 0.
+#
+# Heavily inspired by marin's experiments/protein/eval_protein_distogram.py.
+
+
+# Distance-bin midpoints (Å) — used to compute the expected distance
+# from a per-pair probability distribution over the 64 bins. Bin k
+# (1-indexed: 1..64) covers the interval ((k-1)*0.5, k*0.5] Å, so its
+# midpoint is k*0.5 - 0.25. Same convention as
+# eval_protein_distogram.py:DISTANCE_BIN_MIDPOINTS.
+_DISTANCE_BIN_WIDTH_A = 0.5
+_NUM_DISTANCE_BINS = 64
+_DISTANCE_MAX_A = _NUM_DISTANCE_BINS * _DISTANCE_BIN_WIDTH_A  # 32.0
+# Midpoints: 0.25, 0.75, 1.25, ..., 31.75
+_DISTANCE_BIN_MIDPOINTS = tuple(
+    (k + 1) * _DISTANCE_BIN_WIDTH_A - _DISTANCE_BIN_WIDTH_A / 2
+    for k in range(_NUM_DISTANCE_BINS)
+)
+
+# Contact cutoff used to determine "true long-range contacts" for
+# seeded-prompt construction. CB-CB ≤ 8 Å, sep ≥ 24. Matches the
+# v1 format definition.
+_CONTACT_CUTOFF_A = 8.0
+_LONG_RANGE_SEP = 24
+
+
+@dataclass(frozen=True)
+class EvaluationConfig:
+    """Hyperparameters for ``evaluate``.
+
+    Defaults reproduce the zero-shot CA-CA distogram MAE setting used
+    by marin's ``eval_protein_distogram.py``, plus the seeded sweep
+    that Phase 7c in the LlamaFold-experiments notebook explored.
+    """
+
+    # The atom on each residue to query. Default CA-CA: the simplest,
+    # most-trained-against signal. Same atom for both i and j.
+    query_atom: str = "CA"
+
+    # Sweep over seeded-contact counts. (0,) = zero-shot only;
+    # (0, 5, 20, 50) reproduces the full Phase 7c sweep.
+    seed_n_values: tuple[int, ...] = (0,)
+
+    # vllm config.
+    top_k_logprobs: int = 128
+    batch_size: int = 64
+    dtype: str = "bfloat16"
+    gpu_memory_utilization: float = 0.85
+
+    # Cap pairs per structure (useful for cheap smoke tests). None =
+    # query every (i, j) with i < j and finite GT.
+    max_pairs_per_structure: int | None = None
+
+    # GT distances above this are masked from the MAE — matches the
+    # training-time clip at 32 Å (anything above lands in <d32.0>
+    # and is uninformative for distance regression).
+    distance_cap_angstrom: float = 32.0
+
+
+def _atom_position(residue: Residue, atom_name: str) -> tuple[float, float, float] | None:
+    """Return the (x, y, z) of the named atom on ``residue``, or None if absent."""
+    for name, x, y, z in residue.atoms:
+        if name == atom_name:
+            return (x, y, z)
+    return None
+
+
+def _gt_query_distance_matrix(
+    structure: ParsedStructure, atom_name: str
+) -> "np.ndarray":  # noqa: F821 — numpy imported lazily
+    """N×N distance matrix using ``atom_name`` on both endpoints.
+
+    Returns NaN for residues missing the named atom.
+    """
+    import numpy as np
+
+    n = len(structure.residues)
+    positions: list[tuple[float, float, float] | None] = [
+        _atom_position(r, atom_name) for r in structure.residues
+    ]
+    out = np.full((n, n), np.nan, dtype=np.float32)
+    for i in range(n):
+        pi = positions[i]
+        if pi is None:
+            continue
+        for j in range(n):
+            pj = positions[j]
+            if pj is None:
+                continue
+            if i == j:
+                out[i, j] = 0.0
+                continue
+            out[i, j] = float(np.linalg.norm(np.asarray(pi) - np.asarray(pj)))
+    return out
+
+
+def _gt_long_range_contacts(structure: ParsedStructure) -> list[tuple[int, int]]:
+    """1-indexed (i, j) pairs with CB-CB ≤ 8 Å and sep ≥ 24, sorted by (i, j).
+
+    Uses ``_cb_or_ca_position`` (CA fallback for GLY / missing CB) to
+    match the v1 format's contact definition and the training-data
+    convention.
+    """
+    cb: dict[int, tuple[float, float, float]] = {}
+    for r in structure.residues:
+        p = _cb_or_ca_position(r)
+        if p is not None:
+            cb[r.index] = p
+    out: list[tuple[int, int]] = []
+    indices = sorted(cb)
+    for ii in range(len(indices)):
+        for jj in range(ii + 1, len(indices)):
+            i = indices[ii]
+            j = indices[jj]
+            if j - i < _LONG_RANGE_SEP:
+                continue
+            if _euclidean(cb[i], cb[j]) <= _CONTACT_CUTOFF_A:
+                out.append((i, j))
+    out.sort()
+    return out
+
+
+def _build_eval_prompt_tokens(
+    structure: ParsedStructure,
+    seeded_contacts: list[tuple[int, int]],
+    structure_name: str,
+) -> list[str]:
+    """Base prompt = ``<sn> <begin_sequence> <AA1>..<AAn> <begin_statements> <seeded contacts>``.
+
+    Each seeded contact emits 3 tokens: ``<long-range-contact> <p_i> <p_j>``
+    (the v1 format's long-range type, matching marin's eval).
+    """
+    toks: list[str] = [f"<{structure_name}>", "<begin_sequence>"]
+    toks.extend(f"<{r.name}>" for r in structure.residues)
+    toks.append("<begin_statements>")
+    for i, j in seeded_contacts:
+        toks.append("<long-range-contact>")
+        toks.append(f"<p{i}>")
+        toks.append(f"<p{j}>")
+    return toks
+
+
+def _pair_tail_tokens(i: int, j: int, atom_i: str, atom_j: str) -> list[str]:
+    """The 5-token tail that elicits a ``<d_X.X>`` next-token distribution."""
+    return ["<distance>", f"<p{i}>", f"<p{j}>", f"<{atom_i}>", f"<{atom_j}>"]
+
+
+def _resolve_distance_token_ids(tokenizer) -> list[int]:
+    """The 64 distance-bin token IDs, in bin order (k=0 → ``<d0.5>``)."""
+    ids: list[int] = []
+    for k in range(_NUM_DISTANCE_BINS):
+        tok = f"<d{(k + 1) * _DISTANCE_BIN_WIDTH_A:.1f}>"
+        enc = tokenizer.encode(tok, add_special_tokens=False)
+        if len(enc) != 1:
+            raise ValueError(f"Unexpected encoding for {tok}: {enc!r}")
+        ids.append(int(enc[0]))
+    return ids
+
+
+def _encode_token_strs(tokenizer, token_strs: list[str]) -> list[int]:
+    """Encode a list of `<...>` tokens. Asserts 1:1 mapping (WordLevel)."""
+    ids = tokenizer.encode(" ".join(token_strs), add_special_tokens=False)
+    if len(ids) != len(token_strs):
+        raise ValueError(
+            "Tokenizer did not produce 1:1 mapping. "
+            f"first 10 in: {token_strs[:10]} / out: {ids[:10]}"
+        )
+    return [int(x) for x in ids]
+
+
+@dataclass(frozen=True)
+class _PerStructureResult:
+    entry_id: str
+    n_residues: int
+    n_seeded: int
+    n_pairs: int
+    mae_angstrom: float
+    per_pair: list[dict]  # one record per (i, j)
+
+
+def _evaluate_structure_at_seed(
+    structure: ParsedStructure,
+    *,
+    llm,
+    tokenizer,
+    cfg: EvaluationConfig,
+    structure_name: str,
+    distance_token_ids: list[int],
+    bin_midpoints,  # np.ndarray
+    n_seeded: int,
+) -> _PerStructureResult:
+    """Single (structure, seed-count) evaluation. Returns aggregated + per-pair records."""
+    import numpy as np
+    from vllm import SamplingParams, TokensPrompt
+
+    gt = _gt_query_distance_matrix(structure, cfg.query_atom)  # (n, n)
+    n = gt.shape[0]
+    gt_long = _gt_long_range_contacts(structure)
+    seeded = gt_long[:n_seeded] if n_seeded > 0 else []
+
+    base_tokens = _build_eval_prompt_tokens(structure, seeded, structure_name)
+    base_ids = _encode_token_strs(tokenizer, base_tokens)
+
+    distance_id_set = set(distance_token_ids)
+    bin_of = {tid: k for k, tid in enumerate(distance_token_ids)}
+
+    # Build all pair prompts up-front; vllm batches internally.
+    prompts: list = []
+    keys: list[tuple[int, int]] = []
+    for i in range(1, n + 1):
+        gt_i = gt[i - 1]
+        for j in range(i + 1, n + 1):
+            gt_ij = float(gt_i[j - 1])
+            if not math.isfinite(gt_ij) or gt_ij > cfg.distance_cap_angstrom:
+                continue
+            tail = _pair_tail_tokens(i, j, cfg.query_atom, cfg.query_atom)
+            tail_ids = _encode_token_strs(tokenizer, tail)
+            prompts.append(TokensPrompt(prompt_token_ids=base_ids + tail_ids))
+            keys.append((i, j))
+            if (
+                cfg.max_pairs_per_structure is not None
+                and len(prompts) >= cfg.max_pairs_per_structure
+            ):
+                break
+        if (
+            cfg.max_pairs_per_structure is not None
+            and len(prompts) >= cfg.max_pairs_per_structure
+        ):
+            break
+
+    sampling = SamplingParams(
+        temperature=1.0,
+        top_p=1.0,
+        top_k=-1,
+        max_tokens=1,
+        logprobs=cfg.top_k_logprobs,
+        n=1,
+    )
+
+    per_pair_records: list[dict] = []
+    abs_errs: list[float] = []
+    for chunk_start in range(0, len(prompts), cfg.batch_size):
+        chunk_prompts = prompts[chunk_start : chunk_start + cfg.batch_size]
+        chunk_keys = keys[chunk_start : chunk_start + cfg.batch_size]
+        outputs = llm.generate(chunk_prompts, sampling, use_tqdm=False)
+        for (i, j), out in zip(chunk_keys, outputs, strict=True):
+            lp_dict = out.outputs[0].logprobs[0] if out.outputs[0].logprobs else {}
+            row = np.zeros(_NUM_DISTANCE_BINS, dtype=np.float32)
+            for tok_id, lp in lp_dict.items():
+                tid = int(tok_id)
+                if tid in distance_id_set:
+                    row[bin_of[tid]] = float(np.exp(float(lp.logprob)))
+            total = float(row.sum())
+            if total <= 0:
+                # Model put zero mass on any distance bin within top-k —
+                # skip this pair from the MAE rather than letting it dominate.
+                continue
+            row /= total
+            expected = float((row * bin_midpoints).sum())
+            gt_ij = float(gt[i - 1, j - 1])
+            abs_err = abs(expected - gt_ij)
+            abs_errs.append(abs_err)
+            per_pair_records.append({
+                "entry_id": structure.entry_id,
+                "n_seeded": n_seeded,
+                "i": i,
+                "j": j,
+                "gt_angstrom": gt_ij,
+                "expected_angstrom": expected,
+                "abs_err_angstrom": abs_err,
+            })
+
+    mae = float(np.mean(abs_errs)) if abs_errs else float("nan")
+    return _PerStructureResult(
+        entry_id=structure.entry_id,
+        n_residues=n,
+        n_seeded=n_seeded,
+        n_pairs=len(abs_errs),
+        mae_angstrom=mae,
+        per_pair=per_pair_records,
+    )
+
+
+def _evaluate_all(
+    records: Iterator[ParsedStructure],
+    *,
+    model_path: str,
+    cfg: EvaluationConfig,
+    structure_name: str,
+) -> EvalResult:
+    """End-to-end eval entrypoint. Loads vllm, sweeps seed counts, aggregates."""
+    # Materialize records first so an empty input doesn't trigger the
+    # heavy vllm import (or model load).
+    structures = list(records)
+    if not structures:
+        return EvalResult(metrics={}, per_example=[], extras={
+            "structure": structure_name,
+            "model_path": model_path,
+            "warning": "no input structures",
+        })
+
+    import numpy as np
+    from vllm import LLM
+
+    llm = LLM(
+        model=model_path,
+        dtype=cfg.dtype,
+        gpu_memory_utilization=cfg.gpu_memory_utilization,
+        enforce_eager=True,
+        trust_remote_code=True,
+        max_logprobs=max(cfg.top_k_logprobs, 128),
+    )
+    tokenizer = llm.get_tokenizer()
+    distance_token_ids = _resolve_distance_token_ids(tokenizer)
+    bin_midpoints = np.asarray(_DISTANCE_BIN_MIDPOINTS, dtype=np.float32)
+
+    all_per_pair: list[dict] = []
+    per_structure_mae: dict[int, dict[str, float]] = {n: {} for n in cfg.seed_n_values}
+    per_structure_n_pairs: dict[int, dict[str, int]] = {n: {} for n in cfg.seed_n_values}
+
+    for structure in structures:
+        for n_seeded in cfg.seed_n_values:
+            result = _evaluate_structure_at_seed(
+                structure,
+                llm=llm,
+                tokenizer=tokenizer,
+                cfg=cfg,
+                structure_name=structure_name,
+                distance_token_ids=distance_token_ids,
+                bin_midpoints=bin_midpoints,
+                n_seeded=n_seeded,
+            )
+            per_structure_mae[n_seeded][structure.entry_id] = result.mae_angstrom
+            per_structure_n_pairs[n_seeded][structure.entry_id] = result.n_pairs
+            all_per_pair.extend(result.per_pair)
+
+    metrics: dict[str, float] = {}
+    for n_seeded in cfg.seed_n_values:
+        maes = [v for v in per_structure_mae[n_seeded].values() if math.isfinite(v)]
+        if maes:
+            metrics[f"mae_at_n{n_seeded}_angstrom"] = float(np.mean(maes))
+        else:
+            metrics[f"mae_at_n{n_seeded}_angstrom"] = float("nan")
+
+    extras: dict[str, Any] = {
+        "structure": structure_name,
+        "model_path": model_path,
+        "query_atom": cfg.query_atom,
+        "seed_n_values": list(cfg.seed_n_values),
+        "n_structures": len(structures),
+        "per_structure_mae": per_structure_mae,
+        "per_structure_n_pairs": per_structure_n_pairs,
+    }
+    return EvalResult(
+        metrics=metrics,
+        per_example=all_per_pair,
+        extras=extras,
+    )
+
+
+# --------------------------------------------------------------------------
 # DocumentStructure implementation
 # --------------------------------------------------------------------------
 
@@ -634,9 +1011,14 @@ class ContactsAndDistancesV1:
     name = "contacts-and-distances-v1"
     context_length = 8192
 
-    def __init__(self, generation_config: GenerationConfig | None = None) -> None:
+    def __init__(
+        self,
+        generation_config: GenerationConfig | None = None,
+        evaluation_config: EvaluationConfig | None = None,
+    ) -> None:
         self._tokens = _all_domain_tokens()
         self.generation_config = generation_config or GenerationConfig()
+        self.evaluation_config = evaluation_config or EvaluationConfig()
 
     def tokens(self) -> list[str]:
         # Return a copy so callers can't accidentally mutate the
@@ -703,11 +1085,39 @@ class ContactsAndDistancesV1:
         self,
         *,
         model_path: str,
-        ground_truth_records: Iterator[Any],
+        ground_truth_records: Iterator[ParsedStructure],
     ) -> EvalResult:
-        raise NotImplementedError(
-            "evaluate is not yet implemented — coming in the next commit "
-            "(vllm-backed rollout eval)."
+        """vllm-backed distance MAE eval.
+
+        For each ground-truth structure, queries the model for a
+        next-token distribution over the 64 ``<d_X.X>`` bins on every
+        residue-pair at the configured atom pair (default CA-CA),
+        computes the expected distance, and reports macro-mean MAE
+        against the GT.
+
+        If ``self.evaluation_config.seed_n_values`` includes values
+        > 0, the eval also runs with that many true long-range
+        contacts (CB-CB ≤ 8 Å, sep ≥ 24) seeded into the prompt
+        before the distance queries. Phase 7c (zero-shot vs N-seeded)
+        shows up in the returned metrics as
+        ``mae_at_n0_angstrom`` / ``mae_at_n5_angstrom`` / etc.
+
+        Args:
+            model_path: HF model path. The tokenizer is loaded from
+                here too (the
+                ``always-save-the-tokenizer-with-the-model`` rule
+                guarantees it's co-located).
+            ground_truth_records: iterator over ``ParsedStructure``
+                — typically ``self.iter_ground_truth(pdb_dir)``.
+
+        Requires ``vllm`` — install with
+        ``uv sync --extra eval`` in this experiment dir.
+        """
+        return _evaluate_all(
+            ground_truth_records,
+            model_path=model_path,
+            cfg=self.evaluation_config,
+            structure_name=self.name,
         )
 
 

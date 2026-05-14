@@ -36,9 +36,16 @@ from structure import (  # noqa: E402
     PLDDT_BINS,
     UNK_TOKEN,
     ContactsAndDistancesV1,
+    EvaluationConfig,
     ParsedStructure,
+    _build_eval_prompt_tokens,
+    _DISTANCE_BIN_MIDPOINTS,
     _distance_token,
+    _gt_long_range_contacts,
+    _gt_query_distance_matrix,
+    _pair_tail_tokens,
     _plddt_bin_token,
+    _resolve_distance_token_ids,
     get_structure,
     parse_structure,
 )
@@ -417,11 +424,143 @@ def test_iter_ground_truth_shares_parser(tiny_pdb_path):
 
 
 # ---------------------------------------------------------------------------
-# evaluate placeholder
+# evaluate() — vllm-free pieces (prompt builders, GT helpers, midpoints)
 # ---------------------------------------------------------------------------
 
 
-def test_evaluate_not_implemented():
+def test_distance_bin_midpoints_canonical():
+    # 64 bins at 0.5Å resolution. Bin 1 = (0, 0.5] → midpoint 0.25.
+    # Bin 64 = (31.5, 32.0] → midpoint 31.75.
+    assert len(_DISTANCE_BIN_MIDPOINTS) == 64
+    assert math.isclose(_DISTANCE_BIN_MIDPOINTS[0], 0.25)
+    assert math.isclose(_DISTANCE_BIN_MIDPOINTS[1], 0.75)
+    assert math.isclose(_DISTANCE_BIN_MIDPOINTS[-1], 31.75)
+
+
+def test_resolve_distance_token_ids_uses_canonical_tokenizer():
+    tok = build_tokenizer(get_structure())
+    ids = _resolve_distance_token_ids(tok)
+    assert len(ids) == 64
+    # bin 0 == <d0.5> at id (CONTROL + CONTACT_TYPES + DISTANCE_MARKER + 0)
+    # We don't need to know the exact ID — just that decoding round-trips.
+    assert tok.decode([ids[0]]).strip() == "<d0.5>"
+    assert tok.decode([ids[-1]]).strip() == "<d32.0>"
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_gt_long_range_contacts_filters_by_sep_and_distance(tiny_pdb_path):
+    """The tiny 5-residue fixture has no long-range pairs (sep < 24 for all)."""
+    parsed = parse_structure(tiny_pdb_path)
+    assert _gt_long_range_contacts(parsed) == []
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_gt_query_distance_matrix_ca_ca(tiny_pdb_path):
+    parsed = parse_structure(tiny_pdb_path)
+    gt = _gt_query_distance_matrix(parsed, "CA")
+    # 5x5, diagonal is zero, symmetric, all finite (all 5 residues have CA).
+    assert gt.shape == (5, 5)
+    for k in range(5):
+        assert gt[k, k] == 0.0
+    for i in range(5):
+        for j in range(5):
+            assert math.isfinite(gt[i, j])
+            assert math.isclose(gt[i, j], gt[j, i], rel_tol=1e-5)
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_gt_query_distance_matrix_missing_atom_nans(tiny_pdb_path):
+    """A residue without the requested atom yields NaN rows/cols.
+
+    The fixture's GLY (residue 3) has no CB — so a CB-CB matrix has NaN
+    for any pair touching row/col 2.
+    """
+    parsed = parse_structure(tiny_pdb_path)
+    gt = _gt_query_distance_matrix(parsed, "CB")
+    gly_idx = next(i for i, r in enumerate(parsed.residues) if r.name == "GLY")
+    for j in range(5):
+        if j == gly_idx:
+            continue
+        assert math.isnan(gt[gly_idx, j]), f"expected NaN at GLY row, got {gt[gly_idx, j]}"
+
+
+def test_build_eval_prompt_tokens_zero_shot():
+    """Zero-shot prompt: structure tag + sequence + begin_statements only."""
+    s = ContactsAndDistancesV1()
+    structure = ParsedStructure(
+        entry_id="test",
+        residues=tuple([
+            # 3 dummy residues; atoms don't matter for this prompt-shape test
+            __import__("structure").Residue(index=k + 1, name=name, plddt=99.0, atoms=())
+            for k, name in enumerate(["MET", "LYS", "PHE"])
+        ]),
+        source_path=Path("/dev/null"),
+    )
+    toks = _build_eval_prompt_tokens(structure, seeded_contacts=[], structure_name=s.name)
+    assert toks == [
+        "<contacts-and-distances-v1>",
+        "<begin_sequence>",
+        "<MET>", "<LYS>", "<PHE>",
+        "<begin_statements>",
+    ]
+
+
+def test_build_eval_prompt_tokens_with_seeded_contacts():
+    """Seeded contacts appear as `<long-range-contact> <p_i> <p_j>` triples."""
+    s = ContactsAndDistancesV1()
+    structure = ParsedStructure(
+        entry_id="test",
+        residues=tuple([
+            __import__("structure").Residue(index=k + 1, name="ALA", plddt=99.0, atoms=())
+            for k in range(5)
+        ]),
+        source_path=Path("/dev/null"),
+    )
+    toks = _build_eval_prompt_tokens(
+        structure,
+        seeded_contacts=[(1, 30), (2, 50)],
+        structure_name=s.name,
+    )
+    # tail of toks: <begin_statements>, then 3 tokens per contact
+    assert toks[-7:] == [
+        "<begin_statements>",
+        "<long-range-contact>", "<p1>", "<p30>",
+        "<long-range-contact>", "<p2>", "<p50>",
+    ]
+
+
+def test_pair_tail_tokens_shape():
+    """The 5-token tail elicits a distance-bin next-token prediction."""
+    assert _pair_tail_tokens(7, 42, "CA", "CB") == [
+        "<distance>", "<p7>", "<p42>", "<CA>", "<CB>",
+    ]
+
+
+def test_evaluation_config_defaults():
+    cfg = EvaluationConfig()
+    assert cfg.query_atom == "CA"
+    assert cfg.seed_n_values == (0,)
+    assert cfg.top_k_logprobs >= 64
+    assert cfg.distance_cap_angstrom == 32.0
+
+
+def test_evaluate_picks_up_evaluation_config():
+    """The class-level config knob is what evaluate() consults."""
+    custom = EvaluationConfig(query_atom="CB", seed_n_values=(0, 5, 20))
+    s = ContactsAndDistancesV1(evaluation_config=custom)
+    assert s.evaluation_config is custom
+
+
+# ---------------------------------------------------------------------------
+# Full vllm-backed evaluate() — GPU-only smoke
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_evaluate_raises_without_vllm_or_records():
+    """Empty input is safely handled — no vllm spin-up, no metrics."""
     s = get_structure()
-    with pytest.raises(NotImplementedError):
-        s.evaluate(model_path="fake", ground_truth_records=iter([]))
+    result = s.evaluate(model_path="/nonexistent", ground_truth_records=iter([]))
+    assert result.metrics == {}
+    assert result.per_example == []
+    assert result.extras.get("warning") == "no input structures"

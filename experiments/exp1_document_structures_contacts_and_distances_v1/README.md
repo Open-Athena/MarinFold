@@ -92,9 +92,18 @@ experiments.
     entries per Foldseek structural cluster", a *data-pipeline*
     selection — not augmentation here.
   - `evaluate(model_path, ground_truth_records)` — vllm-backed
-    rollout eval. Phase 0/1-style for v1 (forced-scaffold contact
-    statements, consensus vs GT CB-CB ≤ 8 Å). Phase 6 SMC / Phase 11
-    routing are follow-ups in separate eval experiments.
+    distance MAE eval. For each target structure, queries the model
+    once per residue-pair (i, j) with i<j at the configured atom
+    pair (default CA-CA): the prompt is the v1 base prompt
+    + sequence + `<begin_statements>` + optional N seeded GT
+    long-range contacts + `<distance> <p_i> <p_j> <atom_i> <atom_j>`,
+    and the next-token distribution over the 64 `<d_X.X>` bins is
+    renormalized to an expected distance. MAE against the GT
+    matrix at the same atom pair is the headline metric.
+    `EvaluationConfig.seed_n_values` (default `(0,)`) sweeps over
+    seeded-contact counts in a single run — set to `(0, 5, 20, 50)`
+    to reproduce the Phase 7c "few GT contacts as hints" trace from
+    the LlamaFold-experiments notebook.
 - Verify via the local CLI in `document_structures/`:
   - `marinfold-document-structure generate structure.py <sample-pdb-dir>
     --num-docs 100 --context-length 8192 --out /tmp/sample.parquet`
@@ -119,8 +128,12 @@ experiments.
    structure today.
 4. `evaluate()` on
    `protein-contacts-1b-3.5e-4-distance-masked-7d355e/hf/step-31337`
-   reproduces the `eval/protein_dist/macro_loss` from W&B for a small
-   subset of targets (within sampling tolerance).
+   reproduces the Phase 7c trend from the LlamaFold-experiments
+   notebook: zero-shot CA-CA MAE around 3.6 Å on the 12-target set,
+   dropping to ~1.4 Å with N=50 seeded GT contacts. We'll consider
+   the eval validated once `mae_at_n0_angstrom` and
+   `mae_at_n50_angstrom` agree (within run-to-run noise) with the
+   notebook's `r_d` rows.
 5. Graduated as `document_structures/contacts_and_distances_v1/ →
    ../experiments/exp<N>_document_structures_contacts_and_distances_v1/`
    once results land.
