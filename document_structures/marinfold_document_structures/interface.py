@@ -205,10 +205,20 @@ def build_tokenizer(component):
 
 
 def _load_module_by_path(path: Path):
-    """Load a Python module by file path under a synthetic package name."""
+    """Load a Python module by file path under a synthetic package name.
+
+    Also puts the file's parent directory on ``sys.path`` (idempotent)
+    so the loaded module can ``from _vocab import ...`` / ``from
+    _parse import ...`` to reach its private sibling modules — that's
+    the intended shape of a document-structure impl (two public
+    files + shared private helpers in the same dir).
+    """
     p = Path(path).resolve()
     if not p.is_file():
         raise FileNotFoundError(f"Implementation file not found: {p}")
+    parent = str(p.parent)
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
     mod_name = f"_marinfold_ds_{abs(hash(str(p)))}"
     spec = importlib.util.spec_from_file_location(mod_name, p)
     if spec is None or spec.loader is None:
