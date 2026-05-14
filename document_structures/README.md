@@ -3,12 +3,15 @@
 The shared interface + local-testing CLI for MarinFold document
 structures.
 
-A **document structure** is a recipe that:
+A **document structure**:
 
-1. **Generates** training documents from input data (PDB, AFDB, mmCIF,
-   …) — `DocumentStructure.generate_documents`.
-2. **Evaluates** trained models against ground-truth structures using
-   the same format — `DocumentStructure.evaluate`.
+1. **Declares its vocabulary** via `tokens()`. The tokenizer is
+   derived from this list (no hardcoded HF URL) — see
+   `build_tokenizer(structure)`.
+2. **Generates** training documents from input data (PDB, mmCIF,
+   AFDB, …) — `generate_documents`.
+3. **Evaluates** trained models against ground-truth structures —
+   `evaluate`.
 
 The shape is captured by the
 [`DocumentStructure`](marinfold_document_structures/interface.py)
@@ -26,7 +29,7 @@ document_structures/
 ├── AGENTS.md                               # rules for working under document_structures/
 ├── marinfold_document_structures/
 │   ├── __init__.py
-│   ├── interface.py                        # DocumentStructure Protocol + load_structure
+│   ├── interface.py                        # Protocol + EvalResult + build_tokenizer + load_structure
 │   └── cli.py                              # marinfold-document-structure CLI
 └── <graduated symlinks>                    # e.g. contacts_and_distances_v1/ → ../experiments/exp<N>_document_structures_<name>/
 ```
@@ -52,6 +55,14 @@ uv run marinfold-document-structure generate \
     --num-docs 100 \
     --context-length 8192 \
     --out /tmp/sample-docs.parquet
+
+# Build / save / push the tokenizer derived from structure.tokens():
+uv run marinfold-document-structure tokenizer \
+    ../experiments/exp<N>_document_structures_<name>/structure.py \
+    --save-local /tmp/my-tokenizer            # local copy for inspection
+uv run marinfold-document-structure tokenizer \
+    ../experiments/exp<N>_document_structures_<name>/structure.py \
+    --push open-athena/my-structure-tokenizer  # push to HF Hub
 
 # Run an eval locally:
 uv run marinfold-document-structure evaluate \
@@ -80,8 +91,15 @@ from marinfold_document_structures import DocumentStructure, EvalResult
 
 class MyDocumentStructure:
     name = "my-structure"
-    tokenizer = "timodonnell/my-tokenizer@<sha>"
     context_length = 8192
+
+    def tokens(self) -> list[str]:
+        # All domain tokens, in canonical order. `<pad>` and `<eos>`
+        # are added by build_tokenizer — don't include them here.
+        return [
+            "<my-structure>", "<begin_sequence>", "<end>",
+            # ...
+        ]
 
     def iter_inputs(self, path):
         # yield input records the CLI passes to generate_documents
@@ -99,6 +117,7 @@ class MyDocumentStructure:
         # return EvalResult(metrics={...}, per_example=[...], extras={...})
         ...
 
+
 def get_structure() -> DocumentStructure:
     return MyDocumentStructure()
 ```
@@ -106,6 +125,11 @@ def get_structure() -> DocumentStructure:
 The `DocumentStructure` Protocol is `runtime_checkable`, so
 `isinstance(structure, DocumentStructure)` validates the shape at load
 time without requiring you to inherit from it.
+
+The tokenizer is whatever
+[`build_tokenizer(structure)`](marinfold_document_structures/interface.py)
+constructs from `tokens()` — WordLevel + whitespace-split, with
+`<pad>` at id 0 and `<eos>` at id 1.
 
 ## See also
 

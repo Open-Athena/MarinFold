@@ -7,10 +7,13 @@ name = "marinfold-document-structures"
 version = "0.1.0"
 description = "MarinFold document_structures/ library — interface + local CLI for document-structure impls."
 requires-python = ">=3.11"
-# The interface + CLI is stdlib + pyarrow (for --out parquet). Specific
-# implementations bring their own deps (transformers, biopython, etc.).
+# Stdlib + pyarrow (for --out parquet) + tokenizers/transformers (for
+# build_tokenizer). Specific implementations bring their own structure-
+# parsing (gemmi / biotite / biopython) and eval (vllm / torch) deps.
 dependencies = [
     "pyarrow",
+    "tokenizers>=0.15",
+    "transformers>=4.40",
 ]
 
 [project.optional-dependencies]

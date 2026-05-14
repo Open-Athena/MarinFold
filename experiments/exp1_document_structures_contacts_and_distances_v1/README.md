@@ -71,25 +71,30 @@ experiments.
 ## Approach
 
 - Create `experiments/exp<N>_document_structures_contacts_and_distances_v1/`.
-- Implement `structure.py` exposing `get_structure() -> DocumentStructure`. Attributes:
+- Implement `structure.py` exposing `get_structure() -> DocumentStructure`. Attributes / methods:
   - `name = "contacts-and-distances-v1"`
-  - `tokenizer = "timodonnell/protein-docs-tokenizer@83f597d88e9b"`
   - `context_length = 8192`
-  - `iter_inputs(path)` — accept a directory of PDB/mmCIF files (or a
-    single file); yield parsed-structure records.
-  - `iter_ground_truth(path)` — same shape, used by `evaluate`.
+  - `tokens()` — return the canonical 2840-token domain list (ported
+    from `exp0_models_protein_docs_initial_port/create_protein_tokenizer.py`).
+    The tokenizer is then built by
+    `marinfold_document_structures.build_tokenizer(structure)`; no
+    hardcoded tokenizer URL.
+  - `iter_inputs(path)` — accept PDB / mmCIF / `.gz` / directory.
+    AFDB inputs are mmCIF (gemmi-parsed); PDB targets are
+    hand-rolled (port from `protein_distogram_eval.py`).
+  - `iter_ground_truth(path)` — same parser; eval-time records may
+    carry a precomputed GT contact map.
   - `generate_documents(input_records, *, context_length, num_docs)` —
-    port the per-structure-to-document logic from LlamaFold-experiments'
-    `data.py` and whatever script produced the HF parquets. Reproduce
-    the 5x augmentation (round-ordered per cluster) for AFDB-style
-    inputs.
-  - `evaluate(model_path, ground_truth_records)` — port the distogram-
-    benchmark eval from `protein_distogram_eval.py`. Optionally also
-    cover the offline contact / distogram eval logic from marin's
-    `experiments/protein/eval_protein_{contacts,distogram}.py`.
-- Auxiliary: a small `tokenizer.py` that constructs the pinned 2840-
-  token WordLevel tokenizer (port `create_protein_tokenizer.py`) and a
-  test that confirms byte-identity with the published tokenizer.
+    one doc per input. Layout per the HF dataset README: sequence,
+    contact statements (long / medium / short, rank-ordered),
+    distance statements (0.5 Å bins, sampled atom pairs), pLDDT bin
+    (from AFDB B-factor). The `-5x` HF subset means "up to 5 AFDB
+    entries per Foldseek structural cluster", a *data-pipeline*
+    selection — not augmentation here.
+  - `evaluate(model_path, ground_truth_records)` — vllm-backed
+    rollout eval. Phase 0/1-style for v1 (forced-scaffold contact
+    statements, consensus vs GT CB-CB ≤ 8 Å). Phase 6 SMC / Phase 11
+    routing are follow-ups in separate eval experiments.
 - Verify via the local CLI in `document_structures/`:
   - `marinfold-document-structure generate structure.py <sample-pdb-dir>
     --num-docs 100 --context-length 8192 --out /tmp/sample.parquet`
@@ -105,7 +110,9 @@ experiments.
 1. `structure.py` defines a class satisfying the `DocumentStructure`
    Protocol (passes `isinstance(structure, DocumentStructure)` at
    load time via the `marinfold-document-structure` CLI).
-2. Tokenizer constructed by the experiment is byte-identical to
+2. The tokenizer built via
+   `marinfold_document_structures.build_tokenizer(structure)` (from
+   `structure.tokens()`) is byte-identical to the published
    `timodonnell/protein-docs-tokenizer@83f597d88e9b`.
 3. Tokenizing a generated doc for 1QYS (top7) matches the token-ID
    sequence that `protein_distogram_eval.py` builds for the same
