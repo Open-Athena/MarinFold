@@ -1,7 +1,7 @@
 [project]
 name = "exp1-document-structures-contacts-and-distances-v1"
 version = "0.1.0"
-description = "Port the contacts-and-distances-v1 document structure into the MarinFold DocumentStructure Protocol."
+description = "contacts-and-distances-v1 document structure: generate / infer / evaluate driver."
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "marinfold-document-structures",

@@ -593,3 +593,43 @@ def test_write_eval_parquet_preserves_extras(tmp_path: Path):
     assert row["seed_n_values"] == [0, 5, 20]
     assert "extras_json" in row
     assert "per_structure_mae" in row["extras_json"]
+
+
+def test_write_docs_jsonl_empty_does_not_create_file(tmp_path: Path):
+    """Empty generator must raise before any file is opened."""
+    from marinfold_document_structures import write_docs
+
+    out = tmp_path / "docs.jsonl"
+    with pytest.raises(SystemExit):
+        write_docs(out, iter([]), structure_name="x")
+    assert not out.exists()
+
+
+def test_write_predictions_structure_name_wins_over_record_key(tmp_path: Path):
+    """A record's own 'structure' key must not clobber the caller's name."""
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+
+    out = tmp_path / "preds.parquet"
+    write_predictions(
+        out,
+        [{"entry_id": "X", "structure": "format-other", "value": 1}],
+        structure_name="contacts-and-distances-v1",
+    )
+    tbl = pq.read_table(str(out))
+    assert tbl.column("structure").to_pylist() == ["contacts-and-distances-v1"]
+
+
+def test_write_eval_structure_name_wins_over_extras(tmp_path: Path):
+    """An extras 'structure' key must not clobber the caller's name."""
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+
+    out = tmp_path / "eval.parquet"
+    result = EvalResult(
+        metrics={"mae": 1.0},
+        extras={"structure": "format-other", "model": "M"},
+    )
+    write_eval(out, result, structure_name="contacts-and-distances-v1")
+    tbl = pq.read_table(str(out))
+    assert tbl.column("structure").to_pylist() == ["contacts-and-distances-v1"]

@@ -36,22 +36,18 @@ def write_docs(out: Path, docs: Iterable[str], *, structure_name: str) -> None:
     empty file would mask a broken generator).
     """
     out.parent.mkdir(parents=True, exist_ok=True)
+    rows = [{"document": d, "structure": structure_name} for d in docs]
+    if not rows:
+        raise SystemExit("generator produced 0 documents")
     if out.suffix == ".parquet":
         import pyarrow as pa
         import pyarrow.parquet as pq
 
-        rows = [{"document": d, "structure": structure_name} for d in docs]
-        if not rows:
-            raise SystemExit("generator produced 0 documents")
         pq.write_table(pa.Table.from_pylist(rows), str(out), compression="zstd")
     elif out.suffix in (".jsonl", ".json"):
-        n = 0
         with open(out, "w") as f:
-            for d in docs:
-                f.write(json.dumps({"document": d, "structure": structure_name}) + "\n")
-                n += 1
-        if n == 0:
-            raise SystemExit("generator produced 0 documents")
+            for row in rows:
+                f.write(json.dumps(row) + "\n")
     else:
         raise SystemExit(f"--out must end in .parquet or .jsonl; got {out}")
 
@@ -61,15 +57,16 @@ def write_predictions(
 ) -> None:
     """Write per-input inference records to parquet or jsonl.
 
-    Each record is the impl's prediction dict; the writer prepends a
-    ``structure`` column so the rows are unambiguous when concatenated
-    with output from other impls.
+    Each record is the impl's prediction dict; the writer stamps a
+    ``structure`` column on each row so the rows are unambiguous when
+    concatenated with output from other impls. ``structure_name``
+    wins over any ``structure`` key the record happens to carry.
     """
     out.parent.mkdir(parents=True, exist_ok=True)
     records = list(records)
     if not records:
         raise SystemExit("inference produced 0 records")
-    rows = [{"structure": structure_name, **r} for r in records]
+    rows = [{**r, "structure": structure_name} for r in records]
     if out.suffix == ".parquet":
         import pyarrow as pa
         import pyarrow.parquet as pq
@@ -116,10 +113,7 @@ def write_eval(out: Path, result: EvalResult, *, structure_name: str) -> None:
         import pyarrow as pa
         import pyarrow.parquet as pq
 
-        flat: dict[str, Any] = {
-            "structure": structure_name,
-            "n_examples": summary["n_examples"],
-        }
+        flat: dict[str, Any] = {"n_examples": summary["n_examples"]}
         for k, v in result.metrics.items():
             flat[f"metric_{k}"] = v
         nested: dict[str, Any] = {}
@@ -134,6 +128,9 @@ def write_eval(out: Path, result: EvalResult, *, structure_name: str) -> None:
                 nested[k] = v
         if nested:
             flat["extras_json"] = json.dumps(nested, default=str)
+        # Stamp ``structure`` last so caller-supplied name wins over
+        # anything an impl happened to put in ``result.extras``.
+        flat["structure"] = structure_name
         pq.write_table(pa.Table.from_pylist([flat]), str(out), compression="zstd")
         if result.per_example:
             per_path = out.with_name(out.stem + "_per_example.parquet")
