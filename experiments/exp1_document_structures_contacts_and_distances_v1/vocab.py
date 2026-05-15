@@ -3,11 +3,8 @@
 
 """Canonical vocabulary for the contacts-and-distances-v1 format.
 
-Private to this experiment dir. Imported by ``generate.py`` and
-``inference.py`` — both must expose the same ordered token list via
-``tokens()`` (the ``Generator`` / ``Inference`` Protocols enforce
-this implicitly: any mismatch means the tokenizers they build are
-incompatible).
+Local to this experiment dir. Imported by ``generate.py``,
+``inference.py``, and ``parse.py``.
 
 Order is **load-bearing**. Token IDs derived from this list must
 stay stable for every checkpoint trained against the v1 vocab.
