@@ -205,27 +205,69 @@ def build_tokenizer(component):
 
 
 def _load_module_by_path(path: Path):
-    """Load a Python module by file path under a synthetic package name.
+    """Load a Python module by file path, isolating its private siblings.
 
-    Also puts the file's parent directory on ``sys.path`` (idempotent)
-    so the loaded module can ``from _vocab import ...`` / ``from
-    _parse import ...`` to reach its private sibling modules — that's
-    the intended shape of a document-structure impl (two public
-    files + shared private helpers in the same dir).
+    The impl's ``generate.py`` / ``inference.py`` reach their private
+    siblings via bare imports (``from _vocab import ...`` / ``from
+    _parse import ...``). Python caches imported modules in
+    ``sys.modules`` keyed on the bare name, so a naive
+    ``sys.path.insert + exec_module`` would let the first impl's
+    ``_vocab`` / ``_parse`` linger and silently shadow the second
+    impl's siblings on subsequent loads.
+
+    We isolate the load by:
+
+    1. Snapshotting ``sys.path`` and any pre-existing ``sys.modules``
+       entries for the impl's private siblings (``_*.py``).
+    2. Prepending the impl dir to ``sys.path`` and clearing those
+       sibling entries from ``sys.modules`` so the impl's own files
+       are loaded fresh.
+    3. Running ``exec_module`` on the entry-point file. After it
+       returns, the entry-point has bound every imported symbol
+       directly in its own namespace, so the freshly-loaded siblings
+       can be safely evicted.
+    4. In ``finally``, restoring ``sys.path`` and the snapshotted
+       sibling entries — leaving global state untouched for the next
+       load.
+
+    Net effect: ``load_*(impl_A)`` followed by ``load_*(impl_B)`` in
+    the same process yields two independent module trees, even when
+    both impls share file names (``_vocab.py``, ``_parse.py``, …).
     """
     p = Path(path).resolve()
     if not p.is_file():
         raise FileNotFoundError(f"Implementation file not found: {p}")
-    parent = str(p.parent)
-    if parent not in sys.path:
-        sys.path.insert(0, parent)
+    parent_dir = p.parent
+    parent_str = str(parent_dir)
+    private_siblings = sorted(
+        sib.stem for sib in parent_dir.glob("_*.py") if sib.stem != "__init__"
+    )
+
+    saved_sys_path = list(sys.path)
+    saved_siblings: dict[str, Any] = {
+        name: sys.modules[name] for name in private_siblings if name in sys.modules
+    }
+
     mod_name = f"_marinfold_ds_{abs(hash(str(p)))}"
     spec = importlib.util.spec_from_file_location(mod_name, p)
     if spec is None or spec.loader is None:
         raise ImportError(f"Could not load {p} as a Python module")
     module = importlib.util.module_from_spec(spec)
-    sys.modules[mod_name] = module
-    spec.loader.exec_module(module)
+
+    try:
+        if parent_str in sys.path:
+            sys.path.remove(parent_str)
+        sys.path.insert(0, parent_str)
+        for name in private_siblings:
+            sys.modules.pop(name, None)
+        sys.modules[mod_name] = module
+        spec.loader.exec_module(module)
+    finally:
+        sys.path[:] = saved_sys_path
+        for name in private_siblings:
+            sys.modules.pop(name, None)
+            if name in saved_siblings:
+                sys.modules[name] = saved_siblings[name]
     return module
 
 

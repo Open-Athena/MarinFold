@@ -527,3 +527,202 @@ def test_inference_evaluate_empty_input_warns(tmp_path: Path):
     assert result.metrics == {}
     assert result.per_example == []
     assert result.extras.get("warning") == "no input structures"
+
+
+# ---------------------------------------------------------------------------
+# Ultrareview regression tests
+# ---------------------------------------------------------------------------
+
+
+def test_inference_add_args_distance_cap_only_in_evaluate():
+    """bug_012: --distance-cap-angstrom is consumed only by evaluate."""
+    infer_p = _inference_args("infer")
+    with pytest.raises(SystemExit):
+        infer_p.parse_args([
+            str(_EXP_DIR), "--model", "M", "--input", "/tmp/x",
+            "--distance-cap-angstrom", "16.0",
+        ])
+    eval_p = _inference_args("evaluate")
+    args = eval_p.parse_args([
+        str(_EXP_DIR), "--model", "M", "--input", "/tmp/x",
+        "--distance-cap-angstrom", "16.0",
+    ])
+    assert args.distance_cap_angstrom == 16.0
+
+
+def test_resolve_distance_token_ids_rejects_unk_collapse():
+    """bug_008: a tokenizer missing the <d_X.X> vocab must error loudly."""
+
+    class _DummyTokenizer:
+        unk_token_id = 42
+
+        def encode(self, tok, add_special_tokens=False):
+            return [self.unk_token_id]
+
+    with pytest.raises(ValueError, match="UNK"):
+        _resolve_distance_token_ids(_DummyTokenizer())
+
+
+def test_resolve_distance_token_ids_rejects_partial_collapse():
+    """bug_008: partial collapse (some bins valid, some UNK) still errors."""
+
+    class _PartialTokenizer:
+        unk_token_id = 42
+        _next_id = 100
+
+        def encode(self, tok, add_special_tokens=False):
+            # Two adjacent bins both collide on id=100.
+            if tok in ("<d0.5>", "<d1.0>"):
+                return [100]
+            self._next_id += 1
+            return [self._next_id]
+
+    with pytest.raises(ValueError, match="collapsed|unique IDs"):
+        _resolve_distance_token_ids(_PartialTokenizer())
+
+
+def test_load_isolates_per_impl_vocab(tmp_path: Path):
+    """bug_003: two impls in the same process must load independent vocab."""
+
+    def _make_impl(dir_: Path, *, name: str, ctx: int) -> None:
+        dir_.mkdir(parents=True, exist_ok=True)
+        (dir_ / "_vocab.py").write_text(
+            textwrap.dedent(
+                f"""
+                NAME = {name!r}
+                CONTEXT_LENGTH = {ctx}
+                def all_domain_tokens():
+                    return [{name!r}, "<begin>", "<end>"]
+                """
+            )
+        )
+        (dir_ / "generate.py").write_text(
+            textwrap.dedent(
+                """
+                import argparse
+                from _vocab import NAME, CONTEXT_LENGTH, all_domain_tokens
+
+                class _Gen:
+                    name = NAME
+                    context_length = CONTEXT_LENGTH
+                    def tokens(self):
+                        return all_domain_tokens()
+                    def add_args(self, p):
+                        p.add_argument('--input', required=True)
+                    def run(self, args):
+                        return iter([])
+
+                def get_generator():
+                    return _Gen()
+                """
+            )
+        )
+
+    impl_a = tmp_path / "impl_a"
+    impl_b = tmp_path / "impl_b"
+    _make_impl(impl_a, name="format-a", ctx=1024)
+    _make_impl(impl_b, name="format-b", ctx=2048)
+
+    gen_a = load_generator(impl_a)
+    gen_b = load_generator(impl_b)
+    # Pre-fix: gen_b inherits gen_a's vocab/name because Python caches
+    # bare `_vocab` in sys.modules across the two loads.
+    assert gen_a.name == "format-a"
+    assert gen_b.name == "format-b"
+    assert gen_a.tokens() == ["format-a", "<begin>", "<end>"]
+    assert gen_b.tokens() == ["format-b", "<begin>", "<end>"]
+    assert gen_a.context_length == 1024
+    assert gen_b.context_length == 2048
+    # Reload the first impl after the second — must still see its own vocab.
+    gen_a_again = load_generator(impl_a)
+    assert gen_a_again.name == "format-a"
+    assert gen_a_again.tokens() == ["format-a", "<begin>", "<end>"]
+
+
+def test_load_does_not_leak_sys_path_or_sys_modules(tmp_path: Path):
+    """bug_003 hygiene: loader restores sys.path and sys.modules after load."""
+    impl = tmp_path / "impl_x"
+    impl.mkdir()
+    (impl / "_vocab.py").write_text("NAME = 'x'\nCONTEXT_LENGTH = 16\n"
+                                    "def all_domain_tokens():\n    return ['x']\n")
+    (impl / "generate.py").write_text(textwrap.dedent("""
+        from _vocab import NAME, CONTEXT_LENGTH, all_domain_tokens
+
+        class _Gen:
+            name = NAME
+            context_length = CONTEXT_LENGTH
+            def tokens(self): return all_domain_tokens()
+            def add_args(self, p): pass
+            def run(self, args): return iter([])
+
+        def get_generator(): return _Gen()
+    """))
+
+    path_before = list(sys.path)
+    vocab_before = sys.modules.get("_vocab")
+
+    gen = load_generator(impl)
+    assert gen.name == "x"
+
+    assert sys.path == path_before
+    assert sys.modules.get("_vocab") is vocab_before
+
+
+# bug_001: parquet writers must include structure_name / extras
+
+
+def test_write_predictions_parquet_includes_structure(tmp_path: Path):
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+    from marinfold_document_structures.cli import _write_predictions
+
+    out = tmp_path / "preds.parquet"
+    _write_predictions(
+        out,
+        [{"entry_id": "X", "expected_distances": [1.0, 2.0]}],
+        structure_name="contacts-and-distances-v1",
+    )
+    tbl = pq.read_table(str(out))
+    cols = tbl.column_names
+    assert "structure" in cols, cols
+    assert tbl.column("structure").to_pylist() == ["contacts-and-distances-v1"]
+
+
+def test_write_eval_parquet_preserves_extras(tmp_path: Path):
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+    from marinfold_document_structures import EvalResult
+    from marinfold_document_structures.cli import _write_eval
+
+    out = tmp_path / "eval.parquet"
+    result = EvalResult(
+        metrics={"mae_at_n0_angstrom": 3.6},
+        per_example=[],
+        extras={
+            "model": "open-athena/foo@step-31337",
+            "query_atom": "CA",
+            "seed_n_values": [0, 5, 20],
+            "per_structure_mae": {"1QYS": 3.6},
+        },
+    )
+    _write_eval(out, result, structure_name="contacts-and-distances-v1")
+    tbl = pq.read_table(str(out))
+    row = {k: tbl.column(k).to_pylist()[0] for k in tbl.column_names}
+    assert row["model"] == "open-athena/foo@step-31337"
+    assert row["query_atom"] == "CA"
+    assert row["seed_n_values"] == [0, 5, 20]
+    # Nested dict gets JSON-stringified
+    assert "extras_json" in row
+    assert "per_structure_mae" in row["extras_json"]
+
+
+# bug_005: <cmd> --help works without impl_dir
+
+
+def test_cli_help_without_impl_dir_does_not_error(capsys):
+    from marinfold_document_structures.cli import _cmd_generate
+
+    rc = _cmd_generate(["--help"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "impl_dir" in captured.out

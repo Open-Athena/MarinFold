@@ -172,6 +172,25 @@ def _resolve_distance_token_ids(tokenizer) -> list[int]:
         if len(enc) != 1:
             raise ValueError(f"Unexpected encoding for {tok}: {enc!r}")
         ids.append(int(enc[0]))
+    # WordLevel tokenizers return the same unk_token_id for every
+    # unknown string, so the per-token len==1 check above silently
+    # passes even when every <d_X.X> is UNK. Catch that explicitly:
+    # the failure mode otherwise is a constant ~31.75 Å expected
+    # distance and ~14 Å MAE that looks like a badly-trained model.
+    unk_id = getattr(tokenizer, "unk_token_id", None)
+    if unk_id is not None and unk_id in ids:
+        raise ValueError(
+            f"Tokenizer mapped one or more <d_X.X> bin tokens to the "
+            f"UNK id ({unk_id}). The tokenizer is missing the v1 "
+            f"distance vocabulary — make sure the tokenizer is co-"
+            f"located with the model (see document_structures/AGENTS.md)."
+        )
+    if len(set(ids)) != _NUM_DISTANCE_BINS:
+        raise ValueError(
+            f"Tokenizer collapsed distance-bin tokens to {len(set(ids))} "
+            f"unique IDs (expected {_NUM_DISTANCE_BINS}). Some <d_X.X> "
+            f"tokens are missing from the tokenizer vocab."
+        )
     return ids
 
 
@@ -218,12 +237,24 @@ def _query_pairs(
     keep_bin_probs: bool,
     distance_token_ids: list[int],
     bin_midpoints,
+    gt=None,
+    distance_cap_angstrom: float | None = None,
 ) -> _StructurePrediction:
     """Single (structure, seed-count) inference pass.
 
-    Returns expected distance per pair (no GT comparison). Pairs where
-    the model puts zero mass on any of the 64 distance bins within
-    top-K are skipped from the output.
+    Returns expected distance per pair. Pairs where the model puts
+    zero mass on any of the 64 distance bins within top-K are skipped
+    from the output.
+
+    If ``gt`` is provided (an N×N distance matrix from
+    :func:`_gt_query_distance_matrix`), pairs are pre-filtered: any
+    pair with non-finite GT or GT > ``distance_cap_angstrom`` is
+    skipped *before* the LLM forward pass. ``max_pairs`` then caps
+    the number of evaluatable pairs, not raw queries — which is what
+    ``--max-pairs-per-structure`` is meant to control in eval mode.
+
+    The ``predict`` (no-GT) caller passes ``gt=None`` and queries
+    every (i, j).
     """
     import numpy as np
     from vllm import SamplingParams, TokensPrompt
@@ -236,13 +267,16 @@ def _query_pairs(
     distance_id_set = set(distance_token_ids)
     bin_of = {tid: k for k, tid in enumerate(distance_token_ids)}
 
-    # Decide pairs. For inference we don't gate on GT distance (we
-    # don't have it for "no GT" callers); we query every pair with
-    # i < j up to `max_pairs`.
     prompts: list = []
     keys: list[tuple[int, int]] = []
     for i in range(1, n + 1):
         for j in range(i + 1, n + 1):
+            if gt is not None:
+                gt_ij = float(gt[i - 1, j - 1])
+                if not math.isfinite(gt_ij):
+                    continue
+                if distance_cap_angstrom is not None and gt_ij > distance_cap_angstrom:
+                    continue
             tail = _pair_tail_tokens(i, j, query_atom, query_atom)
             tail_ids = _encode_token_strs(tokenizer, tail)
             prompts.append(TokensPrompt(prompt_token_ids=base_ids + tail_ids))
@@ -384,12 +418,10 @@ class V1Inference:
         )
         parser.add_argument(
             "--max-pairs-per-structure", type=int, default=None,
-            help="Cap pairs per structure (useful for smoke tests).",
-        )
-        parser.add_argument(
-            "--distance-cap-angstrom", type=float, default=32.0,
-            help="GT distances above this are masked from MAE (eval only). "
-                 "Anything above lands in the saturated bin.",
+            help="Cap pairs per structure (useful for smoke tests). In "
+                 "evaluate mode this caps *evaluatable* pairs (pairs with "
+                 "finite GT below --distance-cap-angstrom); in infer mode "
+                 "it caps all queried pairs since there is no GT.",
         )
 
         if subcommand == "infer":
@@ -398,6 +430,13 @@ class V1Inference:
                 help="Include the full 64-bin distribution per pair in "
                      "the output records. Default off (records carry "
                      "only the expected distance).",
+            )
+        elif subcommand == "evaluate":
+            parser.add_argument(
+                "--distance-cap-angstrom", type=float, default=32.0,
+                help="GT distances above this are masked from MAE. "
+                     "Anything above lands in the saturated bin so "
+                     "predictions for these pairs aren't meaningful.",
             )
 
     # ---- predict (no GT) ---------------------------------------------------
@@ -491,12 +530,12 @@ class V1Inference:
                     keep_bin_probs=False,
                     distance_token_ids=distance_token_ids,
                     bin_midpoints=bin_midpoints,
+                    gt=gt,
+                    distance_cap_angstrom=args.distance_cap_angstrom,
                 )
                 abs_errs: list[float] = []
                 for (i, j), expected in zip(pred.pairs, pred.expected_distances, strict=True):
                     gt_ij = float(gt[i - 1, j - 1])
-                    if not math.isfinite(gt_ij) or gt_ij > args.distance_cap_angstrom:
-                        continue
                     abs_err = abs(expected - gt_ij)
                     abs_errs.append(abs_err)
                     per_pair.append({

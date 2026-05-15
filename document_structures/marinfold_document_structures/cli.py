@@ -51,10 +51,14 @@ def _base_parser(prog: str) -> argparse.ArgumentParser:
     """First-pass parser — just ``impl_dir`` + a permissive ``--out``.
 
     ``add_help=False`` so that a ``--help`` in argv falls through to
-    the second-pass parser (which has the impl's args).
+    the second-pass parser (which has the impl's args), and
+    ``nargs='?'`` on ``impl_dir`` so that ``<cmd> --help`` (with no
+    positional) doesn't error out before the help fallthrough — the
+    second-pass parser still requires ``impl_dir`` for real
+    invocations.
     """
     p = argparse.ArgumentParser(prog=prog, add_help=False)
-    p.add_argument("impl_dir", type=Path)
+    p.add_argument("impl_dir", type=Path, nargs="?", default=None)
     p.add_argument("--out", type=Path, required=False)
     return p
 
@@ -67,6 +71,21 @@ def _full_parser(prog: str, description: str) -> argparse.ArgumentParser:
     )
     p.add_argument("--out", type=Path, required=True, help="Output path.")
     return p
+
+
+def _print_first_pass_help(prog: str, *, subcommand_kind: str) -> None:
+    """Help text when ``<cmd> --help`` is invoked without an ``impl_dir``.
+
+    The real, impl-aware help requires loading the impl first. Direct
+    the user to pass ``<impl_dir> --help`` for that.
+    """
+    print(
+        f"usage: {prog} <impl_dir> [--out OUT] [impl-specific args...]\n\n"
+        f"Run a document-structure {subcommand_kind}. <impl_dir> is the "
+        f"experiment directory containing generate.py + inference.py.\n\n"
+        f"To see the impl-specific args (the bulk of the surface), run:\n"
+        f"  {prog} <impl_dir> --help\n",
+    )
 
 
 # --------------------------------------------------------------------------
@@ -101,15 +120,16 @@ def _write_predictions(out: Path, records, *, structure_name: str) -> None:
     records = list(records)
     if not records:
         raise SystemExit("inference produced 0 records")
+    rows = [{"structure": structure_name, **r} for r in records]
     if out.suffix == ".parquet":
         import pyarrow as pa
         import pyarrow.parquet as pq
 
-        pq.write_table(pa.Table.from_pylist(records), str(out), compression="zstd")
+        pq.write_table(pa.Table.from_pylist(rows), str(out), compression="zstd")
     elif out.suffix in (".jsonl", ".json"):
         with open(out, "w") as f:
-            for r in records:
-                f.write(json.dumps({"structure": structure_name, **r}, default=str) + "\n")
+            for row in rows:
+                f.write(json.dumps(row, default=str) + "\n")
     else:
         raise SystemExit(f"--out must end in .parquet or .jsonl; got {out}")
 
@@ -135,9 +155,28 @@ def _write_eval(out: Path, result: EvalResult, *, structure_name: str) -> None:
         import pyarrow as pa
         import pyarrow.parquet as pq
 
-        flat = {"structure": structure_name, "n_examples": summary["n_examples"]}
+        flat: dict[str, Any] = {
+            "structure": structure_name,
+            "n_examples": summary["n_examples"],
+        }
         for k, v in result.metrics.items():
             flat[f"metric_{k}"] = v
+        # Flatten scalar / list extras into top-level columns; JSON-
+        # stringify nested dicts (and anything pyarrow can't infer a
+        # schema for) into an extras_json column so callers can still
+        # recover them — mirrors what the .json branch above stores.
+        nested: dict[str, Any] = {}
+        for k, v in result.extras.items():
+            if isinstance(v, (str, int, float, bool)) or v is None:
+                flat[k] = v
+            elif isinstance(v, list) and all(
+                isinstance(x, (str, int, float, bool)) or x is None for x in v
+            ):
+                flat[k] = v
+            else:
+                nested[k] = v
+        if nested:
+            flat["extras_json"] = json.dumps(nested, default=str)
         pq.write_table(pa.Table.from_pylist([flat]), str(out), compression="zstd")
         if result.per_example:
             per_path = out.with_name(out.stem + "_per_example.parquet")
@@ -157,8 +196,15 @@ def _write_eval(out: Path, result: EvalResult, *, structure_name: str) -> None:
 
 
 def _cmd_generate(argv: list[str]) -> int:
-    base = _base_parser("marinfold-document-structure generate")
+    prog = "marinfold-document-structure generate"
+    base = _base_parser(prog)
     base_args, _ = base.parse_known_args(argv)
+    if base_args.impl_dir is None:
+        if any(a in ("-h", "--help") for a in argv):
+            _print_first_pass_help(prog, subcommand_kind="generator")
+            return 0
+        print(f"{prog}: error: impl_dir is required", file=sys.stderr)
+        return 2
     generator = load_generator(base_args.impl_dir)
     print(
         f"[marinfold-document-structure] loaded generator {generator.name!r} "
@@ -180,8 +226,15 @@ def _cmd_generate(argv: list[str]) -> int:
 
 
 def _cmd_infer(argv: list[str]) -> int:
-    base = _base_parser("marinfold-document-structure infer")
+    prog = "marinfold-document-structure infer"
+    base = _base_parser(prog)
     base_args, _ = base.parse_known_args(argv)
+    if base_args.impl_dir is None:
+        if any(a in ("-h", "--help") for a in argv):
+            _print_first_pass_help(prog, subcommand_kind="inference")
+            return 0
+        print(f"{prog}: error: impl_dir is required", file=sys.stderr)
+        return 2
     inference = load_inference(base_args.impl_dir)
     print(
         f"[marinfold-document-structure] loaded inference {inference.name!r} "
@@ -203,8 +256,15 @@ def _cmd_infer(argv: list[str]) -> int:
 
 
 def _cmd_evaluate(argv: list[str]) -> int:
-    base = _base_parser("marinfold-document-structure evaluate")
+    prog = "marinfold-document-structure evaluate"
+    base = _base_parser(prog)
     base_args, _ = base.parse_known_args(argv)
+    if base_args.impl_dir is None:
+        if any(a in ("-h", "--help") for a in argv):
+            _print_first_pass_help(prog, subcommand_kind="evaluation")
+            return 0
+        print(f"{prog}: error: impl_dir is required", file=sys.stderr)
+        return 2
     inference = load_inference(base_args.impl_dir)
     print(
         f"[marinfold-document-structure] loaded inference {inference.name!r} "
