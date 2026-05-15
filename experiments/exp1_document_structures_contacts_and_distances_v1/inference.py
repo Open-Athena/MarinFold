@@ -1,41 +1,37 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""contacts-and-distances-v1 Inference (predict + evaluate).
+"""contacts-and-distances-v1 inference + evaluation.
 
-Loads from this file via ``get_inference()``. Powers two
-``marinfold-document-structure`` subcommands:
+Library module — the CLI surface lives in ``cli.py`` next door,
+which imports :func:`predict` and :func:`evaluate` from here.
 
-- ``infer    <this_dir> --model M --input X     --out preds.parquet``
-- ``evaluate <this_dir> --model M --input X     --out metrics.json``
-
-Both walk every residue pair (i, j) with i < j on every input
-structure, query the model at the prompt
+Both functions walk every residue pair (i, j) with i < j on every
+input structure and query a trained model at the prompt::
 
     <contacts-and-distances-v1> <begin_sequence> <AAs>
     <begin_statements>
     [N seeded <long-range-contact> <p_i> <p_j> triples (evaluate only)]
     <distance> <p_i> <p_j> <atom_i> <atom_j>
 
-and renormalize the next-token distribution over the 64 ``<d_X.X>``
+renormalizing the next-token distribution over the 64 ``<d_X.X>``
 bins to an expected distance.
 
-- ``infer`` yields one record per input structure: the entry id, the
-  pairs queried, and the expected distance per pair. No ground truth
-  is consulted; predictions for any structure (including ones where
-  you only have the sequence) are valid output.
+- :func:`predict` yields one record per (structure, n_seeded) pair.
+  No ground truth is consulted — predictions for any structure
+  (including ones where you only have the sequence) are valid output.
 
-- ``evaluate`` additionally computes |expected − GT_distance| per
-  pair, where the GT distance is taken from the same input file
-  (the inputs ARE the ground truth in this mode), and reports the
-  macro-mean MAE across structures. ``--seed-n-values 0,5,20,50``
-  sweeps the seeded-contact count in a single run (matches Phase 7c
-  from the LlamaFold-experiments notebook).
+- :func:`evaluate` additionally computes ``|expected − GT_distance|``
+  per pair (the GT distance is taken from the same input file — the
+  inputs ARE the ground truth in this mode) and reports the macro-
+  mean MAE across structures. Multiple seed counts in
+  ``seed_n_values`` (e.g. ``(0, 5, 20, 50)``) sweep the seeded-
+  contact hint count in a single run, mirroring Phase 7c of the
+  LlamaFold-experiments notebook.
 
 Inspired by marin's experiments/protein/eval_protein_distogram.py.
 """
 
-import argparse
 import math
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -44,15 +40,13 @@ from typing import Any
 
 from marinfold_document_structures import EvalResult
 
-from _parse import (
+from parse import (
     ParsedStructure,
-    Residue,
     atom_position,
     cb_or_ca_position,
     euclidean,
     iter_parsed_structures,
 )
-from _vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 
 
 # --------------------------------------------------------------------------
@@ -61,8 +55,7 @@ from _vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 
 
 # Distance-bin midpoints (Å) — bin k (1..64) covers ((k-1)*0.5,
-# k*0.5] Å, so its midpoint is k*0.5 - 0.25. Matches
-# marin's eval_protein_distogram.py.
+# k*0.5] Å, so its midpoint is k*0.5 - 0.25.
 _DISTANCE_BIN_WIDTH_A = 0.5
 _NUM_DISTANCE_BINS = 64
 _DISTANCE_MAX_A = _NUM_DISTANCE_BINS * _DISTANCE_BIN_WIDTH_A  # 32.0
@@ -72,25 +65,38 @@ _DISTANCE_BIN_MIDPOINTS = tuple(
 )
 
 # Contact-eligibility cutoffs for the "seeded GT contacts" hint mode.
-# Match the v1 format definition.
 _CONTACT_CUTOFF_A = 8.0
 _LONG_RANGE_SEP = 24
 
 
-def _parse_seed_n_values(s: str) -> tuple[int, ...]:
-    """Parse `--seed-n-values 0,5,20,50` into a tuple of ints."""
-    out: list[int] = []
-    for token in s.split(","):
-        token = token.strip()
-        if not token:
-            continue
-        n = int(token)
-        if n < 0:
-            raise argparse.ArgumentTypeError(f"seed-n value must be >= 0; got {n}")
-        out.append(n)
-    if not out:
-        raise argparse.ArgumentTypeError("--seed-n-values must include at least one value")
-    return tuple(out)
+# --------------------------------------------------------------------------
+# Inference config
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class InferenceConfig:
+    """Shared inputs to :func:`predict` and :func:`evaluate`.
+
+    The CLI assembles one of these from the parsed args and hands it
+    over. Eval-only knobs (``distance_cap_angstrom``) and infer-only
+    knobs (``keep_bin_probs``) live as optional fields here; the
+    function that doesn't use them ignores them.
+    """
+
+    model: str
+    input_path: Path
+    seed_n_values: tuple[int, ...] = (0,)
+    query_atom: str = "CA"
+    top_k_logprobs: int = 128
+    batch_size: int = 64
+    dtype: str = "bfloat16"
+    gpu_memory_utilization: float = 0.85
+    max_pairs_per_structure: int | None = None
+    # infer-only:
+    keep_bin_probs: bool = False
+    # evaluate-only:
+    distance_cap_angstrom: float = 32.0
 
 
 # --------------------------------------------------------------------------
@@ -148,6 +154,8 @@ def _build_base_prompt_tokens(
     seeded_contacts: list[tuple[int, int]],
 ) -> list[str]:
     """Base prompt = `<task> <begin_sequence> <AAs> <begin_statements> [seeded contacts]`."""
+    from vocab import NAME
+
     toks: list[str] = [f"<{NAME}>", "<begin_sequence>"]
     toks.extend(f"<{r.name}>" for r in structure.residues)
     toks.append("<begin_statements>")
@@ -175,7 +183,7 @@ def _resolve_distance_token_ids(tokenizer) -> list[int]:
     # WordLevel tokenizers return the same unk_token_id for every
     # unknown string, so the per-token len==1 check above silently
     # passes even when every <d_X.X> is UNK. Catch that explicitly:
-    # the failure mode otherwise is a constant ~31.75 Å expected
+    # otherwise the failure mode is a constant ~31.75 Å expected
     # distance and ~14 Å MAE that looks like a badly-trained model.
     unk_id = getattr(tokenizer, "unk_token_id", None)
     if unk_id is not None and unk_id in ids:
@@ -183,7 +191,7 @@ def _resolve_distance_token_ids(tokenizer) -> list[int]:
             f"Tokenizer mapped one or more <d_X.X> bin tokens to the "
             f"UNK id ({unk_id}). The tokenizer is missing the v1 "
             f"distance vocabulary — make sure the tokenizer is co-"
-            f"located with the model (see document_structures/AGENTS.md)."
+            f"located with the model."
         )
     if len(set(ids)) != _NUM_DISTANCE_BINS:
         raise ValueError(
@@ -212,15 +220,13 @@ def _encode_token_strs(tokenizer, token_strs: list[str]) -> list[int]:
 
 @dataclass(frozen=True)
 class _StructurePrediction:
-    """One inference pass over one (structure, seed-count) — bin probs per pair."""
+    """One inference pass over one (structure, seed-count)."""
 
     entry_id: str
     n_residues: int
     n_seeded: int
     pairs: list[tuple[int, int]]  # (i, j), 1-indexed, i < j
     expected_distances: list[float]   # per pair (Å)
-    # 64-bin distribution per pair, in case the caller wants the
-    # full thing (e.g. for argmax-based metrics or visualization).
     bin_probs: list[list[float]] | None  # None when we don't keep it
 
 
@@ -242,19 +248,11 @@ def _query_pairs(
 ) -> _StructurePrediction:
     """Single (structure, seed-count) inference pass.
 
-    Returns expected distance per pair. Pairs where the model puts
-    zero mass on any of the 64 distance bins within top-K are skipped
-    from the output.
-
-    If ``gt`` is provided (an N×N distance matrix from
-    :func:`_gt_query_distance_matrix`), pairs are pre-filtered: any
-    pair with non-finite GT or GT > ``distance_cap_angstrom`` is
-    skipped *before* the LLM forward pass. ``max_pairs`` then caps
-    the number of evaluatable pairs, not raw queries — which is what
-    ``--max-pairs-per-structure`` is meant to control in eval mode.
-
-    The ``predict`` (no-GT) caller passes ``gt=None`` and queries
-    every (i, j).
+    If ``gt`` is provided, pairs are pre-filtered before the LLM
+    forward pass: any pair with non-finite GT or GT >
+    ``distance_cap_angstrom`` is skipped. ``max_pairs`` then caps
+    evaluatable pairs, not raw queries. ``predict`` (no-GT) passes
+    ``gt=None`` and queries every (i, j).
     """
     import numpy as np
     from vllm import SamplingParams, TokensPrompt
@@ -326,18 +324,18 @@ def _query_pairs(
     )
 
 
-def _make_llm(args: argparse.Namespace):
+def _make_llm(cfg: InferenceConfig):
     """Load vllm + tokenizer + resolve distance token IDs. Imports are lazy."""
     import numpy as np
     from vllm import LLM
 
     llm = LLM(
-        model=args.model,
-        dtype=args.dtype,
-        gpu_memory_utilization=args.gpu_memory_utilization,
+        model=cfg.model,
+        dtype=cfg.dtype,
+        gpu_memory_utilization=cfg.gpu_memory_utilization,
         enforce_eager=True,
         trust_remote_code=True,
-        max_logprobs=max(args.top_k_logprobs, 128),
+        max_logprobs=max(cfg.top_k_logprobs, 128),
     )
     tokenizer = llm.get_tokenizer()
     distance_token_ids = _resolve_distance_token_ids(tokenizer)
@@ -346,233 +344,139 @@ def _make_llm(args: argparse.Namespace):
 
 
 # --------------------------------------------------------------------------
-# Inference class
+# Top-level entry points
 # --------------------------------------------------------------------------
 
 
-class V1Inference:
-    """``Inference`` Protocol impl for contacts-and-distances-v1."""
+def predict(cfg: InferenceConfig) -> Iterator[dict]:
+    """Yield one record per (structure, n_seeded) pair.
 
-    name = NAME
-    context_length = CONTEXT_LENGTH
+    Each record is a dict with the entry id, the seeded-contact
+    count, the queried atom pair, the list of (i, j) pairs, and the
+    per-pair expected distances. If ``cfg.keep_bin_probs`` is set,
+    the full 64-bin probabilities are included too.
 
-    def __init__(self) -> None:
-        self._tokens = all_domain_tokens()
-
-    def tokens(self) -> list[str]:
-        return list(self._tokens)
-
-    # ---- arg registration --------------------------------------------------
-
-    def add_args(
-        self, parser: argparse.ArgumentParser, *, subcommand: str
-    ) -> None:
-        """Register flags for `infer` or `evaluate`.
-
-        Common flags (model, input, atom, seeded contacts, vllm knobs)
-        are shared. ``infer`` adds ``--keep-bin-probs``. ``evaluate``
-        adds nothing extra — the ground truth is the input itself
-        (the parsed structure has the coordinates).
-        """
-        parser.add_argument(
-            "--model", required=True,
-            help="HuggingFace model path or local dir. Tokenizer is "
-                 "loaded from here too (must be co-located).",
-        )
-        parser.add_argument(
-            "--input", type=Path, required=True,
-            help="A single structure file (PDB / mmCIF / .gz) or a "
-                 "directory of them. For evaluate, the input IS the "
-                 "ground truth — its coordinates are compared against "
-                 "the model's predictions.",
-        )
-        parser.add_argument(
-            "--query-atom", default="CA",
-            help="Atom name to query for both i and j sides of each "
-                 "distance statement. Default CA-CA — the most "
-                 "directly-trained signal.",
-        )
-        parser.add_argument(
-            "--seed-n-values", type=_parse_seed_n_values, default=(0,),
-            help="Comma-separated seeded-contact counts (e.g. '0,5,20,50'). "
-                 "Each value runs the full inference pass with that many GT "
-                 "long-range contacts prepended to the prompt as hints. "
-                 "Default '0' = zero-shot.",
-        )
-        parser.add_argument(
-            "--top-k-logprobs", type=int, default=128,
-            help="Top-K logprobs requested from vLLM. Must cover the 64 "
-                 "distance bins (default 128 has plenty of headroom).",
-        )
-        parser.add_argument(
-            "--batch-size", type=int, default=64,
-            help="Pairs per vLLM generate() call.",
-        )
-        parser.add_argument(
-            "--dtype", default="bfloat16",
-            help="vLLM dtype.",
-        )
-        parser.add_argument(
-            "--gpu-memory-utilization", type=float, default=0.85,
-            help="vLLM gpu_memory_utilization.",
-        )
-        parser.add_argument(
-            "--max-pairs-per-structure", type=int, default=None,
-            help="Cap pairs per structure (useful for smoke tests). In "
-                 "evaluate mode this caps *evaluatable* pairs (pairs with "
-                 "finite GT below --distance-cap-angstrom); in infer mode "
-                 "it caps all queried pairs since there is no GT.",
-        )
-
-        if subcommand == "infer":
-            parser.add_argument(
-                "--keep-bin-probs", action="store_true",
-                help="Include the full 64-bin distribution per pair in "
-                     "the output records. Default off (records carry "
-                     "only the expected distance).",
+    No ground truth is consulted — this is the "predict on
+    sequences I haven't measured" path.
+    """
+    structures = list(iter_parsed_structures(cfg.input_path))
+    if not structures:
+        return
+    llm, tokenizer, distance_token_ids, bin_midpoints = _make_llm(cfg)
+    for structure in structures:
+        for n_seeded in cfg.seed_n_values:
+            pred = _query_pairs(
+                structure,
+                llm=llm,
+                tokenizer=tokenizer,
+                query_atom=cfg.query_atom,
+                n_seeded=n_seeded,
+                top_k_logprobs=cfg.top_k_logprobs,
+                batch_size=cfg.batch_size,
+                max_pairs=cfg.max_pairs_per_structure,
+                keep_bin_probs=cfg.keep_bin_probs,
+                distance_token_ids=distance_token_ids,
+                bin_midpoints=bin_midpoints,
             )
-        elif subcommand == "evaluate":
-            parser.add_argument(
-                "--distance-cap-angstrom", type=float, default=32.0,
-                help="GT distances above this are masked from MAE. "
-                     "Anything above lands in the saturated bin so "
-                     "predictions for these pairs aren't meaningful.",
+            record: dict[str, Any] = {
+                "entry_id": pred.entry_id,
+                "n_residues": pred.n_residues,
+                "n_seeded": pred.n_seeded,
+                "query_atom": cfg.query_atom,
+                "pairs": pred.pairs,
+                "expected_distances": pred.expected_distances,
+            }
+            if pred.bin_probs is not None:
+                record["bin_probs"] = pred.bin_probs
+            yield record
+
+
+def evaluate(cfg: InferenceConfig) -> EvalResult:
+    """Run inference + compare against GT distances; return MAE per seed-N.
+
+    Headline metric: ``mae_at_n<N>_angstrom``, macro-mean across
+    structures. Per-pair records (entry_id, n_seeded, i, j, gt,
+    expected, abs_err) land in ``EvalResult.per_example``.
+
+    Ground truth is the input itself — the GT distance for pair
+    (i, j) at ``cfg.query_atom`` is computed from the parsed
+    structure's coordinates. Pairs with non-finite GT or GT >
+    ``cfg.distance_cap_angstrom`` are masked out (pre-filter inside
+    :func:`_query_pairs`, so the LLM is never asked about them).
+    """
+    import numpy as np
+    from vocab import NAME
+
+    structures = list(iter_parsed_structures(cfg.input_path))
+    if not structures:
+        return EvalResult(metrics={}, per_example=[], extras={
+            "structure": NAME,
+            "warning": "no input structures",
+            "model": cfg.model,
+        })
+    llm, tokenizer, distance_token_ids, bin_midpoints = _make_llm(cfg)
+
+    per_structure_mae: dict[int, dict[str, float]] = {
+        n: {} for n in cfg.seed_n_values
+    }
+    per_structure_n_pairs: dict[int, dict[str, int]] = {
+        n: {} for n in cfg.seed_n_values
+    }
+    per_pair: list[dict] = []
+
+    for structure in structures:
+        gt = _gt_query_distance_matrix(structure, cfg.query_atom)
+        for n_seeded in cfg.seed_n_values:
+            pred = _query_pairs(
+                structure,
+                llm=llm,
+                tokenizer=tokenizer,
+                query_atom=cfg.query_atom,
+                n_seeded=n_seeded,
+                top_k_logprobs=cfg.top_k_logprobs,
+                batch_size=cfg.batch_size,
+                max_pairs=cfg.max_pairs_per_structure,
+                keep_bin_probs=False,
+                distance_token_ids=distance_token_ids,
+                bin_midpoints=bin_midpoints,
+                gt=gt,
+                distance_cap_angstrom=cfg.distance_cap_angstrom,
             )
+            abs_errs: list[float] = []
+            for (i, j), expected in zip(pred.pairs, pred.expected_distances, strict=True):
+                gt_ij = float(gt[i - 1, j - 1])
+                abs_err = abs(expected - gt_ij)
+                abs_errs.append(abs_err)
+                per_pair.append({
+                    "entry_id": structure.entry_id,
+                    "n_seeded": n_seeded,
+                    "i": i,
+                    "j": j,
+                    "gt_angstrom": gt_ij,
+                    "expected_angstrom": expected,
+                    "abs_err_angstrom": abs_err,
+                })
+            mae = float(np.mean(abs_errs)) if abs_errs else float("nan")
+            per_structure_mae[n_seeded][structure.entry_id] = mae
+            per_structure_n_pairs[n_seeded][structure.entry_id] = len(abs_errs)
 
-    # ---- predict (no GT) ---------------------------------------------------
-
-    def predict(self, args: argparse.Namespace) -> Iterator[dict]:
-        """Yield one record per (structure, n_seeded) pair.
-
-        Each record is a dict with the entry id, the seeded-contact
-        count, the queried atom pair, the list of (i, j) pairs, and
-        the per-pair expected distances. If ``--keep-bin-probs`` is
-        set, the full bin probabilities are included too.
-        """
-        structures = list(iter_parsed_structures(args.input))
-        if not structures:
-            return
-        llm, tokenizer, distance_token_ids, bin_midpoints = _make_llm(args)
-        keep_bin_probs = bool(getattr(args, "keep_bin_probs", False))
-        for structure in structures:
-            for n_seeded in args.seed_n_values:
-                pred = _query_pairs(
-                    structure,
-                    llm=llm,
-                    tokenizer=tokenizer,
-                    query_atom=args.query_atom,
-                    n_seeded=n_seeded,
-                    top_k_logprobs=args.top_k_logprobs,
-                    batch_size=args.batch_size,
-                    max_pairs=args.max_pairs_per_structure,
-                    keep_bin_probs=keep_bin_probs,
-                    distance_token_ids=distance_token_ids,
-                    bin_midpoints=bin_midpoints,
-                )
-                record: dict[str, Any] = {
-                    "entry_id": pred.entry_id,
-                    "n_residues": pred.n_residues,
-                    "n_seeded": pred.n_seeded,
-                    "query_atom": args.query_atom,
-                    "pairs": pred.pairs,
-                    "expected_distances": pred.expected_distances,
-                }
-                if pred.bin_probs is not None:
-                    record["bin_probs"] = pred.bin_probs
-                yield record
-
-    # ---- evaluate (with GT, computes MAE) ----------------------------------
-
-    def evaluate(self, args: argparse.Namespace) -> EvalResult:
-        """Run predict + compare against GT distances; return MAE per seed-N.
-
-        Headline metric: ``mae_at_n<N>_angstrom``, macro-mean across
-        structures. Per-pair records (entry_id, n_seeded, i, j, gt,
-        expected, abs_err) land in ``EvalResult.per_example``.
-
-        Ground truth is the input itself — the GT distance for pair
-        (i, j) at atom A is computed from the parsed structure's
-        coordinates. Pairs with non-finite GT or GT >
-        ``--distance-cap-angstrom`` are masked out.
-        """
-        import numpy as np
-
-        structures = list(iter_parsed_structures(args.input))
-        if not structures:
-            return EvalResult(metrics={}, per_example=[], extras={
-                "structure": self.name,
-                "warning": "no input structures",
-                "model": args.model,
-            })
-        llm, tokenizer, distance_token_ids, bin_midpoints = _make_llm(args)
-
-        # Per (n_seeded, entry_id) -> mae and n_pairs.
-        per_structure_mae: dict[int, dict[str, float]] = {
-            n: {} for n in args.seed_n_values
-        }
-        per_structure_n_pairs: dict[int, dict[str, int]] = {
-            n: {} for n in args.seed_n_values
-        }
-        per_pair: list[dict] = []
-
-        for structure in structures:
-            gt = _gt_query_distance_matrix(structure, args.query_atom)
-            for n_seeded in args.seed_n_values:
-                pred = _query_pairs(
-                    structure,
-                    llm=llm,
-                    tokenizer=tokenizer,
-                    query_atom=args.query_atom,
-                    n_seeded=n_seeded,
-                    top_k_logprobs=args.top_k_logprobs,
-                    batch_size=args.batch_size,
-                    max_pairs=args.max_pairs_per_structure,
-                    keep_bin_probs=False,
-                    distance_token_ids=distance_token_ids,
-                    bin_midpoints=bin_midpoints,
-                    gt=gt,
-                    distance_cap_angstrom=args.distance_cap_angstrom,
-                )
-                abs_errs: list[float] = []
-                for (i, j), expected in zip(pred.pairs, pred.expected_distances, strict=True):
-                    gt_ij = float(gt[i - 1, j - 1])
-                    abs_err = abs(expected - gt_ij)
-                    abs_errs.append(abs_err)
-                    per_pair.append({
-                        "entry_id": structure.entry_id,
-                        "n_seeded": n_seeded,
-                        "i": i,
-                        "j": j,
-                        "gt_angstrom": gt_ij,
-                        "expected_angstrom": expected,
-                        "abs_err_angstrom": abs_err,
-                    })
-                mae = float(np.mean(abs_errs)) if abs_errs else float("nan")
-                per_structure_mae[n_seeded][structure.entry_id] = mae
-                per_structure_n_pairs[n_seeded][structure.entry_id] = len(abs_errs)
-
-        metrics: dict[str, float] = {}
-        for n_seeded in args.seed_n_values:
-            maes = [v for v in per_structure_mae[n_seeded].values() if math.isfinite(v)]
-            metrics[f"mae_at_n{n_seeded}_angstrom"] = (
-                float(np.mean(maes)) if maes else float("nan")
-            )
-
-        return EvalResult(
-            metrics=metrics,
-            per_example=per_pair,
-            extras={
-                "structure": self.name,
-                "model": args.model,
-                "query_atom": args.query_atom,
-                "seed_n_values": list(args.seed_n_values),
-                "n_structures": len(structures),
-                "per_structure_mae": per_structure_mae,
-                "per_structure_n_pairs": per_structure_n_pairs,
-            },
+    metrics: dict[str, float] = {}
+    for n_seeded in cfg.seed_n_values:
+        maes = [v for v in per_structure_mae[n_seeded].values() if math.isfinite(v)]
+        metrics[f"mae_at_n{n_seeded}_angstrom"] = (
+            float(np.mean(maes)) if maes else float("nan")
         )
 
-
-def get_inference() -> V1Inference:
-    """Entry point read by the marinfold-document-structure CLI."""
-    return V1Inference()
+    return EvalResult(
+        metrics=metrics,
+        per_example=per_pair,
+        extras={
+            "structure": NAME,
+            "model": cfg.model,
+            "query_atom": cfg.query_atom,
+            "seed_n_values": list(cfg.seed_n_values),
+            "n_structures": len(structures),
+            "per_structure_mae": per_structure_mae,
+            "per_structure_n_pairs": per_structure_n_pairs,
+        },
+    )
