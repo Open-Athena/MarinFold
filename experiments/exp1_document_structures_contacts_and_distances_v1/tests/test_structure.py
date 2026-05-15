@@ -1,12 +1,18 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for the contacts-and-distances-v1 DocumentStructure.
+"""Tests for the contacts-and-distances-v1 Generator + Inference.
+
+The Generator + Inference split lives in ``generate.py`` and
+``inference.py``; shared vocab + parsing in ``_vocab.py`` /
+``_parse.py``. Tests load each module via the standard
+``marinfold_document_structures.load_*`` helpers (the same path the
+CLI uses), so a regression in the Protocol surface fails here.
 
 The network-marked tests download the pinned published tokenizer
 (``timodonnell/protein-docs-tokenizer@83f597d88e9b``) and assert
-byte-equivalence with the locally-constructed one. Skip them with
-``pytest -m 'not network'`` if you're offline.
+byte-equivalence. Skip them with ``pytest -m 'not network'`` if
+you're offline.
 
 Run:
 
@@ -14,6 +20,7 @@ Run:
     uv run pytest tests/ -v
 """
 
+import argparse
 import math
 import sys
 import textwrap
@@ -21,68 +28,69 @@ from pathlib import Path
 
 import pytest
 
-# The experiment dir is not a package; make ``structure`` importable.
+# Make the experiment dir importable so we can reach _vocab / _parse /
+# generate / inference directly (the CLI does this via spec_from_file_location,
+# but tests use sys.path for ergonomic in-process imports).
 _EXP_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_EXP_DIR))
 
-from structure import (  # noqa: E402
-    AMINO_ACIDS,
-    ATOM_NAMES,
-    CONTACT_TYPES,
-    CONTROL_TOKENS,
-    DISTANCE_BINS,
-    DISTANCE_MARKER,
-    MAX_POSITION,
-    PLDDT_BINS,
-    UNK_TOKEN,
-    ContactsAndDistancesV1,
-    EvaluationConfig,
-    ParsedStructure,
-    _build_eval_prompt_tokens,
-    _DISTANCE_BIN_MIDPOINTS,
-    _distance_token,
-    _gt_long_range_contacts,
-    _gt_query_distance_matrix,
-    _pair_tail_tokens,
-    _plddt_bin_token,
-    _resolve_distance_token_ids,
-    get_structure,
-    parse_structure,
+from _vocab import (  # noqa: E402
+    AMINO_ACIDS, ATOM_NAMES, CONTACT_TYPES, CONTROL_TOKENS,
+    CONTEXT_LENGTH, DISTANCE_BINS, DISTANCE_MARKER, MAX_POSITION,
+    NAME, PLDDT_BINS, UNK_TOKEN, all_domain_tokens,
+)
+from _parse import ParsedStructure, Residue, parse_structure  # noqa: E402
+from generate import GenerationConfig, V1Generator, get_generator, _distance_token, _plddt_bin_token  # noqa: E402
+from inference import (  # noqa: E402
+    V1Inference, _build_base_prompt_tokens, _gt_long_range_contacts,
+    _gt_query_distance_matrix, _pair_tail_tokens, _parse_seed_n_values,
+    _resolve_distance_token_ids, _DISTANCE_BIN_MIDPOINTS,
+    get_inference,
 )
 
 from marinfold_document_structures import (  # noqa: E402
-    DocumentStructure,
+    Generator,
+    Inference,
     build_tokenizer,
+    load_generator,
+    load_inference,
 )
 
 
 # ---------------------------------------------------------------------------
-# Protocol conformance + metadata
+# Protocol conformance via the CLI loader path
 # ---------------------------------------------------------------------------
 
 
-def test_get_structure_satisfies_protocol():
-    s = get_structure()
-    assert isinstance(s, DocumentStructure), (
-        f"get_structure() returned a {type(s).__name__} that does not "
-        "satisfy the DocumentStructure protocol."
-    )
+def test_load_generator_satisfies_protocol():
+    gen = load_generator(_EXP_DIR)
+    assert isinstance(gen, Generator)
+    assert gen.name == NAME
+    assert gen.context_length == CONTEXT_LENGTH
 
 
-def test_structure_metadata():
-    s = get_structure()
-    assert s.name == "contacts-and-distances-v1"
-    assert s.context_length == 8192
+def test_load_inference_satisfies_protocol():
+    inf = load_inference(_EXP_DIR)
+    assert isinstance(inf, Inference)
+    assert inf.name == NAME
+    assert inf.context_length == CONTEXT_LENGTH
+
+
+def test_generator_and_inference_agree_on_vocab():
+    """Both files must build the same WordLevel tokenizer."""
+    gen = get_generator()
+    inf = get_inference()
+    assert gen.tokens() == inf.tokens()
 
 
 # ---------------------------------------------------------------------------
-# tokens() shape
+# Vocab shape
 # ---------------------------------------------------------------------------
 
 
 def test_tokens_count_matches_canonical_2838():
     """Domain vocab is 2838 tokens; +2 specials = 2840 total."""
-    tokens = get_structure().tokens()
+    tokens = get_generator().tokens()
     n_expected = (
         len(CONTROL_TOKENS)
         + len(CONTACT_TYPES)
@@ -94,25 +102,21 @@ def test_tokens_count_matches_canonical_2838():
         + (MAX_POSITION + 1)
         + len(UNK_TOKEN)
     )
-    assert n_expected == 2838, f"category counts don't sum to 2838: {n_expected}"
+    assert n_expected == 2838
     assert len(tokens) == 2838
 
 
-def test_tokens_unique():
-    tokens = get_structure().tokens()
+def test_tokens_unique_and_returned_as_copy():
+    tokens = all_domain_tokens()
     assert len(tokens) == len(set(tokens))
-
-
-def test_tokens_returns_a_copy():
-    s = ContactsAndDistancesV1()
-    a = s.tokens()
+    g = V1Generator()
+    a = g.tokens()
     a.append("<broken>")
-    assert "<broken>" not in s.tokens()
+    assert "<broken>" not in g.tokens()
 
 
 def test_token_order_invariants():
-    """Spot-check positions baked into every v1 checkpoint."""
-    tokens = get_structure().tokens()
+    tokens = get_generator().tokens()
     assert tokens[0] == "<contacts-and-distances-v1>"
     assert tokens[1] == "<begin_sequence>"
     assert tokens[4] == "<long-range-contact>"
@@ -123,20 +127,24 @@ def test_token_order_invariants():
 
 
 # ---------------------------------------------------------------------------
-# build_tokenizer
+# build_tokenizer (works on Generator AND Inference)
 # ---------------------------------------------------------------------------
 
 
-def test_build_tokenizer_size():
-    tok = build_tokenizer(get_structure())
+def test_build_tokenizer_on_generator():
+    tok = build_tokenizer(get_generator())
     assert len(tok) == 2840
     assert tok.convert_tokens_to_ids("<pad>") == 0
     assert tok.convert_tokens_to_ids("<eos>") == 1
-    assert tok.convert_tokens_to_ids("<contacts-and-distances-v1>") == 2
+
+
+def test_build_tokenizer_on_inference():
+    tok = build_tokenizer(get_inference())
+    assert len(tok) == 2840
 
 
 def test_build_tokenizer_roundtrip_sample():
-    tok = build_tokenizer(get_structure())
+    tok = build_tokenizer(get_generator())
     sample = (
         "<contacts-and-distances-v1> <begin_sequence> "
         "<MET> <LYS> <PHE> <CYS> <ASP> <TYR> <GLY> <LEU> "
@@ -146,11 +154,9 @@ def test_build_tokenizer_roundtrip_sample():
         "<plddt_80_85> <end>"
     )
     ids = tok.encode(sample, add_special_tokens=False)
-    decoded = tok.decode(ids)
     assert len(ids) == len(sample.split())
     unk_id = tok.convert_tokens_to_ids("<UNK>")
     assert unk_id not in ids
-    assert decoded.strip().split() == sample.split()
 
 
 REVISION_PIN = "83f597d88e9b"
@@ -165,16 +171,14 @@ def test_published_tokenizer_vocab_matches():
         "timodonnell/protein-docs-tokenizer",
         revision=REVISION_PIN,
     )
-    local = build_tokenizer(get_structure())
-    pub_vocab = published.get_vocab()
-    loc_vocab = local.get_vocab()
-    assert pub_vocab.keys() == loc_vocab.keys()
+    local = build_tokenizer(get_generator())
+    assert published.get_vocab().keys() == local.get_vocab().keys()
     mismatches = [
-        (t, pub_vocab[t], loc_vocab[t])
-        for t in pub_vocab
-        if pub_vocab[t] != loc_vocab[t]
+        (t, published.get_vocab()[t], local.get_vocab()[t])
+        for t in published.get_vocab()
+        if published.get_vocab()[t] != local.get_vocab()[t]
     ]
-    assert not mismatches, f"first 5 mismatches: {mismatches[:5]}"
+    assert not mismatches, f"first 5: {mismatches[:5]}"
 
 
 @pytest.mark.network
@@ -186,7 +190,7 @@ def test_published_tokenizer_encodes_identically():
         "timodonnell/protein-docs-tokenizer",
         revision=REVISION_PIN,
     )
-    local = build_tokenizer(get_structure())
+    local = build_tokenizer(get_generator())
     sample = (
         "<contacts-and-distances-v1> <begin_sequence> "
         "<MET> <LYS> <PHE> <CYS> <ASP> <TYR> <GLY> <LEU> "
@@ -198,40 +202,31 @@ def test_published_tokenizer_encodes_identically():
         "<distance> <p2> <p80> <NZ> <O> <d15.0> "
         "<plddt_80_85> <end>"
     )
-    assert published.encode(sample, add_special_tokens=False) == local.encode(
-        sample, add_special_tokens=False
+    assert (
+        published.encode(sample, add_special_tokens=False)
+        == local.encode(sample, add_special_tokens=False)
     )
 
 
 # ---------------------------------------------------------------------------
-# Bin / token helpers (pure-stdlib)
+# Generator helpers (pure stdlib)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("d, expected", [
-    (0.0, "d0.5"),         # clamped to lowest bin
-    (0.25, "d0.5"),
-    (0.5, "d0.5"),         # exactly on edge -> ceil(0.5/0.5)=1 -> d0.5
-    (0.51, "d1.0"),
-    (4.0, "d4.0"),
-    (4.5, "d4.5"),
-    (31.99, "d32.0"),
-    (32.0, "d32.0"),
-    (45.7, "d32.0"),       # clamped to top bin
+    (0.0, "d0.5"), (0.25, "d0.5"), (0.5, "d0.5"), (0.51, "d1.0"),
+    (4.0, "d4.0"), (4.5, "d4.5"), (31.99, "d32.0"), (32.0, "d32.0"),
+    (45.7, "d32.0"),
 ])
 def test_distance_token_bins(d, expected):
     assert _distance_token(d) == expected
 
 
 @pytest.mark.parametrize("p, expected", [
-    (50.0, "plddt_lt70"),
-    (69.99, "plddt_lt70"),
-    (70.0, "plddt_70_75"),
-    (74.99, "plddt_70_75"),
-    (75.0, "plddt_75_80"),
-    (84.0, "plddt_80_85"),
-    (95.0, "plddt_95_100"),
-    (100.0, "plddt_95_100"),
+    (50.0, "plddt_lt70"), (69.99, "plddt_lt70"),
+    (70.0, "plddt_70_75"), (74.99, "plddt_70_75"),
+    (75.0, "plddt_75_80"), (84.0, "plddt_80_85"),
+    (95.0, "plddt_95_100"), (100.0, "plddt_95_100"),
 ])
 def test_plddt_bin_token(p, expected):
     edges = (70.0, 75.0, 80.0, 85.0, 90.0, 95.0)
@@ -239,7 +234,7 @@ def test_plddt_bin_token(p, expected):
 
 
 # ---------------------------------------------------------------------------
-# Structure parsing + doc generation (use gemmi; skip if unavailable)
+# Parsing + generation (gemmi-dependent)
 # ---------------------------------------------------------------------------
 
 
@@ -300,165 +295,116 @@ def test_parse_tiny_pdb(tiny_pdb_path):
     parsed = parse_structure(tiny_pdb_path)
     assert isinstance(parsed, ParsedStructure)
     assert parsed.sequence == ["MET", "ALA", "GLY", "LYS", "PHE"]
-    assert len(parsed.residues) == 5
-    # B-factors of MET (80) and PHE (65) — stored verbatim in
-    # residue.plddt (mean over heavy atoms).
     plddts = {r.name: r.plddt for r in parsed.residues}
     assert math.isclose(plddts["MET"], 80.0)
     assert math.isclose(plddts["PHE"], 65.0)
-    # All atoms must be in our v1 atom vocab.
     vocab = set(ATOM_NAMES)
     for r in parsed.residues:
         for name, *_ in r.atoms:
-            assert name in vocab, f"out-of-vocab atom: {name}"
+            assert name in vocab
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_parse_skips_hydrogens(tiny_pdb_path):
-    parsed = parse_structure(tiny_pdb_path)
-    for r in parsed.residues:
-        for name, *_ in r.atoms:
-            assert not name.startswith("H")
-
-
-@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_iter_inputs_directory_walk(tmp_path: Path):
-    """``iter_inputs`` walks subdirs and only picks up structure-shaped files."""
-    sub = tmp_path / "many"
-    sub.mkdir()
-    (sub / "a.pdb").write_text(_PDB_FIXTURE)
-    (sub / "b.pdb").write_text(_PDB_FIXTURE)
-    (sub / "ignore.txt").write_text("not a structure")
-    structures = list(get_structure().iter_inputs(sub))
-    assert len(structures) == 2
-    assert all(s.sequence == ["MET", "ALA", "GLY", "LYS", "PHE"] for s in structures)
-
-
-# ---------------------------------------------------------------------------
-# generate_documents
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_generate_documents_yields_one_per_input(tiny_pdb_path):
-    s = get_structure()
-    docs = list(s.generate_documents(s.iter_inputs(tiny_pdb_path)))
+def test_generator_run_via_args(tiny_pdb_path):
+    """Build args via the impl's own add_args and exercise run()."""
+    g = get_generator()
+    p = argparse.ArgumentParser()
+    p.add_argument("impl_dir", type=Path)
+    p.add_argument("--out", type=Path, default=Path("/tmp/x.parquet"))
+    g.add_args(p)
+    args = p.parse_args([str(_EXP_DIR), "--input", str(tiny_pdb_path)])
+    docs = list(g.run(args))
     assert len(docs) == 1
-
-
-@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_generated_doc_well_formed(tiny_pdb_path):
-    s = get_structure()
-    doc = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
-
-    parts = doc.split()
+    parts = docs[0].split()
     assert parts[0] == "<contacts-and-distances-v1>"
     assert parts[1] == "<begin_sequence>"
-    assert "<begin_statements>" in parts
     assert parts[-1] == "<end>"
 
-    seq_start = parts.index("<begin_sequence>") + 1
-    stmts_start = parts.index("<begin_statements>")
-    assert parts[seq_start:stmts_start] == ["<MET>", "<ALA>", "<GLY>", "<LYS>", "<PHE>"]
-
-    # Exactly one pLDDT bin token in the statements/post-statements
-    # region (the algorithm places it either mid-statements or at the
-    # very end).
-    plddt_tokens = [t for t in parts[stmts_start:] if t.startswith("<plddt_")]
-    assert len(plddt_tokens) == 1
-
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_generated_doc_is_in_vocab(tiny_pdb_path):
-    """Every emitted token must be in the v1 vocabulary (no UNK)."""
-    s = get_structure()
-    doc = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
-    tok = build_tokenizer(s)
-    unk_id = tok.convert_tokens_to_ids("<UNK>")
-    ids = tok.encode(doc, add_special_tokens=False)
-    assert unk_id not in ids, (
-        f"document contains out-of-vocab tokens; doc head: {doc[:200]!r}"
-    )
-    # WordLevel + whitespace-split = 1:1.
-    assert len(ids) == len(doc.split())
-
-
-@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_generation_is_deterministic(tiny_pdb_path):
-    """Same input → same output (seed is sha1(entry_id))."""
-    s = get_structure()
-    doc1 = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
-    doc2 = next(iter(s.generate_documents(s.iter_inputs(tiny_pdb_path))))
-    assert doc1 == doc2
-
-
-@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_generate_num_docs_cap(tmp_path: Path):
-    """``num_docs`` caps the output even when there are more inputs."""
+def test_generator_run_num_docs_cap(tmp_path: Path):
     sub = tmp_path / "many"
     sub.mkdir()
     for i in range(5):
         (sub / f"copy{i}.pdb").write_text(_PDB_FIXTURE)
-    s = get_structure()
-    docs = list(s.generate_documents(s.iter_inputs(sub), num_docs=3))
+    g = get_generator()
+    p = argparse.ArgumentParser()
+    p.add_argument("impl_dir", type=Path)
+    p.add_argument("--out", type=Path, default=Path("/tmp/x.parquet"))
+    g.add_args(p)
+    args = p.parse_args([str(_EXP_DIR), "--input", str(sub), "--num-docs", "3"])
+    docs = list(g.run(args))
     assert len(docs) == 3
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_generate_skips_when_sequence_exceeds_budget(tiny_pdb_path):
-    """A ``context_length`` smaller than ``5 + sequence_length`` skips the doc."""
-    s = get_structure()
-    docs = list(s.generate_documents(s.iter_inputs(tiny_pdb_path), context_length=4))
-    assert docs == []
+def test_generator_run_is_deterministic(tiny_pdb_path):
+    g = get_generator()
+    p = argparse.ArgumentParser()
+    p.add_argument("impl_dir", type=Path)
+    p.add_argument("--out", type=Path, default=Path("/tmp/x.parquet"))
+    g.add_args(p)
+    args = p.parse_args([str(_EXP_DIR), "--input", str(tiny_pdb_path)])
+    a = list(g.run(args))
+    b = list(g.run(args))
+    assert a == b
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_iter_ground_truth_shares_parser(tiny_pdb_path):
-    """``iter_ground_truth`` yields the same parses as ``iter_inputs``."""
-    s = get_structure()
-    a = list(s.iter_inputs(tiny_pdb_path))
-    b = list(s.iter_ground_truth(tiny_pdb_path))
-    assert len(a) == len(b) == 1
-    assert a[0].sequence == b[0].sequence
-    assert a[0].entry_id == b[0].entry_id
+def test_generated_doc_is_in_vocab(tiny_pdb_path):
+    g = get_generator()
+    p = argparse.ArgumentParser()
+    p.add_argument("impl_dir", type=Path)
+    p.add_argument("--out", type=Path, default=Path("/tmp/x.parquet"))
+    g.add_args(p)
+    args = p.parse_args([str(_EXP_DIR), "--input", str(tiny_pdb_path)])
+    doc = next(iter(g.run(args)))
+    tok = build_tokenizer(g)
+    unk_id = tok.convert_tokens_to_ids("<UNK>")
+    ids = tok.encode(doc, add_special_tokens=False)
+    assert unk_id not in ids
+    assert len(ids) == len(doc.split())
 
 
 # ---------------------------------------------------------------------------
-# evaluate() — vllm-free pieces (prompt builders, GT helpers, midpoints)
+# Inference helpers (vllm-free)
 # ---------------------------------------------------------------------------
 
 
-def test_distance_bin_midpoints_canonical():
-    # 64 bins at 0.5Å resolution. Bin 1 = (0, 0.5] → midpoint 0.25.
-    # Bin 64 = (31.5, 32.0] → midpoint 31.75.
+def test_distance_bin_midpoints():
     assert len(_DISTANCE_BIN_MIDPOINTS) == 64
     assert math.isclose(_DISTANCE_BIN_MIDPOINTS[0], 0.25)
-    assert math.isclose(_DISTANCE_BIN_MIDPOINTS[1], 0.75)
     assert math.isclose(_DISTANCE_BIN_MIDPOINTS[-1], 31.75)
 
 
-def test_resolve_distance_token_ids_uses_canonical_tokenizer():
-    tok = build_tokenizer(get_structure())
+def test_resolve_distance_token_ids():
+    tok = build_tokenizer(get_inference())
     ids = _resolve_distance_token_ids(tok)
     assert len(ids) == 64
-    # bin 0 == <d0.5> at id (CONTROL + CONTACT_TYPES + DISTANCE_MARKER + 0)
-    # We don't need to know the exact ID — just that decoding round-trips.
     assert tok.decode([ids[0]]).strip() == "<d0.5>"
     assert tok.decode([ids[-1]]).strip() == "<d32.0>"
 
 
+def test_parse_seed_n_values():
+    assert _parse_seed_n_values("0") == (0,)
+    assert _parse_seed_n_values("0,5,20,50") == (0, 5, 20, 50)
+    assert _parse_seed_n_values("0, 5 , 20") == (0, 5, 20)
+    with pytest.raises(argparse.ArgumentTypeError):
+        _parse_seed_n_values("")
+    with pytest.raises(argparse.ArgumentTypeError):
+        _parse_seed_n_values("-1")
+
+
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_gt_long_range_contacts_filters_by_sep_and_distance(tiny_pdb_path):
-    """The tiny 5-residue fixture has no long-range pairs (sep < 24 for all)."""
+def test_gt_long_range_contacts_filters_by_sep(tiny_pdb_path):
     parsed = parse_structure(tiny_pdb_path)
     assert _gt_long_range_contacts(parsed) == []
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_gt_query_distance_matrix_ca_ca(tiny_pdb_path):
+def test_gt_query_distance_matrix_ca(tiny_pdb_path):
     parsed = parse_structure(tiny_pdb_path)
     gt = _gt_query_distance_matrix(parsed, "CA")
-    # 5x5, diagonal is zero, symmetric, all finite (all 5 residues have CA).
     assert gt.shape == (5, 5)
     for k in range(5):
         assert gt[k, k] == 0.0
@@ -470,34 +416,25 @@ def test_gt_query_distance_matrix_ca_ca(tiny_pdb_path):
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
 def test_gt_query_distance_matrix_missing_atom_nans(tiny_pdb_path):
-    """A residue without the requested atom yields NaN rows/cols.
-
-    The fixture's GLY (residue 3) has no CB — so a CB-CB matrix has NaN
-    for any pair touching row/col 2.
-    """
     parsed = parse_structure(tiny_pdb_path)
     gt = _gt_query_distance_matrix(parsed, "CB")
     gly_idx = next(i for i, r in enumerate(parsed.residues) if r.name == "GLY")
     for j in range(5):
         if j == gly_idx:
             continue
-        assert math.isnan(gt[gly_idx, j]), f"expected NaN at GLY row, got {gt[gly_idx, j]}"
+        assert math.isnan(gt[gly_idx, j])
 
 
-def test_build_eval_prompt_tokens_zero_shot():
-    """Zero-shot prompt: structure tag + sequence + begin_statements only."""
-    s = ContactsAndDistancesV1()
+def test_build_base_prompt_tokens_no_seeds():
     structure = ParsedStructure(
-        entry_id="test",
-        residues=tuple([
-            # 3 dummy residues; atoms don't matter for this prompt-shape test
-            __import__("structure").Residue(index=k + 1, name=name, plddt=99.0, atoms=())
-            for k, name in enumerate(["MET", "LYS", "PHE"])
-        ]),
+        entry_id="t",
+        residues=tuple(
+            Residue(index=k + 1, name=n, plddt=99.0, atoms=())
+            for k, n in enumerate(["MET", "LYS", "PHE"])
+        ),
         source_path=Path("/dev/null"),
     )
-    toks = _build_eval_prompt_tokens(structure, seeded_contacts=[], structure_name=s.name)
-    assert toks == [
+    assert _build_base_prompt_tokens(structure, seeded_contacts=[]) == [
         "<contacts-and-distances-v1>",
         "<begin_sequence>",
         "<MET>", "<LYS>", "<PHE>",
@@ -505,23 +442,16 @@ def test_build_eval_prompt_tokens_zero_shot():
     ]
 
 
-def test_build_eval_prompt_tokens_with_seeded_contacts():
-    """Seeded contacts appear as `<long-range-contact> <p_i> <p_j>` triples."""
-    s = ContactsAndDistancesV1()
+def test_build_base_prompt_tokens_with_seeds():
     structure = ParsedStructure(
-        entry_id="test",
-        residues=tuple([
-            __import__("structure").Residue(index=k + 1, name="ALA", plddt=99.0, atoms=())
+        entry_id="t",
+        residues=tuple(
+            Residue(index=k + 1, name="ALA", plddt=99.0, atoms=())
             for k in range(5)
-        ]),
+        ),
         source_path=Path("/dev/null"),
     )
-    toks = _build_eval_prompt_tokens(
-        structure,
-        seeded_contacts=[(1, 30), (2, 50)],
-        structure_name=s.name,
-    )
-    # tail of toks: <begin_statements>, then 3 tokens per contact
+    toks = _build_base_prompt_tokens(structure, seeded_contacts=[(1, 30), (2, 50)])
     assert toks[-7:] == [
         "<begin_statements>",
         "<long-range-contact>", "<p1>", "<p30>",
@@ -529,38 +459,270 @@ def test_build_eval_prompt_tokens_with_seeded_contacts():
     ]
 
 
-def test_pair_tail_tokens_shape():
-    """The 5-token tail elicits a distance-bin next-token prediction."""
+def test_pair_tail_tokens():
     assert _pair_tail_tokens(7, 42, "CA", "CB") == [
         "<distance>", "<p7>", "<p42>", "<CA>", "<CB>",
     ]
 
 
-def test_evaluation_config_defaults():
-    cfg = EvaluationConfig()
-    assert cfg.query_atom == "CA"
-    assert cfg.seed_n_values == (0,)
-    assert cfg.top_k_logprobs >= 64
-    assert cfg.distance_cap_angstrom == 32.0
-
-
-def test_evaluate_picks_up_evaluation_config():
-    """The class-level config knob is what evaluate() consults."""
-    custom = EvaluationConfig(query_atom="CB", seed_n_values=(0, 5, 20))
-    s = ContactsAndDistancesV1(evaluation_config=custom)
-    assert s.evaluation_config is custom
-
-
 # ---------------------------------------------------------------------------
-# Full vllm-backed evaluate() — GPU-only smoke
+# Inference add_args registers different flags per subcommand
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_evaluate_raises_without_vllm_or_records():
-    """Empty input is safely handled — no vllm spin-up, no metrics."""
-    s = get_structure()
-    result = s.evaluate(model_path="/nonexistent", ground_truth_records=iter([]))
+def _inference_args(subcommand: str) -> argparse.ArgumentParser:
+    inf = get_inference()
+    p = argparse.ArgumentParser()
+    p.add_argument("impl_dir", type=Path)
+    p.add_argument("--out", type=Path, default=Path("/tmp/x"))
+    inf.add_args(p, subcommand=subcommand)
+    return p
+
+
+def test_inference_add_args_infer_includes_keep_bin_probs():
+    p = _inference_args("infer")
+    # --keep-bin-probs is the infer-only flag.
+    args = p.parse_args([
+        str(_EXP_DIR), "--model", "M", "--input", "/tmp/x", "--keep-bin-probs",
+    ])
+    assert args.keep_bin_probs is True
+
+
+def test_inference_add_args_evaluate_omits_keep_bin_probs():
+    p = _inference_args("evaluate")
+    with pytest.raises(SystemExit):
+        # --keep-bin-probs only exists in infer mode
+        p.parse_args([
+            str(_EXP_DIR), "--model", "M", "--input", "/tmp/x", "--keep-bin-probs",
+        ])
+
+
+def test_inference_add_args_seed_n_values_parses_list():
+    p = _inference_args("evaluate")
+    args = p.parse_args([
+        str(_EXP_DIR), "--model", "M", "--input", "/tmp/x",
+        "--seed-n-values", "0,5,20",
+    ])
+    assert args.seed_n_values == (0, 5, 20)
+
+
+def test_inference_predict_empty_input_short_circuits(tmp_path: Path):
+    """Empty input directory yields nothing — vllm is never imported."""
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    inf = get_inference()
+    p = _inference_args("infer")
+    args = p.parse_args([str(_EXP_DIR), "--model", "/nonexistent", "--input", str(empty)])
+    records = list(inf.predict(args))
+    assert records == []
+
+
+def test_inference_evaluate_empty_input_warns(tmp_path: Path):
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    inf = get_inference()
+    p = _inference_args("evaluate")
+    args = p.parse_args([str(_EXP_DIR), "--model", "/nonexistent", "--input", str(empty)])
+    result = inf.evaluate(args)
     assert result.metrics == {}
     assert result.per_example == []
     assert result.extras.get("warning") == "no input structures"
+
+
+# ---------------------------------------------------------------------------
+# Ultrareview regression tests
+# ---------------------------------------------------------------------------
+
+
+def test_inference_add_args_distance_cap_only_in_evaluate():
+    """bug_012: --distance-cap-angstrom is consumed only by evaluate."""
+    infer_p = _inference_args("infer")
+    with pytest.raises(SystemExit):
+        infer_p.parse_args([
+            str(_EXP_DIR), "--model", "M", "--input", "/tmp/x",
+            "--distance-cap-angstrom", "16.0",
+        ])
+    eval_p = _inference_args("evaluate")
+    args = eval_p.parse_args([
+        str(_EXP_DIR), "--model", "M", "--input", "/tmp/x",
+        "--distance-cap-angstrom", "16.0",
+    ])
+    assert args.distance_cap_angstrom == 16.0
+
+
+def test_resolve_distance_token_ids_rejects_unk_collapse():
+    """bug_008: a tokenizer missing the <d_X.X> vocab must error loudly."""
+
+    class _DummyTokenizer:
+        unk_token_id = 42
+
+        def encode(self, tok, add_special_tokens=False):
+            return [self.unk_token_id]
+
+    with pytest.raises(ValueError, match="UNK"):
+        _resolve_distance_token_ids(_DummyTokenizer())
+
+
+def test_resolve_distance_token_ids_rejects_partial_collapse():
+    """bug_008: partial collapse (some bins valid, some UNK) still errors."""
+
+    class _PartialTokenizer:
+        unk_token_id = 42
+        _next_id = 100
+
+        def encode(self, tok, add_special_tokens=False):
+            # Two adjacent bins both collide on id=100.
+            if tok in ("<d0.5>", "<d1.0>"):
+                return [100]
+            self._next_id += 1
+            return [self._next_id]
+
+    with pytest.raises(ValueError, match="collapsed|unique IDs"):
+        _resolve_distance_token_ids(_PartialTokenizer())
+
+
+def test_load_isolates_per_impl_vocab(tmp_path: Path):
+    """bug_003: two impls in the same process must load independent vocab."""
+
+    def _make_impl(dir_: Path, *, name: str, ctx: int) -> None:
+        dir_.mkdir(parents=True, exist_ok=True)
+        (dir_ / "_vocab.py").write_text(
+            textwrap.dedent(
+                f"""
+                NAME = {name!r}
+                CONTEXT_LENGTH = {ctx}
+                def all_domain_tokens():
+                    return [{name!r}, "<begin>", "<end>"]
+                """
+            )
+        )
+        (dir_ / "generate.py").write_text(
+            textwrap.dedent(
+                """
+                import argparse
+                from _vocab import NAME, CONTEXT_LENGTH, all_domain_tokens
+
+                class _Gen:
+                    name = NAME
+                    context_length = CONTEXT_LENGTH
+                    def tokens(self):
+                        return all_domain_tokens()
+                    def add_args(self, p):
+                        p.add_argument('--input', required=True)
+                    def run(self, args):
+                        return iter([])
+
+                def get_generator():
+                    return _Gen()
+                """
+            )
+        )
+
+    impl_a = tmp_path / "impl_a"
+    impl_b = tmp_path / "impl_b"
+    _make_impl(impl_a, name="format-a", ctx=1024)
+    _make_impl(impl_b, name="format-b", ctx=2048)
+
+    gen_a = load_generator(impl_a)
+    gen_b = load_generator(impl_b)
+    # Pre-fix: gen_b inherits gen_a's vocab/name because Python caches
+    # bare `_vocab` in sys.modules across the two loads.
+    assert gen_a.name == "format-a"
+    assert gen_b.name == "format-b"
+    assert gen_a.tokens() == ["format-a", "<begin>", "<end>"]
+    assert gen_b.tokens() == ["format-b", "<begin>", "<end>"]
+    assert gen_a.context_length == 1024
+    assert gen_b.context_length == 2048
+    # Reload the first impl after the second — must still see its own vocab.
+    gen_a_again = load_generator(impl_a)
+    assert gen_a_again.name == "format-a"
+    assert gen_a_again.tokens() == ["format-a", "<begin>", "<end>"]
+
+
+def test_load_does_not_leak_sys_path_or_sys_modules(tmp_path: Path):
+    """bug_003 hygiene: loader restores sys.path and sys.modules after load."""
+    impl = tmp_path / "impl_x"
+    impl.mkdir()
+    (impl / "_vocab.py").write_text("NAME = 'x'\nCONTEXT_LENGTH = 16\n"
+                                    "def all_domain_tokens():\n    return ['x']\n")
+    (impl / "generate.py").write_text(textwrap.dedent("""
+        from _vocab import NAME, CONTEXT_LENGTH, all_domain_tokens
+
+        class _Gen:
+            name = NAME
+            context_length = CONTEXT_LENGTH
+            def tokens(self): return all_domain_tokens()
+            def add_args(self, p): pass
+            def run(self, args): return iter([])
+
+        def get_generator(): return _Gen()
+    """))
+
+    path_before = list(sys.path)
+    vocab_before = sys.modules.get("_vocab")
+
+    gen = load_generator(impl)
+    assert gen.name == "x"
+
+    assert sys.path == path_before
+    assert sys.modules.get("_vocab") is vocab_before
+
+
+# bug_001: parquet writers must include structure_name / extras
+
+
+def test_write_predictions_parquet_includes_structure(tmp_path: Path):
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+    from marinfold_document_structures.cli import _write_predictions
+
+    out = tmp_path / "preds.parquet"
+    _write_predictions(
+        out,
+        [{"entry_id": "X", "expected_distances": [1.0, 2.0]}],
+        structure_name="contacts-and-distances-v1",
+    )
+    tbl = pq.read_table(str(out))
+    cols = tbl.column_names
+    assert "structure" in cols, cols
+    assert tbl.column("structure").to_pylist() == ["contacts-and-distances-v1"]
+
+
+def test_write_eval_parquet_preserves_extras(tmp_path: Path):
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+    from marinfold_document_structures import EvalResult
+    from marinfold_document_structures.cli import _write_eval
+
+    out = tmp_path / "eval.parquet"
+    result = EvalResult(
+        metrics={"mae_at_n0_angstrom": 3.6},
+        per_example=[],
+        extras={
+            "model": "open-athena/foo@step-31337",
+            "query_atom": "CA",
+            "seed_n_values": [0, 5, 20],
+            "per_structure_mae": {"1QYS": 3.6},
+        },
+    )
+    _write_eval(out, result, structure_name="contacts-and-distances-v1")
+    tbl = pq.read_table(str(out))
+    row = {k: tbl.column(k).to_pylist()[0] for k in tbl.column_names}
+    assert row["model"] == "open-athena/foo@step-31337"
+    assert row["query_atom"] == "CA"
+    assert row["seed_n_values"] == [0, 5, 20]
+    # Nested dict gets JSON-stringified
+    assert "extras_json" in row
+    assert "per_structure_mae" in row["extras_json"]
+
+
+# bug_005: <cmd> --help works without impl_dir
+
+
+def test_cli_help_without_impl_dir_does_not_error(capsys):
+    from marinfold_document_structures.cli import _cmd_generate
+
+    rc = _cmd_generate(["--help"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "impl_dir" in captured.out

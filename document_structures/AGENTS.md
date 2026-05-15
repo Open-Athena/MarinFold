@@ -5,11 +5,14 @@ of the root `AGENTS.md`.
 
 ## Scope
 
-`document_structures/` holds the **interface** (`DocumentStructure`
-Protocol) and the **local-testing CLI**
-(`marinfold-document-structure`). Concrete document-structure
+`document_structures/` holds the **interfaces** (`Generator` +
+`Inference` Protocols), the `build_tokenizer` helper, and the
+**local-testing CLI** (`marinfold-document-structure`). Concrete
 implementations are experiments under
-`experiments/exp<N>_document_structures_<name>/`.
+`experiments/exp<N>_document_structures_<name>/`, each with two
+public files: `generate.py` (exports `get_generator()`) and
+`inference.py` (exports `get_inference()`). Shared vocab + parsing
+live in private `_vocab.py` / `_parse.py` modules in the same dir.
 
 Graduated experiments may appear here as symlinks. Those are not
 part of the library; the library is `marinfold_document_structures/`
@@ -17,26 +20,41 @@ only.
 
 ## Hard rules
 
-1. **The interface evolves carefully.** A change to
-   `DocumentStructure` (new method, changed signature) breaks every
+1. **Both interfaces evolve carefully.** A change to `Generator`
+   or `Inference` (new method, changed signature) breaks every
    existing implementation. When evolving, update all known impls
    in the same PR — don't ship a Protocol that no current impl
    satisfies.
 
-2. **Keep the library lightweight.** `marinfold_document_structures/`
-   should only depend on stdlib + pyarrow (for `--out parquet`).
-   Heavy deps (transformers, biopython, jax, …) belong in the impls,
-   not here.
+2. **The two files MUST agree on vocab.** `generate.py`'s
+   `tokens()` and `inference.py`'s `tokens()` produce the same
+   list (typically by importing a shared `_vocab.all_domain_tokens()`).
+   A mismatch silently makes the tokenizers incompatible — tests
+   that pin `gen.tokens() == inf.tokens()` are mandatory for any
+   new impl.
 
-3. **CLI is local-testing-only.** Don't add production-scaling
-   features (iris launch, GCS upload, multi-shard parallelism). That
-   belongs in `data/` and `evals/`. The CLI's job is "let a
-   researcher confirm the impl works on 100 docs before scaling".
+3. **Keep the library lightweight.** `marinfold_document_structures/`
+   should only depend on stdlib + pyarrow + tokenizers/transformers
+   (for `build_tokenizer`). Heavy deps (gemmi, biopython, vllm,
+   torch, …) belong in the impls, not here.
 
-4. **Load by path, not by import name.** The CLI uses
-   `importlib.util.spec_from_file_location` so experiment dirs don't
-   need to be installed packages. Keep it that way; don't introduce
-   a "registry" that requires impls to declare themselves.
+4. **CLI is local-testing-only.** Don't add production-scaling
+   features (iris launch, GCS upload, multi-shard parallelism).
+   That belongs in `data/` and `evals/`. The CLI's job is "let a
+   researcher confirm the impl works on 100 inputs before scaling".
+
+5. **The CLI owns `<impl_dir>` and `--out`.** Everything else is
+   the impl's responsibility — register flags via
+   `add_args(parser)` (Generator) or
+   `add_args(parser, subcommand=)` (Inference). Don't add
+   "standard" generation / inference flags at the CLI level; that
+   constrains impls.
+
+6. **Load by path, not by import name.** The CLI uses
+   `importlib.util.spec_from_file_location` and puts the impl dir
+   on `sys.path` so private siblings (`_vocab.py`, …) resolve.
+   Don't introduce a "registry" that requires impls to declare
+   themselves.
 
 ## Graduated symlinks
 
