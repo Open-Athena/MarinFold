@@ -105,6 +105,38 @@ Do not generate comments that merely restate the code.
 
 ## Hard rules
 
+### Branch + PR for substantive work; don't push directly to main
+
+Substantive changes — new code, multi-file edits, design decisions —
+go on a feature branch and land via a GitHub PR, even when the
+intent is to merge straight into `main`. The branch doesn't need to
+live long: open the PR, run review (e.g. `/ultrareview` against
+`origin/main`), merge, delete the branch.
+
+Branch naming: `<thread>/<short-name>` (e.g. `exp1/eval-impl`,
+`docs/agents-update`). For an experiment that lives entirely on a
+branch (the `marinfold_experiment.branch` frontmatter field), use
+`exp/<N>-<slug>` per the existing convention.
+
+What can still go direct to `main`:
+
+- Pure typo / one-line doc fixes.
+- Regenerating index files (`marinfold itemize`,
+  `marinfold history update-index`).
+- Hotfix reverts when something is actively broken.
+
+What goes through a PR by default:
+
+- New `.py` files or non-trivial edits to existing ones.
+- New experiments (the whole `exp<N>_<kind>_<slug>/` dir).
+- AGENTS / README / RESOURCES policy changes.
+- Anything an agent would benefit from independent review on
+  (`/ultrareview`-able).
+
+The point isn't to slow merges into `main` — most PRs should be
+short-lived. It's to give `/ultrareview` (and any future review
+tooling) a real diff to chew on.
+
 ### Never monkey-patch
 
 Do not replace functions, methods, or attributes of imported modules
