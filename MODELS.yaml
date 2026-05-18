@@ -1,0 +1,4 @@
+- nickname: 1B
+  url: https://huggingface.co/timodonnell/LlamaFold-experiments/tree/main/marin-experiments.protein-contacts-1b-3.5e-4-distance-masked-7d355e
+  document_structures:
+    - contacts-and-distances-v1
