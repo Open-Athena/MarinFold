@@ -25,9 +25,10 @@ infrastructure. Five concerns live at the repo root:
 - `data/` — library for data-generation experiments
   (production wrappers around zephyr pipelines). Plus graduated
   data symlinks.
-- `document_structures/` — interface (`DocumentStructure` Protocol)
-  + local-testing CLI (`marinfold-document-structure`) for
-  document-structure implementations. Plus graduated symlinks.
+- `document_structures/` — small shared toolkit (`EvalResult`,
+  `build_tokenizer`, parquet/jsonl writers) for document-structure
+  implementations. Each impl is a self-contained experiment dir
+  with its own `cli.py`. Plus graduated symlinks.
 
 Each of these is a self-contained "marin-experiments-style" directory:
 its own `pyproject.toml`, its own `.venv`, marin (or stdlib-only deps,

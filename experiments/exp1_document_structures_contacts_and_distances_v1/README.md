@@ -13,24 +13,21 @@ marinfold_experiment:
 ## Question
 
 How do we implement `contacts-and-distances-v1` as a MarinFold
-first-class document structure, conforming to the `Generator` +
-`Inference` Protocols in
-`document_structures/marinfold_document_structures/interface.py`?
+first-class document structure — a set of plain modules + a `cli.py`
+driver that uses the shared toolkit in `marinfold_document_structures`?
 
 ## Hypothesis
 
 The format is already well-defined and battle-tested (used by every
 model in `experiments/exp0_models_protein_docs_initial_port/`, and
 backing the `timodonnell/protein-docs` HF dataset's
-`contacts-and-distances-v1-5x` subset). Porting it into a
-document-structure impl is a mostly mechanical translation: the
-doc-generation logic moves into `generate.py:V1Generator.run`, the
-in-training distogram-benchmark logic from
-`protein_distogram_eval.py` moves into
-`inference.py:V1Inference.evaluate`, and tokenizer construction
-(currently `create_protein_tokenizer.py`) is replaced by the shared
-`build_tokenizer(component)` helper sourcing `tokens()` from the
-canonical vocab in `_vocab.py`.
+`contacts-and-distances-v1-5x` subset). Porting it is a mostly
+mechanical translation: the doc-generation logic becomes
+`generate.generate_documents`, the in-training distogram-benchmark
+logic from `protein_distogram_eval.py` becomes `inference.evaluate`,
+and tokenizer construction (currently `create_protein_tokenizer.py`)
+is replaced by `build_tokenizer(all_domain_tokens())` from the
+canonical vocab in `vocab.py`.
 
 ## Background
 
@@ -67,96 +64,92 @@ Pinned artifacts:
 - In-training distogram benchmark already implemented at
   `experiments/exp0_models_protein_docs_initial_port/protein_distogram_eval.py`.
 
-Now that MarinFold has `Generator` + `Inference` Protocols, this
-format should be the first concrete impl. It becomes the reference
-for any v2/v3 successors and the contract for downstream data-gen +
-eval experiments.
+This is the first MarinFold document-structure impl. It's the
+reference for any v2/v3 successors and the contract for downstream
+data-gen + eval experiments.
 
 ## Approach
 
-Layout (per the document-structures Generator + Inference split):
+Layout:
 
 ```
 experiments/exp1_document_structures_contacts_and_distances_v1/
-├── _vocab.py        # canonical 2838-token vocab + NAME + CONTEXT_LENGTH
-├── _parse.py        # gemmi-backed PDB / mmCIF reader; ParsedStructure dataclass
-├── generate.py      # V1Generator + get_generator()
-├── inference.py     # V1Inference + get_inference() (predict + evaluate)
+├── vocab.py         # canonical 2838-token vocab + NAME + CONTEXT_LENGTH
+├── parse.py         # gemmi-backed PDB / mmCIF reader; ParsedStructure dataclass
+├── generate.py      # generate_documents() + GenerationConfig
+├── inference.py     # predict() + evaluate() + InferenceConfig
+├── cli.py           # argparse driver: generate / infer / evaluate / tokenizer
 └── pyproject.toml
 ```
 
-`_vocab.py` is the canonical vocab list, ported from
+`vocab.py` is the canonical token list, ported from
 `exp0_models_protein_docs_initial_port/create_protein_tokenizer.py`.
-Both `generate.py` and `inference.py` source `tokens()` from it —
-test pins them equal.
+`parse.py` reads PDB / mmCIF (+ `.gz`) via gemmi.
 
-`generate.py:V1Generator.run(args)` ports the document algorithm
-from `timodonnell/contactdoc/contactdoc/generators/contacts_and_distances_v1.py`:
+`generate.py:generate_documents(...)` ports the algorithm from
+`timodonnell/contactdoc/contactdoc/generators/contacts_and_distances_v1.py`:
 deterministic seed per `entry_id`, CB-CB contact eligibility
 (CA for GLY), per-mode fraction sampling, distance statements over
 uniform residue+atom pairs, rank-ordered statements, 50/50 pLDDT
-placement. One doc per input. CLI flags: `--input`, `--num-docs`,
-`--context-length`, plus the algorithm knobs
-(`--contact-cutoff-angstrom`, `--residue-plddt-min`,
-`--contact-f-range`, …). The `-5x` HF subset suffix is a
+placement. One doc per input. The `-5x` HF subset suffix is a
 *data-pipeline* concern ("up to 5 AFDB entries per Foldseek
 structural cluster"), not augmentation here.
 
-`inference.py:V1Inference` powers both the `infer` and `evaluate`
-CLI subcommands. Same per-pair query loop in both cases: walk pairs
-(i, j) with i<j on each input structure, prompt with the v1 base
-+ sequence + `<begin_statements>` + N seeded GT long-range contacts
-+ `<distance> <p_i> <p_j> <atom_i> <atom_j>`, renormalize the
-next-token distribution over the 64 `<d_X.X>` bins to an expected
-distance.
+`inference.py` exposes two plain functions sharing the per-pair
+query loop: walk pairs (i, j) with i<j on each input structure,
+prompt with the v1 base + sequence + `<begin_statements>` + N
+seeded GT long-range contacts + `<distance> <p_i> <p_j> <atom_i>
+<atom_j>`, renormalize the next-token distribution over the 64
+`<d_X.X>` bins to an expected distance.
 
-- `predict(args)` yields per-(structure, n_seeded) records with
+- `predict(cfg)` yields per-(structure, n_seeded) records with
   `expected_distances` (and optionally the full `bin_probs` via
   `--keep-bin-probs`). No GT consulted.
-- `evaluate(args)` runs the same loop, then scores against the
-  GT distance matrix at the same atom pair (the input file IS the
+- `evaluate(cfg)` runs the same loop, then scores against the GT
+  distance matrix at the same atom pair (the input file IS the
   ground truth — its coordinates are the comparison target).
-  Returns `mae_at_n<N>_angstrom` per seeded-contact count.
+  Returns `mae_at_n<N>_angstrom` per seeded-contact count. Pairs
+  with non-finite GT or GT > `distance_cap_angstrom` are filtered
+  *before* the LLM forward pass.
 
 `--seed-n-values 0,5,20,50` sweeps over seeded counts in a single
 run — reproduces the Phase 7c trace from the
 LlamaFold-experiments notebook ("a few GT contacts as hints").
 `--query-atom` (default `CA`) picks the atom on both i and j.
 
-Verify locally via the CLI:
+Verify locally via the CLI (run from this directory with the venv
+active):
 
 ```bash
-marinfold-document-structure generate \
-    experiments/exp1_document_structures_contacts_and_distances_v1/ \
+uv run python cli.py generate \
     --input /path/to/afdb-cifs/ --num-docs 100 \
     --out /tmp/sample-docs.parquet
 
-marinfold-document-structure infer \
-    experiments/exp1_document_structures_contacts_and_distances_v1/ \
+uv run python cli.py infer \
     --model open-athena/<model> --input /path/to/seqs/ \
     --out /tmp/predictions.parquet
 
-marinfold-document-structure evaluate \
-    experiments/exp1_document_structures_contacts_and_distances_v1/ \
+uv run python cli.py evaluate \
     --model open-athena/<model> --input /path/to/pdbs/ \
     --seed-n-values 0,5,20,50 \
     --out /tmp/metrics.json
+
+uv run python cli.py tokenizer --save-local /tmp/tok/
+uv run python cli.py tokenizer --push open-athena/contacts-and-distances-v1-tokenizer
 ```
 
 ## Success criteria
 
-1. `generate.py` and `inference.py` both satisfy their respective
-   `@runtime_checkable` Protocols (`Generator` / `Inference`) — i.e.
-   `marinfold-document-structure` loads them without a Protocol
-   error.
-2. `gen.tokens() == inf.tokens()` (pinned in the test suite — both
-   read from `_vocab.py`), and the tokenizer built via
-   `build_tokenizer(gen)` is byte-identical to the published
-   `timodonnell/protein-docs-tokenizer@83f597d88e9b`.
+1. `cli.py generate / infer / evaluate / tokenizer` all parse and
+   dispatch correctly (covered by `tests/test_structure.py`).
+2. The tokenizer built via `build_tokenizer(all_domain_tokens())`
+   is byte-identical to the published
+   `timodonnell/protein-docs-tokenizer@83f597d88e9b` (network-marked
+   test).
 3. Tokenizing a generated doc for 1QYS (top7) matches the token-ID
    sequence that `protein_distogram_eval.py` builds for the same
    structure today.
-4. `V1Inference.evaluate(args)` on
+4. `inference.evaluate(cfg)` on
    `protein-contacts-1b-3.5e-4-distance-masked-7d355e/hf/step-31337`
    reproduces the Phase 7c trend from the LlamaFold-experiments
    notebook: zero-shot CA-CA MAE around 3.6 Å on the 12-target set,

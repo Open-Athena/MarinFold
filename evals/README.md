@@ -41,8 +41,8 @@ and import via `from marinfold_evals.<module> import ...`.
 
 ## See also
 
-- [`../document_structures/`](../document_structures/) — the
-  `DocumentStructure.evaluate(model, ground_truth)` interface;
-  document-structure evals overlap with what lives here, and the
-  CLI tool `marinfold-document-structure evaluate ...` is a local
-  testing path before scaling out via this library.
+- [`../document_structures/`](../document_structures/) — shared
+  toolkit for document-structure impls (`EvalResult`,
+  `build_tokenizer`, output writers). Each impl exposes its own
+  `python cli.py evaluate ...` for local testing; this library is
+  where the production / scaled-out eval wrappers live.

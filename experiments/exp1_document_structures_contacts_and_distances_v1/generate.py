@@ -1,18 +1,15 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""contacts-and-distances-v1 document Generator.
+"""contacts-and-distances-v1 document generation.
 
-Loads from this file via ``get_generator()``. Powers the
-``marinfold-document-structure generate`` CLI:
-
-    marinfold-document-structure generate <this_dir> \
-        --input path/to/AFDB-cifs/ --num-docs 100 --out docs.parquet
+Library module — the CLI surface lives in ``cli.py`` next door, which
+imports :func:`generate_documents` from here.
 
 The algorithm is a faithful port of
 ``timodonnell/contactdoc/contactdoc/generators/contacts_and_distances_v1.py``
-which produced the published ``timodonnell/protein-docs/contacts-and-distances-v1-5x``
-HF subset.
+which produced the published
+``timodonnell/protein-docs/contacts-and-distances-v1-5x`` HF subset.
 
 Per-doc algorithm (one doc per input structure, deterministic given
 the structure's entry_id):
@@ -34,22 +31,19 @@ structural cluster" — that's a *data-pipeline* selection concern,
 not augmentation. One doc per input here.
 """
 
-import argparse
 import hashlib
 import math
 import random
 from collections.abc import Iterator
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 
-from _parse import (
+from parse import (
     ParsedStructure,
-    Residue,
     cb_or_ca_position,
     euclidean,
     iter_parsed_structures,
 )
-from _vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+from vocab import NAME
 
 
 CONTACT_TOKENS_PER_STATEMENT = 3      # <mode> <p_i> <p_j>
@@ -58,11 +52,10 @@ DISTANCE_TOKENS_PER_STATEMENT = 6     # <distance> <p_i> <p_j> <atom_i> <atom_j>
 
 @dataclass(frozen=True)
 class GenerationConfig:
-    """Hyperparameters for ``V1Generator.run``.
+    """Hyperparameters for :func:`generate_documents`.
 
     Defaults reproduce contactdoc's ``ContactsAndDistancesV1Config``
-    that produced the published HF dataset. Each field is exposed as
-    a CLI flag via ``V1Generator.add_args``.
+    that produced the published HF dataset.
     """
 
     contact_cutoff_angstrom: float = 8.0
@@ -242,101 +235,26 @@ def _generate_one(
     return " ".join(out)
 
 
-# --------------------------------------------------------------------------
-# Generator class
-# --------------------------------------------------------------------------
+def generate_documents(
+    *,
+    input_path,
+    num_docs: int | None,
+    context_length: int,
+    config: GenerationConfig,
+) -> Iterator[str]:
+    """Yield one document per input structure (up to ``num_docs``).
 
-
-class V1Generator:
-    """``Generator`` Protocol impl for contacts-and-distances-v1."""
-
-    name = NAME
-    context_length = CONTEXT_LENGTH
-
-    def __init__(self, generation_config: GenerationConfig | None = None) -> None:
-        self._tokens = all_domain_tokens()
-        self.generation_config = generation_config or GenerationConfig()
-
-    def tokens(self) -> list[str]:
-        return list(self._tokens)
-
-    def add_args(self, parser: argparse.ArgumentParser) -> None:
-        """Register the generate-subcommand's args.
-
-        ``<impl_dir>`` and ``--out`` are already added by the CLI.
-        Everything else (input path + algorithm knobs) lives here.
-        """
-        parser.add_argument(
-            "--input", type=Path, required=True,
-            help="A single structure file (PDB / mmCIF / .gz) or a "
-                 "directory of them. AFDB mmCIFs work as-is.",
-        )
-        parser.add_argument(
-            "--num-docs", type=int, default=None,
-            help="Cap on docs produced (defaults to one per input).",
-        )
-        parser.add_argument(
-            "--context-length", type=int, default=self.context_length,
-            help="Token budget per document.",
-        )
-        # Algorithm knobs (rarely-tweaked; defaults reproduce contactdoc).
-        cfg = self.generation_config
-        parser.add_argument(
-            "--contact-cutoff-angstrom", type=float,
-            default=cfg.contact_cutoff_angstrom,
-            help="CB-CB threshold for contact eligibility.",
-        )
-        parser.add_argument(
-            "--residue-plddt-min", type=float, default=cfg.residue_plddt_min,
-            help="Per-residue pLDDT floor for contact eligibility.",
-        )
-        parser.add_argument(
-            "--contact-f-range", type=float, nargs=2,
-            metavar=("LOW", "HIGH"), default=list(cfg.contact_f_range),
-            help="Uniform-sample range for each contact-mode fraction.",
-        )
-        parser.add_argument(
-            "--contact-rank-mean", type=float, default=cfg.contact_rank_mean,
-            help="Gaussian-rank mean for contact statements.",
-        )
-        parser.add_argument(
-            "--distance-rank-mean", type=float, default=cfg.distance_rank_mean,
-            help="Gaussian-rank mean for distance statements.",
-        )
-        parser.add_argument(
-            "--rank-std", type=float, default=cfg.rank_std,
-            help="Gaussian-rank std (shared between modes).",
-        )
-
-    def run(self, args: argparse.Namespace) -> Iterator[str]:
-        """Generate one doc per input. Skips inputs that don't fit the budget."""
-        cfg = GenerationConfig(
-            contact_cutoff_angstrom=args.contact_cutoff_angstrom,
-            long_range_sep=self.generation_config.long_range_sep,
-            medium_range_sep=self.generation_config.medium_range_sep,
-            short_range_sep=self.generation_config.short_range_sep,
-            contact_f_range=tuple(args.contact_f_range),
-            contact_rank_mean=args.contact_rank_mean,
-            distance_rank_mean=args.distance_rank_mean,
-            rank_std=args.rank_std,
-            residue_plddt_min=args.residue_plddt_min,
-            plddt_bin_edges=self.generation_config.plddt_bin_edges,
-        )
-        produced = 0
-        for structure in iter_parsed_structures(args.input):
-            doc = _generate_one(
-                structure,
-                context_length=args.context_length,
-                cfg=cfg,
-            )
-            if doc is None:
-                continue
-            yield doc
-            produced += 1
-            if args.num_docs is not None and produced >= args.num_docs:
-                return
-
-
-def get_generator() -> V1Generator:
-    """Entry point read by the marinfold-document-structure CLI."""
-    return V1Generator()
+    The driving entry point — ``cli.py`` parses args and calls this
+    with the assembled ``GenerationConfig``. Structures for which the
+    context budget is exhausted are silently skipped (see
+    :func:`_generate_one`).
+    """
+    produced = 0
+    for structure in iter_parsed_structures(input_path):
+        doc = _generate_one(structure, context_length=context_length, cfg=config)
+        if doc is None:
+            continue
+        yield doc
+        produced += 1
+        if num_docs is not None and produced >= num_docs:
+            return

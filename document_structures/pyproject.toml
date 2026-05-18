@@ -4,12 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "marinfold-document-structures"
-version = "0.1.0"
-description = "MarinFold document_structures/ library — interface + local CLI for document-structure impls."
+version = "0.2.0"
+description = "MarinFold document_structures/ library — shared types, tokenizer, and output writers for document-structure impls."
 requires-python = ">=3.11"
-# Stdlib + pyarrow (for --out parquet) + tokenizers/transformers (for
-# build_tokenizer). Specific implementations bring their own structure-
-# parsing (gemmi / biotite / biopython) and eval (vllm / torch) deps.
+# Stdlib + pyarrow (for parquet writers) + tokenizers/transformers
+# (for build_tokenizer). Specific implementations bring their own
+# structure-parsing (gemmi / biotite / biopython) and eval (vllm /
+# torch) deps, plus their own argparse cli.py.
 dependencies = [
     "pyarrow",
     "tokenizers>=0.15",
@@ -18,9 +19,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = []
-
-[project.scripts]
-"marinfold-document-structure" = "marinfold_document_structures.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["marinfold_document_structures"]

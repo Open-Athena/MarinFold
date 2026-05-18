@@ -3,7 +3,7 @@
 
 """Gemmi-based PDB / mmCIF parsing for the contacts-and-distances-v1 experiment.
 
-Private to this experiment dir. Imported by ``generate.py`` and
+Local to this experiment dir. Imported by ``generate.py`` and
 ``inference.py``. Reads PDB / mmCIF (+ ``.gz``), filters atoms to
 the v1 vocab, maps non-canonical residues to UNK, and reads pLDDT
 from B-factors.
@@ -15,7 +15,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
-from _vocab import AMINO_ACIDS, ATOM_NAMES
+from vocab import AMINO_ACIDS, ATOM_NAMES
 
 
 # Canonical 20 amino-acid set — non-canonical residues are mapped to

@@ -49,12 +49,12 @@ in its directory name (`exp10_<kind>_<name>`):
 A **document structure** is a recipe with two responsibilities: turn
 input data (e.g. a PDB) into a training document string, and score a
 trained model against ground-truth structures using the same format.
-The interface is defined in
-[`document_structures/marinfold_document_structures/interface.py`](document_structures/marinfold_document_structures/interface.py),
-and the `marinfold-document-structure` CLI in that subproject can
-generate or evaluate against a local implementation file (no
-`pip install` required) — see
-[`document_structures/README.md`](document_structures/README.md).
+Each format is a self-contained experiment dir with its own `cli.py`
+driver (`generate` / `infer` / `evaluate` / `tokenizer` subcommands)
+on top of a small shared toolkit in
+[`document_structures/`](document_structures/) (`EvalResult`,
+`build_tokenizer`, parquet/jsonl writers). The reference impl is
+[`experiments/exp1_document_structures_contacts_and_distances_v1/`](experiments/exp1_document_structures_contacts_and_distances_v1/).
 
 ## Experiment workflow
 
@@ -179,13 +179,14 @@ reason to be checked in.
 | `marinfold history sync` | Pull W&B runs; skeleton-file the missing ones (needs `wandb` extra) |
 | `marinfold history update-index` | Regenerate `history/RUNS.md` |
 | `marinfold history check` | CI gate: exit non-zero if W&B has runs without history files |
-| `marinfold-document-structure generate IMPL INPUT --out OUT.parquet` | Local doc-gen smoke test |
-| `marinfold-document-structure evaluate IMPL MODEL GROUND_TRUTH --out OUT.json` | Local eval smoke test |
+
+For document-structure CLIs, run `python cli.py {generate,infer,evaluate,tokenizer}`
+from the impl's experiment directory (e.g.
+`experiments/exp1_document_structures_contacts_and_distances_v1/`).
 
 The `marinfold` command (and its subcommands) is installed by `uv sync` in
 `experiments/` (with `uv sync --extra wandb` for `history sync` /
-`history check`). `marinfold-document-structure` is installed by
-`uv sync` in `document_structures/`.
+`history check`).
 
 ## Status
 
