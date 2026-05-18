@@ -4,8 +4,8 @@ Shared library for MarinFold model-training experiments.
 
 The actual training pipelines (per-size, per-loss-mask variant, etc.) live
 under `experiments/exp<N>_models_<name>/` as standalone marin executor
-graphs. This directory only holds code those experiments import — and
-symlinks to experiments that have been **graduated** (see
+graphs. This directory holds code those experiments import — plus
+copies of experiments that have been **graduated** (see
 [`../experiments/README.md`](../experiments/README.md#graduating-an-experiment)).
 
 ## Layout
@@ -19,8 +19,8 @@ models/
 │   ├── __init__.py
 │   ├── defaults.py               # vendored marin default_train / default_tokenize
 │   └── simple_train_config.py    # vendored marin SimpleTrainConfig
-└── <graduated symlinks>          # e.g. contacts_and_distances_v1_baseline/
-                                  # → ../experiments/exp<N>_models_<name>/
+└── <graduated subdirs>           # e.g. contacts_and_distances_v1_baseline/,
+                                  # copied (not symlinked) from experiments/
 ```
 
 ## Setup

@@ -9,36 +9,41 @@ specific rules.
 ## Project shape
 
 MarinFold trains protein-structure language models on Marin
-infrastructure. Five concerns live at the repo root:
+infrastructure. Concerns at the repo root:
 
 - `experiments/` — one dir per GitHub issue tagged `experiment`.
   All new work starts here as `exp<N>_<kind>_<name>/`. Holds prose
   READMEs, launchable `.py` files, and small artifacts (CSVs feeding
-  plots, plots themselves). Also holds the `marinfold_experiments`
-  package with the PM tools (`marinfold scaffold`,
-  `marinfold itemize`, `marinfold graduate`).
+  plots, plots themselves).
+- `scripts/` — repo-management scripts (`scaffold.py`, `itemize.py`,
+  `history.py`). Run with plain `python scripts/<name>.py`.
 - `models/` — library for model-training experiments
   (`marinfold_models.defaults`, `marinfold_models.simple_train_config`,
-  …). Plus symlinks to *graduated* model experiments.
+  …). Plus graduated model experiments (copied from
+  `experiments/`).
 - `evals/` — library for eval experiments (production wrappers
-  around iris launches). Plus graduated eval symlinks.
+  around iris launches). Plus graduated eval experiments.
 - `data/` — library for data-generation experiments
   (production wrappers around zephyr pipelines). Plus graduated
-  data symlinks.
+  data experiments.
 - `document_structures/` — small shared toolkit (`EvalResult`,
   `build_tokenizer`, parquet/jsonl writers) for document-structure
   implementations. Each impl is a self-contained experiment dir
-  with its own `cli.py`. Plus graduated symlinks.
+  with its own `cli.py`. Plus graduated document-structure
+  experiments.
 
-Each of these is a self-contained "marin-experiments-style" directory:
+Each kind dir is a self-contained "marin-experiments-style" directory:
 its own `pyproject.toml`, its own `.venv`, marin (or stdlib-only deps,
-for `experiments/` and `document_structures/`) pulled in via wheels.
+for `document_structures/`) pulled in via wheels.
 
 Experiments may import from any kind library via path deps in their
 own `pyproject.toml`. Libraries DO NOT import from experiments — that
 direction is forbidden. If two experiments need the same helper,
 promote it to the kind library once a second use case actually exists
 (not before).
+
+The `marinfold` CLI name is reserved for a future user-facing
+command (running inference, etc.); it is not currently in use.
 
 See `experiments/README.md` for the workflow and graduation flow.
 
@@ -122,8 +127,8 @@ branch (the `marinfold_experiment.branch` frontmatter field), use
 What can still go direct to `main`:
 
 - Pure typo / one-line doc fixes.
-- Regenerating index files (`marinfold itemize`,
-  `marinfold history update-index`).
+- Regenerating index files (`python scripts/itemize.py`,
+  `python scripts/history.py update-index`).
 - Hotfix reverts when something is actively broken.
 
 What goes through a PR by default:
@@ -228,7 +233,7 @@ The file is created right after `wandb.init()` returns (so the W&B
 URL is in hand). Use:
 
 ```bash
-marinfold history new \
+python scripts/history.py new \
     --wandb-url <url> --wandb-name <name> \
     --experiment <exp<N>_<kind>_<name>-or-no_experiment> \
     --kind <models|evals|data|document_structures|other> \
@@ -239,16 +244,16 @@ marinfold history new \
 On preemption / restart, append the new iris job ID:
 
 ```bash
-marinfold history add-iris-job <run-stem-or-wandb-name> <new-iris-job-id>
+python scripts/history.py add-iris-job <run-stem-or-wandb-name> <new-iris-job-id>
 ```
 
-To catch anything that slipped through, `marinfold history sync`
+To catch anything that slipped through, `python scripts/history.py sync`
 queries the W&B API and creates skeleton files for any runs without
-one (needs the `wandb` extra: `uv sync --extra wandb` in
-`experiments/`). `marinfold history check` exits non-zero if drift
-exists — wire to CI.
+one (needs the `wandb` extra: `uv sync --extra wandb` in `scripts/`).
+`python scripts/history.py check` exits non-zero if drift exists —
+wire to CI.
 
-Always re-run `marinfold history update-index` after creating or
+Always re-run `python scripts/history.py update-index` after creating or
 editing a history file so `history/RUNS.md` stays current.
 
 See `history/README.md` for the schema and the full policy.

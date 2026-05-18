@@ -78,15 +78,12 @@ the top-level `experiments/` tree.
 If marin's `default_train` signature evolves, refresh both vendored
 files in one PR — no compatibility shims.
 
-## Graduated symlinks
+## Graduated experiments
 
 When an experiment is graduated (see
-[`experiments/AGENTS.md`](../experiments/AGENTS.md)), it gets a
-symlink here named after the experiment's name (dropping the
-`exp<N>_models_` prefix). Don't edit through the symlink — edit the
-real path at `experiments/exp<N>_models_<name>/`.
-
-Tools that walk directories (pytest, mypy, ruff) may follow these
-symlinks and double-discover code. The fix: invoke the tool on
-`marinfold_models/` explicitly (`uv run pytest marinfold_models/`),
-not on `.` from this directory.
+[`experiments/AGENTS.md`](../experiments/AGENTS.md)), its directory
+is **copied** here under a name that drops the `exp<N>_models_`
+prefix. The copy is the working version going forward; the original
+`experiments/exp<N>_models_<name>/` stays frozen as the historical
+record. Don't reach back to the experiment dir to edit code — make
+changes here.

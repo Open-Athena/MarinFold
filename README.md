@@ -14,9 +14,8 @@ MarinFold/
 ├── RESOURCES.md            # datasets, tokenizers, W&B projects, prior repos
 ├── AGENTS.md               # shared agent rules
 ├── .github/ISSUE_TEMPLATE/experiment.md
+├── scripts/                # repo-management scripts (scaffold, itemize, history)
 ├── experiments/            # one dir per GitHub issue tagged `experiment`
-│   ├── marinfold_experiments/      # PM tooling (scaffold, itemize, graduate, history)
-│   ├── pyproject.toml
 │   ├── README.md
 │   ├── AGENTS.md
 │   ├── TEMPLATE.md
@@ -24,7 +23,7 @@ MarinFold/
 ├── models/                 # library for model-training experiments
 ├── evals/                  # library for eval experiments
 ├── data/                   # library for data-generation experiments
-├── document_structures/    # interface + local CLI for document-structure impls
+├── document_structures/    # shared toolkit for document-structure impls
 └── history/                # one file per W&B-logged run + summary RUNS.md
 ```
 
@@ -32,7 +31,9 @@ Each top-level dir under the repo root is a **small library** for one
 kind of work. Concrete experimental work begins as an issue and a
 sub-directory under `experiments/` and may pull in helpers from the
 relevant library. Important / high-quality experiments get
-"graduated" — symlinked into the kind dir.
+**graduated** — copied into the kind dir, where the copy keeps
+evolving while the original `experiments/exp<N>_*/` stays frozen as
+the historical record.
 
 ## Experiment kinds
 
@@ -63,9 +64,9 @@ on top of a small shared toolkit in
    the `Kind:` in the issue body.
 2. **Scaffold** the experiment dir:
    ```bash
-   cd experiments
+   cd scripts
    uv sync                                                          # one-time setup
-   uv run marinfold scaffold --issue <N> --kind <kind>
+   python scaffold.py --issue <N> --kind <kind>
    ```
    Creates `experiments/exp<N>_<kind>_<name>/` with a README
    pre-filled from the issue body.
@@ -84,7 +85,7 @@ on top of a small shared toolkit in
 5. **Record results** in the experiment's README. Commit small CSVs
    to its `data/`, plots to its `plots/`. Large artifacts go to GCS
    or HuggingFace (see below).
-6. **Regenerate the index**: `uv run marinfold itemize`.
+6. **Regenerate the index**: `python scripts/itemize.py`.
 7. **Close the issue** once the conclusion lands.
 
 Most work happens on `main`. Use a branch (`exp/<N>-<name>`) only
@@ -93,22 +94,24 @@ library.
 
 ## Graduating an experiment
 
-When an experiment's results are important / high-quality enough to
-become a first-class object in the repo, **graduate** it:
+When an experiment's results are validated and the code should keep
+evolving as a first-class object, **copy** the directory into the
+matching kind dir, dropping the `exp<N>_<kind>_` prefix:
 
 ```bash
-uv run marinfold graduate exp<N>_<kind>_<name>
+cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
+# e.g. cp -r experiments/exp42_models_protein_1b/ models/protein_1b/
 ```
 
-This creates a symlink under the relevant top-level kind dir,
-named with the experiment's name only (dropping the `exp<N>_<kind>_`
-prefix). The experiment dir itself stays put — graduation is
-non-destructive and the historical record in `experiments/` is kept
-forever. The README's `marinfold_experiment.issue` frontmatter still
-links back to the original issue.
+The original `experiments/exp<N>_*/` directory stays **frozen** as
+the historical record — the README, data, plots, and conclusion
+remain as they were at the time of the experiment. The kind-dir
+copy is the working version going forward; edits land there.
 
-Example: graduating `exp42_models_protein_1b_distance_masked` creates
-`models/protein_1b_distance_masked/ → ../experiments/exp42_models_protein_1b_distance_masked/`.
+After the copy, trim or rewrite the experiment-style README to fit
+the kind dir's docs convention, decide whether to keep or merge the
+experiment's `pyproject.toml`, and update any internal links that
+pointed at the experiment dir.
 
 ## Run history
 
@@ -126,7 +129,7 @@ first with links out to W&B + the detail file.
 After `wandb.init()` returns and you have the W&B URL in hand:
 
 ```bash
-marinfold history new \
+python scripts/history.py new \
     --wandb-url https://wandb.ai/open-athena/MarinFold/runs/<id> \
     --wandb-name <display-name> \
     --experiment exp<N>_<kind>_<name>   # or no_experiment
@@ -134,10 +137,10 @@ marinfold history new \
     --short "<one-line description>" \
     --iris-jobs <iris-job-id>
 
-marinfold history add-iris-job <run-stem> <new-iris-job-id>   # on preempt-restart
-marinfold history update-index                                # regenerate RUNS.md
-marinfold history sync                                        # catch missed runs (needs wandb extra)
-marinfold history check                                       # CI gate
+python scripts/history.py add-iris-job <run-stem> <new-iris-job-id>   # on preempt-restart
+python scripts/history.py update-index                                # regenerate RUNS.md
+python scripts/history.py sync                                        # catch missed runs (needs wandb extra)
+python scripts/history.py check                                       # CI gate
 ```
 
 See [`history/README.md`](history/README.md) for the full schema and
@@ -169,24 +172,28 @@ reason to be checked in.
 
 ## Tooling reference
 
-| Command | Purpose |
+Repo-management scripts live in [`scripts/`](scripts/) and are run
+with plain `python`:
+
+| Script | Purpose |
 |---|---|
-| `marinfold scaffold --issue N --kind K` | Create an experiment dir from a GitHub issue |
-| `marinfold itemize` | Regenerate `experiments/index.md` |
-| `marinfold graduate exp<N>_<kind>_<name>` | Symlink an experiment into its kind dir |
-| `marinfold history new ...` | Create a run history file for a W&B run |
-| `marinfold history add-iris-job ...` | Append an iris job ID (preemption / restart) |
-| `marinfold history sync` | Pull W&B runs; skeleton-file the missing ones (needs `wandb` extra) |
-| `marinfold history update-index` | Regenerate `history/RUNS.md` |
-| `marinfold history check` | CI gate: exit non-zero if W&B has runs without history files |
+| `python scripts/scaffold.py --issue N --kind K` | Create an experiment dir from a GitHub issue |
+| `python scripts/itemize.py` | Regenerate `experiments/index.md` |
+| `python scripts/history.py new ...` | Create a run history file for a W&B run |
+| `python scripts/history.py add-iris-job ...` | Append an iris job ID (preemption / restart) |
+| `python scripts/history.py sync` | Pull W&B runs; skeleton-file the missing ones (needs `wandb` extra) |
+| `python scripts/history.py update-index` | Regenerate `history/RUNS.md` |
+| `python scripts/history.py check` | CI gate: exit non-zero if W&B has runs without history files |
 
 For document-structure CLIs, run `python cli.py {generate,infer,evaluate,tokenizer}`
 from the impl's experiment directory (e.g.
 `experiments/exp1_document_structures_contacts_and_distances_v1/`).
 
-The `marinfold` command (and its subcommands) is installed by `uv sync` in
-`experiments/` (with `uv sync --extra wandb` for `history sync` /
-`history check`).
+To set up the scripts venv: `cd scripts && uv venv --python 3.11 && uv sync`
+(add `--extra wandb` for `history sync` / `history check`).
+
+The `marinfold` CLI name is reserved for a future user-facing
+command (running inference, etc.); it is not currently in use.
 
 ## Status
 

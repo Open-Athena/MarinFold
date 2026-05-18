@@ -59,12 +59,12 @@ processes share a W&B run_id, they share one history file.
 
 ## Tooling
 
-All subcommands live under `marinfold history` (installed by
-`uv sync` in `experiments/`):
+All subcommands are wired through `scripts/history.py` (set up the
+venv with `cd scripts && uv venv --python 3.11 && uv sync`):
 
 ```bash
 # Create a new history file (after `wandb.init()` returns):
-marinfold history new \
+python scripts/history.py new \
     --experiment exp13_models_train_1b \
     --kind models \
     --wandb-url https://wandb.ai/open-athena/MarinFold/runs/<id> \
@@ -72,17 +72,17 @@ marinfold history new \
     --iris-job <job-id>
 
 # Append an iris job id (e.g. after a preemption restart):
-marinfold history add-iris-job 20260512_exp13_models_train_1b_fuzzy_cloth <new-job-id>
+python scripts/history.py add-iris-job 20260512_exp13_models_train_1b_fuzzy_cloth <new-job-id>
 
 # Pull runs from W&B and create skeleton history files for any missing one:
-uv sync --extra wandb                # one-time
-marinfold history sync --limit 200
+# (one-time:  cd scripts && uv sync --extra wandb)
+python scripts/history.py sync --limit 200
 
 # Regenerate the summary table:
-marinfold history update-index
+python scripts/history.py update-index
 
 # CI gate: exit non-zero if any W&B run lacks a history file:
-marinfold history check
+python scripts/history.py check
 ```
 
 `sync` and `check` need the optional `wandb` extra (the W&B Python SDK).
@@ -93,12 +93,12 @@ marinfold history check
 Every W&B-logged run must have a history file. The expected workflow
 is:
 
-1. **At launch time**: run `marinfold history new ...` once you have
-   the W&B URL (printed by `wandb.init()`).
-2. **On preemption / restart**: `marinfold history add-iris-job ...`
+1. **At launch time**: run `python scripts/history.py new ...` once
+   you have the W&B URL (printed by `wandb.init()`).
+2. **On preemption / restart**: `python scripts/history.py add-iris-job ...`
    with the new iris job ID.
-3. **Periodically** (or before merging): `marinfold history sync` to
-   catch anything missed, then `marinfold history update-index` to
-   refresh `RUNS.md`.
+3. **Periodically** (or before merging): `python scripts/history.py sync`
+   to catch anything missed, then `python scripts/history.py update-index`
+   to refresh `RUNS.md`.
 
 See the root `AGENTS.md` for the agent-facing version of this rule.

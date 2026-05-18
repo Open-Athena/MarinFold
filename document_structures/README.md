@@ -34,7 +34,7 @@ document_structures/
 │   ├── __init__.py       # re-exports the public API
 │   ├── core.py           # EvalResult + build_tokenizer
 │   └── writers.py        # write_docs / write_predictions / write_eval
-└── <graduated symlinks>  # e.g. contacts_and_distances_v1/ → ../experiments/...
+└── <graduated subdirs>   # e.g. contacts_and_distances_v1/, copied from experiments/
 ```
 
 ## Setup

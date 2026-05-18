@@ -46,8 +46,8 @@ for jupyter or jupytext.
    underlying artifacts.
 
 4. **Keep the frontmatter accurate.** `issue`, `title`, `kind`, and
-   `branch` in `marinfold_experiment:` are read by `marinfold itemize`
-   to regenerate the index.
+   `branch` in `marinfold_experiment:` are read by
+   `python scripts/itemize.py` to regenerate the index.
 
 5. **Use `gh issue comment --edit-last` for progress updates.** Don't
    spam the issue with new comments per progress check. Agent
@@ -68,12 +68,13 @@ for jupyter or jupytext.
 
 8. **Every W&B-logged run gets a `history/runs/*.md`.** After
    `wandb.init()` returns and you have the URL, run
-   `marinfold history new --wandb-url … --wandb-name … --experiment
-   <this-experiment-dir-name> --kind … --short "…"`. Append iris job
-   IDs on restart with `marinfold history add-iris-job …`. The
-   uniqueness key is the W&B `run_id`, not the filename — multiple
-   things going to the same W&B run share one history file. See the
-   root `AGENTS.md` and `history/README.md` for the schema.
+   `python scripts/history.py new --wandb-url … --wandb-name …
+   --experiment <this-experiment-dir-name> --kind … --short "…"`.
+   Append iris job IDs on restart with
+   `python scripts/history.py add-iris-job …`. The uniqueness key
+   is the W&B `run_id`, not the filename — multiple things going to
+   the same W&B run share one history file. See the root
+   `AGENTS.md` and `history/README.md` for the schema.
 
 ## Importing from kind libraries
 
@@ -95,20 +96,34 @@ user's system python.
 
 ## Graduating an experiment
 
-Once results are important / high-quality enough to make this
-experiment a first-class artifact, run:
+Once an experiment's results are validated and the code should keep
+evolving as a first-class object, **copy** the directory into the
+matching kind dir, dropping the `exp<N>_<kind>_` prefix:
 
 ```bash
-uv run marinfold graduate exp<N>_<kind>_<name>
+cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
+# e.g. cp -r experiments/exp42_models_protein_1b/ models/protein_1b/
 ```
 
-This symlinks the experiment dir into the corresponding kind dir
-under a name that drops the `exp<N>_<kind>_` prefix (override with
-`--name`). The experiment itself stays put.
+**Leave the original `experiments/exp<N>_*/` directory untouched.**
+It's the frozen historical record of what was tried at the time of
+the experiment — the README, the data, the plots, the conclusion.
+The kind-dir copy is the working version going forward; edits land
+there, not in the experiment dir.
 
-The symlink lets the kind dir present a clean view of "important
-work" without losing the historical record in `experiments/`. Don't
-edit through the symlink — always edit at `experiments/exp<N>_...`.
+After the copy, you'll typically want to:
+
+- Trim or rewrite the experiment-style README if the kind dir has a
+  different docs convention (kind-dir code isn't always
+  question/hypothesis/result-shaped).
+- Decide whether to keep the experiment's `pyproject.toml` and venv
+  or consolidate with the kind library's setup.
+- Update any internal links / commit references that pointed at the
+  experiment dir.
+
+The kind dir and the experiment dir then diverge: the experiment
+stays frozen as the historical snapshot, the kind dir evolves
+freely.
 
 ## When a researcher replies with a variant
 

@@ -6,8 +6,8 @@ Individual data pipelines (e.g. AFDB → tokenizable docs, ESM
 metagenomic atlas ingestion, ProteinGym mirroring) live as experiments
 under `experiments/exp<N>_data_<name>/`. This directory holds the
 **production wrappers** those experiments import to launch zephyr
-pipelines and publish datasets to GCS / HF, plus symlinks to graduated
-data experiments.
+pipelines and publish datasets to GCS / HF, plus copies of graduated
+data experiments (see [`../experiments/README.md`](../experiments/README.md#graduating-an-experiment)).
 
 ## Layout
 
@@ -18,7 +18,7 @@ data/
 ├── AGENTS.md                  # rules for working under data/
 ├── marinfold_data/            # importable library (skeleton for now)
 │   └── __init__.py
-└── <graduated symlinks>       # e.g. afdb_contacts/ → ../experiments/expN_data_afdb_contacts/
+└── <graduated subdirs>        # e.g. afdb_contacts/, copied from experiments/
 ```
 
 ## Status

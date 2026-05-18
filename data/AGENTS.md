@@ -30,9 +30,11 @@ part of the library; the library is `marinfold_data/` only.
    data source / one document-type / one filter belongs in the
    experiment, not the library.
 
-## Graduated symlinks
+## Graduated experiments
 
-When a data experiment is graduated, it gets a symlink here named
-after the experiment's name (dropping the `exp<N>_data_` prefix).
-Don't edit through the symlink — edit at
-`experiments/exp<N>_data_<name>/`.
+When a data experiment is graduated, its directory is **copied**
+here under a name that drops the `exp<N>_data_` prefix. The copy
+is the working version going forward; the original
+`experiments/exp<N>_data_<name>/` stays frozen as the historical
+record. Don't reach back to the experiment dir to edit code — make
+changes here.

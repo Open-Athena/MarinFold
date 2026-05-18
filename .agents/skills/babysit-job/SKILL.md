@@ -56,7 +56,7 @@ If this is the **first time** you see a W&B URL for the job, create a run
 history file:
 
 ```bash
-marinfold history new \
+python scripts/history.py new \
     --wandb-url <URL> --wandb-name <NAME> \
     --experiment <exp<N>_<kind>_<name>-or-no_experiment> \
     --kind <models|evals|data|document_structures|other> \
@@ -67,7 +67,7 @@ marinfold history new \
 On every restart (step 7 below), append the new iris job ID:
 
 ```bash
-marinfold history add-iris-job <run-stem-or-wandb-name> <NEW_JOB_ID>
+python scripts/history.py add-iris-job <run-stem-or-wandb-name> <NEW_JOB_ID>
 ```
 
 See `history/README.md` for the policy.
@@ -163,8 +163,8 @@ Track `restart_count` to detect flapping. State file allows resume after context
 4. PRINT W&B RUN IDS/LINKS (once per training run)
 
 5. CREATE / UPDATE HISTORY FILE
-   - First time seeing the W&B URL: `marinfold history new ...`
-   - Every restart: `marinfold history add-iris-job ...`
+   - First time seeing the W&B URL: `python scripts/history.py new ...`
+   - Every restart: `python scripts/history.py add-iris-job ...`
 
 6. REPORT PROGRESS (format: ~<current>/<exact_max> steps)
 
@@ -181,7 +181,7 @@ Track `restart_count` to detect flapping. State file allows resume after context
      - if `resubmit_command` uses a fixed `--job-name`, Iris may reuse the same id
        after terminal completion by replacing the finished job.
    - Append the new job id to the history file:
-     marinfold history add-iris-job <run-stem> <NEW_JOB_ID>
+     python scripts/history.py add-iris-job <run-stem> <NEW_JOB_ID>
    - Update state file: `job_id=<NEW_JOB_ID>`, `restart_count += 1`.
    - Go to step 1.
 ```
