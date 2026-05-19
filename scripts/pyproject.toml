@@ -1,0 +1,20 @@
+[project]
+name = "marinfold-scripts"
+version = "0.1.0"
+description = "Repo-management scripts for MarinFold: scaffold, itemize, history."
+requires-python = ">=3.11"
+# Stdlib + pyyaml (for the YAML frontmatter we parse on experiment
+# READMEs and history files). Individual experiment dirs that need
+# marin / levanter / transformers declare them in their own pyproject.
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# history.py's `sync` and `check` subcommands query the W&B API.
+# Install with `uv sync --extra wandb`.
+wandb = ["wandb>=0.16"]
+
+[tool.uv]
+# This is a scripts dir, not a library — uv only manages the venv.
+package = false

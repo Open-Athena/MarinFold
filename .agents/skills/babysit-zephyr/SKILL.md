@@ -69,7 +69,7 @@ The command prints a job ID on success. Note this ID for monitoring.
 ## Run-history integration
 
 Once the pipeline emits a W&B URL (zephyr pipelines that log to W&B), create a
-history file with `marinfold history new --kind data ...`. Follow the same
+history file with `python scripts/history.py new --kind data ...`. Follow the same
 pattern as in **babysit-job**'s run-history section.
 
 ## Stopping a Job
@@ -171,7 +171,7 @@ internal termination reasons. Always check the actual logs at each level
 3. Get the run command (or reuse the previous one).
 4. Submit and resume monitoring.
 5. Append the new iris job ID to the run's history file:
-   `marinfold history add-iris-job <run-stem> <NEW_JOB_ID>`.
+   `python scripts/history.py add-iris-job <run-stem> <NEW_JOB_ID>`.
 
 ## When to Escalate
 

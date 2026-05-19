@@ -5,7 +5,7 @@ launchable code lives as .py files alongside this README in the same
 directory.
 
 Generate programmatically:
-    uv run marinfold scaffold --issue <N> --kind <models|evals|data|document_structures>
+    python scripts/scaffold.py --issue <N> --kind <models|evals|data|document_structures>
 -->
 
 ---

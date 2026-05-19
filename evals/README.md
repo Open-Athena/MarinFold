@@ -4,10 +4,10 @@ Shared library for MarinFold model-evaluation experiments.
 
 Individual eval pipelines (e.g. FoldBench, distogram benchmark,
 ProteinGym) live as experiments under `experiments/exp<N>_evals_<name>/`.
-This directory only holds the **production wrappers** those experiments
+This directory holds the **production wrappers** those experiments
 import — code that submits iris jobs, materializes eval-result tables,
-publishes summaries to GCS / HF — plus symlinks to graduated eval
-experiments.
+publishes summaries to GCS / HF — plus copies of graduated eval
+experiments (see [`../experiments/README.md`](../experiments/README.md#graduating-an-experiment)).
 
 ## Layout
 
@@ -18,7 +18,7 @@ evals/
 ├── AGENTS.md                  # rules for working under evals/
 ├── marinfold_evals/           # importable library (skeleton for now)
 │   └── __init__.py
-└── <graduated symlinks>       # e.g. foldbench/ → ../experiments/expN_evals_foldbench/
+└── <graduated subdirs>        # e.g. foldbench/, copied from experiments/
 ```
 
 ## Status

@@ -64,6 +64,7 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 # Only the library package goes in the wheel — graduated-experiment
-# symlinks (e.g. models/contacts_and_distances_v1/) are runnable
-# experiments, not library code, so they're explicitly excluded.
+# subdirs (e.g. models/contacts_and_distances_v1/) are runnable
+# code copied from experiments/, not library code, so they're
+# explicitly excluded.
 packages = ["marinfold_models"]
