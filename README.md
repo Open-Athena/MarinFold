@@ -23,8 +23,6 @@ MarinFold/
 │   └── exp<N>_<kind>_<name>/       # individual experiments
 ├── marinfold/              # top-level package: backends, doc-structure toolkit, graduated impls, `marinfold` CLI
 ├── models/                 # library for model-training experiments
-├── evals/                  # library for eval experiments
-├── data/                   # library for data-generation experiments
 └── history/                # one file per W&B-logged run + summary RUNS.md
 ```
 
@@ -44,9 +42,15 @@ in its directory name (`exp10_<kind>_<name>`):
 | Kind | What it does | Library lives in |
 |---|---|---|
 | `models` | Train models | [`models/`](models/) |
-| `evals` | Run evals on trained models | [`evals/`](evals/) |
-| `data` | Generate training / eval datasets | [`data/`](data/) |
+| `evals` | Run evals on trained models | — (no shared library yet) |
+| `data` | Generate training / eval datasets | — (no shared library yet) |
 | `document_structures` | Define a generate-from-input + evaluate-against-ground-truth interface for one protein-document format | [`marinfold/src/marinfold/document_structures/`](marinfold/src/marinfold/document_structures/) |
+
+Kind libraries are only created when a second experiment needs the
+same helper. Today `evals/` and `data/` kinds exist as experiment
+kinds (e.g. `experiments/exp9_evals_*`) but have no shared library —
+the first experiment in each kind that finds itself sharing code
+with a sibling creates the kind dir at that point.
 
 A **document structure** is a recipe with two responsibilities: turn
 input data (e.g. a PDB) into a training document string, and score a
@@ -260,5 +264,10 @@ Initial port (commit-level) from the
 branch. All training/export scripts live under
 [`experiments/exp0_models_protein_docs_initial_port/`](experiments/exp0_models_protein_docs_initial_port/);
 shared marin glue is in [`models/marinfold_models/`](models/marinfold_models/).
-Evals, data-gen, and document_structures are scaffolded but empty —
-their first experiments will land soon.
+The `contacts-and-distances-v1` document structure is graduated at
+[`marinfold/src/marinfold/document_structures/contacts_and_distances_v1/`](marinfold/src/marinfold/document_structures/contacts_and_distances_v1/);
+its in-flight history lives at
+[`experiments/exp1_document_structures_contacts_and_distances_v1/`](experiments/exp1_document_structures_contacts_and_distances_v1/).
+Eval experiments (e.g. `experiments/exp9_evals_*`) have started
+landing; a shared `evals` kind library will be created when a second
+eval experiment needs the same helper.

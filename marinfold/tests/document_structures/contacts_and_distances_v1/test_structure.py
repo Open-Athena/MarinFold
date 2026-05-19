@@ -3,19 +3,20 @@
 
 """Tests for the contacts-and-distances-v1 document structure.
 
-The impl is a proper Python package (``contacts_and_distances_v1``)
-with submodules ``vocab`` (token list), ``parse`` (gemmi-backed
-parsing), ``generate`` (training-document generation), ``inference``
-(predict + evaluate), and ``cli`` (argparse driver).
+The impl is a subpackage of marinfold
+(``marinfold.document_structures.contacts_and_distances_v1``) with
+submodules ``vocab`` (token list), ``parse`` (gemmi-backed parsing),
+``generate`` (training-document generation), ``inference`` (predict
++ evaluate), and ``cli`` (argparse driver).
 
 The network-marked tests download the pinned published tokenizer
 (``timodonnell/protein-docs-tokenizer@83f597d88e9b``) and assert
 byte-equivalence. Skip them with ``pytest -m 'not network'`` if
 you're offline.
 
-Run::
+Run from the marinfold/ dir::
 
-    uv sync --extra test
+    uv sync --extra contacts-and-distances-v1
     uv run pytest tests/ -v
 """
 
@@ -26,9 +27,13 @@ from pathlib import Path
 
 import pytest
 
-from contacts_and_distances_v1 import cli, generate, inference
-from contacts_and_distances_v1.parse import ParsedStructure, Residue, parse_structure
-from contacts_and_distances_v1.vocab import (
+from marinfold.document_structures.contacts_and_distances_v1 import (
+    cli, generate, inference,
+)
+from marinfold.document_structures.contacts_and_distances_v1.parse import (
+    ParsedStructure, Residue, parse_structure,
+)
+from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     AMINO_ACIDS, ATOM_NAMES, CONTACT_TYPES, CONTROL_TOKENS,
     CONTEXT_LENGTH, DISTANCE_BINS, DISTANCE_MARKER, MAX_POSITION,
     NAME, PLDDT_BINS, UNK_TOKEN, all_domain_tokens,

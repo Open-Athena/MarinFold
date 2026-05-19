@@ -19,10 +19,10 @@ Public surface:
   CLI dispatches to.
 """
 
-from contacts_and_distances_v1.generate import GenerationConfig, generate_documents
-from contacts_and_distances_v1.inference import InferenceConfig, evaluate, predict
-from contacts_and_distances_v1.parse import structure_from_sequence
-from contacts_and_distances_v1.vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+from .generate import GenerationConfig, generate_documents
+from .inference import InferenceConfig, evaluate, predict
+from .parse import structure_from_sequence
+from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 
 __all__ = [
     "CONTEXT_LENGTH",
