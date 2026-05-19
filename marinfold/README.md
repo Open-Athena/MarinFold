@@ -9,24 +9,23 @@ marinfold/
 ├── pyproject.toml
 ├── README.md
 ├── AGENTS.md
-├── src/
-│   └── marinfold/
-│       ├── __init__.py                       # public API re-exports
-│       ├── cli.py                            # `marinfold infer / evaluate`
-│       ├── registry.py                       # MODELS.yaml: nickname → local path, default model
-│       ├── MODELS.yaml                       # packaged copy (matched against repo root by tests)
-│       ├── inference/                        # Backend protocol + three backends
-│       │   ├── core.py
-│       │   ├── _vllm.py
-│       │   ├── _transformers.py
-│       │   └── _mlx.py
-│       └── document_structures/              # shared toolkit + graduated impl subpackages
-│           ├── core.py                       # EvalResult, build_tokenizer
-│           ├── writers.py                    # write_docs / write_predictions / write_eval
-│           └── contacts_and_distances_v1/    # graduated impl (subpackage)
-│               ├── cli.py
-│               ├── vocab.py / parse.py / generate.py / inference.py
-│               └── ...
+├── marinfold/
+│   ├── __init__.py                       # public API re-exports
+│   ├── cli.py                            # `marinfold infer / evaluate`
+│   ├── registry.py                       # MODELS.yaml: nickname → local path, default model
+│   ├── MODELS.yaml                       # packaged copy (matched against repo root by tests)
+│   ├── inference/                        # Backend protocol + three backends
+│   │   ├── core.py
+│   │   ├── _vllm.py
+│   │   ├── _transformers.py
+│   │   └── _mlx.py
+│   └── document_structures/              # shared toolkit + graduated impl subpackages
+│       ├── core.py                       # EvalResult, build_tokenizer
+│       ├── writers.py                    # write_docs / write_predictions / write_eval
+│       └── contacts_and_distances_v1/    # graduated impl (subpackage)
+│           ├── cli.py
+│           ├── vocab.py / parse.py / generate.py / inference.py
+│           └── ...
 └── tests/
     ├── test_registry.py / test_cli.py / test_transformers.py
     └── document_structures/contacts_and_distances_v1/test_structure.py

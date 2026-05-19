@@ -72,7 +72,7 @@ def _load_impl(structure_name: str) -> ModuleType:
             raise SystemExit(
                 f"Document structure {structure_name!r} is not available. "
                 f"Expected subpackage {module_name!r}. Graduate the impl "
-                f"into marinfold/src/marinfold/document_structures/ first."
+                f"into marinfold/marinfold/document_structures/ first."
             ) from exc
         raise SystemExit(
             f"Document structure {structure_name!r} is installed but a "

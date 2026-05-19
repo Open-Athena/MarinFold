@@ -44,7 +44,7 @@ in its directory name (`exp10_<kind>_<name>`):
 | `models` | Train models | [`models/`](models/) |
 | `evals` | Run evals on trained models | — (no shared library yet) |
 | `data` | Generate training / eval datasets | — (no shared library yet) |
-| `document_structures` | Define a generate-from-input + evaluate-against-ground-truth interface for one protein-document format | [`marinfold/src/marinfold/document_structures/`](marinfold/src/marinfold/document_structures/) |
+| `document_structures` | Define a generate-from-input + evaluate-against-ground-truth interface for one protein-document format | [`marinfold/marinfold/document_structures/`](marinfold/marinfold/document_structures/) |
 
 Kind libraries are only created when a second experiment needs the
 same helper. Today `evals/` and `data/` kinds exist as experiment
@@ -58,7 +58,7 @@ trained model against ground-truth structures using the same format.
 Each format is a self-contained experiment dir with its own `cli.py`
 driver (`generate` / `infer` / `evaluate` / `tokenizer` subcommands)
 on top of the shared toolkit in
-[`marinfold.document_structures`](marinfold/src/marinfold/document_structures/)
+[`marinfold.document_structures`](marinfold/marinfold/document_structures/)
 (`EvalResult`, `build_tokenizer`, parquet/jsonl writers). The
 reference impl is
 [`experiments/exp1_document_structures_contacts_and_distances_v1/`](experiments/exp1_document_structures_contacts_and_distances_v1/);
@@ -161,7 +161,7 @@ cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
 
 # document_structures: subpackage of marinfold
 cp -r experiments/exp<N>_document_structures_<name>/ \
-      marinfold/src/marinfold/document_structures/<name>/
+      marinfold/marinfold/document_structures/<name>/
 ```
 
 The original `experiments/exp<N>_*/` directory stays **frozen** as
@@ -265,7 +265,7 @@ branch. All training/export scripts live under
 [`experiments/exp0_models_protein_docs_initial_port/`](experiments/exp0_models_protein_docs_initial_port/);
 shared marin glue is in [`models/marinfold_models/`](models/marinfold_models/).
 The `contacts-and-distances-v1` document structure is graduated at
-[`marinfold/src/marinfold/document_structures/contacts_and_distances_v1/`](marinfold/src/marinfold/document_structures/contacts_and_distances_v1/);
+[`marinfold/marinfold/document_structures/contacts_and_distances_v1/`](marinfold/marinfold/document_structures/contacts_and_distances_v1/);
 its in-flight history lives at
 [`experiments/exp1_document_structures_contacts_and_distances_v1/`](experiments/exp1_document_structures_contacts_and_distances_v1/).
 Eval experiments (e.g. `experiments/exp9_evals_*`) have started

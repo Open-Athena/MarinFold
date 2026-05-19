@@ -28,7 +28,7 @@ an issue first.
 | `models` | Train models | [`../models/`](../models/) |
 | `evals` | Run evals on trained models | — (no shared library yet) |
 | `data` | Generate training/eval datasets | — (no shared library yet) |
-| `document_structures` | Define an interface for both generating documents from input data and evaluating models | [`../marinfold/src/marinfold/document_structures/`](../marinfold/src/marinfold/document_structures/) |
+| `document_structures` | Define an interface for both generating documents from input data and evaluating models | [`../marinfold/marinfold/document_structures/`](../marinfold/marinfold/document_structures/) |
 
 ## Tooling
 
