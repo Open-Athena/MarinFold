@@ -33,8 +33,10 @@ themselves beyond "single-seq performs worse than MSA."
 - Protenix weights: [TMF001/pxdesign-weights](https://huggingface.co/TMF001/pxdesign-weights)
   (`checkpoint/protenix-v2.pt` plus CCD cache).
 - FoldBench targets: [BEAM-Labs/FoldBench](https://github.com/BEAM-Labs/FoldBench),
-  monomer list at `targets/monomer_protein.csv` (**427 rows** — the issue says
-  "~330" but the upstream CSV has 427; we just take the first N in CSV order).
+  monomer list at `targets/monomer_protein.csv` (**334 rows**, matching the
+  issue's "~330"). Each row is `<pdb>-assembly1,<chain>`; we fetch the
+  biological assembly mmCIF from RCSB and pull the canonical full sequence
+  (incl. unresolved residues) from `_entity_poly.pdbx_seq_one_letter_code_can`.
 
 ## Approach
 
@@ -94,7 +96,7 @@ that experiments use `.py` files, not jupyter. Going with the convention.
 
 ~10-20 GPU-min per protein at 5 seeds × 8 samples on H100 (300 aa), based on
 AF3-class model rules of thumb. 10 proteins × 2 modes ≈ 3-7 GPU-hours;
-100 proteins × 2 modes ≈ 30-60 GPU-hours.
+100 proteins × 2 modes ≈ 30-60 GPU-hours. (Eventual full set: 334 proteins.)
 
 ### CLI
 
