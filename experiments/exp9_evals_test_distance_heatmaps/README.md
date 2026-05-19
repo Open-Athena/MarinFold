@@ -137,42 +137,51 @@ model staging, with vLLM at ~85% GPU util during inference.
 
 ### Variant 2 — minimal seeded-contact search (`contact_seeding_search.ipynb`)
 
-Greedy search over GT long-range contacts (CB-CB ≤ 8 Å, sep ≥ 24),
-cap 12 random candidates per round, sample MAE on 500
-deterministic CA-CA pairs, target MAE < 1.0 Å, MAX_CONTACTS = 5.
-Wall time ~25 min on a single A5000.
+**Beam search width 2** over GT long-range contacts (CB-CB ≤ 8 Å,
+sep ≥ 24), 8 random candidates per (beam state, round), sample
+MAE on 300 deterministic CA-CA pairs, target MAE < 1.0 Å,
+MAX_CONTACTS = 30. Wall time ~75 min on a single A5000.
 
-**No protein reached the 1.0 Å target within 5 seeded contacts.**
-All 8 proteins with at least one long-range GT contact terminated at
-k=5; the other 2 (AF-A0A1C5BRX1-F1, AF-A0A1N7G8C0-F1) have no
-long-range contacts in their AFDB structure (they're small,
-extended folds), so the search reports k=0.
+An earlier pass used pure greedy with MAX_CONTACTS=5 and could
+not reach 1 Å on any protein (best was 1.21 Å). Switching to
+beam-2 + raising the budget to 30 lets **2/10 proteins cross
+the 1.0 Å target** (full-matrix MAE):
 
-| entry_id | n_res | n_cand | k | full MAE @ k=0 | full MAE @ k=5 |
-|---|---:|---:|---:|---:|---:|
-| AF-A0A6B0Z5B5-F1 | 112 | 59 | 5 | 2.20 | **1.21** |
-| AF-A0A1H0PBF4-F1 | 94 | 37 | 5 | 3.23 | **1.29** |
-| AF-A0A2P2Q6H4-F1 | 55 | 17 | 5 | 3.74 | **1.50** |
-| AF-A0A1G4A0Q3-F1 | 114 | 45 | 5 | 3.43 | 2.14 |
-| AF-R7G5V6-F1 | 132 | 21 | 5 | 3.21 | 2.16 |
-| AF-A0A7W4UDR7-F1 | 131 | 116 | 5 | 4.05 | 2.91 |
-| AF-E6UJZ8-F1 | 112 | 113 | 5 | 4.35 | 2.91 |
-| AF-C6S3E2-F1 | 140 | 156 | 5 | 4.81 | 3.34 |
-| AF-A0A1C5BRX1-F1 | 72 | 0 | 0 | 2.85 | 2.85 |
-| AF-A0A1N7G8C0-F1 | 60 | 0 | 0 | 1.03 | 1.03 |
+| entry_id | n_res | n_cand | k | full MAE @ k=0 | full MAE @ chosen k | status |
+|---|---:|---:|---:|---:|---:|---|
+| AF-A0A6B0Z5B5-F1 | 112 | 59 | **7** | 2.20 | **1.08** | target met at k=7 |
+| AF-A0A1H0PBF4-F1 | 94 | 37 | **18** | 3.23 | **1.03** | target met at k=18 |
+| AF-A0A2P2Q6H4-F1 | 55 | 17 | 17 | 3.74 | 1.38 | exhausted candidates |
+| AF-E6UJZ8-F1 | 112 | 113 | 30 | 4.35 | 1.50 | reached MAX_CONTACTS |
+| AF-A0A1G4A0Q3-F1 | 114 | 45 | 30 | 3.43 | 1.62 | reached MAX_CONTACTS |
+| AF-A0A7W4UDR7-F1 | 131 | 116 | 30 | 4.05 | 1.75 | reached MAX_CONTACTS |
+| AF-R7G5V6-F1 | 132 | 21 | 21 | 3.21 | 2.09 | exhausted candidates |
+| AF-C6S3E2-F1 | 140 | 156 | 30 | 4.81 | 2.27 | reached MAX_CONTACTS |
+| AF-A0A1C5BRX1-F1 | 72 | 0 | 0 | 2.85 | 2.85 | no long-range contacts in structure |
+| AF-A0A1N7G8C0-F1 | 60 | 0 | 0 | 1.03 | 1.03 | no long-range contacts in structure |
 
-Pattern: each seeded contact reliably drops MAE, but the curve
-flattens — 5 contacts cuts MAE roughly in half (e.g. 4.81 → 3.34
-for the worst case) but doesn't reach 1 Å for any of these
-proteins. The cleanest reductions are on small / well-folded
-proteins where the long-range contacts strongly constrain the
-geometry (AF-A0A2P2Q6H4-F1 at 55 residues goes from 3.74 to
-1.50 Å with 5 contacts). See `plots/contact_search_trace.png`
-for the per-protein curves and `plots/contact_search_grid.png`
-for the final heatmaps.
+Patterns:
 
-Source CSV: `data/contact_search_summary.csv` (selected
-contacts as `i-j; i-j; …`).
+- The two proteins that cross the target are the same two whose
+  zero-shot MAE was already on the better end (2.20 and 3.23 Å).
+- "Hardness" tracks with the number of GT long-range contacts:
+  the easy proteins have a small, geometrically-constraining
+  contact set; the hard ones (C6S3E2 with 156 long-range
+  contacts) have so many that any 30 only pin part of the
+  structure.
+- AF-A0A2P2Q6H4-F1 used all 17 GT contacts in its candidate set
+  and still didn't break 1 Å — the model just can't predict that
+  structure at <1 Å resolution with this seeding alone.
+- The 2 proteins with zero long-range contacts in their structure
+  can't benefit from any long-range seeding; their MAE stays at
+  the zero-shot value. (For AF-A0A1N7G8C0-F1 that's already
+  1.03 Å — basically at target without any hints.)
+
+See `plots/contact_search_trace.png` for per-protein MAE-vs-k
+curves and `plots/contact_search_grid.png` for the final
+heatmaps. Source CSV: `data/contact_search_summary.csv`
+(`selected_contacts` field lists the chosen contacts as
+`i-j; i-j; …`).
 
 ## Conclusion
 
@@ -184,17 +193,26 @@ the diagonal neighborhood is tightly matched, off-diagonal contacts
 are placed roughly correctly, residual is dominated by the
 saturated-bin ceiling at >32 Å.
 
-**Seeded.** **5 true long-range contacts is not enough** to reach
-< 1.0 Å MAE on any of the 10 test proteins (with greedy
-selection, cap 12 candidates/round). 5 contacts approximately
-halves the zero-shot MAE; the best-case proteins reach
-~1.2 Å. This is consistent with the in-training distogram
-benchmark, where the FoldBench-monomer set needs ~50 seeded
-contacts to reach ~1.4 Å. The headline number from this
-experiment: **on this test split, the `1B` model needs more
-than 5 long-range contacts to break 1 Å MAE.** Whether the
-boundary is closer to 10 or 50 is a follow-up — extend
-`MAX_CONTACTS` (and the candidate cap) and re-run.
+**Seeded.** With beam-2 search and up to 30 seeded long-range
+contacts, **2 of the 10 proteins cross the 1.0 Å MAE
+threshold** — AF-A0A6B0Z5B5-F1 at k=7 (1.08 Å) and
+AF-A0A1H0PBF4-F1 at k=18 (1.03 Å). The other 6 proteins with
+long-range contacts in their candidate set bottom out between
+1.4 and 2.3 Å despite using all 30 contacts, and 2 proteins
+have no long-range contacts at all in their AFDB structure.
+
+So the answer to "minimum seeded contacts to break 1 Å MAE":
+**~7–20 for proteins where it's achievable; not reachable with
+≤30 contacts for the rest**. The hardest proteins in this set
+appear to need either more seeded contacts (and / or
+medium/short-range contacts and pLDDT statements) or a stronger
+model. Worth re-running once we have a checkpoint past
+`protein-contacts-1b-3.5e-4-distance-masked-7d355e` to see how
+the threshold moves.
+
+Beam search width 2 made a real difference vs. the first-pass
+greedy: with pure greedy at MAX_CONTACTS=5 the same proteins
+bottomed at 1.21 / 1.29 Å rather than crossing the threshold.
 
 The two notebooks are the deliverable — a future "did the new
 model learn?" check is just: add a nickname to `MODELS.yaml` and

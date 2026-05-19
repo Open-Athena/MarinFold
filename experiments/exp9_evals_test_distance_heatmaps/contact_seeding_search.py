@@ -130,35 +130,50 @@ DISTANCE_TOKEN_IDS = IH.resolve_distance_token_ids(tokenizer)
 print(f"resolved {len(DISTANCE_TOKEN_IDS)} distance tokens")
 
 # %% [markdown]
-# ## Greedy search per protein
+# ## Beam search per protein
 #
-# `SAMPLE_PAIRS` controls the MAE measurement during search. 500
-# deterministic CA-CA pairs per protein is small enough to keep
-# the search fast, large enough to give a stable MAE estimate
-# (the in-training benchmark uses 1000 per target).
+# Pure greedy (the first cut) repeatedly hit the local-optimum
+# trap: an early "best" contact would lead the search down a
+# branch that couldn't be recovered from later. Here we use
+# **beam search with width 2** — at each round we expand the top
+# 2 subsets so far, evaluate every (subset × candidate) pair, and
+# keep the top 2 of all resulting sets. That doubles per-round
+# cost but routinely escapes early misses.
 #
-# `CANDIDATES_PER_ROUND` caps how many remaining contacts we try
-# each round. Some proteins have 100+ long-range GT contacts; a
-# pure greedy would do 5 × 100+ = 500+ inferences per protein and
-# the whole notebook would take hours. We instead sample a
-# deterministic random subset of remaining candidates each round.
-# It's still greedy, just over a bounded candidate batch — fine
-# for "minimal seeding to reach 1 Å" since we only need one good
-# contact per round.
+# Tuning knobs:
 #
-# `TARGET_MAE` and `MAX_CONTACTS` are the stopping criteria.
+# - `SAMPLE_PAIRS = 300` — fewer pairs per MAE measurement than
+#   the first cut (500), still stable enough to compare
+#   candidates. ~40% wall-time speedup.
+# - `CANDIDATES_PER_ROUND = 8` — per (beam state, round), this
+#   many random remaining-candidate trials are evaluated. The
+#   candidate pool is the GT long-range contacts (CB-CB ≤ 8 Å,
+#   sep ≥ 24), some proteins have 100+ of them.
+# - `BEAM_WIDTH = 2` — number of subsets carried between rounds.
+# - `MAX_CONTACTS = 30` — bumped from 5; the previous run showed
+#   5 is not enough for any protein in this set.
+# - `TARGET_MAE = 1.0` — stop early if the best beam state has
+#   sample MAE below this.
 
 # %%
-SAMPLE_PAIRS = 500
+SAMPLE_PAIRS = 300
 TARGET_MAE = 1.0
-MAX_CONTACTS = 5
+MAX_CONTACTS = 30
+BEAM_WIDTH = 2
+CANDIDATES_PER_ROUND = 8
 PAIR_SAMPLE_SEED = 1
-CANDIDATES_PER_ROUND = 12
 CAND_RNG_SEED = 2
 
 
-def greedy_search_for_protein(spec, parsed):
-    """Greedy-add up to MAX_CONTACTS long-range GT contacts; stop when MAE < TARGET_MAE."""
+def beam_search_for_protein(spec, parsed):
+    """Beam-search up to MAX_CONTACTS long-range GT contacts; stop when sample MAE < TARGET_MAE.
+
+    Beam state: tuple of selected contacts (canonicalised by
+    sorted order so that {A, B} and {B, A} dedupe). Carried with
+    its sample MAE. Each round expands every state by a random
+    subset of remaining candidates; the top BEAM_WIDTH unique
+    states across all expansions become the next beam.
+    """
     pair_seed = hash((spec.entry_id, PAIR_SAMPLE_SEED)) & 0xFFFFFFFF
     sample_pairs = IH.sample_ca_pairs(parsed, SAMPLE_PAIRS, seed=pair_seed)
     candidates = IH.gt_long_range_contacts(parsed)
@@ -173,31 +188,29 @@ def greedy_search_for_protein(spec, parsed):
     cand_rng = np.random.default_rng(
         hash((spec.entry_id, CAND_RNG_SEED)) & 0xFFFFFFFF)
 
-    selected: list[tuple[int, int]] = []
-    trace = []
-
     def measure(contacts):
         pred = IH.predict_at_pairs(
             llm=llm,
             tokenizer=tokenizer,
             parsed=parsed,
             pairs=sample_pairs,
-            seeded_contacts=contacts,
+            seeded_contacts=list(contacts),
             distance_token_ids=DISTANCE_TOKEN_IDS,
         )
         return IH.mae_on_pairs(parsed, sample_pairs, pred)
 
-    # k=0 baseline.
+    # k=0 baseline. One state in the initial beam.
     t0 = time.time()
-    base_mae, base_n = measure([])
-    trace.append({
-        "k": 0,
-        "added_contact": None,
-        "sample_mae_angstrom": base_mae,
-        "n_eval_pairs": base_n,
-        "elapsed_seconds": time.time() - t0,
-    })
+    base_mae, base_n = measure(())
     print(f"  k=0 sample MAE = {base_mae:.3f} Å (n={base_n})")
+    trace = [{
+        "k": 0,
+        "best_sample_mae_angstrom": base_mae,
+        "beam_size": 1,
+        "n_evals_this_round": 1,
+        "elapsed_seconds": time.time() - t0,
+    }]
+    beam = [((), base_mae)]
     if base_mae < TARGET_MAE:
         return {
             "entry_id": spec.entry_id,
@@ -207,58 +220,68 @@ def greedy_search_for_protein(spec, parsed):
             "search_terminated": "target met at k=0",
         }
 
-    while len(selected) < MAX_CONTACTS:
-        remaining = [c for c in candidates if c not in selected]
-        if not remaining:
+    seen_states: set[frozenset] = {frozenset()}
+    k = 0
+    while k < MAX_CONTACTS:
+        k += 1
+        round_t0 = time.time()
+        expansions: list[tuple[tuple, float]] = []
+        n_evals = 0
+        for state, _state_mae in beam:
+            remaining = [c for c in candidates if c not in state]
+            if not remaining:
+                continue
+            if len(remaining) > CANDIDATES_PER_ROUND:
+                idx = cand_rng.choice(len(remaining), size=CANDIDATES_PER_ROUND, replace=False)
+                this_state_round = [remaining[i] for i in sorted(idx)]
+            else:
+                this_state_round = remaining
+            for cand in this_state_round:
+                new_state = tuple(sorted(state + (cand,)))
+                if frozenset(new_state) in seen_states:
+                    continue
+                seen_states.add(frozenset(new_state))
+                trial_mae, _ = measure(new_state)
+                expansions.append((new_state, trial_mae))
+                n_evals += 1
+        if not expansions:
             return {
                 "entry_id": spec.entry_id,
                 "n_candidates": len(candidates),
                 "trace": trace,
-                "selected_contacts": selected,
+                "selected_contacts": list(beam[0][0]),
                 "search_terminated": "exhausted candidates",
             }
-        # Cap candidates per round (see CANDIDATES_PER_ROUND comment).
-        if len(remaining) > CANDIDATES_PER_ROUND:
-            idx = cand_rng.choice(len(remaining), size=CANDIDATES_PER_ROUND, replace=False)
-            this_round = [remaining[i] for i in sorted(idx)]
-        else:
-            this_round = remaining
-        t0 = time.time()
-        best_mae = float("inf")
-        best_contact = None
-        for cand in this_round:
-            trial = selected + [cand]
-            mae, _ = measure(trial)
-            if mae < best_mae:
-                best_mae = mae
-                best_contact = cand
-        elapsed = time.time() - t0
-        selected.append(best_contact)
+        expansions.sort(key=lambda x: x[1])
+        beam = expansions[:BEAM_WIDTH]
+        best_state, best_mae = beam[0]
+        elapsed = time.time() - round_t0
         trace.append({
-            "k": len(selected),
-            "added_contact": best_contact,
-            "sample_mae_angstrom": best_mae,
-            "n_eval_pairs": base_n,
-            "n_tried_this_round": len(this_round),
-            "n_remaining_before_cap": len(remaining),
+            "k": k,
+            "best_sample_mae_angstrom": best_mae,
+            "best_state_size": len(best_state),
+            "beam_size": len(beam),
+            "n_evals_this_round": n_evals,
             "elapsed_seconds": elapsed,
         })
-        print(f"  k={len(selected)} +{best_contact} -> sample MAE = {best_mae:.3f} Å "
-              f"(tried {len(this_round)}/{len(remaining)} cands in {elapsed:.1f}s)")
+        beam_summary = "; ".join(f"{m:.2f}({len(s)})" for s, m in beam)
+        print(f"  k={k} best sample MAE = {best_mae:.3f} Å "
+              f"[beam: {beam_summary}] ({n_evals} evals, {elapsed:.1f}s)")
         if best_mae < TARGET_MAE:
             return {
                 "entry_id": spec.entry_id,
                 "n_candidates": len(candidates),
                 "trace": trace,
-                "selected_contacts": selected,
-                "search_terminated": f"target met at k={len(selected)}",
+                "selected_contacts": list(best_state),
+                "search_terminated": f"target met at k={k}",
             }
 
+    best_state, _ = min(beam, key=lambda x: x[1])
     return {
         "entry_id": spec.entry_id,
         "n_candidates": len(candidates),
         "trace": trace,
-        "selected_contacts": selected,
+        "selected_contacts": list(best_state),
         "search_terminated": f"reached MAX_CONTACTS={MAX_CONTACTS}",
     }
 
@@ -266,7 +289,7 @@ def greedy_search_for_protein(spec, parsed):
 results = []
 for spec, parsed in structures:
     print(f"\n{spec.entry_id} ({len(parsed.residues)} residues):")
-    res = greedy_search_for_protein(spec, parsed)
+    res = beam_search_for_protein(spec, parsed)
     print(f"  -> {res['search_terminated']}; selected {len(res['selected_contacts'])} contacts")
     results.append(res)
 
@@ -317,7 +340,7 @@ print(f"{'entry_id':<24} {'n_res':>5} {'cands':>6} {'k_chosen':>9} {'sample_MAE'
 rows = []
 for (spec, parsed), res in zip(structures, results, strict=True):
     k = len(res["selected_contacts"])
-    sample_mae = res["trace"][-1]["sample_mae_angstrom"] if res["trace"] else float("nan")
+    sample_mae = res["trace"][-1]["best_sample_mae_angstrom"] if res["trace"] else float("nan")
     full_mae = res.get("full_matrix_mae_angstrom", float("nan"))
     rows.append({
         "entry_id": spec.entry_id,
@@ -345,16 +368,17 @@ print(f"\nwrote {(DATA_DIR / 'contact_search_summary.csv').relative_to(REPO_ROOT
 # One line per protein. Horizontal red dash = the 1.0 Å target.
 
 # %%
-fig, ax = plt.subplots(figsize=(8.5, 5.0))
+fig, ax = plt.subplots(figsize=(9.5, 5.5))
 for (spec, _), res in zip(structures, results, strict=True):
+    if not res["trace"]:
+        continue
     ks = [step["k"] for step in res["trace"]]
-    maes = [step["sample_mae_angstrom"] for step in res["trace"]]
-    ax.plot(ks, maes, "-o", label=spec.entry_id, alpha=0.8)
+    maes = [step["best_sample_mae_angstrom"] for step in res["trace"]]
+    ax.plot(ks, maes, "-o", markersize=3, label=spec.entry_id, alpha=0.85)
 ax.axhline(TARGET_MAE, color="red", linestyle="--", alpha=0.7, label=f"target = {TARGET_MAE} Å")
 ax.set_xlabel("k = number of seeded long-range contacts")
-ax.set_ylabel("sample MAE (Å), 500 CA-CA pairs")
-ax.set_title("Greedy-add seeded contacts — MAE trace per protein")
-ax.set_xticks(list(range(MAX_CONTACTS + 1)))
+ax.set_ylabel(f"best sample MAE (Å), {SAMPLE_PAIRS} CA-CA pairs")
+ax.set_title(f"Beam search (width {BEAM_WIDTH}, ≤{CANDIDATES_PER_ROUND} cands/round) — MAE trace per protein")
 ax.legend(loc="upper right", fontsize=8, ncol=2)
 ax.grid(True, alpha=0.3)
 fig.tight_layout()
