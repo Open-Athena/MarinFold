@@ -1,6 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
+import marinfold.registry as registry
 import textwrap
 from pathlib import Path
 
@@ -22,7 +23,15 @@ def test_locate_models_yaml_falls_back_to_package_tree(monkeypatch: pytest.Monke
     yaml_path = _locate_models_yaml()
 
     assert yaml_path.name == "MODELS.yaml"
-    assert yaml_path.parent == Path(__file__).resolve().parents[2]
+    assert yaml_path == Path(registry.__file__).resolve().with_name("MODELS.yaml")
+
+
+def test_packaged_models_yaml_matches_repo_copy() -> None:
+    packaged = Path(registry.__file__).resolve().with_name("MODELS.yaml")
+    repo_copy = Path(__file__).resolve().parents[2] / "MODELS.yaml"
+
+    assert packaged.is_file()
+    assert packaged.read_text() == repo_copy.read_text()
 
 
 def test_repo_models_yaml_has_exactly_one_default() -> None:

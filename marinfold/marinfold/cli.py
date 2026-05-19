@@ -89,16 +89,40 @@ def _pick_document_structure(
     return requested
 
 
+def _resolve_model_and_structure(
+    model_spec: str | None,
+    requested_structure: str | None,
+) -> tuple[str | None, str]:
+    """Resolve the model spec and document structure for CLI dispatch.
+
+    Nickname/default flows still go through ``MODELS.yaml`` so we can
+    pick the model's declared document structure. Local checkpoint
+    directories bypass the registry, which means the caller must pass
+    ``--document-structure`` explicitly.
+    """
+    if model_spec is not None and Path(model_spec).is_dir():
+        if requested_structure is None:
+            raise SystemExit(
+                "Local model directories require --document-structure because "
+                "there is no MODELS.yaml entry to infer it from."
+            )
+        return model_spec, requested_structure
+
+    entry = resolve_model_entry(model_spec)
+    ds_name = _pick_document_structure(entry, requested_structure)
+    return entry.nickname, ds_name
+
+
 def _make_inference_config(
     impl: ModuleType,
-    entry: ModelEntry,
+    model_spec: str | None,
     args: argparse.Namespace,
     *,
     input_path: Path | None = None,
 ) -> Any:
     """Build the impl's InferenceConfig from the parsed CLI args."""
     return impl.InferenceConfig(
-        model=entry.nickname,
+        model=model_spec,
         input_path=input_path,
         backend=args.backend,
         dtype=args.dtype,
@@ -129,16 +153,18 @@ def _structures_from_sequence(impl: ModuleType, seq: str) -> list:
 
 
 def cmd_infer(args: argparse.Namespace) -> None:
-    entry = resolve_model_entry(args.model)
-    ds_name = _pick_document_structure(entry, args.document_structure)
+    model_spec, ds_name = _resolve_model_and_structure(
+        args.model,
+        args.document_structure,
+    )
     impl = _load_impl(ds_name)
 
     if args.input_sequence is not None:
         structures = _structures_from_sequence(impl, args.input_sequence)
-        cfg = _make_inference_config(impl, entry, args)
+        cfg = _make_inference_config(impl, model_spec, args)
         records = list(impl.predict(cfg, structures=structures))
     else:
-        cfg = _make_inference_config(impl, entry, args, input_path=args.input)
+        cfg = _make_inference_config(impl, model_spec, args, input_path=args.input)
         records = list(impl.predict(cfg))
 
     write_predictions(args.out, records, structure_name=ds_name)
@@ -146,11 +172,13 @@ def cmd_infer(args: argparse.Namespace) -> None:
 
 
 def cmd_evaluate(args: argparse.Namespace) -> None:
-    entry = resolve_model_entry(args.model)
-    ds_name = _pick_document_structure(entry, args.document_structure)
+    model_spec, ds_name = _resolve_model_and_structure(
+        args.model,
+        args.document_structure,
+    )
     impl = _load_impl(ds_name)
 
-    cfg = _make_inference_config(impl, entry, args, input_path=args.input_dir)
+    cfg = _make_inference_config(impl, model_spec, args, input_path=args.input_dir)
     # `evaluate` runs predict + GT comparison in one pass; we re-run
     # predict for the predictions output so the per-example records
     # in the metrics file stay aligned with what we write to --out.
