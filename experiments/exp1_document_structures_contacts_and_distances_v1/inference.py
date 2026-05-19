@@ -29,6 +29,10 @@ bins to an expected distance.
   contact hint count in a single run, mirroring Phase 7c of the
   LlamaFold-experiments notebook.
 
+The actual model forward pass goes through
+:mod:`marinfold_inference`; this module is intentionally backend-
+agnostic.
+
 Inspired by marin's experiments/protein/eval_protein_distogram.py.
 """
 
@@ -38,7 +42,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from marinfold_document_structures import EvalResult
+from marinfold_inference import Backend, load_backend
 
 from parse import (
     ParsedStructure,
@@ -82,10 +89,15 @@ class InferenceConfig:
     over. Eval-only knobs (``distance_cap_angstrom``) and infer-only
     knobs (``keep_bin_probs``) live as optional fields here; the
     function that doesn't use them ignores them.
+
+    ``backend`` selects the runtime that loads + executes the model.
+    ``top_k_logprobs`` and ``gpu_memory_utilization`` are vLLM-only;
+    other backends ignore them.
     """
 
     model: str
     input_path: Path
+    backend: str = "vllm"
     seed_n_values: tuple[int, ...] = (0,)
     query_atom: str = "CA"
     top_k_logprobs: int = 128
@@ -109,8 +121,6 @@ def _gt_query_distance_matrix(structure: ParsedStructure, atom_name: str):
 
     Returns NaN for residues missing the named atom.
     """
-    import numpy as np
-
     n = len(structure.residues)
     positions = [atom_position(r, atom_name) for r in structure.residues]
     out = np.full((n, n), np.nan, dtype=np.float32)
@@ -233,39 +243,32 @@ class _StructurePrediction:
 def _query_pairs(
     structure: ParsedStructure,
     *,
-    llm,
-    tokenizer,
+    backend: Backend,
+    distance_token_ids: list[int],
+    bin_midpoints: np.ndarray,
     query_atom: str,
     n_seeded: int,
-    top_k_logprobs: int,
     batch_size: int,
     max_pairs: int | None,
     keep_bin_probs: bool,
-    distance_token_ids: list[int],
-    bin_midpoints,
     gt=None,
     distance_cap_angstrom: float | None = None,
 ) -> _StructurePrediction:
     """Single (structure, seed-count) inference pass.
 
-    If ``gt`` is provided, pairs are pre-filtered before the LLM
+    If ``gt`` is provided, pairs are pre-filtered before the model
     forward pass: any pair with non-finite GT or GT >
     ``distance_cap_angstrom`` is skipped. ``max_pairs`` then caps
     evaluatable pairs, not raw queries. ``predict`` (no-GT) passes
     ``gt=None`` and queries every (i, j).
     """
-    import numpy as np
-    from vllm import SamplingParams, TokensPrompt
-
     n = len(structure.residues)
     gt_long = _gt_long_range_contacts(structure)
     seeded = gt_long[:n_seeded] if n_seeded > 0 else []
     base_tokens = _build_base_prompt_tokens(structure, seeded)
-    base_ids = _encode_token_strs(tokenizer, base_tokens)
-    distance_id_set = set(distance_token_ids)
-    bin_of = {tid: k for k, tid in enumerate(distance_token_ids)}
+    base_ids = _encode_token_strs(backend.tokenizer, base_tokens)
 
-    prompts: list = []
+    prompts: list[list[int]] = []
     keys: list[tuple[int, int]] = []
     for i in range(1, n + 1):
         for j in range(i + 1, n + 1):
@@ -276,18 +279,13 @@ def _query_pairs(
                 if distance_cap_angstrom is not None and gt_ij > distance_cap_angstrom:
                     continue
             tail = _pair_tail_tokens(i, j, query_atom, query_atom)
-            tail_ids = _encode_token_strs(tokenizer, tail)
-            prompts.append(TokensPrompt(prompt_token_ids=base_ids + tail_ids))
+            tail_ids = _encode_token_strs(backend.tokenizer, tail)
+            prompts.append(base_ids + tail_ids)
             keys.append((i, j))
             if max_pairs is not None and len(prompts) >= max_pairs:
                 break
         if max_pairs is not None and len(prompts) >= max_pairs:
             break
-
-    sampling = SamplingParams(
-        temperature=1.0, top_p=1.0, top_k=-1,
-        max_tokens=1, logprobs=top_k_logprobs, n=1,
-    )
 
     out_pairs: list[tuple[int, int]] = []
     out_expected: list[float] = []
@@ -296,23 +294,17 @@ def _query_pairs(
     for chunk_start in range(0, len(prompts), batch_size):
         chunk_prompts = prompts[chunk_start : chunk_start + batch_size]
         chunk_keys = keys[chunk_start : chunk_start + batch_size]
-        outputs = llm.generate(chunk_prompts, sampling, use_tqdm=False)
-        for (i, j), out in zip(chunk_keys, outputs, strict=True):
-            lp_dict = out.outputs[0].logprobs[0] if out.outputs[0].logprobs else {}
-            row = np.zeros(_NUM_DISTANCE_BINS, dtype=np.float32)
-            for tok_id, lp in lp_dict.items():
-                tid = int(tok_id)
-                if tid in distance_id_set:
-                    row[bin_of[tid]] = float(np.exp(float(lp.logprob)))
+        probs = backend.next_token_probs(chunk_prompts, distance_token_ids)
+        for (i, j), row in zip(chunk_keys, probs, strict=True):
             total = float(row.sum())
             if total <= 0:
                 continue
-            row /= total
-            expected = float((row * bin_midpoints).sum())
+            normed = row / total
+            expected = float((normed * bin_midpoints).sum())
             out_pairs.append((i, j))
             out_expected.append(expected)
             if out_bin_probs is not None:
-                out_bin_probs.append(row.tolist())
+                out_bin_probs.append(normed.tolist())
 
     return _StructurePrediction(
         entry_id=structure.entry_id,
@@ -324,23 +316,30 @@ def _query_pairs(
     )
 
 
-def _make_llm(cfg: InferenceConfig):
-    """Load vllm + tokenizer + resolve distance token IDs. Imports are lazy."""
-    import numpy as np
-    from vllm import LLM
-
-    llm = LLM(
-        model=cfg.model,
-        dtype=cfg.dtype,
-        gpu_memory_utilization=cfg.gpu_memory_utilization,
-        enforce_eager=True,
-        trust_remote_code=True,
-        max_logprobs=max(cfg.top_k_logprobs, 128),
+def _make_backend(cfg: InferenceConfig) -> Backend:
+    """Construct the requested backend, passing through backend-specific kwargs."""
+    if cfg.backend == "vllm":
+        return load_backend(
+            "vllm",
+            model=cfg.model,
+            dtype=cfg.dtype,
+            gpu_memory_utilization=cfg.gpu_memory_utilization,
+            top_k_logprobs=cfg.top_k_logprobs,
+        )
+    if cfg.backend == "transformers":
+        return load_backend("transformers", model=cfg.model, dtype=cfg.dtype)
+    if cfg.backend == "mlx":
+        return load_backend("mlx", model=cfg.model)
+    raise ValueError(
+        f"Unknown backend {cfg.backend!r}. Expected one of: 'vllm', 'transformers', 'mlx'."
     )
-    tokenizer = llm.get_tokenizer()
-    distance_token_ids = _resolve_distance_token_ids(tokenizer)
+
+
+def _resolve_targets(backend: Backend) -> tuple[list[int], np.ndarray]:
+    """Resolve the 64 distance-bin token ids + their midpoint vector."""
+    distance_token_ids = _resolve_distance_token_ids(backend.tokenizer)
     bin_midpoints = np.asarray(_DISTANCE_BIN_MIDPOINTS, dtype=np.float32)
-    return llm, tokenizer, distance_token_ids, bin_midpoints
+    return distance_token_ids, bin_midpoints
 
 
 # --------------------------------------------------------------------------
@@ -362,21 +361,20 @@ def predict(cfg: InferenceConfig) -> Iterator[dict]:
     structures = list(iter_parsed_structures(cfg.input_path))
     if not structures:
         return
-    llm, tokenizer, distance_token_ids, bin_midpoints = _make_llm(cfg)
+    backend = _make_backend(cfg)
+    distance_token_ids, bin_midpoints = _resolve_targets(backend)
     for structure in structures:
         for n_seeded in cfg.seed_n_values:
             pred = _query_pairs(
                 structure,
-                llm=llm,
-                tokenizer=tokenizer,
+                backend=backend,
+                distance_token_ids=distance_token_ids,
+                bin_midpoints=bin_midpoints,
                 query_atom=cfg.query_atom,
                 n_seeded=n_seeded,
-                top_k_logprobs=cfg.top_k_logprobs,
                 batch_size=cfg.batch_size,
                 max_pairs=cfg.max_pairs_per_structure,
                 keep_bin_probs=cfg.keep_bin_probs,
-                distance_token_ids=distance_token_ids,
-                bin_midpoints=bin_midpoints,
             )
             record: dict[str, Any] = {
                 "entry_id": pred.entry_id,
@@ -402,9 +400,8 @@ def evaluate(cfg: InferenceConfig) -> EvalResult:
     (i, j) at ``cfg.query_atom`` is computed from the parsed
     structure's coordinates. Pairs with non-finite GT or GT >
     ``cfg.distance_cap_angstrom`` are masked out (pre-filter inside
-    :func:`_query_pairs`, so the LLM is never asked about them).
+    :func:`_query_pairs`, so the model is never asked about them).
     """
-    import numpy as np
     from vocab import NAME
 
     structures = list(iter_parsed_structures(cfg.input_path))
@@ -414,7 +411,8 @@ def evaluate(cfg: InferenceConfig) -> EvalResult:
             "warning": "no input structures",
             "model": cfg.model,
         })
-    llm, tokenizer, distance_token_ids, bin_midpoints = _make_llm(cfg)
+    backend = _make_backend(cfg)
+    distance_token_ids, bin_midpoints = _resolve_targets(backend)
 
     per_structure_mae: dict[int, dict[str, float]] = {
         n: {} for n in cfg.seed_n_values
@@ -429,16 +427,14 @@ def evaluate(cfg: InferenceConfig) -> EvalResult:
         for n_seeded in cfg.seed_n_values:
             pred = _query_pairs(
                 structure,
-                llm=llm,
-                tokenizer=tokenizer,
+                backend=backend,
+                distance_token_ids=distance_token_ids,
+                bin_midpoints=bin_midpoints,
                 query_atom=cfg.query_atom,
                 n_seeded=n_seeded,
-                top_k_logprobs=cfg.top_k_logprobs,
                 batch_size=cfg.batch_size,
                 max_pairs=cfg.max_pairs_per_structure,
                 keep_bin_probs=False,
-                distance_token_ids=distance_token_ids,
-                bin_midpoints=bin_midpoints,
                 gt=gt,
                 distance_cap_angstrom=cfg.distance_cap_angstrom,
             )
@@ -473,6 +469,7 @@ def evaluate(cfg: InferenceConfig) -> EvalResult:
         extras={
             "structure": NAME,
             "model": cfg.model,
+            "backend": cfg.backend,
             "query_atom": cfg.query_atom,
             "seed_n_values": list(cfg.seed_n_values),
             "n_structures": len(structures),

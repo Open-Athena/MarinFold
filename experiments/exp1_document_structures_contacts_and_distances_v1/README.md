@@ -117,25 +117,77 @@ run — reproduces the Phase 7c trace from the
 LlamaFold-experiments notebook ("a few GT contacts as hints").
 `--query-atom` (default `CA`) picks the atom on both i and j.
 
-Verify locally via the CLI (run from this directory with the venv
-active):
+Run from this directory with the venv active.
+
+### Backend-independent commands
+
+`generate` and `tokenizer` don't load a trained model, so they don't
+need a backend extra installed:
 
 ```bash
+uv sync   # base install only
+
 uv run python cli.py generate \
     --input /path/to/afdb-cifs/ --num-docs 100 \
     --out /tmp/sample-docs.parquet
 
-uv run python cli.py infer \
-    --model open-athena/<model> --input /path/to/seqs/ \
-    --out /tmp/predictions.parquet
-
-uv run python cli.py evaluate \
-    --model open-athena/<model> --input /path/to/pdbs/ \
-    --seed-n-values 0,5,20,50 \
-    --out /tmp/metrics.json
-
 uv run python cli.py tokenizer --save-local /tmp/tok/
 uv run python cli.py tokenizer --push open-athena/contacts-and-distances-v1-tokenizer
+```
+
+### Running inference and evaluation
+
+`--backend` selects the runtime; `--model` accepts a nickname listed
+in repo-root [`MODELS.yaml`](../../MODELS.yaml) (the matching HF
+subfolder is downloaded on first use) or a local directory holding
+the model + tokenizer. Bare HF repo ids are not accepted —
+register the model in `MODELS.yaml` first.
+
+**On a GPU machine (Linux + NVIDIA):** vLLM. This is the production
+path; fastest for sweeps over many structures and seed counts.
+
+```bash
+uv sync --extra eval
+uv run python cli.py evaluate \
+    --backend vllm --model 1B \
+    --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
+    --out /tmp/metrics.json
+```
+
+**On an Apple Silicon Mac (M1–M4):** MLX is the fastest local path.
+
+```bash
+uv sync --extra eval-mlx
+uv run python cli.py evaluate \
+    --backend mlx --model 1B \
+    --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
+    --out /tmp/metrics.json
+```
+
+**Generic torch (Apple Silicon MPS, CPU, or CUDA):** lowest-effort
+fallback. Slower than MLX on the same Mac and slower than vLLM on
+the same GPU, but works anywhere torch installs.
+
+```bash
+uv sync --extra eval-local
+uv run python cli.py evaluate \
+    --backend transformers --model 1B --dtype bfloat16 \
+    --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
+    --out /tmp/metrics.json
+```
+
+On MPS, prefer `--dtype bfloat16` (default) or `--dtype float32`. Do
+not use `float16` on MPS for these bf16-trained checkpoints — the
+narrower dynamic range overflows the residual stream and produces
+NaN logits.
+
+`infer` (no ground truth) takes the same `--backend` / `--model`
+flags:
+
+```bash
+uv run python cli.py infer \
+    --backend mlx --model 1B \
+    --input /path/to/seqs/ --out /tmp/predictions.parquet
 ```
 
 ## Success criteria

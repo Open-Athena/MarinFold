@@ -5,15 +5,23 @@ description = "contacts-and-distances-v1 document structure: generate / infer / 
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "marinfold-document-structures",
+    "marinfold-inference",
     "gemmi>=0.6",       # mmCIF / PDB parsing for AFDB inputs
     "numpy",
     "pyarrow",
 ]
 
 [project.optional-dependencies]
-# vllm pulls torch + cuda libs and is only needed for evaluate().
-# Install with `uv sync --extra eval`.
-eval = ["vllm>=0.6"]
+# Backend extras: pick one based on platform. Each delegates to the
+# matching extra on marinfold-inference, so the heavy runtime
+# (vllm / torch / mlx) is only installed when you ask for it.
+#
+# - eval        → vLLM (Linux+GPU production path)
+# - eval-local  → transformers (Apple Silicon MPS, CPU, or CUDA)
+# - eval-mlx    → MLX (Apple Silicon native, fastest local)
+eval       = ["marinfold-inference[vllm]"]
+eval-local = ["marinfold-inference[transformers]"]
+eval-mlx   = ["marinfold-inference[mlx]"]
 # Network-dependent tests (byte-identity check against
 # huggingface.co/timodonnell/protein-docs-tokenizer@<sha>) need
 # huggingface_hub installed. pytest is for running tests in general.
@@ -33,7 +41,8 @@ environments = [
 ]
 
 [tool.uv.sources]
-marinfold-document-structures = { path = "../../document_structures" }
+marinfold-document-structures = { path = "../../document_structures", editable = true }
+marinfold-inference = { path = "../../inference", editable = true }
 
 [tool.pytest.ini_options]
 markers = [
