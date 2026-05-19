@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "marinfold"
+version = "0.1.0"
+description = "MarinFold: backend abstraction, document-structure toolkit, and top-level CLI for running trained protein-document LLMs."
+requires-python = ">=3.11"
+# Base install pulls only the model-resolver + tokenizer deps. Each
+# backend's heavyweight runtime is gated behind an optional extra
+# below and lazy-imported inside its backend module.
+dependencies = [
+    "huggingface_hub>=0.24",
+    "numpy",
+    "pyarrow",
+    "pyyaml>=6",
+    "tokenizers>=0.15",
+    "transformers>=4.40",
+]
+
+[project.optional-dependencies]
+# --- Backend extras (pick one based on platform) ---
+# Linux+GPU production path.
+vllm = ["vllm>=0.6"]
+# Generic torch path — runs on Apple Silicon via MPS, on Linux/macOS
+# CPU otherwise. Lowest-effort local-eval option.
+transformers = ["torch>=2.4", "accelerate>=0.30"]
+# Apple Silicon native via MLX. Darwin-only wheels; uv skips on
+# other platforms automatically.
+mlx = ["mlx>=0.18; sys_platform == 'darwin'", "mlx-lm>=0.20; sys_platform == 'darwin'"]
+
+# --- Document-structure impl extras ---
+# Graduated impls live as subpackages of marinfold.document_structures.*.
+# Their heavy parser deps (gemmi, biopython, …) are opt-in via these
+# extras and lazy-imported inside the impl modules so the marinfold
+# CLI can fail with a clear message when an extra isn't installed.
+contacts-and-distances-v1 = ["gemmi>=0.6"]
+
+[project.scripts]
+marinfold = "marinfold.cli:main"
+# Lower-level per-impl driver (legacy / power-user surface). The
+# high-level ``marinfold infer`` / ``marinfold evaluate`` cover the
+# common cases.
+contacts-and-distances-v1 = "marinfold.document_structures.contacts_and_distances_v1.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[tool.uv]
+package = true
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/marinfold"]
+
+[tool.pytest.ini_options]
+markers = [
+    "network: tests that require internet (e.g. byte-identity check against the published tokenizer on HF Hub). Skip with `pytest -m 'not network'`.",
+]

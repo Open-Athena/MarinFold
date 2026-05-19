@@ -3,48 +3,43 @@
 
 """Tests for the contacts-and-distances-v1 document structure.
 
-The impl is a set of plain modules in the experiment directory:
-``vocab.py`` (token list), ``parse.py`` (gemmi-backed parsing),
-``generate.py`` (training-document generation), ``inference.py``
-(predict + evaluate), and ``cli.py`` (argparse driver). Tests import
-these as plain modules — the experiment dir is on ``sys.path``.
+The impl is a subpackage of marinfold
+(``marinfold.document_structures.contacts_and_distances_v1``) with
+submodules ``vocab`` (token list), ``parse`` (gemmi-backed parsing),
+``generate`` (training-document generation), ``inference`` (predict
++ evaluate), and ``cli`` (argparse driver).
 
 The network-marked tests download the pinned published tokenizer
 (``timodonnell/protein-docs-tokenizer@83f597d88e9b``) and assert
 byte-equivalence. Skip them with ``pytest -m 'not network'`` if
 you're offline.
 
-Run::
+Run from the marinfold/ dir::
 
-    uv sync --extra test
+    uv sync --extra contacts-and-distances-v1
     uv run pytest tests/ -v
 """
 
 import argparse
 import math
-import sys
 import textwrap
 from pathlib import Path
 
 import pytest
 
-
-# Make the experiment dir importable so we can reach vocab / parse /
-# generate / inference / cli directly.
-_EXP_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_EXP_DIR))
-
-from vocab import (  # noqa: E402
+from marinfold.document_structures.contacts_and_distances_v1 import (
+    cli, generate, inference,
+)
+from marinfold.document_structures.contacts_and_distances_v1.parse import (
+    ParsedStructure, Residue, parse_structure,
+)
+from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     AMINO_ACIDS, ATOM_NAMES, CONTACT_TYPES, CONTROL_TOKENS,
     CONTEXT_LENGTH, DISTANCE_BINS, DISTANCE_MARKER, MAX_POSITION,
     NAME, PLDDT_BINS, UNK_TOKEN, all_domain_tokens,
 )
-from parse import ParsedStructure, Residue, parse_structure  # noqa: E402
-import generate  # noqa: E402
-import inference  # noqa: E402
-import cli  # noqa: E402
 
-from marinfold import (  # noqa: E402
+from marinfold import (
     EvalResult,
     build_tokenizer,
     write_eval,

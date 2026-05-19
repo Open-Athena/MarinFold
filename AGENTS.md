@@ -17,24 +17,23 @@ infrastructure. Concerns at the repo root:
   plots, plots themselves).
 - `scripts/` — repo-management scripts (`scaffold.py`, `itemize.py`,
   `history.py`). Run with plain `python scripts/<name>.py`.
+- `marinfold/` — the top-level Python package. Backends, model
+  registry, document-structure shared toolkit, graduated
+  document-structure impls (as subpackages of
+  `marinfold.document_structures.<name>`), and the user-facing
+  `marinfold infer` / `marinfold evaluate` CLI.
 - `models/` — library for model-training experiments
   (`marinfold_models.defaults`, `marinfold_models.simple_train_config`,
-  …). Plus graduated model experiments (copied from
-  `experiments/`).
-- `evals/` — library for eval experiments (production wrappers
-  around iris launches). Plus graduated eval experiments.
-- `data/` — library for data-generation experiments
-  (production wrappers around zephyr pipelines). Plus graduated
-  data experiments.
-- `document_structures/` — small shared toolkit (`EvalResult`,
-  `build_tokenizer`, parquet/jsonl writers) for document-structure
-  implementations. Each impl is a self-contained experiment dir
-  with its own `cli.py`. Plus graduated document-structure
-  experiments.
+  …). Kept separate from `marinfold/` because the training dep
+  stack (marin/levanter/jax) is heavy and platform-coupled and
+  has no business in the inference path.
 
-Each kind dir is a self-contained "marin-experiments-style" directory:
-its own `pyproject.toml`, its own `.venv`, marin (or stdlib-only deps,
-for `document_structures/`) pulled in via wheels.
+Kind libraries for `evals` and `data` (and any other future kind)
+are created on demand — when a second experiment in that kind
+needs the same helper. Don't pre-scaffold an empty library.
+
+Each kind dir / top-level Python package is a self-contained
+directory with its own `pyproject.toml` and its own `.venv`.
 
 Experiments may import from any kind library via path deps in their
 own `pyproject.toml`. Libraries DO NOT import from experiments — that
@@ -42,10 +41,8 @@ direction is forbidden. If two experiments need the same helper,
 promote it to the kind library once a second use case actually exists
 (not before).
 
-The `marinfold` CLI name is reserved for a future user-facing
-command (running inference, etc.); it is not currently in use.
-
-See `experiments/README.md` for the workflow and graduation flow.
+See `experiments/README.md` for the workflow and graduation flow,
+and `marinfold/README.md` for the inference/CLI surface.
 
 ## Shared coding practices
 
