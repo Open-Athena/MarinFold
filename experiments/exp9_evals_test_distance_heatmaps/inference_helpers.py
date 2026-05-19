@@ -82,19 +82,30 @@ def encode_token_strs(tokenizer, token_strs):
 
 
 def build_base_prompt_tokens(parsed, seeded_contacts):
-    """`<task> <begin_sequence> <AAs> <begin_statements> [seeded long-range contacts]`.
+    """`<task> <begin_sequence> <AAs> <begin_statements> [seeded contacts]`.
 
     Args:
         parsed: a `parse.ParsedStructure`.
-        seeded_contacts: list of (i, j) 1-indexed long-range contact pairs.
+        seeded_contacts: list of contact entries. Each entry is
+            either ``(i, j)`` (2-tuple — assumed long-range, kept
+            for back-compat) or ``(type_token, i, j)`` where
+            ``type_token`` is one of ``"<long-range-contact>"``,
+            ``"<medium-range-contact>"``, ``"<short-range-contact>"``.
     """
     from vocab import NAME  # noqa: F401 — needs add_exp1_to_path()
 
     toks = [f"<{NAME}>", "<begin_sequence>"]
     toks.extend(f"<{r.name}>" for r in parsed.residues)
     toks.append("<begin_statements>")
-    for i, j in seeded_contacts:
-        toks.extend(["<long-range-contact>", f"<p{i}>", f"<p{j}>"])
+    for entry in seeded_contacts:
+        if len(entry) == 2:
+            i, j = entry
+            type_tok = "<long-range-contact>"
+        elif len(entry) == 3:
+            type_tok, i, j = entry
+        else:
+            raise ValueError(f"seeded_contacts entry must be (i,j) or (type,i,j); got {entry!r}")
+        toks.extend([type_tok, f"<p{i}>", f"<p{j}>"])
     return toks
 
 
@@ -120,6 +131,52 @@ def gt_long_range_contacts(parsed, cutoff_angstrom=8.0, sep_min=24):
             if euclidean(cb[i], cb[j]) <= cutoff_angstrom:
                 out.append((i, j))
     out.sort()
+    return out
+
+
+# Contact-range definitions matching the protein-docs training data:
+# long-range: sep >= 24, medium: 12 <= sep < 24, short: 6 <= sep < 12.
+# All use the CB-CB ≤ 8 Å cutoff (CA for GLY / missing CB).
+_CONTACT_TYPE_RANGES = [
+    ("<long-range-contact>", 24, None),
+    ("<medium-range-contact>", 12, 24),
+    ("<short-range-contact>", 6, 12),
+]
+
+
+def gt_contacts_all_ranges(parsed, cutoff_angstrom=8.0):
+    """All GT contacts (long + medium + short) as (type_token, i, j).
+
+    Same CB-CB ≤ 8 Å cutoff as the training data, partitioned by
+    sequence separation. Returned in a deterministic order:
+    long-range first (matching the training convention that 100% of
+    long-range contacts come before medium/short in rank), then
+    medium, then short, each block sorted by (i, j).
+    """
+    from parse import cb_or_ca_position, euclidean  # noqa: F401
+
+    cb = {}
+    for r in parsed.residues:
+        p = cb_or_ca_position(r)
+        if p is not None:
+            cb[r.index] = p
+    indices = sorted(cb)
+
+    buckets: dict[str, list[tuple[int, int]]] = {tok: [] for tok, _, _ in _CONTACT_TYPE_RANGES}
+    for ii in range(len(indices)):
+        for jj in range(ii + 1, len(indices)):
+            i, j = indices[ii], indices[jj]
+            sep = j - i
+            if euclidean(cb[i], cb[j]) > cutoff_angstrom:
+                continue
+            for tok, lo, hi in _CONTACT_TYPE_RANGES:
+                if sep >= lo and (hi is None or sep < hi):
+                    buckets[tok].append((i, j))
+                    break
+    out: list[tuple[str, int, int]] = []
+    for tok, _, _ in _CONTACT_TYPE_RANGES:
+        for i, j in sorted(buckets[tok]):
+            out.append((tok, i, j))
     return out
 
 
