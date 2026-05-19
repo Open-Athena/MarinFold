@@ -59,7 +59,7 @@ environments = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/marinfold"]
+packages = ["marinfold"]
 
 [tool.pytest.ini_options]
 markers = [
