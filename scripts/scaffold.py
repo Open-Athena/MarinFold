@@ -1,12 +1,12 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""``marinfold scaffold`` — create a new experiment directory from a GitHub issue.
+"""``scripts/scaffold.py`` — create a new experiment directory from a GitHub issue.
 
 Usage::
 
-    marinfold scaffold --issue 7 --kind models
-    marinfold scaffold --issue 7 --kind document_structures --name my_name
+    python scripts/scaffold.py --issue 7 --kind models
+    python scripts/scaffold.py --issue 7 --kind document_structures --name my_name
 
 Reads the issue via ``gh api`` (must be authenticated), derives a name
 from the title, and creates ``experiments/exp<N>_<kind>_<name>/`` with
@@ -26,8 +26,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from marinfold_experiments import KINDS
-from marinfold_experiments._repo import REPO_ROOT, github_repo
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _lib import KINDS, REPO_ROOT, github_repo  # noqa: E402
 
 
 def fetch_issue(number: int, github_repo: str) -> dict:
@@ -119,7 +120,7 @@ def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="marinfold scaffold")
+    ap = argparse.ArgumentParser(prog="python scripts/scaffold.py")
     ap.add_argument("--issue", type=int, required=True, help="GitHub issue number")
     ap.add_argument(
         "--kind", default=None,
@@ -179,7 +180,8 @@ def main(argv: list[str] | None = None) -> int:
     print("Next steps:")
     print(f"  1. Edit {rel}: fill in the approach and success criteria")
     print("  2. Add launchable .py files in the experiment dir (and a pyproject.toml if it needs marin deps)")
-    print( "  3. When results land, fill in Results + Conclusion, then 'marinfold graduate' if appropriate")
+    print("  3. When results land, fill in Results + Conclusion, then copy the code into")
+    print(f"     {kind}/<name>/ if it should keep evolving (see experiments/README.md)")
     return 0
 
 

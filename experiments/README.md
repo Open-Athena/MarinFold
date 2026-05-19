@@ -23,7 +23,7 @@ an issue first.
 
 ## What each kind means
 
-| Kind | Purpose | Top-level dir for graduated work |
+| Kind | Purpose | Where the code lives once it graduates |
 |---|---|---|
 | `models` | Train models | [`../models/`](../models/) |
 | `evals` | Run evals on trained models | [`../evals/`](../evals/) |
@@ -32,16 +32,17 @@ an issue first.
 
 ## Tooling
 
-Three PM commands live in `marinfold_experiments`:
+Two repo-management scripts live in [`../scripts/`](../scripts/):
 
 ```bash
-cd experiments
+cd scripts
 uv venv --python 3.11
 uv sync
 
-uv run marinfold scaffold --issue 42 --kind models       # create dir from issue
-uv run marinfold itemize                                  # regenerate index.md
-uv run marinfold graduate exp42_models_protein_1b_distance_masked
+# create an experiment dir from a GitHub issue:
+python scaffold.py --issue 42 --kind models
+# regenerate ../experiments/index.md from gh + frontmatter:
+python itemize.py
 ```
 
 The scaffolder pulls Question / Hypothesis / Background / Approach /
@@ -56,7 +57,7 @@ explicitly.
    question, hypothesis, approach, success criteria, **and the kind**.
 2. **Scaffold** the experiment dir:
    ```bash
-   uv run marinfold scaffold --issue <N> --kind <models|evals|data|document_structures>
+   python scripts/scaffold.py --issue <N> --kind <models|evals|data|document_structures>
    ```
    Creates `experiments/exp<N>_<kind>_<name>/` with a README pre-filled
    from the issue body.
@@ -77,19 +78,30 @@ explicitly.
    the root `README.md` for the policy.
 6. **Regenerate the index**:
    ```bash
-   uv run marinfold itemize
+   python scripts/itemize.py
    ```
 7. **Close** the issue once the conclusion lands.
-8. **(Optional) Graduate.** If the experiment's results are
-   important / high-quality enough to become a first-class object,
-   symlink it into the kind dir:
+8. **(Optional) Graduate** by *copying* into the kind dir. If the
+   experiment's code should keep evolving as a first-class object,
+   copy the directory:
    ```bash
-   uv run marinfold graduate exp<N>_<kind>_<name>
-   # → models/<name>/  (or evals/<name>/, data/<name>/, document_structures/<name>/)
+   cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
+   # e.g. cp -r experiments/exp42_models_protein_1b/ models/protein_1b/
    ```
-   The symlink drops the `exp<N>_<kind>_` prefix. The experiment dir
-   stays where it is — graduation is non-destructive. The README's
-   frontmatter still records the original issue.
+   Drop the `exp<N>_<kind>_` prefix in the destination name.
+   **Leave the original `experiments/exp<N>_*/` directory alone** —
+   it's the historical record of what was tried at the time of the
+   experiment, including the README that captures the question /
+   hypothesis / results. Going forward, edits land in the kind-dir
+   copy; the experiment dir is frozen.
+
+   Things to consider in the copy after the move:
+   - Trim or rewrite the experiment-style README if the kind dir has
+     a different docs convention.
+   - Decide whether to keep the experiment's `pyproject.toml` or
+     consolidate it with the kind library's setup.
+   - Update internal links / commit references that pointed at the
+     experiment dir.
 
 ## Main vs. branch
 
@@ -113,7 +125,7 @@ experiments/exp<N>_<kind>_<name>/
 ## Frontmatter
 
 The `README.md` starts with a YAML frontmatter block read by
-`marinfold itemize`:
+`python scripts/itemize.py`:
 
 ```yaml
 ---

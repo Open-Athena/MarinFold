@@ -1,8 +1,12 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Shared helpers for the PM scripts: repo-root resolution, GitHub-repo detection,
-frontmatter parsing."""
+"""Shared helpers for the PM scripts.
+
+Repo-root resolution, GitHub-repo detection, experiment-dir-name
+parsing, frontmatter parsing, plus the canonical experiment-kind
+list (used by both the dir-name parser and the run-history schema).
+"""
 
 import re
 import subprocess
@@ -11,13 +15,19 @@ from typing import Any
 
 import yaml
 
-from marinfold_experiments import KINDS
 
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 """Filesystem path to the MarinFold repo root."""
 
 DEFAULT_GITHUB_REPO = "Open-Athena/MarinFold"
+
+
+KINDS = ("models", "evals", "data", "document_structures")
+"""Recognised experiment kinds. Match the top-level dir names exactly."""
+
+RUN_KINDS = KINDS + ("other",)
+"""Kinds valid in a run-history file. Adds ``other`` for runs outside
+any experiment."""
 
 
 def github_repo() -> str:
@@ -43,8 +53,8 @@ def parse_experiment_dir_name(dir_name: str) -> tuple[int, str, str] | None:
     """Parse ``exp<N>_<kind>_<name>`` → ``(N, kind, name)``.
 
     Returns None if the name doesn't match the convention. ``<kind>``
-    must be one of the recognised kinds (see :data:`KINDS` in
-    ``__init__.py``); ``<name>`` is everything after the kind token.
+    must be one of the recognised kinds in :data:`KINDS`; ``<name>``
+    is everything after the kind token.
     """
     if not dir_name.startswith("exp"):
         return None

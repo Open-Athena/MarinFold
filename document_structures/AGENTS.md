@@ -55,9 +55,12 @@ only.
    features (iris launch, GCS upload, multi-shard parallelism) to
    any impl's `cli.py`. Those belong in `data/` and `evals/`.
 
-## Graduated symlinks
+## Graduated experiments
 
-When a document-structure experiment is graduated, it gets a symlink
-here named after the experiment's name (dropping the
-`exp<N>_document_structures_` prefix). Don't edit through the symlink
-— edit at `experiments/exp<N>_document_structures_<name>/`.
+When a document-structure experiment is graduated, its directory is
+**copied** here under a name that drops the
+`exp<N>_document_structures_` prefix. The copy is the working
+version going forward; the original
+`experiments/exp<N>_document_structures_<name>/` stays frozen as
+the historical record. Don't reach back to the experiment dir to
+edit code — make changes here.
