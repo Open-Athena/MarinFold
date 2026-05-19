@@ -1,0 +1,32 @@
+[project]
+name = "exp12-data-protenix-foldbench-monomers"
+version = "0.1.0"
+description = "Collect Protenix v2 distogram + structure outputs on FoldBench monomers via Modal."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Local-side: input prep (FoldBench CSV → Protenix JSON + GT CIFs),
+    # post-hoc scoring, plotting, and the Modal client. The Protenix /
+    # torch / cuda stack lives in the Modal image, NOT here.
+    "modal>=0.64",
+    "gemmi>=0.6",          # mmCIF / PDB parsing for GT CIFs
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "requests",            # PDB CIF fetch + FoldBench CSV fetch
+    "huggingface-hub>=0.24",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
