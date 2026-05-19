@@ -12,12 +12,27 @@ and `<name>` is a snake_case descriptor (5–6 words max).
 
 The `README.md` is prose only — question, hypothesis, approach,
 results, plots, conclusion. **It is not an executable notebook.**
-Launchable code lives as `.py` files in the same directory; large
-artifacts go to GCS / HuggingFace, never into git.
+Launchable code lives as `.py` files (or `.ipynb` notebooks; see
+below) in the same directory; large artifacts go to GCS /
+HuggingFace, never into git.
 
-If you need to compute something inline (data wrangling, a quick
-plot), put it in a `.py` script in the experiment dir. Don't reach
-for jupyter or jupytext.
+### Notebooks
+
+Jupyter notebooks (`.ipynb`) are welcome in an experiment dir when
+the work is genuinely interactive — exploratory analysis,
+plot-heavy eval reports, prototyping a new doc structure.
+
+**Commit notebooks with their cell outputs.** Outputs (plots,
+small tables, printed metrics) are part of the experiment record
+and let a reader skim the result without re-running. Re-execute
+top-to-bottom (`Restart & Run All` or `jupyter nbconvert --execute
+--inplace`) before committing so the saved state matches the code.
+Keep notebooks small (under a few MB); push large arrays / weights
+to GCS or HuggingFace and reference them by URL from the notebook.
+
+If the inline compute is small and one-shot (a single plot, a
+quick data wrangle), a plain `.py` script is fine too — pick
+whichever fits the work.
 
 ## Hard rules
 

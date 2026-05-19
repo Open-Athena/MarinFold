@@ -1,0 +1,57 @@
+[project]
+name = "exp9-evals-test-distance-heatmaps"
+version = "0.1.0"
+description = "Zero-shot CA-CA distogram eval on 10 random AFDB test proteins."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Pulls in exp1's inference + parse modules via path. Exp1 isn't a
+    # python package (it's a script dir), so the notebook adds it to
+    # sys.path; this entry just ensures uv resolves its transitive
+    # deps (gemmi, numpy, pyarrow, marinfold-document-structures).
+    "exp1-document-structures-contacts-and-distances-v1",
+    "datasets>=2.20",         # load timodonnell/protein-docs test split
+    "fsspec",                 # download AFDB cifs via HTTPS
+    "aiohttp",                # fsspec http backend
+    "huggingface_hub>=0.24",  # snapshot_download for the 1B model
+    "matplotlib>=3.8",        # heatmaps
+    "numpy",
+    "pyyaml>=6",              # read MODELS.yaml
+    "jupyter>=1",
+    "ipykernel>=6",
+    # vllm 0.10+ ships torch 2.10+ which is built against CUDA 12.6
+    # and refuses to start on this machine's CUDA 12.2 driver. Pin
+    # to a vllm release whose torch wheel targets CUDA <= 12.1 so it
+    # runs on driver 535.x. The default torch 2.5.1 PyPI wheel is
+    # built against CUDA 12.4 and fails to load against the system
+    # libnvJitLink.so.12 (CUDA 12.2) on this host's LD_LIBRARY_PATH;
+    # the +cu121 wheel from PyTorch's index avoids that conflict.
+    "vllm>=0.7,<0.8",
+    "torch==2.5.1+cu121",
+    # vllm 0.7.x predates transformers 5.x; 5.x renamed the tokenizer
+    # backend (no more all_special_tokens_extended). Hold transformers
+    # on 4.x for this experiment.
+    "transformers>=4.45,<5",
+]
+
+[tool.uv.sources]
+exp1-document-structures-contacts-and-distances-v1 = { path = "../exp1_document_structures_contacts_and_distances_v1" }
+torch = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "jupytext>=1.19.3",
+]
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
