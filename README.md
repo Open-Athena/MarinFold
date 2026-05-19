@@ -11,6 +11,7 @@ We do not currently have models that anyone should use!
 
 ```
 MarinFold/
+├── MODELS.yaml             # registry of trained models (nickname → HF URL)
 ├── RESOURCES.md            # datasets, tokenizers, W&B projects, prior repos
 ├── AGENTS.md               # shared agent rules
 ├── .github/ISSUE_TEMPLATE/experiment.md
@@ -20,10 +21,11 @@ MarinFold/
 │   ├── AGENTS.md
 │   ├── TEMPLATE.md
 │   └── exp<N>_<kind>_<name>/       # individual experiments
+├── marinfold/              # top-level package: backends + doc-structure toolkit + `marinfold` CLI
 ├── models/                 # library for model-training experiments
 ├── evals/                  # library for eval experiments
 ├── data/                   # library for data-generation experiments
-├── document_structures/    # shared toolkit for document-structure impls
+├── document_structures/    # graduated document-structure impls (one proper package each)
 └── history/                # one file per W&B-logged run + summary RUNS.md
 ```
 
@@ -91,6 +93,54 @@ on top of a small shared toolkit in
 Most work happens on `main`. Use a branch (`exp/<N>-<name>`) only
 when an experiment needs speculative changes to a shared kind
 library.
+
+## Running inference
+
+Trained models are listed in [`MODELS.yaml`](MODELS.yaml) by
+nickname. The `marinfold` CLI looks up the model, picks the first
+document structure it supports, and dispatches to the graduated
+impl. Two subcommands:
+
+```bash
+cd marinfold
+uv sync --extra mlx        # or --extra vllm, or --extra transformers
+
+# Predict residue-pair distances for a sequence (no ground truth).
+uv run marinfold infer \
+    --backend mlx --input-sequence SIINFEKLLLSKP \
+    --out /tmp/preds.json
+
+# Evaluate predictions against ground-truth structures.
+uv run marinfold evaluate \
+    --backend mlx --input-dir /path/to/pdbs/ \
+    --out /tmp/preds.json --metrics-out /tmp/metrics.json
+```
+
+| Backend | Platform | Extra |
+|---|---|---|
+| `vllm` | Linux + NVIDIA GPU (production / scaled eval) | `--extra vllm` |
+| `mlx` | Apple Silicon (fastest local) | `--extra mlx` |
+| `transformers` | Anywhere torch installs (Apple MPS, CPU, CUDA) | `--extra transformers` |
+
+`--model` accepts a [`MODELS.yaml`](MODELS.yaml) nickname or a
+local checkpoint directory. Omit it to use the entry marked
+`default: true`. `--document-structure` overrides the impl
+selection; without it the first supported impl wins. See
+[`marinfold/README.md`](marinfold/README.md) for the full backend
+matrix and `marinfold infer --help` / `marinfold evaluate --help`
+for the full flag set.
+
+For impl-specific flags (seed-N sweeps, distance cap, batch size,
+etc.) use the per-impl `cli.py`:
+
+```bash
+cd document_structures/contacts_and_distances_v1
+uv sync --extra eval-mlx
+uv run python -m contacts_and_distances_v1.cli evaluate \
+    --backend mlx --model 1B \
+    --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
+    --out /tmp/metrics.json
+```
 
 ## Graduating an experiment
 

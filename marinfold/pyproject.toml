@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "marinfold"
+version = "0.1.0"
+description = "MarinFold: backend abstraction, document-structure toolkit, and top-level CLI for running trained protein-document LLMs."
+requires-python = ">=3.11"
+# Base install pulls only the model-resolver + tokenizer deps. Each
+# backend's heavyweight runtime is gated behind an optional extra
+# below and lazy-imported inside its backend module.
+dependencies = [
+    "huggingface_hub>=0.24",
+    "numpy",
+    "pyarrow",
+    "pyyaml>=6",
+    "tokenizers>=0.15",
+    "transformers>=4.40",
+    # Graduated document-structure impls — marinfold's CLI imports
+    # each by package name to dispatch `infer` / `evaluate`. New
+    # graduated impls get added here.
+    "contacts-and-distances-v1",
+]
+
+[project.optional-dependencies]
+# Linux+GPU production path.
+vllm = ["vllm>=0.6"]
+# Generic torch path — runs on Apple Silicon via MPS, on Linux/macOS
+# CPU otherwise. Lowest-effort local-eval option.
+transformers = ["torch>=2.4", "accelerate>=0.30"]
+# Apple Silicon native via MLX. Darwin-only wheels; uv skips on
+# other platforms automatically.
+mlx = ["mlx>=0.18; sys_platform == 'darwin'", "mlx-lm>=0.20; sys_platform == 'darwin'"]
+
+[project.scripts]
+marinfold = "marinfold.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[tool.uv]
+package = true
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+# Graduated document-structure impls live as path deps with editable
+# installs so changes are picked up without a resync.
+contacts-and-distances-v1 = { path = "../document_structures/contacts_and_distances_v1", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["marinfold"]

@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable
 
-from marinfold_document_structures.core import EvalResult
+from marinfold.document_structures.core import EvalResult
 
 
 def write_docs(out: Path, docs: Iterable[str], *, structure_name: str) -> None:

@@ -1,9 +1,11 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-import torch
+import pytest
 
-from marinfold_inference._transformers import _resolve_dtype
+torch = pytest.importorskip("torch")
+
+from marinfold.inference._transformers import _resolve_dtype  # noqa: E402
 
 
 def test_bfloat16_resolves_to_torch_bfloat16() -> None:
@@ -11,7 +13,7 @@ def test_bfloat16_resolves_to_torch_bfloat16() -> None:
 
 
 def test_shared_backend_default_dtype_stays_safe_for_mps_models() -> None:
-    from marinfold_inference._transformers import TransformersBackend
+    from marinfold.inference._transformers import TransformersBackend
 
     assert TransformersBackend.__init__.__kwdefaults__ == {
         "dtype": "bfloat16",

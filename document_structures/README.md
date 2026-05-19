@@ -1,122 +1,72 @@
 # document_structures/
 
-Shared toolkit for MarinFold document-structure implementations.
+Graduated document-structure implementations.
 
 A **document structure** is a protein-document format. Each format
-lives as a self-contained experiment under
-`experiments/exp<N>_document_structures_<name>/` with its own
-`cli.py` and the modules it dispatches to (`generate.py`,
-`inference.py`, plus shared `vocab.py` / `parse.py`).
+starts life as an in-flight experiment under
+`experiments/exp<N>_document_structures_<name>/` and, once results
+are validated, **graduates** into this directory as a proper Python
+package (`document_structures/<name>/`). The original experiment
+dir stays frozen as the historical record.
 
-This library is intentionally tiny — it's the three pieces every
-impl needs from a common place:
-
-- `EvalResult` — the return shape of an impl's `evaluate` function.
-- `build_tokenizer(tokens)` — build a `PreTrainedTokenizerFast` from
-  an ordered token list (WordLevel + whitespace pre-tokenization,
-  `<pad>` at id 0 and `<eos>` at id 1).
-- `write_docs` / `write_predictions` / `write_eval` — parquet / jsonl
-  writers for the three standard output shapes, with consistent
-  schema across formats (the `structure` column, `extras` flattening,
-  per-example sidecars).
-
-Everything else — argparse, model loading, IO conventions specific
-to one format — is the impl's responsibility.
+The shared toolkit every impl pulls from — `EvalResult`,
+`build_tokenizer`, the output writers — lives in
+[`../marinfold/`](../marinfold/) as `marinfold.document_structures`.
+This directory holds only the graduated impl packages themselves.
 
 ## Layout
 
 ```
 document_structures/
-├── pyproject.toml
 ├── README.md
 ├── AGENTS.md
-├── marinfold_document_structures/
-│   ├── __init__.py       # re-exports the public API
-│   ├── core.py           # EvalResult + build_tokenizer
-│   └── writers.py        # write_docs / write_predictions / write_eval
-└── <graduated subdirs>   # e.g. contacts_and_distances_v1/, copied from experiments/
+└── <name>/                       # one per graduated impl
+    ├── pyproject.toml
+    ├── README.md
+    ├── src/
+    │   └── <name>/               # the actual Python package
+    │       ├── __init__.py
+    │       ├── cli.py
+    │       ├── vocab.py
+    │       ├── parse.py
+    │       ├── generate.py
+    │       └── inference.py
+    └── tests/
 ```
 
-## Setup
-
-```bash
-cd document_structures
-uv venv --python 3.11
-uv sync
-```
-
-Impls have their own pyproject.toml + uv environment; they install
-this library via a path dependency.
+Graduated impls are proper installable packages and import as
+`from <name> import inference`. The top-level
+[`marinfold`](../marinfold/) package declares each graduated impl
+as a path dep so the `marinfold` CLI can dispatch to it by name.
 
 ## Authoring a document structure
 
-```
-experiments/exp<N>_document_structures_<name>/
-├── vocab.py        # ordered token list + NAME + CONTEXT_LENGTH
-├── parse.py        # input parsing (gemmi, biopython, …)
-├── generate.py     # generate_documents(...) -> Iterator[str]
-├── inference.py    # predict(cfg) -> Iterator[dict]; evaluate(cfg) -> EvalResult
-├── cli.py          # argparse driver
-└── pyproject.toml
-```
+Start in `experiments/exp<N>_document_structures_<name>/` with a
+flat layout (no `__init__.py`, sibling imports) — see
+[`experiments/exp1_document_structures_contacts_and_distances_v1/`](../experiments/exp1_document_structures_contacts_and_distances_v1/)
+as the reference. Each impl exposes:
 
-`vocab.py` defines the token list. `parse.py` reads inputs.
-`generate.py` and `inference.py` are plain library modules — they
-export functions, not classes wrapping the Protocol shape.
+- `vocab.py`        — ordered token list, `NAME`, `CONTEXT_LENGTH`.
+- `parse.py`        — input parsing (gemmi, biopython, …).
+- `generate.py`     — `generate_documents(...) -> Iterator[str]`.
+- `inference.py`    — `predict(cfg)` and `evaluate(cfg)` plus an
+                      `InferenceConfig` dataclass.
+- `cli.py`          — argparse driver (`generate` / `infer` /
+                      `evaluate` / `tokenizer`).
 
-`cli.py` is the entry point — argparse subparsers for `generate`,
-`infer`, `evaluate`, `tokenizer`. Each subcommand assembles a
-config dataclass from the args, calls the relevant function, and
-hands the result to one of the library's writers:
-
-```python
-# cli.py (sketch)
-import argparse
-from pathlib import Path
-
-from marinfold_document_structures import (
-    build_tokenizer, write_docs, write_predictions, write_eval,
-)
-
-import generate
-import inference
-from vocab import NAME, all_domain_tokens
-
-
-def cmd_generate(args):
-    docs = generate.generate_documents(
-        input_path=args.input, num_docs=args.num_docs,
-        context_length=args.context_length,
-        config=generate.GenerationConfig(...),
-    )
-    write_docs(args.out, docs, structure_name=NAME)
-
-
-def cmd_evaluate(args):
-    cfg = inference.InferenceConfig(model=args.model, ...)
-    result = inference.evaluate(cfg)
-    write_eval(args.out, result, structure_name=NAME)
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    sub = parser.add_subparsers(dest="cmd", required=True)
-    # ... subparsers, each with .set_defaults(func=cmd_*)
-    args = parser.parse_args()
-    args.func(args)
-
-
-if __name__ == "__main__":
-    main()
-```
-
-Run via `python cli.py <subcommand> ...` from the impl dir (with the
-impl's venv active).
+When graduating, copy the impl into `document_structures/<name>/`,
+add a `pyproject.toml` + `src/<name>/__init__.py`, and convert
+sibling imports to intra-package relative imports
+(`from .vocab import ...`). The per-impl `cli.py` still works for
+direct invocation; the top-level `marinfold infer` / `marinfold
+evaluate` CLI gives a higher-level interface that picks the
+document structure from `MODELS.yaml`.
 
 ## See also
 
-- [`../experiments/exp1_document_structures_contacts_and_distances_v1/`](../experiments/exp1_document_structures_contacts_and_distances_v1/)
-  — the reference impl.
+- [`../marinfold/`](../marinfold/) — shared toolkit + backends + CLI.
+- [`../experiments/`](../experiments/) — in-flight (pre-graduation)
+  impls.
 - [`../data/`](../data/) — production data-gen wrappers built on top
   of document structures.
 - [`../evals/`](../evals/) — production eval wrappers built on top

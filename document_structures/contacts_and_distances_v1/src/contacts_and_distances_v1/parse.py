@@ -1,0 +1,279 @@
+# Copyright The MarinFold Authors
+# SPDX-License-Identifier: Apache-2.0
+
+"""Gemmi-based PDB / mmCIF parsing for the contacts-and-distances-v1 experiment.
+
+Local to this experiment dir. Imported by ``generate.py`` and
+``inference.py``. Reads PDB / mmCIF (+ ``.gz``), filters atoms to
+the v1 vocab, maps non-canonical residues to UNK, and reads pLDDT
+from B-factors.
+"""
+
+import math
+import warnings
+from collections.abc import Iterator
+from dataclasses import dataclass
+from pathlib import Path
+
+from .vocab import AMINO_ACIDS, ATOM_NAMES
+
+
+# Canonical 20 amino-acid set — non-canonical residues are mapped to
+# UNK at parse time (matching contactdoc's
+# canonical_residue_policy = "map_to_unk").
+_CANONICAL_20 = frozenset(AMINO_ACIDS)
+
+# Recognised file extensions when ``iter_structure_paths`` is given
+# a directory. Gemmi auto-detects format from extension via
+# ``gemmi.read_structure(path)``.
+_STRUCTURE_EXTS = frozenset({
+    ".cif", ".cif.gz", ".mmcif", ".mmcif.gz",
+    ".pdb", ".pdb.gz", ".ent", ".ent.gz",
+})
+
+
+@dataclass(frozen=True)
+class Residue:
+    """A single residue extracted from a polymer chain."""
+
+    index: int  # 1-based position in the chain
+    name: str   # 3-letter canonical name, or "UNK"
+    plddt: float
+    # (atom_name, x, y, z) tuples for all non-hydrogen, in-vocab atoms.
+    atoms: tuple[tuple[str, float, float, float], ...]
+
+
+@dataclass(frozen=True)
+class ParsedStructure:
+    """One parsed polymer chain, ready for doc generation or evaluation.
+
+    Records yielded by ``iter_structure_paths`` + ``parse_structure``.
+    """
+
+    entry_id: str  # the file stem (e.g. "AF-P00767-F1-model_v4")
+    residues: tuple[Residue, ...]
+    source_path: Path  # for error messages / provenance
+
+    @property
+    def sequence(self) -> list[str]:
+        return [r.name for r in self.residues]
+
+    @property
+    def global_plddt(self) -> float:
+        """Mean pLDDT across all residues."""
+        if not self.residues:
+            return float("nan")
+        return sum(r.plddt for r in self.residues) / len(self.residues)
+
+
+def _vocab_safe_atoms(gemmi_residue) -> tuple[tuple[str, float, float, float], ...]:
+    """Heavy atoms whose names are present in the v1 atom vocab.
+
+    Drops hydrogens and any atom whose name is outside ``ATOM_NAMES``
+    (e.g. non-canonical residue atoms, alt-loc artifacts).
+    """
+    valid_names = set(ATOM_NAMES)
+    out: list[tuple[str, float, float, float]] = []
+    for atom in gemmi_residue:
+        if atom.is_hydrogen():
+            continue
+        name = atom.name.strip()
+        if name not in valid_names:
+            continue
+        out.append((name, atom.pos.x, atom.pos.y, atom.pos.z))
+    return tuple(out)
+
+
+def _residue_plddt(gemmi_residue) -> float:
+    """Per-residue pLDDT = mean B-factor of heavy atoms.
+
+    Matches contactdoc's ``_residue_plddt`` exactly. For non-AFDB
+    structures the B-factor isn't pLDDT but the algorithm doesn't
+    care — it just uses the value as a confidence proxy.
+    """
+    b_values = []
+    for atom in gemmi_residue:
+        if not atom.is_hydrogen():
+            b_values.append(atom.b_iso)
+    if not b_values:
+        return float("-inf")
+    return sum(b_values) / len(b_values)
+
+
+def parse_structure(
+    path: Path,
+    *,
+    require_single_chain: bool = True,
+) -> ParsedStructure:
+    """Parse one structure file (mmCIF or PDB, optionally gzipped).
+
+    Raises:
+        ValueError: if the structure has no polymer chains, requires
+            single-chain and has multiple, or has no residues.
+    """
+    import gemmi
+
+    structure = gemmi.read_structure(str(path))
+    # Populate entity / polymer metadata. AFDB mmCIFs ship with it
+    # baked in but hand-rolled PDBs (and bare PDBs without TER records)
+    # need this call before chain.get_polymer() returns anything.
+    structure.setup_entities()
+    if len(structure) == 0:
+        raise ValueError(f"{path}: no models in structure")
+    model = structure[0]
+    polymer_chains = [ch for ch in model if ch.get_polymer()]
+    if not polymer_chains:
+        raise ValueError(f"{path}: no polymer chain")
+    if require_single_chain and len(polymer_chains) != 1:
+        raise ValueError(
+            f"{path}: expected single polymer chain, found {len(polymer_chains)}. "
+            "Pass require_single_chain=False to take the first."
+        )
+    chain = polymer_chains[0]
+    polymer = chain.get_polymer()
+    residues: list[Residue] = []
+    for idx, res in enumerate(polymer, start=1):
+        name = res.name.strip()
+        if name not in _CANONICAL_20:
+            name = "UNK"
+        residues.append(Residue(
+            index=idx,
+            name=name,
+            plddt=_residue_plddt(res),
+            atoms=_vocab_safe_atoms(res),
+        ))
+    if not residues:
+        raise ValueError(f"{path}: no residues parsed")
+    entry_id = structure.name or path.stem
+    for ext in (".cif", ".mmcif", ".pdb", ".ent"):
+        if entry_id.endswith(ext):
+            entry_id = entry_id[: -len(ext)]
+            break
+    return ParsedStructure(
+        entry_id=entry_id,
+        residues=tuple(residues),
+        source_path=path,
+    )
+
+
+def iter_structure_paths(path: Path) -> Iterator[Path]:
+    """Yield structure files under ``path`` (file or directory, recursive)."""
+    if path.is_file():
+        yield path
+        return
+    if not path.is_dir():
+        raise FileNotFoundError(path)
+    for p in sorted(path.rglob("*")):
+        if not p.is_file():
+            continue
+        name = p.name.lower()
+        if any(name.endswith(ext) for ext in _STRUCTURE_EXTS):
+            yield p
+
+
+def iter_parsed_structures(path: Path) -> Iterator[ParsedStructure]:
+    """Convenience: parse every structure file under ``path``.
+
+    Files that fail to parse are skipped with a warning rather than
+    aborting iteration.
+    """
+    for p in iter_structure_paths(Path(path)):
+        try:
+            yield parse_structure(p)
+        except ValueError as exc:
+            warnings.warn(f"skipping {p}: {exc}", stacklevel=2)
+            continue
+
+
+# One-letter → three-letter canonical-20 mapping. Anything else
+# raises in :func:`structure_from_sequence` — sequence-only infer
+# refuses to silently substitute UNK because the user's intent is
+# unclear (typo vs. genuine non-canonical).
+_AA1_TO_AA3 = {
+    "A": "ALA", "R": "ARG", "N": "ASN", "D": "ASP", "C": "CYS",
+    "Q": "GLN", "E": "GLU", "G": "GLY", "H": "HIS", "I": "ILE",
+    "L": "LEU", "K": "LYS", "M": "MET", "F": "PHE", "P": "PRO",
+    "S": "SER", "T": "THR", "W": "TRP", "Y": "TYR", "V": "VAL",
+}
+
+
+def structure_from_sequence(
+    aa_string: str,
+    *,
+    entry_id: str = "sequence",
+) -> ParsedStructure:
+    """Build a :class:`ParsedStructure` from a one-letter AA sequence.
+
+    Residues carry no atom coordinates and an NaN pLDDT. Useful for
+    ``marinfold infer --input-sequence ...``: the model is queried
+    over residue pairs but no ground truth is consulted, so the
+    missing coordinates never matter.
+
+    Args:
+        aa_string: One-letter amino-acid sequence using the canonical
+            20 (``A C D E F G H I K L M N P Q R S T V W Y``).
+            Whitespace is stripped; case is ignored.
+        entry_id: Identifier used in output records. Defaults to
+            ``"sequence"``.
+
+    Raises:
+        ValueError: ``aa_string`` is empty after whitespace stripping,
+            or contains a character outside the canonical 20.
+    """
+    cleaned = "".join(aa_string.split()).upper()
+    if not cleaned:
+        raise ValueError("sequence is empty")
+    residues: list[Residue] = []
+    for i, ch in enumerate(cleaned, start=1):
+        if ch not in _AA1_TO_AA3:
+            raise ValueError(
+                f"unknown amino-acid letter {ch!r} at position {i} "
+                f"in sequence (canonical 20 only)."
+            )
+        residues.append(Residue(
+            index=i,
+            name=_AA1_TO_AA3[ch],
+            plddt=math.nan,
+            atoms=(),
+        ))
+    return ParsedStructure(
+        entry_id=entry_id,
+        residues=tuple(residues),
+        source_path=Path("<sequence>"),
+    )
+
+
+# --------------------------------------------------------------------------
+# Atom-position helpers used by both generation and evaluation
+# --------------------------------------------------------------------------
+
+
+def atom_position(residue: Residue, atom_name: str) -> tuple[float, float, float] | None:
+    """Return the (x, y, z) of the named atom on ``residue``, or None if absent."""
+    for name, x, y, z in residue.atoms:
+        if name == atom_name:
+            return (x, y, z)
+    return None
+
+
+def cb_or_ca_position(residue: Residue) -> tuple[float, float, float] | None:
+    """CB position for ``residue`` (or CA for GLY / missing CB).
+
+    Matches contactdoc's ``_get_cb_or_ca``. Returns ``None`` if
+    neither CB nor CA is present.
+    """
+    target = "CA" if residue.name == "GLY" else "CB"
+    fallback_ca: tuple[float, float, float] | None = None
+    for name, x, y, z in residue.atoms:
+        if name == target:
+            return (x, y, z)
+        if name == "CA":
+            fallback_ca = (x, y, z)
+    return fallback_ca
+
+
+def euclidean(p1, p2) -> float:
+    dx = p1[0] - p2[0]
+    dy = p1[1] - p2[1]
+    dz = p1[2] - p2[2]
+    return math.sqrt(dx * dx + dy * dy + dz * dz)

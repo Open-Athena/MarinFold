@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 import numpy as np
 
-from marinfold_inference.registry import resolve_model
+from marinfold.registry import resolve_model
 
 if TYPE_CHECKING:
     from transformers import PreTrainedTokenizerFast
@@ -79,14 +79,15 @@ class Backend(Protocol):
 def load_backend(
     name: BackendName,
     *,
-    model: str,
+    model: str | None,
     **kwargs,
 ) -> Backend:
     """Load one of the registered backends against a resolved model.
 
     ``model`` is passed through :func:`resolve_model`: a local
-    directory or a ``MODELS.yaml`` nickname. The resolved local path
-    is handed to the backend's constructor along with any backend-
+    directory, a ``MODELS.yaml`` nickname, or ``None`` to use the
+    entry marked ``default: true``. The resolved local path is
+    handed to the backend's constructor along with any backend-
     specific ``**kwargs``.
 
     Lazy-imports the backend's module so the optional runtime
@@ -95,13 +96,13 @@ def load_backend(
     """
     model_path = resolve_model(model)
     if name == "vllm":
-        from marinfold_inference._vllm import VllmBackend
+        from marinfold.inference._vllm import VllmBackend
         return VllmBackend(model_path, **kwargs)
     if name == "transformers":
-        from marinfold_inference._transformers import TransformersBackend
+        from marinfold.inference._transformers import TransformersBackend
         return TransformersBackend(model_path, **kwargs)
     if name == "mlx":
-        from marinfold_inference._mlx import MlxBackend
+        from marinfold.inference._mlx import MlxBackend
         return MlxBackend(model_path, **kwargs)
     raise ValueError(
         f"Unknown backend {name!r}. Expected one of: 'vllm', 'transformers', 'mlx'."

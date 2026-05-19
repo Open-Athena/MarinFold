@@ -29,9 +29,9 @@ from marinfold import (
     write_predictions,
 )
 
-import generate
-import inference
-from vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+from . import generate
+from . import inference
+from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 
 
 def _seed_n_values(s: str) -> tuple[int, ...]:

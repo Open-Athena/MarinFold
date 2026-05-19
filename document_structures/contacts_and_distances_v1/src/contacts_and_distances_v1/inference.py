@@ -37,7 +37,7 @@ Inspired by marin's experiments/protein/eval_protein_distogram.py.
 """
 
 import math
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -46,7 +46,7 @@ import numpy as np
 
 from marinfold import Backend, EvalResult, load_backend
 
-from parse import (
+from .parse import (
     ParsedStructure,
     atom_position,
     cb_or_ca_position,
@@ -94,8 +94,8 @@ class InferenceConfig:
     other backends ignore them.
     """
 
-    model: str
-    input_path: Path
+    model: str | None
+    input_path: Path | None = None
     backend: str = "vllm"
     seed_n_values: tuple[int, ...] = (0,)
     query_atom: str = "CA"
@@ -163,7 +163,7 @@ def _build_base_prompt_tokens(
     seeded_contacts: list[tuple[int, int]],
 ) -> list[str]:
     """Base prompt = `<task> <begin_sequence> <AAs> <begin_statements> [seeded contacts]`."""
-    from vocab import NAME
+    from .vocab import NAME
 
     toks: list[str] = [f"<{NAME}>", "<begin_sequence>"]
     toks.extend(f"<{r.name}>" for r in structure.residues)
@@ -346,7 +346,11 @@ def _resolve_targets(backend: Backend) -> tuple[list[int], np.ndarray]:
 # --------------------------------------------------------------------------
 
 
-def predict(cfg: InferenceConfig) -> Iterator[dict]:
+def predict(
+    cfg: InferenceConfig,
+    *,
+    structures: Iterable[ParsedStructure] | None = None,
+) -> Iterator[dict]:
     """Yield one record per (structure, n_seeded) pair.
 
     Each record is a dict with the entry id, the seeded-contact
@@ -355,9 +359,18 @@ def predict(cfg: InferenceConfig) -> Iterator[dict]:
     the full 64-bin probabilities are included too.
 
     No ground truth is consulted — this is the "predict on
-    sequences I haven't measured" path.
+    sequences I haven't measured" path. Caller may pass
+    pre-built ``structures`` directly (e.g. synthesized from
+    a one-letter sequence via
+    :func:`contacts_and_distances_v1.parse.structure_from_sequence`);
+    otherwise structures are parsed from ``cfg.input_path``.
     """
-    structures = list(iter_parsed_structures(cfg.input_path))
+    if structures is None:
+        if cfg.input_path is None:
+            raise ValueError("predict requires cfg.input_path or structures=")
+        structures = list(iter_parsed_structures(cfg.input_path))
+    else:
+        structures = list(structures)
     if not structures:
         return
     backend = _make_backend(cfg)
@@ -388,7 +401,11 @@ def predict(cfg: InferenceConfig) -> Iterator[dict]:
             yield record
 
 
-def evaluate(cfg: InferenceConfig) -> EvalResult:
+def evaluate(
+    cfg: InferenceConfig,
+    *,
+    structures: Iterable[ParsedStructure] | None = None,
+) -> EvalResult:
     """Run inference + compare against GT distances; return MAE per seed-N.
 
     Headline metric: ``mae_at_n<N>_angstrom``, macro-mean across
@@ -400,10 +417,21 @@ def evaluate(cfg: InferenceConfig) -> EvalResult:
     structure's coordinates. Pairs with non-finite GT or GT >
     ``cfg.distance_cap_angstrom`` are masked out (pre-filter inside
     :func:`_query_pairs`, so the model is never asked about them).
-    """
-    from vocab import NAME
 
-    structures = list(iter_parsed_structures(cfg.input_path))
+    Caller may pass pre-parsed ``structures`` directly; otherwise
+    they are parsed from ``cfg.input_path``. Sequence-only
+    structures (no atom coordinates) are not meaningful here — GT
+    distances depend on atoms — so the path-based call is the
+    expected use.
+    """
+    from .vocab import NAME
+
+    if structures is None:
+        if cfg.input_path is None:
+            raise ValueError("evaluate requires cfg.input_path or structures=")
+        structures = list(iter_parsed_structures(cfg.input_path))
+    else:
+        structures = list(structures)
     if not structures:
         return EvalResult(metrics={}, per_example=[], extras={
             "structure": NAME,

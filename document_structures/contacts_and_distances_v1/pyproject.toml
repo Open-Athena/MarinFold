@@ -1,7 +1,11 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "exp1-document-structures-contacts-and-distances-v1"
+name = "contacts-and-distances-v1"
 version = "0.1.0"
-description = "contacts-and-distances-v1 document structure: generate / infer / evaluate driver."
+description = "contacts-and-distances-v1 document structure: generate / infer / evaluate implementation."
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "marinfold",
@@ -12,8 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 # Backend extras: pick one based on platform. Each delegates to the
-# matching extra on the consolidated marinfold package, so the heavy
-# runtime (vllm / torch / mlx) is only installed when you ask for it.
+# matching extra on the marinfold package, so the heavy runtime
+# (vllm / torch / mlx) is only installed when you ask for it.
 #
 # - eval        → vLLM (Linux+GPU production path)
 # - eval-local  → transformers (Apple Silicon MPS, CPU, or CUDA)
@@ -21,17 +25,19 @@ dependencies = [
 eval       = ["marinfold[vllm]"]
 eval-local = ["marinfold[transformers]"]
 eval-mlx   = ["marinfold[mlx]"]
-# Network-dependent tests (byte-identity check against
-# huggingface.co/timodonnell/protein-docs-tokenizer@<sha>) need
-# huggingface_hub installed. pytest is for running tests in general.
+# Network-dependent tests need huggingface_hub installed.
 test = ["pytest>=8", "huggingface_hub>=0.24"]
+
+[project.scripts]
+# Lower-level CLI for direct invocation; the high-level
+# ``marinfold infer / evaluate`` lives in the marinfold package.
+contacts-and-distances-v1 = "contacts_and_distances_v1.cli:main"
 
 [dependency-groups]
 dev = []
 
 [tool.uv]
-# Not a package — only used for venv + dep resolution.
-package = false
+package = true
 fork-strategy = "fewest"
 prerelease = "allow"
 environments = [
@@ -41,6 +47,9 @@ environments = [
 
 [tool.uv.sources]
 marinfold = { path = "../../marinfold", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/contacts_and_distances_v1"]
 
 [tool.pytest.ini_options]
 markers = [

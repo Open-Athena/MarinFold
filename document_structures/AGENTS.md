@@ -5,62 +5,83 @@ of the root `AGENTS.md`.
 
 ## Scope
 
-`document_structures/` is a **small shared toolkit**: the `EvalResult`
-dataclass, `build_tokenizer`, and the parquet/jsonl output writers
-(`write_docs` / `write_predictions` / `write_eval`). That's it.
+`document_structures/` holds **graduated document-structure
+implementations**. Each impl is a proper Python package under
+`document_structures/<name>/` with its own `pyproject.toml`,
+`src/<name>/` package dir, and tests.
 
-Concrete implementations live under
-`experiments/exp<N>_document_structures_<name>/` and own their full
-CLI surface. Each impl typically has:
+The **shared toolkit** every impl pulls from — `EvalResult`,
+`build_tokenizer`, and the output writers (`write_docs` /
+`write_predictions` / `write_eval`) — does not live here. It lives in
+[`../marinfold/`](../marinfold/) as `marinfold.document_structures`,
+and impls import it as `from marinfold.document_structures import …`
+(or via the top-level re-exports: `from marinfold import EvalResult`,
+etc.).
+
+Each impl typically has:
 
 - `vocab.py` — ordered token list + `NAME` / `CONTEXT_LENGTH`.
 - `parse.py` — input parsing (gemmi / biopython / …).
 - `generate.py` — training-document generation as a plain function
   (e.g. `generate_documents(...) -> Iterator[str]`).
-- `inference.py` — `predict(cfg) -> Iterator[dict]` and
-  `evaluate(cfg) -> EvalResult` as plain functions; takes a config
-  dataclass the CLI builds.
-- `cli.py` — argparse driver with `generate` / `infer` / `evaluate` /
-  `tokenizer` subcommands. Run as `python cli.py <subcommand> ...`.
-
-Graduated experiments may appear here as symlinks. Those are not
-part of the library; the library is `marinfold_document_structures/`
-only.
+- `inference.py` — `predict(cfg)` and `evaluate(cfg)` as plain
+  functions; takes an `InferenceConfig` dataclass.
+- `cli.py` — argparse driver (`generate` / `infer` / `evaluate` /
+  `tokenizer`). Still useful for direct invocation; the high-level
+  `marinfold infer` / `marinfold evaluate` CLI gives a friendlier
+  interface for the common cases.
 
 ## Hard rules
 
-1. **Keep the library lightweight.** `marinfold_document_structures/`
-   should depend only on stdlib + pyarrow + tokenizers/transformers
-   (for `build_tokenizer`). Heavy deps (gemmi, biopython, vllm,
-   torch, …) belong in the impls, not here. If an impl needs a new
-   shared helper, prefer copying once and lifting when a second impl
-   needs the same shape.
+1. **Don't reintroduce a centralized CLI dispatcher inside this
+   directory.** A prior design used `Generator` / `Inference`
+   Protocols + dynamic module loading + a
+   `marinfold-document-structure` entry point. It accumulated subtle
+   bugs (sys.modules cache leaks, two-pass argparse weirdness,
+   silently-different output schemas across formats) for very little
+   ergonomic gain.
 
-2. **Don't reintroduce a centralized CLI or Protocol layer.** A
-   prior design used `Generator` / `Inference` Protocols + dynamic
-   module loading + a `marinfold-document-structure` entry point.
-   It accumulated subtle bugs (sys.modules cache leaks, two-pass
-   argparse weirdness, silently-different output schemas across
-   formats) for very little ergonomic gain. Each impl ships its own
-   `cli.py` instead.
+   The top-level `marinfold` CLI (in [`../marinfold/`](../marinfold/))
+   imports impls as **proper packages** declared as path deps — no
+   dynamic loader, no entry-point registry. Adding a new graduated
+   impl means adding it to `marinfold`'s path deps once.
 
-3. **Output writers go through the library.** The three standard
-   shapes (docs, predictions, eval) all use
-   `marinfold_document_structures.write_*`. They handle the parquet
-   vs. jsonl branching, the `structure` column, the eval extras
-   flattening, and the per-example sidecars consistently — don't
-   reimplement these in `cli.py`.
+2. **Output writers go through `marinfold.document_structures`.** The
+   three standard shapes (docs, predictions, eval) all use the
+   `write_*` helpers. They handle the parquet vs. jsonl branching,
+   the `structure` column, the eval extras flattening, and the
+   per-example sidecars consistently — don't reimplement these in
+   any impl's `cli.py`.
 
-4. **CLI is local-testing-only.** Don't add production-scaling
-   features (iris launch, GCS upload, multi-shard parallelism) to
-   any impl's `cli.py`. Those belong in `data/` and `evals/`.
+3. **Per-impl `cli.py` is local-testing-only.** Don't add production-
+   scaling features (iris launch, GCS upload, multi-shard
+   parallelism) to it. Those belong in `data/` and `evals/`.
 
-## Graduated experiments
+## Graduating an experiment
 
-When a document-structure experiment is graduated, its directory is
-**copied** here under a name that drops the
-`exp<N>_document_structures_` prefix. The copy is the working
-version going forward; the original
-`experiments/exp<N>_document_structures_<name>/` stays frozen as
-the historical record. Don't reach back to the experiment dir to
-edit code — make changes here.
+When a document-structure experiment is graduated, copy the impl into
+`document_structures/<name>/` and restructure it as a proper package:
+
+```
+document_structures/<name>/
+├── pyproject.toml
+├── README.md
+├── src/
+│   └── <name>/
+│       ├── __init__.py
+│       ├── cli.py
+│       ├── vocab.py
+│       ├── parse.py
+│       ├── generate.py
+│       └── inference.py
+└── tests/
+```
+
+Inside the package, convert sibling imports (`from vocab import …`)
+to intra-package relative imports (`from .vocab import …`).
+
+Then add the impl as a path dep in
+[`../marinfold/pyproject.toml`](../marinfold/pyproject.toml) so the
+top-level `marinfold` CLI can dispatch to it. The original
+`experiments/exp<N>_document_structures_<name>/` stays frozen as the
+historical record.

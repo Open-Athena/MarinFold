@@ -13,7 +13,7 @@ subcommands) and the modules it dispatches to (``generate.py``,
 This library is intentionally tiny: it holds the shared types
 (``EvalResult``) and the one piece of logic every impl needs to
 agree on (``build_tokenizer``). The output writers live next door in
-:mod:`marinfold_document_structures.writers`. Everything else —
+:mod:`marinfold.document_structures.writers`. Everything else —
 argparse surfaces, file IO conventions, the impl's algorithm — is
 the impl's business.
 """
