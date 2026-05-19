@@ -1,29 +1,35 @@
 # marinfold/
 
 The top-level MarinFold Python package: backend abstraction, shared
-document-structure toolkit, and the `marinfold` CLI.
-
-This consolidates what used to be three things — `inference/`,
-`document_structures/` (the library half), and a hypothetical
-top-level CLI — into one importable package with three submodules:
+document-structure toolkit, graduated document-structure impls, and
+the `marinfold` CLI.
 
 ```
 marinfold/
 ├── pyproject.toml
 ├── README.md
 ├── AGENTS.md
-└── marinfold/
-    ├── __init__.py               # public API re-exports
-    ├── cli.py                    # `marinfold infer / evaluate`
-    ├── registry.py               # MODELS.yaml: nickname → local path, default model
-    ├── inference/                # Backend protocol + three backends
-    │   ├── core.py
-    │   ├── _vllm.py
-    │   ├── _transformers.py
-    │   └── _mlx.py
-    └── document_structures/      # EvalResult, build_tokenizer, output writers
-        ├── core.py
-        └── writers.py
+├── src/
+│   └── marinfold/
+│       ├── __init__.py                       # public API re-exports
+│       ├── cli.py                            # `marinfold infer / evaluate`
+│       ├── registry.py                       # MODELS.yaml: nickname → local path, default model
+│       ├── MODELS.yaml                       # packaged copy (matched against repo root by tests)
+│       ├── inference/                        # Backend protocol + three backends
+│       │   ├── core.py
+│       │   ├── _vllm.py
+│       │   ├── _transformers.py
+│       │   └── _mlx.py
+│       └── document_structures/              # shared toolkit + graduated impl subpackages
+│           ├── core.py                       # EvalResult, build_tokenizer
+│           ├── writers.py                    # write_docs / write_predictions / write_eval
+│           └── contacts_and_distances_v1/    # graduated impl (subpackage)
+│               ├── cli.py
+│               ├── vocab.py / parse.py / generate.py / inference.py
+│               └── ...
+└── tests/
+    ├── test_registry.py / test_cli.py / test_transformers.py
+    └── document_structures/contacts_and_distances_v1/test_structure.py
 ```
 
 ## Public API
@@ -38,6 +44,11 @@ probs = backend.next_token_probs(prompts, target_token_ids)
 # Build a doc-structure impl:
 from marinfold import EvalResult, build_tokenizer
 from marinfold import write_docs, write_predictions, write_eval
+
+# Use a graduated impl directly:
+from marinfold.document_structures.contacts_and_distances_v1 import (
+    predict, evaluate, InferenceConfig,
+)
 ```
 
 ## Backends
@@ -50,6 +61,23 @@ from marinfold import write_docs, write_predictions, write_eval
 
 All three load HF safetensors directly — no GGUF / MLX conversion
 step is required.
+
+## Document-structure impls
+
+Graduated impls live as subpackages of `marinfold.document_structures`.
+Their heavy parser deps (e.g. `gemmi`) are opt-in via per-impl
+extras and lazy-imported inside the impl modules, so importing the
+subpackage doesn't pull anything you didn't ask for.
+
+| Impl | Extra |
+|---|---|
+| `contacts-and-distances-v1` | `marinfold[contacts-and-distances-v1]` (pulls `gemmi`) |
+
+The high-level `marinfold infer` / `marinfold evaluate` CLI picks
+the impl automatically based on the model's `document_structures`
+list in `MODELS.yaml`. Each impl also ships its own lower-level
+console script (e.g. `contacts-and-distances-v1`) for power-user
+flag access.
 
 ## Model resolution
 
@@ -72,7 +100,6 @@ known models small, named, and discoverable.
 
 ## See also
 
-- [`../document_structures/`](../document_structures/) — graduated
-  document-structure impls (each its own proper package).
 - [`../experiments/`](../experiments/) — in-flight experiments,
-  including pre-graduation impls.
+  including pre-graduation document-structure impls.
+- [`../MODELS.yaml`](../MODELS.yaml) — registered trained models.

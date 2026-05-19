@@ -16,8 +16,9 @@ Dispatch is driven by repo-root ``MODELS.yaml``:
    resolves to a :class:`marinfold.ModelEntry`.
 2. ``--document-structure <name>`` (or omitted → the first entry in
    the model's ``document_structures`` list) picks the impl package.
-3. The impl package is imported by name (e.g. ``contacts_and_distances_v1``)
-   and the appropriate function (``predict`` / ``evaluate``) is called.
+3. The impl subpackage is imported (e.g.
+   ``marinfold.document_structures.contacts_and_distances_v1``) and
+   the appropriate function (``predict`` / ``evaluate``) is called.
 
 For impl-specific flags (seed-N sweeps, distance cap, batch size, …)
 use the per-impl ``cli.py`` instead. The top-level CLI keeps its
@@ -44,22 +45,39 @@ _BACKEND_CHOICES = ("vllm", "transformers", "mlx")
 # --------------------------------------------------------------------------
 
 
-def _impl_package_name(structure_name: str) -> str:
-    """Map a doc-structure NAME (kebab-case) to its Python package name."""
-    return structure_name.replace("-", "_")
+def _impl_module_name(structure_name: str) -> str:
+    """Map a doc-structure NAME (kebab-case) to its subpackage module path."""
+    return f"marinfold.document_structures.{structure_name.replace('-', '_')}"
 
 
 def _load_impl(structure_name: str) -> ModuleType:
-    """Import the graduated impl package; emit a helpful error on miss."""
-    pkg_name = _impl_package_name(structure_name)
+    """Import the impl subpackage; emit a helpful error on miss.
+
+    Two failure modes for graduated impls:
+
+    - The impl subpackage doesn't exist (typo / not yet graduated).
+    - The impl exists but its optional-deps extra
+      (e.g. ``marinfold[contacts-and-distances-v1]``) isn't installed,
+      so a transitive import (gemmi etc.) fails.
+    """
+    module_name = _impl_module_name(structure_name)
     try:
-        return importlib.import_module(pkg_name)
+        return importlib.import_module(module_name)
     except ModuleNotFoundError as exc:
+        # Distinguish "impl package missing" from "impl's deps missing".
+        impl_missing = exc.name == module_name or (
+            exc.name is not None and module_name.startswith(exc.name + ".")
+        )
+        if impl_missing:
+            raise SystemExit(
+                f"Document structure {structure_name!r} is not available. "
+                f"Expected subpackage {module_name!r}. Graduate the impl "
+                f"into marinfold/src/marinfold/document_structures/ first."
+            ) from exc
         raise SystemExit(
-            f"Document structure {structure_name!r} is not installed. "
-            f"Expected to import Python package {pkg_name!r}. Add it as "
-            f"a path dep in marinfold's pyproject.toml after graduating "
-            f"the experiment into document_structures/{pkg_name}/."
+            f"Document structure {structure_name!r} is installed but a "
+            f"required dep is missing ({exc.name!r}). Install the matching "
+            f"extra: pip install 'marinfold[{structure_name}]'."
         ) from exc
 
 

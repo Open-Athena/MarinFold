@@ -5,25 +5,29 @@ root `AGENTS.md`.
 
 ## Scope
 
-`marinfold/` is the top-level user-facing package. Three
+`marinfold/` is the top-level user-facing package. Four
 responsibilities, nothing more:
 
 1. **Inference backends** (`marinfold.inference`) — the `Backend`
    protocol (`next_token_probs`, `tokenizer`) and the three
-   implementations (vLLM, transformers, MLX).
-2. **Document-structure shared toolkit** (`marinfold.document_structures`)
-   — `EvalResult`, `build_tokenizer`, output writers
-   (`write_docs` / `write_predictions` / `write_eval`).
-3. **Top-level CLI** (`marinfold.cli`) + model registry
+   implementations (vLLM, transformers, MLX). Protein-unaware.
+2. **Document-structure shared toolkit** (`marinfold.document_structures`
+   `core` + `writers`) — `EvalResult`, `build_tokenizer`, output
+   writers (`write_docs` / `write_predictions` / `write_eval`).
+   Protein-unaware.
+3. **Graduated document-structure impls**
+   (`marinfold.document_structures.<name>`) — each impl is a
+   subpackage. The impl is the only place that knows about residues,
+   distances, and one specific protein-document format.
+4. **Top-level CLI** (`marinfold.cli`) + model registry
    (`marinfold.registry`) — `marinfold infer` / `marinfold evaluate`
    that look up a model in `MODELS.yaml`, pick a supported document
-   structure, and dispatch to the graduated impl package.
+   structure, and dispatch to the impl subpackage.
 
-Format-specific logic — prompt construction, vocab token resolution,
-ground-truth comparison, MAE/accuracy math — belongs in the document-
-structure impl, not here. The library is protein-unaware. If a helper
-here starts to know about residues or distances, it's in the wrong
-package.
+Format-specific logic stays inside an impl subpackage. The
+sibling modules under `marinfold.inference` and `marinfold.document_structures.{core,writers}`
+remain protein-unaware. If a helper in those starts to know about
+residues or distances, it's in the wrong place.
 
 ## Hard rules
 
