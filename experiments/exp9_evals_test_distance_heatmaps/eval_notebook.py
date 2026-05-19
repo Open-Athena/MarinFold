@@ -336,6 +336,59 @@ for spec, parsed in structures:
     print(f"    saved {out_path.relative_to(REPO_ROOT)}; MAE = {mae:.2f} Å")
 
 # %% [markdown]
+# ## All proteins at a glance — 10 × 3 grid
+#
+# One row per protein, columns = GT, predicted, |residual|. Color
+# scales are shared per column so brightness is comparable across
+# rows.
+
+# %%
+n_proteins = len(structures)
+fig, axes = plt.subplots(
+    n_proteins, 3,
+    figsize=(11, 3.2 * n_proteins),
+    squeeze=False,
+)
+for row, (spec, parsed) in enumerate(structures):
+    gt = gt_matrices[spec.entry_id]
+    pred = predicted_matrices[spec.entry_id]
+    abs_err = np.abs(pred - gt)
+    n = gt.shape[0]
+    ii, jj = np.meshgrid(np.arange(n), np.arange(n), indexing="ij")
+    valid = (ii != jj) & np.isfinite(gt) & (gt <= DISTANCE_MAX_A)
+    mae = float(abs_err[valid & np.isfinite(pred)].mean())
+
+    im0 = axes[row, 0].imshow(gt, vmin=0, vmax=DISTANCE_MAX_A, cmap="viridis")
+    im1 = axes[row, 1].imshow(pred, vmin=0, vmax=DISTANCE_MAX_A, cmap="viridis")
+    im2 = axes[row, 2].imshow(abs_err, vmin=0, vmax=10.0, cmap="magma")
+
+    axes[row, 0].set_ylabel(f"{spec.entry_id}\n({n} res)\nMAE={mae:.2f} Å",
+                            fontsize=9)
+    if row == 0:
+        axes[row, 0].set_title("GT CA-CA (Å)")
+        axes[row, 1].set_title("Predicted CA-CA (Å)")
+        axes[row, 2].set_title("|residual| (Å)")
+    for col in range(3):
+        axes[row, col].set_xticks([])
+        axes[row, col].set_yticks([])
+
+# Shared colorbars on the right edge.
+cbar_ax_dist = fig.add_axes([0.93, 0.55, 0.012, 0.32])
+fig.colorbar(im1, cax=cbar_ax_dist, label="distance (Å)")
+cbar_ax_err = fig.add_axes([0.93, 0.13, 0.012, 0.32])
+fig.colorbar(im2, cax=cbar_ax_err, label="|residual| (Å)")
+
+fig.suptitle(
+    f"All {n_proteins} test proteins — 1B model, zero-shot CA-CA "
+    f"(macro MAE = {float(np.mean([r['mae_ca_ca_angstrom'] for r in per_protein_mae])):.2f} Å)",
+    fontsize=12,
+)
+fig.subplots_adjust(left=0.13, right=0.91, top=0.97, bottom=0.02, hspace=0.18, wspace=0.05)
+fig.savefig(PLOTS_DIR / "all_proteins_grid.png", dpi=110, bbox_inches="tight")
+plt.show()
+print(f"saved {(PLOTS_DIR / 'all_proteins_grid.png').relative_to(REPO_ROOT)}")
+
+# %% [markdown]
 # ## Aggregate
 #
 # Macro-mean MAE across the 10 proteins, plus a scatter of
