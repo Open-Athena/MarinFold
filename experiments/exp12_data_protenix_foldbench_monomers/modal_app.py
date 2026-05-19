@@ -76,6 +76,13 @@ PROTENIX_IMAGE = (
         "PROTENIX_ROOT_DIR": "/root/protenix_root",
         # Tell HF tokenization layer to not phone home unnecessarily.
         "TOKENIZERS_PARALLELISM": "false",
+        # Protenix's runner/msa_search.py defaults to
+        # https://protenix-server.com/api/msa. That endpoint can be
+        # unreliable; the underlying helper supports the
+        # ColabFold MMseqs2 API as a drop-in, which is the de-facto
+        # public service for this workload. We pin it explicitly so
+        # MSA pre-compute is deterministic across Modal runs.
+        "MMSEQS_SERVICE_HOST_URL": "https://api.colabfold.com",
     })
     .add_local_python_source("distogram_hook")
 )
@@ -133,13 +140,20 @@ def precompute_msa(stem: str, sequence: str) -> dict:
 
     Idempotent: if the target a3m files already exist, returns
     immediately without re-running.
+
+    Path layout from Protenix's colabfold-mode pipeline:
+      - ``<msa_res_dir>/0/pairing.a3m``  (stub for monomers; ">query\n<seq>")
+      - ``<msa_res_dir>/0/0/non_pairing.a3m``  (the actual unpaired MSA;
+        the nested ``0/`` matches ``query_<id>`` numbering in the
+        protenix colab_request_utils extractor.)
+    Idempotency keys on the real MSA file (``non_pairing.a3m``).
     """
     target_dir = Path("/msa") / stem / "msa"
-    paired = target_dir / "pairing.a3m"
-    non_paired = target_dir / "non_pairing.a3m"
-    if non_paired.exists() or paired.exists():
-        print(f"[{stem}] MSA already present; skipping.")
-        return {"stem": stem, "skipped": True, "dir": str(target_dir)}
+    unpaired_dir = target_dir / "0" / "0"
+    non_paired = unpaired_dir / "non_pairing.a3m"
+    if non_paired.exists():
+        print(f"[{stem}] MSA already present at {non_paired}; skipping.")
+        return {"stem": stem, "skipped": True, "dir": str(unpaired_dir)}
 
     # Protenix's msa_search machinery operates on the per-task JSON
     # in-place, populating sequence['proteinChain']['pairedMsaPath'] /
@@ -183,23 +197,47 @@ class ProtenixWorker:
 
     @modal.enter()
     def setup(self) -> None:
-        # Symlink the weights Volume into PROTENIX_ROOT_DIR with the
-        # layout Protenix expects.
+        # Lay out PROTENIX_ROOT_DIR the way Protenix expects:
+        #   - checkpoint/protenix-v2.pt        -> /weights/checkpoint/protenix-v2.pt
+        #   - common/components.cif            -> /weights/ccd_cache/components.v20240608.cif
+        #   - common/components.cif.rdkit_mol.pkl -> /weights/ccd_cache/...rdkit_mol.pkl
+        # Protenix's configs/configs_data.py points ccd_components_file at
+        # ``$PROTENIX_ROOT_DIR/common/components.cif`` (NOT the versioned
+        # ``ccd_cache/`` filename the HF mirror ships), so we hard-link
+        # the canonical name in.
         root = Path(os.environ["PROTENIX_ROOT_DIR"])
         root.mkdir(parents=True, exist_ok=True)
-        for sub in ("checkpoint", "ccd_cache"):
-            src = Path("/weights") / sub
-            dst = root / sub
-            if dst.exists() or dst.is_symlink():
-                if dst.is_symlink():
-                    dst.unlink()
-                else:
-                    shutil.rmtree(dst)
+        # checkpoint dir: directory symlink is fine.
+        ckpt_src = Path("/weights/checkpoint")
+        ckpt_dst = root / "checkpoint"
+        if ckpt_dst.is_symlink():
+            ckpt_dst.unlink()
+        elif ckpt_dst.exists():
+            shutil.rmtree(ckpt_dst)
+        if ckpt_src.exists():
+            ckpt_dst.symlink_to(ckpt_src)
+            print(f"linked {ckpt_dst} -> {ckpt_src}")
+        else:
+            print(f"WARN: {ckpt_src} missing")
+        # common/ dir: per-file symlinks under canonical names.
+        common = root / "common"
+        common.mkdir(parents=True, exist_ok=True)
+        canonical_map = {
+            "components.cif": "/weights/ccd_cache/components.v20240608.cif",
+            "components.cif.rdkit_mol.pkl": "/weights/ccd_cache/components.v20240608.cif.rdkit_mol.pkl",
+        }
+        for canonical_name, src_path in canonical_map.items():
+            src = Path(src_path)
+            dst = common / canonical_name
+            if dst.is_symlink():
+                dst.unlink()
+            elif dst.exists():
+                dst.unlink()
             if src.exists():
                 dst.symlink_to(src)
                 print(f"linked {dst} -> {src}")
             else:
-                print(f"WARN: {src} missing; ProtenixWorker will fail on first call.")
+                print(f"WARN: {src} missing")
 
     @modal.method()
     def predict_one(
@@ -230,9 +268,13 @@ class ProtenixWorker:
         #    disable Protenix's auto-search.
         job_data = json.loads(job_json_str)
         if mode == "msa":
-            msa_dir = Path("/msa") / stem / "msa"
-            paired = msa_dir / "pairing.a3m"
-            non_paired = msa_dir / "non_pairing.a3m"
+            # Pre-computed MSAs land at:
+            #   /msa/<stem>/msa/0/pairing.a3m      (monomer stub)
+            #   /msa/<stem>/msa/0/0/non_pairing.a3m (real unpaired MSA)
+            # under Protenix's colabfold-mode layout (see precompute_msa).
+            base = Path("/msa") / stem / "msa" / "0"
+            paired = base / "pairing.a3m"
+            non_paired = base / "0" / "non_pairing.a3m"
             for task in job_data:
                 for seq in task["sequences"]:
                     if "proteinChain" not in seq:
@@ -314,17 +356,28 @@ class ProtenixWorker:
             handle.remove()
 
         # 6. Copy outputs from scratch into the persistent /outputs Volume.
+        # Protenix lays them out as:
+        #   {dump_dir}/{dataset_name=""}/{stem}/seed_{seed}/predictions/{stem}_sample_*.cif
+        #                                                              {stem}_summary_confidence_sample_*.json
+        # We flatten the predictions/ subdir away so downstream tools just
+        # iterate seed_*/<files>.
         out_root = Path("/outputs") / mode / stem
         out_root.mkdir(parents=True, exist_ok=True)
         for seed in seeds:
-            src_seed_dir = dump_dir / "" / stem / f"seed_{seed}"   # dataset_name is "" per dumper
+            src_seed_dir = dump_dir / stem / f"seed_{seed}"   # dataset_name="" elides
+            src_predictions = src_seed_dir / "predictions"
             dst_seed_dir = out_root / f"seed_{seed}"
-            if not src_seed_dir.exists():
-                print(f"WARN: no Protenix output for {mode}/{stem}/seed_{seed}")
+            if not src_predictions.exists():
+                print(f"WARN: no Protenix predictions for {mode}/{stem}/seed_{seed}")
                 continue
             dst_seed_dir.mkdir(exist_ok=True)
-            for f in src_seed_dir.iterdir():
-                shutil.copy2(f, dst_seed_dir / f.name)
+            for f in src_predictions.iterdir():
+                if f.is_file():
+                    shutil.copy2(f, dst_seed_dir / f.name)
+                elif f.is_dir():
+                    # Sub-dirs (rare; would only be present for multi-sample
+                    # full_data dumps). Recursive copy.
+                    shutil.copytree(f, dst_seed_dir / f.name, dirs_exist_ok=True)
             # Distogram for this seed (if captured).
             dist_src = capture_out / f"seed_{seed}" / f"{stem}_distogram.npz"
             if dist_src.exists():
