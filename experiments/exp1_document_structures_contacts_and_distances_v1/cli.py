@@ -78,6 +78,7 @@ def cmd_infer(args: argparse.Namespace) -> None:
     cfg = inference.InferenceConfig(
         model=args.model,
         input_path=args.input,
+        backend=args.backend,
         seed_n_values=args.seed_n_values,
         query_atom=args.query_atom,
         top_k_logprobs=args.top_k_logprobs,
@@ -96,6 +97,7 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
     cfg = inference.InferenceConfig(
         model=args.model,
         input_path=args.input,
+        backend=args.backend,
         seed_n_values=args.seed_n_values,
         query_atom=args.query_atom,
         top_k_logprobs=args.top_k_logprobs,
@@ -179,8 +181,17 @@ def build_parser() -> argparse.ArgumentParser:
     # ---- shared inference args (used by infer + evaluate) ------------------
     def _add_inference_common(p: argparse.ArgumentParser) -> None:
         p.add_argument("--model", required=True,
-                       help="HuggingFace model path or local dir. Tokenizer "
-                            "must be co-located.")
+                       help="Local directory holding the model + tokenizer, "
+                            "or a nickname listed in repo-root MODELS.yaml "
+                            "(e.g. '1B'). Bare HF repo ids are not "
+                            "accepted — register the model in MODELS.yaml "
+                            "first.")
+        p.add_argument("--backend", choices=("vllm", "transformers", "mlx"),
+                       default="vllm",
+                       help="Inference runtime. 'vllm' is the Linux+GPU "
+                            "production path; 'transformers' runs on Apple "
+                            "Silicon (MPS), CPU, or CUDA; 'mlx' is Apple "
+                            "Silicon native. Default 'vllm'.")
         p.add_argument("--input", type=Path, required=True,
                        help="Structure file (PDB / mmCIF / .gz) or directory. "
                             "For evaluate, the input IS the ground truth — "
@@ -190,10 +201,17 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--seed-n-values", type=_seed_n_values, default=(0,),
                        help="Comma-separated seeded-contact counts "
                             "(e.g. '0,5,20,50'). Default '0' = zero-shot.")
-        p.add_argument("--top-k-logprobs", type=int, default=128)
+        p.add_argument("--top-k-logprobs", type=int, default=128,
+                       help="vLLM-only; ignored by other backends.")
         p.add_argument("--batch-size", type=int, default=64)
-        p.add_argument("--dtype", default="bfloat16")
-        p.add_argument("--gpu-memory-utilization", type=float, default=0.85)
+        p.add_argument("--dtype", default="bfloat16",
+                       help="Model dtype. Honored by vllm and transformers; "
+                            "MLX ignores it (loads whatever's on disk). "
+                            "On MPS prefer bfloat16 or float32 — float16 "
+                            "overflows the residual stream for these "
+                            "bf16-trained checkpoints.")
+        p.add_argument("--gpu-memory-utilization", type=float, default=0.85,
+                       help="vLLM-only; ignored by other backends.")
         p.add_argument("--max-pairs-per-structure", type=int, default=None,
                        help="Cap pairs per structure (useful for smoke tests). "
                             "In evaluate mode this caps *evaluatable* pairs "
