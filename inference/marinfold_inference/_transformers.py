@@ -58,7 +58,7 @@ class TransformersBackend:
         self,
         model_path: Path,
         *,
-        dtype: str = "float16",
+        dtype: str = "bfloat16",
         device: str | None = None,
     ):
         self._device = device or _best_device()

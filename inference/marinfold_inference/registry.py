@@ -15,9 +15,13 @@ Bare HF repo ids are not accepted by design — keeping the set of
 known models small and named makes it easy to track which checkpoint
 produced which eval number.
 
-``MODELS.yaml`` is located by walking up from ``os.getcwd()`` looking
-for the file. The env var ``MARINFOLD_MODELS_YAML`` overrides that
-search.
+``MODELS.yaml`` is located in this order:
+
+1. The path named by ``MARINFOLD_MODELS_YAML``.
+2. Walking up from ``os.getcwd()``.
+3. Walking up from this package's location, which covers the normal
+   editable-install / repo-checkout case even when the caller's cwd is
+   elsewhere.
 """
 
 import os
@@ -106,7 +110,7 @@ def _find_entry_by_nickname(nickname: str) -> dict[str, Any] | None:
 
 
 def _locate_models_yaml() -> Path:
-    """Find ``MODELS.yaml`` via env override or walk-up from cwd."""
+    """Find ``MODELS.yaml`` via env override, cwd, or package location."""
     override = os.environ.get("MARINFOLD_MODELS_YAML")
     if override:
         p = Path(override)
@@ -117,15 +121,20 @@ def _locate_models_yaml() -> Path:
             )
         return p
 
-    cwd = Path.cwd().resolve()
-    for parent in [cwd, *cwd.parents]:
-        candidate = parent / _MODELS_YAML_FILENAME
-        if candidate.is_file():
-            return candidate
+    search_roots = [Path.cwd().resolve(), Path(__file__).resolve().parent]
+    seen: set[Path] = set()
+    for root in search_roots:
+        for parent in [root, *root.parents]:
+            if parent in seen:
+                continue
+            seen.add(parent)
+            candidate = parent / _MODELS_YAML_FILENAME
+            if candidate.is_file():
+                return candidate
     raise FileNotFoundError(
-        f"Could not find {_MODELS_YAML_FILENAME} in {cwd} or any "
-        f"parent directory. Set MARINFOLD_MODELS_YAML to point at "
-        f"it explicitly."
+        f"Could not find {_MODELS_YAML_FILENAME} from cwd {Path.cwd().resolve()} "
+        f"or from the package location {Path(__file__).resolve().parent}. "
+        f"Set MARINFOLD_MODELS_YAML to point at it explicitly."
     )
 
 
