@@ -1669,6 +1669,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
+    { name = "matplotlib", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "numpy", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "pyarrow", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "pyyaml", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
@@ -1679,7 +1680,6 @@ dependencies = [
 [package.optional-dependencies]
 contacts-and-distances-v1 = [
     { name = "gemmi", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
-    { name = "matplotlib", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
 ]
 mlx = [
     { name = "mlx", marker = "sys_platform == 'darwin'" },
@@ -1703,7 +1703,7 @@ requires-dist = [
     { name = "accelerate", marker = "extra == 'transformers'", specifier = ">=0.30" },
     { name = "gemmi", marker = "extra == 'contacts-and-distances-v1'", specifier = ">=0.6" },
     { name = "huggingface-hub", specifier = ">=0.24" },
-    { name = "matplotlib", marker = "extra == 'contacts-and-distances-v1'" },
+    { name = "matplotlib" },
     { name = "mlx", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.18" },
     { name = "mlx-lm", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.20" },
     { name = "numpy" },

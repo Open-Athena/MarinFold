@@ -12,6 +12,7 @@ requires-python = ">=3.10,<3.14"
 # below and lazy-imported inside its backend module.
 dependencies = [
     "huggingface_hub>=0.24",
+    "matplotlib",
     "numpy",
     "pyarrow",
     "pyyaml>=6",
@@ -35,9 +36,7 @@ mlx = ["mlx>=0.18; sys_platform == 'darwin'", "mlx-lm>=0.20; sys_platform == 'da
 # Their heavy parser deps (gemmi, biopython, …) are opt-in via these
 # extras and lazy-imported inside the impl modules so the marinfold
 # CLI can fail with a clear message when an extra isn't installed.
-# matplotlib here is for the impl's plots.py (PDF heatmap writers
-# behind ``--out-plots``); imported lazily inside the helpers.
-contacts-and-distances-v1 = ["gemmi>=0.6", "matplotlib"]
+contacts-and-distances-v1 = ["gemmi>=0.6"]
 
 [project.scripts]
 marinfold = "marinfold.cli:main"
