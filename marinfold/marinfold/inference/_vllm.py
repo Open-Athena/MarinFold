@@ -36,7 +36,13 @@ class VllmBackend:
         dtype: str = "bfloat16",
         gpu_memory_utilization: float = 0.85,
         top_k_logprobs: int = 128,
+        tail_batch_size: int = 64,
     ):
+        if tail_batch_size < 1:
+            raise ValueError(
+                f"tail_batch_size must be >= 1; got {tail_batch_size}."
+            )
+        self._tail_batch_size = tail_batch_size
         self._top_k_logprobs = top_k_logprobs
         self._llm = LLM(
             model=str(model_path),
@@ -78,20 +84,26 @@ class VllmBackend:
         target_to_col = {tid: c for c, tid in enumerate(target_token_ids)}
         target_id_set = set(target_token_ids)
 
-        prefix = list(prefix_token_ids)
-        full_prompts = [
-            TokensPrompt(prompt_token_ids=prefix + list(tail))
-            for tail in tail_token_ids_batch
-        ]
-        # vLLM's automatic prefix caching reuses KV blocks for the
-        # shared prefix across these prompts.
-        outputs = self._llm.generate(full_prompts, self._sampling, use_tqdm=False)
-
         out = np.zeros((len(tail_token_ids_batch), n_targets), dtype=np.float32)
-        for row_idx, result in enumerate(outputs):
-            lp_dict = result.outputs[0].logprobs[0] if result.outputs[0].logprobs else {}
-            for tok_id, lp in lp_dict.items():
-                tid = int(tok_id)
-                if tid in target_id_set:
-                    out[row_idx, target_to_col[tid]] = float(np.exp(float(lp.logprob)))
+        prefix = list(prefix_token_ids)
+        for chunk_start in range(0, len(tail_token_ids_batch), self._tail_batch_size):
+            chunk = tail_token_ids_batch[
+                chunk_start : chunk_start + self._tail_batch_size
+            ]
+            full_prompts = [
+                TokensPrompt(prompt_token_ids=prefix + list(tail))
+                for tail in chunk
+            ]
+            # vLLM's automatic prefix caching reuses KV blocks for the
+            # shared prefix across these prompts, while chunking keeps
+            # each scheduler request bounded on long proteins.
+            outputs = self._llm.generate(full_prompts, self._sampling, use_tqdm=False)
+            for row_offset, result in enumerate(outputs):
+                lp_dict = result.outputs[0].logprobs[0] if result.outputs[0].logprobs else {}
+                for tok_id, lp in lp_dict.items():
+                    tid = int(tok_id)
+                    if tid in target_id_set:
+                        out[chunk_start + row_offset, target_to_col[tid]] = float(
+                            np.exp(float(lp.logprob))
+                        )
         return out

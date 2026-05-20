@@ -14,6 +14,7 @@ class _FakeInferenceConfig:
     model: str | None
     input_path: Path | None = None
     backend: str = "vllm"
+    batch_size: int = 64
     dtype: str = "bfloat16"
 
 
@@ -66,6 +67,8 @@ def test_cmd_infer_accepts_local_model_directory(
             "contacts-and-distances-v1",
             "--input-sequence",
             "ACD",
+            "--batch-size",
+            "17",
             "--out",
             str(out_path),
         ]
@@ -74,6 +77,7 @@ def test_cmd_infer_accepts_local_model_directory(
     cli.cmd_infer(args)
 
     assert captured["cfg"].model == str(model_dir)
+    assert captured["cfg"].batch_size == 17
     assert captured["structures"] == [{"sequence": "ACD"}]
     assert captured["out"] == out_path
     assert captured["structure_name"] == "contacts-and-distances-v1"

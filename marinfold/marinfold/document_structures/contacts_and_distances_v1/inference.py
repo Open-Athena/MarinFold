@@ -337,6 +337,7 @@ def _make_backend(cfg: InferenceConfig) -> Backend:
             dtype=cfg.dtype,
             gpu_memory_utilization=cfg.gpu_memory_utilization,
             top_k_logprobs=cfg.top_k_logprobs,
+            tail_batch_size=cfg.batch_size,
         )
     if cfg.backend == "transformers":
         return load_backend(
