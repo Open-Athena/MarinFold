@@ -603,13 +603,31 @@ def test_cmd_generate_jsonl_writes_one_doc_per_line(tiny_pdb_path, tmp_path: Pat
     assert [json.loads(l) for l in lines] == expected
 
 
+# Single-residue PDB — passes parsing but fails `at_least_two_residuals`, so
+# it's the cheapest way to force a doc to drop out of the pipeline.
+_SINGLE_RESIDUE_PDB = textwrap.dedent("""\
+    HEADER    TEST                                    01-JAN-26   TEST
+    ATOM      1  N   MET A   1      27.340  24.430   2.614  1.00 80.00           N
+    ATOM      2  CA  MET A   1      26.266  25.413   2.842  1.00 80.00           C
+    ATOM      3  C   MET A   1      26.913  26.639   3.531  1.00 80.00           C
+    ATOM      4  O   MET A   1      27.886  26.463   4.263  1.00 80.00           O
+    END
+""")
+
+
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_cmd_generate_respects_num_docs(multi_pdb_dir, tmp_path: Path):
-    """--num-docs caps the size of the output."""
+def test_cmd_generate_num_docs_counts_only_emitted_docs(tmp_path: Path):
+    """--num-docs is a cap on *emitted* docs, not consumed inputs."""
     pq = pytest.importorskip("pyarrow.parquet")
+    sub = tmp_path / "mixed"
+    sub.mkdir()
+    for i in range(2):
+        (sub / f"a_invalid_{i}.pdb").write_text(_SINGLE_RESIDUE_PDB)
+    for i in range(4):
+        (sub / f"z_valid_{i}.pdb").write_text(_PDB_FIXTURE)
     out = tmp_path / "docs.parquet"
 
-    cli.cmd_generate(_parse_generate_args(multi_pdb_dir, out, num_docs=3))
+    cli.cmd_generate(_parse_generate_args(sub, out, num_docs=3))
 
     assert pq.read_table(str(out)).num_rows == 3
 

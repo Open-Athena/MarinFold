@@ -67,11 +67,8 @@ def cmd_generate(args: argparse.Namespace) -> None:
         rank_std=args.rank_std,
         residue_plddt_min=args.residue_plddt_min,
     )
-    # If num_docs is `None`, this will iterate over the whole collection.
-    src = itertools.islice(generate.iter_parsed_structures(args.input), args.num_docs)
-
     ds = (
-        Dataset.from_iterable(src)
+        Dataset.from_iterable(generate.iter_parsed_structures(args.input))
         .filter(generate.at_least_two_residuals)
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
         # Sometimes generate_one returns `None`.
@@ -79,6 +76,9 @@ def cmd_generate(args: argparse.Namespace) -> None:
         # Preserve single-file --out semantics.
         .reshard(1)
     )
+
+    if args.num_docs is not None:
+        ds = ds.take_per_shard(args.num_docs)
 
     match args.out.suffix:
         case ".parquet":
