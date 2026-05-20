@@ -71,8 +71,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
     src = itertools.islice(generate.iter_parsed_structures(args.input), args.num_docs)
 
     ds = (
-        Dataset
-        .from_iterable(src)
+        Dataset.from_iterable(src)
         .filter(generate.at_least_two_residuals)
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
         # Sometimes generate_one returns `None`.
