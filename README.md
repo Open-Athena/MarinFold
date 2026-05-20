@@ -44,7 +44,7 @@ We also have an evaluation mode to make it easy to compare to ground truth:
 ```bash
 uv run marinfold evaluate \
     --backend vllm \
-    --input-file tests/data/1QYS.cif \
+    --input tests/data/1QYS.cif \
     --out ~/preds.json \
     --out-plots ~/plots.pdf
 ```
