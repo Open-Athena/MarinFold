@@ -16,3 +16,4 @@ best/
 
 # Local Modal scratch.
 .modal/
+.DS_Store

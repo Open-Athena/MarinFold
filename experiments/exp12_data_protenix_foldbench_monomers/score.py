@@ -60,6 +60,18 @@ import gemmi
 import numpy as np
 
 
+# CSV schema shared by the top-1 and all-samples scoring entry points.
+_FIELDS = [
+    "pdb_id", "chain_id", "mode", "seed", "sample_idx", "ranking_score",
+    "n_residues",
+    "mae_distogram_cb_angstrom", "n_mae_distogram_pairs",
+    "mae_structure_ca_angstrom",
+    "drmsd_ca_angstrom", "n_ca_pairs",
+    "rmsd_ca_angstrom", "n_ca_atoms",
+    "rmsd_all_heavy_angstrom", "n_heavy_atoms",
+]
+
+
 # Distogram bin centers — must match Protenix v2's distogram head config.
 # From bytedance/Protenix configs/configs_base.py's loss.distogram block:
 #   min_bin = 2.3125, max_bin = 21.6875, no_bins = 64
@@ -285,6 +297,115 @@ class ProteinScore:
     n_heavy_atoms: int
 
 
+@dataclass(frozen=True)
+class _MetricResult:
+    """The metric outputs of comparing one (pred, GT) pair. No ID fields."""
+
+    n_residues: int
+    mae_distogram_cb_angstrom: float
+    n_mae_distogram_pairs: int
+    mae_structure_ca_angstrom: float
+    drmsd_ca_angstrom: float
+    n_ca_pairs: int
+    rmsd_ca_angstrom: float
+    n_ca_atoms: int
+    rmsd_all_heavy_angstrom: float
+    n_heavy_atoms: int
+
+
+def _compute_metrics(
+    *,
+    pred_cif: Path,
+    gt_cif: Path,
+    distogram_npz: Path,
+    pred_coords_cache: ProteinCoords | None = None,
+    gt_coords_cache: ProteinCoords | None = None,
+    gt_atoms_cache: dict[tuple[int, str], tuple[float, float, float]] | None = None,
+    expected_distances_cache: np.ndarray | None = None,
+) -> _MetricResult:
+    """Compute all five metrics for one (pred_cif, gt_cif, distogram_npz) triple.
+
+    Per-sample loops (e.g. ``score-all-samples``) re-use the GT coordinates
+    + heavy-atom positions + (per-seed) distogram across the 40 samples
+    that share them. Caches let callers avoid re-parsing the same CIF
+    8 times per seed. None for any cache means "parse from disk".
+    """
+    gt_coords = gt_coords_cache or _read_protein_coords_from_cif(gt_cif)
+    pred_coords = pred_coords_cache or _read_protein_coords_from_cif(pred_cif)
+    if gt_coords.n_residues != pred_coords.n_residues:
+        # Truncate to the shorter chain (rare; only seen with malformed
+        # CIFs). The downstream pair sets are masked by what's resolved
+        # in each.
+        pass  # logged once at the caller level
+    n = min(gt_coords.n_residues, pred_coords.n_residues)
+
+    expected = expected_distances_cache
+    if expected is None:
+        expected = _expected_distances_from_distogram(distogram_npz)
+    if expected.shape != (n, n):
+        m = min(expected.shape[0], n)
+        expected = expected[:m, :m]
+        n = m
+
+    iu = np.triu_indices(n, k=1)
+
+    # 1. Distogram-derived MAE on CB-CB (CA-for-GLY).
+    gt_rep_d, gt_rep_mask = _pairwise_distance_matrix(gt_coords.rep[:n])
+    mae_disto_usable = gt_rep_mask[iu]
+    n_mae_disto_pairs = int(mae_disto_usable.sum())
+    if n_mae_disto_pairs == 0:
+        mae_disto = float("nan")
+    else:
+        mae_disto = float(np.mean(np.abs(
+            expected[iu][mae_disto_usable] - gt_rep_d[iu][mae_disto_usable]
+        )))
+
+    # 2 + 3. Structure-derived MAE + dRMSD on CA-CA (same pair set).
+    gt_ca_d, gt_ca_mask = _pairwise_distance_matrix(gt_coords.ca[:n])
+    pred_ca_d, pred_ca_mask = _pairwise_distance_matrix(pred_coords.ca[:n])
+    ca_usable = gt_ca_mask[iu] & pred_ca_mask[iu]
+    n_ca_pairs = int(ca_usable.sum())
+    if n_ca_pairs == 0:
+        mae_struct = float("nan")
+        drmsd = float("nan")
+    else:
+        ca_diffs = pred_ca_d[iu][ca_usable] - gt_ca_d[iu][ca_usable]
+        mae_struct = float(np.mean(np.abs(ca_diffs)))
+        drmsd = float(np.sqrt(np.mean(ca_diffs ** 2)))
+
+    # 4. Kabsch RMSD over CA atoms.
+    pred_ca_xyz: list[tuple[float, float, float]] = []
+    gt_ca_xyz: list[tuple[float, float, float]] = []
+    for i in range(n):
+        if pred_coords.ca[i] is not None and gt_coords.ca[i] is not None:
+            pred_ca_xyz.append(pred_coords.ca[i])
+            gt_ca_xyz.append(gt_coords.ca[i])
+    rmsd_ca = _kabsch_rmsd(pred_ca_xyz, gt_ca_xyz)
+    n_ca_atoms = len(pred_ca_xyz)
+
+    # 5. Kabsch RMSD over all matching heavy atoms.
+    pred_atoms = _read_heavy_atom_positions(pred_cif)
+    gt_atoms = gt_atoms_cache or _read_heavy_atom_positions(gt_cif)
+    shared_keys = sorted(set(pred_atoms) & set(gt_atoms))
+    pred_heavy = [pred_atoms[k] for k in shared_keys]
+    gt_heavy = [gt_atoms[k] for k in shared_keys]
+    rmsd_heavy = _kabsch_rmsd(pred_heavy, gt_heavy)
+    n_heavy_atoms = len(shared_keys)
+
+    return _MetricResult(
+        n_residues=n,
+        mae_distogram_cb_angstrom=mae_disto,
+        n_mae_distogram_pairs=n_mae_disto_pairs,
+        mae_structure_ca_angstrom=mae_struct,
+        drmsd_ca_angstrom=drmsd,
+        n_ca_pairs=n_ca_pairs,
+        rmsd_ca_angstrom=rmsd_ca,
+        n_ca_atoms=n_ca_atoms,
+        rmsd_all_heavy_angstrom=rmsd_heavy,
+        n_heavy_atoms=n_heavy_atoms,
+    )
+
+
 def score(
     *,
     best_dir: Path,
@@ -311,72 +432,9 @@ def score(
             distogram_npz = best_subdir / "distogram.npz"
             provenance = json.loads((best_subdir / "provenance.json").read_text())
 
-            gt_coords = _read_protein_coords_from_cif(gt_cif)
-            pred_coords = _read_protein_coords_from_cif(pred_cif)
-            if gt_coords.n_residues != pred_coords.n_residues:
-                print(
-                    f"WARN: {mode}/{stem}: GT has {gt_coords.n_residues} residues, "
-                    f"prediction has {pred_coords.n_residues}; truncating to min."
-                )
-            n = min(gt_coords.n_residues, pred_coords.n_residues)
-
-            expected = _expected_distances_from_distogram(distogram_npz)
-            if expected.shape != (n, n):
-                # Truncate to the smaller dimension if the distogram
-                # exceeds GT/pred length (e.g. token padding round-trip).
-                m = min(expected.shape[0], n)
-                expected = expected[:m, :m]
-                n = m
-
-            iu = np.triu_indices(n, k=1)
-
-            # 1. Distogram-derived MAE on CB-CB (CA-for-GLY).
-            gt_rep_d, gt_rep_mask = _pairwise_distance_matrix(gt_coords.rep[:n])
-            mae_disto_usable = gt_rep_mask[iu]
-            n_mae_disto_pairs = int(mae_disto_usable.sum())
-            if n_mae_disto_pairs == 0:
-                mae_disto = float("nan")
-            else:
-                mae_disto = float(np.mean(np.abs(
-                    expected[iu][mae_disto_usable] - gt_rep_d[iu][mae_disto_usable]
-                )))
-
-            # 2 + 3. Structure-derived MAE + dRMSD on CA-CA (same pair set).
-            gt_ca_d, gt_ca_mask = _pairwise_distance_matrix(gt_coords.ca[:n])
-            pred_ca_d, pred_ca_mask = _pairwise_distance_matrix(pred_coords.ca[:n])
-            ca_usable = gt_ca_mask[iu] & pred_ca_mask[iu]
-            n_ca_pairs = int(ca_usable.sum())
-            if n_ca_pairs == 0:
-                mae_struct = float("nan")
-                drmsd = float("nan")
-            else:
-                ca_diffs = pred_ca_d[iu][ca_usable] - gt_ca_d[iu][ca_usable]
-                mae_struct = float(np.mean(np.abs(ca_diffs)))
-                drmsd = float(np.sqrt(np.mean(ca_diffs ** 2)))
-
-            # 4. Kabsch RMSD over CA atoms.
-            pred_ca_xyz: list[tuple[float, float, float]] = []
-            gt_ca_xyz: list[tuple[float, float, float]] = []
-            for i in range(n):
-                if pred_coords.ca[i] is not None and gt_coords.ca[i] is not None:
-                    pred_ca_xyz.append(pred_coords.ca[i])
-                    gt_ca_xyz.append(gt_coords.ca[i])
-            rmsd_ca = _kabsch_rmsd(pred_ca_xyz, gt_ca_xyz)
-            n_ca_atoms = len(pred_ca_xyz)
-
-            # 5. Kabsch RMSD over all matching heavy atoms.
-            pred_atoms = _read_heavy_atom_positions(pred_cif)
-            gt_atoms = _read_heavy_atom_positions(gt_cif)
-            shared_keys = sorted(set(pred_atoms) & set(gt_atoms))
-            # Optional: restrict to residues within our truncated n
-            # (sometimes Protenix's prediction has more residues than the
-            # truncated comparison length, but using all matching keys
-            # gives us the most generous all-heavy comparison).
-            pred_heavy = [pred_atoms[k] for k in shared_keys]
-            gt_heavy = [gt_atoms[k] for k in shared_keys]
-            rmsd_heavy = _kabsch_rmsd(pred_heavy, gt_heavy)
-            n_heavy_atoms = len(shared_keys)
-
+            m = _compute_metrics(
+                pred_cif=pred_cif, gt_cif=gt_cif, distogram_npz=distogram_npz,
+            )
             rows.append(ProteinScore(
                 pdb_id=entry["pdb_id"],
                 chain_id=entry["chain_id"],
@@ -384,37 +442,30 @@ def score(
                 seed=int(provenance["seed"]),
                 sample_idx=int(provenance["sample_idx"]),
                 ranking_score=float(provenance["ranking_score"]),
-                n_residues=n,
-                mae_distogram_cb_angstrom=mae_disto,
-                n_mae_distogram_pairs=n_mae_disto_pairs,
-                mae_structure_ca_angstrom=mae_struct,
-                drmsd_ca_angstrom=drmsd,
-                n_ca_pairs=n_ca_pairs,
-                rmsd_ca_angstrom=rmsd_ca,
-                n_ca_atoms=n_ca_atoms,
-                rmsd_all_heavy_angstrom=rmsd_heavy,
-                n_heavy_atoms=n_heavy_atoms,
+                n_residues=m.n_residues,
+                mae_distogram_cb_angstrom=m.mae_distogram_cb_angstrom,
+                n_mae_distogram_pairs=m.n_mae_distogram_pairs,
+                mae_structure_ca_angstrom=m.mae_structure_ca_angstrom,
+                drmsd_ca_angstrom=m.drmsd_ca_angstrom,
+                n_ca_pairs=m.n_ca_pairs,
+                rmsd_ca_angstrom=m.rmsd_ca_angstrom,
+                n_ca_atoms=m.n_ca_atoms,
+                rmsd_all_heavy_angstrom=m.rmsd_all_heavy_angstrom,
+                n_heavy_atoms=m.n_heavy_atoms,
             ))
             print(
-                f"{mode}/{stem}: n_res={n} "
-                f"MAE_disto={mae_disto:.3f} MAE_struct={mae_struct:.3f} "
-                f"dRMSD={drmsd:.3f} RMSD_CA={rmsd_ca:.3f} "
-                f"RMSD_all={rmsd_heavy:.3f} (n_atoms={n_heavy_atoms})"
+                f"{mode}/{stem}: n_res={m.n_residues} "
+                f"MAE_disto={m.mae_distogram_cb_angstrom:.3f} "
+                f"MAE_struct={m.mae_structure_ca_angstrom:.3f} "
+                f"dRMSD={m.drmsd_ca_angstrom:.3f} "
+                f"RMSD_CA={m.rmsd_ca_angstrom:.3f} "
+                f"RMSD_all={m.rmsd_all_heavy_angstrom:.3f} (n_atoms={m.n_heavy_atoms})"
             )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
-    fields = [
-        "pdb_id", "chain_id", "mode", "seed", "sample_idx", "ranking_score",
-        "n_residues",
-        "mae_distogram_cb_angstrom", "n_mae_distogram_pairs",
-        "mae_structure_ca_angstrom",
-        "drmsd_ca_angstrom", "n_ca_pairs",
-        "rmsd_ca_angstrom", "n_ca_atoms",
-        "rmsd_all_heavy_angstrom", "n_heavy_atoms",
-    ]
     with out_csv.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(fields)
+        writer.writerow(_FIELDS)
         for r in rows:
             writer.writerow([
                 r.pdb_id, r.chain_id, r.mode, r.seed, r.sample_idx, r.ranking_score,
@@ -429,6 +480,126 @@ def score(
     return rows
 
 
+def score_all_samples(
+    *,
+    runs_dir: Path,
+    inputs_dir: Path,
+    out_csv: Path,
+    modes: list[str],
+    stems_filter: list[str] | None = None,
+    append: bool = False,
+) -> int:
+    """For each (mode, stem) under ``runs_dir``, score ALL 40 samples per
+    (seed × sample) — not just the top-1 — and append rows to ``out_csv``.
+
+    Expects the raw Protenix output layout under ``runs_dir``::
+
+        runs_dir/{mode}/{stem}/seed_<S>/
+            {stem}_sample_<I>.cif
+            {stem}_summary_confidence_sample_<I>.json
+            {stem}_distogram.npz   # one per seed; shared across the 8 samples
+
+    Per-seed caching: the GT coords, GT heavy atoms, and the distogram
+    expected-distance matrix are parsed once per seed and reused across
+    the 8 samples in that seed (the distogram is per-seed by construction
+    of Protenix's trunk loop).
+
+    Idempotent via the ``append`` flag — when True, ``out_csv`` is opened
+    in append mode and existing rows are skipped via a (mode, stem,
+    seed, sample_idx) key.
+
+    ``stems_filter`` (if given) restricts to those stems; otherwise all
+    stems in ``inputs_dir/manifest.csv`` are processed.
+    """
+    import csv as _csv
+
+    manifest = list(_csv.DictReader((inputs_dir / "manifest.csv").open()))
+    if stems_filter is not None:
+        wanted = set(stems_filter)
+        manifest = [r for r in manifest if r["stem"] in wanted]
+
+    # Idempotency: load existing (mode, stem, seed, sample_idx) tuples.
+    seen: set[tuple[str, str, int, int]] = set()
+    write_header = True
+    if append and out_csv.exists():
+        with out_csv.open() as f:
+            reader = _csv.DictReader(f)
+            for row in reader:
+                seen.add((
+                    row["mode"], f"{row['pdb_id']}_{row['chain_id']}",
+                    int(row["seed"]), int(row["sample_idx"]),
+                ))
+        write_header = False
+        print(f"resuming from {out_csv}: {len(seen)} existing rows")
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    mode_str = "a" if append and out_csv.exists() else "w"
+    f_out = out_csv.open(mode_str, newline="")
+    writer = csv.writer(f_out)
+    if write_header:
+        writer.writerow(_FIELDS)
+
+    n_written = 0
+    try:
+        for entry in manifest:
+            stem = entry["stem"]
+            gt_cif = inputs_dir / "gt" / f"{stem}.cif"
+            gt_coords = _read_protein_coords_from_cif(gt_cif)
+            gt_atoms = _read_heavy_atom_positions(gt_cif)
+            for mode in modes:
+                mode_stem_dir = runs_dir / mode / stem
+                if not mode_stem_dir.exists():
+                    continue
+                for seed_dir in sorted(mode_stem_dir.glob("seed_*")):
+                    seed = int(seed_dir.name.removeprefix("seed_"))
+                    distogram_npz = seed_dir / f"{stem}_distogram.npz"
+                    if not distogram_npz.exists():
+                        print(f"WARN: missing distogram {distogram_npz}; skipping seed.")
+                        continue
+                    # Parse the distogram once per seed.
+                    expected = _expected_distances_from_distogram(distogram_npz)
+                    # Iterate samples within the seed.
+                    conf_prefix = f"{stem}_summary_confidence_sample_"
+                    for conf_path in sorted(seed_dir.glob(f"{conf_prefix}*.json")):
+                        idx_part = conf_path.stem[len(conf_prefix):]
+                        if not idx_part.isdigit():
+                            continue
+                        sample_idx = int(idx_part)
+                        if (mode, stem, seed, sample_idx) in seen:
+                            continue
+                        cif = seed_dir / f"{stem}_sample_{sample_idx}.cif"
+                        if not cif.exists():
+                            continue
+                        ranking_score = float(json.loads(conf_path.read_text())
+                                              .get("ranking_score", float("nan")))
+                        m = _compute_metrics(
+                            pred_cif=cif, gt_cif=gt_cif, distogram_npz=distogram_npz,
+                            gt_coords_cache=gt_coords,
+                            gt_atoms_cache=gt_atoms,
+                            expected_distances_cache=expected,
+                        )
+                        writer.writerow([
+                            entry["pdb_id"], entry["chain_id"], mode, seed, sample_idx,
+                            # Use full repr so downstream "top-1 by ranking_score"
+                            # picks deterministically; 6-dp rounding produces
+                            # spurious ties (seen for 5sbj_A msa seeds 1 vs 3).
+                            repr(ranking_score),
+                            m.n_residues,
+                            f"{m.mae_distogram_cb_angstrom:.4f}", m.n_mae_distogram_pairs,
+                            f"{m.mae_structure_ca_angstrom:.4f}",
+                            f"{m.drmsd_ca_angstrom:.4f}", m.n_ca_pairs,
+                            f"{m.rmsd_ca_angstrom:.4f}", m.n_ca_atoms,
+                            f"{m.rmsd_all_heavy_angstrom:.4f}", m.n_heavy_atoms,
+                        ])
+                        f_out.flush()  # crash-safe under streaming sync
+                        n_written += 1
+            print(f"{stem}: scored ({n_written} rows so far)")
+    finally:
+        f_out.close()
+    print(f"Wrote {n_written} new rows to {out_csv}.")
+    return n_written
+
+
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser(
         "score",
@@ -440,4 +611,27 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--modes", default="single_seq,msa", help="Comma-separated mode names.")
     p.set_defaults(func=lambda args: score(
         best_dir=args.best, inputs_dir=args.inputs, out_csv=args.out, modes=args.modes.split(","),
+    ))
+
+    # --- score-all-samples ---
+    p2 = subparsers.add_parser(
+        "score-all-samples",
+        help="Score every sample (not just top-1) under a raw outputs/ tree. One row per (mode, stem, seed, sample_idx).",
+    )
+    p2.add_argument(
+        "--runs", type=Path, required=True,
+        help="Dir mirroring the Modal output Volume layout: {mode}/{stem}/seed_*/{stem}_sample_*.cif ...",
+    )
+    p2.add_argument("--inputs", type=Path, required=True, help="Dir produced by prepare-inputs.")
+    p2.add_argument("--out", type=Path, required=True, help="Output CSV path (typically data/scores_all_samples.csv).")
+    p2.add_argument("--modes", default="single_seq,msa", help="Comma-separated mode names.")
+    p2.add_argument("--stems-file", default=None, help="Optional path with one stem per line; restricts to those stems.")
+    p2.add_argument("--append", action="store_true",
+                    help="Append to an existing CSV; skip (mode, stem, seed, sample_idx) tuples already present. "
+                         "Useful for streaming runs that score per-stem then delete the local copy.")
+    p2.set_defaults(func=lambda args: score_all_samples(
+        runs_dir=args.runs, inputs_dir=args.inputs, out_csv=args.out,
+        modes=args.modes.split(","),
+        stems_filter=(Path(args.stems_file).read_text().split() if args.stems_file else None),
+        append=args.append,
     ))
