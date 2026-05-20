@@ -20,9 +20,10 @@ Dispatch is driven by repo-root ``MODELS.yaml``:
    ``marinfold.document_structures.contacts_and_distances_v1``) and
    the appropriate function (``predict`` / ``evaluate``) is called.
 
-For impl-specific flags (seed-N sweeps, distance cap, batch size, …)
-use the per-impl ``cli.py`` instead. The top-level CLI keeps its
-surface narrow on purpose.
+For impl-specific flags (seed-N sweeps, distance cap, …) use the
+per-impl ``cli.py`` instead. The top-level CLI keeps its surface
+narrow on purpose, but it does expose ``--batch-size`` because that
+one is useful for tuning backend memory / throughput across impls.
 """
 
 import argparse
@@ -153,6 +154,7 @@ def _make_inference_config(
         model=model_spec,
         input_path=input_path,
         backend=args.backend,
+        batch_size=args.batch_size,
         dtype=args.dtype,
     )
 
@@ -292,6 +294,13 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         help="Model dtype. Honored by vllm + transformers; MLX loads "
              "whatever's on disk. On MPS prefer 'bfloat16' or "
              "'float32'.",
+    )
+    p.add_argument(
+        "--batch-size", type=int, default=64,
+        help="Backend batch size for pair scoring. For MLX and "
+             "transformers this is tails per cached forward pass; for "
+             "vLLM it caps how many shared-prefix prompts are submitted "
+             "in one scheduler request.",
     )
 
 
