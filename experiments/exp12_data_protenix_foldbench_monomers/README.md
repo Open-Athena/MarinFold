@@ -136,23 +136,21 @@ HF bucket under `data/protenix-foldbench-monomers/`.
 
 ## Results
 
-**Status: 48 of 100 proteins, paired in both modes.** Dispatched the
-full 100-protein × 2-mode run (200 jobs); Modal workspace hit its
-monthly spend limit after 51 single-seq + 51 msa completions (102 of
-200), with 48 proteins fully complete in *both* modes. The remaining
-52 will resume after the billing cycle resets — the worker is
-idempotent against the output Volume so a re-dispatch only runs the
-missing ones.
+**Status: 100 of 100 proteins, paired in both modes.** Full run
+complete after a workspace switch mid-stream — first 48 paired
+proteins ran on Modal workspace `timodonnell` (hit billing cycle
+spend limit at 102 of 200 jobs); the remaining 52 ran on `open-athena`
+via the same idempotent worker. Final `data/scores.csv` is a
+union of the two runs (200 rows = 100 proteins × 2 modes).
 
-48-protein subset (subset of first 100 rows of FoldBench's
-`monomer_protein.csv`, 30-738 aa). Top-1 sample per (protein, mode)
-by Protenix's `ranking_score`. Five per-protein metrics (per-mode
-mean / median):
+First 100 rows of FoldBench's `monomer_protein.csv` (30-761 aa).
+Top-1 sample per (protein, mode) by Protenix's `ranking_score`.
+Five per-protein metrics (per-mode mean / median):
 
 | Mode | MAE distogram CB | MAE structure CA | dRMSD CA | RMSD CA (Kabsch) | RMSD all-heavy (Kabsch) |
 |---|---|---|---|---|---|
-| single_seq | 6.66 / 6.39 | 5.52 / 5.57 | 7.56 / 7.77 | 12.31 / 12.49 | 12.75 / 12.73 |
-| msa        | 5.11 / 4.51 | 0.62 / 0.48 | 1.18 / 0.95 |  1.67 /  1.24 |  2.15 /  1.77 |
+| single_seq | 7.28 / 7.02 | 6.09 / 6.41 | 8.29 / 8.43 | 13.68 / 14.41 | 14.09 / 15.03 |
+| msa        | 5.67 / 5.10 | 0.73 / 0.47 | 1.34 / 0.84 |  1.86 /  1.18 |  2.36 /  1.69 |
 
 All in Å. Lower is better.
 
@@ -169,46 +167,50 @@ Plots ([`plots/`](plots/)) — two PNGs per metric:
 - **Structure-derived metrics show massive MSA improvement** (≥83%
   reduction across structure_MAE / dRMSD / RMSD_CA / RMSD_all-heavy).
   This is the headline: in MSA mode Protenix produces structures
-  within 1.7 Å median Kabsch CA-RMSD of GT; in single-seq mode the
+  within 1.18 Å median Kabsch CA-RMSD of GT; in single-seq mode the
   same model is essentially guessing on most natural proteins
-  (median CA-RMSD 12.5 Å — global-fold-wrong).
-- **Distogram MAE shows a smaller MSA gain** (~23%) because Protenix's
+  (median CA-RMSD 14.4 Å — global-fold-wrong).
+- **Distogram MAE shows a smaller MSA gain** (~22%) because Protenix's
   distogram is capped at 21.84 Å — pairs farther than that all get
   the same midpoint (~21.7 Å), so the floor of distogram MAE on a
   400 aa protein is large regardless of model quality. The structure-
   derived MAE (which doesn't have this cap) shows the real signal:
-  0.62 Å in MSA vs 5.52 Å in single-seq, an 8.9× improvement.
-- **Designed peptides are mode-insensitive**: 5sbj_A (30 aa with
-  ACE/NH2 caps) scores identically across modes — no natural-homolog
+  0.73 Å in MSA vs 6.09 Å in single-seq, an 8.4× improvement.
+- **Designed peptides are mode-insensitive**: e.g. 5sbj_A (30 aa with
+  ACE/NH2 caps) scores ~identically across modes — no natural-homolog
   signal for the MSA to exploit.
 
 ### Outputs not in git
 
 Raw structures, distograms, and confidence JSONs live on the Modal
-`foldbench-protenix-runs` Volume. The curated `best/` tree (top-1
-sample per protein-mode, 96 entries for the 48 paired proteins) is
-~1.2 GB on the local sync; `.gitignore`'d. After human review +
-the resumed 52-protein backfill, the full set goes to
-`huggingface.co/buckets/open-athena/MarinFold/data/protenix-foldbench-monomers/`.
+`foldbench-protenix-runs` Volume (the 48 originals on `timodonnell`
+and the 52 backfills on `open-athena`). The curated `best/` tree
+(top-1 sample per protein-mode, 200 entries) is ~2.5 GB on the local
+sync; `.gitignore`'d. Slated for upload to
+`huggingface.co/buckets/open-athena/MarinFold/data/protenix-foldbench-monomers/`
+after human review — the two-workspace split is the only nuisance
+in the eventual HF consolidation step (both sets of raw outputs can
+be downloaded and uploaded together).
 
 ## Conclusion
 
-On 48 of 100 FoldBench monomers, Protenix v2 with MSA produces
-near-native structures (median Kabsch CA-RMSD 1.24 Å, median dRMSD
-0.95 Å) — a regime where downstream eval against MarinFold's
-predictions is meaningful. Single-sequence mode degrades sharply on
-natural proteins (median Kabsch CA-RMSD 12.5 Å); it's a viable
-"MSA-free" baseline only for designed peptides.
+On 100 FoldBench monomers, Protenix v2 with MSA produces near-native
+structures (median Kabsch CA-RMSD 1.18 Å, median dRMSD 0.84 Å) — a
+regime where downstream eval against MarinFold's predictions is
+meaningful. Single-sequence mode degrades sharply on natural proteins
+(median Kabsch CA-RMSD 14.4 Å); it's a viable "MSA-free" baseline
+only for designed peptides.
 
 The distogram is a usable distance signal when the model is otherwise
-performing well: MSA-mode distogram MAE (on CB) is 5.1 Å mean / 4.5 Å
+performing well: MSA-mode distogram MAE (on CB) is 5.7 Å mean / 5.1 Å
 median, with the long tail entirely explained by Protenix's 21.84 Å
-distogram cap (the structure-derived MAE on CA, with no cap, is 0.62 Å
+distogram cap (the structure-derived MAE on CA, with no cap, is 0.73 Å
 mean for the same set). When MarinFold's distograms come online for
 the same proteins, the apples-to-apples comparison is against
 Protenix's MSA-mode distogram MAE — single-seq is a weaker baseline.
 
-Resuming the remaining 52 proteins after the Modal billing cycle
-resets will push the numbers toward the full-100 view; the per-mode
-trends are unlikely to shift materially given n=48 already.
+The 100-protein numbers track the 48-paired interim view closely
+(median RMSD_CA single_seq 12.49 → 14.41 Å; msa 1.24 → 1.18 Å), so
+extending to the full 334 FoldBench monomers is unlikely to shift
+the headline conclusions but would tighten the tail statistics.
 

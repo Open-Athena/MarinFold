@@ -522,6 +522,17 @@ def run_cli(args: argparse.Namespace) -> None:
     if not manifest:
         raise ValueError(f"empty manifest: {manifest_csv}")
 
+    # Optional --stems-file restricts the run to a subset. Used for
+    # resumes (e.g. after switching Modal workspaces or hitting a
+    # spend limit mid-run).
+    stems_filter: set[str] | None = None
+    if getattr(args, "stems_file", None):
+        stems_filter = {s.strip() for s in Path(args.stems_file).read_text().splitlines() if s.strip()}
+        manifest = [r for r in manifest if r["stem"] in stems_filter]
+        print(f"restricted to {len(manifest)} stems from {args.stems_file}")
+        if not manifest:
+            raise ValueError(f"no manifest rows matched {args.stems_file}")
+
     modes = [m.strip() for m in args.modes.split(",")]
     seeds = [int(s.strip()) for s in args.seeds.split(",")]
     print(

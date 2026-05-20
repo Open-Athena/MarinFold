@@ -23,8 +23,17 @@ import modal_app
 def main() -> None:
     inputs = Path("inputs")
     manifest = list(csv.DictReader((inputs / "manifest.csv").open()))
+    # Optional --stems-file restricts to the listed stems (one per line).
+    # Useful for resuming on a fresh Modal workspace where we only need
+    # to MSA the proteins we haven't yet computed paired predictions for.
+    stems_filter: set[str] | None = None
+    if len(sys.argv) > 1 and sys.argv[1] == "--stems-file":
+        stems_filter = {s.strip() for s in Path(sys.argv[2]).read_text().splitlines() if s.strip()}
+        print(f"filtering to {len(stems_filter)} stems from {sys.argv[2]}")
     args = []
     for row in manifest:
+        if stems_filter is not None and row["stem"] not in stems_filter:
+            continue
         job = json.loads((inputs / row["job_json"]).read_text())
         seq = job[0]["sequences"][0]["proteinChain"]["sequence"]
         args.append((row["stem"], seq))

@@ -65,6 +65,15 @@ def _add_run_subparser(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--n-sample", type=int, default=8, help="Diffusion samples per seed.")
     p.add_argument("--n-cycle", type=int, default=10, help="Trunk cycles (recycles).")
     p.add_argument("--gpu", default="H100", help="Modal GPU class.")
+    p.add_argument(
+        "--stems-file",
+        default=None,
+        help=(
+            "Optional path to a text file with one stem per line; restricts the run to "
+            "just those stems. Useful for resuming on a new Modal workspace where only "
+            "a subset needs re-running."
+        ),
+    )
 
     def _dispatch(args: argparse.Namespace) -> None:
         # Lazy import so the CLI loads without the modal SDK.
