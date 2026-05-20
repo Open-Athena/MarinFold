@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "marinfold"
 version = "0.1.0"
 description = "MarinFold: backend abstraction, document-structure toolkit, and top-level CLI for running trained protein-document LLMs."
-requires-python = ">=3.11"
+requires-python = ">=3.10,<3.14"
 # Base install pulls only the model-resolver + tokenizer deps. Each
 # backend's heavyweight runtime is gated behind an optional extra
 # below and lazy-imported inside its backend module.
