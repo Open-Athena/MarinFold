@@ -1668,6 +1668,7 @@ name = "marinfold"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "gemmi", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "matplotlib", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "numpy", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
@@ -1678,9 +1679,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-contacts-and-distances-v1 = [
-    { name = "gemmi", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
-]
 mlx = [
     { name = "mlx", marker = "sys_platform == 'darwin'" },
     { name = "mlx-lm", marker = "sys_platform == 'darwin'" },
@@ -1701,7 +1699,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", marker = "extra == 'transformers'", specifier = ">=0.30" },
-    { name = "gemmi", marker = "extra == 'contacts-and-distances-v1'", specifier = ">=0.6" },
+    { name = "gemmi", specifier = ">=0.6" },
     { name = "huggingface-hub", specifier = ">=0.24" },
     { name = "matplotlib" },
     { name = "mlx", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.18" },
@@ -1714,7 +1712,7 @@ requires-dist = [
     { name = "transformers", specifier = ">=4.40,<5" },
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.6" },
 ]
-provides-extras = ["vllm", "transformers", "mlx", "contacts-and-distances-v1"]
+provides-extras = ["vllm", "transformers", "mlx"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.3" }]

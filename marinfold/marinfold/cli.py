@@ -64,12 +64,10 @@ def _impl_module_name(structure_name: str) -> str:
 def _load_impl(structure_name: str) -> ModuleType:
     """Import the impl subpackage; emit a helpful error on miss.
 
-    Two failure modes for graduated impls:
+    Two failure modes:
 
     - The impl subpackage doesn't exist (typo / not yet graduated).
-    - The impl exists but its optional-deps extra
-      (e.g. ``marinfold[contacts-and-distances-v1]``) isn't installed,
-      so a transitive import (gemmi etc.) fails.
+    - The impl exists but a transitive import fails (missing dep).
     """
     module_name = _impl_module_name(structure_name)
     try:
@@ -87,8 +85,8 @@ def _load_impl(structure_name: str) -> ModuleType:
             ) from exc
         raise SystemExit(
             f"Document structure {structure_name!r} is installed but a "
-            f"required dep is missing ({exc.name!r}). Install the matching "
-            f"extra: pip install 'marinfold[{structure_name}]'."
+            f"required dep is missing ({exc.name!r}). Reinstall marinfold "
+            f"or pip-install the missing package."
         ) from exc
 
 
@@ -337,8 +335,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--out-plots", type=_pdf_path, default=None,
         help="Optional multi-page PDF; one predicted-distance heatmap "
              "page per (structure, n_seeded). Requires the impl to "
-             "expose plot_infer_pdf; for contacts-and-distances-v1 "
-             "this is pulled in by the [contacts-and-distances-v1] extra.",
+             "expose plot_infer_pdf.",
     )
     p_inf.set_defaults(func=cmd_infer)
 

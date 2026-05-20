@@ -64,13 +64,9 @@ step is required.
 ## Document-structure impls
 
 Graduated impls live as subpackages of `marinfold.document_structures`.
-Their heavy parser deps (e.g. `gemmi`) are opt-in via per-impl
-extras and lazy-imported inside the impl modules, so importing the
-subpackage doesn't pull anything you didn't ask for.
-
-| Impl | Extra |
-|---|---|
-| `contacts-and-distances-v1` | `marinfold[contacts-and-distances-v1]` (pulls `gemmi`) |
+The current impl (`contacts-and-distances-v1`) and its parser /
+plotting deps (`gemmi`, `matplotlib`) are pulled in by the base
+install.
 
 The high-level `marinfold infer` / `marinfold evaluate` CLI picks
 the impl automatically based on the model's `document_structures`
