@@ -38,12 +38,21 @@ import pandas as pd
 
 
 _METRICS = (
-    ("mae_distogram_cb_angstrom", "Distogram MAE on CB (Å)"),
-    ("drmsd_distogram_cb_angstrom", "Distogram dRMSD on CB (Å)"),
+    # Distance-based, in-range pair set (option B).
+    ("mae_distogram_cb_angstrom", "Distogram MAE on CB (Å, in-range)"),
+    ("drmsd_distogram_cb_angstrom", "Distogram dRMSD on CB (Å, in-range)"),
+    # Distance-based, contact-regime pair set (option C1).
+    ("mae_distogram_cb_contact_angstrom", "Distogram MAE on CB (Å, contacts only)"),
+    ("drmsd_distogram_cb_contact_angstrom", "Distogram dRMSD on CB (Å, contacts only)"),
+    # Structure-based.
     ("mae_structure_ca_angstrom", "Structure-distance MAE on CA (Å)"),
     ("drmsd_ca_angstrom", "dRMSD on CA (Å)"),
     ("rmsd_ca_angstrom", "Kabsch RMSD on CA (Å)"),
     ("rmsd_all_heavy_angstrom", "Kabsch RMSD on all heavy atoms (Å)"),
+    # CASP contact precision (option C2). Long-range only on the plots;
+    # short and medium still in the CSV / summary.
+    ("prec_long_L", "CASP precision @ top L, long range (sep ≥ 24)"),
+    ("prec_long_L_5", "CASP precision @ top L/5, long range (sep ≥ 24)"),
 )
 
 
@@ -53,10 +62,16 @@ def _load(scores_csv: Path) -> pd.DataFrame:
         "ranking_score", "selected_as_best", "n_residues",
         "mae_distogram_cb_angstrom", "drmsd_distogram_cb_angstrom",
         "n_mae_distogram_pairs",
+        "mae_distogram_cb_contact_angstrom", "drmsd_distogram_cb_contact_angstrom",
+        "n_mae_distogram_contact_pairs",
         "mae_structure_ca_angstrom",
         "drmsd_ca_angstrom", "n_ca_pairs",
         "rmsd_ca_angstrom", "n_ca_atoms",
         "rmsd_all_heavy_angstrom", "n_heavy_atoms",
+        "prec_short_L", "prec_short_L_2", "prec_short_L_5",
+        "prec_medium_L", "prec_medium_L_2", "prec_medium_L_5",
+        "prec_long_L", "prec_long_L_2", "prec_long_L_5",
+        "n_short_contacts", "n_medium_contacts", "n_long_contacts",
     )
     for col in numeric_cols:
         if col in df.columns:

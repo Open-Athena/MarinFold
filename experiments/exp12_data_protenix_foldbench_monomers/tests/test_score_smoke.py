@@ -110,13 +110,27 @@ def test_score_perfect_prediction_has_near_zero_drmsd(tmp_path: Path, repo_input
     assert r.rmsd_all_heavy_angstrom == pytest.approx(0.0, abs=1e-6)
     # Oracle distogram → expected distance = bin midpoint of GT bin.
     # Max per-pair error is half the bin width (~0.15 Å); mean / RMS
-    # are well below.
-    assert 0.0 <= r.mae_distogram_cb_angstrom < 0.2, (
-        f"distogram MAE too high: {r.mae_distogram_cb_angstrom}"
-    )
-    assert 0.0 <= r.drmsd_distogram_cb_angstrom < 0.2, (
-        f"distogram dRMSD too high: {r.drmsd_distogram_cb_angstrom}"
-    )
+    # are well below. Both the in-range and contact-regime variants
+    # should land here.
+    for metric_name in (
+        "mae_distogram_cb_angstrom", "drmsd_distogram_cb_angstrom",
+        "mae_distogram_cb_contact_angstrom", "drmsd_distogram_cb_contact_angstrom",
+    ):
+        v = getattr(r, metric_name)
+        # `nan` only OK if there were zero usable pairs for that variant.
+        if v == v:  # not NaN
+            assert 0.0 <= v < 0.2, f"{metric_name} too high: {v}"
     # dRMSD >= MAE always (Jensen).
     assert r.drmsd_distogram_cb_angstrom >= r.mae_distogram_cb_angstrom
+    # Oracle distogram: all true-contact pair scores are 1.0, all
+    # non-contact pair scores are 0.0, so the ranking is perfect —
+    # precision @ top L = min(n_contacts, L) / L. We just sanity-check
+    # the value is in [0, 1] and the class denominators are non-negative.
+    for class_name in ("short", "medium", "long"):
+        for top in ("L", "L_2", "L_5"):
+            col = f"prec_{class_name}_{top}"
+            v = getattr(r, col)
+            if v == v:  # not NaN (NaN only if class has no eligible pairs)
+                assert 0.0 <= v <= 1.0, f"{col} out of range: {v}"
+        assert getattr(r, f"n_{class_name}_contacts") >= 0
     assert out_csv.exists()

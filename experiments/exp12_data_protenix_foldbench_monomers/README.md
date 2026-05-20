@@ -147,12 +147,40 @@ First 100 rows of FoldBench's `monomer_protein.csv` (30-761 aa).
 Top-1 sample per (protein, mode) by Protenix's `ranking_score`.
 Five per-protein metrics (per-mode mean / median):
 
-| Mode | MAE distogram CB | dRMSD distogram CB | MAE structure CA | dRMSD CA | RMSD CA (Kabsch) | RMSD all-heavy (Kabsch) |
-|---|---|---|---|---|---|---|
-| single_seq | 7.28 / 7.02 | 9.85 / 9.50 | 6.09 / 6.41 | 8.29 / 8.43 | 13.68 / 14.41 | 14.09 / 15.03 |
-| msa        | 5.67 / 5.10 | 8.75 / 8.16 | 0.73 / 0.47 | 1.34 / 0.84 |  1.86 /  1.18 |  2.36 /  1.69 |
+**Distance-based metrics on CB-CB (CA-for-GLY) — in-range pair set**
+(GT in `[2.31, 21.84] Å`, Protenix v2's distogram range):
+
+| Mode | MAE distogram CB | dRMSD distogram CB |
+|---|---|---|
+| single_seq | 2.69 / 2.96 | 3.75 / 4.15 |
+| msa        | 0.47 / 0.39 | 0.79 / 0.66 |
+
+**Distance-based metrics on CB-CB — contact regime** (GT ≤ 8 Å,
+CASP convention):
+
+| Mode | MAE distogram CB (contacts) | dRMSD distogram CB (contacts) |
+|---|---|---|
+| single_seq | 3.56 / 3.97 | 5.49 / 6.18 |
+| msa        | 0.40 / 0.32 | 0.73 / 0.54 |
+
+**Structure-based metrics (CA / all-heavy)**:
+
+| Mode | MAE structure CA | dRMSD CA | RMSD CA (Kabsch) | RMSD all-heavy (Kabsch) |
+|---|---|---|---|---|
+| single_seq | 6.09 / 6.41 | 8.29 / 8.43 | 13.68 / 14.41 | 14.09 / 15.03 |
+| msa        | 0.73 / 0.47 | 1.34 / 0.84 |  1.86 /  1.18 |  2.36 /  1.69 |
 
 All in Å. Lower is better.
+
+**CASP contact precision @ top L / top L/5** (higher is better; CASP14
+convention, see issue [#12](https://github.com/Open-Athena/MarinFold/issues/12)):
+
+| Mode | prec_long_L | prec_long_L_5 |
+|---|---|---|
+| single_seq | 0.37 / 0.28 | 0.61 / 0.67 |
+| msa        | 0.91 / 0.99 | 0.99 / 1.00 |
+
+(Short / medium / L/2 cuts also in `data/scores.csv` per the full schema.)
 
 Source CSVs (all use the same column schema; the all-samples file just
 has 40× the rows + a ``selected_as_best`` flag):
@@ -171,18 +199,20 @@ Plots ([`plots/`](plots/)) — two PNGs per metric:
 
 ### Notes on the numbers
 
-- **Structure-derived metrics show massive MSA improvement** (≥83%
-  reduction across structure_MAE / dRMSD / RMSD_CA / RMSD_all-heavy).
-  This is the headline: in MSA mode Protenix produces structures
-  within 1.18 Å median Kabsch CA-RMSD of GT; in single-seq mode the
-  same model is essentially guessing on most natural proteins
-  (median CA-RMSD 14.4 Å — global-fold-wrong).
-- **Distogram MAE shows a smaller MSA gain** (~22%) because Protenix's
-  distogram is capped at 21.84 Å — pairs farther than that all get
-  the same midpoint (~21.7 Å), so the floor of distogram MAE on a
-  400 aa protein is large regardless of model quality. The structure-
-  derived MAE (which doesn't have this cap) shows the real signal:
-  0.73 Å in MSA vs 6.09 Å in single-seq, an 8.4× improvement.
+- **Distogram metrics filter out unrepresentable pairs.** Protenix v2's
+  distogram covers `[2.31, 21.84] Å`; pairs with GT outside this range
+  produce a clipping bias unrelated to model quality. We drop them
+  from the in-range MAE / dRMSD computation, and the contact-regime
+  variant tightens the filter further to GT ≤ 8 Å. **For cross-model
+  comparison with MarinFold, use the intersection of the two models'
+  distogram ranges** (Protenix is the narrower one at 21.84 Å, so it
+  defines the upper bound).
+- **All distance + structure metrics show ~80-90% MSA improvement**.
+  Median MSA Kabsch CA-RMSD is 1.18 Å vs single-seq 14.4 Å —
+  global-fold-correct in MSA mode, global-fold-wrong otherwise.
+- **CASP contact precision (long range)**: MSA mode is near-perfect
+  (median precision @ top L = 0.99, @ top L/5 = 1.00). Single-seq
+  averages 0.37 / 0.61 — usable but well below MSA.
 - **Designed peptides are mode-insensitive**: e.g. 5sbj_A (30 aa with
   ACE/NH2 caps) scores ~identically across modes — no natural-homolog
   signal for the MSA to exploit.
@@ -208,13 +238,18 @@ meaningful. Single-sequence mode degrades sharply on natural proteins
 (median Kabsch CA-RMSD 14.4 Å); it's a viable "MSA-free" baseline
 only for designed peptides.
 
-The distogram is a usable distance signal when the model is otherwise
-performing well: MSA-mode distogram MAE (on CB) is 5.7 Å mean / 5.1 Å
-median, with the long tail entirely explained by Protenix's 21.84 Å
-distogram cap (the structure-derived MAE on CA, with no cap, is 0.73 Å
-mean for the same set). When MarinFold's distograms come online for
-the same proteins, the apples-to-apples comparison is against
-Protenix's MSA-mode distogram MAE — single-seq is a weaker baseline.
+The distogram is a strong distance signal when the model is otherwise
+performing well. With the principled filter (drop pairs whose GT is
+outside the distogram's expressible range), MSA-mode distogram MAE
+on CB is **0.47 Å mean / 0.39 Å median**, and contact-regime MAE is
+**0.40 Å / 0.32 Å**. CASP-style contact precision @ top L (long range)
+is **0.91 mean / 0.99 median** in MSA mode. For cross-model
+comparison with MarinFold, score MarinFold's distogram against the
+same pair sets — see issue [#12](https://github.com/Open-Athena/MarinFold/issues/12)
+for the full metric definitions and filter conventions. *(The first
+write-up of this experiment used unfiltered distogram metrics, which
+were dominated by clipping bias; that's why the earlier issue comments
+showed much larger distogram MAEs.)*
 
 The 100-protein numbers track the 48-paired interim view closely
 (median RMSD_CA single_seq 12.49 → 14.41 Å; msa 1.24 → 1.18 Å), so

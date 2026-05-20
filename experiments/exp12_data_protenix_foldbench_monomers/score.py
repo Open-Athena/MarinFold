@@ -64,15 +64,39 @@ import numpy as np
 # (``score-all-samples``) entry points. In the top-1 CSV every row has
 # selected_as_best=1; in the all-samples CSV exactly 200 of 8000 rows
 # (one per (mode, stem)) get selected_as_best=1.
+#
+# Distogram-derived metric columns (per-seed redundancy: the 8 samples
+# within a seed share the same distogram → identical values):
+#   * `mae_distogram_cb_angstrom` / `drmsd_distogram_cb_angstrom` —
+#     filtered to GT pairs in the distogram's expressible range
+#     (2.31 ≤ gt ≤ 21.84 Å for Protenix v2). This removes the clipping
+#     bias of the unfiltered version.
+#   * `mae_distogram_cb_contact_angstrom` / `drmsd_distogram_cb_contact_angstrom`
+#     — same formula but on the contact-regime pair set (GT ≤ 8 Å,
+#     CASP convention).
+#   * `prec_{short,medium,long}_L{,_2,_5}` — CASP contact precision @
+#     top-L / top-L/2 / top-L/5 per separation class. Score: contact
+#     probability summed over distogram bins with center ≤ 8 Å.
 _FIELDS = [
     "pdb_id", "chain_id", "mode", "seed", "sample_idx", "ranking_score",
     "selected_as_best",
     "n_residues",
-    "mae_distogram_cb_angstrom", "drmsd_distogram_cb_angstrom", "n_mae_distogram_pairs",
+    # Distogram MAE/dRMSD on the in-range pair set (option B).
+    "mae_distogram_cb_angstrom", "drmsd_distogram_cb_angstrom",
+    "n_mae_distogram_pairs",
+    # Distogram MAE/dRMSD on the contact-regime pair set (option C1).
+    "mae_distogram_cb_contact_angstrom", "drmsd_distogram_cb_contact_angstrom",
+    "n_mae_distogram_contact_pairs",
+    # Structure-derived (CA-based, unaffected by distogram range).
     "mae_structure_ca_angstrom",
     "drmsd_ca_angstrom", "n_ca_pairs",
     "rmsd_ca_angstrom", "n_ca_atoms",
     "rmsd_all_heavy_angstrom", "n_heavy_atoms",
+    # CASP contact precision (option C2). One column per (range, k).
+    "prec_short_L", "prec_short_L_2", "prec_short_L_5",
+    "prec_medium_L", "prec_medium_L_2", "prec_medium_L_5",
+    "prec_long_L", "prec_long_L_2", "prec_long_L_5",
+    "n_short_contacts", "n_medium_contacts", "n_long_contacts",
 ]
 
 
@@ -83,9 +107,10 @@ _FIELDS = [
 #   bin_width = (max_bin - min_bin) / no_bins
 #   boundaries = linspace(min_bin, max_bin - bin_width, no_bins)
 #   centers    = boundaries + 0.5 * bin_width
-# Out-of-range distances (>21.84 Å) go into the last bin; the
-# corresponding bin center underestimates them, which biases MAE
-# slightly upward on far pairs. This is the AF3-standard convention.
+# Out-of-range distances (>21.84 Å) get implicit-clipped to the last
+# bin's center on the model side (the expected distance can never
+# exceed centers[-1] ≈ 21.54 Å), which is why the distance-based
+# metrics (MAE / dRMSD) filter pairs to GT in [min, max].
 _DISTOGRAM_MIN_A = 2.3125
 _DISTOGRAM_MAX_A = 21.6875
 _DISTOGRAM_N_BINS = 64
@@ -96,6 +121,30 @@ _DISTOGRAM_BIN_MIDPOINTS = np.linspace(
     _DISTOGRAM_N_BINS,
     dtype=np.float64,
 ) + 0.5 * _DISTOGRAM_BIN_WIDTH
+
+
+# CASP / contact-evaluation constants.
+# Contact = CB-CB ≤ 8 Å (CA for GLY) — standard since CASP9, and the
+# definition Protenix's distogram is trained against (see the v2 config).
+_CONTACT_CUTOFF_A = 8.0
+
+# Mask of distogram bins whose centers fall under the contact cutoff —
+# used to derive the per-pair contact probability from the per-pair
+# 64-bin distribution. Bins 0..18 for Protenix v2 (centers 2.46-7.91 Å).
+_CONTACT_BIN_MASK = _DISTOGRAM_BIN_MIDPOINTS <= _CONTACT_CUTOFF_A
+
+# CASP14-onwards sequence-separation classes. `(sep_lo, sep_hi)` with
+# inclusive bounds; sep_hi=None means no upper limit. Pairs with
+# |i - j| ≤ 5 are intentionally excluded (too easy).
+_CASP_SEPARATIONS: dict[str, tuple[int, int | None]] = {
+    "short": (6, 11),
+    "medium": (12, 23),
+    "long": (24, None),
+}
+
+# Precision @ top L/k convention. CASP14 reports L, L/2, L/5 (and
+# sometimes L/10). We track the three headline ones.
+_CASP_TOP_K: tuple[int, ...] = (1, 2, 5)
 
 
 @dataclass(frozen=True)
@@ -250,8 +299,21 @@ def _pairwise_distance_matrix(
     return distances, mask
 
 
-def _expected_distances_from_distogram(distogram_path: Path) -> np.ndarray:
-    """Load distogram (.npz with key 'probs' shape [N, N, 64]); return expected-distance matrix [N, N].
+@dataclass(frozen=True)
+class _DistogramDerived:
+    """Outputs we derive from a single distogram .npz."""
+
+    expected_distances: np.ndarray   # [N, N] — Σ p_bin · center_bin
+    contact_probabilities: np.ndarray  # [N, N] — Σ p_bin over bins with center ≤ 8 Å
+
+
+def _load_distogram_derivatives(distogram_path: Path) -> _DistogramDerived:
+    """Load distogram (.npz with key 'probs' shape [N, N, 64]).
+
+    Returns both the expected-distance matrix and the contact-probability
+    matrix (= mass on bins with center ≤ 8 Å). Both are needed for the
+    full per-protein scoring suite; computing them in one pass avoids
+    reloading the .npz.
 
     If the .npz key is 'logits' instead, softmax along the last axis
     first. The Modal-side hook saves probabilities directly (after
@@ -262,7 +324,6 @@ def _expected_distances_from_distogram(distogram_path: Path) -> np.ndarray:
         probs = data["probs"].astype(np.float64)
     elif "logits" in data:
         logits = data["logits"].astype(np.float64)
-        # Stable softmax along last axis.
         m = logits.max(axis=-1, keepdims=True)
         exp = np.exp(logits - m)
         probs = exp / exp.sum(axis=-1, keepdims=True)
@@ -273,7 +334,75 @@ def _expected_distances_from_distogram(distogram_path: Path) -> np.ndarray:
             f"{distogram_path}: expected last dim = {_DISTOGRAM_N_BINS}, got {probs.shape[-1]}"
         )
     expected = (probs * _DISTOGRAM_BIN_MIDPOINTS).sum(axis=-1)
-    return expected
+    contact = probs[..., _CONTACT_BIN_MASK].sum(axis=-1)
+    return _DistogramDerived(expected_distances=expected, contact_probabilities=contact)
+
+
+def _expected_distances_from_distogram(distogram_path: Path) -> np.ndarray:
+    """Back-compat wrapper around :func:`_load_distogram_derivatives` for callers
+    that only need the expected-distance matrix.
+    """
+    return _load_distogram_derivatives(distogram_path).expected_distances
+
+
+def _casp_contact_precisions(
+    *,
+    contact_probs: np.ndarray,   # [N, N], in [0, 1]
+    gt_rep_d: np.ndarray,        # [N, N], NaN at unresolved positions
+    gt_rep_mask: np.ndarray,     # [N, N], True iff both rep atoms resolved
+    n_residues: int,
+) -> dict[str, float | int]:
+    """CASP-style top-L/k contact precision per separation class.
+
+    For each (short / medium / long) sequence-separation class:
+      * Restrict to pairs (i, j) with i < j, |j - i| in the class's
+        range, AND both rep atoms resolved in GT.
+      * Rank those pairs by predicted ``contact_probs[i, j]`` descending.
+      * For k ∈ {1, 2, 5} take the top ``L // k`` (at least 1) pairs;
+        precision = (# true contacts in top-k) / (# returned).
+      * Also report the total true-contact count in the class.
+
+    Returns a dict keyed by the corresponding ``_FIELDS`` columns
+    (``prec_<range>_L``, ``prec_<range>_L_2``, ``prec_<range>_L_5``,
+    ``n_<range>_contacts``). Precision is NaN if the class has no
+    eligible pairs (i.e. the protein is too short to have any).
+    """
+    is_contact_pair = (gt_rep_d <= _CONTACT_CUTOFF_A) & gt_rep_mask
+    out: dict[str, float | int] = {}
+    for range_name, (sep_lo, sep_hi) in _CASP_SEPARATIONS.items():
+        col_template = f"prec_{range_name}_L{{}}"
+        # Build (i, j) pair list for the class, only resolved pairs.
+        rows: list[int] = []
+        cols: list[int] = []
+        for i in range(n_residues):
+            j_start = i + sep_lo
+            j_end = n_residues if sep_hi is None else min(n_residues, i + sep_hi + 1)
+            for j in range(j_start, j_end):
+                if gt_rep_mask[i, j]:
+                    rows.append(i)
+                    cols.append(j)
+        if not rows:
+            for k in _CASP_TOP_K:
+                col = col_template.format("" if k == 1 else f"_{k}")
+                out[col] = float("nan")
+            out[f"n_{range_name}_contacts"] = 0
+            continue
+        rows_arr = np.asarray(rows)
+        cols_arr = np.asarray(cols)
+        scores = contact_probs[rows_arr, cols_arr]
+        gt_binary = is_contact_pair[rows_arr, cols_arr].astype(np.int64)
+        # Sort by predicted contact probability descending. We use
+        # mergesort for stability across runs (CASP-friendly).
+        order = np.argsort(-scores, kind="mergesort")
+        sorted_gt = gt_binary[order]
+        for k in _CASP_TOP_K:
+            top_n = max(1, n_residues // k)
+            top_n = min(top_n, len(sorted_gt))
+            precision = float(sorted_gt[:top_n].sum()) / top_n
+            col = col_template.format("" if k == 1 else f"_{k}")
+            out[col] = precision
+        out[f"n_{range_name}_contacts"] = int(gt_binary.sum())
+    return out
 
 
 @dataclass(frozen=True)
@@ -285,10 +414,15 @@ class ProteinScore:
     sample_idx: int
     ranking_score: float
     n_residues: int
-    # Distogram-derived MAE + dRMSD on CB-CB (CA-for-GLY).
+    # Distogram-derived MAE + dRMSD on CB-CB (CA-for-GLY), filtered to
+    # pairs whose GT is in the distogram's expressible range.
     mae_distogram_cb_angstrom: float
     drmsd_distogram_cb_angstrom: float
     n_mae_distogram_pairs: int
+    # Same, filtered to the contact-regime (GT ≤ 8 Å).
+    mae_distogram_cb_contact_angstrom: float
+    drmsd_distogram_cb_contact_angstrom: float
+    n_mae_distogram_contact_pairs: int
     # Structure-derived MAE on CA-CA (predicted vs GT pairwise distances).
     mae_structure_ca_angstrom: float
     # dRMSD on CA-CA (RMSE of pred-vs-GT pairwise CA distances).
@@ -300,6 +434,19 @@ class ProteinScore:
     # Kabsch RMSD over all matching heavy atoms.
     rmsd_all_heavy_angstrom: float
     n_heavy_atoms: int
+    # CASP-style contact precision per separation class @ top L / L/2 / L/5.
+    prec_short_L: float
+    prec_short_L_2: float
+    prec_short_L_5: float
+    prec_medium_L: float
+    prec_medium_L_2: float
+    prec_medium_L_5: float
+    prec_long_L: float
+    prec_long_L_2: float
+    prec_long_L_5: float
+    n_short_contacts: int
+    n_medium_contacts: int
+    n_long_contacts: int
 
 
 @dataclass(frozen=True)
@@ -307,9 +454,15 @@ class _MetricResult:
     """The metric outputs of comparing one (pred, GT) pair. No ID fields."""
 
     n_residues: int
+    # In-range distogram MAE/dRMSD (option B).
     mae_distogram_cb_angstrom: float
     drmsd_distogram_cb_angstrom: float
     n_mae_distogram_pairs: int
+    # Contact-regime distogram MAE/dRMSD (option C1).
+    mae_distogram_cb_contact_angstrom: float
+    drmsd_distogram_cb_contact_angstrom: float
+    n_mae_distogram_contact_pairs: int
+    # Structure metrics.
     mae_structure_ca_angstrom: float
     drmsd_ca_angstrom: float
     n_ca_pairs: int
@@ -317,6 +470,19 @@ class _MetricResult:
     n_ca_atoms: int
     rmsd_all_heavy_angstrom: float
     n_heavy_atoms: int
+    # CASP contact precision (option C2).
+    prec_short_L: float
+    prec_short_L_2: float
+    prec_short_L_5: float
+    prec_medium_L: float
+    prec_medium_L_2: float
+    prec_medium_L_5: float
+    prec_long_L: float
+    prec_long_L_2: float
+    prec_long_L_5: float
+    n_short_contacts: int
+    n_medium_contacts: int
+    n_long_contacts: int
 
 
 def _compute_metrics(
@@ -327,14 +493,14 @@ def _compute_metrics(
     pred_coords_cache: ProteinCoords | None = None,
     gt_coords_cache: ProteinCoords | None = None,
     gt_atoms_cache: dict[tuple[int, str], tuple[float, float, float]] | None = None,
-    expected_distances_cache: np.ndarray | None = None,
+    distogram_derived_cache: _DistogramDerived | None = None,
 ) -> _MetricResult:
-    """Compute all five metrics for one (pred_cif, gt_cif, distogram_npz) triple.
+    """Compute the full metric suite for one (pred_cif, gt_cif, distogram_npz).
 
     Per-sample loops (e.g. ``score-all-samples``) re-use the GT coordinates
     + heavy-atom positions + (per-seed) distogram across the 40 samples
-    that share them. Caches let callers avoid re-parsing the same CIF
-    8 times per seed. None for any cache means "parse from disk".
+    that share them. Caches let callers avoid re-parsing the same CIF /
+    .npz 8 times per seed. ``None`` for any cache means "parse from disk".
     """
     gt_coords = gt_coords_cache or _read_protein_coords_from_cif(gt_cif)
     pred_coords = pred_coords_cache or _read_protein_coords_from_cif(pred_cif)
@@ -345,32 +511,57 @@ def _compute_metrics(
         pass  # logged once at the caller level
     n = min(gt_coords.n_residues, pred_coords.n_residues)
 
-    expected = expected_distances_cache
-    if expected is None:
-        expected = _expected_distances_from_distogram(distogram_npz)
+    derived = distogram_derived_cache or _load_distogram_derivatives(distogram_npz)
+    expected = derived.expected_distances
+    contact_probs = derived.contact_probabilities
     if expected.shape != (n, n):
         m = min(expected.shape[0], n)
         expected = expected[:m, :m]
+        contact_probs = contact_probs[:m, :m]
         n = m
 
     iu = np.triu_indices(n, k=1)
-
-    # 1. Distogram-derived MAE + dRMSD on CB-CB (CA-for-GLY).
-    # MAE = mean(|expected - gt|);  dRMSD = sqrt(mean((expected - gt)^2)).
-    # Same pair set as each other (resolved-in-GT representative-atom
-    # pairs in the upper triangle).
     gt_rep_d, gt_rep_mask = _pairwise_distance_matrix(gt_coords.rep[:n])
-    mae_disto_usable = gt_rep_mask[iu]
-    n_mae_disto_pairs = int(mae_disto_usable.sum())
+
+    # 1a. Distogram MAE + dRMSD — in-range pair set (option B).
+    # Filter: pair resolved in GT AND 2.31 <= gt <= 21.84 (Protenix v2's
+    # distogram range). This removes pairs whose GT distance the model
+    # literally cannot express; without the filter the metric is
+    # dominated by the clipping bias on far pairs.
+    gt_rep_d_iu = gt_rep_d[iu]
+    inrange_mask = (
+        gt_rep_mask[iu]
+        & (gt_rep_d_iu >= _DISTOGRAM_MIN_A)
+        & (gt_rep_d_iu <= _DISTOGRAM_MAX_A)
+    )
+    n_mae_disto_pairs = int(inrange_mask.sum())
     if n_mae_disto_pairs == 0:
         mae_disto = float("nan")
         drmsd_disto = float("nan")
     else:
-        disto_diffs = (
-            expected[iu][mae_disto_usable] - gt_rep_d[iu][mae_disto_usable]
-        )
+        disto_diffs = expected[iu][inrange_mask] - gt_rep_d_iu[inrange_mask]
         mae_disto = float(np.mean(np.abs(disto_diffs)))
         drmsd_disto = float(np.sqrt(np.mean(disto_diffs ** 2)))
+
+    # 1b. Distogram MAE + dRMSD — contact-regime pair set (option C1).
+    # CASP contact convention: GT <= 8 Å. Same atom (CB / CA-for-GLY).
+    contact_mask = gt_rep_mask[iu] & (gt_rep_d_iu <= _CONTACT_CUTOFF_A)
+    n_disto_contact_pairs = int(contact_mask.sum())
+    if n_disto_contact_pairs == 0:
+        mae_disto_contact = float("nan")
+        drmsd_disto_contact = float("nan")
+    else:
+        disto_diffs_c = expected[iu][contact_mask] - gt_rep_d_iu[contact_mask]
+        mae_disto_contact = float(np.mean(np.abs(disto_diffs_c)))
+        drmsd_disto_contact = float(np.sqrt(np.mean(disto_diffs_c ** 2)))
+
+    # 1c. CASP contact precision (option C2).
+    casp = _casp_contact_precisions(
+        contact_probs=contact_probs,
+        gt_rep_d=gt_rep_d,
+        gt_rep_mask=gt_rep_mask,
+        n_residues=n,
+    )
 
     # 2 + 3. Structure-derived MAE + dRMSD on CA-CA (same pair set).
     gt_ca_d, gt_ca_mask = _pairwise_distance_matrix(gt_coords.ca[:n])
@@ -409,6 +600,9 @@ def _compute_metrics(
         mae_distogram_cb_angstrom=mae_disto,
         drmsd_distogram_cb_angstrom=drmsd_disto,
         n_mae_distogram_pairs=n_mae_disto_pairs,
+        mae_distogram_cb_contact_angstrom=mae_disto_contact,
+        drmsd_distogram_cb_contact_angstrom=drmsd_disto_contact,
+        n_mae_distogram_contact_pairs=n_disto_contact_pairs,
         mae_structure_ca_angstrom=mae_struct,
         drmsd_ca_angstrom=drmsd,
         n_ca_pairs=n_ca_pairs,
@@ -416,6 +610,18 @@ def _compute_metrics(
         n_ca_atoms=n_ca_atoms,
         rmsd_all_heavy_angstrom=rmsd_heavy,
         n_heavy_atoms=n_heavy_atoms,
+        prec_short_L=casp["prec_short_L"],
+        prec_short_L_2=casp["prec_short_L_2"],
+        prec_short_L_5=casp["prec_short_L_5"],
+        prec_medium_L=casp["prec_medium_L"],
+        prec_medium_L_2=casp["prec_medium_L_2"],
+        prec_medium_L_5=casp["prec_medium_L_5"],
+        prec_long_L=casp["prec_long_L"],
+        prec_long_L_2=casp["prec_long_L_2"],
+        prec_long_L_5=casp["prec_long_L_5"],
+        n_short_contacts=casp["n_short_contacts"],
+        n_medium_contacts=casp["n_medium_contacts"],
+        n_long_contacts=casp["n_long_contacts"],
     )
 
 
@@ -459,6 +665,9 @@ def score(
                 mae_distogram_cb_angstrom=m.mae_distogram_cb_angstrom,
                 drmsd_distogram_cb_angstrom=m.drmsd_distogram_cb_angstrom,
                 n_mae_distogram_pairs=m.n_mae_distogram_pairs,
+                mae_distogram_cb_contact_angstrom=m.mae_distogram_cb_contact_angstrom,
+                drmsd_distogram_cb_contact_angstrom=m.drmsd_distogram_cb_contact_angstrom,
+                n_mae_distogram_contact_pairs=m.n_mae_distogram_contact_pairs,
                 mae_structure_ca_angstrom=m.mae_structure_ca_angstrom,
                 drmsd_ca_angstrom=m.drmsd_ca_angstrom,
                 n_ca_pairs=m.n_ca_pairs,
@@ -466,15 +675,27 @@ def score(
                 n_ca_atoms=m.n_ca_atoms,
                 rmsd_all_heavy_angstrom=m.rmsd_all_heavy_angstrom,
                 n_heavy_atoms=m.n_heavy_atoms,
+                prec_short_L=m.prec_short_L,
+                prec_short_L_2=m.prec_short_L_2,
+                prec_short_L_5=m.prec_short_L_5,
+                prec_medium_L=m.prec_medium_L,
+                prec_medium_L_2=m.prec_medium_L_2,
+                prec_medium_L_5=m.prec_medium_L_5,
+                prec_long_L=m.prec_long_L,
+                prec_long_L_2=m.prec_long_L_2,
+                prec_long_L_5=m.prec_long_L_5,
+                n_short_contacts=m.n_short_contacts,
+                n_medium_contacts=m.n_medium_contacts,
+                n_long_contacts=m.n_long_contacts,
             ))
             print(
                 f"{mode}/{stem}: n_res={m.n_residues} "
-                f"MAE_disto={m.mae_distogram_cb_angstrom:.3f} "
-                f"dRMSD_disto={m.drmsd_distogram_cb_angstrom:.3f} "
+                f"MAE_disto[in]={m.mae_distogram_cb_angstrom:.3f} "
+                f"MAE_disto[ct]={m.mae_distogram_cb_contact_angstrom:.3f} "
+                f"dRMSD[in]={m.drmsd_distogram_cb_angstrom:.3f} "
                 f"MAE_struct={m.mae_structure_ca_angstrom:.3f} "
-                f"dRMSD={m.drmsd_ca_angstrom:.3f} "
                 f"RMSD_CA={m.rmsd_ca_angstrom:.3f} "
-                f"RMSD_all={m.rmsd_all_heavy_angstrom:.3f} (n_atoms={m.n_heavy_atoms})"
+                f"P_long_L={m.prec_long_L:.3f} P_long_L/5={m.prec_long_L_5:.3f}"
             )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -483,20 +704,32 @@ def score(
         writer.writerow(_FIELDS)
         for r in rows:
             # selected_as_best=1 always: this is the top-1 picker.
-            writer.writerow([
-                r.pdb_id, r.chain_id, r.mode, r.seed, r.sample_idx, r.ranking_score,
-                1,
-                r.n_residues,
-                f"{r.mae_distogram_cb_angstrom:.4f}",
-                f"{r.drmsd_distogram_cb_angstrom:.4f}",
-                r.n_mae_distogram_pairs,
-                f"{r.mae_structure_ca_angstrom:.4f}",
-                f"{r.drmsd_ca_angstrom:.4f}", r.n_ca_pairs,
-                f"{r.rmsd_ca_angstrom:.4f}", r.n_ca_atoms,
-                f"{r.rmsd_all_heavy_angstrom:.4f}", r.n_heavy_atoms,
-            ])
+            writer.writerow(_format_csv_row(r, selected_as_best=1))
     print(f"Wrote {out_csv} with {len(rows)} rows.")
     return rows
+
+
+def _format_csv_row(r, *, selected_as_best: int) -> list:
+    """One CSV-row formatter shared by score() and score_all_samples()."""
+    def _f(x: float) -> str:
+        return f"{x:.4f}" if x == x else "nan"  # NaN passthrough
+    return [
+        r.pdb_id, r.chain_id, r.mode, r.seed, r.sample_idx, r.ranking_score,
+        selected_as_best,
+        r.n_residues,
+        _f(r.mae_distogram_cb_angstrom), _f(r.drmsd_distogram_cb_angstrom),
+        r.n_mae_distogram_pairs,
+        _f(r.mae_distogram_cb_contact_angstrom), _f(r.drmsd_distogram_cb_contact_angstrom),
+        r.n_mae_distogram_contact_pairs,
+        _f(r.mae_structure_ca_angstrom),
+        _f(r.drmsd_ca_angstrom), r.n_ca_pairs,
+        _f(r.rmsd_ca_angstrom), r.n_ca_atoms,
+        _f(r.rmsd_all_heavy_angstrom), r.n_heavy_atoms,
+        _f(r.prec_short_L), _f(r.prec_short_L_2), _f(r.prec_short_L_5),
+        _f(r.prec_medium_L), _f(r.prec_medium_L_2), _f(r.prec_medium_L_5),
+        _f(r.prec_long_L), _f(r.prec_long_L_2), _f(r.prec_long_L_5),
+        r.n_short_contacts, r.n_medium_contacts, r.n_long_contacts,
+    ]
 
 
 def score_all_samples(
@@ -579,8 +812,9 @@ def score_all_samples(
                     if not distogram_npz.exists():
                         print(f"WARN: missing distogram {distogram_npz}; skipping seed.")
                         continue
-                    # Parse the distogram once per seed.
-                    expected = _expected_distances_from_distogram(distogram_npz)
+                    # Parse the distogram once per seed (gets both
+                    # expected-distance and contact-probability matrices).
+                    derived = _load_distogram_derivatives(distogram_npz)
                     # Iterate samples within the seed.
                     conf_prefix = f"{stem}_summary_confidence_sample_"
                     for conf_path in sorted(seed_dir.glob(f"{conf_prefix}*.json")):
@@ -601,7 +835,7 @@ def score_all_samples(
                             pred_cif=cif, gt_cif=gt_cif, distogram_npz=distogram_npz,
                             gt_coords_cache=gt_coords,
                             gt_atoms_cache=gt_atoms,
-                            expected_distances_cache=expected,
+                            distogram_derived_cache=derived,
                         )
                         stem_rows_by_mode[mode].append({
                             "ranking_score": ranking_score, "seed": seed,
@@ -623,26 +857,28 @@ def score_all_samples(
                 for i, row in enumerate(mode_rows):
                     row["selected_as_best"] = 1 if i == best_idx else 0
             # Write all rows for this stem in (mode, seed, sample_idx) order.
+            # We need a "ProteinScore-like" record for _format_csv_row;
+            # build a tiny adapter that carries everything from the
+            # _MetricResult plus the id fields.
+            class _Adapter:
+                __slots__ = ("pdb_id", "chain_id", "mode", "seed", "sample_idx",
+                             "ranking_score", *_MetricResult.__dataclass_fields__.keys())
             for mode in modes:
                 for row in stem_rows_by_mode[mode]:
                     rm = row["metrics"]
-                    writer.writerow([
-                        entry["pdb_id"], entry["chain_id"], mode,
-                        row["seed"], row["sample_idx"],
-                        # Use full repr so downstream "top-1 by ranking_score"
-                        # picks deterministically; 6-dp rounding produces
-                        # spurious ties (seen for 5sbj_A msa seeds 1 vs 3).
-                        repr(row["ranking_score"]),
-                        row["selected_as_best"],
-                        rm.n_residues,
-                        f"{rm.mae_distogram_cb_angstrom:.4f}",
-                        f"{rm.drmsd_distogram_cb_angstrom:.4f}",
-                        rm.n_mae_distogram_pairs,
-                        f"{rm.mae_structure_ca_angstrom:.4f}",
-                        f"{rm.drmsd_ca_angstrom:.4f}", rm.n_ca_pairs,
-                        f"{rm.rmsd_ca_angstrom:.4f}", rm.n_ca_atoms,
-                        f"{rm.rmsd_all_heavy_angstrom:.4f}", rm.n_heavy_atoms,
-                    ])
+                    a = _Adapter()
+                    a.pdb_id = entry["pdb_id"]
+                    a.chain_id = entry["chain_id"]
+                    a.mode = mode
+                    a.seed = row["seed"]
+                    a.sample_idx = row["sample_idx"]
+                    # Use full repr so downstream "top-1 by ranking_score"
+                    # picks deterministically; 6-dp rounding produces
+                    # spurious ties (seen for 5sbj_A msa seeds 1 vs 3).
+                    a.ranking_score = repr(row["ranking_score"])
+                    for f in _MetricResult.__dataclass_fields__:
+                        setattr(a, f, getattr(rm, f))
+                    writer.writerow(_format_csv_row(a, selected_as_best=row["selected_as_best"]))
                     n_written += 1
             f_out.flush()  # crash-safe under streaming sync
             print(f"{stem}: scored ({n_written} rows so far)")
