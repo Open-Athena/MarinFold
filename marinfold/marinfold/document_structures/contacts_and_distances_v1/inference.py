@@ -447,9 +447,11 @@ def evaluate(
     per_structure_n_pairs: dict[int, dict[str, int]] = {
         n: {} for n in cfg.seed_n_values
     }
+    per_structure_n_residues: dict[str, int] = {}
     per_pair: list[dict] = []
 
     for structure in structures:
+        per_structure_n_residues[structure.entry_id] = len(structure.residues)
         gt = _gt_query_distance_matrix(structure, cfg.query_atom)
         for n_seeded in cfg.seed_n_values:
             pred = _query_pairs(
@@ -502,5 +504,6 @@ def evaluate(
             "n_structures": len(structures),
             "per_structure_mae": per_structure_mae,
             "per_structure_n_pairs": per_structure_n_pairs,
+            "per_structure_n_residues": per_structure_n_residues,
         },
     )

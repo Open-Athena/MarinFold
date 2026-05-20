@@ -31,7 +31,18 @@ from marinfold import (
 
 from . import generate
 from . import inference
+from . import plots
 from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+
+
+def _pdf_path(s: str) -> Path:
+    """Argparse type validator: only accept ``*.pdf`` paths for ``--out-plots``."""
+    p = Path(s)
+    if p.suffix.lower() != ".pdf":
+        raise argparse.ArgumentTypeError(
+            f"--out-plots must end in .pdf; got {s!r}"
+        )
+    return p
 
 
 def _seed_n_values(s: str) -> tuple[int, ...]:
@@ -88,9 +99,15 @@ def cmd_infer(args: argparse.Namespace) -> None:
         max_pairs_per_structure=args.max_pairs_per_structure,
         keep_bin_probs=args.keep_bin_probs,
     )
-    records = inference.predict(cfg)
+    # Materialize so writer + plotter see the same data. ``predict``
+    # is a generator; the writer already lists internally, so
+    # listing here doesn't add memory pressure.
+    records = list(inference.predict(cfg))
     write_predictions(args.out, records, structure_name=NAME)
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
+    if args.out_plots is not None:
+        plots.plot_infer_pdf(args.out_plots, records)
+        print(f"[{NAME}] wrote {args.out_plots}", file=sys.stderr)
 
 
 def cmd_evaluate(args: argparse.Namespace) -> None:
@@ -112,6 +129,9 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
     for k, v in result.metrics.items():
         print(f"  {k} = {v}")
+    if args.out_plots is not None:
+        plots.plot_evaluate_pdf(args.out_plots, result)
+        print(f"[{NAME}] wrote {args.out_plots}", file=sys.stderr)
 
 
 def cmd_tokenizer(args: argparse.Namespace) -> None:
@@ -219,6 +239,12 @@ def build_parser() -> argparse.ArgumentParser:
                             "in infer mode it caps all queried pairs.")
         p.add_argument("--out", type=Path, required=True,
                        help="Output path.")
+        p.add_argument("--out-plots", type=_pdf_path, default=None,
+                       help="Optional multi-page PDF; one heatmap page "
+                            "per (structure, n_seeded). For infer this "
+                            "is the predicted distance matrix; for "
+                            "evaluate, GT (left) and predicted (right) "
+                            "side-by-side.")
 
     # ---- infer -------------------------------------------------------------
     p_inf = sub.add_parser("infer", help="Run a trained model (no ground truth).")
