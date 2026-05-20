@@ -92,7 +92,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
         case _:
             typing.assert_never(args.out.suffix)
 
-    # Default client is `None` and will auto-detect environment.
+    # Default client will auto-detect environment.
     ZephyrContext().execute(ds)
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
 
