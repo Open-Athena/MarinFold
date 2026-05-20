@@ -103,9 +103,14 @@ def test_score_perfect_prediction_has_near_zero_drmsd(tmp_path: Path, repo_input
     )
     assert len(results) == 1
     r = results[0]
-    assert r.stem if False else True  # noqa - shape check below
-    assert r.drmsd_angstrom == pytest.approx(0.0, abs=1e-6)
-    # MAE: oracle distogram → expected distance = bin midpoint of GT bin.
+    # Prediction == GT → all structure-derived metrics should be ~0.
+    assert r.drmsd_ca_angstrom == pytest.approx(0.0, abs=1e-6)
+    assert r.mae_structure_ca_angstrom == pytest.approx(0.0, abs=1e-6)
+    assert r.rmsd_ca_angstrom == pytest.approx(0.0, abs=1e-6)
+    assert r.rmsd_all_heavy_angstrom == pytest.approx(0.0, abs=1e-6)
+    # Oracle distogram → expected distance = bin midpoint of GT bin.
     # Max per-pair error is half the bin width (~0.15 Å); mean is well below.
-    assert 0.0 <= r.mae_angstrom < 0.2, f"MAE too high: {r.mae_angstrom}"
+    assert 0.0 <= r.mae_distogram_cb_angstrom < 0.2, (
+        f"distogram MAE too high: {r.mae_distogram_cb_angstrom}"
+    )
     assert out_csv.exists()

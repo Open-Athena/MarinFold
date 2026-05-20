@@ -167,12 +167,28 @@ def precompute_msa(stem: str, sequence: str) -> dict:
         "covalent_bonds": [],
     }
     target_dir.parent.mkdir(parents=True, exist_ok=True)
-    update_seq_msa(infer_data, str(target_dir), mode="colabfold")
+    try:
+        update_seq_msa(infer_data, str(target_dir), mode="colabfold")
+        failed = False
+        err = None
+    except Exception as e:  # noqa: BLE001 - ColabFold API can fail transiently
+        # Don't propagate: starmap would fail-fast on a single error and
+        # we'd lose the per-protein status of every other concurrent
+        # MSA. The dispatcher script retries (idempotent), and individual
+        # failures surface as ``failed: True`` in the result dict.
+        print(f"WARN: precompute_msa({stem!r}) raised {type(e).__name__}: {e}")
+        failed = True
+        err = str(e)
     MSA_VOL.commit()
     return {
         "stem": stem,
         "skipped": False,
-        "paired_exists": paired.exists(),
+        "failed": failed,
+        "error": err,
+        # The colabfold pipeline lays out:
+        #   <target_dir>/0/pairing.a3m       (monomer stub)
+        #   <target_dir>/0/0/non_pairing.a3m (real unpaired MSA)
+        "paired_exists": (target_dir / "0" / "pairing.a3m").exists(),
         "non_paired_exists": non_paired.exists(),
     }
 

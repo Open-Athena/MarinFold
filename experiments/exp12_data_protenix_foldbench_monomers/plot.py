@@ -3,7 +3,15 @@
 
 """Render comparison PNGs from data/scores.csv.
 
-Two plots per metric (MAE in Å, dRMSD in Å):
+Two plots per metric, for each of the five score.py outputs:
+
+- ``mae_distogram_cb_angstrom`` — distogram MAE on CB.
+- ``mae_structure_ca_angstrom`` — structure-distance-derived MAE on CA.
+- ``drmsd_ca_angstrom``         — dRMSD on CA.
+- ``rmsd_ca_angstrom``          — Kabsch RMSD on CA.
+- ``rmsd_all_heavy_angstrom``   — Kabsch RMSD on all matching heavy atoms.
+
+Per metric:
 
 - ``plots/{metric}_per_protein.png`` — grouped bar chart, one bar pair
   (single_seq / msa) per protein, sorted by protein size.
@@ -12,8 +20,8 @@ Two plots per metric (MAE in Å, dRMSD in Å):
   protein.
 
 A small summary CSV ``data/scores_summary.csv`` is also written: per-mode
-mean / median of each metric. Useful headline numbers for the issue
-comment.
+mean / median / min / max of each metric. Useful headline numbers for
+the issue comment.
 """
 
 import argparse
@@ -29,10 +37,26 @@ import numpy as np
 import pandas as pd
 
 
+_METRICS = (
+    ("mae_distogram_cb_angstrom", "Distogram MAE on CB (Å)"),
+    ("mae_structure_ca_angstrom", "Structure-distance MAE on CA (Å)"),
+    ("drmsd_ca_angstrom", "dRMSD on CA (Å)"),
+    ("rmsd_ca_angstrom", "Kabsch RMSD on CA (Å)"),
+    ("rmsd_all_heavy_angstrom", "Kabsch RMSD on all heavy atoms (Å)"),
+)
+
+
 def _load(scores_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(scores_csv)
-    # Ensure numeric (csv module wrote strings if we hand-wrote).
-    for col in ["mae_angstrom", "drmsd_angstrom", "n_residues", "ranking_score"]:
+    numeric_cols = (
+        "ranking_score", "n_residues",
+        "mae_distogram_cb_angstrom", "n_mae_distogram_pairs",
+        "mae_structure_ca_angstrom",
+        "drmsd_ca_angstrom", "n_ca_pairs",
+        "rmsd_ca_angstrom", "n_ca_atoms",
+        "rmsd_all_heavy_angstrom", "n_heavy_atoms",
+    )
+    for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
@@ -100,7 +124,9 @@ def _ss_vs_msa_scatter(df: pd.DataFrame, metric: str, label: str, out_png: Path)
 def _summary(df: pd.DataFrame, out_csv: Path) -> None:
     rows: list[dict] = []
     for mode, sub in df.groupby("mode"):
-        for metric in ("mae_angstrom", "drmsd_angstrom"):
+        for metric, _ in _METRICS:
+            if metric not in sub.columns:
+                continue
             rows.append({
                 "mode": mode,
                 "metric": metric,
@@ -119,15 +145,17 @@ def _summary(df: pd.DataFrame, out_csv: Path) -> None:
 
 
 def plot(*, scores_csv: Path, out_dir: Path) -> None:
-    """Top-level: load scores, render PNGs + summary CSV."""
+    """Top-level: load scores, render PNGs + summary CSV for all metrics."""
     df = _load(scores_csv)
     if df.empty:
         print(f"WARN: {scores_csv} is empty.")
         return
-    _per_protein_bars(df, "mae_angstrom", "MAE (Å)", out_dir / "mae_per_protein.png")
-    _per_protein_bars(df, "drmsd_angstrom", "dRMSD (Å)", out_dir / "drmsd_per_protein.png")
-    _ss_vs_msa_scatter(df, "mae_angstrom", "MAE (Å)", out_dir / "mae_ss_vs_msa_scatter.png")
-    _ss_vs_msa_scatter(df, "drmsd_angstrom", "dRMSD (Å)", out_dir / "drmsd_ss_vs_msa_scatter.png")
+    for metric, label in _METRICS:
+        if metric not in df.columns:
+            print(f"WARN: {metric} not in scores CSV; skipping.")
+            continue
+        _per_protein_bars(df, metric, label, out_dir / f"{metric}_per_protein.png")
+        _ss_vs_msa_scatter(df, metric, label, out_dir / f"{metric}_ss_vs_msa_scatter.png")
     summary_csv = scores_csv.parent / (scores_csv.stem + "_summary.csv")
     _summary(df, summary_csv)
 

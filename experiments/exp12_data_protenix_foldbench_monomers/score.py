@@ -3,33 +3,51 @@
 
 """Score the best Protenix sample per (protein, mode) against GT.
 
-Two per-protein metrics (one row per (protein, mode) in ``scores.csv``):
+Five per-protein metrics (one row per (protein, mode) in
+``scores.csv``):
 
-- **MAE** — mean absolute error between Protenix's expected distance
-  (``Σ p_bin · midpoint`` over the 64 bins of its distogram) and the GT
-  **CB-CB distance** (CA-CA for glycine, per the AF3 / Protenix
+- **mae_distogram_cb_angstrom** — mean absolute error between
+  Protenix's distogram-derived expected distance
+  (``Σ p_bin · midpoint`` over the 64 bins) and the GT **CB-CB
+  distance** (CA-CA for glycine, per the AF3 / Protenix
   representative-atom convention), averaged over residue pairs where
-  both representative atoms are resolved in the GT.
+  both representative atoms are resolved in the GT. *This is the
+  apples-to-apples comparison for the distogram head's output.*
 
-- **dRMSD** — sqrt of mean squared difference between the predicted
-  **CA-CA** pairwise distance matrix (from the best mmCIF) and the GT
-  CA-CA pairwise distance matrix, over the same pair set (resolved-in-GT
-  CA pairs). No sequence-separation filter (per agreement with author).
+- **mae_structure_ca_angstrom** — same shape as the above, but the
+  predicted distances come from the predicted **structure**'s CA-CA
+  pairwise distance matrix (i.e. the mmCIF output, not the distogram).
+  GT is also CA-CA. Lets us compare how well the *structure* itself
+  reproduces the GT distance map.
 
-Why different atoms: Protenix's distogram head represents each token
-by its CB (CA for glycine) — see ``add_distogram_rep_atom_mask`` in
-bytedance/Protenix protenix/data/core/parser.py. Comparing the
-distogram-derived expected distance against a GT CA-CA distance would
-be a biased apples-to-oranges comparison, so MAE uses the matching
-atom set. dRMSD is a property of the predicted *structure*, not the
-distogram — the user specified CA-CA for that.
+- **drmsd_ca_angstrom** — RMSE of the same (pred_CA-CA - GT_CA-CA)
+  pairwise distance differences (i.e. dRMSD over CA, no sequence-
+  separation filter).
+
+- **rmsd_ca_angstrom** — superposition-based RMSD over CA atoms, after
+  Kabsch alignment (via ``gemmi.superpose_positions``). Uses the
+  residues where both pred and GT have a resolved CA.
+
+- **rmsd_all_heavy_angstrom** — superposition-based RMSD over all
+  heavy-atom matches between pred and GT, keyed by ``(label_seq_id,
+  atom_name)``. Hydrogens are excluded (Protenix outputs heavy atoms
+  only by default).
+
+Why distogram MAE uses CB but dRMSD/RMSD use CA: Protenix's distogram
+head represents each token by its CB (CA for glycine) — see
+``add_distogram_rep_atom_mask`` in bytedance/Protenix
+protenix/data/core/parser.py. Comparing the distogram-derived
+expected distance against a GT CA-CA distance would be apples-to-
+oranges. The structure-derived metrics (dRMSD + the two RMSDs + the
+structure-derived MAE) all use CA, since CA-CA is the canonical
+backbone-geometry comparison.
 
 Residue index alignment: Protenix's output sequence is length-N (same
 as input), 1-indexed. The GT CIF's residues are mapped to the
 canonical sequence via gemmi's ``label_seq_id`` (which matches the
 canonical 1..N order). Unresolved residues — those in
 ``_entity_poly_seq`` but with no corresponding ``_atom_site`` row for
-the relevant atom — get masked out.
+the relevant atom — get masked out per-metric.
 """
 
 import argparse
@@ -143,6 +161,59 @@ def _read_protein_coords_from_cif(cif_path: Path) -> ProteinCoords:
     )
 
 
+def _read_heavy_atom_positions(cif_path: Path) -> dict[tuple[int, str], tuple[float, float, float]]:
+    """Read every heavy atom keyed by ``(label_seq_id, atom_name)``.
+
+    Used for all-heavy-atom RMSD: we intersect the keys between pred
+    and GT, then superpose on the matched subset. Hydrogens are
+    excluded (Protenix outputs heavy-only by default; GT may have H
+    in some entries and not others — easier to ignore them uniformly).
+    """
+    structure = gemmi.read_structure(str(cif_path))
+    structure.setup_entities()
+    peptide_entities = [
+        e for e in structure.entities
+        if e.entity_type == gemmi.EntityType.Polymer
+        and e.polymer_type == gemmi.PolymerType.PeptideL
+    ]
+    if not peptide_entities:
+        raise ValueError(f"No polypeptide(L) entity in {cif_path}")
+    subchains = set(peptide_entities[0].subchains)
+    out: dict[tuple[int, str], tuple[float, float, float]] = {}
+    for model in structure:
+        for chain in model:
+            for residue in chain:
+                if residue.subchain not in subchains:
+                    continue
+                label_seq = residue.label_seq
+                if label_seq is None:
+                    continue
+                for atom in residue:
+                    # Skip hydrogens (H / D) — element check beats atom-name
+                    # heuristics like startswith("H") since e.g. "HG" might
+                    # be Mercury in a non-standard residue.
+                    element = atom.element.name if atom.element else ""
+                    if element in ("H", "D"):
+                        continue
+                    key = (int(label_seq), atom.name)
+                    out[key] = (atom.pos.x, atom.pos.y, atom.pos.z)
+        break  # first model only
+    return out
+
+
+def _kabsch_rmsd(
+    pred_xyz: list[tuple[float, float, float]],
+    gt_xyz: list[tuple[float, float, float]],
+) -> float:
+    """Superposition-based RMSD via gemmi (Kabsch). Returns NaN if <3 points."""
+    if len(pred_xyz) < 3:
+        return float("nan")
+    pred_pos = [gemmi.Position(*p) for p in pred_xyz]
+    gt_pos = [gemmi.Position(*p) for p in gt_xyz]
+    res = gemmi.superpose_positions(pred_pos, gt_pos)
+    return float(res.rmsd)
+
+
 def _pairwise_distance_matrix(
     positions: list[tuple[float, float, float] | None],
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -198,9 +269,20 @@ class ProteinScore:
     sample_idx: int
     ranking_score: float
     n_residues: int
-    n_pairs_scored: int
-    mae_angstrom: float
-    drmsd_angstrom: float
+    # Distogram-derived MAE on CB-CB (CA-for-GLY).
+    mae_distogram_cb_angstrom: float
+    n_mae_distogram_pairs: int
+    # Structure-derived MAE on CA-CA (predicted vs GT pairwise distances).
+    mae_structure_ca_angstrom: float
+    # dRMSD on CA-CA (RMSE of pred-vs-GT pairwise CA distances).
+    drmsd_ca_angstrom: float
+    n_ca_pairs: int
+    # Kabsch RMSD over CA atoms.
+    rmsd_ca_angstrom: float
+    n_ca_atoms: int
+    # Kabsch RMSD over all matching heavy atoms.
+    rmsd_all_heavy_angstrom: float
+    n_heavy_atoms: int
 
 
 def score(
@@ -246,31 +328,54 @@ def score(
                 expected = expected[:m, :m]
                 n = m
 
-            # MAE: expected distance vs GT CB-or-CA-for-GLY distance.
-            gt_rep_d, gt_rep_mask = _pairwise_distance_matrix(gt_coords.rep[:n])
             iu = np.triu_indices(n, k=1)
-            mae_usable = gt_rep_mask[iu]
-            n_mae_pairs = int(mae_usable.sum())
-            if n_mae_pairs == 0:
-                print(f"WARN: {mode}/{stem}: no usable GT representative-atom pairs; skipping MAE.")
-                mae = float("nan")
+
+            # 1. Distogram-derived MAE on CB-CB (CA-for-GLY).
+            gt_rep_d, gt_rep_mask = _pairwise_distance_matrix(gt_coords.rep[:n])
+            mae_disto_usable = gt_rep_mask[iu]
+            n_mae_disto_pairs = int(mae_disto_usable.sum())
+            if n_mae_disto_pairs == 0:
+                mae_disto = float("nan")
             else:
-                mae = float(np.mean(np.abs(
-                    expected[iu][mae_usable] - gt_rep_d[iu][mae_usable]
+                mae_disto = float(np.mean(np.abs(
+                    expected[iu][mae_disto_usable] - gt_rep_d[iu][mae_disto_usable]
                 )))
 
-            # dRMSD: predicted CA-CA vs GT CA-CA.
+            # 2 + 3. Structure-derived MAE + dRMSD on CA-CA (same pair set).
             gt_ca_d, gt_ca_mask = _pairwise_distance_matrix(gt_coords.ca[:n])
             pred_ca_d, pred_ca_mask = _pairwise_distance_matrix(pred_coords.ca[:n])
-            drmsd_usable = gt_ca_mask[iu] & pred_ca_mask[iu]
-            n_drmsd_pairs = int(drmsd_usable.sum())
-            if n_drmsd_pairs == 0:
-                print(f"WARN: {mode}/{stem}: no usable CA pairs; skipping dRMSD.")
+            ca_usable = gt_ca_mask[iu] & pred_ca_mask[iu]
+            n_ca_pairs = int(ca_usable.sum())
+            if n_ca_pairs == 0:
+                mae_struct = float("nan")
                 drmsd = float("nan")
             else:
-                drmsd = float(np.sqrt(np.mean(
-                    (pred_ca_d[iu][drmsd_usable] - gt_ca_d[iu][drmsd_usable]) ** 2
-                )))
+                ca_diffs = pred_ca_d[iu][ca_usable] - gt_ca_d[iu][ca_usable]
+                mae_struct = float(np.mean(np.abs(ca_diffs)))
+                drmsd = float(np.sqrt(np.mean(ca_diffs ** 2)))
+
+            # 4. Kabsch RMSD over CA atoms.
+            pred_ca_xyz: list[tuple[float, float, float]] = []
+            gt_ca_xyz: list[tuple[float, float, float]] = []
+            for i in range(n):
+                if pred_coords.ca[i] is not None and gt_coords.ca[i] is not None:
+                    pred_ca_xyz.append(pred_coords.ca[i])
+                    gt_ca_xyz.append(gt_coords.ca[i])
+            rmsd_ca = _kabsch_rmsd(pred_ca_xyz, gt_ca_xyz)
+            n_ca_atoms = len(pred_ca_xyz)
+
+            # 5. Kabsch RMSD over all matching heavy atoms.
+            pred_atoms = _read_heavy_atom_positions(pred_cif)
+            gt_atoms = _read_heavy_atom_positions(gt_cif)
+            shared_keys = sorted(set(pred_atoms) & set(gt_atoms))
+            # Optional: restrict to residues within our truncated n
+            # (sometimes Protenix's prediction has more residues than the
+            # truncated comparison length, but using all matching keys
+            # gives us the most generous all-heavy comparison).
+            pred_heavy = [pred_atoms[k] for k in shared_keys]
+            gt_heavy = [gt_atoms[k] for k in shared_keys]
+            rmsd_heavy = _kabsch_rmsd(pred_heavy, gt_heavy)
+            n_heavy_atoms = len(shared_keys)
 
             rows.append(ProteinScore(
                 pdb_id=entry["pdb_id"],
@@ -280,35 +385,55 @@ def score(
                 sample_idx=int(provenance["sample_idx"]),
                 ranking_score=float(provenance["ranking_score"]),
                 n_residues=n,
-                n_pairs_scored=n_drmsd_pairs,
-                mae_angstrom=mae,
-                drmsd_angstrom=drmsd,
+                mae_distogram_cb_angstrom=mae_disto,
+                n_mae_distogram_pairs=n_mae_disto_pairs,
+                mae_structure_ca_angstrom=mae_struct,
+                drmsd_ca_angstrom=drmsd,
+                n_ca_pairs=n_ca_pairs,
+                rmsd_ca_angstrom=rmsd_ca,
+                n_ca_atoms=n_ca_atoms,
+                rmsd_all_heavy_angstrom=rmsd_heavy,
+                n_heavy_atoms=n_heavy_atoms,
             ))
             print(
                 f"{mode}/{stem}: n_res={n} "
-                f"mae_pairs={n_mae_pairs} drmsd_pairs={n_drmsd_pairs} "
-                f"MAE={mae:.3f} dRMSD={drmsd:.3f}"
+                f"MAE_disto={mae_disto:.3f} MAE_struct={mae_struct:.3f} "
+                f"dRMSD={drmsd:.3f} RMSD_CA={rmsd_ca:.3f} "
+                f"RMSD_all={rmsd_heavy:.3f} (n_atoms={n_heavy_atoms})"
             )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
+    fields = [
+        "pdb_id", "chain_id", "mode", "seed", "sample_idx", "ranking_score",
+        "n_residues",
+        "mae_distogram_cb_angstrom", "n_mae_distogram_pairs",
+        "mae_structure_ca_angstrom",
+        "drmsd_ca_angstrom", "n_ca_pairs",
+        "rmsd_ca_angstrom", "n_ca_atoms",
+        "rmsd_all_heavy_angstrom", "n_heavy_atoms",
+    ]
     with out_csv.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            "pdb_id", "chain_id", "mode", "seed", "sample_idx", "ranking_score",
-            "n_residues", "n_pairs_scored", "mae_angstrom", "drmsd_angstrom",
-        ])
+        writer.writerow(fields)
         for r in rows:
             writer.writerow([
                 r.pdb_id, r.chain_id, r.mode, r.seed, r.sample_idx, r.ranking_score,
-                r.n_residues, r.n_pairs_scored,
-                f"{r.mae_angstrom:.4f}", f"{r.drmsd_angstrom:.4f}",
+                r.n_residues,
+                f"{r.mae_distogram_cb_angstrom:.4f}", r.n_mae_distogram_pairs,
+                f"{r.mae_structure_ca_angstrom:.4f}",
+                f"{r.drmsd_ca_angstrom:.4f}", r.n_ca_pairs,
+                f"{r.rmsd_ca_angstrom:.4f}", r.n_ca_atoms,
+                f"{r.rmsd_all_heavy_angstrom:.4f}", r.n_heavy_atoms,
             ])
     print(f"Wrote {out_csv} with {len(rows)} rows.")
     return rows
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("score", help="MAE (vs expected distance) + dRMSD (vs CA-CA distance) per (protein, mode).")
+    p = subparsers.add_parser(
+        "score",
+        help="MAE (distogram + structure) + dRMSD + RMSD (CA + all-heavy) per (protein, mode).",
+    )
     p.add_argument("--best", type=Path, required=True, help="Dir produced by select-best (with {mode}/{stem}/ subtree).")
     p.add_argument("--inputs", type=Path, required=True, help="Dir produced by prepare-inputs (contains manifest.csv + gt/).")
     p.add_argument("--out", type=Path, required=True, help="Output CSV path (typically data/scores.csv).")
