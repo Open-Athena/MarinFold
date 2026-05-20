@@ -17,11 +17,16 @@ Public surface:
 - :func:`predict`, :func:`evaluate`, :class:`InferenceConfig` —
   from :mod:`.inference`. These are what the top-level ``marinfold``
   CLI dispatches to.
+- :func:`plot_infer_pdf`, :func:`plot_evaluate_pdf` — from
+  :mod:`.plots`. Optional PDF writers used by ``marinfold infer
+  --out-plots`` / ``marinfold evaluate --out-plots``. Matplotlib is
+  imported lazily inside the helpers.
 """
 
 from .generate import GenerationConfig, generate_documents
 from .inference import InferenceConfig, evaluate, predict
 from .parse import structure_from_sequence
+from .plots import plot_evaluate_pdf, plot_infer_pdf
 from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 
 __all__ = [
@@ -32,6 +37,8 @@ __all__ = [
     "all_domain_tokens",
     "evaluate",
     "generate_documents",
+    "plot_evaluate_pdf",
+    "plot_infer_pdf",
     "predict",
     "structure_from_sequence",
 ]

@@ -45,6 +45,16 @@ _BACKEND_CHOICES = ("vllm", "transformers", "mlx")
 # --------------------------------------------------------------------------
 
 
+def _pdf_path(s: str) -> Path:
+    """Argparse type validator: only accept ``*.pdf`` paths for ``--out-plots``."""
+    p = Path(s)
+    if p.suffix.lower() != ".pdf":
+        raise argparse.ArgumentTypeError(
+            f"--out-plots must end in .pdf; got {s!r}"
+        )
+    return p
+
+
 def _impl_module_name(structure_name: str) -> str:
     """Map a doc-structure NAME (kebab-case) to its subpackage module path."""
     return f"marinfold.document_structures.{structure_name.replace('-', '_')}"
@@ -188,6 +198,9 @@ def cmd_infer(args: argparse.Namespace) -> None:
     write_predictions(args.out, records, structure_name=ds_name)
     print(f"[marinfold] wrote predictions to {args.out}", file=sys.stderr)
 
+    if args.out_plots is not None:
+        _emit_infer_plots(impl, ds_name, args.out_plots, records)
+
 
 def cmd_evaluate(args: argparse.Namespace) -> None:
     model_spec, ds_name = _resolve_model_and_structure(
@@ -213,6 +226,41 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
         records = list(impl.predict(dataclasses.replace(cfg)))
         write_predictions(args.out, records, structure_name=ds_name)
         print(f"[marinfold] wrote predictions to {args.out}", file=sys.stderr)
+
+    if args.out_plots is not None:
+        _emit_evaluate_plots(impl, ds_name, args.out_plots, result)
+
+
+def _emit_infer_plots(
+    impl: ModuleType,
+    ds_name: str,
+    out_path: Path,
+    records: list[Any],
+) -> None:
+    fn = getattr(impl, "plot_infer_pdf", None)
+    if fn is None:
+        raise SystemExit(
+            f"Document structure {ds_name!r} does not expose plot_infer_pdf "
+            f"— --out-plots is not supported for this impl."
+        )
+    fn(out_path, records)
+    print(f"[marinfold] wrote plots to {out_path}", file=sys.stderr)
+
+
+def _emit_evaluate_plots(
+    impl: ModuleType,
+    ds_name: str,
+    out_path: Path,
+    result: Any,
+) -> None:
+    fn = getattr(impl, "plot_evaluate_pdf", None)
+    if fn is None:
+        raise SystemExit(
+            f"Document structure {ds_name!r} does not expose plot_evaluate_pdf "
+            f"— --out-plots is not supported for this impl."
+        )
+    fn(out_path, result)
+    print(f"[marinfold] wrote plots to {out_path}", file=sys.stderr)
 
 
 # --------------------------------------------------------------------------
@@ -275,6 +323,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", type=Path, required=True,
         help="Predictions output (.json/.jsonl/.parquet).",
     )
+    p_inf.add_argument(
+        "--out-plots", type=_pdf_path, default=None,
+        help="Optional multi-page PDF; one predicted-distance heatmap "
+             "page per (structure, n_seeded). Requires the impl to "
+             "expose plot_infer_pdf; for contacts-and-distances-v1 "
+             "this is pulled in by the [contacts-and-distances-v1] extra.",
+    )
     p_inf.set_defaults(func=cmd_infer)
 
     # ---- evaluate ---------------------------------------------------------
@@ -296,6 +351,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", type=Path, default=None,
         help="Optional predictions output (.json/.jsonl/.parquet). "
              "Omit to skip the second predict pass.",
+    )
+    p_eval.add_argument(
+        "--out-plots", type=_pdf_path, default=None,
+        help="Optional multi-page PDF; one (GT, predicted) heatmap "
+             "page per (structure, n_seeded). Requires the impl to "
+             "expose plot_evaluate_pdf.",
     )
     p_eval.set_defaults(func=cmd_evaluate)
 
