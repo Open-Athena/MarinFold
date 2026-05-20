@@ -7,7 +7,7 @@ Two subcommands::
 
     marinfold infer    --backend mlx --input-sequence SIINFEKL... --out preds.json
     marinfold infer    --backend mlx --input /path/to/file-or-dir --out preds.json
-    marinfold evaluate --backend mlx --input-dir /path/to/pdbs/ \
+    marinfold evaluate --backend mlx --input /path/to/pdbs/ \
         --out preds.json --metrics-out metrics.json
 
 Dispatch is driven by repo-root ``MODELS.yaml``:
@@ -211,15 +211,16 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
     )
     impl = _load_impl(ds_name)
 
-    cfg = _make_inference_config(impl, model_spec, args, input_path=args.input_dir)
+    cfg = _make_inference_config(impl, model_spec, args, input_path=args.input)
     # `evaluate` runs predict + GT comparison in one pass; we re-run
     # predict for the predictions output so the per-example records
     # in the metrics file stay aligned with what we write to --out.
     # Cheaper alternative would be teaching evaluate to also emit raw
     # prediction records, but that complicates the EvalResult shape.
     result = impl.evaluate(cfg)
-    write_eval(args.metrics_out, result, structure_name=ds_name)
-    print(f"[marinfold] wrote metrics to {args.metrics_out}", file=sys.stderr)
+    if args.metrics_out is not None:
+        write_eval(args.metrics_out, result, structure_name=ds_name)
+        print(f"[marinfold] wrote metrics to {args.metrics_out}", file=sys.stderr)
 
     if args.out is not None:
         # Re-run predict on the same inputs to emit a predictions
@@ -348,13 +349,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common(p_eval)
     p_eval.add_argument(
-        "--input-dir", type=Path, required=True,
-        help="Directory of structure files (.pdb / .cif / .gz). The "
-             "atom coordinates are the ground truth.",
+        "--input", type=Path, required=True,
+        help="Path to a structure file (.pdb / .cif / .gz) or a "
+             "directory of them. Atom coordinates are the ground truth.",
     )
     p_eval.add_argument(
-        "--metrics-out", type=Path, required=True,
-        help="Aggregated metrics output (.json/.parquet).",
+        "--metrics-out", type=Path, default=None,
+        help="Optional aggregated metrics output (.json/.parquet). "
+             "Omit to skip the metrics file; plots still include GT.",
     )
     p_eval.add_argument(
         "--out", type=Path, default=None,
