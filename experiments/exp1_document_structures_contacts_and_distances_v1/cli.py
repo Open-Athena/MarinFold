@@ -20,7 +20,9 @@ sidecars) live in :mod:`marinfold_document_structures.writers`.
 
 import argparse
 import sys
+import typing
 from pathlib import Path
+import itertools
 
 from marinfold import (
     build_tokenizer,
@@ -28,6 +30,7 @@ from marinfold import (
     write_eval,
     write_predictions,
 )
+from zephyr import Dataset, ZephyrContext
 
 import generate
 import inference
@@ -64,13 +67,31 @@ def cmd_generate(args: argparse.Namespace) -> None:
         rank_std=args.rank_std,
         residue_plddt_min=args.residue_plddt_min,
     )
-    docs = generate.generate_documents(
-        input_path=args.input,
-        num_docs=args.num_docs,
-        context_length=args.context_length,
-        config=cfg,
+    # If num_docs is `None`, this will iterate over the whole collection.
+    src = itertools.islice(generate.iter_parsed_structures(args.input_path), args.num_docs)
+
+    ds = (
+        Dataset
+        .from_iterable(src)
+        .filter(generate.at_least_two_residuals)
+        .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
+        .filter(lambda x: x)  # Sometimes generate_one returns `None`.
     )
-    write_docs(args.out, docs, structure_name=NAME)
+
+    match args.out.suffix:
+        case ".parquet":
+            ds = (
+                ds
+                .map(lambda d: {"document": d, "structure": NAME})
+                .write_parquet(args.out)
+            )
+        case ".jsonl" | ".json":
+            ds.write_jsonl(args.out)
+        case _:
+            typing.assert_never(args.out.suffix)
+
+    # Default client is `None` and will auto-detect environment.
+    ZephyrContext().execute(ds)
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
 
 

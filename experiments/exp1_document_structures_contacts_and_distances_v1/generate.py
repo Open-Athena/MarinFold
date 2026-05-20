@@ -99,16 +99,20 @@ class _Statement:
     tokens: tuple[str, ...]
 
 
-def _generate_one(
+def at_least_two_residuals(structure: ParsedStructure) -> bool:
+    residues = structure.residues
+    num_residues = len(residues)
+    return num_residues >= 2
+
+
+def generate_one(
     structure: ParsedStructure,
     *,
     context_length: int,
     cfg: GenerationConfig,
 ) -> str | None:
     """Build one document string for ``structure``, or None if it doesn't fit."""
-    residues = structure.residues
-    num_residues = len(residues)
-    if num_residues < 2:
+    if not at_least_two_residuals(structure):
         return None
 
     # Deterministic seed per entry — keeps generation reproducible
@@ -251,7 +255,7 @@ def generate_documents(
     """
     produced = 0
     for structure in iter_parsed_structures(input_path):
-        doc = _generate_one(structure, context_length=context_length, cfg=config)
+        doc = generate_one(structure, context_length=context_length, cfg=config)
         if doc is None:
             continue
         yield doc
