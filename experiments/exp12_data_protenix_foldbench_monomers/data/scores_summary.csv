@@ -1,0 +1,5 @@
+mode,metric,n,mean,median,min,max
+msa,mae_angstrom,10,3.4971400000000004,3.38575,0.4787,8.2508
+msa,drmsd_angstrom,10,1.5095199999999998,1.2543,0.2644,4.2436
+single_seq,mae_angstrom,10,5.09307,5.4722,0.4802,9.9298
+single_seq,drmsd_angstrom,10,6.39353,6.3134,0.8149,10.7466

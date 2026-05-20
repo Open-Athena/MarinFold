@@ -136,8 +136,56 @@ HF bucket under `data/protenix-foldbench-monomers/`.
 
 ## Results
 
-_(Fill in after the 10-protein run completes.)_
+10-protein subset (first 10 rows of FoldBench's `monomer_protein.csv`,
+30-394 aa). Top-1 sample per (protein, mode) by Protenix's
+`ranking_score`; MAE on the kept sample's distogram vs GT CB-CB
+(CA-for-GLY); dRMSD on the kept sample's CA-CA distance matrix vs GT.
+
+| Mode | MAE (Å), mean | MAE (Å), median | dRMSD (Å), mean | dRMSD (Å), median |
+|---|---|---|---|---|
+| single_seq | 5.09 | 5.47 | 6.39 | 6.31 |
+| msa | 3.50 | 3.39 | 1.51 | 1.25 |
+
+Source CSVs: [`data/scores.csv`](data/scores.csv) (per-protein),
+[`data/scores_summary.csv`](data/scores_summary.csv) (per-mode summary).
+
+Plots ([`plots/`](plots/)):
+- `mae_per_protein.png` — grouped bar chart of MAE per protein, both modes
+- `drmsd_per_protein.png` — same, for dRMSD
+- `mae_ss_vs_msa_scatter.png` — paired scatter, y=single_seq, x=msa
+- `drmsd_ss_vs_msa_scatter.png` — same, for dRMSD
+
+### Notes on the numbers
+
+- **MAE inflates with protein size** because Protenix's distogram has
+  a 21.84 Å max bin — pairs with GT distance beyond that get clipped
+  to the last bin midpoint (~21.7 Å). For a 400-aa protein many pairs
+  are at 30-80 Å, so the floor of MAE on those pairs is large. dRMSD
+  doesn't have this issue.
+- **dRMSD improvement is dramatic**: single_seq → MSA reduces mean
+  dRMSD 4.2× (6.39 → 1.51 Å). On the hardest single_seq target
+  (7qsj_A, 373 aa, single_seq dRMSD 6.7 Å), MSA brings it to 0.26 Å.
+- **Designed-peptide outlier**: 5sbj_A (30 aa with ACE/NH2 caps)
+  scores nearly identically in both modes (~0.48 Å MAE, ~0.93 Å
+  dRMSD) — no MSA signal to exploit on a designed sequence with no
+  natural homologs.
+
+### Outputs not in git
+
+Raw structures (800 .cif), distograms (100 .npz), and confidence JSONs
+(800) live on the Modal `foldbench-protenix-runs` Volume and rsynced
+locally to `outputs/` (1.0 GB). The curated `best/` tree (top-1 sample
+per protein-mode, 20 entries) is ~80 MB. Both are `.gitignore`'d. They
+go to `huggingface.co/buckets/open-athena/MarinFold/data/protenix-foldbench-monomers/`
+after human review.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+For the 10-protein subset, Protenix v2 in MSA mode produces near-native
+structures (median dRMSD 1.25 Å) and the distogram is a meaningful
+signal for distance prediction (mean MAE 3.50 Å, dominated by the
+inability to represent >22 Å distances). Single-sequence mode degrades
+sharply on natural proteins (mean dRMSD 6.4 Å) while remaining usable
+on small designed peptides. The pipeline is ready to scale to 100
+proteins once these numbers are approved by a human.
+
