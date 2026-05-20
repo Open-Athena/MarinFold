@@ -16,7 +16,7 @@ dependencies = [
     "pyarrow",
     "pyyaml>=6",
     "tokenizers>=0.15",
-    "transformers>=4.40",
+    "transformers>=4.40,<5",
 ]
 
 [project.optional-dependencies]
