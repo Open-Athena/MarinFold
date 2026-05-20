@@ -115,6 +115,8 @@ def generate_one(
     if not at_least_two_residuals(structure):
         return None
 
+    residues = structure.residues
+    num_residues = len(residues)
     # Deterministic seed per entry — keeps generation reproducible
     # across re-runs.
     seed = int(hashlib.sha1(structure.entry_id.encode()).hexdigest()[:8], 16)

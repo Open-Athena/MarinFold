@@ -537,6 +537,83 @@ def test_cli_seed_n_values_rejects_bad():
         cli._seed_n_values("-1")
 
 
+# ---------------------------------------------------------------------------
+# cmd_generate (Zephyr pipeline) — integration
+#
+# These run cmd_generate end-to-end through the same code path the binary
+# uses (argparse → handler → Zephyr execution → on-disk artifact) and assert
+# the output matches the legacy generate.generate_documents() iterator.
+# ---------------------------------------------------------------------------
+
+
+def _parse_generate_args(input_path: Path, out: Path, num_docs: int | None = None) -> argparse.Namespace:
+    argv = ["generate", "--input", str(input_path), "--out", str(out)]
+    if num_docs is not None:
+        argv += ["--num-docs", str(num_docs)]
+    return cli.build_parser().parse_args(argv)
+
+
+@pytest.fixture
+def multi_pdb_dir(tmp_path: Path) -> Path:
+    sub = tmp_path / "pdbs"
+    sub.mkdir()
+    for i in range(5):
+        (sub / f"copy{i}.pdb").write_text(_PDB_FIXTURE)
+    return sub
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_parquet_matches_legacy(multi_pdb_dir, tmp_path: Path):
+    """Parquet path: rows wrap docs as {document, structure} and equal the legacy iterator."""
+    pq = pytest.importorskip("pyarrow.parquet")
+    out = tmp_path / "docs.parquet"
+
+    cli.cmd_generate(_parse_generate_args(multi_pdb_dir, out))
+
+    assert out.exists(), "cmd_generate did not write the parquet output"
+    tbl = pq.read_table(str(out))
+    assert set(tbl.column_names) == {"document", "structure"}
+    assert set(tbl.column("structure").to_pylist()) == {NAME}
+    assert sorted(tbl.column("document").to_pylist()) == sorted(
+        generate.generate_documents(
+            input_path=multi_pdb_dir,
+            num_docs=None,
+            context_length=CONTEXT_LENGTH,
+            config=generate.GenerationConfig(),
+        )
+    )
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_jsonl_writes_one_doc_per_line(tiny_pdb_path, tmp_path: Path):
+    """JSONL path: pass-through — one JSON-encoded doc string per line."""
+    import json
+
+    out = tmp_path / "docs.jsonl"
+    cli.cmd_generate(_parse_generate_args(tiny_pdb_path, out))
+
+    assert out.exists(), "cmd_generate did not write the jsonl output"
+    lines = [l for l in out.read_text().splitlines() if l.strip()]
+    expected = list(generate.generate_documents(
+        input_path=tiny_pdb_path,
+        num_docs=None,
+        context_length=CONTEXT_LENGTH,
+        config=generate.GenerationConfig(),
+    ))
+    assert [json.loads(l) for l in lines] == expected
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_respects_num_docs(multi_pdb_dir, tmp_path: Path):
+    """--num-docs caps the size of the output."""
+    pq = pytest.importorskip("pyarrow.parquet")
+    out = tmp_path / "docs.parquet"
+
+    cli.cmd_generate(_parse_generate_args(multi_pdb_dir, out, num_docs=3))
+
+    assert pq.read_table(str(out)).num_rows == 3
+
+
 def test_cli_top_level_help_does_not_error(capsys):
     parser = cli.build_parser()
     with pytest.raises(SystemExit) as exc:

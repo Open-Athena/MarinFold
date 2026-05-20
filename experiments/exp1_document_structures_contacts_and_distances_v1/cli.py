@@ -68,14 +68,17 @@ def cmd_generate(args: argparse.Namespace) -> None:
         residue_plddt_min=args.residue_plddt_min,
     )
     # If num_docs is `None`, this will iterate over the whole collection.
-    src = itertools.islice(generate.iter_parsed_structures(args.input_path), args.num_docs)
+    src = itertools.islice(generate.iter_parsed_structures(args.input), args.num_docs)
 
     ds = (
         Dataset
         .from_iterable(src)
         .filter(generate.at_least_two_residuals)
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
-        .filter(lambda x: x)  # Sometimes generate_one returns `None`.
+        # Sometimes generate_one returns `None`.
+        .filter(lambda x: x)
+        # Preserve single-file --out semantics.
+        .reshard(1)
     )
 
     match args.out.suffix:
@@ -83,10 +86,10 @@ def cmd_generate(args: argparse.Namespace) -> None:
             ds = (
                 ds
                 .map(lambda d: {"document": d, "structure": NAME})
-                .write_parquet(args.out)
+                .write_parquet(str(args.out))
             )
         case ".jsonl" | ".json":
-            ds.write_jsonl(args.out)
+            ds = ds.write_jsonl(str(args.out))
         case _:
             typing.assert_never(args.out.suffix)
 
