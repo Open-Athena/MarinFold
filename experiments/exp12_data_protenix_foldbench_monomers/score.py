@@ -60,11 +60,15 @@ import gemmi
 import numpy as np
 
 
-# CSV schema shared by the top-1 and all-samples scoring entry points.
+# CSV schema shared by the top-1 (``score``) and all-samples
+# (``score-all-samples``) entry points. In the top-1 CSV every row has
+# selected_as_best=1; in the all-samples CSV exactly 200 of 8000 rows
+# (one per (mode, stem)) get selected_as_best=1.
 _FIELDS = [
     "pdb_id", "chain_id", "mode", "seed", "sample_idx", "ranking_score",
+    "selected_as_best",
     "n_residues",
-    "mae_distogram_cb_angstrom", "n_mae_distogram_pairs",
+    "mae_distogram_cb_angstrom", "drmsd_distogram_cb_angstrom", "n_mae_distogram_pairs",
     "mae_structure_ca_angstrom",
     "drmsd_ca_angstrom", "n_ca_pairs",
     "rmsd_ca_angstrom", "n_ca_atoms",
@@ -281,8 +285,9 @@ class ProteinScore:
     sample_idx: int
     ranking_score: float
     n_residues: int
-    # Distogram-derived MAE on CB-CB (CA-for-GLY).
+    # Distogram-derived MAE + dRMSD on CB-CB (CA-for-GLY).
     mae_distogram_cb_angstrom: float
+    drmsd_distogram_cb_angstrom: float
     n_mae_distogram_pairs: int
     # Structure-derived MAE on CA-CA (predicted vs GT pairwise distances).
     mae_structure_ca_angstrom: float
@@ -303,6 +308,7 @@ class _MetricResult:
 
     n_residues: int
     mae_distogram_cb_angstrom: float
+    drmsd_distogram_cb_angstrom: float
     n_mae_distogram_pairs: int
     mae_structure_ca_angstrom: float
     drmsd_ca_angstrom: float
@@ -349,16 +355,22 @@ def _compute_metrics(
 
     iu = np.triu_indices(n, k=1)
 
-    # 1. Distogram-derived MAE on CB-CB (CA-for-GLY).
+    # 1. Distogram-derived MAE + dRMSD on CB-CB (CA-for-GLY).
+    # MAE = mean(|expected - gt|);  dRMSD = sqrt(mean((expected - gt)^2)).
+    # Same pair set as each other (resolved-in-GT representative-atom
+    # pairs in the upper triangle).
     gt_rep_d, gt_rep_mask = _pairwise_distance_matrix(gt_coords.rep[:n])
     mae_disto_usable = gt_rep_mask[iu]
     n_mae_disto_pairs = int(mae_disto_usable.sum())
     if n_mae_disto_pairs == 0:
         mae_disto = float("nan")
+        drmsd_disto = float("nan")
     else:
-        mae_disto = float(np.mean(np.abs(
+        disto_diffs = (
             expected[iu][mae_disto_usable] - gt_rep_d[iu][mae_disto_usable]
-        )))
+        )
+        mae_disto = float(np.mean(np.abs(disto_diffs)))
+        drmsd_disto = float(np.sqrt(np.mean(disto_diffs ** 2)))
 
     # 2 + 3. Structure-derived MAE + dRMSD on CA-CA (same pair set).
     gt_ca_d, gt_ca_mask = _pairwise_distance_matrix(gt_coords.ca[:n])
@@ -395,6 +407,7 @@ def _compute_metrics(
     return _MetricResult(
         n_residues=n,
         mae_distogram_cb_angstrom=mae_disto,
+        drmsd_distogram_cb_angstrom=drmsd_disto,
         n_mae_distogram_pairs=n_mae_disto_pairs,
         mae_structure_ca_angstrom=mae_struct,
         drmsd_ca_angstrom=drmsd,
@@ -444,6 +457,7 @@ def score(
                 ranking_score=float(provenance["ranking_score"]),
                 n_residues=m.n_residues,
                 mae_distogram_cb_angstrom=m.mae_distogram_cb_angstrom,
+                drmsd_distogram_cb_angstrom=m.drmsd_distogram_cb_angstrom,
                 n_mae_distogram_pairs=m.n_mae_distogram_pairs,
                 mae_structure_ca_angstrom=m.mae_structure_ca_angstrom,
                 drmsd_ca_angstrom=m.drmsd_ca_angstrom,
@@ -456,6 +470,7 @@ def score(
             print(
                 f"{mode}/{stem}: n_res={m.n_residues} "
                 f"MAE_disto={m.mae_distogram_cb_angstrom:.3f} "
+                f"dRMSD_disto={m.drmsd_distogram_cb_angstrom:.3f} "
                 f"MAE_struct={m.mae_structure_ca_angstrom:.3f} "
                 f"dRMSD={m.drmsd_ca_angstrom:.3f} "
                 f"RMSD_CA={m.rmsd_ca_angstrom:.3f} "
@@ -467,10 +482,14 @@ def score(
         writer = csv.writer(f)
         writer.writerow(_FIELDS)
         for r in rows:
+            # selected_as_best=1 always: this is the top-1 picker.
             writer.writerow([
                 r.pdb_id, r.chain_id, r.mode, r.seed, r.sample_idx, r.ranking_score,
+                1,
                 r.n_residues,
-                f"{r.mae_distogram_cb_angstrom:.4f}", r.n_mae_distogram_pairs,
+                f"{r.mae_distogram_cb_angstrom:.4f}",
+                f"{r.drmsd_distogram_cb_angstrom:.4f}",
+                r.n_mae_distogram_pairs,
                 f"{r.mae_structure_ca_angstrom:.4f}",
                 f"{r.drmsd_ca_angstrom:.4f}", r.n_ca_pairs,
                 f"{r.rmsd_ca_angstrom:.4f}", r.n_ca_atoms,
@@ -544,8 +563,12 @@ def score_all_samples(
         for entry in manifest:
             stem = entry["stem"]
             gt_cif = inputs_dir / "gt" / f"{stem}.cif"
+            # Parse GT once per stem; reused across the 40 samples in each mode.
             gt_coords = _read_protein_coords_from_cif(gt_cif)
             gt_atoms = _read_heavy_atom_positions(gt_cif)
+            # Buffer this stem's rows so we can stamp ``selected_as_best``
+            # before writing — top-1 by ranking_score *per mode*.
+            stem_rows_by_mode: dict[str, list[dict]] = {m: [] for m in modes}
             for mode in modes:
                 mode_stem_dir = runs_dir / mode / stem
                 if not mode_stem_dir.exists():
@@ -570,29 +593,58 @@ def score_all_samples(
                         cif = seed_dir / f"{stem}_sample_{sample_idx}.cif"
                         if not cif.exists():
                             continue
-                        ranking_score = float(json.loads(conf_path.read_text())
-                                              .get("ranking_score", float("nan")))
+                        ranking_score = float(
+                            json.loads(conf_path.read_text())
+                            .get("ranking_score", float("nan"))
+                        )
                         m = _compute_metrics(
                             pred_cif=cif, gt_cif=gt_cif, distogram_npz=distogram_npz,
                             gt_coords_cache=gt_coords,
                             gt_atoms_cache=gt_atoms,
                             expected_distances_cache=expected,
                         )
-                        writer.writerow([
-                            entry["pdb_id"], entry["chain_id"], mode, seed, sample_idx,
-                            # Use full repr so downstream "top-1 by ranking_score"
-                            # picks deterministically; 6-dp rounding produces
-                            # spurious ties (seen for 5sbj_A msa seeds 1 vs 3).
-                            repr(ranking_score),
-                            m.n_residues,
-                            f"{m.mae_distogram_cb_angstrom:.4f}", m.n_mae_distogram_pairs,
-                            f"{m.mae_structure_ca_angstrom:.4f}",
-                            f"{m.drmsd_ca_angstrom:.4f}", m.n_ca_pairs,
-                            f"{m.rmsd_ca_angstrom:.4f}", m.n_ca_atoms,
-                            f"{m.rmsd_all_heavy_angstrom:.4f}", m.n_heavy_atoms,
-                        ])
-                        f_out.flush()  # crash-safe under streaming sync
-                        n_written += 1
+                        stem_rows_by_mode[mode].append({
+                            "ranking_score": ranking_score, "seed": seed,
+                            "sample_idx": sample_idx, "metrics": m,
+                        })
+            # Mark top-1 per mode (by ranking_score; ties broken by lower
+            # seed then lower sample_idx for determinism).
+            for mode, mode_rows in stem_rows_by_mode.items():
+                if not mode_rows:
+                    continue
+                best_idx = max(
+                    range(len(mode_rows)),
+                    key=lambda i: (
+                        mode_rows[i]["ranking_score"],
+                        -mode_rows[i]["seed"],
+                        -mode_rows[i]["sample_idx"],
+                    ),
+                )
+                for i, row in enumerate(mode_rows):
+                    row["selected_as_best"] = 1 if i == best_idx else 0
+            # Write all rows for this stem in (mode, seed, sample_idx) order.
+            for mode in modes:
+                for row in stem_rows_by_mode[mode]:
+                    rm = row["metrics"]
+                    writer.writerow([
+                        entry["pdb_id"], entry["chain_id"], mode,
+                        row["seed"], row["sample_idx"],
+                        # Use full repr so downstream "top-1 by ranking_score"
+                        # picks deterministically; 6-dp rounding produces
+                        # spurious ties (seen for 5sbj_A msa seeds 1 vs 3).
+                        repr(row["ranking_score"]),
+                        row["selected_as_best"],
+                        rm.n_residues,
+                        f"{rm.mae_distogram_cb_angstrom:.4f}",
+                        f"{rm.drmsd_distogram_cb_angstrom:.4f}",
+                        rm.n_mae_distogram_pairs,
+                        f"{rm.mae_structure_ca_angstrom:.4f}",
+                        f"{rm.drmsd_ca_angstrom:.4f}", rm.n_ca_pairs,
+                        f"{rm.rmsd_ca_angstrom:.4f}", rm.n_ca_atoms,
+                        f"{rm.rmsd_all_heavy_angstrom:.4f}", rm.n_heavy_atoms,
+                    ])
+                    n_written += 1
+            f_out.flush()  # crash-safe under streaming sync
             print(f"{stem}: scored ({n_written} rows so far)")
     finally:
         f_out.close()

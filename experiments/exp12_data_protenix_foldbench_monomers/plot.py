@@ -39,6 +39,7 @@ import pandas as pd
 
 _METRICS = (
     ("mae_distogram_cb_angstrom", "Distogram MAE on CB (Å)"),
+    ("drmsd_distogram_cb_angstrom", "Distogram dRMSD on CB (Å)"),
     ("mae_structure_ca_angstrom", "Structure-distance MAE on CA (Å)"),
     ("drmsd_ca_angstrom", "dRMSD on CA (Å)"),
     ("rmsd_ca_angstrom", "Kabsch RMSD on CA (Å)"),
@@ -49,8 +50,9 @@ _METRICS = (
 def _load(scores_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(scores_csv)
     numeric_cols = (
-        "ranking_score", "n_residues",
-        "mae_distogram_cb_angstrom", "n_mae_distogram_pairs",
+        "ranking_score", "selected_as_best", "n_residues",
+        "mae_distogram_cb_angstrom", "drmsd_distogram_cb_angstrom",
+        "n_mae_distogram_pairs",
         "mae_structure_ca_angstrom",
         "drmsd_ca_angstrom", "n_ca_pairs",
         "rmsd_ca_angstrom", "n_ca_atoms",
@@ -59,6 +61,10 @@ def _load(scores_csv: Path) -> pd.DataFrame:
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
+    # When called on the all-samples CSV, restrict to top-1 rows for the
+    # per-protein plots (those plots assume one (mode, stem) per row).
+    if "selected_as_best" in df.columns and (df["selected_as_best"] == 0).any():
+        df = df[df["selected_as_best"] == 1].reset_index(drop=True)
     return df
 
 

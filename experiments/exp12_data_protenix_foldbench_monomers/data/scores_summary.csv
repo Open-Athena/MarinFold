@@ -1,10 +1,12 @@
 mode,metric,n,mean,median,min,max
 msa,mae_distogram_cb_angstrom,100,5.6693169999999995,5.0988500000000005,0.3429,19.0819
+msa,drmsd_distogram_cb_angstrom,100,8.745958,8.1623,0.6555,27.5512
 msa,mae_structure_ca_angstrom,100,0.7333369999999999,0.46525,0.181,6.8393
 msa,drmsd_ca_angstrom,100,1.342763,0.8447,0.2458,10.7508
 msa,rmsd_ca_angstrom,100,1.8642750000000001,1.17515,0.3461,11.7766
-msa,rmsd_all_heavy_angstrom,100,2.355197,1.6936499999999999,0.8727,11.5908
+msa,rmsd_all_heavy_angstrom,100,2.3551969999999995,1.6936499999999999,0.8727,11.5908
 single_seq,mae_distogram_cb_angstrom,100,7.279901000000001,7.01905,0.4802,19.9849
+single_seq,drmsd_distogram_cb_angstrom,100,9.851102,9.49845,0.7412,27.7967
 single_seq,mae_structure_ca_angstrom,100,6.091632000000001,6.41325,0.321,14.4782
 single_seq,drmsd_ca_angstrom,100,8.289495,8.42775,0.4877,19.7167
 single_seq,rmsd_ca_angstrom,100,13.679683,14.414200000000001,0.5869,28.1566

@@ -147,16 +147,23 @@ First 100 rows of FoldBench's `monomer_protein.csv` (30-761 aa).
 Top-1 sample per (protein, mode) by Protenix's `ranking_score`.
 Five per-protein metrics (per-mode mean / median):
 
-| Mode | MAE distogram CB | MAE structure CA | dRMSD CA | RMSD CA (Kabsch) | RMSD all-heavy (Kabsch) |
-|---|---|---|---|---|---|
-| single_seq | 7.28 / 7.02 | 6.09 / 6.41 | 8.29 / 8.43 | 13.68 / 14.41 | 14.09 / 15.03 |
-| msa        | 5.67 / 5.10 | 0.73 / 0.47 | 1.34 / 0.84 |  1.86 /  1.18 |  2.36 /  1.69 |
+| Mode | MAE distogram CB | dRMSD distogram CB | MAE structure CA | dRMSD CA | RMSD CA (Kabsch) | RMSD all-heavy (Kabsch) |
+|---|---|---|---|---|---|---|
+| single_seq | 7.28 / 7.02 | 9.85 / 9.50 | 6.09 / 6.41 | 8.29 / 8.43 | 13.68 / 14.41 | 14.09 / 15.03 |
+| msa        | 5.67 / 5.10 | 8.75 / 8.16 | 0.73 / 0.47 | 1.34 / 0.84 |  1.86 /  1.18 |  2.36 /  1.69 |
 
 All in Å. Lower is better.
 
-Source CSVs: [`data/scores.csv`](data/scores.csv) (per-protein, all
-metrics), [`data/scores_summary.csv`](data/scores_summary.csv) (per-mode
-mean/median/min/max).
+Source CSVs (all use the same column schema; the all-samples file just
+has 40× the rows + a ``selected_as_best`` flag):
+
+- [`data/scores.csv`](data/scores.csv) — 200 rows, top-1 per (protein,
+  mode) by Protenix's ``ranking_score``. All rows have ``selected_as_best=1``.
+- [`data/scores_all_samples.csv`](data/scores_all_samples.csv) — 8000 rows,
+  every (protein, mode, seed, sample_idx). 200 of them have
+  ``selected_as_best=1`` (the same selection as the top-1 file).
+- [`data/scores_summary.csv`](data/scores_summary.csv) — per-mode
+  mean/median/min/max (computed on the top-1 view).
 
 Plots ([`plots/`](plots/)) — two PNGs per metric:
 - `{metric}_per_protein.png` — grouped bar chart of metric per protein
