@@ -41,7 +41,6 @@ class BestPick:
     ranking_score: float
     cif: Path
     confidence_json: Path
-    distogram_npz: Path
 
 
 def _iter_seed_dirs(run_root: Path, mode: str, stem: str) -> Iterable[Path]:
@@ -88,13 +87,6 @@ def select_best(*, runs_dir: Path, out_dir: Path, modes: list[str], stems: list[
             best: BestPick | None = None
             for seed_dir in _iter_seed_dirs(runs_dir, mode, stem):
                 seed = int(seed_dir.name.removeprefix("seed_"))
-                distogram = seed_dir / f"{stem}_distogram.npz"
-                if not distogram.exists():
-                    # Distogram is optional — the forward hook may have
-                    # failed even when the structure write succeeded.
-                    # We surface this as a print and skip this seed.
-                    print(f"WARN: missing distogram for {mode}/{stem}/{seed_dir.name}; skipping seed.")
-                    continue
                 try:
                     idx, score, cif, conf = _find_best_in_seed_dir(seed_dir, stem)
                 except FileNotFoundError as e:
@@ -104,17 +96,25 @@ def select_best(*, runs_dir: Path, out_dir: Path, modes: list[str], stems: list[
                     best = BestPick(
                         mode=mode, stem=stem, seed=seed,
                         sample_idx=idx, ranking_score=score,
-                        cif=cif, confidence_json=conf, distogram_npz=distogram,
+                        cif=cif, confidence_json=conf,
                     )
             if best is None:
                 print(f"WARN: no usable samples for {mode}/{stem}; skipping.")
                 continue
 
+            distogram_npz = runs_dir / mode / stem / f"seed_{best.seed}" / f"{stem}_distogram.npz"
+            if not distogram_npz.exists():
+                raise FileNotFoundError(
+                    f"Top-ranked sample for {mode}/{stem} is seed {best.seed}, "
+                    "but its distogram is missing. Refusing to silently "
+                    "downgrade to a lower-ranked seed."
+                )
+
             dst_dir = out_dir / mode / stem
             dst_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(best.cif, dst_dir / "structure.cif")
             shutil.copy2(best.confidence_json, dst_dir / "confidence.json")
-            shutil.copy2(best.distogram_npz, dst_dir / "distogram.npz")
+            shutil.copy2(distogram_npz, dst_dir / "distogram.npz")
             (dst_dir / "provenance.json").write_text(json.dumps({
                 "stem": best.stem,
                 "mode": best.mode,
@@ -123,7 +123,7 @@ def select_best(*, runs_dir: Path, out_dir: Path, modes: list[str], stems: list[
                 "ranking_score": best.ranking_score,
                 "src_cif": str(best.cif),
                 "src_confidence_json": str(best.confidence_json),
-                "src_distogram_npz": str(best.distogram_npz),
+                "src_distogram_npz": str(distogram_npz),
             }, indent=2))
             picks.append(best)
             print(f"selected {mode}/{stem}: seed={best.seed} sample={best.sample_idx} ranking_score={best.ranking_score:.4f}")

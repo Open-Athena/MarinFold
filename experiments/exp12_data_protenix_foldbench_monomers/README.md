@@ -108,8 +108,8 @@ uv run python cli.py prepare-inputs --n 10 --out inputs/
 uv run python cli.py run --inputs inputs/ --modes single_seq,msa --outputs-volume foldbench-protenix-runs
 
 # locally: pick top-1 sample per (protein, mode), then score against GT
-uv run python cli.py select-best --runs outputs/ --out best/
-uv run python cli.py score --best best/ --gt inputs/gt/ --out data/scores.csv
+uv run python cli.py select-best --runs outputs/ --out best/ --manifest inputs/manifest.csv
+uv run python cli.py score --best best/ --inputs inputs/ --out data/scores.csv
 uv run python cli.py plot --scores data/scores.csv --out plots/
 ```
 
@@ -213,4 +213,3 @@ The 100-protein numbers track the 48-paired interim view closely
 (median RMSD_CA single_seq 12.49 → 14.41 Å; msa 1.24 → 1.18 Å), so
 extending to the full 334 FoldBench monomers is unlikely to shift
 the headline conclusions but would tighten the tail statistics.
-
