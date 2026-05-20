@@ -129,6 +129,20 @@ def setup_weights() -> dict:
 # --------------------------------------------------------------------------
 
 
+@app.function(volumes={"/msa": MSA_VOL}, timeout=60 * 5, cpu=0.5)
+def audit_msa(stem: str) -> dict:
+    """Tiny CPU function: report whether MSA files exist for ``stem``."""
+    base = Path("/msa") / stem / "msa" / "0"
+    paired = base / "pairing.a3m"
+    non_paired = base / "0" / "non_pairing.a3m"
+    return {
+        "stem": stem,
+        "dir_exists": base.exists(),
+        "paired_exists": paired.exists(),
+        "non_pairing_exists": non_paired.exists(),
+    }
+
+
 @app.function(volumes={"/msa": MSA_VOL}, timeout=60 * 60, cpu=2.0)
 def precompute_msa(stem: str, sequence: str) -> dict:
     """Run Protenix's ColabFold MSA pipeline for one protein and persist.
@@ -272,6 +286,28 @@ class ProtenixWorker:
         """
         if mode not in ("single_seq", "msa"):
             raise ValueError(f"unknown mode {mode!r}")
+
+        # Idempotency check: if every (seed × sample_0) is already on the
+        # output Volume with its distogram, skip. Cheap when scaling to
+        # 100+ proteins and resuming after a partial run / spend-limit hit.
+        out_root = Path("/outputs") / mode / stem
+        OUTPUTS_VOL.reload()
+        all_seeds_done = True
+        for seed in seeds:
+            seed_dir = out_root / f"seed_{seed}"
+            has_cif = (seed_dir / f"{stem}_sample_0.cif").exists()
+            has_conf = (seed_dir / f"{stem}_summary_confidence_sample_0.json").exists()
+            has_dist = (seed_dir / f"{stem}_distogram.npz").exists()
+            if not (has_cif and has_conf and has_dist):
+                all_seeds_done = False
+                break
+        if all_seeds_done:
+            print(f"[{mode}/{stem}] already complete on Volume; skipping.")
+            return {
+                "stem": stem, "mode": mode, "seeds": list(seeds),
+                "n_sample": n_sample, "n_distograms_written": 0,
+                "output_dir": str(out_root), "skipped": True,
+            }
 
         scratch = Path("/tmp/exp12_scratch") / f"{mode}_{stem}_{int(time.time())}"
         scratch.mkdir(parents=True)

@@ -136,56 +136,79 @@ HF bucket under `data/protenix-foldbench-monomers/`.
 
 ## Results
 
-10-protein subset (first 10 rows of FoldBench's `monomer_protein.csv`,
-30-394 aa). Top-1 sample per (protein, mode) by Protenix's
-`ranking_score`; MAE on the kept sample's distogram vs GT CB-CB
-(CA-for-GLY); dRMSD on the kept sample's CA-CA distance matrix vs GT.
+**Status: 48 of 100 proteins, paired in both modes.** Dispatched the
+full 100-protein × 2-mode run (200 jobs); Modal workspace hit its
+monthly spend limit after 51 single-seq + 51 msa completions (102 of
+200), with 48 proteins fully complete in *both* modes. The remaining
+52 will resume after the billing cycle resets — the worker is
+idempotent against the output Volume so a re-dispatch only runs the
+missing ones.
 
-| Mode | MAE (Å), mean | MAE (Å), median | dRMSD (Å), mean | dRMSD (Å), median |
-|---|---|---|---|---|
-| single_seq | 5.09 | 5.47 | 6.39 | 6.31 |
-| msa | 3.50 | 3.39 | 1.51 | 1.25 |
+48-protein subset (subset of first 100 rows of FoldBench's
+`monomer_protein.csv`, 30-738 aa). Top-1 sample per (protein, mode)
+by Protenix's `ranking_score`. Five per-protein metrics (per-mode
+mean / median):
 
-Source CSVs: [`data/scores.csv`](data/scores.csv) (per-protein),
-[`data/scores_summary.csv`](data/scores_summary.csv) (per-mode summary).
+| Mode | MAE distogram CB | MAE structure CA | dRMSD CA | RMSD CA (Kabsch) | RMSD all-heavy (Kabsch) |
+|---|---|---|---|---|---|
+| single_seq | 6.66 / 6.39 | 5.52 / 5.57 | 7.56 / 7.77 | 12.31 / 12.49 | 12.75 / 12.73 |
+| msa        | 5.11 / 4.51 | 0.62 / 0.48 | 1.18 / 0.95 |  1.67 /  1.24 |  2.15 /  1.77 |
 
-Plots ([`plots/`](plots/)):
-- `mae_per_protein.png` — grouped bar chart of MAE per protein, both modes
-- `drmsd_per_protein.png` — same, for dRMSD
-- `mae_ss_vs_msa_scatter.png` — paired scatter, y=single_seq, x=msa
-- `drmsd_ss_vs_msa_scatter.png` — same, for dRMSD
+All in Å. Lower is better.
+
+Source CSVs: [`data/scores.csv`](data/scores.csv) (per-protein, all
+metrics), [`data/scores_summary.csv`](data/scores_summary.csv) (per-mode
+mean/median/min/max).
+
+Plots ([`plots/`](plots/)) — two PNGs per metric:
+- `{metric}_per_protein.png` — grouped bar chart of metric per protein
+- `{metric}_ss_vs_msa_scatter.png` — paired scatter, y=single_seq, x=msa
 
 ### Notes on the numbers
 
-- **MAE inflates with protein size** because Protenix's distogram has
-  a 21.84 Å max bin — pairs with GT distance beyond that get clipped
-  to the last bin midpoint (~21.7 Å). For a 400-aa protein many pairs
-  are at 30-80 Å, so the floor of MAE on those pairs is large. dRMSD
-  doesn't have this issue.
-- **dRMSD improvement is dramatic**: single_seq → MSA reduces mean
-  dRMSD 4.2× (6.39 → 1.51 Å). On the hardest single_seq target
-  (7qsj_A, 373 aa, single_seq dRMSD 6.7 Å), MSA brings it to 0.26 Å.
-- **Designed-peptide outlier**: 5sbj_A (30 aa with ACE/NH2 caps)
-  scores nearly identically in both modes (~0.48 Å MAE, ~0.93 Å
-  dRMSD) — no MSA signal to exploit on a designed sequence with no
-  natural homologs.
+- **Structure-derived metrics show massive MSA improvement** (≥83%
+  reduction across structure_MAE / dRMSD / RMSD_CA / RMSD_all-heavy).
+  This is the headline: in MSA mode Protenix produces structures
+  within 1.7 Å median Kabsch CA-RMSD of GT; in single-seq mode the
+  same model is essentially guessing on most natural proteins
+  (median CA-RMSD 12.5 Å — global-fold-wrong).
+- **Distogram MAE shows a smaller MSA gain** (~23%) because Protenix's
+  distogram is capped at 21.84 Å — pairs farther than that all get
+  the same midpoint (~21.7 Å), so the floor of distogram MAE on a
+  400 aa protein is large regardless of model quality. The structure-
+  derived MAE (which doesn't have this cap) shows the real signal:
+  0.62 Å in MSA vs 5.52 Å in single-seq, an 8.9× improvement.
+- **Designed peptides are mode-insensitive**: 5sbj_A (30 aa with
+  ACE/NH2 caps) scores identically across modes — no natural-homolog
+  signal for the MSA to exploit.
 
 ### Outputs not in git
 
-Raw structures (800 .cif), distograms (100 .npz), and confidence JSONs
-(800) live on the Modal `foldbench-protenix-runs` Volume and rsynced
-locally to `outputs/` (1.0 GB). The curated `best/` tree (top-1 sample
-per protein-mode, 20 entries) is ~80 MB. Both are `.gitignore`'d. They
-go to `huggingface.co/buckets/open-athena/MarinFold/data/protenix-foldbench-monomers/`
-after human review.
+Raw structures, distograms, and confidence JSONs live on the Modal
+`foldbench-protenix-runs` Volume. The curated `best/` tree (top-1
+sample per protein-mode, 96 entries for the 48 paired proteins) is
+~1.2 GB on the local sync; `.gitignore`'d. After human review +
+the resumed 52-protein backfill, the full set goes to
+`huggingface.co/buckets/open-athena/MarinFold/data/protenix-foldbench-monomers/`.
 
 ## Conclusion
 
-For the 10-protein subset, Protenix v2 in MSA mode produces near-native
-structures (median dRMSD 1.25 Å) and the distogram is a meaningful
-signal for distance prediction (mean MAE 3.50 Å, dominated by the
-inability to represent >22 Å distances). Single-sequence mode degrades
-sharply on natural proteins (mean dRMSD 6.4 Å) while remaining usable
-on small designed peptides. The pipeline is ready to scale to 100
-proteins once these numbers are approved by a human.
+On 48 of 100 FoldBench monomers, Protenix v2 with MSA produces
+near-native structures (median Kabsch CA-RMSD 1.24 Å, median dRMSD
+0.95 Å) — a regime where downstream eval against MarinFold's
+predictions is meaningful. Single-sequence mode degrades sharply on
+natural proteins (median Kabsch CA-RMSD 12.5 Å); it's a viable
+"MSA-free" baseline only for designed peptides.
+
+The distogram is a usable distance signal when the model is otherwise
+performing well: MSA-mode distogram MAE (on CB) is 5.1 Å mean / 4.5 Å
+median, with the long tail entirely explained by Protenix's 21.84 Å
+distogram cap (the structure-derived MAE on CA, with no cap, is 0.62 Å
+mean for the same set). When MarinFold's distograms come online for
+the same proteins, the apples-to-apples comparison is against
+Protenix's MSA-mode distogram MAE — single-seq is a weaker baseline.
+
+Resuming the remaining 52 proteins after the Modal billing cycle
+resets will push the numbers toward the full-100 view; the per-mode
+trends are unlikely to shift materially given n=48 already.
 
