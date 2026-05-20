@@ -91,7 +91,10 @@ class InferenceConfig:
 
     ``backend`` selects the runtime that loads + executes the model.
     ``top_k_logprobs`` and ``gpu_memory_utilization`` are vLLM-only;
-    other backends ignore them.
+    other backends ignore them. ``batch_size`` is the per-prefix
+    fan-out: how many (i, j) pairs the backend processes in one
+    cached-forward pass. Bigger amortizes launch overhead, smaller
+    bounds peak unified-memory use.
     """
 
     model: str | None
@@ -247,13 +250,20 @@ def _query_pairs(
     bin_midpoints: np.ndarray,
     query_atom: str,
     n_seeded: int,
-    batch_size: int,
     max_pairs: int | None,
     keep_bin_probs: bool,
     gt=None,
     distance_cap_angstrom: float | None = None,
 ) -> _StructurePrediction:
     """Single (structure, seed-count) inference pass.
+
+    Builds the base prompt prefix once, then hands the whole list of
+    5-token pair tails to the backend in a single
+    :meth:`Backend.next_token_probs` call. Backends with prefix
+    caching (MLX, transformers via past_key_values, vLLM via its
+    automatic prefix cache) compute the prefix forward pass once and
+    only spend per-pair compute on the 5-token tails. Backend-internal
+    chunking handles memory pressure.
 
     If ``gt`` is provided, pairs are pre-filtered before the model
     forward pass: any pair with non-finite GT or GT >
@@ -267,7 +277,7 @@ def _query_pairs(
     base_tokens = _build_base_prompt_tokens(structure, seeded)
     base_ids = _encode_token_strs(backend.tokenizer, base_tokens)
 
-    prompts: list[list[int]] = []
+    tail_ids_list: list[list[int]] = []
     keys: list[tuple[int, int]] = []
     for i in range(1, n + 1):
         for j in range(i + 1, n + 1):
@@ -279,22 +289,20 @@ def _query_pairs(
                     continue
             tail = _pair_tail_tokens(i, j, query_atom, query_atom)
             tail_ids = _encode_token_strs(backend.tokenizer, tail)
-            prompts.append(base_ids + tail_ids)
+            tail_ids_list.append(tail_ids)
             keys.append((i, j))
-            if max_pairs is not None and len(prompts) >= max_pairs:
+            if max_pairs is not None and len(tail_ids_list) >= max_pairs:
                 break
-        if max_pairs is not None and len(prompts) >= max_pairs:
+        if max_pairs is not None and len(tail_ids_list) >= max_pairs:
             break
 
     out_pairs: list[tuple[int, int]] = []
     out_expected: list[float] = []
     out_bin_probs: list[list[float]] | None = [] if keep_bin_probs else None
 
-    for chunk_start in range(0, len(prompts), batch_size):
-        chunk_prompts = prompts[chunk_start : chunk_start + batch_size]
-        chunk_keys = keys[chunk_start : chunk_start + batch_size]
-        probs = backend.next_token_probs(chunk_prompts, distance_token_ids)
-        for (i, j), row in zip(chunk_keys, probs, strict=True):
+    if tail_ids_list:
+        probs = backend.next_token_probs(base_ids, tail_ids_list, distance_token_ids)
+        for (i, j), row in zip(keys, probs, strict=True):
             total = float(row.sum())
             if total <= 0:
                 continue
@@ -316,7 +324,12 @@ def _query_pairs(
 
 
 def _make_backend(cfg: InferenceConfig) -> Backend:
-    """Construct the requested backend, passing through backend-specific kwargs."""
+    """Construct the requested backend, passing through backend-specific kwargs.
+
+    ``cfg.batch_size`` is forwarded to backends that own their tail-
+    batching internally (MLX, transformers). vLLM's scheduler does its
+    own batching, so ``cfg.batch_size`` is ignored there.
+    """
     if cfg.backend == "vllm":
         return load_backend(
             "vllm",
@@ -326,9 +339,18 @@ def _make_backend(cfg: InferenceConfig) -> Backend:
             top_k_logprobs=cfg.top_k_logprobs,
         )
     if cfg.backend == "transformers":
-        return load_backend("transformers", model=cfg.model, dtype=cfg.dtype)
+        return load_backend(
+            "transformers",
+            model=cfg.model,
+            dtype=cfg.dtype,
+            tail_batch_size=cfg.batch_size,
+        )
     if cfg.backend == "mlx":
-        return load_backend("mlx", model=cfg.model)
+        return load_backend(
+            "mlx",
+            model=cfg.model,
+            tail_batch_size=cfg.batch_size,
+        )
     raise ValueError(
         f"Unknown backend {cfg.backend!r}. Expected one of: 'vllm', 'transformers', 'mlx'."
     )
@@ -384,7 +406,6 @@ def predict(
                 bin_midpoints=bin_midpoints,
                 query_atom=cfg.query_atom,
                 n_seeded=n_seeded,
-                batch_size=cfg.batch_size,
                 max_pairs=cfg.max_pairs_per_structure,
                 keep_bin_probs=cfg.keep_bin_probs,
             )
@@ -459,7 +480,6 @@ def evaluate(
                 bin_midpoints=bin_midpoints,
                 query_atom=cfg.query_atom,
                 n_seeded=n_seeded,
-                batch_size=cfg.batch_size,
                 max_pairs=cfg.max_pairs_per_structure,
                 keep_bin_probs=False,
                 gt=gt,
