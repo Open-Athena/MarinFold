@@ -224,7 +224,7 @@ crash or a partial smoke.
 ```bash
 uv run python score_marinfold.py     # writes data/marinfold_scores.csv
 uv run python collect_timings.py     # writes data/timings.csv
-uv run python score_comparison.py    # writes data/scores.csv + data/scores_summary.csv (incl. hypothesis verdict)
+uv run python score_comparison.py    # writes data/scores.csv + data/scores_summary.csv + data/hypothesis_verdict.json
 uv run python plot_comparison.py     # writes plots/*.png
 ```
 
