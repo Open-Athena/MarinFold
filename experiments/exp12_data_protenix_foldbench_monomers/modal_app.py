@@ -91,6 +91,58 @@ app = modal.App(APP_NAME, image=PROTENIX_IMAGE)
 
 
 # --------------------------------------------------------------------------
+# Local helpers
+# --------------------------------------------------------------------------
+
+
+def _seed_outputs_complete(seed_dir: Path, *, stem: str, n_sample: int) -> bool:
+    """Return whether a seed directory contains the full expected payload."""
+    if not (seed_dir / f"{stem}_distogram.npz").exists():
+        return False
+    for sample_idx in range(n_sample):
+        if not (seed_dir / f"{stem}_sample_{sample_idx}.cif").exists():
+            return False
+        if not (seed_dir / f"{stem}_summary_confidence_sample_{sample_idx}.json").exists():
+            return False
+    return True
+
+
+def _inject_precomputed_msa_paths(
+    job_data: list[dict],
+    *,
+    stem: str,
+    msa_root: Path = Path("/msa"),
+) -> bool:
+    """Add precomputed MSA paths in-place when present.
+
+    Returns True when at least one precomputed MSA file was found.
+    """
+    msa_dir = msa_root / stem / "msa"
+    base = msa_dir / "0"
+    paired = base / "pairing.a3m"
+    non_paired = base / "0" / "non_pairing.a3m"
+
+    found_precomputed_msa = False
+    for task in job_data:
+        for seq in task["sequences"]:
+            if "proteinChain" not in seq:
+                continue
+            if paired.exists():
+                seq["proteinChain"]["pairedMsaPath"] = str(paired)
+                found_precomputed_msa = True
+            if non_paired.exists():
+                seq["proteinChain"]["unpairedMsaPath"] = str(non_paired)
+                found_precomputed_msa = True
+
+    if not found_precomputed_msa:
+        print(
+            f"WARN: no pre-computed MSA at {msa_dir} for {stem}; "
+            "Protenix will auto-search at inference time."
+        )
+    return found_precomputed_msa
+
+
+# --------------------------------------------------------------------------
 # Weights bootstrap (one-time)
 # --------------------------------------------------------------------------
 
@@ -287,18 +339,16 @@ class ProtenixWorker:
         if mode not in ("single_seq", "msa"):
             raise ValueError(f"unknown mode {mode!r}")
 
-        # Idempotency check: if every (seed × sample_0) is already on the
-        # output Volume with its distogram, skip. Cheap when scaling to
-        # 100+ proteins and resuming after a partial run / spend-limit hit.
+        # Idempotency check: only skip when every seed has the full
+        # expected payload. A partial seed (e.g. distogram + sample_0
+        # only) must be re-run so select_best still ranks the full
+        # N_sample search.
         out_root = Path("/outputs") / mode / stem
         OUTPUTS_VOL.reload()
         all_seeds_done = True
         for seed in seeds:
             seed_dir = out_root / f"seed_{seed}"
-            has_cif = (seed_dir / f"{stem}_sample_0.cif").exists()
-            has_conf = (seed_dir / f"{stem}_summary_confidence_sample_0.json").exists()
-            has_dist = (seed_dir / f"{stem}_distogram.npz").exists()
-            if not (has_cif and has_conf and has_dist):
+            if not _seed_outputs_complete(seed_dir, stem=stem, n_sample=n_sample):
                 all_seeds_done = False
                 break
         if all_seeds_done:
@@ -320,28 +370,7 @@ class ProtenixWorker:
         #    disable Protenix's auto-search.
         job_data = json.loads(job_json_str)
         if mode == "msa":
-            # Pre-computed MSAs land at:
-            #   /msa/<stem>/msa/0/pairing.a3m      (monomer stub)
-            #   /msa/<stem>/msa/0/0/non_pairing.a3m (real unpaired MSA)
-            # under Protenix's colabfold-mode layout (see precompute_msa).
-            base = Path("/msa") / stem / "msa" / "0"
-            paired = base / "pairing.a3m"
-            non_paired = base / "0" / "non_pairing.a3m"
-            for task in job_data:
-                for seq in task["sequences"]:
-                    if "proteinChain" not in seq:
-                        continue
-                    if paired.exists():
-                        seq["proteinChain"]["pairedMsaPath"] = str(paired)
-                    if non_paired.exists():
-                        seq["proteinChain"]["unpairedMsaPath"] = str(non_paired)
-                    # If neither file exists, Protenix will fall through to
-                    # auto-search at inference time — we surface a warning.
-                    if not paired.exists() and not non_paired.exists():
-                        print(
-                            f"WARN: no pre-computed MSA at {msa_dir} for {stem}; "
-                            f"Protenix will auto-search at inference time."
-                        )
+            _inject_precomputed_msa_paths(job_data, stem=stem)
         input_json.write_text(json.dumps(job_data, indent=2))
 
         # 2. Build the Protenix config dict. We mimic runner/inference.py's
