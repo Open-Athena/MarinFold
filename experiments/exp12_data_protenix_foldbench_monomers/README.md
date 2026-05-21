@@ -31,12 +31,32 @@ themselves beyond "single-seq performs worse than MSA."
   (issue [#309](https://github.com/bytedance/Protenix/issues/309) — v2 weights
   download is 403'd at ByteDance; we use the HF mirror).
 - Protenix weights: [TMF001/pxdesign-weights](https://huggingface.co/TMF001/pxdesign-weights)
-  (`checkpoint/protenix-v2.pt` plus CCD cache).
+  (`checkpoint/protenix-v2.pt` plus CCD cache `components.v20240608.cif`).
 - FoldBench targets: [BEAM-Labs/FoldBench](https://github.com/BEAM-Labs/FoldBench),
   monomer list at `targets/monomer_protein.csv` (**334 rows**, matching the
   issue's "~330"). Each row is `<pdb>-assembly1,<chain>`; we fetch the
   biological assembly mmCIF from RCSB and pull the canonical full sequence
   (incl. unresolved residues) from `_entity_poly.pdbx_seq_one_letter_code_can`.
+
+### Reproducibility pins
+
+- **FoldBench commit:** [`4273f6877d82bd0b2fa476d1b2f34d121cbccc70`](https://github.com/BEAM-Labs/FoldBench/tree/4273f6877d82bd0b2fa476d1b2f34d121cbccc70)
+  (HEAD of `main` as of our download, 2026-05-19 UTC). The
+  `targets/monomer_protein.csv` file we used has sha256
+  `43c2a5e9a73e84e00afb8d0108761547a8f9d6e52865e122792748c9c32bf595`.
+- **Protenix:** `protenix==2.0.0` (PyPI, pulled by the Modal image). With
+  `torch==2.7.1`, `biotite==1.4.0`, `gemmi==0.6.7`, `numpy==2.4.1`,
+  Python 3.11.5 in the container.
+- **Protenix v2 weights:** snapshot of `huggingface.co/TMF001/pxdesign-weights`
+  taken at experiment time (the HF mirror; ByteDance's own download
+  endpoint was returning 403 — see Protenix issue #309).
+- **CCD cache:** `components.v20240608.cif` (+ its rdkit_mol pickle) from
+  the same HF mirror.
+- **MSA server:** ColabFold's MMseqs2 API at `https://api.colabfold.com`
+  (set via `MMSEQS_SERVICE_HOST_URL` env var on the Modal image; the
+  Protenix-server.com default doesn't synthesize the `non_pairing.a3m`
+  files Protenix's inference path expects).
+- **Scoring-side (local):** `python 3.11.15`, `gemmi 0.7.5`, `numpy 2.4.6`.
 
 ## Approach
 
@@ -112,6 +132,154 @@ uv run python cli.py select-best --runs outputs/ --out best/ --manifest inputs/m
 uv run python cli.py score --best best/ --inputs inputs/ --out data/scores.csv
 uv run python cli.py plot --scores data/scores.csv --out plots/
 ```
+
+## Metrics
+
+This section is the reproduction spec. The implementation lives in
+[`score.py`](score.py); this is what it does, with all constants
+pinned. The CSV schema (200-row top-1 file
+[`data/scores.csv`](data/scores.csv) and 8000-row per-sample file
+[`data/scores_all_samples.csv`](data/scores_all_samples.csv)) is shared
+across both files plus a `selected_as_best` flag (always 1 in top-1;
+exactly 200 of 8000 in all-samples).
+
+### Sample selection (per protein × mode)
+
+5 trunk seeds × 8 diffusion samples per seed = 40 candidate structures
++ 5 distograms (the distogram is computed once per seed in the trunk;
+the 8 diffusion samples within a seed share the same distogram).
+
+- **Top-1** = max `summary_confidence.ranking_score` over the 40 samples.
+- **Tie-breaking** when two samples tie on `ranking_score`: lower seed
+  wins, then lower `sample_idx`. (Real tie observed once on this data:
+  `5sbj_A/msa` seeds 1 vs 3.)
+- The kept distogram is the one from the *seed* that produced the
+  top-1 sample.
+
+### Residue alignment
+
+- Predicted CIF (from Protenix) + GT CIF (RCSB assembly1) parsed with
+  `gemmi`, indexed by **`label_seq_id`** (the 1..N canonical sequence
+  position from `_entity_poly_seq`).
+- Both filtered to the **single L-peptide entity** (FoldBench monomers
+  always have exactly one; we raise loudly otherwise).
+- "Unresolved" residue (in `entity_poly_seq` but missing from
+  `atom_site` for the relevant atom) → `None`, gets dropped from the
+  per-metric pair set.
+
+### Atom conventions
+
+| Metric family | Atom on each side of each pair |
+|---|---|
+| Distogram MAE / dRMSD (in-range + contact) | CB (CA for GLY) — matches Protenix's distogram representative-atom convention |
+| CASP contact precision (predicted score side) | distogram bins with **center ≤ 8 Å** summed → contact probability |
+| CASP contact precision (GT side) | CB-CB ≤ 8 Å with both rep atoms resolved (CA for GLY) |
+| Structure-distance MAE, dRMSD CA | CA |
+| Kabsch RMSD CA | CA |
+| Kabsch RMSD all-heavy | every shared `(label_seq_id, atom_name)` between pred and GT, **hydrogens excluded by element** (not by name) |
+
+### Distogram bin scheme (pinned)
+
+From Protenix v2 [`configs/configs_base.py`](https://github.com/bytedance/Protenix/blob/main/configs/configs_base.py):
+
+```
+min_bin = 2.3125 Å,  max_bin = 21.6875 Å,  no_bins = 64
+```
+
+Bin centers (matches Protenix's `get_bin_centers` in [`sample_confidence.py`](https://github.com/bytedance/Protenix/blob/main/protenix/model/sample_confidence.py)):
+
+```python
+bin_width = (max_bin - min_bin) / no_bins      # 0.302734375 Å
+boundaries = linspace(min_bin, max_bin - bin_width, no_bins)
+centers    = boundaries + 0.5 * bin_width
+# centers[0]  = 2.464 Å,   centers[63] = 21.535 Å
+```
+
+Per-pair **expected distance** = `sum(p_bin × center_bin)` over the 64
+bins (after softmax). The captured `.npz` already stores softmaxed
+probabilities. Per-pair **contact probability** = `sum(p_bin)` over
+bins whose `center ≤ 8 Å` — that's bins 0..18 (19 bins) for Protenix v2.
+
+### Pair selection
+
+For every distance-based metric, pairs come from `np.triu_indices(N, k=1)`
+(upper triangle, no diagonal), then filtered:
+
+| Metric | Filter |
+|---|---|
+| `mae_distogram_cb_angstrom` / `drmsd_distogram_cb_angstrom` (**option B**) | both rep atoms resolved in GT **AND** `2.3125 ≤ gt_cb_cb ≤ 21.6875 Å` |
+| `mae_distogram_cb_contact_angstrom` / `drmsd_distogram_cb_contact_angstrom` (**option C1**) | both rep atoms resolved in GT **AND** `gt_cb_cb ≤ 8.0 Å` |
+| `mae_structure_ca_angstrom` / `drmsd_ca_angstrom` | both CAs resolved in **both** GT and pred |
+| `rmsd_ca_angstrom` (Kabsch) | shared CA residues between pred and GT (Kabsch is atom-set based, no upper-triangle restriction) |
+| `rmsd_all_heavy_angstrom` (Kabsch) | shared `(label_seq_id, atom_name)` keys, hydrogens excluded |
+
+**No sequence-separation filter** for the MAE/dRMSD metrics (includes
+`|i-j|=1` bonded-neighbor pairs at ~3.8 Å). This compresses MAE/dRMSD
+slightly relative to a `|i-j|≥6` cutoff used in some literature.
+
+### Formulas
+
+Let `iu = np.triu_indices(N, k=1)`, `usable` = filter mask per the table above:
+
+```python
+# Distogram MAE on CB (option B / in-range)
+mae_distogram_cb = mean(|expected[iu][usable] - gt_cb_d[iu][usable]|)
+drmsd_distogram_cb = sqrt(mean((expected[iu][usable] - gt_cb_d[iu][usable]) ** 2))
+
+# Distogram MAE/dRMSD on CB (option C1 / contact-regime) — same formulas,
+# different `usable` mask (gt ≤ 8 Å).
+
+# Structure-derived MAE / dRMSD on CA — same diffs vector for both:
+ca_diffs = pred_ca_d[iu][usable] - gt_ca_d[iu][usable]
+mae_structure_ca = mean(|ca_diffs|)
+drmsd_ca         = sqrt(mean(ca_diffs ** 2))
+
+# Kabsch RMSD over CA atoms (and over all heavy atoms, via shared key set):
+res = gemmi.superpose_positions(pred_xyz, gt_xyz)   # Kabsch under the hood
+rmsd_ca = res.rmsd
+```
+
+### CASP contact precision (option C2)
+
+CASP14+ convention. **Sequence-separation classes** (inclusive bounds):
+
+- **Short**: `6 ≤ |i − j| ≤ 11`
+- **Medium**: `12 ≤ |i − j| ≤ 23`
+- **Long**: `|i − j| ≥ 24`
+
+(Pairs with `|i − j| ≤ 5` are excluded — too easy.)
+
+For each class:
+1. Restrict to pairs (i, j) with `i < j`, separation in the class's
+   range, both rep atoms resolved in GT.
+2. Rank pairs by predicted **contact probability** descending. Stable
+   mergesort for determinism.
+3. For each `k ∈ {1, 2, 5}`: take the top `max(1, L // k)` pairs;
+   `precision = (#true_contacts_in_topK) / topK`.
+4. True contact = `gt_cb_cb ≤ 8 Å` with both rep atoms resolved.
+
+Output columns: `prec_{short,medium,long}_{L,L_2,L_5}` plus
+`n_{short,medium,long}_contacts` for denominator info. NaN if a class
+has no eligible pairs (only happens for very short proteins, e.g. long-
+range needs L ≥ 25).
+
+### Cross-model comparison (e.g. MarinFold-side scoring)
+
+When scoring MarinFold's distogram against these results:
+
+1. Apply identical residue alignment + atom-pair logic (CB-CB / CA-for-GLY
+   for distogram metrics, CA-CA for structure metrics).
+2. Substitute MarinFold's own distogram bin range for the option-B
+   filter — and for the head-to-head, use the **intersection** of the
+   two ranges. MarinFold's `contacts-and-distances-v1` covers
+   `[0, 32] Å` per [`exp1_document_structures_contacts_and_distances_v1`](../exp1_document_structures_contacts_and_distances_v1/README.md);
+   intersection with Protenix is `[2.3125, 21.6875] Å`, so **score
+   MarinFold on the same Protenix-defined pair set**.
+3. For option C1, the 8 Å contact filter is identical across models.
+4. For option C2, compute MarinFold's per-pair contact probability the
+   same way (sum mass on bins with center ≤ 8 Å — bin indices differ
+   because MarinFold's binning is different). The CASP precision
+   formulas are then identical.
 
 ## Success criteria
 
@@ -217,17 +385,40 @@ Plots ([`plots/`](plots/)) — two PNGs per metric:
   ACE/NH2 caps) scores ~identically across modes — no natural-homolog
   signal for the MSA to exploit.
 
-### Outputs not in git
+### Outputs
 
-Raw structures, distograms, and confidence JSONs live on the Modal
-`foldbench-protenix-runs` Volume (the 48 originals on `timodonnell`
-and the 52 backfills on `open-athena`). The curated `best/` tree
-(top-1 sample per protein-mode, 200 entries) is ~2.5 GB on the local
-sync; `.gitignore`'d. Slated for upload to
-`huggingface.co/buckets/open-athena/MarinFold/data/protenix-foldbench-monomers/`
-after human review — the two-workspace split is the only nuisance
-in the eventual HF consolidation step (both sets of raw outputs can
-be downloaded and uploaded together).
+**Uploaded to HuggingFace:**
+[`open-athena/MarinFold/blob/main/data/protenix-foldbench-monomers/`](https://huggingface.co/datasets/open-athena/MarinFold/tree/main/data/protenix-foldbench-monomers)
+
+Layout:
+
+```
+data/protenix-foldbench-monomers/
+├── README.md                      # this experiment's writeup mirror
+├── scores.csv                     # 200 rows top-1 (= repo's data/scores.csv)
+├── scores_all_samples.csv         # 8000 rows (= repo's data/scores_all_samples.csv)
+├── scores_summary.csv             # per-mode aggregates
+├── manifest.csv                   # 100 proteins (pdb_id, chain, n_residues, ...)
+├── best/
+│   ├── single_seq/{pdb}_{chain}/{structure.cif, confidence.json, distogram.npz, provenance.json}
+│   └── msa/{pdb}_{chain}/{same layout}
+├── gt/*.cif                       # 100 GT biological-assembly mmCIFs (~26 MB)
+└── msa/{pdb}_{chain}/msa/         # pre-computed ColabFold MSAs
+    └── 0/                         # Protenix's colabfold-mode layout
+        ├── pairing.a3m            # stub for monomers (just the query)
+        ├── 0/non_pairing.a3m      # the real unpaired MSA
+        ├── bfd.mgnify30.metaeuk30.smag30.a3m
+        └── uniref.a3m
+```
+
+**Raw 40-sample outputs (~50 GB) NOT uploaded.** They live on the Modal
+`foldbench-protenix-runs` Volume (48 originals on workspace
+`timodonnell`, 52 backfills on `open-athena`) — useful if you need to
+re-rank or look at sample variance, but the curated top-1 in `best/`
+plus the `scores_all_samples.csv` per-sample metrics cover the
+expected downstream uses. Re-sync via
+`modal volume get foldbench-protenix-runs <path> <local>` with the
+right `MODAL_PROFILE` if needed.
 
 ## Conclusion
 
