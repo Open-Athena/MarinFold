@@ -1,0 +1,15 @@
+{
+  "verdict": "not_supported",
+  "n_metrics_supporting": 0,
+  "metrics_supporting": [],
+  "metrics_refuting": [
+    "lddt_distogram_cb",
+    "mae_distogram_cb_angstrom",
+    "drmsd_distogram_cb_angstrom"
+  ],
+  "details": [
+    "lddt_distogram_cb: protenix_msa=0.9122, protenix_single_seq=0.4319, marinfold_1b=0.2715 -> refute",
+    "mae_distogram_cb_angstrom: protenix_msa=0.4683, protenix_single_seq=2.6851, marinfold_1b=5.6421 -> refute",
+    "drmsd_distogram_cb_angstrom: protenix_msa=0.7874, protenix_single_seq=3.7500, marinfold_1b=7.1433 -> refute"
+  ]
+}

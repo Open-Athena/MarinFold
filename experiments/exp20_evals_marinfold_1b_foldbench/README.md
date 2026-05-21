@@ -111,7 +111,9 @@ The issue spells out that the hypothesis "1B underperforms
 Protenix" counts as supported iff `marinfold_1b`'s aggregate mean
 sits strictly between `protenix_single_seq` and `protenix_msa`
 on at least 2 of 3 headline metrics. `score_comparison.py`
-computes this verdict and writes it into `data/scores_summary.csv`.
+computes this verdict, keeps `data/scores_summary.csv` as a clean
+CSV, and writes the verdict details to
+`data/hypothesis_verdict.json`.
 
 ### Compute
 
@@ -293,7 +295,8 @@ intersection-range filter `[2.31, 21.69] Å`):
 Source: [`data/scores.csv`](data/scores.csv) (300 rows: 100 proteins ×
 3 methods). Per-method aggregates in
 [`data/scores_summary.csv`](data/scores_summary.csv). The
-hypothesis-verdict row in that file is `not_supported`:
+verdict in [`data/hypothesis_verdict.json`](data/hypothesis_verdict.json)
+is `not_supported`:
 on every one of the 3 headline metrics (LDDT, MAE, dRMSD),
 MarinFold's mean falls **outside** the
 (`protenix_msa`, `protenix_single_seq`) interval — 1B is worse

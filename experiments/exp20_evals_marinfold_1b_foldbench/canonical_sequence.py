@@ -42,6 +42,19 @@ class CanonicalSequence:
     residue_names: tuple[str, ...]
 
 
+def normalize_residue_name(raw_name: str) -> str:
+    """Map a raw entity_poly_seq residue name onto the v1 residue vocab."""
+    name = raw_name.split(",")[0].strip().upper()
+    return name if name in _CANONICAL_20 else "UNK"
+
+
+def representative_atom_name(residue_name: str) -> str:
+    """Return the representative atom used by this eval for one residue."""
+    if residue_name in ("GLY", "UNK"):
+        return "CA"
+    return "CB"
+
+
 def read_canonical_sequence(cif_path: Path) -> CanonicalSequence:
     """Pull the single polypeptide(L) entity's 1..N sequence.
 
@@ -69,10 +82,6 @@ def read_canonical_sequence(cif_path: Path) -> CanonicalSequence:
     entity = peptide_entities[0]
     seq: list[str] = []
     for raw_name in entity.full_sequence:
-        # entity.full_sequence is a list of strings like 'ALA' or
-        # comma-separated alternatives like 'ASP,ASN' for ambiguous
-        # entries; pick the first.
-        name = str(raw_name).split(",")[0].strip().upper()
-        seq.append(name if name in _CANONICAL_20 else "UNK")
+        seq.append(normalize_residue_name(str(raw_name)))
 
     return CanonicalSequence(n_residues=len(seq), residue_names=tuple(seq))

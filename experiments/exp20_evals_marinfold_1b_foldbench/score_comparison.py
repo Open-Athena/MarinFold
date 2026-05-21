@@ -16,8 +16,8 @@ Output:
     100 × ``marinfold_1b`` + 100 × ``protenix_single_seq`` + 100 ×
     ``protenix_msa``. Column schema matches ``score_marinfold.py``.
   - ``data/scores_summary.csv`` — per-method aggregates
-    (mean / median / min / max) for each headline metric, plus the
-    hypothesis-verdict columns.
+    (mean / median / min / max) for each headline metric.
+  - ``data/hypothesis_verdict.json`` — machine-readable verdict details.
 
 Hypothesis verdict (from issue #20 success criteria):
 
@@ -32,6 +32,7 @@ Hypothesis verdict (from issue #20 success criteria):
 
 import argparse
 import csv
+import json
 from pathlib import Path
 from statistics import mean, median
 
@@ -68,6 +69,12 @@ def _parse_int(x: str) -> int:
     if x in ("", "nan", "NaN"):
         return 0
     return int(x)
+
+
+def _format_summary_value(value: object) -> object:
+    if isinstance(value, float):
+        return f"{value:.4f}"
+    return value
 
 
 def _load_marinfold_rows(csv_path: Path) -> list[dict]:
@@ -127,7 +134,7 @@ def _load_protenix_rows(csv_path: Path) -> list[dict]:
     return out
 
 
-def _aggregate_for_method(rows: list[dict], method: str) -> dict[str, float]:
+def _aggregate_for_method(rows: list[dict], method: str) -> dict[str, object]:
     """Mean / median / min / max for each headline metric, for one method.
 
     Only rows whose ``method`` matches are aggregated. NaN values are
@@ -136,7 +143,7 @@ def _aggregate_for_method(rows: list[dict], method: str) -> dict[str, float]:
     chains). Returns a flat dict keyed ``{metric}_{stat}``.
     """
     method_rows = [r for r in rows if r["method"] == method]
-    out: dict[str, float] = {"method": method, "n_proteins": len(method_rows)}
+    out: dict[str, object] = {"method": method, "n_proteins": len(method_rows)}
     for col, _direction in _HEADLINE:
         values = [_parse_float(r[col]) for r in method_rows]
         clean = [v for v in values if v == v]  # drop NaN
@@ -163,7 +170,13 @@ def _hypothesis_verdict(summary_rows: list[dict]) -> dict[str, object]:
     """
     by_method = {r["method"]: r for r in summary_rows}
     if "marinfold_1b" not in by_method or "protenix_single_seq" not in by_method or "protenix_msa" not in by_method:
-        return {"verdict": "incomplete", "metrics_supporting": 0, "details": "missing one or more methods"}
+        return {
+            "verdict": "incomplete",
+            "n_metrics_supporting": 0,
+            "metrics_supporting": [],
+            "metrics_refuting": [],
+            "details": ["missing one or more methods"],
+        }
 
     supporting: list[str] = []
     refuting: list[str] = []
@@ -178,23 +191,32 @@ def _hypothesis_verdict(summary_rows: list[dict]) -> dict[str, object]:
         if direction == "higher":
             # higher = better. 1B beats SS iff m1b > mss; loses to MSA iff m1b < mms.
             ok = mss < m1b < mms
-            sign = ">"
         else:
             # lower = better. 1B beats SS iff m1b < mss; loses to MSA iff m1b > mms.
             ok = mms < m1b < mss
-            sign = "<"
+        actual_order = ", ".join(
+            f"{name}={value:.4f}"
+            for name, value in sorted(
+                (
+                    ("marinfold_1b", m1b),
+                    ("protenix_single_seq", mss),
+                    ("protenix_msa", mms),
+                ),
+                key=lambda item: item[1],
+                reverse=(direction == "higher"),
+            )
+        )
         details.append(
-            f"{col}: protenix_msa={mms:.4f} {sign} marinfold_1b={m1b:.4f} {sign} protenix_single_seq={mss:.4f} "
-            f"→ {'support' if ok else 'refute'}"
+            f"{col}: {actual_order} -> {'support' if ok else 'refute'}"
         )
         (supporting if ok else refuting).append(col)
     verdict = "supported" if len(supporting) >= 2 else "not_supported"
     return {
         "verdict": verdict,
         "n_metrics_supporting": len(supporting),
-        "metrics_supporting": ",".join(supporting),
-        "metrics_refuting": ",".join(refuting),
-        "details": " | ".join(details),
+        "metrics_supporting": supporting,
+        "metrics_refuting": refuting,
+        "details": details,
     }
 
 
@@ -204,10 +226,11 @@ def merge_and_summarize(
     protenix_csv: Path,
     out_scores_csv: Path,
     out_summary_csv: Path,
+    out_verdict_json: Path,
 ) -> dict[str, object]:
     """Top-level entry point — produce the combined CSV + summary CSV.
 
-    Returns the hypothesis verdict dict (also written into the summary CSV).
+    Returns the hypothesis verdict dict (also written to JSON).
     """
     mf_rows = _load_marinfold_rows(marinfold_csv)
     px_rows = _load_protenix_rows(protenix_csv)
@@ -239,12 +262,12 @@ def merge_and_summarize(
         writer = csv.DictWriter(f, fieldnames=summary_cols, extrasaction="ignore")
         writer.writeheader()
         for row in summary:
-            row_out = {k: (f"{v:.4f}" if isinstance(v, float) else v) for k, v in row.items()}
+            row_out = {k: _format_summary_value(v) for k, v in row.items()}
             writer.writerow(row_out)
-        f.write("\n# Hypothesis verdict (issue #20)\n")
-        for k, v in verdict.items():
-            f.write(f"# {k}: {v}\n")
     print(f"Wrote {out_summary_csv}.")
+    out_verdict_json.parent.mkdir(parents=True, exist_ok=True)
+    out_verdict_json.write_text(json.dumps(verdict, indent=2) + "\n")
+    print(f"Wrote {out_verdict_json}.")
     print(f"Hypothesis verdict: {verdict}")
     return verdict
 
@@ -262,12 +285,18 @@ def main() -> None:
     )
     parser.add_argument("--scores", type=Path, default=here / "data" / "scores.csv")
     parser.add_argument("--summary", type=Path, default=here / "data" / "scores_summary.csv")
+    parser.add_argument(
+        "--verdict-json",
+        type=Path,
+        default=here / "data" / "hypothesis_verdict.json",
+    )
     args = parser.parse_args()
     merge_and_summarize(
         marinfold_csv=args.marinfold_csv,
         protenix_csv=args.protenix_csv,
         out_scores_csv=args.scores,
         out_summary_csv=args.summary,
+        out_verdict_json=args.verdict_json,
     )
 
 

@@ -42,6 +42,8 @@ from pathlib import Path
 import gemmi
 import numpy as np
 
+from canonical_sequence import normalize_residue_name, representative_atom_name
+
 
 # --------------------------------------------------------------------------
 # Constants
@@ -99,14 +101,14 @@ MARINFOLD_BINS = BinScheme(
 
 
 # --------------------------------------------------------------------------
-# GT-side CIF parsing (CB-CB / CA-for-GLY, label_seq_id indexed)
+# GT-side CIF parsing (CB-CB / CA-for-GLY/UNK, label_seq_id indexed)
 # --------------------------------------------------------------------------
 
 
 def _read_gt_rep_coords(cif_path: Path) -> tuple[int, list[tuple[float, float, float] | None]]:
     """Return (n_residues, rep_xyz_list) — same as exp12.
 
-    ``rep_xyz_list[i]`` is the CB-or-CA-for-GLY position of residue
+    ``rep_xyz_list[i]`` is the CB-or-CA representative position of residue
     i+1, or None if unresolved in the GT. ``n_residues`` comes from
     ``entity.full_sequence`` so the indexing aligns with the 1B
     distogram (which is also driven by the canonical 1..N sequence).
@@ -124,7 +126,10 @@ def _read_gt_rep_coords(cif_path: Path) -> tuple[int, list[tuple[float, float, f
         raise ValueError(f"{cif_path}: multiple polypeptide(L) entities.")
     entity = peptide_entities[0]
     subchains = set(entity.subchains)
-    n_residues = len(entity.full_sequence)
+    sequence_names = tuple(
+        normalize_residue_name(str(raw_name)) for raw_name in entity.full_sequence
+    )
+    n_residues = len(sequence_names)
 
     rep_by_seq: dict[int, tuple[float, float, float]] = {}
     for model in structure:
@@ -135,9 +140,10 @@ def _read_gt_rep_coords(cif_path: Path) -> tuple[int, list[tuple[float, float, f
                 label_seq = residue.label_seq
                 if label_seq is None:
                     continue
-                ca = residue.find_atom("CA", "\0")
-                res_name = residue.name.upper()
-                if res_name == "GLY":
+                if label_seq < 1 or label_seq > n_residues:
+                    continue
+                if representative_atom_name(sequence_names[label_seq - 1]) == "CA":
+                    ca = residue.find_atom("CA", "\0")
                     if ca is not None:
                         rep_by_seq[label_seq] = (ca.pos.x, ca.pos.y, ca.pos.z)
                 else:

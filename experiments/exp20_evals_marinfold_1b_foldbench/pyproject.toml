@@ -49,6 +49,5 @@ package = false
 fork-strategy = "fewest"
 prerelease = "allow"
 environments = [
-    "sys_platform == 'darwin'",
     "sys_platform == 'linux'",
 ]
