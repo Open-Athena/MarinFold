@@ -1,0 +1,19 @@
+# Re-generatable by `python cli.py prepare-inputs` (downloads FoldBench
+# CSV + GT mmCIFs from RCSB). 3-4 MB at N=10 inputs; would be ~100MB
+# at the full 334 monomers. Per AGENTS.md, large/regeneratable
+# artifacts are not committed.
+inputs/
+
+# Synced-down Modal output Volume contents. Per the README's policy:
+# raw outputs (CIFs, distograms, confidence JSONs) live in the Modal
+# Volume + optionally rsynced here for inspection, but never go to git.
+outputs/
+
+# Curated top-1 selections built by `cli.py select-best`. Stays out of
+# git; gets uploaded to the open-athena/MarinFold HF bucket after
+# human review.
+best/
+
+# Local Modal scratch.
+.modal/
+.DS_Store
