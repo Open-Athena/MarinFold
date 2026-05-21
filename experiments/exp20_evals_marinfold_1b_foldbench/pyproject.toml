@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib>=3.8",
     "numpy",
     "pandas>=2.2",
+    "seaborn>=0.13",  # for swarmplot in plot_comparison.py
     "pyyaml>=6",  # read MODELS.yaml
     # vllm 0.10+ needs CUDA 12.6 in its torch wheel; this host runs CUDA 12.2.
     # Pin vllm 0.7.x and the matching torch +cu121 wheel (same pins exp9 settled on).

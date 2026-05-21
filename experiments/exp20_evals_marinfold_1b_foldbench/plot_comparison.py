@@ -19,6 +19,10 @@ produces:
 - ``plots/timing_vs_sequence_length.png`` (if ``data/timings.csv``
   is present) — log-log scatter of per-protein runtime vs sequence
   length, one series per GPU.
+- ``plots/lddt_5way_swarm.png`` (if the Protenix ``scores.csv`` is
+  reachable for structure-LDDT) — 5-category swarm plot of LDDT
+  (1B distogram, Protenix single_seq distogram + structure, Protenix
+  msa distogram + structure) with a light boxplot overlay.
 """
 
 import argparse
@@ -27,6 +31,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 _METHOD_COLORS = {
@@ -164,7 +169,170 @@ def timing_vs_sequence_length(timings_csv: Path, out_path: Path) -> None:
     plt.close(fig)
 
 
-def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None) -> None:
+def lddt_5way_swarm(
+    *,
+    merged_scores_csv: Path,
+    protenix_scores_csv: Path,
+    out_path: Path,
+) -> None:
+    """5-category LDDT swarm: 1B (disto), Protenix-SS (disto + structure), Protenix-MSA (disto + structure).
+
+    The merged ``data/scores.csv`` only has distogram-LDDT (structure
+    metrics were dropped from the schema). The Protenix-side
+    structure-LDDT lives in ``protenix_data/.../scores.csv``
+    (column ``lddt_structure_cb``, the CB / CA-for-GLY variant —
+    apples-to-apples with the CB-CB distogram LDDT).
+
+    Points are seaborn ``swarmplot`` (no overlap), overlaid with a
+    light grey boxplot at alpha=0.5 so the median + quartiles are
+    visible against the swarm.
+    """
+    merged = pd.read_csv(merged_scores_csv)
+    protenix = pd.read_csv(protenix_scores_csv)
+
+    rows: list[dict] = []
+    # 1-2) MarinFold 1B: distogram (point) + distogram-soft.
+    mf = merged[merged["method"] == "marinfold_1b"][
+        ["pdb_id", "chain_id", "lddt_distogram_cb", "lddt_distogram_cb_soft"]
+    ]
+    for _, r in mf.iterrows():
+        stem = f"{r['pdb_id']}_{r['chain_id']}"
+        rows.append({"protein": stem,
+                     "category": "marinfold_1b (distogram)",
+                     "lddt": r["lddt_distogram_cb"]})
+        rows.append({"protein": stem,
+                     "category": "marinfold_1b (distogram, soft)",
+                     "lddt": r["lddt_distogram_cb_soft"]})
+
+    # 3-8) Protenix single_seq + msa: distogram + distogram-soft + structure-CB.
+    for mode in ("single_seq", "msa"):
+        sub = protenix[protenix["mode"] == mode]
+        for _, r in sub.iterrows():
+            stem = f"{r['pdb_id']}_{r['chain_id']}"
+            rows.append({"protein": stem,
+                         "category": f"protenix_{mode} (distogram)",
+                         "lddt": r["lddt_distogram_cb"]})
+            rows.append({"protein": stem,
+                         "category": f"protenix_{mode} (distogram, soft)",
+                         "lddt": r["lddt_distogram_cb_soft"]})
+            rows.append({"protein": stem,
+                         "category": f"protenix_{mode} (structure)",
+                         "lddt": r["lddt_structure_cb"]})
+
+    df = pd.DataFrame(rows).dropna(subset=["lddt"])
+    order = [
+        "marinfold_1b (distogram)",
+        "marinfold_1b (distogram, soft)",
+        "protenix_single_seq (distogram)",
+        "protenix_single_seq (distogram, soft)",
+        "protenix_single_seq (structure)",
+        "protenix_msa (distogram)",
+        "protenix_msa (distogram, soft)",
+        "protenix_msa (structure)",
+    ]
+    palette = {
+        "marinfold_1b (distogram)": "#d95f02",
+        "marinfold_1b (distogram, soft)": "#d95f02",
+        "protenix_single_seq (distogram)": "#7570b3",
+        "protenix_single_seq (distogram, soft)": "#7570b3",
+        "protenix_single_seq (structure)": "#7570b3",
+        "protenix_msa (distogram)": "#1b9e77",
+        "protenix_msa (distogram, soft)": "#1b9e77",
+        "protenix_msa (structure)": "#1b9e77",
+    }
+
+    fig, ax = plt.subplots(figsize=(13, 5.5))
+    # Boxplot first (so the swarm renders on top). Light grey
+    # boxes at alpha=0.5; no outliers (the swarm shows them).
+    sns.boxplot(
+        data=df, x="category", y="lddt", order=order,
+        showfliers=False, width=0.55,
+        boxprops={"facecolor": "#cccccc", "alpha": 0.5, "edgecolor": "#888888"},
+        medianprops={"color": "#222222", "linewidth": 2.0},
+        whiskerprops={"color": "#888888"}, capprops={"color": "#888888"},
+        ax=ax,
+    )
+    sns.swarmplot(
+        data=df, x="category", y="lddt", order=order,
+        palette=palette, hue="category", legend=False,
+        size=3.5, ax=ax,
+    )
+    ax.set_xlabel("")
+    ax.set_ylabel("LDDT")
+    ax.set_title(f"LDDT-CB (n={df['protein'].nunique()} FoldBench monomers)")
+    ax.set_ylim(-0.02, 1.02)
+    # Wrap long x-tick labels onto two lines for readability.
+    ax.set_xticklabels(
+        [t.get_text().replace(" (", "\n(") for t in ax.get_xticklabels()],
+        fontsize=9,
+    )
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=130)
+    plt.close(fig)
+
+
+def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
+    """Swarm plot of CASP top-L contact precision per (method, sep class).
+
+    9 categories: 3 methods × {short, medium, long} sequence separation.
+    All three methods produce a distogram, so each method has one column
+    per separation class (``prec_{short,medium,long}_L``). Structure-
+    derived contact precision (binarize predicted CB-CB at 8 Å) isn't
+    in exp12's score schema, so this plot is distogram-only.
+    """
+    merged = pd.read_csv(merged_scores_csv)
+    rows: list[dict] = []
+    methods = ("marinfold_1b", "protenix_single_seq", "protenix_msa")
+    sep_classes = ("short", "medium", "long")
+    for method in methods:
+        sub = merged[merged["method"] == method]
+        for _, r in sub.iterrows():
+            stem = f"{r['pdb_id']}_{r['chain_id']}"
+            for sep in sep_classes:
+                rows.append({"protein": stem,
+                             "category": f"{method} ({sep})",
+                             "prec": r[f"prec_{sep}_L"]})
+
+    df = pd.DataFrame(rows).dropna(subset=["prec"])
+    order = [f"{m} ({s})" for s in sep_classes for m in methods]
+    method_color = {
+        "marinfold_1b": "#d95f02",
+        "protenix_single_seq": "#7570b3",
+        "protenix_msa": "#1b9e77",
+    }
+    palette = {f"{m} ({s})": method_color[m] for s in sep_classes for m in methods}
+
+    fig, ax = plt.subplots(figsize=(15, 5.5))
+    sns.boxplot(
+        data=df, x="category", y="prec", order=order,
+        showfliers=False, width=0.55,
+        boxprops={"facecolor": "#cccccc", "alpha": 0.5, "edgecolor": "#888888"},
+        medianprops={"color": "#222222", "linewidth": 2.0},
+        whiskerprops={"color": "#888888"}, capprops={"color": "#888888"},
+        ax=ax,
+    )
+    sns.swarmplot(
+        data=df, x="category", y="prec", order=order,
+        palette=palette, hue="category", legend=False,
+        size=2.0, ax=ax,
+    )
+    ax.set_xlabel("")
+    ax.set_ylabel("precision @ top L")
+    ax.set_title(f"CASP contact precision @ L (n={df['protein'].nunique()} FoldBench monomers)")
+    ax.set_ylim(-0.02, 1.02)
+    ax.set_xticklabels(
+        [t.get_text().replace(" (", "\n(") for t in ax.get_xticklabels()],
+        fontsize=9,
+    )
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=130)
+    plt.close(fig)
+
+
+def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None,
+           protenix_scores_csv: Path | None = None) -> None:
     df = pd.read_csv(scores_csv)
     _ensure_outdir(out_dir)
     per_protein_bar(
@@ -190,6 +358,16 @@ def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None) 
     )
     if timings_csv is not None:
         timing_vs_sequence_length(timings_csv, out_dir / "timing_vs_sequence_length.png")
+    if protenix_scores_csv is not None and protenix_scores_csv.exists():
+        lddt_5way_swarm(
+            merged_scores_csv=scores_csv,
+            protenix_scores_csv=protenix_scores_csv,
+            out_path=out_dir / "lddt_5way_swarm.png",
+        )
+    prec_at_l_swarm(
+        merged_scores_csv=scores_csv,
+        out_path=out_dir / "prec_L_swarm.png",
+    )
     print(f"Wrote plots to {out_dir}/")
 
 
@@ -199,8 +377,14 @@ def main() -> None:
     parser.add_argument("--scores", type=Path, default=here / "data" / "scores.csv")
     parser.add_argument("--out", type=Path, default=here / "plots")
     parser.add_argument("--timings", type=Path, default=here / "data" / "timings.csv")
+    parser.add_argument(
+        "--protenix-scores", type=Path,
+        default=here / "protenix_data" / "data" / "protenix-foldbench-monomers" / "scores.csv",
+        help="Source for Protenix structure-LDDT (5-way swarm plot).",
+    )
     args = parser.parse_args()
-    render(scores_csv=args.scores, out_dir=args.out, timings_csv=args.timings)
+    render(scores_csv=args.scores, out_dir=args.out, timings_csv=args.timings,
+           protenix_scores_csv=args.protenix_scores)
 
 
 if __name__ == "__main__":
