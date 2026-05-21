@@ -91,6 +91,16 @@ whichever fits the work.
    the same W&B run share one history file. See the root
    `AGENTS.md` and `history/README.md` for the schema.
 
+9. **Capture per-input timings whenever you run a predictor.** Bake
+   timing capture into the wrapper at evaluation time and commit a
+   `data/timings.csv` to the experiment dir — don't plan to
+   reconstruct from logs after the fact (Modal's ephemeral-app logs
+   get pruned). Use the schema documented in the root `AGENTS.md`
+   "Capture timings for every predictor run" section so cross-
+   experiment timing comparisons (e.g. exp12 Protenix vs exp20
+   MarinFold-1B) join on `(stem, n_residues)` without bespoke
+   munging.
+
 ## Importing from kind libraries
 
 An experiment that needs marin or a kind library has its own

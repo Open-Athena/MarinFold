@@ -255,6 +255,54 @@ editing a history file so `history/RUNS.md` stays current.
 
 See `history/README.md` for the schema and the full policy.
 
+### Capture timings for every predictor run
+
+**Always record per-protein (or per-input) wall-time and worker
+metadata when you run *any* predictor**, whether it's a MarinFold
+model, Protenix, ESMFold, AlphaFold, or anyone else's. **Save
+timings to a CSV at evaluation time, not "we can reconstruct it
+later from logs"** — Modal's ephemeral-app logs get pruned, iris
+job records get garbage-collected, and "we'll grab it from the
+output dirs' mtimes" is fragile across re-syncs. Bake it into the
+predictor wrapper.
+
+Minimum schema (one row per (input, mode) pair, or per (input,
+seed) if the predictor splits work that way):
+
+```
+stem, n_residues, n_pairs, mode,
+elapsed_seconds,             # pure inference time (matches AF3-paper convention)
+model_load_seconds,          # weight-load + runner setup time, reported separately
+total_seconds,               # everything: setup + inference + dump (sanity check)
+model_nickname,              # e.g. "protenix-v2", "marinfold-1b"
+runner_tag,                  # "modal", "iris", "local"
+gpu_name, gpu_total_memory_gb, gpu_compute_capability,
+hostname, platform, torch_version,
+timestamp_utc
+```
+
+Plus any per-predictor-specific columns (e.g. `n_seeds`,
+`n_samples_per_seed`, `batch_size`).
+
+This schema is concretely realized in
+[`experiments/exp12_data_protenix_foldbench_monomers/data/timings.csv`](experiments/exp12_data_protenix_foldbench_monomers/data/timings.csv)
+and
+[`experiments/exp20_evals_marinfold_1b_foldbench/data/timings.csv`](experiments/exp20_evals_marinfold_1b_foldbench/data/timings.csv) — they share enough columns
+that the two CSVs join cleanly on `(stem, n_residues)`. Match it
+when adding a new evaluator so cross-experiment timing comparisons
+(e.g. MarinFold vs Protenix vs ESMFold scaling curves) just work.
+Commit the CSV to git; upload alongside other artifacts when going
+to the HF bucket. Plot conventions for the timing-vs-length curve
+are in
+[`experiments/exp12_data_protenix_foldbench_monomers/_scripts/plot_timings.py`](experiments/exp12_data_protenix_foldbench_monomers/_scripts/plot_timings.py).
+
+For Modal-hosted predictors: capture worker metadata once in
+`@modal.enter` (stash in `self.worker_meta`), time the inference in
+`predict_one`, and write a `timings.json` per (input, mode) on the
+output Volume — then a small post-hoc script aggregates those into
+the CSV. Don't try to recover this from Modal logs after the fact;
+ephemeral-app logs disappear.
+
 ## See also
 
 - `RESOURCES.md` — datasets, tokenizers, prior repos and prior runs.
