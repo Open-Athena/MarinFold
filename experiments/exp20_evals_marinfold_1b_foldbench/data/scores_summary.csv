@@ -1,0 +1,4 @@
+method,n_proteins,lddt_distogram_cb_mean,lddt_distogram_cb_median,lddt_distogram_cb_min,lddt_distogram_cb_max,mae_distogram_cb_angstrom_mean,mae_distogram_cb_angstrom_median,mae_distogram_cb_angstrom_min,mae_distogram_cb_angstrom_max,drmsd_distogram_cb_angstrom_mean,drmsd_distogram_cb_angstrom_median,drmsd_distogram_cb_angstrom_min,drmsd_distogram_cb_angstrom_max
+marinfold_1b,100,0.2715,0.2332,0.1425,0.7354,5.6421,5.9402,1.0374,8.9890,7.1433,7.4188,1.7188,10.9747
+protenix_single_seq,100,0.4319,0.3671,0.1991,0.9357,2.6851,2.9554,0.3691,4.2667,3.7500,4.1524,0.5245,5.5208
+protenix_msa,100,0.9122,0.9287,0.4017,0.9884,0.4683,0.3929,0.2107,2.9285,0.7874,0.6627,0.2740,3.9748
