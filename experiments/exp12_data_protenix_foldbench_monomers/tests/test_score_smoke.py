@@ -133,4 +133,21 @@ def test_score_perfect_prediction_has_near_zero_drmsd(tmp_path: Path, repo_input
             if v == v:  # not NaN (NaN only if class has no eligible pairs)
                 assert 0.0 <= v <= 1.0, f"{col} out of range: {v}"
         assert getattr(r, f"n_{class_name}_contacts") >= 0
+    # LDDT: prediction == GT → structure-LDDT must be exactly 1.0.
+    # Distogram-LDDT (point) on an oracle delta-distogram (which puts
+    # all mass exactly on the GT bin) → expected distance = bin center,
+    # error per pair = |center - gt| < bin_width/2 ≈ 0.15 Å, so well
+    # under the 0.5 Å smallest threshold → also 1.0.
+    # Distogram-LDDT (soft) likewise: bins centered within (gt - 0.5, gt
+    # + 0.5) capture all the probability mass (since the delta is in the
+    # GT bin), so preservation = 1.0 at every threshold.
+    for col in ("lddt_structure_ca", "lddt_structure_cb",
+                "lddt_structure_all_heavy",
+                "lddt_distogram_cb", "lddt_distogram_cb_soft"):
+        v = getattr(r, col)
+        # Some columns may be NaN on a very short test protein
+        # (lddt_structure_all_heavy needs ≥2 atoms with non-self
+        # pairs; tiny protein could yield NaN — accept either).
+        if v == v:  # not NaN
+            assert v == pytest.approx(1.0, abs=1e-3), f"{col} should be ~1.0 for perfect pred, got {v}"
     assert out_csv.exists()

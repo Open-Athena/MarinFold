@@ -53,6 +53,12 @@ _METRICS = (
     # short and medium still in the CSV / summary.
     ("prec_long_L", "CASP precision @ top L, long range (sep ≥ 24)"),
     ("prec_long_L_5", "CASP precision @ top L/5, long range (sep ≥ 24)"),
+    # LDDT (CASP convention: 15 Å inclusion, thresholds 0.5/1/2/4 Å).
+    ("lddt_structure_ca", "LDDT-CA from predicted structure"),
+    ("lddt_structure_cb", "LDDT-CB from predicted structure"),
+    ("lddt_structure_all_heavy", "LDDT-all-heavy from predicted structure"),
+    ("lddt_distogram_cb", "LDDT-CB from distogram (point estimate)"),
+    ("lddt_distogram_cb_soft", "LDDT-CB from distogram (soft / probabilistic)"),
 )
 
 
@@ -72,6 +78,8 @@ def _load(scores_csv: Path) -> pd.DataFrame:
         "prec_medium_L", "prec_medium_L_2", "prec_medium_L_5",
         "prec_long_L", "prec_long_L_2", "prec_long_L_5",
         "n_short_contacts", "n_medium_contacts", "n_long_contacts",
+        "lddt_structure_ca", "lddt_structure_cb", "lddt_structure_all_heavy",
+        "lddt_distogram_cb", "lddt_distogram_cb_soft",
     )
     for col in numeric_cols:
         if col in df.columns:

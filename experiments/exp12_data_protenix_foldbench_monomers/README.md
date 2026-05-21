@@ -263,6 +263,128 @@ Output columns: `prec_{short,medium,long}_{L,L_2,L_5}` plus
 has no eligible pairs (only happens for very short proteins, e.g. long-
 range needs L ≥ 25).
 
+### Adding new distogram-derived metrics
+
+All raw artifacts needed to compute new per-(protein, mode) metrics are
+already in `best/` (and uploaded to the HF bucket — see "Outputs"
+below). To add a new metric, you don't need to re-run Protenix; just
+load the existing files. Quick reference:
+
+**Loading the distogram** (the most common starting point):
+
+```python
+import numpy as np
+d = np.load("best/msa/7uk8_A/distogram.npz")["probs"]
+# d.shape == (N, N, 64)  — N = protein length
+# d.dtype == float32
+# d sums to 1.0 along axis -1 (softmaxed probabilities)
+# Bin k corresponds to center _DISTOGRAM_BIN_MIDPOINTS[k]
+#   = 2.464 Å for k=0, ..., 21.535 Å for k=63
+# See score.py for the exact bin-center formula.
+```
+
+The same `.npz` schema (`probs` key, `[N, N, 64]` float32) is in every
+`best/{mode}/{stem}/distogram.npz`. The matrix is symmetric and the
+upper triangle is the canonical pair set.
+
+**Loading the predicted structure:**
+
+```python
+import gemmi
+s = gemmi.read_structure("best/msa/7uk8_A/structure.cif")
+# Same layout / atom naming as the GT CIFs in inputs/gt/.
+# Per-atom b_factor = Protenix's pLDDT × 100 (per the Protenix dumper).
+```
+
+**Loading Protenix's summary confidence** (per-sample confidence; useful
+for filters or alternate ranking criteria):
+
+```python
+import json
+c = json.load(open("best/msa/7uk8_A/confidence.json"))
+# Keys: plddt, gpde, ptm, iptm, chain_plddt, chain_ptm, chain_iptm,
+#       chain_pair_iptm, chain_pair_plddt, chain_pair_iptm_global,
+#       has_clash, disorder, ranking_score, num_recycles, ...
+# All scalars are Python floats; chain_* are length-1 lists for monomers.
+```
+
+**Where to add a new metric in `score.py`:**
+
+1. Compute it inside [`_compute_metrics()`](score.py) — that function
+   already has `expected` (distogram-derived expected distances),
+   `contact_probs`, `gt_coords` (CA + rep), `gt_rep_d / gt_rep_mask`
+   (CB-CB distance matrix), `pred_coords`, and `gt_atoms` (heavy
+   atoms) all in scope. Add your metric using those.
+2. Add the column to `_MetricResult` (dataclass), `ProteinScore`
+   (dataclass), `_FIELDS` (CSV header tuple), and `_format_csv_row()`
+   (CSV writer). The smoke test in `tests/test_score_smoke.py` will
+   catch most schema mistakes.
+3. Re-score the top-1 view:
+   `uv run python cli.py score --best best --inputs inputs --out data/scores.csv`
+   (no Modal calls, no GPU, ~30 sec for 200 rows).
+4. Re-score all 8000 samples:
+   `uv run python _scripts/score_all_samples.py`
+   (streams from the Modal `foldbench-protenix-runs` Volume; ~15 min for the full set).
+5. Re-upload changed files:
+   `uv run python _scripts/upload_to_hf.py --no-msa`
+   (xet dedupes unchanged files; only the new CSVs / plots go over the wire).
+
+**Some metric ideas the existing data supports out of the box:**
+
+- **LDDT** (any atom set, GT-derived): compute from pred + GT structures,
+  no distogram needed. Standard CASP convention is 15 Å inclusion
+  radius, thresholds 0.5/1/2/4 Å.
+- **Distogram entropy per pair** (or summed): `-(probs * log(probs)).sum(axis=-1)`
+  — a model-confidence proxy that's independent of GT.
+- **Calibration**: bin the predicted distance distribution against the
+  empirical GT distribution. Tells you how well-calibrated the distogram
+  is across distance ranges.
+- **Variance of the distogram-implied distance**: `Σ p_bin × (center_bin − expected)²`
+  — a per-pair uncertainty estimate.
+- **Top-K contact-probability ROC / AUC**: alternative to the CASP top-L/k
+  precision we already compute.
+- **Inter-residue distance error distribution** (per-distance-bin MAE):
+  bin GT distances and report MAE within each, to see where the model
+  fails (near vs far pairs).
+
+### LDDT (CASP convention, option D)
+
+**Inclusion radius** 15 Å, **distance-difference thresholds**
+`{0.5, 1, 2, 4} Å`, **sequence separation** `|i-j| ≥ 1` (only self
+excluded). Per-residue LDDT = mean over thresholds of
+(#preserved_at_t / #scored_pairs_for_residue). Global LDDT = mean over
+residues with ≥1 scored pair. Range [0, 1].
+
+Five variants in two families:
+
+**Structure-derived** (predicted CIF vs GT CIF — analogous to
+RMSD-Kabsch but local instead of global):
+
+| Column | Atom set |
+|---|---|
+| `lddt_structure_ca` | CA only |
+| `lddt_structure_cb` | CB (CA for GLY) |
+| `lddt_structure_all_heavy` | All heavy atoms (intra-residue pairs excluded) |
+
+The all-heavy variant uses a direct numpy implementation; may diverge
+slightly from OpenStructure on symmetry-related atom labels (Asp
+OD1/OD2, Leu CD1/CD2, etc.) — fine for internal Protenix-vs-MarinFold
+comparison, use OpenStructure if you need byte-identity with
+FoldBench-paper LDDT.
+
+**Distogram-derived** (per-pair predicted distance distribution vs GT
+CB-CB distance — there's no CA / all-atom variant because the distogram
+only represents CB-CB):
+
+| Column | What |
+|---|---|
+| `lddt_distogram_cb` | Point estimate: `expected_distance` from the distogram as the predicted distance |
+| `lddt_distogram_cb_soft` | Probabilistic: per pair, score at threshold `t` is `Σ p_bin` over bins whose center is in `(gt - t, gt + t)`. Uses the full distribution; rewards calibrated uncertainty. |
+
+The 15 Å inclusion radius is well inside the distogram's expressible
+range (centers go up to 21.54 Å), so unlike the unfiltered distogram
+MAE there's no clipping bias to worry about for LDDT.
+
 ### Cross-model comparison (e.g. MarinFold-side scoring)
 
 When scoring MarinFold's distogram against these results:
@@ -349,6 +471,20 @@ convention, see issue [#12](https://github.com/Open-Athena/MarinFold/issues/12))
 | msa        | 0.91 / 0.99 | 0.99 / 1.00 |
 
 (Short / medium / L/2 cuts also in `data/scores.csv` per the full schema.)
+
+**LDDT** (CASP convention: 15 Å inclusion, thresholds 0.5/1/2/4 Å,
+range [0, 1], higher is better):
+
+| Mode | LDDT-CA (struct) | LDDT-CB (struct) | LDDT-all-heavy (struct) | LDDT-CB (distogram) | LDDT-CB (distogram, soft) |
+|---|---|---|---|---|---|
+| single_seq | 0.48 / 0.42 | 0.45 / 0.39 | 0.42 / 0.36 | 0.43 / 0.37 | 0.42 / 0.36 |
+| msa        | 0.93 / 0.95 | 0.91 / 0.93 | 0.85 / 0.86 | 0.91 / 0.93 | 0.88 / 0.89 |
+
+Structure-LDDT and distogram-LDDT on CB agree closely (~0.91 in MSA
+mode for both) — meaning the distogram-derived expected distance is a
+faithful proxy for the predicted CB-CB distance. The soft variant
+(probabilistic, using the full bin distribution) is systematically
+~0.04 stricter than the point-estimate version.
 
 Source CSVs (all use the same column schema; the all-samples file just
 has 40× the rows + a ``selected_as_best`` flag):

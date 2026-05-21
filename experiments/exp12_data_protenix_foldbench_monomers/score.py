@@ -97,6 +97,16 @@ _FIELDS = [
     "prec_medium_L", "prec_medium_L_2", "prec_medium_L_5",
     "prec_long_L", "prec_long_L_2", "prec_long_L_5",
     "n_short_contacts", "n_medium_contacts", "n_long_contacts",
+    # LDDT (CASP convention: 15 Å inclusion, thresholds 0.5/1/2/4 Å,
+    # min sep 1, range [0, 1]). Structure-derived in three atom-set
+    # variants + distogram-derived in two flavors (point vs soft).
+    # Distogram variants are only meaningful on CB (CA-for-GLY)
+    # because that's what the Protenix distogram represents.
+    "lddt_structure_ca",
+    "lddt_structure_cb",
+    "lddt_structure_all_heavy",
+    "lddt_distogram_cb",
+    "lddt_distogram_cb_soft",
 ]
 
 
@@ -145,6 +155,23 @@ _CASP_SEPARATIONS: dict[str, tuple[int, int | None]] = {
 # Precision @ top L/k convention. CASP14 reports L, L/2, L/5 (and
 # sometimes L/10). We track the three headline ones.
 _CASP_TOP_K: tuple[int, ...] = (1, 2, 5)
+
+
+# LDDT scoring conventions (Mariani et al. 2013, OpenStructure default).
+# - Pair "in scope" iff gt_distance < _LDDT_INCLUSION_RADIUS_A AND
+#   sequence separation |i - j| >= _LDDT_MIN_SEPARATION (i.e. exclude
+#   only self-pairs by default; the OpenStructure default also excludes
+#   bonded backbone neighbors but we leave that off for simplicity —
+#   the impact on the global metric is tiny).
+# - For each scored pair, "preserved at threshold t" iff
+#   |pred_distance - gt_distance| < t.
+# - Per-residue LDDT = mean over thresholds of
+#   (#preserved_at_t / #scored_pairs_for_residue).
+# - Global LDDT = mean over residues that have at least one scored pair.
+# Output range [0, 1]; higher is better. CASP standard thresholds:
+_LDDT_INCLUSION_RADIUS_A: float = 15.0
+_LDDT_THRESHOLDS_A: tuple[float, ...] = (0.5, 1.0, 2.0, 4.0)
+_LDDT_MIN_SEPARATION: int = 1
 
 
 @dataclass(frozen=True)
@@ -279,6 +306,170 @@ def _kabsch_rmsd(
     return float(res.rmsd)
 
 
+# --------------------------------------------------------------------------
+# LDDT helpers
+# --------------------------------------------------------------------------
+
+
+def _lddt_from_distance_matrices(
+    pred_d: np.ndarray,
+    gt_d: np.ndarray,
+    *,
+    pair_mask: np.ndarray,
+) -> float:
+    """Standard LDDT score given pred + GT pairwise distance matrices.
+
+    ``pred_d``, ``gt_d`` both shape ``[N, N]``; entries can be NaN
+    where unresolved. ``pair_mask`` is the boolean ``[N, N]`` mask of
+    pairs that are both resolved AND in scope (this caller's
+    responsibility — typically `gt_d < 15 Å AND |i-j| >= 1 AND both
+    resolved`). The function ignores the diagonal regardless.
+
+    Returns the global LDDT (mean over residues with at least one
+    in-scope pair, of the per-residue LDDT). Range [0, 1]. NaN if no
+    residue has any in-scope pair.
+    """
+    n = pred_d.shape[0]
+    # Compute the per-pair "preserved at threshold t" for each t, then
+    # average over thresholds. preservation has shape [N, N]: it's the
+    # average over thresholds of (|pred - gt| < t), which is the
+    # contribution each in-scope pair makes to its residue's LDDT.
+    diffs = np.abs(pred_d - gt_d)
+    # Treat NaN diffs as "not preserved" (they'll be masked out anyway).
+    diffs = np.where(np.isnan(diffs), np.inf, diffs)
+    preservation = np.mean(
+        [(diffs < t).astype(np.float64) for t in _LDDT_THRESHOLDS_A],
+        axis=0,
+    )
+    # For each residue i, average preservation over its in-scope pairs.
+    # numerator[i] = sum of preservation[i, j] over j in mask[i, :]
+    # denom[i]     = number of in-scope pairs for i (sum of mask[i, :])
+    mask = pair_mask.copy()
+    np.fill_diagonal(mask, False)  # belt and suspenders
+    denom = mask.sum(axis=1)
+    if denom.sum() == 0:
+        return float("nan")
+    numer = (preservation * mask).sum(axis=1)
+    per_residue = np.where(denom > 0, numer / np.maximum(denom, 1), np.nan)
+    finite = per_residue[np.isfinite(per_residue)]
+    return float(np.mean(finite)) if finite.size else float("nan")
+
+
+def _lddt_inclusion_mask(
+    gt_d: np.ndarray,
+    gt_mask: np.ndarray,
+    *,
+    inclusion_radius: float = _LDDT_INCLUSION_RADIUS_A,
+    min_separation: int = _LDDT_MIN_SEPARATION,
+) -> np.ndarray:
+    """Boolean [N, N] mask of pairs eligible for LDDT scoring.
+
+    A pair (i, j) is eligible iff:
+      - both i and j are resolved (``gt_mask[i, j]`` True),
+      - ``|i - j| >= min_separation`` (CASP default 1 → only excludes self),
+      - ``gt_d[i, j] < inclusion_radius`` (CASP default 15 Å).
+    """
+    n = gt_d.shape[0]
+    i_idx = np.arange(n)[:, None]
+    j_idx = np.arange(n)[None, :]
+    sep_ok = np.abs(i_idx - j_idx) >= min_separation
+    return gt_mask & sep_ok & (gt_d < inclusion_radius)
+
+
+def _lddt_distogram_soft(
+    probs: np.ndarray,         # [N, N, 64] softmaxed distogram
+    gt_d: np.ndarray,          # [N, N] GT CB-CB distances (NaN at unresolved)
+    *,
+    pair_mask: np.ndarray,     # [N, N] in-scope pairs (see _lddt_inclusion_mask)
+) -> float:
+    """Probabilistic / "soft" distogram-LDDT.
+
+    Per pair, the score at threshold t is the probability that the
+    predicted distance is within t of the GT, computed by summing
+    distogram mass over the bins whose centers fall in (gt - t, gt + t).
+    Averaged over thresholds, then aggregated by residue and globally
+    in exactly the same way as the standard LDDT.
+
+    Unlike the point-estimate version, this uses the model's full
+    uncertainty information: a confident-but-wrong prediction is
+    penalized more than a hedging one.
+    """
+    n = gt_d.shape[0]
+    # For each pair, per-threshold soft preservation:
+    #   preservation_t[i, j] = sum over bins k where |center_k - gt[i,j]| < t  of  probs[i,j,k]
+    # Then average over thresholds → preservation[i, j].
+    # Vectorize over pairs by broadcasting against bin centers.
+    centers = _DISTOGRAM_BIN_MIDPOINTS  # [64]
+    # gt_d[:, :, None] has shape [N, N, 1]; broadcasts with centers [64].
+    # We want |centers - gt| < t per (i, j, k, t). Compute per-threshold
+    # masks and average.
+    gt_d_safe = np.where(np.isfinite(gt_d), gt_d, 0.0)
+    bin_diff = np.abs(centers[None, None, :] - gt_d_safe[:, :, None])  # [N, N, 64]
+    preservation_per_threshold = []
+    for t in _LDDT_THRESHOLDS_A:
+        bin_in_window = (bin_diff < t).astype(np.float64)  # [N, N, 64]
+        soft = (probs * bin_in_window).sum(axis=-1)         # [N, N]
+        preservation_per_threshold.append(soft)
+    preservation = np.mean(preservation_per_threshold, axis=0)  # [N, N]
+    # Aggregate exactly like the point-estimate LDDT.
+    mask = pair_mask.copy()
+    np.fill_diagonal(mask, False)
+    denom = mask.sum(axis=1)
+    if denom.sum() == 0:
+        return float("nan")
+    numer = (preservation * mask).sum(axis=1)
+    per_residue = np.where(denom > 0, numer / np.maximum(denom, 1), np.nan)
+    finite = per_residue[np.isfinite(per_residue)]
+    return float(np.mean(finite)) if finite.size else float("nan")
+
+
+def _lddt_all_heavy(
+    pred_atoms: dict[tuple[int, str], tuple[float, float, float]],
+    gt_atoms: dict[tuple[int, str], tuple[float, float, float]],
+) -> float:
+    """All-heavy-atom LDDT.
+
+    Atom set = every shared (label_seq_id, atom_name) key between pred
+    and GT. Per-atom analog of the standard residue-level LDDT:
+    in-scope pairs are atom pairs (a, b) with `a != b`, in different
+    residues (intra-residue pairs excluded per OpenStructure default),
+    and `gt_d_ab < inclusion_radius`.
+
+    Numpy implementation; may diverge slightly from OpenStructure on
+    symmetry-related atom labels (e.g. Asp OD1/OD2 swaps, Leu CD1/CD2)
+    because we don't attempt symmetry-aware renaming. For internal
+    Protenix-vs-MarinFold comparison this is fine; for direct
+    head-to-head against FoldBench-paper numbers use OpenStructure.
+    """
+    shared = sorted(set(pred_atoms) & set(gt_atoms))
+    if len(shared) < 2:
+        return float("nan")
+    pred = np.asarray([pred_atoms[k] for k in shared], dtype=np.float64)  # [M, 3]
+    gt = np.asarray([gt_atoms[k] for k in shared], dtype=np.float64)
+    # Pairwise distance matrices.
+    pred_d = np.linalg.norm(pred[:, None, :] - pred[None, :, :], axis=-1)
+    gt_d = np.linalg.norm(gt[:, None, :] - gt[None, :, :], axis=-1)
+    # Same-residue mask (atoms belonging to the same label_seq_id).
+    res_ids = np.asarray([k[0] for k in shared])
+    same_residue = res_ids[:, None] == res_ids[None, :]
+    inclusion = (gt_d < _LDDT_INCLUSION_RADIUS_A) & (~same_residue)
+    # No self pairs.
+    np.fill_diagonal(inclusion, False)
+    # Per-atom LDDT: same aggregation as residue-level.
+    diffs = np.abs(pred_d - gt_d)
+    preservation = np.mean(
+        [(diffs < t).astype(np.float64) for t in _LDDT_THRESHOLDS_A],
+        axis=0,
+    )
+    denom = inclusion.sum(axis=1)
+    if denom.sum() == 0:
+        return float("nan")
+    numer = (preservation * inclusion).sum(axis=1)
+    per_atom = np.where(denom > 0, numer / np.maximum(denom, 1), np.nan)
+    finite = per_atom[np.isfinite(per_atom)]
+    return float(np.mean(finite)) if finite.size else float("nan")
+
+
 def _pairwise_distance_matrix(
     positions: list[tuple[float, float, float] | None],
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -303,6 +494,7 @@ def _pairwise_distance_matrix(
 class _DistogramDerived:
     """Outputs we derive from a single distogram .npz."""
 
+    probs: np.ndarray                # [N, N, 64] — softmaxed bin probabilities
     expected_distances: np.ndarray   # [N, N] — Σ p_bin · center_bin
     contact_probabilities: np.ndarray  # [N, N] — Σ p_bin over bins with center ≤ 8 Å
 
@@ -335,7 +527,11 @@ def _load_distogram_derivatives(distogram_path: Path) -> _DistogramDerived:
         )
     expected = (probs * _DISTOGRAM_BIN_MIDPOINTS).sum(axis=-1)
     contact = probs[..., _CONTACT_BIN_MASK].sum(axis=-1)
-    return _DistogramDerived(expected_distances=expected, contact_probabilities=contact)
+    return _DistogramDerived(
+        probs=probs.astype(np.float64),
+        expected_distances=expected,
+        contact_probabilities=contact,
+    )
 
 
 def _expected_distances_from_distogram(distogram_path: Path) -> np.ndarray:
@@ -447,6 +643,12 @@ class ProteinScore:
     n_short_contacts: int
     n_medium_contacts: int
     n_long_contacts: int
+    # LDDT (CASP convention: 15 Å inclusion, thresholds 0.5/1/2/4 Å).
+    lddt_structure_ca: float
+    lddt_structure_cb: float
+    lddt_structure_all_heavy: float
+    lddt_distogram_cb: float
+    lddt_distogram_cb_soft: float
 
 
 @dataclass(frozen=True)
@@ -483,6 +685,12 @@ class _MetricResult:
     n_short_contacts: int
     n_medium_contacts: int
     n_long_contacts: int
+    # LDDT (CASP convention).
+    lddt_structure_ca: float
+    lddt_structure_cb: float
+    lddt_structure_all_heavy: float
+    lddt_distogram_cb: float
+    lddt_distogram_cb_soft: float
 
 
 def _compute_metrics(
@@ -595,6 +803,51 @@ def _compute_metrics(
     rmsd_heavy = _kabsch_rmsd(pred_heavy, gt_heavy)
     n_heavy_atoms = len(shared_keys)
 
+    # 6. LDDT scores. CASP convention: 15 Å inclusion, thresholds
+    # 0.5/1/2/4 Å. For structure variants we re-use the pairwise
+    # distance matrices already built above (CA-CA from step 2/3;
+    # CB-CB-equivalent from step 1 = gt_rep_d).
+    # 6a. Structure-LDDT on CA.
+    if n_ca_pairs == 0:
+        lddt_struct_ca = float("nan")
+    else:
+        ca_inclusion = _lddt_inclusion_mask(
+            gt_d=gt_ca_d, gt_mask=gt_ca_mask & pred_ca_mask,
+        )
+        lddt_struct_ca = _lddt_from_distance_matrices(
+            pred_d=pred_ca_d, gt_d=gt_ca_d, pair_mask=ca_inclusion,
+        )
+    # 6b. Structure-LDDT on CB (CA-for-GLY).
+    pred_rep_d, pred_rep_mask = _pairwise_distance_matrix(pred_coords.rep[:n])
+    cb_inclusion = _lddt_inclusion_mask(
+        gt_d=gt_rep_d, gt_mask=gt_rep_mask & pred_rep_mask,
+    )
+    lddt_struct_cb = _lddt_from_distance_matrices(
+        pred_d=pred_rep_d, gt_d=gt_rep_d, pair_mask=cb_inclusion,
+    )
+    # 6c. Structure-LDDT on all heavy atoms.
+    pred_atoms_for_lddt = {k: v for k, v in pred_atoms.items() if k in gt_atoms}
+    gt_atoms_for_lddt = {k: v for k, v in gt_atoms.items() if k in pred_atoms}
+    lddt_struct_all = _lddt_all_heavy(pred_atoms_for_lddt, gt_atoms_for_lddt)
+    # 6d. Distogram-LDDT, point estimate on CB. Uses the same inclusion
+    # mask as 6b but the predicted distance is the expected distance
+    # from the distogram (which is bounded to [2.46, 21.54] Å; the
+    # 15 Å inclusion is well within that range so no clipping bias).
+    disto_inclusion = _lddt_inclusion_mask(
+        gt_d=gt_rep_d, gt_mask=gt_rep_mask,
+    )
+    lddt_disto_cb = _lddt_from_distance_matrices(
+        pred_d=expected, gt_d=gt_rep_d, pair_mask=disto_inclusion,
+    )
+    # 6e. Distogram-LDDT, probabilistic / "soft" on CB. Uses the same
+    # inclusion mask but scores each pair via the probability mass in
+    # the (gt - t, gt + t) bin window.
+    lddt_disto_cb_soft = _lddt_distogram_soft(
+        probs=derived.probs[:n, :n, :],
+        gt_d=gt_rep_d,
+        pair_mask=disto_inclusion,
+    )
+
     return _MetricResult(
         n_residues=n,
         mae_distogram_cb_angstrom=mae_disto,
@@ -622,6 +875,11 @@ def _compute_metrics(
         n_short_contacts=casp["n_short_contacts"],
         n_medium_contacts=casp["n_medium_contacts"],
         n_long_contacts=casp["n_long_contacts"],
+        lddt_structure_ca=lddt_struct_ca,
+        lddt_structure_cb=lddt_struct_cb,
+        lddt_structure_all_heavy=lddt_struct_all,
+        lddt_distogram_cb=lddt_disto_cb,
+        lddt_distogram_cb_soft=lddt_disto_cb_soft,
     )
 
 
@@ -687,15 +945,20 @@ def score(
                 n_short_contacts=m.n_short_contacts,
                 n_medium_contacts=m.n_medium_contacts,
                 n_long_contacts=m.n_long_contacts,
+                lddt_structure_ca=m.lddt_structure_ca,
+                lddt_structure_cb=m.lddt_structure_cb,
+                lddt_structure_all_heavy=m.lddt_structure_all_heavy,
+                lddt_distogram_cb=m.lddt_distogram_cb,
+                lddt_distogram_cb_soft=m.lddt_distogram_cb_soft,
             ))
             print(
                 f"{mode}/{stem}: n_res={m.n_residues} "
-                f"MAE_disto[in]={m.mae_distogram_cb_angstrom:.3f} "
-                f"MAE_disto[ct]={m.mae_distogram_cb_contact_angstrom:.3f} "
-                f"dRMSD[in]={m.drmsd_distogram_cb_angstrom:.3f} "
-                f"MAE_struct={m.mae_structure_ca_angstrom:.3f} "
                 f"RMSD_CA={m.rmsd_ca_angstrom:.3f} "
-                f"P_long_L={m.prec_long_L:.3f} P_long_L/5={m.prec_long_L_5:.3f}"
+                f"lDDT_CA={m.lddt_structure_ca:.3f} "
+                f"lDDT_CB={m.lddt_structure_cb:.3f} "
+                f"lDDT_all={m.lddt_structure_all_heavy:.3f} "
+                f"lDDT_disto={m.lddt_distogram_cb:.3f} "
+                f"lDDT_disto[soft]={m.lddt_distogram_cb_soft:.3f}"
             )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -729,6 +992,9 @@ def _format_csv_row(r, *, selected_as_best: int) -> list:
         _f(r.prec_medium_L), _f(r.prec_medium_L_2), _f(r.prec_medium_L_5),
         _f(r.prec_long_L), _f(r.prec_long_L_2), _f(r.prec_long_L_5),
         r.n_short_contacts, r.n_medium_contacts, r.n_long_contacts,
+        _f(r.lddt_structure_ca), _f(r.lddt_structure_cb),
+        _f(r.lddt_structure_all_heavy),
+        _f(r.lddt_distogram_cb), _f(r.lddt_distogram_cb_soft),
     ]
 
 
