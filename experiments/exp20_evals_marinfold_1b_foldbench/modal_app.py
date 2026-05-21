@@ -190,13 +190,22 @@ class MarinFoldWorker:
         if not force and out_path.exists():
             try:
                 with np.load(out_path) as data:
-                    if (
+                    shape_ok = (
                         "probs" in data.files
                         and data["probs"].shape == (seq.n_residues, seq.n_residues, _NUM_DISTANCE_BINS)
-                    ):
-                        return {"stem": stem, "status": "skipped", "n_residues": seq.n_residues}
+                    )
             except (OSError, ValueError):
-                pass  # corrupt; recompute
+                shape_ok = False
+            prov_path = out_dir / "provenance.json"
+            prov_model = None
+            if prov_path.exists():
+                try:
+                    prov_model = json.loads(prov_path.read_text()).get("model_nickname")
+                except (OSError, ValueError):
+                    prov_model = None
+            if shape_ok and prov_model == model_nickname:
+                return {"stem": stem, "status": "skipped", "n_residues": seq.n_residues}
+            # Model mismatch (or missing provenance) → recompute.
 
         t0 = time.time()
         probs = _predict_distogram(
@@ -323,7 +332,24 @@ def main(
         local_out = _HERE / "outputs"
         local_out.mkdir(parents=True, exist_ok=True)
         print(f"downloading outputs volume → {local_out} ...")
-        OUTPUTS_VOL.batch_download(local_out)
+        # modal.Volume has no client-side bulk download; walk the
+        # tree via iterdir() + read_file() (which streams chunks).
+        n_files = 0
+        for stem_entry in OUTPUTS_VOL.iterdir("/"):
+            # stem_entry.path is e.g. "/5sbj_A"; we expect a directory.
+            if stem_entry.type != modal.FileEntryType.DIRECTORY:
+                continue
+            stem_dir = local_out / Path(stem_entry.path).name
+            stem_dir.mkdir(parents=True, exist_ok=True)
+            for file_entry in OUTPUTS_VOL.iterdir(stem_entry.path):
+                if file_entry.type != modal.FileEntryType.FILE:
+                    continue
+                local_file = stem_dir / Path(file_entry.path).name
+                with local_file.open("wb") as fh:
+                    for chunk in OUTPUTS_VOL.read_file(file_entry.path):
+                        fh.write(chunk)
+                n_files += 1
+        print(f"downloaded {n_files} files into {local_out}/")
 
     print(f"done. {len([r for r in results if r.get('status') == 'ok'])} new, "
           f"{len([r for r in results if r.get('status') == 'skipped'])} skipped, "

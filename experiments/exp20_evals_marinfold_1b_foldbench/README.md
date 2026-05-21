@@ -142,15 +142,120 @@ protein), so the eval is partial-result-friendly per the issue's
   Protenix biological-assembly GT mmCIF.
 - `run_1b_eval.py` — local vLLM driver.
 - `modal_app.py` — Modal driver.
+- `download_outputs.py` — pull the Modal Volume back to local
+  `outputs/` (idempotent; used when `modal run` was detached).
 - `score_marinfold.py` — MarinFold-side per-protein scoring.
 - `score_comparison.py` — merge + hypothesis verdict.
 - `collect_timings.py` — aggregate `outputs/*/provenance.json` →
   `data/timings.csv`.
 - `plot_comparison.py` — 3-way per-protein + aggregate plots + the
-  length-vs-runtime plot.
+  length-vs-runtime plot + LDDT / prec-at-L swarm plots.
 - `tests/test_smoke.py` — bin scheme, contact mask, CIF parser.
 
 Zero-shot only — no seeded contacts, no hints.
+
+## Running this experiment
+
+Designed for re-runs with different checkpoints. Idempotency
+(local + Modal) is keyed on `(stem, n_residues, model_nickname)`
+— bumping `MODELS.yaml` to a new model automatically invalidates
+the old `distogram.npz` files (provenance JSON's `model_nickname`
+must match the requested one or the protein is recomputed).
+
+### Prerequisites
+
+- `uv` (Python toolchain).
+- `modal` CLI authenticated for the Modal run (`modal token current`
+  should resolve a workspace; we used `open-athena`).
+- A GPU on the local host if you want to use `run_1b_eval.py` (any
+  ≥24 GB card; an RTX A5000 is enough). Modal needs no local GPU.
+
+### One-time setup
+
+```bash
+cd experiments/exp20_evals_marinfold_1b_foldbench
+uv sync
+# Fetch Protenix scores + GT mmCIFs from the open-athena/MarinFold
+# HF bucket. The bucket API needs huggingface_hub>=1.5, which
+# conflicts with our vllm/transformers pins, so we run it in an
+# ephemeral env that is independent of the main exp20 venv.
+uv run --with "huggingface_hub>=1.5" python fetch_protenix_data.py
+```
+
+That populates `protenix_data/data/protenix-foldbench-monomers/`
+with `manifest.csv`, `scores.csv`, `scores_summary.csv`, and 100
+`gt/*.cif` files (~30 MB total).
+
+### Inference
+
+Pick **one** of local or Modal — both write to the same
+`outputs/<stem>/{distogram.npz, provenance.json}` layout so the
+downstream scoring code doesn't care which produced them.
+
+**Local (one machine, sequential):**
+
+```bash
+uv run python run_1b_eval.py                  # full 100 proteins
+uv run python run_1b_eval.py --limit 5        # smoke
+uv run python run_1b_eval.py --model 1B       # override MODELS.yaml nickname
+```
+
+**Modal (parallel H100s, recommended for full runs):**
+
+```bash
+# Smoke (3 proteins) — runs in the foreground, streams logs:
+uv run modal run modal_app.py --limit 3
+
+# Full run, detached (Modal keeps running even if your shell exits):
+uv run modal run --detach modal_app.py
+
+# Detached runs don't download outputs back; pull them when ready:
+uv run python download_outputs.py
+```
+
+Both drivers skip proteins whose `distogram.npz` matches the
+requested `model_nickname` already, so it's safe to re-run after a
+crash or a partial smoke.
+
+### Score + plot
+
+```bash
+uv run python score_marinfold.py     # writes data/marinfold_scores.csv
+uv run python collect_timings.py     # writes data/timings.csv
+uv run python score_comparison.py    # writes data/scores.csv + data/scores_summary.csv (incl. hypothesis verdict)
+uv run python plot_comparison.py     # writes plots/*.png
+```
+
+The plotting step depends on `protenix_data/` (already fetched
+above) for the structure-LDDT side of the 5-way swarm plot, and on
+`../exp12_data_protenix_foldbench_monomers/data/timings.csv` (from
+exp12) for the 3-way timing-vs-length plot. Both default paths;
+override via `--protenix-scores` / `--protenix-timings`.
+
+### Re-running with a new model
+
+1. Edit `MODELS.yaml` (or add a new entry with a different
+   nickname).
+2. Re-run any of the inference commands above — both local and
+   Modal will recompute proteins whose `provenance.json`
+   `model_nickname` doesn't match what you requested.
+3. The Modal outputs Volume (`marinfold-1b-foldbench-runs`) is
+   shared across runs. If you want a clean slate per checkpoint,
+   either delete the volume contents (`modal volume rm ...`) or
+   change the volume name in `modal_app.py:OUTPUTS_VOLUME_NAME`
+   before launching. The default behavior — overwrite per protein
+   on a new model — is what we usually want.
+4. Re-run the score + plot chain. CSVs and plots are regenerated
+   in place.
+
+### Smoke tests
+
+```bash
+uv run --extra test pytest tests/
+```
+
+Doesn't run the model — just checks bin midpoints, contact mask,
+the canonical-sequence reader, and the smoke distogram (if present).
 
 ## Success criteria
 
