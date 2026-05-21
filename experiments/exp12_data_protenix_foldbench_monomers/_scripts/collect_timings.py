@@ -1,4 +1,4 @@
-"""Pull per-(mode, stem) timings.json from the Modal output Volume
+"""Pull per-(mode, stem) ``timings.json`` from the Modal output Volume
 and aggregate into ``data/timings.csv``.
 
 Output schema mirrors exp20's ``data/timings.csv`` columns where they
@@ -20,7 +20,6 @@ in the KB range (timings.json files are ~700 bytes each).
 import csv
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -43,7 +42,7 @@ CSV_FIELDS = [
 ]
 
 
-def sync_timings_json(mode: str, stem: str, dest: Path) -> Path | None:
+def sync_timings_json(mode: str, stem: str, dest: Path) -> Path:
     """``modal volume get`` /outputs/{mode}/{stem}/timings.json to local."""
     target_dir = dest / mode / stem
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -52,9 +51,16 @@ def sync_timings_json(mode: str, stem: str, dest: Path) -> Path | None:
         "foldbench-protenix-runs", f"{mode}/{stem}/timings.json",
         str(target_dir / "timings.json"),
     ]
-    res = subprocess.run(cmd, capture_output=True, env=os.environ.copy())
+    res = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        env=os.environ.copy(),
+    )
     if res.returncode != 0:
-        return None
+        raise RuntimeError(
+            f"modal volume get failed for {mode}/{stem}: {res.stderr.strip() or res.stdout.strip()}"
+        )
     return target_dir / "timings.json"
 
 
@@ -64,7 +70,8 @@ def main() -> None:
         raise SystemExit(f"missing {stems_file} — did dispatch_timing.py run?")
     stems = [s.strip() for s in stems_file.read_text().splitlines() if s.strip()]
 
-    manifest = list(csv.DictReader(open("inputs/manifest.csv")))
+    with open("inputs/manifest.csv") as f:
+        manifest = list(csv.DictReader(f))
     by_stem = {r["stem"]: r for r in manifest}
 
     out_csv = Path("data/timings.csv")
@@ -74,11 +81,10 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="exp12_timings_") as scratch:
         scratch_dir = Path(scratch)
         for stem in stems:
+            if stem not in by_stem:
+                raise SystemExit(f"stem not in manifest: {stem}")
             for mode in ("single_seq", "msa"):
                 p = sync_timings_json(mode, stem, scratch_dir)
-                if p is None:
-                    print(f"WARN: no timings.json for {mode}/{stem}")
-                    continue
                 t = json.loads(p.read_text())
                 n = int(by_stem[stem]["n_residues"])
                 row = {
@@ -109,6 +115,11 @@ def main() -> None:
                     f"load={row['model_load_seconds']}s"
                 )
 
+    expected_rows = len(stems) * 2
+    if len(rows) != expected_rows:
+        raise SystemExit(
+            f"expected {expected_rows} timing rows for {len(stems)} stems, got {len(rows)}"
+        )
     # Sort for stable output: by mode then n_residues.
     rows.sort(key=lambda r: (r["mode"], r["n_residues"]))
     with out_csv.open("w", newline="") as f:
