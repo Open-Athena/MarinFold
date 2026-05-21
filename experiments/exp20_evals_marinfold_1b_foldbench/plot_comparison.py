@@ -272,6 +272,73 @@ def lddt_5way_swarm(
     plt.close(fig)
 
 
+def marinfold_vs_protenix_timing(
+    *,
+    marinfold_timings_csv: Path,
+    protenix_timings_csv: Path,
+    out_path: Path,
+) -> None:
+    """3-way per-protein wall-time vs sequence length.
+
+    Joins exp20's ``data/timings.csv`` (MarinFold 1B, 100 proteins,
+    zero-shot distogram pair sweep) with the Protenix timings CSV
+    from exp12 (PR #22 — 20 proteins, single_seq + msa). Both use
+    ``elapsed_seconds`` as the post-model-load inference time, so
+    the comparison is steady-state per-protein cost.
+
+    Each method has a different scaling profile:
+      - Protenix: ~fixed (trunk dominates), ~90 s/protein on H100.
+      - MarinFold: pair sweep is O(N²) so wall-time grows as N²
+        on log-log.
+
+    Both axes log scale; one marker per (protein, method).
+    """
+    if not protenix_timings_csv.exists():
+        print(f"skip 3-way timing plot: {protenix_timings_csv} not found.")
+        return
+    mf = pd.read_csv(marinfold_timings_csv)
+    px = pd.read_csv(protenix_timings_csv)
+    rows: list[dict] = []
+    for _, r in mf.iterrows():
+        rows.append({
+            "method": "marinfold_1b",
+            "n_residues": r["n_residues"],
+            "elapsed_seconds": r["elapsed_seconds"],
+            "gpu_name": r.get("gpu_name", ""),
+        })
+    for _, r in px.iterrows():
+        rows.append({
+            "method": f"protenix_{r['mode']}",
+            "n_residues": r["n_residues"],
+            "elapsed_seconds": r["elapsed_seconds"],
+            "gpu_name": r.get("gpu_name", ""),
+        })
+    df = pd.DataFrame(rows).dropna(subset=["elapsed_seconds", "n_residues"])
+
+    method_color = {
+        "marinfold_1b": "#d95f02",
+        "protenix_single_seq": "#7570b3",
+        "protenix_msa": "#1b9e77",
+    }
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    for method, color in method_color.items():
+        sub = df[df["method"] == method]
+        ax.scatter(
+            sub["n_residues"], sub["elapsed_seconds"],
+            color=color, alpha=0.7, s=22, label=f"{method} (n={len(sub)})",
+        )
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("sequence length (residues)")
+    ax.set_ylabel("inference wall-time (seconds, post model load)")
+    ax.set_title("Per-protein inference cost vs sequence length (H100)")
+    ax.grid(which="both", alpha=0.3)
+    ax.legend(fontsize=9, loc="best")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=130)
+    plt.close(fig)
+
+
 def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
     """Swarm plot of CASP top-L contact precision per (method, sep class).
 
@@ -332,7 +399,8 @@ def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
 
 
 def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None,
-           protenix_scores_csv: Path | None = None) -> None:
+           protenix_scores_csv: Path | None = None,
+           protenix_timings_csv: Path | None = None) -> None:
     df = pd.read_csv(scores_csv)
     _ensure_outdir(out_dir)
     per_protein_bar(
@@ -368,6 +436,12 @@ def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None,
         merged_scores_csv=scores_csv,
         out_path=out_dir / "prec_L_swarm.png",
     )
+    if timings_csv is not None and protenix_timings_csv is not None:
+        marinfold_vs_protenix_timing(
+            marinfold_timings_csv=timings_csv,
+            protenix_timings_csv=protenix_timings_csv,
+            out_path=out_dir / "timing_3way_vs_sequence_length.png",
+        )
     print(f"Wrote plots to {out_dir}/")
 
 
@@ -382,9 +456,15 @@ def main() -> None:
         default=here / "protenix_data" / "data" / "protenix-foldbench-monomers" / "scores.csv",
         help="Source for Protenix structure-LDDT (5-way swarm plot).",
     )
+    parser.add_argument(
+        "--protenix-timings", type=Path,
+        default=here.parent / "exp12_data_protenix_foldbench_monomers" / "data" / "timings.csv",
+        help="Source for Protenix timings (3-way timing-vs-length plot).",
+    )
     args = parser.parse_args()
     render(scores_csv=args.scores, out_dir=args.out, timings_csv=args.timings,
-           protenix_scores_csv=args.protenix_scores)
+           protenix_scores_csv=args.protenix_scores,
+           protenix_timings_csv=args.protenix_timings)
 
 
 if __name__ == "__main__":
