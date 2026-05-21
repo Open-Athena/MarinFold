@@ -279,6 +279,34 @@ class ProtenixWorker:
 
     @modal.enter()
     def setup(self) -> None:
+        # Capture worker-machine metadata once per container; reused as
+        # CSV columns by the timing dispatcher. Match exp20's
+        # data/timings.csv schema so the two experiments' CSVs join
+        # cleanly on (stem, n_residues).
+        import platform
+        import socket
+        meta: dict[str, str | float | int | None] = {
+            "hostname": socket.gethostname(),
+            "platform": platform.platform(),
+        }
+        try:
+            import torch  # noqa: PLC0415
+            meta["torch_version"] = torch.__version__
+            if torch.cuda.is_available():
+                idx = torch.cuda.current_device()
+                props = torch.cuda.get_device_properties(idx)
+                meta["gpu_name"] = props.name
+                meta["gpu_total_memory_gb"] = round(props.total_memory / 1e9, 2)
+                meta["gpu_compute_capability"] = f"{props.major}.{props.minor}"
+            else:
+                meta["gpu_name"] = None
+                meta["gpu_total_memory_gb"] = None
+                meta["gpu_compute_capability"] = None
+        except Exception as e:  # noqa: BLE001
+            meta["torch_version"] = f"<unavailable: {e!r}>"
+        self.worker_meta = meta
+        print(f"worker meta: {meta}")
+
         # Lay out PROTENIX_ROOT_DIR the way Protenix expects:
         #   - checkpoint/protenix-v2.pt        -> /weights/checkpoint/protenix-v2.pt
         #   - common/components.cif            -> /weights/ccd_cache/components.v20240608.cif
@@ -331,13 +359,21 @@ class ProtenixWorker:
         seeds: list[int],
         n_sample: int,
         n_cycle: int,
+        force_run: bool = False,
     ) -> dict:
         """Run Protenix v2 on one (protein, mode); persist outputs to /outputs.
+
+        If ``force_run`` is True, bypass the idempotency check (the
+        existing per-stem outputs are overwritten, in-place). Useful
+        when re-running a curated subset for timing measurements
+        without having to delete the corresponding output dir first.
 
         Returns a small metadata dict with timing + paths produced.
         """
         if mode not in ("single_seq", "msa"):
             raise ValueError(f"unknown mode {mode!r}")
+
+        predict_one_start = time.time()
 
         # Idempotency check: only skip when every seed has the full
         # expected payload. A partial seed (e.g. distogram + sample_0
@@ -351,7 +387,7 @@ class ProtenixWorker:
             if not _seed_outputs_complete(seed_dir, stem=stem, n_sample=n_sample):
                 all_seeds_done = False
                 break
-        if all_seeds_done:
+        if all_seeds_done and not force_run:
             print(f"[{mode}/{stem}] already complete on Volume; skipping.")
             return {
                 "stem": stem, "mode": mode, "seeds": list(seeds),
@@ -416,8 +452,11 @@ class ProtenixWorker:
         cfg = parse_configs(configs=base2, arg_str=arg_str, fill_required_with_null=True)
         cfg = update_gpu_compatible_configs(cfg)
 
-        # 3. Construct the runner (loads weights).
+        # 3. Construct the runner (loads weights). Time it separately
+        #    so timings.csv can match exp20's model_load_seconds column.
+        model_load_start = time.time()
         runner = InferenceRunner(cfg)
+        model_load_seconds = time.time() - model_load_start
 
         # 4. Attach the distogram-capture hook.
         from distogram_hook import DistogramCapture
@@ -431,10 +470,12 @@ class ProtenixWorker:
         #    DistogramCapture to know which seed is active for each
         #    forward. The cleanest way is to wrap the seed loop
         #    ourselves rather than calling infer_predict directly.
+        inference_start = time.time()
         try:
             self._run_seed_loop(runner, cfg, capture=capture, stem=stem)
         finally:
             handle.remove()
+        inference_seconds = time.time() - inference_start
 
         # 6. Copy outputs from scratch into the persistent /outputs Volume.
         # Protenix lays them out as:
@@ -463,6 +504,33 @@ class ProtenixWorker:
             dist_src = capture_out / f"seed_{seed}" / f"{stem}_distogram.npz"
             if dist_src.exists():
                 shutil.copy2(dist_src, dst_seed_dir / f"{stem}_distogram.npz")
+
+        # 7. Write a per-(stem, mode) timings.json next to the seed
+        # directories. The schema mirrors exp20's data/timings.csv
+        # column names where they apply (elapsed_seconds, model_load_seconds,
+        # gpu_name, etc.) so downstream cross-experiment joins are trivial.
+        # Per-protein totals are split into:
+        #   model_load_seconds — runner construction time (excluded from elapsed)
+        #   elapsed_seconds    — pure inference + per-seed dump (matches exp20)
+        #   total_seconds      — total predict_one wall time including
+        #                        idempotency check, MSA-path splice, scratch
+        #                        setup, and the volume copy at the end
+        from datetime import datetime, timezone
+        timings = {
+            "stem": stem,
+            "mode": mode,
+            "n_seeds": len(seeds),
+            "n_samples_per_seed": n_sample,
+            "n_cycle": n_cycle,
+            "model_load_seconds": round(model_load_seconds, 4),
+            "elapsed_seconds": round(inference_seconds, 4),
+            "total_seconds": round(time.time() - predict_one_start, 4),
+            "model_nickname": "protenix-v2",
+            "runner_tag": "modal",
+            "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            **{k: v for k, v in self.worker_meta.items()},
+        }
+        (out_root / "timings.json").write_text(json.dumps(timings, indent=2))
         OUTPUTS_VOL.commit()
         shutil.rmtree(scratch, ignore_errors=True)
         return {
@@ -471,6 +539,9 @@ class ProtenixWorker:
             "seeds": list(seeds),
             "n_sample": n_sample,
             "n_distograms_written": capture.n_writes,
+            "model_load_seconds": round(model_load_seconds, 4),
+            "elapsed_seconds": round(inference_seconds, 4),
+            "total_seconds": round(time.time() - predict_one_start, 4),
             "output_dir": str(out_root),
         }
 
