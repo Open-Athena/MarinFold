@@ -1,0 +1,21 @@
+# Pulled from HF (Protenix scores + GT CIFs + manifest). Kept out of
+# git per AGENTS.md — small artifacts go in data/, large ones to HF.
+protenix_data/
+
+# Per-protein MarinFold 1B distograms (.npz). Each is ~N*N*64*4 bytes;
+# the 760 aa protein is ~140 MB. We push these to HF after a successful
+# run; only the score CSVs land in git.
+outputs/
+outputs_modal/
+
+# Scratch CSVs from local-vs-Modal smoke comparison.
+data/marinfold_scores_modal.csv
+
+# Local vLLM cache + the cloned 1B model snapshot.
+.model_cache/
+
+# Stray pycache.
+__pycache__/
+*.pyc
+.venv/
+uv.lock
