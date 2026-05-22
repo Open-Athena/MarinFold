@@ -13,7 +13,7 @@ marinfold/
 │   ├── __init__.py                       # public API re-exports
 │   ├── cli.py                            # `marinfold infer / evaluate`
 │   ├── registry.py                       # MODELS.yaml: nickname → local path, default model
-│   ├── MODELS.yaml                       # packaged copy (matched against repo root by tests)
+│   ├── MODELS.yaml                       # model registry: nickname -> model path
 │   ├── inference/                        # Backend protocol + three backends
 │   │   ├── core.py
 │   │   ├── _vllm.py
@@ -79,7 +79,7 @@ flag access.
 `--model` (or the `model=` arg to `load_backend`) accepts:
 
 1. A local directory (path that exists on disk). Used as-is.
-2. A nickname listed in repo-root `MODELS.yaml`. The matching HF
+2. A nickname listed in `marinfold/MODELS.yaml`. The matching HF
    subfolder is downloaded via `huggingface_hub.snapshot_download`.
 
 Bare HF repo ids are not accepted — register the model in
@@ -91,10 +91,10 @@ known models small, named, and discoverable.
 1. The path named by `MARINFOLD_MODELS_YAML`.
 2. Walking up from `os.getcwd()`.
 3. Walking up from this package's location (covers the normal
-   editable-install / repo-checkout case even when cwd is elsewhere).
+   installed-package / editable-install case even when cwd is elsewhere).
 
 ## See also
 
 - [`../experiments/`](../experiments/) — in-flight experiments,
   including pre-graduation document-structure impls.
-- [`../MODELS.yaml`](../MODELS.yaml) — registered trained models.
+- [`marinfold/MODELS.yaml`](./marinfold/MODELS.yaml) — registered trained models.

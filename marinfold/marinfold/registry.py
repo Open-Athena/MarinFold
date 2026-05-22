@@ -6,7 +6,7 @@
 ``--model`` (or the ``model=`` arg to :func:`load_backend`) accepts:
 
 1. A local directory that exists on disk → used as-is.
-2. A nickname listed in repo-root ``MODELS.yaml`` → the matching HF
+2. A nickname listed in ``MODELS.yaml`` → the matching HF
    URL is parsed and the relevant subfolder/prefix is downloaded.
    Two URL shapes are supported: regular model/dataset repos
    (``https://huggingface.co/<org>/<repo>/tree/<rev>/<subfolder>``)
@@ -25,8 +25,8 @@ produced which eval number.
 1. The path named by ``MARINFOLD_MODELS_YAML``.
 2. Walking up from ``os.getcwd()``.
 3. Walking up from this package's location, which covers the normal
-   editable-install / repo-checkout case even when the caller's cwd is
-   elsewhere.
+   installed-package / editable-install case even when the caller's cwd
+   is elsewhere.
 """
 
 import os
@@ -218,7 +218,7 @@ def resolve_model(spec: str | None) -> Path:
 
     Args:
         spec: Either a path to a local directory (must exist), a
-            nickname listed in repo-root ``MODELS.yaml``, or
+            nickname listed in ``MODELS.yaml``, or
             ``None`` to use the entry marked ``default: true``.
 
     Returns:

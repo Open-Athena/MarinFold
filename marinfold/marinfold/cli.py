@@ -10,7 +10,7 @@ Two subcommands::
     marinfold evaluate --backend mlx --input /path/to/pdbs/ \
         --out preds.json --metrics-out metrics.json
 
-Dispatch is driven by repo-root ``MODELS.yaml``:
+Dispatch is driven by packaged ``MODELS.yaml``:
 
 1. ``--model <nickname>`` (or omitted → the entry with ``default: true``)
    resolves to a :class:`marinfold.ModelEntry`.
