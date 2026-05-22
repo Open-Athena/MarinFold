@@ -56,6 +56,12 @@ environments = [
 [tool.hatch.build.targets.wheel]
 packages = ["marinfold"]
 
+# Ship the repo-root MODELS.yaml inside the package so wheel-installed
+# users get the model registry without needing the repo on disk. Single
+# source of truth lives at the repo root; the wheel build copies it in.
+[tool.hatch.build.targets.wheel.force-include]
+"../MODELS.yaml" = "marinfold/MODELS.yaml"
+
 [tool.pytest.ini_options]
 markers = [
     "network: tests that require internet (e.g. byte-identity check against the published tokenizer on HF Hub). Skip with `pytest -m 'not network'`.",

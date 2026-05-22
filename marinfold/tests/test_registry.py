@@ -17,23 +17,20 @@ from marinfold.registry import (
 )
 
 
-def test_locate_models_yaml_falls_back_to_package_tree(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Nickname resolution should not depend on the caller's cwd being in-repo."""
+def test_locate_models_yaml_works_from_arbitrary_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Nickname resolution should not depend on the caller's cwd being in-repo.
+
+    The locator walks up from the package install location as a fallback,
+    so it finds MODELS.yaml either at the repo root (editable install) or
+    bundled inside the package (wheel install).
+    """
     monkeypatch.delenv("MARINFOLD_MODELS_YAML", raising=False)
     monkeypatch.chdir(Path("/tmp"))
 
     yaml_path = _locate_models_yaml()
 
     assert yaml_path.name == "MODELS.yaml"
-    assert yaml_path == Path(registry.__file__).resolve().with_name("MODELS.yaml")
-
-
-def test_packaged_models_yaml_matches_repo_copy() -> None:
-    packaged = Path(registry.__file__).resolve().with_name("MODELS.yaml")
-    repo_copy = Path(__file__).resolve().parents[2] / "MODELS.yaml"
-
-    assert packaged.is_file()
-    assert packaged.read_text() == repo_copy.read_text()
+    assert yaml_path.is_file()
 
 
 def test_repo_models_yaml_has_exactly_one_default() -> None:
