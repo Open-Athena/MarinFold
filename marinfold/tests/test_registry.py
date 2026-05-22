@@ -4,6 +4,7 @@
 import marinfold.registry as registry
 import textwrap
 from pathlib import Path
+from typing import BinaryIO
 
 import pytest
 
@@ -93,10 +94,10 @@ def test_parse_hf_url_regular_repo_no_tree() -> None:
 
 def test_parse_hf_url_bucket() -> None:
     loc = _parse_hf_url(
-        "https://huggingface.co/buckets/open-athena/MarinFold/tree/models/protein-contacts-1_5b-distance-masked-70f8f5.49999"
+        "https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/protein-contacts-1_5b-distance-masked-70f8f5/step-49999"
     )
     assert loc.repo_id == "open-athena/MarinFold"
-    assert loc.subfolder == "models/protein-contacts-1_5b-distance-masked-70f8f5.49999"
+    assert loc.subfolder == "checkpoints/protein-contacts-1_5b-distance-masked-70f8f5/step-49999"
     assert loc.is_bucket is True
 
 
@@ -110,6 +111,96 @@ def test_parse_hf_url_bucket_no_tree() -> None:
 def test_parse_hf_url_rejects_garbage() -> None:
     with pytest.raises(ValueError, match="Could not parse HuggingFace URL"):
         _parse_hf_url("not a url")
+
+
+def test_download_bucket_prefix_uses_http_api(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import huggingface_hub.constants as hf_constants
+    import huggingface_hub.file_download as hf_file_download
+    import huggingface_hub.utils as hf_utils
+
+    location = _parse_hf_url(
+        "https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/protein-contacts-1_5b-distance-masked-70f8f5/step-49999"
+    )
+    assert location.is_bucket is True
+
+    expected_dir = (
+        tmp_path
+        / "hf-cache"
+        / "buckets"
+        / "open-athena/MarinFold"
+        / "checkpoints/protein-contacts-1_5b-distance-masked-70f8f5/step-49999"
+    )
+    download_url = (
+        "https://example.test/buckets/open-athena/MarinFold/resolve/"
+        "checkpoints/protein-contacts-1_5b-distance-masked-70f8f5/step-49999/config.json"
+    )
+    tree_url = (
+        "https://example.test/api/buckets/open-athena/MarinFold/tree/"
+        "checkpoints%2Fprotein-contacts-1_5b-distance-masked-70f8f5%2Fstep-49999"
+    )
+    seen: dict[str, object] = {}
+
+    class _FakeResponse:
+        def json(self) -> list[dict[str, object]]:
+            return [
+                {
+                    "type": "file",
+                    "path": (
+                        "checkpoints/protein-contacts-1_5b-distance-masked-"
+                        "70f8f5/step-49999/config.json"
+                    ),
+                    "size": 5,
+                }
+            ]
+
+    class _FakeSession:
+        def get(
+            self,
+            url: str,
+            *,
+            params: dict[str, object] | None = None,
+            headers: dict[str, str] | None = None,
+        ) -> _FakeResponse:
+            seen["tree_url"] = url
+            seen["tree_params"] = params
+            seen["tree_headers"] = headers
+            return _FakeResponse()
+
+    def _fake_http_get(
+        url: str,
+        temp_file: BinaryIO,
+        *,
+        headers: dict[str, str] | None = None,
+        expected_size: int | None = None,
+        displayed_filename: str | None = None,
+        **_: object,
+    ) -> None:
+        seen["download_url"] = url
+        seen["download_headers"] = headers
+        seen["expected_size"] = expected_size
+        seen["displayed_filename"] = displayed_filename
+        temp_file.write(b"hello")
+
+    monkeypatch.setattr(hf_constants, "ENDPOINT", "https://example.test")
+    monkeypatch.setattr(hf_constants, "HF_HUB_CACHE", str(tmp_path / "hf-cache"))
+    monkeypatch.setattr(
+        hf_utils, "build_hf_headers", lambda **_: {"authorization": "Bearer test"}
+    )
+    monkeypatch.setattr(hf_utils, "get_session", lambda: _FakeSession())
+    monkeypatch.setattr(hf_utils, "hf_raise_for_status", lambda response: None)
+    monkeypatch.setattr(hf_file_download, "http_get", _fake_http_get)
+
+    resolved = registry._download_bucket_prefix(location)
+
+    assert resolved == expected_dir.resolve()
+    assert seen["tree_url"] == tree_url
+    assert seen["tree_params"] == {"recursive": "true"}
+    assert seen["download_url"] == download_url
+    assert seen["expected_size"] == 5
+    assert seen["displayed_filename"] == "config.json"
+    assert (expected_dir / "config.json").read_bytes() == b"hello"
 
 
 def test_no_default_means_default_lookup_errors(

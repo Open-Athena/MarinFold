@@ -12,8 +12,7 @@
    (``https://huggingface.co/<org>/<repo>/tree/<rev>/<subfolder>``)
    are fetched via ``huggingface_hub.snapshot_download``; storage
    buckets (``https://huggingface.co/buckets/<org>/<bucket>/tree/<prefix>``)
-   are mirrored via ``HfApi.list_bucket_tree`` +
-   ``download_bucket_files``.
+   are mirrored via the bucket HTTP API.
 3. ``None`` → the entry marked ``default: true`` in ``MODELS.yaml``
    is used.
 
@@ -34,7 +33,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from urllib.parse import quote
 
 
 _MODELS_YAML_FILENAME = "MODELS.yaml"
@@ -92,6 +91,14 @@ class _HFLocation:
     revision: str
     subfolder: str | None
     is_bucket: bool = False
+
+
+@dataclass(frozen=True)
+class _BucketFileEntry:
+    """One file listed under a storage-bucket prefix."""
+
+    path: str
+    size: int
 
 
 def list_model_entries() -> list[ModelEntry]:
@@ -345,20 +352,14 @@ def _download_bucket_prefix(location: _HFLocation) -> Path:
     """Mirror a bucket prefix into the local HF cache and return its path.
 
     HF storage buckets are flat (no git revisions), so they go through a
-    separate API (``HfApi.list_bucket_tree`` + ``download_bucket_files``)
-    instead of ``snapshot_download``. Files are mirrored to
+    separate HTTP API instead of ``snapshot_download``. Files are mirrored to
     ``<HF_HUB_CACHE>/buckets/<repo_id>/<remote-path>``; an entry is
     re-downloaded only if it is missing locally or its size does not
     match the bucket's metadata.
     """
-    from huggingface_hub import BucketFile, HfApi
     from huggingface_hub.constants import HF_HUB_CACHE
 
-    api = HfApi()
-    entries = api.list_bucket_tree(
-        location.repo_id, prefix=location.subfolder, recursive=True
-    )
-    files = [e for e in entries if isinstance(e, BucketFile)]
+    files = _list_bucket_files(location.repo_id, location.subfolder)
     if not files:
         raise FileNotFoundError(
             f"No files found in bucket {location.repo_id!r} under prefix "
@@ -366,20 +367,96 @@ def _download_bucket_prefix(location: _HFLocation) -> Path:
         )
 
     local_root = Path(HF_HUB_CACHE) / "buckets" / location.repo_id
-    to_download: list[tuple[BucketFile, Path]] = []
-    for f in files:
-        local_path = local_root / f.path
-        if local_path.is_file() and local_path.stat().st_size == f.size:
+    for file_entry in files:
+        local_path = local_root / file_entry.path
+        if local_path.is_file() and local_path.stat().st_size == file_entry.size:
             continue
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-        to_download.append((f, local_path))
-    if to_download:
-        api.download_bucket_files(location.repo_id, to_download)
+        _download_bucket_file(location.repo_id, file_entry, local_path)
 
-    result = local_root if location.subfolder is None else local_root / location.subfolder
+    result = (
+        local_root
+        if location.subfolder is None
+        else local_root / location.subfolder
+    )
     if not result.is_dir():
         raise FileNotFoundError(
             f"Expected bucket prefix at {result} after download, but it "
             f"does not exist."
         )
     return result.resolve()
+
+
+def _list_bucket_files(
+    repo_id: str, prefix: str | None
+) -> list[_BucketFileEntry]:
+    """List all files under a storage-bucket prefix."""
+    from huggingface_hub import constants
+    from huggingface_hub.utils import (
+        build_hf_headers,
+        get_session,
+        hf_raise_for_status,
+    )
+
+    tree_url = _bucket_tree_url(constants.ENDPOINT, repo_id, prefix)
+    response = get_session().get(
+        tree_url,
+        params={"recursive": "true"},
+        headers=build_hf_headers(),
+    )
+    hf_raise_for_status(response)
+    entries = response.json()
+    if not isinstance(entries, list):
+        raise ValueError(
+            f"Bucket tree response for {repo_id!r} was not a list: "
+            f"{type(entries).__name__}."
+        )
+
+    files: list[_BucketFileEntry] = []
+    for item in entries:
+        if not isinstance(item, dict) or item.get("type") != "file":
+            continue
+        path = item.get("path")
+        size = item.get("size")
+        if not isinstance(path, str) or not isinstance(size, int):
+            raise ValueError(
+                f"Bucket tree response for {repo_id!r} contained an "
+                f"invalid file entry: {item!r}."
+            )
+        files.append(_BucketFileEntry(path=path, size=size))
+    return files
+
+
+def _download_bucket_file(
+    repo_id: str, file_entry: _BucketFileEntry, local_path: Path
+) -> None:
+    """Download one bucket file to its mirrored cache location."""
+    from huggingface_hub import constants
+    from huggingface_hub.file_download import http_get
+    from huggingface_hub.utils import build_hf_headers
+
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = local_path.with_name(f"{local_path.name}.incomplete")
+    try:
+        with temp_path.open("wb") as fh:
+            http_get(
+                _bucket_resolve_url(constants.ENDPOINT, repo_id, file_entry.path),
+                fh,
+                headers=build_hf_headers(),
+                expected_size=file_entry.size,
+                displayed_filename=local_path.name,
+            )
+    except Exception:
+        temp_path.unlink(missing_ok=True)
+        raise
+    temp_path.replace(local_path)
+
+
+def _bucket_tree_url(endpoint: str, repo_id: str, prefix: str | None) -> str:
+    """Build the bucket-tree API URL for a prefix."""
+    encoded_prefix = f"/{quote(prefix, safe='')}" if prefix else ""
+    return f"{endpoint}/api/buckets/{repo_id}/tree{encoded_prefix}"
+
+
+def _bucket_resolve_url(endpoint: str, repo_id: str, path: str) -> str:
+    """Build the public resolve URL for one file in a bucket."""
+    return f"{endpoint}/buckets/{repo_id}/resolve/{quote(path, safe='/')}"
