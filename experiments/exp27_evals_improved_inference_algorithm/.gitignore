@@ -1,0 +1,14 @@
+# Pulled from HF (Protenix scores + GT CIFs + manifest). Kept out of
+# git per AGENTS.md — small artifacts go in data/, large ones to HF.
+protenix_data/
+
+# Per-protein distograms (.npz). Each is ~N*N*64*4 bytes; the 738 aa
+# train protein is ~140 MB. Only the score CSVs and the
+# experiments.tsv land in git.
+outputs/
+
+# Stray local caches.
+__pycache__/
+*.pyc
+.venv/
+uv.lock

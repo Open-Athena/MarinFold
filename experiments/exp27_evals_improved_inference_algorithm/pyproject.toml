@@ -1,0 +1,49 @@
+[project]
+name = "exp27-evals-improved-inference-algorithm"
+version = "0.1.0"
+description = "Improved inference-time algorithm for MarinFold 1B on FoldBench monomers."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # exp1 contributes parse + vocab modules (path import). The
+    # path dep here ensures uv resolves its transitive deps
+    # (gemmi, numpy, pyarrow, marinfold-document-structures).
+    "exp1-document-structures-contacts-and-distances-v1",
+    # huggingface_hub for snapshot_download of the 1B model checkpoint.
+    # Held to <1 because transformers 4.x caps it there. The bucket-side
+    # fetcher (fetch_protenix_data.py) runs in its own ephemeral env via
+    # `uv run --with huggingface_hub==1.5.0 …` so we don't have to break
+    # the transformers pin to get bucket API support.
+    "huggingface_hub>=0.24,<1",
+    "numpy",
+    "pandas>=2.2",
+    "pyyaml>=6",  # read MODELS.yaml
+    # vllm 0.10+ needs CUDA 12.6 in its torch wheel; this host runs CUDA 12.2.
+    # Pin vllm 0.7.x and the matching torch +cu121 wheel (same pins exp20 settled on).
+    "vllm>=0.7,<0.8",
+    "torch==2.5.1+cu121",
+    # vllm 0.7.x predates transformers 5.x.
+    "transformers>=4.45,<5",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+exp1-document-structures-contacts-and-distances-v1 = { path = "../exp1_document_structures_contacts_and_distances_v1" }
+torch = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
