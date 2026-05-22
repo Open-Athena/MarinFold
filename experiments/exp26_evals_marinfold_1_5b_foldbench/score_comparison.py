@@ -1,33 +1,37 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Merge MarinFold + Protenix scores into a single 3-way comparison CSV.
+"""Merge MarinFold 1.5B + 1B + Protenix scores into a 4-way comparison CSV.
 
 Inputs:
-  - ``data/marinfold_scores.csv`` (produced by ``score_marinfold.py``):
-    one row per protein, ``method == "marinfold_1b"``.
+  - ``data/marinfold_scores.csv`` (produced by ``score_marinfold.py``
+    on this experiment's 1.5B outputs): one row per protein,
+    ``method == "marinfold_1_5b"``.
+  - ``../exp20_evals_marinfold_1b_foldbench/data/scores.csv`` (already
+    a 3-way exp20 CSV); we pull the ``marinfold_1b`` rows directly
+    from it so the 1B numbers stay byte-identical to PR #21's
+    published baseline — no re-scoring.
   - ``protenix_data/.../scores.csv`` (downloaded by ``fetch_protenix_data.py``):
     two rows per protein, ``mode ∈ {single_seq, msa}`` — exp12's full
-    schema, but for the merge we keep only the columns that overlap
-    with MarinFold (the distogram-side metrics).
+    schema; we project to our column set.
 
 Output:
-  - ``data/scores.csv`` — 300 rows when all 100 proteins are scored:
-    100 × ``marinfold_1b`` + 100 × ``protenix_single_seq`` + 100 ×
-    ``protenix_msa``. Column schema matches ``score_marinfold.py``.
-  - ``data/scores_summary.csv`` — per-method aggregates
-    (mean / median / min / max) for each headline metric.
-  - ``data/hypothesis_verdict.json`` — machine-readable verdict details.
+  - ``data/scores.csv`` — 400 rows when all 100 proteins are scored:
+    100 × each of ``marinfold_1_5b``, ``marinfold_1b``,
+    ``protenix_single_seq``, ``protenix_msa``.
+  - ``data/scores_summary.csv`` — per-method aggregates.
+  - ``data/hypothesis_verdict.json`` — machine-readable verdict.
 
-Hypothesis verdict (from issue #20 success criteria):
+Hypothesis verdict (from issue #26 success criteria):
 
-    The hypothesis is supported iff ``marinfold_1b`` sits strictly
-    between ``protenix_single_seq`` and ``protenix_msa`` on the
-    aggregate (mean) of at least 2 of the 3 headline metrics:
+    The hypothesis is supported iff ``marinfold_1_5b`` beats
+    ``marinfold_1b`` on the aggregate (mean) of at least 3 of the
+    4 headline metrics:
 
       - ``lddt_distogram_cb`` (higher is better)
       - ``mae_distogram_cb_angstrom`` (lower is better)
       - ``drmsd_distogram_cb_angstrom`` (lower is better)
+      - ``prec_long_L`` (higher is better)
 """
 
 import argparse
@@ -50,12 +54,21 @@ _OUR_COLUMNS = [
     "lddt_distogram_cb", "lddt_distogram_cb_soft",
 ]
 
-# Headline metrics for the hypothesis check (issue #20 success criteria).
-# Direction is "lower is better" for MAE/dRMSD, "higher is better" for LDDT.
+# Headline metrics for the hypothesis check (issue #26 success criteria).
+# Direction is "lower is better" for MAE/dRMSD, "higher is better" for
+# LDDT and the long-range contact precision @ L.
 _HEADLINE = (
     ("lddt_distogram_cb", "higher"),
     ("mae_distogram_cb_angstrom", "lower"),
     ("drmsd_distogram_cb_angstrom", "lower"),
+    ("prec_long_L", "higher"),
+)
+
+_METHODS = (
+    "marinfold_1_5b",
+    "marinfold_1b",
+    "protenix_single_seq",
+    "protenix_msa",
 )
 
 
@@ -77,15 +90,41 @@ def _format_summary_value(value: object) -> object:
     return value
 
 
-def _load_marinfold_rows(csv_path: Path) -> list[dict]:
+def _load_marinfold_rows(csv_path: Path, expected_method: str) -> list[dict]:
+    """Load this experiment's MarinFold scores CSV.
+
+    ``expected_method`` is enforced to catch the easy mistake of
+    pointing at the wrong file (e.g. 1B's CSV when running the 1.5B
+    pipeline).
+    """
     with csv_path.open() as f:
         rows = list(csv.DictReader(f))
     if not rows:
         return []
-    if rows[0].get("method") != "marinfold_1b":
-        # Cheap sanity check on the input.
-        raise ValueError(f"{csv_path}: expected method=marinfold_1b, got {rows[0].get('method')!r}")
+    if rows[0].get("method") != expected_method:
+        raise ValueError(
+            f"{csv_path}: expected method={expected_method!r}, "
+            f"got {rows[0].get('method')!r}"
+        )
     return rows
+
+
+def _load_exp20_1b_rows(csv_path: Path) -> list[dict]:
+    """Pull ``marinfold_1b`` rows out of exp20's 3-way scores.csv.
+
+    exp20's scores.csv is itself a merged CSV with three methods
+    interleaved. We just filter to the 1B rows so the numbers come
+    in byte-identical to PR #21 (no re-scoring of 1B).
+    """
+    with csv_path.open() as f:
+        rows = list(csv.DictReader(f))
+    one_b = [r for r in rows if r.get("method") == "marinfold_1b"]
+    if not one_b:
+        raise ValueError(
+            f"{csv_path}: no rows with method=marinfold_1b "
+            f"(found methods: {sorted({r['method'] for r in rows})})"
+        )
+    return one_b
 
 
 def _load_protenix_rows(csv_path: Path) -> list[dict]:
@@ -161,58 +200,44 @@ def _aggregate_for_method(rows: list[dict], method: str) -> dict[str, object]:
 
 
 def _hypothesis_verdict(summary_rows: list[dict]) -> dict[str, object]:
-    """Decide whether 1B lands between protenix_single_seq and protenix_msa.
+    """Decide whether 1.5B beats 1B on >=3 of 4 headline metrics.
 
-    Per issue #20: hypothesis is supported iff the aggregate mean of
-    ``marinfold_1b`` is strictly between the two Protenix means on at
-    least 2 of the 3 headline metrics, in the direction that says
-    "1B beats single-seq but loses to MSA".
+    Per issue #26: hypothesis is supported iff the aggregate (mean)
+    of ``marinfold_1_5b`` is strictly better than ``marinfold_1b``
+    on at least 3 of the 4 headline metrics (in each metric's
+    "better" direction).
     """
     by_method = {r["method"]: r for r in summary_rows}
-    if "marinfold_1b" not in by_method or "protenix_single_seq" not in by_method or "protenix_msa" not in by_method:
+    if "marinfold_1_5b" not in by_method or "marinfold_1b" not in by_method:
         return {
             "verdict": "incomplete",
             "n_metrics_supporting": 0,
             "metrics_supporting": [],
             "metrics_refuting": [],
-            "details": ["missing one or more methods"],
+            "details": ["missing 1.5B or 1B summary row"],
         }
 
     supporting: list[str] = []
     refuting: list[str] = []
     details: list[str] = []
     for col, direction in _HEADLINE:
+        m15 = by_method["marinfold_1_5b"][f"{col}_mean"]
         m1b = by_method["marinfold_1b"][f"{col}_mean"]
-        mss = by_method["protenix_single_seq"][f"{col}_mean"]
-        mms = by_method["protenix_msa"][f"{col}_mean"]
-        if any(v != v for v in (m1b, mss, mms)):  # NaN check
+        if any(v != v for v in (m15, m1b)):  # NaN check
             details.append(f"{col}: NaN in means; skipped.")
             continue
-        if direction == "higher":
-            # higher = better. 1B beats SS iff m1b > mss; loses to MSA iff m1b < mms.
-            ok = mss < m1b < mms
-        else:
-            # lower = better. 1B beats SS iff m1b < mss; loses to MSA iff m1b > mms.
-            ok = mms < m1b < mss
-        actual_order = ", ".join(
-            f"{name}={value:.4f}"
-            for name, value in sorted(
-                (
-                    ("marinfold_1b", m1b),
-                    ("protenix_single_seq", mss),
-                    ("protenix_msa", mms),
-                ),
-                key=lambda item: item[1],
-                reverse=(direction == "higher"),
-            )
-        )
+        ok = (m15 > m1b) if direction == "higher" else (m15 < m1b)
+        delta = m15 - m1b
         details.append(
-            f"{col}: {actual_order} -> {'support' if ok else 'refute'}"
+            f"{col}: 1.5B={m15:.4f} vs 1B={m1b:.4f} (delta={delta:+.4f}, "
+            f"direction={direction}) -> {'support' if ok else 'refute'}"
         )
         (supporting if ok else refuting).append(col)
-    verdict = "supported" if len(supporting) >= 2 else "not_supported"
+    threshold = 3
+    verdict = "supported" if len(supporting) >= threshold else "not_supported"
     return {
         "verdict": verdict,
+        "threshold": f"{threshold}/{len(_HEADLINE)}",
         "n_metrics_supporting": len(supporting),
         "metrics_supporting": supporting,
         "metrics_refuting": refuting,
@@ -222,24 +247,24 @@ def _hypothesis_verdict(summary_rows: list[dict]) -> dict[str, object]:
 
 def merge_and_summarize(
     *,
-    marinfold_csv: Path,
+    marinfold_1_5b_csv: Path,
+    marinfold_1b_csv: Path,
     protenix_csv: Path,
     out_scores_csv: Path,
     out_summary_csv: Path,
     out_verdict_json: Path,
 ) -> dict[str, object]:
-    """Top-level entry point — produce the combined CSV + summary CSV.
-
-    Returns the hypothesis verdict dict (also written to JSON).
-    """
-    mf_rows = _load_marinfold_rows(marinfold_csv)
+    """Produce the 4-way combined CSV + summary CSV + verdict JSON."""
+    m15_rows = _load_marinfold_rows(marinfold_1_5b_csv, "marinfold_1_5b")
+    m1b_rows = _load_exp20_1b_rows(marinfold_1b_csv)
     px_rows = _load_protenix_rows(protenix_csv)
 
-    all_rows = mf_rows + px_rows
+    all_rows = m15_rows + m1b_rows + px_rows
 
-    # Sort: protein-major, then method, deterministic.
-    method_order = {"marinfold_1b": 0, "protenix_single_seq": 1, "protenix_msa": 2}
-    all_rows.sort(key=lambda r: (r["pdb_id"], r["chain_id"], method_order.get(r["method"], 99)))
+    method_order = {name: i for i, name in enumerate(_METHODS)}
+    all_rows.sort(
+        key=lambda r: (r["pdb_id"], r["chain_id"], method_order.get(r["method"], 99))
+    )
 
     out_scores_csv.parent.mkdir(parents=True, exist_ok=True)
     with out_scores_csv.open("w", newline="") as f:
@@ -248,11 +273,7 @@ def merge_and_summarize(
         writer.writerows(all_rows)
     print(f"Wrote {out_scores_csv} ({len(all_rows)} rows).")
 
-    summary = [
-        _aggregate_for_method(all_rows, "marinfold_1b"),
-        _aggregate_for_method(all_rows, "protenix_single_seq"),
-        _aggregate_for_method(all_rows, "protenix_msa"),
-    ]
+    summary = [_aggregate_for_method(all_rows, m) for m in _METHODS]
     verdict = _hypothesis_verdict(summary)
 
     summary_cols = ["method", "n_proteins"] + [
@@ -268,7 +289,8 @@ def merge_and_summarize(
     out_verdict_json.parent.mkdir(parents=True, exist_ok=True)
     out_verdict_json.write_text(json.dumps(verdict, indent=2) + "\n")
     print(f"Wrote {out_verdict_json}.")
-    print(f"Hypothesis verdict: {verdict}")
+    print(f"Hypothesis verdict: {verdict['verdict']} "
+          f"({verdict['n_metrics_supporting']}/{len(_HEADLINE)} headline metrics)")
     return verdict
 
 
@@ -276,23 +298,29 @@ def main() -> None:
     here = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--marinfold-csv", type=Path, default=here / "data" / "marinfold_scores.csv",
+        "--marinfold-1-5b-csv", type=Path,
+        default=here / "data" / "marinfold_scores.csv",
+        help="This experiment's 1.5B scores (from score_marinfold.py).",
     )
     parser.add_argument(
-        "--protenix-csv",
-        type=Path,
+        "--marinfold-1b-csv", type=Path,
+        default=here.parent / "exp20_evals_marinfold_1b_foldbench" / "data" / "scores.csv",
+        help="exp20's published 3-way scores.csv; we filter to its 1B rows.",
+    )
+    parser.add_argument(
+        "--protenix-csv", type=Path,
         default=here / "protenix_data" / "data" / "protenix-foldbench-monomers" / "scores.csv",
     )
     parser.add_argument("--scores", type=Path, default=here / "data" / "scores.csv")
     parser.add_argument("--summary", type=Path, default=here / "data" / "scores_summary.csv")
     parser.add_argument(
-        "--verdict-json",
-        type=Path,
+        "--verdict-json", type=Path,
         default=here / "data" / "hypothesis_verdict.json",
     )
     args = parser.parse_args()
     merge_and_summarize(
-        marinfold_csv=args.marinfold_csv,
+        marinfold_1_5b_csv=args.marinfold_1_5b_csv,
+        marinfold_1b_csv=args.marinfold_1b_csv,
         protenix_csv=args.protenix_csv,
         out_scores_csv=args.scores,
         out_summary_csv=args.summary,
