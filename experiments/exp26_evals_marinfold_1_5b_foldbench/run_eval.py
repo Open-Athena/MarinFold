@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Run MarinFold 1B zero-shot on the 100 FoldBench monomers.
+"""Run MarinFold zero-shot on the 100 FoldBench monomers.
 
 For every protein in ``protenix_data/manifest.csv``:
   1. Read the canonical 1..N residue sequence from the matching
@@ -12,11 +12,14 @@ For every protein in ``protenix_data/manifest.csv``:
      distogram representative-atom convention).
   4. Capture the full 64-bin probability vector per pair, build a
      symmetric ``[N, N, 64]`` array, and save it to
-     ``outputs/<stem>/distogram.npz`` with key ``probs``.
+     ``<out>/<stem>/distogram.npz`` with key ``probs``.
 
-Idempotent: re-running skips proteins whose ``distogram.npz`` already
-exists and has the expected shape. ``--limit N`` keeps the run small
-during smoke tests.
+``--out`` accepts either a local directory or a ``gs://`` URI; in the
+GCS case, per-protein outputs are written to a temp dir and then
+``gsutil cp``-ed to GCS so the iris worker doesn't need gcsfs.
+
+Idempotent: re-running skips proteins whose ``provenance.json``
+already records the requested ``model_nickname``.
 """
 
 import argparse
@@ -24,25 +27,28 @@ import json
 import math
 import os
 import platform
+import re
+import shutil
 import socket
+import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import yaml
 
-# exp1 path dep: we use its parse + vocab modules to stay byte-identical
-# with the training-time tokenization. The exp1 dir is a script dir, not
-# a python package, so we add it to sys.path before importing.
 _THIS = Path(__file__).resolve().parent
-_EXP1 = _THIS.parent / "exp1_document_structures_contacts_and_distances_v1"
-if str(_EXP1) not in sys.path:
-    sys.path.insert(0, str(_EXP1))
+# vocab.py and canonical_sequence.py live next to this file (vendored
+# for iris shipping — the worker only has the experiment dir, not the
+# wider repo, so sys.path hacks back to a sibling exp dir don't work).
+sys.path.insert(0, str(_THIS))
 
-from vocab import NAME  # noqa: E402 — needs sys.path insertion above
+from vocab import NAME  # noqa: E402
 
 from canonical_sequence import (  # noqa: E402
     read_canonical_sequence,
@@ -62,41 +68,146 @@ _BIN_MIDPOINTS = np.array(
 )
 
 
-def _resolve_model_path(models_yaml_path: Path, nickname: str) -> str:
-    """Return the local HF snapshot dir for the named model entry.
+# --- HuggingFace URL resolution (vendored, see marinfold.registry) ---
+#
+# Inlined into this file so the iris worker doesn't need the wider
+# MarinFold repo. Handles both shapes seen in MODELS.yaml today:
+#   - https://huggingface.co/<owner>/<repo>/tree/<rev>[/<subdir>]
+#   - https://huggingface.co/buckets/<org>/<bucket>/tree/<prefix>
+# The bucket shape is what the 1.5B entry uses (added by PR #25).
 
-    Reads ``MODELS.yaml``, finds the entry with ``nickname == nickname``,
-    snapshot-downloads only the matching subdir of the HF repo (the
-    repo can contain many sibling models — exp9's resolver uses the
-    same trick), and returns the local path that vLLM should load from.
+_HF_URL_PATTERN = re.compile(
+    r"^https?://(?:www\.)?huggingface\.co/"
+    r"(?P<repo>(?!buckets/)[^/]+/[^/]+)"
+    r"(?:/tree/(?P<rev>[^/]+)(?:/(?P<subfolder>.+?))?)?/?$"
+)
+_HF_BUCKET_URL_PATTERN = re.compile(
+    r"^https?://(?:www\.)?huggingface\.co/buckets/"
+    r"(?P<repo>[^/]+/[^/]+)"
+    r"(?:/tree/(?P<prefix>.+?))?/?$"
+)
 
-    Re-runnable: ``snapshot_download`` is content-addressed; unchanged
-    files don't redownload.
+
+@dataclass(frozen=True)
+class _HFLocation:
+    repo_id: str
+    revision: str
+    subfolder: str | None
+    is_bucket: bool = False
+
+
+def _parse_hf_url(url: str) -> _HFLocation:
+    m = _HF_BUCKET_URL_PATTERN.match(url.strip())
+    if m is not None:
+        prefix = m.group("prefix")
+        if prefix is not None:
+            prefix = prefix.rstrip("/") or None
+        return _HFLocation(
+            repo_id=m.group("repo"), revision="",
+            subfolder=prefix, is_bucket=True,
+        )
+    m = _HF_URL_PATTERN.match(url.strip())
+    if m is None:
+        raise ValueError(f"could not parse HuggingFace URL {url!r}")
+    return _HFLocation(
+        repo_id=m.group("repo"),
+        revision=m.group("rev") or "main",
+        subfolder=m.group("subfolder"),
+    )
+
+
+def _download_bucket_prefix(location: _HFLocation) -> Path:
+    """Mirror an HF storage-bucket prefix into the local HF cache.
+
+    Faithful port of ``marinfold.registry._download_bucket_prefix``
+    — including ``?recursive=true`` on the tree listing and URL
+    encoding on the resolve URL.
     """
-    from huggingface_hub import snapshot_download
+    from urllib.parse import quote
+    from huggingface_hub import constants
+    from huggingface_hub.constants import HF_HUB_CACHE
+    from huggingface_hub.file_download import http_get
+    from huggingface_hub.utils import (
+        build_hf_headers, get_session, hf_raise_for_status,
+    )
 
+    endpoint = constants.ENDPOINT
+    prefix = location.subfolder
+    encoded_prefix = f"/{quote(prefix, safe='')}" if prefix else ""
+    tree_url = f"{endpoint}/api/buckets/{location.repo_id}/tree{encoded_prefix}"
+    resp = get_session().get(
+        tree_url, params={"recursive": "true"}, headers=build_hf_headers(),
+    )
+    hf_raise_for_status(resp)
+    entries = resp.json()
+    files = [
+        (e["path"], int(e["size"]))
+        for e in entries
+        if isinstance(e, dict) and e.get("type") == "file"
+    ]
+    if not files:
+        raise FileNotFoundError(
+            f"no files under bucket {location.repo_id!r} prefix {prefix!r}"
+        )
+
+    local_root = Path(HF_HUB_CACHE) / "buckets" / location.repo_id
+    for path, size in files:
+        dest = local_root / path
+        if dest.is_file() and dest.stat().st_size == size:
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_name(f"{dest.name}.incomplete")
+        try:
+            with tmp.open("wb") as fh:
+                http_get(
+                    f"{endpoint}/buckets/{location.repo_id}/resolve/"
+                    f"{quote(path, safe='/')}",
+                    fh,
+                    headers=build_hf_headers(),
+                    expected_size=size,
+                    displayed_filename=dest.name,
+                )
+        except Exception:
+            tmp.unlink(missing_ok=True)
+            raise
+        tmp.replace(dest)
+    result = (
+        local_root / location.subfolder
+        if location.subfolder is not None
+        else local_root
+    )
+    if not result.is_dir():
+        raise FileNotFoundError(
+            f"expected bucket prefix at {result} but missing"
+        )
+    return result.resolve()
+
+
+def _resolve_model_path(models_yaml_path: Path, nickname: str) -> str:
+    """Return the local HF snapshot dir for the named MODELS.yaml entry.
+
+    Supports both the regular HF tree URLs and the storage-bucket URLs
+    (``huggingface.co/buckets/<org>/<bucket>/tree/<prefix>``) used by
+    the 1.5B entry. Re-runnable: HF Hub's ``snapshot_download`` is
+    content-addressed, and the bucket mirror keeps files keyed by
+    ``(path, size)`` — unchanged files don't redownload.
+    """
     entries = yaml.safe_load(models_yaml_path.read_text())
     matched = [e for e in entries if e.get("nickname") == nickname]
     if not matched:
         raise ValueError(f"no entry for {nickname!r} in {models_yaml_path}")
-    entry = matched[0]
-    url = entry["url"]
-    # URL format: https://huggingface.co/<owner>/<repo>/tree/<ref>/<subdir>
-    prefix = "https://huggingface.co/"
-    if not url.startswith(prefix):
-        raise ValueError(f"unexpected model URL {url!r}")
-    rest = url[len(prefix):].split("/")
-    if len(rest) < 2:
-        raise ValueError(f"unexpected model URL {url!r}")
-    repo_id = "/".join(rest[:2])
-    subdir = rest[4] if len(rest) > 4 and rest[2] == "tree" else None
-    # Use the default HF cache to share with other experiments
-    # (exp9 etc.) instead of re-downloading into a local-only dir.
+    location = _parse_hf_url(matched[0]["url"])
+    if location.is_bucket:
+        return str(_download_bucket_prefix(location))
+
+    from huggingface_hub import snapshot_download
+    allow = [f"{location.subfolder}/*"] if location.subfolder else None
     local = snapshot_download(
-        repo_id=repo_id,
-        allow_patterns=[f"{subdir}/*"] if subdir else None,
+        repo_id=location.repo_id,
+        revision=location.revision,
+        allow_patterns=allow,
     )
-    return str(Path(local) / subdir) if subdir else local
+    return str(Path(local) / location.subfolder) if location.subfolder else local
 
 
 def _load_vllm(model_local_path: str):
@@ -258,77 +369,149 @@ def _hardware_info() -> dict[str, Any]:
     return info
 
 
-def _output_complete(out_path: Path, n: int, *, model_nickname: str) -> bool:
-    """Return True iff the .npz has probs ``[n, n, 64]`` AND was generated by the same model.
+# --- Output sink: local dir OR gs:// URI -------------------------------
+#
+# iris workers don't write back to bizon's filesystem, so the eval has
+# to push results to GCS as it goes. To avoid pulling in gcsfs/fsspec
+# as deps, we write each protein's outputs to a tempdir locally and
+# then ``gsutil cp`` them to the configured prefix. Provenance lookups
+# (idempotency check) use ``gsutil cat`` over the prov.json sidecar.
 
-    Without the model check, switching ``MODELS.yaml`` to a new
-    checkpoint would silently leave the old outputs in place. We
-    keep the file iff:
-      - ``distogram.npz`` parses and has the expected shape, AND
-      - the sibling ``provenance.json`` records the same
-        ``model_nickname``.
-    Older runs without ``provenance.json`` get treated as
-    incomplete (forces a re-run when the model changes; safe
-    fallback).
-    """
-    if not out_path.exists():
-        return False
-    try:
-        with np.load(out_path) as data:
-            shape_ok = (
-                "probs" in data.files
-                and data["probs"].shape == (n, n, _NUM_DISTANCE_BINS)
+def _is_gcs(uri: str) -> bool:
+    return uri.startswith("gs://")
+
+
+def _gsutil(*args: str, capture: bool = False) -> subprocess.CompletedProcess:
+    cmd = ["gsutil", "-q", *args]
+    return subprocess.run(
+        cmd, check=True, capture_output=capture, text=True,
+    )
+
+
+def _read_remote_provenance(uri: str) -> dict[str, Any] | None:
+    """Return the parsed prov dict at ``uri`` (gs:// or local), or None."""
+    if _is_gcs(uri):
+        try:
+            proc = subprocess.run(
+                ["gsutil", "-q", "cat", uri],
+                check=True, capture_output=True, text=True,
             )
-    except (OSError, ValueError, KeyError):
-        return False
-    if not shape_ok:
-        return False
-    prov_path = out_path.parent / "provenance.json"
-    if not prov_path.exists():
-        return False
+        except subprocess.CalledProcessError:
+            return None
+        try:
+            return json.loads(proc.stdout)
+        except ValueError:
+            return None
+    p = Path(uri)
+    if not p.exists():
+        return None
     try:
-        prov = json.loads(prov_path.read_text())
+        return json.loads(p.read_text())
     except (OSError, ValueError):
+        return None
+
+
+def _output_complete(out_base: str, stem: str, n: int, *, model_nickname: str) -> bool:
+    """Idempotency check: is ``<out_base>/<stem>/provenance.json`` for this nickname?
+
+    We key only on the provenance file (not the distogram.npz shape) for
+    GCS sinks — fetching the .npz over gsutil just to check a shape is
+    wasteful. Local sinks use the same convention for symmetry.
+    """
+    sep = "/" if _is_gcs(out_base) else os.sep
+    prov_uri = f"{out_base.rstrip('/')}{sep}{stem}{sep}provenance.json"
+    prov = _read_remote_provenance(prov_uri)
+    if prov is None:
         return False
-    return prov.get("model_nickname") == model_nickname
+    return (
+        prov.get("model_nickname") == model_nickname
+        and int(prov.get("n_residues", -1)) == n
+    )
+
+
+def _write_output(
+    out_base: str, stem: str, *,
+    probs: np.ndarray, provenance: dict[str, Any],
+) -> str:
+    """Save distogram.npz + provenance.json under ``<out_base>/<stem>/``.
+
+    Returns the destination URI (gs://... or local path).
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        npz_path = tmp / "distogram.npz"
+        np.savez_compressed(npz_path, probs=probs)
+        prov_path = tmp / "provenance.json"
+        prov_path.write_text(json.dumps(provenance, indent=2) + "\n")
+        if _is_gcs(out_base):
+            dest = f"{out_base.rstrip('/')}/{stem}/"
+            _gsutil("cp", str(npz_path), dest)
+            _gsutil("cp", str(prov_path), dest)
+            return dest
+        dest_dir = Path(out_base) / stem
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(npz_path, dest_dir / "distogram.npz")
+        shutil.copy2(prov_path, dest_dir / "provenance.json")
+        return str(dest_dir)
+
+
+_DEFAULT_OUT_GCS = (
+    "gs://marin-us-east5/protein-structure/MarinFold/exp26/"
+    "protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers"
+)
 
 
 def run(
     *,
     protenix_dir: Path,
-    out_dir: Path,
+    out_base: str,
+    model_url: str,
     model_nickname: str,
-    models_yaml: Path,
     limit: int | None = None,
     batch_size: int = 128,
 ) -> int:
     """Drive the full sweep. Returns the number of NEW proteins scored.
 
-    Idempotent: existing distogram.npz files with the right shape are
-    left alone. ``limit`` truncates the manifest after sorting (most
-    proteins are listed in PDB order).
+    Idempotent: skips proteins whose ``<out_base>/<stem>/provenance.json``
+    already records the requested ``model_nickname``.
     """
     manifest = _read_manifest(protenix_dir / "manifest.csv")
     if limit is not None:
         manifest = manifest[:limit]
 
-    # Quick pre-flight: figure out which proteins still need work. If
-    # everything is already complete, skip the vLLM load entirely
-    # (saves ~20s + ~6 GB of GPU memory).
+    # Pre-flight: skip vLLM load entirely if everything is already done.
     pending: list[dict[str, Any]] = []
     for entry in manifest:
         stem = entry["stem"]
         n = int(entry["n_residues"])
-        out_path = out_dir / stem / "distogram.npz"
-        if _output_complete(out_path, n, model_nickname=model_nickname):
-            print(f"skip {stem}: distogram already complete (N={n})")
+        if _output_complete(out_base, stem, n, model_nickname=model_nickname):
+            print(f"skip {stem}: provenance.json already records {model_nickname} (N={n})")
             continue
         pending.append(entry)
     if not pending:
-        print(f"All {len(manifest)} proteins already have complete distograms.")
+        print(f"All {len(manifest)} proteins already complete for {model_nickname}.")
         return 0
 
-    model_path = _resolve_model_path(models_yaml, model_nickname)
+    location = _parse_hf_url(model_url)
+    print(
+        f"Resolving model: nickname={model_nickname} url={model_url} -> "
+        f"{'bucket' if location.is_bucket else 'tree'}({location.repo_id})"
+    )
+    if location.is_bucket:
+        model_path = str(_download_bucket_prefix(location))
+    else:
+        from huggingface_hub import snapshot_download
+        allow = [f"{location.subfolder}/*"] if location.subfolder else None
+        local = snapshot_download(
+            repo_id=location.repo_id,
+            revision=location.revision,
+            allow_patterns=allow,
+        )
+        model_path = (
+            str(Path(local) / location.subfolder)
+            if location.subfolder else local
+        )
+
     print(f"Loading vLLM with model={model_path} ...")
     t_load_start = time.time()
     llm, tokenizer = _load_vllm(model_path)
@@ -360,19 +543,13 @@ def run(
             batch_size=batch_size,
         )
         elapsed = time.time() - start
-        out_path = out_dir / stem / "distogram.npz"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(out_path, probs=probs)
-        # Provenance: tiny JSON sidecar lets future readers know
-        # exactly which model nickname + atom convention + hardware
-        # produced this. ``elapsed_seconds`` + ``n_pairs`` + ``hardware``
-        # are what the timing plots (sequence-length vs runtime) join on.
         n_pairs = seq.n_residues * (seq.n_residues - 1) // 2
-        (out_path.parent / "provenance.json").write_text(json.dumps({
+        provenance = {
             "stem": stem,
             "n_residues": seq.n_residues,
             "n_pairs": n_pairs,
             "model_nickname": model_nickname,
+            "model_url": model_url,
             "model_path": model_path,
             "atom_convention": "CB-CB (CA for GLY/UNK)",
             "bin_scheme": {
@@ -386,10 +563,11 @@ def run(
             "batch_size": batch_size,
             "hardware": hw,
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        }, indent=2) + "\n")
+        }
+        dest = _write_output(out_base, stem, probs=probs, provenance=provenance)
         n_written += 1
         print(
-            f"wrote {out_path} ({seq.n_residues} residues, {n_pairs} pairs, "
+            f"wrote {dest} ({seq.n_residues} residues, {n_pairs} pairs, "
             f"{elapsed:.1f} s; {n_pairs / max(elapsed, 1e-6):.0f} pairs/s)"
         )
     return n_written
@@ -405,20 +583,30 @@ def main() -> None:
     )
     parser.add_argument(
         "--out",
-        type=Path,
-        default=_THIS / "outputs",
-        help="Where to save per-protein distogram.npz files (default: ./outputs/).",
+        default=_DEFAULT_OUT_GCS,
+        help=(
+            "Where to save per-protein distogram.npz + provenance.json. "
+            "Either a local directory path or a gs:// URI. Default points "
+            "at this experiment's canonical GCS prefix."
+        ),
     )
     parser.add_argument(
-        "--model",
-        default="1B",
-        help="MODELS.yaml nickname (default: 1B).",
+        "--model-url",
+        required=True,
+        help=(
+            "Full HuggingFace URL for the checkpoint (regular tree URL or "
+            "bucket URL). Pass-through from MODELS.yaml; this script does "
+            "not read MODELS.yaml so the iris worker is self-contained."
+        ),
     )
     parser.add_argument(
-        "--models-yaml",
-        type=Path,
-        default=_THIS.parent.parent / "MODELS.yaml",
-        help="Path to MODELS.yaml (default: repo root).",
+        "--model-nickname",
+        required=True,
+        help=(
+            "Short identifier for the model (e.g. '1.5B'). Used only for "
+            "provenance.json idempotency and the timing CSV's "
+            "model_nickname column. Pass-through from MODELS.yaml."
+        ),
     )
     parser.add_argument(
         "--limit",
@@ -435,9 +623,9 @@ def main() -> None:
     args = parser.parse_args()
     n = run(
         protenix_dir=args.protenix_dir,
-        out_dir=args.out,
-        model_nickname=args.model,
-        models_yaml=args.models_yaml,
+        out_base=args.out,
+        model_url=args.model_url,
+        model_nickname=args.model_nickname,
         limit=args.limit,
         batch_size=args.batch_size,
     )

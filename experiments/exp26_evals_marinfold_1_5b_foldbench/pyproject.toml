@@ -1,45 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "exp20-evals-marinfold-1b-foldbench"
+name = "exp26-evals-marinfold-1-5b-foldbench"
 version = "0.1.0"
-description = "Eval MarinFold 1B against Protenix v2 on the 100 FoldBench monomers from exp12."
+description = "Eval MarinFold 1.5B against 1B + Protenix v2 on the 100 FoldBench monomers from exp12."
 requires-python = ">=3.11,<3.13"
+# Host deps only — these install on bizon for scoring + the iris-submit.
+# The TPU runtime (vllm-tpu, torch-xla) is opt-in via the `vllm` and
+# `tpu` extras below; iris adds those when syncing on the worker.
 dependencies = [
-    # exp1 contributes parse + vocab modules (path import). The
-    # path dep here ensures uv resolves its transitive deps
-    # (gemmi, numpy, pyarrow, marinfold-document-structures).
-    "exp1-document-structures-contacts-and-distances-v1",
-    # huggingface_hub for snapshot_download of the 1B model checkpoint.
-    # Held to <1 because transformers 4.x caps it there. The bucket-side
-    # fetcher (fetch_protenix_data.py) runs in its own ephemeral env via
-    # `uv run --with huggingface_hub==1.5.0 …` so we don't have to break
-    # the transformers pin to get bucket API support.
-    "huggingface_hub>=0.24,<1",
+    # Iris CLI + its peer pkgs (all from marin find-links).
+    "marin-iris",
+    # Scoring + plotting on the host.
+    "huggingface_hub>=0.24",
     "matplotlib>=3.8",
     "numpy",
     "pandas>=2.2",
-    "seaborn>=0.13",  # for swarmplot in plot_comparison.py
-    "pyyaml>=6",  # read MODELS.yaml
-    # vllm 0.10+ needs CUDA 12.6 in its torch wheel; this host runs CUDA 12.2.
-    # Pin vllm 0.7.x and the matching torch +cu121 wheel (same pins exp9 settled on).
-    "vllm>=0.7,<0.8",
-    "torch==2.5.1+cu121",
-    # vllm 0.7.x predates transformers 5.x.
-    "transformers>=4.45,<5",
-    # Modal driver lives in modal_app.py; only needed to dispatch jobs.
-    "modal>=0.66",
+    "pyyaml>=6",
+    "seaborn>=0.13",
+    # exp1 contributes parse + vocab modules for the local scoring side
+    # (vocab.py is also vendored into this dir for the iris worker).
+    "exp1-document-structures-contacts-and-distances-v1",
 ]
 
 [project.optional-dependencies]
+# Worker-only inference stack. iris syncs these on the TPU worker via
+# `--extra vllm --extra tpu`. Don't install locally on bizon — vllm 0.7
+# pulls CUDA wheels that conflict with the TPU stack.
+vllm = ["vllm>=0.7,<0.11"]
+tpu = []  # placeholder; vllm picks up the TPU runtime via its own extras
+
+# Iris's remote worker runs `uv sync --all-packages --no-group dev`,
+# which errors if the dev group doesn't exist. Empty stub for parity
+# with marin-experiments/tiny-stories.
 test = ["pytest>=8"]
-
-[tool.uv.sources]
-exp1-document-structures-contacts-and-distances-v1 = { path = "../exp1_document_structures_contacts_and_distances_v1" }
-torch = { index = "pytorch-cu121" }
-
-[[tool.uv.index]]
-name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu121"
-explicit = true
 
 [dependency-groups]
 dev = []
@@ -51,3 +47,23 @@ prerelease = "allow"
 environments = [
     "sys_platform == 'linux'",
 ]
+# Mirrored from marin-experiments/tiny-stories/pyproject.toml so the
+# marin dep graph resolves the same way for us as it does for them.
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4",
+    "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.22",
+    "wheel>=0.46.2",
+    "datasets>=3.1.0,<4.0.0",
+    "equinox>=0.11.10",
+]
+
+find-links = [
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-iris-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-rigging-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-fray-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-finelog-latest",
+]
+
+[tool.uv.sources]
+exp1-document-structures-contacts-and-distances-v1 = { path = "../exp1_document_structures_contacts_and_distances_v1" }
