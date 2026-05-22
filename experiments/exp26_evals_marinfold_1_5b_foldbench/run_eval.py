@@ -30,7 +30,6 @@ import platform
 import re
 import shutil
 import socket
-import subprocess
 import sys
 import tempfile
 import time
@@ -371,35 +370,45 @@ def _hardware_info() -> dict[str, Any]:
 
 # --- Output sink: local dir OR gs:// URI -------------------------------
 #
-# iris workers don't write back to bizon's filesystem, so the eval has
-# to push results to GCS as it goes. To avoid pulling in gcsfs/fsspec
-# as deps, we write each protein's outputs to a tempdir locally and
-# then ``gsutil cp`` them to the configured prefix. Provenance lookups
-# (idempotency check) use ``gsutil cat`` over the prov.json sidecar.
+# iris TPU containers do not have `gsutil` on PATH, so we go through
+# the google-cloud-storage SDK directly. Service-account creds are
+# auto-mounted from the TPU VM's metadata server — `storage.Client()`
+# picks them up with no further config.
 
 def _is_gcs(uri: str) -> bool:
     return uri.startswith("gs://")
 
 
-def _gsutil(*args: str, capture: bool = False) -> subprocess.CompletedProcess:
-    cmd = ["gsutil", "-q", *args]
-    return subprocess.run(
-        cmd, check=True, capture_output=capture, text=True,
-    )
+def _gcs_split(uri: str) -> tuple[str, str]:
+    """Split ``gs://bucket/path`` into ``(bucket, path)``."""
+    if not _is_gcs(uri):
+        raise ValueError(f"not a gs:// URI: {uri!r}")
+    rest = uri[len("gs://"):]
+    bucket, _, path = rest.partition("/")
+    return bucket, path
+
+
+_GCS_CLIENT = None
+
+
+def _gcs_client():
+    """Lazy-cached storage.Client (one per process)."""
+    global _GCS_CLIENT
+    if _GCS_CLIENT is None:
+        from google.cloud import storage
+        _GCS_CLIENT = storage.Client()
+    return _GCS_CLIENT
 
 
 def _read_remote_provenance(uri: str) -> dict[str, Any] | None:
     """Return the parsed prov dict at ``uri`` (gs:// or local), or None."""
     if _is_gcs(uri):
-        try:
-            proc = subprocess.run(
-                ["gsutil", "-q", "cat", uri],
-                check=True, capture_output=True, text=True,
-            )
-        except subprocess.CalledProcessError:
+        bucket_name, path = _gcs_split(uri)
+        blob = _gcs_client().bucket(bucket_name).blob(path)
+        if not blob.exists():
             return None
         try:
-            return json.loads(proc.stdout)
+            return json.loads(blob.download_as_text())
         except ValueError:
             return None
     p = Path(uri)
@@ -414,9 +423,9 @@ def _read_remote_provenance(uri: str) -> dict[str, Any] | None:
 def _output_complete(out_base: str, stem: str, n: int, *, model_nickname: str) -> bool:
     """Idempotency check: is ``<out_base>/<stem>/provenance.json`` for this nickname?
 
-    We key only on the provenance file (not the distogram.npz shape) for
-    GCS sinks — fetching the .npz over gsutil just to check a shape is
-    wasteful. Local sinks use the same convention for symmetry.
+    Keys on the provenance file (not the .npz shape) — fetching the
+    distogram just to check a shape is wasteful for the GCS path.
+    Local and GCS sinks share the same convention.
     """
     sep = "/" if _is_gcs(out_base) else os.sep
     prov_uri = f"{out_base.rstrip('/')}{sep}{stem}{sep}provenance.json"
@@ -444,10 +453,11 @@ def _write_output(
         prov_path = tmp / "provenance.json"
         prov_path.write_text(json.dumps(provenance, indent=2) + "\n")
         if _is_gcs(out_base):
-            dest = f"{out_base.rstrip('/')}/{stem}/"
-            _gsutil("cp", str(npz_path), dest)
-            _gsutil("cp", str(prov_path), dest)
-            return dest
+            bucket_name, prefix = _gcs_split(out_base.rstrip("/"))
+            bucket = _gcs_client().bucket(bucket_name)
+            bucket.blob(f"{prefix}/{stem}/distogram.npz").upload_from_filename(str(npz_path))
+            bucket.blob(f"{prefix}/{stem}/provenance.json").upload_from_filename(str(prov_path))
+            return f"{out_base.rstrip('/')}/{stem}/"
         dest_dir = Path(out_base) / stem
         dest_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(npz_path, dest_dir / "distogram.npz")

@@ -17,6 +17,10 @@ dependencies = [
     # the host-side score_marinfold.py and the iris worker's
     # canonical_sequence.py (which reads the GT mmCIFs).
     "gemmi>=0.6",
+    # google-cloud-storage drives the worker-side writes to GCS —
+    # iris's TPU containers don't have `gsutil` on PATH, but the
+    # service-account creds are auto-mounted, so the SDK Just Works.
+    "google-cloud-storage>=2.10",
     "huggingface_hub>=0.24",
     "matplotlib>=3.8",
     "numpy",
