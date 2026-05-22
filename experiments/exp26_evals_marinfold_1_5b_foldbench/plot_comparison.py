@@ -1,28 +1,11 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Plots for the 3-way comparison.
+"""Plots for the 4-way comparison (1.5B / 1B / Protenix single_seq / msa).
 
 Reads ``data/scores.csv`` (output of ``score_comparison.py``) and
-produces:
-
-- ``plots/lddt_per_protein.png`` — per-protein grouped bar chart of
-  LDDT-distogram-CB for all three methods.
-- ``plots/mae_per_protein.png`` — same for MAE-distogram-CB.
-- ``plots/headline_aggregate.png`` — bar chart of mean and median for
-  each headline metric per method.
-- ``plots/marinfold_vs_protenix_scatter.png`` — paired scatter,
-  MarinFold on x, Protenix on y (one panel per Protenix mode, per
-  metric).
-- ``plots/prec_long_L_per_protein.png`` — CASP long-range contact
-  precision @ top L, per protein per method.
-- ``plots/timing_vs_sequence_length.png`` (if ``data/timings.csv``
-  is present) — log-log scatter of per-protein runtime vs sequence
-  length, one series per GPU.
-- ``plots/lddt_5way_swarm.png`` (if the Protenix ``scores.csv`` is
-  reachable for structure-LDDT) — 5-category swarm plot of LDDT
-  (1B distogram, Protenix single_seq distogram + structure, Protenix
-  msa distogram + structure) with a light boxplot overlay.
+produces per-protein bar charts, an aggregate headline figure,
+paired scatters anchored on ``marinfold_1_5b``, and the swarm plots.
 """
 
 import argparse
@@ -35,11 +18,14 @@ import seaborn as sns
 
 
 _METHOD_COLORS = {
+    "marinfold_1_5b": "#e6550d",
     "marinfold_1b": "#d95f02",
     "protenix_single_seq": "#7570b3",
     "protenix_msa": "#1b9e77",
 }
-_METHOD_ORDER = ("marinfold_1b", "protenix_single_seq", "protenix_msa")
+_METHOD_ORDER = (
+    "marinfold_1_5b", "marinfold_1b", "protenix_single_seq", "protenix_msa",
+)
 
 
 def _ensure_outdir(out_dir: Path) -> None:
@@ -75,13 +61,14 @@ def per_protein_bar(
 
 
 def headline_aggregate(df: pd.DataFrame, out_path: Path) -> None:
-    """Bar chart of mean and median for the three headline metrics."""
+    """Bar chart of mean and median for the four headline metrics."""
     metrics = [
         ("lddt_distogram_cb", "LDDT-distogram-CB (higher=better)"),
         ("mae_distogram_cb_angstrom", "MAE-distogram-CB (Å, lower=better)"),
         ("drmsd_distogram_cb_angstrom", "dRMSD-distogram-CB (Å, lower=better)"),
+        ("prec_long_L", "prec_long_L (higher=better)"),
     ]
-    fig, axes = plt.subplots(1, len(metrics), figsize=(4 * len(metrics), 4))
+    fig, axes = plt.subplots(1, len(metrics), figsize=(3.6 * len(metrics), 4))
     methods = list(_METHOD_ORDER)
     x = np.arange(len(methods))
     width = 0.4
@@ -100,24 +87,28 @@ def headline_aggregate(df: pd.DataFrame, out_path: Path) -> None:
 
 
 def paired_scatter(df: pd.DataFrame, *, metric: str, out_path: Path) -> None:
-    """Paired per-protein scatter: x=marinfold_1b, y=protenix_{mode}.
+    """Paired per-protein scatter anchored on ``marinfold_1_5b``.
 
-    One panel per Protenix mode. y=x diagonal in grey for reference.
+    Three panels (1.5B vs each of: 1B, protenix_single_seq,
+    protenix_msa). Points above the y=x diagonal mean the comparator
+    beats 1.5B; points below mean 1.5B beats the comparator. The
+    1.5B-vs-1B panel is the headline view for this experiment.
     """
-    mf = df[df["method"] == "marinfold_1b"].set_index("pdb_id")[metric]
-    fig, axes = plt.subplots(1, 2, figsize=(9, 4.5), sharey=True)
-    for ax, mode in zip(axes, ("protenix_single_seq", "protenix_msa"), strict=True):
-        px = df[df["method"] == mode].set_index("pdb_id")[metric]
-        common = mf.index.intersection(px.index)
-        x_vals = mf.loc[common].to_numpy()
-        y_vals = px.loc[common].to_numpy()
-        ax.scatter(x_vals, y_vals, s=14, color=_METHOD_COLORS[mode], alpha=0.7)
+    anchor = df[df["method"] == "marinfold_1_5b"].set_index("pdb_id")[metric]
+    others = ("marinfold_1b", "protenix_single_seq", "protenix_msa")
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.5), sharey=False)
+    for ax, comp in zip(axes, others, strict=True):
+        comp_vals = df[df["method"] == comp].set_index("pdb_id")[metric]
+        common = anchor.index.intersection(comp_vals.index)
+        x_vals = anchor.loc[common].to_numpy()
+        y_vals = comp_vals.loc[common].to_numpy()
+        ax.scatter(x_vals, y_vals, s=14, color=_METHOD_COLORS[comp], alpha=0.7)
         lo = float(np.nanmin([x_vals.min(), y_vals.min()])) if len(common) else 0
         hi = float(np.nanmax([x_vals.max(), y_vals.max()])) if len(common) else 1
         ax.plot([lo, hi], [lo, hi], color="#bbbbbb", linewidth=0.8, linestyle="--")
-        ax.set_xlabel(f"marinfold_1b  {metric}")
-        ax.set_ylabel(f"{mode}  {metric}")
-        ax.set_title(f"{mode} vs marinfold_1b")
+        ax.set_xlabel(f"marinfold_1_5b  {metric}")
+        ax.set_ylabel(f"{comp}  {metric}")
+        ax.set_title(f"{comp} vs marinfold_1_5b")
     fig.tight_layout()
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
@@ -350,7 +341,7 @@ def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
     """
     merged = pd.read_csv(merged_scores_csv)
     rows: list[dict] = []
-    methods = ("marinfold_1b", "protenix_single_seq", "protenix_msa")
+    methods = _METHOD_ORDER
     sep_classes = ("short", "medium", "long")
     for method in methods:
         sub = merged[merged["method"] == method]
@@ -363,12 +354,7 @@ def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
 
     df = pd.DataFrame(rows).dropna(subset=["prec"])
     order = [f"{m} ({s})" for s in sep_classes for m in methods]
-    method_color = {
-        "marinfold_1b": "#d95f02",
-        "protenix_single_seq": "#7570b3",
-        "protenix_msa": "#1b9e77",
-    }
-    palette = {f"{m} ({s})": method_color[m] for s in sep_classes for m in methods}
+    palette = {f"{m} ({s})": _METHOD_COLORS[m] for s in sep_classes for m in methods}
 
     fig, ax = plt.subplots(figsize=(15, 5.5))
     sns.boxplot(
