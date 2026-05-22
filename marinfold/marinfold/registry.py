@@ -69,12 +69,16 @@ class ModelEntry:
         default: True for the entry that should be picked when the
             user doesn't pass ``--model``. At most one entry in
             ``MODELS.yaml`` may have this set.
+        wandb_url: Optional W&B run URL for the training run that
+            produced this checkpoint. Informational only — not used
+            for resolution.
     """
 
     nickname: str
     url: str
     document_structures: tuple[str, ...] = field(default_factory=tuple)
     default: bool = False
+    wandb_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -137,12 +141,19 @@ def list_model_entries() -> list[ModelEntry]:
                 f"{yaml_path} entry {item['nickname']!r}: "
                 f"'document_structures' must be a list of strings."
             )
+        wandb_url = item.get("wandb_url")
+        if wandb_url is not None and not isinstance(wandb_url, str):
+            raise ValueError(
+                f"{yaml_path} entry {item['nickname']!r}: "
+                f"'wandb_url' must be a string if set."
+            )
         entries.append(
             ModelEntry(
                 nickname=str(item["nickname"]),
                 url=str(item["url"]),
                 document_structures=tuple(ds),
                 default=bool(item.get("default", False)),
+                wandb_url=wandb_url,
             )
         )
     defaults = [e for e in entries if e.default]

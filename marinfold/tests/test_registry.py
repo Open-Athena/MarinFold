@@ -74,6 +74,34 @@ def test_multiple_defaults_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: P
         list_model_entries()
 
 
+def test_wandb_url_field_parsed(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    yaml_path = tmp_path / "MODELS.yaml"
+    _write_yaml(yaml_path, """
+        - nickname: A
+          default: true
+          url: https://huggingface.co/x/y/tree/main/sub
+          wandb_url: https://wandb.ai/o/p/runs/abc
+        - nickname: B
+          url: https://huggingface.co/x/z/tree/main/sub
+    """)
+    monkeypatch.setenv("MARINFOLD_MODELS_YAML", str(yaml_path))
+    entries = {e.nickname: e for e in list_model_entries()}
+    assert entries["A"].wandb_url == "https://wandb.ai/o/p/runs/abc"
+    assert entries["B"].wandb_url is None
+
+
+def test_wandb_url_non_string_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    yaml_path = tmp_path / "MODELS.yaml"
+    _write_yaml(yaml_path, """
+        - nickname: A
+          url: https://huggingface.co/x/y/tree/main/sub
+          wandb_url: 42
+    """)
+    monkeypatch.setenv("MARINFOLD_MODELS_YAML", str(yaml_path))
+    with pytest.raises(ValueError, match="'wandb_url' must be a string"):
+        list_model_entries()
+
+
 def test_parse_hf_url_regular_repo() -> None:
     loc = _parse_hf_url(
         "https://huggingface.co/timodonnell/LlamaFold-experiments/tree/main/marin-experiments.protein-contacts-1b"
