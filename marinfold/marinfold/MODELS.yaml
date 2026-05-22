@@ -3,3 +3,7 @@
   url: https://huggingface.co/timodonnell/LlamaFold-experiments/tree/main/marin-experiments.protein-contacts-1b-3.5e-4-distance-masked-7d355e
   document_structures:
     - contacts-and-distances-v1
+- nickname: 1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/models/protein-contacts-1_5b-distance-masked-70f8f5.49999
+  document_structures:
+    - contacts-and-distances-v1

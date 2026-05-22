@@ -9,6 +9,7 @@ import pytest
 
 from marinfold.registry import (
     _locate_models_yaml,
+    _parse_hf_url,
     default_model_nickname,
     list_model_entries,
     resolve_model_entry,
@@ -70,6 +71,45 @@ def test_multiple_defaults_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     monkeypatch.setenv("MARINFOLD_MODELS_YAML", str(yaml_path))
     with pytest.raises(ValueError, match="multiple entries marked default"):
         list_model_entries()
+
+
+def test_parse_hf_url_regular_repo() -> None:
+    loc = _parse_hf_url(
+        "https://huggingface.co/timodonnell/LlamaFold-experiments/tree/main/marin-experiments.protein-contacts-1b"
+    )
+    assert loc.repo_id == "timodonnell/LlamaFold-experiments"
+    assert loc.revision == "main"
+    assert loc.subfolder == "marin-experiments.protein-contacts-1b"
+    assert loc.is_bucket is False
+
+
+def test_parse_hf_url_regular_repo_no_tree() -> None:
+    loc = _parse_hf_url("https://huggingface.co/org/repo")
+    assert loc.repo_id == "org/repo"
+    assert loc.revision == "main"
+    assert loc.subfolder is None
+    assert loc.is_bucket is False
+
+
+def test_parse_hf_url_bucket() -> None:
+    loc = _parse_hf_url(
+        "https://huggingface.co/buckets/open-athena/MarinFold/tree/models/protein-contacts-1_5b-distance-masked-70f8f5.49999"
+    )
+    assert loc.repo_id == "open-athena/MarinFold"
+    assert loc.subfolder == "models/protein-contacts-1_5b-distance-masked-70f8f5.49999"
+    assert loc.is_bucket is True
+
+
+def test_parse_hf_url_bucket_no_tree() -> None:
+    loc = _parse_hf_url("https://huggingface.co/buckets/open-athena/MarinFold")
+    assert loc.repo_id == "open-athena/MarinFold"
+    assert loc.subfolder is None
+    assert loc.is_bucket is True
+
+
+def test_parse_hf_url_rejects_garbage() -> None:
+    with pytest.raises(ValueError, match="Could not parse HuggingFace URL"):
+        _parse_hf_url("not a url")
 
 
 def test_no_default_means_default_lookup_errors(
