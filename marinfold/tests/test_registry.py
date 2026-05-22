@@ -31,6 +31,15 @@ def test_locate_models_yaml_works_from_arbitrary_cwd(monkeypatch: pytest.MonkeyP
 
     assert yaml_path.name == "MODELS.yaml"
     assert yaml_path.is_file()
+    assert yaml_path == Path(registry.__file__).resolve().with_name("MODELS.yaml")
+
+
+def test_packaged_models_yaml_matches_repo_copy() -> None:
+    packaged = Path(registry.__file__).resolve().with_name("MODELS.yaml")
+    repo_copy = Path(__file__).resolve().parents[2] / "MODELS.yaml"
+
+    assert packaged.is_file()
+    assert packaged.read_text() == repo_copy.read_text()
 
 
 def test_repo_models_yaml_has_exactly_one_default() -> None:
