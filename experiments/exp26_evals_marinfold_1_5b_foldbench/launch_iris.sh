@@ -24,15 +24,23 @@ if [[ ! -f protenix_data/data/protenix-foldbench-monomers/manifest.csv ]]; then
     exit 1
 fi
 
+# Foreground by default (Ctrl+C kills the job). For long detached
+# runs, prepend IRIS_NO_WAIT=1 — e.g. `IRIS_NO_WAIT=1 ./launch_iris.sh`
+# for the full 100-protein run.
+WAIT_ARGS=()
+if [[ "${IRIS_NO_WAIT:-0}" != "0" ]]; then
+    WAIT_ARGS+=("--no-wait" "--no-terminate-on-exit")
+fi
+
 exec uv run iris --cluster=marin job run \
     --tpu v5p-8 \
     --cpu 16 --memory 64GB --disk 64GB \
     --enable-extra-resources \
     --extra vllm --extra tpu \
-    --no-wait \
     --max-retries 2 \
+    "${WAIT_ARGS[@]}" \
     -e MARINFOLD_RUNNER_TAG iris \
-    -- python run_eval.py \
+    -- bash worker_entry.sh \
         --model-url "$MODEL_URL" \
         --model-nickname "$MODEL_NICKNAME" \
         --out "$OUT_GCS" \

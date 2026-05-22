@@ -27,14 +27,15 @@ dependencies = [
 
 [project.optional-dependencies]
 # Worker-only inference stack. iris syncs these on the TPU worker via
-# `--extra vllm --extra tpu`. Don't install locally on bizon — vllm 0.7
-# pulls CUDA wheels that conflict with the TPU stack.
-vllm = ["vllm>=0.7,<0.11"]
-tpu = []  # placeholder; vllm picks up the TPU runtime via its own extras
-
-# Iris's remote worker runs `uv sync --all-packages --no-group dev`,
-# which errors if the dev group doesn't exist. Empty stub for parity
-# with marin-experiments/tiny-stories.
+# `--extra vllm --extra tpu`. Don't install locally on bizon — vllm
+# and torch-xla pull TPU-specific wheels that conflict with the host
+# CPU stack.
+#
+# `tpu` pulls `marin[tpu]` for torch-xla + vllm-tpu runtime alignment;
+# this matches the marin protein-experiments branch which uses the
+# same `--extra=vllm --extra=tpu` pair on iris launches.
+vllm = ["vllm>=0.7"]
+tpu = ["marin[tpu]; sys_platform == 'linux'"]
 test = ["pytest>=8"]
 
 [dependency-groups]
@@ -59,11 +60,24 @@ override-dependencies = [
 ]
 
 find-links = [
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-haliax-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-levanter-latest",
     "https://github.com/marin-community/marin/releases/expanded_assets/marin-iris-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-zephyr-latest",
     "https://github.com/marin-community/marin/releases/expanded_assets/marin-rigging-latest",
     "https://github.com/marin-community/marin/releases/expanded_assets/marin-fray-latest",
     "https://github.com/marin-community/marin/releases/expanded_assets/marin-finelog-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/dupekit-0.1.0-40ac799",
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
 ]
+
+# marin depends on resiliparse>=0.17.2 which only exists on this custom
+# index. Mirrored from marin-experiments/tiny-stories/pyproject.toml.
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
 exp1-document-structures-contacts-and-distances-v1 = { path = "../exp1_document_structures_contacts_and_distances_v1" }
+resiliparse = { index = "marin-resiliparse" }
