@@ -6,9 +6,13 @@
 ``--model`` (or the ``model=`` arg to :func:`load_backend`) accepts:
 
 1. A local directory that exists on disk → used as-is.
-2. A nickname listed in repo-root ``MODELS.yaml`` → the matching HF
-   URL is parsed into ``(repo_id, revision, subfolder)`` and the
-   subfolder is downloaded via ``huggingface_hub.snapshot_download``.
+2. A nickname listed in ``MODELS.yaml`` → the matching HF
+   URL is parsed and the relevant subfolder/prefix is downloaded.
+   Two URL shapes are supported: regular model/dataset repos
+   (``https://huggingface.co/<org>/<repo>/tree/<rev>/<subfolder>``)
+   are fetched via ``huggingface_hub.snapshot_download``; storage
+   buckets (``https://huggingface.co/buckets/<org>/<bucket>/tree/<prefix>``)
+   are mirrored via the bucket HTTP API.
 3. ``None`` → the entry marked ``default: true`` in ``MODELS.yaml``
    is used.
 
@@ -21,21 +25,29 @@ produced which eval number.
 1. The path named by ``MARINFOLD_MODELS_YAML``.
 2. Walking up from ``os.getcwd()``.
 3. Walking up from this package's location, which covers the normal
-   editable-install / repo-checkout case even when the caller's cwd is
-   elsewhere.
+   installed-package / editable-install case even when the caller's cwd
+   is elsewhere.
 """
 
 import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from urllib.parse import quote
 
 
 _MODELS_YAML_FILENAME = "MODELS.yaml"
+# Regular model/dataset repos: https://huggingface.co/<org>/<repo>[/tree/<rev>[/<subfolder>]]
 _HF_URL_PATTERN = re.compile(
     r"^https://huggingface\.co/(?P<repo>[^/]+/[^/]+)"
     r"(?:/tree/(?P<rev>[^/]+)(?:/(?P<subfolder>.+))?)?/?$"
+)
+# Storage buckets: https://huggingface.co/buckets/<org>/<bucket>[/tree/<prefix>]
+# Buckets are flat (no branches), so the "/tree/<prefix>" segment is just a
+# path prefix within the bucket, not a separate revision.
+_HF_BUCKET_URL_PATTERN = re.compile(
+    r"^https://huggingface\.co/buckets/(?P<repo>[^/]+/[^/]+)"
+    r"(?:/tree/(?P<prefix>.+?))?/?$"
 )
 
 
@@ -46,6 +58,10 @@ class ModelEntry:
     Attributes:
         nickname: Short name used on the CLI (e.g. ``"1B"``).
         url: HuggingFace tree URL pointing at the model's directory.
+            Either a regular repo URL
+            (``https://huggingface.co/<org>/<repo>/tree/<rev>/<subfolder>``)
+            or a storage-bucket URL
+            (``https://huggingface.co/buckets/<org>/<bucket>/tree/<prefix>``).
         document_structures: Ordered tuple of supported document-
             structure names. The first entry is the implicit default
             when ``marinfold infer`` / ``marinfold evaluate`` is called
@@ -53,21 +69,40 @@ class ModelEntry:
         default: True for the entry that should be picked when the
             user doesn't pass ``--model``. At most one entry in
             ``MODELS.yaml`` may have this set.
+        wandb_url: Optional W&B run URL for the training run that
+            produced this checkpoint. Informational only — not used
+            for resolution.
     """
 
     nickname: str
     url: str
     document_structures: tuple[str, ...] = field(default_factory=tuple)
     default: bool = False
+    wandb_url: str | None = None
 
 
 @dataclass(frozen=True)
 class _HFLocation:
-    """A parsed HF URL: repo + revision + optional subfolder."""
+    """A parsed HF URL: a regular repo or a storage bucket.
+
+    For regular repos, ``revision`` is the git ref and ``subfolder`` is
+    an optional directory within the snapshot. For buckets, ``revision``
+    is unused (buckets are flat) and ``subfolder`` is the path prefix
+    within the bucket.
+    """
 
     repo_id: str
     revision: str
     subfolder: str | None
+    is_bucket: bool = False
+
+
+@dataclass(frozen=True)
+class _BucketFileEntry:
+    """One file listed under a storage-bucket prefix."""
+
+    path: str
+    size: int
 
 
 def list_model_entries() -> list[ModelEntry]:
@@ -106,12 +141,19 @@ def list_model_entries() -> list[ModelEntry]:
                 f"{yaml_path} entry {item['nickname']!r}: "
                 f"'document_structures' must be a list of strings."
             )
+        wandb_url = item.get("wandb_url")
+        if wandb_url is not None and not isinstance(wandb_url, str):
+            raise ValueError(
+                f"{yaml_path} entry {item['nickname']!r}: "
+                f"'wandb_url' must be a string if set."
+            )
         entries.append(
             ModelEntry(
                 nickname=str(item["nickname"]),
                 url=str(item["url"]),
                 document_structures=tuple(ds),
                 default=bool(item.get("default", False)),
+                wandb_url=wandb_url,
             )
         )
     defaults = [e for e in entries if e.default]
@@ -176,7 +218,7 @@ def resolve_model(spec: str | None) -> Path:
 
     Args:
         spec: Either a path to a local directory (must exist), a
-            nickname listed in repo-root ``MODELS.yaml``, or
+            nickname listed in ``MODELS.yaml``, or
             ``None`` to use the entry marked ``default: true``.
 
     Returns:
@@ -253,13 +295,33 @@ def _locate_models_yaml() -> Path:
 
 
 def _parse_hf_url(url: str) -> _HFLocation:
-    """Parse a ``https://huggingface.co/<repo>/tree/<rev>/<sub>`` URL."""
-    m = _HF_URL_PATTERN.match(url.strip())
+    """Parse a HuggingFace tree URL (regular repo or storage bucket).
+
+    Accepts either:
+
+    - ``https://huggingface.co/<org>/<repo>[/tree/<rev>[/<subfolder>]]``
+    - ``https://huggingface.co/buckets/<org>/<bucket>[/tree/<prefix>]``
+    """
+    s = url.strip()
+    # Try bucket pattern first — the regular pattern would otherwise greedily
+    # match the "buckets/<org>" segment as a repo id.
+    m = _HF_BUCKET_URL_PATTERN.match(s)
+    if m is not None:
+        prefix = m.group("prefix")
+        if prefix is not None:
+            prefix = prefix.rstrip("/") or None
+        return _HFLocation(
+            repo_id=m.group("repo"),
+            revision="",
+            subfolder=prefix,
+            is_bucket=True,
+        )
+    m = _HF_URL_PATTERN.match(s)
     if m is None:
         raise ValueError(
-            f"Could not parse HuggingFace URL {url!r}. Expected "
-            f"'https://huggingface.co/<org>/<repo>' optionally "
-            f"followed by '/tree/<revision>[/<subfolder>]'."
+            f"Could not parse HuggingFace URL {url!r}. Expected either "
+            f"'https://huggingface.co/<org>/<repo>[/tree/<revision>[/<subfolder>]]' "
+            f"or 'https://huggingface.co/buckets/<org>/<bucket>[/tree/<prefix>]'."
         )
     return _HFLocation(
         repo_id=m.group("repo"),
@@ -270,6 +332,9 @@ def _parse_hf_url(url: str) -> _HFLocation:
 
 def _download_subfolder(location: _HFLocation) -> Path:
     """Download just the model's subfolder from HF Hub; return local path."""
+    if location.is_bucket:
+        return _download_bucket_prefix(location)
+
     from huggingface_hub import snapshot_download
 
     allow_patterns: list[str] | None
@@ -292,3 +357,117 @@ def _download_subfolder(location: _HFLocation) -> Path:
             f"{location.subfolder!r} at {local_path}."
         )
     return local_path.resolve()
+
+
+def _download_bucket_prefix(location: _HFLocation) -> Path:
+    """Mirror a bucket prefix into the local HF cache and return its path.
+
+    HF storage buckets are flat (no git revisions), so they go through a
+    separate HTTP API instead of ``snapshot_download``. Files are mirrored to
+    ``<HF_HUB_CACHE>/buckets/<repo_id>/<remote-path>``; an entry is
+    re-downloaded only if it is missing locally or its size does not
+    match the bucket's metadata.
+    """
+    from huggingface_hub.constants import HF_HUB_CACHE
+
+    files = _list_bucket_files(location.repo_id, location.subfolder)
+    if not files:
+        raise FileNotFoundError(
+            f"No files found in bucket {location.repo_id!r} under prefix "
+            f"{location.subfolder!r}."
+        )
+
+    local_root = Path(HF_HUB_CACHE) / "buckets" / location.repo_id
+    for file_entry in files:
+        local_path = local_root / file_entry.path
+        if local_path.is_file() and local_path.stat().st_size == file_entry.size:
+            continue
+        _download_bucket_file(location.repo_id, file_entry, local_path)
+
+    result = (
+        local_root
+        if location.subfolder is None
+        else local_root / location.subfolder
+    )
+    if not result.is_dir():
+        raise FileNotFoundError(
+            f"Expected bucket prefix at {result} after download, but it "
+            f"does not exist."
+        )
+    return result.resolve()
+
+
+def _list_bucket_files(
+    repo_id: str, prefix: str | None
+) -> list[_BucketFileEntry]:
+    """List all files under a storage-bucket prefix."""
+    from huggingface_hub import constants
+    from huggingface_hub.utils import (
+        build_hf_headers,
+        get_session,
+        hf_raise_for_status,
+    )
+
+    tree_url = _bucket_tree_url(constants.ENDPOINT, repo_id, prefix)
+    response = get_session().get(
+        tree_url,
+        params={"recursive": "true"},
+        headers=build_hf_headers(),
+    )
+    hf_raise_for_status(response)
+    entries = response.json()
+    if not isinstance(entries, list):
+        raise ValueError(
+            f"Bucket tree response for {repo_id!r} was not a list: "
+            f"{type(entries).__name__}."
+        )
+
+    files: list[_BucketFileEntry] = []
+    for item in entries:
+        if not isinstance(item, dict) or item.get("type") != "file":
+            continue
+        path = item.get("path")
+        size = item.get("size")
+        if not isinstance(path, str) or not isinstance(size, int):
+            raise ValueError(
+                f"Bucket tree response for {repo_id!r} contained an "
+                f"invalid file entry: {item!r}."
+            )
+        files.append(_BucketFileEntry(path=path, size=size))
+    return files
+
+
+def _download_bucket_file(
+    repo_id: str, file_entry: _BucketFileEntry, local_path: Path
+) -> None:
+    """Download one bucket file to its mirrored cache location."""
+    from huggingface_hub import constants
+    from huggingface_hub.file_download import http_get
+    from huggingface_hub.utils import build_hf_headers
+
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = local_path.with_name(f"{local_path.name}.incomplete")
+    try:
+        with temp_path.open("wb") as fh:
+            http_get(
+                _bucket_resolve_url(constants.ENDPOINT, repo_id, file_entry.path),
+                fh,
+                headers=build_hf_headers(),
+                expected_size=file_entry.size,
+                displayed_filename=local_path.name,
+            )
+    except Exception:
+        temp_path.unlink(missing_ok=True)
+        raise
+    temp_path.replace(local_path)
+
+
+def _bucket_tree_url(endpoint: str, repo_id: str, prefix: str | None) -> str:
+    """Build the bucket-tree API URL for a prefix."""
+    encoded_prefix = f"/{quote(prefix, safe='')}" if prefix else ""
+    return f"{endpoint}/api/buckets/{repo_id}/tree{encoded_prefix}"
+
+
+def _bucket_resolve_url(endpoint: str, repo_id: str, path: str) -> str:
+    """Build the public resolve URL for one file in a bucket."""
+    return f"{endpoint}/buckets/{repo_id}/resolve/{quote(path, safe='/')}"

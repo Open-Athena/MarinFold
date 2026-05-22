@@ -202,7 +202,7 @@ def build_parser() -> argparse.ArgumentParser:
     def _add_inference_common(p: argparse.ArgumentParser) -> None:
         p.add_argument("--model", required=True,
                        help="Local directory holding the model + tokenizer, "
-                            "or a nickname listed in repo-root MODELS.yaml "
+                            "or a nickname listed in MODELS.yaml "
                             "(e.g. '1B'). Bare HF repo ids are not "
                             "accepted — register the model in MODELS.yaml "
                             "first.")
