@@ -1,0 +1,2 @@
+experiment_id	description	mean_lddt	median_lddt	total_wall_seconds	runtime_ratio_vs_baseline	mean_lddt_delta_pct	notes
+baseline_naive	Naive distogram readout (same as exp20): <begin_statements> with no seeded contacts, read top-128 logprobs per pair, renormalize over the 64 <d_X.X> bins.	0.2496	0.2500	1384.5	1.000	+0.00	

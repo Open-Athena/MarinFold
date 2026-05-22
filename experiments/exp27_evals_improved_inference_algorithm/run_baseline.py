@@ -34,6 +34,14 @@ import traceback
 from pathlib import Path
 
 _THIS = Path(__file__).resolve().parent
+# exp1 path dep: ``canonical_sequence`` (imported transitively from
+# ``score_marinfold``) does ``from vocab import AMINO_ACIDS``. The
+# worker subprocesses set this up inside ``naive_inference`` after
+# pinning CUDA, but the parent process also imports ``score_marinfold``
+# in ``_score_and_log`` — so it needs the same path injection.
+_EXP1 = _THIS.parent / "exp1_document_structures_contacts_and_distances_v1"
+if str(_EXP1) not in sys.path:
+    sys.path.insert(0, str(_EXP1))
 
 
 def _worker(
