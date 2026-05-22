@@ -4,6 +4,6 @@
   document_structures:
     - contacts-and-distances-v1
 - nickname: 1.5B
-  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/models/protein-contacts-1_5b-distance-masked-70f8f5.49999
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/protein-contacts-1_5b-distance-masked-70f8f5/step-49999
   document_structures:
     - contacts-and-distances-v1
