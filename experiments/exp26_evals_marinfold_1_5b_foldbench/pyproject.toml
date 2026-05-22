@@ -13,16 +13,17 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     # Iris CLI + its peer pkgs (all from marin find-links).
     "marin-iris",
-    # Scoring + plotting on the host.
+    # Scoring + plotting on the host; gemmi parses mmCIFs for both
+    # the host-side score_marinfold.py and the iris worker's
+    # canonical_sequence.py (which reads the GT mmCIFs).
+    "gemmi>=0.6",
     "huggingface_hub>=0.24",
     "matplotlib>=3.8",
     "numpy",
     "pandas>=2.2",
+    "pyarrow",
     "pyyaml>=6",
     "seaborn>=0.13",
-    # exp1 contributes parse + vocab modules for the local scoring side
-    # (vocab.py is also vendored into this dir for the iris worker).
-    "exp1-document-structures-contacts-and-distances-v1",
 ]
 
 [project.optional-dependencies]
@@ -79,5 +80,4 @@ name = "marin-resiliparse"
 url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
-exp1-document-structures-contacts-and-distances-v1 = { path = "../exp1_document_structures_contacts_and_distances_v1" }
 resiliparse = { index = "marin-resiliparse" }
