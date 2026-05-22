@@ -1,2 +1,3 @@
 experiment_id	description	mean_lddt	median_lddt	total_wall_seconds	runtime_ratio_vs_baseline	mean_lddt_delta_pct	notes
 baseline_naive	Naive distogram readout (same as exp20): <begin_statements> with no seeded contacts, read top-128 logprobs per pair, renormalize over the 64 <d_X.X> bins.	0.2496	0.2500	1384.5	1.000	+0.00	
+gt_filtered_naive	Same readout as baseline_naive, restricted to (i, j) pairs where GT CB-CB distance < 15 A (LDDT inclusion radius). Point lddt_distogram_cb identical to baseline by construction; MAE/dRMSD/contact-precision columns are biased and should be ignored. GT-aware speedup intended to free wall-clock budget for richer algorithms.	0.2496	0.2499	215.3	0.155	-0.02	
