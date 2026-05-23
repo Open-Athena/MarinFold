@@ -337,3 +337,74 @@ sharpen T=0.05 → mean LDDT 0.3376, +35.3%.** Chain wall =
 +50% bar (0.3744) remains uncleared. Need +0.037 more. The cheap
 knobs (more rounds, higher K, lower threshold) have plateaued. Next
 must be a different algorithm shape.
+
+### Things tried beyond iteration
+
+**Sampled UNION** (M=10 rollouts → union of unique contacts → single
+readout). 0.3168 raw, best T=1.0. Sampling-based seed selection gets
+mostly the same set as marginal top-K, plus some noise. Worse than
+deterministic top-K. Killed.
+
+**Mixture of distograms** across {seeded, iter_R2, iter_R3,
+iter_R2_low, iter_R3_low}. Equal-weight 0.3029. Top-3 mix 0.3134. Best
+of (R2_low + R3_low) 0.3329. All worse than best single algorithm.
+Averaging blurs distributions.
+
+**Per-protein best (cheats)**: picking the best individual algorithm
+per protein on the train set gives mean 0.3365 — barely better than
+single best (0.3376). The algorithms aren't differently wrong on
+different proteins; they're all wrong in similar ways.
+
+**Per-pair max-confidence (no GT)**: for each pair, pick the variant
+with the highest peak probability. 0.3037 — *worse* than individuals.
+Cross-algorithm confidence doesn't correlate with cross-algorithm
+correctness.
+
+**Iter on top of iter_R3_low** (effectively R=5 total: snapshot
+R3_low, then run R=2 iter from it). 0.3364 raw, 0.3389 sharpened.
++35.78%. Tiny improvement over R=3. Confirms iteration saturates by
+round ~3.
+
+**Strict iteration from R3_low prior** (1 round, K=2L, min_prob=0.5
+using the now-richer iter_R3_low's high-confidence contact set).
+0.3333 raw, 0.3343 sharpened. *Worse* than growing-K. Strict
+threshold loses too many seeds even after iteration enriches the
+candidate pool.
+
+**Growing K per round** — kc=[0.5L, 1.0L, 1.5L], R=3, min_prob=0.1.
+Cautious-then-bold schedule. **0.3421 raw (T=1.0 best), +37.07%.**
+New best. 4/10 proteins now pass the +50% bar individually
+(7y5j, 7ykm, 7ur2 newly passes, growing K also raises 7zs2 close to
+the bar). The remaining hard proteins (8baq, 7uk8, 8cba, 7xz3,
+8eb9, 7ylr) still need +0.07 to +0.13.
+
+**Plddt-token probe**: free-form T=0.7 sample from base prompt
+produces messy mixed output — many `<*-range-contact><pi><pj>` but
+also bare position triplets, lonely `<distance>` markers without
+position/atom/bin completion, and `<distance><d_X.Y>` direct binding.
+No `<plddt_*>` tokens emitted. Plddt path is dead — the model
+doesn't naturally produce confidence tokens during generation.
+
+### Where I am
+
+| algorithm | LDDT | sharpened | Δ% |
+|---|---:|---:|---:|
+| baseline_naive | 0.2496 | 0.2738 | +9.68 (sharp) |
+| seeded_contacts (K=L, min=0.3) | 0.2816 | 0.2894 | +15.94 |
+| iterative_R3_kc1.0_min0.1 | 0.3327 | 0.3376 | +35.31 |
+| **iter_R3_grow_kc05_10_15** | **0.3421** | 0.3418 | **+37.07** |
+| gt_oracle_seeded (diagnostic) | 0.7167 | 0.7163 | +187 |
+| **+10% bar (cleared)** | — | 0.2746 | — |
+| **+50% bar (NOT cleared)** | — | 0.3744 | — |
+
+Best honest algorithm: `iter_R3_grow_kc05_10_15` at 0.3421 — without
+even needing sharpening on top. Wall-clock chain = 1387 (baseline
+prior) + 1931 (iter) = 3318 s, 2.39× baseline, well within 5× budget.
+
+The growing-K schedule beats fixed-K because each round adds *more*
+confident contacts (iteration sharpens contact predictions, raising
+many pairs above the threshold). Starting bold and staying bold (K=L
+throughout) saturates because round 1's noisy bold picks limit
+round 2's improvement.
+
+_(Running R=4 with kc=[0.5, 1.0, 1.5, 2.5] for one more push.)_

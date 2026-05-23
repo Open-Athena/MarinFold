@@ -55,6 +55,7 @@ def _worker(
     min_modal_prob: float,
     sharpen_T_for_modes: float,
     order: str,
+    prior_name: str,
 ) -> None:
     """One worker = one GPU = one persistent vLLM instance.
 
@@ -101,7 +102,7 @@ def _worker(
                 min_modal_prob=min_modal_prob,
                 sharpen_T_for_modes=sharpen_T_for_modes,
                 order=order,
-                initial_prior_path=Path(out_dir) / stem / "distogram_baseline_naive.npz",
+                initial_prior_path=Path(out_dir) / stem / prior_name,
             )
             result_queue.put((stem, f"gpu{gpu_id}", elapsed, ""))
         except Exception as exc:  # noqa: BLE001 — surface per-protein failures
@@ -160,6 +161,7 @@ def run(
     min_modal_prob: float,
     sharpen_T_for_modes: float,
     order: str,
+    prior_name: str,
 ) -> dict:
     """Drive the pool. Returns a small dict of timing + completion info."""
     stems_with_lengths = _read_train_stems(train_csv)
@@ -230,6 +232,7 @@ def run(
                 "min_modal_prob": min_modal_prob,
                 "sharpen_T_for_modes": sharpen_T_for_modes,
                 "order": order,
+                "prior_name": prior_name,
             },
             daemon=False,
         )
@@ -460,6 +463,10 @@ def main() -> None:
         "--order", default="long_med_short",
         choices=["long_med_short", "by_prob"],
     )
+    parser.add_argument(
+        "--prior-name", default="distogram_baseline_naive.npz",
+        help="Snapshot filename in outputs/<stem>/ to use as round-1 prior.",
+    )
     args = parser.parse_args()
 
     info = run(
@@ -479,6 +486,7 @@ def main() -> None:
         min_modal_prob=args.min_modal_prob,
         sharpen_T_for_modes=args.sharpen_T_for_modes,
         order=args.order,
+        prior_name=args.prior_name,
     )
 
     print(f"\nWorker model-load times (s): {info.get('worker_load_seconds', {})}")

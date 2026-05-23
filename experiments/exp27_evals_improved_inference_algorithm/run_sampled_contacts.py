@@ -49,6 +49,7 @@ def _worker(
     temperature: float,
     top_p: float,
     base_seed: int,
+    aggregation: str,
 ) -> None:
     """One worker = one GPU = one persistent vLLM instance.
 
@@ -93,6 +94,7 @@ def _worker(
                 temperature=temperature,
                 top_p=top_p,
                 base_seed=base_seed,
+                aggregation=aggregation,
             )
             result_queue.put((stem, f"gpu{gpu_id}", elapsed, ""))
         except Exception as exc:  # noqa: BLE001 — surface per-protein failures
@@ -149,6 +151,7 @@ def run(
     temperature: float,
     top_p: float,
     base_seed: int,
+    aggregation: str,
 ) -> dict:
     """Drive the pool. Returns a small dict of timing + completion info."""
     stems_with_lengths = _read_train_stems(train_csv)
@@ -217,6 +220,7 @@ def run(
                 "temperature": temperature,
                 "top_p": top_p,
                 "base_seed": base_seed,
+                "aggregation": aggregation,
             },
             daemon=False,
         )
@@ -436,6 +440,9 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument("--base-seed", type=int, default=27)
+    parser.add_argument(
+        "--aggregation", default="average", choices=["average", "union"],
+    )
     args = parser.parse_args()
 
     info = run(
@@ -453,6 +460,7 @@ def main() -> None:
         temperature=args.temperature,
         top_p=args.top_p,
         base_seed=args.base_seed,
+        aggregation=args.aggregation,
     )
 
     print(f"\nWorker model-load times (s): {info.get('worker_load_seconds', {})}")

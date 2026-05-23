@@ -204,47 +204,87 @@ def predict_one(
     temperature: float = 0.7,
     top_p: float = 0.9,
     base_seed: int = 27,
+    aggregation: str = "average",
 ) -> float:
     """Predict distances with model-sampled contact prefixes.
 
-    For ``n_rollouts > 1``, averages the per-pair probabilities across
-    rollouts (each with its own sampled prefix + its own readout).
+    ``aggregation`` controls how multiple rollouts are combined:
+      - ``average``: each rollout gets its own readout; per-pair probs
+        are averaged. (Earlier finding: this *hurts* — blurs the
+        distogram.)
+      - ``union``: take the UNION of sampled seed contacts across
+        rollouts (deduplicated by (i, j)), then do a single readout
+        with the union as the prefix. Aims to enrich the seed set with
+        diverse low-frequency contacts that any single rollout would
+        miss.
     """
     gt_cif = protenix_dir / "gt" / f"{stem}.cif"
     seq = read_canonical_sequence(gt_cif)
     pair_mask = build_gt_shell_mask(gt_cif, seq.n_residues)
 
     t_start = time.time()
-    accumulator = np.zeros(
-        (seq.n_residues, seq.n_residues, NUM_DISTANCE_BINS), dtype=np.float32,
-    )
     rollouts_meta: list[dict] = []
     n_pairs_queried = 0
-    for r in range(n_rollouts):
-        seeds, n_sample_tokens = sample_contact_prefix(
-            rt, seq.residue_names,
-            max_tokens=max_sample_tokens,
-            temperature=temperature,
-            top_p=top_p,
-            seed=base_seed + r,
+    prefix_token_count = 0
+
+    if aggregation == "average":
+        accumulator = np.zeros(
+            (seq.n_residues, seq.n_residues, NUM_DISTANCE_BINS), dtype=np.float32,
         )
-        probs_r, n_pairs_queried, prefix_token_count = predict_distogram_with_prefix(
+        for r in range(n_rollouts):
+            seeds, n_sample_tokens = sample_contact_prefix(
+                rt, seq.residue_names,
+                max_tokens=max_sample_tokens,
+                temperature=temperature, top_p=top_p,
+                seed=base_seed + r,
+            )
+            probs_r, n_pairs_queried, prefix_token_count = predict_distogram_with_prefix(
+                rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
+                seeds=seeds, batch_size=batch_size,
+            )
+            accumulator += probs_r
+            rollouts_meta.append({
+                "rollout": r, "seed": base_seed + r,
+                "n_sample_tokens": n_sample_tokens,
+                "n_seeds": len(seeds),
+                "prefix_token_count": prefix_token_count,
+            })
+        probs = accumulator / max(1, n_rollouts)
+        row_sums = probs.sum(axis=-1, keepdims=True)
+        np.divide(probs, row_sums, out=probs, where=row_sums > 0)
+    elif aggregation == "union":
+        all_seeds: list[tuple[int, int, str]] = []
+        seen: set[tuple[int, int]] = set()
+        for r in range(n_rollouts):
+            seeds, n_sample_tokens = sample_contact_prefix(
+                rt, seq.residue_names,
+                max_tokens=max_sample_tokens,
+                temperature=temperature, top_p=top_p,
+                seed=base_seed + r,
+            )
+            rollouts_meta.append({
+                "rollout": r, "seed": base_seed + r,
+                "n_sample_tokens": n_sample_tokens,
+                "n_seeds": len(seeds),
+            })
+            for (i, j, tok) in seeds:
+                if (i, j) in seen:
+                    continue
+                seen.add((i, j))
+                all_seeds.append((i, j, tok))
+        # Sort the union long → medium → short for prefix
+        rng_idx = {
+            "<long-range-contact>": 0,
+            "<medium-range-contact>": 1,
+            "<short-range-contact>": 2,
+        }
+        all_seeds.sort(key=lambda s: (rng_idx[s[2]], s[0], s[1]))
+        probs, n_pairs_queried, prefix_token_count = predict_distogram_with_prefix(
             rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
-            seeds=seeds, batch_size=batch_size,
+            seeds=all_seeds, batch_size=batch_size,
         )
-        accumulator += probs_r
-        rollouts_meta.append({
-            "rollout": r,
-            "seed": base_seed + r,
-            "n_sample_tokens": n_sample_tokens,
-            "n_seeds": len(seeds),
-            "prefix_token_count": prefix_token_count,
-        })
-    probs = accumulator / max(1, n_rollouts)
-    # Re-normalize rows (safety; averaging of normalized rows stays
-    # normalized but rounding can drift).
-    row_sums = probs.sum(axis=-1, keepdims=True)
-    np.divide(probs, row_sums, out=probs, where=row_sums > 0)
+    else:
+        raise ValueError(f"unknown aggregation: {aggregation}")
     elapsed = time.time() - t_start
 
     n_pairs_total = seq.n_residues * (seq.n_residues - 1) // 2
@@ -258,6 +298,7 @@ def predict_one(
         "n_pairs_queried": n_pairs_queried,
         "pair_filter_fraction": round(n_pairs_queried / n_pairs_total, 4),
         "n_rollouts": n_rollouts,
+        "aggregation": aggregation,
         "max_sample_tokens": max_sample_tokens,
         "temperature": temperature,
         "top_p": top_p,
