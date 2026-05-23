@@ -122,12 +122,116 @@ No Modal, no iris, no TRC — local only per the issue.
 
 ## Results
 
-_(Filled in as experiments land.)_
+Full per-experiment narrative lives in
+[`RESULTS_LOG.md`](RESULTS_LOG.md); aggregate rows are in
+[`data/experiments.tsv`](data/experiments.tsv). Summary below.
 
 ### Baseline
 
-_(Filled in after the baseline run completes.)_
+`baseline_naive` (exp20's naive distogram readout, A100/bf16) on the
+10-protein train set:
+
+  mean LDDT 0.2496 · median 0.2500 · wall 1386.7 s
+
+Per-protein range 0.151 — 0.449. Soft LDDT 0.268 (the model's
+probability mass is closer to GT than its expected-value point
+estimate; classic multimodal failure).
+
+### The +10% bar (mean LDDT ≥ 0.2746): cleared
+
+Two cheap wins each clear it on their own; stacking them gives the
+first decisive result.
+
+- **Distogram sharpening** (`p' = softmax(log(p+ε)/T)`, T=0.05). Pure
+  post-process, ~30 s. Mean LDDT **0.2738, +9.68%** — just below
+  the bar alone but stacks.
+- **Self-bootstrapped contact seeding** (`seeded_contacts_kL1.0_min0.3`):
+  one extra readout where K=L most-confident contacts from a full
+  baseline are dropped into the `<begin_statements>` prefix as
+  `<{range}-range-contact><pi><pj>`. Mean LDDT **0.2816, +12.83%**.
+  Stack with sharpening: **0.2894, +15.94%**.
+
+### The +50% bar (mean LDDT ≥ 0.3744): NOT cleared
+
+Best honest algorithm: **`iter_R4_grow_05_10_15_25`** —
+iterative contact-only with a growing-K schedule (kc per round =
+0.5L, 1.0L, 1.5L, 2.5L; min_contact_prob=0.1; range-ordered
+long → medium → short). Round 1 picks contacts from baseline. Each
+subsequent round picks contacts from the previous round's distogram,
+which is sharper because iteration enriches the model's high-
+confidence contact pool (8baq_A goes from 3 contacts >0.5 in
+baseline to 227 after iter R=3).
+
+  mean LDDT **0.3511** · median 0.3169 · +40.66%
+  (sharpening *doesn't* help here — T=1.0 wins, same pattern as
+  the GT-oracle: better algos have less-spread distributions to
+  rescue.)
+
+Chain wall: 1386.7 (baseline prior — necessary because seeds must
+come from an unfiltered distogram) + 2986.4 (iter R=4 grow) =
+**4373 s, 3.16× baseline**. Within the 5× budget.
+
+### GT-oracle ceiling (diagnostic only)
+
+Seeding the model with TRUE contacts (every pair where `gt_d < 8 Å`)
+gives mean LDDT **0.7167, +187%**. This tells us:
+1. The model has the capacity to score >0.7 with right contacts.
+2. The bottleneck for honest algorithms is contact-prediction quality
+   on harder proteins, not the model's expressivity.
+3. Sharpening doesn't help the oracle distogram (T=1.0 best),
+   confirming the diminishing-returns pattern for sharpening as
+   algorithms improve.
+
+### What got tried and rejected
+
+Full table in `RESULTS_LOG.md`. Headline misses:
+
+- **Sampled contact prefixes** (idea 6, model-generated contact
+  statements as prefix): +2.88% single rollout, +0.28% M=5 average.
+  M=10 union: +26.92%. All worse than top-K marginal seeding because
+  the model emits few contacts before transitioning to `<distance>`
+  and the sampled set has lower precision than top-K.
+- **Distance commits** (idea 2, one-hot rows for high-confidence
+  modal distances): +12.4% — *worse* than plain seeded. One-hot rows
+  zero LDDT when modes are wrong; per-pair variance kills the gain.
+- **K = 2L seeded contacts**: −1.2% vs K=L. Adding lower-precision
+  tail seeds poisons the readout. **Precision > count.**
+- **Multi-rollout averaging** of distograms (M=5): blurs the
+  distributions, 8/10 proteins regress.
+- **Mixture-of-distograms** across algorithms: doesn't beat single
+  best; the variants aren't differently wrong, just less wrong.
+- **Per-pair max-confidence** ensembling: worse than any individual.
+- **Sharpening + better algo**: the sharpening contribution shrinks
+  as algorithms improve (matches GT-oracle finding).
 
 ## Conclusion
 
-_(Filled in once at least one algorithm clears the +10% bar.)_
+**Best honest algorithm: `iter_R4_grow_05_10_15_25` at mean LDDT
+0.3511 (+40.66%).** Clears the issue's original +10% bar (raised
+mid-experiment to +50%) by a wide margin; falls short of the +50%
+bar by 0.023 absolute / 9 percentage points.
+
+Per-protein status vs +50% bar (0.3744): 4/10 pass on this single
+algorithm (7y5j, 7ykm, 7ur2 newly passes from iteration, 7zs2
+nearly there at +0.012). The hard misses (8baq, 7uk8, 7xz3,
+8cba, 8eb9, 7ylr) all gain +0.05 to +0.13 from baseline but their
+oracle ceilings are 0.62 — 0.73; the model can score well on these
+proteins given the right contact set but doesn't honestly identify
+those contacts. The bottleneck is contact-prediction quality on
+sparser-confidence (mostly larger) proteins.
+
+Reproducing the best algorithm:
+
+```
+uv run python run_baseline.py --dtype bfloat16 --n-gpus 1
+uv run python snapshot_distograms.py --to distogram_baseline_naive.npz
+uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
+  --algorithm iter_R4_grow_05_10_15_25 \
+  --n-rounds 4 \
+  --k-contacts-per-L-per-round 0.5 1.0 1.5 2.5 \
+  --k-distances-per-L-per-round 0.0 0.0 0.0 0.0 \
+  --min-contact-prob 0.1 \
+  --prior-name distogram_baseline_naive.npz
+```
+
+Total wall: ~4373 s on a single A100 40 GB in bf16.
