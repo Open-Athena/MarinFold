@@ -261,4 +261,79 @@ gt_filtered readout under that prefix.
 
 ### idea 2b: iterative contacts-only
 
-_(running iterative_contacts_R2_kc1.0)_
+Round 1 = seeded contacts from baseline. Round 2+ = pick fresh
+contacts from the *previous round's* distogram (sharper because that
+round had context). No distance commits — those hurt (see idea 2).
+
+Knob sweep:
+
+| algorithm | rounds | K | min_p | order | LDDT (raw) | + sharpen | Δ% |
+|---|---:|---|---:|---|---:|---:|---:|
+| iterative_contacts_R2_kc1.0 | 2 | L | 0.3 | long_med_short | 0.2916 | 0.2970 (T=0.3) | +19.0 |
+| iterative_contacts_R3_kc1.0 | 3 | L | 0.3 | long_med_short | 0.2953 | 0.2999 (T=0.3) | +20.16 |
+| iterative_contacts_R2_kc1.0_min0.1 | 2 | L | **0.1** | long_med_short | 0.3292 | 0.3331 (T=0.1) | +33.5 |
+| iterative_contacts_R3_kc1.0_min0.1 | 3 | L | 0.1 | long_med_short | 0.3327 | **0.3376 (T=0.05)** | **+35.3** |
+| iterative_contacts_R2_kc1.0_min0.1_byprob | 2 | L | 0.1 | by_prob | 0.3246 | 0.3248 (T=0.3) | +30.1 |
+| iterative_contacts_R2_kc2.0_min0.1 | 2 | **2L** | 0.1 | long_med_short | 0.3209 | 0.3209 (T=1.0) | +28.6 |
+
+**Findings:**
+- Lowering `min_contact_prob` from 0.3 to 0.1 was the big lever
+  (+0.04). Below 0.1 there's no effect (the K=L cap binds in either
+  case for our proteins).
+- R=2 → R=3 with low threshold added only +0.005 (saturating).
+- `by_prob` ordering is *worse* than `long_med_short` (−0.008). The
+  range-priority sort matters: long-range contacts as anchors first
+  reflects the training-time document structure.
+- K=2L (double density) *hurts* (−0.012 vs K=L). Adding lower-
+  precision seeds in the second half of the prefix poisons the
+  readout. **Precision > count.**
+- Sharpening's gain shrinks as the underlying distogram improves
+  (matches the GT-oracle finding). For the best iterative variant
+  sharpening adds only +0.005.
+
+**Per-protein status vs the +50% bar (0.3744):**
+
+| stem | base | iter_R3_low | oracle | gap to bar |
+|---|---:|---:|---:|---:|
+| 7y5j_A | 0.4485 | 0.5583 | 0.8044 | **PASS** |
+| 7ykm_A | 0.3317 | 0.4468 | 0.8052 | **PASS** |
+| 7ur2_A | 0.2633 | 0.3682 | 0.7219 | +0.006 |
+| 7zs2_A | 0.2500 | 0.3350 | 0.6895 | +0.039 |
+| 7ylr_A | 0.2673 | 0.3041 | 0.6734 | +0.070 |
+| 8eb9_A | 0.1510 | 0.2872 | 0.7254 | +0.087 |
+| 7xz3_A | 0.1913 | 0.2647 | 0.6993 | +0.109 |
+| 8cba_A | 0.2045 | 0.2619 | 0.7319 | +0.112 |
+| 7uk8_A | 0.2010 | 0.2565 | 0.6290 | +0.117 |
+| 8baq_A | 0.1872 | 0.2439 | 0.6870 | +0.130 |
+
+3/10 already pass. 5 of the 7 misses need >+0.07; 4 need >+0.10. The
+oracle ceiling is wide open for every miss — contact-prediction
+quality on the weak proteins is the bottleneck.
+
+### Distogram-mixture diagnostic
+
+Tested averaging distograms across {seeded, iter_R2, iter_R3,
+iter_R2_low, iter_R3_low}. Equal-weight mix: 0.3029. Top-3 mix:
+0.3134. Mix of just (R2_low + R3_low): 0.3329. **Mixtures don't beat
+the best single algorithm.** The component algorithms aren't
+*differently* wrong — they're varying degrees of the same wrong, and
+averaging just blends a good signal with worse ones.
+
+### Mode-vs-mean precision on high-confidence pairs (diagnostic)
+
+For pairs with sharpened max prob > 0.5, the modal-bin LDDT
+preservation is *slightly* better than the mean-bin (~+0.01-0.07
+absolute) on most proteins, but the gap is small and mixed-sign per
+protein. Confirms: distance commits at the mode don't have much
+headroom over the mean. Killing distance-commit variants entirely.
+
+### Where we are
+
+Best honest algorithm: **`iterative_contacts_R3_kc1.0_min0.1` +
+sharpen T=0.05 → mean LDDT 0.3376, +35.3%.** Chain wall =
+1387 (baseline prior) + 1953 (iter R=3) + 21 (sharpen sweep) =
+3361 s, 2.4× baseline. Within 5× budget.
+
++50% bar (0.3744) remains uncleared. Need +0.037 more. The cheap
+knobs (more rounds, higher K, lower threshold) have plateaued. Next
+must be a different algorithm shape.

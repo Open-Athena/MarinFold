@@ -54,6 +54,7 @@ def _worker(
     min_contact_prob: float,
     min_modal_prob: float,
     sharpen_T_for_modes: float,
+    order: str,
 ) -> None:
     """One worker = one GPU = one persistent vLLM instance.
 
@@ -99,6 +100,7 @@ def _worker(
                 min_contact_prob=min_contact_prob,
                 min_modal_prob=min_modal_prob,
                 sharpen_T_for_modes=sharpen_T_for_modes,
+                order=order,
                 initial_prior_path=Path(out_dir) / stem / "distogram_baseline_naive.npz",
             )
             result_queue.put((stem, f"gpu{gpu_id}", elapsed, ""))
@@ -157,6 +159,7 @@ def run(
     min_contact_prob: float,
     min_modal_prob: float,
     sharpen_T_for_modes: float,
+    order: str,
 ) -> dict:
     """Drive the pool. Returns a small dict of timing + completion info."""
     stems_with_lengths = _read_train_stems(train_csv)
@@ -226,6 +229,7 @@ def run(
                 "min_contact_prob": min_contact_prob,
                 "min_modal_prob": min_modal_prob,
                 "sharpen_T_for_modes": sharpen_T_for_modes,
+                "order": order,
             },
             daemon=False,
         )
@@ -452,6 +456,10 @@ def main() -> None:
     parser.add_argument("--min-contact-prob", type=float, default=0.3)
     parser.add_argument("--min-modal-prob", type=float, default=0.5)
     parser.add_argument("--sharpen-T-for-modes", type=float, default=0.1)
+    parser.add_argument(
+        "--order", default="long_med_short",
+        choices=["long_med_short", "by_prob"],
+    )
     args = parser.parse_args()
 
     info = run(
@@ -470,6 +478,7 @@ def main() -> None:
         min_contact_prob=args.min_contact_prob,
         min_modal_prob=args.min_modal_prob,
         sharpen_T_for_modes=args.sharpen_T_for_modes,
+        order=args.order,
     )
 
     print(f"\nWorker model-load times (s): {info.get('worker_load_seconds', {})}")

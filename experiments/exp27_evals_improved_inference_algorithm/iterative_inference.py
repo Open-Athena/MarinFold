@@ -91,8 +91,16 @@ def extract_round_statements(
     sharpen_T_for_modes: float,
     already_committed: set[tuple[int, int]],
     residue_names: list[str],
+    order: str = "long_med_short",
 ) -> tuple[list[tuple[int, int, str]], list[tuple[int, int, str, str, str]]]:
     """Pick contact + distance statements from a prior distogram.
+
+    ``order`` controls how the contact candidates are sorted before
+    truncation to ``k_contacts``:
+      - ``long_med_short`` (default): all long-range first, then medium,
+        then short, each by descending prob. Matches the v1 vocab order.
+      - ``by_prob``: top by prob regardless of range. Tends to give a
+        natural mix when high-prob picks span ranges.
 
     Returns ``(contact_statements, distance_statements)`` where
       contact_statements = [(i, j, "<{range}-range-contact>")]
@@ -113,8 +121,13 @@ def extract_round_statements(
                 if p < min_contact_prob:
                     continue
                 contact_candidates.append((i + 1, j + 1, token, p))
-    range_index = {tok: idx for idx, (_, _, _, tok) in enumerate(_RANGE_BUCKETS)}
-    contact_candidates.sort(key=lambda c: (range_index[c[2]], -c[3]))
+    if order == "long_med_short":
+        range_index = {tok: idx for idx, (_, _, _, tok) in enumerate(_RANGE_BUCKETS)}
+        contact_candidates.sort(key=lambda c: (range_index[c[2]], -c[3]))
+    elif order == "by_prob":
+        contact_candidates.sort(key=lambda c: -c[3])
+    else:
+        raise ValueError(f"unknown order: {order}")
     contact_statements = [(i, j, tok) for (i, j, tok, _p) in contact_candidates[:k_contacts]]
 
     # Track what we've committed to avoid double-counting in distance picks.
@@ -263,6 +276,7 @@ def predict_one(
     min_contact_prob: float = 0.3,
     min_modal_prob: float = 0.5,
     sharpen_T_for_modes: float = 0.1,
+    order: str = "long_med_short",
     initial_prior_path: Path | None = None,
 ) -> float:
     """Run R rounds of iterative seeding.
@@ -296,6 +310,7 @@ def predict_one(
             sharpen_T_for_modes=sharpen_T_for_modes,
             already_committed=already_committed,
             residue_names=seq.residue_names,
+            order=order,
         )
         current_prior, n_pairs_queried, prefix_token_count = predict_distogram_with_statements(
             rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
