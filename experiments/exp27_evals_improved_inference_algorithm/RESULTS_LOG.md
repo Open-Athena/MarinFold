@@ -483,3 +483,110 @@ right contacts, but for proteins where the model's marginal contact
 predictions are sparse (8baq, 7uk8, 7xz3, 8cba, 8eb9, 7ylr), even
 iteration can't honestly fill in the missing contacts beyond ~0.25-
 0.32.
+
+## Update: re-running sampled-prefix variants properly
+
+User flagged that I had a bug in idea 6: the original "sampled
+contacts" stopped at the first `<distance>` token. But training docs
+stochastically interleave contacts and distances, so `<distance>`
+isn't a meaningful boundary. With the stop in place each rollout
+emitted only 2-33 contacts; the seed set was tiny and noisy.
+
+**Fix: `ContactsOnlyLogitsProcessor`** — masks all non-contact tokens
+during generation. State cycle (mod 3): contact-range → position →
+position. Each rollout now spends its whole `max_tokens` budget
+emitting contact statements.
+
+### Range-token diagnostic (`probe_range_entropy.py`)
+
+For each protein, after each contact-range token, measure entropy of
+the model's next-token distribution over position tokens. Result:
+all 3 ranges have similar information (~5.0-6.9 bits, vs max
+6.6-8.6); short tends to be 0.1-0.5 bits sharper. **No range is
+"flat".** But the model's prior over WHICH range to emit is
+overwhelmingly biased to medium (~99% at T=0.7).
+
+So the medium-bias is in the range-token *prior*, not in the
+conditional knowledge. `range_strategy` knob added to the LP:
+  - `model`: keep model's prior (the bug — heavily medium-biased)
+  - `uniform`: overwrite range-token logits to 0 (1/3 of each)
+  - `round_robin`: deterministic L,M,S,L,M,S,...
+
+### Sampled-prefix results (with the LP fix)
+
+| variant | strategy | mean LDDT | Δ% | wall (s) |
+|---|---|---:|---:|---:|
+| M=1 | model (buggy: medium-bias) | 0.2219 | −11.1 | 743 |
+| M=1 | uniform | 0.2713 | +8.7 | 769 |
+| M=5 union | uniform | 0.3142 | +25.9 | 2458 |
+| M=10 union | uniform | 0.3213 | +28.7 | 4237 |
+
+Sampled-uniform plateaus around 0.32. Diminishing returns past M=5.
+But — **per-protein breakdown shows it gains on different proteins
+than iter_R4_grow**. 8eb9_A: 0.151 (baseline) → 0.362 (sampled M=5
+union uniform), gain +0.21 (vs +0.16 from iter_R4_grow). Sampling
+delivers contacts that iteration can't extract from the marginal
+distogram.
+
+### Combined: sampled-uniform-M=5 prior + iter R=4 grow
+
+This is the new headline.
+
+**`iter_R4_grow_on_sampled_uniform_M5`**: take the M=5 union uniform
+distogram as the prior, then run the same R=4 growing-K iteration
+(kc=[0.5, 1, 1.5, 2.5], min_p=0.1) on top.
+
+  mean LDDT **0.3564, +42.81%**.  median 0.3665.
+  chain wall = 2458 (sampled prior) + 3155 (iter R=4) = **5613 s**,
+  4.05× baseline. Within 5× budget.
+
+  Sharpening sweep: T=1.0 wins (no sharpening helps), same pattern as
+  the GT-oracle finding.
+
+Per-protein vs +50% bar (0.3744):
+
+| stem | base | iter_R4_grow | new headline | pad |
+|---|---:|---:|---:|---:|
+| 7y5j (102) | 0.4485 | 0.5659 | 0.5136 | PASS |
+| 7ykm (105) | 0.3317 | 0.5178 | 0.4639 | PASS |
+| 7ur2 (195) | 0.2633 | 0.4008 | 0.3665 | +0.008 |
+| 7ylr (330) | 0.2673 | 0.3169 | **0.3991** | **PASS (newly)** |
+| 7zs2 (316) | 0.2500 | 0.3619 | **0.3778** | **PASS (newly)** |
+| 8eb9 (95)  | 0.1510 | 0.3071 | 0.3455 | +0.029 |
+| 8cba (214) | 0.2045 | 0.2735 | 0.3028 | +0.071 |
+| 7uk8 (394) | 0.2010 | 0.2515 | 0.2657 | +0.108 |
+| 7xz3 (325) | 0.1913 | 0.2618 | 0.2727 | +0.101 |
+| 8baq (208) | 0.1872 | 0.2540 | 0.2567 | +0.117 |
+
+**5 / 10 proteins now pass the +50% bar** (up from 4 with iter_R4_grow
+alone). 7ylr and 7zs2 cross the bar with the sampled prior; 7ur2 is
+within 0.01.
+
+Tried `iter_R3_grow_on_sampled_uniform_M10`: 0.3401 (worse — adding
+more sampling rollouts and dropping one iteration round doesn't pay
+off; the iteration round is more valuable than M=10 vs M=5 sampling
+diversity).
+
+## Final standings
+
+| algorithm | mean LDDT | Δ% | chain wall (s) | budget? |
+|---|---:|---:|---:|---:|
+| baseline_naive | 0.2496 | — | 1386.7 | — |
+| **+10% bar** | **0.2746** | **+10** | — | — |
+| iter_R4_grow_05_10_15_25 | 0.3511 | +40.68 | 4373 | ✓ |
+| iter_R4_grow_kc_kd_strict | 0.3503 | +40.34 | 5160 | ✓ (no gain) |
+| sampled_uniform_M5_union | 0.3142 | +25.86 | 2458 | ✓ |
+| sampled_uniform_M10_union | 0.3213 | +28.71 | 4237 | ✓ |
+| iter_R3_grow_on_sampled_M10 | 0.3401 | +36.26 | 6226 | ✓ |
+| **iter_R4_grow_on_sampled_M5** | **0.3564** | **+42.81** | **5613** | ✓ |
+| **+50% bar** | **0.3744** | **+50** | — | — |
+| gt_oracle (diagnostic) | 0.7167 | +187.14 | — | (cheating) |
+
+**Headline: `iter_R4_grow_on_sampled_uniform_M5` — 0.3564 (+42.81%),
+chain 5613 s (4.05× baseline), within 5× budget. Falls 0.018 short of
++50% bar.**
+
+5 / 10 proteins pass +50% individually. The 5 misses still need +0.07
+to +0.12 — the remaining gap is the model's contact-prediction quality
+on hard proteins (oracle ceilings 0.62-0.74), which neither sampling
+nor iteration can fully unlock from this checkpoint.

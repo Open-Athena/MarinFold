@@ -153,29 +153,46 @@ first decisive result.
 
 ### The +50% bar (mean LDDT ≥ 0.3744): NOT cleared
 
-Best honest algorithm: **`iter_R4_grow_05_10_15_25`** —
-iterative contact-only with a growing-K schedule (kc per round =
-0.5L, 1.0L, 1.5L, 2.5L; min_contact_prob=0.1; range-ordered
-long → medium → short). Round 1 picks contacts from baseline. Each
-subsequent round picks contacts from the previous round's distogram,
-which is sharper because iteration enriches the model's high-
-confidence contact pool (8baq_A goes from 3 contacts >0.5 in
-baseline to 227 after iter R=3).
+Best honest algorithm: **`iter_R4_grow_on_sampled_uniform_M5`** —
+combines two ideas:
 
-  mean LDDT **0.3511** · median 0.3169 · +40.66%
+1. **Sampled-uniform prior.** Sample contact statements directly
+   from the model (vLLM `logits_processors` masks everything but the
+   3 contact-range and N position tokens). The model's natural prior
+   over the 3 range tokens is heavily medium-biased (~99% at T=0.7),
+   so we overwrite range-token logits to 0 → uniform 1/3 of each
+   range. M=5 independent rollouts, take the UNION of unique
+   (i, j) pairs as the seed prefix. Run one readout under that
+   prefix. mean LDDT 0.3142 alone.
 
-The reported 0.3511 uses the **standard expected-distance readout**
-(`pred_d = sum(probs * midpoints)`) with **no sharpening** — that's
-the score_marinfold default. Sharpening over the top *hurts*: a
-T sweep over the iter R=4 grow distogram gave 0.3511 at T=1.0
-(identity), 0.3492 at T=0.3, 0.3479 at T=0.1, 0.3473 at T=0.05.
-The "diminishing-returns-from-sharpening" pattern matches the
-GT-oracle: once the underlying distributions are sharper because of
-better context, further sharpening over-commits and trims good mass.
+2. **Iterative contact-only with growing K**, starting from that
+   sampled prior instead of the naive baseline distogram.
+   kc per round = 0.5L, 1.0L, 1.5L, 2.5L. min_contact_prob=0.1.
+   Range-ordered long → medium → short.
 
-Chain wall: 1386.7 (baseline prior — necessary because seeds must
-come from an unfiltered distogram) + 2986.4 (iter R=4 grow) =
-**4373 s, 3.16× baseline**. Within the 5× budget.
+  mean LDDT **0.3564** · median 0.3665 · +42.81%
+
+The reported 0.3564 uses the **standard expected-distance readout**
+(`pred_d = sum(probs * midpoints)`) with **no sharpening** —
+sharpening on top hurts (T=1.0 wins; T=0.3 gives 0.3537, T=0.1
+gives 0.3520). Same diminishing-returns pattern the GT-oracle showed:
+sharpening rescues high-entropy distributions from bad context;
+once context is good the distributions are already sharp.
+
+Chain wall: 2458 (sampled M=5 union prior) + 3155 (iter R=4 grow) =
+**5613 s, 4.05× baseline**. Within the 5× budget.
+
+**Why sampling helps where iteration didn't:** sampled rollouts emit
+contact pairs autoregressively, so they capture *joint* structural
+hints (which positions co-occur as plausible contacts) that the
+independent marginal contact-probabilities (used by pure iteration)
+miss. 8eb9_A — a protein where iteration alone got stuck at 0.31 —
+jumps to 0.35 with the sampled prior + iteration; 7ylr_A and 7zs2_A
+newly clear the +50% bar.
+
+**Previous in-budget headline** (kept for the record):
+  `iter_R4_grow_05_10_15_25` — pure iteration from a naive baseline
+  prior. 0.3511, +40.66%, chain 4373 s.
 
 ### GT-oracle ceiling (diagnostic only)
 
@@ -212,32 +229,37 @@ Full table in `RESULTS_LOG.md`. Headline misses:
 
 ## Conclusion
 
-**Best honest algorithm: `iter_R4_grow_05_10_15_25` at mean LDDT
-0.3511 (+40.66%).** Clears the issue's original +10% bar (raised
-mid-experiment to +50%) by a wide margin; falls short of the +50%
-bar by 0.023 absolute / 9 percentage points.
+**Best honest algorithm: `iter_R4_grow_on_sampled_uniform_M5` at mean
+LDDT 0.3564 (+42.81%).** Clears the issue's original +10% bar by 4×;
+falls 0.018 short of the mid-experiment-raised +50% bar (0.3744).
 
-Per-protein status vs +50% bar (0.3744): 4/10 pass on this single
-algorithm (7y5j, 7ykm, 7ur2 newly passes from iteration, 7zs2
-nearly there at +0.012). The hard misses (8baq, 7uk8, 7xz3,
-8cba, 8eb9, 7ylr) all gain +0.05 to +0.13 from baseline but their
-oracle ceilings are 0.62 — 0.73; the model can score well on these
-proteins given the right contact set but doesn't honestly identify
-those contacts. The bottleneck is contact-prediction quality on
-sparser-confidence (mostly larger) proteins.
+Per-protein status vs +50% bar: 5/10 pass on this single algorithm
+(7y5j, 7ykm pass easily; 7ylr and 7zs2 newly cross the bar with the
+sampled prior added; 7ur2 within 0.01). The 5 misses (8baq, 7uk8,
+7xz3, 8cba, 8eb9) need +0.07 to +0.12; their oracle ceilings are
+0.62 — 0.73. The bottleneck is contact-prediction quality on
+sparser-confidence proteins — the model has the *capacity* but
+neither sampling nor iteration can fully extract those contacts
+from this checkpoint.
 
 Reproducing the best algorithm:
 
 ```
-uv run python run_baseline.py --dtype bfloat16 --n-gpus 1
-uv run python snapshot_distograms.py --to distogram_baseline_naive.npz
+# 1. Produce the sampled-uniform-M5 union distogram (no naive prior needed)
+uv run python run_sampled_contacts.py --dtype bfloat16 --n-gpus 1 \
+  --algorithm sampled_uniform_M5_union_T0.7 \
+  --n-rollouts 5 --temperature 0.7 --top-p 0.9 --max-sample-tokens 900 \
+  --range-strategy uniform --aggregation union
+uv run python snapshot_distograms.py --to distogram_sampled_uniform_M5_union.npz
+
+# 2. Iterate R=4 growing K on top of that prior
 uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
-  --algorithm iter_R4_grow_05_10_15_25 \
+  --algorithm iter_R4_grow_on_sampled_uniform_M5 \
   --n-rounds 4 \
   --k-contacts-per-L-per-round 0.5 1.0 1.5 2.5 \
   --k-distances-per-L-per-round 0.0 0.0 0.0 0.0 \
   --min-contact-prob 0.1 \
-  --prior-name distogram_baseline_naive.npz
+  --prior-name distogram_sampled_uniform_M5_union.npz
 ```
 
-Total wall: ~4373 s on a single A100 40 GB in bf16.
+Total wall: ~5613 s on a single A100 40 GB in bf16.
