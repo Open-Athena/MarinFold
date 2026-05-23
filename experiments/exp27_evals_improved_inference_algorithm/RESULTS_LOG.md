@@ -134,4 +134,131 @@ which avoids the baseline-prior cost entirely.)_
 
 ### idea 6: model-sampled contact prefix
 
-_(next up)_
+**`sampled_contacts_n1_T0.7`** — single rollout, sample with T=0.7,
+top_p=0.9, max_tokens=600, stop tokens `<distance>` / `<end>`. Parse
+emitted contact statements, use as prefix, re-read distances.
+
+The model stops at `<distance>` very early — 2-33 contacts per
+protein (vs idea 1's K=L hundreds). Cost 244.6 s.
+
+| stem | L | n_seeds | sample tok | baseline | sampled | Δ |
+|---|---:|---:|---:|---:|---:|---:|
+| 7uk8_A | 394 | 33 | 100 | 0.2010 | 0.2139 | +0.0129 |
+| 7ur2_A | 195 |  8 |  25 | 0.2633 | 0.2765 | +0.0132 |
+| 7xz3_A | 325 | 11 |  34 | 0.1913 | 0.2084 | +0.0171 |
+| 7y5j_A | 102 |  8 |  25 | 0.4485 | 0.4482 | −0.0003 |
+| 7ykm_A | 105 |  2 |   7 | 0.3317 | 0.3165 | −0.0152 |
+| 7ylr_A | 330 | 33 | 100 | 0.2673 | 0.2898 | +0.0225 |
+| 7zs2_A | 316 | 13 |  40 | 0.2500 | 0.2527 | +0.0027 |
+| 8baq_A | 208 |  8 |  25 | 0.1872 | 0.1954 | +0.0082 |
+| 8cba_A | 214 |  8 |  25 | 0.2045 | 0.2072 | +0.0027 |
+| 8eb9_A | 95 |  2 |   7 | 0.1510 | 0.1599 | +0.0089 |
+| **mean** | | | | **0.2496** | **0.2568** | **+0.0072** |
+
+**+2.88%.** Far weaker than idea 1's +12.83%. The model commits very
+few contacts before transitioning to `<distance>` — fewer seeds, less
+conditioning, less lift. Compared to idea 1 which picks K=L seeds from
+the model's marginal contact distribution, sampling under-utilises the
+contact knowledge the model has.
+
+**`sampled_contacts_n5_T0.7`** — same as above but average 5
+independent rollouts (different seeds). Cost 1409.4 s (5× single, as
+expected).
+
+| stem | baseline | M=5 | Δ |
+|---|---:|---:|---:|
+| 7uk8_A | 0.2010 | 0.1929 | −0.0081 |
+| 7ur2_A | 0.2633 | 0.2554 | −0.0079 |
+| 7xz3_A | 0.1913 | 0.1858 | −0.0055 |
+| 7y5j_A | 0.4485 | 0.5032 | +0.0547 |
+| 7ykm_A | 0.3317 | 0.3183 | −0.0134 |
+| 7ylr_A | 0.2673 | 0.2509 | −0.0164 |
+| 7zs2_A | 0.2500 | 0.2465 | −0.0035 |
+| 8baq_A | 0.1872 | 0.1774 | −0.0098 |
+| 8cba_A | 0.2045 | 0.1969 | −0.0076 |
+| 8eb9_A | 0.1510 | 0.1759 | +0.0249 |
+| **mean** | **0.2496** | **0.2503** | **+0.0007** |
+
+**+0.28%, *worse* than single rollout.** 8/10 proteins regress under
+averaging. Probabilistic averaging blurs the per-rollout distograms,
+making them flatter — and we already knew (idea 5 sharpening) that
+flatter distograms are worse for LDDT. The rollout diversity is real
+but the aggregation rule (mean of probs) is wrong: a hard-mode rule
+(pick the bin where rollouts agree most) might be different. Not
+chased further here — idea 1 already cleared the bar with much less
+machinery.
+
+**Verdict: idea 6 ranks far below idea 1 in this form.** The "honest"
+no-prior path costs us most of idea 1's gain. Worth revisiting if
+sampling without a `<distance>` stop token produces denser contact
+emissions — TODO.
+
+### idea 3: stochastic multi-rollout averaging
+
+Covered by `sampled_contacts_n5_T0.7` above (M=5 averaging of sampled
+prefixes). Result: averaging hurts. Not pursuing M=10 — the trend is
+clear and the cost grows linearly.
+
+### idea 2: iterative self-distillation
+
+**`iterative_R2_kc1.0_kd1.0`** — Round 1 = K=L contacts from
+baseline. Round 2 = K=L/2 contacts + K=L modal-distance commits
+(sharpen T=0.1, min_modal_p=0.9). Distance commits become one-hot
+rows in the saved distogram (E[d] = bin midpoint), so a wrong commit
+zeroes that pair's LDDT.
+
+  mean LDDT 0.2805 (median 0.2801), 1639.7 s. **+12.39%, slightly
+  *worse* than plain seeded (0.2816, +12.83%).** Distance commits
+  hurt: locking in one-hot rows is high-variance per pair, and the
+  net LDDT loss from wrong modes outweighs the gain on right modes
+  even at min_modal_p=0.9.
+
+  Verdict on distance commits: kill them. Iterative should be
+  contact-only.
+
+## Update: +50% goal
+
+After clearing +10% with sharpened seeded (0.2894, +15.94%), the user
+raised the bar: **mean LDDT ≥ 0.3744 (+50%)**. Need another +0.085
+absolute. Strategy pivots from knob-tuning to algorithm-shape search.
+
+### GT oracle ceiling diagnostic (NOT a candidate algorithm)
+
+`gt_oracle_seeded` — seed the model with TRUE contacts (every (i,j)
+where GT CB-CB < 8 Å and |i-j| ≥ 6), then run the standard
+gt_filtered readout under that prefix.
+
+  **mean LDDT 0.7167 (median 0.7219), +187%.** Huge.
+
+| stem | baseline | seeded | oracle | oracle − seeded |
+|---|---:|---:|---:|---:|
+| 7uk8_A | 0.2010 | 0.2148 | 0.6290 | +0.4142 |
+| 7ur2_A | 0.2633 | 0.2836 | 0.7219 | +0.4383 |
+| 7xz3_A | 0.1913 | 0.2102 | 0.6993 | +0.4891 |
+| 7y5j_A | 0.4485 | 0.5432 | 0.8044 | +0.2612 |
+| 7ykm_A | 0.3317 | 0.4020 | 0.8052 | +0.4032 |
+| 7ylr_A | 0.2673 | 0.3157 | 0.6734 | +0.3577 |
+| 7zs2_A | 0.2500 | 0.2888 | 0.6895 | +0.4007 |
+| 8baq_A | 0.1872 | 0.2014 | 0.6870 | +0.4856 |
+| 8cba_A | 0.2045 | 0.1973 | 0.7319 | +0.5346 |
+| 8eb9_A | 0.1510 | 0.1593 | 0.7254 | +0.5661 |
+
+**Implications:**
+- The model is *very* capable with right contacts (median per-protein
+  0.72). The +50% bar (0.3744) is well below the ceiling.
+- The gap between honest seeded and oracle (+0.43 average) is
+  contact-prediction quality. Anything that improves contact quality
+  will translate to LDDT gains roughly along this axis.
+- Sharpening the oracle's distogram doesn't help (best T=1.0, no
+  change). The model's distribution is already sharp when context is
+  good. Sharpening was previously rescuing high-entropy distributions
+  caused by inadequate context; once context is right, sharpening
+  has nothing to do. **This means later seeded variants benefit less
+  from sharpening as they get better.**
+- Proteins where seeded did poorly (8eb9, 8baq, 8cba, 7xz3) have the
+  *largest* oracle gaps. Contact quality is the bottleneck across the
+  board, but more so where the model has weak natural confidence.
+
+### idea 2b: iterative contacts-only
+
+_(running iterative_contacts_R2_kc1.0)_
