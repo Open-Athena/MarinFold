@@ -1,0 +1,324 @@
+# Copyright The MarinFold Authors
+# SPDX-License-Identifier: Apache-2.0
+
+"""Idea 6: model-sampled contact prefix.
+
+Honest version of idea 1 — instead of picking seed contacts from a
+prior naive distogram (which requires a full naive pass), let the
+model autoregressively generate a contact-statement block from the
+base prompt ``<begin_sequence><AAs><begin_statements>``. Parse the
+emitted statements (stop at ``<distance>``, ``<end>``, max-token cap,
+or first malformed sequence), use them as the prefix for a distance
+readout on LDDT-shell pairs.
+
+This matches the training distribution: docs were generated as
+``[contacts]* [distances]*``, so sampling from ``<begin_statements>``
+should produce contacts naturally.
+
+For multi-rollout averaging, run M independent samples (different
+``seed`` values), each gets its own readout, average final distograms.
+"""
+
+import argparse
+import json
+import math
+import re
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+
+_THIS = Path(__file__).resolve().parent
+_EXP1 = _THIS.parent / "exp1_document_structures_contacts_and_distances_v1"
+if str(_EXP1) not in sys.path:
+    sys.path.insert(0, str(_EXP1))
+
+from naive_inference import (  # noqa: E402
+    BIN_MIDPOINTS,
+    DISTANCE_MAX_A,
+    NUM_DISTANCE_BINS,
+    Runtime,
+    _build_base_prompt,
+    _encode_tokens,
+    load_runtime,
+)
+from canonical_sequence import (  # noqa: E402
+    read_canonical_sequence,
+    representative_atom_name,
+)
+from gt_filtered_inference import build_gt_shell_mask  # noqa: E402
+
+
+_CONTACT_TOKEN_STRS = (
+    "<long-range-contact>",
+    "<medium-range-contact>",
+    "<short-range-contact>",
+)
+_STOP_TOKEN_STRS = ("<distance>", "<end>")
+_POSITION_RE = re.compile(r"<p(\d+)>")
+_CONTACT_RE = re.compile(
+    r"<(long|medium|short)-range-contact>\s*<p(\d+)>\s*<p(\d+)>"
+)
+
+
+def sample_contact_prefix(
+    rt: Runtime,
+    residue_names: list[str],
+    *,
+    max_tokens: int,
+    temperature: float,
+    top_p: float,
+    seed: int,
+) -> tuple[list[tuple[int, int, str]], int]:
+    """Sample one contact-statement rollout from ``<begin_statements>``.
+
+    Parses the decoded text for ``<{range}-range-contact><pi><pj>``
+    triplets; stops at the first ``<distance>`` / ``<end>`` token or at
+    ``max_tokens``. Returns ``(seeds, n_decoded_tokens)``.
+    """
+    from vllm import SamplingParams, TokensPrompt
+
+    base_tokens = _build_base_prompt(residue_names)
+    base_ids = _encode_tokens(rt.tokenizer, base_tokens)
+
+    sampling = SamplingParams(
+        temperature=temperature,
+        top_p=top_p,
+        top_k=-1,
+        max_tokens=max_tokens,
+        n=1,
+        seed=seed,
+        stop=list(_STOP_TOKEN_STRS),
+    )
+    outputs = rt.llm.generate(
+        [TokensPrompt(prompt_token_ids=base_ids)], sampling, use_tqdm=False,
+    )
+    gen_ids = list(outputs[0].outputs[0].token_ids)
+    gen_text = rt.tokenizer.decode(gen_ids, skip_special_tokens=False)
+
+    n = len(residue_names)
+    seeds: list[tuple[int, int, str]] = []
+    for m in _CONTACT_RE.finditer(gen_text):
+        range_name = m.group(1)
+        i = int(m.group(2))
+        j = int(m.group(3))
+        if i < 1 or j < 1 or i > n or j > n or i == j:
+            continue
+        if i > j:
+            i, j = j, i
+        if (j - i) < 6:
+            continue
+        seeds.append((i, j, f"<{range_name}-range-contact>"))
+    # Dedupe by (i, j) — keep the first occurrence so the model's
+    # token-order ranking is preserved.
+    seen: set[tuple[int, int]] = set()
+    deduped: list[tuple[int, int, str]] = []
+    for (i, j, tok) in seeds:
+        if (i, j) in seen:
+            continue
+        seen.add((i, j))
+        deduped.append((i, j, tok))
+    return deduped, len(gen_ids)
+
+
+def predict_distogram_with_prefix(
+    *,
+    rt: Runtime,
+    residue_names: list[str],
+    pair_mask: np.ndarray,
+    seeds: list[tuple[int, int, str]],
+    batch_size: int = 128,
+    top_k_logprobs: int = 128,
+) -> tuple[np.ndarray, int, int]:
+    """Same as seeded_contacts_inference.predict_distogram_seeded.
+
+    Inlined here so this module is self-contained (the algorithm-side
+    contract is the only thing that changes between ideas).
+    """
+    from vllm import SamplingParams, TokensPrompt
+
+    n = len(residue_names)
+    if pair_mask.shape != (n, n):
+        raise ValueError(f"pair_mask shape {pair_mask.shape} != ({n}, {n})")
+
+    base_tokens = _build_base_prompt(residue_names)
+    seed_tokens: list[str] = []
+    for (i, j, tok) in seeds:
+        seed_tokens.extend([tok, f"<p{i}>", f"<p{j}>"])
+    prefix_ids = _encode_tokens(rt.tokenizer, base_tokens + seed_tokens)
+
+    distance_id_set = set(rt.distance_token_ids)
+    bin_of = {tid: k for k, tid in enumerate(rt.distance_token_ids)}
+
+    pairs: list[tuple[int, int]] = []
+    for i in range(1, n + 1):
+        for j in range(i + 1, n + 1):
+            if pair_mask[i - 1, j - 1]:
+                pairs.append((i, j))
+
+    prompts = []
+    for (i, j) in pairs:
+        a_i = representative_atom_name(residue_names[i - 1])
+        a_j = representative_atom_name(residue_names[j - 1])
+        tail = _encode_tokens(rt.tokenizer, [
+            "<distance>", f"<p{i}>", f"<p{j}>", f"<{a_i}>", f"<{a_j}>",
+        ])
+        prompts.append(TokensPrompt(prompt_token_ids=prefix_ids + tail))
+
+    sampling = SamplingParams(
+        temperature=1.0, top_p=1.0, top_k=-1,
+        max_tokens=1, logprobs=top_k_logprobs, n=1,
+    )
+
+    probs = np.zeros((n, n, NUM_DISTANCE_BINS), dtype=np.float32)
+    for chunk_start in range(0, len(prompts), batch_size):
+        chunk_prompts = prompts[chunk_start : chunk_start + batch_size]
+        outputs = rt.llm.generate(chunk_prompts, sampling, use_tqdm=False)
+        for offset, gen in enumerate(outputs):
+            lp_dict = gen.outputs[0].logprobs[0] if gen.outputs[0].logprobs else {}
+            row = np.zeros(NUM_DISTANCE_BINS, dtype=np.float32)
+            for tok_id, lp in lp_dict.items():
+                tid = int(tok_id)
+                if tid in distance_id_set:
+                    row[bin_of[tid]] = math.exp(float(lp.logprob))
+            total = float(row.sum())
+            if total > 0:
+                row /= total
+            i, j = pairs[chunk_start + offset]
+            probs[i - 1, j - 1, :] = row
+            probs[j - 1, i - 1, :] = row
+    return probs, len(pairs), len(prefix_ids)
+
+
+def predict_one(
+    *,
+    rt: Runtime,
+    stem: str,
+    protenix_dir: Path,
+    out_dir: Path,
+    batch_size: int = 128,
+    algorithm: str = "sampled_contacts_v1",
+    n_rollouts: int = 1,
+    max_sample_tokens: int = 600,
+    temperature: float = 0.7,
+    top_p: float = 0.9,
+    base_seed: int = 27,
+) -> float:
+    """Predict distances with model-sampled contact prefixes.
+
+    For ``n_rollouts > 1``, averages the per-pair probabilities across
+    rollouts (each with its own sampled prefix + its own readout).
+    """
+    gt_cif = protenix_dir / "gt" / f"{stem}.cif"
+    seq = read_canonical_sequence(gt_cif)
+    pair_mask = build_gt_shell_mask(gt_cif, seq.n_residues)
+
+    t_start = time.time()
+    accumulator = np.zeros(
+        (seq.n_residues, seq.n_residues, NUM_DISTANCE_BINS), dtype=np.float32,
+    )
+    rollouts_meta: list[dict] = []
+    n_pairs_queried = 0
+    for r in range(n_rollouts):
+        seeds, n_sample_tokens = sample_contact_prefix(
+            rt, seq.residue_names,
+            max_tokens=max_sample_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            seed=base_seed + r,
+        )
+        probs_r, n_pairs_queried, prefix_token_count = predict_distogram_with_prefix(
+            rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
+            seeds=seeds, batch_size=batch_size,
+        )
+        accumulator += probs_r
+        rollouts_meta.append({
+            "rollout": r,
+            "seed": base_seed + r,
+            "n_sample_tokens": n_sample_tokens,
+            "n_seeds": len(seeds),
+            "prefix_token_count": prefix_token_count,
+        })
+    probs = accumulator / max(1, n_rollouts)
+    # Re-normalize rows (safety; averaging of normalized rows stays
+    # normalized but rounding can drift).
+    row_sums = probs.sum(axis=-1, keepdims=True)
+    np.divide(probs, row_sums, out=probs, where=row_sums > 0)
+    elapsed = time.time() - t_start
+
+    n_pairs_total = seq.n_residues * (seq.n_residues - 1) // 2
+    out_path = out_dir / stem / "distogram.npz"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(out_path, probs=probs)
+    (out_path.parent / "provenance.json").write_text(json.dumps({
+        "stem": stem,
+        "n_residues": seq.n_residues,
+        "n_pairs": n_pairs_total,
+        "n_pairs_queried": n_pairs_queried,
+        "pair_filter_fraction": round(n_pairs_queried / n_pairs_total, 4),
+        "n_rollouts": n_rollouts,
+        "max_sample_tokens": max_sample_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "base_seed": base_seed,
+        "rollouts": rollouts_meta,
+        "algorithm": algorithm,
+        "model_nickname": rt.model_nickname,
+        "model_path": rt.model_path,
+        "atom_convention": "CB-CB (CA for GLY/UNK)",
+        "bin_scheme": {
+            "min_A": 0.0,
+            "max_A": DISTANCE_MAX_A,
+            "n_bins": NUM_DISTANCE_BINS,
+            "midpoints_A": BIN_MIDPOINTS.tolist(),
+        },
+        "elapsed_seconds": round(elapsed, 3),
+        "model_load_seconds": round(rt.model_load_seconds, 3),
+        "batch_size": batch_size,
+        "hardware": rt.hardware,
+        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }, indent=2) + "\n")
+    return elapsed
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stem", required=True)
+    parser.add_argument(
+        "--protenix-dir", type=Path,
+        default=_THIS / "protenix_data" / "data" / "protenix-foldbench-monomers",
+    )
+    parser.add_argument("--out", type=Path, default=_THIS / "outputs")
+    parser.add_argument("--model", default="1B")
+    parser.add_argument(
+        "--models-yaml", type=Path,
+        default=_THIS.parent.parent / "MODELS.yaml",
+    )
+    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--dtype", default="auto")
+    parser.add_argument("--n-rollouts", type=int, default=1)
+    parser.add_argument("--max-sample-tokens", type=int, default=600)
+    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--top-p", type=float, default=0.9)
+    parser.add_argument("--base-seed", type=int, default=27)
+    args = parser.parse_args()
+    rt = load_runtime(
+        model_nickname=args.model, models_yaml=args.models_yaml,
+        dtype=args.dtype,
+    )
+    elapsed = predict_one(
+        rt=rt, stem=args.stem,
+        protenix_dir=args.protenix_dir, out_dir=args.out,
+        batch_size=args.batch_size,
+        n_rollouts=args.n_rollouts,
+        max_sample_tokens=args.max_sample_tokens,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        base_seed=args.base_seed,
+    )
+    print(f"{args.stem}: {elapsed:.1f} s")
+
+
+if __name__ == "__main__":
+    main()
