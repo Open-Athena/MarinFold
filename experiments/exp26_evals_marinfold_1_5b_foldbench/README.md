@@ -205,7 +205,7 @@ re-launch after a preemption.
 ### Score + plot
 
 ```bash
-uv run python score_marinfold.py     # writes data/marinfold_1_5b_scores.csv
+uv run python score_marinfold.py     # writes data/marinfold_scores.csv (method=marinfold_1_5b)
 uv run python collect_timings.py     # writes data/timings.csv
 uv run python score_comparison.py    # writes data/scores.csv + data/scores_summary.csv + data/hypothesis_verdict.json
 uv run python plot_comparison.py     # writes plots/*.png
@@ -229,8 +229,79 @@ uv run --extra test pytest tests/
 
 ## Results
 
-_TBD — filled in after the iris run completes and `score_comparison.py` / `plot_comparison.py` have been run._
+100 / 100 proteins ran cleanly on v5p-8 via iris in a single ~4 h job.
+Per-protein outputs live under
+`gs://marin-us-east5/protein-structure/MarinFold/exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/<stem>/{distogram.npz, provenance.json}`.
+
+### Aggregate (mean across the 100 monomers)
+
+| metric | marinfold_1_5b | marinfold_1b | protenix_single_seq | protenix_msa |
+|---|---:|---:|---:|---:|
+| `lddt_distogram_cb` ↑ | **0.288** | 0.272 | 0.432 | 0.912 |
+| `mae_distogram_cb_angstrom` (Å) ↓ | **5.695** | 5.642 | 2.685 | 0.468 |
+| `drmsd_distogram_cb_angstrom` (Å) ↓ | **7.202** | 7.143 | 3.750 | 0.787 |
+| `prec_long_L` ↑ | **0.285** | 0.258 | 0.373 | 0.913 |
+
+The 1.5B vs 1B deltas are small in both directions:
+LDDT +0.016, prec_long_L +0.026, MAE +0.053 Å (worse), dRMSD +0.059 Å
+(worse). Hypothesis-verdict counter (from
+`data/hypothesis_verdict.json`) is **2 / 4 headline metrics support**,
+which is below the 3 / 4 bar — so the issue's pre-registered
+hypothesis is **not supported**.
+
+### Per-protein head-to-head
+
+The aggregate hides a sharper picture: on metrics that pool error
+within a single bin (LDDT, contact precision) 1.5B wins on the
+majority of proteins, but on the per-pair Å-distance metrics (MAE,
+dRMSD) it loses on most.
+
+| metric | 1.5B beats 1B | 1.5B beats Protenix-SS | 1.5B beats Protenix-MSA |
+|---|---:|---:|---:|
+| `lddt_distogram_cb` ↑ | 74 / 100 | 11 / 100 | 0 / 100 |
+| `prec_long_L` ↑ | 70 / 100 | 33 / 100 | 1 / 100 |
+| `mae_distogram_cb_angstrom` ↓ | 40 / 100 | 6 / 100 | 0 / 100 |
+| `drmsd_distogram_cb_angstrom` ↓ | 38 / 100 | 6 / 100 | 0 / 100 |
+
+vs Protenix-MSA, MarinFold 1.5B beats it on a single protein, on a
+single metric (`prec_long_L`).
+
+### Inference cost
+
+Per-protein wall-time vs sequence length on log-log is in
+`plots/timing_4way_vs_sequence_length.png`. Hardware caveat: 1.5B
+ran on TPU v5p-8 via iris; 1B ran on H100 via Modal (exp20);
+Protenix ran on H100 (exp12). Apples-to-apples the 1.5B pair sweep
+on v5p-8 is roughly an order of magnitude slower per protein than
+the 1B sweep on H100, but both show the same clean O(N²) scaling
+shape; this is a hardware mix story, not an algorithmic regression.
+
+### Artifacts
+
+- `data/marinfold_scores.csv` — 100 per-protein 1.5B scores.
+- `data/timings.csv` — 100 per-protein wall-times (iris/TPU).
+- `data/scores.csv` — 400-row 4-way merge.
+- `data/scores_summary.csv` — per-method aggregates (table above).
+- `data/hypothesis_verdict.json` — programmatic 3/4 verdict.
+- `plots/headline_aggregate.png`,
+  `plots/lddt_5way_swarm.png`,
+  `plots/lddt_marinfold_vs_protenix_scatter.png` (anchored on 1.5B),
+  `plots/timing_4way_vs_sequence_length.png`, et al.
 
 ## Conclusion
 
-_TBD._
+**Did 1.5B move us closer to Protenix?** Slightly, in the same shape
+1B already had — better on bin-pooled metrics (LDDT +1.6 pp,
+prec_long_L +2.6 pp), no movement (in fact a small regression) on
+the Å-distance metrics (MAE +0.05 Å, dRMSD +0.06 Å). The gap to
+Protenix-single-seq is still wide on every metric (LDDT 0.288 vs
+0.432) and to Protenix-MSA it remains ≈3×. On the pre-registered
+3-of-4 bar, the hypothesis is **not supported** (2 / 4).
+
+So the headline read for the issue: scaling 1B → 1.5B at the
+current training budget gives a small but real bump on contact-class
+metrics, no gain on the metric you'd actually use for downstream
+structure work (per-pair Å error), and does not narrow the gap to
+Protenix-single-seq in any meaningful way. The natural next move is
+not "scale params again", it's the training-side levers (more
+tokens, distance loss reweighting, MSA conditioning).
