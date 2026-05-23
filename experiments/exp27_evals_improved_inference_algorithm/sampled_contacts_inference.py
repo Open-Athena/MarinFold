@@ -55,11 +55,145 @@ _CONTACT_TOKEN_STRS = (
     "<medium-range-contact>",
     "<short-range-contact>",
 )
-_STOP_TOKEN_STRS = ("<distance>", "<end>")
 _POSITION_RE = re.compile(r"<p(\d+)>")
 _CONTACT_RE = re.compile(
     r"<(long|medium|short)-range-contact>\s*<p(\d+)>\s*<p(\d+)>"
 )
+
+
+def _resolve_contact_range_ids(tokenizer) -> list[int]:
+    ids = []
+    for tok in _CONTACT_TOKEN_STRS:
+        enc = tokenizer.encode(tok, add_special_tokens=False)
+        if len(enc) != 1:
+            raise ValueError(f"contact token {tok!r} didn't tokenize to 1: {enc!r}")
+        ids.append(enc[0])
+    return ids
+
+
+def _resolve_position_token_ids(tokenizer, n_residues: int) -> list[int]:
+    """Return IDs for ``<p1>`` .. ``<p_{n_residues}>``.
+
+    Positions are 1-indexed in the v1 grammar (matches the canonical
+    1..N residue numbering).
+    """
+    ids = []
+    for i in range(1, n_residues + 1):
+        enc = tokenizer.encode(f"<p{i}>", add_special_tokens=False)
+        if len(enc) != 1:
+            raise ValueError(f"position <p{i}> didn't tokenize to 1: {enc!r}")
+        ids.append(enc[0])
+    return ids
+
+
+class ContactsOnlyLogitsProcessor:
+    """Force vLLM sampling to emit only contact statements.
+
+    Training documents stochastically interleave contact and distance
+    statements, so the model emits ``<distance>`` after a few contacts
+    on its own. To get many sampled contacts per rollout, we mask the
+    logits to a 3-state cycle:
+
+      state 0 (modulo 3): allow only the 3 ``<*-range-contact>`` tokens
+      state 1            : allow only position tokens ``<p1>`` .. ``<pN>``
+      state 2            : same as state 1
+
+    ``range_strategy`` controls how the contact-range token is chosen
+    at state 0:
+
+      "model"       : keep the model's logits over the 3 range tokens.
+                      In practice the model strongly prefers
+                      ``<medium-range-contact>`` (~99% at T=0.7).
+      "uniform"     : overwrite the 3 logits to 0 so the softmax is
+                      uniform → ~1/3 of each range, sampled randomly.
+      "round_robin" : deterministic L → M → S cycle. Exactly 1/3 of
+                      each range over a long-enough rollout.
+
+    Validity of (i, j) pairs is checked in post-processing — the LP
+    only constrains token *type* / *range-token identity*, not pair
+    semantics.
+    """
+
+    def __init__(
+        self,
+        *,
+        contact_range_ids: list[int],
+        position_ids: list[int],
+        vocab_size: int,
+        range_strategy: str = "model",
+    ):
+        # ordered as [long, medium, short] — matches _CONTACT_TOKEN_STRS
+        self._contact_ids_ordered = list(contact_range_ids)
+        self._range_strategy = range_strategy
+        self._vocab_size = vocab_size
+        # Pre-build masks lazily on the GPU device the first time __call__ is hit.
+        # Pre-building eagerly on CPU + moving every call adds ~ms per token,
+        # which dominates wall time when the LP runs 9000+ times per protein.
+        self._contact_range_ids_t = contact_range_ids
+        self._position_ids_t = position_ids
+        self._device_masks = None  # populated on first __call__
+
+    def _materialise(self, device, vocab_size_runtime):
+        import torch
+        all_contact = torch.full((vocab_size_runtime,), float("-inf"), device=device)
+        for tid in self._contact_range_ids_t:
+            if tid < vocab_size_runtime:
+                all_contact[tid] = 0.0
+        position = torch.full((vocab_size_runtime,), float("-inf"), device=device)
+        for tid in self._position_ids_t:
+            if tid < vocab_size_runtime:
+                position[tid] = 0.0
+        single = []
+        for tid in self._contact_range_ids_t:
+            m = torch.full((vocab_size_runtime,), float("-inf"), device=device)
+            if tid < vocab_size_runtime:
+                m[tid] = 0.0
+            single.append(m)
+        uniform = torch.full((vocab_size_runtime,), float("-inf"), device=device)
+        for tid in self._contact_range_ids_t:
+            if tid < vocab_size_runtime:
+                uniform[tid] = 0.0
+        # "uniform" is the OVERWRITE-style mask: every allowed token gets logit 0,
+        # blocked tokens are -inf; we return this directly (not added to logits)
+        # so the model's prior is ignored.
+        self._device_masks = {
+            "all_contact": all_contact,
+            "position": position,
+            "single": single,
+            "uniform": uniform,
+        }
+
+    def __call__(self, generated_token_ids, logits):
+        if self._device_masks is None:
+            self._materialise(logits.device, logits.shape[-1])
+        m = self._device_masks
+        state = len(generated_token_ids) % 3
+        if state == 0:
+            if self._range_strategy == "model":
+                return logits + m["all_contact"]
+            if self._range_strategy == "uniform":
+                return m["uniform"]
+            if self._range_strategy == "round_robin":
+                round_idx = len(generated_token_ids) // 3
+                return m["single"][round_idx % 3]
+            raise ValueError(f"unknown range_strategy: {self._range_strategy}")
+        return logits + m["position"]
+
+
+def _range_token_for_separation(sep: int) -> str | None:
+    """Return the contact-range token matching this sequence separation.
+
+    Matches score_marinfold._CASP_SEPARATIONS:
+      short  = 6..11   medium = 12..23   long = 24+
+    Returns None for sep < 6 (invalid for contacts).
+    """
+    if sep < 6:
+        return None
+    if sep <= 11:
+        return "<short-range-contact>"
+    if sep <= 23:
+        return "<medium-range-contact>"
+    return "<long-range-contact>"
 
 
 def sample_contact_prefix(
@@ -70,18 +204,40 @@ def sample_contact_prefix(
     temperature: float,
     top_p: float,
     seed: int,
+    range_strategy: str = "model",
 ) -> tuple[list[tuple[int, int, str]], int]:
-    """Sample one contact-statement rollout from ``<begin_statements>``.
+    """Sample one contact-only rollout from ``<begin_statements>``.
 
-    Parses the decoded text for ``<{range}-range-contact><pi><pj>``
-    triplets; stops at the first ``<distance>`` / ``<end>`` token or at
-    ``max_tokens``. Returns ``(seeds, n_decoded_tokens)``.
+    Uses a :class:`ContactsOnlyLogitsProcessor` to mask all non-contact
+    tokens during generation, so the entire ``max_tokens`` budget gets
+    spent emitting contact statements (rather than the model
+    transitioning to ``<distance>`` after a handful).
+
+    Post-processing:
+      * drop pairs with i == j, position out of [1, N], or |i-j| < 6
+        (CASP minimum for a "real" contact)
+      * dedupe by (i, j) — keep first occurrence so the model's
+        token-order ranking is preserved
+      * **rewrite the range token to match the actual |i-j|** — the
+        model can sample (e.g.) ``<short-range-contact>`` followed by
+        positions 100 apart; we always reseed with the bucket the
+        scorer uses
+
+    Returns ``(seeds, n_decoded_tokens)``.
     """
     from vllm import SamplingParams, TokensPrompt
 
     base_tokens = _build_base_prompt(residue_names)
     base_ids = _encode_tokens(rt.tokenizer, base_tokens)
+    n = len(residue_names)
 
+    vocab_size = rt.tokenizer.vocab_size
+    lp = ContactsOnlyLogitsProcessor(
+        contact_range_ids=_resolve_contact_range_ids(rt.tokenizer),
+        position_ids=_resolve_position_token_ids(rt.tokenizer, n),
+        vocab_size=vocab_size,
+        range_strategy=range_strategy,
+    )
     sampling = SamplingParams(
         temperature=temperature,
         top_p=top_p,
@@ -89,7 +245,7 @@ def sample_contact_prefix(
         max_tokens=max_tokens,
         n=1,
         seed=seed,
-        stop=list(_STOP_TOKEN_STRS),
+        logits_processors=[lp],
     )
     outputs = rt.llm.generate(
         [TokensPrompt(prompt_token_ids=base_ids)], sampling, use_tqdm=False,
@@ -97,21 +253,18 @@ def sample_contact_prefix(
     gen_ids = list(outputs[0].outputs[0].token_ids)
     gen_text = rt.tokenizer.decode(gen_ids, skip_special_tokens=False)
 
-    n = len(residue_names)
     seeds: list[tuple[int, int, str]] = []
     for m in _CONTACT_RE.finditer(gen_text):
-        range_name = m.group(1)
         i = int(m.group(2))
         j = int(m.group(3))
         if i < 1 or j < 1 or i > n or j > n or i == j:
             continue
         if i > j:
             i, j = j, i
-        if (j - i) < 6:
+        tok = _range_token_for_separation(j - i)
+        if tok is None:
             continue
-        seeds.append((i, j, f"<{range_name}-range-contact>"))
-    # Dedupe by (i, j) — keep the first occurrence so the model's
-    # token-order ranking is preserved.
+        seeds.append((i, j, tok))
     seen: set[tuple[int, int]] = set()
     deduped: list[tuple[int, int, str]] = []
     for (i, j, tok) in seeds:
@@ -205,6 +358,7 @@ def predict_one(
     top_p: float = 0.9,
     base_seed: int = 27,
     aggregation: str = "average",
+    range_strategy: str = "model",
 ) -> float:
     """Predict distances with model-sampled contact prefixes.
 
@@ -237,6 +391,7 @@ def predict_one(
                 max_tokens=max_sample_tokens,
                 temperature=temperature, top_p=top_p,
                 seed=base_seed + r,
+                range_strategy=range_strategy,
             )
             probs_r, n_pairs_queried, prefix_token_count = predict_distogram_with_prefix(
                 rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
@@ -261,6 +416,7 @@ def predict_one(
                 max_tokens=max_sample_tokens,
                 temperature=temperature, top_p=top_p,
                 seed=base_seed + r,
+                range_strategy=range_strategy,
             )
             rollouts_meta.append({
                 "rollout": r, "seed": base_seed + r,
@@ -303,6 +459,7 @@ def predict_one(
         "temperature": temperature,
         "top_p": top_p,
         "base_seed": base_seed,
+        "range_strategy": range_strategy,
         "rollouts": rollouts_meta,
         "algorithm": algorithm,
         "model_nickname": rt.model_nickname,

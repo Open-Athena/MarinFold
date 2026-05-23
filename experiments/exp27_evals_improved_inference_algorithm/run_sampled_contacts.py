@@ -50,6 +50,7 @@ def _worker(
     top_p: float,
     base_seed: int,
     aggregation: str,
+    range_strategy: str,
 ) -> None:
     """One worker = one GPU = one persistent vLLM instance.
 
@@ -95,6 +96,7 @@ def _worker(
                 top_p=top_p,
                 base_seed=base_seed,
                 aggregation=aggregation,
+                range_strategy=range_strategy,
             )
             result_queue.put((stem, f"gpu{gpu_id}", elapsed, ""))
         except Exception as exc:  # noqa: BLE001 — surface per-protein failures
@@ -152,6 +154,7 @@ def run(
     top_p: float,
     base_seed: int,
     aggregation: str,
+    range_strategy: str,
 ) -> dict:
     """Drive the pool. Returns a small dict of timing + completion info."""
     stems_with_lengths = _read_train_stems(train_csv)
@@ -221,6 +224,7 @@ def run(
                 "top_p": top_p,
                 "base_seed": base_seed,
                 "aggregation": aggregation,
+                "range_strategy": range_strategy,
             },
             daemon=False,
         )
@@ -443,6 +447,16 @@ def main() -> None:
     parser.add_argument(
         "--aggregation", default="average", choices=["average", "union"],
     )
+    parser.add_argument(
+        "--range-strategy", default="model",
+        choices=["model", "uniform", "round_robin"],
+        help=(
+            "How to choose <*-range-contact> tokens during sampling. "
+            "'model' = use model's prior (heavily medium-biased). "
+            "'uniform' = equal probability across the 3 range tokens. "
+            "'round_robin' = deterministic L,M,S,L,M,S,... cycle."
+        ),
+    )
     args = parser.parse_args()
 
     info = run(
@@ -461,6 +475,7 @@ def main() -> None:
         top_p=args.top_p,
         base_seed=args.base_seed,
         aggregation=args.aggregation,
+        range_strategy=args.range_strategy,
     )
 
     print(f"\nWorker model-load times (s): {info.get('worker_load_seconds', {})}")

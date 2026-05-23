@@ -33,3 +33,7 @@ iter_R4_grow_05_10_15_25	R=4 growing K: 0.5L, 1.0L, 1.5L, 2.5L. min_prob=0.1.	0.
 sharpen_T1.0_on_iter_R4_grow_05_10_15_25	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_05_10_15_25 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3511	0.3169	235.7	0.170	+40.68	
 iter_R4_grow_kc_kd_strict	R=4 grow contacts kc=[0.5, 1, 1.5, 2.5] + distance commits kd=[0, 0.1L, 0.3L, 0.5L], min_modal_p=0.5, sharpen T=0.5 for mode pick.	0.3503	0.3307	3770.6	2.719	+40.34	
 sharpen_T1.0_on_iter_R4_grow_kc_kd_strict	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_kc_kd_strict distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3503	0.3307	235.7	0.170	+40.34	
+sampled_constrained_M1_T0.7	Contacts-only constrained sampling (logits processor masks non-contact tokens). M=1 rollout, T=0.7, top_p=0.9, max_tokens=900.	0.2219	0.2167	743.4	0.536	-11.09	
+sampled_constrained_M1_T0.7_fast	M=1 sampled constrained with device-resident LP masks. Re-run after speed fix.	0.2219	0.2167	743.7	0.536	-11.09	
+sampled_uniform_M1_T0.7	Constrained sampling, M=1, T=0.7, range_strategy=uniform (1/3 each range).	0.2713	0.2497	769.0	0.555	+8.70	
+sampled_uniform_M5_union_T0.7	Constrained sampling M=5 union, uniform range. 5 rollouts × 900 max_tokens each → union → readout.	0.3142	0.3213	2457.9	1.772	+25.86	
