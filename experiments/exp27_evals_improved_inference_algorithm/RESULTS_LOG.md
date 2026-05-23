@@ -441,6 +441,45 @@ substantial prefix density (197 commits in the final round for the
 largest protein). The per-pair one-hot LDDT loss exactly offsets the
 prefix-context benefit. Dropping distance commits permanently.
 
-### iter R=5 grow
+### iter R=5 grow — aborted, would have busted budget
 
-_(running iter_R5_grow_05_10_15_25_30)_
+Launched `iter_R5_grow_05_10_15_25_30` (kc=[0.5L, 1L, 1.5L, 2.5L,
+3.0L]). First protein (7uk8_A, L=394) was still on round 4-5 after
+60 minutes. Projected total wall ≥ 6000 s → chain wall ≥ 7400 s >
+5× baseline (6920 s). Killed before completion.
+
+Per-round growth was already saturating (R=3 → R=4 added +0.009 in
+LDDT); R=5 was unlikely to clear the +50% bar even if completed,
+and would have disqualified itself on wall-clock anyway. **Best
+in-budget remains `iter_R4_grow_05_10_15_25` at 0.3511 (+40.68%).**
+
+## Final standings
+
+| algorithm | mean LDDT | Δ% | chain wall (s) | budget? |
+|---|---:|---:|---:|---:|
+| baseline_naive | 0.2496 | — | 1386.7 | — |
+| **+10% bar** | **0.2746** | **+10** | — | — |
+| sharpen_T0.05 (post-process only) | 0.2738 | +9.68 | ~1610 | ✓ |
+| seeded_contacts | 0.2816 | +12.83 | ~1780 | ✓ |
+| sharpen on seeded | 0.2894 | +15.94 | ~1810 | ✓ |
+| iterative_R3_contacts (min=0.3) | 0.2999 (sharp) | +20.16 | ~2660 | ✓ |
+| iterative_R3 (min=0.1) | 0.3376 (sharp) | +35.24 | ~3360 | ✓ |
+| iter_R3_grow_05_10_15 | 0.3421 | +37.07 | ~3320 | ✓ |
+| iter_R4_grow_05_10_15_25 | 0.3511 | **+40.68** | **4373** | ✓ |
+| iter_R4_grow + strict kd | 0.3503 | +40.34 | 5160 | ✓ (no gain) |
+| iter_R5_grow_05_10_15_25_30 | — | — | >7400 (projected) | ✗ killed |
+| **+50% bar** | **0.3744** | **+50** | — | — |
+| gt_oracle (diagnostic) | 0.7167 | +187.14 | — | (cheating) |
+
+**Headline:** `iter_R4_grow_05_10_15_25` — iterative contact-only
+seeding with growing K per round. Mean LDDT **0.3511 (+40.68%)**,
+chain wall **4373 s (3.16× baseline)**.
+
+**Clears the issue's original +10% bar by 4×. Falls short of the
+mid-experiment-raised +50% bar by 0.023 LDDT (9 percentage points).**
+The bottleneck is contact prediction quality on harder proteins — the
+GT-oracle diagnostic shows the model is capable of ~0.7 mean LDDT with
+right contacts, but for proteins where the model's marginal contact
+predictions are sparse (8baq, 7uk8, 7xz3, 8cba, 8eb9, 7ylr), even
+iteration can't honestly fill in the missing contacts beyond ~0.25-
+0.32.
