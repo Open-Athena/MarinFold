@@ -470,7 +470,7 @@ def main() -> None:
         type=Path,
         default=Path(__file__).resolve().parent / "data" / "marinfold_scores.csv",
     )
-    parser.add_argument("--method", default="marinfold_1b")
+    parser.add_argument("--method", default="marinfold_1_5b")
     args = parser.parse_args()
     score_all(
         protenix_dir=args.protenix_dir,

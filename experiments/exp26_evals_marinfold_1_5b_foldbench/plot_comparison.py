@@ -32,6 +32,14 @@ def _ensure_outdir(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
 
+def _first_nonempty(*values) -> str:
+    """First value that's a non-empty string. Skips NaN (which is truthy in Python)."""
+    for v in values:
+        if isinstance(v, str) and v.strip():
+            return v
+    return ""
+
+
 def per_protein_bar(
     df: pd.DataFrame, *, metric: str, ylabel: str, out_path: Path,
     higher_is_better: bool,
@@ -166,7 +174,12 @@ def lddt_5way_swarm(
     protenix_scores_csv: Path,
     out_path: Path,
 ) -> None:
-    """5-category LDDT swarm: 1B (disto), Protenix-SS (disto + structure), Protenix-MSA (disto + structure).
+    """LDDT swarm across all 4 methods + Protenix structure categories.
+
+    Per method:
+      - MarinFold 1.5B, 1B: distogram + distogram-soft (2 categories each).
+      - Protenix single_seq, msa: distogram + distogram-soft + structure-CB
+        (3 categories each).
 
     The merged ``data/scores.csv`` only has distogram-LDDT (structure
     metrics were dropped from the schema). The Protenix-side
@@ -182,20 +195,21 @@ def lddt_5way_swarm(
     protenix = pd.read_csv(protenix_scores_csv)
 
     rows: list[dict] = []
-    # 1-2) MarinFold 1B: distogram (point) + distogram-soft.
-    mf = merged[merged["method"] == "marinfold_1b"][
-        ["pdb_id", "chain_id", "lddt_distogram_cb", "lddt_distogram_cb_soft"]
-    ]
-    for _, r in mf.iterrows():
-        stem = f"{r['pdb_id']}_{r['chain_id']}"
-        rows.append({"protein": stem,
-                     "category": "marinfold_1b (distogram)",
-                     "lddt": r["lddt_distogram_cb"]})
-        rows.append({"protein": stem,
-                     "category": "marinfold_1b (distogram, soft)",
-                     "lddt": r["lddt_distogram_cb_soft"]})
+    # MarinFold (1.5B and 1B): distogram (point) + distogram-soft.
+    for marin_method in ("marinfold_1_5b", "marinfold_1b"):
+        mf = merged[merged["method"] == marin_method][
+            ["pdb_id", "chain_id", "lddt_distogram_cb", "lddt_distogram_cb_soft"]
+        ]
+        for _, r in mf.iterrows():
+            stem = f"{r['pdb_id']}_{r['chain_id']}"
+            rows.append({"protein": stem,
+                         "category": f"{marin_method} (distogram)",
+                         "lddt": r["lddt_distogram_cb"]})
+            rows.append({"protein": stem,
+                         "category": f"{marin_method} (distogram, soft)",
+                         "lddt": r["lddt_distogram_cb_soft"]})
 
-    # 3-8) Protenix single_seq + msa: distogram + distogram-soft + structure-CB.
+    # Protenix single_seq + msa: distogram + distogram-soft + structure-CB.
     for mode in ("single_seq", "msa"):
         sub = protenix[protenix["mode"] == mode]
         for _, r in sub.iterrows():
@@ -212,6 +226,8 @@ def lddt_5way_swarm(
 
     df = pd.DataFrame(rows).dropna(subset=["lddt"])
     order = [
+        "marinfold_1_5b (distogram)",
+        "marinfold_1_5b (distogram, soft)",
         "marinfold_1b (distogram)",
         "marinfold_1b (distogram, soft)",
         "protenix_single_seq (distogram)",
@@ -221,16 +237,7 @@ def lddt_5way_swarm(
         "protenix_msa (distogram, soft)",
         "protenix_msa (structure)",
     ]
-    palette = {
-        "marinfold_1b (distogram)": "#d95f02",
-        "marinfold_1b (distogram, soft)": "#d95f02",
-        "protenix_single_seq (distogram)": "#7570b3",
-        "protenix_single_seq (distogram, soft)": "#7570b3",
-        "protenix_single_seq (structure)": "#7570b3",
-        "protenix_msa (distogram)": "#1b9e77",
-        "protenix_msa (distogram, soft)": "#1b9e77",
-        "protenix_msa (structure)": "#1b9e77",
-    }
+    palette = {cat: _METHOD_COLORS[cat.split(" (")[0]] for cat in order}
 
     fig, ax = plt.subplots(figsize=(13, 5.5))
     # Boxplot first (so the swarm renders on top). Light grey
@@ -265,64 +272,83 @@ def lddt_5way_swarm(
 
 def marinfold_vs_protenix_timing(
     *,
-    marinfold_timings_csv: Path,
+    marinfold_1_5b_timings_csv: Path,
+    marinfold_1b_timings_csv: Path | None,
     protenix_timings_csv: Path,
     out_path: Path,
 ) -> None:
-    """3-way per-protein wall-time vs sequence length.
+    """4-way per-protein wall-time vs sequence length.
 
-    Joins exp20's ``data/timings.csv`` (MarinFold 1B, 100 proteins,
-    zero-shot distogram pair sweep) with the Protenix timings CSV
-    from exp12 (PR #22 — 20 proteins, single_seq + msa). Both use
+    Joins exp26's own 1.5B timings, exp20's 1B timings, and the
+    Protenix exp12 timings (single_seq + msa). All use
     ``elapsed_seconds`` as the post-model-load inference time, so
     the comparison is steady-state per-protein cost.
 
-    Each method has a different scaling profile:
-      - Protenix: ~fixed (trunk dominates), ~90 s/protein on H100.
-      - MarinFold: pair sweep is O(N²) so wall-time grows as N²
-        on log-log.
+    Hardware caveat — the three MarinFold/Protenix runs were on
+    different accelerators (1.5B on TPU v5p-8 via iris, 1B on H100
+    via Modal, Protenix on H100). The plot annotates each series
+    with its hardware so the comparison is read carefully. Pair-sweep
+    cost still scales O(N²) regardless of hardware, which is what
+    the log-log shape captures.
 
     Both axes log scale; one marker per (protein, method).
     """
     if not protenix_timings_csv.exists():
-        print(f"skip 3-way timing plot: {protenix_timings_csv} not found.")
+        print(f"skip 4-way timing plot: {protenix_timings_csv} not found.")
         return
-    mf = pd.read_csv(marinfold_timings_csv)
+    mf_15b = pd.read_csv(marinfold_1_5b_timings_csv)
     px = pd.read_csv(protenix_timings_csv)
     rows: list[dict] = []
-    for _, r in mf.iterrows():
+    for _, r in mf_15b.iterrows():
         rows.append({
-            "method": "marinfold_1b",
+            "method": "marinfold_1_5b",
             "n_residues": r["n_residues"],
             "elapsed_seconds": r["elapsed_seconds"],
-            "gpu_name": r.get("gpu_name", ""),
+            "hardware": _first_nonempty(r.get("gpu_name"), r.get("runner_tag")),
         })
+    if marinfold_1b_timings_csv is not None and marinfold_1b_timings_csv.exists():
+        mf_1b = pd.read_csv(marinfold_1b_timings_csv)
+        for _, r in mf_1b.iterrows():
+            rows.append({
+                "method": "marinfold_1b",
+                "n_residues": r["n_residues"],
+                "elapsed_seconds": r["elapsed_seconds"],
+                "hardware": _first_nonempty(r.get("gpu_name"), r.get("runner_tag")),
+            })
     for _, r in px.iterrows():
         rows.append({
             "method": f"protenix_{r['mode']}",
             "n_residues": r["n_residues"],
             "elapsed_seconds": r["elapsed_seconds"],
-            "gpu_name": r.get("gpu_name", ""),
+            "hardware": r.get("gpu_name", ""),
         })
     df = pd.DataFrame(rows).dropna(subset=["elapsed_seconds", "n_residues"])
 
-    method_color = {
-        "marinfold_1b": "#d95f02",
-        "protenix_single_seq": "#7570b3",
-        "protenix_msa": "#1b9e77",
-    }
-    fig, ax = plt.subplots(figsize=(8, 5.5))
-    for method, color in method_color.items():
+    # Hardware label per method (most common value in the series).
+    def _hw_label(method: str) -> str:
         sub = df[df["method"] == method]
+        if sub.empty:
+            return ""
+        top = sub["hardware"].dropna().value_counts()
+        if top.empty:
+            return ""
+        return f", {top.idxmax().split()[0]}"  # first token, e.g. 'NVIDIA' or 'iris'
+
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    for method in ("marinfold_1_5b", "marinfold_1b", "protenix_single_seq", "protenix_msa"):
+        sub = df[df["method"] == method]
+        if sub.empty:
+            continue
         ax.scatter(
             sub["n_residues"], sub["elapsed_seconds"],
-            color=color, alpha=0.7, s=22, label=f"{method} (n={len(sub)})",
+            color=_METHOD_COLORS[method], alpha=0.7, s=22,
+            label=f"{method} (n={len(sub)}{_hw_label(method)})",
         )
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("sequence length (residues)")
     ax.set_ylabel("inference wall-time (seconds, post model load)")
-    ax.set_title("Per-protein inference cost vs sequence length (H100)")
+    ax.set_title("Per-protein inference cost vs sequence length")
     ax.grid(which="both", alpha=0.3)
     ax.legend(fontsize=9, loc="best")
     fig.tight_layout()
@@ -386,7 +412,8 @@ def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
 
 def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None,
            protenix_scores_csv: Path | None = None,
-           protenix_timings_csv: Path | None = None) -> None:
+           protenix_timings_csv: Path | None = None,
+           marinfold_1b_timings_csv: Path | None = None) -> None:
     df = pd.read_csv(scores_csv)
     _ensure_outdir(out_dir)
     per_protein_bar(
@@ -424,9 +451,10 @@ def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None,
     )
     if timings_csv is not None and protenix_timings_csv is not None:
         marinfold_vs_protenix_timing(
-            marinfold_timings_csv=timings_csv,
+            marinfold_1_5b_timings_csv=timings_csv,
+            marinfold_1b_timings_csv=marinfold_1b_timings_csv,
             protenix_timings_csv=protenix_timings_csv,
-            out_path=out_dir / "timing_3way_vs_sequence_length.png",
+            out_path=out_dir / "timing_4way_vs_sequence_length.png",
         )
     print(f"Wrote plots to {out_dir}/")
 
@@ -445,12 +473,18 @@ def main() -> None:
     parser.add_argument(
         "--protenix-timings", type=Path,
         default=here.parent / "exp12_data_protenix_foldbench_monomers" / "data" / "timings.csv",
-        help="Source for Protenix timings (3-way timing-vs-length plot).",
+        help="Source for Protenix timings (4-way timing-vs-length plot).",
+    )
+    parser.add_argument(
+        "--marinfold-1b-timings", type=Path,
+        default=here.parent / "exp20_evals_marinfold_1b_foldbench" / "data" / "timings.csv",
+        help="Source for exp20 MarinFold 1B timings (4-way timing-vs-length plot).",
     )
     args = parser.parse_args()
     render(scores_csv=args.scores, out_dir=args.out, timings_csv=args.timings,
            protenix_scores_csv=args.protenix_scores,
-           protenix_timings_csv=args.protenix_timings)
+           protenix_timings_csv=args.protenix_timings,
+           marinfold_1b_timings_csv=args.marinfold_1b_timings)
 
 
 if __name__ == "__main__":
