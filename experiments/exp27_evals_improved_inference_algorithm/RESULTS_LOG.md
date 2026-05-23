@@ -407,4 +407,40 @@ many pairs above the threshold). Starting bold and staying bold (K=L
 throughout) saturates because round 1's noisy bold picks limit
 round 2's improvement.
 
-_(Running R=4 with kc=[0.5, 1.0, 1.5, 2.5] for one more push.)_
+### iter R=4 grow (kc=[0.5L, 1L, 1.5L, 2.5L])
+
+**`iter_R4_grow_05_10_15_25`**: mean LDDT **0.3511, +40.66%**.
+Sharpening doesn't help (T=1.0 wins).
+
+| stem | base | R=3 grow | R=4 grow | oracle | pad |
+|---|---:|---:|---:|---:|---:|
+| 7uk8_A | 0.2010 | 0.2501 | 0.2515 | 0.6290 | +0.122 |
+| 7ur2_A | 0.2633 | 0.3871 | 0.4008 | 0.7219 | PASS |
+| 7xz3_A | 0.1913 | 0.2562 | 0.2618 | 0.6993 | +0.112 |
+| 7y5j_A | 0.4485 | 0.5626 | 0.5659 | 0.8044 | PASS |
+| 7ykm_A | 0.3317 | 0.5131 | 0.5178 | 0.8052 | PASS |
+| 7ylr_A | 0.2673 | 0.3026 | 0.3169 | 0.6734 | +0.057 |
+| 7zs2_A | 0.2500 | 0.3526 | 0.3619 | 0.6895 | +0.012 |
+| 8baq_A | 0.1872 | 0.2503 | 0.2540 | 0.6870 | +0.120 |
+| 8cba_A | 0.2045 | 0.2652 | 0.2735 | 0.7319 | +0.100 |
+| 8eb9_A | 0.1510 | 0.2815 | 0.3071 | 0.7254 | +0.067 |
+
+R=3 → R=4 added +0.009. Chain wall: 1387 + 2986 = 4373 s, 3.2× baseline.
+
+### iter R=4 grow + strict distance commits
+
+**`iter_R4_grow_kc_kd_strict`** — same grow schedule, plus
+kd=[0, 0.1L, 0.3L, 0.5L] distance commits with min_modal_p=0.5 and
+sharpen T=0.5 for mode selection.
+
+  mean LDDT **0.3503**, basically identical to no-kd variant
+  (−0.0008, within noise). 3770 s wall (1.3× the no-kd R=4 grow).
+
+**Distance commits add no value** even with strict filtering and
+substantial prefix density (197 commits in the final round for the
+largest protein). The per-pair one-hot LDDT loss exactly offsets the
+prefix-context benefit. Dropping distance commits permanently.
+
+### iter R=5 grow
+
+_(running iter_R5_grow_05_10_15_25_30)_
