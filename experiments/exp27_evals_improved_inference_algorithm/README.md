@@ -163,9 +163,15 @@ confidence contact pool (8baq_A goes from 3 contacts >0.5 in
 baseline to 227 after iter R=3).
 
   mean LDDT **0.3511** · median 0.3169 · +40.66%
-  (sharpening *doesn't* help here — T=1.0 wins, same pattern as
-  the GT-oracle: better algos have less-spread distributions to
-  rescue.)
+
+The reported 0.3511 uses the **standard expected-distance readout**
+(`pred_d = sum(probs * midpoints)`) with **no sharpening** — that's
+the score_marinfold default. Sharpening over the top *hurts*: a
+T sweep over the iter R=4 grow distogram gave 0.3511 at T=1.0
+(identity), 0.3492 at T=0.3, 0.3479 at T=0.1, 0.3473 at T=0.05.
+The "diminishing-returns-from-sharpening" pattern matches the
+GT-oracle: once the underlying distributions are sharper because of
+better context, further sharpening over-commits and trims good mass.
 
 Chain wall: 1386.7 (baseline prior — necessary because seeds must
 come from an unfiltered distogram) + 2986.4 (iter R=4 grow) =
