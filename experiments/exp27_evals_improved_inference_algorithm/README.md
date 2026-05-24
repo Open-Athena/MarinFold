@@ -263,3 +263,47 @@ uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
 ```
 
 Total wall: ~5613 s on a single A100 40 GB in bf16.
+
+## Cross-model check: same algorithm on 1.5B
+
+After rebasing onto main, `MODELS.yaml` gained a `1.5B` entry pointing
+at `protein-contacts-1_5b-distance-masked-70f8f5/step-49999` in the
+`open-athena/MarinFold` HF bucket. The 1.5B has 24 hidden layers
+(1.5× the 1B's 16) and GQA (8 KV heads vs 32). The checkpoint name
+suggests step 49999 — likely undertrained vs the 1B production
+checkpoint.
+
+Re-ran the exact same algorithm with `--model 1.5B`, output to
+`outputs_1.5b/`:
+
+| | mean LDDT | median | wall (s) | lift |
+|---|---:|---:|---:|---:|
+| 1B baseline (naive) | 0.2496 | 0.2500 | 1387 | — |
+| 1B combined (headline) | **0.3564** | 0.3665 | 3155 | **+42.81%** |
+| 1.5B baseline (naive) | 0.2627 | 0.2577 | 1866 | — |
+| 1.5B sampled\_uniform\_M5\_union (stage A only) | 0.2038 | 0.2126 | 3472 | **−22.42%** |
+| 1.5B combined (headline) | **0.2864** | 0.2665 | 4230 | **+9.04%** |
+
+**The 1B algorithm does not transfer cleanly to 1.5B.** The same
+pipeline gives +42.81% on 1B but only +9.04% on 1.5B. Stage A alone
+is *worse* than baseline on 1.5B (−22%) — sampled-uniform contacts
+appear to mislead the 1.5B more than they help.
+
+Per-protein, 1.5B regresses on the largest proteins (7ylr: −30%,
+7zs2: −26%, 7uk8: −15%) but still gains on small/mid ones (8eb9:
++78%, 8cba: +35%, 8baq: +31%). The large-protein regression is the
+defining failure: those proteins also dominate the mean.
+
+**Likely causes (not investigated further here):**
+- 1.5B at step-49999 is likely undertrained relative to the 1B
+  production checkpoint.
+- The `range_strategy=uniform` fix was tuned to undo 1B's
+  ~99% medium-range prior. 1.5B may have a different range-token
+  prior, in which case forcing uniform actively hurts. A
+  re-run of `probe_range_entropy.py` on 1.5B would say.
+- The conditional next-position knowledge profile likely differs.
+
+The algorithm's hyperparameters (`range_strategy`, K schedule,
+`min_contact_prob`) were tuned on 1B and need re-tuning per model.
+
+Full per-protein numbers and discussion in [RESULTS\_LOG.md](RESULTS_LOG.md).
