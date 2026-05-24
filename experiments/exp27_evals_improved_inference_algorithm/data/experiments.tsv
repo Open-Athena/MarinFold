@@ -41,3 +41,6 @@ sampled_uniform_M10_union_T0.7	Constrained sampling M=10 union, uniform range. S
 iter_R4_grow_on_sampled_uniform_M5	R=4 growing K iteration with sampled_uniform_M5_union as the prior. Combines sampling-diverse contacts (good for previously-stuck proteins) with iterative refinement.	0.3564	0.3665	3154.5	2.275	+42.80	
 sharpen_T1.0_on_iter_R4_grow_on_sampled_uniform_M5	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_on_sampled_uniform_M5 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3564	0.3665	240.9	0.174	+42.80	
 iter_R3_grow_on_sampled_uniform_M10	R=3 growing K iteration from sampled_uniform_M10_union prior (richer than M=5). kc=[0.5, 1.0, 1.5].	0.3401	0.3523	1988.6	1.434	+36.26	
+sampled_uniform_M5_union_T0.7_1.5B	Same algorithm on 1.5B (vs 1B headline). Sampled uniform M=5 union prior, contacts-only LP, T=0.7.	0.2038	0.2126	3471.6	2.504	-18.36	
+iter_R4_grow_on_sampled_uniform_M5_1.5B	Same algorithm as the 1B headline, but using 1.5B model. iter R=4 grow on sampled_uniform_M5 prior.	0.2864	0.2665	4229.9	3.050	+14.74	
+baseline_naive_1.5B	Naive baseline on 1.5B model. Comparison point for the combined algorithm.	0.2627	0.2577	1866.1	1.346	+5.23	

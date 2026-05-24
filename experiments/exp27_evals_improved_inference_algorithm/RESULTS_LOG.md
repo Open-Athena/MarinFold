@@ -590,3 +590,77 @@ chain 5613 s (4.05× baseline), within 5× budget. Falls 0.018 short of
 to +0.12 — the remaining gap is the model's contact-prediction quality
 on hard proteins (oracle ceilings 0.62-0.74), which neither sampling
 nor iteration can fully unlock from this checkpoint.
+
+## Same algorithm on the 1.5B model
+
+After rebasing onto main, `MODELS.yaml` has a `1.5B` entry pointing at
+`buckets/open-athena/MarinFold/.../protein-contacts-1_5b-distance-masked-70f8f5/step-49999`.
+The 1.5B has 24 hidden layers (1.5× the 1B's 16) and GQA with 8 KV
+heads (vs 32 for 1B). Note the checkpoint name: **step-49999** —
+likely undertrained relative to the 1B production checkpoint.
+
+Re-ran the exact same algorithm on the same 10 train proteins with
+`--model 1.5B`, output to `outputs_1.5b/`.
+
+| run | mean LDDT | median | wall (s) |
+|---|---:|---:|---:|
+| 1B baseline (naive) | 0.2496 | 0.2500 | 1387 |
+| 1B sampled\_uniform\_M5\_union | 0.3142 | 0.3213 | 2458 |
+| **1B combined (headline)** | **0.3564** | **0.3665** | 3155 |
+| 1.5B baseline (naive) | 0.2627 | 0.2577 | 1866 |
+| 1.5B sampled\_uniform\_M5\_union | **0.2038** | 0.2126 | 3472 |
+| **1.5B combined** | **0.2864** | **0.2665** | 4230 |
+
+**Lift (combined vs same-model baseline):**
+- 1B: +42.81%
+- 1.5B: **+9.04%**
+
+**The algorithm does NOT scale similarly to 1.5B.**
+
+Most striking: stage A (sampled M=5 union) is *worse* than naive
+baseline on 1.5B (0.2038 vs 0.2627, −22.4%). Stage B (iterative
+growing-K) recovers some of the lost ground but doesn't reach
+parity with even the 1.5B baseline relative to what 1B achieved.
+
+Per-protein 1.5B-combined vs 1B-combined:
+
+| stem | L | 1B_base | 1.5B_base | 1B_combined | 1.5B_combined | 1B lift | 1.5B lift |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 7y5j | 102 | 0.4485 | 0.5326 | 0.5136 | 0.5645 | +14.6% | +6.0% |
+| 7ykm | 105 | 0.3317 | 0.3124 | 0.4639 | 0.4010 | +39.9% | +28.4% |
+| 7ur2 | 195 | 0.2633 | 0.2577 | 0.3665 | 0.3090 | +39.2% | +19.9% |
+| 7ylr | 330 | 0.2673 | 0.3071 | 0.3991 | 0.2140 | +49.3% | −30.3% |
+| 7zs2 | 316 | 0.2500 | 0.2809 | 0.3778 | 0.2086 | +51.1% | −25.7% |
+| 8eb9 |  95 | 0.1510 | 0.1496 | 0.3455 | 0.2665 | +128.8% | +78.1% |
+| 8cba | 214 | 0.2045 | 0.2054 | 0.3028 | 0.2772 | +48.1% | +35.0% |
+| 7xz3 | 325 | 0.1913 | 0.2011 | 0.2727 | 0.2146 | +42.6% | +6.7% |
+| 7uk8 | 394 | 0.2010 | 0.1944 | 0.2657 | 0.1661 | +32.2% | −14.6% |
+| 8baq | 208 | 0.1872 | 0.1854 | 0.2567 | 0.2425 | +37.1% | +30.8% |
+
+**Observations:**
+- 1.5B baseline (0.2627) is only +5% above 1B baseline — the larger
+  model doesn't help much on the naive readout.
+- 1.5B combined REGRESSES on 3/10 proteins: 7ylr (−30%), 7zs2 (−26%),
+  7uk8 (−15%). All large proteins.
+- 1.5B combined STILL beats its own baseline on 7/10 proteins, just
+  with smaller gains than 1B managed.
+- Largest-protein performance is the worst on 1.5B — possibly the
+  undertrained checkpoint has not yet learned to handle long
+  sequences and many seeded contacts as well as 1B has.
+
+**Hypotheses for why the algorithm doesn't transfer:**
+1. **1.5B is undertrained** (step-49999 only) — has not yet learned
+   the conditional-distance distribution well enough for sampling
+   constraints to help.
+2. **Range-token prior is different on 1.5B** — the "uniform" fix
+   was specifically tuned to undo 1B's 99% medium-bias. If 1.5B has
+   a different prior over the 3 ranges, forcing uniform might
+   actively hurt.
+3. **Different conditional-knowledge profile** — the entropy probe
+   measured on 1B showed all 3 ranges have similar position-entropy.
+   1.5B might be different and need a different sampling policy.
+
+To know which, would re-run `probe_range_entropy.py` on 1.5B and
+look at the conditional distributions. Not chasing this here — the
+headline answer is clear: **the 1B algorithm does not transfer to
+1.5B (step-49999) without re-tuning.**
