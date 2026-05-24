@@ -664,3 +664,50 @@ To know which, would re-run `probe_range_entropy.py` on 1.5B and
 look at the conditional distributions. Not chasing this here — the
 headline answer is clear: **the 1B algorithm does not transfer to
 1.5B (step-49999) without re-tuning.**
+
+## Range-token weighting by top-position probability
+
+Idea: pre-compute the top position-token probability after each range
+token (3 forward passes per protein), use as the range-sampling
+weights. Intuition: if the model has a very confident first-position
+prediction for short-range, weight short higher when sampling the
+range token. If all ranges are flat, fall back close to uniform.
+
+Implementation: `measure_range_top_probs()` returns `(top_long,
+top_med, top_short)`. The LP's `weighted` strategy overwrites
+state-0 logits to `log(top_p)` for each range; softmax over the 3
+is the per-statement range distribution.
+
+Measured weights (1B):
+
+| stem | L | top_p long | top_p med | top_p short | weights (L/M/S) |
+|---|---:|---:|---:|---:|---|
+| 8eb9 | 95  | 0.0279 | 0.0367 | 0.0520 | 0.24 / 0.31 / 0.45 |
+| 7y5j | 102 | 0.0447 | 0.0599 | 0.1139 | 0.21 / 0.27 / 0.52 |
+| 7uk8 | 394 | 0.0183 | 0.0238 | 0.0249 | 0.27 / 0.36 / 0.37 |
+
+Small proteins skew toward short-range; long protein 7uk8 is close
+to uniform.
+
+Results (1B):
+
+| algorithm | mean LDDT | Δ% |
+|---|---:|---:|
+| sampled\_uniform\_M5\_union | 0.3142 | +25.86 |
+| sampled\_weighted\_M5\_union | 0.2902 | +16.27 |
+| iter\_R4\_grow\_on\_sampled\_uniform\_M5 | 0.3564 | +42.81 |
+| iter\_R4\_grow\_on\_sampled\_weighted\_M5 | 0.3493 | +39.96 |
+
+**Weighted is worse than uniform** both alone (−0.024 LDDT) and after
+iteration (−0.007 LDDT). Per-protein, weighted wins on small proteins
+(7y5j +0.047, 8eb9 +0.035) and loses on most others (7zs2 −0.060 is
+the biggest hit). The net trade is negative.
+
+**Why uniform beats weighted:** uniform forces broad coverage across
+the 3 ranges. Weighted concentrates sampling on the model's
+already-confident ranges, leaving the others under-explored — but
+the readout still needs distance info for pairs across ALL
+separations. Over-fitting the sampling to the strongest range-token
+signal sacrifices coverage on the others.
+
+Sticking with `range_strategy=uniform` as the 1B headline.
