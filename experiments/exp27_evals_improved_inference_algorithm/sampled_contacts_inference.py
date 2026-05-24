@@ -121,14 +121,18 @@ class ContactsOnlyLogitsProcessor:
         position_ids: list[int],
         vocab_size: int,
         range_strategy: str = "model",
+        range_log_weights: tuple[float, float, float] | None = None,
     ):
         # ordered as [long, medium, short] — matches _CONTACT_TOKEN_STRS
         self._contact_ids_ordered = list(contact_range_ids)
         self._range_strategy = range_strategy
         self._vocab_size = vocab_size
+        # For range_strategy="weighted": log-weights to place on the 3
+        # range tokens (in the [long, medium, short] order matching
+        # _CONTACT_TOKEN_STRS). Softmax over these is the per-statement
+        # range distribution. Non-range tokens get -inf at state 0.
+        self._range_log_weights = range_log_weights
         # Pre-build masks lazily on the GPU device the first time __call__ is hit.
-        # Pre-building eagerly on CPU + moving every call adds ~ms per token,
-        # which dominates wall time when the LP runs 9000+ times per protein.
         self._contact_range_ids_t = contact_range_ids
         self._position_ids_t = position_ids
         self._device_masks = None  # populated on first __call__
@@ -153,14 +157,22 @@ class ContactsOnlyLogitsProcessor:
         for tid in self._contact_range_ids_t:
             if tid < vocab_size_runtime:
                 uniform[tid] = 0.0
-        # "uniform" is the OVERWRITE-style mask: every allowed token gets logit 0,
-        # blocked tokens are -inf; we return this directly (not added to logits)
+        weighted = None
+        if self._range_log_weights is not None:
+            weighted = torch.full((vocab_size_runtime,), float("-inf"), device=device)
+            for tid, lw in zip(self._contact_range_ids_t, self._range_log_weights):
+                if tid < vocab_size_runtime:
+                    weighted[tid] = float(lw)
+        # uniform/weighted are OVERWRITE-style masks: every allowed token
+        # gets the specified logit (0 for uniform; log-weight for weighted),
+        # blocked tokens are -inf. Returned directly (not added to logits)
         # so the model's prior is ignored.
         self._device_masks = {
             "all_contact": all_contact,
             "position": position,
             "single": single,
             "uniform": uniform,
+            "weighted": weighted,
         }
 
     def __call__(self, generated_token_ids, logits):
@@ -176,8 +188,63 @@ class ContactsOnlyLogitsProcessor:
             if self._range_strategy == "round_robin":
                 round_idx = len(generated_token_ids) // 3
                 return m["single"][round_idx % 3]
+            if self._range_strategy == "weighted":
+                if m["weighted"] is None:
+                    raise ValueError(
+                        "range_strategy='weighted' requires range_log_weights"
+                    )
+                return m["weighted"]
             raise ValueError(f"unknown range_strategy: {self._range_strategy}")
         return logits + m["position"]
+
+
+def measure_range_top_probs(
+    rt: Runtime, residue_names: list[str],
+) -> tuple[float, float, float]:
+    """Return the model's top position-token probability after each of the
+    3 range tokens, ordered (long, medium, short).
+
+    For each range token r, we form the prompt
+        <begin_seq><AAs><begin_stmts><{r}-range-contact>
+    and read the next-token distribution (top-128 logprobs). We extract
+    the marginal mass on each position token <p1>..<pN>, renormalise
+    inside that subset (so the result is a proper distribution over
+    positions), and return the maximum.
+
+    A larger top-prob for range r means the model has a sharper opinion
+    about which first position to emit for a contact of that range. Use
+    these as range-sampling weights when range_strategy="weighted".
+    """
+    from vllm import SamplingParams, TokensPrompt
+
+    n = len(residue_names)
+    pos_ids = _resolve_position_token_ids(rt.tokenizer, n)
+    pos_id_set = set(pos_ids)
+    base_ids = _encode_tokens(rt.tokenizer, _build_base_prompt(residue_names))
+    contact_ids = _resolve_contact_range_ids(rt.tokenizer)
+
+    prompts = []
+    for tid in contact_ids:
+        prompts.append(TokensPrompt(prompt_token_ids=base_ids + [tid]))
+    sampling = SamplingParams(
+        temperature=1.0, top_p=1.0, top_k=-1,
+        max_tokens=1, n=1, logprobs=128,
+    )
+    outputs = rt.llm.generate(prompts, sampling, use_tqdm=False)
+    top_probs: list[float] = []
+    for gen in outputs:
+        lp_dict = gen.outputs[0].logprobs[0] if gen.outputs[0].logprobs else {}
+        mass_per_pos = []
+        for tid, lp in lp_dict.items():
+            if int(tid) in pos_id_set:
+                mass_per_pos.append(math.exp(float(lp.logprob)))
+        total = sum(mass_per_pos)
+        if total <= 0:
+            top_probs.append(0.0)
+            continue
+        top = max(mass_per_pos) / total  # renormalise within positions
+        top_probs.append(top)
+    return tuple(top_probs)
 
 
 def _range_token_for_separation(sep: int) -> str | None:
@@ -205,6 +272,7 @@ def sample_contact_prefix(
     top_p: float,
     seed: int,
     range_strategy: str = "model",
+    range_log_weights: tuple[float, float, float] | None = None,
 ) -> tuple[list[tuple[int, int, str]], int]:
     """Sample one contact-only rollout from ``<begin_statements>``.
 
@@ -237,6 +305,7 @@ def sample_contact_prefix(
         position_ids=_resolve_position_token_ids(rt.tokenizer, n),
         vocab_size=vocab_size,
         range_strategy=range_strategy,
+        range_log_weights=range_log_weights,
     )
     sampling = SamplingParams(
         temperature=temperature,
@@ -381,6 +450,17 @@ def predict_one(
     n_pairs_queried = 0
     prefix_token_count = 0
 
+    # Pre-compute range weights once per protein if requested.
+    range_log_weights: tuple[float, float, float] | None = None
+    range_top_probs: tuple[float, float, float] | None = None
+    if range_strategy == "weighted":
+        range_top_probs = measure_range_top_probs(rt, seq.residue_names)
+        # log-weights = log(top_p + eps). softmax(log-weights) is then
+        # the per-statement range distribution. Order matches
+        # _CONTACT_TOKEN_STRS = (long, medium, short).
+        eps = 1e-12
+        range_log_weights = tuple(math.log(p + eps) for p in range_top_probs)
+
     if aggregation == "average":
         accumulator = np.zeros(
             (seq.n_residues, seq.n_residues, NUM_DISTANCE_BINS), dtype=np.float32,
@@ -392,6 +472,7 @@ def predict_one(
                 temperature=temperature, top_p=top_p,
                 seed=base_seed + r,
                 range_strategy=range_strategy,
+                range_log_weights=range_log_weights,
             )
             probs_r, n_pairs_queried, prefix_token_count = predict_distogram_with_prefix(
                 rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
@@ -417,6 +498,7 @@ def predict_one(
                 temperature=temperature, top_p=top_p,
                 seed=base_seed + r,
                 range_strategy=range_strategy,
+                range_log_weights=range_log_weights,
             )
             rollouts_meta.append({
                 "rollout": r, "seed": base_seed + r,
@@ -460,6 +542,7 @@ def predict_one(
         "top_p": top_p,
         "base_seed": base_seed,
         "range_strategy": range_strategy,
+        "range_top_probs": list(range_top_probs) if range_top_probs else None,
         "rollouts": rollouts_meta,
         "algorithm": algorithm,
         "model_nickname": rt.model_nickname,

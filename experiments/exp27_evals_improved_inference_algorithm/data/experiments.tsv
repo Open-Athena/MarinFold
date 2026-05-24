@@ -44,3 +44,5 @@ iter_R3_grow_on_sampled_uniform_M10	R=3 growing K iteration from sampled_uniform
 sampled_uniform_M5_union_T0.7_1.5B	Same algorithm on 1.5B (vs 1B headline). Sampled uniform M=5 union prior, contacts-only LP, T=0.7.	0.2038	0.2126	3471.6	2.504	-18.36	
 iter_R4_grow_on_sampled_uniform_M5_1.5B	Same algorithm as the 1B headline, but using 1.5B model. iter R=4 grow on sampled_uniform_M5 prior.	0.2864	0.2665	4229.9	3.050	+14.74	
 baseline_naive_1.5B	Naive baseline on 1.5B model. Comparison point for the combined algorithm.	0.2627	0.2577	1866.1	1.346	+5.23	
+sampled_weighted_M5_union_T0.7	M=5 union, range_strategy=weighted (top-position-prob per range). Comparison to uniform on 1B.	0.2902	0.2899	2307.6	1.664	+16.28	
+iter_R4_grow_on_sampled_weighted_M5	R=4 grow on top of sampled_weighted_M5_union prior. Comparison vs iter_R4_grow_on_sampled_uniform_M5 (0.3564).	0.3493	0.3673	3133.1	2.259	+39.96	

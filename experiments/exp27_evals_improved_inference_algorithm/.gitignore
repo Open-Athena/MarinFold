@@ -6,6 +6,7 @@ protenix_data/
 # train protein is ~140 MB. Only the score CSVs and the
 # experiments.tsv land in git.
 outputs/
+outputs_*/
 
 # Stray local caches.
 __pycache__/

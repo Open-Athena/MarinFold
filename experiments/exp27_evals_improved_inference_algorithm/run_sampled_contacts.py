@@ -449,12 +449,14 @@ def main() -> None:
     )
     parser.add_argument(
         "--range-strategy", default="model",
-        choices=["model", "uniform", "round_robin"],
+        choices=["model", "uniform", "round_robin", "weighted"],
         help=(
             "How to choose <*-range-contact> tokens during sampling. "
             "'model' = use model's prior (heavily medium-biased). "
             "'uniform' = equal probability across the 3 range tokens. "
-            "'round_robin' = deterministic L,M,S,L,M,S,... cycle."
+            "'round_robin' = deterministic L,M,S,L,M,S,... cycle. "
+            "'weighted' = sample range token weighted by its top "
+            "position-token probability (pre-computed once per protein)."
         ),
     )
     args = parser.parse_args()
