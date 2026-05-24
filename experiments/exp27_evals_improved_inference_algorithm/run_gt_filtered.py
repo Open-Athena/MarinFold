@@ -395,7 +395,7 @@ def main() -> None:
     parser.add_argument(
         "--models-yaml",
         type=Path,
-        default=_THIS.parent.parent / "MODELS.yaml",
+        default=_THIS.parent.parent / "marinfold" / "marinfold" / "MODELS.yaml",
     )
     parser.add_argument("--n-gpus", type=int, default=8)
     parser.add_argument("--batch-size", type=int, default=128)

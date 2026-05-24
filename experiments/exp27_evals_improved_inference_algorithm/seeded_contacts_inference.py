@@ -285,7 +285,7 @@ def main() -> None:
     parser.add_argument("--model", default="1B")
     parser.add_argument(
         "--models-yaml", type=Path,
-        default=_THIS.parent.parent / "MODELS.yaml",
+        default=_THIS.parent.parent / "marinfold" / "marinfold" / "MODELS.yaml",
     )
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--dtype", default="auto")

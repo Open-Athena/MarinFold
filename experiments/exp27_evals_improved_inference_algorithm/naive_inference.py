@@ -90,28 +90,19 @@ class Runtime:
 
 
 def resolve_model_path(models_yaml_path: Path, nickname: str) -> str:
-    """Return the local HF snapshot dir for the named model entry."""
-    from huggingface_hub import snapshot_download
+    """Return the local HF snapshot dir for the named model entry.
 
-    entries = yaml.safe_load(models_yaml_path.read_text())
-    matched = [e for e in entries if e.get("nickname") == nickname]
-    if not matched:
-        raise ValueError(f"no entry for {nickname!r} in {models_yaml_path}")
-    entry = matched[0]
-    url = entry["url"]
-    prefix = "https://huggingface.co/"
-    if not url.startswith(prefix):
-        raise ValueError(f"unexpected model URL {url!r}")
-    rest = url[len(prefix):].split("/")
-    if len(rest) < 2:
-        raise ValueError(f"unexpected model URL {url!r}")
-    repo_id = "/".join(rest[:2])
-    subdir = rest[4] if len(rest) > 4 and rest[2] == "tree" else None
-    local = snapshot_download(
-        repo_id=repo_id,
-        allow_patterns=[f"{subdir}/*"] if subdir else None,
-    )
-    return str(Path(local) / subdir) if subdir else local
+    Delegates to ``marinfold.registry.resolve_model`` so this works for
+    both regular HF repos and storage-bucket URLs (the 1.5B model uses
+    the bucket format). The ``models_yaml_path`` arg is kept for API
+    compatibility but is honoured via the ``MARINFOLD_MODELS_YAML``
+    environment variable so the registry's lookup chain finds the same
+    file the caller intended.
+    """
+    import os
+    os.environ["MARINFOLD_MODELS_YAML"] = str(models_yaml_path)
+    from marinfold.registry import resolve_model
+    return str(resolve_model(nickname))
 
 
 def _hardware_info() -> dict[str, Any]:
@@ -345,7 +336,7 @@ def main() -> None:
     parser.add_argument(
         "--models-yaml",
         type=Path,
-        default=_THIS.parent.parent / "MODELS.yaml",
+        default=_THIS.parent.parent / "marinfold" / "marinfold" / "MODELS.yaml",
     )
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument(
