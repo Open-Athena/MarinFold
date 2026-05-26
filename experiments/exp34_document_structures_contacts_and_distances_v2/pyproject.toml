@@ -1,0 +1,36 @@
+[project]
+name = "exp34-document-structures-contacts-and-distances-v2"
+version = "0.1.0"
+description = "contacts-and-distances-v2 (v1 + <think> pause tokens) training-doc generator."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold",
+    "gemmi>=0.6",
+    "matplotlib>=3.8",
+    "numpy",
+    "pandas>=2",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "huggingface_hub>=0.24"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+
+[tool.pytest.ini_options]
+markers = [
+    "network: tests that require internet (e.g. byte-identity check against the published v1 tokenizer on HF Hub). Skip with `pytest -m 'not network'`.",
+]

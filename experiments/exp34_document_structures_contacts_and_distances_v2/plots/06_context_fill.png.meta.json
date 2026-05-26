@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Every doc fills the 8192-token budget within a handful of tokens. The small deficit (max=8192, median=8190) comes from integer-division when allocating distance statements out of the remaining budget after contacts are placed."
+}

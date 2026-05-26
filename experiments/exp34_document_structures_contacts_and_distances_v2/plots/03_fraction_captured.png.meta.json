@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "What fraction of a protein's eligible contacts make it into the doc, broken out by mode. Medium- and short-range typically saturate (median ~1.0) because the per-mode budget can usually hold them all. Long-range is the bottleneck \u2014 median ~0.41, because long-range eligible pools can be huge (up to 1365 contacts on the longest protein here)."
+}
