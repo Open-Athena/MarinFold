@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Each scatter point is one document. Contact-statement counts rise with sequence length (more eligible contacts available), with substantial variance from the per-mode fraction sampling. Distance-statement count *falls* with sequence length \u2014 because residue tokens take a larger bite of the 8192 budget, leaving less room for statements after contacts have claimed their share."
+}

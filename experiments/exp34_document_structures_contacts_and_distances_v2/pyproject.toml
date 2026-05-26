@@ -6,7 +6,9 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "marinfold",
     "gemmi>=0.6",
+    "matplotlib>=3.8",
     "numpy",
+    "pandas>=2",
     "pyarrow",
 ]
 

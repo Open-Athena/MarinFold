@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Statements per document, by type. Distance statements dominate (mean ~1210); contacts are limited by the per-mode budget knob ``contact_f_range`` (default uniform(-0.1, 0.2), clamped to 0). Long-range contacts are the most numerous because their eligible pool is the largest. Symlog y-axis to keep both contact and distance scales legible on one panel."
+}

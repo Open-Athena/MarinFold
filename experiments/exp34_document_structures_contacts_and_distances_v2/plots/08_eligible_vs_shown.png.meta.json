@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Per-mode: x = eligible contacts in the protein, y = contacts placed in the doc. Points on y=x mean the doc captured *every* available contact of that mode. Medium- and short-range proteins frequently saturate; long-range proteins routinely have far more eligible contacts than the per-mode budget can fit."
+}

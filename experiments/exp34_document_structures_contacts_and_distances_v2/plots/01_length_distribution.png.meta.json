@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Sequence-length histogram of the 100 FoldBench monomer ground-truth CIFs used as the representative sample. Median ~ 220 residues; range 30..761."
+}

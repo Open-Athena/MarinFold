@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Per-doc token budget, averaged across the sample. Distance statements eat ~89% of the context (6 tokens each at ~1210 statements per doc); contacts ~8%, residues ~3%, <think> ~0.1%. Docs pack to the budget almost exactly (mean total ~8190/8192)."
+}
