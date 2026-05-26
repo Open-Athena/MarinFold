@@ -19,10 +19,10 @@ sidecars) live in :mod:`marinfold_document_structures.writers`.
 """
 
 import argparse
+import os
 import sys
 import typing
 from pathlib import Path
-import itertools
 
 from marinfold import (
     build_tokenizer,
@@ -34,6 +34,7 @@ from zephyr import Dataset, ZephyrContext
 
 import generate
 import inference
+import parse
 from vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 
 
@@ -68,7 +69,13 @@ def cmd_generate(args: argparse.Namespace) -> None:
         residue_plddt_min=args.residue_plddt_min,
     )
     ds = (
-        Dataset.from_iterable(generate.iter_parsed_structures(args.input))
+        # from_files lists paths in the driver but fans the (expensive) gemmi
+        # parse + doc generation out to workers — unlike from_iterable, which
+        # would drain the whole parsing generator in the driver at plan time.
+        Dataset.from_files(parse.input_glob(args.input))
+        .map(parse.try_parse_structure)
+        # try_parse_structure returns None for unparseable files.
+        .filter(lambda s: s is not None)
         .filter(generate.at_least_two_residuals)
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
         # Sometimes generate_one returns `None`.
@@ -80,17 +87,21 @@ def cmd_generate(args: argparse.Namespace) -> None:
     if args.num_docs is not None:
         ds = ds.take_per_shard(args.num_docs)
 
-    match args.out.suffix:
+    # os.path.splitext keeps cloud URLs intact (Path would collapse the
+    # "gs://" double slash); a trailing glob like "*.parquet" still yields
+    # the right suffix.
+    suffix = os.path.splitext(args.out)[1]
+    match suffix:
         case ".parquet":
             ds = (
                 ds
                 .map(lambda d: {"document": d, "structure": NAME})
-                .write_parquet(str(args.out))
+                .write_parquet(args.out)
             )
         case ".jsonl" | ".json":
-            ds = ds.write_jsonl(str(args.out))
+            ds = ds.write_jsonl(args.out)
         case _:
-            typing.assert_never(args.out.suffix)
+            typing.assert_never(suffix)
 
     # Default client will auto-detect environment.
     ZephyrContext().execute(ds)
@@ -177,14 +188,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ---- generate ----------------------------------------------------------
     p_gen = sub.add_parser("generate", help="Generate training documents.")
-    p_gen.add_argument("--input", type=Path, required=True,
-                       help="PDB / mmCIF (.gz) file or directory of them.")
+    p_gen.add_argument("--input", type=str, required=True,
+                       help="PDB / mmCIF (.gz) file or directory of them; "
+                            "local path or cloud URL (gs://, s3://, ...).")
     p_gen.add_argument("--num-docs", type=int, default=None,
                        help="Cap on docs produced (default: one per input).")
     p_gen.add_argument("--context-length", type=int, default=CONTEXT_LENGTH,
                        help="Token budget per document.")
-    p_gen.add_argument("--out", type=Path, required=True,
-                       help="Output path (.parquet or .jsonl).")
+    p_gen.add_argument("--out", type=str, required=True,
+                       help="Output path (.parquet or .jsonl); local or cloud URL.")
     # Algorithm knobs (defaults reproduce contactdoc).
     cfg_defaults = generate.GenerationConfig()
     p_gen.add_argument("--contact-cutoff-angstrom", type=float,

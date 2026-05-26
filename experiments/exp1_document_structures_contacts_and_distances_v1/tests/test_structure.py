@@ -482,7 +482,7 @@ def test_cli_generate_parses():
         "--out", "/tmp/docs.parquet",
     ])
     assert args.cmd == "generate"
-    assert args.input == Path("/tmp/x")
+    assert args.input == "/tmp/x"
     assert args.num_docs == 10
     assert args.func is cli.cmd_generate
 
@@ -582,6 +582,29 @@ def test_cmd_generate_parquet_matches_legacy(multi_pdb_dir, tmp_path: Path):
             config=generate.GenerationConfig(),
         )
     )
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_accepts_explicit_glob(multi_pdb_dir, tmp_path: Path):
+    """An explicit --input glob is passed through verbatim: selective and
+    non-recursive (a bare directory, by contrast, auto-expands recursively)."""
+    pq = pytest.importorskip("pyarrow.parquet")
+    # Decoys the `*.pdb` glob must ignore: a non-structure file beside the
+    # inputs, and a nested .pdb one level down.
+    (multi_pdb_dir / "notes.txt").write_text("ignore me")
+    nested = multi_pdb_dir / "deep"
+    nested.mkdir()
+    (nested / "extra.pdb").write_text(_PDB_FIXTURE)
+
+    out = tmp_path / "docs.parquet"
+    args = cli.build_parser().parse_args(
+        ["generate", "--input", f"{multi_pdb_dir}/*.pdb", "--out", str(out)]
+    )
+    cli.cmd_generate(args)
+
+    # Only the 5 top-level copy*.pdb match — notes.txt is the wrong extension
+    # and deep/extra.pdb is excluded because `*.pdb` is non-recursive.
+    assert pq.read_table(str(out)).num_rows == 5
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
