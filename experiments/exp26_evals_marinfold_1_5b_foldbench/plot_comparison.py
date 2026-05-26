@@ -6,6 +6,8 @@
 Reads ``data/scores.csv`` (output of ``score_comparison.py``) and
 produces per-protein bar charts, an aggregate headline figure,
 paired scatters anchored on ``marinfold_1_5b``, and the swarm plots.
+Each plot is saved via ``save_plot_with_meta`` so it lands in the
+PDF appendix built by ``build_summary.py``.
 """
 
 import argparse
@@ -15,6 +17,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from build_summary import save_plot_with_meta
 
 
 _METHOD_COLORS = {
@@ -64,7 +68,15 @@ def per_protein_bar(
     ax.set_title(f"{metric} per protein — {'higher' if higher_is_better else 'lower'} is better")
     ax.legend(loc="best", fontsize=8)
     fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
+    direction = "higher" if higher_is_better else "lower"
+    save_plot_with_meta(
+        fig, out_path, dpi=120,
+        caption=(
+            f"Per-protein {metric} grouped bar across all 4 methods "
+            f"(n={len(proteins)} FoldBench monomers). {direction.capitalize()} "
+            f"is better."
+        ),
+    )
     plt.close(fig)
 
 
@@ -90,7 +102,13 @@ def headline_aggregate(df: pd.DataFrame, out_path: Path) -> None:
         ax.set_title(title, fontsize=10)
         ax.legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
+    save_plot_with_meta(
+        fig, out_path, dpi=120,
+        caption=(
+            "Aggregate (mean + median) for the 4 headline metrics × 4 methods. "
+            "Hypothesis verdict (1.5B vs 1B, 3/4 bar): 2/4 metrics support → not supported."
+        ),
+    )
     plt.close(fig)
 
 
@@ -118,7 +136,127 @@ def paired_scatter(df: pd.DataFrame, *, metric: str, out_path: Path) -> None:
         ax.set_ylabel(f"{comp}  {metric}")
         ax.set_title(f"{comp} vs marinfold_1_5b")
     fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
+    direction = "above" if metric == "lddt_distogram_cb" or metric.startswith("prec_") else "below"
+    save_plot_with_meta(
+        fig, out_path, dpi=120,
+        caption=(
+            f"Paired per-protein {metric} scatter, 1.5B on the x-axis. "
+            f"Points {direction} the y=x diagonal = comparator wins. The "
+            f"1.5B-vs-1B panel is the headline view."
+        ),
+    )
+    plt.close(fig)
+
+
+def lddt_1_5b_vs_1b_scatter(df: pd.DataFrame, *, out_path: Path) -> None:
+    """Standalone 1.5B vs 1B LDDT scatter, square equal-axes, with win-rate annotation."""
+    m15 = df[df["method"] == "marinfold_1_5b"].set_index("pdb_id")["lddt_distogram_cb"]
+    m1 = df[df["method"] == "marinfold_1b"].set_index("pdb_id")["lddt_distogram_cb"]
+    both = pd.concat([m15.rename("m15"), m1.rename("m1")], axis=1).dropna()
+    n = len(both)
+    if n == 0:
+        return
+    n_wins = int((both["m15"] > both["m1"]).sum())
+    median_delta = float((both["m15"] - both["m1"]).median())
+    mean_delta = float((both["m15"] - both["m1"]).mean())
+
+    lo = float(min(both["m15"].min(), both["m1"].min())) - 0.02
+    hi = float(max(both["m15"].max(), both["m1"].max())) + 0.02
+
+    fig, ax = plt.subplots(figsize=(6.5, 6.5))
+    ax.plot([lo, hi], [lo, hi], color="#888888", linestyle="--", linewidth=1)
+    ax.scatter(
+        both["m1"], both["m15"],
+        color=_METHOD_COLORS["marinfold_1_5b"],
+        alpha=0.75, s=32, edgecolor="white", linewidth=0.5,
+    )
+    ax.set_xlabel("LDDT-CB, marinfold_1b", fontsize=11)
+    ax.set_ylabel("LDDT-CB, marinfold_1_5b", fontsize=11)
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.set_aspect("equal")
+    ax.grid(alpha=0.3)
+    ax.set_title(f"1.5B vs 1B on LDDT-CB (n={n} FoldBench monomers)", fontsize=12)
+    ax.text(
+        0.04, 0.96,
+        f"points above diagonal: 1.5B wins  ({n_wins}/{n})\n"
+        f"median Δ (1.5B - 1B):  {median_delta:+.4f}\n"
+        f"mean Δ (1.5B - 1B):    {mean_delta:+.4f}",
+        transform=ax.transAxes, fontsize=10, va="top", family="monospace",
+        bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "#cccccc"},
+    )
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, out_path, dpi=140,
+        caption=(
+            f"Standalone 1.5B vs 1B LDDT-CB scatter, one point per protein "
+            f"(n={n}). Square equal-axes; points above diagonal = 1.5B wins "
+            f"({n_wins}/{n}). Median Δ {median_delta:+.4f}, mean Δ {mean_delta:+.4f}."
+        ),
+    )
+    plt.close(fig)
+
+
+def lddt_vs_protein_length(
+    df: pd.DataFrame, *, out_path: Path, xscale: str = "linear",
+) -> None:
+    """LDDT-CB vs sequence length, 4 methods overlaid.
+
+    Light scatter + binned-median line per method across 7 length
+    quantiles. ``xscale`` is ``'linear'`` or ``'log'`` — log gives
+    equal visual weight to the short and long ends of the FoldBench
+    distribution (30–761 residues).
+    """
+    n_bins = 7
+    all_lengths = df["n_residues"].dropna().values
+    if len(all_lengths) == 0:
+        return
+    edges = np.quantile(all_lengths, np.linspace(0, 1, n_bins + 1))
+    edges[0] -= 0.5
+    edges[-1] += 0.5
+
+    fig, ax = plt.subplots(figsize=(9, 5.5))
+    for method in _METHOD_ORDER:
+        sub = df[df["method"] == method].dropna(subset=["lddt_distogram_cb", "n_residues"])
+        color = _METHOD_COLORS[method]
+        ax.scatter(
+            sub["n_residues"], sub["lddt_distogram_cb"],
+            color=color, alpha=0.30, s=14, edgecolor="none",
+        )
+        centers, medians = [], []
+        for lo, hi in zip(edges[:-1], edges[1:], strict=True):
+            m = (sub["n_residues"] >= lo) & (sub["n_residues"] < hi)
+            if m.sum() >= 3:
+                centers.append(sub.loc[m, "n_residues"].median())
+                medians.append(sub.loc[m, "lddt_distogram_cb"].median())
+        ax.plot(
+            centers, medians, color=color, linewidth=2.4,
+            marker="o", markersize=6, label=f"{method} (n={len(sub)})",
+        )
+    if xscale == "log":
+        ax.set_xscale("log")
+    ax.set_xlabel("protein length (residues)", fontsize=11)
+    ax.set_ylabel("LDDT-CB", fontsize=11)
+    ax.set_ylim(-0.02, 1.02)
+    ax.set_title("LDDT-CB vs protein length (n=100 FoldBench monomers)", fontsize=12)
+    ax.grid(alpha=0.3, which="both" if xscale == "log" else "major")
+    ax.legend(fontsize=9, loc="upper right")
+    ax.text(
+        0.01, 0.01,
+        "lines: per-method binned median across 7 length quantiles",
+        transform=ax.transAxes, fontsize=8, color="#666666",
+    )
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, out_path, dpi=140,
+        caption=(
+            f"LDDT-CB vs protein length (n_residues, {xscale} x-axis), all 4 "
+            f"methods. Light scatter per protein, lines are per-method binned "
+            f"medians across 7 length quantiles. Protenix-MSA is roughly flat "
+            f"near 0.9; both MarinFold models degrade smoothly with length and "
+            f"track each other closely; Protenix-SS sits in between."
+        ),
+    )
     plt.close(fig)
 
 
@@ -136,15 +274,13 @@ def timing_vs_sequence_length(timings_csv: Path, out_path: Path) -> None:
     df = pd.read_csv(timings_csv)
     if df.empty or "elapsed_seconds" not in df.columns:
         return
-    # Drop incomplete rows (e.g. ones from older provenance.json
-    # files written before timing fields were added).
     df = df.dropna(subset=["elapsed_seconds", "n_residues"])
     if df.empty:
         return
     fig, ax = plt.subplots(figsize=(7, 5))
     gpus = list(df["gpu_name"].fillna("unknown").unique())
     palette = plt.colormaps["tab10"].resampled(max(len(gpus), 1))
-    markers = {"local": "o", "modal": "s"}
+    markers = {"local": "o", "modal": "s", "iris": "^"}
     for i, gpu in enumerate(gpus):
         sub = df[df["gpu_name"].fillna("unknown") == gpu]
         for tag, marker in markers.items():
@@ -160,11 +296,17 @@ def timing_vs_sequence_length(timings_csv: Path, out_path: Path) -> None:
     ax.set_yscale("log")
     ax.set_xlabel("sequence length (residues)")
     ax.set_ylabel("inference wall-time (seconds)")
-    ax.set_title("MarinFold 1B per-protein runtime")
+    ax.set_title("MarinFold 1.5B per-protein runtime")
     ax.grid(which="both", alpha=0.3)
     ax.legend(fontsize=8, loc="best")
     fig.tight_layout()
-    fig.savefig(out_path, dpi=120)
+    save_plot_with_meta(
+        fig, out_path, dpi=120,
+        caption=(
+            "Per-protein wall-time vs sequence length for MarinFold 1.5B "
+            "(this exp). Log-log; the pair-sweep is O(N²) so the slope is ~2."
+        ),
+    )
     plt.close(fig)
 
 
@@ -195,7 +337,6 @@ def lddt_5way_swarm(
     protenix = pd.read_csv(protenix_scores_csv)
 
     rows: list[dict] = []
-    # MarinFold (1.5B and 1B): distogram (point) + distogram-soft.
     for marin_method in ("marinfold_1_5b", "marinfold_1b"):
         mf = merged[merged["method"] == marin_method][
             ["pdb_id", "chain_id", "lddt_distogram_cb", "lddt_distogram_cb_soft"]
@@ -209,7 +350,6 @@ def lddt_5way_swarm(
                          "category": f"{marin_method} (distogram, soft)",
                          "lddt": r["lddt_distogram_cb_soft"]})
 
-    # Protenix single_seq + msa: distogram + distogram-soft + structure-CB.
     for mode in ("single_seq", "msa"):
         sub = protenix[protenix["mode"] == mode]
         for _, r in sub.iterrows():
@@ -240,8 +380,6 @@ def lddt_5way_swarm(
     palette = {cat: _METHOD_COLORS[cat.split(" (")[0]] for cat in order}
 
     fig, ax = plt.subplots(figsize=(13, 5.5))
-    # Boxplot first (so the swarm renders on top). Light grey
-    # boxes at alpha=0.5; no outliers (the swarm shows them).
     sns.boxplot(
         data=df, x="category", y="lddt", order=order,
         showfliers=False, width=0.55,
@@ -259,14 +397,21 @@ def lddt_5way_swarm(
     ax.set_ylabel("LDDT")
     ax.set_title(f"LDDT-CB (n={df['protein'].nunique()} FoldBench monomers)")
     ax.set_ylim(-0.02, 1.02)
-    # Wrap long x-tick labels onto two lines for readability.
     ax.set_xticklabels(
         [t.get_text().replace(" (", "\n(") for t in ax.get_xticklabels()],
         fontsize=9,
     )
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
-    fig.savefig(out_path, dpi=130)
+    save_plot_with_meta(
+        fig, out_path, dpi=130,
+        caption=(
+            "LDDT-CB across 10 categories (4 methods × {distogram, "
+            "distogram-soft, structure where available}). Boxplot overlay "
+            "shows median + quartiles. Protenix-MSA dominates ~0.93; "
+            "MarinFold 1.5B and 1B sit nearly on top of each other at ~0.25."
+        ),
+    )
     plt.close(fig)
 
 
@@ -324,7 +469,6 @@ def marinfold_vs_protenix_timing(
         })
     df = pd.DataFrame(rows).dropna(subset=["elapsed_seconds", "n_residues"])
 
-    # Hardware label per method (most common value in the series).
     def _hw_label(method: str) -> str:
         sub = df[df["method"] == method]
         if sub.empty:
@@ -332,7 +476,7 @@ def marinfold_vs_protenix_timing(
         top = sub["hardware"].dropna().value_counts()
         if top.empty:
             return ""
-        return f", {top.idxmax().split()[0]}"  # first token, e.g. 'NVIDIA' or 'iris'
+        return f", {top.idxmax().split()[0]}"
 
     fig, ax = plt.subplots(figsize=(8, 5.5))
     for method in ("marinfold_1_5b", "marinfold_1b", "protenix_single_seq", "protenix_msa"):
@@ -352,15 +496,23 @@ def marinfold_vs_protenix_timing(
     ax.grid(which="both", alpha=0.3)
     ax.legend(fontsize=9, loc="best")
     fig.tight_layout()
-    fig.savefig(out_path, dpi=130)
+    save_plot_with_meta(
+        fig, out_path, dpi=130,
+        caption=(
+            "Per-protein wall-time vs sequence length, all 4 methods (log-log). "
+            "Hardware caveat: 1.5B on TPU v5p-8/iris, 1B on H100/Modal, "
+            "Protenix on H100. Both MarinFold models show clean O(N²) "
+            "pair-sweep scaling; Protenix is roughly flat at ~100 s."
+        ),
+    )
     plt.close(fig)
 
 
 def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
     """Swarm plot of CASP top-L contact precision per (method, sep class).
 
-    9 categories: 3 methods × {short, medium, long} sequence separation.
-    All three methods produce a distogram, so each method has one column
+    12 categories: 4 methods × {short, medium, long} sequence separation.
+    All four methods produce a distogram, so each method has one column
     per separation class (``prec_{short,medium,long}_L``). Structure-
     derived contact precision (binarize predicted CB-CB at 8 Å) isn't
     in exp12's score schema, so this plot is distogram-only.
@@ -406,7 +558,14 @@ def prec_at_l_swarm(*, merged_scores_csv: Path, out_path: Path) -> None:
     )
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
-    fig.savefig(out_path, dpi=130)
+    save_plot_with_meta(
+        fig, out_path, dpi=130,
+        caption=(
+            "CASP contact precision @ top L, 12 categories (4 methods × "
+            "{short, medium, long} separation). Long-range is the hardest; "
+            "1.5B and 1B sit close to each other on every separation class."
+        ),
+    )
     plt.close(fig)
 
 
@@ -437,6 +596,9 @@ def render(*, scores_csv: Path, out_dir: Path, timings_csv: Path | None = None,
         df, metric="mae_distogram_cb_angstrom",
         out_path=out_dir / "mae_marinfold_vs_protenix_scatter.png",
     )
+    lddt_1_5b_vs_1b_scatter(df, out_path=out_dir / "lddt_1_5b_vs_1b_scatter.png")
+    lddt_vs_protein_length(df, out_path=out_dir / "lddt_vs_protein_length.png", xscale="linear")
+    lddt_vs_protein_length(df, out_path=out_dir / "lddt_vs_protein_length_log.png", xscale="log")
     if timings_csv is not None:
         timing_vs_sequence_length(timings_csv, out_dir / "timing_vs_sequence_length.png")
     if protenix_scores_csv is not None and protenix_scores_csv.exists():
