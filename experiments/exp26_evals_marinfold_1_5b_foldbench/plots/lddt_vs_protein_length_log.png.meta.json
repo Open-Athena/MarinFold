@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "LDDT-CB vs protein length (n_residues, log x-axis), all 4 methods. Light scatter per protein, lines are per-method binned medians across 7 length quantiles. Protenix-MSA is roughly flat near 0.9; both MarinFold models degrade smoothly with length and track each other closely; Protenix-SS sits in between."
+}

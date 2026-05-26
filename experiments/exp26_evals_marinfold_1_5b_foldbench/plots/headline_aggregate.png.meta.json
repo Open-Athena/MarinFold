@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Aggregate (mean + median) for the 4 headline metrics \u00d7 4 methods. Hypothesis verdict (1.5B vs 1B, 3/4 bar): 2/4 metrics support \u2192 not supported."
+}
