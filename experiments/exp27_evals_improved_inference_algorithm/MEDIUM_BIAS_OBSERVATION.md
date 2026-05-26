@@ -101,23 +101,55 @@ long bucket after rebucketing. Distinct from "model emitted long".)
 
 ## Why does this happen?
 
-The proximate cause is whatever in-context dependency the model
-learned during training. Some plausible mechanisms:
+**Training-data composition.** The exp1 document generator
+(`exp1_document_structures_contacts_and_distances_v1/generate.py`)
+samples each range's fraction of the document independently:
 
-- **Training docs were range-homogeneous.** If the training-time
-  documents typically used one range type per document (e.g. a doc
-  is "this protein's medium contacts" or "this protein's long
-  contacts"), the model has learned "once you start with range X,
-  keep using range X". I don't know the exp1 generator's choices
-  for distance-masked docs offhand, but this fits the observed
-  monolithic generations.
-- **It's not a temperature artifact.** Lowering T should make it
-  *more* sticky, not less. T=0.7 is what we used; at T=1.0 the same
-  pattern would appear.
-- **It's not a vLLM logits-processor ordering bug.** vLLM applies
-  logits processors before temperature scaling. The first-token
-  distribution under the LP matches what the marginal probe (A)
-  predicts (modulo the seed-driven sampling).
+```python
+f_long   = max(0.0, rng.uniform(-0.1, 0.2))  # clipped to 0
+f_medium = max(0.0, rng.uniform(-0.1, 0.2))  # clipped to 0
+f_short  = max(0.0, rng.uniform(-0.1, 0.2))  # clipped to 0
+```
+
+The `max(0, ...)` clip means **each range has ~1/3 probability of
+being entirely absent** from a given training document. Doing the
+combinatorics on three independent Bernoullis with `p=1/3` of
+absence per range:
+
+| document composition | probability | example |
+|---|---:|---|
+| all 3 ranges present | (2/3)³ ≈ 30% | normal mixed doc |
+| exactly 2 ranges     | 3·(2/3)²·(1/3) ≈ 44% | e.g. only long + medium |
+| exactly 1 range      | 3·(2/3)·(1/3)² ≈ 22% | e.g. all medium |
+| zero ranges          | (1/3)³ ≈ 4% | distance-only doc |
+
+So **~66% of training docs are range-incomplete** — at least one
+range type is absent. The model has correctly learned the
+conditional "if this document hasn't shown any short-range contacts
+yet, it's probably a 'no-short-range' document — keep emitting
+non-short." That conditional pattern, applied autoregressively
+after the first contact picks the dominant range, is the lock-in
+we see at inference time.
+
+This is a model-fits-its-training-distribution story, not a bug.
+The model is doing exactly the right thing for the distribution it
+saw — it's just that the distribution wasn't the distribution we'd
+want for grammar-constrained sampling of "give me a maximally
+informative mix of all three range types in one rollout."
+
+**Other things it's not:**
+
+- **Not a temperature artifact.** Lowering T would make it *more*
+  sticky, not less. T=0.7 is what we used; at T=1.0 the same
+  pattern would appear with slightly more switching.
+- **Not a vLLM logits-processor ordering bug.** vLLM applies logits
+  processors before temperature scaling. The first-token
+  distribution under the LP matches what marginal probe (A)
+  predicts (modulo the seed-driven sampling), so the LP doesn't
+  distort anything.
+- **Not unique to medium.** seed=29 / 31 / 42 etc. lock onto long
+  or short instead — the lock-in mechanism doesn't favour any
+  particular range.
 
 ## What "fixing" this with range_strategy=uniform did
 
