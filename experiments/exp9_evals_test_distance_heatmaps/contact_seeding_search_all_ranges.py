@@ -53,6 +53,7 @@ REPO_ROOT = EXP_DIR.parents[1]
 sys.path.insert(0, str(EXP_DIR))
 
 import inference_helpers as IH
+from build_summary import save_plot_with_meta
 IH.add_exp1_to_path()
 
 from parse import parse_structure
@@ -286,17 +287,66 @@ for (spec, parsed), res in zip(structures, results, strict=True):
     print(f"    full-matrix MAE = {full_mae:.3f} Å ({time.time()-t0:.1f}s)")
 
 # %% [markdown]
-# ## Per-protein summary
+# ## LDDT trace — full-matrix LDDT(CA) at each k
+#
+# The MAE trace above is a 300-pair sample, which makes it cheap to
+# evaluate every round during the search. LDDT is defined over all
+# pairs within 15 Å (CASP convention), per-residue then averaged, so
+# it really wants the full N×N predicted matrix. We replay the search
+# post-hoc: walk each protein's `selected_contacts` from k=0 to
+# k_final, predict the full CA distance matrix, and compute LDDT(CA)
+# vs the AFDB GT. At k=k_final we reuse the prediction already done
+# in the previous cell.
 
 # %%
-import csv
-
 PLOTS_DIR = EXP_DIR / "plots"
 DATA_DIR = EXP_DIR / "data"
 PLOTS_DIR.mkdir(exist_ok=True)
 DATA_DIR.mkdir(exist_ok=True)
 
-print(f"{'entry_id':<24} {'n_res':>5} {'cands':>6} {'k':>4} {'long':>4} {'med':>4} {'short':>5} {'sample_MAE':>11} {'full_MAE':>10}  status")
+print("LDDT trace replay (full-matrix CA prediction per k):")
+for (spec, parsed), res in zip(structures, results, strict=True):
+    sel = res["selected_contacts"]
+    k_final = len(sel)
+    gt = final_gt[spec.entry_id]
+    lddt_trace = []
+    t_proto = time.time()
+    for k in range(k_final + 1):
+        t0 = time.time()
+        if k == k_final:
+            pred = final_predicted[spec.entry_id]
+        else:
+            pred = IH.predict_distance_matrix(
+                llm=llm,
+                tokenizer=tokenizer,
+                parsed=parsed,
+                seeded_contacts=sel[:k],
+                distance_token_ids=DISTANCE_TOKEN_IDS,
+            )
+        lddt = IH.lddt_from_distance_matrices(pred, gt)
+        n = gt.shape[0]
+        ii, jj = np.meshgrid(np.arange(n), np.arange(n), indexing="ij")
+        valid = (ii != jj) & np.isfinite(gt) & (gt <= IH.DISTANCE_MAX_A) & np.isfinite(pred)
+        full_mae = float(np.abs(pred - gt)[valid].mean()) if valid.any() else float("nan")
+        lddt_trace.append({
+            "k": k,
+            "lddt_ca": lddt,
+            "full_matrix_mae_angstrom": full_mae,
+            "elapsed_seconds": time.time() - t0,
+        })
+    res["lddt_trace"] = lddt_trace
+    final_lddt = lddt_trace[-1]["lddt_ca"]
+    res["lddt_ca"] = final_lddt
+    print(f"  {spec.entry_id}: k_final={k_final}, LDDT(CA)@0={lddt_trace[0]['lddt_ca']:.3f} "
+          f"-> @k_final={final_lddt:.3f}  ({time.time()-t_proto:.1f}s)")
+
+# %% [markdown]
+# ## Per-protein summary
+
+# %%
+import csv
+
+print(f"{'entry_id':<24} {'n_res':>5} {'cands':>6} {'k':>4} {'long':>4} {'med':>4} {'short':>5} {'sample_MAE':>11} {'full_MAE':>10} {'LDDT_CA':>9}  status")
 rows = []
 for (spec, parsed), res in zip(structures, results, strict=True):
     k = len(res["selected_contacts"])
@@ -306,6 +356,7 @@ for (spec, parsed), res in zip(structures, results, strict=True):
     n_short = sum(1 for c in sel if c[0] == "<short-range-contact>")
     sample_mae = res["trace"][-1]["sample_mae_angstrom"] if res["trace"] else float("nan")
     full_mae = res.get("full_matrix_mae_angstrom", float("nan"))
+    final_lddt = res.get("lddt_ca", float("nan"))
     rows.append({
         "entry_id": spec.entry_id,
         "uniprot_accession": spec.uniprot_accession,
@@ -319,17 +370,36 @@ for (spec, parsed), res in zip(structures, results, strict=True):
             f"{c[0].strip('<>').replace('-range-contact','')}:{c[1]}-{c[2]}" for c in sel),
         "final_sample_mae_angstrom": sample_mae,
         "full_matrix_mae_angstrom": full_mae,
+        "full_matrix_lddt_ca": final_lddt,
         "search_terminated": res["search_terminated"],
     })
     print(f"{spec.entry_id:<24} {len(parsed.residues):>5} {res['n_candidates']:>6} "
           f"{k:>4} {n_long:>4} {n_med:>4} {n_short:>5} "
-          f"{sample_mae:>11.3f} {full_mae:>10.3f}  {res['search_terminated']}")
+          f"{sample_mae:>11.3f} {full_mae:>10.3f} {final_lddt:>9.3f}  {res['search_terminated']}")
 
 with (DATA_DIR / "contact_search_all_ranges_summary.csv").open("w", newline="") as fh:
     w = csv.DictWriter(fh, fieldnames=list(rows[0]))
     w.writeheader()
     w.writerows(rows)
 print(f"\nwrote {(DATA_DIR / 'contact_search_all_ranges_summary.csv').relative_to(REPO_ROOT)}")
+
+# Per-(protein, k) trace CSV so the LDDT plot can be regenerated
+# without re-running inference.
+trace_rows = []
+for (spec, _), res in zip(structures, results, strict=True):
+    for step in res.get("lddt_trace", []):
+        trace_rows.append({
+            "entry_id": spec.entry_id,
+            "k": step["k"],
+            "lddt_ca": step["lddt_ca"],
+            "full_matrix_mae_angstrom": step["full_matrix_mae_angstrom"],
+        })
+if trace_rows:
+    with (DATA_DIR / "contact_search_all_ranges_lddt_trace.csv").open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(trace_rows[0]))
+        w.writeheader()
+        w.writerows(trace_rows)
+    print(f"wrote {(DATA_DIR / 'contact_search_all_ranges_lddt_trace.csv').relative_to(REPO_ROOT)}")
 
 # %% [markdown]
 # ## Trace plot
@@ -352,7 +422,55 @@ ax.set_title(f"Greedy search over all contact ranges — MAE trace per protein "
 ax.legend(loc="upper right", fontsize=8, ncol=2)
 ax.grid(True, alpha=0.3)
 fig.tight_layout()
-fig.savefig(PLOTS_DIR / "contact_search_all_ranges_trace.png", dpi=110)
+save_plot_with_meta(
+    fig, PLOTS_DIR / "contact_search_all_ranges_trace.png",
+    caption=(
+        f"V3 (pure-greedy, all ranges) — sample-MAE-vs-k curves on "
+        f"{SAMPLE_PAIRS} deterministic CA-CA pairs. Candidate pool opens to "
+        f"long + medium + short-range GT contacts. Red dashed line is target "
+        f"= {TARGET_MAE} Å."
+    ),
+    script="contact_seeding_search_all_ranges.ipynb",
+    dpi=110,
+)
+plt.show()
+
+# %% [markdown]
+# ## LDDT trace plot
+#
+# Same x-axis (k = number of seeded contacts) as the MAE trace
+# above, but with LDDT(CA) on the y-axis — full-matrix CA distance
+# predictions vs the AFDB GT, standard CASP LDDT (15 Å inclusion,
+# thresholds 0.5/1/2/4 Å). LDDT is bounded in [0, 1] and higher
+# is better, so the curves rise from left to right.
+
+# %%
+fig, ax = plt.subplots(figsize=(9.5, 5.5))
+for (spec, _), res in zip(structures, results, strict=True):
+    lt = res.get("lddt_trace") or []
+    if not lt:
+        continue
+    ks = [step["k"] for step in lt]
+    lddts = [step["lddt_ca"] for step in lt]
+    ax.plot(ks, lddts, "-o", markersize=3, label=spec.entry_id, alpha=0.85)
+ax.set_xlabel("k = number of seeded contacts (any range)")
+ax.set_ylabel("full-matrix LDDT(CA) (CASP: 15 Å, 0.5/1/2/4 Å)")
+ax.set_ylim(0.0, 1.0)
+ax.set_title(f"Greedy search over all contact ranges — LDDT(CA) trace per protein "
+             f"(≤{CANDIDATES_PER_ROUND} cands/round)")
+ax.legend(loc="lower right", fontsize=8, ncol=2)
+ax.grid(True, alpha=0.3)
+fig.tight_layout()
+save_plot_with_meta(
+    fig, PLOTS_DIR / "contact_search_all_ranges_lddt_trace.png",
+    caption=(
+        f"V3 LDDT replay — LDDT(CA)-vs-k under V3, replayed post-hoc with one "
+        f"full-matrix prediction per k. CASP convention (15 Å inclusion, "
+        f"thresholds 0.5/1/2/4 Å); LDDT ∈ [0, 1], higher is better."
+    ),
+    script="contact_seeding_search_all_ranges.ipynb",
+    dpi=110,
+)
 plt.show()
 
 # %% [markdown]
@@ -393,7 +511,16 @@ fig.suptitle(
     fontsize=12,
 )
 fig.subplots_adjust(left=0.13, right=0.91, top=0.97, bottom=0.02, hspace=0.18, wspace=0.05)
-fig.savefig(PLOTS_DIR / "contact_search_all_ranges_grid.png", dpi=110, bbox_inches="tight")
+save_plot_with_meta(
+    fig, PLOTS_DIR / "contact_search_all_ranges_grid.png",
+    caption=(
+        f"V3 (pure-greedy, all ranges) — 10×3 CA-CA heatmap grid (GT / "
+        f"predicted-with-seeded-any-range / |residual|) at each protein's "
+        f"chosen k. Target sample MAE < {TARGET_MAE} Å, k ≤ {MAX_CONTACTS}."
+    ),
+    script="contact_seeding_search_all_ranges.ipynb",
+    dpi=110,
+)
 plt.show()
 print(f"saved {(PLOTS_DIR / 'contact_search_all_ranges_grid.png').relative_to(REPO_ROOT)}")
 

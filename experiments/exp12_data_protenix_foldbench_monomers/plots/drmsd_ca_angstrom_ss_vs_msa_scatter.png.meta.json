@@ -1,0 +1,11 @@
+{
+  "script": "cli.py",
+  "args": [
+    "plot",
+    "--scores",
+    "data/scores.csv",
+    "--out",
+    "plots/"
+  ],
+  "caption": "Paired dRMSD on CA (\u00c5), y=single_seq, x=MSA. Each point is one protein; dashed line is y=x. Below the diagonal: MSA mode is better (typical for distance/structure metrics)."
+}

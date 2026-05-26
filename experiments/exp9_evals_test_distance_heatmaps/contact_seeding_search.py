@@ -57,6 +57,7 @@ REPO_ROOT = EXP_DIR.parents[1]
 sys.path.insert(0, str(EXP_DIR))
 
 import inference_helpers as IH
+from build_summary import save_plot_with_meta
 IH.add_exp1_to_path()
 
 from parse import parse_structure
@@ -382,7 +383,16 @@ ax.set_title(f"Beam search (width {BEAM_WIDTH}, ≤{CANDIDATES_PER_ROUND} cands/
 ax.legend(loc="upper right", fontsize=8, ncol=2)
 ax.grid(True, alpha=0.3)
 fig.tight_layout()
-fig.savefig(PLOTS_DIR / "contact_search_trace.png", dpi=110)
+save_plot_with_meta(
+    fig, PLOTS_DIR / "contact_search_trace.png",
+    caption=(
+        f"V2 (beam-{BEAM_WIDTH} long-range search) — sample-MAE-vs-k curves "
+        f"on {SAMPLE_PAIRS} deterministic CA-CA pairs. One line per protein; "
+        f"red dashed line is target = {TARGET_MAE} Å."
+    ),
+    script="contact_seeding_search.ipynb",
+    dpi=110,
+)
 plt.show()
 
 # %% [markdown]
@@ -430,7 +440,16 @@ fig.suptitle(
     fontsize=12,
 )
 fig.subplots_adjust(left=0.13, right=0.91, top=0.97, bottom=0.02, hspace=0.18, wspace=0.05)
-fig.savefig(PLOTS_DIR / "contact_search_grid.png", dpi=110, bbox_inches="tight")
+save_plot_with_meta(
+    fig, PLOTS_DIR / "contact_search_grid.png",
+    caption=(
+        f"V2 (beam-{BEAM_WIDTH} long-range search) — 10×3 CA-CA heatmap grid "
+        f"(GT / predicted-with-seeded / |residual|) at each protein's chosen "
+        f"k. Target sample MAE < {TARGET_MAE} Å, k ≤ {MAX_CONTACTS}."
+    ),
+    script="contact_seeding_search.ipynb",
+    dpi=110,
+)
 plt.show()
 print(f"saved {(PLOTS_DIR / 'contact_search_grid.png').relative_to(REPO_ROOT)}")
 

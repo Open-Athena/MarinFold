@@ -1,0 +1,5 @@
+{
+  "script": "eval_notebook.ipynb",
+  "args": [],
+  "caption": "V1 (zero-shot) \u2014 10\u00d73 grid of CA-CA heatmaps (GT / predicted / |residual|) across all 10 AFDB test proteins. Macro MAE = 3.29 \u00c5."
+}

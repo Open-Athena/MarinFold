@@ -54,6 +54,7 @@ from parse import parse_structure, atom_position
 from vocab import NAME
 
 from select_test_proteins import select_test_proteins, download_cif
+from build_summary import save_plot_with_meta
 
 print("repo root:", REPO_ROOT)
 print("exp1 dir:", EXP1_DIR)
@@ -331,7 +332,16 @@ for spec, parsed in structures:
         ax.set_ylabel("residue i")
     fig.tight_layout()
     out_path = PLOTS_DIR / f"{spec.entry_id}.png"
-    fig.savefig(out_path, dpi=110)
+    save_plot_with_meta(
+        fig, out_path,
+        caption=(
+            f"V1 (zero-shot) — CA-CA distance heatmap for {spec.entry_id} "
+            f"({n} aa, MAE {mae:.2f} Å). Panels: GT, predicted, |residual|. "
+            f"Model: 1B, RTX A5000."
+        ),
+        script="eval_notebook.ipynb",
+        dpi=110,
+    )
     plt.show()
     print(f"    saved {out_path.relative_to(REPO_ROOT)}; MAE = {mae:.2f} Å")
 
@@ -384,7 +394,17 @@ fig.suptitle(
     fontsize=12,
 )
 fig.subplots_adjust(left=0.13, right=0.91, top=0.97, bottom=0.02, hspace=0.18, wspace=0.05)
-fig.savefig(PLOTS_DIR / "all_proteins_grid.png", dpi=110, bbox_inches="tight")
+_grid_macro_mae = float(np.mean([r["mae_ca_ca_angstrom"] for r in per_protein_mae]))
+save_plot_with_meta(
+    fig, PLOTS_DIR / "all_proteins_grid.png",
+    caption=(
+        f"V1 (zero-shot) — 10×3 grid of CA-CA heatmaps (GT / predicted / "
+        f"|residual|) across {n_proteins} AFDB test proteins. "
+        f"Macro MAE = {_grid_macro_mae:.2f} Å. Model: 1B."
+    ),
+    script="eval_notebook.ipynb",
+    dpi=110,
+)
 plt.show()
 print(f"saved {(PLOTS_DIR / 'all_proteins_grid.png').relative_to(REPO_ROOT)}")
 
@@ -434,7 +454,16 @@ ax.set_xlabel("GT CA-CA distance (Å)")
 ax.set_ylabel("predicted expected distance (Å)")
 ax.set_title(f"pooled across {len(per_protein_mae)} proteins, {len(all_gt):,} pairs\nmacro MAE = {macro_mae:.2f} Å")
 fig.tight_layout()
-fig.savefig(PLOTS_DIR / "pooled_scatter.png", dpi=110)
+save_plot_with_meta(
+    fig, PLOTS_DIR / "pooled_scatter.png",
+    caption=(
+        f"V1 (zero-shot) — pooled expected vs GT CA-CA distance across "
+        f"{len(per_protein_mae)} proteins ({len(all_gt):,} evaluable pairs). "
+        f"Macro CA-CA MAE = {macro_mae:.2f} Å. Red dashed line is y=x."
+    ),
+    script="eval_notebook.ipynb",
+    dpi=110,
+)
 plt.show()
 
 # %% [markdown]
