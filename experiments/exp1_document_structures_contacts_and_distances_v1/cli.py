@@ -69,9 +69,6 @@ def cmd_generate(args: argparse.Namespace) -> None:
         residue_plddt_min=args.residue_plddt_min,
     )
     ds = (
-        # from_files lists paths in the driver but fans the (expensive) gemmi
-        # parse + doc generation out to workers — unlike from_iterable, which
-        # would drain the whole parsing generator in the driver at plan time.
         Dataset.from_files(parse.input_glob(args.input))
         .map(parse.try_parse_structure)
         # try_parse_structure returns None for unparseable files.
@@ -79,7 +76,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
         .filter(generate.at_least_two_residuals)
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
         # Sometimes generate_one returns `None`.
-        .filter(lambda x: x)
+        .filter(lambda x: x is not None)
         # Preserve single-file --out semantics.
         .reshard(1)
     )
