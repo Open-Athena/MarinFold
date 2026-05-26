@@ -14,6 +14,18 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8", "huggingface_hub>=0.24"]
+# Diagnostic-only extras: stream the v1-5x training dataset off HF
+# (``datasets``) and load the v1 1B model for next-token softmax
+# probes (``torch`` + ``transformers``). Not needed by the
+# generator; install with `uv sync --extra probe` to run
+# ``_scripts/probe_begin_statements_prior.py``.
+probe = [
+    "datasets>=2.18",
+    "huggingface_hub>=0.24",
+    "torch>=2.4",
+    "transformers>=4.40",
+    "accelerate>=0.30",
+]
 
 [dependency-groups]
 dev = []
