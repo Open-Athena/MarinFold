@@ -1,0 +1,8 @@
+{
+  "script": "probe_prior_by_position.py",
+  "args": [
+    "--num-proteins",
+    "20"
+  ],
+  "caption": "Left: raw softmax mass on each candidate at the k'th inter-statement boundary in a real v1 doc. Right: same data but renormalized over the 3 contact-mode tokens only (matching the masking that exp27's logits processor applies). If a positional medium bias exists, the orange line on the right panel climbs as k increases."
+}
