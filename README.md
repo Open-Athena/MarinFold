@@ -49,6 +49,43 @@ uv run marinfold evaluate \
     --out-plots ~/plots.pdf
 ```
 
+## Document structures
+
+A **document structure** is a recipe for turning a protein structure
+into the token string a trained model sees (and back).
+`contacts-and-distances-v1` is our current format: a residue
+sequence followed by a mix of CB-CB contact statements and per-pair
+distance statements, with a per-structure pLDDT-bin token.
+
+Generate one document from a structure file:
+
+```bash
+cd marinfold
+uv sync
+uv run contacts-and-distances-v1 generate \
+    --input tests/data/1QYS.cif \
+    --out /tmp/docs.jsonl
+```
+
+The output is one row per input structure with a `document` field
+holding the token string (`.parquet` works too — pick by suffix).
+View the first document:
+
+```bash
+python -c "import json; print(json.loads(open('/tmp/docs.jsonl').readline())['document'])"
+```
+
+You'll see a single space-separated token string like:
+
+```
+<contacts-and-distances-v1> <begin_sequence> <M> <G> <D> <I> ... <begin_statements> <long-range-contact> <p3> <p82> <distance> <p7> <p41> <CA> <CB> <d12.5> ... <plddt_95_100> <end>
+```
+
+Point `--input` at a directory to batch over a whole set of
+structures (one document per input). See `contacts-and-distances-v1
+generate --help` for the algorithm knobs (contact cutoff, per-mode
+fractions, pLDDT filter, context-length budget).
+
 ## More details (mostly written by robots)
 
 Trained models are listed in `[MODELS.yaml](MODELS.yaml)` by
@@ -93,7 +130,7 @@ console script:
 
 ```bash
 cd marinfold
-uv sync --extra mlx --extra contacts-and-distances-v1
+uv sync --extra mlx
 uv run contacts-and-distances-v1 evaluate \
     --backend mlx --model 1B \
     --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
