@@ -46,3 +46,5 @@ iter_R4_grow_on_sampled_uniform_M5_1.5B	Same algorithm as the 1B headline, but u
 baseline_naive_1.5B	Naive baseline on 1.5B model. Comparison point for the combined algorithm.	0.2627	0.2577	1866.1	1.346	+5.23	
 sampled_weighted_M5_union_T0.7	M=5 union, range_strategy=weighted (top-position-prob per range). Comparison to uniform on 1B.	0.2902	0.2899	2307.6	1.664	+16.28	
 iter_R4_grow_on_sampled_weighted_M5	R=4 grow on top of sampled_weighted_M5_union prior. Comparison vs iter_R4_grow_on_sampled_uniform_M5 (0.3564).	0.3493	0.3673	3133.1	2.259	+39.96	
+heldout_baseline_naive	Naive baseline on the 10 held-out proteins (seed=42, n_res<=400, excludes train).	0.2797	0.2746	1225.6	0.884	+12.04	
+heldout_sampled_uniform_M5_union	Stage A on held-out 10. Same params as 1B headline.	0.3189	0.3146	2547.5	1.837	+27.77	
