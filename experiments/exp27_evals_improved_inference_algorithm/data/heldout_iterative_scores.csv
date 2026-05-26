@@ -1,0 +1,11 @@
+pdb_id,chain_id,method,n_residues,mae_distogram_cb_angstrom,drmsd_distogram_cb_angstrom,n_mae_distogram_pairs,mae_distogram_cb_contact_angstrom,drmsd_distogram_cb_contact_angstrom,n_mae_distogram_contact_pairs,prec_short_L,prec_short_L_2,prec_short_L_5,prec_medium_L,prec_medium_L_2,prec_medium_L_5,prec_long_L,prec_long_L_2,prec_long_L_5,n_short_contacts,n_medium_contacts,n_long_contacts,lddt_distogram_cb,lddt_distogram_cb_soft
+7t9r,A,heldout_iter_R4_grow_on_sampled_uniform_M5,38,6.4512,9.3541,673,2.8470,3.7709,159,0.2105,0.1579,0.2857,0.4474,0.5263,0.5714,0.2632,0.3158,0.4286,18,32,18,0.3980,0.3682
+7y8i,A,heldout_iter_R4_grow_on_sampled_uniform_M5,97,8.4117,12.0459,2513,0.9895,1.4532,359,0.3505,0.7083,1.0000,0.4124,0.7292,0.9474,0.8763,0.9375,1.0000,34,40,122,0.7179,0.6638
+7zoi,A,heldout_iter_R4_grow_on_sampled_uniform_M5,151,11.5109,13.8011,5678,4.5404,7.1485,612,0.4172,0.4933,0.6000,0.2252,0.3467,0.5333,0.2980,0.4133,0.5333,77,96,153,0.3083,0.2976
+7wz5,A,heldout_iter_R4_grow_on_sampled_uniform_M5,161,11.9273,14.1509,7371,3.9528,6.6466,758,0.0994,0.1375,0.1562,0.0683,0.1125,0.1250,0.1801,0.2125,0.2812,21,11,213,0.3023,0.2951
+8bau,A,heldout_iter_R4_grow_on_sampled_uniform_M5,189,12.8104,14.9119,8921,4.3062,7.8642,907,0.3122,0.4255,0.5405,0.1323,0.1809,0.3243,0.1534,0.1915,0.2162,79,51,210,0.3270,0.3191
+8gmy,A,heldout_iter_R4_grow_on_sampled_uniform_M5,236,13.2384,15.3000,11334,4.7840,8.7602,1071,0.2203,0.3305,0.4681,0.2712,0.3814,0.3617,0.3559,0.4237,0.4894,70,116,285,0.3139,0.3054
+7xg9,A,heldout_iter_R4_grow_on_sampled_uniform_M5,288,11.9504,14.3944,15951,2.6393,4.8259,1432,0.1562,0.2847,0.4035,0.1736,0.2778,0.4211,0.5382,0.6736,0.7368,55,64,485,0.4252,0.4180
+7x4p,A,heldout_iter_R4_grow_on_sampled_uniform_M5,307,13.3348,15.3654,15771,4.8947,8.7341,1453,0.1824,0.2026,0.2951,0.2541,0.3007,0.2951,0.2769,0.3922,0.5082,84,115,354,0.3014,0.2936
+7v3o,A,heldout_iter_R4_grow_on_sampled_uniform_M5,328,13.5885,15.4077,15986,5.5834,8.9996,1386,0.1768,0.2073,0.2923,0.1372,0.1463,0.1385,0.2226,0.2622,0.3538,110,82,465,0.2465,0.2394
+7qsj,A,heldout_iter_R4_grow_on_sampled_uniform_M5,373,12.6787,14.8759,22300,3.9058,6.9808,1828,0.2708,0.4032,0.5541,0.1796,0.2419,0.2568,0.2842,0.3280,0.4730,124,117,552,0.3440,0.3340
