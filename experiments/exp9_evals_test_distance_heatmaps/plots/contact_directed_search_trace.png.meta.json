@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_directed_search.ipynb",
+  "args": [],
+  "caption": "V4 (directed search by predicted CB-CB) — LDDT(CB)-vs-k curves; one full-matrix prediction per round, next contact chosen by largest current predicted CB-CB. CASP convention (15 Å inclusion, thresholds 0.5/1/2/4 Å)."
+}

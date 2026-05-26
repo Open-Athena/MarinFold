@@ -243,6 +243,109 @@ Source CSV: `data/contact_search_all_ranges_summary.csv` (the
 Trace: `plots/contact_search_all_ranges_trace.png`. Grid of
 final heatmaps: `plots/contact_search_all_ranges_grid.png`.
 
+**LDDT trace.** The MAE trace above is a 300-CA-CA-pair sample
+(cheap to evaluate at every round), so it can't compute proper
+LDDT — LDDT is defined per-residue over all pairs within 15 Å of
+GT. After the search finishes, the notebook replays each protein's
+`selected_contacts` step by step (k=0..k_final), predicts the full
+N×N CA distance matrix at each k, and computes global LDDT(CA)
+under the standard CASP convention (15 Å inclusion, thresholds
+0.5/1/2/4 Å). One extra full-matrix prediction per k per protein
+(~150 across all 10 proteins), so this roughly doubles the
+end-to-end wall time. The per-k LDDT series is saved to
+`data/contact_search_all_ranges_lddt_trace.csv`; the final-k LDDT
+is also appended to `contact_search_all_ranges_summary.csv` as
+`full_matrix_lddt_ca`. Plot:
+`plots/contact_search_all_ranges_lddt_trace.png` — same x-axis as
+the MAE trace, y-axis is LDDT(CA) ∈ [0, 1], higher is better.
+
+### Variant 4 — directed search by predicted CB-CB distance (`contact_seeding_directed_search.ipynb`)
+
+V3 spent most of its wall time on per-candidate sample-MAE
+evaluation: each round picked the next contact by running
+inference on up to 10 random candidates (300 CA-CA pairs each)
+and comparing MAEs. The post-hoc LDDT replay then ran one extra
+full-matrix prediction per k. V4 collapses both phases into one:
+**at each round, run a single full-matrix prediction; then pick
+the next contact by sorting remaining candidates by their
+current predicted CB-CB distance and taking the largest.**
+
+The heuristic: every candidate has GT CB-CB ≤ 8 Å (that's the
+contact definition), so a candidate the model currently predicts
+as close is a redundant seed; a candidate the model predicts as
+far apart is one it's most wrong about — seeding it should give
+the largest correction. No per-candidate inference, no random
+sampling, no sample-MAE proxy. Deterministic given the input.
+
+Other deltas vs V3:
+
+- Everything is **CB-CB** (CA-for-GLY) — GT uses
+  `cb_or_ca_position` (matches the contact-extraction
+  convention), and the model is queried with `query_atom="CB"`
+  (matches the training-data convention for emitting `<CB>`
+  tokens).
+- Only **LDDT-CB** is tracked (no MAE column anywhere).
+- **No early stop**: always runs to MAX_CONTACTS=30 (or until
+  candidates are exhausted) so the curve shape is fully visible.
+
+Per-round cost ≈ one full-matrix CB prediction. For 10 proteins ×
+~31 rounds = ~256 full-matrix predictions total (8/10 proteins
+hit MAX_CONTACTS=30; the two with tiny candidate pools stop
+early). **Measured wall time on the A5000: 144 min**
+(`sum(elapsed_seconds)` across the trace CSV), vs ~161 min for
+V3 + LDDT-CA replay — an ~11 % speedup. Smaller than the naive
+"V4 just skips the per-candidate search inference" estimate
+because V4 doesn't early-stop on the easy proteins, so it ends
+up doing slightly *more* full-matrix predictions than V3's
+replay did (256 vs 218).
+
+Final LDDT(CB) per protein (no early stop, runs to
+MAX_CONTACTS=30 or until candidates exhausted):
+
+| entry_id | n_res | n_cand | k | init LDDT-CB | final LDDT-CB | L/M/S |
+|---|---:|---:|---:|---:|---:|---|
+| AF-A0A2P2Q6H4-F1 | 55 | 80 | 30 | 0.357 | **0.804** | 8/12/10 |
+| AF-A0A6B0Z5B5-F1 | 112 | 91 | 30 | 0.552 | **0.786** | 17/6/7 |
+| AF-A0A1C5BRX1-F1 | 72 | 4 | 4 | 0.767 | **0.784** | 0/0/4 |
+| AF-R7G5V6-F1 | 132 | 40 | 30 | 0.616 | **0.767** | 15/3/12 |
+| AF-A0A1N7G8C0-F1 | 60 | 2 | 2 | 0.755 | **0.753** | 0/0/2 |
+| AF-A0A1H0PBF4-F1 | 94 | 47 | 30 | 0.481 | **0.729** | 24/0/6 |
+| AF-A0A1G4A0Q3-F1 | 114 | 72 | 30 | 0.397 | **0.702** | 16/8/6 |
+| AF-E6UJZ8-F1 | 112 | 162 | 30 | 0.346 | **0.693** | 23/1/6 |
+| AF-A0A7W4UDR7-F1 | 131 | 243 | 30 | 0.316 | **0.627** | 22/4/4 |
+| AF-C6S3E2-F1 | 140 | 230 | 30 | 0.244 | **0.525** | 21/4/5 |
+
+Observations:
+
+- **The heuristic works.** Final LDDT-CB lands within ~0.05 of
+  V3's final LDDT-CA on most proteins (sometimes a touch lower
+  — V3 was tuning to MAE on every step, V4 only sees LDDT
+  implicitly). Same protein ordering as V3 across the board.
+- **Long-range contacts dominate early picks**, as predicted by
+  the heuristic: AF-A0A1H0PBF4-F1 picks 24 of 30 long-range
+  (vs V3's 9/30). AF-E6UJZ8-F1 picks 23/30 long-range (V3: ?).
+  The model is indeed most-wrong about distant CB pairs, so the
+  ranking surfaces them first.
+- **AF-A0A1N7G8C0-F1 LDDT drops slightly** (0.755 → 0.753) after
+  adding its 2 short-range candidates — these aren't useful
+  seeds and the model marginally over-corrects. Confirms that
+  "rank by largest predicted distance" doesn't always pick
+  *helpful* contacts when the few candidates that exist are
+  already at short range.
+
+Artifacts:
+
+- `data/contact_directed_search_summary.csv` (one row per protein:
+  `selected_contacts`, `initial_lddt_cb`, `final_lddt_cb`, …).
+- `data/contact_directed_search_trace.csv` (one row per
+  `(entry_id, k)`: `added_contact_type`,
+  `predicted_distance_before_seeding_a`, `lddt_cb`,
+  `elapsed_seconds`).
+- `plots/contact_directed_search_trace.png` — LDDT(CB) vs k, one
+  line per protein.
+- `plots/contact_directed_search_grid.png` — 10×3 CB-CB heatmap
+  grid (GT, predicted-with-seeded, |residual|).
+
 ## Conclusion
 
 **Zero-shot.** The `1B` model predicts unseen AFDB CA-CA distance
@@ -277,6 +380,21 @@ The hardest proteins (C6S3E2, A0A7W4UDR7) still need either
 once we have a checkpoint past
 `protein-contacts-1b-3.5e-4-distance-masked-7d355e`.
 
-The two notebooks are the deliverable — a future "did the new
+**Directed-search by predicted CB-CB (V4).** Drops the
+per-candidate sample-MAE evaluation entirely: at each round we
+already need one full-matrix prediction (to score LDDT-CB
+against the GT), and the same prediction is used to rank
+remaining candidates by descending predicted distance — pick
+the one the model is currently most wrong about. Final LDDT(CB)
+lands within ~0.05 of V3's final LDDT-CA on most proteins, with
+the same protein ordering. Wall time is ~11 % under V3 + LDDT
+replay (144 vs 161 min on the A5000); the speedup is modest
+because V4 doesn't early-stop on the easy proteins. The
+useful empirical confirmation: directed-search picks
+long-range contacts heavily in the first few rounds, exactly
+as the heuristic predicts — the model is most-wrong about
+distant CB pairs, and seeding those gives the biggest LDDT lift.
+
+The four notebooks are the deliverable — a future "did the new
 model learn?" check is just: add a nickname to `MODELS.yaml` and
 re-run them.

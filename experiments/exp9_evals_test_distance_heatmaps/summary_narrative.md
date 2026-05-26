@@ -53,8 +53,16 @@ algorithm.
 
 Single full-matrix prediction per round; pick next contact by sorting
 remaining candidates by current predicted CB-CB distance and taking
-the largest. Tracks LDDT-CB only (no MAE column). About ⅔ the wall
-time of V3 + LDDT replay. Per-protein LDDT-CB curves in
+the largest. Tracks LDDT-CB only (no MAE column). 144 min on the
+A5000 vs 161 min for V3 + LDDT replay — an ~11% speedup, smaller
+than naive estimate because V4 doesn't early-stop on easy proteins.
+
+Final LDDT(CB) lands within ~0.05 of V3's final LDDT-CA on most
+proteins, same ordering across the 10. The empirical confirmation:
+directed-search picks long-range contacts heavily in early rounds
+(e.g. AF-A0A1H0PBF4-F1: 24/30 long-range vs V3's 9/30) — the model
+is most-wrong about distant CB pairs, and seeding those gives the
+biggest LDDT lift. Per-protein LDDT-CB curves in
 `plots/contact_directed_search_trace.png`.
 
 ## Conclusion

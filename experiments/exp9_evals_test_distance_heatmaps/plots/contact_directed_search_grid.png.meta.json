@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_directed_search.ipynb",
+  "args": [],
+  "caption": "V4 (directed search by predicted CB-CB) — 10×3 CB-CB heatmap grid (GT / predicted-with-seeded / |residual|) at each protein's final k (no early stop, k ≤ 30)."
+}

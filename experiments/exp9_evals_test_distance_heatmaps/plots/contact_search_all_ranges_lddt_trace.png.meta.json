@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_search_all_ranges.ipynb",
+  "args": [],
+  "caption": "V3 LDDT replay \u2014 LDDT(CA)-vs-k under Variant 3, replayed post-hoc with one full-matrix prediction per k. CASP convention (15 \u00c5 inclusion, thresholds 0.5/1/2/4 \u00c5)."
+}

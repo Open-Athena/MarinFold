@@ -317,6 +317,25 @@ def ca_distance_matrix(parsed):
     return np.linalg.norm(pts[:, None, :] - pts[None, :, :], axis=-1)
 
 
+def cb_distance_matrix(parsed):
+    """N×N CB-CB distance matrix in Å, CA-for-GLY (and CA fallback for
+    any residue missing CB).
+
+    Matches the convention used in `gt_contacts_all_ranges` and the
+    `<CB>` query atom in training data: `cb_or_ca_position(r)` returns
+    the CB coordinate if available, else CA. NaN at any residue
+    missing both.
+    """
+    from parse import cb_or_ca_position  # noqa: F401
+
+    n = len(parsed.residues)
+    pts = np.array(
+        [cb_or_ca_position(r) or (np.nan,) * 3 for r in parsed.residues],
+        dtype=np.float32,
+    )
+    return np.linalg.norm(pts[:, None, :] - pts[None, :, :], axis=-1)
+
+
 def mae_on_pairs(parsed, pairs, predicted, query_atom="CA"):
     """MAE on `pairs` between `predicted` (1D in pair order) and GT coords.
 
@@ -342,3 +361,55 @@ def mae_on_pairs(parsed, pairs, predicted, query_atom="CA"):
     if not abs_errs:
         return float("nan"), 0
     return float(np.mean(abs_errs)), len(abs_errs)
+
+
+# LDDT scoring (Mariani et al. 2013; CASP/OpenStructure conventions).
+# Matches the implementation in exp12/score.py — inclusion radius 15 Å,
+# thresholds 0.5/1/2/4 Å, min_separation=1 (only excludes self-pairs).
+LDDT_INCLUSION_RADIUS_A = 15.0
+LDDT_THRESHOLDS_A = (0.5, 1.0, 2.0, 4.0)
+LDDT_MIN_SEPARATION = 1
+
+
+def lddt_from_distance_matrices(
+    pred_d,
+    gt_d,
+    *,
+    inclusion_radius_a=LDDT_INCLUSION_RADIUS_A,
+    thresholds_a=LDDT_THRESHOLDS_A,
+    min_separation=LDDT_MIN_SEPARATION,
+):
+    """Standard global LDDT from a pair of [N, N] distance matrices.
+
+    Pairs are "in scope" when both endpoints are resolved (finite GT),
+    sequence separation ≥ `min_separation`, and GT distance <
+    `inclusion_radius_a`. For each in-scope pair, "preserved at
+    threshold t" iff |pred - gt| < t; per-pair preservation is the
+    mean over thresholds. Per-residue LDDT is the mean preservation
+    over its in-scope pairs; global LDDT is the mean over residues
+    with ≥1 in-scope pair. Returns float in [0, 1] or NaN.
+    """
+    gt_d = np.asarray(gt_d, dtype=np.float64)
+    pred_d = np.asarray(pred_d, dtype=np.float64)
+    n = gt_d.shape[0]
+    gt_mask = np.isfinite(gt_d)
+    i_idx = np.arange(n)[:, None]
+    j_idx = np.arange(n)[None, :]
+    sep_ok = np.abs(i_idx - j_idx) >= min_separation
+    # NaN < radius is False, so unresolved pairs are excluded.
+    in_scope = gt_mask & sep_ok & (gt_d < inclusion_radius_a)
+    np.fill_diagonal(in_scope, False)
+    if not in_scope.any():
+        return float("nan")
+    diffs = np.abs(pred_d - gt_d)
+    diffs = np.where(np.isnan(diffs), np.inf, diffs)
+    preservation = np.mean(
+        [(diffs < t).astype(np.float64) for t in thresholds_a],
+        axis=0,
+    )
+    denom = in_scope.sum(axis=1)
+    numer = (preservation * in_scope).sum(axis=1)
+    with np.errstate(invalid="ignore"):
+        per_residue = np.where(denom > 0, numer / np.maximum(denom, 1), np.nan)
+    finite = per_residue[np.isfinite(per_residue)]
+    return float(np.mean(finite)) if finite.size else float("nan")
