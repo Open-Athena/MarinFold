@@ -49,3 +49,4 @@ iter_R4_grow_on_sampled_weighted_M5	R=4 grow on top of sampled_weighted_M5_union
 heldout_baseline_naive	Naive baseline on the 10 held-out proteins (seed=42, n_res<=400, excludes train).	0.2797	0.2746	1225.6	0.884	+12.04	
 heldout_sampled_uniform_M5_union	Stage A on held-out (re-run after I deleted distograms).	0.3189	0.3146	2558.0	1.845	+27.77	
 heldout_iter_R4_grow_on_sampled_uniform_M5	Stage B on held-out 10. Same params as 1B headline.	0.3684	0.3270	3254.7	2.347	+47.61	
+1.5B_iter_R4_grow_from_baseline	1.5B iter R4 grow from baseline_naive prior. No sampling stage. Train set.	0.3295	0.2767	4271.5	3.080	+32.02	
