@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Standalone 1.5B vs 1B LDDT-CB scatter, one point per protein (n=100). Square equal-axes; points above diagonal = 1.5B wins (74/100). Median \u0394 +0.0073, mean \u0394 +0.0162."
+}

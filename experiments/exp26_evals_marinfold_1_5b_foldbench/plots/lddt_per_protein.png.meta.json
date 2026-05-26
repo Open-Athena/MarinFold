@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Per-protein lddt_distogram_cb grouped bar across all 4 methods (n=100 FoldBench monomers). Higher is better."
+}

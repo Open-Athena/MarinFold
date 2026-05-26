@@ -219,6 +219,33 @@ tokenizer is "well-known" and pinned by URL elsewhere (e.g.
 `timodonnell/protein-docs-tokenizer@<sha>`) — co-locate it so
 nothing breaks if the source tokenizer URL changes.
 
+### GCS bucket: `marin-us-east5/protein-structure/MarinFold`
+
+When an experiment needs to dump large eval outputs (raw
+distograms, prediction batches, intermediate parquets) to GCS —
+typically because it ran on TRC via iris and the worker is
+ephemeral — write them under
+
+```
+gs://marin-us-east5/protein-structure/MarinFold/<experiment-name>/...
+```
+
+where `<experiment-name>` is informative enough that someone
+scanning the bucket can tell what it is without reading the source
+(e.g.
+`exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/`).
+The point is to keep all MarinFold outputs co-located under one
+prefix so the marin team can find them and tell at a glance what
+each subdir is — don't sprinkle MarinFold artifacts across
+`gs://marin-us-east5/eval/...`, `gs://marin-us-east5/checkpoints/...`,
+etc. (those prefixes belong to the marin protein-experiments
+convention, not ours).
+
+The same "small artifacts (CSVs, plots) stay in git, large
+artifacts go to durable storage" rule from the HF bucket section
+applies — GCS is for the big stuff that wouldn't fit in the
+experiment dir.
+
 ### Run history
 
 **Every W&B-logged run gets a history file under `history/runs/`.**

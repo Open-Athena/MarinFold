@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Per-protein wall-time vs sequence length, all 4 methods (log-log). Hardware caveat: 1.5B on TPU v5p-8/iris, 1B on H100/Modal, Protenix on H100. Both MarinFold models show clean O(N\u00b2) pair-sweep scaling; Protenix is roughly flat at ~100 s."
+}

@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "CASP contact precision @ top L, 12 categories (4 methods \u00d7 {short, medium, long} separation). Long-range is the hardest; 1.5B and 1B sit close to each other on every separation class."
+}
