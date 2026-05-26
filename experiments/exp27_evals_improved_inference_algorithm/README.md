@@ -264,6 +264,42 @@ uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
 
 Total wall: ~5613 s on a single A100 40 GB in bf16.
 
+## Cross-protein check: held-out 10 proteins (1B)
+
+Knobs were tuned on the train 10. To estimate overfit, picked
+**10 NEW proteins** with `random.Random(42).sample(...)` from the
+same FoldBench pool (`n_residues ≤ 400`, excluding the train 10) and
+ran the headline algorithm with identical knobs.
+
+| | train (10) | held-out (10) | delta |
+|---|---:|---:|---:|
+| baseline_naive | 0.2496 | 0.2797 | +0.030 |
+| sampled\_uniform\_M5\_union (stage A) | 0.3142 | 0.3189 | +0.005 |
+| combined (headline) | **0.3564** | **0.3685** | **+0.012** |
+| **lift over baseline** | **+42.81%** | **+31.75%** | **−11 pp** |
+
+**Every held-out protein gains.** Per-protein lifts range from +11.7%
+(7qsj) to +54.6% (7v3o). 7y8i reaches 0.7179 (near GT-oracle range).
+Mean lift drops by 11 percentage points vs train — real overfit cost
+of tuning on a 10-protein set, but a modest one. **The algorithm
+generalizes; we didn't just memorize knobs that flatter these
+specific 10 proteins.**
+
+Per-protein held-out results:
+
+| stem | L | base | combined | lift |
+|---|---:|---:|---:|---:|
+| 7t9r |  38 | 0.3455 | 0.3980 | +15.2% |
+| 7y8i |  97 | 0.4689 | **0.7179** | +53.1% |
+| 7zoi | 151 | 0.2362 | 0.3083 | +30.5% |
+| 7wz5 | 161 | 0.2222 | 0.3023 | +36.0% |
+| 8bau | 189 | 0.2518 | 0.3270 | +29.9% |
+| 8gmy | 236 | 0.2746 | 0.3139 | +14.3% |
+| 7xg9 | 288 | 0.2980 | 0.4252 | +42.7% |
+| 7x4p | 307 | 0.2319 | 0.3014 | +30.0% |
+| 7v3o | 328 | 0.1594 | 0.2465 | +54.6% |
+| 7qsj | 373 | 0.3080 | 0.3440 | +11.7% |
+
 ## Cross-model check: same algorithm on 1.5B
 
 After rebasing onto main, `MODELS.yaml` gained a `1.5B` entry pointing
@@ -295,15 +331,38 @@ Per-protein, 1.5B regresses on the largest proteins (7ylr: −30%,
 defining failure: those proteins also dominate the mean.
 
 **Likely causes (not investigated further here):**
-- 1.5B at step-49999 is likely undertrained relative to the 1B
-  production checkpoint.
+- Real architectural differences (24 layers + GQA vs 16 layers + MHA)
+  produce different conditional-distance distributions.
 - The `range_strategy=uniform` fix was tuned to undo 1B's
   ~99% medium-range prior. 1.5B may have a different range-token
   prior, in which case forcing uniform actively hurts. A
   re-run of `probe_range_entropy.py` on 1.5B would say.
-- The conditional next-position knowledge profile likely differs.
+- (The "1.5B is undertrained" hypothesis was ruled out — both 1B
+  and 1.5B saw the same number of training steps per the model
+  authors. So this transfer failure is about the model, not training
+  budget.)
 
 The algorithm's hyperparameters (`range_strategy`, K schedule,
 `min_contact_prob`) were tuned on 1B and need re-tuning per model.
+
+## Overfit decomposition
+
+Combining the two generalization checks gives a clean decomposition of
+where the tuning-on-train lift is rooted:
+
+|  | drop in lift vs train | which dimension changed |
+|---|---:|---|
+| held-out 10 (same model, different proteins) | −11 pp | protein set |
+| 1.5B on train (different model, same proteins) | −34 pp | model |
+
+**The algorithm's tuning is ~3× more model-specific than
+protein-specific.** Most of the "+42.81% headline" reflects the
+algorithm exploiting features specific to *this* 1B checkpoint;
+the protein-set portion is much smaller.
+
+The +31.75% on a fresh protein set is the more honest "generalizing"
+number for the algorithm at this model. The full +42.81% should be
+read as "what's achievable when the algorithm's range/K knobs are
+let to overfit the eval set."
 
 Full per-protein numbers and discussion in [RESULTS\_LOG.md](RESULTS_LOG.md).

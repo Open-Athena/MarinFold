@@ -711,3 +711,90 @@ separations. Over-fitting the sampling to the strongest range-token
 signal sacrifices coverage on the others.
 
 Sticking with `range_strategy=uniform` as the 1B headline.
+
+## Held-out 10 proteins (1B): protein-set overfit check
+
+Knobs (range_strategy, K schedule, min_contact_prob, growth pattern)
+were tuned exclusively on the 10 train proteins. To estimate protein-
+set overfit, picked 10 NEW proteins via
+`random.Random(42).sample(...)` from the same FoldBench pool
+(`n_residues ≤ 400`, excluding the train 10) and ran the headline
+algorithm with identical knobs.
+
+Held-out protein list (seed=42):
+
+| stem | L |
+|---|---:|
+| 7t9r |  38 |
+| 7y8i |  97 |
+| 7zoi | 151 |
+| 7wz5 | 161 |
+| 8bau | 189 |
+| 8gmy | 236 |
+| 7xg9 | 288 |
+| 7x4p | 307 |
+| 7v3o | 328 |
+| 7qsj | 373 |
+
+Wall clocks:
+
+| step | held-out wall (s) |
+|---|---:|
+| baseline_naive | 1226 |
+| sampled\_uniform\_M5\_union | 2558 |
+| iter\_R4\_grow on top | 3255 |
+| **chain total** | **7039 (5.7× heldout-baseline)** |
+
+(5.7× exceeds the train 5× budget rule. Held-out has a slightly
+shorter average length than train, so the baseline is faster while
+the combined algorithm scales similarly. For the generalization read
+what matters is the mean-LDDT lift; the wall budget was specific
+to the train set.)
+
+Headline:
+
+|  | mean LDDT | median | lift |
+|---|---:|---:|---:|
+| heldout_baseline | 0.2797 | 0.2746 | --- |
+| heldout_stageA (sampled\_uniform\_M5) | 0.3189 | 0.3160 | +14.04% |
+| **heldout_combined** | **0.3685** | **0.3270** | **+31.75%** |
+
+Compared to train (+42.81%), the lift drops 11 percentage points on
+held-out. **Every held-out protein gains positively:**
+
+| stem | L | baseline | combined | lift |
+|---|---:|---:|---:|---:|
+| 7t9r |  38 | 0.3455 | 0.3980 | +15.2% |
+| 7y8i |  97 | 0.4689 | **0.7179** | +53.1% |
+| 7zoi | 151 | 0.2362 | 0.3083 | +30.5% |
+| 7wz5 | 161 | 0.2222 | 0.3023 | +36.0% |
+| 8bau | 189 | 0.2518 | 0.3270 | +29.9% |
+| 8gmy | 236 | 0.2746 | 0.3139 | +14.3% |
+| 7xg9 | 288 | 0.2980 | 0.4252 | +42.7% |
+| 7x4p | 307 | 0.2319 | 0.3014 | +30.0% |
+| 7v3o | 328 | 0.1594 | 0.2465 | +54.6% |
+| 7qsj | 373 | 0.3080 | 0.3440 | +11.7% |
+
+**Takeaway: the algorithm generalizes.** Real overfit cost of ~11 pp
+from tuning knobs on a 10-protein set, but the lift is robustly
+positive across both protein sets.
+
+## Overfit decomposition: protein vs model
+
+|  | drop in lift vs train | dimension changed |
+|---|---:|---|
+| held-out 10 (same model, different proteins) | −11 pp | protein set |
+| 1.5B on train (different model, same proteins) | −34 pp | model |
+
+**The algorithm's tuning is ~3× more model-specific than
+protein-specific.** Most of the "+42.81%" headline reflects the
+algorithm exploiting features of this 1B checkpoint; the protein-set
+portion is a much smaller share. The +31.75% on a fresh protein set
+is the more honest "this is what the algorithm achieves on this
+model" number; the +42.81% should be read as "what's achievable
+when the range/K knobs are let to overfit the eval set."
+
+(Note: the "1.5B is undertrained" hypothesis was ruled out — model
+authors confirmed both 1B and 1.5B saw the same number of training
+steps. The 1.5B transfer failure is about the model, not training
+budget.)
