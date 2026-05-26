@@ -75,7 +75,9 @@ explicitly.
 5. **Record results** in the experiment's README. Commit small CSVs
    to `data/`, plots to `plots/`. Large artifacts (model weights, big
    intermediate parquets, predictions) go to GCS or HuggingFace; see
-   the root `README.md` for the policy.
+   the root `README.md` for the policy. Keep `plots/summary.pdf`
+   (narrative + plot appendix) updated as you go — see
+   [`AGENTS.md`](AGENTS.md).
 6. **Regenerate the index**:
    ```bash
    python scripts/itemize.py
@@ -119,6 +121,8 @@ experiments/exp<N>_<kind>_<name>/
   pyproject.toml     # optional; needed if the experiment imports marin or a kind lib
   data/              # small CSVs committed; the source for any plot
   plots/             # PNGs/PDFs committed; embedded in README.md
+  plots/summary.pdf  # living presentation slides — narrative + plot appendix.
+                     # See experiments/AGENTS.md for the contract.
   *.py               # launchable scripts + analysis
 ```
 

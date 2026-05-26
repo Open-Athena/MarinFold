@@ -22,6 +22,7 @@ Does NOT overwrite an existing directory unless ``--force`` is passed.
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -29,6 +30,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _lib import KINDS, REPO_ROOT, github_repo  # noqa: E402
+
+TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 
 def fetch_issue(number: int, github_repo: str) -> dict:
@@ -119,6 +122,31 @@ def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
     return "".join(out)
 
 
+def render_narrative(*, issue: dict) -> str:
+    """Starter ``summary_narrative.md`` for a freshly scaffolded experiment.
+
+    Pulls the Question / Hypothesis text from the issue body. The agent
+    is expected to keep this file updated through the experiment — it
+    feeds ``plots/summary.pdf`` via ``build_summary.py``.
+    """
+    body = issue.get("body") or ""
+    question = extract_section(body, ["Question"]) or "_(Copy from the issue.)_"
+    hypothesis = extract_section(body, ["Hypothesis"]) or "_(Copy from the issue.)_"
+    title = issue["title"]
+
+    out: list[str] = []
+    out.append(f"# Summary slides — {title}\n\n")
+    out.append(
+        "<!-- Feeds plots/summary.pdf via build_summary.py.\n"
+        "     One `## ` heading per slide; body text becomes the slide.\n"
+        "     Keep this current as the experiment progresses. -->\n\n"
+    )
+    out.append("## What we're doing\n\n" + question + "\n\n")
+    out.append("## Why\n\n" + hypothesis + "\n\n")
+    out.append("## Results so far\n\n_(Fill in as results come in.)_\n")
+    return "".join(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python scripts/scaffold.py")
     ap.add_argument("--issue", type=int, required=True, help="GitHub issue number")
@@ -175,12 +203,26 @@ def main(argv: list[str] | None = None) -> int:
 
     readme.write_text(render_readme(issue=issue, kind=kind, name=name, branch=args.branch))
 
+    # Drop the summary-slides scaffolding. `build_summary.py` is copied
+    # verbatim from scripts/templates/; `summary_narrative.md` is
+    # rendered from the issue body. Both feed `plots/summary.pdf` — the
+    # living presentation maintained through the experiment. See
+    # experiments/AGENTS.md for the contract.
+    build_script = exp_dir / "build_summary.py"
+    if not build_script.exists() or args.force:
+        shutil.copyfile(TEMPLATES_DIR / "build_summary.py", build_script)
+
+    narrative = exp_dir / "summary_narrative.md"
+    if not narrative.exists() or args.force:
+        narrative.write_text(render_narrative(issue=issue))
+
     rel = readme.relative_to(REPO_ROOT)
     print(f"Scaffolded {rel}")
     print("Next steps:")
     print(f"  1. Edit {rel}: fill in the approach and success criteria")
     print("  2. Add launchable .py files in the experiment dir (and a pyproject.toml if it needs marin deps)")
-    print("  3. When results land, fill in Results + Conclusion, then copy the code into")
+    print("  3. Keep summary_narrative.md current; regenerate slides with `python build_summary.py`")
+    print("  4. When results land, fill in Results + Conclusion, then copy the code into")
     print(f"     {kind}/<name>/ if it should keep evolving (see experiments/README.md)")
     return 0
 

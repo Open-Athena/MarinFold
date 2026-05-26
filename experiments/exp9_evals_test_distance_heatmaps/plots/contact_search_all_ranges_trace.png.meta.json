@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_search_all_ranges.ipynb",
+  "args": [],
+  "caption": "V3 (pure-greedy, all ranges) \u2014 MAE-vs-k curves; candidate pool opened to long + medium + short-range GT contacts. 4 / 10 proteins cross the 1.0 \u00c5 target; every protein improves vs V2."
+}

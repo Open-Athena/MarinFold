@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_search.ipynb",
+  "args": [],
+  "caption": "V2 (beam-2 long-range search) \u2014 MAE-vs-k curves; one line per protein. Horizontal target at 1.0 \u00c5. 2 / 10 proteins cross the threshold (AF-A0A6B0Z5B5-F1 at k=7, AF-A0A1H0PBF4-F1 at k=18)."
+}

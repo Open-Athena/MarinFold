@@ -1,0 +1,5 @@
+{
+  "script": "eval_notebook.ipynb",
+  "args": [],
+  "caption": "V1 (zero-shot) \u2014 per-protein CA-CA distance heatmaps for AF-C6S3E2-F1 (140 aa, MAE 4.81 \u00c5 (hardest)). Panels: GT, predicted, |residual|. Model: 1B, RTX A5000."
+}

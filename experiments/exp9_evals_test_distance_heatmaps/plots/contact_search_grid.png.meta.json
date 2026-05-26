@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_search.ipynb",
+  "args": [],
+  "caption": "V2 (beam-2 long-range search) \u2014 10\u00d73 CA-CA heatmap grid (GT / predicted-with-seeded-contacts / |residual|) at each protein's chosen k."
+}

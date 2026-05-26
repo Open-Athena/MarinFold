@@ -1,0 +1,5 @@
+{
+  "script": "contact_seeding_search_all_ranges.ipynb",
+  "args": [],
+  "caption": "V3 (pure-greedy, all ranges) \u2014 10\u00d73 CA-CA heatmap grid (GT / predicted-with-seeded-contacts / |residual|) at each protein's chosen k."
+}

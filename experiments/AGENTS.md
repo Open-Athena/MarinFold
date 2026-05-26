@@ -101,6 +101,84 @@ whichever fits the work.
    MarinFold-1B) join on `(stem, n_residues)` without bespoke
    munging.
 
+## Summary slides — `plots/summary.pdf`
+
+Maintain a `plots/summary.pdf` while the experiment is in flight.
+Regenerate it interactively as plots and findings accumulate — it's a
+living deliverable, not an end-of-experiment one-shot. Treat it as
+the readable face of the experiment: README is the canonical prose
+record, `summary.pdf` is what you'd actually show someone.
+
+Structure:
+
+1. **Narrative section (first).** What we're doing, why, and the
+   current state of the results. A reader who opens only the PDF
+   should walk away knowing the question and where it stands.
+2. **Plot appendix (last).** Each misc plot from the experiment, with
+   a short caption: what it shows, and how it was generated.
+
+For every embedded plot, print the **generating script name and its
+full argument list** in small text on the same page (footer or
+caption is fine). The point is that anyone reading the PDF can rerun
+or edit the plot without spelunking the repo.
+
+Individual plot files still live alongside under `plots/` —
+`summary.pdf` aggregates them, it doesn't replace them.
+
+Regeneration must be fast: a single script invocation that assembles
+the PDF from the existing per-plot PNGs and narrative text (e.g.
+matplotlib's `PdfPages`, or ReportLab). Don't rerun expensive
+analysis at PDF-build time — the build script consumes already-saved
+plots and CSVs.
+
+### Implementation
+
+`scripts/scaffold.py` drops two files into every new experiment:
+
+- **`build_summary.py`** — the renderer. Copied verbatim from
+  [`scripts/templates/build_summary.py`](../scripts/templates/build_summary.py);
+  run it with `python build_summary.py` (or `uv run python …`) from
+  the experiment dir. Reads narrative + plots, writes
+  `plots/summary.pdf`. Self-contained; depends only on matplotlib.
+- **`summary_narrative.md`** — the narrative source. One `## `
+  heading per slide; body text under it becomes the slide. The
+  agent edits this through the experiment.
+
+Plot metadata lives in sidecar files **`plots/<plot>.<ext>.meta.json`**
+written by the plotting script via the `save_plot_with_meta(...)`
+helper exported from `build_summary.py`:
+
+```python
+from build_summary import save_plot_with_meta
+
+save_plot_with_meta(
+    fig,
+    "plots/my_plot.png",
+    caption="MAE vs k for ten proteins; lower is better.",
+)
+# default: script = sys.argv[0], args = sys.argv[1:]
+```
+
+The sidecar holds `{"script": ..., "args": [...], "caption": ...}`.
+`build_summary.py` reads it to print the script + invocation in
+small text on each plot's slide. Plots without a sidecar still
+appear in the PDF, with a placeholder caption nudging you to wire
+the helper in.
+
+Commit the `*.meta.json` sidecars alongside the PNGs — they're
+small (a few hundred bytes) and essential for the PDF build.
+
+When backfilling an existing plotting script: replace
+`fig.savefig(path)` with `save_plot_with_meta(fig, path, caption=...)`.
+For a one-off plot you don't want to re-run, drop a hand-written
+`plots/<plot>.<ext>.meta.json` next to the PNG with the same schema.
+
+Posting the link to `summary.pdf` on the experiment issue is a
+**user-triggered** step. When the user says the experiment is done,
+add a comment on the issue with a link to the PDF (raw GitHub URL or
+HuggingFace if it's too big to commit). Don't do this on your own
+initiative — see rule #6.
+
 ## Importing from kind libraries
 
 An experiment that needs marin or a kind library has its own
@@ -167,4 +245,11 @@ Before the issue is closed:
 - Every plot in the README has its source data committed under
   `data/` (small CSVs) so the plot can be regenerated without
   rerunning the underlying pipeline.
+- `plots/summary.pdf` is up to date and its build script runs
+  cleanly from the committed `data/` + `plots/` inputs.
 - The issue title and the README title match.
+
+When the user gives the go-ahead, post a comment on the experiment
+issue with a link to `plots/summary.pdf` (edit the agent's last
+comment per rule #5). Don't close the issue — that's a human action
+(rule #6).

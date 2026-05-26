@@ -36,6 +36,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from build_summary import save_plot_with_meta
+
 
 _METRICS = (
     # Distance-based, in-range pair set (option B).
@@ -122,7 +124,15 @@ def _per_protein_bars(df: pd.DataFrame, metric: str, ylabel: str, out_png: Path)
     ax.legend()
     fig.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_png, dpi=150)
+    save_plot_with_meta(
+        fig, out_png,
+        caption=(
+            f"Per-protein {ylabel}, single_seq vs MSA. Bars sorted by "
+            f"protein length. Top-1 sample per (protein, mode) by Protenix's "
+            f"ranking_score."
+        ),
+        dpi=150,
+    )
     plt.close(fig)
     print(f"Wrote {out_png}")
 
@@ -145,7 +155,15 @@ def _ss_vs_msa_scatter(df: pd.DataFrame, metric: str, label: str, out_png: Path)
     ax.set_aspect("equal", adjustable="box")
     fig.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_png, dpi=150)
+    save_plot_with_meta(
+        fig, out_png,
+        caption=(
+            f"Paired {label}, y=single_seq, x=MSA. Each point is one "
+            f"protein; dashed line is y=x. Below the diagonal: MSA mode "
+            f"is better (typical for distance/structure metrics)."
+        ),
+        dpi=150,
+    )
     plt.close(fig)
     print(f"Wrote {out_png}")
 

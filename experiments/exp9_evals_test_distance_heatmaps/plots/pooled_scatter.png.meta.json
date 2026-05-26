@@ -1,0 +1,5 @@
+{
+  "script": "eval_notebook.ipynb",
+  "args": [],
+  "caption": "V1 (zero-shot) \u2014 pooled expected vs GT CA-CA distance scatter across all 40,442 evaluable pairs from the 10 test proteins. Macro CA-CA MAE = 3.29 \u00c5."
+}

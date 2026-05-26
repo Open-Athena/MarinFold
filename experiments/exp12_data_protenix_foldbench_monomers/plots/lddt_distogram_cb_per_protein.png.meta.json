@@ -1,0 +1,11 @@
+{
+  "script": "cli.py",
+  "args": [
+    "plot",
+    "--scores",
+    "data/scores.csv",
+    "--out",
+    "plots/"
+  ],
+  "caption": "Per-protein LDDT-CB from distogram (point estimate), single_seq vs MSA. Bars sorted by protein length. Top-1 sample per (protein, mode) by Protenix's ranking_score."
+}
