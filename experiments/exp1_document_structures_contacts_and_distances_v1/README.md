@@ -147,9 +147,7 @@ uv run iris --cluster=marin cluster dashboard
 Then, in another dedicated terminal window, run the document generation job:
 
 ```bash
-uv run python cli.py generate \
-    --input "gs://public-datasets-deepmind-alphafold-v4/" --num-docs 100 \
-    --out "gs://marin-tmp-us-central1/marin-fold-tests/*.parquet"
+uv run iris --cluster=marin-dev job run -- python cli.py generate --input "gs://public-datasets-deepmind-alphafold-v4/" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/*.parquet"
 ```
 
 ### Running inference and evaluation
