@@ -5,8 +5,10 @@
 
 Used by every algorithm we try so the experiment ledger stays
 consistent. The runtime ratio + LDDT delta are computed automatically
-relative to the row keyed ``baseline_naive`` (which is the row
-``run_baseline.py`` writes).
+relative to the appropriate baseline row for that experiment family:
+train-1B rows compare to ``baseline_naive``, train-1.5B rows to
+``baseline_naive_1.5B``, held-out 1B rows to ``heldout_baseline_naive``,
+and held-out 1.5B rows to ``heldout_1.5B_baseline``.
 
 Library surface (preferred — keeps logic in-process):
 
@@ -46,6 +48,17 @@ FIELDNAMES = [
 BASELINE_ID = "baseline_naive"
 
 
+def infer_baseline_id(experiment_id: str) -> str:
+    """Infer which baseline family an experiment row should use."""
+    if experiment_id.startswith("heldout_1.5B_"):
+        return "heldout_1.5B_baseline"
+    if experiment_id.startswith("heldout_"):
+        return "heldout_baseline_naive"
+    if experiment_id.endswith("_1.5B") or experiment_id.startswith("1.5B_"):
+        return "baseline_naive_1.5B"
+    return BASELINE_ID
+
+
 def _load(tsv_path: Path) -> list[dict]:
     if not tsv_path.exists():
         return []
@@ -53,14 +66,30 @@ def _load(tsv_path: Path) -> list[dict]:
         return list(csv.DictReader(f, delimiter="\t"))
 
 
-def _baseline_metrics(rows: list[dict]) -> tuple[float | None, float | None]:
+def _baseline_metrics(
+    rows: list[dict], baseline_id: str,
+) -> tuple[float | None, float | None]:
     for r in rows:
-        if r.get("experiment_id") == BASELINE_ID:
+        if r.get("experiment_id") == baseline_id:
             try:
                 return float(r["mean_lddt"]), float(r["total_wall_seconds"])
             except (KeyError, ValueError):
                 return None, None
     return None, None
+
+
+def get_existing_total_wall_seconds(
+    *, experiment_id: str, tsv_path: Path = _DEFAULT_TSV,
+) -> float | None:
+    """Return the existing recorded wall-clock for ``experiment_id`` if present."""
+    for row in _load(tsv_path):
+        if row.get("experiment_id") != experiment_id:
+            continue
+        try:
+            return float(row["total_wall_seconds"])
+        except (KeyError, ValueError):
+            return None
+    return None
 
 
 def upsert_experiment_row(
@@ -75,9 +104,10 @@ def upsert_experiment_row(
 ) -> Path:
     """Insert or replace the row matching ``experiment_id``."""
     rows = _load(tsv_path)
-    baseline_mean, baseline_wall = _baseline_metrics(rows)
+    baseline_id = infer_baseline_id(experiment_id)
+    baseline_mean, baseline_wall = _baseline_metrics(rows, baseline_id)
 
-    if experiment_id == BASELINE_ID:
+    if experiment_id == baseline_id:
         ratio = 1.0
         delta = 0.0
     else:

@@ -185,9 +185,11 @@ def run(
             "n_proteins": len(stems_with_lengths),
             "n_pending": 0,
             "n_cached": len(cached_elapsed),
-            "total_wall_seconds": 0.0,
+            "total_wall_seconds": None,
             "per_protein_elapsed": cached_elapsed,
             "worker_load_seconds": {},
+            "init_errors": [],
+            "proto_errors": [],
         }
 
     # Spawn (not fork) so each worker gets a clean process state
@@ -299,6 +301,26 @@ def run(
     }
 
 
+def _validate_complete_run(info: dict) -> None:
+    """Refuse to score or update the ledger if the run is incomplete."""
+    issues: list[str] = []
+    if info.get("init_errors"):
+        issues.append(f"{len(info['init_errors'])} worker init error(s)")
+    if info.get("proto_errors"):
+        issues.append(f"{len(info['proto_errors'])} per-protein error(s)")
+    n_scored = len(info.get("per_protein_elapsed", {}))
+    n_expected = int(info["n_proteins"])
+    if n_scored != n_expected:
+        issues.append(
+            f"only {n_scored} / {n_expected} proteins have completed outputs"
+        )
+    if issues:
+        raise RuntimeError(
+            "Run incomplete; refusing to score or upsert experiments.tsv: "
+            + "; ".join(issues)
+        )
+
+
 def _score_and_log(
     *,
     train_csv: Path,
@@ -308,11 +330,12 @@ def _score_and_log(
     experiments_tsv: Path,
     experiment_id: str,
     description: str,
-    total_wall_seconds: float,
+    total_wall_seconds: float | None,
 ) -> None:
     """Score the outputs and append a row to data/experiments.tsv."""
     sys.path.insert(0, str(_THIS))
     from score_marinfold import MARINFOLD_BINS, score_one
+    import statistics
     import csv
 
     with train_csv.open() as f:
@@ -338,6 +361,12 @@ def _score_and_log(
         )
         rows.append(row)
 
+    if len(rows) != len(train_rows):
+        raise RuntimeError(
+            f"Refusing to write partial results: scored {len(rows)} / "
+            f"{len(train_rows)} proteins."
+        )
+
     # Save per-protein scores.
     if rows:
         from score_marinfold import _CSV_FIELDS, _format_value
@@ -356,7 +385,7 @@ def _score_and_log(
                  and row["lddt_distogram_cb"] == row["lddt_distogram_cb"]]
         lddts.sort()
         mean_lddt = sum(lddts) / len(lddts) if lddts else float("nan")
-        median_lddt = lddts[len(lddts) // 2] if lddts else float("nan")
+        median_lddt = statistics.median(lddts) if lddts else float("nan")
     else:
         mean_lddt = float("nan")
         median_lddt = float("nan")
@@ -364,7 +393,24 @@ def _score_and_log(
     # Append row to experiments.tsv. Ratio vs baseline is computed
     # against the existing ``baseline_naive`` row if there is one;
     # for the baseline row itself the ratio is 1.0 by definition.
-    from append_experiment_row import upsert_experiment_row
+    from append_experiment_row import (
+        get_existing_total_wall_seconds,
+        upsert_experiment_row,
+    )
+    if total_wall_seconds is None:
+        total_wall_seconds = get_existing_total_wall_seconds(
+            experiment_id=experiment_id, tsv_path=experiments_tsv,
+        )
+        if total_wall_seconds is None:
+            raise RuntimeError(
+                "All outputs were cached, but there is no existing "
+                f"total_wall_seconds entry for {experiment_id!r} in "
+                f"{experiments_tsv}."
+            )
+        print(
+            "Reusing existing total_wall_seconds from experiments.tsv: "
+            f"{total_wall_seconds:.1f} s"
+        )
     upsert_experiment_row(
         experiment_id=experiment_id,
         description=description,
@@ -459,6 +505,7 @@ def main() -> None:
 
     print(f"\nWorker model-load times (s): {info.get('worker_load_seconds', {})}")
     print(f"Per-protein elapsed (s): {info.get('per_protein_elapsed', {})}")
+    _validate_complete_run(info)
 
     _score_and_log(
         train_csv=args.train_csv,

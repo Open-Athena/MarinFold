@@ -1,58 +1,58 @@
 experiment_id	description	mean_lddt	median_lddt	total_wall_seconds	runtime_ratio_vs_baseline	mean_lddt_delta_pct	notes
-gt_filtered_naive	Same readout as baseline_naive, restricted to (i, j) pairs where GT CB-CB distance < 15 A (LDDT inclusion radius). Point lddt_distogram_cb identical to baseline by construction; MAE/dRMSD/contact-precision columns are biased and should be ignored. GT-aware speedup intended to free wall-clock budget for richer algorithms.	0.2496	0.2499	215.3	0.155	-0.02	
-sharpen_T0.05_on_gt_filtered_naive	Post-process temperature sharpening (T=0.05) of the gt_filtered_naive distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2738	0.2678	239.2	0.173	+9.68	
-baseline_naive	Naive distogram readout (same as exp20): <begin_statements> with no seeded contacts, read top-128 logprobs per pair, renormalize over the 64 <d_X.X> bins.	0.2496	0.2500	1386.7	1.000	+0.00	
-seeded_contacts_kL1.0_min0.3	Self-bootstrapped contact seeding. Seeds drawn from full baseline_naive distogram; readout on LDDT-shell pairs.	0.2816	0.2836	392.1	0.283	+12.83	
-sharpen_T0.02_on_seeded_contacts_kL1.0_min0.3	Post-process temperature sharpening (T=0.02) of the seeded_contacts_kL1.0_min0.3 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2894	0.2895	245.8	0.177	+15.94	
-sampled_contacts_n1_T0.7	Model-sampled contact prefix: temperature sampling from <begin_statements>, parse emitted contact statements, re-read distances at LDDT-shell pairs.	0.2568	0.2527	244.6	0.176	+2.90	
-sampled_contacts_n5_T0.7	5-rollout sampled contact prefix (T=0.7, top_p=0.9). Average distograms.	0.2503	0.2465	1409.4	1.016	+0.29	
-iterative_R2_kc1.0_kd1.0	Iterative R=2. Round 1: K=L contacts (min_prob=0.3). Round 2: K=L modal distances (sharpen T=0.1, min_modal_p=0.9). Readout on LDDT-shell pairs.	0.2805	0.2801	1639.7	1.182	+12.37	
-gt_oracle_seeded	DIAGNOSTIC ONLY. Seeded with GROUND-TRUTH contacts (pairs with gt_d < 8 A and |i-j| >= 6). Establishes the ceiling of seeded-style algorithms.	0.7167	0.7219	1177.1	0.849	+187.14	
+gt_filtered_naive	Same readout as baseline_naive, restricted to (i, j) pairs where GT CB-CB distance < 15 A (LDDT inclusion radius). Point lddt_distogram_cb identical to baseline by construction; MAE/dRMSD/contact-precision columns are biased and should be ignored. GT-aware speedup intended to free wall-clock budget for richer algorithms.	0.2496	0.2272	215.3	0.155	+0.00	
+sharpen_T0.05_on_gt_filtered_naive	Post-process temperature sharpening (T=0.05) of the gt_filtered_naive distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2738	0.2678	239.2	0.172	+9.70	
+baseline_naive	Naive distogram readout (same as exp20): <begin_statements> with no seeded contacts, read top-128 logprobs per pair, renormalize over the 64 <d_X.X> bins.	0.2496	0.2273	1386.7	1.000	+0.00	
+seeded_contacts_kL1.0_min0.3	Self-bootstrapped contact seeding. Seeds drawn from full baseline_naive distogram; readout on LDDT-shell pairs.	0.2816	0.2492	392.1	0.283	+12.82	
+sharpen_T0.02_on_seeded_contacts_kL1.0_min0.3	Post-process temperature sharpening (T=0.02) of the seeded_contacts_kL1.0_min0.3 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2894	0.2895	245.8	0.177	+15.95	
+sampled_contacts_n1_T0.7	Model-sampled contact prefix: temperature sampling from <begin_statements>, parse emitted contact statements, re-read distances at LDDT-shell pairs.	0.2568	0.2527	244.6	0.176	+2.88	
+sampled_contacts_n5_T0.7	5-rollout sampled contact prefix (T=0.7, top_p=0.9). Average distograms.	0.2503	0.2465	1409.4	1.016	+0.28	
+iterative_R2_kc1.0_kd1.0	Iterative R=2. Round 1: K=L contacts (min_prob=0.3). Round 2: K=L modal distances (sharpen T=0.1, min_modal_p=0.9). Readout on LDDT-shell pairs.	0.2805	0.2801	1639.7	1.182	+12.38	
+gt_oracle_seeded	DIAGNOSTIC ONLY. Seeded with GROUND-TRUTH contacts (pairs with gt_d < 8 A and |i-j| >= 6). Establishes the ceiling of seeded-style algorithms.	0.7167	0.7106	1177.1	0.849	+187.14	
 sharpen_T1.0_on_gt_oracle_seeded	Post-process temperature sharpening (T=1.0) of the gt_oracle_seeded distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.7167	0.7219	245.4	0.177	+187.14	
-iterative_contacts_R2_kc1.0	Iterative contact-only R=2. Round 1: K=L contacts from baseline. Round 2: K=L contacts from round-1 distogram. NO distance commits.	0.2916	0.2865	815.3	0.588	+16.81	
-sharpen_T0.3_on_iterative_contacts_R2_kc1.0	Post-process temperature sharpening (T=0.3) of the iterative_contacts_R2_kc1.0 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2970	0.2913	240.4	0.173	+19.01	
-iterative_contacts_R3_kc1.0	Iterative contact-only R=3. Each round: K=L contacts from previous round's distogram.	0.2953	0.2896	1271.4	0.917	+18.29	
-sharpen_T0.3_on_iterative_contacts_R3_kc1.0	Post-process temperature sharpening (T=0.3) of the iterative_contacts_R3_kc1.0 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2999	0.2931	235.9	0.170	+20.16	
-iterative_contacts_R2_kc1.0_min0.1	Iterative contact-only R=2 with min_contact_prob=0.1 (vs 0.3). More seeds for sparse-confidence proteins.	0.3292	0.3045	1304.8	0.941	+31.90	
+iterative_contacts_R2_kc1.0	Iterative contact-only R=2. Round 1: K=L contacts from baseline. Round 2: K=L contacts from round-1 distogram. NO distance commits.	0.2916	0.2865	815.3	0.588	+16.83	
+sharpen_T0.3_on_iterative_contacts_R2_kc1.0	Post-process temperature sharpening (T=0.3) of the iterative_contacts_R2_kc1.0 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2970	0.2913	240.4	0.173	+18.99	
+iterative_contacts_R3_kc1.0	Iterative contact-only R=3. Each round: K=L contacts from previous round's distogram.	0.2953	0.2896	1271.4	0.917	+18.31	
+sharpen_T0.3_on_iterative_contacts_R3_kc1.0	Post-process temperature sharpening (T=0.3) of the iterative_contacts_R3_kc1.0 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.2999	0.2931	235.9	0.170	+20.15	
+iterative_contacts_R2_kc1.0_min0.1	Iterative contact-only R=2 with min_contact_prob=0.1 (vs 0.3). More seeds for sparse-confidence proteins.	0.3292	0.3045	1304.8	0.941	+31.89	
 sharpen_T0.1_on_iterative_contacts_R2_kc1.0_min0.1	Post-process temperature sharpening (T=0.1) of the iterative_contacts_R2_kc1.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3331	0.3119	235.8	0.170	+33.45	
-iterative_contacts_R3_kc1.0_min0.1	Iterative contact-only R=3, min_contact_prob=0.1, K=L per round.	0.3327	0.3041	1952.6	1.408	+33.28	
-sharpen_T0.05_on_iterative_contacts_R3_kc1.0_min0.1	Post-process temperature sharpening (T=0.05) of the iterative_contacts_R3_kc1.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3376	0.3097	235.9	0.170	+35.24	
+iterative_contacts_R3_kc1.0_min0.1	Iterative contact-only R=3, min_contact_prob=0.1, K=L per round.	0.3327	0.3041	1952.6	1.408	+33.29	
+sharpen_T0.05_on_iterative_contacts_R3_kc1.0_min0.1	Post-process temperature sharpening (T=0.05) of the iterative_contacts_R3_kc1.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3376	0.3097	235.9	0.170	+35.26	
 iterative_contacts_R2_kc1.0_min0.1_byprob	Iterative R=2, K=L, min_prob=0.1, sorted by_prob (no range bias).	0.3246	0.3134	1317.1	0.950	+30.05	
 sharpen_T0.3_on_iterative_contacts_R2_kc1.0_min0.1_byprob	Post-process temperature sharpening (T=0.3) of the iterative_contacts_R2_kc1.0_min0.1_byprob distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3248	0.3125	235.8	0.170	+30.13	
-iterative_contacts_R2_kc2.0_min0.1	Iterative R=2, K=2L (double density), min_prob=0.1, long_med_short.	0.3209	0.3143	1912.7	1.379	+28.58	
-sharpen_T1.0_on_iterative_contacts_R2_kc2.0_min0.1	Post-process temperature sharpening (T=1.0) of the iterative_contacts_R2_kc2.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3209	0.3143	235.8	0.170	+28.58	
+iterative_contacts_R2_kc2.0_min0.1	Iterative R=2, K=2L (double density), min_prob=0.1, long_med_short.	0.3209	0.3143	1912.7	1.379	+28.57	
+sharpen_T1.0_on_iterative_contacts_R2_kc2.0_min0.1	Post-process temperature sharpening (T=1.0) of the iterative_contacts_R2_kc2.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3209	0.3143	235.8	0.170	+28.57	
 sampled_contacts_union_n10_T0.7	Sampled union: M=10 rollouts at T=0.7, union of all unique contacts, single readout.	0.3168	0.3181	990.2	0.714	+26.92	
 sharpen_T1.0_on_sampled_contacts_union_n10_T0.7	Post-process temperature sharpening (T=1.0) of the sampled_contacts_union_n10_T0.7 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3168	0.3181	236.2	0.170	+26.92	
-iter_R2_on_R3low_kc1.0_min0.1	Iterative R=2 starting from iter_R3_low distogram as prior. Effectively R=5 total.	0.3364	0.3038	1321.9	0.953	+34.79	
-sharpen_T0.1_on_iter_R2_on_R3low_kc1.0_min0.1	Post-process temperature sharpening (T=0.1) of the iter_R2_on_R3low_kc1.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3389	0.3078	236.0	0.170	+35.79	
-iter_R3_grow_kc05_10_15	Iter R=3 with growing K per round: K=0.5L, L, 1.5L. min_prob=0.1.	0.3421	0.3026	1930.5	1.392	+37.07	
-sharpen_T1.0_on_iter_R3_grow_kc05_10_15	Post-process temperature sharpening (T=1.0) of the iter_R3_grow_kc05_10_15 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3421	0.3026	235.7	0.170	+37.07	
-iter_R1_from_R3low_kc2.0_min0.5	Single round from iter_R3_low prior with K=2L, min_prob=0.5. Use the now-richer set of high-confidence iterated contacts.	0.3333	0.3075	738.2	0.532	+33.52	
-sharpen_T0.3_on_iter_R1_from_R3low_kc2.0_min0.5	Post-process temperature sharpening (T=0.3) of the iter_R1_from_R3low_kc2.0_min0.5 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3343	0.3094	235.9	0.170	+33.92	
-iter_R4_grow_05_10_15_25	R=4 growing K: 0.5L, 1.0L, 1.5L, 2.5L. min_prob=0.1.	0.3511	0.3169	2986.4	2.154	+40.68	
-sharpen_T1.0_on_iter_R4_grow_05_10_15_25	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_05_10_15_25 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3511	0.3169	235.7	0.170	+40.68	
+iter_R2_on_R3low_kc1.0_min0.1	Iterative R=2 starting from iter_R3_low distogram as prior. Effectively R=5 total.	0.3364	0.3038	1321.9	0.953	+34.78	
+sharpen_T0.1_on_iter_R2_on_R3low_kc1.0_min0.1	Post-process temperature sharpening (T=0.1) of the iter_R2_on_R3low_kc1.0_min0.1 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3389	0.3078	236.0	0.170	+35.78	
+iter_R3_grow_kc05_10_15	Iter R=3 with growing K per round: K=0.5L, L, 1.5L. min_prob=0.1.	0.3421	0.3026	1930.5	1.392	+37.06	
+sharpen_T1.0_on_iter_R3_grow_kc05_10_15	Post-process temperature sharpening (T=1.0) of the iter_R3_grow_kc05_10_15 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3421	0.3026	235.7	0.170	+37.06	
+iter_R1_from_R3low_kc2.0_min0.5	Single round from iter_R3_low prior with K=2L, min_prob=0.5. Use the now-richer set of high-confidence iterated contacts.	0.3333	0.3075	738.2	0.532	+33.53	
+sharpen_T0.3_on_iter_R1_from_R3low_kc2.0_min0.5	Post-process temperature sharpening (T=0.3) of the iter_R1_from_R3low_kc2.0_min0.5 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3343	0.3094	235.9	0.170	+33.93	
+iter_R4_grow_05_10_15_25	R=4 growing K: 0.5L, 1.0L, 1.5L, 2.5L. min_prob=0.1.	0.3511	0.3169	2986.4	2.154	+40.67	
+sharpen_T1.0_on_iter_R4_grow_05_10_15_25	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_05_10_15_25 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3511	0.3169	235.7	0.170	+40.67	
 iter_R4_grow_kc_kd_strict	R=4 grow contacts kc=[0.5, 1, 1.5, 2.5] + distance commits kd=[0, 0.1L, 0.3L, 0.5L], min_modal_p=0.5, sharpen T=0.5 for mode pick.	0.3503	0.3307	3770.6	2.719	+40.34	
 sharpen_T1.0_on_iter_R4_grow_kc_kd_strict	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_kc_kd_strict distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3503	0.3307	235.7	0.170	+40.34	
-sampled_constrained_M1_T0.7	Contacts-only constrained sampling (logits processor masks non-contact tokens). M=1 rollout, T=0.7, top_p=0.9, max_tokens=900.	0.2219	0.2167	743.4	0.536	-11.09	
-sampled_constrained_M1_T0.7_fast	M=1 sampled constrained with device-resident LP masks. Re-run after speed fix.	0.2219	0.2167	743.7	0.536	-11.09	
-sampled_uniform_M1_T0.7	Constrained sampling, M=1, T=0.7, range_strategy=uniform (1/3 each range).	0.2713	0.2497	769.0	0.555	+8.70	
-sampled_uniform_M5_union_T0.7	Constrained sampling M=5 union, uniform range. 5 rollouts × 900 max_tokens each → union → readout.	0.3142	0.3213	2457.9	1.772	+25.86	
-sampled_uniform_M10_union_T0.7	Constrained sampling M=10 union, uniform range. Should give a richer union than M=5.	0.3213	0.3296	4237.4	3.056	+28.71	
-iter_R4_grow_on_sampled_uniform_M5	R=4 growing K iteration with sampled_uniform_M5_union as the prior. Combines sampling-diverse contacts (good for previously-stuck proteins) with iterative refinement.	0.3564	0.3665	3154.5	2.275	+42.80	
-sharpen_T1.0_on_iter_R4_grow_on_sampled_uniform_M5	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_on_sampled_uniform_M5 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3564	0.3665	240.9	0.174	+42.80	
+sampled_constrained_M1_T0.7	Contacts-only constrained sampling (logits processor masks non-contact tokens). M=1 rollout, T=0.7, top_p=0.9, max_tokens=900.	0.2219	0.2167	743.4	0.536	-11.10	
+sampled_constrained_M1_T0.7_fast	M=1 sampled constrained with device-resident LP masks. Re-run after speed fix.	0.2219	0.2167	743.7	0.536	-11.10	
+sampled_uniform_M1_T0.7	Constrained sampling, M=1, T=0.7, range_strategy=uniform (1/3 each range).	0.2713	0.2497	769.0	0.555	+8.69	
+sampled_uniform_M5_union_T0.7	Constrained sampling M=5 union, uniform range. 5 rollouts × 900 max_tokens each → union → readout.	0.3142	0.3213	2457.9	1.772	+25.88	
+sampled_uniform_M10_union_T0.7	Constrained sampling M=10 union, uniform range. Should give a richer union than M=5.	0.3213	0.3296	4237.4	3.056	+28.73	
+iter_R4_grow_on_sampled_uniform_M5	R=4 growing K iteration with sampled_uniform_M5_union as the prior. Combines sampling-diverse contacts (good for previously-stuck proteins) with iterative refinement.	0.3564	0.3560	3154.5	2.275	+42.79	
+sharpen_T1.0_on_iter_R4_grow_on_sampled_uniform_M5	Post-process temperature sharpening (T=1.0) of the iter_R4_grow_on_sampled_uniform_M5 distogram. probs' = softmax(log(p+eps)/T) applied to non-empty pair rows; empty rows left as zero. No new inference.	0.3564	0.3665	240.9	0.174	+42.79	
 iter_R3_grow_on_sampled_uniform_M10	R=3 growing K iteration from sampled_uniform_M10_union prior (richer than M=5). kc=[0.5, 1.0, 1.5].	0.3401	0.3523	1988.6	1.434	+36.26	
-sampled_uniform_M5_union_T0.7_1.5B	Same algorithm on 1.5B (vs 1B headline). Sampled uniform M=5 union prior, contacts-only LP, T=0.7.	0.2038	0.2126	3471.6	2.504	-18.36	
-iter_R4_grow_on_sampled_uniform_M5_1.5B	Same algorithm as the 1B headline, but using 1.5B model. iter R=4 grow on sampled_uniform_M5 prior.	0.2864	0.2665	4229.9	3.050	+14.74	
-baseline_naive_1.5B	Naive baseline on 1.5B model. Comparison point for the combined algorithm.	0.2627	0.2577	1866.1	1.346	+5.23	
-sampled_weighted_M5_union_T0.7	M=5 union, range_strategy=weighted (top-position-prob per range). Comparison to uniform on 1B.	0.2902	0.2899	2307.6	1.664	+16.28	
-iter_R4_grow_on_sampled_weighted_M5	R=4 grow on top of sampled_weighted_M5_union prior. Comparison vs iter_R4_grow_on_sampled_uniform_M5 (0.3564).	0.3493	0.3673	3133.1	2.259	+39.96	
-heldout_sampled_uniform_M5_union	Stage A on held-out (re-run after I deleted distograms).	0.3189	0.3146	2558.0	1.845	+27.77	
-heldout_iter_R4_grow_on_sampled_uniform_M5	Stage B on held-out 10. Same params as 1B headline.	0.3684	0.3270	3254.7	2.347	+47.61	
-1.5B_iter_R4_grow_from_baseline	1.5B iter R4 grow from baseline_naive prior. No sampling stage. Train set.	0.3295	0.2767	4271.5	3.080	+32.02	
-1.5B_iter_R4_kc05_10_15_20	1.5B iter R=4, kc=[0.5, 1, 1.5, 2.0] — less aggressive final K, from baseline prior.	0.3320	0.2780	4186.9	3.019	+33.00	
-1.5B_iter_R3_grow_05_10_15	1.5B iter R=3 grow [0.5, 1, 1.5], from baseline prior. Test fewer rounds on long proteins.	0.3398	0.2925	2732.4	1.970	+36.15	
-1.5B_iter_R2_grow_05_10	1.5B iter R=2 grow [0.5, 1.0], from baseline. Test if even fewer rounds works.	0.3404	0.3165	1530.5	1.104	+36.36	
-heldout_1.5B_baseline	1.5B naive baseline on the 10 held-out proteins.	0.3150	0.3100	1645.1	1.186	+26.22	
-heldout_1.5B_iter_R2_grow_05_10	1.5B winning algorithm on heldout 10 — iter R=2 grow [0.5, 1.0] from 1.5B baseline.	0.3605	0.3685	1479.8	1.067	+44.44	
-heldout_baseline_naive	Re-run 1B baseline on heldout (need distograms for iter prior).	0.2797	0.2746	1223.8	0.883	+12.04	
-heldout_1B_iter_R2_grow_05_10	1B applied to the 1.5B-tuned algorithm: iter R=2 grow [0.5, 1.0] from 1B baseline.	0.3314	0.3164	1060.8	0.765	+32.78	
+sampled_uniform_M5_union_T0.7_1.5B	Same algorithm on 1.5B (vs 1B headline). Sampled uniform M=5 union prior, contacts-only LP, T=0.7.	0.2038	0.1948	3471.6	1.860	-22.42	
+iter_R4_grow_on_sampled_uniform_M5_1.5B	Same algorithm as the 1B headline, but using 1.5B model. iter R=4 grow on sampled_uniform_M5 prior.	0.2864	0.2545	4229.9	2.267	+9.02	
+baseline_naive_1.5B	Naive baseline on 1.5B model. Comparison point for the combined algorithm.	0.2627	0.2315	1866.1	1.000	+0.00	
+sampled_weighted_M5_union_T0.7	M=5 union, range_strategy=weighted (top-position-prob per range). Comparison to uniform on 1B.	0.2902	0.2795	2307.6	1.664	+16.27	
+iter_R4_grow_on_sampled_weighted_M5	R=4 grow on top of sampled_weighted_M5_union prior. Comparison vs iter_R4_grow_on_sampled_uniform_M5 (0.3564).	0.3493	0.3425	3133.1	2.259	+39.94	
+heldout_sampled_uniform_M5_union	Stage A on held-out (re-run after I deleted distograms).	0.3189	0.3135	2558.0	2.090	+14.02	
+heldout_iter_R4_grow_on_sampled_uniform_M5	Stage B on held-out 10. Same params as 1B headline.	0.3684	0.3205	3254.7	2.660	+31.71	
+1.5B_iter_R4_grow_from_baseline	1.5B iter R4 grow from baseline_naive prior. No sampling stage. Train set.	0.3295	0.2743	4271.5	2.289	+25.43	
+1.5B_iter_R4_kc05_10_15_20	1.5B iter R=4, kc=[0.5, 1, 1.5, 2.0] — less aggressive final K, from baseline prior.	0.3320	0.2754	4186.9	2.244	+26.38	
+1.5B_iter_R3_grow_05_10_15	1.5B iter R=3 grow [0.5, 1, 1.5], from baseline prior. Test fewer rounds on long proteins.	0.3398	0.2842	2732.4	1.464	+29.35	
+1.5B_iter_R2_grow_05_10	1.5B iter R=2 grow [0.5, 1.0], from baseline. Test if even fewer rounds works.	0.3403	0.3106	1530.5	0.820	+29.54	
+heldout_1.5B_baseline	1.5B naive baseline on the 10 held-out proteins.	0.3150	0.2847	1645.1	1.000	+0.00	
+heldout_1.5B_iter_R2_grow_05_10	1.5B winning algorithm on heldout 10 — iter R=2 grow [0.5, 1.0] from 1.5B baseline.	0.3605	0.3451	1479.8	0.900	+14.44	
+heldout_baseline_naive	Re-run 1B baseline on heldout (need distograms for iter prior).	0.2797	0.2632	1223.8	1.000	+0.00	
+heldout_1B_iter_R2_grow_05_10	1B applied to the 1.5B-tuned algorithm: iter R=2 grow [0.5, 1.0] from 1B baseline.	0.3314	0.3153	1060.8	0.867	+18.48	

@@ -273,12 +273,12 @@ for (i, j) in all pairs:
       \toprule
       run & mean LDDT & median & wall (s) & lift\\
       \midrule
-      1B baseline (naive)            & 0.2496 & 0.2500 & 1387 & --- \\
-      \textbf{1B combined}           & \textbf{0.3564} & 0.3665 & 3155 & \textcolor{green}{\textbf{+42.81\%}}\\
+      1B baseline (naive)            & 0.2496 & 0.2273 & 1387 & --- \\
+      \textbf{1B combined}           & \textbf{0.3564} & 0.3560 & 3155 & \textcolor{green}{\textbf{+42.81\%}}\\
       \addlinespace
-      1.5B baseline (naive)          & 0.2627 & 0.2577 & 1866 & --- \\
+      1.5B baseline (naive)          & 0.2627 & 0.2315 & 1866 & --- \\
       1.5B stage A only              & 0.2038 & 0.2126 & 3472 & \textcolor{red}{\textbf{$-$22.42\%}} \\
-      \textbf{1.5B combined}         & \textbf{0.2864} & 0.2665 & 4230 & \textcolor{orange}{\textbf{+9.04\%}}\\
+      \textbf{1.5B combined}         & \textbf{0.2864} & 0.2545 & 4230 & \textcolor{orange}{\textbf{+9.04\%}}\\
       \bottomrule
     \end{tabular}
   \end{center}
@@ -435,12 +435,12 @@ uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
       \toprule
       1.5B sweep on the 10 train proteins & mean LDDT & median & wall (s) & lift \\
       \midrule
-      baseline (naive)                                   & 0.2627 & 0.2577 & 1866 & --- \\
-      1B headline transferred (iter R=4 grow on sampled) & 0.2864 & 0.2665 & 4230 & \textcolor{orange}{+9.0\%} \\
-      iter R=4 grow [0.5,1,1.5,2.5] from baseline (drop stage A) & 0.3295 & 0.2767 & 4272 & \textcolor{green}{+25.5\%} \\
-      iter R=4 grow [0.5,1,1.5,2.0] (smaller final K)    & 0.3320 & 0.2780 & 4187 & \textcolor{green}{+26.4\%} \\
-      iter R=3 grow [0.5,1.0,1.5]                        & 0.3398 & 0.2925 & 2732 & \textcolor{green}{+29.4\%} \\
-      \textbf{iter R=2 grow [0.5,1.0] from baseline (WINNER)} & \textbf{0.3403} & 0.3165 & \textbf{1531} & \textcolor{green}{\textbf{+29.6\%}} \\
+      baseline (naive)                                   & 0.2627 & 0.2315 & 1866 & --- \\
+      1B headline transferred (iter R=4 grow on sampled) & 0.2864 & 0.2545 & 4230 & \textcolor{orange}{+9.0\%} \\
+      iter R=4 grow [0.5,1,1.5,2.5] from baseline (drop stage A) & 0.3295 & 0.2743 & 4272 & \textcolor{green}{+25.5\%} \\
+      iter R=4 grow [0.5,1,1.5,2.0] (smaller final K)    & 0.3320 & 0.2754 & 4187 & \textcolor{green}{+26.4\%} \\
+      iter R=3 grow [0.5,1.0,1.5]                        & 0.3398 & 0.2842 & 2732 & \textcolor{green}{+29.4\%} \\
+      \textbf{iter R=2 grow [0.5,1.0] from baseline (WINNER)} & \textbf{0.3403} & 0.3106 & \textbf{1531} & \textcolor{green}{\textbf{+29.6\%}} \\
       \bottomrule
     \end{tabular}
   \end{center}

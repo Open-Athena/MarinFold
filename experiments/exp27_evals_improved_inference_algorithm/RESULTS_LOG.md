@@ -11,7 +11,7 @@ file adds the design rationale, what was tried, and what we learned.
 
 | algorithm | mean LDDT | median | wall (s) | notes |
 |---|---:|---:|---:|---|
-| `baseline_naive` | 0.2496 | 0.2500 | 1384.5 | exp20 algorithm, A100/bf16. |
+| `baseline_naive` | 0.2496 | 0.2273 | 1384.5 | exp20 algorithm, A100/bf16. |
 | `gt_filtered_naive` | 0.2496 | 0.2499 | 215.3 | Same readout, only pairs with GT < 15 Å. Same headline LDDT by construction; uses GT mask so it's a speedup, not a generalizing algorithm. Used as the per-pair-cost unit for every later experiment. |
 
 ## Diagnostic: soft vs hard LDDT (baseline_naive)
@@ -536,7 +536,7 @@ This is the new headline.
 distogram as the prior, then run the same R=4 growing-K iteration
 (kc=[0.5, 1, 1.5, 2.5], min_p=0.1) on top.
 
-  mean LDDT **0.3564, +42.81%**.  median 0.3665.
+  mean LDDT **0.3564, +42.81%**.  median 0.3560.
   chain wall = 2458 (sampled prior) + 3155 (iter R=4) = **5613 s**,
   4.05× baseline. Within 5× budget.
 
@@ -604,12 +604,12 @@ Re-ran the exact same algorithm on the same 10 train proteins with
 
 | run | mean LDDT | median | wall (s) |
 |---|---:|---:|---:|
-| 1B baseline (naive) | 0.2496 | 0.2500 | 1387 |
+| 1B baseline (naive) | 0.2496 | 0.2273 | 1387 |
 | 1B sampled\_uniform\_M5\_union | 0.3142 | 0.3213 | 2458 |
-| **1B combined (headline)** | **0.3564** | **0.3665** | 3155 |
-| 1.5B baseline (naive) | 0.2627 | 0.2577 | 1866 |
+| **1B combined (headline)** | **0.3564** | **0.3560** | 3155 |
+| 1.5B baseline (naive) | 0.2627 | 0.2315 | 1866 |
 | 1.5B sampled\_uniform\_M5\_union | **0.2038** | 0.2126 | 3472 |
-| **1.5B combined** | **0.2864** | **0.2665** | 4230 |
+| **1.5B combined** | **0.2864** | **0.2545** | 4230 |
 
 **Lift (combined vs same-model baseline):**
 - 1B: +42.81%
@@ -755,9 +755,9 @@ Headline:
 
 |  | mean LDDT | median | lift |
 |---|---:|---:|---:|
-| heldout_baseline | 0.2797 | 0.2746 | --- |
-| heldout_stageA (sampled\_uniform\_M5) | 0.3189 | 0.3160 | +14.04% |
-| **heldout_combined** | **0.3685** | **0.3270** | **+31.75%** |
+| heldout_baseline | 0.2797 | 0.2632 | --- |
+| heldout_stageA (sampled\_uniform\_M5) | 0.3189 | 0.3135 | +14.04% |
+| **heldout_combined** | **0.3685** | **0.3205** | **+31.75%** |
 
 Compared to train (+42.81%), the lift drops 11 percentage points on
 held-out. **Every held-out protein gains positively:**

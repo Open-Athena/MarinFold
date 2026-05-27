@@ -131,7 +131,7 @@ Full per-experiment narrative lives in
 `baseline_naive` (exp20's naive distogram readout, A100/bf16) on the
 10-protein train set:
 
-  mean LDDT 0.2496 · median 0.2500 · wall 1386.7 s
+  mean LDDT 0.2496 · median 0.2273 · wall 1386.7 s
 
 Per-protein range 0.151 — 0.449. Soft LDDT 0.268 (the model's
 probability mass is closer to GT than its expected-value point
@@ -170,7 +170,7 @@ combines two ideas:
    kc per round = 0.5L, 1.0L, 1.5L, 2.5L. min_contact_prob=0.1.
    Range-ordered long → medium → short.
 
-  mean LDDT **0.3564** · median 0.3665 · +42.81%
+  mean LDDT **0.3564** · median 0.3560 · +42.81%
 
 The reported 0.3564 uses the **standard expected-distance readout**
 (`pred_d = sum(probs * midpoints)`) with **no sharpening** —
@@ -314,11 +314,11 @@ Re-ran the exact same algorithm with `--model 1.5B`, output to
 
 | | mean LDDT | median | wall (s) | lift |
 |---|---:|---:|---:|---:|
-| 1B baseline (naive) | 0.2496 | 0.2500 | 1387 | — |
-| 1B combined (headline) | **0.3564** | 0.3665 | 3155 | **+42.81%** |
-| 1.5B baseline (naive) | 0.2627 | 0.2577 | 1866 | — |
+| 1B baseline (naive) | 0.2496 | 0.2273 | 1387 | — |
+| 1B combined (headline) | **0.3564** | 0.3560 | 3155 | **+42.81%** |
+| 1.5B baseline (naive) | 0.2627 | 0.2315 | 1866 | — |
 | 1.5B sampled\_uniform\_M5\_union (stage A only) | 0.2038 | 0.2126 | 3472 | **−22.42%** |
-| 1.5B combined (headline) | **0.2864** | 0.2665 | 4230 | **+9.04%** |
+| 1.5B combined (headline) | **0.2864** | 0.2545 | 4230 | **+9.04%** |
 
 **The 1B algorithm does not transfer cleanly to 1.5B.** The same
 pipeline gives +42.81% on 1B but only +9.04% on 1.5B. Stage A alone
@@ -384,12 +384,12 @@ Two hypotheses were tested on train:
 
 | run | mean LDDT | median | wall (s) | lift vs 1.5B baseline |
 |---|---:|---:|---:|---:|
-| 1.5B baseline (naive) | 0.2627 | 0.2577 | 1866 | — |
-| 1B headline algorithm transferred | 0.2864 | 0.2665 | 4230 | +9.0% |
-| 1.5B iter R=4 grow `[0.5, 1, 1.5, 2.5]` from baseline | 0.3295 | 0.2767 | 4272 | +25.5% |
-| 1.5B iter R=4 grow `[0.5, 1, 1.5, 2.0]` (smaller K_final) | 0.3320 | 0.2780 | 4187 | +26.4% |
-| 1.5B iter R=3 grow `[0.5, 1.0, 1.5]` from baseline | 0.3398 | 0.2925 | 2732 | +29.4% |
-| **1.5B iter R=2 grow `[0.5, 1.0]` from baseline (WINNER)** | **0.3403** | **0.3165** | **1531** | **+29.6%** |
+| 1.5B baseline (naive) | 0.2627 | 0.2315 | 1866 | — |
+| 1B headline algorithm transferred | 0.2864 | 0.2545 | 4230 | +9.0% |
+| 1.5B iter R=4 grow `[0.5, 1, 1.5, 2.5]` from baseline | 0.3295 | 0.2743 | 4272 | +25.5% |
+| 1.5B iter R=4 grow `[0.5, 1, 1.5, 2.0]` (smaller K_final) | 0.3320 | 0.2754 | 4187 | +26.4% |
+| 1.5B iter R=3 grow `[0.5, 1.0, 1.5]` from baseline | 0.3398 | 0.2842 | 2732 | +29.4% |
+| **1.5B iter R=2 grow `[0.5, 1.0]` from baseline (WINNER)** | **0.3403** | **0.3106** | **1531** | **+29.6%** |
 
 The 1.5B winner is `iter_R2_grow_from_baseline`: two rounds, K=0.5L
 then K=1.0L, min_contact_prob=0.1, prior = the naive baseline
