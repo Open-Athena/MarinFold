@@ -278,7 +278,7 @@
 \begin{frame}[fragile]{Reproducer}
   {\footnotesize 10 train proteins \textperiodcentered\ A100 40\,GB
    \textperiodcentered\ bf16 \textperiodcentered\ outputs to
-   \codeS{outputs\_1.5b/}.}\\[0.3em]
+   \codeS{outputs\_1.5b/}.}\par\vspace{0.3em}
   \begin{lstlisting}[style=code,basicstyle=\ttfamily\scriptsize\color{navy}]
 # 1.5B: stage A
 uv run python run_sampled_contacts.py --dtype bfloat16 --n-gpus 1 \
