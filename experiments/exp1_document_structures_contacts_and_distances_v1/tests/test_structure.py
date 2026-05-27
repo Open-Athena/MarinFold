@@ -620,6 +620,19 @@ def test_cmd_generate_sharded_out_writes_one_file_per_input(multi_pdb_dir, tmp_p
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_num_docs_with_shard_pattern_writes_one_file_per_input(multi_pdb_dir, tmp_path: Path):
+    """--num-docs N caps inputs; with a {shard} --out that's N single-doc files."""
+    pq = pytest.importorskip("pyarrow.parquet")
+    out = tmp_path / "corpus-{shard:05d}-of-{total:05d}.parquet"
+    cli.cmd_generate(_parse_generate_args(multi_pdb_dir, out, num_docs=2))
+
+    files = sorted(tmp_path.glob("corpus-*.parquet"))
+    rows = sorted(pq.read_table(str(f)).num_rows for f in files)
+    assert len(files) == 2, f"--num-docs 2 should process 2 inputs -> 2 files, got {len(files)}"
+    assert rows == [1, 1], f"expected one doc per file, got {rows}"
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
 def test_cmd_generate_jsonl_writes_one_doc_per_line(tiny_pdb_path, tmp_path: Path):
     """JSONL path: pass-through — one JSON-encoded doc string per line."""
     import json
@@ -651,8 +664,12 @@ _SINGLE_RESIDUE_PDB = textwrap.dedent("""\
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
-def test_cmd_generate_num_docs_counts_only_emitted_docs(tmp_path: Path):
-    """--num-docs is a cap on *emitted* docs, not consumed inputs."""
+def test_cmd_generate_num_docs_caps_inputs_not_emitted_docs(tmp_path: Path):
+    """--num-docs caps the inputs scanned, so unparseable inputs consume the budget.
+
+    The 2 single-residue files sort first and fill 2 of the 3 input slots, even
+    though they yield no doc — leaving a single emitted document.
+    """
     pq = pytest.importorskip("pyarrow.parquet")
     sub = tmp_path / "mixed"
     sub.mkdir()
@@ -664,7 +681,7 @@ def test_cmd_generate_num_docs_counts_only_emitted_docs(tmp_path: Path):
 
     cli.cmd_generate(_parse_generate_args(sub, out, num_docs=3))
 
-    assert pq.read_table(str(out)).num_rows == 3
+    assert pq.read_table(str(out)).num_rows == 1
 
 
 def test_cli_top_level_help_does_not_error(capsys):

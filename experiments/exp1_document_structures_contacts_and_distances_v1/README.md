@@ -147,14 +147,32 @@ uv run iris --cluster=marin cluster dashboard
 Then, in another dedicated terminal window, run the document generation job:
 
 ```bash
-uv run iris --cluster=marin job run \
-   --cpu 1 --memory 2GB  -- \
-   python cli.py generate \
-  --input "gs://public-datasets-deepmind-alphafold-v4/AF-A0A009*_v4.cif" \ 
-  --num-docs 100 \
-  --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus-{shard:05d}-of-{total:05d}.parquet" \ 
-  --worker-cpu 4 --worker-memory 16g --worker-disk 64g
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "gs://public-datasets-deepmind-alphafold-v4/AF-A0A009*_v4.cif" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 4 --worker-memory 16g --worker-disk 64g
 ```
+
+Keep it on **one line** — a backslash-continuation with a trailing space silently
+truncates the command (everything after it leaks to your shell).
+
+What the arguments do:
+
+- **`--input` must be a bounded prefix glob, never the bare bucket root.** The
+  driver enumerates every matching path before work starts, so `gs://…-v4/`
+  (hundreds of millions of objects) hangs regardless of `--num-docs`. Verify a
+  real prefix first — the exact key layout / extension may differ:
+  ```bash
+  gcloud storage ls "gs://public-datasets-deepmind-alphafold-v4/AF-A0A009*" | head
+  ```
+- **`--num-docs N`** processes the first N matched inputs (≈ N docs, one per
+  structure). It bounds parsing, not listing — so pair it with a tight prefix.
+- **`--out` with a `{shard}`** placeholder writes one parquet per input; drop the
+  placeholder for a single merged file.
+- **`--cpu`/`--memory` before `--`** size the launcher (the lister/orchestrator);
+  **`--worker-*` after `--`** size the Zephyr worker tasks that download, parse,
+  and write. Keep the launcher under 4 GB to avoid needing
+  `--enable-extra-resources`.
+
+Cancel a running job with `uv run iris --cluster=marin job stop <JOB_ID>` (find
+the id via `iris --cluster=marin job list`).
 
 ### Running inference and evaluation
 

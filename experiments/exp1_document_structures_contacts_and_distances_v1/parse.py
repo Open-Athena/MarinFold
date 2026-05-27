@@ -215,6 +215,25 @@ def input_glob(path) -> str:
     return spec
 
 
+def list_structure_files(pattern: str, limit: int | None = None) -> list[str]:
+    """Resolve a glob pattern to sorted, fully-qualified structure-file URLs.
+
+    Brace-expands the pattern (so ``…/*.{cif,cif.gz,…}`` works) the same way
+    Zephyr's ``from_files`` does, then globs each branch. ``limit`` keeps only
+    the first N matches — a cheap way to cap how many inputs a run processes.
+    Note the glob is still enumerated in full before truncating, so pair
+    ``limit`` with a bounded prefix rather than a whole-bucket pattern.
+    """
+    from braceexpand import braceexpand
+
+    fs, _ = fsspec.core.url_to_fs(pattern)
+    matches: set[str] = set()
+    for branch in braceexpand(pattern):
+        matches.update(fs.unstrip_protocol(p) for p in fs.glob(branch))
+    ordered = sorted(matches)
+    return ordered[:limit] if limit is not None else ordered
+
+
 def try_parse_structure(path) -> "ParsedStructure | None":
     """Parse one structure, returning ``None`` (with a warning) on failure.
 

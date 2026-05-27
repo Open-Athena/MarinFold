@@ -69,8 +69,18 @@ def cmd_generate(args: argparse.Namespace) -> None:
         rank_std=args.rank_std,
         residue_plddt_min=args.residue_plddt_min,
     )
+    glob = parse.input_glob(args.input)
+    # --num-docs caps the *inputs* processed. Historically it capped documents,
+    # but with one doc per structure that's equivalent — and capping inputs
+    # bounds parsing to the first N files (the glob is still enumerated to sort
+    # it, so use a bounded prefix). Without it, from_files shards the whole glob.
+    if args.num_docs is not None:
+        source = Dataset.from_iterable(parse.list_structure_files(glob, limit=args.num_docs))
+    else:
+        source = Dataset.from_files(glob)
+
     ds = (
-        Dataset.from_files(parse.input_glob(args.input))
+        source
         .map(parse.try_parse_structure)
         # try_parse_structure returns None for unparseable files.
         .filter(lambda s: s is not None)
@@ -80,16 +90,10 @@ def cmd_generate(args: argparse.Namespace) -> None:
         .filter(lambda x: x is not None)
     )
 
-    # from_files gives each input file its own shard, so an --out pattern with a
-    # {shard} placeholder writes one output file per input. Without it, collapse
-    # to a single shard for single-file output.
+    # Each input is its own shard, so a {shard} --out writes one file per input;
+    # otherwise collapse everything into a single file.
     if "{shard" not in args.out:
         ds = ds.reshard(1)
-
-    if args.num_docs is not None:
-        # Per-shard cap: a global limit for single-file output, a per-input
-        # limit when --out is sharded.
-        ds = ds.take_per_shard(args.num_docs)
 
     # os.path.splitext keeps cloud URLs intact (Path would collapse the
     # "gs://" double slash); a trailing glob like "*.parquet" still yields
@@ -204,8 +208,11 @@ def build_parser() -> argparse.ArgumentParser:
                        help="PDB / mmCIF (.gz) file or directory of them; "
                             "local path or cloud URL (gs://, s3://, ...).")
     p_gen.add_argument("--num-docs", type=int, default=None,
-                       help="Cap on docs produced. A global cap for single-file "
-                            "output; a per-input cap when --out is sharded.")
+                       help="Process only the first N input files (one doc per "
+                            "structure, so ~N docs). With a {shard} --out this "
+                            "writes up to N single-doc files; otherwise one file "
+                            "with up to N docs. Pair with a bounded --input — the "
+                            "glob is enumerated in full before truncating.")
     p_gen.add_argument("--context-length", type=int, default=CONTEXT_LENGTH,
                        help="Token budget per document.")
     p_gen.add_argument("--out", type=str, required=True,
