@@ -459,6 +459,105 @@ uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
   \end{itemize}
 \end{frame}
 
+% --- Addendum slide A.5: 1.5B algorithm in one picture ---
+\begin{frame}{The 1.5B algorithm in one picture}
+  \begin{center}
+    \begin{tikzpicture}[scale=1.0]
+      % Prior box
+      \draw[draw=navy, line width=1pt, rounded corners=4pt, fill=lightnavy]
+        (0, 0) rectangle (4.2, 3.6);
+      \node[font=\small\bfseries, text=navy, anchor=north]
+        at (2.1, 3.4) {Prior};
+      \node[font=\footnotesize, text=navy, anchor=north, text width=3.8cm,
+            align=center]
+        at (2.1, 2.85)
+        {naive baseline distogram\\[0.2em]
+         (\codeS{predict\_distogram})\\[0.2em]
+         all $\binom{L}{2}$ pairs queried,\\
+         no sampling, no contacts};
+      \node[font=\scriptsize\itshape, text=grey, anchor=south]
+        at (2.1, 0.15) {one forward pass};
+
+      \draw[->, line width=1.5pt, navy] (4.3, 1.8) -- (5.0, 1.8);
+
+      % Round 1
+      \draw[draw=orange, line width=1pt, rounded corners=4pt, fill=lightorange]
+        (5.1, 0) rectangle (8.7, 3.6);
+      \node[font=\small\bfseries, text=orange, anchor=north]
+        at (6.9, 3.4) {Round 1};
+      \node[font=\footnotesize, text=navy, anchor=north, text width=3.2cm,
+            align=center]
+        at (6.9, 2.85)
+        {pick top \textbf{$K=0.5L$}\\
+         contacts from prior\\
+         (min p=0.1;\\long\,>\,med\,>\,short)\\[0.2em]
+         re-read distances\\
+         with contacts prefix};
+
+      \draw[->, line width=1.5pt, orange] (8.8, 1.8) -- (9.5, 1.8);
+
+      % Round 2
+      \draw[draw=orange, line width=1pt, rounded corners=4pt, fill=lightorange]
+        (9.6, 0) rectangle (13.2, 3.6);
+      \node[font=\small\bfseries, text=orange, anchor=north]
+        at (11.4, 3.4) {Round 2 (final)};
+      \node[font=\footnotesize, text=navy, anchor=north, text width=3.2cm,
+            align=center]
+        at (11.4, 2.85)
+        {pick top \textbf{$K=1.0L$}\\
+         contacts from round-1\\
+         distogram\\[0.2em]
+         re-read distances\\
+         $\Rightarrow$ final probs};
+    \end{tikzpicture}
+  \end{center}
+  \vspace{0.2em}
+  \begin{center}
+    {\large\bfseries\color{green}+29.6\% on 1.5B train · +14.4\% on 1.5B held-out · also +18.5\% on 1B held-out}\\[0.2em]
+    {\footnotesize Total wall 1531\,s on a single A100 40\,GB ($\sim$1.7$\times$ baseline; 2.8$\times$ faster than the 1B headline).}
+  \end{center}
+  \vspace{0.3em}
+  Library entry point in
+  \codeS{combined\_algorithm.py}:
+  \codeS{predict\_distogram\_iter\_from\_baseline(...)}.
+\end{frame}
+
+% --- Addendum slide A.7: worked example on 8eb9_A ---
+\begin{frame}[fragile]{Worked example: 8eb9\_A under 1.5B}
+  \scriptsize Smallest train protein (L=95), 1745 LDDT-shell pairs. Each
+  row below is one library-function call away from the previous (no extra
+  knobs).
+  \vspace{0.4em}
+  \begin{center}\small
+    \begin{tabular}{lrrr}
+      \toprule
+      stage & K (contacts picked) & wall (s) & LDDT \\
+      \midrule
+      prior (naive baseline)               & 0          & $\sim$8  & 0.1496 \\
+      $\;\;$\textrightarrow{} round 1      & K=48       & $\sim$12 & 0.2260 \quad{\color{green}+51.1\%} \\
+      $\;\;$\textrightarrow{} round 2 (final) & K=95    & $\sim$15 & \textbf{0.2555} \quad{\color{green}\textbf{+70.8\%}} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vspace{0.5em}
+  \begin{lstlisting}[style=code,basicstyle=\ttfamily\scriptsize\color{navy}]
+from naive_inference import load_runtime
+from combined_algorithm import predict_distogram_iter_from_baseline_from_cif
+
+rt = load_runtime(model_nickname="1.5B", models_yaml=MODELS_YAML, dtype="bfloat16")
+probs, meta = predict_distogram_iter_from_baseline_from_cif(
+    rt=rt, gt_cif="protenix_data/.../8eb9_A.cif",
+)
+# probs: (95, 95, 64) float32  ->  save as .npz and pass to score_marinfold.score_one
+# meta:  algorithm = "iter_R2_grow_from_baseline", rounds = 2, kc = [0.5, 1.0]
+  \end{lstlisting}
+  \vspace{0.2em}
+  {\footnotesize\color{navy}\textbf{Reproduces} the
+    \codeS{1.5B\_iter\_R2\_grow\_05\_10} CSV row exactly (LDDT 0.2555).
+    Both the prior pass and the two iteration rounds reuse the loaded
+    \codeS{rt}; no model re-loads, no on-disk distogram caching.}
+\end{frame}
+
 % --- Addendum slide B: cross-model heldout per-protein ---
 \begin{frame}{Cross-model held-out: 1.5B-tuned algorithm on both models}
   \scriptsize \codeS{iter\_R2\_grow\_from\_baseline} — kc=[0.5L, 1.0L], min\_p=0.1,
