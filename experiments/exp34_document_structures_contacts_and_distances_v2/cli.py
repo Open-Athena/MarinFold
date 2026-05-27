@@ -16,16 +16,27 @@ one to train on the result, then one to eval the trained model).
 """
 
 import argparse
+import os
 import sys
+import typing
 from pathlib import Path
 
-from marinfold import (
-    build_tokenizer,
-    write_docs,
-)
+from marinfold import build_tokenizer
+from fray import ResourceConfig
+from zephyr import Dataset, ZephyrContext
 
 import generate
+import parse
 from vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+
+
+# Input extensions that mean "parquet rows with an mmCIF column", as opposed to
+# directories/globs of individual .cif/.pdb structure files.
+_PARQUET_INPUT_SUFFIXES = (".parquet", ".pq")
+
+
+def _is_parquet_input(spec: str) -> bool:
+    return os.path.splitext(spec)[1].lower() in _PARQUET_INPUT_SUFFIXES
 
 
 def cmd_generate(args: argparse.Namespace) -> None:
@@ -41,13 +52,62 @@ def cmd_generate(args: argparse.Namespace) -> None:
         think_additional_count_range=tuple(args.think_additional_count_range),
         think_run_length_geom_p=args.think_run_length_geom_p,
     )
-    docs = generate.generate_documents(
-        input_path=args.input,
-        num_docs=args.num_docs,
-        context_length=args.context_length,
-        config=cfg,
+
+    # Two input modalities, dispatched on the --input extension:
+    #   * parquet — each row holds an mmCIF in --cif-column plus an entry_id
+    #     (e.g. the timodonnell/afdb-1.6M dataset); read those columns and parse
+    #     the text in memory.
+    #   * structure files — each path is a .cif/.pdb that gemmi reads directly.
+    # entry_id matters either way: _generate_one seeds its RNG from it.
+    if _is_parquet_input(args.input):
+        rows = Dataset.from_files(args.input).load_parquet(
+            columns=[args.cif_column, "entry_id"]
+        )
+        if args.num_docs is not None:
+            rows = rows.reshard(1).take_per_shard(args.num_docs)
+        structures = rows.map(
+            lambda r: parse.try_parse_cif_content(r.get(args.cif_column), r.get("entry_id"))
+        )
+    else:
+        glob = parse.input_glob(args.input)
+        if args.num_docs is not None:
+            source = Dataset.from_iterable(parse.list_structure_files(glob, limit=args.num_docs))
+        else:
+            source = Dataset.from_files(glob)
+        structures = source.map(parse.try_parse_structure)
+
+    ds = (
+        structures
+        # try_parse_* returns None for unparseable inputs; _generate_one returns
+        # None for structures with < 2 residues or that don't fit the budget.
+        .filter(lambda s: s is not None)
+        .map(lambda s: generate._generate_one(s, context_length=args.context_length, cfg=cfg))
+        .filter(lambda d: d is not None)
     )
-    write_docs(args.out, docs, structure_name=NAME)
+
+    # Each input is its own shard, so a {shard} --out writes one file per input;
+    # otherwise collapse everything into a single file.
+    if "{shard" not in args.out:
+        ds = ds.reshard(1)
+
+    suffix = os.path.splitext(args.out)[1]
+    match suffix:
+        case ".parquet":
+            ds = ds.map(lambda d: {"document": d, "structure": NAME}).write_parquet(args.out)
+        case ".jsonl" | ".json":
+            ds = ds.write_jsonl(args.out)
+        case _:
+            typing.assert_never(suffix)
+
+    ctx = ZephyrContext(
+        max_workers=args.max_workers,
+        resources=ResourceConfig(
+            cpu=args.worker_cpu,
+            ram=args.worker_memory,
+            disk=args.worker_disk,
+        ),
+    )
+    ctx.execute(ds)
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
 
 
@@ -86,14 +146,42 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ---- generate ----------------------------------------------------------
     p_gen = sub.add_parser("generate", help="Generate training documents.")
-    p_gen.add_argument("--input", type=Path, required=True,
-                       help="PDB / mmCIF (.gz) file or directory of them.")
+    p_gen.add_argument("--input", type=str, required=True,
+                       help="Structures to read. A .cif/.pdb (.gz) file / "
+                            "directory / glob, OR a .parquet file/glob whose "
+                            "rows carry mmCIF text in --cif-column (e.g. "
+                            "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet). "
+                            "Local path or cloud URL (gs://, s3://, hf://, ...).")
+    p_gen.add_argument("--cif-column", type=str, default="cif_content",
+                       help="For parquet --input: column holding the mmCIF text "
+                            "(default: cif_content). Rows also need an 'entry_id' "
+                            "column (seeds per-structure generation).")
     p_gen.add_argument("--num-docs", type=int, default=None,
-                       help="Cap on docs produced (default: one per input).")
+                       help="Process only the first N input files (one doc per "
+                            "structure, so ~N docs). With a {shard} --out this "
+                            "writes up to N single-doc files; otherwise one file "
+                            "with up to N docs. Pair with a bounded --input — the "
+                            "glob is enumerated in full before truncating.")
     p_gen.add_argument("--context-length", type=int, default=CONTEXT_LENGTH,
                        help="Token budget per document.")
-    p_gen.add_argument("--out", type=Path, required=True,
-                       help="Output path (.parquet or .jsonl).")
+    p_gen.add_argument("--out", type=str, required=True,
+                       help="Output path (.parquet or .jsonl), local or cloud "
+                            "URL. Include a {shard} placeholder (e.g. "
+                            "corpus-{shard:05d}-of-{total:05d}.parquet) to write "
+                            "one file per input; omit it for a single file.")
+    # Zephyr worker resources. Each shard's rows are parsed + generated
+    # single-threaded, so one CPU per worker is the efficient default — raise
+    # --max-workers (not --worker-cpu) to scale out. See README.
+    p_gen.add_argument("--worker-cpu", type=float, default=1,
+                       help="CPUs per Zephyr worker task.")
+    p_gen.add_argument("--worker-memory", type=str, default="4g",
+                       help="RAM per Zephyr worker task (e.g. 4g, 8g).")
+    p_gen.add_argument("--worker-disk", type=str, default="32g",
+                       help="Ephemeral disk per Zephyr worker task (spill scratch).")
+    p_gen.add_argument("--max-workers", type=int, default=None,
+                       help="Upper bound on concurrent Zephyr workers. Actual "
+                            "count is min(max_workers, num_shards). Default: "
+                            "Zephyr's own (128 on a cluster) or ZEPHYR_MAX_WORKERS.")
     cfg_defaults = generate.GenerationConfig()
     # ---- v1-inherited knobs ----
     p_gen.add_argument("--contact-cutoff-angstrom", type=float,

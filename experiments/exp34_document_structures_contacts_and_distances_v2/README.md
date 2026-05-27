@@ -85,10 +85,11 @@ tokenizer-projection layer from scratch.
 experiments/exp34_document_structures_contacts_and_distances_v2/
 ├── vocab.py         # NAME='contacts-and-distances-v2', THINK_TOKEN,
 │                    # all_domain_tokens() = v1 ++ [<v2>, <think>]
-├── parse.py         # gemmi PDB/mmCIF reader (copied from v1; same atom vocab)
+├── parse.py         # gemmi PDB/mmCIF reader (copied from v1); fsspec/cloud
+│                    # paths + in-memory mmCIF (parquet cif_content) support
 ├── generate.py      # v2 algorithm: think-overhead pre-sampling + slot placement
-├── cli.py           # `generate` + `tokenizer` subcommands
-├── pyproject.toml   # marinfold path dep, gemmi, numpy, pyarrow
+├── cli.py           # `generate` (Zephyr pipeline) + `tokenizer` subcommands
+├── pyproject.toml   # marinfold + gemmi/numpy/pyarrow + marin-zephyr/fsspec/gcsfs/hf
 └── tests/test_structure.py
 ```
 
@@ -97,7 +98,7 @@ subpackage and appends, so the v1/v2 prefix can never silently drift.
 The CLI exposes `generate` and `tokenizer` only — inference and
 evaluation surfaces will be added once a v2-trained model exists.
 
-### Running it
+### Running it locally
 
 ```bash
 uv sync --extra test
@@ -114,6 +115,54 @@ uv run python cli.py generate \
 # Run tests.
 uv run pytest tests/ -v
 ```
+
+`generate` runs on Zephyr and auto-detects its backend: a local thread pool
+off-cluster (as above), or Iris worker tasks when launched on the cluster.
+
+### Generating documents with Zephyr on Iris
+
+In a dedicated terminal, connect to the cluster:
+
+```bash
+uv run iris --cluster=marin cluster dashboard
+```
+
+The input is the [`timodonnell/afdb-1.6M`](https://huggingface.co/datasets/timodonnell/afdb-1.6M)
+dataset: ~1,000 parquet shards (2,000 rows each, under `shard_000-999/`) whose
+`cif_content` column holds the raw mmCIF text of one AlphaFold structure per row.
+
+Smoke test first — a single shard (2,000 structures), capped to 100 docs in one file:
+
+```bash
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/shard_000-999/shard_000000.parquet" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/v2-corpus100.parquet" --worker-cpu 1 --worker-memory 4g
+```
+
+Then the full run — all 1.6M structures, one output parquet per input shard:
+
+```bash
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --out "gs://marin-us-east5/protein-structure/MarinFold/exp34/corpus_v1-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 1 --worker-memory 4g --worker-disk 64g --max-workers 512
+```
+
+Keep each on **one line** — a backslash-continuation with a trailing space
+silently truncates the command (everything after it leaks to your shell).
+
+What the arguments do:
+
+- **`--input`** accepts a `.parquet` file/glob (rows with mmCIF in `--cif-column`,
+  default `cif_content`) or a `.cif`/`.pdb` file/dir/glob. `hf://`, `gs://`, `s3://`
+  and local paths all work.
+- **`--num-docs N`** caps the run to N documents. For parquet it reads every
+  matched shard before truncating, so pair it with a single-shard `--input` (as
+  above) for a cheap sample — not the full `**/*.parquet` glob.
+- **`--out` with a `{shard}`** placeholder writes one parquet per input shard;
+  drop it (or set `--num-docs`) for a single merged file.
+- **Scale with `--max-workers`, not `--worker-cpu`.** Each shard's rows are
+  parsed + generated single-threaded, so 1 CPU/worker is the efficient default;
+  raising the CPU count just leaves cores idle. `--cpu`/`--memory` before `--`
+  size the launcher; `--worker-*` after `--` size the workers.
+
+Cancel a running job with `uv run iris --cluster=marin job stop <JOB_ID>` (find
+the id via `iris --cluster=marin job list`).
 
 Knobs that override the issue's pinned defaults are exposed as flags
 (`--think-initial-prob`, `--think-initial-geom-p`,

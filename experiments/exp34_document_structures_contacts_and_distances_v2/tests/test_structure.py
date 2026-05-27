@@ -458,7 +458,7 @@ def test_cli_generate_parses():
         "--out", "/tmp/docs.parquet",
     ])
     assert args.cmd == "generate"
-    assert args.input == Path("/tmp/x")
+    assert args.input == "/tmp/x"
     assert args.num_docs == 10
     assert args.func is cli.cmd_generate
     # v2-specific defaults wired through.

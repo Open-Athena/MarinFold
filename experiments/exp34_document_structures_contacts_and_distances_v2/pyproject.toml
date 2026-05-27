@@ -10,6 +10,10 @@ dependencies = [
     "numpy",
     "pandas>=2",
     "pyarrow",
+    "marin-zephyr",     # distributed generation on Iris
+    "fsspec",           # uniform local + cloud file IO
+    "gcsfs",            # gs:// support
+    "huggingface_hub",  # hf:// support for parquet structure datasets
 ]
 
 [project.optional-dependencies]
@@ -28,7 +32,8 @@ environments = [
 ]
 
 [tool.uv.sources]
-marinfold = { path = "../../marinfold", editable = true }
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }
 
 [tool.pytest.ini_options]
 markers = [
