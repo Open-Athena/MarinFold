@@ -130,6 +130,54 @@ def _entry_id_from_url(url: str) -> str:
     return base
 
 
+def _build_parsed_structure(structure, *, entry_id: str, source_path: str,
+                            require_single_chain: bool) -> ParsedStructure:
+    """Extract a single polymer chain from a parsed gemmi ``Structure``.
+
+    Shared core of :func:`parse_structure` (file/URL) and
+    :func:`parse_cif_content` (in-memory mmCIF text).
+
+    Raises:
+        ValueError: if the structure has no polymer chains, requires
+            single-chain and has multiple, or has no residues.
+    """
+    # Populate entity / polymer metadata. AFDB mmCIFs ship with it
+    # baked in but hand-rolled PDBs (and bare PDBs without TER records)
+    # need this call before chain.get_polymer() returns anything.
+    structure.setup_entities()
+    if len(structure) == 0:
+        raise ValueError(f"{source_path}: no models in structure")
+    model = structure[0]
+    polymer_chains = [ch for ch in model if ch.get_polymer()]
+    if not polymer_chains:
+        raise ValueError(f"{source_path}: no polymer chain")
+    if require_single_chain and len(polymer_chains) != 1:
+        raise ValueError(
+            f"{source_path}: expected single polymer chain, found {len(polymer_chains)}. "
+            "Pass require_single_chain=False to take the first."
+        )
+    chain = polymer_chains[0]
+    polymer = chain.get_polymer()
+    residues: list[Residue] = []
+    for idx, res in enumerate(polymer, start=1):
+        name = res.name.strip()
+        if name not in _CANONICAL_20:
+            name = "UNK"
+        residues.append(Residue(
+            index=idx,
+            name=name,
+            plddt=_residue_plddt(res),
+            atoms=_vocab_safe_atoms(res),
+        ))
+    if not residues:
+        raise ValueError(f"{source_path}: no residues parsed")
+    return ParsedStructure(
+        entry_id=entry_id,
+        residues=tuple(residues),
+        source_path=source_path,
+    )
+
+
 def parse_structure(
     path,
     *,
@@ -151,43 +199,40 @@ def parse_structure(
     with fsspec.open(url, "rb", compression="infer") as f:
         data = f.read()
     structure = gemmi.read_structure_string(data, format=_coor_format(url))
-    # Populate entity / polymer metadata. AFDB mmCIFs ship with it
-    # baked in but hand-rolled PDBs (and bare PDBs without TER records)
-    # need this call before chain.get_polymer() returns anything.
-    structure.setup_entities()
-    if len(structure) == 0:
-        raise ValueError(f"{path}: no models in structure")
-    model = structure[0]
-    polymer_chains = [ch for ch in model if ch.get_polymer()]
-    if not polymer_chains:
-        raise ValueError(f"{path}: no polymer chain")
-    if require_single_chain and len(polymer_chains) != 1:
-        raise ValueError(
-            f"{path}: expected single polymer chain, found {len(polymer_chains)}. "
-            "Pass require_single_chain=False to take the first."
-        )
-    chain = polymer_chains[0]
-    polymer = chain.get_polymer()
-    residues: list[Residue] = []
-    for idx, res in enumerate(polymer, start=1):
-        name = res.name.strip()
-        if name not in _CANONICAL_20:
-            name = "UNK"
-        residues.append(Residue(
-            index=idx,
-            name=name,
-            plddt=_residue_plddt(res),
-            atoms=_vocab_safe_atoms(res),
-        ))
-    if not residues:
-        raise ValueError(f"{url}: no residues parsed")
     # read_structure_string leaves structure.name empty (no filename to
     # derive it from), so fall back to the URL basename.
-    entry_id = structure.name or _entry_id_from_url(url)
-    return ParsedStructure(
-        entry_id=entry_id,
-        residues=tuple(residues),
+    return _build_parsed_structure(
+        structure,
+        entry_id=structure.name or _entry_id_from_url(url),
         source_path=url,
+        require_single_chain=require_single_chain,
+    )
+
+
+def parse_cif_content(
+    cif_text,
+    entry_id: str | None = None,
+    *,
+    require_single_chain: bool = True,
+) -> ParsedStructure:
+    """Parse an mmCIF document held in memory (e.g. a parquet ``cif_content`` cell).
+
+    ``cif_text`` may be ``str`` or ``bytes``. ``entry_id`` provides provenance
+    when the caller knows it (e.g. an ``entry_id`` column); otherwise it falls
+    back to the structure's own name.
+
+    Raises:
+        ValueError: same conditions as :func:`parse_structure`.
+    """
+    import gemmi
+
+    structure = gemmi.read_structure_string(cif_text, format=gemmi.CoorFormat.Mmcif)
+    resolved = entry_id or structure.name or "<cif_content>"
+    return _build_parsed_structure(
+        structure,
+        entry_id=resolved,
+        source_path=resolved,
+        require_single_chain=require_single_chain,
     )
 
 
@@ -245,6 +290,15 @@ def try_parse_structure(path) -> "ParsedStructure | None":
         return parse_structure(path)
     except ValueError as exc:
         warnings.warn(f"skipping {path}: {exc}", stacklevel=2)
+        return None
+
+
+def try_parse_cif_content(cif_text, entry_id: str | None = None) -> "ParsedStructure | None":
+    """``.map``-friendly :func:`parse_cif_content`: ``None`` (with a warning) on failure."""
+    try:
+        return parse_cif_content(cif_text, entry_id)
+    except ValueError as exc:
+        warnings.warn(f"skipping {entry_id or '<cif_content>'}: {exc}", stacklevel=2)
         return None
 
 

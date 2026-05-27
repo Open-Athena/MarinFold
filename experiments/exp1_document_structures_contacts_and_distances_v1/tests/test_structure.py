@@ -633,6 +633,38 @@ def test_cmd_generate_num_docs_with_shard_pattern_writes_one_file_per_input(mult
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_parquet_cif_content_input(tmp_path: Path):
+    """Parquet input: rows carrying mmCIF text in cif_content are parsed into docs."""
+    import gemmi
+
+    pa = pytest.importorskip("pyarrow")
+    pq = pytest.importorskip("pyarrow.parquet")
+    structure = gemmi.read_pdb_string(_PDB_FIXTURE)
+    structure.setup_entities()
+    cif_text = structure.make_mmcif_document().as_string()
+
+    shards = tmp_path / "shards"
+    shards.mkdir()
+    pq.write_table(
+        pa.table({
+            "entry_id": ["AF-TEST1-F1", "AF-TEST2-F1"],
+            "cif_content": [cif_text, cif_text],
+            "seq_len": [5, 5],  # extra column the column-selecting loader ignores
+        }),
+        str(shards / "shard_000000.parquet"),
+    )
+    out = tmp_path / "docs.parquet"
+    args = cli.build_parser().parse_args(
+        ["generate", "--input", f"{shards}/*.parquet", "--out", str(out)]
+    )
+    cli.cmd_generate(args)
+
+    tbl = pq.read_table(str(out))
+    assert set(tbl.column_names) == {"document", "structure"}
+    assert tbl.num_rows == 2
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
 def test_cmd_generate_jsonl_writes_one_doc_per_line(tiny_pdb_path, tmp_path: Path):
     """JSONL path: pass-through — one JSON-encoded doc string per line."""
     import json

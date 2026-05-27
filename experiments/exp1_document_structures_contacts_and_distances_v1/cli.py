@@ -55,6 +55,15 @@ def _seed_n_values(s: str) -> tuple[int, ...]:
     return tuple(out)
 
 
+# Input extensions that mean "parquet rows with an mmCIF column", as opposed to
+# directories/globs of individual .cif/.pdb structure files.
+_PARQUET_INPUT_SUFFIXES = (".parquet", ".pq")
+
+
+def _is_parquet_input(spec: str) -> bool:
+    return os.path.splitext(spec)[1].lower() in _PARQUET_INPUT_SUFFIXES
+
+
 # --------------------------------------------------------------------------
 # Subcommand handlers
 # --------------------------------------------------------------------------
@@ -69,16 +78,33 @@ def cmd_generate(args: argparse.Namespace) -> None:
         rank_std=args.rank_std,
         residue_plddt_min=args.residue_plddt_min,
     )
-    glob = parse.input_glob(args.input)
-    if args.num_docs is not None:
-        source = Dataset.from_iterable(parse.list_structure_files(glob, limit=args.num_docs))
+    # Two input modalities, dispatched on the --input extension:
+    #   * parquet — each row holds an mmCIF in --cif-column plus an entry_id
+    #     (e.g. the timodonnell/afdb-1.6M dataset); read those columns and parse
+    #     the text in memory.
+    #   * structure files — each path is a .cif/.pdb that gemmi reads directly.
+    # entry_id matters either way: generate_one seeds its RNG from it.
+    if _is_parquet_input(args.input):
+        rows = Dataset.from_files(args.input).load_parquet(
+            columns=[args.cif_column, "entry_id"]
+        )
+        if args.num_docs is not None:
+            # Rows span many shards, so funnel to one shard before capping.
+            rows = rows.reshard(1).take_per_shard(args.num_docs)
+        structures = rows.map(
+            lambda r: parse.try_parse_cif_content(r.get(args.cif_column), r.get("entry_id"))
+        )
     else:
-        source = Dataset.from_files(glob)
+        glob = parse.input_glob(args.input)
+        if args.num_docs is not None:
+            source = Dataset.from_iterable(parse.list_structure_files(glob, limit=args.num_docs))
+        else:
+            source = Dataset.from_files(glob)
+        structures = source.map(parse.try_parse_structure)
 
     ds = (
-        source
-        .map(parse.try_parse_structure)
-        # try_parse_structure returns None for unparseable files.
+        structures
+        # try_parse_* returns None for unparseable inputs.
         .filter(lambda s: s is not None)
         .filter(generate.at_least_two_residuals)
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
@@ -201,8 +227,15 @@ def build_parser() -> argparse.ArgumentParser:
     # ---- generate ----------------------------------------------------------
     p_gen = sub.add_parser("generate", help="Generate training documents.")
     p_gen.add_argument("--input", type=str, required=True,
-                       help="PDB / mmCIF (.gz) file or directory of them; "
-                            "local path or cloud URL (gs://, s3://, ...).")
+                       help="Structures to read. Either a .cif/.pdb (.gz) file / "
+                            "directory / glob, OR a .parquet file/glob whose rows "
+                            "carry mmCIF text in --cif-column (e.g. "
+                            "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet). "
+                            "Local path or cloud URL (gs://, s3://, hf://, ...).")
+    p_gen.add_argument("--cif-column", type=str, default="cif_content",
+                       help="For parquet --input: column holding the mmCIF text "
+                            "(default: cif_content). Rows also need an 'entry_id' "
+                            "column (seeds per-structure generation).")
     p_gen.add_argument("--num-docs", type=int, default=None,
                        help="Process only the first N input files (one doc per "
                             "structure, so ~N docs). With a {shard} --out this "

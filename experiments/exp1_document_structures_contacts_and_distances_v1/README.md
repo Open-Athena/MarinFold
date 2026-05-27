@@ -144,32 +144,38 @@ Next, in a dedicated terminal window, please connect to the Iris cluster:
 uv run iris --cluster=marin cluster dashboard
 ```
 
-Then, in another dedicated terminal window, run the document generation job:
+The input is the [`timodonnell/afdb-1.6M`](https://huggingface.co/datasets/timodonnell/afdb-1.6M)
+dataset: ~1,000 parquet shards (2,000 rows each, under `shard_000-999/`) whose
+`cif_content` column holds the raw mmCIF text of one AlphaFold structure per row.
+
+Smoke test first — a single shard (2,000 structures), capped to 100 docs in one file:
 
 ```bash
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "gs://public-datasets-deepmind-alphafold-v4/AF-A0A009*_v4.cif" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 4 --worker-memory 16g --worker-disk 64g
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/shard_000-999/shard_000000.parquet" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus.parquet" --worker-cpu 4 --worker-memory 16g
 ```
 
-Keep it on **one line** — a backslash-continuation with a trailing space silently
-truncates the command (everything after it leaks to your shell).
+Then the full run — all 1.6M structures, one output parquet per input shard:
+
+```bash
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 4 --worker-memory 16g --worker-disk 64g
+```
+
+Keep each on **one line** — a backslash-continuation with a trailing space
+silently truncates the command (everything after it leaks to your shell).
 
 What the arguments do:
 
-- **`--input` must be a bounded prefix glob, never the bare bucket root.** The
-  driver enumerates every matching path before work starts, so `gs://…-v4/`
-  (hundreds of millions of objects) hangs regardless of `--num-docs`. Verify a
-  real prefix first — the exact key layout / extension may differ:
-  ```bash
-  gcloud storage ls "gs://public-datasets-deepmind-alphafold-v4/AF-A0A009*" | head
-  ```
-- **`--num-docs N`** processes the first N matched inputs (≈ N docs, one per
-  structure). It bounds parsing, not listing — so pair it with a tight prefix.
-- **`--out` with a `{shard}`** placeholder writes one parquet per input; drop the
-  placeholder for a single merged file.
-- **`--cpu`/`--memory` before `--`** size the launcher (the lister/orchestrator);
-  **`--worker-*` after `--`** size the Zephyr worker tasks that download, parse,
-  and write. Keep the launcher under 4 GB to avoid needing
-  `--enable-extra-resources`.
+- **`--input`** accepts a `.parquet` file/glob (rows with mmCIF in `--cif-column`,
+  default `cif_content`) or a `.cif`/`.pdb` file/dir/glob. `hf://`, `gs://`, `s3://`
+  and local paths all work.
+- **`--num-docs N`** caps the run to N documents. For parquet it reads every
+  matched shard before truncating, so pair it with a single-shard `--input` (as
+  above) for a cheap sample — not the full `**/*.parquet` glob.
+- **`--out` with a `{shard}`** placeholder writes one parquet per input shard;
+  drop the placeholder (or set `--num-docs`) for a single merged file.
+- **`--cpu`/`--memory` before `--`** size the launcher (lists shards + orchestrates);
+  **`--worker-*` after `--`** size the Zephyr workers that download, parse, and
+  write. Keep the launcher under 4 GB to avoid needing `--enable-extra-resources`.
 
 Cancel a running job with `uv run iris --cluster=marin job stop <JOB_ID>` (find
 the id via `iris --cluster=marin job list`).

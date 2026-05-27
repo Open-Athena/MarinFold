@@ -11,6 +11,7 @@ dependencies = [
     "marin-zephyr",
     "fsspec", # uniform local + cloud file IO for structure inputs
     "gcsfs", # gs:// support for AFDB / marin buckets
+    "huggingface_hub", # hf:// support for parquet structure datasets
 ]
 
 [project.optional-dependencies]
