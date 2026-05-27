@@ -365,4 +365,71 @@ number for the algorithm at this model. The full +42.81% should be
 read as "what's achievable when the algorithm's range/K knobs are
 let to overfit the eval set."
 
+## Addendum: re-tuning the algorithm for 1.5B
+
+After establishing that the 1B-tuned pipeline only gives +9.04% on
+1.5B, I re-tuned the algorithm from scratch on 1.5B using the **same
+10 train proteins**, then evaluated on the 10 held-out proteins.
+
+Two hypotheses were tested on train:
+
+1. **Drop stage A (sampled-uniform contacts).** On 1.5B the
+   sampled-uniform stage *hurts* (−22% on its own); the 99%
+   medium-range bias that motivated it on 1B is a 1B-specific
+   pathology.
+2. **Use fewer iteration rounds.** Long proteins on 1.5B over-iterate
+   under R=4. Test R=4 → R=3 → R=2.
+
+1.5B sweep on the 10 train proteins:
+
+| run | mean LDDT | median | wall (s) | lift vs 1.5B baseline |
+|---|---:|---:|---:|---:|
+| 1.5B baseline (naive) | 0.2627 | 0.2577 | 1866 | — |
+| 1B headline algorithm transferred | 0.2864 | 0.2665 | 4230 | +9.0% |
+| 1.5B iter R=4 grow `[0.5, 1, 1.5, 2.5]` from baseline | 0.3295 | 0.2767 | 4272 | +25.5% |
+| 1.5B iter R=4 grow `[0.5, 1, 1.5, 2.0]` (smaller K_final) | 0.3320 | 0.2780 | 4187 | +26.4% |
+| 1.5B iter R=3 grow `[0.5, 1.0, 1.5]` from baseline | 0.3398 | 0.2925 | 2732 | +29.4% |
+| **1.5B iter R=2 grow `[0.5, 1.0]` from baseline (WINNER)** | **0.3403** | **0.3165** | **1531** | **+29.6%** |
+
+The 1.5B winner is `iter_R2_grow_from_baseline`: two rounds, K=0.5L
+then K=1.0L, min_contact_prob=0.1, prior = the naive baseline
+distogram. No sampling stage. It is also faster than the 1B winner
+(~1.7× over baseline vs ~4× for 1B).
+
+### Cross-model held-out evaluation
+
+The 1.5B-tuned algorithm applied to **both** models on the 10
+held-out proteins (per-protein numbers in
+`data/heldout_1B_iter_R2_scores.csv` and
+`data/heldout_1.5B_iter_R2_scores.csv`):
+
+| model | baseline | tuned (iter R=2 grow) | lift |
+|---|---:|---:|---:|
+| 1B | 0.2797 | **0.3314** | **+18.5%** |
+| 1.5B | 0.3150 | **0.3605** | **+14.4%** |
+
+(For reference, the original 1B-headline algorithm gives 0.3685 on
+the same 10 held-out proteins, +31.75%. So when each model gets
+its own tuned algorithm, 1.5B's absolute LDDT comes close to 1B's
+but the relative lift is smaller — partly because 1.5B has a
+stronger baseline on this set.)
+
+**Reproducer (1.5B winner on either model):**
+
+```sh
+uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
+    --train-csv data/heldout_proteins.csv \
+    --out outputs_heldout_1.5B \
+    --model 1.5B \
+    --algorithm heldout_1.5B_iter_R2_grow_05_10 \
+    --n-rounds 2 \
+    --k-contacts-per-L-per-round 0.5 1.0 \
+    --k-distances-per-L-per-round 0.0 0.0 \
+    --min-contact-prob 0.1 \
+    --prior-name distogram_heldout_1.5B_baseline.npz
+```
+
+(`--prior-name` is the naive-baseline distogram for the same model;
+generate it first with `run_baseline.py` + `snapshot_distograms.py`.)
+
 Full per-protein numbers and discussion in [RESULTS\_LOG.md](RESULTS_LOG.md).

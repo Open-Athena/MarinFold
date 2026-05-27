@@ -13,4 +13,12 @@ __pycache__/
 *.pyc
 .venv/
 uv.lock
-slides.vrb
+
+# LaTeX build artifacts (committed PDFs are the deliverable)
+*.aux
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.log

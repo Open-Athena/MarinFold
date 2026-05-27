@@ -54,11 +54,12 @@
     \begin{tabular}{@{}rl@{}}
       \large train (10 proteins, 1B): & {\Large\color{green}\textbf{+42.81\%}} (mean LDDT 0.250 \textrightarrow{} 0.356)\\[0.4em]
       \large held-out (10 new, 1B):     & {\Large\color{green}\textbf{+31.75\%}} (0.280 \textrightarrow{} 0.369) — \emph{generalizes}\\[0.4em]
-      \large same algo on 1.5B (train): & {\Large\color{orange}\textbf{+9.04\%}} — \emph{does NOT transfer}\\
+      \large 1.5B re-tuned (train):     & {\Large\color{green}\textbf{+29.57\%}} (0.263 \textrightarrow{} 0.340) — \emph{shape transfers, knobs don't}\\[0.4em]
+      \large 1.5B re-tuned (held-out):  & {\Large\color{green}\textbf{+14.44\%}} (0.315 \textrightarrow{} 0.361)\\
     \end{tabular}
     \\[1.2cm]
-    {\small\color{navy}\codeS{iter\_R4\_grow\_on\_sampled\_uniform\_M5} —
-      sampled-uniform contact prior + iterative growing-K seeding}\\[0.6cm]
+    {\small\color{navy}\codeS{iter\_R4\_grow\_on\_sampled\_uniform\_M5} (1B) ·
+      \codeS{iter\_R2\_grow\_from\_baseline} (1.5B)}\\[0.6cm]
     {\small\color{grey}\ttfamily Issue \#27 \textperiodcentered\
       branch exp/27-improved-inference-algorithm \textperiodcentered\
       PR \#32}
@@ -386,11 +387,11 @@ for (i, j) in all pairs:
           on 1B. The algorithmic shape transfers; the knobs don't.
     \item \textbf{Reproducer command is in the README.} Total wall
           $\sim$5613\,s on a single A100 40\,GB in bf16.
-    \item \textbf{Closing this experiment.} Next directions worth
-          chasing (not in scope here): re-probe + re-tune for 1.5B;
-          extend iteration with cross-protein structural priors;
-          replace post-hoc range-token uniform with a learned
-          range-aware decoding head.
+    \item \textbf{Re-tuning for 1.5B (addendum).} A separate sweep
+          on the same 10 train proteins lifts 1.5B from 0.263 to
+          \textbf{0.340} (+29.6\%); the winner is
+          \codeS{iter\_R2\_grow\_from\_baseline} — \emph{no} stage A,
+          fewer rounds. Generalizes to +14.4\% on held-out.
   \end{itemize}
 \end{frame}
 
@@ -421,6 +422,92 @@ uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
   \end{lstlisting}
   {\tiny\color{grey}\ttfamily Branch: exp/27-improved-inference-algorithm \textperiodcentered\
     PR \#32 \textperiodcentered\ See README.md and RESULTS\_LOG.md for the full story.}
+\end{frame}
+
+% --- Addendum slide A: re-tuning for 1.5B ---
+\begin{frame}{Addendum: re-tuning for 1.5B}
+  \textbf{Question:} the 1B-tuned pipeline only gives +9\% on 1.5B
+  (slide 8). If we re-tune \emph{from scratch} on the same 10 train
+  proteins, can the 1.5B do better?
+  \vspace{0.4em}
+  \begin{center}\small
+    \begin{tabular}{lrrr@{\hspace{1.4em}}l}
+      \toprule
+      1.5B sweep on the 10 train proteins & mean LDDT & median & wall (s) & lift \\
+      \midrule
+      baseline (naive)                                   & 0.2627 & 0.2577 & 1866 & --- \\
+      1B headline transferred (iter R=4 grow on sampled) & 0.2864 & 0.2665 & 4230 & \textcolor{orange}{+9.0\%} \\
+      iter R=4 grow [0.5,1,1.5,2.5] from baseline (drop stage A) & 0.3295 & 0.2767 & 4272 & \textcolor{green}{+25.5\%} \\
+      iter R=4 grow [0.5,1,1.5,2.0] (smaller final K)    & 0.3320 & 0.2780 & 4187 & \textcolor{green}{+26.4\%} \\
+      iter R=3 grow [0.5,1.0,1.5]                        & 0.3398 & 0.2925 & 2732 & \textcolor{green}{+29.4\%} \\
+      \textbf{iter R=2 grow [0.5,1.0] from baseline (WINNER)} & \textbf{0.3403} & 0.3165 & \textbf{1531} & \textcolor{green}{\textbf{+29.6\%}} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vspace{0.4em}
+  \begin{itemize}
+    \setlength\itemsep{0.15em}
+    \item \textbf{Sampling stage A actively hurts on 1.5B.} Dropping
+          it (iter alone from baseline prior) jumps from +9\% to
+          +25\%. The 99\% medium-range bias that justified
+          sampled-uniform on 1B does not exist on 1.5B.
+    \item \textbf{1.5B wants FEWER rounds.} R=4 \textrightarrow{} R=3
+          \textrightarrow{} R=2 monotonically improves; R=2 is also
+          $\sim$2.8$\times$ faster than the 1B winner.
+    \item Long proteins regress under over-iteration on 1.5B;
+          shorter rollouts protect them.
+  \end{itemize}
+\end{frame}
+
+% --- Addendum slide B: cross-model heldout per-protein ---
+\begin{frame}{Cross-model held-out: 1.5B-tuned algorithm on both models}
+  \scriptsize \codeS{iter\_R2\_grow\_from\_baseline} — kc=[0.5L, 1.0L], min\_p=0.1,
+  prior = naive-baseline distogram. Applied to both 1B and 1.5B on the
+  10 held-out proteins.
+  \vspace{0.2em}
+  \begin{center}\scriptsize
+    \begin{tabular}{lrrr@{\hspace{0.6em}}r@{\hspace{1.2em}}rr@{\hspace{0.6em}}r}
+      \toprule
+       &  & \multicolumn{3}{c}{\textbf{1B}} & \multicolumn{3}{c}{\textbf{1.5B}}\\
+      \cmidrule(lr){3-5}\cmidrule(lr){6-8}
+      stem & L & baseline & tuned & $\Delta$\% & baseline & tuned & $\Delta$\%\\
+      \midrule
+      7t9r &  38 & 0.3455 & 0.3613 & +4.6 & 0.4053 & 0.3729 & $-$8.0 \\
+      7y8i &  97 & 0.4689 & 0.5709 & +21.8 & 0.6151 & 0.7022 & +14.2 \\
+      7zoi & 151 & 0.2362 & 0.2584 & +9.4 & 0.2318 & 0.3218 & +38.8 \\
+      7wz5 & 161 & 0.2222 & 0.3164 & +42.4 & 0.2195 & 0.3203 & +45.9 \\
+      8bau & 189 & 0.2518 & 0.3043 & +20.8 & 0.2594 & 0.2918 & +12.5 \\
+      8gmy & 236 & 0.2746 & 0.2875 & +4.7 & 0.3696 & 0.3913 & +5.9 \\
+      7xg9 & 288 & 0.2980 & 0.3720 & +24.8 & 0.3100 & 0.3685 & +18.9 \\
+      7x4p & 307 & 0.2319 & 0.3142 & +35.5 & 0.2294 & 0.2866 & +24.9 \\
+      7v3o & 328 & 0.1594 & 0.1971 & +23.7 & 0.1633 & 0.1790 & +9.6 \\
+      7qsj & 373 & 0.3080 & 0.3321 & +7.8 & 0.3469 & 0.3707 & +6.9 \\
+      \midrule
+      \textbf{mean} & & \textbf{0.2797} & \textbf{0.3314} & \textbf{+18.5} & \textbf{0.3150} & \textbf{0.3605} & \textbf{+14.4} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vspace{0.3em}
+  \begin{itemize}\footnotesize
+    \setlength\itemsep{0.1em}
+    \item \textbf{Both models gain.} 1.5B-tuned algorithm lifts 1.5B
+          by +14.4\% and 1B by +18.5\% on held-out. Every protein
+          gains on 1B; 9/10 gain on 1.5B (7t9r, L=38, the only
+          regression — tiny tail proteins are fragile).
+    \item \textbf{Model-specific tuning matters.} For comparison, the
+          \emph{1B-tuned} algorithm (iter R=4 grow on sampled M5)
+          gives +31.75\% on 1B held-out — almost 2$\times$ the lift
+          of the 1.5B-tuned algorithm on 1B. Each model's optimal
+          knobs differ.
+    \item \textbf{1.5B baseline (0.315) is already stronger than 1B
+          baseline (0.280)} on this held-out set, so the absolute
+          tuned-1.5B LDDT (0.361) is competitive with tuned-1B
+          under either algorithm.
+    \item \textbf{Protein-set overfit is similar magnitude} on both
+          models ($\sim$15pp drop train\,\textrightarrow\,held-out
+          on 1.5B; $\sim$11pp on 1B). Algorithmic SHAPE transfers,
+          knobs (R, kc schedule, stage A on/off) are model-specific.
+  \end{itemize}
 \end{frame}
 
 \end{document}
