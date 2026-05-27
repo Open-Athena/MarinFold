@@ -151,13 +151,13 @@ dataset: ~1,000 parquet shards (2,000 rows each, under `shard_000-999/`) whose
 Smoke test first — a single shard (2,000 structures), capped to 100 docs in one file:
 
 ```bash
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/shard_000-999/shard_000000.parquet" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus100.parquet" --worker-cpu 4 --worker-memory 16g
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/shard_000-999/shard_000000.parquet" --num-docs 100 --out "gs://marin-tmp-us-central1/marin-fold-tests/corpus100.parquet" --worker-cpu 1 --worker-memory 4g
 ```
 
 Then the full run — all 1.6M structures, one output parquet per input shard:
 
 ```bash
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --out "gs://marin-us-east5/protein-structure/MarinFold/exp1/corpus_v1-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 4 --worker-memory 16g --worker-disk 64g
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --out "gs://marin-us-east5/protein-structure/MarinFold/exp1/corpus_v1-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 1 --max-workers 512 --worker-memory 4g --worker-disk 64g
 ```
 
 Keep each on **one line** — a backslash-continuation with a trailing space
