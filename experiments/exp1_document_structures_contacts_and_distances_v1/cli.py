@@ -30,6 +30,7 @@ from marinfold import (
     write_eval,
     write_predictions,
 )
+from fray import ResourceConfig
 from zephyr import Dataset, ZephyrContext
 
 import generate
@@ -77,11 +78,17 @@ def cmd_generate(args: argparse.Namespace) -> None:
         .map(lambda s: generate.generate_one(s, context_length=args.context_length, cfg=cfg))
         # Sometimes generate_one returns `None`.
         .filter(lambda x: x is not None)
-        # Preserve single-file --out semantics.
-        .reshard(1)
     )
 
+    # from_files gives each input file its own shard, so an --out pattern with a
+    # {shard} placeholder writes one output file per input. Without it, collapse
+    # to a single shard for single-file output.
+    if "{shard" not in args.out:
+        ds = ds.reshard(1)
+
     if args.num_docs is not None:
+        # Per-shard cap: a global limit for single-file output, a per-input
+        # limit when --out is sharded.
         ds = ds.take_per_shard(args.num_docs)
 
     # os.path.splitext keeps cloud URLs intact (Path would collapse the
@@ -100,8 +107,16 @@ def cmd_generate(args: argparse.Namespace) -> None:
         case _:
             typing.assert_never(suffix)
 
-    # Default client will auto-detect environment.
-    ZephyrContext().execute(ds)
+    # Default client auto-detects the environment (Iris on-cluster, else local).
+    ctx = ZephyrContext(
+        max_workers=args.max_workers,
+        resources=ResourceConfig(
+            cpu=args.worker_cpu,
+            ram=args.worker_memory,
+            disk=args.worker_disk,
+        ),
+    )
+    ctx.execute(ds)
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
 
 
@@ -189,11 +204,15 @@ def build_parser() -> argparse.ArgumentParser:
                        help="PDB / mmCIF (.gz) file or directory of them; "
                             "local path or cloud URL (gs://, s3://, ...).")
     p_gen.add_argument("--num-docs", type=int, default=None,
-                       help="Cap on docs produced (default: one per input).")
+                       help="Cap on docs produced. A global cap for single-file "
+                            "output; a per-input cap when --out is sharded.")
     p_gen.add_argument("--context-length", type=int, default=CONTEXT_LENGTH,
                        help="Token budget per document.")
     p_gen.add_argument("--out", type=str, required=True,
-                       help="Output path (.parquet or .jsonl); local or cloud URL.")
+                       help="Output path (.parquet or .jsonl), local or cloud "
+                            "URL. Include a {shard} placeholder (e.g. "
+                            "corpus-{shard:05d}-of-{total:05d}.parquet) to write "
+                            "one file per input; omit it for a single file.")
     # Algorithm knobs (defaults reproduce contactdoc).
     cfg_defaults = generate.GenerationConfig()
     p_gen.add_argument("--contact-cutoff-angstrom", type=float,
@@ -208,6 +227,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen.add_argument("--distance-rank-mean", type=float,
                        default=cfg_defaults.distance_rank_mean)
     p_gen.add_argument("--rank-std", type=float, default=cfg_defaults.rank_std)
+    # Zephyr worker resources. These size the per-worker tasks that download +
+    # gemmi-parse structures, generate docs, and run the reshard/write — NOT
+    # the `iris job run` launcher. Zephyr's own defaults (1 CPU / 1 GB / 16 GB)
+    # OOM on parse-heavy work, so we default higher here.
+    p_gen.add_argument("--worker-cpu", type=float, default=2,
+                       help="CPUs per Zephyr worker task.")
+    p_gen.add_argument("--worker-memory", type=str, default="8g",
+                       help="RAM per Zephyr worker task (e.g. 8g, 16g).")
+    p_gen.add_argument("--worker-disk", type=str, default="32g",
+                       help="Ephemeral disk per Zephyr worker task (spill "
+                            "scratch; e.g. 32g, 64g).")
+    p_gen.add_argument("--max-workers", type=int, default=None,
+                       help="Upper bound on concurrent Zephyr workers. Actual "
+                            "count is min(max_workers, num_input_shards), so it "
+                            "can't exceed the number of matched files. Default: "
+                            "Zephyr's own (128 on a cluster, CPU count locally; "
+                            "or the ZEPHYR_MAX_WORKERS env var).")
     p_gen.set_defaults(func=cmd_generate)
 
     # ---- shared inference args (used by infer + evaluate) ------------------

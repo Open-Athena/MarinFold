@@ -608,6 +608,18 @@ def test_cmd_generate_accepts_explicit_glob(multi_pdb_dir, tmp_path: Path):
 
 
 @pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
+def test_cmd_generate_sharded_out_writes_one_file_per_input(multi_pdb_dir, tmp_path: Path):
+    """A {shard} placeholder in --out writes one parquet file per input file."""
+    pq = pytest.importorskip("pyarrow.parquet")
+    out = tmp_path / "corpus-{shard:05d}-of-{total:05d}.parquet"
+    cli.cmd_generate(_parse_generate_args(multi_pdb_dir, out))
+
+    files = sorted(tmp_path.glob("corpus-*.parquet"))
+    assert len(files) == 5, f"expected one parquet per input, got {len(files)}"
+    assert all(pq.read_table(str(f)).num_rows >= 1 for f in files)
+
+
+@pytest.mark.skipif(not _HAS_GEMMI, reason="gemmi not installed")
 def test_cmd_generate_jsonl_writes_one_doc_per_line(tiny_pdb_path, tmp_path: Path):
     """JSONL path: pass-through — one JSON-encoded doc string per line."""
     import json
