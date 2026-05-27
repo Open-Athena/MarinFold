@@ -1,9 +1,24 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Library function: the headline inference algorithm from exp27.
+"""Library functions: the two exp27 winning inference algorithms.
 
-The algorithm is ``iter_R4_grow_on_sampled_uniform_M5``:
+There are TWO library entry points here:
+
+* :func:`predict_distogram_combined` — 1B-tuned headline
+  (``iter_R4_grow_on_sampled_uniform_M5``). Sampled-uniform prior +
+  iter R=4 grow. +42.81% on 1B train, +31.75% on 1B held-out.
+
+* :func:`predict_distogram_iter_from_baseline` — 1.5B-tuned addendum
+  (``iter_R2_grow_from_baseline``). No sampling stage; naive
+  baseline as the prior + iter R=2 grow ``[0.5, 1.0]``. +29.57% on
+  1.5B train, +14.44% on 1.5B held-out. Also lifts 1B by +18.5% on
+  held-out, but for 1B the headline `combined` variant above is
+  stronger.
+
+------
+
+**1B-tuned algorithm — :func:`predict_distogram_combined`:**
 
   Stage A — sampled-uniform contact prior:
     Sample M=5 independent contact-only rollouts from the base prompt
@@ -19,6 +34,14 @@ The algorithm is ``iter_R4_grow_on_sampled_uniform_M5``:
     distogram (range-ordered long>medium>short, ``min_contact_prob=0.1``),
     re-read distances under the new prefix. K per round grows
     0.5L, 1.0L, 1.5L, 2.5L.
+
+**1.5B-tuned algorithm — :func:`predict_distogram_iter_from_baseline`:**
+
+  No sampling stage. The prior is just the naive baseline distogram.
+  Then run 2 rounds of growing-K refinement with kc=[0.5L, 1.0L].
+  Stage A actively hurt on 1.5B (the 99% medium-range bias was a
+  1B-specific pathology) and 1.5B over-iterates on long proteins, so
+  fewer rounds win.
 
 Standard expected-distance readout (``E[d] = sum(probs * midpoints)``)
 on the final distogram. No post-hoc sharpening (sharpening only helps
@@ -76,6 +99,9 @@ from sampled_contacts_inference import (  # noqa: E402
 from iterative_inference import (  # noqa: E402
     extract_round_statements,
     predict_distogram_with_statements,
+)
+from naive_inference import (  # noqa: E402
+    predict_distogram as predict_distogram_naive,
 )
 
 
@@ -320,6 +346,189 @@ def predict_distogram_combined_from_cif(
     seq = read_canonical_sequence(gt_cif)
     pair_mask = build_gt_shell_mask(gt_cif, seq.n_residues)
     return predict_distogram_combined(
+        rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
+        **algorithm_kwargs,
+    )
+
+
+# Default knobs for the 1.5B-tuned variant. Reproduce the +29.6%-on-
+# train / +14.4%-on-held-out result reported in the README addendum.
+DEFAULTS_1_5B = {
+    "n_rounds": 2,
+    "k_contacts_per_L_per_round": (0.5, 1.0),
+    "min_contact_prob": 0.1,
+    "order": "long_med_short",
+    "batch_size": 128,
+    "top_k_logprobs": 128,
+}
+
+
+def predict_distogram_iter_from_baseline(
+    *,
+    rt: Runtime,
+    residue_names: list[str],
+    pair_mask: np.ndarray,
+    n_rounds: int = DEFAULTS_1_5B["n_rounds"],
+    k_contacts_per_L_per_round: tuple[float, ...] = DEFAULTS_1_5B["k_contacts_per_L_per_round"],
+    min_contact_prob: float = DEFAULTS_1_5B["min_contact_prob"],
+    order: str = DEFAULTS_1_5B["order"],
+    batch_size: int = DEFAULTS_1_5B["batch_size"],
+    top_k_logprobs: int = DEFAULTS_1_5B["top_k_logprobs"],
+    prior_distogram: np.ndarray | None = None,
+    include_history: bool = False,
+    include_intermediate_distograms: bool = False,
+) -> tuple[np.ndarray, dict]:
+    """Run the 1.5B-tuned exp27 algorithm on one protein.
+
+    Algorithm: ``iter_R2_grow_from_baseline``. Two rounds of growing-K
+    refinement (``kc=[0.5L, 1.0L]``, ``min_contact_prob=0.1``) on top
+    of the naive baseline distogram. No sampling stage. Tuned for the
+    1.5B checkpoint (sampling stage A actively hurt 1.5B, and 1.5B
+    over-iterates on long proteins, so fewer rounds win).
+
+    Args:
+        rt: A loaded :class:`naive_inference.Runtime` (one vLLM
+            instance pinned to the current GPU). Should be the 1.5B
+            model for the reported lifts to reproduce; works on 1B
+            too but the 1B-tuned :func:`predict_distogram_combined` is
+            a stronger choice for 1B.
+        residue_names: Canonical 3-letter residue names, length N.
+        pair_mask: ``[N, N]`` bool, ``True`` for the (i, j) upper-
+            triangle pairs to read distances at. Same semantics as
+            :func:`predict_distogram_combined`.
+        n_rounds, k_contacts_per_L_per_round, min_contact_prob, order:
+            Stage B knobs. Defaults reproduce the 1.5B headline.
+        batch_size, top_k_logprobs: vLLM readout knobs.
+        prior_distogram: Optional precomputed naive-baseline distogram
+            ``[N, N, 64]`` (e.g. cached from a previous run). If
+            ``None``, the naive baseline is computed here (one
+            additional masked forward pass). Pass an explicit prior to
+            amortise that cost across hyperparameter sweeps.
+        include_history: If True, ``meta`` includes the full contact
+            picks made at every iteration round.
+        include_intermediate_distograms: If True, ``meta`` includes
+            the baseline-prior distogram and each round's post-round
+            distogram (each is ``[N, N, 64]`` float32 — large).
+
+    Returns:
+        ``(probs, meta)``:
+          - ``probs``: ``[N, N, 64]`` float32 distogram. Symmetric
+            across the diagonal. Pairs outside ``pair_mask`` are zero.
+          - ``meta``: dict with the algorithm name, knobs used, and
+            per-round counts.
+    """
+    N = len(residue_names)
+    if pair_mask.shape != (N, N):
+        raise ValueError(
+            f"pair_mask shape {pair_mask.shape} != ({N}, {N}) (residue_names)"
+        )
+
+    # ---------------- Prior: naive baseline distogram ----------------
+    # The naive baseline is computed UNMASKED (all upper-triangle pairs),
+    # matching the experiment pipeline that produced the reported lifts.
+    # extract_round_statements picks top-K contacts from this prior, and
+    # restricting it to ``pair_mask`` here would silently change which
+    # contacts are eligible.
+    if prior_distogram is None:
+        prior_distogram = predict_distogram_naive(
+            rt=rt, residue_names=tuple(residue_names),
+            batch_size=batch_size, top_k_logprobs=top_k_logprobs,
+        )
+        n_pairs_queried_prior = N * (N - 1) // 2
+        prior_source = "naive_baseline"
+    else:
+        if prior_distogram.shape != (N, N, 64):
+            raise ValueError(
+                f"prior_distogram shape {prior_distogram.shape} != ({N}, {N}, 64)"
+            )
+        n_pairs_queried_prior = 0
+        prior_source = "supplied"
+
+    # ---------------- Iterative growing-K refinement ----------------
+    current_prior = prior_distogram
+    rounds_meta: list[dict] = []
+    intermediate_round_distograms: list[np.ndarray] = []
+    already_committed: set[tuple[int, int]] = set()
+    for round_idx in range(n_rounds):
+        k_contacts = int(round(k_contacts_per_L_per_round[round_idx] * N))
+        contact_statements, distance_statements = extract_round_statements(
+            current_prior,
+            k_contacts=k_contacts,
+            k_distances=0,  # default schedule has no distance commits
+            min_contact_prob=min_contact_prob,
+            min_modal_prob=DEFAULTS["min_modal_prob"],
+            sharpen_T_for_modes=DEFAULTS["sharpen_T_for_modes"],
+            already_committed=already_committed,
+            residue_names=residue_names,
+            order=order,
+        )
+        current_prior, n_pairs_queried_b, prefix_tok_b = predict_distogram_with_statements(
+            rt=rt, residue_names=residue_names, pair_mask=pair_mask,
+            contact_statements=contact_statements,
+            distance_statements=distance_statements,
+            batch_size=batch_size,
+        )
+        for (i, j, *_r) in distance_statements:
+            already_committed.add((i, j))
+        round_record = {
+            "round": round_idx,
+            "k_contacts": k_contacts,
+            "n_contact_statements": len(contact_statements),
+            "n_distance_statements": len(distance_statements),
+            "n_pairs_queried": n_pairs_queried_b,
+            "prefix_token_count": prefix_tok_b,
+        }
+        if include_history:
+            round_record["contact_statements"] = list(contact_statements)
+            round_record["distance_statements"] = list(distance_statements)
+        if include_intermediate_distograms:
+            intermediate_round_distograms.append(current_prior.copy())
+        rounds_meta.append(round_record)
+
+    prior_meta = {
+        "source": prior_source,
+        "n_pairs_queried": n_pairs_queried_prior,
+    }
+    if include_intermediate_distograms:
+        prior_meta["distogram"] = prior_distogram
+
+    stage_b_meta = {
+        "n_rounds": n_rounds,
+        "k_contacts_per_L_per_round": list(k_contacts_per_L_per_round),
+        "min_contact_prob": min_contact_prob,
+        "order": order,
+        "rounds": rounds_meta,
+    }
+    if include_intermediate_distograms:
+        stage_b_meta["round_distograms"] = intermediate_round_distograms
+
+    meta = {
+        "algorithm": "iter_R2_grow_from_baseline",
+        "n_residues": N,
+        "prior": prior_meta,
+        "stage_b": stage_b_meta,
+    }
+    return current_prior, meta
+
+
+def predict_distogram_iter_from_baseline_from_cif(
+    *,
+    rt: Runtime,
+    gt_cif: Path,
+    **algorithm_kwargs,
+) -> tuple[np.ndarray, dict]:
+    """Convenience wrapper for :func:`predict_distogram_iter_from_baseline`
+    that derives ``residue_names`` and the LDDT-shell pair mask from a
+    Protenix GT CIF.
+
+    Same semantics as :func:`predict_distogram_combined_from_cif`; see
+    that function's docstring for details on the GT-shell mask.
+    """
+    from canonical_sequence import read_canonical_sequence
+    from gt_filtered_inference import build_gt_shell_mask
+    seq = read_canonical_sequence(gt_cif)
+    pair_mask = build_gt_shell_mask(gt_cif, seq.n_residues)
+    return predict_distogram_iter_from_baseline(
         rt=rt, residue_names=seq.residue_names, pair_mask=pair_mask,
         **algorithm_kwargs,
     )
