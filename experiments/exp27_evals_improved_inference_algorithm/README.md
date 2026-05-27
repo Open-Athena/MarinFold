@@ -432,4 +432,30 @@ uv run python run_iterative.py --dtype bfloat16 --n-gpus 1 \
 (`--prior-name` is the naive-baseline distogram for the same model;
 generate it first with `run_baseline.py` + `snapshot_distograms.py`.)
 
+## Library functions for downstream use
+
+Both winning algorithms are exposed as library functions in
+[`combined_algorithm.py`](combined_algorithm.py), so downstream
+experiments can run them without going through the CLI / on-disk
+snapshot dance:
+
+- `predict_distogram_combined(rt, residue_names, pair_mask, ...)` —
+  the 1B-tuned headline (`iter_R4_grow_on_sampled_uniform_M5`).
+  Default knobs reproduce the +42.81%-on-train number byte-for-byte.
+- `predict_distogram_iter_from_baseline(rt, residue_names, pair_mask, ...)` —
+  the 1.5B-tuned addendum (`iter_R2_grow_from_baseline`). Default
+  knobs reproduce the +29.6%-on-train number byte-for-byte.
+
+Each returns `(probs, meta)`. `probs` is `[N, N, 64]` and is
+score-equivalent to the `.npz` the experiment scripts write to
+`outputs/<stem>/distogram.npz`. `meta` carries the algorithm name and
+per-stage counts; pass `include_history=True` to also get every
+contact/distance statement picked, or `include_intermediate_distograms=True`
+to also get the per-round distograms (large).
+
+`*_from_cif` convenience wrappers derive `residue_names` and the
+LDDT-shell `pair_mask` from a Protenix GT CIF in one line. Use the
+plain function with a full-upper-triangle mask when you don't have a
+GT structure on hand.
+
 Full per-protein numbers and discussion in [RESULTS\_LOG.md](RESULTS_LOG.md).
