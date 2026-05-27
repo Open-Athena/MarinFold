@@ -1,0 +1,11 @@
+pdb_id,chain_id,assembly,stem,n_residues,gt_cif,job_json
+7t9r,A,1,7t9r_A,38,gt/7t9r_A.cif,jobs/7t9r_A.json
+7y8i,A,1,7y8i_A,97,gt/7y8i_A.cif,jobs/7y8i_A.json
+7zoi,A,1,7zoi_A,151,gt/7zoi_A.cif,jobs/7zoi_A.json
+7wz5,A,1,7wz5_A,161,gt/7wz5_A.cif,jobs/7wz5_A.json
+8bau,A,1,8bau_A,189,gt/8bau_A.cif,jobs/8bau_A.json
+8gmy,A,1,8gmy_A,236,gt/8gmy_A.cif,jobs/8gmy_A.json
+7xg9,A,1,7xg9_A,288,gt/7xg9_A.cif,jobs/7xg9_A.json
+7x4p,A,1,7x4p_A,307,gt/7x4p_A.cif,jobs/7x4p_A.json
+7v3o,A,1,7v3o_A,328,gt/7v3o_A.cif,jobs/7v3o_A.json
+7qsj,A,1,7qsj_A,373,gt/7qsj_A.cif,jobs/7qsj_A.json
