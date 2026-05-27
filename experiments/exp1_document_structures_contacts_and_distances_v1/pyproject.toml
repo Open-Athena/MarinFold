@@ -5,12 +5,12 @@ description = "contacts-and-distances-v1 document structure: generate / infer / 
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "marinfold",
-    "gemmi>=0.6",       # mmCIF / PDB parsing for AFDB inputs
+    "gemmi>=0.6", # mmCIF / PDB parsing for AFDB inputs
     "numpy",
     "pyarrow",
     "marin-zephyr",
-    "fsspec",       # uniform local + cloud file IO for structure inputs
-    "gcsfs",        # gs:// support for AFDB / marin buckets
+    "fsspec", # uniform local + cloud file IO for structure inputs
+    "gcsfs", # gs:// support for AFDB / marin buckets
 ]
 
 [project.optional-dependencies]
@@ -43,7 +43,8 @@ environments = [
 ]
 
 [tool.uv.sources]
-marinfold = { path = "../../marinfold", editable = true }
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }
 
 [tool.pytest.ini_options]
 markers = [
