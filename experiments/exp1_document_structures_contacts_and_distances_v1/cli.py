@@ -70,10 +70,6 @@ def cmd_generate(args: argparse.Namespace) -> None:
         residue_plddt_min=args.residue_plddt_min,
     )
     glob = parse.input_glob(args.input)
-    # --num-docs caps the *inputs* processed. Historically it capped documents,
-    # but with one doc per structure that's equivalent — and capping inputs
-    # bounds parsing to the first N files (the glob is still enumerated to sort
-    # it, so use a bounded prefix). Without it, from_files shards the whole glob.
     if args.num_docs is not None:
         source = Dataset.from_iterable(parse.list_structure_files(glob, limit=args.num_docs))
     else:
