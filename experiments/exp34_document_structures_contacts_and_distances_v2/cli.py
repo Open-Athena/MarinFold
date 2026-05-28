@@ -53,21 +53,33 @@ def cmd_generate(args: argparse.Namespace) -> None:
         think_run_length_geom_p=args.think_run_length_geom_p,
     )
 
-    # Two input modalities, dispatched on the --input extension:
-    #   * parquet — each row holds an mmCIF in --cif-column plus an entry_id
-    #     (e.g. the timodonnell/afdb-1.6M dataset); read those columns and parse
-    #     the text in memory.
+    # Input modalities, dispatched on the --input extension (and on
+    # --cif-uri-column for the parquet case):
+    #   * parquet + --cif-uri-column — each row holds a URI (e.g. gs://...) to
+    #     the structure file; read just the URI + entry_id columns from the
+    #     manifest, then fetch each structure in-region. Avoids egressing the
+    #     bulky cif_content column cross-cloud.
+    #   * parquet (default) — each row holds an inline mmCIF in --cif-column
+    #     plus an entry_id; parse the text in memory.
     #   * structure files — each path is a .cif/.pdb that gemmi reads directly.
-    # entry_id matters either way: _generate_one seeds its RNG from it.
+    # entry_id matters in every mode: _generate_one seeds its RNG from it, and
+    # passing the manifest's canonical id keeps URI-mode docs byte-identical
+    # to inline-cif-mode docs on the same dataset.
     if _is_parquet_input(args.input):
+        cif_col = args.cif_uri_column or args.cif_column
         rows = Dataset.from_files(args.input).load_parquet(
-            columns=[args.cif_column, "entry_id"]
+            columns=[cif_col, "entry_id"]
         )
         if args.num_docs is not None:
             rows = rows.reshard(1).take_per_shard(args.num_docs)
-        structures = rows.map(
-            lambda r: parse.try_parse_cif_content(r.get(args.cif_column), r.get("entry_id"))
-        )
+        if args.cif_uri_column:
+            structures = rows.map(
+                lambda r: parse.try_parse_structure(r.get(cif_col), entry_id=r.get("entry_id"))
+            )
+        else:
+            structures = rows.map(
+                lambda r: parse.try_parse_cif_content(r.get(cif_col), r.get("entry_id"))
+            )
     else:
         glob = parse.input_glob(args.input)
         if args.num_docs is not None:
@@ -156,6 +168,13 @@ def build_parser() -> argparse.ArgumentParser:
                        help="For parquet --input: column holding the mmCIF text "
                             "(default: cif_content). Rows also need an 'entry_id' "
                             "column (seeds per-structure generation).")
+    p_gen.add_argument("--cif-uri-column", type=str, default=None,
+                       help="For parquet --input: column holding a URI per row "
+                            "(e.g. 'gcs_uri' in afdb-1.6M -> gs://...). When set, "
+                            "only the URI + entry_id columns are read from the "
+                            "manifest and workers fetch each structure from the "
+                            "URI directly — much faster than streaming the bulky "
+                            "--cif-column cross-cloud. Overrides --cif-column.")
     p_gen.add_argument("--num-docs", type=int, default=None,
                        help="Process only the first N input files (one doc per "
                             "structure, so ~N docs). With a {shard} --out this "

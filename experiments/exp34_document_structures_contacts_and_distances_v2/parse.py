@@ -187,12 +187,18 @@ def parse_structure(
     path,
     *,
     require_single_chain: bool = True,
+    entry_id: str | None = None,
 ) -> ParsedStructure:
     """Parse one structure file (mmCIF or PDB, optionally gzipped).
 
     ``path`` may be a local path or any fsspec-supported URL (``gs://``,
     ``s3://`, ...); bytes are read through fsspec so gemmi never has to
     touch a remote filesystem directly.
+
+    ``entry_id`` overrides the entry id derived from the URL — useful when
+    the caller already has a canonical id (e.g. an ``entry_id`` column in a
+    parquet manifest of ``gs://`` URIs) and wants RNG seeding in
+    ``generate_one`` to match an inline-cif run on the same dataset.
 
     Raises:
         ValueError: if the structure has no polymer chains, requires
@@ -205,10 +211,11 @@ def parse_structure(
         data = f.read()
     structure = gemmi.read_structure_string(data, format=_coor_format(url))
     # read_structure_string leaves structure.name empty (no filename to
-    # derive it from), so fall back to the URL basename.
+    # derive it from), so fall back to the URL basename — unless the caller
+    # supplied a canonical entry_id.
     return _build_parsed_structure(
         structure,
-        entry_id=structure.name or _entry_id_from_url(url),
+        entry_id=entry_id or structure.name or _entry_id_from_url(url),
         source_path=url,
         require_single_chain=require_single_chain,
     )
@@ -284,16 +291,20 @@ def list_structure_files(pattern: str, limit: int | None = None) -> list[str]:
     return ordered[:limit] if limit is not None else ordered
 
 
-def try_parse_structure(path) -> "ParsedStructure | None":
+def try_parse_structure(path, entry_id: str | None = None) -> "ParsedStructure | None":
     """Parse one structure, returning ``None`` (with a warning) on failure.
 
     The ``.map``-friendly counterpart to :func:`iter_parsed_structures`'s
     warn-and-skip behaviour — raising inside a Zephyr map stage would kill
-    the worker, so unparseable files are dropped instead.
+    the worker, so unparseable files and transient fetch errors are dropped
+    instead. ``entry_id`` is forwarded to :func:`parse_structure` for
+    callers that have a canonical id (e.g. a parquet ``gs://`` manifest).
     """
     try:
-        return parse_structure(path)
-    except ValueError as exc:
+        return parse_structure(path, entry_id=entry_id)
+    except (ValueError, OSError) as exc:
+        # ValueError: gemmi rejects the file. OSError: fsspec/network/missing
+        # object (a `gs://` 404, transient HTTP, etc.).
         warnings.warn(f"skipping {path}: {exc}", stacklevel=2)
         return None
 

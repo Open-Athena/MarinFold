@@ -140,8 +140,18 @@ uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py genera
 Then the full run — all 1.6M structures, one output parquet per input shard:
 
 ```bash
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --out "gs://marin-us-east5/protein-structure/MarinFold/exp34/corpus_v1-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 1 --worker-memory 4g --worker-disk 64g --max-workers 512
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py generate --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --cif-uri-column gcs_uri --out "gs://marin-us-east5/protein-structure/MarinFold/exp34/corpus_v2-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 1 --worker-memory 4g --worker-disk 64g --max-workers 512
 ```
+
+`--cif-uri-column gcs_uri` is the fast path for this dataset: the parquet
+manifest has a `gcs_uri` column pointing at the public AFDB GCS bucket, so we
+read only `[entry_id, gcs_uri]` from HuggingFace (~160 KB/shard instead of
+~70 MB — parquet is columnar, so the bulky `cif_content` column is never
+materialized) and workers fetch each structure from `gs://` in-cloud. That
+avoids the HF→GCP cross-cloud egress (and the throttling that comes from 512
+workers hammering HuggingFace at once); per-shard time stops being I/O-bound.
+Drop the flag to fall back to streaming `cif_content` inline — same docs,
+slower I/O.
 
 Keep each on **one line** — a backslash-continuation with a trailing space
 silently truncates the command (everything after it leaks to your shell).
