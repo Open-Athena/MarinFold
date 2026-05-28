@@ -25,6 +25,10 @@ from vocab import AMINO_ACIDS, ATOM_NAMES
 # canonical_residue_policy = "map_to_unk").
 _CANONICAL_20 = frozenset(AMINO_ACIDS)
 
+# Hoisted out of the per-residue hot path in _vocab_safe_atoms (called once per
+# residue, millions of times per shard).
+_ATOM_NAMES = frozenset(ATOM_NAMES)
+
 # Recognised file extensions when ``iter_structure_paths`` is given
 # a directory. Gemmi auto-detects format from extension via
 # ``gemmi.read_structure(path)``.
@@ -74,13 +78,12 @@ def _vocab_safe_atoms(gemmi_residue) -> tuple[tuple[str, float, float, float], .
     Drops hydrogens and any atom whose name is outside ``ATOM_NAMES``
     (e.g. non-canonical residue atoms, alt-loc artifacts).
     """
-    valid_names = set(ATOM_NAMES)
     out: list[tuple[str, float, float, float]] = []
     for atom in gemmi_residue:
         if atom.is_hydrogen():
             continue
         name = atom.name.strip()
-        if name not in valid_names:
+        if name not in _ATOM_NAMES:
             continue
         out.append((name, atom.pos.x, atom.pos.y, atom.pos.z))
     return tuple(out)
