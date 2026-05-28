@@ -1,0 +1,49 @@
+[project]
+name = "exp5-data-contacts-and-distances-v2-zephyr"
+version = "0.1.0"
+description = "Generate contacts-and-distances-v2 training documents at scale on the marin Iris cluster via Zephyr."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold", # vocab (AMINO_ACIDS/ATOM_NAMES) + build_tokenizer for the v2 tokenizer
+    "gemmi>=0.7", # mmCIF parsing — read_structure_string requires >=0.7.0
+    "numpy", # columnar in-memory structure representation
+    "pyarrow", # parquet read/write + Zephyr-native row dicts
+    "marin-zephyr", # distributed generation on Iris
+    "fsspec", # uniform local + cloud file IO
+    "gcsfs", # gs:// for the AFDB public bucket + marin output buckets
+    "huggingface_hub", # hf:// for the timodonnell/afdb-1.6M manifest
+]
+# NOTE on obstore: we tried it (object_store-backed, ~9x throughput vs gcsfs
+# for parallel small-object GETs). It works for our marin-us-central1 output
+# bucket but fails on the AFDB public bucket with
+# "GenericError: Content-Length Header missing from response". Root cause is
+# upstream: object_store's HTTP handler strictly requires Content-Length, but
+# AFDB cifs are stored with Content-Encoding: gzip and GCS transparently
+# gunzips them on the wire, omitting Content-Length. The documented fix
+# (Accept-Encoding: gzip) can only be set via client_options.default_headers
+# in obstore today, and those headers leak into the OAuth2 token fetch and
+# break it. Diagnostic + variants tried are documented in the README.
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+    # exp34's generate is the byte-identity oracle for v2 doc content. We import
+    # it through a sys.path shim in tests/ (it's an experiment dir, not a package),
+    # but its own deps (gemmi, marinfold, numpy) are already covered above.
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }
