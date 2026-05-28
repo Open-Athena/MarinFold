@@ -88,6 +88,12 @@ class ParsedStructure:
     atom_name_id: np.ndarray  # uint8[T] — index into ``parse._ATOM_NAMES_TUPLE``
     atom_xyz: np.ndarray  # float64[T, 3]
 
+    # Per-residue ``(name_ids, xyz)`` slices into the flat tables, materialized
+    # ONCE in ``from_gemmi``. Numpy slices are views (no copy), so this is
+    # cheap to build and zero-cost to keep alongside the flat arrays. Used by
+    # ``atoms_for(i)`` for downstream vectorized per-residue analytics.
+    per_residue_atoms: tuple[tuple[np.ndarray, np.ndarray], ...]
+
     # Precomputed once at parse time so generate.py doesn't have to choose
     # between FP-fidelity (sum/N over Python floats) and vectorization.
     global_plddt: float
@@ -216,21 +222,35 @@ class ParsedStructure:
         # property — keeps RNG-seeded doc content byte-identical.
         global_plddt = sum(plddt_values) / len(plddt_values)
 
+        atom_offsets_arr = np.asarray(atom_offsets, dtype=np.int32)
+        atom_name_id_arr = (
+            np.asarray(atom_name_id_list, dtype=np.uint8)
+            if atom_name_id_list else np.empty(0, dtype=np.uint8)
+        )
+        atom_xyz_arr = (
+            np.asarray(atom_xyz_list, dtype=np.float64).reshape(-1, 3)
+            if atom_xyz_list else np.empty((0, 3), dtype=np.float64)
+        )
+
+        # Materialize per-residue views once. Numpy slices share memory with
+        # the flat arrays — no copies, just (PyObject + view header) per
+        # residue. For ~250 residues this is ~25 KB of overhead total.
+        per_residue_atoms = tuple(
+            (atom_name_id_arr[atom_offsets[i]:atom_offsets[i + 1]],
+             atom_xyz_arr[atom_offsets[i]:atom_offsets[i + 1]])
+            for i in range(len(sequence))
+        )
+
         return cls(
             entry_id=entry_id,
             source=source,
             sequence=tuple(sequence),
             plddt_per_residue=np.asarray(plddt_values, dtype=np.float64),
             cb_or_ca_xyz=np.asarray(cb_or_ca_rows, dtype=np.float64),
-            atom_offsets=np.asarray(atom_offsets, dtype=np.int32),
-            atom_name_id=(
-                np.asarray(atom_name_id_list, dtype=np.uint8)
-                if atom_name_id_list else np.empty(0, dtype=np.uint8)
-            ),
-            atom_xyz=(
-                np.asarray(atom_xyz_list, dtype=np.float64).reshape(-1, 3)
-                if atom_xyz_list else np.empty((0, 3), dtype=np.float64)
-            ),
+            atom_offsets=atom_offsets_arr,
+            atom_name_id=atom_name_id_arr,
+            atom_xyz=atom_xyz_arr,
+            per_residue_atoms=per_residue_atoms,
             global_plddt=global_plddt,
         )
 
@@ -239,10 +259,11 @@ class ParsedStructure:
         return len(self.sequence)
 
     def atoms_for(self, i: int) -> tuple[np.ndarray, np.ndarray]:
-        """Atoms of residue ``i`` (0-based): ``(name_ids[K], xyz[K, 3])``."""
-        start = int(self.atom_offsets[i])
-        end = int(self.atom_offsets[i + 1])
-        return self.atom_name_id[start:end], self.atom_xyz[start:end]
+        """Atoms of residue ``i`` (0-based): ``(name_ids[K], xyz[K, 3])``.
+
+        O(1) tuple-index into the precomputed ``per_residue_atoms``.
+        """
+        return self.per_residue_atoms[i]
 
 
 # --------------------------------------------------------------------------

@@ -196,20 +196,33 @@ def generate_one(
     selected_medium = rng.sample(contacts_medium, n_medium) if n_medium > 0 else []
     selected_short = rng.sample(contacts_short, n_short) if n_short > 0 else []
 
-    # ---- distance statements ----------------------------------------------
-    # ``distance_indices`` = 1-based residue indices with at least one
-    # in-vocab atom — preserves legacy iteration order (ascending).
-    atoms_per_residue = np.diff(structure.atom_offsets)
-    distance_indices = (np.flatnonzero(atoms_per_residue > 0) + 1).tolist()
+    # ---- distance statements (two-phase: serial RNG → vectorized math) ----
+    # Phase 1 walks the RNG serially (the only legal way: byte-identity vs
+    # exp34 requires Mersenne-Twister draws in this exact order), but
+    # records only cheap integer indices into per-residue + per-atom plans.
+    # Phase 2 then does ALL xyz lookups, distance math, and bin tokenization
+    # vectorized over the plan via fancy indexing into the CSR atom table.
+    # Net win: ~12 scalar ops per statement (subtract/square/add/sqrt)
+    # collapse into one C-level numpy call across all statements.
     atom_offsets = structure.atom_offsets
-    atom_name_id = structure.atom_name_id
     atom_xyz = structure.atom_xyz
+    atom_name_id = structure.atom_name_id
+    atoms_per_residue = np.diff(atom_offsets)
+    distance_indices = (np.flatnonzero(atoms_per_residue > 0) + 1).tolist()
 
     distance_statements: list[tuple[int, int, str, str, str]] = []
-    if len(distance_indices) >= 2:
+    if len(distance_indices) >= 2 and n_distance > 0:
+        # Phase 1: serial RNG → integer plan arrays. RNG advance is
+        # bit-for-bit unchanged vs the old per-statement loop (same
+        # rng.sample + rng.randrange call sequence, same retry policy).
+        # `rng.randrange(K)` invokes the same `_randbelow(K)` as
+        # `rng.choice(seq_of_len_K)` — sequence content doesn't matter for
+        # the MT state, only the length.
+        plan_i: list[int] = []
+        plan_j: list[int] = []
+        plan_atom_a: list[int] = []  # 0-based atom index within residue (i - 1)
+        plan_atom_b: list[int] = []
         for _ in range(n_distance):
-            # Draw: residue pair (with up to 10 retries when sep <= 1, exactly
-            # matching the legacy retry loop).
             a, b = rng.sample(distance_indices, 2)
             i, j = (a, b) if a < b else (b, a)
             if j - i <= 1:
@@ -222,24 +235,43 @@ def generate_one(
                         break
                 if not ok:
                     continue
-            # Draw: per-residue atom pick. ``rng.choice(tuple)`` and
-            # ``rng.randrange(len)`` both call ``self._randbelow(len)``, so
-            # the RNG state evolves identically as long as the lengths match.
-            ki = int(atom_offsets[i] - atom_offsets[i - 1])  # i is 1-based
-            kj = int(atom_offsets[j] - atom_offsets[j - 1])
-            idx_a = rng.randrange(ki)
-            idx_b = rng.randrange(kj)
-            i0_start = int(atom_offsets[i - 1])
-            j0_start = int(atom_offsets[j - 1])
-            ai_name = _ATOM_NAMES_TUPLE[int(atom_name_id[i0_start + idx_a])]
-            aj_name = _ATOM_NAMES_TUPLE[int(atom_name_id[j0_start + idx_b])]
-            # Pull as Python floats (.tolist on a (3,) float64 row) so the
-            # subsequent (ax - bx)**2 + … + math.sqrt sequence is identical
-            # to exp34's tuple-based computation.
-            ax, ay, az = atom_xyz[i0_start + idx_a].tolist()
-            bx, by, bz = atom_xyz[j0_start + idx_b].tolist()
-            d = math.sqrt((ax - bx) ** 2 + (ay - by) ** 2 + (az - bz) ** 2)
-            distance_statements.append((i, j, ai_name, aj_name, _distance_token(d)))
+            k_i = int(atoms_per_residue[i - 1])
+            k_j = int(atoms_per_residue[j - 1])
+            plan_i.append(i)
+            plan_j.append(j)
+            plan_atom_a.append(rng.randrange(k_i))
+            plan_atom_b.append(rng.randrange(k_j))
+
+        # Phase 2: vectorized lookup + distance + tokenize over the plan.
+        if plan_i:
+            i_arr = np.asarray(plan_i, dtype=np.int32)
+            j_arr = np.asarray(plan_j, dtype=np.int32)
+            flat_a = atom_offsets[i_arr - 1] + np.asarray(plan_atom_a, dtype=np.int32)
+            flat_b = atom_offsets[j_arr - 1] + np.asarray(plan_atom_b, dtype=np.int32)
+            diffs = atom_xyz[flat_a] - atom_xyz[flat_b]
+            d_arr = np.sqrt((diffs * diffs).sum(axis=1))
+            # Vectorized _distance_token: ceil(d/0.5) clipped to [1, 64].
+            # Identical mapping to the per-element function, just in numpy.
+            bin_arr = np.clip(np.ceil(d_arr / 0.5).astype(np.int64), 1, 64)
+            # Name lookup is one fancy-index into the uint8 CSR column +
+            # one tuple-index per element into the (~37-entry) vocab. The
+            # final ``distance_statements`` build is in Python because the
+            # downstream consumer is a list of mixed-type tuples — but the
+            # per-element body is now bare list ops, no math, no rng.
+            name_a_ids = atom_name_id[flat_a]
+            name_b_ids = atom_name_id[flat_b]
+            i_list = i_arr.tolist()
+            j_list = j_arr.tolist()
+            bin_list = bin_arr.tolist()
+            name_a_list = name_a_ids.tolist()
+            name_b_list = name_b_ids.tolist()
+            distance_statements = [
+                (i_list[k], j_list[k],
+                 _ATOM_NAMES_TUPLE[name_a_list[k]],
+                 _ATOM_NAMES_TUPLE[name_b_list[k]],
+                 f"d{bin_list[k] * 0.5:.1f}")
+                for k in range(len(plan_i))
+            ]
 
     # ---- assemble statements + ranks --------------------------------------
     statements: list[_Statement] = []
