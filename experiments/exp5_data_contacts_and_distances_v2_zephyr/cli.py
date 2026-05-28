@@ -35,6 +35,7 @@ from fray import ResourceConfig
 from marinfold import build_tokenizer
 from zephyr import Dataset, ZephyrContext
 
+import csr_store
 import generate
 import parse
 from vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
@@ -219,6 +220,100 @@ def _generate_shard(
 
 
 # --------------------------------------------------------------------------
+# parse-to-csr pipeline (one-time precompute → on-the-fly training dataloader)
+# --------------------------------------------------------------------------
+
+
+def _resolve_passthrough_with_types(input_path: str, cif_col: str
+                                    ) -> tuple[list[str], dict]:
+    """Like ``_resolve_input_columns`` but also returns the arrow types of the
+    passthrough columns.
+
+    The CSR writer needs a stable per-shard schema (one schema across all
+    Zephyr shards so the output parquet is concatenable), and the passthrough
+    columns' types come from the manifest. We peek the schema once at
+    submission time so workers don't all redo the schema fetch.
+    """
+    import fsspec
+    import pyarrow.parquet as pq
+
+    fs, _ = fsspec.core.url_to_fs(input_path)
+    matches = sorted(fs.glob(input_path))
+    if not matches:
+        raise FileNotFoundError(f"No parquet files match {input_path!r}")
+    first = fs.unstrip_protocol(matches[0])
+    with fsspec.open(first, "rb") as f:
+        schema = pq.ParquetFile(f).schema_arrow
+    if "entry_id" not in schema.names:
+        raise ValueError(f"{first}: missing required 'entry_id' column")
+    if cif_col not in schema.names:
+        raise ValueError(f"{first}: missing cif column {cif_col!r}")
+    passthrough = [c for c in _OPTIONAL_PASSTHROUGH if c in schema.names]
+    passthrough_types = {c: schema.field(c).type for c in passthrough}
+    columns = ["entry_id", cif_col] + [c for c in passthrough if c not in ("entry_id", cif_col)]
+    return columns, passthrough_types
+
+
+def _parse_row_to_csr(
+    row: dict,
+    *,
+    cif_uri_column: str,
+    cif_text_column: str | None,
+    passthrough_columns: list[str],
+) -> dict | None:
+    """Fetch + parse one manifest row, return its CSR dict (or None on failure).
+
+    Same fetch+parse path as ``_generate_doc_for_row`` — kept as a separate
+    function to keep the per-subcommand worker body explicit and to make it
+    easy to swap the output side (CSR dict vs generated doc) at the Zephyr
+    pipeline boundary.
+    """
+    entry_id = row.get("entry_id")
+    if cif_text_column is not None:
+        cif = row.get(cif_text_column)
+        if cif is None:
+            return None
+        structure = parse.try_parse_cif_content(cif, entry_id=entry_id, source=entry_id)
+    else:
+        uri = row.get(cif_uri_column)
+        if uri is None:
+            return None
+        structure = parse.try_parse_cif_from_uri(uri, entry_id=entry_id)
+    if structure is None:
+        return None
+    passthrough = {col: row.get(col) for col in passthrough_columns}
+    return csr_store.parsed_structure_to_row(structure, passthrough=passthrough)
+
+
+def _parse_to_csr_shard(
+    items,
+    shard_info,
+    *,
+    cif_uri_column: str,
+    cif_text_column: str | None,
+    fetch_concurrency: int,
+    passthrough_columns: list[str],
+):
+    """``map_shard`` body for the CSR precompute. Same thread-pool structure
+    as the doc-generation shard worker — the fetch cost dominates either way.
+    """
+    rows = list(items)
+    if not rows:
+        return
+    worker = partial(
+        _parse_row_to_csr,
+        cif_uri_column=cif_uri_column,
+        cif_text_column=cif_text_column,
+        passthrough_columns=passthrough_columns,
+    )
+    workers = min(fetch_concurrency, len(rows))
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="exp5-csr") as pool:
+        for csr_row in pool.map(worker, rows):
+            if csr_row is not None:
+                yield csr_row
+
+
+# --------------------------------------------------------------------------
 # Subcommand handlers
 # --------------------------------------------------------------------------
 
@@ -288,6 +383,51 @@ def cmd_generate(args: argparse.Namespace) -> None:
     )
     ctx.execute(ds)
     print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
+
+
+def cmd_parse_to_csr(args: argparse.Namespace) -> None:
+    """One-time precompute: AFDB CIFs → CSR parquet (~30-50× smaller than CIFs,
+    skips both the GCS GET and the gemmi parse at training time).
+
+    Pipeline shape mirrors ``cmd_generate``: same fetch concurrency, same
+    passthrough wishlist, same per-shard output sharding. The output rows are
+    columnar :class:`parse.ParsedStructure` views (see :mod:`csr_store` for the
+    schema).
+    """
+    cif_col = args.cif_text_column or args.cif_uri_column
+    columns, passthrough_types = _resolve_passthrough_with_types(args.input, cif_col)
+    passthrough_columns = list(passthrough_types.keys())
+
+    rows = Dataset.from_files(args.input).load_parquet(columns=columns)
+    if args.num_structures is not None:
+        rows = rows.reshard(1).take_per_shard(args.num_structures)
+
+    csr_rows = rows.map_shard(partial(
+        _parse_to_csr_shard,
+        cif_uri_column=args.cif_uri_column,
+        cif_text_column=args.cif_text_column,
+        fetch_concurrency=args.fetch_concurrency,
+        passthrough_columns=passthrough_columns,
+    ))
+
+    if "{shard" not in args.out:
+        csr_rows = csr_rows.reshard(1)
+
+    # Pin the output schema so every shard parquet has the same columns/types
+    # → the resulting dataset is directly concatenable by the dataloader.
+    schema = csr_store.schema_with_passthrough(passthrough_types)
+    ds = csr_rows.write_parquet(args.out, schema=schema)
+
+    ctx = ZephyrContext(
+        max_workers=args.max_workers,
+        resources=ResourceConfig(
+            cpu=args.worker_cpu,
+            ram=args.worker_memory,
+            disk=args.worker_disk,
+        ),
+    )
+    ctx.execute(ds)
+    print(f"[{NAME}] wrote CSR parquet to {args.out}", file=sys.stderr)
 
 
 def cmd_tokenizer(args: argparse.Namespace) -> None:
@@ -411,6 +551,34 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen.add_argument("--think-run-length-geom-p", type=float,
                        default=cfg_defaults.think_run_length_geom_p)
     p_gen.set_defaults(func=cmd_generate)
+
+    # ---- parse-to-csr ------------------------------------------------------
+    p_csr = sub.add_parser(
+        "parse-to-csr",
+        help="One-time precompute: AFDB CIFs → CSR parquet for on-the-fly "
+             "training-time doc generation. Drops both the GCS GET and the "
+             "gemmi parse from the training-loop hot path.",
+    )
+    p_csr.add_argument("--input", type=str, required=True,
+                       help="Same as `generate --input`: parquet manifest URI/glob.")
+    p_csr.add_argument("--cif-uri-column", type=str, default="gcs_uri")
+    p_csr.add_argument("--cif-text-column", type=str, default=None)
+    p_csr.add_argument(
+        "--num-structures", type=int, default=None,
+        help="Global cap on total structures emitted (writes a single merged "
+             "file). For sharded output use a {shard} placeholder in --out.",
+    )
+    p_csr.add_argument(
+        "--out", type=str, required=True,
+        help="Output parquet path/pattern. Include {shard:05d} for one file "
+             "per input shard (recommended for the full 1.6M run).",
+    )
+    p_csr.add_argument("--worker-cpu", type=float, default=1)
+    p_csr.add_argument("--worker-memory", type=str, default="4g")
+    p_csr.add_argument("--worker-disk", type=str, default="32g")
+    p_csr.add_argument("--max-workers", type=int, default=None)
+    p_csr.add_argument("--fetch-concurrency", type=int, default=32)
+    p_csr.set_defaults(func=cmd_parse_to_csr)
 
     # ---- tokenizer ---------------------------------------------------------
     p_tok = sub.add_parser("tokenizer", help="Build / save / push the v2 tokenizer.")
