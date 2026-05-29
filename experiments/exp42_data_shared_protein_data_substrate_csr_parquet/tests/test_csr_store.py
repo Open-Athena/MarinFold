@@ -1,25 +1,30 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""CSR parquet store: roundtrip + byte-identity through the store.
+"""CSR parquet store: roundtrip + dataloader infrastructure.
 
-The CSR layer is load-bearing for the on-the-fly training-time dataloader.
-These tests pin two contracts:
+The CSR layer is load-bearing for any future doc-format experiment that
+wants on-the-fly training-time generation. These tests pin the
+substrate-side contracts; specific doc formats validate their own
+byte-identity in their own experiments (e.g. exp5 vs exp34 for v2).
 
-1. **Field-level roundtrip**: every numeric column survives parquet write +
-   read with the right dtype and shape.
-2. **End-to-end byte-identity**: generating from a ParsedStructure that came
-   out of CSR is exactly the same as generating from the same structure that
-   came straight out of gemmi. (CSR is a faithful re-serialization, not a
-   lossy compression.)
+Contracts asserted here:
 
-Together these mean a trainer using ``CSRDocumentDataset`` over a precomputed
-CSR shard produces *byte-identical docs* to a trainer running the full
-CIF→parse→generate pipeline, with the only difference being that the CSR
-path skips ~2.4 ms of parse + the GCS GET per row.
+1. **Column-level roundtrip**: every numeric column survives parquet
+   write + read with the right dtype, shape, and exact value. This is
+   the foundation — *any* pure function of those columns is byte-equal
+   through CSR if this holds (the implication is what lets specific doc
+   formats skip a CSR-specific byte-identity test of their own).
+2. **Multi-fragment via pyarrow.dataset**: pointing at a directory
+   auto-discovers all parquet files in it (the natural Zephyr-write shape).
+3. **Glob form**: a shell-style pattern selects a subset of fragments.
+4. **Predicate pushdown**: ``filter=`` is evaluated at the C++ scan layer.
+5. **Callback extension point**: ``generator=`` accepts any
+   ``DocumentGenerator``-shaped callable; the dataloader passes structures
+   to it with the per-(entry_id, epoch) reseed already baked in.
+6. **Subclass extension point**: overriding ``_structure_to_doc`` can
+   enrich the yielded dict (add fields, yield multiple docs per structure).
 """
-
-from __future__ import annotations
 
 import hashlib
 from pathlib import Path
@@ -29,16 +34,19 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 import csr_store
-import generate
 import parse
+
+
+# ---------- helpers --------------------------------------------------------
 
 
 def _to_arrow_then_back(ps: parse.ParsedStructure, tmp_path: Path
                         ) -> parse.ParsedStructure:
     """Write a single-row CSR parquet to disk, read it back, reconstruct.
 
-    Exercises the actual on-disk roundtrip (not just dict-roundtrip) so any
-    arrow type / dtype mismatch in the schema surfaces here, not in production.
+    Exercises the actual on-disk roundtrip (not just dict-roundtrip) so
+    any arrow type / dtype mismatch in the schema surfaces here, not in
+    production.
     """
     row = csr_store.parsed_structure_to_row(ps)
     schema = csr_store.schema_with_passthrough({})
@@ -51,10 +59,34 @@ def _to_arrow_then_back(ps: parse.ParsedStructure, tmp_path: Path
     return csr_store.row_to_parsed_structure(batch_read.to_pylist()[0])
 
 
+def _echo_generator(structure: parse.ParsedStructure) -> str:
+    """Trivial doc-format-agnostic test generator.
+
+    Encodes entry_id + a hash over every CSR field into a deterministic
+    string. Sensitive enough that any roundtrip drift (any field
+    silently changing through write/read) would change the output.
+    Used in tests that exercise the dataloader plumbing without taking
+    on a v2-specific dependency.
+    """
+    h = hashlib.sha1()
+    h.update(structure.entry_id.encode())
+    h.update(",".join(structure.sequence).encode())
+    h.update(structure.plddt_per_residue.tobytes())
+    h.update(structure.cb_or_ca_xyz.tobytes())
+    h.update(structure.atom_offsets.tobytes())
+    h.update(structure.atom_name_id.tobytes())
+    h.update(structure.atom_xyz.tobytes())
+    return f"<doc entry_id={structure.entry_id} sha1={h.hexdigest()[:16]}>"
+
+
+# ---------- tests ----------------------------------------------------------
+
+
 def test_csr_roundtrip_preserves_shapes_and_values(tmp_path, synthetic_cif):
-    """Every column round-trips with the exact shape + dtype the in-memory
-    ParsedStructure had. This is the *floor* — if it fails, nothing else
-    downstream can work."""
+    """Every column round-trips with the exact shape + dtype + values the
+    in-memory ParsedStructure had. This is the *foundation* — if it fails,
+    nothing else downstream can work, and any byte-identity test for any
+    doc format depends on it transitively."""
     original = parse.parse_cif_content(synthetic_cif, entry_id="AF-RT-F1")
     restored = _to_arrow_then_back(original, tmp_path)
 
@@ -62,8 +94,6 @@ def test_csr_roundtrip_preserves_shapes_and_values(tmp_path, synthetic_cif):
     assert restored.sequence == original.sequence
     assert restored.num_residues == original.num_residues
     assert restored.global_plddt == original.global_plddt
-    # All numeric columns: dtype + shape + exact equality (float64 is bit-
-    # exact through parquet's float64 logical type).
     for name in ("plddt_per_residue", "cb_or_ca_xyz",
                  "atom_offsets", "atom_name_id", "atom_xyz"):
         a = getattr(original, name)
@@ -71,31 +101,6 @@ def test_csr_roundtrip_preserves_shapes_and_values(tmp_path, synthetic_cif):
         assert a.dtype == b.dtype, f"{name}: dtype drift {a.dtype} → {b.dtype}"
         assert a.shape == b.shape, f"{name}: shape drift {a.shape} → {b.shape}"
         np.testing.assert_array_equal(a, b, err_msg=f"{name} not bit-equal")
-
-
-def test_doc_byte_identical_through_csr(tmp_path, synthetic_cif):
-    """The training-time contract: CIF→doc and CIF→CSR→doc must be identical.
-
-    If this passes, the dataloader can serve docs that match a precomputed
-    reference corpus exactly — which is what makes the CSR store a drop-in
-    for the doc store *without* losing the byte-identity audit that
-    tests/test_byte_identity.py establishes vs exp34.
-    """
-    entry_id = "AF-RT-F1"
-    original = parse.parse_cif_content(synthetic_cif, entry_id=entry_id)
-    restored = _to_arrow_then_back(original, tmp_path)
-
-    cfg = generate.GenerationConfig()
-    doc_direct = generate.generate_one(original, context_length=8192, cfg=cfg)
-    doc_csr = generate.generate_one(restored, context_length=8192, cfg=cfg)
-
-    assert doc_direct == doc_csr, (
-        "CSR roundtrip perturbed the generated document — somewhere a "
-        "dtype/shape/value drifted. SHA1 direct={}, csr={}".format(
-            hashlib.sha1(doc_direct.encode()).hexdigest(),
-            hashlib.sha1(doc_csr.encode()).hexdigest(),
-        )
-    )
 
 
 def test_dataset_path_discovers_fragments_in_directory(tmp_path, synthetic_cif):
@@ -124,10 +129,11 @@ def test_dataset_path_discovers_fragments_in_directory(tmp_path, synthetic_cif):
             str(csr_dir / f"shard-{shard_idx:05d}.parquet"),
         )
 
-    ds = CSRDocumentDataset(dataset_path=str(csr_dir), epoch=0)
+    ds = CSRDocumentDataset(
+        dataset_path=str(csr_dir), generator=_echo_generator, epoch=0,
+    )
     outputs = list(ds)
     assert len(outputs) == 6
-    # Filename-sorted fragment order, then within-fragment row order.
     expected_ids = [f"AF-S{s}R{r}-F1" for s in (0, 1) for r in range(3)]
     assert sorted(o["entry_id"] for o in outputs) == sorted(expected_ids)
 
@@ -137,8 +143,8 @@ def test_dataset_path_accepts_glob(tmp_path, synthetic_cif):
 
     Confirms ``_open_dataset`` does filesystem-side glob expansion so the
     user can use shell-style patterns without writing their own discovery
-    code. The non-matching file ('extra.parquet') is left in place to make
-    sure it's actually filtered, not just absent.
+    code. The non-matching file is left in place to make sure it's
+    actually filtered, not just absent.
     """
     from dataset import CSRDocumentDataset
 
@@ -155,7 +161,8 @@ def test_dataset_path_accepts_glob(tmp_path, synthetic_cif):
         pq.write_table(pa.Table.from_batches([batch]), str(tmp_path / name))
 
     ds = CSRDocumentDataset(
-        dataset_path=str(tmp_path / "shard-*.parquet"), epoch=0,
+        dataset_path=str(tmp_path / "shard-*.parquet"),
+        generator=_echo_generator, epoch=0,
     )
     outputs = list(ds)
     assert {o["entry_id"] for o in outputs} == {"AF-A-F1", "AF-B-F1"}
@@ -167,7 +174,7 @@ def test_dataset_predicate_pushdown_via_filter(tmp_path, synthetic_cif):
     Stages 4 rows with a ``split`` passthrough column (2 train, 2 val),
     then asserts the filter shrinks the output set without ever
     materializing the filtered-out rows on the Python side. This is the
-    main perf win pyarrow.dataset gives us over the per-file loop.
+    main perf win pyarrow.dataset gives us over per-file loops.
     """
     import pyarrow.compute as pc
     from dataset import CSRDocumentDataset
@@ -185,6 +192,7 @@ def test_dataset_predicate_pushdown_via_filter(tmp_path, synthetic_cif):
 
     ds = CSRDocumentDataset(
         dataset_path=str(path),
+        generator=_echo_generator,
         epoch=0,
         # Filter touches a column NOT in CSR_READ_COLUMNS — the dataloader
         # must extend the projection to include it; we do that explicitly
@@ -203,7 +211,7 @@ def test_dataset_accepts_custom_generator_callback(tmp_path, synthetic_cif):
     Exercises the composition extension point: pass any
     ``DocumentGenerator``-shaped callable. Validates that (1) the callback
     actually runs on each structure, (2) its output reaches the consumer
-    unchanged, and (3) the dataloader still wires per-epoch reseeding into
+    unchanged, and (3) the dataloader wires per-epoch reseeding into
     ``structure.entry_id`` so callbacks that seed off entry_id get fresh
     draws each epoch without the dataloader knowing anything about them.
     """
@@ -221,9 +229,7 @@ def test_dataset_accepts_custom_generator_callback(tmp_path, synthetic_cif):
 
     # Stub generator returns the (possibly reseeded) entry_id verbatim — so
     # we can read the per-epoch suffix straight out of the yielded doc.
-    seen_entry_ids = []
     def echo(structure):
-        seen_entry_ids.append(structure.entry_id)
         return f"DOC:{structure.entry_id}"
 
     ds_e0 = CSRDocumentDataset(dataset_path=str(path), generator=echo, epoch=0)
@@ -250,8 +256,7 @@ def test_dataset_subclass_can_enrich_output_dict(tmp_path, synthetic_cif):
     The callback covers the common case (swap the algorithm); subclassing
     covers the case where the *output shape* should change — e.g. attach a
     token-id field, surface a passthrough column, or yield N variants per
-    structure. This test pins the subclassing contract by adding a derived
-    field and asserting it shows up downstream.
+    structure.
     """
     from dataset import CSRDocumentDataset
 
@@ -271,47 +276,7 @@ def test_dataset_subclass_can_enrich_output_dict(tmp_path, synthetic_cif):
     path = tmp_path / "sub.parquet"
     pq.write_table(pa.Table.from_batches([batch]), str(path))
 
-    ds = TaggedDataset(dataset_path=str(path), epoch=0)
+    ds = TaggedDataset(dataset_path=str(path), generator=_echo_generator, epoch=0)
     outputs = list(ds)
     assert all("seq_len" in o for o in outputs)
     assert all(isinstance(o["seq_len"], int) and o["seq_len"] > 0 for o in outputs)
-
-
-def test_dataset_streams_docs_from_csr(tmp_path, synthetic_cif):
-    """End-to-end: write a multi-row CSR shard, point ``CSRDocumentDataset``
-    at it, iterate, get a doc per row. The minimal architectural smoke test
-    for the on-the-fly training pipeline."""
-    from dataset import CSRDocumentDataset
-
-    # Three rows: same structure, three different entry_ids → three docs.
-    rows = []
-    for i in range(3):
-        ps = parse.parse_cif_content(synthetic_cif, entry_id=f"AF-DS{i:02d}-F1")
-        rows.append(csr_store.parsed_structure_to_row(ps))
-    schema = csr_store.schema_with_passthrough({})
-    batch = csr_store.rows_to_record_batch(rows, schema)
-    shard = tmp_path / "shard.parquet"
-    pq.write_table(pa.Table.from_batches([batch]), str(shard))
-
-    ds = CSRDocumentDataset(dataset_path=str(shard), epoch=0)
-    outputs = list(ds)
-    assert len(outputs) == 3
-    assert [o["entry_id"] for o in outputs] == [
-        "AF-DS00-F1", "AF-DS01-F1", "AF-DS02-F1",
-    ]
-    for o in outputs:
-        assert o["document"].startswith("<contacts-and-distances-v2> <begin_sequence>")
-        assert o["document"].endswith("<end>")
-
-    # Per-epoch reseeding: same dataset, different epoch → different docs.
-    # This is the core "free augmentation" property of on-the-fly generation;
-    # if it ever stops holding, the architecture has silently regressed to a
-    # static-corpus equivalent.
-    ds_e1 = CSRDocumentDataset(dataset_path=str(shard), epoch=1)
-    outputs_e1 = list(ds_e1)
-    by_id_e0 = {o["entry_id"]: o["document"] for o in outputs}
-    by_id_e1 = {o["entry_id"]: o["document"] for o in outputs_e1}
-    diffs = sum(by_id_e0[k] != by_id_e1[k] for k in by_id_e0)
-    assert diffs == 3, (
-        f"epoch reseeding produced identical docs for {3 - diffs}/3 structures"
-    )

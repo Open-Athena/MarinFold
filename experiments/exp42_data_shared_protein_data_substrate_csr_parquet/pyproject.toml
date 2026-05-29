@@ -1,0 +1,40 @@
+[project]
+name = "exp42-data-shared-protein-data-substrate-csr-parquet"
+version = "0.1.0"
+description = "CSR-parquet protein-data substrate + on-the-fly training-time dataloader. Doc-format-agnostic."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold",        # schema vocab (AMINO_ACIDS / ATOM_NAMES) — pinned source of truth
+    "gemmi>=0.7",       # mmCIF parsing (read_structure_string requires >=0.7.0)
+    "numpy",            # columnar ParsedStructure representation
+    "pyarrow>=14",      # parquet read/write + pa.dataset (predicate pushdown, native gs:// FS)
+    "marin-zephyr",     # distributed precompute on Iris
+    "fsspec",           # uniform local + cloud file IO
+    "gcsfs",            # gs:// for AFDB + marin output buckets
+    "huggingface_hub",  # hf:// for the timodonnell/afdb-1.6M manifest
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+# torch is *optional* — dataset.py subclasses torch.utils.data.IterableDataset
+# when torch is importable, otherwise falls back to a plain Python iterable.
+# This keeps tests + CI lightweight; training jobs install torch separately.
+torch = ["torch"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }

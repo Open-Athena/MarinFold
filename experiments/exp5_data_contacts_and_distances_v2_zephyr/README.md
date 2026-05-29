@@ -94,13 +94,6 @@ generated docs.
 - **`--num-docs N` is a global cap on emitted documents**, collapses
   to a single output file. For sharded output use a `{shard}`
   placeholder in `--out` and drop `--num-docs`.
-- **Two output modes** are supported. The default `generate`
-  subcommand writes a static corpus of finished documents (one
-  parquet per input shard). The newer `parse-to-csr` subcommand
-  writes the *parsed structures* in a columnar CSR layout that the
-  in-process `dataset.CSRDocumentDataset` consumes at training time,
-  with per-epoch RNG variation as free data augmentation. See "On-the-fly
-  training-time generation" below for when / why to use each.
 
 ### Output schema
 
@@ -167,70 +160,15 @@ obstore exposes per-request / per-bucket header overrides that don't
 touch the auth flow, we stay on `fsspec/gcsfs` for the fetch.
 Worth filing upstream the next time someone touches obstore.
 
-### On-the-fly training-time generation (CSR store + dataloader)
+### See also: on-the-fly training-time generation (#42)
 
-The default pipeline writes a **static corpus** of generated documents
-(one parquet per input shard) — fine for fixed-corpus training, but it
-bakes in the RNG seed at corpus-generation time so every epoch sees the
-same docs. The CSR store is a second output mode that defers generation
-to the training-time dataloader, which gives you:
-
-* **Per-epoch RNG variation** — same structure → different doc each
-  epoch (`seed = sha1(entry_id + "|e" + epoch)`), at zero storage cost.
-  Free data augmentation that the static corpus can't offer without
-  pre-generating N variants per structure.
-* **~12× smaller artifact** than the source CIFs (the CSR layout
-  encodes a parsed-and-validated `ParsedStructure` directly; no need to
-  re-parse with gemmi at training time). ~25-40 GB compressed for the
-  full 1.6M corpus, fits on local NVMe.
-* **No GCS-GET-per-row at training time** — the precompute step pays
-  that cost once; the dataloader reads CSR parquets sequentially.
-* **Predicate pushdown** — `filter=pc.field("split") == "train"` is
-  evaluated at the C++ scan layer, so non-matching rows are never
-  decoded.
-* **Generic over doc type** — pass any
-  `Callable[[ParsedStructure], str | None]` to `generator=` to swap
-  the v2 algorithm for a different doc type without subclassing.
-
-**Step 1: one-time precompute on Iris** (Zephyr pipeline that mirrors
-`generate` but writes CSR rows instead of generated docs):
-
-```bash
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- python cli.py parse-to-csr --input "hf://datasets/timodonnell/afdb-1.6M/**/*.parquet" --out "gs://marin-us-central1/protein-structure/MarinFold/exp5/csr-v1-{shard:05d}-of-{total:05d}.parquet" --worker-cpu 1 --worker-memory 4g --worker-disk 64g --max-workers 512 --fetch-concurrency 32
-```
-
-For a quick check, cap to N structures with `--num-structures N`.
-
-**Step 2: read the CSR store from a training dataloader** (Python):
-
-```python
-from dataset import CSRDocumentDataset, v2_generator
-from torch.utils.data import DataLoader
-
-# Point at one path — directory, single file, or glob. pyarrow.dataset
-# handles fragment discovery + filesystem inference (gs://, s3://, local).
-ds = CSRDocumentDataset(
-    dataset_path="gs://marin-us-central1/protein-structure/MarinFold/exp5/",
-    epoch=current_epoch,                      # bump between epochs
-    # generator=v2_generator() is the default — pass a custom one to vary
-    # the doc type without subclassing the dataloader.
-)
-
-loader = DataLoader(ds, batch_size=64, num_workers=16, collate_fn=lambda b: b)
-for batch in loader:
-    for row in batch:                         # row = {"entry_id": ..., "document": ...}
-        ...                                   # tokenize + feed trainer
-```
-
-Measured throughput (single CPU, real AFDB): **~225 docs/sec** (~4.4
-ms/doc) end-to-end with the v2 generator. At 16 dataloader workers per
-node that's ~3,600 docs/sec — enough to keep an 8-GPU job with
-256-doc/sec/GPU demand comfortably fed.
-
-For tokenization / token-id output, subclass `CSRDocumentDataset` and
-override `_structure_to_doc(structure)` to attach the fields you want.
-See `tests/test_csr_store.py::test_dataset_subclass_can_enrich_output_dict`
-for the pattern.
+For training-time doc generation from the same parsed structures —
+with per-epoch RNG variation as free data augmentation, ~12× smaller
+artifact, and a doc-format-agnostic dataloader callback API — see
+[`exp42`](../exp42_data_shared_protein_data_substrate_csr_parquet/) (the
+"shared protein-data substrate" experiment). exp5 emits the static v2
+corpus to HF; exp42 emits the CSR parquet substrate that any
+doc-format experiment can consume on the fly.
 
 ### Layout
 
@@ -239,14 +177,11 @@ experiments/exp5_data_contacts_and_distances_v2_zephyr/
 ├── vocab.py        # re-exports marinfold v1 vocab + appends V2_NEW_TOKENS
 ├── parse.py        # columnar ParsedStructure + gemmi fast-path extractor
 ├── generate.py     # vectorized v2 generation; byte-identical RNG stream vs exp34
-├── csr_store.py    # CSR parquet schema + zero-copy batched reader
-├── dataset.py      # on-the-fly training-time dataloader (IterableDataset)
-├── cli.py          # `generate` / `parse-to-csr` / `tokenizer` subcommands
+├── cli.py          # `generate` (Zephyr pipeline) + `tokenizer` subcommands
 ├── pyproject.toml  # marinfold + gemmi/numpy/pyarrow + marin-zephyr/fsspec/gcsfs/hf
 └── tests/
     ├── test_parse.py          # columnar shape + per-residue invariants
     ├── test_byte_identity.py  # SHA-1 match against exp34 reference
-    ├── test_csr_store.py      # CSR roundtrip + byte-identity-through-CSR + dataloader
     └── test_cli.py            # end-to-end cli.cmd_generate smoke
 ```
 
