@@ -197,6 +197,86 @@ def test_dataset_predicate_pushdown_via_filter(tmp_path, synthetic_cif):
     assert {o["entry_id"] for o in outputs} == {"AF-F00-F1", "AF-F02-F1"}
 
 
+def test_dataset_accepts_custom_generator_callback(tmp_path, synthetic_cif):
+    """``generator=`` swaps the doc algorithm without touching the dataloader.
+
+    Exercises the composition extension point: pass any
+    ``DocumentGenerator``-shaped callable. Validates that (1) the callback
+    actually runs on each structure, (2) its output reaches the consumer
+    unchanged, and (3) the dataloader still wires per-epoch reseeding into
+    ``structure.entry_id`` so callbacks that seed off entry_id get fresh
+    draws each epoch without the dataloader knowing anything about them.
+    """
+    from dataset import CSRDocumentDataset
+
+    schema = csr_store.schema_with_passthrough({})
+    rows = [
+        csr_store.parsed_structure_to_row(
+            parse.parse_cif_content(synthetic_cif, entry_id=f"AF-CB{i:02d}-F1"))
+        for i in range(3)
+    ]
+    batch = csr_store.rows_to_record_batch(rows, schema)
+    path = tmp_path / "cb.parquet"
+    pq.write_table(pa.Table.from_batches([batch]), str(path))
+
+    # Stub generator returns the (possibly reseeded) entry_id verbatim — so
+    # we can read the per-epoch suffix straight out of the yielded doc.
+    seen_entry_ids = []
+    def echo(structure):
+        seen_entry_ids.append(structure.entry_id)
+        return f"DOC:{structure.entry_id}"
+
+    ds_e0 = CSRDocumentDataset(dataset_path=str(path), generator=echo, epoch=0)
+    out_e0 = list(ds_e0)
+    assert [o["document"] for o in out_e0] == [
+        "DOC:AF-CB00-F1|e0", "DOC:AF-CB01-F1|e0", "DOC:AF-CB02-F1|e0",
+    ]
+    # Yielded entry_id is the ORIGINAL (without the |eN suffix) so callers
+    # can still join back to manifest rows by entry_id.
+    assert [o["entry_id"] for o in out_e0] == ["AF-CB00-F1", "AF-CB01-F1", "AF-CB02-F1"]
+
+    # Different epoch → callback sees the new suffix → different docs, all
+    # without the callback caring about epoch.
+    ds_e1 = CSRDocumentDataset(dataset_path=str(path), generator=echo, epoch=1)
+    out_e1 = list(ds_e1)
+    assert [o["document"] for o in out_e1] == [
+        "DOC:AF-CB00-F1|e1", "DOC:AF-CB01-F1|e1", "DOC:AF-CB02-F1|e1",
+    ]
+
+
+def test_dataset_subclass_can_enrich_output_dict(tmp_path, synthetic_cif):
+    """Subclassing ``_structure_to_doc`` adds fields / multiplies output.
+
+    The callback covers the common case (swap the algorithm); subclassing
+    covers the case where the *output shape* should change — e.g. attach a
+    token-id field, surface a passthrough column, or yield N variants per
+    structure. This test pins the subclassing contract by adding a derived
+    field and asserting it shows up downstream.
+    """
+    from dataset import CSRDocumentDataset
+
+    class TaggedDataset(CSRDocumentDataset):
+        def _structure_to_doc(self, structure):
+            for row in super()._structure_to_doc(structure):
+                row["seq_len"] = structure.num_residues  # derived field
+                yield row
+
+    schema = csr_store.schema_with_passthrough({})
+    rows = [
+        csr_store.parsed_structure_to_row(
+            parse.parse_cif_content(synthetic_cif, entry_id=f"AF-SUB{i:02d}-F1"))
+        for i in range(2)
+    ]
+    batch = csr_store.rows_to_record_batch(rows, schema)
+    path = tmp_path / "sub.parquet"
+    pq.write_table(pa.Table.from_batches([batch]), str(path))
+
+    ds = TaggedDataset(dataset_path=str(path), epoch=0)
+    outputs = list(ds)
+    assert all("seq_len" in o for o in outputs)
+    assert all(isinstance(o["seq_len"], int) and o["seq_len"] > 0 for o in outputs)
+
+
 def test_dataset_streams_docs_from_csr(tmp_path, synthetic_cif):
     """End-to-end: write a multi-row CSR shard, point ``CSRDocumentDataset``
     at it, iterate, get a doc per row. The minimal architectural smoke test

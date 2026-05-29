@@ -20,7 +20,7 @@ import fnmatch
 import hashlib
 import os
 import random
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -30,6 +30,35 @@ import pyarrow.fs as pa_fs
 import csr_store
 import generate
 from generate import GenerationConfig
+from parse import ParsedStructure
+
+
+# Doc-generation callback signature. Takes a fully-reconstructed
+# :class:`parse.ParsedStructure` (with the per-(entry_id, epoch) reseed
+# already baked into ``structure.entry_id`` — generators that seed off
+# ``entry_id`` get fresh draws each epoch for free) and returns either the
+# generated doc string or ``None`` to skip this structure. Used to vary the
+# doc type the dataloader emits without touching the dataloader itself.
+DocumentGenerator = Callable[[ParsedStructure], Optional[str]]
+
+
+def v2_generator(cfg: Optional[GenerationConfig] = None,
+                 context_length: int = 8192) -> DocumentGenerator:
+    """Default doc generator: the v2 contacts-and-distances algorithm with
+    its standard hyperparameters. Bound here so the dataloader's
+    ``generator=`` default is one constructor call.
+
+    Pass a custom ``cfg`` (e.g. higher ``contact_cutoff_angstrom``, different
+    pLDDT bins) to vary the v2 sampling without subclassing anything. To
+    emit a different doc type entirely, write your own callable matching
+    :data:`DocumentGenerator` and pass it in directly.
+    """
+    cfg = cfg if cfg is not None else GenerationConfig()
+    def _gen(structure: ParsedStructure) -> Optional[str]:
+        return generate.generate_one(
+            structure, context_length=context_length, cfg=cfg,
+        )
+    return _gen
 
 # Optional torch base class — keeps the POC dependency-free while letting it
 # slot into a real torch DataLoader when used in training.
@@ -47,11 +76,27 @@ except ImportError:
 
 @dataclass
 class CSRDocumentDataset(_IterableDatasetBase):
-    """Stream generated v2 documents from a CSR parquet dataset.
+    """Stream generated documents from a CSR parquet dataset.
 
-    Yields ``{"entry_id": str, "document": str}`` dicts. A real training
-    integration would wrap this with a tokenizer (cheap, ~0.3 ms/doc); kept
-    out of the POC so the throughput numbers below isolate generate cost.
+    Yields ``{"entry_id": str, "document": str}`` dicts by default. Two
+    extension points let callers vary the doc *type* without touching this
+    class:
+
+    * **callback** — pass any ``DocumentGenerator`` to ``generator=`` to
+      swap the v2 algorithm for another (e.g. a different generation
+      strategy, an inference-time scoring doc, a unit-test fixture):
+
+      .. code-block:: python
+
+          ds = CSRDocumentDataset(
+              dataset_path=...,
+              generator=v2_generator(cfg=GenerationConfig(rank_std=2.0)),
+          )
+
+    * **subclass** — override :meth:`_structure_to_doc` to change the
+      *output shape* (e.g. add tokenized fields, yield multiple docs per
+      structure, attach extra metadata). The callback covers most needs;
+      subclassing is for callers who want to enrich the yielded dict.
 
     Parameters
     ----------
@@ -61,27 +106,28 @@ class CSRDocumentDataset(_IterableDatasetBase):
         * a directory: ``"gs://marin-us-central1/exp5/csr/"``
           (pyarrow auto-discovers all ``*.parquet`` files inside),
         * a single file: ``"/tmp/csr/shard-00000.parquet"``,
-        * a glob:       ``"/tmp/csr/shard-*.parquet"`` (expanded via the
-          relevant fsspec filesystem before being handed to pyarrow).
+        * a glob:       ``"/tmp/csr/shard-*.parquet"``.
 
         The user doesn't need to glob, list, or sort fragments themselves —
         pyarrow.dataset handles fragment discovery and filesystem details.
+    generator : DocumentGenerator
+        Callable applied to each reconstructed :class:`ParsedStructure` to
+        produce the doc string. Default :func:`v2_generator` reproduces the
+        contacts-and-distances-v2 algorithm with its standard config.
     epoch : int
-        Reseeds RNG so the same structure produces a different doc each epoch.
-        Caller bumps this between epochs.
-    context_length : int
-        Token budget per document.
-    cfg : GenerationConfig
-        v2 generation hyperparameters; defaults match exp34's reference.
+        Reseeds RNG so the same structure produces a different doc each
+        epoch. The dataloader rewrites ``structure.entry_id`` to
+        ``"{entry_id}|e{epoch}"`` before calling ``generator`` — anything
+        that seeds off ``entry_id`` (which ``generate_one`` does) gets fresh
+        draws each epoch for free.
     read_batch_size : int
         Parquet read batch size — amortizes decode cost over many rows while
         keeping per-row memory bounded. Default 256 is a good
         latency/throughput balance.
     shuffle_within_fragment : bool
         If True, draw rows in a per-fragment random order each epoch (still
-        deterministic given ``epoch``). The default streaming behavior
-        already gives between-fragment variety; this is for stricter
-        permutation guarantees.
+        deterministic given ``epoch``). One fragment is materialized at a
+        time (~100 MB at our density); the dataset as a whole never is.
     filter : pyarrow.compute.Expression, optional
         Evaluated at the C++ scan layer (e.g.
         ``pc.field("split") == "train"``). Non-matching rows are never
@@ -94,9 +140,8 @@ class CSRDocumentDataset(_IterableDatasetBase):
     """
 
     dataset_path: str
+    generator: DocumentGenerator = field(default_factory=v2_generator)
     epoch: int = 0
-    context_length: int = 8192
-    cfg: GenerationConfig = field(default_factory=GenerationConfig)
     read_batch_size: int = 256
     shuffle_within_fragment: bool = False
     filter: Optional[Any] = None
@@ -160,15 +205,21 @@ class CSRDocumentDataset(_IterableDatasetBase):
                     for structure in csr_store._iter_batch_rows_zero_copy(batch):
                         yield from self._structure_to_doc(structure)
 
-    def _structure_to_doc(self, structure) -> Iterator[dict[str, Any]]:
-        # Override generate's default ``sha1(entry_id)`` seeding by patching
-        # the entry_id with an epoch suffix. Keeps the generate.py contract
-        # (entry_id → seed) intact while giving per-epoch variation.
+    def _structure_to_doc(self, structure: ParsedStructure
+                          ) -> Iterator[dict[str, Any]]:
+        """Yield one output row per ``structure``. Override this in a
+        subclass to enrich the dict (e.g. attach token ids, surface
+        passthrough columns) or yield multiple rows per structure.
+
+        The default rewrites ``entry_id`` to ``"{entry_id}|e{epoch}"`` so
+        any generator that seeds off ``entry_id`` automatically gets fresh
+        draws each epoch — and then yields the original ``entry_id`` back
+        out, so downstream consumers can correlate generated docs with
+        manifest rows.
+        """
         from dataclasses import replace
         seeded = replace(structure, entry_id=f"{structure.entry_id}|e{self.epoch}")
-        doc = generate.generate_one(
-            seeded, context_length=self.context_length, cfg=self.cfg,
-        )
+        doc = self.generator(seeded)
         if doc is None:
             return
         yield {"entry_id": structure.entry_id, "document": doc}
