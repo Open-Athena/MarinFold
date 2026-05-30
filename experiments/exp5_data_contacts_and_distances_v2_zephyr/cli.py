@@ -3,21 +3,38 @@
 
 """contacts-and-distances-v2-on-zephyr driver.
 
+exp5 is the at-scale, Zephyr-parallelized runner for the v2 doc
+algorithm — it does *not* re-implement the algorithm. The parse +
+generate code is imported from exp34
+(``exp34_document_structures_contacts_and_distances_v2``), the
+local-only reference impl, so the two can never drift. exp5's value
+is everything *around* that impl: the Zephyr pipeline, in-shard
+fetch concurrency, manifest passthrough, output schema, Iris
+resource defaults.
+
 Two subcommands:
 
 * ``generate`` — runs the v2 generator at scale on the marin Iris
-  cluster. Input is the timodonnell/afdb-1.6M parquet manifest on
-  HuggingFace; per-row mmCIFs are fetched concurrently from the
-  ``gcs_uri`` column inside each Zephyr shard (the perf finding
-  from the prior production run: sequential per-row GCS fetches
-  were the residual bottleneck once the URI mode killed the
-  cross-cloud HF egress).
+  cluster. Input is the ``timodonnell/afdb-1.6M`` parquet manifest
+  on HuggingFace; per-row mmCIFs are fetched concurrently from the
+  ``gcs_uri`` column inside each Zephyr shard.
 
-* ``tokenizer`` — build / save / push the v2 tokenizer (same as
-  exp34's; included so a downstream training job can pin a single
-  experiment for both the dataset and the tokenizer build).
+* ``tokenizer`` — build / save / push the v2 tokenizer (delegates to
+  exp34's vocab so the published tokenizer pins back to one source).
 
 Run examples are in the experiment README.
+
+On the import shim
+==================
+
+exp34 lives at ``../exp34_*`` and is declared ``package = false`` in
+its pyproject — it's an experiment dir, not an installable package.
+We make its modules importable here by prepending its path to
+``sys.path`` once at module load. Tim's #38 review comment notes
+this is a long-term smell; the right end-state is to graduate v2 to
+``marinfold/marinfold/document_structures/contacts_and_distances_v2/``
+(per the same pattern as v1) and then this shim disappears entirely.
+Until that lands, this is the cleanest "one source of truth" we have.
 """
 
 from __future__ import annotations
@@ -26,18 +43,27 @@ import argparse
 import hashlib
 import os
 import sys
+import tempfile
 import typing
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
-from fray import ResourceConfig
-from marinfold import build_tokenizer
-from zephyr import Dataset, ZephyrContext
+# Make exp34's modules (``parse``, ``generate``, ``vocab``) importable.
+# Insert at position 0 so they win over anything else on sys.path with the
+# same module name. Must happen *before* the exp34 imports below.
+_EXP34_DIR = Path(__file__).resolve().parent.parent / "exp34_document_structures_contacts_and_distances_v2"
+if str(_EXP34_DIR) not in sys.path:
+    sys.path.insert(0, str(_EXP34_DIR))
 
-import generate
-import parse
-from vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+import fsspec  # noqa: E402
+from fray import ResourceConfig  # noqa: E402
+from marinfold import build_tokenizer  # noqa: E402
+from zephyr import Dataset, ZephyrContext  # noqa: E402
+
+import generate  # exp34's generate.py  # noqa: E402
+import parse  # exp34's parse.py  # noqa: E402
+from vocab import CONTEXT_LENGTH, NAME, all_domain_tokens  # exp34's vocab.py  # noqa: E402
 
 
 # Manifest columns we'll copy verbatim to the output *if* the input parquet
@@ -77,7 +103,6 @@ def _resolve_input_columns(input_path: str, cif_col: str) -> tuple[list[str], li
     time so the same column list is used for every shard's
     ``load_parquet(columns=...)`` call — keeping the output schema stable.
     """
-    import fsspec
     import pyarrow.parquet as pq
 
     fs, _ = fsspec.core.url_to_fs(input_path)
@@ -108,22 +133,92 @@ def _resolve_input_columns(input_path: str, cif_col: str) -> tuple[list[str], li
     return columns, passthrough
 
 
+def _parse_bytes_via_tempfile(data: bytes, *, suffix: str = ".cif") -> parse.ParsedStructure:
+    """Wrap exp34's path-only ``parse.parse_structure`` for our bytes pipeline.
+
+    exp34's parser takes a ``Path`` (and reads through ``gemmi.read_structure``);
+    we fetch cif bytes from gs:// or HF and need to feed them in. Cheapest +
+    most faithful adapter: spool to a ``NamedTemporaryFile`` and pass the
+    path. ``entry_id`` is derived inside ``parse_structure`` from the cif's
+    ``_entry.id`` field (``structure.name``), NOT the filename — so the
+    tempfile's random name is harmless. The file is unlinked on exit.
+    """
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(data)
+        tmp_path = Path(tmp.name)
+    try:
+        return parse.parse_structure(tmp_path)
+    finally:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+
+
+def _fetch_and_parse(uri: str) -> parse.ParsedStructure | None:
+    """Fetch a cif via fsspec (transparent gunzip if applicable) and parse
+    it through exp34's parser. Returns ``None`` on fetchable / parseable
+    failure so a single bad row never kills a Zephyr worker.
+
+    Mirrors the original exp5 ``try_parse_cif_from_uri`` surface — caller
+    treats ``None`` as "skip this row."
+    """
+    import warnings
+
+    try:
+        with fsspec.open(uri, "rb", compression="infer") as f:
+            data = f.read()
+    except (OSError, ValueError) as exc:
+        warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
+        return None
+    try:
+        return _parse_bytes_via_tempfile(data)
+    except (ValueError, OSError) as exc:
+        warnings.warn(f"parse failed for {uri}: {exc}", stacklevel=2)
+        return None
+
+
+def _try_parse_inline_cif(data, *, entry_id: str | None) -> parse.ParsedStructure | None:
+    """Inline-cif fallback (--cif-text-column): parse bytes already in the row.
+
+    Same ``None``-on-failure contract as :func:`_fetch_and_parse`.
+    """
+    import warnings
+
+    if data is None:
+        return None
+    if isinstance(data, str):
+        data = data.encode()
+    try:
+        return _parse_bytes_via_tempfile(data)
+    except (ValueError, OSError) as exc:
+        warnings.warn(f"parse failed for {entry_id}: {exc}", stacklevel=2)
+        return None
+
+
 def _build_output_row(row: dict, doc: str, structure: parse.ParsedStructure,
                       passthrough_columns: list[str]) -> dict:
     """Assemble one output row: doc text + computed provenance + manifest passthrough.
 
-    ``global_plddt`` and ``seq_len`` use the *parsed-structure* values (what
-    ``generate_one`` actually serialized into the doc's pLDDT bin and
-    sequence-token block), not the manifest's. Keeps each row internally
-    consistent — the metadata describes what was emitted.
+    ``entry_id`` comes from the manifest (it's the authoritative key the
+    downstream consumer joins on); ``structure.entry_id`` (derived inside
+    exp34's parser from the cif's ``_entry.id`` field) is used only as a
+    fallback when the manifest didn't supply one. For real AFDB rows
+    both agree; for synthetic / unkeyed inputs, manifest-wins is the right
+    policy.
+
+    ``global_plddt`` and ``seq_len`` use the *parsed-structure* values
+    (what ``_generate_one`` actually serialized into the doc's pLDDT bin
+    and sequence-token block), not the manifest's. Keeps each row
+    internally consistent — the metadata describes what was emitted.
     """
     contacts_emitted = sum(1 for t in doc.split() if t in _CONTACT_MARKERS)
     out = {
-        "entry_id": row.get("entry_id"),
+        "entry_id": row.get("entry_id") or structure.entry_id,
         "structure": NAME,
         "document": doc,
         "sha1": hashlib.sha1(doc.encode()).hexdigest(),
-        "seq_len": int(structure.num_residues),
+        "seq_len": len(structure.residues),
         "global_plddt": float(structure.global_plddt),
         "contacts_emitted": int(contacts_emitted),
     }
@@ -150,23 +245,21 @@ def _generate_doc_for_row(
 
     Returns an output-row dict (with ``document`` + provenance metadata) on
     success, or ``None`` when the structure was unfetchable / unparseable /
-    too small to fit the token budget. Designed to be safe inside a Zephyr
-    worker — never raises on transient I/O errors.
+    too small to fit the token budget. Safe inside a Zephyr worker — never
+    raises on transient I/O errors.
     """
-    entry_id = row.get("entry_id")
     if cif_text_column is not None:
-        cif = row.get(cif_text_column)
-        if cif is None:
-            return None
-        structure = parse.try_parse_cif_content(cif, entry_id=entry_id, source=entry_id)
+        structure = _try_parse_inline_cif(
+            row.get(cif_text_column), entry_id=row.get("entry_id"),
+        )
     else:
         uri = row.get(cif_uri_column)
         if uri is None:
             return None
-        structure = parse.try_parse_cif_from_uri(uri, entry_id=entry_id)
+        structure = _fetch_and_parse(uri)
     if structure is None:
         return None
-    doc = generate.generate_one(structure, context_length=context_length, cfg=cfg)
+    doc = generate._generate_one(structure, context_length=context_length, cfg=cfg)
     if doc is None:
         return None
     return _build_output_row(row, doc, structure, passthrough_columns)
@@ -185,18 +278,17 @@ def _generate_shard(
 ):
     """``map_shard`` body: fetch all rows' cifs concurrently within the shard.
 
-    The CPU work (gemmi parse + doc generation) takes ~6 ms per row;
-    the GCS GET is ~30-80 ms on a cold connection. Without intra-shard
-    concurrency, per-shard latency is bounded by the sum of GETs
-    (sequential I/O), which is what made run 233550 land at ~128 s/shard
-    despite vectorized parse. A ThreadPoolExecutor of ``fetch_concurrency``
-    workers overlaps the I/O — gemmi releases the GIL during the C++
-    parse, so the threads make real progress in parallel.
+    The CPU work (gemmi parse + doc generation) takes a few ms per row; the
+    GCS GET is ~30-80 ms on a cold connection. Without intra-shard
+    concurrency, per-shard latency is bounded by the sum of GETs (sequential
+    I/O), which is what made the prior production run land at ~128 s/shard.
+    A ThreadPoolExecutor of ``fetch_concurrency`` workers overlaps the I/O —
+    gemmi releases the GIL during the C++ parse, so the threads make real
+    progress in parallel.
 
     Order within the output shard mirrors input row order (we use
-    ``executor.map`` not ``as_completed``). That makes the run
-    deterministic per-shard, which matters for byte-comparing outputs
-    across runs.
+    ``executor.map`` not ``as_completed``). That makes the run deterministic
+    per-shard, which matters for byte-comparing outputs across runs.
     """
     rows = list(items)
     if not rows:

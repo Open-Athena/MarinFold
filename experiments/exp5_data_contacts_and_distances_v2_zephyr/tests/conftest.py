@@ -3,18 +3,14 @@
 
 """Test fixtures shared across exp5's test suite.
 
-Two path adjustments:
-
-* Add the experiment dir itself to ``sys.path`` so ``import parse`` /
-  ``import generate`` / ``import vocab`` work — experiments aren't
-  importable packages.
-* Add exp34's directory so the byte-identity test can import its
-  parse + generate as the reference oracle.
+Adds the experiment dir to ``sys.path`` so ``import cli`` works —
+experiments aren't importable packages. We don't add exp34 here: ``cli.py``
+itself installs the exp34 path shim at module load, so importing ``cli``
+from a test transitively pulls in exp34's ``parse`` / ``generate`` /
+``vocab`` correctly.
 
 Provides a ``synthetic_cif`` fixture: a realistic-ish polymer mmCIF
-text (~50 residues) built by converting a synthetic PDB via gemmi —
-identical generation logic to exp34's ``_make_long_pdb`` test helper,
-so cross-experiment byte-identity checks are reproducible.
+text (~50 residues) built by converting a synthetic PDB via gemmi.
 """
 
 from __future__ import annotations
@@ -25,15 +21,8 @@ from pathlib import Path
 import pytest
 
 _EXP_DIR = Path(__file__).resolve().parents[1]
-_EXP34_DIR = _EXP_DIR.parent / "exp34_document_structures_contacts_and_distances_v2"
-
-# Order matters: exp5's own modules first so ``import parse`` resolves to
-# exp5's parse, not exp34's. The exp34 oracle imports under the
-# ``exp34_*`` aliases in test_byte_identity.py via a sys.path swap.
-for p in (_EXP_DIR, _EXP34_DIR):
-    p_str = str(p)
-    if p_str not in sys.path:
-        sys.path.insert(0, p_str)
+if str(_EXP_DIR) not in sys.path:
+    sys.path.insert(0, str(_EXP_DIR))
 
 
 def _make_long_pdb(num_residues: int) -> str:

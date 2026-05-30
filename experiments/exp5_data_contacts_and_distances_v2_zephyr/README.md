@@ -55,39 +55,45 @@ single-digit minutes:
 
 ## Approach
 
-This is a fresh implementation. It calls out to nothing in exp34 at
-runtime; the byte-identity contract is enforced by a test that
-imports exp34's reference via `sys.path` and SHA-1-compares the
-generated docs.
+**exp5 is a Zephyr wrapper around exp34's local impl.** The v2 doc
+algorithm — parse + generate + vocab — comes from
+[`exp34`](../exp34_document_structures_contacts_and_distances_v2/),
+imported directly via a `sys.path` shim in `cli.py`. Two copies of an
+algorithm always drift; one source of truth doesn't (see Tim's review on
+PR [#38](https://github.com/Open-Athena/MarinFold/pull/38)). The
+trade-off is that we accept exp34's per-row CPU cost as-is rather than
+re-implementing for speed — the prior production runs landed at ~8 min
+end-to-end on the cluster, well within budget for a one-time job.
+
+Performance-oriented re-engineering of the parse + generate inner
+loop — and the columnar `ParsedStructure` + CSR substrate that comes
+with it — lives in
+[`exp42`](../exp42_data_shared_protein_data_substrate_csr_parquet/), where
+training-time on-the-fly doc generation actually needs the speedup.
+exp5 stays small.
 
 ### Design choices
 
-- **Columnar in-memory structure** (`parse.ParsedStructure`).
-  Per-residue arrays at the *structure* level: `plddt_per_residue:
-  float64[N]`, `cb_or_ca_xyz: float64[N, 3]`, plus a flat CSR atom
-  table (`atom_offsets: int32[N+1]`, `atom_name_id: uint8[T]`,
-  `atom_xyz: float64[T, 3]`). No backward compat with marinfold's
-  tuple-of-tuples `Residue.atoms` — designed to round-trip zero-copy
-  to `pyarrow.RecordBatch` if a precomputed-store experiment ever
-  needs it.
-- **Single-pass parser** with the gemmi fast path: `Model.all()` flat
-  CRA iteration + `atom.pos.tolist()` (one nanobind call vs three
-  attribute accesses). Polymer-iteration fallback for non-AFDB
-  inputs. See `parse.py` for the determinism contract that keeps docs
-  byte-identical to exp34.
-- **Vectorized contact eligibility.** `np.triu_indices(k=1)` over the
-  `cb_or_ca_xyz` array replaces a ~1.7 M-call Python `euclidean`
-  loop. Row-major order is preserved so `rng.sample` over each
-  contacts-by-mode list sees identical inputs to exp34.
+- **One source of truth.** `cli.py` does `import parse, generate, vocab`
+  — all three modules resolve to exp34 via a `sys.path` shim at module
+  load (exp34 is `package = false` so we can't path-dep it as an
+  installable package; the long-term fix is to graduate v2 to
+  `marinfold/marinfold/document_structures/contacts_and_distances_v2/`,
+  at which point the shim disappears).
+- **Per-row I/O adapter.** exp34's `parse.parse_structure(path)` takes
+  a local filesystem path; the manifest gives us a `gs://` URI. The
+  worker fetches via `fsspec` into a `NamedTemporaryFile`, then calls
+  the parser. exp34's parser derives `entry_id` from the cif's
+  `_entry.id` field, so the random tempfile name is harmless. Per-row
+  cost: one tempfile open/write/unlink, ~negligible.
 - **URI-mode input is the default.** `--cif-uri-column` defaults to
   `gcs_uri`. The bulky `cif_content` path is still available via
   `--cif-text-column` for testing or datasets without URI columns.
 - **In-shard concurrent fetches** via `Dataset.map_shard` +
-  `ThreadPoolExecutor` (`--fetch-concurrency`, default 32). This is
-  the new lever — the prior production run landed at ~128 s/shard
-  because the 2,000 per-row GCS GETs ran sequentially. The fetch
-  backend is `fsspec` + `gcsfs`; see "On obstore" below for why we
-  didn't switch.
+  `ThreadPoolExecutor` (`--fetch-concurrency`, default 32). The
+  prior production run landed at ~128 s/shard because the 2,000 per-row
+  GCS GETs ran sequentially. Threading them overlaps GETs with gemmi
+  parse (gemmi releases the GIL during the C++ parse).
 - **Resource defaults bake in the lesson:** `--worker-cpu 1`,
   `--worker-memory 4g`, `--max-workers` left to Zephyr's default of
   128 on a cluster (raise via the flag or `ZEPHYR_MAX_WORKERS`).
@@ -126,54 +132,32 @@ read deduplicates it before calling `load_parquet(columns=...)`.
 Schema detection happens once at submission time (peek the first
 matching parquet file), so the output schema is stable across shards.
 
-### On obstore (and why we didn't switch)
+### See also: on-the-fly training-time generation (#42)
 
-We evaluated [obstore](https://developmentseed.org/obstore/) (Rust
-`object_store`-backed, advertised ~9× throughput vs `fsspec` on
-parallel small-object GETs) as the per-row fetch backend. It works on
-single-region GCS buckets like our output bucket
-`gs://marin-us-central1/...`, but it **cannot read AFDB** as shipped
-(obstore 0.9.5). The root cause is upstream: `object_store`'s HTTP
-handler hard-requires a `Content-Length` header on every GCS GET
-response, and AFDB cifs are stored with `Content-Encoding: gzip` so
-GCS transparently decompresses on the wire (visible in the response
-as `x-guploader-response-body-transformations: gunzipped`) and omits
-`Content-Length`. The documented client-side workaround
-(`Accept-Encoding: gzip`) can only be set via
-`client_options.default_headers` today, and those headers leak into
-the OAuth2 token fetch and break it.
-
-Variants we tried (all fail identically on AFDB):
-
-* `GCSStore.from_url` / `GCSStore(bucket=…)` / `.get_range` /
-  `.stream`,
-* `client_options={"http1_only"/"http2_only"/"allow_http"}`,
-* `client_options={"default_headers": {"Accept-Encoding": "gzip"}}`
-  — breaks the token fetch,
-* static `credential_provider` + `default_headers` — Accept-Encoding
-  doesn't reach the GCS GET,
-* `obstore.fsspec.register("gs")` + `fsspec.open(...)`,
-* `FsspecStore("gs", ...)`.
-
-Until either `object_store` relaxes the `Content-Length` invariant or
-obstore exposes per-request / per-bucket header overrides that don't
-touch the auth flow, we stay on `fsspec/gcsfs` for the fetch.
-Worth filing upstream the next time someone touches obstore.
+For training-time doc generation directly from the parsed substrate —
+with per-epoch RNG variation as free data augmentation, ~12× smaller
+artifact than raw CIFs, and a doc-format-agnostic dataloader callback
+API — see
+[`exp42`](../exp42_data_shared_protein_data_substrate_csr_parquet/) (the
+"shared protein-data substrate" experiment). exp5 publishes the static
+v2 corpus to HF; exp42 publishes a CSR-parquet substrate that any
+doc-format experiment can consume on the fly.
 
 ### Layout
 
 ```
 experiments/exp5_data_contacts_and_distances_v2_zephyr/
-├── vocab.py        # re-exports marinfold v1 vocab + appends V2_NEW_TOKENS
-├── parse.py        # columnar ParsedStructure + gemmi fast-path extractor
-├── generate.py     # vectorized v2 generation; byte-identical RNG stream vs exp34
-├── cli.py          # `generate` (Zephyr pipeline) + `tokenizer` subcommands
+├── cli.py          # `generate` (Zephyr pipeline) + `tokenizer` subcommands.
+│                   # Imports parse/generate/vocab from exp34 via sys.path shim.
 ├── pyproject.toml  # marinfold + gemmi/numpy/pyarrow + marin-zephyr/fsspec/gcsfs/hf
 └── tests/
-    ├── test_parse.py          # columnar shape + per-residue invariants
-    ├── test_byte_identity.py  # SHA-1 match against exp34 reference
     └── test_cli.py            # end-to-end cli.cmd_generate smoke
 ```
+
+Notably absent: `parse.py`, `generate.py`, `vocab.py` — all three live
+in [`exp34`](../exp34_document_structures_contacts_and_distances_v2/)
+and are imported at runtime. exp5's job is the Zephyr pipeline around
+those modules, nothing more.
 
 ### Running it locally
 
@@ -216,19 +200,22 @@ shell. Cancel a running job with
 
 ## Success criteria
 
-1. **Byte-identity vs exp34.** Generated v2 docs are SHA-1-equal to
-   exp34's reference implementation for the same structure + entry_id,
-   across multiple seeds — covered by
-   `tests/test_byte_identity.py::test_doc_byte_identical_to_exp34`.
+1. **One source of truth for v2.** Generated docs come from exp34's
+   `parse.parse_structure` + `generate._generate_one` (no fork, no
+   re-implementation). Verifiable by `git grep -rn 'def parse_structure\|def _generate_one'`
+   returning hits only under `exp34_*/`.
 2. **Full 1.6M-structure generation completes** on the marin Iris
    cluster, writing one parquet per input shard to GCS, with no shard
    left unwritten and no `ZephyrWorkerError` propagating.
-3. **Wall-clock improves over the prior runs** — the v2 production
-   runs from the exp34 session landed at ~14 min (sequential
-   `cif_content`) and ~8 min (`gcs_uri` mode without intra-shard
-   concurrency). With the thread-pool fetches the per-shard time
-   should drop below the prior ~128 s, and end-to-end wall should
-   come in well under ~5 min compute.
+3. **Wall-clock within budget** — the v2 production runs from the
+   exp34 session landed at ~14 min (sequential `cif_content`) and ~8
+   min (`gcs_uri` mode without intra-shard concurrency). The
+   thread-pool fetches should keep the per-shard time well under the
+   prior ~128 s. We're explicitly *not* targeting the 5-min number
+   from the earlier perf-focused branch — that speedup required the
+   forked parse/generate, which we've intentionally dropped per
+   @timodonnell's PR [#38](https://github.com/Open-Athena/MarinFold/pull/38)
+   review.
 
 ## Results
 

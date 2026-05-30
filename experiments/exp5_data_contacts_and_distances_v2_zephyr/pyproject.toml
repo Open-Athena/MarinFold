@@ -1,35 +1,30 @@
 [project]
 name = "exp5-data-contacts-and-distances-v2-zephyr"
 version = "0.1.0"
-description = "Generate contacts-and-distances-v2 training documents at scale on the marin Iris cluster via Zephyr."
+description = "Generate contacts-and-distances-v2 training documents at scale on the marin Iris cluster via Zephyr. Wraps exp34's local impl."
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "marinfold", # vocab (AMINO_ACIDS/ATOM_NAMES) + build_tokenizer for the v2 tokenizer
-    "gemmi>=0.7", # mmCIF parsing — read_structure_string requires >=0.7.0
-    "numpy", # columnar in-memory structure representation
-    "pyarrow", # parquet read/write + Zephyr-native row dicts
-    "marin-zephyr", # distributed generation on Iris
-    "fsspec", # uniform local + cloud file IO
-    "gcsfs", # gs:// for the AFDB public bucket + marin output buckets
-    "huggingface_hub", # hf:// for the timodonnell/afdb-1.6M manifest
+    "marinfold",        # build_tokenizer for the `tokenizer` subcommand
+    "gemmi>=0.6",       # mmCIF parsing — version matches exp34's pin
+    "numpy",            # pulled in by exp34's parse + generate
+    "pyarrow",          # parquet read/write + Zephyr-native row dicts
+    "marin-zephyr",     # distributed generation on Iris
+    "fsspec",           # uniform local + cloud file IO for per-row cif fetch
+    "gcsfs",            # gs:// for the AFDB public bucket + marin output buckets
+    "huggingface_hub",  # hf:// for the timodonnell/afdb-1.6M manifest
 ]
-# NOTE on obstore: we tried it (object_store-backed, ~9x throughput vs gcsfs
-# for parallel small-object GETs). It works for our marin-us-central1 output
-# bucket but fails on the AFDB public bucket with
-# "GenericError: Content-Length Header missing from response". Root cause is
-# upstream: object_store's HTTP handler strictly requires Content-Length, but
-# AFDB cifs are stored with Content-Encoding: gzip and GCS transparently
-# gunzips them on the wire, omitting Content-Length. The documented fix
-# (Accept-Encoding: gzip) can only be set via client_options.default_headers
-# in obstore today, and those headers leak into the OAuth2 token fetch and
-# break it. Diagnostic + variants tried are documented in the README.
+# Note on the exp34 dep: exp5's ``cli.py`` imports exp34's ``parse`` /
+# ``generate`` / ``vocab`` via a ``sys.path`` shim at module load — exp34 is
+# ``package = false`` in its own pyproject so we can't path-dep it as an
+# installable package. The shim makes its modules visible by their flat
+# names. Long-term, v2 should graduate to
+# ``marinfold/marinfold/document_structures/contacts_and_distances_v2/``
+# (per Tim's #38 review); then the shim disappears and this becomes a
+# regular ``from marinfold... import`` line.
 
 [project.optional-dependencies]
 test = [
     "pytest>=8",
-    # exp34's generate is the byte-identity oracle for v2 doc content. We import
-    # it through a sys.path shim in tests/ (it's an experiment dir, not a package),
-    # but its own deps (gemmi, marinfold, numpy) are already covered above.
 ]
 
 [dependency-groups]
