@@ -143,6 +143,16 @@ API — see
 v2 corpus to HF; exp42 publishes a CSR-parquet substrate that any
 doc-format experiment can consume on the fly.
 
+### See also: on-the-fly training-time generation (#42)
+
+For training-time doc generation from the same parsed structures —
+with per-epoch RNG variation as free data augmentation, ~12× smaller
+artifact, and a doc-format-agnostic dataloader callback API — see
+[`exp42`](../exp42_data_shared_protein_data_substrate_csr_parquet/) (the
+"shared protein-data substrate" experiment). exp5 emits the static v2
+corpus to HF; exp42 emits the CSR parquet substrate that any
+doc-format experiment can consume on the fly.
+
 ### Layout
 
 ```
