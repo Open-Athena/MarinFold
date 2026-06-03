@@ -84,7 +84,7 @@ PROTENIX_IMAGE = (
         # MSA pre-compute is deterministic across Modal runs.
         "MMSEQS_SERVICE_HOST_URL": "https://api.colabfold.com",
     })
-    .add_local_python_source("distogram_hook")
+    .add_local_python_source("distogram_hook", "msa_depth")
 )
 
 app = modal.App(APP_NAME, image=PROTENIX_IMAGE)
@@ -192,6 +192,36 @@ def audit_msa(stem: str) -> dict:
         "dir_exists": base.exists(),
         "paired_exists": paired.exists(),
         "non_pairing_exists": non_paired.exists(),
+    }
+
+
+@app.function(volumes={"/msa": MSA_VOL}, timeout=60 * 30, cpu=4.0, memory=8192)
+def compute_msa_depth(stem: str) -> dict:
+    """CPU function: MSA depth metrics for ``stem`` from its non_pairing.a3m.
+
+    Reads ``/msa/{stem}/msa/0/0/non_pairing.a3m`` (the merged unpaired
+    MSA Protenix feeds the model) and returns ``n_seqs`` plus the
+    redundancy-reweighted ``n_eff`` at the default identity thresholds.
+    See :mod:`msa_depth` for the exact definitions. Returns
+    ``found=False`` (and NaN metrics) when the a3m is missing so the
+    dispatcher can report per-protein status without failing the batch.
+    """
+    import math
+
+    import msa_depth as md
+
+    a3m = Path("/msa") / stem / "msa" / "0" / "0" / "non_pairing.a3m"
+    if not a3m.exists():
+        return {
+            "stem": stem, "found": False,
+            "n_seqs": 0, "query_len": 0,
+            **{f"n_eff_{t}": math.nan for t in md.DEFAULT_THRESHOLDS},
+        }
+    depth = md.msa_depth(a3m.read_text())
+    return {
+        "stem": stem, "found": True,
+        "n_seqs": depth.n_seqs, "query_len": depth.query_len,
+        **{f"n_eff_{t}": depth.n_eff[t] for t in md.DEFAULT_THRESHOLDS},
     }
 
 
