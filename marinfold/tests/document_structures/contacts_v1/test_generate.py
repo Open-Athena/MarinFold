@@ -39,14 +39,15 @@ def _residues(n: int, *, start_resnum: int = 1) -> list[ResidueInfo]:
 
 
 def _pos_indices(document: str) -> list[int]:
-    return [int(m) for m in re.findall(r"<pos-(\d+)>", document)]
+    # Positions are reused <pX> tokens from contacts-and-distances-v1.
+    return [int(m) for m in re.findall(r"<p(\d+)>", document)]
 
 
 def _sections(document: str) -> tuple[list[str], list[str]]:
     """Split into (sequence-section tokens, structure-section tokens)."""
     toks = document.split()
-    bs = toks.index("<begin-structure>")
-    seq = toks[toks.index("<begin-sequence>") + 1: bs]
+    bs = toks.index("<begin_statements>")
+    seq = toks[toks.index("<begin_sequence>") + 1: bs]
     struct = toks[bs + 1: toks.index("<end>")]
     return seq, struct
 
@@ -60,8 +61,8 @@ def test_document_framing():
     res = build_document("e", _residues(5), [RawContact(0, 2, 0.9)])
     toks = res.document.split()
     assert toks[0] == "<contacts-v1>"
-    assert toks[1] == "<begin-sequence>"
-    assert "<begin-structure>" in toks
+    assert toks[1] == "<begin_sequence>"     # reused from c-and-d-v1
+    assert "<begin_statements>" in toks      # reused from c-and-d-v1
     assert toks[-1] == "<end>"
 
 
@@ -71,7 +72,7 @@ def test_sequence_section_defines_each_residue_once_plus_two_termini():
     seq, _ = _sections(res.document)
     assert seq.count("<n-term>") == 1
     assert seq.count("<c-term>") == 1
-    # One <pos-X> <AA> statement per residue → exactly len residues AA tokens,
+    # One <pX> <AA> statement per residue → exactly len residues AA tokens,
     # and the residue position indices are the L distinct wrapped indices.
     n = vocab.NUM_POSITION_INDICES
     expected = {(res.start_index + k) % n for k in range(len(residues))}
@@ -189,14 +190,14 @@ def test_emitted_pair_order_matches_flip_flag():
     contacts = [RawContact(0, 5, 0.9), RawContact(1, 8, 0.6), RawContact(3, 11, 0.3)]
     res = build_document("flip", residues, contacts)
     _, struct = _sections(res.document)
-    # struct is groups of <contact> <pos-a> <pos-b>.
+    # struct is groups of <contact> <pA> <pB>.
     triples = [struct[i:i + 3] for i in range(0, len(struct), 3)]
     assert len(triples) == len(res.contacts)
     for (marker, a, b), c in zip(triples, res.contacts):
         assert marker == "<contact>"
         first, second = (c.pos_j, c.pos_i) if c.flipped else (c.pos_i, c.pos_j)
-        assert a == f"<pos-{first}>"
-        assert b == f"<pos-{second}>"
+        assert a == f"<p{first}>"
+        assert b == f"<p{second}>"
 
 
 # ---------------------------------------------------------------------------

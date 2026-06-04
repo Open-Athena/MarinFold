@@ -88,7 +88,7 @@ fractions, pLDDT filter, context-length budget).
 
 A second format, `contacts-v1`
 ([SPEC.md](marinfold/marinfold/document_structures/contacts_v1/SPEC.md)),
-is contacts-only: a residue sequence — `<pos-N> <AA>` statements in
+is contacts-only: a residue sequence — `<pN> <AA>` statements in
 random order, with `<n-term>`/`<c-term>` markers and residues numbered
 from a random start that wraps around 2000 indices — followed by
 `<contact>` statements for the strongest

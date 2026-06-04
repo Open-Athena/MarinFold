@@ -8,6 +8,9 @@ from pathlib import Path
 import pytest
 
 from marinfold.document_structures.contacts_v1 import cli
+from marinfold.document_structures.contacts_v1.generate import build_document
+from marinfold.document_structures.contacts_v1.parse import RawContact, ResidueInfo
+from marinfold.document_structures.contacts_v1.vocab import position_token
 
 
 def test_generate_parses():
@@ -76,6 +79,33 @@ def test_view_parses_with_max_contacts():
 def test_view_default_max_contacts():
     args = cli.build_parser().parse_args(["view", "--input", "x"])
     assert args.max_contacts == 20
+
+
+def test_view_prints_reused_position_tokens(monkeypatch, capsys):
+    residues = [
+        ResidueInfo(seq_index=0, resname="ALA", resnum=1, chain="A"),
+        ResidueInfo(seq_index=1, resname="GLY", resnum=2, chain="A"),
+        ResidueInfo(seq_index=2, resname="SER", resnum=3, chain="A"),
+    ]
+    result = build_document("view-demo", residues, [RawContact(0, 2, 0.9)])
+    assert result is not None
+    monkeypatch.setattr(
+        cli.generate,
+        "generate_documents",
+        lambda **_: iter([result]),
+    )
+
+    args = cli.build_parser().parse_args(["view", "--input", "demo.cif", "--max-contacts", "5"])
+    args.func(args)
+
+    out = capsys.readouterr().out
+    assert f"n_term={position_token(result.n_term_index)}" in out
+    assert f"c_term={position_token(result.c_term_index)}" in out
+    assert (
+        f"{position_token(result.contacts[0].pos_i)}/"
+        f"{position_token(result.contacts[0].pos_j)}"
+    ) in out
+    assert "<pos-" not in out
 
 
 def test_tokenizer_parses():

@@ -14,12 +14,12 @@ input structure, fully deterministic given the structure's ``entry_id``:
 2. Pick a random n-terminal index ``start`` in ``[0, 2000)``; number
    residues ``start, start+1, …`` with wrap-around (so the model sees
    the whole index range, not just the low values most proteins reach).
-3. Emit the sequence section — one ``<pos-X> <AA>`` statement per
+3. Emit the sequence section — one ``<pX> <AA>`` statement per
    residue plus one ``<n-term>`` and one ``<c-term>`` statement — in
    random order.
 4. Emit the structure section — select the N strongest contacts (N
    chosen to fill the context-length budget, dropping the weakest if
-   they don't all fit), then emit ``<contact> <pos-X> <pos-Y>``
+   they don't all fit), then emit ``<contact> <pX> <pY>``
    statements for them in *random* order, each pair's order coin-flipped.
 
 The pure builder :func:`build_document` takes already-computed residues
@@ -44,14 +44,25 @@ from .parse import (
     analyze_structure,
     iter_analyzed_structures,
 )
-from .vocab import CONTEXT_LENGTH, NUM_POSITION_INDICES
+from .vocab import (
+    BEGIN_SEQUENCE_TOKEN,
+    BEGIN_STRUCTURE_TOKEN,
+    CONTACT_TOKEN,
+    CONTEXT_LENGTH,
+    C_TERM_TOKEN,
+    DOC_TYPE_TOKEN,
+    END_TOKEN,
+    NUM_POSITION_INDICES,
+    N_TERM_TOKEN,
+    position_token,
+)
 
 
 # Token counts the budget arithmetic depends on.
-_SEQ_TOKENS_PER_RESIDUE = 2     # <pos-X> <AA>
-_TERMINUS_STATEMENTS = 2        # <n-term> <pos-S>  and  <c-term> <pos-E>
-_CONTACT_TOKENS_PER_STATEMENT = 3   # <contact> <pos-X> <pos-Y>
-# <contacts-v1> <begin-sequence> … <begin-structure> … <end>
+_SEQ_TOKENS_PER_RESIDUE = 2     # <pX> <AA>
+_TERMINUS_STATEMENTS = 2        # <n-term> <pS>  and  <c-term> <pE>
+_CONTACT_TOKENS_PER_STATEMENT = 3   # <contact> <pX> <pY>
+# <contacts-v1> <begin_sequence> … <begin_statements> … <end>
 _FRAME_TOKENS = 4
 
 
@@ -86,7 +97,7 @@ class EmittedContact:
     ``resnum`` / ``resname`` fields are in canonical sequence order for
     interpretability. ``pos_i`` / ``pos_j`` are the document position
     indices for ``seq_i`` / ``seq_j``. ``flipped`` records the coin flip:
-    when True the document writes ``<contact> <pos_j> <pos_i>`` (j first).
+    when True the document writes ``<contact> <pJ> <pI>`` (j first).
     """
 
     seq_i: int
@@ -236,10 +247,11 @@ def build_document(
 
     # Sequence section: per-residue assignments + the two termini, shuffled.
     seq_statements: list[tuple[str, ...]] = [
-        (f"<pos-{pos_of_seq[k]}>", f"<{r.resname}>") for k, r in enumerate(residues)
+        (position_token(pos_of_seq[k]), f"<{r.resname}>")
+        for k, r in enumerate(residues)
     ]
-    seq_statements.append(("<n-term>", f"<pos-{n_term_index}>"))
-    seq_statements.append(("<c-term>", f"<pos-{c_term_index}>"))
+    seq_statements.append((N_TERM_TOKEN, position_token(n_term_index)))
+    seq_statements.append((C_TERM_TOKEN, position_token(c_term_index)))
     rng.shuffle(seq_statements)
 
     # Structure section. Rank by descending degree (stable sort keeps
@@ -288,14 +300,14 @@ def build_document(
             flipped=rng.random() < 0.5,
         ))
 
-    tokens: list[str] = ["<contacts-v1>", "<begin-sequence>"]
+    tokens: list[str] = [DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
     for statement in seq_statements:
         tokens.extend(statement)
-    tokens.append("<begin-structure>")
+    tokens.append(BEGIN_STRUCTURE_TOKEN)
     for c in emitted:
         first, second = (c.pos_j, c.pos_i) if c.flipped else (c.pos_i, c.pos_j)
-        tokens += ["<contact>", f"<pos-{first}>", f"<pos-{second}>"]
-    tokens.append("<end>")
+        tokens += [CONTACT_TOKEN, position_token(first), position_token(second)]
+    tokens.append(END_TOKEN)
 
     return GenerationResult(
         entry_id=entry_id,

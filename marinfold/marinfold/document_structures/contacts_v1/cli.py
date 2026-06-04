@@ -31,7 +31,7 @@ from typing import Any
 from marinfold import build_tokenizer, write_docs
 
 from . import generate
-from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
+from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens, position_token
 
 
 # --------------------------------------------------------------------------
@@ -131,7 +131,8 @@ def cmd_view(args: argparse.Namespace) -> None:
             f"  residues={result.seq_len}  "
             f"global_plddt={result.global_plddt:.1f}  "
             f"start_index={result.start_index}  "
-            f"n_term=<pos-{result.n_term_index}>  c_term=<pos-{result.c_term_index}>"
+            f"n_term={position_token(result.n_term_index)}  "
+            f"c_term={position_token(result.c_term_index)}"
         )
         print(
             f"  contacts: {result.contacts_emitted} included / "
@@ -152,7 +153,7 @@ def cmd_view(args: argparse.Namespace) -> None:
         print(f"  strongest contacts (up to {ncap}, sorted for display):")
         for c in by_degree[:ncap]:
             print(
-                f"    <pos-{c.pos_i}>/<pos-{c.pos_j}>  "
+                f"    {position_token(c.pos_i)}/{position_token(c.pos_j)}  "
                 f"{c.resname_i}{c.resnum_i}–{c.resname_j}{c.resnum_j}  "
                 f"degree={c.degree:.4f}"
             )
