@@ -144,8 +144,31 @@ uv run --extra zephyr iris --cluster=marin job run --cpu 1 --memory 2GB -- \
 
 ## Results
 
-_(Fill in after the run completes — selection counts, per-round/per-split doc
-totals, wall-clock + worker count, output paths, W&B/Iris job ids.)_
+### Stage A — selection (done)
+
+afdb-24M: **24,009,002** structures across **1,679,067** structural clusters.
+After the `seq_len ∈ [2, 2000]` pre-filter and the `<3`-member drop:
+
+- **960,054 clusters kept** (718,997 dropped as too small).
+- **4,213,203 documents selected** → 2,111 manifest shards.
+
+| split | round 0 | round 1 | round 2 | round 3 | round 4 |
+|---|--:|--:|--:|--:|--:|
+| train | 941,028 | 941,028 | 941,028 | 719,519 | 587,079 |
+| val | 9,558 | 9,558 | 9,558 | 7,316 | 5,964 |
+| test | 9,468 | 9,468 | 9,468 | 7,248 | 5,915 |
+
+`round-0 == round-1 == round-2` holds in every split (the issue's
+constraint), and the manifest is physically ordered round-4 → round-0.
+Counts: [`data/selection_counts.csv`](data/selection_counts.csv) /
+[`data/selection_stats.json`](data/selection_stats.json). Per-core
+generation throughput measured at **4.45 docs/s/core** (~225 ms/structure),
+so ~4.2 M docs ≈ **~31 min on 512 Iris workers**.
+
+### Stage B — generation
+
+_(Fill in after the Iris run: wall-clock + worker count, output paths,
+W&B/Iris job ids, any dropped-row counts.)_
 
 ## Conclusion
 
