@@ -88,6 +88,10 @@ metadata columns mirroring the published `protein-docs` datasets:
 `--summary-out FILE.json` additionally writes a rich per-protein summary
 (full residue sequence + every emitted contact with its degree).
 
+To explore a generated `docs.parquet` interactively — metadata
+distributions, a document decoder, and per-protein inspection — see
+[`explore_documents.ipynb`](explore_documents.ipynb).
+
 ## Generate documents
 
 ### From local structure files
