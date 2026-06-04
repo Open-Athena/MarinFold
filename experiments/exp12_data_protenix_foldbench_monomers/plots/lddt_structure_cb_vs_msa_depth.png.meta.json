@@ -1,0 +1,15 @@
+{
+  "script": "cli.py",
+  "args": [
+    "plot",
+    "--scores",
+    "data/scores.csv",
+    "--out",
+    "plots/",
+    "--msa-depth",
+    "data/msa_depth.csv",
+    "--depth-col",
+    "n_eff_0.8"
+  ],
+  "caption": "LDDT-CB from predicted structure as a function of MSA depth (n_eff_0.8, log scale). Each point is one protein in one mode. MSA depth is a per-protein property, so single_seq and msa points share an x-coordinate per protein."
+}
