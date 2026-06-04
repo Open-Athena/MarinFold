@@ -4,6 +4,8 @@
 """Pure (no pyconfind) tests for contacts-v1 parsing helpers + the
 shared ``write_docs`` metadata generalization."""
 
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -11,6 +13,7 @@ import pytest
 from marinfold import write_docs
 from marinfold.document_structures.contacts_v1.parse import (
     _canonical_resname,
+    analyze_structure,
     iter_structure_paths,
 )
 
@@ -49,6 +52,46 @@ def test_iter_structure_paths_directory_filters_and_sorts(tmp_path: Path):
 def test_iter_structure_paths_missing(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
         list(iter_structure_paths(tmp_path / "nope"))
+
+
+class _FakeStructure:
+    name = "fake_struct.cif"
+
+    def __len__(self) -> int:
+        return 0
+
+
+@pytest.mark.parametrize("assembly", [None, 2, "bio1"])
+def test_analyze_structure_passes_assembly_to_pyconfind(monkeypatch, assembly):
+    captured: dict[str, object] = {}
+
+    def fake_analyze(structure, **kwargs):
+        captured["structure"] = structure
+        captured["assembly"] = kwargs["assembly"]
+        return types.SimpleNamespace(
+            positions=[
+                types.SimpleNamespace(
+                    position=types.SimpleNamespace(chain="A", resname="ALA", resnum=10)
+                ),
+                types.SimpleNamespace(
+                    position=types.SimpleNamespace(chain="A", resname="GLY", resnum=11)
+                ),
+            ],
+            report=types.SimpleNamespace(
+                contacts=[types.SimpleNamespace(pos_i=0, pos_j=1, degree=0.5)]
+            ),
+        )
+
+    monkeypatch.setitem(sys.modules, "gemmi", types.SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "pyconfind", types.SimpleNamespace(analyze=fake_analyze))
+
+    analyzed = analyze_structure(_FakeStructure(), assembly=assembly)
+
+    assert captured["structure"].__class__ is _FakeStructure
+    assert captured["assembly"] == assembly
+    assert analyzed.entry_id == "fake_struct"
+    assert [r.resname for r in analyzed.residues] == ["ALA", "GLY"]
+    assert analyzed.contacts[0].degree == 0.5
 
 
 # ---------------------------------------------------------------------------

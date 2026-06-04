@@ -96,11 +96,13 @@ the spec changes.
   mutually consistent. Contacts reference residues by 0-based sequence
   index with `seq_i < seq_j`.
 - **pyconfind parameters.** confind/C++ defaults: `contact_distance=3.0`,
-  `dcut=25.0`, `clash_distance=2.0`, plus `native_only=True`. pyconfind
-  returns every contact with degree > 0 (down to ~1e-8); the
+  `dcut=25.0`, `clash_distance=2.0`, plus `native_only=True`. We pass
+  `assembly=None` by default, i.e. analyze the asymmetric unit / input
+  structure as-is rather than implicitly expanding biological assembly 1.
+  pyconfind returns every contact with degree > 0 (down to ~1e-8); the
   `min_contact_degree` filter above then decides which are eligible.
-  These (and `min_contact_degree`) are exposed as CLI knobs but default
-  to the above.
+  These (including `--assembly` and `min_contact_degree`) are exposed as
+  CLI knobs but default to the above.
 - **Non-canonical residues.** pyconfind's "legal" protein residues
   beyond the standard 20 (HIS variants HSD/HSE/HSC/HSP/HIP, plus MSE,
   SEC, CSO, SEP, TPO, PTR) are canonicalized to their parent amino acid
@@ -123,11 +125,12 @@ the spec changes.
   pyconfind's `(seq_i, seq_j)`-ascending order — deterministic. The
   selected N are then shuffled, so the order in the document is random
   (not degree-sorted).
-- **Truncation.** The whole sequence section is always kept (it fits for
-  any chain ≤ 2000 residues); the N strongest *above-threshold* contacts
-  fill the remaining budget, `N = floor((8192 − frame − sequence) / 3)`
-  capped at the number passing the filter. `truncated` means a budget
-  overflow specifically — some above-threshold contact didn't fit
+- **Truncation.** The whole sequence section is kept when it fits; if the
+  framing + sequence section alone exceeds the context budget, the protein
+  is skipped with a warning. Otherwise the N strongest *above-threshold*
+  contacts fill the remaining budget, `N = floor((8192 − frame − sequence)
+  / 3)` capped at the number passing the filter. `truncated` means a
+  budget overflow specifically — some above-threshold contact didn't fit
   (`contacts_passing_min_degree > contacts_emitted`) — not that the
   degree filter dropped something.
 - **Determinism.** Seeded by `random.Random(int(sha1(entry_id)[:8], 16))`

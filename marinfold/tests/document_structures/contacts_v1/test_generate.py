@@ -8,17 +8,23 @@ serialization, determinism, wrap-around indexing, ordering, and
 truncation logic can all be exercised without running pyconfind.
 """
 
+from pathlib import Path
 import re
 
 import pytest
 
 from marinfold import build_tokenizer
+from marinfold.document_structures.contacts_v1 import generate as generate_module
 from marinfold.document_structures.contacts_v1 import vocab
 from marinfold.document_structures.contacts_v1.generate import (
     GenerationConfig,
     build_document,
 )
-from marinfold.document_structures.contacts_v1.parse import RawContact, ResidueInfo
+from marinfold.document_structures.contacts_v1.parse import (
+    AnalyzedStructure,
+    RawContact,
+    ResidueInfo,
+)
 
 
 _AA_CYCLE = ["MET", "ALA", "GLY", "LYS", "PHE", "SER", "THR", "VAL", "LEU", "ILE"]
@@ -319,6 +325,32 @@ def test_returns_none_for_too_many_residues():
     assert build_document("e", _residues(11), [], config=cfg) is None
     # Exactly at the cap is allowed.
     assert build_document("e", _residues(10), [], config=cfg) is not None
+
+
+def test_returns_none_when_fixed_section_exceeds_context_length():
+    assert build_document("e", _residues(6), [], context_length=19) is None
+
+
+def test_generate_documents_warns_and_skips_when_fixed_section_exceeds_context_length(
+    monkeypatch,
+):
+    analyzed = AnalyzedStructure(
+        entry_id="too-long",
+        residues=tuple(_residues(30)),
+        contacts=(),
+        global_plddt=80.0,
+        source_path=Path("too-long.cif"),
+    )
+    monkeypatch.setattr(
+        generate_module,
+        "iter_analyzed_structures",
+        lambda *args, **kwargs: iter([analyzed]),
+    )
+    with pytest.warns(
+        UserWarning,
+        match=r"skipping too-long: fixed sequence section needs 68 tokens > context_length 67",
+    ):
+        assert list(generate_module.generate_documents("ignored", context_length=67)) == []
 
 
 # ---------------------------------------------------------------------------

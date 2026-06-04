@@ -75,6 +75,7 @@ class GenerationConfig:
     clash_distance: float = 2.0
     min_contact_degree: float = 0.001
     num_position_indices: int = NUM_POSITION_INDICES
+    assembly: int | str | None = None
 
 
 @dataclass(frozen=True)
@@ -187,6 +188,15 @@ def _generation_seed(entry_id: str) -> int:
     return int(hashlib.sha1(entry_id.encode()).hexdigest()[:8], 16)
 
 
+def _fixed_token_cost(num_residues: int) -> int:
+    """Token cost of the framing + full sequence section (no contacts)."""
+    return (
+        _FRAME_TOKENS
+        + _SEQ_TOKENS_PER_RESIDUE * num_residues
+        + _TERMINUS_STATEMENTS * 2
+    )
+
+
 def build_document(
     entry_id: str,
     residues: Sequence[ResidueInfo],
@@ -201,7 +211,8 @@ def build_document(
     Pure and deterministic given ``entry_id`` (the RNG seed). Returns
     ``None`` if the chain can't be serialized: fewer than 2 residues, or
     more residues than there are position indices (``config`` /
-    ``vocab.NUM_POSITION_INDICES``).
+    ``vocab.NUM_POSITION_INDICES``), or if the framing + sequence section
+    alone already exceeds ``context_length``.
 
     ``residues`` must be in sequence order; ``contacts`` reference them by
     0-based ``seq_i < seq_j`` index.
@@ -210,6 +221,9 @@ def build_document(
     num_residues = len(residues)
     num_indices = config.num_position_indices
     if num_residues < 2 or num_residues > num_indices:
+        return None
+    fixed = _fixed_token_cost(num_residues)
+    if fixed > context_length:
         return None
 
     rng = random.Random(_generation_seed(entry_id))
@@ -242,11 +256,6 @@ def build_document(
 
     # Budget: frame + sequence section fixed; the N strongest eligible
     # contacts fill the rest.
-    fixed = (
-        _FRAME_TOKENS
-        + _SEQ_TOKENS_PER_RESIDUE * num_residues
-        + _TERMINUS_STATEMENTS * 2
-    )
     available = context_length - fixed
     max_contacts = max(0, available // _CONTACT_TOKENS_PER_STATEMENT)
     n_emit = min(contacts_passing, max_contacts)
@@ -325,6 +334,14 @@ def _result_from_analyzed(
             stacklevel=2,
         )
         return None
+    fixed = _fixed_token_cost(num_residues)
+    if fixed > context_length:
+        warnings.warn(
+            f"skipping {analyzed.entry_id}: fixed sequence section needs "
+            f"{fixed} tokens > context_length {context_length}",
+            stacklevel=2,
+        )
+        return None
     return build_document(
         analyzed.entry_id,
         analyzed.residues,
@@ -357,6 +374,7 @@ def generate_document(
         contact_distance=config.contact_distance,
         dcut=config.dcut,
         clash_distance=config.clash_distance,
+        assembly=config.assembly,
         rotamer_library=rotamer_library,
     )
     return _result_from_analyzed(analyzed, context_length=context_length, config=config)
@@ -384,6 +402,7 @@ def generate_documents(
         contact_distance=config.contact_distance,
         dcut=config.dcut,
         clash_distance=config.clash_distance,
+        assembly=config.assembly,
         rotamer_library=rotamer_library,
     ):
         result = _result_from_analyzed(

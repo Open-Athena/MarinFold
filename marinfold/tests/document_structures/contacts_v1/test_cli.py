@@ -21,6 +21,7 @@ def test_generate_parses():
     assert args.out == Path("docs.parquet")
     assert args.summary_out == Path("summary.json")
     assert args.num_docs == 10
+    assert args.assembly is None
     # pyconfind defaults wired through.
     assert args.native_only is True
     assert args.contact_distance == 3.0
@@ -36,6 +37,19 @@ def test_min_contact_degree_override():
     assert args.min_contact_degree == 0.05
     cfg = cli._config_from_args(args)
     assert cfg.min_contact_degree == 0.05
+
+
+@pytest.mark.parametrize(("raw", "expected"), [
+    ("none", None),
+    ("2", 2),
+    ("bio1", "bio1"),
+])
+def test_generate_parses_assembly(raw, expected):
+    args = cli.build_parser().parse_args([
+        "generate", "--input", "cifs/", "--out", "docs.parquet",
+        "--assembly", raw,
+    ])
+    assert args.assembly == expected
 
 
 def test_generate_requires_out():

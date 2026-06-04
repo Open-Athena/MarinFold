@@ -138,6 +138,7 @@ def analyze_structure(
     contact_distance: float = 3.0,
     dcut: float = 25.0,
     clash_distance: float = 2.0,
+    assembly: int | str | None = None,
     rotamer_library=None,
 ) -> AnalyzedStructure:
     """Run pyconfind on one structure and return an :class:`AnalyzedStructure`.
@@ -150,6 +151,9 @@ def analyze_structure(
         native_only: pyconfind native-only mode (SPEC default ``True``).
         contact_distance / dcut / clash_distance: pyconfind geometry knobs
             (C++ confind defaults).
+        assembly: biological assembly passed through to pyconfind. ``None``
+            means "use the asymmetric unit as-is" rather than implicitly
+            expanding assembly 1.
         rotamer_library: passed through to ``pyconfind.analyze``; ``None``
             auto-downloads + caches the Dunbrack 2010 library once.
 
@@ -178,6 +182,7 @@ def analyze_structure(
         contact_distance=contact_distance,
         dcut=dcut,
         clash_distance=clash_distance,
+        assembly=assembly,
         rotamer_library=rotamer_library,
     )
 
@@ -237,6 +242,7 @@ def iter_analyzed_structures(
     contact_distance: float = 3.0,
     dcut: float = 25.0,
     clash_distance: float = 2.0,
+    assembly: int | str | None = None,
     rotamer_library=None,
 ) -> Iterator[AnalyzedStructure]:
     """Analyze every structure file under ``path``.
@@ -252,6 +258,7 @@ def iter_analyzed_structures(
                 contact_distance=contact_distance,
                 dcut=dcut,
                 clash_distance=clash_distance,
+                assembly=assembly,
                 rotamer_library=rotamer_library,
             )
         except (ValueError, RuntimeError) as exc:

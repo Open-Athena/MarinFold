@@ -39,12 +39,29 @@ from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens
 # --------------------------------------------------------------------------
 
 
+def _assembly_arg(text: str) -> int | str | None:
+    """Parse ``--assembly`` into pyconfind's ``int | str | None`` surface."""
+    stripped = text.strip()
+    lowered = stripped.lower()
+    if lowered == "none":
+        return None
+    try:
+        return int(stripped)
+    except ValueError:
+        if not stripped:
+            raise argparse.ArgumentTypeError(
+                "assembly must be an integer, a named assembly, or 'none'"
+            ) from None
+        return stripped
+
+
 def _config_from_args(args: argparse.Namespace) -> generate.GenerationConfig:
     return generate.GenerationConfig(
         native_only=args.native_only,
         contact_distance=args.contact_distance,
         dcut=args.dcut,
         clash_distance=args.clash_distance,
+        assembly=args.assembly,
         min_contact_degree=args.min_contact_degree,
     )
 
@@ -179,6 +196,7 @@ def cmd_tokenizer(args: argparse.Namespace) -> None:
 
 def _add_generation_common(p: argparse.ArgumentParser) -> None:
     """Args shared by ``generate`` and ``view``."""
+    cfg = generate.GenerationConfig()
     p.add_argument("--input", type=Path, required=True,
                    help="PDB / mmCIF (.gz) file or directory of them.")
     p.add_argument("--num-docs", type=int, default=None,
@@ -188,8 +206,11 @@ def _add_generation_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--rotamer-library", type=Path, default=None,
                    help="pyconfind rotamer-library directory (EBL.out + "
                         "BEBL.out). Default: auto-download + cache.")
+    p.add_argument("--assembly", type=_assembly_arg, default=cfg.assembly,
+                   help="Biological assembly passed to pyconfind. Default "
+                        "'none' uses the asymmetric unit as-is; pass an "
+                        "integer or assembly name to expand explicitly.")
     # pyconfind geometry knobs (SPEC / confind defaults).
-    cfg = generate.GenerationConfig()
     p.add_argument("--native-only", action=argparse.BooleanOptionalAction,
                    default=cfg.native_only,
                    help="Only place rotamers of the native amino acid "
