@@ -31,6 +31,7 @@ from typing import Any
 from marinfold import build_tokenizer, write_docs
 
 from . import generate
+from .parse import DEFAULT_CIF_COLUMN, DEFAULT_ID_COLUMN
 from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens, position_token
 
 
@@ -100,6 +101,8 @@ def cmd_generate(args: argparse.Namespace) -> None:
         context_length=args.context_length,
         config=config,
         rotamer_library=args.rotamer_library,
+        cif_column=args.cif_column,
+        id_column=args.id_column,
     ))
     write_docs(
         args.out,
@@ -124,6 +127,8 @@ def cmd_view(args: argparse.Namespace) -> None:
         context_length=args.context_length,
         config=config,
         rotamer_library=args.rotamer_library,
+        cif_column=args.cif_column,
+        id_column=args.id_column,
     ):
         shown += 1
         print(f"\n=== {result.entry_id} ===")
@@ -199,7 +204,15 @@ def _add_generation_common(p: argparse.ArgumentParser) -> None:
     """Args shared by ``generate`` and ``view``."""
     cfg = generate.GenerationConfig()
     p.add_argument("--input", type=Path, required=True,
-                   help="PDB / mmCIF (.gz) file or directory of them.")
+                   help="PDB / mmCIF (.gz) file or directory of them, OR a "
+                        ".parquet shard / directory of shards in the afdb-24M "
+                        "layout (structures read from --cif-column).")
+    p.add_argument("--cif-column", default=DEFAULT_CIF_COLUMN,
+                   help="For parquet input: column holding the mmCIF text "
+                        f"(default {DEFAULT_CIF_COLUMN!r}).")
+    p.add_argument("--id-column", default=DEFAULT_ID_COLUMN,
+                   help="For parquet input: column holding the entry id / "
+                        f"generation seed (default {DEFAULT_ID_COLUMN!r}).")
     p.add_argument("--num-docs", type=int, default=None,
                    help="Cap on documents produced (default: one per input).")
     p.add_argument("--context-length", type=int, default=CONTEXT_LENGTH,

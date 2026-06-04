@@ -42,6 +42,23 @@ def test_min_contact_degree_override():
     assert cfg.min_contact_degree == 0.05
 
 
+def test_parquet_column_defaults():
+    args = cli.build_parser().parse_args([
+        "generate", "--input", "shard.parquet", "--out", "docs.parquet",
+    ])
+    assert args.cif_column == "cif_content"
+    assert args.id_column == "entry_id"
+
+
+def test_parquet_column_overrides():
+    args = cli.build_parser().parse_args([
+        "generate", "--input", "shard.parquet", "--out", "docs.parquet",
+        "--cif-column", "mmcif", "--id-column", "id",
+    ])
+    assert args.cif_column == "mmcif"
+    assert args.id_column == "id"
+
+
 @pytest.mark.parametrize(("raw", "expected"), [
     ("none", None),
     ("2", 2),

@@ -34,16 +34,21 @@ from .generate import (
     generate_documents,
 )
 from .parse import (
+    DEFAULT_CIF_COLUMN,
+    DEFAULT_ID_COLUMN,
     AnalyzedStructure,
     RawContact,
     ResidueInfo,
     analyze_structure,
     iter_analyzed_structures,
+    iter_parquet_analyzed_structures,
 )
 from .vocab import CONTEXT_LENGTH, NAME, NUM_POSITION_INDICES, all_domain_tokens
 
 __all__ = [
     "CONTEXT_LENGTH",
+    "DEFAULT_CIF_COLUMN",
+    "DEFAULT_ID_COLUMN",
     "NAME",
     "NUM_POSITION_INDICES",
     "AnalyzedStructure",
@@ -58,4 +63,5 @@ __all__ = [
     "generate_document",
     "generate_documents",
     "iter_analyzed_structures",
+    "iter_parquet_analyzed_structures",
 ]
