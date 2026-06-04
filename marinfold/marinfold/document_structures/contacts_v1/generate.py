@@ -38,6 +38,8 @@ from pathlib import Path
 from typing import Any
 
 from .parse import (
+    DEFAULT_CIF_COLUMN,
+    DEFAULT_ID_COLUMN,
     AnalyzedStructure,
     RawContact,
     ResidueInfo,
@@ -399,17 +401,23 @@ def generate_documents(
     context_length: int = CONTEXT_LENGTH,
     config: GenerationConfig = GenerationConfig(),
     rotamer_library=None,
+    cif_column: str = DEFAULT_CIF_COLUMN,
+    id_column: str | None = DEFAULT_ID_COLUMN,
 ) -> Iterator[GenerationResult]:
     """Yield one :class:`GenerationResult` per input structure (up to ``num_docs``).
 
     The driving entry point — ``cli.py`` parses args and calls this with
-    the assembled :class:`GenerationConfig`. Structures that fail to parse,
-    are multi-chain, or fall outside the serializable residue range are
-    skipped with a warning.
+    the assembled :class:`GenerationConfig`. ``input_path`` may be a
+    structure file / directory, or a ``.parquet`` shard / directory of
+    shards in the afdb-24M layout (structures read from ``cif_column``, ids
+    from ``id_column``). Structures that fail to parse, are multi-chain, or
+    fall outside the serializable residue range are skipped with a warning.
     """
     produced = 0
     for analyzed in iter_analyzed_structures(
         Path(input_path),
+        cif_column=cif_column,
+        id_column=id_column,
         native_only=config.native_only,
         contact_distance=config.contact_distance,
         dcut=config.dcut,

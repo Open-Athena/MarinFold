@@ -37,6 +37,11 @@ _STRUCTURE_EXTS = (
     ".pdb", ".pdb.gz", ".ent", ".ent.gz",
 )
 
+# Default parquet columns for the afdb-24M layout: each row carries the raw
+# mmCIF text in ``cif_content`` and the AFDB id in ``entry_id``.
+DEFAULT_CIF_COLUMN = "cif_content"
+DEFAULT_ID_COLUMN = "entry_id"
+
 # Map every residue name pyconfind treats as protein (its
 # LEGAL_RESIDUE_NAMES: the standard 20 plus HIS variants, MSE, and a few
 # modified residues) to a canonical-20 three-letter token. Modified
@@ -235,9 +240,100 @@ def iter_structure_paths(path: Path) -> Iterator[Path]:
             yield p
 
 
+def _gemmi_structure_from_cif_text(cif_text: str, *, name: str | None = None):
+    """Parse mmCIF text (e.g. an afdb-24M ``cif_content`` cell) to a structure."""
+    import gemmi
+
+    structure = gemmi.read_structure_string(cif_text)
+    if name and not structure.name:
+        structure.name = name
+    return structure
+
+
+def _parquet_paths(path: Path) -> list[Path]:
+    """Return the ``.parquet`` shard(s) at/under ``path`` (empty if none)."""
+    if path.is_file():
+        return [path] if path.suffix.lower() == ".parquet" else []
+    if path.is_dir():
+        return sorted(path.rglob("*.parquet"))
+    return []
+
+
+def iter_parquet_analyzed_structures(
+    parquet_path: Path,
+    *,
+    cif_column: str = DEFAULT_CIF_COLUMN,
+    id_column: str | None = DEFAULT_ID_COLUMN,
+    native_only: bool = True,
+    contact_distance: float = 3.0,
+    dcut: float = 25.0,
+    clash_distance: float = 2.0,
+    assembly: int | str | None = None,
+    rotamer_library=None,
+    batch_size: int = 64,
+) -> Iterator[AnalyzedStructure]:
+    """Analyze structures from a parquet shard's ``cif_column`` (afdb-24M layout).
+
+    Row batches are streamed (so a ``num_docs`` cap downstream stops early
+    and cheaply), and ``id_column`` supplies each structure's ``entry_id``
+    (the deterministic generation seed). When ``id_column`` is missing /
+    empty a synthetic ``<stem>:row<N>`` id is used. Rows that fail to parse
+    or analyze are skipped with a warning.
+
+    Raises:
+        ValueError: ``cif_column`` is not present in the parquet schema.
+    """
+    import pyarrow.parquet as pq
+
+    parquet_path = Path(parquet_path)
+    parquet_file = pq.ParquetFile(parquet_path)
+    schema_names = set(parquet_file.schema_arrow.names)
+    if cif_column not in schema_names:
+        raise ValueError(
+            f"{parquet_path}: no column {cif_column!r} "
+            f"(available: {sorted(schema_names)})"
+        )
+    use_id = bool(id_column) and id_column in schema_names
+    columns = [cif_column] + ([id_column] if use_id else [])
+
+    row_offset = 0
+    for batch in parquet_file.iter_batches(batch_size=batch_size, columns=columns):
+        cif_arr = batch.column(cif_column)
+        id_arr = batch.column(id_column) if use_id else None
+        for i in range(batch.num_rows):
+            entry_id = (
+                id_arr[i].as_py() if id_arr is not None
+                else f"{parquet_path.stem}:row{row_offset + i}"
+            )
+            cif_text = cif_arr[i].as_py()
+            if not cif_text:
+                warnings.warn(
+                    f"skipping {entry_id}: empty {cif_column!r}", stacklevel=2
+                )
+                continue
+            try:
+                structure = _gemmi_structure_from_cif_text(cif_text, name=str(entry_id))
+                yield analyze_structure(
+                    structure,
+                    entry_id=str(entry_id),
+                    native_only=native_only,
+                    contact_distance=contact_distance,
+                    dcut=dcut,
+                    clash_distance=clash_distance,
+                    assembly=assembly,
+                    rotamer_library=rotamer_library,
+                )
+            except (ValueError, RuntimeError) as exc:
+                warnings.warn(f"skipping {entry_id}: {exc}", stacklevel=2)
+                continue
+        row_offset += batch.num_rows
+
+
 def iter_analyzed_structures(
     path: Path,
     *,
+    cif_column: str = DEFAULT_CIF_COLUMN,
+    id_column: str | None = DEFAULT_ID_COLUMN,
     native_only: bool = True,
     contact_distance: float = 3.0,
     dcut: float = 25.0,
@@ -245,12 +341,32 @@ def iter_analyzed_structures(
     assembly: int | str | None = None,
     rotamer_library=None,
 ) -> Iterator[AnalyzedStructure]:
-    """Analyze every structure file under ``path``.
+    """Analyze every structure under ``path``.
 
-    Files that fail to parse / analyze (including multi-chain inputs) are
-    skipped with a warning rather than aborting the whole run.
+    ``path`` may be a structure file / a directory of them, **or** a
+    ``.parquet`` shard / directory of shards in the afdb-24M layout — in
+    which case structures are read from the ``cif_column`` mmCIF text and
+    ids from ``id_column``. (If a directory holds parquet shards they take
+    precedence over loose structure files.) Inputs that fail to parse or
+    analyze — including multi-chain ones — are skipped with a warning.
     """
-    for p in iter_structure_paths(Path(path)):
+    path = Path(path)
+    parquet_paths = _parquet_paths(path)
+    if parquet_paths:
+        for parquet_path in parquet_paths:
+            yield from iter_parquet_analyzed_structures(
+                parquet_path,
+                cif_column=cif_column,
+                id_column=id_column,
+                native_only=native_only,
+                contact_distance=contact_distance,
+                dcut=dcut,
+                clash_distance=clash_distance,
+                assembly=assembly,
+                rotamer_library=rotamer_library,
+            )
+        return
+    for p in iter_structure_paths(path):
         try:
             yield analyze_structure(
                 p,
