@@ -4,44 +4,50 @@ This document defines a spec for the *contacts-v1* document type. It is the inpu
 
 ## Example document
 
+(Shown with the **actual emitted tokens**; the original design sketch used
+`<pos-22>` / `<begin-sequence>` / `<begin-structure>` and lowercase amino
+acids, but per the decisions below those are realized as the
+contacts-and-distances-v1 tokens `<p22>` / `<begin_sequence>` /
+`<begin_statements>` and uppercase `<ALA>` …)
+
 ```
 <contacts-v1>
-<begin-sequence>
-<pos-22> <phe>
-<n-term> <pos-20>
-<pos-21> <ala>
-<c-term> <pos 22>
-<pos-20> <ala>
-<begin-structure>
-<contact> <pos-20> <pos-21> 
-<contact> <pos-22> <pos-21> 
+<begin_sequence>
+<p22> <PHE>
+<n-term> <p20>
+<p21> <ALA>
+<c-term> <p22>
+<p20> <ALA>
+<begin_statements>
+<contact> <p20> <p21>
+<contact> <p22> <p21>
 <end>
 ```
 
 ## Details
 
-We have two sections: a sequence section (starting with `<begin-sequence>`) and a structure section (starting with `<begin-structure>`).
+We have two sections: a sequence section (starting with `<begin_sequence>`) and a structure section (starting with `<begin_statements>`).
 
 ### Sequence section
 This consists of three kinds of statements.
 
-`<POS-XXX> <RESIDUE>` indicates that position XXX is the given amino acid. We have indexing tokens `<pos-0000>` through `<pos-1999>` (2000 indices total).
+`<pXXX> <RESIDUE>` indicates that position XXX is the given amino acid. The position tokens are contacts-and-distances-v1's `<p0>` through `<p1999>` (2000 indices total), reused rather than minted anew.
 
-`<n-term>` `<pos-XXX>` indicates that position XXX is the N-terminus of a protein chain
+`<n-term>` `<pXXX>` indicates that position XXX is the N-terminus of a protein chain
 
-`<c-term>` `<pos-XXX>` indicates that position XXX is the C-terminus of a protein chain.
+`<c-term>` `<pXXX>` indicates that position XXX is the C-terminus of a protein chain.
 
 The statements of the sequence section are given in random order. We define the amino acid for all residues exactly once. We define the N- and C-termini for each protein chain.
 
 ### Residue indexing
 We support structures with up to 2000 residues
 
-Rather than numbering residues in a protein as e.g. 0 to 1999, each time we generate a document we pick a random number n in [0, 2000) to be the n-terminal residue. We start indexing from this residue. Residue indices "wrap around", so the residue after `<pos-1999>` is `<pos-0>`. The motivation here is that we want the model to be experienced in using all residue indices. Since most proteins are way less than 2000 residues, if we always started the protein chain off at `<pos-0>` the model would only rarely see the higher value indices.
+Rather than numbering residues in a protein as e.g. 0 to 1999, each time we generate a document we pick a random number n in [0, 2000) to be the n-terminal residue. We start indexing from this residue. Residue indices "wrap around", so the residue after `<p1999>` is `<p0>`. The motivation here is that we want the model to be experienced in using all residue indices. Since most proteins are way less than 2000 residues, if we always started the protein chain off at `<p0>` the model would only rarely see the higher value indices.
 
 In the future we will support multiple protein chains, and we will just have multiple <n-term> and <c-term> statements for these. They will need to be spaced out enough to not overlap. For example we might have one protein that starts at index 1800 and continues until residue 100, and another that starts at residue 300 and continues until 800.
 
 ### Structure section
-The structure section consists of statements of the form `<contact>` `<pos-XXX>` `<pos-YYY>`, which indicates that residues at index XXX and YYY are in contact.
+The structure section consists of statements of the form `<contact>` `<pXXX>` `<pYYY>`, which indicates that residues at index XXX and YYY are in contact.
 
 Contacts are defined as contact degree > 0 where contact degree is implemented in [pyconfind](https://github.com/timodonnell/pyconfind). We run pyconfind in `native_only=True` mode, i.e. only consider the actual given amino acid at each position rather than all other possibilities.
 
@@ -49,7 +55,7 @@ Before selecting which contacts to include, we discard any contact whose contact
 
 From the contacts that pass this threshold, we include the N with the highest contact degree (the N strongest), where N is chosen so the document fills the 8192-token budget (see Document length). These N selected contacts are then listed in **random order** in the structure section — they are *not* sorted by degree. (We select by strength so that, when a protein has more above-threshold contacts than fit, the weakest are the ones dropped; but the order they appear in the document is randomized so the model does not learn a degree-sorted ordering.)
 
-Note that the contact matrix is symmetric. We randomize the order that each contact pair is given in: if there is a contact between XXX and YYY, with 50% probability we output `<contact> <pos-XXX> <pos-YYY>` and the other half of the time we output `<contact> <pos-YYY> <pos-XXX>`. Each contact is only specified once, i.e. once we emit the contact between XXX and YYY we will never emit it again in either order.
+Note that the contact matrix is symmetric. We randomize the order that each contact pair is given in: if there is a contact between XXX and YYY, with 50% probability we output `<contact> <pXXX> <pYYY>` and the other half of the time we output `<contact> <pYYY> <pXXX>`. Each contact is only specified once, i.e. once we emit the contact between XXX and YYY we will never emit it again in either order.
 
 ### Document length
 Our max document length is 8192 tokens. N (the number of contacts included) is the number of the strongest *above-threshold* contacts whose `<contact>` statements fit in the budget remaining after the sequence section. If the protein has more above-threshold contacts than fit, the weakest of them are dropped (truncation); if it has fewer, all above-threshold contacts are included and the document is shorter than the budget.
@@ -69,24 +75,33 @@ the spec changes.
 
 ### Decisions that override the spec text
 
-- **Position tokens are unpadded: `<pos-0>` … `<pos-1999>`.** The
-  *Details* section above writes `<pos-0000>` through `<pos-1999>`
-  (zero-padded), but the example writes `<pos-22>`. Per a maintainer
-  decision the unpadded form (matching the example) is canonical. 2000
-  tokens total.
-- **Amino-acid tokens are the uppercase three-letter tokens reused from
-  contacts-and-distances-v1: `<ALA>`, `<ARG>`, … `<VAL>`.** The example
-  above shows lowercase (`<phe>`, `<ala>`), but per a maintainer
-  decision contacts-v1 reuses the existing uppercase AA tokens so the
-  two document structures share amino-acid embeddings (useful for the
-  planned later fine-tuning). No lowercase `<ala>`-style tokens exist in
-  the vocab.
-- **The worked example is illustrative and has informal typos** that the
-  implementation does not reproduce: `<c-term> <pos 22>` is always
-  emitted as `<c-term> <pos-22>` (hyphenated), and the prose "we will
-  never see `<contact> <pos-XXX> <pos-YYY>` or `<contact> <pos-YYY>
-  <pos-XXX>`" means a contact pair is emitted exactly once in one of the
-  two orders.
+contacts-v1 **reuses contacts-and-distances-v1 tokens wherever an
+equivalent already exists**, so the two structures share token IDs /
+embeddings and a contacts-v1 model can be fine-tuned on
+contacts-and-distances-v1 documents without a tokenizer change. This
+overrides the spec's own token spellings:
+
+- **Position tokens reuse `<p0>` … `<p1999>`.** The *Details* section's
+  `<pXXX>` indices (sketched as `<pos-0000>` / `<pos-22>` in the original
+  draft) are contacts-and-distances-v1's existing `<p0>`–`<p2700>`
+  position tokens; contacts-v1 uses the first 2000 of them and mints no
+  `<pos-N>` tokens. Note a contacts-v1 position is a *randomized
+  wrap-around* index, whereas the same `<pX>` in contacts-and-distances-v1
+  is a true chain position — the leading doc-type token distinguishes the
+  two interpretations.
+- **Section markers reuse `<begin_sequence>` / `<begin_statements>`.**
+  The spec's `<begin-sequence>` / `<begin-structure>` are realized as
+  contacts-and-distances-v1's underscore-spelled markers (so
+  `<begin_statements>` opens the structure section).
+- **Amino-acid tokens reuse the uppercase `<ALA>` … `<VAL>`.** The
+  example's lowercase (`<phe>`, `<ala>`) is not used; reusing the
+  uppercase AAs shares amino-acid embeddings with contacts-and-distances-v1.
+- **`<end>` is the shared contacts-and-distances-v1 token** too.
+
+The only tokens contacts-v1 mints itself are `<contacts-v1>`, `<n-term>`,
+`<c-term>`, `<contact>`, and the (unused) `<think>` — five tokens with no
+contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
+22>` space typo is emitted as `<c-term> <p22>`.)
 
 ### Points the spec left open (implementation choices)
 
@@ -139,11 +154,12 @@ the spec changes.
   (2) the shuffle of the sequence-section statements, then (3) the
   shuffle of the N selected contacts (their in-document order), then
   (4) the per-contact pair-order coin flips.
-- **Vocab order.** Load-bearing and append-only: contacts-v1 native
-  control tokens, then `<pos-0>`…`<pos-1999>`, then `<think>`, then the
-  contacts-and-distances-v1 `all_domain_tokens()` list deduplicated. The
-  only token shared between the two groups is `<end>`, kept once (shared
-  id). Total domain vocab = 4845 tokens (4847 with `<pad>`/`<eos>`).
+- **Vocab order.** Load-bearing and append-only: the 5 native tokens
+  (`<contacts-v1>`, `<n-term>`, `<c-term>`, `<contact>`, `<think>`), then
+  the entire contacts-and-distances-v1 `all_domain_tokens()` list. The two
+  groups are disjoint — contacts-v1 reuses c-and-d-v1 tokens by *emitting*
+  them, not by re-minting — so no dedup is needed. Total domain vocab =
+  2843 tokens (2845 with `<pad>`/`<eos>`).
 
 ### Metadata tracked (beyond the spec)
 

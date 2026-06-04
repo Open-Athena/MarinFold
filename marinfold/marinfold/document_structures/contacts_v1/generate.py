@@ -44,7 +44,18 @@ from .parse import (
     analyze_structure,
     iter_analyzed_structures,
 )
-from .vocab import CONTEXT_LENGTH, NUM_POSITION_INDICES
+from .vocab import (
+    BEGIN_SEQUENCE_TOKEN,
+    BEGIN_STRUCTURE_TOKEN,
+    CONTACT_TOKEN,
+    CONTEXT_LENGTH,
+    C_TERM_TOKEN,
+    DOC_TYPE_TOKEN,
+    END_TOKEN,
+    NUM_POSITION_INDICES,
+    N_TERM_TOKEN,
+    position_token,
+)
 
 
 # Token counts the budget arithmetic depends on.
@@ -236,10 +247,11 @@ def build_document(
 
     # Sequence section: per-residue assignments + the two termini, shuffled.
     seq_statements: list[tuple[str, ...]] = [
-        (f"<pos-{pos_of_seq[k]}>", f"<{r.resname}>") for k, r in enumerate(residues)
+        (position_token(pos_of_seq[k]), f"<{r.resname}>")
+        for k, r in enumerate(residues)
     ]
-    seq_statements.append(("<n-term>", f"<pos-{n_term_index}>"))
-    seq_statements.append(("<c-term>", f"<pos-{c_term_index}>"))
+    seq_statements.append((N_TERM_TOKEN, position_token(n_term_index)))
+    seq_statements.append((C_TERM_TOKEN, position_token(c_term_index)))
     rng.shuffle(seq_statements)
 
     # Structure section. Rank by descending degree (stable sort keeps
@@ -288,14 +300,14 @@ def build_document(
             flipped=rng.random() < 0.5,
         ))
 
-    tokens: list[str] = ["<contacts-v1>", "<begin-sequence>"]
+    tokens: list[str] = [DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
     for statement in seq_statements:
         tokens.extend(statement)
-    tokens.append("<begin-structure>")
+    tokens.append(BEGIN_STRUCTURE_TOKEN)
     for c in emitted:
         first, second = (c.pos_j, c.pos_i) if c.flipped else (c.pos_i, c.pos_j)
-        tokens += ["<contact>", f"<pos-{first}>", f"<pos-{second}>"]
-    tokens.append("<end>")
+        tokens += [CONTACT_TOKEN, position_token(first), position_token(second)]
+    tokens.append(END_TOKEN)
 
     return GenerationResult(
         entry_id=entry_id,
