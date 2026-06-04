@@ -110,23 +110,26 @@ exp53_data_contacts_v1_zephyr/
 ├── fetch_manifest_columns.py # rate-limit-safe afdb-24M small-column fetch
 ├── cli.py                    # Stage B: Zephyr/Iris generate driver
 ├── generate_rows.py          # Stage B per-row worker (no zephyr import)
-├── pyproject.toml            # marinfold[contacts-v1] + duckdb + (extra: marin-zephyr)
+├── pyproject.toml            # marinfold[contacts-v1] + duckdb + marin-zephyr (Stage B)
 └── tests/                    # Stage A unit tests + Stage B byte-identity tests
 ```
 
 ### Running it
 
+See [`HANDOFF.md`](HANDOFF.md) for the authoritative, current resume steps
+(manifest upload, iris smoke, full run, publish) and the gotchas.
+
 ```bash
 uv sync --extra test               # Stage A + worker tests
 uv run python -m pytest tests/ -q
 
-# Stage A (local): consolidate small columns, then select.
-uv run python fetch_manifest_columns.py --out ~/exp53_scratch/afdb24m_small.parquet
-uv run python selection.py --input ~/exp53_scratch/afdb24m_small.parquet \
-    --out gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest
+# Stage A (local): consolidate afdb-24M's small columns, then select.
+uv run python fetch_manifest_columns.py --out ~/exp53_scratch/afdb24m_small        # dir, resumable
+uv run python selection.py --input ~/exp53_scratch/afdb24m_small \
+    --out ~/exp53_scratch/selection_manifest                                       # local; then upload to GCS
 
-# Stage B (Iris), once per split (train shown):
-uv run --extra zephyr iris --cluster=marin job run --cpu 1 --memory 2GB -- \
+# Stage B (Iris), once per split (train shown); marin-zephyr is a base dep:
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
   python cli.py generate \
     --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/train/shard_*.parquet" \
     --out   "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/train/contacts_v1-{shard:05d}-of-{total:05d}.parquet" \
