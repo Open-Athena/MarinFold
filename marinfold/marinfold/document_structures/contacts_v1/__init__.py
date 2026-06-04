@@ -3,9 +3,9 @@
 
 """contacts-v1 document structure.
 
-Serialize each protein as a *sequence section* (one ``<pos-X> <AA>``
+Serialize each protein as a *sequence section* (one ``<pX> <AA>``
 statement per residue, plus ``<n-term>`` / ``<c-term>`` markers, in random
-order) followed by a *structure section* of ``<contact> <pos-X> <pos-Y>``
+order) followed by a *structure section* of ``<contact> <pX> <pY>``
 statements for the strongest pyconfind side-chain contacts (as many as
 fill the context-length budget), listed in random order. Residues are
 numbered from a random n-terminal index that wraps around 2000 position
