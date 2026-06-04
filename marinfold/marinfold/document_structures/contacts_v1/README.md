@@ -34,21 +34,30 @@ A document is a single space-separated token string:
   id always yields the same document.
 
 A tiny worked example — a 4-residue chain `MET-ALA-GLY-PHE` numbered from
-a random start index of 27. In a file it's a single space-separated line;
-wrapped here for readability:
+a random start index of 20. It's a single space-separated line in a file;
+shown one statement per line here:
 
 ```
-<contacts-v1> <begin_sequence>
-  <n-term> <p27> <c-term> <p30>
-  <p27> <MET> <p29> <GLY> <p28> <ALA> <p30> <PHE>
+<contacts-v1>
+<begin_sequence>
+<p23> <PHE>
+<n-term> <p20>
+<p21> <ALA>
+<c-term> <p23>
+<p20> <MET>
+<p22> <GLY>
 <begin_statements>
-  <contact> <p29> <p27> <contact> <p27> <p30>
+<contact> <p20> <p23>
+<contact> <p20> <p22>
 <end>
 ```
 
-The four residues (`<p27>`…`<p30>`) and the two terminus markers come out
-in random order; the two contacts are listed strongest-degree first, each
-pair's order independently coin-flipped.
+All six sequence statements — the four `<pN> <AA>` residues and the two
+terminus markers — appear in **one random order**, so `<n-term>` /
+`<c-term>` are interleaved with the residues rather than grouped up front.
+The contacts are **also in random order** (selected strongest-first to fill
+the budget, but not *listed* by degree — here the degree-0.92 `<p20> <p22>`
+contact comes second), each pair's two positions coin-flipped.
 
 Eyeball a real one (prints the document + a contact table):
 

@@ -140,11 +140,11 @@ def test_readme_worked_example_is_current():
     ]
     contacts = [RawContact(0, 2, 0.92), RawContact(0, 3, 0.31)]
     expected = (
-        "<contacts-v1> <begin_sequence> <n-term> <p27> <c-term> <p30> "
-        "<p27> <MET> <p29> <GLY> <p28> <ALA> <p30> <PHE> <begin_statements> "
-        "<contact> <p29> <p27> <contact> <p27> <p30> <end>"
+        "<contacts-v1> <begin_sequence> <p23> <PHE> <n-term> <p20> "
+        "<p21> <ALA> <c-term> <p23> <p20> <MET> <p22> <GLY> <begin_statements> "
+        "<contact> <p20> <p23> <contact> <p20> <p22> <end>"
     )
-    assert build_document("toy-135", residues, contacts).document == expected
+    assert build_document("ex-21", residues, contacts).document == expected
 
     readme = (
         Path(__file__).parents[3]
