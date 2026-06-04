@@ -128,6 +128,32 @@ def test_different_entry_id_differs():
     assert a.document != b.document
 
 
+def test_readme_worked_example_is_current():
+    """The worked example in README.md must match real build_document output.
+
+    Pins the exact tokens and checks the README still contains them, so the
+    example can't silently drift when the token format changes.
+    """
+    residues = [
+        ResidueInfo(i, name, 1 + i, "A")
+        for i, name in enumerate(["MET", "ALA", "GLY", "PHE"])
+    ]
+    contacts = [RawContact(0, 2, 0.92), RawContact(0, 3, 0.31)]
+    expected = (
+        "<contacts-v1> <begin_sequence> <n-term> <p27> <c-term> <p30> "
+        "<p27> <MET> <p29> <GLY> <p28> <ALA> <p30> <PHE> <begin_statements> "
+        "<contact> <p29> <p27> <contact> <p27> <p30> <end>"
+    )
+    assert build_document("toy-135", residues, contacts).document == expected
+
+    readme = (
+        Path(__file__).parents[3]
+        / "marinfold" / "document_structures" / "contacts_v1" / "README.md"
+    ).read_text()
+    # README wraps the example across lines; collapse whitespace to compare.
+    assert expected in " ".join(readme.split())
+
+
 # ---------------------------------------------------------------------------
 # Wrap-around indexing
 # ---------------------------------------------------------------------------

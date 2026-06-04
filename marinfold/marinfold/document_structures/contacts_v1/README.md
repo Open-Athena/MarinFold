@@ -33,6 +33,23 @@ A document is a single space-separated token string:
 - **Deterministic** per `entry_id` (the RNG seed), so the same structure +
   id always yields the same document.
 
+A tiny worked example — a 4-residue chain `MET-ALA-GLY-PHE` numbered from
+a random start index of 27. In a file it's a single space-separated line;
+wrapped here for readability:
+
+```
+<contacts-v1> <begin_sequence>
+  <n-term> <p27> <c-term> <p30>
+  <p27> <MET> <p29> <GLY> <p28> <ALA> <p30> <PHE>
+<begin_statements>
+  <contact> <p29> <p27> <contact> <p27> <p30>
+<end>
+```
+
+The four residues (`<p27>`…`<p30>`) and the two terminus markers come out
+in random order; the two contacts are listed strongest-degree first, each
+pair's order independently coin-flipped.
+
 Eyeball a real one (prints the document + a contact table):
 
 ```bash
