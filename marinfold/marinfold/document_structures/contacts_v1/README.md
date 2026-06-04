@@ -67,9 +67,10 @@ metadata columns mirroring the published `protein-docs` datasets:
 ### From local structure files
 
 ```bash
+# a .pdb/.cif(.gz) file or a directory of them; .jsonl works too
 uv run contacts-v1 generate \
-    --input /path/to/structures/ \           # a .pdb/.cif(.gz) file or a directory of them
-    --out docs.parquet \                     # one row per structure (.jsonl works too)
+    --input /path/to/structures/ \
+    --out docs.parquet \
     --summary-out summary.json
 ```
 

@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from marinfold.document_structures.contacts_v1 import parse as parse_module
 from marinfold.document_structures.contacts_v1.parse import _parquet_paths
 
 _1QYS = Path(__file__).parents[2] / "data" / "1QYS.cif"
@@ -59,17 +60,15 @@ def test_parquet_paths_missing_is_empty(tmp_path: Path):
 
 def test_gemmi_structure_from_cif_text():
     pytest.importorskip("gemmi")
-    from marinfold.document_structures.contacts_v1.parse import (
-        _gemmi_structure_from_cif_text,
+    structure = parse_module._gemmi_structure_from_cif_text(
+        _1QYS.read_text(), name="fallback"
     )
-
-    structure = _gemmi_structure_from_cif_text(_1QYS.read_text(), name="fallback")
     assert len(structure) >= 1
     assert sum(1 for chain in structure[0] for _ in chain) > 0
 
 
 # ---------------------------------------------------------------------------
-# End-to-end parquet generation (pyconfind + rotamer library)
+# Parquet row handling
 # ---------------------------------------------------------------------------
 
 
@@ -79,6 +78,39 @@ def _write_parquet(path: Path, table_dict: dict) -> Path:
 
     pq.write_table(pa.table(table_dict), str(path))
     return path
+
+
+def test_iter_parquet_analyzed_structures_falls_back_for_empty_or_null_id(
+    monkeypatch, tmp_path: Path
+):
+    seen_entry_ids: list[str] = []
+
+    def fake_parse(_cif_text: str, *, name: str | None = None):
+        return object()
+
+    def fake_analyze(_structure, **kwargs):
+        seen_entry_ids.append(kwargs["entry_id"])
+        return kwargs["entry_id"]
+
+    monkeypatch.setattr(parse_module, "_gemmi_structure_from_cif_text", fake_parse)
+    monkeypatch.setattr(parse_module, "analyze_structure", fake_analyze)
+
+    shard = _write_parquet(
+        tmp_path / "rows.parquet",
+        {
+            "entry_id": ["", None, "AF-REAL"],
+            "cif_content": ["cif-a", "cif-b", "cif-c"],
+        },
+    )
+    rows = list(parse_module.iter_parquet_analyzed_structures(shard))
+
+    assert rows == ["rows:row0", "rows:row1", "AF-REAL"]
+    assert seen_entry_ids == rows
+
+
+# ---------------------------------------------------------------------------
+# End-to-end parquet generation (pyconfind + rotamer library)
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.network
@@ -127,10 +159,6 @@ def test_generate_documents_from_parquet_synthetic_id(tmp_path: Path):
 
 def test_generate_documents_from_parquet_missing_cif_column(tmp_path: Path):
     """Wrong --cif-column errors loudly (no pyconfind needed to hit this)."""
-    from marinfold.document_structures.contacts_v1.parse import (
-        iter_parquet_analyzed_structures,
-    )
-
     shard = _write_parquet(tmp_path / "s.parquet", {"foo": ["x"]})
     with pytest.raises(ValueError, match="no column 'cif_content'"):
-        list(iter_parquet_analyzed_structures(shard))
+        list(parse_module.iter_parquet_analyzed_structures(shard))

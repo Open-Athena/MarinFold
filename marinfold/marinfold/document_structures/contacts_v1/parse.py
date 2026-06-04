@@ -301,9 +301,13 @@ def iter_parquet_analyzed_structures(
         cif_arr = batch.column(cif_column)
         id_arr = batch.column(id_column) if use_id else None
         for i in range(batch.num_rows):
+            synthetic_entry_id = f"{parquet_path.stem}:row{row_offset + i}"
+            raw_entry_id = id_arr[i].as_py() if id_arr is not None else None
             entry_id = (
-                id_arr[i].as_py() if id_arr is not None
-                else f"{parquet_path.stem}:row{row_offset + i}"
+                synthetic_entry_id
+                if raw_entry_id is None
+                or (isinstance(raw_entry_id, str) and not raw_entry_id.strip())
+                else raw_entry_id
             )
             cif_text = cif_arr[i].as_py()
             if not cif_text:
