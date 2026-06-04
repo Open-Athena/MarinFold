@@ -50,15 +50,18 @@ def test_generate_document_1qys_tokenizes_cleanly():
     assert res.entry_id == "1QYS"
     assert res.seq_len == 92
     assert res.contacts_pre_filter > 0
-    assert res.contacts_emitted == res.contacts_pre_filter  # 92 residues → fits
-    assert res.contacts_excluded == 0
-    assert res.truncated is False
+    # 1QYS has a long tail of near-zero contacts; the 0.001 filter drops them.
+    assert res.contacts_passing_min_degree < res.contacts_pre_filter
+    assert res.contacts_emitted == res.contacts_passing_min_degree  # all eligible fit
+    assert res.contacts_excluded == res.contacts_pre_filter - res.contacts_emitted
+    assert res.truncated is False  # eligible all fit; weak ones filtered, not truncated
     assert res.num_tokens <= CONTEXT_LENGTH
-    # Degree stats consistent; not truncated → lowest_included == lowest_nonzero.
+    # Every emitted contact is above threshold; whole-protein min is below it.
     degrees = [c.degree for c in res.contacts]
-    assert res.highest_contact_degree == max(degrees)
-    assert res.lowest_included_contact_degree == min(degrees)
-    assert res.lowest_nonzero_contact_degree == res.lowest_included_contact_degree
+    assert all(d >= 0.001 for d in degrees)
+    assert res.highest_contact_degree == max(degrees)     # strongest is included
+    assert res.lowest_included_contact_degree == min(degrees) >= 0.001
+    assert res.lowest_nonzero_contact_degree < 0.001      # raw min is below threshold
     # Tokenizes 1:1 with the published vocab, no UNK collapse.
     tok = build_tokenizer(all_domain_tokens())
     ids = tok.encode(res.document, add_special_tokens=False)

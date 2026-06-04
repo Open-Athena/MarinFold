@@ -45,6 +45,7 @@ def _config_from_args(args: argparse.Namespace) -> generate.GenerationConfig:
         contact_distance=args.contact_distance,
         dcut=args.dcut,
         clash_distance=args.clash_distance,
+        min_contact_degree=args.min_contact_degree,
     )
 
 
@@ -118,6 +119,7 @@ def cmd_view(args: argparse.Namespace) -> None:
         print(
             f"  contacts: {result.contacts_emitted} included / "
             f"{result.contacts_excluded} excluded / "
+            f"{result.contacts_passing_min_degree} pass min-degree / "
             f"{result.contacts_pre_filter} found  "
             f"truncated={result.truncated}  tokens={result.num_tokens}"
         )
@@ -198,6 +200,10 @@ def _add_generation_common(p: argparse.ArgumentParser) -> None:
                    help="CA-CA pair cutoff in Å for the contact-degree search.")
     p.add_argument("--clash-distance", type=float, default=cfg.clash_distance,
                    help="Backbone-clash cutoff in Å used while pruning rotamers.")
+    p.add_argument("--min-contact-degree", type=float, default=cfg.min_contact_degree,
+                   help="Drop contacts with degree below this before "
+                        "selection; they are never included even if there is "
+                        f"room (default {cfg.min_contact_degree}).")
 
 
 def build_parser() -> argparse.ArgumentParser:

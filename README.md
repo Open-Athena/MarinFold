@@ -93,8 +93,8 @@ random order, with `<n-term>`/`<c-term>` markers and residues numbered
 from a random start that wraps around 2000 indices — followed by
 `<contact>` statements for the strongest
 [pyconfind](https://github.com/timodonnell/pyconfind) side-chain
-contacts (as many as fill the context budget), listed in random order.
-Generation needs the `contacts-v1` extra (pyconfind):
+contacts above a minimum degree (as many as fill the context budget),
+listed in random order. Generation needs the `contacts-v1` extra (pyconfind):
 
 ```bash
 cd marinfold

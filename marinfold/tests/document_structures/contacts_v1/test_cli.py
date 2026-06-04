@@ -25,6 +25,17 @@ def test_generate_parses():
     assert args.native_only is True
     assert args.contact_distance == 3.0
     assert args.dcut == 25.0
+    assert args.min_contact_degree == 0.001
+
+
+def test_min_contact_degree_override():
+    args = cli.build_parser().parse_args([
+        "generate", "--input", "x", "--out", "o.jsonl",
+        "--min-contact-degree", "0.05",
+    ])
+    assert args.min_contact_degree == 0.05
+    cfg = cli._config_from_args(args)
+    assert cfg.min_contact_degree == 0.05
 
 
 def test_generate_requires_out():

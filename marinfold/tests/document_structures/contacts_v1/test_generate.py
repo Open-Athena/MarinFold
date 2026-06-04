@@ -205,6 +205,7 @@ def test_truncation_keeps_strongest_and_respects_budget():
     context_length = 200  # frame(4)+seq(2*50)+termini(4)=108 → 30 contacts fit
     res = build_document("trunc", residues, contacts, context_length=context_length)
     assert res.contacts_pre_filter == 40
+    assert res.contacts_passing_min_degree == 40  # all degrees >= 0.001
     assert res.contacts_emitted == 30
     assert res.contacts_excluded == 10
     assert res.truncated is True
@@ -226,6 +227,7 @@ def test_not_truncated_when_everything_fits():
     res = build_document("fits", residues, contacts)
     assert res.truncated is False
     assert res.contacts_excluded == 0
+    assert res.contacts_passing_min_degree == 2
     assert res.contacts_emitted == res.contacts_pre_filter == 2
     # No truncation → weakest-included equals weakest-overall.
     assert res.highest_contact_degree == 0.9
@@ -236,11 +238,70 @@ def test_not_truncated_when_everything_fits():
 def test_degree_stats_none_when_no_contacts():
     res = build_document("nocontacts", _residues(5), [])
     assert res.contacts_pre_filter == 0
+    assert res.contacts_passing_min_degree == 0
     assert res.contacts_emitted == 0
     assert res.contacts_excluded == 0
     assert res.highest_contact_degree is None
     assert res.lowest_nonzero_contact_degree is None
     assert res.lowest_included_contact_degree is None
+
+
+# ---------------------------------------------------------------------------
+# Minimum-degree filter
+# ---------------------------------------------------------------------------
+
+
+def test_min_degree_filter_excludes_weak_contacts_even_with_space():
+    residues = _residues(10)
+    # Two strong, two below the 0.001 default — plenty of budget room.
+    contacts = [
+        RawContact(0, 5, 0.9),
+        RawContact(1, 6, 0.5),
+        RawContact(2, 7, 0.0005),   # below threshold
+        RawContact(3, 8, 1e-8),     # below threshold
+    ]
+    res = build_document("weak", residues, contacts)
+    assert res.contacts_pre_filter == 4
+    assert res.contacts_passing_min_degree == 2
+    assert res.contacts_emitted == 2          # weak ones never included
+    assert res.contacts_excluded == 2
+    assert res.truncated is False             # dropped by filter, not budget
+    # Emitted degrees are only the strong ones; none below threshold.
+    assert sorted(c.degree for c in res.contacts) == [0.5, 0.9]
+    assert all(c.degree >= 0.001 for c in res.contacts)
+    # Whole-protein stats still reflect the raw contacts.
+    assert res.highest_contact_degree == 0.9
+    assert res.lowest_nonzero_contact_degree == 1e-8
+    assert res.lowest_included_contact_degree == 0.5
+
+
+def test_custom_min_contact_degree_threshold():
+    residues = _residues(10)
+    contacts = [RawContact(0, 5, 0.9), RawContact(1, 6, 0.05), RawContact(2, 7, 0.005)]
+    cfg = GenerationConfig(min_contact_degree=0.1)
+    res = build_document("thresh", residues, contacts, config=cfg)
+    assert res.contacts_passing_min_degree == 1   # only 0.9 >= 0.1
+    assert res.contacts_emitted == 1
+    assert res.contacts_excluded == 2
+    assert res.lowest_included_contact_degree == 0.9
+
+
+def test_all_contacts_below_threshold():
+    residues = _residues(6)
+    contacts = [RawContact(0, 3, 0.0002), RawContact(1, 5, 1e-7)]
+    res = build_document("allweak", residues, contacts)
+    assert res.contacts_pre_filter == 2
+    assert res.contacts_passing_min_degree == 0
+    assert res.contacts_emitted == 0
+    assert res.contacts_excluded == 2
+    assert res.truncated is False
+    # Whole-protein degree stats exist; included-degree is null.
+    assert res.highest_contact_degree == 0.0002
+    assert res.lowest_nonzero_contact_degree == 1e-7
+    assert res.lowest_included_contact_degree is None
+    # Document still valid: sequence section + empty structure section.
+    assert res.document.split()[-1] == "<end>"
+    assert "<contact>" not in res.document.split()
 
 
 # ---------------------------------------------------------------------------
@@ -275,6 +336,7 @@ def test_metadata_row_and_summary_dict():
     assert row["seq_len"] == 5
     assert row["global_plddt"] == 87.5
     assert row["contacts_pre_filter"] == 2
+    assert row["contacts_passing_min_degree"] == 2
     assert row["contacts_emitted"] == 2
     assert row["contacts_excluded"] == 0
     assert row["truncated"] is False

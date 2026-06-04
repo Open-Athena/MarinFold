@@ -45,12 +45,14 @@ The structure section consists of statements of the form `<contact>` `<pos-XXX>`
 
 Contacts are defined as contact degree > 0 where contact degree is implemented in [pyconfind](https://github.com/timodonnell/pyconfind). We run pyconfind in `native_only=True` mode, i.e. only consider the actual given amino acid at each position rather than all other possibilities.
 
-We include the N contacts with the highest contact degree (the N strongest), where N is chosen so the document fills the 8192-token budget (see Document length). These N selected contacts are then listed in **random order** in the structure section — they are *not* sorted by degree. (We select by strength so that, when a protein has more contacts than fit, the weakest are the ones dropped; but the order they appear in the document is randomized so the model does not learn a degree-sorted ordering.)
+Before selecting which contacts to include, we discard any contact whose contact degree is below a minimum threshold (`min_contact_degree`, default 0.001). Contacts below this threshold are **never** written to a document, even if there is room for them. (pyconfind reports many very weak contacts — degrees down to ~1e-8 — and this threshold keeps those noise-level contacts out.)
+
+From the contacts that pass this threshold, we include the N with the highest contact degree (the N strongest), where N is chosen so the document fills the 8192-token budget (see Document length). These N selected contacts are then listed in **random order** in the structure section — they are *not* sorted by degree. (We select by strength so that, when a protein has more above-threshold contacts than fit, the weakest are the ones dropped; but the order they appear in the document is randomized so the model does not learn a degree-sorted ordering.)
 
 Note that the contact matrix is symmetric. We randomize the order that each contact pair is given in: if there is a contact between XXX and YYY, with 50% probability we output `<contact> <pos-XXX> <pos-YYY>` and the other half of the time we output `<contact> <pos-YYY> <pos-XXX>`. Each contact is only specified once, i.e. once we emit the contact between XXX and YYY we will never emit it again in either order.
 
 ### Document length
-Our max document length is 8192 tokens. N (the number of contacts included) is the number of the strongest contacts whose `<contact>` statements fit in the budget remaining after the sequence section. If the protein has more contacts than fit, the weakest are dropped (truncation); if it has fewer, all are included and the document is shorter than the budget.
+Our max document length is 8192 tokens. N (the number of contacts included) is the number of the strongest *above-threshold* contacts whose `<contact>` statements fit in the budget remaining after the sequence section. If the protein has more above-threshold contacts than fit, the weakest of them are dropped (truncation); if it has fewer, all above-threshold contacts are included and the document is shorter than the budget.
 
 ### Additional tokens
 For the vocab, also include as additional tokens all the tokens in the contacts-and-distances-v1 [vocab](https://github.com/Open-Athena/MarinFold/blob/main/marinfold/marinfold/document_structures/contacts_and_distances_v1/vocab.py). We may fine tune on documents like that later. Also include this additional token: `<think>`
@@ -94,10 +96,11 @@ the spec changes.
   mutually consistent. Contacts reference residues by 0-based sequence
   index with `seq_i < seq_j`.
 - **pyconfind parameters.** confind/C++ defaults: `contact_distance=3.0`,
-  `dcut=25.0`, `clash_distance=2.0`, plus `native_only=True`. Every
-  contact pyconfind returns with degree > 0 is eligible (including very
-  weak contacts with degree ~1e-8). These are exposed as CLI knobs but
-  default to the above.
+  `dcut=25.0`, `clash_distance=2.0`, plus `native_only=True`. pyconfind
+  returns every contact with degree > 0 (down to ~1e-8); the
+  `min_contact_degree` filter above then decides which are eligible.
+  These (and `min_contact_degree`) are exposed as CLI knobs but default
+  to the above.
 - **Non-canonical residues.** pyconfind's "legal" protein residues
   beyond the standard 20 (HIS variants HSD/HSE/HSC/HSP/HIP, plus MSE,
   SEC, CSO, SEP, TPO, PTR) are canonicalized to their parent amino acid
@@ -109,16 +112,24 @@ the spec changes.
 - **Residue-count bounds.** "Up to 2000 residues" is enforced: chains
   with fewer than 2 residues or more than 2000 (can't be uniquely
   indexed under wrap-around) are skipped with a warning.
-- **Contact selection & ordering.** Selection of the N strongest uses a
-  *stable* sort by descending degree, so equal-degree contacts at the
-  truncation boundary break ties by pyconfind's `(seq_i, seq_j)`-ascending
-  order — deterministic. The selected N are then shuffled, so the order
-  in the document is random (not degree-sorted).
+- **Minimum degree filter.** Contacts with degree below
+  `config.min_contact_degree` (default 0.001) are dropped before anything
+  else and are never emitted, regardless of budget. pyconfind returns a
+  long tail of near-zero-degree contacts (down to ~1e-8); this keeps that
+  noise out of documents.
+- **Contact selection & ordering.** From the above-threshold contacts,
+  selection of the N strongest uses a *stable* sort by descending degree,
+  so equal-degree contacts at the truncation boundary break ties by
+  pyconfind's `(seq_i, seq_j)`-ascending order — deterministic. The
+  selected N are then shuffled, so the order in the document is random
+  (not degree-sorted).
 - **Truncation.** The whole sequence section is always kept (it fits for
-  any chain ≤ 2000 residues); the N strongest contacts fill the remaining
-  budget, `N = floor((8192 − frame − sequence) / 3)` capped at the number
-  available. `truncated`, `contacts_pre_filter`, `contacts_emitted`, and
-  `contacts_excluded` are recorded as metadata.
+  any chain ≤ 2000 residues); the N strongest *above-threshold* contacts
+  fill the remaining budget, `N = floor((8192 − frame − sequence) / 3)`
+  capped at the number passing the filter. `truncated` means a budget
+  overflow specifically — some above-threshold contact didn't fit
+  (`contacts_passing_min_degree > contacts_emitted`) — not that the
+  degree filter dropped something.
 - **Determinism.** Seeded by `random.Random(int(sha1(entry_id)[:8], 16))`
   (same scheme as contacts-and-distances-v1). RNG draws happen in a
   fixed, load-bearing order: (1) the random n-terminal start index, then
@@ -140,21 +151,26 @@ protein-docs-style metadata. Per document we record: `entry_id`,
 and the following contact statistics:
 
 - `contacts_pre_filter` — total contacts (degree > 0) the protein had.
+- `contacts_passing_min_degree` — how many passed the `min_contact_degree`
+  filter (the pool the strongest N are chosen from).
 - `contacts_emitted` — how many were included in the document.
 - `contacts_excluded` — how many did not make it in (`pre_filter −
-  emitted`); `truncated` is `contacts_excluded > 0`.
+  emitted`); counts both below-threshold and budget-truncated contacts.
+- `truncated` — whether a budget overflow dropped any above-threshold
+  contact (`contacts_passing_min_degree > contacts_emitted`).
 - `highest_contact_degree` — max degree over all the protein's contacts.
 - `lowest_nonzero_contact_degree` — min degree over all the protein's
   contacts (pyconfind only returns degree > 0, so this is the smallest
-  positive degree).
+  positive degree, which may be below the filter threshold).
 - `lowest_included_contact_degree` — min degree among the contacts that
-  made it into the document (the truncation threshold). Equals
-  `lowest_nonzero_contact_degree` when nothing is truncated.
+  made it into the document (always ≥ `min_contact_degree`).
 
-The three degree fields are null when the protein has no contacts. The
-local `--summary-out` JSON additionally lists the full residue sequence
-and every emitted contact with its contact-degree value and the residue
-numbers/names it connects.
+The whole-protein degree fields (`highest_contact_degree`,
+`lowest_nonzero_contact_degree`) are null when the protein has no contacts
+at all; `lowest_included_contact_degree` is null when nothing was emitted
+(no contacts, or all below threshold). The local `--summary-out` JSON
+additionally lists the full residue sequence and every emitted contact
+with its contact-degree value and the residue numbers/names it connects.
 
 ### Not yet implemented
 

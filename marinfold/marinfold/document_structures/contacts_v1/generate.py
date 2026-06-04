@@ -60,7 +60,10 @@ class GenerationConfig:
     """Hyperparameters for contacts-v1 generation.
 
     The first four are pyconfind geometry knobs (SPEC defaults — confind's
-    C++ defaults, native-only). ``num_position_indices`` is the size of the
+    C++ defaults, native-only). ``min_contact_degree`` filters out weak
+    contacts before selection: any contact with degree below it is never
+    emitted, even if there is budget room (pyconfind returns a long tail of
+    near-zero-degree contacts). ``num_position_indices`` is the size of the
     position-token space and must match ``vocab.NUM_POSITION_INDICES``; it
     also caps the longest chain we can serialize (one index per residue,
     no collisions).
@@ -70,6 +73,7 @@ class GenerationConfig:
     contact_distance: float = 3.0
     dcut: float = 25.0
     clash_distance: float = 2.0
+    min_contact_degree: float = 0.001
     num_position_indices: int = NUM_POSITION_INDICES
 
 
@@ -131,6 +135,7 @@ class GenerationResult:
     n_term_index: int
     c_term_index: int
     contacts_pre_filter: int
+    contacts_passing_min_degree: int
     contacts_emitted: int
     contacts_excluded: int
     truncated: bool
@@ -157,6 +162,7 @@ class GenerationResult:
             "n_term_index": self.n_term_index,
             "c_term_index": self.c_term_index,
             "contacts_pre_filter": self.contacts_pre_filter,
+            "contacts_passing_min_degree": self.contacts_passing_min_degree,
             "contacts_emitted": self.contacts_emitted,
             "contacts_excluded": self.contacts_excluded,
             "truncated": self.truncated,
@@ -222,16 +228,20 @@ def build_document(
     seq_statements.append(("<c-term>", f"<pos-{c_term_index}>"))
     rng.shuffle(seq_statements)
 
-    # Structure section. Rank by descending degree to pick which contacts
-    # survive truncation. Stable sort keeps pyconfind's (seq_i, seq_j)
-    # ordering as the deterministic tie-break at the truncation boundary.
+    # Structure section. Rank by descending degree (stable sort keeps
+    # pyconfind's (seq_i, seq_j) ordering as the deterministic tie-break),
+    # then drop contacts below the minimum-degree threshold before picking
+    # which survive truncation.
     ordered = sorted(contacts, key=lambda c: -c.degree)
     contacts_pre_filter = len(ordered)
     highest_degree = ordered[0].degree if ordered else None
     lowest_nonzero_degree = ordered[-1].degree if ordered else None
 
-    # Budget: frame + sequence section fixed; the N strongest contacts
-    # fill the rest.
+    eligible = [c for c in ordered if c.degree >= config.min_contact_degree]
+    contacts_passing = len(eligible)
+
+    # Budget: frame + sequence section fixed; the N strongest eligible
+    # contacts fill the rest.
     fixed = (
         _FRAME_TOKENS
         + _SEQ_TOKENS_PER_RESIDUE * num_residues
@@ -239,12 +249,14 @@ def build_document(
     )
     available = context_length - fixed
     max_contacts = max(0, available // _CONTACT_TOKENS_PER_STATEMENT)
-    n_emit = min(contacts_pre_filter, max_contacts)
+    n_emit = min(contacts_passing, max_contacts)
     contacts_excluded = contacts_pre_filter - n_emit
-    truncated = contacts_excluded > 0
+    # "Truncated" means a budget overflow dropped an *eligible* contact —
+    # not that the min-degree filter removed weak ones.
+    truncated = n_emit < contacts_passing
 
-    selected = ordered[:n_emit]
-    # Weakest contact that made it in (selected is still degree-sorted here).
+    selected = eligible[:n_emit]
+    # Weakest contact that made it in (eligible is still degree-sorted here).
     lowest_included_degree = selected[-1].degree if selected else None
     # List the selected contacts in random order — the model should not
     # learn a degree-sorted ordering. (Selection above is by strength; the
@@ -286,6 +298,7 @@ def build_document(
         n_term_index=n_term_index,
         c_term_index=c_term_index,
         contacts_pre_filter=contacts_pre_filter,
+        contacts_passing_min_degree=contacts_passing,
         contacts_emitted=len(emitted),
         contacts_excluded=contacts_excluded,
         truncated=truncated,
