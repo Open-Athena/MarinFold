@@ -86,6 +86,27 @@ structures (one document per input). See `contacts-and-distances-v1
 generate --help` for the algorithm knobs (contact cutoff, per-mode
 fractions, pLDDT filter, context-length budget).
 
+A second format, `contacts-v1`
+([SPEC.md](marinfold/marinfold/document_structures/contacts_v1/SPEC.md)),
+is contacts-only: a residue sequence — `<pos-N> <AA>` statements in
+random order, with `<n-term>`/`<c-term>` markers and residues numbered
+from a random start that wraps around 2000 indices — followed by
+`<contact>` statements for the strongest
+[pyconfind](https://github.com/timodonnell/pyconfind) side-chain
+contacts above a minimum degree (as many as fill the context budget),
+listed in random order. Generation needs the `contacts-v1` extra (pyconfind):
+
+```bash
+cd marinfold
+uv sync --extra contacts-v1
+# Eyeball documents + their contact tables in the terminal:
+uv run contacts-v1 view --input tests/data/1QYS.cif
+# Write documents (with protein-docs-style metadata columns) plus a
+# per-protein JSON summary (sequence, every contact's degree, truncation):
+uv run contacts-v1 generate --input tests/data/1QYS.cif \
+    --out /tmp/contacts_v1_docs.jsonl --summary-out /tmp/summary.json
+```
+
 ## More details (mostly written by robots)
 
 Trained models are listed in `[MODELS.yaml](MODELS.yaml)` by
