@@ -449,6 +449,7 @@ def test_metadata_row_and_summary_dict():
     assert row["entry_id"] == "AF-META"
     assert row["seq_len"] == 5
     assert row["global_plddt"] == 87.5
+    assert row["min_seq_separation"] == 1
     assert row["contacts_pre_filter"] == 2
     assert row["contacts_passing_min_degree"] == 2
     assert row["contacts_emitted"] == 2
@@ -460,6 +461,7 @@ def test_metadata_row_and_summary_dict():
     assert len(row["sha1"]) == 40
     summary = res.summary_dict()
     assert "document" not in summary
+    assert summary["min_seq_separation"] == 1
     assert summary["sequence"] == ["MET", "ALA", "GLY", "LYS", "PHE"]
     assert len(summary["contacts"]) == 2
     # Contacts are in (random) document order; check as a set.

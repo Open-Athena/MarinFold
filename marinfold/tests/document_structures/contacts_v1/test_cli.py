@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from marinfold.document_structures.contacts_v1 import cli
-from marinfold.document_structures.contacts_v1.generate import build_document
+from marinfold.document_structures.contacts_v1.generate import GenerationConfig, build_document
 from marinfold.document_structures.contacts_v1.parse import RawContact, ResidueInfo
 from marinfold.document_structures.contacts_v1.vocab import position_token
 
@@ -138,6 +138,34 @@ def test_view_prints_reused_position_tokens(monkeypatch, capsys):
         f"{position_token(result.contacts[0].pos_j)}"
     ) in out
     assert "<pos-" not in out
+
+
+def test_view_handles_no_included_contacts(monkeypatch, capsys):
+    residues = [
+        ResidueInfo(seq_index=i, resname=aa, resnum=1 + i, chain="A")
+        for i, aa in enumerate(["ALA", "GLY", "SER", "THR"])
+    ]
+    result = build_document(
+        "view-empty-contacts",
+        residues,
+        [RawContact(0, 2, 0.9)],
+        config=GenerationConfig(min_seq_separation=1, min_contact_degree=1.0),
+    )
+    assert result is not None
+    assert result.contacts_pre_filter == 1
+    assert result.contacts_emitted == 0
+    monkeypatch.setattr(
+        cli.generate,
+        "generate_documents",
+        lambda **_: iter([result]),
+    )
+
+    args = cli.build_parser().parse_args(["view", "--input", "demo.cif"])
+    args.func(args)
+
+    out = capsys.readouterr().out
+    assert "survive seq-sep>=1" in out
+    assert "lowest_included=n/a" in out
 
 
 def test_tokenizer_parses():

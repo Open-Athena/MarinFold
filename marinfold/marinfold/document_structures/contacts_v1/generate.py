@@ -139,10 +139,11 @@ class GenerationResult:
 
     The flat scalars mirror the metadata columns of the published
     ``timodonnell/protein-docs`` datasets (``seq_len``,
-    ``contacts_pre_filter``, ``contacts_emitted``, …). :meth:`metadata_row`
-    is the flat parquet/jsonl row; :meth:`summary_dict` is the richer view
-    (full sequence + per-contact degrees) for the local ``--summary-out``
-    JSON.
+    ``contacts_pre_filter``, ``contacts_emitted``, …), plus the
+    contact-definition knob that affects those counts
+    (``min_seq_separation``). :meth:`metadata_row` is the flat
+    parquet/jsonl row; :meth:`summary_dict` is the richer view (full
+    sequence + per-contact degrees) for the local ``--summary-out`` JSON.
     """
 
     entry_id: str
@@ -153,6 +154,7 @@ class GenerationResult:
     start_index: int
     n_term_index: int
     c_term_index: int
+    min_seq_separation: int
     contacts_pre_filter: int
     contacts_passing_min_degree: int
     contacts_emitted: int
@@ -180,6 +182,7 @@ class GenerationResult:
             "start_index": self.start_index,
             "n_term_index": self.n_term_index,
             "c_term_index": self.c_term_index,
+            "min_seq_separation": self.min_seq_separation,
             "contacts_pre_filter": self.contacts_pre_filter,
             "contacts_passing_min_degree": self.contacts_passing_min_degree,
             "contacts_emitted": self.contacts_emitted,
@@ -269,10 +272,11 @@ def build_document(
         if (c.seq_j - c.seq_i) >= config.min_seq_separation
     ]
 
-    # Structure section. Rank by descending degree (stable sort keeps
-    # pyconfind's (seq_i, seq_j) ordering as the deterministic tie-break),
-    # then drop contacts below the minimum-degree threshold before picking
-    # which survive truncation.
+    # Structure section. These counts/stats are over the post-seq-sep pool.
+    # Rank by descending degree (stable sort keeps pyconfind's
+    # (seq_i, seq_j) ordering as the deterministic tie-break), then drop
+    # contacts below the minimum-degree threshold before picking which
+    # survive truncation.
     ordered = sorted(contacts, key=lambda c: -c.degree)
     contacts_pre_filter = len(ordered)
     highest_degree = ordered[0].degree if ordered else None
@@ -333,6 +337,7 @@ def build_document(
         start_index=start,
         n_term_index=n_term_index,
         c_term_index=c_term_index,
+        min_seq_separation=config.min_seq_separation,
         contacts_pre_filter=contacts_pre_filter,
         contacts_passing_min_degree=contacts_passing,
         contacts_emitted=len(emitted),

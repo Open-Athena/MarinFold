@@ -175,10 +175,13 @@ contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
 The spec does not define output metadata; the issue asks to track
 protein-docs-style metadata. Per document we record: `entry_id`,
 `seq_len`, `global_plddt` (mean CA B-factor), `start_index`,
-`n_term_index`, `c_term_index`, `num_tokens`, `sha1` of the document,
-and the following contact statistics:
+`n_term_index`, `c_term_index`, `min_seq_separation`, `num_tokens`,
+`sha1` of the document, and the following contact statistics:
 
-- `contacts_pre_filter` — total contacts (degree > 0) the protein had.
+- `min_seq_separation` — the minimum sequence separation used for this
+  row's contact definition.
+- `contacts_pre_filter` — total contacts (degree > 0) that survived the
+  `min_seq_separation` definition.
 - `contacts_passing_min_degree` — how many passed the `min_contact_degree`
   filter (the pool the strongest N are chosen from).
 - `contacts_emitted` — how many were included in the document.
@@ -186,10 +189,11 @@ and the following contact statistics:
   emitted`); counts both below-threshold and budget-truncated contacts.
 - `truncated` — whether a budget overflow dropped any above-threshold
   contact (`contacts_passing_min_degree > contacts_emitted`).
-- `highest_contact_degree` — max degree over all the protein's contacts.
-- `lowest_nonzero_contact_degree` — min degree over all the protein's
-  contacts (pyconfind only returns degree > 0, so this is the smallest
-  positive degree, which may be below the filter threshold).
+- `highest_contact_degree` — max degree over the protein's surviving
+  (`min_seq_separation`-respecting) contacts.
+- `lowest_nonzero_contact_degree` — min degree over the protein's
+  surviving contacts (pyconfind only returns degree > 0, so this is the
+  smallest positive degree, which may be below the filter threshold).
 - `lowest_included_contact_degree` — min degree among the contacts that
   made it into the document (always ≥ `min_contact_degree`).
 

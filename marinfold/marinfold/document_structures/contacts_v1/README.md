@@ -76,7 +76,8 @@ uv run contacts-v1 view --input tests/data/1QYS.cif
 ## Output + metadata
 
 `generate` writes one row per protein — the `document` token string plus
-metadata columns mirroring the published `protein-docs` datasets:
+metadata columns mirroring the published `protein-docs` datasets, plus
+the sequence-separation knob that defines what counts as a contact:
 
 | column | meaning |
 |---|---|
@@ -84,7 +85,8 @@ metadata columns mirroring the published `protein-docs` datasets:
 | `seq_len` | residue count |
 | `global_plddt` | mean CA B-factor (pLDDT for AFDB inputs) |
 | `start_index`, `n_term_index`, `c_term_index` | residue-numbering offsets |
-| `contacts_pre_filter` | all contacts with degree > 0 |
+| `min_seq_separation` | minimum `|i-j|` required for a pair to count as a contact |
+| `contacts_pre_filter` | contacts with degree > 0 that survive the `min_seq_separation` definition |
 | `contacts_passing_min_degree` | how many passed the min-degree filter |
 | `contacts_emitted` / `contacts_excluded` | included / not included |
 | `truncated` | whether a budget overflow dropped an eligible contact |
