@@ -143,6 +143,8 @@ def cmd_generate(args: argparse.Namespace) -> None:
         max_workers=args.max_workers,
         resources=ResourceConfig(
             cpu=args.worker_cpu, ram=args.worker_memory, disk=args.worker_disk,
+            regions=[args.region] if args.region else None,
+            preemptible=args.preemptible,
         ),
     )
     ctx.execute(ds)
@@ -181,6 +183,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-workers", type=int, default=None,
                    help="Cap concurrent Zephyr workers (default: cluster default "
                         "or ZEPHYR_MAX_WORKERS).")
+    p.add_argument("--region", type=str, default="us-central1",
+                   help="Pin workers to this GCP region (match the iris cluster) "
+                        "so a large pool can't spill cross-region/continent. "
+                        "Empty string uses the cluster default.")
+    p.add_argument("--preemptible", action=argparse.BooleanOptionalAction, default=True,
+                   help="Request preemptible/spot workers — far more in-region "
+                        "capacity + cheaper than on-demand; zephyr retries "
+                        "preemptions. (iris may still auto-tag the JOB "
+                        "non-preemptible from a small controller --memory; pass "
+                        "the iris-job-run preemptible flag too for full effect.)")
     p.add_argument("--fetch-concurrency", type=int, default=32,
                    help="Concurrent URI fetches per shard (overlaps GCS GETs with "
                         "pyconfind). Default 32.")

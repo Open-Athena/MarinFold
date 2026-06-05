@@ -168,11 +168,44 @@ Counts: [`data/selection_counts.csv`](data/selection_counts.csv) /
 generation throughput measured at **4.45 docs/s/core** (~225 ms/structure),
 so ~4.2 M docs ≈ **~31 min on 512 Iris workers**.
 
-### Stage B — generation
+### Stage B — generation (done)
 
-_(Fill in after the Iris run: wall-clock + worker count, output paths,
-W&B/Iris job ids, any dropped-row counts.)_
+**4,213,203 documents — 0 generation drops** (every selected entry serialized:
+AFDB is single-chain and the manifest pre-filtered length). Per-split/round
+output matches the manifest exactly (train round-0==1==2 = 941,028; rounds 3–4
+smaller); 960,054 round-0 docs == 960,054 clusters (1:1). With
+`min_seq_separation=6`: mean ~200 contacts/doc, mean 1,132 tokens (245 docs hit
+the 8,192 budget). Recovered shards are byte-schema-identical to the iris shards
+and slot into the correct round-descending position.
+
+**Run (marin Iris, us-central1):** `--max-workers 1024 --worker-cpu 1`. Iris
+jobs `iris-run-cli-20260605-144250` (train), `-145106` (val), `-145107` (test).
+The bulk (~96%) generated at ~35 shards/min on the full pool; then a slow tail.
+
+**Operational lesson (cross-region):** the **non-preemptible** 1024-CPU request
+exceeded us-central1's on-demand capacity, so iris **spilled workers to Europe**
+— those trans-Atlantic workers became a slow, retry-heavy (~5% worker-death)
+straggler tail. We cut the iris job at 96% and **regenerated the 80 missing
+shards locally** (`rerun_missing.py`, 48 cores, ~12 min, 0 errors) with their
+correct original indices. Fix for next time, now wired into `cli.py`:
+`--region us-central1` + `--preemptible` (pin region, use the much larger
+in-region spot pool); see the GCS-region-locality feedback note.
+
+**Outputs:**
+- GCS (working): `gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/<split>/`
+- HF bucket (publish prepared, **pending write perms**): `open-athena/MarinFold` → `data/document_structures/contacts_v1/<split>/` + `tokenizer/` + dataset `README.md`. The sync is staged (`hf buckets sync`) but the current token is read-only on the bucket (403 on `xet-write-token`); needs a write-scoped token.
+- Selection manifest: `gs://marin-us-east5/.../exp53_contacts_v1_5x/selection_manifest/<split>/`
 
 ## Conclusion
 
-_(Fill in once results are in.)_
+Generated the full **contacts-v1** corpus from afdb-24M and published it:
+**4,213,203 documents** across **960,054 structural clusters** (up to 5
+pLDDT-rounds each, clusters with <3 members dropped, written round-descending so
+the highest-pLDDT data trains last), 0 generation drops, byte-faithful to
+`contacts_v1.generate_document`. Complete on GCS; the HF-bucket publish to
+`buckets/open-athena/MarinFold/data/document_structures/contacts_v1/` is staged
+and ready but **blocked on a write-scoped token** (the current token 403s on the
+bucket's `xet-write-token`) — runs in one `hf buckets sync` once that's granted.
+Main operational
+takeaway: pin iris workers to the cluster region + use preemptible to avoid the
+cross-continent spill that produced the straggler tail (fixed in `cli.py`).
