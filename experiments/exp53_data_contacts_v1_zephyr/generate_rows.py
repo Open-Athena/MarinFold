@@ -88,12 +88,21 @@ def structure_from_cif(data: str | bytes, *, entry_id: str) -> gemmi.Structure:
 
 
 def _fetch_cif_bytes(uri: str) -> bytes | None:
-    """Fetch a cif from a URI via fsspec (transparent gunzip). ``None`` on error."""
+    """Fetch a cif from a URI, reading the *whole* object. ``None`` on error.
+
+    Uses the filesystem's ``cat_file`` (a single full GET) rather than a
+    seekable ``open().read()``. The AFDB GCS objects are gzip-transcoded
+    (``Content-Encoding: gzip``) and report their *compressed* size, so a
+    size/range-based read returns only that many bytes of the decompressed
+    stream and silently truncates larger structures mid-``_atom_site`` loop
+    (gemmi then raises "Wrong number of values in loop _atom_site"). A plain
+    GET lets GCS decompressively transcode and we read to EOF -- the full mmCIF.
+    """
     import fsspec
 
     try:
-        with fsspec.open(uri, "rb", compression="infer") as f:
-            return f.read()
+        fs, path = fsspec.core.url_to_fs(uri)
+        return fs.cat_file(path)
     except (OSError, ValueError) as exc:
         warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
         return None
