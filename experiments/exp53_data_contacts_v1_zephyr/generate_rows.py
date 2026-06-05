@@ -51,17 +51,28 @@ PASSTHROUGH_COLUMNS: tuple[str, ...] = (
 DEFAULT_CIF_URI_COLUMN = "gcs_uri"
 
 
-def _load_rotamer_library() -> Any | None:
-    """Pre-parse pyconfind's Dunbrack rotamer library once (best effort).
+# Process-wide cache of the parsed rotamer library (or None on failure). A
+# Zephyr worker processes many shards; parsing pyconfind's (large) EBL.out is
+# ~tens of seconds, so we do it once per worker process, not once per shard.
+_ROTAMER_UNSET: Any = object()
+_ROTAMER_LIBRARY: Any = _ROTAMER_UNSET
 
-    Loaded once per shard and passed explicitly to every ``generate_document``
+
+def _load_rotamer_library() -> Any | None:
+    """Parse pyconfind's Dunbrack rotamer library once per process (best effort).
+
+    Memoized process-wide and passed explicitly to every ``generate_document``
     call so pyconfind does not re-parse the (large) ``EBL.out`` for each
-    structure, and so the shard's fetch threads don't race on pyconfind's
-    lazy process-wide default. ``cached_rotamer_library()`` downloads + caches
-    the library per user and returns its path; ``load_library`` parses it.
-    Returns ``None`` on failure — ``generate_document(rotamer_library=None)``
-    then falls back to pyconfind's own lazy load (slower, but correct).
+    structure or each shard, and so the shard's fetch threads don't race on
+    pyconfind's lazy process-wide default. ``cached_rotamer_library()``
+    downloads + caches the library per user and returns its path;
+    ``load_library`` parses it. Returns ``None`` on failure —
+    ``generate_document(rotamer_library=None)`` then falls back to pyconfind's
+    own lazy load (slower, but correct).
     """
+    global _ROTAMER_LIBRARY
+    if _ROTAMER_LIBRARY is not _ROTAMER_UNSET:
+        return _ROTAMER_LIBRARY
     try:
         from pyconfind import load_library
 
@@ -70,11 +81,12 @@ def _load_rotamer_library() -> Any | None:
         except ImportError:
             from pyconfind.data import cached_rotamer_library
 
-        return load_library(cached_rotamer_library())
+        _ROTAMER_LIBRARY = load_library(cached_rotamer_library())
     except Exception as exc:  # noqa: BLE001 — optional speedup, never fatal
         warnings.warn(f"rotamer-library preload failed ({exc}); per-call load",
                       stacklevel=2)
-        return None
+        _ROTAMER_LIBRARY = None
+    return _ROTAMER_LIBRARY
 
 
 def structure_from_cif(data: str | bytes, *, entry_id: str) -> gemmi.Structure:
