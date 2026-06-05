@@ -89,6 +89,11 @@ def _write_summary(
         json.dump(summary, f, indent=2, default=str)
 
 
+def _format_optional_degree(value: float | None) -> str:
+    """Render an optional degree for terminal display."""
+    return "n/a" if value is None else f"{value:.4f}"
+
+
 # --------------------------------------------------------------------------
 # Subcommand handlers
 # --------------------------------------------------------------------------
@@ -144,14 +149,15 @@ def cmd_view(args: argparse.Namespace) -> None:
             f"  contacts: {result.contacts_emitted} included / "
             f"{result.contacts_excluded} excluded / "
             f"{result.contacts_passing_min_degree} pass min-degree / "
-            f"{result.contacts_pre_filter} found  "
+            f"{result.contacts_pre_filter} survive seq-sep>="
+            f"{result.min_seq_separation}  "
             f"truncated={result.truncated}  tokens={result.num_tokens}"
         )
         if result.contacts_pre_filter:
             print(
-                f"  degree: highest={result.highest_contact_degree:.4f}  "
-                f"lowest_nonzero={result.lowest_nonzero_contact_degree:.4f}  "
-                f"lowest_included={result.lowest_included_contact_degree:.4f}"
+                f"  degree: highest={_format_optional_degree(result.highest_contact_degree)}  "
+                f"lowest_nonzero={_format_optional_degree(result.lowest_nonzero_contact_degree)}  "
+                f"lowest_included={_format_optional_degree(result.lowest_included_contact_degree)}"
             )
         ncap = args.max_contacts
         # Contacts appear in random order in the document; sort for display.
