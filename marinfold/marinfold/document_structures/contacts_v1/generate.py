@@ -73,9 +73,13 @@ class GenerationConfig:
     """Hyperparameters for contacts-v1 generation.
 
     The first four are pyconfind geometry knobs (SPEC defaults — confind's
-    C++ defaults, native-only). ``min_contact_degree`` filters out weak
-    contacts before selection: any contact with degree below it is never
-    emitted, even if there is budget room (pyconfind returns a long tail of
+    C++ defaults, native-only). ``min_seq_separation`` is the minimum
+    primary-sequence separation for a pair to count as a contact: residues
+    fewer than this many positions apart in the chain (``|i - j| <
+    min_seq_separation``) are never contacts (default 6, i.e. 5-or-closer
+    pairs are excluded). ``min_contact_degree`` filters out weak contacts
+    before selection: any contact with degree below it is never emitted,
+    even if there is budget room (pyconfind returns a long tail of
     near-zero-degree contacts). ``num_position_indices`` is the size of the
     position-token space and must match ``vocab.NUM_POSITION_INDICES``; it
     also caps the longest chain we can serialize (one index per residue,
@@ -86,6 +90,7 @@ class GenerationConfig:
     contact_distance: float = 3.0
     dcut: float = 25.0
     clash_distance: float = 2.0
+    min_seq_separation: int = 6
     min_contact_degree: float = 0.001
     num_position_indices: int = NUM_POSITION_INDICES
     assembly: int | str | None = None
@@ -255,6 +260,14 @@ def build_document(
     seq_statements.append((N_TERM_TOKEN, position_token(n_term_index)))
     seq_statements.append((C_TERM_TOKEN, position_token(c_term_index)))
     rng.shuffle(seq_statements)
+
+    # Sequence-separation filter (definitional): residues fewer than
+    # min_seq_separation positions apart in the primary sequence are never
+    # contacts, so they're dropped before anything is counted.
+    contacts = [
+        c for c in contacts
+        if (c.seq_j - c.seq_i) >= config.min_seq_separation
+    ]
 
     # Structure section. Rank by descending degree (stable sort keeps
     # pyconfind's (seq_i, seq_j) ordering as the deterministic tie-break),

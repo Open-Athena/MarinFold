@@ -22,10 +22,11 @@ A document is a single space-separated token string:
   `<n-term>` and one `<c-term>` marker, all in random order. Residues are
   numbered from a random n-terminal index that wraps around 2000 position
   indices (so the model sees the whole index range, not just low values).
-- **Structure section** — pyconfind side-chain contacts with contact
-  degree ≥ `min_contact_degree` (default 0.001). We take the strongest N
-  that fill the 8192-token budget and list them in random order; each
-  `<contact>` pair's order is coin-flipped.
+- **Structure section** — pyconfind side-chain contacts, restricted to
+  pairs at least `min_seq_separation` residues apart in the chain (default
+  6) with contact degree ≥ `min_contact_degree` (default 0.001). We take
+  the strongest N that fill the 8192-token budget and list them in random
+  order; each `<contact>` pair's order is coin-flipped.
 - **Token reuse** — positions (`<pN>`), section markers (`<begin_sequence>`
   / `<begin_statements>`), amino acids (`<ALA>`…), `<UNK>` and `<end>` are
   reused from `contacts-and-distances-v1`; only `<contacts-v1>`, `<n-term>`,
@@ -33,31 +34,36 @@ A document is a single space-separated token string:
 - **Deterministic** per `entry_id` (the RNG seed), so the same structure +
   id always yields the same document.
 
-A tiny worked example — a 4-residue chain `MET-ALA-GLY-PHE` numbered from
-a random start index of 20. It's a single space-separated line in a file;
-shown one statement per line here:
+A tiny worked example — an 8-residue chain `MET-ALA-GLY-PHE-SER-THR-LYS-VAL`
+numbered from a random start index of 20. It's a single space-separated line
+in a file; shown one statement per line here:
 
 ```
 <contacts-v1>
 <begin_sequence>
 <p23> <PHE>
 <n-term> <p20>
+<p26> <LYS>
+<p25> <THR>
+<p27> <VAL>
 <p21> <ALA>
-<c-term> <p23>
-<p20> <MET>
 <p22> <GLY>
+<c-term> <p27>
+<p20> <MET>
+<p24> <SER>
 <begin_statements>
-<contact> <p20> <p23>
-<contact> <p20> <p22>
+<contact> <p21> <p27>
+<contact> <p20> <p26>
 <end>
 ```
 
-All six sequence statements — the four `<pN> <AA>` residues and the two
+The ten sequence statements — the eight `<pN> <AA>` residues and the two
 terminus markers — appear in **one random order**, so `<n-term>` /
 `<c-term>` are interleaved with the residues rather than grouped up front.
-The contacts are **also in random order** (selected strongest-first to fill
-the budget, but not *listed* by degree — here the degree-0.92 `<p20> <p22>`
-contact comes second), each pair's two positions coin-flipped.
+The two contacts are **also in random order** (selected strongest-first to
+fill the budget, but not *listed* by degree), each pair's two positions
+coin-flipped. Both pairs span ≥ 6 residues in the chain (`p20`–`p26` and
+`p21`–`p27`); closer pairs are excluded by `min_seq_separation` (default 6).
 
 Eyeball a real one (prints the document + a contact table):
 
@@ -158,10 +164,10 @@ The tokenizer subcommand needs no extra (pyconfind is only used by
 
 ## Algorithm knobs
 
-`--min-contact-degree` (0.001), `--context-length` (8192), `--assembly`
-(`none` = asymmetric unit as-is), and the pyconfind geometry knobs
-`--contact-distance` / `--dcut` / `--clash-distance`. See
-`contacts-v1 generate --help` for the full set.
+`--min-seq-separation` (6), `--min-contact-degree` (0.001),
+`--context-length` (8192), `--assembly` (`none` = asymmetric unit as-is),
+and the pyconfind geometry knobs `--contact-distance` / `--dcut` /
+`--clash-distance`. See `contacts-v1 generate --help` for the full set.
 
 ## Library interface
 

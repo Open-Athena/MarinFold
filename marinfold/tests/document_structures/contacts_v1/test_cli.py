@@ -42,6 +42,18 @@ def test_min_contact_degree_override():
     assert cfg.min_contact_degree == 0.05
 
 
+def test_min_seq_separation_default_and_override():
+    args = cli.build_parser().parse_args(["generate", "--input", "x", "--out", "o.jsonl"])
+    assert args.min_seq_separation == 6
+    assert cli._config_from_args(args).min_seq_separation == 6
+
+    args2 = cli.build_parser().parse_args([
+        "generate", "--input", "x", "--out", "o.jsonl", "--min-seq-separation", "12",
+    ])
+    assert args2.min_seq_separation == 12
+    assert cli._config_from_args(args2).min_seq_separation == 12
+
+
 def test_parquet_column_defaults():
     args = cli.build_parser().parse_args([
         "generate", "--input", "shard.parquet", "--out", "docs.parquet",
@@ -100,12 +112,15 @@ def test_view_default_max_contacts():
 
 def test_view_prints_reused_position_tokens(monkeypatch, capsys):
     residues = [
-        ResidueInfo(seq_index=0, resname="ALA", resnum=1, chain="A"),
-        ResidueInfo(seq_index=1, resname="GLY", resnum=2, chain="A"),
-        ResidueInfo(seq_index=2, resname="SER", resnum=3, chain="A"),
+        ResidueInfo(seq_index=i, resname=aa, resnum=1 + i, chain="A")
+        for i, aa in enumerate(
+            ["ALA", "GLY", "SER", "THR", "LYS", "VAL", "LEU", "PHE"]
+        )
     ]
-    result = build_document("view-demo", residues, [RawContact(0, 2, 0.9)])
+    # sep 6 → survives the default min_seq_separation=6 filter.
+    result = build_document("view-demo", residues, [RawContact(0, 6, 0.9)])
     assert result is not None
+    assert result.contacts_emitted == 1
     monkeypatch.setattr(
         cli.generate,
         "generate_documents",
