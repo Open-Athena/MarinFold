@@ -63,6 +63,7 @@ def _config_from_args(args: argparse.Namespace) -> generate.GenerationConfig:
         dcut=args.dcut,
         clash_distance=args.clash_distance,
         assembly=args.assembly,
+        min_seq_separation=args.min_seq_separation,
         min_contact_degree=args.min_contact_degree,
     )
 
@@ -235,6 +236,10 @@ def _add_generation_common(p: argparse.ArgumentParser) -> None:
                    help="CA-CA pair cutoff in Å for the contact-degree search.")
     p.add_argument("--clash-distance", type=float, default=cfg.clash_distance,
                    help="Backbone-clash cutoff in Å used while pruning rotamers.")
+    p.add_argument("--min-seq-separation", type=int, default=cfg.min_seq_separation,
+                   help="Minimum primary-sequence separation |i-j| for a pair "
+                        "to count as a contact; closer pairs are never "
+                        f"contacts (default {cfg.min_seq_separation}).")
     p.add_argument("--min-contact-degree", type=float, default=cfg.min_contact_degree,
                    help="Drop contacts with degree below this before "
                         "selection; they are never included even if there is "

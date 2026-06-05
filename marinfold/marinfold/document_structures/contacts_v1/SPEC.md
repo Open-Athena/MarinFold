@@ -51,6 +51,8 @@ The structure section consists of statements of the form `<contact>` `<pXXX>` `<
 
 Contacts are defined as contact degree > 0 where contact degree is implemented in [pyconfind](https://github.com/timodonnell/pyconfind). We run pyconfind in `native_only=True` mode, i.e. only consider the actual given amino acid at each position rather than all other possibilities.
 
+We also require a minimum primary-sequence separation: a pair of residues at sequence positions i and j is only a contact if `|i - j| >= min_seq_separation` (default 6). Residues 5 or fewer positions apart in the chain are never contacts, regardless of geometry — this keeps trivial local / secondary-structure contacts out of the documents.
+
 Before selecting which contacts to include, we discard any contact whose contact degree is below a minimum threshold (`min_contact_degree`, default 0.001). Contacts below this threshold are **never** written to a document, even if there is room for them. (pyconfind reports many very weak contacts — degrees down to ~1e-8 — and this threshold keeps those noise-level contacts out.)
 
 From the contacts that pass this threshold, we include the N with the highest contact degree (the N strongest), where N is chosen so the document fills the 8192-token budget (see Document length). These N selected contacts are then listed in **random order** in the structure section — they are *not* sorted by degree. (We select by strength so that, when a protein has more above-threshold contacts than fit, the weakest are the ones dropped; but the order they appear in the document is randomized so the model does not learn a degree-sorted ordering.)
@@ -129,6 +131,13 @@ contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
 - **Residue-count bounds.** "Up to 2000 residues" is enforced: chains
   with fewer than 2 residues or more than 2000 (can't be uniquely
   indexed under wrap-around) are skipped with a warning.
+- **Minimum sequence separation.** A pair counts as a contact only if its
+  residues are at least `config.min_seq_separation` (default 6) positions
+  apart in the primary sequence (`seq_j - seq_i >= min_seq_separation`).
+  This is *definitional* — closer pairs are filtered before anything is
+  counted, so `contacts_pre_filter` (and the degree statistics) already
+  exclude them. (`contacts-and-distances-v1` used the same minimum of 6 via
+  its `short_range_sep`.)
 - **Minimum degree filter.** Contacts with degree below
   `config.min_contact_degree` (default 0.001) are dropped before anything
   else and are never emitted, regardless of budget. pyconfind returns a

@@ -38,6 +38,13 @@ def _residues(n: int, *, start_resnum: int = 1) -> list[ResidueInfo]:
     ]
 
 
+# Most builder tests exercise mechanics orthogonal to the sequence-separation
+# filter. This permissive config (min_seq_separation=1 keeps every pair, since
+# seq_i < seq_j) lets their small synthetic contacts through; the seq-sep
+# filter has dedicated tests below.
+_CFG = GenerationConfig(min_seq_separation=1)
+
+
 def _pos_indices(document: str) -> list[int]:
     # Positions are reused <pX> tokens from contacts-and-distances-v1.
     return [int(m) for m in re.findall(r"<p(\d+)>", document)]
@@ -58,7 +65,7 @@ def _sections(document: str) -> tuple[list[str], list[str]]:
 
 
 def test_document_framing():
-    res = build_document("e", _residues(5), [RawContact(0, 2, 0.9)])
+    res = build_document("e", _residues(5), [RawContact(0, 2, 0.9)], config=_CFG)
     toks = res.document.split()
     assert toks[0] == "<contacts-v1>"
     assert toks[1] == "<begin_sequence>"     # reused from c-and-d-v1
@@ -83,13 +90,14 @@ def test_sequence_section_defines_each_residue_once_plus_two_termini():
 
 
 def test_token_count_matches_split_and_num_tokens():
-    res = build_document("e", _residues(6), [RawContact(0, 3, 0.5), RawContact(1, 4, 0.2)])
+    res = build_document("e", _residues(6), [RawContact(0, 3, 0.5), RawContact(1, 4, 0.2)],
+                         config=_CFG)
     assert res.num_tokens == len(res.document.split())
 
 
 def test_tokenizes_with_no_unk():
     res = build_document("vocabcheck", _residues(9),
-                         [RawContact(0, 4, 0.7), RawContact(2, 8, 0.3)])
+                         [RawContact(0, 4, 0.7), RawContact(2, 8, 0.3)], config=_CFG)
     tok = build_tokenizer(vocab.all_domain_tokens())
     ids = tok.encode(res.document, add_special_tokens=False)
     assert len(ids) == len(res.document.split())
@@ -114,8 +122,8 @@ def test_unk_resname_emits_unk_token():
 def test_deterministic_same_entry_id():
     residues = _residues(8)
     contacts = [RawContact(0, 4, 0.9), RawContact(1, 6, 0.5), RawContact(2, 7, 0.1)]
-    a = build_document("AF-X", residues, contacts)
-    b = build_document("AF-X", residues, contacts)
+    a = build_document("AF-X", residues, contacts, config=_CFG)
+    b = build_document("AF-X", residues, contacts, config=_CFG)
     assert a.document == b.document
     assert a.start_index == b.start_index
 
@@ -136,13 +144,18 @@ def test_readme_worked_example_is_current():
     """
     residues = [
         ResidueInfo(i, name, 1 + i, "A")
-        for i, name in enumerate(["MET", "ALA", "GLY", "PHE"])
+        for i, name in enumerate(
+            ["MET", "ALA", "GLY", "PHE", "SER", "THR", "LYS", "VAL"]
+        )
     ]
-    contacts = [RawContact(0, 2, 0.92), RawContact(0, 3, 0.31)]
+    # Both contacts span >= 6 residues, so they survive the default
+    # min_seq_separation=6 (the example uses the default config).
+    contacts = [RawContact(0, 6, 0.91), RawContact(1, 7, 0.42)]
     expected = (
         "<contacts-v1> <begin_sequence> <p23> <PHE> <n-term> <p20> "
-        "<p21> <ALA> <c-term> <p23> <p20> <MET> <p22> <GLY> <begin_statements> "
-        "<contact> <p20> <p23> <contact> <p20> <p22> <end>"
+        "<p26> <LYS> <p25> <THR> <p27> <VAL> <p21> <ALA> <p22> <GLY> "
+        "<c-term> <p27> <p20> <MET> <p24> <SER> <begin_statements> "
+        "<contact> <p21> <p27> <contact> <p20> <p26> <end>"
     )
     assert build_document("ex-21", residues, contacts).document == expected
 
@@ -193,7 +206,7 @@ def test_wraparound_actually_wraps():
 def test_contacts_selected_by_strength_multiset_preserved():
     residues = _residues(10)
     contacts = [RawContact(0, 5, 0.2), RawContact(1, 7, 0.9), RawContact(2, 9, 0.5)]
-    res = build_document("order", residues, contacts)
+    res = build_document("order", residues, contacts, config=_CFG)
     # All fit → all included; the multiset of degrees is preserved.
     assert res.contacts_emitted == 3
     assert sorted(c.degree for c in res.contacts) == [0.2, 0.5, 0.9]
@@ -204,7 +217,7 @@ def test_contacts_listed_in_random_order_not_degree_sorted():
     # ~1/39! — so a non-sorted order is a reliable signal of randomization.
     residues = _residues(40)
     contacts = [RawContact(i, i + 1, float(39 - i)) for i in range(39)]
-    res = build_document("randorder", residues, contacts)
+    res = build_document("randorder", residues, contacts, config=_CFG)
     degrees = [c.degree for c in res.contacts]
     assert res.contacts_emitted == 39
     assert sorted(degrees) == [float(d) for d in range(1, 40)]  # multiset intact
@@ -214,7 +227,7 @@ def test_contacts_listed_in_random_order_not_degree_sorted():
 def test_emitted_pair_order_matches_flip_flag():
     residues = _residues(12)
     contacts = [RawContact(0, 5, 0.9), RawContact(1, 8, 0.6), RawContact(3, 11, 0.3)]
-    res = build_document("flip", residues, contacts)
+    res = build_document("flip", residues, contacts, config=_CFG)
     _, struct = _sections(res.document)
     # struct is groups of <contact> <pA> <pB>.
     triples = [struct[i:i + 3] for i in range(0, len(struct), 3)]
@@ -236,7 +249,8 @@ def test_truncation_keeps_strongest_and_respects_budget():
     # 40 contacts with strictly decreasing degrees.
     contacts = [RawContact(i, i + 1, float(40 - i)) for i in range(40)]
     context_length = 200  # frame(4)+seq(2*50)+termini(4)=108 → 30 contacts fit
-    res = build_document("trunc", residues, contacts, context_length=context_length)
+    res = build_document("trunc", residues, contacts, context_length=context_length,
+                         config=_CFG)
     assert res.contacts_pre_filter == 40
     assert res.contacts_passing_min_degree == 40  # all degrees >= 0.001
     assert res.contacts_emitted == 30
@@ -257,7 +271,7 @@ def test_truncation_keeps_strongest_and_respects_budget():
 def test_not_truncated_when_everything_fits():
     residues = _residues(6)
     contacts = [RawContact(0, 3, 0.9), RawContact(1, 5, 0.4)]
-    res = build_document("fits", residues, contacts)
+    res = build_document("fits", residues, contacts, config=_CFG)
     assert res.truncated is False
     assert res.contacts_excluded == 0
     assert res.contacts_passing_min_degree == 2
@@ -293,7 +307,7 @@ def test_min_degree_filter_excludes_weak_contacts_even_with_space():
         RawContact(2, 7, 0.0005),   # below threshold
         RawContact(3, 8, 1e-8),     # below threshold
     ]
-    res = build_document("weak", residues, contacts)
+    res = build_document("weak", residues, contacts, config=_CFG)
     assert res.contacts_pre_filter == 4
     assert res.contacts_passing_min_degree == 2
     assert res.contacts_emitted == 2          # weak ones never included
@@ -311,7 +325,7 @@ def test_min_degree_filter_excludes_weak_contacts_even_with_space():
 def test_custom_min_contact_degree_threshold():
     residues = _residues(10)
     contacts = [RawContact(0, 5, 0.9), RawContact(1, 6, 0.05), RawContact(2, 7, 0.005)]
-    cfg = GenerationConfig(min_contact_degree=0.1)
+    cfg = GenerationConfig(min_contact_degree=0.1, min_seq_separation=1)
     res = build_document("thresh", residues, contacts, config=cfg)
     assert res.contacts_passing_min_degree == 1   # only 0.9 >= 0.1
     assert res.contacts_emitted == 1
@@ -322,7 +336,7 @@ def test_custom_min_contact_degree_threshold():
 def test_all_contacts_below_threshold():
     residues = _residues(6)
     contacts = [RawContact(0, 3, 0.0002), RawContact(1, 5, 1e-7)]
-    res = build_document("allweak", residues, contacts)
+    res = build_document("allweak", residues, contacts, config=_CFG)
     assert res.contacts_pre_filter == 2
     assert res.contacts_passing_min_degree == 0
     assert res.contacts_emitted == 0
@@ -335,6 +349,47 @@ def test_all_contacts_below_threshold():
     # Document still valid: sequence section + empty structure section.
     assert res.document.split()[-1] == "<end>"
     assert "<contact>" not in res.document.split()
+
+
+# ---------------------------------------------------------------------------
+# Minimum sequence-separation filter
+# ---------------------------------------------------------------------------
+
+
+def test_seq_separation_filter_excludes_close_pairs_by_default():
+    residues = _residues(12)
+    contacts = [
+        RawContact(0, 5, 0.9),   # sep 5 → excluded (default min_seq_separation=6)
+        RawContact(0, 6, 0.8),   # sep 6 → kept
+        RawContact(1, 9, 0.7),   # sep 8 → kept
+        RawContact(4, 5, 0.6),   # sep 1 → excluded
+    ]
+    res = build_document("sep", residues, contacts)  # default config
+    assert res.contacts_pre_filter == 2          # only the sep>=6 pairs are contacts
+    assert res.contacts_emitted == 2
+    assert sorted(c.degree for c in res.contacts) == [0.7, 0.8]
+    assert all((c.seq_j - c.seq_i) >= 6 for c in res.contacts)
+    # The strongest pair (degree 0.9) was excluded by the seq-sep filter, so
+    # the degree stats reflect only the surviving (>=6) pairs.
+    assert res.highest_contact_degree == 0.8
+
+
+def test_custom_min_seq_separation():
+    residues = _residues(20)
+    contacts = [RawContact(0, 6, 0.9), RawContact(0, 9, 0.5), RawContact(0, 15, 0.3)]
+    res = build_document("sep10", residues, contacts,
+                         config=GenerationConfig(min_seq_separation=10))
+    # Only seps >= 10 survive → just (0, 15).
+    assert res.contacts_pre_filter == 1
+    assert {c.seq_j - c.seq_i for c in res.contacts} == {15}
+
+
+def test_min_seq_separation_one_keeps_adjacent_pairs():
+    residues = _residues(10)
+    contacts = [RawContact(0, 1, 0.9), RawContact(2, 3, 0.5)]  # seps 1, 1
+    res = build_document("sep1", residues, contacts,
+                         config=GenerationConfig(min_seq_separation=1))
+    assert res.contacts_emitted == 2
 
 
 # ---------------------------------------------------------------------------
@@ -388,7 +443,7 @@ def test_generate_documents_warns_and_skips_when_fixed_section_exceeds_context_l
 def test_metadata_row_and_summary_dict():
     residues = _residues(5)
     contacts = [RawContact(0, 2, 0.9), RawContact(1, 4, 0.5)]
-    res = build_document("AF-META", residues, contacts, global_plddt=87.5)
+    res = build_document("AF-META", residues, contacts, global_plddt=87.5, config=_CFG)
     row = res.metadata_row()
     assert row["document"] == res.document
     assert row["entry_id"] == "AF-META"
