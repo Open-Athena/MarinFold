@@ -1106,7 +1106,7 @@ dependencies = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold#d6d5e6b6f5993fd54d8033872b8a50e75a1d0cda" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold#dd025aab744dca44cfeb17bfb079d5e60f673505" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },

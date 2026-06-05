@@ -73,6 +73,7 @@ def _config_from_args(args: argparse.Namespace) -> GenerationConfig:
         dcut=args.dcut,
         clash_distance=args.clash_distance,
         assembly=args.assembly,
+        min_seq_separation=args.min_seq_separation,
         min_contact_degree=args.min_contact_degree,
     )
 
@@ -186,6 +187,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # contacts-v1 generation knobs (SPEC defaults).
     cfg = GenerationConfig()
+    p.add_argument("--min-seq-separation", type=int, default=cfg.min_seq_separation,
+                   help="Min primary-sequence separation |i-j| for a contact "
+                        f"(default {cfg.min_seq_separation}); closer pairs excluded.")
     p.add_argument("--min-contact-degree", type=float, default=cfg.min_contact_degree)
     p.add_argument("--contact-distance", type=float, default=cfg.contact_distance)
     p.add_argument("--dcut", type=float, default=cfg.dcut)
