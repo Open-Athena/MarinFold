@@ -193,7 +193,7 @@ in-region spot pool); see the GCS-region-locality feedback note.
 
 **Outputs:**
 - GCS (working): `gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/<split>/`
-- HF bucket (publish prepared, **pending write perms**): `open-athena/MarinFold` → `data/document_structures/contacts_v1/<split>/` + `tokenizer/` + dataset `README.md`. The sync is staged (`hf buckets sync`) but the current token is read-only on the bucket (403 on `xet-write-token`); needs a write-scoped token.
+- HF bucket (**published**): `open-athena/MarinFold` → `data/document_structures/contacts_v1/<split>/` (2,067 / 22 / 22 shards) + `tokenizer/` + dataset `README.md`, via `hf buckets sync`.
 - Selection manifest: `gs://marin-us-east5/.../exp53_contacts_v1_5x/selection_manifest/<split>/`
 
 ## Conclusion
@@ -202,10 +202,9 @@ Generated the full **contacts-v1** corpus from afdb-24M and published it:
 **4,213,203 documents** across **960,054 structural clusters** (up to 5
 pLDDT-rounds each, clusters with <3 members dropped, written round-descending so
 the highest-pLDDT data trains last), 0 generation drops, byte-faithful to
-`contacts_v1.generate_document`. Complete on GCS; the HF-bucket publish to
-`buckets/open-athena/MarinFold/data/document_structures/contacts_v1/` is staged
-and ready but **blocked on a write-scoped token** (the current token 403s on the
-bucket's `xet-write-token`) — runs in one `hf buckets sync` once that's granted.
-Main operational
+`contacts_v1.generate_document`. Complete on GCS and **published** to
+`buckets/open-athena/MarinFold/data/document_structures/contacts_v1/`
+(2,067 / 22 / 22 shards + README + tokenizer). The issue's success criterion is
+met. Main operational
 takeaway: pin iris workers to the cluster region + use preemptible to avoid the
 cross-continent spill that produced the straggler tail (fixed in `cli.py`).
