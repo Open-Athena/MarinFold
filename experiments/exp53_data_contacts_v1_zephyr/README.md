@@ -170,7 +170,7 @@ so ~4.2 M docs ≈ **~31 min on 512 Iris workers**.
 
 ### Stage B — generation (done)
 
-**4,213,203 documents — 0 generation drops** (every selected entry serialized:
+**4,213,203 documents — 0 generation drops** (**~4.67 B tokens** in train; 4.77 B total, mean ~1,131 num_tokens/doc) (every selected entry serialized:
 AFDB is single-chain and the manifest pre-filtered length). Per-split/round
 output matches the manifest exactly (train round-0==1==2 = 941,028; rounds 3–4
 smaller); 960,054 round-0 docs == 960,054 clusters (1:1). With

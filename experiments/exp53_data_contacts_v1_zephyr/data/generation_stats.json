@@ -9,13 +9,41 @@
   "max_num_tokens": 8192,
   "num_truncated": 245,
   "per_split_round": {
-    "train": {"0": 941028, "1": 941028, "2": 941028, "3": 719519, "4": 587079},
-    "val":   {"0": 9558, "1": 9558, "2": 9558, "3": 7316, "4": 5964},
-    "test":  {"0": 9468, "1": 9468, "2": 9468, "3": 7248, "4": 5915}
+    "train": {
+      "0": 941028,
+      "1": 941028,
+      "2": 941028,
+      "3": 719519,
+      "4": 587079
+    },
+    "val": {
+      "0": 9558,
+      "1": 9558,
+      "2": 9558,
+      "3": 7316,
+      "4": 5964
+    },
+    "test": {
+      "0": 9468,
+      "1": 9468,
+      "2": 9468,
+      "3": 7248,
+      "4": 5915
+    }
   },
-  "iris_jobs": {"train": "iris-run-cli-20260605-144250", "val": "iris-run-cli-20260605-145106", "test": "iris-run-cli-20260605-145107"},
+  "iris_jobs": {
+    "train": "iris-run-cli-20260605-144250",
+    "val": "iris-run-cli-20260605-145106",
+    "test": "iris-run-cli-20260605-145107"
+  },
   "outputs": {
     "gcs": "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/",
     "hf_bucket": "open-athena/MarinFold:data/document_structures/contacts_v1/"
+  },
+  "total_tokens": 4767719225,
+  "per_split_tokens": {
+    "train": 4672623743,
+    "val": 47780004,
+    "test": 47315478
   }
 }
