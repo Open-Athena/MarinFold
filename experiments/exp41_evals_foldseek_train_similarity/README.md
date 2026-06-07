@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 41
   title: "curate an eval set of designed proteins and low-MSA proteins"
   kind: evals
-  branch: Issue41
+  branch: exp/41-foldseek-train-similarity
 ---
 
 # Foldseek train-set similarity tool (issue #41)
 
-**Issue:** [#41](https://github.com/Open-Athena/MarinFold/issues/41) · **Kind:** `evals` · **Branch:** `Issue41`
+**Issue:** [#41](https://github.com/Open-Athena/MarinFold/issues/41) · **Kind:** `evals` · **Branch:** `exp/41-foldseek-train-similarity`
 
 ## Question
 
