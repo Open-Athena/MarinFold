@@ -29,6 +29,7 @@ import platform
 import shutil
 import subprocess
 import tarfile
+import tempfile
 import urllib.request
 from pathlib import Path
 
@@ -75,38 +76,68 @@ def _cached_binary() -> Path:
     return _cache_dir() / "foldseek" / "bin" / "foldseek"
 
 
+def _cached_binary_ok() -> bool:
+    """True if a cached binary looks complete (exists, non-empty, executable).
+
+    Guards against a truncated/partial binary left by an interrupted older
+    install being trusted forever; a zero-byte or non-executable file is
+    treated as absent so it gets re-downloaded.
+    """
+    binary = _cached_binary()
+    return binary.exists() and binary.stat().st_size > 0 and os.access(binary, os.X_OK)
+
+
 def install_foldseek() -> Path:
     """Download + extract the static Foldseek binary into the cache.
 
-    Returns the path to the extracted ``foldseek`` executable. Idempotent:
-    if the cached binary already exists it is returned without re-downloading.
+    Returns the path to the extracted ``foldseek`` executable. Idempotent: a
+    complete cached binary is returned without re-downloading. The download +
+    extraction happen in a private temp dir and are atomically swapped into
+    place, so a crashed or concurrent install never leaves a half-written
+    binary in the cache that a later run would trust.
     """
-    binary = _cached_binary()
-    if binary.exists():
-        return binary
+    if _cached_binary_ok():
+        return _cached_binary()
 
     cache = _cache_dir()
     cache.mkdir(parents=True, exist_ok=True)
     tarball_name = _static_tarball_name()
     url = f"{_DOWNLOAD_BASE}/{tarball_name}"
-    tar_path = cache / tarball_name
 
-    print(f"[foldseek_env] downloading {url}")
-    urllib.request.urlretrieve(url, tar_path)
-    print(f"[foldseek_env] extracting {tar_path.name} into {cache}")
-    with tarfile.open(tar_path) as tf:
-        try:
-            tf.extractall(cache, filter="data")  # safe-extraction filter (py>=3.11.4)
-        except TypeError:
-            tf.extractall(cache)
-    tar_path.unlink(missing_ok=True)
+    # Foldseek's tarball unpacks to a top-level ``foldseek/`` dir; the cached
+    # binary lives at ``<cache>/foldseek/bin/foldseek``. We stage the whole
+    # ``foldseek/`` tree in a temp dir and os.replace it into place atomically.
+    work = Path(tempfile.mkdtemp(prefix=".install-", dir=cache))
+    try:
+        tar_path = work / tarball_name
+        print(f"[foldseek_env] downloading {url}")
+        urllib.request.urlretrieve(url, tar_path)
+        print(f"[foldseek_env] extracting {tar_path.name}")
+        with tarfile.open(tar_path) as tf:
+            try:
+                tf.extractall(work, filter="data")  # safe-extraction filter (py>=3.11.4)
+            except TypeError:
+                tf.extractall(work)
 
+        staged_root = work / "foldseek"
+        staged_bin = staged_root / "bin" / "foldseek"
+        if not staged_bin.exists():
+            raise RuntimeError(
+                f"extracted {tarball_name} but bin/foldseek is missing; "
+                f"the Foldseek tarball layout may have changed."
+            )
+        staged_bin.chmod(0o755)
+
+        final_root = _cache_dir() / "foldseek"
+        if final_root.exists():
+            shutil.rmtree(final_root)
+        os.replace(staged_root, final_root)  # atomic swap (same filesystem)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+    binary = _cached_binary()
     if not binary.exists():
-        raise RuntimeError(
-            f"extracted {tarball_name} but {binary} is missing; "
-            f"the Foldseek tarball layout may have changed."
-        )
-    binary.chmod(0o755)
+        raise RuntimeError(f"install completed but {binary} is missing")
     return binary
 
 
@@ -128,9 +159,8 @@ def ensure_foldseek(auto_install: bool = True) -> str:
     if on_path:
         return on_path
 
-    cached = _cached_binary()
-    if cached.exists():
-        return str(cached.resolve())
+    if _cached_binary_ok():
+        return str(_cached_binary().resolve())
 
     if not auto_install or os.environ.get("MARINFOLD_FOLDSEEK_NO_INSTALL"):
         raise FileNotFoundError(

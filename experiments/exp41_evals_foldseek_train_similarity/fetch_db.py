@@ -3,19 +3,19 @@
 
 """Download the built Foldseek representative DB from a Modal Volume.
 
-``build_db_modal.py`` leaves a compact Foldseek DB (``db/targetDB*``) and
-``reps_manifest.csv`` on the ``afdb-foldseek-reps`` Volume. This pulls them
-to a local directory so ``query_similarity.py`` can run against the DB and
-join hits to splits via the manifest -- exactly as it does for the
-prototype DB, just with a far larger target set.
+``build_db_modal.py`` leaves a Foldseek DB (``db/targetDB*``) and
+``reps_manifest.csv`` on the ``afdb-foldseek-reps-full`` Volume. This pulls
+them to a local directory so ``query_similarity.py`` can run against the DB
+and join hits to splits via the manifest.
 
-The DB is small (tens of MB for the 1-per-shard build), so a plain
-iterdir + read_file walk (mirroring exp20's ``download_outputs``) is fine;
-no bulk-transfer machinery needed.
+The full DB is ~2.6 GB; a plain iterdir + read_file walk (mirroring exp20's
+``download_outputs``) is adequate for a one-time pull. (The DB is also
+published as a public HF bucket -- see the README -- which ``hf buckets
+sync`` fetches without needing Modal.)
 
 Example::
 
-    uv run python fetch_db.py --volume afdb-foldseek-reps --out db_1per_shard
+    uv run python fetch_db.py --volume afdb-foldseek-reps-full --out db_full
 """
 
 import argparse
@@ -57,8 +57,8 @@ def _download_file(vol: modal.Volume, remote_path: str, local_path: Path) -> Non
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--volume", default="afdb-foldseek-reps", help="Modal Volume name")
-    ap.add_argument("--out", type=Path, default=Path("db_1per_shard"), help="Local output dir")
+    ap.add_argument("--volume", default="afdb-foldseek-reps-full", help="Modal Volume name")
+    ap.add_argument("--out", type=Path, default=Path("db_full"), help="Local output dir")
     args = ap.parse_args()
 
     vol = modal.Volume.from_name(args.volume)
@@ -77,8 +77,8 @@ def main() -> None:
         f"      --candidate-dir candidates/foldbench/data/protenix-foldbench-monomers/gt \\\n"
         f"      --db {db_local}/targetDB \\\n"
         f"      --reps-manifest {manifest_local} \\\n"
-        f"      --out data/foldbench_vs_1per_shard_similarity.csv \\\n"
-        f"      --db-tag afdb-24M-1per-shard"
+        f"      --out data/foldbench_vs_full_reps_similarity.csv \\\n"
+        f"      --db-tag afdb-24M-full-reps-1331330"
     )
 
 

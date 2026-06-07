@@ -33,6 +33,7 @@ CLI::
 
 import argparse
 import tempfile
+import warnings
 from pathlib import Path
 
 import gemmi
@@ -69,6 +70,10 @@ DEFAULT_REDUNDANT_TM = 0.9
 DEFAULT_TM_FIELD = "qtmscore"
 
 _STRUCT_EXTS = (".cif", ".mmcif", ".pdb", ".ent")
+# Glob patterns for candidate structure files (plain + gzipped). Single
+# source of truth shared by candidate_stems / run / collect_timings so the
+# stem set, the residue-count map, and the timing set never disagree.
+_STRUCT_GLOBS = ("*.cif", "*.cif.gz", "*.mmcif", "*.pdb", "*.pdb.gz", "*.ent")
 
 
 def _strip_struct_ext(name: str) -> str:
@@ -79,6 +84,15 @@ def _strip_struct_ext(name: str) -> str:
         if name.lower().endswith(ext):
             return name[: -len(ext)]
     return name
+
+
+def iter_candidate_files(candidate_dir: Path) -> list[Path]:
+    """All candidate structure files under ``candidate_dir``, sorted & deduped."""
+    seen: dict[str, Path] = {}
+    for pattern in _STRUCT_GLOBS:
+        for p in candidate_dir.glob(pattern):
+            seen.setdefault(p.name, p)
+    return sorted(seen.values())
 
 
 def normalize_name(fs_name: str, known: set[str]) -> str:
@@ -102,11 +116,7 @@ def normalize_name(fs_name: str, known: set[str]) -> str:
 
 def candidate_stems(candidate_dir: Path) -> set[str]:
     """Stems (filename without structure extension) of the candidate cifs."""
-    stems: set[str] = set()
-    for ext in ("*.cif", "*.cif.gz", "*.mmcif", "*.pdb", "*.pdb.gz", "*.ent"):
-        for p in candidate_dir.glob(ext):
-            stems.add(_strip_struct_ext(p.name))
-    return stems
+    return {_strip_struct_ext(p.name) for p in iter_candidate_files(candidate_dir)}
 
 
 def count_residues(cif_path: Path) -> int:
@@ -237,6 +247,20 @@ def summarize(
             lambda t: normalize_name(str(t), manifest_ids)
         )
         hits["target_split"] = hits["representative_id"].map(split_by_id)
+        # A hit whose target rep is absent from the manifest gets split=NaN
+        # and is silently dropped from every train-match verdict. The shipped
+        # DB and manifest are co-derived so this is normally zero; warn loudly
+        # if it ever isn't, rather than mislabel a candidate novel_fold.
+        unmatched = hits["target_split"].isna()
+        if unmatched.any():
+            n_targets = hits.loc[unmatched, "representative_id"].nunique()
+            warnings.warn(
+                f"{int(unmatched.sum())} foldseek hits ({n_targets} distinct targets) "
+                f"did not join to the reps manifest; their split is unknown and they "
+                f"are excluded from train-match verdicts. Check that --db and "
+                f"--reps-manifest come from the same build.",
+                stacklevel=2,
+            )
         grouped = {stem: g for stem, g in hits.groupby("stem")}
 
     rows: list[dict] = []
@@ -302,16 +326,14 @@ def run(
     gpu: bool = False,
 ) -> pd.DataFrame:
     """End-to-end: easy-search candidates, summarize, write ``out_csv``."""
-    stems = candidate_stems(candidate_dir)
-    if not stems:
+    files = iter_candidate_files(candidate_dir)
+    if not files:
         raise RuntimeError(f"no candidate structures found under {candidate_dir}")
     manifest = pd.read_csv(reps_manifest)
 
-    n_residues = {
-        _strip_struct_ext(p.name): count_residues(p)
-        for ext in ("*.cif", "*.cif.gz", "*.mmcif", "*.pdb", "*.pdb.gz", "*.ent")
-        for p in candidate_dir.glob(ext)
-    }
+    # One directory walk: derive both the stem set and the residue map.
+    n_residues = {_strip_struct_ext(p.name): count_residues(p) for p in files}
+    stems = set(n_residues)
 
     with tempfile.TemporaryDirectory(prefix="foldseek_") as td:
         tmp = Path(td)

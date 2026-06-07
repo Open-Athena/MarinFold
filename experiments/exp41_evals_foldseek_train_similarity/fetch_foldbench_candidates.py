@@ -37,7 +37,7 @@ def _files_to_download(api: HfApi, bucket_id: str) -> list[str]:
     """Return the bucket paths matching one of ``_ALLOW_PATTERNS``."""
     paths: list[str] = []
     for entry in api.list_bucket_tree(bucket_id, recursive=True):
-        if getattr(entry, "type", None) == "directory":
+        if entry.type == "directory":
             continue
         path = entry.path
         if any(fnmatch.fnmatch(path, pat) for pat in _ALLOW_PATTERNS):

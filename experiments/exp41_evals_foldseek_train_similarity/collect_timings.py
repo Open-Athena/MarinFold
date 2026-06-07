@@ -35,6 +35,7 @@ Example::
 """
 
 import argparse
+import os
 import platform
 import tempfile
 import time
@@ -44,7 +45,13 @@ from pathlib import Path
 import pandas as pd
 
 from foldseek_env import foldseek_version
-from query_similarity import count_residues, easy_search, parse_m8
+from query_similarity import (
+    _strip_struct_ext,
+    count_residues,
+    easy_search,
+    iter_candidate_files,
+    parse_m8,
+)
 
 _FIELDS = [
     "stem",
@@ -88,8 +95,6 @@ def db_n_reps(db_prefix: Path) -> int:
 
 def worker_meta(db_prefix: Path, db_snapshot_tag: str, alignment_type: int) -> dict:
     """Constant per-run metadata stamped onto every timing row."""
-    import os
-
     return {
         "n_db_reps": db_n_reps(db_prefix),
         "alignment_type": alignment_type,
@@ -132,23 +137,22 @@ def collect(
     per_candidate: bool = True,
 ) -> pd.DataFrame:
     """Time the foldseek search per candidate (+ batched) and write the CSV."""
-    cifs = sorted(
-        p
-        for ext in ("*.cif", "*.cif.gz", "*.mmcif", "*.pdb", "*.pdb.gz", "*.ent")
-        for p in candidate_dir.glob(ext)
-    )
+    cifs = iter_candidate_files(candidate_dir)
     if not cifs:
         raise RuntimeError(f"no candidate structures under {candidate_dir}")
     meta = worker_meta(db_prefix, db_snapshot_tag, alignment_type)
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     rows: list[dict] = []
+    res_by_file: dict[Path, int] = {}
     if per_candidate:
         for i, cif in enumerate(cifs):
+            stem = _strip_struct_ext(cif.name)
             n_res = count_residues(cif)
+            res_by_file[cif] = n_res
             elapsed, n_hits = _time_search(cif, db_prefix, alignment_type)
             rows.append({
-                "stem": cif.name.split(".")[0],
+                "stem": stem,
                 "n_residues": n_res,
                 "mode": "per_candidate",
                 "elapsed_seconds": round(elapsed, 4),
@@ -156,10 +160,15 @@ def collect(
                 "timestamp_utc": stamp,
                 **meta,
             })
-            print(f"[{i + 1}/{len(cifs)}] {cif.stem}: {n_res} res, {elapsed:.3f}s, {n_hits} hits")
+            print(f"[{i + 1}/{len(cifs)}] {stem}: {n_res} res, {elapsed:.3f}s, {n_hits} hits")
 
-    # Batched: one search over the whole dir = realistic throughput.
-    total_res = sum(count_residues(c) for c in cifs)
+    # Batched: one search over the whole dir = realistic throughput. Reuse the
+    # per-candidate residue counts when we have them instead of re-parsing.
+    total_res = (
+        sum(res_by_file.values())
+        if per_candidate
+        else sum(count_residues(c) for c in cifs)
+    )
     elapsed, n_hits = _time_search(candidate_dir, db_prefix, alignment_type)
     rows.append({
         "stem": "__ALL__",
