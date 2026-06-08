@@ -1,0 +1,12 @@
+{
+  "script": "plot_similarity.py",
+  "args": [
+    "--csv",
+    "data/foldbench_vs_full_reps_similarity.csv",
+    "--timings-csv",
+    "data/timings.csv",
+    "--suffix",
+    "FoldBench-100 vs afdb-24M full train reps (1.33M)"
+  ],
+  "caption": "Each candidate's nearest TRAIN representative: structural TM (x) vs sequence identity (y). Bottom-right = structurally close but sequence-distant, the leakage a sequence-only filter would miss. Dashed line = 0.5 same-fold boundary."
+}
