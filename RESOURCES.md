@@ -57,6 +57,14 @@ Large MarinFold experiment artifacts that don't fit in git (raw distograms, pred
 gs://marin-<region>/protein-structure/MarinFold/<experiment-name>/...
 ```
 
-in the `marin-<region>` bucket co-located with the job's compute zone (`marin-us-east5` for us-east5-a TPU train/eval, `marin-us-central1` for CPU data-gen on the Iris cluster), where `<experiment-name>` is descriptive enough to be recognizable to the marin team (e.g. `exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/`). See AGENTS.md "GCS bucket" and "Cross-region data transfers" for the full convention. Small CSVs and plots that feed READMEs still live in the experiment dir's `data/` and `plots/` — GCS is for the big stuff.
-
+in the `marin-<region>` bucket matching the job's compute zone. For
+example, our current v5p TPU train/eval jobs often use
+`marin-us-east5`, while a CPU data-gen job pinned to `us-central1-a`
+should use `marin-us-central1`; the region follows the pinned compute,
+not the other way around. `<experiment-name>` should be descriptive
+enough to be recognizable to the marin team (e.g.
+`exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/`).
+See AGENTS.md "GCS bucket" and "Cross-region data transfers" for the
+full convention. Small CSVs and plots that feed READMEs still live in
+the experiment dir's `data/` and `plots/` — GCS is for the big stuff.
 
