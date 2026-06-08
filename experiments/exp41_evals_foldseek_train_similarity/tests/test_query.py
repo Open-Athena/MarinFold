@@ -21,11 +21,8 @@ import pytest
 _HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_HERE))
 
-import query_similarity as qs  # noqa: E402
 from query_similarity import (  # noqa: E402
-    DEFAULT_MAX_SEQS,
     FORMAT_FIELDS,
-    easy_search,
     normalize_name,
     parse_m8,
     summarize,
@@ -138,43 +135,3 @@ def test_normalize_name():
     assert normalize_name("K7TTU0_A", known) == "K7TTU0"
     # Unknown name falls through to the stripped base (won't join).
     assert normalize_name("unknown_thing.cif", known) == "unknown_thing"
-
-
-def test_easy_search_forwards_max_seqs(monkeypatch, tmp_path: Path):
-    captured: dict[str, list[str]] = {}
-
-    def _fake_run_foldseek(args: list[str]):
-        captured["args"] = args
-        return None
-
-    monkeypatch.setattr(qs, "run_foldseek", _fake_run_foldseek)
-
-    easy_search(
-        tmp_path / "candidates",
-        tmp_path / "db" / "targetDB",
-        tmp_path / "out" / "aln.m8",
-        tmp_path / "tmp",
-        max_seqs=4096,
-    )
-    args = captured["args"]
-    assert args[0] == "easy-search"
-    assert args[args.index("--max-seqs") + 1] == "4096"
-
-
-def test_easy_search_default_max_seqs_matches_foldseek_default(monkeypatch, tmp_path: Path):
-    captured: dict[str, list[str]] = {}
-
-    def _fake_run_foldseek(args: list[str]):
-        captured["args"] = args
-        return None
-
-    monkeypatch.setattr(qs, "run_foldseek", _fake_run_foldseek)
-
-    easy_search(
-        tmp_path / "candidates",
-        tmp_path / "db" / "targetDB",
-        tmp_path / "out" / "aln.m8",
-        tmp_path / "tmp",
-    )
-    args = captured["args"]
-    assert args[args.index("--max-seqs") + 1] == str(DEFAULT_MAX_SEQS)

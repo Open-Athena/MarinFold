@@ -18,13 +18,14 @@ candidates at once), so this script records two modes:
 - ``batched`` — a single ``easy-search`` over the whole candidate dir
   (``stem == "__ALL__"``), the realistic throughput.
 
-Columns keep the repo's shared timing-schema fields even when some are
-blank here (no GPU, no torch, no separately measurable model-load phase),
-then add Foldseek-specific context like ``n_db_reps``, ``alignment_type``,
-and ``n_hits``. ``n_db_reps`` is essential context: search cost scales with
-the target DB, and the prototype DB (~229 reps) is tiny next to the full
-~1.3M-rep training DB, so absolute times here are dominated by per-call
-startup, not DB scaling.
+Columns mirror exp20's ``timings.csv`` (``stem, n_residues,
+elapsed_seconds, model_nickname, runner_tag, hostname, platform,
+timestamp_utc``) with Foldseek-specific additions (``n_db_reps``,
+``alignment_type``, ``n_hits``, ``foldseek_version``) and no GPU/torch
+columns (CPU TM-align). ``n_db_reps`` is essential context: search cost
+scales with the target DB, and the prototype DB (~229 reps) is tiny next
+to the full ~1.3M-rep training DB, so absolute times here are dominated by
+per-call startup, not DB scaling.
 
 Example::
 
@@ -45,7 +46,6 @@ import pandas as pd
 
 from foldseek_env import foldseek_version
 from query_similarity import (
-    DEFAULT_MAX_SEQS,
     _strip_struct_ext,
     count_residues,
     easy_search,
@@ -56,28 +56,21 @@ from query_similarity import (
 _FIELDS = [
     "stem",
     "n_residues",
-    "n_pairs",
-    "mode",
-    "elapsed_seconds",
-    "model_load_seconds",
-    "total_seconds",
-    "model_nickname",
-    "gpu_name",
-    "gpu_total_memory_gb",
-    "gpu_compute_capability",
-    "runner_tag",
-    "hostname",
-    "platform",
-    "torch_version",
-    "timestamp_utc",
     "n_db_reps",
+    "mode",
     "alignment_type",
-    "max_seqs",
+    "elapsed_seconds",
     "n_hits",
+    "model_nickname",
+    "runner_tag",
+    "gpu_name",
     "cpu_model",
     "n_cpus",
+    "hostname",
+    "platform",
     "foldseek_version",
     "db_snapshot_tag",
+    "timestamp_utc",
 ]
 
 
@@ -100,21 +93,13 @@ def db_n_reps(db_prefix: Path) -> int:
     return sum(1 for _ in lookup.open())
 
 
-def worker_meta(
-    db_prefix: Path,
-    db_snapshot_tag: str,
-    alignment_type: int,
-    max_seqs: int,
-) -> dict:
+def worker_meta(db_prefix: Path, db_snapshot_tag: str, alignment_type: int) -> dict:
     """Constant per-run metadata stamped onto every timing row."""
     return {
         "n_db_reps": db_n_reps(db_prefix),
         "alignment_type": alignment_type,
-        "max_seqs": max_seqs,
         "model_nickname": "foldseek-easy-search-tmalign",
         "gpu_name": "",  # CPU TM-align; set if --gpu search is added later
-        "gpu_total_memory_gb": None,
-        "gpu_compute_capability": None,
         "runner_tag": "local",
         "cpu_model": _cpu_model(),
         "n_cpus": os.cpu_count() or -1,
@@ -125,31 +110,18 @@ def worker_meta(
         # the hardware context the timing comparison needs.
         "hostname": os.environ.get("MARINFOLD_TIMING_HOSTNAME", ""),
         "platform": platform.platform(),
-        "torch_version": None,
         "foldseek_version": foldseek_version(),
         "db_snapshot_tag": db_snapshot_tag,
     }
 
 
-def _time_search(
-    query: Path,
-    db_prefix: Path,
-    alignment_type: int,
-    max_seqs: int,
-) -> tuple[float, int]:
+def _time_search(query: Path, db_prefix: Path, alignment_type: int) -> tuple[float, int]:
     """Run one easy-search over ``query`` (file or dir); return (seconds, n_hits)."""
     with tempfile.TemporaryDirectory(prefix="fs_timing_") as td:
         tmp = Path(td)
         out_m8 = tmp / "aln.m8"
         t0 = time.perf_counter()
-        easy_search(
-            query,
-            db_prefix,
-            out_m8,
-            tmp / "fs_tmp",
-            alignment_type=alignment_type,
-            max_seqs=max_seqs,
-        )
+        easy_search(query, db_prefix, out_m8, tmp / "fs_tmp", alignment_type=alignment_type)
         elapsed = time.perf_counter() - t0
         n_hits = len(parse_m8(out_m8))
     return elapsed, n_hits
@@ -162,14 +134,13 @@ def collect(
     *,
     db_snapshot_tag: str = "unknown",
     alignment_type: int = 1,
-    max_seqs: int = DEFAULT_MAX_SEQS,
     per_candidate: bool = True,
 ) -> pd.DataFrame:
     """Time the foldseek search per candidate (+ batched) and write the CSV."""
     cifs = iter_candidate_files(candidate_dir)
     if not cifs:
         raise RuntimeError(f"no candidate structures under {candidate_dir}")
-    meta = worker_meta(db_prefix, db_snapshot_tag, alignment_type, max_seqs)
+    meta = worker_meta(db_prefix, db_snapshot_tag, alignment_type)
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     rows: list[dict] = []
@@ -179,15 +150,12 @@ def collect(
             stem = _strip_struct_ext(cif.name)
             n_res = count_residues(cif)
             res_by_file[cif] = n_res
-            elapsed, n_hits = _time_search(cif, db_prefix, alignment_type, max_seqs)
+            elapsed, n_hits = _time_search(cif, db_prefix, alignment_type)
             rows.append({
                 "stem": stem,
                 "n_residues": n_res,
-                "n_pairs": None,
                 "mode": "per_candidate",
                 "elapsed_seconds": round(elapsed, 4),
-                "model_load_seconds": None,
-                "total_seconds": round(elapsed, 4),
                 "n_hits": n_hits,
                 "timestamp_utc": stamp,
                 **meta,
@@ -201,15 +169,12 @@ def collect(
         if per_candidate
         else sum(count_residues(c) for c in cifs)
     )
-    elapsed, n_hits = _time_search(candidate_dir, db_prefix, alignment_type, max_seqs)
+    elapsed, n_hits = _time_search(candidate_dir, db_prefix, alignment_type)
     rows.append({
         "stem": "__ALL__",
         "n_residues": total_res,
-        "n_pairs": None,
         "mode": "batched",
         "elapsed_seconds": round(elapsed, 4),
-        "model_load_seconds": None,
-        "total_seconds": round(elapsed, 4),
         "n_hits": n_hits,
         "timestamp_utc": stamp,
         **meta,
@@ -232,7 +197,6 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=here / "data" / "timings.csv")
     ap.add_argument("--db-tag", default="unknown")
     ap.add_argument("--alignment-type", type=int, default=1)
-    ap.add_argument("--max-seqs", type=int, default=DEFAULT_MAX_SEQS)
     ap.add_argument("--no-per-candidate", action="store_true", help="Only the batched row")
     args = ap.parse_args()
 
@@ -242,7 +206,6 @@ def main() -> None:
         args.out,
         db_snapshot_tag=args.db_tag,
         alignment_type=args.alignment_type,
-        max_seqs=args.max_seqs,
         per_candidate=not args.no_per_candidate,
     )
 

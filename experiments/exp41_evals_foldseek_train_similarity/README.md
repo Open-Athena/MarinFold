@@ -201,14 +201,10 @@ the reason structural rather than sequence clustering is the right axis).
 ### Performance / timing
 
 `collect_timings.py` records per-input search wall-time + worker metadata
-to `data/timings.csv` using the repo's shared timing columns
-(`stem, n_residues, n_pairs, mode, elapsed_seconds, model_load_seconds,
-total_seconds, model_nickname, gpu_name, gpu_total_memory_gb,
-gpu_compute_capability, runner_tag, hostname, platform, torch_version,
-timestamp_utc`) plus Foldseek-specific context (`n_db_reps, alignment_type,
-max_seqs, n_hits, cpu_model, n_cpus, foldseek_version, db_snapshot_tag`).
-For Foldseek there is no separate model-load phase, so
-`model_load_seconds` is blank and `total_seconds == elapsed_seconds`. On an Intel
+to `data/timings.csv` (schema mirrors exp20/exp12: `stem, n_residues,
+elapsed_seconds, model_nickname, runner_tag, hostname, platform,
+timestamp_utc`, plus foldseek-specific `n_db_reps, alignment_type, n_hits,
+foldseek_version`; no GPU/torch columns (CPU TM-align). On an Intel
 i7-10610U (8 cores), FoldBench-100:
 
 | DB | mode | wall-time |
