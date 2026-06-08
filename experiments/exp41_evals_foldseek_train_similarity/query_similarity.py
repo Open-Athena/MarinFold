@@ -68,6 +68,10 @@ _NUMERIC_FIELDS = ("alntmscore", "qtmscore", "ttmscore", "lddt", "fident", "alnl
 DEFAULT_FOLD_TM = 0.5
 DEFAULT_REDUNDANT_TM = 0.9
 DEFAULT_TM_FIELD = "qtmscore"
+# Match Foldseek's documented default prefilter handoff rather than a smaller
+# custom cap, so dense val/test neighborhoods are less likely to truncate the
+# nearest train representative before alignment.
+DEFAULT_MAX_SEQS = 1000
 
 _STRUCT_EXTS = (".cif", ".mmcif", ".pdb", ".ent")
 # Glob patterns for candidate structure files (plain + gzipped). Single
@@ -155,7 +159,7 @@ def easy_search(
     tmp_dir: Path,
     *,
     alignment_type: int = 1,
-    max_seqs: int = 300,
+    max_seqs: int = DEFAULT_MAX_SEQS,
     evalue: str = "inf",
     exhaustive: bool = False,
     gpu: bool = False,
@@ -164,7 +168,9 @@ def easy_search(
 
     Thresholds are loosened (``-c 0`` coverage, large e-value) so even a
     genuinely novel candidate emits its *best* (low-TM) hit rather than
-    being filtered to no row. Returns ``out_m8``.
+    being filtered to no row. ``max_seqs`` controls how many prefilter hits
+    reach alignment; setting it too low risks truncating the nearest train
+    representative in a dense held-out neighborhood. Returns ``out_m8``.
     """
     out_m8.parent.mkdir(parents=True, exist_ok=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -321,6 +327,7 @@ def run(
     fold_tm: float = DEFAULT_FOLD_TM,
     redundant_tm: float = DEFAULT_REDUNDANT_TM,
     db_snapshot_tag: str = "unknown",
+    max_seqs: int = DEFAULT_MAX_SEQS,
     evalue: str = "inf",
     exhaustive: bool = False,
     gpu: bool = False,
@@ -343,6 +350,7 @@ def run(
             db_prefix,
             out_m8,
             tmp / "fs_tmp",
+            max_seqs=max_seqs,
             evalue=evalue,
             exhaustive=exhaustive,
             gpu=gpu,
@@ -375,6 +383,15 @@ def main() -> None:
     ap.add_argument("--fold-tm", type=float, default=DEFAULT_FOLD_TM)
     ap.add_argument("--redundant-tm", type=float, default=DEFAULT_REDUNDANT_TM)
     ap.add_argument("--db-tag", default="unknown", help="Snapshot tag recorded in the output (which training DB)")
+    ap.add_argument(
+        "--max-seqs",
+        type=int,
+        default=DEFAULT_MAX_SEQS,
+        help=(
+            "Foldseek prefilter hits handed to alignment. Higher is slower but "
+            "reduces the chance of truncating the nearest train representative."
+        ),
+    )
     ap.add_argument("--evalue", default="inf", help="Foldseek -e threshold (loose by default to keep weak hits)")
     ap.add_argument("--exhaustive", action="store_true", help="Skip prefilter (slow; only for tiny DBs)")
     ap.add_argument("--gpu", action="store_true", help="Use Foldseek GPU mode for the search")
@@ -389,6 +406,7 @@ def main() -> None:
         fold_tm=args.fold_tm,
         redundant_tm=args.redundant_tm,
         db_snapshot_tag=args.db_tag,
+        max_seqs=args.max_seqs,
         evalue=args.evalue,
         exhaustive=args.exhaustive,
         gpu=args.gpu,

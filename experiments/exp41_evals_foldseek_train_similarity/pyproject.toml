@@ -28,4 +28,5 @@ modal = ["modal>=0.64"]
 package = false
 environments = [
     "sys_platform == 'linux'",
+    "sys_platform == 'darwin'",
 ]

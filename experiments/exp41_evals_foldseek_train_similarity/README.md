@@ -74,6 +74,10 @@ uv run python foldseek_env.py install        # one-time: foldseek binary -> loca
 uv run python fetch_foldbench_candidates.py   # the 100 GT candidate cifs
 ```
 
+`uv sync` / `uv run` are supported on both Linux and macOS for the local
+query, test, and plotting path. The cloud DB builder still runs on Modal's
+Linux workers.
+
 **Smoke test** (minutes, ~$0.05) — proves the pipeline end to end without the
 full 1.3 TB scan:
 
@@ -137,6 +141,11 @@ n_residues)` keys join onto exp20's `data/timings.csv`.
 - Foldseek names DB entries by **filename stem** (it ignores the internal
   `data_` block), so we name representative cifs `<struct_cluster_id>.cif`
   and the join is exact.
+- The query path intentionally uses Foldseek's documented default
+  `--max-seqs 1000` rather than the earlier 300-hit cap, so dense held-out
+  neighborhoods are less likely to truncate the nearest *train* hit before
+  alignment. Override with `--max-seqs` if you want to trade more runtime
+  for more sensitivity.
 - Foldseek's `alntmscore` can slightly **exceed 1.0** on self-matches
   (e.g. 1.004); `qtmscore`/`ttmscore` are bounded in [0, 1]. The verdict
   uses `qtmscore` by default for this reason (and because it's
@@ -192,10 +201,14 @@ the reason structural rather than sequence clustering is the right axis).
 ### Performance / timing
 
 `collect_timings.py` records per-input search wall-time + worker metadata
-to `data/timings.csv` (schema mirrors exp20/exp12: `stem, n_residues,
-elapsed_seconds, model_nickname, runner_tag, hostname, platform,
-timestamp_utc`, plus foldseek-specific `n_db_reps, alignment_type, n_hits,
-foldseek_version`; no GPU/torch columns (CPU TM-align). On an Intel
+to `data/timings.csv` using the repo's shared timing columns
+(`stem, n_residues, n_pairs, mode, elapsed_seconds, model_load_seconds,
+total_seconds, model_nickname, gpu_name, gpu_total_memory_gb,
+gpu_compute_capability, runner_tag, hostname, platform, torch_version,
+timestamp_utc`) plus Foldseek-specific context (`n_db_reps, alignment_type,
+max_seqs, n_hits, cpu_model, n_cpus, foldseek_version, db_snapshot_tag`).
+For Foldseek there is no separate model-load phase, so
+`model_load_seconds` is blank and `total_seconds == elapsed_seconds`. On an Intel
 i7-10610U (8 cores), FoldBench-100:
 
 | DB | mode | wall-time |

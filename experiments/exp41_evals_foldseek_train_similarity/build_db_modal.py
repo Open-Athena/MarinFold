@@ -25,9 +25,10 @@ Build strategy (the read is the cost; everything else rides along):
    worker; only the compact sub-DB (~25 MB) and a manifest marker touch the
    Volume, so the Volume never holds the ~675 GB of decompressed CIFs that
    a single central ``createdb`` would require.
-2. ``build_db`` (reducer, CPU): ``foldseek concatdbs``-merges the sub-DBs
-   into one ``/out/db/targetDB`` (component by component, the documented
-   way), concatenates the markers into ``/out/reps_manifest.csv``, commits.
+2. ``build_db`` (reducer, CPU): once *all* batches succeed, it
+   ``foldseek concatdbs``-merges the sub-DBs into one ``/out/db/targetDB``
+   (component by component, the documented way), concatenates the markers
+   into ``/out/reps_manifest.csv``, sanity-checks counts, commits.
 
 ``fetch_db.py`` then pulls the ~3 GB DB + manifest to the laptop and
 ``query_similarity.py`` runs against it unchanged.
@@ -211,7 +212,7 @@ def _merge_dbs(prefixes: list[str], out_prefix: str, scratch: Path) -> None:
 
 
 @app.function(volumes={"/out": OUT_VOL}, cpu=4.0, memory=16384, timeout=60 * 60 * 4)
-def build_db(snapshot_tag: str) -> dict:
+def build_db(snapshot_tag: str, expected_batches: int) -> dict:
     """Merge per-batch sub-DBs into one targetDB; write the manifest."""
     import pandas as pd
 
@@ -224,8 +225,19 @@ def build_db(snapshot_tag: str) -> dict:
     prefixes = sorted(
         str(d / "db") for d in subdbs_root.glob("batch_*") if (d / "db.dbtype").exists()
     )
+    markers = sorted(done_dir.glob("batch_*.json"))
     if not prefixes:
         raise RuntimeError(f"no sub-DBs under {subdbs_root}")
+    if len(prefixes) != len(markers):
+        raise RuntimeError(
+            f"found {len(prefixes)} sub-DBs but {len(markers)} manifest markers; "
+            "refusing to publish a mismatched DB."
+        )
+    if len(prefixes) != expected_batches:
+        raise RuntimeError(
+            f"expected {expected_batches} completed batches but found {len(prefixes)}; "
+            "refusing to publish a partial DB."
+        )
     print(f"merging {len(prefixes)} sub-DBs ...")
 
     scratch = Path("/tmp/merge_scratch")
@@ -237,7 +249,7 @@ def build_db(snapshot_tag: str) -> dict:
 
     # Manifest from per-batch markers (robust to a partial fan-out).
     rows: list[dict] = []
-    for marker in done_dir.glob("batch_*.json"):
+    for marker in markers:
         rows.extend(json.loads(marker.read_text()))
     df = (
         pd.DataFrame(rows)
@@ -245,10 +257,15 @@ def build_db(snapshot_tag: str) -> dict:
         .sort_values("representative_id")
         .reset_index(drop=True)
     )
-    df.to_csv("/out/reps_manifest.csv", index=False)
 
     # Sanity: how many entries actually landed in the merged DB?
     n_db_entries = sum(1 for _ in (db_dir / "targetDB.index").open())
+    if n_db_entries != len(df):
+        raise RuntimeError(
+            f"merged DB has {n_db_entries} entries but manifest has {len(df)} reps; "
+            "refusing to publish inconsistent artifacts."
+        )
+    df.to_csv("/out/reps_manifest.csv", index=False)
     split_counts = df["split"].value_counts().to_dict()
     db_files = {p.name: p.stat().st_size for p in db_dir.glob("targetDB*")}
     print(f"merged DB entries={n_db_entries} manifest reps={len(df)} splits={split_counts}")
@@ -313,9 +330,12 @@ def run_build(
     print(f"extraction done: {total} reps across {len(batches)} batches, {failures} failed")
 
     if failures:
-        print(f"WARNING: {failures} batches failed; merging the rest (idempotent, re-run to fill gaps).")
+        raise RuntimeError(
+            f"{failures} extraction batches failed; refusing to publish a partial DB. "
+            "Re-run the build to fill the missing batches, then merge."
+        )
     print("merging sub-DBs (reducer) ...")
-    info = build_db.remote(snapshot_tag)
+    info = build_db.remote(snapshot_tag, expected_batches=len(batches))
     info["extraction_failures"] = failures
     print("DB built:")
     print(json.dumps(info, indent=2))
