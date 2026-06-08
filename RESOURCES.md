@@ -54,9 +54,9 @@ After the rename to MarinFold, let's put runs at https://wandb.ai/open-athena/Ma
 Large MarinFold experiment artifacts that don't fit in git (raw distograms, prediction batches, intermediate parquets — typically produced by iris jobs on TRC) live under
 
 ```
-gs://marin-us-east5/protein-structure/MarinFold/<experiment-name>/...
+gs://marin-<region>/protein-structure/MarinFold/<experiment-name>/...
 ```
 
-where `<experiment-name>` is descriptive enough to be recognizable to the marin team (e.g. `exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/`). See AGENTS.md "GCS bucket" for the full convention. Small CSVs and plots that feed READMEs still live in the experiment dir's `data/` and `plots/` — GCS is for the big stuff.
+in the `marin-<region>` bucket co-located with the job's compute zone (`marin-us-east5` for us-east5-a TPU train/eval, `marin-us-central1` for CPU data-gen on the Iris cluster), where `<experiment-name>` is descriptive enough to be recognizable to the marin team (e.g. `exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/`). See AGENTS.md "GCS bucket" and "Cross-region data transfers" for the full convention. Small CSVs and plots that feed READMEs still live in the experiment dir's `data/` and `plots/` — GCS is for the big stuff.
 
 

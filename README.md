@@ -324,7 +324,8 @@ run name. (See `AGENTS.md` "HF bucket" for the splitting policy.)
 — first-class published text / tokenized corpora that levanter
 loads via `hf://datasets/` URIs. Long-tail / in-flight data
 artifacts go to the bucket instead.
-- **GCS** (`gs://marin-us-east5/<...>`) — large intermediate
+- **GCS** (`gs://marin-<region>/<...>`, co-located with the job's
+compute zone — see `AGENTS.md` "GCS bucket") — large intermediate
 artifacts produced by marin's executor (tokenized parquets,
 cached features, predictions).
 - **W&B** (`https://wandb.ai/open-athena/MarinFold`) — training and
