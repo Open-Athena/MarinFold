@@ -29,13 +29,15 @@ only.
    ignored by the hasher.
 
 3. **Co-locate compute with its bucket region.** Pin TPU
-   training/eval jobs to `us-east5-a` (matching the `marin-us-east5`
-   checkpoint bucket; the v5p pool is `{us-central1-a, us-east5-a}`)
-   via `ResourceConfig.with_tpu(..., zone="us-east5-a")`. Cross-region
-   checkpoint I/O is slow and expensive. The same co-location rule
-   applies to *every* iris job, not just TPU training — see the root
-   `AGENTS.md` "Cross-region data transfers & the shared Iris cluster"
-   rule.
+   training/eval jobs to the zone whose regional bucket you intend to
+   use, then write checkpoints and large artifacts to the matching
+   `marin-<region>` bucket. For our current v5p-based MarinFold jobs
+   that usually means `ResourceConfig.with_tpu(..., zone="us-east5-a")`
+   together with `marin-us-east5`, but if a job is pinned elsewhere
+   the bucket should move with it. Cross-region checkpoint I/O is slow
+   and expensive. The same co-location rule applies to *every* iris
+   job, not just TPU training — see the root `AGENTS.md`
+   "Cross-region data transfers & the shared Iris cluster" rule.
 
 4. **Tokenizer revisions are pinned.** Always use the `repo@revision`
    suffix in tokenizer names so levanter's cache is keyed by

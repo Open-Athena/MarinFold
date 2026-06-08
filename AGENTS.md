@@ -265,17 +265,20 @@ actually run in**, not a fixed region:
 gs://marin-<region>/protein-structure/MarinFold/<experiment-name>/...
 ```
 
-- **TPU training / eval** pins to `us-east5-a` (co-located with the
-  `marin-us-east5` checkpoint bucket; the v5p pool is
-  `{us-central1-a, us-east5-a}`) → write to
-  `gs://marin-us-east5/protein-structure/MarinFold/<exp>/`.
-- **CPU data-gen on the Iris cluster** lands in us-central1 /
-  us-central2 (or even Europe if you over-request) → pin the worker
-  zone and write to the matching same-region bucket, e.g.
-  `gs://marin-us-central1/protein-structure/MarinFold/<exp>/`.
-  Writing this output to `marin-us-east5` instead means every worker
-  does a cross-region PUT (exp5 already moved to `marin-us-central1`
-  for exactly this reason).
+- **TPU training / eval** follows the same rule: pin the TPU zone,
+  then write to the matching `marin-<region>` bucket. For our
+  current v5p-based MarinFold jobs that usually means `us-east5-a`
+  and `gs://marin-us-east5/protein-structure/MarinFold/<exp>/`, but
+  that is an example, not a global rule.
+- **CPU data-gen on the Iris cluster** likewise depends on where the
+  workers actually land: us-central1 / us-central2 are common, but
+  fallback pools can spill farther. Pin the worker zone and write to
+  the matching same-region bucket, e.g.
+  `gs://marin-us-central1/protein-structure/MarinFold/<exp>/` for a
+  job pinned to `us-central1-a`. Writing that output to a different
+  region (for example `marin-us-east5`) means every worker does a
+  cross-region PUT; exp5 already moved to `marin-us-central1` for
+  exactly this reason.
 - If a single canonical location is genuinely needed, do **one bulk
   copy after the job completes**, not thousands of streamed
   cross-region worker PUTs — and respect the > 10 GB sign-off rule
