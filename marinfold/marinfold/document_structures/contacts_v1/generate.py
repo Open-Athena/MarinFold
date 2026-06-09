@@ -33,7 +33,7 @@ import math
 import random
 import warnings
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +45,7 @@ from .parse import (
     ResidueInfo,
     analyze_structure,
     iter_analyzed_structures,
+    residues_from_sequence,
 )
 from .vocab import (
     BEGIN_SEQUENCE_TOKEN,
@@ -56,6 +57,7 @@ from .vocab import (
     END_TOKEN,
     NUM_POSITION_INDICES,
     N_TERM_TOKEN,
+    SEQUENCE_ONLY_DOC_TYPE_TOKEN,
     position_token,
 )
 
@@ -83,7 +85,10 @@ class GenerationConfig:
     near-zero-degree contacts). ``num_position_indices`` is the size of the
     position-token space and must match ``vocab.NUM_POSITION_INDICES``; it
     also caps the longest chain we can serialize (one index per residue,
-    no collisions).
+    no collisions). ``sequence_only`` switches the builder to the
+    sequence-only document type (``<contacts-v1.sequence_only>``): it emits
+    the sequence section only — no structure section, no contacts — and the
+    pyconfind geometry / contact-selection knobs above are then ignored.
     """
 
     native_only: bool = True
@@ -94,6 +99,7 @@ class GenerationConfig:
     min_contact_degree: float = 0.001
     num_position_indices: int = NUM_POSITION_INDICES
     assembly: int | str | None = None
+    sequence_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -264,6 +270,41 @@ def build_document(
     seq_statements.append((C_TERM_TOKEN, position_token(c_term_index)))
     rng.shuffle(seq_statements)
 
+    # Sequence-only variant: emit the sequence section under the
+    # <contacts-v1.sequence_only> doc type and stop -- no structure section,
+    # no contacts. The two RNG draws that shape the sequence section (the
+    # n-terminal start index, then this shuffle) are exactly the first two
+    # draws of the full path, so a sequence-only document's sequence section
+    # is byte-identical to the contacts-v1 document the same entry_id +
+    # residues would have produced. The contact-statistics fields are not
+    # meaningful here and are reported as 0 / None.
+    if config.sequence_only:
+        tokens = [SEQUENCE_ONLY_DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
+        for statement in seq_statements:
+            tokens.extend(statement)
+        tokens.append(END_TOKEN)
+        return GenerationResult(
+            entry_id=entry_id,
+            document=" ".join(tokens),
+            residues=tuple(residues),
+            seq_len=num_residues,
+            global_plddt=global_plddt,
+            start_index=start,
+            n_term_index=n_term_index,
+            c_term_index=c_term_index,
+            min_seq_separation=config.min_seq_separation,
+            contacts_pre_filter=0,
+            contacts_passing_min_degree=0,
+            contacts_emitted=0,
+            contacts_excluded=0,
+            truncated=False,
+            highest_contact_degree=None,
+            lowest_nonzero_contact_degree=None,
+            lowest_included_contact_degree=None,
+            num_tokens=len(tokens),
+            contacts=(),
+        )
+
     # Sequence-separation filter (definitional): residues fewer than
     # min_seq_separation positions apart in the primary sequence are never
     # contacts, so they're dropped before anything is counted.
@@ -410,6 +451,39 @@ def generate_document(
         rotamer_library=rotamer_library,
     )
     return _result_from_analyzed(analyzed, context_length=context_length, config=config)
+
+
+def generate_sequence_only_document(
+    sequence: str,
+    *,
+    entry_id: str,
+    context_length: int = CONTEXT_LENGTH,
+    config: GenerationConfig = GenerationConfig(),
+) -> GenerationResult | None:
+    """Generate a sequence-only document from a one-letter AA sequence.
+
+    The structure-free entry point a sequence-database job (e.g. UniRef50;
+    see exp64) calls per sequence: map the one-letter ``sequence`` to
+    residues (:func:`~marinfold.document_structures.contacts_v1.parse.residues_from_sequence`)
+    and emit the sequence section only, under the
+    ``<contacts-v1.sequence_only>`` doc type. No pyconfind, no contacts.
+
+    ``config`` is forced to ``sequence_only=True`` (so callers may pass a
+    plain :class:`GenerationConfig`); ``entry_id`` is the deterministic
+    generation seed. Returns ``None`` for sequences that cannot be
+    serialized — fewer than 2 residues, or more than ``config`` /
+    ``vocab.NUM_POSITION_INDICES`` residues (can't be uniquely indexed
+    under wrap-around).
+    """
+    seq_config = config if config.sequence_only else replace(config, sequence_only=True)
+    residues = residues_from_sequence(sequence)
+    return build_document(
+        entry_id,
+        residues,
+        (),
+        context_length=context_length,
+        config=seq_config,
+    )
 
 
 def generate_documents(

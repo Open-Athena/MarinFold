@@ -1,0 +1,25 @@
+{
+  "structure": "contacts-v1.sequence_only",
+  "source": "LiteFold/UniRef50",
+  "shards_processed": [
+    45
+  ],
+  "workers": 1,
+  "wall_seconds": 17.7,
+  "seen": 100000,
+  "written": 100000,
+  "skipped_length": 0,
+  "skipped_unserializable": 0,
+  "tokens": 22306504,
+  "rows_per_split": {
+    "train": 98965,
+    "val": 493,
+    "test": 542
+  },
+  "tokens_per_split": {
+    "train": 22075687,
+    "val": 110035,
+    "test": 120782
+  },
+  "output_dir": "/home/bizon/exp64_sample"
+}

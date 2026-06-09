@@ -65,6 +65,21 @@ def _canonical_resname(resname: str) -> str:
     return _RESNAME_TO_CANONICAL.get(resname.strip().upper(), "UNK")
 
 
+# One-letter -> canonical 3-letter for the standard 20 amino acids. Used by
+# the sequence-only path: sequence databases (e.g. UniRef50) give one-letter
+# codes and carry no structure, so there is no 3-letter residue name to read
+# off. Codes outside the standard 20 -- the ambiguity/placeholder letters
+# B (Asx), Z (Glx), J (Xle), X (any), the rarer U (Sec) / O (Pyl), and any
+# stop/gap symbols -- fall through to "UNK" in `residues_from_sequence`,
+# matching `_canonical_resname`'s unknown fallback.
+_ONE_LETTER_TO_THREE = {
+    "A": "ALA", "R": "ARG", "N": "ASN", "D": "ASP", "C": "CYS",
+    "Q": "GLN", "E": "GLU", "G": "GLY", "H": "HIS", "I": "ILE",
+    "L": "LEU", "K": "LYS", "M": "MET", "F": "PHE", "P": "PRO",
+    "S": "SER", "T": "THR", "W": "TRP", "Y": "TYR", "V": "VAL",
+}
+
+
 @dataclass(frozen=True)
 class ResidueInfo:
     """One residue of the (single) protein chain, in sequence order."""
@@ -73,6 +88,31 @@ class ResidueInfo:
     resname: str     # canonical 3-letter name (uppercase), or "UNK"
     resnum: int      # author residue number from the structure
     chain: str       # author chain id
+
+
+def residues_from_sequence(
+    sequence: str, *, chain: str = "A"
+) -> tuple[ResidueInfo, ...]:
+    """Build a residue list from a one-letter amino-acid sequence.
+
+    The sequence-only analogue of the residue extraction in
+    :func:`analyze_structure`: there is no structure, so residues are
+    numbered ``0..L-1`` in order (``resnum`` is the 1-based index) on a
+    single synthetic ``chain``. One-letter codes outside the standard 20
+    map to ``"UNK"`` (so the document carries ``<UNK>`` there — the same
+    fallback the structure path uses). Whitespace is ignored and the
+    comparison is case-insensitive. No pyconfind, no geometry.
+    """
+    cleaned = "".join(sequence.split()).upper()
+    return tuple(
+        ResidueInfo(
+            seq_index=i,
+            resname=_ONE_LETTER_TO_THREE.get(code, "UNK"),
+            resnum=1 + i,
+            chain=chain,
+        )
+        for i, code in enumerate(cleaned)
+    )
 
 
 @dataclass(frozen=True)

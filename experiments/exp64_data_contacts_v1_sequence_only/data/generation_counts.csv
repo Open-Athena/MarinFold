@@ -1,0 +1,2 @@
+shard_index,seen,written,skipped_length,skipped_unserializable,files_written,tokens,train_rows,val_rows,test_rows,train_tokens,val_tokens,test_tokens
+45,100000,100000,0,0,3,22306504,98965,493,542,22075687,110035,120782
