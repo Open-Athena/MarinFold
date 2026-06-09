@@ -1,11 +1,17 @@
 # MarinFold
 
-Can a vanilla LLM predict protein structures if its training "documents" are structured
-in the right way? MarinFold aims to answer this question. Our models are trained
+Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
+MarinFold aims to answer this question. Our models are trained
 from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
-This is a research codebase for an ongoing project. It is an experiment in open development.
-We do not currently have models that anyone should use!
+This is a research codebase for an ongoing project. It is an experiment in open development. Our accuracy is pretty low so far. We do not currently have models that anyone should use!
+
+## Current performance
+
+<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_5way_swarm.png" alt="LDDT 5-way swarm plot" width="75%">
+<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_vs_protein_length_log.png" alt="LDDT vs protein length log plot" width="75%">
+
+The MarinFold models shown above were trained on `contacts-and-distances-v1`. The distogram was read-out by prompting with the sequence only and no inference time search was used.
 
 ## Try it out
 
