@@ -35,6 +35,14 @@ experiment only generates the data.
 
 ## Results so far
 
-Library + driver implemented and unit-tested; a streamed real-data sample
-validated the end-to-end path (well-formed docs, 0% `<UNK>`). Full local
-generation + HuggingFace upload pending go-ahead.
+**Generated + verified.** 60,004,535 documents / ~32.98 B tokens from all
+60.3 M UniRef50 sequences in 30.5 min (60 workers, 0 errors); 0.51 % dropped for
+`>2000` residues, 0 unserializable. Splits ≈ 99 / 0.5 / 0.5 % (train 32.65 B
+tok). Parquet rows re-counted to exactly 60,004,535; docs byte-faithful to
+`generate_sequence_only_document`.
+
+**Upload pending a token.** The 58 GB corpus + `tokenizer/` + card is staged at
+`~/exp64_out`; publishing to the `open-athena/MarinFold` bucket
+(`data/document_structures/contacts-v1.sequence_only/`) needs an org-scoped write
+token (the workstation token is scoped to `timodonnell`) — one `hf buckets sync`
+away.

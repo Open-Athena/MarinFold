@@ -117,17 +117,58 @@ unified tokenizer.
 
 ## Results
 
-_In progress._ Library + driver implemented and unit-tested (lib: pure
-`contacts_v1` suite green; driver: `tests/test_generate_rows.py` green,
-byte-identical to `generate_sequence_only_document`). A streamed real-data
-sample (shard 0 front) validated parsing/generation (0 % `<UNK>` residues,
-well-formed docs). Full local generation + HF upload pending go-ahead (issue:
-inspect locally before upload).
+Full corpus generated locally — 60 workers (one per UniRef50 shard), **30.5 min**
+(`wall_seconds` 1827.6), **0 errors / 0 warnings**:
 
-Open decisions before the full run: physical output order (length-sorted as
-written vs. an added shuffle pass) and confirmation that `> 2000`-residue
-sequences are dropped (not truncated).
+- **60,004,535 documents — 32,983,420,021 tokens** (~32.98 B) from all
+  60,315,044 UniRef50 sequences.
+- **310,509 (0.51%) dropped** for falling outside `[2, 2000]` residues (the
+  `>2000`-residue giants, concentrated in source shards 0–1); **0**
+  unserializable. Accounting is exact: `written + skipped_length =
+  60,315,044` = every sequence.
+- Splits (arbitrary, `sha1(entry_id) % 1000`): train **59,403,434** (32.65 B
+  tok) / val **300,982** (165 M) / test **300,119** (165 M) ≈ 99.0 / 0.50 / 0.50 %.
+- Mean ~550 `num_tokens`/doc (≈271 residues). Integrity re-verified: parquet
+  rows sum to exactly **60,004,535** (301 / 61 / 61 files, 58 GB zstd).
+- Format confirmed on real data: every doc is `<contacts-v1.sequence_only>
+  <begin_sequence> … <n-term>/<c-term> … <end>`, **no** structure section,
+  `num_tokens == 2*seq_len + 7`, 0 `<UNK>` leakage.
+
+Counts: [`data/generation_counts.csv`](data/generation_counts.csv) (per shard)
+and [`data/summary.json`](data/summary.json). Dataset card:
+[`DATASET_README.md`](DATASET_README.md).
+
+**Resolved open decisions:** (1) **physical order** — shipped as generated
+(length-banded, since UniRef50 is globally length-sorted), documented in the
+dataset card with a recommendation to shuffle at training time, rather than
+risk a 58 GB shuffle pass on the unattended run; (2) `>2000`-residue sequences
+are **dropped, not truncated** (310,509 `skipped_length`, 0 truncations).
+
+**Upload status — pending an org-scoped token.** The dataset (train/val/test +
+`tokenizer/` + `README.md`, 58 GB) is staged at `~/exp64_out`. Publishing to the
+HF bucket `open-athena/MarinFold` → `data/document_structures/contacts-v1.sequence_only/`
+is blocked because the workstation's active token (`write2`) is fine-grained to
+`timodonnell` only and 403s on the open-athena Xet write endpoint (the other
+stored token, `boltzgen-write`, is scoped to the `boltzgen` org). Finish with an
+open-athena-write token active:
+
+```bash
+hf auth switch        # to a token with open-athena repo.write (or: hf auth login)
+hf buckets sync ~/exp64_out \
+  hf://buckets/open-athena/MarinFold/data/document_structures/contacts-v1.sequence_only \
+  --exclude "_done/*"
+```
+
+(A `--dry-run` of exactly this sync is verified: 427 files / 58 GB, no `_done/`
+markers.)
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The sequence-only contacts-v1 corpus is **generated and verified**:
+**60,004,535 documents / ~32.98 B tokens** from UniRef50, byte-faithful to
+`generate_sequence_only_document` (sequence section identical to contacts-v1),
+under the appended `<contacts-v1.sequence_only>` token (unified 2846-token
+tokenizer, every pre-existing id preserved). The issue's data-generation work is
+done; the final publish to the `open-athena/MarinFold` bucket is staged and a
+single `hf buckets sync` away once an open-athena-write token is active (the
+available workstation token is scoped to `timodonnell` only).
