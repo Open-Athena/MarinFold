@@ -39,8 +39,8 @@ from fray import ResourceConfig
 from levanter.data.text import BlockShuffleConfig, LmDataConfig, TextLmDatasetFormat
 from levanter.models.llama import LlamaConfig
 
-from experiments.defaults import default_tokenize, default_train
-from experiments.simple_train_config import SimpleTrainConfig
+from .defaults import default_tokenize, default_train
+from .simple_train_config import SimpleTrainConfig
 from marin.execution.executor import executor_main, versioned
 from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
 
@@ -101,6 +101,19 @@ protein_docs_r3b_tokenized = default_tokenize(
 protein_docs_r3b_val_tokenized = default_tokenize(
     name="protein-docs-r3b-val",
     dataset=f"{HF_DATASET_BASE}/random-3-bins/val/",
+    tokenizer=PROTEIN_TOKENIZER,
+    format=TextLmDatasetFormat(text_key="document"),
+    is_validation=True,
+)
+protein_docs_cd_tokenized = default_tokenize(
+    name="protein-docs-cd-all-doc-types",
+    dataset=f"{HF_DATASET_BASE}/contacts-and-distances-v1-5x/train/",
+    tokenizer=PROTEIN_TOKENIZER,
+    format=TextLmDatasetFormat(text_key="document"),
+)
+protein_docs_cd_val_tokenized = default_tokenize(
+    name="protein-docs-cd-val-all-doc-types",
+    dataset=f"{HF_DATASET_BASE}/contacts-and-distances-v1-5x/val/",
     tokenizer=PROTEIN_TOKENIZER,
     format=TextLmDatasetFormat(text_key="document"),
     is_validation=True,
