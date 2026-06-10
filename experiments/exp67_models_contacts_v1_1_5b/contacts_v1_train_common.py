@@ -195,7 +195,14 @@ def build_train_step(
     # secret lands in git. If unset, we omit it (and the run will fail fast with
     # marin's clear "WANDB_API_KEY must be set" message rather than silently
     # logging nowhere).
-    env_vars = {"WANDB_ENTITY": "open-athena"}
+    # PYTHONPATH=/app makes Python auto-import `/app/sitecustomize.py` at
+    # interpreter startup in the training pod (the iris bundle unpacks to /app;
+    # dirs on PYTHONPATH are searched for sitecustomize during site init). That
+    # shim patches the marin-latest tokenize↔train cache bug (#6008/#6014) so the
+    # trainer can read its own token cache. Remove once on a marin build with
+    # #6014. The pod runs marin's run_levanter_train_lm — not our code — so this
+    # env hook is the only injection point. See sitecustomize.py / README.
+    env_vars = {"WANDB_ENTITY": "open-athena", "PYTHONPATH": "/app"}
     _wandb_key = os.environ.get("WANDB_API_KEY")
     if _wandb_key:
         env_vars["WANDB_API_KEY"] = _wandb_key

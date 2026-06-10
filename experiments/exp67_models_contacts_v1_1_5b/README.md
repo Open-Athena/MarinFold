@@ -146,10 +146,10 @@ match reality; the resolutions are baked into the code:
    from the driver's environment and threads it into `env_vars` (never
    hard-coded). Launch with `iris ... -e WANDB_API_KEY <key>`.
 
-## ⚠️ Current blocker (open): marin-latest tokenize↔train cache mismatch
+## marin-latest tokenize↔train cache mismatch — worked around (shim)
 
-As of 2026-06-10 the run gets **all the way through tokenization and into the
-trainer**, then the training pod dies reading the token cache:
+As of 2026-06-10 the run got **all the way through tokenization and into the
+trainer**, then the training pod died reading the token cache:
 
 ```
 ValueError: Sharded cache ledger missing input_ids/0 count for shard part-00000-of-00133
@@ -177,14 +177,24 @@ is frozen at **2026-05-29** (verified across all release tags), i.e. ~4 days
 tokenize (`override_output_path`); exp67 is the first *fresh* tokenize→train on
 this snapshot.
 
-**Fix = a marin build with #6014** (then a one-time re-tokenize). Options, in
-order of preference: (a) ping the marin team to rebuild the `marin-latest`
-wheel (the fix is already merged); (b) install `marin` from git `main`
-(risk: monorepo version skew with the May-29 marin-levanter/iris wheels).
-**Tokenization is durable** — both caches persist under
-`…/exp67_contacts_v1_1_5b/tokenized/…` — but the caches were written by the buggy
-tokenizer, so they must be rebuilt once marin is upgraded. (6 of the issue's
-≤10 allowed test runs used.)
+**The on-disk caches are actually correct and flat** — I narrowed the bug to
+`levanter.data.text._batch_tokenizer.BatchTokenizer.output_exemplar`, which
+returns `{"input_ids": <python list>}`. The cache *writer* flattens that with
+`is_leaf=heuristic_is_leaf` (a list of ints is a leaf → one flat `input_ids`
+field, matching disk), but the *reader's* `jagged_array_tree` walks the same
+exemplar **without** `is_leaf`, so the list becomes the tree node `input_ids/0`.
+So no re-tokenize is needed — only the reader's in-memory exemplar is wrong.
+
+**Workaround in place (`sitecustomize.py`):** a startup shim makes
+`output_exemplar` return numpy arrays (true leaves), so the reader's field path
+collapses back to the flat `input_ids` the cache uses. Verified locally by
+reading the real val cache (41,954 rows) end-to-end. It's injected into the
+training pod via `PYTHONPATH=/app` (set in `build_train_step` `env_vars`) — the
+pod runs marin's `run_levanter_train_lm`, not our code, so an interpreter-startup
+hook is the only injection point. **Remove `sitecustomize.py` and the
+`PYTHONPATH` env once the experiment is on a marin build that includes #6014.**
+Tokenization is durable (both caches persist under
+`…/exp67_contacts_v1_1_5b/tokenized/…` and are reused on restart).
 
 ## Success criteria
 
