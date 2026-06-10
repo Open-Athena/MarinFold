@@ -1,10 +1,11 @@
 # MarinFold
 
-Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
-MarinFold aims to answer this question. Our models are trained
-from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb)
 
-This is a research codebase for an ongoing project. It is an experiment in open development. Our accuracy is pretty low so far. We do not currently have models that anyone should use!
+Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
+MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
+
+This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far. We do not currently have models that anyone should use!
 
 ## Current performance
 
@@ -163,6 +164,11 @@ uv run contacts-and-distances-v1 evaluate \
     --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
     --out /tmp/metrics.json
 ```
+
+## Colab Notebooks
+
+- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run the current `1B` or `1.5B` model with `vllm` and plot ground-truth vs predicted distance heatmaps.
+- [Inspect Data 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inspect_data1.ipynb) — browse legacy `timodonnell/protein-docs` subsets plus newer `open-athena/MarinFold` bucket parquet data, with sample documents and parquet schema previews.
 
 ## Layout
 
