@@ -28,9 +28,9 @@ single-subset baselines like ``protein-contacts-1b-3.5e-4-distance-masked-7d355e
 
 Usage::
 
-    uv run iris --config=lib/iris/examples/marin.yaml job run \\
-        --memory=16GB --disk=16GB --cpu=1 --extra=tpu --zone=us-east5-a -- \\
-        python -m experiments.protein.train_protein_1b_all_docs_unmasked
+    uv run iris --cluster=marin job run \\
+     --extra=tpu --region=us-central2 --enable-extra-resources --tpu=v4-8 \\
+     -- python -m experiments.protein.train_protein_iter_all_docs_unmasked
 """
 
 import dataclasses
