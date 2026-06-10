@@ -50,8 +50,11 @@ whichever fits the work.
 
 2. **Don't commit ad-hoc binaries.** Commit small CSVs to `data/` and
    plots to `plots/`. Large model weights, intermediate parquets,
-   prediction dumps, etc. go to GCS (`gs://marin-us-east5/...`) or
-   HuggingFace (`buckets/open-athena/MarinFold` for checkpoints,
+   prediction dumps, etc. go to GCS (the region-co-located
+   `gs://marin-<region>/protein-structure/MarinFold/...` — write to
+   the bucket matching your job's compute zone; see the root
+   `AGENTS.md` "GCS bucket" rule) or HuggingFace
+   (`buckets/open-athena/MarinFold` for checkpoints,
    `datasets/timodonnell/<name>` for datasets). See the root
    `README.md` for the policy.
 

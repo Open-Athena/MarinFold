@@ -1,0 +1,31 @@
+[project]
+name = "exp41-evals-foldseek-train-similarity"
+version = "0.1.0"
+description = "Reusable Foldseek tool: how close is a candidate structure to MarinFold's training set?"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Bucket downloads (FoldBench candidate cifs, prebuilt rep DB) need the
+    # newer hub bucket API. No transformers here, so unlike exp20 we can pin
+    # >=1.5 directly in the venv without an ephemeral env.
+    "huggingface_hub>=1.5",
+    # afdb-24M parquet streaming (build_reps_manifest.py) + the join/groupby.
+    "pandas>=2.2",
+    "pyarrow>=15",
+    # CIF residue counting for the candidates.
+    "gemmi>=0.6",
+    # Verdict histogram for summary.pdf.
+    "matplotlib>=3.8",
+    "numpy",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+# Cloud build of the full representative DB (build_db_modal.py + fetch_db.py).
+# Kept optional so the core query path stays light and Modal-free.
+modal = ["modal>=0.64"]
+
+[tool.uv]
+package = false
+environments = [
+    "sys_platform == 'linux'",
+]

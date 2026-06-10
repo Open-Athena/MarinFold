@@ -28,15 +28,26 @@ from typing import Any, Iterable
 from marinfold.document_structures.core import EvalResult
 
 
-def write_docs(out: Path, docs: Iterable[str], *, structure_name: str) -> None:
+def write_docs(
+    out: Path, docs: Iterable[str | dict], *, structure_name: str
+) -> None:
     """Write generated training documents to parquet or jsonl.
 
-    Each output row is ``{"document": <string>, "structure": <name>}``.
-    Errors loudly when the generator produced no documents (a silent
-    empty file would mask a broken generator).
+    Each item is either a bare document string or a row dict that already
+    carries metadata alongside its ``"document"`` key (e.g. contact counts,
+    truncation flag — mirroring the published protein-docs datasets). Bare
+    strings become ``{"document": <string>}``; every row is stamped with
+    ``"structure": <name>`` last, so the caller-supplied name wins over any
+    ``structure`` key a row happened to carry.
+
+    Errors loudly when the generator produced no documents (a silent empty
+    file would mask a broken generator).
     """
     out.parent.mkdir(parents=True, exist_ok=True)
-    rows = [{"document": d, "structure": structure_name} for d in docs]
+    rows = [
+        {**({"document": d} if isinstance(d, str) else d), "structure": structure_name}
+        for d in docs
+    ]
     if not rows:
         raise SystemExit("generator produced 0 documents")
     if out.suffix == ".parquet":

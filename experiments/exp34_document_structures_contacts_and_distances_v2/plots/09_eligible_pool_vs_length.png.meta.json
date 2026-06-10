@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Eligible-contact pool size by mode versus sequence length. Long-range pools grow super-linearly with length (~N^1.5 visually on this log-log) while medium- and short-range pools grow roughly linearly. This is what makes long-range the bottleneck on fraction-captured."
+}

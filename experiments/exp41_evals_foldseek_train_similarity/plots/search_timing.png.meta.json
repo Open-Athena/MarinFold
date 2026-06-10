@@ -1,0 +1,12 @@
+{
+  "script": "plot_similarity.py",
+  "args": [
+    "--csv",
+    "data/foldbench_vs_full_reps_similarity.csv",
+    "--timings-csv",
+    "data/timings.csv",
+    "--suffix",
+    "FoldBench-100 vs afdb-24M full train reps (1.33M)"
+  ],
+  "caption": "Per-candidate TM-align search time vs length, against a 229-rep target DB. At this tiny DB size the cost is dominated by Foldseek per-call setup, not DB scaling \u2014 absolute numbers will rise with the full ~1.3M-rep training DB. Batched throughput is in the '__ALL__' row."
+}

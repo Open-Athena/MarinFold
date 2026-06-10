@@ -1,0 +1,19 @@
+{
+  "verdict": "not_supported",
+  "threshold": "3/4",
+  "n_metrics_supporting": 2,
+  "metrics_supporting": [
+    "lddt_distogram_cb",
+    "prec_long_L"
+  ],
+  "metrics_refuting": [
+    "mae_distogram_cb_angstrom",
+    "drmsd_distogram_cb_angstrom"
+  ],
+  "details": [
+    "lddt_distogram_cb: 1.5B=0.2876 vs 1B=0.2715 (delta=+0.0162, direction=higher) -> support",
+    "mae_distogram_cb_angstrom: 1.5B=5.6954 vs 1B=5.6421 (delta=+0.0532, direction=lower) -> refute",
+    "drmsd_distogram_cb_angstrom: 1.5B=7.2021 vs 1B=7.1433 (delta=+0.0588, direction=lower) -> refute",
+    "prec_long_L: 1.5B=0.2848 vs 1B=0.2584 (delta=+0.0264, direction=higher) -> support"
+  ]
+}

@@ -1,0 +1,14 @@
+# Downloaded candidate structures (re-fetchable from the HF bucket).
+candidates/
+# Prototype / built Foldseek target DBs (rebuildable; large).
+# `*_db/` catches prototype_db; `db_*/` catches the fetched/built DB dirs
+# (db_full, db_1per_shard, db_merge_test) that fetch_db.py writes locally.
+*_db/
+db_*/
+prototype_db/
+tinydb/
+# Foldseek scratch + raw search outputs.
+fs_tmp/
+*.m8
+# Local venv.
+.venv/

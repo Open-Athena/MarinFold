@@ -31,13 +31,20 @@ transformers = ["torch>=2.4", "accelerate>=0.30"]
 # Apple Silicon native via MLX. Darwin-only wheels; uv skips on
 # other platforms automatically.
 mlx = ["mlx>=0.18; sys_platform == 'darwin'", "mlx-lm>=0.20; sys_platform == 'darwin'"]
+# --- Document-structure generation extras ---
+# contacts-v1 generation needs pyconfind for side-chain contact degree.
+# (The tokenizer subcommand works without it.) Add pyconfind[fast] /
+# numba in data-generation jobs for the JIT contact backend.
+contacts-v1 = ["pyconfind>=0.5"]
 
 [project.scripts]
 marinfold = "marinfold.cli:main"
-# Lower-level per-impl driver (legacy / power-user surface). The
+# Lower-level per-impl drivers (legacy / power-user surface). The
 # high-level ``marinfold infer`` / ``marinfold evaluate`` cover the
 # common cases.
 contacts-and-distances-v1 = "marinfold.document_structures.contacts_and_distances_v1.cli:main"
+# generate / view need the contacts-v1 extra (pyconfind); tokenizer does not.
+contacts-v1 = "marinfold.document_structures.contacts_v1.cli:main"
 
 [dependency-groups]
 dev = [

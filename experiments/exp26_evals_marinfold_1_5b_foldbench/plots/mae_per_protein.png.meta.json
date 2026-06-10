@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Per-protein mae_distogram_cb_angstrom grouped bar across all 4 methods (n=100 FoldBench monomers). Lower is better."
+}

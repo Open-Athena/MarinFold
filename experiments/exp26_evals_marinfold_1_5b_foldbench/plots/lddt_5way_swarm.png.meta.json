@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "LDDT-CB across 10 categories (4 methods \u00d7 {distogram, distogram-soft, structure where available}). Boxplot overlay shows median + quartiles. Protenix-MSA dominates ~0.93; MarinFold 1.5B and 1B sit nearly on top of each other at ~0.25."
+}

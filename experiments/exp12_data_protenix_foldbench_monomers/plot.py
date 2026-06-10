@@ -64,6 +64,21 @@ _METRICS = (
 )
 
 
+# Metrics used for the accuracy-vs-MSA-depth plots. LDDT is the accuracy
+# readout here (CASP convention); LDDT-CA leads as the headline. Override
+# with `plot --depth-metrics ...`. Bounded [0,1] and length-robust, so it
+# compares cleanly across proteins of different sizes — unlike raw
+# RMSD/MAE, which is why the vs-depth view uses LDDT rather than all
+# metrics.
+_DEPTH_METRICS: tuple[str, ...] = (
+    "lddt_structure_ca",
+    "lddt_structure_cb",
+    "lddt_structure_all_heavy",
+    "lddt_distogram_cb",
+    "lddt_distogram_cb_soft",
+)
+
+
 def _load(scores_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(scores_csv)
     numeric_cols = (
@@ -168,6 +183,57 @@ def _ss_vs_msa_scatter(df: pd.DataFrame, metric: str, label: str, out_png: Path)
     print(f"Wrote {out_png}")
 
 
+def _metric_vs_depth(
+    df: pd.DataFrame,
+    depth_df: pd.DataFrame,
+    metric: str,
+    label: str,
+    depth_col: str,
+    out_png: Path,
+) -> None:
+    """Scatter ``metric`` vs MSA depth, one series per mode (log-x depth).
+
+    ``df`` is the top-1 scores (one row per (protein, mode)); ``depth_df``
+    carries per-protein MSA depth keyed by (pdb_id, chain_id). Depth is a
+    per-protein property, so single_seq points share the same x as their
+    msa counterparts — that's deliberate: it shows whether single-seq
+    performance tracks the homolog signal even though single-seq doesn't
+    use the MSA.
+    """
+    sub = df[["pdb_id", "chain_id", "mode", metric]].copy()
+    merged = sub.merge(
+        depth_df[["pdb_id", "chain_id", depth_col]],
+        on=["pdb_id", "chain_id"], how="inner",
+    )
+    merged = merged.dropna(subset=[metric, depth_col])
+    merged = merged[merged[depth_col] > 0]
+    if merged.empty:
+        print(f"WARN: no (depth, {metric}) data; skipping vs-depth plot.")
+        return
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    for mode, mode_sub in merged.groupby("mode"):
+        ax.scatter(mode_sub[depth_col], mode_sub[metric], s=28, alpha=0.7, label=mode)
+    ax.set_xscale("log")
+    ax.set_xlabel(f"MSA depth ({depth_col})")
+    ax.set_ylabel(label)
+    ax.set_title(f"Protenix v2 — {label} vs MSA depth")
+    ax.legend()
+    fig.tight_layout()
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    save_plot_with_meta(
+        fig, out_png,
+        caption=(
+            f"{label} as a function of MSA depth ({depth_col}, log scale). "
+            f"Each point is one protein in one mode. MSA depth is a "
+            f"per-protein property, so single_seq and msa points share an "
+            f"x-coordinate per protein."
+        ),
+        dpi=150,
+    )
+    plt.close(fig)
+    print(f"Wrote {out_png}")
+
+
 def _summary(df: pd.DataFrame, out_csv: Path) -> None:
     rows: list[dict] = []
     for mode, sub in df.groupby("mode"):
@@ -191,18 +257,50 @@ def _summary(df: pd.DataFrame, out_csv: Path) -> None:
     print(f"Wrote {out_csv}")
 
 
-def plot(*, scores_csv: Path, out_dir: Path) -> None:
-    """Top-level: load scores, render PNGs + summary CSV for all metrics."""
+def plot(
+    *,
+    scores_csv: Path,
+    out_dir: Path,
+    msa_depth_csv: Path | None = None,
+    depth_col: str = "n_eff_0.8",
+    depth_metrics: tuple[str, ...] = _DEPTH_METRICS,
+) -> None:
+    """Top-level: load scores, render PNGs + summary CSV for all metrics.
+
+    When ``msa_depth_csv`` is given, also render
+    ``{metric}_vs_msa_depth.png`` for each metric in ``depth_metrics``
+    (accuracy as a function of MSA depth, ``depth_col``). Defaults to the
+    LDDT family — that's the accuracy readout for the vs-depth view.
+    """
     df = _load(scores_csv)
     if df.empty:
         print(f"WARN: {scores_csv} is empty.")
         return
+    labels = dict(_METRICS)
+    depth_df: pd.DataFrame | None = None
+    if msa_depth_csv is not None:
+        depth_df = pd.read_csv(msa_depth_csv)
+        if depth_col not in depth_df.columns:
+            raise ValueError(
+                f"{msa_depth_csv} has no column {depth_col!r}; "
+                f"available: {list(depth_df.columns)}"
+            )
+        depth_df[depth_col] = pd.to_numeric(depth_df[depth_col], errors="coerce")
     for metric, label in _METRICS:
         if metric not in df.columns:
             print(f"WARN: {metric} not in scores CSV; skipping.")
             continue
         _per_protein_bars(df, metric, label, out_dir / f"{metric}_per_protein.png")
         _ss_vs_msa_scatter(df, metric, label, out_dir / f"{metric}_ss_vs_msa_scatter.png")
+    if depth_df is not None:
+        for metric in depth_metrics:
+            if metric not in df.columns:
+                print(f"WARN: depth metric {metric} not in scores CSV; skipping.")
+                continue
+            _metric_vs_depth(
+                df, depth_df, metric, labels.get(metric, metric), depth_col,
+                out_dir / f"{metric}_vs_msa_depth.png",
+            )
     summary_csv = scores_csv.parent / (scores_csv.stem + "_summary.csv")
     _summary(df, summary_csv)
 
@@ -211,4 +309,15 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("plot", help="Render PNGs + summary CSV from data/scores.csv.")
     p.add_argument("--scores", type=Path, required=True, help="data/scores.csv path.")
     p.add_argument("--out", type=Path, required=True, help="Output dir for PNGs (typically plots/).")
-    p.set_defaults(func=lambda args: plot(scores_csv=args.scores, out_dir=args.out))
+    p.add_argument("--msa-depth", type=Path, default=None,
+                   help="Optional data/msa_depth.csv; adds {metric}_vs_msa_depth.png plots.")
+    p.add_argument("--depth-col", default="n_eff_0.8",
+                   help="Depth column to plot against (e.g. n_eff_0.8, n_eff_0.62, n_seqs).")
+    p.add_argument("--depth-metrics", default=",".join(_DEPTH_METRICS),
+                   help="Comma-separated metrics for the vs-depth plots "
+                        "(default: the LDDT family — the accuracy readout).")
+    p.set_defaults(func=lambda args: plot(
+        scores_csv=args.scores, out_dir=args.out,
+        msa_depth_csv=args.msa_depth, depth_col=args.depth_col,
+        depth_metrics=tuple(m.strip() for m in args.depth_metrics.split(",") if m.strip()),
+    ))

@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Per-protein wall-time vs sequence length for MarinFold 1.5B (this exp). Log-log; the pair-sweep is O(N\u00b2) so the slope is ~2."
+}

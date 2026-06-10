@@ -1,0 +1,5 @@
+{
+  "script": "plot_sample_stats.py",
+  "args": [],
+  "caption": "Three views of think-token cost. Left: total <think> tokens per doc (mean ~8). Middle: initial-run length k1 when the P=0.75 gate fires \u2014 distribution matches Geom(0.13). Right: # additional inter-statement runs \u2014 0..3 (matches int(Uniform(-4, 4)) clamped to 0)."
+}

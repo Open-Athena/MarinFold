@@ -2,12 +2,17 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb)
 
-Can a vanilla LLM predict protein structures if its training "documents" are structured
-in the right way? MarinFold aims to answer this question. Our models are trained
-from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
+Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
+MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
-This is a research codebase for an ongoing project. It is an experiment in open development.
-We do not currently have models that anyone should use!
+This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far. We do not currently have models that anyone should use!
+
+## Current performance
+
+<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_5way_swarm.png" alt="LDDT 5-way swarm plot" width="75%">
+<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_vs_protein_length_log.png" alt="LDDT vs protein length log plot" width="75%">
+
+The MarinFold models shown above were trained on `contacts-and-distances-v1`. The distogram was read-out by prompting with the sequence only and no inference time search was used.
 
 ## Try it out
 
@@ -49,6 +54,64 @@ uv run marinfold evaluate \
     --input tests/data/1QYS.cif \
     --out ~/preds.json \
     --out-plots ~/plots.pdf
+```
+
+## Document structures
+
+A **document structure** is a recipe for turning a protein structure
+into the token string a trained model sees (and back).
+`contacts-and-distances-v1` is our current format: a residue
+sequence followed by a mix of CB-CB contact statements and per-pair
+distance statements, with a per-structure pLDDT-bin token.
+
+Generate one document from a structure file:
+
+```bash
+cd marinfold
+uv sync
+uv run contacts-and-distances-v1 generate \
+    --input tests/data/1QYS.cif \
+    --out /tmp/docs.jsonl
+```
+
+The output is one row per input structure with a `document` field
+holding the token string (`.parquet` works too — pick by suffix).
+View the first document:
+
+```bash
+python -c "import json; print(json.loads(open('/tmp/docs.jsonl').readline())['document'])"
+```
+
+You'll see a single space-separated token string like:
+
+```
+<contacts-and-distances-v1> <begin_sequence> <M> <G> <D> <I> ... <begin_statements> <long-range-contact> <p3> <p82> <distance> <p7> <p41> <CA> <CB> <d12.5> ... <plddt_95_100> <end>
+```
+
+Point `--input` at a directory to batch over a whole set of
+structures (one document per input). See `contacts-and-distances-v1
+generate --help` for the algorithm knobs (contact cutoff, per-mode
+fractions, pLDDT filter, context-length budget).
+
+A second format, `contacts-v1`
+([SPEC.md](marinfold/marinfold/document_structures/contacts_v1/SPEC.md)),
+is contacts-only: a residue sequence — `<pN> <AA>` statements in
+random order, with `<n-term>`/`<c-term>` markers and residues numbered
+from a random start that wraps around 2000 indices — followed by
+`<contact>` statements for the strongest
+[pyconfind](https://github.com/timodonnell/pyconfind) side-chain
+contacts above a minimum degree (as many as fill the context budget),
+listed in random order. Generation needs the `contacts-v1` extra (pyconfind):
+
+```bash
+cd marinfold
+uv sync --extra contacts-v1
+# Eyeball documents + their contact tables in the terminal:
+uv run contacts-v1 view --input tests/data/1QYS.cif
+# Write documents (with protein-docs-style metadata columns) plus a
+# per-protein JSON summary (sequence, every contact's degree, truncation):
+uv run contacts-v1 generate --input tests/data/1QYS.cif \
+    --out /tmp/contacts_v1_docs.jsonl --summary-out /tmp/summary.json
 ```
 
 ## More details (mostly written by robots)
@@ -95,7 +158,7 @@ console script:
 
 ```bash
 cd marinfold
-uv sync --extra mlx --extra contacts-and-distances-v1
+uv sync --extra mlx
 uv run contacts-and-distances-v1 evaluate \
     --backend mlx --model 1B \
     --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
@@ -273,7 +336,8 @@ run name. (See `AGENTS.md` "HF bucket" for the splitting policy.)
 — first-class published text / tokenized corpora that levanter
 loads via `hf://datasets/` URIs. Long-tail / in-flight data
 artifacts go to the bucket instead.
-- **GCS** (`gs://marin-us-east5/<...>`) — large intermediate
+- **GCS** (`gs://marin-<region>/<...>`, co-located with the job's
+compute zone — see `AGENTS.md` "GCS bucket") — large intermediate
 artifacts produced by marin's executor (tokenized parquets,
 cached features, predictions).
 - **W&B** (`https://wandb.ai/open-athena/MarinFold`) — training and

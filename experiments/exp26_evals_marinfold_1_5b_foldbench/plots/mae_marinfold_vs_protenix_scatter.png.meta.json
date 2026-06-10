@@ -1,0 +1,5 @@
+{
+  "script": "plot_comparison.py",
+  "args": [],
+  "caption": "Paired per-protein mae_distogram_cb_angstrom scatter, 1.5B on the x-axis. Points below the y=x diagonal = comparator wins. The 1.5B-vs-1B panel is the headline view."
+}

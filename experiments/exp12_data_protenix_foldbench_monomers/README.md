@@ -100,8 +100,10 @@ experiments/exp12_data_protenix_foldbench_monomers/
 ├── distogram_hook.py   # forward-hook util that captures distogram_head logits
 ├── select_best.py      # per protein × mode: rank by ranking_score, link best
 ├── score.py            # MAE on expected distances + dRMSD on CA-CA distances
+├── msa_depth.py        # a3m parsing + N_eff (Meff) reweighting (pure, testable)
 ├── plot.py             # PNG plots from data/scores.csv (no notebook — see note)
 ├── data/scores.csv     # committed
+├── data/msa_depth.csv  # committed — per-protein MSA depth (n_seqs + N_eff)
 ├── plots/*.png         # committed
 ├── pyproject.toml
 └── tests/
@@ -384,6 +386,59 @@ only represents CB-CB):
 The 15 Å inclusion radius is well inside the distogram's expressible
 range (centers go up to 21.54 Å), so unlike the unfiltered distogram
 MAE there's no clipping bias to worry about for LDDT.
+
+### MSA depth (n_seqs + N_eff)
+
+Per-protein MSA depth, so downstream plots can show predictor accuracy
+as a function of how much homolog signal each target has. Computed from
+the merged unpaired MSA Protenix actually feeds the model
+(`{stem}/msa/0/0/non_pairing.a3m` on the `protenix-foldbench-msa`
+Volume). Depth is a property of the *protein*, not the mode/seed/sample,
+so it lives in its own [`data/msa_depth.csv`](data/msa_depth.csv) and is
+joined to `scores.csv` on `(pdb_id, chain_id)` at plot time.
+
+Implementation: [`msa_depth.py`](msa_depth.py) (pure numpy, unit-tested)
++ the `compute_msa_depth` Modal CPU function in
+[`modal_app.py`](modal_app.py). Two metrics:
+
+- **`n_seqs`** — raw number of sequences in the a3m (incl. the query as
+  record 0). The simple "total entries" count.
+- **`n_eff_0.8` / `n_eff_0.62`** — redundancy-reweighted effective count
+  (Meff) at 0.8 (AlphaFold2 / HHblits convention) and 0.62 (common in
+  the coevolution literature). Definitions, pinned:
+
+  - **Match-state extraction**: a3m uppercase + `-` are match columns
+    (aligned to the query); lowercase = insertions, dropped. Every
+    sequence then has length `L` = query length.
+  - **Pairwise identity** = (# columns both non-gap AND equal) / (# columns
+    both non-gap) — identity over the overlapping region, so a partial-
+    coverage fragment that matches its overlap clusters with the query
+    rather than looking distant because of its gaps.
+  - **Meff at threshold `t`**: `w_i = 1 / |{j : identity(i,j) ≥ t}|`
+    (the set includes `i`); `n_eff = Σ w_i`. Fully diverse → `n_eff == n_seqs`;
+    all-identical → `n_eff == 1`.
+
+CSV columns: `pdb_id, chain_id, stem, n_residues, query_len, n_seqs,
+n_eff_0.8, n_eff_0.62`. (`query_len` should equal `n_residues`; a
+mismatch flags an a3m/sequence inconsistency.)
+
+Generate it (CPU-only, reads the MSA Volume):
+
+```bash
+uv run python _scripts/compute_msa_depth.py --inputs inputs --out data/msa_depth.csv
+```
+
+Then add accuracy-vs-depth plots (`plots/{metric}_vs_msa_depth.png`,
+both modes, log-x depth). **Accuracy is read out as LDDT** (the LDDT
+family is the default `--depth-metrics`, led by LDDT-CA): it's bounded
+[0, 1] and length-robust, so it compares cleanly across proteins of
+different sizes — unlike raw RMSD/MAE. Override with `--depth-metrics`
+if you want a different metric on the y-axis.
+
+```bash
+uv run python cli.py plot --scores data/scores.csv --out plots/ \
+    --msa-depth data/msa_depth.csv --depth-col n_eff_0.8
+```
 
 ### Cross-model comparison (e.g. MarinFold-side scoring)
 
