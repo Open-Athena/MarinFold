@@ -198,15 +198,26 @@ Tokenization is durable (both caches persist under
 
 ## Success criteria
 
-We have a model training run launched and training. **Status: blocked at the
-trainer's cache read by the marin-latest regression above — code is complete and
-tokenization succeeds; the run reaches the trainer but cannot read the cache.**
+We have a model training run launched and training. **Status: ✅ MET.** The run
+is live on a v5p-8 @ us-east5-a and stepping with a healthy, decreasing loss
+(8.29 → 7.91 → 7.43 → 6.86 over the first steps; init ≈ ln(2845) = 7.95).
 
 ## Results
 
-_(Fill in after the run completes — W&B run URL, val-loss curve, any contact
-recapitulation numbers vs the prior contacts-and-distances-v1 1.5B.)_
+- **W&B run:** https://wandb.ai/open-athena/MarinFold/runs/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2
+  (run name `protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked`)
+- **Iris job:** `/bizon/iris-run-job-20260610-124627` (launched 2026-06-10)
+- **Outputs:** `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/`
+  — token caches under `tokenized/`, checkpoints under `checkpoints/…` every
+  2000 steps.
+- Token caches (built once, reused): train `tokenized/contacts-v1-663ba6`
+  (~4.7B tok), val `tokenized/contacts-v1-val-92827b` (41,954 docs).
+
+_(Fill in after the run completes — final/val loss curve, contact-recapitulation
+numbers vs the prior contacts-and-distances-v1 1.5B.)_
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+_(Fill in after results are in. Reminder: the `sitecustomize.py` shim + the
+`PYTHONPATH=/app` env are temporary workarounds for marin #6008/#6014 — remove
+them once the experiment is on a marin build that includes the fix.)_
