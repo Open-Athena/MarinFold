@@ -3,9 +3,15 @@ name = "exp71-models-hackathon-project-add-a-new-datasource"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11,<3.13"
 dependencies = [
+    "marin-core>=0.2.12.dev202606100934",
     "marin-fray>=0.2.12.dev202606100934",
     "marin-iris>=0.2.12.dev202606100934",
     "marin-levanter>=0.2.12.dev202606100934",
 ]
+
+[project.optional-dependencies]
+# Iris's remote worker runs `uv sync --all-packages --no-group dev`, so a
+# dev group must exist (even if empty) for --no-group to work.
+tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
