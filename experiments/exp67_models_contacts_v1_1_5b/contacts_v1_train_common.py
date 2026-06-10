@@ -187,6 +187,19 @@ def build_train_step(
         wandb_name: Explicit W&B run name (defaults to ``name`` when None).
         override_output_path: When set, pins the output directory.
     """
+    # The training pod logs to W&B (entity open-athena). marin's training entry
+    # raises unless WANDB_API_KEY is present in the pod's env_vars or os.environ
+    # — and the pod does NOT inherit the launching shell's env, so we forward the
+    # key explicitly here. It's read from the driver's environment (set it at
+    # launch with `iris ... -e WANDB_API_KEY <key>`), never hard-coded, so no
+    # secret lands in git. If unset, we omit it (and the run will fail fast with
+    # marin's clear "WANDB_API_KEY must be set" message rather than silently
+    # logging nowhere).
+    env_vars = {"WANDB_ENTITY": "open-athena"}
+    _wandb_key = os.environ.get("WANDB_API_KEY")
+    if _wandb_key:
+        env_vars["WANDB_API_KEY"] = _wandb_key
+
     train_config = SimpleTrainConfig(
         resources=resources,
         train_batch_size=train_batch_size,
@@ -199,7 +212,7 @@ def build_train_step(
         steps_per_export=steps_per_export,
         max_eval_batches=max_eval_batches,
         data_seed=versioned(data_seed),
-        env_vars={"WANDB_ENTITY": "open-athena"},
+        env_vars=env_vars,
     )
 
     contacts_v1_data = LmDataConfig(
