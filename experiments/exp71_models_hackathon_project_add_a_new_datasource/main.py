@@ -45,13 +45,13 @@ from marin.execution.executor import executor_main, versioned
 from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
 
 # Architecture matches train_protein_1b.py exactly.
-protein_llama_1b = LlamaConfig(
+protein_llama = LlamaConfig(
     max_seq_len=8192,
-    hidden_dim=2048,
-    intermediate_dim=8192,
-    num_heads=32,
+    hidden_dim=1024,
+    intermediate_dim=4028,
+    num_heads=8,
     num_kv_heads=8,
-    num_layers=16,
+    num_layers=8,
 )
 
 HF_DATASET_BASE = "hf://datasets/timodonnell/protein-docs@main"
@@ -187,7 +187,7 @@ train_config = SimpleTrainConfig(
 protein_model_1b_all_docs_unmasked = default_train(
     name="protein-contacts-1b-3.5e-4-all-docs-unmasked",
     tokenized=protein_docs_data,
-    model_config=protein_llama_1b,
+    model_config=protein_llama,
     train_config=train_config,
     tags=["protein", "all-docs", "1b", "llama", "unmasked"],
     eval_harness_tasks=[],
