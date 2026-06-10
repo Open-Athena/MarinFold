@@ -44,7 +44,7 @@ from experiments.simple_train_config import SimpleTrainConfig
 from marin.execution.executor import executor_main, versioned
 from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
 
-# Architecture matches train_protein_1b.py exactly.
+# Small llama model we can iterate on.
 protein_llama = LlamaConfig(
     max_seq_len=8192,
     hidden_dim=1024,
