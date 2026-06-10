@@ -155,23 +155,36 @@ trainer**, then the training pod dies reading the token cache:
 ValueError: Sharded cache ledger missing input_ids/0 count for shard part-00000-of-00133
 ```
 
-Diagnosis (verified by reading the cache ledgers on GCS): the marin tokenize
-step writes `shard_ledger.json` with `field_counts_by_shard[<shard>] =
-{"input_ids": <n>}`, but levanter's training-time cache reader
-(`levanter/store/cache.py:_build_flat_field_offsets_async`) looks up the field
-as **`input_ids/0`** (a tree leaf-path) and raises when that key is absent. Both
-the train and val caches use the flat `input_ids` key, and a single
-`marin-levanter` version writes and reads them — so this is a writer/reader
-field-naming **regression in the floating `marin-latest` (0.99.dev20260529)**,
-not an experiment-config issue. exp0 never hit it because it always cache-skips
-its tokenize (`override_output_path`); exp67 is the first run to do a *fresh*
-tokenize→train on current marin-latest.
+**Root cause (already fixed upstream — do NOT file a new issue):** marin's
+tokenize computes the consolidation exemplar with `_exemplar_for`
+(`marin/processing/tokenize/tokenize.py:256` in `0.99.dev20260529`), which
+produces a field layout that disagrees with what marin-levanter's reader
+reconstructs from `processor.output_exemplar`. On disk everything is the flat
+`input_ids` (data dir `part-*/input_ids`, ledger `field_counts[input_ids]`), but
+the reader walks the exemplar tree and addresses the field as the leaf-path
+**`input_ids/0`** (`levanter/store/cache.py:558`,
+`jtu.tree_map_with_path(field_store, self._cache._exemplar)`), so
+`_build_flat_field_offsets_async` raises. This is marin issue
+[#6008](https://github.com/marin-community/marin/issues/6008) ("Remove
+`_exemplar_for` from tokenize"), **CLOSED, fixed by
+[#6014](https://github.com/marin-community/marin/pull/6014) (merged
+2026-06-02)** — which drops `_exemplar_for` and derives the exemplar from the
+shards so writer and reader agree.
 
-**Tokenization is durable** (both caches are built and reused on restart, under
-`…/exp67_contacts_v1_1_5b/tokenized/…`), so the fix is purely the marin/levanter
-version: pin marin to a snapshot where tokenize and train agree on the ledger
-field key (e.g. whatever the carefully-tuned #61 run uses), or land an upstream
-fix. Pending a version decision. (6 of the issue's ≤10 allowed test runs used.)
+**Why we still hit it:** every marin `*-latest` wheel on the find-links mirror
+is frozen at **2026-05-29** (verified across all release tags), i.e. ~4 days
+*before* #6014 merged. exp0 never hit the bug because it always cache-skips its
+tokenize (`override_output_path`); exp67 is the first *fresh* tokenize→train on
+this snapshot.
+
+**Fix = a marin build with #6014** (then a one-time re-tokenize). Options, in
+order of preference: (a) ping the marin team to rebuild the `marin-latest`
+wheel (the fix is already merged); (b) install `marin` from git `main`
+(risk: monorepo version skew with the May-29 marin-levanter/iris wheels).
+**Tokenization is durable** — both caches persist under
+`…/exp67_contacts_v1_1_5b/tokenized/…` — but the caches were written by the buggy
+tokenizer, so they must be rebuilt once marin is upgraded. (6 of the issue's
+≤10 allowed test runs used.)
 
 ## Success criteria
 
