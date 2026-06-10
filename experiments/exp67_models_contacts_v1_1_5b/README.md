@@ -95,7 +95,10 @@ match reality; the resolutions are baked into the code:
    `open-athena/contacts-v1-tokenizer`, but that repo was never created — the
    workstation HF token lacks open-athena org-create perms. exp53 published the
    canonical, levanter-loadable copy under `timodonnell/` (2845 vocab, all
-   tokenizer files). We pin it by commit: `timodonnell/contacts-v1-tokenizer@5d68a24a899f`.
+   tokenizer files). It is referenced **without** a `@<sha>` revision suffix:
+   levanter's training loader accepts `repo@rev`, but the marin *tokenize* step
+   loads via `huggingface_hub`, which rejects the suffix (`HFValidationError`).
+   exp0 could pin only because its tokenize step was cache-skipped.
 
 2. **Eval runs over the full val split, not a `max_eval_batches` head.** The
    plan assumed `max_eval_batches` would yield a *shuffled* ~5K-doc eval. It

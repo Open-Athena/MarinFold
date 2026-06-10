@@ -59,14 +59,20 @@ from marinfold_models.simple_train_config import SimpleTrainConfig
 CONTACTS_V1_MARIN_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b"
 os.environ["MARIN_PREFIX"] = CONTACTS_V1_MARIN_PREFIX
 
-# contacts-v1 tokenizer, pinned to a specific commit so a future re-push of the
-# repo can't poison the revision-keyed local cache (same rationale as exp0's
-# pin of protein-docs-tokenizer). 2845 vocab tokens; verified loadable by
-# transformers/levanter. NOTE: the contacts-v1 SPEC / cli.py ``--push`` example
+# contacts-v1 tokenizer (2845 vocab tokens; verified loadable by
+# transformers/levanter). NOTE: the contacts-v1 SPEC / cli.py ``--push`` example
 # points at ``open-athena/contacts-v1-tokenizer``, but that repo was never
 # created — the workstation HF token lacks open-athena org-create perms — so
 # exp53 published the canonical, levanter-loadable copy under ``timodonnell/``.
-CONTACTS_V1_TOKENIZER = "timodonnell/contacts-v1-tokenizer@5d68a24a899f"
+#
+# NOT pinned with a ``@<sha>`` revision suffix: levanter's training-side
+# ``load_tokenizer`` accepts ``repo@rev``, but the marin *tokenize* step loads
+# the tokenizer through ``huggingface_hub`` directly, which rejects the ``@rev``
+# suffix with HFValidationError ("Repo id must use alphanumeric chars…"). exp0
+# could pin (``protein-docs-tokenizer@83f597d8``) only because its tokenize step
+# was cache-skipped. The repo is stable (single commit, owned by us), so the
+# unpinned id is safe here.
+CONTACTS_V1_TOKENIZER = "timodonnell/contacts-v1-tokenizer"
 
 # contacts-v1 corpus tokenize INPUT. We read the parquet directly from its
 # region-local GCS working copy (written by exp53), NOT the published HF bucket
