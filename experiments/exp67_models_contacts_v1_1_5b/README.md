@@ -140,9 +140,44 @@ match reality; the resolutions are baked into the code:
      explicitly to this experiment's `dependencies` (it's on the marin
      find-links mirror).
 
+6. **WANDB_API_KEY forwarded into the training pod.** marin's training entry
+   raises unless the key is in the pod's `env_vars`/`os.environ`, and the pod
+   does not inherit the launching shell's env. `build_train_step` reads the key
+   from the driver's environment and threads it into `env_vars` (never
+   hard-coded). Launch with `iris ... -e WANDB_API_KEY <key>`.
+
+## ⚠️ Current blocker (open): marin-latest tokenize↔train cache mismatch
+
+As of 2026-06-10 the run gets **all the way through tokenization and into the
+trainer**, then the training pod dies reading the token cache:
+
+```
+ValueError: Sharded cache ledger missing input_ids/0 count for shard part-00000-of-00133
+```
+
+Diagnosis (verified by reading the cache ledgers on GCS): the marin tokenize
+step writes `shard_ledger.json` with `field_counts_by_shard[<shard>] =
+{"input_ids": <n>}`, but levanter's training-time cache reader
+(`levanter/store/cache.py:_build_flat_field_offsets_async`) looks up the field
+as **`input_ids/0`** (a tree leaf-path) and raises when that key is absent. Both
+the train and val caches use the flat `input_ids` key, and a single
+`marin-levanter` version writes and reads them — so this is a writer/reader
+field-naming **regression in the floating `marin-latest` (0.99.dev20260529)**,
+not an experiment-config issue. exp0 never hit it because it always cache-skips
+its tokenize (`override_output_path`); exp67 is the first run to do a *fresh*
+tokenize→train on current marin-latest.
+
+**Tokenization is durable** (both caches are built and reused on restart, under
+`…/exp67_contacts_v1_1_5b/tokenized/…`), so the fix is purely the marin/levanter
+version: pin marin to a snapshot where tokenize and train agree on the ledger
+field key (e.g. whatever the carefully-tuned #61 run uses), or land an upstream
+fix. Pending a version decision. (6 of the issue's ≤10 allowed test runs used.)
+
 ## Success criteria
 
-We have a model training run launched and training.
+We have a model training run launched and training. **Status: blocked at the
+trainer's cache read by the marin-latest regression above — code is complete and
+tokenization succeeds; the run reaches the trainer but cannot read the cache.**
 
 ## Results
 
