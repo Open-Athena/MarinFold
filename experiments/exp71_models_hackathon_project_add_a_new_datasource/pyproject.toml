@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "marin-fray>=0.2.12.dev202606100934",
     "marin-iris>=0.2.12.dev202606100934",
     "marin-levanter>=0.2.12.dev202606100934",
 ]

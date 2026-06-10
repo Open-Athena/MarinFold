@@ -768,12 +768,14 @@ name = "exp71-models-hackathon-project-add-a-new-datasource"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "marin-fray" },
     { name = "marin-iris" },
     { name = "marin-levanter" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "marin-fray", specifier = ">=0.2.12.dev202606100934" },
     { name = "marin-iris", specifier = ">=0.2.12.dev202606100934" },
     { name = "marin-levanter", specifier = ">=0.2.12.dev202606100934" },
 ]
