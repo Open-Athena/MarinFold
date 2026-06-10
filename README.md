@@ -102,6 +102,11 @@ uv run contacts-and-distances-v1 evaluate \
     --out /tmp/metrics.json
 ```
 
+## Colab Notebooks
+
+- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run the current `1B` or `1.5B` model with `vllm` and plot ground-truth vs predicted distance heatmaps.
+- [Inspect Data 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inspect_data1.ipynb) — browse legacy `timodonnell/protein-docs` subsets plus newer `open-athena/MarinFold` bucket parquet data, with sample documents and parquet schema previews.
+
 ## Layout
 
 ```
