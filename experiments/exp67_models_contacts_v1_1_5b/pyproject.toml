@@ -1,0 +1,70 @@
+[project]
+name = "exp67-models-contacts-v1-1-5b"
+version = "0.1.0"
+description = "Quick 1.5B Llama run on the contacts-v1 corpus (unmasked next-token loss, shuffled) — issue #67."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marin",
+    "marin-levanter",
+    "marin-iris",
+    "marin-zephyr",
+    "marin-rigging",
+    "marinfold-models",
+    # marin.processing.tokenize -> marin.datakit.normalize imports `dupekit`
+    # unconditionally, but the current marin wheel doesn't declare it as a
+    # dependency, so it isn't pulled transitively. It lives on the marin
+    # find-links mirror (see [tool.uv].find-links below). Pin it explicitly.
+    "dupekit",
+    # protein_distogram_eval.py:
+    "fsspec",
+    "numpy",
+    "pyarrow",
+    "transformers",
+    "tokenizers",
+]
+
+[project.optional-dependencies]
+tpu = ["marin[tpu]; sys_platform == 'linux'"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# This pyproject only exists so `uv sync` can resolve the venv — the
+# experiment itself is a collection of scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4",
+    "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.22",
+    "wheel>=0.46.2",
+    "datasets>=3.1.0,<4.0.0",
+    "equinox>=0.11.10",
+]
+
+find-links = [
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-haliax-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-levanter-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-iris-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-zephyr-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-rigging-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-fray-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-finelog-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/dupekit-0.1.0-40ac799",
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+marinfold-models = { path = "../../models" }

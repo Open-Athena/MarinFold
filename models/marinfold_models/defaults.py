@@ -38,7 +38,13 @@ from levanter.trainer import TrainerConfig
 from levanter.utils import fsspec_utils
 from levanter.utils.mesh import MeshConfig
 from marin.evaluation.evaluation_config import EvalTaskConfig, convert_to_levanter_task_config
-from marin.execution.executor import (
+# Import the version/path helpers from the ``marin.execution`` package root
+# rather than the ``.executor`` submodule. Current marin (0.99.dev2026xxxx)
+# only re-exports ``versioned`` / ``ensure_versioned`` / ``this_output_path`` /
+# ``output_path_of`` from ``marin.execution.types`` via the package ``__init__``;
+# importing them from ``.executor`` (as the original vendored copy did) now
+# raises ImportError. The package root is the stable public surface.
+from marin.execution import (
     ExecutorStep,
     InputName,
     VersionedValue,
