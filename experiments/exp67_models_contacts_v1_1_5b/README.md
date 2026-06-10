@@ -107,7 +107,25 @@ match reality; the resolutions are baked into the code:
    val split each eval (`max_eval_batches=None`) — unbiased, real cluster-level
    holdout, ~6% compute overhead. (Decision confirmed with Tim.)
 
-3. **Two dependency-drift fixes** (current floating `marin-latest` is
+3. **Tokenize reads GCS, not the HF bucket.** The corpus is *published* to the
+   HF bucket `hf://buckets/open-athena/MarinFold/.../contacts_v1/`, but HF
+   buckets are **not `HfFileSystem`-addressable**: levanter's fsspec on the
+   worker resolves `open-athena/MarinFold` as a dataset/model repo and 404s
+   (`repository not found`), so the tokenize step never reads a byte. We point
+   the tokenizer at the byte-identical, region-local (us-east5) GCS working
+   copy instead — `gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/<split>/*.parquet`
+   — with an explicit `*.parquet` glob so neither marin nor levanter falls back
+   to the default `**/*.json.gz` pattern. (exp0 didn't hit this because it read
+   an `hf://datasets/` *repo*, which the HF datasets loader handles.)
+
+4. **All executor output pinned under `protein-structure/`** via `MARIN_PREFIX`
+   (force-set in `contacts_v1_train_common.py`): token caches, checkpoints, and
+   HF exports land under
+   `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/…`,
+   never the top-level `gs://marin-us-east5/{tokenized,checkpoints}/…` (which
+   belong to the marin protein-experiments convention, per AGENTS.md).
+
+5. **Two dependency-drift fixes** (current floating `marin-latest` is
    `0.99.dev20260529`, newer than when exp0 was written):
    - `models/marinfold_models/defaults.py` imported `versioned` /
      `ensure_versioned` / `this_output_path` / `unwrap_versioned_value` from the

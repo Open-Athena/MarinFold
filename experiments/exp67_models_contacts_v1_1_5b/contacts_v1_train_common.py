@@ -9,9 +9,10 @@ next-token loss (no distance-bin loss mask — contacts-v1 has no ``<distance>``
 statements). Every training script in this directory shares:
 
 * The contacts-v1 tokenizer (2845 tokens), pinned to a commit.
-* The ``contacts_v1`` train/val parquets published to the open-athena HF bucket
-  (and the marin tokenize steps that materialize their token caches — sharing
-  the steps here means all runs reuse one cache).
+* The ``contacts_v1`` train/val parquets — read from their region-local GCS
+  working copy (the HF *bucket* publish isn't levanter-addressable; see
+  ``GCS_CORPUS_BASE`` below) — and the marin tokenize steps that materialize
+  their token caches (sharing the steps here means all runs reuse one cache).
 * The TPU resource config pinned to ``us-east5-a`` (co-located with the
   ``marin-us-east5`` checkpoint bucket).
 * **Shuffling** of the training data: the corpus shards are physically
@@ -67,9 +68,18 @@ os.environ["MARIN_PREFIX"] = CONTACTS_V1_MARIN_PREFIX
 # exp53 published the canonical, levanter-loadable copy under ``timodonnell/``.
 CONTACTS_V1_TOKENIZER = "timodonnell/contacts-v1-tokenizer@5d68a24a899f"
 
-# contacts-v1 corpus, published by exp53 to the open-athena MarinFold HF bucket.
-# Splits: train / val / test; one text column ``document`` per row.
-HF_DATASET_BASE = "hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1"
+# contacts-v1 corpus tokenize INPUT. We read the parquet directly from its
+# region-local GCS working copy (written by exp53), NOT the published HF bucket
+# at hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1/.
+# Reason: HF *buckets* are NOT HfFileSystem-addressable, so levanter's fsspec on
+# the iris worker resolves `open-athena/MarinFold` as a dataset/model repo and
+# 404s ("repository not found") — the tokenize step fails before reading a byte.
+# The GCS copy is byte-identical, co-located with the TPU (us-east5), and plain
+# gcsfs-globbable. Splits train / val / test; one text column ``document``.
+# The ``*.parquet`` glob is explicit (not a bare dir) so neither marin's
+# expand_tokenize_paths nor levanter's URL globber falls back to the default
+# ``**/*.json.gz`` pattern (which matches nothing here).
+GCS_CORPUS_BASE = "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents"
 
 # Fixed seed for the training-data shuffle (and the marin executor versions it,
 # so changing it forces a fresh run rather than silently reusing a cache).
@@ -94,13 +104,13 @@ PROTEIN_RESOURCES_USE5 = ResourceConfig.with_tpu(
 # step hash.
 contacts_v1_tokenized = default_tokenize(
     name="contacts-v1",
-    dataset=f"{HF_DATASET_BASE}/train/",
+    dataset=f"{GCS_CORPUS_BASE}/train/*.parquet",
     tokenizer=CONTACTS_V1_TOKENIZER,
     format=TextLmDatasetFormat(text_key="document"),
 )
 contacts_v1_val_tokenized = default_tokenize(
     name="contacts-v1-val",
-    dataset=f"{HF_DATASET_BASE}/val/",
+    dataset=f"{GCS_CORPUS_BASE}/val/*.parquet",
     tokenizer=CONTACTS_V1_TOKENIZER,
     format=TextLmDatasetFormat(text_key="document"),
     is_validation=True,
@@ -257,7 +267,7 @@ def build_hf_export_step(
 
 __all__ = [
     "CONTACTS_V1_TOKENIZER",
-    "HF_DATASET_BASE",
+    "GCS_CORPUS_BASE",
     "PROTEIN_RESOURCES_USE5",
     "build_hf_export_step",
     "build_train_step",
