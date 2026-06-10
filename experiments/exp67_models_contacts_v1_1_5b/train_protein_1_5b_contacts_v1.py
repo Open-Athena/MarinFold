@@ -18,11 +18,15 @@ but with two deliberate changes for contacts-v1:
 Length: 1 epoch ≈ 4,490 steps (train ≈ 4.7B tok / (128 × 8192 = 1.05M tok/step));
 ``num_train_steps=12_000`` is ~2.7 epochs.
 
+All executor output (token caches + checkpoints) is pinned under
+``gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b`` via
+``MARIN_PREFIX`` (force-set in ``contacts_v1_train_common``).
+
 Usage::
 
-    uv run iris --config=lib/iris/examples/marin.yaml job run \\
-        --memory=16GB --disk=16GB --cpu=1 --extra=tpu --zone=us-east5-a -- \\
-        python -m train_protein_1_5b_contacts_v1
+    uv run iris --cluster marin job run --no-wait --enable-extra-resources \\
+        --memory=16GB --disk=16GB --cpu=1 --extra=tpu --zone=us-east5-a \\
+        -- python -m train_protein_1_5b_contacts_v1
 """
 
 from levanter.models.llama import LlamaConfig

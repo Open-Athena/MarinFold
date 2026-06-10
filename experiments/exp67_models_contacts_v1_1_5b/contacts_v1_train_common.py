@@ -35,6 +35,7 @@ and schedule on top of these shared bits.
 """
 
 import dataclasses
+import os
 from collections.abc import Sequence
 
 from fray import ResourceConfig
@@ -45,6 +46,17 @@ from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
 
 from marinfold_models.defaults import default_tokenize, default_train
 from marinfold_models.simple_train_config import SimpleTrainConfig
+
+# Pin ALL marin-executor output — token caches AND checkpoints AND HF exports —
+# under the MarinFold protein-structure prefix, per AGENTS.md. The executor
+# takes its output prefix from the MARIN_PREFIX env var; left unset it defaults
+# to the top level of the bucket, scattering artifacts into
+# gs://marin-us-east5/{tokenized,checkpoints}/... which belong to the marin
+# protein-experiments convention, NOT ours. We force-set it here (at import,
+# before any default_tokenize / default_train constructs an output path) so
+# every entry point in this dir — train and export — lands under one prefix.
+CONTACTS_V1_MARIN_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b"
+os.environ["MARIN_PREFIX"] = CONTACTS_V1_MARIN_PREFIX
 
 # contacts-v1 tokenizer, pinned to a specific commit so a future re-push of the
 # repo can't poison the revision-keyed local cache (same rationale as exp0's

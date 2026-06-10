@@ -25,6 +25,22 @@ dependencies = [
 
 [project.optional-dependencies]
 tpu = ["marin[tpu]; sys_platform == 'linux'"]
+# The marin executor builds the CPU-only tokenize sub-job with `--extra cpu`
+# (default_tokenize -> remote(..., pip_dependency_groups=["cpu"])), so this
+# extra must exist in the experiment's pyproject. exp0 never needed it because
+# it pins override_output_path to a pre-existing token cache (tokenize skipped);
+# exp67 tokenizes a fresh corpus, so the step actually runs. `marin[cpu]` pulls
+# the CPU jax build used for tokenization; it also hard-requires torch /
+# torchvision (unused at runtime — tokenize sets USE_TORCH=0 — but they must
+# resolve). torch/torchvision are inlined here (NOT just left transitive)
+# because uv source maps don't propagate through transitive extras, so the
+# `pytorch-cpu` index routing below only applies to direct deps. Mirrors the
+# exp26 foldbench pattern.
+cpu = [
+    "marin[cpu]",
+    "torch==2.10.0",
+    "torchvision==0.25.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
 
 [dependency-groups]
 dev = []
@@ -65,8 +81,20 @@ find-links = [
 name = "marin-resiliparse"
 url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
+# pytorch-cpu is where the `+cpu` local-version wheels live (torch and
+# torchvision), required by marin's `cpu` extra. `explicit = true` so it's
+# only consulted for packages routed to it below. Mirrors exp26.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [tool.uv.sources]
 resiliparse = { index = "marin-resiliparse" }
+# Route torch / torchvision through pytorch-cpu for the `cpu` extra so the
+# `+cpu` local-version wheels resolve.
+torch = [{ index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
 # Resolve marinfold-models from git (the `models/` subdirectory), NOT a local
 # `path = "../../models"`. Iris bundles only this experiment dir (`git ls-files`
 # from cwd), so a relative path that escapes the dir fails on the worker with

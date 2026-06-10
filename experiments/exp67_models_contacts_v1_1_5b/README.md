@@ -64,13 +64,26 @@ tok/step)). `num_train_steps=12_000` ≈ **2.7 epochs**. `steps_per_eval=250`,
 - `train_protein_1_5b_contacts_v1.py` — the 1.5B training step (entry point).
 - `export_protein_1_5b_contacts_v1.py` — CPU HF-export of a checkpoint.
 
-**Launch** (≤10 test runs allowed per the issue):
+**Output location** — all executor artifacts (token caches, checkpoints, HF
+exports) are pinned under one prefix via `MARIN_PREFIX` (force-set in
+`contacts_v1_train_common.py`), per AGENTS.md — never the top-level
+`gs://marin-us-east5/{tokenized,checkpoints}/…`:
+`gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/…`.
+
+**Launch** (≤10 test runs allowed per the issue) — from the experiment dir, on
+the marin cluster:
 
 ```
-uv run iris --config=lib/iris/examples/marin.yaml job run \
-    --memory=16GB --disk=16GB --cpu=1 --extra=tpu --zone=us-east5-a -- \
-    python -m train_protein_1_5b_contacts_v1
+cd experiments/exp67_models_contacts_v1_1_5b
+uv run iris --cluster marin job run --no-wait --enable-extra-resources \
+    --memory=16GB --disk=16GB --cpu=1 --extra=tpu --zone=us-east5-a \
+    -- python -m train_protein_1_5b_contacts_v1
 ```
+
+The CPU driver runs `executor_main`, which provisions the v5p-8 itself and
+launches the tokenize sub-jobs (built with `--extra cpu`) then the training pod
+(built with `--extra tpu`). Monitor with
+`uv run iris --cluster marin job logs <JOB_ID> --since-seconds 600`.
 
 ## Implementation notes & decisions
 
