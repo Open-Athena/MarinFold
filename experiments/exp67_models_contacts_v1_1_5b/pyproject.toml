@@ -67,4 +67,13 @@ url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
 resiliparse = { index = "marin-resiliparse" }
-marinfold-models = { path = "../../models" }
+# Resolve marinfold-models from git (the `models/` subdirectory), NOT a local
+# `path = "../../models"`. Iris bundles only this experiment dir (`git ls-files`
+# from cwd), so a relative path that escapes the dir fails on the worker with
+# "cannot normalize a relative path beyond the base directory: /app/../../models".
+# A git source is fetched on the worker, exactly like exp53's `marinfold` dep.
+# Pinned to this experiment's branch because it carries the marin-API-drift fix
+# in defaults.py (see README "Implementation notes"); retarget to `main` (or a
+# tag/commit) once this PR merges. For local iteration, override with
+#   uv sync --extra tpu  (after `uv pip install --reinstall-package marinfold-models ../../models`)
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", branch = "exp/67-contacts-v1-1_5b" }
