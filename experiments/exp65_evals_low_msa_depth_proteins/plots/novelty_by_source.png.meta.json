@@ -1,0 +1,5 @@
+{
+  "script": "summarize_novelty.py",
+  "args": [],
+  "caption": "Fold-novelty of each candidate source vs the 1.33M AFDB-24M training representatives (exp41 Foldseek query; qtmscore verdict, redundant>=0.9 / same_fold>=0.5 / novel_fold). Compare to FoldBench-100's 1/100 novel."
+}

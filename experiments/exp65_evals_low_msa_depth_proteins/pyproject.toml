@@ -1,0 +1,26 @@
+[project]
+name = "exp65-evals-low-msa-depth-proteins"
+version = "0.1.0"
+description = "Fetch structurally-novel / low-MSA candidate proteins (PDB de novo, CASP FM, CAMEO hard) for the MarinFold eval set."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # HTTP for the RCSB search API, RCSB file server, the CASP download
+    # area, and CAMEO. Matches exp12's prepare_inputs.py download idiom.
+    "requests>=2.31",
+    # Residue counting / chain parsing of the fetched mmCIF + PDB files.
+    "gemmi>=0.6",
+    # msa_depth.py (Neff) is numpy-only; manifests + any later joins use pandas.
+    "numpy",
+    "pandas>=2.2",
+    # summary.pdf.
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv]
+package = false
+environments = [
+    "sys_platform == 'linux'",
+]
