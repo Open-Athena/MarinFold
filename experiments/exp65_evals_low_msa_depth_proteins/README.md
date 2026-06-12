@@ -105,9 +105,15 @@ per-protein table ([`data/candidate_2d_label.csv`](data/candidate_2d_label.csv))
 | **Fold novelty** | Foldseek TM vs the 1.33M AFDB-24M train reps (exp41 tool) | `query_similarity.py` (exp41) | `data/*_vs_afdb_reps_similarity.csv` |
 | **Sequence leakage** | MMseqs2 vs the same reps' sequences (≥30% id, ≥50% cov to a *train* rep) | `seq_leakage.py` | `data/candidate_seq_leakage.csv` |
 | **MSA depth (Neff)** | ColabFold MMseqs2 MSA (no Modal) → effective homolog count | `fetch_msa_colabfold.py` + `msa_depth.py` | `data/candidate_msa_depth.csv` |
-| **merge** | join the three by candidate; crosstabs | `combine_axes.py` | `data/candidate_2d_label.csv` |
+| **merge** | join the three by candidate (+ `deposit_date` from each source manifest); crosstabs | `combine_axes.py` | `data/candidate_2d_label.csv` |
 
 Sequences are pulled from the structures by `extract_sequences.py`.
+
+`candidate_2d_label.csv` also carries each candidate's `deposit_date` (the
+temporal axis, joined from the per-source manifests by source + stem, so the
+three de-novo/CAMEO cross-listings each keep their own date). CASP FM rows are
+blank — those domains come from the prediction-center tarballs and carry no PDB
+deposition date.
 
 ## Results
 
