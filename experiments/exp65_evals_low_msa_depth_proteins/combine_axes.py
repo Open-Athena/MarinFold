@@ -8,6 +8,7 @@ Pulls together, per candidate:
 - **sequence leakage** vs training (``candidate_seq_leakage.csv``)
 - **MSA depth** Neff tier (``candidate_msa_depth.csv``; optional, "pending"
   until ``fetch_msa_colabfold.py`` + ``msa_depth.py`` have run)
+- **deposit date** (the temporal axis; from each source's ``*_manifest.csv``)
 
 and writes ``data/candidate_2d_label.csv`` plus prints the headline crosstabs
 (``notes/low-msa-eval-curation.md`` §6: the hardest cell is novel-fold ×
@@ -26,6 +27,17 @@ SIM_CSVS = {
     "denovo_pdb": DATA / "denovo_vs_afdb_reps_similarity.csv",
     "casp_fm": DATA / "casp_fm_vs_afdb_reps_similarity.csv",
     "cameo_hard": DATA / "cameo_hard_vs_afdb_reps_similarity.csv",
+}
+# Per-source manifests carry deposit_date (the temporal axis). Keyed by the
+# candidate_sequences.csv source label -- not the manifest's own ``source``
+# column (CASP records ``casp14_fm``/``casp15_fm`` there) -- so the three stems
+# cross-listed in de novo *and* CAMEO each take their own source's date. CASP
+# manifests have no deposition date (domains come from tarballs), so those rows
+# stay blank.
+MANIFEST_CSVS = {
+    "denovo_pdb": DATA / "denovo_pdb_manifest.csv",
+    "casp_fm": DATA / "casp_fm_manifest.csv",
+    "cameo_hard": DATA / "cameo_hard_manifest.csv",
 }
 
 
@@ -94,6 +106,7 @@ def main() -> None:
     leak = load_keyed(DATA / "candidate_seq_leakage.csv")
     depth = load_keyed(DATA / "candidate_msa_depth.csv")
     have_depth = bool(depth)
+    deposit = {src: load_keyed(path) for src, path in MANIFEST_CSVS.items()}
 
     rows = []
     for s in seqs:
@@ -105,6 +118,7 @@ def main() -> None:
         tier = neff_tier(neff) if have_depth else "pending"
         rows.append({
             "dataset": source, "stem": stem, "pdb_id": pdb, "length": s["length"],
+            "deposit_date": deposit.get(source, {}).get(stem, {}).get("deposit_date", ""),
             "fold_verdict": f.get("fold_verdict", "missing"),
             "nearest_train_fold_qtm": f.get("best_train_qtm", ""),
             "seq_leakage": lk.get("verdict", "missing"),
@@ -115,8 +129,9 @@ def main() -> None:
         })
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    fields = ["dataset", "stem", "pdb_id", "length", "fold_verdict", "nearest_train_fold_qtm",
-              "seq_leakage", "nearest_train_seq_fident", "msa_n_seqs", "msa_neff", "neff_tier"]
+    fields = ["dataset", "stem", "pdb_id", "length", "deposit_date", "fold_verdict",
+              "nearest_train_fold_qtm", "seq_leakage", "nearest_train_seq_fident",
+              "msa_n_seqs", "msa_neff", "neff_tier"]
     with args.out.open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=fields)
         w.writeheader()
