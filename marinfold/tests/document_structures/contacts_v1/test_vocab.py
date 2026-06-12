@@ -20,10 +20,13 @@ from marinfold.document_structures.contacts_v1.vocab import (
     NAME,
     NATIVE_TOKENS,
     NUM_POSITION_INDICES,
+    SEQUENCE_ONLY_DOC_TYPE_TOKEN,
+    SEQUENCE_ONLY_TOKENS,
     additional_tokens,
     all_domain_tokens,
     contacts_v1_native_tokens,
     position_token,
+    sequence_only_tokens,
 )
 
 
@@ -78,19 +81,46 @@ def test_token_order_invariants():
     assert tokens[5] == "<contacts-and-distances-v1>"
 
 
+def test_sequence_only_token_is_appended_last():
+    # The sequence-only doc type is minted by contacts-v1 but appended after
+    # the contacts-and-distances-v1 block (append-only), so it is NOT one of
+    # the 5 native tokens and NOT part of the reused c-and-d-v1 block.
+    tokens = all_domain_tokens()
+    assert SEQUENCE_ONLY_DOC_TYPE_TOKEN == "<contacts-v1.sequence_only>"
+    assert SEQUENCE_ONLY_TOKENS == [SEQUENCE_ONLY_DOC_TYPE_TOKEN]
+    assert sequence_only_tokens() == [SEQUENCE_ONLY_DOC_TYPE_TOKEN]
+    assert tokens[-1] == SEQUENCE_ONLY_DOC_TYPE_TOKEN
+    assert SEQUENCE_ONLY_DOC_TYPE_TOKEN not in NATIVE_TOKENS
+    assert SEQUENCE_ONLY_DOC_TYPE_TOKEN not in additional_tokens()
+    # Dropping the trailing token recovers exactly the original native +
+    # c-and-d-v1 vocabulary, in order — i.e. every pre-existing id is intact.
+    assert tokens[:-1] == [*contacts_v1_native_tokens(), *additional_tokens()]
+
+
+def test_sequence_only_token_takes_the_final_id_only():
+    # Adding the token preserved every pre-existing id: the contacts-v1 doc
+    # type is still id 2 and the c-and-d-v1 block still starts at id 7; the
+    # new token simply occupies the final id.
+    tok = build_tokenizer(all_domain_tokens())
+    assert tok.convert_tokens_to_ids(SEQUENCE_ONLY_DOC_TYPE_TOKEN) == len(tok) - 1
+    assert tok.convert_tokens_to_ids("<contacts-v1>") == 2
+    assert tok.convert_tokens_to_ids("<contacts-and-distances-v1>") == 7
+
+
 def test_tokens_unique():
     tokens = all_domain_tokens()
     assert len(tokens) == len(set(tokens))
 
 
 def test_domain_token_count():
-    # 5 native + the full 2838-token contacts-and-distances-v1 vocab.
-    assert len(all_domain_tokens()) == 5 + len(cd_v1_all_domain_tokens()) == 2843
+    # 5 native + the full 2838-token contacts-and-distances-v1 vocab + the 1
+    # trailing sequence-only token.
+    assert len(all_domain_tokens()) == 5 + len(cd_v1_all_domain_tokens()) + 1 == 2844
 
 
 def test_build_tokenizer_size_and_specials():
     tok = build_tokenizer(all_domain_tokens())
-    assert len(tok) == 2845  # 2843 domain + <pad> + <eos>
+    assert len(tok) == 2846  # 2844 domain + <pad> + <eos>
     assert tok.convert_tokens_to_ids("<pad>") == 0
     assert tok.convert_tokens_to_ids("<eos>") == 1
     assert tok.convert_tokens_to_ids("<contacts-v1>") == 2

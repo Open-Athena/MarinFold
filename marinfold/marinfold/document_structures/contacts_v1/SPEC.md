@@ -165,10 +165,13 @@ contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
   (4) the per-contact pair-order coin flips.
 - **Vocab order.** Load-bearing and append-only: the 5 native tokens
   (`<contacts-v1>`, `<n-term>`, `<c-term>`, `<contact>`, `<think>`), then
-  the entire contacts-and-distances-v1 `all_domain_tokens()` list. The two
-  groups are disjoint — contacts-v1 reuses c-and-d-v1 tokens by *emitting*
-  them, not by re-minting — so no dedup is needed. Total domain vocab =
-  2843 tokens (2845 with `<pad>`/`<eos>`).
+  the entire contacts-and-distances-v1 `all_domain_tokens()` list, then the
+  single sequence-only doc-type token `<contacts-v1.sequence_only>` (see
+  *Sequence-only variant* below). The three groups are disjoint —
+  contacts-v1 reuses c-and-d-v1 tokens by *emitting* them, not by
+  re-minting — so no dedup is needed. The sequence-only token is appended
+  **last**, so adding it left every pre-existing id unchanged. Total domain
+  vocab = 2844 tokens (2846 with `<pad>`/`<eos>`).
 
 ### Metadata tracked (beyond the spec)
 
@@ -203,6 +206,39 @@ at all; `lowest_included_contact_degree` is null when nothing was emitted
 (no contacts, or all below threshold). The local `--summary-out` JSON
 additionally lists the full residue sequence and every emitted contact
 with its contact-degree value and the residue numbers/names it connects.
+
+### Sequence-only variant (`contacts-v1.sequence_only`)
+
+A second document type that carries **only the sequence section** — no
+structure section, no contacts. It exists to fold a large sequence-only
+corpus (UniRef50; see
+[exp64](../../../../experiments/exp64_data_contacts_v1_sequence_only))
+into the contacts-v1 token space, so the two corpora can be trained
+together under one tokenizer.
+
+- **Document shape.** `<contacts-v1.sequence_only> <begin_sequence> …
+  sequence statements … <end>`. The sequence section is **byte-identical**
+  to what `<contacts-v1>` emits for the same `entry_id` + residues: same
+  random wrap-around start index, same `<n-term>`/`<c-term>` markers, same
+  shuffled `<pX> <AA>` statements (pinned by `tests/.../test_sequence_only.py`).
+  Only the leading doc-type token and the absence of the `<begin_statements>`
+  structure section differ; the frame is 3 tokens (not 4).
+- **Token.** `<contacts-v1.sequence_only>` is minted by contacts-v1 but is
+  **not** one of the 5 native tokens — it is appended last in
+  `all_domain_tokens()` (the `sequence_only_tokens()` group) so that adding
+  it preserved every pre-existing token id.
+- **Generation.** `GenerationConfig(sequence_only=True)` switches
+  `build_document` to this branch (the pyconfind geometry / contact knobs
+  are then ignored). `generate_sequence_only_document(sequence, entry_id=…)`
+  is the structure-free entry point: it maps a one-letter sequence to
+  residues via `parse.residues_from_sequence` (standard-20 → 3-letter;
+  anything else → `<UNK>`) and calls the builder. **No pyconfind** is
+  involved, so sequence-only generation needs no `contacts-v1` extra.
+- **Metadata.** The contact-statistics columns (`contacts_pre_filter`,
+  `contacts_emitted`, `highest_contact_degree`, …) are not meaningful and
+  are reported as `0` / `None`; `seq_len`, `start_index`, `n_term_index`,
+  `c_term_index`, `num_tokens`, `sha1` carry through as usual, so the parquet
+  schema stays compatible with the contacts-v1 corpus.
 
 ### Not yet implemented
 

@@ -1,0 +1,34 @@
+[project]
+name = "exp64-data-contacts-v1-sequence-only"
+version = "0.1.0"
+description = "Generate the sequence-only contacts-v1 document corpus from UniRef50 (local, sharded parquet). Calls marinfold's generate_sequence_only_document — no document logic re-implemented."
+requires-python = ">=3.11,<3.13"
+# Local generation only: no pyconfind (sequence-only is structure-free) and no
+# marin-zephyr (runs on one box). marinfold is a *path* dep so this exercises
+# the in-repo contacts_v1 changes under review, not a pinned git rev.
+dependencies = [
+    "marinfold",        # generate_sequence_only_document + build_tokenizer
+    "zstandard>=0.22",  # read UniRef50 *.fasta.zst shards
+    "huggingface_hub",  # download shards + upload the published dataset
+    "pyarrow",          # typed sharded-parquet output
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[tool.pytest.ini_options]
+markers = [
+    "network: tests that require internet (HF shard download). Skip with `pytest -m 'not network'`.",
+]
