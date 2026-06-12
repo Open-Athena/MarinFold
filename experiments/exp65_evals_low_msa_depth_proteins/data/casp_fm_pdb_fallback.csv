@@ -1,0 +1,14 @@
+domain,pdb_id,chain,casp_range,status,note
+T1052-D3,,,,unavailable,CASP14 oligomer; no released PDB (UniProt Q858F5; PDBe best_structures 404)
+T1053-D1,,,,unavailable,CASP14; no released PDB (T4SS effector; targetlist has no PDB code)
+T1053-D2,,,,unavailable,CASP14; no released PDB (T4SS effector; targetlist has no PDB code)
+T1112-D1,8ork,AAA,1-460,pdb_fallback,single FM domain == whole monomer chain
+T1113-D1,7uyx,A,1-192,pdb_fallback,homodimer; chain A is the target monomer
+T1122-D1,8bbt,A,4-237,pdb_fallback,single FM domain == whole monomer chain
+T1125-D1,8h2n,A,327-460,pdb_fallback,multidomain RNAP chain A; PDB author numbering == CASP target numbering
+T1125-D2,8h2n,A,461-608,pdb_fallback,
+T1125-D4,8h2n,A,798-946,pdb_fallback,8 of 149 residues unmodeled in 8h2n
+T1125-D5,8h2n,A,947-1096,pdb_fallback,
+T1125-D6,8h2n,A,1097-1162,unavailable,only 21 of 66 residues modeled in 8h2n (partial domain); excluded
+T1130-D1,,,,unavailable,CASP15; no released PDB (targetlist id g3873; no PDB code)
+T1131-D1,,,,unavailable,CASP15; no released PDB (targetlist id g2703; no PDB code)

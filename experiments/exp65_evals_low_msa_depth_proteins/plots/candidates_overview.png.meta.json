@@ -1,0 +1,5 @@
+{
+  "script": "plot_candidates.py",
+  "args": [],
+  "caption": "Fetched exp65 candidate set. Left: total vs with-downloaded-structure counts per source (CASP FM's gap = oligomeric/late-release domains recorded without coords). Right: chain-length distributions."
+}
