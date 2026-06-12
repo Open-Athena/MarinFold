@@ -183,6 +183,14 @@ def write_rows(rows: list[dict], path: Path) -> None:
     pq.write_table(table, str(path), compression="zstd")
 
 
+def remove_shard_outputs(out_dir: Path, shard_index: int) -> None:
+    """Remove prior parquet chunks for a shard before regenerating it."""
+    pattern = f"uniref50-{shard_index:05d}-*.parquet"
+    for split in SPLITS:
+        for path in (out_dir / split).glob(pattern):
+            path.unlink()
+
+
 def process_shard(
     fasta_path: Path | str,
     *,
@@ -206,6 +214,7 @@ def process_shard(
     shard (for quick samples; ``None`` = whole shard).
     """
     out_dir = Path(out_dir)
+    remove_shard_outputs(out_dir, shard_index)
     buffers: dict[str, list[dict]] = {s: [] for s in SPLITS}
     chunk_idx: dict[str, int] = {s: 0 for s in SPLITS}
     counts = ShardCounts(shard_index=shard_index)

@@ -98,7 +98,7 @@ uv run python cli.py tokenizer --save-local ~/exp64_out/tokenizer
 uv run python cli.py inspect  --out ~/exp64_out --num 5
 ```
 
-### Source: `LiteFold/UniRef50`
+### Source: `LiteFold/UniRef50@338d0ed9964a1aca1f22eec65a2db7cc96654758`
 
 60,315,044 sequences / 17.28 B residues across 61 `*.fasta.zst` shards
 (~11.5 GB compressed). **The shards are globally sorted by length, longest

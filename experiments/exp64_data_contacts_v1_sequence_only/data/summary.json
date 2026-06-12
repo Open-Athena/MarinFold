@@ -1,6 +1,7 @@
 {
   "structure": "contacts-v1.sequence_only",
   "source": "LiteFold/UniRef50",
+  "source_revision": "338d0ed9964a1aca1f22eec65a2db7cc96654758",
   "shards_processed": [
     0,
     1,

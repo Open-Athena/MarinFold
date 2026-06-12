@@ -47,6 +47,7 @@ import generate_rows
 from generate_rows import SPLITS, STRUCTURE_NAME, process_shard
 
 DEFAULT_REPO = "LiteFold/UniRef50"
+DEFAULT_REVISION = "338d0ed9964a1aca1f22eec65a2db7cc96654758"
 SHARD_SUBDIR = "sequences/sequence_uniref50_uniref50.fasta.gz"
 TOTAL_SHARDS = 61
 EXP_DIR = Path(__file__).resolve().parent
@@ -79,7 +80,7 @@ def shard_repo_filename(i: int) -> str:
 
 
 def resolve_shard_path(
-    i: int, *, repo: str, shards_dir: str | None, cache_dir: str
+    i: int, *, repo: str, revision: str, shards_dir: str | None, cache_dir: str
 ) -> Path:
     """Local path to shard ``i`` — found under ``shards_dir`` or downloaded."""
     if shards_dir:
@@ -92,7 +93,7 @@ def resolve_shard_path(
     from huggingface_hub import hf_hub_download
 
     return Path(hf_hub_download(
-        repo_id=repo, repo_type="dataset",
+        repo_id=repo, repo_type="dataset", revision=revision,
         filename=shard_repo_filename(i), local_dir=cache_dir,
     ))
 
@@ -110,9 +111,11 @@ def _run_shard(task: dict) -> dict:
         rec = json.loads(marker.read_text())
         rec["skipped_existing"] = True
         return rec
+    if marker.exists():
+        marker.unlink()
 
     fasta_path = resolve_shard_path(
-        i, repo=task["repo"], shards_dir=task["shards_dir"],
+        i, repo=task["repo"], revision=task["revision"], shards_dir=task["shards_dir"],
         cache_dir=task["cache_dir"],
     )
     t0 = time.monotonic()
@@ -152,7 +155,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
     tasks = [
         {
             "shard_index": i, "out_dir": str(out_dir),
-            "repo": args.repo, "shards_dir": args.shards_dir,
+            "repo": args.repo, "revision": args.revision, "shards_dir": args.shards_dir,
             "cache_dir": str(Path(args.cache_dir).expanduser()),
             "rows_per_file": args.rows_per_file,
             "val_per_mille": args.val_per_mille,
@@ -183,13 +186,20 @@ def cmd_generate(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
 
-    _write_run_summary(records, out_dir=out_dir, wall_seconds=time.monotonic() - t0,
-                       shards=shards, workers=workers)
+    _write_run_summary(
+        records,
+        out_dir=out_dir,
+        wall_seconds=time.monotonic() - t0,
+        shards=shards,
+        workers=workers,
+        source=args.repo,
+        source_revision=args.revision,
+    )
 
 
 def _write_run_summary(
     records: list[dict], *, out_dir: Path, wall_seconds: float,
-    shards: list[int], workers: int,
+    shards: list[int], workers: int, source: str, source_revision: str,
 ) -> None:
     """Aggregate per-shard counts to data/generation_counts.csv + summary.json."""
     data_dir = EXP_DIR / "data"
@@ -210,7 +220,8 @@ def _write_run_summary(
 
     summary = {
         "structure": STRUCTURE_NAME,
-        "source": DEFAULT_REPO,
+        "source": source,
+        "source_revision": source_revision,
         "shards_processed": shards,
         "workers": workers,
         "wall_seconds": round(wall_seconds, 1),
@@ -305,6 +316,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--out", required=True, help="Output dir for <split>/*.parquet.")
     g.add_argument("--repo", default=DEFAULT_REPO,
                    help=f"HF dataset to pull shards from (default {DEFAULT_REPO}).")
+    g.add_argument("--revision", default=DEFAULT_REVISION,
+                   help=f"HF dataset revision (default {DEFAULT_REVISION}).")
     g.add_argument("--shards-dir", default=None,
                    help="Local dir holding shard-*.fasta.zst (skips download).")
     g.add_argument("--cache-dir", default="~/exp64_uniref50_shards",

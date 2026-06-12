@@ -1,7 +1,8 @@
 # contacts-v1.sequence_only protein-document dataset
 
 **Sequence-only** training documents in the contacts-v1 token space, generated
-from [`LiteFold/UniRef50`](https://huggingface.co/datasets/LiteFold/UniRef50) by
+from [`LiteFold/UniRef50`](https://huggingface.co/datasets/LiteFold/UniRef50/tree/338d0ed9964a1aca1f22eec65a2db7cc96654758)
+at revision `338d0ed9964a1aca1f22eec65a2db7cc96654758` by
 calling MarinFold's `generate_sequence_only_document` (no re-implementation).
 Each document is the **contacts-v1 sequence section only** — same random
 wrap-around `<pX> <AA>` indexing, `<n-term>`/`<c-term>` markers, and shuffled

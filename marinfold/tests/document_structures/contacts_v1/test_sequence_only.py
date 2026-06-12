@@ -111,6 +111,16 @@ def test_num_tokens_formula_and_matches_split():
     assert res.num_tokens == len(res.document.split())
 
 
+def test_exact_context_length_fits():
+    length = 2
+    num_tokens = 3 + 2 * length + 2 * 2
+    res = build_document(
+        "e", _residues(length), [], context_length=num_tokens, config=_SEQ_ONLY
+    )
+    assert res is not None
+    assert res.num_tokens == num_tokens
+
+
 def test_tokenizes_with_no_unk_and_new_token_is_real():
     res = build_document("vc", _residues(9), [], config=_SEQ_ONLY)
     tok = build_tokenizer(vocab.all_domain_tokens())

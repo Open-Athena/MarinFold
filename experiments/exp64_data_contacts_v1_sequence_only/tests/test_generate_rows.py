@@ -186,3 +186,30 @@ def test_process_shard_chunks_by_rows_per_file(tmp_path):
         "uniref50-00003-0002.parquet",
     ]
     assert sum(pq.ParquetFile(f).metadata.num_rows for f in files) == 10
+
+
+def test_process_shard_replaces_prior_chunks(tmp_path):
+    fasta = _make_fasta_zst(
+        tmp_path / "shard-000000.fasta.zst",
+        [(f"UniRef50_{i}", "MAGFST") for i in range(10)],
+    )
+    out_dir = tmp_path / "out"
+    process_shard(
+        fasta, shard_index=0, out_dir=out_dir,
+        val_per_mille=0, test_per_mille=0, rows_per_file=4,
+    )
+
+    fasta = _make_fasta_zst(
+        tmp_path / "shard-000000.fasta.zst",
+        [("UniRef50_replacement", "MAGFST")],
+    )
+    process_shard(
+        fasta, shard_index=0, out_dir=out_dir,
+        val_per_mille=0, test_per_mille=0, rows_per_file=4,
+    )
+
+    files = sorted((out_dir / "train").glob("*.parquet"))
+    assert [f.name for f in files] == ["uniref50-00000-0000.parquet"]
+    assert pq.read_table(files[0]).column("entry_id").to_pylist() == [
+        "UniRef50_replacement"
+    ]

@@ -215,10 +215,11 @@ def _generation_seed(entry_id: str) -> int:
     return int(hashlib.sha1(entry_id.encode()).hexdigest()[:8], 16)
 
 
-def _fixed_token_cost(num_residues: int) -> int:
+def _fixed_token_cost(num_residues: int, *, sequence_only: bool = False) -> int:
     """Token cost of the framing + full sequence section (no contacts)."""
+    frame_tokens = 3 if sequence_only else _FRAME_TOKENS
     return (
-        _FRAME_TOKENS
+        frame_tokens
         + _SEQ_TOKENS_PER_RESIDUE * num_residues
         + _TERMINUS_STATEMENTS * 2
     )
@@ -249,7 +250,7 @@ def build_document(
     num_indices = config.num_position_indices
     if num_residues < 2 or num_residues > num_indices:
         return None
-    fixed = _fixed_token_cost(num_residues)
+    fixed = _fixed_token_cost(num_residues, sequence_only=config.sequence_only)
     if fixed > context_length:
         return None
 
@@ -407,7 +408,7 @@ def _result_from_analyzed(
             stacklevel=2,
         )
         return None
-    fixed = _fixed_token_cost(num_residues)
+    fixed = _fixed_token_cost(num_residues, sequence_only=config.sequence_only)
     if fixed > context_length:
         warnings.warn(
             f"skipping {analyzed.entry_id}: fixed sequence section needs "
