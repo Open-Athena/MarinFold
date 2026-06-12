@@ -17,6 +17,7 @@ dependencies = [
     "dupekit",
     # protein_distogram_eval.py:
     "fsspec",
+    "matplotlib",
     "numpy",
     "pyarrow",
     "transformers",
@@ -100,8 +101,8 @@ torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
 # from cwd), so a relative path that escapes the dir fails on the worker with
 # "cannot normalize a relative path beyond the base directory: /app/../../models".
 # A git source is fetched on the worker, exactly like exp53's `marinfold` dep.
-# Pinned to this experiment's branch because it carries the marin-API-drift fix
-# in defaults.py (see README "Implementation notes"); retarget to `main` (or a
-# tag/commit) once this PR merges. For local iteration, override with
+# Pinned to the exact commit used to launch the recorded run because it carries
+# the marin-API-drift fix in defaults.py (see README "Implementation notes").
+# For local iteration, override with
 #   uv sync --extra tpu  (after `uv pip install --reinstall-package marinfold-models ../../models`)
-marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", branch = "exp/67-contacts-v1-1_5b" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "5f925614076f9f3594a314182267b31841ce6064" }

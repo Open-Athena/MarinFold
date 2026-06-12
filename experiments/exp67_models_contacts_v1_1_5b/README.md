@@ -12,7 +12,7 @@ marinfold_experiment:
 
 ## Question
 
-The goal is to get a quick sense of what accuracy is possible by training on the contacts-v1 dataset. 
+The goal is to get a quick sense of what accuracy is possible by training on the contacts-v1 dataset.
 
 The plan is that @eric-czech will do another experiment where he uses more carefully tuned settings. The goal for this current experiment is just to do something simple so it can train while we have a team offsite (as well as get an example of training into this repo).
 
@@ -28,7 +28,7 @@ More details about it are [here](https://github.com/Open-Athena/MarinFold/tree/m
 
 The main difference from our previous contacts-and-distances-v1 is we have gotten rid of distance statements (our evals will be entirely on contact recapitulation). Also note it is much smaller (4B tokens).
 
-See #61 
+See #61
 
 See our 1.5B training run here: https://github.com/marin-community/marin/tree/protein-training-1b
 
@@ -95,10 +95,11 @@ match reality; the resolutions are baked into the code:
    `open-athena/contacts-v1-tokenizer`, but that repo was never created — the
    workstation HF token lacks open-athena org-create perms. exp53 published the
    canonical, levanter-loadable copy under `timodonnell/` (2845 vocab, all
-   tokenizer files). It is referenced **without** a `@<sha>` revision suffix:
-   levanter's training loader accepts `repo@rev`, but the marin *tokenize* step
-   loads via `huggingface_hub`, which rejects the suffix (`HFValidationError`).
-   exp0 could pin only because its tokenize step was cache-skipped.
+   tokenizer files). Training and export use the immutable
+   `timodonnell/contacts-v1-tokenizer@5d68a24a899f` identifier. Marin's tokenize
+   step cannot parse `repo@rev`, so its bare repo identifier is isolated to the
+   tokenize config. The recorded run reuses the already-materialized caches;
+   training and export remain pinned to the exact tokenizer revision.
 
 2. **Eval runs over the full val split, not a `max_eval_batches` head.** The
    plan assumed `max_eval_batches` would yield a *shuffled* ~5K-doc eval. It
@@ -146,7 +147,7 @@ match reality; the resolutions are baked into the code:
    from the driver's environment and threads it into `env_vars` (never
    hard-coded). Launch with `iris ... -e WANDB_API_KEY <key>`.
 
-## marin-latest tokenize↔train cache mismatch — worked around (shim)
+## marin-latest tokenize↔train cache mismatch
 
 As of 2026-06-10 the run got **all the way through tokenization and into the
 trainer**, then the training pod died reading the token cache:
@@ -185,16 +186,12 @@ field, matching disk), but the *reader's* `jagged_array_tree` walks the same
 exemplar **without** `is_leaf`, so the list becomes the tree node `input_ids/0`.
 So no re-tokenize is needed — only the reader's in-memory exemplar is wrong.
 
-**Workaround in place (`sitecustomize.py`):** a startup shim makes
-`output_exemplar` return numpy arrays (true leaves), so the reader's field path
-collapses back to the flat `input_ids` the cache uses. Verified locally by
-reading the real val cache (41,954 rows) end-to-end. It's injected into the
-training pod via `PYTHONPATH=/app` (set in `build_train_step` `env_vars`) — the
-pod runs marin's `run_levanter_train_lm`, not our code, so an interpreter-startup
-hook is the only injection point. **Remove `sitecustomize.py` and the
-`PYTHONPATH` env once the experiment is on a marin build that includes #6014.**
-Tokenization is durable (both caches persist under
-`…/exp67_contacts_v1_1_5b/tokenized/…` and are reused on restart).
+The launched run temporarily worked around this in its runtime environment.
+The repository does not retain that runtime patch because monkey-patching
+third-party classes is forbidden here. Future training launches must use a
+Marin build containing #6014. Tokenization is durable: both caches persist
+under `…/exp67_contacts_v1_1_5b/tokenized/…` and are reused through explicit
+immutable cache paths.
 
 ## Success criteria
 
@@ -218,6 +215,5 @@ numbers vs the prior contacts-and-distances-v1 1.5B.)_
 
 ## Conclusion
 
-_(Fill in after results are in. Reminder: the `sitecustomize.py` shim + the
-`PYTHONPATH=/app` env are temporary workarounds for marin #6008/#6014 — remove
-them once the experiment is on a marin build that includes the fix.)_
+_(Fill in after results are in. Future launches require a Marin build containing
+#6014.)_

@@ -19,11 +19,11 @@ marinfold_run:
 
 # 2026-06-10 · exp67_models_contacts_v1_1_5b · protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked
 
-**Launched:** 2026-06-10T12:54:46Z by bizon  
-**Kind:** models  
-**Experiment:** exp67_models_contacts_v1_1_5b  
-**W&B:** [protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked](https://wandb.ai/open-athena/MarinFold/runs/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2)  
-**Git:** `5f925614`  
+- **Launched:** 2026-06-10T12:54:46Z by bizon
+- **Kind:** models
+- **Experiment:** exp67_models_contacts_v1_1_5b
+- **W&B:** [protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked](https://wandb.ai/open-athena/MarinFold/runs/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2)
+- **Git:** `5f925614`
 
 ## Description
 
@@ -42,11 +42,9 @@ _(Bullet list of differences from the last run of this kind.)_
 - First MarinFold run to do a *fresh* tokenize→train on `marin-latest`
   (`0.99.dev20260529`); surfaced 7 distinct infra issues, all documented in the
   experiment README "Implementation notes".
-- **Temporary shim:** the trainer can't read its own token cache on this marin
-  build (bug #6008, fixed upstream by #6014 but not yet in a published wheel).
-  Worked around with `experiments/exp67_models_contacts_v1_1_5b/sitecustomize.py`
-  (patches `BatchTokenizer.output_exemplar` to return numpy leaves), injected via
-  `PYTHONPATH=/app` in the pod env. **Remove once on a marin build with #6014.**
+- The launched run temporarily worked around marin bug #6008 at runtime.
+  The repository does not retain that monkey-patch; future launches require a
+  Marin build containing the upstream #6014 fix.
 - Launched from branch `exp/67-contacts-v1-1_5b` (PR #70); also carries a
   repo-wide fix to `models/marinfold_models/defaults.py` (marin import drift).
 - Healthy start: loss 8.29→6.21 over the first ~9 steps, MFU ~40%.

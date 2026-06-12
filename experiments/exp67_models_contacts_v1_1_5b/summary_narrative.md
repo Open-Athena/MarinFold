@@ -6,7 +6,7 @@
 
 ## What we're doing
 
-The goal is to get a quick sense of what accuracy is possible by training on the contacts-v1 dataset. 
+The goal is to get a quick sense of what accuracy is possible by training on the contacts-v1 dataset.
 
 The plan is that @eric-czech will do another experiment where he uses more carefully tuned settings. The goal for this current experiment is just to do something simple so it can train while we have a team offsite (as well as get an example of training into this repo).
 

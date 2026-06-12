@@ -60,19 +60,14 @@ CONTACTS_V1_MARIN_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp6
 os.environ["MARIN_PREFIX"] = CONTACTS_V1_MARIN_PREFIX
 
 # contacts-v1 tokenizer (2845 vocab tokens; verified loadable by
-# transformers/levanter). NOTE: the contacts-v1 SPEC / cli.py ``--push`` example
-# points at ``open-athena/contacts-v1-tokenizer``, but that repo was never
-# created — the workstation HF token lacks open-athena org-create perms — so
-# exp53 published the canonical, levanter-loadable copy under ``timodonnell/``.
-#
-# NOT pinned with a ``@<sha>`` revision suffix: levanter's training-side
-# ``load_tokenizer`` accepts ``repo@rev``, but the marin *tokenize* step loads
-# the tokenizer through ``huggingface_hub`` directly, which rejects the ``@rev``
-# suffix with HFValidationError ("Repo id must use alphanumeric chars…"). exp0
-# could pin (``protein-docs-tokenizer@83f597d8``) only because its tokenize step
-# was cache-skipped. The repo is stable (single commit, owned by us), so the
-# unpinned id is safe here.
-CONTACTS_V1_TOKENIZER = "timodonnell/contacts-v1-tokenizer"
+# transformers/levanter). The training and export paths use the immutable
+# ``repo@revision`` identifier. Marin's tokenize step currently passes the value
+# directly to huggingface_hub, which rejects that syntax, so tokenization uses
+# the bare repo id and includes the revision in its executor-step name. The
+# already-materialized caches below were created from this exact revision.
+CONTACTS_V1_TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
+CONTACTS_V1_TOKENIZER_REVISION = "5d68a24a899f"
+CONTACTS_V1_TOKENIZER = f"{CONTACTS_V1_TOKENIZER_REPO}@{CONTACTS_V1_TOKENIZER_REVISION}"
 
 # contacts-v1 corpus tokenize INPUT. We read the parquet directly from its
 # region-local GCS working copy (written by exp53), NOT the published HF bucket
@@ -104,20 +99,19 @@ PROTEIN_RESOURCES_USE5 = ResourceConfig.with_tpu(
     zone="us-east5-a",
 )
 
-# Fresh corpus → fresh token caches. No ``override_output_path`` (unlike exp0,
-# which pinned legacy cache dirs to avoid a re-tokenize): there is no prior
-# contacts-v1 cache to reuse, so let marin derive the output path from the
-# step hash.
+# Reuse the caches created for the recorded run. Keep the original step names so
+# Marin resolves the existing 4.7B-token train cache and held-out validation
+# cache rather than tokenizing again.
 contacts_v1_tokenized = default_tokenize(
     name="contacts-v1",
     dataset=f"{GCS_CORPUS_BASE}/train/*.parquet",
-    tokenizer=CONTACTS_V1_TOKENIZER,
+    tokenizer=CONTACTS_V1_TOKENIZER_REPO,
     format=TextLmDatasetFormat(text_key="document"),
 )
 contacts_v1_val_tokenized = default_tokenize(
     name="contacts-v1-val",
     dataset=f"{GCS_CORPUS_BASE}/val/*.parquet",
-    tokenizer=CONTACTS_V1_TOKENIZER,
+    tokenizer=CONTACTS_V1_TOKENIZER_REPO,
     format=TextLmDatasetFormat(text_key="document"),
     is_validation=True,
 )
@@ -195,14 +189,7 @@ def build_train_step(
     # secret lands in git. If unset, we omit it (and the run will fail fast with
     # marin's clear "WANDB_API_KEY must be set" message rather than silently
     # logging nowhere).
-    # PYTHONPATH=/app makes Python auto-import `/app/sitecustomize.py` at
-    # interpreter startup in the training pod (the iris bundle unpacks to /app;
-    # dirs on PYTHONPATH are searched for sitecustomize during site init). That
-    # shim patches the marin-latest tokenize↔train cache bug (#6008/#6014) so the
-    # trainer can read its own token cache. Remove once on a marin build with
-    # #6014. The pod runs marin's run_levanter_train_lm — not our code — so this
-    # env hook is the only injection point. See sitecustomize.py / README.
-    env_vars = {"WANDB_ENTITY": "open-athena", "PYTHONPATH": "/app"}
+    env_vars = {"WANDB_ENTITY": "open-athena"}
     _wandb_key = os.environ.get("WANDB_API_KEY")
     if _wandb_key:
         env_vars["WANDB_API_KEY"] = _wandb_key
@@ -255,11 +242,10 @@ def build_hf_export_step(
 ) -> ExecutorStep:
     """Build a CPU-only HF export step for the contacts-v1 training run.
 
-    Mirrors exp0's ``build_hf_export_step``. The export reads the latest
-    available checkpoint inside ``train_step``'s ``checkpoints/`` subdirectory
-    (``discover_latest=True``) — ``checkpoint_step`` only labels the output dir
-    (``hf/step-{checkpoint_step}``). The contacts-v1 tokenizer is co-located
-    with the exported weights (hard rule: tokenizer travels with the model).
+    The export reads the requested ``step-{checkpoint_step}`` checkpoint inside
+    ``train_step``'s ``checkpoints/`` subdirectory. The contacts-v1 tokenizer is
+    co-located with the exported weights (hard rule: tokenizer travels with the
+    model).
 
     Set ``checkpoint_path_override`` to a literal gs:// path to snapshot a
     checkpoint while training is still in progress (bypasses the dependency on
@@ -278,7 +264,7 @@ def build_hf_export_step(
     if checkpoint_path_override is not None:
         checkpoint_path = checkpoint_path_override
     else:
-        checkpoint_path = output_path_of(train_step, "checkpoints")
+        checkpoint_path = output_path_of(train_step, f"checkpoints/step-{checkpoint_step}")
 
     return convert_checkpoint_to_hf_step(
         name=f"hf/{name_prefix}-step-{checkpoint_step}",
@@ -287,12 +273,14 @@ def build_hf_export_step(
         model=model_config,
         tokenizer=CONTACTS_V1_TOKENIZER,
         use_cpu=True,
-        discover_latest=True,
+        discover_latest=False,
     )
 
 
 __all__ = [
     "CONTACTS_V1_TOKENIZER",
+    "CONTACTS_V1_TOKENIZER_REPO",
+    "CONTACTS_V1_TOKENIZER_REVISION",
     "GCS_CORPUS_BASE",
     "PROTEIN_RESOURCES_USE5",
     "build_hf_export_step",

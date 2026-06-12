@@ -4,10 +4,10 @@
 """Convert the 1.5B contacts-v1 training run to HuggingFace format.
 
 Targets the run produced by ``train_protein_1_5b_contacts_v1.py``.
-``CHECKPOINT_STEP`` only labels the output directory (``hf/...-step-{N}``);
-``discover_latest=True`` resolves whichever loadable checkpoint is current. The
-contacts-v1 tokenizer is co-located with the exported weights (hard rule:
-tokenizer travels with the model).
+``CHECKPOINT_STEP`` selects the exact ``checkpoints/step-{N}`` input and labels
+the output directory (``hf/...-step-{N}``). The contacts-v1 tokenizer is
+co-located with the exported weights (hard rule: tokenizer travels with the
+model).
 
 By default this depends on the training step reaching SUCCEEDED. To snapshot a
 checkpoint mid-run, set ``CHECKPOINT_PATH`` to the literal
@@ -30,7 +30,7 @@ from train_protein_1_5b_contacts_v1 import (
     protein_model_1_5b_contacts_v1,
 )
 
-# Labels the output dir only (discover_latest resolves the real checkpoint).
+# Selects the exact input checkpoint and labels the output directory.
 CHECKPOINT_STEP = 12_000
 # Set to a literal gs://.../checkpoints path to snapshot mid-run without waiting
 # for the training step to finish; leave None to depend on the train step.
