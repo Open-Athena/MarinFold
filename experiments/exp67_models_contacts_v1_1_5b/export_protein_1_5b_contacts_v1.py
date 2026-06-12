@@ -9,15 +9,19 @@ the output directory (``hf/...-step-{N}``). The contacts-v1 tokenizer is
 co-located with the exported weights (hard rule: tokenizer travels with the
 model).
 
-By default this depends on the training step reaching SUCCEEDED. To snapshot a
-checkpoint mid-run, set ``CHECKPOINT_PATH`` to the literal
-``gs://.../checkpoints`` dir (printed in the run's logs / discoverable under
-``gs://marin-us-east5/checkpoints/<run>-<hash>/checkpoints``) and pass it as
-``checkpoint_path_override``.
+``CHECKPOINT_PATH`` is set to the run's actual checkpoint directory rather than
+left to the dependency-derived default, because levanter writes checkpoints under
+the **W&B-run-name** dir (the ``-3b5cf2`` suffix is the W&B run id, generated at
+runtime by ``wandb.init``), NOT the executor-hash output dir that
+``output_path_of(train_step, ...)`` resolves to. The dependency path therefore
+can never find these weights (verified: ``…-23f72e/`` has only ``.executor_info``;
+the checkpoints live under ``…-3b5cf2/checkpoints/step-*``). This mirrors exp0's
+export scripts, which also hard-code the run-name path. NOTE: this path is
+specific to *this* launched run — a relaunch gets a new ``-<runid>`` suffix.
 
-Usage::
+Usage (run after the target ``step-{CHECKPOINT_STEP}`` checkpoint exists on GCS)::
 
-    uv run iris --config=lib/iris/examples/marin.yaml job run \\
+    uv run iris --cluster marin job run --no-wait --enable-extra-resources \\
         --memory=32GB --disk=16GB --cpu=4 \\
         -- python -m export_protein_1_5b_contacts_v1
 """
@@ -30,11 +34,19 @@ from train_protein_1_5b_contacts_v1 import (
     protein_model_1_5b_contacts_v1,
 )
 
-# Selects the exact input checkpoint and labels the output directory.
+# Which permanent (steps_per_export=2000) checkpoint to export; selects the exact
+# input ``step-{N}`` and labels the output dir. Must already exist on GCS
+# (currently step-2000, step-4000, …; the final is step-12000).
 CHECKPOINT_STEP = 12_000
-# Set to a literal gs://.../checkpoints path to snapshot mid-run without waiting
-# for the training step to finish; leave None to depend on the train step.
-CHECKPOINT_PATH: str | None = None
+# The run's real checkpoint directory (W&B-run-name dir — see module docstring).
+# CHECKPOINT_PATH is derived from CHECKPOINT_STEP so the two stay in sync; with
+# the override set, ``build_hf_export_step`` reads this exact step dir
+# (discover_latest=False) instead of the unreachable dependency-derived path.
+_RUN_CHECKPOINTS_DIR = (
+    "gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/checkpoints/"
+    "protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/checkpoints"
+)
+CHECKPOINT_PATH: str | None = f"{_RUN_CHECKPOINTS_DIR}/step-{CHECKPOINT_STEP}"
 
 hf_export = build_hf_export_step(
     train_step=protein_model_1_5b_contacts_v1,
