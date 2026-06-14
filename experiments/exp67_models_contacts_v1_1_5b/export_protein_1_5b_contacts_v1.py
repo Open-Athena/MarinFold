@@ -34,10 +34,13 @@ from train_protein_1_5b_contacts_v1 import (
     protein_model_1_5b_contacts_v1,
 )
 
-# Which permanent (steps_per_export=2000) checkpoint to export; selects the exact
-# input ``step-{N}`` and labels the output dir. Must already exist on GCS
-# (currently step-2000, step-4000, …; the final is step-12000).
-CHECKPOINT_STEP = 12_000
+# NOTE: the completed run ALREADY auto-exported HF models at every export step
+# to ``…-3b5cf2/hf/step-{2000,4000,6000,8000,10000,11999}`` (safetensors +
+# tokenizer co-located), so the final loadable model exists at ``hf/step-11999``
+# and this script is only needed to RE-export. Available levanter checkpoints:
+# step-{2000,4000,6000,8000,10000,11999}. The final is step-11999 (= step 12000
+# 0-indexed), NOT step-12000.
+CHECKPOINT_STEP = 11_999
 # The run's real checkpoint directory (W&B-run-name dir — see module docstring).
 # CHECKPOINT_PATH is derived from CHECKPOINT_STEP so the two stay in sync; with
 # the override set, ``build_hf_export_step`` reads this exact step dir

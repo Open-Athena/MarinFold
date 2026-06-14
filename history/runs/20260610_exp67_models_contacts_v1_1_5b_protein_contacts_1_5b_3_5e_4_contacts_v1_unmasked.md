@@ -29,6 +29,18 @@ marinfold_run:
 
 1.5B Llama on contacts-v1, unmasked next-token loss, shuffled, 12k steps (~2.7 epochs), LR 3.5e-4, v5p-8 @ us-east5-a
 
+## Outcome (✅ COMPLETED 2026-06-14)
+
+Ran to `SUCCEEDED` — full 12,000 steps. **train loss 8.29→2.87** (min 2.85),
+**eval/loss (full held-out val) 3.63→2.98**, no overfitting. 74.8 h wall-clock
+(**17 preemptions, 0 failures** — all auto-resumed; two multi-hour overnight
+pending stalls on v5p capacity). Artifacts under
+`gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/`:
+levanter `checkpoints/step-{2000,4000,6000,8000,10000,11999}` + auto HF exports
+`hf/step-{…,11999}` (safetensors + tokenizer co-located). Final loadable model:
+`hf/step-11999/`. Follow-up: downstream contact-recapitulation eval vs the prior
+contacts-and-distances-v1 1.5B.
+
 ## Detailed plan
 
 _(Why we ran this, what we expect to see, unusual parameters.)_

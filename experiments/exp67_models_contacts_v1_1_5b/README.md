@@ -195,25 +195,46 @@ immutable cache paths.
 
 ## Success criteria
 
-We have a model training run launched and training. **Status: ✅ MET.** The run
-is live on a v5p-8 @ us-east5-a and stepping with a healthy, decreasing loss
-(8.29 → 7.91 → 7.43 → 6.86 over the first steps; init ≈ ln(2845) = 7.95).
+We have a model training run launched and training. **Status: ✅ MET — and the
+run ran to completion** (all 12,000 steps, `SUCCEEDED`).
 
 ## Results
+
+**Completed 2026-06-14** — trained the full 12,000 steps (~2.7 epochs).
 
 - **W&B run:** https://wandb.ai/open-athena/MarinFold/runs/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2
   (run name `protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked`)
 - **Iris job:** `/bizon/iris-run-job-20260610-124627` (launched 2026-06-10)
-- **Outputs:** `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/`
-  — token caches under `tokenized/`, checkpoints under `checkpoints/…` every
-  2000 steps.
-- Token caches (built once, reused): train `tokenized/contacts-v1-663ba6`
-  (~4.7B tok), val `tokenized/contacts-v1-val-92827b` (41,954 docs).
+- **Loss** (both monotonically decreasing; eval tracks train → no overfitting):
+  - **train**: 8.29 (init ≈ ln(2845)=7.95) → **2.87** (min 2.85)
+  - **eval/loss** (entire held-out val split): 3.63 (step 250) → **2.98** (final)
+- **Wall-clock:** 74.8 h for 12k steps at ~19.5 s/step. The extra wall-clock over
+  the ~2.5-day compute estimate was **v5p preemptible-pool churn** — **17
+  preemptions, 0 failures**; every one auto-resumed from the rolling checkpoint
+  (incl. two multi-hour overnight pending stalls waiting for capacity). Real
+  progress lost to preemption was negligible (rolling checkpoint every ~10 min).
 
-_(Fill in after the run completes — final/val loss curve, contact-recapitulation
-numbers vs the prior contacts-and-distances-v1 1.5B.)_
+**Artifacts** — all under `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/`:
+- Token caches (built once, reused across all 18 restarts): train
+  `tokenized/contacts-v1-663ba6` (~4.7B tok), val `tokenized/contacts-v1-val-92827b`
+  (41,954 docs).
+- Under `checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/`:
+  - `checkpoints/step-{2000,4000,6000,8000,10000,11999}` — permanent **levanter**
+    checkpoints (full model+optimizer state, ~17.7 GB each; the final step is
+    11999, i.e. step 12000 0-indexed).
+  - `hf/step-{2000,…,11999}` — **HF-format exports auto-generated at each export
+    step** (safetensors shards + `config.json` + the contacts-v1 tokenizer
+    co-located). **The final loadable model is `hf/step-11999/`** — no manual
+    export needed (the `export_*.py` script remains as a re-export path).
 
 ## Conclusion
 
-_(Fill in after results are in. Future launches require a Marin build containing
-#6014.)_
+The quick/simple 1.5B contacts-v1 run trained cleanly end-to-end: train loss
+8.29→2.87, held-out eval 3.63→2.98, no overfitting, and a ready-to-serve HF
+checkpoint. It establishes the working tokenize→train→export path for contacts-v1
+in this repo (the deliverable @eric-czech's tuned #61 builds on) and surfaced +
+fixed 7 infra issues now documented above. Open follow-ups: (1) downstream
+**contact-recapitulation** eval of `hf/step-11999` vs the prior
+contacts-and-distances-v1 1.5B (the actual accuracy question); (2) future
+launches need a Marin build containing #6014 (the cache shim is not retained in
+the repo).
