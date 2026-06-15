@@ -227,6 +227,18 @@ run ran to completion** (all 12,000 steps, `SUCCEEDED`).
     co-located). **The final loadable model is `hf/step-11999/`** — no manual
     export needed (the `export_*.py` script remains as a re-export path).
 
+**Published to the open-athena HF bucket** (final checkpoint, 2026-06-15):
+```
+hf://buckets/open-athena/MarinFold/checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/hf/step-11999/
+```
+(7 files, 5.89 GB; weights + tokenizer co-located; follows the
+`checkpoints/<wandb-run-name>-<id>/hf/step-<N>/` convention.) HF buckets aren't
+`HfFileSystem`-addressable, so consume in two steps:
+```bash
+hf buckets cp -r hf://buckets/open-athena/MarinFold/checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/hf/step-11999 ./model
+python -c "from transformers import AutoModelForCausalLM, AutoTokenizer; AutoModelForCausalLM.from_pretrained('./model'); AutoTokenizer.from_pretrained('./model')"
+```
+
 ## Conclusion
 
 The quick/simple 1.5B contacts-v1 run trained cleanly end-to-end: train loss

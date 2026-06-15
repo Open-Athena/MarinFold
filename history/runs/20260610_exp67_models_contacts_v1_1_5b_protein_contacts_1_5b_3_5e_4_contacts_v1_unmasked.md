@@ -38,8 +38,10 @@ pending stalls on v5p capacity). Artifacts under
 `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/`:
 levanter `checkpoints/step-{2000,4000,6000,8000,10000,11999}` + auto HF exports
 `hf/step-{…,11999}` (safetensors + tokenizer co-located). Final loadable model:
-`hf/step-11999/`. Follow-up: downstream contact-recapitulation eval vs the prior
-contacts-and-distances-v1 1.5B.
+`hf/step-11999/`. **Published to the open-athena HF bucket (2026-06-15):**
+`hf://buckets/open-athena/MarinFold/checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/hf/step-11999/`
+(7 files, 5.89 GB, weights + tokenizer co-located). Follow-up: downstream
+contact-recapitulation eval vs the prior contacts-and-distances-v1 1.5B.
 
 ## Detailed plan
 
