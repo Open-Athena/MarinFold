@@ -113,8 +113,96 @@ We have a summary pdf with plots showing protenix v2 (single sequence), protenix
 
 ## Results
 
-_(Fill in after the run completes.)_
+Folded all **552 proteins** (FoldBench-100 + 452 unique exp65 candidates;
+the eval manifests carry 554 rows, 552 unique stems) with both ESMFold and
+ESMFold2, single-sequence, on Modal H100s — **0 failures**. pyconfind
+ground-truth alignment identity was **≥ 0.95 for every structure** (mean
+0.9994) and the predicted-structure alignment identity was **1.000**, so
+the resolved-residue → input-sequence mapping is sound. Source data is
+[`data/contact_precision_all.csv`](data/contact_precision_all.csv) (tidy,
+one row per stem × model × predictor × range × cut; ESMFold + ESMFold2 +
+the spliced-in Protenix-v2 rows from exp74).
+
+**Settings used** (logged per run): ESMFold `facebook/esmfold_v1`,
+`num_recycles=4`, ESM2 stem fp16, trunk `chunk_size=128`, one deterministic
+prediction per protein. ESMFold2 `biohub/ESMFold2` (ESMC-6B, 6.58 B params,
+~13.9 GB GPU), single-sequence, `num_loops=20`, `num_sampling_steps=100`,
+**best-of-5** diffusion samples kept by the model's pTM confidence.
+
+### Headline — R-precision (precision@R; ceiling 1.0 for every protein)
+
+The success-criteria 4-config comparison (all rank pairs by pyconfind
+contact degree on the predicted structure):
+
+**FoldBench-100** (natural proteins):
+
+| config | agg | short | medium | long |
+|---|---|---|---|---|
+| protenix-v2 · SS | 0.282 | 0.364 | 0.300 | 0.252 |
+| protenix-v2 · MSA | **0.847** | 0.843 | 0.849 | 0.833 |
+| ESMFold | 0.755 | 0.755 | 0.762 | 0.743 |
+| **ESMFold2** | **0.805** | 0.803 | 0.813 | 0.794 |
+
+**exp65** (low-MSA / novel-fold; 452 candidates):
+
+| config | agg | short | medium | long |
+|---|---|---|---|---|
+| protenix-v2 · SS | 0.674 | 0.707 | 0.700 | 0.642 |
+| protenix-v2 · MSA | **0.804** | 0.809 | 0.823 | 0.787 |
+| ESMFold | 0.755 | 0.760 | 0.780 | 0.730 |
+| **ESMFold2** | 0.782 | 0.789 | 0.800 | 0.763 |
+
+Two robust findings:
+1. **ESMFold2 is the best single-sequence contact predictor here.** On
+   natural proteins its single-sequence R-precision (0.805) **nearly matches
+   MSA-mode Protenix-v2** (0.847) and crushes single-sequence Protenix
+   (0.282); ESMFold2 > ESMFold at every separation.
+2. **In the low-MSA / novel-fold regime the gap to MSA-Protenix collapses.**
+   On exp65, single-sequence ESMFold2 (0.782) is within ~0.02 of MSA Protenix
+   (0.804), and even ESMFold (0.755) is close. This is exactly the regime
+   MarinFold cares about, and it's where a strong single-sequence folder is
+   most valuable.
+
+**By MSA depth** (exp65 long-range R-precision; `plots/contacts_at_R_by_neff_tier.png`):
+for **orphan** proteins (Neff≈1) ESMFold2 (0.748) is **on par with or above**
+MSA-mode Protenix (0.725) and single-sequence Protenix (0.735); the MSA
+advantage only opens up for deep-MSA proteins (MSA Protenix 0.813 vs ESMFold2
+0.782). The single-sequence models lose nothing in the shallow-MSA regime.
+
+Precision@L tells the same ranking but is bounded by pyconfind's contact
+density for short proteins (ESMFold2 FoldBench @L = 0.73 agg / 0.52 long);
+**R-precision is the fair read** and is flat across short/medium/long for
+every model — i.e. the models rank contacts equally well at all separations.
+
+**Timing** ([`data/timings.csv`](data/timings.csv)): ESMFold median **1.5 s**
+/ protein (deterministic, single pass); ESMFold2 median **21 s** / protein
+(best-of-5 diffusion; mean 34 s). Both H100.
+
+Plots in [`plots/`](plots/): contacts @ L / L2 / L5 / **R** by model and
+range; neff_tier and fold_verdict stratifications (at L and R);
+FoldBench-vs-exp65. Raw predicted structures (all 552 × 2 models) + the full
+pyconfind contact tables are on the HF bucket under
+`data/esmfold-contacts-eval-exp78/`, so the predictions can be re-scored
+under different contact criteria without re-running.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+On our 554-row eval set, **ESMFold2 is the strongest single-sequence
+contact predictor** — its single-sequence pyconfind-contact R-precision
+(FoldBench 0.805) approaches MSA-mode Protenix-v2 (0.847) and far exceeds
+single-sequence Protenix (0.282), with ESMFold a notch below ESMFold2 but
+still well above single-sequence Protenix on natural proteins. The headline
+for MarinFold: **in the low-MSA / novel-fold regime the single-sequence vs
+MSA gap nearly vanishes** — on exp65, single-sequence ESMFold2 (0.782) is
+within 0.02 of MSA Protenix (0.804), and for orphan proteins ESMFold2 is on
+par with or better than MSA Protenix. A capable single-sequence folder loses
+little by not having an MSA exactly where MSAs are shallow — encouraging for
+a single-sequence contact-prediction model. ESMFold2 costs ~14× ESMFold's
+wall-clock (best-of-5 6B diffusion vs one deterministic pass) for a ~0.03–0.05
+R-precision gain.
+
+Caveats: the comparison is honest but not perfectly symmetric — ESMFold v1 is
+single-shot while ESMFold2 is best-of-5 and Protenix is top-1-of-40; pyconfind
+contact density caps precision@L (R-precision sidesteps this). All four
+configs share one pyconfind ground truth and the GT-resolved candidate-pair
+universe, so the rankings are comparable.

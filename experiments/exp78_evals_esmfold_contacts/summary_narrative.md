@@ -24,6 +24,21 @@ num_sampling_steps=100), keeping the top-1 by confidence. Both on Modal (H100);
 all predicted structures saved to the HF bucket for re-scoring. Protenix v2
 numbers are reused from exp74.
 
-## Results so far
+## Results
 
-_(Fill in as predictions land and scoring completes.)_
+All 552 proteins folded by both models (0 failures); pyconfind GT alignment
+≥ 0.95 everywhere. R-precision (ceiling 1.0/protein), structure predictor:
+
+FoldBench-100 — Protenix·SS 0.28, Protenix·MSA 0.85, ESMFold 0.76, ESMFold2 0.81.
+exp65 (low-MSA) — Protenix·SS 0.67, Protenix·MSA 0.80, ESMFold 0.76, ESMFold2 0.78.
+
+ESMFold2 is the best single-sequence contact predictor: single-seq ESMFold2
+≈ MSA-mode Protenix on natural proteins, and far above single-seq Protenix.
+
+## Takeaway
+
+In the low-MSA / novel-fold regime the single-seq vs MSA gap nearly vanishes:
+single-sequence ESMFold2 lands within ~0.02 of MSA-mode Protenix on exp65, and
+for orphan proteins (Neff≈1) it's on par with or above MSA Protenix. A strong
+single-sequence folder loses little where MSAs are shallow — the regime that
+matters for MarinFold. ESMFold ~1.5 s/protein, ESMFold2 ~21 s/protein (best-of-5).
