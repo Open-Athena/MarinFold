@@ -24,6 +24,13 @@ hf buckets cp data/contact_eval_meta_all.csv   "$BUCKET/contact_eval_meta_all.cs
 hf buckets cp data/contacts_raw_all.parquet    "$BUCKET/contacts_raw_all.parquet"
 hf buckets cp data/eval_manifest_exp65.csv     "$BUCKET/eval_manifest_exp65.csv"
 hf buckets cp _scratch/hf_readme.md            "$BUCKET/README.md"
+
+# plots + summary.pdf (small; per-file cp is more reliable than folder sync)
+for f in plots/*.png plots/summary.pdf; do
+  [ -f "$f" ] && hf buckets cp "$f" "$BUCKET/plots/$(basename "$f")"
+done
+
+# curated Protenix outputs (~5 GB); idempotent — re-running finishes a partial sync
 hf buckets sync _scratch/best_exp65            "$BUCKET/best_exp65"
 
 echo "uploaded to $BUCKET"

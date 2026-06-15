@@ -95,15 +95,19 @@ Ground truth is the same for all four configs; predictors differ:
   score = predicted **contact degree** (0 for unpredicted pairs).
 
 **Metric — contacts @ L**: precision among the top-L ranked pairs (L =
-sequence length), also @ L/2 and L/5, reported **in aggregate** (sep ≥ 6) and
-**split** short [6,11] / medium [12,23] / long [≥24]. The candidate-pair
-universe is restricted to residues **resolved in the GT structure**,
-identically across all four configs, so the numbers are comparable.
+sequence length), also @ L/2, @ L/5, and **R-precision** (precision@R where
+R = the bin's ground-truth contact count, so the ceiling is 1.0 for every
+protein — the density-robust cut, equal to recall@R). Reported **in
+aggregate** (sep ≥ 6) and **split** short [6,11] / medium [12,23] / long
+[≥24]. The candidate-pair universe is restricted to residues **resolved in
+the GT structure**, identically across all four configs, so the numbers are
+comparable.
 
 > **Note on the metric.** pyconfind contacts are sparser than the CB-CB ≤ 8 Å
 > contacts of classic CASP precision@L (≈0.6/residue here), so precision@L is
 > bounded by contact density for short proteins (a perfect predictor caps at
-> `n_true/L`); L/2 and L/5 are less affected. Also, the **distogram** configs
+> `n_true/L`); L/2, L/5, and especially **R-precision** (ceiling 1.0 for every
+> protein) sidestep this. Also, the **distogram** configs
 > rank by a CB-CB-distance notion against a side-chain-contact ground truth,
 > so they carry an inherent representation gap vs the **structure** configs —
 > this is the eval the issue asked for, and the structure configs are the
@@ -187,11 +191,28 @@ MSA mode**; the MSA benefit only materializes once the MSA is deep.
 novel_fold 0.39 / 0.28 (MSA/SS), same_fold 0.44 / 0.39, redundant 0.46 /
 0.35 — novel folds are hardest, as expected.
 
-Plots in [`plots/`](plots/): contacts @ L/L2/L5 by config and range, the
-two stratifications above, FoldBench-vs-exp65, and precision-vs-Neff.
-Raw Protenix outputs + the full pyconfind contact tables (every degree>0
-contact, GT + predicted; 696k rows) are on the HF bucket under
-`data/protenix-contacts-eval-exp74/`.
+**R-precision** (precision@R, R = the bin's true-contact count; ceiling 1.0,
+so ranges are directly comparable) shows the model ranks contacts **equally
+well at every separation** — the low short-range precision@L above is purely
+the density cap, not a model weakness:
+
+| set | predictor·mode | short | medium | long | agg |
+|---|---|---|---|---|---|
+| FoldBench-100 | structure·MSA | 0.84 | 0.85 | 0.83 | 0.85 |
+| exp65 | structure·MSA | 0.81 | 0.82 | 0.79 | 0.80 |
+| exp65 | structure·SS | — | — | 0.64 | 0.67 |
+
+(FoldBench structure·MSA R-precision ≈ 0.84 flat across short/medium/long,
+vs 0.12 / 0.16 / 0.55 at precision@L.) The MSA-depth story is even cleaner in
+R-precision — exp65 long-range structure R-precision, MSA−SS gap by tier:
+orphan **−0.01**, low +0.04, marginal +0.20, deep +0.27
+([`plots/contacts_at_R_by_neff_tier.png`](plots/contacts_at_R_by_neff_tier.png)).
+
+Plots in [`plots/`](plots/): contacts @ L / L2 / L5 / **R-precision** by
+config and range; the neff_tier and fold_verdict stratifications (at both L
+and R); R-precision vs Neff; and FoldBench-vs-exp65. Raw Protenix outputs +
+the full pyconfind contact tables (every degree>0 contact, GT + predicted;
+696k rows) are on the HF bucket under `data/protenix-contacts-eval-exp74/`.
 
 ## Conclusion
 
@@ -200,8 +221,8 @@ natural proteins (FoldBench-100 structure-config contacts @ L = 0.77, @
 L/5 = 0.91). The headline finding for our purposes: **on low-MSA-depth
 proteins the single-sequence and MSA modes converge** — for orphan/low-Neff
 candidates single-sequence is as accurate as MSA mode, and the MSA
-advantage grows monotonically with MSA depth (MSA−SS long-range gap
-−0.01 → +0.16 from orphan to deep). That's encouraging for a
+advantage grows monotonically with MSA depth (R-precision long-range
+MSA−SS gap −0.01 → +0.27 from orphan to deep). That's encouraging for a
 single-sequence contact-prediction model: in the regime where MSAs are
 shallow — the regime that matters for us — there is little left on the
 table by not using an MSA. The **structure** configs (pyconfind on the
@@ -210,7 +231,9 @@ pyconfind ground truth; the **distogram** configs sit lower because of
 the CB-CB-distance vs side-chain-contact representation gap, not
 necessarily worse prediction.
 
-Caveats: precision @ L is bounded by pyconfind's contact density for
-short proteins (≈0.6 contacts/residue), so L/2 and L/5 are the cleaner
-read for small targets; the 8 Å distogram threshold is a default and can
-be swept cheaply against the saved distograms.
+Caveats: precision @ L is bounded by pyconfind's contact density
+(≈0.6 contacts/residue), so it understates short-range performance —
+**R-precision** is the cleaner read (the model is flat at ~0.84 across
+short/medium/long for FoldBench structure·MSA, vs 0.12/0.16/0.55 at
+precision@L). The 8 Å distogram threshold is a default and can be swept
+cheaply against the saved distograms.

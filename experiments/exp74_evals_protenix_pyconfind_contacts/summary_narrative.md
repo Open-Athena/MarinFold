@@ -58,6 +58,18 @@ orphan 0.41/0.42 (gap −0.01), low 0.45/0.43, marginal 0.50/0.38, deep
 par with MSA mode** — the regime that matters for a single-sequence model.
 Novel folds are the hardest stratum (long structure @ L: novel 0.39/0.28).
 
+## R-precision: ranking quality without the density cap
+
+precision@L understates short-range accuracy because pyconfind contacts are
+sparse (there aren't L short-range contacts to find). **R-precision**
+(precision@R, R = the bin's true-contact count; ceiling 1.0 for every
+protein) fixes this. In R-precision the structure·MSA config is **flat across
+separations** — FoldBench short 0.84 ≈ medium 0.85 ≈ long 0.83 (vs
+0.12/0.16/0.55 at precision@L) — so the model ranks short contacts just as
+well; the precision@L dip was a density artifact. The MSA-depth gap is
+cleaner too: exp65 long-range structure R-precision MSA−SS gap runs
+−0.01 (orphan) → +0.27 (deep).
+
 ## Where the data lives
 
 `data/contact_precision_all.csv` (tidy scores), `plots/` (contacts @ L by

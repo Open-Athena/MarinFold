@@ -17,9 +17,10 @@ configurations** = {single_seq, msa} x {distogram, structure}:
   candidate pairs by predicted contact degree.
 
 Metric: **contacts @ L** (precision among the top-L predicted pairs,
-L = sequence length), also @ L/2 and L/5, reported **in aggregate**
-(separation >= 6) and **split by range** short [6,11] / medium [12,23]
-/ long [>=24]. The candidate-pair universe is restricted to residues
+L = sequence length), also @ L/2, L/5, and **R-precision** (precision@R
+where R = the bin's ground-truth contact count, so the ceiling is 1.0 for
+every protein), reported **in aggregate** (separation >= 6) and **split by
+range** short [6,11] / medium [12,23] / long [>=24]. The candidate-pair universe is restricted to residues
 resolved in the ground-truth structure, identically across all four
 configs, so the numbers are comparable.
 
@@ -69,7 +70,18 @@ RANGES: dict[str, tuple[int, int | None]] = {
     "medium": (12, 23),
     "long": (24, None),
 }
-TOP_K: tuple[int, ...] = (1, 2, 5)
+
+# Prediction-count cuts for precision@<cut>: each maps (L, n_true) -> the number
+# of top-ranked pairs to score. L/L2/L5 are the CASP top-L/k cuts. "R" is
+# R-precision (precision@R / recall@R): cutoff R = the ground-truth contact
+# count for the bin, so a perfect ranker scores 1.0 for every protein regardless
+# of contact density — the density-robust complement to precision@L.
+CUTS: tuple[tuple[str, object], ...] = (
+    ("L", lambda L, c: L),
+    ("L/2", lambda L, c: max(1, L // 2)),
+    ("L/5", lambda L, c: max(1, L // 5)),
+    ("R", lambda L, c: c),
+)
 
 MODES = ("single_seq", "msa")
 PREDICTORS = ("distogram", "structure")
@@ -116,7 +128,13 @@ def _precision_rows(
     pair_sep: np.ndarray,
     L: int,
 ) -> list[dict]:
-    """precision @ {L, L/2, L/5} per range, given a predictor score matrix."""
+    """precision @ {L, L/2, L/5, R} per range, given a predictor score matrix.
+
+    "R" = R-precision (precision@R): cutoff R = the bin's ground-truth contact
+    count, so the ceiling is 1.0 for every protein regardless of contact
+    density (at this cutoff precision == recall). NaN when the bin has no
+    candidate pairs or no true contacts.
+    """
     cand_scores_all = score[pair_i, pair_j]
     cand_gt_all = true_mat[pair_i, pair_j]
     rows: list[dict] = []
@@ -128,17 +146,17 @@ def _precision_rows(
         gt = cand_gt_all[in_range].astype(np.int64)
         n_cand = int(scores.size)
         n_true = int(gt.sum())
-        if n_cand == 0:
-            for k in TOP_K:
-                rows.append(dict(range=rng, k=k, precision=float("nan"),
-                                 n_candidate=0, n_true=n_true, n_top=0))
-            continue
-        order = np.argsort(-scores, kind="mergesort")  # stable, deterministic ties
-        gt_sorted = gt[order]
-        for k in TOP_K:
-            top_n = min(max(1, L // k), n_cand)
+        order = np.argsort(-scores, kind="mergesort") if n_cand else None  # stable ties
+        gt_sorted = gt[order] if n_cand else None
+        for cut, target_fn in CUTS:
+            target = int(target_fn(L, n_true))
+            if n_cand == 0 or target <= 0:
+                rows.append(dict(range=rng, cut=cut, precision=float("nan"),
+                                 n_candidate=n_cand, n_true=n_true, n_top=0))
+                continue
+            top_n = min(target, n_cand)
             precision = float(gt_sorted[:top_n].sum()) / top_n
-            rows.append(dict(range=rng, k=k, precision=precision,
+            rows.append(dict(range=rng, cut=cut, precision=precision,
                              n_candidate=n_cand, n_true=n_true, n_top=top_n))
     return rows
 
@@ -279,7 +297,7 @@ def evaluate_dataset(
         meta_rows.append(dict(dataset=rec["dataset"], **strata, **meta))
         long_prec = next((r["precision"] for r in pr
                           if r["mode"] == "msa" and r["predictor"] == "structure"
-                          and r["range"] == "long" and r["k"] == 1), float("nan"))
+                          and r["range"] == "long" and r["cut"] == "R"), float("nan"))
         print(f"[{n}/{len(df)}] {stem}: L={meta['L']} resolved={meta['gt_n_resolved']} "
               f"id={meta['gt_align_identity']:.3f} true={meta['n_true_contacts']} "
               f"| msa/structure P@L(long)={long_prec}")

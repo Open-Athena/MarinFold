@@ -4,11 +4,10 @@
 """Plots for the Protenix-vs-pyconfind contact eval.
 
 Consumes ``contact_precision.csv`` (tidy long form, one row per
-``stem x mode x predictor x range x k``) + ``contact_eval_meta.csv``.
-All plots show **contacts @ L accuracy** (precision among the top-L
-predicted pairs); the headline is aggregate + split by short/medium/long
-range across the four configs, the rest stratify by the exp65 novelty /
-MSA-depth axes.
+``stem x mode x predictor x range x cut``) + ``contact_eval_meta.csv``.
+Cuts are L / L/2 / L/5 (CASP top-L/k precision) and **R** (R-precision:
+cutoff = the bin's ground-truth contact count, so the ceiling is 1.0 for
+every protein — density-robust, the right cut for comparing short vs long).
 
 The four configs are {single_seq, msa} x {distogram, structure}:
   - distogram: rank pairs by P(rep atoms within 8 Å) from the distogram.
@@ -41,17 +40,26 @@ RANGE_TITLE = {"all": "aggregate (sep≥6)", "short": "short [6,11]",
                "medium": "medium [12,23]", "long": "long [≥24]"}
 NEFF_ORDER = ["orphan", "low", "marginal", "deep"]
 FOLD_ORDER = ["novel_fold", "same_fold", "redundant"]
+# cut id (as stored in the CSV) -> filename-safe label
+CUT_FILE = {"L": "L", "L/2": "L_2", "L/5": "L_5", "R": "R"}
 
 
-def _mean_precision(df: pd.DataFrame, *, k: int) -> pd.DataFrame:
-    """Mean precision by (mode, predictor, range) for a given top-L/k."""
-    sub = df[df["k"] == k]
+def _axis_label(cut: str) -> str:
+    return "R-precision" if cut == "R" else f"precision @ {cut}"
+
+
+def _title(cut: str) -> str:
+    return "R-precision" if cut == "R" else f"Contacts @ {cut}"
+
+
+def _mean_precision(df: pd.DataFrame, *, cut: str) -> pd.DataFrame:
+    sub = df[df["cut"] == cut]
     return sub.groupby(["mode", "predictor", "range"])["precision"].mean().reset_index()
 
 
-def plot_by_config_and_range(df: pd.DataFrame, out: Path, *, k: int, label: str, script_args: list[str]) -> None:
-    """Headline: contacts@L per config, one panel per range."""
-    means = _mean_precision(df, k=k)
+def plot_by_config_and_range(df, out, *, cut, script_args):
+    """Headline: precision@cut per config, one panel per range."""
+    means = _mean_precision(df, cut=cut)
     fig, axes = plt.subplots(1, 4, figsize=(15, 4.2), sharey=True)
     for ax, rng in zip(axes, RANGE_ORDER):
         vals, colors, ticks = [], [], []
@@ -70,21 +78,23 @@ def plot_by_config_and_range(df: pd.DataFrame, out: Path, *, k: int, label: str,
         ax.set_title(RANGE_TITLE[rng], fontsize=10)
         ax.set_ylim(0, 1.0)
         ax.grid(axis="y", alpha=0.3)
-    axes[0].set_ylabel(f"mean precision @ top-{label}")
-    fig.suptitle(f"Contacts @ {label}: Protenix vs pyconfind ground truth (4 configs)", fontsize=12)
+    axes[0].set_ylabel(f"mean {_axis_label(cut)}")
+    note = "  (ceiling 1.0 for every protein)" if cut == "R" else ""
+    fig.suptitle(f"{_title(cut)}: Protenix vs pyconfind ground truth (4 configs)" + note, fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     save_plot_with_meta(
         fig, out, script="plot.py", args=script_args,
-        caption=(f"Mean precision among top-{label} ranked pairs vs pyconfind contacts "
-                 f"(degree≥0.001, sep≥6), per config, aggregate and by range. "
-                 f"distogram=rank by P(CB-CB≤8Å); structure=rank by pyconfind degree on the predicted CIF."),
+        caption=(f"Mean {_axis_label(cut)} vs pyconfind contacts (degree≥0.001, sep≥6), per config, "
+                 f"aggregate and by range. distogram=rank by P(CB-CB≤8Å); structure=rank by pyconfind "
+                 f"degree on the predicted CIF."
+                 + (" R-precision cutoff = #true contacts, so a perfect ranker = 1.0." if cut == "R" else "")),
     )
     plt.close(fig)
 
 
-def _grouped_by_stratum(df, out, *, stratum, order, k, rng, label, script_args, title):
-    """Grouped bars: x=stratum level, groups=config, y=mean precision@L (one range)."""
-    sub = df[(df["k"] == k) & (df["range"] == rng) & df[stratum].isin(order)]
+def _grouped_by_stratum(df, out, *, stratum, order, cut, rng, script_args, title):
+    """Grouped bars: x=stratum level, groups=config, y=mean precision@cut (one range)."""
+    sub = df[(df["cut"] == cut) & (df["range"] == rng) & df[stratum].isin(order)]
     if sub.empty:
         return
     means = sub.groupby([stratum, "mode", "predictor"])["precision"].mean().reset_index()
@@ -101,7 +111,7 @@ def _grouped_by_stratum(df, out, *, stratum, order, k, rng, label, script_args, 
         ax.bar(x + (ci - 1.5) * w, vals, width=w, color=color, label=disp)
     ax.set_xticks(x)
     ax.set_xticklabels([f"{lv}\n(n={int(counts.get(lv, 0))})" for lv in levels], fontsize=9)
-    ax.set_ylabel(f"mean precision @ top-{label}")
+    ax.set_ylabel(f"mean {_axis_label(cut)}")
     ax.set_ylim(0, 1.0)
     ax.grid(axis="y", alpha=0.3)
     ax.legend(fontsize=8, ncol=2)
@@ -111,11 +121,11 @@ def _grouped_by_stratum(df, out, *, stratum, order, k, rng, label, script_args, 
     plt.close(fig)
 
 
-def plot_precision_vs_neff(df, meta, out, *, k, rng, label, script_args):
-    """Scatter precision@L(range) vs MSA Neff (log x), per predictor, colored by mode."""
+def plot_precision_vs_neff(df, out, *, cut, rng, script_args):
+    """Scatter precision@cut(range) vs MSA Neff (log x), per predictor, colored by mode."""
     if "msa_neff" not in df.columns:
         return
-    sub = df[(df["k"] == k) & (df["range"] == rng)].copy()
+    sub = df[(df["cut"] == cut) & (df["range"] == rng)].copy()
     sub["msa_neff"] = pd.to_numeric(sub["msa_neff"], errors="coerce")
     sub = sub[sub["msa_neff"] > 0]
     if sub.empty:
@@ -131,45 +141,47 @@ def plot_precision_vs_neff(df, meta, out, *, k, rng, label, script_args):
         ax.set_ylim(0, 1.02)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=8)
-    axes[0].set_ylabel(f"precision @ top-{label} ({RANGE_TITLE[rng]})")
-    fig.suptitle(f"Contacts @ {label} vs MSA depth — {RANGE_TITLE[rng]}", fontsize=12)
+    axes[0].set_ylabel(f"{_axis_label(cut)} ({RANGE_TITLE[rng]})")
+    fig.suptitle(f"{_title(cut)} vs MSA depth — {RANGE_TITLE[rng]}", fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     save_plot_with_meta(fig, out, script="plot.py", args=script_args,
-                        caption=f"Per-protein precision@top-{label} ({rng} range) vs MSA Neff.")
+                        caption=f"Per-protein {_axis_label(cut)} ({rng} range) vs MSA Neff.")
     plt.close(fig)
 
 
 def main(precision_csv: Path, meta_csv: Path, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(precision_csv)
-    meta = pd.read_csv(meta_csv) if Path(meta_csv).exists() else pd.DataFrame()
     sa = ["--precision-csv", str(precision_csv), "--meta-csv", str(meta_csv), "--out", str(out_dir)]
 
-    # Headline: contacts @ L / L2 / L5 by config and range.
-    for k, lab in [(1, "L"), (2, "L_2"), (5, "L_5")]:
-        plot_by_config_and_range(df, out_dir / f"contacts_at_{lab}_by_config_and_range.png",
-                                 k=k, label=lab, script_args=sa)
+    # Headline: precision @ L / L2 / L5 / R-precision, by config and range.
+    for cut in ["L", "L/2", "L/5", "R"]:
+        plot_by_config_and_range(df, out_dir / f"contacts_at_{CUT_FILE[cut]}_by_config_and_range.png",
+                                 cut=cut, script_args=sa)
 
-    # Stratified (exp65 axes). Only fire when the strata columns exist + populate.
-    for stratum, order, fname, title in [
-        ("neff_tier", NEFF_ORDER, "contacts_at_L_by_neff_tier", "Contacts @ L by MSA-depth tier (long-range)"),
-        ("fold_verdict", FOLD_ORDER, "contacts_at_L_by_fold_verdict", "Contacts @ L by fold novelty (long-range)"),
-    ]:
-        if stratum in df.columns:
-            _grouped_by_stratum(df, out_dir / f"{fname}.png", stratum=stratum, order=order,
-                                k=1, rng="long", label="L", script_args=sa, title=title)
+    # Stratified (exp65 axes) — long-range, at both L and R (R is the fair cut).
+    for cut in ["L", "R"]:
+        lab = CUT_FILE[cut]
+        for stratum, order, fname in [
+            ("neff_tier", NEFF_ORDER, f"contacts_at_{lab}_by_neff_tier"),
+            ("fold_verdict", FOLD_ORDER, f"contacts_at_{lab}_by_fold_verdict"),
+        ]:
+            if stratum in df.columns:
+                axis = "MSA-depth tier" if stratum == "neff_tier" else "fold novelty"
+                _grouped_by_stratum(df, out_dir / f"{fname}.png", stratum=stratum, order=order,
+                                    cut=cut, rng="long", script_args=sa,
+                                    title=f"{_title(cut)} by {axis} (long-range)")
 
-    # Precision vs MSA depth.
-    plot_precision_vs_neff(df, meta, out_dir / "precision_vs_neff_long.png",
-                           k=1, rng="long", label="L", script_args=sa)
+    # Precision vs MSA depth (R-precision, long-range).
+    plot_precision_vs_neff(df, out_dir / "rprecision_vs_neff_long.png", cut="R", rng="long", script_args=sa)
 
-    # foldbench vs exp65 (only when both present).
+    # foldbench vs exp65 (R-precision, aggregate), when both present.
     if df["dataset"].nunique() > 1:
         df2 = df.copy()
         df2["group"] = np.where(df2["dataset"] == "foldbench100", "foldbench100", "exp65")
-        _grouped_by_stratum(df2, out_dir / "contacts_at_L_foldbench_vs_exp65.png",
-                            stratum="group", order=["foldbench100", "exp65"], k=1, rng="all",
-                            label="L", script_args=sa, title="Contacts @ L: FoldBench-100 vs exp65 (aggregate)")
+        _grouped_by_stratum(df2, out_dir / "contacts_at_R_foldbench_vs_exp65.png",
+                            stratum="group", order=["foldbench100", "exp65"], cut="R", rng="all",
+                            script_args=sa, title="R-precision: FoldBench-100 vs exp65 (aggregate)")
     print(f"wrote plots to {out_dir}")
 
 

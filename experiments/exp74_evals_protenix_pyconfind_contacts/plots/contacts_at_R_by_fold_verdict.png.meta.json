@@ -8,5 +8,5 @@
     "--out",
     "plots"
   ],
-  "caption": "Per-protein precision@top-L (long range) vs MSA Neff."
+  "caption": "R-precision by fold novelty (long-range)"
 }

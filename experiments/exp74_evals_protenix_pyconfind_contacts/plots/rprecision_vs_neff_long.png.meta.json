@@ -8,5 +8,5 @@
     "--out",
     "plots"
   ],
-  "caption": "Contacts @ L: FoldBench-100 vs exp65 (aggregate)"
+  "caption": "Per-protein R-precision (long range) vs MSA Neff."
 }
