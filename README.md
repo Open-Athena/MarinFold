@@ -5,7 +5,9 @@
 Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
 MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
-This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far. We do not currently have models that anyone should use!
+This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far!
+
+If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
 
 ## Current performance
 
