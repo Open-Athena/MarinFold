@@ -47,14 +47,21 @@ python itemize.py
 
 The scaffolder pulls Question / Hypothesis / Background / Approach /
 Success criteria sections from the GitHub issue body. It picks
-`--kind` from a `Kind:` line in the issue body if not passed
-explicitly.
+`--kind` from the issue's `kind/<kind>` label (then a `Kind:` line in
+the issue body) if not passed explicitly.
+
+`itemize.py` groups the index by kind. A dir-backed experiment's kind
+comes from its dir; a dir-less issue's kind comes from its
+`kind/<kind>` label — so **every experiment issue should carry a
+`kind/<kind>` label** (`kind/models`, `kind/evals`, `kind/data`, or
+`kind/document_structures`).
 
 ## Flow
 
 1. **File an issue** with the `experiment` label using the
    [issue template](../.github/ISSUE_TEMPLATE/experiment.md). Fill in
-   question, hypothesis, approach, success criteria, **and the kind**.
+   question, hypothesis, approach, success criteria, **and the kind** —
+   add the matching `kind/<kind>` label (the index groups by it).
 2. **Scaffold** the experiment dir:
    ```bash
    python scripts/scaffold.py --issue <N> --kind <models|evals|data|document_structures>
