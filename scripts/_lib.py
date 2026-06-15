@@ -29,6 +29,36 @@ RUN_KINDS = KINDS + ("other",)
 """Kinds valid in a run-history file. Adds ``other`` for runs outside
 any experiment."""
 
+KIND_DESCRIPTIONS = {
+    "models": "trains models",
+    "evals": "runs evals on trained models",
+    "data": "generates training/eval datasets",
+    "document_structures": "defines a generate + evaluate document interface",
+}
+"""One-line gloss per kind. Mirrors experiments/README.md's table and the
+``kind/<kind>`` GitHub label descriptions."""
+
+KIND_LABEL_PREFIX = "kind/"
+"""Issues carry their experiment kind as a ``kind/<kind>`` GitHub label.
+This is the source of truth for an experiment's kind *before* it has a
+``experiments/exp<N>_<kind>_<name>/`` dir; once the dir exists, the dir
+name / README frontmatter is authoritative."""
+
+
+def kind_from_labels(label_names: list[str]) -> str | None:
+    """Return the experiment kind from a ``kind/<kind>`` label, if present.
+
+    ``label_names`` is the list of bare label names on an issue. Returns
+    the first recognised kind found, or None if no ``kind/<kind>`` label
+    names a known kind.
+    """
+    for name in label_names:
+        if name.startswith(KIND_LABEL_PREFIX):
+            kind = name[len(KIND_LABEL_PREFIX):]
+            if kind in KINDS:
+                return kind
+    return None
+
 
 def github_repo() -> str:
     """Best-effort: derive owner/name from the `origin` remote.

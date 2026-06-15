@@ -12,9 +12,10 @@ Reads the issue via ``gh api`` (must be authenticated), derives a name
 from the title, and creates ``experiments/exp<N>_<kind>_<name>/`` with
 a README.md prefilled from the issue's prose.
 
-The ``--kind`` argument is required if the issue doesn't declare one
-(see the issue template's "Kind" field). Recognised kinds:
-``models``, ``evals``, ``data``, ``document_structures``.
+The ``--kind`` argument is required if the issue doesn't declare one. Kind
+is read, in order, from: ``--kind``, the issue's ``kind/<kind>`` label, then
+a ``Kind:`` line in the issue body. Recognised kinds: ``models``, ``evals``,
+``data``, ``document_structures``.
 
 Does NOT overwrite an existing directory unless ``--force`` is passed.
 """
@@ -29,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _lib import KINDS, REPO_ROOT, github_repo  # noqa: E402
+from _lib import KINDS, REPO_ROOT, github_repo, kind_from_labels  # noqa: E402
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -154,8 +155,8 @@ def main(argv: list[str] | None = None) -> int:
         "--kind", default=None,
         choices=sorted(KINDS),
         help=(
-            "Experiment kind. If not passed, attempts to read 'Kind:' from "
-            "the issue body."
+            "Experiment kind. If not passed, read from the issue's "
+            "`kind/<kind>` label, then a 'Kind:' line in the issue body."
         ),
     )
     ap.add_argument("--name", default=None, help="Override the auto-derived name")
@@ -173,11 +174,17 @@ def main(argv: list[str] | None = None) -> int:
     repo = args.repo or github_repo()
     issue = fetch_issue(args.issue, repo)
 
-    kind = args.kind or _kind_from_issue_body(issue.get("body") or "")
+    label_names = [lbl["name"] for lbl in issue.get("labels", [])]
+    kind = (
+        args.kind
+        or kind_from_labels(label_names)
+        or _kind_from_issue_body(issue.get("body") or "")
+    )
     if not kind:
         print(
-            "Could not determine experiment kind. Pass --kind, or add "
-            "'Kind: <models|evals|data|document_structures>' to the issue body.",
+            "Could not determine experiment kind. Pass --kind, add a "
+            "`kind/<models|evals|data|document_structures>` label to the issue, "
+            "or add 'Kind: <kind>' to the issue body.",
             file=sys.stderr,
         )
         return 1

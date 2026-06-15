@@ -24,6 +24,10 @@ See experiments/README.md for the full workflow.
      - data: generates training/eval datasets
      - document_structures: defines a generate + evaluate interface for
        a specific protein-document format (overlap with data and evals)
+
+     Add the matching `kind/<kind>` label to this issue (e.g. kind/models).
+     The experiments index groups by it. Mirror it in the line below so
+     `scaffold.py` can read it even before the label is applied.
 -->
 
 - Kind: <!-- e.g. models -->

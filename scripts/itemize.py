@@ -4,14 +4,19 @@
 """``scripts/itemize.py`` — regenerate experiments/index.md from gh + frontmatter.
 
 Source of truth for WHICH experiments exist is
-``gh issue list --label experiment``. Each experiment's dir is named
-``experiments/exp<N>_<kind>_<name>/``, cross-referenced by issue
-number. Per-experiment metadata (title, kind, branch) comes from the
-README's ``marinfold_experiment:`` frontmatter when present; falls
-back to the issue title.
+``gh issue list --label experiment``. The index groups experiments by
+**kind**. An experiment's kind comes from its
+``experiments/exp<N>_<kind>_<name>/`` dir (README ``marinfold_experiment:``
+frontmatter, else the dir name) when one exists; otherwise from the
+issue's ``kind/<kind>`` label. Dir-less issues with no ``kind/<kind>``
+label land under "Unclassified". Per-experiment metadata (title, branch)
+comes from the frontmatter when present, falling back to the issue title.
 
-Experiment dirs without a matching open or closed `experiment`-labeled
-issue are listed under "Orphans" so we notice and fix the naming.
+If a dir-backed issue carries a ``kind/<kind>`` label that disagrees with
+its dir, the dir wins and a warning is printed (fix the stale label).
+
+Experiment dirs without a matching `experiment`-labeled issue are listed
+under "Orphans" so we notice and fix the naming.
 """
 
 import argparse
@@ -23,8 +28,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _lib import (  # noqa: E402
+    KIND_DESCRIPTIONS,
+    KINDS,
     REPO_ROOT,
     github_repo,
+    kind_from_labels,
     parse_experiment_dir_name,
     read_frontmatter,
 )
@@ -38,7 +46,7 @@ def list_experiment_issues(repo: str) -> list[dict]:
             "--label", "experiment",
             "--state", "all",
             "--limit", "200",
-            "--json", "number,title,state,url,createdAt,closedAt",
+            "--json", "number,title,state,url,createdAt,closedAt,labels",
         ],
         text=True,
     )
@@ -62,25 +70,34 @@ def scan_experiment_dirs() -> dict[int, Path]:
     return out
 
 
+def _dir_kind(exp_dir: Path) -> str | None:
+    """Kind of a dir-backed experiment: README frontmatter, else dir name."""
+    fm = read_frontmatter(exp_dir / "README.md") or {}
+    kind = fm.get("kind")
+    if kind:
+        return kind
+    parsed = parse_experiment_dir_name(exp_dir.name)
+    return parsed[1] if parsed else None
+
+
 def _render_row(issue: dict, exp_dir: Path | None, repo: str) -> str:
     number = issue["number"]
     issue_url = issue["url"]
     title = issue["title"].replace("|", "&#124;")
+    state = issue["state"].lower()
     if exp_dir is not None:
         dir_name = exp_dir.name
         nb_url = f"https://github.com/{repo}/blob/main/experiments/{dir_name}/README.md"
         fm = read_frontmatter(exp_dir / "README.md") or {}
         branch = fm.get("branch") or "?"
-        kind = fm.get("kind") or "?"
         fm_title = fm.get("title")
         display_title = fm_title or title
         dir_cell = f"[`{dir_name}`]({nb_url})"
     else:
         display_title = title
         branch = "—"
-        kind = "—"
         dir_cell = "_no dir yet_"
-    return f"| [#{number}]({issue_url}) | {display_title} | `{kind}` | `{branch}` | {dir_cell} |"
+    return f"| [#{number}]({issue_url}) | {state} | {display_title} | `{branch}` | {dir_cell} |"
 
 
 def _render_orphan_row(exp_dir: Path, repo: str) -> str:
@@ -95,63 +112,101 @@ def _render_orphan_row(exp_dir: Path, repo: str) -> str:
     return f"| {issue_cell} | {title} | `{kind}` | `{branch}` | [`{dir_name}`]({nb_url}) |"
 
 
-TABLE_HEADER = "| Issue | Title | Kind | Branch | Directory |\n|---|---|---|---|---|"
+KIND_TABLE_HEADER = "| Issue | State | Title | Branch | Directory |\n|---|---|---|---|---|"
+ORPHAN_TABLE_HEADER = "| Issue | Title | Kind | Branch | Directory |\n|---|---|---|---|---|"
 
 
-def render_index(issues: list[dict], exp_dirs: dict[int, Path], repo: str) -> str:
-    open_rows: list[str] = []
-    closed_rows: list[str] = []
+def _resolve_kind(issue: dict, exp_dir: Path | None) -> tuple[str | None, str | None]:
+    """Resolve an experiment's kind, returning ``(kind, warning)``.
+
+    A dir-backed experiment's kind comes from its dir (frontmatter / dir
+    name) — authoritative, since the dir name physically encodes it. A
+    dir-less experiment's kind comes from its ``kind/<kind>`` label. If a
+    dir-backed issue *also* carries a label that disagrees with the dir,
+    the dir wins and we surface a warning so the stale label gets fixed.
+    """
+    label_kind = kind_from_labels([lbl["name"] for lbl in issue.get("labels", [])])
+    if exp_dir is not None:
+        dir_kind = _dir_kind(exp_dir)
+        warning = None
+        if label_kind and dir_kind and label_kind != dir_kind:
+            warning = (
+                f"#{issue['number']}: kind/{label_kind} label disagrees with "
+                f"dir kind `{dir_kind}` ({exp_dir.name}); using the dir"
+            )
+        return dir_kind, warning
+    return label_kind, None
+
+
+def render_index(
+    issues: list[dict], exp_dirs: dict[int, Path], repo: str
+) -> tuple[str, list[str]]:
+    by_kind: dict[str, list[str]] = {k: [] for k in KINDS}
+    unclassified_rows: list[str] = []
+    warnings: list[str] = []
     matched: set[int] = set()
     for issue in sorted(issues, key=lambda i: -int(i["number"])):
         matched.add(issue["number"])
         exp_dir = exp_dirs.get(issue["number"])
+        kind, warning = _resolve_kind(issue, exp_dir)
+        if warning:
+            warnings.append(warning)
         row = _render_row(issue, exp_dir, repo)
-        if issue["state"].lower() == "open":
-            open_rows.append(row)
+        if kind in by_kind:
+            by_kind[kind].append(row)
         else:
-            closed_rows.append(row)
+            unclassified_rows.append(row)
     orphan_rows = [
         _render_orphan_row(p, repo)
         for n, p in sorted(exp_dirs.items())
         if n not in matched
     ]
 
+    total = sum(len(v) for v in by_kind.values()) + len(unclassified_rows)
     lines = [
         "# Experiments",
         "",
-        "Each row is a GitHub issue tagged `experiment`. The experiment's",
-        "dir lives at `experiments/exp<N>_<kind>_<name>/`. `Kind` is one of",
-        "`models`, `evals`, `data`, `document_structures`.",
+        "Each row is a GitHub issue tagged `experiment`, grouped by **kind**.",
+        "An experiment's kind comes from its `experiments/exp<N>_<kind>_<name>/`",
+        "dir when one exists, otherwise from the issue's `kind/<kind>` label.",
+        f"Kinds: {', '.join(f'`{k}`' for k in KINDS)}.",
         "",
-        "_This page is regenerated by `python scripts/itemize.py`._",
-        "",
-        "## Open",
+        f"_{total} experiments. This page is regenerated by `python scripts/itemize.py`._",
         "",
     ]
-    if open_rows:
-        lines.append(TABLE_HEADER)
-        lines.extend(open_rows)
-    else:
-        lines.append("_(No open experiments.)_")
-    lines.extend(["", "## Closed", ""])
-    if closed_rows:
-        lines.append(TABLE_HEADER)
-        lines.extend(closed_rows)
-    else:
-        lines.append("_(No closed experiments yet.)_")
+    for kind in KINDS:
+        rows = by_kind[kind]
+        lines.append(f"## `{kind}` — {KIND_DESCRIPTIONS[kind]} ({len(rows)})")
+        lines.append("")
+        if rows:
+            lines.append(KIND_TABLE_HEADER)
+            lines.extend(rows)
+        else:
+            lines.append("_(none yet.)_")
+        lines.append("")
+    if unclassified_rows:
+        lines.extend([
+            "## Unclassified",
+            "",
+            "Dir-less issues with no `kind/<kind>` label. Add one so they land",
+            "under a kind above.",
+            "",
+            KIND_TABLE_HEADER,
+        ])
+        lines.extend(unclassified_rows)
+        lines.append("")
     if orphan_rows:
         lines.extend([
-            "",
             "## Orphans",
             "",
-            "Dirs that don't match any open or closed issue labelled `experiment`.",
+            "Dirs that don't match any issue labelled `experiment`.",
             "Either file the issue or fix the dir name.",
             "",
-            TABLE_HEADER,
+            ORPHAN_TABLE_HEADER,
         ])
         lines.extend(orphan_rows)
-    lines.append("")
-    return "\n".join(lines)
+        lines.append("")
+    return "\n".join(lines).rstrip("\n") + "\n", warnings
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -174,7 +229,9 @@ def main(argv: list[str] | None = None) -> int:
     repo = args.repo or github_repo()
     issues = list_experiment_issues(repo)
     exp_dirs = scan_experiment_dirs()
-    content = render_index(issues, exp_dirs, repo)
+    content, warnings = render_index(issues, exp_dirs, repo)
+    for w in warnings:
+        print(f"WARNING: {w}", file=sys.stderr)
 
     if args.check:
         current = args.output.read_text() if args.output.exists() else ""
