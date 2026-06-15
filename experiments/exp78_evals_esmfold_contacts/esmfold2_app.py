@@ -44,17 +44,23 @@ OUTPUTS_VOLUME_NAME = "esmfold2-exp78-runs"
 WEIGHTS_VOL = modal.Volume.from_name(WEIGHTS_VOLUME_NAME, create_if_missing=True)
 OUTPUTS_VOL = modal.Volume.from_name(OUTPUTS_VOLUME_NAME, create_if_missing=True)
 
+# HF token (for snapshotting biohub/ESMFold2 + its ESMC-6B base). The model
+# is not gated, but a token avoids anonymous rate limits; this secret sets
+# HF_TOKEN in the container.
+HF_SECRET = modal.Secret.from_name("helico-hf-modal")
+
 HF_MODEL_ID = "biohub/ESMFold2"
 
 ESMFOLD2_IMAGE = (
-    modal.Image.from_registry("nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04", add_python="3.11")
+    # Biohub's esm package requires Python >=3.12,<3.13.
+    modal.Image.from_registry("nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04", add_python="3.12")
     .apt_install("git")
     .pip_install(
         "torch",
-        # Biohub's `esm` package provides esm.models.esmfold2 (input builder)
-        # and registers the transformers ESMFold2Model. Pinned-ish; resolved
-        # by the spike.
-        "esm",
+        # Biohub's `esm` package (NOT the unrelated PyPI `esm`!) provides
+        # esm.models.esmfold2 (the input builder) and registers the
+        # transformers ESMFold2Model. Installed from git — no PyPI release yet.
+        "esm @ git+https://github.com/Biohub/esm.git@main",
         "transformers>=4.40",
         "accelerate",
         "huggingface_hub[hf_transfer]",
@@ -71,7 +77,7 @@ ESMFOLD2_IMAGE = (
 app = modal.App(APP_NAME, image=ESMFOLD2_IMAGE)
 
 
-@app.function(volumes={"/weights": WEIGHTS_VOL}, timeout=60 * 60)
+@app.function(volumes={"/weights": WEIGHTS_VOL}, timeout=60 * 60, secrets=[HF_SECRET])
 def setup_weights() -> dict:
     """Snapshot the ESMFold2 weights from HF into the weights Volume."""
     from huggingface_hub import snapshot_download
@@ -113,6 +119,7 @@ def _score_confidence(result) -> float:
     volumes={"/weights": WEIGHTS_VOL, "/outputs": OUTPUTS_VOL},
     gpu="H100",
     timeout=60 * 60 * 4,
+    secrets=[HF_SECRET],
 )
 @modal.concurrent(max_inputs=1)
 class ESMFold2Worker:

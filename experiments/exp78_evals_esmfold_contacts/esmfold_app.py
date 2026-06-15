@@ -51,7 +51,9 @@ ESMFOLD_IMAGE = (
         # transformers vendors the OpenFold structure module ESMFold needs;
         # no separate openfold install. accelerate eases device placement.
         "torch",
-        "transformers>=4.40",
+        # ESMFold v1's EsmForProteinFolding lives in transformers 4.x; v5
+        # restructured the Esm models, so pin below 5 to keep the API.
+        "transformers>=4.40,<5",
         "accelerate",
         "huggingface_hub[hf_transfer]",
         "gemmi>=0.6",   # PDB -> mmCIF conversion in-worker

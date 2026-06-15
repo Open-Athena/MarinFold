@@ -20,7 +20,7 @@ Prints a diagnostic dump; writes nothing persistent.
 
 import modal
 
-from esmfold2_app import ESMFOLD2_IMAGE, HF_MODEL_ID, WEIGHTS_VOL
+from esmfold2_app import ESMFOLD2_IMAGE, HF_MODEL_ID, HF_SECRET, WEIGHTS_VOL
 
 app = modal.App("esmfold2-spike-exp78", image=ESMFOLD2_IMAGE)
 
@@ -28,7 +28,7 @@ app = modal.App("esmfold2-spike-exp78", image=ESMFOLD2_IMAGE)
 TEST_SEQ = "LSDEDFKAVFGMTRSAFANLPLWKQQNLKKEKGLF"
 
 
-@app.function(volumes={"/weights": WEIGHTS_VOL}, gpu="H100", timeout=60 * 40)
+@app.function(volumes={"/weights": WEIGHTS_VOL}, gpu="H100", timeout=60 * 40, secrets=[HF_SECRET])
 def spike() -> dict:
     import json
     import time
