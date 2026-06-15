@@ -22,7 +22,12 @@ import modal
 
 from esmfold2_app import ESMFOLD2_IMAGE, HF_MODEL_ID, HF_SECRET, WEIGHTS_VOL
 
-app = modal.App("esmfold2-spike-exp78", image=ESMFOLD2_IMAGE)
+# The spike module imports esmfold2_app at top level, which also re-executes
+# inside the remote container — so the container needs esmfold2_app.py present.
+app = modal.App(
+    "esmfold2-spike-exp78",
+    image=ESMFOLD2_IMAGE.add_local_python_source("esmfold2_app"),
+)
 
 # A short well-folded test sequence (villin headpiece HP35).
 TEST_SEQ = "LSDEDFKAVFGMTRSAFANLPLWKQQNLKKEKGLF"
