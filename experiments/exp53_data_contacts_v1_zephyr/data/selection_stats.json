@@ -1,0 +1,110 @@
+{
+  "clusters_post_seqlen": 1679051,
+  "clusters_kept": 960054,
+  "clusters_dropped": 718997,
+  "rows_post_seqlen": 24008933,
+  "selected_docs_total": 4213203,
+  "per_split": [
+    {
+      "split": "test",
+      "docs": 41567,
+      "clusters": 9468
+    },
+    {
+      "split": "train",
+      "docs": 4129682,
+      "clusters": 941028
+    },
+    {
+      "split": "val",
+      "docs": 41954,
+      "clusters": 9558
+    }
+  ],
+  "per_split_round": [
+    {
+      "split": "test",
+      "round": 0,
+      "docs": 9468
+    },
+    {
+      "split": "test",
+      "round": 1,
+      "docs": 9468
+    },
+    {
+      "split": "test",
+      "round": 2,
+      "docs": 9468
+    },
+    {
+      "split": "test",
+      "round": 3,
+      "docs": 7248
+    },
+    {
+      "split": "test",
+      "round": 4,
+      "docs": 5915
+    },
+    {
+      "split": "train",
+      "round": 0,
+      "docs": 941028
+    },
+    {
+      "split": "train",
+      "round": 1,
+      "docs": 941028
+    },
+    {
+      "split": "train",
+      "round": 2,
+      "docs": 941028
+    },
+    {
+      "split": "train",
+      "round": 3,
+      "docs": 719519
+    },
+    {
+      "split": "train",
+      "round": 4,
+      "docs": 587079
+    },
+    {
+      "split": "val",
+      "round": 0,
+      "docs": 9558
+    },
+    {
+      "split": "val",
+      "round": 1,
+      "docs": 9558
+    },
+    {
+      "split": "val",
+      "round": 2,
+      "docs": 9558
+    },
+    {
+      "split": "val",
+      "round": 3,
+      "docs": 7316
+    },
+    {
+      "split": "val",
+      "round": 4,
+      "docs": 5964
+    }
+  ],
+  "config": {
+    "input": "/home/bizon/exp53_scratch/afdb24m_small/**/*.parquet",
+    "min_seq_len": 2,
+    "max_seq_len": 2000,
+    "min_cluster_size": 3,
+    "num_rounds": 5,
+    "shard_size": 2000
+  },
+  "num_shards": 2111
+}

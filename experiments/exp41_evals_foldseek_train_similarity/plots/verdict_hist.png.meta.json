@@ -1,0 +1,12 @@
+{
+  "script": "plot_similarity.py",
+  "args": [
+    "--csv",
+    "data/foldbench_vs_full_reps_similarity.csv",
+    "--timings-csv",
+    "data/timings.csv",
+    "--suffix",
+    "FoldBench-100 vs afdb-24M full train reps (1.33M)"
+  ],
+  "caption": "Per-candidate verdict counts vs the training-set representative DB (FoldBench-100 vs afdb-24M full train reps (1.33M)). Verdict keys off the nearest TRAIN cluster's query-normalized TM-score: redundant >= 0.9, same_fold >= 0.5, else novel_fold."
+}

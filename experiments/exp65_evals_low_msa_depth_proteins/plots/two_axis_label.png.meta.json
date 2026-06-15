@@ -1,0 +1,5 @@
+{
+  "script": "plot_2d_label.py",
+  "args": [],
+  "caption": "exp65 2-D eval label. Left: fold-novelty (vs AFDB-24M train reps, Foldseek) x MSA-depth (Neff, ColabFold); red box = the novel-fold x shallow-MSA corner FoldBench-100 couldn't populate. Right: which datasets supply the shallow-MSA tail."
+}

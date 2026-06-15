@@ -1,0 +1,41 @@
+[project]
+name = "exp74-evals-protenix-pyconfind-contacts"
+version = "0.1.0"
+description = "Eval Protenix v2 contact prediction (4 configs) against pyconfind ground truth on FoldBench-100 + the exp65 low-MSA / novel-fold set."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Local-side: input prep, pyconfind ground-truth + scoring, plotting,
+    # HF up/download, and the Modal client. The Protenix / torch / cuda
+    # stack lives in the Modal image, NOT here.
+    "modal>=0.64",
+    "gemmi>=0.6",          # mmCIF / PDB parsing + chain extraction
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "requests",            # RCSB structure fetch
+    "huggingface-hub>=0.24",
+    # pyconfind ground-truth contacts, run exactly like contacts_v1
+    # (native_only=True). The extra pulls pyconfind>=0.5.
+    "marinfold[contacts-v1]",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+# Optional JIT backend for pyconfind on larger batches. Not required —
+# the exp65 / FoldBench structures are small (<=460 aa).
+fast = ["numba"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]

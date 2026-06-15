@@ -1,0 +1,18 @@
+# Downloaded structures (re-fetchable from RCSB / CASP / CAMEO; large).
+structures/
+# Raw download scratch: CASP target tarballs + extracted trees, CAMEO archives.
+*.tar.gz
+casp_raw/
+cameo_raw/
+# Generic scratch.
+tmp/
+# Local venv + caches.
+.venv/
+__pycache__/
+.pytest_cache/
+# ColabFold MSAs (large; re-fetchable from api.colabfold.com).
+data/msa/
+# FASTA files are derived from data/candidate_sequences.csv (which carries the
+# sequence column) via extract_sequences.py; don't duplicate them in git.
+data/candidates.fasta
+data/seqs/

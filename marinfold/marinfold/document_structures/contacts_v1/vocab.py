@@ -29,7 +29,11 @@ a contacts-v1 document emits:
 The vocab is therefore: the 5 native tokens, then the entire
 contacts-and-distances-v1 ``all_domain_tokens()`` list (which supplies
 every reused token plus the rest of its vocab, carried so the fine-tuning
-path keeps a single tokenizer). The two groups are disjoint.
+path keeps a single tokenizer), then one trailing token for the
+sequence-only variant (``<contacts-v1.sequence_only>``; see
+:data:`SEQUENCE_ONLY_TOKENS`). The three groups are disjoint, and the
+sequence-only token is appended **last** so introducing it left every
+pre-existing token id unchanged (append-only).
 """
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
@@ -69,6 +73,17 @@ NATIVE_TOKENS = [
 BEGIN_SEQUENCE_TOKEN = "<begin_sequence>"      # start of the sequence section
 BEGIN_STRUCTURE_TOKEN = "<begin_statements>"   # start of the structure section
 END_TOKEN = "<end>"
+
+# --- Sequence-only variant (contacts-v1.sequence_only) ---
+# Doc type that emits ONLY the sequence section (no structure section). It
+# lets a sequence-only corpus (e.g. UniRef50; see exp64) live in the
+# contacts-v1 token space so it can be mixed with the contacts-v1 corpus
+# under one tokenizer. Minted by contacts-v1 but deliberately kept OUT of
+# NATIVE_TOKENS and appended LAST in all_domain_tokens(): that way adding it
+# left every pre-existing contacts-v1 / contacts-and-distances-v1 token id
+# unchanged (append-only — see the module docstring).
+SEQUENCE_ONLY_DOC_TYPE_TOKEN = "<contacts-v1.sequence_only>"
+SEQUENCE_ONLY_TOKENS = [SEQUENCE_ONLY_DOC_TYPE_TOKEN]
 
 
 def position_token(index: int) -> str:
@@ -120,6 +135,16 @@ def additional_tokens() -> list[str]:
     return [t for t in _cd_v1_all_domain_tokens() if t not in native]
 
 
+def sequence_only_tokens() -> list[str]:
+    """The token(s) the sequence-only variant mints, appended last.
+
+    Currently just ``<contacts-v1.sequence_only>``. Kept as its own
+    trailing group (rather than folded into the leading native tokens) so
+    that adding it preserved every pre-existing token id.
+    """
+    return list(SEQUENCE_ONLY_TOKENS)
+
+
 def all_domain_tokens() -> list[str]:
     """Return the full ordered contacts-v1 domain vocabulary.
 
@@ -127,6 +152,11 @@ def all_domain_tokens() -> list[str]:
     and 1); this function returns the domain tokens only, starting at id 2.
 
     The group order (the native tokens, then the contacts-and-distances-v1
-    block) and the within-group order are both load-bearing.
+    block, then the trailing sequence-only token) and the within-group
+    order are both load-bearing.
     """
-    return [*contacts_v1_native_tokens(), *additional_tokens()]
+    return [
+        *contacts_v1_native_tokens(),
+        *additional_tokens(),
+        *sequence_only_tokens(),
+    ]

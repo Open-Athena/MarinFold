@@ -1,0 +1,12 @@
+# Local generation outputs + downloaded UniRef50 shards (large; live outside
+# git — re-generatable from cli.py / re-fetchable from HF).
+out/
+*_out/
+*.parquet
+*.fasta.zst
+uniref50*/
+tokenizer/
+# Caches / local venv.
+.venv/
+__pycache__/
+.pytest_cache/

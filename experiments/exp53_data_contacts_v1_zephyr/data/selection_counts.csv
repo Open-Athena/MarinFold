@@ -1,0 +1,16 @@
+split,round,docs
+test,0,9468
+test,1,9468
+test,2,9468
+test,3,7248
+test,4,5915
+train,0,941028
+train,1,941028
+train,2,941028
+train,3,719519
+train,4,587079
+val,0,9558
+val,1,9558
+val,2,9558
+val,3,7316
+val,4,5964

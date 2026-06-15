@@ -1,11 +1,18 @@
 # MarinFold
 
-Can a vanilla LLM predict protein structures if its training "documents" are structured
-in the right way? MarinFold aims to answer this question. Our models are trained
-from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb)
 
-This is a research codebase for an ongoing project. It is an experiment in open development.
-We do not currently have models that anyone should use!
+Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
+MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
+
+This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far. We do not currently have models that anyone should use!
+
+## Current performance
+
+<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_5way_swarm.png" alt="LDDT 5-way swarm plot" width="75%">
+<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_vs_protein_length_log.png" alt="LDDT vs protein length log plot" width="75%">
+
+The MarinFold models shown above were trained on `contacts-and-distances-v1`. The distogram was read-out by prompting with the sequence only and no inference time search was used.
 
 ## Try it out
 
@@ -157,6 +164,11 @@ uv run contacts-and-distances-v1 evaluate \
     --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
     --out /tmp/metrics.json
 ```
+
+## Colab Notebooks
+
+- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run the current `1B` or `1.5B` model with `vllm` and plot ground-truth vs predicted distance heatmaps.
+- [Inspect Data 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inspect_data1.ipynb) — browse legacy `timodonnell/protein-docs` subsets plus newer `open-athena/MarinFold` bucket parquet data, with sample documents and parquet schema previews.
 
 ## Layout
 
@@ -324,7 +336,8 @@ run name. (See `AGENTS.md` "HF bucket" for the splitting policy.)
 — first-class published text / tokenized corpora that levanter
 loads via `hf://datasets/` URIs. Long-tail / in-flight data
 artifacts go to the bucket instead.
-- **GCS** (`gs://marin-us-east5/<...>`) — large intermediate
+- **GCS** (`gs://marin-<region>/<...>`, co-located with the job's
+compute zone — see `AGENTS.md` "GCS bucket") — large intermediate
 artifacts produced by marin's executor (tokenized parquets,
 cached features, predictions).
 - **W&B** (`https://wandb.ai/open-athena/MarinFold`) — training and

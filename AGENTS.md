@@ -219,27 +219,80 @@ tokenizer is "well-known" and pinned by URL elsewhere (e.g.
 `timodonnell/protein-docs-tokenizer@<sha>`) — co-locate it so
 nothing breaks if the source tokenizer URL changes.
 
-### GCS bucket: `marin-us-east5/protein-structure/MarinFold`
+### Cross-region data transfers & the shared Iris cluster
 
-When an experiment needs to dump large eval outputs (raw
+Storage and bandwidth are dominant cost drivers for this project,
+and the marin Iris pools straddle regions and continents — the v5p
+TPU pool spans `{us-central1-a, us-east5-a}`, the CPU pool reaches
+`europe-west4`, and the controller lives in `us-central1-a`. There
+is no single region that "the cluster" is in, so cross-region I/O is
+a default failure mode, not a rare edge case. Treat it as something
+to avoid:
+
+- **Don't stream large data across regions or to the open internet.**
+  Co-locate a job's GCS I/O with its compute zone (see "GCS bucket"
+  below). Stream through `fsspec` rather than copying artifacts to
+  local disk, and never pull more than a few MB across regions in a
+  hot path.
+- **Pin the worker zone** (`--zone`, `ResourceConfig`) so workers
+  land in-region with their data, and prefer in-region preemptible
+  pools over over-requesting on-demand capacity. Over-requesting
+  on-demand workers spills them cross-continent: exp53 asked for a
+  large on-demand CPU pool, spilled to `europe-west4`, and those
+  workers did slow trans-Atlantic reads/writes and became the
+  straggler tail.
+- **A cross-region copy larger than 10 GB needs explicit human
+  sign-off**, regardless of previous instructions. Under that, mirror
+  once into the local region and reference the local copy thereafter
+  (mirrors marin's `TransferBudget` default of 10 GB).
+- **Never use the GCS storage-transfer-service** to move data between
+  regions without explicit user approval — bulk cross-region moves
+  are a real cost event.
+- **Never stop, restart, or bounce the shared Iris cluster** unless
+  the user gives express permission. Other people's jobs run on it.
+
+### GCS bucket: `marin-<region>/protein-structure/MarinFold/` (co-locate with compute)
+
+When an experiment needs to dump large eval/data outputs (raw
 distograms, prediction batches, intermediate parquets) to GCS —
 typically because it ran on TRC via iris and the worker is
-ephemeral — write them under
+ephemeral — write them under the
+`protein-structure/MarinFold/<experiment-name>/` prefix, but in the
+`marin-<region>` bucket **co-located with the zone the job's workers
+actually run in**, not a fixed region:
 
 ```
-gs://marin-us-east5/protein-structure/MarinFold/<experiment-name>/...
+gs://marin-<region>/protein-structure/MarinFold/<experiment-name>/...
 ```
 
-where `<experiment-name>` is informative enough that someone
-scanning the bucket can tell what it is without reading the source
-(e.g.
+- **TPU training / eval** follows the same rule: pin the TPU zone,
+  then write to the matching `marin-<region>` bucket. For our
+  current v5p-based MarinFold jobs that usually means `us-east5-a`
+  and `gs://marin-us-east5/protein-structure/MarinFold/<exp>/`, but
+  that is an example, not a global rule.
+- **CPU data-gen on the Iris cluster** likewise depends on where the
+  workers actually land: us-central1 / us-central2 are common, but
+  fallback pools can spill farther. Pin the worker zone and write to
+  the matching same-region bucket, e.g.
+  `gs://marin-us-central1/protein-structure/MarinFold/<exp>/` for a
+  job pinned to `us-central1-a`. Writing that output to a different
+  region (for example `marin-us-east5`) means every worker does a
+  cross-region PUT; exp5 already moved to `marin-us-central1` for
+  exactly this reason.
+- If a single canonical location is genuinely needed, do **one bulk
+  copy after the job completes**, not thousands of streamed
+  cross-region worker PUTs — and respect the > 10 GB sign-off rule
+  above.
+
+Keep the `protein-structure/MarinFold/<experiment-name>/` prefix
+identical across regions, so MarinFold outputs stay co-located by
+convention and the marin team can find them at a glance. Make
+`<experiment-name>` informative enough to recognize without reading
+the source (e.g.
 `exp26/protein-contacts-1_5b-distance-masked-70f8f5-step-49999-foldbench-monomers/`).
-The point is to keep all MarinFold outputs co-located under one
-prefix so the marin team can find them and tell at a glance what
-each subdir is — don't sprinkle MarinFold artifacts across
-`gs://marin-us-east5/eval/...`, `gs://marin-us-east5/checkpoints/...`,
-etc. (those prefixes belong to the marin protein-experiments
-convention, not ours).
+Don't sprinkle MarinFold artifacts across `marin-<region>/eval/...`,
+`marin-<region>/checkpoints/...`, etc. (those prefixes belong to the
+marin protein-experiments convention, not ours).
 
 The same "small artifacts (CSVs, plots) stay in git, large
 artifacts go to durable storage" rule from the HF bucket section
