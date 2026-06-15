@@ -140,8 +140,77 @@ expect MSA ≫ single-seq and the structure predictor ≥ distogram predictor
 
 ## Results
 
-_(Fill in after the full exp65 run + scoring completes.)_
+Scored **554 proteins** — FoldBench-100 + all 454 exp65 candidates (396
+de-novo, 32 CAMEO-hard, 26 CASP-FM) — in all four configs. pyconfind
+ground-truth alignment identity was **≥ 0.95 for every structure** (mean
+0.999), so the resolved-residue → input-sequence mapping is sound across
+the heterogeneous set (RCSB assemblies, CASP domain clips, designed
+monomers). All numbers are mean contact precision; source data is
+[`data/contact_precision_all.csv`](data/contact_precision_all.csv) (tidy,
+one row per stem × mode × predictor × range × k).
+
+**Contacts @ L (k=1), by config:**
+
+| set | predictor | MSA agg | MSA long | SS agg | SS long |
+|---|---|---|---|---|---|
+| FoldBench-100 | structure | **0.77** | 0.55 | 0.25 | 0.16 |
+| FoldBench-100 | distogram | 0.45 | 0.39 | 0.21 | 0.15 |
+| exp65 (454) | structure | **0.70** | 0.45 | **0.58** | 0.36 |
+| exp65 (454) | distogram | 0.44 | 0.36 | 0.39 | 0.31 |
+
+(FoldBench-100 structure·MSA contacts @ L/5 = 0.91 agg / 0.90 long.)
+
+Two robust patterns:
+1. **The structure predictor beats the distogram predictor** in every
+   setting — expected, since it shares pyconfind's side-chain-contact
+   notion while the distogram ranks by a CB-CB ≤ 8 Å distance proxy.
+2. **MSA ≫ single-seq on FoldBench-100, but the gap collapses on exp65**
+   (structure agg: 0.77→0.25 vs 0.70→0.58). exp65 is exactly the
+   low-MSA / novel regime where MSA mode has little coevolution signal to
+   exploit.
+
+**The MSA advantage scales with MSA depth** — exp65 long-range structure
+contacts @ L by Neff tier ([`plots/contacts_at_L_by_neff_tier.png`](plots/contacts_at_L_by_neff_tier.png)):
+
+| neff_tier | n | MSA | single-seq | MSA−SS |
+|---|---|---|---|---|
+| orphan (Neff≈1) | 106 | 0.414 | 0.419 | **−0.005** |
+| low (1–10) | 115 | 0.452 | 0.434 | +0.018 |
+| marginal (10–30) | 15 | 0.503 | 0.383 | +0.119 |
+| deep (≥30) | 218 | 0.453 | 0.296 | +0.157 |
+
+For orphan / low-Neff proteins, **single-sequence Protenix is on par with
+MSA mode**; the MSA benefit only materializes once the MSA is deep.
+
+**By fold novelty** (exp65 long-range structure contacts @ L;
+[`plots/contacts_at_L_by_fold_verdict.png`](plots/contacts_at_L_by_fold_verdict.png)):
+novel_fold 0.39 / 0.28 (MSA/SS), same_fold 0.44 / 0.39, redundant 0.46 /
+0.35 — novel folds are hardest, as expected.
+
+Plots in [`plots/`](plots/): contacts @ L/L2/L5 by config and range, the
+two stratifications above, FoldBench-vs-exp65, and precision-vs-Neff.
+Raw Protenix outputs + the full pyconfind contact tables (every degree>0
+contact, GT + predicted; 696k rows) are on the HF bucket under
+`data/protenix-contacts-eval-exp74/`.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+Protenix v2 predicts pyconfind-defined contacts well in MSA mode on
+natural proteins (FoldBench-100 structure-config contacts @ L = 0.77, @
+L/5 = 0.91). The headline finding for our purposes: **on low-MSA-depth
+proteins the single-sequence and MSA modes converge** — for orphan/low-Neff
+candidates single-sequence is as accurate as MSA mode, and the MSA
+advantage grows monotonically with MSA depth (MSA−SS long-range gap
+−0.01 → +0.16 from orphan to deep). That's encouraging for a
+single-sequence contact-prediction model: in the regime where MSAs are
+shallow — the regime that matters for us — there is little left on the
+table by not using an MSA. The **structure** configs (pyconfind on the
+predicted structure) are the apples-to-apples comparison to our
+pyconfind ground truth; the **distogram** configs sit lower because of
+the CB-CB-distance vs side-chain-contact representation gap, not
+necessarily worse prediction.
+
+Caveats: precision @ L is bounded by pyconfind's contact density for
+short proteins (≈0.6 contacts/residue), so L/2 and L/5 are the cleaner
+read for small targets; the 8 Å distogram threshold is a default and can
+be swept cheaply against the saved distograms.

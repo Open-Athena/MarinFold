@@ -1,0 +1,12 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--meta-csv",
+    "data/contact_eval_meta_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Mean precision among top-L ranked pairs vs pyconfind contacts (degree\u22650.001, sep\u22656), per config, aggregate and by range. distogram=rank by P(CB-CB\u22648\u00c5); structure=rank by pyconfind degree on the predicted CIF."
+}

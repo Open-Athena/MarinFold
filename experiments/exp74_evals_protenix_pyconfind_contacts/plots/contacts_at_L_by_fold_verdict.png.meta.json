@@ -1,0 +1,12 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--meta-csv",
+    "data/contact_eval_meta_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Contacts @ L by fold novelty (long-range)"
+}
