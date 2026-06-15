@@ -1,0 +1,24 @@
+# Heavy, re-fetchable / re-derivable artifacts — never committed (AGENTS rule #2).
+.venv/
+__pycache__/
+*.pyc
+
+# Downloaded / synced raw outputs (from the HF bucket or Modal volumes).
+_hf_foldbench/
+_hf_exp65/
+best/
+gt/
+inputs/
+outputs/
+structures/
+msa/
+_scratch/
+
+# Large raw contact tables / distogram dumps land in data/ but are pushed to
+# HF, not git. Keep small committed CSVs; ignore the big parquet dumps.
+data/contacts_raw.parquet
+data/contacts_raw_all.parquet
+# Per-dataset score dirs are intermediate; the combined data/contact_*_all.csv
+# supersede them and their raw parquets go to HF.
+data/exp65_scores/
+data/foldbench_scores/
