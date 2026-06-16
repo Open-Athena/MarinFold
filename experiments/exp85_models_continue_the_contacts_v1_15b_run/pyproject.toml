@@ -4,17 +4,19 @@ version = "0.1.0"
 description = "Warm-restart the #67 contacts-v1 1.5B run for ~1 more epoch with a re-heated LR — issue #85."
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "marin",
+    # marin-core is the source dist for the `marin` module (see [tool.uv.sources]
+    # below — the marin workspace is pinned to a git source >= 2026-06-02 so the
+    # worker gets the fixed cache-ledger reader; the published `marin` wheel is
+    # frozen at the buggy 2026-05-29 build).
+    "marin-core",
     "marin-levanter",
     "marin-iris",
     "marin-zephyr",
     "marin-rigging",
     "marinfold-models",
     # marin.processing.tokenize -> marin.datakit.normalize imports `dupekit`
-    # unconditionally, but the current marin wheel doesn't declare it as a
-    # dependency, so it isn't pulled transitively. It lives on the marin
-    # find-links mirror (see [tool.uv].find-links below). Pin it explicitly.
-    "dupekit",
+    # unconditionally. The source dist name is `marin-dupekit` (git-sourced below).
+    "marin-dupekit",
     # protein_distogram_eval.py:
     "fsspec",
     "matplotlib",
@@ -25,7 +27,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-tpu = ["marin[tpu]; sys_platform == 'linux'"]
+tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
 # The marin executor builds the CPU-only tokenize sub-job with `--extra cpu`
 # (default_tokenize -> remote(..., pip_dependency_groups=["cpu"])), so this
 # extra must exist in the experiment's pyproject. exp0 never needed it because
@@ -38,7 +40,7 @@ tpu = ["marin[tpu]; sys_platform == 'linux'"]
 # `pytorch-cpu` index routing below only applies to direct deps. Mirrors the
 # exp26 foldbench pattern.
 cpu = [
-    "marin[cpu]",
+    "marin-core[cpu]",
     "torch==2.10.0",
     "torchvision==0.25.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
@@ -65,16 +67,11 @@ override-dependencies = [
     "equinox>=0.11.10",
 ]
 
+# The marin-* packages + dupekit are pinned to a marin git source (see
+# [tool.uv.sources] below) so the worker builds the FIXED cache-ledger reader
+# from source (>= 2026-06-02), not the frozen 2026-05-29 wheels. Only kitoken
+# (a Rust wheel from a separate repo) is still fetched as a prebuilt wheel.
 find-links = [
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-haliax-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-levanter-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-iris-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-zephyr-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-rigging-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-fray-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/marin-finelog-latest",
-    "https://github.com/marin-community/marin/releases/expanded_assets/dupekit-0.1.0-40ac799",
     "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
 ]
 
@@ -105,4 +102,24 @@ torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
 # the marin-API-drift fix in defaults.py (see README "Implementation notes").
 # For local iteration, override with
 #   uv sync --extra tpu  (after `uv pip install --reinstall-package marinfold-models ../../models`)
-marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "5f925614076f9f3594a314182267b31841ce6064" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "445e8b39c9441af304959dea457d0ba95635ee3a" }
+
+# Pin the whole marin workspace to a git source at commit e78c54a8 (2026-06-10),
+# which carries the #6008/#6014 cache-ledger READER fix (accepts the `input_ids`
+# ledger that exp67's reused cache was written with). The published `marin-*`
+# wheels are frozen at the buggy 2026-05-29 build, and a git source can't
+# substitute for the published `marin` (it renames `marin-core` -> `marin` at
+# release), so we depend on the source dist names directly. The worker fetches
+# the marin repo and builds these from source (this is how eric's #75 sweep gets
+# a working reader). NOTE: the iris CLIENT still needs an editable iris for the
+# freshness gate (`uv pip install -e ~/git/marin/lib/iris` after sync) — the
+# git-source iris here is for the (freshness-exempt) worker.
+marin-core = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/marin", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-levanter = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/levanter", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-iris = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/iris", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-rigging = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/rigging", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-fray = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/fray", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-finelog = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/finelog", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-haliax = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/haliax", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
+marin-dupekit = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/dupekit", rev = "e78c54a83236e532ac893e1d92cfde8b72cf6bb2" }
