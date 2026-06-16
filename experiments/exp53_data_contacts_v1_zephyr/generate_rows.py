@@ -22,7 +22,6 @@ provenance columns (``round``, ``struct_cluster_id``, …).
 
 import warnings
 from collections.abc import Iterable, Iterator
-from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any
 
@@ -33,6 +32,10 @@ from marinfold.document_structures.contacts_v1 import (
     generate_document,
 )
 from marinfold.document_structures.contacts_v1.vocab import CONTEXT_LENGTH, NAME
+from marinfold.document_structures.io import (
+    read_object_bytes,
+    thread_per_row_in_shard,
+)
 
 # Manifest columns copied verbatim onto every output row (provenance: lets a
 # generated doc be traced back to its cluster / round / split / source).
@@ -99,27 +102,6 @@ def structure_from_cif(data: str | bytes, *, entry_id: str) -> gemmi.Structure:
     return structure
 
 
-def _fetch_cif_bytes(uri: str) -> bytes | None:
-    """Fetch a cif from a URI, reading the *whole* object. ``None`` on error.
-
-    Uses the filesystem's ``cat_file`` (a single full GET) rather than a
-    seekable ``open().read()``. The AFDB GCS objects are gzip-transcoded
-    (``Content-Encoding: gzip``) and report their *compressed* size, so a
-    size/range-based read returns only that many bytes of the decompressed
-    stream and silently truncates larger structures mid-``_atom_site`` loop
-    (gemmi then raises "Wrong number of values in loop _atom_site"). A plain
-    GET lets GCS decompressively transcode and we read to EOF -- the full mmCIF.
-    """
-    import fsspec
-
-    try:
-        fs, path = fsspec.core.url_to_fs(uri)
-        return fs.cat_file(path)
-    except (OSError, ValueError) as exc:
-        warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
-        return None
-
-
 def build_output_row(row: dict, result, *, structure_name: str = NAME) -> dict[str, Any]:
     """Assemble one output row: contacts-v1 metadata + manifest provenance.
 
@@ -161,7 +143,7 @@ def generate_doc_for_row(
         uri = row.get(cif_uri_column)
         if not uri:
             return None
-        cif = _fetch_cif_bytes(uri)
+        cif = read_object_bytes(uri)
         if cif is None:
             return None
     try:
@@ -197,15 +179,11 @@ def generate_shard(
     Signature ``(items, shard_info, *, ...)`` matches zephyr's ``map_shard``
     contract, but the function is plain Python and unit-tested directly. The
     rotamer library is loaded once for the whole shard. For the URI path,
-    fetches run on a ``ThreadPoolExecutor`` so the per-row GCS GETs overlap
-    pyconfind's contact computation (pyconfind releases the GIL in its
-    compiled backend). For the inline-cif path there is no I/O to overlap,
-    so rows run sequentially. Output order mirrors input order
-    (``pool.map``), keeping per-shard output deterministic.
+    delegates to :func:`marinfold.document_structures.io.thread_per_row_in_shard`
+    so the per-row GCS GETs overlap pyconfind's contact computation
+    (pyconfind releases the GIL in its compiled backend). For the inline-cif
+    path there is no I/O to overlap, so rows run sequentially.
     """
-    rows = list(items)
-    if not rows:
-        return
     rotamer_library = _load_rotamer_library()
     worker = partial(
         generate_doc_for_row,
@@ -217,13 +195,13 @@ def generate_shard(
         structure_name=structure_name,
     )
     if cif_text_column is not None:
-        for row in rows:
+        for row in items:
             out = worker(row)
             if out is not None:
                 yield out
         return
-    workers = min(fetch_concurrency, len(rows))
-    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="exp53-fetch") as pool:
-        for out in pool.map(worker, rows):
-            if out is not None:
-                yield out
+    yield from thread_per_row_in_shard(
+        items, worker=worker,
+        fetch_concurrency=fetch_concurrency,
+        thread_name_prefix="exp53-fetch",
+    )
