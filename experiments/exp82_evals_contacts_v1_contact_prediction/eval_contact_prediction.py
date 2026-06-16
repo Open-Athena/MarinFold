@@ -75,11 +75,14 @@ BEGIN = "<begin_statements>"
 @dataclass
 class Protein:
     entry: str
-    prefix: str          # sequence section incl. <begin_statements>
+    prefix: str          # sequence section incl. <begin_statements> (contacts-v1 format)
     L: int               # number of residues
     nterm: int           # position index of the N-terminus
-    seq_positions: list[int]   # position index per sequence index 0..L-1
+    seq_positions: list[int]   # contacts-v1 position index per sequence index 0..L-1
     gt: set              # ground-truth contacts as frozenset({seq_i, seq_j})
+    residues: list[str]  # residue token (e.g. "<GLY>") per sequence index 0..L-1
+                         # (lets a different format, e.g. contacts-and-distances-v1,
+                         #  rebuild the same protein's prefix — see the prior-model eval)
 
 
 # --------------------------------------------------------------------------- #
@@ -96,12 +99,17 @@ def parse_protein(entry: str, doc: str) -> Protein | None:
                         key=lambda p: (p - nterm) % NUM_POS)
     L = len(pos_in_seq)
     seqidx = {p: (p - nterm) % NUM_POS for p in pos_in_seq}
+    # residue at each position (from `<pX> <RES>` statements; 3-letter AA tokens).
+    res_of_pos = {int(p): aa for p, aa in re.findall(r"<p(\d+)>\s+<([A-Z]{3})>", prefix)}
+    residues = [f"<{res_of_pos[p]}>" for p in pos_in_seq] if all(p in res_of_pos for p in pos_in_seq) else None
+    if residues is None:
+        return None
     gt = set()
     for a, b in CONTACT_RE.findall(struct):
         ia, ib = seqidx.get(int(a)), seqidx.get(int(b))
         if ia is not None and ib is not None and ia != ib:
             gt.add(frozenset((ia, ib)))
-    return Protein(entry, prefix, L, nterm, pos_in_seq, gt)
+    return Protein(entry, prefix, L, nterm, pos_in_seq, gt, residues)
 
 
 def load_proteins(n, lo, hi):
@@ -136,15 +144,19 @@ class Scorer:
         return self.tok.convert_tokens_to_ids(f"<p{pos}>")
 
     @torch.no_grad()
-    def contact_logprob_matrix(self, prefix_ids, positions):
-        """log P(<contact> pi pj | prefix) for all i,j over `positions`.
+    def contact_logprob_matrix(self, prefix_ids, positions, contact_id=None):
+        """log P(<contact-tok> pi pj | prefix) for all i,j over `positions`.
 
-        Returns (lp1[i], lp2[i, j]) where lp1 = log P(pi | prefix,<contact>) and
-        lp2[i,j] = log P(pj | prefix,<contact>,pi). Batched: one pass for lp1,
-        chunked passes for lp2 (sequence prefix,<contact>,pi for each i).
+        Returns (lp1[i], lp2[i, j]) where lp1 = log P(pi | prefix,<contact-tok>)
+        and lp2[i,j] = log P(pj | prefix,<contact-tok>,pi). ``contact_id``
+        defaults to ``<contact>`` (contacts-v1); pass a ``<{range}-range-contact>``
+        id for the contacts-and-distances-v1 prior model. Batched: one pass for
+        lp1, chunked passes for lp2.
         """
+        if contact_id is None:
+            contact_id = self.contact_id
         pos_ids = [self.ptoken(p) for p in positions]
-        base = list(prefix_ids) + [self.contact_id]
+        base = list(prefix_ids) + [contact_id]
         # lp1: distribution right after prefix+<contact>
         X = torch.tensor([base], device=self.device)
         logits = self.model(X).logits[0, -1].float()

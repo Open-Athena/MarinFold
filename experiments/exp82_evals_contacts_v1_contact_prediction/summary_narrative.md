@@ -21,4 +21,10 @@ long-range contacts ~2× better than random, but absolute precision is very low
 (~1–2%). **iterative** is marginally best (long P@L 0.017 vs pairwise 0.014 vs
 random 0.007); **rollout does not beat pairwise.** Unlike exp27, better
 inference doesn't rescue this model — the bottleneck is the weak base model, not
-the readout. The harness re-runs against any contacts-v1 checkpoint.
+the readout.
+
+**Head-to-head (the #67 hypothesis): the prior contacts-and-distances-v1 1.5B
+wins ~2–4×** (long P@L 0.028 vs 0.017; medlong P@L 0.048 vs 0.020) on the same
+proteins — so the quick contacts-v1 run did NOT beat the previous 1.5B at
+contact prediction (the prior trained ~50k steps on more data vs 12k). Both
+harnesses re-run against any future checkpoint.

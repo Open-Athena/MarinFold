@@ -99,17 +99,54 @@ medlong = ≥12):
   **model-vs-random ratio (~2×)** is the meaningful quantity, not the absolute
   value.
 
+### Head-to-head vs the prior contacts-and-distances-v1 1.5B (the #67 hypothesis)
+
+`eval_prior_model_contacts.py` scores the **prior** 1.5B model
+(`protein-contacts-1_5b-distance-masked-70f8f5`, step-49999) on the **same** 24
+proteins / ground truth / metrics, via its native readouts: `statements`
+(`<{range}-range-contact> <pi> <pj>`) and `distance` (P(CA–CA ≤ 8 Å)). Raw:
+[`data/results_prior_1_5b_n24.txt`](data/results_prior_1_5b_n24.txt).
+
+| model · method | long P@L | long P@L/2 | long P@L/5 | medlong P@L | P@(#gt) |
+|---|---|---|---|---|---|
+| contacts-v1 · pairwise | 0.014 | 0.013 | 0.016 | 0.017 | 0.023 |
+| contacts-v1 · iterative | 0.017 | 0.014 | 0.014 | 0.020 | 0.022 |
+| **prior c-and-d-v1 · statements** | **0.028** | **0.030** | **0.026** | **0.048** | 0.047 |
+| prior c-and-d-v1 · distance | 0.018 | 0.013 | 0.009 | 0.033 | **0.050** |
+| random | 0.008 | 0.004 | 0.005 | 0.009 | 0.011 |
+
+**The prior 1.5B wins by ~2–4×** on every band (e.g. medlong P@L 0.048 vs the
+contacts-v1 model's best 0.020; long P@L 0.028 vs 0.017). Its **contact-statement
+readout beats its own distance readout** — even though it was distance-masked,
+the `<…-range-contact>` statements carry the better contact signal (the CA–CA
+distance proxy is also weaker against pyconfind side-chain ground truth).
+
+Caveats: (1) the prior model trained ~50k steps on the larger
+contacts-and-distances-v1 corpus vs exp67's 12k steps — this is "more training",
+not necessarily a worse recipe; (2) the two models use different contact
+*definitions* (contacts-v1 = pyconfind side-chain; prior = CB–CB ≤ 8 Å), and we
+score both against the contacts-v1 ground truth — yet the prior still wins
+*despite* that home-field disadvantage, which strengthens the result.
+
 ## Conclusion
 
 The quick contacts-v1 1.5B model (#67) has only a **weak** contact signal
 (~2× random at ranking long-range contacts), and **better inference doesn't
 rescue it** — iterative refinement helps marginally, rollout voting not at all.
-The bottleneck is the base model, not the readout algorithm: the lever is a
-stronger model (more training / the carefully-tuned #61), not a cleverer
-decoder. The harness (`eval_contact_prediction.py`) is the reusable deliverable
-— re-runnable against any contacts-v1 checkpoint.
+The bottleneck is the base model, not the readout algorithm.
 
-**Open follow-ups:** (1) run the same harness on the prior
-contacts-and-distances-v1 1.5B for the head-to-head #67 hypothesis; (2) re-run
-on #61's tuned model when it lands; (3) larger protein set + true CASP top-L
-normalization (here capped by small-protein contact counts).
+**The #67 hypothesis was not met:** the prior contacts-and-distances-v1 1.5B
+predicts contacts **~2–4× better** than the new quick contacts-v1 model on the
+same proteins — so the simple/quick run did *not* beat the previous 1.5B at
+contact recapitulation. That's expected given the prior model's ~50k-step / larger-corpus
+training vs exp67's 12k steps; the lever is a stronger model (more training /
+the carefully-tuned #61), not a cleverer decoder. The two harnesses
+(`eval_contact_prediction.py`, `eval_prior_model_contacts.py`) are the reusable
+deliverable — re-runnable against any future contacts-v1 / contacts-and-distances-v1
+checkpoint.
+
+**Open follow-ups:** (1) re-run on #61's tuned model when it lands (does careful
+tuning close the gap to the prior 1.5B?); (2) larger protein set + true CASP
+top-L normalization (here capped by small-protein contact counts); (3) common
+contact-definition ground truth (compute CB–CB GT) for a fully apples-to-apples
+prior comparison.
