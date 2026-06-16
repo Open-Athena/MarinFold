@@ -7,29 +7,29 @@ description: Write a Zephyr/Iris data-generation pipeline that finishes in minut
 
 A Zephyr pipeline that *works* and one that *finishes in budget* differ on a
 small set of decisions you make once at the top of `cli.py`. Most of them
-are unobvious from the marin-zephyr docs because the costs aren't local —
-they show up as straggler tails, silently-truncated reads, or cluster bills,
+are unobvious from the marin-zephyr docs because the costs aren't local.
+They show up as straggler tails, silently-truncated reads, or cluster bills,
 not as wrong output.
 
 This skill draws on lessons from two real MarinFold pipelines that
 chose differently:
 
-* `experiments/exp5_data_contacts_and_distances_v2_zephyr/` —
-  1.6 M structures. The README's success criterion documents a prior
+* `experiments/exp5_data_contacts_and_distances_v2_zephyr/` (1.6 M
+  structures). The README's success criterion documents a prior
   `gcs_uri`-mode production run (without intra-shard concurrency) at
-  **≤ 8 min wall-clock**; the current shape adds intra-shard threading
+  **≤ 8 min wall-clock**. The current shape adds intra-shard threading
   on top, so wall-clock should be no worse than that bound. **exp5
-  is currently on a PR branch, not yet on `main`** — if you need to
+  is currently on a PR branch, not yet on `main`**. If you need to
   read its code, locate the PR via `gh pr list` and check it out
   locally (or browse on github.com).
-* [`experiments/exp53_data_contacts_v1_zephyr/`](../../../experiments/exp53_data_contacts_v1_zephyr/) —
-  4.2 M structures (pyconfind-heavy). Two hard-won fixes mid-development
+* [`experiments/exp53_data_contacts_v1_zephyr/`](../../../experiments/exp53_data_contacts_v1_zephyr/)
+  (4.2 M structures, pyconfind-heavy). Two hard-won fixes mid-development
   prevented this one from running for many cluster-hours: the
   rotamer-library memoization
   ([`daa18e1`](https://github.com/Open-Athena/MarinFold/commit/daa18e1))
   and the gzip-truncation fix
-  ([`43a0535`](https://github.com/Open-Athena/MarinFold/commit/43a0535))
-  — without them, a smoke test produced only 2/100 valid documents.
+  ([`43a0535`](https://github.com/Open-Athena/MarinFold/commit/43a0535)).
+  Without them, a smoke test produced only 2/100 valid documents.
   Both lessons are documented as patterns below.
 
 When you're done, your pipeline should clear every box in the
@@ -37,15 +37,15 @@ When you're done, your pipeline should clear every box in the
 
 ---
 
-## TL;DR — the five decisions that dominate
+## TL;DR: the five decisions that dominate
 
 1. **Inside `map_shard`, run a `ThreadPoolExecutor` around the per-row
    fetch+parse.** GCS GETs are ~30–80 ms; gemmi parse releases the GIL.
-   Threading them is the single biggest per-shard speedup — exp5's prior
-   sequential version landed at ~128 s/shard; threaded should drop well
-   below that (estimated low-single-digit seconds at fetch-concurrency
-   32 over ~2,000 rows, but actual cluster wall-clock not yet
-   re-measured).
+   Threading them is the largest per-shard speedup available. exp5's
+   prior sequential version landed at ~128 s/shard; threaded should
+   drop well below that (estimated low-single-digit seconds at
+   fetch-concurrency 32 over ~2,000 rows, though actual cluster
+   wall-clock is not yet re-measured).
 2. **`--worker-cpu 1`, scale via `--max-workers`.** Per-shard CPU is
    single-threaded Python once the in-shard thread pool overlaps the I/O.
    Asking for more cores per worker wastes cluster capacity.
@@ -57,9 +57,9 @@ When you're done, your pipeline should clear every box in the
 4. **Fetch per-row objects via
    `marinfold.document_structures.io.read_object_bytes`** (a full
    `cat_file` GET), not `fsspec.open().read()`. GCS objects with
-   `Content-Encoding: gzip` report compressed size in `Content-Length`;
-   a size-based read truncates large objects mid-content. The bug is
-   silent — your parser fails downstream with a confusing
+   `Content-Encoding: gzip` report compressed size in `Content-Length`,
+   so a size-based read truncates large objects mid-content. The bug
+   is silent: your parser fails downstream with a confusing
    "unexpected end" error, not an obvious I/O fault.
 5. **Source per-row data via the manifest's `gcs_uri` pointer column,
    not the inline `cif_content` column.** Datasets like afdb-1.6M ship
@@ -72,9 +72,9 @@ When you're done, your pipeline should clear every box in the
    per-row fetch. Default to `--cif-uri-column=gcs_uri`; reserve
    `--cif-text-column` for local testing or inputs without a URI column.
 
-The rest of this skill walks through each layer of the pipeline (per-row →
-per-shard → per-job → per-output) with the code patterns these decisions
-imply.
+The rest of this skill walks through each layer of the pipeline
+(per-row, per-shard, per-job, per-output) with the code patterns
+these decisions imply.
 
 ---
 
@@ -112,13 +112,13 @@ def generate_shard(items, shard_info, *, cfg, fetch_concurrency=32, ...):
 case where the per-row GCS GET (~30–80 ms) is an order of magnitude
 larger than the per-row CPU step. If your CPU step is heavier (e.g.
 pyconfind-based contact computation in exp53, where per-doc CPU
-dominates), threading still helps but its marginal effect shrinks —
-the right concurrency knob is then closer to the worker's effective
+dominates), threading still helps but its marginal effect shrinks.
+The right concurrency knob is then closer to the worker's effective
 core count than to the I/O latency ratio.
 
-If you have *no* per-row I/O (inline cif text in the manifest), skip the
-helper — there's nothing to overlap and a thread pool is pure overhead.
-exp53's `generate_shard` shows the branch:
+If you have *no* per-row I/O (inline cif text in the manifest), skip
+the helper. There's nothing to overlap and a thread pool is pure
+overhead. exp53's `generate_shard` shows the branch:
 
 ```python
 if cif_text_column is not None:
@@ -135,38 +135,39 @@ yield from thread_per_row_in_shard(items, worker=worker, ...)
 ### 2. Memoize per-worker init in a module global
 
 A Zephyr worker process serves many shards over its lifetime. If your
-algorithm requires a heavy per-process resource (parsed reference library,
-loaded model, JIT-compiled kernel), **do not initialize it per shard or per
-row** — cache it in a module-level global so it's parsed once per worker.
+algorithm requires a heavy per-process resource (parsed reference
+library, loaded model, JIT-compiled kernel), **do not initialize it
+per shard or per row**. Cache it in a module-level global so it's
+parsed once per worker.
 
 exp53's
 [commit `daa18e1`](https://github.com/Open-Athena/MarinFold/commit/daa18e1)
-is the canonical example: pyconfind's rotamer library takes tens of seconds
-to parse. Before the fix, every shard paid that cost. After:
+is the canonical example: pyconfind's rotamer library takes tens of
+seconds to parse. Before the fix, every shard paid that cost. After
+(using ``functools.cache`` for the cross-shard memoization):
 
 ```python
-_ROTAMER_UNSET: Any = object()
-_ROTAMER_LIBRARY: Any = _ROTAMER_UNSET
+import functools
 
-def _load_rotamer_library() -> Any | None:
-    global _ROTAMER_LIBRARY
-    if _ROTAMER_LIBRARY is not _ROTAMER_UNSET:
-        return _ROTAMER_LIBRARY  # second-and-onward shards: instant
+@functools.cache
+def _load_rotamer_library():
     try:
         from pyconfind import load_library, cached_rotamer_library
-        _ROTAMER_LIBRARY = load_library(cached_rotamer_library())
+        return load_library(cached_rotamer_library())
     except Exception as exc:
         warnings.warn(f"preload failed ({exc}); per-call load", stacklevel=2)
-        _ROTAMER_LIBRARY = None
-    return _ROTAMER_LIBRARY
+        return None
 ```
 
-Use a sentinel (`_ROTAMER_UNSET`) rather than `None`, so the failure path
-(genuinely returned `None`) caches and doesn't retry on every call.
+The stdlib ``functools.cache`` covers the load-bearing part for free:
+it distinguishes "not yet called" from "called and returned None", so
+a worker whose preload genuinely returned ``None`` once doesn't retry
+per shard. Cache plus ``try/except`` together give you lazy init,
+cached failure, no per-shard retry, and no hand-rolled sentinel.
 
-This pattern compounds: a 30 s per-worker init across 500 workers × 100
-shards-per-worker is a **41-hour cluster bill** if you do it per shard;
-30 s × 500 once-per-worker is a 15-second blip.
+This pattern compounds. A 30 s per-worker init across 500 workers
+times 100 shards-per-worker is a **41-hour cluster bill** if you do
+it per shard; 30 s times 500 once-per-worker is a 15-second blip.
 
 ---
 
@@ -190,11 +191,11 @@ uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
 ```
 
 Note the *two* cpu/memory pairs: the **outer** `--cpu`/`--memory` on
-`iris job run` size the **launcher container** (tiny); the **inner**
-`--worker-cpu`/`--worker-memory` (consumed by `ZephyrContext`) size each
-**worker pod**. They're not the same thing and overspending on the launcher
-is wasteful but harmless; overspending on the workers multiplies by 500+
-and is not.
+`iris job run` sizes the **launcher container** (tiny); the **inner**
+`--worker-cpu`/`--worker-memory` (consumed by `ZephyrContext`) sizes
+each **worker pod**. Overspending on the launcher is wasteful but
+harmless; overspending on the workers multiplies by 500+, which is
+not harmless at all.
 
 ### 2. Pin `--region`, request `--preemptible`
 
@@ -224,9 +225,9 @@ p.add_argument("--region", type=str, default="us-central1",
                     "so a large pool can't spill cross-region/continent.")
 p.add_argument("--preemptible", action=argparse.BooleanOptionalAction,
                default=True,
-               help="Request preemptible/spot workers — far more in-region "
-                    "capacity + cheaper than on-demand; zephyr retries "
-                    "preemptions.")
+               help="Request preemptible/spot workers. More in-region "
+                    "capacity than on-demand at lower cost; zephyr "
+                    "retries preemptions.")
 ```
 
 exp53's
@@ -236,11 +237,11 @@ from cross-continent on-demand spills.
 
 ### 3. Match output bucket to the cluster's region
 
-`gs://marin-<region>/protein-structure/MarinFold/<exp>/` — the bucket
-**must** be in the same region as the workers, or every per-row PUT is a
-cross-region transfer (cost + latency). For the Iris cluster's
-`us-central1` default, that's `gs://marin-us-central1/...`. See the root
-[`AGENTS.md`](../../../AGENTS.md) "GCS bucket" section.
+The output bucket `gs://marin-<region>/protein-structure/MarinFold/<exp>/`
+**must** be in the same region as the workers, or every per-row PUT
+is a cross-region transfer (cost and latency). For the Iris cluster's
+`us-central1` default, that's `gs://marin-us-central1/...`. See the
+root [`AGENTS.md`](../../../AGENTS.md) "GCS bucket" section.
 
 ---
 
@@ -254,38 +255,39 @@ afdb-1.6M (and other AFDB-derived manifests on HuggingFace) ship every
 cif *twice*: as a one-line `gcs_uri` pointer to the public AFDB GCS
 bucket, **and** as the full inline mmCIF text in a `cif_content` column.
 
-The choice between them dominates everything else in this section:
+The choice between them dominates everything else in this section.
 
-- **`gcs_uri`** → workers fetch from AFDB's GCS bucket directly. For a
-  GCP-based cluster (the marin Iris pool), that's in-cloud and usually
-  in-region — fast network, no cross-cloud egress charges. Reading the
-  manifest costs ~160 KB/shard (just the URI strings + provenance).
-- **`cif_content`** → every worker reads the bulky inline mmCIF back
-  from HuggingFace, cross-cloud, per row. Reading the manifest costs
-  ~70 MB/shard (~2,000× more I/O), and that bulk crosses the open
-  internet rather than staying inside GCP.
+With `gcs_uri`, workers fetch from AFDB's GCS bucket directly. For a
+GCP-based cluster (the marin Iris pool), that's in-cloud and usually
+in-region: fast network, no cross-cloud egress charges. Reading the
+manifest costs ~160 KB/shard (just the URI strings plus provenance).
+
+With `cif_content`, every worker reads the bulky inline mmCIF back
+from HuggingFace, cross-cloud, per row. Reading the manifest costs
+~70 MB/shard (~2,000× more I/O), and that bulk crosses the open
+internet rather than staying inside GCP.
 
 Default to `--cif-uri-column=gcs_uri`. Reserve `--cif-text-column` for
 local tests (where inline cif keeps the path off the network entirely)
 or for input manifests that don't ship a URI column.
 
-A subtle related trap: if you have to enumerate the HF manifest's
-*shards* up front, do it through an authenticated `HfFileSystem` with a
-pre-warmed dircache + the `/resolve/` CDN URLs (one API call to list, N
-CDN reads for the data). Per-shard `hf://` reads make one `paths-info`
-API call each, which blows HF's 3,000 req / 5 min quota on a
-multi-thousand-shard manifest. See the "HuggingFace API quota" trap
-below.
+A related trap: if you have to enumerate the HF manifest's *shards*
+up front, do it through an authenticated `HfFileSystem` with a
+pre-warmed dircache plus the `/resolve/` CDN URLs (one API call to
+list, N CDN reads for the data). Per-shard `hf://` reads make one
+`paths-info` API call each, which blows HF's 3,000 req / 5 min quota
+on a multi-thousand-shard manifest. See the "HuggingFace API quota"
+trap below.
 
 ### 2. Read only the columns you need
 
 Parquet is columnar.
 `Dataset.from_files(input).load_parquet(columns=…)` reads only the
 requested columns. With `gcs_uri` picked, the minimal set is
-`[entry_id, gcs_uri, <optional passthrough>]` — ~160 KB/shard. Reading
-the full row (including `cif_content`) is ~70 MB/shard regardless of
-which fetch path you take downstream — column projection is what
-*activates* the data-source win.
+`[entry_id, gcs_uri, <optional passthrough>]`, about 160 KB/shard.
+Reading the full row (including `cif_content`) is ~70 MB/shard
+regardless of which fetch path you take downstream, so column
+projection is what *activates* the data-source win.
 
 The exp5 pattern: peek the manifest schema once at submission time,
 decide which optional passthrough columns are present, then pass the
@@ -326,16 +328,15 @@ per input shard:
 --out "gs://marin-us-central1/.../corpus-{shard:05d}-of-{total:05d}.parquet"
 ```
 
-This is load-bearing for two reasons:
+This is load-bearing for two reasons. First, write throughput: many
+small writers in parallel beat one centralized writer's serialized
+output stream. Second, provenance and restartability: if shard 042
+fails, you re-run with a filter on input shard 042 and the rest of
+the output stays intact. See
+`experiments/exp53_data_contacts_v1_zephyr/rerun_missing.py` for the
+resume pattern.
 
-1. **Streaming write throughput** — many small writers in parallel beat one
-   centralized writer's serialized output stream.
-2. **Provenance + restartability** — if shard 042 fails, you re-run with a
-   filter on input shard 042 and the rest of the output stays intact. See
-   `experiments/exp53_data_contacts_v1_zephyr/rerun_missing.py` for the
-   resume pattern.
-
-For smoke tests, omit `{shard}` (or pass `--num-docs N`) — that collapses
+For smoke tests, omit `{shard}` (or pass `--num-docs N`) to collapse
 to a single output file:
 
 ```python
@@ -356,15 +357,16 @@ order so the highest-quality data is read *last* by streaming consumers.
 
 `Content-Encoding: gzip` objects report their **compressed** size in the
 content-length header. A size-based read (`fsspec.open(uri, "rb").read()`
-or `compression="infer"` + slicing) reads only that many bytes of the
-decompressed stream — silently truncating large cifs mid-`_atom_site`.
-gemmi then raises `"Wrong number of values in loop _atom_site"`.
+or `compression="infer"` plus slicing) reads only that many bytes of
+the decompressed stream and silently truncates large cifs
+mid-`_atom_site`. gemmi then raises `"Wrong number of values in loop
+_atom_site"`.
 
-The fix is to use a single full GET (the filesystem's `cat_file`) that
-reads to EOF. This is what
+The fix is a single full GET (the filesystem's `cat_file`) that reads
+to EOF. That's what
 [`marinfold.document_structures.io.read_object_bytes`](../../../marinfold/marinfold/document_structures/io.py)
-encapsulates — same `None`-on-failure contract as the threading helper
-above, so they compose directly:
+does. It has the same `None`-on-failure contract as the threading
+helper above, so they compose directly:
 
 ```python
 from marinfold.document_structures.io import (
@@ -403,33 +405,34 @@ reads for the data.
 
 ### `httpx<1` for marin-iris
 
-The marin-iris GCP provider calls `httpx.Client(timeout=...)`, removed in
-the 1.0 prerelease. Pin `httpx<1` in your `pyproject.toml` base deps. (exp53
-discovered this in its HANDOFF; pin it preemptively.)
+The marin-iris GCP provider calls `httpx.Client(timeout=...)`, removed
+in the 1.0 prerelease. Pin `httpx<1` in your `pyproject.toml` base
+deps. exp53 discovered this in its HANDOFF; pin it preemptively.
 
 ---
 
 ## Stage the work: cheap selection, then heavy generation
 
-Large data pipelines benefit from a **two-stage** layout:
+Large data pipelines benefit from a **two-stage** layout.
 
-* **Stage A — selection** is metadata-only. Read a few small columns from
-  the input manifest (entry_id, pLDDT, cluster ids, ...), compute the
-  selection / shuffling / round assignment in Python or DuckDB, and emit a
-  *new* parquet manifest. This stage runs in seconds-to-minutes on one
-  process and is trivially re-runnable.
-* **Stage B — generation** consumes Stage A's manifest and does the
-  per-row fetch + heavy compute. This is the Zephyr/Iris stage with all
-  the lessons above.
+Stage A (selection) is metadata-only. Read a few small columns from
+the input manifest (entry_id, pLDDT, cluster ids, ...), compute the
+selection, shuffling, or round assignment in Python or DuckDB, and
+emit a *new* parquet manifest. This stage runs in seconds to minutes
+on one process and is trivially re-runnable.
 
-exp53 split this way: `selection.py` reduces 24 M structures → 4.2 M
-selected (entry, round) records in ~13 s, then `cli.py generate` runs the
-heavy per-row work on the 4.2 M-row manifest.
+Stage B (generation) consumes Stage A's manifest and does the per-row
+fetch plus heavy compute. This is the Zephyr/Iris stage with all the
+lessons above.
 
-**Why**: the selection logic changes more often than the generation logic
-(filter thresholds, split policies, round counts) and the iteration cost
-should match. Don't recompute structure parsing every time you want to
-test a new selection.
+exp53 split this way: `selection.py` reduces 24 M structures to 4.2 M
+selected (entry, round) records in ~13 s, then `cli.py generate` runs
+the heavy per-row work on the 4.2 M-row manifest.
+
+The reason to split: selection logic changes more often than
+generation logic (filter thresholds, split policies, round counts),
+and the iteration cost should match. Don't recompute structure
+parsing every time you want to test a new selection.
 
 ---
 
@@ -451,7 +454,7 @@ Run it on every change; don't skip it because "the local tests passed."
 
 Per-doc latency from the smoke is what you use to project full-run
 wall-clock: `n_docs / (workers × docs_per_sec_per_worker)`. **Treat
-this as an upper-bound estimate, not a guarantee** — startup overhead,
+this as a lower-bound estimate, not a guarantee.** Startup overhead,
 preemption retries, straggler tails, and per-worker init costs all
 land on top of the per-doc rate, and the gap can be 2–5×. The
 projection's job is to flag "this is hours, not minutes" before you
@@ -462,11 +465,11 @@ the minute.
 
 ## Finding the next perf opportunity
 
-If your smoke run's projected wall-clock is out of budget — or you just
-want to know whether there's headroom — these are the steps that
-actually surface the right thing to fix, in order. The order matters:
-each step is cheap and rules out a class of bottlenecks the next step
-would otherwise misdiagnose.
+If your smoke run's projected wall-clock is out of budget (or if you
+just want to know whether there's headroom), these are the steps that
+surface the right thing to fix. The order matters: each step is cheap
+and rules out a class of bottlenecks the next step would otherwise
+misdiagnose.
 
 ### 1. Project before optimizing
 
@@ -478,8 +481,8 @@ per_row = network_GET  +  parse  +  generate  +  write
         ~30–80 ms      +  ms     +  ms        +  µs   (typical)
 ```
 
-If the network GET dominates (it usually does for cif fetches), no amount
-of Python-side optimization moves the needle — `thread_per_row_in_shard`
+If the network GET dominates (it usually does for cif fetches), no
+amount of Python-side optimization helps. `thread_per_row_in_shard`
 is your win, and you're done. If parse or generate dominates, then
 profiling is worthwhile. **Decide which regime you're in before
 investing in tools.** Most of the time the answer is "I/O dominates,
@@ -487,9 +490,9 @@ thread it, ship."
 
 ### 2. cProfile a representative single-row run, sorted by `tottime`
 
-Once you've decided the CPU side is worth investigating, profile one row
-on a *real* input (not a synthetic fixture — pathological-fast structures
-hide the very loops you want to find):
+Once you've decided the CPU side is worth investigating, profile one
+row on a *real* input. Synthetic fixtures are pathological-fast and
+hide the loops you want to find.
 
 ```python
 import cProfile, pstats
@@ -501,11 +504,11 @@ prof.disable()
 pstats.Stats(prof).strip_dirs().sort_stats("tottime").print_stats(15)
 ```
 
-Read **`tottime`**, not `cumtime` — `tottime` is time spent *in* the
+Read **`tottime`**, not `cumtime`. `tottime` is time spent *in* the
 function excluding callees, which is what points at the hot loop.
 `cumtime` is dominated by your top-level entry point and tells you
-nothing actionable. Run the loop ≥ 200 times so the per-call overhead of
-the profiler itself doesn't dominate cheap calls.
+nothing actionable. Run the loop ≥ 200 times so the per-call overhead
+of the profiler itself doesn't dominate cheap calls.
 
 ### 3. Isolate the components
 
@@ -527,14 +530,14 @@ gen_ms = 1000 * (time.perf_counter() - t) / N
 
 # Component C: end-to-end
 # ... and check that parse_ms + gen_ms ≈ end_to_end_ms (often it doesn't,
-# which is itself the finding — something in the glue is non-trivial).
+# which is itself the finding: something in the glue is non-trivial).
 ```
 
-Concretely: if your end-to-end is 7 ms/doc and your isolated parse +
-generate sum to 5 ms/doc, the missing 2 ms is somewhere in the glue
-(per-row dataclass churn, dict construction, JSON serialization,
-etc.) and that's where the next optimization opportunity lives —
-not in parse or generate themselves.
+If your end-to-end is 7 ms/doc and your isolated parse + generate sum
+to 5 ms/doc, the missing 2 ms is somewhere in the glue (per-row
+dataclass churn, dict construction, JSON serialization, etc.). That's
+where the next optimization opportunity lives, not in parse or
+generate themselves.
 
 ### 4. Multi-trial measurement; report min + median
 
@@ -549,57 +552,60 @@ print(f"min={min(trials):.2f}  median={sorted(trials)[2]:.2f}  trials={trials}")
 ```
 
 Use **min** as the "true" cost (least noise added) and **median** as
-"typical." When they diverge significantly, something in your environment
-is variable and worth fixing before continuing (background processes,
-disk cache state, etc.).
+"typical." When they diverge significantly, something in your
+environment is variable and worth fixing before continuing: background
+processes, disk cache state, and so on.
 
-### 5. Hypothesis-driven changes — predict, then measure, then report honestly
+### 5. Hypothesis-driven changes: predict, then measure, then report honestly
 
 For each optimization, **predict the win before implementing it** and
-write the prediction down. Then measure. Three possible outcomes:
+write the prediction down. Then measure. There are three possible
+outcomes.
 
-- **Predicted win materialized** → ship, update the skill if the lesson
-  generalizes.
-- **Predicted win was wrong (smaller, or zero)** → roll back. This is
-  the most important branch; the temptation to keep the change because
-  it's "cleaner" or "more correct in principle" leaks complexity into
-  the codebase for no measurable benefit.
-- **Predicted win was wrong in an *interesting* way** (different
-  bottleneck surfaced) → keep the prediction in your notes; the gap
-  between expected and measured is itself a finding about where the
-  cost actually lives.
+If the predicted win materialized, ship it, and update the skill if
+the lesson generalizes.
 
-A worked example of the "rollback" branch worth internalizing:
-splitting a hot Python loop into "pre-compute integer indices, then do
-the math in vectorized numpy" *sounds* faster, but for batch sizes in
-the low thousands, per-element numpy access has fixed overhead
-comparable to ~12 scalar Python ops — and the gains from vectorization
-get eaten by the Python-side cost of building the plan arrays. The
-right move when the measurement comes back flat is to revert, even
-when the rewrite looks more elegant. The finding (that there's a
-crossover point below which Python beats numpy for per-element
-access) is the keeper; the rewrite isn't.
+If the predicted win was wrong (smaller, or zero), roll back. This
+is the most important branch. The temptation to keep the change
+because it's "cleaner" or "more correct in principle" leaks
+complexity into the codebase for no measurable benefit.
+
+If the predicted win was wrong in an interesting way (a different
+bottleneck surfaced), keep the prediction in your notes. The gap
+between expected and measured is itself a finding about where the
+cost actually lives.
+
+A worked example of the rollback branch: splitting a hot Python loop
+into "pre-compute integer indices, then do the math in vectorized
+numpy" *sounds* faster. But for batch sizes in the low thousands,
+per-element numpy access has fixed overhead comparable to ~12 scalar
+Python ops, and the gains from vectorization get eaten by the
+Python-side cost of building the plan arrays. The right move when
+the measurement comes back flat is to revert, even when the rewrite
+looks more elegant. The finding (that there's a crossover point
+below which Python beats numpy for per-element access) is the
+keeper; the rewrite isn't.
 
 ### When to stop
 
-You're done optimizing when the remaining cost is one of:
+You're done optimizing when the remaining cost is one of these.
 
-- **Real network latency** — `cat_file` of a 50 KB object across the
-  internet has a floor. Add concurrency, not cleverness.
-- **C-extension parse cost** (gemmi, pyconfind) — Python can't do
-  anything here; the GIL is already released, you're competing with C.
-- **Algorithmic floor** — the doc generator inherently has to do O(N²)
-  contact work over N residues; you can vectorize but not avoid it.
-- **The cluster's wall-clock is now bounded by something else** — at
-  some point shaving 0.5 ms/doc off a 4 ms/doc pipeline saves
-  ~minutes on a 30-minute run; cluster startup overhead and
-  Zephyr scheduling start dominating. Below that threshold, the
-  return on more profiling is essentially zero.
+1. Real network latency. `cat_file` of a 50 KB object across the
+   internet has a floor. Add concurrency, not cleverness.
+2. C-extension parse cost (gemmi, pyconfind). Python can't help
+   here; the GIL is already released, and you're competing with C.
+3. Algorithmic floor. The doc generator inherently has to do O(N²)
+   contact work over N residues; you can vectorize but not avoid it.
+4. The cluster's wall-clock is now bounded by something else. At
+   some point shaving 0.5 ms/doc off a 4 ms/doc pipeline saves
+   ~minutes on a 30-minute run, and cluster startup overhead and
+   Zephyr scheduling start dominating. Below that threshold, the
+   return on more profiling is essentially zero.
 
-Each of these is a perfectly acceptable stopping point — the goal isn't
-maximum theoretical throughput, it's "fits the budget the experiment
-needs." If your projected wall-clock is already under the user's
-tolerance, **don't optimize**; the time you'd spend has better uses.
+Each of these is a fine stopping point. The goal is fitting the
+budget the experiment needs, not maximizing theoretical throughput.
+If your projected wall-clock is already under the user's tolerance,
+**don't optimize**; the time you'd spend has better uses.
 
 ---
 
@@ -647,10 +653,10 @@ Before triggering the full run, verify each of these:
 - [ ] Smoke output sample manually inspected for shape + content.
 - [ ] User has gated the full run.
 
-If any of these is missing, fix it before scaling out. The cost of an
-unnecessary full run on 512 preemptible workers is real (cluster capacity
-+ $) and the cost of *finding out at hour 3* that you needed the
-gzip-safe reader is realer.
+If any of these is missing, fix it before scaling out. The cost of
+an unnecessary full run on 512 preemptible workers is real (cluster
+capacity and $), and the cost of *finding out at hour 3* that you
+needed the gzip-safe reader is worse.
 
 ---
 
@@ -662,6 +668,6 @@ After the full run completes:
    the experiment's README "Results" section. Include the output GCS URI.
 2. Commit a `data/timings.csv` (per the root `AGENTS.md` "Capture timings
    for every predictor run" rule).
-3. If you discovered a new trap not in this skill, *open a PR adding it
-   here* — the cost of writing it down is much less than the cost of the
-   next agent rediscovering it.
+3. If you discovered a new trap not in this skill, *open a PR adding
+   it here*. The cost of writing it down is much less than the cost
+   of the next agent rediscovering it.

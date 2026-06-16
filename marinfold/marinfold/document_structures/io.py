@@ -3,21 +3,19 @@
 
 """Shared I/O patterns for document-structure data-generation pipelines.
 
-This module's natural home is the per-row worker that runs inside a
-Zephyr ``map_shard`` body: most document-structure ``generate`` impls
-need the same pattern — fetch a per-row resource over the network,
-parse it, hand it to the algorithm, emit a row.
+The per-row worker inside a Zephyr ``map_shard`` body usually follows
+the same pattern across document-structure ``generate`` impls: fetch a
+per-row resource over the network, parse it, hand it to the algorithm,
+emit a row. Two helpers here cover the parts that recur:
 
-Two helpers, designed to compose:
-
-- :func:`read_object_bytes` — fetch one object's bytes (returns ``None``
-  on I/O failure). Uses a full GET so transparently-gzip-transcoded
+- :func:`read_object_bytes`: fetch one object's bytes. Returns ``None``
+  on I/O failure. Uses a full GET so transparently-gzip-transcoded
   objects aren't silently truncated.
-- :func:`thread_per_row_in_shard` — the ``map_shard`` body that
-  overlaps per-row I/O with CPU work via a thread pool.
+- :func:`thread_per_row_in_shard`: a ``map_shard`` body that overlaps
+  per-row I/O with CPU work via a thread pool.
 
 See ``.agents/skills/zephyr-pipeline-performance/SKILL.md`` for the
-full performance rationale + the surrounding decisions
+full performance rationale and the surrounding decisions
 (``--worker-cpu 1``, region pinning, etc.).
 """
 
@@ -43,22 +41,23 @@ def thread_per_row_in_shard(
     non-``None`` results in input order.
 
     Intended as the body of a Zephyr ``map_shard`` callback when each row
-    requires a per-row network fetch (GCS GET, HF download, …) followed by
-    CPU work (parse + generate). The thread pool overlaps the fetches with
-    the CPU work of rows that have already arrived — the single biggest
-    per-shard speedup, because the GIL is released during both the network
-    syscall and most C-extension parsers (gemmi, pyconfind, ...).
+    requires a per-row network fetch (GCS GET, HF download, …) followed
+    by CPU work (parse + generate). The thread pool overlaps fetches
+    with the CPU work of rows that have already arrived. The GIL is
+    released during both the network syscall and most C-extension
+    parsers (gemmi, pyconfind, ...), so threading is the per-shard
+    speedup that matters most for I/O-bound workers.
 
     The pool size is capped at ``len(items)`` so a small shard does not
     spawn dozens of idle threads. Output uses ``pool.map`` (not
-    ``as_completed``), so the iteration order matches the input order —
-    important when downstream readers want deterministic per-shard
+    ``as_completed``), so the iteration order matches the input order.
+    This matters when downstream readers want deterministic per-shard
     parquet content across runs.
 
     The worker is expected to return ``None`` on a transient row-level
     failure (bad fetch, unparseable cif, doesn't fit the token budget)
-    rather than raising; those rows are silently dropped here. Letting a
-    single bad row raise would kill the Zephyr worker for the whole
+    rather than raising; those rows are silently dropped here. A bad
+    row that raises instead would kill the Zephyr worker for the whole
     shard.
 
     Parameters
@@ -68,15 +67,16 @@ def thread_per_row_in_shard(
     worker
         Per-row callable. Should return ``None`` to skip a row, or the
         output value to yield. Must be picklable if the Zephyr backend
-        ships it cross-process — typically the call site builds one via
+        ships it cross-process. The call site typically builds one via
         ``functools.partial(per_row_fn, **shard_constants)``.
     fetch_concurrency
-        Max concurrent in-flight workers. ``32`` is well-calibrated for
-        30–80 ms GCS GETs paired with ~6 ms of CPU per row. Bump it when
+        Max concurrent in-flight workers. ``32`` works well for the
+        common case where the per-row GCS GET (~30–80 ms) is an order
+        of magnitude larger than the per-row CPU step. Bump it when
         the CPU step is heavier, but past ~64 the overhead starts to
         dominate.
     thread_name_prefix
-        Surfaces in thread dumps + logs — useful when babysitting a
+        Surfaces in thread dumps and logs. Useful when babysitting a
         running Zephyr job. Convention: ``"<exp-tag>-fetch"`` (e.g.
         ``"exp5-fetch"``).
 
@@ -99,8 +99,8 @@ def thread_per_row_in_shard(
 
     For pipelines that have *both* a URI-fetch path and an inline path
     (e.g. ``--cif-text-column`` for local testing), branch at the call
-    site and use ``map`` for the inline path — there's no I/O to overlap,
-    so the thread pool is pure overhead.
+    site and use ``map`` for the inline path. There is no I/O to
+    overlap, so the thread pool is pure overhead.
     """
     rows = list(items)
     if not rows:
@@ -116,26 +116,26 @@ def thread_per_row_in_shard(
 def read_object_bytes(uri: str, *, warn: bool = True) -> Optional[bytes]:
     """Read the full byte contents of a remote (or local) object via fsspec.
 
-    Returns ``None`` on any I/O failure (and, by default, emits a warning),
-    so a single bad object in a shard does not bring down the surrounding
-    worker — designed to pair with :func:`thread_per_row_in_shard`, which
-    skips ``None`` results.
+    Returns ``None`` on any I/O failure (and, by default, emits a
+    warning) so a single bad object in a shard does not bring down the
+    surrounding worker. Pairs with :func:`thread_per_row_in_shard`,
+    which skips ``None`` results.
 
     Uses the filesystem's ``cat_file`` (a single full GET that reads to
     EOF) rather than a seekable ``open(...).read()``. The two differ in
-    one important case: **objects served with** ``Content-Encoding: gzip``
-    (server-side transcoded) **report their compressed size in the
-    ``Content-Length`` header**, while the body is decompressed on the
+    one important case: objects served with ``Content-Encoding: gzip``
+    (server-side transcoded) report their compressed size in the
+    ``Content-Length`` header, while the body is decompressed on the
     wire. A size-based read returns only that many bytes of the
-    decompressed stream and silently truncates large objects mid-content
-    — the kind of failure a downstream parser surfaces as a confusing
-    "unexpected end of input" error rather than as an obvious I/O fault.
-    ``cat_file`` reads to EOF, so the full decompressed object is
-    returned every time.
+    decompressed stream and silently truncates large objects
+    mid-content. The downstream parser then surfaces this as a
+    confusing "unexpected end of input" rather than as an I/O fault.
+    ``cat_file`` reads to EOF, so the full decompressed object comes
+    back every time.
 
-    Common case: GCS objects uploaded with ``Content-Encoding: gzip``
-    metadata, which GCS transparently decodes on serve (see the GCS
-    "transcoding" docs).
+    The common case is GCS objects uploaded with ``Content-Encoding:
+    gzip`` metadata, which GCS transparently decodes on serve (see the
+    GCS "transcoding" docs).
 
     Parameters
     ----------
@@ -143,7 +143,7 @@ def read_object_bytes(uri: str, *, warn: bool = True) -> Optional[bytes]:
         fsspec-recognised URI: a local path, ``file://``, ``gs://``,
         ``s3://``, ``hf://``, ``http(s)://``, etc.
     warn
-        Default ``True``: emit a ``warnings.warn`` on I/O failure so
+        Default ``True``. Emits a ``warnings.warn`` on I/O failure so
         ops can spot patterns in worker logs. Pass ``warn=False`` for
         bulk scans (e.g. enumerating known-missing objects) where the
         log spam would drown out signal.

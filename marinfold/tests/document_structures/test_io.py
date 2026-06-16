@@ -3,14 +3,14 @@
 
 """Tests for marinfold.document_structures.io.
 
-- ``read_object_bytes`` — fetch one object's bytes via fsspec.
+- ``read_object_bytes``: fetch one object's bytes via fsspec.
   Contracts: returns the bytes on success; returns ``None`` on
   failure (never raises); emits a warning by default; can be silenced
   with ``warn=False``.
 
-- ``thread_per_row_in_shard`` — per-shard worker fan-out.
-  Contracts: yields in input order; skips ``None`` results; empty
-  input is a no-op (does not spawn a pool).
+- ``thread_per_row_in_shard``: per-shard worker fan-out. Contracts:
+  yields in input order; skips ``None`` results; empty input is a
+  no-op (does not spawn a pool).
 
 Tests use the local filesystem (via plain paths and ``file://`` URIs)
 so they have no network dependency and run in milliseconds.
