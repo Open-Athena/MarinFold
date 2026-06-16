@@ -29,9 +29,12 @@ The #67 run was a single un-tuned cosine decay over ~2.7 epochs (final eval/loss
 A **warm-restart continuation** via marin/levanter's `initialize_from_checkpoint_path` (loads model weights only → fresh step-0, fresh optimizer state, fresh LR schedule, fresh shuffled data loader; `reset_data_loader_on_init=True`). Reuse the exact #67 recipe (unmasked loss, shuffle, full-val eval, us-east5-a v5p-8) and change only:
 
 - **init**: weights from `step-11999`.
-- **LR re-heat**: peak **2.0e-4** (≈0.57× the original 3.5e-4) — a moderate re-heat that perturbs the converged solution without blowing it up in a single epoch. *(Key knob — easy to bump to the full 3.5e-4 if we want a more aggressive restart.)* Same cosine-to-min_lr_ratio shape and 0.1 warmup as #67.
-- **length**: ~4,500 steps (≈1 epoch; 1 epoch ≈ 4,490 steps).
+- **slice + batch**: **v5p-32** (4× #67's v5p-8) with **batch 512** (4×). v5p-8 was thrashing on preemption (10 in 11 min, never reached step 0); v5p-32 has capacity. Per-chip batch stays 32 (identical to #67 ⇒ same memory, no OOM).
+- **LR re-heat**: peak **4.0e-4** = 2× the batch-128 value of **2.0e-4** (the chosen moderate re-heat), scaled by √4 for the 4× batch. Same cosine-to-min_lr_ratio shape and 0.1 warmup as #67.
+- **length**: **~1,125 steps** (≈1 epoch at batch 512; ¼ of the 4,490 steps it takes at batch 128).
 - **data_seed**: 1 (fresh permutation so the extra epoch isn't the identical order as #67's last epoch).
+
+> Recipe evolution: the run was first launched on v5p-8 / batch 128 / LR 2.0e-4 / 4,500 steps, but the v5p-8 preemptible pool thrashed (never reached step 0). It was moved to v5p-32 with proportional batch (×4) and √-scaled LR (×2), per the standard LR-vs-batch rule.
 
 Then export `step-{final}` to HF, publish to the open-athena bucket, and run the exp82 harness (precision@top-{L,L/2,L/5} long/medlong + the benchmark heatmaps/seeding) head-to-head vs #67.
 
@@ -106,8 +109,8 @@ uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources
 
 ### Launched run
 
-- Job `/bizon/iris-run-job-20260616-214924` (submitted 2026-06-16 21:49 UTC), v5p-8 @ us-east5-a.
-- W&B run name `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3` (entity open-athena).
+- **v5p-32 run:** job `/bizon/iris-run-job-20260616-223513` (submitted 2026-06-16 22:35 UTC), v5p-32 @ us-east5-a, batch 512, LR 4.0e-4, ~1125 steps. W&B run `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512` (entity open-athena).
+- Superseded v5p-8 attempt: job `/bizon/iris-run-job-20260616-214924` — terminated on preemption thrashing before reaching step 0.
 - Tokenize steps reused exp67's caches ("already succeeded") — no re-tokenization.
 
 ## Results
