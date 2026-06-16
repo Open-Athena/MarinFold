@@ -75,14 +75,22 @@ CONTACTS_V1_MARIN_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp6
 os.environ["MARIN_PREFIX"] = CONTACTS_V1_MARIN_PREFIX
 
 # contacts-v1 tokenizer (2845 vocab tokens; verified loadable by
-# transformers/levanter). The training and export paths use the immutable
-# ``repo@revision`` identifier. Marin's tokenize step currently passes the value
-# directly to huggingface_hub, which rejects that syntax, so tokenization uses
-# the bare repo id and includes the revision in its executor-step name. The
-# already-materialized caches below were created from this exact revision.
+# transformers/levanter).
+#
+# Use the BARE repo id everywhere (tokenize, training data config, and HF
+# export). The ``repo@revision`` form is rejected by huggingface_hub's
+# ``validate_repo_id`` (HFValidationError: "Repo id must use alphanumeric chars
+# …") wherever the value reaches it un-split — including the *training* tokenizer
+# load (this marin/levanter build does not split ``@rev`` on that path). exp67's
+# successful run actually tokenized + trained with the bare repo; the ``@rev``
+# pin was added to train/export by later review but never exercised in a run,
+# and it fails here (the warm-restart is the first run to load it). The repo is a
+# stable single-revision tokenizer and the reused caches were built from it, so
+# the bare id resolves to identical files; the pinned revision is kept below for
+# documentation only.
 CONTACTS_V1_TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
-CONTACTS_V1_TOKENIZER_REVISION = "5d68a24a899f"
-CONTACTS_V1_TOKENIZER = f"{CONTACTS_V1_TOKENIZER_REPO}@{CONTACTS_V1_TOKENIZER_REVISION}"
+CONTACTS_V1_TOKENIZER_REVISION = "5d68a24a899f"  # documented pin; not passed as repo@rev
+CONTACTS_V1_TOKENIZER = CONTACTS_V1_TOKENIZER_REPO
 
 # contacts-v1 corpus tokenize INPUT. We read the parquet directly from its
 # region-local GCS working copy (written by exp53), NOT the published HF bucket
