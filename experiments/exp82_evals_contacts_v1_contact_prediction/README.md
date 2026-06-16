@@ -128,12 +128,54 @@ not necessarily a worse recipe; (2) the two models use different contact
 score both against the contacts-v1 ground truth — yet the prior still wins
 *despite* that home-field disadvantage, which strengthens the result.
 
+### Canonical benchmark proteins (1QYS / 7BNY / 1UBQ) — heatmaps + seeding
+
+Built fresh contacts-v1 documents (sequence + pyconfind ground-truth side-chain
+contacts) for the canonical test proteins from prior evals — Top7 (1QYS),
+7BNY (chain A), ubiquitin (1UBQ) — via `contacts-v1 generate` (experimental PDB
+structures, not AFDB). Docs: [`data/benchmark_docs.parquet`](data/benchmark_docs.parquet);
+analysis: `benchmark_analysis.py`.
+
+**Contact-probability heatmaps** ([`plots/heatmap_{1QYS,7BNY,1UBQ}.png`](plots/)) —
+predicted contact score vs ground truth. They explain *why* the contacts-v1
+model is weak:
+- **contacts-v1 model** → a smooth **sequence-separation gradient** (bright near
+  the diagonal, decaying out); it has learned "closer in sequence ⇒ more likely
+  contact" but **not the specific off-diagonal contact structure**.
+- **prior model** (P(CA–CA ≤ 8 Å)) → sharp **structured off-diagonal blobs** that
+  track the real contact clusters — it genuinely predicts structure.
+
+**AUC vs # ground-truth contacts seeded into the prompt**
+([`plots/auc_vs_seeded.png`](plots/auc_vs_seeded.png)) — seed N true contacts,
+then measure AUC of ranking the *remaining* (sep ≥ 12) contacts vs decoys:
+
+| #seeded | 0 | 1 | 2 | 4 | 8 | 16 | 32 |
+|---|---|---|---|---|---|---|---|
+| 1QYS | 0.49 | 0.54 | 0.59 | 0.68 | 0.75 | 0.87 | 0.94 |
+| 7BNY | 0.53 | 0.56 | 0.58 | 0.57 | 0.73 | 0.79 | 0.86 |
+| 1UBQ | 0.47 | 0.50 | 0.62 | 0.54 | 0.83 | 0.81 | 0.95 |
+
+Unconditionally (0 seeds) the model is **at chance** (~0.5), but AUC climbs to
+**~0.86–0.95 by 32 seeds**. So the model learned the **joint / co-occurrence
+structure** of contact maps (contact *completion* — given some contacts it ranks
+correlated ones well) but **not de novo contact prediction from sequence**. That
+is consistent with: a quick run learned contact-map statistics, not folding —
+and it's exactly the regime where exp27-style iterative seeding *can't*
+bootstrap, because the N=0 starting point is chance.
+
 ## Conclusion
 
 The quick contacts-v1 1.5B model (#67) has only a **weak** contact signal
 (~2× random at ranking long-range contacts), and **better inference doesn't
 rescue it** — iterative refinement helps marginally, rollout voting not at all.
 The bottleneck is the base model, not the readout algorithm.
+
+**What the model actually learned** (benchmark heatmaps + seeding curve): a
+**sequence-separation prior** plus the **co-occurrence structure** of contact
+maps — given some true contacts it ranks correlated ones well (AUC →~0.9 at 32
+seeds) — but **not de novo contact prediction from sequence** (unconditional AUC
+≈ chance; its heatmap is a diagonal gradient, not the real off-diagonal
+structure). It learned contact-map *statistics*, not folding.
 
 **The #67 hypothesis was not met:** the prior contacts-and-distances-v1 1.5B
 predicts contacts **~2–4× better** than the new quick contacts-v1 model on the

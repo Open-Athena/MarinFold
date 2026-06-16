@@ -13,6 +13,8 @@ dependencies = [
     "gcsfs",
     "pyarrow",
     "numpy",
+    # Heatmaps + AUC-vs-seeding plots (benchmark_analysis.py).
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
