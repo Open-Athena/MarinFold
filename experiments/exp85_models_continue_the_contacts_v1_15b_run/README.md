@@ -58,21 +58,57 @@ The module keeps exp67's `MARIN_PREFIX` (`…/exp67_contacts_v1_1_5b`) so the to
 
 ## Launch
 
+### iris client freshness (important)
+
+The iris controller gates **root job submissions** on client freshness: it
+rejects clients whose `client_revision_date` is older than a **rolling 14-day
+window** (`iris/cluster/controller/service.py` → `_check_client_freshness`,
+`FRESHNESS_WINDOW=14d`). That date comes from `iris.version.client_revision_date()`:
+a wheel's stamped `_build_info.BUILD_DATE`, else a `git log` on the iris source
+tree, else `""` (→ the old default `2026-04-22`).
+
+Consequences for this experiment:
+- The **pinned `marin-iris` wheel is frozen at build `2026-05-29`** (the public
+  `marin-*-latest` indices stopped updating), which fell outside the window on
+  ~2026-06-12 and is now rejected. A git-URL repin does **not** fix it: uv copies
+  the source *without* `.git`, so `BUILD_DATE` is empty and the `git log` fallback
+  finds no repo → the stale `2026-04-22` default (worse).
+- The working fix is an **editable install of iris from a local, recently-pulled
+  marin checkout**, so the `git log` fallback reports a fresh date:
+  ```bash
+  git -C ~/git/marin pull          # ensure lib/iris commit date is within ~14 days
+  uv pip install -e ~/git/marin/lib/iris   # after `uv sync`; makes the client fresh
+  ```
+  Only the **launching client** needs this. The TPU **worker** builds from this
+  dir's frozen-wheel `pyproject.toml` and is **exempt** — the driver's child-job
+  submission is not a "root" submission, so its stale iris is fine (verified: the
+  first launch's child TPU step submitted and ran normally).
+
+### Commands
+
 ```bash
 cd experiments/exp85_models_continue_the_contacts_v1_15b_run
 uv venv && uv sync --extra tpu
+uv pip install -e ~/git/marin/lib/iris      # client-freshness fix (see above)
 
 # Train (warm restart, ~1 epoch). WANDB_API_KEY must be in the launching env —
-# build_train_step forwards it into the pod's env_vars.
-WANDB_API_KEY=<key> uv run iris --cluster marin job run --no-wait \
+# build_train_step forwards it into the pod's env_vars. Use `uv run --no-sync`
+# so the editable iris isn't reverted by an implicit re-sync.
+WANDB_API_KEY=<key> uv run --no-sync iris --cluster marin job run --no-wait \
     --enable-extra-resources --memory=16GB --disk=16GB --cpu=1 \
     --extra=tpu --zone=us-east5-a \
     -- python -m train_protein_1_5b_contacts_v1_reheat
 
 # After step-4499 lands on GCS, fill in the runid + step in the export script, then:
-uv run iris --cluster marin job run --no-wait --enable-extra-resources \
+uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources \
     --memory=32GB --disk=16GB --cpu=4 -- python -m export_protein_1_5b_contacts_v1_reheat
 ```
+
+### Launched run
+
+- Job `/bizon/iris-run-job-20260616-214924` (submitted 2026-06-16 21:49 UTC), v5p-8 @ us-east5-a.
+- W&B run name `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3` (entity open-athena).
+- Tokenize steps reused exp67's caches ("already succeeded") — no re-tokenization.
 
 ## Results
 
