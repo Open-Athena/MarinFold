@@ -1,0 +1,85 @@
+---
+marinfold_experiment:
+  issue: 85
+  title: "exp: continue the contacts-v1 1.5B run for another epoch (LR re-heat / warm restart)"
+  kind: models
+  branch: exp/85-contacts-v1-1_5b-reheat
+---
+
+# exp: continue the contacts-v1 1.5B run for another epoch (LR re-heat / warm restart)
+
+**Issue:** [#85](https://github.com/Open-Athena/MarinFold/issues/85) · **Kind:** `models` · **Branch:** `exp/85-contacts-v1-1_5b-reheat`
+
+## Question
+
+Does continuing the quick #67 contacts-v1 1.5B run (`protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2`) for **another epoch with a re-heated learning rate** (a cosine warm-restart from the final `step-11999` checkpoint) lower eval loss — and does it improve contact recapitulation on the exp82 benchmark?
+
+## Hypothesis
+
+The #67 run was a single un-tuned cosine decay over ~2.7 epochs (final eval/loss **2.980**, bpb 0.4232). Its LR decayed to its floor, so the last steps made little progress. A **warm restart** — reload the weights, re-heat the LR, and run ~1 more epoch of shuffled data — should squeeze out additional loss reduction "for free" (no new data, ~1 epoch of compute) and give a second contacts-v1 checkpoint to compare against both #67 and the #61/#75 tuned sweep. Whether the loss gain translates into better contact prediction is the open question (exp82 showed #67 is near-chance at *de novo* contact prediction).
+
+## Background
+
+- **#67** — the quick/simple 1.5B run. Recipe in `experiments/exp67_models_contacts_v1_1_5b/`: unmasked next-token loss, shuffled (Feistel) train stream, LR 3.5e-4 peak / cosine, batch 128, seq 8192, v5p-8 @ us-east5-a, 12k steps (~2.7 epochs). Final levanter checkpoint: `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/checkpoints/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/checkpoints/step-11999`.
+- **#82** — contact-prediction eval harness + benchmark (heatmaps, seeding, poly-Ala). The reusable harness can score any contacts-v1 checkpoint, so the continued model drops straight in.
+- **#61/#75** — eric-czech's tuned sweep on the *same* contacts-v1 corpus (Qwen3 1.5B, LR/WD sweep, epochs 1/2/4/8). Best finished run so far (`e2-lr7e-4-wd0p1`) is only ~0.01 below the #67 baseline; the 4-/8-epoch runs are still in flight. This experiment is a cheap, orthogonal lever on the *existing* #67 model.
+
+## Approach
+
+A **warm-restart continuation** via marin/levanter's `initialize_from_checkpoint_path` (loads model weights only → fresh step-0, fresh optimizer state, fresh LR schedule, fresh shuffled data loader; `reset_data_loader_on_init=True`). Reuse the exact #67 recipe (unmasked loss, shuffle, full-val eval, us-east5-a v5p-8) and change only:
+
+- **init**: weights from `step-11999`.
+- **LR re-heat**: peak **2.0e-4** (≈0.57× the original 3.5e-4) — a moderate re-heat that perturbs the converged solution without blowing it up in a single epoch. *(Key knob — easy to bump to the full 3.5e-4 if we want a more aggressive restart.)* Same cosine-to-min_lr_ratio shape and 0.1 warmup as #67.
+- **length**: ~4,500 steps (≈1 epoch; 1 epoch ≈ 4,490 steps).
+- **data_seed**: 1 (fresh permutation so the extra epoch isn't the identical order as #67's last epoch).
+
+Then export `step-{final}` to HF, publish to the open-athena bucket, and run the exp82 harness (precision@top-{L,L/2,L/5} long/medlong + the benchmark heatmaps/seeding) head-to-head vs #67.
+
+## Success criteria
+
+- A continued/​re-heated checkpoint that trains cleanly and reaches **eval/loss < 2.980** (beats #67's final).
+- HF export published to the bucket (tokenizer co-located).
+- exp82 harness numbers for the continued model vs #67 (does lower loss → better contact recapitulation?).
+- **Stretch:** a small re-heat-peak comparison (e.g. 2.0e-4 vs 3.5e-4) if the first restart looks promising.
+
+## Files
+
+- `train_protein_1_5b_contacts_v1_reheat.py` — the warm-restart training step. Sets `initialize_from_checkpoint_path` to #67's `step-11999`, re-heat peak LR `2.0e-4`, `num_train_steps=4500`, `data_seed=1`. Run name `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3`.
+- `contacts_v1_train_common.py` — copied from exp67 and extended with an `initialize_from_checkpoint_path` knob on `build_train_step` (forwarded to `SimpleTrainConfig`; `default_train` already supports it). Everything else (corpus, tokenizer, **token caches reused via exp67's `MARIN_PREFIX`**, TPU recipe) is unchanged.
+- `export_protein_1_5b_contacts_v1_reheat.py` — HF export; fill in the real `-<wandb-runid>` suffix + final step after launch.
+
+### Mechanism — warm restart vs resume
+
+`reset_data_loader_on_init=True` (the default) routes `initialize_from_checkpoint_path` to `TrainLmConfig.initialize_from_checkpoint_path` (`marinfold_models/defaults.py:314`), which loads **model weights only** and starts a fresh run: step 0, fresh optimizer state, fresh cosine LR schedule (so our `learning_rate`/`warmup` = the re-heat), fresh shuffled data loader. This is a true warm restart — *not* `trainer.initialize_from` (which would resume the decayed schedule + optimizer + data position).
+
+### Cache reuse
+
+The module keeps exp67's `MARIN_PREFIX` (`…/exp67_contacts_v1_1_5b`) so the tokenize steps resolve exp67's existing 4.7B-token train + val caches instead of re-tokenizing — which also avoids the known marin-latest fresh-tokenize cache-ledger bug (#6008/#6014). The warm-restart run's checkpoints/exports land under their own W&B-run-name subdir, so they don't collide with #67's.
+
+## Launch
+
+```bash
+cd experiments/exp85_models_continue_the_contacts_v1_15b_run
+uv venv && uv sync --extra tpu
+
+# Train (warm restart, ~1 epoch). WANDB_API_KEY must be in the launching env —
+# build_train_step forwards it into the pod's env_vars.
+WANDB_API_KEY=<key> uv run iris --cluster marin job run --no-wait \
+    --enable-extra-resources --memory=16GB --disk=16GB --cpu=1 \
+    --extra=tpu --zone=us-east5-a \
+    -- python -m train_protein_1_5b_contacts_v1_reheat
+
+# After step-4499 lands on GCS, fill in the runid + step in the export script, then:
+uv run iris --cluster marin job run --no-wait --enable-extra-resources \
+    --memory=32GB --disk=16GB --cpu=4 -- python -m export_protein_1_5b_contacts_v1_reheat
+```
+
+## Results
+
+_(Fill in after the run completes.)_
+
+_(Fill in after the run completes.)_
+
+## Conclusion
+
+_(Fill in after results are in.)_
