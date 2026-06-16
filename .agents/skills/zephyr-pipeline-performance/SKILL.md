@@ -556,7 +556,7 @@ Use **min** as the "true" cost (least noise added) and **median** as
 environment is variable and worth fixing before continuing: background
 processes, disk cache state, and so on.
 
-### 5. Hypothesis-driven changes: predict, then measure, then report honestly
+### 5. Hypothesis-driven changes: predict, then measure, then report
 
 For each optimization, **predict the win before implementing it** and
 write the prediction down. Then measure. There are three possible
