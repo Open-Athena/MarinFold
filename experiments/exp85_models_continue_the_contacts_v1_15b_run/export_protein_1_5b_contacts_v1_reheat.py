@@ -30,15 +30,15 @@ from train_protein_1_5b_contacts_v1_reheat import (
     protein_model_1_5b_contacts_v1_reheat,
 )
 
-# Final step of the ~4,500-step continuation (= num_train_steps - 1, like #67's
+# Final step of the ~1,125-step continuation (= num_train_steps - 1, like #67's
 # 11999). Confirm against the GCS checkpoints/ listing once the run finishes.
-CHECKPOINT_STEP = 4_499
+CHECKPOINT_STEP = 1_124
 # The run's real checkpoint dir (W&B-run-name dir). Reuses exp67's MARIN_PREFIX
 # (shared cache); the run is namespaced by its own W&B run name. Replace
 # ``REPLACE_RUNID`` with the actual wandb run-id suffix once the run starts.
 _RUN_CHECKPOINTS_DIR = (
     "gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/checkpoints/"
-    "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-REPLACE_RUNID/checkpoints"
+    "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512-REPLACE_RUNID/checkpoints"
 )
 CHECKPOINT_PATH: str | None = f"{_RUN_CHECKPOINTS_DIR}/step-{CHECKPOINT_STEP}"
 
@@ -46,7 +46,7 @@ hf_export = build_hf_export_step(
     train_step=protein_model_1_5b_contacts_v1_reheat,
     model_config=protein_llama_1_5b,
     checkpoint_step=CHECKPOINT_STEP,
-    name_prefix="protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3",
+    name_prefix="protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512",
     checkpoint_path_override=CHECKPOINT_PATH,
 )
 

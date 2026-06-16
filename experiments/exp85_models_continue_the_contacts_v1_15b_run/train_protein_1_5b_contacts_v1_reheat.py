@@ -12,16 +12,21 @@ fresh optimizer state, fresh cosine LR schedule (so ``learning_rate`` + warmup
 define the re-heat), and a fresh shuffled data loader.
 
 Everything else matches the #67 recipe (unmasked next-token loss, Feistel
-shuffle, full held-out-val eval, v5p-8 @ us-east5-a, batch 128, seq 8192). The
-token caches are reused from #67 via the shared ``MARIN_PREFIX`` (see
-``contacts_v1_train_common``), so no re-tokenization happens.
+shuffle, full held-out-val eval, us-east5-a, seq 8192). The token caches are
+reused from #67 via the shared ``MARIN_PREFIX`` (see ``contacts_v1_train_common``),
+so no re-tokenization happens.
 
 Knobs that differ from #67:
 * ``initialize_from_checkpoint_path`` — warm-start from #67 ``step-11999``.
-* ``learning_rate`` — re-heat peak **2.0e-4** (≈0.57× the original 3.5e-4): a
-  moderate restart that perturbs the converged solution without blowing it up in
-  a single epoch. Bump to ``3.5e-4`` for a full-strength re-heat.
-* ``num_train_steps`` — **4500** (~1 epoch; 1 epoch ≈ 4,490 steps).
+* **slice** — **v5p-32** (vs #67's v5p-8). The v5p-8 preemptible pool was
+  thrashing (10 preemptions in 11 min, never reached step 0); v5p-32/64 have
+  capacity. 4× the chips.
+* ``train_batch_size`` — **512** (4×, matching the 4× chips ⇒ per-chip batch
+  stays 32, identical to #67 — same memory footprint, no OOM).
+* ``learning_rate`` — re-heat peak **4.0e-4** = 2× the batch-128 value of
+  2.0e-4 (√ of the 4× batch increase, the standard LR-vs-batch scaling).
+* ``num_train_steps`` — **1125** (~1 epoch at batch 512; ¼ of the 4,490 steps
+  it takes at batch 128).
 * ``data_seed`` — **1** (a different Feistel permutation than #67's seed 0, so the
   extra epoch isn't the identical token order).
 
@@ -33,6 +38,7 @@ Usage::
         -- python -m train_protein_1_5b_contacts_v1_reheat
 """
 
+from fray import ResourceConfig
 from levanter.models.llama import LlamaConfig
 from marin.execution import executor_main
 
@@ -59,21 +65,36 @@ INIT_CHECKPOINT = (
     "protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2/checkpoints/step-11999"
 )
 
-# Re-heat peak LR (key knob). 2.0e-4 ≈ 0.57× the #67 peak of 3.5e-4.
-REHEAT_PEAK_LR = 2.0e-4
-# ~1 epoch (1 epoch ≈ 4,490 steps at 128 × 8192 = 1.05M tok/step over ~4.7B tok).
-CONTINUE_STEPS = 4_500
+# Bigger, less-contended slice. The v5p-8 preemptible pool was thrashing
+# (10 preemptions in 11 min, never reached step 0); v5p-32/64 have capacity now.
+# v5p-32 = 4× the chips of #67's v5p-8, so we scale the GLOBAL batch 4× (128→512)
+# — per-chip batch stays 32 (identical to #67 ⇒ same memory, no OOM) — and scale
+# the re-heat peak LR by √4 = 2× (2.0e-4 → 4.0e-4, per the standard sqrt rule).
+RESOURCES_V5P32 = ResourceConfig.with_tpu(
+    "v5p-32", slice_count=1, cpu=32, ram="128g", disk="50g", zone="us-east5-a",
+)
+# Re-heat peak LR: 2× the batch-128 value of 2.0e-4 (sqrt of the 4× batch increase).
+REHEAT_PEAK_LR = 4.0e-4
+TRAIN_BATCH = 512
+# ~1 epoch. At 512 × 8192 = 4.19M tok/step over ~4.7B train tokens ⇒ ~1,123 steps
+# (¼ of the 4,490 steps it would take at batch 128).
+CONTINUE_STEPS = 1_125
 
-RUN_NAME = "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3"
+RUN_NAME = "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512"
 
 protein_model_1_5b_contacts_v1_reheat = build_train_step(
     name=RUN_NAME,
     model_config=protein_llama_1_5b,
     learning_rate=REHEAT_PEAK_LR,
     num_train_steps=CONTINUE_STEPS,
+    train_batch_size=TRAIN_BATCH,
     data_seed=1,
-    extra_tags=("1_5b", "continue", "reheat"),
+    extra_tags=("1_5b", "continue", "reheat", "v5p32", "bs512"),
     wandb_name=RUN_NAME,
+    resources=RESOURCES_V5P32,
+    # Short run (1,125 steps) on a preemptible pool — keep frequent permanent
+    # checkpoints so a late preemption can't lose much (vs the 2000 default).
+    steps_per_export=250,
     initialize_from_checkpoint_path=INIT_CHECKPOINT,
 )
 
