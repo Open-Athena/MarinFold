@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
+from dataclasses import replace
 
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
@@ -51,6 +53,17 @@ def load_local_proteins(path):
         if p is not None:
             out.append(p)
     return out
+
+
+def poly_ala(p):
+    """Same protein with every residue identity replaced by ALA in the prompt.
+
+    Only the `<pX> <RES>` residue assignments are rewritten (n-term/c-term
+    position markers and all positions/contacts are untouched), so the model
+    sees the protein's *length* and the seeded contacts but no sequence to
+    reason about — a control for "is the model using the sequence at all?"."""
+    ala_prefix = re.sub(r"(<p\d+>\s+)<[A-Z]{3}>", r"\1<ALA>", p.prefix)
+    return replace(p, entry=f"{p.entry}-polyAla", prefix=ala_prefix)
 
 
 def gt_matrix(p):
@@ -165,9 +178,19 @@ def plot_auc_vs_seeding(proteins, cv1, ns, outdir):
         means = auc_vs_seeding(cv1, p, ns)
         xs = [n for n, m in zip(ns, means) if not np.isnan(m)]
         ys = [m for m in means if not np.isnan(m)]
-        ax.plot(xs, ys, marker="o", label=f"{p.entry} (L={p.L}, {len(p.gt)} gt)")
+        line, = ax.plot(xs, ys, marker="o", label=f"{p.entry} (L={p.L}, {len(p.gt)} gt)")
         print(f"  {p.entry}: AUC vs seeded {list(zip(ns, [round(m,3) for m in means]))}", flush=True)
-    ax.axhline(0.5, ls="--", c="grey", label="chance")
+        # poly-ALA control: same length + seeded contacts, no real sequence.
+        pa = poly_ala(p)
+        means_a = auc_vs_seeding(cv1, pa, ns)
+        xs_a = [n for n, m in zip(ns, means_a) if not np.isnan(m)]
+        ys_a = [m for m in means_a if not np.isnan(m)]
+        ax.plot(xs_a, ys_a, ls="--", marker="x", color=line.get_color())
+        print(f"  {p.entry} (poly-Ala): AUC vs seeded {list(zip(ns, [round(m,3) for m in means_a]))}", flush=True)
+    ax.axhline(0.5, ls=":", c="grey", label="chance")
+    # style proxies so the dashed-vs-solid meaning is explicit in the legend
+    ax.plot([], [], c="black", marker="o", label="native sequence")
+    ax.plot([], [], c="black", ls="--", marker="x", label="poly-Ala (no sequence)")
     ax.set_xlabel("# ground-truth contacts seeded into the prompt")
     ax.set_ylabel("AUC of predicting the remaining contacts (sep ≥ 12)")
     ax.set_title("contacts-v1 1.5B: does seeding known contacts help predict the rest?")
@@ -184,6 +207,8 @@ def main():
     ap.add_argument("--docs", required=True)
     ap.add_argument("--outdir", default="plots")
     ap.add_argument("--seed-ns", default="0,1,2,4,8,16,32")
+    ap.add_argument("--skip-heatmaps", action="store_true",
+                    help="only regenerate the AUC-vs-seeding plot (no prior model needed)")
     args = ap.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
     ns = [int(x) for x in args.seed_ns.split(",")]
@@ -193,8 +218,9 @@ def main():
     cv1 = Scorer(args.cv1_model)
     prior = Scorer(args.prior_model) if args.prior_model else None
 
-    print("=== heatmaps ===", flush=True)
-    plot_heatmaps(proteins, cv1, prior, args.outdir)
+    if not args.skip_heatmaps:
+        print("=== heatmaps ===", flush=True)
+        plot_heatmaps(proteins, cv1, prior, args.outdir)
     print("=== AUC vs #seeded GT contacts (contacts-v1 model) ===", flush=True)
     plot_auc_vs_seeding(proteins, cv1, ns, args.outdir)
 

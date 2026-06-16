@@ -163,6 +163,24 @@ is consistent with: a quick run learned contact-map statistics, not folding —
 and it's exactly the regime where exp27-style iterative seeding *can't*
 bootstrap, because the N=0 starting point is chance.
 
+**Poly-Ala control** (dashed lines in the plot) — re-run with every residue in
+the prompt replaced by `<ALA>`, so the model sees only the protein *length* plus
+the seeded contacts, no real sequence:
+
+| #seeded | 0 | 1 | 2 | 4 | 8 | 16 | 32 |
+|---|---|---|---|---|---|---|---|
+| 1QYS poly-Ala | 0.43 | 0.48 | 0.52 | 0.60 | 0.72 | 0.83 | 0.90 |
+| 7BNY poly-Ala | 0.40 | 0.49 | 0.55 | 0.59 | 0.68 | 0.73 | 0.80 |
+| 1UBQ poly-Ala | 0.46 | 0.42 | 0.53 | 0.53 | 0.76 | 0.74 | 0.86 |
+
+The poly-Ala curves track the native ones with the **same shape**, sitting only
+**~0.05–0.13 AUC lower** and still climbing to ~0.80–0.90 at 32 seeds. So the
+"seeding helps" effect is **almost entirely contact-map topology**, not
+sequence: given some contacts, the model ranks correlated ones from the contact
+*geometry* alone. The native sequence contributes a **small, consistent** boost
+(real but minor) — further evidence the model leans on contact-map statistics
+rather than reasoning from the sequence.
+
 ## Conclusion
 
 The quick contacts-v1 1.5B model (#67) has only a **weak** contact signal
