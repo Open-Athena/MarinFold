@@ -1,6 +1,6 @@
 ---
 name: zephyr-pipeline-performance
-description: Write a Zephyr/Iris data-generation pipeline that finishes in minutes, not hours. Use when authoring or reviewing an `exp<N>_data_*/cli.py` (or any `map_shard`-based job that fetches per-row inputs and emits parquet). Covers the per-row / per-shard / per-worker / per-job decisions that separate an 8-minute run from an overnight one.
+description: Write a Zephyr/Iris data-generation pipeline that finishes in minutes, not hours. Use when authoring or reviewing an `exp<N>_data_*/cli.py` (or any `map_shard`-based job that fetches per-row inputs and emits parquet). Covers the per-row / per-shard / per-worker / per-job decisions that separate a fits-in-budget run from an overnight one.
 ---
 
 # Skill: write performant Zephyr pipelines
@@ -11,19 +11,26 @@ are unobvious from the marin-zephyr docs because the costs aren't local —
 they show up as straggler tails, silently-truncated reads, or cluster bills,
 not as wrong output.
 
-This skill captures the lessons from two real MarinFold pipelines that
+This skill draws on lessons from two real MarinFold pipelines that
 chose differently:
 
-* [`experiments/exp5_data_contacts_and_distances_v2_zephyr/`](../../../experiments/exp5_data_contacts_and_distances_v2_zephyr/) —
-  1.6 M structures, ~8 min wall-clock end-to-end on Iris.
+* `experiments/exp5_data_contacts_and_distances_v2_zephyr/` —
+  1.6 M structures. The README's success criterion documents a prior
+  `gcs_uri`-mode production run (without intra-shard concurrency) at
+  **≤ 8 min wall-clock**; the current shape adds intra-shard threading
+  on top, so wall-clock should be no worse than that bound. **exp5
+  is currently on a PR branch, not yet on `main`** — if you need to
+  read its code, locate the PR via `gh pr list` and check it out
+  locally (or browse on github.com).
 * [`experiments/exp53_data_contacts_v1_zephyr/`](../../../experiments/exp53_data_contacts_v1_zephyr/) —
-  4.2 M structures (pyconfind-heavy), ~31 min projected after two hard-won fixes.
-  The pre-fix version of exp53 (commits prior to
-  [`43a0535`](https://github.com/Open-Athena/MarinFold/commit/43a0535)
-  and [`daa18e1`](https://github.com/Open-Athena/MarinFold/commit/daa18e1))
-  silently dropped 98 % of rows and re-parsed a multi-second per-worker
-  setup every shard — translating into hours of cluster wall-clock for the
-  same output.
+  4.2 M structures (pyconfind-heavy). Two hard-won fixes mid-development
+  prevented this one from running for many cluster-hours: the
+  rotamer-library memoization
+  ([`daa18e1`](https://github.com/Open-Athena/MarinFold/commit/daa18e1))
+  and the gzip-truncation fix
+  ([`43a0535`](https://github.com/Open-Athena/MarinFold/commit/43a0535))
+  — without them, a smoke test produced only 2/100 valid documents.
+  Both lessons are documented as patterns below.
 
 When you're done, your pipeline should clear every box in the
 [Pre-launch checklist](#pre-launch-checklist) at the end of this skill.
@@ -35,7 +42,10 @@ When you're done, your pipeline should clear every box in the
 1. **Inside `map_shard`, run a `ThreadPoolExecutor` around the per-row
    fetch+parse.** GCS GETs are ~30–80 ms; gemmi parse releases the GIL.
    Threading them is the single biggest per-shard speedup — exp5's prior
-   sequential version landed at ~128 s/shard; threaded landed at ~few s.
+   sequential version landed at ~128 s/shard; threaded should drop well
+   below that (estimated low-single-digit seconds at fetch-concurrency
+   32 over ~2,000 rows, but actual cluster wall-clock not yet
+   re-measured).
 2. **`--worker-cpu 1`, scale via `--max-workers`.** Per-shard CPU is
    single-threaded Python once the in-shard thread pool overlaps the I/O.
    Asking for more cores per worker wastes cluster capacity.
@@ -98,10 +108,13 @@ def generate_shard(items, shard_info, *, cfg, fetch_concurrency=32, ...):
     )
 ```
 
-**Default `--fetch-concurrency=32`** is well-calibrated for 30–80 ms GCS
-GETs and ~6 ms of CPU per row. Bump it if your CPU step is heavier (e.g.
-pyconfind-based contact computation: exp53 still uses 32, but its CPU
-dominates so the threads matter less).
+**Default `--fetch-concurrency=32`** is well-calibrated for the common
+case where the per-row GCS GET (~30–80 ms) is an order of magnitude
+larger than the per-row CPU step. If your CPU step is heavier (e.g.
+pyconfind-based contact computation in exp53, where per-doc CPU
+dominates), threading still helps but its marginal effect shrinks —
+the right concurrency knob is then closer to the worker's effective
+core count than to the I/O latency ratio.
 
 If you have *no* per-row I/O (inline cif text in the manifest), skip the
 helper — there's nothing to overlap and a thread pool is pure overhead.
@@ -162,7 +175,7 @@ shards-per-worker is a **41-hour cluster bill** if you do it per shard;
 The `ZephyrContext` / Iris `job run` call is where you decide how the
 cluster spends its time. Two rules dominate.
 
-### `--worker-cpu 1`, scale via `--max-workers`
+### 1. `--worker-cpu 1`, scale via `--max-workers`
 
 Per-shard CPU is single-threaded Python once the in-shard thread pool
 overlaps the I/O. A worker with 4 CPUs just leaves 3 idle. Use the smallest
@@ -183,7 +196,7 @@ Note the *two* cpu/memory pairs: the **outer** `--cpu`/`--memory` on
 is wasteful but harmless; overspending on the workers multiplies by 500+
 and is not.
 
-### Pin `--region`, request `--preemptible`
+### 2. Pin `--region`, request `--preemptible`
 
 The shared marin Iris cluster straddles regions and continents (see the
 project root [`AGENTS.md`](../../../AGENTS.md) "Cross-region data transfers
@@ -221,7 +234,7 @@ exp53's
 added these knobs after the first full run got a multi-hour straggler tail
 from cross-continent on-demand spills.
 
-### Match output bucket to the cluster's region
+### 3. Match output bucket to the cluster's region
 
 `gs://marin-<region>/protein-structure/MarinFold/<exp>/` — the bucket
 **must** be in the same region as the workers, or every per-row PUT is a
@@ -437,10 +450,13 @@ requester-pays issue, the cross-region spill, the per-worker init bug.
 Run it on every change; don't skip it because "the local tests passed."
 
 Per-doc latency from the smoke is what you use to project full-run
-wall-clock: `n_docs / (workers × docs_per_sec_per_worker)`. exp5 measured
-~6 ms/doc → 1.6 M docs / (512 workers × 167 docs/s) ≈ 19 s of compute
-(actual wall-clock ~8 min with overhead). exp53 measured ~225 ms/doc
-(pyconfind-heavy) → 4.2 M docs / (512 × 4.45) ≈ 31 min.
+wall-clock: `n_docs / (workers × docs_per_sec_per_worker)`. **Treat
+this as an upper-bound estimate, not a guarantee** — startup overhead,
+preemption retries, straggler tails, and per-worker init costs all
+land on top of the per-doc rate, and the gap can be 2–5×. The
+projection's job is to flag "this is hours, not minutes" before you
+spend the cluster time finding out, not to predict the wall-clock to
+the minute.
 
 ---
 
@@ -514,10 +530,11 @@ gen_ms = 1000 * (time.perf_counter() - t) / N
 # which is itself the finding — something in the glue is non-trivial).
 ```
 
-This is how exp5's perf-engineering thread (which Tim ultimately rejected
-in favor of one source of truth — but the *measurement* was sound)
-narrowed the 9.5 → 5.7 ms/doc journey: each iteration measured parse and
-generate separately, so we knew which half a given change moved.
+Concretely: if your end-to-end is 7 ms/doc and your isolated parse +
+generate sum to 5 ms/doc, the missing 2 ms is somewhere in the glue
+(per-row dataclass churn, dict construction, JSON serialization,
+etc.) and that's where the next optimization opportunity lives —
+not in parse or generate themselves.
 
 ### 4. Multi-trial measurement; report min + median
 
@@ -552,12 +569,16 @@ write the prediction down. Then measure. Three possible outcomes:
   between expected and measured is itself a finding about where the
   cost actually lives.
 
-The exp5 perf thread had all three: the two-phase distance loop was
-predicted to save 0.3 ms/doc; measurement showed it broke even (gains
-from vectorization were eaten by Python-side plan-list construction).
-That's a "rollback" outcome — the code went into a different branch, and
-the *finding* (per-element numpy access has fixed overhead comparable to
-~12 scalar Python ops) made it into the surrounding decisions.
+A worked example of the "rollback" branch worth internalizing:
+splitting a hot Python loop into "pre-compute integer indices, then do
+the math in vectorized numpy" *sounds* faster, but for batch sizes in
+the low thousands, per-element numpy access has fixed overhead
+comparable to ~12 scalar Python ops — and the gains from vectorization
+get eaten by the Python-side cost of building the plan arrays. The
+right move when the measurement comes back flat is to revert, even
+when the rewrite looks more elegant. The finding (that there's a
+crossover point below which Python beats numpy for per-element
+access) is the keeper; the rewrite isn't.
 
 ### When to stop
 

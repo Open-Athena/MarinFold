@@ -26,6 +26,8 @@ from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, TypeVar
 
+import fsspec
+
 T = TypeVar("T")
 U = TypeVar("U")
 
@@ -111,13 +113,13 @@ def thread_per_row_in_shard(
                 yield out
 
 
-def read_object_bytes(uri: str) -> Optional[bytes]:
+def read_object_bytes(uri: str, *, warn: bool = True) -> Optional[bytes]:
     """Read the full byte contents of a remote (or local) object via fsspec.
 
-    Returns ``None`` on any I/O failure, emitting a warning, so a single
-    bad object in a shard does not bring down the surrounding worker —
-    designed to pair with :func:`thread_per_row_in_shard`, which skips
-    ``None`` results.
+    Returns ``None`` on any I/O failure (and, by default, emits a warning),
+    so a single bad object in a shard does not bring down the surrounding
+    worker — designed to pair with :func:`thread_per_row_in_shard`, which
+    skips ``None`` results.
 
     Uses the filesystem's ``cat_file`` (a single full GET that reads to
     EOF) rather than a seekable ``open(...).read()``. The two differ in
@@ -134,12 +136,22 @@ def read_object_bytes(uri: str) -> Optional[bytes]:
     Common case: GCS objects uploaded with ``Content-Encoding: gzip``
     metadata, which GCS transparently decodes on serve (see the GCS
     "transcoding" docs).
-    """
-    import fsspec
 
+    Parameters
+    ----------
+    uri
+        fsspec-recognised URI: a local path, ``file://``, ``gs://``,
+        ``s3://``, ``hf://``, ``http(s)://``, etc.
+    warn
+        Default ``True``: emit a ``warnings.warn`` on I/O failure so
+        ops can spot patterns in worker logs. Pass ``warn=False`` for
+        bulk scans (e.g. enumerating known-missing objects) where the
+        log spam would drown out signal.
+    """
     try:
         fs, path = fsspec.core.url_to_fs(uri)
         return fs.cat_file(path)
     except (OSError, ValueError) as exc:
-        warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
+        if warn:
+            warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
         return None

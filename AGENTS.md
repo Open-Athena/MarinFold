@@ -42,7 +42,11 @@ promote it to the kind library once a second use case actually exists
 (not before).
 
 See `experiments/README.md` for the workflow and graduation flow,
-and `marinfold/README.md` for the inference/CLI surface.
+and `marinfold/README.md` for the inference/CLI surface. For any
+data-generation pipeline that runs on the marin Iris cluster via
+Zephyr, read the [`zephyr-pipeline-performance`](.agents/skills/zephyr-pipeline-performance/SKILL.md)
+skill before drafting `cli.py` — it captures the handful of
+decisions that separate a fits-in-budget run from an overnight one.
 
 ## Shared coding practices
 
