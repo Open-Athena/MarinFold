@@ -44,6 +44,26 @@ from marin.execution import executor_main
 
 from contacts_v1_train_common import build_train_step
 
+# --- TEMP DIAGNOSTIC (issue #85): which marin-levanter does the pod resolve? ---
+# Runs at import on the DRIVER pod, whose env is built by the same
+# `uv sync --all-packages --frozen` as the training worker. #6014 removed
+# `_exemplar_for`; its presence ⇒ the OLD buggy cache reader (input_ids/0).
+try:
+    import importlib.metadata as _md
+    import inspect as _ins
+
+    import levanter.store.cache as _lc
+
+    _buggy = "_exemplar_for" in _ins.getsource(_lc)
+    print(
+        f"DIAG85 marin-levanter={_md.version('marin-levanter')} "
+        f"marin-core={_md.version('marin-core')} cache={_lc.__file__} "
+        f"has_exemplar_for={_buggy} (True=OLD/buggy reader)",
+        flush=True,
+    )
+except Exception as _e:  # diagnostics must never break the run
+    print(f"DIAG85 failed: {_e!r}", flush=True)
+
 # 1.5B shape — identical to the #67 run (matches Pythia-1.4B: h=2048, l=24,
 # dff=8192, heads=32). MUST match the checkpoint we warm-start from.
 protein_llama_1_5b = LlamaConfig(
