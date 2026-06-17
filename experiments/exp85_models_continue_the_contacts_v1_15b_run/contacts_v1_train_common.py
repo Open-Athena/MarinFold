@@ -226,6 +226,9 @@ def build_train_step(
     _wandb_key = os.environ.get("WANDB_API_KEY")
     if _wandb_key:
         env_vars["WANDB_API_KEY"] = _wandb_key
+    # TEMP (issue #85): verbose worker `uv sync` to capture the TPU worker's
+    # actual marin-levanter version + install source (PyPI vs baked).
+    env_vars["IRIS_DEBUG_UV_SYNC"] = "1"
 
     train_config = SimpleTrainConfig(
         resources=resources,
