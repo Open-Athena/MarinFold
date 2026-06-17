@@ -47,7 +47,7 @@ Then export `step-{final}` to HF, publish to the open-athena bucket, and run the
 
 ## Files
 
-- `train_protein_1_5b_contacts_v1_reheat.py` — the warm-restart training step. Sets `initialize_from_checkpoint_path` to #67's `step-11999`, re-heat peak LR `2.0e-4`, `num_train_steps=4500`, `data_seed=1`. Run name `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3`.
+- `train_protein_1_5b_contacts_v1_reheat.py` — the warm-restart training step. Sets `initialize_from_checkpoint_path` to #67's `step-11999`, **v5p-32**, **batch 512**, re-heat peak LR **4.0e-4**, **`num_train_steps=1125`**, `data_seed=1`. Run name `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512`.
 - `contacts_v1_train_common.py` — copied from exp67 and extended with an `initialize_from_checkpoint_path` knob on `build_train_step` (forwarded to `SimpleTrainConfig`; `default_train` already supports it). Everything else (corpus, tokenizer, **token caches reused via exp67's `MARIN_PREFIX`**, TPU recipe) is unchanged.
 - `export_protein_1_5b_contacts_v1_reheat.py` — HF export; fill in the real `-<wandb-runid>` suffix + final step after launch.
 
@@ -57,55 +57,35 @@ Then export `step-{final}` to HF, publish to the open-athena bucket, and run the
 
 ### Cache reuse
 
-The module keeps exp67's `MARIN_PREFIX` (`…/exp67_contacts_v1_1_5b`) so the tokenize steps resolve exp67's existing 4.7B-token train + val caches instead of re-tokenizing — which also avoids the known marin-latest fresh-tokenize cache-ledger bug (#6008/#6014). The warm-restart run's checkpoints/exports land under their own W&B-run-name subdir, so they don't collide with #67's.
+The module keeps exp67's `MARIN_PREFIX` (`…/exp67_contacts_v1_1_5b`) so the tokenize steps resolve exp67's existing 4.7B-token train + val caches instead of re-tokenizing. The warm-restart run's checkpoints/exports land under their own W&B-run-name subdir, so they don't collide with #67's.
+
+> ⚠️ Reusing that cache does **not** avoid the cache-ledger bug (#6008) — that bug bites on **read**, and it is the current blocker. See **Status** + [`MARIN_CACHE_READER_BUG.md`](MARIN_CACHE_READER_BUG.md). Re-tokenizing would not help (the ledger is correct; the reader is intolerant).
 
 ## Launch
-
-### iris client freshness (important)
-
-The iris controller gates **root job submissions** on client freshness: it
-rejects clients whose `client_revision_date` is older than a **rolling 14-day
-window** (`iris/cluster/controller/service.py` → `_check_client_freshness`,
-`FRESHNESS_WINDOW=14d`). That date comes from `iris.version.client_revision_date()`:
-a wheel's stamped `_build_info.BUILD_DATE`, else a `git log` on the iris source
-tree, else `""` (→ the old default `2026-04-22`).
-
-Consequences for this experiment:
-- The **pinned `marin-iris` wheel is frozen at build `2026-05-29`** (the public
-  `marin-*-latest` indices stopped updating), which fell outside the window on
-  ~2026-06-12 and is now rejected. A git-URL repin does **not** fix it: uv copies
-  the source *without* `.git`, so `BUILD_DATE` is empty and the `git log` fallback
-  finds no repo → the stale `2026-04-22` default (worse).
-- The working fix is an **editable install of iris from a local, recently-pulled
-  marin checkout**, so the `git log` fallback reports a fresh date:
-  ```bash
-  git -C ~/git/marin pull          # ensure lib/iris commit date is within ~14 days
-  uv pip install -e ~/git/marin/lib/iris   # after `uv sync`; makes the client fresh
-  ```
-  Only the **launching client** needs this. The TPU **worker** builds from this
-  dir's frozen-wheel `pyproject.toml` and is **exempt** — the driver's child-job
-  submission is not a "root" submission, so its stale iris is fine (verified: the
-  first launch's child TPU step submitted and ran normally).
-
-### Commands
 
 ```bash
 cd experiments/exp85_models_continue_the_contacts_v1_15b_run
 uv venv && uv sync --extra tpu
-uv pip install -e ~/git/marin/lib/iris      # client-freshness fix (see above)
 
 # Train (warm restart, ~1 epoch). WANDB_API_KEY must be in the launching env —
-# build_train_step forwards it into the pod's env_vars. Use `uv run --no-sync`
-# so the editable iris isn't reverted by an implicit re-sync.
-WANDB_API_KEY=<key> uv run --no-sync iris --cluster marin job run --no-wait \
+# build_train_step forwards it into the pod's env_vars.
+WANDB_API_KEY=<key> uv run iris --cluster marin job run --no-wait \
     --enable-extra-resources --memory=16GB --disk=16GB --cpu=1 \
     --extra=tpu --zone=us-east5-a \
     -- python -m train_protein_1_5b_contacts_v1_reheat
 
-# After step-4499 lands on GCS, fill in the runid + step in the export script, then:
-uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources \
+# After step-1124 (= num_train_steps-1) lands on GCS, fill the real -<wandb-runid>
+# suffix + step into export_protein_1_5b_contacts_v1_reheat.py, then:
+uv run iris --cluster marin job run --no-wait --enable-extra-resources \
     --memory=32GB --disk=16GB --cpu=4 -- python -m export_protein_1_5b_contacts_v1_reheat
 ```
+
+> **iris client freshness (resolved):** the controller rejects root submissions
+> whose client is older than a rolling 14-day window
+> (`iris/cluster/controller/service.py` → `_check_client_freshness`). Depending on
+> PyPI `marin-iris` (its wheel carries a fresh `BUILD_DATE`) makes a plain
+> `uv run iris` pass — **no editable-iris workaround needed.** (That hack was only
+> required while pinned to the frozen GitHub `marin-*-latest` wheels.)
 
 ### Launched run
 
@@ -113,56 +93,54 @@ uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources
 - Superseded v5p-8 attempt: job `/bizon/iris-run-job-20260616-214924` — terminated on preemption thrashing before reaching step 0.
 - Tokenize steps reused exp67's caches ("already succeeded") — no re-tokenization.
 
-## Status — BLOCKED on the TPU worker's marin (2026-06-16)
+## Status — BLOCKED; handoff for infra/marin investigation (2026-06-17)
 
-The recipe is complete and correct, but the run cannot reach step 0 because of a
-marin-infrastructure issue on the **TPU worker pod** (not the experiment code).
+**The experiment code + recipe are complete and correct.** The run cannot reach
+step 0 because of a marin/levanter **cache-reader failure on the iris TPU worker**.
+Authoritative analysis, a verified minimal repro, and a proposed code fix:
+[`MARIN_CACHE_READER_BUG.md`](MARIN_CACHE_READER_BUG.md). PR **#86** is intentionally
+left open (not merging until the infra issue is fixed).
 
-Chain of frozen-wheel blockers hit + fixed:
-1. **iris client freshness gate** → editable iris from `~/git/marin` (✅, committed/documented).
-2. **tokenizer `repo@rev`** rejected at train time → bare repo id (✅).
-3. **cache-ledger reader #6008** → pin the marin workspace to a git source
-   (`marin-core` @ e78c54a8 = 2026-06-10, which has the #6014 reader fix). Resolves
-   + builds; **verified the fixed reader loads the shared cache locally** (4.1M rows).
+**Symptom.** The training step dies in the data loader with:
+```
+ValueError: Sharded cache ledger missing input_ids/0 count for shard part-00000-of-00133
+```
+The cache ledger's field key is `input_ids`; the reader derives `input_ids/0`
+(jax flattens a python-list `output_exemplar`) and the count lookup has no
+fallback. Reproduced locally; see the bug doc for the `_resolve_ledger_field` fix.
 
-**Remaining blocker:** the fix lands on the **CPU driver** but NOT the **TPU worker**:
-- A `DIAG85` probe + a local reader test proved the **driver** gets `marin-levanter==0.2.0`
-  with the fixed reader (`has_exemplar_for=False`), and the driver builds it from
-  source (~7 min).
-- The **TPU worker** (`v5p-32`) finishes `uv sync` in **~50 s** — far too fast to build
-  from source — and runs the **OLD frozen reader** (fails: `Sharded cache ledger missing
-  input_ids/0`). It is fast-syncing a pre-baked/cached **frozen** marin from the TPU pod
-  environment, ignoring the git-source lock.
-- Disproven experiment-side levers: the committed `uv.lock` (522 KB) pins the git source;
-  bumping `data_seed` and changing the run name (fresh task hash `f417f6b7`) did **not**
-  change the TPU worker's behavior. The driver and child share the same bundle/lock yet
-  resolve marin differently — so this is the **marin/iris TPU runtime image / pod env**,
-  which can't be overridden from this pyproject.
+**Side blockers hit and RESOLVED along the way** (so they don't distract the next person):
+1. iris client 14-day freshness gate → use PyPI `marin-iris` (fresh `BUILD_DATE`); no editable-iris hack.
+2. tokenizer `repo@rev` rejected at train time → bare repo id.
+3. stale GitHub `marin-*-latest` find-links (`0.99.dev20260529`) → depend on the marin source dists (`marin-core` etc.) from **PyPI** with a `<0.3` bound (the frozen `0.99.dev` sorts above the fixed `0.2.x.dev`). `uv.lock` now pins `0.2.19.dev202606171019`.
 
-**UPDATE (2026-06-17): the fix IS on PyPI, but the TPU worker still won't use it.**
-The marin source packages are published to **PyPI** as `marin-core`/`marin-levanter`/…
-`0.2.x.dev<date>` (the GitHub `marin-*-latest` find-links are the frozen `0.99.dev20260529`).
-The pyproject now depends on those from PyPI with a `<0.3` bound (the frozen `0.99.dev`
-sorts *above* the fixed `0.2.x.dev`, so the bound is required). Verified locally: resolves
-to `0.2.19.dev202606171019`, fixed reader (`has_exemplar_for=False`), and the PyPI iris
-wheel has a fresh `BUILD_DATE` → the freshness gate passes **with no editable-iris hack**.
+**The remaining blocker is NOT versioning — that's the key, surprising finding:**
+- The worker's captured W&B `requirements.txt` shows it ran the **fixed** marin
+  (`marin-levanter==0.2.19.dev202606171019`; earlier attempts `0.2.0`) and **still
+  failed** with `input_ids/0`. So "the worker is on a stale/baked frozen marin" is
+  **not** the explanation. *(An earlier hypothesis in git history said the TPU image
+  bakes frozen `0.99.dev`; the W&B evidence disproves it.)*
+- That same `0.2.19.dev` reads the **same cache fine locally** (it normalizes the
+  list exemplar → derives `input_ids`). The end-to-end failure **does not reproduce
+  locally**.
+- ⇒ **Open question for the handoff:** why does the TPU worker derive `input_ids/0`
+  while a local read of the same cache + same marin version derives `input_ids`?
+  Candidates: the pre-#6014 cache has no stored exemplar so the reader falls back to
+  the list `output_exemplar`; an effective build/exemplar difference on the pod; a
+  jax/haliax tree-flattening difference. **The reader-fallback fix in the bug doc
+  makes the reader correct regardless of which side derives the mismatch** — landing
+  it in marin/levanter is the cleanest unblock.
 
-But the run **still fails identically on the TPU worker** (`input_ids/0`) with both the
-git-source and the PyPI pin, while the CPU **driver** gets the fixed marin in both cases.
-Conclusion: **the TPU runtime image bakes a frozen marin (`0.99.dev20260529`) into the pod,
-and `uv sync --all-packages` for an *external* experiment does not override it** (eric's
-#75 works because he launches from the marin *workspace*, whose `--all-packages` rebuilds
-the `lib/*` members from source). This is a marin/iris TPU-image issue — not fixable from
-this pyproject.
+**Reference (for whoever investigates):**
+- Failing W&B runs: `open-athena/MarinFold`, names `…-reheat-e3-bs512[-v2]`, all `state=failed` (their `requirements.txt` show the installed marin versions).
+- Recent failing iris jobs: `/bizon/iris-run-job-20260617-153047`, `…-002506`, `…-001956`.
+- Shared cache: `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/tokenized/contacts-v1-663ba6` (ledger `field_counts = {input_ids}`).
+- Local repro of the reader intolerance: see `MARIN_CACHE_READER_BUG.md` (Minimal repro).
 
-**Unblock options (all marin-side):**
-1. **Rebuild/refresh the TPU runtime image** so its baked marin is ≥ 2026-06-02 (cleanest).
-2. Make the worker `uv sync` actually honor the locked marin (e.g. `--reinstall` / not
-   bake marin into the image).
-3. Run exp85's train step from the marin-workspace environment (as eric's #75 does).
-
-The pyproject is left in the **PyPI** state (correct + driver-verified; will "just work"
-once the TPU image carries current marin). Everything committed (PR #86); no re-tokenize needed.
+**To verify a fix and finish the experiment:**
+1. Relaunch (see **Launch**). Success = the run steps past 0 and logs `train/loss` (target eval/loss < 2.980).
+2. After `step-1124` lands, fill the `-<wandb-runid>` + step into `export_protein_1_5b_contacts_v1_reheat.py` and run the export.
+3. Publish the HF export to the open-athena bucket (tokenizer co-located); run the #82 harness head-to-head vs #67.
 
 ## Results
 
