@@ -100,7 +100,12 @@ TRAIN_BATCH = 512
 # (¼ of the 4,490 steps it would take at batch 128).
 CONTINUE_STEPS = 1_125
 
-RUN_NAME = "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512"
+# NOTE the "-v2" suffix: the prior name's child-task hash (726d1794) stayed
+# constant across launches and the TPU worker kept reusing a venv that was first
+# built with the FROZEN marin wheels (buggy cache reader), even after the
+# git-source repin (the DRIVER got fixed marin, the child didn't). A new run name
+# forces a fresh child task identity → fresh worker venv built from the lock.
+RUN_NAME = "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512-v2"
 
 protein_model_1_5b_contacts_v1_reheat = build_train_step(
     name=RUN_NAME,
