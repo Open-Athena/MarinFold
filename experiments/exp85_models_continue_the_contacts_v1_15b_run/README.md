@@ -139,15 +139,30 @@ Chain of frozen-wheel blockers hit + fixed:
   resolve marin differently — so this is the **marin/iris TPU runtime image / pod env**,
   which can't be overridden from this pyproject.
 
-**Unblock options (need the marin side):**
-1. **Republish fixed `marin-*` wheels** (≥ 2026-06-02) — then revert to the published-wheel
-   pyproject and the worker just works. Cleanest; needs eric (on vacation).
-2. Rebuild/refresh the **TPU runtime image** so its baked marin is ≥ 2026-06-02, or make
-   the worker `uv sync` actually honor the git-source lock (force `--reinstall`).
-3. Run exp85's train step from eric's marin-workspace environment (his #75 worker already
-   reads this exact cache fine).
+**UPDATE (2026-06-17): the fix IS on PyPI, but the TPU worker still won't use it.**
+The marin source packages are published to **PyPI** as `marin-core`/`marin-levanter`/…
+`0.2.x.dev<date>` (the GitHub `marin-*-latest` find-links are the frozen `0.99.dev20260529`).
+The pyproject now depends on those from PyPI with a `<0.3` bound (the frozen `0.99.dev`
+sorts *above* the fixed `0.2.x.dev`, so the bound is required). Verified locally: resolves
+to `0.2.19.dev202606171019`, fixed reader (`has_exemplar_for=False`), and the PyPI iris
+wheel has a fresh `BUILD_DATE` → the freshness gate passes **with no editable-iris hack**.
 
-Everything is committed (PR #86); the run is one marin-side fix away, no re-tokenize needed.
+But the run **still fails identically on the TPU worker** (`input_ids/0`) with both the
+git-source and the PyPI pin, while the CPU **driver** gets the fixed marin in both cases.
+Conclusion: **the TPU runtime image bakes a frozen marin (`0.99.dev20260529`) into the pod,
+and `uv sync --all-packages` for an *external* experiment does not override it** (eric's
+#75 works because he launches from the marin *workspace*, whose `--all-packages` rebuilds
+the `lib/*` members from source). This is a marin/iris TPU-image issue — not fixable from
+this pyproject.
+
+**Unblock options (all marin-side):**
+1. **Rebuild/refresh the TPU runtime image** so its baked marin is ≥ 2026-06-02 (cleanest).
+2. Make the worker `uv sync` actually honor the locked marin (e.g. `--reinstall` / not
+   bake marin into the image).
+3. Run exp85's train step from the marin-workspace environment (as eric's #75 does).
+
+The pyproject is left in the **PyPI** state (correct + driver-verified; will "just work"
+once the TPU image carries current marin). Everything committed (PR #86); no re-tokenize needed.
 
 ## Results
 
