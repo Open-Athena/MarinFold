@@ -113,9 +113,43 @@ uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources
 - Superseded v5p-8 attempt: job `/bizon/iris-run-job-20260616-214924` — terminated on preemption thrashing before reaching step 0.
 - Tokenize steps reused exp67's caches ("already succeeded") — no re-tokenization.
 
-## Results
+## Status — BLOCKED on the TPU worker's marin (2026-06-16)
 
-_(Fill in after the run completes.)_
+The recipe is complete and correct, but the run cannot reach step 0 because of a
+marin-infrastructure issue on the **TPU worker pod** (not the experiment code).
+
+Chain of frozen-wheel blockers hit + fixed:
+1. **iris client freshness gate** → editable iris from `~/git/marin` (✅, committed/documented).
+2. **tokenizer `repo@rev`** rejected at train time → bare repo id (✅).
+3. **cache-ledger reader #6008** → pin the marin workspace to a git source
+   (`marin-core` @ e78c54a8 = 2026-06-10, which has the #6014 reader fix). Resolves
+   + builds; **verified the fixed reader loads the shared cache locally** (4.1M rows).
+
+**Remaining blocker:** the fix lands on the **CPU driver** but NOT the **TPU worker**:
+- A `DIAG85` probe + a local reader test proved the **driver** gets `marin-levanter==0.2.0`
+  with the fixed reader (`has_exemplar_for=False`), and the driver builds it from
+  source (~7 min).
+- The **TPU worker** (`v5p-32`) finishes `uv sync` in **~50 s** — far too fast to build
+  from source — and runs the **OLD frozen reader** (fails: `Sharded cache ledger missing
+  input_ids/0`). It is fast-syncing a pre-baked/cached **frozen** marin from the TPU pod
+  environment, ignoring the git-source lock.
+- Disproven experiment-side levers: the committed `uv.lock` (522 KB) pins the git source;
+  bumping `data_seed` and changing the run name (fresh task hash `f417f6b7`) did **not**
+  change the TPU worker's behavior. The driver and child share the same bundle/lock yet
+  resolve marin differently — so this is the **marin/iris TPU runtime image / pod env**,
+  which can't be overridden from this pyproject.
+
+**Unblock options (need the marin side):**
+1. **Republish fixed `marin-*` wheels** (≥ 2026-06-02) — then revert to the published-wheel
+   pyproject and the worker just works. Cleanest; needs eric (on vacation).
+2. Rebuild/refresh the **TPU runtime image** so its baked marin is ≥ 2026-06-02, or make
+   the worker `uv sync` actually honor the git-source lock (force `--reinstall`).
+3. Run exp85's train step from eric's marin-workspace environment (his #75 worker already
+   reads this exact cache fine).
+
+Everything is committed (PR #86); the run is one marin-side fix away, no re-tokenize needed.
+
+## Results
 
 _(Fill in after the run completes.)_
 

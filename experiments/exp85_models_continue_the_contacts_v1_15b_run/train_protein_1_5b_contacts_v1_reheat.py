@@ -44,26 +44,6 @@ from marin.execution import executor_main
 
 from contacts_v1_train_common import build_train_step
 
-# --- TEMP DIAGNOSTIC (issue #85): which marin-levanter does the pod resolve? ---
-# Runs at import on the DRIVER pod, whose env is built by the same
-# `uv sync --all-packages --frozen` as the training worker. #6014 removed
-# `_exemplar_for`; its presence ⇒ the OLD buggy cache reader (input_ids/0).
-try:
-    import importlib.metadata as _md
-    import inspect as _ins
-
-    import levanter.store.cache as _lc
-
-    _buggy = "_exemplar_for" in _ins.getsource(_lc)
-    print(
-        f"DIAG85 marin-levanter={_md.version('marin-levanter')} "
-        f"marin-core={_md.version('marin-core')} cache={_lc.__file__} "
-        f"has_exemplar_for={_buggy} (True=OLD/buggy reader)",
-        flush=True,
-    )
-except Exception as _e:  # diagnostics must never break the run
-    print(f"DIAG85 failed: {_e!r}", flush=True)
-
 # 1.5B shape — identical to the #67 run (matches Pythia-1.4B: h=2048, l=24,
 # dff=8192, heads=32). MUST match the checkpoint we warm-start from.
 protein_llama_1_5b = LlamaConfig(
@@ -100,12 +80,7 @@ TRAIN_BATCH = 512
 # (¼ of the 4,490 steps it would take at batch 128).
 CONTINUE_STEPS = 1_125
 
-# NOTE the "-v2" suffix: the prior name's child-task hash (726d1794) stayed
-# constant across launches and the TPU worker kept reusing a venv that was first
-# built with the FROZEN marin wheels (buggy cache reader), even after the
-# git-source repin (the DRIVER got fixed marin, the child didn't). A new run name
-# forces a fresh child task identity → fresh worker venv built from the lock.
-RUN_NAME = "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512-v2"
+RUN_NAME = "protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512"
 
 protein_model_1_5b_contacts_v1_reheat = build_train_step(
     name=RUN_NAME,
@@ -113,10 +88,7 @@ protein_model_1_5b_contacts_v1_reheat = build_train_step(
     learning_rate=REHEAT_PEAK_LR,
     num_train_steps=CONTINUE_STEPS,
     train_batch_size=TRAIN_BATCH,
-    # data_seed=2 (was 1): bumped to bust the executor step hash so marin can't
-    # reuse any cached state/env from the earlier frozen-wheel 726d1794 attempts.
-    # Still a fresh Feistel permutation distinct from #67's seed 0.
-    data_seed=2,
+    data_seed=1,
     extra_tags=("1_5b", "continue", "reheat", "v5p32", "bs512"),
     wandb_name=RUN_NAME,
     resources=RESOURCES_V5P32,
