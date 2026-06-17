@@ -88,7 +88,10 @@ protein_model_1_5b_contacts_v1_reheat = build_train_step(
     learning_rate=REHEAT_PEAK_LR,
     num_train_steps=CONTINUE_STEPS,
     train_batch_size=TRAIN_BATCH,
-    data_seed=1,
+    # data_seed=2 (was 1): bumped to bust the executor step hash so marin can't
+    # reuse any cached state/env from the earlier frozen-wheel 726d1794 attempts.
+    # Still a fresh Feistel permutation distinct from #67's seed 0.
+    data_seed=2,
     extra_tags=("1_5b", "continue", "reheat", "v5p32", "bs512"),
     wandb_name=RUN_NAME,
     resources=RESOURCES_V5P32,
