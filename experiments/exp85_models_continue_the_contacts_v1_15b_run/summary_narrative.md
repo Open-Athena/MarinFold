@@ -14,4 +14,10 @@ The #67 run was a single un-tuned cosine decay over ~2.7 epochs (final eval/loss
 
 ## Results so far
 
-_(Fill in as results come in.)_
+Recipe + code complete (v5p-32, batch 512, re-heat LR 4.0e-4, ~1125 steps, warm-start
+from #67 step-11999). **BLOCKED** before step 0 by a marin/levanter cache-reader bug on
+the iris TPU worker: `Sharded cache ledger missing input_ids/0 count` (ledger key is
+`input_ids`). Reproduced locally; analysis + fix in `MARIN_CACHE_READER_BUG.md`. The
+worker ran the *fixed* marin (`0.2.19.dev`) and still failed, and it doesn't reproduce
+locally — so the open question is why the worker derives `input_ids/0`. Handed off for
+infra/marin investigation; PR #86 left open.
