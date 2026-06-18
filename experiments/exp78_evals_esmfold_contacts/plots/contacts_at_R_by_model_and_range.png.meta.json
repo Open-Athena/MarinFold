@@ -1,0 +1,10 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Mean R-precision vs pyconfind contacts (degree\u22650.001, sep\u22656), per model, aggregate and by range. All configs rank candidate pairs by pyconfind contact degree on the predicted structure. R-precision cutoff = #true contacts, so a perfect ranker = 1.0."
+}
