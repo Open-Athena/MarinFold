@@ -15,9 +15,11 @@ The #67 run was a single un-tuned cosine decay over ~2.7 epochs (final eval/loss
 ## Results so far
 
 Recipe + code complete (v5p-32, batch 512, re-heat LR 4.0e-4, ~1125 steps, warm-start
-from #67 step-11999). **BLOCKED** before step 0 by a marin/levanter cache-reader bug on
-the iris TPU worker: `Sharded cache ledger missing input_ids/0 count` (ledger key is
-`input_ids`). Reproduced locally; analysis + fix in `MARIN_CACHE_READER_BUG.md`. The
-worker ran the *fixed* marin (`0.2.19.dev`) and still failed, and it doesn't reproduce
-locally — so the open question is why the worker derives `input_ids/0`. Handed off for
-infra/marin investigation; PR #86 left open.
+from #67 step-11999). The 2026-06-17 attempts were blocked before step 0 by a
+marin/levanter cache-reader mismatch on the iris TPU worker:
+`Sharded cache ledger missing input_ids/0 count` while the ledger key is `input_ids`.
+The branch now avoids that path by reading exp67's reused token caches as prebuilt
+`input_ids` arrays (`PrebuiltLmDatasetFormat`) and disabling automatic cache rebuilds.
+Local direct loads of the real train and validation GCS caches both derive
+`input_ids` and pass offset construction, so the next step is relaunching the v5p-32
+warm restart and checking that it logs `train/loss`.

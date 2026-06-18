@@ -59,7 +59,15 @@ Then export `step-{final}` to HF, publish to the open-athena bucket, and run the
 
 The module keeps exp67's `MARIN_PREFIX` (`…/exp67_contacts_v1_1_5b`) so the tokenize steps resolve exp67's existing 4.7B-token train + val caches instead of re-tokenizing. The warm-restart run's checkpoints/exports land under their own W&B-run-name subdir, so they don't collide with #67's.
 
-> ⚠️ Reusing that cache does **not** avoid the cache-ledger bug (#6008) — that bug bites on **read**, and it is the current blocker. See **Status** + [`MARIN_CACHE_READER_BUG.md`](MARIN_CACHE_READER_BUG.md). Re-tokenizing would not help (the ledger is correct; the reader is intolerant).
+The reused caches are read with `PrebuiltLmDatasetFormat(input_ids_key="input_ids")`
+and `auto_build_caches=False`. That matters for the 2026-06-17 cache-reader
+failure: the old path reused the raw-text tokenizer format, whose
+`BatchTokenizer.output_exemplar` is a Python list and can derive the pytree field
+`input_ids/0`; the cache ledger records the array field `input_ids`. Reading the
+already-tokenized cache as prebuilt token IDs makes the exemplar an ndarray leaf
+and derives `input_ids`, matching the ledger. `auto_build_caches=False` also
+prevents a missing cache from silently trying to rebuild raw text with the
+prebuilt reader.
 
 ## Launch
 
@@ -93,13 +101,30 @@ uv run iris --cluster marin job run --no-wait --enable-extra-resources \
 - Superseded v5p-8 attempt: job `/bizon/iris-run-job-20260616-214924` — terminated on preemption thrashing before reaching step 0.
 - Tokenize steps reused exp67's caches ("already succeeded") — no re-tokenization.
 
-## Status — BLOCKED; handoff for infra/marin investigation (2026-06-17)
+## Status — experiment-side cache-read workaround ready (2026-06-18)
 
-**The experiment code + recipe are complete and correct.** The run cannot reach
-step 0 because of a marin/levanter **cache-reader failure on the iris TPU worker**.
-Authoritative analysis, a verified minimal repro, and a proposed code fix:
-[`MARIN_CACHE_READER_BUG.md`](MARIN_CACHE_READER_BUG.md). PR **#86** is intentionally
-left open (not merging until the infra issue is fixed).
+The original code + recipe were blocked before step 0 by a marin/levanter
+**cache-reader failure on the iris TPU worker**. Authoritative analysis, a
+verified minimal repro, and the upstream reader-fallback fix are captured in
+[`MARIN_CACHE_READER_BUG.md`](MARIN_CACHE_READER_BUG.md).
+
+This branch now applies the stronger experiment-side workaround suggested in
+that note: read exp67's existing token caches as **prebuilt `input_ids` arrays**
+rather than as raw-text tokenizer output. Local verification against the real GCS
+caches succeeds through the old failure point:
+
+- train cache:
+  `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/tokenized/contacts-v1-663ba6/train`
+  loads with ledger field `input_ids` and `_ensure_shard_field_offsets("input_ids")`.
+- validation cache:
+  `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/tokenized/contacts-v1-val-92827b/validation`
+  loads with ledger field `input_ids` and `_ensure_shard_field_offsets("input_ids")`.
+- smoke config confirms both `DatasetComponent`s use `PrebuiltLmDatasetFormat`,
+  their exemplar flattens to `input_ids`, and `LmDataConfig.auto_build_caches`
+  is `False`.
+
+This should let a relaunched TPU run step past the `input_ids/0` failure without
+waiting for an upstream marin/levanter release.
 
 **Symptom.** The training step dies in the data loader with:
 ```
@@ -114,7 +139,7 @@ fallback. Reproduced locally; see the bug doc for the `_resolve_ledger_field` fi
 2. tokenizer `repo@rev` rejected at train time → bare repo id.
 3. stale GitHub `marin-*-latest` find-links (`0.99.dev20260529`) → depend on the marin source dists (`marin-core` etc.) from **PyPI** with a `<0.3` bound (the frozen `0.99.dev` sorts above the fixed `0.2.x.dev`). `uv.lock` now pins `0.2.19.dev202606171019`.
 
-**The remaining blocker is NOT versioning — that's the key, surprising finding:**
+**The original blocker was NOT versioning — that's the key, surprising finding:**
 - The worker's captured W&B `requirements.txt` shows it ran the **fixed** marin
   (`marin-levanter==0.2.19.dev202606171019`; earlier attempts `0.2.0`) and **still
   failed** with `input_ids/0`. So "the worker is on a stale/baked frozen marin" is
@@ -129,7 +154,8 @@ fallback. Reproduced locally; see the bug doc for the `_resolve_ledger_field` fi
   the list `output_exemplar`; an effective build/exemplar difference on the pod; a
   jax/haliax tree-flattening difference. **The reader-fallback fix in the bug doc
   makes the reader correct regardless of which side derives the mismatch** — landing
-  it in marin/levanter is the cleanest unblock.
+  it in marin/levanter remains the cleanest upstream fix, but exp85 no longer
+  needs to hit that code path.
 
 **Reference (for whoever investigates):**
 - Failing W&B runs: `open-athena/MarinFold`, names `…-reheat-e3-bs512[-v2]`, all `state=failed` (their `requirements.txt` show the installed marin versions).
@@ -137,7 +163,7 @@ fallback. Reproduced locally; see the bug doc for the `_resolve_ledger_field` fi
 - Shared cache: `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/tokenized/contacts-v1-663ba6` (ledger `field_counts = {input_ids}`).
 - Local repro of the reader intolerance: see `MARIN_CACHE_READER_BUG.md` (Minimal repro).
 
-**To verify a fix and finish the experiment:**
+**To finish the experiment:**
 1. Relaunch (see **Launch**). Success = the run steps past 0 and logs `train/loss` (target eval/loss < 2.980).
 2. After `step-1124` lands, fill the `-<wandb-runid>` + step into `export_protein_1_5b_contacts_v1_reheat.py` and run the export.
 3. Publish the HF export to the open-athena bucket (tokenizer co-located); run the #82 harness head-to-head vs #67.

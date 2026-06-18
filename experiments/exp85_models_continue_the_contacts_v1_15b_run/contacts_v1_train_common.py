@@ -47,7 +47,7 @@ import os
 from collections.abc import Sequence
 
 from fray import ResourceConfig
-from levanter.data.text import LmDataConfig, TextLmDatasetFormat
+from levanter.data.text import DatasetComponent, LmDataConfig, PrebuiltLmDatasetFormat, TextLmDatasetFormat
 from levanter.models.llama import LlamaConfig
 from marin.execution import ExecutorStep, output_path_of, versioned
 from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
@@ -140,6 +140,14 @@ contacts_v1_val_tokenized = default_tokenize(
 )
 
 
+def _as_prebuilt_cache_component(component: DatasetComponent) -> DatasetComponent:
+    """Read an existing token cache as array-backed ``input_ids`` records."""
+    return dataclasses.replace(
+        component,
+        format=PrebuiltLmDatasetFormat(input_ids_key="input_ids"),
+    )
+
+
 def unmasked_components() -> dict[str, object]:
     """Train+val DatasetComponents with ``pack=True`` and NO loss mask.
 
@@ -149,13 +157,17 @@ def unmasked_components() -> dict[str, object]:
     components, no ``loss_weight_fn`` is applied: every token position
     contributes to the loss.
     """
-    train_component = dataclasses.replace(
-        step_to_lm_mixture_component(contacts_v1_tokenized, include_raw_paths=True),
-        pack=True,
+    train_component = _as_prebuilt_cache_component(
+        dataclasses.replace(
+            step_to_lm_mixture_component(contacts_v1_tokenized, include_raw_paths=True),
+            pack=True,
+        )
     )
-    val_component = dataclasses.replace(
-        step_to_lm_mixture_component(contacts_v1_val_tokenized, include_raw_paths=True),
-        pack=True,
+    val_component = _as_prebuilt_cache_component(
+        dataclasses.replace(
+            step_to_lm_mixture_component(contacts_v1_val_tokenized, include_raw_paths=True),
+            pack=True,
+        )
     )
     return {"contacts-v1": train_component, "contacts-v1-val": val_component}
 
@@ -248,6 +260,7 @@ def build_train_step(
         train_weights={"contacts-v1": 1.0, "contacts-v1-val": 0.0},
         tokenizer=CONTACTS_V1_TOKENIZER,
         cache_dir=None,
+        auto_build_caches=False,
         shuffle=True,
         block_cross_document_attention=True,
     )
