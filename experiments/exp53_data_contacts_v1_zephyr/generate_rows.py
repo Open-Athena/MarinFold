@@ -128,16 +128,19 @@ def generate_doc_for_row(
     serializable range. Never raises on a single bad row — a dropped row
     just shrinks its round slightly (issue #53: drop, don't backfill).
     """
+    # exp53 ships in lenient mode: per issue #53 (drop, don't backfill),
+    # rows that fail to fetch or generate are dropped from the corpus
+    # rather than retried or backfilled.
     entry_id = row.get("entry_id")
     if cif_text_column is not None:
         cif = row.get(cif_text_column)
         if not cif:
-            return None
+            return None  # lenient: missing inline cif column → skip
     else:
         uri = row.get(cif_uri_column)
         if not uri:
-            return None
-        cif = read_object_bytes(uri)
+            return None  # lenient: missing URI in row → skip
+        cif = read_object_bytes(uri, missing_ok=True)  # lenient: skip on fetch failure
         if cif is None:
             return None
     try:
@@ -150,6 +153,8 @@ def generate_doc_for_row(
             rotamer_library=rotamer_library,
         )
     except (ValueError, RuntimeError) as exc:
+        # lenient: parse/generate failures (multi-chain, invalid cif,
+        # contacts-v1 out-of-range) are warned + dropped.
         warnings.warn(f"generate failed for {entry_id}: {exc}", stacklevel=2)
         return None
     if result is None:

@@ -1,6 +1,6 @@
 ---
 name: zephyr-pipeline-performance
-description: Write a Zephyr/Iris data-generation pipeline that finishes in minutes, not hours. Use when authoring or reviewing an `exp<N>_data_*/cli.py` (or any `map_shard`-based job that fetches per-row inputs and emits parquet). Covers the per-row / per-shard / per-worker / per-job decisions that separate a fits-in-budget run from an overnight one.
+description: Write a Zephyr/Iris data-generation pipeline that finishes in minutes (not hours) and ships a clean corpus (not a silently-corrupted one). Use when authoring or reviewing an `exp<N>_data_*/cli.py` (or any `map_shard`-based job that fetches per-row inputs and emits parquet). Covers the per-row / per-shard / per-worker / per-job decisions for wall-clock plus the fail-loud default for data quality.
 ---
 
 # Skill: write performant Zephyr pipelines
@@ -37,7 +37,7 @@ When you're done, your pipeline should clear every box in the
 
 ---
 
-## TL;DR: the five decisions that dominate
+## TL;DR: the six decisions that dominate
 
 1. **Inside `map_shard`, run a `ThreadPoolExecutor` around the per-row
    fetch+parse.** GCS GETs are ~30–80 ms; gemmi parse releases the GIL.
@@ -71,10 +71,58 @@ When you're done, your pipeline should clear every box in the
    output, ~2,000× less manifest I/O plus a fundamentally cheaper
    per-row fetch. Default to `--cif-uri-column=gcs_uri`; reserve
    `--cif-text-column` for local testing or inputs without a URI column.
+6. **Default to fail-loud on data-quality failures.** When a fetch,
+   parse, or generate raises, let the Zephyr worker die with a real
+   stack trace. A killed worker forces you to triage the bug now,
+   when the cluster job is small; a silently-dropped row corrupts the
+   training corpus and surfaces weeks later as a model that behaves
+   slightly oddly, recovery path "re-run the entire pipeline." The
+   library helpers default to raise; opt into lenient mode
+   (`read_object_bytes(uri, missing_ok=True)`) only per call site,
+   with a comment tying the choice to a specific policy. Return
+   `None` only for *designed-in filter predicates* (the structure is
+   multi-chain, too small to fit, etc.), not for swallowed exceptions.
+   See the "Fail loud on data-quality failures" section below.
 
 The rest of this skill walks through each layer of the pipeline
 (per-row, per-shard, per-job, per-output) with the code patterns
 these decisions imply.
+
+---
+
+## Fail loud on data-quality failures
+
+The principle from TL;DR #6, in code. The library helpers default
+to raise; lenient mode is opt-in per call site, with a comment:
+
+```python
+# Pipeline policy is "drop, don't backfill" per issue #N; missing
+# AFDB cifs are expected for ~0.1% of cluster ids that were
+# retracted upstream.
+cif = read_object_bytes(uri, missing_ok=True)
+if cif is None:
+    return None
+```
+
+The two cases where returning ``None`` is correct (not a
+swallowed failure):
+
+1. **Designed-in filter predicates.** The worker has explicitly
+   determined the row is not eligible for output: a multi-chain
+   structure when single-chain is required, a sequence too short
+   to fit the context budget, etc. These look like
+   ``if structure.num_chains > 1: return None``, not exception
+   handlers around upstream calls. The smoke run audits these by
+   inspecting *which* rows returned ``None`` and confirming each
+   one matches the predicate.
+2. **Explicitly opted-in lenient mode** (as above), with a comment
+   tying the decision to a specific failure mode and a policy
+   document.
+
+Everything else should raise. If your smoke run drops rows you
+can't immediately explain via one of these two cases, the right
+move is to delay scaling and figure out why, even if it's only one
+row in a hundred.
 
 ---
 
@@ -365,8 +413,10 @@ _atom_site"`.
 The fix is a single full GET (the filesystem's `cat_file`) that reads
 to EOF. That's what
 [`marinfold.document_structures.io.read_object_bytes`](../../../marinfold/marinfold/document_structures/io.py)
-does. It has the same `None`-on-failure contract as the threading
-helper above, so they compose directly:
+does. It raises on I/O failure by default (per the "Fail loud"
+section above), so a corrupted fetch surfaces as a worker crash
+with a real stack trace rather than as a silently-missing row in
+the corpus:
 
 ```python
 from marinfold.document_structures.io import (
@@ -374,16 +424,18 @@ from marinfold.document_structures.io import (
 )
 
 def _generate_doc_for_row(row, *, cif_uri_column, ...):
-    cif = read_object_bytes(row[cif_uri_column])  # full GET, gzip-safe
-    if cif is None:
-        return None
-    ...
+    cif = read_object_bytes(row[cif_uri_column])  # gzip-safe; raises on failure
+    # ... parse, generate, etc. Exceptions from any of these also propagate.
 ```
 
-Symptom check: if your smoke test produces a suspiciously low success rate
-(e.g. < 5 % of rows yielding output), **inspect a sample of failures**
-before scaling up. A near-total silent drop with an otherwise-working
-pipeline shape is a near-certain I/O truncation bug.
+Symptom check: under the fail-loud default, a truncation bug surfaces
+as a crash on the first affected row, not a silent drop. If you find
+yourself reading "Wrong number of values in loop _atom_site" in a
+worker traceback, this is almost certainly the bug, and the fix is to
+ensure the per-row fetch goes through `read_object_bytes` (which
+uses `cat_file`) rather than a size-based `fsspec.open().read()`.
+If your pipeline runs in opt-in lenient mode and you instead see a
+suspiciously high *rate* of skipped rows, the same diagnosis applies.
 
 ### Requester-pays buckets (AFDB)
 
@@ -442,7 +494,9 @@ parsing every time you want to test a new selection.
 1. Local unit tests (no Zephyr): test_cli.py against file:// URIs.
 2. Local Zephyr smoke (in-process): ZephyrContext with 2-3 inline rows.
 3. Iris smoke: --num-docs 100, one input shard, single output file.
-   Verify success rate, per-doc latency, output schema.
+   Verify the smoke completed without crashing (fail-loud default
+   means no swallowed errors), every dropped row matches a
+   designed-in filter predicate, per-doc latency, output schema.
 4. GATE: report measured rate + worker count + projected wall-clock to
    the user. Don't auto-trigger the full run.
 5. Full run after explicit go-ahead.
@@ -618,8 +672,17 @@ Before triggering the full run, verify each of these:
       `marinfold.document_structures.io.read_object_bytes` (or
       equivalent: a full `cat_file` GET that handles gzip-transcoded
       objects), not `fsspec.open().read()` with size inference.
-- [ ] The worker returns `None` (not raises) on transient I/O / parse
-      failures so a single bad row can't kill a Zephyr worker.
+- [ ] The worker **raises** on I/O / parse / generate failures (the
+      default behavior of the library helpers). Killing one Zephyr
+      worker is much cheaper than silently shipping a corrupted
+      training corpus. Only return ``None`` for *designed-in filter
+      predicates* (multi-chain when single-chain is required,
+      structure too small to fit the context budget, etc.), where the
+      "no output" outcome is a known-and-expected property of the
+      input, not a swallowed error. If your pipeline genuinely needs
+      lenient mode for a specific failure mode, opt in explicitly at
+      the call site (`read_object_bytes(uri, missing_ok=True)`) and
+      add a comment explaining why.
 
 **Per-shard**
 - [ ] URI-path `map_shard` body delegates to
@@ -647,9 +710,18 @@ Before triggering the full run, verify each of these:
 
 **Validation**
 - [ ] Local unit tests pass.
-- [ ] Iris smoke run (`--num-docs 100`, single input shard) produced
-      ≥ 95 % valid docs and measured per-doc latency matches the
-      projection.
+- [ ] Iris smoke run (`--num-docs 100`, single input shard): **every
+      input row is accounted for**. A row either yields output, or
+      matches a designed-in filter predicate that returns ``None``
+      (multi-chain structure, too small to fit the context budget,
+      etc.). No swallowed exceptions: under the fail-loud default,
+      a smoke run that completes without crashing means there were
+      no I/O / parse / generate failures. The smoke set is small
+      enough to enumerate every dropped row and confirm it matches
+      a filter predicate, not a sample.
+- [ ] Measured per-doc latency on the smoke matches the projection
+      within ~2×; large gaps mean either the smoke isn't
+      representative or the projection's assumptions are wrong.
 - [ ] Smoke output sample manually inspected for shape + content.
 - [ ] User has gated the full run.
 

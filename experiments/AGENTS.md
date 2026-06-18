@@ -188,12 +188,14 @@ initiative — see rule #6.
 For any `exp<N>_data_*/` that runs a `map_shard` pipeline on the marin
 Iris cluster, read the
 [`zephyr-pipeline-performance`](../.agents/skills/zephyr-pipeline-performance/SKILL.md)
-skill **before** drafting `cli.py`. It covers the five decisions that
-dominate Zephyr pipeline wall-clock: source data via the manifest's
-`gcs_uri` pointer (not bulky inline cif), thread the per-row fetch, pin
-the region, memoize per-worker init, and use the shared gzip-safe
-reader. Each decision is paired with the code pattern that implements
-it.
+skill **before** drafting `cli.py`. It covers the six decisions that
+dominate Zephyr pipeline correctness and wall-clock: source data via
+the manifest's `gcs_uri` pointer (not bulky inline cif), thread the
+per-row fetch, pin the region, memoize per-worker init, use the
+shared gzip-safe reader, and default to fail-loud on data-quality
+failures (a silently-dropped row corrupts the training corpus
+weeks-of-debugging downstream). Each decision is paired with the
+code pattern that implements it.
 
 The skill exists because the same handful of mistakes keep eating
 hours-to-days of cluster time on each new data experiment. The cost of

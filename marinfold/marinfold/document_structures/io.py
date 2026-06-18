@@ -54,11 +54,14 @@ def thread_per_row_in_shard(
     This matters when downstream readers want deterministic per-shard
     parquet content across runs.
 
-    The worker is expected to return ``None`` on a transient row-level
-    failure (bad fetch, unparseable cif, doesn't fit the token budget)
-    rather than raising; those rows are silently dropped here. A bad
-    row that raises instead would kill the Zephyr worker for the whole
-    shard.
+    Worker exceptions propagate. If the worker raises, the surrounding
+    Zephyr worker dies, which is the correct behavior for data-quality
+    failures (a silently-dropped row corrupts the downstream training
+    corpus). Use ``None`` *only* for designed-in filters: rows that the
+    worker has explicitly determined are not eligible (e.g. a structure
+    too small to fit the context budget). Lenient skip-on-error
+    behavior, when truly needed, lives at the call site (e.g.
+    ``read_object_bytes(uri, missing_ok=True)``), not here.
 
     Parameters
     ----------
@@ -113,13 +116,22 @@ def thread_per_row_in_shard(
                 yield out
 
 
-def read_object_bytes(uri: str, *, warn: bool = True) -> Optional[bytes]:
+def read_object_bytes(
+    uri: str, *, missing_ok: bool = False, warn: bool = True,
+) -> Optional[bytes]:
     """Read the full byte contents of a remote (or local) object via fsspec.
 
-    Returns ``None`` on any I/O failure (and, by default, emits a
-    warning) so a single bad object in a shard does not bring down the
-    surrounding worker. Pairs with :func:`thread_per_row_in_shard`,
-    which skips ``None`` results.
+    **Raises on I/O failure by default**. This is deliberate: in a
+    data-generation pipeline, a silently-dropped row corrupts the
+    training corpus, and the cost of discovering that weeks later (when
+    a model behaves oddly) far exceeds the cost of killing a Zephyr
+    worker on a single bad fetch.
+
+    Pass ``missing_ok=True`` only when a missing/unfetchable object is
+    expected and acceptable (e.g. enumerating which entries in a
+    candidate list are actually present in the bucket). Lenient mode
+    returns ``None`` instead of raising, and, by default, emits a
+    ``warnings.warn`` so the drop shows up in logs.
 
     Uses the filesystem's ``cat_file`` (a single full GET that reads to
     EOF) rather than a seekable ``open(...).read()``. The two differ in
@@ -142,16 +154,23 @@ def read_object_bytes(uri: str, *, warn: bool = True) -> Optional[bytes]:
     uri
         fsspec-recognised URI: a local path, ``file://``, ``gs://``,
         ``s3://``, ``hf://``, ``http(s)://``, etc.
+    missing_ok
+        Default ``False`` (raise on failure). Pass ``True`` only when
+        the caller has audited the failure modes and decided a silent
+        skip is correct. With ``True``, returns ``None`` instead of
+        raising.
     warn
-        Default ``True``. Emits a ``warnings.warn`` on I/O failure so
-        ops can spot patterns in worker logs. Pass ``warn=False`` for
-        bulk scans (e.g. enumerating known-missing objects) where the
-        log spam would drown out signal.
+        Only consulted when ``missing_ok=True``. Default emits a
+        ``warnings.warn`` on the drop so it shows up in worker logs.
+        Pass ``warn=False`` for bulk scans where the log spam would
+        drown out signal.
     """
     try:
         fs, path = fsspec.core.url_to_fs(uri)
         return fs.cat_file(path)
     except (OSError, ValueError) as exc:
+        if not missing_ok:
+            raise
         if warn:
             warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
         return None
