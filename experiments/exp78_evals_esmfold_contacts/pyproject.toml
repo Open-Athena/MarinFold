@@ -1,0 +1,39 @@
+[project]
+name = "exp78-evals-esmfold-contacts"
+version = "0.1.0"
+description = "Eval ESMFold + ESMFold2 contact prediction (pyconfind on predicted structures) against pyconfind ground truth, on exp74's 554-protein eval set; compare to Protenix v2 (single-seq + MSA)."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Local-side: input prep, pyconfind ground-truth + scoring, plotting,
+    # HF up/download, and the Modal client. The ESMFold / ESMFold2 / torch /
+    # cuda stack lives in the Modal images, NOT here.
+    "modal>=0.64",
+    "gemmi>=0.6",          # mmCIF / PDB parsing + chain extraction
+    "numpy",
+    "pandas",
+    "pyarrow",             # contacts_raw parquet
+    "matplotlib",
+    "requests",            # RCSB structure fetch
+    "huggingface-hub>=0.24",
+    # pyconfind ground-truth contacts, run exactly like contacts_v1
+    # (native_only=True). The extra pulls pyconfind>=0.5.
+    "marinfold[contacts-v1]",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
