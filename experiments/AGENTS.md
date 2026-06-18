@@ -67,10 +67,11 @@ whichever fits the work.
    `branch` in `marinfold_experiment:` are read by
    `python scripts/itemize.py` to regenerate the index.
 
-5. **Use `gh issue comment --edit-last` for progress updates.** Don't
-   spam the issue with new comments per progress check. Agent
-   comments start with 🤖. Agent-opened PRs/issues carry the
-   `agent-generated` label.
+5. **Post new issue comments for progress updates.** Don't edit an
+   existing issue comment unless the user explicitly asks for that.
+   Avoid per-poll noise by batching routine status into meaningful
+   milestone updates. Agent comments start with 🤖. Agent-opened
+   PRs/issues carry the `agent-generated` label.
 
 6. **Agents never close experiment issues.** Posting results, updating
    the README's Conclusion, and marking the work done in the
@@ -253,6 +254,5 @@ Before the issue is closed:
 - The issue title and the README title match.
 
 When the user gives the go-ahead, post a comment on the experiment
-issue with a link to `plots/summary.pdf` (edit the agent's last
-comment per rule #5). Don't close the issue — that's a human action
-(rule #6).
+issue with a link to `plots/summary.pdf` (use a new issue comment per
+rule #5). Don't close the issue — that's a human action (rule #6).

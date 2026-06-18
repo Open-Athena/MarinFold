@@ -8,7 +8,12 @@ version = "0.1.0"
 description = "MarinFold models/ library — shared training helpers, vendored marin defaults."
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "marin",
+    # marin-core is the SOURCE dist name for the `marin` Python module. The
+    # published `marin` wheel (0.99.dev*) is frozen at 2026-05-29 with the
+    # un-fixed cache-ledger READER (it demands `input_ids/0`); marin-core built
+    # from source >= 2026-06-02 has the reader fix. Depending on marin-core lets
+    # consumers pin the marin workspace to a git source (see exp85's pyproject).
+    "marin-core",
     "marin-levanter",
     "marin-iris",
     "marin-zephyr",
@@ -18,7 +23,7 @@ dependencies = [
 [project.optional-dependencies]
 # Iris's remote worker runs `uv sync --all-packages --no-group dev`, so a
 # dev group must exist (even if empty) for --no-group to work.
-tpu = ["marin[tpu]; sys_platform == 'linux'"]
+tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
 
 [dependency-groups]
 dev = []
