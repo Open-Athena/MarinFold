@@ -18,8 +18,11 @@ Recipe + code complete (v5p-32, batch 512, re-heat LR 4.0e-4, ~1125 steps, warm-
 from #67 step-11999). The 2026-06-17 attempts were blocked before step 0 by a
 marin/levanter cache-reader mismatch on the iris TPU worker:
 `Sharded cache ledger missing input_ids/0 count` while the ledger key is `input_ids`.
-The branch now avoids that path by reading exp67's reused token caches as prebuilt
-`input_ids` arrays (`PrebuiltLmDatasetFormat`) and disabling automatic cache rebuilds.
-Local direct loads of the real train and validation GCS caches both derive
-`input_ids` and pass offset construction, so the next step is relaunching the v5p-32
-warm restart and checking that it logs `train/loss`.
+The branch now avoids that path with `ArrayExemplarTextLmDatasetFormat`: it keeps
+Levanter's packed text-dataset path but makes the cache-reader exemplar an ndarray
+`input_ids` leaf, and disables automatic cache rebuilds. Local direct loads of the
+real train and validation GCS caches both derive `input_ids`, pass offset
+construction, and return `PackedTokenDataset`. Relaunch
+`/tim/iris-run-job-20260618-151053` is now running on v5p-32, resumed W&B run
+`protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512-5fc77c`, reached
+train step 9/1125, and logged loss ~2.96 by 2026-06-18 15:18 UTC.

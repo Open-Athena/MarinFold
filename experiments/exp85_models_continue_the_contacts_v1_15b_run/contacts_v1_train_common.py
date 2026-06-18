@@ -45,9 +45,12 @@ and schedule on top of these shared bits.
 import dataclasses
 import os
 from collections.abc import Sequence
+from typing import Any
 
 from fray import ResourceConfig
-from levanter.data.text import DatasetComponent, LmDataConfig, PrebuiltLmDatasetFormat, TextLmDatasetFormat
+import numpy as np
+from levanter.data.text import DatasetComponent, LmDataConfig, TextLmDatasetFormat
+from levanter.data.text._batch_tokenizer import BatchTokenizer
 from levanter.models.llama import LlamaConfig
 from marin.execution import ExecutorStep, output_path_of, versioned
 from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
@@ -140,11 +143,42 @@ contacts_v1_val_tokenized = default_tokenize(
 )
 
 
-def _as_prebuilt_cache_component(component: DatasetComponent) -> DatasetComponent:
-    """Read an existing token cache as array-backed ``input_ids`` records."""
+class ArrayExemplarBatchTokenizer(BatchTokenizer):
+    """BatchTokenizer variant whose exemplar treats token sequences as array leaves."""
+
+    def __call__(self, batch: Sequence[dict]) -> list[dict]:
+        examples = super().__call__(batch)
+        return [{key: np.asarray(value) for key, value in example.items()} for example in examples]
+
+    @property
+    def output_exemplar(self) -> dict[str, np.ndarray]:
+        exemplar = super().output_exemplar
+        return {key: np.asarray(value) for key, value in exemplar.items()}
+
+
+@dataclasses.dataclass(frozen=True)
+class ArrayExemplarTextLmDatasetFormat(TextLmDatasetFormat):
+    """Text format that keeps packing semantics but matches old cache ledger fields."""
+
+    def build_preprocessor(
+        self, tokenizer: Any, *, enforce_eos: bool = True, enforce_bos: bool = True
+    ) -> ArrayExemplarBatchTokenizer:
+        return ArrayExemplarBatchTokenizer(
+            tokenizer,
+            enforce_bos=enforce_bos,
+            enforce_eos=enforce_eos,
+            text_field=self.text_key,
+        )
+
+
+TextLmDatasetFormat.register_subclass("array_exemplar_text", ArrayExemplarTextLmDatasetFormat)
+
+
+def _as_array_exemplar_component(component: DatasetComponent) -> DatasetComponent:
+    """Read existing token caches with an array-backed ``input_ids`` exemplar."""
     return dataclasses.replace(
         component,
-        format=PrebuiltLmDatasetFormat(input_ids_key="input_ids"),
+        format=ArrayExemplarTextLmDatasetFormat(text_key="document"),
     )
 
 
@@ -157,13 +191,13 @@ def unmasked_components() -> dict[str, object]:
     components, no ``loss_weight_fn`` is applied: every token position
     contributes to the loss.
     """
-    train_component = _as_prebuilt_cache_component(
+    train_component = _as_array_exemplar_component(
         dataclasses.replace(
             step_to_lm_mixture_component(contacts_v1_tokenized, include_raw_paths=True),
             pack=True,
         )
     )
-    val_component = _as_prebuilt_cache_component(
+    val_component = _as_array_exemplar_component(
         dataclasses.replace(
             step_to_lm_mixture_component(contacts_v1_val_tokenized, include_raw_paths=True),
             pack=True,

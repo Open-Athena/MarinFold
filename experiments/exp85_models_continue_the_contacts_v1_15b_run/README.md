@@ -59,15 +59,16 @@ Then export `step-{final}` to HF, publish to the open-athena bucket, and run the
 
 The module keeps exp67's `MARIN_PREFIX` (`…/exp67_contacts_v1_1_5b`) so the tokenize steps resolve exp67's existing 4.7B-token train + val caches instead of re-tokenizing. The warm-restart run's checkpoints/exports land under their own W&B-run-name subdir, so they don't collide with #67's.
 
-The reused caches are read with `PrebuiltLmDatasetFormat(input_ids_key="input_ids")`
-and `auto_build_caches=False`. That matters for the 2026-06-17 cache-reader
-failure: the old path reused the raw-text tokenizer format, whose
-`BatchTokenizer.output_exemplar` is a Python list and can derive the pytree field
-`input_ids/0`; the cache ledger records the array field `input_ids`. Reading the
-already-tokenized cache as prebuilt token IDs makes the exemplar an ndarray leaf
-and derives `input_ids`, matching the ledger. `auto_build_caches=False` also
-prevents a missing cache from silently trying to rebuild raw text with the
-prebuilt reader.
+The reused caches are read with `ArrayExemplarTextLmDatasetFormat`, a tiny
+`TextLmDatasetFormat` subclass whose `BatchTokenizer.output_exemplar` exposes
+`input_ids` as an ndarray leaf. That matters for the 2026-06-17 cache-reader
+failure: the old raw-text tokenizer exemplar was a Python list and could derive
+the pytree field `input_ids/0`; the cache ledger records the array field
+`input_ids`. Keeping this as a text format preserves Levanter
+`PackedTokenDataset` semantics for train and validation, while the ndarray
+exemplar makes the cache reader derive `input_ids`, matching the ledger.
+`auto_build_caches=False` also prevents a missing cache from silently rebuilding
+raw text in the training job.
 
 ## Launch
 
@@ -101,7 +102,7 @@ uv run iris --cluster marin job run --no-wait --enable-extra-resources \
 - Superseded v5p-8 attempt: job `/bizon/iris-run-job-20260616-214924` — terminated on preemption thrashing before reaching step 0.
 - Tokenize steps reused exp67's caches ("already succeeded") — no re-tokenization.
 
-## Status — experiment-side cache-read workaround ready (2026-06-18)
+## Status — relaunched and training (2026-06-18)
 
 The original code + recipe were blocked before step 0 by a marin/levanter
 **cache-reader failure on the iris TPU worker**. Authoritative analysis, a
@@ -109,9 +110,10 @@ verified minimal repro, and the upstream reader-fallback fix are captured in
 [`MARIN_CACHE_READER_BUG.md`](MARIN_CACHE_READER_BUG.md).
 
 This branch now applies the stronger experiment-side workaround suggested in
-that note: read exp67's existing token caches as **prebuilt `input_ids` arrays**
-rather than as raw-text tokenizer output. Local verification against the real GCS
-caches succeeds through the old failure point:
+that note: keep exp67's existing token caches on the packed text-dataset path,
+but use an ndarray-backed `input_ids` exemplar so the cache reader derives the
+ledger field `input_ids`. Local verification against the real GCS caches
+succeeds through the old failure point:
 
 - train cache:
   `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/tokenized/contacts-v1-663ba6/train`
@@ -119,12 +121,22 @@ caches succeeds through the old failure point:
 - validation cache:
   `gs://marin-us-east5/protein-structure/MarinFold/exp67_contacts_v1_1_5b/tokenized/contacts-v1-val-92827b/validation`
   loads with ledger field `input_ids` and `_ensure_shard_field_offsets("input_ids")`.
-- smoke config confirms both `DatasetComponent`s use `PrebuiltLmDatasetFormat`,
-  their exemplar flattens to `input_ids`, and `LmDataConfig.auto_build_caches`
-  is `False`.
+- smoke config confirms both `DatasetComponent`s use
+  `ArrayExemplarTextLmDatasetFormat`, their exemplar flattens to `input_ids`,
+  `dataset_for_component(...)` returns `PackedTokenDataset`, and
+  `LmDataConfig.auto_build_caches` is `False`.
 
-This should let a relaunched TPU run step past the `input_ids/0` failure without
-waiting for an upstream marin/levanter release.
+Relaunch history:
+
+- `/tim/iris-run-job-20260618-150348` stepped past the original
+  `input_ids/0` cache-ledger failure, then exposed a second issue: reading the
+  cache as `PrebuiltLmDatasetFormat` bypassed Levanter packing, so validation
+  saw variable-length examples (`GrugLmExample token length ... must match Pos
+  axis size 8192`).
+- `/tim/iris-run-job-20260618-151053` uses the refined
+  `ArrayExemplarTextLmDatasetFormat` packed-reader fix. It resumed W&B run
+  `protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512-5fc77c`, reached
+  train step 9/1125, and logged loss ~2.96 by 2026-06-18 15:18 UTC.
 
 **Symptom.** The training step dies in the data loader with:
 ```

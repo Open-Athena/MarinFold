@@ -7,4 +7,5 @@ _See [`README.md`](README.md) for the file schema + policy._
 
 | Date | Experiment | W&B run | Kind | User | Description | Details |
 |---|---|---|---|---|---|---|
+| 2026-06-18 | `exp85_models_continue_the_contacts_v1_15b_run` | [protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512](https://wandb.ai/open-athena/MarinFold/runs/protein-contacts-1_5b-contacts-v1-unmasked-reheat-e3-bs512-5fc77c) | `models` | tim | Warm-restart #67 contacts-v1 1.5B from step-11999 with v5p-32 batch512 LR reheat | [md](runs/20260618_exp85_models_continue_the_contacts_v1_15b_run_protein_contacts_1_5b_contacts_v1_unmasked_reheat_e3_bs512.md) |
 | 2026-06-10 | `exp67_models_contacts_v1_1_5b` | [protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked](https://wandb.ai/open-athena/MarinFold/runs/protein-contacts-1_5b-3.5e-4-contacts-v1-unmasked-3b5cf2) | `models` | bizon | 1.5B Llama on contacts-v1, unmasked next-token loss, shuffled, 12k steps (~2.7 epochs), LR 3.5e-4, v5p-8 @ us-east5-a | [md](runs/20260610_exp67_models_contacts_v1_1_5b_protein_contacts_1_5b_3_5e_4_contacts_v1_unmasked.md) |
