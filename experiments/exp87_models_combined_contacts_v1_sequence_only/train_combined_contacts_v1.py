@@ -78,9 +78,16 @@ protein_model_1_5b_combined = build_train_step(
     extra_tags=("1_5b", "combined", "v5p32", "bs512", "epoch1"),
     wandb_name=RUN_NAME,
     resources=RESOURCES_V5P32,
-    # Long-ish run on a preemptible pool — keep periodic permanent checkpoints so
-    # a late preemption can't lose much.
-    steps_per_export=1000,
+    # Bank permanent checkpoints frequently. The v5p pool is preemptible and a
+    # single host death gang-fails the whole TPU job (seen 2026-06-19 at step
+    # ~186: JAX distributed coordination abort, iris fail=1/preempt=0, executor
+    # did NOT auto-retry). marin imputes a deterministic run id from the output
+    # path, so a relaunch of this step RESUMES from the latest permanent
+    # checkpoint in base_path — but only permanent (steps_per_export) checkpoints
+    # land there (the rolling checkpoint goes to a ttl-temp path that cross-run
+    # resume doesn't read). 250 keeps the lost-on-failure window small while a
+    # supervisor auto-relaunches; not versioned, so it doesn't change the run id.
+    steps_per_export=250,
 )
 
 
