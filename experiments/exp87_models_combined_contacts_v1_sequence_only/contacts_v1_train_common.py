@@ -151,6 +151,17 @@ PROTEIN_RESOURCES_USE5 = ResourceConfig.with_tpu(
     zone="us-east5-a",
 )
 
+# Sequence-only tokenize is memory-heavy and OOM-killed the CPU-pool nodes
+# (coordinator included) on the first attempt (2026-06-19): the corpus is ~7×
+# larger than contacts-v1 AND length-banded — the early shards hold the longest
+# UniRef50 sequences (up to ~2000 residues ≈ ~4k tokens/doc), so several default
+# 16g map-workers co-located on one node spike past node RAM. Give fatter
+# workers (and a fatter coordinator) so the scheduler packs fewer per node and
+# each has headroom on the long-sequence shards. Applied to the sequence-only
+# TRAIN step only — the val step (small, length-balanced) already tokenized fine
+# on defaults, so we leave its config (and cache) untouched.
+SEQONLY_TOKENIZE_RESOURCES = ResourceConfig.with_cpu(cpu=4, ram="48g", disk="30g")
+
 # ── Tokenize steps ────────────────────────────────────────────────────────────
 # contacts-v1: keep exp67's exact step names + tokenizer id + dataset path so
 # marin resolves the EXISTING caches (no re-tokenization).
@@ -176,6 +187,8 @@ seqonly_tokenized = default_tokenize(
     dataset=f"{GCS_SEQONLY_BASE}/train/*.parquet",
     tokenizer=UNIFIED_TOKENIZER_REPO,
     format=TextLmDatasetFormat(text_key="document"),
+    resources=SEQONLY_TOKENIZE_RESOURCES,
+    worker_resources=SEQONLY_TOKENIZE_RESOURCES,
 )
 seqonly_val_tokenized = default_tokenize(
     name="contacts-v1-sequence-only-val",
