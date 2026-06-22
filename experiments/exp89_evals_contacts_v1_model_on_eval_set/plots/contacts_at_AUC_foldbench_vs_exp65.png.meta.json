@@ -1,0 +1,10 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Ranking AUC: FoldBench-100 vs exp65 (aggregate)"
+}

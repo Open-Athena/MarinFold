@@ -1,0 +1,10 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Mean precision @ L/5 vs pyconfind contacts (degree>=0.001, sep>=6), per predictor, aggregate and by range. MarinFold ranks pairs by its pairwise contact-statement log-prob; the structure models rank by pyconfind degree on the predicted structure. n=554 proteins."
+}

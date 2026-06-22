@@ -117,11 +117,59 @@ for MarinFold reported next to every other predictor.
 
 ## Results
 
-_Finalizing on the full 554-protein run (preliminary read on the first ~21
-shared proteins: MarinFold's contact-ranking **AUC** is on par with Protenix-v2,
-while its top-K precision (@L, R-precision) sits well below the structure
-predictors; ESMFold2 is strongest)._
+All **554** proteins scored, **0 failures** (`data/timings.csv`; mean 4.9 s,
+max 63 s on one A5000). Full table: `data/contact_precision_all.csv`; plots:
+`plots/`; slides: `plots/summary.pdf`.
+
+**Headline — long-range (seq-sep ≥ 24), mean over 554 proteins:**
+
+| predictor | AUC | R-precision | contacts@L |
+|---|---|---|---|
+| **MarinFold-cv1 1.5B (sequence only)** | **0.881** | 0.269 | 0.188 |
+| Protenix-v2 · single-seq (structure) | 0.815 | 0.572 | 0.326 |
+| Protenix-v2 · MSA (structure) | 0.935 | 0.795 | 0.465 |
+| ESMFold (single-seq) | 0.892 | 0.732 | 0.418 |
+| ESMFold2 (single-seq) | 0.916 | 0.769 | 0.443 |
+
+(Aggregate-range AUC: MarinFold **0.904**, Protenix-SS 0.830, Protenix-MSA
+0.941, ESMFold 0.901, ESMFold2 0.923.)
+
+**1. Ranking AUC — the sequence-only LM is competitive.** MarinFold's
+long-range contact-ranking AUC (**0.881**; 0.904 aggregate) **matches ESMFold**
+and **beats single-sequence Protenix-v2** (0.815), trailing only Protenix-MSA
+and ESMFold2. It is **robust to MSA depth** (long-range AUC 0.87 / 0.85 / 0.91 /
+0.90 over orphan / marginal / low / deep tiers) and **fold novelty**, where it
+**edges ESMFold2 on novel folds** (0.81 vs 0.79). This answers exp82's open
+question: careful tuning moved the model from **~chance** (the quick #67 model)
+to **ESMFold-class ranking AUC from sequence alone**.
+
+**2. Top-K precision — structure methods win decisively.** At R-precision and
+contacts@L, MarinFold (0.269 / 0.188 long-range) sits **well below every
+structure predictor** (ESMFold2 0.769 / 0.443; Protenix-MSA 0.795 / 0.465). It
+orders contacts broadly well but does not concentrate confidence on the true top
+contacts. (AUC also somewhat favours a continuous ranker — MarinFold scores
+every pair — over structure-derived contact sets that tie most pairs at degree
+0; the top-K precision metrics are the fairer "did you find the contacts"
+comparison.)
+
+The vLLM/iris-TPU scorer ([`score_eval_set_vllm.py`](score_eval_set_vllm.py))
+is provided as the canonical-platform reproduction (same scoring definition and
+`npz` layout) but was not the source of these numbers — see *Method*.
 
 ## Conclusion
 
-_(Fill in after the full results land.)_
+The carefully-tuned contacts-v1 1.5B (eval loss 2.7566) has a **real,
+MSA-depth-robust contact signal**: from sequence alone it ranks residue–residue
+contacts about as well as ESMFold by AUC (and better than single-sequence
+Protenix-v2), a large jump over the near-chance #67 model that exp82 measured.
+It is **not yet a high-precision contact predictor** — its top-K precision
+(contacts@L, R-precision) is far below the structure-based methods, so for
+"high-confidence contact" use it trails ESMFold / ESMFold2 / Protenix-MSA. Net:
+tuning closed the *ranking* gap but not the *top-K precision* gap; the next
+lever is sharpening the model's top predictions (or a larger / longer-trained
+model), not the decoder.
+
+_(Suggested follow-ups, for a human to decide: (a) protenix-distogram AUC needs
+the saved distograms — only its precision is included here; (b) a higher-quality
+calibration / sharpening of the top predictions; (c) the vLLM/iris-TPU run as the
+canonical platform reproduction.)_

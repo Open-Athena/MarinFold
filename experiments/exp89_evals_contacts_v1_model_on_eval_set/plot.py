@@ -36,8 +36,9 @@ CONFIGS = [
 CUTS = ["L", "L/2", "L/5", "R", "AUC"]
 CUT_FILE = {"L": "L", "L/2": "L_2", "L/5": "L_5", "R": "R", "AUC": "AUC"}
 RANGE_ORDER = ["all", "short", "medium", "long"]
-NEFF_ORDER = ["shallow", "medium", "deep"]
-FOLD_ORDER = ["novel", "borderline", "redundant"]
+# exp65 strata labels (low MSA-depth → high; most novel fold → least).
+NEFF_ORDER = ["orphan", "marginal", "low", "deep"]
+FOLD_ORDER = ["novel_fold", "same_fold", "redundant"]
 
 
 def _axis_label(cut: str) -> str:
