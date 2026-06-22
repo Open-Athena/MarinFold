@@ -83,6 +83,17 @@ def test_casp_fm_classification_loads():
     assert all(r["category"] == "FM" and r["casp"] == "CASP14" for r in fm_only)
 
 
+def test_parse_pdb_code():
+    # Answer code trails the protein name; take the last word-bounded token.
+    assert fetch_casp_fm.parse_pdb_code("GLuc 7d2o  ") == "7d2o"
+    assert fetch_casp_fm.parse_pdb_code("S0A2C3d1 6vr4  ") == "6vr4"
+    assert fetch_casp_fm.parse_pdb_code("YscY-YscX 7qih") == "7qih"
+    # Unreleased / canceled targets carry no real PDB code.
+    assert fetch_casp_fm.parse_pdb_code("g3873") is None
+    assert fetch_casp_fm.parse_pdb_code("Q858F5.1") is None
+    assert fetch_casp_fm.parse_pdb_code("T4SS effector") is None
+
+
 # A minimal 3-residue poly-Gly with a BLANK chain id (CASP-style), which
 # gemmi only counts as a polymer after setup_entities() / the CA fallback.
 _BLANK_CHAIN_PDB = """\
