@@ -17,6 +17,7 @@ The convention is borrowed from `marin-community/marin`'s
 |---|---|---|
 | [babysit-job](babysit-job/SKILL.md) | Monitor an Iris job, recover on failure | ported from marin |
 | [babysit-zephyr](babysit-zephyr/SKILL.md) | Same, for Zephyr pipeline jobs | ported from marin |
+| [zephyr-pipeline-performance](zephyr-pipeline-performance/SKILL.md) | Write a Zephyr/Iris pipeline that finishes in minutes, not hours: the five decisions that dominate wall-clock + the I/O traps that silently destroy it. Read before drafting any new `exp<N>_data_*/cli.py`. | MarinFold-native, distilled from exp5 + exp53 |
 
 ## Adapting marin skills
 

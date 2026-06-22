@@ -20,9 +20,9 @@ seed. The output row is contacts-v1's ``metadata_row()`` plus the manifest
 provenance columns (``round``, ``struct_cluster_id``, …).
 """
 
+import functools
 import warnings
 from collections.abc import Iterable, Iterator
-from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any
 
@@ -33,6 +33,10 @@ from marinfold.document_structures.contacts_v1 import (
     generate_document,
 )
 from marinfold.document_structures.contacts_v1.vocab import CONTEXT_LENGTH, NAME
+from marinfold.document_structures.io import (
+    read_object_bytes,
+    thread_per_row_in_shard,
+)
 
 # Manifest columns copied verbatim onto every output row (provenance: lets a
 # generated doc be traced back to its cluster / round / split / source).
@@ -51,28 +55,22 @@ PASSTHROUGH_COLUMNS: tuple[str, ...] = (
 DEFAULT_CIF_URI_COLUMN = "gcs_uri"
 
 
-# Process-wide cache of the parsed rotamer library (or None on failure). A
-# Zephyr worker processes many shards; parsing pyconfind's (large) EBL.out is
-# ~tens of seconds, so we do it once per worker process, not once per shard.
-_ROTAMER_UNSET: Any = object()
-_ROTAMER_LIBRARY: Any = _ROTAMER_UNSET
-
-
+@functools.cache
 def _load_rotamer_library() -> Any | None:
     """Parse pyconfind's Dunbrack rotamer library once per process (best effort).
 
-    Memoized process-wide and passed explicitly to every ``generate_document``
-    call so pyconfind does not re-parse the (large) ``EBL.out`` for each
-    structure or each shard, and so the shard's fetch threads don't race on
-    pyconfind's lazy process-wide default. ``cached_rotamer_library()``
-    downloads + caches the library per user and returns its path;
-    ``load_library`` parses it. Returns ``None`` on failure —
-    ``generate_document(rotamer_library=None)`` then falls back to pyconfind's
-    own lazy load (slower, but correct).
+    Memoized process-wide via ``functools.cache`` and passed explicitly to
+    every ``generate_document`` call so pyconfind does not re-parse the
+    (large) ``EBL.out`` for each structure or each shard, and so the
+    shard's fetch threads don't race on pyconfind's lazy process-wide
+    default. A Zephyr worker processes many shards; ``EBL.out`` parsing
+    is ~tens of seconds — once per worker, not once per shard.
+
+    Returns ``None`` on failure — ``generate_document(rotamer_library=None)``
+    then falls back to pyconfind's own lazy load (slower, but correct).
+    The None return is itself cached (next call is instant), so a worker
+    whose preload failed once doesn't retry per shard.
     """
-    global _ROTAMER_LIBRARY
-    if _ROTAMER_LIBRARY is not _ROTAMER_UNSET:
-        return _ROTAMER_LIBRARY
     try:
         from pyconfind import load_library
 
@@ -81,12 +79,11 @@ def _load_rotamer_library() -> Any | None:
         except ImportError:
             from pyconfind.data import cached_rotamer_library
 
-        _ROTAMER_LIBRARY = load_library(cached_rotamer_library())
+        return load_library(cached_rotamer_library())
     except Exception as exc:  # noqa: BLE001 — optional speedup, never fatal
         warnings.warn(f"rotamer-library preload failed ({exc}); per-call load",
                       stacklevel=2)
-        _ROTAMER_LIBRARY = None
-    return _ROTAMER_LIBRARY
+        return None
 
 
 def structure_from_cif(data: str | bytes, *, entry_id: str) -> gemmi.Structure:
@@ -97,27 +94,6 @@ def structure_from_cif(data: str | bytes, *, entry_id: str) -> gemmi.Structure:
     if not structure.name:
         structure.name = str(entry_id)
     return structure
-
-
-def _fetch_cif_bytes(uri: str) -> bytes | None:
-    """Fetch a cif from a URI, reading the *whole* object. ``None`` on error.
-
-    Uses the filesystem's ``cat_file`` (a single full GET) rather than a
-    seekable ``open().read()``. The AFDB GCS objects are gzip-transcoded
-    (``Content-Encoding: gzip``) and report their *compressed* size, so a
-    size/range-based read returns only that many bytes of the decompressed
-    stream and silently truncates larger structures mid-``_atom_site`` loop
-    (gemmi then raises "Wrong number of values in loop _atom_site"). A plain
-    GET lets GCS decompressively transcode and we read to EOF -- the full mmCIF.
-    """
-    import fsspec
-
-    try:
-        fs, path = fsspec.core.url_to_fs(uri)
-        return fs.cat_file(path)
-    except (OSError, ValueError) as exc:
-        warnings.warn(f"fetch failed for {uri}: {exc}", stacklevel=2)
-        return None
 
 
 def build_output_row(row: dict, result, *, structure_name: str = NAME) -> dict[str, Any]:
@@ -152,16 +128,19 @@ def generate_doc_for_row(
     serializable range. Never raises on a single bad row — a dropped row
     just shrinks its round slightly (issue #53: drop, don't backfill).
     """
+    # exp53 ships in lenient mode: per issue #53 (drop, don't backfill),
+    # rows that fail to fetch or generate are dropped from the corpus
+    # rather than retried or backfilled.
     entry_id = row.get("entry_id")
     if cif_text_column is not None:
         cif = row.get(cif_text_column)
         if not cif:
-            return None
+            return None  # lenient: missing inline cif column → skip
     else:
         uri = row.get(cif_uri_column)
         if not uri:
-            return None
-        cif = _fetch_cif_bytes(uri)
+            return None  # lenient: missing URI in row → skip
+        cif = read_object_bytes(uri, missing_ok=True)  # lenient: skip on fetch failure
         if cif is None:
             return None
     try:
@@ -174,6 +153,8 @@ def generate_doc_for_row(
             rotamer_library=rotamer_library,
         )
     except (ValueError, RuntimeError) as exc:
+        # lenient: parse/generate failures (multi-chain, invalid cif,
+        # contacts-v1 out-of-range) are warned + dropped.
         warnings.warn(f"generate failed for {entry_id}: {exc}", stacklevel=2)
         return None
     if result is None:
@@ -197,15 +178,11 @@ def generate_shard(
     Signature ``(items, shard_info, *, ...)`` matches zephyr's ``map_shard``
     contract, but the function is plain Python and unit-tested directly. The
     rotamer library is loaded once for the whole shard. For the URI path,
-    fetches run on a ``ThreadPoolExecutor`` so the per-row GCS GETs overlap
-    pyconfind's contact computation (pyconfind releases the GIL in its
-    compiled backend). For the inline-cif path there is no I/O to overlap,
-    so rows run sequentially. Output order mirrors input order
-    (``pool.map``), keeping per-shard output deterministic.
+    delegates to :func:`marinfold.document_structures.io.thread_per_row_in_shard`
+    so the per-row GCS GETs overlap pyconfind's contact computation
+    (pyconfind releases the GIL in its compiled backend). For the inline-cif
+    path there is no I/O to overlap, so rows run sequentially.
     """
-    rows = list(items)
-    if not rows:
-        return
     rotamer_library = _load_rotamer_library()
     worker = partial(
         generate_doc_for_row,
@@ -217,13 +194,13 @@ def generate_shard(
         structure_name=structure_name,
     )
     if cif_text_column is not None:
-        for row in rows:
+        for row in items:
             out = worker(row)
             if out is not None:
                 yield out
         return
-    workers = min(fetch_concurrency, len(rows))
-    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="exp53-fetch") as pool:
-        for out in pool.map(worker, rows):
-            if out is not None:
-                yield out
+    yield from thread_per_row_in_shard(
+        items, worker=worker,
+        fetch_concurrency=fetch_concurrency,
+        thread_name_prefix="exp53-fetch",
+    )

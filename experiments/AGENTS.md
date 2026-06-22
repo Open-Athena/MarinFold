@@ -183,6 +183,27 @@ add a comment on the issue with a link to the PDF (raw GitHub URL or
 HuggingFace if it's too big to commit). Don't do this on your own
 initiative — see rule #6.
 
+## Writing a data-generation pipeline (Zephyr / Iris)
+
+For any `exp<N>_data_*/` that runs a `map_shard` pipeline on the marin
+Iris cluster, read the
+[`zephyr-pipeline-performance`](../.agents/skills/zephyr-pipeline-performance/SKILL.md)
+skill **before** drafting `cli.py`. It covers the six decisions that
+dominate Zephyr pipeline correctness and wall-clock: source data via
+the manifest's `gcs_uri` pointer (not bulky inline cif), thread the
+per-row fetch, pin the region, memoize per-worker init, use the
+shared gzip-safe reader, and default to fail-loud on data-quality
+failures (a silently-dropped row corrupts the training corpus
+weeks-of-debugging downstream). Each decision is paired with the
+code pattern that implements it.
+
+The skill exists because the same handful of mistakes keep eating
+hours-to-days of cluster time on each new data experiment. The cost of
+the 10 minutes it takes to read is much less than the cost of the next
+overnight run that fails on a known issue. **Both `exp5` (8 min for
+1.6 M structures) and `exp53` (31 min for 4.2 M)** are the reference
+implementations cited throughout.
+
 ## Importing from kind libraries
 
 An experiment that needs marin or a kind library has its own
