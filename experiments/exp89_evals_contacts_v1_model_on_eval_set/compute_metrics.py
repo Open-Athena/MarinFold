@@ -122,9 +122,9 @@ def main() -> int:
     ap.add_argument("--gt", type=Path, required=True)
     ap.add_argument("--scores", type=Path, required=True,
                     help="primary MarinFold model scores dir (eric's #61/#75 2.7566)")
-    ap.add_argument("--also-scores", type=Path, default=None,
-                    help="a second MarinFold model's scores dir (e.g. the #67 model)")
-    ap.add_argument("--also-label", default="marinfold-cv1-exp67")
+    ap.add_argument("--extra", action="append", default=[],
+                    help="additional MarinFold model(s) as label=dir (repeatable); e.g. the "
+                         "#67 model or the K=10 ensemble. npz['score'] is read.")
     ap.add_argument("--exp78-precision", type=Path, required=True)
     ap.add_argument("--exp78-raw", type=Path, required=True)
     ap.add_argument("--exp74-raw", type=Path, required=True)
@@ -136,8 +136,9 @@ def main() -> int:
 
     # --- MarinFold model(s): precision + AUC from the saved score matrices ---
     models = [("marinfold-contacts-v1", args.scores)]
-    if args.also_scores is not None:
-        models.append((args.also_label, args.also_scores))
+    for spec in args.extra:
+        label, _, d = spec.partition("=")
+        models.append((label, Path(d)))
     for label, scores_dir in models:
         n_scored = 0
         for rec in gt:

@@ -176,9 +176,35 @@ that tracks the real contacts** (β-hairpin corners, long-range bands) — *not*
 diagonal-only sequence-separation gradient exp82 saw for the near-chance #67
 model. Visual confirmation of finding 1.
 
-The vLLM/iris-TPU scorer ([`score_eval_set_vllm.py`](score_eval_set_vllm.py))
-is provided as the canonical-platform reproduction (same scoring definition and
-`npz` layout) but was not the source of these numbers — see *Method*.
+## Ensembling over the document randomization (test-time augmentation)
+
+contacts-v1 builds each document with two **random nuisances**: the N-terminus
+**start position** (`(start+k) mod 2000`) and the **order** of the `<pX> <AA>`
+statements. The model trained on these, so P(contact) should be invariant to
+them — but a finite model isn't, and the single-realization eval above picks one
+arbitrary draw. Resampling the sequence definition **K=10** times and averaging
+the per-pair P(contact) (a Monte-Carlo marginal over the nuisance) is free —
+no retraining, no ground truth.
+
+Run on **iris** — vLLM on **6× v5p-8** (us-east5-a), generation-logprobs,
+`bf16` ([`ensemble_worker_vllm_tpu.py`](ensemble_worker_vllm_tpu.py),
+[`gen_ensemble_prompts.py`](gen_ensemble_prompts.py)). The bf16/TPU
+single-realization matches the local fp32/transformers numbers within ≤ 0.006
+(AUC-long 0.879 vs 0.881; R-long 0.263 vs 0.269), so the backend is faithful.
+**K=10 ensemble vs single, same backend, n=554:**
+
+| long-range | single | **K=10 ensemble** | Δ |
+|---|---|---|---|
+| AUC | 0.879 | **0.899** | +0.020 |
+| R-precision | 0.263 | **0.315** | **+0.051** |
+| contacts@L | 0.184 | **0.209** | +0.025 |
+
+The gain holds across all 554 proteins and is **largest on R-precision** (the
+weak spot) — variance reduction sharpens the top-K ranking, as the 10-protein
+probe predicted. It pushes long-range **AUC 0.88 → 0.90 (≈ ESMFold2's 0.92)**
+but **does not close the top-K gap** (R-precision 0.32 vs ESMFold2's 0.77). The
+local transformers path ([`score_eval_set_vllm.py`](score_eval_set_vllm.py) is
+the iris/vLLM variant) gives the same definition.
 
 ## Conclusion
 
@@ -191,7 +217,9 @@ It is **not yet a high-precision contact predictor** — its top-K precision
 "high-confidence contact" use it trails ESMFold / ESMFold2 / Protenix-MSA. Net:
 tuning closed the *ranking* gap but not the *top-K precision* gap; the next
 lever is sharpening the model's top predictions (or a larger / longer-trained
-model), not the decoder.
+model), not the decoder. **Ensembling K=10 resampled sequence definitions**
+(free, no retraining) is one cheap step in that direction — +0.05 R-precision
+and AUC up to ≈ ESMFold2 — but it narrows rather than closes the top-K gap.
 
 _(Suggested follow-ups, for a human to decide: (a) protenix-distogram AUC needs
 the saved distograms — only its precision is included here; (b) a higher-quality
