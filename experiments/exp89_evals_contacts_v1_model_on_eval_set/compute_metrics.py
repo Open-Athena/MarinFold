@@ -120,7 +120,11 @@ def stamp(rows, *, rec, model, mode, predictor) -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gt", type=Path, required=True)
-    ap.add_argument("--scores", type=Path, required=True)
+    ap.add_argument("--scores", type=Path, required=True,
+                    help="primary MarinFold model scores dir (eric's #61/#75 2.7566)")
+    ap.add_argument("--also-scores", type=Path, default=None,
+                    help="a second MarinFold model's scores dir (e.g. the #67 model)")
+    ap.add_argument("--also-label", default="marinfold-cv1-exp67")
     ap.add_argument("--exp78-precision", type=Path, required=True)
     ap.add_argument("--exp78-raw", type=Path, required=True)
     ap.add_argument("--exp74-raw", type=Path, required=True)
@@ -130,25 +134,28 @@ def main() -> int:
     gt = load_gt(args.gt)
     new_rows: list[dict] = []
 
-    # --- MarinFold: precision + AUC from the saved score matrices ---
-    n_scored = 0
-    for rec in gt:
-        stem = rec["stem"]
-        npz = args.scores / f"{rec['dataset']}__{stem}.npz"
-        if not npz.exists():
-            continue
-        L = rec["L"]
-        score = np.load(npz)["score"].astype(np.float64)
-        if score.shape != (L, L):
-            print(f"  {stem}: score shape {score.shape} != L={L}; skipping")
-            continue
-        resolved = np.asarray(rec["resolved"], dtype=np.int64)
-        tmat = true_matrix(L, rec["contacts"])
-        pi, pj, psep = resolved_pairs(resolved)
-        rows = metric_rows(score, tmat, pi, pj, psep, L, with_precision=True)
-        new_rows += stamp(rows, rec=rec, model="marinfold-contacts-v1", mode="single_seq", predictor="lm")
-        n_scored += 1
-    print(f"[metrics] MarinFold scored: {n_scored}/{len(gt)} proteins")
+    # --- MarinFold model(s): precision + AUC from the saved score matrices ---
+    models = [("marinfold-contacts-v1", args.scores)]
+    if args.also_scores is not None:
+        models.append((args.also_label, args.also_scores))
+    for label, scores_dir in models:
+        n_scored = 0
+        for rec in gt:
+            npz = scores_dir / f"{rec['dataset']}__{rec['stem']}.npz"
+            if not npz.exists():
+                continue
+            L = rec["L"]
+            score = np.load(npz)["score"].astype(np.float64)
+            if score.shape != (L, L):
+                print(f"  {rec['stem']}: score shape {score.shape} != L={L}; skipping")
+                continue
+            resolved = np.asarray(rec["resolved"], dtype=np.int64)
+            tmat = true_matrix(L, rec["contacts"])
+            pi, pj, psep = resolved_pairs(resolved)
+            rows = metric_rows(score, tmat, pi, pj, psep, L, with_precision=True)
+            new_rows += stamp(rows, rec=rec, model=label, mode="single_seq", predictor="lm")
+            n_scored += 1
+        print(f"[metrics] {label} scored: {n_scored}/{len(gt)} proteins")
 
     # --- AUC for the existing predictors over the same universe ---
     def auc_for(raw: pd.DataFrame, model: str, mode: str):
@@ -180,8 +187,8 @@ def main() -> int:
         auc_for(exp74_raw, "protenix-v2", mode)
 
     new_df = pd.DataFrame(new_rows)
-    # MarinFold-only convenience table
-    new_df[new_df.model == "marinfold-contacts-v1"].to_csv(
+    # MarinFold-only convenience table (both models if present)
+    new_df[new_df.model.str.startswith("marinfold")].to_csv(
         args.out.parent / "marinfold_precision.csv", index=False)
 
     # Unified table: existing exp78 precision rows + everything new.

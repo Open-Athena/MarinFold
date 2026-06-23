@@ -134,6 +134,21 @@ max 63 s on one A5000). Full table: `data/contact_precision_all.csv`; plots:
 (Aggregate-range AUC: MarinFold **0.904**, Protenix-SS 0.830, Protenix-MSA
 0.941, ESMFold 0.901, ESMFold2 0.923.)
 
+**vs the earlier #67 model.** Scoring Tim's quick contacts-v1 1.5B from
+[#67](https://github.com/Open-Athena/MarinFold/issues/67)
+(`…-unmasked-3b5cf2/hf/step-11999`, plain Llama, eval loss **2.980**) through the
+same harness shows what Eric's tuning bought: a **0.22 lower eval loss
+(2.98 → 2.76)** turns a **near-chance** predictor into a useful one.
+
+| long-range | AUC | R-precision | contacts@L |
+|---|---|---|---|
+| MarinFold **#67** (Tim, 2.980) | 0.616 | 0.022 | 0.021 |
+| MarinFold **#61/#75** (Eric, 2.756) | **0.881** | **0.269** | **0.188** |
+
+#67 is barely above chance (AUC 0.62; R-precision 0.02 ≈ random) — consistent
+with exp82's read — while the tuned #61 model is ~9–12× better at top-K
+precision and lands at ESMFold-class ranking AUC.
+
 **1. Ranking AUC — the sequence-only LM is competitive.** MarinFold's
 long-range contact-ranking AUC (**0.881**; 0.904 aggregate) **matches ESMFold**
 and **beats single-sequence Protenix-v2** (0.815), trailing only Protenix-MSA

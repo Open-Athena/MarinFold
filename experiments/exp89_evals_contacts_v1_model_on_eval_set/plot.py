@@ -32,7 +32,8 @@ import seaborn as sns
 # Display order. MarinFold (the experiment's subject) first, then the
 # structure-config baselines. (model, mode, predictor, label, color).
 CONFIGS = [
-    ("marinfold-contacts-v1", "single_seq", "lm", "MarinFold-cv1 1.5B (seq)", "#e6550d"),
+    ("marinfold-contacts-v1", "single_seq", "lm", "MarinFold #61 (2.76)", "#e6550d"),
+    ("marinfold-cv1-exp67", "single_seq", "lm", "MarinFold #67 (2.98)", "#fdae6b"),
     ("protenix-v2", "single_seq", "structure", "Protenix-v2 · SS", "#9ecae1"),
     ("protenix-v2", "msa", "structure", "Protenix-v2 · MSA", "#2171b5"),
     ("esmfold", "single_seq", "structure", "ESMFold", "#74c476"),
