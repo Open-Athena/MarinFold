@@ -11,10 +11,9 @@ ESMFold and ESMFold2, for every metric the issue asks for — contacts @
 {L, L/2, L/5}, R-precision, and **AUC** — aggregate and split by
 short / medium / long range.
 
-Each bar is the **mean over proteins**; the black error bar is the **95%
-bootstrap CI of the mean** (2000 resamples); the scattered dots are the
-**individual proteins** (a jittered strip — the large-n analogue of a swarm;
-true swarm overcrowds at n≈554).
+The headline accuracy panels are **boxplots** over the 554 proteins (box =
+median + IQR, whiskers = 1.5×IQR, points = outliers, ◆ = mean). The
+stratified-by-stratum plots stay grouped bars with 95% bootstrap-CI error bars.
 """
 from __future__ import annotations
 
@@ -46,8 +45,8 @@ NEFF_ORDER = ["orphan", "marginal", "low", "deep"]
 FOLD_ORDER = ["novel_fold", "same_fold", "redundant"]
 
 N_BOOT = 2000
-ERRNOTE = ("bar = mean over proteins   ·   black error bar = 95% bootstrap CI of the mean "
-           f"({N_BOOT} resamples)   ·   dots = individual proteins (jittered strip)")
+BOXNOTE = ("box = median & IQR (Q1–Q3)   ·   whiskers = 1.5×IQR   ·   ◆ = mean   ·   "
+           "points = outliers   ·   n=554 proteins")
 
 
 def _axis_label(cut: str) -> str:
@@ -89,51 +88,43 @@ def plot_by_config_and_range(df, out, *, cut, script_args):
     sub = df[df["cut"] == cut]
     labels = [c[3] for c in CONFIGS]
     palette = {c[3]: c[4] for c in CONFIGS}
+    meanprops = dict(marker="D", markerfacecolor="white", markeredgecolor="black", markersize=4.5)
+    flierprops = dict(marker=".", markersize=2, markerfacecolor="0.4", markeredgecolor="none", alpha=0.35)
     fig, axes = plt.subplots(1, 4, figsize=(17, 5.2), sharey=True)
     for ax, rng in zip(axes, RANGE_ORDER):
         rsub = sub[sub["range"] == rng]
-        means, los, his, pts = [], [], [], []
+        rows, means = [], {}
         for model, mode, pred, disp, _ in CONFIGS:
             v = _vals(rsub, model, mode, pred)
-            m, lo, hi = boot_ci(v)
-            means.append(m); los.append(lo); his.append(hi)
-            pts += [(disp, x) for x in v if np.isfinite(x)]
-        x = np.arange(len(CONFIGS))
-        # individual proteins (jittered strip)
-        if pts:
-            pdf = pd.DataFrame(pts, columns=["cfg", "precision"])
-            sns.stripplot(data=pdf, x="cfg", y="precision", order=labels, hue="cfg",
-                          palette=palette, ax=ax, size=2.4, alpha=0.30, jitter=0.24,
-                          edgecolor="none", legend=False, zorder=2)
-        # mean bar (light) + 95% bootstrap CI
-        ax.bar(x, means, color=[palette[l] for l in labels], alpha=0.28, width=0.72, zorder=1)
-        yerr = np.array([[m - lo for m, lo in zip(means, los)],
-                         [hi - m for m, hi in zip(means, his)]])
-        ax.errorbar(x, means, yerr=yerr, fmt="o", ms=5, color="black", ecolor="black",
-                    elinewidth=1.5, capsize=4, zorder=3)
-        for xi, m, hi in zip(x, means, his):
-            if not np.isnan(m):
-                ax.text(xi, min(hi + 0.02, 1.0), f"{m:.2f}", ha="center", va="bottom",
-                        fontsize=7, zorder=4)
+            v = v[np.isfinite(v)]
+            rows += [(disp, x) for x in v]
+            means[disp] = float(v.mean()) if v.size else float("nan")
+        bdf = pd.DataFrame(rows, columns=["cfg", "precision"])
+        sns.boxplot(data=bdf, x="cfg", y="precision", order=labels, hue="cfg", palette=palette,
+                    ax=ax, width=0.62, legend=False, showmeans=True, meanprops=meanprops,
+                    flierprops=flierprops, medianprops=dict(color="black", linewidth=1.3),
+                    boxprops=dict(alpha=0.85), linewidth=1.0)
+        for xi, disp in enumerate(labels):
+            if not np.isnan(means[disp]):
+                ax.text(xi, 1.03, f"{means[disp]:.2f}", ha="center", va="bottom", fontsize=7)
         if cut == "AUC":
             ax.axhline(0.5, ls="--", lw=1, color="grey", zorder=0)
         ax.set_title(rng, fontsize=10)
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
+        for t in ax.get_xticklabels():
+            t.set_rotation(30); t.set_horizontalalignment("right"); t.set_fontsize(8)
         ax.set_xlabel("")
         ax.grid(axis="y", alpha=0.3)
-    axes[0].set_ylabel(f"{_axis_label(cut)}")
-    axes[0].set_ylim(0, 1.02)
+    axes[0].set_ylabel(_axis_label(cut))
+    axes[0].set_ylim(-0.02, 1.08)
     fig.suptitle(f"{_title(cut)}: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2  (n=554)",
                  fontsize=13)
-    fig.text(0.5, 0.005, ERRNOTE, ha="center", fontsize=8.5, color="0.3")
+    fig.text(0.5, 0.005, BOXNOTE, ha="center", fontsize=8.5, color="0.3")
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     _save(fig, out, script_args=script_args,
-          caption=(f"Mean {_axis_label(cut)} vs pyconfind contacts (degree>=0.001, sep>=6), per "
-                   f"predictor, aggregate and by range, over 554 proteins. "
-                   f"Bars = mean; black error bars = 95% bootstrap CI of the mean ({N_BOOT} "
-                   f"resamples); dots = individual proteins (jittered strip — swarm overcrowds at "
-                   f"n=554). MarinFold ranks pairs by its pairwise contact-statement log-prob; the "
+          caption=(f"{_axis_label(cut)} vs pyconfind contacts (degree>=0.001, sep>=6), per "
+                   f"predictor, aggregate and by range, over 554 proteins. Boxplots: box = median "
+                   f"& IQR, whiskers = 1.5×IQR, points = outliers, white diamond = mean (labelled). "
+                   f"MarinFold ranks pairs by its pairwise contact-statement log-prob; the "
                    f"structure models rank by pyconfind degree on the predicted structure."))
 
 
