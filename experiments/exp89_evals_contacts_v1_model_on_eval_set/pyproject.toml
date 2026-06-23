@@ -1,0 +1,44 @@
+[project]
+name = "exp82-evals-contacts-v1-contact-prediction"
+version = "0.1.0"
+description = "Contact-prediction inference algorithms (pairwise / rollout / iterative) for the contacts-v1 1.5B model from exp67 — issue #82."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # GPU inference of the 1.5B model. The host runs CUDA 12.2, so torch is
+    # pinned to a +cu121 wheel (same pin exp20 settled on for this box) routed
+    # through the pytorch-cu121 index below.
+    "torch==2.5.1+cu121",
+    "transformers>=4.45",
+    # Read the held-out contacts-v1 test parquet from GCS.
+    "gcsfs",
+    "pyarrow",
+    "numpy",
+    # Heatmaps + AUC-vs-seeding plots (benchmark_analysis.py).
+    "matplotlib>=3.8",
+    "pandas>=3.0.3",
+    "scikit-learn>=1.9.0",
+    "seaborn>=0.13.2",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

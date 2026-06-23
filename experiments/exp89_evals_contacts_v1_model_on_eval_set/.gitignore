@@ -1,0 +1,10 @@
+# Heavy / re-derivable artifacts — never committed (AGENTS rule #2).
+.venv/
+__pycache__/
+*.pyc
+
+# Scratch: downloaded parquets, per-protein score matrices, test plots.
+_scratch/
+
+# Derived GT universe (7.6 MB) — pushed to the HF bucket, not git.
+data/gt_universe.jsonl
