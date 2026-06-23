@@ -86,17 +86,18 @@ def _vals(df, model, mode, predictor) -> np.ndarray:
     return s["precision"].to_numpy(dtype=float)
 
 
-def plot_by_config_and_range(df, out, *, cut, script_args):
+def plot_by_config_and_range(df, out, *, cut, script_args, configs=None, title=None):
+    configs = configs or CONFIGS
     sub = df[df["cut"] == cut]
-    labels = [c[3] for c in CONFIGS]
-    palette = {c[3]: c[4] for c in CONFIGS}
+    labels = [c[3] for c in configs]
+    palette = {c[3]: c[4] for c in configs}
     meanprops = dict(marker="D", markerfacecolor="white", markeredgecolor="black", markersize=4.5)
     flierprops = dict(marker=".", markersize=2, markerfacecolor="0.4", markeredgecolor="none", alpha=0.35)
     fig, axes = plt.subplots(1, 4, figsize=(17, 5.2), sharey=True)
     for ax, rng in zip(axes, RANGE_ORDER):
         rsub = sub[sub["range"] == rng]
         rows, means = [], {}
-        for model, mode, pred, disp, _ in CONFIGS:
+        for model, mode, pred, disp, _ in configs:
             v = _vals(rsub, model, mode, pred)
             v = v[np.isfinite(v)]
             rows += [(disp, x) for x in v]
@@ -118,7 +119,7 @@ def plot_by_config_and_range(df, out, *, cut, script_args):
         ax.grid(axis="y", alpha=0.3)
     axes[0].set_ylabel(_axis_label(cut))
     axes[0].set_ylim(-0.02, 1.08)
-    fig.suptitle(f"{_title(cut)}: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2  (n=554)",
+    fig.suptitle(title or f"{_title(cut)}: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2  (n=554)",
                  fontsize=13)
     fig.text(0.5, 0.005, BOXNOTE, ha="center", fontsize=8.5, color="0.3")
     fig.tight_layout(rect=(0, 0.03, 1, 1))
@@ -191,6 +192,13 @@ def main(precision_csv: Path, out_dir: Path) -> None:
             _grouped_by_stratum(df2, out_dir / f"contacts_at_{CUT_FILE[cut]}_foldbench_vs_exp65.png",
                                 stratum="group", order=["foldbench100", "exp65"], cut=cut, rng="all",
                                 script_args=sa, title=f"{_title(cut)}: FoldBench-100 vs exp65 (aggregate)")
+
+    # Headline "where do we stand" figure for the main repo README: contact
+    # R-precision, excluding the near-chance #67 baseline.
+    plot_by_config_and_range(
+        df, out_dir / "where_we_stand_rprecision.png", cut="R", script_args=sa,
+        configs=[c for c in CONFIGS if c[0] != "marinfold-cv1-exp67"],
+        title="Where we stand — contact R-precision vs Protenix-v2 / ESMFold / ESMFold2  (n=554)")
     print(f"wrote plots to {out_dir}")
 
 
