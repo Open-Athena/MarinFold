@@ -167,6 +167,42 @@ def _grouped_by_stratum(df, out, *, stratum, order, cut, rng, script_args, title
           caption=f"{title}. Bars = mean; error bars = 95% bootstrap CI of the mean.")
 
 
+def plot_single_panel(df, out, *, cut, rng, configs, title, script_args):
+    """One aggregate boxplot panel (a single range) over `configs` — headline use."""
+    sub = df[(df["cut"] == cut) & (df["range"] == rng)]
+    labels = [c[3] for c in configs]
+    palette = {c[3]: c[4] for c in configs}
+    rows, means = [], {}
+    for model, mode, pred, disp, _ in configs:
+        v = _vals(sub, model, mode, pred)
+        v = v[np.isfinite(v)]
+        rows += [(disp, x) for x in v]
+        means[disp] = float(v.mean()) if v.size else float("nan")
+    bdf = pd.DataFrame(rows, columns=["cfg", "precision"])
+    fig, ax = plt.subplots(figsize=(9, 5.6))
+    sns.boxplot(data=bdf, x="cfg", y="precision", order=labels, hue="cfg", palette=palette, ax=ax,
+                width=0.6, legend=False, showmeans=True,
+                meanprops=dict(marker="D", markerfacecolor="white", markeredgecolor="black", markersize=5),
+                flierprops=dict(marker=".", markersize=2, markerfacecolor="0.4", markeredgecolor="none", alpha=0.35),
+                medianprops=dict(color="black", linewidth=1.4), boxprops=dict(alpha=0.85), linewidth=1.0)
+    for xi, disp in enumerate(labels):
+        if not np.isnan(means[disp]):
+            ax.text(xi, 1.03, f"{means[disp]:.2f}", ha="center", va="bottom", fontsize=9)
+    for t in ax.get_xticklabels():
+        t.set_rotation(22); t.set_horizontalalignment("right"); t.set_fontsize(9)
+    ax.set_xlabel("")
+    ax.set_ylabel(_axis_label(cut), fontsize=11)
+    ax.set_ylim(-0.02, 1.08)
+    ax.grid(axis="y", alpha=0.3)
+    ax.set_title(title, fontsize=13)
+    fig.text(0.5, 0.005, "box = median & IQR · whiskers = 1.5×IQR · ◆ = mean · points = outliers",
+             ha="center", fontsize=8.5, color="0.3")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    _save(fig, out, script_args=script_args,
+          caption=(f"Contact {_axis_label(cut)} (aggregate, seq-sep>=6) vs pyconfind contacts, "
+                   f"n=554 proteins. Boxplots over proteins; white diamond = mean (labelled)."))
+
+
 def main(precision_csv: Path, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(precision_csv)
@@ -193,12 +229,12 @@ def main(precision_csv: Path, out_dir: Path) -> None:
                                 stratum="group", order=["foldbench100", "exp65"], cut=cut, rng="all",
                                 script_args=sa, title=f"{_title(cut)}: FoldBench-100 vs exp65 (aggregate)")
 
-    # Headline "where do we stand" figure for the main repo README: contact
-    # R-precision, excluding the near-chance #67 baseline.
-    plot_by_config_and_range(
-        df, out_dir / "where_we_stand_rprecision.png", cut="R", script_args=sa,
+    # Headline "where do we stand" figure for the main repo README: a single
+    # aggregate panel of contact R-precision, excluding the near-chance #67.
+    plot_single_panel(
+        df, out_dir / "where_we_stand_rprecision.png", cut="R", rng="all", script_args=sa,
         configs=[c for c in CONFIGS if c[0] != "marinfold-cv1-exp67"],
-        title="Where we stand — contact R-precision vs Protenix-v2 / ESMFold / ESMFold2  (n=554)")
+        title="Where we stand — contact R-precision  (n=554)")
     print(f"wrote plots to {out_dir}")
 
 

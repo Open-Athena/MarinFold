@@ -19,7 +19,7 @@ a 10-resample test-time ensemble) ranks long-range contacts about as well as
 ESMFold by AUC, but still trails the structure-based predictors on top-K
 precision (shown here). Details: [experiments/exp89](experiments/exp89_evals_contacts_v1_model_on_eval_set/).
 
-<img src="experiments/exp89_evals_contacts_v1_model_on_eval_set/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="100%">
+<img src="experiments/exp89_evals_contacts_v1_model_on_eval_set/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
 
 **Distogram / structure (`contacts-and-distances-v1` models).** Earlier results —
 LDDT of the CB–CB distogram read-out (sequence-only prompt, no inference-time search):
