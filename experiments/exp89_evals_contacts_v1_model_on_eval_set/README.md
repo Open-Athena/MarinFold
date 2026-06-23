@@ -152,6 +152,15 @@ every pair — over structure-derived contact sets that tie most pairs at degree
 0; the top-K precision metrics are the fairer "did you find the contacts"
 comparison.)
 
+**Heatmaps (`plots/heatmap_{1QYS,7BNY,1UBQ}.png`,
+[`benchmark_heatmaps.py`](benchmark_heatmaps.py)).** For the three canonical test
+proteins — 1QYS (Top7), 7BNY, 1UBQ — each figure shows ground-truth pyconfind
+contacts next to the model's **P(contact)** (the probability it emits each pair
+as its next contact statement). The model puts **structured off-diagonal mass
+that tracks the real contacts** (β-hairpin corners, long-range bands) — *not* the
+diagonal-only sequence-separation gradient exp82 saw for the near-chance #67
+model. Visual confirmation of finding 1.
+
 The vLLM/iris-TPU scorer ([`score_eval_set_vllm.py`](score_eval_set_vllm.py))
 is provided as the canonical-platform reproduction (same scoring definition and
 `npz` layout) but was not the source of these numbers — see *Method*.
