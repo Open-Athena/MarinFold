@@ -6,5 +6,5 @@
     "--out",
     "plots"
   ],
-  "caption": "Ranking AUC by fold novelty (long-range)"
+  "caption": "Ranking AUC by fold novelty (long-range). Bars = mean; error bars = 95% bootstrap CI of the mean."
 }

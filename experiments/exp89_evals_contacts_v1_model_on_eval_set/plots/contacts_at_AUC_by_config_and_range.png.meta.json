@@ -6,5 +6,5 @@
     "--out",
     "plots"
   ],
-  "caption": "Mean ranking AUC vs pyconfind contacts (degree>=0.001, sep>=6), per predictor, aggregate and by range. MarinFold ranks pairs by its pairwise contact-statement log-prob; the structure models rank by pyconfind degree on the predicted structure. n=554 proteins."
+  "caption": "Mean ranking AUC vs pyconfind contacts (degree>=0.001, sep>=6), per predictor, aggregate and by range, over 554 proteins. Bars = mean; black error bars = 95% bootstrap CI of the mean (2000 resamples); dots = individual proteins (jittered strip \u2014 swarm overcrowds at n=554). MarinFold ranks pairs by its pairwise contact-statement log-prob; the structure models rank by pyconfind degree on the predicted structure."
 }

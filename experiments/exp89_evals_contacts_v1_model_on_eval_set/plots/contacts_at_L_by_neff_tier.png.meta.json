@@ -6,5 +6,5 @@
     "--out",
     "plots"
   ],
-  "caption": "Contacts @ L by MSA-depth tier (long-range)"
+  "caption": "Contacts @ L by MSA-depth tier (long-range). Bars = mean; error bars = 95% bootstrap CI of the mean."
 }

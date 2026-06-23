@@ -6,5 +6,5 @@
     "--out",
     "plots"
   ],
-  "caption": "R-precision: FoldBench-100 vs exp65 (aggregate)"
+  "caption": "R-precision: FoldBench-100 vs exp65 (aggregate). Bars = mean; error bars = 95% bootstrap CI of the mean."
 }
