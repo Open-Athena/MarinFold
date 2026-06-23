@@ -234,7 +234,7 @@ def main(precision_csv: Path, out_dir: Path) -> None:
     plot_single_panel(
         df, out_dir / "where_we_stand_rprecision.png", cut="R", rng="all", script_args=sa,
         configs=[c for c in CONFIGS if c[0] != "marinfold-cv1-exp67"],
-        title="Where we stand — contact R-precision  (n=554)")
+        title="Contact R-precision  (n=554)")
     print(f"wrote plots to {out_dir}")
 
 
