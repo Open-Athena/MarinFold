@@ -5,29 +5,21 @@
 Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
 MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
-This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far!
+This is a research codebase for an ongoing project. It is an experiment in open development.
 
-If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
+We welcome collaborators! If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
 
 ## Current performance
 
-**Contact prediction (`contacts-v1` models).** R-precision at recovering
-pyconfind side-chain contacts on our 554-protein eval set (FoldBench-100 +
-low-MSA / novel-fold proteins), against Protenix-v2 (single-sequence / MSA),
-ESMFold and ESMFold2. Our best `contacts-v1` 1.5B (eval loss 2.76; `×10 ens` =
-a 10-resample test-time ensemble) ranks long-range contacts about as well as
-ESMFold by AUC, but still trails the structure-based predictors on top-K
-precision (shown here). Details: [experiments/exp89](experiments/exp89_evals_contacts_v1_model_on_eval_set/).
+Here we are prompting with the amino acid sequence and predicting residue/residue contacts.
 
 <img src="experiments/exp89_evals_contacts_v1_model_on_eval_set/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
 
-**Distogram / structure (`contacts-and-distances-v1` models).** Earlier results —
-LDDT of the CB–CB distogram read-out (sequence-only prompt, no inference-time search):
-
-<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_5way_swarm.png" alt="LDDT 5-way swarm plot" width="75%">
-<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_vs_protein_length_log.png" alt="LDDT vs protein length log plot" width="75%">
+The `×10 ens` model above is our current best model running with 10x resamples at test-time.
 
 ## Try it out
+
+Instructions for our newest models coming soon: what we have here is for our previous generation.
 
 Our current model predicts CB/CB distograms given single sequence input.
 
