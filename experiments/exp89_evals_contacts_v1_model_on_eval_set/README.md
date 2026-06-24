@@ -206,6 +206,28 @@ but **does not close the top-K gap** (R-precision 0.32 vs ESMFold2's 0.77). The
 local transformers path ([`score_eval_set_vllm.py`](score_eval_set_vllm.py) is
 the iris/vLLM variant) gives the same definition.
 
+## Scaling: contact accuracy vs eval loss across the #75 sweep
+
+Scoring the sweep's other per-epoch winners (E1/E2/E4) through the same harness
+(single realization, no ensembling) next to E8 shows that contact prediction
+**emerges sharply, not smoothly**, with the training objective:
+
+| ckpt | epochs | lr / wd | eval loss | AUC (long) | R-precision (all / long) |
+|---|---|---|---|---|---|
+| E1 | 1 | 7e-4 / wd0.05 | 3.046 | 0.615 | 0.028 / 0.022 |
+| E2 | 2 | 7e-4 / wd0.8 | 2.942 | 0.623 | 0.029 / 0.024 |
+| E4 | 4 | 1e-3 / wd0.05 | 2.924 | 0.620 | 0.031 / 0.023 |
+| **E8** | 8 | 1e-3 / wd0.2 | **2.757** | **0.881** | **0.339 / 0.269** |
+
+E1–E4 sit at **near-chance** contact accuracy (R-precision ≈ 0.03, AUC ≈ 0.62)
+across a 0.12-nat span of eval loss (3.05 → 2.92); then **E8, only 0.17 nats
+lower (2.76), jumps ~10× on R-precision and to ESMFold-class AUC**. The last
+stretch of loss reduction is where the contact signal appears. (E1 ≈ the #67
+model's regime — loss 2.98, also near-chance — a cross-check.) Caveat: four
+points, and the cells differ in lr/wd, so this is loss-vs-accuracy across
+heterogeneous runs, not a controlled epoch sweep. Plot:
+`plots/loss_vs_rprecision.png` ([`loss_vs_rprecision.py`](loss_vs_rprecision.py)).
+
 ## Conclusion
 
 The carefully-tuned contacts-v1 1.5B (eval loss 2.7566) has a **real,
