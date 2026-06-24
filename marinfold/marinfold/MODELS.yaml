@@ -9,7 +9,7 @@
 - nickname: 1.5B-contacts-v1
   default: true
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679
-  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084
+  # wandb_url: eric-czech's W&B run in `eric-czech/marin` — fill in the exact URL.
   document_structures:
     - contacts-v1
 # Previous generation: contacts-and-distances-v1 (predicts CB-CB distograms).
