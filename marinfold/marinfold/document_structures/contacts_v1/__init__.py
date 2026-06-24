@@ -26,6 +26,13 @@ Public surface:
   the single-structure entry point a zephyr data job calls per input;
   ``generate_sequence_only_document`` is its structure-free analogue for
   sequence databases (e.g. UniRef50; see exp64).
+- :func:`predict`, :func:`evaluate`, :class:`InferenceConfig`,
+  :class:`ContactStructure`, :func:`structure_from_sequence` — from
+  :mod:`.inference`. The pairwise contact-prediction readout the top-level
+  ``marinfold`` CLI dispatches to (see ``inference.py`` for the algorithm).
+- :func:`plot_infer_pdf`, :func:`plot_evaluate_pdf` — from :mod:`.plots`.
+  Optional ``P(contact)`` heatmap writers for ``marinfold infer
+  --out-plots`` / ``marinfold evaluate --out-plots``.
 """
 
 from .generate import (
@@ -36,6 +43,13 @@ from .generate import (
     generate_document,
     generate_documents,
     generate_sequence_only_document,
+)
+from .inference import (
+    ContactStructure,
+    InferenceConfig,
+    evaluate,
+    predict,
+    structure_from_sequence,
 )
 from .parse import (
     DEFAULT_CIF_COLUMN,
@@ -48,6 +62,7 @@ from .parse import (
     iter_parquet_analyzed_structures,
     residues_from_sequence,
 )
+from .plots import plot_evaluate_pdf, plot_infer_pdf
 from .vocab import (
     CONTEXT_LENGTH,
     NAME,
@@ -64,18 +79,25 @@ __all__ = [
     "NUM_POSITION_INDICES",
     "SEQUENCE_ONLY_DOC_TYPE_TOKEN",
     "AnalyzedStructure",
+    "ContactStructure",
     "EmittedContact",
     "GenerationConfig",
     "GenerationResult",
+    "InferenceConfig",
     "RawContact",
     "ResidueInfo",
     "all_domain_tokens",
     "analyze_structure",
     "build_document",
+    "evaluate",
     "generate_document",
     "generate_documents",
     "generate_sequence_only_document",
     "iter_analyzed_structures",
     "iter_parquet_analyzed_structures",
+    "plot_evaluate_pdf",
+    "plot_infer_pdf",
+    "predict",
     "residues_from_sequence",
+    "structure_from_sequence",
 ]

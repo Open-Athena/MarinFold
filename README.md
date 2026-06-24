@@ -19,9 +19,12 @@ The `×10 ens` model above is our current best model running with 10x resamples 
 
 ## Try it out
 
-Instructions for our newest models coming soon: what we have here is for our previous generation.
-
-Our current model predicts CB/CB distograms given single sequence input.
+Our current best model predicts a **residue–residue contact map** from a
+single sequence — no MSA, no template, no structure. It's the `contacts-v1`
+1.5B model [@eric-czech](https://github.com/eric-czech) trained in
+[#61](https://github.com/Open-Athena/MarinFold/issues/61) (the `×10 ens`
+predictor in *Current performance* above) and is the default model in
+[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml).
 
 ### GPU example
 
@@ -33,32 +36,61 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 git clone https://github.com/Open-Athena/MarinFold.git
 cd MarinFold/marinfold
-uv sync --extra vllm  # use "vllm" for Linux+GPU, "mlx" for Apple Silicon
+uv sync --extra vllm  # "vllm" for Linux+GPU, "transformers" for CPU/CUDA, "mlx" for Apple Silicon
 ```
 
 Run inference:
 
 ```bash
-# Predict the distogram for the Top7 de novo designed protein ([1QYS](https://www.rcsb.org/structure/1QYS))
-# Replace "vllm" with "mlx" if you are on Apple Silicon rather than Linux+GPU.
+# Predict the contact map for the Top7 de novo designed protein ([1QYS](https://www.rcsb.org/structure/1QYS)).
+# Replace "vllm" with "transformers" (CPU/CUDA) or "mlx" (Apple Silicon).
 SEQUENCE=MGDIQVQVNIDDNGKNFDYTYTVTTESELQKVLNELMDYIKKQGAKRVRISITARTKKEAEKFAAILIKVFAELGYNDINVTFDGDTVTVEGQLEGGSLEHHHHHH
 uv run marinfold infer \
     --backend vllm \
     --input-sequence $SEQUENCE \
     --out ~/prediction.json \
-    --out-plots ~/plots.pdf
+    --out-plots ~/contact_map.pdf
 ```
 
-Note: the first time this runs it will download our 1B parameter model (~4 gb).
+`--out` holds one `P(contact)` score per residue pair; `--out-plots` is the
+contact-map heatmap. The first run downloads our 1.5B contacts-v1 model
+(~6 gb). Omitting `--model` uses the default (`1.5B-contacts-v1`); the older
+distogram models are still available as `--model 1B` / `1.5B` (see below).
 
-We also have an evaluation mode to make it easy to compare to ground truth:
+The `×10 ens` plot in *Current performance* averages **10** resampled sequence
+realizations (test-time augmentation). Reproduce it with the per-impl driver's
+`--ensemble-k` (the top-level CLI keeps its surface narrow):
+
+```bash
+uv run contacts-v1 infer \
+    --backend vllm --model 1.5B-contacts-v1 \
+    --input-sequence $SEQUENCE --ensemble-k 10 \
+    --out ~/prediction.json --out-plots ~/contact_map.pdf
+```
+
+To score against a known structure's ground-truth contacts, use `evaluate`
+(reports contact-prediction AUC and precision@{L, L/2, L/5}). Ground truth is
+read with [pyconfind](https://github.com/timodonnell/pyconfind), so add its
+extra to the sync (`uv sync --extra vllm --extra contacts-v1`):
 
 ```bash
 uv run marinfold evaluate \
     --backend vllm \
     --input tests/data/1QYS.cif \
-    --out ~/preds.json \
-    --out-plots ~/plots.pdf
+    --metrics-out ~/metrics.json \
+    --out-plots ~/gt_vs_pred.pdf
+```
+
+### Previous generation (distograms)
+
+Our earlier `contacts-and-distances-v1` models predict CB–CB **distograms**
+rather than contacts. Same CLI, just point `--model` at one of them:
+
+```bash
+uv run marinfold infer \
+    --backend vllm --model 1B \
+    --input-sequence $SEQUENCE \
+    --out ~/distogram.json --out-plots ~/distogram.pdf
 ```
 
 ## Document structures
@@ -130,15 +162,15 @@ impl. Two subcommands:
 cd marinfold
 uv sync --extra mlx        # or --extra vllm, or --extra transformers
 
-# Predict residue-pair distances for a sequence (no ground truth).
+# Predict structure for a sequence (contacts or distances, per the model).
 uv run marinfold infer \
     --backend mlx --input-sequence SIINFEKLLLSKP \
     --out /tmp/preds.json
 
 # Evaluate predictions against ground-truth structures.
 uv run marinfold evaluate \
-    --backend mlx --input-dir /path/to/pdbs/ \
-    --out /tmp/preds.json --metrics-out /tmp/metrics.json
+    --backend mlx --input /path/to/pdbs/ \
+    --metrics-out /tmp/metrics.json
 ```
 
 

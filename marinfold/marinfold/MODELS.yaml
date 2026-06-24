@@ -1,5 +1,19 @@
-- nickname: 1B
+# Registry of trained MarinFold models, by nickname. The `marinfold` CLI
+# resolves `--model <nickname>` (or the `default: true` entry when `--model`
+# is omitted) to the HF URL below, downloads it, and dispatches to the first
+# `document_structures` impl the entry lists. See registry.py.
+
+# Current best: eric-czech's contacts-v1 1.5B (issue #61; #75 tuning-sweep
+# winner, eval loss 2.7566). Predicts residue-residue contacts from sequence;
+# exported to the bucket by exp89 with the contacts-v1 tokenizer co-located.
+- nickname: 1.5B-contacts-v1
   default: true
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084
+  document_structures:
+    - contacts-v1
+# Previous generation: contacts-and-distances-v1 (predicts CB-CB distograms).
+- nickname: 1B
   url: https://huggingface.co/timodonnell/LlamaFold-experiments/tree/main/marin-experiments.protein-contacts-1b-3.5e-4-distance-masked-7d355e
   wandb_url: https://wandb.ai/timodonnell/marin/runs/protein-contacts-1b-3.5e-4-distance-masked-7d355e
   document_structures:
