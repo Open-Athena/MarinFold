@@ -1,0 +1,4 @@
+{
+  "script": "loss_vs_rprecision.py",
+  "caption": "Contact R-precision (aggregate + long-range, n=554) vs final contacts-v1-val eval loss for the #75 sweep per-epoch winners E1/E2/E4/E8. Single-realization, no ensembling."
+}
