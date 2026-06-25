@@ -1,0 +1,26 @@
+16 FoldBench dev proteins; n_rollouts=100 batch=24 T=1.0 p=0.95 k=50
+
+     7qp5_A L=245  simple_lR=0.102  resample_lR=0.078
+     7tjb_A L=227  simple_lR=0.374  resample_lR=0.374
+     7tlh_A L=136  simple_lR=0.074  resample_lR=0.096
+     7uvg_A L=183  simple_lR=0.189  resample_lR=0.145
+     7xcd_A L=178  simple_lR=0.121  resample_lR=0.089
+     7y54_A L=100  simple_lR=0.577  resample_lR=0.592
+     7ykm_A L=105  simple_lR=0.381  resample_lR=0.429
+     7zu3_A L=132  simple_lR=0.066  resample_lR=0.132
+     8adc_A L=215  simple_lR=0.049  resample_lR=0.069
+     8arl_A L=246  simple_lR=0.044  resample_lR=0.031
+     8axj_A L=162  simple_lR=0.481  resample_lR=0.469
+     8bau_A L=189  simple_lR=0.098  resample_lR=0.113
+     8bgb_A L=131  simple_lR=0.122  resample_lR=0.135
+     8cpn_A L=207  simple_lR=0.102  resample_lR=0.124
+     8ec3_A L=168  simple_lR=0.143  resample_lR=0.173
+     8gmy_A L=236  simple_lR=0.226  resample_lR=0.221
+
+=== AGGREGATE (mean over 16 dev proteins) ===
+method                long_P@L   long_P@L2   long_P@L5      long_R medlong_P@L   medlong_R       P@ngt
+pairwise                 0.135       0.176       0.248       0.163       0.179       0.182       0.203
+rollout                  0.160       0.217       0.312       0.197       0.209       0.217       0.231
+rollout+resample         0.162       0.228       0.331       0.204       0.211       0.221       0.242
+
+(long = sep>=24, medlong = >=12; R = R-precision = precision at top-#GT in band)

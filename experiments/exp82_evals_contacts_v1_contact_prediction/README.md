@@ -181,12 +181,129 @@ sequence: given some contacts, the model ranks correlated ones from the contact
 (real but minor) — further evidence the model leans on contact-map statistics
 rather than reasoning from the sequence.
 
+## Re-run on the tuned #61/#75 model (eval loss 2.7566) — the inference search, redone
+
+exp82's open follow-up #1 was *"re-run on #61's tuned model."*
+[#89](https://github.com/Open-Athena/MarinFold/issues/89) exported that model
+(`prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084` step-35679) and showed it is far
+stronger than the #67 quick model (long-range ranking AUC 0.62 → 0.88) — but it
+scored **`pairwise` only**, taking exp82's "smarter decoders don't help" as
+settled. That verdict was measured on the *weak* model; exp27 got **+30% from
+iteration on a strong base model**. So this PR re-runs the full inference-algorithm
+search on the strong model.
+
+**Methodology — select on dev, never on test.** Inference algorithms are
+*selected* on a 16-protein **FoldBench dev** set ([`prepare_foldbench_dev.py`](prepare_foldbench_dev.py)
+→ `data/foldbench_dev.jsonl`; 100 ≤ L ≤ 250, fixed seed-0 sample). Held out for the
+final evaluation: the other 84 FoldBench proteins, the 454 denovo/CASP/CAMEO
+proteins, and the entire contacts-v1 `test` split. Candidate universe = the
+**resolved** residues; ground truth = pyconfind contacts (sep ≥ 6) — defined
+exactly as #89. The shared harness gained a resolved-universe option + R-precision,
+and rollout's generation budget changed from `3·|GT|+60` (a ground-truth leak) to
+`4·L+64`.
+
+### Dev: `rollout` > `pairwise` > `iterative` — a flip from the weak model
+
+[`eval_search_foldbench_dev.py`](eval_search_foldbench_dev.py); raw:
+[`data/results_foldbench_dev_step35679.txt`](data/results_foldbench_dev_step35679.txt).
+Mean over 16 dev proteins:
+
+| method | long P@L | long P@L/2 | long P@L/5 | long R | P@#gt |
+|---|---|---|---|---|---|
+| **rollout** | **0.158** | **0.211** | **0.305** | **0.192** | **0.233** |
+| pairwise | 0.131 | 0.165 | 0.226 | 0.160 | 0.204 |
+| iterative | 0.096 | 0.144 | 0.213 | 0.132 | 0.202 |
+| random | 0.013 | 0.011 | 0.009 | 0.010 | 0.013 |
+
+The order **inverts** vs #67: `rollout` beats `pairwise` on every metric (+20%
+R-precision), and `iterative` now **hurts** (−18% R). Mechanism: `iterative`
+commits the model's own top-0.5L–2.5L predictions as fixed context, and at
+~13–33% precision that seeds mostly *false* contacts, which the model's learned
+co-occurrence prior then propagates — exactly the regime exp82's seeding curve
+predicted would fail (the model completes maps well from *true* contacts, but
+cannot yet self-seed). `rollout` is variance reduction over 100 sampled
+contact-sets; its gain is largest at the very top of the ranking (P@L/5 +35%).
+
+### Sampling sweep — a wash ([`sweep_rollout_dev.py`](sweep_rollout_dev.py))
+
+Raw: [`data/results_rollout_sweep_dev.txt`](data/results_rollout_sweep_dev.txt).
+Sweeping temperature (1.0 / 0.7 / 0.5), top-p (0.90 / 0.95 / 1.0), and a
+domain-aware **top-k = L/5** moves long-range R-precision by < ±0.006 — within the
+noise band for 16 proteins. **T = 0.5 clearly hurts** (P@L/5 0.257 vs 0.283;
+over-sharpening collapses the vote). Default T = 1.0 / p = 0.95 is near-optimal:
+the lever is the *method*, not the sampling distribution's shape.
+
+### Resampling the document per rollout — a small, free bonus ([`eval_rollout_resampled_dev.py`](eval_rollout_resampled_dev.py))
+
+Raw: [`data/results_rollout_resampled_dev.txt`](data/results_rollout_resampled_dev.txt).
+Each rollout draws a *fresh* contacts-v1 realization (resample the N-terminus start
++ the `<pX> <AA>` statement order — #89's test-time augmentation), so the frequency
+vote averages over the document nuisance as well as the sampling noise. Because all
+realizations of a protein share prefix length, this costs ~nothing extra on the GPU
+(`Scorer.sample_completions`). Mean over 16 dev proteins:
+
+| method | long P@L | long P@L/2 | long P@L/5 | long R | P@#gt |
+|---|---|---|---|---|---|
+| pairwise | 0.135 | 0.176 | 0.248 | 0.163 | 0.203 |
+| rollout | 0.160 | 0.217 | 0.312 | 0.197 | 0.231 |
+| **rollout + resample** | **0.162** | **0.228** | **0.331** | **0.204** | **0.242** |
+
+Resampling improves every metric (+0.002–0.019; R +0.007) — small but consistent,
+and free. It is smaller than #89's +0.05 *pairwise* TTA because `rollout` already
+ensembles, so the document nuisance is largely averaged out. **Settled recipe:
+`rollout + resample`** at default sampling.
+
+### Full curated-set evaluation (554 proteins): `rollout+resample` vs `pairwise`
+
+[`eval_full_curated_set.py`](eval_full_curated_set.py) (resumable) →
+[`data/eval_full_results.jsonl`](data/eval_full_results.jsonl); [`analyze_full_curated_set.py`](analyze_full_curated_set.py)
+→ table + plots. Whole #74/#78 curated set (FoldBench-100 + 454 denovo/CASP/CAMEO),
+long-range, mean over 554:
+
+| method | long P@L | long P@L/2 | long P@L/5 | long R | medlong P@L | P@#gt |
+|---|---|---|---|---|---|---|
+| pairwise | 0.225 | 0.308 | 0.393 | 0.285 | 0.305 | 0.351 |
+| **rollout + resample** | **0.279** | **0.402** | **0.517** | **0.368** | **0.375** | **0.425** |
+
+**+29% long-range R-precision (0.285 → 0.368)**, winning every metric on every
+dataset. Per-dataset long-range R (pairwise → rollout+resample): denovo_pdb
+0.335 → 0.433, FoldBench-100 0.173 → 0.219, cameo_hard 0.179 → 0.236, casp_fm
+0.097 → 0.115. The **538 proteins held out from dev** give the same gain
+(R 0.289 → 0.373), so it is not dev-overfit. It also beats #89's **K=10-ensemble
+pairwise** (long R 0.315). It remains well below the structure predictors (#89:
+ESMFold2 long R ≈ 0.77, Protenix-MSA ≈ 0.80) — rollout+resample narrows the
+LM-vs-structure top-K gap from the sequence side but does not close it.
+Plot: [`plots/eval_full_pairwise_vs_resample.png`](plots/eval_full_pairwise_vs_resample.png).
+
+### Cost ([`data/eval_full_timings.csv`](data/eval_full_timings.csv), [`plots/eval_full_resample_time_vs_length.png`](plots/eval_full_resample_time_vs_length.png))
+
+`rollout+resample` is **~50 s/protein** mean on one A5000 at n=100 (median 44 s,
+p95 98 s, max 225 s at L=738), scaling ~linearly with L (the full 554 took 8.4 h);
+`pairwise` is ~0.3 s. Rollouts terminate cleanly — **0 % hit the `4·L+64` cap** —
+each emitting ~2–2.5·L tokens / ~80–125 contacts before `<end>`. So the +29%
+R-precision costs ~150× the per-protein compute of pairwise: cheap in absolute
+terms (decoder-only, no retraining), but a real cost at eval-set scale.
+
 ## Conclusion
 
-The quick contacts-v1 1.5B model (#67) has only a **weak** contact signal
-(~2× random at ranking long-range contacts), and **better inference doesn't
-rescue it** — iterative refinement helps marginally, rollout voting not at all.
-The bottleneck is the base model, not the readout algorithm.
+**Headline (strong model).** Re-running the inference search on the tuned #61/#75
+model (eval loss 2.7566) **flips exp82's original verdict**: with a strong base
+model, better inference helps a lot. The dev-selected recipe — **`rollout` voting +
+per-rollout document resampling** — lifts long-range R-precision from **0.285
+(`pairwise`, what #89 used) to 0.368 (+29%)** on the 554-protein curated eval set,
+winning every metric on every dataset and holding on the 538 proteins held out from
+selection (0.289 → 0.373). It is a free, decoder-only gain (no retraining), and
+beats #89's K=10-ensemble pairwise (0.315) — though it stays well below
+structure-based predictors. `iterative`, marginally *best* on the weak model, now
+*hurts* (self-seeding the model's own ~13–33%-precision predictions backfires).
+Net: tuning made the **decoder a real lever again**; closing the gap to structure
+methods still needs a stronger model, not just a cleverer readout.
+
+**Original finding (#67 quick model).** The quick contacts-v1 1.5B model (#67) has
+only a **weak** contact signal (~2× random at ranking long-range contacts), and
+**better inference doesn't rescue it** — iterative refinement helps marginally,
+rollout voting not at all. The bottleneck is the base model, not the readout
+algorithm.
 
 **What the model actually learned** (benchmark heatmaps + seeding curve): a
 **sequence-separation prior** plus the **co-occurrence structure** of contact
@@ -205,8 +322,11 @@ the carefully-tuned #61), not a cleverer decoder. The two harnesses
 deliverable — re-runnable against any future contacts-v1 / contacts-and-distances-v1
 checkpoint.
 
-**Open follow-ups:** (1) re-run on #61's tuned model when it lands (does careful
-tuning close the gap to the prior 1.5B?); (2) larger protein set + true CASP
-top-L normalization (here capped by small-protein contact counts); (3) common
-contact-definition ground truth (compute CB–CB GT) for a fully apples-to-apples
-prior comparison.
+**Open follow-ups:** (1) ✅ **done in this PR** — re-ran the search on #61's tuned
+model (see the section above): the gap to the prior 1.5B is closed and the
+inference-algorithm verdict flips (`rollout+resample` > `pairwise` > `iterative`);
+(2) larger protein set + true CASP top-L normalization — also addressed by the
+554-protein curated-set eval above; (3) common contact-definition ground truth
+(compute CB–CB GT) for a fully apples-to-apples prior comparison; (4) confirm the
+recipe on the contacts-v1 `test` split (kept untouched for a final check) and
+push the rollout+resample run to the iris/vLLM-TPU path for scale.

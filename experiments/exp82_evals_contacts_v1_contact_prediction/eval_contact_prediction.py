@@ -83,6 +83,10 @@ class Protein:
     residues: list[str]  # residue token (e.g. "<GLY>") per sequence index 0..L-1
                          # (lets a different format, e.g. contacts-and-distances-v1,
                          #  rebuild the same protein's prefix — see the prior-model eval)
+    resolved: frozenset | None = None  # candidate universe (seq indices); None = all
+                         # 0..L-1. Experimental-structure proteins (FoldBench / the
+                         # eval set) have unresolved residues that carry no ground
+                         # truth, so there we score only resolved–resolved pairs.
 
 
 # --------------------------------------------------------------------------- #
@@ -174,8 +178,13 @@ class Scorer:
         return lp1, lp2
 
     @torch.no_grad()
-    def rollouts(self, prefix_ids, n_rollouts, temperature, top_p, max_new, batch=10):
-        """Sample contact-section completions; return list of decoded strings."""
+    def rollouts(self, prefix_ids, n_rollouts, temperature, top_p, max_new, batch=10, top_k=50):
+        """Sample contact-section completions; return list of decoded strings.
+
+        ``top_k=50`` is the HF default the original rollout ran under (no
+        generation_config in the export); pass ``top_k=0`` to disable top-k
+        filtering, or any int to restrict each step to its top-k tokens.
+        """
         X = torch.tensor([prefix_ids], device=self.device)
         texts = []
         done = 0
@@ -183,6 +192,7 @@ class Scorer:
             b = min(batch, n_rollouts - done)
             out = self.model.generate(
                 X.repeat(b, 1), do_sample=True, temperature=temperature, top_p=top_p,
+                top_k=top_k,
                 max_new_tokens=max_new, eos_token_id=self.end_id, pad_token_id=self.end_id,
             )
             for row in out:
@@ -190,12 +200,38 @@ class Scorer:
             done += b
         return texts
 
+    @torch.no_grad()
+    def sample_completions(self, prefixes, temperature, top_p, max_new, batch=10, top_k=50):
+        """Sample one completion per prefix in ``prefixes`` (a list of *equal-length*
+        token-id lists), batched; returns decoded strings aligned with ``prefixes``.
+
+        Unlike ``rollouts`` (one shared prefix repeated), this lets each rollout use
+        a *different* contacts-v1 document realization (resampled N-term start +
+        statement order) at no extra GPU cost: every realization of a protein has
+        identical prefix length, so batching is just as efficient — and the
+        shared-prefix path never reused the prefix KV-cache across the batch anyway.
+        """
+        texts = []
+        for s in range(0, len(prefixes), batch):
+            chunk = prefixes[s:s + batch]
+            X = torch.tensor(chunk, device=self.device)            # [b, prefix_len] (uniform len)
+            out = self.model.generate(
+                X, do_sample=True, temperature=temperature, top_p=top_p, top_k=top_k,
+                max_new_tokens=max_new, eos_token_id=self.end_id, pad_token_id=self.end_id,
+            )
+            for row in out:
+                texts.append(self.tok.decode(row[X.shape[1]:], skip_special_tokens=False))
+        return texts
+
 
 # --------------------------------------------------------------------------- #
 # Methods → ranked candidate list                                              #
 # --------------------------------------------------------------------------- #
-def candidate_pairs(L):
-    return [(i, j) for i in range(L) for j in range(i + MIN_SEP, L)]
+def candidate_pairs(L, resolved=None):
+    pairs = [(i, j) for i in range(L) for j in range(i + MIN_SEP, L)]
+    if resolved is not None:
+        pairs = [pr for pr in pairs if pr[0] in resolved and pr[1] in resolved]
+    return pairs
 
 
 def rank_pairwise(scorer, p: Protein, committed=()):
@@ -209,18 +245,24 @@ def rank_pairwise(scorer, p: Protein, committed=()):
     # score(i,j) for orientation i->j = lp1[i] + lp2[i,j]; symmetrize.
     fwd = lp1[:, None] + lp2                        # [i, j]
     sym = 0.5 * (fwd + fwd.T)                       # geo-mean in log space
-    pairs = candidate_pairs(p.L)
+    pairs = candidate_pairs(p.L, p.resolved)
     scored = [(sym[i, j], (i, j)) for (i, j) in pairs]
     scored.sort(reverse=True)
     return [pr for _, pr in scored]
 
 
-def rank_rollout(scorer, p: Protein, n_rollouts, temperature, top_p):
+def rank_rollout(scorer, p: Protein, n_rollouts, temperature, top_p, top_k=50, batch=10):
     prefix_ids = scorer.tok(p.prefix, add_special_tokens=False).input_ids
     seqidx = {pos: i for i, pos in enumerate(p.seq_positions)}
     counts = Counter()
-    max_new = min(8192 - len(prefix_ids), 3 * len(p.gt) + 60)
-    for text in scorer.rollouts(prefix_ids, n_rollouts, temperature, top_p, max_new):
+    # Generation budget sized from L (which the model already sees in the
+    # prefix), never the GT contact count: a contacts-v1 protein has well under
+    # L contacts (sep>=6), each a 3-token "<contact> <pi> <pj>" statement, so
+    # 4*L+64 is generous headroom while still bounding a runaway sample. (Was
+    # 3*len(p.gt)+60 -- that peeked at the ground truth; removed so rollout
+    # carries no oracle dependence.)
+    max_new = min(8192 - len(prefix_ids), 4 * p.L + 64)
+    for text in scorer.rollouts(prefix_ids, n_rollouts, temperature, top_p, max_new, batch=batch, top_k=top_k):
         seen = set()
         for a, b in CONTACT_RE.findall(text):
             ia, ib = seqidx.get(int(a)), seqidx.get(int(b))
@@ -229,7 +271,7 @@ def rank_rollout(scorer, p: Protein, n_rollouts, temperature, top_p):
             key = (min(ia, ib), max(ia, ib))
             if abs(ia - ib) >= MIN_SEP and key not in seen:
                 seen.add(key); counts[key] += 1
-    pairs = candidate_pairs(p.L)
+    pairs = candidate_pairs(p.L, p.resolved)
     # rank by frequency desc; unseen pairs keep candidate order (count 0)
     return sorted(pairs, key=lambda pr: -counts.get(pr, 0))
 
@@ -270,11 +312,13 @@ def metrics(ranking, gt, L):
         gtb = {g for g in gt_pairs if sep(g) >= lo}
         out[f"{band}_ngt"] = len(gtb)
         for name, k in (("L", L), ("L2", L // 2), ("L5", L // 5)):
-            kk = min(k, len(cand)) if len(gtb) else 0
             # precision restricted to this separation band
             top = [pr for pr in cand[:k]]
             out[f"{band}_P@{name}"] = (sum(1 for pr in top if tuple(sorted(pr)) in gtb) / len(top)) if top and gtb else float("nan")
-    # overall P@(#gt) and a cheap AUC vs gt over all candidates
+        # R-precision: precision at top-(#GT in this band) — the sharp top-K metric
+        topr = cand[:len(gtb)]
+        out[f"{band}_R"] = (sum(1 for pr in topr if tuple(sorted(pr)) in gtb) / len(topr)) if topr and gtb else float("nan")
+    # overall P@(#gt) over all candidates
     out["P@ngt"] = prec_at(ranking, len(gt_pairs))
     return out
 
@@ -324,7 +368,7 @@ def main():
             torch.cuda.empty_cache()
             print(f"{p.entry:>22} L={p.L:>3} -- SKIPPED (CUDA OOM)", flush=True)
             continue
-        rand = candidate_pairs(p.L); rng.shuffle(rand)
+        rand = candidate_pairs(p.L, p.resolved); rng.shuffle(rand)
         rankings["random"] = rand
         line = [f"{p.entry:>22} L={p.L:>3} gt={len(p.gt):>3}"]
         for m, rk in rankings.items():
