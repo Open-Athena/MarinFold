@@ -1,0 +1,10 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "R-precision vs pyconfind contacts (degree>=0.001, sep>=6), per predictor, aggregate and by range, over 554 proteins. Boxplots: box = median & IQR, whiskers = 1.5\u00d7IQR, points = outliers, white diamond = mean (labelled). MarinFold ranks pairs by its pairwise contact-statement log-prob; the structure models rank by pyconfind degree on the predicted structure."
+}

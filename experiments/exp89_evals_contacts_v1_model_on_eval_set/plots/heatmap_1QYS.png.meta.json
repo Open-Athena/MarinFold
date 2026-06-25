@@ -1,0 +1,1 @@
+{"script": "benchmark_heatmaps.py", "caption": "1QYS: ground-truth pyconfind contacts (left) vs the contacts-v1 1.5B model's P(contact) from sequence (right) — the probability the model emits each pair as its next contact statement. Near-diagonal band (sep<6) masked."}

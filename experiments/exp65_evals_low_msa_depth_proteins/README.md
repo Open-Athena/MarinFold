@@ -112,8 +112,14 @@ Sequences are pulled from the structures by `extract_sequences.py`.
 `candidate_2d_label.csv` also carries each candidate's `deposit_date` (the
 temporal axis, joined from the per-source manifests by source + stem, so the
 three de-novo/CAMEO cross-listings each keep their own date). CASP FM rows are
-blank — those domains come from the prediction-center tarballs and carry no PDB
-deposition date.
+dated by their **answer structure's** RCSB deposition date: `fetch_casp_fm.py`
+resolves each target's deposited PDB code from the CASP `targetlist.cgi` (or the
+fallback map's explicit `pdb_id`) and looks up its `deposit_date`. All 26
+structure-bearing CASP FM rows are dated; the 6 unresolved domains (no released
+PDB) stay blank. Note a CASP target's deposit date can predate its public
+release (deposited then embargoed through the prediction season, e.g. T1029 →
+`6uf2` deposited 2019-09 but released 2020-09), so for a strict leakage-cutoff
+the PDB release date is the more conservative bound.
 
 ## Results
 

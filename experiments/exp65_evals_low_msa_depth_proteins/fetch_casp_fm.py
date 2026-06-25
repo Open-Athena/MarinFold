@@ -35,10 +35,20 @@ the CASP target numbering (verified per entry, e.g. 8h2n chain A is numbered
 327..1117, matching T1125's domain boundaries). Domains with no released PDB
 at all (and the one whose domain is only partially modelled, T1125-D6) stay in
 the manifest with an empty ``local_path`` rather than being silently dropped.
+
+Each resolved domain is also stamped with a ``deposit_date``: the RCSB
+deposition date of its answer structure (resolved from the CASP targetlist's
+answer-PDB code, or the fallback map's explicit ``pdb_id``). This is the
+temporal axis the maintainer needs to reason about training-set cutoffs, and is
+the same ``deposit_date`` semantics the de novo source uses. Note a CASP
+target's deposit date can predate its public release (structures are often
+deposited then embargoed through the prediction season), so for strict
+leakage-cutoff reasoning the release date is the more conservative bound.
 """
 
 import argparse
 import csv
+import io
 import re
 import shutil
 import tarfile
@@ -58,6 +68,14 @@ from _pdb_io import (
 HERE = Path(__file__).resolve().parent
 FM_DOMAINS_CSV = HERE / "data" / "casp_fm_domains.csv"
 FM_PDB_FALLBACK_CSV = HERE / "data" / "casp_fm_pdb_fallback.csv"
+
+# Targetlist (``;``-delimited CSV) maps each CASP target to its deposited answer
+# structure: the trailing 4-char PDB code in the Description column. RCSB's
+# entry metadata endpoint then gives that structure's deposition date. We date a
+# CASP domain by its answer structure's RCSB ``deposit_date`` so the manifest's
+# temporal axis is apples-to-apples with the de novo source.
+CASP_TARGETLIST_URL = "https://predictioncenter.org/{casp}/targetlist.cgi?type=csv"
+RCSB_ENTRY_URL = "https://data.rcsb.org/rest/v1/core/entry/{pdb}"
 
 # Per-CASP download config. ``*_prefix`` are matched against the live targets
 # directory index so a re-dated tarball (the filenames carry a release date)
@@ -93,6 +111,51 @@ def load_pdb_fallback() -> dict[str, dict]:
         return {}
     with FM_PDB_FALLBACK_CSV.open() as fh:
         return {r["domain"]: r for r in csv.DictReader(fh)}
+
+
+def parse_pdb_code(description: str) -> str | None:
+    """Extract the answer PDB code from a targetlist Description cell.
+
+    A PDB code is a digit followed by three alphanumerics, word-bounded; we
+    return the last such token (the answer code trails the protein name, e.g.
+    ``GLuc 7d2o`` -> ``7d2o``, ``S0A2C3d1 6vr4`` -> ``6vr4``) lower-cased.
+    Cells with no released structure carry no code -- ``g3873``, ``Q858F5.1``
+    have no word-bounded digit-led 4-char token -- and return ``None``.
+    """
+    codes = re.findall(r"\b[0-9][a-zA-Z0-9]{3}\b", description)
+    return codes[-1].lower() if codes else None
+
+
+def casp_target_pdb_map(casp: str) -> dict[str, str]:
+    """Map CASP target id -> deposited answer PDB code, from the targetlist.
+
+    ``targetlist.cgi?type=csv`` is a ``;``-delimited table whose Description
+    column ends with the answer structure's 4-char PDB code for released targets;
+    canceled / unreleased targets carry no code and are absent from the map.
+    """
+    text = http_get(CASP_TARGETLIST_URL.format(casp=casp.lower()), timeout=60).text
+    out: dict[str, str] = {}
+    for row in csv.DictReader(io.StringIO(text), delimiter=";"):
+        target = (row.get("Target") or "").strip()
+        code = parse_pdb_code(row.get("Description") or "")
+        if target and code:
+            out[target] = code
+    return out
+
+
+def rcsb_deposit_date(pdb_id: str, cache: dict[str, str]) -> str:
+    """RCSB initial deposition date (``YYYY-MM-DD``) for ``pdb_id``; cached.
+
+    The cache dedupes repeat lookups when several domains share one answer
+    structure (e.g. T1125's four domains all map to ``8h2n``).
+    """
+    pid = pdb_id.lower()
+    if pid in cache:
+        return cache[pid]
+    info = http_get(RCSB_ENTRY_URL.format(pdb=pid), timeout=60).json()
+    raw = info.get("rcsb_accession_info", {}).get("deposit_date", "") or ""
+    cache[pid] = raw.split("T")[0]  # ISO timestamp -> calendar date
+    return cache[pid]
 
 
 def parse_range(spec: str) -> list[tuple[int, int]]:
@@ -211,18 +274,32 @@ def run(
     pdb_fallback = load_pdb_fallback()
     cif_dir = raw_dir / "pdb_cif"
 
+    # Temporal axis: resolve each target's answer PDB (targetlist code, or the
+    # fallback map's explicit pdb_id) and date the domain by that structure's
+    # RCSB deposit date. ``date_cache`` dedupes shared answer structures.
+    target_pdb: dict[str, str] = {}
+    for casp in casps:
+        target_pdb.update(casp_target_pdb_map(casp))
+    date_cache: dict[str, str] = {}
+
     rows: list[ManifestRow] = []
     n_unresolved = 0
     n_fallback = 0
+    n_dated = 0
     for r in fm:
         casp, target, domain, category = r["casp"], r["target"], r["domain"], r["category"]
         files = available[casp]
         src = files.get(domain) or files.get(target)
         source = f"{casp.lower()}_fm"
+        fb = pdb_fallback.get(domain)
+
+        answer_pdb = (fb.get("pdb_id") if fb else "") or target_pdb.get(target, "")
+        deposit_date = rcsb_deposit_date(answer_pdb, date_cache) if answer_pdb else ""
+        if deposit_date:
+            n_dated += 1
 
         # Not in the public monomer tarballs: try the deposited-PDB fallback.
         if src is None:
-            fb = pdb_fallback.get(domain)
             if fb and fb.get("pdb_id") and fb.get("status") == "pdb_fallback":
                 dest = out_dir / casp / f"{domain}.pdb"
                 extract_domain_from_pdb(fb["pdb_id"], fb["chain"], fb["casp_range"], dest, cif_dir)
@@ -232,6 +309,7 @@ def run(
                     ManifestRow(
                         source=source, stem=domain, pdb_id=fb["pdb_id"],
                         chain=fb["chain"], length=count_residues(dest),
+                        deposit_date=deposit_date,
                         category=category, novelty_axis=NOVELTY_AXIS,
                         local_path=str(dest.relative_to(HERE)),
                     )
@@ -243,6 +321,7 @@ def run(
             rows.append(
                 ManifestRow(
                     source=source, stem=domain, pdb_id=target,
+                    deposit_date=deposit_date,
                     category=category, novelty_axis=NOVELTY_AXIS,
                 )
             )
@@ -259,6 +338,7 @@ def run(
                 pdb_id=target,
                 chain="",  # CASP domain coords are single-chain
                 length=count_residues(dest),
+                deposit_date=deposit_date,
                 category=category,
                 novelty_axis=NOVELTY_AXIS,
                 local_path=str(dest.relative_to(HERE)),
@@ -270,7 +350,7 @@ def run(
     print(
         f"Wrote {len(rows)} rows to {manifest_path} "
         f"({n_ok} with structures [{n_fallback} via PDB fallback], "
-        f"{n_unresolved} unresolved); structures in {out_dir}/"
+        f"{n_unresolved} unresolved, {n_dated} dated); structures in {out_dir}/"
     )
     return rows
 

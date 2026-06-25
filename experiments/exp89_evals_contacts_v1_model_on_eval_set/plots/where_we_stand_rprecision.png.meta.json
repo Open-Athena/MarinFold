@@ -1,0 +1,10 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--precision-csv",
+    "data/contact_precision_all.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Contact R-precision (aggregate, seq-sep>=6) vs pyconfind contacts, n=554 proteins. Boxplots over proteins; white diamond = mean (labelled)."
+}

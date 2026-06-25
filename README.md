@@ -5,18 +5,21 @@
 Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
 MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
-This is a research codebase for an ongoing project. It is an experiment in open development. Accuracy is pretty low so far!
+This is a research codebase for an ongoing project. It is an experiment in open development.
 
-If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
+We welcome collaborators! If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
 
 ## Current performance
 
-<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_5way_swarm.png" alt="LDDT 5-way swarm plot" width="75%">
-<img src="experiments/exp26_evals_marinfold_1_5b_foldbench/plots/lddt_vs_protein_length_log.png" alt="LDDT vs protein length log plot" width="75%">
+Here we are prompting with the amino acid sequence and predicting residue/residue contacts.
 
-The MarinFold models shown above were trained on `contacts-and-distances-v1`. The distogram was read-out by prompting with the sequence only and no inference time search was used.
+<img src="experiments/exp89_evals_contacts_v1_model_on_eval_set/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
+
+The `×10 ens` model above is our current best model running with 10x resamples at test-time.
 
 ## Try it out
+
+Instructions for our newest models coming soon: what we have here is for our previous generation.
 
 Our current model predicts CB/CB distograms given single sequence input.
 
