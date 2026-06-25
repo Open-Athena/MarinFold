@@ -1,0 +1,27 @@
+16 FoldBench dev proteins (resolved universe, pyconfind GT); methods=['pairwise', 'rollout', 'iterative']
+
+   7qp5_A L=245 res=241 gt=306  pairwise:lP@L=0.053  rollout:lP@L=0.086  iterative:lP@L=0.037  random:lP@L=0.012
+   7tjb_A L=227 res=222 gt=259  pairwise:lP@L=0.229  rollout:lP@L=0.313  iterative:lP@L=0.233  random:lP@L=0.018
+   7tlh_A L=136 res=124 gt=138  pairwise:lP@L=0.088  rollout:lP@L=0.088  iterative:lP@L=0.044  random:lP@L=0.022
+   7uvg_A L=183 res=166 gt=221  pairwise:lP@L=0.148  rollout:lP@L=0.175  iterative:lP@L=0.044  random:lP@L=0.005
+   7xcd_A L=178 res=178 gt=180  pairwise:lP@L=0.073  rollout:lP@L=0.073  iterative:lP@L=0.062  random:lP@L=0.011
+   7y54_A L=100 res=100 gt=129  pairwise:lP@L=0.330  rollout:lP@L=0.470  iterative:lP@L=0.290  random:lP@L=0.020
+   7ykm_A L=105 res= 81 gt= 73  pairwise:lP@L=0.248  rollout:lP@L=0.248  iterative:lP@L=0.133  random:lP@L=0.019
+   7zu3_A L=132 res=126 gt=117  pairwise:lP@L=0.091  rollout:lP@L=0.121  iterative:lP@L=0.030  random:lP@L=0.015
+   8adc_A L=215 res=207 gt=231  pairwise:lP@L=0.047  rollout:lP@L=0.079  iterative:lP@L=0.079  random:lP@L=0.005
+   8arl_A L=246 res=232 gt=358  pairwise:lP@L=0.008  rollout:lP@L=0.004  iterative:lP@L=0.004  random:lP@L=0.016
+   8axj_A L=162 res=161 gt=189  pairwise:lP@L=0.228  rollout:lP@L=0.278  iterative:lP@L=0.247  random:lP@L=0.012
+   8bau_A L=189 res=189 gt=284  pairwise:lP@L=0.058  rollout:lP@L=0.058  iterative:lP@L=0.005  random:lP@L=0.016
+   8bgb_A L=131 res=130 gt=126  pairwise:lP@L=0.084  rollout:lP@L=0.092  iterative:lP@L=0.076  random:lP@L=0.023
+   8cpn_A L=207 res=159 gt=206  pairwise:lP@L=0.087  rollout:lP@L=0.097  iterative:lP@L=0.029  random:lP@L=0.000
+   8ec3_A L=168 res=155 gt=152  pairwise:lP@L=0.190  rollout:lP@L=0.149  iterative:lP@L=0.071  random:lP@L=0.018
+   8gmy_A L=236 res=219 gt=330  pairwise:lP@L=0.131  rollout:lP@L=0.199  iterative:lP@L=0.157  random:lP@L=0.000
+
+=== AGGREGATE (mean over 16 FoldBench dev proteins) ===
+method          long_P@L   long_P@L2   long_P@L5      long_R medlong_P@L   medlong_R       P@ngt
+pairwise           0.131       0.165       0.226       0.160       0.180       0.187       0.204
+rollout            0.158       0.211       0.305       0.192       0.209       0.217       0.233
+iterative          0.096       0.144       0.213       0.132       0.160       0.171       0.202
+random             0.013       0.011       0.009       0.010       0.015       0.013       0.013
+
+(long = seq-sep>=24, medlong = >=12; P@L/L2/L5 = precision of top-{L,L/2,L/5}; R = R-precision = precision at top-#GT in band.)

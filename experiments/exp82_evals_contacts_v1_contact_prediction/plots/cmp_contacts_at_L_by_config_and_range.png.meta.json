@@ -1,0 +1,10 @@
+{
+  "script": "plot_comparison.py",
+  "args": [
+    "--precision-csv",
+    "_scratch/contact_precision_with_rollout.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "precision @ L vs pyconfind contacts (degree>=0.001, sep>=6), per predictor, aggregate and by range, over 554 proteins. Boxplots: box = median & IQR, whiskers = 1.5\u00d7IQR, points = outliers, white diamond = mean (labelled). rollout+resample ranks pairs by sampled-completion vote frequency; pairwise by contact-statement log-prob; structure models by pyconfind degree on the predicted structure. Metrics computed by exp89's exact code."
+}

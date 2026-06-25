@@ -1,0 +1,32 @@
+PRIOR contacts-and-distances-v1 1.5B on 24 held-out test proteins; methods=['statements', 'distance']
+
+      AF-A0A1G4XG90-F1 L=127 gt=115  statements:long_P@L=0.02  distance:long_P@L=0.06  random:long_P@L=0.00
+          AF-I3DK94-F1 L= 82 gt= 40  statements:long_P@L=0.04  distance:long_P@L=0.01  random:long_P@L=0.01
+      AF-A0A7I4YXG4-F1 L= 92 gt= 77  statements:long_P@L=0.01  distance:long_P@L=0.02  random:long_P@L=0.04
+      AF-A0A016WAA8-F1 L= 97 gt= 57  statements:long_P@L=0.07  distance:long_P@L=0.01  random:long_P@L=0.00
+      AF-A0A150N1B1-F1 L= 98 gt= 76  statements:long_P@L=0.05  distance:long_P@L=0.02  random:long_P@L=0.00
+      AF-A0A0P0W3U4-F1 L= 88 gt= 47  statements:long_P@L=0.00  distance:long_P@L=0.02  random:long_P@L=0.00
+          AF-L1LB90-F1 L=119 gt= 19  statements:long_P@L=0.00  distance:long_P@L=0.00  random:long_P@L=0.01
+      AF-A0A2G5BBT7-F1 L=113 gt= 69  statements:long_P@L=0.01  distance:long_P@L=0.01  random:long_P@L=0.00
+      AF-A0A0G4F440-F1 L=145 gt= 44  statements:long_P@L=0.01  distance:long_P@L=0.00  random:long_P@L=0.00
+      AF-A0A7J6VKP5-F1 L=117 gt= 72  statements:long_P@L=0.00  distance:long_P@L=0.03  random:long_P@L=0.01
+      AF-A0A452YUS1-F1 L=146 gt= 43  statements:long_P@L=0.00  distance:long_P@L=0.01  random:long_P@L=0.00
+      AF-A0A1A9ZNB8-F1 L=101 gt= 69  statements:long_P@L=0.00  distance:long_P@L=0.07  random:long_P@L=0.00
+          AF-A2FPJ8-F1 L=136 gt=121  statements:long_P@L=0.02  distance:long_P@L=0.01  random:long_P@L=0.00
+      AF-A0A510GAQ8-F1 L= 54 gt= 12  statements:long_P@L=0.13  distance:long_P@L=0.00  random:long_P@L=0.02
+      AF-A0A432TWI8-F1 L= 70 gt= 42  statements:long_P@L=0.01  distance:long_P@L=0.00  random:long_P@L=0.01
+      AF-A0A6P8B046-F1 L=109 gt= 60  statements:long_P@L=0.05  distance:long_P@L=0.01  random:long_P@L=0.02
+      AF-A0A103XJE2-F1 L= 82 gt= 25  statements:long_P@L=0.00  distance:long_P@L=0.01  random:long_P@L=0.00
+      AF-A0A072UES3-F1 L= 64 gt= 19  statements:long_P@L=0.03  distance:long_P@L=0.03  random:long_P@L=0.03
+      AF-A0A841Q250-F1 L= 99 gt= 64  statements:long_P@L=0.10  distance:long_P@L=0.04  random:long_P@L=0.00
+      AF-A0A7Z9M7N5-F1 L=150 gt= 80  statements:long_P@L=0.00  distance:long_P@L=0.00  random:long_P@L=0.00
+      AF-A0A1H2CGN0-F1 L=112 gt= 76  statements:long_P@L=0.02  distance:long_P@L=0.03  random:long_P@L=0.02
+      AF-A0A4Z1E3S8-F1 L=129 gt= 56  statements:long_P@L=0.02  distance:long_P@L=0.02  random:long_P@L=0.00
+      AF-A0A1X2H165-F1 L=116 gt=  6  statements:long_P@L=n/a  distance:long_P@L=n/a  random:long_P@L=n/a
+      AF-A0A397AB90-F1 L=142 gt= 48  statements:long_P@L=0.04  distance:long_P@L=0.01  random:long_P@L=0.00
+
+=== PRIOR 1.5B AGGREGATE (mean over proteins) ===
+method             long_P@L    long_P@L2    long_P@L5  medlong_P@L medlong_P@L2 medlong_P@L5        P@ngt
+statements            0.028        0.030        0.026        0.048        0.062        0.065        0.047
+distance              0.018        0.013        0.009        0.033        0.040        0.047        0.050
+random                0.008        0.004        0.005        0.009        0.011        0.012        0.011

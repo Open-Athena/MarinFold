@@ -1,0 +1,8 @@
+{
+  "script": "analyze_full_curated_set.py",
+  "args": [
+    "--results",
+    "_scratch/eval_full_results.jsonl"
+  ],
+  "caption": "rollout+resample wall-time per protein vs sequence length (one point per protein, 554 curated eval proteins, n_rollouts=100, one A5000). Cost grows ~linearly with L (generation length) with mild super-linear curvature from attention."
+}

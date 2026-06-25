@@ -1,0 +1,8 @@
+{
+  "script": "plot_where_we_stand.py",
+  "args": [
+    "--precision-csv",
+    "_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "Contact R-precision (all sep>=6, n=554): MarinFold #61 n=100 rollouts (rollout+resample+tiebreak) vs Protenix-v2 / ESMFold / ESMFold2."
+}
