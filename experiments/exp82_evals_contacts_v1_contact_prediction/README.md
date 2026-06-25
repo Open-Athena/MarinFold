@@ -136,7 +136,7 @@ contacts) for the canonical test proteins from prior evals — Top7 (1QYS),
 structures, not AFDB). Docs: [`data/benchmark_docs.parquet`](data/benchmark_docs.parquet);
 analysis: `benchmark_analysis.py`.
 
-**Contact-probability heatmaps** ([`plots/heatmap_{1QYS,7BNY,1UBQ}.png`](plots/)) —
+**Contact-probability heatmaps** ([`plots/legacy_step11999/heatmap_{1QYS,7BNY,1UBQ}.png`](plots/legacy_step11999/)) —
 predicted contact score vs ground truth. They explain *why* the contacts-v1
 model is weak:
 - **contacts-v1 model** → a smooth **sequence-separation gradient** (bright near
@@ -146,7 +146,7 @@ model is weak:
   track the real contact clusters — it genuinely predicts structure.
 
 **AUC vs # ground-truth contacts seeded into the prompt**
-([`plots/auc_vs_seeded.png`](plots/auc_vs_seeded.png)) — seed N true contacts,
+([`plots/legacy_step11999/auc_vs_seeded.png`](plots/legacy_step11999/auc_vs_seeded.png)) — seed N true contacts,
 then measure AUC of ranking the *remaining* (sep ≥ 12) contacts vs decoys:
 
 | #seeded | 0 | 1 | 2 | 4 | 8 | 16 | 32 |
@@ -253,51 +253,75 @@ and free. It is smaller than #89's +0.05 *pairwise* TTA because `rollout` alread
 ensembles, so the document nuisance is largely averaged out. **Settled recipe:
 `rollout + resample`** at default sampling.
 
-### Full curated-set evaluation (554 proteins): `rollout+resample` vs `pairwise`
+### Full curated-set evaluation (554 proteins): vs every other predictor
 
-[`eval_full_curated_set.py`](eval_full_curated_set.py) (resumable) →
-[`data/eval_full_results.jsonl`](data/eval_full_results.jsonl); [`analyze_full_curated_set.py`](analyze_full_curated_set.py)
-→ table + plots. Whole #74/#78 curated set (FoldBench-100 + 454 denovo/CASP/CAMEO),
-long-range, mean over 554:
+The dev recipe is scored on the **whole #74/#78 curated set** (FoldBench-100 + 454
+denovo/CASP/CAMEO) by **exp89's exact `compute_metrics`** — the *same* metric code
+as the structure predictors, so every bar is comparable (our exp82 `metrics()`
+disagrees with it by up to 0.4/protein from float16 tie-breaking, so it can't be
+mixed in). Pipeline: [`score_rollout_resample_eval.py`](score_rollout_resample_eval.py)
+saves per-pair vote-score matrices → [`build_comparison_table.py`](build_comparison_table.py)
+computes metrics with exp89's copied-verbatim code → [`plot_comparison.py`](plot_comparison.py)
+draws the bars ([`plots/cmp_*_by_config_and_range.png`](plots/), plus by MSA-depth
+tier and fold novelty).
 
-| method | long P@L | long P@L/2 | long P@L/5 | long R | medlong P@L | P@#gt |
-|---|---|---|---|---|---|---|
-| pairwise | 0.225 | 0.308 | 0.393 | 0.285 | 0.305 | 0.351 |
-| **rollout + resample** | **0.279** | **0.402** | **0.517** | **0.368** | **0.375** | **0.425** |
+**Tie-break refinement (raised in review).** The vote score is an integer 0–N, so
+~⅔ of candidate pairs tie at 0 votes — a tie mass that, ordered arbitrarily, drags
+ranking **AUC** below pairwise's despite far stronger top-K precision. Breaking ties
+with the pairwise log-prob — `combined = votes + min-max(pairwise) ∈ [0, 0.5)`, so
+votes stay the primary key — reorders that tail informatively. It is **free** (the
+pairwise score matrices already exist) and recovers AUC at **zero top-K cost**.
 
-**+29% long-range R-precision (0.285 → 0.368)**, winning every metric on every
-dataset. Per-dataset long-range R (pairwise → rollout+resample): denovo_pdb
-0.335 → 0.433, FoldBench-100 0.173 → 0.219, cameo_hard 0.179 → 0.236, casp_fm
-0.097 → 0.115. The **538 proteins held out from dev** give the same gain
-(R 0.289 → 0.373), so it is not dev-overfit. It also beats #89's **K=10-ensemble
-pairwise** (long R 0.315). It remains well below the structure predictors (#89:
-ESMFold2 long R ≈ 0.77, Protenix-MSA ≈ 0.80) — rollout+resample narrows the
-LM-vs-structure top-K gap from the sequence side but does not close it.
-Plot: [`plots/eval_full_pairwise_vs_resample.png`](plots/eval_full_pairwise_vs_resample.png).
+Long-range, mean over 554 (exp89 metric):
+
+| predictor (long-range) | R-precision | contacts@L | AUC |
+|---|---|---|---|
+| **MarinFold rollout+resample +tiebreak** | **0.353** | **0.231** | **0.898** |
+| MarinFold rollout+resample (plain) | 0.355 | 0.232 | 0.851 |
+| MarinFold ×10 ens · pairwise (#89) | 0.315 | 0.209 | 0.899 |
+| MarinFold pairwise (#89) | 0.269 | 0.188 | 0.881 |
+| Protenix-v2 · single-seq (structure) | 0.466 | 0.302 | 0.815 |
+| Protenix-v2 · MSA (structure) | 0.628 | 0.414 | 0.935 |
+| ESMFold (single-seq) | 0.732 | 0.418 | 0.892 |
+| ESMFold2 (single-seq) | 0.769 | 0.443 | 0.916 |
+
+**rollout+resample is the best LM-only inference** — long-range R-precision **0.355**
+and contacts@L **0.232**, well above pairwise (0.269 / 0.188, what #89 used) and the
+K=10 pairwise ensemble (0.315 / 0.209). The **tie-break** lifts AUC **0.851 → 0.898**
+(above pairwise's 0.881 and ESMFold's 0.892, level with the ensemble) at no top-K
+cost — so the headline recipe is **`rollout+resample +tiebreak`**: rollout's top-K
+with pairwise's global ranking. It still **trails every structure predictor on
+top-K** (ESMFold2 0.769 / 0.443; Protenix-MSA 0.628 / 0.414) — better inference
+narrows the LM-vs-structure gap from the sequence side but does not close it; that
+needs a stronger model. Per-model summary:
+[`data/eval_comparison_summary.csv`](data/eval_comparison_summary.csv).
 
 ### Cost ([`data/eval_full_timings.csv`](data/eval_full_timings.csv), [`plots/eval_full_resample_time_vs_length.png`](plots/eval_full_resample_time_vs_length.png))
 
 `rollout+resample` is **~50 s/protein** mean on one A5000 at n=100 (median 44 s,
 p95 98 s, max 225 s at L=738), scaling ~linearly with L (the full 554 took 8.4 h);
 `pairwise` is ~0.3 s. Rollouts terminate cleanly — **0 % hit the `4·L+64` cap** —
-each emitting ~2–2.5·L tokens / ~80–125 contacts before `<end>`. So the +29%
-R-precision costs ~150× the per-protein compute of pairwise: cheap in absolute
-terms (decoder-only, no retraining), but a real cost at eval-set scale.
+each emitting ~2–2.5·L tokens / ~80–125 contacts before `<end>`. So the top-K gain
+costs ~150× the per-protein compute of pairwise: cheap in absolute terms
+(decoder-only, no retraining), but a real cost at eval-set scale. The score-matrix
+re-run (adaptive batch up to 64) did all 554 in **3.9 h**; the pairwise tie-break is
+**free** (arithmetic on the existing matrices).
 
 ## Conclusion
 
 **Headline (strong model).** Re-running the inference search on the tuned #61/#75
 model (eval loss 2.7566) **flips exp82's original verdict**: with a strong base
-model, better inference helps a lot. The dev-selected recipe — **`rollout` voting +
-per-rollout document resampling** — lifts long-range R-precision from **0.285
-(`pairwise`, what #89 used) to 0.368 (+29%)** on the 554-protein curated eval set,
-winning every metric on every dataset and holding on the 538 proteins held out from
-selection (0.289 → 0.373). It is a free, decoder-only gain (no retraining), and
-beats #89's K=10-ensemble pairwise (0.315) — though it stays well below
-structure-based predictors. `iterative`, marginally *best* on the weak model, now
-*hurts* (self-seeding the model's own ~13–33%-precision predictions backfires).
-Net: tuning made the **decoder a real lever again**; closing the gap to structure
-methods still needs a stronger model, not just a cleverer readout.
+model, better inference helps a lot. The recipe — **`rollout` voting + per-rollout
+document resampling, with pairwise tie-breaking** — is the **best LM-only inference**
+on the 554-protein curated eval set: long-range R-precision **0.355** and contacts@L
+**0.231** (vs pairwise 0.269 / 0.188, what #89 used; and the K=10 pairwise ensemble
+0.315 / 0.209), with AUC **0.898** once the tie-break recovers it from 0.851. A free,
+decoder-only gain (no retraining). It still **trails every structure predictor on
+top-K** (ESMFold2 0.769 / 0.443; Protenix-MSA 0.628 / 0.414) — better inference
+narrows the LM-vs-structure gap but does not close it; that needs a stronger model.
+`iterative`, marginally *best* on the weak model, now *hurts* (self-seeding the
+model's own ~13–33%-precision predictions backfires). Net: tuning made the
+**decoder a real lever again**.
 
 **Original finding (#67 quick model).** The quick contacts-v1 1.5B model (#67) has
 only a **weak** contact signal (~2× random at ranking long-range contacts), and

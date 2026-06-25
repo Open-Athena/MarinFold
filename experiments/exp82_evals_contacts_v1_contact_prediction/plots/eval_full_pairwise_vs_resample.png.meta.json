@@ -1,8 +1,0 @@
-{
-  "script": "analyze_full_curated_set.py",
-  "args": [
-    "--results",
-    "_scratch/eval_full_results.jsonl"
-  ],
-  "caption": "Long-range (sep>=24) contact metrics, pairwise vs the dev-selected rollout+resample recipe, on the 554-protein curated eval set and per dataset. rollout+resample wins every metric on every dataset (see the README table for all bands)."
-}
