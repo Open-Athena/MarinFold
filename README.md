@@ -13,9 +13,9 @@ We welcome collaborators! If you would like to discuss or contribute, join the [
 
 Here we are prompting with the amino acid sequence and predicting residue/residue contacts.
 
-<img src="experiments/exp89_evals_contacts_v1_model_on_eval_set/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold-cv1 vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
+<img src="experiments/exp82_evals_contacts_v1_contact_prediction/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold #61 n=100 rollouts vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
 
-The `×10 ens` model above is our current best model running with 10x resamples at test-time.
+The `MarinFold #61 n=100 rollouts` bar above is our #61 model (eval loss 2.76) with our best test-time inference — 100 resampled rollouts with pairwise tie-breaking (see [exp82](experiments/exp82_evals_contacts_v1_contact_prediction/README.md)).
 
 ## Try it out
 
