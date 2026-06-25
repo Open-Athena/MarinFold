@@ -1,0 +1,10 @@
+{
+  "script": "plot_comparison.py",
+  "args": [
+    "--precision-csv",
+    "_scratch/contact_precision_with_rollout.csv",
+    "--out",
+    "plots"
+  ],
+  "caption": "Ranking AUC by MSA-depth tier (long-range). Bars = mean; error bars = 95% bootstrap CI of the mean."
+}
