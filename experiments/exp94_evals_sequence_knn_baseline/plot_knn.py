@@ -219,11 +219,13 @@ def plot_stratified_all(knn, base, summary, out, k: int = 10) -> None:
     print(f"[plot] {out}")
 
 
-# (label, model, mode, predictor, source) for the viral vs non-viral panel.
+# (label, model, mode, predictor, source, color) for the viral vs non-viral panel.
 VIRAL_PANEL = [
     ("seq-KNN k=10", "seq-knn-k10", "single_seq", "knn", "knn", "#888"),
     ("MarinFold #61", MARINFOLD, "single_seq", "lm", "base", "#2a7"),
+    ("Protenix-v2 (single-seq)", "protenix-v2", "single_seq", "structure", "base", "#48c"),
     ("Protenix-v2 (MSA)", "protenix-v2", "msa", "structure", "base", "#15396b"),
+    ("ESMFold", "esmfold", "single_seq", "structure", "base", "#e8a"),
     ("ESMFold2", "esmfold2", "single_seq", "structure", "base", "#a26"),
 ]
 
