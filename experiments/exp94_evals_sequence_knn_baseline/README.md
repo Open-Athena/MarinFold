@@ -129,6 +129,19 @@ across every identity bin**, including the 139 proteins with no training homolog
 all. Per-protein the two barely correlate (Pearson r = 0.12): they are accurate on
 *different* proteins, not the same ones.
 
+Extending this to **all predictors** ([`rprecision_vs_identity_all.png`](plots/rprecision_vs_identity_all.png))
+makes the point sharper: seq-KNN is the *only* predictor whose accuracy tracks
+sequence identity. MarinFold, Protenix-v2 (single-seq/MSA), ESMFold and ESMFold2 are
+all flat or even decline toward high identity. Caveat: the identity axis is
+confounded with dataset composition — the no-hit / low-identity bins are dominated by
+de novo *designed* proteins (123 of the 139 no-hit proteins are `denovo_pdb`; full
+list in [`data/no_hit_proteins.csv`](data/no_hit_proteins.csv)), which the structure
+predictors find easy (idealized backbones), lifting the left side of their curves.
+The robust, confound-resistant signal is the *slope*: only the copy baseline tracks
+identity. Notably 117/135 no-hit proteins (with strata) are `same_fold`/`redundant`
+by structure despite `novel_seq` sequences — the twilight zone a structural-KNN
+(foldseek) follow-up would target.
+
 ## Conclusion
 
 A no-folding "copy the nearest training neighbor's contacts" null model matches

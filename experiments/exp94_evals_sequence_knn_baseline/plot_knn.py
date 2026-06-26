@@ -159,6 +159,66 @@ def plot_stratified(knn: pd.DataFrame, base: pd.DataFrame, summary: pd.DataFrame
     print(f"[plot] {out}")
 
 
+IDENT_BINS = [(-0.01, 0.001, "no hit"), (0.001, 0.3, "0-30%"), (0.3, 0.5, "30-50%"),
+              (0.5, 0.7, "50-70%"), (0.7, 1.01, "70-100%")]
+# (label, model, mode, predictor, source) — source picks the per-protein frame.
+STRAT_PREDICTORS = [
+    ("seq-KNN k=10", "seq-knn-k10", "single_seq", "knn", "knn", "#888", "-o"),
+    ("MarinFold #61", MARINFOLD, "single_seq", "lm", "base", "#2a7", "-o"),
+    ("Protenix-v2 (single-seq)", "protenix-v2", "single_seq", "structure", "base", "#48c", "--s"),
+    ("Protenix-v2 (MSA)", "protenix-v2", "msa", "structure", "base", "#15396b", "--s"),
+    ("ESMFold", "esmfold", "single_seq", "structure", "base", "#e8a", "--^"),
+    ("ESMFold2", "esmfold2", "single_seq", "structure", "base", "#a26", "--^"),
+]
+
+
+def _per_protein_long_r(df, model, mode, predictor):
+    sub = df[(df.model == model) & (df["mode"] == mode) & (df.predictor == predictor)
+             & (df.range == "long") & (df.cut == "R")]
+    return sub[["dataset", "stem", "precision"]].dropna()
+
+
+def plot_stratified_all(knn, base, summary, out, k: int = 10) -> None:
+    """Long-range R-precision vs nearest-neighbor identity, for every predictor.
+
+    Same identity bins as `plot_stratified`, but as a line per predictor so the
+    contrast is visible: seq-KNN (copy baseline) rises with identity while the
+    folding predictors are flat — their accuracy doesn't depend on whether a
+    training homolog exists.
+    """
+    s = summary.copy()
+    s[["dataset", "stem"]] = s["query"].str.split("__", n=1, expand=True)
+    s["ident"] = s["best_fident"].where(s["n_hits"] > 0, 0.0)
+    s = s[["dataset", "stem", "ident"]]
+
+    x = range(len(IDENT_BINS))
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    for label, model, mode, pred, src, color, style in STRAT_PREDICTORS:
+        frame = knn if src == "knn" else base
+        pp = _per_protein_long_r(frame, model, mode, pred).merge(s, on=["dataset", "stem"])
+        ys, xs = [], []
+        for i, (lo, hi, _) in enumerate(IDENT_BINS):
+            b = pp[(pp["ident"] > lo) & (pp["ident"] <= hi)]
+            if len(b):
+                xs.append(i)
+                ys.append(b["precision"].mean())
+        ax.plot(xs, ys, style, color=color, label=label, lw=1.8, ms=6)
+
+    # bin counts (predictor-independent: full eval set)
+    counts = [int(((s["ident"] > lo) & (s["ident"] <= hi)).sum()) for lo, hi, _ in IDENT_BINS]
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([f"{lbl}\n(n={c})" for (_, _, lbl), c in zip(IDENT_BINS, counts)], fontsize=8)
+    ax.set_xlabel("best training-set sequence identity (nearest neighbor)")
+    ax.set_ylabel("long-range R-precision")
+    ax.set_title("Contact accuracy vs nearest-training-neighbor identity — all predictors")
+    ax.legend(fontsize=8, ncol=2)
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(out, dpi=150)
+    plt.close(fig)
+    print(f"[plot] {out}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--comparison", type=Path, default=Path("data/knn_comparison.csv"))
@@ -178,6 +238,7 @@ def main() -> int:
     plot_k_sweep(agg, args.plots / "k_sweep.png")
     plot_scatter(knn, base, args.plots / "memorization_scatter.png")
     plot_stratified(knn, base, summary, args.plots / "rprecision_vs_identity.png")
+    plot_stratified_all(knn, base, summary, args.plots / "rprecision_vs_identity_all.png")
     return 0
 
 
