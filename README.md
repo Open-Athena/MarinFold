@@ -22,9 +22,9 @@ The `MarinFold #61 n=100 rollouts` bar above is our #61 model (eval loss 2.76) w
 Our current best model predicts a **residue–residue contact map** from a
 single sequence — no MSA, no template, no structure. It's the `contacts-v1`
 1.5B model [@eric-czech](https://github.com/eric-czech) trained in
-[#61](https://github.com/Open-Athena/MarinFold/issues/61) (the `×10 ens`
-predictor in *Current performance* above) and is the default model in
-[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml).
+[#61](https://github.com/Open-Athena/MarinFold/issues/61) (the
+`MarinFold #61 n=100 rollouts` predictor in *Current performance* above) and is
+the default model in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml).
 
 ### GPU example
 
@@ -57,16 +57,25 @@ contact-map heatmap. The first run downloads our 1.5B contacts-v1 model
 (~6 gb). Omitting `--model` uses the default (`1.5B-contacts-v1`); the older
 distogram models are still available as `--model 1B` / `1.5B` (see below).
 
-The `×10 ens` plot in *Current performance* averages **10** resampled sequence
-realizations (test-time augmentation). Reproduce it with the per-impl driver's
-`--ensemble-k` (the top-level CLI keeps its surface narrow):
+The command above uses the fast **`pairwise`** readout (~0.3 s/protein). Our
+**best** inference — the `MarinFold #61 n=100 rollouts` bar in *Current
+performance* — is exp82's **`rollout`** recipe: vote over 100 sampled
+contact-section completions (each from a freshly resampled document) with a
+pairwise tie-break. It is ~150× slower (~50 s/protein on a GPU) but sharpens the
+top-ranked contacts. Run it via the per-impl driver (the top-level CLI keeps its
+surface narrow):
 
 ```bash
 uv run contacts-v1 infer \
     --backend vllm --model 1.5B-contacts-v1 \
-    --input-sequence $SEQUENCE --ensemble-k 10 \
+    --method rollout --n-rollouts 100 \
+    --input-sequence $SEQUENCE \
     --out ~/prediction.json --out-plots ~/contact_map.pdf
 ```
+
+`rollout` needs a sampling backend — `--backend vllm` or `transformers` (not
+`mlx`). The pairwise `--ensemble-k N` test-time-augmentation knob lives on this
+driver too.
 
 To score against a known structure's ground-truth contacts, use `evaluate`
 (reports contact-prediction AUC and precision@{L, L/2, L/5}). Ground truth is

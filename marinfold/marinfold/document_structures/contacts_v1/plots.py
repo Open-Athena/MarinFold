@@ -63,29 +63,30 @@ def figure_predicted_contacts(record: dict[str, Any]):
 
     entry_id = record["entry_id"]
     n = int(record["n_residues"])
-    ensemble_k = int(record.get("ensemble_k", 1))
+    method = str(record.get("method", "pairwise"))
+    label = _score_label(method)
     pred = _reconstruct_matrix(
-        [tuple(p) for p in record["pairs"]], record["p_contact"], n
+        [tuple(p) for p in record["pairs"]], record["score"], n
     )
 
     vmax = _robust_vmax(pred)
     fig, ax = plt.subplots(figsize=(6.2, 5.4))
     im = ax.imshow(pred, cmap="magma", origin="lower", vmin=0, vmax=vmax,
                    interpolation="none")
-    ax.set_title("MarinFold-cv1 · model P(contact)\n(pairwise readout, from sequence)")
+    ax.set_title(f"MarinFold-cv1 · {label}\n({method} readout, from sequence)")
     ax.set_xlabel("residue j")
     ax.set_ylabel("residue i")
-    fig.colorbar(im, ax=ax, fraction=0.046, label="P(contact)")
-    ens = f", ×{ensemble_k} ens" if ensemble_k > 1 else ""
-    fig.suptitle(f"{entry_id}  (L={n}{ens})")
+    fig.colorbar(im, ax=ax, fraction=0.046, label=label)
+    fig.suptitle(f"{entry_id}  (L={n}{_method_detail(record)})")
     fig.tight_layout()
     return fig
 
 
 def figure_gt_vs_predicted(
-    *, entry_id: str, n_residues: int, gt: np.ndarray, pred: np.ndarray
+    *, entry_id: str, n_residues: int, gt: np.ndarray, pred: np.ndarray,
+    score_label: str = "P(contact)",
 ):
-    """Two-panel figure: GT contacts (left), model ``P(contact)`` (right)."""
+    """Two-panel figure: GT contacts (left), the model's contact score (right)."""
     import matplotlib.pyplot as plt
 
     n_contacts = int(np.nansum(gt) // 2)
@@ -97,14 +98,27 @@ def figure_gt_vs_predicted(
     )
     im = axes[1].imshow(pred, cmap="magma", origin="lower", vmin=0, vmax=vmax,
                         interpolation="none")
-    axes[1].set_title("MarinFold-cv1 · model P(contact)\n(pairwise readout, from sequence)")
+    axes[1].set_title(f"MarinFold-cv1 · {score_label}\n(from sequence)")
     for ax in axes:
         ax.set_xlabel("residue j")
         ax.set_ylabel("residue i")
-    fig.colorbar(im, ax=axes[1], fraction=0.046, label="P(contact)")
+    fig.colorbar(im, ax=axes[1], fraction=0.046, label=score_label)
     fig.suptitle(entry_id)
     fig.tight_layout()
     return fig
+
+
+def _score_label(method: str) -> str:
+    """Colour-bar / title label for the per-pair score of each method."""
+    return "rollout vote score" if method == "rollout" else "P(contact)"
+
+
+def _method_detail(record: dict[str, Any]) -> str:
+    """Short title suffix describing the readout's ensemble / rollout count."""
+    if record.get("method") == "rollout":
+        return f", {int(record.get('n_rollouts', 0))} rollouts"
+    k = int(record.get("ensemble_k", 1))
+    return f", ×{k} ens" if k > 1 else ""
 
 
 def _robust_vmax(matrix: np.ndarray) -> float:
@@ -144,7 +158,7 @@ def plot_evaluate_pdf(out_path: Path, result: EvalResult) -> None:
     """Write one GT-vs-model contact-map page per structure.
 
     Reconstructs both panels from ``result.per_example`` (every scored
-    candidate pair's ``p_contact`` and ``gt``). N per structure comes from
+    candidate pair's ``score`` and ``gt``). N per structure comes from
     ``result.extras["per_structure_n_residues"]``.
     """
     import matplotlib.pyplot as plt
@@ -154,6 +168,7 @@ def plot_evaluate_pdf(out_path: Path, result: EvalResult) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     n_by_entry: dict[str, int] = result.extras.get("per_structure_n_residues", {})
+    score_label = _score_label(result.extras.get("method", "pairwise"))
 
     by_entry: dict[str, list[dict]] = {}
     entry_order: list[str] = []
@@ -172,9 +187,10 @@ def plot_evaluate_pdf(out_path: Path, result: EvalResult) -> None:
             n = int(n_by_entry.get(entry_id) or (max(max(r["i"], r["j"]) for r in rows)))
             pairs = [(int(r["i"]), int(r["j"])) for r in rows]
             gt = _reconstruct_matrix(pairs, [float(r["gt"]) for r in rows], n)
-            pred = _reconstruct_matrix(pairs, [float(r["p_contact"]) for r in rows], n)
+            pred = _reconstruct_matrix(pairs, [float(r["score"]) for r in rows], n)
             fig = figure_gt_vs_predicted(
-                entry_id=entry_id, n_residues=n, gt=gt, pred=pred
+                entry_id=entry_id, n_residues=n, gt=gt, pred=pred,
+                score_label=score_label,
             )
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)

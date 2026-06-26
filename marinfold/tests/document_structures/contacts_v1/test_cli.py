@@ -230,6 +230,37 @@ def test_infer_keep_matrix_flag():
     assert args.keep_matrix is True
 
 
+def test_infer_method_defaults_pairwise():
+    args = cli.build_parser().parse_args([
+        "infer", "--model", "M", "--input-sequence", "ACDE", "--out", "p.json",
+    ])
+    assert args.method == "pairwise"
+    assert cli._inference_config(args).method == "pairwise"
+
+
+def test_infer_method_rollout_flags():
+    args = cli.build_parser().parse_args([
+        "infer", "--model", "M", "--input-sequence", "ACDEFGHIK",
+        "--out", "preds.json", "--method", "rollout",
+        "--n-rollouts", "50", "--temperature", "0.7", "--top-p", "0.9", "--top-k", "0",
+    ])
+    assert args.method == "rollout"
+    cfg = cli._inference_config(args)
+    assert cfg.method == "rollout"
+    assert cfg.n_rollouts == 50
+    assert cfg.temperature == 0.7
+    assert cfg.top_p == 0.9
+    assert cfg.top_k == 0
+
+
+def test_infer_method_rejects_unknown():
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args([
+            "infer", "--model", "M", "--input-sequence", "ACDE",
+            "--out", "p.json", "--method", "bogus",
+        ])
+
+
 def test_evaluate_parses_and_rejects_input_sequence():
     args = cli.build_parser().parse_args([
         "evaluate", "--model", "M", "--input", "tests/data/1QYS.cif",

@@ -59,6 +59,7 @@ is backend-agnostic (vLLM / transformers / MLX).
 """
 
 import math
+import re
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
@@ -80,6 +81,8 @@ from .parse import (
 from .vocab import (
     BEGIN_STRUCTURE_TOKEN,
     CONTACT_TOKEN,
+    CONTEXT_LENGTH,
+    END_TOKEN,
     NAME,
     NUM_POSITION_INDICES,
     position_token,
@@ -112,6 +115,17 @@ _RANGES: dict[str, tuple[int, int | None]] = {
 # log finite (such pairs simply rank last).
 _PROB_FLOOR = 1e-30
 
+# Parses `<contact> <p_i> <p_j>` triples out of a sampled rollout completion
+# (one contacts-v1 contact statement). Mirrors exp82's CONTACT_RE.
+_CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
+
+# Rollout generation budget: 4·L + 64 tokens. A contacts-v1 protein emits well
+# under L contacts (sep >= 6), each a 3-token statement, so this is generous
+# headroom while bounding a runaway sample. Sized from L (which the model sees
+# in the prefix), never the GT contact count — no oracle dependence (exp82).
+_ROLLOUT_TOKENS_PER_RESIDUE = 4
+_ROLLOUT_TOKENS_CONSTANT = 64
+
 
 # --------------------------------------------------------------------------
 # Inference config + structure container
@@ -127,14 +141,23 @@ class InferenceConfig:
     surface the top-level ``marinfold`` CLI fills in; the rest are
     contacts-v1 knobs with defaults.
 
+    ``method`` selects the contact readout:
+
+    - ``"pairwise"`` (default, fast ~0.3 s/protein) — the P(contact) readout
+      above, optionally averaged over ``ensemble_k`` resampled realizations.
+    - ``"rollout"`` (~50 s/protein) — exp82's settled best LM-only recipe:
+      ``n_rollouts`` sampled contact-section completions, each from a fresh
+      document realization, voted by pair-occurrence frequency and tie-broken
+      by the pairwise log-prob. Needs a sampling backend (vLLM / transformers;
+      not MLX). ``temperature`` / ``top_p`` / ``top_k`` are its sampling knobs.
+
     ``min_seq_separation`` is the smallest primary-sequence gap |i - j| that
     can be a contact (6 — matching the data), so closer pairs are never
-    scored or counted. ``ensemble_k`` is the test-time-augmentation draw
-    count (1 = a single deterministic realization). ``top_k_logprobs`` and
-    ``gpu_memory_utilization`` are vLLM-only; other backends ignore them.
-    ``batch_size`` is the per-prefix tail fan-out the backend batches
-    internally. ``keep_matrix`` adds the dense per-structure ``P(contact)``
-    matrix to each ``predict`` record.
+    scored or counted. ``top_k_logprobs`` and ``gpu_memory_utilization`` are
+    vLLM-only; other backends ignore them. ``batch_size`` is the per-prefix
+    fan-out backends batch internally (pairwise tails / rollout completions).
+    ``keep_matrix`` adds the dense per-structure score matrix to each
+    ``predict`` record.
     """
 
     model: str | None
@@ -142,11 +165,17 @@ class InferenceConfig:
     backend: str = "vllm"
     batch_size: int = 64
     dtype: str = "bfloat16"
+    method: str = "pairwise"
     min_seq_separation: int = 6
     ensemble_k: int = 1
     top_k_logprobs: int = 256
     gpu_memory_utilization: float = 0.85
     keep_matrix: bool = False
+    # rollout-only sampling knobs (method == "rollout"):
+    n_rollouts: int = 100
+    temperature: float = 1.0
+    top_p: float = 0.95
+    top_k: int = 50
 
 
 @dataclass(frozen=True)
@@ -236,63 +265,193 @@ def _token_id(tokenizer, token: str) -> int:
     return int(tid)
 
 
-def _pcontact_matrix(
+def _fwd_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
-    """``P(contact)`` over all residue pairs for one sequence realization.
+    """``log P(i)·P(j|i)`` over all residue pairs for one sequence realization.
 
-    Returns a symmetric ``[L, L]`` array (sequence coordinates) where entry
-    (i, j) is ``exp(lp1[i] + lp2[i, j]) + exp(lp1[j] + lp2[j, i])`` — the
-    model's probability of emitting {i, j} as its next contact statement,
-    unordered. The diagonal / near-diagonal band is meaningless here; callers
-    mask it.
+    Returns ``fwd[i, j] = lp1[i] + lp2[i, j]`` with
+    ``lp1[i] = log P(<p_i> | prefix, <contact>)`` and
+    ``lp2[i, j] = log P(<p_j> | prefix, <contact>, <p_i>)`` — the two
+    conditional distributions the pairwise readout needs, restricted to this
+    protein's position tokens. Not symmetric; callers symmetrize.
     """
     tokenizer = backend.tokenizer
     prefix_ids = list(tokenizer.encode(prefix, add_special_tokens=False))
     contact_id = _token_id(tokenizer, CONTACT_TOKEN)
     pos_ids = [_token_id(tokenizer, position_token(p)) for p in seq_positions]
 
-    # lp1[i] = log P(<p_i> | prefix, <contact>): one forward, the distribution
-    # right after `prefix + <contact>`, restricted to this protein's position
-    # tokens.
+    # lp1: one forward, the distribution right after `prefix + <contact>`.
     p1 = backend.next_token_probs(prefix_ids, [[contact_id]], pos_ids)  # (1, L)
     lp1 = np.log(np.clip(np.asarray(p1[0], dtype=np.float64), _PROB_FLOOR, None))
-
-    # lp2[i, j] = log P(<p_j> | prefix, <contact>, <p_i>): one tail per i.
+    # lp2: one tail (`<contact> <p_i>`) per i.
     tails = [[contact_id, pid] for pid in pos_ids]
     p2 = backend.next_token_probs(prefix_ids, tails, pos_ids)  # (L, L)
     lp2 = np.log(np.clip(np.asarray(p2, dtype=np.float64), _PROB_FLOOR, None))
-
-    fwd = lp1[:, None] + lp2  # log P(i)·P(j|i)
-    return np.exp(fwd) + np.exp(fwd.T)  # unordered contact probability, symmetric
+    return lp1[:, None] + lp2  # log P(i)·P(j|i)
 
 
-def _ensemble_pcontact(
-    backend: Backend, structure: ContactStructure, *, ensemble_k: int
+def _pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
+    """Unordered ``P(contact)``: ``exp(fwd) + exp(fwd.T)`` (symmetric)."""
+    return np.exp(fwd) + np.exp(fwd.T)
+
+
+def _sym_from_fwd(fwd: np.ndarray) -> np.ndarray:
+    """Symmetrized geo-mean log-score ``0.5·(fwd + fwd.T)``.
+
+    The pairwise *ranking* score, and the key that breaks rollout's vote ties.
+    """
+    return 0.5 * (fwd + fwd.T)
+
+
+def _pcontact_matrix(
+    backend: Backend, prefix: str, seq_positions: list[int]
+) -> np.ndarray:
+    """``P(contact)`` over all residue pairs for one sequence realization.
+
+    Entry (i, j) is the model's probability of emitting {i, j} as its next
+    contact statement, unordered. The diagonal / near-diagonal band is
+    meaningless here; callers mask it.
+    """
+    return _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+
+
+# --------------------------------------------------------------------------
+# Per-structure score matrices (pairwise / rollout)
+# --------------------------------------------------------------------------
+
+
+def _pairwise_score_matrix(
+    backend: Backend, structure: ContactStructure, cfg: "InferenceConfig"
 ) -> tuple[np.ndarray, int] | None:
-    """Mean ``P(contact)`` over ``ensemble_k`` sequence-definition resamples.
+    """Mean ``P(contact)`` over ``cfg.ensemble_k`` sequence-definition resamples.
 
     Each draw uses a different deterministic ``entry_id`` salt, so the
     contacts-v1 start index + statement order differ; the resulting matrices
     are all in sequence coordinates, so averaging is element-wise. Returns
-    ``(P_mean, L)`` or ``None`` if the structure can't be serialized.
+    ``(score, L)`` or ``None`` if the structure can't be serialized.
     """
     acc: np.ndarray | None = None
     seq_len = 0
-    for k in range(ensemble_k):
+    for k in range(cfg.ensemble_k):
         entry_id = (
             structure.entry_id
-            if ensemble_k == 1
+            if cfg.ensemble_k == 1
             else f"{structure.entry_id}#cv1ens{k}"
         )
         built = _prefix_and_positions(structure, entry_id=entry_id)
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
-        matrix = _pcontact_matrix(backend, prefix, seq_positions)
+        matrix = _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
         acc = matrix if acc is None else acc + matrix
     assert acc is not None  # ensemble_k >= 1
-    return acc / ensemble_k, seq_len
+    return acc / cfg.ensemble_k, seq_len
+
+
+def _adaptive_sample_batch(seq_len: int, cap: int, *, budget: int = 20000) -> int:
+    """Bigger generation batch for short proteins, smaller for long.
+
+    Keeps the per-batch KV-cache roughly constant (~``budget`` tokens). vLLM
+    ignores this (it schedules its own batching); transformers honours it.
+    """
+    return max(1, min(cap, budget // max(seq_len, 1)))
+
+
+def _tiebreak(votes: np.ndarray, pairwise_sym: np.ndarray) -> np.ndarray:
+    """``votes + (pairwise − lo)/(hi − lo)·0.5`` — votes rank, pairwise breaks ties.
+
+    Vote counts are integers (gaps >= 1), so adding a pairwise term bounded to
+    [0, 0.5) only reorders pairs *tied* on votes; it never crosses a count
+    boundary. min-max over the upper triangle is monotonic, so within a tie
+    group this is exactly ranking by the pairwise score (exp82's tie-break).
+    """
+    upper = np.triu_indices(votes.shape[0], k=1)
+    scores = pairwise_sym[upper]
+    lo, hi = float(scores.min()), float(scores.max())
+    return votes + (pairwise_sym - lo) / (hi - lo + 1e-9) * 0.5
+
+
+def _rollout_score_matrix(
+    backend: Backend, structure: ContactStructure, cfg: "InferenceConfig"
+) -> tuple[np.ndarray, int] | None:
+    """exp82 ``rollout + resample + tiebreak`` score matrix.
+
+    Draw ``cfg.n_rollouts`` sampled contact-section completions — each from a
+    *fresh* document realization (resampled N-terminus + statement order) — and
+    accumulate the per-pair occurrence frequency into a symmetric ``[L, L]``
+    vote matrix (input-sequence coordinates). The big 0-vote tie mass is then
+    broken by the pairwise log-prob from one canonical realization. Returns
+    ``(combined, L)`` or ``None`` if the structure can't be serialized.
+
+    Needs a sampling backend (vLLM / transformers); MLX raises
+    ``NotImplementedError`` from :meth:`Backend.sample_completions`.
+    """
+    tokenizer = backend.tokenizer
+    stop_id = _token_id(tokenizer, END_TOKEN)
+
+    prefixes: list[list[int]] = []
+    position_maps: list[dict[int, int]] = []
+    seq_len = 0
+    for r in range(cfg.n_rollouts):
+        built = _prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
+        if built is None:
+            return None
+        prefix, seq_positions, seq_len = built
+        prefixes.append(list(tokenizer.encode(prefix, add_special_tokens=False)))
+        position_maps.append({pos: i for i, pos in enumerate(seq_positions)})
+
+    max_new = min(
+        CONTEXT_LENGTH - len(prefixes[0]),
+        _ROLLOUT_TOKENS_PER_RESIDUE * seq_len + _ROLLOUT_TOKENS_CONSTANT,
+    )
+    completions = backend.sample_completions(
+        prefixes,
+        max_new_tokens=max_new,
+        temperature=cfg.temperature,
+        top_p=cfg.top_p,
+        top_k=cfg.top_k,
+        stop_token_id=stop_id,
+        batch_size=_adaptive_sample_batch(seq_len, cfg.batch_size),
+    )
+
+    votes = np.zeros((seq_len, seq_len), dtype=np.float64)
+    for token_ids, pos_to_seq in zip(completions, position_maps, strict=True):
+        text = tokenizer.decode(token_ids, skip_special_tokens=False)
+        seen: set[tuple[int, int]] = set()
+        for a, b in _CONTACT_RE.findall(text):
+            ia, ib = pos_to_seq.get(int(a)), pos_to_seq.get(int(b))
+            if ia is None or ib is None or ia == ib:
+                continue
+            lo, hi = (ia, ib) if ia < ib else (ib, ia)
+            if (hi - lo) >= cfg.min_seq_separation and (lo, hi) not in seen:
+                seen.add((lo, hi))
+                votes[lo, hi] += 1.0
+                votes[hi, lo] += 1.0
+
+    # Pairwise log-prob (one canonical realization) breaks the vote ties.
+    built = _prefix_and_positions(structure, entry_id=structure.entry_id)
+    assert built is not None  # the rollout realizations already serialized
+    prefix, seq_positions, _ = built
+    pairwise_sym = _sym_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    return _tiebreak(votes, pairwise_sym), seq_len
+
+
+def _score_matrix(
+    backend: Backend, structure: ContactStructure, cfg: "InferenceConfig"
+) -> tuple[np.ndarray, int] | None:
+    """Dispatch to the configured readout; returns ``(score, L)`` or ``None``.
+
+    Higher score ⇒ more likely contact, for both methods (so ranking, plots,
+    and metrics are method-agnostic).
+    """
+    if cfg.method == "rollout":
+        return _rollout_score_matrix(backend, structure, cfg)
+    if cfg.method == "pairwise":
+        return _pairwise_score_matrix(backend, structure, cfg)
+    raise ValueError(
+        f"Unknown method {cfg.method!r}. Expected 'pairwise' or 'rollout'."
+    )
 
 
 def _candidate_pairs(seq_len: int, min_seq_separation: int) -> list[tuple[int, int]]:
@@ -405,12 +564,14 @@ def predict(
     *,
     structures: Iterable[ContactStructure] | None = None,
 ) -> Iterator[dict]:
-    """Yield one ``P(contact)`` record per input structure.
+    """Yield one contact-score record per input structure.
 
-    Each record carries the entry id, residue count, the candidate pairs
-    (1-based ``[i, j]``, ``i < j``, separation >= ``cfg.min_seq_separation``)
-    and the model's ``P(contact)`` score per pair. With ``cfg.keep_matrix``
-    the dense, band-masked ``[L, L]`` matrix is included too.
+    Each record carries the entry id, residue count, the ``method``, the
+    candidate pairs (1-based ``[i, j]``, ``i < j``, separation >=
+    ``cfg.min_seq_separation``) and the per-pair ranking ``score`` (higher ⇒
+    more likely contact: ``P(contact)`` for ``method="pairwise"``, the
+    tie-broken vote score for ``"rollout"``). With ``cfg.keep_matrix`` the
+    dense, band-masked ``[L, L]`` score matrix is included too.
 
     No ground truth is consulted. ``structures`` may be passed directly (e.g.
     from :func:`structure_from_sequence`); otherwise they are read from
@@ -421,7 +582,7 @@ def predict(
         return
     backend = _make_backend(cfg)
     for structure in resolved:
-        built = _ensemble_pcontact(backend, structure, ensemble_k=cfg.ensemble_k)
+        built = _score_matrix(backend, structure, cfg)
         if built is None:
             warnings.warn(
                 f"skipping {structure.entry_id}: cannot serialize "
@@ -430,19 +591,22 @@ def predict(
                 stacklevel=2,
             )
             continue
-        pcontact, seq_len = built
+        score, seq_len = built
         pairs = _candidate_pairs(seq_len, cfg.min_seq_separation)
         record: dict[str, Any] = {
             "entry_id": structure.entry_id,
             "n_residues": seq_len,
             "min_seq_separation": cfg.min_seq_separation,
-            "ensemble_k": cfg.ensemble_k,
+            "method": cfg.method,
             "pairs": [[i + 1, j + 1] for (i, j) in pairs],
-            "p_contact": [float(pcontact[i, j]) for (i, j) in pairs],
+            "score": [float(score[i, j]) for (i, j) in pairs],
         }
+        record["n_rollouts" if cfg.method == "rollout" else "ensemble_k"] = (
+            cfg.n_rollouts if cfg.method == "rollout" else cfg.ensemble_k
+        )
         if cfg.keep_matrix:
-            record["p_contact_matrix"] = _band_masked(
-                pcontact, seq_len, cfg.min_seq_separation
+            record["score_matrix"] = _band_masked(
+                score, seq_len, cfg.min_seq_separation
             ).tolist()
         yield record
 
@@ -578,7 +742,7 @@ def evaluate(
                 stacklevel=2,
             )
             continue
-        built = _ensemble_pcontact(backend, structure, ensemble_k=cfg.ensemble_k)
+        built = _score_matrix(backend, structure, cfg)
         if built is None:
             warnings.warn(
                 f"skipping {structure.entry_id}: cannot serialize "
@@ -586,13 +750,13 @@ def evaluate(
                 stacklevel=2,
             )
             continue
-        pcontact, seq_len = built
+        score, seq_len = built
         gt = _gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
         per_structure_n_residues[structure.entry_id] = seq_len
 
-        rows = _metric_rows(pcontact, gt, seq_len, cfg.min_seq_separation)
-        for rng, metrics in rows.items():
-            for key, value in metrics.items():
+        rows = _metric_rows(score, gt, seq_len, cfg.min_seq_separation)
+        for rng, rng_metrics in rows.items():
+            for key, value in rng_metrics.items():
                 if math.isfinite(value):
                     agg[f"{key}_{rng}"].append(value)
 
@@ -601,7 +765,7 @@ def evaluate(
                 "entry_id": structure.entry_id,
                 "i": i + 1,
                 "j": j + 1,
-                "p_contact": float(pcontact[i, j]),
+                "score": float(score[i, j]),
                 "gt": int(bool(gt[i, j])),
             })
         n_scored += 1
@@ -614,8 +778,10 @@ def evaluate(
             "structure": NAME,
             "model": cfg.model,
             "backend": cfg.backend,
+            "method": cfg.method,
             "min_seq_separation": cfg.min_seq_separation,
             "ensemble_k": cfg.ensemble_k,
+            "n_rollouts": cfg.n_rollouts,
             "n_structures": n_scored,
             "per_structure_n_residues": per_structure_n_residues,
         },

@@ -16,6 +16,7 @@ Run from the marinfold/ dir::
 """
 
 import math
+import re
 from pathlib import Path
 
 import numpy as np
@@ -75,6 +76,34 @@ class _PlantedBackend:
                     if frozenset({cond, m}) in self._planted:
                         out[row, col] = 0.9
         return out
+
+    def sample_completions(self, prefix_token_ids_batch, *, max_new_tokens,
+                           temperature=1.0, top_p=0.95, top_k=50,
+                           stop_token_id=None, seed=None, batch_size=None):
+        """Emit each prefix's planted contacts, in *that* realization's tokens.
+
+        Each rollout prefix is a freshly resampled realization (different
+        N-terminus + statement order). We recover its position numbering from
+        the decoded prefix and write ``<contact> <p_a> <p_b>`` for every planted
+        seq-index pair, so the rollout vote-counter recovers them — exercising
+        the real resample → parse → vote path.
+        """
+        completions = []
+        for prefix_ids in prefix_token_ids_batch:
+            text = self._tok.decode(prefix_ids, skip_special_tokens=False)
+            nterm = int(re.search(r"<n-term>\s+<p(\d+)>", text).group(1))
+            positions = sorted(
+                {int(p) for p in re.findall(r"<p(\d+)>", text)},
+                key=lambda p: (p - nterm) % 2000,
+            )
+            toks: list[str] = []
+            for pair in self._planted:
+                a, b = sorted(pair)
+                toks += ["<contact>", f"<p{positions[a]}>", f"<p{positions[b]}>"]
+            completions.append(
+                list(self._tok.encode(" ".join(toks), add_special_tokens=False))
+            )
+        return completions
 
 
 # ---------------------------------------------------------------------------
@@ -196,14 +225,15 @@ def test_predict_record_shape_and_ranking(monkeypatch):
     assert rec["entry_id"] == "demo"
     assert rec["n_residues"] == seq_len
     assert rec["min_seq_separation"] == 6
+    assert rec["method"] == "pairwise"
     n_candidates = len(inf._candidate_pairs(seq_len, 6))
-    assert len(rec["pairs"]) == n_candidates == len(rec["p_contact"])
+    assert len(rec["pairs"]) == n_candidates == len(rec["score"])
     for i, j in rec["pairs"]:
         assert 1 <= i < j <= seq_len and (j - i) >= 6  # 1-indexed candidates
-    top = rec["pairs"][int(np.argmax(rec["p_contact"]))]
+    top = rec["pairs"][int(np.argmax(rec["score"]))]
     assert tuple(top) == (1, 13)  # planted (0,12) → 1-indexed (1,13)
 
-    matrix = np.array(rec["p_contact_matrix"])
+    matrix = np.array(rec["score_matrix"])
     assert matrix.shape == (seq_len, seq_len)
     assert np.isnan(matrix[0, 0])  # diagonal / band blanked
 
@@ -229,11 +259,12 @@ def test_evaluate_recovers_planted_contacts(monkeypatch):
     result = inf.evaluate(cfg, structures=[structure])
 
     assert result.extras["n_structures"] == 1
+    assert result.extras["method"] == "pairwise"
     assert result.metrics["auc_all"] == 1.0
     assert result.metrics["r_precision_all"] == 1.0
     assert any(row["gt"] == 1 for row in result.per_example)
     assert all(
-        set(row) >= {"entry_id", "i", "j", "p_contact", "gt"}
+        set(row) >= {"entry_id", "i", "j", "score", "gt"}
         for row in result.per_example
     )
 
@@ -244,3 +275,68 @@ def test_evaluate_empty_returns_warning():
     assert result.metrics == {}
     assert result.per_example == []
     assert result.extras.get("warning") == "no input structures"
+
+
+# ---------------------------------------------------------------------------
+# rollout method
+# ---------------------------------------------------------------------------
+
+
+def test_tiebreak_keeps_votes_primary():
+    votes = np.array([[0, 2, 0], [2, 0, 5], [0, 5, 0]], dtype=float)
+    sym = np.array([[0, 9, 1], [9, 0, -3], [1, -3, 0]], dtype=float)
+    combined = inf._tiebreak(votes, sym)
+    # The 5-vote pair outranks the 2-vote pair regardless of pairwise.
+    assert combined[1, 2] > combined[0, 1]
+    # The pairwise offset stays in [0, 0.5): it never crosses a vote boundary.
+    offset = combined - votes
+    assert offset.min() >= 0.0
+    assert offset.max() <= 0.5 + 1e-9
+
+
+def test_score_matrix_rejects_unknown_method():
+    s = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    cfg = inf.InferenceConfig(model="/x", method="bogus")
+    with pytest.raises(ValueError, match="pairwise|rollout"):
+        inf._score_matrix(object(), s, cfg)
+
+
+def test_predict_rollout_votes_and_ranks(monkeypatch):
+    s = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    canonical_positions = inf._prefix_and_positions(s, entry_id="demo")[1]
+    backend = _PlantedBackend(_tokenizer(), canonical_positions, planted=[(0, 12)])
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
+
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="transformers", method="rollout", n_rollouts=4
+    )
+    records = list(inf.predict(cfg, structures=[s]))
+    assert len(records) == 1
+    rec = records[0]
+    assert rec["method"] == "rollout"
+    assert rec["n_rollouts"] == 4
+    assert "ensemble_k" not in rec
+    top = rec["pairs"][int(np.argmax(rec["score"]))]
+    assert tuple(top) == (1, 13)  # planted (0,12) wins the vote
+    # Every rollout votes the planted pair, so its score is >= n_rollouts.
+    assert max(rec["score"]) >= 4.0
+
+
+def test_evaluate_rollout_recovers_planted(monkeypatch):
+    s0 = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    canonical_positions = inf._prefix_and_positions(s0, entry_id="demo")[1]
+    planted = [(0, 12), (2, 16)]
+    backend = _PlantedBackend(_tokenizer(), canonical_positions, planted=planted)
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
+
+    structure = inf.ContactStructure(
+        entry_id="demo",
+        residues=s0.residues,
+        gt_contacts=tuple(RawContact(i, j, 1.0) for i, j in planted),
+    )
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="transformers", method="rollout", n_rollouts=3
+    )
+    result = inf.evaluate(cfg, structures=[structure])
+    assert result.extras["method"] == "rollout"
+    assert result.metrics["r_precision_all"] == 1.0

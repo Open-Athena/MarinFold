@@ -34,20 +34,28 @@ def _read_pdf_page_count(pdf_path: Path) -> int:
         return blob.count(b"/Type /Page") - blob.count(b"/Type /Pages")
 
 
-def _infer_record(entry_id: str, n: int) -> dict:
+def _infer_record(entry_id: str, n: int, method: str = "pairwise") -> dict:
     pairs = [[i, j] for i in range(1, n + 1) for j in range(i + 6, n + 1)]
-    return {
+    record = {
         "entry_id": entry_id,
         "n_residues": n,
         "min_seq_separation": 6,
-        "ensemble_k": 1,
+        "method": method,
         "pairs": pairs,
-        "p_contact": [0.1 * ((i + j) % 5) for (i, j) in pairs],
+        "score": [0.1 * ((i + j) % 5) for (i, j) in pairs],
     }
+    record["n_rollouts" if method == "rollout" else "ensemble_k"] = (
+        100 if method == "rollout" else 1
+    )
+    return record
 
 
 def test_plot_infer_pdf_writes_one_page_per_record(tmp_path: Path) -> None:
-    records = [_infer_record("AF-A-F1", 14), _infer_record("AF-B-F1", 16)]
+    # One pairwise page, one rollout page — exercises both method labels.
+    records = [
+        _infer_record("AF-A-F1", 14, method="pairwise"),
+        _infer_record("AF-B-F1", 16, method="rollout"),
+    ]
     out_pdf = tmp_path / "infer.pdf"
     plot_infer_pdf(out_pdf, records)
     assert out_pdf.exists()
@@ -66,7 +74,7 @@ def test_plot_evaluate_pdf_writes_one_page_per_structure(tmp_path: Path) -> None
                     "entry_id": entry_id,
                     "i": i,
                     "j": j,
-                    "p_contact": 0.1 * ((i + j) % 5),
+                    "score": 0.1 * ((i + j) % 5),
                     "gt": int((j - i) == 6),
                 })
     result = EvalResult(
@@ -75,6 +83,7 @@ def test_plot_evaluate_pdf_writes_one_page_per_structure(tmp_path: Path) -> None
         extras={
             "structure": "contacts-v1",
             "model": "dummy",
+            "method": "rollout",  # exercise the rollout score label
             "per_structure_n_residues": n_by_entry,
         },
     )

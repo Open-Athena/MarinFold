@@ -199,11 +199,16 @@ def _inference_config(args: argparse.Namespace) -> inference.InferenceConfig:
         backend=args.backend,
         batch_size=args.batch_size,
         dtype=args.dtype,
+        method=args.method,
         min_seq_separation=args.min_seq_separation,
         ensemble_k=args.ensemble_k,
         top_k_logprobs=args.top_k_logprobs,
         gpu_memory_utilization=args.gpu_memory_utilization,
         keep_matrix=getattr(args, "keep_matrix", False),
+        n_rollouts=args.n_rollouts,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
     )
 
 
@@ -345,13 +350,30 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Inference runtime. 'vllm' (Linux+GPU, default), "
                             "'transformers' (anywhere torch installs), or 'mlx' "
                             "(Apple Silicon native).")
+        p.add_argument("--method", choices=("pairwise", "rollout"),
+                       default="pairwise",
+                       help="Contact readout. 'pairwise' (default, fast) scores "
+                            "P(contact) per pair; 'rollout' (exp82's best, "
+                            "~150x slower) votes over sampled completions with a "
+                            "pairwise tie-break, and needs --backend vllm or "
+                            "transformers (not mlx).")
         p.add_argument("--min-seq-separation", type=int, default=6,
                        help="Smallest |i-j| that can be a contact (default 6, "
                             "matching the contacts-v1 data).")
         p.add_argument("--ensemble-k", type=int, default=1,
-                       help="Resample the sequence definition this many times "
-                            "and average P(contact) (test-time augmentation; "
-                            "default 1).")
+                       help="(--method pairwise) resample the sequence definition "
+                            "this many times and average P(contact) (test-time "
+                            "augmentation; default 1).")
+        p.add_argument("--n-rollouts", type=int, default=100,
+                       help="(--method rollout) sampled completions to vote over "
+                            "(default 100).")
+        p.add_argument("--temperature", type=float, default=1.0,
+                       help="(--method rollout) sampling temperature (default 1.0).")
+        p.add_argument("--top-p", type=float, default=0.95,
+                       help="(--method rollout) nucleus top-p (default 0.95).")
+        p.add_argument("--top-k", type=int, default=50,
+                       help="(--method rollout) sampling top-k; 0 disables "
+                            "(default 50).")
         p.add_argument("--top-k-logprobs", type=int, default=256,
                        help="vLLM-only; ignored by other backends.")
         p.add_argument("--batch-size", type=int, default=64)
