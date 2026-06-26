@@ -142,6 +142,40 @@ identity. Notably 117/135 no-hit proteins (with strata) are `same_fold`/`redunda
 by structure despite `novel_seq` sequences — the twilight zone a structural-KNN
 (foldseek) follow-up would target.
 
+### Viral / out-of-distribution proteins
+
+AFDB (the contacts-v1 training source) **excludes viruses**, so viral eval proteins
+are a clean out-of-distribution probe. [`annotate_taxonomy.py`](annotate_taxonomy.py)
+labels every eval protein via RCSB taxonomy (full table
+[`data/eval_taxonomy.csv`](data/eval_taxonomy.csv), viral subset
+[`data/viral_proteins.csv`](data/viral_proteins.csv)): **28 / 554 are viral** — 18/26
+of `casp_fm` (CASP14 FM is phage-heavy: 9 from *Cellulophaga* phage phi14:2), 6
+`foldbench100`, 4 `cameo_hard`, 0 `denovo_pdb` (all synthetic designs). Bacteriophages
+count (also AFDB-excluded).
+
+| predictor | viral (n=28) | non-viral (n=526) |
+|---|---|---|
+| seq-KNN k=10 | 0.08 | 0.34 |
+| **MarinFold #61** | **0.11** | **0.37** |
+| Protenix-v2 (MSA) | 0.60 | 0.81 |
+| ESMFold2 | 0.36 | 0.79 |
+
+→ [`plots/viral_vs_nonviral.png`](plots/viral_vs_nonviral.png). MarinFold drops 3.3×
+on viral (to ~30% of its non-viral accuracy), as does ESMFold2 (0.79→0.36) — both
+are trained on natural/AFDB-like proteins — while the MSA-based Protenix degrades
+gracefully (retains ~74%). This **refines the identity-stratification result**: the
+flat ~0.40 MarinFold scored in the "no training homolog" bin was buoyed by the 123 de
+novo *designed* proteins (idealized, easy); on genuinely OOD natural proteins (viral)
+MarinFold's contact accuracy collapses. The eval's headline number is propped up by
+in-distribution and designed proteins; viral/OOD proteins are a real blind spot.
+
+**Per-protein comparison table for further analysis:**
+[`data/per_protein_comparison.csv`](data/per_protein_comparison.csv) — one row per
+eval protein with long-range R-precision for every predictor (MarinFold variants,
+seq-KNN, Protenix single-seq/MSA, ESMFold, ESMFold2) alongside strata (`is_viral`,
+`source_organism`, `best_train_identity`, `n_train_seq_hits`, `fold_verdict`,
+`seq_leakage`, `length`). Built by [`build_per_protein_table.py`](build_per_protein_table.py).
+
 ## Conclusion
 
 A no-folding "copy the nearest training neighbor's contacts" null model matches

@@ -219,11 +219,51 @@ def plot_stratified_all(knn, base, summary, out, k: int = 10) -> None:
     print(f"[plot] {out}")
 
 
+# (label, model, mode, predictor, source) for the viral vs non-viral panel.
+VIRAL_PANEL = [
+    ("seq-KNN k=10", "seq-knn-k10", "single_seq", "knn", "knn", "#888"),
+    ("MarinFold #61", MARINFOLD, "single_seq", "lm", "base", "#2a7"),
+    ("Protenix-v2 (MSA)", "protenix-v2", "msa", "structure", "base", "#15396b"),
+    ("ESMFold2", "esmfold2", "single_seq", "structure", "base", "#a26"),
+]
+
+
+def plot_viral(knn, base, taxonomy, out, k: int = 10) -> None:
+    """Viral vs non-viral long-range R-precision. AFDB (the training source)
+    excludes viruses, so viral eval proteins are out-of-distribution."""
+    tax = taxonomy[["dataset", "stem", "is_viral"]].copy()
+    tax["is_viral"] = tax["is_viral"] == True  # noqa: E712 (csv bool)
+    groups = [("viral", True), ("non-viral", False)]
+    counts = {g: int((tax.is_viral == flag).sum()) for g, flag in groups}
+
+    fig, ax = plt.subplots(figsize=(8.5, 5))
+    width = 0.8 / len(VIRAL_PANEL)
+    for pi, (label, model, mode, pred, src, color) in enumerate(VIRAL_PANEL):
+        frame = knn if src == "knn" else base
+        pp = _per_protein_long_r(frame, model, mode, pred).merge(tax, on=["dataset", "stem"])
+        vals = [pp[pp.is_viral == flag]["precision"].mean() for _, flag in groups]
+        xs = [gi + (pi - (len(VIRAL_PANEL) - 1) / 2) * width for gi in range(len(groups))]
+        bars = ax.bar(xs, vals, width, label=label, color=color)
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, v + 0.008, f"{v:.2f}",
+                    ha="center", va="bottom", fontsize=7)
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels([f"{g}\n(n={counts[g]})" for g, _ in groups])
+    ax.set_ylabel("long-range R-precision")
+    ax.set_title("Viral (out-of-distribution: AFDB excludes viruses) vs non-viral eval proteins")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(out, dpi=150)
+    plt.close(fig)
+    print(f"[plot] {out}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--comparison", type=Path, default=Path("data/knn_comparison.csv"))
     ap.add_argument("--knn-per-protein", type=Path, default=Path("data/knn_precision_all.csv"))
     ap.add_argument("--hit-summary", type=Path, default=Path("data/knn_hit_summary.csv"))
+    ap.add_argument("--taxonomy", type=Path, default=Path("data/eval_taxonomy.csv"))
     ap.add_argument("--base-csv", type=Path, required=True)
     ap.add_argument("--plots", type=Path, default=Path("plots"))
     args = ap.parse_args()
@@ -239,6 +279,8 @@ def main() -> int:
     plot_scatter(knn, base, args.plots / "memorization_scatter.png")
     plot_stratified(knn, base, summary, args.plots / "rprecision_vs_identity.png")
     plot_stratified_all(knn, base, summary, args.plots / "rprecision_vs_identity_all.png")
+    if args.taxonomy.exists():
+        plot_viral(knn, base, pd.read_csv(args.taxonomy), args.plots / "viral_vs_nonviral.png")
     return 0
 
 

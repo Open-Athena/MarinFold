@@ -1,0 +1,29 @@
+dataset,stem,gt_chain,pdb_evidence,source_organism,is_viral
+foldbench100,7xcd_A,A,7XCD,Tenuivirus oryzaclavatae,True
+foldbench100,7y5m_A,A,7Y5M,Tacheng Tick Virus 1,True
+foldbench100,7zu3_A,A,7ZU3,parechovirus A1,True
+foldbench100,7zv1_A,A,7ZV1,Aichi virus A846/88,True
+foldbench100,8q8i_A,A,8Q8I,Paramecium bursaria Chlorella virus 1,True
+foldbench100,8bke_A,A,8BKE,Klebsiella phage KP34,True
+casp_fm,T1031-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1033-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1035-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1037-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1038-D1,,6YA2_1@1.00id,Orthotospovirus tomatomaculae,True
+casp_fm,T1038-D2,,6Y9L_1@1.00id,Orthotospovirus tomatomaculae,True
+casp_fm,T1039-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1040-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1041-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1042-D1,,6VR4_1@0.96id,Cellulophaga phage phi14:2,True
+casp_fm,T1043-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1113-D1,A,7UYX_1@0.87id,Pseudomonas phage PA1C,True
+casp_fm,T1122-D1,A,8BBT_1@0.98id,Tipula oleracea nudivirus,True
+casp_fm,T1123-D1,,7UZT_1@0.95id,Astrovirus MLB1,True
+casp_fm,T1125-D1,A,8H2M_1@1.00id,Oshimavirus P2345,True
+casp_fm,T1125-D2,A,8H2M_1@0.99id,Oshimavirus P2345,True
+casp_fm,T1125-D4,A,8H2M_1@0.93id,Oshimavirus P2345,True
+casp_fm,T1125-D5,A,8H2M_1@0.99id,Oshimavirus P2345,True
+cameo_hard,9eqn_A,A,9EQN,Infectious bursal disease virus,True
+cameo_hard,9j46_F,F,9J46,African swine fever virus,True
+cameo_hard,8s3m_A,A,8S3M,Thermus phage Tt72,True
+cameo_hard,9eum_A,A,9EUM,Staphylococcus phage 812,True
