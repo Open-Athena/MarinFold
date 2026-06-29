@@ -107,3 +107,39 @@ class VllmBackend:
                             np.exp(float(lp.logprob))
                         )
         return out
+
+    def sample_completions(
+        self,
+        prefix_token_ids_batch: list[list[int]],
+        *,
+        max_new_tokens: int,
+        temperature: float = 1.0,
+        top_p: float = 0.95,
+        top_k: int = 50,
+        stop_token_id: int | None = None,
+        seed: int | None = None,
+        batch_size: int | None = None,
+    ) -> list[list[int]]:
+        if not prefix_token_ids_batch:
+            return []
+        # vLLM samples natively: one SamplingParams, all prompts in one
+        # generate() call — the scheduler batches them and reuses shared-prefix
+        # KV blocks. ``batch_size`` is therefore ignored here. ``outputs`` come
+        # back aligned with the input prompts; ``token_ids`` excludes the prompt
+        # and (with include_stop_str_in_output=False, the default) the stop
+        # token.
+        sampling = SamplingParams(
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k if (top_k and top_k > 0) else -1,
+            max_tokens=max_new_tokens,
+            stop_token_ids=[stop_token_id] if stop_token_id is not None else None,
+            seed=seed,
+            n=1,
+        )
+        prompts = [
+            TokensPrompt(prompt_token_ids=list(prefix))
+            for prefix in prefix_token_ids_batch
+        ]
+        outputs = self._llm.generate(prompts, sampling, use_tqdm=False)
+        return [list(result.outputs[0].token_ids) for result in outputs]
