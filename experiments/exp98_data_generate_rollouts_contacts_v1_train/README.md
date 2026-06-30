@@ -52,13 +52,17 @@ themselves.
   unit-tested): parse each rollout's contacts, compute precision / recall / F1 per
   separation band (all sep≥6 / short / medium / long) vs GT. Headline + "best"
   selection use **all sep≥6** (the document's own contact definition).
-- **Saved per target** (GCS
-  `…/exp98_rollouts_contacts_v1_train/runs/full/`):
-  - `rollout_metrics/<entry>.parquet` — one row per rollout, all per-band metrics.
-  - `best_rollouts/<entry>.json` — the **best-recall** and **best-F1** rollouts
-    saved verbatim as complete contacts-v1 documents (token order preserved — a
-    future experiment may train on these).
-  - `timings/<entry>.csv` — per-target generation timing.
+- **Saved per target** — the worker writes per-target files to the GCS *working
+  copy* (`gs://marin-us-east5/…/exp98_rollouts_contacts_v1_train/runs/full/`:
+  `rollout_metrics/<entry>.parquet`, `best_rollouts/<entry>.json`,
+  `timings/<entry>.csv`). The best-recall and best-F1 rollouts are saved verbatim
+  as complete contacts-v1 documents (token order preserved — a future experiment
+  may train on these).
+- **Publish (public)** — [`publish_to_hf.py`](publish_to_hf.py) consolidates the
+  GCS run into a few parquets and uploads them to the **public**
+  `open-athena/MarinFold` HF bucket (`data/contacts-v1-train-rollouts-exp98/`), so
+  anyone — including an **auth-free Colab** — can read them. GCS needs auth; the HF
+  bucket does not. See [Public artifacts](#public-artifacts).
 - **Aggregate** — [`aggregate_results.py`](aggregate_results.py): throughput +
   accuracy summaries, plots, CSVs.
 
@@ -108,10 +112,10 @@ one-time XLA compile warmup because the calib set is small):
 ### Full run (1000 targets × 1000 rollouts = 1,000,000 rollouts)
 
 resample, tp=4, **8× v5p-8** in us-east5-a. **0 failures** — all 1000 targets have
-`rollout_metrics/`, `best_rollouts/`, `timings/` on GCS
-(`…/exp98_rollouts_contacts_v1_train/runs/full/`). Consolidated per-target table:
-[`data/full_per_target.csv`](data/full_per_target.csv) (+ `…/runs/full/per_target_summary.parquet`
-on GCS for the Colab explorer); throughput: [`data/full_throughput.csv`](data/full_throughput.csv).
+`rollout_metrics/`, `best_rollouts/`, `timings/` (GCS working copy; published to
+the public HF bucket — see [Public artifacts](#public-artifacts)). Consolidated
+per-target table: [`data/full_per_target.csv`](data/full_per_target.csv);
+throughput: [`data/full_throughput.csv`](data/full_throughput.csv).
 
 **Resources & throughput** ([`plots/full_throughput_vs_L.png`](plots/full_throughput_vs_L.png)):
 
@@ -154,9 +158,36 @@ Strongly **length-dependent** ([`plots/full_bestacc_vs_L.png`](plots/full_bestac
 0.9 (best-recall: 20.5% / 8.2% / 1.1%). The best-recall and best-F1 rollouts are
 saved verbatim as complete contacts-v1 documents in `best_rollouts/<entry>.json`.
 
-**Interactive explorer:** [`explore_results.ipynb`](explore_results.ipynb) (open in
-Colab) loads the per-target summary + drills into any target's 1000-rollout
-distribution and its saved best rollouts from GCS.
+**Interactive explorer:** [`explore_results.ipynb`](explore_results.ipynb) —
+**runs in Colab with no login** (reads the public HF bucket). Overview plots +
+drill into any target's 1000-rollout distribution and its saved best rollouts.
+
+## Public artifacts
+
+All result artifacts are published to the **public** `open-athena/MarinFold` HF
+bucket (no auth) under `data/contacts-v1-train-rollouts-exp98/` (list with
+`hf buckets list open-athena/MarinFold/data/contacts-v1-train-rollouts-exp98`):
+
+| file | rows | contents |
+|---|---|---|
+| `per_target_summary.parquet` | 1,000 | per target: L, n_gt, best-of-1000 recall/F1, per-rollout means, timing |
+| `best_rollouts.parquet` | 1,000 | best-recall + best-F1 rollout per target, full contacts-v1 documents + parsed contacts |
+| `rollout_metrics_all.parquet` | 1,000,000 | every rollout's per-band precision/recall/F1, `n_gen_tokens`, `finished` |
+
+Read anonymously (no token):
+
+```python
+import pandas as pd
+from huggingface_hub import HfFileSystem  # pip install 'huggingface_hub>=1.5'
+fs = HfFileSystem(token=False)
+base = "buckets/open-athena/MarinFold/data/contacts-v1-train-rollouts-exp98"
+with fs.open(f"{base}/per_target_summary.parquet", "rb") as f:
+    t = pd.read_parquet(f)
+```
+
+The full per-target run (one file per target) also lives on GCS at
+`gs://marin-us-east5/…/exp98_rollouts_contacts_v1_train/runs/full/` (auth-required
+working copy); re-publish with `python publish_to_hf.py`.
 
 ## Conclusion
 
@@ -181,6 +212,6 @@ documents are concentrated in shorter proteins.
 
 **Suggested follow-ups (human to decide):** (1) scale targets up (the cost is
 affordable); (2) the actual fine-tuning experiment — train on the saved best
-rollouts vs re-epoching; (3) for large proteins, more rollouts or a stronger model
-to lift best-of-N; (4) `best_rollouts/` is a natural HuggingFace dataset to
-publish for (2).
+rollouts vs re-epoching (the public `best_rollouts.parquet` is the ready-made
+dataset); (3) for large proteins, more rollouts or a stronger model to lift
+best-of-N.
