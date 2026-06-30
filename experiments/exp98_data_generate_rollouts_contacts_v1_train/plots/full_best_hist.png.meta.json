@@ -1,0 +1,12 @@
+{
+  "script": "aggregate_results.py",
+  "args": [
+    "--runs",
+    "full=gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/full",
+    "--out-prefix",
+    "full",
+    "--gcs-summary",
+    "gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/full/per_target_summary.parquet"
+  ],
+  "caption": "Distribution of per-target best-of-1000 recall and F1 (all contacts, sep>=6)."
+}

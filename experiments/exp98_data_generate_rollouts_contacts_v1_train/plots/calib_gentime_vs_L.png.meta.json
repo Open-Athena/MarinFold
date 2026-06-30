@@ -1,0 +1,12 @@
+{
+  "script": "aggregate_results.py",
+  "args": [
+    "--runs",
+    "resample_tp1=gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/calib_resample",
+    "nsample_tp1=gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/calib_nsample",
+    "resample_tp4=gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/calib_tp4_resample",
+    "--out-prefix",
+    "calib"
+  ],
+  "caption": "Per-target rollout generation wall time vs protein length."
+}
