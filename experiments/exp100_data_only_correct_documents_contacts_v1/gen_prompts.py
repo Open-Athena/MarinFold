@@ -77,16 +77,24 @@ def main() -> int:
 
     if args.limit:
         targets = targets[: args.limit]
-    print(f"{len(targets)} targets x {args.n_rollouts} rollouts -> {args.out}", flush=True)
-
     out = args.out.rstrip("/")
+
+    # Resume by listing the out dir ONCE (a per-target exists() check is ~1M serial
+    # GCS calls at ~941k targets). Then only build+write the missing ones.
+    if not args.overwrite:
+        try:
+            lst = fs.ls(out, detail=False) if is_gcs else (
+                [f"{out}/{f}" for f in os.listdir(out)] if os.path.isdir(out) else [])
+        except FileNotFoundError:
+            lst = []
+        done = {os.path.basename(p).rsplit(".", 1)[0] for p in lst if p.endswith(".parquet")}
+        before = len(targets)
+        targets = [t for t in targets if t["entry_id"] not in done]
+        print(f"resume: {len(done)} already written, {before-len(targets)} skipped", flush=True)
+    print(f"{len(targets)} targets x {args.n_rollouts} rollouts -> {args.out}", flush=True)
 
     def _process_once(t):
         dest = f"{out}/{t['entry_id']}.parquet"
-        if not args.overwrite:
-            exists = fs.exists(dest) if is_gcs else os.path.exists(dest)
-            if exists:
-                return False
         rows = build_prompts(t["entry_id"], t["sequence"], args.n_rollouts)
         table = pa.Table.from_pylist(rows)
         if is_gcs:
