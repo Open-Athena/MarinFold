@@ -74,26 +74,6 @@ def write_parquet(table, dest):
         pq.write_table(table, fh)
 
 
-def seq_nll(prompt_logprobs, lo, hi):
-    """Sum of -logprob over prompt positions [lo, hi) (the generated region).
-
-    ``prompt_logprobs[t]`` is ``None`` at t==0 and otherwise a ``{tid: Logprob}``
-    map containing the *actual* token at position t (prompt_logprobs=0). The
-    realized token id at t is read from the dict's single entry.
-    """
-    total = 0.0
-    n = 0
-    for t in range(lo, hi):
-        d = prompt_logprobs[t]
-        if not d:
-            continue
-        # exactly one entry under prompt_logprobs=0: the realized token's logprob
-        lp = next(iter(d.values())).logprob
-        total += -lp
-        n += 1
-    return total, n
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
@@ -106,8 +86,6 @@ def main():
     ap.add_argument("--top-p", type=float, default=0.95)
     ap.add_argument("--top-k", type=int, default=50)
     ap.add_argument("--max-model-len", type=int, default=8192)
-    ap.add_argument("--max-logprobs", type=int, default=1,
-                    help="prompt_logprobs=0 needs only the realized token; keep small")
     ap.add_argument("--tensor-parallel-size", type=int, default=1,
                     help="shard the model across this many TPU chips (v5p-8 has 4)")
     ap.add_argument("--tpu-type", default="v5p-8")
@@ -146,7 +124,7 @@ def main():
     t_load = time.time()
     llm = LLM(model=stage(a.model), max_model_len=a.max_model_len,
               tensor_parallel_size=a.tensor_parallel_size, enforce_eager=True,
-              dtype="bfloat16", max_logprobs=a.max_logprobs)
+              dtype="bfloat16")
     tok = llm.get_tokenizer()
     contact_id = tok.convert_tokens_to_ids("<contact>")
     end_id = tok.convert_tokens_to_ids("<end>")
@@ -167,8 +145,11 @@ def main():
         with fsspec.open(f"{a.prompts}/{entry}.parquet", "rb") as fh:
             prows = pq.read_table(fh).to_pylist()[: a.n_rollouts]
 
-        # --- Pass A: constrained generation (one SamplingParams per rollout) ---
-        prompts, sps, meta = [], [], []
+        # --- Constrained generation with folded-in unmodified-NLL capture ---
+        # (one SamplingParams + one ContactConstraint per rollout; the processor
+        # records each realized token's pre-mask full-vocab logprob, so there is
+        # no separate prompt_logprobs pass — which returns None on TPU anyway.)
+        prompts, sps, cons, meta = [], [], [], []
         for p in prows:
             prompt_ids = tok(p["prefix"], add_special_tokens=False).input_ids
             seq_positions = list(p["seq_positions"])         # seq index -> position
@@ -183,8 +164,8 @@ def main():
                 n=1, temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
                 max_tokens=con.max_new_tokens() + 4, stop_token_ids=[end_id],
                 logits_processors=[con]))
-            meta.append(dict(r=int(p["r"]), prefix=p["prefix"], prompt_ids=prompt_ids,
-                             prompt_len=len(prompt_ids), pos_to_seq=pos_to_seq))
+            cons.append(con)
+            meta.append(dict(r=int(p["r"]), prefix=p["prefix"], pos_to_seq=pos_to_seq))
         t0 = time.time()
         gouts = llm.generate(prompts, sps, use_tqdm=False)
         gen_s = time.time() - t0
@@ -192,21 +173,13 @@ def main():
         gen_ids = [list(o.outputs[0].token_ids) for o in gouts]
         gen_text = [tok.decode(g, skip_special_tokens=False) for g in gen_ids]
 
-        # --- Pass B: unmodified NLL via prompt_logprobs over prefix+generated ---
-        score_prompts = [TokensPrompt(prompt_token_ids=meta[i]["prompt_ids"] + gen_ids[i])
-                         for i in range(len(prows))]
-        ssp = SamplingParams(max_tokens=1, temperature=0.0, prompt_logprobs=0)
-        t1 = time.time()
-        souts = llm.generate(score_prompts, ssp, use_tqdm=False)
-        score_s = time.time() - t1
-
         rows, docs, total_gen = [], [], 0
-        for i, o in enumerate(souts):
-            plen = meta[i]["prompt_len"]
+        for i in range(len(prows)):
             g = gen_ids[i]
             total_gen += len(g)
-            doc_full_nll, ndoc = seq_nll(o.prompt_logprobs, 1, plen + len(g))
-            struct_nll, nstruct = seq_nll(o.prompt_logprobs, plen, plen + len(g))
+            cons[i].finalize(g)
+            struct_nll = cons[i].struct_nll()
+            nstruct = len(cons[i].token_logprobs)
             # correctness check: the constrained doc must be 100% correct + full recall
             pred = parse_pred(gen_text[i], meta[i]["pos_to_seq"])
             sc = score_rollout(pred, gtb)
@@ -219,10 +192,9 @@ def main():
                 finished=finished, n_pred=len(pred),
                 all_prec=sc["all_prec"], all_rec=sc["all_rec"], all_f1=sc["all_f1"],
                 struct_nll=struct_nll, struct_ntok=nstruct,
-                struct_nll_per_tok=(struct_nll / nstruct) if nstruct else math.nan,
-                doc_nll=doc_full_nll))
+                struct_nll_per_tok=(struct_nll / nstruct) if nstruct else math.nan))
             docs.append(dict(r=meta[i]["r"], document=meta[i]["prefix"] + " " + gen_text[i],
-                             struct_nll=struct_nll, doc_nll=doc_full_nll,
+                             struct_nll=struct_nll,
                              n_contacts=n_contacts, finished=finished,
                              all_prec=sc["all_prec"], all_rec=sc["all_rec"],
                              pred_contacts=sorted([list(p) for p in pred])))
@@ -246,7 +218,7 @@ def main():
         trow = dict(entry_id=entry, L=L, n_gt=len(gt_seq), n_rollouts=len(rows),
                     n_correct=n_correct, tensor_parallel=a.tensor_parallel_size,
                     total_gen_tokens=total_gen, gen_seconds=round(gen_s, 3),
-                    score_seconds=round(score_s, 3), tokens_per_s=round(tps, 1),
+                    tokens_per_s=round(tps, 1),
                     mean_gen_tokens=round(total_gen / len(rows), 1),
                     best_struct_nll=round(rows[best]["struct_nll"], 3),
                     tpu_type=a.tpu_type)
@@ -257,7 +229,7 @@ def main():
         with fsspec.open(f"{out}/timings/{entry}.csv", "w") as fh:
             fh.write(tbuf.getvalue())
         print(f"  [{n+1}/{len(mine)}] {entry} L={L} n_gt={len(gt_seq)}  "
-              f"gen {gen_s:.1f}s score {score_s:.1f}s  {tps:.0f} tok/s  "
+              f"gen {gen_s:.1f}s  {tps:.0f} tok/s  "
               f"correct={n_correct}/{len(rows)}  best_struct_nll={rows[best]['struct_nll']:.1f}",
               flush=True)
         if n_correct != len(rows):

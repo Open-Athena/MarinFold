@@ -66,7 +66,7 @@ def _read_document(fs, p):
     s = d["selected"]
     return dict(entry_id=d["entry_id"], L=d["L"], n_gt=d["n_gt"],
                 n_rollouts=d["n_rollouts"], n_correct=d["n_correct"],
-                selected_r=s["r"], struct_nll=s["struct_nll"], doc_nll=s["doc_nll"],
+                selected_r=s["r"], struct_nll=s["struct_nll"],
                 n_contacts=s["n_contacts"], finished=s["finished"],
                 precision=s["all_prec"], recall=s["all_rec"],
                 document=s["document"],

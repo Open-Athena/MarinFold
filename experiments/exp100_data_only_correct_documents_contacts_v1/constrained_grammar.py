@@ -99,20 +99,36 @@ def legal_token_ids(generated_ids: list[int], *, contact_id: int, end_id: int,
 
 
 class ContactConstraint:
-    """Per-rollout vLLM logits processor enforcing only-correct contacts.
+    """Per-rollout vLLM logits processor enforcing only-correct contacts **and**
+    capturing the rollout's *unmodified* (full-vocabulary) NLL.
 
     One instance per rollout (closes over that rollout's prefix + GT contacts).
     Pass via ``SamplingParams(logits_processors=[ContactConstraint(...)])`` with a
     *per-prompt* SamplingParams so each rollout gets its own state.
+
+    **Why NLL is captured here** rather than in a second ``prompt_logprobs`` pass:
+    ``prompt_logprobs`` returns ``None`` on the iris JAX/TPU stack (it bit exp89),
+    so a separate scoring pass is not portable. Instead, at each step we read the
+    incoming logits *before* masking — that is the unmodified next-token
+    distribution — take its log-softmax, and lazily record the log-prob of the
+    token that actually gets realized (seen on the next call). The final token
+    (``<end>``) is recorded by :meth:`finalize` after generation, since the
+    processor is not called again once it is emitted. ``struct_nll`` (the issue's
+    "original likelihood, full output vocabulary") is then ``-sum(token_logprobs)``
+    over the generated structure section.
     """
 
     def __init__(self, prompt_token_ids: list[int], gt_pos_pairs: Iterable[tuple[int, int]],
-                 *, contact_id: int, end_id: int):
+                 *, contact_id: int, end_id: int, capture_nll: bool = True):
         self.prompt_token_ids = list(prompt_token_ids)
         self.contact_id = contact_id
         self.end_id = end_id
         self.remaining_full = build_remaining(gt_pos_pairs)
+        self.capture_nll = capture_nll
+        self.token_logprobs: list[float] = []  # unmodified logprob of each realized gen token
         self._offset: int | None = None  # resolved on first call
+        self._prev_logrow = None          # log-softmax of the previous step's (pre-mask) logits
+        self._prev_len: int | None = None
 
     def _generated(self, past_token_ids: list[int]) -> list[int]:
         if self._offset is None:
@@ -122,16 +138,37 @@ class ContactConstraint:
         return list(past_token_ids[self._offset:])
 
     def __call__(self, past_token_ids, logits):
+        import torch  # local import: keep the pure FSM importable without torch
         gen = self._generated(past_token_ids)
+        # Record the unmodified logprob of the token realized since the last call
+        # (contiguity guard: only when exactly one new token appeared).
+        if (self.capture_nll and self._prev_logrow is not None
+                and len(gen) == self._prev_len + 1):
+            self.token_logprobs.append(float(self._prev_logrow[gen[-1]]))
+        if self.capture_nll:
+            self._prev_logrow = torch.log_softmax(logits.detach().float(), dim=-1)
+            self._prev_len = len(gen)
+        # Mask everything except the allowed ids to -inf (in place, fp-safe).
         allowed = legal_token_ids(gen, contact_id=self.contact_id, end_id=self.end_id,
                                   remaining_full=self.remaining_full)
-        # Mask everything except the allowed ids to -inf (in place, fp-safe).
-        import torch  # local import: keep the pure FSM importable without torch
         mask = torch.ones_like(logits, dtype=torch.bool)
         idx = torch.tensor(sorted(allowed), device=logits.device, dtype=torch.long)
         mask[idx] = False
         logits[mask] = float("-inf")
         return logits
+
+    def finalize(self, generated_ids: list[int]) -> None:
+        """Record the last generated token's unmodified logprob (the processor is
+        not called again after the final token). Idempotent-ish: only appends the
+        single trailing token the lazy loop could not reach."""
+        if (self.capture_nll and self._prev_logrow is not None
+                and self._prev_len is not None
+                and len(self.token_logprobs) == self._prev_len < len(generated_ids)):
+            self.token_logprobs.append(float(self._prev_logrow[generated_ids[self._prev_len]]))
+
+    def struct_nll(self) -> float:
+        """Unmodified NLL of the generated structure section (contacts + ``<end>``)."""
+        return -float(sum(self.token_logprobs))
 
     def max_new_tokens(self) -> int:
         """Exact generated length of a complete rollout: 3 per contact + ``<end>``."""
