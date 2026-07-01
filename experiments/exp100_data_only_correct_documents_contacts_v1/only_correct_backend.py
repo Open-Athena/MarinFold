@@ -134,44 +134,77 @@ class OnlyCorrectBackend(StructuredOutputBackend):
 _REGISTERED = False
 
 
+def _sop_backend(sampling_params):
+    so = getattr(sampling_params, "structured_outputs", None)
+    return getattr(so, "_backend", None) if so is not None else None
+
+
 def register() -> None:
-    """Monkeypatch vLLM V1 to route our backend. Idempotent. Call before requests
-    (and in every engine process — see module docstring)."""
+    """Monkeypatch vLLM V1 to route our only-correct backend. Idempotent, and
+    version-robust across the vLLM layout differences we've hit:
+
+    * grammar_init: we *pre-set* ``self.backend`` to OnlyCorrectBackend for our
+      requests, then delegate to the original — both the 0.11 and 0.20 forks skip
+      their hardcoded if/elif dispatch when ``self.backend`` is already set, so we
+      don't have to reimplement their (differing) grammar-creation tail.
+    * validation: 0.20 validates in ``SamplingParams._validate_structured_outputs``
+      (called via ``params.verify``); 0.11 validated in
+      ``Processor._validate_structured_output``. We patch whichever exists so the
+      xgrammar/guidance syntax check is skipped for our spec and ``_backend`` is
+      set to ours.
+
+    Must run in every engine process (see module docstring)."""
     global _REGISTERED
     if _REGISTERED:
         return
-    from vllm.v1.engine.processor import Processor
     from vllm.v1 import structured_output as so
 
-    _orig_validate = Processor._validate_structured_output
-
-    def _patched_validate(self, params):
-        sp = getattr(params, "structured_outputs", None)
-        if sp is not None and self.structured_outputs_config and is_our_spec(sp.grammar):
-            if self.model_config.skip_tokenizer_init:
-                raise ValueError("structured outputs need a tokenizer")
-            sp._backend = BACKEND_NAME  # bypass xgrammar/guidance syntax validation
-            return
-        return _orig_validate(self, params)
-
-    Processor._validate_structured_output = _patched_validate
-
+    # (1) grammar_init: pre-set our backend, then delegate.
     _orig_init = so.StructuredOutputManager.grammar_init
 
     def _patched_grammar_init(self, request):
-        if request.structured_output_request is None:
-            return
-        sp = request.sampling_params
-        if sp is not None and sp.structured_outputs is not None \
-                and getattr(sp.structured_outputs, "_backend", None) == BACKEND_NAME:
-            if self.backend is None:
-                vocab = self.vllm_config.model_config.get_vocab_size()
-                self.backend = OnlyCorrectBackend(
-                    self.vllm_config, tokenizer=self.tokenizer, vocab_size=vocab)
-            grammar = self.executor.submit(self._async_create_grammar, request)
-            request.structured_output_request.grammar = grammar
-            return
+        if request.structured_output_request is not None \
+                and _sop_backend(request.sampling_params) == BACKEND_NAME \
+                and self.backend is None:
+            vocab = self.vllm_config.model_config.get_vocab_size()
+            self.backend = OnlyCorrectBackend(
+                self.vllm_config, tokenizer=self.tokenizer, vocab_size=vocab)
         return _orig_init(self, request)
 
     so.StructuredOutputManager.grammar_init = _patched_grammar_init
+
+    # (2) validation: skip syntax check + set _backend for our spec.
+    patched = False
+    try:  # vLLM 0.20.x — SamplingParams._validate_structured_outputs(cfg, tokenizer)
+        from vllm.sampling_params import SamplingParams
+        _orig_v = SamplingParams._validate_structured_outputs
+
+        def _patched_v(self, structured_outputs_config, tokenizer):
+            sp = getattr(self, "structured_outputs", None)
+            if sp is not None and structured_outputs_config is not None and is_our_spec(sp.grammar):
+                if tokenizer is None:
+                    raise ValueError("structured outputs need a tokenizer")
+                sp._backend = BACKEND_NAME
+                return
+            return _orig_v(self, structured_outputs_config, tokenizer)
+
+        SamplingParams._validate_structured_outputs = _patched_v
+        patched = True
+    except (ImportError, AttributeError):
+        pass
+    if not patched:  # vLLM 0.11.x — Processor._validate_structured_output(params)
+        from vllm.v1.engine.processor import Processor
+        _orig_p = Processor._validate_structured_output
+
+        def _patched_p(self, params):
+            sp = getattr(params, "structured_outputs", None)
+            if sp is not None and self.structured_outputs_config and is_our_spec(sp.grammar):
+                if self.model_config.skip_tokenizer_init:
+                    raise ValueError("structured outputs need a tokenizer")
+                sp._backend = BACKEND_NAME
+                return
+            return _orig_p(self, params)
+
+        Processor._validate_structured_output = _patched_p
+
     _REGISTERED = True
