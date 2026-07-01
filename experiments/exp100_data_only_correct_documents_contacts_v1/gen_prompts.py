@@ -73,7 +73,9 @@ def main() -> int:
         os.makedirs(args.out, exist_ok=True)
 
     with fsspec.open(args.targets, "rb") as fh:
-        targets = pq.read_table(fh).to_pylist()
+        # only entry_id + sequence are needed; skip the bulky gt_contacts lists
+        # (materializing them via to_pylist for ~941k rows costs minutes + tens of GB)
+        targets = pq.read_table(fh, columns=["entry_id", "sequence"]).to_pylist()
 
     if args.limit:
         targets = targets[: args.limit]
