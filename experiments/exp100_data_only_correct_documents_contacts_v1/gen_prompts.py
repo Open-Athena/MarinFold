@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import fsspec
@@ -80,7 +81,7 @@ def main() -> int:
 
     out = args.out.rstrip("/")
 
-    def process(t):
+    def _process_once(t):
         dest = f"{out}/{t['entry_id']}.parquet"
         if not args.overwrite:
             exists = fs.exists(dest) if is_gcs else os.path.exists(dest)
@@ -95,17 +96,33 @@ def main() -> int:
             pq.write_table(table, dest)
         return True
 
-    written = skipped = 0
+    def process(t):
+        # Retry transient GCS/auth errors (SSL/oauth token blips under high
+        # concurrency) rather than crashing the whole 900k-file job.
+        for attempt in range(6):
+            try:
+                return _process_once(t)
+            except Exception as e:  # noqa: BLE001
+                if attempt == 5:
+                    print(f"  FAILED {t['entry_id']}: {e!r}", flush=True)
+                    raise
+                time.sleep(2 ** attempt)
+
+    written = skipped = failed = 0
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         futs = {ex.submit(process, t): t for t in targets}
         for n, fut in enumerate(as_completed(futs)):
-            if fut.result():
-                written += 1
-            else:
-                skipped += 1
-            if (n + 1) % 50 == 0 or n == 0:
-                print(f"  {n+1}/{len(targets)} ({written} written, {skipped} skipped)", flush=True)
-    print(f"done: {written} written, {skipped} skipped", flush=True)
+            try:
+                if fut.result():
+                    written += 1
+                else:
+                    skipped += 1
+            except Exception:  # noqa: BLE001 — already logged; keep going, re-run resumes
+                failed += 1
+            if (n + 1) % 1000 == 0 or n == 0:
+                print(f"  {n+1}/{len(targets)} ({written} written, {skipped} skipped, "
+                      f"{failed} failed)", flush=True)
+    print(f"done: {written} written, {skipped} skipped, {failed} failed", flush=True)
     return 0
 
 
