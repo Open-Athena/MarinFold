@@ -67,15 +67,19 @@ pure-Python and unit-tested ([`tests/`](tests)) — including a full seq→posit
 text→parse round-trip — so it is validated without a model.
 
 - **Inference** — two interchangeable workers writing the same outputs:
-  [`gen_constrained_worker_hf_gpu.py`](gen_constrained_worker_hf_gpu.py) (HF
-  transformers, local CUDA GPU — the **proven** path, used for validation) and
-  [`gen_constrained_worker_vllm_tpu.py`](gen_constrained_worker_vllm_tpu.py) (vLLM
-  on iris TPU v5p-8, `tensor_parallel_size=4`, for the eventual scale-out — its
-  per-request `logits_processors` support on the JAX/TPU stack is still to be
-  spiked). Both use the bf16 model (`…-bc3084/hf_bf16/step-35679`) and resume on
-  restart. The GPU worker batches a target's N rollouts with **zero padding**:
-  they share prompt length *and* generated length (`3*n_gt+1`), so one decode loop
-  finishes all N on the same step.
+  - [`gen_constrained_worker_hf_gpu.py`](gen_constrained_worker_hf_gpu.py) — HF
+    transformers, local CUDA GPU. Masks + captures NLL in one in-process decode
+    loop; batches a target's N rollouts with **zero padding** (they share prompt
+    length *and* generated length `3*n_gt+1`, finishing together). Used for the
+    validation run.
+  - [`gen_constrained_worker_vllm.py`](gen_constrained_worker_vllm.py) — vLLM, the
+    **portable scale-out** path (GPU now, **iris TPU** after plugin registration).
+    Masks via a custom vLLM **structured-output backend**
+    ([`only_correct_backend.py`](only_correct_backend.py)) — the only per-step
+    masking hook the marin TPU stack honors — and recovers unmodified NLL via a
+    `prompt_logprobs` pass. ~2× the HF worker's throughput on the same GPU.
+
+  Both use the bf16 model (`…-bc3084/hf_bf16/step-35679`) and resume on restart.
 - **Outputs (GCS working copy)** under `runs/<name>/`: `nll/<entry>.parquet`
   (per-rollout NLLs + correctness), `documents/<entry>.json` (selected document),
   `all_documents/<entry>.json` (all N verbatim), `timings/<entry>.csv`.
@@ -93,19 +97,35 @@ text→parse round-trip — so it is validated without a model.
   record the N=10 NLL spread, measure throughput/cost.
 - **Phase 2 — scale** to the full unique-protein train set, publish, write up.
 
-### Key risk (status)
+### Backends & the iris/TPU port (resolved)
 
-The only-correct decode needs per-step logit masking + unmodified full-vocab
-scoring. Two facts settled this:
-1. **`prompt_logprobs` returns `None` on the iris JAX/TPU stack** (exp89) — so the
-   NLL is captured *inside* the processor from the pre-mask logits instead of in a
-   second pass (works on any backend).
-2. **Per-request `logits_processors` on vLLM-`tpu_inference` is unproven** — still
-   to be spiked. The **GPU path is fully proven** (below), so it is a guaranteed
-   fallback for the whole experiment; the TPU worker is for scale-out only.
+Source review of the pinned marin `tpu_inference` (rev 29faff43) + vLLM V1 fork
+(571de56) settled how to run this on TPU:
 
-The processor also **auto-detects** whether the backend prepends the prompt to
-`past_token_ids`, so it is robust to that cross-version difference.
+- **Custom `LogitsProcessor.apply()` is NOT invoked on TPU** (nor are
+  `logit_bias`/`allowed_token_ids`/`bad_words`). So the HF worker's per-step
+  logits-processor approach can't run there.
+- **The structured-output grammar bitmask IS applied on-device in JAX** — the one
+  live per-step masking hook. So the constraint is expressed as a custom vLLM
+  **`StructuredOutputBackend`** ([`only_correct_backend.py`](only_correct_backend.py))
+  whose `fill_bitmask` emits our FSM's allowed-token set each step.
+- **`prompt_logprobs` IS supported** on this `tpu_inference` rev (the old exp89
+  "None on TPU" note is stale) and is computed from **raw pre-mask logits**, so a
+  separate scoring pass recovers the unmodified NLL.
+
+The structured-output path is **GPU-proven** (`gen_constrained_worker_vllm.py`
++ `only_correct_backend.py`: 10/10-correct, NLL matching the HF worker, ~2×
+throughput). It is the **same code** on TPU — only registration differs.
+
+**iris port (remaining step).** vLLM V1 picks the structured-output backend by a
+hardcoded if/elif in `StructuredOutputManager` (no plugin hook), and that manager
+runs in the **EngineCore process** (separate from the driver on multiprocess/TPU).
+So `only_correct_backend.register()` (which monkeypatches `grammar_init` +
+`Processor._validate_structured_output`) must run in **every** engine process. On
+GPU we force an in-process engine (`VLLM_ENABLE_V1_MULTIPROCESSING=0`); on iris,
+expose `register` as a `vllm.general_plugins` entry point (loaded in every
+process) by installing this experiment as a small package into the iris vLLM env,
+then launch per the exp89/exp98 recipe with `--tensor-parallel-size 4`.
 
 ## Run
 
@@ -118,10 +138,14 @@ python gen_constrained_worker_hf_gpu.py --model <local hf_bf16 dir> \
     --targets data/targets.parquet --prompts <prompts dir> \
     --out <run dir> --shard 0/1 --n-rollouts 10
 
-# Stage B — iris TPU scale-out (once the logits_processor spike passes)
-python gen_constrained_worker_vllm_tpu.py --model gs://.../hf_bf16/step-35679 \
-    --targets gs://.../targets.parquet --prompts gs://.../prompts \
-    --out gs://.../runs/full --shard 0/8 --n-rollouts 10 --tensor-parallel-size 4
+# Stage B — vLLM (GPU now; iris TPU after registering the plugin). In-process
+# engine on GPU so the backend monkeypatch reaches EngineCore:
+VLLM_ENABLE_V1_MULTIPROCESSING=0 python gen_constrained_worker_vllm.py \
+    --model <hf_bf16 dir> --targets data/targets.parquet --prompts <prompts dir> \
+    --out <run dir> --shard 0/1 --n-rollouts 10
+# iris TPU: install this dir as a package exposing only_correct_backend.register
+# as a vllm.general_plugins entry point, then --tensor-parallel-size 4 per the
+# exp89/exp98 iris recipe.
 
 # Stage C (local): aggregate + publish
 uv run python aggregate_results.py --run <run dir> --out-prefix full
@@ -162,6 +186,14 @@ The method is validated end-to-end against the tuned 1.5B (HF bf16). On a spike 
 
 The regenerated documents (selected + all 10 per target) are on the GCS working
 copy; `publish_to_hf.py` uploads them to the public bucket.
+
+### vLLM structured-output backend (GPU, portable to TPU)
+
+The `gen_constrained_worker_vllm.py` + `only_correct_backend.py` path was verified
+against the HF worker on a 6-target × 10 sample: **10/10 correct on all 6**, per-target
+best struct-NLL matching the HF worker within sampling noise (e.g. 859.5 vs 856.1,
+1741 vs 1734), at **~790 tok/s (~2× the HF worker)** on the same A5000. This is
+the code that ports to iris/TPU (see backend note above).
 
 ## Conclusion
 

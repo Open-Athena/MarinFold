@@ -98,6 +98,72 @@ def legal_token_ids(generated_ids: list[int], *, contact_id: int, end_id: int,
             for pair in remaining if pending_pi in pair}
 
 
+class OnlyCorrectMatcher:
+    """Incremental (O(1)/token) only-correct FSM for the structured-output path.
+
+    Same grammar as :func:`legal_token_ids` but maintains state incrementally
+    instead of replaying the whole prefix each step — needed because vLLM calls
+    ``fill_bitmask`` / ``accept_tokens`` every decode step (replay would be
+    O(n^2)/rollout). Cross-checked against :func:`legal_token_ids` in the tests.
+
+    ``phase`` is the position in the 3-token ``<contact> <pi> <pj>`` cycle.
+    """
+
+    def __init__(self, gt_pos_pairs: Iterable[tuple[int, int]], *, contact_id: int, end_id: int):
+        self.contact_id = contact_id
+        self.end_id = end_id
+        self._initial = build_remaining(gt_pos_pairs)
+        self.reset()
+
+    def reset(self) -> None:
+        self.remaining = set(self._initial)
+        self.phase = 0
+        self.pending_pi: int | None = None
+        self.terminated = False
+
+    def allowed(self) -> set[int]:
+        if self.terminated:
+            return set()
+        if self.phase == 0:
+            return {self.contact_id} if self.remaining else {self.end_id}
+        if self.phase == 1:
+            return {pid for pair in self.remaining for pid in pair}
+        return {next(iter(pair - {self.pending_pi}))
+                for pair in self.remaining if self.pending_pi in pair}
+
+    def accept(self, token: int) -> bool:
+        """Advance by one realized token. Returns False (no-op) if not allowed."""
+        if token not in self.allowed():
+            return False
+        if self.phase == 0:
+            if token == self.end_id:
+                self.terminated = True
+            else:  # <contact>
+                self.phase = 1
+        elif self.phase == 1:
+            self.pending_pi = token
+            self.phase = 2
+        else:  # phase 2: complete the contact
+            self.remaining.discard(frozenset((self.pending_pi, token)))
+            self.pending_pi = None
+            self.phase = 0
+        return True
+
+
+def pack_allowed_bitmask(allowed: Iterable[int], n_words: int):
+    """Pack an allowed-token-id set into an int32 ``[n_words]`` vLLM bitmask row.
+
+    Convention (matches xgrammar / the TPU ``structured_decode_fn``): bit set to 1
+    means the token is **allowed**; 0 means masked to ``-inf``. Returns a numpy
+    int32 array (build with uint32 then view as int32 to place bit 31 safely).
+    """
+    import numpy as np
+    row = np.zeros(n_words, dtype=np.uint32)
+    for t in allowed:
+        row[t >> 5] |= np.uint32(1) << np.uint32(t & 31)
+    return row.view(np.int32)
+
+
 class ContactConstraint:
     """Per-rollout vLLM logits processor enforcing only-correct contacts **and**
     capturing the rollout's *unmodified* (full-vocabulary) NLL.
