@@ -146,11 +146,30 @@ The method is validated end-to-end against the tuned 1.5B (HF bf16). On a spike 
 - **Selection by lowest structure-NLL is meaningful** — the N-rollout NLL spread is
   real (best-of-10 clearly below the mean), so the "keep the most-likely ordering"
   step does something.
-- Throughput ~380 tok/s at batch 10 on the A5000 (≈ 3.5 h projected for the full
-  1000 × 10 validation).
+- Throughput ~380–420 tok/s at batch 10 on the A5000.
 
-_Full 1000-target validation run + aggregate/plots: in progress._
+### Full validation run (1000 targets × 10 rollouts = 10,000 documents, local A5000)
+
+- **10,000 / 10,000 rollouts 100%-correct + full-recall** (0 warnings) — every
+  target yields 10 valid, fully-correct contacts-v1 documents.
+- **Cost:** 4.30 M generated tokens, ~419 tok/s, **2.85 GPU-hours** (~2.86 h wall)
+  on one A5000. (An H100 / TPU or multi-GPU shard would cut this substantially.)
+- **NLL selection is meaningful:** best-of-10 structure NLL averages **18.9 nats**
+  below the per-target mean rollout, i.e. picking the model's preferred ordering
+  measurably concentrates likelihood. Best-of-10 struct NLL mean 971 / median 659
+  (length-dependent). Per-target table: [`data/full_per_target.csv`](data/full_per_target.csv);
+  plot: [`plots/full_nll_vs_L.png`](plots/full_nll_vs_L.png).
+
+The regenerated documents (selected + all 10 per target) are on the GCS working
+copy; `publish_to_hf.py` uploads them to the public bucket.
 
 ## Conclusion
 
-_Pending the full validation run._
+The only-correct constrained-decoding method works: for every training protein we
+can generate valid, 100%-correct, full-recall contacts-v1 documents whose contact
+ordering is sampled from the base model and selected by unmodified likelihood, at
+~0.003 GPU-hours per protein (10 rollouts). Validated end-to-end on 1000 proteins
+(10,000 documents, all correct) on a single local GPU. Scale-out (full
+unique-protein train set) and the fine-tuning-vs-re-epoch comparison are the
+follow-ups; the iris/TPU port uses vLLM's structured-output bitmask path (see
+[`only_correct_backend.py`](only_correct_backend.py)).
