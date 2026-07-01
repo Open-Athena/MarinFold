@@ -160,9 +160,12 @@ def main():
                           for i, j in gt_seq]
             spec = make_grammar_spec(gt_pos_ids, contact_id, end_id)
             gprompts.append(TokensPrompt(prompt_token_ids=prompt_ids))
+            # exact generated length is 3*n_gt+1 (+small slack); cap to the context
+            # left after the prompt so the longest proteins never exceed max_model_len.
+            max_new = min(3 * len(gt_seq) + 4, a.max_model_len - len(prompt_ids))
             gsp.append(SamplingParams(
                 n=1, temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
-                max_tokens=3 * len(gt_seq) + 8, stop_token_ids=[end_id],
+                max_tokens=max(max_new, 1), stop_token_ids=[end_id],
                 structured_outputs=StructuredOutputsParams(grammar=spec)))
             meta.append(dict(r=int(p["r"]), prefix=p["prefix"], prompt_ids=prompt_ids,
                              prompt_len=len(prompt_ids), pos_to_seq=pos_to_seq))
