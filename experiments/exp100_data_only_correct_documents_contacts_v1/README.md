@@ -117,15 +117,31 @@ The structured-output path is **GPU-proven** (`gen_constrained_worker_vllm.py`
 + `only_correct_backend.py`: 10/10-correct, NLL matching the HF worker, ~2×
 throughput). It is the **same code** on TPU — only registration differs.
 
-**iris port (remaining step).** vLLM V1 picks the structured-output backend by a
-hardcoded if/elif in `StructuredOutputManager` (no plugin hook), and that manager
-runs in the **EngineCore process** (separate from the driver on multiprocess/TPU).
-So `only_correct_backend.register()` (which monkeypatches `grammar_init` +
-`Processor._validate_structured_output`) must run in **every** engine process. On
-GPU we force an in-process engine (`VLLM_ENABLE_V1_MULTIPROCESSING=0`); on iris,
-expose `register` as a `vllm.general_plugins` entry point (loaded in every
-process) by installing this experiment as a small package into the iris vLLM env,
-then launch per the exp89/exp98 recipe with `--tensor-parallel-size 4`.
+**iris/TPU launch (proven).** vLLM picks the structured-output backend by a
+hardcoded if/elif in `StructuredOutputManager` (no plugin hook), so
+`only_correct_backend.register()` monkeypatches `grammar_init` (pre-setting our
+backend, then delegating) and the validation hook. That manager runs in the
+EngineCore process, so we set **`VLLM_ENABLE_V1_MULTIPROCESSING=0`** to make the
+engine in-process — then the in-worker `register()` reaches it, with **no
+entry-point install needed** (iris bundles the launch workspace, so staged files
+ship as-is). The marin TPU stack is **vLLM 0.20.1** (not the 0.11.2 in local
+caches); `register()` is written to handle both layouts. Recipe: stage the worker
++ its 3 sibling modules into the marin checkout and launch
+
+```bash
+uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources \
+  --tpu=v5p-8 --memory=64GB --disk=64GB --cpu=16 --extra=vllm --extra=tpu \
+  --zone=us-east5-a -e VLLM_ENABLE_V1_MULTIPROCESSING 0 \
+  -- python exp100_iris/gen_constrained_worker_vllm.py \
+     --model gs://marin-us-east5/checkpoints/…/hf_bf16/step-35679 \
+     --targets gs://…/exp100_only_correct_contacts_v1_train/targets.parquet \
+     --prompts gs://…/exp100_only_correct_contacts_v1_train/prompts \
+     --out gs://…/exp100_only_correct_contacts_v1_train/runs/full_tpu \
+     --shard 0/1 --n-rollouts 10 --tensor-parallel-size 4
+```
+
+Calibration (3 targets) confirmed 10/10-correct on a v5p-8 with NLLs matching the
+GPU path, ~1350 tok/s after the one-time XLA compile (77 s).
 
 ## Run
 
