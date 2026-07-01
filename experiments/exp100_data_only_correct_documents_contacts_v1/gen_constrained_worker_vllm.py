@@ -116,11 +116,21 @@ def main():
     if a.limit:
         mine = mine[: a.limit]
 
-    def done(entry):
-        return (ofs.exists(f"{out}/nll/{entry}.parquet")
-                and ofs.exists(f"{out}/documents/{entry}.json"))
     if not a.overwrite:
-        mine = [e for e in mine if not done(e)]
+        # Resume by listing the output dirs ONCE (a per-entry exists() check is
+        # ~200k serial GCS calls at shard sizes ~117k -> hours of startup).
+        def _done_entries():
+            got = None
+            for sub in ("nll", "documents"):
+                try:
+                    names = {os.path.basename(p).rsplit(".", 1)[0]
+                             for p in ofs.ls(f"{out}/{sub}", detail=False)}
+                except FileNotFoundError:
+                    names = set()
+                got = names if got is None else (got & names)
+            return got or set()
+        done = _done_entries()
+        mine = [e for e in mine if e not in done]
     print(f"shard {si}/{sm}: {len(mine)} targets to do, n_rollouts={a.n_rollouts}", flush=True)
     if not mine:
         print(f"SHARD_DONE {si}/{sm}: nothing to do", flush=True)
