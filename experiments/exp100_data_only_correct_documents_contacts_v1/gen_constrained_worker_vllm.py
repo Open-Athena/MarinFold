@@ -28,12 +28,38 @@ import math
 import os
 import time
 
+# Force an in-process EngineCore so register()'s monkeypatch of grammar_init (which
+# runs in the EngineCore) takes effect without a pip-installed vllm.general_plugins
+# entry point. Must be set before vllm is imported. On the JAX/TPU stack the engine
+# is single-process (SPMD) anyway; on GPU this makes the driver == EngineCore.
+os.environ.setdefault("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
+
 import fsspec
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from only_correct_backend import make_grammar_spec, register
 from rollout_metrics import gt_by_band, parse_pred, score_rollout
+
+
+def stage(model_path):
+    """Download a gs:// model dir to local tmp (TPU worker needs local files)."""
+    if not model_path.startswith("gs://"):
+        return model_path
+    import hashlib
+    import tempfile
+    from fsspec.core import url_to_fs
+    fs, root = url_to_fs(model_path.rstrip("/"))
+    local = os.path.join(tempfile.gettempdir(), "cv1model",
+                         hashlib.sha256(model_path.encode()).hexdigest()[:12])
+    os.makedirs(local, exist_ok=True)
+    for e in fs.find(root, detail=True, maxdepth=1).values():
+        if e.get("type") != "file":
+            continue
+        lp = os.path.join(local, os.path.basename(e["name"]))
+        if not (os.path.exists(lp) and os.path.getsize(lp) == e.get("size")):
+            fs.get(e["name"], lp)
+    return local
 
 
 def write_parquet(table, dest):
@@ -97,7 +123,7 @@ def main():
         return
 
     t_load = time.time()
-    llm = LLM(model=a.model, max_model_len=a.max_model_len,
+    llm = LLM(model=stage(a.model), max_model_len=a.max_model_len,
               tensor_parallel_size=a.tensor_parallel_size, enforce_eager=True,
               dtype="bfloat16", structured_outputs_config={"backend": "auto"})
     tok = llm.get_tokenizer()
