@@ -9,3 +9,8 @@
   wandb_url: https://wandb.ai/timodonnell/marin/runs/protein-contacts-1_5b-distance-masked-70f8f5
   document_structures:
     - contacts-and-distances-v1
+- nickname: contacts-v1-exp75-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084
+  document_structures:
+    - contacts-v1
