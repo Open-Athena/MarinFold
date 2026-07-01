@@ -144,7 +144,8 @@ def main():
             prefixes = [p["prefix"] for p in prows]
             max_new = min(a.max_model_len - max(len(x) for x in ids_list), 4 * L + 64)
             sp = SamplingParams(n=1, temperature=a.temperature, top_p=a.top_p,
-                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[end_id])
+                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[end_id],
+                                logprobs=1)
             t0 = time.time()
             outs = llm.generate([TokensPrompt(prompt_token_ids=x) for x in ids_list],
                                 sp, use_tqdm=False)
@@ -156,7 +157,8 @@ def main():
             m0 = {int(pos): i for i, pos in enumerate(p0["seq_positions"])}
             max_new = min(a.max_model_len - len(ids), 4 * L + 64)
             sp = SamplingParams(n=a.n_rollouts, temperature=a.temperature, top_p=a.top_p,
-                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[end_id])
+                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[end_id],
+                                logprobs=1)
             t0 = time.time()
             outs = llm.generate([TokensPrompt(prompt_token_ids=ids)], sp, use_tqdm=False)
             gen_s = time.time() - t0
@@ -168,13 +170,25 @@ def main():
         all_texts = [] if (a.save_texts and n == 0) else None
         for co, m, rkey, prefix in completions:
             tok_ids = co.token_ids
-            total_gen += len(tok_ids)
+            ntok = len(tok_ids)
+            total_gen += ntok
             text = tok.decode(tok_ids, skip_special_tokens=False)
             pred = parse_pred(text, m)
             sc = score_rollout(pred, gtb)
             finished = co.finish_reason == "stop"
-            rows.append(dict(r=int(rkey), n_gen_tokens=len(tok_ids), finished=finished,
-                             n_pred=len(pred), **sc))
+            # model confidence: NLL of the sampled rollout (sum of token logprobs),
+            # and its length-normalized form (total NLL confounds with length).
+            clp = co.cumulative_logprob
+            if clp is None and co.logprobs:
+                clp = sum(d[t].logprob for t, d in zip(tok_ids, co.logprobs) if t in d)
+            nll = -clp if clp is not None else float("nan")
+            # flattened predicted contacts [i0,j0,i1,j1,…] (seq-index, sep>=6,
+            # deduped) so vote/weighted-vote ensembles can be built offline.
+            pred_flat = [int(x) for pr in sorted(pred) for x in pr]
+            rows.append(dict(r=int(rkey), n_gen_tokens=ntok, finished=finished,
+                             n_pred=len(pred), nll=nll,
+                             nll_per_tok=(nll / ntok if ntok else float("nan")),
+                             pred=pred_flat, **sc))
             if all_texts is not None:
                 all_texts.append(dict(r=int(rkey), text=text))
             rec, f1, prec = sc["all_rec"], sc["all_f1"], sc["all_prec"]

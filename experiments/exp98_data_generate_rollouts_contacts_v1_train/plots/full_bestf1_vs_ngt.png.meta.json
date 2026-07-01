@@ -4,9 +4,7 @@
     "--runs",
     "full=gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/full",
     "--out-prefix",
-    "full",
-    "--gcs-summary",
-    "gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/full/per_target_summary.parquet"
+    "full"
   ],
   "caption": "Per-target best-of-1000 F1 vs number of ground-truth contacts (colored by L)."
 }

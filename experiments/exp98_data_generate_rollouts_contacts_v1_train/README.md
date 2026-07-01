@@ -158,6 +158,44 @@ Strongly **length-dependent** ([`plots/full_bestacc_vs_L.png`](plots/full_bestac
 0.9 (best-recall: 20.5% / 8.2% / 1.1%). The best-recall and best-F1 rollouts are
 saved verbatim as complete contacts-v1 documents in `best_rollouts/<entry>.json`.
 
+### Picking good rollouts *without* ground truth
+
+best-of-N above needs labels. For the train-on-rollouts goal we want a **label-free**
+way to get a high-quality contact set per target. Two strategies over the 1000
+rollouts (F1, all sep≥6, mean over 1000 targets; a second run captured per-rollout
+NLL + contact sets — [`analyze_nll.py`](analyze_nll.py), [`analyze_ensemble.py`](analyze_ensemble.py)):
+
+| strategy | F1 | label-free? |
+|---|---|---|
+| single rollout, random | 0.115 | ✓ |
+| single rollout, **min-NLL** (most confident) | 0.133 | ✓ |
+| **consensus vote, top-K** | **0.256** | ✓ |
+| likelihood-weighted vote, top-K | 0.257–0.259 | ✓ |
+| vote, majority (≥50%) | 0.072 | ✓ |
+| consensus vote, oracle-K | 0.297 | needs GT |
+| single rollout, oracle (best of 1000) | 0.341 | needs GT |
+
+- **Model confidence (NLL) is a weak selector.** Within-target Spearman(NLL/token,
+  F1) = **−0.19** (negative in 89% of targets) — confident rollouts are *slightly*
+  more accurate — but picking the single most-confident rollout barely beats random
+  (0.133 vs 0.115). ([`plots/nll_full_f1_nll_vs_acc.png`](plots/nll_full_f1_nll_vs_acc.png).)
+- **Consensus voting is the clear win.** Score each candidate pair by how often it
+  is emitted across the 1000 rollouts, keep the top-K (K = typical rollout size —
+  label-free): **F1 0.256, ~2.2× a random rollout** and ~75% of the single-rollout
+  oracle (0.341), with no labels. Weighting the vote by `softmax(−NLL/token)` adds
+  almost nothing at scale (0.257–0.259); majority-vote is *bad* (0.072 — true
+  contacts rarely appear in ≥50% of rollouts, so top-K is the right cutoff). This is
+  the contact-set/F1-level echo of [#82](https://github.com/Open-Athena/MarinFold/issues/82)'s
+  "rollout-voting is the best LM-only inference." ([`plots/ens_full_strategies.png`](plots/ens_full_strategies.png).)
+- **Cost caveat.** Capturing per-rollout NLL needs vLLM `logprobs=1`, which is
+  **~3.7× slower** on this TPU stack (4.6k tok/s / ~17 v5p-8-hours vs 17k / 4.6 for
+  plain generation). The predicted-contact capture that voting needs is free; only
+  the NLL is expensive.
+
+_(Preview caveat: an early 10-target calibration overstated both — it showed
+min-NLL closing 40% of the gap and weighting helping +0.02; the full 1000-target
+run corrects these to ~8% and ~0. The consensus-vote win held up.)_
+
 **Interactive explorer:** [`explore_results.ipynb`](explore_results.ipynb) —
 **runs in Colab with no login** (reads the public HF bucket). Overview plots +
 drill into any target's 1000-rollout distribution and its saved best rollouts.
@@ -172,7 +210,8 @@ bucket (no auth) under `data/contacts-v1-train-rollouts-exp98/` (list with
 |---|---|---|
 | `per_target_summary.parquet` | 1,000 | per target: L, n_gt, best-of-1000 recall/F1, per-rollout means, timing |
 | `best_rollouts.parquet` | 1,000 | best-recall + best-F1 rollout per target, full contacts-v1 documents + parsed contacts |
-| `rollout_metrics_all.parquet` | 1,000,000 | every rollout's per-band precision/recall/F1, `n_gen_tokens`, `finished` |
+| `rollout_metrics_all.parquet` | 1,000,000 | every rollout's per-band precision/recall/F1, `n_gen_tokens`, `finished`, model `nll`/`nll_per_tok`, and `pred` (flattened predicted contacts, for voting) |
+| `targets.parquet` | 1,000 | per target: `sequence`, `L`, `gt_contacts` (so the vote analysis is reproducible) |
 
 Read anonymously (no token):
 
@@ -210,8 +249,18 @@ material the train-on-high-accuracy-rollouts idea needs. Quality falls off with
 length (best F1 0.52 at L≤100 → 0.20 at L>400), so the high-value training
 documents are concentrated in shorter proteins.
 
+**Getting a good target without labels.** best-of-N needs ground truth, which we
+won't have at scale. The label-free lever that works is **consensus voting** —
+aggregating contact occurrences across the 1000 rollouts and taking the top-K gives
+F1 **0.256** (2.2× a random rollout, ~75% of the best-of-1000 oracle). The model's
+own **confidence (NLL) is a weak selector** (single most-confident rollout ≈ 0.13,
+barely above random) and **likelihood-weighting the vote adds ~nothing** at scale —
+the win is the consensus, not the weighting. (Capturing NLL also costs ~3.7× the
+TPU time, so it isn't worth it for selection.)
+
 **Suggested follow-ups (human to decide):** (1) scale targets up (the cost is
 affordable); (2) the actual fine-tuning experiment — train on the saved best
 rollouts vs re-epoching (the public `best_rollouts.parquet` is the ready-made
 dataset); (3) for large proteins, more rollouts or a stronger model to lift
-best-of-N.
+best-of-N; (4) whether the *consensus* set (label-free, F1 0.26) is a better
+training target than best-of-N (oracle, 0.34) for the fine-tuning experiment.

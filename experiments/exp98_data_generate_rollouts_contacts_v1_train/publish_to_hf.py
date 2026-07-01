@@ -89,6 +89,9 @@ def main() -> int:
     ap.add_argument("--run", required=True, help="GCS run dir (runs/full)")
     ap.add_argument("--summary", default=None,
                     help="per_target_summary.parquet (defaults to <run>/per_target_summary.parquet)")
+    ap.add_argument("--targets", default=None,
+                    help="targets.parquet with entry_id + gt_contacts + sequence "
+                         "(published so the consensus analysis is reproducible)")
     ap.add_argument("--workers", type=int, default=48)
     ap.add_argument("--dest", default=BUCKET)
     ap.add_argument("--dry-run", action="store_true", help="build locally, skip upload")
@@ -123,12 +126,18 @@ def main() -> int:
         pq.write_table(pq.read_table(fh), f"{out}/per_target_summary.parquet")
     print("per_target_summary.parquet copied", flush=True)
 
-    # 4. README
+    # 4. targets.parquet (GT + sequences — lets viewers rebuild the vote ensemble)
+    targets = a.targets or f"{os.path.dirname(run.rstrip('/'))}/../targets.parquet"
+    with fsspec.open(targets, "rb") as fh:
+        pq.write_table(pq.read_table(fh), f"{out}/targets.parquet")
+    print("targets.parquet copied", flush=True)
+
+    # 5. README
     with open(f"{out}/README.md", "w") as fh:
         fh.write(README)
 
     for f in ("per_target_summary.parquet", "best_rollouts.parquet",
-              "rollout_metrics_all.parquet", "README.md"):
+              "rollout_metrics_all.parquet", "targets.parquet", "README.md"):
         sz = os.path.getsize(f"{out}/{f}") / 1e6
         print(f"  {f}: {sz:.1f} MB", flush=True)
 
@@ -138,7 +147,7 @@ def main() -> int:
 
     hf = find_hf()
     for f in ("README.md", "per_target_summary.parquet", "best_rollouts.parquet",
-              "rollout_metrics_all.parquet"):
+              "rollout_metrics_all.parquet", "targets.parquet"):
         dest = f"{a.dest.rstrip('/')}/{f}"
         print(f"uploading {f} -> {dest}", flush=True)
         subprocess.run([hf, "buckets", "cp", f"{out}/{f}", dest], check=True)
@@ -160,7 +169,12 @@ contacts-v1 1.5B model (eval loss 2.7566), generated on TPU.
   metrics and parsed `*_pred_contacts` (JSON list of [i,j] seq-index pairs).
 - `rollout_metrics_all.parquet` (1,000,000 rows) — every rollout's per-band
   precision/recall/F1 (`all`/`short`/`med`/`long`), `n_gen_tokens`, `finished`,
-  keyed by `entry_id` + `r` (sorted by entry_id for filtered reads).
+  the model's `nll` / `nll_per_tok` (confidence), and `pred` (the flattened
+  predicted contact pairs, for building vote ensembles), keyed by `entry_id`+`r`
+  (sorted by entry_id for filtered reads).
+- `targets.parquet` (1,000 rows) — per target: `sequence`, `L`, and
+  `gt_contacts` (ground-truth pairs), so the vote/consensus analysis is
+  reproducible.
 
 All readable anonymously, e.g.:
 

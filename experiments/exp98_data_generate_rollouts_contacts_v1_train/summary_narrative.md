@@ -53,8 +53,17 @@ Best-of-1000 per target (all sep≥6): recall mean **0.335** (max 1.0), F1 mean
 many rollouts surfaces far higher-quality contact sets than any single decode —
 the raw material for the train-on-rollouts idea.
 
+## Selecting rollouts without labels
+
+best-of-N needs ground truth. Label-free alternatives (F1, all sep≥6): **consensus
+voting** (aggregate contact occurrences across the 1000 rollouts, take top-K) =
+**0.256** — 2.2× a random rollout, ~75% of the best-of-1000 oracle (0.341). Model
+**confidence (NLL) is a weak selector** (most-confident single rollout 0.13 ≈
+random 0.12) and **likelihood-weighting the vote adds ~nothing** at scale. Capturing
+NLL also costs ~3.7× the TPU time. Takeaway: use consensus, not confidence.
+
 ## Deliverables
 
-Per target: precision/recall/F1 of all 1000 rollouts + the best-recall and best-F1
-rollouts saved verbatim (complete contacts-v1 documents). Interactive explorer:
-explore_results.ipynb (Colab).
+Per target: precision/recall/F1 + NLL + predicted contacts of all 1000 rollouts +
+the best-recall and best-F1 rollouts saved verbatim (complete contacts-v1
+documents). Public HF bucket + interactive explorer: explore_results.ipynb (Colab).
