@@ -65,29 +65,51 @@ def is_our_spec(grammar: str | None) -> bool:
 class OnlyCorrectGrammar(StructuredOutputGrammar):
     """Request-level grammar: wraps the incremental FSM + emits its bitmask."""
 
-    def __init__(self, matcher: OnlyCorrectMatcher, vocab_size: int):
-        self.m = matcher
+    def __init__(self, gt_pairs, contact_id: int, end_id: int, vocab_size: int):
+        self._gt = [tuple(p) for p in gt_pairs]
+        self.contact_id = contact_id
+        self.end_id = end_id
+        self.m = OnlyCorrectMatcher(self._gt, contact_id=contact_id, end_id=end_id)
         self.vocab_size = vocab_size
         self.n_words = (vocab_size + 31) // 32
         self.history: list[int] = []
+        self.broken = False  # set if a token slips past the mask (state unrecoverable)
+
+    def _new_matcher(self) -> OnlyCorrectMatcher:
+        return OnlyCorrectMatcher(self._gt, contact_id=self.contact_id, end_id=self.end_id)
 
     def accept_tokens(self, request_id: str, tokens: list[int]) -> bool:
+        # History-authoritative + tolerant: NEVER return False (a False makes vLLM
+        # terminate the request). The mask is applied correctly by vLLM; the only
+        # failure mode we've seen is our *incremental* state momentarily drifting
+        # from the true token stream under the engine's fill/accept scheduling. On
+        # any mismatch we resync by replaying the authoritative history; only if the
+        # replayed stream is genuinely illegal (mask truly failed) do we mark the
+        # rollout broken (it just won't be selected — it isn't 100%-correct).
         for t in tokens:
-            if not self.m.accept(int(t)):
-                return False
-            self.history.append(int(t))
+            t = int(t)
+            if self.broken:
+                self.history.append(t)
+                continue
+            if self.m.accept(t):
+                self.history.append(t)
+                continue
+            probe = self._new_matcher()
+            if all(probe.accept(x) for x in self.history) and probe.accept(t):
+                self.m = probe                      # resynced from history
+                self.history.append(t)
+            else:
+                self.broken = True                  # genuine mask miss; abandon constraint
+                self.history.append(t)
         return True
 
     def validate_tokens(self, tokens: list[int]) -> list[int]:
-        # accepted prefix from current state, without advancing (fresh replay)
-        probe = OnlyCorrectMatcher(
-            [tuple(p) for p in self.m._initial],  # frozenset iterates to 2 ids
-            contact_id=self.m.contact_id, end_id=self.m.end_id)
+        probe = self._new_matcher()
         for t in self.history:
             probe.accept(t)
         out: list[int] = []
         for t in tokens:
-            if probe.accept(int(t)):
+            if not self.broken and probe.accept(int(t)):
                 out.append(int(t))
             else:
                 break
@@ -97,20 +119,26 @@ class OnlyCorrectGrammar(StructuredOutputGrammar):
         if num_tokens <= 0:
             return
         self.history = self.history[:-num_tokens]
-        self.m.reset()
+        self.m = self._new_matcher()
+        self.broken = False
         for t in self.history:
-            self.m.accept(t)
+            if not self.m.accept(t):
+                self.broken = True
+                break
 
     def fill_bitmask(self, bitmask: torch.Tensor, idx: int) -> None:
-        row = pack_allowed_bitmask(self.m.allowed(), self.n_words)
+        # broken -> full mask (no constraint); the rollout is already non-correct.
+        allowed = range(self.vocab_size) if self.broken else self.m.allowed()
+        row = pack_allowed_bitmask(allowed, self.n_words)
         bitmask[idx] = torch.from_numpy(row).to(bitmask.dtype)
 
     def is_terminated(self) -> bool:
-        return self.m.terminated
+        return self.m.terminated and not self.broken
 
     def reset(self) -> None:
-        self.m.reset()
+        self.m = self._new_matcher()
         self.history.clear()
+        self.broken = False
 
 
 class OnlyCorrectBackend(StructuredOutputBackend):
@@ -119,9 +147,9 @@ class OnlyCorrectBackend(StructuredOutputBackend):
     def compile_grammar(self, request_type: StructuredOutputOptions, grammar_spec: str
                         ) -> StructuredOutputGrammar:
         spec = json.loads(grammar_spec)
-        matcher = OnlyCorrectMatcher([tuple(p) for p in spec["gt"]],
-                                     contact_id=spec["contact_id"], end_id=spec["end_id"])
-        return OnlyCorrectGrammar(matcher, self.vocab_size)
+        return OnlyCorrectGrammar([tuple(p) for p in spec["gt"]],
+                                  contact_id=spec["contact_id"], end_id=spec["end_id"],
+                                  vocab_size=self.vocab_size)
 
     def allocate_token_bitmask(self, max_num_seqs: int) -> torch.Tensor:
         # int32 [max_num_seqs, ceil(vocab/32)], initialized all-allowed (-1 == all bits set)
