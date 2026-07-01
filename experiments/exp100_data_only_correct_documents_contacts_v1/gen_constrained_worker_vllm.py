@@ -92,6 +92,10 @@ def main():
     ap.add_argument("--top-p", type=float, default=0.95)
     ap.add_argument("--top-k", type=int, default=50)
     ap.add_argument("--max-model-len", type=int, default=8192)
+    ap.add_argument("--max-num-seqs", type=int, default=96,
+                    help="keep < 128 so vLLM uses the serial grammar-bitmask fill "
+                         "path; the parallel (threaded) path has a rare fill/accept "
+                         "desync that yields occasional non-correct rollouts")
     ap.add_argument("--tensor-parallel-size", type=int, default=1)
     ap.add_argument("--tpu-type", default="A5000")
     ap.add_argument("--limit", type=int, default=None)
@@ -125,7 +129,8 @@ def main():
     t_load = time.time()
     llm = LLM(model=stage(a.model), max_model_len=a.max_model_len,
               tensor_parallel_size=a.tensor_parallel_size, enforce_eager=True,
-              dtype="bfloat16", structured_outputs_config={"backend": "auto"})
+              dtype="bfloat16", max_num_seqs=a.max_num_seqs,
+              structured_outputs_config={"backend": "auto"})
     tok = llm.get_tokenizer()
     contact_id = tok.convert_tokens_to_ids("<contact>")
     end_id = tok.convert_tokens_to_ids("<end>")
@@ -198,8 +203,13 @@ def main():
                              all_prec=sc["all_prec"], all_rec=sc["all_rec"],
                              pred_contacts=sorted([list(p) for p in pred])))
 
-        best = min(range(len(rows)), key=lambda i: rows[i]["struct_nll"])
-        n_correct = sum(1 for r in rows if r["all_prec"] == 1.0 and r["all_rec"] == 1.0)
+        # select the most-likely rollout ONLY among 100%-correct ones, so a rare
+        # grammar-rejected (truncated) rollout can never win on its shorter NLL.
+        correct = [i for i in range(len(rows))
+                   if rows[i]["all_prec"] == 1.0 and rows[i]["all_rec"] == 1.0]
+        pool = correct if correct else list(range(len(rows)))
+        best = min(pool, key=lambda i: rows[i]["struct_nll"])
+        n_correct = len(correct)
         write_parquet(pa.Table.from_pylist(rows), f"{out}/nll/{entry}.parquet")
         with fsspec.open(f"{out}/documents/{entry}.json", "w") as fh:
             json.dump(dict(entry_id=entry, L=L, n_gt=len(gt_seq), n_rollouts=len(rows),

@@ -186,8 +186,12 @@ def main():
                              all_prec=sc["all_prec"], all_rec=sc["all_rec"],
                              pred_contacts=sorted([list(p) for p in pred])))
 
-        best = min(range(len(rows)), key=lambda i: rows[i]["struct_nll"])
-        n_correct = sum(1 for r in rows if r["all_prec"] == 1.0 and r["all_rec"] == 1.0)
+        # select the most-likely rollout only among 100%-correct ones (robustness)
+        correct = [i for i in range(len(rows))
+                   if rows[i]["all_prec"] == 1.0 and rows[i]["all_rec"] == 1.0]
+        pool = correct if correct else list(range(len(rows)))
+        best = min(pool, key=lambda i: rows[i]["struct_nll"])
+        n_correct = len(correct)
         total_tok_all += total_gen
 
         write_parquet(pa.Table.from_pylist(rows), f"{out}/nll/{entry}.parquet")
