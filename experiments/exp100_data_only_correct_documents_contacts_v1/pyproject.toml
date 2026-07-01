@@ -1,0 +1,38 @@
+[project]
+name = "exp100-data-only-correct-documents-contacts-v1"
+version = "0.1.0"
+description = "Regenerate the contacts-v1 training set by sampling only-correct (constrained) documents from the tuned 1.5B model and selecting per protein by unmodified likelihood, on TPU/iris — issue #100."
+requires-python = ">=3.11,<3.13"
+# LOCAL steps only (select_targets.py, gen_prompts.py, aggregate_results.py).
+# The TPU rollout worker (gen_rollouts_worker_vllm_tpu.py) is marinfold-free and
+# runs in the marin checkout's vllm/tpu env on iris — its deps are NOT here.
+dependencies = [
+    "marinfold",   # build_document / residues_from_sequence for resampled prefixes
+    "gcsfs",       # read the exp53 train shards + write artifacts to GCS
+    "fsspec",
+    "pyarrow",
+    "pandas>=2.0",
+    "numpy",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+# Local path dep: these scripts run on this box against the code under test.
+# (The TPU worker doesn't import marinfold, so it doesn't need this resolved
+# on the cluster — contrast exp53, which git-sourced marinfold for its workers.)
+marinfold = { path = "../../marinfold" }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
