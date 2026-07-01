@@ -143,6 +143,21 @@ uv run --no-sync iris --cluster marin job run --no-wait --enable-extra-resources
 Calibration (3 targets) confirmed 10/10-correct on a v5p-8 with NLLs matching the
 GPU path, ~1350 tok/s after the one-time XLA compile (77 s).
 
+**Full run on iris (1000 × 10, one v5p-8).** All **1000/1000 selected documents
+100%-correct** (mean 9.985/10 rollouts correct; 0 targets with <1 correct), NLLs
+matching the GPU run (best-of-N struct NLL mean 971 / median 660; mean−min spread
+19.1). Cost: 4.30 M tokens, **1,226 tok/s (tp=4)**, **~1.04 v5p-8-hours** (gen
+0.97 + score 0.07) — ~3× the A5000's per-unit rate, and shardable across many
+v5p-8 (exp98 used 8×). Per-target table: `data/full_tpu_per_target.csv`.
+
+One caveat, fully mitigated: under vLLM 0.20's fill/accept scheduling at scale our
+incremental FSM state occasionally drifts (~0.15 % of rollouts hit a spurious
+"grammar rejected" → truncated), which the **select-among-100%-correct** rule
+absorbs (a truncated rollout can't win selection). The
+**history-authoritative, tolerant grammar** (`only_correct_backend.py`: resync
+from the true token stream, never terminate the request) removes even those on
+subsequent runs.
+
 ## Run
 
 ```bash
@@ -214,10 +229,11 @@ the code that ports to iris/TPU (see backend note above).
 ## Conclusion
 
 The only-correct constrained-decoding method works: for every training protein we
-can generate valid, 100%-correct, full-recall contacts-v1 documents whose contact
-ordering is sampled from the base model and selected by unmodified likelihood, at
-~0.003 GPU-hours per protein (10 rollouts). Validated end-to-end on 1000 proteins
-(10,000 documents, all correct) on a single local GPU. Scale-out (full
-unique-protein train set) and the fine-tuning-vs-re-epoch comparison are the
-follow-ups; the iris/TPU port uses vLLM's structured-output bitmask path (see
-[`only_correct_backend.py`](only_correct_backend.py)).
+generate valid, 100%-correct, full-recall contacts-v1 documents whose contact
+ordering is sampled from the base model and selected by unmodified likelihood.
+Validated end-to-end on 1000 proteins (10,000 documents, all selected docs correct)
+on **both** a local GPU (HF worker, 2.85 A5000-h) and **iris TPU** (vLLM
+structured-output-backend worker, ~1.04 v5p-8-h, 1000/1000 correct). The TPU path
+is the efficient, shardable one for scale-out. Remaining: scale to the full
+unique-protein train set, publish the set to the public HF bucket, and the
+fine-tuning-vs-re-epoch comparison (a later experiment).
