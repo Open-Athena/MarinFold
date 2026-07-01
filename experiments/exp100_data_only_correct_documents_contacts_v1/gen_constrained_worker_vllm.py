@@ -100,6 +100,9 @@ def main():
     ap.add_argument("--tpu-type", default="A5000")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--overwrite", action="store_true")
+    ap.add_argument("--save-all-documents", action="store_true",
+                    help="also write all N rollouts verbatim per target (off by "
+                         "default — at ~941k targets that's millions of extra files)")
     a = ap.parse_args()
     si, sm = (int(x) for x in a.shard.split("/"))
     out = a.out.rstrip("/")
@@ -228,8 +231,9 @@ def main():
             json.dump(dict(entry_id=entry, L=L, n_gt=len(gt_seq), n_rollouts=len(rows),
                            n_correct=n_correct, selected_by="struct_nll", selected=docs[best],
                            sampling=dict(temperature=a.temperature, top_p=a.top_p, top_k=a.top_k)), fh)
-        with fsspec.open(f"{out}/all_documents/{entry}.json", "w") as fh:
-            json.dump(dict(entry_id=entry, documents=docs), fh)
+        if a.save_all_documents:
+            with fsspec.open(f"{out}/all_documents/{entry}.json", "w") as fh:
+                json.dump(dict(entry_id=entry, documents=docs), fh)
 
         tps = total_gen / gen_s if gen_s > 0 else 0.0
         trow = dict(entry_id=entry, L=L, n_gt=len(gt_seq), n_rollouts=len(rows),
