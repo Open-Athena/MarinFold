@@ -33,19 +33,21 @@ per line; the real document is one space-separated token string.
 <begin_statements>
 <contact> <p21> <p27>
 <contact> <p20> <p26>
-<p24> <CA> <xyz-654>
-<p20> <CB> <xyz-045> <xyz-782>
-<p26> <CA> <xyz-128>
-<p22> <N> <xyz-401> <xyz-693> <xyz-928>
 <p26> <CA> <xyz-129> <xyz-360> <xyz-883> <xyz-749>
+<p20> <CB> <xyz-602> <xyz-188>
+<p24> <CA> <xyz-205>
+<p22> <N> <xyz-079> <xyz-412> <xyz-098>
+<p24> <CA> <xyz-105> <xyz-741> <xyz-552> <xyz-337>
 <end>
 ```
 
-The `<p26> <CA>` atom is mentioned twice: first at depth 1 (`<xyz-128>`),
-later at depth 4 (`<xyz-129> <xyz-360> <xyz-883> <xyz-749>`). Both mentions
-are noisy re-draws around the same true position — the hundreds digit
-happens to read `8` the first time and the (correct) `9` the second time.
-See *Noise model* below for the arithmetic behind this exact example.
+The very first coordinate statement (`<p26> <CA>`) is always full precision
+— see *Mention scheduling* for why. `<p24> <CA>` is then mentioned twice:
+first at depth 1 (`<xyz-205>`), where noise happened to push its
+x-coordinate across the 100/200 Å boundary (true hundreds digit is `1`, not
+`2`); a later depth-4 mention (`<xyz-105> <xyz-741> <xyz-552> <xyz-337>`)
+reads the corrected, full-precision value. See *Noise model* below for the
+exact arithmetic behind this example.
 
 ## Details
 
@@ -80,15 +82,16 @@ derivation). The difference is *selection*: contacts-v1 takes the
 conditioning hint, so we take a **uniform random sample**:
 
 - With probability 0.3, N = 0 (no contacts at all).
-- Otherwise, N ~ Uniform{1, ..., min(30, num_eligible_contacts)}, and the N
+- Otherwise, N ~ Uniform{1, ..., min(50, num_eligible_contacts)}, and the N
   contacts are a uniform random sample (not strongest-first) from the
   above-threshold pool.
 
-Why 30 as the cap, and why contacts don't compete with coordinates for
-budget: each `<contact> <pX> <pY>` statement is 3 tokens, so even 30
-contacts is only 90 tokens — about 1% of the 8192-token budget. The upper
-bound is a modeling choice (how much contact conditioning to expose), not a
-length constraint. Coordinates below are what actually fill the document.
+Why 50 as the cap, and why contacts don't compete with coordinates for
+budget: each `<contact> <pX> <pY>` statement is 3 tokens, so even 50
+contacts is only 150 tokens — under 0.5% of the 32768-token budget. The
+upper bound is a modeling choice (how much contact conditioning to expose),
+not a length constraint. Coordinates below are what actually fill the
+document.
 
 The N selected contacts are listed in random order, and (as in contacts-v1)
 each pair's two positions are coin-flipped independently.
@@ -213,88 +216,119 @@ length*). Each event:
    (they reinforce that the noise is calibrated, not that the value
    changes), not wasted tokens.
 
-2. **Pick a depth** (1–4) — from a distribution that shifts from shallow to
-   deep as the coordinate section progresses, so the document *trends*
-   hundreds → tens → ones → tenths overall, while still allowing an early
-   deep mention or a late shallow one occasionally. Concretely: let `t =
-   (coordinate tokens emitted so far) / (coordinate section token budget)`,
-   a value in `[0, 1]`. Depths have centers `c = [0, 1/3, 2/3, 1]`; depth
-   `d`'s raw weight is `max(0, 1 − 3·|t − c_d|) + ε` with `ε = 0.05` (a
-   floor so no depth is ever impossible); normalize the 4 weights to sum to
-   1 and sample. At `t = 0` this puts 87.5% weight on depth 1, with the
-   remaining 12.5% split evenly across depths 2–4 (~4.2% each) — i.e. yes,
-   an atom's very first mention in the whole document has a small but real
-   chance of jumping straight to full precision; the distribution shifts
-   smoothly through depths 2 and 3 and lands symmetrically on depth 4 (87.5%
-   / 4.2% each elsewhere) by `t = 1`.
+2. **Pick a depth** (1–4). **Exception: the very first coordinate statement
+   in the document (event index 0) always gets depth 4**, regardless of the
+   schedule below. Before any coordinate has been given, the document's
+   random rotation+translation frame (see *Coordinate frame*) is unknown to
+   a reader — a lone coarse digit carries little information with no
+   established anchor to interpret it relative to. Revealing one atom's
+   exact position first gives everything mentioned afterward, at any depth,
+   something concrete to be relative to. (The atom for this first event is
+   still chosen the same way as any other — step 1 above, uniformly at
+   random — only its depth is fixed; its token cost still counts toward the
+   budget bookkeeping like any other event.)
+
+   Every event after the first draws its depth from a distribution that
+   shifts from shallow to deep as the coordinate section progresses, so the
+   document *trends* hundreds → tens → ones → tenths overall, while still
+   allowing an early deep mention or a late shallow one occasionally.
+   Concretely: let `t = (coordinate tokens emitted so far) / (coordinate
+   section token budget)`, a value in `[0, 1]` (already slightly above 0 by
+   the second event, since the forced first event's own tokens count toward
+   the numerator). Depths have centers `c = [0, 1/3, 2/3, 1]`; depth `d`'s
+   raw weight is `max(0, 1 − 3·|t − c_d|) + ε` with `ε = 0.05` (a floor so
+   no depth is ever impossible); normalize the 4 weights to sum to 1 and
+   sample. At `t = 0` this puts 87.5% weight on depth 1, with the remaining
+   12.5% split evenly across depths 2–4 (~4.2% each); the distribution
+   shifts smoothly through depths 2 and 3 and lands symmetrically on depth 4
+   (87.5% / 4.2% each elsewhere) by `t = 1`.
 
 3. **Draw fresh noise and emit.** See *Noise model* — a new independent
    noisy coordinate is drawn for *this event*, and digits 1..depth are read
    off it. Because the noise is redrawn per mention rather than per atom,
    two mentions of the same atom can (rarely) disagree even in their
-   coarsest digit — that's the mechanism behind the `<xyz-128>` →
-   `<xyz-129>` example above.
+   coarsest digit — that's the mechanism behind the `<p24> <CA>` example's
+   `<xyz-205>` → `<xyz-105>` hundreds-digit correction above.
 
-Depth-schedule constants (`ε = 0.05`, kernel centers, kernel width) are
-reasonable defaults, not load-bearing invariants — fine to expose as knobs
-for future tuning.
+The forced-depth-4 first event is a fixed rule, not a tunable. The
+depth-schedule constants that govern every other event (`ε = 0.05`, kernel
+centers, kernel width) are reasonable defaults, not load-bearing invariants
+— fine to expose as knobs for future tuning.
 
 ##### Noise model
 
 Per the motivating ask: when a statement's *finest* revealed digit is, say,
-the hundreds place, that digit should be the true bin ~95% of the time (so
-the model isn't trained to treat coordinate bins as rigid) — and a later,
-finer mention is what's allowed to reveal that the coarse digit was
-actually off by one bin.
+the hundreds place, that digit should be the true bin ~95% of the time when
+the true position sits at the exact **center** of its bin (so the model
+isn't trained to treat coordinate bins as rigid) — and a later, finer
+mention is what's allowed to reveal that the coarse digit was actually off
+by one bin.
 
 For a mention at depth `d`, let `w_d` be the bin width at the finest
 revealed place: `100, 10, 1, 0.1` Å for `d = 1, 2, 3, 4`. Draw isotropic
-Gaussian noise independently per axis, `σ_d = w_d / 16`, add it to the true
-(frame-transformed) coordinate **once per mention**, clamp to `[0, 999.9]`,
-and extract all `1..d` digits from that single noisy value (so a deep
-mention's coarser digits come from the same noisy draw as its finest digit
-— since `σ_d` is small relative to the coarser bins' width, they essentially
-never flip at depth ≥ 2).
+Gaussian noise independently per axis, `σ_d = max(w_d / 4, 0.1)` Å, add it
+to the true (frame-transformed) coordinate **once per mention**, clamp to
+`[0, 999.9]`, and extract all `1..d` digits from that single noisy value
+(so a deep mention's coarser digits come from the same noisy draw as its
+finest digit — since `σ_d` is small relative to the coarser bins' width,
+they essentially never flip at depth ≥ 2).
 
-Why `σ_d = w_d / 16`: for a true value uniformly positioned within a bin of
-width `w`, and Gaussian noise of scale `σ`, the probability the noisy value
-lands in the same bin (averaged over the true value's position in the bin)
-is `2Φ(w/σ) − 1 + (2σ/w)(φ(w/σ) − φ(0))`. At `w/σ = 16` this evaluates to
-`95.0%` (verified numerically, including by direct Monte Carlo simulation).
-So concretely: `σ_1 = 6.25` Å, `σ_2 = 0.625` Å, `σ_3 = 0.0625` Å, `σ_4 =
-0.00625` Å. The depth-3/4 values are far finer than any real structure's
-physical coordinate uncertainty — that's expected and fine, since this
-noise isn't modeling physical measurement error, it's a training-time
-softening of the bin boundaries, calibrated purely so each mention's own
-stated precision is ~95% reliable.
+Why `σ_d = w_d / 4`: for a true value sitting at the exact center of a bin
+of width `w`, the nearest boundary is `w/2` away, and Gaussian noise of
+scale `σ` stays inside it with probability `2Φ(w/(2σ)) − 1`. At `σ = w/4`
+that's `2Φ(2) − 1 ≈ 95.45%` (verified numerically) — close to the 95%
+target, and, unlike the previous uniform-position-average calibration this
+replaces, it holds at that *same* ~95.45% for any bin width, since `w/σ` is
+fixed at 4 regardless of scale. Concretely: `σ_1 = 25.0` Å, `σ_2 = 2.5` Å,
+`σ_3 = 0.25` Å for `d = 1, 2, 3`.
 
-Worked example (the `<p26> <CA>` mentions in the document above), true
-position `(138.7, 268.4, 903.9)` after the frame transform:
+`σ_4` breaks the pattern: `w_4 / 4 = 0.1 / 4 = 0.025` Å is clamped up to a
+**floor of `0.1` Å**, since noise finer than that would be tighter than most
+real structures' coordinates are even known to — false precision. The
+floor means the tenths digit does *not* hit ~95%: at `σ_4 = 0.1`, a
+bin-centered true value keeps its correct tenths digit only `2Φ(0.5) − 1 ≈
+38.3%` of the time. This is an intentional tradeoff — the tenths digit is
+deliberately the softest of the four, so the model isn't trained to trust
+sub-0.1 Å precision as reliable just because the vocabulary can nominally
+express it.
 
-| mention | depth | noisy draw | tokens |
-|---|---|---|---|
-| 1st | 1 | `(138.9, 267.9, 898.9)` | `<xyz-128>` |
-| 2nd | 4 | `(138.7, 268.4, 903.9)` | `<xyz-129> <xyz-360> <xyz-883> <xyz-749>` |
+(Off-center true values — not sitting exactly at a bin's midpoint — are, in
+general, nearer to *one* boundary than the center is, so their actual
+stay-probability is somewhat lower than the center-of-bin figures above;
+those figures are a best case, not an average.)
 
-The first mention's noise draw happened to push z (903.9) down across the
-900 boundary to 898.9, reading hundreds-digit `8` instead of the true `9`;
-the second draw is close enough to true that all four digits read
-correctly. (This is exact arithmetic per the digit-extraction formula
-above, not illustrative rounding — verified numerically while drafting
-this spec.)
+Worked example — the `<p24> <CA>` mentions in the document above, true
+position `(175.0, 45.2, 512.6)` after the frame transform:
+
+| mention | depth | σ (Å) | noisy draw | tokens |
+|---|---|---|---|---|
+| 1st (early, shallow) | 1 | 25.0 | `(202.80, 55.80, 538.52)` | `<xyz-205>` |
+| 2nd (later, deep) | 4 | 0.1 | `(175.26, 45.25, 512.71)` | `<xyz-105> <xyz-741> <xyz-552> <xyz-337>` |
+
+The first mention's noise draw happened to push x (175.0) up across the
+100/200 boundary to 202.80, reading hundreds-digit `2` instead of the true
+`1`; the second draw, at the much tighter depth-4 noise scale, reads all
+four digits correctly. (Exact arithmetic per the digit-extraction formula
+above, verified numerically while drafting this spec.)
 
 ### Document length
 
-Context budget is 8192 tokens (same constant as contacts-v1 /
-contacts-and-distances-v1). Costs:
+Context budget is 32768 tokens — larger than contacts-v1 /
+contacts-and-distances-v1's shared 8192, since coordinates need far more
+room than contacts ever did (see the coverage table below: even at 32768,
+the largest supported chain only gets partial atom coverage). This is a
+deliberate divergence from those two formats — token *vocabulary* is shared
+(see *Additional tokens*) but context length isn't, and nothing about the
+shared-embeddings story depends on the three formats using the same budget.
+Costs:
 
 - Frame: 4 tokens (doc-type, `<begin_sequence>`, `<begin_statements>`,
   `<end>`).
 - Sequence section: `2L + 4` tokens for an `L`-residue chain (same as
   contacts-v1).
-- Contacts: `3N` tokens for `N` contacts (`N ≤ 30`, so ≤ 90 tokens — see
+- Contacts: `3N` tokens for `N` contacts (`N ≤ 50`, so ≤ 150 tokens — see
   *Contacts* above for why this doesn't meaningfully compete for budget).
-- Coordinates: whatever remains, `B = 8192 − 4 − (2L + 4) − 3N`. Mention
+- Coordinates: whatever remains, `B = 32768 − 4 − (2L + 4) − 3N`. Mention
   events (2 tokens for `<pX> <ATOM>`, plus 1–4 for the `<xyz-*>` tokens, so
   3–6 tokens each) are sampled per *Mention scheduling* and appended until
   the next event wouldn't fit in `B`; that last partial event is dropped
@@ -303,26 +337,29 @@ contacts-and-distances-v1). Costs:
   with a warning (same as contacts-v1).
 
 This is also the answer to "what should the contact-count upper bound be":
-**30**, chosen because at 3 tokens/contact it's cheap regardless (≤ ~1% of
-budget) — the real budget pressure is entirely in the coordinate section,
-so there was no length-based reason to pick a smaller or larger contact cap.
-30 gives reasonable variety in how much contact conditioning a document can
-show.
+**50**, chosen because at 3 tokens/contact it's cheap regardless (well under
+0.5% of budget) — the real budget pressure is entirely in the coordinate
+section, so there was no length-based reason to pick a smaller or larger
+contact cap. 50 gives reasonable variety in how much contact conditioning a
+document can show.
 
 Rough coverage this implies (heavy-atom count estimated at ~7.7 atoms/residue,
 a typical average across the 20 canonical amino acids; simulated directly
-from the *Mention scheduling* algorithm above, using `E[N contacts] ≈ 11`):
+from the *Mention scheduling* algorithm above, including the forced-depth-4
+first event, using `E[N contacts] ≈ 18`):
 
 | chain length L | ~atoms | events that fit | ~fraction of atoms touched ≥1x | avg mentions per touched atom |
 |---|---|---|---|---|
-| 50 | ~385 | ~1,830 | ~99% | ~4.8 |
-| 300 | ~2,310 | ~1,720 | ~53% | ~1.4 |
-| 1000 | ~7,700 | ~1,400 | ~16% | ~1.1 |
-| 2000 | ~15,400 | ~950 | ~6% | ~1.0 |
+| 50 | ~385 | ~7,430 | ~100% | ~19.3 |
+| 300 | ~2,310 | ~7,320 | ~96% | ~3.3 |
+| 1000 | ~7,700 | ~7,010 | ~60% | ~1.5 |
+| 2000 | ~15,400 | ~6,570 | ~35% | ~1.2 |
 
-Small chains get near-total, often-repeated coverage; large chains get a
-random sparse sample, mostly single mentions at whatever depth the
-scheduler happened to be at. (Numbers are simulation estimates for the
+Coverage is far more generous than an 8192 budget would allow: mid-size
+chains (300 residues) are close to total coverage, and even the largest
+supported chain (2000 residues, the *Residue indexing* cap) now gets
+roughly a third of its atoms touched at least once, versus the ~6% an
+8192-token budget would give it. (Numbers are simulation estimates for the
 *default* parameters above, not load-bearing — they'll shift if the
 defaults are tuned.)
 
@@ -338,29 +375,42 @@ That's it — 1001 new tokens total. Everything else (positions `<p0>` …
 `<p1999>`, `<n-term>`, `<c-term>`, `<contact>`, amino acids, atom names,
 `<begin_sequence>`, `<begin_statements>`, `<end>`, `<UNK>`, `<think>`, and
 the trailing `<contacts-v1.sequence_only>`) is reused by carrying forward
-contacts-v1's entire `all_domain_tokens()` list unchanged, the same way
-contacts-v1 carried forward contacts-and-distances-v1's — so a model
+contacts-v1's entire `all_domain_tokens()` list unchanged — so a model
 trained on any one of the three formats shares embeddings with the others
 and can be fine-tuned across them without a tokenizer change.
 
-Following contacts-v1's own precedent (its 5 native tokens come *before*
-the inherited block, not after), this format's vocab should be: its own
-1001 native tokens first, then contacts-v1's full domain vocab (2844
-tokens) after. Total domain vocab: 3845 tokens (3847 with `<pad>`/`<eos>`).
+Unlike contacts-v1's own precedent (its 5 native tokens come *before* its
+inherited contacts-and-distances-v1 block), this format puts the
+**inherited contacts-v1 block first and its own 1001 native tokens last**:
+
+```
+all_domain_tokens() = [*contacts-v1's full domain vocab (2844 tokens),
+                        *this format's own 1001 native tokens]
+```
+
+so that every one of contacts-v1's tokens keeps the *exact same numeric id*
+it has in contacts-v1's own standalone tokenizer (both prepend
+`<pad>`/`<eos>` at ids 0–1, so contacts-v1's tokens occupy ids 2–2845 in
+either tokenizer). A pretrained contacts-v1 checkpoint's embedding matrix
+can then be warm-started into a contacts-and-coordinates-v1 model by
+appending 1001 new rows, rather than remapping every existing embedding to
+a new id. Total domain vocab: 3845 tokens (3847 with `<pad>`/`<eos>`).
 
 ## Suggested default parameters
 
 | Parameter | Default | Notes |
 |---|---|---|
-| `context_length` | 8192 | same as contacts-v1 / contacts-and-distances-v1 |
+| `context_length` | 32768 | larger than contacts-v1 / contacts-and-distances-v1's 8192 — coordinates need the room |
 | `min_seq_separation` | 6 | reused from contacts-v1's contact definition |
 | `min_contact_degree` | 0.001 | reused from contacts-v1's contact definition |
 | `n_contacts_zero_prob` | 0.3 | P(N = 0) |
-| `n_contacts_max` | 30 | see *Document length* |
+| `n_contacts_max` | 50 | see *Document length* |
 | `cube_size` | 1000.0 Å | the `<xyz-DDD>` coordinate range per axis |
 | `cube_margin` | 10.0 Å | placement margin; structures needing more than `cube_size − 2×margin` Å span in any axis are skipped |
-| `noise_ratio` (`w_d / σ_d`) | 16 | gives ~95% same-bin probability at a mention's finest revealed digit |
+| `noise_divisor` (`w_d / σ_d`) | 4 | gives ~95.45% bin-center reliability at a mention's finest digit, for `d = 1, 2, 3` |
+| `noise_sigma_floor` | 0.1 Å | minimum noise stdev; overrides the divisor at `d = 4` (drops that level's bin-center reliability to ~38%) |
 | `depth_kernel_epsilon` | 0.05 | floor weight in the depth-scheduling kernel, keeps all depths always possible |
+| `force_full_precision_first_event` | true | the document's very first coordinate statement always gets depth 4 |
 
 ## Open questions / future work
 
