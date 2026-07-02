@@ -1,0 +1,555 @@
+dataset,stem,gt_chain,pdb_evidence,source_organism,is_viral
+foldbench100,5sbj_A,A,5SBJ,synthetic construct,False
+foldbench100,7pv5_A,A,7PV5,Drosophila melanogaster,False
+foldbench100,7qp5_A,A,7QP5,Escherichia coli K-12,False
+foldbench100,7qsj_A,A,7QSJ,Mycolicibacterium hassiacum,False
+foldbench100,7t9r_A,A,7T9R,Crocodylus porosus,False
+foldbench100,7tlh_A,A,7TLH,Mus musculus,False
+foldbench100,7tjb_A,A,7TJB,Neisseria gonorrhoeae FA 1090,False
+foldbench100,7uba_A,A,7UBA,Vanderwaltozyma polyspora DSM 70294,False
+foldbench100,7uk8_A,A,7UK8,Escherichia coli K-12,False
+foldbench100,7ur2_A,A,7UR2,Rattus norvegicus,False
+foldbench100,7ur7_A,A,7UR7,synthetic construct,False
+foldbench100,7urp_A,A,7URP,Ruminococcus bromii L2-63,False
+foldbench100,7uvg_A,A,7UVG,Ruminococcus bromii L2-63,False
+foldbench100,7uww_A,A,7UWW,Ruminococcus bromii L2-63,False
+foldbench100,7v3o_A,A,7V3O,Streptomyces ossamyceticus,False
+foldbench100,7w15_A,A,7W15,Acinetobacter baumannii,False
+foldbench100,7y3h_A,A,7Y3H,Apiospora montagnei NRRL 25634,False
+foldbench100,7wz5_A,A,7WZ5,Larimichthys crocea,False
+foldbench100,7wzm_A,A,7WZM,Streptomyces avermitilis,False
+foldbench100,7x4p_A,A,7X4P,Enterococcus faecalis,False
+foldbench100,7x3h_A,A,7X3H,Clostridium botulinum,False
+foldbench100,7x8l_A,A,7X8L,Altericroceibacterium indicum,False
+foldbench100,7xcd_A,A,7XCD,Tenuivirus oryzaclavatae,True
+foldbench100,7xg9_A,A,7XG9,Sphingobium sp. SYK-6,False
+foldbench100,7xi5_A,A,7XI5,Pseudomonas citronellolis,False
+foldbench100,7xp9_A,A,7XP9,Phytophthora infestans T30-4,False
+foldbench100,8ycm_A,A,8YCM,Homo sapiens,False
+foldbench100,7xq4_A,A,7XQ4,Streptomyces showdoensis,False
+foldbench100,7xrx_A,A,7XRX,Pseudomonas aeruginosa PAO1,False
+foldbench100,7xjr_A,A,7XJR,Algibacter sp. L4_22,False
+foldbench100,7xyr_A,A,7XYR,Bacteroides thetaiotaomicron,False
+foldbench100,7xz3_A,A,7XZ3,Thermobaculum terrenum,False
+foldbench100,7y4h_A,A,7Y4H,Actinomadura viridis,False
+foldbench100,7y54_A,A,7Y54,Chelicerata,False
+foldbench100,7y5m_A,A,7Y5M,Tacheng Tick Virus 1,True
+foldbench100,7y5r_A,A,7Y5R,Chelicerata,False
+foldbench100,7y8h_A,A,7Y8H,Chelicerata,False
+foldbench100,7y8i_A,A,7Y8I,Chelicerata,False
+foldbench100,7y5j_A,A,7Y5J,Chelicerata,False
+foldbench100,7yd4_A,A,7YD4,Mycobacterium tuberculosis H37Rv,False
+foldbench100,7yhr_A,A,7YHR,Pseudomonas delhiensis,False
+foldbench100,7ykm_A,A,7YKM,Deinococcus radiodurans,False
+foldbench100,7ylr_A,A,7YLR,Variovorax paradoxus,False
+foldbench100,8gmy_A,A,8GMY,Drosophila melanogaster,False
+foldbench100,7yug_A,A,7YUG,Homo sapiens,False
+foldbench100,7yyg_A,A,7YYG,Bordetella pertussis Tohama I,False
+foldbench100,7z65_A,A,7Z65,Chitinivibrio alkaliphilus ACht1,False
+foldbench100,7znz_A,A,7ZNZ,Akkermansia muciniphila ATCC BAA-835,False
+foldbench100,7zoi_A,A,7ZOI,Chitinophaga pinensis DSM 2588,False
+foldbench100,7zs2_A,A,7ZS2,Candidatus Kuenenia,False
+foldbench100,7zu3_A,A,7ZU3,parechovirus A1,True
+foldbench100,7zv1_A,A,7ZV1,Aichi virus A846/88,True
+foldbench100,8adc_A,A,8ADC,Waddlia chondrophila,False
+foldbench100,8add_A,A,8ADD,Danio rerio,False
+foldbench100,8ah9_A,A,8AH9,synthetic construct,False
+foldbench100,8akh_A,A,8AKH,Lactiplantibacillus plantarum,False
+foldbench100,8ak2_A,A,8AK2,Drosophila melanogaster,False
+foldbench100,8arl_A,A,8ARL,Plasmodium vivax,False
+foldbench100,8q8i_A,A,8Q8I,Paramecium bursaria Chlorella virus 1,True
+foldbench100,8au6_A,A,8AU6,Corynebacterium glutamicum ATCC 13032,False
+foldbench100,8axj_A,A,8AXJ,Trypanosoma brucei brucei TREU927,False
+foldbench100,8azb_A,A,8AZB,Bacillus subtilis subsp. subtilis str. 168,False
+foldbench100,8b2e_A,A,8B2E,Kionochaeta sp.,False
+foldbench100,8b2g_A,A,8B2G,Penicillium virgatum,False
+foldbench100,8b2s_A,A,8B2S,Trichophaea saccata,False
+foldbench100,8b4u_A,A,8B4U,Candidatus Bathyarchaeota archaeon,False
+foldbench100,8b5w_A,A,8B5W,Homo sapiens,False
+foldbench100,8b61_A,A,8B61,Bacteroides fragilis NCTC 9343,False
+foldbench100,8b6a_A,A,8B6A,Bacteroides fragilis NCTC 9343,False
+foldbench100,8b6e_A,A,8B6E,Paulinella chromatophora,False
+foldbench100,8baq_A,A,8BAQ,Escherichia coli,False
+foldbench100,8bau_A,A,8BAU,Phytophthora nicotianae,False
+foldbench100,8bfy_A,A,8BFY,Streptomyces scabiei,False
+foldbench100,8bgb_A,A,8BGB,Geobacillus thermodenitrificans,False
+foldbench100,8bke_A,A,8BKE,Klebsiella phage KP34,True
+foldbench100,8bsb_A,A,8BSB,Vibrio cholerae O1 biovar El Tor str. N16961,False
+foldbench100,8bux_A,A,8BUX,Homo sapiens,False
+foldbench100,8c4d_A,A,8C4D,Enterococcus faecium,False
+foldbench100,7xlz_A,A,7XLZ,Vibrio anguillarum 775,False
+foldbench100,8c4y_A,A,8C4Y,Prochlorococcus marinus subsp. pastoris str. CCMP1986,False
+foldbench100,8cba_A,A,8CBA,Enterococcus faecalis,False
+foldbench100,8ci9_A,A,8CI9,Sinopodophyllum hexandrum,False
+foldbench100,8cih_A,A,8CIH,Homo sapiens,False
+foldbench100,8amo_A,A,8AMO,Mycobacterium tuberculosis H37Rv,False
+foldbench100,8cpk_A,A,8CPK,Escherichia coli,False
+foldbench100,8cpn_A,A,8CPN,metagenome,False
+foldbench100,8d2z_A,A,8D2Z,Burkholderia cenocepacia,False
+foldbench100,8daj_A,A,8DAJ,Lihuaxuella thermophila,False
+foldbench100,8dez_A,A,8DEZ,Acinetobacter baumannii ACICU,False
+foldbench100,8dge_A,A,8DGE,Bacteroides ovatus ATCC 8483,False
+foldbench100,8dhj_A,A,8DHJ,Clostridioides difficile 6050,False
+foldbench100,8dmu_A,A,8DMU,Drosophila melanogaster,False
+foldbench100,8dp9_A,A,8DP9,Melampsora lini,False
+foldbench100,8dqd_A,A,8DQD,Campylobacter concisus,False
+foldbench100,8dx0_A,A,8DX0,Enterococcus,False
+foldbench100,8e0r_A,A,8E0R,Mus musculus,False
+foldbench100,8e5h_A,A,8E5H,Stutzerimonas chloritidismutans AW-1,False
+foldbench100,8eb9_A,A,8EB9,Fusarium oxysporum f. sp. lycopersici,False
+foldbench100,8ec3_A,A,8EC3,Borrelia hermsii HS1,False
+foldbench100,8eo5_A,A,8EO5,uncultured soil bacterium,False
+denovo_pdb,1mj0_A,A,1MJ0,None,False
+denovo_pdb,1qys_A,A,1QYS,None,False
+denovo_pdb,1uw1_A,A,1UW1,synthetic construct,False
+denovo_pdb,2avp_A,A,2AVP,None,False
+denovo_pdb,2fkg_A,A,2FKG,Borreliella burgdorferi,False
+denovo_pdb,2fo7_A,A,2FO7,None,False
+denovo_pdb,2hkd_A,A,2HKD,Borreliella burgdorferi,False
+denovo_pdb,2hyz_A,A,2HYZ,None,False
+denovo_pdb,2i5v_O,O,2I5V,Borreliella burgdorferi,False
+denovo_pdb,2i5z_O,O,2I5Z,Borreliella burgdorferi,False
+denovo_pdb,2p05_A,A,2P05,unidentified,False
+denovo_pdb,2p09_A,A,2P09,unidentified,False
+denovo_pdb,2qyj_A,A,2QYJ,None,False
+denovo_pdb,2wqh_A,A,2WQH,synthetic construct,False
+denovo_pdb,2xen_A,A,2XEN,synthetic construct,False
+denovo_pdb,2zgd_A,A,2ZGD,None,False
+denovo_pdb,2zgg_A,A,2ZGG,None,False
+denovo_pdb,3dgl_A,A,3DGL,unidentified,False
+denovo_pdb,3dgm_A,A,3DGM,unidentified,False
+denovo_pdb,3dgn_A,A,3DGN,unidentified,False
+denovo_pdb,3dgo_A,A,3DGO,unidentified,False
+denovo_pdb,3lt8_A,A,3LT8,synthetic construct,False
+denovo_pdb,3lt9_A,A,3LT9,synthetic construct,False
+denovo_pdb,3lta_A,A,3LTA,synthetic construct,False
+denovo_pdb,3ltb_A,A,3LTB,synthetic construct,False
+denovo_pdb,3ltc_A,A,3LTC,synthetic construct,False
+denovo_pdb,3ltd_A,A,3LTD,synthetic construct,False
+denovo_pdb,3o49_A,A,3O49,synthetic construct,False
+denovo_pdb,3o4b_A,A,3O4B,synthetic construct,False
+denovo_pdb,3o4c_A,A,3O4C,synthetic construct,False
+denovo_pdb,3o4d_A,A,3O4D,synthetic construct,False
+denovo_pdb,3p6i_A,A,3P6I,None,False
+denovo_pdb,3p6j_A,A,3P6J,None,False
+denovo_pdb,3pg0_A,A,3PG0,synthetic construct,False
+denovo_pdb,3q7w_A,A,3Q7W,None,False
+denovo_pdb,3q7x_A,A,3Q7X,None,False
+denovo_pdb,3q7y_A,A,3Q7Y,None,False
+denovo_pdb,3rfn_A,A,3RFN,Pyrococcus horikoshii OT3;Pyrococcus horikoshii OT3,False
+denovo_pdb,3teu_A,A,3TEU,,False
+denovo_pdb,3v45_A,A,3V45,,False
+denovo_pdb,3ww9_A,A,3WW9,None,False
+denovo_pdb,3wwa_A,A,3WWA,None,False
+denovo_pdb,4a29_A,A,4A29,synthetic construct,False
+denovo_pdb,4d8h_A,A,4D8H,synthetic construct,False
+denovo_pdb,4db6_A,A,4DB6,synthetic construct,False
+denovo_pdb,4drt_A,A,4DRT,synthetic construct,False
+denovo_pdb,4dui_A,A,4DUI,synthetic construct,False
+denovo_pdb,4etj_A,A,4ETJ,synthetic construct,False
+denovo_pdb,4hxt_A,A,4HXT,synthetic construct,False
+denovo_pdb,4ijb_A,A,4IJB,synthetic construct,False
+denovo_pdb,4j8y_A,A,4J8Y,synthetic construct,False
+denovo_pdb,4lny_A,A,4LNY,synthetic construct,False
+denovo_pdb,4lpx_A,A,4LPX,synthetic construct,False
+denovo_pdb,4lt9_A,A,4LT9,synthetic construct,False
+denovo_pdb,4n6t_A,A,4N6T,synthetic construct,False
+denovo_pdb,4n6u_A,A,4N6U,synthetic construct,False
+denovo_pdb,4nez_A,A,4NEZ,synthetic construct,False
+denovo_pdb,4oxw_A,A,4OXW,synthetic construct,False
+denovo_pdb,4oza_A,A,4OZA,Streptococcus sp.,False
+denovo_pdb,4ozc_A,A,4OZC,Streptococcus sp.,False
+denovo_pdb,4pq8_A,A,4PQ8,synthetic construct,False
+denovo_pdb,4psj_A,A,4PSJ,synthetic construct,False
+denovo_pdb,4pww_A,A,4PWW,synthetic construct,False
+denovo_pdb,4qkr_A,A,4QKR,synthetic construct,False
+denovo_pdb,4qks_A,A,4QKS,synthetic construct,False
+denovo_pdb,4r5c_A,A,4R5C,synthetic construct,False
+denovo_pdb,4r6f_A,A,4R6F,synthetic construct,False
+denovo_pdb,4u3h_A,A,4U3H,synthetic construct,False
+denovo_pdb,4uos_A,A,4UOS,synthetic construct,False
+denovo_pdb,4wpy_A,A,4WPY,Mycobacterium tuberculosis H37Rv,False
+denovo_pdb,4wsp_A,A,4WSP,Mycobacterium tuberculosis H37Rv,False
+denovo_pdb,4yxx_A,A,4YXX,synthetic construct,False
+denovo_pdb,4yxz_A,A,4YXZ,synthetic construct,False
+denovo_pdb,5bvl_A,A,5BVL,synthetic construct,False
+denovo_pdb,5cwb_A,A,5CWB,synthetic construct,False
+denovo_pdb,5cwc_A,A,5CWC,synthetic construct,False
+denovo_pdb,5cwd_A,A,5CWD,synthetic construct,False
+denovo_pdb,5cwg_A,A,5CWG,synthetic construct,False
+denovo_pdb,5cwh_A,A,5CWH,synthetic construct,False
+denovo_pdb,5cwi_A,A,5CWI,synthetic construct,False
+denovo_pdb,5cwj_A,A,5CWJ,synthetic construct,False
+denovo_pdb,5cwk_A,A,5CWK,synthetic construct,False
+denovo_pdb,5cwm_A,A,5CWM,synthetic construct,False
+denovo_pdb,5cwn_A,A,5CWN,synthetic construct,False
+denovo_pdb,5cwp_A,A,5CWP,synthetic construct,False
+denovo_pdb,5cwq_A,A,5CWQ,synthetic construct,False
+denovo_pdb,5di5_A,A,5DI5,synthetic construct,False
+denovo_pdb,5dra_A,A,5DRA,synthetic construct,False
+denovo_pdb,5f53_A,A,5F53,synthetic construct,False
+denovo_pdb,5hrz_A,A,5HRZ,synthetic construct,False
+denovo_pdb,5ieo_A,A,5IEO,synthetic construct,False
+denovo_pdb,5iep_A,A,5IEP,synthetic construct,False
+denovo_pdb,5j0i_A,A,5J0I,synthetic construct,False
+denovo_pdb,5l0p_A,A,5L0P,Homo sapiens;Homo sapiens;Homo sapiens;Klebsiella pneumoniae,False
+denovo_pdb,5l33_A,A,5L33,synthetic construct,False
+denovo_pdb,5le4_A,A,5LE4,synthetic construct,False
+denovo_pdb,5le9_A,A,5LE9,synthetic construct,False
+denovo_pdb,5lea_A,A,5LEA,synthetic construct,False
+denovo_pdb,5lw2_A,A,5LW2,synthetic construct,False
+denovo_pdb,5oos_A,A,5OOS,synthetic construct,False
+denovo_pdb,5oou_A,A,5OOU,synthetic construct,False
+denovo_pdb,5op3_A,A,5OP3,synthetic construct,False
+denovo_pdb,5orm_A,A,5ORM,synthetic construct,False
+denovo_pdb,5trv_A,A,5TRV,synthetic construct,False
+denovo_pdb,5vjs_A,A,5VJS,synthetic construct,False
+denovo_pdb,5vjt_A,A,5VJT,synthetic construct,False
+denovo_pdb,5vju_A,A,5VJU,synthetic construct,False
+denovo_pdb,5vnv_A,A,5VNV,synthetic construct,False
+denovo_pdb,5xg5_A,A,5XG5,synthetic construct,False
+denovo_pdb,5ys7_A,A,5YS7,Borreliella burgdorferi,False
+denovo_pdb,6ais_O,O,6AIS,Borreliella burgdorferi,False
+denovo_pdb,6ds9_A,A,6DS9,synthetic construct,False
+denovo_pdb,6ee5_A,A,6EE5,synthetic construct,False
+denovo_pdb,6egc_A,A,6EGC,synthetic construct,False
+denovo_pdb,6f0s_A,A,6F0S,synthetic construct,False
+denovo_pdb,6ff6_A,A,6FF6,synthetic construct,False
+denovo_pdb,6fpb_A,A,6FPB,synthetic construct,False
+denovo_pdb,6g6m_A,A,6G6M,synthetic construct,False
+denovo_pdb,6g6p_A,A,6G6P,synthetic construct,False
+denovo_pdb,6i37_A,A,6I37,synthetic construct,False
+denovo_pdb,6i38_A,A,6I38,synthetic construct,False
+denovo_pdb,6i39_A,A,6I39,synthetic construct,False
+denovo_pdb,6i3a_A,A,6I3A,synthetic construct,False
+denovo_pdb,6ics_O,O,6ICS,Borreliella burgdorferi,False
+denovo_pdb,6idc_A,A,6IDC,Borreliella burgdorferi,False
+denovo_pdb,6iei_A,A,6IEI,Borreliella burgdorferi B31,False
+denovo_pdb,6jcc_A,A,6JCC,synthetic construct,False
+denovo_pdb,6mrr_A,A,6MRR,synthetic construct,False
+denovo_pdb,6mrs_A,A,6MRS,synthetic construct,False
+denovo_pdb,6n9h_A,A,6N9H,synthetic construct,False
+denovo_pdb,6naf_A,A,6NAF,synthetic construct,False
+denovo_pdb,6nek_A,A,6NEK,synthetic construct,False
+denovo_pdb,6nla_A,A,6NLA,Streptococcus,False
+denovo_pdb,6qb2_A,A,6QB2,synthetic construct,False
+denovo_pdb,6qsd_A,A,6QSD,synthetic construct,False
+denovo_pdb,6qse_A,A,6QSE,synthetic construct,False
+denovo_pdb,6qsg_A,A,6QSG,synthetic construct,False
+denovo_pdb,6qsh_A,A,6QSH,synthetic construct,False
+denovo_pdb,6rej_A,A,6REJ,synthetic construct,False
+denovo_pdb,6rek_A,A,6REK,synthetic construct,False
+denovo_pdb,6rem_A,A,6REM,synthetic construct,False
+denovo_pdb,6reo_A,A,6REO,synthetic construct,False
+denovo_pdb,6rlh_A,A,6RLH,synthetic construct,False
+denovo_pdb,6rli_A,A,6RLI,synthetic construct,False
+denovo_pdb,6sa6_A,A,6SA6,synthetic construct,False
+denovo_pdb,6tjg_A,A,6TJG,synthetic construct,False
+denovo_pdb,6veh_A,A,6VEH,synthetic construct,False
+denovo_pdb,6w3w_A,A,6W3W,synthetic construct,False
+denovo_pdb,6w90_A,A,6W90,synthetic construct,False
+denovo_pdb,6wvs_A,A,6WVS,synthetic construct,False
+denovo_pdb,6x9z_A,A,6X9Z,synthetic construct,False
+denovo_pdb,6xi6_A,A,6XI6,synthetic construct,False
+denovo_pdb,6xt4_A,A,6XT4,synthetic construct,False
+denovo_pdb,6y7p_A,A,6Y7P,synthetic construct,False
+denovo_pdb,6ypi_A,A,6YPI,synthetic construct,False
+denovo_pdb,6yqx_A,A,6YQX,synthetic construct,False
+denovo_pdb,6yqy_A,A,6YQY,synthetic construct,False
+denovo_pdb,6z2i_A,A,6Z2I,synthetic construct,False
+denovo_pdb,7a8s_A,A,7A8S,synthetic construct,False
+denovo_pdb,7ah0_A,A,7AH0,synthetic construct,False
+denovo_pdb,7awy_A,A,7AWY,synthetic construct,False
+denovo_pdb,7awz_A,A,7AWZ,synthetic construct,False
+denovo_pdb,7ax0_A,A,7AX0,synthetic construct,False
+denovo_pdb,7ax2_A,A,7AX2,synthetic construct,False
+denovo_pdb,7bid_A,A,7BID,synthetic construct,False
+denovo_pdb,7dgu_A,A,7DGU,Escherichia coli 'BL21-Gold(DE3)pLysS AG,False
+denovo_pdb,7dgw_A,A,7DGW,Escherichia coli 'BL21-Gold(DE3)pLysS AG,False
+denovo_pdb,7dgy_A,A,7DGY,Escherichia coli 'BL21-Gold(DE3)pLysS AG,False
+denovo_pdb,7dmf_A,A,7DMF,synthetic construct,False
+denovo_pdb,7f1h_A,A,7F1H,synthetic construct,False
+denovo_pdb,7f1i_A,A,7F1I,synthetic construct,False
+denovo_pdb,7f1j_A,A,7F1J,synthetic construct,False
+denovo_pdb,7f1k_A,A,7F1K,synthetic construct,False
+denovo_pdb,7f1l_A,A,7F1L,synthetic construct,False
+denovo_pdb,7hiy_A,A,7HIY,synthetic construct,False
+denovo_pdb,7hiz_A,A,7HIZ,synthetic construct,False
+denovo_pdb,7hj0_A,A,7HJ0,synthetic construct,False
+denovo_pdb,7hj1_A,A,7HJ1,synthetic construct,False
+denovo_pdb,7hj2_A,A,7HJ2,synthetic construct,False
+denovo_pdb,7hj3_A,A,7HJ3,synthetic construct,False
+denovo_pdb,7hj4_A,A,7HJ4,synthetic construct,False
+denovo_pdb,7hj5_A,A,7HJ5,synthetic construct,False
+denovo_pdb,7hj6_A,A,7HJ6,synthetic construct,False
+denovo_pdb,7hj7_A,A,7HJ7,synthetic construct,False
+denovo_pdb,7hj8_A,A,7HJ8,synthetic construct,False
+denovo_pdb,7hj9_A,A,7HJ9,synthetic construct,False
+denovo_pdb,7hja_A,A,7HJA,synthetic construct,False
+denovo_pdb,7hjb_A,A,7HJB,synthetic construct,False
+denovo_pdb,7hjc_A,A,7HJC,synthetic construct,False
+denovo_pdb,7hjd_A,A,7HJD,synthetic construct,False
+denovo_pdb,7hje_A,A,7HJE,synthetic construct,False
+denovo_pdb,7hjf_A,A,7HJF,synthetic construct,False
+denovo_pdb,7hjg_A,A,7HJG,synthetic construct,False
+denovo_pdb,7hjh_A,A,7HJH,synthetic construct,False
+denovo_pdb,7hji_A,A,7HJI,synthetic construct,False
+denovo_pdb,7hjj_A,A,7HJJ,synthetic construct,False
+denovo_pdb,7hjk_A,A,7HJK,synthetic construct,False
+denovo_pdb,7hjl_A,A,7HJL,synthetic construct,False
+denovo_pdb,7hjm_A,A,7HJM,synthetic construct,False
+denovo_pdb,7hjn_A,A,7HJN,synthetic construct,False
+denovo_pdb,7hjo_A,A,7HJO,synthetic construct,False
+denovo_pdb,7hjp_A,A,7HJP,synthetic construct,False
+denovo_pdb,7hjq_A,A,7HJQ,synthetic construct,False
+denovo_pdb,7hjr_A,A,7HJR,synthetic construct,False
+denovo_pdb,7hjs_A,A,7HJS,synthetic construct,False
+denovo_pdb,7hjt_A,A,7HJT,synthetic construct,False
+denovo_pdb,7hju_A,A,7HJU,synthetic construct,False
+denovo_pdb,7hjv_A,A,7HJV,synthetic construct,False
+denovo_pdb,7hjw_A,A,7HJW,synthetic construct,False
+denovo_pdb,7hjx_A,A,7HJX,synthetic construct,False
+denovo_pdb,7hjy_A,A,7HJY,synthetic construct,False
+denovo_pdb,7hjz_A,A,7HJZ,synthetic construct,False
+denovo_pdb,7hk0_A,A,7HK0,synthetic construct,False
+denovo_pdb,7hk1_A,A,7HK1,synthetic construct,False
+denovo_pdb,7hk2_A,A,7HK2,synthetic construct,False
+denovo_pdb,7hk3_A,A,7HK3,synthetic construct,False
+denovo_pdb,7hk4_A,A,7HK4,synthetic construct,False
+denovo_pdb,7jrq_A,A,7JRQ,Escherichia coli,False
+denovo_pdb,7kuw_A,A,7KUW,synthetic construct,False
+denovo_pdb,7mcc_A,A,7MCC,synthetic construct,False
+denovo_pdb,7ocm_A,A,7OCM,Homo sapiens;Homo sapiens,False
+denovo_pdb,7osu_A,A,7OSU,synthetic construct,False
+denovo_pdb,7osv_A,A,7OSV,synthetic construct,False
+denovo_pdb,7ot7_A,A,7OT7,synthetic construct,False
+denovo_pdb,7p12_A,A,7P12,synthetic construct,False
+denovo_pdb,7qnl_AAA,AAA,7QNL,synthetic construct,False
+denovo_pdb,7rmx_A,A,7RMX,synthetic construct,False
+denovo_pdb,7smj_A,A,7SMJ,synthetic construct,False
+denovo_pdb,7sq3_A,A,7SQ3,synthetic construct,False
+denovo_pdb,7sq4_A,A,7SQ4,synthetic construct,False
+denovo_pdb,7sq5_A,A,7SQ5,synthetic construct,False
+denovo_pdb,7tal_A,A,7TAL,synthetic construct,False
+denovo_pdb,7tjl_A,A,7TJL,synthetic construct,False
+denovo_pdb,7udo_A,A,7UDO,synthetic construct,False
+denovo_pdb,7uek_A,A,7UEK,synthetic construct,False
+denovo_pdb,7ur7_A,A,7UR7,synthetic construct,False
+denovo_pdb,7ur8_A,A,7UR8,synthetic construct,False
+denovo_pdb,7vql_A,A,7VQL,synthetic construct,False
+denovo_pdb,7vqv_A,A,7VQV,synthetic construct,False
+denovo_pdb,7vty_A,A,7VTY,synthetic construct,False
+denovo_pdb,7vu4_A,A,7VU4,synthetic construct,False
+denovo_pdb,8a3k_UNK,UNK,8A3K,synthetic construct,False
+denovo_pdb,8ah9_A,A,8AH9,synthetic construct,False
+denovo_pdb,8bcs_A,A,8BCS,synthetic construct,False
+denovo_pdb,8bl3_A,A,8BL3,Escherichia coli,False
+denovo_pdb,8bl5_A,A,8BL5,synthetic construct,False
+denovo_pdb,8bl6_A,A,8BL6,synthetic construct,False
+denovo_pdb,8bl9_A,A,8BL9,synthetic construct,False
+denovo_pdb,8bu0_A,A,8BU0,synthetic construct,False
+denovo_pdb,8ch0_A,A,8CH0,synthetic construct,False
+denovo_pdb,8chy_A,A,8CHY,synthetic construct,False
+denovo_pdb,8cig_A,A,8CIG,synthetic construct,False
+denovo_pdb,8ckr_A,A,8CKR,synthetic construct,False
+denovo_pdb,8cmq_A,A,8CMQ,synthetic construct,False
+denovo_pdb,8cqq_A,A,8CQQ,synthetic construct,False
+denovo_pdb,8cux_B,B,8CUX,synthetic construct,False
+denovo_pdb,8d03_A,A,8D03,synthetic construct,False
+denovo_pdb,8d05_A,A,8D05,synthetic construct,False
+denovo_pdb,8d9o_A,A,8D9O,synthetic construct,False
+denovo_pdb,8d9p_A,A,8D9P,synthetic construct,False
+denovo_pdb,8eov_A,A,8EOV,synthetic construct,False
+denovo_pdb,8eoz_B,B,8EOZ,synthetic construct,False
+denovo_pdb,8etq_A,A,8ETQ,synthetic construct,False
+denovo_pdb,8fjf_A,A,8FJF,synthetic construct,False
+denovo_pdb,8fjg_A,A,8FJG,synthetic construct,False
+denovo_pdb,8g9j_A,A,8G9J,synthetic construct,False
+denovo_pdb,8gl3_A,A,8GL3,synthetic construct,False
+denovo_pdb,8j1w_A,A,8J1W,synthetic construct,False
+denovo_pdb,8j1x_A,A,8J1X,synthetic construct,False
+denovo_pdb,8j98_A,A,8J98,synthetic construct,False
+denovo_pdb,8ju8_A,A,8JU8,synthetic construct,False
+denovo_pdb,8k7o_A,A,8K7O,synthetic construct,False
+denovo_pdb,8k7z_A,A,8K7Z,synthetic construct,False
+denovo_pdb,8k8f_A,A,8K8F,synthetic construct,False
+denovo_pdb,8k8g_A,A,8K8G,synthetic construct,False
+denovo_pdb,8k8i_A,A,8K8I,synthetic construct,False
+denovo_pdb,8ka7_A,A,8KA7,synthetic construct,False
+denovo_pdb,8kac_A,A,8KAC,synthetic construct,False
+denovo_pdb,8kc0_A,A,8KC0,synthetic construct,False
+denovo_pdb,8kc1_A,A,8KC1,synthetic construct,False
+denovo_pdb,8kc4_A,A,8KC4,synthetic construct,False
+denovo_pdb,8kc8_A,A,8KC8,synthetic construct,False
+denovo_pdb,8kcj_A,A,8KCJ,synthetic construct,False
+denovo_pdb,8kck_A,A,8KCK,synthetic construct,False
+denovo_pdb,8kdq_A,A,8KDQ,synthetic construct,False
+denovo_pdb,8oys_A,A,8OYS,synthetic construct,False
+denovo_pdb,8oyw_A,A,8OYW,synthetic construct,False
+denovo_pdb,8p4y_A,A,8P4Y,synthetic construct,False
+denovo_pdb,8pf0_A,A,8PF0,Homo sapiens,False
+denovo_pdb,8q52_A,A,8Q52,Escherichia coli K-12;Thermotoga maritima MSB8;Escherichia coli K-12,False
+denovo_pdb,8qad_A,A,8QAD,synthetic construct,False
+denovo_pdb,8qaf_A,A,8QAF,synthetic construct,False
+denovo_pdb,8qkd_A,A,8QKD,synthetic construct,False
+denovo_pdb,8qup_A,A,8QUP,synthetic construct,False
+denovo_pdb,8qzn_A,A,8QZN,synthetic construct,False
+denovo_pdb,8r8o_A,A,8R8O,synthetic construct,False
+denovo_pdb,8sjf_A,A,8SJF,synthetic construct,False
+denovo_pdb,8tnm_A,A,8TNM,synthetic construct,False
+denovo_pdb,8vc8_A,A,8VC8,synthetic construct,False
+denovo_pdb,8vei_A,A,8VEI,synthetic construct,False
+denovo_pdb,8vez_A,A,8VEZ,synthetic construct,False
+denovo_pdb,8w97_A,A,8W97,synthetic construct,False
+denovo_pdb,8xyr_A,A,8XYR,synthetic construct,False
+denovo_pdb,8xyu_A,A,8XYU,synthetic construct,False
+denovo_pdb,8xyw_A,A,8XYW,synthetic construct,False
+denovo_pdb,8y33_A,A,8Y33,synthetic construct,False
+denovo_pdb,9bk7_A,A,9BK7,synthetic construct,False
+denovo_pdb,9cte_A,A,9CTE,synthetic construct,False
+denovo_pdb,9d01_A,A,9D01,synthetic construct,False
+denovo_pdb,9db8_A,A,9DB8,synthetic construct,False
+denovo_pdb,9db9_A,A,9DB9,synthetic construct,False
+denovo_pdb,9dba_A,A,9DBA,synthetic construct,False
+denovo_pdb,9dbb_A,A,9DBB,synthetic construct,False
+denovo_pdb,9dbc_A,A,9DBC,synthetic construct,False
+denovo_pdb,9dbd_A,A,9DBD,synthetic construct,False
+denovo_pdb,9dbu_A,A,9DBU,synthetic construct,False
+denovo_pdb,9dbv_A,A,9DBV,synthetic construct,False
+denovo_pdb,9dbw_A,A,9DBW,synthetic construct,False
+denovo_pdb,9dcx_A,A,9DCX,synthetic construct,False
+denovo_pdb,9dd2_A,A,9DD2,synthetic construct,False
+denovo_pdb,9de4_A,A,9DE4,synthetic construct,False
+denovo_pdb,9dea_A,A,9DEA,synthetic construct,False
+denovo_pdb,9ded_A,A,9DED,synthetic construct,False
+denovo_pdb,9dw2_A,A,9DW2,synthetic construct,False
+denovo_pdb,9fw5_A,A,9FW5,synthetic construct,False
+denovo_pdb,9fw7_A,A,9FW7,synthetic construct,False
+denovo_pdb,9fwa_A,A,9FWA,synthetic construct,False
+denovo_pdb,9gvf_A,A,9GVF,synthetic construct,False
+denovo_pdb,9h10_A,A,9H10,synthetic construct,False
+denovo_pdb,9h3c_A,A,9H3C,synthetic construct,False
+denovo_pdb,9h4c_A,A,9H4C,synthetic construct,False
+denovo_pdb,9hag_A,A,9HAG,synthetic construct,False
+denovo_pdb,9hnh_A,A,9HNH,synthetic construct,False
+denovo_pdb,9jl8_A,A,9JL8,synthetic construct,False
+denovo_pdb,9jl9_A,A,9JL9,synthetic construct,False
+denovo_pdb,9jla_A,A,9JLA,synthetic construct,False
+denovo_pdb,9jwo_A,A,9JWO,synthetic construct,False
+denovo_pdb,9jwq_A,A,9JWQ,synthetic construct,False
+denovo_pdb,9jwt_A,A,9JWT,synthetic construct,False
+denovo_pdb,9kgz_A,A,9KGZ,synthetic construct,False
+denovo_pdb,9lm8_A,A,9LM8,Homo sapiens,False
+denovo_pdb,9lni_A,A,9LNI,Escherichia coli,False
+denovo_pdb,9lns_A,A,9LNS,Escherichia coli,False
+denovo_pdb,9mrb_A,A,9MRB,synthetic construct,False
+denovo_pdb,9mxx_A,A,9MXX,synthetic construct,False
+denovo_pdb,9n0j_A,A,9N0J,synthetic construct,False
+denovo_pdb,9qdp_A,A,9QDP,synthetic construct,False
+denovo_pdb,9qrf_A,A,9QRF,synthetic construct,False
+denovo_pdb,9quc_A,A,9QUC,synthetic construct,False
+denovo_pdb,9qud_A,A,9QUD,synthetic construct,False
+denovo_pdb,9qui_A,A,9QUI,synthetic construct,False
+denovo_pdb,9qul_A,A,9QUL,synthetic construct,False
+denovo_pdb,9quo_A,A,9QUO,synthetic construct,False
+denovo_pdb,9r00_A,A,9R00,synthetic construct,False
+denovo_pdb,9r0z_A,A,9R0Z,synthetic construct,False
+denovo_pdb,9r17_A,A,9R17,synthetic construct,False
+denovo_pdb,9r1j_A,A,9R1J,synthetic construct,False
+denovo_pdb,9r1k_A,A,9R1K,synthetic construct,False
+denovo_pdb,9r1l_A,A,9R1L,synthetic construct,False
+denovo_pdb,9r1m_A,A,9R1M,synthetic construct,False
+denovo_pdb,9r1n_A,A,9R1N,synthetic construct,False
+denovo_pdb,9r2k_A,A,9R2K,synthetic construct,False
+denovo_pdb,9r7f_A,A,9R7F,synthetic construct,False
+denovo_pdb,9raa_A,A,9RAA,Escherichia coli BL21(DE3),False
+denovo_pdb,9raq_A,A,9RAQ,synthetic construct,False
+denovo_pdb,9rar_A,A,9RAR,synthetic construct,False
+denovo_pdb,9rb0_A,A,9RB0,synthetic construct,False
+denovo_pdb,9rbe_A,A,9RBE,synthetic construct,False
+denovo_pdb,9szu_A,A,9SZU,synthetic construct,False
+denovo_pdb,9tas_A,A,9TAS,synthetic construct,False
+denovo_pdb,9tau_A,A,9TAU,synthetic construct,False
+denovo_pdb,9ugr_A,A,9UGR,synthetic construct,False
+denovo_pdb,9v3a_A,A,9V3A,Escherichia coli BL21(DE3),False
+denovo_pdb,9v4l_A,A,9V4L,Escherichia coli BL21(DE3),False
+denovo_pdb,9vp8_A,A,9VP8,Salmonella enterica subsp. enterica,False
+denovo_pdb,9vvn_A,A,9VVN,synthetic construct,False
+denovo_pdb,9x1w_A,A,9X1W,Homo sapiens,False
+denovo_pdb,9x1x_A,A,9X1X,Homo sapiens,False
+denovo_pdb,9xzo_A,A,9XZO,synthetic construct,False
+denovo_pdb,3og3_A,A,3OG3,Thermotoga maritima;Thermotoga maritima;Thermotoga maritima,False
+denovo_pdb,4ess_A,A,4ESS,synthetic construct,False
+denovo_pdb,4gvw_A,A,4GVW,,False
+denovo_pdb,4z08_A,A,4Z08,synthetic construct,False
+denovo_pdb,5d2t_A,A,5D2T,synthetic construct,False
+denovo_pdb,5d2v_A,A,5D2V,synthetic construct,False
+denovo_pdb,5d2w_A,A,5D2W,synthetic construct,False
+denovo_pdb,5d2x_A,A,5D2X,synthetic construct,False
+denovo_pdb,5d2y_A,A,5D2Y,synthetic construct,False
+denovo_pdb,5d30_A,A,5D30,synthetic construct,False
+denovo_pdb,5od1_A,A,5OD1,synthetic construct,False
+denovo_pdb,2af5_A,A,2AF5,Borreliella burgdorferi;Borreliella burgdorferi,False
+denovo_pdb,3qa9_A,A,3QA9,Escherichia coli,False
+denovo_pdb,4ndj_A,A,4NDJ,Aequorea victoria;Eimeria acervulina,False
+denovo_pdb,3v1a_A,A,3V1A,synthetic construct,False
+denovo_pdb,4pjr_A,A,4PJR,unidentified,False
+denovo_pdb,4pjs_A,A,4PJS,unidentified,False
+casp_fm,T1027-D1,,7D2O_1@1.00id,Gaussia princeps (in: crustaceans),False
+casp_fm,T1029-D1,,6UF2_1@1.00id,Synechococcus elongatus PCC 7942 = FACHB-805,False
+casp_fm,T1031-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1033-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1035-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1037-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1038-D1,,6YA2_1@1.00id,Orthotospovirus tomatomaculae,True
+casp_fm,T1038-D2,,6Y9L_1@1.00id,Orthotospovirus tomatomaculae,True
+casp_fm,T1039-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1040-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1041-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1042-D1,,6VR4_1@0.96id,Cellulophaga phage phi14:2,True
+casp_fm,T1043-D1,,6VR4_1@1.00id,Cellulophaga phage phi14:2,True
+casp_fm,T1049-D1,,6Y4F_1@1.00id,Proteus mirabilis HI4320,False
+casp_fm,T1104-D1,,7ROA_1@0.89id,Enterococcus faecalis OG1RF,False
+casp_fm,T1112-D1,AAA,8ORK_1@0.98id,Methanothermus fervidus DSM 2088,False
+casp_fm,T1113-D1,A,7UYX_1@0.87id,Pseudomonas phage PA1C,True
+casp_fm,T1120-D1,,7QVB_1@1.00id,Deinococcus radiodurans R1 = ATCC 13939 = DSM 20539,False
+casp_fm,T1120-D2,,7QVB_1@1.00id,Deinococcus radiodurans R1 = ATCC 13939 = DSM 20539,False
+casp_fm,T1121-D1,,7TIL_1@0.96id,Pseudomonas aeruginosa PA14,False
+casp_fm,T1122-D1,A,8BBT_1@0.98id,Tipula oleracea nudivirus,True
+casp_fm,T1123-D1,,7UZT_1@0.95id,Astrovirus MLB1,True
+casp_fm,T1125-D1,A,8H2M_1@1.00id,Oshimavirus P2345,True
+casp_fm,T1125-D2,A,8H2M_1@0.99id,Oshimavirus P2345,True
+casp_fm,T1125-D4,A,8H2M_1@0.93id,Oshimavirus P2345,True
+casp_fm,T1125-D5,A,8H2M_1@0.99id,Oshimavirus P2345,True
+cameo_hard,8j4i_A,A,8J4I,Homo sapiens,False
+cameo_hard,8raj_A,A,8RAJ,Methylorubrum extorquens AM1,False
+cameo_hard,8jvx_B,B,8JVX,synthetic construct,False
+cameo_hard,8vej_B,B,8VEJ,synthetic construct,False
+cameo_hard,8u1a_A,A,8U1A,synthetic construct,False
+cameo_hard,8vd6_A,A,8VD6,synthetic construct,False
+cameo_hard,8wwc_C,C,8WWC,synthetic construct,False
+cameo_hard,9eqn_A,A,9EQN,Infectious bursal disease virus,True
+cameo_hard,9isp_A,A,9ISP,Porphyromonas gingivalis W83,False
+cameo_hard,8s89_A,A,8S89,synthetic construct,False
+cameo_hard,8yl4_B,B,8YL4,Escherichia coli,False
+cameo_hard,9fdg_A,A,9FDG,synthetic construct,False
+cameo_hard,9dl1_D,D,9DL1,Homo sapiens,False
+cameo_hard,9k3e_C,C,9K3E,Taylorella equigenitalis MCE9,False
+cameo_hard,8zaf_A,A,8ZAF,Shimazuella kribbensis,False
+cameo_hard,9hac_B,B,9HAC,synthetic construct,False
+cameo_hard,9had_C,C,9HAD,synthetic construct,False
+cameo_hard,9j46_F,F,9J46,African swine fever virus,True
+cameo_hard,8v4w_A,A,8V4W,Campylobacter concisus,False
+cameo_hard,9bch_A,A,9BCH,Corynebacterium diphtheriae NCTC 13129,False
+cameo_hard,8xtn_A,A,8XTN,Homo sapiens,False
+cameo_hard,9b7d_D,D,9B7D,metagenome,False
+cameo_hard,9def_A,A,9DEF,synthetic construct,False
+cameo_hard,9deg_A,A,9DEG,synthetic construct,False
+cameo_hard,9j5h_A,A,9J5H,synthetic construct,False
+cameo_hard,8s3m_A,A,8S3M,Thermus phage Tt72,True
+cameo_hard,8yoz_A,A,8YOZ,Thermus thermophilus HB8,False
+cameo_hard,9f4c_A,A,9F4C,Homo sapiens,False
+cameo_hard,9de9_B,B,9DE9,synthetic construct,False
+cameo_hard,9deb_E,E,9DEB,synthetic construct,False
+cameo_hard,9emy_B,B,9EMY,Plasmodium falciparum,False
+cameo_hard,9eum_A,A,9EUM,Staphylococcus phage 812,True

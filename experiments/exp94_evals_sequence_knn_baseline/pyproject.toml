@@ -1,0 +1,30 @@
+[project]
+name = "exp94-evals-sequence-knn-baseline"
+version = "0.1.0"
+description = "Sequence K-nearest-neighbor null model for contact prediction — issue #94. CPU-only, no GPU."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Pass 1 reads the local contacts-v1 train parquet shards; everything else is
+    # numpy/pandas. No torch — this baseline does no folding (mmseqs is a binary,
+    # installed by knn_lib.ensure_mmseqs, not a Python dep).
+    "pyarrow",
+    "numpy",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

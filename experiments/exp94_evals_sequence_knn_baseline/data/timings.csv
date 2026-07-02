@@ -1,0 +1,5 @@
+phase,model_nickname,runner_tag,elapsed_seconds,n_queries,n_train_docs,n_alignments,n_neighbors_used,sensitivity,cpu_model,n_cpus,hostname,platform
+build_train_index,seq-knn,local,33.6,,4129682,,,,AMD Ryzen Threadripper PRO 5975WX 32-Cores,64,ip1,Linux-5.15.0-33-generic-x86_64-with-glibc2.35
+mmseqs_search,seq-knn,local,30.0,554,4129682,47734,,7.5,AMD Ryzen Threadripper PRO 5975WX 32-Cores,64,ip1,Linux-5.15.0-33-generic-x86_64-with-glibc2.35
+build_knn_scores,seq-knn,local,420.3,554,4129682,47734,7239,7.5,AMD Ryzen Threadripper PRO 5975WX 32-Cores,64,ip1,Linux-5.15.0-33-generic-x86_64-with-glibc2.35
+compute_knn_metrics,seq-knn,local,117.8,554,,,,,AMD Ryzen Threadripper PRO 5975WX 32-Cores,64,ip1,Linux-5.15.0-33-generic-x86_64-with-glibc2.35
