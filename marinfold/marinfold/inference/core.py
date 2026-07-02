@@ -94,6 +94,49 @@ class Backend(Protocol):
         """
         ...
 
+    def sample_completions(
+        self,
+        prefix_token_ids_batch: list[list[int]],
+        *,
+        max_new_tokens: int,
+        temperature: float = 1.0,
+        top_p: float = 0.95,
+        top_k: int = 50,
+        stop_token_id: int | None = None,
+        seed: int | None = None,
+        batch_size: int | None = None,
+    ) -> list[list[int]]:
+        """Sample one autoregressive completion per prefix.
+
+        The sampling counterpart to :meth:`next_token_probs`: instead of a
+        single forward pass it draws a stochastic continuation. Used by
+        rollout-style decoders (e.g. contacts-v1 ``--method rollout``), which
+        sample many contact-section completions and vote.
+
+        Args:
+            prefix_token_ids_batch: One prompt per row. Rows must share a
+                length — callers rolling out one protein pass document
+                realizations whose prefixes are the same length. May be empty.
+            max_new_tokens: Hard cap on generated tokens per row.
+            temperature / top_p / top_k: sampling controls; ``top_k <= 0``
+                disables top-k filtering.
+            stop_token_id: stop a row's generation at this token (excluded
+                from the returned ids). ``None`` runs to ``max_new_tokens``.
+            seed: optional RNG seed for reproducibility.
+            batch_size: backend hint for how many rows to decode per forward
+                batch (a memory bound). Backends that schedule their own
+                batching (vLLM) ignore it.
+
+        Returns:
+            One list of generated token ids per input row — prefix and stop
+            token excluded — aligned with ``prefix_token_ids_batch``.
+
+        Raises:
+            NotImplementedError: the backend has no sampling path (e.g. MLX
+                today); use a backend that does (vLLM / transformers).
+        """
+        ...
+
 
 def load_backend(
     name: BackendName,

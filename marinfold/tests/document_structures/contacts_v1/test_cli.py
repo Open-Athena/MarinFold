@@ -188,5 +188,98 @@ def test_top_level_help(capsys):
         cli.build_parser().parse_args(["--help"])
     assert exc.value.code == 0
     out = capsys.readouterr().out
-    for sub in ("generate", "view", "tokenizer"):
+    for sub in ("generate", "view", "infer", "evaluate", "tokenizer"):
         assert sub in out
+
+
+def test_infer_parses_input_sequence():
+    args = cli.build_parser().parse_args([
+        "infer", "--model", "1.5B-contacts-v1",
+        "--input-sequence", "SIINFEKLLLSKP", "--out", "preds.json",
+        "--ensemble-k", "10",
+    ])
+    assert args.cmd == "infer"
+    assert args.func is cli.cmd_infer
+    assert args.input_sequence == "SIINFEKLLLSKP"
+    assert args.input is None
+    assert args.ensemble_k == 10
+    assert args.min_seq_separation == 6  # default
+    cfg = cli._inference_config(args)
+    assert cfg.ensemble_k == 10
+    assert cfg.model == "1.5B-contacts-v1"
+
+
+def test_infer_requires_a_source():
+    """--input-sequence / --input are mutually exclusive and one is required."""
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args([
+            "infer", "--model", "M", "--out", "preds.json",
+        ])
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args([
+            "infer", "--model", "M", "--out", "preds.json",
+            "--input-sequence", "ACDE", "--input", "x.cif",
+        ])
+
+
+def test_infer_keep_matrix_flag():
+    args = cli.build_parser().parse_args([
+        "infer", "--model", "M", "--input-sequence", "ACDEFGHIK",
+        "--out", "preds.parquet", "--keep-matrix",
+    ])
+    assert args.keep_matrix is True
+
+
+def test_infer_method_defaults_pairwise():
+    args = cli.build_parser().parse_args([
+        "infer", "--model", "M", "--input-sequence", "ACDE", "--out", "p.json",
+    ])
+    assert args.method == "pairwise"
+    assert cli._inference_config(args).method == "pairwise"
+
+
+def test_infer_method_rollout_flags():
+    args = cli.build_parser().parse_args([
+        "infer", "--model", "M", "--input-sequence", "ACDEFGHIK",
+        "--out", "preds.json", "--method", "rollout",
+        "--n-rollouts", "50", "--temperature", "0.7", "--top-p", "0.9", "--top-k", "0",
+    ])
+    assert args.method == "rollout"
+    cfg = cli._inference_config(args)
+    assert cfg.method == "rollout"
+    assert cfg.n_rollouts == 50
+    assert cfg.temperature == 0.7
+    assert cfg.top_p == 0.9
+    assert cfg.top_k == 0
+
+
+def test_infer_method_rejects_unknown():
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args([
+            "infer", "--model", "M", "--input-sequence", "ACDE",
+            "--out", "p.json", "--method", "bogus",
+        ])
+
+
+def test_evaluate_parses_and_rejects_input_sequence():
+    args = cli.build_parser().parse_args([
+        "evaluate", "--model", "M", "--input", "tests/data/1QYS.cif",
+        "--out", "metrics.json", "--out-plots", "heatmaps.pdf",
+    ])
+    assert args.cmd == "evaluate"
+    assert args.func is cli.cmd_evaluate
+    assert args.out_plots == Path("heatmaps.pdf")
+    # evaluate has no --input-sequence (ground truth needs a structure).
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args([
+            "evaluate", "--model", "M", "--input-sequence", "ACDE",
+            "--out", "metrics.json",
+        ])
+
+
+def test_out_plots_must_be_pdf():
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args([
+            "infer", "--model", "M", "--input-sequence", "ACDE",
+            "--out", "preds.json", "--out-plots", "heatmaps.png",
+        ])
