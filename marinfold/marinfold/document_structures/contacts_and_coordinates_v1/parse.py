@@ -103,8 +103,14 @@ def _vocab_safe_atoms(gemmi_residue) -> tuple[AtomCoord, ...]:
 def _atoms_by_residue_key(gemmi_structure) -> dict[tuple[str, int], tuple[AtomCoord, ...]]:
     """Map ``(chain, author-resnum)`` to a residue's eligible heavy atoms.
 
-    Walks the first model. Residues with no in-vocab heavy atoms are
-    skipped (they contribute no coordinate statements anyway). A repeated
+    Walks the **polymer** residues of the first model only —
+    ``chain.get_polymer()`` excludes waters and free ligands (whose atom
+    names ``O`` / ``C`` / ``N`` are in the vocab and would otherwise shadow a
+    same-numbered protein residue's atoms) while keeping modified residues
+    like ``MSE`` that pyconfind canonicalizes and places geometry for. This
+    matches the residue set pyconfind reports, so the ``(chain, resnum)``
+    alignment in :func:`analyze_coordinates` is against protein residues on
+    both sides. Residues with no in-vocab heavy atoms are skipped. A repeated
     ``(chain, resnum)`` key — an insertion code, essentially never seen in
     the AFDB single chains this format targets — keeps the first occurrence
     and warns, so the collision is visible rather than silently mixing two
@@ -113,8 +119,11 @@ def _atoms_by_residue_key(gemmi_structure) -> dict[tuple[str, int], tuple[AtomCo
     out: dict[tuple[str, int], tuple[AtomCoord, ...]] = {}
     if len(gemmi_structure) == 0:
         return out
+    # Populate polymer/entity metadata so get_polymer() is reliable even for
+    # hand-rolled PDBs (AFDB mmCIFs ship with it; the call is idempotent).
+    gemmi_structure.setup_entities()
     for chain in gemmi_structure[0]:
-        for res in chain:
+        for res in chain.get_polymer():
             atoms = _vocab_safe_atoms(res)
             if not atoms:
                 continue
