@@ -164,24 +164,52 @@ def main():
             prows = pq.read_table(fh).to_pylist()[: a.n_rollouts]
 
         # --- constrained generation via the structured-output bitmask ---
+        # A rollout is viable only if the context leaves room for the full
+        # structure section (3*n_gt+1 tokens). If the resampled prefix already
+        # fills max_model_len there is no room to generate, and requesting even a
+        # single token makes vLLM raise (prompt+1 > max_model_len); such a rollout
+        # could at best produce a truncated, non-correct document. Skip it.
+        need = 3 * len(gt_seq) + 1
         gprompts, gsp, meta = [], [], []
         for p in prows:
             prompt_ids = tok(p["prefix"], add_special_tokens=False).input_ids
+            room = a.max_model_len - len(prompt_ids)
+            if room < need:
+                continue
             seq_positions = list(p["seq_positions"])
             pos_to_seq = {int(pos): i for i, pos in enumerate(seq_positions)}
             gt_pos_ids = [(pos_token_id(seq_positions[i]), pos_token_id(seq_positions[j]))
                           for i, j in gt_seq]
             spec = make_grammar_spec(gt_pos_ids, contact_id, end_id)
             gprompts.append(TokensPrompt(prompt_token_ids=prompt_ids))
-            # exact generated length is 3*n_gt+1 (+small slack); cap to the context
-            # left after the prompt so the longest proteins never exceed max_model_len.
-            max_new = min(3 * len(gt_seq) + 4, a.max_model_len - len(prompt_ids))
+            # exact generated length is 3*n_gt+1 (+small slack); cap to the room
+            # left after the prompt so we never exceed max_model_len.
+            max_new = min(3 * len(gt_seq) + 4, room)
             gsp.append(SamplingParams(
                 n=1, temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
-                max_tokens=max(max_new, 1), stop_token_ids=[end_id],
+                max_tokens=max_new, stop_token_ids=[end_id],
                 structured_outputs=StructuredOutputsParams(grammar=spec)))
             meta.append(dict(r=int(p["r"]), prefix=p["prefix"], prompt_ids=prompt_ids,
                              prompt_len=len(prompt_ids), pos_to_seq=pos_to_seq))
+
+        # No rollout fits in context -> this protein cannot be regenerated within
+        # max_model_len. Write a skip marker (both nll + documents, so resume marks
+        # it done and never retries it) and move on, instead of crashing the shard.
+        if not meta:
+            write_parquet(pa.Table.from_pylist([dict(
+                r=-1, n_gen_tokens=0, n_contacts=0, finished=False, n_pred=0,
+                all_prec=math.nan, all_rec=math.nan, all_f1=math.nan,
+                struct_nll=math.nan, struct_ntok=0, struct_nll_per_tok=math.nan)]),
+                f"{out}/nll/{entry}.parquet")
+            with fsspec.open(f"{out}/documents/{entry}.json", "w") as fh:
+                json.dump(dict(entry_id=entry, L=L, n_gt=len(gt_seq), n_rollouts=0,
+                               n_correct=0, skipped=True,
+                               reason="prompt_exceeds_context"), fh)
+            print(f"  [{n+1}/{len(mine)}] {entry} L={L} n_gt={len(gt_seq)}  "
+                  f"SKIP prompt_exceeds_context (need {need}, ctx {a.max_model_len})",
+                  flush=True)
+            continue
+
         t0 = time.time()
         gouts = llm.generate(gprompts, gsp, use_tqdm=False)
         gen_s = time.time() - t0
@@ -190,7 +218,7 @@ def main():
 
         # --- unmodified NLL via prompt_logprobs over prefix+generated ---
         spr = [TokensPrompt(prompt_token_ids=meta[i]["prompt_ids"] + gen_ids[i])
-               for i in range(len(prows))]
+               for i in range(len(meta))]
         ssp = SamplingParams(max_tokens=1, temperature=0.0, prompt_logprobs=0)
         t1 = time.time()
         souts = llm.generate(spr, ssp, use_tqdm=False)

@@ -50,6 +50,9 @@ def _read_nll(fs, p):
     entry = os.path.basename(p)[: -len(".parquet")]
     with fs.open(p, "rb") as fh:
         m = pq.read_table(fh).to_pandas()
+    m = m[m["r"] >= 0]  # drop r=-1 skip sentinel (prompt_exceeds_context)
+    if m.empty:         # fully-skipped target: not a real result
+        return None
     ok = ((m["all_prec"] == 1.0) & (m["all_rec"] == 1.0))
     best = m.loc[m["struct_nll"].idxmin()]
     return dict(
@@ -81,7 +84,7 @@ def main() -> int:
 
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         tim = pd.concat(list(ex.map(lambda p: _read_timing(fs, p), tpaths)), ignore_index=True)
-        nll = pd.DataFrame(list(ex.map(lambda p: _read_nll(fs, p), npaths)))
+        nll = pd.DataFrame([r for r in ex.map(lambda p: _read_nll(fs, p), npaths) if r is not None])
 
     df = tim.merge(nll, on="entry_id", suffixes=("", "_n"))
     os.makedirs(a.data_dir, exist_ok=True)

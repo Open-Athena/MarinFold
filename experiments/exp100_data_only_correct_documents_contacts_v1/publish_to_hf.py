@@ -60,9 +60,15 @@ def find_hf() -> str:
 
 
 def _read_document(fs, p):
-    """One row: the selected only-correct document for a protein."""
+    """One row: the selected only-correct document for a protein.
+
+    Returns None for proteins skipped at generation time (prefix filled the whole
+    context, no room for the structure section) — they are not in the deliverable.
+    """
     with fs.open(p, "r") as fh:
         d = json.load(fh)
+    if d.get("skipped"):
+        return None
     s = d["selected"]
     return dict(entry_id=d["entry_id"], L=d["L"], n_gt=d["n_gt"],
                 n_rollouts=d["n_rollouts"], n_correct=d["n_correct"],
@@ -78,6 +84,7 @@ def _read_nll(fs, p):
     entry = os.path.basename(p)[: -len(".parquet")]
     with fs.open(p, "rb") as fh:
         m = pq.read_table(fh).to_pandas()
+    m = m[m["r"] >= 0]  # drop the r=-1 skip sentinel (prompt_exceeds_context)
     m.insert(0, "entry_id", entry)
     return m
 
@@ -100,8 +107,10 @@ def main() -> int:
 
     # 1. regenerated_documents.parquet (the deliverable training set)
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
-        docs = pd.DataFrame(list(ex.map(lambda p: _read_document(fs, p), dpaths)))
-    docs = docs.sort_values("entry_id").reset_index(drop=True)
+        rows = [r for r in ex.map(lambda p: _read_document(fs, p), dpaths) if r is not None]
+    n_skipped = len(dpaths) - len(rows)
+    docs = pd.DataFrame(rows).sort_values("entry_id").reset_index(drop=True)
+    print(f"skipped (prompt_exceeds_context): {n_skipped}", flush=True)
     pq.write_table(pa.Table.from_pandas(docs, preserve_index=False),
                    f"{out}/regenerated_documents.parquet")
     print(f"regenerated_documents.parquet: {len(docs)} rows", flush=True)
