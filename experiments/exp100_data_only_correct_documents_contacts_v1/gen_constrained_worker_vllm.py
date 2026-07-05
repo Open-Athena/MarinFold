@@ -165,15 +165,18 @@ def main():
 
         # --- constrained generation via the structured-output bitmask ---
         # A rollout is viable only if the context leaves room for the full
-        # structure section (3*n_gt+1 tokens). If the resampled prefix already
-        # fills max_model_len there is no room to generate, and requesting even a
-        # single token makes vLLM raise (prompt+1 > max_model_len); such a rollout
-        # could at best produce a truncated, non-correct document. Skip it.
+        # structure section (3*n_gt+1 tokens). Reserve ONE extra token of headroom:
+        # the scoring pass below re-feeds prompt+generated as a prompt with
+        # max_tokens=1, so prompt+generated must be <= max_model_len-1 or vLLM
+        # raises "prompt (N) + output (>=1) > max_model_len". If the resampled prefix
+        # leaves no room, the rollout could at best produce a truncated, non-correct
+        # document (and would crash the scoring pass) -> skip it.
+        budget = a.max_model_len - 1  # leave room for the scoring pass's forced token
         need = 3 * len(gt_seq) + 1
         gprompts, gsp, meta = [], [], []
         for p in prows:
             prompt_ids = tok(p["prefix"], add_special_tokens=False).input_ids
-            room = a.max_model_len - len(prompt_ids)
+            room = budget - len(prompt_ids)
             if room < need:
                 continue
             seq_positions = list(p["seq_positions"])
@@ -183,7 +186,8 @@ def main():
             spec = make_grammar_spec(gt_pos_ids, contact_id, end_id)
             gprompts.append(TokensPrompt(prompt_token_ids=prompt_ids))
             # exact generated length is 3*n_gt+1 (+small slack); cap to the room
-            # left after the prompt so we never exceed max_model_len.
+            # left (against the reserved budget) so prompt+generated <= budget and
+            # the scoring pass never exceeds max_model_len.
             max_new = min(3 * len(gt_seq) + 4, room)
             gsp.append(SamplingParams(
                 n=1, temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
