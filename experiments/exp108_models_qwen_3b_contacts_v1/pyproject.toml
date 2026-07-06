@@ -97,4 +97,4 @@ torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
 # iteration override the git dep with the working copy:
 #   uv sync --extra gpu
 #   uv pip install --reinstall-package marinfold-models ../../models
-marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "REPLACE_WITH_LAUNCH_COMMIT" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "62ba9db0056cd4569ea468b96c60b7e3716acce1" }
