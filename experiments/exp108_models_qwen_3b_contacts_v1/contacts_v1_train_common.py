@@ -69,39 +69,9 @@ PROTEIN_RESOURCES_H100 = ResourceConfig.with_gpu(
 )
 
 
-def build_hf_export_step(
-    *,
-    trainer,
-    model_config,
-    checkpoint_path: str,
-    name_prefix: str,
-    checkpoint_step: int,
-):
-    """CPU-only HF export of a chosen checkpoint; tokenizer co-located (hard rule).
-
-    ``trainer`` is a levanter ``TrainerConfig`` (get it from
-    ``dispatch_train.build_on_pod_config(...).train_config.trainer`` for the run
-    you're exporting). ``checkpoint_path`` is the concrete S3
-    ``…/checkpoints/step-{N}`` dir.
-    """
-    from copy import deepcopy
-
-    from levanter.trainer import TrainerConfig
-    from marin.export import convert_checkpoint_to_hf_step
-
-    if not isinstance(trainer, TrainerConfig):
-        raise TypeError(f"Expected a levanter TrainerConfig, got {type(trainer)!r}")
-
-    return convert_checkpoint_to_hf_step(
-        name=f"hf/{name_prefix}-step-{checkpoint_step}",
-        checkpoint_path=checkpoint_path,  # pyrefly: ignore
-        trainer=deepcopy(trainer),
-        model=model_config,
-        tokenizer=CONTACTS_V1_TOKENIZER,
-        use_cpu=True,
-        discover_latest=False,
-    )
-
+# HF export lives in `export_qwen_3b_contacts_v1.py`. It is a WIP against modern
+# marin (0.2.38 moved/renamed the old `marin.export.convert_checkpoint_to_hf_step`
+# + `executor_main`); not needed until a run produces a checkpoint to export.
 
 __all__ = [
     "CONTACTS_V1_DATA_SEED",
@@ -111,5 +81,4 @@ __all__ = [
     "CONTACTS_V1_TOKENIZER_REPO",
     "CONTACTS_V1_TOKENIZER_REVISION",
     "PROTEIN_RESOURCES_H100",
-    "build_hf_export_step",
 ]

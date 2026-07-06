@@ -12,15 +12,20 @@ so we dispatch the training gangs ourselves, grug-style
 (cf. marin ``experiments/grug/dispatch.py``).
 
 The training entrypoint is marin's own ``run_levanter_train_lm`` — identical to
-the executor path — but the inner ``TrainLmConfig`` is assembled here at driver
-top-level via marin's ``_build_train_lm_config`` (so we reuse its AdamW /
-TrainerConfig / mesh / checkpointer / mp-policy assembly), with:
-  * the executor ``this_output_path()`` placeholder on ``WandbConfig.replicate_path``
-    replaced by a concrete S3 path, and
+the executor path — but the inner ``TrainLmOnPodConfig`` is assembled here at
+driver top-level via MarinFold's ``build_train_lm_on_pod_config`` (which
+reproduces modern marin's ``marin.experiment.train.train_lm`` TrainerConfig /
+mesh / checkpointer / mp-policy assembly but takes a CONCRETE ``output_path``
+instead of a ``StepContext``), with:
+  * ``WandbConfig.replicate_path`` set directly to the concrete S3 output path
+    (the builder wires this), and
   * the dataset configured to **tokenize-on-the-fly** from raw S3 parquet into a
     concrete S3 cache (``auto_build_caches=True``), so nothing routes through the
-    executor's ``default_tokenize`` / ``output_path_of`` (which return
-    executor-resolved ``InputName`` references, not concrete paths).
+    executor's tokenize/path resolution (which return lazy step references, not
+    concrete paths).
+
+The optimizer is the driver's responsibility: we build the ``AdamConfig``
+(cosine, warmup fraction, wd) here and hand it to the builder.
 
 VALIDATE ON THE FIRST (smoke) RUN — this bypasses the executor's serialization
 and path resolution, so confirm live:
@@ -48,6 +53,7 @@ from levanter.data.text import (
     UrlDatasetSourceConfig,
 )
 from levanter.models.lm_model import LmConfig
+from levanter.optim import AdamConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import (
     TrainLmOnPodConfig,
@@ -62,8 +68,7 @@ from contacts_v1_train_common import (
     CONTACTS_V1_TOKENIZER,
     PROTEIN_RESOURCES_H100,
 )
-from marinfold_models.defaults import _build_train_lm_config
-from marinfold_models.simple_train_config import SimpleTrainConfig
+from marinfold_models import build_train_lm_on_pod_config
 
 logger = logging.getLogger(__name__)
 
@@ -132,20 +137,6 @@ def build_data_config() -> LmDataConfig:
     )
 
 
-def _with_concrete_replicate_path(inner, output_path: str | None):
-    """Replace the executor ``this_output_path()`` placeholder on
-    ``WandbConfig.replicate_path`` with a concrete path (or None).
-
-    ``_build_train_lm_config`` sets ONLY this placeholder (defaults.py); the
-    checkpointer / HF paths are filled later inside ``run_levanter_train_lm``
-    from ``TrainLmOnPodConfig.output_path``. Replace unconditionally — the
-    builder always assigns the placeholder here.
-    """
-    tracker = dataclasses.replace(inner.trainer.tracker, replicate_path=output_path)
-    trainer = dataclasses.replace(inner.trainer, tracker=tracker)
-    return dataclasses.replace(inner, trainer=trainer)
-
-
 def build_on_pod_config(
     *,
     run_name: str,
@@ -164,54 +155,50 @@ def build_on_pod_config(
     wandb_group: str | None = "protein-training",
     data_seed: int = CONTACTS_V1_DATA_SEED,
     steps_per_eval: int = 500,
-    steps_per_export: int = 5000,
 ) -> TrainLmOnPodConfig:
     """Build the ``TrainLmOnPodConfig`` for one run (reused by dispatch + HF export).
 
-    Assembles the inner ``TrainLmConfig`` with marin's builder (AdamW /
-    TrainerConfig / mesh / checkpointer / mp), swaps the executor placeholder on
-    ``replicate_path`` for the concrete ``output_path``, and points the data at
-    the tokenize-on-the-fly S3 cache.
+    Builds the AdamW cosine optimizer here (the driver owns the optimizer now),
+    then assembles the inner ``TrainLmConfig`` with MarinFold's
+    ``build_train_lm_on_pod_config`` (modern-marin TrainerConfig / mesh /
+    checkpointer / mp, with a CONCRETE ``output_path`` on ``replicate_path`` and
+    as the ``TrainLmOnPodConfig`` output), pointing the data at the
+    tokenize-on-the-fly S3 cache.
 
-    Pass RAW scalars (NOT ``versioned()``): ``_build_train_lm_config`` forwards
+    Pass RAW scalars (NOT ``versioned()``): the builder forwards
     ``learning_rate`` / ``num_train_steps`` / ``train_batch_size`` straight into
-    the levanter config without unwrapping, so a ``VersionedValue`` would leak.
+    the levanter config without unwrapping.
     """
-    train_config = SimpleTrainConfig(
-        resources=resources,
-        train_batch_size=train_batch_size,
-        num_train_steps=num_train_steps,
+    # AdamW, cosine decay, ``warmup`` as a fraction of steps (0.1 = 10%). Tracks
+    # Eric's #75 tuned recipe; weight_decay is the swept regularizer.
+    optimizer = AdamConfig(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         warmup=warmup,
-        train_seq_len=seq_len,
-        steps_per_eval=steps_per_eval,
-        steps_per_export=steps_per_export,
-        data_seed=data_seed,
-        env_vars=env_vars,
+        lr_schedule="cosine",
     )
 
-    # Reuse marin's optimizer (AdamW) + TrainerConfig + mesh + checkpointer + mp.
-    _name, inner_config = _build_train_lm_config(
-        run_name,
-        build_data_config(),
-        model_config,
-        train_config,
-        tags=tuple(tags),
-        use_default_validation=False,
-        eval_harness_tasks=(),
-        wandb_name=wandb_name or run_name,
-        wandb_group=wandb_group,
-    )
-    inner_config = _with_concrete_replicate_path(inner_config, output_path)
-
-    return TrainLmOnPodConfig(
-        train_config=inner_config,
+    pod_config = build_train_lm_on_pod_config(
+        run_name=run_name,
+        model=model_config,
+        optimizer=optimizer,
+        data=build_data_config(),
         resources=resources,
-        output_path=output_path,   # run_levanter_train_lm derives checkpointer/HF/run-id from this
+        output_path=output_path,   # replicate_path + checkpointer/HF/run-id derive from this
+        num_train_steps=num_train_steps,
+        train_batch_size=train_batch_size,
+        seq_len=seq_len,
+        steps_per_eval=steps_per_eval,
+        data_seed=data_seed,
+        wandb_project="MarinFold",
+        wandb_group=wandb_group,
+        wandb_name=wandb_name or run_name,
+        tags=tuple(tags),
         env_vars=env_vars,
-        auto_build_caches=True,    # force levanter to build caches on the workers
     )
+
+    # Force levanter to build the tokenize-on-the-fly caches on the workers.
+    return dataclasses.replace(pod_config, auto_build_caches=True)
 
 
 def dispatch_training_run(

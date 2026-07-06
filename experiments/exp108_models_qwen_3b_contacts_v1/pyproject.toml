@@ -2,7 +2,8 @@
 name = "exp108-models-qwen-3b-contacts-v1"
 version = "0.1.0"
 description = "3B Qwen3 contacts-v1 sweep, 16 epochs, on the CoreWeave RNO2A H100 cluster — issue #108."
-requires-python = ">=3.11,<3.13"
+# >=3.12: the resolved marin-levanter dev line (0.2.21.dev+) dropped 3.11 support.
+requires-python = ">=3.12,<3.13"
 dependencies = [
     # Depend on the marin SOURCE dist names (marin-core == the `marin` module),
     # resolved from PyPI — NOT the `marin-*-latest` GitHub find-links, which are
@@ -23,12 +24,15 @@ dependencies = [
     "pyarrow",
     "transformers",
     "tokenizers",
-    # S3 access to the CoreWeave bucket for the data-staging script + local
-    # inspection (the in-cluster job gets creds/endpoint injected by iris).
+    # S3 access to the CoreWeave bucket — levanter reads the corpus/cache via
+    # fsspec/s3fs on the workers (creds/endpoint injected by iris in-cluster).
     "s3fs",
     "boto3",
-    "gcsfs",
-    "huggingface-hub>=1.5",
+    # NB: do NOT pin huggingface-hub>=1.5 here — marin-levanter's transformers
+    # requires hf-hub<1.0, so a >=1.5 pin makes the env unresolvable. The
+    # data-staging script (which wants hf-hub>=1.5 for HF-bucket access) runs in
+    # a SEPARATE workstation env, not this training venv. gcsfs likewise lives in
+    # the staging env only.
 ]
 
 [project.optional-dependencies]
@@ -43,8 +47,11 @@ gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
 # routing below only applies to direct deps.
 cpu = [
     "marin-core[cpu]",
-    "torch==2.10.0",
-    "torchvision==0.25.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    # Match marin-core[cpu]'s pinned torch (lib/marin/pyproject.toml): the dev
+    # line bumped 2.10.0 -> 2.11.0 / torchvision 0.25 -> 0.26. Keep in lockstep
+    # or uv fails to resolve (torch==X vs torch==Y conflict).
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 
 [dependency-groups]
@@ -54,8 +61,9 @@ dev = []
 package = false
 fork-strategy = "fewest"
 prerelease = "allow"
+# Linux only — the workstation launcher and the CoreWeave workers are all Linux.
+# (Dropping the darwin split also sidesteps its separate resolution failures.)
 environments = [
-    "sys_platform == 'darwin'",
     "sys_platform == 'linux'",
 ]
 override-dependencies = [
