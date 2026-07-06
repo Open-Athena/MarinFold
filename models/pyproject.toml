@@ -24,6 +24,10 @@ dependencies = [
 # Iris's remote worker runs `uv sync --all-packages --no-group dev`, so a
 # dev group must exist (even if empty) for --no-group to work.
 tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
+# GPU (CUDA) install for CoreWeave H100 runs (cw-rno2a / cw-us-east-02a). Mirrors
+# the `tpu` extra but pulls the CUDA jax build. `marin-core[gpu]` transitively
+# brings `marin-levanter[gpu]`. First used by exp108 (3B Qwen on CoreWeave).
+gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
 
 [dependency-groups]
 dev = []
