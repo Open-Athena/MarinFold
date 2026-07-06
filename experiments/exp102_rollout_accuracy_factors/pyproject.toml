@@ -1,0 +1,38 @@
+[project]
+name = "exp102-rollout-accuracy-factors"
+version = "0.1.0"
+description = "Regenerate contacts-v1 rollouts preserving contact emission ORDER and per-contact logprob, so the accuracy-factor analysis of issue #102 (what differentiates high- vs average-accuracy rollouts) can run entirely on CPU. Local-GPU (transformers) variant of the exp98 rollout worker."
+requires-python = ">=3.11,<3.13"
+# One env runs everything locally: prompt-building (marinfold), GPU generation
+# (transformers), and aggregation. Unlike exp98 (which split a marinfold-free TPU
+# worker off), this experiment runs on a single local GPU box, so there is no
+# cluster/host split to respect.
+dependencies = [
+    "marinfold[transformers]",  # build_document / residues_from_sequence + torch/accelerate
+    "transformers>=4.51,<5",    # Qwen3 support; <5 so the levanter rope config loads
+    "torch>=2.4",
+    "accelerate>=0.30",
+    "safetensors",
+    "huggingface_hub>=0.24",
+    "hf_transfer",
+    "fsspec",
+    "pyarrow",
+    "pandas>=2.0",
+    "numpy",
+    "scipy",          # Spearman correlations in analysis_starter.py
+    "matplotlib",     # optional plots for the #102 analysis
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
