@@ -303,6 +303,64 @@ artifacts go to durable storage" rule from the HF bucket section
 applies — GCS is for the big stuff that wouldn't fit in the
 experiment dir.
 
+### CoreWeave RNO2A GPU cluster (`cw-rno2a`)
+
+MarinFold can also train on **GPU** via CoreWeave RNO2A (`cw-rno2a`, 512× H100,
+an iris cluster; config in marin `lib/iris/config/cw-rno2a.yaml`, runbook
+`lib/iris/docs/coreweave.md`). exp108 was the first MarinFold GPU run — its
+`experiments/exp108_.../README.md` has the recipe/runbook; the durable,
+cluster-general lessons are here:
+
+- **Two easy-to-miss launcher prereqs.** Beyond the kubeconfig
+  (`~/.kube/coreweave-iris-rno2a`, context `marin-rn02a_RNO2A`) and the
+  object-storage key (`CW_KEY_ID`/`CW_KEY_SECRET`, console → Object Storage):
+  `kubectl` must be **on `PATH`** (the launcher shells out to it for the
+  controller tunnel — match the cluster k8s version, currently v1.36.x; missing
+  it → `Could not connect to controller: … 'kubectl'`), and the experiment venv
+  needs **`marin-iris[controller]`** (missing it → `Install iris[controller] to
+  use CloudK8sService`).
+- **Storage is S3, not GCS.** CoreWeave AI Object Storage, bucket
+  `marin-us-east-02a`. From a workstation use `https://cwobject.com` with
+  **virtual-hosted addressing** (path-style is rejected — `PathStyleRequestNotAllowed`);
+  in-cluster jobs get creds + the LOTA endpoint (`http://cwlota.com`) injected by
+  iris. Task pods carry **one** endpoint/credential set — GCS is unreachable from
+  jobs, so stage inputs into the CoreWeave bucket first, under a single removable
+  top-level prefix (exp108 used `s3://marin-us-east-02a/MarinFold/`).
+- **Batch priority does NOT propagate to executor-spawned children.** `iris job
+  run --priority batch` sets only the *driver* band; the marin executor /
+  `remote()` submit child jobs (tokenize, training gang) with no band →
+  interactive. To run training at batch, dispatch it yourself as a
+  `fray.JobRequest(priority=3)` (see exp108 `dispatch_train.py`;
+  `PRIORITY_BAND_BATCH == 3`, forwarded verbatim by `fray/iris_backend.py`) — the
+  sanctioned way, consistent with "Never monkey-patch" above.
+- **A driver that submits child gangs must WAIT on them.** Gangs are *children*
+  of the driver job; if the driver exits, iris finalizes (kills) them.
+- **Multi-node GPU: reliable ceiling ≈ 4 nodes (as of 2026-07).** 1/2/4-node
+  gangs bootstrap and train; **8-node fails** — the JAX multi-host coordination
+  bootstrap aborts (~5 min in, `CoordinationServiceAgent::SetError`), reproduced
+  on a single isolated 8-node gang. Launch multiple concurrent gangs as
+  **separate, staggered driver jobs** (~90 s apart) — several gangs from one
+  driver collide on coscheduling/coordination. The likely (untried) >4-node fix
+  is the `NCCL_*` env grug forwards; exp108's dispatch forwards
+  `XLA_FLAGS`/`NCCL_`/`JAX_` from the driver but sets none.
+- **GPU env quirks.** `CUDA_ERROR_NOT_PERMITTED` cuMemCreate **FABRIC** warnings
+  are **benign** (the container lacks NVIDIA IMEX; XLA falls back — though this
+  also drops the NVLS collective fast path, hurting FSDP MFU). Transformer Engine
+  is **not** in the `--extra gpu` env, so levanter's default GPU NVTE attention
+  silently falls back to the vanilla O(seq²) kernel — set `attn_backend=JAX_FLASH`
+  (pallas flash, no TE dependency) for long sequences.
+- **Always pin + `uv.lock` marin.** The marin dev line moves daily and
+  periodically refactors its API (0.2.38 removed the old `marin.execution`
+  executor surface — `ExecutorStep`/`this_output_path`/`executor_main`/
+  `default_train`; the modern assembler is `marin.experiment.train.train_lm`).
+  An unpinned range that worked last month silently breaks; a committed `uv.lock`
+  is what saved exp67/exp85.
+- **Monitoring** (no reliable `-f` for scripting): `uv run iris
+  --cluster=cw-rno2a job list | grep <name>` and `… job logs <job> --max-lines N`
+  (filter `zephyr`/`aiobotocore`/`cuda_vmm` noise; a gang's own state line is
+  `…<name> <state>` with a **space** — sub-job lines have a trailing `/`).
+  `iris job stop <job>` to kill.
+
 ### Run history
 
 **Every W&B-logged run gets a history file under `history/runs/`.**
