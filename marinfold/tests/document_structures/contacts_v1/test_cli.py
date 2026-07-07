@@ -194,7 +194,7 @@ def test_top_level_help(capsys):
 
 def test_infer_parses_input_sequence():
     args = cli.build_parser().parse_args([
-        "infer", "--model", "1.5B-contacts-v1",
+        "infer", "--model", "contacts-v1-exp75-1.5B",
         "--input-sequence", "SIINFEKLLLSKP", "--out", "preds.json",
         "--ensemble-k", "10",
     ])
@@ -206,7 +206,7 @@ def test_infer_parses_input_sequence():
     assert args.min_seq_separation == 6  # default
     cfg = cli._inference_config(args)
     assert cfg.ensemble_k == 10
-    assert cfg.model == "1.5B-contacts-v1"
+    assert cfg.model == "contacts-v1-exp75-1.5B"
 
 
 def test_infer_requires_a_source():
