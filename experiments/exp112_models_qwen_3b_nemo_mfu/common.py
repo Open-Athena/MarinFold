@@ -37,6 +37,13 @@ NEMO_IMAGE = os.environ.get("EXP112_IMAGE", "nvcr.io/nvidia/nemo:25.04.02")
 # the deferred real run would put checkpoints here.
 # ---------------------------------------------------------------------------
 EXP112_S3_PREFIX = "s3://marin-us-east-02a/MarinFold/exp112_qwen_3b_nemo_mfu"
+# Megatron .bin/.idx corpus (produced by prepare_megatron_data.py); the bootstrap
+# downloads these to node-local disk before torchrun.
+EXP112_DATA_S3 = f"{EXP112_S3_PREFIX}/tokenized_megatron"
+# Sharded checkpoints (synced per-node; the only durable store — no shared FS).
+EXP112_CKPT_S3_BASE = f"{EXP112_S3_PREFIX}/checkpoints"
+# Multi-node torchrun rendezvous: rank-0 publishes its IP here (attempt-scoped).
+EXP112_RDZV_S3_BASE = f"{EXP112_S3_PREFIX}/rdzv"
 
 # contacts-v1 tokenizer (2845 real tokens; Megatron pads the embedding up to a
 # multiple of `make_vocab_size_divisible_by`). Loaded from HF inside the
@@ -71,19 +78,31 @@ MODEL = dict(
 GLOBAL_BATCH_SIZE = 128   # sequences; 128 * 8192 ~= 1.05M tokens/step (= exp108)
 WEIGHT_DECAY = 0.2
 WARMUP_FRACTION = 0.1
-LEARNING_RATE = 1e-3      # #75's winner (only used by the deferred real run)
+LEARNING_RATE = 1e-3      # #75's winner
+
+# 16-epoch schedule (identical to exp108). Computed from the contacts-v1 train
+# token count so it stays correct if the batch changes.
+TRAIN_TOKENS = 4_672_623_743  # exp53 generation_stats: 4,129,682 docs
+EPOCHS = 16
+SEQ_LEN = MODEL["seq_length"]
+
+
+def num_train_steps(global_batch: int = GLOBAL_BATCH_SIZE, epochs: int = EPOCHS) -> int:
+    import math
+    return epochs * math.ceil(TRAIN_TOKENS / (global_batch * SEQ_LEN))  # ≈71,312 @ bs128
 
 # ---------------------------------------------------------------------------
 # Device: a single 8xH100 node on cw-rno2a. torchrun --standalone drives the 8
 # local GPUs (no multi-node rendezvous -> sidesteps iris's missing coordinator
 # API). One iris task == one pod == one node; replicas=1.
 # ---------------------------------------------------------------------------
-def h100_resources(image: str = NEMO_IMAGE) -> ResourceConfig:
-    """One 8xH100 node in the NeMo container."""
+def h100_resources(image: str = NEMO_IMAGE, replicas: int = 1) -> ResourceConfig:
+    """`replicas` × 8xH100 nodes in the NeMo container (gang-scheduled). The full
+    run uses replicas=4 (32 GPU); the benchmark used replicas=1."""
     return ResourceConfig.with_gpu(
         "H100",
         count=8,
-        replicas=1,
+        replicas=replicas,
         image=image,
         cpu=64,
         ram="512g",

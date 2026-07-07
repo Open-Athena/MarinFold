@@ -50,13 +50,20 @@ from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, create_environment
 
 from common import (
+    EXP112_CKPT_S3_BASE,
+    EXP112_DATA_S3,
+    EXP112_RDZV_S3_BASE,
     EXP112_S3_PREFIX,
     GLOBAL_BATCH_SIZE,
+    LEARNING_RATE,
     MODEL,
     NEMO_IMAGE,
     WANDB_ENTITY,
     WANDB_PROJECT,
+    WARMUP_FRACTION,
+    WEIGHT_DECAY,
     h100_resources,
+    num_train_steps,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,43 +93,97 @@ def _forwarded_env() -> dict[str, str]:
 TRAIN_SCRIPT = Path(__file__).with_name("nemo_train_qwen3.py")
 
 
-def build_bootstrap(*, nproc_per_node: int, run_name: str, results_s3: str, train_args: list[str]) -> str:
-    """Bash bootstrap for the NeMo pod: decode the inlined script, torchrun it,
-    then best-effort upload the MFU summary JSON to S3 (so it survives the pod).
+DATA_LOCAL = "/tmp/exp112/data"
+MASTER_PORT = int(os.environ.get("EXP112_MASTER_PORT", "29500"))
+
+
+def build_bootstrap(*, nproc_per_node: int, replicas: int, run_name: str, results_s3: str,
+                    data_mode: str, train_args: list[str]) -> str:
+    """Bash bootstrap for the NeMo pod(s). Single node -> torchrun --standalone.
+    Multi-node -> S3 rendezvous (rank-0 publishes IRIS_ADVERTISE_HOST to an
+    attempt-scoped key; peers poll) + static torchrun. Real data -> each node
+    downloads the bin/idx first. Benchmark (mock) -> upload the MFU summary after.
     """
     script_b64 = base64.b64encode(TRAIN_SCRIPT.read_bytes()).decode()
     results_local = "/tmp/exp112_mfu.json"
     train_argline = " ".join(train_args)
-    # NOTE: keep this POSIX-sh friendly; the NeMo image's /bin/bash is fine.
+    rdzv_prefix = f"{EXP112_RDZV_S3_BASE}/{run_name}"
+    files = "train_document.bin train_document.idx val_document.bin val_document.idx"
     return f"""
 set -euo pipefail
-echo "[exp112-bootstrap] host=$(hostname) python=$(command -v python) torchrun=$(command -v torchrun)"
-echo "[exp112-bootstrap] nvidia-smi:"; nvidia-smi -L || true
-mkdir -p /tmp/exp112
+TID="${{IRIS_TASK_ID:-/x/0:0}}"
+NR="${{TID%%:*}}"; export NODE_RANK="${{NR##*/}}"; export ATTEMPT="${{TID##*:}}"
+export NNODES="${{IRIS_NUM_TASKS:-1}}"
+export MASTER_PORT="{MASTER_PORT}"
+echo "[exp112-bootstrap] host=$(hostname) task=$TID node_rank=$NODE_RANK nnodes=$NNODES ip=${{IRIS_ADVERTISE_HOST:-?}}"
+nvidia-smi -L || true
+mkdir -p /tmp/exp112 {DATA_LOCAL}
 echo {script_b64} | base64 -d > /tmp/exp112/nemo_train_qwen3.py
-echo "[exp112-bootstrap] decoded train script ($(wc -l < /tmp/exp112/nemo_train_qwen3.py) lines); launching torchrun"
+echo "[exp112-bootstrap] decoded train script ($(wc -l < /tmp/exp112/nemo_train_qwen3.py) lines)"
+
+if [ "$NNODES" -gt 1 ]; then
+  echo "[exp112-bootstrap] multi-node rendezvous (attempt $ATTEMPT) via S3"
+  python - <<PYEOF
+import os, time, boto3
+from botocore.config import Config
+s3 = boto3.client("s3", endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
+                  config=Config(s3={{"addressing_style": "virtual"}}))
+uri = "{rdzv_prefix}/%s/master" % os.environ["ATTEMPT"]
+b, k = uri[5:].split("/", 1)
+nr = int(os.environ["NODE_RANK"]); ip = os.environ.get("IRIS_ADVERTISE_HOST", "127.0.0.1")
+if nr == 0:
+    s3.put_object(Bucket=b, Key=k, Body=ip.encode()); m = ip
+    print("[exp112] published MASTER_ADDR", ip)
+else:
+    m = None
+    for _ in range(600):
+        try:
+            m = s3.get_object(Bucket=b, Key=k)["Body"].read().decode(); break
+        except Exception:
+            time.sleep(2)
+    if not m:
+        raise SystemExit("[exp112] rendezvous timeout waiting for rank-0 IP")
+    print("[exp112] got MASTER_ADDR", m)
+open("/tmp/exp112/master_addr", "w").write(m)
+PYEOF
+  MASTER_ADDR="$(cat /tmp/exp112/master_addr)"
+  LAUNCH="torchrun --nnodes=$NNODES --node-rank=$NODE_RANK --master-addr=$MASTER_ADDR --master-port=$MASTER_PORT --nproc-per-node={nproc_per_node}"
+else
+  LAUNCH="torchrun --standalone --nnodes=1 --nproc-per-node={nproc_per_node}"
+fi
+
+if [ "{data_mode}" = "real" ]; then
+  echo "[exp112-bootstrap] downloading bin/idx -> {DATA_LOCAL}"
+  python - <<PYEOF
+import os, boto3
+from botocore.config import Config
+s3 = boto3.client("s3", endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
+                  config=Config(s3={{"addressing_style": "virtual"}}))
+base = "{EXP112_DATA_S3}"; b, pre = base[5:].split("/", 1)
+for f in "{files}".split():
+    dst = "{DATA_LOCAL}/" + f
+    if not os.path.exists(dst) or os.path.getsize(dst) == 0:
+        s3.download_file(b, pre + "/" + f, dst); print("[exp112] downloaded", f, os.path.getsize(dst))
+PYEOF
+fi
+
 export EXP112_RESULTS_JSON={results_local}
 export EXP112_RUN_NAME={run_name}
+echo "[exp112-bootstrap] launching: $LAUNCH"
 set +e
-torchrun --standalone --nnodes=1 --nproc-per-node={nproc_per_node} \
-    /tmp/exp112/nemo_train_qwen3.py {train_argline}
+$LAUNCH /tmp/exp112/nemo_train_qwen3.py {train_argline}
 rc=$?
 set -e
 echo "[exp112-bootstrap] torchrun exited rc=$rc"
-# Best-effort: push the MFU summary to S3 (creds injected by iris). Logs already
-# carry the summary, so failure here is non-fatal.
-if [ -f {results_local} ]; then
-  python - <<'PYEOF' || echo "[exp112-bootstrap] S3 upload skipped/failed (summary is still in logs)"
+# Benchmark only: push the MFU summary (real runs persist via checkpoints).
+if [ "$NODE_RANK" = "0" ] && [ -f {results_local} ]; then
+  python - <<PYEOF || echo "[exp112-bootstrap] summary upload skipped (also in logs)"
 import os, boto3
 from botocore.config import Config
-src = "{results_local}"
-uri = "{results_s3}"
-assert uri.startswith("s3://")
-bucket, key = uri[5:].split("/", 1)
 s3 = boto3.client("s3", endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
                   config=Config(s3={{"addressing_style": "virtual"}}))
-s3.upload_file(src, bucket, key)
-print("[exp112-bootstrap] uploaded", uri)
+b, k = "{results_s3}"[5:].split("/", 1)
+s3.upload_file("{results_local}", b, k); print("[exp112-bootstrap] uploaded {results_s3}")
 PYEOF
 fi
 exit $rc
@@ -130,11 +191,15 @@ exit $rc
 
 
 def build_train_args(*, max_steps: int, micro_batch_size: int, global_batch_size: int,
-                     data: str, run_name: str) -> list[str]:
-    return [
+                     data: str, run_name: str, devices: int, num_nodes: int,
+                     checkpoint_s3: str = "", checkpoint_every: int = 500,
+                     val_check_interval: int = 1000, limit_val_batches: int = 50) -> list[str]:
+    args = [
         f"--max-steps={max_steps}",
         f"--micro-batch-size={micro_batch_size}",
         f"--global-batch-size={global_batch_size}",
+        f"--devices={devices}",
+        f"--num-nodes={num_nodes}",
         f"--seq-length={MODEL['seq_length']}",
         f"--num-layers={MODEL['num_layers']}",
         f"--hidden-size={MODEL['hidden_size']}",
@@ -147,6 +212,20 @@ def build_train_args(*, max_steps: int, micro_batch_size: int, global_batch_size
         f"--wandb-entity={WANDB_ENTITY}",
         f"--wandb-name={run_name}",
     ]
+    if data == "real":
+        args += [
+            f"--train-data-prefix={DATA_LOCAL}/train_document",
+            f"--val-data-prefix={DATA_LOCAL}/val_document",
+            f"--checkpoint-s3={checkpoint_s3}",
+            f"--checkpoint-every={checkpoint_every}",
+            f"--val-check-interval={val_check_interval}",
+            f"--limit-val-batches={limit_val_batches}",
+            f"--lr={LEARNING_RATE}",
+            f"--weight-decay={WEIGHT_DECAY}",
+            f"--warmup-fraction={WARMUP_FRACTION}",
+            "--resume",  # idempotent: no S3 checkpoint yet => fresh start
+        ]
+    return args
 
 
 def build_request(
@@ -156,25 +235,31 @@ def build_request(
     micro_batch_size: int,
     global_batch_size: int = GLOBAL_BATCH_SIZE,
     data: str = "mock",
+    replicas: int = 1,
     image: str = NEMO_IMAGE,
+    checkpoint_every: int = 500,
+    val_check_interval: int = 1000,
     env_vars: dict[str, str] | None = None,
 ) -> JobRequest:
-    resources = h100_resources(image=image)
-    nproc = resources.device.count  # 8 GPUs on the node
+    resources = h100_resources(image=image, replicas=replicas)
+    nproc = resources.device.count  # 8 GPUs per node
 
     results_s3 = f"{EXP112_S3_PREFIX}/results/{run_name}.json"
+    checkpoint_s3 = f"{EXP112_CKPT_S3_BASE}/{run_name}"
     train_args = build_train_args(
         max_steps=max_steps, micro_batch_size=micro_batch_size,
         global_batch_size=global_batch_size, data=data, run_name=run_name,
+        devices=nproc, num_nodes=replicas, checkpoint_s3=checkpoint_s3,
+        checkpoint_every=checkpoint_every, val_check_interval=val_check_interval,
     )
     bootstrap = build_bootstrap(
-        nproc_per_node=nproc, run_name=run_name, results_s3=results_s3, train_args=train_args,
+        nproc_per_node=nproc, replicas=replicas, run_name=run_name, results_s3=results_s3,
+        data_mode=data, train_args=train_args,
     )
 
     task_env = {**_forwarded_env(), **(env_vars or {})}
-    # docker_image (NOT workspace) so create_environment does NOT bundle/sync the
-    # launcher's pyproject INTO the NeMo container (which would break the image);
-    # the container IS the environment. Mirror it on resources.image too.
+    # docker_image (NOT workspace) so create_environment does NOT sync the
+    # launcher's pyproject INTO the NeMo container; the container IS the environment.
     environment = create_environment(docker_image=image, env_vars=task_env)
 
     return JobRequest(
@@ -182,18 +267,26 @@ def build_request(
         entrypoint=Entrypoint.from_binary("bash", ["-lc", bootstrap]),
         resources=resources,
         environment=environment,
-        priority=IRIS_PRIORITY_BAND_BATCH,   # -> iris BATCH band
-        processes_per_task=1,                # torchrun forks the 8 ranks itself
-        max_retries_failure=0,
+        replicas=replicas,                        # gang of `replicas` × 8×H100 nodes
+        priority=IRIS_PRIORITY_BAND_BATCH,        # -> iris BATCH band
+        processes_per_task=1,                     # torchrun forks the 8 ranks per node
+        max_retries_failure=0,                    # a code bug shouldn't retry
+        max_retries_preemption=100,               # but auto-restart on preemption (resume from S3)
     )
 
 
 def main() -> None:
-    run_name = os.environ.get("EXP112_RUN_NAME", "plm-exp112-cv1-3b-nemo-bench")
-    max_steps = int(os.environ.get("EXP112_MAX_STEPS", "300"))
+    data = os.environ.get("EXP112_DATA", "mock")
+    replicas = int(os.environ.get("EXP112_REPLICAS", "1"))
+    run_default = "plm-exp112-cv1-3b-nemo-e16-lr1e-3-wd0p2" if data == "real" else "plm-exp112-cv1-3b-nemo-bench"
+    run_name = os.environ.get("EXP112_RUN_NAME", run_default)
     micro_batch = int(os.environ.get("EXP112_MICRO_BATCH", "1"))
     global_batch = int(os.environ.get("EXP112_GLOBAL_BATCH", str(GLOBAL_BATCH_SIZE)))
-    data = os.environ.get("EXP112_DATA", "mock")
+    # Full 16-epoch step count for the real run (overridable for a smoke).
+    default_steps = num_train_steps(global_batch) if data == "real" else 300
+    max_steps = int(os.environ.get("EXP112_MAX_STEPS", str(default_steps)))
+    checkpoint_every = int(os.environ.get("EXP112_CKPT_EVERY", "500"))
+    val_interval = int(os.environ.get("EXP112_VAL_INTERVAL", "1000"))
 
     env_vars = {"WANDB_ENTITY": WANDB_ENTITY, "WANDB_PROJECT": WANDB_PROJECT}
     if os.environ.get("WANDB_API_KEY"):
@@ -201,23 +294,27 @@ def main() -> None:
 
     request = build_request(
         run_name=run_name, max_steps=max_steps, micro_batch_size=micro_batch,
-        global_batch_size=global_batch, data=data, env_vars=env_vars,
+        global_batch_size=global_batch, data=data, replicas=replicas,
+        checkpoint_every=checkpoint_every, val_check_interval=val_interval, env_vars=env_vars,
     )
 
-    print(f"[exp112] dispatch: {run_name} | image={NEMO_IMAGE} | 8xH100 batch-band | "
-          f"gbs{global_batch} mbs{micro_batch} steps{max_steps} data={data}")
+    print(f"[exp112] dispatch: {run_name} | image={NEMO_IMAGE} | {replicas}×8="
+          f"{replicas * 8} H100 batch-band | gbs{global_batch} mbs{micro_batch} "
+          f"steps{max_steps} data={data} ckpt_every={checkpoint_every}")
 
     if os.environ.get("EXP112_DRY_RUN"):
         print("[exp112] DRY RUN — JobRequest built, not submitting.")
-        print(f"  priority={request.priority} image={request.resources.image} "
-              f"nproc={request.resources.device.count} "
-              f"entrypoint=bash -lc <{len(request.entrypoint.binary_entrypoint.args[1])} char bootstrap>")
+        print(f"  priority={request.priority} replicas={request.replicas} "
+              f"image={request.resources.image} nproc={request.resources.device.count} "
+              f"max_retries_preemption={request.max_retries_preemption} "
+              f"bootstrap={len(request.entrypoint.binary_entrypoint.args[1])} chars")
         return
 
     job = current_client().submit(request)
-    print(f"[exp112] submitted {run_name}; awaiting completion (driver must outlive the gang).")
+    print(f"[exp112] submitted {run_name} ({replicas} nodes); awaiting completion "
+          f"(driver must outlive the gang).")
     job.wait(raise_on_failure=True)
-    print(f"[exp112] {run_name}: SUCCEEDED — MFU summary in the job logs + {EXP112_S3_PREFIX}/results/")
+    print(f"[exp112] {run_name}: SUCCEEDED — checkpoints under {EXP112_CKPT_S3_BASE}/{run_name}/")
 
 
 if __name__ == "__main__":
