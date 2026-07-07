@@ -1,0 +1,5 @@
+# generated data, staged model, run outputs — not committed (published to HF bucket)
+data/
+.venv/
+__pycache__/
+*.pyc
