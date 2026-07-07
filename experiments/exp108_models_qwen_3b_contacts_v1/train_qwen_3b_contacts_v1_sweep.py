@@ -112,7 +112,7 @@ def main() -> None:
         f"seq={SEQ_LEN} replicas={REPLICAS} ({REPLICAS * 8} H100/run) | "
         f"{STEPS_PER_EPOCH} steps/epoch × {EPOCHS} epochs = {EPOCHS * STEPS_PER_EPOCH} steps"
         + (f" (capped to {NUM_TRAIN_STEPS} for smoke run)" if _max_steps_env else "")
-        + f" | {len(SWEEP_LRS)} job(s), wait={WAIT}"
+        + f" | {len(SWEEP_LRS)} job(s)"
     )
     jobs = []
     for lr in SWEEP_LRS:
