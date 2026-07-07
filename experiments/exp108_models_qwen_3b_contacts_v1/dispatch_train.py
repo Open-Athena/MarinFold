@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os
 
 from fray import ResourceConfig
 from fray.current_client import current_client
@@ -83,6 +84,26 @@ assert "priority" in {f.name for f in dataclasses.fields(JobRequest)}, (
     "This fray build lacks JobRequest.priority; batch-band dispatch requires the "
     "0.2.x.dev fray line (exp108's pins), not the frozen 0.99.dev build."
 )
+
+# Runtime-tuning env vars forwarded from the driver to the training gang. Iris
+# tasks don't inherit the submitter's shell, and the gang runs in a SEPARATE pod
+# from this driver, so anything passed to the driver via `iris job run -e XLA_FLAGS
+# ...` (or NCCL_*/JAX_*) must be re-exported explicitly onto the gang — exactly
+# like grug's dispatch (experiments/grug/dispatch.py). This is what lets us tune
+# H100 throughput (e.g. -e XLA_FLAGS=--xla_gpu_enable_latency_hiding_scheduler=true)
+# without editing code. JAX_PLATFORMS is excluded so the CPU driver's value can't
+# leak onto the GPU gang.
+_FORWARD_ENV_PREFIXES = ("XLA_FLAGS", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
+_FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS",)
+
+
+def _forwarded_perf_env() -> dict[str, str]:
+    return {
+        k: v
+        for k, v in os.environ.items()
+        if k.startswith(_FORWARD_ENV_PREFIXES) and k not in _FORWARD_ENV_EXCLUDE
+    }
+
 
 # Token caches live under the same MarinFold/ prefix as everything else (#108).
 # With auto_build_caches=True the training workers build them on first read; the
@@ -214,6 +235,11 @@ def dispatch_training_run(
     submit it as a **batch-band** Fray job. Extra kwargs are forwarded to
     :func:`build_on_pod_config`.
     """
+    # Merge driver-forwarded perf env (XLA_FLAGS/NCCL_/JAX_) under the explicit
+    # env_vars (WANDB_*), which win on conflict. Flows to both the pod config and
+    # the gang's runtime environment.
+    env_vars = {**_forwarded_perf_env(), **(env_vars or {})}
+
     on_pod_config = build_on_pod_config(
         run_name=run_name, resources=resources, env_vars=env_vars, **config_kwargs
     )
@@ -221,7 +247,7 @@ def dispatch_training_run(
     environment = create_environment(
         # resolve_training_env: hardware defaults + GIT_COMMIT + JAX compile cache.
         # (The WANDB-key check inside is TPU-only; we forward WANDB_* via env_vars.)
-        env_vars=resolve_training_env(base_env=dict(env_vars or {}), resources=resources),
+        env_vars=resolve_training_env(base_env=dict(env_vars), resources=resources),
         extras=extras_for_resources(resources),  # GpuConfig -> ["gpu"]
     )
 

@@ -45,11 +45,20 @@ import dataclasses
 import math
 import os
 
+from levanter.layers.attention import AttentionBackend
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.models.qwen import Qwen3Config
 
 from contacts_v1_train_common import CONTACTS_V1_S3_PREFIX, PROTEIN_RESOURCES_H100
 from dispatch_train import dispatch_training_run
+
+# Attention backend. On GPU levanter defaults to NVTE (Transformer Engine), but
+# TE is NOT installed in the `--extra gpu` env, so it silently falls back to the
+# VANILLA O(seq^2) reference kernel — catastrophic at seq 8192 (~52k tok/s in the
+# first smoke run). JAX_FLASH is levanter's pallas/Triton flash kernel (O(seq)
+# memory, no TE dependency). Override with EXP108_ATTN=nvte|vanilla|default.
+_ATTN = os.environ.get("EXP108_ATTN", "jax_flash").upper()
+ATTN_BACKEND = AttentionBackend[_ATTN] if _ATTN else None
 
 # --- Qwen3 ~3B shape (#75's 1.5B width, depth doubled 24 → 48) ---------------
 protein_qwen3_3b = Qwen3Config(
@@ -60,6 +69,7 @@ protein_qwen3_3b = Qwen3Config(
     num_kv_heads=8,
     num_layers=48,  # 2× #75's 24 → ~2.9B params; head_dim defaults to 2048/32=64 (= #75)
     rope=Llama3RotaryEmbeddingsConfig(),
+    attn_backend=ATTN_BACKEND,
 )
 
 # --- Recipe (tracks #75) -----------------------------------------------------
@@ -101,8 +111,14 @@ def _lr_tag(lr: float) -> str:
     return f"{lr:.0e}".replace("e-0", "e-").replace("e+0", "e")
 
 
+# Optional suffix to isolate a run's output path (e.g. throughput-probe runs, so
+# they don't resume from an earlier run's checkpoint at the shared path).
+_RUN_SUFFIX = os.environ.get("EXP108_RUN_SUFFIX", "")
+
+
 def run_name_for(lr: float) -> str:
-    return f"plm-exp108-cv1-3b-e{EPOCHS}-lr{_lr_tag(lr)}-wd0p2"
+    base = f"plm-exp108-cv1-3b-e{EPOCHS}-lr{_lr_tag(lr)}-wd0p2"
+    return f"{base}-{_RUN_SUFFIX}" if _RUN_SUFFIX else base
 
 
 def main() -> None:
