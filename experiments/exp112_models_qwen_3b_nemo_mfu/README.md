@@ -143,9 +143,40 @@ uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
 
 ## Results
 
-_(Fill in after the benchmark: tokens/s, tokens/s/GPU, s/step, model-TFLOP/s/GPU,
-MFU; side-by-side with exp108's ~52k tok/s / ~15% MFU.)_
+Single **8×H100** node on `cw-rno2a`, batch **128 × seq 8192** (= exp108),
+**bf16**, gradient checkpointing **on** (as exp108), **mock** data, NeMo 2.3.2 /
+`nvcr.io/nvidia/nemo:25.04.02`. The whole novel path worked first try on the
+cluster: nvcr.io image pull (~4.5 min), binary `torchrun` entrypoint at **batch**
+band, base64-inlined script, 8-GPU bringup, and S3 result upload. Model built with
+the exact geometry (48L / 2048h / 32h·8kv GQA / QK-norm / RMSNorm / SwiGLU / RoPE,
+vocab 2845). JSON summaries under `…/exp112_qwen_3b_nemo_mfu/results/`.
+
+| run | micro-batch | s/step | tokens/s | tokens/s/GPU | model TFLOP/s/GPU | **MFU** |
+|-----|:-----------:|:------:|:--------:|:------------:|:-----------------:|:-------:|
+| NeMo (smoke, 40 steps) | 1 | 11.69 | 89,737 | 11,217 | 251 | 25.4% |
+| NeMo (50 steps) | 2 | 11.34 | 92,465 | 11,558 | 259 | 26.2% |
+| **NeMo (50 steps)** | **4** | **11.29** | **92,861** | **11,608** | **260** | **26.3%** |
+| **exp108 Levanter** (baseline) | — | ~20 | ~52,000 | ~6,500 | — | **~15%** |
+
+**NeMo ≈ 1.75–1.79× Levanter** on identical model / shape / hardware:
+**~26% MFU vs ~15%**, **~93k vs ~52k tok/s**, **~11.3 vs ~20 s/step**. Micro-batch
+barely moves it (memory-bound at this shape with grad checkpointing), so mbs 1 is a
+fine default. MFU is computed as model-FLOPs ÷ (step_time × 8 × 989 TFLOP/s); the
+*throughput* columns are formula-free and carry the comparison on their own.
 
 ## Conclusion
 
-_(Fill in — did NeMo beat Levanter's MFU, and by how much; recommend go/no-go on the full run.)_
+**Yes — NeMo/Megatron-Core is materially more efficient than Levanter here (~1.75×),
+out of the box.** That directly answers #112. Two honest caveats: the number is
+**~26% MFU, not** the ~35–40% one might hope for a 3B on H100 — the ceiling here is
+set by the **mandatory activation recompute** (48L × seq 8192 doesn't fit without it,
+same tax exp108 paid), **bf16** (no fp8), and **DP-replicated** params (no TP/FSDP).
+Each is a known lever: **fp8** (Transformer-Engine, plausibly another ~1.3–1.8×),
+**TP/FSDP** to drop grad checkpointing, and larger effective batch — all deferred.
+
+**Recommendation:** the throughput win is real and large enough to justify moving the
+**full 16-epoch training run to NeMo** if we want the trained model sooner — a 4-node
+NeMo run should land in **~2–2.5 days vs exp108's ~4** at the same node count. Before
+that: wire the real `.bin/.idx` data path (block cross-doc attention; verify Megatron
+#2357) and solve multi-node `torchrun` rendezvous over `IRIS_TASK_ID` (both in
+*Deferred*). Left to the humans to decide (issue stays open).
