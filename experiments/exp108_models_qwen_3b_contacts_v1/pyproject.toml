@@ -13,7 +13,11 @@ dependencies = [
     # ones. (See exp85.)
     "marin-core>=0.2.5.dev202606020954,<0.3",
     "marin-levanter>=0.2.5.dev202606020954,<0.3",
-    "marin-iris>=0.2.5.dev202606020954,<0.3",
+    # [controller] extra: needed by the workstation launcher to reach the
+    # CoreWeave k8s controller (CloudK8sService); see lib/iris/docs/coreweave.md
+    # ("uv pip install 'marin-iris[controller]'"). Without it, `iris job run`
+    # fails with "Install iris[controller] to use CloudK8sService".
+    "marin-iris[controller]>=0.2.5.dev202606020954,<0.3",
     "marin-zephyr>=0.2.5.dev202606020954,<0.3",
     "marin-rigging>=0.2.5.dev202606020954,<0.3",
     "marinfold-models",

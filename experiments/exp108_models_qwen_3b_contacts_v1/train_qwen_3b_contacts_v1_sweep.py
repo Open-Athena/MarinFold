@@ -27,7 +27,6 @@ Env knobs (so a smoke run needs no code edit):
     EXP108_TRAIN_BATCH global batch in sequences (default 128, = #75)
     EXP108_REPLICAS    number of 8×H100 nodes per run (default 1 = 8 GPUs)
     EXP108_MAX_STEPS   cap steps for a smoke run (default: full 16-epoch count)
-    EXP108_WAIT        "1" to block on each job (default: submit and return)
 
 Launch (batch priority — required by #108):
 
@@ -74,7 +73,6 @@ TRAIN_TOKENS = 4_672_623_743
 
 TRAIN_BATCH = int(os.environ.get("EXP108_TRAIN_BATCH", "128"))
 REPLICAS = int(os.environ.get("EXP108_REPLICAS", "1"))
-WAIT = os.environ.get("EXP108_WAIT") == "1"
 
 # 16 epochs, computed from tokens so it stays correct if the batch changes.
 STEPS_PER_EPOCH = math.ceil(TRAIN_TOKENS / (TRAIN_BATCH * SEQ_LEN))
@@ -135,11 +133,28 @@ def main() -> None:
             wandb_name=name,
             tags=("protein", "contacts-v1", "qwen3", "3b", "unmasked", "coreweave",
                   f"e{EPOCHS}", f"bs{TRAIN_BATCH}", f"lr{_lr_tag(lr)}"),
-            wait=WAIT,
+            wait=False,  # submit only; we block on all of them below
         )
         print(f"  submitted: {name} -> {output_path}")
-        jobs.append(job)
-    print(f"[exp108] submitted {len(jobs)} job(s) at iris batch priority.")
+        jobs.append((name, job))
+    print(f"[exp108] submitted {len(jobs)} gang(s) at iris batch priority; awaiting completion.")
+
+    # CRITICAL: the training gangs are CHILDREN of this driver job. If the driver
+    # exits first, iris finalizes (kills) them (that's what happened with the
+    # first wait=False launch). So the driver must stay alive until every gang
+    # finishes. Submitting all first, then waiting, lets the N sweep gangs run
+    # concurrently while the driver blocks. raise_on_failure per-job so one sweep
+    # member failing doesn't tear down the others.
+    failures = 0
+    for name, job in jobs:
+        try:
+            job.wait(raise_on_failure=True)
+            print(f"[exp108] {name}: SUCCEEDED")
+        except Exception as e:  # noqa: BLE001 — report, keep waiting on the rest
+            failures += 1
+            print(f"[exp108] {name}: FAILED — {e}")
+    if failures:
+        raise SystemExit(f"[exp108] {failures}/{len(jobs)} run(s) failed")
 
 
 if __name__ == "__main__":
