@@ -344,7 +344,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--model", required=True,
                        help="Local directory holding the model + tokenizer, or "
                             "a nickname listed in MODELS.yaml "
-                            "(e.g. '1.5B-contacts-v1').")
+                            "(e.g. 'contacts-v1-exp75-1.5B').")
         p.add_argument("--backend", choices=("vllm", "transformers", "mlx"),
                        default="vllm",
                        help="Inference runtime. 'vllm' (Linux+GPU, default), "

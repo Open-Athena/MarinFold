@@ -54,7 +54,7 @@ uv run marinfold infer \
 
 `--out` holds one `P(contact)` score per residue pair; `--out-plots` is the
 contact-map heatmap. The first run downloads our 1.5B contacts-v1 model
-(~6 gb). Omitting `--model` uses the default (`1.5B-contacts-v1`); the older
+(~6 gb). Omitting `--model` uses the default (`contacts-v1-exp75-1.5B`); the older
 distogram models are still available as `--model 1B` / `1.5B` (see below).
 
 The command above uses the fast **`pairwise`** readout (~0.3 s/protein). Our
@@ -67,7 +67,7 @@ surface narrow):
 
 ```bash
 uv run contacts-v1 infer \
-    --backend vllm --model 1.5B-contacts-v1 \
+    --backend vllm --model contacts-v1-exp75-1.5B \
     --method rollout --n-rollouts 100 \
     --input-sequence $SEQUENCE \
     --out ~/prediction.json --out-plots ~/contact_map.pdf
@@ -213,7 +213,7 @@ uv run contacts-and-distances-v1 evaluate \
 
 ## Colab Notebooks
 
-- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run our current best `1.5B-contacts-v1` model on a structure from RCSB and plot the ground-truth vs predicted contact map (choose `pairwise` or `rollout` inference).
+- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run our current best `contacts-v1-exp75-1.5B` model on a structure from RCSB and plot the ground-truth vs predicted contact map (choose `pairwise` or `rollout` inference).
 - [Inspect Data 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inspect_data1.ipynb) — browse legacy `timodonnell/protein-docs` subsets plus newer `open-athena/MarinFold` bucket parquet data, with sample documents and parquet schema previews.
 
 ## Layout
