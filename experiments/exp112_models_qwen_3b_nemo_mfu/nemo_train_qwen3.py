@@ -350,12 +350,19 @@ except Exception:  # noqa: BLE001
         _Callback = object
 
 
+def _step_of(d):
+    # NeMo names checkpoints with `consumed_samples=N` (monotonic) and sometimes
+    # `step=N`; use whichever is present as the progress/ordering key.
+    for pat in (r"consumed_samples=?(\d+)", r"step=?(\d+)"):
+        m = re.search(pat, d.name)
+        if m:
+            return int(m.group(1))
+    return -1
+
+
 def _pick_latest(subdirs):
     """Highest-step checkpoint subdir (deterministic across nodes)."""
-    def step_of(d):
-        m = re.search(r"step=?(\d+)", d.name)
-        return int(m.group(1)) if m else -1
-    return max(subdirs, key=lambda d: (step_of(d), d.stat().st_mtime))
+    return max(subdirs, key=lambda d: (_step_of(d), d.stat().st_mtime))
 
 
 class ThroughputCallback(_Callback):
@@ -375,30 +382,37 @@ class ThroughputCallback(_Callback):
 
 
 class S3CheckpointSync(_Callback):
-    """After each local checkpoint, sync the newest sharded dir to S3 (each node
-    uploads its own shards; union = complete). Prune S3 to just the latest +
-    commit latest.txt. Non-fatal on error (checkpoint still on local disk)."""
+    """Sync the newest sharded checkpoint dir to S3 whenever a NEW one appears
+    (detected by its step, not by a step-count trigger — NeMo's ModelCheckpoint
+    writes after our callback and at a step offset, so a `% every == 0` trigger
+    misses it). Each node uploads its OWN shards (union = complete checkpoint; no
+    shared FS); rank-0 prunes S3 to just the latest + commits latest.txt. All
+    ranks see the same latest step (every node writes the DCP checkpoint locally),
+    so the barrier stays collective-safe. Non-fatal on error."""
 
     def __init__(self, checkpoint_s3: str, checkpoint_dir: str, checkpoint_every: int):
         super().__init__()
         self.checkpoint_s3 = checkpoint_s3
         self.checkpoint_dir = checkpoint_dir
-        self.checkpoint_every = checkpoint_every
+        self._last_synced = -1
 
-    def on_train_batch_end(self, trainer, *a, **k):
+    def _sync(self):
         if not self.checkpoint_s3:
             return
-        step = int(trainer.global_step)
-        if step <= 0 or step % self.checkpoint_every != 0:
+        from pathlib import Path
+        ck = Path(self.checkpoint_dir)
+        if not ck.exists():
             return
+        subdirs = [d for d in ck.iterdir() if d.is_dir() and not d.name.startswith(".")]
+        subdirs = [d for d in subdirs if _step_of(d) >= 0]  # step-named (skip bare -last)
+        if not subdirs:
+            return
+        latest = _pick_latest(subdirs)
+        step = _step_of(latest)
+        if step <= self._last_synced:
+            return  # already uploaded this checkpoint
         try:
-            from pathlib import Path
-            _barrier()  # all ranks finished the (sync) save
-            ck = Path(self.checkpoint_dir)
-            subdirs = [d for d in ck.iterdir() if d.is_dir() and not d.name.startswith(".")] if ck.exists() else []
-            if not subdirs:
-                return
-            latest = _pick_latest(subdirs)
+            _barrier()  # DCP save is synchronous+collective; all nodes have it now
             n = _upload_tree(str(latest), f"{self.checkpoint_s3}/{latest.name}")
             _barrier()  # all nodes finished uploading their shards
             if _env_int("RANK", 0) == 0:
@@ -407,8 +421,15 @@ class S3CheckpointSync(_Callback):
                         _delete_s3_subdir(f"{self.checkpoint_s3}/{name}")
                 _s3_write_text(f"{self.checkpoint_s3}/latest.txt", latest.name)
                 print(f"[exp112] checkpoint synced to S3: {latest.name} (node shards: {n} files)", flush=True)
+            self._last_synced = step
         except Exception as e:  # noqa: BLE001 — never kill training over a sync
             print(f"[exp112] S3 checkpoint sync error (non-fatal): {e}", flush=True)
+
+    def on_train_batch_end(self, trainer, *a, **k):
+        self._sync()
+
+    def on_train_end(self, trainer, *a, **k):
+        self._sync()  # catch the final checkpoint (no batch after it)
 
 
 def main() -> None:
@@ -421,6 +442,31 @@ def main() -> None:
     from nemo import lightning as nl
     from nemo.collections import llm
     from nemo.collections.llm.gpt.data.mock import MockDataModule
+
+    # Multi-node dataset index cache without a shared FS: Megatron builds the
+    # sample/shuffle .npy on GLOBAL rank-0 only, into a NODE-LOCAL dir, then all
+    # ranks read it -> other nodes' ranks FileNotFound. Patch the dataset builder
+    # so that DURING the build, get_rank() reports the LOCAL rank: each node's
+    # local-rank-0 builds its own node-local cache (before the collective barrier),
+    # and that node's other ranks read it (after). The barrier is collective and
+    # doesn't use get_rank, so this stays correct; get_rank is restored after.
+    import torch.distributed as _dist
+    import megatron.core.datasets.blended_megatron_dataset_builder as _bb
+
+    _orig_build = _bb.BlendedMegatronDatasetBuilder.build
+
+    def _build_local_rank(self):
+        if not (_dist.is_available() and _dist.is_initialized()):
+            return _orig_build(self)
+        lr = _env_int("LOCAL_RANK", 0)
+        real = _dist.get_rank
+        _dist.get_rank = lambda *a, **k: lr
+        try:
+            return _orig_build(self)
+        finally:
+            _dist.get_rank = real
+
+    _bb.BlendedMegatronDatasetBuilder.build = _build_local_rank
 
     # Tokenizer (tiny, from HF) -> real vocab size for faithful head FLOPs.
     from nemo.collections.common.tokenizers.huggingface.auto_tokenizer import AutoTokenizer
@@ -471,10 +517,10 @@ def main() -> None:
         from pathlib import Path
 
         from nemo.collections.llm.gpt.data import PreTrainingDataModule
-        # Megatron writes .npy sample-index maps here — MUST be writable (keep it
-        # off the data dir, which may be a read-only mount).
-        idx_dir = os.environ.get("EXP112_INDEX_DIR", "/tmp/exp112/index")
-        Path(idx_dir).mkdir(parents=True, exist_ok=True)
+        # index_mapping_dir=None -> Megatron builds the sample/shuffle indices
+        # IN MEMORY on every rank (a few seconds over ~9M samples). With a path,
+        # only GLOBAL rank-0 writes the .npy to its node-local disk, and other
+        # nodes' ranks can't read it (no shared FS on cw-rno2a) -> FileNotFound.
         data = PreTrainingDataModule(
             paths={
                 "train": [args.train_data_prefix],
@@ -488,7 +534,7 @@ def main() -> None:
             reset_attention_mask=True,
             reset_position_ids=True,
             eod_mask_loss=False,
-            index_mapping_dir=idx_dir,
+            index_mapping_dir=None,
             num_workers=4,
         )
 

@@ -95,6 +95,10 @@ TRAIN_SCRIPT = Path(__file__).with_name("nemo_train_qwen3.py")
 
 DATA_LOCAL = "/tmp/exp112/data"
 MASTER_PORT = int(os.environ.get("EXP112_MASTER_PORT", "29500"))
+# Strongly-consistent object endpoint for the tiny rendezvous object (the injected
+# LOTA cache negative-caches a cross-node poll-before-write). Pods reach it (they
+# already pull nvcr.io / HF). Data + checkpoints keep using the fast injected LOTA.
+RDZV_ENDPOINT = os.environ.get("EXP112_RDZV_ENDPOINT", "https://cwobject.com")
 
 
 def build_bootstrap(*, nproc_per_node: int, replicas: int, run_name: str, results_s3: str,
@@ -107,12 +111,17 @@ def build_bootstrap(*, nproc_per_node: int, replicas: int, run_name: str, result
     script_b64 = base64.b64encode(TRAIN_SCRIPT.read_bytes()).decode()
     results_local = "/tmp/exp112_mfu.json"
     train_argline = " ".join(train_args)
-    rdzv_prefix = f"{EXP112_RDZV_S3_BASE}/{run_name}"
+    # Gang-common rendezvous key. IRIS_TASK_ID is `/user/job/<gang>/<node_rank>`
+    # (NO `:attempt` suffix in the pod), so we key on run_name (unique per run,
+    # identical for every node). rank-0 OVERWRITES its current IP each attempt;
+    # on a preemption-restart a stale IP just yields a fast connection-refused and
+    # the gang retries (self-heals), rather than a silent key mismatch.
+    rdzv_key = f"{EXP112_RDZV_S3_BASE}/{run_name}/master"
     files = "train_document.bin train_document.idx val_document.bin val_document.idx"
     return f"""
 set -euo pipefail
-TID="${{IRIS_TASK_ID:-/x/0:0}}"
-NR="${{TID%%:*}}"; export NODE_RANK="${{NR##*/}}"; export ATTEMPT="${{TID##*:}}"
+TID="${{IRIS_TASK_ID:-/x/0}}"
+export NODE_RANK="${{TID##*/}}"
 export NNODES="${{IRIS_NUM_TASKS:-1}}"
 export MASTER_PORT="{MASTER_PORT}"
 echo "[exp112-bootstrap] host=$(hostname) task=$TID node_rank=$NODE_RANK nnodes=$NNODES ip=${{IRIS_ADVERTISE_HOST:-?}}"
@@ -122,31 +131,60 @@ echo {script_b64} | base64 -d > /tmp/exp112/nemo_train_qwen3.py
 echo "[exp112-bootstrap] decoded train script ($(wc -l < /tmp/exp112/nemo_train_qwen3.py) lines)"
 
 if [ "$NNODES" -gt 1 ]; then
-  echo "[exp112-bootstrap] multi-node rendezvous (attempt $ATTEMPT) via S3"
+  echo "[exp112-bootstrap] multi-node rendezvous via S3 (node_rank=$NODE_RANK)"
   python - <<PYEOF
 import os, time, boto3
 from botocore.config import Config
-s3 = boto3.client("s3", endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
+# Rendezvous uses the CONSISTENT external endpoint, NOT the injected LOTA cache
+# (cwlota.com): LOTA negative-caches a cross-node poll-before-write, so a peer
+# never sees rank-0's just-written IP. Tiny object, so external latency is fine.
+s3 = boto3.client("s3", endpoint_url="{RDZV_ENDPOINT}",
                   config=Config(s3={{"addressing_style": "virtual"}}))
-uri = "{rdzv_prefix}/%s/master" % os.environ["ATTEMPT"]
-b, k = uri[5:].split("/", 1)
+b, k = "{rdzv_key}"[5:].split("/", 1)
 nr = int(os.environ["NODE_RANK"]); ip = os.environ.get("IRIS_ADVERTISE_HOST", "127.0.0.1")
 if nr == 0:
     s3.put_object(Bucket=b, Key=k, Body=ip.encode()); m = ip
-    print("[exp112] published MASTER_ADDR", ip)
+    print("[exp112] published MASTER_ADDR", ip, flush=True)
 else:
     m = None
-    for _ in range(600):
+    for i in range(600):
         try:
             m = s3.get_object(Bucket=b, Key=k)["Body"].read().decode(); break
         except Exception:
+            if i % 15 == 0:
+                print("[exp112] waiting for rank-0 IP…", flush=True)
             time.sleep(2)
     if not m:
         raise SystemExit("[exp112] rendezvous timeout waiting for rank-0 IP")
-    print("[exp112] got MASTER_ADDR", m)
+    print("[exp112] got MASTER_ADDR", m, flush=True)
 open("/tmp/exp112/master_addr", "w").write(m)
 PYEOF
   MASTER_ADDR="$(cat /tmp/exp112/master_addr)"
+  # Gloo (Megatron makes CPU/metadata process-groups over it) needs the host-eth
+  # interface explicitly; without GLOO_SOCKET_IFNAME it auto-picks a wrong iface
+  # (IB / link-local) -> "connectFullMesh failed" across nodes. Derive the iface
+  # owning this node's routable IP (falls back to the default-route iface).
+  # Find the interface owning this node's routable IP via Python stdlib
+  # (SIOCGIFADDR) — the NeMo container has no working `ip` command. Gloo (used by
+  # Megatron's CPU process groups + the distributed optimizer) needs
+  # GLOO_SOCKET_IFNAME pinned to that host-eth iface or connectFullMesh fails.
+  IFACE=$(python -c "
+import os, socket, fcntl, struct, sys
+want = os.environ.get('IRIS_ADVERTISE_HOST', '')
+sel = ''
+for n in sorted(os.listdir('/sys/class/net')):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        ip = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', n[:15].encode()))[20:24])
+        sys.stderr.write(' iface %s %s\\n' % (n, ip))
+        if ip == want:
+            sel = n
+    except Exception:
+        pass
+print(sel)
+" || true)
+  if [ -n "$IFACE" ]; then export GLOO_SOCKET_IFNAME="$IFACE"; fi
+  echo "[exp112-bootstrap] GLOO_SOCKET_IFNAME=${{GLOO_SOCKET_IFNAME:-unset}} (ip=${{IRIS_ADVERTISE_HOST:-?}})"
   LAUNCH="torchrun --nnodes=$NNODES --node-rank=$NODE_RANK --master-addr=$MASTER_ADDR --master-port=$MASTER_PORT --nproc-per-node={nproc_per_node}"
 else
   LAUNCH="torchrun --standalone --nnodes=1 --nproc-per-node={nproc_per_node}"
