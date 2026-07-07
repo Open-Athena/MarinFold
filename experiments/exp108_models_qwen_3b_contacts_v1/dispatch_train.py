@@ -219,7 +219,25 @@ def build_on_pod_config(
     )
 
     # Force levanter to build the tokenize-on-the-fly caches on the workers.
-    return dataclasses.replace(pod_config, auto_build_caches=True)
+    pod_config = dataclasses.replace(pod_config, auto_build_caches=True)
+
+    # EXP108_PROFILE=1 → capture a levanter/JAX profiler trace over a small step
+    # window (past compile/warmup). The trace lands in the pod's local log_dir and
+    # is uploaded to the W&B run as an artifact. Used to diagnose the ~15% MFU
+    # (FSDP collectives vs recompute vs matmul). Off by default.
+    if os.environ.get("EXP108_PROFILE") == "1":
+        from levanter.callbacks.profiler import ProfilerConfig
+
+        prof = ProfilerConfig(
+            enabled=True,
+            start_step=int(os.environ.get("EXP108_PROFILE_START", "6")),
+            num_steps=int(os.environ.get("EXP108_PROFILE_STEPS", "4")),
+        )
+        tc = pod_config.train_config
+        tc = dataclasses.replace(tc, trainer=dataclasses.replace(tc.trainer, profiler=prof))
+        pod_config = dataclasses.replace(pod_config, train_config=tc)
+
+    return pod_config
 
 
 def dispatch_training_run(
