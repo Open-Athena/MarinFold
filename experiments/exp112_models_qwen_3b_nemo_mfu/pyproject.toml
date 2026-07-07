@@ -1,0 +1,43 @@
+[project]
+name = "exp112-models-qwen-3b-nemo-mfu"
+version = "0.1.0"
+description = "3B Qwen3 contacts-v1 on CoreWeave H100 via NVIDIA NeMo, MFU comparison vs exp108's Levanter — issue #112."
+# >=3.12 to match the marin-iris/fray 0.2.x.dev line (dropped 3.11).
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # --- Launcher / dispatch side ONLY. --------------------------------------
+    # Unlike exp108 this env does NOT carry the training stack (no marin-core /
+    # levanter / torch / jax): NeMo lives inside the `nvcr.io/nvidia/nemo`
+    # container and is launched via a torchrun BINARY entrypoint. All we need on
+    # the workstation + the CPU driver pod is:
+    #   * marin-iris[controller] — the `iris` CLI + CloudK8sService to reach the
+    #     CoreWeave k8s controller (same as exp108; without [controller]:
+    #     "Install iris[controller] to use CloudK8sService").
+    #   * marin-fray — the JobRequest/Entrypoint/current_client submit API.
+    # Pin the FIXED 0.2.x.dev line (<0.3): the frozen `0.99.dev` marin-fray build
+    # has NO `JobRequest.priority` field, so batch-band dispatch would silently
+    # fall back to interactive (dispatch_nemo asserts against this at import).
+    "marin-iris[controller]>=0.2.5.dev202606020954,<0.3",
+    "marin-fray>=0.2.5.dev202606020954,<0.3",
+    # S3 (CoreWeave AI Object Storage) staging of code + reading the parquet
+    # corpus manifest from the workstation. boto3 for the S3 client; pyarrow to
+    # peek at the staged parquet; huggingface_hub only to resolve the tokenizer.
+    "boto3",
+    "s3fs",
+    "pyarrow",
+    "numpy",
+    "huggingface_hub",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+# Linux only — the workstation launcher and the CoreWeave controller/driver pods
+# are all Linux.
+environments = [
+    "sys_platform == 'linux'",
+]
