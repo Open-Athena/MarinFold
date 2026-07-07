@@ -60,6 +60,12 @@ from dispatch_train import dispatch_training_run
 _ATTN = os.environ.get("EXP108_ATTN", "jax_flash").upper()
 ATTN_BACKEND = AttentionBackend[_ATTN] if _ATTN else None
 
+# Gradient (activation) checkpointing. Default ON (Qwen3 default) — needed at
+# high per-GPU batch. Turning it OFF removes the ~25-33% recompute tax but stores
+# all layer activations (much more memory) — only viable at low per-GPU batch
+# (e.g. multi-node). Toggle with EXP108_GRAD_CKPT=0.
+_GRAD_CKPT = os.environ.get("EXP108_GRAD_CKPT", "1") != "0"
+
 # --- Qwen3 ~3B shape (#75's 1.5B width, depth doubled 24 → 48) ---------------
 protein_qwen3_3b = Qwen3Config(
     max_seq_len=8192,
@@ -70,6 +76,7 @@ protein_qwen3_3b = Qwen3Config(
     num_layers=48,  # 2× #75's 24 → ~2.9B params; head_dim defaults to 2048/32=64 (= #75)
     rope=Llama3RotaryEmbeddingsConfig(),
     attn_backend=ATTN_BACKEND,
+    gradient_checkpointing=_GRAD_CKPT,
 )
 
 # --- Recipe (tracks #75) -----------------------------------------------------
