@@ -69,46 +69,64 @@ Still pass `--priority batch` on the driver (the launch commands do). **HF expor
 
 ## Runbook
 
-**0. Auth (done on Tim's workstation):** kubeconfig `~/.kube/coreweave-iris-rno2a` (verified), object-storage key in `~/.config/marin/cw-rno2a.env`. Source it first: `set -a; source ~/.config/marin/cw-rno2a.env; set +a`.
+**0. Workstation prereqs** (one-time, done on Tim's box):
+- kubeconfig `~/.kube/coreweave-iris-rno2a` (context `marin-rn02a_RNO2A`).
+- object-storage key in `~/.config/marin/cw-rno2a.env`; source it before any command: `set -a; source ~/.config/marin/cw-rno2a.env; set +a`.
+- **`kubectl` on `PATH`** — the launcher shells out to it for the controller tunnel. Install a version matching the cluster (k8s v1.36.x). *Without it: `Could not connect to controller: … 'kubectl'`.*
+- `marin-iris[controller]` (already in `pyproject.toml`) — needed for `CloudK8sService`. *Without it: `Install iris[controller] to use CloudK8sService`.*
+- W&B key: pulled from `~/.netrc` (`python -c "import netrc; print(netrc.netrc().authenticators('api.wandb.ai')[2])"`).
 
-**1. Stage the corpus to CoreWeave S3** (workstation; GCS mirror → S3, byte-identical to the HF publish):
+**1. Stage the corpus to CoreWeave S3** (done — GCS mirror → S3, byte-identical to the HF publish; ~12 GiB, idempotent):
 ```bash
-cd experiments/exp108_models_qwen_3b_contacts_v1
-set -a; source ~/.config/marin/cw-rno2a.env; set +a
-python stage_data_to_coreweave.py --splits train val     # ~12 GiB, idempotent
+python stage_data_to_coreweave.py --splits train val
 ```
 Lands at `s3://marin-us-east-02a/MarinFold/data/document_structures/contacts_v1/{train,val}/`.
 
-**2. Pin `marinfold-models`** — commit this experiment + the `models/` `gpu`-extra change, push, and set `rev` in `pyproject.toml` to that commit. Local iteration: `uv sync --extra gpu && uv pip install --reinstall-package marinfold-models ../../models`.
+**2. Pin `marinfold-models`** (done) — `rev` in `pyproject.toml` points at the `models/` refresh commit; `uv.lock` freezes marin 0.2.38. Local iteration: `uv sync && uv pip install --reinstall-package marinfold-models ../../models`.
 
-**3. Smoke run** (one LR, ~50 steps — confirm batch fits + measure step time):
+**3. Launch — one SEPARATE, STAGGERED driver per LR** (see "Operational findings" for *why* not one driver):
 ```bash
-WANDB_API_KEY=<key> uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
+set -a; source ~/.config/marin/cw-rno2a.env; set +a
+WK=$(python -c "import netrc; print(netrc.netrc().authenticators('api.wandb.ai')[2])")
+for lr in 5e-4 1e-3 2e-3; do
+  uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
     --enable-extra-resources --cpu=2 --memory=6GB --disk=16GB --extra gpu \
-    -e WANDB_API_KEY <key> -e EXP108_LRS 1e-3 -e EXP108_MAX_STEPS 50 \
+    -e WANDB_API_KEY "$WK" -e EXP108_LRS "$lr" -e EXP108_REPLICAS 4 \
+    -e EXP108_ATTN jax_flash -e EXP108_RUN_SUFFIX v2 --job-name exp108-v2-lr$lr \
     -- python -m train_qwen_3b_contacts_v1_sweep
+  sleep 90   # stagger the bootstraps
+done
 ```
-Follow: `uv run iris --cluster=cw-rno2a job logs <job-id> -f`.
+Smoke first with `-e EXP108_MAX_STEPS 50` (single LR). Monitor: `uv run iris --cluster=cw-rno2a job list | grep exp108`; `… job logs <job> --max-lines N` (filter `zephyr|aiobotocore|cuda_vmm` noise; the gang's own line is `…wd0p2-<suffix> <state>` with a SPACE).
 
-**4. Full sweep** — same command without the `EXP108_MAX_STEPS`/`EXP108_LRS` smoke overrides (launches all 3 LRs). If the batch OOMs, drop it (`-e EXP108_TRAIN_BATCH 64`) or scale out (`-e EXP108_REPLICAS 2`).
+**4. Export** the winner — WIP (`export_qwen_3b_contacts_v1.py` is a stub; marin's HF-export API moved in 0.2.38 and needs porting; not needed until a checkpoint exists).
 
-**5. Export** the winner — set `EXP108_EXPORT_LR`, fill the `-<runid>` suffix in `export_qwen_3b_contacts_v1.py`, run with `--extra cpu --priority batch`.
+## Operational findings (validated live, 2026-07-07)
 
-## Implementation notes & open questions
+Everything the smoke run was meant to prove **works**: batch-priority dispatch, `TrainLmOnPodConfig` cloudpickle across Fray, `auto_build_caches` S3 tokenize (→ `<cache_dir>/{train,validation}`, 2067 shards), GPU training, held-out eval, S3 checkpoint. Plus:
 
-- **First GPU/CoreWeave run in MarinFold, via direct dispatch.** We reuse marin's `run_levanter_train_lm` (device-agnostic; marin's `train_tiny_model` uses `with_gpu("H100", count=8)`) but submit it ourselves. **Not yet verified live — the smoke run exists to shake these out:**
-  - the `TrainLmOnPodConfig` object graph cloudpickles across the Fray boundary (same graph the executor ships, but we now build it);
-  - `auto_build_caches=True` tokenizes the S3 parquet on the workers into `<cache_dir>/{train,validation}` (the val component has empty `train_urls` by design — weight 0);
-  - the submitted job reports the **batch** band;
-  - checkpoints land under the explicit `output_path` (confirm the exact `step-{N}` / any run-id subdir from the S3 listing — the export script needs it);
-  - **multi-node** (`replicas>1`) — start single-node; multi-host GPU gangs need coscheduling not exercised here.
-- **Storage is S3, not GCS.** All artifacts under `s3://marin-us-east-02a/MarinFold/` (removable later, per #108). In-cluster, iris injects CoreWeave AWS creds + endpoint; the `check_gcs_paths_same_region` guard is a no-op (no GCS paths).
-- **Data source.** The canonical HF publish is an HF *bucket* (`hf://buckets/open-athena/MarinFold/…`), not anon-listable via the normal API. The staging script defaults to the **byte-identical GCS mirror** exp53 wrote; `--source hf` needs bucket auth.
-- **Overfitting.** 16 epochs = 16× repetition of a 4.7B-token corpus. Watch the train/val gap; wd is already 0.2 (#75's value). If val loss diverges, revisit epochs / regularization.
+- **Driver must WAIT on its gangs.** Gangs are *children* of the driver job; if the driver exits (`wait=False`), iris finalizes (kills) them. The sweep submits all, then blocks.
+- **Node-count ceiling ≈ 4.** 1/2/4-node gangs bootstrap and train fine; **8-node fails** — the JAX multi-host coordination bootstrap aborts (~5 min in, `CoordinationServiceAgent::SetError`), reproduced on a single isolated 8-node gang. Likely fix (untried): the `NCCL_*` env grug forwards for >4-node bootstrap (we forward `XLA_FLAGS`/`NCCL_`/`JAX_` but set none). Chasing this unlocks 8+ nodes (~2-day runs).
+- **Launch runs as SEPARATE staggered drivers.** 3 gangs from one driver fail fast (coscheduling/coordination collision); one gang per driver, ~90 s apart, matches the working single-gang case.
+- **`CUDA_ERROR_NOT_PERMITTED` fabric warnings are benign** — the container lacks NVIDIA IMEX for fabric memory; XLA falls back. (Also a suspect for the ~15% MFU via non-NVLS collectives.)
+
+## Throughput / scaling
+
+- **~20 s/step at batch 128 × seq 8192 on one 8×H100 node (~52k tok/s, ~15% MFU).** Scales **near-linearly**: ~10 s/step (2 nodes), ~5 s/step (4 nodes) → full 16-epoch run ≈ **~4 days at 4 nodes**.
+- **`gradient_checkpointing` is mandatory** — disabling it OOMs hard (692 GiB activations for 48 layers × seq 8192, even at 8 seq/GPU). The ~30% recompute tax is unavoidable for this shape.
+- **Attention backend is irrelevant** here (only ~15% of FLOPs); `jax_flash` == the NVTE→reference fallback (Transformer Engine isn't in the `--extra gpu` env). Low MFU is systemic (memory-bound recompute + suboptimal FSDP collectives — params are gathered in f32; `p=bf16` would halve that).
+- Node count is the wall-clock knob (`EXP108_REPLICAS`); the effective batch stays 128 seq regardless (data-parallel), so the LRs/steps are unchanged.
 
 ## Results
 
-_(Fill in after the run completes.)_
+- **Smoke run** (job `exp108-smoke3`, lr 1e-3, 50 steps, 2026-07-07): SUCCEEDED — full path validated end-to-end (see Operational findings).
+- **Real sweep launched** 2026-07-07 at **4 nodes/run** (3 separate staggered drivers), full 16 epochs (71,312 steps), batch 128, wd 0.2, 10% warmup, `jax_flash`, gradient checkpointing on:
+  - `plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v2`
+  - `plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v2`  (#75's winning LR)
+  - `plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v2`
+
+  W&B: `open-athena/MarinFold` · checkpoints under `s3://marin-us-east-02a/MarinFold/exp108_qwen_3b_contacts_v1/checkpoints/<run>/`. **Target: beat #75's best eval loss 2.7566.**
+- _(Fill in final val losses + comparison to #75 when the runs complete.)_
 
 ## Conclusion
 
