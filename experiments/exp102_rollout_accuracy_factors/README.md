@@ -86,11 +86,20 @@ One row per rollout, keyed `entry_id`+`r`:
 `targets.parquet` carries `sequence` + `gt_contacts`, so contact separation,
 residue identities, and correctness are all derivable on CPU.
 
-## Analysis starter
+## Analysis
 
-`analysis_starter.py` builds `contacts_frame` (one row per rollout×contact:
-rank, sep, band, logprob, correct, rollout F1 quartile, residue identities) and
-prints one worked example per #102 question: length correlation, order-bias by
-band × F1-quartile, confidence/order signature, amino-acid enrichment, and the
-within-target most-informative-contact search. It is a scaffold to extend, not a
-conclusion.
+Two equivalent entry points, both CPU-only and auth-free:
+
+- **`analysis_colab.ipynb`** — self-contained Colab notebook: pulls the published
+  data anonymously, builds the tables, and renders a **plot per #102 question**.
+  Defaults to a 40-target demo subset for snappy cells (`USE_ALL_TARGETS = True`
+  for the full ~200). Open it in Colab:
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/experiments/exp102_rollout_accuracy_factors/analysis_colab.ipynb)
+- **`analysis_starter.py`** — the same analyses as a script (`--source hf` reads
+  the bucket; `--source local` reads a run dir; `--max-targets N` to iterate).
+
+Both build `contacts_frame` (one row per rollout×contact: rank, sep, band,
+logprob, correct, rollout F1 quartile, residue identities) and cover: length
+correlation, order-bias by band × F1-quartile, confidence/order signature,
+amino-acid enrichment, and the within-target most-informative-contact search.
+Scaffolds to extend, not conclusions.
