@@ -1,0 +1,2 @@
+run,n_targets,n_rollouts,total_gen_tokens,sum_gen_seconds,tokens_per_s,mean_tok_per_rollout,proj_1tpu_hours,proj_8tpu_hours
+full,1000,1000000,283125262,16482.6,17177.2,283.1,4.58,0.57

@@ -58,6 +58,30 @@ whichever fits the work.
    `datasets/timodonnell/<name>` for datasets). See the root
    `README.md` for the policy.
 
+   **GCS is private (auth-required); the `open-athena/MarinFold` HF
+   bucket is public.** We develop in the open — anything a person
+   outside the cluster should be able to see (result artifacts a
+   reader/reviewer wants, anything a notebook reads, headline
+   figures) must be **published to the public HF bucket**, not left
+   only on GCS. GCS is fine as the *working copy* for an at-scale job
+   (thousands of per-shard files), but consolidate the results and
+   `hf buckets cp`/`sync` them to `buckets/open-athena/MarinFold/...`
+   so they're readable with no auth. The HF bucket is readable
+   anonymously from Python — `HfFileSystem(token=False).open(
+   "buckets/open-athena/MarinFold/...")` (needs `huggingface_hub>=1.5`)
+   — and writable with an **open-athena-scoped** token (`hf auth
+   whoami` must list the org; the bare workstation token may not have
+   write scope — see the root `AGENTS.md`). Keep a small, reproducible
+   `publish_to_hf.py` in the experiment that rebuilds + uploads the
+   public artifacts from the GCS run.
+
+   **Interactive notebooks (`*.ipynb`) must run with no
+   authentication.** Read published artifacts from the public HF
+   bucket (anonymously), never from GCS or a private path that forces
+   a viewer to log in. Open them in Colab straight from GitHub
+   (`https://colab.research.google.com/github/<owner>/<repo>/blob/<branch>/<path>`);
+   the repo is public so this needs no login.
+
 3. **Cite your runs.** When you reference a training or eval run in
    the README, include the W&B run name, the GCS output path, or the
    git SHA — whatever is enough for a future reader to find the

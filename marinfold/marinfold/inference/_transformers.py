@@ -177,6 +177,70 @@ class TransformersBackend:
                 )
         return out
 
+    def sample_completions(
+        self,
+        prefix_token_ids_batch: list[list[int]],
+        *,
+        max_new_tokens: int,
+        temperature: float = 1.0,
+        top_p: float = 0.95,
+        top_k: int = 50,
+        stop_token_id: int | None = None,
+        seed: int | None = None,
+        batch_size: int | None = None,
+    ) -> list[list[int]]:
+        if not prefix_token_ids_batch:
+            return []
+        lengths = {len(p) for p in prefix_token_ids_batch}
+        if len(lengths) != 1:
+            raise ValueError(
+                "sample_completions requires equal-length prefixes in a single "
+                f"call; got lengths {sorted(lengths)}."
+            )
+        prefix_len = lengths.pop()
+        if prefix_len == 0:
+            raise ValueError("sample_completions requires a non-empty prefix.")
+        if seed is not None:
+            torch.manual_seed(seed)
+
+        pad_id = stop_token_id
+        if pad_id is None:
+            pad_id = self._tokenizer.pad_token_id
+            if pad_id is None:
+                pad_id = self._tokenizer.eos_token_id or 0
+        gen_kwargs: dict = dict(
+            do_sample=True,
+            temperature=temperature,
+            top_p=top_p,
+            max_new_tokens=max_new_tokens,
+            pad_token_id=pad_id,
+        )
+        if top_k and top_k > 0:
+            gen_kwargs["top_k"] = top_k
+        if stop_token_id is not None:
+            gen_kwargs["eos_token_id"] = stop_token_id
+
+        chunk_size = batch_size or self._tail_batch_size
+        results: list[list[int]] = []
+        with torch.inference_mode():
+            for start in range(0, len(prefix_token_ids_batch), chunk_size):
+                chunk = prefix_token_ids_batch[start : start + chunk_size]
+                input_ids = torch.tensor(chunk, dtype=torch.long, device=self._device)
+                # All rows share a length (validated above), so the prompt has
+                # no padding — an all-ones mask is correct and silences the
+                # "pad == eos, mask not inferable" generate() warning.
+                attention_mask = torch.ones_like(input_ids)
+                generated = self._model.generate(
+                    input_ids, attention_mask=attention_mask, **gen_kwargs
+                )
+                # Each row finishes at the stop token, then gets pad-filled
+                # (pad == stop) to the batch's longest sequence; trim there.
+                for row in generated[:, prefix_len:].tolist():
+                    if stop_token_id is not None and stop_token_id in row:
+                        row = row[: row.index(stop_token_id)]
+                    results.append(row)
+        return results
+
 
 def _replicate_cache(prefix_cache: DynamicCache, batch_size: int) -> DynamicCache:
     """Return a per-layer batch-tiled copy of ``prefix_cache``.
