@@ -56,15 +56,17 @@ WANDB_ENTITY = "open-athena"
 WANDB_PROJECT = "MarinFold"
 
 # ---------------------------------------------------------------------------
-# Model — Qwen3 ~2.9B, IDENTICAL geometry to exp108 (#75's 1.5B width, depth
-# doubled 24 -> 48). These are the FLOP-determining dims, so keeping them exact
-# is what makes the MFU number comparable to exp108's Levanter run.
+# Model — **#75's exact 1.47B Qwen3** (replicate the best contacts-v1 model, but
+# 16 epochs instead of 8). Authoritative config (marin `eac/plm-exp75`, W&B
+# `eric-czech/marin`; = exp67/exp85's `protein_llama_1_5b` width, Qwen3 variant):
 #   hidden 2048 / ffn 8192 (=4h) / 32 heads / 8 KV groups (GQA) / head_dim 64 /
-#   48 layers / seq 8192. Qwen3 specifics: RMSNorm, SwiGLU, QK-layernorm,
-#   Llama/GPT-NeoX-noninterleaved RoPE, untied embeddings.
+#   **24 layers** / seq 8192. Qwen3: RMSNorm, SwiGLU, QK-layernorm, RoPE
+#   (**Llama3 theta 500000**; see ROTARY_BASE), untied embeddings. ~1.47B params.
+# (An earlier revision of this dir ran a 48-layer ~2.9B by-depth model for the
+# MFU benchmark; the full training run replicates #75's actual 1.5B instead.)
 # ---------------------------------------------------------------------------
 MODEL = dict(
-    num_layers=48,
+    num_layers=24,
     hidden_size=2048,
     ffn_hidden_size=8192,
     num_attention_heads=32,
@@ -72,6 +74,11 @@ MODEL = dict(
     kv_channels=64,       # head_dim (= 2048/32); set explicit to be safe
     seq_length=8192,
 )
+# #75's RoPE theta (levanter Llama3RotaryEmbeddingsConfig.theta). NeMo's generic
+# GPTConfig exposes rotary_base but not the Llama3 low/high-freq SCALING (a
+# context-extension feature, dubious at train seq == original 8192); we match the
+# dominant base theta. One documented divergence from #75's exact rope.
+ROTARY_BASE = 500000.0
 
 # Recipe (tracks #75 / exp108). Not all matter for MFU, but keep them faithful
 # for the deferred real run.

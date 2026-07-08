@@ -52,14 +52,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--micro-batch-size", type=int, default=int(os.environ.get("EXP112_MICRO_BATCH", "1")))
     p.add_argument("--global-batch-size", type=int, default=int(os.environ.get("EXP112_GLOBAL_BATCH", "128")))
     p.add_argument("--seq-length", type=int, default=8192)
-    # Model geometry (defaults = exp112/exp108 Qwen3 ~2.9B)
-    p.add_argument("--num-layers", type=int, default=48)
+    # Model geometry (defaults = #75's 1.47B Qwen3: 2048h / 8192ffn / 32h·8kv / 24L)
+    p.add_argument("--num-layers", type=int, default=24)
     p.add_argument("--hidden-size", type=int, default=2048)
     p.add_argument("--ffn-hidden-size", type=int, default=8192)
     p.add_argument("--num-attention-heads", type=int, default=32)
     p.add_argument("--num-query-groups", type=int, default=8)
     p.add_argument("--kv-channels", type=int, default=64)
-    p.add_argument("--rotary-base", type=float, default=1_000_000.0)
+    p.add_argument("--rotary-base", type=float, default=500_000.0)  # #75 Llama3 rope theta
     p.add_argument("--no-grad-ckpt", action="store_true",
                    help="disable activation checkpointing (exp108 needed it ON to fit)")
     # Optim (only meaningful for a real run; harmless for the benchmark)

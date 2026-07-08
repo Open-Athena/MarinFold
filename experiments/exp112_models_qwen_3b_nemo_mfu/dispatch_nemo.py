@@ -58,6 +58,7 @@ from common import (
     LEARNING_RATE,
     MODEL,
     NEMO_IMAGE,
+    ROTARY_BASE,
     WANDB_ENTITY,
     WANDB_PROJECT,
     WARMUP_FRACTION,
@@ -255,6 +256,7 @@ def build_train_args(*, max_steps: int, micro_batch_size: int, global_batch_size
         f"--num-attention-heads={MODEL['num_attention_heads']}",
         f"--num-query-groups={MODEL['num_query_groups']}",
         f"--kv-channels={MODEL['kv_channels']}",
+        f"--rotary-base={ROTARY_BASE}",
         f"--data={data}",
         f"--wandb-project={WANDB_PROJECT}",
         f"--wandb-entity={WANDB_ENTITY}",
@@ -326,7 +328,7 @@ def build_request(
 def main() -> None:
     data = os.environ.get("EXP112_DATA", "mock")
     replicas = int(os.environ.get("EXP112_REPLICAS", "1"))
-    run_default = "plm-exp112-cv1-3b-nemo-e16-lr1e-3-wd0p2" if data == "real" else "plm-exp112-cv1-3b-nemo-bench"
+    run_default = "plm-exp112-cv1-1_5b-nemo-e16-lr1e-3-wd0p2" if data == "real" else "plm-exp112-cv1-3b-nemo-bench"
     run_name = os.environ.get("EXP112_RUN_NAME", run_default)
     micro_batch = int(os.environ.get("EXP112_MICRO_BATCH", "1"))
     global_batch = int(os.environ.get("EXP112_GLOBAL_BATCH", str(GLOBAL_BATCH_SIZE)))
