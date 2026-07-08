@@ -76,16 +76,15 @@ _TERMINUS_TOKENS = 4            # <n-term> <pS>  and  <c-term> <pE>  (2 x 2)
 _CONTACT_TOKENS_PER_STATEMENT = 3   # <contact> <pX> <pY>
 # <contacts-and-coordinates-v1> <begin_sequence> … <begin_statements> … <end>
 _FRAME_TOKENS = 4
-_MENTION_HEADER_TOKENS = 2      # <pX> <ATOM>, before the 1..4 xyz tokens
+_MENTION_HEADER_TOKENS = 2      # <pX> <ATOM>, before the 1..max_depth xyz tokens
 
-# Bin width (Å) at the finest revealed place for depths 1..4.
+# Bin width (Å) at each revealed place, coarsest -> finest: hundreds, tens,
+# ones, tenths. The format emits the first ``max_depth`` places; the default
+# ``max_depth = 3`` stops at ones (1 Å resolution). Index 3 (tenths) exists
+# only to support raising ``max_depth`` to 4 as a future knob — no vocab
+# change (SPEC → Coordinates / Suggested default parameters).
 _BIN_WIDTHS = (100.0, 10.0, 1.0, 0.1)
-# Integer place divisors for hundreds / tens / ones / tenths after the
-# quantize-by-10 step (see _coordinate_digits).
-_PLACE_DIVISORS = (1000, 100, 10, 1)
-# Clamp bound applied to a (noisy) coordinate before digit extraction, so a
-# boundary atom never produces an out-of-range digit (SPEC → Coordinate frame).
-_MAX_COORD = 999.9
+_MAX_SUPPORTED_DEPTH = len(_BIN_WIDTHS)
 
 
 @dataclass(frozen=True)
@@ -104,12 +103,17 @@ class GenerationConfig:
     - ``cube_size`` / ``cube_margin``: the ``<xyz-DDD>`` range per axis and
       the placement margin; a structure spanning more than
       ``cube_size - 2*cube_margin`` Å on any axis (after rotation) is skipped.
-    - ``noise_divisor`` / ``noise_sigma_floor``: the per-depth Gaussian noise
-      is ``sigma_d = max(bin_width_d / noise_divisor, noise_sigma_floor)``.
+    - ``max_depth``: the finest place emitted — 3 (hundreds/tens/ones →
+      1 Å resolution) by default. Raising it to 4 reintroduces a tenths digit
+      with no vocab change (SPEC → Coordinates).
+    - ``noise_divisor``: the per-depth Gaussian noise is
+      ``sigma_d = bin_width_d / noise_divisor`` — a uniform ~95.45%
+      bin-center reliability at every depth.
     - ``depth_kernel_epsilon``: floor weight in the depth-scheduling kernel,
       so no depth is ever impossible.
     - ``force_full_precision_first_event``: the document's very first
-      coordinate statement always gets depth 4 (SPEC → Mention scheduling).
+      coordinate statement always gets full precision, i.e. depth ``max_depth``
+      (SPEC → Mention scheduling).
     """
 
     native_only: bool = True
@@ -124,18 +128,27 @@ class GenerationConfig:
     n_contacts_max: int = 50
     cube_size: float = 1000.0
     cube_margin: float = 10.0
+    max_depth: int = 3
     noise_divisor: float = 4.0
-    noise_sigma_floor: float = 0.1
     depth_kernel_epsilon: float = 0.05
     force_full_precision_first_event: bool = True
 
-    def depth_sigmas(self) -> tuple[float, float, float, float]:
-        """Per-depth Gaussian noise stdev (Å) for depths 1..4."""
-        sigmas = tuple(
-            max(w / self.noise_divisor, self.noise_sigma_floor)
-            for w in _BIN_WIDTHS
+    def __post_init__(self) -> None:
+        if not 1 <= self.max_depth <= _MAX_SUPPORTED_DEPTH:
+            raise ValueError(
+                f"max_depth must be in [1, {_MAX_SUPPORTED_DEPTH}], "
+                f"got {self.max_depth}"
+            )
+
+    def depth_sigmas(self) -> tuple[float, ...]:
+        """Per-depth Gaussian noise stdev (Å): ``bin_width_d / noise_divisor``.
+
+        One entry per revealed place, coarsest first. At the default
+        ``max_depth = 3`` this is ``(25.0, 2.5, 0.25)``.
+        """
+        return tuple(
+            _BIN_WIDTHS[d] / self.noise_divisor for d in range(self.max_depth)
         )
-        return sigmas  # type: ignore[return-value]
 
 
 @dataclass(frozen=True)
@@ -161,7 +174,9 @@ class GenerationResult:
     num_eligible_atoms: int
     num_events: int
     num_distinct_atoms_mentioned: int
-    depth_histogram: tuple[int, int, int, int]
+    max_depth: int
+    # One count per depth 1..max_depth (finest place emitted).
+    depth_histogram: tuple[int, ...]
     rotation_quaternion: tuple[float, float, float, float]  # (w, x, y, z)
     translation: tuple[float, float, float]
     truncated: bool
@@ -174,11 +189,15 @@ class GenerationResult:
         return hashlib.sha1(self.document.encode()).hexdigest()
 
     def metadata_row(self) -> dict[str, Any]:
-        """Flat row (document + scalar metadata) for the docs parquet/jsonl."""
+        """Flat row (document + scalar metadata) for the docs parquet/jsonl.
+
+        Emits one ``depth{i}_count`` column per depth 1..``max_depth`` (three
+        at the default 1 Å resolution); the schema is stable across a run
+        because every document in a run shares one ``max_depth``.
+        """
         qw, qx, qy, qz = self.rotation_quaternion
         tx, ty, tz = self.translation
-        d1, d2, d3, d4 = self.depth_histogram
-        return {
+        row: dict[str, Any] = {
             "document": self.document,
             "entry_id": self.entry_id,
             "seq_len": self.seq_len,
@@ -192,10 +211,11 @@ class GenerationResult:
             "num_eligible_atoms": self.num_eligible_atoms,
             "num_events": self.num_events,
             "num_distinct_atoms_mentioned": self.num_distinct_atoms_mentioned,
-            "depth1_count": d1,
-            "depth2_count": d2,
-            "depth3_count": d3,
-            "depth4_count": d4,
+            "max_depth": self.max_depth,
+        }
+        for i, count in enumerate(self.depth_histogram, start=1):
+            row[f"depth{i}_count"] = count
+        row.update({
             "quat_w": qw,
             "quat_x": qx,
             "quat_y": qy,
@@ -206,7 +226,8 @@ class GenerationResult:
             "truncated": self.truncated,
             "num_tokens": self.num_tokens,
             "sha1": self.sha1,
-        }
+        })
+        return row
 
     def summary_dict(self) -> dict[str, Any]:
         """Rich per-protein view for the local summary JSON."""
@@ -227,25 +248,45 @@ def _fixed_token_cost(num_residues: int) -> int:
     return _FRAME_TOKENS + _SEQ_TOKENS_PER_RESIDUE * num_residues + _TERMINUS_TOKENS
 
 
-def _coordinate_digits(value: float) -> tuple[int, int, int, int]:
-    """The hundreds / tens / ones / tenths digits of one clamped coordinate.
+def _coord_scale(max_depth: int) -> int:
+    """Integer scale making the finest revealed place the ones digit of ``round(v*scale)``.
 
-    Done entirely in integer space (SPEC → Digit extraction): quantize once
-    to the nearest 0.1 by scaling to an integer, then read digits with
-    ``//`` / ``%``. Implementing this as ``floor(v / place) % 10`` with a
-    float ``place`` like 0.1 silently corrupts the tenths digit for values
-    whose IEEE-754 representation rounds the wrong way (e.g. ``180.2``).
+    ``max_depth = 3`` (finest place = ones) → 1; ``max_depth = 4`` (tenths) → 10.
     """
-    clamped = min(_MAX_COORD, max(0.0, value))
-    v10 = round(clamped * 10)  # nearest 0.1, as an integer in [0, 9999]
-    return tuple((v10 // d) % 10 for d in _PLACE_DIVISORS)  # type: ignore[return-value]
+    return 10 ** (max_depth - 3)
 
 
-def _xyz_tokens(x: float, y: float, z: float, depth: int) -> list[str]:
+def _max_coord(max_depth: int) -> float:
+    """Clamp bound: largest coordinate whose digits fit ``max_depth`` places.
+
+    999 at 1 Å resolution (``max_depth = 3``), 999.9 with a tenths digit.
+    Clamping a (noisy) coordinate here keeps a boundary atom from producing an
+    out-of-range digit (SPEC → Coordinate frame).
+    """
+    return (10 ** max_depth - 1) / _coord_scale(max_depth)
+
+
+def _coordinate_digits(value: float, max_depth: int) -> tuple[int, ...]:
+    """The ``max_depth`` decimal digits of one clamped coordinate, coarsest first.
+
+    At the default 1 Å resolution (SPEC → Digit extraction) this is entirely
+    integer: round ``v`` to the nearest Å and read the hundreds / tens / ones
+    digits with ``//`` / ``%``. A future ``max_depth = 4`` variant quantizes
+    once as ``round(v * 10)`` (never divide by a float ``0.1`` — ``180.2 / 0.1``
+    is ``1801.9999999999998`` in IEEE-754 and would corrupt the digit).
+    """
+    scale = _coord_scale(max_depth)
+    clamped = min(_max_coord(max_depth), max(0.0, value))
+    n = round(clamped * scale)
+    coarsest = 100 * scale  # divisor for the hundreds place in scaled space
+    return tuple((n // (coarsest // 10 ** i)) % 10 for i in range(max_depth))
+
+
+def _xyz_tokens(x: float, y: float, z: float, depth: int, max_depth: int) -> list[str]:
     """The ``depth`` coordinate tokens for one mention, coarsest place first."""
-    xd = _coordinate_digits(x)
-    yd = _coordinate_digits(y)
-    zd = _coordinate_digits(z)
+    xd = _coordinate_digits(x, max_depth)
+    yd = _coordinate_digits(y, max_depth)
+    zd = _coordinate_digits(z, max_depth)
     return [xyz_token_for_digits(xd[p], yd[p], zd[p]) for p in range(depth)]
 
 
@@ -313,16 +354,20 @@ def _apply_frame(
 
 
 def _sample_depth(rng: random.Random, t: float, config: GenerationConfig) -> int:
-    """Sample a mention depth (1..4) from the coarse-to-fine schedule kernel.
+    """Sample a mention depth (1..max_depth) from the coarse-to-fine kernel.
 
     ``t`` in [0, 1] is the fraction of the coordinate budget already emitted.
-    Depth ``d`` has center ``c = [0, 1/3, 2/3, 1]`` and raw weight
-    ``max(0, 1 - 3*|t - c_d|) + epsilon``; weights are normalized and
-    sampled. At ``t = 0`` depth 1 carries ~87.5% of the mass; by ``t = 1``
-    depth 4 does — so the document trends hundreds → tenths overall while
-    still allowing the occasional early-deep / late-shallow mention.
+    The ``max_depth`` depths have centers evenly spaced over [0, 1]
+    (``[0, 1/2, 1]`` at the default max_depth 3) and raw weight
+    ``max(0, 1 - 3*|t - c_d|) + epsilon``; weights are normalized and sampled.
+    At ``t = 0`` depth 1 carries ~91% of the mass (max_depth 3); by ``t = 1``
+    the finest depth does — so the document trends hundreds → ones overall
+    while still allowing the occasional early-deep / late-shallow mention.
     """
-    centers = (0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0)
+    max_depth = config.max_depth
+    if max_depth == 1:
+        return 1
+    centers = [i / (max_depth - 1) for i in range(max_depth)]
     weights = [max(0.0, 1.0 - 3.0 * abs(t - c)) + config.depth_kernel_epsilon
                for c in centers]
     total = math.fsum(weights)
@@ -332,7 +377,7 @@ def _sample_depth(rng: random.Random, t: float, config: GenerationConfig) -> int
         cumulative += weight
         if r < cumulative:
             return depth_minus_1 + 1
-    return 4  # float-rounding fallback
+    return max_depth  # float-rounding fallback
 
 
 def _select_contacts(
@@ -474,9 +519,10 @@ def build_document(
         - _CONTACT_TOKENS_PER_STATEMENT * len(emitted_contacts)
     )
     sigmas = config.depth_sigmas()
+    max_depth = config.max_depth
     coord_tokens: list[str] = []
     coord_token_count = 0
-    depth_histogram = [0, 0, 0, 0]
+    depth_histogram = [0] * max_depth
     mentioned: set[tuple[int, str]] = set()
     num_events = 0
     truncated = False
@@ -486,7 +532,7 @@ def build_document(
         atom_idx = rng.randrange(num_eligible_atoms)
         # (6b) pick a depth: the first event is forced to full precision.
         if num_events == 0 and config.force_full_precision_first_event:
-            depth = 4
+            depth = max_depth
         else:
             depth = _sample_depth(rng, coord_token_count / coord_budget, config)
         cost = _MENTION_HEADER_TOKENS + depth
@@ -503,7 +549,7 @@ def build_document(
         seq_index, atom_name = identities[atom_idx]
         coord_tokens.append(position_token(pos_of_seq[seq_index]))
         coord_tokens.append(atom_token(atom_name))
-        coord_tokens.extend(_xyz_tokens(nx, ny, nz, depth))
+        coord_tokens.extend(_xyz_tokens(nx, ny, nz, depth, max_depth))
         coord_token_count += cost
         depth_histogram[depth - 1] += 1
         mentioned.add((seq_index, atom_name))
@@ -535,10 +581,8 @@ def build_document(
         num_eligible_atoms=num_eligible_atoms,
         num_events=num_events,
         num_distinct_atoms_mentioned=len(mentioned),
-        depth_histogram=(
-            depth_histogram[0], depth_histogram[1],
-            depth_histogram[2], depth_histogram[3],
-        ),
+        max_depth=max_depth,
+        depth_histogram=tuple(depth_histogram),
         rotation_quaternion=quaternion,
         translation=translation,
         truncated=truncated,

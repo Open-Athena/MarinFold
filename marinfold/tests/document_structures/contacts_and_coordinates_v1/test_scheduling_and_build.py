@@ -71,15 +71,16 @@ def _sequence_section(document: str) -> list[str]:
 
 def test_sample_depth_shallow_at_t0_deep_at_t1():
     rng = random.Random(0)
-    config = GenerationConfig()
+    config = GenerationConfig()  # max_depth = 3
     n = 20_000
     at0 = [_sample_depth(rng, 0.0, config) for _ in range(n)]
     at1 = [_sample_depth(rng, 1.0, config) for _ in range(n)]
-    # ~87.5% mass on depth 1 at t=0, on depth 4 at t=1.
-    assert at0.count(1) / n > 0.82
-    assert at1.count(4) / n > 0.82
-    # Epsilon floor keeps every depth reachable at the extremes.
-    assert at0.count(4) > 0 and at1.count(1) > 0
+    # ~91% mass on depth 1 at t=0, on depth 3 (the finest) at t=1.
+    assert at0.count(1) / n > 0.86
+    assert at1.count(3) / n > 0.86
+    # No depth is ever above max_depth; epsilon keeps the extremes reachable.
+    assert max(at0) <= 3 and max(at1) <= 3
+    assert at0.count(3) > 0 and at1.count(1) > 0
 
 
 def test_first_coordinate_event_is_full_precision():
@@ -89,10 +90,10 @@ def test_first_coordinate_event_is_full_precision():
     assert result is not None
     statements = _coord_statements(result.document)
     assert statements, "expected coordinate statements"
-    # SPEC: the very first coordinate statement always gets depth 4.
-    assert len(statements[0][2]) == 4
-    # Every mention has 1..4 xyz tokens.
-    assert all(1 <= len(xyzs) <= 4 for _pos, _atom, xyzs in statements)
+    # SPEC: the very first coordinate statement always gets depth max_depth (3).
+    assert len(statements[0][2]) == 3
+    # Every mention has 1..3 xyz tokens.
+    assert all(1 <= len(xyzs) <= 3 for _pos, _atom, xyzs in statements)
 
 
 def test_first_event_forced_flag_off_allows_shallow_first():
@@ -102,10 +103,24 @@ def test_first_event_forced_flag_off_allows_shallow_first():
     result = build_document("seed-abc", residues, [], atoms,
                             context_length=32768, config=config)
     assert result is not None
-    # depth4-first is no longer guaranteed; depth-1 heavy schedule at t~0
-    # means the first event is very likely shallow. Only assert it is valid.
+    # depth-3-first is no longer guaranteed; the depth-1-heavy schedule at
+    # t~0 means the first event is very likely shallow. Only assert it's valid.
     first = _coord_statements(result.document)[0]
-    assert 1 <= len(first[2]) <= 4
+    assert 1 <= len(first[2]) <= 3
+
+
+def test_max_depth_4_knob_produces_four_token_first_event():
+    residues = _toy_residues(10)
+    atoms = _toy_atoms(residues)
+    config = GenerationConfig(max_depth=4)
+    result = build_document("seed-abc", residues, [], atoms,
+                            context_length=32768, config=config)
+    assert result is not None
+    statements = _coord_statements(result.document)
+    assert len(statements[0][2]) == 4  # forced full precision at max_depth=4
+    assert all(1 <= len(xyzs) <= 4 for _pos, _atom, xyzs in statements)
+    assert result.max_depth == 4
+    assert len(result.depth_histogram) == 4
 
 
 def test_determinism_same_entry_id():

@@ -66,8 +66,8 @@ def _config_from_args(args: argparse.Namespace) -> generate.GenerationConfig:
         n_contacts_max=args.n_contacts_max,
         cube_size=args.cube_size,
         cube_margin=args.cube_margin,
+        max_depth=args.max_depth,
         noise_divisor=args.noise_divisor,
-        noise_sigma_floor=args.noise_sigma_floor,
         depth_kernel_epsilon=args.depth_kernel_epsilon,
     )
 
@@ -136,7 +136,7 @@ def cmd_view(args: argparse.Namespace) -> None:
         id_column=args.id_column,
     ):
         shown += 1
-        d1, d2, d3, d4 = result.depth_histogram
+        depths = "/".join(str(c) for c in result.depth_histogram)
         print(f"\n=== {result.entry_id} ===")
         print(
             f"  residues={result.seq_len}  "
@@ -152,7 +152,7 @@ def cmd_view(args: argparse.Namespace) -> None:
         print(
             f"  coordinates: {result.num_events} events over "
             f"{result.num_distinct_atoms_mentioned}/{result.num_eligible_atoms} "
-            f"atoms  depths(1..4)=[{d1},{d2},{d3},{d4}]  "
+            f"atoms  depths(1..{result.max_depth})=[{depths}]  "
             f"truncated={result.truncated}  tokens={result.num_tokens}"
         )
         qw, qx, qy, qz = result.rotation_quaternion
@@ -247,10 +247,12 @@ def _add_generation_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--cube-margin", type=float, default=cfg.cube_margin,
                    help="Placement margin, Å; structures spanning more than "
                         f"cube_size-2*margin are skipped (default {cfg.cube_margin}).")
+    p.add_argument("--max-depth", type=int, default=cfg.max_depth,
+                   help="Finest place emitted: 3 = hundreds/tens/ones (1 Å "
+                        f"resolution); 4 reintroduces a tenths digit (default "
+                        f"{cfg.max_depth}).")
     p.add_argument("--noise-divisor", type=float, default=cfg.noise_divisor,
                    help=f"bin_width/sigma for the noise model (default {cfg.noise_divisor}).")
-    p.add_argument("--noise-sigma-floor", type=float, default=cfg.noise_sigma_floor,
-                   help=f"Minimum noise stdev, Å (default {cfg.noise_sigma_floor}).")
     p.add_argument("--depth-kernel-epsilon", type=float, default=cfg.depth_kernel_epsilon,
                    help=f"Floor weight in the depth kernel (default {cfg.depth_kernel_epsilon}).")
 

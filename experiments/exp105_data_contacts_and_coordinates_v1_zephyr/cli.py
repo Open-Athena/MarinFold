@@ -79,8 +79,8 @@ def _config_from_args(args: argparse.Namespace) -> GenerationConfig:
         n_contacts_max=args.n_contacts_max,
         cube_size=args.cube_size,
         cube_margin=args.cube_margin,
+        max_depth=args.max_depth,
         noise_divisor=args.noise_divisor,
-        noise_sigma_floor=args.noise_sigma_floor,
         depth_kernel_epsilon=args.depth_kernel_epsilon,
     )
 
@@ -218,8 +218,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--n-contacts-max", type=int, default=cfg.n_contacts_max)
     p.add_argument("--cube-size", type=float, default=cfg.cube_size)
     p.add_argument("--cube-margin", type=float, default=cfg.cube_margin)
+    p.add_argument("--max-depth", type=int, default=cfg.max_depth)
     p.add_argument("--noise-divisor", type=float, default=cfg.noise_divisor)
-    p.add_argument("--noise-sigma-floor", type=float, default=cfg.noise_sigma_floor)
     p.add_argument("--depth-kernel-epsilon", type=float, default=cfg.depth_kernel_epsilon)
     p.set_defaults(func=cmd_generate)
     return parser

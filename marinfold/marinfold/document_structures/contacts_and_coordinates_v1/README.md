@@ -23,7 +23,7 @@ quick orientation.
 
 A coordinate mention names a heavy atom by `(position, atom name)` — e.g.
 `<p26> <CA>` — then reveals a **prefix** of its (x, y, z) digits: depth 1 =
-hundreds only, up to depth 4 = hundreds+tens+ones+tenths (0.1 Å). Each
+hundreds only, up to depth 3 = hundreds+tens+ones (1 Å, full precision). Each
 `<xyz-DDD>` token packs the x/y/z digit at one decimal place. Positions
 live in a random rotated + translated frame inside a 1000 Å cube (free data
 augmentation — no physical distance changes), and every mention carries

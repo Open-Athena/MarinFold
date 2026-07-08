@@ -21,8 +21,8 @@ def test_generate_defaults_wire_through():
     # Coordinate-section defaults land in the config.
     assert config.cube_size == 1000.0
     assert config.cube_margin == 10.0
+    assert config.max_depth == 3
     assert config.noise_divisor == 4.0
-    assert config.noise_sigma_floor == 0.1
     assert config.n_contacts_zero_prob == 0.3
     assert config.n_contacts_max == 50
 
@@ -31,12 +31,12 @@ def test_coordinate_knobs_override():
     parser = cli.build_parser()
     args = parser.parse_args([
         "view", "--input", "x.cif",
-        "--cube-size", "500", "--noise-sigma-floor", "0.2",
+        "--cube-size", "500", "--max-depth", "4",
         "--n-contacts-max", "10", "--context-length", "8192",
     ])
     config = cli._config_from_args(args)
     assert config.cube_size == 500.0
-    assert config.noise_sigma_floor == 0.2
+    assert config.max_depth == 4
     assert config.n_contacts_max == 10
     assert args.context_length == 8192
 
