@@ -220,7 +220,8 @@ def _s3():
     return boto3.client(
         "s3",
         endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),  # in-cluster: http://cwlota.com
-        config=Config(s3={"addressing_style": "virtual"}, retries={"max_attempts": 10}),
+        config=Config(s3={"addressing_style": "virtual"}, retries={"max_attempts": 10},
+                      max_pool_connections=32),  # >= the uploader's ThreadPool (16) to avoid pool-full churn
     )
 
 

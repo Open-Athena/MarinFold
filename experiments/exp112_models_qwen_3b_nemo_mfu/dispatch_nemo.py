@@ -320,8 +320,12 @@ def build_request(
         replicas=replicas,                        # gang of `replicas` × 8×H100 nodes
         priority=IRIS_PRIORITY_BAND_BATCH,        # -> iris BATCH band
         processes_per_task=1,                     # torchrun forks the 8 ranks per node
-        max_retries_failure=0,                    # a code bug shouldn't retry
-        max_retries_preemption=100,               # but auto-restart on preemption (resume from S3)
+        # The code is validated (ran 35k+ steps), so a mid-run gang failure is
+        # almost always a transient node/NCCL hiccup, not a bug. Retry on failure
+        # too (each retry resumes from the S3 checkpoint), not just on preemption
+        # — a single sibling failing otherwise kills the whole run.
+        max_retries_failure=20,
+        max_retries_preemption=100,               # auto-restart on preemption (resume from S3)
     )
 
 
