@@ -394,23 +394,32 @@ class S3CheckpointSync(_Callback):
         super().__init__()
         self.checkpoint_s3 = checkpoint_s3
         self.checkpoint_dir = checkpoint_dir
-        self._last_synced = -1
+        self.checkpoint_every = max(1, checkpoint_every)
+        self._last_sync_step = 0       # global_step of the last upload (throttle)
+        self._last_synced_key = -1     # consumed_samples of the last uploaded ckpt (dedup)
 
-    def _sync(self):
+    def _sync(self, trainer):
         if not self.checkpoint_s3:
+            return
+        # Throttle by global_step (deterministic across ranks -> barrier-safe): at
+        # most one upload per checkpoint_every steps. NeMo bumps the `-last` ckpt's
+        # consumed_samples every step, so an un-throttled sync would upload ~40 GB
+        # every step at the real scale.
+        step = int(trainer.global_step)
+        if step - self._last_sync_step < self.checkpoint_every:
             return
         from pathlib import Path
         ck = Path(self.checkpoint_dir)
         if not ck.exists():
             return
-        subdirs = [d for d in ck.iterdir() if d.is_dir() and not d.name.startswith(".")]
-        subdirs = [d for d in subdirs if _step_of(d) >= 0]  # step-named (skip bare -last)
+        subdirs = [d for d in ck.iterdir() if d.is_dir() and not d.name.startswith(".") and _step_of(d) >= 0]
         if not subdirs:
             return
         latest = _pick_latest(subdirs)
-        step = _step_of(latest)
-        if step <= self._last_synced:
-            return  # already uploaded this checkpoint
+        key = _step_of(latest)
+        if key <= self._last_synced_key:
+            self._last_sync_step = step  # nothing newer; reset the throttle window
+            return
         try:
             _barrier()  # DCP save is synchronous+collective; all nodes have it now
             n = _upload_tree(str(latest), f"{self.checkpoint_s3}/{latest.name}")
@@ -421,15 +430,17 @@ class S3CheckpointSync(_Callback):
                         _delete_s3_subdir(f"{self.checkpoint_s3}/{name}")
                 _s3_write_text(f"{self.checkpoint_s3}/latest.txt", latest.name)
                 print(f"[exp112] checkpoint synced to S3: {latest.name} (node shards: {n} files)", flush=True)
-            self._last_synced = step
+            self._last_synced_key = key
+            self._last_sync_step = step
         except Exception as e:  # noqa: BLE001 — never kill training over a sync
             print(f"[exp112] S3 checkpoint sync error (non-fatal): {e}", flush=True)
 
     def on_train_batch_end(self, trainer, *a, **k):
-        self._sync()
+        self._sync(trainer)
 
     def on_train_end(self, trainer, *a, **k):
-        self._sync()  # catch the final checkpoint (no batch after it)
+        self._last_sync_step = 0  # force the final checkpoint through the throttle
+        self._sync(trainer)
 
 
 def main() -> None:

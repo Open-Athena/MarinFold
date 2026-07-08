@@ -143,17 +143,27 @@ s3 = boto3.client("s3", endpoint_url="{RDZV_ENDPOINT}",
 b, k = "{rdzv_key}"[5:].split("/", 1)
 nr = int(os.environ["NODE_RANK"]); ip = os.environ.get("IRIS_ADVERTISE_HOST", "127.0.0.1")
 if nr == 0:
+    # Overwrite with THIS attempt's IP (a preemption-restart reuses the key).
     s3.put_object(Bucket=b, Key=k, Body=ip.encode()); m = ip
     print("[exp112] published MASTER_ADDR", ip, flush=True)
 else:
+    # Reject a STALE master (a previous attempt's dead IP) by freshness: stamp a
+    # probe to read the S3 server clock, then only trust `master` if it was
+    # written around/after our boot (this attempt), not minutes ago.
+    s3.put_object(Bucket=b, Key=k + ".probe", Body=b"x")
+    t_ref = s3.head_object(Bucket=b, Key=k + ".probe")["LastModified"]
     m = None
     for i in range(600):
         try:
-            m = s3.get_object(Bucket=b, Key=k)["Body"].read().decode(); break
+            age = (t_ref - s3.head_object(Bucket=b, Key=k)["LastModified"]).total_seconds()
+            if age < 120:  # written this attempt (node-0 writes ~concurrently)
+                m = s3.get_object(Bucket=b, Key=k)["Body"].read().decode(); break
+            if i % 15 == 0:
+                print("[exp112] rendezvous key is stale (age %ds); waiting for fresh" % int(age), flush=True)
         except Exception:
             if i % 15 == 0:
                 print("[exp112] waiting for rank-0 IP…", flush=True)
-            time.sleep(2)
+        time.sleep(2)
     if not m:
         raise SystemExit("[exp112] rendezvous timeout waiting for rank-0 IP")
     print("[exp112] got MASTER_ADDR", m, flush=True)
