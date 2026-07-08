@@ -132,14 +132,42 @@ uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
 - **FLOP-formula parity** — we lead with *throughput* to avoid it; treat the MFU
   ratio as indicative unless both frameworks' FLOP formulas are reconciled.
 
-## Deferred (only if the MFU win justifies a full run)
+## Full 16-epoch training run (multi-node) — implemented
 
-- **Real data:** contacts-v1 parquet `document` → JSONL → `preprocess_data.py`
-  (HF tokenizer, `--append-eod`) → `.bin/.idx` on S3; train with
-  `reset_attention_mask`/`reset_position_ids` (block cross-doc attention; verify vs
-  Megatron #2357 on the TE path). The `--data <prefix>` path in the script is stubbed for this.
-- **Multi-node:** needs a custom torchrun rendezvous over S3/`IRIS_TASK_ID`.
-- **Full 16-epoch run + eval-loss** comparison / beat 2.7 + HF export.
+Because the MFU win was compelling, the deferred full run was built out and
+**launched at 4 nodes (32 H100)**: `plm-exp112-cv1-3b-nemo-e16-lr1e-3-wd0p2`,
+**71,312 steps** (= exp108, from 4,672,623,743 train tokens), LR 1e-3, wd 0.2,
+10% warmup, global batch 128, real contacts-v1 data. Target: beat #75's eval
+loss 2.7566. Run it with `EXP112_DATA=real EXP112_REPLICAS=4` (see the top of
+`dispatch_nemo.py`); `prepare_megatron_data.py` produced the `.bin/.idx` corpus.
+
+This required solving several **real multi-node / no-shared-FS** problems on
+`cw-rno2a` (all validated live on a 2-node smoke incl. a kill→resume):
+
+- **Data:** parquet `document` → JSONL → `preprocess_data.py` (HF tokenizer,
+  `--append-eod` = `<eos>` boundary) → `.bin/.idx` on S3; `reset_attention_mask` +
+  `reset_position_ids` for block cross-doc attention.
+- **torchrun rendezvous:** iris has no coordinator API for torchrun, so rank-0
+  publishes `IRIS_ADVERTISE_HOST` to S3 and peers poll (static rendezvous). Two
+  gotchas: the injected LOTA endpoint negative-caches a cross-node
+  poll-before-write → use the **consistent** `cwobject.com` endpoint for the
+  rendezvous object; and a preemption-restart reuses the key, so the poller
+  rejects a **stale** master IP by S3 `LastModified` freshness.
+- **Gloo:** Megatron's CPU process groups + distributed optimizer need Gloo, whose
+  cross-node full-mesh fails unless `GLOO_SOCKET_IFNAME` is pinned to the host-eth
+  iface — found via Python stdlib `SIOCGIFADDR` (the NeMo container has no `ip`).
+- **Dataset index (no shared FS):** Megatron builds the sample `.npy` on global
+  rank-0 into a node-local dir; a monkeypatch makes `get_rank()` report the LOCAL
+  rank *during the build* so each node's local-0 builds its own cache.
+- **Checkpoint + resume:** Megatron writes a sharded (DCP) checkpoint; each node
+  syncs its own shards to S3 (union = complete), rank-0 prunes + commits
+  `latest.txt`, throttled to one upload per `checkpoint_every` steps. On (re)start
+  each node mirrors the latest checkpoint back and `AutoResume` continues — batch
+  priority is preemptible, so the gang auto-restarts (`max_retries_preemption`) and
+  resumes; the CPU driver is non-preemptible and outlives it.
+
+Deferred still: **HF export** of the final checkpoint (custom arch → needs an
+exporter/state-dict remap) + the downstream contacts eval.
 
 ## Results
 
@@ -163,6 +191,13 @@ vocab 2845). JSON summaries under `…/exp112_qwen_3b_nemo_mfu/results/`.
 barely moves it (memory-bound at this shape with grad checkpointing), so mbs 1 is a
 fine default. MFU is computed as model-FLOPs ÷ (step_time × 8 × 989 TFLOP/s); the
 *throughput* columns are formula-free and carry the comparison on their own.
+
+### Full training run (4 nodes / 32 H100)
+
+_Launched `plm-exp112-cv1-3b-nemo-e16-lr1e-3-wd0p2`, 71,312 steps. Checkpoints
+under `…/exp112_qwen_3b_nemo_mfu/checkpoints/<run>/`, W&B `open-athena/MarinFold`.
+Fill in final **val loss** vs #75's 2.7566, wall-clock, and 32-GPU throughput/MFU
+when it completes._
 
 ## Conclusion
 
