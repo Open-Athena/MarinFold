@@ -83,18 +83,45 @@ drafted in can't reach the AFDB bucket.)_
 
 ## Running it
 
-**0. Tokenizer** (once; needed by trainers, not by generation):
+> **The submitting client must be fresh (<14 days).** The live controller
+> rejects *root* `LaunchJob` submissions whose `marin-iris` client is older
+> than 14 days (`_check_client_freshness`, marin PR #5108). The frozen
+> `marin-*-latest` wheels this project pins (2026-05-29) are past that floor,
+> so **do not** submit with `uv run iris` from this project's venv — it fails
+> at submit with "marin-iris client is too old (build 2026-05-29; minimum …)".
+> Submit instead with a fresh **editable** marin-iris (an editable install
+> reports its git-commit date as the client revision). On this workstation a
+> recent editable checkout lives at `/home/bizon/git/marin`, so set
+> `IRIS=/home/bizon/git/marin/.venv/bin/iris` and confirm freshness first:
+> `"$IRIS" ...` where
+> `python -c "from iris.version import client_revision_date; print(client_revision_date())"`
+> must be ≥ today−14 (if stale, `git -C /home/bizon/git/marin pull` a branch
+> whose `lib/iris` was touched recently, or make a fresh editable checkout).
+> Worker/child tasks are **exempt** from the gate, so the worker env keeps the
+> frozen wheels (see `pyproject.toml`). One cosmetic consequence: zephyr's
+> dashboard status-text push 404s against the current controller and logs
+> non-fatal "Failed to report task status text" warnings — the pipeline still
+> runs and writes correct output (smoke-verified 2026-07-08).
+
+Below, `$IRIS` is that fresh editable client, run from this experiment
+directory (so the 0.1 MB workspace bundle = `cli.py` + `generate_rows.py` +
+`pyproject.toml`).
+
+**0. Tokenizer** (once; needed by trainers, not by generation). Build locally;
+it is published **into the HF bucket** next to the data in step 3. (The
+`open-athena/…-tokenizer` *model repo* pattern is superseded — corpus
+tokenizers live in the bucket, and `open-athena` model-repo creation 403s.)
 
 ```bash
 python -m marinfold.document_structures.contacts_and_coordinates_v1.cli \
-    tokenizer --push open-athena/contacts-and-coordinates-v1-tokenizer
+    tokenizer --save-local ./tokenizer
 ```
 
 **1. Iris smoke** — 100 docs from one train shard, single output file.
 Validates the requester-pays fetch and measures per-doc latency:
 
 ```bash
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
+"$IRIS" --cluster=marin job run --cpu 1 --memory 2GB -- \
   python cli.py generate \
     --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/train/shard_00000.parquet" \
     --out   "gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/_smoke/out.parquet" \
@@ -106,7 +133,7 @@ file per input shard (preserving the round-descending order):
 
 ```bash
 for split in train val test; do
-  uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
+  "$IRIS" --cluster=marin job run --cpu 1 --memory 2GB -- \
     python cli.py generate \
       --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/${split}/shard_*.parquet" \
       --out   "gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/documents/${split}/ccoord_v1-{shard:05d}-of-{total:05d}.parquet" \
@@ -115,13 +142,13 @@ for split in train val test; do
 done
 ```
 
-**3. Publish** the `documents/` tree + tokenizer + this README to
-`buckets/open-athena/MarinFold/data/document_structures/contacts_and_coordinates_v1/{train,val,test}/`.
+**3. Publish** the `documents/` tree + `tokenizer/` + a dataset README to
+`buckets/open-athena/MarinFold/data/document_structures/contacts_and_coordinates_v1/{train,val,test}/`
+(mirrors the contacts-v1 layout from exp53).
 
 > Output bucket is `gs://marin-us-central1` (region-local to the Iris
-> cluster) so per-row PUTs aren't cross-region; the input manifest stays
-> where exp53 wrote it (`us-east5`). Confirm the live cluster region at the
-> smoke step and adjust `--region` / the output bucket together.
+> cluster, controller zone `us-central1-a`) so per-row PUTs aren't
+> cross-region; the input manifest stays where exp53 wrote it (`us-east5`).
 
 ## Success criteria
 

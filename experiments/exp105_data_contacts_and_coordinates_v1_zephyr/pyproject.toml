@@ -16,6 +16,7 @@ dependencies = [
     "gcsfs",                   # gs:// for the AFDB public bucket + marin output
     "huggingface_hub",         # hf:// publish
     "marin-zephyr",            # distributed generation on marin Iris
+    "marin-iris",              # the `iris` job-submission CLI + GCP provider
     # Pin httpx < 1: prerelease=allow (needed for some marin deps) otherwise
     # floats httpx to 1.0.dev*, whose Client() dropped the `timeout` kwarg that
     # marin-iris's GCP provider passes -> iris CLI crashes on submit.
@@ -37,12 +38,40 @@ environments = [
     "sys_platform == 'linux'",
 ]
 
+# marin packages for the WORKER/LAUNCHER env come from the `marin-*-latest`
+# GitHub release assets (the same source models/pyproject.toml uses), NOT a git
+# branch — the old `alxmrs/stamp-iris-build-date` pin is permanently dead (marin
+# PR #5990 was closed unmerged and its branch deleted).
+#
+# IMPORTANT — the live controller enforces a 14-day client-freshness gate on
+# *root* job submissions only (marin PR #5108; iris/cluster/controller/service.py
+# `_check_client_freshness`). These `-latest` assets are currently FROZEN at
+# 2026-05-29, so a client built from them is REJECTED at submit time
+# ("marin-iris client is too old"). But child/worker tasks are exempt from the
+# gate, and the worker env is `uv sync`'d from this pyproject independently, so
+# the frozen wheels are fine HERE. The submitting client (the `iris job run`
+# process on the workstation) must instead be a fresh (<14-day) marin-iris — use
+# an editable install from a recent marin checkout (its git-commit date becomes
+# the client revision date). See the README "Launching" section.
+# One known cosmetic effect of the 2026-05-29 worker env against the current
+# controller: zephyr's dashboard status-text push (finelog `register_table`)
+# 404s and logs non-fatal "Failed to report task status text" warnings. The
+# pipeline itself runs and writes correct output; only live dashboard status is
+# missing.
+find-links = [
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-zephyr-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-iris-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-fray-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-rigging-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-finelog-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/dupekit-0.1.0-40ac799",
+]
+
 [tool.uv.sources]
-# Git deps (not local path) so the SAME pyproject resolves on remote Iris
-# workers. contacts_and_coordinates_v1 lands on main via this PR; until then
-# point the branch at the PR ref for the iris smoke.
+# marinfold stays a git dep (not a local path) so the SAME pyproject resolves on
+# remote Iris workers, which can't see this checkout. No rev/branch = origin/main
+# HEAD at sync time; contacts_and_coordinates_v1 is on main as of PR #106.
 marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
-marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }
 
 [tool.pytest.ini_options]
 markers = [
