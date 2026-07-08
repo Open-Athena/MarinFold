@@ -1,11 +1,40 @@
 [project]
 name = "exp40-document-structures-generate-bio2token-documents-on-zephyr"
 version = "0.1.0"
-description = "Add your description here"
+description = "Generate bio2token neural-tokenizer documents on Zephyr (issue #40)"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"  # marin-iris requires >=3.12,<3.14
 dependencies = [
     "marin-iris>=0.2.39.dev202607070858",
     "marin-zephyr>=0.2.39.dev202607070858",
-    "torch>=2.12.1",
+    # torch is pinned to 2.9.x to stay compatible with torch_xla: the newest
+    # torch_xla is 2.9.0 (no 2.10/2.11/2.12), and torch_xla must match torch's
+    # minor version. Only this experiment pins torch (marin-zephyr/iris do not),
+    # so we own this constraint. On macOS this resolves to the MPS-capable wheel
+    # for local dev; on Linux it pairs with the torch_xla below for TPU.
+    "torch>=2.9,<2.10",
+    "numpy",
+    "einops",   # used by the vendored FSQ layer
+    "gemmi",    # cif/pdb parsing for the input adapter
+    "pyarrow",  # parquet document output
+]
+
+[project.optional-dependencies]
+# TPU/XLA deployment. torch_xla ships only manylinux x86_64 wheels and needs
+# Python >=3.10, so it is gated by environment markers — `uv sync` stays clean
+# on macOS/arm, and `uv sync --extra tpu` pulls it (plus libtpu) on the cluster.
+tpu = [
+    "torch_xla[tpu]==2.9.0 ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+# Reference-oracle test deps (bio2token's biopython/pandas input pipeline).
+# Not needed by the deployable core (mamba.py / model.py / FSQ).
+dev = [
+    "pytest",
+    "biopython",
+    "pandas",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "network: test downloads the pretrained checkpoint (needs internet)",
 ]
