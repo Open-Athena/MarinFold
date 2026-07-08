@@ -7,4 +7,5 @@ requires-python = ">=3.12"
 dependencies = [
     "marin-iris>=0.2.39.dev202607070858",
     "marin-zephyr>=0.2.39.dev202607070858",
+    "torch>=2.12.1",
 ]

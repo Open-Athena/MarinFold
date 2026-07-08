@@ -22,11 +22,17 @@ Does a commonly used neural tokenizer, like bio2token, make useful documents for
 
 ## Background
 
-See parent issue.
+See [parent issue](https://github.com/Open-Athena/MarinFold/issues/2).
 
 ## Approach
 
-Adapt previous zephyr scripts in this repo (in a new experiment) to perform inference with bio2token.
+- Add [bio2token](https://github.com/flagshippioneering/bio2token/tree/main) as a `uv` dep in this experiment's pyproject.
+- Based on our model for PDBs, write an adapter for our structure of data to their [expected pdb dict format](https://github.com/flagshippioneering/bio2token/blob/e3139ba655aa71e2afd0904ef46679b2796815d9/src/bio2token/data/utils/utils.py#L300).
+- Create an efficient Zephyr pipeline (see the [Zephyr agent skill](.agents/skills/zephyr-pipeline-performance/SKILL.md)) that adapts our data source to inference batches (via the previous step), and make it perform inference via the [bio2token encoder](https://github.com/flagshippioneering/bio2token/blob/main/src/bio2token/models/encoder.py). The encoder outputs a 1d tensor of integers (tokens).
+- Hydrate the model with the official [bio2token checkpoint](https://github.com/flagshippioneering/bio2token/blob/main/checkpoints/bio2token/bio2token_pretrained/epoch%3D0243-val_loss_epoch%3D0.71-best-checkpoint.ckpt).
+- Update the torch backend to [target XLA/TPUs](https://docs.pytorch.org/xla/master/learn/migration-to-xla-on-tpus.html).
+- Write the token documents in a similar document format (i.e. parquet) with a similar chunking/shard structure as the [standard token documents](experiments/exp1_document_structures_contacts_and_distances_v1/README.md). 
+  - See this parquet store for reference: `gs://marin-us-central1/protein-structure/MarinFold/exp5/corpus_v2-{shard:05d}-of-{total:05d}.parquet`
 
 ## Success criteria
 
