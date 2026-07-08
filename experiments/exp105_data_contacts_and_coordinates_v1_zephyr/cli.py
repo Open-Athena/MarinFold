@@ -146,11 +146,15 @@ def cmd_generate(args: argparse.Namespace) -> None:
         case _:
             typing.assert_never(suffix)
 
+    # Default to the output-local region if none given. --region is repeatable
+    # so a large on-demand pool can span several (US) regions without spilling
+    # to Europe (see --region help).
+    regions = args.region if args.region else ["us-central1"]
     ctx = ZephyrContext(
         max_workers=args.max_workers,
         resources=ResourceConfig(
             cpu=args.worker_cpu, ram=args.worker_memory, disk=args.worker_disk,
-            regions=[args.region] if args.region else None,
+            regions=regions,
             preemptible=args.preemptible,
         ),
     )
@@ -191,14 +195,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-workers", type=int, default=None,
                    help="Cap concurrent Zephyr workers (default: cluster default "
                         "or ZEPHYR_MAX_WORKERS).")
-    p.add_argument("--region", type=str, default="us-central1",
-                   help="Pin workers to this GCP region (match the iris cluster) "
-                        "so a large pool can't spill cross-region. Empty string "
-                        "uses the cluster default.")
-    p.add_argument("--preemptible", action=argparse.BooleanOptionalAction, default=True,
-                   help="Request preemptible/spot workers — far more in-region "
-                        "capacity + cheaper than on-demand; zephyr retries "
-                        "preemptions.")
+    p.add_argument("--region", action="append", default=None,
+                   help="GCP region(s) to place workers in (repeatable). Defaults "
+                        "to ['us-central1'] (region-local to the output bucket). "
+                        "Pass several US regions to grow the on-demand pool without "
+                        "spilling to Europe (the marin cluster's CPU scale groups "
+                        "span us-central1/central2/east1/east5/west1/west4).")
+    p.add_argument("--preemptible", action=argparse.BooleanOptionalAction, default=False,
+                   help="Request preemptible/spot workers. Default False: the marin "
+                        "cluster has NO preemptible CPU scale group, so a "
+                        "preemptible request creates zero autoscaler demand and the "
+                        "job strands on incidental on-demand VMs. Use on-demand.")
     p.add_argument("--fetch-concurrency", type=int, default=32,
                    help="Concurrent URI fetches per shard (overlaps GCS GETs with "
                         "pyconfind). Default 32.")

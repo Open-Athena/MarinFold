@@ -125,8 +125,18 @@ Validates the requester-pays fetch and measures per-doc latency:
   python cli.py generate \
     --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/train/shard_00000.parquet" \
     --out   "gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/_smoke/out.parquet" \
-    --num-docs 100 --region us-central1 --preemptible
+    --num-docs 100 --region us-central1
 ```
+
+> **Workers are ON-DEMAND, not preemptible.** The marin cluster has no
+> preemptible CPU scale group, so a `--preemptible` worker request registers
+> **zero** autoscaler demand and the job strands on the ~dozen incidental
+> on-demand CPU VMs (`cli.py` now defaults to `--no-preemptible`; exp53's old
+> "use --preemptible" advice is obsolete). **Capacity caveat:** the CPU pool is
+> small (autoscaler `peak_demand`≈6 on `us-central1-a`) and shared; a
+> 1024-worker fan-out only materialises when the cluster is quiet. `--region`
+> is repeatable — spread across US regions (below) to grow the pool without
+> exp53's trans-Atlantic spill.
 
 **2. Full run** — once per split. `{shard}` in `--out` writes one output
 file per input shard (preserving the round-descending order):
@@ -137,8 +147,10 @@ for split in train val test; do
     python cli.py generate \
       --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/${split}/shard_*.parquet" \
       --out   "gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/documents/${split}/ccoord_v1-{shard:05d}-of-{total:05d}.parquet" \
-      --worker-cpu 1 --worker-memory 4g --max-workers 512 --fetch-concurrency 32 \
-      --region us-central1 --preemptible
+      --worker-cpu 1 --worker-memory 4g --max-workers 1024 --fetch-concurrency 32 \
+      --no-preemptible \
+      --region us-central1 --region us-central2 --region us-east1 \
+      --region us-east5 --region us-west1 --region us-west4
 done
 ```
 
