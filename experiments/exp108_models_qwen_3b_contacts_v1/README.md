@@ -49,8 +49,8 @@ We trained a model to < 2.7 eval loss
 
 Keep [#75](https://github.com/Open-Athena/MarinFold/issues/75)'s tuned recipe; change only **1.5B → ~3B** and **8 → 16 epochs**.
 
-- **Model** — Qwen3 (levanter `Qwen3Config`) at **#75's exact 1.5B width** (hidden 2048, intermediate 8192, 32 heads / 8 KV, head_dim 64, `Llama3RotaryEmbeddingsConfig`, seq 8192) with **layers doubled 24 → 48** → ~2.9B params. Depth-only scaling keeps #75's width so its tuned LR/wd transfer directly. Vocab (~2845) from the contacts-v1 tokenizer at model-init.
-  - *Alternative if you'd rather use an off-the-shelf 3B*: marin's `experiments/qwen3.py::qwen2_5_3b` (Qwen2.5-3B: 2048h / 36L / 11008ff / 16h / 2kv). Changes heads/kv/ff vs #75, so #75's LR transfers less cleanly — hence not the default.
+- **Model** — Qwen3 (levanter `Qwen3Config`) **width-scaled from #75** (keep #75's 24 layers, widen hidden 2048→2816, ff 8192→11264, 44 heads / 11 KV, head_dim 64, GQA 4:1, `Llama3RotaryEmbeddingsConfig`, seq 8192) → **~2.78B params**, with **QK-norm on**. Vocab (~2845) from the contacts-v1 tokenizer at model-init.
+  - *Why width, not depth:* the first attempt (`v2` runs) depth-doubled #75 (24→48 layers) on the theory that keeping the width lets #75's tuned LR transfer. **It diverged at all three LRs.** A config diff vs #75's stable run showed the *only* difference was `num_layers` (48 vs 24) — LR transfers under **width** scaling, not depth, so 48 layers lowered the stable-LR ceiling. Width-scaling (this version) preserves #75's LR/stability; QK-norm (off in both #75 and v2) is added for extra deep-attention stability. See #108.
 - **Recipe (tracks #75)** — unmasked next-token loss, Feistel shuffle (`data_seed=0`), packed, full held-out-val eval. AdamW, cosine, **10% warmup**, **wd 0.2**. Batch 128 × seq 8192 → ~4,457 steps/epoch → **16 epochs ≈ 71,312 steps**.
 - **Sweep** — peak **LR ∈ {5e-4, 1e-3, 2e-3}** at wd 0.2 (bracketing #75's winning 1e-3). Three separate single-node GPU jobs. Override via `EXP108_LRS`.
 - **Device** — default **single 8×H100 node** per run (`replicas=1`), FSDP over the 8 GPUs.
@@ -119,13 +119,9 @@ Everything the smoke run was meant to prove **works**: batch-priority dispatch, 
 
 ## Results
 
-- **Smoke run** (job `exp108-smoke3`, lr 1e-3, 50 steps, 2026-07-07): SUCCEEDED — full path validated end-to-end (see Operational findings).
-- **Real sweep launched** 2026-07-07 at **4 nodes/run** (3 separate staggered drivers), full 16 epochs (71,312 steps), batch 128, wd 0.2, 10% warmup, `jax_flash`, gradient checkpointing on:
-  - `plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v2`
-  - `plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v2`  (#75's winning LR)
-  - `plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v2`
-
-  W&B: `open-athena/MarinFold` · checkpoints under `s3://marin-us-east-02a/MarinFold/exp108_qwen_3b_contacts_v1/checkpoints/<run>/`. **Target: beat #75's best eval loss 2.7566.**
+- **Smoke run** (`exp108-smoke3`, 50 steps, 2026-07-07): SUCCEEDED — full path validated end-to-end (see Operational findings).
+- **`v2` sweep — DEPTH-scaled (24→48 layers), 3 LRs @ 4 nodes, 2026-07-07: FAILED (instability).** All three LRs went unstable within ~1.5 epochs (val bouncing 3.0–3.9, spiking; never approached the target). Diff vs #75 showed the *only* config difference was `num_layers` (48 vs 24) → depth lowered the stable-LR ceiling. Killed and superseded.
+- **`v3` sweep — WIDTH-scaled (~2.78B, 24 layers, QK-norm on), 3 LRs @ 4 nodes, 2026-07-07:** relaunched with the fix (see Design). Runs `plm-exp108-cv1-3b-e16-lr{5e-4,1e-3,2e-3}-wd0p2-v3` on W&B `open-athena/MarinFold`; checkpoints under `s3://marin-us-east-02a/MarinFold/exp108_qwen_3b_contacts_v1/checkpoints/<run>/`. **Target: beat #75's 2.7566.**
 - _(Fill in final val losses + comparison to #75 when the runs complete.)_
 
 ## Conclusion
