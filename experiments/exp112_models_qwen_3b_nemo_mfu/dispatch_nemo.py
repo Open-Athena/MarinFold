@@ -122,7 +122,7 @@ def build_bootstrap(*, nproc_per_node: int, replicas: int, run_name: str, result
     return f"""
 set -euo pipefail
 TID="${{IRIS_TASK_ID:-/x/0}}"
-export NODE_RANK="${{TID##*/}}"
+NR="${{TID%%:*}}"; export NODE_RANK="${{NR##*/}}"   # strip ":attempt" if present (iris is inconsistent), then take the rank
 export NNODES="${{IRIS_NUM_TASKS:-1}}"
 export MASTER_PORT="{MASTER_PORT}"
 echo "[exp112-bootstrap] host=$(hostname) task=$TID node_rank=$NODE_RANK nnodes=$NNODES ip=${{IRIS_ADVERTISE_HOST:-?}}"
