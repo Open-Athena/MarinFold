@@ -66,14 +66,22 @@ ATTN_BACKEND = AttentionBackend[_ATTN] if _ATTN else None
 # (e.g. multi-node). Toggle with EXP108_GRAD_CKPT=0.
 _GRAD_CKPT = os.environ.get("EXP108_GRAD_CKPT", "1") != "0"
 
-# --- Qwen3 ~3B shape (#75's 1.5B width, depth doubled 24 → 48) ---------------
+# --- Qwen3 ~2.8B shape: WIDTH-scaled from #75 (keep 24 layers, widen) --------
+# The first attempt depth-doubled #75 (24→48 layers), keeping width, on the theory
+# that #75's tuned LR would transfer. It didn't: LR transfers under *width* scaling,
+# not depth — 48 layers lowered the stable-LR ceiling and all three LRs went
+# unstable (v2 runs diverged/spiked; see #108). This version instead widens #75's
+# 24-layer model (hidden 2048→2816, ff 8192→11264, GQA 4:1 preserved) to ~2.78B,
+# so #75's recipe/LR transfer, AND turns ON Qwen3's QK-norm (off before) for extra
+# deep-attention stability. head_dim defaults to 2816/44 = 64 (= #75).
 protein_qwen3_3b = Qwen3Config(
     max_seq_len=8192,
-    hidden_dim=2048,
-    intermediate_dim=8192,
-    num_heads=32,
-    num_kv_heads=8,
-    num_layers=48,  # 2× #75's 24 → ~2.9B params; head_dim defaults to 2048/32=64 (= #75)
+    hidden_dim=2816,
+    intermediate_dim=11264,
+    num_heads=44,
+    num_kv_heads=11,
+    num_layers=24,
+    use_qk_norm=True,
     rope=Llama3RotaryEmbeddingsConfig(),
     attn_backend=ATTN_BACKEND,
     gradient_checkpointing=_GRAD_CKPT,
