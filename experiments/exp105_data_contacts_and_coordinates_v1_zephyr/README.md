@@ -168,45 +168,49 @@ filters.
 
 ## Results
 
-Format/pipeline validated end-to-end and **`val` + `test` generated + published**
-(2026-07-08); **`train` is capacity-blocked** (see below). All on the PyPI-marin
-env (`0.2.40.dev202607080801`), `--no-preemptible`, US regions.
+**Complete.** All three splits generated on the PyPI-marin env
+(`0.2.40.dev202607080801`), `--no-preemptible`, US regions — byte-faithful to
+`generate_document`, **0 generation drops**, same proteins/rounds/splits as
+contacts-v1 (exp53).
 
-| split | docs | rounds (0/1/2/3/4) | drops | tokens | status |
-|---|--:|---|--:|--:|---|
-| val | 41,954 | 9,558/9,558/9,558/7,316/5,964 | **0** | 1.375 B | ✅ done + published |
-| test | 41,567 | 9,468/9,468/9,468/7,248/5,915 | **0** | 1.362 B | ✅ done + published |
-| train | 4,129,682 (expected) | 941,028×3 / 719,519 / 587,079 | — | ~135 B | ⏳ pending capacity |
+| split | docs | rounds (0/1/2/3/4) | drops | tokens |
+|---|--:|---|--:|--:|
+| train | 4,129,682 | 941,028 / 941,028 / 941,028 / 719,519 / 587,079 | **0** | 135.3 B |
+| val | 41,954 | 9,558 / 9,558 / 9,558 / 7,316 / 5,964 | **0** | 1.375 B |
+| test | 41,567 | 9,468 / 9,468 / 9,468 / 7,248 / 5,915 | **0** | 1.362 B |
+| **total** | **4,213,203** | 960,054 / 960,054 / 960,054 / 734,083 / 598,958 | **0** | **~138.0 B** |
 
-- **0 generation drops**: per split `records_in == records_out`, and per-round
-  counts match exp53's manifest exactly (same proteins/rounds/splits).
-- **Budget-filling confirmed**: `num_tokens` mean 32,766 (min 32,764, max
-  32,768) across both splits.
-- **Byte-faithful**: the smoke set + every shard's `sha1 == sha1(document)`;
-  the worker calls straight into `generate_document` (pinned by
-  `tests/test_generate_rows.py`).
-- **Throughput**: ~1.1 s/doc/core; each split ran ~22 workers (the full CPU
-  pool) and finished in ~40 min. val+test wall-clock ~1 h total (test queued
-  behind val for the shared ~22 worker slots).
-- **Published** (val/test): `buckets/open-athena/MarinFold/data/document_structures/contacts_and_coordinates_v1/{val,test}/`
-  + `tokenizer/` + this dataset README.
-- **GCS working copy**: `gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/documents/{val,test}/`.
+- **0 drops**: per-round counts match exp53's manifest **exactly** for every
+  split (`records_in == records_out`); every AFDB entry serialized.
+- **Budget-filling**: `num_tokens` ∈ [32,764, 32,768] (mean ~32,766) across all
+  4.2 M docs.
+- **Byte-faithful**: worker calls straight into `generate_document`
+  (`tests/test_generate_rows.py`); every shard's `sha1 == sha1(document)`.
+- **Sizes / throughput**: train = 303 GiB parquet; ~1.1 s/doc/core.
+- **Published**: `buckets/open-athena/MarinFold/data/document_structures/contacts_and_coordinates_v1/{train,val,test}/`
+  + `tokenizer/` (3,847-token vocab) + dataset README.
+- **GCS working copy**: `gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/documents/`.
 
-**`train` blocker.** The marin cluster's on-demand CPU pool is small (~11
-`e2-highmem-2` VMs = ~22 worker slots; autoscaler does not grow it for this
-fan-out). val/test (22 shards each) fit that pool and finished quickly, but the
-2,067-shard train split at ~22 workers is ~2+ days. AFDB `gcs_uri` is
-requester-pays and can't be fetched from the workstation, so train must run
-on-cluster. It needs either a CPU-autoscaler capacity bump (admin) or a
-multi-day resumable grind (`{shard}` output makes it restartable). See
-[`NOTES.md`](NOTES.md) for the full env/infra debugging story.
+**How train actually ran (2026-07-09).** The env/registration fix (current marin
+from PyPI — see [`NOTES.md`](NOTES.md)) is what unblocked it. train ran two ways
+at once, both writing the same GCS `train/` dir (deterministic identical bytes +
+skip-existing → concurrent writes are safe): the **iris** grind, where the CPU
+autoscaler scaled to ~1000 on-demand workers and finished ~2,000 shards in ~2 h;
+and [`local_generate_train.py`](local_generate_train.py) on the 64-core
+workstation (the AFDB bucket is publicly readable, so `read_object_bytes` works
+off-cluster). The local sweep only needed ~34 shards — the cluster was that
+fast. Earlier this looked "capacity-blocked" because a *small* split (val, 22
+shards) only booted 22 workers; a 2,067-shard request scales far higher.
 
 ## Conclusion
 
-The generator + Zephyr pipeline are correct and the corpus is byte-faithful to
-`contacts_and_coordinates_v1.generate_document` with 0 drops: **val (41,954) and
-test (41,567) are complete and published** to the HF bucket. The single
-remaining item is the **train** split, which is throughput-bound on the marin
-CPU pool (not a code issue — the env/registration blockers are fixed by using
-current marin from PyPI; see `NOTES.md`). Once train generates, drop its
-`train/` shards into the same bucket path and update the Results table.
+Generated and published the full **contacts-and-coordinates-v1** corpus:
+**4,213,203 documents / ~138 B tokens** across train/val/test, **0 generation
+drops**, byte-faithful to `contacts_and_coordinates_v1.generate_document`, on the
+same proteins as contacts-v1. On the HF bucket at
+`buckets/open-athena/MarinFold/data/document_structures/contacts_and_coordinates_v1/`
+(+ tokenizer + README) and on GCS. The success criterion is met. The load-bearing
+lesson (in [`NOTES.md`](NOTES.md)): install marin from **PyPI** (current dev
+wheels), not the frozen `marin-*-latest` GitHub assets — the frozen wheels fail
+the client-freshness gate and, worse, silently break worker registration so a
+job spins without progress.
