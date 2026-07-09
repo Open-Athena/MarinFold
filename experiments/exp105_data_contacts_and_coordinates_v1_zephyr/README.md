@@ -47,7 +47,8 @@ provenance columns (`round`, `struct_cluster_id`, `split`, …). `cli.py`
 wraps this in a Zephyr `map_shard`, reusing exp53's performance decisions
 (see the [`zephyr-pipeline-performance`](../../.agents/skills/zephyr-pipeline-performance/SKILL.md)
 skill): `thread_per_row_in_shard` overlaps the GCS GETs with pyconfind,
-1 CPU/worker scaled via `--max-workers`, region-pinned + preemptible, and
+1 CPU/worker scaled via `--max-workers`, on-demand + multi-US-region (the
+cluster has no preemptible CPU pool; see "Running it"), and
 fail-loud with per-row lenient drops only for designed-in filters
 (multi-chain, out-of-range, too large for the coordinate cube).
 
@@ -83,29 +84,25 @@ drafted in can't reach the AFDB bucket.)_
 
 ## Running it
 
-> **The submitting client must be fresh (<14 days).** The live controller
-> rejects *root* `LaunchJob` submissions whose `marin-iris` client is older
-> than 14 days (`_check_client_freshness`, marin PR #5108). The frozen
-> `marin-*-latest` wheels this project pins (2026-05-29) are past that floor,
-> so **do not** submit with `uv run iris` from this project's venv — it fails
-> at submit with "marin-iris client is too old (build 2026-05-29; minimum …)".
-> Submit instead with a fresh **editable** marin-iris (an editable install
-> reports its git-commit date as the client revision). On this workstation a
-> recent editable checkout lives at `/home/bizon/git/marin`, so set
-> `IRIS=/home/bizon/git/marin/.venv/bin/iris` and confirm freshness first:
-> `"$IRIS" ...` where
-> `python -c "from iris.version import client_revision_date; print(client_revision_date())"`
-> must be ≥ today−14 (if stale, `git -C /home/bizon/git/marin pull` a branch
-> whose `lib/iris` was touched recently, or make a fresh editable checkout).
-> Worker/child tasks are **exempt** from the gate, so the worker env keeps the
-> frozen wheels (see `pyproject.toml`). One cosmetic consequence: zephyr's
-> dashboard status-text push 404s against the current controller and logs
-> non-fatal "Failed to report task status text" warnings — the pipeline still
-> runs and writes correct output (smoke-verified 2026-07-08).
+> **Use current marin from PyPI (`pyproject.toml` already does).** The whole
+> marin stack is published to PyPI on ~every push
+> (`marin-iris`/`zephyr`/`fray`/`rigging` `0.2.40.dev2026…`, plus the native
+> `marin-finelog-server` wheel). This is what makes both the launcher and the
+> Iris workers match the **live controller**. Two failure modes this avoids,
+> both hit while debugging this run:
+> 1. The controller rejects *root* submissions from a `marin-iris` client
+>    older than 14 days (`_check_client_freshness`, marin PR #5108). The PyPI
+>    dev wheel stamps a fresh `BUILD_DATE`, so `uv run iris` from this env
+>    submits fine. (The stale `marin-*-latest` GitHub release assets, frozen at
+>    2026-05-29, are rejected — don't use them.)
+> 2. With the frozen 2026-05-29 worker env, workers get *scheduled* but never
+>    *register* with the zephyr coordinator — `finelog register_table` 404s
+>    against the upgraded controller, so the coordinator sees ~0 live workers
+>    and the run makes no progress. Current PyPI wheels fix this.
 
-Below, `$IRIS` is that fresh editable client, run from this experiment
-directory (so the 0.1 MB workspace bundle = `cli.py` + `generate_rows.py` +
-`pyproject.toml`).
+All commands run from this experiment directory (so the 0.1 MB workspace bundle
+= `cli.py` + `generate_rows.py` + `pyproject.toml`), and submit with this env's
+own `uv run iris`.
 
 **0. Tokenizer** (once; needed by trainers, not by generation). Build locally;
 it is published **into the HF bucket** next to the data in step 3. (The
@@ -121,7 +118,7 @@ python -m marinfold.document_structures.contacts_and_coordinates_v1.cli \
 Validates the requester-pays fetch and measures per-doc latency:
 
 ```bash
-"$IRIS" --cluster=marin job run --cpu 1 --memory 2GB -- \
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
   python cli.py generate \
     --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/train/shard_00000.parquet" \
     --out   "gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/_smoke/out.parquet" \
@@ -143,7 +140,7 @@ file per input shard (preserving the round-descending order):
 
 ```bash
 for split in train val test; do
-  "$IRIS" --cluster=marin job run --cpu 1 --memory 2GB -- \
+  uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
     python cli.py generate \
       --input "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/${split}/shard_*.parquet" \
       --out   "gs://marin-us-central1/protein-structure/MarinFold/exp105_ccoord_v1/documents/${split}/ccoord_v1-{shard:05d}-of-{total:05d}.parquet" \
