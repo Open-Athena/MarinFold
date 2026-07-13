@@ -332,7 +332,11 @@ def build_request(
 def main() -> None:
     data = os.environ.get("EXP112_DATA", "mock")
     replicas = int(os.environ.get("EXP112_REPLICAS", "1"))
-    run_default = "plm-exp112-cv1-1_5b-nemo-e16-lr1e-3-wd0p2" if data == "real" else "plm-exp112-cv1-3b-nemo-bench"
+    # -v2 = #75-faithful config fix (no wd on embeddings/output, tied embeddings,
+    # Llama3 rope scaling, RMSNorm eps 1e-6) — the v1 run converged to 3.12 vs #75's
+    # 2.7566 because Megatron decayed the embeddings at wd 0.2. Fresh run name so it
+    # doesn't resume the v1 checkpoint.
+    run_default = "plm-exp112-cv1-1_5b-nemo-e16-lr1e-3-wd0p2-v2" if data == "real" else "plm-exp112-cv1-3b-nemo-bench"
     run_name = os.environ.get("EXP112_RUN_NAME", run_default)
     micro_batch = int(os.environ.get("EXP112_MICRO_BATCH", "1"))
     global_batch = int(os.environ.get("EXP112_GLOBAL_BATCH", str(GLOBAL_BATCH_SIZE)))

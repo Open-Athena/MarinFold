@@ -60,6 +60,17 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--num-query-groups", type=int, default=8)
     p.add_argument("--kv-channels", type=int, default=64)
     p.add_argument("--rotary-base", type=float, default=500_000.0)  # #75 Llama3 rope theta
+    # --- #75-faithful knobs (the exp108/Levanter run used these; defaults match #75) ---
+    p.add_argument("--rope-scaling-factor", type=float, default=float(os.environ.get("EXP112_ROPE_SCALING", "8.0")),
+                   help="Llama3 RoPE freq-scaling factor (#75 = 8.0; 0 disables). NeMo GPTConfig lacks the "
+                        "knob, so this is injected into MCoreGPTModel (llama3 low/high/orig = 1/4/8192, = #75).")
+    p.add_argument("--tie-embeddings", type=int, default=int(os.environ.get("EXP112_TIE", "1")),
+                   help="tie input/output embeddings (#75/Qwen3 = 1)")
+    p.add_argument("--layernorm-eps", type=float, default=float(os.environ.get("EXP112_LN_EPS", "1e-6")),
+                   help="RMSNorm epsilon (#75/Qwen3-0.6B = 1e-6; Megatron default 1e-5)")
+    p.add_argument("--wd-embeddings", type=int, default=int(os.environ.get("EXP112_WD_EMB", "0")),
+                   help="apply weight decay to embeddings + output layer (#75 = 0 -> EXCLUDED, like Levanter's "
+                        "default mask; Megatron decays them by default, which over-regularizes at wd 0.2)")
     p.add_argument("--no-grad-ckpt", action="store_true",
                    help="disable activation checkpointing (exp108 needed it ON to fit)")
     # Optim (only meaningful for a real run; harmless for the benchmark)
@@ -485,6 +496,23 @@ def main() -> None:
     tokenizer = AutoTokenizer(pretrained_model_name=args.tokenizer)
     vocab_size = tokenizer.vocab_size
 
+    # Llama3 RoPE freq-scaling to match #75 (Levanter Llama3RotaryEmbeddingsConfig:
+    # theta 500000 + factor 8 / low 1 / high 4 / orig 8192). NeMo's generic
+    # GPTConfig has no rope_scaling field and configure_model doesn't pass it, so
+    # inject it at the MCoreGPTModel constructor (Megatron's llama3 scaling
+    # hardcodes low/high/orig = 1/4/8192, exactly #75).
+    if args.rope_scaling_factor and args.rope_scaling_factor > 0:
+        import megatron.core.models.gpt.gpt_model as _mgpt
+        _orig_gpt_init = _mgpt.GPTModel.__init__
+
+        def _gpt_init_rope(self, *a, **k):
+            k["rope_scaling"] = True
+            k["rope_scaling_factor"] = args.rope_scaling_factor
+            print(f"[exp112] Llama3 RoPE scaling ON (factor={args.rope_scaling_factor}, theta={args.rotary_base})", flush=True)
+            return _orig_gpt_init(self, *a, **k)
+
+        _mgpt.GPTModel.__init__ = _gpt_init_rope
+
     # --- Model: Qwen3 geometry via the generic Megatron-backed GPTConfig ------
     config = llm.GPTConfig(
         num_layers=args.num_layers,
@@ -497,13 +525,14 @@ def main() -> None:
         # Qwen3 specifics
         normalization="RMSNorm",
         qk_layernorm=True,
+        layernorm_epsilon=args.layernorm_eps,     # #75/Qwen3 = 1e-6
         gated_linear_unit=True,
         activation_func=F.silu,
         add_bias_linear=False,
         position_embedding_type="rope",
         rotary_base=args.rotary_base,
         rotary_percent=1.0,
-        share_embeddings_and_output_weights=False,
+        share_embeddings_and_output_weights=bool(args.tie_embeddings),  # #75/Qwen3 = tied
         make_vocab_size_divisible_by=128,
         bf16=True,
         # Activation checkpointing (exp108 needed it ON to fit 48L*seq8192).
@@ -550,16 +579,34 @@ def main() -> None:
             num_workers=4,
         )
 
-    # --- Optimizer / schedule (tracks #75; irrelevant to MFU) -----------------
+    # --- Optimizer / schedule (matches #75) -----------------------------------
     from megatron.core.optimizer import OptimizerConfig
     from nemo.lightning.pytorch.optim import CosineAnnealingScheduler, MegatronOptimizerModule
+
+    # Weight-decay mask matching Levanter's default (#75): exclude biases, norms
+    # (1-D), AND embeddings/output. Megatron's default only excludes biases+1-D, so
+    # it decays the 2-D embedding/output matrices at wd 0.2 -> over-regularizes a
+    # small-vocab model. Passing no_weight_decay_cond OVERRIDES Megatron's default,
+    # so replicate its bias/1-D rule here too. (Set --wd-embeddings 1 to revert.)
+    def _no_wd_cond(name, param):
+        base = name.endswith(".bias") or len(param.shape) == 1
+        if args.wd_embeddings:
+            res = base
+        else:
+            n = name.lower()
+            res = base or ("embedding" in n) or ("output_layer" in n)
+        if os.environ.get("EXP112_DEBUG_WD"):
+            print(f"[wd] {'NO_WD' if res else 'decay'} shape={tuple(param.shape)} {name}", flush=True)
+        return res
+
     opt = MegatronOptimizerModule(
         config=OptimizerConfig(
             optimizer="adam",
             lr=args.lr,
             weight_decay=args.weight_decay,
             adam_beta1=0.9,
-            adam_beta2=0.95,
+            adam_beta2=0.95,       # = Levanter's default beta2 (verified)
+            adam_eps=1e-8,
             bf16=True,
             use_distributed_optimizer=True,
             clip_grad=1.0,
@@ -567,8 +614,9 @@ def main() -> None:
         lr_scheduler=CosineAnnealingScheduler(
             warmup_steps=max(1, int(args.warmup_fraction * args.max_steps)),
             constant_steps=0,
-            min_lr=args.lr * 0.1,
+            min_lr=args.lr * 0.1,  # = Levanter min_lr_ratio 0.1
         ),
+        no_weight_decay_cond=_no_wd_cond,
     )
 
     # --- Trainer --------------------------------------------------------------
