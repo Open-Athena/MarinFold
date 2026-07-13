@@ -5,8 +5,9 @@ description = "Generate bio2token neural-tokenizer documents on Zephyr (issue #4
 readme = "README.md"
 requires-python = ">=3.12,<3.14"  # marin-iris requires >=3.12,<3.14
 dependencies = [
-    "marin-iris>=0.2.39.dev202607070858",
-    "marin-zephyr>=0.2.39.dev202607070858",
+    "marin-iris>=0.2.12.dev202607100930",
+    "marin-zephyr>=0.2.12.dev202607100930",
+    "marin-finelog>=0.2.12.dev202607100930",
     # torch is pinned to 2.9.x to stay compatible with torch_xla: the newest
     # torch_xla is 2.9.0 (no 2.10/2.11/2.12), and torch_xla must match torch's
     # minor version. Only this experiment pins torch (marin-zephyr/iris do not),
@@ -17,6 +18,7 @@ dependencies = [
     "einops",   # used by the vendored FSQ layer
     "gemmi",    # cif/pdb parsing for the input adapter
     "pyarrow",  # parquet document output
+    "fsspec",   # gzip-safe per-row object fetch (io_utils.read_object_bytes)
 ]
 
 [project.optional-dependencies]

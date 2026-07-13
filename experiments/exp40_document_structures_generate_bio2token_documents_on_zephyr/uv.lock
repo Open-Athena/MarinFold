@@ -410,6 +410,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "einops" },
     { name = "gemmi" },
+    { name = "marin-finelog" },
     { name = "marin-iris" },
     { name = "marin-zephyr" },
     { name = "numpy" },
@@ -432,8 +433,9 @@ requires-dist = [
     { name = "biopython", marker = "extra == 'dev'" },
     { name = "einops" },
     { name = "gemmi" },
-    { name = "marin-iris", specifier = ">=0.2.39.dev202607070858" },
-    { name = "marin-zephyr", specifier = ">=0.2.39.dev202607070858" },
+    { name = "marin-finelog", specifier = ">=0.2.12.dev202607100930" },
+    { name = "marin-iris", specifier = ">=0.2.12.dev202607100930" },
+    { name = "marin-zephyr", specifier = ">=0.2.12.dev202607100930" },
     { name = "numpy" },
     { name = "pandas", marker = "extra == 'dev'" },
     { name = "pyarrow" },
@@ -933,7 +935,7 @@ wheels = [
 
 [[package]]
 name = "marin-finelog"
-version = "0.2.10"
+version = "0.2.12.dev202607100930"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -947,9 +949,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/ea/1e53cc39aeb66d747533f6e423f5f202ddd1be9a482406345f9b839217f8/marin_finelog-0.2.10.tar.gz", hash = "sha256:2881a021ad2ac5f0a9a75fada759a130d1533d0e87f97e2f5119de68753d4a0e", size = 52204, upload-time = "2026-06-16T15:21:07.603Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/b6/8e304a10dc2f20265176a9dee7f4a42ec0965327330e339e266e21eb3228/marin_finelog-0.2.12.dev202607100930.tar.gz", hash = "sha256:098fdc39f5e8caeb3a689ca9f0abff2640510f55b698ab44481cace851d3a1b8", size = 70252, upload-time = "2026-07-10T10:02:36.524Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/d4/cebe857527ff2703edc2def8748cbe9fd84315bfe24c6e01463a3bb83f58/marin_finelog-0.2.10-py3-none-any.whl", hash = "sha256:9b240454f1f997c0aede999f871051eb5349f7c1b0003c1d2653c69a9f2cefa0", size = 53400, upload-time = "2026-06-16T15:20:53.35Z" },
+    { url = "https://files.pythonhosted.org/packages/82/06/2ef1f4dfa096e857a6cbe7322aa252cd0a5360888e1edb3ec9a12276aefb/marin_finelog-0.2.12.dev202607100930-py3-none-any.whl", hash = "sha256:a5934c6cc4a0cc4200800450b44d32ea005a189503bd3d0457cf571fd7bee237", size = 69749, upload-time = "2026-07-10T10:02:23.18Z" },
 ]
 
 [[package]]
@@ -1063,7 +1065,7 @@ name = "markdown-it-py"
 version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "mdurl" },
+    { name = "mdurl", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/06/ff/7841249c247aa650a76b9ee4bbaeae59370dc8bfd2f6c01f3630c35eb134/markdown_it_py-4.2.0.tar.gz", hash = "sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49", size = 82454, upload-time = "2026-05-07T12:08:28.36Z" }
 wheels = [
@@ -1292,7 +1294,7 @@ name = "nvidia-cudnn-cu12"
 version = "9.10.2.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/51/e123d997aa098c61d029f76663dedbfb9bc8dcf8c60cbd6adbe42f76d049/nvidia_cudnn_cu12-9.10.2.21-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:949452be657fa16687d0930933f032835951ef0892b37d2d53824d1a84dc97a8", size = 706758467, upload-time = "2025-06-06T21:54:08.597Z" },
@@ -1303,7 +1305,7 @@ name = "nvidia-cufft-cu12"
 version = "11.3.3.83"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1f/13/ee4e00f30e676b66ae65b4f08cb5bcbb8392c03f54f2d5413ea99a5d1c80/nvidia_cufft_cu12-11.3.3.83-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:4d2dd21ec0b88cf61b62e6b43564355e5222e4a3fb394cac0db101f2dd0d4f74", size = 193118695, upload-time = "2025-03-07T01:45:27.821Z" },
@@ -1330,9 +1332,9 @@ name = "nvidia-cusolver-cu12"
 version = "11.7.3.90"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
-    { name = "nvidia-cusparse-cu12" },
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "nvidia-cusparse-cu12", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/85/48/9a13d2975803e8cf2777d5ed57b87a0b6ca2cc795f9a4f59796a910bfb80/nvidia_cusolver_cu12-11.7.3.90-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:4376c11ad263152bd50ea295c05370360776f8c3427b30991df774f9fb26c450", size = 267506905, upload-time = "2025-03-07T01:47:16.273Z" },
@@ -1343,7 +1345,7 @@ name = "nvidia-cusparse-cu12"
 version = "12.5.8.93"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c2/f5/e1854cb2f2bcd4280c44736c93550cc300ff4b8c95ebe370d0aa7d2b473d/nvidia_cusparse_cu12-12.5.8.93-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1ec05d76bbbd8b61b06a80e1eaf8cf4959c3d4ce8e711b65ebd0443bb0ebb13b", size = 288216466, upload-time = "2025-03-07T01:48:13.779Z" },
@@ -1860,8 +1862,8 @@ name = "rich"
 version = "15.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py" },
-    { name = "pygments" },
+    { name = "markdown-it-py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "pygments", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c0/8f/0722ca900cc807c13a6a0c696dacf35430f72e0ec571c4275d2371fca3e9/rich-15.0.0.tar.gz", hash = "sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36", size = 230680, upload-time = "2026-04-12T08:24:00.75Z" }
 wheels = [
@@ -2022,10 +2024,10 @@ name = "torch-xla"
 version = "2.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "absl-py" },
-    { name = "numpy" },
-    { name = "pyyaml" },
-    { name = "requests" },
+    { name = "absl-py", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "pyyaml", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "requests", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e4/30/8f18ac8473eb721cce978877b3d6227730bd069a42e6f0c32f3e1df59608/torch_xla-2.9.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:d6b4fbb2704bff08194c170b23dcf6dea562cf3cb53d9951b86667c327b6f5ed", size = 80302207, upload-time = "2025-11-17T22:40:38.151Z" },
@@ -2034,8 +2036,8 @@ wheels = [
 
 [package.optional-dependencies]
 tpu = [
-    { name = "libtpu" },
-    { name = "tpu-info" },
+    { name = "libtpu", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "tpu-info", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 
 [[package]]
@@ -2043,12 +2045,12 @@ name = "tpu-info"
 version = "0.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "grpcio" },
-    { name = "immutabledict" },
-    { name = "packaging" },
-    { name = "prometheus-client" },
-    { name = "protobuf" },
-    { name = "rich" },
+    { name = "grpcio", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "immutabledict", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "packaging", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prometheus-client", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "protobuf", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "rich", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/dc/9e8fc37cfa42e8cb8a9225e57d4c50be668c7ff0a07560ba27c6357f7cce/tpu_info-0.14.2-py3-none-any.whl", hash = "sha256:9e11ccdb4a64b9c6858311a560c992546224a1fa09da660b7b63983af17c4196", size = 44263, upload-time = "2026-07-06T19:21:06.744Z" },
