@@ -434,7 +434,13 @@ class S3CheckpointSync(_Callback):
             return
         try:
             _barrier()  # DCP save is synchronous+collective; all nodes have it now
-            n = _upload_tree(str(latest), f"{self.checkpoint_s3}/{latest.name}")
+            # Per-NODE upload (LOCAL_RANK 0 only): each node's local ckpt dir holds
+            # all 8 of that node's ranks' shards. Without this gate all 32 ranks
+            # re-upload the same node's files 8x -> connection-pool churn + a slow
+            # upload stalls the barrier and can trip the NCCL watchdog.
+            n = 0
+            if _env_int("LOCAL_RANK", 0) == 0:
+                n = _upload_tree(str(latest), f"{self.checkpoint_s3}/{latest.name}")
             _barrier()  # all nodes finished uploading their shards
             if _env_int("RANK", 0) == 0:
                 for name in _list_s3_subdirs(self.checkpoint_s3):

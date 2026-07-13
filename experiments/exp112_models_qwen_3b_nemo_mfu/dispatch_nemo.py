@@ -196,6 +196,10 @@ print(sel)
 " || true)
   if [ -n "$IFACE" ]; then export GLOO_SOCKET_IFNAME="$IFACE"; fi
   echo "[exp112-bootstrap] GLOO_SOCKET_IFNAME=${{GLOO_SOCKET_IFNAME:-unset}} (ip=${{IRIS_ADVERTISE_HOST:-?}})"
+  # NCCL robustness: tolerate slow/flaky IB links + a longer collective watchdog so
+  # a transient inter-node stall doesn't SIGABRT the gang (the main failure mode at
+  # 4 nodes over many hours). Driver-side resubmit still catches genuine failures.
+  export NCCL_IB_TIMEOUT=22 NCCL_IB_RETRY_CNT=13 TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1800
   LAUNCH="torchrun --nnodes=$NNODES --node-rank=$NODE_RANK --master-addr=$MASTER_ADDR --master-port=$MASTER_PORT --nproc-per-node={nproc_per_node}"
 else
   LAUNCH="torchrun --standalone --nnodes=1 --nproc-per-node={nproc_per_node}"
@@ -368,11 +372,28 @@ def main() -> None:
               f"bootstrap={len(request.entrypoint.binary_entrypoint.args[1])} chars")
         return
 
-    job = current_client().submit(request)
-    print(f"[exp112] submitted {run_name} ({replicas} nodes); awaiting completion "
-          f"(driver must outlive the gang).")
-    job.wait(raise_on_failure=True)
-    print(f"[exp112] {run_name}: SUCCEEDED — checkpoints under {EXP112_CKPT_S3_BASE}/{run_name}/")
+    # Driver-side retry loop. At 4 nodes over ~1 day the cluster throws periodic
+    # NCCL collective timeouts (a node's inter-node collective stalls -> SIGABRT).
+    # iris's own max_retries doesn't recover us because job.wait(raise_on_failure)
+    # raises on the first gang failure and the driver would exit. Instead the
+    # (non-preemptible CPU) driver RESUBMITS the gang on each failure; every new
+    # gang resumes from the latest S3 checkpoint (bootstrap restore + AutoResume),
+    # and the rendezvous freshness check handles the new attempt's IP.
+    import time
+    max_gang_retries = int(os.environ.get("EXP112_GANG_RETRIES", "60"))
+    for attempt in range(1, max_gang_retries + 1):
+        job = current_client().submit(request)
+        print(f"[exp112] submitted {run_name} ({replicas} nodes) — attempt {attempt}/{max_gang_retries}", flush=True)
+        try:
+            job.wait(raise_on_failure=True)
+            print(f"[exp112] {run_name}: SUCCEEDED — checkpoints under {EXP112_CKPT_S3_BASE}/{run_name}/")
+            return
+        except Exception as e:  # noqa: BLE001 — resubmit + resume from S3 checkpoint
+            print(f"[exp112] attempt {attempt} failed: {e}", flush=True)
+            if attempt < max_gang_retries:
+                print("[exp112] resubmitting (resumes from the latest S3 checkpoint)…", flush=True)
+                time.sleep(30)
+    raise SystemExit(f"[exp112] {run_name}: exhausted {max_gang_retries} gang attempts")
 
 
 if __name__ == "__main__":
