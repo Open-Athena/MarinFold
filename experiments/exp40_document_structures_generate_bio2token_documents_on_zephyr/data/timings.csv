@@ -1,0 +1,4 @@
+run_tag,phase,split,n_docs,n_atoms,elapsed_seconds,docs_per_sec,atoms_per_sec,device,n_workers,tpu_type,zone,compile_amortized,notes,timestamp_utc
+smoke,tokenize_shard,val,100,,74.4,1.34,,xla,1,v6e-4,us-east5-b,no,"100-doc cap; compile-dominated (one XLA graph per length bucket); per-chip",2026-07-13T23:39:05Z
+oomfix,tokenize_shard,val,2000,4368664,215.49,9.28,20273,xla,1,v6e-4,us-east5-b,yes,"full 2000-row shard on 1 chip; 0 malformed; token-budget batching (max_batch_tokens=131072); per-chip steady-state",2026-07-14T05:08:09Z
+val,end_to_end,val,41954,86564334,985,42.6,87883,xla,8,v6e-4,us-east5-b,yes,"22 shards on 8 workers; wall-clock incl provisioning+compile+write; 0 malformed; us-east5 co-located (zero egress)",2026-07-14T16:44:32Z
