@@ -1,6 +1,6 @@
 ---
 name: zephyr-pipeline-performance
-description: Write a Zephyr/Iris data-generation pipeline that finishes in minutes (not hours) and ships a clean corpus (not a silently-corrupted one). Use when authoring or reviewing an `exp<N>_data_*/cli.py` (or any `map_shard`-based job that fetches per-row inputs and emits parquet). Covers the per-row / per-shard / per-worker / per-job decisions for wall-clock plus the fail-loud default for data quality.
+description: Write a Zephyr/Iris data-generation pipeline that finishes in minutes (not hours) and ships a clean corpus (not a silently-corrupted one). Use when authoring or reviewing an `exp<N>_data_*/cli.py` (or any `map_shard`-based job that fetches per-row inputs and emits parquet). Covers the per-row / per-shard / per-worker / per-job decisions for wall-clock plus the fail-loud default for data quality — including **neural / accelerator (TPU) tokenizers** when the model is the cost (batched bucketed inference, `ResourceConfig.with_tpu`, and parallel scans for sequential-recurrence models like SSMs/RNNs).
 ---
 
 # Skill: write performant Zephyr pipelines
@@ -11,8 +11,20 @@ are unobvious from the marin-zephyr docs because the costs aren't local.
 They show up as straggler tails, silently-truncated reads, or cluster bills,
 not as wrong output.
 
-This skill draws on lessons from two real MarinFold pipelines that
-chose differently:
+**Before any of them, make one upstream choice: which regime is your pipeline
+in?** For almost every pipeline the per-row cost is a **GCS fetch** and the CPU
+step is cheap — it is **I/O-bound**, and the TL;DR below (and every section
+after it) is written for that case. The exception is when the per-row work is a
+**neural forward pass on an accelerator** (a tokenizer model on TPU/GPU): there
+the compute can dominate the fetch, and the decisions change — you batch onto
+the accelerator instead of threading per row. Profile one row to tell which you
+are (see [Project before optimizing](#1-project-before-optimizing)); if compute
+wins, skip to [Neural / accelerator
+tokenizers](#neural--accelerator-tokenizers-when-the-model-is-the-cost). Unless
+a section says otherwise, everything that follows assumes I/O-bound.
+
+This skill draws on lessons from real MarinFold pipelines — two
+I/O-bound, one compute-bound:
 
 * `experiments/exp5_data_contacts_and_distances_v2_zephyr/` (1.6 M
   structures). The README's success criterion documents a prior
@@ -31,13 +43,20 @@ chose differently:
   ([`43a0535`](https://github.com/Open-Athena/MarinFold/commit/43a0535)).
   Without them, a smoke test produced only 2/100 valid documents.
   Both lessons are documented as patterns below.
+* [`experiments/exp40_document_structures_generate_bio2token_documents_on_zephyr/`](../../../experiments/exp40_document_structures_generate_bio2token_documents_on_zephyr/)
+  (bio2token, a Mamba neural tokenizer on TPU) — the **compute-bound**
+  case: the per-row cost is a model forward pass, not a fetch, which
+  inverts the concurrency model (batch onto the accelerator instead of
+  threading per row) and adds XLA concerns (static-shape bucketing, a
+  parallel scan). The worked example for the [neural
+  section](#neural--accelerator-tokenizers-when-the-model-is-the-cost) below.
 
 When you're done, your pipeline should clear every box in the
 [Pre-launch checklist](#pre-launch-checklist) at the end of this skill.
 
 ---
 
-## TL;DR: the six decisions that dominate
+## TL;DR: the six decisions that dominate (I/O-bound pipelines)
 
 1. **Inside `map_shard`, run a `ThreadPoolExecutor` around the per-row
    fetch+parse.** GCS GETs are ~30–80 ms; gemmi parse releases the GIL.
@@ -86,7 +105,8 @@ When you're done, your pipeline should clear every box in the
 
 The rest of this skill walks through each layer of the pipeline
 (per-row, per-shard, per-job, per-output) with the code patterns
-these decisions imply.
+these decisions imply. (Compute-bound neural tokenizers take a
+different path — see the regime note above.)
 
 ---
 
@@ -663,6 +683,165 @@ If your projected wall-clock is already under the user's tolerance,
 
 ---
 
+## Neural / accelerator tokenizers (when the model is the cost)
+
+The sections above assume I/O dominates. When the per-row work is a neural
+forward pass on an accelerator, that assumption can invert — but **measure
+before you believe it**. Profile one row (the "Project before optimizing" step
+above) and confirm the encoder forward, not the GCS GET, is the bottleneck; a
+small model behind slow I/O can still be I/O-bound. If compute wins, the
+decisions below apply. exp40 (bio2token, a bidirectional Mamba encoder on TPU)
+is the worked example throughout; its measured shape:
+
+| step | cost | note |
+|---|---|---|
+| GCS GET + gemmi parse + adapt | ~2.5 ms/doc | negligible |
+| **encoder forward (the tokens), CPU** | **~0.19 ms/atom on 1 thread** (≈ 450 ms for a 2,350-atom mean protein) | dominates by ~100× |
+| encoder forward, one v6e TPU chip | ~0.34 s/doc steady-state; **+~40 s one-time XLA compile per length bucket** | compile dominates *short* runs |
+
+The first three decisions below are general to any neural tokenizer; the last
+applies only to models with a sequential recurrence.
+
+### Batch onto the accelerator — don't thread-per-row
+
+The I/O-bound pattern (`thread_per_row_in_shard`) runs one row per thread to
+overlap each fetch with its compute. For accelerator inference that's the wrong
+shape: throughput comes from **batching many inputs into one forward pass**
+(B=1 starves a systolic array), not from concurrent single-item forwards. So the
+shard body becomes two phases, not one interleaved pool:
+
+- **fetch + parse concurrently** (still I/O-bound — a thread pool earns its keep), then
+- **one batched forward pass per bucket** on the accelerator.
+
+The knob that matters is `--max-batch` (it bounds device memory), not
+`--fetch-concurrency`.
+
+```python
+def generate_shard(items, shard_info, *, device, max_batch, ...):
+    rows = list(items)
+    # Concurrent fetch + parse (I/O-bound).
+    with ThreadPoolExecutor(max_workers=min(fetch_concurrency, len(rows))) as pool:
+        parsed = [p for p in pool.map(fetch_and_parse, rows) if p is not None]
+    # ONE batched forward pass per length bucket — the throughput lever.
+    docs = tokenize_batched([p.structure for p in parsed], model, device, max_batch)
+    # Assemble + yield in input order.
+```
+
+One extra reason thread-per-row can *actively* backfire: if the model's forward
+holds the GIL, N threads serialize to ~1×. exp40's pure-Python Mamba scan is a
+`for t in range(L)` loop that does exactly this — but most models do their heavy
+work in GIL-releasing kernels, so this particular failure is model-dependent.
+The batching conclusion holds either way; don't lean on the GIL to justify it.
+
+### Static-length bucketing (variable-length inputs on XLA)
+
+Only relevant when your inputs are **variable-length** and you're on **XLA/TPU**
+(a fixed-shape tokenizer — e.g. image patches — skips this). XLA compiles one
+executable per input shape, so feeding raw lengths triggers a fresh multi-second
+compile for every distinct length — the job never finishes compiling. **Pad each
+input up to the smallest length in a short geometric ladder** (exp40:
+`256, 512, …, 16384`) so a whole run compiles only `~len(BUCKETS)` graphs.
+Oversized inputs fall back to their exact length (one rare extra compile) —
+never dropped or truncated.
+
+**If you pad, prove it's a no-op.** Padding is free only if padded positions
+can't change real positions' outputs — and *how* they might leak is
+architecture-specific: attention over padded keys, normalization statistics
+computed across padding, a bidirectional model's backward receptive field.
+Whatever your model, mask the padding and **pin it with a test that padded +
+batched outputs are bit-for-bit equal to the unpadded ones** — don't reason
+about the leak, assert its absence. (exp40's leak was a conv1d **bias** plus the
+backward scan of a bidirectional stack; the guard is `tests/test_bucketing.py`.)
+
+### Compile once per worker; warm a shared cache for the fleet
+
+The "memoize heavy init per worker" rule is doubly load-bearing on an
+accelerator: the checkpoint load **and** the first XLA compile (one per bucket)
+happen once per worker, cached in a module global. Raise
+`ZephyrContext(heartbeat_timeout=...)` well above the 120 s default so a cold
+compile isn't declared dead. A *short* run is dominated by that compile (exp40
+smoke: 74 s for 100 docs, mostly compile); only a run long enough to amortize it
+shows the real per-doc rate. For a many-worker full run, warm a **shared
+persistent XLA compile cache on GCS** once (a 1-VM job over one input per bucket)
+so "≈`len(BUCKETS)` compiles × N workers" collapses to "≈`len(BUCKETS)` compiles,
+once." You cannot AOT the TPU compile on a CPU/GPU CI runner — the executable is
+keyed to the TPU generation + libtpu version, so it must compile on that TPU.
+
+### If your model has a sequential recurrence (SSM / RNN / linear attention)
+
+Transformers and CNNs can skip this one. A model that scans the length axis with
+a recurrence — a state-space model (Mamba), an RNN, or linear attention — has a
+`for t in range(L)` step that is correct under XLA but **unrolls into an L-deep
+graph** (thousands of ops × layers × directions): enormous compile, slow
+executable. Rewrite the linear recurrence `h_t = a_t·h_{t-1} + b_t` as a
+Hillis-Steele associative scan over the affine-map operator
+`(a₂,b₂)∘(a₁,b₁) = (a₂·a₁, a₂·b₁+b₂)`: log₂(L) vectorized steps, a compact graph.
+Assert it matches the sequential recurrence to float eps (exp40
+`tests/test_scan.py`). On CPU it's ~3× *slower* (O(L·logL) work) — fine; it's the
+TPU executable you're optimizing, and local dev stays correct.
+
+## Provisioning TPU workers on Iris (fray `ResourceConfig.with_tpu`)
+
+CPU pipelines pass `ResourceConfig(cpu=, ram=, disk=, regions=, preemptible=)`.
+For TPU workers the accelerator lives in the `device` field — use the builder,
+and keep the launcher (`iris job run`) a tiny CPU coordinator:
+
+```python
+ctx = ZephyrContext(
+    max_workers=args.max_workers,
+    resources=ResourceConfig.with_tpu(
+        "v6e-4",                     # a real marin pool + zone (see traps below)
+        zone="us-east5-b",
+        regions=["us-east5"],        # PIN — else the worker inherits the launcher's region
+        preemptible=True,
+    ),
+    coordinator_resources=ResourceConfig(cpu=1, ram="2g"),
+    heartbeat_timeout=600.0,         # absorb cold XLA compile
+)
+```
+
+```bash
+# Launcher is CPU-only; --extra tpu makes workers `uv sync` the torch_xla wheel.
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB --extra tpu -- \
+    python cli.py generate --device xla --tpu-type v6e-4 --zone us-east5-b ...
+```
+
+Worker-side torch_xla init (Iris injects `PJRT_DEVICE=TPU` per task — no env
+setup), loading the model once per worker:
+
+```python
+import torch_xla
+dev = torch_xla.device()
+model = load_model().to(dev).eval()          # module global; once per worker
+tokens = model.tokenize(coords.to(dev), mask.to(dev))
+torch_xla.sync()                             # flush the lazy graph each batch
+tokens = tokens.to("cpu")
+```
+
+### TPU traps the exp40 smoke surfaced (all silent-until-scheduled)
+
+- **`[dependency-groups] dev` must exist**, or iris's runtime `uv sync --group
+  dev` aborts and *no deps install* — the worker dies on the first third-party
+  `import` (looks like a missing-package bug; is a total sync failure). Add
+  `[dependency-groups]\ndev = []` + `[tool.uv] prerelease = "allow"` + a
+  dual-platform `environments` list (matches exp53).
+- **Pin `regions` consistently with `zone`.** `ResourceConfig.regions=None` (the
+  default) means *inherit the launcher job's region*. Launcher in `us-central2` +
+  pinned `zone=us-central1-a` → contradictory constraint →
+  `unschedulable: no groups in zone`. Pass `regions=[zone-minus-suffix]`.
+- **Get `(tpu_type, zone)` from the live cluster config, not the `TpuType`
+  Literal.** marin's pools live in `iris/config/marin.yaml → tpu_pools`; the
+  Literal lists sizes/zones the cluster doesn't offer. And **preemptible pools
+  contend**: v5p-8 sat `pending` ("…has sufficient [capacity]") for 10+ min;
+  the far larger **v6e-preemptible** pool (us-east5-b) scheduled instantly.
+  Prefer a big pool and co-locate `--out` (and, ideally, the input manifest)
+  with its zone's region — that also keeps egress at zero.
+- **A v6e-4 / v5p-8 VM is 4 chips; one Python worker uses chip 0** — 3 idle.
+  Accept for a first correctness run; fan out (SPMD, or 4 workers/VM) only if
+  measured throughput needs it.
+
+---
+
 ## Pre-launch checklist
 
 Before triggering the full run, verify each of these:
@@ -707,6 +886,22 @@ Before triggering the full run, verify each of these:
       worker needs (one schema peek at submission time).
 - [ ] `--out` contains `{shard:05d}-of-{total:05d}` for the full run;
       smoke runs may omit it.
+
+**Neural / accelerator tokenizer (only if the per-row work is model inference)**
+- [ ] Shard body is **two-phase** (concurrent fetch+parse → one *batched*
+      forward pass per bucket), not `thread_per_row` — accelerator throughput
+      comes from batching, not concurrent single-item forwards.
+- [ ] Variable-length inputs are **length-bucketed** to a short fixed ladder so
+      XLA compiles `~len(BUCKETS)` graphs, not one per distinct length.
+- [ ] If you pad for bucketing, a test asserts **padded+batched outputs ==
+      unpadded outputs** bit-for-bit (mask the padding; leak vectors are
+      architecture-specific).
+- [ ] Worker requests a TPU via `ResourceConfig.with_tpu(type, zone=,
+      regions=[zone-region], preemptible=)`; `(type, zone)` come from
+      `marin.yaml → tpu_pools` (a real, non-contended pool), and `--out` +
+      manifest are co-located with that region (zero egress).
+- [ ] `[dependency-groups] dev = []` present; `heartbeat_timeout` raised for
+      cold compile; model loaded once per worker at module scope.
 
 **Validation**
 - [ ] Local unit tests pass.
