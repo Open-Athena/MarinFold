@@ -461,6 +461,28 @@ class S3CheckpointSync(_Callback):
         self._sync(trainer)
 
 
+# Weight-decay mask — MODULE LEVEL for the SAME reason as the callbacks above:
+# it is handed to MegatronOptimizerModule(no_weight_decay_cond=...), and NeMo's
+# ModelCheckpoint fiddle-io-dumps the trainer graph (which includes the optimizer)
+# at every save. A `main.<locals>` closure crashes that serialization at the first
+# checkpoint (fiddle walks the qualname `main.<locals>._no_wd_cond` by getattr ->
+# "'function' object has no attribute '<locals>'"), restart-looping the run before
+# any checkpoint banks. A module-level function pyref's cleanly. It reads
+# wd_embeddings from an env var (set in main) instead of closing over `args`.
+# Excludes biases + 1-D (norms) AND embeddings/output (matches Levanter's #75
+# default; Megatron's default decays the 2-D embedding/output at wd 0.2).
+def _no_wd_cond(name, param):
+    base = name.endswith(".bias") or len(param.shape) == 1
+    if os.environ.get("EXP112_WD_EMBEDDINGS") == "1":
+        res = base
+    else:
+        n = name.lower()
+        res = base or ("embedding" in n) or ("output_layer" in n)
+    if os.environ.get("EXP112_DEBUG_WD"):
+        print(f"[wd] {'NO_WD' if res else 'decay'} shape={tuple(param.shape)} {name}", flush=True)
+    return res
+
+
 def main() -> None:
     args = parse_args()
     if args.tiny:
@@ -496,6 +518,29 @@ def main() -> None:
             _dist.get_rank = real
 
     _bb.BlendedMegatronDatasetBuilder.build = _build_local_rank
+
+    # Belt-and-suspenders: NeMo's ModelCheckpoint._save_checkpoint fiddle-io-dumps
+    # the trainer context ("context/" YAML) on every save. If ANY object in that
+    # graph isn't fiddle-serializable, the exception propagates and kills training
+    # at the first checkpoint. We don't use "context/" for resume (AutoResume reads
+    # the Megatron DCP weights/optimizer, and we rebuild the model in-code each
+    # launch), so make the dump non-fatal: a serialization failure logs + skips the
+    # context rather than crashing the run. The module-level _no_wd_cond above fixes
+    # the known offender; this guards any future one.
+    try:
+        import nemo.lightning.io.mixin as _io_mixin
+        _orig_io_dump = _io_mixin.IOMixin.io_dump
+
+        def _safe_io_dump(self, *a, **k):
+            try:
+                return _orig_io_dump(self, *a, **k)
+            except Exception as e:  # noqa: BLE001
+                print(f"[exp112] NeMo io_dump skipped (non-fatal; resume uses DCP "
+                      f"weights, not fiddle context): {type(e).__name__}: {e}", flush=True)
+
+        _io_mixin.IOMixin.io_dump = _safe_io_dump
+    except Exception as e:  # noqa: BLE001
+        print(f"[exp112] could not install io_dump guard: {e}", flush=True)
 
     # Tokenizer (tiny, from HF) -> real vocab size for faithful head FLOPs.
     from nemo.collections.common.tokenizers.huggingface.auto_tokenizer import AutoTokenizer
@@ -590,20 +635,11 @@ def main() -> None:
     from nemo.lightning.pytorch.optim import CosineAnnealingScheduler, MegatronOptimizerModule
 
     # Weight-decay mask matching Levanter's default (#75): exclude biases, norms
-    # (1-D), AND embeddings/output. Megatron's default only excludes biases+1-D, so
-    # it decays the 2-D embedding/output matrices at wd 0.2 -> over-regularizes a
-    # small-vocab model. Passing no_weight_decay_cond OVERRIDES Megatron's default,
-    # so replicate its bias/1-D rule here too. (Set --wd-embeddings 1 to revert.)
-    def _no_wd_cond(name, param):
-        base = name.endswith(".bias") or len(param.shape) == 1
-        if args.wd_embeddings:
-            res = base
-        else:
-            n = name.lower()
-            res = base or ("embedding" in n) or ("output_layer" in n)
-        if os.environ.get("EXP112_DEBUG_WD"):
-            print(f"[wd] {'NO_WD' if res else 'decay'} shape={tuple(param.shape)} {name}", flush=True)
-        return res
+    # (1-D), AND embeddings/output (Megatron's default only excludes biases+1-D, so
+    # it decays the 2-D embedding/output at wd 0.2 -> over-regularizes a small-vocab
+    # model). The mask fn is MODULE-LEVEL (_no_wd_cond, above) so it survives NeMo's
+    # fiddle io_dump at checkpoint save; it reads wd_embeddings via this env var.
+    os.environ["EXP112_WD_EMBEDDINGS"] = "1" if args.wd_embeddings else "0"
 
     opt = MegatronOptimizerModule(
         config=OptimizerConfig(
