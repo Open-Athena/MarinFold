@@ -28,10 +28,10 @@ See [parent issue](https://github.com/Open-Athena/MarinFold/issues/2).
 
 - Add [bio2token](https://github.com/flagshippioneering/bio2token/tree/main) as a `uv` dep in this experiment's pyproject.
 - Based on our model for PDBs, write an adapter for our structure of data to their [expected pdb dict format](https://github.com/flagshippioneering/bio2token/blob/e3139ba655aa71e2afd0904ef46679b2796815d9/src/bio2token/data/utils/utils.py#L300).
-- Create an efficient Zephyr pipeline (see the [Zephyr agent skill](.agents/skills/zephyr-pipeline-performance/SKILL.md)) that adapts our data source to inference batches (via the previous step), and make it perform inference via the [bio2token encoder](https://github.com/flagshippioneering/bio2token/blob/main/src/bio2token/models/encoder.py). The encoder outputs a 1d tensor of integers (tokens).
+- Create an efficient Zephyr pipeline (see the [Zephyr agent skill](../../.agents/skills/zephyr-pipeline-performance/SKILL.md)) that adapts our data source to inference batches (via the previous step), and make it perform inference via the [bio2token encoder](https://github.com/flagshippioneering/bio2token/blob/main/src/bio2token/models/encoder.py). The encoder outputs a 1d tensor of integers (tokens).
 - Hydrate the model with the official [bio2token checkpoint](https://github.com/flagshippioneering/bio2token/blob/main/checkpoints/bio2token/bio2token_pretrained/epoch%3D0243-val_loss_epoch%3D0.71-best-checkpoint.ckpt).
 - Update the torch backend to [target XLA/TPUs](https://docs.pytorch.org/xla/master/learn/migration-to-xla-on-tpus.html).
-- Write the token documents in a similar document format (i.e. parquet) with a similar chunking/shard structure as the [standard token documents](experiments/exp1_document_structures_contacts_and_distances_v1/README.md). 
+- Write the token documents in a similar document format (i.e. parquet) with a similar chunking/shard structure as the [standard token documents](../exp1_document_structures_contacts_and_distances_v1/README.md). 
   - See this parquet store for reference: `gs://marin-us-central1/protein-structure/MarinFold/exp5/corpus_v2-{shard:05d}-of-{total:05d}.parquet`
 
 ## Success criteria
@@ -42,8 +42,72 @@ See [parent issue](https://github.com/Open-Athena/MarinFold/issues/2).
 
 ## Results
 
-_(Fill in after the run completes.)_
+**bio2token documents generate correctly at scale on Iris/Zephyr TPUs.** The
+`val` split is published and ready for Tim's review:
+
+- **Corpus:** `gs://marin-us-east5/protein-structure/MarinFold/exp40/val/corpus-{shard:05d}-of-00022.parquet`
+- **41,954 documents, 0 malformed** (every doc `<bio2token-v1> … <end>`, one
+  `<bt###>` code per atom, `num_tokens == 4 + seq_length + num_atoms`).
+  86.6 M atoms tokenized; `num_atoms` p50 1,551 / max 11,773; `seq_length`
+  p50 197 / max 1,490. Schema carries the manifest provenance (split, plddt,
+  cluster ids, round, …).
+- **Run:** 22 shards on **8 × v6e-4 preemptible** workers (us-east5-b),
+  ~16 min end-to-end. All compute + manifest + output co-located in us-east5 →
+  **zero cross-region egress**.
+
+**Throughput (measured, 1 v6e chip, XLA compile amortized):** ~**0.108 s/doc**,
+~**20,300 atoms/s** (full 2,000-row shard). A short run is dominated by the
+one-time XLA compile (~7 graphs, one per length bucket): the 100-doc smoke was
+0.74 s/doc, mostly compile.
+
+**How it works (the deployable pipeline).** bio2token's published encoder needs
+CUDA-only kernels; exp40 reimplements the all-atom Mamba-1 encoder + FSQ in
+**pure, XLA-compilable PyTorch** (`mamba.py`, `model.py`), loads the official
+checkpoint exactly (round-trip RMSD 0.94 Å), and serves it on TPU via a
+two-phase Zephyr worker (`generate_rows.py`): concurrent fetch+parse, then **one
+batched forward pass per length bucket** (`tokenizer.py`). Three properties make
+the TPU path work: an **associative (parallel) scan** replacing the sequential
+recurrence (compact XLA graph, bit-exact), **static-length bucketing + masking**
+(compile once per bucket; padded tokens are bit-for-bit equal to unpadded — see
+`tests/test_bucketing.py`), and **token-budgeted batches** (`B·L ≤ 131072`) that
+keep HBM flat (a fixed batch count OOMs the largest bucket on v6e). Provisioned
+with `ResourceConfig.with_tpu("v6e-4", zone="us-east5-b", regions=["us-east5"])`.
+
+**Open (throughput headroom, not correctness):** a worker uses only 1 of the
+v6e-4's 4 chips — multi-chip fan-out (or a shared GCS XLA compile-cache) is the
+lever for a cost-efficient full 4.2 M-doc run. See
+[`data/timings.csv`](data/timings.csv).
+
+### Reproduce
+
+```bash
+# Iris TPU smoke (1 worker, 100 docs) — validates the full path end-to-end.
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB --extra tpu -- \
+  python cli.py generate \
+    --input 'gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/selection_manifest/val/shard_00000.parquet' \
+    --out   'gs://marin-us-east5/protein-structure/MarinFold/exp40/smoke/corpus.parquet' \
+    --device xla --tpu-type v6e-4 --zone us-east5-b --num-docs 100 --max-workers 1
+
+# Full split (per-shard output; scale --max-workers).
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB --extra tpu -- \
+  python cli.py generate \
+    --input 'gs://.../selection_manifest/val/shard_*.parquet' \
+    --out   'gs://marin-us-east5/.../exp40/val/corpus-{shard:05d}-of-{total:05d}.parquet' \
+    --device xla --tpu-type v6e-4 --zone us-east5-b --max-workers 8
+```
+
+> Region note: output/compute use **us-east5** (co-located with the input
+> manifest and the v6e pool) rather than the issue's `us-central1` — the v5p
+> pool in us-central1 was capacity-contended, and co-location keeps egress at
+> zero. Tim's review needs the corpus, not a specific region.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The reach question — "can Zephyr do neural inference en masse?" — is answered
+**yes**: a checkpoint-faithful, pure-PyTorch bio2token tokenizer runs on TPU
+through the existing Zephyr/Iris data-generation harness, producing a clean
+`val` corpus with zero malformed documents. Whether the documents are *better*
+(smaller, and as good as contacts-v1 for downstream prediction) is the next
+question — it needs Tim's review of the published corpus plus a head-to-head on
+a downstream eval. The train/test splits and any full-scale run should first add
+multi-chip fan-out or a shared XLA compile-cache for cost efficiency.

@@ -36,6 +36,21 @@ dev = [
     "pandas",
 ]
 
+# iris's runtime setup runs `uv sync --group dev`; without this table the sync
+# aborts ("Group `dev` is not defined") and no deps install on the worker.
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+prerelease = "allow"   # marin-iris/zephyr/finelog ship as .dev prereleases
+# Resolve for both the local dev box (darwin) and the linux cluster workers so
+# the same lock serves both (torch_xla is gated to linux-x86_64 by markers).
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
 [tool.pytest.ini_options]
 markers = [
     "network: test downloads the pretrained checkpoint (needs internet)",

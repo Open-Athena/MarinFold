@@ -29,12 +29,10 @@ import torch
 
 from bio2token.data.utils.molecule_conventions import (
     AA_ABRV_REVERSED,
-    AA_BB_REF,
     AA_C_REF,
     BB_ATOMS_AA,
     BB_ATOMS_RNA,
     RNA_ABRV_REVERSED,
-    RNA_BB_REF,
     RNA_C_REF,
     SC_ATOMS_AA,
     SC_ATOMS_RNA,
@@ -114,9 +112,9 @@ def parse_structure(source, *, entry_id: str | None = None) -> ParsedStructure:
 def _canonical_layout(res: Residue):
     """Return (atom_names, token_classes) for one residue in canonical order."""
     if res.res_type == "aa":
-        bb, sc, bb_ref, c_ref = BB_ATOMS_AA, SC_ATOMS_AA[res.name], AA_BB_REF, AA_C_REF
+        bb, sc, c_ref = BB_ATOMS_AA, SC_ATOMS_AA[res.name], AA_C_REF
     else:
-        bb, sc, bb_ref, c_ref = BB_ATOMS_RNA, SC_ATOMS_RNA[res.name], RNA_BB_REF, RNA_C_REF
+        bb, sc, c_ref = BB_ATOMS_RNA, SC_ATOMS_RNA[res.name], RNA_C_REF
     names = list(bb) + list(sc)
     classes = [C_REF_CLASS if c_ref[i] else BB_CLASS for i in range(len(bb))]
     classes += [SC_CLASS] * len(sc)
@@ -138,7 +136,7 @@ def to_bio2token_batch(parsed: ParsedStructure, *, add_batch_dim: bool = True) -
     atom_name: list[str] = []
     for r_idx, res in enumerate(parsed.residues):
         names, classes = _canonical_layout(res)
-        for name, cls in zip(names, classes):
+        for name, cls in zip(names, classes, strict=True):
             coords.append(res.atoms.get(name, _NAN3))
             token_class.append(cls)
             residue_index.append(r_idx)
@@ -146,13 +144,17 @@ def to_bio2token_batch(parsed: ParsedStructure, *, add_batch_dim: bool = True) -
 
     structure = np.asarray(coords, dtype=np.float64)          # (N_all, 3)
     known = ~np.isnan(structure).any(axis=1)                  # (N_all,)
+    if not known.any():
+        # Every heavy atom missing -> centering on an empty barycenter is NaN and
+        # would emit a degenerate 0-atom document. Fail loud instead.
+        raise ValueError(f"{parsed.entry_id}: no known heavy atoms to tokenize")
     structure[known] -= structure[known].mean(axis=0)         # center on known barycenter
 
     batch = {
         "structure": torch.tensor(structure[known], dtype=torch.float32),
         "token_class": torch.tensor(np.asarray(token_class)[known], dtype=torch.long),
         "residue_index": torch.tensor(np.asarray(residue_index)[known], dtype=torch.long),
-        "atom_name": [a for a, k in zip(atom_name, known) if k],
+        "atom_name": [a for a, k in zip(atom_name, known, strict=True) if k],
     }
     if add_batch_dim:
         for key in ("structure", "token_class", "residue_index"):

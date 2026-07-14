@@ -29,9 +29,12 @@ from bio2token.layers.fsq import FSQ, FSQConfig
 from mamba import MambaStack
 
 # Official pretrained checkpoint (~14 MB, no Git-LFS). Downloaded on demand;
-# not committed (repo policy: no large binaries in-tree).
+# not committed (repo policy: no large binaries in-tree). Pinned to the same
+# commit the bio2token conventions were vendored from (not a mutable branch
+# ref) so the artifact can't change under us — reproducible loads.
+_BIO2TOKEN_SHA = "e3139ba655aa71e2afd0904ef46679b2796815d9"
 CKPT_URL = (
-    "https://raw.githubusercontent.com/flagshippioneering/bio2token/main/"
+    f"https://raw.githubusercontent.com/flagshippioneering/bio2token/{_BIO2TOKEN_SHA}/"
     "checkpoints/bio2token/bio2token_pretrained/"
     "epoch%3D0243-val_loss_epoch%3D0.71-best-checkpoint.ckpt"
 )
@@ -45,8 +48,8 @@ class Encoder(nn.Module):
         self.encoder = MambaStack(d_input=3, d_output=128, n_layer=4, bidirectional=True)
         self.quantizer = FSQ(FSQConfig(levels=FSQ_LEVELS, d_input=128))
 
-    def forward(self, structure):
-        encoding, indices = self.quantizer(self.encoder(structure))
+    def forward(self, structure, mask=None):
+        encoding, indices = self.quantizer(self.encoder(structure, mask))
         return encoding, indices
 
 
@@ -55,8 +58,8 @@ class Decoder(nn.Module):
         super().__init__()
         self.decoder = MambaStack(d_input=128, d_output=3, n_layer=6, bidirectional=True)
 
-    def forward(self, encoding):
-        return self.decoder(encoding)
+    def forward(self, encoding, mask=None):
+        return self.decoder(encoding, mask)
 
 
 class Bio2Token(nn.Module):
@@ -69,15 +72,20 @@ class Bio2Token(nn.Module):
         self.decoder = Decoder()
 
     @torch.no_grad()
-    def tokenize(self, structure):
-        """structure: (B, L, 3) float -> indices: (B, L) long in [0, 4095]."""
-        _, indices = self.encoder(structure)
+    def tokenize(self, structure, mask=None):
+        """structure: (B, L, 3) float -> indices: (B, L) long in [0, 4095].
+
+        ``mask`` (B, L; 1 for real atoms) is required when ``structure`` is
+        right-padded to a fixed bucket length; padded positions still emit a
+        token but the real positions are unaffected (see mamba.py docstring).
+        """
+        _, indices = self.encoder(structure, mask)
         return indices
 
     @torch.no_grad()
-    def reconstruct(self, structure):
-        encoding, indices = self.encoder(structure)
-        return self.decoder(encoding), indices
+    def reconstruct(self, structure, mask=None):
+        encoding, indices = self.encoder(structure, mask)
+        return self.decoder(encoding, mask), indices
 
 
 def get_checkpoint(cache_dir: str | None = None) -> str:
@@ -98,5 +106,8 @@ def load_bio2token(ckpt_path: str | None = None, device: str = "cpu") -> Bio2Tok
     sd = torch.load(ckpt_path, map_location="cpu", weights_only=False)["state_dict"]
     stripped = {(k[len("model."):] if k.startswith("model.") else k): v for k, v in sd.items()}
     model = Bio2Token()
-    missing, unexpected = model.load_state_dict(stripped, strict=True)
+    # strict=True raises on any missing/unexpected key, so a successful return
+    # is itself the exact-architecture-match assertion (module tree mirrors the
+    # checkpoint; see the class docstrings).
+    model.load_state_dict(stripped, strict=True)
     return model.to(device).eval()

@@ -5,10 +5,10 @@
 
 The single load-bearing assertion is reconstruction RMSD: a protein can only
 round-trip through encoder -> FSQ -> decoder to sub-Angstrom accuracy if BOTH
-the official weights loaded correctly AND our hand-written selective scan is
+the official weights loaded correctly AND the pure-PyTorch selective scan is
 numerically faithful to the original CUDA Mamba. A wrong scan yields garbage
-coordinates, not a near-miss. This is the Phase-0 gate; keep it green as the
-XLA port evolves (run it after any change to ``mamba.py``).
+coordinates, not a near-miss. Keep this assertion green after any change to
+``mamba.py``.
 
 Marked ``network``: downloads the ~14 MB pretrained checkpoint on first run.
 Run from the experiment dir: ``uv run pytest tests/ -m network``.

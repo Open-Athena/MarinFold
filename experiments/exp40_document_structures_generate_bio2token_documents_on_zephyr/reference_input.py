@@ -6,8 +6,9 @@
 This is the *oracle* path: it builds the ``structure`` / ``token_class`` /
 mask tensors exactly the way upstream ``scripts/test_pdb.py`` does — through
 vendored ``pdb_2_dict`` + ``uniform_dataframe`` + ``compute_masks``. It is
-what the round-trip test tokenizes and what our own (gemmi-based) production
-adapter in a later phase must match.
+what the round-trip test tokenizes, and the reference that the gemmi-based
+production adapter (``adapt.py``) is validated against (see
+``tests/test_adapt.py``).
 
 bio2token's ``pdb_2_dict`` is biopython/PDB based, so a cif input is first
 converted to PDB with gemmi.

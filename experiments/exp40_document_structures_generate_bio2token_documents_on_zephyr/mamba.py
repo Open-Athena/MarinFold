@@ -13,18 +13,28 @@ runs on CPU/MPS for local development.
 The inner mixer is structurally the well-known reference
 `johnma2006/mamba-minimal` (https://github.com/johnma2006/mamba-minimal) —
 identical canonical layer names (``in_proj / conv1d / x_proj / dt_proj /
-A_log / D / out_proj``) and the same sequential selective scan. What we add
-on top is bio2token's stack semantics: a **bidirectional, weight-shared**
-pass (run each block forward and on the flipped sequence, then sum), an
-input/output projection, and a final ``norm_f`` — matching the parameter
-layout of the official checkpoint exactly (verified: state_dict loads with
-no missing/unexpected keys). See ``model.py`` for the checkpoint loader.
+A_log / D / out_proj``) and the same sequential selective scan. Added on top
+is bio2token's stack semantics: a **bidirectional, weight-shared** pass (run
+each block forward and on the flipped sequence, then sum), an input/output
+projection, and a final ``norm_f`` — matching the parameter layout of the
+official checkpoint exactly, so its ``state_dict`` loads with no missing or
+unexpected keys. See ``model.py`` for the checkpoint loader.
 
-Perf note for the XLA port: ``_selective_scan`` is a sequential recurrence
-over the length axis. It is correct on every backend but, unrolled, builds
-a large XLA graph; replacing it with an associative/parallel scan (and
-static-length bucketing) is the throughput work for TPU. Correctness does
-not depend on that change.
+XLA port: ``_selective_scan`` is an associative (Hillis-Steele) scan over the
+length axis — log2(L) fully-vectorized steps, no Python loop — so it compiles
+to a compact, fast XLA graph instead of an L-deep unrolled recurrence. It is
+numerically identical to the textbook sequential recurrence, pinned to float
+precision by ``tests/test_scan.py`` (incl. L=1 and non-power-of-two lengths).
+Combined with static-length bucketing in the tokenizer (pad each structure to
+one of a few fixed lengths so XLA compiles once per bucket), this is what makes
+TPU inference practical.
+
+Bucketing pads sequences on the right, which requires a ``mask`` (1 for real
+atoms, 0 for padding): the stack is **bidirectional**, so end-padding would
+otherwise leak into real positions through the backward (flipped) scan and the
+conv1d bias. Masking zeroes the hidden state and the scan input at padded
+positions, making the padded forward pass bit-for-bit equal to the unpadded
+one on the real positions (validated in tests/test_bucketing.py).
 """
 
 import torch
@@ -63,12 +73,18 @@ class MambaMixer(nn.Module):
         self.D = nn.Parameter(torch.ones(d_inner))
         self.out_proj = nn.Linear(d_inner, d_model, bias=False)
 
-    def forward(self, x):  # x: (B, L, d_model)
+    def forward(self, x, mask=None):  # x: (B, L, d_model); mask: (B, L) or None
         L = x.shape[1]
         xz = self.in_proj(x)
         xin, z = xz.chunk(2, dim=-1)                     # each (B, L, d_inner)
         xc = self.conv1d(xin.transpose(1, 2))[..., :L]   # depthwise causal conv
         xc = F.silu(xc.transpose(1, 2))
+        if mask is not None:
+            # Zero the padded positions' scan input so ``dBu`` there is 0 and the
+            # recurrence carries no state through padding (load-bearing for the
+            # backward pass; see module docstring). The conv1d bias otherwise
+            # makes padding non-zero even for all-zero inputs.
+            xc = xc * mask.unsqueeze(-1)
         dt, Bmat, Cmat = torch.split(
             self.x_proj(xc), [self.dt_rank, self.d_state, self.d_state], dim=-1)
         dt = F.softplus(self.dt_proj(dt))                # (B, L, d_inner)
@@ -80,16 +96,27 @@ class MambaMixer(nn.Module):
 
     @staticmethod
     def _selective_scan(u, dt, A, Bmat, Cmat):
+        """Associative (Hillis-Steele) inclusive scan of the linear recurrence
+        ``h_t = dA_t * h_{t-1} + dBu_t``, then ``y_t = <C_t, h_t>``.
+
+        Each step composes the per-position affine maps ``x -> a*x + b`` using
+        the associative operator ``(a2,b2) ∘ (a1,b1) = (a2*a1, a2*b1 + b2)``.
+        log2(L) vectorized steps, no Python loop over L — XLA compiles this to
+        a compact graph. Identical to the sequential recurrence to float eps.
+        """
         # u, dt: (B, L, d_inner); A: (d_inner, d_state); B, C: (B, L, d_state)
-        Bsz, L, d_inner = u.shape
-        dA = torch.exp(dt.unsqueeze(-1) * A)                          # (B, L, d_inner, d_state)
-        dBu = dt.unsqueeze(-1) * Bmat.unsqueeze(2) * u.unsqueeze(-1)  # (B, L, d_inner, d_state)
-        h = torch.zeros(Bsz, d_inner, A.shape[1], device=u.device, dtype=u.dtype)
-        ys = []
-        for t in range(L):
-            h = dA[:, t] * h + dBu[:, t]
-            ys.append(torch.einsum("bds,bs->bd", h, Cmat[:, t]))
-        return torch.stack(ys, dim=1)                                 # (B, L, d_inner)
+        L = u.shape[1]
+        a = torch.exp(dt.unsqueeze(-1) * A)                          # (B, L, d_inner, d_state)
+        b = dt.unsqueeze(-1) * Bmat.unsqueeze(2) * u.unsqueeze(-1)   # (B, L, d_inner, d_state)
+        shift = 1
+        while shift < L:
+            # prev[t] = scan value at t-shift; identity (a=1, b=0) for t < shift.
+            a_prev = F.pad(a[:, :L - shift], (0, 0, 0, 0, shift, 0), value=1.0)
+            b_prev = F.pad(b[:, :L - shift], (0, 0, 0, 0, shift, 0), value=0.0)
+            b = a * b_prev + b        # compose (outer=current, inner=prev); uses old a
+            a = a * a_prev
+            shift *= 2
+        return torch.einsum("blds,bls->bld", b, Cmat)                # (B, L, d_inner)
 
 
 class Block(nn.Module):
@@ -100,10 +127,10 @@ class Block(nn.Module):
         self.norm = RMSNorm(d_model)
         self.mixer = MambaMixer(d_model=d_model)
 
-    def forward(self, hidden_states, residual):
+    def forward(self, hidden_states, residual, mask=None):
         residual = hidden_states if residual is None else (hidden_states + residual)
         hidden_states = self.norm(residual)
-        return self.mixer(hidden_states), residual
+        return self.mixer(hidden_states, mask), residual
 
 
 class MambaStack(nn.Module):
@@ -124,14 +151,22 @@ class MambaStack(nn.Module):
         self.output_projection = (nn.Identity() if d_output == d_model
                                   else nn.Linear(d_model, d_output, bias=False))
 
-    def forward(self, input_ids):  # (B, L, d_input)
+    def forward(self, input_ids, mask=None):  # (B, L, d_input); mask: (B, L) or None
         hidden_states = self.input_projection(input_ids)
         residual = None
+        # Flipped mask for the backward pass; zeroing padded hidden states each
+        # layer keeps the conv1d from reading non-zero padding as a neighbor.
+        mask_c = None if mask is None else mask.unsqueeze(-1).to(hidden_states.dtype)
+        mask_flip = None if mask is None else mask.flip(1)
         for layer in self.layers:
-            h_fwd, r_fwd = layer(hidden_states, residual)
+            if mask_c is not None:
+                hidden_states = hidden_states * mask_c
+                residual = residual if residual is None else residual * mask_c
+            h_fwd, r_fwd = layer(hidden_states, residual, mask)
             if self.bidirectional:
                 h_bwd, r_bwd = layer(hidden_states.flip(1),
-                                     None if residual is None else residual.flip(1))
+                                     None if residual is None else residual.flip(1),
+                                     mask_flip)
                 hidden_states = h_fwd + h_bwd.flip(1)
                 residual = r_fwd + r_bwd.flip(1)
             else:
