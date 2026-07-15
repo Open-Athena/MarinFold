@@ -102,5 +102,7 @@ torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
 # `path = "../../models"`. Iris bundles only this experiment dir (`git ls-files`
 # from cwd), so a relative path that escapes the dir fails on the worker. A git
 # source is fetched on the worker, exactly like exp85's `marinfold-models` dep.
-# rev is filled at launch with the exact commit used for the recorded run.
-marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "REPLACE_WITH_LAUNCH_COMMIT" }
+# Pinned to main tip 0c2fd36 (models/ is unchanged from main on this branch); this
+# is the defaults.py whose default_train/default_tokenize signatures + hf-bucket
+# handling this experiment's code was written against. Bump if models/ changes.
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "0c2fd369a36822f4f9b9055a3af5da3ab41e4e2b" }
