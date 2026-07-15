@@ -42,11 +42,11 @@ def test_generate_shard_inline_batched():
                               device="cpu", max_batch=2))
     assert len(out) == 3
     for src, doc in zip(rows, out, strict=True):
-        assert doc["structure"] == "bio2token-v1"
+        assert doc["structure"] == "bio2token-v2"
         assert doc["entry_id"] == src["entry_id"]           # preserved
         assert doc["split"] == "val" and doc["round"] == 4  # provenance passthrough
         assert doc["struct_cluster_id"] == src["struct_cluster_id"]
-        assert doc["document"].startswith("<bio2token-v1> <begin_sequence> ")
+        assert doc["document"].startswith("<bio2token-v2> <begin_sequence> ")
         assert doc["document"].endswith(" <end>")
         assert doc["document"].count("<bt") == doc["num_atoms"]
 

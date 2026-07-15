@@ -87,6 +87,15 @@ class Bio2Token(nn.Module):
         encoding, indices = self.encoder(structure, mask)
         return self.decoder(encoding, mask), indices
 
+    @torch.no_grad()
+    def decode_indices(self, indices, mask=None):
+        """indices (B, L) long -> coords (B, L, 3). The inverse of ``tokenize``:
+        dequantize the FSQ indices back to continuous codes and run the decoder.
+        Reconstructs a structure from a document's tokens (the atoms must be in
+        the encoder's canonical order — see ``decode.py``)."""
+        codes = self.encoder.quantizer.indices_to_codes(indices)
+        return self.decoder(codes, mask)
+
 
 def get_checkpoint(cache_dir: str | None = None) -> str:
     """Return a local path to the pretrained checkpoint, downloading if absent."""

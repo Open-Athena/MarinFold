@@ -42,23 +42,42 @@ See [parent issue](https://github.com/Open-Athena/MarinFold/issues/2).
 
 ## Results
 
-**bio2token documents generate correctly at scale on Iris/Zephyr TPUs.** The
-`val` split is published and ready for Tim's review:
+**bio2token runs end-to-end on Iris/Zephyr TPUs, emitting the self-describing
+`bio2token-v2` documents described below.** The infrastructure was validated by
+a full 22-shard `val` run; the document format was then redesigned per review
+(see the [PR thread](https://github.com/Open-Athena/MarinFold/pull/114)), so the
+published corpus predates the format change and is being **regenerated to v2**.
 
-- **Corpus:** `gs://marin-us-east5/protein-structure/MarinFold/exp40/val/corpus-{shard:05d}-of-00022.parquet`
-- **41,954 documents, 0 malformed** (every doc `<bio2token-v1> … <end>`, one
-  `<bt###>` code per atom, `num_tokens == 4 + seq_length + num_atoms`).
-  86.6 M atoms tokenized; `num_atoms` p50 1,551 / max 11,773; `seq_length`
-  p50 197 / max 1,490. Schema carries the manifest provenance (split, plddt,
-  cluster ids, round, …).
-- **Run:** 22 shards on **8 × v6e-4 preemptible** workers (us-east5-b),
-  ~16 min end-to-end. All compute + manifest + output co-located in us-east5 →
-  **zero cross-region egress**.
+### Document format (`bio2token-v2`)
 
-**Throughput (measured, 1 v6e chip, XLA compile amortized):** ~**0.108 s/doc**,
-~**20,300 atoms/s** (full 2,000-row shard). A short run is dominated by the
-one-time XLA compile (~7 graphs, one per length bucket): the 100-doc smoke was
-0.74 s/doc, mostly compile.
+Each atom is a **self-describing triple** `<pN> <atom-name> <btC>` (residue
+position, atom name, bio2token code), and the triples are **shuffled** into a
+random per-document order so the model never has to index into a positional
+stream; a `<pN> <RES>` sequence section precedes them:
+
+    <bio2token-v2> <begin_sequence> <p0> <ASP> <p1> <ILE> …
+      <begin_statements> <p51> <CB> <bt3891> <p6> <OD1> <bt3983> … <end>
+
+Token strings (`<MET>`, `<CA>`, `<pN>`, the section markers) are **reused
+verbatim from the contacts document structures** so bio2token documents share a
+token space with them and can be mixed under one tokenizer; only
+`<bio2token-v2>` and the 4096 `<bt*>` codes are minted here. The format is
+**losslessly invertible** (a document decodes back to the exact per-atom codes
+in canonical order), and decoding to coordinates reproduces the original CA
+positions at **0.81 Å CA-RMSD** on 1QYS — bio2token's lossy-FSQ reconstruction
+floor, i.e. the ceiling for any model trained on these tokens
+(`decode.py`, `tests/test_decode.py`). The self-describing layout costs ~3
+tokens/atom vs. the initial 1, a deliberate tradeoff for trainability.
+
+### Infrastructure (measured)
+
+- **Validation run:** 22 shards on **8 × v6e-4 preemptible** workers (us-east5-b),
+  ~16 min end-to-end, 41,954 structures, 86.6 M atoms. All compute + manifest +
+  output co-located in us-east5 → **zero cross-region egress**.
+- **Throughput (1 v6e chip, XLA compile amortized):** ~**0.108 s/doc**,
+  ~**20,300 atoms/s** (full 2,000-row shard). A short run is dominated by the
+  one-time XLA compile (~7 graphs, one per length bucket): the 100-doc smoke was
+  0.74 s/doc, mostly compile.
 
 **How it works (the deployable pipeline).** bio2token's published encoder needs
 CUDA-only kernels; exp40 reimplements the all-atom Mamba-1 encoder + FSQ in

@@ -1,11 +1,11 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Driver: generate bio2token-v1 documents at scale on Iris/Zephyr TPUs.
+"""Driver: generate bio2token-v2 documents at scale on Iris/Zephyr TPUs.
 
 Consumes an input manifest (one row per structure: ``entry_id`` + a structure
 URI in ``gcs_uri`` + optional provenance columns) and, per input shard, fetches
-the structures and emits bio2token-v1 documents by calling into
+the structures and emits bio2token-v2 documents by calling into
 :func:`generate_rows.generate_shard`. The heavy neural forward pass runs on a
 **TPU worker** (``--device xla``); the launcher (``iris job run``) stays a tiny
 CPU coordinator.
@@ -164,7 +164,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=f"{NAME} on zephyr — generate documents from an input manifest.")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("generate", help="Generate bio2token-v1 documents at scale.")
+    p = sub.add_parser("generate", help="Generate bio2token-v2 documents at scale.")
     p.add_argument("--input", required=True,
                    help="Input-manifest parquet glob (one row per structure), "
                         "e.g. gs://.../manifest/val/shard_*.parquet.")
