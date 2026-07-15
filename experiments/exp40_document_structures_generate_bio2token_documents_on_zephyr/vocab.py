@@ -30,6 +30,10 @@ import random
 
 NAME = "bio2token-v2"
 CODEBOOK_SIZE = 4096  # prod(FSQ levels) = 4^6
+# Token budget per document, shared with the contacts structures. A structure
+# with more atoms than fit is not dropped — its atoms are randomly sampled down
+# to what fits (see ``generate.build_row``).
+CONTEXT_LENGTH = 8192
 
 # --- Document-type marker + section markers ---------------------------------
 # The doc-type marker is minted here; the section markers + <end> are the
@@ -96,9 +100,10 @@ def code_token(code: int) -> str:
     return f"<bt{code}>"
 
 
-def _seed_from(entry_id: str) -> int:
-    """Deterministic per-document seed so a document's atom shuffle is stable
-    across runs (Python's ``hash`` is salted per process, so use SHA-256)."""
+def seed_from(entry_id: str) -> int:
+    """Deterministic per-document seed so a document's atom sampling + shuffle
+    are stable across runs (Python's ``hash`` is salted per process; use
+    SHA-256)."""
     return int.from_bytes(hashlib.sha256(entry_id.encode()).digest()[:8], "big")
 
 
@@ -120,7 +125,7 @@ def build_document(
         parts += [position_token(pos), residue_token(res_name)]
 
     shuffled = list(atoms)
-    random.Random(_seed_from(entry_id)).shuffle(shuffled)
+    random.Random(seed_from(entry_id)).shuffle(shuffled)
     parts.append(BEGIN_STATEMENTS)
     for pos, atom_name, code in shuffled:
         parts += [position_token(pos), atom_token(atom_name), code_token(code)]

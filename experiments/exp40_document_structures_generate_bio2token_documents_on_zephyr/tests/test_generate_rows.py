@@ -52,10 +52,17 @@ def test_generate_shard_inline_batched():
 
 
 @pytest.mark.network
-def test_max_context_filters():
+def test_context_sampling_fits_budget():
+    # A small context budget samples atoms down to fit — structures are kept
+    # (Tim's ask), not dropped.
     out = list(generate_shard(_rows(2), cif_text_column="cif_content",
-                              device="cpu", max_context=100))
-    assert out == []  # every doc exceeds 100 tokens -> all filtered (designed-in)
+                              device="cpu", context_length=1000))
+    assert len(out) == 2
+    for doc in out:
+        assert doc["num_tokens"] <= 1000
+        assert doc["truncated"] is True
+        assert doc["num_atoms"] < doc["num_atoms_total"]
+        assert doc["document"].count("<bt") == doc["num_atoms"]
 
 
 @pytest.mark.network

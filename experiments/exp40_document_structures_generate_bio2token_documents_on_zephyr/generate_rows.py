@@ -20,9 +20,11 @@ in two phases:
    busy (see ``tokenizer.py``).
 
 Fail-loud by default (``on_error="raise"``): a bad fetch/parse kills the worker
-with a real traceback so a corrupt corpus is never silently shipped. The only
-``None`` is the ``max_context`` filter — a structure whose document exceeds the
-token budget is skipped by design. ``--on-error skip`` warns and drops instead.
+with a real traceback so a corrupt corpus is never silently shipped. A structure
+with more atoms than fit the context is not dropped — its atoms are randomly
+sampled to fit (see ``generate.build_row``); ``None`` is only the rare
+designed-in drop (a chain too long to position-number). ``--on-error skip``
+warns and drops parse failures instead of raising.
 """
 
 import warnings
@@ -35,7 +37,7 @@ from adapt import ParsedStructure, parse_structure
 from generate import generate_documents
 from io_utils import read_object_bytes
 from tokenizer import DEFAULT_BUCKETS, DEFAULT_MAX_BATCH, DEFAULT_MAX_BATCH_TOKENS
-from vocab import NAME
+from vocab import CONTEXT_LENGTH, NAME
 
 DEFAULT_CIF_URI_COLUMN = "gcs_uri"
 
@@ -107,7 +109,7 @@ def generate_shard(
     buckets: tuple[int, ...] = DEFAULT_BUCKETS,
     max_batch: int = DEFAULT_MAX_BATCH,
     max_batch_tokens: int = DEFAULT_MAX_BATCH_TOKENS,
-    max_context: int | None = None,
+    context_length: int = CONTEXT_LENGTH,
     fetch_concurrency: int = 32,
     on_error: str = "raise",
     structure_name: str = NAME,
@@ -143,12 +145,12 @@ def generate_shard(
     # Compute: one batched forward pass per length bucket (the throughput lever).
     doc_rows = generate_documents(
         parsed_list, device=device, buckets=buckets, max_batch=max_batch,
-        max_batch_tokens=max_batch_tokens, max_context=max_context)
+        max_batch_tokens=max_batch_tokens, context_length=context_length)
 
     # Assemble + yield in input order.
     for src, doc in zip(src_rows, doc_rows, strict=True):
         if doc is None:
-            continue  # designed-in: exceeded max_context
+            continue  # designed-in drop (chain too long to position-number)
         out = dict(doc)  # already carries structure/entry_id/sequence/document/…
         out["structure"] = structure_name
         for col in PASSTHROUGH_COLUMNS:

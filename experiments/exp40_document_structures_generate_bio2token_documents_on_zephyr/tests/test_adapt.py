@@ -68,6 +68,9 @@ def test_generate_document_wellformed():
     assert doc.count("<bt") == row["num_atoms"] == n_atom
     assert row["seq_length"] == n_res
     assert row["num_tokens"] == 4 + 2 * n_res + 3 * n_atom
+    # 1QYS fits the default context budget, so no atoms are sampled out.
+    assert row["truncated"] is False
+    assert row["num_atoms_total"] == n_atom
 
 
 def batch_atoms(parsed) -> int:

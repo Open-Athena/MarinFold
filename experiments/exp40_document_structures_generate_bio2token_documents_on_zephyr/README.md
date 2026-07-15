@@ -69,6 +69,13 @@ floor, i.e. the ceiling for any model trained on these tokens
 (`decode.py`, `tests/test_decode.py`). The self-describing layout costs ~3
 tokens/atom vs. the initial 1, a deliberate tradeoff for trainability.
 
+Because ~3 tokens/atom means a large protein won't fit an 8k context, a
+structure with more atoms than fit has its **atoms randomly sampled** (seeded
+by entry id) down to the budget — the full residue sequence is kept, and the
+atom budget is `(context_length − 4 − 2·n_residues) / 3`. Rows record
+`num_atoms` (emitted), `num_atoms_total`, and a `truncated` flag. Only the rare
+chain too long to position-number (> 2700 residues) is dropped outright.
+
 ### Infrastructure (measured)
 
 - **Validation run:** 22 shards on **8 × v6e-4 preemptible** workers (us-east5-b),

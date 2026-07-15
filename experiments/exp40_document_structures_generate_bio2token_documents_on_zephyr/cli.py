@@ -42,7 +42,7 @@ import fsspec
 
 import generate_rows
 from tokenizer import DEFAULT_MAX_BATCH, DEFAULT_MAX_BATCH_TOKENS
-from vocab import NAME
+from vocab import CONTEXT_LENGTH, NAME
 
 # Columns projected from the manifest: required (entry_id + cif source) plus
 # optional provenance passthrough (carried onto each output row when present).
@@ -118,7 +118,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
         device=args.device,
         max_batch=args.max_batch,
         max_batch_tokens=args.max_batch_tokens,
-        max_context=args.max_context,
+        context_length=args.context_length,
         fetch_concurrency=args.fetch_concurrency,
         on_error=args.on_error,
         structure_name=NAME,
@@ -179,8 +179,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "testing). Overrides --cif-uri-column.")
     p.add_argument("--num-docs", type=int, default=None,
                    help="Global cap on documents (single merged output file).")
-    p.add_argument("--max-context", type=int, default=None,
-                   help="Skip structures whose document exceeds this token count.")
+    p.add_argument("--context-length", type=int, default=CONTEXT_LENGTH,
+                   help="Token budget per document (default "
+                        f"{CONTEXT_LENGTH}); a structure with more atoms than fit "
+                        "has its atoms randomly sampled down to the budget.")
 
     # Neural-tokenizer knobs.
     p.add_argument("--device", default="xla", choices=["xla", "cpu", "cuda"],

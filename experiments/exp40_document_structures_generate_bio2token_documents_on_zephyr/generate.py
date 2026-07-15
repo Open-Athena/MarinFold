@@ -21,6 +21,7 @@ run pays the checkpoint load — and, on XLA, the first compile — once, not pe
 structure.
 """
 
+import random
 from typing import Any
 
 from adapt import ParsedStructure, parse_structure, to_bio2token_batch
@@ -32,7 +33,7 @@ from tokenizer import (
     resolve_device,
     tokenize_structures,
 )
-from vocab import MAX_POSITION, NAME, build_document
+from vocab import CONTEXT_LENGTH, MAX_POSITION, NAME, build_document, seed_from
 
 _MODEL_CACHE: dict[str, Any] = {}
 _DEVICE_CACHE: dict[str, Any] = {}
@@ -57,22 +58,41 @@ def build_row(
     residue_index: list[int],
     atom_name: list[str],
     codes: list[int],
+    *,
+    context_length: int = CONTEXT_LENGTH,
 ) -> dict[str, Any] | None:
     """Assemble one document-row dict from a parsed structure + its per-atom
-    (residue index, atom name, code). Returns ``None`` if the chain is longer
-    than the position-token range (a designed-in drop, matching the contacts
-    structures — such a chain can't be uniquely position-numbered)."""
+    (residue index, atom name, code).
+
+    A structure with more atoms than fit in ``context_length`` is not dropped:
+    its atoms are **randomly sampled** (seeded by entry id) down to what fits,
+    keeping the full residue sequence. The token budget for atoms is
+    ``context_length - markers(4) - sequence(2/residue)``, at 3 tokens/atom.
+    Returns ``None`` only for a chain too long to position-number, or one whose
+    sequence alone exceeds the context (both rare, designed-in drops).
+    """
     if len(parsed.residues) > MAX_POSITION + 1:
         return None
     sequence = [(i, res.name) for i, res in enumerate(parsed.residues)]
+    atom_budget = (context_length - 4 - 2 * len(sequence)) // 3
+    if atom_budget <= 0:
+        return None  # sequence alone doesn't fit — nothing to sample into
+
     atoms = list(zip(residue_index, atom_name, codes, strict=True))
+    n_total = len(atoms)
+    truncated = n_total > atom_budget
+    if truncated:
+        atoms = random.Random(seed_from(parsed.entry_id)).sample(atoms, atom_budget)
+
     document = build_document(sequence, atoms, entry_id=parsed.entry_id)
     return {
         "structure": NAME,
         "entry_id": parsed.entry_id,
         "sequence": parsed.sequence,
         "seq_length": len(parsed.residues),
-        "num_atoms": len(codes),
+        "num_atoms": len(atoms),        # atoms emitted (after any sampling)
+        "num_atoms_total": n_total,     # atoms before sampling
+        "truncated": truncated,
         "num_tokens": document.count(" ") + 1,
         "document": document,
     }
@@ -85,15 +105,16 @@ def generate_documents(
     buckets: tuple[int, ...] = DEFAULT_BUCKETS,
     max_batch: int = DEFAULT_MAX_BATCH,
     max_batch_tokens: int = DEFAULT_MAX_BATCH_TOKENS,
-    max_context: int | None = None,
+    context_length: int = CONTEXT_LENGTH,
 ) -> list[dict[str, Any] | None]:
     """Tokenize a batch of already-parsed structures and assemble their rows.
 
-    Returns one entry per input structure, in order: a row dict, or ``None`` if
-    the chain exceeds the position-token range or the document exceeds
-    ``max_context`` tokens (designed-in filters — a structure that doesn't fit
-    is skipped, not truncated mid-molecule which would corrupt it). The
-    tokenization is bucketed + batched on ``device`` (see ``tokenizer.py``).
+    Returns one entry per input structure, in order: a row dict, or ``None`` for
+    the rare designed-in drops (chain too long to position-number, or sequence
+    alone over ``context_length``). Structures with more atoms than fit have
+    their atoms randomly sampled to the budget (see :func:`build_row`), not
+    dropped. The tokenization is bucketed + batched on ``device`` (see
+    ``tokenizer.py``).
     """
     if not parsed_structures:
         return []
@@ -103,18 +124,12 @@ def generate_documents(
         coords, get_model(device), device=get_device(device),
         buckets=buckets, max_batch=max_batch, max_batch_tokens=max_batch_tokens)
 
-    rows: list[dict[str, Any] | None] = []
-    for parsed, batch, toks in zip(parsed_structures, batches, token_tensors, strict=True):
-        row = build_row(
-            parsed,
-            batch["residue_index"].tolist(),
-            batch["atom_name"],
-            toks.tolist(),
-        )
-        if row is not None and max_context is not None and row["num_tokens"] > max_context:
-            row = None
-        rows.append(row)
-    return rows
+    return [
+        build_row(parsed, batch["residue_index"].tolist(), batch["atom_name"],
+                  toks.tolist(), context_length=context_length)
+        for parsed, batch, toks in
+        zip(parsed_structures, batches, token_tensors, strict=True)
+    ]
 
 
 def generate_document(
@@ -122,13 +137,13 @@ def generate_document(
     *,
     entry_id: str | None = None,
     device: str = "cpu",
-    max_context: int | None = None,
+    context_length: int = CONTEXT_LENGTH,
 ) -> dict[str, Any] | None:
     """Parse + adapt + tokenize one structure into a document row.
 
-    Returns a metadata row dict, or ``None`` if the structure is filtered
-    (too-long chain / over ``max_context``). Parse/adapt/tokenize failures
-    propagate (fail-loud).
+    Returns a metadata row dict (with atoms sampled to ``context_length`` if
+    needed), or ``None`` for the rare designed-in drops. Parse/adapt/tokenize
+    failures propagate (fail-loud).
     """
     parsed = parse_structure(source, entry_id=entry_id)
-    return generate_documents([parsed], device=device, max_context=max_context)[0]
+    return generate_documents([parsed], device=device, context_length=context_length)[0]
