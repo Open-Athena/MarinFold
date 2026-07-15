@@ -18,7 +18,8 @@ contacts-and-distances-v1 documents without a tokenizer change. Concretely
 a contacts-v1 document emits:
 
 - ``<contacts-v1>``, ``<n-term>``, ``<c-term>``, ``<contact>`` — minted
-  here (no contacts-and-distances-v1 analog), plus the unused ``<think>``.
+  here (no contacts-and-distances-v1 analog), plus ``<think>`` (emitted only
+  in ``think=True`` generation; see ``generate.py`` / #123).
 - ``<begin_sequence>`` / ``<begin_statements>`` — the section markers,
   reused from contacts-and-distances-v1 (its underscore spelling).
 - ``<p0>`` .. ``<p1999>`` — residue position indices, reused from
@@ -58,7 +59,10 @@ DOC_TYPE_TOKEN = "<contacts-v1>"
 N_TERM_TOKEN = "<n-term>"
 C_TERM_TOKEN = "<c-term>"
 CONTACT_TOKEN = "<contact>"
-# Reasoning scratch token reserved by SPEC.md. Unused by the generator.
+# Pause / reasoning-scratch token. Emitted in the structure section only when
+# the generator runs with GenerationConfig(think=True) (issue #123); the
+# default generator leaves it unused. No vocab change was needed — it was
+# reserved here from the start for exactly this.
 THINK_TOKEN = "<think>"
 
 NATIVE_TOKENS = [

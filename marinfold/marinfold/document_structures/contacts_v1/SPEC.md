@@ -101,9 +101,13 @@ overrides the spec's own token spellings:
 - **`<end>` is the shared contacts-and-distances-v1 token** too.
 
 The only tokens contacts-v1 mints itself are `<contacts-v1>`, `<n-term>`,
-`<c-term>`, `<contact>`, and the (unused) `<think>` — five tokens with no
-contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
-22>` space typo is emitted as `<c-term> <p22>`.)
+`<c-term>`, `<contact>`, and `<think>` — five tokens with no
+contacts-and-distances-v1 analog. `<think>` is a *pause* token that is
+emitted only under `GenerationConfig(think=True)` (see *Think (pause)
+tokens* below); the default generator does not emit it, but it has always
+been reserved in the vocab so no tokenizer change was needed to add the
+think path. (The original example's `<c-term> <pos 22>` space typo is
+emitted as `<c-term> <p22>`.)
 
 ### Points the spec left open (implementation choices)
 
@@ -162,7 +166,13 @@ contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
   fixed, load-bearing order: (1) the random n-terminal start index, then
   (2) the shuffle of the sequence-section statements, then (3) the
   shuffle of the N selected contacts (their in-document order), then
-  (4) the per-contact pair-order coin flips.
+  (4) the per-contact pair-order coin flips. When `think=True` two more
+  draw groups bracket these: **(0)** the think-overhead sample happens
+  *first*, right after seeding and before the start index (so its count is
+  known in time to reserve budget), and **(5)** the think-run slot
+  assignment happens *last*, after the flips. When `think=False` (the
+  default) neither group draws anything, so the stream — and therefore
+  the document — is byte-identical to the pre-think generator.
 - **Vocab order.** Load-bearing and append-only: the 5 native tokens
   (`<contacts-v1>`, `<n-term>`, `<c-term>`, `<contact>`, `<think>`), then
   the entire contacts-and-distances-v1 `all_domain_tokens()` list, then the
@@ -173,12 +183,59 @@ contacts-and-distances-v1 analog. (The original example's `<c-term> <pos
   **last**, so adding it left every pre-existing id unchanged. Total domain
   vocab = 2844 tokens (2846 with `<pad>`/`<eos>`).
 
+### Think (pause) tokens (`think=True`)
+
+`GenerationConfig(think=True)` augments the **structure section** with
+`<think>` (pause) tokens — the contacts-v1 analog of
+[#34](https://github.com/Open-Athena/MarinFold/issues/34) (which produced
+`contacts-and-distances-v2`). See [#123](https://github.com/Open-Athena/MarinFold/issues/123).
+At training time these are loss-masked, giving the model "free" compute to
+spend before it commits to a prediction ([Goyal et al. 2023](https://arxiv.org/abs/2310.02226)).
+The switch defaults to **off**; when off the generator is byte-identical to
+before this path existed (see *Determinism*). It is inert on the
+`sequence_only` path (there is no structure section to augment).
+
+- **What/where.** `<think>` runs sit **between** `<contact>` statements
+  (never inside a `<contact> <pX> <pY>` triple), only in the structure
+  section (the predicted part). The sequence section is the given prompt
+  and stays think-free. contacts-v1 statements are uniform 3-token
+  `<contact>` statements, so "between statements" simply means "before a
+  `<contact>`" — there is no pLDDT token and none of #34's
+  think-before-pLDDT tie-break.
+- **Sampling (identical distributions to #34, via ported `_geometric` /
+  `_sample_think_overhead`).**
+  - **Initial run.** With probability `think_initial_prob` (0.75) place
+    `k1 ~ Geometric(think_initial_geom_p=0.13)` (support ≥ 1) `<think>`
+    tokens at slot 0 — right after `<begin_statements>`. Otherwise `k1 = 0`.
+  - **Additional runs.** Draw `k2 ~ Uniform(think_additional_count_range =
+    (-4, 4))` and add `max(int(k2), 0)` further runs, each of length
+    `Geometric(think_run_length_geom_p=0.25)`, at random inter-statement
+    slots `∈ [0, N-1]` (slot `i` = "right before `emitted[i]`"). Runs
+    landing in the same slot are concatenated.
+- **Budget.** The total think-token count is subtracted from the 8192-token
+  budget **before** choosing how many contacts fit, so documents still end
+  with `<end>` and never overflow. Fewer contacts are emitted than the
+  same protein would get with `think=False`.
+- **No-contacts edge case.** When the structure section is empty (no
+  above-threshold, seq-sep-respecting contacts) but the initial-run gate
+  fired, the initial run is still emitted (right after
+  `<begin_statements>`); the additional runs have no statement to anchor to
+  and are dropped. Mirrors #34.
+- **Doc type / vocab.** No new doc type and **no vocab/tokenizer change** —
+  think-augmented documents are still `<contacts-v1>` and reuse the
+  already-reserved `<think>` token, so existing contacts-v1 checkpoints stay
+  token-compatible and a mixed (with/without think) corpus trains under
+  them. (Minting a `<contacts-v2>` doc type was considered and rejected.)
+- **Metadata.** `think_tokens` records how many `<think>` tokens the
+  document actually contains (0 when `think=False`).
+
 ### Metadata tracked (beyond the spec)
 
 The spec does not define output metadata; the issue asks to track
 protein-docs-style metadata. Per document we record: `entry_id`,
 `seq_len`, `global_plddt` (mean CA B-factor), `start_index`,
 `n_term_index`, `c_term_index`, `min_seq_separation`, `num_tokens`,
+`think_tokens` (count of emitted `<think>` tokens; 0 unless `think=True`),
 `sha1` of the document, and the following contact statistics:
 
 - `min_seq_separation` — the minimum sequence separation used for this

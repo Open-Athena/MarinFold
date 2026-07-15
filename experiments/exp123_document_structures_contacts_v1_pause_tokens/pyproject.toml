@@ -1,0 +1,27 @@
+[project]
+name = "exp123-document-structures-contacts-v1-pause-tokens"
+version = "0.1.0"
+description = "contacts-v1 <think> (pause) token generation flag (analog of #34)."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold[contacts-v1]",
+    "gemmi>=0.6",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
