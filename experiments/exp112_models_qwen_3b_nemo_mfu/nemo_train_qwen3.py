@@ -64,13 +64,17 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--rope-scaling-factor", type=float, default=float(os.environ.get("EXP112_ROPE_SCALING", "8.0")),
                    help="Llama3 RoPE freq-scaling factor (#75 = 8.0; 0 disables). NeMo GPTConfig lacks the "
                         "knob, so this is injected into MCoreGPTModel (llama3 low/high/orig = 1/4/8192, = #75).")
-    p.add_argument("--tie-embeddings", type=int, default=int(os.environ.get("EXP112_TIE", "1")),
-                   help="tie input/output embeddings (#75/Qwen3 = 1)")
-    p.add_argument("--layernorm-eps", type=float, default=float(os.environ.get("EXP112_LN_EPS", "1e-6")),
-                   help="RMSNorm epsilon (#75/Qwen3-0.6B = 1e-6; Megatron default 1e-5)")
+    # #75's ACTUAL logged W&B config (eric-czech/marin prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1)
+    # is the authority here: tie_word_embeddings=False, use_qk_norm=False, eps=1e-5.
+    p.add_argument("--tie-embeddings", type=int, default=int(os.environ.get("EXP112_TIE", "0")),
+                   help="tie input/output embeddings (#75 = 0 -> UNTIED, separate lm_head)")
+    p.add_argument("--qk-layernorm", type=int, default=int(os.environ.get("EXP112_QK_NORM", "0")),
+                   help="Qwen3 QK-LayerNorm (#75 use_qk_norm = 0 -> OFF, despite Qwen3-0.6B reference)")
+    p.add_argument("--layernorm-eps", type=float, default=float(os.environ.get("EXP112_LN_EPS", "1e-5")),
+                   help="RMSNorm epsilon (#75 layer_norm_epsilon = 1e-5)")
     p.add_argument("--wd-embeddings", type=int, default=int(os.environ.get("EXP112_WD_EMB", "0")),
-                   help="apply weight decay to embeddings + output layer (#75 = 0 -> EXCLUDED, like Levanter's "
-                        "default mask; Megatron decays them by default, which over-regularizes at wd 0.2)")
+                   help="apply weight decay to the INPUT embedding too (#75 = 0 -> input embedding EXCLUDED; "
+                        "#75 DOES decay the untied output lm_head, like Levanter's default mask)")
     p.add_argument("--no-grad-ckpt", action="store_true",
                    help="disable activation checkpointing (exp108 needed it ON to fit)")
     # Optim (only meaningful for a real run; harmless for the benchmark)
@@ -469,15 +473,19 @@ class S3CheckpointSync(_Callback):
 # "'function' object has no attribute '<locals>'"), restart-looping the run before
 # any checkpoint banks. A module-level function pyref's cleanly. It reads
 # wd_embeddings from an env var (set in main) instead of closing over `args`.
-# Excludes biases + 1-D (norms) AND embeddings/output (matches Levanter's #75
-# default; Megatron's default decays the 2-D embedding/output at wd 0.2).
+# Excludes biases + 1-D (norms) + the INPUT embedding, but DECAYS the untied
+# output lm_head + attn/mlp matrices — matching #75's logged decayed_weights.
 def _no_wd_cond(name, param):
     base = name.endswith(".bias") or len(param.shape) == 1
     if os.environ.get("EXP112_WD_EMBEDDINGS") == "1":
         res = base
     else:
+        # #75's decayed_weights: DECAYS the untied output lm_head + all attn/mlp
+        # matrices; EXCLUDES only the input embedding (+ 1-D norms/bias). So mask
+        # the input embedding but NOT output_layer. (Megatron: input =
+        # `embedding.word_embeddings.weight`, output = `output_layer.weight`.)
         n = name.lower()
-        res = base or ("embedding" in n) or ("output_layer" in n)
+        res = base or ("word_embeddings" in n) or ("embedding" in n and "output" not in n)
     if os.environ.get("EXP112_DEBUG_WD"):
         print(f"[wd] {'NO_WD' if res else 'decay'} shape={tuple(param.shape)} {name}", flush=True)
     return res
@@ -575,15 +583,15 @@ def main() -> None:
         seq_length=args.seq_length,
         # Qwen3 specifics
         normalization="RMSNorm",
-        qk_layernorm=True,
-        layernorm_epsilon=args.layernorm_eps,     # #75/Qwen3 = 1e-6
+        qk_layernorm=bool(args.qk_layernorm),     # #75 use_qk_norm = False
+        layernorm_epsilon=args.layernorm_eps,     # #75 = 1e-5
         gated_linear_unit=True,
         activation_func=F.silu,
         add_bias_linear=False,
         position_embedding_type="rope",
         rotary_base=args.rotary_base,
         rotary_percent=1.0,
-        share_embeddings_and_output_weights=bool(args.tie_embeddings),  # #75/Qwen3 = tied
+        share_embeddings_and_output_weights=bool(args.tie_embeddings),  # #75 = untied (False)
         make_vocab_size_divisible_by=128,
         bf16=True,
         # Activation checkpointing (exp108 needed it ON to fit 48L*seq8192).

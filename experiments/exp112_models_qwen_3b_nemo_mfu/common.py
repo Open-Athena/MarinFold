@@ -60,8 +60,11 @@ WANDB_PROJECT = "MarinFold"
 # 16 epochs instead of 8). Authoritative config (marin `eac/plm-exp75`, W&B
 # `eric-czech/marin`; = exp67/exp85's `protein_llama_1_5b` width, Qwen3 variant):
 #   hidden 2048 / ffn 8192 (=4h) / 32 heads / 8 KV groups (GQA) / head_dim 64 /
-#   **24 layers** / seq 8192. Qwen3: RMSNorm, SwiGLU, QK-layernorm, RoPE
-#   (**Llama3 theta 500000**; see ROTARY_BASE), untied embeddings. ~1.47B params.
+#   **24 layers** / seq 8192. RMSNorm (eps **1e-5**), SwiGLU, RoPE (**Llama3 theta
+#   500000**, factor 8/low 1/high 4/orig 8192; see ROTARY_BASE). Per #75's LOGGED
+#   W&B config (eric-czech/marin): **use_qk_norm=False, tie_word_embeddings=False**
+#   (untied lm_head, which IS weight-decayed). Reference ckpt Qwen/Qwen3-0.6B but
+#   with QK-norm OFF and embeddings untied. ~1.47B params.
 # (An earlier revision of this dir ran a 48-layer ~2.9B by-depth model for the
 # MFU benchmark; the full training run replicates #75's actual 1.5B instead.)
 # ---------------------------------------------------------------------------
