@@ -1,0 +1,12 @@
+{
+  "script": "analyze_nll.py",
+  "args": [
+    "--run",
+    "gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/full_v2",
+    "--metric",
+    "all_f1",
+    "--out-prefix",
+    "nll_full_f1"
+  ],
+  "caption": "Left: rollout all_f1 vs per-target z-scored NLL/token. Right: per-target Spearman(NLL/tok, all_f1); negative = confident rollouts are more accurate."
+}

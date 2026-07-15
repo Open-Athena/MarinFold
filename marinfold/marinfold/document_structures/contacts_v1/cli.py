@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""contacts-v1 driver — generate / view / tokenizer.
+"""contacts-v1 driver — generate / view / infer / evaluate / tokenizer.
 
 Usage::
 
@@ -10,6 +10,10 @@ Usage::
         --summary-out summary.json
     # Eyeball a few documents + their contact tables in the terminal.
     python cli.py view --input tests/data/1QYS.cif
+    # Predict a contact map (P(contact)) for a sequence — no ground truth.
+    python cli.py infer --model M --input-sequence SIINFEKL... --out preds.json
+    # Score the model's contacts against pyconfind ground truth.
+    python cli.py evaluate --model M --input tests/data/1QYS.cif --out metrics.json
     # Build / save / push the contacts-v1 tokenizer.
     python cli.py tokenizer --save-local ./tok/
     python cli.py tokenizer --push open-athena/contacts-v1-tokenizer
@@ -20,6 +24,10 @@ string plus the metadata columns from :meth:`GenerationResult.metadata_row`
 :func:`marinfold.write_docs`. With ``--summary-out`` it also dumps a rich
 JSON summary (full sequence + every emitted contact's degree) for local
 inspection. ``view`` is the same generation but printed, no files.
+
+``infer`` / ``evaluate`` are the same surface the top-level ``marinfold``
+CLI dispatches to, exposed here with the extra contacts-v1 knobs
+(``--min-seq-separation``, ``--ensemble-k``, …); see :mod:`.inference`.
 """
 
 import argparse
@@ -28,9 +36,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from marinfold import build_tokenizer, write_docs
+from marinfold import build_tokenizer, write_docs, write_eval, write_predictions
 
-from . import generate
+from . import generate, inference, plots
 from .parse import DEFAULT_CIF_COLUMN, DEFAULT_ID_COLUMN
 from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens, position_token
 
@@ -38,6 +46,14 @@ from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens, position_token
 # --------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------
+
+
+def _pdf_path(s: str) -> Path:
+    """Argparse type validator: only accept ``*.pdf`` paths for ``--out-plots``."""
+    p = Path(s)
+    if p.suffix.lower() != ".pdf":
+        raise argparse.ArgumentTypeError(f"--out-plots must end in .pdf; got {s!r}")
+    return p
 
 
 def _assembly_arg(text: str) -> int | str | None:
@@ -176,6 +192,52 @@ def cmd_view(args: argparse.Namespace) -> None:
         print(f"[{NAME}] no documents generated for {args.input}", file=sys.stderr)
 
 
+def _inference_config(args: argparse.Namespace) -> inference.InferenceConfig:
+    return inference.InferenceConfig(
+        model=args.model,
+        input_path=getattr(args, "input", None),
+        backend=args.backend,
+        batch_size=args.batch_size,
+        dtype=args.dtype,
+        method=args.method,
+        min_seq_separation=args.min_seq_separation,
+        ensemble_k=args.ensemble_k,
+        top_k_logprobs=args.top_k_logprobs,
+        gpu_memory_utilization=args.gpu_memory_utilization,
+        keep_matrix=getattr(args, "keep_matrix", False),
+        n_rollouts=args.n_rollouts,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
+    )
+
+
+def cmd_infer(args: argparse.Namespace) -> None:
+    cfg = _inference_config(args)
+    if args.input_sequence is not None:
+        structures = [inference.structure_from_sequence(args.input_sequence)]
+        records = list(inference.predict(cfg, structures=structures))
+    else:
+        records = list(inference.predict(cfg))
+    write_predictions(args.out, records, structure_name=NAME)
+    print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
+    if args.out_plots is not None:
+        plots.plot_infer_pdf(args.out_plots, records)
+        print(f"[{NAME}] wrote {args.out_plots}", file=sys.stderr)
+
+
+def cmd_evaluate(args: argparse.Namespace) -> None:
+    cfg = _inference_config(args)
+    result = inference.evaluate(cfg)
+    write_eval(args.out, result, structure_name=NAME)
+    print(f"[{NAME}] wrote {args.out}", file=sys.stderr)
+    for k, v in result.metrics.items():
+        print(f"  {k} = {v}")
+    if args.out_plots is not None:
+        plots.plot_evaluate_pdf(args.out_plots, result)
+        print(f"[{NAME}] wrote {args.out_plots}", file=sys.stderr)
+
+
 def cmd_tokenizer(args: argparse.Namespace) -> None:
     tokenizer = build_tokenizer(all_domain_tokens())
     print(f"[{NAME}] built tokenizer with {len(tokenizer)} tokens", file=sys.stderr)
@@ -276,6 +338,80 @@ def build_parser() -> argparse.ArgumentParser:
     p_view.add_argument("--max-contacts", type=int, default=20,
                         help="Max contacts to list per document (default 20).")
     p_view.set_defaults(func=cmd_view)
+
+    # ---- shared inference args (infer + evaluate) --------------------------
+    def _add_inference_common(p: argparse.ArgumentParser) -> None:
+        p.add_argument("--model", required=True,
+                       help="Local directory holding the model + tokenizer, or "
+                            "a nickname listed in MODELS.yaml "
+                            "(e.g. 'contacts-v1-exp75-1.5B').")
+        p.add_argument("--backend", choices=("vllm", "transformers", "mlx"),
+                       default="vllm",
+                       help="Inference runtime. 'vllm' (Linux+GPU, default), "
+                            "'transformers' (anywhere torch installs), or 'mlx' "
+                            "(Apple Silicon native).")
+        p.add_argument("--method", choices=("pairwise", "rollout"),
+                       default="pairwise",
+                       help="Contact readout. 'pairwise' (default, fast) scores "
+                            "P(contact) per pair; 'rollout' (exp82's best, "
+                            "~150x slower) votes over sampled completions with a "
+                            "pairwise tie-break, and needs --backend vllm or "
+                            "transformers (not mlx).")
+        p.add_argument("--min-seq-separation", type=int, default=6,
+                       help="Smallest |i-j| that can be a contact (default 6, "
+                            "matching the contacts-v1 data).")
+        p.add_argument("--ensemble-k", type=int, default=1,
+                       help="(--method pairwise) resample the sequence definition "
+                            "this many times and average P(contact) (test-time "
+                            "augmentation; default 1).")
+        p.add_argument("--n-rollouts", type=int, default=100,
+                       help="(--method rollout) sampled completions to vote over "
+                            "(default 100).")
+        p.add_argument("--temperature", type=float, default=1.0,
+                       help="(--method rollout) sampling temperature (default 1.0).")
+        p.add_argument("--top-p", type=float, default=0.95,
+                       help="(--method rollout) nucleus top-p (default 0.95).")
+        p.add_argument("--top-k", type=int, default=50,
+                       help="(--method rollout) sampling top-k; 0 disables "
+                            "(default 50).")
+        p.add_argument("--top-k-logprobs", type=int, default=256,
+                       help="vLLM-only; ignored by other backends.")
+        p.add_argument("--batch-size", type=int, default=64)
+        p.add_argument("--dtype", default="bfloat16",
+                       help="Model dtype. Honored by vllm + transformers; MLX "
+                            "loads whatever's on disk.")
+        p.add_argument("--gpu-memory-utilization", type=float, default=0.85,
+                       help="vLLM-only; ignored by other backends.")
+        p.add_argument("--out", type=Path, required=True, help="Output path.")
+        p.add_argument("--out-plots", type=_pdf_path, default=None,
+                       help="Optional multi-page PDF; one P(contact) heatmap "
+                            "page per structure (infer), or GT-vs-model "
+                            "side-by-side (evaluate).")
+
+    # ---- infer -------------------------------------------------------------
+    p_inf = sub.add_parser("infer", help="Predict a contact map (no ground truth).")
+    _add_inference_common(p_inf)
+    src = p_inf.add_mutually_exclusive_group(required=True)
+    src.add_argument("--input-sequence", default=None,
+                     help="One-letter amino-acid sequence (e.g. SIINFEKLLLSKP).")
+    src.add_argument("--input", type=Path, default=None,
+                     help="Structure file (PDB / mmCIF / .gz) or directory; the "
+                          "sequence is read from each (no pyconfind needed).")
+    p_inf.add_argument("--keep-matrix", action="store_true",
+                       help="Include the dense [L,L] P(contact) matrix per "
+                            "structure in the output records.")
+    p_inf.set_defaults(func=cmd_infer)
+
+    # ---- evaluate ----------------------------------------------------------
+    p_eval = sub.add_parser(
+        "evaluate", help="Predict + score against pyconfind ground-truth contacts.")
+    _add_inference_common(p_eval)
+    p_eval.add_argument("--input", type=Path, required=True,
+                        help="Structure file (PDB / mmCIF / .gz) or directory. "
+                             "The input IS the ground truth — pyconfind contacts "
+                             "on it are scored against the model (needs the "
+                             "contacts-v1 extra).")
+    p_eval.set_defaults(func=cmd_evaluate)
 
     # ---- tokenizer ---------------------------------------------------------
     p_tok = sub.add_parser("tokenizer",

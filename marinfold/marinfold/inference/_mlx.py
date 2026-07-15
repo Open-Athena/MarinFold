@@ -117,6 +117,26 @@ class MlxBackend:
             )
         return out
 
+    def sample_completions(
+        self,
+        prefix_token_ids_batch: list[list[int]],
+        *,
+        max_new_tokens: int,
+        temperature: float = 1.0,
+        top_p: float = 0.95,
+        top_k: int = 50,
+        stop_token_id: int | None = None,
+        seed: int | None = None,
+        batch_size: int | None = None,
+    ) -> list[list[int]]:
+        # Sampling/rollout is not yet wired for MLX (batched mlx-lm generation
+        # over a shared prefix needs its own path). Pairwise scoring works on
+        # MLX via next_token_probs; for --method rollout use vLLM or transformers.
+        raise NotImplementedError(
+            "rollout sampling is not implemented for the MLX backend yet; "
+            "use --backend vllm or --backend transformers for --method rollout."
+        )
+
 
 def _replicate_cache(prefix_cache: list[KVCache], batch_size: int) -> list[KVCache]:
     """Return a per-layer copy of ``prefix_cache`` tiled to ``batch_size``.

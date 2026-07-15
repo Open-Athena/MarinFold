@@ -1,0 +1,14 @@
+{
+  "script": "analyze_ensemble.py",
+  "args": [
+    "--run",
+    "gs://marin-us-east5/protein-structure/MarinFold/exp98_rollouts_contacts_v1_train/runs/full_v2",
+    "--targets",
+    "data/targets.parquet",
+    "--temps",
+    "1.0,0.3",
+    "--out-prefix",
+    "ens_full"
+  ],
+  "caption": "Per-target F1 by strategy. single-* pick one rollout; vote-* aggregate contact occurrences across 1000 rollouts (majority / top-K@mean-size = label-free; oracle-K needs GT). wvote weights rollouts by softmax(-NLL/token)."
+}

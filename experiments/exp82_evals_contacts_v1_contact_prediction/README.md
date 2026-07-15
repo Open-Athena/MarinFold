@@ -307,6 +307,33 @@ costs ~150× the per-protein compute of pairwise: cheap in absolute terms
 re-run (adaptive batch up to 64) did all 554 in **3.9 h**; the pairwise tie-break is
 **free** (arithmetic on the existing matrices).
 
+### Inference-time analyses — why voting works, and a tested non-lever
+
+Two diagnostics on a few example proteins
+([`analyze_rollout_distribution.py`](analyze_rollout_distribution.py),
+[`experiment_suppress_eos.py`](experiment_suppress_eos.py); figures in
+[`plots/inference_analyses/`](plots/inference_analyses/)).
+
+**The vote beats the *best* single rollout** (1.1–2.2×, widening on hard proteins):
+per-rollout R-precision (first R generated contacts, R = #GT) tops out below the
+vote — e.g. 7y54_A best 0.47 vs vote 0.53; 7qp5_A best 0.09 vs vote 0.21. The cause
+is **under-generation** — the model emits only ~⅓–⅔ of R contacts per rollout
+because it samples `<end>` early (the `4·L+64` length cap never binds — 0/40 hit it;
+and the training documents held the *full* contact set, so it's the model stopping,
+not a data cap). The union over 100 rollouts covers what no single rollout can —
+this is why `rollout` > `pairwise`. **Rollout NLL barely predicts quality**
+(Spearman ρ between −0.39 and +0.09 across proteins), so likelihood-based rollout
+selection/weighting is not promising.
+
+**Forcing more contacts (suppress `<end>`) — tested, not adopted.** Banning `<end>`
+until ≥ N contacts (N = R oracle, or N = ⌈1.5·L⌉ deployable) reliably lifts *single*
+rollouts (per-rollout mean +0.03–0.05; best single rollout up, e.g. 0.49 → 0.65) but
+the **n=100 vote barely moves**: mean +0.02, inconsistent (+0.06 / 0 / +0.035 /
+−0.02 across the four proteins). Once 100 rollouts are voted, the extra forced
+contacts are lower-confidence and can be correlated noise that pollutes the top-R —
+not worth 2–4× the generation cost. The remaining lever for top-K precision is a
+stronger base model, not the decoder.
+
 ## Conclusion
 
 **Headline (strong model).** Re-running the inference search on the tuned #61/#75

@@ -1,0 +1,38 @@
+[project]
+name = "exp98-data-generate-rollouts-contacts-v1-train"
+version = "0.1.0"
+description = "Generate 1000 rollouts each for 1000 contacts-v1 training targets on TPU/iris, score per-rollout precision/recall, save the best rollouts. Scale + data-collection probe for the train-on-rollouts idea — issue #98."
+requires-python = ">=3.11,<3.13"
+# LOCAL steps only (select_targets.py, gen_prompts.py, aggregate_results.py).
+# The TPU rollout worker (gen_rollouts_worker_vllm_tpu.py) is marinfold-free and
+# runs in the marin checkout's vllm/tpu env on iris — its deps are NOT here.
+dependencies = [
+    "marinfold",   # build_document / residues_from_sequence for resampled prefixes
+    "gcsfs",       # read the exp53 train shards + write artifacts to GCS
+    "fsspec",
+    "pyarrow",
+    "pandas>=2.0",
+    "numpy",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+# Local path dep: these scripts run on this box against the code under test.
+# (The TPU worker doesn't import marinfold, so it doesn't need this resolved
+# on the cluster — contrast exp53, which git-sourced marinfold for its workers.)
+marinfold = { path = "../../marinfold" }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
