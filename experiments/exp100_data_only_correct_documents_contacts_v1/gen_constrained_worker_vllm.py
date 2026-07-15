@@ -97,7 +97,10 @@ def main():
                          "path; the parallel (threaded) path has a rare fill/accept "
                          "desync that yields occasional non-correct rollouts")
     ap.add_argument("--tensor-parallel-size", type=int, default=1)
-    ap.add_argument("--tpu-type", default="A5000")
+    # Device label recorded in each timings row; pass the real accelerator
+    # (e.g. v5p-8, v6e-4). Defaults to "unknown" so it is never silently wrong —
+    # the r0_full run's v5p-8 rows predate this and are mislabeled "A5000".
+    ap.add_argument("--tpu-type", default="unknown")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--overwrite", action="store_true")
     ap.add_argument("--save-all-documents", action="store_true",

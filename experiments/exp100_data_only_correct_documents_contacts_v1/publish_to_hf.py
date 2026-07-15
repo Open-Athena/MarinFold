@@ -70,6 +70,14 @@ def _read_document(fs, p):
     if d.get("skipped"):
         return None
     s = d["selected"]
+    # Correctness gate: the deliverable is only-correct by construction. Keep a doc
+    # iff its selected rollout is 100%-precision/recall, OR it is a zero-contact
+    # protein (n_gt==0: an empty statement list is trivially correct, but scores as
+    # degenerate prec=0.0/rec=nan). Drop everything else — i.e. the rare targets
+    # whose every rollout desynced/truncated (all_rec<1) — so the published set
+    # contains no incorrect document.
+    if d["n_gt"] > 0 and not (s["all_prec"] == 1.0 and s["all_rec"] == 1.0):
+        return None
     return dict(entry_id=d["entry_id"], L=d["L"], n_gt=d["n_gt"],
                 n_rollouts=d["n_rollouts"], n_correct=d["n_correct"],
                 selected_r=s["r"], struct_nll=s["struct_nll"],

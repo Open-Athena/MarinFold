@@ -180,7 +180,12 @@ VLLM_ENABLE_V1_MULTIPROCESSING=0 python gen_constrained_worker_vllm.py \
 
 # Stage C (local): aggregate + publish
 uv run python aggregate_results.py --run <run dir> --out-prefix full
-HF_TOKEN=<open-athena-scoped> uv run python publish_to_hf.py --run <run dir>
+# publish_to_hf.py uploads via `hf buckets`, which needs huggingface_hub>=1.5 (the
+# uv-locked venv here has 0.36.2). Use an hf CLI >=1.5 whose token is authed to an
+# account in the open-athena org; --dry-run builds the parquets locally without
+# uploading. The correctness gate in _read_document keeps only n_gt==0 or
+# prec==rec==1.0 docs, so the published set is 100%-correct by construction.
+uv run python publish_to_hf.py --run <run dir>            # add --dry-run to preview
 ```
 
 ## Results
@@ -226,14 +231,56 @@ best struct-NLL matching the HF worker within sampling noise (e.g. 859.5 vs 856.
 1741 vs 1734), at **~790 tok/s (~2× the HF worker)** on the same A5000. This is
 the code that ports to iris/TPU (see backend note above).
 
+### Full round-0 scale-out — the deliverable (941,004 documents)
+
+The entire round-0 contacts-v1 train set was regenerated on iris preemptible TPUs
+(`select_round0_all.py`: all 941,028 proteins, ground truth parsed from the original
+documents), N=10 rollouts each, selecting the lowest unmodified-NLL document per
+protein.
+
+- **Deliverable: 941,004 regenerated documents, verified 0 incorrect.** Every
+  contact-bearing document has `precision = recall = 1.0`; contact-bearing targets
+  averaged **9.99 / 10** correct rollouts. The 1,783 zero-contact proteins are kept
+  (an empty statement list is trivially correct; they score as degenerate
+  `prec=0/rec=nan` and are exempted by the publish filter). **24 of 941,028** targets
+  are excluded: ~23 whose resampled prefix already fills the 8192 context (no room
+  for the structure section) and **1** pathological large protein
+  (`AF-A0A7R8UDF5-F1`, `n_gt=338`) whose every rollout desynced.
+- **Selection is meaningful at scale:** the selected document sits on average
+  **39.7 nats** below the per-target mean rollout NLL.
+- **Scale of the set:** protein length mean 256 / max 1994; contacts `n_gt` mean 201
+  / median 131 / max 1737; **~5.64 B tokens** generated; selected `struct_nll` mean
+  1460 / median 829.
+- **Compute (Jul 2–13):** ~592k documents generated on **v5p-8** and ~349k on
+  **v6e-4**. (The `tpu_type` column tags the v5p-8 docs `A5000` — a cosmetic
+  default-label artifact, not the real device.) The fleet grew from 8× v5p-8, to a
+  mixed 16-worker run (4 v5p-8 + 12 v6e-4) once v6e capacity was validated, to a
+  24× v6e-4 "tail" sprint that cleared the last single-worker straggler slice.
+  ≈1,290 `tp=4` generation-compute-hours (excludes XLA warmup, preemption re-warms,
+  and the `prompt_logprobs` scoring pass).
+- **Two scale-only bugs, fixed on this branch:** a context overflow that appears
+  only at full scale — a tight-fit rollout with `prompt + generated == 8192` tripped
+  `prompt (8192) + output (≥1) > max_model_len` in **both** the generate and the
+  `prompt_logprobs` scoring pass — fixed by reserving one token of headroom and
+  skipping targets that cannot fit (resume-safe skip marker); and a rare grammar
+  desync at high concurrency, absorbed by the *select-among-100%-correct* rule plus a
+  one-shot re-run of the 745 affected targets (744 recovered, 1 excluded).
+
+**Published** to the public `open-athena/MarinFold` bucket at
+`data/contacts-v1-train-only-correct-exp100/`:
+[`regenerated_documents.parquet`](https://huggingface.co/datasets/open-athena/MarinFold) (3.6 GB — the training set),
+`rollout_nll_all.parquet` (all N rollout NLLs), `per_target_nll.parquet` (per-protein
+NLL spread). Auth-free for Colab.
+
 ## Conclusion
 
-The only-correct constrained-decoding method works: for every training protein we
-generate valid, 100%-correct, full-recall contacts-v1 documents whose contact
-ordering is sampled from the base model and selected by unmodified likelihood.
-Validated end-to-end on 1000 proteins (10,000 documents, all selected docs correct)
-on **both** a local GPU (HF worker, 2.85 A5000-h) and **iris TPU** (vLLM
-structured-output-backend worker, ~1.04 v5p-8-h, 1000/1000 correct). The TPU path
-is the efficient, shardable one for scale-out. Remaining: scale to the full
-unique-protein train set, publish the set to the public HF bucket, and the
-fine-tuning-vs-re-epoch comparison (a later experiment).
+The only-correct constrained-decoding method works, and the deliverable is done:
+**941,004 regenerated round-0 contacts-v1 training documents, verified 100%-correct,
+published to the public HuggingFace bucket** — exp100's success criterion. For every
+training protein (bar 25 edge cases) we generate valid, 100%-correct, full-recall
+documents whose contact ordering is sampled from the base model and selected by
+unmodified likelihood. The method was validated end-to-end on 1000 proteins on both a
+local A5000 (HF worker) and iris TPU (vLLM structured-output backend), then scaled to
+the full set on a mixed v5p-8 + v6e-4 preemptible-TPU fleet. Remaining (a later
+experiment): the fine-tuning-on-regenerated-docs vs. re-epoching comparison this set
+was built to enable.
