@@ -1,0 +1,29 @@
+[project]
+name = "exp126-data-contacts-v1-think"
+version = "0.1.0"
+description = "Local at-scale generation of the think-augmented contacts-v1 corpus (#126)."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold[contacts-v1]",
+    "gemmi>=0.6",
+    "gcsfs>=2024",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
