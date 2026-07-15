@@ -125,7 +125,8 @@ uv run python select_round0_val.py             # val targets + original round-0 
 #   see experiments/exp100_.../{gen_prompts,gen_constrained_worker_vllm,aggregate_results}.py
 
 # --- Train (headline 1-epoch first, then the 4-epoch curve) ---
-EXP120_MODE=headline EXP120_STEPS_PER_EPOCH=<N> WANDB_API_KEY=<key> \
+# EXP120_STEPS_PER_EPOCH=1006 (measured; identical for both arms).
+EXP120_MODE=headline EXP120_STEPS_PER_EPOCH=1006 WANDB_API_KEY=<key> \
   uv run iris --cluster marin job run --no-wait --enable-extra-resources \
     --memory=16GB --disk=16GB --cpu=1 --extra=tpu --zone=us-east5-a \
     -- python -m train_regen_vs_reepoch_sweep
@@ -147,8 +148,24 @@ uv run --no-sync python export_checkpoints.py \
 
 ## Status
 
-Scaffolded (code complete, syntax-checked). Data-prep + TPU launches pending —
-see the per-step status appended below as the run proceeds.
+**Data prep DONE (2026-07-15).** All corpora staged under the exp120 GCS prefix
+(`gs://marin-us-east5/protein-structure/MarinFold/exp120_regen_vs_reepoch_contacts_v1/data/`):
+
+- `regen_train/` — Arm B, **941,004** docs (mirrored from the HF bucket, 64 shards).
+- `orig_r0_train/` — Arm A, **941,004** docs; **941,004/941,004 regen proteins
+  matched** in round-0 train (0 missing) — the arms are exactly aligned.
+- `orig_r0_val/` — original round-0 val corpus, **9,558** docs.
+- `targets_val_r0.parquet` — **9,558** round-0 val targets for regen-val generation.
+
+**Matched budget confirmed:** total train tokens **1,054,171,823** (Arm A);
+per-protein token counts are **bit-identical across arms** (0 mismatches over a
+14,704-protein sample, ratio 1.00000 — same L, same contact set, order-only
+difference). At batch 128 × seq 8192 → **`EXP120_STEPS_PER_EPOCH = 1006`**
+(headline = 1006 steps; 4-epoch curve = 4024 steps), the same for both arms.
+
+**Pending (TPU / iris):** generate the regenerated val set (exp100 pipeline on
+`targets_val_r0.parquet`), then the training sweep, exports, and the exp89
+downstream eval. Launch commands below.
 
 ## Results
 
