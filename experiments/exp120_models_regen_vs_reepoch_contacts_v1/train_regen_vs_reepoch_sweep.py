@@ -125,7 +125,10 @@ def build_steps() -> list:
                         num_train_steps=spe * max_epochs,
                         train_batch_size=TRAIN_BATCH,
                         steps_per_eval=max(1, spe // 4),
-                        steps_per_export=spe,  # checkpoint every epoch boundary
+                        # Half-epoch permanent checkpoints: hits every epoch
+                        # boundary (spe, 2*spe, ...) AND gives early resume points
+                        # so a preemption on the long (~17h) run loses <~2h, not ~4h.
+                        steps_per_export=max(1, spe // 2),
                         extra_tags=("curve", f"e{max_epochs}", lr_tag),
                         wandb_name=name,
                     )
