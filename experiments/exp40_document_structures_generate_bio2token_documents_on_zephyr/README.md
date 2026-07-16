@@ -42,11 +42,11 @@ See [parent issue](https://github.com/Open-Athena/MarinFold/issues/2).
 
 ## Results
 
-**bio2token runs end-to-end on Iris/Zephyr TPUs, emitting the self-describing
-`bio2token-v2` documents described below.** The infrastructure was validated by
-a full 22-shard `val` run; the document format was then redesigned per review
-(see the [PR thread](https://github.com/Open-Athena/MarinFold/pull/114)), so the
-published corpus predates the format change and is being **regenerated to v2**.
+**bio2token runs end-to-end on Iris/Zephyr TPUs, and the `val` split is
+published as self-describing `bio2token-v2` documents** (format below) at
+`gs://marin-us-east5/protein-structure/MarinFold/exp40/val/corpus-{shard:05d}-of-00022.parquet`
+— **41,954 documents, 0 malformed**, ready for review. The format was iterated
+during review (see the [PR thread](https://github.com/Open-Athena/MarinFold/pull/114)).
 
 ### Document format (`bio2token-v2`)
 
@@ -76,15 +76,21 @@ atom budget is `(context_length − 4 − 2·n_residues) / 3`. Rows record
 `num_atoms` (emitted), `num_atoms_total`, and a `truncated` flag. Only the rare
 chain too long to position-number (> 2700 residues) is dropped outright.
 
-### Infrastructure (measured)
+### Corpus + infrastructure (measured)
 
-- **Validation run:** 22 shards on **8 × v6e-4 preemptible** workers (us-east5-b),
-  ~16 min end-to-end, 41,954 structures, 86.6 M atoms. All compute + manifest +
-  output co-located in us-east5 → **zero cross-region egress**.
+- **`val` corpus:** 41,954 documents, 0 malformed, all `bio2token-v2`. Every
+  document fits the 8k budget (`num_tokens` p50 5,051, max 8,192). **26.2%**
+  (10,976) of structures were large enough to have their atoms sampled;
+  **76.3%** of all atoms are kept (66.0 M of 86.6 M). Schema carries the
+  `truncated` / `num_atoms_total` flags plus the manifest provenance (split,
+  plddt, cluster ids, round, …).
+- **Run:** 22 shards on **v6e-4 preemptible** workers (us-east5-b), all compute
+  + manifest + output co-located in us-east5 → **zero cross-region egress**.
 - **Throughput (1 v6e chip, XLA compile amortized):** ~**0.108 s/doc**,
   ~**20,300 atoms/s** (full 2,000-row shard). A short run is dominated by the
   one-time XLA compile (~7 graphs, one per length bucket): the 100-doc smoke was
-  0.74 s/doc, mostly compile.
+  0.74 s/doc, mostly compile. (Preemption can stretch wall-clock: this run lost
+  6 of 8 workers mid-flight and finished on 1–2.)
 
 **How it works (the deployable pipeline).** bio2token's published encoder needs
 CUDA-only kernels; exp40 reimplements the all-atom Mamba-1 encoder + FSQ in
