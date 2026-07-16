@@ -169,9 +169,43 @@ downstream eval. Launch commands below.
 
 ## Results
 
-_(Fill in after runs complete: the three val-loss curves per arm across the 1–4
-epoch sweep, and the exp89 downstream contact-prediction table per checkpoint.)_
+### Warm-start sanity (passed)
+
+All runs start at first-step **loss ≈ 2.6–2.7** (== Eric's base 2.7566), confirming
+the cross-repo Qwen3 warm-start loaded correctly and `pad_tokenizer_to_match_model`
+handled the vocab (a broken load reads ~8). Trained on v6e-8/us-east5-b.
+
+### Headline (1 epoch) — eval loss
+
+Held-out eval loss at step ~1005 (base checkpoint = 2.7566):
+
+| arm | LR | val-full (real held-out) | val-orig (round-0) | val-regen (on-policy) |
+|---|---|---|---|---|
+| **A — re-epoch original** | 3e-4 | **2.744** | **2.721** | 2.666 |
+| **B — regenerated** | 3e-4 | 2.837 | 2.815 | **2.525** |
+| **B — regenerated** | 1e-4 | 2.836 | 2.815 | **2.537** |
+| A — re-epoch original | 1e-4 | _(re-running after 1 preemption)_ | | |
+
+**Read:** on the **real held-out original val**, re-epoching the original data
+nudges loss *down* (2.7566 → 2.744), while the regenerated arm regresses *up* to
+~2.84. On the **regenerated val** it flips (regen arm 2.52 vs re-epoch 2.67) — the
+regenerated model fits its own low-entropy, on-policy distribution but does worse
+on the true objective. This is the issue's counter-hypothesis on eval loss. LR
+(1e-4 vs 3e-4) barely matters for the regen arm.
+
+**Caveat (decider still pending):** issue #120 warns loss and accuracy can diverge
+(cf. #89). The downstream contact-prediction accuracy (exp89 harness) is what
+determines "the better contacts-v1 model" and is not yet run.
+
+### Curve (1–4 epochs) — in progress
+
+`/bizon/iris-run-job-20260716-081125` (lr3e-4, both arms, 4-epoch flat-LR, per-epoch
+checkpoints). Watching whether the regen arm degrades further on val-full with more
+passes.
 
 ## Conclusion
 
-_(Fill in — which arm yields the better contacts-v1 model, and by how much.)_
+_(Pending downstream contact-prediction accuracy. Preliminary on eval loss:
+re-epoching the original data beats fine-tuning on the regenerated docs on the
+real held-out objective at 1 epoch; the regenerated arm mainly learns its own
+on-policy distribution.)_
