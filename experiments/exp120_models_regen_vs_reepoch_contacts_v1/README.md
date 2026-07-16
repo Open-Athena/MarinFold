@@ -197,6 +197,27 @@ on the true objective. This is the issue's counter-hypothesis on eval loss. LR
 (cf. #89). The downstream contact-prediction accuracy (exp89 harness) is what
 determines "the better contacts-v1 model" and is not yet run.
 
+### Headline (1 epoch) — downstream contact accuracy (THE DECIDER)
+
+exp89 harness (pairwise scoring, 554-protein eval set, GT via pyconfind).
+**Pipeline validated:** base #75 reproduces exp89's published numbers (long
+R-precision 0.2695 ≈ 0.269, long AUC 0.8807 ≈ 0.881).
+
+| model | long R-prec | long AUC | long contacts@L | all R-prec | all AUC |
+|---|---|---|---|---|---|
+| base #75 (Eric) | 0.2695 | 0.8807 | 0.1877 | 0.3389 | 0.9042 |
+| **A — re-epoch** (lr3e-4) | **0.2794** ↑ | **0.8859** ↑ | **0.1938** ↑ | **0.3495** | 0.9085 |
+| **B — regenerated** (lr3e-4) | 0.2618 ↓ | 0.8767 ↓ | 0.1823 ↓ | 0.3297 ↓ | 0.9005 |
+
+**Loss and accuracy agree.** Re-epoching the original data slightly *improves*
+contact prediction over the base (long R-precision 0.270 → 0.279, +3.7%);
+fine-tuning on the regenerated docs slightly *degrades* it (0.270 → 0.262,
+−2.9%). Arm A beats Arm B by ~0.018 long R-precision (+6.7%). The regenerated
+set's clean, on-policy, low-entropy documents provide little new signal and are a
+slightly worse fine-tuning target than simply re-epoching the original data — the
+issue's hypothesis is **rejected** at 1 epoch (effect sizes are modest: these are
+1-epoch continue-trains on an already-8-epoch model).
+
 ### Curve (1–4 epochs) — in progress
 
 `/bizon/iris-run-job-20260716-081125` (lr3e-4, both arms, 4-epoch flat-LR, per-epoch
@@ -205,7 +226,18 @@ passes.
 
 ## Conclusion
 
-_(Pending downstream contact-prediction accuracy. Preliminary on eval loss:
-re-epoching the original data beats fine-tuning on the regenerated docs on the
-real held-out objective at 1 epoch; the regenerated arm mainly learns its own
-on-policy distribution.)_
+At 1 epoch and matched budget, **re-epoching the original contacts-v1 training
+data produces a better contacts-v1 model than fine-tuning on the exp100
+regenerated only-correct documents** — consistently on both eval loss and
+downstream contact-prediction accuracy. Re-epoch nudges the base #75 model
+slightly better (long R-precision 0.270 → 0.279); the regenerated arm is slightly
+worse than the base (0.270 → 0.262). The regenerated set is 100%-correct and
+on-policy (the model's own preferred contact orderings), so it is low-entropy and
+provides little *new* signal — exactly the counter-hypothesis. The issue's
+hypothesis (regenerated docs are a cleaner, higher-signal target) is **rejected**.
+
+Effect sizes are modest (both arms move the already-8-epoch base by ≤0.02 R-prec),
+so the practical read is "regenerating the training set is not a useful lever for
+this model." _(1–4 epoch curve in progress — checking the regen arm doesn't
+recover, or degrade further, with more passes; lr1e-4 variants confirm the LR
+doesn't change the ranking.)_
