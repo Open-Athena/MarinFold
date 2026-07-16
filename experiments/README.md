@@ -23,12 +23,19 @@ an issue first.
 
 ## What each kind means
 
-| Kind | Purpose | Where the code lives once it graduates |
+| Kind | Purpose | Shared library it imports from |
 |---|---|---|
 | `models` | Train models | [`../models/`](../models/) |
 | `evals` | Run evals on trained models | — (no shared library yet) |
 | `data` | Generate training/eval datasets | — (no shared library yet) |
 | `document_structures` | Define an interface for both generating documents from input data and evaluating models | [`../marinfold/marinfold/document_structures/`](../marinfold/marinfold/document_structures/) |
+
+An experiment dir stays under `experiments/` for its whole life — it
+is never copied or promoted into a kind dir. Reusable code goes in the
+kind library from the start and the experiment imports it. A document
+structure in particular is always implemented in
+[`marinfold.document_structures`](../marinfold/marinfold/document_structures/);
+see [`../marinfold/README.md`](../marinfold/README.md).
 
 ## Tooling
 
@@ -90,27 +97,6 @@ comes from its dir; a dir-less issue's kind comes from its
    python scripts/itemize.py
    ```
 7. **Close** the issue once the conclusion lands.
-8. **(Optional) Graduate** by *copying* into the kind dir. If the
-   experiment's code should keep evolving as a first-class object,
-   copy the directory:
-   ```bash
-   cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
-   # e.g. cp -r experiments/exp42_models_protein_1b/ models/protein_1b/
-   ```
-   Drop the `exp<N>_<kind>_` prefix in the destination name.
-   **Leave the original `experiments/exp<N>_*/` directory alone** —
-   it's the historical record of what was tried at the time of the
-   experiment, including the README that captures the question /
-   hypothesis / results. Going forward, edits land in the kind-dir
-   copy; the experiment dir is frozen.
-
-   Things to consider in the copy after the move:
-   - Trim or rewrite the experiment-style README if the kind dir has
-     a different docs convention.
-   - Decide whether to keep the experiment's `pyproject.toml` or
-     consolidate it with the kind library's setup.
-   - Update internal links / commit references that pointed at the
-     experiment dir.
 
 ## Main vs. branch
 

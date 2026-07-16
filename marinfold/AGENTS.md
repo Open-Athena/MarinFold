@@ -15,10 +15,13 @@ responsibilities, nothing more:
    `core` + `writers`) — `EvalResult`, `build_tokenizer`, output
    writers (`write_docs` / `write_predictions` / `write_eval`).
    Protein-unaware.
-3. **Graduated document-structure impls**
+3. **Document-structure impls**
    (`marinfold.document_structures.<name>`) — each impl is a
-   subpackage. The impl is the only place that knows about residues,
-   distances, and one specific protein-document format.
+   subpackage, and every format is implemented here from its first
+   commit (there's no in-flight location and no graduation step;
+   experiments import the impl from this package). The impl is the
+   only place that knows about residues, distances, and one specific
+   protein-document format.
 4. **Top-level CLI** (`marinfold.cli`) + model registry
    (`marinfold.registry`) — `marinfold infer` / `marinfold evaluate`
    that look up a model in `MODELS.yaml`, pick a supported document
@@ -62,5 +65,5 @@ residues or distances, it's in the wrong place.
    `marinfold infer` and `marinfold evaluate` cover the common
    "run a trained model" cases. Lower-level operations (e.g.
    `generate`, `tokenizer`) stay on the per-impl `cli.py` inside
-   each graduated impl. Don't grow the top-level CLI into a
+   each impl. Don't grow the top-level CLI into a
    centralized dispatcher for impl-specific tooling.

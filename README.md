@@ -162,10 +162,11 @@ uv run contacts-v1 generate --input tests/data/1QYS.cif \
 
 ## More details (mostly written by robots)
 
-Trained models are listed in `[MODELS.yaml](MODELS.yaml)` by
+Trained models are listed in
+[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) by
 nickname. The `marinfold` CLI looks up the model, picks the first
-document structure it supports, and dispatches to the graduated
-impl. Two subcommands:
+document structure it supports, and dispatches to that impl. Two
+subcommands:
 
 ```bash
 cd marinfold
@@ -190,7 +191,7 @@ uv run marinfold evaluate \
 | `transformers` | Anywhere torch installs (Apple MPS, CPU, CUDA) | `--extra transformers` |
 
 
-`--model` accepts a `[MODELS.yaml](MODELS.yaml)` nickname or a
+`--model` accepts a [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) nickname or a
 local checkpoint directory. Omit it to use the entry marked
 `default: true`. `--document-structure` overrides the impl
 selection; without it the first supported impl wins. See
@@ -199,8 +200,10 @@ matrix and `marinfold infer --help` / `marinfold evaluate --help`
 for the full flag set.
 
 For impl-specific flags (seed-N sweeps, distance cap, batch size,
-etc.) each graduated impl ships its own lower-level CLI as a
-console script:
+etc.) each impl has its own lower-level CLI. `contacts-v1` and
+`contacts-and-distances-v1` install theirs as console scripts
+(`contacts-and-coordinates-v1` has none — run it with `python -m`;
+see [`marinfold/README.md`](marinfold/README.md)):
 
 ```bash
 cd marinfold
@@ -220,7 +223,6 @@ uv run contacts-and-distances-v1 evaluate \
 
 ```
 MarinFold/
-├── MODELS.yaml             # registry of trained models (nickname → HF URL)
 ├── RESOURCES.md            # datasets, tokenizers, W&B projects, prior repos
 ├── AGENTS.md               # shared agent rules
 ├── .github/ISSUE_TEMPLATE/experiment.md
@@ -230,18 +232,17 @@ MarinFold/
 │   ├── AGENTS.md
 │   ├── TEMPLATE.md
 │   └── exp<N>_<kind>_<name>/       # individual experiments
-├── marinfold/              # top-level package: backends, doc-structure toolkit, graduated impls, `marinfold` CLI
+├── marinfold/              # top-level package: MODELS.yaml, backends, doc-structure toolkit + impls, `marinfold` CLI
 ├── models/                 # library for model-training experiments
 └── history/                # one file per W&B-logged run + summary RUNS.md
 ```
 
 Each top-level dir under the repo root is a **small library** for one
 kind of work. Concrete experimental work begins as an issue and a
-sub-directory under `experiments/` and may pull in helpers from the
-relevant library. Important / high-quality experiments get
-**graduated** — copied into the kind dir, where the copy keeps
-evolving while the original `experiments/exp<N>_*/` stays frozen as
-the historical record.
+sub-directory under `experiments/` and pulls in helpers from the
+relevant library. An experiment dir is never copied into a kind dir —
+code meant to be reused lands in the library from the start and the
+experiment imports it.
 
 ## Experiment workflow
 
@@ -296,44 +297,14 @@ with a sibling creates the kind dir at that point.
 A **document structure** is a recipe with two responsibilities: turn
 input data (e.g. a PDB) into a training document string, and score a
 trained model against ground-truth structures using the same format.
-Each format is a self-contained experiment dir with its own `cli.py`
-driver (`generate` / `infer` / `evaluate` / `tokenizer` subcommands)
-on top of the shared toolkit in
-`[marinfold.document_structures](marinfold/marinfold/document_structures/)`
-(`EvalResult`, `build_tokenizer`, parquet/jsonl writers). The
-reference impl is
-`[experiments/exp1_document_structures_contacts_and_distances_v1/](experiments/exp1_document_structures_contacts_and_distances_v1/)`;
-graduated impls live as subpackages of `marinfold.document_structures`.
-
-
-
-## Graduating an experiment
-
-When an experiment's results are validated and the code should keep
-evolving as a first-class object, **copy** the directory into the
-matching kind dir, dropping the `exp<N>_<kind>_` prefix:
-
-```bash
-# models / evals / data: peer kind directory
-cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
-# e.g. cp -r experiments/exp42_models_protein_1b/ models/protein_1b/
-
-# document_structures: subpackage of marinfold
-cp -r experiments/exp<N>_document_structures_<name>/ \
-      marinfold/marinfold/document_structures/<name>/
-```
-
-The original `experiments/exp<N>_*/` directory stays **frozen** as
-the historical record — the README, data, plots, and conclusion
-remain as they were at the time of the experiment. The graduated
-copy is the working version going forward; edits land there.
-
-After the copy: convert sibling imports to intra-package relative
-imports (`from .vocab import …`), add an `__init__.py` re-export
-of the public surface, and — for document_structures impls — add
-an optional-deps extra to `marinfold/pyproject.toml` for any
-heavy parser deps (e.g. `gemmi`). Tests move next to similar
-tests under each kind dir's `tests/`.
+Every format is implemented as a subpackage of
+[`marinfold.document_structures`](marinfold/marinfold/document_structures/)
+from its first commit, with its own `cli.py` driver (`generate` /
+`view` / `infer` / `evaluate` / `tokenizer`, depending on the impl) on
+top of the shared toolkit there (`EvalResult`, `build_tokenizer`,
+parquet/jsonl writers). `contacts-v1` is the current format; see
+[`marinfold/README.md`](marinfold/README.md) for all three and what
+each supports.
 
 ## Run history
 
@@ -411,9 +382,10 @@ with plain `python`:
 
 
 For impl-specific CLI surfaces (e.g. `generate` and `tokenizer`
-subcommands), see the per-impl console script — graduated impls
-expose one as `<structure-name>` (e.g. `contacts-and-distances-v1 {generate,infer,evaluate,tokenizer} ...`) installed alongside the
-top-level `marinfold` command.
+subcommands), see the per-impl CLI — `contacts-v1` and
+`contacts-and-distances-v1` install one as `<structure-name>` (e.g.
+`contacts-and-distances-v1 {generate,infer,evaluate,tokenizer} ...`)
+alongside the top-level `marinfold` command.
 
 To set up the scripts venv: `cd scripts && uv venv --python 3.11 && uv sync`
 (add `--extra wandb` for `history sync` / `history check`).
@@ -425,10 +397,11 @@ Initial port (commit-level) from the
 branch. All training/export scripts live under
 `[experiments/exp0_models_protein_docs_initial_port/](experiments/exp0_models_protein_docs_initial_port/)`;
 shared marin glue is in `[models/marinfold_models/](models/marinfold_models/)`.
-The `contacts-and-distances-v1` document structure is graduated at
+The `contacts-and-distances-v1` document structure lives at
 `[marinfold/marinfold/document_structures/contacts_and_distances_v1/](marinfold/marinfold/document_structures/contacts_and_distances_v1/)`;
-its in-flight history lives at
-`[experiments/exp1_document_structures_contacts_and_distances_v1/](experiments/exp1_document_structures_contacts_and_distances_v1/)`.
+the experiment that first built it is
+`[experiments/exp1_document_structures_contacts_and_distances_v1/](experiments/exp1_document_structures_contacts_and_distances_v1/)`,
+kept as a historical record.
 Eval experiments (e.g. `experiments/exp9_evals_`*) have started
 landing; a shared `evals` kind library will be created when a second
 eval experiment needs the same helper.
