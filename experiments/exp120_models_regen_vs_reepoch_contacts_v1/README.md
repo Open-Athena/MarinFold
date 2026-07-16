@@ -206,17 +206,19 @@ R-precision 0.2695 ≈ 0.269, long AUC 0.8807 ≈ 0.881).
 | model | long R-prec | long AUC | long contacts@L | all R-prec | all AUC |
 |---|---|---|---|---|---|
 | base #75 (Eric) | 0.2695 | 0.8807 | 0.1877 | 0.3389 | 0.9042 |
-| **A — re-epoch** (lr3e-4) | **0.2794** ↑ | **0.8859** ↑ | **0.1938** ↑ | **0.3495** | 0.9085 |
-| **B — regenerated** (lr3e-4) | 0.2618 ↓ | 0.8767 ↓ | 0.1823 ↓ | 0.3297 ↓ | 0.9005 |
+| **A — re-epoch** lr1e-4 | 0.2799 ↑ | 0.8851 ↑ | 0.1933 ↑ | 0.3478 | 0.9078 |
+| **A — re-epoch** lr3e-4 | **0.2794** ↑ | **0.8859** ↑ | **0.1938** ↑ | **0.3495** | 0.9085 |
+| **B — regenerated** lr1e-4 | 0.2627 ↓ | 0.8775 ↓ | 0.1831 ↓ | 0.3310 ↓ | 0.9010 |
+| **B — regenerated** lr3e-4 | 0.2618 ↓ | 0.8767 ↓ | 0.1823 ↓ | 0.3297 ↓ | 0.9005 |
 
-**Loss and accuracy agree.** Re-epoching the original data slightly *improves*
-contact prediction over the base (long R-precision 0.270 → 0.279, +3.7%);
-fine-tuning on the regenerated docs slightly *degrades* it (0.270 → 0.262,
-−2.9%). Arm A beats Arm B by ~0.018 long R-precision (+6.7%). The regenerated
-set's clean, on-policy, low-entropy documents provide little new signal and are a
-slightly worse fine-tuning target than simply re-epoching the original data — the
-issue's hypothesis is **rejected** at 1 epoch (effect sizes are modest: these are
-1-epoch continue-trains on an already-8-epoch model).
+**Loss and accuracy agree, and the ranking is LR-independent.** Both re-epoch runs
+land ~0.279–0.280 long R-precision (*up* from base 0.2695); both regenerated runs
+~0.262–0.263 (*down* from base). Arm A beats Arm B by ~0.017 long R-precision
+(~6.5%) at both LRs, on every range/metric. The regenerated set's clean, on-policy,
+low-entropy documents provide little new signal and are a slightly *worse*
+fine-tuning target than simply re-epoching the original data — the issue's
+hypothesis is **rejected** at 1 epoch (effect sizes are modest: 1-epoch
+continue-trains on an already-8-epoch model).
 
 ### Curve (1–4 epochs) — in progress
 
