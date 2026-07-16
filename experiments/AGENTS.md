@@ -246,36 +246,20 @@ Pure-analysis experiments (no marin imports) don't need a pyproject
 at all — they can just sit as `.py` files in a dir and run with the
 user's system python.
 
-## Graduating an experiment
+## An experiment dir is never copied into a kind dir
 
-Once an experiment's results are validated and the code should keep
-evolving as a first-class object, **copy** the directory into the
-matching kind dir, dropping the `exp<N>_<kind>_` prefix:
+There is no graduation step. An experiment lives under
+`experiments/exp<N>_<kind>_<name>/` for its whole life, and nothing
+gets copied or symlinked out of it into `models/` or `marinfold/`.
 
-```bash
-cp -r experiments/exp<N>_<kind>_<name>/ <kind>/<name>/
-# e.g. cp -r experiments/exp42_models_protein_1b/ models/protein_1b/
-```
-
-**Leave the original `experiments/exp<N>_*/` directory untouched.**
-It's the frozen historical record of what was tried at the time of
-the experiment — the README, the data, the plots, the conclusion.
-The kind-dir copy is the working version going forward; edits land
-there, not in the experiment dir.
-
-After the copy, you'll typically want to:
-
-- Trim or rewrite the experiment-style README if the kind dir has a
-  different docs convention (kind-dir code isn't always
-  question/hypothesis/result-shaped).
-- Decide whether to keep the experiment's `pyproject.toml` and venv
-  or consolidate with the kind library's setup.
-- Update any internal links / commit references that pointed at the
-  experiment dir.
-
-The kind dir and the experiment dir then diverge: the experiment
-stays frozen as the historical snapshot, the kind dir evolves
-freely.
+Code that should be reusable goes into the kind library **from the
+start**, and the experiment imports it — a document structure is
+always implemented in `marinfold.document_structures.<name>`, and
+shared training glue always lives in `marinfold_models`. If a second
+experiment turns out to need a helper an earlier one wrote, move that
+helper into the kind library then (the bar is "≥ 2 experiments would
+import it, and the abstraction is stable"), and leave the rest of the
+experiment where it is.
 
 ## When a researcher replies with a variant
 

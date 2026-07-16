@@ -10,11 +10,10 @@ collection of training scripts. Specific training pipelines live as
 experiments under `experiments/exp<N>_models_<name>/` and import
 `marinfold_models.*` from here.
 
-Graduated experiments may also appear as symlinks under this
-directory (e.g. `models/contacts_and_distances_v1_baseline/` →
-`../experiments/exp<N>_models_contacts_and_distances_v1_baseline/`).
-Those are not part of the library; the library is `marinfold_models/`
-only.
+The library is `marinfold_models/`, and that's all `models/` holds.
+Experiment dirs are never copied or symlinked in — an experiment
+stays under `experiments/` for its whole life and imports what it
+needs from here.
 
 ## Hard rules
 
@@ -83,13 +82,3 @@ the top-level `experiments/` tree.
 
 If marin's `default_train` signature evolves, refresh both vendored
 files in one PR — no compatibility shims.
-
-## Graduated experiments
-
-When an experiment is graduated (see
-[`experiments/AGENTS.md`](../experiments/AGENTS.md)), its directory
-is **copied** here under a name that drops the `exp<N>_models_`
-prefix. The copy is the working version going forward; the original
-`experiments/exp<N>_models_<name>/` stays frozen as the historical
-record. Don't reach back to the experiment dir to edit code — make
-changes here.

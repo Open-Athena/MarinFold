@@ -18,7 +18,7 @@ infrastructure. Concerns at the repo root:
 - `scripts/` — repo-management scripts (`scaffold.py`, `itemize.py`,
   `history.py`). Run with plain `python scripts/<name>.py`.
 - `marinfold/` — the top-level Python package. Backends, model
-  registry, document-structure shared toolkit, graduated
+  registry, document-structure shared toolkit, the
   document-structure impls (as subpackages of
   `marinfold.document_structures.<name>`), and the user-facing
   `marinfold infer` / `marinfold evaluate` CLI.
@@ -41,7 +41,12 @@ direction is forbidden. If two experiments need the same helper,
 promote it to the kind library once a second use case actually exists
 (not before).
 
-See `experiments/README.md` for the workflow and graduation flow,
+Experiment dirs are never copied into a kind dir — there is no
+graduation step. Reusable code lands in the kind library from the
+start and the experiment imports it; the experiment dir keeps only
+its own driver code and results.
+
+See `experiments/README.md` for the workflow,
 and `marinfold/README.md` for the inference/CLI surface. For any
 data-generation pipeline that runs on the marin Iris cluster via
 Zephyr, read the [`zephyr-pipeline-performance`](.agents/skills/zephyr-pipeline-performance/SKILL.md)
