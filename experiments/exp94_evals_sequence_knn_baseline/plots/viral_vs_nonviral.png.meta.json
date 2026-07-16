@@ -1,0 +1,8 @@
+{
+  "script": "plot_knn.py",
+  "args": [
+    "--base-csv",
+    "../exp82_evals_contacts_v1_contact_prediction/_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "Long-range R-precision on the 28 viral vs 526 non-viral eval proteins. AFDB (the training source) excludes viruses, so viral is out-of-distribution: MarinFold drops 3.3x (0.37 to 0.11) and ESMFold2 0.79 to 0.36, while MSA-based Protenix-v2 retains ~74%."
+}

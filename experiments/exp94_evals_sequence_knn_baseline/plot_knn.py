@@ -28,6 +28,8 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from build_summary import save_plot_with_meta  # noqa: E402
+
 MARINFOLD = "marinfold-cv1-rollout-resample-tiebreak"  # "#61 with n=100 rollouts"
 # (display label, model, mode, predictor) for the headline bars, in reference
 # order. protenix-v2 carries both a `distogram` and a `structure` predictor under
@@ -70,7 +72,15 @@ def plot_headline(agg: pd.DataFrame, out: Path) -> None:
     ax.set_title("Contact prediction: sequence-KNN null model vs MarinFold and structure predictors")
     ax.set_ylim(0, max(v for v in vals if v == v) * 1.18)
     fig.tight_layout()
-    fig.savefig(out, dpi=150)
+    save_plot_with_meta(
+        fig, out, dpi=150,
+        caption=(
+            "Mean long-range R-precision over the 554 eval proteins, all scored under exp89's "
+            "metric harness. The issue's success criterion: seq-KNN k=10 (0.324) ties MarinFold "
+            "#61 (0.353) — a no-folding copy-the-neighbours baseline nearly matches the LM on "
+            "average."
+        ),
+    )
     plt.close(fig)
     print(f"[plot] {out}")
 
@@ -87,7 +97,14 @@ def plot_k_sweep(agg: pd.DataFrame, out: Path, ks=(1, 5, 10, 25, 50)) -> None:
     ax.set_title("seq-KNN: R-precision vs k")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(out, dpi=150)
+    save_plot_with_meta(
+        fig, out, dpi=150,
+        caption=(
+            "seq-KNN long-range R-precision vs k (nearest training neighbours voted), self-included "
+            "vs self-excluded. Peaks at k=10; the two curves coincide because only 2 of 554 eval "
+            "proteins have a verbatim self-hit — homology transfer, not train/eval leakage."
+        ),
+    )
     plt.close(fig)
     print(f"[plot] {out}")
 
@@ -109,7 +126,14 @@ def plot_scatter(knn: pd.DataFrame, base: pd.DataFrame, out: Path, k: int = 10) 
     ax.set_ylim(-0.02, 1.02)
     ax.set_aspect("equal")
     fig.tight_layout()
-    fig.savefig(out, dpi=150)
+    save_plot_with_meta(
+        fig, out, dpi=150,
+        caption=(
+            f"Per-protein long-range R-precision: seq-KNN k={k} (x) vs MarinFold #61 (y); dashed "
+            f"line = parity. The cloud does not hug the diagonal (Pearson r={r:.2f}) — the two are "
+            f"accurate on different proteins, so their matching averages are coincidental."
+        ),
+    )
     plt.close(fig)
     print(f"[plot] {out}  (r={r:.3f})")
 
@@ -154,7 +178,14 @@ def plot_stratified(knn: pd.DataFrame, base: pd.DataFrame, summary: pd.DataFrame
     ax.set_title("Contact accuracy vs nearest-training-neighbor identity")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(out, dpi=150)
+    save_plot_with_meta(
+        fig, out, dpi=150,
+        caption=(
+            f"Long-range R-precision binned by best training-set sequence identity ('no hit' = no "
+            f"mmseqs homolog). The core memorization read: seq-KNN k={k} climbs 0.00 to 0.69 while "
+            f"MarinFold #61 stays flat (~0.34-0.40), including on the 139 no-homolog proteins."
+        ),
+    )
     plt.close(fig)
     print(f"[plot] {out}")
 
@@ -214,7 +245,14 @@ def plot_stratified_all(knn, base, summary, out, k: int = 10) -> None:
     ax.legend(fontsize=8, ncol=2)
     ax.grid(axis="y", alpha=0.25)
     fig.tight_layout()
-    fig.savefig(out, dpi=150)
+    save_plot_with_meta(
+        fig, out, dpi=150,
+        caption=(
+            "Same identity bins, one line per predictor: seq-KNN is the only one whose accuracy "
+            "tracks training-sequence identity. Caveat — the axis is confounded with composition "
+            "(123 of the 139 no-hit proteins are denovo_pdb designs); the robust signal is the slope."
+        ),
+    )
     plt.close(fig)
     print(f"[plot] {out}")
 
@@ -255,7 +293,14 @@ def plot_viral(knn, base, taxonomy, out, k: int = 10) -> None:
     ax.set_title("Viral (out-of-distribution: AFDB excludes viruses) vs non-viral eval proteins")
     ax.legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig(out, dpi=150)
+    save_plot_with_meta(
+        fig, out, dpi=150,
+        caption=(
+            "Long-range R-precision on the 28 viral vs 526 non-viral eval proteins. AFDB (the "
+            "training source) excludes viruses, so viral is out-of-distribution: MarinFold drops "
+            "3.3x (0.37 to 0.11) and ESMFold2 0.79 to 0.36, while MSA-based Protenix-v2 retains ~74%."
+        ),
+    )
     plt.close(fig)
     print(f"[plot] {out}")
 
