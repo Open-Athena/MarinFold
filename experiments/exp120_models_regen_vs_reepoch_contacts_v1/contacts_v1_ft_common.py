@@ -114,11 +114,14 @@ MODEL_CONFIG = Qwen3Config(
 
 CONTACTS_V1_DATA_SEED = 0
 
-# Pin to us-east5-a: co-locate the TPU with the marin-us-east5 checkpoint bucket
-# and Eric's INIT_CHECKPOINT. v5p-8 is enough for a short continue-train; the
-# launcher can override to a bigger slice.
+# Train on v6e in us-east5-b. Rationale: the v5p-8 *preemptible* pool is both
+# heavily contended AND thrashes on short runs (exp85 saw 10 preemptions in 11 min,
+# never reaching step 0). v6e-preemptible in us-east5-b is abundant (exp100) and
+# in-region with the marin-us-east5 checkpoint bucket, and marin training on v6e is
+# proven (eric's exp117 trains on v6e). v6e-8 = 8 chips, per-chip batch 16 at global
+# batch 128. Bump to v6e-16 if a gang OOMs (v6e has 32GB HBM/chip vs v5p's ~95GB).
 PROTEIN_RESOURCES_USE5 = ResourceConfig.with_tpu(
-    "v5p-8", slice_count=1, cpu=32, ram="128g", disk="50g", zone="us-east5-a",
+    "v6e-8", slice_count=1, cpu=32, ram="128g", disk="50g", zone="us-east5-b",
 )
 
 
