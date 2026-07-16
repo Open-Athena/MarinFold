@@ -61,8 +61,36 @@ uv run python publish_to_hf.py --documents ~/exp126_scratch/documents
 
 ## Results
 
-_(Fill in after the run completes.)_
+Generated the full corpus locally (48 procs, ~20h wall; fetch-bound on the
+public AFDB bucket) and published it. **4,213,203 documents — 0 generation
+drops**, per-split/round counts **matching the exp53 non-think corpus exactly**
+(including the 245 budget-truncated train docs), so it is a true 1:1 think twin.
+
+| split | round 0 | round 1 | round 2 | round 3 | round 4 | total | docs w/ think |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| train | 941,028 | 941,028 | 941,028 | 719,519 | 587,079 | 4,129,682 | 3,482,930 |
+| val | 9,558 | 9,558 | 9,558 | 7,316 | 5,964 | 41,954 | 35,437 |
+| test | 9,468 | 9,468 | 9,468 | 7,248 | 5,915 | 41,567 | 35,040 |
+
+- **~4.81 B tokens** total (train ~4.71 B), mean ~1,140 `num_tokens`/doc.
+- **~84.3 % of documents carry a `<think>` run**; mean ~8.7 `<think>` tokens/doc
+  (~0.8 % of all tokens). Every document fits 8,192 tokens and ends with
+  `<end>`; `<think>` runs appear only between `<contact>` statements (validated
+  on val + train spot-checks: 0 invariant violations; `sha1`/`num_tokens`/
+  `think_tokens` self-consistent).
+- **Published** to `open-athena/MarinFold` →
+  `data/document_structures/contacts_v1_think/{train,val,test}/` (2,067 / 22 / 22
+  shards, round-descending) + dataset `README.md` + `tokenizer/` (unchanged
+  contacts-v1 tokenizer, `<think>` = id 6).
+
+Generation used `marinfold` @ the branch head (think path from #123/PR #125),
+pyconfind 0.6.0. gcsfs reads were verified byte-identical to gcloud (no
+requester-pays truncation on this box).
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The think-augmented contacts-v1 corpus exists and is published — a drop-in,
+1:1-aligned alternative to `contacts_v1` differing only by the `<think>` tokens
+(and the `think_tokens` column). It is ready for #124 (train a contacts-v1 1.5B
+with `<think>` loss-masked) and the downstream inference-time think evaluation.
+Generation only; does not close #123 or #126.

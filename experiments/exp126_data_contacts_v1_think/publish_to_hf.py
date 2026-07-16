@@ -158,6 +158,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--stats-only", action="store_true",
                     help="Compute + print stats and render README, but do not upload.")
     ap.add_argument("--skip-tokenizer", action="store_true")
+    ap.add_argument("--hf-bin", default="hf",
+                    help="Path to an `hf` CLI with the `buckets` subcommand "
+                         "(needs huggingface_hub>=1.5; the marinfold venv pins "
+                         "0.36 which lacks it, so pass the workstation hf, e.g. "
+                         "/home/bizon/anaconda3/bin/hf).")
     args = ap.parse_args(argv)
 
     # Verify shard completeness before publishing anything.
@@ -199,12 +204,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Built tokenizer → {tok_dir}", flush=True)
 
     # Sync shards per split, then upload README + tokenizer.
+    hf = args.hf_bin
     for split in SPLITS:
-        _run(["hf", "buckets", "sync", str(args.documents / split),
+        _run([hf, "buckets", "sync", str(args.documents / split),
               f"{BUCKET}/{split}"])
-    _run(["hf", "buckets", "cp", str(out_readme), f"{BUCKET}/README.md"])
+    _run([hf, "buckets", "cp", str(out_readme), f"{BUCKET}/README.md"])
     if not args.skip_tokenizer:
-        _run(["hf", "buckets", "sync", str(tok_dir), f"{BUCKET}/tokenizer"])
+        _run([hf, "buckets", "sync", str(tok_dir), f"{BUCKET}/tokenizer"])
     print("\nPublished to", BUCKET, flush=True)
     return 0
 
