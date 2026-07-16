@@ -15,8 +15,8 @@ importing :mod:`marinfold.inference` itself requires only the base
 deps and works with zero backends installed.
 
 The library is protein-unaware. Document-structure impls
-(``marinfold.document_structures`` and graduated impl packages
-under ``document_structures/``) build prompts as opaque token-id
+(``marinfold.document_structures`` and the impl packages under
+``document_structures/``) build prompts as opaque token-id
 lists and pass them in.
 """
 

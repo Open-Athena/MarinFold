@@ -66,7 +66,7 @@ def _load_impl(structure_name: str) -> ModuleType:
 
     Two failure modes:
 
-    - The impl subpackage doesn't exist (typo / not yet graduated).
+    - The impl subpackage doesn't exist (typo / not implemented yet).
     - The impl exists but a transitive import fails (missing dep).
     """
     module_name = _impl_module_name(structure_name)
@@ -80,8 +80,8 @@ def _load_impl(structure_name: str) -> ModuleType:
         if impl_missing:
             raise SystemExit(
                 f"Document structure {structure_name!r} is not available. "
-                f"Expected subpackage {module_name!r}. Graduate the impl "
-                f"into marinfold/marinfold/document_structures/ first."
+                f"Expected subpackage {module_name!r}. Add the impl under "
+                f"marinfold/marinfold/document_structures/ first."
             ) from exc
         raise SystemExit(
             f"Document structure {structure_name!r} is installed but a "

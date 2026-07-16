@@ -4,12 +4,11 @@
 """Shared toolkit for MarinFold document-structure implementations.
 
 A document structure is a protein-document format. Each format lives
-as its own proper package under ``document_structures/<name>/`` once
-graduated (and as a flat experiment dir under
-``experiments/exp<N>_document_structures_<name>/`` while in
-flight).
+as its own proper package under ``document_structures/<name>/``, from
+its first commit — experiments import the impl from here rather than
+carrying their own copy.
 
-This subpackage holds the three pieces every impl shares:
+This subpackage holds the pieces every impl shares:
 
 - :class:`EvalResult` — return shape of ``evaluate``.
 - :func:`build_tokenizer` — build a ``PreTrainedTokenizerFast`` from
