@@ -1,0 +1,8 @@
+{
+  "script": "plot_knn.py",
+  "args": [
+    "--base-csv",
+    "../exp82_evals_contacts_v1_contact_prediction/_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "Per-protein long-range R-precision: seq-KNN k=10 (x) vs MarinFold #61 (y); dashed line = parity. The cloud does not hug the diagonal (Pearson r=0.12) \u2014 the two are accurate on different proteins, so their matching averages are coincidental."
+}

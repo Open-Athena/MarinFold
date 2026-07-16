@@ -1,0 +1,8 @@
+{
+  "script": "plot_knn.py",
+  "args": [
+    "--base-csv",
+    "../exp82_evals_contacts_v1_contact_prediction/_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "Mean long-range R-precision over the 554 eval proteins, all scored under exp89's metric harness. The issue's success criterion: seq-KNN k=10 (0.324) ties MarinFold #61 (0.353) \u2014 a no-folding copy-the-neighbours baseline nearly matches the LM on average."
+}

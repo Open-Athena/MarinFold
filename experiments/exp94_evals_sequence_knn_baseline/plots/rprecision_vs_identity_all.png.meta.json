@@ -1,0 +1,8 @@
+{
+  "script": "plot_knn.py",
+  "args": [
+    "--base-csv",
+    "../exp82_evals_contacts_v1_contact_prediction/_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "Same identity bins, one line per predictor: seq-KNN is the only one whose accuracy tracks training-sequence identity. Caveat \u2014 the axis is confounded with composition (123 of the 139 no-hit proteins are denovo_pdb designs); the robust signal is the slope."
+}

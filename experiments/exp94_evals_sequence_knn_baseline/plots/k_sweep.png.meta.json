@@ -1,0 +1,8 @@
+{
+  "script": "plot_knn.py",
+  "args": [
+    "--base-csv",
+    "../exp82_evals_contacts_v1_contact_prediction/_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "seq-KNN long-range R-precision vs k (nearest training neighbours voted), self-included vs self-excluded. Peaks at k=10; the two curves coincide because only 2 of 554 eval proteins have a verbatim self-hit \u2014 homology transfer, not train/eval leakage."
+}

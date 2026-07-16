@@ -1,0 +1,8 @@
+{
+  "script": "plot_knn.py",
+  "args": [
+    "--base-csv",
+    "../exp82_evals_contacts_v1_contact_prediction/_scratch/contact_precision_with_rollout.csv"
+  ],
+  "caption": "Long-range R-precision binned by best training-set sequence identity ('no hit' = no mmseqs homolog). The core memorization read: seq-KNN k=10 climbs 0.00 to 0.69 while MarinFold #61 stays flat (~0.34-0.40), including on the 139 no-homolog proteins."
+}
