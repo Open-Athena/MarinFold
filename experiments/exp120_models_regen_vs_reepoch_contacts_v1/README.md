@@ -220,26 +220,54 @@ fine-tuning target than simply re-epoching the original data — the issue's
 hypothesis is **rejected** at 1 epoch (effect sizes are modest: 1-epoch
 continue-trains on an already-8-epoch model).
 
-### Curve (1–4 epochs) — in progress
+### Curve (1–4 epochs)
 
-`/bizon/iris-run-job-20260716-081125` (lr3e-4, both arms, 4-epoch flat-LR, per-epoch
-checkpoints). Watching whether the regen arm degrades further on val-full with more
-passes.
+A 4-epoch **flat-LR** run per arm (lr3e-4; per-half-epoch checkpoints), so the
+epoch points are directly comparable.
+
+**Held-out loss rises monotonically with epochs for both arms — plain
+overfitting** (val-orig; flat LR):
+
+| epoch | A · re-epoch | B · regenerated |
+|---|---|---|
+| e1 | 2.748 | 2.846 |
+| e2 | 2.770 | 2.872 |
+| e3 | 2.793 | 2.903 |
+| e4 | 2.813 | 2.937 |
+
+**Downstream long-range R-precision across the sweep** (base = 0.2695):
+
+| model | long R-prec | long AUC | contacts@L |
+|---|---|---|---|
+| **A · cosine 1-epoch** (headline, best) | **0.2794** | **0.8859** | **0.1938** |
+| B · cosine 1-epoch | 0.2618 | 0.8767 | 0.1823 |
+| A · flat e1 | 0.2594 | 0.8738 | 0.1793 |
+| B · flat e1 | 0.2552 | 0.8704 | 0.1778 |
+| A · flat e4 | 0.2382 | 0.8610 | 0.1693 |
+| B · flat e4 | 0.2476 | 0.8656 | 0.1729 |
+
+Two clear reads: (1) **decaying the LR matters** — the properly-decayed cosine
+1-epoch runs beat their flat-LR counterparts (A 0.279 vs 0.259), and the flat runs
+already sit at/below the base; (2) **more epochs hurt** — both arms fall
+monotonically with flat-LR passes, dropping *below* the base by epoch 4. (The e4
+"flip", B 0.248 > A 0.238, is inside the already-degraded, below-base regime and
+is not practically meaningful.) The single best model in the whole sweep is the
+**1-epoch cosine re-epoch** (A, 0.2794) — published as `contacts-v1-exp120-1.5B`
+(new default in `MODELS.yaml`).
 
 ## Conclusion
 
-At 1 epoch and matched budget, **re-epoching the original contacts-v1 training
-data produces a better contacts-v1 model than fine-tuning on the exp100
-regenerated only-correct documents** — consistently on both eval loss and
-downstream contact-prediction accuracy. Re-epoch nudges the base #75 model
-slightly better (long R-precision 0.270 → 0.279); the regenerated arm is slightly
-worse than the base (0.270 → 0.262). The regenerated set is 100%-correct and
-on-policy (the model's own preferred contact orderings), so it is low-entropy and
-provides little *new* signal — exactly the counter-hypothesis. The issue's
-hypothesis (regenerated docs are a cleaner, higher-signal target) is **rejected**.
+At matched budget, **re-epoching the original contacts-v1 training data produces a
+better contacts-v1 model than fine-tuning on the exp100 regenerated only-correct
+documents** — consistently on eval loss and downstream contact accuracy, at both
+LRs. The best recipe is a **single, LR-decayed (cosine) epoch of re-epoch**: it
+lifts the #75 base's long-range R-precision from 0.270 → **0.279** (AUC 0.881 →
+0.886). The regenerated arm is *worse than the base* (0.270 → 0.262): its
+100%-correct, on-policy, model-preferred-ordering documents are low-entropy and
+carry little *new* signal — exactly the issue's counter-hypothesis. Training longer
+(more epochs / non-decayed LR) overfits and hurts both arms.
 
-Effect sizes are modest (both arms move the already-8-epoch base by ≤0.02 R-prec),
-so the practical read is "regenerating the training set is not a useful lever for
-this model." _(1–4 epoch curve in progress — checking the regen arm doesn't
-recover, or degrade further, with more passes; lr1e-4 variants confirm the LR
-doesn't change the ranking.)_
+The issue's hypothesis (regenerated docs are a cleaner, higher-signal target) is
+**rejected**. Practically: regenerating the training set is not a useful lever for
+this model, but the cheap 1-epoch cosine re-epoch is a small, free win and is now
+the default MarinFold contacts-v1 model. Raw numbers: `results/downstream_*.csv`.
