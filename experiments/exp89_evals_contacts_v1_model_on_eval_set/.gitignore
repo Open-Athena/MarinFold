@@ -6,5 +6,6 @@ __pycache__/
 # Scratch: downloaded parquets, per-protein score matrices, test plots.
 _scratch/
 
-# Derived GT universe (7.6 MB) — pushed to the HF bucket, not git.
+# Derived GT universe (7.6 MB), checkpoint-independent — lives on the HF bucket,
+# not git: hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp89/gt_universe.jsonl
 data/gt_universe.jsonl
