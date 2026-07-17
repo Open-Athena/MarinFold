@@ -89,7 +89,9 @@ torch), and the metric step is backend-agnostic.
 cd /home/bizon/git/marin && uv run --no-sync python \
     <exp89>/export_contacts_v1_best_to_hf.py --output-dir <local>/hf_step35679
 
-# (1) GT universe — exp78 venv has pyconfind + the staged GT structures
+# (1) GT universe — checkpoint-INDEPENDENT; pull the built copy instead of rebuilding:
+hf buckets cp hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp89/gt_universe.jsonl data/gt_universe.jsonl
+#     … or rebuild from scratch (exp78 venv has pyconfind + the staged GT structures):
 <exp78-venv>/bin/python prepare_gt_universe.py --out data/gt_universe.jsonl
 
 # (2) scores — local CUDA (canonical) …
