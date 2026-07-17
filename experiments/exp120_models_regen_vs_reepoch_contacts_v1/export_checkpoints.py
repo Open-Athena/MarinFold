@@ -111,10 +111,18 @@ def main() -> int:
     print("[export] DONE")
 
     if args.bucket_dest:
+        # `hf buckets cp` (hf 1.5) has no --recursive, so publish per-file. Only
+        # supported for a local output_dir (list its files); gs:// dests are
+        # already durable and don't need re-publishing.
+        if args.output_dir.startswith("gs://") or args.output_dir.startswith("hf://"):
+            raise SystemExit("--bucket-dest requires a LOCAL --output-dir to publish from")
         hf = _find_hf()
-        print(f"[export] publishing {args.output_dir} -> {args.bucket_dest}")
-        subprocess.run([hf, "buckets", "cp", "--recursive", args.output_dir,
-                        args.bucket_dest], check=True)
+        dest = args.bucket_dest.rstrip("/")
+        print(f"[export] publishing {args.output_dir} -> {dest}")
+        for name in sorted(os.listdir(args.output_dir)):
+            src = os.path.join(args.output_dir, name)
+            if os.path.isfile(src):
+                subprocess.run([hf, "buckets", "cp", src, f"{dest}/{name}"], check=True)
         print("[export] published")
     return 0
 
