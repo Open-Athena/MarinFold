@@ -3,11 +3,22 @@
 # is omitted) to the HF URL below, downloads it, and dispatches to the first
 # `document_structures` impl the entry lists. See registry.py.
 
-# Current best: eric-czech's contacts-v1 1.5B (issue #61; #75 tuning-sweep
-# winner, eval loss 2.7566). Predicts residue-residue contacts from sequence;
-# exported to the bucket by exp89 with the contacts-v1 tokenizer co-located.
-- nickname: contacts-v1-exp75-1.5B
+# Current best: exp120 (issue #120) — a 1-epoch, re-heated-LR continue-train of
+# the #75 model on the ORIGINAL contacts-v1 round-0 data (the "re-epoch" arm that
+# beat fine-tuning on the exp100 regenerated docs). Best downstream contact
+# prediction so far: long-range R-precision 0.279 / AUC 0.886 vs the #75 base's
+# 0.270 / 0.881 (554-protein eval set, exp89 harness). contacts-v1 tokenizer
+# co-located; exported to the bucket by exp120.
+- nickname: contacts-v1-exp120-1.5B
   default: true
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/exp120-cv1-1_5b-orig-lr3e-4-e1-cos/hf/step-1005
+  wandb_url: https://wandb.ai/open-athena/MarinFold/runs/exp120-cv1-1_5b-orig-lr3e-4-e1-cos-fb79f7
+  document_structures:
+    - contacts-v1
+# The #75 base it continue-trains from: eric-czech's contacts-v1 1.5B (issue #61;
+# #75 tuning-sweep winner, eval loss 2.7566). Exported to the bucket by exp89 with
+# the contacts-v1 tokenizer co-located.
+- nickname: contacts-v1-exp75-1.5B
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084
   document_structures:
