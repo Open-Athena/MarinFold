@@ -1,0 +1,26 @@
+[project]
+name = "exp132-data-contacts-and-crops-v1"
+version = "0.1.0"
+description = "Generate the contacts-and-crops-v1 training-document dataset locally over exp53's contacts-v1 selection manifest (the same proteins), and publish to the open-athena/MarinFold HF bucket. Calls into marinfold's contacts_and_crops_v1 generator (no re-implementation)."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold[contacts-v1]",  # contacts_and_crops_v1.generate_document + pyconfind
+    "pyconfind[fast]",         # numba JIT contact backend for the at-scale run
+    "gemmi>=0.6",              # parse mmCIF bytes -> gemmi.Structure
+    "numpy",                   # frame transform (rotation/translation)
+    "pyarrow",                 # parquet read/write
+    "fsspec",                  # uniform local + cloud IO for per-row cif fetch
+    "gcsfs",                   # gs:// for the public AFDB bucket
+    "huggingface_hub",         # hf:// publish
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+# Local path dep: this experiment runs locally against the crops package in
+# this checkout (the format lands on main via PR #131).
+marinfold = { path = "../../marinfold", editable = true }
