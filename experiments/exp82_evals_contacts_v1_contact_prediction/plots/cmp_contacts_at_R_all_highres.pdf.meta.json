@@ -1,0 +1,16 @@
+{
+  "script": "plot_all_only.py",
+  "args": [
+    "--precision-csv",
+    "_scratch/contact_precision_with_rollout.csv",
+    "--out",
+    "plots",
+    "--cut",
+    "R",
+    "--range",
+    "all",
+    "--dpi",
+    "600"
+  ],
+  "caption": "R-precision vs pyconfind contacts (degree>=0.001, sep>=6), per predictor, all contacts (sep \u2265 6) only, over 554 proteins. Single-panel high-resolution cut of cmp_contacts_at_R_by_config_and_range.png (same data and styling). Boxplots: box = median & IQR, whiskers = 1.5x IQR, points = outliers, white diamond = mean (labelled). rollout+resample ranks pairs by sampled-completion vote frequency; pairwise by contact-statement log-prob; structure models by pyconfind degree on the predicted structure. Metrics computed by exp89's exact code."
+}
