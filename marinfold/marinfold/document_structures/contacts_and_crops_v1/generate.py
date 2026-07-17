@@ -34,7 +34,8 @@ The RNG draw order is load-bearing (``SPEC.md`` → *RNG draw order*):
 6. Pass-1 atom-draw sequence: per draw, weighted atom choice, then box-noise
    (x, y, z)
 7. Pass-2 crop sequence: per step, select-coin, box choice, then per-candidate
-   membership-noise (x, y, z) + keep draw
+   membership-noise (x, y, z) + keep draw, then a shuffle of the kept atoms
+   (so a crop lists its atoms in random order)
 
 The pure builder :func:`build_document` takes already-computed residues,
 contacts, and per-atom coordinates, so it (and its determinism / frame /
@@ -638,10 +639,14 @@ def build_document(
             # (7b) membership via neighbor bleed-in: consider atoms whose true
             #      box is `box` or a neighbor; include iff the σ-noised
             #      position floors back into `box`, then a 0.99 keep on top.
+            #      Noise is drawn per candidate in fixed order, but the kept
+            #      atoms are then **shuffled** so a crop lists its atoms in
+            #      random order — no residue-run leak (the candidate order is
+            #      residue-sequence order, which the format otherwise hides).
             candidates: list[int] = list(cell_atoms.get(box, ()))
             for nb in _neighbors(box):
                 candidates.extend(cell_atoms.get(nb, ()))
-            emitted_here = 0
+            included: list[tuple[int, float, float, float]] = []
             for ai in candidates:
                 tx, ty, tz = (float(v) for v in transformed[ai])
                 nx = tx + rng.gauss(0.0, sigma)
@@ -651,9 +656,14 @@ def build_document(
                     continue
                 if rng.random() >= keep_prob:
                     continue
+                included.append((ai, nx, ny, nz))
+            rng.shuffle(included)
+
+            emitted_here = 0
+            for ai, nx, ny, nz in included:
                 if struct_tokens + _CROP_ATOM_TOKENS > structure_budget:
-                    # A big box overflowed the budget: emit what fit (partial
-                    # last crop), never skip the whole box.
+                    # A big box overflowed the budget: emit the (random) atoms
+                    # that fit (partial last crop), never skip the whole box.
                     truncated = True
                     break
                 ones, tenths = _ones_tenths_tokens(nx, ny, nz)

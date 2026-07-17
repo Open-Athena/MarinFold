@@ -128,6 +128,12 @@ hundreds + tens.
   dropped from this crop; a neighbor atom noise pulls in is included — and a
   later read of the neighbor box corrects it. Apply an independent **0.99
   keep** per candidate on top.
+- **Random atom order within a crop.** Candidates are considered in
+  residue-sequence order, but the kept atoms are **shuffled** before emission,
+  so a crop lists its atoms in random order (like the sequence section and
+  contacts). Without this, a residue's atoms would come out contiguous,
+  leaking residue adjacency the format otherwise hides. When a big box's atoms
+  overflow the budget, the (random) atoms that fit are the ones emitted.
 - **Empty crops allowed.** If nothing lands in `b`, emit just the header and
   move on.
 - **Big boxes never skipped.** If a box's atoms overflow the remaining
@@ -202,7 +208,7 @@ Seeded from the first 8 sha1 hex digits of `entry_id`:
    unconditionally), box choice (random-atom uniform / frontier uniform /
    re-show weighted, by branch), then per-candidate membership-noise
    (x, y, z Gaussians) and, only when the noised position floors into the
-   box, a keep uniform
+   box, a keep uniform; finally a shuffle of the crop's kept atoms
 
 ## Metadata
 

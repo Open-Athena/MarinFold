@@ -160,6 +160,30 @@ def test_pass2_reshows_boxes_on_small_structure():
     assert result.num_crops > result.num_distinct_crop_boxes
 
 
+def test_crop_atoms_are_shuffled_not_residue_grouped():
+    # A crop's atoms are emitted in random order, not residue-sequence order —
+    # otherwise a residue's atoms come out contiguous and leak adjacency. Use a
+    # dense small structure so at least one crop holds atoms from several
+    # residues, and assert the positions within some crop are not sorted (a
+    # residue-grouped emission would run monotonically by seq index).
+    residues = _toy_residues(50)
+    atoms = _toy_atoms(residues, spread=15.0)  # dense → boxes pool many residues
+    result = build_document("shuffle", residues, [], atoms)
+    assert result is not None
+    _c, _p1, crops = _statements(result.document)
+    multi = [
+        [stmt[0] for stmt in a]
+        for _h, a in crops
+        if len({stmt[0] for stmt in a}) >= 3
+    ]
+    assert multi, "expected a crop spanning >=3 residues to test ordering"
+    # At least one such crop must not be in nondecreasing residue order.
+    def _nondecreasing(seq):
+        nums = [int(p[2:-1]) for p in seq]
+        return all(a <= b for a, b in zip(nums, nums[1:]))
+    assert any(not _nondecreasing(positions) for positions in multi)
+
+
 def test_determinism_same_entry_id():
     residues = _toy_residues(12)
     atoms = _toy_atoms(residues)
