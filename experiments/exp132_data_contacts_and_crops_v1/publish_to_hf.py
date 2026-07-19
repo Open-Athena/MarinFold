@@ -152,6 +152,8 @@ tokenizer/                                                             # contact
 `organism_name`.
 
 `sha1` = sha1 of `document`, so byte-equality with the MarinFold generator is a single column compare.
+
+**On `truncated`:** this format is *budget-filling* — Pass 2 keeps emitting crops until the 8192-token budget is spent, so the final crop is almost always cut mid-atoms. `truncated` records exactly that (a partial last crop) and is therefore `True` for ~96% of documents; it does **not** indicate a poorly-captured protein (small/mid chains fully resolve at 0.1 Å). Use `crop_atoms_emitted` / `num_eligible_atoms` for fine-resolution coverage and `num_pass1_mentions` for coarse coverage.
 """
 
 
