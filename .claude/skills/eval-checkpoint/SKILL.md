@@ -9,8 +9,10 @@ description: >-
 
 # Evaluate a contacts-v1 checkpoint
 
-Treat the exp89 evaluator, fixed ground truth, candidate-pair universe, and
-metric implementation as the measurement specification. Infer environment-
+Treat the [exp89 evaluator](https://github.com/Open-Athena/MarinFold/issues/89),
+fixed ground truth, candidate-pair universe, and metric implementation as the
+measurement specification. Its standard pairwise score comes from
+[exp82](https://github.com/Open-Athena/MarinFold/issues/82). Infer environment-
 specific commands from the checked-out revisions and current tooling.
 
 ## Establish identity and locality
@@ -51,9 +53,15 @@ environment when a smaller source/package surface avoids version conflicts.
 3. Gate the full run on one real protein: load the actual weights and tokenizer,
    execute a forward pass, obtain the complete position-token log-probabilities,
    and write a valid score matrix.
-4. On TPU vLLM, verify the TPU-targeted runtime and inspect checkpoint,
-   parameter, and compute dtypes. Normalize floating weights intentionally
-   before sharding; isolate any CPU PyTorch conversion from vLLM engine startup.
+4. On TPU vLLM, derive the expected parameter dtype from the model/runtime
+   configuration and inspect the tensors in every safetensor shard. If they
+   differ—for example, `float32` exported weights with `bfloat16` TPU
+   parameters—rewrite
+   only floating tensors to the expected dtype before vLLM loads and shards
+   them. Preserve integer/bool tensors, names, shapes, shard indexes, config,
+   and tokenizer. Run the conversion in a short-lived CPU process, then start
+   vLLM fresh so it cannot inherit PyTorch/OpenMP state. Record the source and
+   effective dtypes.
 
 ## Expected outputs
 
@@ -68,8 +76,22 @@ environment when a smaller source/package surface avoids version conflicts.
   cuts, completeness counts, output paths, and the checkpoint's W&B train/val
   losses when requested. Record the source W&B metric keys.
 
-Reject silent skips, wrong-shaped matrices, incomplete log-probability vectors,
-or a 552-unit result caused by deduplicating on `stem`.
+## Validate completeness
+
+- Require exactly 554 `(dataset, stem)` score files and zero unreported skips.
+  The 552 unique stems are an expected property, not the evaluation count.
+- Require each score matrix to have shape `[L,L]` for its ground-truth record.
+  Confirm that every required position token is present in each returned
+  next-token log-probability distribution; never replace missing entries with a
+  fallback score without failing the gate.
+- Require 11,080 metric rows per evaluated model: 554 units × four ranges × the
+  five cuts `L`, `L/2`, `L/5`, `R`, and `AUC`, each exactly once.
+- Expect 554 valid values for the three fixed-length precision cuts. For `R`
+  and `AUC`, expect 554 in `all`/`short` and 553 in `medium`/`long`; retain the
+  undefined row rather than silently dropping that protein.
+
+Stop before reporting if any invariant fails. Name every skipped or invalid
+unit and preserve partial outputs for diagnosis.
 
 ## Debugging ladder
 
