@@ -2,7 +2,8 @@
 name = "exp105-data-contacts-and-coordinates-v1-zephyr"
 version = "0.1.0"
 description = "Generate the contacts-and-coordinates-v1 training-document dataset at scale on the marin Iris cluster via Zephyr, reusing exp53's contacts-v1 selection manifest (the same proteins). Calls into marinfold's contacts_and_coordinates_v1 generator (no re-implementation)."
-requires-python = ">=3.11,<3.13"
+# marin requires 3.12+; the resolved env is 3.12.
+requires-python = ">=3.12,<3.13"
 # Base install covers the per-row generation logic and the marin-zephyr
 # runtime used to fan out on Iris. marin-zephyr is in base (not an extra) so
 # Iris workers get the runtime however the job ships its env.
@@ -15,11 +16,15 @@ dependencies = [
     "fsspec",                  # uniform local + cloud IO for per-row cif fetch
     "gcsfs",                   # gs:// for the AFDB public bucket + marin output
     "huggingface_hub",         # hf:// publish
-    "marin-zephyr",            # distributed generation on marin Iris
-    # Pin httpx < 1: prerelease=allow (needed for some marin deps) otherwise
-    # floats httpx to 1.0.dev*, whose Client() dropped the `timeout` kwarg that
-    # marin-iris's GCP provider passes -> iris CLI crashes on submit.
-    "httpx>=0.28.1,<1",
+    # marin runtime from PyPI at a CURRENT dev release (see the [tool.uv] note):
+    # this matches the live controller so worker tasks register with the control
+    # plane (the frozen 2026-05-29 GitHub `-latest` wheels do NOT — workers get
+    # scheduled but never join the zephyr coordinator, and finelog 404s). The
+    # 0.2.40.dev* release is co-versioned across the marin packages; fray /
+    # rigging / finelog / finelog-server resolve transitively from PyPI.
+    "marin-zephyr>=0.2.40.dev202607080801",  # distributed generation on marin Iris
+    "marin-iris>=0.2.40.dev202607080801",    # `iris` job-submission CLI + GCP provider
+    "httpx>=0.28.1",           # current marin-iris is httpx-1-compatible
 ]
 
 [project.optional-dependencies]
@@ -37,12 +42,28 @@ environments = [
     "sys_platform == 'linux'",
 ]
 
+# marin packages come from **PyPI** (the default index), where marin publishes
+# a fresh co-versioned dev release of the whole stack on ~every push
+# (marin-iris/zephyr/fray/rigging @ 0.2.40.dev202607080801 = 2026-07-08, plus
+# the native marin-finelog-server wheel). This is what makes the worker/launcher
+# env match the LIVE controller.
+#
+# Do NOT use the `marin-*-latest` GitHub release assets: that channel is a stale
+# side-channel FROZEN at 2026-05-29, and a worker built from it can't join the
+# current control plane — worker tasks get scheduled but never register with the
+# zephyr coordinator (finelog's `register_table` 404s, so zephyr sees ~0 live
+# workers and the run makes no progress). PyPI current wheels fix that.
+#
+# The controller also enforces a 14-day client-freshness gate on *root* job
+# submissions (marin PR #5108; iris/cluster/controller/service.py
+# `_check_client_freshness`). A PyPI 0.2.40.dev2026070808* client is fresh, so
+# `uv run iris` from THIS env submits fine — no separate editable client needed.
+
 [tool.uv.sources]
-# Git deps (not local path) so the SAME pyproject resolves on remote Iris
-# workers. contacts_and_coordinates_v1 lands on main via this PR; until then
-# point the branch at the PR ref for the iris smoke.
+# marinfold stays a git dep (not a local path) so the SAME pyproject resolves on
+# remote Iris workers, which can't see this checkout. No rev/branch = origin/main
+# HEAD at sync time; contacts_and_coordinates_v1 is on main as of PR #106.
 marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
-marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }
 
 [tool.pytest.ini_options]
 markers = [
