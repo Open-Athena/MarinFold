@@ -78,17 +78,14 @@ environment when a smaller source/package surface avoids version conflicts.
 
 ## Validate completeness
 
-- Require exactly 554 `(dataset, stem)` score files and zero unreported skips.
-  The 552 unique stems are an expected property, not the evaluation count.
-- Require each score matrix to have shape `[L,L]` for its ground-truth record.
-  Confirm that every required position token is present in each returned
-  next-token log-probability distribution; never replace missing entries with a
-  fallback score without failing the gate.
-- Require 11,080 metric rows per evaluated model: 554 units × four ranges × the
-  five cuts `L`, `L/2`, `L/5`, `R`, and `AUC`, each exactly once.
-- Expect 554 valid values for the three fixed-length precision cuts. For `R`
-  and `AUC`, expect 554 in `all`/`short` and 553 in `medium`/`long`; retain the
-  undefined row rather than silently dropping that protein.
+- Account for every expected `(dataset, stem)` unit and report skips or failures
+  explicitly. Do not deduplicate on `stem` alone.
+- Check that each score matrix matches its protein length and that every
+  required position-token log probability was returned rather than replaced by
+  a fallback value.
+- Check that metric outputs cover the evaluator's expected ranges and cuts for
+  every scored unit, and report valid-value counts where a metric may be
+  undefined.
 
 Stop before reporting if any invariant fails. Name every skipped or invalid
 unit and preserve partial outputs for diagnosis.
