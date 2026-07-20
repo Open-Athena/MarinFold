@@ -76,6 +76,24 @@ environment when a smaller source/package surface avoids version conflicts.
   cuts, completeness counts, output paths, and the checkpoint's W&B train/val
   losses when requested. Record the source W&B metric keys.
 
+## Validate against the E8 reference
+
+Before trusting a new execution path, reproduce the
+[exp75](https://github.com/Open-Athena/MarinFold/issues/75) E8 checkpoint
+`prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084` at step 35679. Choose the
+artifact that best fits the runtime and data locality:
+
+- HF format: [HF mirror](https://huggingface.co/open-athena/marinfold-exp75/tree/main/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679)
+  or `gs://marin-us-east5/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679/`.
+- Levanter format: [HF mirror](https://huggingface.co/open-athena/marinfold-exp75/tree/main/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/checkpoints/step-35679)
+  or `gs://marin-us-east5/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/checkpoints/step-35679/`.
+
+With exp89 semantics, one realization, and no ensembling, the
+[PR #93 E8 row](https://github.com/Open-Athena/MarinFold/pull/93#issue-4738130859)
+reports long-range AUC `0.881` and R-precision `0.339` (all) / `0.269` (long).
+The reproduced metrics should match at the reported precision. Investigate
+discrepancies before evaluating a new checkpoint.
+
 ## Validate completeness
 
 - Account for every expected `(dataset, stem)` unit and report skips or failures
