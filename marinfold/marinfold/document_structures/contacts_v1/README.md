@@ -31,6 +31,12 @@ A document is a single space-separated token string:
   / `<begin_statements>`), amino acids (`<ALA>`…), `<UNK>` and `<end>` are
   reused from `contacts-and-distances-v1`; only `<contacts-v1>`, `<n-term>`,
   `<c-term>`, `<contact>` and `<think>` are minted here. See [`SPEC.md`](SPEC.md).
+- **Optional `<think>` (pause) tokens** — `GenerationConfig(think=True)`
+  (CLI `--think`) splices `<think>` runs between `<contact>` statements in
+  the structure section (issue #123), reusing the already-reserved token
+  with no tokenizer change. Off by default and byte-identical to the
+  pre-think generator when off. See the *Think (pause) tokens* section of
+  [`SPEC.md`](SPEC.md).
 - **Deterministic** per `entry_id` (the RNG seed), so the same structure +
   id always yields the same document.
 

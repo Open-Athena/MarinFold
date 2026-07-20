@@ -1,0 +1,8 @@
+metric,empirical,spec_target
+n_docs,10000.0000,
+initial_gate_rate,0.7521,~0.75
+initial_run_mean_len,7.5792,~7.69 (1/0.13)
+extra_run_count_mean,0.7517,~0.75
+extra_run_len_mean,3.9564,~4.0 (1/0.25)
+docs_with_any_think,0.8444,
+mean_think_per_doc,8.6743,

@@ -42,6 +42,31 @@ def test_min_contact_degree_override():
     assert cfg.min_contact_degree == 0.05
 
 
+def test_think_defaults_off():
+    args = cli.build_parser().parse_args(["generate", "--input", "x", "--out", "o.jsonl"])
+    cfg = cli._config_from_args(args)
+    assert cfg.think is False
+    # #123 distribution defaults are wired through even while off.
+    assert cfg.think_initial_prob == 0.75
+    assert cfg.think_initial_geom_p == 0.13
+    assert cfg.think_additional_count_range == (-4.0, 4.0)
+    assert cfg.think_run_length_geom_p == 0.25
+
+
+def test_think_flag_and_overrides():
+    args = cli.build_parser().parse_args([
+        "generate", "--input", "x", "--out", "o.jsonl", "--think",
+        "--think-initial-prob", "1.0",
+        "--think-additional-count-range", "-2", "6",
+        "--think-run-length-geom-p", "0.5",
+    ])
+    cfg = cli._config_from_args(args)
+    assert cfg.think is True
+    assert cfg.think_initial_prob == 1.0
+    assert cfg.think_additional_count_range == (-2.0, 6.0)
+    assert cfg.think_run_length_geom_p == 0.5
+
+
 def test_min_seq_separation_default_and_override():
     args = cli.build_parser().parse_args(["generate", "--input", "x", "--out", "o.jsonl"])
     assert args.min_seq_separation == 6

@@ -81,6 +81,11 @@ def _config_from_args(args: argparse.Namespace) -> generate.GenerationConfig:
         assembly=args.assembly,
         min_seq_separation=args.min_seq_separation,
         min_contact_degree=args.min_contact_degree,
+        think=args.think,
+        think_initial_prob=args.think_initial_prob,
+        think_initial_geom_p=args.think_initial_geom_p,
+        think_additional_count_range=tuple(args.think_additional_count_range),
+        think_run_length_geom_p=args.think_run_length_geom_p,
     )
 
 
@@ -312,6 +317,30 @@ def _add_generation_common(p: argparse.ArgumentParser) -> None:
                    help="Drop contacts with degree below this before "
                         "selection; they are never included even if there is "
                         f"room (default {cfg.min_contact_degree}).")
+    # <think> (pause) tokens in the structure section (see SPEC.md / #123).
+    p.add_argument("--think", action=argparse.BooleanOptionalAction,
+                   default=cfg.think,
+                   help="Insert <think> (pause) tokens between <contact> "
+                        "statements in the structure section (default off). "
+                        "Off is byte-identical to the pre-think generator.")
+    p.add_argument("--think-initial-prob", type=float, default=cfg.think_initial_prob,
+                   help="(--think) P of an initial <think> run right after "
+                        f"<begin_statements> (default {cfg.think_initial_prob}).")
+    p.add_argument("--think-initial-geom-p", type=float,
+                   default=cfg.think_initial_geom_p,
+                   help="(--think) Geometric p for the initial run length "
+                        f"(default {cfg.think_initial_geom_p}).")
+    p.add_argument("--think-additional-count-range", type=float, nargs=2,
+                   metavar=("LO", "HI"),
+                   default=list(cfg.think_additional_count_range),
+                   help="(--think) Uniform range for k2; extra runs = "
+                        "max(int(k2), 0) "
+                        f"(default {cfg.think_additional_count_range[0]} "
+                        f"{cfg.think_additional_count_range[1]}).")
+    p.add_argument("--think-run-length-geom-p", type=float,
+                   default=cfg.think_run_length_geom_p,
+                   help="(--think) Geometric p for each additional run length "
+                        f"(default {cfg.think_run_length_geom_p}).")
 
 
 def build_parser() -> argparse.ArgumentParser:

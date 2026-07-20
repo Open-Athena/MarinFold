@@ -26,6 +26,15 @@ The pure builder :func:`build_document` takes already-computed residues
 and contacts, so it (and its determinism / truncation / ordering) can be
 unit-tested without pyconfind. :func:`generate_document` /
 :func:`generate_documents` wire pyconfind in front of it.
+
+Optionally the structure section is augmented with ``<think>`` (pause)
+tokens when ``GenerationConfig(think=True)`` — the contacts-v1 analog of
+issue #34 (which added them to contacts-and-distances-v2). ``<think>``
+runs are placed *between* ``<contact>`` statements (never inside one),
+their total count subtracted from the token budget so documents still fit
+and end with ``<end>``. The switch defaults to ``False``; when off, the
+generator draws no think-related randomness, so its output is byte-for-byte
+what it was before this path existed. See ``SPEC.md`` for the distributions.
 """
 
 import hashlib
@@ -58,6 +67,7 @@ from .vocab import (
     NUM_POSITION_INDICES,
     N_TERM_TOKEN,
     SEQUENCE_ONLY_DOC_TYPE_TOKEN,
+    THINK_TOKEN,
     position_token,
 )
 
@@ -100,6 +110,24 @@ class GenerationConfig:
     num_position_indices: int = NUM_POSITION_INDICES
     assembly: int | str | None = None
     sequence_only: bool = False
+
+    # --- <think> (pause) tokens (contacts-v1 analog of #34) ---
+    # Master switch. When False (default) the generator draws no
+    # think-related randomness and its output is byte-identical to the
+    # pre-think generator (existing corpora / checkpoints are unaffected).
+    # When True, ``<think>`` runs are inserted between ``<contact>``
+    # statements in the structure section, per the distributions below
+    # (identical to #34's, so both structures draw from the same laws).
+    # Ignored on the ``sequence_only`` path (no structure section).
+    think: bool = False
+    # P(any think tokens right after <begin_statements>).
+    think_initial_prob: float = 0.75
+    # Geometric p for the length of the initial run (support >= 1).
+    think_initial_geom_p: float = 0.13
+    # Uniform range for k2; n_additional_runs = max(int(k2), 0).
+    think_additional_count_range: tuple[float, float] = (-4.0, 4.0)
+    # Geometric p for the length of each additional run (support >= 1).
+    think_run_length_geom_p: float = 0.25
 
 
 @dataclass(frozen=True)
@@ -171,6 +199,8 @@ class GenerationResult:
     lowest_nonzero_contact_degree: float | None
     lowest_included_contact_degree: float | None
     num_tokens: int
+    # Count of ``<think>`` tokens emitted (0 unless ``config.think``).
+    think_tokens: int = 0
     contacts: tuple[EmittedContact, ...] = field(default_factory=tuple)
 
     @property
@@ -198,6 +228,7 @@ class GenerationResult:
             "lowest_nonzero_contact_degree": self.lowest_nonzero_contact_degree,
             "lowest_included_contact_degree": self.lowest_included_contact_degree,
             "num_tokens": self.num_tokens,
+            "think_tokens": self.think_tokens,
             "sha1": self.sha1,
         }
 
@@ -223,6 +254,48 @@ def _fixed_token_cost(num_residues: int, *, sequence_only: bool = False) -> int:
         + _SEQ_TOKENS_PER_RESIDUE * num_residues
         + _TERMINUS_STATEMENTS * 2
     )
+
+
+def _geometric(rng: random.Random, p: float) -> int:
+    """Sample from Geometric(p) with support {1, 2, 3, ...}.
+
+    Uses inverse-CDF on a uniform sample from ``rng`` so the result is
+    deterministic in the same RNG stream as the rest of generation.
+    Defined for ``p in (0, 1]``; ``p == 1`` always returns 1 (every trial
+    succeeds immediately). Ported verbatim from #34's generator so the two
+    document structures draw ``<think>`` run lengths from identical laws.
+    """
+    if not (0.0 < p <= 1.0):
+        raise ValueError(f"p must be in (0, 1]; got {p!r}")
+    if p == 1.0:
+        return 1
+    # rng.random() in [0, 1); 1 - U in (0, 1] avoids log(0).
+    u = 1.0 - rng.random()
+    return int(math.ceil(math.log(u) / math.log(1.0 - p)))
+
+
+def _sample_think_overhead(
+    rng: random.Random, config: GenerationConfig
+) -> tuple[int, list[int]]:
+    """Sample ``(k1, additional_run_lengths)`` for one document.
+
+    ``k1`` is the length of the run placed right after
+    ``<begin_statements>`` (0 if the ``think_initial_prob`` gate misses).
+    ``additional_run_lengths`` are the lengths of the extra runs the caller
+    then assigns to random inter-statement slots. Same procedure and
+    distributions as #34's ``_sample_think_overhead``.
+    """
+    if rng.random() < config.think_initial_prob:
+        k1 = _geometric(rng, config.think_initial_geom_p)
+    else:
+        k1 = 0
+    lo, hi = config.think_additional_count_range
+    k2 = rng.uniform(lo, hi)
+    n_additional = max(int(k2), 0)
+    additional_lengths = [
+        _geometric(rng, config.think_run_length_geom_p) for _ in range(n_additional)
+    ]
+    return k1, additional_lengths
 
 
 def build_document(
@@ -255,6 +328,19 @@ def build_document(
         return None
 
     rng = random.Random(_generation_seed(entry_id))
+
+    # Think-token overhead is sampled FIRST (mirroring #34) so its count can
+    # be subtracted from the contact budget before selection, and so the draw
+    # order is a clean prepend to the existing stream. Gated on ``config.think``
+    # (and never on the sequence-only path, which has no structure section):
+    # when the switch is off this branch draws nothing, so ``start`` / the
+    # shuffles / the flips see the exact same RNG stream as before this path
+    # existed and the document is byte-identical.
+    k1 = 0
+    think_run_lengths: list[int] = []
+    if config.think and not config.sequence_only:
+        k1, think_run_lengths = _sample_think_overhead(rng, config)
+    total_think_tokens = k1 + sum(think_run_lengths)
 
     # Residue numbering: random n-terminal index, then wrap around.
     start = rng.randrange(num_indices)
@@ -327,9 +413,9 @@ def build_document(
     eligible = [c for c in ordered if c.degree >= config.min_contact_degree]
     contacts_passing = len(eligible)
 
-    # Budget: frame + sequence section fixed; the N strongest eligible
-    # contacts fill the rest.
-    available = context_length - fixed
+    # Budget: frame + sequence section fixed; the pre-sampled think tokens
+    # are reserved next; the N strongest eligible contacts fill the rest.
+    available = context_length - fixed - total_think_tokens
     max_contacts = max(0, available // _CONTACT_TOKENS_PER_STATEMENT)
     n_emit = min(contacts_passing, max_contacts)
     contacts_excluded = contacts_pre_filter - n_emit
@@ -361,13 +447,41 @@ def build_document(
             flipped=rng.random() < 0.5,
         ))
 
+    # Assign each additional think run to an inter-statement slot in
+    # [0, n_stmts - 1] uniformly at random, with replacement (slot i =
+    # "right before emitted[i]"); the initial run sits at slot 0, right after
+    # <begin_statements>. Runs landing in the same slot are concatenated. This
+    # is the last RNG use, so it stays a clean suffix on the stream; it draws
+    # nothing when think is off (``think_run_lengths`` is empty). When there
+    # are no contacts, only the initial run can be placed (no statement to
+    # anchor the additional runs to) — mirroring #34's no-statement edge case.
+    think_at_slot: dict[int, int] = {}
+    if k1 > 0:
+        think_at_slot[0] = k1
+    if emitted and think_run_lengths:
+        n_stmts = len(emitted)
+        for length in think_run_lengths:
+            slot = rng.randint(0, n_stmts - 1)
+            think_at_slot[slot] = think_at_slot.get(slot, 0) + length
+
     tokens: list[str] = [DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
     for statement in seq_statements:
         tokens.extend(statement)
     tokens.append(BEGIN_STRUCTURE_TOKEN)
-    for c in emitted:
+    think_emitted = 0
+    for idx, c in enumerate(emitted):
+        n_think = think_at_slot.get(idx, 0)
+        if n_think:
+            tokens += [THINK_TOKEN] * n_think
+            think_emitted += n_think
         first, second = (c.pos_j, c.pos_i) if c.flipped else (c.pos_i, c.pos_j)
         tokens += [CONTACT_TOKEN, position_token(first), position_token(second)]
+    if not emitted and k1 > 0:
+        # No contacts but the initial run still fired: emit it so the document
+        # records the sampled overhead (rare — only for proteins with no
+        # above-threshold, seq-sep-respecting contacts).
+        tokens += [THINK_TOKEN] * k1
+        think_emitted += k1
     tokens.append(END_TOKEN)
 
     return GenerationResult(
@@ -389,6 +503,7 @@ def build_document(
         lowest_nonzero_contact_degree=lowest_nonzero_degree,
         lowest_included_contact_degree=lowest_included_degree,
         num_tokens=len(tokens),
+        think_tokens=think_emitted,
         contacts=tuple(emitted),
     )
 
