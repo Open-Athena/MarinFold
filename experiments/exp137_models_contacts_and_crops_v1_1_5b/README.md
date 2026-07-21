@@ -42,10 +42,24 @@ reference for a long from-scratch run, and well past Chinchilla for 1.5B.
 | Text column | `document` |
 
 The crops corpus is published to the open-athena HF **bucket** (not
-levanter-addressable on the worker), so `mirror_crops_corpus.py` mirrors the
-parquet shards byte-for-byte to GCS. The exp137 launch mirrored from exp132's
-local generation scratch (`--source local`), whose shards are byte-identical to
-the published bucket (verified by shard size).
+levanter-addressable on the worker), so its parquet shards are mirrored
+byte-for-byte to GCS. **The workstation's uplink to GCS is ~2.5 MB/s (asymmetric
+link), so a 55 GB workstation upload takes ~6 h** — instead, `mirror_on_pod.py`
+runs the HF-bucket→GCS copy **on an iris CPU pod** (cloud read + cloud write via
+the pod's marin-us-east5-authorized SA), finishing in ~5 min at ~200 MB/s:
+
+```bash
+cd experiments/exp137_models_contacts_and_crops_v1_1_5b
+/home/bizon/git/marin/.venv/bin/iris --cluster marin job run --no-wait \
+  --enable-extra-resources --cpu=8 --memory=16GB --disk=32GB --zone=us-east5-a \
+  -e MIRROR_WORKERS 16 \
+  -- uv run --with 'huggingface_hub>=1.5,<2' --with hf_xet --with gcsfs \
+     python -m mirror_on_pod
+```
+
+`uv run --with` supplies the bucket Python API (`download_bucket_files`, hub≥1.5)
+without perturbing the locked training env. `mirror_crops_corpus.py` is the slow
+local fallback (workstation→GCS, `--source local` from exp132's scratch).
 
 **Two validation losses are tracked** (`eval/<key>/loss`):
 - `contacts-and-crops-v1-val` — **primary** (the corpus we train on).
