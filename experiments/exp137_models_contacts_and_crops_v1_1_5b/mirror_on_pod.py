@@ -42,6 +42,10 @@ DST = (
 )
 SHARDS = {"train": 2067, "val": 22, "test": 22}
 
+# Authenticated bucket reads get a higher HF rate limit than anon; the anon path
+# 429s under concurrency. Pass a token via HF_TOKEN (else fall back to anon).
+_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN") or False
+
 fs = gcsfs.GCSFileSystem(skip_instance_cache=True)
 
 
@@ -56,9 +60,9 @@ def one(split: str, fn: str, tmp: str) -> int:
     src = f"{BUCKET_PREFIX}/{split}/{fn}"
     local = os.path.join(tmp, fn)
     last = None
-    for attempt in range(4):
+    for attempt in range(8):
         try:
-            download_bucket_files(BUCKET_ID, files=[(src, local)], token=False,
+            download_bucket_files(BUCKET_ID, files=[(src, local)], token=_TOKEN,
                                   raise_on_missing_files=True)
             sz = os.path.getsize(local)
             with open(local, "rb") as a, fs.open(f"{DST}/{split}/{fn}", "wb") as b:
@@ -78,7 +82,8 @@ def one(split: str, fn: str, tmp: str) -> int:
                     os.remove(local)
                 except OSError:
                     pass
-            time.sleep(2 * (attempt + 1))
+            # exponential backoff (helps with HF 429 rate limits under concurrency)
+            time.sleep(min(60, 3 * (2 ** attempt)) + (hash(fn) % 5))
     raise last
 
 
