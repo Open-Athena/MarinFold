@@ -14,13 +14,21 @@ dependencies = [
     "pyarrow",                 # parquet read/write + Zephyr-native row dicts
     "fsspec",                  # uniform local + cloud IO
     "gcsfs",                   # gs:// for the in-region mirror + marin output
-    "huggingface_hub>=1.5",    # Stage 0 HF-bucket mirror + hf:// publish
+    # NB: the HF-bucket API (Stage 0 mirror, Stage 2 upload) needs
+    # huggingface_hub>=1.5, but marinfold -> transformers pins hub<1.0, so it is
+    # NOT a dep here. Run the mirror / bucket upload in an isolated env instead:
+    # `uv run --no-project --with 'huggingface_hub>=1.5,<2' --with hf_xet --with gcsfs`.
+    # Stage 1 (marinfold generation) uses only fsspec/gcsfs for GCS — no hub API.
     # marin runtime from PyPI at a CURRENT dev release (see the [tool.uv] note):
     # matches the live controller so worker tasks register with the control
     # plane. The frozen 2026-05-29 GitHub `-latest` wheels do NOT.
     "marin-zephyr>=0.2.40.dev202607080801",  # distributed generation on marin Iris
     "marin-iris>=0.2.40.dev202607080801",    # `iris` job-submission CLI + GCP provider
-    "httpx>=0.28.1",           # current marin-iris is httpx-1-compatible
+    # httpx MUST stay <1: with prerelease=allow, uv otherwise resolves the
+    # broken httpx 1.0.dev* prerelease, whose aiobotocore shim (s3fs -> rigging
+    # -> iris) references httpx.TimeoutException — absent there — and every
+    # `iris` invocation dies on import (the exp53 "httpx<1" gotcha).
+    "httpx>=0.28.1,<1",
 ]
 
 [project.optional-dependencies]
