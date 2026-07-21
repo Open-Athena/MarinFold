@@ -20,12 +20,57 @@ Env:
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import gcsfs
-from huggingface_hub import download_bucket_files
+
+_PKGS = ["huggingface_hub>=1.5,<2", "hf_xet", "gcsfs", "google-auth"]
+
+
+def _have_bucket_api() -> bool:
+    try:
+        from huggingface_hub import download_bucket_files  # noqa: F401
+        import gcsfs  # noqa: F401
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _ensure_deps() -> None:
+    """Install the bucket API (hub>=1.5) + gcsfs into THIS interpreter.
+
+    The synced project env pins hub 0.36 (transitive), which lacks the bucket
+    Python API. We upgrade in-place using the same interpreter iris launched, so
+    there's no venv/PATH ambiguity (the reason a ``bash -lc`` wrapper failed).
+    """
+    if _have_bucket_api():
+        return
+    attempts = (
+        [sys.executable, "-m", "pip", "install", "-q", "--upgrade", *_PKGS],
+        ["uv", "pip", "install", "-q", "--upgrade", "--python", sys.executable, *_PKGS],
+    )
+    for cmd in attempts:
+        try:
+            subprocess.run(cmd, check=True)
+            if _have_bucket_api():
+                return
+        except Exception as e:  # noqa: BLE001
+            print(f"[ensure_deps] {cmd[0]} failed: {e}", flush=True)
+    subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=False)
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--upgrade", *_PKGS], check=True)
+
+
+_ensure_deps()
+
+import gcsfs  # noqa: E402
+import huggingface_hub  # noqa: E402
+from huggingface_hub import download_bucket_files  # noqa: E402
+
+print(f"[mirror] python={sys.executable} hub={huggingface_hub.__version__} "
+      f"gcsfs={gcsfs.__version__}", flush=True)
 
 BUCKET_ID = "open-athena/MarinFold"
 BUCKET_PREFIX = "data/document_structures/contacts_and_crops_v1"
