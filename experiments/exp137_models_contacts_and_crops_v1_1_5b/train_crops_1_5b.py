@@ -62,8 +62,12 @@ def build_steps() -> list:
     steps_per_export = int(os.environ.get("EXP137_STEPS_PER_EXPORT", "10000"))
     _mev = os.environ.get("EXP137_MAX_EVAL_BATCHES")
     max_eval_batches = int(_mev) if _mev else None
+    # contacts-v1 mix-in fraction of TRAIN tokens (0 = crops-only, the default run;
+    # e.g. 0.05 = 5% standalone contacts-v1 docs alongside the crops bulk, a la #121).
+    cv1_mix = float(os.environ.get("EXP137_CV1_MIX", "0"))
 
-    default_name = f"exp137-cc1-1_5b-{_lr_tag(lr)}-wd{wd:g}".replace(".", "p") + "-bs128"
+    slug = "cc1" if cv1_mix <= 0 else f"cc1mix{round(cv1_mix * 100)}"
+    default_name = f"exp137-{slug}-1_5b-{_lr_tag(lr)}-wd{wd:g}".replace(".", "p") + "-bs128"
     name = os.environ.get("EXP137_NAME", default_name)
 
     return [
@@ -76,6 +80,7 @@ def build_steps() -> list:
             steps_per_eval=steps_per_eval,
             steps_per_export=steps_per_export,
             max_eval_batches=max_eval_batches,
+            contacts_v1_mix=cv1_mix,
             extra_tags=(f"steps{steps}",),
             wandb_name=name,
         )

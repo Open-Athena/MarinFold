@@ -82,6 +82,13 @@ CROPS_VAL_GLOB = f"{CROPS_DATA_PREFIX}/val/*.parquet"
 CONTACTS_V1_VAL_GLOB = (
     "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/val/*.parquet"
 )
+# contacts-v1 TRAIN split -- exp53's published corpus (same proteins/rounds as the
+# crops corpus, one contacts-v1 doc per). Used ONLY for the optional mix-in variant
+# (a token-minority alongside the crops bulk, a la #121, to keep pure-contacts
+# capability sharp). Tokenized with the crops tokenizer (subset ids).
+CONTACTS_V1_TRAIN_GLOB = (
+    "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/train/*.parquet"
+)
 
 # Qwen3 1.47B -- exp117 / #75 / exp44 dims + Llama3 rope, verbatim. Vocab is set
 # from the tokenizer (3848) at build time. Do NOT change the architecture.
@@ -159,6 +166,8 @@ def _tokenize_step(name: str, glob: str, *, is_validation: bool) -> ExecutorStep
 CROPS_TRAIN_TOK = _tokenize_step("contacts-and-crops-v1-train", CROPS_TRAIN_GLOB, is_validation=False)
 CROPS_VAL_TOK = _tokenize_step("contacts-and-crops-v1-val", CROPS_VAL_GLOB, is_validation=True)
 CONTACTS_V1_VAL_TOK = _tokenize_step("contacts-v1-val", CONTACTS_V1_VAL_GLOB, is_validation=True)
+# Built only when the mix-in variant is requested (contacts_v1_mix > 0).
+CONTACTS_V1_TRAIN_TOK = _tokenize_step("contacts-v1-train", CONTACTS_V1_TRAIN_GLOB, is_validation=False)
 
 
 def _as_array_exemplar_component(component: DatasetComponent) -> DatasetComponent:
@@ -205,6 +214,7 @@ def build_train_step(
     steps_per_export: int = 5000,
     max_eval_batches: int | None = None,
     data_seed: int = CROPS_DATA_SEED,
+    contacts_v1_mix: float = 0.0,
     extra_tags: Sequence[str] = (),
     wandb_name: str | None = None,
     resources: ResourceConfig = PROTEIN_RESOURCES,
@@ -246,9 +256,25 @@ def build_train_step(
         # From scratch: no initialize_from_checkpoint_path, no pad_tokenizer.
     )
 
-    train_key = "contacts-and-crops-v1-train"
-    components = {train_key: _component(CROPS_TRAIN_TOK), **VAL_COMPONENTS}
-    train_weights = {train_key: 1.0, **{k: 0.0 for k in VAL_COMPONENTS}}
+    # Train mixture. Default: crops-only (weight 1.0). With contacts_v1_mix > 0,
+    # add a token-minority of standalone contacts-v1 documents (exp53, same
+    # proteins) so that fraction of TRAINING tokens comes from contacts-v1 and the
+    # rest from crops (a la #121, to keep pure-contacts capability sharp). The two
+    # runs share the same num_train_steps (token budget), so they A/B cleanly.
+    crops_key = "contacts-and-crops-v1-train"
+    components = {crops_key: _component(CROPS_TRAIN_TOK), **VAL_COMPONENTS}
+    if contacts_v1_mix > 0.0:
+        if not 0.0 < contacts_v1_mix < 1.0:
+            raise ValueError(f"contacts_v1_mix must be in (0, 1), got {contacts_v1_mix}")
+        cv1_key = "contacts-v1-train"
+        components[cv1_key] = _component(CONTACTS_V1_TRAIN_TOK)
+        train_weights = {
+            crops_key: 1.0 - contacts_v1_mix,
+            cv1_key: contacts_v1_mix,
+            **{k: 0.0 for k in VAL_COMPONENTS},
+        }
+    else:
+        train_weights = {crops_key: 1.0, **{k: 0.0 for k in VAL_COMPONENTS}}
 
     crops_data = LmDataConfig(
         components=components,
@@ -260,6 +286,7 @@ def build_train_step(
         block_cross_document_attention=True,
     )
 
+    mix_tag = "crops-only" if contacts_v1_mix <= 0.0 else f"cv1mix{contacts_v1_mix:g}"
     return default_train(
         name=name,
         tokenized=crops_data,
@@ -267,7 +294,7 @@ def build_train_step(
         train_config=train_config,
         tags=[
             "protein", "contacts-and-crops-v1", "qwen3", "unmasked", "exp137",
-            "from-scratch", *extra_tags,
+            "from-scratch", mix_tag, *extra_tags,
         ],
         eval_harness_tasks=[],
         use_default_validation=False,
