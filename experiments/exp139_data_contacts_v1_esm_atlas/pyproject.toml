@@ -1,0 +1,61 @@
+[project]
+name = "exp139-data-contacts-v1-esm-atlas"
+version = "0.1.0"
+description = "Generate the contacts-v1 training-document corpus at scale from the ESMFold2-Atlas distillation set (open-athena/esm-atlas-esmfold2-distill, ~67M single-chain monomers) on the marin Iris cluster via Zephyr, and in the same pyconfind pass save the reusable raw contacts. Calls into marinfold's contacts_v1 generator (no re-implementation)."
+# marin requires 3.12+; the resolved env is 3.12.
+requires-python = ">=3.12,<3.13"
+# Base install covers the per-row generation logic and the marin-zephyr runtime
+# used to fan out on Iris. marin-zephyr is in base (not an extra) so Iris
+# workers get the runtime however the job ships its env.
+dependencies = [
+    "marinfold[contacts-v1]",  # analyze_structure + build_document + analyzed_to_row (+ pyconfind)
+    "pyconfind[fast]",         # numba JIT contact backend for the at-scale run
+    "gemmi>=0.6",              # parse inline mmCIF text -> gemmi.Structure
+    "pyarrow",                 # parquet read/write + Zephyr-native row dicts
+    "fsspec",                  # uniform local + cloud IO
+    "gcsfs",                   # gs:// for the in-region mirror + marin output
+    "huggingface_hub>=1.5",    # Stage 0 HF-bucket mirror + hf:// publish
+    # marin runtime from PyPI at a CURRENT dev release (see the [tool.uv] note):
+    # matches the live controller so worker tasks register with the control
+    # plane. The frozen 2026-05-29 GitHub `-latest` wheels do NOT.
+    "marin-zephyr>=0.2.40.dev202607080801",  # distributed generation on marin Iris
+    "marin-iris>=0.2.40.dev202607080801",    # `iris` job-submission CLI + GCP provider
+    "httpx>=0.28.1",           # current marin-iris is httpx-1-compatible
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+# marin packages come from PyPI (the default index), where marin publishes a
+# fresh co-versioned dev release of the whole stack on ~every push. This is what
+# makes the worker/launcher env match the LIVE controller. Do NOT use the
+# `marin-*-latest` GitHub release assets (frozen at 2026-05-29 — workers built
+# from them never join the current zephyr coordinator). The controller also
+# enforces a 14-day client-freshness gate on *root* submissions; submit with a
+# fresh editable iris (/home/bizon/git/marin/.venv/bin/iris) if the pinned
+# PyPI dev wheel has aged past the floor.
+
+[tool.uv.sources]
+# marinfold stays a git dep (not a local path) so the SAME pyproject resolves on
+# remote Iris workers, which can't see this checkout. Pinned to this experiment's
+# branch because the reusable-contacts helper (contacts_v1.analyzed_to_row /
+# analyzed_from_row) is not yet on main — repoint to main (drop `branch`) once
+# the exp139 PR merges.
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", branch = "claude/esm-atlas-contacts-v1-gen-db9624" }
+
+[tool.pytest.ini_options]
+markers = [
+    "network: tests that require internet (HF / GCS reads). Skip with `pytest -m 'not network'`.",
+]
