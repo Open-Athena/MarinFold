@@ -8,60 +8,70 @@ workstation->GCS upload takes ~6 h. A pod in the marin cluster reads the HF
 bucket and writes to gs://marin-us-east5 both at cloud speeds, finishing in
 minutes. This is the fast path (``mirror_crops_corpus.py`` is the slow local one).
 
-The pod reads with the ``hf`` CLI (``hf buckets cp``, huggingface_hub >= 1.5 +
-hf_xet — pip-installed into a scratch prefix at launch so it never perturbs the
-locked training env) and writes with gcsfs using the pod's service account (which
-has marin-us-east5 write, same as marin's checkpoint writes). Resumable: skips
-shards already present in GCS with a matching size.
+The pod reads with ``huggingface_hub.download_bucket_files`` (>= 1.5 + hf_xet,
+pip-installed at launch — anon, no token) and writes with gcsfs using the pod's
+service account (which has marin-us-east5 write, same as marin's checkpoint
+writes). Resumable: skips shards already present in GCS.
 
 Env:
-* ``HF_BIN``   path to an ``hf`` (>=1.5) binary (default: ``hf`` on PATH)
-* ``MIRROR_SPLITS`` comma list (default ``train,val,test``)
+* ``MIRROR_SPLITS``  comma list (default ``train,val,test``)
 * ``MIRROR_WORKERS`` thread count (default 16 — cloud-side, no uplink cap)
 """
 from __future__ import annotations
 
 import os
-import subprocess
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import gcsfs
+from huggingface_hub import download_bucket_files
 
-BUCKET_ROOT = (
-    "hf://buckets/open-athena/MarinFold/data/document_structures/contacts_and_crops_v1"
-)
+BUCKET_ID = "open-athena/MarinFold"
+BUCKET_PREFIX = "data/document_structures/contacts_and_crops_v1"
 DST = (
     "gs://marin-us-east5/protein-structure/MarinFold/exp132_contacts_and_crops_v1/documents"
 )
 SHARDS = {"train": 2067, "val": 22, "test": 22}
-HF_BIN = os.environ.get("HF_BIN", "hf")
 
 fs = gcsfs.GCSFileSystem(skip_instance_cache=True)
 
 
-def existing_sizes(split: str) -> dict[str, int]:
+def existing(split: str) -> set[str]:
     try:
-        return {os.path.basename(i["name"]): i["size"] for i in fs.ls(f"{DST}/{split}", detail=True)}
+        return {os.path.basename(i["name"]) for i in fs.ls(f"{DST}/{split}", detail=True)}
     except FileNotFoundError:
-        return {}
+        return set()
 
 
 def one(split: str, fn: str, tmp: str) -> int:
-    src = f"{BUCKET_ROOT}/{split}/{fn}"
+    src = f"{BUCKET_PREFIX}/{split}/{fn}"
     local = os.path.join(tmp, fn)
-    subprocess.run([HF_BIN, "buckets", "cp", src, local], check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-    sz = os.path.getsize(local)
-    with open(local, "rb") as a, fs.open(f"{DST}/{split}/{fn}", "wb") as b:
-        while True:
-            chunk = a.read(16 << 20)
-            if not chunk:
-                break
-            b.write(chunk)
-    os.remove(local)
-    return sz
+    last = None
+    for attempt in range(4):
+        try:
+            download_bucket_files(BUCKET_ID, files=[(src, local)], token=False,
+                                  raise_on_missing_files=True)
+            sz = os.path.getsize(local)
+            with open(local, "rb") as a, fs.open(f"{DST}/{split}/{fn}", "wb") as b:
+                while True:
+                    chunk = a.read(16 << 20)
+                    if not chunk:
+                        break
+                    b.write(chunk)
+            if fs.info(f"{DST}/{split}/{fn}")["size"] != sz:
+                raise RuntimeError("size mismatch after write")
+            os.remove(local)
+            return sz
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if os.path.exists(local):
+                try:
+                    os.remove(local)
+                except OSError:
+                    pass
+            time.sleep(2 * (attempt + 1))
+    raise last
 
 
 def main() -> int:
@@ -69,16 +79,12 @@ def main() -> int:
     workers = int(os.environ.get("MIRROR_WORKERS", "16"))
     tmp = tempfile.mkdtemp(prefix="mirror_")
     t0 = time.time()
-    grand_done = grand_total = 0
+    grand = 0
     for split in splits:
         n = SHARDS[split]
-        have = existing_sizes(split)
-        # We don't know each shard's size a priori (bucket ls is another call);
-        # re-copy only those missing from GCS entirely (size check on re-runs is
-        # cheap since present ones are skipped by name).
+        have = existing(split)
         names = [f"contacts_and_crops_v1-{i:05d}-of-{n:05d}.parquet" for i in range(n)]
         todo = [fn for fn in names if fn not in have]
-        grand_total += len(todo)
         print(f"[{split}] {n} shards, {len(names)-len(todo)} present, {len(todo)} to copy", flush=True)
         done = 0
         with ThreadPoolExecutor(max_workers=workers) as ex:
@@ -88,24 +94,20 @@ def main() -> int:
                 try:
                     fut.result()
                     done += 1
-                    grand_done += 1
+                    grand += 1
                     if done % 100 == 0 or done == len(todo):
                         el = time.time() - t0
-                        print(f"[{split}] {done}/{len(todo)} ({el:.0f}s, {grand_done/el:.1f}/s)", flush=True)
+                        print(f"[{split}] {done}/{len(todo)} ({el:.0f}s, {grand/el:.1f}/s)", flush=True)
                 except Exception as e:  # noqa: BLE001
-                    err = getattr(e, "stderr", b"")
-                    print(f"[{split}] FAIL {fn}: {type(e).__name__} {err[:200]!r}", flush=True)
+                    print(f"[{split}] FAIL {fn}: {type(e).__name__} {str(e)[:200]}", flush=True)
         print(f"[{split}] done {done}/{len(todo)}", flush=True)
-    # verify
     miss = 0
     for split in splits:
-        have = existing_sizes(split)
-        n = SHARDS[split]
-        for i in range(n):
-            fn = f"contacts_and_crops_v1-{i:05d}-of-{n:05d}.parquet"
-            if fn not in have:
+        have = existing(split)
+        for i in range(SHARDS[split]):
+            if f"contacts_and_crops_v1-{i:05d}-of-{SHARDS[split]:05d}.parquet" not in have:
                 miss += 1
-    print(f"MIRROR DONE {grand_done} copied in {time.time()-t0:.0f}s; missing={miss}", flush=True)
+    print(f"MIRROR DONE {grand} copied in {time.time()-t0:.0f}s; missing={miss}", flush=True)
     return 1 if miss else 0
 
 
