@@ -131,6 +131,18 @@ slices just have smaller per-device batch).
 4. Report s/step, tok/s, MFU, slice.
 5. HF export co-located with the crops tokenizer; downstream exp89 contact eval.
 
-## Status
+## Status (2026-07-21) — LAUNCHED
 
-See the PR / issue #137 for launch status.
+- Smoke (`exp137-smoke`, v6e-8): validated end-to-end (from-scratch loss ~9.4 ≈
+  ln 3848, step-19 checkpoint + HF export).
+- **Full run LIVE:** `exp137-cc1-1_5b-lr3p162e-3-wd0p2-bs128` on **v6e-64 @
+  us-east5-b** (v5p-128/us-east5 had no preemptible capacity; v5p was only in
+  us-central1, cross-region — kept co-located on v6e). ~**1.5 s/it → ~30 h**,
+  71,359 steps, loss descending (9.4→4.98 by step 120). W&B `open-athena/MarinFold`.
+  Checkpoints under `.../checkpoints/exp137-cc1-1_5b-lr3p162e-3-wd0p2-bs128-95290f/`.
+
+**Picking a TPU slice:** `iris cluster status` shows live availability per
+pool/zone (columns Booting/Init/**Ready**/Failed/Demand). Large single slices
+(v5p-128, v6e-64) may show "no workers match constraints" when the preemptible
+pool is empty — request a size the autoscaler can boot, co-located with the data
+region. See issue #137 for full launch notes.
