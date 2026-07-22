@@ -1,6 +1,7 @@
 # exp142 — short-document / under-generation bias in contacts-v1 rollouts
 
-Issue: [#142](https://github.com/Open-Athena/MarinFold/issues/142) · Kind: evals
+Issue: [#142](https://github.com/Open-Athena/MarinFold/issues/142) · Kind: evals ·
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/short_document_bias.ipynb) interactive notebook ([`notebooks/short_document_bias.ipynb`](../../notebooks/short_document_bias.ipynb))
 
 ## Question
 
