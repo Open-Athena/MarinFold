@@ -140,7 +140,14 @@ def cmd_generate(args: argparse.Namespace) -> None:
         case _:
             typing.assert_never(suffix)
 
-    regions = args.region if args.region else ["us-central1"]
+    # Region pinning is a GCP concept (co-locate workers with the GCS bucket).
+    # CoreWeave (cw-us-east-02a) is a single fixed region with a pinned cpu-genoa
+    # pool, so a plain CPU ResourceConfig lands there — pass no regions. Chunk
+    # storage auto-resolves from the pod's MARIN_PREFIX (s3://marin-us-east-02a).
+    if args.platform == "coreweave":
+        regions = None
+    else:
+        regions = args.region if args.region else ["us-central1"]
     ctx = ZephyrContext(
         max_workers=args.max_workers,
         resources=ResourceConfig(
@@ -189,6 +196,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-workers", type=int, default=None,
                    help="Cap concurrent Zephyr workers (default: cluster default "
                         "or ZEPHYR_MAX_WORKERS).")
+    p.add_argument("--platform", choices=("gcp", "coreweave"), default="gcp",
+                   help="gcp (marin GCP Iris): pin workers to --region (default "
+                        "us-central1), read/write gs://. coreweave (cw-us-east-02a "
+                        "Genoa): no region pin (pinned cpu-genoa pool), read/write "
+                        "s3://marin-us-east-02a, chunk storage auto from MARIN_PREFIX.")
     p.add_argument("--region", action="append", default=None,
                    help="GCP region(s) to place workers in (repeatable). Defaults "
                         "to ['us-central1'] — region-local to the mirror + output. "

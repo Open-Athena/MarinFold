@@ -51,11 +51,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 BUCKET_ID = os.environ.get("BUCKET_ID", "open-athena/esm-atlas-esmfold2-distill")
-GCS_DEST = os.environ.get(
+# Destination prefix — any fsspec URL. GCS (`gs://marin-us-central1/...`, GCP
+# Iris) or CoreWeave object storage (`s3://marin-us-east-02a/...`, cw-us-east-02a;
+# creds + endpoint are auto-injected into task pods). Env name DEST (GCS_DEST
+# kept as a back-compat alias).
+DEST = (os.environ.get("DEST") or os.environ.get(
     "GCS_DEST",
     "gs://marin-us-central1/protein-structure/MarinFold/"
     "exp139_esm_atlas_contacts_v1/source",
-).rstrip("/")
+)).rstrip("/")
 MIRROR_WORKERS = int(os.environ.get("MIRROR_WORKERS", "6"))
 HF_TOKEN = os.environ.get("HF_TOKEN") or None
 MIRROR_TMP = Path(os.environ.get("MIRROR_TMP", "/tmp/esm_atlas_mirror"))
@@ -103,17 +107,18 @@ def _plan():
     return entries
 
 
-def _mirror_one(gcs, src_path: str, size: int | None) -> str:
+def _mirror_one(fs, src_path: str, size: int | None) -> str:
     """Move one file HF→GCS: skip if already there (size match), else dl→put→rm."""
+    import fsspec
     from huggingface_hub import download_bucket_files
 
-    dst = f"{GCS_DEST}/{src_path}"
-    gcs_path = dst[len("gs://"):]
+    # fs-relative destination path (strip the protocol via fsspec).
+    _, dst_path = fsspec.core.url_to_fs(f"{DEST}/{src_path}")
 
     # Resume: skip if present with a matching size (or present + size unknown).
     try:
-        if gcs.exists(gcs_path):
-            if size is None or gcs.size(gcs_path) == size:
+        if fs.exists(dst_path):
+            if size is None or fs.size(dst_path) == size:
                 return f"skip  {src_path}"
     except Exception:  # noqa: BLE001 — existence check is best-effort
         pass
@@ -127,7 +132,7 @@ def _mirror_one(gcs, src_path: str, size: int | None) -> str:
                 BUCKET_ID, files=[(src_path, str(local))],
                 raise_on_missing_files=True, token=HF_TOKEN or None,
             )
-            gcs.put_file(str(local), gcs_path)
+            fs.put_file(str(local), dst_path)
             got = local.stat().st_size
             return f"put   {src_path} ({got:,} B)"
         except Exception as exc:  # noqa: BLE001 — retry 429 / transient GCS
@@ -149,24 +154,27 @@ def main() -> int:
     plan = _plan()
     n_parts = sum(1 for p, _ in plan if p.startswith("structures/parts/"))
     total_bytes = sum(s or 0 for _, s in plan)
-    _log(f"[mirror] {BUCKET_ID} -> {GCS_DEST}")
+    _log(f"[mirror] {BUCKET_ID} -> {DEST}")
     _log(f"[mirror] {len(plan)} files to mirror ({n_parts} parts), "
          f"~{total_bytes / 1e12:.2f} TB, {MIRROR_WORKERS} workers"
          + (" [DRY_RUN]" if DRY_RUN else ""))
     for p, s in plan[:3]:
-        _log(f"[mirror]   e.g. {p} ({(s or 0):,} B) -> {GCS_DEST}/{p}")
+        _log(f"[mirror]   e.g. {p} ({(s or 0):,} B) -> {DEST}/{p}")
     if DRY_RUN:
         return 0
 
-    import gcsfs
+    import fsspec
 
-    gcs = gcsfs.GCSFileSystem()
+    # One filesystem for the destination (gs:// via gcsfs, s3:// via s3fs — creds
+    # from the ambient env: GCP ADC / service account, or CoreWeave's injected
+    # AWS_* + AWS_ENDPOINT_URL).
+    fs, _ = fsspec.core.url_to_fs(DEST)
     MIRROR_TMP.mkdir(parents=True, exist_ok=True)
 
     done = failed = 0
     with ThreadPoolExecutor(max_workers=MIRROR_WORKERS,
                             thread_name_prefix="mirror") as pool:
-        futs = {pool.submit(_mirror_one, gcs, p, s): p for p, s in plan}
+        futs = {pool.submit(_mirror_one, fs, p, s): p for p, s in plan}
         for fut in as_completed(futs):
             src = futs[fut]
             try:
