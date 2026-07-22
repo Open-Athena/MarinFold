@@ -49,11 +49,16 @@ from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
 from marinfold_models.defaults import default_tokenize, default_train
 from marinfold_models.simple_train_config import SimpleTrainConfig
 
-# All exp137 marin-executor output (token caches, checkpoints, HF exports) lands
-# under this prefix (per AGENTS.md). Fresh caches for the crops corpus.
-MARIN_PREFIX = (
-    "gs://marin-us-east5/protein-structure/MarinFold/exp137_contacts_and_crops_v1_1_5b"
-)
+# Region bucket for ALL data + executor output (caches, checkpoints, HF exports).
+# Default us-east5 (where the corpus was first staged); override with EXP137_BUCKET
+# to run co-located in another region (e.g. gs://marin-us-east1 when us-east5 TPU
+# capacity is scarce -- marin HARD-BLOCKS training when the TPU zone's region !=
+# the data region, so the corpus must be mirrored to the same-region bucket first;
+# see mirror_crops_corpus.py / the region note in README). Path layout is identical
+# across regions -- only the bucket changes.
+_BUCKET = os.environ.get("EXP137_BUCKET", "gs://marin-us-east5").rstrip("/")
+_ROOT = f"{_BUCKET}/protein-structure/MarinFold"
+MARIN_PREFIX = f"{_ROOT}/exp137_contacts_and_crops_v1_1_5b"
 os.environ["MARIN_PREFIX"] = MARIN_PREFIX
 
 # contacts-and-crops-v1 tokenizer (3848 vocab, superset of contacts-v1). Use the
@@ -71,24 +76,18 @@ CROPS_TOKENIZER = CROPS_TOKENIZER_REPO
 # under the exp132 data prefix (see mirror_crops_corpus.py). Explicit ``*.parquet``
 # globs so neither marin's expand_tokenize_paths nor levanter's URL globber falls
 # back to the default ``**/*.json.gz`` pattern.
-CROPS_DATA_PREFIX = (
-    "gs://marin-us-east5/protein-structure/MarinFold/exp132_contacts_and_crops_v1/documents"
-)
+CROPS_DATA_PREFIX = f"{_ROOT}/exp132_contacts_and_crops_v1/documents"
 CROPS_TRAIN_GLOB = f"{CROPS_DATA_PREFIX}/train/*.parquet"
 CROPS_VAL_GLOB = f"{CROPS_DATA_PREFIX}/val/*.parquet"
 # contacts-v1 val split -- exp53's published corpus. Tokenized with the CROPS
 # tokenizer (superset -> contacts-v1 docs tokenize identically), so this loss is
 # directly comparable to Eric's exp117 contacts-v1-val leader (2.7112).
-CONTACTS_V1_VAL_GLOB = (
-    "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/val/*.parquet"
-)
+CONTACTS_V1_VAL_GLOB = f"{_ROOT}/exp53_contacts_v1_5x/documents/val/*.parquet"
 # contacts-v1 TRAIN split -- exp53's published corpus (same proteins/rounds as the
 # crops corpus, one contacts-v1 doc per). Used ONLY for the optional mix-in variant
 # (a token-minority alongside the crops bulk, a la #121, to keep pure-contacts
 # capability sharp). Tokenized with the crops tokenizer (subset ids).
-CONTACTS_V1_TRAIN_GLOB = (
-    "gs://marin-us-east5/protein-structure/MarinFold/exp53_contacts_v1_5x/documents/train/*.parquet"
-)
+CONTACTS_V1_TRAIN_GLOB = f"{_ROOT}/exp53_contacts_v1_5x/documents/train/*.parquet"
 
 # Qwen3 1.47B -- exp117 / #75 / exp44 dims + Llama3 rope, verbatim. Vocab is set
 # from the tokenizer (3848) at build time. Do NOT change the architecture.
