@@ -25,6 +25,7 @@ class AttentionLayout(StrEnum):
 
     FULL = "full_segment"
     CAUSAL = "causal_segment"
+    BLOCK_CAUSAL = "block_causal_segment"
 
 
 @dataclass(frozen=True, eq=False)
@@ -47,8 +48,9 @@ class Coordinate:
 
 POSITION_IDS = Coordinate("position_ids", missing=0)
 QUERY = Coordinate("query", dtype=np.bool_, missing=False)
+ATTENTION_BLOCK = Coordinate("attention_block", missing=0)
 
-RUNTIME_COORDINATES = (POSITION_IDS, QUERY)
+RUNTIME_COORDINATES = (POSITION_IDS, QUERY, ATTENTION_BLOCK)
 
 
 @dataclass(frozen=True)
@@ -176,6 +178,8 @@ class Document:
         for coordinate in RUNTIME_COORDINATES:
             if coordinate not in values:
                 values[coordinate] = _filled_coordinate(coordinate, len(self.token_ids))
+        if self.attention == AttentionLayout.BLOCK_CAUSAL:
+            _validate_attention_blocks(values[ATTENTION_BLOCK])
         self._coordinates = MappingProxyType(values)
 
         ranges = (ScoreRange(0, len(self)),) if score_ranges is None else score_ranges
@@ -431,14 +435,24 @@ def concatenate(*documents: Document) -> Document:
             for score_range in document.score_ranges
         )
         offset += len(document)
+    concatenated_coordinates = {
+        coordinate: np.concatenate(
+            tuple(document[coordinate] for document in documents)
+        )
+        for coordinate in coordinates
+    }
+    if documents[0].attention == AttentionLayout.BLOCK_CAUSAL:
+        shifted_blocks: list[np.ndarray] = []
+        block_offset = 0
+        for document in documents:
+            blocks = document[ATTENTION_BLOCK]
+            shifted_blocks.append(blocks + block_offset)
+            block_offset += int(blocks[-1]) + 1
+        concatenated_coordinates[ATTENTION_BLOCK] = np.concatenate(shifted_blocks)
+
     return Document(
         np.concatenate(tuple(document.token_ids for document in documents)),
-        {
-            coordinate: np.concatenate(
-                tuple(document[coordinate] for document in documents)
-            )
-            for coordinate in coordinates
-        },
+        concatenated_coordinates,
         attention=documents[0].attention,
         score_ranges=tuple(shifted_ranges),
         vocabulary=vocabulary,
@@ -458,6 +472,17 @@ def causal_training_document(token_ids: Sequence[TokenLike]) -> Document:
         },
         attention=AttentionLayout.CAUSAL,
     )
+
+
+def _validate_attention_blocks(blocks: np.ndarray) -> None:
+    """Validate an ordered partition used by block-causal attention."""
+    if blocks[0] != 0:
+        raise ValueError("Block-causal attention blocks must start at 0")
+    differences = np.diff(blocks)
+    if np.any((differences < 0) | (differences > 1)):
+        raise ValueError(
+            "Block-causal attention blocks must be nondecreasing contiguous integers"
+        )
 
 
 @dataclass(frozen=True)

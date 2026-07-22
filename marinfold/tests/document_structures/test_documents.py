@@ -8,6 +8,7 @@ import pytest
 
 from marinfold.document_structures.core import Vocabulary
 from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
     QUERY,
     AttentionLayout,
     Document,
@@ -88,6 +89,32 @@ def test_concatenate_coalesces_adjacent_default_scoring() -> None:
     assert len(document.score_ranges) == 1
     assert (document.score_ranges[0].start, document.score_ranges[0].stop) == (0, 4)
     assert document.score_ranges[0].scorer is next_token_score
+
+
+def test_concatenate_orders_block_causal_attention_spans() -> None:
+    context = Document(
+        (1, 2, 3),
+        {ATTENTION_BLOCK: (0, 0, 0)},
+        attention=AttentionLayout.BLOCK_CAUSAL,
+    )
+    queries = Document(
+        (4, 4, 4),
+        {ATTENTION_BLOCK: (0, 0, 1)},
+        attention=AttentionLayout.BLOCK_CAUSAL,
+    )
+
+    document = context + queries
+
+    assert tuple(document[ATTENTION_BLOCK]) == (0, 0, 0, 1, 1, 2)
+
+
+def test_block_causal_attention_requires_ordered_contiguous_blocks() -> None:
+    with pytest.raises(ValueError, match="nondecreasing contiguous"):
+        Document(
+            (1, 2, 3),
+            {ATTENTION_BLOCK: (0, 2, 1)},
+            attention=AttentionLayout.BLOCK_CAUSAL,
+        )
 
 
 def test_take_keeps_explicit_targets_aligned_when_reordering() -> None:

@@ -15,6 +15,7 @@ from marinfold.document_structures.contacts_v1.training_documents import (
     unordered_contacts_score,
 )
 from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
     QUERY,
     AttentionLayout,
     Coordinate,
@@ -86,9 +87,17 @@ def test_levanter_loss_applies_document_scorer_after_one_logits_pass() -> None:
 
 
 def test_levanter_unordered_contact_loss_is_jittable_and_differentiable() -> None:
-    context = Document((3,), attention=AttentionLayout.FULL).unscored()
+    context = Document(
+        (3,),
+        {ATTENTION_BLOCK: (0,)},
+        attention=AttentionLayout.BLOCK_CAUSAL,
+    ).unscored()
     queries = (
-        Document((4,) * 7, attention=AttentionLayout.FULL)
+        Document(
+            (4,) * 7,
+            {ATTENTION_BLOCK: (0, 0, 0, 1, 1, 1, 2)},
+            attention=AttentionLayout.BLOCK_CAUSAL,
+        )
         .with_targets((5, 6, 7, 5, 8, 9, 2))
         .scored_by(unordered_contacts_score)
     )
@@ -107,6 +116,35 @@ def test_levanter_unordered_contact_loss_is_jittable_and_differentiable() -> Non
     assert gradient_leaves
     assert all(bool(jnp.all(jnp.isfinite(leaf))) for leaf in gradient_leaves)
     assert any(bool(jnp.any(leaf != 0)) for leaf in gradient_leaves)
+
+
+def test_levanter_materializes_block_causal_attention_with_segment_isolation() -> None:
+    document = Document(
+        (3, 4, 4, 4),
+        {ATTENTION_BLOCK: (0, 1, 1, 2)},
+        attention=AttentionLayout.BLOCK_CAUSAL,
+    ).with_targets((5, 6, 7), start=1)
+    Pos = hax.Axis("position", 4)
+    batch = levanter_scored_document_batch(pack((document,), max_seq_len=4), Pos=Pos)
+
+    materialized = batch.attention_mask.materialize(
+        Pos, hax.Axis("key_position", 4)
+    )
+
+    assert materialized is not None
+    np.testing.assert_array_equal(
+        materialized.rearrange((hax.Axis("batch", 1), Pos, hax.Axis("key_position", 4))).array[
+            0
+        ],
+        np.asarray(
+            (
+                (True, False, False, False),
+                (True, True, True, False),
+                (True, True, True, False),
+                (True, True, True, True),
+            )
+        ),
+    )
 
 
 def test_levanter_loss_rejects_model_smaller_than_document_vocabulary() -> None:

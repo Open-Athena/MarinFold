@@ -35,6 +35,7 @@ from marinfold.document_structures.core import (
     build_tokenizer,
 )
 from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
     POSITION_IDS,
     QUERY,
     AttentionLayout,
@@ -61,6 +62,7 @@ from marinfold.document_structures.writers import (
 )
 
 __all__ = [
+    "ATTENTION_BLOCK",
     "POSITION_IDS",
     "QUERY",
     "AttentionLayout",

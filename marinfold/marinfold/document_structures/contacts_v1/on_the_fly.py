@@ -329,13 +329,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--think-tokens",
         type=int,
         default=0,
-        help="Fixed pause positions before full-attention target slots.",
+        help="Fixed pause positions before relative-position target slots.",
     )
     parser.add_argument(
         "--target-scoring",
         choices=tuple(scoring.value for scoring in ContactTargetScoring),
         default=ContactTargetScoring.ORDERED_TOKENS.value,
-        help="Fixed token targets or dynamic unordered-contact matching.",
+        help="Fixed token targets or sequential unordered-contact scoring.",
     )
     return parser
 

@@ -13,6 +13,7 @@ from levanter.layers.attention import AttentionMask
 from levanter.models.lm_model import LmHeadModel
 
 from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
     POSITION_IDS,
     AttentionLayout,
     Coordinate,
@@ -86,6 +87,14 @@ def levanter_scored_document_batch(
     attention_mask = AttentionMask()
     if packed.attention == AttentionLayout.CAUSAL:
         attention_mask = AttentionMask.causal()
+    elif packed.attention == AttentionLayout.BLOCK_CAUSAL:
+        attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK]), axes)
+        KPos = hax.Axis("key_position", Pos.size)
+        key_blocks = attention_blocks.rename({Pos: KPos})
+        explicit_mask = (
+            attention_blocks.broadcast_axis(KPos) >= key_blocks.broadcast_axis(Pos)
+        ).rearrange((Batch, Pos, KPos))
+        attention_mask = AttentionMask.explicit(explicit_mask)
     attention_mask = attention_mask.with_segment_ids(segment_ids)
 
     target_ids = np.full(packed.token_ids.shape, -1, dtype=np.int32)

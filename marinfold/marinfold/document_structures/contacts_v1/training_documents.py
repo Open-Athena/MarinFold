@@ -30,6 +30,7 @@ from marinfold.document_structures.contacts_v1.vocab import (
 )
 from marinfold.document_structures.core import Token
 from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
     QUERY,
     AttentionLayout,
     Coordinate,
@@ -44,6 +45,7 @@ class ContactDocumentStyle(StrEnum):
 
     CAUSAL_SERIALIZED = "causal-serialized"
     FULL_ATTENTION_RELATIVE = "full-attention-relative"
+    BLOCK_CAUSAL_RELATIVE = "block-causal-relative"
 
 
 class ContactTargetScoring(StrEnum):
@@ -57,12 +59,14 @@ RELATIVE_POSITION = Coordinate("relative_position")
 
 
 def unordered_contacts_score(logits: Any, context: ScoreContext) -> Any:
-    """Score a set of undirected contacts with a greedy dynamic oracle.
+    """Score undirected contacts with a sequential multi-positive oracle.
 
     This scorer deliberately knows the contacts-v1 target layout: zero or more
     ``<contact> <p_i> <p_j>`` triples followed by one ordered ``<end>`` token.
-    It chooses a one-to-one matching between predicted and gold triples using
-    cross-entropy cost, allowing either endpoint orientation for each contact.
+    At each query slot, every not-yet-consumed gold contact is valid. The
+    highest-probability remaining contact is consumed before the next slot, so
+    predicting the same contact again receives no credit. Both endpoint
+    orientations are marginalized. Everything happens after one model forward.
     """
     if context.target_ids is None:
         raise ValueError("Unordered contact scoring requires explicit targets")
@@ -92,39 +96,29 @@ def unordered_contacts_score(logits: Any, context: ScoreContext) -> Any:
     reversed_contacts = target_contacts[:, [0, 2, 1]]
     canonical_costs = _contact_match_costs(contact_logits, target_contacts)
     reversed_costs = _contact_match_costs(contact_logits, reversed_contacts)
-    use_reversed = reversed_costs < canonical_costs
-    match_costs = xp.minimum(canonical_costs, reversed_costs)
+    contact_log_probs = xp.logaddexp(-canonical_costs, -reversed_costs)
 
     indices = xp.arange(contact_count)
-    available_predictions = xp.ones((contact_count,), dtype=xp.bool_)
     available_targets = xp.ones((contact_count,), dtype=xp.bool_)
-    assignment = xp.zeros((contact_count, contact_count), dtype=xp.bool_)
-    for _ in range(contact_count):
-        available = available_predictions[:, None] & available_targets[None, :]
-        masked_costs = xp.where(available, match_costs, xp.asarray(xp.inf))
-        flat_match = xp.argmin(masked_costs.reshape(-1))
-        prediction = flat_match // contact_count
-        target = flat_match % contact_count
-        chosen = (indices[:, None] == prediction) & (indices[None, :] == target)
-        assignment = assignment | chosen
-        available_predictions = available_predictions & (indices != prediction)
+    slot_losses = []
+    for slot in range(contact_count):
+        remaining_log_probs = xp.where(
+            available_targets,
+            contact_log_probs[slot],
+            xp.asarray(-xp.inf),
+        )
+        slot_losses.append(-_logsumexp(remaining_log_probs, xp=xp))
+        target = xp.argmax(remaining_log_probs)
         available_targets = available_targets & (indices != target)
 
-    candidate_targets = xp.where(
-        use_reversed[..., None],
-        reversed_contacts[None, :, :],
-        target_contacts[None, :, :],
-    )
-    selected_targets = xp.sum(
-        assignment[..., None].astype(target_contacts.dtype) * candidate_targets,
-        axis=1,
-    )
-    contact_losses = _token_cross_entropy(
-        contact_logits.reshape(contact_token_count, logits.shape[-1]),
-        selected_targets.reshape(contact_token_count),
-    )
     end_losses = _token_cross_entropy(end_logits, end_targets)
-    return xp.mean(xp.concatenate((contact_losses, end_losses), axis=0))
+    total_loss = xp.sum(xp.stack(slot_losses)) + xp.sum(end_losses)
+    return total_loss / target_ids.shape[0]
+
+
+def _logsumexp(values: Any, *, xp: Any) -> Any:
+    maximum = xp.max(values)
+    return maximum + xp.log(xp.sum(xp.exp(values - maximum)))
 
 
 def _contact_match_costs(contact_logits: Any, target_contacts: Any) -> Any:
@@ -161,8 +155,8 @@ def _array_namespace(array: Any) -> Any:
 class DocumentConstructionConfig:
     """Select a model-facing representation independently of contact analysis.
 
-    ``think_tokens`` applies to the full-attention representation. These are
-    observed pause positions between the natural-order sequence and hidden
+    ``think_tokens`` applies to the relative-position representations. These
+    are observed pause positions between the natural-order sequence and hidden
     target slots. The target slots themselves also use ``<think>`` as a neutral
     input token and are distinguished by the ``QUERY`` coordinate.
     """
@@ -181,7 +175,7 @@ class DocumentConstructionConfig:
             raise ValueError(f"max_seq_len must be positive, got {self.max_seq_len}")
         if self.style == ContactDocumentStyle.CAUSAL_SERIALIZED and self.think_tokens:
             raise ValueError(
-                "think_tokens is only supported by full-attention-relative; "
+                "think_tokens is only supported by relative-position styles; "
                 "use GenerationConfig(think=True) for serialized causal documents"
             )
         if (
@@ -203,6 +197,13 @@ def build_contact_training_document(
         return causal_document_from_generation(generation)
     if config.style == ContactDocumentStyle.FULL_ATTENTION_RELATIVE:
         return full_attention_relative_document(
+            generation,
+            think_tokens=config.think_tokens,
+            max_seq_len=config.max_seq_len,
+            target_scoring=config.target_scoring,
+        )
+    if config.style == ContactDocumentStyle.BLOCK_CAUSAL_RELATIVE:
+        return block_causal_relative_document(
             generation,
             think_tokens=config.think_tokens,
             max_seq_len=config.max_seq_len,
@@ -289,6 +290,82 @@ def full_attention_relative_document(
             QUERY: (True,) * len(target_tokens),
         },
         attention=AttentionLayout.FULL,
+    ).with_targets(target_tokens)
+    if target_scoring == ContactTargetScoring.UNORDERED_CONTACTS:
+        query_document = query_document.scored_by(unordered_contacts_score)
+    elif target_scoring != ContactTargetScoring.ORDERED_TOKENS:
+        raise ValueError(f"Unsupported contact target scoring: {target_scoring}")
+    return context_document + query_document
+
+
+def block_causal_relative_document(
+    generation: GenerationResult,
+    *,
+    think_tokens: int = 0,
+    max_seq_len: int = CONTEXT_LENGTH,
+    target_scoring: ContactTargetScoring = ContactTargetScoring.UNORDERED_CONTACTS,
+) -> Document:
+    """Build a bidirectional sequence prefix and ordered causal query blocks.
+
+    The sequence/framing tokens form one full-attention block. Each optional
+    think token is its own block. Each three-position contact query is one
+    bidirectional block, followed by a singleton ``<end>`` query block. A block
+    may attend to itself and every earlier block, but never to a later block.
+    Contact labels remain scoring-only metadata; every query input is neutral.
+    """
+    if think_tokens < 0:
+        raise ValueError(f"think_tokens must be non-negative, got {think_tokens}")
+    if max_seq_len <= 0:
+        raise ValueError(f"max_seq_len must be positive, got {max_seq_len}")
+
+    sequence_tokens = [
+        VOCABULARY.token(f"<{residue.resname}>") for residue in generation.residues
+    ]
+    prefix_tokens: list[Token] = [DOC_TYPE, BEGIN_SEQUENCE]
+    prefix_tokens.extend(sequence_tokens)
+    prefix_tokens.append(BEGIN_STRUCTURE)
+    context_tokens = [*prefix_tokens, *([THINK] * think_tokens)]
+    context_blocks = (0,) * len(prefix_tokens) + tuple(range(1, think_tokens + 1))
+
+    contacts = sorted(generation.contacts, key=lambda item: (item.seq_i, item.seq_j))
+    target_tokens: list[Token] = []
+    query_blocks: list[int] = []
+    for block, contact in enumerate(contacts):
+        target_tokens.extend(
+            (CONTACT, POSITIONS[contact.seq_i], POSITIONS[contact.seq_j])
+        )
+        query_blocks.extend((block, block, block))
+    target_tokens.append(END)
+    query_blocks.append(len(contacts))
+
+    document_length = len(context_tokens) + len(target_tokens)
+    if document_length > max_seq_len:
+        raise ValueError(
+            f"Block-causal document needs {document_length} tokens, "
+            f"exceeding max_seq_len={max_seq_len}"
+        )
+
+    context_relative_positions = (
+        (RELATIVE_POSITION.missing,) * 2
+        + tuple(range(len(sequence_tokens)))
+        + (RELATIVE_POSITION.missing,) * (1 + think_tokens)
+    )
+    context_document = Document(
+        context_tokens,
+        {
+            RELATIVE_POSITION: context_relative_positions,
+            ATTENTION_BLOCK: context_blocks,
+        },
+        attention=AttentionLayout.BLOCK_CAUSAL,
+    ).unscored()
+    query_document = Document(
+        [THINK] * len(target_tokens),
+        {
+            RELATIVE_POSITION: tuple(range(len(target_tokens))),
+            QUERY: (True,) * len(target_tokens),
+            ATTENTION_BLOCK: query_blocks,
+        },
+        attention=AttentionLayout.BLOCK_CAUSAL,
     ).with_targets(target_tokens)
     if target_scoring == ContactTargetScoring.UNORDERED_CONTACTS:
         query_document = query_document.scored_by(unordered_contacts_score)

@@ -27,6 +27,13 @@ Vocabulary identity is also static batch metadata. Tagged documents retain
 their declaration fingerprint through packing, and the loss rejects a model
 whose logits axis is smaller than the declared vocabulary.
 
+Block-causal documents are lowered to an explicit Levanter attention mask:
+tokens attend bidirectionally within their integer attention block and to all
+earlier blocks in the same packed segment. This is suitable for local
+JAX/vanilla prototyping. Levanter's TPU Splash backend does not yet lower
+explicit masks; a structured Splash block-mask lowering is required before
+using this layout for a production TPU run.
+
 Experiments using this bridge must declare both `marinfold-models` and
 `marinfold` as direct dependencies. uv source mappings are not transitive, so
 the experiment should map both packages to their respective repository

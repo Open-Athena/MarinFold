@@ -33,6 +33,7 @@ from marinfold.document_structures.contacts_v1.vocab import (
     position_token,
 )
 from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
     POSITION_IDS,
     QUERY,
     AttentionLayout,
@@ -186,6 +187,40 @@ def test_full_attention_document_can_score_unordered_contacts() -> None:
 
     document = build_contact_training_document(generation, config=config)
 
+    assert len(document.score_ranges) == 2
+    assert document.score_ranges[0].scorer is None
+    assert document.score_ranges[1].scorer is unordered_contacts_score
+
+
+def test_block_causal_document_uses_full_prefix_and_causal_contact_blocks() -> None:
+    residues = tuple(
+        ResidueInfo(index, name, index + 1, "A")
+        for index, name in enumerate(
+            ("MET", "ALA", "GLY", "PHE", "SER", "THR", "LYS", "VAL")
+        )
+    )
+    generation = build_document(
+        "ex-block-causal",
+        residues,
+        (RawContact(0, 6, 0.91), RawContact(1, 7, 0.42)),
+    )
+    assert generation is not None
+    config = DocumentConstructionConfig(
+        style=ContactDocumentStyle.BLOCK_CAUSAL_RELATIVE,
+        target_scoring=ContactTargetScoring.UNORDERED_CONTACTS,
+        think_tokens=2,
+    )
+
+    document = build_contact_training_document(generation, config=config)
+
+    prefix_length = 2 + len(residues) + 1
+    assert document.attention == AttentionLayout.BLOCK_CAUSAL
+    assert tuple(document[ATTENTION_BLOCK]) == (
+        (0,) * prefix_length
+        + (1, 2)
+        + (3, 3, 3, 4, 4, 4, 5)
+    )
+    assert tuple(document[QUERY]) == (False,) * (prefix_length + 2) + (True,) * 7
     assert len(document.score_ranges) == 2
     assert document.score_ranges[0].scorer is None
     assert document.score_ranges[1].scorer is unordered_contacts_score

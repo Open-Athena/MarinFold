@@ -190,13 +190,13 @@ establishes document/token parity; prefetch, distributed dataset sharding, and
 layout-bucketed `LevanterScoredDocumentBatch` loading remain before this is
 suitable for a training hot path.
 
-To exercise the alternative full-attention representation on the same raw
-structure and selected contacts:
+To exercise the unordered-contact prototype on the same raw structure and
+selected contacts:
 
 ```bash
 uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
     --split train --limit 1 \
-    --document-style full-attention-relative \
+    --document-style block-causal-relative \
     --think-tokens 16 \
     --target-scoring unordered-contacts
 ```
@@ -205,12 +205,16 @@ This variant presents amino-acid tokens once in natural sequence order and
 sets their `relative_position` coordinate to `0..L-1`; ordinary rotary
 `position_ids` stay zero. It does not place position tokens beside residues or
 shuffle their order. Contact labels are canonical triples using true 0-based
-relative indices, sorted by `(i, j)`. They live only in scoring metadata, aligned
-to `<think>` query placeholders, so full attention cannot read the labels.
-`--think-tokens N` adds N unsupervised pause positions after the sequence and
-before those target slots. The default `causal-serialized` style remains
-byte-compatible with the existing contacts-v1 corpus and requires
-`--think-tokens 0`.
+relative indices. They live only in scoring metadata, aligned to `<think>`
+query placeholders, so attention cannot read the labels. Framing and sequence
+tokens form one bidirectional attention block. Each pause token, contact query
+triple, and final `<end>` query forms a successive causal block: a block sees
+itself and all earlier blocks, never later ones. `--think-tokens N` inserts N
+singleton pause blocks between the sequence and contact queries.
+
+`full-attention-relative` remains available as the simultaneous-query baseline.
+The default `causal-serialized` style remains byte-compatible with the existing
+contacts-v1 corpus and requires `--think-tokens 0`.
 
 The contacts constructor builds its hidden query document directly, attaches
 the canonical contact targets with `with_targets(...)`, and selects
@@ -225,11 +229,12 @@ fails immediately. The vocabulary fingerprint travels with the `Document`,
 and concatenation or packing rejects documents from another vocabulary.
 
 `unordered-contacts` treats each `<contact> <p_i> <p_j>` triple as one set
-element. After the single model forward pass, its dynamic oracle greedily
-matches prediction slots and gold contacts by cross-entropy cost, allows either
-endpoint orientation, and consumes every prediction and gold pair exactly
-once. `<end>` remains an ordered suffix target. The default `ordered-tokens`
-scorer retains the canonical serialized order for a direct baseline.
+element. After the single model forward pass, each slot receives the negative
+log probability of *any* remaining gold contact. The oracle consumes that
+slot's highest-probability remaining contact before scoring the next slot, so
+repeating it receives no credit. Both endpoint orientations are marginalized.
+`<end>` remains an ordered suffix target. The default `ordered-tokens` scorer
+retains the canonical serialized order for a direct baseline.
 
 ## Build the tokenizer
 
