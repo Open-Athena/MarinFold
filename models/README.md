@@ -6,6 +6,32 @@ The actual training pipelines (per-size, per-loss-mask variant, etc.) live
 under `experiments/exp<N>_models_<name>/` as standalone marin executor
 graphs. This directory holds only the code those experiments import.
 
+## Scored documents
+
+`marinfold_models.scored_document` bridges the document-structure prototype to
+Levanter's public `Trainer` loss callback. Convert a packed document batch with
+`levanter_scored_document_batch(...)`, then construct the trainer with
+`scored_document_loss` as its loss function. The loss function performs one LM
+forward pass and applies each document scorer to its annotated logits range.
+
+```python
+batch = levanter_scored_document_batch(packed, Pos=model.Pos)
+with Trainer(trainer_config, optimizer, scored_document_loss) as trainer:
+    ...
+```
+
+Token and explicit-target values are dynamic JAX leaves. Callback identities
+and range bounds are static, so production input pipelines should bucket equal
+packing/range layouts to reuse compiled train steps.
+Vocabulary identity is also static batch metadata. Tagged documents retain
+their declaration fingerprint through packing, and the loss rejects a model
+whose logits axis is smaller than the declared vocabulary.
+
+Experiments using this bridge must declare both `marinfold-models` and
+`marinfold` as direct dependencies. uv source mappings are not transitive, so
+the experiment should map both packages to their respective repository
+subdirectories.
+
 ## Layout
 
 ```
@@ -16,6 +42,7 @@ models/
 └── marinfold_models/             # importable library
     ├── __init__.py
     ├── defaults.py               # vendored marin default_train / default_tokenize
+    ├── scored_document.py        # Document scorer -> Levanter loss bridge
     └── simple_train_config.py    # vendored marin SimpleTrainConfig
 ```
 

@@ -9,6 +9,8 @@ reuses everything else (positions, section markers, amino acids, ``<UNK>``,
 ``<end>``) from the contacts-and-distances-v1 vocab.
 """
 
+import pytest
+
 from marinfold import build_tokenizer
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     all_domain_tokens as cd_v1_all_domain_tokens,
@@ -20,8 +22,10 @@ from marinfold.document_structures.contacts_v1.vocab import (
     NAME,
     NATIVE_TOKENS,
     NUM_POSITION_INDICES,
+    POSITIONS,
     SEQUENCE_ONLY_DOC_TYPE_TOKEN,
     SEQUENCE_ONLY_TOKENS,
+    VOCABULARY,
     additional_tokens,
     all_domain_tokens,
     contacts_v1_native_tokens,
@@ -37,7 +41,11 @@ def test_name_and_index_space():
 
 def test_native_tokens_are_the_five_unique_ones():
     assert NATIVE_TOKENS == [
-        "<contacts-v1>", "<n-term>", "<c-term>", "<contact>", "<think>",
+        "<contacts-v1>",
+        "<n-term>",
+        "<c-term>",
+        "<contact>",
+        "<think>",
     ]
     assert contacts_v1_native_tokens() == NATIVE_TOKENS
 
@@ -59,8 +67,15 @@ def test_no_minted_duplicates_of_reused_tokens():
         assert dead not in tokens
     # The reused spellings (from c-and-d-v1) are present exactly once.
     doc = all_domain_tokens()
-    for reused in ("<begin_sequence>", "<begin_statements>", "<p0>", "<p1999>",
-                   "<ALA>", "<UNK>", "<end>"):
+    for reused in (
+        "<begin_sequence>",
+        "<begin_statements>",
+        "<p0>",
+        "<p1999>",
+        "<ALA>",
+        "<UNK>",
+        "<end>",
+    ):
         assert reused in tokens
         assert doc.count(reused) == 1
 
@@ -101,7 +116,7 @@ def test_sequence_only_token_takes_the_final_id_only():
     # Adding the token preserved every pre-existing id: the contacts-v1 doc
     # type is still id 2 and the c-and-d-v1 block still starts at id 7; the
     # new token simply occupies the final id.
-    tok = build_tokenizer(all_domain_tokens())
+    tok = build_tokenizer(VOCABULARY)
     assert tok.convert_tokens_to_ids(SEQUENCE_ONLY_DOC_TYPE_TOKEN) == len(tok) - 1
     assert tok.convert_tokens_to_ids("<contacts-v1>") == 2
     assert tok.convert_tokens_to_ids("<contacts-and-distances-v1>") == 7
@@ -119,7 +134,7 @@ def test_domain_token_count():
 
 
 def test_build_tokenizer_size_and_specials():
-    tok = build_tokenizer(all_domain_tokens())
+    tok = build_tokenizer(VOCABULARY)
     assert len(tok) == 2846  # 2844 domain + <pad> + <eos>
     assert tok.convert_tokens_to_ids("<pad>") == 0
     assert tok.convert_tokens_to_ids("<eos>") == 1
@@ -127,7 +142,7 @@ def test_build_tokenizer_size_and_specials():
 
 
 def test_build_tokenizer_roundtrip_sample():
-    tok = build_tokenizer(all_domain_tokens())
+    tok = build_tokenizer(VOCABULARY)
     sample = (
         "<contacts-v1> <begin_sequence> "
         "<p22> <PHE> <n-term> <p20> <p21> <ALA> "
@@ -144,7 +159,7 @@ def test_build_tokenizer_roundtrip_sample():
 
 def test_position_tokens_shared_with_cd_v1():
     # A contacts-v1 position token and the same c-and-d-v1 token map to one id.
-    tok = build_tokenizer(all_domain_tokens())
+    tok = build_tokenizer(VOCABULARY)
     assert tok.convert_tokens_to_ids("<p22>") == tok.convert_tokens_to_ids(
         position_token(22)
     )
@@ -153,6 +168,21 @@ def test_position_tokens_shared_with_cd_v1():
 
 
 def test_unk_token_decodes():
-    tok = build_tokenizer(all_domain_tokens())
+    tok = build_tokenizer(VOCABULARY)
     ids = tok.encode("<UNK>", add_special_tokens=False)
     assert tok.decode(ids).strip() == "<UNK>"
+
+
+def test_vocabulary_collects_complete_position_family_with_stable_ids():
+    assert VOCABULARY.domain_tokens == tuple(all_domain_tokens())
+    assert len(POSITIONS) == NUM_POSITION_INDICES
+    assert POSITIONS[0].text == "<p0>"
+    assert POSITIONS[-1].text == "<p1999>"
+    assert int(POSITIONS[22]) == build_tokenizer(VOCABULARY).convert_tokens_to_ids(
+        "<p22>"
+    )
+
+
+def test_vocabulary_encoding_rejects_undeclared_structural_tokens():
+    with pytest.raises(KeyError, match="not declared by contacts-v1"):
+        VOCABULARY.encode(("<contact>", "<p20000>"))

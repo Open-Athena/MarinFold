@@ -18,6 +18,11 @@ dependencies = [
     "marin-iris",
     "marin-zephyr",
     "marin-rigging",
+    # Imported unconditionally by marin.processing.tokenize, used by defaults.py.
+    "marin-dupekit<0.3",
+    "marinfold",
+    # Levanter's tracker imports the ``git`` module during package import.
+    "gitpython",
 ]
 
 [project.optional-dependencies]
@@ -26,7 +31,7 @@ dependencies = [
 tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
 
 [dependency-groups]
-dev = []
+dev = ["pytest>=9.0.3"]
 
 [tool.uv]
 fork-strategy = "fewest"
@@ -63,6 +68,7 @@ url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
 resiliparse = { index = "marin-resiliparse" }
+marinfold = { path = "../marinfold", editable = true }
 
 [tool.hatch.metadata]
 allow-direct-references = true

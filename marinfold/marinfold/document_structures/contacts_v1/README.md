@@ -160,6 +160,77 @@ Use `--num-docs` to cap output; a whole shard's 2,000 structures works
 too (just drop `--num-docs`). For a custom schema use `--cif-column` /
 `--id-column`.
 
+### Construct training documents on the fly from afdb-1.6M
+
+`on_the_fly.py` prototypes the Marin document-program representation without
+materializing document Parquets or a Levanter token cache. It reads only the
+small manifest columns from a pinned revision of
+[`timodonnell/afdb-1.6M`](https://huggingface.co/datasets/timodonnell/afdb-1.6M),
+fetches each row's raw mmCIF through `gcs_uri`, calls the same
+`generate_document` implementation used above, and emits a causal
+token-aligned `Document` with the default shifted next-token scorer.
+
+```bash
+cd marinfold
+uv sync --extra contacts-v1-online
+
+# Defaults to one protein; no corpus is written.
+uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
+    --split train --limit 1
+
+# Iris/ADC path: pinned Parquet manifest plus each row's gcs_uri.
+uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
+    --source gcs --split train --limit 1
+```
+
+The default credential-free smoke gets at most ten inline CIF rows through the
+HF Dataset Server. The `gcs` source is the intended at-scale shape and requires
+Google ADC. The current prototype is synchronous and deterministic. It
+establishes document/token parity; prefetch, distributed dataset sharding, and
+layout-bucketed `LevanterScoredDocumentBatch` loading remain before this is
+suitable for a training hot path.
+
+To exercise the alternative full-attention representation on the same raw
+structure and selected contacts:
+
+```bash
+uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
+    --split train --limit 1 \
+    --document-style full-attention-relative \
+    --think-tokens 16 \
+    --target-scoring unordered-contacts
+```
+
+This variant presents amino-acid tokens once in natural sequence order and
+sets their `relative_position` coordinate to `0..L-1`; ordinary rotary
+`position_ids` stay zero. It does not place position tokens beside residues or
+shuffle their order. Contact labels are canonical triples using true 0-based
+relative indices, sorted by `(i, j)`. They live only in scoring metadata, aligned
+to `<think>` query placeholders, so full attention cannot read the labels.
+`--think-tokens N` adds N unsupervised pause positions after the sequence and
+before those target slots. The default `causal-serialized` style remains
+byte-compatible with the existing contacts-v1 corpus and requires
+`--think-tokens 0`.
+
+The contacts constructor builds its hidden query document directly, attaches
+the canonical contact targets with `with_targets(...)`, and selects
+`unordered_contacts_score` with `scored_by(...)`. The generic document layer
+only stores and routes that callback; it knows nothing about contacts, graphs,
+endpoint orientation, or the three-token contact layout.
+
+This construction uses the immutable `contacts_v1.VOCABULARY` declaration,
+not tokenizer string encoding. Control tokens and the complete `<p0>` through
+`<p1999>` family are vocabulary-bound handles; requesting an undeclared token
+fails immediately. The vocabulary fingerprint travels with the `Document`,
+and concatenation or packing rejects documents from another vocabulary.
+
+`unordered-contacts` treats each `<contact> <p_i> <p_j>` triple as one set
+element. After the single model forward pass, its dynamic oracle greedily
+matches prediction slots and gold contacts by cross-entropy cost, allows either
+endpoint orientation, and consumes every prediction and gold pair exactly
+once. `<end>` remains an ordered suffix target. The default `ordered-tokens`
+scorer retains the canonical serialized order for a direct baseline.
+
 ## Build the tokenizer
 
 ```bash

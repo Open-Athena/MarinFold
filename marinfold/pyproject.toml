@@ -36,6 +36,9 @@ mlx = ["mlx>=0.18; sys_platform == 'darwin'", "mlx-lm>=0.20; sys_platform == 'da
 # (The tokenizer subcommand works without it.) Add pyconfind[fast] /
 # numba in data-generation jobs for the JIT contact backend.
 contacts-v1 = ["pyconfind>=0.5"]
+# Raw AFDB -> contacts-v1 construction additionally follows each manifest
+# row's ``gs://`` structure pointer at iteration time.
+contacts-v1-online = ["gcsfs", "pyconfind>=0.5"]
 
 [project.scripts]
 marinfold = "marinfold.cli:main"

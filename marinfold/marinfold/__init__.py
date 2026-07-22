@@ -16,6 +16,11 @@ when you need something not in the re-export list.
 
 from marinfold.document_structures import (
     EvalResult,
+    Token,
+    TokenFamily,
+    Vocabulary,
+    VocabularyBuilder,
+    VocabularyIdentity,
     build_tokenizer,
     write_docs,
     write_eval,
@@ -34,6 +39,11 @@ __all__ = [
     "Backend",
     "EvalResult",
     "ModelEntry",
+    "Token",
+    "TokenFamily",
+    "Vocabulary",
+    "VocabularyBuilder",
+    "VocabularyIdentity",
     "build_tokenizer",
     "default_model_nickname",
     "list_model_entries",

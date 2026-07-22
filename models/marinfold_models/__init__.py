@@ -10,6 +10,18 @@ having to vendor its own copy.
 """
 
 from marinfold_models.defaults import default_tokenize, default_train
+from marinfold_models.scored_document import (
+    LevanterScoredDocumentBatch,
+    levanter_scored_document_batch,
+    scored_document_loss,
+)
 from marinfold_models.simple_train_config import SimpleTrainConfig
 
-__all__ = ["SimpleTrainConfig", "default_tokenize", "default_train"]
+__all__ = [
+    "LevanterScoredDocumentBatch",
+    "SimpleTrainConfig",
+    "default_tokenize",
+    "default_train",
+    "levanter_scored_document_batch",
+    "scored_document_loss",
+]

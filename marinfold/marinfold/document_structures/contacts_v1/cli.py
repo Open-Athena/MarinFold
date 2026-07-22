@@ -40,7 +40,7 @@ from marinfold import build_tokenizer, write_docs, write_eval, write_predictions
 
 from . import generate, inference, plots
 from .parse import DEFAULT_CIF_COLUMN, DEFAULT_ID_COLUMN
-from .vocab import CONTEXT_LENGTH, NAME, all_domain_tokens, position_token
+from .vocab import CONTEXT_LENGTH, NAME, VOCABULARY, position_token
 
 
 # --------------------------------------------------------------------------
@@ -244,7 +244,7 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
 
 
 def cmd_tokenizer(args: argparse.Namespace) -> None:
-    tokenizer = build_tokenizer(all_domain_tokens())
+    tokenizer = build_tokenizer(VOCABULARY)
     print(f"[{NAME}] built tokenizer with {len(tokenizer)} tokens", file=sys.stderr)
     did_anything = False
     if args.save_local is not None:
@@ -261,7 +261,7 @@ def cmd_tokenizer(args: argparse.Namespace) -> None:
         )
         did_anything = True
     if not did_anything:
-        sample = " ".join(all_domain_tokens()[:8])
+        sample = " ".join(VOCABULARY.domain_tokens[:8])
         encoded = tokenizer.encode(sample, add_special_tokens=False)
         print(f"sample: {sample!r}")
         print(f"  ids:  {encoded}")

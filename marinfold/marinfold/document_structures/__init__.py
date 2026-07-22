@@ -20,9 +20,36 @@ This subpackage holds the pieces every impl shares:
   overlaps per-row I/O with CPU work. Together they cover the per-row
   worker every data-generation pipeline ends up writing (see the
   ``zephyr-pipeline-performance`` skill).
+- :class:`Document` / :class:`Coordinate` / :func:`pack` — typed,
+  token-aligned model inputs and post-forward scoring ranges adapted from
+  Marin's document-program prototype.
 """
 
-from marinfold.document_structures.core import EvalResult, build_tokenizer
+from marinfold.document_structures.core import (
+    EvalResult,
+    Token,
+    TokenFamily,
+    Vocabulary,
+    VocabularyBuilder,
+    VocabularyIdentity,
+    build_tokenizer,
+)
+from marinfold.document_structures.documents import (
+    POSITION_IDS,
+    QUERY,
+    AttentionLayout,
+    Coordinate,
+    Document,
+    PackedBatch,
+    PackedScoreRange,
+    ScoreContext,
+    ScoreRange,
+    Scorer,
+    causal_training_document,
+    concatenate,
+    next_token_score,
+    pack,
+)
 from marinfold.document_structures.io import (
     read_object_bytes,
     thread_per_row_in_shard,
@@ -34,8 +61,27 @@ from marinfold.document_structures.writers import (
 )
 
 __all__ = [
+    "POSITION_IDS",
+    "QUERY",
+    "AttentionLayout",
+    "Coordinate",
+    "Document",
     "EvalResult",
+    "PackedBatch",
+    "PackedScoreRange",
+    "ScoreContext",
+    "ScoreRange",
+    "Scorer",
+    "Token",
+    "TokenFamily",
+    "Vocabulary",
+    "VocabularyBuilder",
+    "VocabularyIdentity",
     "build_tokenizer",
+    "causal_training_document",
+    "concatenate",
+    "next_token_score",
+    "pack",
     "read_object_bytes",
     "thread_per_row_in_shard",
     "write_docs",
