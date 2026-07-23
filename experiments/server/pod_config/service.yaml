@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: marinfold-inference-server
+  labels:
+    app: marinfold-inference-server
+spec:
+  type: ClusterIP
+  selector:
+    app: marinfold-inference-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
