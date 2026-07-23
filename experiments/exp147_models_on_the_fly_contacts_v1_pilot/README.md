@@ -109,7 +109,7 @@ the validation-tokenization and v6e-8 worker jobs:
 
 ```bash
 uv run iris --cluster=marin job run --no-wait \
-  --cpu=1 --memory=2G --extra=cpu --zone=us-east5-a \
+  --cpu=1 --memory=2G --extra=cpu --zone=us-east5-b \
   -e WANDB_API_KEY "$WANDB_API_KEY" \
   -- python train.py --run
 ```

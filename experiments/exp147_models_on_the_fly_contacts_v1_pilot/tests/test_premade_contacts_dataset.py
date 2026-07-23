@@ -14,7 +14,6 @@ from marin.execution.artifact import ArtifactRecord
 from marin.execution.lazy import StepContext
 from marin.processing.tokenize.tokenize import TokenizedCache
 from marin.training.training import TrainLmOnPodConfig
-
 from marinfold.document_structures.contacts_v1 import (
     AnalyzedStructure,
     RawContact,
@@ -289,4 +288,4 @@ def test_launch_config_contains_direct_dataset_and_expected_routing():
     assert train_config.trainer.per_device_parallelism == 16
     assert train_config.trainer.tracker.entity == "open-athena"
     assert train_config.trainer.tracker.project == "MarinFold"
-    assert config.resources.zone == "us-east5-a"
+    assert config.resources.zone == "us-east5-b"

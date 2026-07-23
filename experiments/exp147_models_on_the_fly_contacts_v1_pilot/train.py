@@ -11,6 +11,7 @@ from datetime import timedelta
 import jmp
 from fray.types import ResourceConfig
 from haliax.partitioning import ResourceAxis
+from iris.client.client import get_iris_ctx
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import (
@@ -25,7 +26,6 @@ from levanter.optim.config import AdamConfig
 from levanter.tracker.wandb import WandbConfig
 from levanter.trainer import TrainerConfig
 from levanter.utils.mesh import MeshConfig
-from iris.client.client import get_iris_ctx
 from marin.execution.lazy import ArtifactStep, StepContext, lower
 from marin.execution.remote import remote
 from marin.execution.step_runner import StepRunner
@@ -39,7 +39,6 @@ from marin.training.training import (
 )
 
 from premade_contacts_dataset import FixedQuotaPremadeContactsDataset
-
 
 BUCKET = os.environ.get("EXP147_BUCKET", "gs://marin-us-east5").rstrip("/")
 ROOT = f"{BUCKET}/protein-structure/MarinFold"
@@ -67,7 +66,7 @@ MODEL_CONFIG = Qwen3Config(
 )
 
 TPU_TYPE = os.environ.get("EXP147_TPU", "v6e-8")
-TPU_ZONE = os.environ.get("EXP147_ZONE", "us-east5-a")
+TPU_ZONE = os.environ.get("EXP147_ZONE", "us-east5-b")
 RESOURCES = ResourceConfig.with_tpu(
     TPU_TYPE,
     slice_count=1,
