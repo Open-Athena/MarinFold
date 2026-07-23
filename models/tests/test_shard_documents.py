@@ -9,9 +9,8 @@ from marinfold.document_structures.documents import (
     Document,
     causal_training_document,
 )
-from marinfold_models.streaming_documents import (
+from marinfold_models.shard_documents import (
     causal_lm_example_from_documents,
-    streaming_document_state_path,
 )
 
 
@@ -35,8 +34,8 @@ def test_causal_adapter_rejects_noncausal_document():
         causal_lm_example_from_documents((document,), 8, 4)
 
 
-def test_streaming_state_uses_process_local_model_checkpoint_sidecar():
-    assert (
-        streaming_document_state_path("gs://bucket/run/step-10/", process_index=3)
-        == "gs://bucket/run/step-10/input/streaming-documents-process-00003.json"
-    )
+def test_causal_adapter_builds_zero_loss_padding_example():
+    example = causal_lm_example_from_documents((), 8, 4)
+
+    np.testing.assert_array_equal(np.asarray(example.tokens), np.zeros(8))
+    np.testing.assert_array_equal(np.asarray(example.loss_weight), np.zeros(8))

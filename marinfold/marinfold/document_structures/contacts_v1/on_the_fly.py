@@ -39,7 +39,6 @@ from marinfold.document_structures.contacts_v1.generate import (
 )
 from marinfold.document_structures.contacts_v1.training_documents import (
     ContactDocumentStyle,
-    ContactTargetScoring,
     DocumentConstructionConfig,
     build_contact_training_document,
 )
@@ -331,12 +330,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="Fixed pause positions before relative-position target slots.",
     )
-    parser.add_argument(
-        "--target-scoring",
-        choices=tuple(scoring.value for scoring in ContactTargetScoring),
-        default=ContactTargetScoring.ORDERED_TOKENS.value,
-        help="Fixed token targets or sequential unordered-contact scoring.",
-    )
     return parser
 
 
@@ -344,7 +337,6 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     document_config = DocumentConstructionConfig(
         style=ContactDocumentStyle(args.document_style),
-        target_scoring=ContactTargetScoring(args.target_scoring),
         think_tokens=args.think_tokens,
     )
     if args.source == "hf-inline":
@@ -379,7 +371,6 @@ def main(argv: list[str] | None = None) -> int:
                     "seq_len": example.generation.seq_len,
                     "contacts_emitted": example.generation.contacts_emitted,
                     "document_style": document_config.style.value,
-                    "target_scoring": document_config.target_scoring.value,
                     "attention": example.document.attention.value,
                     "think_tokens": document_config.think_tokens,
                     "document_tokens": example.generation.num_tokens,

@@ -6,23 +6,24 @@ The actual training pipelines (per-size, per-loss-mask variant, etc.) live
 under `experiments/exp<N>_models_<name>/` as standalone marin executor
 graphs. This directory holds only the code those experiments import.
 
-## Scored documents
+## Weighted document targets
 
-`marinfold_models.scored_document` bridges the document-structure prototype to
+`marinfold_models.document_loss` bridges document target distributions to
 Levanter's public `Trainer` loss callback. Convert a packed document batch with
-`levanter_scored_document_batch(...)`, then construct the trainer with
-`scored_document_loss` as its loss function. The loss function performs one LM
-forward pass and applies each document scorer to its annotated logits range.
+`levanter_document_batch(...)`, then construct the trainer with
+`document_loss` as its loss function. The loss function performs one LM
+forward pass and applies weighted categorical cross-entropy.
 
 ```python
-batch = levanter_scored_document_batch(packed, Pos=model.Pos)
-with Trainer(trainer_config, optimizer, scored_document_loss) as trainer:
+batch = levanter_document_batch(packed, Pos=model.Pos)
+with Trainer(trainer_config, optimizer, document_loss) as trainer:
     ...
 ```
 
-Token and explicit-target values are dynamic JAX leaves. Callback identities
-and range bounds are static, so production input pipelines should bucket equal
-packing/range layouts to reuse compiled train steps.
+Each explicit target range stores one sparse candidate-token vector and a dense
+`weights[position, candidate]` matrix. Rows are normalized distributions;
+`with_targets(...)` is the one-hot convenience API. The bridge flattens
+nonzero weights into dynamic JAX leaves before the train step.
 Vocabulary identity is also static batch metadata. Tagged documents retain
 their declaration fingerprint through packing, and the loss rejects a model
 whose logits axis is smaller than the declared vocabulary.
@@ -39,36 +40,28 @@ Experiments using this bridge must declare both `marinfold-models` and
 the experiment should map both packages to their respective repository
 subdirectories.
 
-## Streaming documents
+## Fixed-quota shard documents
 
-`marinfold_models.streaming_documents.StreamingDocumentDataset` is the shared
-on-the-fly construction path. It owns Parquet shard/row shuffling, process
-partitioning, bounded best-fit packing, and checkpointable stream state. An
-experiment supplies projected source columns, a deterministic
-`row -> Document | None` generator with a versioned `generator_id`, and a
-`documents -> Levanter example` adapter.
+`marinfold_models.shard_documents.FixedQuotaShardDocumentDataset` is the shared
+on-the-fly construction path. It maps every example index to an epoch, a
+deterministically shuffled Parquet shard, and a fixed output slot. An experiment
+supplies projected source columns, a deterministic `row -> Document | None`
+generator, and a `documents -> Levanter example` adapter.
 
 The included `causal_lm_example_from_documents` adapter implements ordinary
 packed next-token training. Other attention and scoring layouts can reuse the
-stream and packer with a different adapter.
+shard packer with a different adapter.
 
-Loader checkpoints do not pickle `Document` objects or scorer callbacks.
-Instead they save the shuffled source cursor and source-row references for
-documents held in open and ready packing bins. Restore rereads those few rows
-and reruns the deterministic generator. A changed generator fails via its
-`generator_id` instead of silently resuming with mixed semantics.
+Each shard is shuffled per epoch, constructed completely, and packed with
+best-fit decreasing. It then emits exactly `examples_per_shard` slots. Overfull
+shards uniformly sample packed bins without replacement; underfull shards
+insert zero-loss padding slots. Uniform bin selection gives every document in
+an overfull shard the same conditional inclusion probability.
 
-Levanter prefetches ahead of the optimizer. When `global_batch_size` is set,
-the dataset retains exact states at the start of each requested optimizer step.
-Use `save_checkpoint(path, step=N)` for model checkpoint step `N`, not
-`save_checkpoint(path)` after prefetch. Each JAX process needs its own sidecar
-because shard assignments and packing bins are process-local. The generic state
-is ready for a training-entrypoint checkpoint hook:
-`save_model_checkpoint_sidecar(checkpoint_path, step=N)` writes the canonical
-`input/streaming-documents-process-<rank>.json`, and the matching load method
-restores it before constructing Levanter's `DataLoader`. Stock
-`levanter.main.train_lm` does not yet expose a user callback that can invoke
-these methods.
+The dataset is genuinely random access and carries no semantic loader state.
+Its small LRU cache only avoids reconstructing a shard during sequential
+prefetch. Checkpoint resume therefore continues to use Levanter's ordinary
+global example indices without loader sidecars or prefetch coordination.
 
 ## Layout
 
@@ -80,8 +73,8 @@ models/
 └── marinfold_models/             # importable library
     ├── __init__.py
     ├── defaults.py               # vendored marin default_train / default_tokenize
-    ├── scored_document.py        # Document scorer -> Levanter loss bridge
-    ├── streaming_documents.py    # On-the-fly construction, packing, state
+    ├── document_loss.py          # Weighted document targets -> Levanter loss
+    ├── shard_documents.py        # Stateless fixed-quota shard construction
     └── simple_train_config.py    # vendored marin SimpleTrainConfig
 ```
 

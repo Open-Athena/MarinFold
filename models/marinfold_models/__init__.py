@@ -10,26 +10,24 @@ having to vendor its own copy.
 """
 
 from marinfold_models.defaults import default_tokenize, default_train
-from marinfold_models.scored_document import (
-    LevanterScoredDocumentBatch,
-    levanter_scored_document_batch,
-    scored_document_loss,
+from marinfold_models.document_loss import (
+    LevanterDocumentBatch,
+    document_loss,
+    levanter_document_batch,
 )
 from marinfold_models.simple_train_config import SimpleTrainConfig
-from marinfold_models.streaming_documents import (
-    StreamingDocumentDataset,
+from marinfold_models.shard_documents import (
+    FixedQuotaShardDocumentDataset,
     causal_lm_example_from_documents,
-    streaming_document_state_path,
 )
 
 __all__ = [
-    "LevanterScoredDocumentBatch",
+    "LevanterDocumentBatch",
     "SimpleTrainConfig",
     "default_tokenize",
     "default_train",
-    "levanter_scored_document_batch",
-    "scored_document_loss",
-    "StreamingDocumentDataset",
+    "document_loss",
+    "levanter_document_batch",
+    "FixedQuotaShardDocumentDataset",
     "causal_lm_example_from_documents",
-    "streaming_document_state_path",
 ]

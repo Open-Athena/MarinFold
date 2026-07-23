@@ -17,7 +17,7 @@ from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
 from marinfold_models.defaults import default_tokenize, default_train
 from marinfold_models.simple_train_config import SimpleTrainConfig
 
-from premade_contacts_dataset import StreamingPremadeContactsDataset
+from premade_contacts_dataset import FixedQuotaPremadeContactsDataset
 
 
 BUCKET = os.environ.get("EXP147_BUCKET", "gs://marin-us-east5").rstrip("/")
@@ -82,12 +82,12 @@ def build_steps() -> list:
         f"exp147-otf-contacts-v1-1_5b-pilot-{steps}s-v6e8",
     )
 
-    train_dataset = StreamingPremadeContactsDataset(
+    train_dataset = FixedQuotaPremadeContactsDataset(
         data_prefix=PILOT_CONTACTS_PREFIX,
         num_shards=int(os.environ.get("EXP147_NUM_SHARDS", "16")),
+        examples_per_shard=int(os.environ.get("EXP147_EXAMPLES_PER_SHARD", "2650")),
         seed=0,
         max_seq_len=8192,
-        global_batch_size=128,
     )
     train_key = "on-the-fly/esm-atlas-contacts-v1"
     val_key = "tokenized/contacts-v1-val"
@@ -100,9 +100,8 @@ def build_steps() -> list:
         tokenizer=CONTACTS_TOKENIZER_REPO,
         cache_dir=None,
         auto_build_caches=False,
-        # The streaming dataset owns shard/row shuffling and ignores external
-        # index values. These two settings keep the single-component mixture
-        # from reordering those values before the stream sees them.
+        # Shard and row shuffling are deterministic functions of the example
+        # index. Avoid an unnecessary second permutation in the outer mixture.
         shuffle=False,
         mixture_block_size=1,
         block_cross_document_attention=True,

@@ -9,7 +9,7 @@ coordinates, one attention layout, and immutable scoring ranges. Scoring is
 metadata consumed after the model forward pass; it is never a model input.
 """
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
@@ -53,93 +53,91 @@ ATTENTION_BLOCK = Coordinate("attention_block", missing=0)
 RUNTIME_COORDINATES = (POSITION_IDS, QUERY, ATTENTION_BLOCK)
 
 
-@dataclass(frozen=True)
-class ScoreContext:
-    """Document-local inputs supplied to a range scorer after model execution."""
-
-    token_ids: Any
-    target_ids: Any | None = None
-
-
-Scorer = Callable[[Any, ScoreContext], Any]
 TokenLike = int | Token
 _MISSING = object()
 
 
-def _array_namespace(array: Any) -> Any:
-    namespace = getattr(array, "__array_namespace__", None)
-    return namespace() if namespace is not None else np
-
-
-def _token_cross_entropy(logits: Any, target_ids: Any) -> Any:
-    xp = _array_namespace(logits)
-    targets = xp.asarray(target_ids)
-    if logits.shape[0] != targets.shape[0]:
-        raise ValueError(
-            f"Scorer received {logits.shape[0]} logit positions for "
-            f"{targets.shape[0]} targets"
-        )
-    maxima = xp.max(logits, axis=-1, keepdims=True)
-    log_normalizers = xp.log(xp.sum(xp.exp(logits - maxima), axis=-1))
-    log_normalizers = log_normalizers + maxima[..., 0]
-    target_logits = xp.take_along_axis(logits, targets[..., None], axis=-1)[..., 0]
-    return log_normalizers - target_logits
-
-
-def next_token_score(logits: Any, context: ScoreContext) -> Any:
-    """Mean token cross-entropy, shifted unless explicit targets are supplied.
-
-    Scorers return a mean over their scored token positions. The Levanter
-    adapter weights range means by their target counts when combining them.
-    This implementation uses the logits' array namespace, so it works with
-    NumPy for construction tests and JAX arrays inside the training step.
-    """
-    xp = _array_namespace(logits)
-    token_ids = xp.asarray(context.token_ids)
-    if context.target_ids is None:
-        if token_ids.shape[0] < 2:
-            return xp.sum(logits) * 0.0
-        score_logits = logits[:-1]
-        target_ids = token_ids[1:]
-    else:
-        score_logits = logits
-        target_ids = xp.asarray(context.target_ids)
-    return xp.mean(_token_cross_entropy(score_logits, target_ids))
-
-
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ScoreRange:
-    """One half-open document range and the callback that scores it.
+    """One half-open range with optional sparse categorical targets.
 
-    ``target_ids=None`` asks the scorer to infer ordinary next-token targets
-    from the range's input tokens. Explicit targets align one-to-one with the
-    positions in ``[start, stop)``. ``scorer=None`` marks an unscored range.
+    A scored range without explicit targets uses ordinary shifted next-token
+    targets from the document tokens. Explicit targets use one shared sparse
+    ``target_ids`` vector and a dense
+    ``target_weights[position_within_range, target]`` matrix. Each weight row
+    is normalized independently. An unscored range carries no targets.
     """
 
     start: int
     stop: int
-    scorer: Scorer | None = next_token_score
+    scored: bool = True
     target_ids: tuple[int, ...] | None = None
+    target_weights: np.ndarray | None = None
 
     def __post_init__(self) -> None:
-        if self.scorer is not None and not callable(self.scorer):
-            raise TypeError("A score range scorer must be callable or None")
-        if self.target_ids is not None:
-            object.__setattr__(
-                self, "target_ids", tuple(int(target) for target in self.target_ids)
-            )
         if self.start < 0 or self.stop <= self.start:
             raise ValueError(
                 f"Score ranges must be non-empty and ordered, got [{self.start}, {self.stop})"
             )
-        if (
-            self.target_ids is not None
-            and len(self.target_ids) != self.stop - self.start
-        ):
+        if (self.target_ids is None) != (self.target_weights is None):
             raise ValueError(
-                f"Score range [{self.start}, {self.stop}) has {len(self.target_ids)} "
-                f"targets, expected {self.stop - self.start}"
+                "Explicit target_ids and target_weights must be supplied together"
             )
+        if not self.scored and self.target_ids is not None:
+            raise ValueError("An unscored range cannot carry explicit targets")
+        if self.target_ids is None:
+            return
+
+        target_ids = tuple(int(target) for target in self.target_ids)
+        if not target_ids:
+            raise ValueError("Explicit target_ids cannot be empty")
+        if len(set(target_ids)) != len(target_ids):
+            raise ValueError("Explicit target_ids must be unique within a range")
+        weights = np.asarray(self.target_weights, dtype=np.float32)
+        expected_shape = (self.stop - self.start, len(target_ids))
+        if weights.shape != expected_shape:
+            raise ValueError(
+                f"Target weights have shape {weights.shape}, expected {expected_shape}"
+            )
+        if not np.all(np.isfinite(weights)) or np.any(weights < 0):
+            raise ValueError("Target weights must be finite and non-negative")
+        row_sums = weights.sum(axis=1, keepdims=True)
+        if np.any(row_sums <= 0):
+            raise ValueError("Every target-weight row must have positive mass")
+        normalized = weights / row_sums
+        normalized.setflags(write=False)
+        object.__setattr__(self, "target_ids", target_ids)
+        object.__setattr__(self, "target_weights", normalized)
+
+    @property
+    def has_explicit_targets(self) -> bool:
+        return self.target_ids is not None
+
+    @property
+    def target_count(self) -> int:
+        if not self.scored:
+            return 0
+        if self.has_explicit_targets:
+            return self.stop - self.start
+        return self.stop - self.start - 1
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ScoreRange):
+            return NotImplemented
+        return (
+            self.start == other.start
+            and self.stop == other.stop
+            and self.scored == other.scored
+            and self.target_ids == other.target_ids
+            and (
+                (self.target_weights is None and other.target_weights is None)
+                or (
+                    self.target_weights is not None
+                    and other.target_weights is not None
+                    and np.array_equal(self.target_weights, other.target_weights)
+                )
+            )
+        )
 
 
 class Document:
@@ -252,31 +250,18 @@ class Document:
             f"vocabulary={None if self.vocabulary is None else self.vocabulary.name!r})"
         )
 
-    def scored_by(
-        self,
-        scorer: Scorer | None,
-        *,
-        start: int = 0,
-        stop: int | None = None,
-    ) -> "Document":
-        """Return a copy scored by ``scorer`` over ``[start, stop)``.
-
-        Passing ``None`` makes the selected range input-only. Existing explicit
-        targets remain attached, allowing ``with_targets`` and ``scored_by`` to
-        compose in either order.
-        """
+    def unscored(self, *, start: int = 0, stop: int | None = None) -> "Document":
+        """Return a copy whose selected range contributes no training score."""
         normalized_start, normalized_stop = _normalize_range(
             start, len(self) if stop is None else stop, len(self)
         )
         return self._replace_score_range(
             normalized_start,
             normalized_stop,
-            scorer=scorer,
+            scored=False,
+            target_ids=None,
+            target_weights=None,
         )
-
-    def unscored(self, *, start: int = 0, stop: int | None = None) -> "Document":
-        """Return a copy whose selected range contributes no training score."""
-        return self.scored_by(None, start=start, stop=stop)
 
     def with_targets(
         self,
@@ -285,7 +270,7 @@ class Document:
         start: int | None = None,
         stop: int | None = None,
     ) -> "Document":
-        """Attach explicit token targets to a range without changing its scorer.
+        """Attach one-hot token targets to a range.
 
         With no range arguments, targets align to the final ``len(target_ids)``
         positions, so ``document.with_targets(token_id)`` naturally targets the
@@ -293,31 +278,76 @@ class Document:
         only ``stop`` makes them end at that boundary.
         """
         targets = _normalize_targets(target_ids, self.vocabulary)
+        candidates = tuple(dict.fromkeys(targets))
+        candidate_indices = {
+            target_id: index for index, target_id in enumerate(candidates)
+        }
+        weights = np.zeros((len(targets), len(candidates)), dtype=np.float32)
+        for position, target_id in enumerate(targets):
+            weights[position, candidate_indices[target_id]] = 1.0
+        return self.with_target_distribution(
+            candidates,
+            weights,
+            start=start,
+            stop=stop,
+        )
+
+    def with_target_distribution(
+        self,
+        target_ids: Sequence[TokenLike],
+        target_weights: np.ndarray | Sequence[Sequence[float]],
+        *,
+        start: int | None = None,
+        stop: int | None = None,
+    ) -> "Document":
+        """Attach sparse categorical target distributions to a position range.
+
+        ``target_ids`` is the shared sparse candidate vocabulary for the range.
+        ``target_weights`` has shape ``(positions, len(target_ids))``. Weight
+        rows may be unnormalized counts; they are normalized when stored.
+        """
+        targets = _normalize_targets(target_ids, self.vocabulary)
+        weights = np.asarray(target_weights, dtype=np.float32)
+        if weights.ndim != 2:
+            raise ValueError(
+                f"Target weights must be a matrix, got shape {weights.shape}"
+            )
+        if weights.shape[1] != len(targets):
+            raise ValueError(
+                f"Target weights have {weights.shape[1]} columns for "
+                f"{len(targets)} target ids"
+            )
+        target_positions = weights.shape[0]
+        if target_positions == 0:
+            raise ValueError("Target weights must contain at least one position")
         if start is None and stop is None:
             normalized_stop = len(self)
-            normalized_start = normalized_stop - len(targets)
+            normalized_start = normalized_stop - target_positions
         elif start is None:
             normalized_stop = _normalize_boundary(stop, len(self))
-            normalized_start = normalized_stop - len(targets)
+            normalized_start = normalized_stop - target_positions
         else:
             normalized_start = _normalize_boundary(start, len(self))
             normalized_stop = (
-                normalized_start + len(targets)
+                normalized_start + target_positions
                 if stop is None
                 else _normalize_boundary(stop, len(self))
             )
         normalized_start, normalized_stop = _normalize_range(
             normalized_start, normalized_stop, len(self)
         )
-        if normalized_stop - normalized_start != len(targets):
+        if normalized_stop - normalized_start != target_positions:
             raise ValueError(
                 f"Target range [{normalized_start}, {normalized_stop}) has length "
-                f"{normalized_stop - normalized_start}, but received {len(targets)} targets"
+                f"{normalized_stop - normalized_start}, but received "
+                f"{target_positions} weight rows"
             )
         return self._replace_score_range(
             normalized_start,
             normalized_stop,
+            scored=True,
             target_ids=targets,
+            target_weights=weights,
         )
 
     def take(self, indices: np.ndarray | tuple[int, ...] | list[int]) -> "Document":
@@ -352,8 +382,9 @@ class Document:
         start: int,
         stop: int,
         *,
-        scorer: Scorer | None | object = _MISSING,
-        target_ids: tuple[int, ...] | object = _MISSING,
+        scored: bool | object = _MISSING,
+        target_ids: tuple[int, ...] | None | object = _MISSING,
+        target_weights: np.ndarray | None | object = _MISSING,
     ) -> "Document":
         ranges: list[ScoreRange] = []
         for score_range in self.score_ranges:
@@ -367,22 +398,27 @@ class Document:
                     _slice_score_range(score_range, score_range.start, overlap_start)
                 )
             overlap = _slice_score_range(score_range, overlap_start, overlap_stop)
-            replacement_scorer = (
-                overlap.scorer if scorer is _MISSING else cast(Scorer | None, scorer)
+            replacement_scored = (
+                overlap.scored if scored is _MISSING else cast(bool, scored)
             )
             if target_ids is _MISSING:
                 replacement_targets = overlap.target_ids
+                replacement_weights = overlap.target_weights
             else:
-                targets = cast(tuple[int, ...], target_ids)
-                replacement_targets = targets[
-                    overlap_start - start : overlap_stop - start
-                ]
+                replacement_targets = cast(tuple[int, ...] | None, target_ids)
+                weights = cast(np.ndarray | None, target_weights)
+                replacement_weights = (
+                    None
+                    if weights is None
+                    else weights[overlap_start - start : overlap_stop - start]
+                )
             ranges.append(
                 ScoreRange(
                     overlap_start,
                     overlap_stop,
-                    replacement_scorer,
+                    replacement_scored,
                     replacement_targets,
+                    replacement_weights,
                 )
             )
             if overlap_stop < score_range.stop:
@@ -429,8 +465,9 @@ def concatenate(*documents: Document) -> Document:
             ScoreRange(
                 score_range.start + offset,
                 score_range.stop + offset,
-                score_range.scorer,
+                score_range.scored,
                 score_range.target_ids,
+                score_range.target_weights,
             )
             for score_range in document.score_ranges
         )
@@ -460,7 +497,7 @@ def concatenate(*documents: Document) -> Document:
 
 
 def causal_training_document(token_ids: Sequence[TokenLike]) -> Document:
-    """Build a causal document using the default shifted-token scorer."""
+    """Build a causal document using ordinary shifted next-token targets."""
     if len(token_ids) < 2:
         raise ValueError("Causal training documents require at least two tokens")
     length = len(token_ids)
@@ -487,14 +524,15 @@ def _validate_attention_blocks(blocks: np.ndarray) -> None:
 
 @dataclass(frozen=True)
 class PackedScoreRange:
-    """One document score range shifted into a packed row."""
+    """One document target range shifted into a packed row."""
 
     row: int
     start: int
     stop: int
     document_index: int
-    scorer: Scorer | None
+    scored: bool
     target_ids: tuple[int, ...] | None = None
+    target_weights: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -591,8 +629,9 @@ def pack(documents: tuple[Document, ...], *, max_seq_len: int) -> PackedBatch:
                     start=score_range.start + offset,
                     stop=score_range.stop + offset,
                     document_index=document_index,
-                    scorer=score_range.scorer,
+                    scored=score_range.scored,
                     target_ids=score_range.target_ids,
+                    target_weights=score_range.target_weights,
                 )
                 for score_range in document.score_ranges
             )
@@ -634,16 +673,26 @@ def _validate_and_coalesce_score_ranges(
         if coalesced and _can_merge_score_ranges(coalesced[-1], score_range):
             previous = coalesced.pop()
             targets = None
+            weights = None
             if previous.target_ids is not None:
                 if score_range.target_ids is None:
                     raise AssertionError("Mergeable scoring ranges disagree on targets")
-                targets = previous.target_ids + score_range.target_ids
+                targets = previous.target_ids
+                if (
+                    previous.target_weights is None
+                    or score_range.target_weights is None
+                ):
+                    raise AssertionError("Explicit target range is missing weights")
+                weights = np.concatenate(
+                    (previous.target_weights, score_range.target_weights), axis=0
+                )
             coalesced.append(
                 ScoreRange(
                     previous.start,
                     score_range.stop,
-                    previous.scorer,
+                    previous.scored,
                     targets,
+                    weights,
                 )
             )
         else:
@@ -654,18 +703,27 @@ def _validate_and_coalesce_score_ranges(
 def _can_merge_score_ranges(left: ScoreRange, right: ScoreRange) -> bool:
     return (
         left.stop == right.start
-        and left.scorer == right.scorer
-        and (left.target_ids is None) == (right.target_ids is None)
+        and left.scored == right.scored
+        and (
+            (left.target_ids is None and right.target_ids is None)
+            or left.target_ids == right.target_ids
+        )
     )
 
 
 def _slice_score_range(score_range: ScoreRange, start: int, stop: int) -> ScoreRange:
-    targets = None
-    if score_range.target_ids is not None:
-        targets = score_range.target_ids[
+    weights = None
+    if score_range.target_weights is not None:
+        weights = score_range.target_weights[
             start - score_range.start : stop - score_range.start
         ]
-    return ScoreRange(start, stop, score_range.scorer, targets)
+    return ScoreRange(
+        start,
+        stop,
+        score_range.scored,
+        score_range.target_ids,
+        weights,
+    )
 
 
 def _score_range_at(
@@ -673,10 +731,18 @@ def _score_range_at(
 ) -> ScoreRange:
     for score_range in score_ranges:
         if score_range.start <= old_index < score_range.stop:
-            targets = None
-            if score_range.target_ids is not None:
-                targets = (score_range.target_ids[old_index - score_range.start],)
-            return ScoreRange(new_index, new_index + 1, score_range.scorer, targets)
+            weights = None
+            if score_range.target_weights is not None:
+                weights = score_range.target_weights[
+                    old_index - score_range.start : old_index - score_range.start + 1
+                ]
+            return ScoreRange(
+                new_index,
+                new_index + 1,
+                score_range.scored,
+                score_range.target_ids,
+                weights,
+            )
     raise IndexError(f"Token index {old_index} is outside scoring coverage")
 
 

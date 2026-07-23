@@ -14,9 +14,8 @@ A shard-local direct Levanter dataset can reconstruct `AnalyzedStructure`, call 
 
 ## Results so far
 
-A stateful streaming prototype now constructs documents directly from contact
-rows and carries partial best-fit bins across loader calls. It owns shard/row
-shuffling and partitions shards across JAX processes. Synthetic tests pass; no
-real data transfer or training run has started. Exact checkpoint resume remains
-the central unresolved consequence because Levanter prefetches ahead of the
-optimizer.
+A stateless prototype now maps every example index to a deterministic
+`(epoch, shard, slot)`, constructs documents directly from contact rows, and
+best-fit packs an entire shard into exactly 2,650 output slots. Overfull shards
+uniformly sample packed bins; underfull shards use zero-loss padding. Synthetic
+tests pass; no real data transfer or training run has started.
