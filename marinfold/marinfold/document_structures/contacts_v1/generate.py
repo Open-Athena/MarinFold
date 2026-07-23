@@ -46,6 +46,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from marinfold.document_structures.core import Token
+
 from .parse import (
     DEFAULT_CIF_COLUMN,
     DEFAULT_ID_COLUMN,
@@ -57,20 +59,20 @@ from .parse import (
     residues_from_sequence,
 )
 from .vocab import (
-    BEGIN_SEQUENCE_TOKEN,
-    BEGIN_STRUCTURE_TOKEN,
-    CONTACT_TOKEN,
+    BEGIN_SEQUENCE,
+    BEGIN_STRUCTURE,
+    C_TERM,
+    CONTACT,
     CONTEXT_LENGTH,
-    C_TERM_TOKEN,
-    DOC_TYPE_TOKEN,
-    END_TOKEN,
+    DOC_TYPE,
+    END,
+    N_TERM,
     NUM_POSITION_INDICES,
-    N_TERM_TOKEN,
-    SEQUENCE_ONLY_DOC_TYPE_TOKEN,
-    THINK_TOKEN,
-    position_token,
+    POSITIONS,
+    RESIDUES,
+    SEQUENCE_ONLY_DOC_TYPE,
+    THINK,
 )
-
 
 # Token counts the budget arithmetic depends on.
 _SEQ_TOKENS_PER_RESIDUE = 2     # <pX> <AA>
@@ -181,7 +183,7 @@ class GenerationResult:
     """
 
     entry_id: str
-    document: str
+    tokens: tuple[Token, ...]
     residues: tuple[ResidueInfo, ...]
     seq_len: int
     global_plddt: float
@@ -202,6 +204,11 @@ class GenerationResult:
     # Count of ``<think>`` tokens emitted (0 unless ``config.think``).
     think_tokens: int = 0
     contacts: tuple[EmittedContact, ...] = field(default_factory=tuple)
+
+    @property
+    def document(self) -> str:
+        """Render the token sequence for persisted text datasets."""
+        return " ".join(token.text for token in self.tokens)
 
     @property
     def sha1(self) -> str:
@@ -349,12 +356,12 @@ def build_document(
     c_term_index = pos_of_seq[-1]
 
     # Sequence section: per-residue assignments + the two termini, shuffled.
-    seq_statements: list[tuple[str, ...]] = [
-        (position_token(pos_of_seq[k]), f"<{r.resname}>")
+    seq_statements: list[tuple[Token, ...]] = [
+        (POSITIONS[pos_of_seq[k]], RESIDUES[r.resname])
         for k, r in enumerate(residues)
     ]
-    seq_statements.append((N_TERM_TOKEN, position_token(n_term_index)))
-    seq_statements.append((C_TERM_TOKEN, position_token(c_term_index)))
+    seq_statements.append((N_TERM, POSITIONS[n_term_index]))
+    seq_statements.append((C_TERM, POSITIONS[c_term_index]))
     rng.shuffle(seq_statements)
 
     # Sequence-only variant: emit the sequence section under the
@@ -366,13 +373,13 @@ def build_document(
     # residues would have produced. The contact-statistics fields are not
     # meaningful here and are reported as 0 / None.
     if config.sequence_only:
-        tokens = [SEQUENCE_ONLY_DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
+        tokens = [SEQUENCE_ONLY_DOC_TYPE, BEGIN_SEQUENCE]
         for statement in seq_statements:
             tokens.extend(statement)
-        tokens.append(END_TOKEN)
+        tokens.append(END)
         return GenerationResult(
             entry_id=entry_id,
-            document=" ".join(tokens),
+            tokens=tuple(tokens),
             residues=tuple(residues),
             seq_len=num_residues,
             global_plddt=global_plddt,
@@ -464,29 +471,29 @@ def build_document(
             slot = rng.randint(0, n_stmts - 1)
             think_at_slot[slot] = think_at_slot.get(slot, 0) + length
 
-    tokens: list[str] = [DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
+    tokens: list[Token] = [DOC_TYPE, BEGIN_SEQUENCE]
     for statement in seq_statements:
         tokens.extend(statement)
-    tokens.append(BEGIN_STRUCTURE_TOKEN)
+    tokens.append(BEGIN_STRUCTURE)
     think_emitted = 0
     for idx, c in enumerate(emitted):
         n_think = think_at_slot.get(idx, 0)
         if n_think:
-            tokens += [THINK_TOKEN] * n_think
+            tokens += [THINK] * n_think
             think_emitted += n_think
         first, second = (c.pos_j, c.pos_i) if c.flipped else (c.pos_i, c.pos_j)
-        tokens += [CONTACT_TOKEN, position_token(first), position_token(second)]
+        tokens += [CONTACT, POSITIONS[first], POSITIONS[second]]
     if not emitted and k1 > 0:
         # No contacts but the initial run still fired: emit it so the document
         # records the sampled overhead (rare — only for proteins with no
         # above-threshold, seq-sep-respecting contacts).
-        tokens += [THINK_TOKEN] * k1
+        tokens += [THINK] * k1
         think_emitted += k1
-    tokens.append(END_TOKEN)
+    tokens.append(END)
 
     return GenerationResult(
         entry_id=entry_id,
-        document=" ".join(tokens),
+        tokens=tuple(tokens),
         residues=tuple(residues),
         seq_len=num_residues,
         global_plddt=global_plddt,

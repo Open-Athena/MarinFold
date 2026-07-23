@@ -6,8 +6,6 @@ from pathlib import Path
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
-
-from marinfold import build_tokenizer
 from marinfold.document_structures.contacts_v1.generate import build_document
 from marinfold.document_structures.contacts_v1.on_the_fly import (
     iter_afdb_records_from_parquet,
@@ -35,6 +33,8 @@ from marinfold.document_structures.documents import (
     QUERY,
     AttentionLayout,
 )
+
+from marinfold import build_tokenizer
 
 
 def _residues(count: int) -> tuple[ResidueInfo, ...]:
@@ -64,10 +64,14 @@ def test_causal_document_matches_existing_contacts_serialization() -> None:
     tokenizer = build_tokenizer(VOCABULARY)
 
     document = causal_document_from_generation(generation)
-    expected_ids = tuple(tokenizer.convert_tokens_to_ids(generation.document.split()))
+    expected_ids = tuple(int(token) for token in generation.tokens)
+    tokenizer_ids = tuple(
+        tokenizer.convert_tokens_to_ids(generation.document.split())
+    )
     eos_token_id = tokenizer.eos_token_id
     assert eos_token_id is not None
 
+    assert tokenizer_ids == expected_ids
     assert tuple(document.token_ids) == (*expected_ids, eos_token_id)
     assert tuple(document[QUERY]) == (True,) * len(expected_ids) + (False,)
     assert len(document.score_ranges) == 1

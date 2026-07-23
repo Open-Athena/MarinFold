@@ -38,6 +38,9 @@ pre-existing token id unchanged (append-only).
 """
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
+    AMINO_ACIDS as _CD_V1_AMINO_ACIDS,
+)
+from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     MAX_POSITION as _CD_V1_MAX_POSITION,
 )
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
@@ -47,7 +50,6 @@ from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     all_domain_tokens as _cd_v1_all_domain_tokens,
 )
 from marinfold.document_structures.core import VocabularyBuilder
-
 
 NAME = "contacts-v1"
 CONTEXT_LENGTH = 8192
@@ -184,10 +186,17 @@ VOCABULARY = (
 )
 
 DOC_TYPE = VOCABULARY.token(DOC_TYPE_TOKEN)
+SEQUENCE_ONLY_DOC_TYPE = VOCABULARY.token(SEQUENCE_ONLY_DOC_TYPE_TOKEN)
 BEGIN_SEQUENCE = VOCABULARY.token(BEGIN_SEQUENCE_TOKEN)
 BEGIN_STRUCTURE = VOCABULARY.token(BEGIN_STRUCTURE_TOKEN)
+N_TERM = VOCABULARY.token(N_TERM_TOKEN)
+C_TERM = VOCABULARY.token(C_TERM_TOKEN)
 CONTACT = VOCABULARY.token(CONTACT_TOKEN)
 THINK = VOCABULARY.token(THINK_TOKEN)
 END = VOCABULARY.token(END_TOKEN)
 EOS = VOCABULARY.token("<eos>")
 POSITIONS = VOCABULARY.family("positions", "<p{}>", count=NUM_POSITION_INDICES)
+RESIDUES = {
+    residue: VOCABULARY.token(f"<{residue}>")
+    for residue in (*_CD_V1_AMINO_ACIDS, "UNK")
+}
