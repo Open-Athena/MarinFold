@@ -52,12 +52,15 @@ from .inference import (
     structure_from_sequence,
 )
 from .parse import (
+    ANALYZED_ROW_COLUMNS,
     DEFAULT_CIF_COLUMN,
     DEFAULT_ID_COLUMN,
     AnalyzedStructure,
     RawContact,
     ResidueInfo,
     analyze_structure,
+    analyzed_from_row,
+    analyzed_to_row,
     iter_analyzed_structures,
     iter_parquet_analyzed_structures,
     residues_from_sequence,
@@ -73,6 +76,7 @@ from .vocab import (
 )
 
 __all__ = [
+    "ANALYZED_ROW_COLUMNS",
     "CONTEXT_LENGTH",
     "DEFAULT_CIF_COLUMN",
     "DEFAULT_ID_COLUMN",
@@ -90,6 +94,8 @@ __all__ = [
     "ResidueInfo",
     "all_domain_tokens",
     "analyze_structure",
+    "analyzed_from_row",
+    "analyzed_to_row",
     "build_document",
     "evaluate",
     "generate_document",
