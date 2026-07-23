@@ -47,6 +47,12 @@ from marin.execution import executor_main
 from crops_train_common import build_train_step
 
 
+# Exact TRAIN-token counts (for epoch-based mixture budgeting).
+CROPS_TRAIN_TOKENS = 33_824_241_857  # exp132 stats.json (contacts-and-crops-v1 train)
+CV1_TRAIN_TOKENS = 4_676_753_425     # Eric exp117 TRAIN_TOKENS (contacts-v1 train)
+_TOK_PER_STEP = 128 * 8192
+
+
 def _lr_tag(lr: float) -> str:
     # 3.1623e-3 -> "lr3p162e-3" (matches Eric's exp117 naming)
     s = f"{lr:.3e}".replace("-0", "-")
@@ -66,7 +72,24 @@ def build_steps() -> list:
     # e.g. 0.05 = 5% standalone contacts-v1 docs alongside the crops bulk, a la #121).
     cv1_mix = float(os.environ.get("EXP137_CV1_MIX", "0"))
 
-    slug = "cc1" if cv1_mix <= 0 else f"cc1mix{round(cv1_mix * 100)}"
+    # Epoch-based mixture (overrides EXP137_STEPS + EXP137_CV1_MIX). Set both
+    # EXP137_CROPS_EPOCHS and EXP137_CV1_EPOCHS to train an exact number of passes
+    # over each corpus (e.g. 1 crops epoch + 8 contacts-v1 epochs). The sampling
+    # weights are the token fractions, and num_train_steps is the summed token
+    # budget / (batch*seq), so each corpus is seen exactly its requested # of times.
+    _ce = os.environ.get("EXP137_CROPS_EPOCHS")
+    _ve = os.environ.get("EXP137_CV1_EPOCHS")
+    epoch_tag = ""
+    if _ce is not None and _ve is not None:
+        crops_ep, cv1_ep = float(_ce), float(_ve)
+        crops_tok = crops_ep * CROPS_TRAIN_TOKENS
+        cv1_tok = cv1_ep * CV1_TRAIN_TOKENS
+        total_tok = crops_tok + cv1_tok
+        steps = round(total_tok / _TOK_PER_STEP)
+        cv1_mix = cv1_tok / total_tok
+        epoch_tag = f"crops{crops_ep:g}ep-cv1{cv1_ep:g}ep"
+
+    slug = epoch_tag or ("cc1" if cv1_mix <= 0 else f"cc1mix{round(cv1_mix * 100)}")
     default_name = f"exp137-{slug}-1_5b-{_lr_tag(lr)}-wd{wd:g}".replace(".", "p") + "-bs128"
     name = os.environ.get("EXP137_NAME", default_name)
 
