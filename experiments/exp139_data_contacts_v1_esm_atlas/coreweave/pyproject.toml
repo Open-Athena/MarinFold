@@ -1,0 +1,9 @@
+[project]
+name = "cw-mirror"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["huggingface_hub>=1.5,<2", "hf_xet", "s3fs", "pyarrow"]
+[dependency-groups]
+dev = []
+[tool.uv]
+package = false
