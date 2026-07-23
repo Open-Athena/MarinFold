@@ -59,13 +59,26 @@ def scan_experiment_dirs() -> dict[int, Path]:
     exp_root = REPO_ROOT / "experiments"
     if not exp_root.is_dir():
         return out
-    for p in exp_root.iterdir():
+    # Sort so the winner on a collision is deterministic (not filesystem order).
+    for p in sorted(exp_root.iterdir()):
         if not p.is_dir():
             continue
         parsed = parse_experiment_dir_name(p.name)
         if parsed is None:
             continue
         n, _kind, _name = parsed
+        if n in out:
+            # Two dirs parse to the same issue number. The index renders one
+            # dir per issue and the orphan pass can't see the loser (its issue
+            # IS matched), so a silent overwrite would hide the drift this tool
+            # exists to surface. Warn and keep the first (sorted) dir.
+            print(
+                f"WARNING: multiple experiment dirs for issue #{n}: "
+                f"{out[n].name} and {p.name}; keeping {out[n].name}. "
+                f"Rename or remove the duplicate.",
+                file=sys.stderr,
+            )
+            continue
         out[n] = p
     return out
 

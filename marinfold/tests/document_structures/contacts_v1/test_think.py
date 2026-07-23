@@ -104,6 +104,18 @@ def test_geometric_p_one_returns_one():
     assert all(_geometric(rng, 1.0) == 1 for _ in range(10))
 
 
+def test_geometric_boundary_random_zero_stays_in_support():
+    # Regression: rng.random() == 0.0 -> u = 1 - 0 = 1.0, and
+    # ceil(log(1)/log(1-p)) == 0, which would return 0 and violate the
+    # documented support {1, 2, 3, ...}. The clamp keeps it >= 1.
+    class _ZeroRng(random.Random):
+        def random(self):  # noqa: D401 - forces the u == 1.0 boundary
+            return 0.0
+
+    assert _geometric(_ZeroRng(), 0.13) == 1
+    assert _geometric(_ZeroRng(), 0.99) == 1
+
+
 def test_geometric_mean_matches_1_over_p():
     rng = random.Random(42)
     samples = [_geometric(rng, 0.13) for _ in range(20_000)]
@@ -296,6 +308,26 @@ def test_no_contacts_still_emits_initial_run():
     # And it sits right after <begin_statements>.
     bs = toks.index("<begin_statements>")
     assert toks[bs + 1] == "<think>"
+
+
+def test_no_contacts_initial_run_never_overflows_tiny_budget():
+    """Regression: the no-contacts initial-run branch used to emit k1 <think>
+    tokens unconditionally. With a context_length that leaves no think headroom
+    (fixed == context_length), that overflowed the "never exceed context_length"
+    invariant. The clamp caps the run to the remaining budget."""
+    residues = _residues(11)  # fixed == _FRAME_TOKENS(4) + 2*11 + 2*2 == 30
+    cfg = GenerationConfig(min_seq_separation=1, think=True, think_initial_prob=1.0)
+    # No headroom at all: every gate-fired build must still fit in the budget.
+    for i in range(200):
+        res = build_document(f"AF-TINY-{i}", residues, [], context_length=30, config=cfg)
+        if res is None:
+            continue
+        assert res.num_tokens <= 30
+        assert res.document.split().count("<think>") == res.think_tokens
+    # A little headroom (2 tokens) must clamp k1 down to exactly that headroom.
+    res = build_document("AF-TINY-HR", residues, [], context_length=32, config=cfg)
+    assert res is not None and res.num_tokens <= 32
+    assert res.think_tokens <= 2
 
 
 def test_sequence_only_ignores_think():
