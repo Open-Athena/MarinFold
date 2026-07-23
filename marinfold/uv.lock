@@ -1913,7 +1913,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6" },
     { name = "tokenizers", specifier = ">=0.15" },
     { name = "torch", marker = "extra == 'transformers'", specifier = ">=2.4" },
-    { name = "transformers", specifier = ">=4.40,<5" },
+    { name = "transformers", specifier = ">=4.40,<6" },
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.6" },
 ]
 provides-extras = ["vllm", "transformers", "mlx", "contacts-v1", "contacts-v1-online"]

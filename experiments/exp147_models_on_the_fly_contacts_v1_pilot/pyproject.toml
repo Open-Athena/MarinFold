@@ -6,12 +6,12 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "fsspec",
     "gcsfs",
-    "marin-core>=0.2.20.dev202606180959,<0.3",
+    "marin-core>=0.2.56.dev202607230804,<0.3",
     "marin-dupekit<0.3",
-    "marin-iris>=0.2.20.dev202606180959,<0.3",
-    "marin-levanter>=0.2.20.dev202606180959,<0.3",
-    "marin-rigging>=0.2.20.dev202606180959,<0.3",
-    "marin-zephyr>=0.2.20.dev202606180959,<0.3",
+    "marin-iris>=0.2.56.dev202607230804,<0.3",
+    "marin-levanter>=0.2.56.dev202607230804,<0.3",
+    "marin-rigging>=0.2.56.dev202607230804,<0.3",
+    "marin-zephyr>=0.2.56.dev202607230804,<0.3",
     "marinfold",
     "marinfold-models",
     "numpy",
@@ -44,6 +44,7 @@ override-dependencies = [
     "equinox>=0.11.10",
     "omegaconf>=2.4.0.dev4",
     "python-multipart>=0.0.22",
+    "transformers>=5.5.3,<6",
     "wheel>=0.46.2",
 ]
 find-links = [

@@ -6,7 +6,7 @@
 # dependencies = [
 #   "fsspec",
 #   "gcsfs",
-#   "huggingface-hub>=1.5,<2",
+#   "huggingface-hub>=1.6,<2",
 #   "pyarrow",
 # ]
 # ///
@@ -64,16 +64,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", default=DEFAULT_OUTPUT)
     parser.add_argument("--num-shards", type=int, default=16)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Perform the transfer. Without this flag, only print the plan.",
+    )
     args = parser.parse_args(argv)
     if args.num_shards <= 0 or args.num_shards > 3338:
         parser.error("--num-shards must be in [1, 3338]")
+    if args.workers <= 0:
+        parser.error("--workers must be positive")
 
     hf_fs = HfFileSystem(token=False)
     shard_names = [_shard_name(index) for index in range(args.num_shards)]
     transfer_bytes = sum(
-        int(
-            hf_fs.info(str(PurePosixPath(CONTACTS_PREFIX) / shard_name))["size"]
-        )
+        int(hf_fs.info(str(PurePosixPath(CONTACTS_PREFIX) / shard_name))["size"])
         for shard_name in shard_names
     )
     if transfer_bytes > MAX_TRANSFER_BYTES:
@@ -83,10 +88,19 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     print(
-        f"Staging {len(shard_names)} shards ({transfer_bytes / 1e9:.2f} GB) "
+        f"Plan: stage {len(shard_names)} shards "
+        f"({transfer_bytes / 1e9:.2f} GB maximum) "
         f"to {args.output}",
         file=sys.stderr,
     )
+    if not args.execute:
+        print(
+            "Preview only; no destination was contacted and no data was "
+            "transferred. Re-run with --execute to apply this plan.",
+            file=sys.stderr,
+        )
+        return 0
+
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         staged = list(
             pool.map(

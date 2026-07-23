@@ -2,12 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import asyncio
+import json
 from pathlib import Path
 
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 from levanter.data.mixture import MixtureDataset
+from levanter.data.text.datasets import DirectDatasetComponent
+from marin.execution.artifact import ArtifactRecord
+from marin.execution.lazy import StepContext
+from marin.processing.tokenize.tokenize import TokenizedCache
+from marin.training.training import TrainLmOnPodConfig
 
 from marinfold.document_structures.contacts_v1 import (
     AnalyzedStructure,
@@ -25,6 +31,8 @@ from marinfold_models.shard_documents import (
 from premade_contacts_dataset import (
     FixedQuotaPremadeContactsDataset,
 )
+from smoke_dataset import main as smoke_dataset_main
+from train import CONTACTS_TOKENIZER, CONTACTS_TOKENIZER_REPO, build_step
 
 
 def _analyzed(entry_id: str, length: int) -> AnalyzedStructure:
@@ -200,3 +208,68 @@ def test_single_component_mixture_preserves_random_access(tmp_path: Path):
 
     for left, right in zip(mixed, direct, strict=True):
         np.testing.assert_array_equal(np.asarray(left.tokens), np.asarray(right.tokens))
+
+
+def test_smoke_dataset_reports_real_loader_stats(tmp_path: Path, capsys):
+    rows = [
+        analyzed_to_row(_analyzed(f"r{row_index}", 20 + row_index))
+        for row_index in range(8)
+    ]
+    path = tmp_path / "shard-00000-of-03338.parquet"
+    pq.write_table(pa.Table.from_pylist(rows), path)
+
+    assert (
+        smoke_dataset_main(
+            [
+                "--data-prefix",
+                str(tmp_path),
+                "--num-shards",
+                "1",
+                "--examples-per-shard",
+                "3",
+                "--batch-size",
+                "2",
+            ]
+        )
+        == 0
+    )
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["examples"] == 3
+    assert result["loss_tokens"] > 0
+    assert result["stats"]["shards_constructed"] == 1
+    assert 0 < result["stats"]["packing_utilization"] <= 1
+
+
+def test_launch_config_contains_direct_dataset_and_expected_routing():
+    step = build_step()
+    validation = step.deps[0]
+    context = StepContext.for_run(
+        "gs://marin-us-east5/test/output",
+        "gs://marin-us-east5/test",
+        runtime_args=step.runtime_args,
+        deps=step.deps,
+    )
+    cache = TokenizedCache(path="gs://marin-us-east5/test/validation")
+    cache.__dict__["record"] = ArtifactRecord(
+        config={
+            "tokenizer": CONTACTS_TOKENIZER_REPO,
+            "format": {"text_key": "document"},
+        }
+    )
+    context._loaded[id(validation)] = cache
+
+    config = step.build_config(context)
+
+    assert isinstance(config, TrainLmOnPodConfig)
+    train_config = config.train_config
+    component = train_config.data.components[
+        "on-the-fly/esm-atlas-contacts-v1"
+    ]
+    assert isinstance(component, DirectDatasetComponent)
+    assert train_config.data.tokenizer == CONTACTS_TOKENIZER
+    assert train_config.trainer.train_batch_size == 256
+    assert train_config.trainer.per_device_parallelism == 16
+    assert train_config.trainer.tracker.entity == "open-athena"
+    assert train_config.trainer.tracker.project == "MarinFold"
+    assert config.resources.zone == "us-east5-a"

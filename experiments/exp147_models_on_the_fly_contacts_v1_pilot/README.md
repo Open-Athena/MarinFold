@@ -26,13 +26,17 @@ A shard-local direct Levanter dataset can reconstruct `AnalyzedStructure`, call 
 - Map global example indices to deterministically shuffled shards and fixed
   shard-local output slots. Shuffle all rows within each shard per epoch.
 - Reconstruct canonical causal serialized documents on demand with
-  `analyzed_from_row` + `build_document`, then encode with the existing
-  contacts vocabulary and EOS.
+  `analyzed_from_row` + `build_document`, then encode with the immutable
+  `timodonnell/contacts-v1-tokenizer@5d68a24a899f` vocabulary and EOS.
 - Pack each complete shard with best-fit decreasing and emit exactly 2,650
   examples. Uniformly sample packed bins if the shard is overfull; insert
   zero-loss examples if it is underfull. Cross-document attention remains
   blocked through segment IDs.
-- Train from scratch with the best exp117 configuration: Qwen3 1.47B, sequence length 8192, global batch 128, LR 3.1623e-3, WD 0.2, cosine schedule, 10% warmup, AdamW betas 0.9/0.95, data seed 0.
+- Train from scratch with the best finished exp117 configuration: Qwen3
+  1.47B, sequence length 8192, global batch 256, LR 3.1623e-3, WD 0.2,
+  cosine schedule, 10% warmup, AdamW betas 0.9/0.95, data seed 0. The
+  default v6e-8 pilot uses per-device parallelism 16 and two gradient
+  accumulation steps.
 - Evaluate the regular full `contacts_v1` validation set normally under
   `eval/tokenized/contacts-v1-val/loss`.
 
@@ -60,6 +64,68 @@ packing fragmentation. If a shard is overfull, packed bins are selected
 uniformly without replacement. Every document in that shard consequently has
 the same conditional inclusion probability because it belongs to exactly one
 bin.
+
+### Pilot staging
+
+The staging helper is preview-only unless `--execute` is supplied. The preview
+reads public Hugging Face metadata but does not contact GCS or transfer data:
+
+```bash
+uv run stage_pilot.py --num-shards 16
+```
+
+After reviewing the reported source size and destination, apply that exact
+plan explicitly:
+
+```bash
+uv run stage_pilot.py --num-shards 16 --execute
+```
+
+Once staged, construct and consume one complete fixed-quota shard locally on
+the GCS data path:
+
+```bash
+PYTHONPATH=.:../../marinfold:../../models \
+  uv run smoke_dataset.py --num-shards 1
+```
+
+This reports wall time, examples per second, generator drops, truncations,
+quota discards or padding packs, and real-token packing utilization. It reads
+the staged shard but does not launch training.
+
+### Launch
+
+Inspect the fully lowered Marin graph without submitting anything:
+
+```bash
+PYTHONPATH=.:../../marinfold:../../models uv run train.py
+```
+
+The graph contains a CPU dependency that materializes the ordinary
+`contacts-v1` validation cache and one v6e-8 training artifact that consumes
+the direct on-the-fly dataset. After the staged-data smoke test passes, submit
+that exact graph through a small CPU coordinator. The coordinator dispatches
+the validation-tokenization and v6e-8 worker jobs:
+
+```bash
+uv run iris --cluster=marin job run --no-wait \
+  --cpu=1 --memory=2G --extra=cpu --zone=us-east5-a \
+  -e WANDB_API_KEY "$WANDB_API_KEY" \
+  -- python train.py --run
+```
+
+Before submission, the current branch must be pushed and this experiment's
+lockfile refreshed to that pushed commit so Iris workers install the same
+document and loader code. GCP application-default credentials are also needed
+by the launcher. Running `train.py --run` directly outside Iris is rejected.
+
+### Reference run
+
+The parameter reference is Eric’s best finished 1.47B exp117 run:
+[`prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4`](https://wandb.ai/eric-czech/marin/runs/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4).
+It reached `eval/tokenized/contacts-v1-val/loss = 2.703709`. The exp147
+pilot defaults to 200 steps rather than copying its full 16-epoch token
+budget; the architecture, batch, and optimizer settings match.
 
 ## Success criteria
 

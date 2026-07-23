@@ -1,21 +1,42 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Launch the exp147 on-the-fly contacts-v1 TPU pilot."""
+"""Build or launch the exp147 on-the-fly contacts-v1 TPU pilot."""
 
+import argparse
 import dataclasses
 import os
+from datetime import timedelta
 
-from fray import ResourceConfig
-from levanter.data.text import DatasetComponent, LmDataConfig, TextLmDatasetFormat
-from levanter.data.text.datasets import DirectDatasetComponent
+import jmp
+from fray.types import ResourceConfig
+from haliax.partitioning import ResourceAxis
+from levanter.adaptor import NoAdaptorConfig
+from levanter.checkpoint import CheckpointerConfig
+from levanter.data.text.datasets import (
+    DatasetComponent,
+    DirectDatasetComponent,
+    LmDataConfig,
+)
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
+from levanter.main.train_lm import TrainLmConfig
 from levanter.models.qwen import Qwen3Config
-from marin.execution import executor_main, versioned
-from marin.processing.tokenize.data_configs import step_to_lm_mixture_component
-
-from marinfold_models.defaults import default_tokenize, default_train
-from marinfold_models.simple_train_config import SimpleTrainConfig
+from levanter.optim.config import AdamConfig
+from levanter.tracker.wandb import WandbConfig
+from levanter.trainer import TrainerConfig
+from levanter.utils.mesh import MeshConfig
+from iris.client.client import get_iris_ctx
+from marin.execution.lazy import ArtifactStep, StepContext, lower
+from marin.execution.remote import remote
+from marin.execution.step_runner import StepRunner
+from marin.experiment.data import tokenized
+from marin.experiment.namespacing import user_namespaced_name
+from marin.processing.tokenize.tokenize import TokenizedCache
+from marin.training.training import (
+    LevanterCheckpoint,
+    TrainLmOnPodConfig,
+    run_levanter_train_lm,
+)
 
 from premade_contacts_dataset import FixedQuotaPremadeContactsDataset
 
@@ -31,6 +52,9 @@ CONTACTS_V1_VAL_GLOB = f"{ROOT}/exp53_contacts_v1_5x/documents/val/*.parquet"
 
 CONTACTS_TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
 CONTACTS_TOKENIZER_REVISION = "5d68a24a899f"
+CONTACTS_TOKENIZER = f"{CONTACTS_TOKENIZER_REPO}@{CONTACTS_TOKENIZER_REVISION}"
+ARTIFACT_VERSION = os.environ.get("EXP147_VERSION", "exp147-dev")
+VALIDATION_VERSION = "2026.07.23"
 
 MODEL_CONFIG = Qwen3Config(
     max_seq_len=8192,
@@ -53,104 +77,259 @@ RESOURCES = ResourceConfig.with_tpu(
     zone=TPU_ZONE,
 )
 
-CONTACTS_V1_VAL_TOK = default_tokenize(
-    name="contacts-v1-val",
-    dataset=CONTACTS_V1_VAL_GLOB,
-    tokenizer=CONTACTS_TOKENIZER_REPO,
-    format=TextLmDatasetFormat(text_key="document"),
-    is_validation=True,
+TAGS = (
+    "protein",
+    "contacts-v1",
+    "on-the-fly",
+    "esm-atlas",
+    "qwen3",
+    "unmasked",
+    "exp147",
+    "pilot",
+    "exp117-reference",
+)
+TOKEN_AXES = (
+    ResourceAxis.REPLICA_DCN,
+    ResourceAxis.REPLICA,
+    ResourceAxis.DATA,
 )
 
 
-def _validation_component() -> DatasetComponent:
-    component = step_to_lm_mixture_component(
-        CONTACTS_V1_VAL_TOK,
-        include_raw_paths=True,
+def _validation_step() -> ArtifactStep[TokenizedCache]:
+    return tokenized(
+        name="tokenized/contacts-v1-val",
+        paths=[CONTACTS_V1_VAL_GLOB],
+        tokenizer=CONTACTS_TOKENIZER_REPO,
+        version=VALIDATION_VERSION,
+        validation=True,
+        text_key="document",
+        resources=ResourceConfig.with_cpu(
+            cpu=4,
+            ram="16g",
+            disk="10g",
+            zone=TPU_ZONE,
+        ),
     )
-    return dataclasses.replace(component, pack=True)
 
 
-def build_steps() -> list:
+def _validation_component(cache: TokenizedCache) -> DatasetComponent:
+    return dataclasses.replace(cache.as_component(), pack=True)
+
+
+def _train_job(pod_config: TrainLmOnPodConfig) -> None:
+    remote(run_levanter_train_lm, resources=pod_config.resources)(pod_config)
+
+
+def _identity_config(
+    ctx: StepContext,
+    validation: ArtifactStep[TokenizedCache],
+    *,
+    name: str,
+    steps: int,
+    steps_per_eval: int,
+    train_batch_size: int,
+    per_device_parallelism: int,
+    max_eval_batches: int | None,
+    num_shards: int,
+    examples_per_shard: int,
+) -> dict[str, object]:
+    """Return the stable experiment decisions used for artifact fingerprinting."""
+    return {
+        "name": name,
+        "model": MODEL_CONFIG,
+        "optimizer": AdamConfig(
+            learning_rate=3.1623e-3,
+            weight_decay=0.2,
+            beta1=0.9,
+            beta2=0.95,
+            warmup=0.1,
+            lr_schedule="cosine",
+            min_lr_ratio=0.1,
+        ),
+        "data": {
+            "kind": "fixed-quota-premade-contacts-v1",
+            "prefix": PILOT_CONTACTS_PREFIX,
+            "num_shards": num_shards,
+            "total_shards": 3338,
+            "examples_per_shard": examples_per_shard,
+            "seed": 0,
+            "max_seq_len": 8192,
+            "validation": ctx.artifact_path(validation),
+            "tokenizer": CONTACTS_TOKENIZER,
+            "shuffle": False,
+            "mixture_block_size": 1,
+            "block_cross_document_attention": True,
+        },
+        "trainer": {
+            "train_batch_size": train_batch_size,
+            "per_device_parallelism": per_device_parallelism,
+            "num_train_steps": steps,
+            "steps_per_eval": steps_per_eval,
+            "max_eval_batches": max_eval_batches,
+            "precision": "p=f32,c=bfloat16",
+            "mesh": {"replica": 1, "data": -1, "model": 1},
+        },
+        "wandb": {
+            "entity": "open-athena",
+            "project": "MarinFold",
+            "group": "exp147-on-the-fly-contacts-v1",
+            "name": name,
+            "tags": TAGS,
+        },
+        "hf_save_steps": steps,
+        "data_seed": 0,
+    }
+
+
+def build_step() -> ArtifactStep[LevanterCheckpoint]:
+    """Build the lazy training artifact without submitting it."""
+    validation = _validation_step()
     steps = int(os.environ.get("EXP147_STEPS", "200"))
     steps_per_eval = int(os.environ.get("EXP147_STEPS_PER_EVAL", "100"))
+    train_batch_size = int(os.environ.get("EXP147_TRAIN_BATCH_SIZE", "256"))
+    per_device_parallelism = int(
+        os.environ.get("EXP147_PER_DEVICE_PARALLELISM", "16")
+    )
     max_eval_batches_env = os.environ.get("EXP147_MAX_EVAL_BATCHES")
     max_eval_batches = (
         int(max_eval_batches_env) if max_eval_batches_env is not None else None
     )
+    num_shards = int(os.environ.get("EXP147_NUM_SHARDS", "16"))
+    examples_per_shard = int(
+        os.environ.get("EXP147_EXAMPLES_PER_SHARD", "2650")
+    )
     name = os.environ.get(
         "EXP147_NAME",
-        f"exp147-otf-contacts-v1-1_5b-pilot-{steps}s-v6e8",
+        f"exp147-otf-contacts-v1-1_5b-pilot-{steps}s-bs{train_batch_size}-v6e8",
     )
 
-    train_dataset = FixedQuotaPremadeContactsDataset(
-        data_prefix=PILOT_CONTACTS_PREFIX,
-        num_shards=int(os.environ.get("EXP147_NUM_SHARDS", "16")),
-        examples_per_shard=int(os.environ.get("EXP147_EXAMPLES_PER_SHARD", "2650")),
-        seed=0,
-        max_seq_len=8192,
-    )
-    train_key = "on-the-fly/esm-atlas-contacts-v1"
-    val_key = "tokenized/contacts-v1-val"
-    data = LmDataConfig(
-        components={
-            train_key: DirectDatasetComponent(datasets={"train": train_dataset}),
-            val_key: _validation_component(),
-        },
-        train_weights={train_key: 1.0, val_key: 0.0},
-        tokenizer=CONTACTS_TOKENIZER_REPO,
-        cache_dir=None,
-        auto_build_caches=False,
-        # Shard and row shuffling are deterministic functions of the example
-        # index. Avoid an unnecessary second permutation in the outer mixture.
-        shuffle=False,
-        mixture_block_size=1,
-        block_cross_document_attention=True,
+    def build_config(ctx: StepContext) -> TrainLmOnPodConfig | dict[str, object]:
+        identity = _identity_config(
+            ctx,
+            validation,
+            name=name,
+            steps=steps,
+            steps_per_eval=steps_per_eval,
+            train_batch_size=train_batch_size,
+            per_device_parallelism=per_device_parallelism,
+            max_eval_batches=max_eval_batches,
+            num_shards=num_shards,
+            examples_per_shard=examples_per_shard,
+        )
+        if ctx.is_fingerprint:
+            return identity
+
+        train_dataset = FixedQuotaPremadeContactsDataset(
+            data_prefix=PILOT_CONTACTS_PREFIX,
+            num_shards=num_shards,
+            examples_per_shard=examples_per_shard,
+            seed=0,
+            max_seq_len=8192,
+        )
+        train_key = "on-the-fly/esm-atlas-contacts-v1"
+        val_key = "tokenized/contacts-v1-val"
+        data = LmDataConfig(
+            components={
+                train_key: DirectDatasetComponent(datasets={"train": train_dataset}),
+                val_key: _validation_component(ctx.resolved(validation)),
+            },
+            train_weights={train_key: 1.0, val_key: 0.0},
+            tokenizer=CONTACTS_TOKENIZER,
+            cache_dir=None,
+            auto_build_caches=False,
+            shuffle=False,
+            mixture_block_size=1,
+            block_cross_document_attention=True,
+        )
+        trainer = TrainerConfig(
+            id=name,
+            tracker=WandbConfig(
+                entity="open-athena",
+                project="MarinFold",
+                name=name,
+                tags=list(TAGS),
+                group="exp147-on-the-fly-contacts-v1",
+                replicate_path=ctx.output_path,
+            ),
+            mp=jmp.get_policy("p=f32,c=bfloat16"),
+            train_batch_size=train_batch_size,
+            per_device_parallelism=per_device_parallelism,
+            num_train_steps=steps,
+            steps_per_eval=steps_per_eval,
+            checkpointer=CheckpointerConfig(
+                save_interval=timedelta(minutes=10),
+                keep=[{"every": steps}],
+            ),
+            mesh=MeshConfig(
+                axes={"replica": 1, "data": -1, "model": 1},
+                compute_mapping={
+                    "token": TOKEN_AXES,
+                    "token_repeat": TOKEN_AXES,
+                },
+            ),
+            per_device_eval_parallelism=-1,
+            max_eval_batches=max_eval_batches,
+            allow_nondivisible_batch_size=True,
+        )
+        train_config = TrainLmConfig(
+            data=data,
+            trainer=trainer,
+            model=MODEL_CONFIG,
+            optimizer=identity["optimizer"],
+            z_loss_weight=0.0,
+            train_seq_len=8192,
+            hf_save_steps=steps,
+            data_seed=0,
+            adapter=NoAdaptorConfig(),
+        )
+        env_vars = {"WANDB_ENTITY": "open-athena", "WANDB_PROJECT": "MarinFold"}
+        wandb_api_key = os.environ.get("WANDB_API_KEY")
+        if wandb_api_key:
+            env_vars["WANDB_API_KEY"] = wandb_api_key
+        return TrainLmOnPodConfig(
+            train_config=train_config,
+            resources=ctx.runtime_arg("train_resources"),
+            output_path=ctx.output_path,
+            env_vars=env_vars,
+            auto_build_caches=False,
+        )
+
+    return ArtifactStep(
+        name=user_namespaced_name(f"checkpoints/{name}", ARTIFACT_VERSION),
+        version=ARTIFACT_VERSION,
+        artifact_type=LevanterCheckpoint,
+        run=_train_job,
+        build_config=build_config,
+        deps=(validation,),
+        runtime_args={"train_resources": RESOURCES},
     )
 
-    env_vars = {"WANDB_ENTITY": "open-athena"}
-    wandb_api_key = os.environ.get("WANDB_API_KEY")
-    if wandb_api_key:
-        env_vars["WANDB_API_KEY"] = wandb_api_key
-    train_config = SimpleTrainConfig(
-        resources=RESOURCES,
-        train_batch_size=128,
-        num_train_steps=versioned(steps),
-        learning_rate=versioned(3.1623e-3),
-        lr_schedule=versioned("cosine"),
-        min_lr_ratio=0.1,
-        weight_decay=0.2,
-        warmup=0.1,
-        beta1=0.9,
-        beta2=0.95,
-        train_seq_len=8192,
-        steps_per_eval=steps_per_eval,
-        steps_per_export=steps,
-        max_eval_batches=max_eval_batches,
-        data_seed=versioned(0),
-        env_vars=env_vars,
+
+def build_steps() -> list[ArtifactStep[LevanterCheckpoint]]:
+    """Build the single-step launch list used by tests and the CLI."""
+    return [build_step()]
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--run",
+        action="store_true",
+        help="Submit the lowered graph. Without this flag, only print the plan.",
     )
-    train_step = default_train(
-        name=name,
-        tokenized=data,
-        model_config=MODEL_CONFIG,
-        train_config=train_config,
-        tags=[
-            "protein",
-            "contacts-v1",
-            "on-the-fly",
-            "esm-atlas",
-            "qwen3",
-            "unmasked",
-            "exp147",
-            "pilot",
-        ],
-        eval_harness_tasks=[],
-        use_default_validation=False,
-        wandb_group="exp147-on-the-fly-contacts-v1",
-        wandb_name=name,
-    )
-    return [train_step]
+    args = parser.parse_args(argv)
+    lowered = lower(build_step())
+    if not args.run:
+        print(lowered)
+        return 0
+    if get_iris_ctx() is None:
+        parser.error(
+            "--run must execute inside an Iris coordinator job; use the launch "
+            "command in this experiment's README"
+        )
+    StepRunner().run([lowered])
+    return 0
 
 
 if __name__ == "__main__":
-    executor_main(steps=build_steps())
+    raise SystemExit(main())
