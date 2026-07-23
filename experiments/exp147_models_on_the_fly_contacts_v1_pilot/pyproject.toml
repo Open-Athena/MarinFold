@@ -2,7 +2,7 @@
 name = "exp147-models-on-the-fly-contacts-v1-pilot"
 version = "0.1.0"
 description = "Pilot on-the-fly contacts-v1 training from premade ESM Atlas contacts."
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "fsspec",
     "gcsfs",
@@ -23,8 +23,8 @@ dependencies = [
 tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
 cpu = [
     "marin-core[cpu]",
-    "torch==2.10.0",
-    "torchvision==0.25.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 
 [dependency-groups]
