@@ -50,6 +50,7 @@ from crops_train_common import build_train_step
 # Exact TRAIN-token counts (for epoch-based mixture budgeting).
 CROPS_TRAIN_TOKENS = 33_824_241_857  # exp132 stats.json (contacts-and-crops-v1 train)
 CV1_TRAIN_TOKENS = 4_676_753_425     # Eric exp117 TRAIN_TOKENS (contacts-v1 train)
+ESM_ATLAS_TRAIN_TOKENS = 71_383_345_402  # exp139 README (contacts_v1_esm_atlas train)
 _TOK_PER_STEP = 128 * 8192
 
 
@@ -72,24 +73,37 @@ def build_steps() -> list:
     # e.g. 0.05 = 5% standalone contacts-v1 docs alongside the crops bulk, a la #121).
     cv1_mix = float(os.environ.get("EXP137_CV1_MIX", "0"))
 
-    # Epoch-based mixture (overrides EXP137_STEPS + EXP137_CV1_MIX). Set both
-    # EXP137_CROPS_EPOCHS and EXP137_CV1_EPOCHS to train an exact number of passes
-    # over each corpus (e.g. 1 crops epoch + 8 contacts-v1 epochs). The sampling
-    # weights are the token fractions, and num_train_steps is the summed token
-    # budget / (batch*seq), so each corpus is seen exactly its requested # of times.
+    esm_atlas_mix = float(os.environ.get("EXP137_ESM_ATLAS_MIX", "0"))
+
+    # Epoch-based mixture (overrides EXP137_STEPS + the *_MIX fractions). Set
+    # EXP137_CROPS_EPOCHS plus EXP137_CV1_EPOCHS and/or EXP137_ESM_ATLAS_EPOCHS to
+    # train an exact number of passes over each corpus. The sampling weights are the
+    # token fractions, and num_train_steps is the summed token budget / (batch*seq),
+    # so each corpus is seen exactly its requested # of epochs. Setting all three to
+    # 1 == "1 epoch of everything, mixed proportional to size".
     _ce = os.environ.get("EXP137_CROPS_EPOCHS")
     _ve = os.environ.get("EXP137_CV1_EPOCHS")
+    _ee = os.environ.get("EXP137_ESM_ATLAS_EPOCHS")
     epoch_tag = ""
-    if _ce is not None and _ve is not None:
-        crops_ep, cv1_ep = float(_ce), float(_ve)
+    if _ce is not None and (_ve is not None or _ee is not None):
+        crops_ep = float(_ce)
+        cv1_ep = float(_ve) if _ve is not None else 0.0
+        esm_ep = float(_ee) if _ee is not None else 0.0
         crops_tok = crops_ep * CROPS_TRAIN_TOKENS
         cv1_tok = cv1_ep * CV1_TRAIN_TOKENS
-        total_tok = crops_tok + cv1_tok
+        esm_tok = esm_ep * ESM_ATLAS_TRAIN_TOKENS
+        total_tok = crops_tok + cv1_tok + esm_tok
         steps = round(total_tok / _TOK_PER_STEP)
         cv1_mix = cv1_tok / total_tok
-        epoch_tag = f"crops{crops_ep:g}ep-cv1{cv1_ep:g}ep"
+        esm_atlas_mix = esm_tok / total_tok
+        parts = [f"crops{crops_ep:g}ep"]
+        if cv1_ep:
+            parts.append(f"cv1{cv1_ep:g}ep")
+        if esm_ep:
+            parts.append(f"esm{esm_ep:g}ep")
+        epoch_tag = "-".join(parts)
 
-    slug = epoch_tag or ("cc1" if cv1_mix <= 0 else f"cc1mix{round(cv1_mix * 100)}")
+    slug = epoch_tag or ("cc1" if cv1_mix <= 0 and esm_atlas_mix <= 0 else f"cc1mix{round(cv1_mix * 100)}")
     default_name = f"exp137-{slug}-1_5b-{_lr_tag(lr)}-wd{wd:g}".replace(".", "p") + "-bs128"
     name = os.environ.get("EXP137_NAME", default_name)
 
@@ -104,6 +118,7 @@ def build_steps() -> list:
             steps_per_export=steps_per_export,
             max_eval_batches=max_eval_batches,
             contacts_v1_mix=cv1_mix,
+            esm_atlas_mix=esm_atlas_mix,
             extra_tags=(f"steps{steps}",),
             wandb_name=name,
         )

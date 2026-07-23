@@ -89,6 +89,11 @@ CONTACTS_V1_VAL_GLOB = f"{_ROOT}/exp53_contacts_v1_5x/documents/val/*.parquet"
 # (a token-minority alongside the crops bulk, a la #121, to keep pure-contacts
 # capability sharp). Tokenized with the crops tokenizer (subset ids).
 CONTACTS_V1_TRAIN_GLOB = f"{_ROOT}/exp53_contacts_v1_5x/documents/train/*.parquet"
+# contacts-v1 ESMFold2-Atlas distillation corpus (exp139, issue #139): contacts-v1
+# format documents from ~67M ESM-Atlas proteins (~71.4B tokens), same tokenizer as
+# contacts-v1 (subset of the crops tokenizer). Train-only. Used ONLY for the 3-way
+# mix-in variant. Mirrored to GCS via mirror_on_pod.py (MIRROR_SRC_PREFIX=.../train).
+ESM_ATLAS_TRAIN_GLOB = f"{_ROOT}/exp139_contacts_v1_esm_atlas/documents/train/*.parquet"
 
 # Qwen3 1.47B -- exp117 / #75 / exp44 dims + Llama3 rope, verbatim. Vocab is set
 # from the tokenizer (3848) at build time. Do NOT change the architecture.
@@ -182,6 +187,8 @@ CROPS_VAL_TOK = _tokenize_step("contacts-and-crops-v1-val", CROPS_VAL_GLOB, is_v
 CONTACTS_V1_VAL_TOK = _tokenize_step("contacts-v1-val", CONTACTS_V1_VAL_GLOB, is_validation=True)
 # Built only when the mix-in variant is requested (contacts_v1_mix > 0).
 CONTACTS_V1_TRAIN_TOK = _tokenize_step("contacts-v1-train", CONTACTS_V1_TRAIN_GLOB, is_validation=False)
+# Built only when the ESM-Atlas mix-in is requested (esm_atlas_mix > 0).
+ESM_ATLAS_TRAIN_TOK = _tokenize_step("contacts-v1-esm-atlas-train", ESM_ATLAS_TRAIN_GLOB, is_validation=False)
 
 
 def _as_array_exemplar_component(component: DatasetComponent) -> DatasetComponent:
@@ -229,6 +236,7 @@ def build_train_step(
     max_eval_batches: int | None = None,
     data_seed: int = CROPS_DATA_SEED,
     contacts_v1_mix: float = 0.0,
+    esm_atlas_mix: float = 0.0,
     extra_tags: Sequence[str] = (),
     wandb_name: str | None = None,
     resources: ResourceConfig = PROTEIN_RESOURCES,
@@ -275,20 +283,21 @@ def build_train_step(
     # proteins) so that fraction of TRAINING tokens comes from contacts-v1 and the
     # rest from crops (a la #121, to keep pure-contacts capability sharp). The two
     # runs share the same num_train_steps (token budget), so they A/B cleanly.
+    if contacts_v1_mix < 0 or esm_atlas_mix < 0 or contacts_v1_mix + esm_atlas_mix >= 1.0:
+        raise ValueError(
+            f"contacts_v1_mix ({contacts_v1_mix}) + esm_atlas_mix ({esm_atlas_mix}) must be "
+            f"in [0, 1) so crops keeps a positive weight"
+        )
     crops_key = "contacts-and-crops-v1-train"
     components = {crops_key: _component(CROPS_TRAIN_TOK), **VAL_COMPONENTS}
+    weights: dict[str, float] = {crops_key: 1.0 - contacts_v1_mix - esm_atlas_mix}
     if contacts_v1_mix > 0.0:
-        if not 0.0 < contacts_v1_mix < 1.0:
-            raise ValueError(f"contacts_v1_mix must be in (0, 1), got {contacts_v1_mix}")
-        cv1_key = "contacts-v1-train"
-        components[cv1_key] = _component(CONTACTS_V1_TRAIN_TOK)
-        train_weights = {
-            crops_key: 1.0 - contacts_v1_mix,
-            cv1_key: contacts_v1_mix,
-            **{k: 0.0 for k in VAL_COMPONENTS},
-        }
-    else:
-        train_weights = {crops_key: 1.0, **{k: 0.0 for k in VAL_COMPONENTS}}
+        components["contacts-v1-train"] = _component(CONTACTS_V1_TRAIN_TOK)
+        weights["contacts-v1-train"] = contacts_v1_mix
+    if esm_atlas_mix > 0.0:
+        components["contacts-v1-esm-atlas-train"] = _component(ESM_ATLAS_TRAIN_TOK)
+        weights["contacts-v1-esm-atlas-train"] = esm_atlas_mix
+    train_weights = {**weights, **{k: 0.0 for k in VAL_COMPONENTS}}
 
     crops_data = LmDataConfig(
         components=components,
@@ -300,7 +309,10 @@ def build_train_step(
         block_cross_document_attention=True,  # == levanter default == Eric's exp117
     )
 
-    mix_tag = "crops-only" if contacts_v1_mix <= 0.0 else f"cv1mix{contacts_v1_mix:g}"
+    if contacts_v1_mix <= 0.0 and esm_atlas_mix <= 0.0:
+        mix_tag = "crops-only"
+    else:
+        mix_tag = f"cv1mix{contacts_v1_mix:g}-esmmix{esm_atlas_mix:g}"
     return default_train(
         name=name,
         tokenized=crops_data,
