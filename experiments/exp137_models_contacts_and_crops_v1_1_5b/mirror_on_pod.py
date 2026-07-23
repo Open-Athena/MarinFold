@@ -1,77 +1,82 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Cloud-side crops-corpus mirror: HF bucket -> GCS, run ON an iris pod.
+"""Cloud-side corpus mirror: HF bucket -> GCS, run ON an iris pod.
 
-The workstation's uplink to GCS is ~2.5 MB/s (asymmetric link), so a 55 GB
-workstation->GCS upload takes ~6 h. A pod in the marin cluster reads the HF
-bucket and writes to gs://marin-us-east5 both at cloud speeds, finishing in
-minutes. This is the fast path (``mirror_crops_corpus.py`` is the slow local one).
+The workstation's uplink to GCS is ~2.5 MB/s (asymmetric link), so a >50 GB
+workstation->GCS upload takes many hours. A pod in the marin cluster reads the HF
+bucket and writes to gs://marin-* both at cloud speeds, finishing in minutes. This
+is the fast path (``mirror_crops_corpus.py`` is the slow local one).
 
 The pod reads with ``huggingface_hub.download_bucket_files`` (>= 1.5 + hf_xet,
-pip-installed at launch — anon, no token) and writes with gcsfs using the pod's
-service account (which has marin-us-east5 write, same as marin's checkpoint
-writes). Resumable: skips shards already present in GCS.
+supplied via ``uv run --with`` -- anon, but pass HF_TOKEN for a higher rate limit)
+and writes with gcsfs using the pod's service account (which has marin-* write, the
+same SA that writes marin checkpoints). Resumable: skips objects already present in
+GCS with a matching size.
 
-Env:
-* ``MIRROR_SPLITS``  comma list (default ``train,val,test``)
-* ``MIRROR_WORKERS`` thread count (default 16 — cloud-side, no uplink cap)
+Parameterized by env (defaults mirror the contacts-and-crops-v1 corpus for
+backwards-compat):
+* ``MIRROR_SRC_BUCKET``   HF bucket id                 (default ``open-athena/MarinFold``)
+* ``MIRROR_SRC_PREFIX``   path prefix within the bucket to mirror (recursive)
+* ``MIRROR_DST``          gs:// destination dir; the SRC_PREFIX-relative path is preserved under it
+* ``MIRROR_WORKERS``      thread count (default 8 -- HF 429-rate-limits higher)
 """
 from __future__ import annotations
 
 import os
-import sys
+import posixpath
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import gcsfs
 import huggingface_hub
-from huggingface_hub import download_bucket_files
+from huggingface_hub import download_bucket_files, list_bucket_tree
 
-# hub>=1.5 (for the bucket Python API) + hf_xet + gcsfs are provided at launch via
-# `uv run --with 'huggingface_hub>=1.5,<2' --with hf_xet --with gcsfs`, so the
-# locked training env is never perturbed. See the launch command in README.
-print(f"[mirror] python={sys.executable} hub={huggingface_hub.__version__} "
-      f"gcsfs={gcsfs.__version__}", flush=True)
+# hub>=1.5 (bucket Python API) + hf_xet + gcsfs come from `uv run --with ...` at
+# launch, so the locked training env is never perturbed (see README launch cmd).
+print(f"[mirror] python hub={huggingface_hub.__version__} gcsfs={gcsfs.__version__}", flush=True)
 
-BUCKET_ID = "open-athena/MarinFold"
-BUCKET_PREFIX = "data/document_structures/contacts_and_crops_v1"
-DST = (
-    "gs://marin-us-east5/protein-structure/MarinFold/exp132_contacts_and_crops_v1/documents"
-)
-SHARDS = {"train": 2067, "val": 22, "test": 22}
-
-# Authenticated bucket reads get a higher HF rate limit than anon; the anon path
-# 429s under concurrency. Pass a token via HF_TOKEN (else fall back to anon).
+SRC_BUCKET = os.environ.get("MIRROR_SRC_BUCKET", "open-athena/MarinFold")
+SRC_PREFIX = os.environ.get(
+    "MIRROR_SRC_PREFIX", "data/document_structures/contacts_and_crops_v1"
+).rstrip("/")
+DST = os.environ["MIRROR_DST"].rstrip("/")
+WORKERS = int(os.environ.get("MIRROR_WORKERS", "8"))
 _TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN") or False
 
 fs = gcsfs.GCSFileSystem(skip_instance_cache=True)
 
 
-def existing(split: str) -> set[str]:
+def _rel(path: str) -> str:
+    return path[len(SRC_PREFIX):].lstrip("/")
+
+
+def existing() -> dict[str, int]:
     try:
-        return {os.path.basename(i["name"]) for i in fs.ls(f"{DST}/{split}", detail=True)}
-    except FileNotFoundError:
-        return set()
+        return {i["name"].split(f"{DST.split('://',1)[1]}/", 1)[-1]: i["size"]
+                for i in fs.find(DST, detail=True).values()}
+    except Exception:  # noqa: BLE001
+        return {}
 
 
-def one(split: str, fn: str, tmp: str) -> int:
-    src = f"{BUCKET_PREFIX}/{split}/{fn}"
-    local = os.path.join(tmp, fn)
+def one(src_path: str, tmp: str) -> int:
+    rel = _rel(src_path)
+    local = os.path.join(tmp, rel.replace("/", "_"))
+    dst = f"{DST}/{rel}"
     last = None
     for attempt in range(8):
         try:
-            download_bucket_files(BUCKET_ID, files=[(src, local)], token=_TOKEN,
+            download_bucket_files(SRC_BUCKET, files=[(src_path, local)], token=_TOKEN,
                                   raise_on_missing_files=True)
             sz = os.path.getsize(local)
-            with open(local, "rb") as a, fs.open(f"{DST}/{split}/{fn}", "wb") as b:
+            with open(local, "rb") as a, fs.open(dst, "wb") as b:
                 while True:
                     chunk = a.read(16 << 20)
                     if not chunk:
                         break
                     b.write(chunk)
-            if fs.info(f"{DST}/{split}/{fn}")["size"] != sz:
+            if fs.info(dst)["size"] != sz:
                 raise RuntimeError("size mismatch after write")
             os.remove(local)
             return sz
@@ -82,45 +87,36 @@ def one(split: str, fn: str, tmp: str) -> int:
                     os.remove(local)
                 except OSError:
                     pass
-            # exponential backoff (helps with HF 429 rate limits under concurrency)
-            time.sleep(min(60, 3 * (2 ** attempt)) + (hash(fn) % 5))
+            time.sleep(min(60, 3 * (2 ** attempt)) + (hash(rel) % 5))
     raise last
 
 
 def main() -> int:
-    splits = [s.strip() for s in os.environ.get("MIRROR_SPLITS", "train,val,test").split(",") if s.strip()]
-    workers = int(os.environ.get("MIRROR_WORKERS", "16"))
+    print(f"[mirror] {SRC_BUCKET}:{SRC_PREFIX} -> {DST} (workers={WORKERS})", flush=True)
+    items = list(list_bucket_tree(SRC_BUCKET, prefix=SRC_PREFIX, recursive=True, token=_TOKEN))
+    srcs = [getattr(i, "path") for i in items
+            if type(i).__name__ == "BucketFile" and getattr(i, "path", "").endswith(".parquet")]
+    have = existing()
+    todo = [s for s in srcs if _rel(s) not in have]
+    print(f"[mirror] {len(srcs)} parquet; {len(srcs) - len(todo)} present; {len(todo)} to copy", flush=True)
     tmp = tempfile.mkdtemp(prefix="mirror_")
     t0 = time.time()
-    grand = 0
-    for split in splits:
-        n = SHARDS[split]
-        have = existing(split)
-        names = [f"contacts_and_crops_v1-{i:05d}-of-{n:05d}.parquet" for i in range(n)]
-        todo = [fn for fn in names if fn not in have]
-        print(f"[{split}] {n} shards, {len(names)-len(todo)} present, {len(todo)} to copy", flush=True)
-        done = 0
-        with ThreadPoolExecutor(max_workers=workers) as ex:
-            futs = {ex.submit(one, split, fn, tmp): fn for fn in todo}
-            for fut in as_completed(futs):
-                fn = futs[fut]
-                try:
-                    fut.result()
-                    done += 1
-                    grand += 1
-                    if done % 100 == 0 or done == len(todo):
-                        el = time.time() - t0
-                        print(f"[{split}] {done}/{len(todo)} ({el:.0f}s, {grand/el:.1f}/s)", flush=True)
-                except Exception as e:  # noqa: BLE001
-                    print(f"[{split}] FAIL {fn}: {type(e).__name__} {str(e)[:200]}", flush=True)
-        print(f"[{split}] done {done}/{len(todo)}", flush=True)
-    miss = 0
-    for split in splits:
-        have = existing(split)
-        for i in range(SHARDS[split]):
-            if f"contacts_and_crops_v1-{i:05d}-of-{SHARDS[split]:05d}.parquet" not in have:
-                miss += 1
-    print(f"MIRROR DONE {grand} copied in {time.time()-t0:.0f}s; missing={miss}", flush=True)
+    done = 0
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        futs = {ex.submit(one, s, tmp): s for s in todo}
+        for fut in as_completed(futs):
+            s = futs[fut]
+            try:
+                fut.result()
+                done += 1
+                if done % 100 == 0 or done == len(todo):
+                    el = time.time() - t0
+                    print(f"[mirror] {done}/{len(todo)} ({el:.0f}s, {done/el:.1f}/s)", flush=True)
+            except Exception as e:  # noqa: BLE001
+                print(f"[mirror] FAIL {_rel(s)}: {type(e).__name__} {str(e)[:200]}", flush=True)
+    have2 = existing()
+    miss = [s for s in srcs if _rel(s) not in have2]
+    print(f"MIRROR DONE {done} copied in {time.time()-t0:.0f}s; missing={len(miss)}", flush=True)
     return 1 if miss else 0
 
 
