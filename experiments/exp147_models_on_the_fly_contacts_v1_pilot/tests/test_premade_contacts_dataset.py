@@ -15,13 +15,17 @@ from marinfold.document_structures.contacts_v1 import (
     ResidueInfo,
     analyzed_to_row,
 )
+from marinfold.document_structures.documents import causal_training_document
+from marinfold_models.streaming_documents import (
+    OnlineBestFitDocumentPacker,
+    RowReference,
+    SourcedDocument,
+    StreamingDocumentStats,
+    shard_indices_for_process,
+)
 
 from premade_contacts_dataset import (
-    EncodedDocument,
-    OnlineBestFitPacker,
     StreamingPremadeContactsDataset,
-    StreamingStats,
-    shard_indices_for_process,
 )
 
 
@@ -94,8 +98,8 @@ def test_shard_partition_is_disjoint_and_complete():
 
 
 def test_online_packer_carries_partial_bins():
-    stats = StreamingStats()
-    packer = OnlineBestFitPacker(
+    stats = StreamingDocumentStats()
+    packer = OnlineBestFitDocumentPacker(
         max_seq_len=100,
         max_segments_per_example=8,
         min_fill_fraction=0.95,
@@ -104,10 +108,11 @@ def test_online_packer_carries_partial_bins():
     )
     for index, length in enumerate((61, 61, 39)):
         packer.add(
-            EncodedDocument(
-                source_id=str(index),
-                tokens=np.arange(length, dtype=np.int32),
-                segment_id=index,
+            SourcedDocument(
+                source=RowReference(epoch=0, shard_index=0, row_index=index),
+                document=causal_training_document(
+                    np.arange(length, dtype=np.int32)
+                ),
             )
         )
 
@@ -167,3 +172,63 @@ def test_processes_read_different_streams(tmp_path: Path):
         not np.array_equal(np.asarray(left.tokens), np.asarray(right.tokens))
         for left, right in zip(zero, one, strict=True)
     )
+
+
+def test_checkpoint_round_trip_restores_exact_next_pack(tmp_path: Path):
+    _write_shards(tmp_path)
+    original = _dataset(tmp_path)
+    asyncio.run(original.get_batch(range(7)))
+    checkpoint = tmp_path / "loader-state.json"
+    original.save_checkpoint(str(checkpoint))
+    expected = asyncio.run(original.get_batch(range(7, 17)))
+
+    restored = _dataset(tmp_path)
+    restored.load_checkpoint(str(checkpoint))
+    actual = asyncio.run(restored.get_batch(range(7, 17)))
+
+    for left, right in zip(expected, actual, strict=True):
+        np.testing.assert_array_equal(np.asarray(left.tokens), np.asarray(right.tokens))
+        np.testing.assert_array_equal(
+            np.asarray(left.loss_weight), np.asarray(right.loss_weight)
+        )
+
+
+def test_checkpoint_uses_optimizer_step_snapshot_before_prefetch(tmp_path: Path):
+    _write_shards(tmp_path)
+    original = StreamingPremadeContactsDataset(
+        data_prefix=str(tmp_path),
+        num_shards=4,
+        total_shards=4,
+        seed=17,
+        max_seq_len=512,
+        min_fill_fraction=0.95,
+        max_open_packs=16,
+        row_block_size=16,
+        process_index=0,
+        process_count=1,
+        global_batch_size=6,
+    )
+    prefetched = asyncio.run(original.get_batch(range(18)))
+    checkpoint = tmp_path / "loader-step-1.json"
+    original.save_checkpoint(str(checkpoint), step=1)
+
+    restored = StreamingPremadeContactsDataset(
+        data_prefix=str(tmp_path),
+        num_shards=4,
+        total_shards=4,
+        seed=17,
+        max_seq_len=512,
+        min_fill_fraction=0.95,
+        max_open_packs=16,
+        row_block_size=16,
+        process_index=0,
+        process_count=1,
+        global_batch_size=6,
+    )
+    restored.load_checkpoint(str(checkpoint))
+    resumed = asyncio.run(restored.get_batch(range(6, 12)))
+
+    for expected, actual in zip(prefetched[6:12], resumed, strict=True):
+        np.testing.assert_array_equal(
+            np.asarray(expected.tokens), np.asarray(actual.tokens)
+        )

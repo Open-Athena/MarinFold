@@ -39,6 +39,37 @@ Experiments using this bridge must declare both `marinfold-models` and
 the experiment should map both packages to their respective repository
 subdirectories.
 
+## Streaming documents
+
+`marinfold_models.streaming_documents.StreamingDocumentDataset` is the shared
+on-the-fly construction path. It owns Parquet shard/row shuffling, process
+partitioning, bounded best-fit packing, and checkpointable stream state. An
+experiment supplies projected source columns, a deterministic
+`row -> Document | None` generator with a versioned `generator_id`, and a
+`documents -> Levanter example` adapter.
+
+The included `causal_lm_example_from_documents` adapter implements ordinary
+packed next-token training. Other attention and scoring layouts can reuse the
+stream and packer with a different adapter.
+
+Loader checkpoints do not pickle `Document` objects or scorer callbacks.
+Instead they save the shuffled source cursor and source-row references for
+documents held in open and ready packing bins. Restore rereads those few rows
+and reruns the deterministic generator. A changed generator fails via its
+`generator_id` instead of silently resuming with mixed semantics.
+
+Levanter prefetches ahead of the optimizer. When `global_batch_size` is set,
+the dataset retains exact states at the start of each requested optimizer step.
+Use `save_checkpoint(path, step=N)` for model checkpoint step `N`, not
+`save_checkpoint(path)` after prefetch. Each JAX process needs its own sidecar
+because shard assignments and packing bins are process-local. The generic state
+is ready for a training-entrypoint checkpoint hook:
+`save_model_checkpoint_sidecar(checkpoint_path, step=N)` writes the canonical
+`input/streaming-documents-process-<rank>.json`, and the matching load method
+restores it before constructing Levanter's `DataLoader`. Stock
+`levanter.main.train_lm` does not yet expose a user callback that can invoke
+these methods.
+
 ## Layout
 
 ```
@@ -50,6 +81,7 @@ models/
     ├── __init__.py
     ├── defaults.py               # vendored marin default_train / default_tokenize
     ├── scored_document.py        # Document scorer -> Levanter loss bridge
+    ├── streaming_documents.py    # On-the-fly construction, packing, state
     └── simple_train_config.py    # vendored marin SimpleTrainConfig
 ```
 

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "MarinFold models/ library — shared training helpers, vendored marin defaults."
 requires-python = ">=3.11,<3.13"
 dependencies = [
+    "fsspec",
     # marin-core is the SOURCE dist name for the `marin` Python module. The
     # published `marin` wheel (0.99.dev*) is frozen at 2026-05-29 with the
     # un-fixed cache-ledger READER (it demands `input_ids/0`); marin-core built
@@ -23,6 +24,8 @@ dependencies = [
     "marinfold",
     # Levanter's tracker imports the ``git`` module during package import.
     "gitpython",
+    "numpy",
+    "pyarrow",
 ]
 
 [project.optional-dependencies]

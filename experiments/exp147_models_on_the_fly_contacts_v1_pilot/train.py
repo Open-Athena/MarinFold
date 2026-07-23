@@ -87,6 +87,7 @@ def build_steps() -> list:
         num_shards=int(os.environ.get("EXP147_NUM_SHARDS", "16")),
         seed=0,
         max_seq_len=8192,
+        global_batch_size=128,
     )
     train_key = "on-the-fly/esm-atlas-contacts-v1"
     val_key = "tokenized/contacts-v1-val"

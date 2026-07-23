@@ -16,6 +16,11 @@ from marinfold_models.scored_document import (
     scored_document_loss,
 )
 from marinfold_models.simple_train_config import SimpleTrainConfig
+from marinfold_models.streaming_documents import (
+    StreamingDocumentDataset,
+    causal_lm_example_from_documents,
+    streaming_document_state_path,
+)
 
 __all__ = [
     "LevanterScoredDocumentBatch",
@@ -24,4 +29,7 @@ __all__ = [
     "default_train",
     "levanter_scored_document_batch",
     "scored_document_loss",
+    "StreamingDocumentDataset",
+    "causal_lm_example_from_documents",
+    "streaming_document_state_path",
 ]

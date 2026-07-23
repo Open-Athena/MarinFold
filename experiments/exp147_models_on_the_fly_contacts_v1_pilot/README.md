@@ -39,26 +39,31 @@ A shard-local direct Levanter dataset can reconstruct `AnalyzedStructure`, call 
 
 ### Prototype contract and consequences
 
-`StreamingPremadeContactsDataset` is a deliberately stateful adapter behind
-Levanter's random-access `AsyncDataset` interface. Its `get_batch(indices)`
-uses the number of requested examples but does not interpret the index values.
-The training configuration therefore sets `shuffle=False` and
+`StreamingPremadeContactsDataset` is now a small contacts-specific adapter over
+the reusable `marinfold_models.streaming_documents.StreamingDocumentDataset`.
+The generic layer owns shuffling, process partitioning, packing, and loader
+state; the experiment supplies the premade-contact columns and a deterministic
+row-to-`Document` function. Its `get_batch(indices)` uses index values only to
+retain optimizer-step checkpoint boundaries, not as random-access document
+addresses. The training configuration therefore sets `shuffle=False` and
 `mixture_block_size=1`; shard and row shuffling live inside the stream.
 
-This is sufficient to inspect the data path and run a non-resuming pilot, but
-it is not yet safe for a long preemptible run:
+The checkpoint state covers the shard and row-block cursors, partial and ready
+packing bins, the non-consuming shape-inference peek, and exact snapshots from
+before each prefetched optimizer step. Open-bin documents are represented by
+source-row references and deterministically reconstructed on restore, so scorer
+callbacks never need to be serialized. Configuration fingerprints include a
+versioned generator ID and process topology.
 
-- Levanter prefetches many batches ahead of the optimizer.
-- The shard cursor, row-block cursor, partial packing bins, and prefetched
-  examples are not included in training checkpoints.
-- Resuming therefore restarts the data stream rather than reproducing the
-  exact next batch.
-- The current loader assumes every JAX process receives at least one staged
-  shard and that the process count remains fixed for a run.
-
-Before a long run, either the loader/prefetch state must become checkpointed at
-an optimizer-step boundary or packing must become a deterministic function of
-a batch identifier.
+`save_checkpoint(path, step=N)` and `load_checkpoint(path)` are implemented and
+round-trip tested, including restoring an earlier optimizer boundary after
+later batches were prefetched. Each JAX process needs a separate loader-state
+sidecar, and the process count must remain fixed. The remaining integration
+before a preemptible run is a small hook in the training entrypoint that calls
+`save_model_checkpoint_sidecar(...)` whenever Levanter commits model checkpoint
+`N`, and calls its load counterpart before constructing the resumed
+`DataLoader`; stock `levanter.main.train_lm` has no user callback surface for
+this yet.
 
 ## Success criteria
 
@@ -74,8 +79,9 @@ a batch identifier.
 The code-only prototype is implemented. Synthetic parquet tests cover
 deterministic construction, carry-over of partial bins, process-disjoint shard
 assignment, the special non-consuming `getitem_async` peek Levanter performs
-during loader initialization, and packed utilization. No real data has been
-transferred and no training job has been launched.
+during loader initialization, packed utilization, exact loader-state restore,
+and recovery of an optimizer-step state from behind Levanter-style prefetch.
+No real data has been transferred and no training job has been launched.
 
 ## Conclusion
 
