@@ -41,6 +41,7 @@ from fray import ResourceConfig
 import numpy as np
 from levanter.data.text import DatasetComponent, LmDataConfig, TextLmDatasetFormat
 from levanter.data.text._batch_tokenizer import BatchTokenizer
+from levanter.data.text.datasets import BlockShuffleConfig
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.models.qwen import Qwen3Config
 from marin.execution import ExecutorStep, output_path_of, versioned
@@ -102,6 +103,15 @@ MODEL_CONFIG = Qwen3Config(
 )
 
 CROPS_DATA_SEED = 0  # exp117 uses data_seed=0
+
+# Match Eric's exp117 shuffle EXACTLY: a hierarchical Feistel BLOCK shuffle, not a
+# full permutation. exp117_sweep.py sets `SHUFFLE = BlockShuffleConfig(io_block_size
+# =256, window_blocks=512, perm_type="feistel")` (also the levanter LmDataConfig
+# default). We previously passed `shuffle=True`, which levanter routes to a FULL
+# Feistel permutation (ds.shuffle) instead of ds.block_shuffle -- a real divergence
+# on the round/pLDDT-ordered corpus (full perm mixes all rounds uniformly; the block
+# shuffle preserves macro round-order while mixing within ~131k-sequence windows).
+CROPS_SHUFFLE = BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel")
 
 # Default TPU slice. exp137 is a long (~75B-token) from-scratch run, so we target
 # a large dedicated v5p slice in us-east5 (in-region with the marin-us-east5 data
@@ -281,8 +291,8 @@ def build_train_step(
         tokenizer=CROPS_TOKENIZER,
         cache_dir=None,
         auto_build_caches=False,
-        shuffle=True,
-        block_cross_document_attention=True,
+        shuffle=CROPS_SHUFFLE,  # Eric's exp117 block shuffle (was shuffle=True == full perm)
+        block_cross_document_attention=True,  # == levanter default == Eric's exp117
     )
 
     mix_tag = "crops-only" if contacts_v1_mix <= 0.0 else f"cv1mix{contacts_v1_mix:g}"
