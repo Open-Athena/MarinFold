@@ -68,7 +68,8 @@ bin.
 ### Pilot staging
 
 The staging helper is preview-only unless `--execute` is supplied. The preview
-reads public Hugging Face metadata but does not contact GCS or transfer data:
+reads public Hugging Face and destination GCS metadata to report only the
+missing shards; it does not transfer data:
 
 ```bash
 uv run stage_pilot.py --num-shards 16
@@ -79,6 +80,15 @@ plan explicitly:
 
 ```bash
 uv run stage_pilot.py --num-shards 16 --execute
+```
+
+An approved full-corpus mirror uses the same resume-safe destination. Transfers
+above 10 GB require the explicit acknowledgement flag:
+
+```bash
+uv run stage_pilot.py \
+  --num-shards 3338 --workers 32 \
+  --execute --allow-large-transfer
 ```
 
 Once staged, construct and consume one complete fixed-quota shard locally on
@@ -155,9 +165,31 @@ A complete shard was then read from GCS and converted on the local CPU:
 - Construction and consumption took 55.88 seconds: 47.42 packed examples per
   second.
 
-The smoke test launched no Iris or TPU jobs. The short TPU training pilot has
-not started.
+The 200-step pilot then completed successfully on one preemptible v6e-8 in
+`us-east5-b`, with zero failures or preemptions:
+
+- [W&B run](https://wandb.ai/open-athena/MarinFold/runs/exp147-otf-contacts-v1-1_5b-pilot-200s-bs256-v6e8)
+  and [Iris job](https://iris.oa.dev/#/job/%2Fjder%2Firis-run-train-20260723-195327).
+- Validation `contacts-v1-val/loss` improved from `5.510117` at step 100 to
+  `4.693140` at the final step 199. Final train loss was `4.541664`.
+- Across steps 3–198, median step time was 27.792 seconds, median throughput was
+  9.211 examples/second and 75,460 tokens/second, and median MFU was 14.057%.
+  Median foreground loading time was 1.1 ms. The background 8,192-example
+  producer emitted noisy slow-loading warnings, but it did not sustain a
+  foreground training stall.
+- The Levanter-native checkpoint is at
+  `gs://marin-us-east5/protein-structure/MarinFold/exp147_on_the_fly_contacts_v1_pilot/users/jder/checkpoints/exp147-otf-contacts-v1-1_5b-pilot-200s-bs256-v6e8/exp147-dev/checkpoints/step-199`.
+  The HF-compatible export, including the tokenizer, is next to it under
+  `exp147-dev/hf/step-199`.
+
+This run used git SHA `b317807`, before the no-rendering optimization in
+`7260479`; its throughput is therefore the baseline for that change.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The stateless fixed-quota loader successfully fed a v6e-8 throughout training,
+and the ordinary contacts-v1 validation metric and both checkpoint formats work
+end to end. This pilot deliberately compressed the optimizer schedule into 200
+steps, so its loss is not a fair same-step comparison with the 35,680-step
+exp117 reference. The next sanity check should retain the exp117 step count and
+evaluation cadence and compare the first one or two validation points.
