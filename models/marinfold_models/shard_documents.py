@@ -8,7 +8,6 @@ import bisect
 from collections import OrderedDict
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from pathlib import PurePosixPath
 from typing import Any, Generic, TypeVar
 
 import fsspec
@@ -277,11 +276,7 @@ class FixedQuotaShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
     def _construct_shard(
         self, epoch: int, shard_index: int
     ) -> tuple[PackedDocuments | None, ...]:
-        shard_name = self.shard_name_template.format(
-            shard_index=shard_index,
-            total_shards=self.total_shards,
-        )
-        shard_path = str(PurePosixPath(self.data_prefix) / shard_name)
+        shard_path = self._shard_path(shard_index)
         with fsspec.open(shard_path, "rb") as source:
             table = pq.read_table(source, columns=list(self.columns))
         if table.num_rows == 0:
@@ -321,6 +316,13 @@ class FixedQuotaShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
             0, len(packs) - self.examples_per_shard
         )
         return slots
+
+    def _shard_path(self, shard_index: int) -> str:
+        shard_name = self.shard_name_template.format(
+            shard_index=shard_index,
+            total_shards=self.total_shards,
+        )
+        return f"{self.data_prefix}/{shard_name}"
 
 
 def causal_lm_example_from_documents(

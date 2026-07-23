@@ -138,11 +138,25 @@ budget; the architecture, batch, and optimizer settings match.
 
 ## Results
 
-The code-only stateless prototype is implemented. Synthetic Parquet tests cover
-best-fit packing, exact quota selection, zero-loss padding, overflow,
-deterministic random and repeated access, cache reconstruction, and the
-single-component Levanter mixture. No real data has been transferred and no
-training job has been launched.
+The stateless prototype is implemented. Synthetic Parquet tests cover best-fit
+packing, exact quota selection, zero-loss padding, overflow, deterministic
+random and repeated access, cache reconstruction, remote URI preservation, and
+the single-component Levanter mixture.
+
+On 2026-07-23, 16 source shards (1.52 GB) were staged to
+`gs://marin-us-east5/protein-structure/MarinFold/exp147_on_the_fly_contacts_v1_pilot/pilot_data/contacts/`.
+A complete shard was then read from GCS and converted on the local CPU:
+
+- 20,000 source documents produced 2,608 packed examples.
+- No documents were dropped or truncated, and no packs were discarded by the
+  fixed quota.
+- The 2,650-example quota added 42 zero-loss padding examples.
+- Real-token packing utilization was 98.2469%.
+- Construction and consumption took 55.88 seconds: 47.42 packed examples per
+  second.
+
+The smoke test launched no Iris or TPU jobs. The short TPU training pilot has
+not started.
 
 ## Conclusion
 

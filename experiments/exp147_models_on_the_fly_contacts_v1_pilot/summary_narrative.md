@@ -18,4 +18,10 @@ A stateless prototype now maps every example index to a deterministic
 `(epoch, shard, slot)`, constructs documents directly from contact rows, and
 best-fit packs an entire shard into exactly 2,650 output slots. Overfull shards
 uniformly sample packed bins; underfull shards use zero-loss padding. Synthetic
-tests pass; no real data transfer or training run has started.
+tests pass.
+
+The first real GCS shard smoke converted 20,000 documents into 2,608 packs in
+55.88 seconds (47.42 examples/s), with no drops or truncations and 98.2469%
+real-token utilization. The fixed quota added 42 zero-loss padding examples.
+Sixteen raw shards (1.52 GB) are staged in `us-east5`; no training run has
+started.

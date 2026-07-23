@@ -42,6 +42,10 @@ def _copy_file(source: Any, destination: str) -> None:
         shutil.copyfileobj(source, target, length=32 << 20)
 
 
+def _destination_path(output_prefix: str, shard_name: str) -> str:
+    return f"{output_prefix.rstrip('/')}/contacts/{shard_name}"
+
+
 def _stage_one(
     shard_name: str,
     *,
@@ -49,7 +53,7 @@ def _stage_one(
 ) -> str:
     hf_fs = HfFileSystem(token=False)
     contacts_source = str(PurePosixPath(CONTACTS_PREFIX) / shard_name)
-    contacts_destination = str(PurePosixPath(output_prefix) / "contacts" / shard_name)
+    contacts_destination = _destination_path(output_prefix, shard_name)
 
     destination_fs, destination_path = fsspec.core.url_to_fs(contacts_destination)
     if not destination_fs.exists(destination_path):

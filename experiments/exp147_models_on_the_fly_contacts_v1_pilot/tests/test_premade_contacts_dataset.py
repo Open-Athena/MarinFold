@@ -32,6 +32,7 @@ from premade_contacts_dataset import (
     FixedQuotaPremadeContactsDataset,
 )
 from smoke_dataset import main as smoke_dataset_main
+from stage_pilot import _destination_path
 from train import CONTACTS_TOKENIZER, CONTACTS_TOKENIZER_REPO, build_step
 
 
@@ -158,6 +159,22 @@ def test_index_mapping_is_stateless_and_epoch_shuffled(tmp_path: Path):
         np.testing.assert_array_equal(
             np.asarray(left.loss_weight), np.asarray(right.loss_weight)
         )
+
+
+def test_remote_paths_preserve_uri_scheme():
+    dataset = FixedQuotaPremadeContactsDataset(
+        data_prefix="gs://bucket/prefix",
+        num_shards=1,
+    )
+
+    assert (
+        dataset._shard_path(0)
+        == "gs://bucket/prefix/shard-00000-of-03338.parquet"
+    )
+    assert (
+        _destination_path("gs://bucket/pilot", "shard.parquet")
+        == "gs://bucket/pilot/contacts/shard.parquet"
+    )
 
 
 def test_padding_slots_have_zero_loss(tmp_path: Path):
