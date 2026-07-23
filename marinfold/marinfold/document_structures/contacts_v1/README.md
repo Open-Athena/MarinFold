@@ -160,6 +160,76 @@ Use `--num-docs` to cap output; a whole shard's 2,000 structures works
 too (just drop `--num-docs`). For a custom schema use `--cif-column` /
 `--id-column`.
 
+### Construct training documents on the fly from afdb-1.6M
+
+`on_the_fly.py` prototypes the Marin document-program representation without
+materializing document Parquets or a Levanter token cache. It reads only the
+small manifest columns from a pinned revision of
+[`timodonnell/afdb-1.6M`](https://huggingface.co/datasets/timodonnell/afdb-1.6M),
+fetches each row's raw mmCIF through `gcs_uri`, calls the same
+`generate_document` implementation used above, and emits a causal
+token-aligned `Document` with ordinary shifted next-token targets.
+
+```bash
+cd marinfold
+uv sync --extra contacts-v1-online
+
+# Defaults to one protein; no corpus is written.
+uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
+    --split train --limit 1
+
+# Iris/ADC path: pinned Parquet manifest plus each row's gcs_uri.
+uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
+    --source gcs --split train --limit 1
+```
+
+The default credential-free smoke gets at most ten inline CIF rows through the
+HF Dataset Server. The `gcs` source is the intended at-scale shape and requires
+Google ADC. The current prototype is synchronous and deterministic. It
+establishes document/token parity; prefetch and distributed dataset sharding
+remain before this is suitable for a training hot path.
+
+To exercise the unordered-contact prototype on the same raw structure and
+selected contacts:
+
+```bash
+uv run python -m marinfold.document_structures.contacts_v1.on_the_fly \
+    --split train --limit 1 \
+    --document-style block-causal-relative \
+    --think-tokens 16
+```
+
+This variant presents amino-acid tokens once in natural sequence order and
+sets their `relative_position` coordinate to `0..L-1`; ordinary rotary
+`position_ids` stay zero. It does not place position tokens beside residues or
+shuffle their order. Framing and sequence tokens form one bidirectional
+attention block. Each pause token and each actual teacher-forced contact token
+forms a successive singleton causal block: a token sees itself and all earlier
+blocks, never later tokens. `--think-tokens N` inserts N observed singleton
+pause blocks between the sequence and the contact suffix.
+
+The default `causal-serialized` style remains byte-compatible with the existing
+contacts-v1 corpus and requires `--think-tokens 0`.
+
+The contacts constructor attaches a range-level sparse target distribution with
+`with_target_distribution(...)`. The range owns one candidate token vector and
+a dense `weights[position, candidate]` matrix. After `<contact>`, endpoint
+weights equal their incidence counts among the remaining contacts. After the
+teacher-forced first endpoint, weights are uniform over its remaining
+neighbors. The teacher-forced contact is removed before constructing the next
+slot, and `<end>` receives unit mass only after the set is exhausted.
+
+This construction uses the immutable `contacts_v1.VOCABULARY` declaration,
+not tokenizer string encoding. Control tokens and the complete `<p0>` through
+`<p1999>` family are vocabulary-bound handles; requesting an undeclared token
+fails immediately. The vocabulary fingerprint travels with the `Document`,
+and concatenation or packing rejects documents from another vocabulary.
+
+The Levanter bridge applies weighted categorical cross-entropy after one model
+forward pass. Because weights preserve multiplicity, four remaining contacts
+incident to one position and one incident to another produce a 4:1 target
+probability ratio rather than a uniform multi-positive objective.
+
 ## Build the tokenizer
 
 ```bash

@@ -136,3 +136,73 @@ def test_write_docs_structure_name_wins(tmp_path: Path):
     )
     import json
     assert json.loads(out.read_text())["structure"] == "contacts-v1"
+
+
+def test_analyzed_row_roundtrip_preserves_document():
+    from marinfold.document_structures.contacts_v1 import (
+        ANALYZED_ROW_COLUMNS,
+        AnalyzedStructure,
+        RawContact,
+        ResidueInfo,
+        analyzed_from_row,
+        analyzed_to_row,
+        build_document,
+    )
+
+    analyzed = AnalyzedStructure(
+        entry_id="toy-entry",
+        residues=tuple(
+            ResidueInfo(seq_index=i, resname=resname, resnum=10 + i, chain="A")
+            for i, resname in enumerate(
+                ("ALA", "GLY", "TRP", "SER", "LYS", "ILE", "PHE", "VAL")
+            )
+        ),
+        contacts=(
+            RawContact(seq_i=0, seq_j=6, degree=0.812),
+            RawContact(seq_i=1, seq_j=7, degree=0.4),
+            RawContact(seq_i=2, seq_j=5, degree=0.0009),
+        ),
+        global_plddt=87.5,
+        source_path=Path("/tmp/toy.cif"),
+    )
+
+    row = analyzed_to_row(analyzed)
+    assert set(row) == set(ANALYZED_ROW_COLUMNS)
+    restored = analyzed_from_row(row)
+    assert restored.residues == analyzed.residues
+    assert restored.contacts == analyzed.contacts
+    assert restored.global_plddt == analyzed.global_plddt
+
+    direct = build_document(
+        analyzed.entry_id,
+        analyzed.residues,
+        analyzed.contacts,
+        global_plddt=analyzed.global_plddt,
+    )
+    roundtripped = build_document(
+        restored.entry_id,
+        restored.residues,
+        restored.contacts,
+        global_plddt=restored.global_plddt,
+    )
+    assert direct is not None and roundtripped is not None
+    assert roundtripped.document == direct.document
+    assert roundtripped.metadata_row() == direct.metadata_row()
+
+
+def test_analyzed_from_row_rejects_mismatched_parallel_columns():
+    from marinfold.document_structures.contacts_v1 import analyzed_from_row
+
+    with pytest.raises(ValueError, match="Residue columns"):
+        analyzed_from_row(
+            {
+                "entry_id": "bad",
+                "global_plddt": 80.0,
+                "residue_resname": ["ALA"],
+                "residue_resnum": [],
+                "residue_chain": ["A"],
+                "contact_seq_i": [],
+                "contact_seq_j": [],
+                "contact_degree": [],
+            }
+        )

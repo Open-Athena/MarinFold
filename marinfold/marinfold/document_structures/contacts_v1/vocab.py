@@ -38,12 +38,18 @@ pre-existing token id unchanged (append-only).
 """
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
+    AMINO_ACIDS as _CD_V1_AMINO_ACIDS,
+)
+from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     MAX_POSITION as _CD_V1_MAX_POSITION,
+)
+from marinfold.document_structures.contacts_and_distances_v1.vocab import (
+    VOCABULARY as _CD_V1_VOCABULARY,
 )
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
     all_domain_tokens as _cd_v1_all_domain_tokens,
 )
-
+from marinfold.document_structures.core import VocabularyBuilder
 
 NAME = "contacts-v1"
 CONTEXT_LENGTH = 8192
@@ -74,8 +80,8 @@ NATIVE_TOKENS = [
 ]
 
 # --- Tokens reused from contacts-and-distances-v1 (emitted, not minted) ---
-BEGIN_SEQUENCE_TOKEN = "<begin_sequence>"      # start of the sequence section
-BEGIN_STRUCTURE_TOKEN = "<begin_statements>"   # start of the structure section
+BEGIN_SEQUENCE_TOKEN = "<begin_sequence>"  # start of the sequence section
+BEGIN_STRUCTURE_TOKEN = "<begin_statements>"  # start of the structure section
 END_TOKEN = "<end>"
 
 # --- Sequence-only variant (contacts-v1.sequence_only) ---
@@ -108,8 +114,13 @@ def _validate_reuse() -> None:
             f"<p{_CD_V1_MAX_POSITION}>"
         )
     cd_v1 = set(_cd_v1_all_domain_tokens())
-    reused = {BEGIN_SEQUENCE_TOKEN, BEGIN_STRUCTURE_TOKEN, END_TOKEN,
-              position_token(0), position_token(NUM_POSITION_INDICES - 1)}
+    reused = {
+        BEGIN_SEQUENCE_TOKEN,
+        BEGIN_STRUCTURE_TOKEN,
+        END_TOKEN,
+        position_token(0),
+        position_token(NUM_POSITION_INDICES - 1),
+    }
     missing = reused - cd_v1
     if missing:
         raise ValueError(
@@ -164,3 +175,28 @@ def all_domain_tokens() -> list[str]:
         *additional_tokens(),
         *sequence_only_tokens(),
     ]
+
+
+VOCABULARY = (
+    VocabularyBuilder(NAME)
+    .append(*NATIVE_TOKENS)
+    .inherit(_CD_V1_VOCABULARY)
+    .append(*SEQUENCE_ONLY_TOKENS)
+    .freeze()
+)
+
+DOC_TYPE = VOCABULARY.token(DOC_TYPE_TOKEN)
+SEQUENCE_ONLY_DOC_TYPE = VOCABULARY.token(SEQUENCE_ONLY_DOC_TYPE_TOKEN)
+BEGIN_SEQUENCE = VOCABULARY.token(BEGIN_SEQUENCE_TOKEN)
+BEGIN_STRUCTURE = VOCABULARY.token(BEGIN_STRUCTURE_TOKEN)
+N_TERM = VOCABULARY.token(N_TERM_TOKEN)
+C_TERM = VOCABULARY.token(C_TERM_TOKEN)
+CONTACT = VOCABULARY.token(CONTACT_TOKEN)
+THINK = VOCABULARY.token(THINK_TOKEN)
+END = VOCABULARY.token(END_TOKEN)
+EOS = VOCABULARY.token("<eos>")
+POSITIONS = VOCABULARY.family("positions", "<p{}>", count=NUM_POSITION_INDICES)
+RESIDUES = {
+    residue: VOCABULARY.token(f"<{residue}>")
+    for residue in (*_CD_V1_AMINO_ACIDS, "UNK")
+}

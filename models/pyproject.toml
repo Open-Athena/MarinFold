@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "MarinFold models/ library — shared training helpers, vendored marin defaults."
 requires-python = ">=3.11,<3.13"
 dependencies = [
+    "fsspec",
     # marin-core is the SOURCE dist name for the `marin` Python module. The
     # published `marin` wheel (0.99.dev*) is frozen at 2026-05-29 with the
     # un-fixed cache-ledger READER (it demands `input_ids/0`); marin-core built
@@ -18,6 +19,13 @@ dependencies = [
     "marin-iris",
     "marin-zephyr",
     "marin-rigging",
+    # Imported unconditionally by marin.processing.tokenize, used by defaults.py.
+    "marin-dupekit<0.3",
+    "marinfold",
+    # Levanter's tracker imports the ``git`` module during package import.
+    "gitpython",
+    "numpy",
+    "pyarrow",
 ]
 
 [project.optional-dependencies]
@@ -26,7 +34,7 @@ dependencies = [
 tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
 
 [dependency-groups]
-dev = []
+dev = ["pytest>=9.0.3"]
 
 [tool.uv]
 fork-strategy = "fewest"
@@ -63,6 +71,7 @@ url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
 resiliparse = { index = "marin-resiliparse" }
+marinfold = { path = "../marinfold", editable = true }
 
 [tool.hatch.metadata]
 allow-direct-references = true

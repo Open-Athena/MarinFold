@@ -1,0 +1,68 @@
+[project]
+name = "exp147-models-on-the-fly-contacts-v1-pilot"
+version = "0.1.0"
+description = "Pilot on-the-fly contacts-v1 training from premade ESM Atlas contacts."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fsspec",
+    "gcsfs",
+    "marin-core>=0.2.56.dev202607230804,<0.3",
+    "marin-dupekit<0.3",
+    "marin-iris>=0.2.56.dev202607230804,<0.3",
+    "marin-levanter>=0.2.56.dev202607230804,<0.3",
+    "marin-rigging>=0.2.56.dev202607230804,<0.3",
+    "marin-zephyr>=0.2.56.dev202607230804,<0.3",
+    "marinfold",
+    "marinfold-models",
+    "numpy",
+    "pyarrow",
+    "transformers",
+]
+
+[project.optional-dependencies]
+tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
+cpu = [
+    "marin-core[cpu]",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+override-dependencies = [
+    "antlr4-python3-runtime==4.11",
+    "datasets>=3.1.0,<4.0.0",
+    "equinox>=0.11.10",
+    "omegaconf>=2.4.0.dev4",
+    "python-multipart>=0.0.22",
+    "transformers>=5.5.3,<6",
+    "wheel>=0.46.2",
+]
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+torch = [{ index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "codex/on-the-fly-contacts" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "codex/on-the-fly-contacts" }

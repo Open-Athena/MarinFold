@@ -22,10 +22,12 @@ ordered *position* list so they stay consistent with each other:
 (and unit-tested) without it installed.
 """
 
+import math
 import warnings
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import AMINO_ACIDS
 
@@ -147,6 +149,83 @@ class AnalyzedStructure:
     contacts: tuple[RawContact, ...]
     global_plddt: float
     source_path: Path
+
+
+ANALYZED_ROW_COLUMNS: tuple[str, ...] = (
+    "entry_id",
+    "seq_len",
+    "global_plddt",
+    "num_contacts",
+    "residue_resname",
+    "residue_resnum",
+    "residue_chain",
+    "contact_seq_i",
+    "contact_seq_j",
+    "contact_degree",
+)
+
+
+def analyzed_to_row(analyzed: AnalyzedStructure) -> dict[str, Any]:
+    """Serialize an analyzed structure to the reusable parquet row format."""
+    return {
+        "entry_id": analyzed.entry_id,
+        "seq_len": len(analyzed.residues),
+        "global_plddt": float(analyzed.global_plddt),
+        "num_contacts": len(analyzed.contacts),
+        "residue_resname": [residue.resname for residue in analyzed.residues],
+        "residue_resnum": [int(residue.resnum) for residue in analyzed.residues],
+        "residue_chain": [residue.chain for residue in analyzed.residues],
+        "contact_seq_i": [int(contact.seq_i) for contact in analyzed.contacts],
+        "contact_seq_j": [int(contact.seq_j) for contact in analyzed.contacts],
+        "contact_degree": [float(contact.degree) for contact in analyzed.contacts],
+    }
+
+
+def analyzed_from_row(
+    row: Mapping[str, Any],
+    *,
+    entry_id: str | None = None,
+    source_path: str | Path | None = None,
+) -> AnalyzedStructure:
+    """Reconstruct an analyzed structure from a reusable parquet row."""
+    resnames = list(row["residue_resname"])
+    resnums = list(row["residue_resnum"])
+    chains = list(row["residue_chain"])
+    if not (len(resnames) == len(resnums) == len(chains)):
+        raise ValueError("Residue columns must have equal lengths")
+
+    seq_i = list(row["contact_seq_i"])
+    seq_j = list(row["contact_seq_j"])
+    degrees = list(row["contact_degree"])
+    if not (len(seq_i) == len(seq_j) == len(degrees)):
+        raise ValueError("Contact columns must have equal lengths")
+
+    residues = tuple(
+        ResidueInfo(
+            seq_index=index,
+            resname=str(resname),
+            resnum=int(resnum),
+            chain=str(chain),
+        )
+        for index, (resname, resnum, chain) in enumerate(
+            zip(resnames, resnums, chains, strict=True)
+        )
+    )
+    contacts = tuple(
+        RawContact(seq_i=int(i), seq_j=int(j), degree=float(degree))
+        for i, j, degree in zip(seq_i, seq_j, degrees, strict=True)
+    )
+    raw_plddt = row.get("global_plddt")
+    global_plddt = float(raw_plddt) if raw_plddt is not None else math.nan
+    resolved_entry_id = entry_id if entry_id is not None else row["entry_id"]
+    resolved_source_path = Path(source_path) if source_path is not None else Path("<row>")
+    return AnalyzedStructure(
+        entry_id=str(resolved_entry_id),
+        residues=residues,
+        contacts=contacts,
+        global_plddt=global_plddt,
+        source_path=resolved_source_path,
+    )
 
 
 def _strip_structure_ext(stem: str) -> str:
