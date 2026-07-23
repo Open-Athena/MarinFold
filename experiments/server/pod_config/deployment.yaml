@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marinfold-inference-server
+  labels:
+    app: marinfold-inference-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marinfold-inference-server
+  template:
+    metadata:
+      labels:
+        app: marinfold-inference-server
+    spec:
+      containers:
+        - name: api
+          image: python:3.11-slim
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: MARINFOLD_SERVER_ENVIRONMENT
+              value: coreweave
+            - name: MARINFOLD_SERVER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: marinfold-inference-server-token
+                  key: token
+            - name: MARINFOLD_SERVER_REPO
+              value: https://github.com/Open-Athena/MarinFold.git
+            - name: MARINFOLD_SERVER_REF
+              value: main
+          command: ["/bin/sh", "-lc"]
+          args:
+            - |
+              set -eu
+              apt-get update
+              apt-get install -y --no-install-recommends git ca-certificates curl
+              rm -rf /var/lib/apt/lists/*
+              python -m pip install --no-cache-dir uv
+              git clone --depth 1 --branch "${MARINFOLD_SERVER_REF}" "${MARINFOLD_SERVER_REPO}" /workspace/MarinFold
+              cd /workspace/MarinFold/experiments/server
+              uv sync --no-dev
+              exec uv run uvicorn marinfold_server.app:app --host 0.0.0.0 --port 8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: workspace
+              mountPath: /mnt/marinfold-workspace
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: marinfold-workspace
