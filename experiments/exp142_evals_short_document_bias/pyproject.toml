@@ -1,0 +1,31 @@
+[project]
+name = "exp142-evals-short-document-bias"
+version = "0.1.0"
+description = "Probe whether the exp75 E8 contacts-v1 1.5B under-generates contacts / emits too-short rollout documents vs ground truth, and whether it worsens with length. Local-GPU (HF transformers) rollout probe reusing the exp98/exp102 harness on the exp89 eval set."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold[transformers]",  # build_document / residues_from_sequence + torch/accelerate
+    "transformers>=4.51,<5",    # Qwen3 support; <5 so the levanter llama3 rope config loads
+    "torch>=2.4",
+    "accelerate>=0.30",
+    "safetensors",
+    "huggingface_hub>=0.24",
+    "pyarrow",
+    "pandas>=2.0",
+    "numpy",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
