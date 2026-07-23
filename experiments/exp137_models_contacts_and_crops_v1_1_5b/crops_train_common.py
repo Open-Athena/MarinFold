@@ -129,9 +129,16 @@ CROPS_SHUFFLE: object = (
 # allocation fallback (v5p-128 -> v5p-64 -> v5p-32 -> v6e-*), see the launcher.
 _TPU_TYPE = os.environ.get("EXP137_TPU", "v5p-128")
 _TPU_ZONE = os.environ.get("EXP137_ZONE", "us-east5-a")
+# Placement can be a single ZONE (default) or a REGION list (Eric-style,
+# `regions=[region]`). v5p gangs only register autoscaler demand under the region
+# form -- a zone= v5p request sits in "coscheduling" with Demand=0 forever, whereas
+# regions=["us-east5"] binds (matches exp117_sweep.py's with_tpu(regions=...)).
+# Set EXP137_REGION (e.g. "us-east5") to use the region form.
+_TPU_REGION = os.environ.get("EXP137_REGION")
 _TPU_SLICES = int(os.environ.get("EXP137_SLICES", "1"))
+_PLACEMENT = {"regions": [_TPU_REGION.lower()]} if _TPU_REGION else {"zone": _TPU_ZONE}
 PROTEIN_RESOURCES = ResourceConfig.with_tpu(
-    _TPU_TYPE, slice_count=_TPU_SLICES, cpu=32, ram="128g", disk="50g", zone=_TPU_ZONE,
+    _TPU_TYPE, slice_count=_TPU_SLICES, cpu=32, ram="128g", disk="50g", **_PLACEMENT,
 )
 
 
