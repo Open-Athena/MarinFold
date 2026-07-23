@@ -31,6 +31,7 @@ produced which eval number.
 
 import os
 import re
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import quote
@@ -369,6 +370,7 @@ def _download_bucket_prefix(location: _HFLocation) -> Path:
     match the bucket's metadata.
     """
     from huggingface_hub.constants import HF_HUB_CACHE
+    from huggingface_hub.utils import WeakFileLock
 
     files = _list_bucket_files(location.repo_id, location.subfolder)
     if not files:
@@ -382,7 +384,17 @@ def _download_bucket_prefix(location: _HFLocation) -> Path:
         local_path = local_root / file_entry.path
         if local_path.is_file() and local_path.stat().st_size == file_entry.size:
             continue
-        _download_bucket_file(location.repo_id, file_entry, local_path)
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        # Serialize concurrent downloaders of the SAME file so they don't
+        # interleave writes (e.g. a parallel eval sweep sharing one
+        # HF_HUB_CACHE, or the default bucket model pulled by several
+        # processes at once). This mirrors ``snapshot_download``'s own
+        # per-file locking, which the hand-rolled bucket path otherwise
+        # lacks. Re-check under the lock so only the first process downloads.
+        with WeakFileLock(f"{local_path}.lock"):
+            if local_path.is_file() and local_path.stat().st_size == file_entry.size:
+                continue
+            _download_bucket_file(location.repo_id, file_entry, local_path)
 
     result = (
         local_root
@@ -446,7 +458,14 @@ def _download_bucket_file(
     from huggingface_hub.utils import build_hf_headers
 
     local_path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = local_path.with_name(f"{local_path.name}.incomplete")
+    # Unique per-process temp name so two concurrent downloaders of the same
+    # file never share (and corrupt) one ``.incomplete`` scratch file; the
+    # final ``replace`` is atomic, so any observer sees either no file or a
+    # complete one. Defense in depth alongside the per-file lock in
+    # ``_download_bucket_prefix``.
+    temp_path = local_path.with_name(
+        f"{local_path.name}.{os.getpid()}.{uuid.uuid4().hex}.incomplete"
+    )
     try:
         with temp_path.open("wb") as fh:
             http_get(

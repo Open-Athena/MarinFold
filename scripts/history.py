@@ -377,7 +377,6 @@ def _experiment_from_wandb_run(run) -> str:
     We look at config + tags + group. If none looks like ``exp<N>_<kind>_<name>``,
     fall back to ``no_experiment``.
     """
-    exp_re = re.compile(r"^exp\d+_[a-z_]+$")
     config = dict(run.config) if hasattr(run, "config") else {}
     candidates = []
     candidates.append(config.get("experiment"))
@@ -385,7 +384,11 @@ def _experiment_from_wandb_run(run) -> str:
     candidates.append(getattr(run, "group", None))
     candidates.extend(getattr(run, "tags", None) or [])
     for c in candidates:
-        if isinstance(c, str) and exp_re.match(c):
+        # Use the canonical parser (not a private regex) so this stays a single
+        # source of truth with _kind_from_wandb_run below: it accepts digits in
+        # the <name> token (e.g. exp67_models_contacts_v1_1_5b) and enforces
+        # that the second token is a real KIND.
+        if isinstance(c, str) and parse_experiment_dir_name(c) is not None:
             return c
     return "no_experiment"
 

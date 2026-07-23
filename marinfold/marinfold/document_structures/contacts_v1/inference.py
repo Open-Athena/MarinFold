@@ -299,7 +299,10 @@ def _pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
 def _sym_from_fwd(fwd: np.ndarray) -> np.ndarray:
     """Symmetrized geo-mean log-score ``0.5·(fwd + fwd.T)``.
 
-    The pairwise *ranking* score, and the key that breaks rollout's vote ties.
+    Used only as the key that breaks rollout's large zero-vote mass. The
+    pairwise readout ranks by ``P(contact)`` (:func:`_pcontact_from_fwd`)
+    instead; the two orderings differ for orientation-asymmetric pairs but
+    agree with the exp82/exp89 sym-ranked numbers within backend noise.
     """
     return 0.5 * (fwd + fwd.T)
 
