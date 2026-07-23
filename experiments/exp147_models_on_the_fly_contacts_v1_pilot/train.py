@@ -11,6 +11,7 @@ from datetime import timedelta
 import jmp
 from fray.types import ResourceConfig
 from haliax.partitioning import ResourceAxis
+from huggingface_hub import snapshot_download
 from iris.client.client import get_iris_ctx
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
@@ -52,6 +53,16 @@ CONTACTS_V1_VAL_GLOB = f"{ROOT}/exp53_contacts_v1_5x/documents/val/*.parquet"
 CONTACTS_TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
 CONTACTS_TOKENIZER_REVISION = "5d68a24a899f"
 CONTACTS_TOKENIZER = f"{CONTACTS_TOKENIZER_REPO}@{CONTACTS_TOKENIZER_REVISION}"
+TOKENIZER_ALLOW_PATTERNS = (
+    "tokenizer*",
+    "chat_template*",
+    "special_tokens*",
+    "added_tokens*",
+    "vocab*",
+    "merges*",
+    "spiece*",
+    "*.tiktoken",
+)
 ARTIFACT_VERSION = os.environ.get("EXP147_VERSION", "exp147-dev")
 VALIDATION_VERSION = "2026.07.23"
 
@@ -115,8 +126,31 @@ def _validation_component(cache: TokenizedCache) -> DatasetComponent:
     return dataclasses.replace(cache.as_component(), pack=True)
 
 
+def _with_local_tokenizer(
+    pod_config: TrainLmOnPodConfig, tokenizer_path: str
+) -> TrainLmOnPodConfig:
+    train_config = dataclasses.replace(
+        pod_config.train_config,
+        data=dataclasses.replace(
+            pod_config.train_config.data,
+            tokenizer=tokenizer_path,
+        ),
+    )
+    return dataclasses.replace(pod_config, train_config=train_config)
+
+
+def _run_with_pinned_tokenizer(pod_config: TrainLmOnPodConfig) -> None:
+    """Stage the pinned tokenizer on the TPU worker before starting Levanter."""
+    tokenizer_path = snapshot_download(
+        repo_id=CONTACTS_TOKENIZER_REPO,
+        revision=CONTACTS_TOKENIZER_REVISION,
+        allow_patterns=list(TOKENIZER_ALLOW_PATTERNS),
+    )
+    run_levanter_train_lm(_with_local_tokenizer(pod_config, tokenizer_path))
+
+
 def _train_job(pod_config: TrainLmOnPodConfig) -> None:
-    remote(run_levanter_train_lm, resources=pod_config.resources)(pod_config)
+    remote(_run_with_pinned_tokenizer, resources=pod_config.resources)(pod_config)
 
 
 def _identity_config(

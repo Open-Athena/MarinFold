@@ -32,7 +32,12 @@ from premade_contacts_dataset import (
 )
 from smoke_dataset import main as smoke_dataset_main
 from stage_pilot import _destination_path
-from train import CONTACTS_TOKENIZER, CONTACTS_TOKENIZER_REPO, build_step
+from train import (
+    CONTACTS_TOKENIZER,
+    CONTACTS_TOKENIZER_REPO,
+    _with_local_tokenizer,
+    build_step,
+)
 
 
 def _analyzed(entry_id: str, length: int) -> AnalyzedStructure:
@@ -289,3 +294,7 @@ def test_launch_config_contains_direct_dataset_and_expected_routing():
     assert train_config.trainer.tracker.entity == "open-athena"
     assert train_config.trainer.tracker.project == "MarinFold"
     assert config.resources.zone == "us-east5-b"
+
+    local_config = _with_local_tokenizer(config, "/tmp/pinned-tokenizer")
+    assert local_config.train_config.data.tokenizer == "/tmp/pinned-tokenizer"
+    assert config.train_config.data.tokenizer == CONTACTS_TOKENIZER
