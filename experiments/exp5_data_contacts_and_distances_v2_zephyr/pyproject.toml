@@ -1,0 +1,44 @@
+[project]
+name = "exp5-data-contacts-and-distances-v2-zephyr"
+version = "0.1.0"
+description = "Generate contacts-and-distances-v2 training documents at scale on the marin Iris cluster via Zephyr. Wraps exp34's local impl."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold",        # build_tokenizer for the `tokenizer` subcommand
+    "gemmi>=0.6",       # mmCIF parsing — version matches exp34's pin
+    "numpy",            # pulled in by exp34's parse + generate
+    "pyarrow",          # parquet read/write + Zephyr-native row dicts
+    "marin-zephyr",     # distributed generation on Iris
+    "fsspec",           # uniform local + cloud file IO for per-row cif fetch
+    "gcsfs",            # gs:// for the AFDB public bucket + marin output buckets
+    "huggingface_hub",  # hf:// for the timodonnell/afdb-1.6M manifest
+]
+# Note on the exp34 dep: exp5's ``cli.py`` imports exp34's ``parse`` /
+# ``generate`` / ``vocab`` via a ``sys.path`` shim at module load — exp34 is
+# ``package = false`` in its own pyproject so we can't path-dep it as an
+# installable package. The shim makes its modules visible by their flat
+# names. Long-term, v2 should graduate to
+# ``marinfold/marinfold/document_structures/contacts_and_distances_v2/``
+# (per Tim's #38 review); then the shim disappears and this becomes a
+# regular ``from marinfold... import`` line.
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", branch = "alxmrs/stamp-iris-build-date" }
