@@ -102,21 +102,70 @@ the pinned PyPI `marin-iris` dev wheel has aged past the 14-day client-freshness
 
 ## Status
 
-- ✅ **Reusable-contacts serializer landed** in `marinfold` (`analyzed_to_row` /
-  `analyzed_from_row`), with a round-trip **byte-identity** test proving a document
-  built from the saved contacts equals one built directly (no pyconfind).
-- ✅ **Worker validated end-to-end on real ESM-Atlas cif** (8 structures pulled from
-  `part_00000` via range reads; gemmi 0.7 + pyconfind 0.6): all single-chain (model 0,
-  chain `A`), 0 drops, combined rows well-formed, and the saved **raw** contacts are a
-  superset of the document's selected contacts (e.g. 91 raw ⊃ 34 emitted). Provenance
-  (`ptm`, `cluster_size`, `source`, `split`, `seq_cluster_id`) passes through.
-- ⏳ **Stage 0 mirror** — kicked off on an iris pod (see the run-history entry).
-- ⏳ **Stage 1 smoke → GATE → full run** — pending the mirror.
+**DONE** — corpus generated and published (2026-07-23).
 
 ## Results
 
-_(Fill in after the run completes.)_
+Generated on **CoreWeave Genoa** (`cw-us-east-02a`, 4× `cd-gp-a192-genoa` =
+384 physical EPYC 9454 cores, reserved/pinned) rather than the GCP marin pool —
+see "Where it ran" below.
+
+| | |
+| --- | --- |
+| Documents | **66,759,922** (1:1 with the source; **41 drops**, 0.00006 %) |
+| Tokens | **71,383,345,402** (~71.4 B), mean **1,069**/doc |
+| Raw pyconfind contacts | **31,884,900,670**, mean **478**/structure |
+| Shards | 3,338, verified **3,338/3,338 coverage, 0 missing, 0 duplicates** |
+| Mean protein length | 237.3 residues (source range 60–1000) |
+| Compute | ~2,850 core-hours (Genoa 1-core: 3,074 s per 20 k-structure part) |
+
+**Published** to [`open-athena/MarinFold`](https://huggingface.co/buckets/open-athena/MarinFold)
+(both verified by **anonymous** read-back):
+
+| View | Path | Size |
+| --- | --- | --- |
+| Documents corpus | `data/document_structures/contacts_v1_esm_atlas/train/` (+ `tokenizer/`, `README.md`) | 133.3 GB |
+| Reusable contacts | `data/contacts/esm_atlas_esmfold2_distill/` (+ `README.md`) | 316.7 GB |
+
+This is **~16× the AFDB `contacts_v1` corpus** (4.21 M docs / 4.67 B tokens) —
+the "67 M proteins instead of 4 M" expansion from #91.
+
+### Validation
+- Reusable-contacts serializer (`analyzed_to_row` / `analyzed_from_row`) landed in
+  `marinfold` with a round-trip **byte-identity** test: a document built from the
+  saved contacts equals one built directly, so future formats skip pyconfind.
+- Worker validated on real ESM-Atlas cif before launch (single-chain, 0 drops, raw
+  contacts ⊃ document contacts). The published `shard-00000` row 0 matches that
+  local validation exactly (`0000052aa00ab212061f7c6987fd87ae`, 60 residues,
+  91 raw contacts) — deterministic from local laptop to published corpus.
+
+### Where it ran (and why)
+The GCP marin CPU pool is a small `n2-highmem-2` **fallback** scale group, not a
+fan-out pool: a 256-worker request was granted **~6 workers** and never scaled,
+projecting **~37 days**. CoreWeave's `cpu-genoa` pool is *reserved and pinned
+always-warm*, so 512 workers materialized in ~10 minutes. Same job: 37 days → ~7 h.
+
+### Operational notes (cost us time; worth knowing)
+- **pyconfind `[fast]` (numba) auto-parallelizes to ~26 cores per worker.** Pin
+  `NUMBA_NUM_THREADS=1` (+`OMP`/`OPENBLAS`) and scale by worker count, else workers
+  oversubscribe the node.
+- **CoreWeave pods default to 5 Gi ephemeral storage** — pass `--disk` for anything
+  that stages files locally (the mirror was evicted twice before this was found).
+- **HF rate-limits the bucket `xet-write-token` endpoint.** 16 upload workers →
+  sustained 429s and failure; **4 workers → zero 429s and *faster* overall**.
+- **marin API drift**: `Dataset`/`ZephyrContext`/`ResourceConfig` now live in
+  `zephyr.execution`; pin `httpx<1` (the 1.0.dev prerelease breaks `iris` on import).
+- A **cluster-wide control-plane restart** killed the main run at 88 % and the first
+  resume batch. Recovery was by *verifying coverage against object storage* rather
+  than trusting job status — which also caught duplicate parts flushed by zombie
+  workers after the kill. Any rerun of this shape should verify coverage + dedupe
+  before publishing.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The corpus exists, is complete (3,338/3,338 parts, 0 gaps, 0 duplicates), and is
+published with its tokenizer and dataset READMEs. Two artifacts, not one: the
+**documents corpus** is ready for training (#124-style follow-ups), and the
+**reusable pyconfind contacts** mean the next document format over this source
+(e.g. `contacts-and-crops-v1`) costs a cheap serialization pass instead of
+~2,850 core-hours of pyconfind.
