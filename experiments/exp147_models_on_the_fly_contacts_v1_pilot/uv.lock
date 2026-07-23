@@ -1648,7 +1648,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=codex%2Fon-the-fly-contacts#c01e0b41b37ee5dd0d47f107fe2cf7855ab27c36" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=codex%2Fon-the-fly-contacts#b09574ff90b8f4f9fa49a86c4e2907dd25dd0330" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
@@ -1663,7 +1663,7 @@ dependencies = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=codex%2Fon-the-fly-contacts#c01e0b41b37ee5dd0d47f107fe2cf7855ab27c36" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=codex%2Fon-the-fly-contacts#b09574ff90b8f4f9fa49a86c4e2907dd25dd0330" }
 dependencies = [
     { name = "fsspec", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "gitpython", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },

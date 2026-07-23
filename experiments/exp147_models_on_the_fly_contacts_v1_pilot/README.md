@@ -124,6 +124,25 @@ uv run iris --cluster=marin job run --no-wait \
   -- python train.py --run
 ```
 
+The schedule-matched sanity run keeps exp117's 35,680-step optimizer horizon
+and 1,115-step evaluation cadence. It first tries a same-region v6e-32; the
+first two validation points are the decision points:
+
+```bash
+uv run iris --cluster=marin job run --no-wait \
+  --cpu=1 --memory=2G --extra=cpu --zone=us-east5-b \
+  -e WANDB_API_KEY "$WANDB_API_KEY" \
+  -e EXP147_STEPS 35680 \
+  -e EXP147_STEPS_PER_EVAL 1115 \
+  -e EXP147_NUM_SHARDS 3338 \
+  -e EXP147_TPU v6e-32 \
+  -e EXP147_ZONE us-east5-b \
+  -e EXP147_PER_DEVICE_PARALLELISM 8 \
+  -e EXP147_NAME exp147-otf-contacts-v1-1_5b-steps35680-bs256-v6e32 \
+  -e EXP147_VERSION steps35680-v6e32-dev \
+  -- python train.py --run
+```
+
 Before submission, the current branch must be pushed and this experiment's
 lockfile refreshed to that pushed commit so Iris workers install the same
 document and loader code. GCP application-default credentials are also needed
