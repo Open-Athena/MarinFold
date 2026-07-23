@@ -118,7 +118,7 @@ that exact graph through a small CPU coordinator. The coordinator dispatches
 the validation-tokenization and v6e-8 worker jobs:
 
 ```bash
-uv run iris --cluster=marin job run --no-wait \
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
   --cpu=1 --memory=2G --extra=cpu --zone=us-east5-b \
   -e WANDB_API_KEY "$WANDB_API_KEY" \
   -- python train.py --run
@@ -129,7 +129,7 @@ and 1,115-step evaluation cadence. It first tries a same-region v6e-32; the
 first two validation points are the decision points:
 
 ```bash
-uv run iris --cluster=marin job run --no-wait \
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
   --cpu=1 --memory=2G --extra=cpu --zone=us-east5-b \
   -e WANDB_API_KEY "$WANDB_API_KEY" \
   -e EXP147_STEPS 35680 \
