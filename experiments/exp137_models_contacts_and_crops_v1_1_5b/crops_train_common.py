@@ -104,14 +104,19 @@ MODEL_CONFIG = Qwen3Config(
 
 CROPS_DATA_SEED = 0  # exp117 uses data_seed=0
 
-# Match Eric's exp117 shuffle EXACTLY: a hierarchical Feistel BLOCK shuffle, not a
-# full permutation. exp117_sweep.py sets `SHUFFLE = BlockShuffleConfig(io_block_size
-# =256, window_blocks=512, perm_type="feistel")` (also the levanter LmDataConfig
-# default). We previously passed `shuffle=True`, which levanter routes to a FULL
-# Feistel permutation (ds.shuffle) instead of ds.block_shuffle -- a real divergence
-# on the round/pLDDT-ordered corpus (full perm mixes all rounds uniformly; the block
-# shuffle preserves macro round-order while mixing within ~131k-sequence windows).
-CROPS_SHUFFLE = BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel")
+# Shuffle policy. Default "block" == Eric's exp117 EXACTLY: a hierarchical Feistel
+# BLOCK shuffle (BlockShuffleConfig(io_block_size=256, window_blocks=512, feistel),
+# also the levanter LmDataConfig default -> ds.block_shuffle). EXP137_SHUFFLE=full
+# selects `shuffle=True`, which levanter routes to a FULL Feistel permutation
+# (ds.shuffle) -- a real divergence on the round/pLDDT-ordered corpus (full perm
+# mixes all rounds uniformly; block preserves macro round-order, mixing within
+# ~131k-sequence windows). The two original runs launched on "full" (before the fix
+# was found); use EXP137_SHUFFLE=full to RESUME them consistently.
+_SHUFFLE_MODE = os.environ.get("EXP137_SHUFFLE", "block")
+CROPS_SHUFFLE: object = (
+    True if _SHUFFLE_MODE == "full"
+    else BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel")
+)
 
 # Default TPU slice. exp137 is a long (~75B-token) from-scratch run, so we target
 # a large dedicated v5p slice in us-east5 (in-region with the marin-us-east5 data
