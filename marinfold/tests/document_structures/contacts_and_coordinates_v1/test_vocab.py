@@ -64,8 +64,16 @@ def test_xyz_token_out_of_range(bad):
         xyz_token(bad)
 
 
-def test_inherited_block_is_contacts_v1_unchanged():
-    assert inherited_tokens() == contacts_v1_all_domain_tokens()
+def test_inherited_block_is_contacts_v1_minus_retraction():
+    # The inherited block is contacts-v1's vocab with its later <retract>
+    # extension (issue #158) removed — this format has no retraction, and
+    # inheriting that trailing token would shift all 1001 coordinate ids.
+    from marinfold.document_structures.contacts_v1.vocab import retract_tokens
+
+    full = contacts_v1_all_domain_tokens()
+    retract = set(retract_tokens())
+    assert inherited_tokens() == [t for t in full if t not in retract]
+    assert set(full) - set(inherited_tokens()) == retract
     assert len(inherited_tokens()) == 2844
 
 

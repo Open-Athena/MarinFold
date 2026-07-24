@@ -66,6 +66,9 @@ from marinfold.document_structures.contacts_v1.vocab import (
 from marinfold.document_structures.contacts_v1.vocab import (
     position_token as _contacts_v1_position_token,
 )
+from marinfold.document_structures.contacts_v1.vocab import (
+    retract_tokens as _contacts_v1_retract_tokens,
+)
 
 
 NAME = "contacts-and-coordinates-v1"
@@ -134,14 +137,22 @@ def atom_token(atom_name: str) -> str:
 
 
 def inherited_tokens() -> list[str]:
-    """The full contacts-v1 domain vocab, carried forward unchanged.
+    """The contacts-v1 domain vocab (minus retraction), carried forward unchanged.
 
-    This is contacts-v1's entire ``all_domain_tokens()`` list (its 5 native
-    tokens, the contacts-and-distances-v1 block, and its trailing
-    sequence-only token) — 2844 tokens — reused verbatim so every id is
-    byte-stable against contacts-v1's own tokenizer.
+    This is contacts-v1's ``all_domain_tokens()`` list (its 5 native tokens,
+    the contacts-and-distances-v1 block, and its trailing sequence-only
+    token) — 2844 tokens — reused verbatim so every id is byte-stable
+    against contacts-v1's own tokenizer.
+
+    contacts-v1's later ``<retract>`` extension (issue #158) is **excluded**:
+    this format has no retraction, and inheriting that trailing token would
+    shove all 1001 coordinate tokens up by one id and break every published
+    coordinate-format checkpoint. Filtering it out (rather than slicing a
+    fixed length) keeps this robust to any further contacts-v1 growth while
+    pinning the 2844-token inherited block.
     """
-    return _contacts_v1_all_domain_tokens()
+    retract = set(_contacts_v1_retract_tokens())
+    return [t for t in _contacts_v1_all_domain_tokens() if t not in retract]
 
 
 def native_tokens() -> list[str]:
