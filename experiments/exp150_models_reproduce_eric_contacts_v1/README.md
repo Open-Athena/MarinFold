@@ -174,7 +174,52 @@ than 14 days, while the job itself runs this dir's pinned marin.
 
 ## Results
 
-_Pending._
+**Run in progress** (launched 2026-07-23).
+
+### Pre-launch verification (complete)
+
+**Corpus + tokenizer are bit-identical to Eric's** — `verify_cache.py` passes:
+
+| cache | ours | Eric's (#117) |
+|---|---|---|
+| contacts-v1-train | 4,676,753,425 tokens / 4,129,682 docs | 4,676,753,425 / 4,129,682 |
+| contacts-v1-val | 47,821,958 tokens / 41,954 docs | 47,821,958 / 41,954 |
+
+This closes the cache-equality criterion: **the training harness is the only
+remaining variable.** It also confirms divergence #2 is harmless — the bare
+repo id resolves to the same tokenizer as his `@5d68a24a899f` pin.
+
+`verify_config.py` passes all 35 knobs on the built step. It caught one real
+defect: leaving `steps_per_hf_export` unset makes it inherit `steps_per_export`
+and HF-export every epoch, which Eric's run does not do.
+
+**Smoke** (`exp150-smoke-...`, v6e-16): 20 steps, exit 0, 0 preemptions,
+checkpoint written, loss 7.86 → 6.77 from ln(2845) = 7.95 (a from-scratch start,
+not a warm-start value). Logged `eval/contacts-v1-val/loss = 6.473`, confirming
+the comparison series is correctly wired.
+
+### The run
+
+| | |
+|---|---|
+| W&B | `open-athena/MarinFold` → `exp150-cv1repro-1_5b-e16-lr3p162e-3-wd0p2-bs128` |
+| checkpoints | `{MARIN_PREFIX}/checkpoints/exp150-cv1repro-1_5b-e16-lr3p162e-3-wd0p2-bs128-<wandbid>/` |
+| slice | v6e-16 / us-east5-b at **8.1 s/it** → 71,360 steps ≈ **6.7 days** |
+
+**Why not v6e-64** (~30h at #137's 1.5 s/it): it never bound. Its 16-task gang
+sat `pending` while the pool read `Demand=0` — the autoscaler was never asked,
+so waiting was futile, not slow. Every 32/64/128/256 pool (v6e *and* v5p) across
+us-east5, us-east1, europe-west4 and us-central1 read `Ready=0` at the same time,
+so relocating regions would not have helped either.
+
+The run is **slice-upgradeable**: `build_steps()` yields an identical step name
+for v6e-16/32/64 (resources aren't in the step hash), so relaunching the same
+name+config on a bigger slice resumes from the GCS checkpoint, costing at most
+one 4,460-step epoch. Hardware and wall-clock are not part of the reproduction.
+
+> Operational note: a root job reporting `State: running` means only the
+> **driver** is up. Confirm training with actual `loss=` lines and check the
+> pool's `Demand` column.
 
 ## Conclusion
 
