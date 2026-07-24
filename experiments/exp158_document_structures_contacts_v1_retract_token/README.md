@@ -38,9 +38,12 @@ Library change in `marinfold/marinfold/document_structures/contacts_v1/`, plus t
 
 Mint one token, `<retract>`, as its own trailing group **appended last** (after `<contacts-v1.sequence_only>`), mirroring the sequence-only precedent. It is kept out of `NATIVE_TOKENS` because that list sits *before* the inherited contacts-and-distances-v1 block — adding to it would shift every downstream ID. Appended last, every pre-existing ID (including the sequence-only token's) is unchanged; a checkpoint only grows its embedding by one row. New helpers: `RETRACT_TOKEN`, `RETRACT_TOKENS`, `retract_tokens()`.
 
-### 2. Coordinate-format ID stability (`contacts_and_coordinates_v1/vocab.py`)
+### 2. Coordinate-format ID stability + mixture superset (`contacts_and_coordinates_v1/vocab.py`)
 
-The coordinate/crops format inherits contacts-v1's vocab as its leading block and appends 1001 coordinate tokens after — so a naive append to contacts-v1 would shove every coordinate ID up by one and break published coordinate checkpoints (exp105/130/132). Fixed by having its `inherited_tokens()` **exclude** the retraction group (filter, not a fixed slice), pinning the inherited block at the pre-retraction 2844 tokens. The coordinate format has no retraction, so no coordinate ID moves.
+The coordinate/crops format inherits contacts-v1's vocab as its leading block and appends 1001 coordinate tokens after — so a naive append to contacts-v1 would shove every coordinate ID up by one and break published coordinate checkpoints (exp105/130/132). Two changes:
+
+- `inherited_tokens()` **excludes** the retraction group (filter, not a fixed slice), pinning the inherited block at the pre-retraction 2844 tokens — so no coordinate ID moves.
+- `all_domain_tokens()` then **re-appends `<retract>` as its very last token** (after the coordinate block). This vocab is the **superset tokenizer** used to train mixtures of the shared-vocab formats (crops + contacts-v1 + …, cf. exp155 and the exp0 "all-doc-types" precedent); carrying `<retract>` lets a mixture include retraction-bearing contacts-v1 documents. Appended last, no coordinate ID moves (coordinate checkpoints gain one embedding row, append-only). `<retract>` therefore has a different ID here (trailing the coordinate block) than in contacts-v1's standalone tokenizer — fine, since each training run uses one tokenizer throughout. Total coordinate domain vocab 3845 → 3846.
 
 ### 3. The fold — the semantic contract (`read.py`, new module)
 
@@ -62,7 +65,7 @@ Added a *Retraction* subsection (fold semantics, orientation, malformed handling
 
 - **Byte-identical when off:** ✅ `generate.py` untouched (`git diff main` empty for it); all generation/think/sequence-only tests pass.
 - **Token IDs unchanged:** ✅ `test_retract_token_is_appended_last` / `test_trailing_tokens_take_the_final_ids_only`; contacts-v1 doc type still id 2, c-and-d block still starts at id 7, sequence-only id unchanged, `<retract>` takes the final id.
-- **Coordinate IDs unchanged:** ✅ `test_inherited_block_is_contacts_v1_minus_retraction` (inherited stays 2844); coordinate total still 3845.
+- **Coordinate IDs unchanged:** ✅ `test_inherited_block_is_contacts_v1_minus_retraction` (inherited stays 2844) + `test_retract_appended_last_leaves_coordinate_ids_fixed` (coordinate token ids fixed; `<retract>` trails the block for the mixture superset).
 - **Round-trip / fold:** ✅ `test_read.py` — contact/retract fold, orientation canonicalisation, re-emit, empty section.
 - **Long-distance fold:** ✅ `test_long_distance_retract`.
 - **Malformed handling:** ✅ counted + tested (`test_read.py`).
