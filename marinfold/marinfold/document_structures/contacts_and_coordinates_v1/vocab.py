@@ -33,7 +33,10 @@ than remapping every existing embedding to a new id.
 
 The 1001 native tokens are the doc-type token ``<contacts-and-coordinates-v1>``
 followed by the 1000 coordinate tokens ``<xyz-000>`` .. ``<xyz-999>`` in
-numeric order. Total domain vocab: 3845 tokens (3847 with ``<pad>``/``<eos>``).
+numeric order. contacts-v1's ``<retract>`` token is then appended last so
+this vocab is a retraction-capable **superset tokenizer** for mixtures (see
+:func:`all_domain_tokens`); this format itself never emits ``<retract>``.
+Total domain vocab: 3846 tokens (3848 with ``<pad>``/``<eos>``).
 """
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
@@ -187,6 +190,15 @@ def _validate_reuse() -> None:
             f"contacts-and-coordinates-v1 native tokens collide with the "
             f"inherited block: {sorted(clashes)}"
         )
+    # The trailing <retract> token (appended by all_domain_tokens for mixture
+    # tokenizers) must be disjoint from both, so appending it adds no dup id.
+    retract = set(_contacts_v1_retract_tokens())
+    retract_clashes = retract & (inherited | set(NATIVE_TOKENS))
+    if retract_clashes:
+        raise ValueError(
+            f"contacts-and-coordinates-v1 retract token collides with an "
+            f"existing token: {sorted(retract_clashes)}"
+        )
 
 
 _validate_reuse()
@@ -198,8 +210,22 @@ def all_domain_tokens() -> list[str]:
     ``build_tokenizer`` prepends the ``<pad>`` / ``<eos>`` specials (ids 0
     and 1); this function returns the domain tokens only, starting at id 2.
 
-    The group order — the entire inherited contacts-v1 block first, then
-    this format's 1001 native tokens (doc type, then ``<xyz-000>`` ..
-    ``<xyz-999>``) — and the within-group order are both load-bearing.
+    The group order is load-bearing: the entire inherited contacts-v1 block
+    first (2844 tokens, retraction excluded), then this format's 1001 native
+    tokens (doc type, then ``<xyz-000>`` .. ``<xyz-999>``), then contacts-v1's
+    ``<retract>`` appended **last**.
+
+    Why ``<retract>`` is carried here even though this format never emits it:
+    this vocab is the **superset tokenizer** used to train mixtures of the
+    shared-vocab formats (e.g. crops + contacts-v1 + …). For a mixture to
+    include retraction-bearing contacts-v1 documents, the shared tokenizer
+    must contain ``<retract>``. Appending it **after** the coordinate block
+    (rather than inheriting it inside the 2844-token prefix) keeps every
+    coordinate-token id fixed, so published coordinate/crops checkpoints stay
+    byte-stable and simply gain one embedding row. Note this puts ``<retract>``
+    at a different id than in contacts-v1's own standalone tokenizer (it
+    trails the coordinate block here); that is fine — a training run uses one
+    tokenizer throughout, and existing checkpoints warm-start append-only into
+    either.
     """
-    return [*inherited_tokens(), *native_tokens()]
+    return [*inherited_tokens(), *native_tokens(), *_contacts_v1_retract_tokens()]
