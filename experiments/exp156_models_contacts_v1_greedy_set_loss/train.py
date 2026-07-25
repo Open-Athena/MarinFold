@@ -17,6 +17,7 @@ a contacts-v1 greedy latent-set objective.
 import argparse
 import dataclasses
 import os
+from collections.abc import Callable
 from datetime import timedelta
 
 import jmp
@@ -485,6 +486,34 @@ def _run_single_pass_smoke(config: TrainLmOnPodConfig) -> None:
         print(f"[exp156] single-pass greedy-set smoke loss = {float(loss):.6f}")
 
 
+def _gpu_telemetry_enabled() -> bool:
+    return EXP156_ACCELERATOR == "gpu" and os.environ.get("EXP156_ENABLE_GPU_TELEMETRY", "1") != "0"
+
+
+def _run_with_gpu_telemetry(pod_config: TrainLmOnPodConfig, train_fn: Callable[[TrainLmOnPodConfig], None]) -> None:
+    if not _gpu_telemetry_enabled():
+        train_fn(pod_config)
+        return
+
+    try:
+        from marin.monitoring.gpu_telemetry import NvidiaSmiTelemetryConfig, nvidia_smi_telemetry
+    except ModuleNotFoundError:
+        from exp156_gpu_telemetry import NvidiaSmiTelemetryConfig, nvidia_smi_telemetry
+
+    output_uri = f"{pod_config.output_path.rstrip('/')}/telemetry/gpu"
+    telemetry_config = NvidiaSmiTelemetryConfig(
+        output_uri=output_uri,
+        interval=float(os.environ.get("EXP156_GPU_TELEMETRY_INTERVAL", "5")),
+        records_per_chunk=int(os.environ.get("EXP156_GPU_TELEMETRY_RECORDS_PER_CHUNK", "120")),
+        max_queue_items=int(os.environ.get("EXP156_GPU_TELEMETRY_MAX_QUEUE_ITEMS", "10000")),
+        log_every=int(os.environ.get("EXP156_GPU_TELEMETRY_LOG_EVERY", "120")),
+        stop_timeout=float(os.environ.get("EXP156_GPU_TELEMETRY_STOP_TIMEOUT", "30")),
+    )
+    print(f"[exp156] writing GPU telemetry to {output_uri}")
+    with nvidia_smi_telemetry(telemetry_config):
+        train_fn(pod_config)
+
+
 def _run_with_pinned_tokenizer(pod_config: TrainLmOnPodConfig) -> None:
     """Stage tokenizer and optional HF warm-start before custom training."""
     from marinfold.registry import resolve_model
@@ -525,12 +554,20 @@ def _run_stock_next_token_train(pod_config: TrainLmOnPodConfig) -> None:
     )
 
 
+def _run_stock_next_token_train_with_telemetry(pod_config: TrainLmOnPodConfig) -> None:
+    _run_with_gpu_telemetry(pod_config, _run_stock_next_token_train)
+
+
+def _run_greedy_set_train_with_telemetry(pod_config: TrainLmOnPodConfig) -> None:
+    _run_with_gpu_telemetry(pod_config, _run_with_pinned_tokenizer)
+
+
 def _train_job(pod_config: TrainLmOnPodConfig) -> None:
     if LOSS_KIND == "next-token":
-        remote(_run_stock_next_token_train, resources=pod_config.resources)(pod_config)
+        remote(_run_stock_next_token_train_with_telemetry, resources=pod_config.resources)(pod_config)
         return
     if LOSS_KIND == "greedy-set":
-        remote(_run_with_pinned_tokenizer, resources=pod_config.resources)(pod_config)
+        remote(_run_greedy_set_train_with_telemetry, resources=pod_config.resources)(pod_config)
         return
     raise ValueError(f"unsupported EXP156_LOSS_KIND={LOSS_KIND!r}")
 
@@ -573,6 +610,13 @@ def _identity_config(
             "shuffle": True,
             "mixture_block_size": 1,
             "block_cross_document_attention": True,
+        },
+        "gpu_telemetry": {
+            "enabled": EXP156_ACCELERATOR == "gpu" and os.environ.get("EXP156_ENABLE_GPU_TELEMETRY", "1") != "0",
+            "interval": float(os.environ.get("EXP156_GPU_TELEMETRY_INTERVAL", "5")),
+            "records_per_chunk": int(os.environ.get("EXP156_GPU_TELEMETRY_RECORDS_PER_CHUNK", "120")),
+            "max_queue_items": int(os.environ.get("EXP156_GPU_TELEMETRY_MAX_QUEUE_ITEMS", "10000")),
+            "log_every": int(os.environ.get("EXP156_GPU_TELEMETRY_LOG_EVERY", "120")),
         },
         "trainer": {
             "train_batch_size": train_batch_size,
@@ -691,7 +735,16 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             pad_tokenizer_to_match_model=True,
         )
         env_vars = {"WANDB_ENTITY": "open-athena", "WANDB_PROJECT": "MarinFold"}
-        for env_name in ("WANDB_API_KEY", "WANDB_MODE"):
+        for env_name in (
+            "WANDB_API_KEY",
+            "WANDB_MODE",
+            "EXP156_ENABLE_GPU_TELEMETRY",
+            "EXP156_GPU_TELEMETRY_INTERVAL",
+            "EXP156_GPU_TELEMETRY_RECORDS_PER_CHUNK",
+            "EXP156_GPU_TELEMETRY_MAX_QUEUE_ITEMS",
+            "EXP156_GPU_TELEMETRY_LOG_EVERY",
+            "EXP156_GPU_TELEMETRY_STOP_TIMEOUT",
+        ):
             env_value = os.environ.get(env_name)
             if env_value:
                 env_vars[env_name] = env_value
