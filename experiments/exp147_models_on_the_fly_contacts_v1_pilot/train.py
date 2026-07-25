@@ -9,6 +9,10 @@ import os
 from datetime import timedelta
 
 import jmp
+from any_permissible import (
+    AnyPermissibleQwen3Config,
+    ContactOracleDataConfig,
+)
 from fray.types import ResourceConfig
 from haliax.partitioning import ResourceAxis
 from huggingface_hub import snapshot_download
@@ -38,7 +42,6 @@ from marin.training.training import (
     TrainLmOnPodConfig,
     run_levanter_train_lm,
 )
-
 from premade_contacts_dataset import FixedQuotaPremadeContactsDataset
 
 BUCKET = os.environ.get("EXP147_BUCKET", "gs://marin-us-east5").rstrip("/")
@@ -74,6 +77,12 @@ MODEL_CONFIG = Qwen3Config(
     num_kv_heads=8,
     num_layers=24,
     rope=Llama3RotaryEmbeddingsConfig(),
+)
+ANY_PERMISSIBLE_MODEL_CONFIG = AnyPermissibleQwen3Config(
+    **{
+        field.name: getattr(MODEL_CONFIG, field.name)
+        for field in dataclasses.fields(AnyPermissibleQwen3Config)
+    }
 )
 
 TPU_TYPE = os.environ.get("EXP147_TPU", "v6e-8")
@@ -165,11 +174,14 @@ def _identity_config(
     max_eval_batches: int | None,
     num_shards: int,
     examples_per_shard: int,
+    any_permissible_loss: bool,
 ) -> dict[str, object]:
     """Return the stable experiment decisions used for artifact fingerprinting."""
     return {
         "name": name,
-        "model": MODEL_CONFIG,
+        "model": (
+            ANY_PERMISSIBLE_MODEL_CONFIG if any_permissible_loss else MODEL_CONFIG
+        ),
         "optimizer": AdamConfig(
             learning_rate=3.1623e-3,
             weight_decay=0.2,
@@ -192,6 +204,9 @@ def _identity_config(
             "shuffle": False,
             "mixture_block_size": 1,
             "block_cross_document_attention": True,
+            "contact_loss": (
+                "any-permissible" if any_permissible_loss else "next-token"
+            ),
         },
         "trainer": {
             "train_batch_size": train_batch_size,
@@ -207,7 +222,7 @@ def _identity_config(
             "project": "MarinFold",
             "group": "exp147-on-the-fly-contacts-v1",
             "name": name,
-            "tags": TAGS,
+            "tags": ((*TAGS, "any-permissible") if any_permissible_loss else TAGS),
         },
         "hf_save_steps": steps,
         "data_seed": 0,
@@ -220,17 +235,19 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
     steps = int(os.environ.get("EXP147_STEPS", "200"))
     steps_per_eval = int(os.environ.get("EXP147_STEPS_PER_EVAL", "100"))
     train_batch_size = int(os.environ.get("EXP147_TRAIN_BATCH_SIZE", "256"))
-    per_device_parallelism = int(
-        os.environ.get("EXP147_PER_DEVICE_PARALLELISM", "16")
-    )
+    per_device_parallelism = int(os.environ.get("EXP147_PER_DEVICE_PARALLELISM", "16"))
     max_eval_batches_env = os.environ.get("EXP147_MAX_EVAL_BATCHES")
     max_eval_batches = (
         int(max_eval_batches_env) if max_eval_batches_env is not None else None
     )
     num_shards = int(os.environ.get("EXP147_NUM_SHARDS", "16"))
-    examples_per_shard = int(
-        os.environ.get("EXP147_EXAMPLES_PER_SHARD", "2650")
-    )
+    examples_per_shard = int(os.environ.get("EXP147_EXAMPLES_PER_SHARD", "2650"))
+    contact_loss = os.environ.get("EXP147_CONTACT_LOSS", "next-token")
+    if contact_loss not in {"next-token", "any-permissible"}:
+        raise ValueError(
+            "EXP147_CONTACT_LOSS must be 'next-token' or 'any-permissible'"
+        )
+    any_permissible_loss = contact_loss == "any-permissible"
     name = os.environ.get(
         "EXP147_NAME",
         f"exp147-otf-contacts-v1-1_5b-pilot-{steps}s-bs{train_batch_size}-v6e8",
@@ -248,6 +265,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             max_eval_batches=max_eval_batches,
             num_shards=num_shards,
             examples_per_shard=examples_per_shard,
+            any_permissible_loss=any_permissible_loss,
         )
         if ctx.is_fingerprint:
             return identity
@@ -258,10 +276,14 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             examples_per_shard=examples_per_shard,
             seed=0,
             max_seq_len=8192,
+            any_permissible_loss=any_permissible_loss,
         )
         train_key = "on-the-fly/esm-atlas-contacts-v1"
         val_key = "tokenized/contacts-v1-val"
-        data = LmDataConfig(
+        data_config_type = (
+            ContactOracleDataConfig if any_permissible_loss else LmDataConfig
+        )
+        data = data_config_type(
             components={
                 train_key: DirectDatasetComponent(datasets={"train": train_dataset}),
                 val_key: _validation_component(ctx.resolved(validation)),
@@ -280,7 +302,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
                 entity="open-athena",
                 project="MarinFold",
                 name=name,
-                tags=list(TAGS),
+                tags=list((*TAGS, "any-permissible") if any_permissible_loss else TAGS),
                 group="exp147-on-the-fly-contacts-v1",
                 replicate_path=ctx.output_path,
             ),
@@ -307,7 +329,9 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         train_config = TrainLmConfig(
             data=data,
             trainer=trainer,
-            model=MODEL_CONFIG,
+            model=(
+                ANY_PERMISSIBLE_MODEL_CONFIG if any_permissible_loss else MODEL_CONFIG
+            ),
             optimizer=identity["optimizer"],
             z_loss_weight=0.0,
             train_seq_len=8192,
