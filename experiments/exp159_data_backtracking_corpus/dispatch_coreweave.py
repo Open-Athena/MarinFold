@@ -105,7 +105,15 @@ def build_request(worker_id: int, num_workers: int, args: dict) -> JobRequest:
         priority=IRIS_PRIORITY_BAND_BATCH,
         processes_per_task=1,
         max_retries_failure=10,
-        # Batch band is preemptible; workers resume by skipping finished shards.
+        # `max_task_failures` is a SEPARATE field that defaults to 0 — without
+        # it a worker dies on its FIRST failure regardless of
+        # max_retries_failure. On this cluster GPU reclamation arrives as a
+        # SIGTERM (exit 143) recorded as a *failure*, not a preemption, so
+        # max_retries_preemption never applies and every reclaimed worker was
+        # being killed outright. Retry generously; a resumed worker skips the
+        # parts it already wrote.
+        max_task_failures=30,
+        # Batch band is preemptible; workers resume by skipping finished parts.
         max_retries_preemption=100,
     )
 
