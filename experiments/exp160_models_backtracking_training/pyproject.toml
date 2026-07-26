@@ -1,0 +1,36 @@
+[project]
+name = "exp160-backtracking-training"
+version = "0.0.0"
+description = "Backtracking training + retraction diagnostics (issue #160)"
+requires-python = ">=3.11"
+dependencies = [
+    "marinfold",
+    # GPU inference of the exp120 1.5B model. The host runs CUDA 12.2, so torch
+    # is pinned to a +cu121 wheel (the pin exp89/exp20 settled on for this box)
+    # routed through the pytorch-cu121 index below.
+    "torch==2.5.1+cu121",
+    "accelerate>=0.30",
+    "transformers>=4.45,<5",
+    # Pilot I/O: exp98 targets.parquet (GT + sequences) from the public bucket.
+    "pandas>=2.0",
+    "pyarrow",
+    "huggingface_hub>=0.24",
+    "numpy",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+torch = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv]
+package = false
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
