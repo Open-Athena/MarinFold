@@ -77,6 +77,9 @@ def build_request(worker_id: int, num_workers: int, args: dict) -> JobRequest:
             "HF_TOKEN": os.environ.get("HF_TOKEN", ""),
             "TOKENIZERS_PARALLELISM": "false",
             "OMP_NUM_THREADS": "8",
+            # uv's cache and the venv are on different filesystems in the pod;
+            # copy mode avoids a hardlink warning per package.
+            "UV_LINK_MODE": "copy",
         },
         extras=["gpu"],
     )
