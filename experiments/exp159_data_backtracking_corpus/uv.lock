@@ -574,6 +574,9 @@ requires-dist = [
 ]
 provides-extras = ["test", "gpu", "dispatch"]
 
+[package.metadata.requires-dev]
+dev = []
+
 [[package]]
 name = "fastapi"
 version = "0.140.0"
@@ -2705,7 +2708,7 @@ name = "triton"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock", marker = "python_full_version < '3.14' and sys_platform == 'linux'" },
+    { name = "filelock", marker = "python_full_version < '3.13' and sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424, upload-time = "2024-10-14T16:05:42.337Z" },

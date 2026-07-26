@@ -27,6 +27,9 @@ gpu = ["accelerate>=0.30"]
 # Submitting iris jobs needs a client that passes the 14-day freshness gate.
 dispatch = ["marin-iris", "marin-fray"]
 
+[dependency-groups]
+dev = []
+
 [tool.uv.sources]
 marinfold = { path = "../../marinfold", editable = true }
 torch = { index = "pytorch-cu121" }
