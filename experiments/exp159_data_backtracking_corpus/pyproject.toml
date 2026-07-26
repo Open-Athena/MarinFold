@@ -20,6 +20,12 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+# Worker extra for CoreWeave H100 dispatch (create_environment(extras=["gpu"])).
+# torch is already a top-level dep: the +cu121 wheel carries sm_90 kernels, so
+# the same pin serves this box (CUDA 12.2 driver) and the H100 nodes.
+gpu = ["accelerate>=0.30"]
+# Submitting iris jobs needs a client that passes the 14-day freshness gate.
+dispatch = ["marin-iris", "marin-fray"]
 
 [tool.uv.sources]
 marinfold = { path = "../../marinfold", editable = true }
