@@ -136,3 +136,98 @@ def test_write_docs_structure_name_wins(tmp_path: Path):
     )
     import json
     assert json.loads(out.read_text())["structure"] == "contacts-v1"
+
+
+# --- AnalyzedStructure serialization round-trip (the reusable contacts record) ---
+
+def _toy_analyzed():
+    """A small AnalyzedStructure built by hand (no pyconfind)."""
+    from marinfold.document_structures.contacts_v1.parse import (
+        AnalyzedStructure,
+        RawContact,
+        ResidueInfo,
+    )
+
+    residues = tuple(
+        ResidueInfo(seq_index=i, resname=rn, resnum=10 + i, chain="A")
+        for i, rn in enumerate(["ALA", "GLY", "TRP", "SER", "LYS", "ILE", "PHE", "VAL"])
+    )
+    contacts = (
+        RawContact(seq_i=0, seq_j=6, degree=0.812),
+        RawContact(seq_i=1, seq_j=7, degree=0.4),
+        RawContact(seq_i=2, seq_j=5, degree=0.0009),  # a weak-tail contact
+    )
+    return AnalyzedStructure(
+        entry_id="toy-entry",
+        residues=residues,
+        contacts=contacts,
+        global_plddt=87.5,
+        source_path=Path("/tmp/toy.cif"),
+    )
+
+
+def test_analyzed_row_roundtrip_preserves_fields():
+    from marinfold.document_structures.contacts_v1.parse import (
+        ANALYZED_ROW_COLUMNS,
+        analyzed_from_row,
+        analyzed_to_row,
+    )
+
+    analyzed = _toy_analyzed()
+    row = analyzed_to_row(analyzed)
+    assert set(ANALYZED_ROW_COLUMNS) == set(row)
+    assert row["seq_len"] == 8
+    assert row["num_contacts"] == 3
+
+    back = analyzed_from_row(row)
+    assert back.entry_id == analyzed.entry_id
+    assert back.global_plddt == analyzed.global_plddt
+    assert back.residues == analyzed.residues        # seq_index re-derived 0..L-1
+    assert back.contacts == analyzed.contacts
+    # source_path is provenance-only (not serialized) → placeholder unless given
+    assert str(back.source_path) == "<row>"
+
+
+def test_analyzed_from_row_coerces_numpy_and_pyarrow_arrays():
+    np = pytest.importorskip("numpy")
+    from marinfold.document_structures.contacts_v1.parse import (
+        analyzed_from_row,
+        analyzed_to_row,
+    )
+
+    row = analyzed_to_row(_toy_analyzed())
+    # Simulate a parquet reader handing back numpy arrays for the list columns.
+    row = dict(row)
+    row["contact_seq_i"] = np.array(row["contact_seq_i"], dtype=np.int64)
+    row["contact_degree"] = np.array(row["contact_degree"], dtype=np.float32)
+    back = analyzed_from_row(row)
+    assert [c.seq_i for c in back.contacts] == [0, 1, 2]
+    assert back.contacts[0].degree == pytest.approx(0.812, rel=1e-6)
+
+
+def test_document_from_saved_contacts_is_byte_identical():
+    """A document built from a round-tripped record == one built directly.
+
+    This is the reuse guarantee: a future doc type can rebuild from the saved
+    pyconfind contacts (analyzed_from_row) and get exactly what it would have
+    from a fresh analyze_structure — no pyconfind needed.
+    """
+    from marinfold.document_structures.contacts_v1.generate import build_document
+    from marinfold.document_structures.contacts_v1.parse import (
+        analyzed_from_row,
+        analyzed_to_row,
+    )
+
+    analyzed = _toy_analyzed()
+    direct = build_document(
+        analyzed.entry_id, analyzed.residues, analyzed.contacts,
+        global_plddt=analyzed.global_plddt,
+    )
+    back = analyzed_from_row(analyzed_to_row(analyzed))
+    from_saved = build_document(
+        back.entry_id, back.residues, back.contacts,
+        global_plddt=back.global_plddt,
+    )
+    assert direct is not None and from_saved is not None
+    assert from_saved.document == direct.document
+    assert from_saved.metadata_row() == direct.metadata_row()

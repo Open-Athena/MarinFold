@@ -5,12 +5,14 @@
 
 import math
 import random
+import re
 
 import numpy as np
 import pytest
 
 from marinfold.document_structures.contacts_and_coordinates_v1.generate import (
     GenerationConfig,
+    _MAX_SUPPORTED_DEPTH,
     _apply_frame,
     _coordinate_digits,
     _random_rotation_matrix,
@@ -45,6 +47,27 @@ def test_max_depth_4_knob_reintroduces_tenths_float_safe():
     assert _xyz_tokens(205.3, 180.2, 5.7, 4, 4) == [
         "<xyz-210>", "<xyz-080>", "<xyz-505>", "<xyz-327>",
     ]
+
+
+def test_coarse_max_depth_1_and_2_yield_integer_digits():
+    # Regression: GenerationConfig validation accepts max_depth in
+    # [1, _MAX_SUPPORTED_DEPTH], but the old extraction used a float divisor
+    # (100 * 10**(max_depth - 3), a float for max_depth < 3), so every "digit"
+    # came out a float and token formatting crashed with
+    # "Unknown format code 'd' for object of type 'float'". Digits must be ints
+    # at every advertised depth, and compose into valid <xyz-NNN> tokens.
+    for value in (0.0, 5.7, 123.4, 999.0, 1e4):
+        for max_depth in (1, 2):
+            digits = _coordinate_digits(value, max_depth)
+            assert len(digits) == max_depth
+            assert all(isinstance(d, int) for d in digits), (value, max_depth, digits)
+    for depth in (1, 2):
+        toks = _xyz_tokens(205.3, 180.2, 5.7, depth, depth)
+        assert len(toks) == depth
+        assert all(re.fullmatch(r"<xyz-\d{3}>", t) for t in toks), toks
+    # The whole advertised range constructs without raising.
+    for d in range(1, _MAX_SUPPORTED_DEPTH + 1):
+        GenerationConfig(max_depth=d)
 
 
 def test_digit_extraction_clamps():

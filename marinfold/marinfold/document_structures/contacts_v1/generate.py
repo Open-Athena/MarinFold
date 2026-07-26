@@ -269,9 +269,13 @@ def _geometric(rng: random.Random, p: float) -> int:
         raise ValueError(f"p must be in (0, 1]; got {p!r}")
     if p == 1.0:
         return 1
-    # rng.random() in [0, 1); 1 - U in (0, 1] avoids log(0).
+    # rng.random() in [0, 1); 1 - U in (0, 1] avoids log(0). The upper
+    # endpoint is inclusive, though: when rng.random() == 0.0, u == 1.0 and
+    # ceil(log(1)/log(1-p)) == 0, which would violate the documented support
+    # {1, 2, 3, ...}. Clamp to 1 so that boundary draw stays in support (the
+    # RNG stream is untouched, so determinism is preserved).
     u = 1.0 - rng.random()
-    return int(math.ceil(math.log(u) / math.log(1.0 - p)))
+    return max(1, int(math.ceil(math.log(u) / math.log(1.0 - p))))
 
 
 def _sample_think_overhead(
@@ -479,9 +483,14 @@ def build_document(
     if not emitted and k1 > 0:
         # No contacts but the initial run still fired: emit it so the document
         # records the sampled overhead (rare — only for proteins with no
-        # above-threshold, seq-sep-respecting contacts).
-        tokens += [THINK_TOKEN] * k1
-        think_emitted += k1
+        # above-threshold, seq-sep-respecting contacts). Clamp to the budget
+        # headroom so the "never overflow context_length" invariant holds even
+        # for a tiny custom context_length: with no contacts, ``fixed`` already
+        # equals the full non-think document length, so ``context_length -
+        # fixed`` is exactly the remaining think budget.
+        k_emit = min(k1, max(0, context_length - fixed))
+        tokens += [THINK_TOKEN] * k_emit
+        think_emitted += k_emit
     tokens.append(END_TOKEN)
 
     return GenerationResult(
