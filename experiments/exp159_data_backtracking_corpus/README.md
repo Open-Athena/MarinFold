@@ -24,7 +24,7 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 ## Approach
 
-### Status: engine core built + unit-tested (CPU). GPU pilot is the next step.
+### Status: engine + adapter + pilot + a 370-doc corpus done (see Results). Scale-up is the open lift.
 
 **`backtrack_engine.py` — the pure state machine (done).** No torch / no marinfold model; the base model is reached only through two injected callables, so the whole loop is unit-tested with a stub backend (`test_backtrack_engine.py`, 6 tests, CPU, <1s):
 
@@ -34,7 +34,7 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 - **Budget-reserved flush = correctness.** The main loop only runs while it can still afford to retract every live non-GT pair and emit every missing GT pair, so the final live set equals GT **exactly** (recall philosophy F). Budget exhaustion sets `truncated` (the one acknowledged failure mode). Loop guard bans a pair after `loop_cap` retract cycles.
 - Output folds (via the real `read.live_contacts`) to exactly GT — asserted in every test.
 
-**Interfaces to implement for the pilot (`Proposer` / `Scorer`):**
+**The two model-backed callables (implemented in `backtrack_adapter.py`):**
 - `Proposer.propose(live)` — build the clean contacts-v1 prompt (sequence prefix + live contacts) and sample the next `<contact>` from `contacts-v1-exp120-1.5B` (HF transformers, T=1.0/p=0.95/k=50), returning its canonical position pair or `None` on `<end>`.
 - `Scorer.score(committed, targets)` — one `_fwd_matrix` pass over the committed-set prompt → `s(c)` for every target pair at once.
 
@@ -66,6 +66,17 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 - **`trigger_recall` tracks context:** it falls when there are few true contacts (0.35 at n_gt=6 vs 0.79 at n_gt=23) — a small committed set gives the posterior little to lean on, so more FPs survive to the flush. Expect richer proteins to be the trigger's strong suit.
 - **Cost:** ~13 s/doc at L≈60 on one A5000 with **no KV-cache reuse** (each step re-prefills the growing prompt). That extrapolates to impractical for a 4.2M-doc corpus — scale needs KV reuse + cross-protein batching + probably TPU. The pilot's job was to *measure* this, and it did.
 - Base model emits many FPs when sampled one-at-a-time at T=1.0 (24–29 per protein) — plenty of retraction signal per document.
+
+### Modest corpus (370 docs) — the corpus-level go/no-go
+
+`gen_corpus.py` ran the engine over the 370 exp98 targets with L in [30,130] (one document each, `noise_retract_prob=0.05`), ~1.5 h on the A5000. Aggregated to `data/backtracking_corpus.parquet` (370 docs, ~198k tokens):
+
+- **Correctness at scale:** all **370/370** documents fold to exactly GT; **0 truncated**.
+- **Trigger is discriminative across the corpus (the real go/no-go):** of **11,489** emitted false positives, **7,098 (61.8%)** were retracted *by the posterior trigger*, with **0** true-contact false alarms — across all 370 proteins the trigger never once retracted a true contact. The remaining 38% of FPs are cleaned at the correctness flush.
+- **Delayed, not immediate:** mean trigger delay **6.4 statements** — retractions sit well back from the mistake (the learnable long-range signal #160 needs), and the trigger-catch rate rises with protein size (70%+ at L~110-120, as the committed context grows).
+- mean 31.6 retracts + 83.5 contacts per doc — retraction is a substantial, well-distributed fraction of each document.
+
+This is a much stronger read than the 3-protein pilot and gives #160 a real (if small) corpus to train on. It is **not** the full corpus — 370 docs is pipeline-validation + first-signal scale; a 4.2M-doc twin needs the throughput work above.
 
 Note: the exp120 checkpoint ships a marinfold-custom `tokenizer_class` (`TokenizersBackend`) that `AutoTokenizer` can't resolve; `run_pilot._fix_tokenizer_config` relabels it to `PreTrainedTokenizerFast` after each `resolve_model`. #160's eval path will hit the same thing — worth fixing in the marinfold transformers backend.
 
