@@ -95,6 +95,38 @@ contacts-v1 document filters (`min_seq_separation=6`,
 weak/local pairs the base model was never trained to emit, and the engine would
 score them all as false positives.
 
+
+### Scale run — 1M documents on CoreWeave H100s (in flight)
+
+`gen_esm_atlas_worker.py` (sharded, resumable) + `dispatch_coreweave.py` (fan-out).
+Launched 2026-07-26 on `cw-rno2a` at **batch priority**: 64 independent 1-GPU
+workers over shards 0-255, 4,000 docs/shard -> ~1.02M documents, writing
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`.
+
+Single-worker smoke on one H100 first: **24 docs in 32 s (1.32 s/doc)**, all
+folding to exactly GT, written to and read back from S3. Per-doc time should
+improve at scale — in the smoke the batch drained to stragglers after 24 docs,
+whereas a 4,000-doc shard keeps the scheduler saturated.
+
+Launch plumbing that had to be right (each one cost a failed submission; the
+recipe is now in the CoreWeave memory note):
+
+| symptom | cause / fix |
+|---|---|
+| CLI refuses `--memory 8GB` | needs `--enable-extra-resources` |
+| `Group 'dev' is not defined` | add `[dependency-groups] dev = []` |
+| `cannot normalize a relative path beyond the base directory` | the pod only gets the experiment dir -> marinfold must be a **git dep**, not `../../marinfold` |
+| `No module named 'fray'` | the job env installs **base** deps only -> marin-fray/iris cannot live in an extra |
+| `cannot import name 'ResourceConfig' from 'fray'` | this fray build exports nothing at top level -> import from `fray.types` / `fray.current_client` |
+| `No module named 'pandas'` after a clean sync | child entrypoint must be **`uv run python ...`**, not bare `python` |
+| torch downloaded twice per worker | a `.python-version` pin made `uv run` rebuild the venv iris had just synced |
+
+Two design points that matter for correctness at this scale: **batch priority is
+set on each child `JobRequest` (`priority=3`)** — the CLI flag bands only the
+driver — and workers are **independent `replicas=1` jobs**, not a co-scheduled
+gang, so preemption on the batch band retries one worker instead of the fleet.
+Workers resume by skipping shards whose output already exists.
+
 ## Success criteria
 
 - Engine: output always folds to exactly GT (unless `truncated`); posterior trigger produces FP-enriched retractions on the stub; loop terminates under adversarial proposers. **✅ (unit tests).**
