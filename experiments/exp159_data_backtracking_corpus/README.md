@@ -45,6 +45,56 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 2. **Scale-up** — the pilot's ~13 s/doc (no KV reuse) is far too slow for a 4.2M-doc corpus; needs KV-cache reuse across the growing prompt, batching across proteins, and likely TPU. This is the real engineering lift before a full run.
 3. **Publish** to `data/document_structures/contacts_v1_backtracking/` (per #126) once scaled.
 
+
+### Throughput work — 8.8x (14.7 -> 1.68 s/doc)
+
+Profiling the single-protein loop attributed **~86%** of the time to `propose`
+(~50 calls x ~220 ms, at **batch size 1**) and ~14% to `score`. Both fixed:
+
+- **Cross-protein batching.** The engine core is now a generator
+  (`backtracking_structure_gen`) that *yields* `ProposeRequest`/`ScoreRequest`,
+  so `batch_runner.run_batched` advances N proteins in lockstep and serves every
+  pending propose in **one left-padded GPU batch**.
+  `build_backtracking_structure` remains as a thin synchronous driver, so the
+  unit tests and pilot are unchanged.
+- **Shorter decode budget.** A contact statement is 3 tokens, so generating 12
+  was ~4x more decode steps than needed (now 6). A *duplicate* proposal is
+  returned rather than treated as EOS — the engine already skips live pairs, so
+  this cannot truncate a document early.
+- **Targeted score.** `score` ran one tail per residue (L) to fill the whole
+  [L, L] map when only the queued pairs' entries are ever read; it now runs
+  tails only for residues appearing in the targets. Numerically identical
+  (asserted by an equivalence test vs `_pcontact_from_fwd(_fwd_matrix(...))`),
+  and it removed the serial bottleneck that remained after propose was batched.
+
+| batch | s/doc | folds→GT |
+|---|---|---|
+| 1 (baseline) | 14.7 | ✅ |
+| 8 | 2.18 | 8/8 |
+| **24** | **1.68** | 24/24 |
+| 48 | 2.09 | 48/48 |
+| 96 | 1.83 | 96/96 |
+
+Batch 24 is the sweet spot on one A5000; larger batches lose to padding waste
+from ragged prompt lengths. Correctness is untouched at every size.
+
+**Implication for 1M documents:** ~470 A5000-GPU-hours, or roughly 120-160
+H100-hours — a few hours across a CoreWeave H100 fleet at batch priority. The
+per-GPU loop is now fast enough that scale is a fan-out problem, not an
+algorithmic one.
+
+### Source for the scale run — exp139's saved contacts
+
+`esm_atlas_source.py` reads proteins + ground truth from the raw-contacts
+shards exp139 published for the 66.76M-protein ESMFold2 distillation set
+(3,338 shards x 20k rows; public bucket, anonymously readable, plus an exp147
+GCS mirror), deserializing with `analyzed_from_row` — **no pyconfind**. Those
+contacts are RAW (every pair with degree > 0), so the loader applies the
+contacts-v1 document filters (`min_seq_separation=6`,
+`min_contact_degree=0.001`); without them ~2/3 of the "ground truth" would be
+weak/local pairs the base model was never trained to emit, and the engine would
+score them all as false positives.
+
 ## Success criteria
 
 - Engine: output always folds to exactly GT (unless `truncated`); posterior trigger produces FP-enriched retractions on the stub; loop terminates under adversarial proposers. **✅ (unit tests).**
