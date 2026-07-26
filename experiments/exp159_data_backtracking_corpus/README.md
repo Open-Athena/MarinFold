@@ -78,7 +78,7 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 This is a much stronger read than the 3-protein pilot and gives #160 a real (if small) corpus to train on. It is **not** the full corpus — 370 docs is pipeline-validation + first-signal scale; a 4.2M-doc twin needs the throughput work above.
 
-Note: the exp120 checkpoint ships a marinfold-custom `tokenizer_class` (`TokenizersBackend`) that `AutoTokenizer` can't resolve; `run_pilot._fix_tokenizer_config` relabels it to `PreTrainedTokenizerFast` after each `resolve_model`. #160's eval path will hit the same thing — worth fixing in the marinfold transformers backend.
+Note: exp120's checkpoint declares a marinfold-custom `tokenizer_class` that `AutoTokenizer` could not resolve; this is now **fixed upstream** (main, PR #165 — the backend falls back to loading `tokenizer.json`), so no workaround is needed here.
 
 ## Conclusion
 

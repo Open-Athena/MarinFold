@@ -52,30 +52,6 @@ _TARGETS = (
 _TRIGGER = {"collapse", "floor", "rank"}
 
 
-def _fix_tokenizer_config(model_path) -> None:
-    """Relabel the checkpoint's marinfold-custom tokenizer_class for AutoTokenizer.
-
-    exp120's export writes ``tokenizer_class: "TokenizersBackend"`` (a marinfold
-    class ``AutoTokenizer`` can't resolve), though its ``tokenizer.json`` is a
-    plain WordLevel tokenizer. Relabel it to ``PreTrainedTokenizerFast`` so the
-    transformers backend loads it. Done after every ``resolve_model`` because
-    that call re-mirrors the bucket and would overwrite an earlier edit.
-    (Flagged upstream — the marinfold transformers backend should load
-    tokenizer.json directly; #160's eval path will hit the same thing.)
-    """
-    import json
-
-    p = os.path.join(str(model_path), "tokenizer_config.json")
-    if not os.path.exists(p):
-        return
-    with open(p) as fh:
-        cfg = json.load(fh)
-    if cfg.get("tokenizer_class") not in (None, "PreTrainedTokenizerFast"):
-        cfg["tokenizer_class"] = "PreTrainedTokenizerFast"
-        with open(p, "w") as fh:
-            json.dump(cfg, fh, indent=2)
-
-
 def _read_targets(url: str):
     """Read the targets parquet. Bucket ``hf://buckets/...`` paths (which
     pyarrow/fsspec don't route) are fetched via their HF resolve URL."""
@@ -181,7 +157,6 @@ def main():
 
     print(f"resolving model {args.model} ...", flush=True)
     model_path = resolve_model(args.model)
-    _fix_tokenizer_config(model_path)
     print(f"loading backend from {model_path}", flush=True)
     backend = load_backend("transformers", model=str(model_path), dtype="bfloat16")
 

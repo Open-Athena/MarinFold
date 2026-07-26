@@ -32,7 +32,6 @@ import time
 import pandas as pd
 
 from run_pilot import (
-    _fix_tokenizer_config,
     _read_targets,
     _TARGETS,
     gt_from_row,
@@ -107,7 +106,6 @@ def main() -> None:
 
     print(f"resolving model {args.model} ...", flush=True)
     model_path = resolve_model(args.model)
-    _fix_tokenizer_config(model_path)
     backend = load_backend("transformers", model=str(model_path), dtype="bfloat16")
 
     df = _read_targets(args.targets)
