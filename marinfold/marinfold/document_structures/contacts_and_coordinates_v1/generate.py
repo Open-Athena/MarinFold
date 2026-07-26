@@ -278,8 +278,13 @@ def _coordinate_digits(value: float, max_depth: int) -> tuple[int, ...]:
     scale = _coord_scale(max_depth)
     clamped = min(_max_coord(max_depth), max(0.0, value))
     n = round(clamped * scale)
-    coarsest = 100 * scale  # divisor for the hundreds place in scaled space
-    return tuple((n // (coarsest // 10 ** i)) % 10 for i in range(max_depth))
+    # Read the ``max_depth`` decimal digits of ``n`` (a max_depth-digit int in
+    # [0, 10**max_depth - 1]), most-significant first. Use an integer power-of-10
+    # divisor directly: ``100 * scale`` is a float for max_depth < 3 (scale is a
+    # negative power of ten there), which would make every extracted digit a
+    # float and crash token formatting for the depths the config validator
+    # advertises. This form is byte-identical for max_depth 3 and 4.
+    return tuple((n // 10 ** (max_depth - 1 - i)) % 10 for i in range(max_depth))
 
 
 def _xyz_tokens(x: float, y: float, z: float, depth: int, max_depth: int) -> list[str]:
