@@ -7,10 +7,12 @@ Gated by the ``[mlx]`` extra (Darwin-only wheels). Uses
 ``mlx_lm.load`` to read HF safetensors directly — no conversion step
 is required for unquantized inference.
 
-The HF tokenizer is loaded separately with
-``transformers.AutoTokenizer`` so the surfaced object is exactly the
-same ``PreTrainedTokenizerFast`` the other backends expose, rather
-than mlx-lm's ``TokenizerWrapper``.
+The HF tokenizer is loaded separately via the shared
+:func:`marinfold.inference._tokenizer.load_tokenizer` so the surfaced
+object is exactly the same ``PreTrainedTokenizerFast`` the other
+backends expose, rather than mlx-lm's ``TokenizerWrapper`` — and so
+marinfold-custom ``tokenizer_class`` exports fall back to
+``tokenizer.json`` the same way the transformers backend does.
 
 Prefix-cache strategy (what makes this fast on Apple Silicon):
 
@@ -34,7 +36,8 @@ import mlx.core as mx
 import numpy as np
 from mlx_lm import load as mlx_load
 from mlx_lm.models.cache import KVCache, make_prompt_cache
-from transformers import AutoTokenizer
+
+from marinfold.inference._tokenizer import load_tokenizer
 
 
 class MlxBackend:
@@ -57,7 +60,7 @@ class MlxBackend:
                 f"tail_batch_size must be >= 1; got {tail_batch_size}."
             )
         self._tail_batch_size = tail_batch_size
-        self._tokenizer = AutoTokenizer.from_pretrained(str(model_path))
+        self._tokenizer = load_tokenizer(model_path)
         # mlx_lm.load returns (model, tokenizer); we use mlx_lm's
         # tokenizer only as a sanity check that the path is loadable
         # and rely on the HF tokenizer above for the public surface.
