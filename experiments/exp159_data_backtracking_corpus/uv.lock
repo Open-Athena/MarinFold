@@ -564,7 +564,7 @@ requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.24" },
     { name = "marin-fray", marker = "extra == 'dispatch'" },
     { name = "marin-iris", marker = "extra == 'dispatch'" },
-    { name = "marinfold", editable = "../../marinfold" },
+    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&branch=exp159-backtracking-corpus" },
     { name = "numpy" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "pyarrow" },
@@ -1473,7 +1473,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { editable = "../../marinfold" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&branch=exp159-backtracking-corpus#04fd81e8cba539a36fcea28b5a2390772480aecd" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
@@ -1485,28 +1485,6 @@ dependencies = [
     { name = "tokenizers", marker = "sys_platform == 'linux'" },
     { name = "transformers", marker = "sys_platform == 'linux'" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", marker = "extra == 'transformers'", specifier = ">=0.30" },
-    { name = "gemmi", specifier = ">=0.6" },
-    { name = "huggingface-hub", specifier = ">=0.24" },
-    { name = "matplotlib" },
-    { name = "mlx", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.18" },
-    { name = "mlx-lm", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.20" },
-    { name = "numpy" },
-    { name = "pyarrow" },
-    { name = "pyconfind", marker = "extra == 'contacts-v1'", specifier = ">=0.5" },
-    { name = "pyyaml", specifier = ">=6" },
-    { name = "tokenizers", specifier = ">=0.15" },
-    { name = "torch", marker = "extra == 'transformers'", specifier = ">=2.4" },
-    { name = "transformers", specifier = ">=4.40,<5" },
-    { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.6" },
-]
-provides-extras = ["vllm", "transformers", "mlx", "contacts-v1"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.3" }]
 
 [[package]]
 name = "markupsafe"

@@ -31,7 +31,13 @@ dispatch = ["marin-iris", "marin-fray"]
 dev = []
 
 [tool.uv.sources]
-marinfold = { path = "../../marinfold", editable = true }
+# marinfold is a GIT dep (not a local path) so the SAME pyproject resolves on
+# remote CoreWeave workers, which cannot see this checkout — a relative
+# `../../marinfold` fails there with "cannot normalize a relative path beyond
+# the base directory". Pinned to this series' branch because the <retract>
+# token + read.py fold (#158) are not on main yet; repoint to main once PR #161
+# merges. (Same pattern as exp139.)
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", branch = "exp159-backtracking-corpus" }
 torch = { index = "pytorch-cu121" }
 
 [[tool.uv.index]]
