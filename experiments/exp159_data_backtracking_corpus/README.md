@@ -38,11 +38,12 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 - `Proposer.propose(live)` — build the clean contacts-v1 prompt (sequence prefix + live contacts) and sample the next `<contact>` from `contacts-v1-exp120-1.5B` (HF transformers, T=1.0/p=0.95/k=50), returning its canonical position pair or `None` on `<end>`.
 - `Scorer.score(committed, targets)` — one `_fwd_matrix` pass over the committed-set prompt → `s(c)` for every target pair at once.
 
+**GPU adapter + pilot (done).** `backtrack_adapter.py` wraps exp120 into `Proposer`/`Scorer` (unit-tested GPU-free in `test_backtrack_adapter.py`); `run_pilot.py` runs the engine on real proteins from exp98's `targets.parquet` (GT + sequences, no pyconfind) and reports the gating numbers. Pilot ran on an RTX A5000 — see Results.
+
 ### Remaining (not started)
-1. **GPU adapter** `gen_backtracking_worker_hf.py` wrapping exp120 into `Proposer`/`Scorer`; assemble the full document (sequence prefix + engine structure + `<end>`) and verify `live_contacts == GT`.
-2. **Pilot** on a small protein set: measure per-document wall-clock (the gating result), FP-enrichment of retractions (the go/no-go), retract-position/delay distributions, label-noise estimate. Dump full documents for eyeballing.
-3. **10% single-retract probe class** — a policy mode of the same engine (hold one FP to a designated end/random position).
-4. **Scale + publish** to `data/document_structures/contacts_v1_backtracking/` (per #126), if the pilot's cost + FP-enrichment justify it.
+1. **10% single-retract probe class** — a policy mode of the same engine (hold one FP to a designated end/random position).
+2. **Scale-up** — the pilot's ~13 s/doc (no KV reuse) is far too slow for a 4.2M-doc corpus; needs KV-cache reuse across the growing prompt, batching across proteins, and likely TPU. This is the real engineering lift before a full run.
+3. **Publish** to `data/document_structures/contacts_v1_backtracking/` (per #126) once scaled.
 
 ## Success criteria
 
@@ -52,8 +53,22 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 ## Results
 
-_(Pilot pending — engine core + tests landed on `exp159-backtracking-corpus`.)_
+**Pilot: 3 proteins (L 55–69), exp120 on one RTX A5000, T=1.0/p=0.95/k=50, eval_cadence=3, min_delay=3, tau=0.35, s_floor=1e-3.** (`data/pilot_metrics.csv`, sample doc in `data/pilot_docs/`.)
+
+| entry | L | n_gt | wall | FP emitted | FP caught by trigger | trigger false alarms (TP) | folds→GT |
+|---|---|---|---|---|---|---|---|
+| AF-A0A0E3P1D7-F1 | 55 | 33 | 14.4 s | 24 | 14 | 0 | ✅ |
+| AF-A0A0R2QD14-F1 | 65 | 23 | 14.8 s | 29 | 23 | 0 | ✅ |
+| AF-A0A0W8FZR3-F1 | 69 | 6 | 9.7 s | 26 | 9 | 0 | ✅ |
+
+- **Correctness holds on real model output:** all 3 documents fold (via `read.live_contacts`) to exactly GT; none truncated.
+- **The posterior-collapse trigger is discriminative (the go/no-go):** across the three proteins, **46 of 79** emitted false positives were retracted *by the trigger* (before the flush), with **0** true contacts ever wrongly retracted by the trigger. So on the real base model the "which contact is wrong" signal is real, and — the point of the whole design — it flags false positives using only the visible contact set, never GT. The uncaught FPs (33) are cleaned at the correctness flush.
+- **`trigger_recall` tracks context:** it falls when there are few true contacts (0.35 at n_gt=6 vs 0.79 at n_gt=23) — a small committed set gives the posterior little to lean on, so more FPs survive to the flush. Expect richer proteins to be the trigger's strong suit.
+- **Cost:** ~13 s/doc at L≈60 on one A5000 with **no KV-cache reuse** (each step re-prefills the growing prompt). That extrapolates to impractical for a 4.2M-doc corpus — scale needs KV reuse + cross-protein batching + probably TPU. The pilot's job was to *measure* this, and it did.
+- Base model emits many FPs when sampled one-at-a-time at T=1.0 (24–29 per protein) — plenty of retraction signal per document.
+
+Note: the exp120 checkpoint ships a marinfold-custom `tokenizer_class` (`TokenizersBackend`) that `AutoTokenizer` can't resolve; `run_pilot._fix_tokenizer_config` relabels it to `PreTrainedTokenizerFast` after each `resolve_model`. #160's eval path will hit the same thing — worth fixing in the marinfold transformers backend.
 
 ## Conclusion
 
-_(Fill in after the pilot.)_
+The method works as designed on the real base model: model-in-the-loop generation with re-conditioning produces **exactly-correct** documents, and the base model's own posterior collapse is a **discriminative, GT-free** signal for *which* contacts to retract and *when* (46/79 FPs caught, 0 false alarms on 3 pilot proteins). The open risk is no longer "does the trigger flag the right contacts" (it does) but **throughput**: at ~13 s/doc unbatched, a full corpus needs KV-cache reuse + batching + TPU before scaling. Recommended next step is that throughput work (or a modest-scale corpus for a first #160 training signal), plus the 10% single-retract probe class.
