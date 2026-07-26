@@ -80,8 +80,11 @@ def build_request(worker_id: int, num_workers: int, args: dict) -> JobRequest:
         },
         extras=["gpu"],
     )
+    # `uv run` (not bare `python`): the workspace env is a project .venv that a
+    # plain `bash -lc python` does not resolve to, so the worker would start on
+    # the system interpreter and fail on the first project import.
     command = (
-        "python gen_esm_atlas_worker.py "
+        "uv run python gen_esm_atlas_worker.py "
         f"--shards {args['shards']} "
         f"--worker-id {worker_id} --num-workers {num_workers} "
         f"--docs-per-shard {args['docs_per_shard']} "
