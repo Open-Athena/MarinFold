@@ -127,6 +127,32 @@ driver — and workers are **independent `replicas=1` jobs**, not a co-scheduled
 gang, so preemption on the batch band retries one worker instead of the fleet.
 Workers resume by skipping shards whose output already exists.
 
+**First 5,000 documents (20 parts) — validated at scale, 2026-07-26:**
+
+```
+fold == n_gt:     5,000/5,000 (OK)      truncated: 0
+docs with a retraction: 83.7%           mean retracts/doc: 36.2
+FP emitted: 175,890  caught by trigger: 136,785 (77.8%)  false alarms: 0
+FP base rate: 0.182   retract precision: 0.975
+ENRICHMENT:   5.37x   (ceiling 1/0.182 = 5.49x -> 98% of max)
+retract distance: mean 17.8 / median 9 statements (0.1% immediate)
+recovery rate: 0.771
+```
+
+Throughput at scale is **1.09 s/doc** (250-doc part in 273 s), better than the
+1.32 s/doc single-worker smoke — the batch stays saturated instead of draining
+to stragglers. ~1.02M documents across 48 workers projects to ~6.5 h.
+
+Two things worth noting against the AFDB reference corpus (2.73x enrichment):
+
+- ESM-Atlas enrichment is **higher (5.37x)**, but that is mostly because its FP
+  base rate is lower (0.182 vs 0.360) so the ceiling is higher; in both cases
+  the trigger reaches ~98% of the achievable maximum. Enrichment is
+  base-rate-normalised, which is exactly why it is the metric to compare on.
+- An earlier single-worker smoke suggested ESM-Atlas had a *weaker* retraction
+  rate (45% of FPs caught). That was an artifact of a 24-doc batch draining to
+  stragglers; at scale it is 77.8%, above AFDB's 61.8%.
+
 ## Success criteria
 
 - Engine: output always folds to exactly GT (unless `truncated`); posterior trigger produces FP-enriched retractions on the stub; loop terminates under adversarial proposers. **✅ (unit tests).**
