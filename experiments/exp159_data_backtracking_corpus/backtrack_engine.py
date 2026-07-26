@@ -86,6 +86,21 @@ class Scorer(Protocol):
 
 
 @dataclass(frozen=True)
+class ProposeRequest:
+    """Engine -> driver: "what contact comes next, given this live set?"."""
+
+    live: list["Pair"]
+
+
+@dataclass(frozen=True)
+class ScoreRequest:
+    """Engine -> driver: "score these queued pairs against this committed set"."""
+
+    committed: list["Pair"]
+    targets: list["Pair"]
+
+
+@dataclass(frozen=True)
 class RetractionPolicy:
     """Knobs for *when* queued contacts are retracted (calibrated on the pilot)."""
 
@@ -142,16 +157,22 @@ class BacktrackResult:
         return " ".join(toks)
 
 
-def build_backtracking_structure(
+def backtracking_structure_gen(
     gt: frozenset[Pair],
-    proposer: Proposer,
-    scorer: Scorer,
     policy: RetractionPolicy,
     *,
     max_statements: int,
     rng: random.Random,
-) -> BacktrackResult:
-    """Synthesise one backtracking structure section.
+):
+    """Generator form of the engine — yields model requests, returns a result.
+
+    Yields :class:`ProposeRequest` / :class:`ScoreRequest` and expects the
+    driver to ``send()`` back the proposed pair (or ``None``) / the score dict.
+    Returns the :class:`BacktrackResult` as the generator's ``StopIteration``
+    value. Decoupling the control flow from the model calls this way lets a
+    driver run **many proteins concurrently** and batch their requests on the
+    GPU (see ``batch_runner.py``); :func:`build_backtracking_structure` is the
+    single-protein synchronous driver over this same logic.
 
     ``max_statements`` bounds the total number of statements (contacts +
     retracts + re-emits) so the caller's token budget is respected; the loop
@@ -208,7 +229,7 @@ def build_backtracking_structure(
     while budget_ok():
         # --- propose one contact (conditioned on the live set) -------------
         if not stopped:
-            pair = proposer.propose(list(live))
+            pair = yield ProposeRequest(list(live))
             if pair is None:
                 stopped = True
             else:
@@ -245,7 +266,7 @@ def build_backtracking_structure(
         if queue and (since_eval >= policy.eval_cadence or stopped):
             since_eval = 0
             targets = [qc.pair for qc in queue]
-            scores = scorer.score(committed(), targets)
+            scores = yield ScoreRequest(committed(), targets)
             rank_cut = (
                 None if policy.rank_factor is None
                 else max(1, int(policy.rank_factor * max(len(gt), 1)))
@@ -302,3 +323,33 @@ def build_backtracking_structure(
 
     res.live_final = frozenset(live_set)
     return res
+
+
+def build_backtracking_structure(
+    gt: frozenset[Pair],
+    proposer: Proposer,
+    scorer: Scorer,
+    policy: RetractionPolicy,
+    *,
+    max_statements: int,
+    rng: random.Random,
+) -> BacktrackResult:
+    """Synchronous single-protein driver over :func:`backtracking_structure_gen`.
+
+    Serves each yielded request immediately from the given ``proposer`` /
+    ``scorer``. Behaviourally identical to the pre-generator engine, so the
+    unit tests and the pilot keep using it unchanged.
+    """
+    gen = backtracking_structure_gen(
+        gt, policy, max_statements=max_statements, rng=rng
+    )
+    try:
+        request = next(gen)
+        while True:
+            if isinstance(request, ProposeRequest):
+                response = proposer.propose(request.live)
+            else:
+                response = scorer.score(request.committed, request.targets)
+            request = gen.send(response)
+    except StopIteration as stop:
+        return stop.value

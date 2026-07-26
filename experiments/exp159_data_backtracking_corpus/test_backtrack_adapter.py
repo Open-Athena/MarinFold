@@ -156,3 +156,24 @@ def test_full_run_assembles_document_folding_to_gt():
     assert res.n_retract_statements >= 2
     # Sanity: the document actually contains retract statements.
     assert "<retract>" in doc
+
+
+def test_targeted_score_matches_full_fwd_matrix():
+    # The adapter's score() computes only the tails its targets need; it must
+    # agree exactly with reading _pcontact_from_fwd(_fwd_matrix(...)) at those
+    # entries (the full-L-tail computation it replaces).
+    import numpy as np
+
+    gt = frozenset({canon(0, 12), canon(2, 16), canon(5, 20)})
+    adapter = _make(gt, script=[])
+    committed = [canon(0, 12), canon(2, 16)]
+    targets = [canon(5, 20), canon(1, 13), canon(3, 19)]
+
+    got = adapter.score(committed, targets)
+
+    prompt = adapter.prefix + " " + adapter._render_contacts(committed)
+    full = inf._pcontact_from_fwd(
+        inf._fwd_matrix(adapter.backend, prompt, adapter.seq_positions)
+    )
+    for i, j in targets:
+        assert np.isclose(got[(i, j)], full[i, j], rtol=1e-9, atol=1e-12)

@@ -40,6 +40,7 @@ from marinfold.document_structures.contacts_v1.read import (
     live_contacts,
 )
 from marinfold.document_structures.contacts_v1.vocab import (
+    CONTACT_TOKEN,
     END_TOKEN,
     position_token,
 )
@@ -124,13 +125,51 @@ class ModelAdapter:
     def score(
         self, committed: Sequence[Pair], targets: Sequence[Pair]
     ) -> dict[Pair, float]:
+        """``s(c)`` for each target pair, conditioned on the committed set.
+
+        Mathematically identical to ``_pcontact_from_fwd(_fwd_matrix(...))``
+        read at the target entries, but computed with **only the tails the
+        targets need**. ``_fwd_matrix`` runs one tail per residue (L of them)
+        to fill the whole [L, L] map; we only ever read a handful of entries,
+        so we run tails just for the residues appearing in ``targets``. With a
+        queue of ~10 pairs on an L~100 protein that is ~20 tails instead of
+        100 — score was the scheduler's serial bottleneck once propose was
+        batched.
+
+            s(c) = exp(lp1[i] + lp2[i, j]) + exp(lp1[j] + lp2[j, i])
+        """
+        import numpy as np
+
         self.n_score_calls += 1
+        pairs = [canon(*t) for t in targets]
+        if not pairs:
+            return {}
         prompt = self.prefix
         if committed:
             prompt = self.prefix + " " + self._render_contacts(committed)
-        fwd = inf._fwd_matrix(self.backend, prompt, self.seq_positions)
-        s = inf._pcontact_from_fwd(fwd)
-        return {canon(i, j): float(s[i, j]) for (i, j) in (canon(*t) for t in targets)}
+
+        tokenizer = self.backend.tokenizer
+        prefix_ids = list(tokenizer.encode(prompt, add_special_tokens=False))
+        contact_id = inf._token_id(tokenizer, CONTACT_TOKEN)
+        pos_ids = [inf._token_id(tokenizer, position_token(p)) for p in self.seq_positions]
+
+        # lp1 over every residue: a single forward pass after `<contact>`.
+        p1 = self.backend.next_token_probs(prefix_ids, [[contact_id]], pos_ids)
+        lp1 = np.log(np.clip(np.asarray(p1[0], dtype=np.float64), inf._PROB_FLOOR, None))
+
+        # lp2 rows only for residues that appear in a target pair.
+        needed = sorted({i for i, _ in pairs} | {j for _, j in pairs})
+        row_of = {k: r for r, k in enumerate(needed)}
+        tails = [[contact_id, pos_ids[k]] for k in needed]
+        p2 = self.backend.next_token_probs(prefix_ids, tails, pos_ids)
+        lp2 = np.log(np.clip(np.asarray(p2, dtype=np.float64), inf._PROB_FLOOR, None))
+
+        out: dict[Pair, float] = {}
+        for i, j in pairs:
+            fwd_ij = lp1[i] + lp2[row_of[i], j]
+            fwd_ji = lp1[j] + lp2[row_of[j], i]
+            out[(i, j)] = float(np.exp(fwd_ij) + np.exp(fwd_ji))
+        return out
 
     # -- document assembly + validation ---------------------------------
     def assemble_document(self, statements: Sequence[tuple[str, int, int]]) -> str:
