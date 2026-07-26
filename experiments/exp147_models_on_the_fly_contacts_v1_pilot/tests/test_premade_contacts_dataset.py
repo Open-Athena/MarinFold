@@ -2,14 +2,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import asyncio
+import dataclasses
 import json
 from pathlib import Path
 
+import jax.numpy as jnp
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 from levanter.data.mixture import MixtureDataset
-from levanter.data.text.datasets import DirectDatasetComponent
+from levanter.data.text.datasets import DirectDatasetComponent, LmDataConfig
+from levanter.optim.config import AdamConfig
 from marin.execution.artifact import ArtifactRecord
 from marin.execution.lazy import StepContext
 from marin.processing.tokenize.tokenize import TokenizedCache
@@ -20,6 +23,7 @@ from marinfold.document_structures.contacts_v1 import (
     ResidueInfo,
     analyzed_to_row,
 )
+from marinfold.document_structures.contacts_v1.vocab import CONTACT
 from marinfold.document_structures.documents import causal_training_document
 from marinfold_models.shard_documents import (
     PackedDocuments,
@@ -27,14 +31,22 @@ from marinfold_models.shard_documents import (
     fixed_quota_pack_slots,
 )
 
+from any_permissible import (
+    AnyPermissibleQwen3Config,
+    ContactOracleDataConfig,
+    _oracle_expected_logits,
+    contact_edge_capacity,
+)
 from premade_contacts_dataset import (
     FixedQuotaPremadeContactsDataset,
+    contact_oracle_lm_example_from_documents,
 )
 from smoke_dataset import main as smoke_dataset_main
 from stage_pilot import _destination_path
 from train import (
     CONTACTS_TOKENIZER,
     CONTACTS_TOKENIZER_REPO,
+    MODEL_CONFIG,
     _with_local_tokenizer,
     build_step,
 )
@@ -146,6 +158,102 @@ def test_fixed_quota_uniformly_selects_bins_and_pads():
     assert sum(slot is None for slot in padded) == 3
 
 
+def test_contact_oracle_adapter_preserves_tokens_and_records_edge_slots():
+    first = causal_training_document(
+        (10, int(CONTACT), 21, 22, int(CONTACT), 23, 24, 11)
+    )
+    second = causal_training_document((12, int(CONTACT), 25, 26, 13))
+
+    example = contact_oracle_lm_example_from_documents(
+        (first, second),
+        max_seq_len=32,
+        max_segments_per_example=4,
+    )
+
+    np.testing.assert_array_equal(
+        np.asarray(example.tokens)[:13],
+        (
+            10,
+            int(CONTACT),
+            21,
+            22,
+            int(CONTACT),
+            23,
+            24,
+            11,
+            12,
+            int(CONTACT),
+            25,
+            26,
+            13,
+        ),
+    )
+    valid = np.asarray(example.edge_valid)
+    np.testing.assert_array_equal(np.asarray(example.edge_positions)[valid], (1, 4, 9))
+    np.testing.assert_array_equal(
+        np.asarray(example.edge_segment_ids)[valid],
+        (0, 0, 1),
+    )
+    assert len(valid) == contact_edge_capacity(32)
+
+
+def test_oracle_expectations_weight_incidence_and_remove_previous_edges():
+    edge_capacity = contact_edge_capacity(12)
+    hidden_size = 16
+    edge_positions = np.zeros((1, edge_capacity), dtype=np.int32)
+    edge_positions[0, :3] = (1, 4, 7)
+    edge_segments = np.full((1, edge_capacity), -1, dtype=np.int32)
+    edge_segments[0, :3] = 0
+    edge_valid = np.zeros((1, edge_capacity), dtype=np.bool_)
+    edge_valid[0, :3] = True
+    first_ids = np.zeros((1, edge_capacity), dtype=np.int32)
+    second_ids = np.zeros((1, edge_capacity), dtype=np.int32)
+    first_ids[0, :3] = (2, 2, 5)
+    second_ids[0, :3] = (5, 7, 8)
+
+    first_queries = np.zeros((1, edge_capacity, hidden_size), dtype=np.float32)
+    second_queries = np.zeros_like(first_queries)
+    first_queries[0, :3] = np.arange(3 * hidden_size, dtype=np.float32).reshape(
+        3, hidden_size
+    )
+    second_queries[0, :3] = 100 + np.arange(3 * hidden_size, dtype=np.float32).reshape(
+        3, hidden_size
+    )
+    identity = np.eye(hidden_size, dtype=np.float32)
+    endpoint_embeddings = np.stack(
+        (identity[first_ids], identity[second_ids]),
+        axis=1,
+    )
+
+    expected_first, expected_second = _oracle_expected_logits(
+        first_query_activations=jnp.asarray(first_queries),
+        second_query_activations=jnp.asarray(second_queries),
+        first_endpoint_ids=jnp.asarray(first_ids),
+        second_endpoint_ids=jnp.asarray(second_ids),
+        endpoint_embeddings=jnp.asarray(endpoint_embeddings),
+        edge_positions=jnp.asarray(edge_positions),
+        edge_segments=jnp.asarray(edge_segments),
+        edge_valid=jnp.asarray(edge_valid),
+    )
+
+    np.testing.assert_allclose(
+        np.asarray(expected_first)[0, :3],
+        (
+            first_queries[0, 0, (2, 5, 2, 7, 5, 8)].mean(),
+            first_queries[0, 1, (2, 7, 5, 8)].mean(),
+            first_queries[0, 2, (5, 8)].mean(),
+        ),
+    )
+    np.testing.assert_allclose(
+        np.asarray(expected_second)[0, :3],
+        (
+            second_queries[0, 0, (5, 7)].mean(),
+            second_queries[0, 1, 7],
+            second_queries[0, 2, 8],
+        ),
+    )
+
+
 def test_index_mapping_is_stateless_and_epoch_shuffled(tmp_path: Path):
     _write_shards(tmp_path)
     dataset = _dataset(tmp_path, examples_per_shard=40)
@@ -171,10 +279,7 @@ def test_remote_paths_preserve_uri_scheme():
         num_shards=1,
     )
 
-    assert (
-        dataset._shard_path(0)
-        == "gs://bucket/prefix/shard-00000-of-03338.parquet"
-    )
+    assert dataset._shard_path(0) == "gs://bucket/prefix/shard-00000-of-03338.parquet"
     assert (
         _destination_path("gs://bucket/pilot", "shard.parquet")
         == "gs://bucket/pilot/contacts/shard.parquet"
@@ -284,11 +389,10 @@ def test_launch_config_contains_direct_dataset_and_expected_routing():
 
     assert isinstance(config, TrainLmOnPodConfig)
     train_config = config.train_config
-    component = train_config.data.components[
-        "on-the-fly/esm-atlas-contacts-v1"
-    ]
+    component = train_config.data.components["on-the-fly/esm-atlas-contacts-v1"]
     assert isinstance(component, DirectDatasetComponent)
     assert train_config.data.tokenizer == CONTACTS_TOKENIZER
+    assert type(train_config.data) is LmDataConfig
     assert train_config.trainer.train_batch_size == 256
     assert train_config.trainer.per_device_parallelism == 16
     assert train_config.trainer.tracker.entity == "open-athena"
@@ -298,3 +402,44 @@ def test_launch_config_contains_direct_dataset_and_expected_routing():
     local_config = _with_local_tokenizer(config, "/tmp/pinned-tokenizer")
     assert local_config.train_config.data.tokenizer == "/tmp/pinned-tokenizer"
     assert config.train_config.data.tokenizer == CONTACTS_TOKENIZER
+
+
+def test_any_permissible_launch_changes_loss_path_only(monkeypatch):
+    monkeypatch.setenv("EXP147_CONTACT_LOSS", "any-permissible")
+    monkeypatch.setenv("EXP147_NAME", "exp147-any-permissible-test")
+    step = build_step()
+    validation = step.deps[0]
+    context = StepContext.for_run(
+        "gs://marin-us-east5/test/output",
+        "gs://marin-us-east5/test",
+        runtime_args=step.runtime_args,
+        deps=step.deps,
+    )
+    cache = TokenizedCache(path="gs://marin-us-east5/test/validation")
+    cache.__dict__["record"] = ArtifactRecord(
+        config={
+            "tokenizer": CONTACTS_TOKENIZER_REPO,
+            "format": {"text_key": "document"},
+        }
+    )
+    context._loaded[id(validation)] = cache
+
+    config = step.build_config(context)
+
+    assert isinstance(config, TrainLmOnPodConfig)
+    train_config = config.train_config
+    assert type(train_config.data) is ContactOracleDataConfig
+    assert isinstance(train_config.model, AnyPermissibleQwen3Config)
+    assert dataclasses.asdict(train_config.model) == dataclasses.asdict(MODEL_CONFIG)
+    assert train_config.trainer.train_batch_size == 256
+    assert train_config.trainer.per_device_parallelism == 16
+    assert train_config.trainer.num_train_steps == 200
+    assert train_config.optimizer == AdamConfig(
+        learning_rate=3.1623e-3,
+        weight_decay=0.2,
+        beta1=0.9,
+        beta2=0.95,
+        warmup=0.1,
+        lr_schedule="cosine",
+        min_lr_ratio=0.1,
+    )

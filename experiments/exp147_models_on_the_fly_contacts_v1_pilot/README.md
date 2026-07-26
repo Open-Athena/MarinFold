@@ -39,6 +39,13 @@ A shard-local direct Levanter dataset can reconstruct `AnalyzedStructure`, call 
   accumulation steps.
 - Evaluate the regular full `contacts_v1` validation set normally under
   `eval/tokenized/contacts-v1-val/loss`.
+- Optionally set `EXP147_CONTACT_LOSS=any-permissible` for a loss-only
+  ablation. Documents, token order, causal attention, packing, model,
+  optimizer, schedule, and ordinary validation remain unchanged. Only the two
+  endpoint targets after each `<contact>` are replaced by the exact
+  without-replacement oracle: the first endpoint is weighted by its incidence
+  among remaining edges, and the second endpoint is weighted over remaining
+  valid neighbors of the teacher-forced first endpoint.
 
 ### Prototype contract and consequences
 
@@ -140,6 +147,26 @@ uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
   -e EXP147_PER_DEVICE_PARALLELISM 8 \
   -e EXP147_NAME exp147-otf-contacts-v1-1_5b-steps35680-bs256-v6e32 \
   -e EXP147_VERSION steps35680-v6e32-dev \
+  -- python train.py --run
+```
+
+To isolate the any-permissible contact loss against the existing v6e-8
+schedule-matched run, use the same command and add only the loss selector and
+a distinct run/artifact name:
+
+```bash
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
+  --cpu=1 --memory=2G --extra=cpu --zone=us-east5-b \
+  -e WANDB_API_KEY "$WANDB_API_KEY" \
+  -e EXP147_STEPS 35680 \
+  -e EXP147_STEPS_PER_EVAL 1115 \
+  -e EXP147_NUM_SHARDS 3338 \
+  -e EXP147_TPU v6e-8 \
+  -e EXP147_ZONE us-east5-b \
+  -e EXP147_PER_DEVICE_PARALLELISM 16 \
+  -e EXP147_CONTACT_LOSS any-permissible \
+  -e EXP147_NAME exp147-otf-contacts-v1-any-permissible-1_5b-steps35680-bs256-v6e8 \
+  -e EXP147_VERSION any-permissible-steps35680-v6e8-dev \
   -- python train.py --run
 ```
 

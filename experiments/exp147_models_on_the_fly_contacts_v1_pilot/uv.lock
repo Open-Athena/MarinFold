@@ -624,8 +624,8 @@ requires-dist = [
     { name = "marin-levanter", specifier = ">=0.2.56.dev202607230804,<0.3" },
     { name = "marin-rigging", specifier = ">=0.2.56.dev202607230804,<0.3" },
     { name = "marin-zephyr", specifier = ">=0.2.56.dev202607230804,<0.3" },
-    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=codex%2Fon-the-fly-contacts" },
-    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=codex%2Fon-the-fly-contacts" },
+    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp147%2Fany-permissible-run" },
+    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp147%2Fany-permissible-run" },
     { name = "numpy" },
     { name = "pyarrow" },
     { name = "torch", marker = "extra == 'cpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp147-models-on-the-fly-contacts-v1-pilot", extra = "cpu" } },
@@ -1648,7 +1648,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=codex%2Fon-the-fly-contacts#b09574ff90b8f4f9fa49a86c4e2907dd25dd0330" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp147%2Fany-permissible-run#a7d829c590ffba9e91741d4ba218e4dc03734f63" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
@@ -1663,7 +1663,7 @@ dependencies = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=codex%2Fon-the-fly-contacts#b09574ff90b8f4f9fa49a86c4e2907dd25dd0330" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp147%2Fany-permissible-run#a7d829c590ffba9e91741d4ba218e4dc03734f63" }
 dependencies = [
     { name = "fsspec", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
     { name = "gitpython", marker = "sys_platform == 'darwin' or sys_platform == 'linux'" },
