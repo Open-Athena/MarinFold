@@ -91,3 +91,27 @@ def tokenizer_source_path(model_path: Path) -> str:
         out_dir = tempfile.mkdtemp(prefix="marinfold-tokenizer-")
         repaired.save_pretrained(out_dir)
         return out_dir
+
+
+def model_source_path(model_path: Path) -> str:
+    """Return a model path whose tokenizer is loadable by a combined loader.
+
+    Some consumers — notably ``mlx_lm.load`` — insist on loading the model
+    and tokenizer from the same directory. If the checkpoint tokenizer loads
+    normally, return ``model_path`` unchanged. Otherwise, create the repaired
+    tokenizer directory from :func:`tokenizer_source_path` and symlink every
+    missing model artifact into it. This keeps large weights in place while
+    presenting the combined loader with one complete, loadable directory.
+    """
+    source_path = Path(tokenizer_source_path(model_path))
+    if source_path == model_path:
+        return str(model_path)
+
+    for model_entry in model_path.iterdir():
+        destination = source_path / model_entry.name
+        if destination.exists() or destination.is_symlink():
+            continue
+        destination.symlink_to(
+            model_entry.resolve(), target_is_directory=model_entry.is_dir()
+        )
+    return str(source_path)

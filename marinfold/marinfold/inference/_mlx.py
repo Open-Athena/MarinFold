@@ -37,7 +37,7 @@ import numpy as np
 from mlx_lm import load as mlx_load
 from mlx_lm.models.cache import KVCache, make_prompt_cache
 
-from marinfold.inference._tokenizer import load_tokenizer
+from marinfold.inference._tokenizer import load_tokenizer, model_source_path
 
 
 class MlxBackend:
@@ -60,11 +60,13 @@ class MlxBackend:
                 f"tail_batch_size must be >= 1; got {tail_batch_size}."
             )
         self._tail_batch_size = tail_batch_size
-        self._tokenizer = load_tokenizer(model_path)
-        # mlx_lm.load returns (model, tokenizer); we use mlx_lm's
-        # tokenizer only as a sanity check that the path is loadable
-        # and rely on the HF tokenizer above for the public surface.
-        self._model, _ = mlx_load(str(model_path))
+        source_path = model_source_path(model_path)
+        self._tokenizer = load_tokenizer(Path(source_path))
+        # mlx_lm.load always loads both the model and its tokenizer from one
+        # directory. The source-path helper supplies a symlink overlay when
+        # the original tokenizer config needs repair, so mlx-lm does not
+        # independently hit the same unresolvable tokenizer_class.
+        self._model, _ = mlx_load(source_path)
 
     @property
     def tokenizer(self):
