@@ -91,6 +91,7 @@ def build_request(worker_id: int, num_workers: int, args: dict) -> JobRequest:
         f"--shards {args['shards']} "
         f"--worker-id {worker_id} --num-workers {num_workers} "
         f"--docs-per-shard {args['docs_per_shard']} "
+        f"--chunk-docs {args['chunk_docs']} "
         f"--batch {args['batch']} "
         f"--noise-prob {args['noise_prob']} "
         f"--out {args['out']}"
@@ -119,6 +120,7 @@ def main() -> None:
     args = {
         "shards": os.environ.get("EXP159_SHARDS", "0-255"),
         "docs_per_shard": int(os.environ.get("EXP159_DOCS_PER_SHARD", "4000")),
+        "chunk_docs": int(os.environ.get("EXP159_CHUNK_DOCS", "250")),
         "batch": int(os.environ.get("EXP159_BATCH", "48")),
         "noise_prob": float(os.environ.get("EXP159_NOISE_PROB", "0.05")),
         "out": os.environ.get("EXP159_OUT", DEFAULT_OUT),

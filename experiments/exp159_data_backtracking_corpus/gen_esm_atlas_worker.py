@@ -3,11 +3,16 @@
 
 """Sharded worker: generate backtracking documents from the ESM-Atlas set (#159).
 
-One worker owns a slice of exp139's 3,338 contacts shards, and for each shard
-generates backtracking documents with the model-in-the-loop engine and writes a
-single parquet. Shards are independent, so N workers fan out with no
-coordination, and a worker resumes by skipping shards whose output already
-exists.
+One worker owns a slice of exp139's 3,338 contacts shards and generates
+backtracking documents with the model-in-the-loop engine, writing a parquet
+**part** every ``--chunk-docs`` documents. Shards are independent, so N workers
+fan out with no coordination, and a worker resumes by skipping parts that
+already exist.
+
+Part-level (rather than shard-level) writes matter on the preemptible batch
+band: a whole-shard write meant one preemption discarded up to a full shard of
+GPU work and showed no progress for ~an hour. Parts bound the loss to one chunk
+and make progress observable.
 
 Ground truth comes from exp139's saved pyconfind contacts (``esm_atlas_source``)
 — no pyconfind at generation time. Documents are produced by the batched
@@ -91,18 +96,8 @@ def _open_writer(path: str):
     return write_bytes_local, os.path.exists
 
 
-def generate_shard(backend, shard: int, args, policy: RetractionPolicy) -> pd.DataFrame:
-    """Generate every usable protein in one input shard; return a rows DataFrame."""
-    structures = list(
-        iter_structures(
-            [shard],
-            source=args.source,
-            min_len=args.min_len,
-            max_len=args.max_len,
-            min_gt=args.min_gt,
-            limit=args.docs_per_shard,
-        )
-    )
+def generate_chunk(backend, structures, args, policy: RetractionPolicy) -> pd.DataFrame:
+    """Generate documents for one chunk of structures; return a rows DataFrame."""
     if not structures:
         return pd.DataFrame()
 
@@ -130,6 +125,7 @@ def generate_shard(backend, shard: int, args, policy: RetractionPolicy) -> pd.Da
         jobs, backend, policy, seed=args.seed, chunk=args.batch,
         propose_tokens=args.propose_tokens,
     )
+    shard = args._current_shard
 
     rows = []
     for entry_id, result in results.items():
@@ -171,7 +167,9 @@ def main() -> None:
     ap.add_argument("--num-workers", type=int, default=1)
     ap.add_argument("--source", default="hf", choices=("hf", "gcs"))
     ap.add_argument("--out", required=True, help="local dir, gs:// or s3:// prefix")
-    ap.add_argument("--docs-per-shard", type=int, default=None)
+    ap.add_argument("--docs-per-shard", type=int, default=4000)
+    ap.add_argument("--chunk-docs", type=int, default=250,
+                    help="documents per output part (checkpoint granularity)")
     ap.add_argument("--min-len", type=int, default=30)
     ap.add_argument("--max-len", type=int, default=400)
     ap.add_argument("--min-gt", type=int, default=4)
@@ -200,27 +198,47 @@ def main() -> None:
 
     total_docs = 0
     for shard in shards:
-        dest = f"{args.out.rstrip('/')}/backtracking-{shard:05d}.parquet"
-        if exists(dest):
-            print(f"  shard {shard}: exists, skipping", flush=True)
-            continue
-        t0 = time.time()
-        df = generate_shard(backend, shard, args, policy)
-        if df.empty:
-            print(f"  shard {shard}: no usable proteins", flush=True)
-            continue
-        buffer = io.BytesIO()
-        df.to_parquet(buffer, index=False)
-        write_bytes(dest, buffer.getvalue())
-        total_docs += len(df)
-        elapsed = time.time() - t0
-        print(
-            f"  shard {shard}: {len(df)} docs in {elapsed:.0f}s "
-            f"({elapsed / max(len(df), 1):.2f}s/doc), "
-            f"fp_trigger={int(df.fp_retracted_by_trigger.sum())}/"
-            f"{int(df.n_fp_emitted.sum())} -> {dest}",
-            flush=True,
-        )
+        args._current_shard = shard
+        # Read the shard once, then generate in CHUNKS, writing a part parquet
+        # after each. Coarse per-shard writes meant a preemption on the batch
+        # band (or any crash) threw away up to a whole shard of GPU work and
+        # showed no progress for an hour; parts bound the loss to one chunk and
+        # make resume fine-grained.
+        structures = None
+        for part, start in enumerate(range(0, args.docs_per_shard, args.chunk_docs)):
+            dest = f"{args.out.rstrip('/')}/backtracking-{shard:05d}-part{part:03d}.parquet"
+            if exists(dest):
+                continue
+            if structures is None:
+                structures = list(
+                    iter_structures(
+                        [shard], source=args.source, min_len=args.min_len,
+                        max_len=args.max_len, min_gt=args.min_gt,
+                        limit=args.docs_per_shard,
+                    )
+                )
+                if not structures:
+                    print(f"  shard {shard}: no usable proteins", flush=True)
+                    break
+            batch_structures = structures[start:start + args.chunk_docs]
+            if not batch_structures:
+                break
+            t0 = time.time()
+            df = generate_chunk(backend, batch_structures, args, policy)
+            if df.empty:
+                continue
+            buffer = io.BytesIO()
+            df.to_parquet(buffer, index=False)
+            write_bytes(dest, buffer.getvalue())
+            total_docs += len(df)
+            elapsed = time.time() - t0
+            print(
+                f"  shard {shard} part {part}: {len(df)} docs in {elapsed:.0f}s "
+                f"({elapsed / max(len(df), 1):.2f}s/doc), "
+                f"fp_trigger={int(df.fp_retracted_by_trigger.sum())}/"
+                f"{int(df.n_fp_emitted.sum())} -> {dest}",
+                flush=True,
+            )
     print(f"worker {args.worker_id} done: {total_docs} documents", flush=True)
 
 
