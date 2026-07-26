@@ -41,12 +41,15 @@ from __future__ import annotations
 import dataclasses
 import os
 
-from fray import (
+# Import everything from fray.types / fray.current_client: some fray builds
+# export nothing at the `fray` top level, so `from fray import ResourceConfig`
+# is not portable across the dev line.
+from fray.current_client import current_client
+from fray.types import (
     Entrypoint,
     JobRequest,
     ResourceConfig,
     create_environment,
-    current_client,
 )
 
 # iris PriorityBand enum value (iris/rpc/job.proto: PRIORITY_BAND_BATCH = 3).

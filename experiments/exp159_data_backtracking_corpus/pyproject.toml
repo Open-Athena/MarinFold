@@ -2,7 +2,7 @@
 name = "exp159-backtracking-corpus"
 version = "0.0.0"
 description = "Model-in-the-loop backtracking corpus engine + pilot (issue #159)"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.14"  # marin-fray supports 3.12-3.13
 dependencies = [
     "marinfold",
     # GPU inference of the exp120 1.5B model. The host runs CUDA 12.2, so torch
@@ -16,6 +16,15 @@ dependencies = [
     "pyarrow",
     "huggingface_hub>=0.24",
     "numpy",
+    # marin runtime in BASE (not an extra): the iris job env installs base deps
+    # only, and the driver imports fray to submit child JobRequests. Dev line
+    # (not the frozen marin-*-latest assets) because JobRequest.priority — the
+    # batch-band field — only exists on the 0.2.x.dev line.
+    "marin-fray>=0.2.40.dev202607080801",
+    "marin-iris>=0.2.40.dev202607080801",
+    # httpx MUST stay <1: with prerelease=allow uv otherwise picks the broken
+    # httpx 1.0.dev*, whose aiobotocore shim breaks every iris import (exp53).
+    "httpx>=0.28.1,<1",
 ]
 
 [project.optional-dependencies]
@@ -24,8 +33,7 @@ test = ["pytest>=8"]
 # torch is already a top-level dep: the +cu121 wheel carries sm_90 kernels, so
 # the same pin serves this box (CUDA 12.2 driver) and the H100 nodes.
 gpu = ["accelerate>=0.30"]
-# Submitting iris jobs needs a client that passes the 14-day freshness gate.
-dispatch = ["marin-iris", "marin-fray"]
+
 
 [dependency-groups]
 dev = []
