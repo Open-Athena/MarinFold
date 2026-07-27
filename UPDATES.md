@@ -1,5 +1,30 @@
 # MarinFold Updates
 
+## Week of July 27, 2026
+
+### Last week
+
+* **Training: Eric trained our best-yet 1.5B model.** On our 554-protein contact benchmark, his new best 1.5B ([#117](https://github.com/Open-Athena/MarinFold/issues/117), eval loss 2.7037) gets **R-precision 0.53** vs **0.42** for the [#61](https://github.com/Open-Athena/MarinFold/issues/61) model we were using.
+* **Training: Eric is looking at scaling parameters to 3B and 6B** ([#154](https://github.com/Open-Athena/MarinFold/issues/154)). See also [#166](https://github.com/Open-Athena/MarinFold/issues/166) (amino-acid augmentation from the best 8-epoch models vs random init).
+* **Training: Jesse (now on parental leave; Zack to take this over) started looking into training on soft-targets instead of one-hot** (similar to how distillation is done in LLMs). See [#162](https://github.com/Open-Athena/MarinFold/pull/162), under [#147](https://github.com/Open-Athena/MarinFold/issues/147). 
+* **Data: the ESMFold2-Atlas contacts-v1 corpus landed ([#139](https://github.com/Open-Athena/MarinFold/issues/139), [#141](https://github.com/Open-Athena/MarinFold/pull/141)) — 66.8M documents / 71.4B tokens,** ~16× the AFDB set and the "67M instead of 4M" ([#91](https://github.com/Open-Athena/MarinFold/issues/91)). Thanks Jacob for the curation. This time we saved raw pyconfind contacts, so the next document format over this source will be much cheaper to generate.
+* **Data: as our first attempt to generate 3D coordinates**, we wrote out *contacts-and-crops-v1* data for the AFDB training set. Tim is training a model on this ([#137](https://github.com/Open-Athena/MarinFold/issues/137); data [#132](https://github.com/Open-Athena/MarinFold/issues/132), format [#130](https://github.com/Open-Athena/MarinFold/issues/130)).
+* **Post-training idea 1: backtracking ([#158](https://github.com/Open-Athena/MarinFold/issues/158), [#159](https://github.com/Open-Athena/MarinFold/issues/159), [#160](https://github.com/Open-Athena/MarinFold/issues/160))** — We allow the model to "undo" a contact by emitting a `<retract>` token ([#161](https://github.com/Open-Athena/MarinFold/pull/161)). The generator retracts when the model's own posterior turns against a contact it already emitted. 1.02M documents generated on 48 H100s in ~4.5h. Training next.
+* **Post-training idea 2: rollout refinement ([#163](https://github.com/Open-Athena/MarinFold/issues/163), [#164](https://github.com/Open-Athena/MarinFold/pull/164)):** prompt the model with contacts sampled from previous rollouts. Generated 10k samples as a test.
+* **Loss functions: Zack started an experiment to look at a different loss function for pre-training ([#156](https://github.com/Open-Athena/MarinFold/issues/156), [#167](https://github.com/Open-Athena/MarinFold/pull/167))**. Trains on the unordered contact set instead of penalizing arbitrary serialization order and orientation. See also [#157](https://github.com/Open-Athena/MarinFold/issues/157) (relative/RoPE-style residue-position embeddings).
+* **Inference fix: got rid of the `top_k=50` sampling we were doing when generating rollouts for evals.** This was leading to a bias where rollouts tend to be shorter than a typical ground truth document, since the *end* token usually survives the top_k threshold but many lower probability contact position tokens don't. Thanks to Zack for a discussion that led to this finding. See [#142](https://github.com/Open-Athena/MarinFold/issues/142).
+* **Housekeeping:** small bugs fixed in a codebase review ([#148](https://github.com/Open-Athena/MarinFold/pull/148), thanks Sankalp); an inference fix for checkpoints exported by newer transformers ([#165](https://github.com/Open-Athena/MarinFold/pull/165)); an [ESM-Atlas explorer Colab](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/explore_esm_atlas_distill.ipynb) ([#140](https://github.com/Open-Athena/MarinFold/pull/140)).
+
+### Upcoming
+* Tim is training a 1.5B on a mix of contacts-and-crops-v1 (AFDB) and contacts-v1 (AFDB, ESM-Atlas). It is looking promising as 28% of the way in we are at `contacts-v1-val` of 2.809 ([#155](https://github.com/Open-Athena/MarinFold/issues/155)).
+* Tim will continue the two new post-training experiments: backtracking ([#160](https://github.com/Open-Athena/MarinFold/issues/160)) and rollout refinement ([#163](https://github.com/Open-Athena/MarinFold/issues/163)).
+* Eric: evals and analysis across the scaling ladder ([#154](https://github.com/Open-Athena/MarinFold/issues/154)) and babysit the augmentation experiment ([#166](https://github.com/Open-Athena/MarinFold/issues/166)). Eric will send Tim an issue with paths to checkpoints he wants eval'd.
+* Zack is working on getting a readout from the loss experiments in [#156](https://github.com/Open-Athena/MarinFold/issues/156) and [#147](https://github.com/Open-Athena/MarinFold/issues/147) / [#162](https://github.com/Open-Athena/MarinFold/pull/162).
+* Jacob is looking into data curation of multi-protein complexes ([#145](https://github.com/Open-Athena/MarinFold/issues/145)).
+* The pause-token dataset ([#124](https://github.com/Open-Athena/MarinFold/issues/124)) is unclaimed if anyone wants to train on it. The data is [ready](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_think). Can discuss on the call whether to do this.
+
+---
+
 ## Week of July 20, 2026
 
 ### Last week
@@ -13,6 +38,7 @@
 * **Productionization:** fixed the Colab/Kaggle notebook so people can actually run the model ([#107](https://github.com/Open-Athena/MarinFold/pull/107), [#115](https://github.com/Open-Athena/MarinFold/pull/115), [#116](https://github.com/Open-Athena/MarinFold/pull/116)), added a `fold-from-contacts` Colab comparing MarinFold vs MSA contacts ([#129](https://github.com/Open-Athena/MarinFold/pull/129)), and an eval-checkpoint skill that takes a checkpoint to R-precision in one step ([#135](https://github.com/Open-Athena/MarinFold/pull/135)).
 
 ### Upcoming
+
 * After the negative result, I want to think more about post-training. One idea that came up in discussions last week with Sergey is to make a new document format that allows for back-tracking on predicted contacts (e.g. reviving the correction/non-correction tokens we had in the earlier [contacts-and-distances-v1](https://huggingface.co/datasets/timodonnell/protein-docs)). This way we can just keep rolling out a document to get different contact sets. We could use the existing base model to sample decoys. Still thinking through how this should work - if anyone has ideas or wants to brainstorm let me know.
 * Eric is running an expanded tuning sweep on contacts-v1. This has already given us better models and will likely continue to find more improvements this week ([#117](https://github.com/Open-Athena/MarinFold/issues/117)).
 * I'd like to kick off some training runs on [contacts-and-crops-v1](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_and_crops_v1). Eric, do you have bandwidth for running a sweep on this data? If not I will try naive things
@@ -66,7 +92,7 @@
 ### Last week
 
 * Looks like our quick-and-dirty model trained on contacts-v1 does not [perform well](https://github.com/Open-Athena/MarinFold/issues/82#issuecomment-4720288663) at all.
-* However, [Eric's sweep](https://github.com/Open-Athena/MarinFold/issues/61#issuecomment-4752161683) generated models with significantly improved eval perplexities than my quick-and-dirty model. So we are evaluating his best model now ([#89](https://github.com/Open-Athena/MarinFold/issues/89)). We will see if this changes the story.
+* However, [Eric&#39;s sweep](https://github.com/Open-Athena/MarinFold/issues/61#issuecomment-4752161683) generated models with significantly improved eval perplexities than my quick-and-dirty model. So we are evaluating his best model now ([#89](https://github.com/Open-Athena/MarinFold/issues/89)). We will see if this changes the story.
 * While we were waiting for @Eric Czech 's sweep, I tried re-heating my quick-and-dirty model and doing another epoch. That improved eval loss somewhat but is still worse than best model from Eric's sweep ([#85](https://github.com/Open-Athena/MarinFold/issues/85))
 * Implemented a simple inference algorithm for our contacts-v1 models ([#82](https://github.com/Open-Athena/MarinFold/issues/82))
 * Evals: we now include ESMFold2 as a comparison ([#78](https://github.com/Open-Athena/MarinFold/issues/78))
