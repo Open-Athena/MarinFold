@@ -29,38 +29,72 @@ Launch via iris (us-east5, `--tpu=v5p-8 --extra=vllm --extra=tpu`), bf16 model
 `gs://marin-us-east5/checkpoints/prot-exp75-cv1-1_5b-e8-.../hf_bf16/step-35679`.
 Publish to a NEW bucket `hf://buckets/open-athena/MarinFold/data/contacts-v1-rollouts-exp163`.
 
-## B. TPU fine-tune (the real run; template = exp120, NOT exp150/137)
+## B. GPU fine-tune on CoreWeave rno-2a (SUPERSEDES the TPU/exp120 plan)
 
-Copy `experiments/exp120_models_regen_vs_reepoch_contacts_v1/contacts_v1_ft_common.py`
-→ `refine_ft_common.py`. Keep:
-- `INIT_CHECKPOINT = gs://marin-us-east5/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/checkpoints/step-35679`
-  (E8, **Levanter-native** dir, via `SimpleTrainConfig.initialize_from_checkpoint_path` = warm restart).
-- `MODEL_CONFIG = Qwen3Config(max_seq_len=8192, hidden 2048, inter 8192, 32 heads,
-  8 kv, 24 layers)`; `pad_tokenizer_to_match_model=True` (2845→2848).
-- Corpus = parquet `document` text column → `TextLmDatasetFormat(text_key="document")`;
-  tokenizer = bare id `timodonnell/contacts-v1-tokenizer`; keep the
-  `ArrayExemplarTextLmDatasetFormat` reader (cache-ledger bug workaround); new MARIN_PREFIX.
-- Launcher modeled on `train_regen_vs_reepoch_sweep.py` (warm-start, low LR, 1-epoch cosine).
+> The original plan here was "copy exp120's `contacts_v1_ft_common.py` and run it on
+> TPU via the marin executor". That is dead: exp120 is **executor-era marin**
+> (`default_train` / `ExecutorStep` / `versioned` / `this_output_path`), and none of
+> it exists in the marin exp163 resolves (0.2.57). Rollout generation already moved
+> to CoreWeave rno-2a (section A), so training follows it there — same cluster, same
+> S3 prefix, same batch band, no GCS→TPU staging at all.
 
-**Loss mask (the custom piece) — `loss_weight_fn` on the training DatasetComponent**
-(model on `experiments/exp0.../protein_train_common.py:61-129`; per-position float
-0/1, packing-safe pure-JAX, NOT `-100`):
-- weight = 1.0 for positions inside each `<begin_statements> … <end>` span, 0.0 elsewhere
-  (sequence + `<begin_candidate>` blocks + any `<think>` → 0 automatically).
-- **Packing-aware:** `pack=True` puts many docs per 8192 seq → must re-arm per doc.
-  Build ON-at-`<begin_statements>` / OFF-at-`<end>` cumulative indicator, not a single index.
-- ids via tokenizer `convert_tokens_to_ids(BEGIN_STRUCTURE_TOKEN / END_TOKEN)`.
+**Code (all committed):**
+- `refine_ft_common.py` — `MODEL_CONFIG` (Qwen3 1.47B: 8192 ctx / hidden 2048 /
+  inter 8192 / 32 heads / 8 kv / 24 layers / llama3 rope, cross-checked against the
+  S3 export's `config.json`), the data config, and `build_on_pod_config()` on top of
+  `marinfold_models.build_train_lm_on_pod_config` (exp108's StepContext-free builder).
+- `dispatch_refine_train.py` — env knobs → one batch-band `JobRequest(priority=3)`
+  per LR → submit → wait. `EXP163_DRY_RUN=1` builds them without submitting.
+- `loss_mask.py` + `tokenize_refinement_corpus.py` — the answer-span mask (below).
 
-**Staging (required):** HF buckets are NOT levanter-addressable → mirror bucket→GCS
-first (template `experiments/exp120.../mirror_regen_train.py`): `hf buckets cp` (system
-hf ≥1.5) → gcsfs-globbable shards under `gs://marin-us-east5/protein-structure/MarinFold/exp163_.../data/`,
-keep `entry_id`+`document`. Co-locate GCS with TPU zone.
+**Warm start — `initialize_from_hf` against the HF export already on S3**
+(`s3://marin-us-east-02a/MarinFold/exp163/model/step-35679`, the artifact vLLM
+loads). levanter's `HFCheckpointConverter` reads fsspec URLs, so nothing is staged.
+Weights only: fresh optimizer / LR schedule / step 0 = a continue-train.
+The Levanter-native E8 checkpoint does exist, but **not** at the path this document
+used to give — it is missing a `protein/` segment; the real one is
+`gs://marin-us-east5/checkpoints/protein/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/checkpoints/step-35679`
+(`hf/` and `hf_bf16/` are siblings). Unused: cw pods have no GCS creds, so it would
+have to be staged S3-ward to warm-start from the very same weights. Reachable via
+`EXP163_INIT_CKPT` if a full-state restore is ever wanted.
 
-**iris launch:** `uv sync --extra tpu`; `WANDB_API_KEY=… uv run iris --cluster marin job
-run … --extra=tpu --zone=…`. Depend on **PyPI** `marin-iris` (not frozen github-latest)
-for the 14-day client-freshness gate.
+**Loss mask — now materialized in the corpus, not hooked onto the component.**
+levanter 1.2 removed `DatasetComponent.loss_weight_fn`; per-token weights only
+arrive via `PrebuiltLmDatasetFormat(input_ids_key=…, loss_weights_key=…)`, i.e. out
+of the cache. So `tokenize_refinement_corpus.py` tokenizes + greedily packs the raw
+corpus into fixed 8192-token rows and writes `input_ids` + `loss_weights` alongside:
+- weight 1.0 across each document's `<begin_statements> … <end>` span (so the model
+  is trained to emit the true contacts **and** to stop), 0.0 on the sequence header,
+  every `<CAND>` block, the trailing `<eos>` and the pad tail;
+- ids resolved from the live tokenizer (`<begin_statements>`=9, `<end>`=10) rather
+  than assumed, with a drift tripwire;
+- cross-document attention still blocked — `PrebuiltLmDataset` derives segment ids
+  from the `<eos>` the packer writes after each document.
+
+Two blockers dissolve with it: nothing cloudpickles by module reference any more (the
+GPU worker never imports exp163 code), and there is no `marinfold` / `transformers`
+pin clash on the training worker.
+
+Measured on the 10k validation corpus (built + staged to
+`exp163/val10k/refinement_tokenized/`): 18,750 docs / 44.3M tokens → **6,569
+sequences** of 8192, 82.3% packing density, 25.2% of tokens carry loss,
+`EXP163_STEPS_PER_EPOCH = 52` at batch 128.
+
+**Launch** (batch priority; see `dispatch_refine_train.py`'s docstring for the smoke
+form and every env knob):
+
+```bash
+cd experiments/exp163_models_teach_contacts_v1_to_refine_a
+set -a; source ~/.config/marin/cw-rno2a.env; set +a
+WK=$(python -c "import netrc; print(netrc.netrc().authenticators('api.wandb.ai')[2])")
+uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
+    --enable-extra-resources --cpu=2 --memory=6GB --disk=16GB --extra gpu \
+    -e WANDB_API_KEY "$WK" -e EXP163_STEPS_PER_EPOCH 52 \
+    -- python -m dispatch_refine_train
+```
 
 ## Sequencing
-MVP go/no-go → generate ~941k×32 rollouts → publish → mirror→GCS → build refinement
-corpus (`build_refinement_corpus.py`, at scale) → mirror corpus→GCS → default_tokenize
-→ warm-start fine-tune (masked) → eval refiner@K vs @K0 + consensus vote on exp89 held-out.
+MVP go/no-go (done) → generate rollouts on cw-rno2a (10k validated; section A) →
+`build_refinement_corpus.py` → `tokenize_refinement_corpus.py` (mask + packing) →
+warm-start fine-tune (`dispatch_refine_train.py`) → HF-export the checkpoint →
+eval refiner@K vs @K0 + consensus vote on exp89 held-out.

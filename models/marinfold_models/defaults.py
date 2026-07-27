@@ -32,11 +32,14 @@ import jmp
 from haliax.partitioning import ResourceAxis
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
-from levanter.data.text import LmDataConfig
+# levanter >= 1.2 emptied the ``levanter.data.text`` / ``levanter.optim`` package
+# __init__s (their registries discover submodules lazily now), so these configs
+# must be imported from their DEFINING submodule.
+from levanter.data.text.datasets import LmDataConfig
 from levanter.eval_harness import LmEvalHarnessConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.lm_model import LmConfig
-from levanter.optim import OptimizerConfig
+from levanter.optim.config import OptimizerConfig
 from levanter.tracker.wandb import WandbConfig
 from levanter.trainer import TrainerConfig
 from levanter.utils.mesh import MeshConfig
@@ -81,13 +84,18 @@ def build_train_lm_on_pod_config(
     num_train_steps: int,
     train_batch_size: int,
     seq_len: int,
+    auto_build_caches: bool = False,
     steps_per_eval: int = 1000,
+    max_eval_batches: int | None = None,
+    steps_per_checkpoint: int | None = None,
     z_loss_weight: float | None = None,
     tensor_parallel_size: int = 1,
     data_seed: int | None = None,
     eval_harness_tasks: Sequence[EvalTaskConfig] = (),
     eval_harness_steps: int | None = None,
     initialize_from_checkpoint_path: str | None = None,
+    initialize_from_hf: str | bool = False,
+    pad_tokenizer_to_match_model: bool = False,
     wandb_project: str = "MarinFold",
     wandb_group: str | None = None,
     wandb_name: str | None = None,
@@ -113,6 +121,23 @@ def build_train_lm_on_pod_config(
     The returned config is a plain dataclass: the caller submits it as its own
     ``fray.types.JobRequest`` (with a batch priority band for #108) rather than
     letting marin dispatch it interactively.
+
+    Warm-start knobs (a fine-tune continues from an existing model; #163):
+    ``initialize_from_checkpoint_path`` takes a **Levanter-native** checkpoint dir
+    while ``initialize_from_hf`` takes an **HF export** (repo id or a directory
+    URL); set at most one. ``pad_tokenizer_to_match_model`` pads the tokenizer up
+    to a wider checkpoint embedding matrix (Eric's contacts-v1 checkpoints padded
+    2846 -> 2848 for TPU efficiency), so the warm-started shapes match.
+
+    ``auto_build_caches`` must be set here, not just on ``data``:
+    ``run_levanter_train_lm`` OVERRIDES ``data.auto_build_caches`` with the outer
+    ``TrainLmOnPodConfig`` value, so leaving it False would silently disable
+    tokenize-on-the-fly even when the data config asked for it.
+
+    ``steps_per_checkpoint`` adds a PERMANENT checkpoint interval on top of the
+    rolling resumption checkpoints — needed when a later step (HF export, eval)
+    has to read a specific ``step-N``. ``None`` keeps marin's default of forced
+    checkpoints only (i.e. just the final one).
     """
     harness = (
         LmEvalHarnessConfig(task_spec=convert_to_levanter_task_config(list(eval_harness_tasks)))
@@ -137,7 +162,14 @@ def build_train_lm_on_pod_config(
             per_device_parallelism=-1,
             num_train_steps=num_train_steps,
             steps_per_eval=steps_per_eval,
-            checkpointer=CheckpointerConfig(save_interval=_RESUMPTION_INTERVAL, keep=[]),
+            max_eval_batches=max_eval_batches,
+            checkpointer=CheckpointerConfig(
+                save_interval=_RESUMPTION_INTERVAL,
+                # `keep` entries are plain dicts (draccus can't parse the
+                # CheckpointInterval dataclass); CheckpointerConfig.create turns
+                # them into CheckpointInterval(every=...).
+                keep=[dict(every=steps_per_checkpoint)] if steps_per_checkpoint else [],
+            ),
             mesh=_marin_mesh(tensor_parallel_size),
             per_device_eval_parallelism=-1,
             allow_nondivisible_batch_size=True,
@@ -148,12 +180,15 @@ def build_train_lm_on_pod_config(
         train_seq_len=seq_len,
         data_seed=data_seed,
         initialize_from_checkpoint_path=initialize_from_checkpoint_path,
+        initialize_from_hf=initialize_from_hf,
+        pad_tokenizer_to_match_model=pad_tokenizer_to_match_model,
         eval_harness=harness,
         eval_harness_steps=eval_harness_steps,
         adapter=NoAdaptorConfig(),
     )
 
     return TrainLmOnPodConfig(
+        auto_build_caches=auto_build_caches,
         train_config=inner,
         resources=resources,
         output_path=output_path,

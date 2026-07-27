@@ -14,7 +14,9 @@ from dataclasses import dataclass
 from fray.cluster import ResourceConfig
 from levanter.callbacks.profiler import ProfilerConfig
 from levanter.callbacks.watch import WatchConfig
-from levanter.optim import OptimizerConfig
+# levanter >= 1.2 emptied the ``levanter.optim`` package __init__ (its registry
+# discovers optimizer submodules lazily); import from the defining submodule.
+from levanter.optim.config import OptimizerConfig
 from levanter.schedule import IntSchedule
 
 
