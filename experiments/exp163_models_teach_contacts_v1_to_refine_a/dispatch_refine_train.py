@@ -24,8 +24,24 @@ Recipe: a dedicated **1-epoch cosine** continue-train (peak LR decays to the
 ``weight_decay=0.2``, ``warmup=0.1``, global batch **128** (== Eric's #75 training
 batch — no batch-scaling confound), seq **8192**. The train corpus is answer-span
 **masked**; the val corpus (original contacts-v1 val) is monitored **unmasked**
-every eval — the step-0 value should read ~ 2.7566, confirming the E8 warm-start
-loaded.
+every eval, as a base-task-retention monitor.
+
+WARM-START VERIFICATION — use **bpb, not loss**. #163 originally called for "step-0
+val loss ~ 2.7566" (Eric's logged E8 value). That check does not work as written,
+for two independent reasons found on the first smoke run:
+
+* levanter has **no step-0 eval** on this path — hooks fire at multiples of
+  ``steps_per_eval``, so the first recorded value already includes LR-warmup
+  damage. Use the ``EXP163_STEPS_PER_EVAL=1 EXP163_MAX_STEPS=1`` probe for an
+  anchor.
+* per-token ``loss`` is **not comparable across harnesses**. levanter's ``bpb``
+  divides by summed per-token-type byte lengths weighted by the loss mask, so a
+  different packing/eval config changes the effective bytes-per-token and hence
+  the loss scale, at identical model quality. Measured: Eric logged
+  loss 2.75660 / bpb 0.39151 (10.16 bytes/token); this harness gives
+  loss 3.16941 / bpb 0.39489 (11.58 bytes/token) — the loss ratio 1.1497 is
+  exactly (bpb ratio 1.0086) x (bytes/token ratio 1.1399). **bpb agrees to 0.9%**,
+  which is the real signal that E8 loaded. Random init would be ~ln(2845) = 7.95.
 
 --------------------------------------------------------------------------------
 PREREQUISITES on S3 (must exist BEFORE this can run):
@@ -48,6 +64,8 @@ Env knobs (so a smoke run needs no code edit):
   EXP163_TRAIN_SEQUENCES  alternative: packed sequences in the corpus; steps/epoch
                           = ceil(sequences / batch)
   EXP163_MAX_STEPS        cap steps for a smoke run (default: full 1-epoch count)
+  EXP163_STEPS_PER_EVAL   override the eval cadence (default: a quarter epoch).
+                          Set to 1 with EXP163_MAX_STEPS=1 for a warm-start anchor probe.
   EXP163_REPLICAS         number of 8xH100 nodes per run (default 1 = 8 GPUs; <=4)
   EXP163_CORPUS           tokenized train corpus glob (S3 default above)
   EXP163_VAL              unmasked val glob            (S3 default above)
@@ -252,7 +270,12 @@ def main() -> None:
 
     # Eval every quarter epoch; keep a permanent checkpoint every half epoch (the
     # final one is always written) so the HF export / eval has a step-N to read.
-    steps_per_eval = max(1, spe // 4)
+    #
+    # NOTE: levanter fires eval hooks at multiples of steps_per_eval and there is
+    # NO step-0 eval, so a normal run never records the pristine warm-start value
+    # (its first eval already includes LR-warmup damage). To capture a near-step-0
+    # anchor, run a 1-step probe: EXP163_MAX_STEPS=1 EXP163_STEPS_PER_EVAL=1.
+    steps_per_eval = int(os.environ.get("EXP163_STEPS_PER_EVAL") or max(1, spe // 4))
     steps_per_checkpoint = max(1, spe // 2)
 
     warm_start = INIT_FROM_LEVANTER or INIT_FROM_HF

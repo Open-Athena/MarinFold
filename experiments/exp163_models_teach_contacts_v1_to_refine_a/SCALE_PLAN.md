@@ -93,6 +93,33 @@ uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
     -- python -m dispatch_refine_train
 ```
 
+### Smoke run — PASSED (2026-07-27)
+
+`plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos`, 52 steps, 1x8xH100, batch band,
+~25 min wall ([W&B](https://wandb.ai/open-athena/MarinFold/runs/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos)).
+
+| check | result |
+|---|---|
+| batch band | child gang submitted at `priority=3` |
+| prebuilt masked cache | built from S3 with **6,569 records**, `input_ids` **and** `loss_weights` array stores |
+| E8 warm-start | loaded (see bpb note below) |
+| masked objective trains | `train/loss` 3.99 -> **2.398** over 52 steps |
+| base-task retention | `eval/contacts-v1-val` 3.4625 (s13) -> 3.1841 (s26) -> 3.1711 (s39) -> **3.1694** (s51); dips during LR warmup, recovers |
+| artifacts | permanent ckpts `step-26`/`step-51` **plus an automatic HF export at `hf/step-51` with the tokenizer co-located** |
+
+Two corrections to the plan came out of it:
+
+1. **The HF export is free.** `run_levanter_train_lm` derives `hf_save_path` from
+   `output_path`, so the run writes `checkpoints/<run>/hf/step-N/` itself, tokenizer
+   included. The planned separate export step (exp108's `export_qwen_3b_contacts_v1.py`
+   template) is **not needed** — Phase 3's HF-transformers scorer can read it directly.
+2. **Verify the warm-start with `bpb`, not `loss`** — and there is no step-0 eval.
+   See `dispatch_refine_train.py`'s docstring: Eric's loss 2.75660 / bpb 0.39151 vs
+   this harness's 3.16941 / 0.39489. bpb agrees to 0.9%; the loss gap is entirely
+   levanter's bytes-per-token bookkeeping (10.16 vs 11.58), which is packing- and
+   version-dependent. **Any MarinFold experiment quoting a cross-harness per-token
+   loss target (#137, #150, #155) is exposed to the same effect.**
+
 ## Sequencing
 MVP go/no-go (done) → generate rollouts on cw-rno2a (10k validated; section A) →
 `build_refinement_corpus.py` → `tokenize_refinement_corpus.py` (mask + packing) →
