@@ -1,6 +1,6 @@
 # exp163 — teaching contacts-v1 to refine a set of candidate rollouts
 
-**Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164) · **Status as of 2026-07-27:** Phases 0–2 complete, Phase 3 in flight
+**Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164) · **Status as of 2026-07-27:** Phases 0–3 complete — **kill criterion met**, mechanism confirmed, forgetting is the blocker
 
 ---
 
@@ -350,31 +350,101 @@ ln(2845) = 7.95).
 ⚠️ This generalizes: **any MarinFold experiment quoting a cross-harness per-token loss
 target is exposed to the same effect** — #137, #150 and #155 all do.
 
-## 8. Phase 3 — evaluation (in flight)
+## 8. Phase 3 — evaluation (DONE): the kill criterion is met, but the mechanism is real
+
+553 proteins from the exp89 eval set, paired, both models scored under identical
+candidate contexts. Harness validation first: **base K0 = 0.3355** against exp89's
+published E8 value of **0.3389** — the pipeline reproduces the reference.
+
+### all band — R-precision
+
+| model | K0 | K1 | K2 | K4 | K8 | K16 | consensus |
+|---|---|---|---|---|---|---|---|
+| base | **0.3355** | 0.1452 | 0.1024 | 0.0665 | 0.0269 | 0.0194 | 0.2023 |
+| refiner | 0.1978 | 0.1555 | 0.0813 | 0.0383 | 0.0211 | 0.0165 | **0.2220** |
+| *(candidate contacts shown)* | 0 | 98 | 195 | 391 | 780 | 1557 | 58 |
+
+Long band tells the same story (base K0 0.2697; refiner consensus 0.1767).
+
+**Against the success criteria:**
+
+* *refiner@K > refiner@K0?* Only for the **consensus** arm: **+0.0242**, and it
+  beats its own K0 on **63%** of proteins. Every raw-K arm fails.
+* *refiner@K > max(base matrix, consensus)?* **No.** The base model's one-shot
+  matrix is 0.3355 on this eval set; the refiner's best arm is 0.2220.
+* **The kill criterion is met.** The best deployable prediction is still the base
+  model's calibrated matrix.
+
+### But the mechanism it was built to test does work
+
+Feed the *same* 56.7%-precision consensus block to both models:
+
+| | K0 | + consensus block | Δ | wins vs own K0 |
+|---|---|---|---|---|
+| base | 0.3355 | 0.2023 | **−0.1333** | 8% |
+| refiner | 0.1978 | 0.2220 | **+0.0242** | 63% |
+
+A **+0.157 swing** in how the two models respond to identical candidate context.
+The base is poisoned exactly as the Step-2 probe predicted; the refiner is not —
+it uses the context constructively. Candidate discrimination *was* learned.
+
+### Why it still loses: catastrophic forgetting, not a failed idea
+
+`refiner K0 = 0.1978` vs `base K0 = 0.3355` — the one-epoch full fine-tune
+destroyed **41%** of the model's one-shot contact ability (base wins on 94% of
+proteins). The +0.024 conditioning gain cannot climb out of a 0.138 hole. The
+refiner is not bad at refining; it is bad at contacts.
+
+Two lessons worth carrying:
+
+1. **Base-task val loss badly under-reports this damage.** Training showed bpb
+   0.39151 → 0.39489, a 0.9% move. The actual contact metric moved 41%. A
+   language-modelling proxy is not a substitute for the task metric — and this is
+   exactly what #89's loss-vs-R-precision study warned about.
+2. **The MVP's conclusion #3 inverts at scale.** The MVP found precision-gating
+   preprocessing was "a dead lever" (consensus ≈ raw blocks). Here raw blocks hurt
+   monotonically for *both* models — even at K=1, with 98 contacts, comfortably
+   inside the training distribution — and the precision-filtered consensus block
+   is the **only** context that helps. Whatever the refiner learned, it is
+   discrimination *given already-high-precision* evidence, not the ability to
+   distil precision out of raw noisy blocks.
+
+(An earlier version of this eval ran only K=16 with `n_cap=120` — 1,920 contacts /
+~5,776 tokens, ~4× the training mean and past the training maximum of 1,282 /
+3,862 — and scored *below* random. That out-of-distribution context was a real
+defect in the eval, now fixed by sweeping K; but with the sweep in place it is
+clear the collapse is not merely a context-length artifact, since K=1 already
+hurts.)
+
+### What this says about the next step
+
+Scaling the corpus 100× does not fix a recipe that loses 41% of the base task in
+a single epoch. The forgetting has to be fixed first — the issue already lists the
+levers (LoRA instead of a full fine-tune, as the MVP used; lower LR; mixing plain
+contacts-v1 documents into the corpus so K=0 stays anchored). The Phase-2 sweep
+already pointed this way: 3e-4 degraded base-task retention 7.4% more than 1e-4
+for a 0.3% training-loss gain.
+
+## 9. Phase 3 — how it was run
 
 The 10k corpus has **no held-out protein split**: all 9,375 rollout proteins went into
-training. So the headline comparison must run on the **exp89 eval set** (554 units /
-552 stems), which needs its own base-model rollouts.
+training. So the headline comparison runs on the **exp89 eval set** (554 units /
+552 stems), which needed its own base-model rollouts.
 
-Built and dispatched: 554 targets (sequences from the exp74/exp78 manifests, GT from
+Built and run: 554 targets (sequences from the exp74/exp78 manifests, GT from
 exp89's `gt_universe.jsonl` under exp89's own `degree ≥ 0.001 ∧ |i−j| ≥ 6` definition,
 so the target GT is bit-identical to what the metric scores against), 24 prompts each,
-8 × 1×H100 shards at batch priority.
+8 × 1×H100 shards at batch priority (13,296 rollouts in ~5 min). Scoring then ran as
+12 more single-H100 jobs — 2 models × 6 shards, ~45 min each.
 
 Leakage is not a concern: the training corpus uses ESM-Atlas MD5 entry ids — a disjoint
 universe from exp89's PDB-derived stems.
 
-**Success criteria** (unchanged from the issue):
+The eval worker is deliberately self-contained (no repo checkout on the pod, no
+`marinfold`, no sklearn); its metrics are verified against exp89's reference —
+R-precision bit-identical, AUC to 1e-16 over 25 randomized cases.
 
-* **Does it use candidates without being poisoned?** refiner@K=16 must exceed
-  refiner@K=0, and never fall below it.
-* **Is it worth it?** refiner@K must beat max(base calibrated matrix, consensus voting)
-  ≈ 0.22, climbing toward oracle best-of-K (0.24) and ultimately the conditional
-  ceiling (0.556), ideally holding AUC ≥ 0.89.
-* **Kill:** refiner ≈ K=0 (ignores candidates), or < K=0 (poisoned), or stuck at ~0.22
-  (learned only consensus).
-
-## 9. Cost of the 1M push
+## 10. Cost of the 1M push
 
 Measured, not estimated: the 10k batch did 225,072 rollouts in ~59 min on 16 H100s ⇒
 **~14,350 rollouts/GPU-hour**. So 1M proteins × 24 rollouts = 24M rollouts ⇒

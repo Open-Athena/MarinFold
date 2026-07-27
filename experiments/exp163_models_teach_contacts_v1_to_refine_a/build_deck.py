@@ -516,36 +516,91 @@ bullets(s, 0.9, 5.1, 11.5, 1.8, [
     ("⚠ #137, #150 and #155 all quote cross-harness per-token loss targets.", ""),
 ], size=13.5, gap=10)
 
-# ============================================================ 14. phase 3
+# ============================================================ 14. phase 3 results
 s = sl()
-title(s, "Phase 3 — evaluation, in flight",
-      "The 10k corpus has no held-out protein split, so the headline test runs on the exp89 eval set.")
-card(s, 0.9, 2.15, 5.6, 2.35, fill=CARD)
-box(s, 1.2, 2.4, 5.0, 0.45, "Dispatched", size=16, bold=True, color=MID)
-bullets(s, 1.2, 2.95, 5.0, 1.4, [
-    "554 eval targets (sequences from exp74/exp78 manifests, GT from exp89's gt_universe)",
-    "24 prompts each · 8 × 1×H100 · batch band",
-    "GT filtered by exp89's own definition, so it is bit-identical to what the metric scores",
-], size=12, gap=7)
-card(s, 6.85, 2.15, 5.6, 2.35, fill=C(0xE8, 0xF3, 0xEE))
-box(s, 7.15, 2.4, 5.0, 0.45, "No leakage", size=16, bold=True, color=GREEN)
-box(s, 7.15, 2.95, 5.0, 1.4,
-    "The training corpus uses ESM-Atlas MD5 entry ids — a disjoint universe from exp89's "
-    "PDB-derived stems. Disjointness holds by construction, not by filtering.",
-    size=12.5, color=C(0x22, 0x50, 0x3E))
-box(s, 0.9, 4.8, 11.5, 0.45, "Success criteria", size=17, bold=True, font=HEAD, color=MID)
-for i, (n, t) in enumerate([
-        (1, "refiner@K16 > refiner@K0 — it uses candidates without being poisoned"),
-        (2, "refiner@K > max(base matrix, consensus) ≈ 0.22 — it is worth it"),
-        (3, "Kill: ≈K0 (ignores), <K0 (poisoned), or stuck at 0.22 (learned only consensus)")]):
-    y = 5.35 + i * 0.55
-    circle_num(s, 0.9, y, 0.36, n, fill=TEAL if i < 2 else CORAL)
-    box(s, 1.42, y + 0.03, 10.9, 0.45, t, size=13.5, color=INK)
+title(s, "Phase 3 — the verdict", "553 exp89 eval proteins, paired, identical candidate contexts for both models.")
+table(s, 0.75, 2.0, 11.85, [
+    ["model", "K0", "K1", "K2", "K4", "K8", "K16", "consensus"],
+    ["base", "0.3355", "0.1452", "0.1024", "0.0665", "0.0269", "0.0194", "0.2023"],
+    ["refiner", "0.1978", "0.1555", "0.0813", "0.0383", "0.0211", "0.0165", "0.2220"],
+    ["candidate contacts", "0", "98", "195", "391", "780", "1557", "58"],
+], [2.55, 1.35, 1.2, 1.2, 1.2, 1.2, 1.2, 1.55], size=12.5, row_h=0.42,
+   hilite={(1, 1), (2, 7)})
+card(s, 0.75, 3.9, 5.75, 1.25, fill=C(0xFA, 0xEC, 0xE9))
+box(s, 1.05, 4.1, 5.15, 0.85,
+    "Kill criterion MET. The base model's one-shot matrix (0.3355) is still the best "
+    "deployable prediction; the refiner's best arm is 0.2220.",
+    size=13.5, color=C(0x8E, 0x3A, 0x2C), bold=True)
+card(s, 6.85, 3.9, 5.75, 1.25, fill=C(0xE8, 0xF3, 0xEE))
+box(s, 7.15, 4.1, 5.15, 0.85,
+    "But raw blocks hurt BOTH models monotonically — even at K=1, comfortably "
+    "in-distribution. Only the precision-filtered consensus block helps.",
+    size=13.5, color=C(0x22, 0x50, 0x3E), bold=True)
+box(s, 0.75, 5.45, 11.85, 0.45, "Harness check: base K0 = 0.3355 vs exp89's published E8 value of 0.3389.",
+    size=13, color=MUTE, italic=True)
+footer(s, "R-precision, all band. Long band tells the same story (base K0 0.2697, refiner consensus 0.1767).")
 
-# ============================================================ 15. 1M decision
+# ============================================================ 15. mechanism works
+s = sl()
+title(s, "The mechanism does work", "Same 56.7%-precision consensus block, fed to both models.")
+cd = CategoryChartData()
+cd.categories = ["base", "refiner"]
+cd.add_series("K0 (no candidates)", (0.3355, 0.1978))
+cd.add_series("+ consensus block", (0.2023, 0.2220))
+gf = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, In(0.9), In(2.1), In(7.0), In(3.9), cd)
+ch = gf.chart
+chart_style(ch, legend=True)
+ch.plots[0].series[0].format.fill.solid()
+ch.plots[0].series[0].format.fill.fore_color.rgb = MUTE
+ch.plots[0].series[1].format.fill.solid()
+ch.plots[0].series[1].format.fill.fore_color.rgb = TEAL
+pl = ch.plots[0]
+pl.has_data_labels = True
+pl.data_labels.number_format = "0.000"
+pl.data_labels.number_format_is_linked = False
+pl.data_labels.font.size = Pt(11); pl.data_labels.font.name = BODY
+pl.data_labels.font.bold = True
+pl.data_labels.position = XL_LABEL_POSITION.OUTSIDE_END
+ch.value_axis.maximum_scale = 0.40
+ch.value_axis.minimum_scale = 0
+card(s, 8.3, 2.15, 4.15, 1.7, fill=C(0xFA, 0xEC, 0xE9))
+box(s, 8.6, 2.36, 3.6, 0.42, "base: POISONED", size=13, bold=True, color=CORAL)
+box(s, 8.6, 2.78, 3.6, 0.7, "-0.133", size=32, bold=True, font=HEAD, color=CORAL)
+box(s, 8.6, 3.38, 3.6, 0.4, "gains on only 8% of proteins", size=11.5, color=C(0x8E, 0x3A, 0x2C))
+card(s, 8.3, 4.0, 4.15, 1.7, fill=C(0xE8, 0xF3, 0xEE))
+box(s, 8.6, 4.21, 3.6, 0.42, "refiner: USES IT", size=13, bold=True, color=GREEN)
+box(s, 8.6, 4.63, 3.6, 0.7, "+0.024", size=32, bold=True, font=HEAD, color=GREEN)
+box(s, 8.6, 5.23, 3.6, 0.4, "gains on 63% of proteins", size=11.5, color=C(0x2E, 0x5D, 0x4A))
+card(s, 0.9, 6.2, 11.55, 0.8, fill=MID)
+box(s, 1.15, 6.4, 11.0, 0.5,
+    "A +0.157 swing in how the two models respond to identical input. Candidate discrimination WAS learned.",
+    size=14.5, color=WHITE, bold=True)
+
+# ============================================================ 16. why it loses
+s = sl()
+title(s, "Why it still loses: forgetting", "The refiner is not bad at refining. It is bad at contacts.")
+for i, (v, l, sub, col) in enumerate([
+        ("0.3355", "base K0", "one-shot contact ability", TEAL),
+        ("0.1978", "refiner K0", "after 1 epoch of fine-tuning", CORAL),
+        ("-41%", "of the base task", "base wins on 94% of proteins", CORAL)]):
+    x = 0.9 + i * 4.0
+    card(s, x, 2.15, 3.6, 2.0)
+    stat(s, x, 2.4, 3.6, v, l, vcol=col, vsize=32, sub=sub)
+bullets(s, 0.9, 4.5, 11.5, 2.4, [
+    ("A +0.024 conditioning gain cannot climb out of a 0.138 hole. ",
+     "Nothing clears the bar because the refiner starts from a much weaker model."),
+    ("The LM proxy badly under-reports the damage. ",
+     "Base-task val bpb moved 0.9% (0.39151 -> 0.39489). The contact metric moved 41%. "
+     "Exactly what #89's loss-vs-R-precision study warned about."),
+    ("Scaling 100x does not fix this. ",
+     "Fix the forgetting first: LoRA (as the MVP used), lower LR, or mix plain "
+     "contacts-v1 documents in so K=0 stays anchored."),
+], size=14, gap=13)
+
+# ============================================================ 17. 1M decision
 s = sl(dark=True)
-title(s, "The 1M push — a decision, not a default",
-      "Cost measured on the 10k batch, not estimated.", dark=True)
+title(s, "The 1M push — now a harder call",
+      "Cost measured on the 10k batch, not estimated. But scale is not the blocker.", dark=True)
 for i, (v, l, col) in enumerate([
         ("14,350", "rollouts per GPU-hour", AMBER),
         ("~1,700", "H100-hours for 1M × 24", WHITE),
@@ -559,8 +614,9 @@ bullets(s, 0.9, 4.4, 11.5, 2.3, [
      "is the point (n_pred 201 vs 95), but it doubles the bill."),
     ("Is 1M the right number? ", "250k proteins is ~420 H100-hours (~26h on 16 shards) and "
      "plausibly buys most of the fold diversity for a quarter of the spend."),
-    ("One wrinkle first. ", "Prompt generation still writes one S3 object per target — fine "
-     "for 554, ~1M objects at scale. Fixing it needs matched changes in the worker's reader."),
+    ("Phase 3 changes the question. ", "The kill criterion is met and the binding "
+     "constraint is forgetting, not data volume — so spending ~1,700 H100-hours on the "
+     "same recipe would buy a better-trained version of a model that loses to its own base."),
 ], size=14, color=C(0xDE, 0xE7, 0xF5), gap=12)
 
 prs.save("exp163_deck.pptx")

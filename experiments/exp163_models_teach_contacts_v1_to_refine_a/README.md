@@ -151,10 +151,34 @@ degrades base-task retention 7.4% more. Checkpoints + HF exports at
 Warm-start verification uses **bpb, not per-token loss** — see `SCALE_PLAN.md` for
 why #163's "step-0 val ≈ 2.7566" criterion is not well posed across harnesses.
 
-### Phase 3 — evaluation (PENDING)
+### Phase 3 — evaluation (DONE 2026-07-27)
 
-Blocked on generating K base rollouts for the exp89 eval set: the 10k corpus has
-no held-out protein split, so `refiner@K16 vs @K0` cannot be read off it.
+553 exp89 eval proteins, paired, both models under identical candidate contexts.
+Harness check: base K0 = **0.3355** vs exp89's published E8 **0.3389**.
+
+| model | K0 | K1 | K2 | K4 | K8 | K16 | consensus |
+|---|---|---|---|---|---|---|---|
+| base | **0.3355** | 0.1452 | 0.1024 | 0.0665 | 0.0269 | 0.0194 | 0.2023 |
+| refiner | 0.1978 | 0.1555 | 0.0813 | 0.0383 | 0.0211 | 0.0165 | **0.2220** |
+
+**The kill criterion is met** — the base model's one-shot matrix (0.3355) remains
+the best deployable prediction; the refiner's best arm is 0.2220.
+
+**But the mechanism works.** Given the same 56.7%-precision consensus block, the
+refiner *gains* +0.0242 over its own K0 (wins on 63% of proteins) while the base
+*loses* −0.1333 (wins on 8%) — a +0.157 swing. Candidate discrimination was learned.
+
+**Why it still loses: catastrophic forgetting.** refiner K0 0.1978 vs base 0.3355 —
+the 1-epoch full fine-tune cost 41% of the one-shot contact ability, and a +0.024
+conditioning gain cannot recover a 0.138 hole. Note base-task val bpb moved only
+0.9% (0.39151 → 0.39489) while the contact metric moved 41%: **the LM proxy badly
+under-reports task damage.**
+
+Also inverts the MVP's conclusion #3: raw candidate blocks hurt monotonically for
+both models (even K=1, in-distribution); the precision-filtered consensus block is
+the *only* context that helps.
+
+See [WRITEUP.md](WRITEUP.md) §8 for the full analysis and next levers.
 
 ## Conclusion
 
