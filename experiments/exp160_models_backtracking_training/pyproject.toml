@@ -16,6 +16,7 @@ dependencies = [
     "pyarrow",
     "huggingface_hub>=0.24",
     "numpy",
+    "requests",
 ]
 
 [project.optional-dependencies]
