@@ -358,6 +358,27 @@ contacts were low-confidence ones. Budget is `6L+128` (exp142's), not the old
 `4L+64`: untruncated documents are long enough that the old cap would bind.
 `unfinished` was 0/55,400 in every pass.
 
+**Model vs sampling — the full 2×2** (both checkpoints × both recipes, 554
+proteins each, so the decomposition is measured rather than assumed):
+
+| R-precision (all) | top-k 50 | no top-k | top-k effect |
+|---|---:|---:|---:|
+| #61 (2.7566) | 0.4131 | 0.4245 | +0.0115 |
+| #117 best (2.7037) | 0.5279 | 0.5350 | +0.0070 |
+| **model effect** | **+0.1149** | **+0.1104** | |
+
+Of the +0.1219 total from the previously published condition to the new headline,
+**~91% is the model and ~7% the sampling change**, with a small negative
+interaction (−0.004). The interaction has a mechanism: the better model already
+under-generates less (123.1 contacts/rollout under top-k, 0.745× GT, vs 110.3 /
+0.667× for #61), so it has less to gain from untruncating — 0.978× vs 0.958× of GT
+once top-k is off. Long-range R behaves the same (89–94% model).
+
+**AUC is the exception**: sampling accounts for ~28–39% of its +0.051 gain
+(#61 0.8808→0.9010, #117 0.9177→0.9318). That fits — untruncating populates the
+low-vote tail, which is exactly the region AUC integrates over and which the
+pairwise tie-break used to have to repair.
+
 **2. The tie-break is dropped from the headline recipe.** It moves R-precision by
 0.0007 (0.41498 → 0.41431 in the run above this section) and exists only to
 rescue AUC from the 0-vote tie mass. With top-k off, far fewer pairs tie at zero
@@ -368,8 +389,17 @@ inference pass is no longer worth its cost.
 **Validation.** The top-k-50 row above reproduces this experiment's own published
 HF-transformers number (0.4150 R / 0.8814 AUC / 0.3550 long R) to within 0.004 on
 a different GPU, a different vLLM, and a different scoring harness. Separately,
-195 proteins scored on both an A5000 (vLLM 0.11.0) and an H100 (vLLM 0.9.2) agree
-at 0.4370 vs 0.4333 mean, per-protein r = 0.987.
+the exp75 no-top-k pass was run **twice end to end** — 12 CoreWeave H100s
+(vLLM 0.9.2) and one workstation A5000 (vLLM 0.11.0) — over all 554 proteins:
+
+| | R (all) | AUC (all) | R (long) |
+|---|---:|---:|---:|
+| CoreWeave H100 / vLLM 0.9.2 | 0.4245 | 0.9010 | 0.3656 |
+| local A5000 / vLLM 0.11.0 | 0.4260 | 0.9011 | 0.3667 |
+| Δ (per-protein r) | −0.0014 (0.992) | −0.0002 (0.982) | −0.0011 (0.985) |
+
+i.e. the two stacks agree well inside the Monte-Carlo noise of 100 sampled
+rollouts. Both report 0/55,400 rollouts hitting the token cap.
 
 **Result — all six predictors, exp89 metrics, n=554:**
 

@@ -95,11 +95,7 @@ echo "[eval-cw] host=$(hostname) label={label} shard={shard_i}/{num_shards} imag
 nvidia-smi -L || true
 
 {FSSPEC_VIRTUAL_ADDRESSING_EXPORT}
-# 1xH100 requests pack up to 8 pods per node, and vLLM's engine-core binds a fixed
-# default torch.distributed port -> a co-located sibling loses with EADDRINUSE.
-# Spread the pods over a wide range keyed on this shell's pid.
-export VLLM_PORT=$(( 20000 + ($$ % 25000) ))
-echo "[eval-cw] AWS_ENDPOINT_URL=${{AWS_ENDPOINT_URL:-unset}} iris_FSSPEC_S3=${{FSSPEC_S3:+present}} VLLM_PORT=$VLLM_PORT"
+echo "[eval-cw] AWS_ENDPOINT_URL=${{AWS_ENDPOINT_URL:-unset}} iris_FSSPEC_S3=${{FSSPEC_S3:+present}}"
 
 mkdir -p {WORK_DIR}
 echo {worker_b64} | base64 -d > {WORKER_LOCAL}
@@ -118,6 +114,14 @@ uv pip install --python "$VLLM_PY" --quiet fsspec s3fs boto3 pyarrow \
 uv pip install --python "$VLLM_PY" --quiet --no-deps "{MARINFOLD_GIT}" \
   || "$VLLM_PY" -m pip install --quiet --no-deps "{MARINFOLD_GIT}"
 "$VLLM_PY" -c "from marinfold.document_structures.contacts_v1 import build_document; print('[eval-cw] marinfold OK')"
+
+# 1xH100 requests pack several pods per node and those pods SHARE the node's network
+# namespace, so vLLM's engine-core all pick the same default torch.distributed port
+# and every loser dies with EADDRINUSE. Ask the kernel for a free port -- do NOT key
+# it on $$ or $(hostname): bash is pid 1 in the container and the hostname is the
+# NODE, so both are identical across co-located pods and make the collision certain.
+export VLLM_PORT=$("$VLLM_PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
+echo "[eval-cw] VLLM_PORT=$VLLM_PORT"
 
 export PYTHONPATH={WORK_DIR}:${{PYTHONPATH:-}}
 exec "$VLLM_PY" {WORKER_LOCAL} \\

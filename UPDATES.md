@@ -32,6 +32,16 @@
 
   So most of the "under-generation" we have been worrying about since [#142](https://github.com/Open-Athena/MarinFold/issues/142) was the decoder after all — the count goes from 0.67× to 0.96× of ground truth. The accuracy it buys is real but modest (+0.011 R-precision, +0.020 AUC), which is consistent with #142's finding that the *withheld* contacts were mostly ones the model was unsure about. Every MarinFold number in the plot above is with top-k off, and it's the default in the eval path now.
 
+  **So how much of 0.41 → 0.53 is the better model and how much is the sampling fix?** Ran the full 2×2 to answer it rather than guess:
+
+  | R-precision (all) | top-k 50 | no top-k | top-k effect |
+  |---|---|---|---|
+  | #61 | 0.413 | 0.425 | +0.011 |
+  | #117 best | 0.528 | 0.535 | +0.007 |
+  | **model effect** | **+0.115** | **+0.110** | |
+
+  **~91% model, ~7% sampling**, slightly sub-additive. The interaction makes sense: the better model was already under-generating less (0.75× of GT under top-k vs 0.67×), so it has less to gain from untruncating. One exception — for **AUC** the sampling change is ~a third of the gain, because untruncating is what populates the low-confidence tail that AUC integrates over.
+
   That top-k-50 row is also the control: it reproduces exp82's published HF-transformers number (0.4150 / 0.8814) to within 0.002 on a completely different stack, which is what licenses comparing any of these bars to the previously published ones.
 
 * **The ESMFold2-Atlas corpus landed — 67M proteins ([#139](https://github.com/Open-Athena/MarinFold/issues/139), [#141](https://github.com/Open-Athena/MarinFold/pull/141)).** **66,759,922 contacts-v1 documents / 71.4B tokens** (41 drops out of 67M), published to the [bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_esm_atlas). That's ~16× the AFDB corpus and it is the "67M instead of 4M" expansion we have been waiting on since [#91](https://github.com/Open-Athena/MarinFold/issues/91) — thanks Jacob for the curation. We also published the **raw pyconfind contacts** as a reusable intermediate (31.9B contacts), so the next document format over this source costs a serialization pass instead of the ~2,850 core-hours pyconfind took. Worth knowing: the GCP CPU pool would have taken ~37 days for this; CoreWeave's reserved CPU pool did it in ~7 hours.

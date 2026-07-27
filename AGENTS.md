@@ -403,6 +403,22 @@ different set of sharp edges. Recipe and gotchas from exp82's re-scoring of the
   **bf16 before uploading** (halves it; vLLM casts at load anyway, so the weights
   are identical), and prefer a checkpoint already on S3. Pod start (image pull +
   boot) is ~2.5 min on top.
+- **Co-located pods share the node's network namespace — give each one a
+  kernel-assigned port.** `with_gpu(count=1)` packs several pods per node, and a
+  server that binds a fixed default port (vLLM's engine-core `TCPStore`, port
+  29500-ish) will lose to its neighbours with
+  `DistNetworkError: … EADDRINUSE`. It is intermittent: we lost 2 of 12 shards on
+  one run. Ask the kernel for a free port in the bootstrap:
+  ```bash
+  export VLLM_PORT=$("$PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
+  ```
+  **Do not** derive it from `$$` or `$(hostname)`. Both look unique and are not:
+  bash is **pid 1** in the container and the hostname is the **node**, so every
+  co-located pod computes the *same* port and the collision goes from
+  intermittent to certain — that mistake took a run from 2/12 failures to 8/12.
+- **`job.wait()` raises on a failed job**, which abandons every remaining wait and
+  reports only the first failure. Catch per job, or a second dead shard stays
+  invisible until you diff the output prefix.
 - **Shard by interleaving a sorted work list** (`idx % n`), not by contiguous
   blocks — one shard that collects all the long sequences sets the wall clock for
   the whole fan-out.
