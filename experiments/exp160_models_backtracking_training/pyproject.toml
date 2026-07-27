@@ -27,7 +27,11 @@ test = ["pytest>=8"]
 dev = []
 
 [tool.uv.sources]
-marinfold = { path = "../../marinfold", editable = true }
+# GIT dep, not a relative path: the iris workspace bundle is only this
+# experiment dir, so `../../marinfold` fails in a pod with "Could not compute
+# absolute path from workspace root and lockfile path". Pinned to the series
+# branch (the <retract> token + read.py fold are not on main yet).
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", branch = "exp160-backtracking-training" }
 torch = { index = "pytorch-cu121" }
 
 [[tool.uv.index]]
