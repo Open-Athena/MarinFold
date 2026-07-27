@@ -55,6 +55,30 @@ Note `recall = 1.000` is **by construction** — the corpus engine's correctness
 2. **Standard eval** — #89 benchmark, retract-aware parsing: did retraction training cost anything?
 3. **Decisive eval** — resample+vote baseline vs retraction rollouts vs the retract-probe, at matched **token** compute (retraction lengthens documents, so equal rollout *count* would hand the arm more compute).
 
+### Vocab / checkpoint compatibility (verified)
+
+The exp120 checkpoint predates two appended tokens. Checked directly against
+its `tokenizer.json`:
+
+| | |
+|---|---|
+| exp120 checkpoint vocab | 2,845 (`vocab_size` = 2845) |
+| current contacts-v1 tokenizer | 2,847 |
+| **id mismatches on the checkpoint's 2,845 tokens** | **0** |
+| new tokens needing embedding rows | `<contacts-v1.sequence_only>` (2845), `<retract>` (2846) |
+
+So continue-training is a **+2 embedding resize, not a remap** — every existing
+embedding keeps its meaning. This is the append-only vocab discipline from #158
+paying off; had `<retract>` been inserted into `NATIVE_TOKENS` instead, all
+2,838 shared contacts-and-distances tokens would have shifted and the
+checkpoint would have been unusable.
+
+Note the published `timodonnell/contacts-v1-tokenizer` repo (used by the exp120
+training path) is the **pre-retract** tokenizer. Training on the backtracking
+corpus needs the tokenizer published *with the corpus*
+(`.../contacts_v1_backtracking/tokenizer/`), or the crops/ccoord superset if
+training a mixture.
+
 ## Success criteria
 
 - **No regression** on #89 R-precision / AUC vs the matched-budget control.
