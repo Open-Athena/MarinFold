@@ -120,6 +120,35 @@ Two corrections to the plan came out of it:
    version-dependent. **Any MarinFold experiment quoting a cross-harness per-token
    loss target (#137, #150, #155) is exposed to the same effect.**
 
+### Full 1-epoch sweep — DONE (2026-07-27)
+
+Both LRs, 52 steps each, 8xH100 batch band, ~25 min each
+(`/bizon/iris-run-job-20260727-140753`).
+
+| peak LR | train/loss (masked refinement objective) | eval loss | eval **bpb** |
+|---|---|---|---|
+| **1e-4** | 3.985 -> **2.3979** | 3.16941 | **0.39489** |
+| 3e-4 | 3.833 -> **2.3915** | 3.40526 | 0.42428 |
+
+**1e-4 is the better trade.** 3e-4 fits the refinement objective marginally better
+(-0.3% train loss) while degrading base-task retention much more (**+7.4% bpb**).
+That echoes the MVP's finding that extra fitting buys refinement at the cost of the
+held-out base task. Both eval curves dip at step 13 and partially recover — LR-warmup
+damage, not divergence.
+
+Re-running the 1e-4 arm reproduced the smoke **bit-identically** (loss 3.16941,
+bpb 0.39489), a free determinism check on tokenize -> pack -> cache -> train.
+
+Checkpoints + auto HF exports (tokenizer co-located):
+`s3://marin-us-east-02a/MarinFold/exp163/checkpoints/plm-exp163-refine-cv1-1_5b-lr{1e-4,3e-4}-e1-cos/hf/step-51`
+
+> ⚠️ **Phase 3 needs new rollouts.** The 10k corpus has **no held-out protein split** —
+> all 9,375 rollout proteins went into training (2 docs each). So `refiner@K16 vs @K0`
+> must be measured on the **exp89 eval set**, which first needs K base rollouts per eval
+> protein generated with the training sampling regime (`--top-k -1`, 24 rollouts) via
+> `dispatch_rollouts.py`. Not yet staged. Leakage is not a concern: the corpus uses
+> ESM-Atlas MD5 ids, a disjoint universe from exp89's PDB-derived stems.
+
 ## Sequencing
 MVP go/no-go (done) → generate rollouts on cw-rno2a (10k validated; section A) →
 `build_refinement_corpus.py` → `tokenize_refinement_corpus.py` (mask + packing) →

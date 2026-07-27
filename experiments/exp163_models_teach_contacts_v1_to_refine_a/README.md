@@ -133,7 +133,28 @@ exp89 `compute_metrics.py`: R-precision (= per-target F1 at top-R) + AUC, in `{a
 
 ## Results
 
-_(Fill in after the run completes.)_
+### Phase 2 — training (DONE 2026-07-27)
+
+Refiner fine-tuned from E8 on the 10k-protein refinement corpus (18,750 docs →
+6,569 packed 8192-token sequences), answer-span masked, 1-epoch cosine, batch 128,
+on CoreWeave `cw-rno2a` 8×H100 at batch priority. See `SCALE_PLAN.md` §B.
+
+| peak LR | train/loss (masked objective) | base-task eval loss | base-task **bpb** |
+|---|---|---|---|
+| **1e-4** | 3.985 → **2.3979** | 3.16941 | **0.39489** |
+| 3e-4 | 3.833 → **2.3915** | 3.40526 | 0.42428 |
+
+1e-4 is the better trade: 3e-4 fits the refinement objective 0.3% better but
+degrades base-task retention 7.4% more. Checkpoints + HF exports at
+`s3://marin-us-east-02a/MarinFold/exp163/checkpoints/<run>/hf/step-51`.
+
+Warm-start verification uses **bpb, not per-token loss** — see `SCALE_PLAN.md` for
+why #163's "step-0 val ≈ 2.7566" criterion is not well posed across harnesses.
+
+### Phase 3 — evaluation (PENDING)
+
+Blocked on generating K base rollouts for the exp89 eval set: the 10k corpus has
+no held-out protein split, so `refiner@K16 vs @K0` cannot be read off it.
 
 ## Conclusion
 
