@@ -1,17 +1,17 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Build or launch the exp156 contacts-v1 greedy set-loss prototype.
+"""Build or launch the exp156 contacts-v1 greedy set-loss experiment.
 
 This follows the exp147 custom-experiment shape: the experiment owns the launch
 script and the nonstandard training entrypoint instead of routing through
 Levanter's stock ``train_lm.main`` loss function.
 
-Current state: the Marin/Iris config plumbing is scaffolded, but the actual
-Levanter ``Trainer`` loop is deliberately left behind
-``run_contacts_v1_greedy_train_lm``. That is the next code we should write
-carefully: it must replace the stock ``model.compute_next_token_loss`` call with
-a contacts-v1 greedy latent-set objective.
+The experiment can run either stock next-token CE or the contacts-v1 greedy
+latent-set objective. The greedy arm uses a custom Levanter ``Trainer`` loop so
+it can replace ``model.compute_next_token_loss`` with contacts-v1 target parsing
+and greedy pair matching while still using standard checkpointing, evaluation
+hooks, W&B tracking, and optional GPU telemetry.
 """
 
 import argparse
@@ -391,7 +391,9 @@ def run_contacts_v1_greedy_train_lm(config: TrainLmOnPodConfig) -> None:
 
 def _run_greedy_train(config: TrainLmOnPodConfig) -> None:
     """Run Levanter Trainer with the contacts-v1 greedy set loss."""
+    import equinox as eqx
     import levanter
+    import levanter.callbacks as callbacks
     import levanter.trainer
     from levanter.trainer import Trainer
     from marin.training.training import _prepare_training_run
@@ -425,6 +427,7 @@ def _run_greedy_train(config: TrainLmOnPodConfig) -> None:
         vocab_size = len(tokenizer)
         Vocab = round_axis_for_partitioning(Axis("vocab", vocab_size), trainer.parameter_axis_mapping)
         train_dataset = train_config.data.train_set(Pos, train_config.trainer.batch_schedule, key=data_key)
+        validation_sets = train_config.data.validation_sets(Pos)
 
         model = train_config.model.build(Vocab, key=model_key)
         if train_config.initialize_from_hf:
@@ -445,6 +448,47 @@ def _run_greedy_train(config: TrainLmOnPodConfig) -> None:
             model = named_jit(trainer.mp.cast_to_param, trainer.parameter_axis_mapping)(model)
 
         state = trainer.initial_state(training_key, model=model)
+
+        @eqx.filter_jit
+        def _greedy_eval_loss(eval_model, example):
+            eval_model = trainer.mp.cast_to_compute(eval_model)
+            loss, _metrics = _loss(eval_model, example, key=None)
+            return loss, {}
+
+        @eqx.filter_jit
+        def _next_token_eval_loss(eval_model, example):
+            eval_model = trainer.mp.cast_to_compute(eval_model)
+            loss = eval_model.compute_next_token_loss(example, key=None)
+            return loss, {}
+
+        if not validation_sets:
+            print("[exp156] no validation datasets provided for greedy-set run")
+        for name, dataset in validation_sets.items():
+            eval_name = name or "validation"
+            greedy_loader = trainer.data_loader(dataset, trainer.EvalBatch)
+            trainer.add_hook(
+                callbacks.compute_validation_loss(
+                    _greedy_eval_loss,
+                    greedy_loader,
+                    max_batches=train_config.trainer.max_eval_batches,
+                    name=f"{eval_name}/greedy_set",
+                ),
+                every=train_config.trainer.steps_per_eval,
+            )
+            if os.environ.get("EXP156_ENABLE_GREEDY_NEXT_TOKEN_EVAL", "1") == "1":
+                next_token_loader = trainer.data_loader(dataset, trainer.EvalBatch)
+                trainer.add_hook(
+                    callbacks.compute_validation_loss(
+                        _next_token_eval_loss,
+                        next_token_loader,
+                        max_batches=train_config.trainer.max_eval_batches,
+                        name=f"{eval_name}/next_token",
+                    ),
+                    every=train_config.trainer.steps_per_eval,
+                )
+            else:
+                print(f"[exp156] skipping next-token validation hook for {eval_name}")
+
         train_loader = trainer.data_loader(train_dataset).iter_from_step(state.step)
         trainer.train(state, train_loader)
     trainer.tracker.finish()
@@ -585,12 +629,13 @@ def _identity_config(
     max_eval_batches: int | None,
 ) -> dict[str, object]:
     """Return stable experiment decisions used for artifact fingerprinting."""
+    learning_rate = float(os.environ.get("EXP156_LEARNING_RATE", "3.1623e-3"))
     return {
         "name": name,
         "model": MODEL_CONFIG,
         "initialize_from_hf": INITIALIZE_FROM_HF,
         "optimizer": AdamConfig(
-            learning_rate=3.1623e-3,
+            learning_rate=learning_rate,
             weight_decay=0.2,
             beta1=0.9,
             beta2=0.95,

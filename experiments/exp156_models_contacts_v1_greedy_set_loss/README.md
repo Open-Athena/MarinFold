@@ -20,16 +20,27 @@ A greedy hard/Viterbi contact-set loss will let the model learn easy contacts fi
 
 ## Approach
 
-Prototype a contacts-v1-specific greedy set loss and a custom Levanter training script that swaps the standard next-token CE for the new objective. Start with a smoke-sized run before any full-scale training.
+This experiment adds a contacts-v1-specific greedy set loss and a custom Levanter training path. The same launcher can run two arms:
 
-For CoreWeave/Iris smoke runs, `train.py` defaults to:
+- `EXP156_LOSS_KIND=next-token`: stock Levanter autoregressive CE baseline.
+- `EXP156_LOSS_KIND=greedy-set`: custom `Trainer` loop that parses the contacts-v1 target block and greedily matches each prediction slot against any remaining true contact pair, including either pair orientation.
+
+The greedy arm now trains inside the jitted Levanter loop; it is no longer just a host-side smoke prototype. It also installs validation hooks for:
+
+- `eval/<val-name>/greedy_set/loss`
+- `eval/<val-name>/next_token/loss`, unless `EXP156_ENABLE_GREEDY_NEXT_TOKEN_EVAL=0`
+
+The next-token validation hook is useful on single-device runs, but currently disabled for greedy multi-GPU runs because Levanter's fused next-token CE path can hit an axis-size mismatch when evaluating a greedy-trained model on an 8-way local mesh.
+
+For CoreWeave/Iris runs, defaults are:
 
 - output prefix: `s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp156_contacts_v1_greedy_set_loss/`
-- resources: `ResourceConfig.with_gpu("H100", count=1, cpu=16, ram="128g", disk="200g")`
 - warm start: `contacts-v1-exp120-1.5B` HF export, staged locally on the worker before Levanter init
 - data globs: `s3://marin-us-east-02a/MarinFold/data/document_structures/contacts_v1/{train,val}/*.parquet`
+- optimizer LR: `EXP156_LEARNING_RATE` if set, otherwise `3.1623e-3`
+- optional durable GPU telemetry: `EXP156_ENABLE_GPU_TELEMETRY=1`
 
-The CoreWeave S3 mirror was verified with a temporary pod in namespace `iris`: train has 2067 shards, val has 22 shards. If using a different mirror, launch with explicit overrides, e.g.:
+Example smoke launch:
 
 ```bash
 EXP156_ACCELERATOR=gpu \
@@ -37,28 +48,50 @@ EXP156_BASE_PREFIX=s3://marin-us-east-02a/marin/protein-structure/MarinFold \
 EXP156_TRAIN_GLOB='s3://.../contacts-v1/train/*.parquet' \
 EXP156_VAL_GLOB='s3://.../contacts-v1/val/*.parquet' \
 EXP156_INITIALIZE_FROM_HF=contacts-v1-exp120-1.5B \
-EXP156_STEPS=1 \
-EXP156_TRAIN_BATCH_SIZE=1 \
+EXP156_LOSS_KIND=greedy-set \
+EXP156_STEPS=75 \
+EXP156_STEPS_PER_EVAL=50 \
+EXP156_MAX_EVAL_BATCHES=16 \
+EXP156_TRAIN_BATCH_SIZE=16 \
 python experiments/exp156_models_contacts_v1_greedy_set_loss/train.py --run
 ```
 
-Loss selection:
+## Results so far
 
-- `EXP156_LOSS_KIND=next-token` runs stock Levanter autoregressive CE with the same data/resources/warm-start. This is the baseline arm.
-- `EXP156_LOSS_KIND=greedy-set` is the target experimental arm, but the full JAX/Haliax `Trainer` loss is still being wired. The smoke/prototype loss works on real logits; the remaining work is to make the hard assignment and selected-token gather run inside Levanter's jitted training step.
+### H100 single-GPU short runs
 
-Current caveat: the baseline config can launch; the greedy training arm is intentionally blocked until the JAX/Haliax loss replaces the current host-side prototype.
+A 75-step greedy-set rerun with both validation hooks succeeded:
+
+- step 50: greedy-set val loss `5.499`; next-token CE val loss `5.545`
+- final step 74: greedy-set val loss `5.393`; next-token CE val loss `5.419`
+
+Earlier 300-step stock next-token H100 run reached final next-token eval loss `4.19192`, so the short greedy run is not yet a fair same-step comparison.
+
+### GB200 4-GPU runs
+
+The stock next-token 4×GB200 run completed 2000 steps and exported `step-1999`:
+
+- final next-token eval loss: `5.516`
+
+The first greedy 4×GB200 run failed during its auxiliary next-token validation hook with a fused CE axis mismatch. The rerun disabled that auxiliary hook and completed 2000 steps:
+
+- final greedy-set validation loss: `5.674`
+
+Both high-LR 4×GB200 runs showed train loss collapsing near zero while validation losses became noisy/worse, consistent with overfitting or an overly aggressive learning rate on this smoke-sized cache. Follow-up 8×H100 runs are using a lower LR (`3e-4`).
+
+## Current caveats
+
+- Multi-GPU greedy runs currently report greedy-set validation only; next-token CE validation is disabled with `EXP156_ENABLE_GREEDY_NEXT_TOKEN_EVAL=0` until the CE eval path avoids the fused-kernel axis mismatch.
+- The runs above used small cached datasets and short schedules; they are signal-gathering runs, not final model-quality comparisons.
+- W&B is intentionally offline unless credentials are available, so logs and telemetry should be read from Iris/S3 artifacts.
 
 ## Success criteria
 
 - Custom loss target-selection logic is unit tested on toy contact sets.
 - Custom training entrypoint can lower/build a Marin/Iris training job.
-- A tiny smoke run starts and reports finite loss.
-
-## Results
-
-_(Fill in after the run completes.)_
+- Greedy and next-token arms both produce finite train losses and validation metrics.
+- Durable GPU telemetry is written for CoreWeave GPU runs.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The greedy-set loss is trainable inside Levanter and can be evaluated directly with a greedy-set validation loss. Early results do not show a clear quality win yet; the next useful comparison is a same-hardware, lower-LR, longer 8×H100 run against the stock next-token baseline.
