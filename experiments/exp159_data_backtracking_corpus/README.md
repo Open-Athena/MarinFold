@@ -40,10 +40,8 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 **GPU adapter + pilot (done).** `backtrack_adapter.py` wraps exp120 into `Proposer`/`Scorer` (unit-tested GPU-free in `test_backtrack_adapter.py`); `run_pilot.py` runs the engine on real proteins from exp98's `targets.parquet` (GT + sequences, no pyconfind) and reports the gating numbers. Pilot ran on an RTX A5000 — see Results.
 
-### Remaining (not started)
-1. **10% single-retract probe class** — a policy mode of the same engine (hold one FP to a designated end/random position).
-2. **Scale-up** — the pilot's ~13 s/doc (no KV reuse) is far too slow for a 4.2M-doc corpus; needs KV-cache reuse across the growing prompt, batching across proteins, and likely TPU. This is the real engineering lift before a full run.
-3. **Publish** to `data/document_structures/contacts_v1_backtracking/` (per #126) once scaled.
+### Remaining
+1. **10% single-retract probe class** — deferred (a policy mode of the same engine: hold one FP to a designated end/random position). Without it, #160's cheap retract-probe eval arm has no on-distribution training support.
 
 
 ### Throughput work — 8.8x (14.7 -> 1.68 s/doc)
@@ -96,11 +94,11 @@ weak/local pairs the base model was never trained to emit, and the engine would
 score them all as false positives.
 
 
-### Scale run — 1M documents on CoreWeave H100s (in flight)
+### Scale run — 1M documents on CoreWeave H100s
 
 `gen_esm_atlas_worker.py` (sharded, resumable) + `dispatch_coreweave.py` (fan-out).
-Launched 2026-07-26 on `cw-rno2a` at **batch priority**: 64 independent 1-GPU
-workers over shards 0-255, 4,000 docs/shard -> ~1.02M documents, writing
+Ran 2026-07-26 on `cw-rno2a` at **batch priority**: 48 independent 1-GPU
+workers over shards 0-255, 4,000 docs/shard -> 1,023,997 documents, writing
 `s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`.
 
 Single-worker smoke on one H100 first: **24 docs in 32 s (1.32 s/doc)**, all
