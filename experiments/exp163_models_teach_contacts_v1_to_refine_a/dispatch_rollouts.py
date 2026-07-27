@@ -176,14 +176,23 @@ echo "[exp163-bootstrap] decoded worker ($(wc -l < {WORKER_LOCAL}) lines) + roll
 
 # vLLM + torch are already in the image; add only the worker's I/O deps. `python -m
 # pip` targets the same interpreter that runs the worker.
-( uv pip install --python /app/.venv/bin/python --quiet fsspec pyarrow s3fs boto3 || ( /app/.venv/bin/python -m ensurepip --upgrade && python -m pip install --quiet --no-input fsspec pyarrow s3fs boto3 ) )
+# Locate the image's python that has vLLM (image layout varies), install the
+# worker's I/O deps into THAT python, and run the worker with it.
+VLLM_PY=""
+for _py in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do
+  if "$_py" -c "import vllm" >/dev/null 2>&1; then VLLM_PY="$_py"; break; fi
+done
+echo "[exp163-bootstrap] candidate pythons: $(which -a python python3 2>/dev/null | tr '\n' ' ')"
+echo "[exp163-bootstrap] vLLM python: ${{VLLM_PY:-NONE}}"
+if [ -z "$VLLM_PY" ]; then echo "[exp163-bootstrap] FATAL: no python imports vllm"; find / -maxdepth 7 -name vllm -type d 2>/dev/null | head; exit 3; fi
+uv pip install --python "$VLLM_PY" --quiet fsspec pyarrow s3fs boto3 || "$VLLM_PY" -m pip install --quiet fsspec pyarrow s3fs boto3
 
 # The worker does `import rollout_metrics`; running the script already puts its dir on
 # sys.path[0], but pin PYTHONPATH too as belt-and-suspenders.
 export PYTHONPATH={WORK_DIR}:${{PYTHONPATH:-}}
 
 echo "[exp163-bootstrap] launching vLLM rollout worker for shard {shard_i}/{num_shards}"
-exec /app/.venv/bin/python {WORKER_LOCAL} \\
+exec "$VLLM_PY" {WORKER_LOCAL} \\
     --model {MODEL_S3} \\
     --targets {TARGETS_S3} \\
     --prompts {PROMPTS_S3} \\
