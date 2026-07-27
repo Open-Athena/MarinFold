@@ -75,7 +75,14 @@ def main() -> None:
         size = download(args.src, args.local)
         print(f"downloaded {size / 1e9:.2f} GB -> {args.local}", flush=True)
 
-    cmd = [args.hf, "buckets", "sync", str(args.local), args.dst]
+    # The project env pins huggingface_hub<1.0 (marinfold -> transformers), and
+    # the `buckets` subcommand needs >=1.5. Run the upload in an ISOLATED env
+    # rather than fighting the pin — exp139's documented workaround.
+    cmd = [
+        "uv", "run", "--no-project",
+        "--with", "huggingface_hub[cli]>=1.6,<2",
+        "hf", "buckets", "sync", str(args.local), args.dst,
+    ] if args.hf == "hf" else [args.hf, "buckets", "sync", str(args.local), args.dst]
     print("+ " + " ".join(cmd), flush=True)
     subprocess.run(cmd, check=True, env={**os.environ})
     print(f"staged -> {args.dst}", flush=True)
