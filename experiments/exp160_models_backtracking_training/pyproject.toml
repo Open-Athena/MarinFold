@@ -17,10 +17,14 @@ dependencies = [
     "huggingface_hub>=0.24",
     "numpy",
     "requests",
+    "gcsfs",
 ]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
 
 [tool.uv.sources]
 marinfold = { path = "../../marinfold", editable = true }
