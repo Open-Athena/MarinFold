@@ -56,4 +56,4 @@ explicit = true
 resiliparse = { index = "marin-resiliparse" }
 torch = [{ index = "pytorch-cpu", extra = "cpu" }]
 torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
-marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "19d23d227414d508408004cad436bc699e7ad5f5" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "a29c0d188d72c08ee4fb8d168ee5854f916a8637" }
