@@ -46,16 +46,19 @@ from marinfold_models.defaults import build_train_lm_on_pod_config
 SEQ_LEN = 8192
 
 
-def fetch_tokenizer(bucket_dir: str, local: Path) -> Path:
-    """Download the superset tokenizer from the bucket to a local dir."""
-    import subprocess
+def fetch_tokenizer(remote_dir: str, local: Path) -> Path:
+    """Download the superset tokenizer to a local dir Levanter can load.
+
+    Handles ``s3://`` (CoreWeave credentials are auto-injected into task pods,
+    so fsspec routes it) — AutoTokenizer cannot read an object-store URI
+    directly, hence the copy.
+    """
+    import fsspec
 
     local.mkdir(parents=True, exist_ok=True)
+    fs, _ = fsspec.core.url_to_fs(remote_dir)
     for name in ("tokenizer.json", "tokenizer_config.json", "special_tokens_map.json"):
-        subprocess.run(
-            ["hf", "buckets", "cp", f"{bucket_dir}/{name}", str(local / name)],
-            check=True,
-        )
+        fs.get(f"{remote_dir.rstrip('/')}/{name}", str(local / name))
     return local
 
 
@@ -104,7 +107,7 @@ def main() -> None:
     args = ap.parse_args()
 
     tokenizer = args.tokenizer
-    if tokenizer.startswith("hf://"):
+    if tokenizer.startswith(("s3://", "gs://", "hf://")):
         tokenizer = str(fetch_tokenizer(tokenizer, Path("/tmp/exp160_tokenizer")))
     print(f"tokenizer -> {tokenizer}", flush=True)
 

@@ -60,11 +60,10 @@ DEFAULT_CORPUS = f"{S3_PREFIX}/corpus"
 DEFAULT_INIT = f"{S3_PREFIX}/init/exp120-step-1005"
 DEFAULT_OUTPUT = f"{S3_PREFIX}/runs"
 
-# Superset tokenizer (crops/ccoord vocab incl. <retract>). Bare repo id — the
-# training tokenizer-load path does not split `@rev` (exp85's note).
-DEFAULT_TOKENIZER = os.environ.get(
-    "EXP160_TOKENIZER", "timodonnell/contacts-v1-backtracking-tokenizer"
-)
+# Superset tokenizer (crops/ccoord vocab incl. <retract>), staged next to the
+# corpus. Using the staged copy avoids minting a new HF model repo, and the
+# worker downloads it to a local dir before handing the path to Levanter.
+DEFAULT_TOKENIZER = os.environ.get("EXP160_TOKENIZER", f"{S3_PREFIX}/corpus/tokenizer")
 
 # 1.5B Qwen3 (exp44 dims + Llama3 rope) — the architecture exp75/exp117/exp120
 # all use. Kept here as data so the worker needs no experiment imports.
