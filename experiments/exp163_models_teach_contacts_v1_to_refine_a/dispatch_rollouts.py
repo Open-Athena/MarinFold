@@ -176,7 +176,7 @@ echo "[exp163-bootstrap] decoded worker ($(wc -l < {WORKER_LOCAL}) lines) + roll
 
 # vLLM + torch are already in the image; add only the worker's I/O deps. `python -m
 # pip` targets the same interpreter that runs the worker.
-python -m pip install --quiet --no-input fsspec pyarrow s3fs boto3
+( uv pip install --python /app/.venv/bin/python --quiet fsspec pyarrow s3fs boto3 || ( /app/.venv/bin/python -m ensurepip --upgrade && python -m pip install --quiet --no-input fsspec pyarrow s3fs boto3 ) )
 
 # The worker does `import rollout_metrics`; running the script already puts its dir on
 # sys.path[0], but pin PYTHONPATH too as belt-and-suspenders.
