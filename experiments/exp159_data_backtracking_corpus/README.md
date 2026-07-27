@@ -188,10 +188,16 @@ failures after the `max_task_failures` fix. Output:
 `s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`
 (4,096 parquet parts).
 
-**Remaining before #160 can train on it:** publish to the public HF bucket
-(`data/document_structures/contacts_v1_backtracking/`) with the superset
-tokenizer co-located, and mirror to GCS if training runs there. The 10%
-single-retract probe class is still not implemented (deferred).
+**Published** (2026-07-27) to
+`hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1_backtracking/`
+— 16 shards (`train/shard-{00000..00015}.parquet`, 1.5 GB zstd), tokenizer
+co-located, README. Verified by an **anonymous** (no-token) download of
+shard-00000: 64,000 rows, 2000/2000 sampled documents fold to exactly GT.
+
+Write-up: [`WRITEUP.md`](WRITEUP.md) · slides:
+[`plots/summary.pdf`](plots/summary.pdf) (17 slides).
+
+The 10% single-retract probe class remains deferred.
 
 ## Success criteria
 
