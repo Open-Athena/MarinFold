@@ -183,7 +183,7 @@ echo "[exp163-bootstrap] decoded worker ($(wc -l < {WORKER_LOCAL}) lines) + roll
 export PYTHONPATH={WORK_DIR}:${{PYTHONPATH:-}}
 
 echo "[exp163-bootstrap] launching vLLM rollout worker for shard {shard_i}/{num_shards}"
-exec python {WORKER_LOCAL} \\
+exec /app/.venv/bin/python {WORKER_LOCAL} \\
     --model {MODEL_S3} \\
     --targets {TARGETS_S3} \\
     --prompts {PROMPTS_S3} \\
