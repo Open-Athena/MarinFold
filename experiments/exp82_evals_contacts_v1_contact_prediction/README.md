@@ -334,6 +334,77 @@ contacts are lower-confidence and can be correlated noise that pollutes the top-
 not worth 2–4× the generation cost. The remaining lever for top-K precision is a
 stronger base model, not the decoder.
 
+### 2026-07-27 refresh: drop top-k, add Eric's #117 best, re-score on CoreWeave
+
+Two changes to the "where we stand" figure, both re-run from scratch so every
+MarinFold bar shares one recipe:
+
+**1. `top_k` is off.** The 50 was never a decision — it is the HuggingFace
+`generate` default, baked into the exp75 export's `config.json` (no
+`generation_config.json`), and it silently rode along into every rollout eval.
+Truncated sampling renormalizes over the kept tokens, which raises `<end>` and
+shortens documents. Paired over all 554 proteins (`contacts_per_rollout.py`,
+counting from the saved vote matrices):
+
+| sampling | contacts/rollout | vs GT (165.2) | R (all) | AUC (all) | R (long) |
+|---|---:|---:|---:|---:|---:|
+| T 1.0 / p 0.95 / **k 50** | 110.3 | 0.67× | 0.4131 | 0.8808 | 0.3511 |
+| T 1.0 / p 0.95 / **no k** | 158.2 | **0.96×** | 0.4245 | 0.9010 | 0.3656 |
+
+The count shortfall [#142](https://github.com/Open-Athena/MarinFold/issues/142)
+measured is therefore mostly decoder-induced, but the accuracy it costs is small
+(+0.011 R, +0.020 AUC) — consistent with #142's conclusion that the suppressed
+contacts were low-confidence ones. Budget is `6L+128` (exp142's), not the old
+`4L+64`: untruncated documents are long enough that the old cap would bind.
+`unfinished` was 0/55,400 in every pass.
+
+**2. The tie-break is dropped from the headline recipe.** It moves R-precision by
+0.0007 (0.41498 → 0.41431 in the run above this section) and exists only to
+rescue AUC from the 0-vote tie mass. With top-k off, far fewer pairs tie at zero
+and the vote score ranks the tail by itself — plain rollout+resample AUC is
+**0.9010**, already above the 0.898 the tie-break used to buy. So the second
+inference pass is no longer worth its cost.
+
+**Validation.** The top-k-50 row above reproduces this experiment's own published
+HF-transformers number (0.4150 R / 0.8814 AUC / 0.3550 long R) to within 0.004 on
+a different GPU, a different vLLM, and a different scoring harness. Separately,
+195 proteins scored on both an A5000 (vLLM 0.11.0) and an H100 (vLLM 0.9.2) agree
+at 0.4370 vs 0.4333 mean, per-protein r = 0.987.
+
+**Result — all six predictors, exp89 metrics, n=554:**
+
+| predictor | R (all) | R (long) | AUC (all) | AUC (long) |
+|---|---:|---:|---:|---:|
+| MarinFold #61 (exp75 E8, 2.7566) | 0.425 | 0.366 | 0.901 | 0.874 |
+| **MarinFold #117 best (2.7037)** | **0.535** | **0.485** | **0.932** | **0.913** |
+| Protenix-v2 · single-seq | 0.603 | 0.572 | 0.830 | 0.815 |
+| Protenix-v2 · MSA | 0.812 | 0.795 | 0.941 | 0.935 |
+| ESMFold | 0.755 | 0.732 | 0.901 | 0.892 |
+| ESMFold2 | 0.786 | 0.769 | 0.923 | 0.916 |
+
+A 0.053-nat eval-loss improvement (2.7566 → 2.7037,
+[#117](https://github.com/Open-Athena/MarinFold/issues/117) run
+`prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4`, step 35679)
+buys **+0.11 R-precision** — the loss→accuracy slope has not flattened.
+
+Note the **AUC** column: at 0.932 (all) MarinFold is now second only to
+Protenix-v2 *with an MSA*, and above ESMFold2. The model ranks the whole contact
+map about as well as a structure predictor; what it lacks is the ability to
+concentrate confidence into the top L / top R pairs. That is a different failure
+than "doesn't know the fold", and points at calibration rather than capacity.
+
+**Pipeline** — [`score_rollout_vllm.py`](score_rollout_vllm.py) (single local GPU)
+or [`dispatch_rollout_eval_cw.py`](dispatch_rollout_eval_cw.py) +
+[`score_rollout_worker_cw.py`](score_rollout_worker_cw.py) (12 single-H100
+CoreWeave shards at batch priority, ~4 min/checkpoint vs ~80 min) →
+[`fetch_cw_scores.py`](fetch_cw_scores.py) →
+[`build_rollout_rows.py`](build_rollout_rows.py) (exp89's metric code, verbatim) →
+[`plot_where_we_stand.py`](plot_where_we_stand.py). Per-protein rows in
+[`data/where_we_stand_rows.csv.gz`](data/where_we_stand_rows.csv.gz), aggregate in
+[`data/where_we_stand_summary.csv`](data/where_we_stand_summary.csv). The
+CoreWeave fan-out gotchas are recorded in the root
+[`AGENTS.md`](../../AGENTS.md#single-gpu-inference-fan-out-n-independent-shards-no-gang).
+
 ## Conclusion
 
 **Headline (strong model).** Re-running the inference search on the tuned #61/#75

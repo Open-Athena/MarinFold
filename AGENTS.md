@@ -366,6 +366,50 @@ cluster-general lessons are here:
   `…<name> <state>` with a **space** — sub-job lines have a trailing `/`).
   `iris job stop <job>` to kill.
 
+#### Single-GPU inference fan-out (N independent shards, no gang)
+
+exp108 above is the *training-gang* path. A fan-out of independent 1×H100 jobs —
+batch scoring, rollout generation, any embarrassingly parallel inference — has a
+different set of sharp edges. Recipe and gotchas from exp82's re-scoring of the
+554-protein contact eval (`dispatch_rollout_eval_cw.py` +
+`score_rollout_worker_cw.py`; the same shape as exp159/exp163's generators):
+
+- **You can submit straight from the workstation — but not with
+  `current_client()`.** Off-cluster it finds no iris context and silently falls
+  back to `LocalClient`, which will try to run every "H100 job" on your box.
+  Build the iris-backed client explicitly over the CLI's controller tunnel:
+  `open_iris_client(cluster_name="cw-rno2a", workspace=None)` (from
+  `iris.cli.connect`) → `FrayIrisClient.from_iris_client(...)`. Worth doing: the
+  shards become **root** jobs, so they survive the launcher exiting and the
+  "driver must wait on its children" rule above does not apply — and the launcher
+  directory then needs no marin/fray pyproject and no pod-side `uv sync`.
+- **With no workspace bundle you must disable iris's setup step.** It runs
+  `uv sync` in `$IRIS_WORKDIR` and dies with ``No `pyproject.toml` found`` before
+  your entrypoint ever runs. Pass `create_environment(..., setup_scripts=[])`.
+  (In-cluster drivers don't hit this — children inherit the parent's bundle,
+  which is also why exp163 tolerated a full marin sync inside its vLLM image.)
+- **In a foreign container, install extra libraries with `--no-deps`.** Plain
+  `pip install marinfold` repins `transformers` out from under the image's vLLM.
+  `--no-deps` plus `fsspec` + `numpy` is enough for the whole `contacts_v1`
+  document generator.
+- **Use fsspec for all S3 — not pyarrow's own filesystem and not the `aws`
+  CLI.** iris injects CoreWeave's endpoint and credentials as an `FSSPEC_S3`
+  blob that only fsspec/s3fs reads; pyarrow's native S3 goes to AWS, and the CLI
+  isn't on `PATH` in most vendor images. Write parquet through
+  `fsspec.open(uri, "wb")`.
+- **Staging the model from the workstation is the whole critical path.** The
+  uplink is ~2.5 MB/s (asymmetric); reading the same object back *in-cluster* is
+  ~500 MB/s (5.5 GiB staged to a pod in 11 s). So: convert fp32 exports to
+  **bf16 before uploading** (halves it; vLLM casts at load anyway, so the weights
+  are identical), and prefer a checkpoint already on S3. Pod start (image pull +
+  boot) is ~2.5 min on top.
+- **Shard by interleaving a sorted work list** (`idx % n`), not by contiguous
+  blocks — one shard that collects all the long sequences sets the wall clock for
+  the whole fan-out.
+- **Throughput datapoint** (Qwen3 1.5B, contacts-v1 rollouts, vLLM bf16):
+  ~25,000 tok/s per H100 vs ~4,000 on a workstation RTX A5000. 12 shards turn an
+  80-minute single-GPU pass into ~4 minutes of compute.
+
 ### Run history
 
 **Every W&B-logged run gets a history file under `history/runs/`.**

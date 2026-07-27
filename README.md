@@ -13,18 +13,24 @@ We welcome collaborators! If you would like to discuss or contribute, join the [
 
 Here we are prompting with the amino acid sequence and predicting residue/residue contacts.
 
-<img src="experiments/exp82_evals_contacts_v1_contact_prediction/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold #61 n=100 rollouts vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
+<img src="experiments/exp82_evals_contacts_v1_contact_prediction/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold #61 and #117-best n=100 rollouts vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
 
-The `MarinFold #61 n=100 rollouts` bar above is our #61 model (eval loss 2.76) with our best test-time inference — 100 resampled rollouts with pairwise tie-breaking (see [exp82](experiments/exp82_evals_contacts_v1_contact_prediction/README.md)).
+Both MarinFold bars use our best test-time inference — 100 resampled rollouts, voted per residue pair (see [exp82](experiments/exp82_evals_contacts_v1_contact_prediction/README.md)). `#61` is the model from [#61](https://github.com/Open-Athena/MarinFold/issues/61)/[#75](https://github.com/Open-Athena/MarinFold/issues/75) (eval loss 2.76); `#117 best` is the current best from [@eric-czech](https://github.com/eric-czech)'s [#117](https://github.com/Open-Athena/MarinFold/issues/117) tuning sweep (eval loss 2.70).
+
+R-precision is a top-K metric. On **AUC** over the whole contact map, `#117 best` reaches 0.932 — second only to Protenix-v2 with an MSA (0.941), and above ESMFold2 (0.923).
 
 ## Try it out
 
-Our current best model predicts a **residue–residue contact map** from a
-single sequence — no MSA, no template, no structure. It's the `contacts-v1`
-1.5B model [@eric-czech](https://github.com/eric-czech) trained in
-[#61](https://github.com/Open-Athena/MarinFold/issues/61) (the
-`MarinFold #61 n=100 rollouts` predictor in *Current performance* above) and is
-the default model in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml).
+MarinFold predicts a **residue–residue contact map** from a single sequence —
+no MSA, no template, no structure. The default model in
+[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is `contacts-v1-exp120-1.5B`,
+a continue-train of the [#61](https://github.com/Open-Athena/MarinFold/issues/61)
+model from [#120](https://github.com/Open-Athena/MarinFold/issues/120).
+
+> **Note:** the `#117 best` model in *Current performance* above is
+> substantially more accurate than the published default, but has not been
+> exported to the bucket yet — see
+> [#117](https://github.com/Open-Athena/MarinFold/issues/117).
 
 ### GPU example
 

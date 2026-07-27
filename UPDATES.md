@@ -1,5 +1,81 @@
 # MarinFold Updates
 
+## Week of July 27, 2026
+
+### Last week
+
+* **Where we stand on accuracy.** Refreshed the headline contact-accuracy plot with the current best model from Eric's sweep ([#117](https://github.com/Open-Athena/MarinFold/issues/117)) alongside the model we have been quoting since [#61](https://github.com/Open-Athena/MarinFold/issues/61). Eric's best is now at **eval loss 2.7037 (perplexity 14.9)**, down from 2.7566 (15.7) for the #61 model.
+
+  <img src="experiments/exp82_evals_contacts_v1_contact_prediction/plots/where_we_stand_rprecision.png" alt="Contact R-precision" width="80%">
+
+  **The tuning gains are showing up in accuracy, and not by a little.** R-precision on the 554-protein eval set goes **0.42 → 0.53** for a 0.053-nat eval-loss improvement, and long-range R-precision **0.37 → 0.48**. We are still behind every structure predictor on top-K precision, but the gap to Protenix-v2 in single-sequence mode is now 0.53 vs 0.60 rather than 0.42 vs 0.60.
+
+  | predictor | R-precision (all) | R-precision (long) | AUC (all) |
+  |---|---|---|---|
+  | MarinFold #61, n=100 rollouts | 0.425 | 0.366 | 0.901 |
+  | **MarinFold #117 best, n=100 rollouts** | **0.535** | **0.485** | **0.932** |
+  | Protenix-v2 · single-seq | 0.603 | 0.572 | 0.830 |
+  | Protenix-v2 · MSA | 0.812 | 0.795 | 0.941 |
+  | ESMFold | 0.755 | 0.732 | 0.901 |
+  | ESMFold2 | 0.786 | 0.769 | 0.923 |
+
+  Worth noticing the AUC column, which the plot doesn't show: at **0.932** we are now second only to Protenix-v2 with an MSA, and above ESMFold2. So the model ranks the *whole* contact map about as well as a structure predictor — what it still does poorly is concentrate its confidence in the top L or top R pairs. That is a calibration/precision problem, not a "the model doesn't know the fold" problem, and it points at a different set of fixes than we've been considering.
+
+  Evals ran on **CoreWeave** — 36 single-H100 jobs at batch priority, 12 shards × 3 passes, ~4 minutes of compute where one workstation GPU takes 80 minutes per checkpoint. Recipe and gotchas are in `AGENTS.md`.
+
+* **We stopped truncating the sampling distribution when we generate rollouts.** All our rollout evals had been running with `top_k=50` — an inherited HuggingFace default baked into the checkpoint export, not a choice anyone made. Truncated sampling renormalizes over the kept tokens, which inflates `<end>` and makes the model stop early. Measured on the eval set, paired, same 554 proteins:
+
+  | | contacts asserted per rollout | vs ground truth (165.2) | R-precision (all) | AUC (all) |
+  |---|---|---|---|---|
+  | top-k 50 | 110.3 | 0.67× | 0.413 | 0.881 |
+  | no top-k | 158.2 | **0.96×** | 0.425 | 0.901 |
+
+  So most of the "under-generation" we have been worrying about since [#142](https://github.com/Open-Athena/MarinFold/issues/142) was the decoder after all — the count goes from 0.67× to 0.96× of ground truth. The accuracy it buys is real but modest (+0.011 R-precision, +0.020 AUC), which is consistent with #142's finding that the *withheld* contacts were mostly ones the model was unsure about. Every MarinFold number in the plot above is with top-k off, and it's the default in the eval path now.
+
+  That top-k-50 row is also the control: it reproduces exp82's published HF-transformers number (0.4150 / 0.8814) to within 0.002 on a completely different stack, which is what licenses comparing any of these bars to the previously published ones.
+
+* **The ESMFold2-Atlas corpus landed — 67M proteins ([#139](https://github.com/Open-Athena/MarinFold/issues/139), [#141](https://github.com/Open-Athena/MarinFold/pull/141)).** **66,759,922 contacts-v1 documents / 71.4B tokens** (41 drops out of 67M), published to the [bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_esm_atlas). That's ~16× the AFDB corpus and it is the "67M instead of 4M" expansion we have been waiting on since [#91](https://github.com/Open-Athena/MarinFold/issues/91) — thanks Jacob for the curation. We also published the **raw pyconfind contacts** as a reusable intermediate (31.9B contacts), so the next document format over this source costs a serialization pass instead of the ~2,850 core-hours pyconfind took. Worth knowing: the GCP CPU pool would have taken ~37 days for this; CoreWeave's reserved CPU pool did it in ~7 hours.
+
+* **Training on the big corpus has started ([#155](https://github.com/Open-Athena/MarinFold/issues/155)).** A 1.5B on a three-way mixture — contacts-and-crops-v1 + contacts-v1 + ESM-Atlas contacts-v1, one epoch of each, size-proportional (it runs out of the [#137](https://github.com/Open-Athena/MarinFold/issues/137) trainer, so the W&B run is named `exp137-crops1ep-cv11ep-esm1ep-…`) — is 28% through and currently reads `contacts-v1-val` **2.809**. Early days (cosine schedule, most of the improvement comes at the end) but it is the best contacts-v1 loss of any of our own multi-corpus runs so far.
+
+* **Backtracking / self-correction ([#158](https://github.com/Open-Athena/MarinFold/issues/158), [#159](https://github.com/Open-Athena/MarinFold/issues/159), [#160](https://github.com/Open-Athena/MarinFold/issues/160)).** This is the idea from the last update — let documents take back a contact they already emitted. All three pieces moved:
+  * The `<retract>` statement is implemented ([#161](https://github.com/Open-Athena/MarinFold/pull/161)); with retraction off the generator emits byte-identical documents to today's contacts-v1, and the new token appends to the end of the vocab so no existing checkpoint's token IDs move.
+  * The corpus generator works, and the interesting part is *when* it retracts: the trigger is the base model's own collapsing posterior on a contact it already emitted, with no ground truth involved. Across the full corpus it caught **76.4% of the false positives** the model emitted and **never once retracted a true contact**. So "the model can tell, from context alone, which of its own contacts are wrong" is real — which is the whole bet.
+  * **1,023,997 documents / 1.08B tokens** generated on 48 H100s at CoreWeave batch priority in ~4.5 hours, zero worker failures, all of them verified to fold back to exactly the ground-truth contact set. Training on it is next.
+
+* **Rollout refinement ([#163](https://github.com/Open-Athena/MarinFold/issues/163), [#164](https://github.com/Open-Athena/MarinFold/pull/164))** — a different post-training angle: show the model K of its own candidate rollouts and train it to emit a better contact set than any of them. Two results worth knowing regardless of whether this works:
+  * **Consensus voting over K rollouts is a dead tie with the base model's own calibrated per-pair matrix** (0.224 vs 0.221). Voting is just a Monte-Carlo estimate of the same marginal — it adds nothing the model doesn't already output. So our current inference recipe is not leaving anything on the table that more rollouts would recover.
+  * **But the joint signal is real and large:** condition the *untrained* base model on 50% of a protein's true contacts and R-precision on the remaining ones goes **0.145 → 0.556**. Feed it a *noisy* rollout instead and it gets worse (0.179 → 0.092) — it was trained on all-true contact sections and trusts its context. That gap is exactly what a refiner would have to learn. A local LoRA MVP confirms it's learnable (0.017 → 0.244 on identical K=16 input), though the margin over the base model is modest so far and looks capped by fold diversity. The first real training run started today.
+
+* **contacts-and-crops-v1 training ([#137](https://github.com/Open-Athena/MarinFold/issues/137), [#138](https://github.com/Open-Athena/MarinFold/pull/138)).** Two from-scratch 1.5B runs on the 8k coordinate-document format. The crops-only run died at 41% and I haven't restarted it; the 95%-crops/5%-contacts-v1 mix is 69% through at crops-val **2.591** / contacts-v1-val **2.992**. Crops-val isn't comparable to anything we've published (different corpus and vocabulary), so contacts-v1-val is the number to watch — and note the crops-only run reads 3.62 there, i.e. a model that never sees a standalone contacts-v1 document is bad at them, which is why the 5% mix-in exists.
+
+* **First-ever straight reproduction of one of Eric's runs ([#150](https://github.com/Open-Athena/MarinFold/issues/150), [#152](https://github.com/Open-Athena/MarinFold/pull/152)).** We have never actually checked that MarinFold's own training path lands where Eric's marin path lands — every previous run of ours changed the architecture, the data, or the hardware. This one changes nothing (his exp117 config verbatim, token cache verified bit-identical: 4,676,753,425 tokens / 4,129,682 docs on both sides). It's 41% through. If it misses 2.7112 by much, some of what we've been calling "data effects" in #120/#121/#137 is really a harness effect.
+
+* **On-the-fly document generation ([#147](https://github.com/Open-Athena/MarinFold/issues/147), [#144](https://github.com/Open-Athena/MarinFold/pull/144)).** Builds contacts-v1 documents from the saved ESM-Atlas contacts at read time instead of materializing a corpus. Pilot ran clean on a v6e-8 at 14% MFU; the schedule-matched run is 22% through.
+
+* **A caveat on every eval loss we quote.** Chasing an unexplained 0.41-nat gap between the #147 run and Eric's, the audit turned up that the standard cached packed dataset **scores `<pad>` positions in the loss** — **12.3% of the positions in our contacts-v1 validation stream are padding**. So the loss/perplexity numbers in this doc are over a stream that is ~1/8 trivially-predictable padding, and the real-document-token loss is meaningfully higher. Comparisons *between* our runs are still valid (they all share the eval), but the absolute number isn't what we've been saying it is, and a model trained with padding masked out (like #147's) is penalized against one that wasn't. Worth fixing the eval before we quote perplexity anywhere external.
+
+* **Eric's sweeps are expanding to bigger models** — [#146](https://github.com/Open-Athena/MarinFold/issues/146) (3B) and [#153](https://github.com/Open-Athena/MarinFold/issues/153) (6B), tracked together under [#154](https://github.com/Open-Athena/MarinFold/issues/154) as a parameter-scaling sweep. He also opened [#166](https://github.com/Open-Athena/MarinFold/issues/166) to test amino-acid augmentation on the six best 8-epoch configs, both from scratch and warm-started.
+
+* **Zack has opened two modeling ideas of his own:** a **greedy latent contact-set loss** ([#156](https://github.com/Open-Athena/MarinFold/issues/156)) that treats contact ordering and pair orientation as latent, so the model isn't spending capacity fitting our arbitrary serialization order, and **replacing the learned residue-position embeddings with a relative/RoPE-style one** ([#157](https://github.com/Open-Athena/MarinFold/issues/157)) on the theory that relative distance is what matters, not absolute index. Code for the set loss is written and smoke-testing.
+
+* **Housekeeping:** nine real bugs found and fixed in a codebase review ([#148](https://github.com/Open-Athena/MarinFold/pull/148), thanks Sankalp); an inference fix so checkpoints exported by newer transformers still load ([#165](https://github.com/Open-Athena/MarinFold/pull/165)); an [ESM-Atlas dataset explorer Colab](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/explore_esm_atlas_distill.ipynb) ([#140](https://github.com/Open-Athena/MarinFold/pull/140)).
+
+* **PSA on checkpoints:** two experiments this week concluded that the top #117 checkpoints had been deleted. They haven't — they were moved to `gs://<bucket>/checkpoints/protein/<run-name>/`, in both `marin-us-east5` and `marin-eu-west4`. The #61/#75 Levanter checkpoint is there too. That unblocks the warm-start in [#160](https://github.com/Open-Athena/MarinFold/issues/160) and [#163](https://github.com/Open-Athena/MarinFold/issues/163).
+
+### Upcoming
+
+* Train on the backtracking corpus ([#160](https://github.com/Open-Athena/MarinFold/issues/160)) and find out whether per-rollout self-correction beats rollout voting. Note the bar is high — #163 says voting already extracts everything the marginal has, so backtracking has to reach the *joint* signal to be worth anything.
+* Finish the #163 refiner training run and decide whether to scale the corpus from 10k to 1M proteins.
+* Let the three long training runs finish — the ESM-Atlas mixture ([#155](https://github.com/Open-Athena/MarinFold/issues/155)), the crops mix ([#137](https://github.com/Open-Athena/MarinFold/issues/137)) and the reproduction ([#150](https://github.com/Open-Athena/MarinFold/issues/150)) — and re-run the accuracy plot on all of them. Right now every accuracy number we quote comes from a model trained on 4M AFDB proteins; none of them has seen the 67M-protein corpus.
+* Eric's 3B and 6B sweeps ([#146](https://github.com/Open-Athena/MarinFold/issues/146), [#153](https://github.com/Open-Athena/MarinFold/issues/153)) should tell us how much of our gap to the structure predictors is just model scale.
+* Zack to get the greedy set loss ([#156](https://github.com/Open-Athena/MarinFold/issues/156)) to a real training run. The pause-token dataset ([#124](https://github.com/Open-Athena/MarinFold/issues/124)) is still unclaimed if anyone wants it — the data is [ready](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_think).
+* Allen on why we fall off with protein length ([#96](https://github.com/Open-Athena/MarinFold/issues/96)) — Jandom's suggestion of folding individual subdomains to see whether multidomain chains are the problem is a good first test.
+* Jacob on a report of the multimer content of AFDB / ESM-Atlas and what else is out there ([#145](https://github.com/Open-Athena/MarinFold/issues/145)).
+* Alex's bio2token baseline ([#133](https://github.com/Open-Athena/MarinFold/issues/133)) — the tokenizer and documents from [#40](https://github.com/Open-Athena/MarinFold/issues/40) are merged and waiting on a model to be trained from them.
+
+---
+
 ## Week of July 20, 2026
 
 ### Last week
