@@ -100,13 +100,19 @@ def render_readme(*, issue: dict, kind: str, name: str, branch: str) -> str:
     approach = extract_section(body, ["Approach"]) or "_(Outline what the experiment will do.)_"
     success = extract_section(body, ["Success criteria"]) or "_(Concrete metrics + thresholds.)_"
 
-    safe_title = issue["title"].replace('"', '\\"')
+    # Emit the title as a single-quoted YAML scalar (doubling internal single
+    # quotes). A double-quoted scalar processes backslash escapes, so a title
+    # like `Fix C:\path handling` produced an invalid `\p` escape and made the
+    # frontmatter unparseable (yaml.safe_load raised in read_frontmatter /
+    # itemize). Single-quoted scalars don't interpret backslashes, so arbitrary
+    # titles round-trip.
+    safe_title = issue["title"].replace("'", "''")
 
     out: list[str] = []
     out.append("---\n")
     out.append("marinfold_experiment:\n")
     out.append(f"  issue: {issue['number']}\n")
-    out.append(f"  title: \"{safe_title}\"\n")
+    out.append(f"  title: '{safe_title}'\n")
     out.append(f"  kind: {kind}\n")
     out.append(f"  branch: {branch}\n")
     out.append("---\n\n")
@@ -220,8 +226,15 @@ def main(argv: list[str] | None = None) -> int:
         shutil.copyfile(TEMPLATES_DIR / "build_summary.py", build_script)
 
     narrative = exp_dir / "summary_narrative.md"
-    if not narrative.exists() or args.force:
+    if not narrative.exists():
         narrative.write_text(render_narrative(issue=issue))
+    elif args.force:
+        # --force is documented (and its error message scoped) to README.md
+        # only. summary_narrative.md is a living document maintained by hand
+        # throughout the experiment and feeds plots/summary.pdf, so never
+        # clobber an existing one — that would silently destroy real work.
+        print("Kept existing summary_narrative.md (not clobbered by --force).",
+              file=sys.stderr)
 
     rel = readme.relative_to(REPO_ROOT)
     print(f"Scaffolded {rel}")
