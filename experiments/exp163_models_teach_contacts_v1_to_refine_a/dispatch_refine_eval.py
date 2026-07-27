@@ -77,7 +77,7 @@ def models() -> dict[str, str]:
     return dict(kv.split("=", 1) for kv in spec.split(",") if kv.strip())
 
 
-def build_bootstrap(*, name: str, uri: str, shard_i: int, shards: int, k: int,
+def build_bootstrap(*, name: str, uri: str, shard_i: int, shards: int, ks: str,
                     limit: int | None) -> str:
     worker_b64 = base64.b64encode(WORKER.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
@@ -108,16 +108,16 @@ exec "$PY" {WORKER_LOCAL} \\
     --rollouts {EVAL_PREFIX}/runs/rollout_metrics \\
     --out {EVAL_PREFIX}/scores/{name} \\
     --shard {shard_i}/{shards} \\
-    --k {k}{limit_arg}
+    --ks {ks}{limit_arg}
 """.strip()
 
 
-def build_request(*, name: str, uri: str, shard_i: int, shards: int, k: int,
+def build_request(*, name: str, uri: str, shard_i: int, shards: int, ks: str,
                   limit: int | None) -> JobRequest:
     resources = ResourceConfig.with_gpu("H100", count=1, image=IMAGE, cpu=16,
                                         ram="128g", disk="256g")
     bootstrap = build_bootstrap(name=name, uri=uri, shard_i=shard_i, shards=shards,
-                                k=k, limit=limit)
+                                ks=ks, limit=limit)
     environment = create_environment(docker_image=IMAGE, env_vars={})
     return JobRequest(
         name=f"exp163-eval-{name}-shard{shard_i}-of{shards}",
@@ -135,18 +135,22 @@ def build_request(*, name: str, uri: str, shard_i: int, shards: int, k: int,
 def main() -> None:
     ap = argparse.ArgumentParser(description="Dispatch exp163 Phase-3 eval shards (batch band).")
     ap.add_argument("--shards", type=int, default=int(os.environ.get("EXP163_EVAL_SHARDS", "4")))
-    ap.add_argument("--k", type=int, default=16)
+    ap.add_argument("--ks", default="2,4,8,16",
+                    help="candidate-block counts to sweep. K x n_cap must stay inside "
+                         "the TRAINING candidate-context distribution (max 1,282 contacts "
+                         "/ 3,862 tokens); past it the context is out of distribution and "
+                         "scores below random.")
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N proteins per shard")
     a = ap.parse_args()
 
     mods = models()
     requests = [
-        build_request(name=n, uri=u, shard_i=i, shards=a.shards, k=a.k, limit=a.limit)
+        build_request(name=n, uri=u, shard_i=i, shards=a.shards, ks=a.ks, limit=a.limit)
         for n, u in mods.items()
         for i in range(a.shards)
     ]
     print(f"[exp163-eval] {len(mods)} model(s) x {a.shards} shard(s) = {len(requests)} jobs | "
-          f"k={a.k} limit={a.limit} image={IMAGE}")
+          f"ks={a.ks} limit={a.limit} image={IMAGE}")
     for n, u in mods.items():
         print(f"    {n:>8}: {u}")
     print(f"    out: {EVAL_PREFIX}/scores/<model>/")

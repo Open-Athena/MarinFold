@@ -123,14 +123,65 @@ def band_metrics(score: np.ndarray, tmat: np.ndarray, pi, pj, psep) -> dict:
 # --------------------------------------------------------------------------
 # scorer (exp82 Scorer + exp89 score_matrix)
 # --------------------------------------------------------------------------
+# Special-token keys carried over when falling back to a raw
+# PreTrainedTokenizerFast. Mirrors marinfold.inference._tokenizer, inlined
+# because the pod has no marinfold.
+_FALLBACK_TOKENIZER_KEYS = (
+    "bos_token", "eos_token", "unk_token", "pad_token", "cls_token",
+    "sep_token", "mask_token", "model_max_length", "clean_up_tokenization_spaces",
+)
+
+
+def load_tokenizer(model_path: str):
+    """Load a checkpoint tokenizer, tolerating levanter-exported ones.
+
+    Levanter training exports declare ``"tokenizer_class": "TokenizersBackend"``
+    in ``tokenizer_config.json`` — a class ``AutoTokenizer`` cannot resolve, so
+    it raises ``ValueError: Tokenizer class TokenizersBackend does not exist``.
+    They do ship a valid WordLevel ``tokenizer.json``, so fall back to building a
+    ``PreTrainedTokenizerFast`` straight from it, carrying the special tokens
+    over. Same repair as ``marinfold.inference._tokenizer.load_tokenizer``.
+    """
+    import json
+    from transformers import AutoTokenizer, PreTrainedTokenizerFast
+    try:
+        return AutoTokenizer.from_pretrained(str(model_path))
+    except Exception:
+        tok_file = os.path.join(model_path, "tokenizer.json")
+        if not os.path.exists(tok_file):
+            raise
+        cfg = {}
+        cfg_path = os.path.join(model_path, "tokenizer_config.json")
+        if os.path.exists(cfg_path):
+            with open(cfg_path) as fh:
+                cfg = json.load(fh)
+        kwargs = {k: cfg[k] for k in _FALLBACK_TOKENIZER_KEYS if k in cfg}
+        print("  tokenizer_class unresolvable -> rebuilt from tokenizer.json", flush=True)
+        return PreTrainedTokenizerFast(tokenizer_file=tok_file, **kwargs)
+
+
+def _load_model(model_path: str, torch):
+    """``AutoModelForCausalLM`` with the right dtype kwarg for this transformers.
+
+    transformers 5.x renamed ``torch_dtype`` to ``dtype``. On 4.x an unknown
+    ``dtype=`` kwarg is swallowed into the model config, which then blows up
+    serializing it (``TypeError: Object of type dtype is not JSON serializable``)
+    — so pick by version rather than guessing.
+    """
+    import transformers
+    from transformers import AutoModelForCausalLM
+    major = int(transformers.__version__.split(".")[0])
+    key = "dtype" if major >= 5 else "torch_dtype"
+    print(f"  transformers {transformers.__version__} -> loading with {key}=bfloat16", flush=True)
+    return AutoModelForCausalLM.from_pretrained(model_path, **{key: torch.bfloat16})
+
+
 class Scorer:
     def __init__(self, model_path, device="cuda", batch=16):
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
         self.torch = torch
-        self.tok = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, dtype=torch.bfloat16).to(device).eval()
+        self.tok = load_tokenizer(model_path)
+        self.model = _load_model(model_path, torch).to(device).eval()
         self.device, self.batch = device, batch
         self.contact_id = self.tok.convert_tokens_to_ids("<contact>")
 
@@ -227,7 +278,10 @@ def main() -> int:
     ap.add_argument("--rollouts", required=True, help="dir of rollout_metrics parquet parts")
     ap.add_argument("--out", required=True)
     ap.add_argument("--shard", default="0/1")
-    ap.add_argument("--k", type=int, default=16)
+    ap.add_argument("--ks", default="2,4,8,16",
+                    help="comma list of candidate-block counts to score (the test-time-"
+                         "scaling sweep). See the note below on staying in-distribution.")
+    ap.add_argument("--k", type=int, default=None, help="deprecated alias for --ks <k>")
     ap.add_argument("--n-cap", type=int, default=120)
     ap.add_argument("--cons-frac", type=float, default=0.3)
     ap.add_argument("--cons-pool", type=int, default=24)
@@ -236,6 +290,7 @@ def main() -> int:
     a = ap.parse_args()
 
     si, sm = (int(x) for x in a.shard.split("/"))
+    ks = sorted({int(x) for x in a.ks.split(",") if x.strip()}) if a.k is None else [a.k]
 
     with fsspec.open(a.targets, "rb") as fh:
         targets = {t["entry_id"]: t for t in pq.read_table(fh).to_pylist()}
@@ -286,17 +341,30 @@ def main() -> int:
         m = band_metrics(scorer.score_matrix(prefix, seq_pos), tmat, pi, pj, psep)
         for b in ("all", "long"):
             out[f"R0_{b}"], out[f"A0_{b}"] = m[b]
-        # raw K blocks
+        # raw candidate blocks, swept over K (test-time scaling).
+        #
+        # STAY IN DISTRIBUTION. The training corpus caps the candidate section by a
+        # token budget: mean 471 contacts / 1,422 tokens per document, MAX 1,282 /
+        # 3,862. K x n_cap can blow straight past that (16 x 120 = 1,920 contacts =
+        # ~5,776 tokens, ~4x the training mean and well beyond anything seen), and a
+        # context that far out of distribution scores BELOW random. So sweep K and
+        # record the realized size, rather than assuming a single K is safe.
         pool = preds[eid]
-        blocks = []
-        for ri in rng.choice(len(pool), min(a.k, len(pool)), replace=False):
-            p = [(i, j) for (i, j) in canon(pool[ri]) if i < L and j < L]
-            if p:
-                blocks.append(emit_block(p[: a.n_cap], seq_pos, rng))
-        m = band_metrics(scorer.score_matrix(prefix_with(prefix, blocks), seq_pos),
-                         tmat, pi, pj, psep)
-        for b in ("all", "long"):
-            out[f"Rraw_{b}"], out[f"Araw_{b}"] = m[b]
+        order = rng.permutation(len(pool))
+        blocks: list[list[str]] = []
+        built = 0
+        for K in ks:
+            while built < min(K, len(pool)):
+                p = [(i, j) for (i, j) in canon(pool[order[built]]) if i < L and j < L]
+                built += 1
+                if p:
+                    blocks.append(emit_block(p[: a.n_cap], seq_pos, rng))
+            n_con = sum((len(b) - 1) // 3 for b in blocks)
+            m = band_metrics(scorer.score_matrix(prefix_with(prefix, blocks), seq_pos),
+                             tmat, pi, pj, psep)
+            for b in ("all", "long"):
+                out[f"Rraw{K}_{b}"], out[f"Araw{K}_{b}"] = m[b]
+            out[f"ncon{K}"] = n_con
         out["n_blocks"] = len(blocks)
         # consensus block
         cons = consensus(pool, L, a.cons_frac, a.cons_pool, a.n_cap, rng)
@@ -311,19 +379,21 @@ def main() -> int:
 
         if (n + 1) % 10 == 0 or n == 0:
             el = time.time() - t0
-            print(f"  [{n+1}/{len(mine)}] {eid} L={L} "
-                  f"K0={out['R0_all']:.3f} rawK={out['Rraw_all']:.3f} "
-                  f"cons={out['Rcons_all']:.3f}  ({el:.0f}s)", flush=True)
+            sweep = " ".join(f"K{K}={out[f'Rraw{K}_all']:.3f}" for K in ks)
+            print(f"  [{n+1}/{len(mine)}] {eid} L={L} K0={out['R0_all']:.3f} {sweep} "
+                  f"cons={out['Rcons_all']:.3f} ncon@{ks[-1]}={out[f'ncon{ks[-1]}']}  ({el:.0f}s)",
+                  flush=True)
 
     ofs = _fs(a.out)
     dest = f"{_strip(a.out).rstrip('/')}/shard-{si}-of-{sm}.parquet"
     with ofs.open(dest, "wb") as fh:
         pq.write_table(pa.Table.from_pylist(rows), fh)
-    r0 = np.nanmean([r["R0_all"] for r in rows]) if rows else float("nan")
-    rr = np.nanmean([r["Rraw_all"] for r in rows]) if rows else float("nan")
-    rc = np.nanmean([r["Rcons_all"] for r in rows]) if rows else float("nan")
+    def mean(key):
+        return np.nanmean([r[key] for r in rows]) if rows else float("nan")
+    sweep = " ".join(f"K{K}={mean(f'Rraw{K}_all'):.4f}(n{mean(f'ncon{K}'):.0f})" for K in ks)
     print(f"SHARD_DONE {si}/{sm}: {len(rows)} proteins in {time.time()-t0:.0f}s | "
-          f"all-band K0={r0:.4f} rawK{a.k}={rr:.4f} cons={rc:.4f} -> {dest}", flush=True)
+          f"all-band K0={mean('R0_all'):.4f} {sweep} cons={mean('Rcons_all'):.4f} -> {dest}",
+          flush=True)
     return 0
 
 
