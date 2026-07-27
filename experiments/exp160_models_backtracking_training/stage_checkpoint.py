@@ -35,9 +35,14 @@ SRC = (
     "exp120_regen_vs_reepoch_contacts_v1/checkpoints/"
     "exp120-cv1-1_5b-orig-lr3e-4-e1-cos-fb79f7/checkpoints/step-1005"
 )
+# CoreWeave S3, written directly from the GCS-local pod. Originally routed via
+# the HF bucket, but its uploader panics on multi-GB files ("File #10 ... is not
+# fully completed: 2257162240/2261618688 bytes") — this checkpoint has a 2.26 GB
+# shard. boto3 multipart handles it, it is one hop instead of two, and the
+# training job then reads from CoreWeave-local storage.
 DST = (
-    "hf://buckets/open-athena/MarinFold/checkpoints/"
-    "exp120-cv1-1_5b-orig-lr3e-4-e1-cos/levanter/step-1005"
+    "s3://marin-us-east-02a/protein-structure/MarinFold/"
+    "exp160_backtracking_training/init/exp120-step-1005"
 )
 
 
@@ -61,6 +66,42 @@ def download(src: str, local: Path) -> int:
     return total
 
 
+def upload_s3(local: Path, dst: str) -> None:
+    """Upload the checkpoint dir to CoreWeave S3 (multipart, virtual-hosted).
+
+    Needs CW_KEY_ID / CW_KEY_SECRET in the environment — CoreWeave credentials
+    are not auto-injected into a *marin* pod the way they are on cw-* clusters.
+    """
+    import boto3
+    from boto3.s3.transfer import TransferConfig
+    from botocore.config import Config
+
+    bucket, prefix = dst[len("s3://"):].split("/", 1)
+    s3 = boto3.client(
+        "s3",
+        endpoint_url="https://cwobject.com",
+        aws_access_key_id=os.environ["CW_KEY_ID"],
+        aws_secret_access_key=os.environ["CW_KEY_SECRET"],
+        config=Config(s3={"addressing_style": "virtual"}),
+        region_name="auto",
+    )
+    # 64 MB parts: the largest shard here is ~2.3 GB, far past the 5 GB
+    # single-PUT ceiling only in aggregate, but multipart also survives a
+    # mid-transfer hiccup.
+    transfer = TransferConfig(multipart_threshold=64 * 1024**2,
+                              multipart_chunksize=64 * 1024**2,
+                              max_concurrency=8)
+    files = [p for p in local.rglob("*") if p.is_file()]
+    total = sum(p.stat().st_size for p in files)
+    done = 0
+    print(f"uploading {len(files)} files ({total / 1e9:.1f} GB) -> {dst}", flush=True)
+    for i, path in enumerate(sorted(files), 1):
+        key = f"{prefix.rstrip('/')}/{path.relative_to(local).as_posix()}"
+        s3.upload_file(str(path), bucket, key, Config=transfer)
+        done += path.stat().st_size
+        print(f"  {i}/{len(files)}  {done / 1e9:.1f}/{total / 1e9:.1f} GB", flush=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default=SRC)
@@ -75,16 +116,16 @@ def main() -> None:
         size = download(args.src, args.local)
         print(f"downloaded {size / 1e9:.2f} GB -> {args.local}", flush=True)
 
-    # The project env pins huggingface_hub<1.0 (marinfold -> transformers), and
-    # the `buckets` subcommand needs >=1.5. Run the upload in an ISOLATED env
-    # rather than fighting the pin — exp139's documented workaround.
-    cmd = [
-        "uv", "run", "--no-project",
-        "--with", "huggingface_hub[cli]>=1.6,<2",
-        "hf", "buckets", "sync", str(args.local), args.dst,
-    ] if args.hf == "hf" else [args.hf, "buckets", "sync", str(args.local), args.dst]
-    print("+ " + " ".join(cmd), flush=True)
-    subprocess.run(cmd, check=True, env={**os.environ})
+    if args.dst.startswith("s3://"):
+        upload_s3(args.local, args.dst)
+    else:
+        cmd = [
+            "uv", "run", "--no-project",
+            "--with", "huggingface_hub[cli]>=1.6,<2",
+            "hf", "buckets", "sync", str(args.local), args.dst,
+        ]
+        print("+ " + " ".join(cmd), flush=True)
+        subprocess.run(cmd, check=True, env={**os.environ})
     print(f"staged -> {args.dst}", flush=True)
 
 

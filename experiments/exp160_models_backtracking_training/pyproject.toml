@@ -18,6 +18,7 @@ dependencies = [
     "numpy",
     "requests",
     "gcsfs",
+    "boto3",
 ]
 
 [project.optional-dependencies]
