@@ -24,7 +24,7 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 ## Approach
 
-### Status: engine + adapter + pilot + a 370-doc corpus done (see Results). Scale-up is the open lift.
+### Status: engine + adapter + pilot + a 1.02M-document corpus DONE (see Results).
 
 **`backtrack_engine.py` — the pure state machine (done).** No torch / no marinfold model; the base model is reached only through two injected callables, so the whole loop is unit-tested with a stub backend (`test_backtrack_engine.py`, 6 tests, CPU, <1s):
 
@@ -152,6 +152,46 @@ Two things worth noting against the AFDB reference corpus (2.73x enrichment):
 - An earlier single-worker smoke suggested ESM-Atlas had a *weaker* retraction
   rate (45% of FPs caught). That was an artifact of a 24-doc batch draining to
   stragglers; at scale it is 77.8%, above AFDB's 61.8%.
+
+### DONE — 1,023,997 documents (2026-07-26)
+
+Full-corpus QA over all 4,096 parts (`consolidate_esm_atlas.py`), with the
+invariant re-derived per document rather than read off the worker's columns:
+
+```
+documents:        1,023,997        unique entry_ids: 1,023,997
+tokens:           1,076,910,057    mean seq_len: 193.7
+truncated:        0
+fold == n_gt:     1,023,997/1,023,997 (OK)
+
+docs with a retraction: 79.7%      mean retracts/doc: 33.1
+FP emitted: 32,849,569  caught by trigger: 25,105,853 (76.4%)
+trigger false alarms:   0
+FP base rate: 0.166   retract precision: 0.974
+ENRICHMENT:   5.85x   (ceiling 1/0.166 = 6.02x -> 97% of max)
+retract distance: mean 17.9 / median 9 statements (0.1% immediate)
+recovery rate: 0.778
+```
+
+**Every one of 1.02M documents folds to exactly its ground truth, none
+truncated, and the posterior trigger never once retracted a true contact**
+across 32.8M emitted false positives. (The 16k "true contacts retracted" in the
+diagnostics sample are the deliberate 5% noise retractions, which the trigger
+column separates out.)
+
+Metrics were stable from 5k -> 30k -> 1.02M documents (precision 0.975 ->
+0.974 -> 0.974; distance 17.8 -> 18.1 -> 17.9), so the generator did not drift
+across proteins.
+
+Run: 48 x 1 H100 on `cw-rno2a` at batch priority, ~4.5 h wall-clock, 0 worker
+failures after the `max_task_failures` fix. Output:
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`
+(4,096 parquet parts).
+
+**Remaining before #160 can train on it:** publish to the public HF bucket
+(`data/document_structures/contacts_v1_backtracking/`) with the superset
+tokenizer co-located, and mirror to GCS if training runs there. The 10%
+single-retract probe class is still not implemented (deferred).
 
 ## Success criteria
 
