@@ -127,6 +127,39 @@ goes GCS → CoreWeave S3 directly from a GCS-local marin pod via boto3
 multipart — one hop, and training reads CoreWeave-local storage. Credentials
 are passed as job env vars only; nothing secret is committed.
 
+### BLOCKER: `marinfold_models` is stale against current marin/levanter
+
+The training launch reached the worker and then failed here:
+
+```
+File ".../marinfold_models/defaults.py", line 35
+    from levanter.data.text import LmDataConfig
+ImportError: cannot import name 'LmDataConfig' from 'levanter.data.text'
+```
+
+This is the documented **marin 0.2.57 / levanter 1.2** API move: `levanter.data.text`
+and `levanter.optim` became lazy plugin registries with empty `__init__`s, so
+imports must name the defining submodule:
+
+| was | now |
+|---|---|
+| `levanter.data.text.{LmDataConfig, DatasetComponent, UrlDatasetSourceConfig}` | `levanter.data.text.datasets` |
+| `levanter.data.text.{TextLmDatasetFormat, PrebuiltLmDatasetFormat}` | `levanter.data.text.formats` |
+| `levanter.optim.{OptimizerConfig, AdamConfig}` | `levanter.optim.config` |
+
+`train_backtracking.py` already uses the new paths; **`models/marinfold_models/defaults.py`
+does not**. Fixing it is a small library change that unblocks any experiment
+re-locking to a recent marin, not just this one.
+
+A second, related constraint forced the env split already committed:
+`marin-core` requires `transformers>=5.5.3` while `marinfold` pins `<5`, so the
+**training** env carries `marinfold-models` (+ marin stack) and *not* `marinfold`.
+Diagnostics that need `marinfold.read` (`diagnose_corpus.py`) run under exp159's
+env instead.
+
+**Status: everything else is staged and verified; training is blocked only on
+this import fix.**
+
 ## Success criteria
 
 - **No regression** on #89 R-precision / AUC vs the matched-budget control.

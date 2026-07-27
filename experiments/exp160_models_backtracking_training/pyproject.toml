@@ -2,15 +2,13 @@
 name = "exp160-backtracking-training"
 version = "0.0.0"
 description = "Backtracking training + retraction diagnostics (issue #160)"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.14"  # marin-fray supports 3.12-3.13
 dependencies = [
-    "marinfold",
     # GPU inference of the exp120 1.5B model. The host runs CUDA 12.2, so torch
     # is pinned to a +cu121 wheel (the pin exp89/exp20 settled on for this box)
     # routed through the pytorch-cu121 index below.
     "torch==2.5.1+cu121",
     "accelerate>=0.30",
-    "transformers>=4.45,<5",
     # Pilot I/O: exp98 targets.parquet (GT + sequences) from the public bucket.
     "pandas>=2.0",
     "pyarrow",
@@ -19,6 +17,14 @@ dependencies = [
     "requests",
     "gcsfs",
     "boto3",
+    # marin runtime in BASE (not an extra): the iris job env installs base deps
+    # only, and the driver imports fray to submit the child JobRequest.
+    "marin-fray>=0.2.40.dev202607080801",
+    "marin-iris>=0.2.40.dev202607080801",
+    # marin training path (build_train_lm_on_pod_config -> run_levanter_train_lm).
+    "marin-core>=0.2.40.dev202607080801",
+    "marinfold-models",
+    "httpx>=0.28.1,<1",
 ]
 
 [project.optional-dependencies]
@@ -32,7 +38,7 @@ dev = []
 # experiment dir, so `../../marinfold` fails in a pod with "Could not compute
 # absolute path from workspace root and lockfile path". Pinned to the series
 # branch (the <retract> token + read.py fold are not on main yet).
-marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", branch = "exp160-backtracking-training" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", branch = "exp160-backtracking-training" }
 torch = { index = "pytorch-cu121" }
 
 [[tool.uv.index]]
