@@ -1,17 +1,18 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
-"""exp163 MVP eval: does conditioning on K candidate blocks beat no-candidates,
-for a given model?  Runs the exp89 calibrated matrix at K=0 and K=16 on the
-val proteins.  Run for BOTH the base E8 and the fine-tuned refiner and compare:
-  - refiner: R(K16) > R(K0)?      -> learned to USE candidates (the headline)
-  - refiner R(K0) vs base R(K0)   -> did fine-tuning hurt one-shot?
-  - base:    R(K16) vs R(K0)      -> base is poisoned by noisy candidates (Step 2)
+"""exp163 MVP eval: calibrated-matrix R-precision under three candidate contexts
+for a given model, on the val proteins:
+  K0        : no candidates (seq + BEGIN)                -> one-shot readout
+  raw       : K raw rollout blocks (13% precision each)  -> the trained format
+  consensus : ONE block = contacts with vote >= frac*M over M sampled rollouts
+              (deployable HIGH-precision partial; the Step-2 lever)
 
     uv run --no-sync python mvp_eval.py --model <base|refiner> --rollouts val_preds.parquet \
-        --targets <exp98>/targets.parquet --out eval_<tag>.csv
+        --targets <exp98>/targets.parquet --out eval.csv
 """
 from __future__ import annotations
 import argparse, sys
+from collections import Counter
 from pathlib import Path
 import numpy as np, pandas as pd
 
@@ -32,15 +33,18 @@ def canon(flat):
     k = (hi - lo) >= MIN_SEP
     return sorted(set(zip(lo[k].tolist(), hi[k].tolist())))
 
-def cand_prefix(prefix, seq_pos, cands, rng, marker=MARKER):
+def emit_block(pairs, seq_pos, rng):
+    toks = [MARKER]
+    order = list(pairs); rng.shuffle(order)
+    for (i, j) in order:
+        a, b = (i, j) if rng.random() < 0.5 else (j, i)
+        toks += ["<contact>", f"<p{seq_pos[a]}>", f"<p{seq_pos[b]}>"]
+    return toks
+
+def prefix_with(prefix, seq_pos, blocks):
     head = prefix[: prefix.rindex(BEGIN)].rstrip()
     toks = [head]
-    for pairs in cands:
-        toks.append(marker)
-        order = list(pairs); rng.shuffle(order)
-        for (i, j) in order:
-            a, b = (i, j) if rng.random() < 0.5 else (j, i)
-            toks += ["<contact>", f"<p{seq_pos[a]}>", f"<p{seq_pos[b]}>"]
+    for blk in blocks: toks += blk
     toks.append(BEGIN)
     return " ".join(toks)
 
@@ -52,50 +56,60 @@ def rprec(scorer, prefix, seq_pos, L, gt):
     d = {(r["range"], r["cut"]): r for r in rows}
     return d[("all", "R")]["precision"], d[("long", "R")]["precision"]
 
+def consensus(pool, L, frac, M, ncap, rng):
+    idx = rng.choice(len(pool), min(M, len(pool)), replace=False)
+    votes = Counter()
+    for t in idx:
+        for (i, j) in canon(pool[t]):
+            if i < L and j < L: votes[(i, j)] += 1
+    thr = max(2, int(frac * len(idx)))
+    keep = [p for p, c in votes.items() if c >= thr]
+    keep.sort(key=lambda p: -votes[p])
+    return keep[:ncap]
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
-    ap.add_argument("--rollouts", required=True)
-    ap.add_argument("--targets", required=True)
+    ap.add_argument("--rollouts", required=True); ap.add_argument("--targets", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--k", type=int, default=16)
-    ap.add_argument("--n-cap", type=int, default=120)
-    ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--k", type=int, default=16); ap.add_argument("--n-cap", type=int, default=120)
+    ap.add_argument("--cons-frac", type=float, default=0.3); ap.add_argument("--cons-pool", type=int, default=32)
+    ap.add_argument("--limit", type=int, default=60)
     a = ap.parse_args()
-
     tgt = pd.read_parquet(a.targets).set_index("entry_id")
     roll = pd.read_parquet(a.rollouts, columns=["entry_id", "r", "pred"])
     preds_by = {e: list(g["pred"].to_numpy()) for e, g in roll.groupby("entry_id")}
-    eids = [e for e in preds_by if e in tgt.index]
-    if a.limit: eids = eids[: a.limit]
-    scorer = Scorer(a.model)
-    rng = np.random.default_rng(0)
-    rows = []
+    eids = [e for e in preds_by if e in tgt.index][: a.limit]
+    scorer = Scorer(a.model); rng = np.random.default_rng(0); rows = []
     for n, eid in enumerate(eids):
-        seq = tgt.loc[eid, "sequence"]
-        built = prefix_and_positions(eid, seq)
+        built = prefix_and_positions(eid, tgt.loc[eid, "sequence"])
         if built is None: continue
         prefix, seq_pos, L = built
         gt = [(i, j) for (i, j) in canon(np.concatenate([np.asarray(p).ravel()
                 for p in tgt.loc[eid, "gt_contacts"]])) if i < L and j < L]
         if len(gt) < 5: continue
-        r0a, r0l = rprec(scorer, prefix, seq_pos, L, gt)            # K=0
-        cands = []
+        gts = set(gt)
+        r0a, r0l = rprec(scorer, prefix, seq_pos, L, gt)
+        # raw: K rollout blocks
+        raw = []
         for ri in rng.choice(len(preds_by[eid]), min(a.k, len(preds_by[eid])), replace=False):
             p = [(i, j) for (i, j) in canon(preds_by[eid][ri]) if i < L and j < L]
-            if p: cands.append(p[: a.n_cap])
-        pfx = cand_prefix(prefix, seq_pos, cands, rng)
-        rKa, rKl = rprec(scorer, pfx, seq_pos, L, gt)               # K=16
-        rows.append(dict(entry_id=eid, L=L, n_gt=len(gt), K=len(cands),
-                         R0_all=r0a, RK_all=rKa, R0_long=r0l, RK_long=rKl))
-        if (n + 1) % 20 == 0:
-            print(f"  {n+1}/{len(eids)}", flush=True)
+            if p: raw.append(emit_block(p[: a.n_cap], seq_pos, rng))
+        rRa, rRl = rprec(scorer, prefix_with(prefix, seq_pos, raw), seq_pos, L, gt)
+        # consensus: one high-precision block
+        cons = consensus(preds_by[eid], L, a.cons_frac, a.cons_pool, a.n_cap, rng)
+        cprec = (len(set(cons) & gts) / len(cons)) if cons else float("nan")
+        cRa, cRl = rprec(scorer, prefix_with(prefix, seq_pos, [emit_block(cons, seq_pos, rng)]), seq_pos, L, gt)
+        rows.append(dict(entry_id=eid, L=L, n_gt=len(gt), R0_all=r0a, Rraw_all=rRa, Rcons_all=cRa,
+                         R0_long=r0l, Rraw_long=rRl, Rcons_long=cRl, cons_n=len(cons), cons_prec=cprec))
+        if (n + 1) % 20 == 0: print(f"  {n+1}/{len(eids)}", flush=True)
     d = pd.DataFrame(rows); d.to_csv(a.out, index=False)
-    print(f"\n=== {a.model}  ({len(d)} val proteins, K={a.k}) ===", flush=True)
-    print(f"  all-band : R(K0)={d.R0_all.mean():.4f}  R(K{a.k})={d.RK_all.mean():.4f}  "
-          f"dR={ (d.RK_all-d.R0_all).mean():+.4f}  (K wins {100*(d.RK_all>d.R0_all).mean():.0f}%)", flush=True)
-    print(f"  long-band: R(K0)={d.R0_long.mean():.4f}  R(K{a.k})={d.RK_long.mean():.4f}  "
-          f"dR={ (d.RK_long-d.R0_long).mean():+.4f}", flush=True)
+    print(f"\n=== {a.model}  ({len(d)} val proteins) ===", flush=True)
+    print(f"  consensus set: mean size={d.cons_n.mean():.0f}  mean precision={d.cons_prec.mean():.3f}", flush=True)
+    for band in ("all", "long"):
+        r0, rr, rc = d[f"R0_{band}"].mean(), d[f"Rraw_{band}"].mean(), d[f"Rcons_{band}"].mean()
+        print(f"  {band:>4}: K0={r0:.4f}  raw-K{a.k}={rr:.4f} (d{rr-r0:+.4f})  "
+              f"consensus={rc:.4f} (d{rc-r0:+.4f})", flush=True)
 
 if __name__ == "__main__":
     main()
