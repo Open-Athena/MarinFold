@@ -1,0 +1,21 @@
+# Retraction diagnostics of the #159 training corpus, computed with THIS
+# experiment's retraction_diagnostics.py so the trained model's number is
+# comparable to it line-for-line rather than quoted from another README.
+#
+# source: hf://buckets/open-athena/MarinFold/data/document_structures/
+#         contacts_v1_backtracking/train/shard-00000.parquet  (64,000 of 1,023,997 docs)
+# command: diagnose_corpus.py --parquet <that shard>
+# published corpus-wide figure: 5.85x  (this shard: 5.86x)
+
+documents:            64000 (79.9% contain a retraction)
+mean contacts/doc:    186.0
+mean retracts/doc:    33.4
+
+FP base rate:         0.166  (of 11720340 emitted pairs)
+retract precision:    0.974  P(false positive | retracted)
+retract recall:       1.000  P(retracted | false positive)
+ENRICHMENT:           5.86x  <- 1.0 = no signal (the pass/fail)
+true contacts retracted: 52475
+
+retract distance:     mean 18.0 / median 9 statements (0.2% immediate)
+recovery rate:        0.778  (true contact on a freed residue after retracting)
