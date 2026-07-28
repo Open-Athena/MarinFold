@@ -51,12 +51,30 @@ from __future__ import annotations
 
 import argparse
 
+import contextlib
+
 import fsspec
 import haliax as hax
 import jax
+import numpy as np
 from levanter.checkpoint import load_checkpoint, save_checkpoint
 
 from train_backtracking import MODEL_CONFIG
+
+
+@contextlib.contextmanager
+def single_host_mesh():
+    """Minimal device mesh.
+
+    ``load_checkpoint`` / ``save_checkpoint`` go through haliax's partitioning
+    layer, which raises ``ValueError: No mesh found`` outside a mesh context —
+    building the model works fine without one, so the failure lands on the
+    load, not on the build. Under ``JAX_PLATFORMS=cpu`` this is a 1x1x1 mesh
+    over the single CPU device; the axis names match the marin training mesh.
+    """
+    devices = np.array(jax.devices()).reshape(1, -1, 1)
+    with jax.sharding.Mesh(devices, ("replica", "data", "model")) as mesh:
+        yield mesh
 
 SRC = (
     "gs://marin-us-east5/protein-structure/MarinFold/"
@@ -89,26 +107,27 @@ def main() -> None:
 
     print(f"jax devices: {jax.devices()}", flush=True)
 
-    src_vocab = hax.Axis("vocab", args.src_vocab)
-    model = MODEL_CONFIG.build(src_vocab, key=jax.random.PRNGKey(0))
-    print(f"built base model at vocab={args.src_vocab}", flush=True)
+    with single_host_mesh():
+        src_vocab = hax.Axis("vocab", args.src_vocab)
+        model = MODEL_CONFIG.build(src_vocab, key=jax.random.PRNGKey(0))
+        print(f"built base model at vocab={args.src_vocab}", flush=True)
 
-    model = load_checkpoint(model, args.src, subpath="model")
-    print(f"loaded {args.src}", flush=True)
+        model = load_checkpoint(model, args.src, subpath="model")
+        print(f"loaded {args.src}", flush=True)
 
-    before = model.embeddings.token_embeddings.weight.array
-    model = model.resize_vocab(args.dst_vocab, key=jax.random.PRNGKey(1))
-    after = model.embeddings.token_embeddings.weight.array
-    print(f"resized embeddings {before.shape} -> {after.shape}", flush=True)
+        before = np.asarray(model.embeddings.token_embeddings.weight.array)
+        model = model.resize_vocab(args.dst_vocab, key=jax.random.PRNGKey(1))
+        after = np.asarray(model.embeddings.token_embeddings.weight.array)
+        print(f"resized embeddings {before.shape} -> {after.shape}", flush=True)
 
-    # The rows we claim are untouched really are: this is the whole safety
-    # argument for an append-only vocab, so assert it rather than assume it.
-    assert (after[: args.src_vocab] == before).all(), "resize perturbed existing token rows"
-    print(f"verified rows 0..{args.src_vocab - 1} are bit-identical", flush=True)
+        # The rows we claim are untouched really are: this is the whole safety
+        # argument for an append-only vocab, so assert it rather than assume it.
+        assert (after[: args.src_vocab] == before).all(), "resize perturbed existing token rows"
+        print(f"verified rows 0..{args.src_vocab - 1} are bit-identical", flush=True)
 
-    # Saved under the `model` subpath so the training job's
-    # `load_checkpoint(model, path, subpath="model")` finds it.
-    save_checkpoint({"model": model}, step=1005, checkpoint_path=args.dst, is_temporary=False)
+        # Saved under the `model` subpath so the training job's
+        # `load_checkpoint(model, path, subpath="model")` finds it.
+        save_checkpoint({"model": model}, step=1005, checkpoint_path=args.dst, is_temporary=False)
     print(f"saved -> {args.dst}", flush=True)
 
 

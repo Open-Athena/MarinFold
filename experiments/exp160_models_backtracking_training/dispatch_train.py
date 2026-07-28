@@ -51,8 +51,10 @@ Prerequisites, both verified before launch:
 
   1. corpus + tokenizer at ``GCS_PREFIX/corpus`` — 32 shards, 3.54 GB, byte
      sizes diffed against the local build
-  2. exp120's Levanter checkpoint at ``INIT`` (it has always lived in
-     us-east5; the CoreWeave S3 copy is now unnecessary)
+  2. exp120's Levanter checkpoint, **vocab-resized to 3849**, at ``INIT`` —
+     see ``resize_init_vocab.py``. exp120's own checkpoint lives in us-east5
+     already (the CoreWeave S3 copy is now unnecessary) but is 2845 tokens
+     wide, which Levanter's strict warm-start load rejects.
 """
 
 from __future__ import annotations
@@ -71,11 +73,10 @@ GCS_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp160_backtrackin
 DEFAULT_CORPUS = f"{GCS_PREFIX}/corpus"
 DEFAULT_OUTPUT = f"{GCS_PREFIX}/runs"
 DEFAULT_TOKENIZER = f"{GCS_PREFIX}/corpus/tokenizer"
-DEFAULT_INIT = (
-    "gs://marin-us-east5/protein-structure/MarinFold/"
-    "exp120_regen_vs_reepoch_contacts_v1/checkpoints/"
-    "exp120-cv1-1_5b-orig-lr3e-4-e1-cos-fb79f7/checkpoints/step-1005"
-)
+# exp120's weights grown to the 3849-token superset vocab by
+# resize_init_vocab.py — NOT exp120's own checkpoint, which is 2845-wide and
+# fails Levanter's strict warm-start load against the superset tokenizer.
+DEFAULT_INIT = f"{GCS_PREFIX}/init/exp120-step-1005-vocab3849"
 
 TPU_TYPE = "v5p-32"
 TPU_ZONE = "us-east5-a"
