@@ -78,7 +78,7 @@ def models() -> dict[str, str]:
 
 
 def build_bootstrap(*, name: str, uri: str, shard_i: int, shards: int, ks: str,
-                    limit: int | None) -> str:
+                    limit: int | None, fmt: str = "candidate") -> str:
     worker_b64 = base64.b64encode(WORKER.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
     return f"""
@@ -108,16 +108,17 @@ exec "$PY" {WORKER_LOCAL} \\
     --rollouts {EVAL_PREFIX}/runs/rollout_metrics \\
     --out {EVAL_PREFIX}/scores/{name} \\
     --shard {shard_i}/{shards} \\
-    --ks {ks}{limit_arg}
+    --ks {ks} \\
+    --format {fmt}{limit_arg}
 """.strip()
 
 
 def build_request(*, name: str, uri: str, shard_i: int, shards: int, ks: str,
-                  limit: int | None) -> JobRequest:
+                  limit: int | None, fmt: str = "candidate") -> JobRequest:
     resources = ResourceConfig.with_gpu("H100", count=1, image=IMAGE, cpu=16,
                                         ram="128g", disk="256g")
     bootstrap = build_bootstrap(name=name, uri=uri, shard_i=shard_i, shards=shards,
-                                ks=ks, limit=limit)
+                                ks=ks, limit=limit, fmt=fmt)
     environment = create_environment(docker_image=IMAGE, env_vars={})
     return JobRequest(
         name=f"exp163-eval-{name}-shard{shard_i}-of{shards}",
@@ -141,16 +142,19 @@ def main() -> None:
                          "/ 3,862 tokens); past it the context is out of distribution and "
                          "scores below random.")
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N proteins per shard")
+    ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
+                    help="MUST match the corpus the checkpoints were trained on")
     a = ap.parse_args()
 
     mods = models()
     requests = [
-        build_request(name=n, uri=u, shard_i=i, shards=a.shards, ks=a.ks, limit=a.limit)
+        build_request(name=n, uri=u, shard_i=i, shards=a.shards, ks=a.ks, limit=a.limit,
+                      fmt=a.format)
         for n, u in mods.items()
         for i in range(a.shards)
     ]
     print(f"[exp163-eval] {len(mods)} model(s) x {a.shards} shard(s) = {len(requests)} jobs | "
-          f"ks={a.ks} limit={a.limit} image={IMAGE}")
+          f"ks={a.ks} format={a.format} limit={a.limit} image={IMAGE}")
     for n, u in mods.items():
         print(f"    {n:>8}: {u}")
     print(f"    out: {EVAL_PREFIX}/scores/<model>/")

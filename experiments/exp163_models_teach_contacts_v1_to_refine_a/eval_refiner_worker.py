@@ -223,12 +223,22 @@ def canon(flat) -> list[tuple[int, int]]:
     return sorted(set(zip(lo[k].tolist(), hi[k].tolist())))
 
 
-def emit_block(pairs, seq_pos, rng) -> list[str]:
+def emit_block(pairs, seq_pos, rng, fmt: str = "candidate") -> list[str]:
+    """One block of candidate contacts, in whichever format the model was trained on.
+
+    v1 ``candidate``: ``<CAND> <contact> pi pj …`` (a repurposed spare marker).
+    v2 ``multi-draft``: ``<begin_statements> <contact> pi pj … <end>`` — a draft is
+    syntactically an ordinary statements section. Feeding a multi-draft model
+    v1-format context (or vice versa) is out of distribution and meaningless, so
+    this must match the corpus the checkpoint was trained on.
+    """
     order = list(pairs); rng.shuffle(order)
-    toks = [MARKER]
+    toks = [BEGIN] if fmt == "multi-draft" else [MARKER]
     for (i, j) in order:
         a, b = (i, j) if rng.random() < 0.5 else (j, i)
         toks += ["<contact>", f"<p{seq_pos[a]}>", f"<p{seq_pos[b]}>"]
+    if fmt == "multi-draft":
+        toks.append("<end>")
     return toks
 
 
@@ -287,6 +297,9 @@ def main() -> int:
     ap.add_argument("--cons-pool", type=int, default=24)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--max-len", type=int, default=None, help="skip proteins longer than this")
+    ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
+                    help="candidate context format — MUST match what the checkpoint "
+                         "was trained on (v1 <CAND> blocks vs v2 statements sections)")
     a = ap.parse_args()
 
     si, sm = (int(x) for x in a.shard.split("/"))
@@ -309,7 +322,8 @@ def main() -> int:
     mine = [e for n, e in enumerate(stems) if n % sm == si]
     if a.limit:
         mine = mine[: a.limit]
-    print(f"[exp163-eval] shard {si}/{sm}: {len(mine)}/{len(stems)} proteins, k={a.k}", flush=True)
+    print(f"[exp163-eval] shard {si}/{sm}: {len(mine)}/{len(stems)} proteins, "
+          f"ks={ks} format={a.format}", flush=True)
 
     local = fetch_model(a.model, "/tmp/exp163_model")
     scorer = Scorer(local)
@@ -358,7 +372,7 @@ def main() -> int:
                 p = [(i, j) for (i, j) in canon(pool[order[built]]) if i < L and j < L]
                 built += 1
                 if p:
-                    blocks.append(emit_block(p[: a.n_cap], seq_pos, rng))
+                    blocks.append(emit_block(p[: a.n_cap], seq_pos, rng, a.format))
             n_con = sum((len(b) - 1) // 3 for b in blocks)
             m = band_metrics(scorer.score_matrix(prefix_with(prefix, blocks), seq_pos),
                              tmat, pi, pj, psep)
@@ -371,7 +385,7 @@ def main() -> int:
         out["cons_n"] = len(cons)
         out["cons_prec"] = (len(set(cons) & gts) / len(cons)) if cons else float("nan")
         m = band_metrics(
-            scorer.score_matrix(prefix_with(prefix, [emit_block(cons, seq_pos, rng)]), seq_pos),
+            scorer.score_matrix(prefix_with(prefix, [emit_block(cons, seq_pos, rng, a.format)]), seq_pos),
             tmat, pi, pj, psep)
         for b in ("all", "long"):
             out[f"Rcons_{b}"], out[f"Acons_{b}"] = m[b]

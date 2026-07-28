@@ -70,11 +70,12 @@ import tempfile
 import time
 
 import fsspec
+import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 from fsspec.core import url_to_fs
 
-from rollout_metrics import BANDS, gt_by_band, parse_pred, score_rollout
+from rollout_metrics import BANDS, gt_by_band, parse_pred, parse_sections, score_rollout
 
 # Accumulate rollout rows across this many targets before flushing a part file.
 FLUSH_EVERY = 2000
@@ -130,6 +131,13 @@ def main():
     ap.add_argument("--overwrite", action="store_true",
                     help="reprocess all assigned targets; drops this shard's existing "
                          "part files + timings first (a clean redo)")
+    ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
+                    help="multi-draft: the model emits SEVERAL <begin_statements>..<end> "
+                         "sections in one completion. Changes the stop token from <end> "
+                         "(which now only closes a section) to <eos>, and scores each "
+                         "section separately.")
+    ap.add_argument("--max-sections", type=int, default=8,
+                    help="multi-draft: token budget is sized for this many sections")
     ap.add_argument("--save-texts", action="store_true",
                     help="also dump every rollout's text for the first target (debug)")
     a = ap.parse_args()
@@ -196,6 +204,11 @@ def main():
               tensor_parallel_size=a.tensor_parallel_size, enforce_eager=True, dtype="bfloat16")
     tok = llm.get_tokenizer()
     end_id = tok.convert_tokens_to_ids("<end>")
+    eos_id = tok.eos_token_id
+    # v2 multi-draft: <end> closes a SECTION, <eos> ends the document. Stopping on
+    # <end> here would truncate after the FIRST (worst) draft.
+    stop_id = eos_id if a.format == "multi-draft" else end_id
+    sections_budget = a.max_sections if a.format == "multi-draft" else 1
     startup_s = time.time() - t_load
     print(f"model loaded in {startup_s:.0f}s (end_id={end_id})", flush=True)
 
@@ -239,9 +252,10 @@ def main():
             maps = [{int(pos): i for i, pos in enumerate(p["seq_positions"])} for p in prows]
             rkeys = [p["r"] for p in prows]
             prefixes = [p["prefix"] for p in prows]
-            max_new = min(a.max_model_len - max(len(x) for x in ids_list), 4 * L + 64)
+            max_new = min(a.max_model_len - max(len(x) for x in ids_list),
+                          (4 * L + 64) * sections_budget)
             sp = SamplingParams(n=1, temperature=a.temperature, top_p=a.top_p,
-                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[end_id])
+                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[stop_id])
             t0 = time.time()
             outs = llm.generate([TokensPrompt(prompt_token_ids=x) for x in ids_list],
                                 sp, use_tqdm=False)
@@ -251,9 +265,9 @@ def main():
             p0 = prows[0]
             ids = tok(p0["prefix"], add_special_tokens=False).input_ids
             m0 = {int(pos): i for i, pos in enumerate(p0["seq_positions"])}
-            max_new = min(a.max_model_len - len(ids), 4 * L + 64)
+            max_new = min(a.max_model_len - len(ids), (4 * L + 64) * sections_budget)
             sp = SamplingParams(n=a.n_rollouts, temperature=a.temperature, top_p=a.top_p,
-                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[end_id])
+                                top_k=a.top_k, max_tokens=max_new, stop_token_ids=[stop_id])
             t0 = time.time()
             outs = llm.generate([TokensPrompt(prompt_token_ids=ids)], sp, use_tqdm=False)
             gen_s = time.time() - t0
@@ -267,14 +281,36 @@ def main():
             ntok = len(tok_ids)
             total_gen += ntok
             text = tok.decode(tok_ids, skip_special_tokens=False)
-            pred = parse_pred(text, m)
+            extra: dict = {}
+            if a.format == "multi-draft":
+                secs = parse_sections(text, m)
+                f1s = [score_rollout(p, gtb)["all_f1"] for p in secs]
+                pred = secs[-1]                      # the LAST section is the answer
+                # Diagnostics for the premise the RL plan rests on: do successive
+                # drafts actually improve, and are they even different?
+                jac = [len(x & y) / max(1, len(x | y)) for x, y in zip(secs, secs[1:])]
+                extra = dict(
+                    n_sections=len(secs),
+                    section_f1=[float(v) for v in f1s],
+                    best_f1=float(max(f1s)) if f1s else float("nan"),
+                    last_f1=float(f1s[-1]) if f1s else float("nan"),
+                    first_f1=float(f1s[0]) if f1s else float("nan"),
+                    # fraction of consecutive steps that improve
+                    frac_improving=(float(np.mean([b > a_ for a_, b in zip(f1s, f1s[1:])]))
+                                    if len(f1s) > 1 else float("nan")),
+                    # 1.0 = draft t+1 identical to draft t (the copy failure mode)
+                    mean_jaccard=float(np.mean(jac)) if jac else float("nan"),
+                )
+            else:
+                pred = parse_pred(text, m)
             sc = score_rollout(pred, gtb)
             finished = co.finish_reason == "stop"
             # flattened predicted contacts [i0,j0,i1,j1,…] (seq-index, sep>=6,
             # deduped) — the corpus builder reshapes this to (-1, 2).
             pred_flat = [int(x) for pr in sorted(pred) for x in pr]
             rows.append(dict(entry_id=entry, r=int(rkey), n_gen_tokens=ntok,
-                             finished=finished, n_pred=len(pred), pred=pred_flat, **sc))
+                              finished=finished, n_pred=len(pred), pred=pred_flat,
+                              **sc, **extra))
             if all_texts is not None:
                 all_texts.append(dict(r=int(rkey), text=text))
 

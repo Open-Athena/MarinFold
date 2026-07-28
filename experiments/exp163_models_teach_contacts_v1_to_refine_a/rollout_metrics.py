@@ -26,8 +26,44 @@ BANDS: dict[str, tuple[int, int | None]] = {
 }
 
 
+BEGIN = "<begin_statements>"
+
+
+def parse_sections(text: str, pos_to_seq: dict[int, int]) -> list[set[tuple[int, int]]]:
+    """One predicted contact set per ``<begin_statements>`` section, in order.
+
+    Needed for the v2 **multi-draft** format, where a single completion contains
+    several successive structures and ``<begin_statements>`` means "discard what
+    came before, here is a new candidate". :func:`parse_pred` regex-scans the
+    whole string, so on a multi-draft completion it would silently MERGE every
+    draft with the answer — the union, not the prediction.
+
+    Convention: the LAST section is the model's final answer; earlier ones are
+    its drafts. Callers wanting best-of-N score each section separately.
+
+    The leading fragment needs care. This is called on two kinds of string:
+
+    * a **completion**, where the prompt already supplied the first
+      ``<begin_statements>`` — so ``chunks[0]`` holds the FIRST section's
+      contacts and dropping it would silently lose draft 1;
+    * a **full document**, where ``chunks[0]`` is the sequence header and holds
+      no contacts at all.
+
+    Keeping ``chunks[0]`` only when it actually contains a contact statement
+    handles both without the caller having to say which it passed.
+    """
+    chunks = text.split(BEGIN)
+    keep = chunks if CONTACT_RE.search(chunks[0]) else chunks[1:]
+    return [parse_pred(c, pos_to_seq) for c in keep] or [set()]
+
+
 def parse_pred(text: str, pos_to_seq: dict[int, int]) -> set[tuple[int, int]]:
-    """Predicted contact set (seq-index pairs, deduped, seq-sep >= MIN_SEP)."""
+    """Predicted contact set (seq-index pairs, deduped, seq-sep >= MIN_SEP).
+
+    NOTE: scans the entire ``text``. For a v2 multi-draft completion (several
+    ``<begin_statements>`` sections) use :func:`parse_sections` instead — this
+    would return the union across drafts.
+    """
     out: set[tuple[int, int]] = set()
     for a, b in CONTACT_RE.findall(text):
         ia, ib = pos_to_seq.get(int(a)), pos_to_seq.get(int(b))
