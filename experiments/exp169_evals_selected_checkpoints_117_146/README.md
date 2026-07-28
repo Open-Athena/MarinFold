@@ -143,8 +143,82 @@ uv run python verify_prepared_exports.py --model ref=<dir> --model new=<dir>
 
 ## Results
 
-_(Fill in after the run completes.)_
+All **554/554** `(dataset, stem)` units scored for all three checkpoints, no
+skips, **0 of 166,200 rollouts truncated** (the `6L+128` token budget never
+binds). 12 × `v5p-8`, ~11.5k tok/s per slice for the 1.5B and ~4.0k for the 3B;
+~10 min per 1.5B shard, ~25 min per 3B shard.
+
+**Aggregate, mean over 554 proteins** (exp89 metric implementation; the #61/#75
+row is exp82's published number, for scale):
+
+| checkpoint | val loss | R (all) | R (long) | P@L (all) | AUC (all) | AUC (long) |
+|---|---:|---:|---:|---:|---:|---:|
+| #61/#75 · 1.5B · E8 | 2.7566 | 0.4245 | 0.3656 | — | 0.9010 | 0.8740 |
+| **#117 · 1.5B · E16 · final (35679)** | 2.7037 | **0.5344** | **0.4815** | **0.4809** | 0.9326 | 0.9147 |
+| #117 · 1.5B · E16 · early stop (33450) | **2.6961** | 0.5318 | 0.4806 | 0.4789 | **0.9327** | **0.9148** |
+| #146 · 3B · E8 (17839) | 2.7025 | 0.5119 | 0.4589 | 0.4594 | 0.9251 | 0.9051 |
+
+**Paired per-protein differences, R-precision** (same 554 proteins score every
+checkpoint; 95% CI on the mean difference):
+
+| A | B | Δ (A−B) | 95% CI | A wins | ties | verdict |
+|---|---|---:|---|---:|---:|---|
+| #117 final | #117 early | +0.0026 | [−0.0010, +0.0062] | 48.6% | 12.8% | **not resolved** |
+| #117 final | #146 3B | +0.0226 | [+0.0167, +0.0284] | 64.3% | 8.3% | resolved |
+| #117 early | #146 3B | +0.0199 | [+0.0143, +0.0256] | 61.2% | 10.3% | resolved |
+
+**Harness check.** The #117 final checkpoint reproduces its published number:
+**0.5344** here against **0.5350** in exp82 — a gap of 0.0006, well inside the
+≤0.006 TPU-vs-CUDA backend agreement exp89 established. AUC 0.9326 vs 0.9318.
+So the new rows are on the published scale, and the cross-checkpoint deltas
+above are backend-controlled regardless (all three ran on the same stack).
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**1. The #117 final checkpoint is the best of the three, and #169's selection
+by val loss did not improve on it.** At R-precision 0.534 (all) / 0.482 (long)
+it is where the project already stood; the two checkpoints #169 added are equal
+to it or worse.
+
+**2. Val-loss early stopping bought nothing here.** The early-stop checkpoint
+has **0.0076 lower** val loss and is statistically indistinguishable on contact
+accuracy: Δ = +0.0026 in favour of the *final* checkpoint, CI [−0.0010, +0.0062],
+win rate 48.6% — a coin flip. The exp82 slope (~1.9 R-precision per nat, measured
+across the 0.053-nat #75→#117 gap) predicted **+0.016** for the early-stop
+checkpoint. We measure −0.003 ± 0.004. **The loss → accuracy relationship is
+steep across training generations and flat inside one run's last 2,000 steps** —
+so `contacts-v1-val/loss` is not a useful tie-breaker at the 0.01-nat scale, and
+picking an early-stop checkpoint on it is not worth the bookkeeping.
+
+**3. Matched val loss does not mean matched contact accuracy across model
+sizes.** The #146 3B has a val loss 0.0012 *better* than the #117 final and is
+**0.023 worse** on R-precision — a resolvable gap (CI [+0.017, +0.028]), the
+largest effect in this comparison, and one the loss column points the wrong way
+on. It holds on long-range R (−0.023) and on AUC (−0.008) too. Caveat: this
+3B differs from the 1.5B in epochs (8 vs 16) and weight decay (0.4 vs 0.2) as
+well as size, so this says *this 3B checkpoint at this loss* is worse, not that
+scale hurts. Either way the practical consequence is the same — **do not compare
+`contacts-v1-val/loss` across model sizes to pick a contact predictor**, and a
+3B is not yet buying anything over the tuned 1.5B.
+
+**4. Nothing here changes where MarinFold sits against structure predictors.**
+0.534 vs Protenix-v2 single-seq 0.603, ESMFold 0.755, ESMFold2 0.786,
+Protenix-MSA 0.812. AUC remains the strong column (0.933, second only to
+Protenix-MSA's 0.941) — the model ranks the whole contact map well and still
+fails to concentrate confidence into the top R pairs.
+
+**Follow-ups.** (a) The 3B result is worth isolating: an epoch- and wd-matched
+3B vs 1.5B would separate scale from schedule. (b) If a future sweep needs a
+checkpoint-selection signal at sub-0.01-nat resolution, it has to be a contact
+metric, not val loss — the eval here costs ~10 min on 4 TPU slices per
+checkpoint, so it is affordable as a selection criterion.
+
+**Artifacts.** Score matrices (554 `[L,L]` per checkpoint), per-protein metrics,
+the paired table and both figures are published to
+`hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp169/`,
+alongside the ground truth and prompts exactly as scored — see
+[`data/BUCKET_README.md`](data/BUCKET_README.md).
+
+![R-precision across predictors](plots/where_we_stand_rprecision.png)
+
+![Val loss vs R-precision](plots/loss_vs_rprecision.png)

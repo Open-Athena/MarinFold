@@ -42,6 +42,32 @@ reproducing the published 0.535 is itself the harness check. And
 vocabulary and one set of special-token ids, since a silent tokenizer shift would
 not fail loudly; it would just produce confident wrong numbers.
 
-## Results so far
+## Results
 
-_(Fill in as results come in.)_
+554/554 proteins for all three checkpoints, 0 of 166,200 rollouts truncated.
+
+| checkpoint | val loss | R (all) | R (long) | AUC (all) |
+|---|---:|---:|---:|---:|
+| #117 · 1.5B · final | 2.7037 | **0.534** | **0.482** | 0.933 |
+| #117 · 1.5B · early stop | 2.6961 | 0.532 | 0.481 | 0.933 |
+| #146 · 3B · E8 | 2.7025 | 0.512 | 0.459 | 0.925 |
+
+The #117 final row reproduces its published 0.5350 to 0.0006 — the harness check.
+
+## What it says
+
+**Early stopping on val loss bought nothing.** The early-stop checkpoint has
+0.0076 lower loss and is indistinguishable on contacts: Δ +0.0026 favouring the
+final checkpoint, CI [-0.0010, +0.0062], win rate 48.6%. The exp82 slope
+predicted +0.016. The loss to accuracy relationship is steep across training
+generations and flat inside one run's last 2,000 steps.
+
+**Matched val loss does not mean matched contact accuracy across model sizes.**
+The 3B's loss is 0.0012 *better* than the 1.5B final, and its R-precision is
+0.023 *worse* — resolvable, CI [+0.017, +0.028], and the largest effect in the
+comparison. (Confounded with epochs 8 vs 16 and wd 0.4 vs 0.2, so it is about
+this checkpoint, not scale as such.)
+
+Practical consequence: `contacts-v1-val/loss` is not a usable tie-breaker below
+~0.01 nats, and must not be compared across model sizes to pick a contact
+predictor.
