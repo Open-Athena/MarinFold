@@ -64,6 +64,10 @@ Env knobs (so a smoke run needs no code edit):
   EXP163_TRAIN_SEQUENCES  alternative: packed sequences in the corpus; steps/epoch
                           = ceil(sequences / batch)
   EXP163_MAX_STEPS        cap steps for a smoke run (default: full 1-epoch count)
+  EXP163_ARMS             comma list of multi-draft loss-weight arms to run, e.g.
+                          "A,B,C,D". Each arm N reads the corpus tokenized with its
+                          own weight profile from .../md_tokenized_<N> and gets its
+                          own run name. Unset = the v1 single-corpus behaviour.
   EXP163_STEPS_PER_EVAL   override the eval cadence (default: a quarter epoch).
                           Set to 1 with EXP163_MAX_STEPS=1 for a warm-start anchor probe.
   EXP163_REPLICAS         number of 8xH100 nodes per run (default 1 = 8 GPUs; <=4)
@@ -193,9 +197,25 @@ def _epochs() -> int:
     return int(os.environ.get("EXP163_EPOCHS", "1"))
 
 
-def run_name_for(lr: float, epochs: int) -> str:
+def _arms() -> list[str | None]:
+    """Multi-draft loss-weight arms to run, or ``[None]`` for the v1 corpus."""
+    spec = os.environ.get("EXP163_ARMS", "").strip()
+    return [x.strip() for x in spec.split(",") if x.strip()] if spec else [None]
+
+
+def corpus_for(arm: str | None) -> str:
+    """Each arm trains on the SAME documents, tokenized with a different weight
+    profile (header / draft / final) — so the corpora differ only in
+    ``loss_weights``, never in ``input_ids``."""
+    if arm is None:
+        return REFINEMENT_TOKENIZED_GLOB
+    return f"{EXP163_S3_PREFIX}/val10k/md_tokenized_{arm}/*.parquet"
+
+
+def run_name_for(lr: float, epochs: int, arm: str | None = None) -> str:
     # W&B-safe (alnum + hyphens, < 64 chars).
-    return f"plm-exp163-refine-cv1-1_5b-lr{_lr_tag(lr)}-e{epochs}-cos"
+    suffix = f"-md{arm}" if arm else ""
+    return f"plm-exp163-refine-cv1-1_5b-lr{_lr_tag(lr)}-e{epochs}-cos{suffix}"
 
 
 def build_request(
@@ -204,6 +224,7 @@ def build_request(
     learning_rate: float,
     num_train_steps: int,
     output_path: str,
+    corpus_glob: str,
     resources,
     replicas: int,
     env_vars: dict[str, str],
@@ -222,6 +243,7 @@ def build_request(
         learning_rate=learning_rate,
         num_train_steps=num_train_steps,
         output_path=output_path,
+        corpus_glob=corpus_glob,
         resources=resources,
         env_vars=env_vars,
         steps_per_eval=steps_per_eval,
@@ -287,34 +309,37 @@ def main() -> None:
         f"replicas={replicas} ({replicas * 8} H100/run) | "
         f"{spe} steps/epoch x {epochs} epoch(s) = {spe * epochs} steps"
         + (f" (capped to {num_train_steps} for smoke)" if _max_steps else "")
-        + f" | {len(lrs)} job(s)\n"
+        + f" | {len(lrs) * len(_arms())} job(s)\n"
         f"         warm-start ({warm_kind}): {warm_start}\n"
-        f"         corpus (masked train):    {REFINEMENT_TOKENIZED_GLOB}\n"
+        f"         arms:                     {[a or 'v1' for a in _arms()]}\n"
+        f"         corpus (masked train):    {corpus_for(_arms()[0])}\n"
         f"         val (unmasked):           {VAL_GLOB}"
     )
 
     requests: list[JobRequest] = []
-    for lr in lrs:
-        name = run_name_for(lr, epochs)
-        output_path = f"{EXP163_S3_PREFIX}/checkpoints/{name}"
-        tags = (
-            "protein", "contacts-v1", "qwen3", "1_5b", "answer-masked",
-            "exp163", "refinement", "coreweave", f"e{epochs}", f"lr{_lr_tag(lr)}",
-        )
-        requests.append(
-            build_request(
-                run_name=name,
-                learning_rate=lr,
-                num_train_steps=num_train_steps,
-                output_path=output_path,
-                resources=resources,
-                replicas=replicas,
-                env_vars=env_vars,
-                steps_per_eval=steps_per_eval,
-                steps_per_checkpoint=steps_per_checkpoint,
-                tags=tags,
+    for arm in _arms():
+        for lr in lrs:
+            name = run_name_for(lr, epochs, arm)
+            output_path = f"{EXP163_S3_PREFIX}/checkpoints/{name}"
+            tags = (
+                "protein", "contacts-v1", "qwen3", "1_5b", "answer-masked",
+                "exp163", "refinement", "coreweave", f"e{epochs}", f"lr{_lr_tag(lr)}",
+            ) + ((f"multi-draft", f"arm{arm}") if arm else ())
+            requests.append(
+                build_request(
+                    run_name=name,
+                    learning_rate=lr,
+                    num_train_steps=num_train_steps,
+                    output_path=output_path,
+                    corpus_glob=corpus_for(arm),
+                    resources=resources,
+                    replicas=replicas,
+                    env_vars=env_vars,
+                    steps_per_eval=steps_per_eval,
+                    steps_per_checkpoint=steps_per_checkpoint,
+                    tags=tags,
+                )
             )
-        )
 
     if os.environ.get("EXP163_DRY_RUN"):
         print("[exp163] DRY RUN -- JobRequests built, not submitting.")

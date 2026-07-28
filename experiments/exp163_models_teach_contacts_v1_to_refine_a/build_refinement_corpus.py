@@ -70,6 +70,76 @@ def emit(pairs, seq_pos, rng, marker=None):
         toks += ["<contact>", position_token(seq_pos[a]), position_token(seq_pos[b])]
     return toks
 
+def emit_section(pairs, seq_pos, rng):
+    """A complete statements section: ``<begin_statements> …contacts… <end>``.
+
+    The v2 "multi-draft" unit. Unlike v1's ``emit(..., marker=CAND)``, a draft is
+    syntactically identical to the answer — that is the whole point of the format:
+    a rollout and its own drafts become the same object, so one generation can
+    emit N successive structures and be RL'd on best-of-N.
+    """
+    return [BEGIN] + emit(pairs, seq_pos, rng) + ["<end>"]
+
+
+def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap, rng,
+                         budget=CTX, order="ascending-f1"):
+    """v2 document: K draft sections (worst -> best) then the TRUE section.
+
+        <contacts-v1> <begin_sequence> …seq…
+        <begin_statements> …draft 1… <end>      (lowest F1)
+        <begin_statements> …draft 2… <end>
+        <begin_statements> …TRUE contacts… <end>
+
+    ``scores`` are per-rollout F1s used only to ORDER the drafts. Sorting by
+    quality was rejected in Phase 0 as "non-deployable" — but that objection was
+    about ranking candidates at *inference*. Here the ordering is a training
+    signal for a monotone refinement ramp; at inference the model produces the
+    ordering itself, so nothing needs ranking. Pass ``order="random"`` to ablate.
+
+    Budget accounting differs from v1 only in that a section costs ``2 + 3n``
+    (its own ``<begin_statements>`` and ``<end>``) rather than ``1 + 3n``.
+    """
+    r = seq_section(entry_id, seq)
+    if r is None:
+        return None
+    head, seq_pos, L = r
+    fixed = len(head) + 2  # final section's BEGIN + <end>
+    gt = [(i, j) for (i, j) in gt_pairs if 0 <= i < L and 0 <= j < L]
+    gt_cap = max(0, (budget - fixed) // 3)                 # GT is prioritised
+    if len(gt) > gt_cap:
+        gt = [gt[t] for t in rng.choice(len(gt), gt_cap, replace=False)]
+    gt_toks = emit(gt, seq_pos, rng)
+    remaining = budget - fixed - len(gt_toks)
+
+    K = int(rng.integers(0, Kmax + 1))                     # Uniform{0..Kmax}
+    drafts, kept = [], []
+    if K > 0 and rollouts:
+        pick = list(rng.choice(len(rollouts), min(K, len(rollouts)), replace=False))
+        if order == "ascending-f1" and scores is not None:
+            pick.sort(key=lambda t: scores[t])             # worst draft first
+        else:
+            rng.shuffle(pick)
+        for ri in pick:
+            pairs = [(i, j) for (i, j) in canon(rollouts[ri]) if i < L and j < L]
+            if not pairs or remaining < 5:                 # BEGIN + triple + <end>
+                continue
+            cap = min(len(pairs), N_cap)
+            n = int(rng.integers(1, cap + 1))              # subsample Uniform[1,cap]
+            n = min(n, (remaining - 2) // 3)               # fit budget (2 = BEGIN+<end>)
+            if n <= 0:
+                continue
+            sub = [pairs[t] for t in rng.choice(len(pairs), n, replace=False)]
+            sec = emit_section(sub, seq_pos, rng)
+            drafts += sec
+            remaining -= len(sec)
+            kept.append(float(scores[ri]) if scores is not None else float("nan"))
+    toks = head + drafts + [BEGIN] + gt_toks + ["<end>"]
+    meta = dict(entry_id=entry_id, L=L, K=len(kept), n_gt=len(gt), n_tokens=len(toks),
+                draft_f1_first=kept[0] if kept else float("nan"),
+                draft_f1_last=kept[-1] if kept else float("nan"))
+    return " ".join(toks), meta
+
+
 def build_doc(entry_id, seq, gt_pairs, rollouts, Kmax, N_cap, marker, rng, budget=CTX):
     r = seq_section(entry_id, seq)
     if r is None:
@@ -113,13 +183,25 @@ def main():
     ap.add_argument("--docs-per-protein", type=int, default=8)
     ap.add_argument("--n-docs", type=int, default=None, help="cap total docs (validate)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
+                    help="candidate = v1 (<CAND> blocks, loss on the answer only); "
+                         "multi-draft = v2 (every section is <begin_statements>..<end>, "
+                         "drafts ordered worst->best, weights set at tokenize time)")
+    ap.add_argument("--draft-order", choices=["ascending-f1", "random"], default="ascending-f1",
+                    help="multi-draft only: order drafts into a refinement ramp, or ablate")
     ap.add_argument("--validate", action="store_true")
     a = ap.parse_args()
-    assert a.marker in VOCAB, f"marker {a.marker} not in vocab (would need a vocab change)"
+    if a.format == "candidate":
+        assert a.marker in VOCAB, f"marker {a.marker} not in vocab (would need a vocab change)"
 
     tgt = pd.read_parquet(a.targets).set_index("entry_id")
-    roll = pd.read_parquet(a.rollouts, columns=["entry_id", "r", "pred"])
+    _cols = ["entry_id", "r", "pred"]
+    if a.format == "multi-draft" and a.draft_order == "ascending-f1":
+        _cols.append("all_f1")          # orders the refinement ramp; not used otherwise
+    roll = pd.read_parquet(a.rollouts, columns=_cols)
     preds_by = {e: list(g["pred"].to_numpy()) for e, g in roll.groupby("entry_id")}
+    scores_by = ({e: list(g["all_f1"].to_numpy()) for e, g in roll.groupby("entry_id")}
+                 if "all_f1" in _cols else {})
     eids = [e for e in preds_by if e in tgt.index]
     rng = np.random.default_rng(a.seed)
 
@@ -133,8 +215,13 @@ def main():
         for _ in range(a.docs_per_protein):
             if a.n_docs and made >= a.n_docs:
                 break
-            r = build_doc(eid, tgt.loc[eid, "sequence"], gt, preds_by[eid],
-                          a.kmax, a.n_cap, a.marker, rng)
+            if a.format == "multi-draft":
+                r = build_doc_multidraft(eid, tgt.loc[eid, "sequence"], gt, preds_by[eid],
+                                         scores_by.get(eid), a.kmax, a.n_cap, rng,
+                                         order=a.draft_order)
+            else:
+                r = build_doc(eid, tgt.loc[eid, "sequence"], gt, preds_by[eid],
+                              a.kmax, a.n_cap, a.marker, rng)
             if r is None:
                 continue
             doc, meta = r
@@ -168,7 +255,8 @@ def main():
                       preds_by[eids[0]], a.kmax, a.n_cap, a.marker, np.random.default_rng(1))
         if r:
             toks = r[0].split()
-            ci = [i for i, t in enumerate(toks) if t == a.marker]
+            ci = [i for i, t in enumerate(toks)
+                  if t == (BEGIN if a.format == "multi-draft" else a.marker)][:-1]
             bi = toks.index(BEGIN)
             print(f"\n  sample doc: {len(toks)} toks; {len(ci)} candidate blocks; "
                   f"BEGIN at {bi}; first 24 toks:\n    {' '.join(toks[:24])}", flush=True)

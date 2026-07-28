@@ -50,7 +50,13 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from loss_mask import answer_span_loss_weights, check_document_spans, resolve_span_ids
+from loss_mask import (
+    answer_span_loss_weights,
+    check_document_spans,
+    find_sections,
+    resolve_span_ids,
+    span_weights,
+)
 
 # CoreWeave AI Object Storage rejects path-style requests; s3fs must address the
 # bucket virtual-hosted. Same knob the rollout bootstrap exports on the pods.
@@ -90,13 +96,20 @@ def read_documents(in_url: str, text_key: str) -> list[str]:
     return docs
 
 
-def encode_documents(docs: list[str], tokenizer, seq_len: int) -> list[tuple[np.ndarray, np.ndarray]]:
-    """Tokenize each document and compute its answer-span loss weights.
+def encode_documents(docs: list[str], tokenizer, seq_len: int, *, fmt: str = "candidate",
+                     w_header: float = 0.0, w_draft: float = 0.0,
+                     w_final: float = 1.0) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Tokenize each document and compute its per-token loss weights.
 
     Mirrors levanter's ``BatchTokenizer``: ``encode(text, add_special_tokens=False)``
     then append ``<eos>`` (the contacts-v1 tokenizer has no bos, so nothing is
-    prepended). Every document is checked for exactly one well-formed
-    ``<begin_statements> … <end>`` span before its mask is taken.
+    prepended).
+
+    ``fmt="candidate"`` (v1) arms the single answer span and nothing else.
+    ``fmt="multi-draft"`` (v2) applies the three-way profile: sequence header at
+    ``w_header``, every draft section at ``w_draft``, the LAST section at
+    ``w_final``. Because the weights are applied here rather than baked into the
+    text, one text corpus can be tokenized several times to sweep the profile.
     """
     begin_id, end_id = resolve_span_ids(tokenizer)
     eos_id = tokenizer.eos_token_id
@@ -107,16 +120,25 @@ def encode_documents(docs: list[str], tokenizer, seq_len: int) -> list[tuple[np.
     n_too_long = 0
     for i, text in enumerate(docs):
         ids = np.asarray(tokenizer.encode(text, add_special_tokens=False), dtype=np.int32)
-        check_document_spans(ids, begin_id=begin_id, end_id=end_id)
-        # The eos rides INSIDE the document so it is never trained on (the mask
-        # closes at <end>) and so the packer's segment boundaries land correctly.
+        if fmt == "candidate":
+            check_document_spans(ids, begin_id=begin_id, end_id=end_id)
+        else:
+            find_sections(ids, begin_id=begin_id, end_id=end_id)   # validates the grammar
+        # The eos rides INSIDE the document so the packer's segment boundaries land
+        # correctly. In v1 it is never trained (the mask closes at <end>); in v2 it
+        # IS trained -- it is the document terminator now that <end> only closes a
+        # section, so the final section's <end> position carries w_final.
         ids = np.append(ids, np.int32(eos_id))
         if len(ids) > seq_len:
             # The corpus builder budgets documents to fit ctx=8192 including
             # <end>; +1 for eos can only bite at the exact boundary.
             n_too_long += 1
             continue
-        weights = answer_span_loss_weights(ids, begin_id=begin_id, end_id=end_id)
+        if fmt == "candidate":
+            weights = answer_span_loss_weights(ids, begin_id=begin_id, end_id=end_id)
+        else:
+            weights = span_weights(ids, w_header=w_header, w_draft=w_draft,
+                                   w_final=w_final, begin_id=begin_id, end_id=end_id)
         encoded.append((ids, weights))
         if (i + 1) % 5000 == 0:
             print(f"  tokenized {i + 1}/{len(docs)}", flush=True)
@@ -206,6 +228,16 @@ def main() -> None:
     ap.add_argument("--rows-per-shard", type=int, default=2000)
     ap.add_argument("--train-batch", type=int, default=128, help="only used to print steps/epoch")
     ap.add_argument("--limit", type=int, default=None, help="smoke: only the first N documents")
+    ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate")
+    ap.add_argument("--w-header", type=float, default=0.0,
+                    help="multi-draft: weight on the sequence header (the original "
+                         "contacts-v1 LM signal -- the anti-forgetting lever)")
+    ap.add_argument("--w-draft", type=float, default=0.0,
+                    help="multi-draft: weight on draft sections. NOTE these hold ~13%%-"
+                         "precision contacts, so this trains the model to emit wrong "
+                         "contacts -- sweep it, do not assume it is safe")
+    ap.add_argument("--w-final", type=float, default=1.0,
+                    help="multi-draft: weight on the final (ground-truth) section")
     a = ap.parse_args()
 
     from transformers import AutoTokenizer
@@ -219,19 +251,26 @@ def main() -> None:
         docs = docs[: a.limit]
     print(f"[exp163] {len(docs)} documents; tokenizing with {a.tokenizer}", flush=True)
 
-    encoded = encode_documents(docs, tokenizer, a.seq_len)
+    encoded = encode_documents(docs, tokenizer, a.seq_len, fmt=a.format,
+                               w_header=a.w_header, w_draft=a.w_draft, w_final=a.w_final)
     doc_tokens = sum(len(ids) for ids, _ in encoded)
-    answer_tokens = sum(int(w.sum()) for _, w in encoded)
+    answer_tokens = sum(float(w.sum()) for _, w in encoded)     # weighted, not a count
 
     input_ids, loss_weights = pack(encoded, seq_len=a.seq_len, pad_id=pad_id)
     n_seq = len(input_ids)
     steps_per_epoch = -(-n_seq // a.train_batch)
 
+    profile = (
+        f"(header {a.w_header} / draft {a.w_draft} / final {a.w_final})"
+        if a.format == "multi-draft"
+        else "(answer span only)"
+    )
     print(
         f"\n[exp163] packed {len(encoded)} documents -> {n_seq} sequences of {a.seq_len}\n"
         f"         document tokens : {doc_tokens:,} (incl. eos)\n"
-        f"         answer tokens   : {answer_tokens:,} "
-        f"({answer_tokens / max(1, doc_tokens):.1%} of document tokens carry loss)\n"
+        f"         weighted tokens : {answer_tokens:,.0f} "
+        f"({answer_tokens / max(1, doc_tokens):.1%} of document tokens, weight-summed)\n"
+        f"         profile         : {a.format} {profile}\n"
         f"         packing density : {doc_tokens / (n_seq * a.seq_len):.1%}\n"
         f"         EXP163_STEPS_PER_EPOCH = {steps_per_epoch}  (batch {a.train_batch})",
         flush=True,
