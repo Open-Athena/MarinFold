@@ -127,6 +127,12 @@ def load_vote_matrices(prefix: str, gt: list[dict]) -> dict[tuple[str, str], np.
     """Rebuild the ``[L, L]`` vote matrices from the sparse triplet parts."""
     dims = {(r["dataset"], r["stem"]): r["L"] for r in gt}
     mats: dict[tuple[str, str], np.ndarray] = {}
+    # Which part first supplied each protein. A protein appearing in two parts
+    # means two independent sets of rollouts were written for it (a smoke run
+    # left behind under the same prefix, or two shardings of the same label),
+    # and since cells are *assigned* rather than accumulated the result would be
+    # a silent blend of both. Refuse instead.
+    origin: dict[tuple[str, str], str] = {}
     parts = list_parts(prefix)
     if not parts:
         raise SystemExit(f"no parquet parts under {prefix}")
@@ -140,6 +146,14 @@ def load_vote_matrices(prefix: str, gt: list[dict]) -> dict[tuple[str, str], np.
             m = mats.get(key)
             if m is None:
                 m = mats[key] = np.zeros((L, L), np.int32)
+                origin[key] = uri
+            elif origin[key] != uri:
+                raise SystemExit(
+                    f"[score] {key[0]}__{key[1]} appears in two parts:\n"
+                    f"  {origin[key]}\n  {uri}\n"
+                    "Two rollout sets for one protein cannot be merged cell-wise; "
+                    "clear the stale parts and rescore."
+                )
             m[i, j] = v
     print(f"[score] {prefix}: {len(parts)} parts -> {len(mats)} proteins")
     return mats
