@@ -98,15 +98,23 @@ def load_targets(path: str):
     return recs
 
 
-def done_stems(out_dir: str, shard_i: int, num_shards: int) -> set[str]:
-    """Stems already covered by this shard's existing part files (resume)."""
+def done_stems(out_dir: str, shard_i: int, num_shards: int) -> tuple[set[str], int]:
+    """Stems this shard has already covered, and how many part files hold them.
+
+    The part count is what the caller must resume *writing* from. Restarting the
+    part counter at 0 on a resume silently overwrites the shard's own earlier
+    parts — the stems in them are skipped as "done" and then their file is
+    clobbered, so they vanish from the output entirely. exp169 lost 2 proteins
+    that way (a smoke run's part-0000 replaced by the full run's part-0000)
+    before this returned the count.
+    """
     import fsspec
     fs, _ = fsspec.core.url_to_fs(out_dir)
     pat = f"{out_dir.rstrip('/')}/shard-{shard_i:03d}-of-{num_shards:03d}-part-*.parquet"
     try:
         parts = fs.glob(pat)
     except FileNotFoundError:
-        return set()
+        return set(), 0
     seen: set[str] = set()
     for p in parts:
         try:
@@ -118,7 +126,7 @@ def done_stems(out_dir: str, shard_i: int, num_shards: int) -> set[str]:
                                                  t.column("stem").to_pylist())}
         except Exception as e:                       # a half-written part from a kill
             print(f"[worker] ignoring unreadable part {p}: {e}", flush=True)
-    return seen
+    return seen, len(parts)
 
 
 def main() -> int:
@@ -159,7 +167,7 @@ def main() -> int:
 
     recs = load_targets(a.targets)
     mine = [r for k, r in enumerate(recs) if k % num_shards == shard_i]
-    skip = done_stems(out_dir, shard_i, num_shards)
+    skip, n_existing_parts = done_stems(out_dir, shard_i, num_shards)
     todo = [r for r in mine if f"{r['dataset']}__{r['stem']}" not in skip]
     if a.limit:
         todo = todo[: a.limit]
@@ -178,7 +186,8 @@ def main() -> int:
               gpu_memory_utilization=a.gpu_frac, enable_prefix_caching=False,
               generation_config="vllm", max_num_seqs=a.max_num_seqs, seed=a.seed)
 
-    t0, n_unfinished, n_total, part = time.time(), 0, 0, 0
+    # Continue the part numbering past whatever a previous attempt wrote.
+    t0, n_unfinished, n_total, part = time.time(), 0, 0, n_existing_parts
     for s in range(0, len(todo), a.chunk):
         group = todo[s:s + a.chunk]
         prompts, per, sps = [], [], []
