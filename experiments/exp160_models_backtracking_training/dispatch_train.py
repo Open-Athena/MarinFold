@@ -135,7 +135,12 @@ def build_command(args: argparse.Namespace) -> list[str]:
         # always-batch rule is specific to those GPU clusters.
         "--priority", "interactive",
         "--extra", "tpu",
-        "--cpu", "200", "--memory", "400GB", "--disk", "200GB",
+        # Bounded by what the pool advertises per VM (marin.yaml v5p-preemptible:
+        # cpu 208, ram 448GB, disk 100GB). Asking for more is not a queue — the
+        # controller rejects the submission outright with "no matching scaling
+        # group has enough per-VM capacity". 100GB of local disk is ample: the
+        # token cache is written to GCS, not to the pod.
+        "--cpu", "200", "--memory", "400GB", "--disk", "100GB",
         # The v5p pool is capacity_type: preemptible whatever band we submit
         # at, so the run must be able to come back. Levanter resumes from its
         # own 10-minute rolling checkpoint.
@@ -156,7 +161,11 @@ def main() -> None:
         return
     if not os.environ.get("WANDB_API_KEY"):
         raise SystemExit("WANDB_API_KEY is not set; the run would train untracked.")
-    subprocess.run(cmd, check=True)
+    # check=False on purpose: CalledProcessError renders the whole argv in its
+    # message, which would echo the W&B key into logs and terminal scrollback.
+    result = subprocess.run(cmd, check=False)
+    if result.returncode:
+        raise SystemExit(f"iris job run failed (exit {result.returncode}); see the error above.")
 
 
 if __name__ == "__main__":
