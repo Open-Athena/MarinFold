@@ -3,12 +3,23 @@
 
 """Training worker: full fine-tune of exp120 on the 50:50 backtracking mix (#160).
 
-Invoked by ``dispatch_train.py`` inside the GPU job. Assembles a
-``TrainLmOnPodConfig`` via ``marinfold_models.defaults.build_train_lm_on_pod_config``
-and runs it, following exp108's GPU wiring.
+Runs on a **v5p-32 TPU slice in us-east5-a** (see ``dispatch_train.py`` for the
+availability evidence behind that zone). Assembles a ``TrainLmOnPodConfig`` via
+``marinfold_models.defaults.build_train_lm_on_pod_config`` and runs it in the
+current process — Levanter/JAX handle the 4 VMs of the slice.
 
 Notes that are easy to get wrong:
 
+- **``resources`` must be a real ``ResourceConfig``, not ``None``.**
+  ``run_levanter_train_lm`` reads ``config.resources.device`` (to log the shape
+  and to pick the GCS region check), so a ``None`` would ``AttributeError`` the
+  moment training started. The earlier CoreWeave revision passed ``None`` and
+  never got far enough to find out.
+- **Every GCS path must be in us-east5.** With a TPU device,
+  ``check_gcs_paths_same_region`` hard-fails on any cross-region path, which is
+  exactly the co-location rule we want enforced. Corpus, token cache, init
+  checkpoint and output all live under ``gs://marin-us-east5`` (a regional
+  bucket in US-EAST5, same region as the us-east5-a slice).
 - **Tokenizer comes from the bucket, not a HF model repo.** The superset
   tokenizer (crops/ccoord vocab, 3849 tokens, `<retract>` at 3848) is published
   next to the corpus, per the "tokenizer lives beside the data" convention. We
@@ -19,10 +30,12 @@ Notes that are easy to get wrong:
   ``PrebuiltLmDatasetFormat`` path that marin 0.2.57 would otherwise force for
   per-token weights.
 - **`auto_build_caches=True`** so the token cache is built on the training
-  workers from the parquet URLs; there is no separate tokenize step to route
-  through GCS (which CoreWeave cannot reach anyway).
+  workers from the parquet URLs; there is no separate tokenize step.
 - **Warm start, not resume**: ``initialize_from_checkpoint_path`` takes model
   weights only — fresh step 0, fresh optimizer state, fresh LR schedule.
+  Levanter's own rolling checkpoints (10-minute cadence, set in
+  ``build_train_lm_on_pod_config``) are what make the run survive preemption —
+  the v5p pool is ``capacity_type: preemptible`` whatever band we submit at.
 """
 
 from __future__ import annotations
@@ -31,27 +44,57 @@ import argparse
 import os
 from pathlib import Path
 
+# `from fray import ResourceConfig` (exp120's spelling) no longer works: this
+# fray line re-exports nothing at the package root.
+from fray.types import ResourceConfig
 from levanter.data.text.datasets import (
     DatasetComponent,
     LmDataConfig,
     UrlDatasetSourceConfig,
 )
 from levanter.data.text.formats import TextLmDatasetFormat
+from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.models.qwen import Qwen3Config
 from levanter.optim.config import AdamConfig
 
 from marinfold_models.defaults import build_train_lm_on_pod_config
 
-# exp75/exp117/exp120 architecture (Qwen3 1.47B: exp44 dims + Llama3 rope).
 SEQ_LEN = 8192
+
+# exp75/exp117/exp120 architecture (Qwen3 1.47B: exp44 dims + Llama3 rope),
+# copied verbatim from exp120's ``MODEL_CONFIG``. It MUST match the checkpoint
+# we warm-start from — in particular the **Llama3 rope**, which carries no
+# parameters, so getting it wrong loads the weights without complaint and then
+# trains a differently-positioned model. (Also note the field is
+# ``max_seq_len``; ``seq_len=`` is a TypeError, not a silent default.)
+MODEL_CONFIG = Qwen3Config(
+    max_seq_len=SEQ_LEN,
+    hidden_dim=2048,
+    intermediate_dim=8192,
+    num_heads=32,
+    num_kv_heads=8,
+    num_layers=24,
+    rope=Llama3RotaryEmbeddingsConfig(),
+)
+
+# The pod shape, restated for marin's benefit (see the module docstring). Sized
+# to the ct5p-hightpu-4t VM: v5p-32 is 4 VMs x 4 chips. Disk holds the 17.7 GiB
+# init checkpoint plus the token cache.
+TPU_TYPE = "v5p-32"
+TPU_ZONE = "us-east5-a"
+
+
+def build_resources(tpu_type: str, zone: str) -> ResourceConfig:
+    return ResourceConfig.with_tpu(
+        tpu_type, slice_count=1, cpu=200, ram="400g", disk="200g", zone=zone
+    )
 
 
 def fetch_tokenizer(remote_dir: str, local: Path) -> Path:
     """Download the superset tokenizer to a local dir Levanter can load.
 
-    Handles ``s3://`` (CoreWeave credentials are auto-injected into task pods,
-    so fsspec routes it) — AutoTokenizer cannot read an object-store URI
-    directly, hence the copy.
+    AutoTokenizer cannot read an object-store URI directly, hence the copy.
+    ``gs://`` routes through gcsfs on the TPU VM's service account.
     """
     import fsspec
 
@@ -104,6 +147,8 @@ def main() -> None:
     ap.add_argument("--num-train-steps", type=int, required=True)
     ap.add_argument("--warmup", type=float, default=0.1)
     ap.add_argument("--data-seed", type=int, default=0)
+    ap.add_argument("--tpu-type", default=TPU_TYPE)
+    ap.add_argument("--tpu-zone", default=TPU_ZONE)
     args = ap.parse_args()
 
     tokenizer = args.tokenizer
@@ -111,14 +156,7 @@ def main() -> None:
         tokenizer = str(fetch_tokenizer(tokenizer, Path("/tmp/exp160_tokenizer")))
     print(f"tokenizer -> {tokenizer}", flush=True)
 
-    model = Qwen3Config(
-        seq_len=SEQ_LEN,
-        hidden_dim=2048,
-        intermediate_dim=8192,
-        num_layers=24,
-        num_heads=32,
-        num_kv_heads=8,
-    )
+    model = MODEL_CONFIG
     optimizer = AdamConfig(
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
@@ -130,7 +168,7 @@ def main() -> None:
         model=model,
         optimizer=optimizer,
         data=build_data_config(args.corpus, tokenizer),
-        resources=None,  # set by the dispatcher's JobRequest; unused on-pod
+        resources=build_resources(args.tpu_type, args.tpu_zone),
         output_path=f"{args.output}/{args.run_name}",
         num_train_steps=args.num_train_steps,
         train_batch_size=args.train_batch_size,
@@ -141,7 +179,7 @@ def main() -> None:
         wandb_project="MarinFold",
         wandb_name=args.run_name,
         tags=("protein", "contacts-v1", "backtracking", "qwen3", "1.5b",
-              "unmasked", "coreweave"),
+              "unmasked", "tpu", "v5p"),
         env_vars={"WANDB_API_KEY": os.environ.get("WANDB_API_KEY", "")},
     )
 

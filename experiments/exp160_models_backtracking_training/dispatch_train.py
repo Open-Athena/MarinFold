@@ -1,172 +1,162 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Full fine-tune of exp120 on the 50:50 backtracking mix, on CoreWeave H100s (#160).
+"""Launch the #160 fine-tune on a marin TPU slice.
 
-Runs *inside* a small CPU driver job on iris and submits the training job at
-**batch priority** (standing rule for any CoreWeave GPU cluster). Modelled on
-exp108's GPU dispatch, which is the working precedent for Levanter training on
-`cw-rno2a`.
+Builds and runs the ``iris job run`` command, so the launch is reproducible and
+the reasoning below travels with it. Run it from this directory:
 
-Decisions and why:
+    uv run python dispatch_train.py            # submit
+    uv run python dispatch_train.py --dry-run  # print the command only
 
-- **Base model `contacts-v1-exp120-1.5B`.** Eric's #117 sweep has better
-  validation loss (best 2.7037, bs256) but **every exp117 checkpoint has been
-  deleted** — the surviving GCS dirs hold only executor metadata, and none are
-  on the HF bucket. exp120 (2.7213) is the best contacts-v1 model that still
-  loads, and it is also the model that *generated* the #159 corpus, so this
-  fine-tunes a model on corrections of its own mistakes.
-- **GPU, not TPU.** The marin TPU cluster was fully subscribed (0 chips free,
-  39 jobs pending on "Insufficient TPUs") while `cw-rno2a` had ~239 free H100s.
-- **Superset tokenizer** (crops/ccoord vocab, 3849 tokens, `<retract>` at 3848).
-  Verified: 0 id mismatches against exp120's 2845 tokens, so this is a +1004
-  embedding resize, not a remap; and 200 real backtracking documents tokenize
-  with exact token counts, no UNKs, exact round-trip.
-- **Unmasked loss + `pack=True`**, exactly as #117 — contacts-v1 has no
-  `<distance>` statements to mask. This matters: marin 0.2.57 removed
-  `DatasetComponent.loss_weight_fn`, so a masked run would require pre-packing
-  a `PrebuiltLmDatasetFormat` cache. Unmasked keeps us on the simple path.
-- **Caches build on the training workers** (`auto_build_caches=True`) straight
-  from the S3 parquet, so there is no separate tokenize step to route through
-  GCS.
+Why a plain CLI submission and not a driver job
+-----------------------------------------------
+The abandoned CoreWeave revision used a small CPU driver job that submitted the
+real training job as a *child* at batch priority. That indirection exists only
+because CoreWeave requires an explicit batch band on every child JobRequest
+(the band does not propagate from the CLI). On the marin cluster there is no
+such rule, so the training job is submitted directly as a root job: fewer
+moving parts, and every launch failure in this experiment so far came from the
+driver/child plumbing rather than from training itself.
 
-Prerequisites (see `README.md`):
-  1. the 50:50 mix staged to `EXP160_CORPUS` (S3) — `build_mix.py`
-  2. exp120's **Levanter** checkpoint staged to `EXP160_INIT` (S3), 16.4 GiB —
-     CoreWeave cannot read GCS
-  3. the superset tokenizer published as a HF repo id
+Why v5p-32 in us-east5-a
+------------------------
+Measured against the live controller DB on 2026-07-28, not assumed:
 
-    set -a; source ~/.config/marin/cw-rno2a.env; set +a
-    KUBECONFIG=~/.kube/coreweave-iris-rno2a \\
-    /home/bizon/git/marin-freshiris/.venv/bin/iris --cluster=cw-rno2a job run \\
-        --no-wait --priority batch --enable-extra-resources \\
-        --cpu=2 --memory=8GB --disk=32GB \\
-        -e WANDB_API_KEY "$WK" -- python -m dispatch_train
+- **Family.** 1,642 tasks were pending cluster-wide: 896 wanted v6e, 429 v5e,
+  and only 101 v5p. Every one of those 101 was band 3 (BATCH) from one user's
+  ``extract-lpv11`` sweep, wanting v5p-32/64. We submit at band 2
+  (INTERACTIVE), which outranks all of it. Band 1 (PRODUCTION) had 258 tasks
+  running and 0 pending, so the queue is not blocking the upper bands.
+- **Zone.** ``us-central1-a`` is exhausted: its live ``quota_reason`` is
+  ``There is no more capacity in the zone "us-central1-a"``, its 86 v5p-8
+  slices are all busy (ages up to 22.7 h) and no new slice had reached ready in
+  125 min. ``us-east5-a`` is actively provisioning: 20 v5p-8 and 12 v5p-32
+  slices reached ready in the preceding 6 h (newest 14 min old), with 26 + 11
+  more booting and no live quota block.
+  NB when re-checking: ``scaling_groups.last_scale_up_ms`` is written by
+  ``begin_scale_up``, so it timestamps *attempts*, not successes — read actual
+  ``ready`` transitions out of the ``slices`` table instead.
+- **Region.** ``gs://marin-us-east5`` is a regional bucket in US-EAST5, so the
+  corpus, the 17.7 GiB exp120 init checkpoint and the outputs are all local to
+  a us-east5-a slice. Nothing needs staging, and marin's TPU-path
+  ``check_gcs_paths_same_region`` assertion passes.
+- **Size.** ~1.9e19 FLOPs (1.47B params x 2.16B tokens). v5p-32 is 4 VMs x 4
+  chips; at ~40% MFU that is ~2 h, which fits inside the 4.5 h maximum slice
+  age observed in that group. v5p-8 would be ~7 h and would almost certainly
+  span a preemption. Not v6e-8 (exp120's shape): us-east5-b v6e is now the most
+  contested pool on the cluster and reports no zone capacity.
+
+Prerequisites, both verified before launch:
+
+  1. corpus + tokenizer at ``GCS_PREFIX/corpus`` — 32 shards, 3.54 GB, byte
+     sizes diffed against the local build
+  2. exp120's Levanter checkpoint at ``INIT`` (it has always lived in
+     us-east5; the CoreWeave S3 copy is now unnecessary)
 """
 
 from __future__ import annotations
 
-import dataclasses
+import argparse
 import os
+import shlex
+import subprocess
 
-from fray.current_client import current_client
-from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
+# Fresh iris client: the workstation's default marin checkout is stale and is
+# rejected by the 14-day client-freshness gate.
+IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
+CLUSTER = "marin"
 
-# iris PriorityBand: PRIORITY_BAND_BATCH = 3 (job.proto).
-IRIS_PRIORITY_BAND_BATCH = 3
-
-S3_PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp160_backtracking_training"
-DEFAULT_CORPUS = f"{S3_PREFIX}/corpus"
-DEFAULT_INIT = f"{S3_PREFIX}/init/exp120-step-1005"
-DEFAULT_OUTPUT = f"{S3_PREFIX}/runs"
-
-# Superset tokenizer (crops/ccoord vocab incl. <retract>), staged next to the
-# corpus. Using the staged copy avoids minting a new HF model repo, and the
-# worker downloads it to a local dir before handing the path to Levanter.
-DEFAULT_TOKENIZER = os.environ.get("EXP160_TOKENIZER", f"{S3_PREFIX}/corpus/tokenizer")
-
-# 1.5B Qwen3 (exp44 dims + Llama3 rope) — the architecture exp75/exp117/exp120
-# all use. Kept here as data so the worker needs no experiment imports.
-MODEL_KWARGS = dict(
-    seq_len=8192,
-    hidden_dim=2048,
-    intermediate_dim=8192,
-    num_layers=24,
-    num_heads=32,
-    num_kv_heads=8,
+GCS_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp160_backtracking_training"
+DEFAULT_CORPUS = f"{GCS_PREFIX}/corpus"
+DEFAULT_OUTPUT = f"{GCS_PREFIX}/runs"
+DEFAULT_TOKENIZER = f"{GCS_PREFIX}/corpus/tokenizer"
+DEFAULT_INIT = (
+    "gs://marin-us-east5/protein-structure/MarinFold/"
+    "exp120_regen_vs_reepoch_contacts_v1/checkpoints/"
+    "exp120-cv1-1_5b-orig-lr3e-4-e1-cos-fb79f7/checkpoints/step-1005"
 )
 
+TPU_TYPE = "v5p-32"
+TPU_ZONE = "us-east5-a"
+SEQ_LEN = 8192
 
-def build_worker_command(args: dict) -> str:
-    """The training entrypoint, run under `uv run` inside the workspace venv."""
-    return (
+
+def build_args() -> argparse.Namespace:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--corpus", default=os.environ.get("EXP160_CORPUS", DEFAULT_CORPUS))
+    ap.add_argument("--init", default=os.environ.get("EXP160_INIT", DEFAULT_INIT))
+    ap.add_argument("--output", default=os.environ.get("EXP160_OUTPUT", DEFAULT_OUTPUT))
+    ap.add_argument("--tokenizer", default=os.environ.get("EXP160_TOKENIZER", DEFAULT_TOKENIZER))
+    ap.add_argument("--tpu-type", default=os.environ.get("EXP160_TPU", TPU_TYPE))
+    ap.add_argument("--tpu-zone", default=os.environ.get("EXP160_ZONE", TPU_ZONE))
+    ap.add_argument(
+        "--run-name",
+        default=os.environ.get("EXP160_RUN_NAME", "exp160-cv1-1_5b-bt50-lr3e-4-e1-cos"),
+    )
+    # exp120's continue-train LR (3e-4, 1-epoch cosine) rather than #117's
+    # 3.16e-3 pretraining LR — this is a fine-tune from a converged model.
+    ap.add_argument("--learning-rate", type=float, default=float(os.environ.get("EXP160_LR", "3e-4")))
+    ap.add_argument("--weight-decay", type=float, default=float(os.environ.get("EXP160_WD", "0.2")))
+    ap.add_argument("--train-batch-size", type=int, default=int(os.environ.get("EXP160_BATCH", "128")))
+    ap.add_argument("--warmup", type=float, default=float(os.environ.get("EXP160_WARMUP", "0.1")))
+    # ~2.16B tokens over the 2.05M-document mix; one epoch.
+    ap.add_argument("--tokens", type=int, default=int(os.environ.get("EXP160_TOKENS", "2160000000")))
+    ap.add_argument("--num-train-steps", type=int, default=int(os.environ.get("EXP160_STEPS", "0")))
+    ap.add_argument("--dry-run", action="store_true")
+    return ap.parse_args()
+
+
+def build_command(args: argparse.Namespace) -> list[str]:
+    steps = args.num_train_steps or max(1, args.tokens // (args.train_batch_size * SEQ_LEN))
+    worker = (
         "uv run python train_backtracking.py "
-        f"--corpus {args['corpus']} "
-        f"--init {args['init']} "
-        f"--output {args['output']} "
-        f"--tokenizer {args['tokenizer']} "
-        f"--run-name {args['run_name']} "
-        f"--learning-rate {args['learning_rate']} "
-        f"--weight-decay {args['weight_decay']} "
-        f"--train-batch-size {args['train_batch_size']} "
-        f"--num-train-steps {args['num_train_steps']} "
-        f"--warmup {args['warmup']}"
+        f"--corpus {args.corpus} "
+        f"--init {args.init} "
+        f"--output {args.output} "
+        f"--tokenizer {args.tokenizer} "
+        f"--run-name {args.run_name} "
+        f"--learning-rate {args.learning_rate} "
+        f"--weight-decay {args.weight_decay} "
+        f"--train-batch-size {args.train_batch_size} "
+        f"--num-train-steps {steps} "
+        f"--warmup {args.warmup} "
+        f"--tpu-type {args.tpu_type} "
+        f"--tpu-zone {args.tpu_zone}"
     )
-
-
-def build_request(args: dict) -> JobRequest:
-    """One multi-GPU training job at batch priority."""
-    resources = ResourceConfig.with_gpu(
-        "H100",
-        count=args["gpus_per_node"],
-        replicas=args["nodes"],
-        cpu=64,
-        ram="512g",
-        # CoreWeave pods default to 5Gi ephemeral; the 16.4 GiB init checkpoint
-        # plus caches need far more.
-        disk="512g",
-    )
-    environment = create_environment(
-        env_vars={
-            "HF_TOKEN": os.environ.get("HF_TOKEN", ""),
-            "WANDB_API_KEY": os.environ.get("WANDB_API_KEY", ""),
-            "TOKENIZERS_PARALLELISM": "false",
-            "UV_LINK_MODE": "copy",
-        },
-        extras=["gpu"],
-    )
-    return JobRequest(
-        name=args["run_name"],
-        entrypoint=Entrypoint.from_binary("bash", ["-lc", build_worker_command(args)]),
-        resources=resources,
-        environment=environment,
-        replicas=args["nodes"],
-        priority=IRIS_PRIORITY_BAND_BATCH,
-        processes_per_task=1,
-        max_retries_failure=10,
-        # Separate field defaulting to 0 — without it a worker dies on its first
-        # failure. GPU reclamation on this cluster arrives as a SIGTERM recorded
-        # as a *failure*, not a preemption (see #159).
-        max_task_failures=20,
-        max_retries_preemption=100,
-    )
+    return [
+        IRIS, f"--cluster={CLUSTER}", "job", "run", "--no-wait",
+        "--tpu", args.tpu_type,
+        "--zone", args.tpu_zone,
+        # --tpu/--gpu and any large CPU/RAM/disk request need this opt-in.
+        "--enable-extra-resources",
+        # INTERACTIVE (band 2) — our cap as a non-admin, and enough to outrank
+        # the entire pending v5p queue, which is band 3. The CoreWeave
+        # always-batch rule is specific to those GPU clusters.
+        "--priority", "interactive",
+        "--extra", "tpu",
+        "--cpu", "200", "--memory", "400GB", "--disk", "200GB",
+        # The v5p pool is capacity_type: preemptible whatever band we submit
+        # at, so the run must be able to come back. Levanter resumes from its
+        # own 10-minute rolling checkpoint.
+        "--max-retries", "100",
+        "--job-name", args.run_name,
+        "-e", "WANDB_API_KEY", os.environ.get("WANDB_API_KEY", ""),
+        "-e", "TOKENIZERS_PARALLELISM", "false",
+        "--", "bash", "-lc", worker,
+    ]
 
 
 def main() -> None:
-    assert "priority" in {f.name for f in dataclasses.fields(JobRequest)}, (
-        "This fray build lacks JobRequest.priority; batch-band dispatch needs "
-        "the 0.2.x.dev fray line."
-    )
-    args = {
-        "corpus": os.environ.get("EXP160_CORPUS", DEFAULT_CORPUS),
-        "init": os.environ.get("EXP160_INIT", DEFAULT_INIT),
-        "output": os.environ.get("EXP160_OUTPUT", DEFAULT_OUTPUT),
-        "tokenizer": DEFAULT_TOKENIZER,
-        "run_name": os.environ.get("EXP160_RUN_NAME", "exp160-cv1-1_5b-bt50-lr3e-4-e1-cos"),
-        # exp120's continue-train LR (3e-4, 1-epoch cosine) rather than #117's
-        # 3.16e-3 pretraining LR — this is a fine-tune from a converged model.
-        "learning_rate": float(os.environ.get("EXP160_LR", "3e-4")),
-        "weight_decay": float(os.environ.get("EXP160_WD", "0.2")),
-        "train_batch_size": int(os.environ.get("EXP160_BATCH", "128")),
-        "num_train_steps": int(os.environ.get("EXP160_STEPS", "0")) or None,
-        "warmup": float(os.environ.get("EXP160_WARMUP", "0.1")),
-        "nodes": int(os.environ.get("EXP160_NODES", "1")),
-        "gpus_per_node": int(os.environ.get("EXP160_GPUS", "8")),
-    }
-    if args["num_train_steps"] is None:
-        # ~2.16B tokens over the 2.05M-document mix; one epoch.
-        tokens = int(os.environ.get("EXP160_TOKENS", "2160000000"))
-        args["num_train_steps"] = max(
-            1, tokens // (args["train_batch_size"] * MODEL_KWARGS["seq_len"])
-        )
-    print(f"dispatching training: {args}", flush=True)
-
-    job = current_client().submit(build_request(args))
-    print(f"submitted -> {job}", flush=True)
-    # The driver must not exit: child jobs are its children and iris finalizes
-    # them if it goes away.
-    job.wait(raise_on_failure=True)
-    print("training finished", flush=True)
+    args = build_args()
+    cmd = build_command(args)
+    printable = [("<WANDB_API_KEY>" if c and c == os.environ.get("WANDB_API_KEY") else c) for c in cmd]
+    print("+ " + " ".join(shlex.quote(c) for c in printable), flush=True)
+    if args.dry_run:
+        return
+    if not os.environ.get("WANDB_API_KEY"):
+        raise SystemExit("WANDB_API_KEY is not set; the run would train untracked.")
+    subprocess.run(cmd, check=True)
 
 
 if __name__ == "__main__":
