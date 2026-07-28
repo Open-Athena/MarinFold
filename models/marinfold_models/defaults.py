@@ -92,6 +92,15 @@ def build_train_lm_on_pod_config(
     eval_harness_tasks: Sequence[EvalTaskConfig] = (),
     eval_harness_steps: int | None = None,
     initialize_from_checkpoint_path: str | None = None,
+    # Weights-only warm start. Despite the near-identical name this is a
+    # DIFFERENT levanter field from the one above: ``initialize_from_...``
+    # performs a full-state restore and demands `step`, `opt_state/*` and
+    # `training_key` in the checkpoint, while ``initialize_model_from_...``
+    # reads only the `model` subtree and leaves a fresh optimizer at step 0.
+    # Use this one for a checkpoint that holds weights alone (e.g. one
+    # produced by a vocab resize) — the other fails with "Missing 34 arrays
+    # in OCDBT checkpoint".
+    initialize_model_from_checkpoint_path: str | None = None,
     wandb_project: str = "MarinFold",
     wandb_group: str | None = None,
     wandb_name: str | None = None,
@@ -155,6 +164,7 @@ def build_train_lm_on_pod_config(
         train_seq_len=seq_len,
         data_seed=data_seed,
         initialize_from_checkpoint_path=initialize_from_checkpoint_path,
+        initialize_model_from_checkpoint_path=initialize_model_from_checkpoint_path,
         eval_harness=harness,
         eval_harness_steps=eval_harness_steps,
         adapter=NoAdaptorConfig(),

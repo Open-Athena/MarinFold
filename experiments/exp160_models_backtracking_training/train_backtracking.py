@@ -179,8 +179,11 @@ def main() -> None:
         # no separate tokenize step for this corpus, so the workers build the
         # cache from the parquet URLs on first run.
         auto_build_caches=True,
-        # Warm start: weights only, fresh optimizer/LR/step-0.
-        initialize_from_checkpoint_path=args.init,
+        # Warm start: weights only, fresh optimizer/LR/step-0. Must be
+        # `initialize_MODEL_from_...`: the resized checkpoint holds only the
+        # `model` subtree, and the full-state variant demands step/opt_state/
+        # training_key ("Missing 34 arrays in OCDBT checkpoint").
+        initialize_model_from_checkpoint_path=args.init,
         wandb_project="MarinFold",
         wandb_name=args.run_name,
         tags=("protein", "contacts-v1", "backtracking", "qwen3", "1.5b",
