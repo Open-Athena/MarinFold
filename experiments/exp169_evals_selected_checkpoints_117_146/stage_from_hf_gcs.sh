@@ -72,7 +72,8 @@ PYEOF
 BOOTSTRAP="mkdir -p /tmp/stage && cat > /tmp/stage/worker.py <<'EOS'
 ${PODSCRIPT}
 EOS
-uv run --no-project --with torch --with huggingface_hub --with gcsfs --with safetensors \\
+uv run --no-project --with torch --with numpy --with huggingface_hub --with gcsfs \\
+    --with safetensors \\
     python /tmp/stage/worker.py '${REPO}' '${PATH_IN_REPO}' '${DEST}'"
 
 # `iris job run` bundles the CWD as the job's workspace, so it must be a small,

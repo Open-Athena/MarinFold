@@ -110,7 +110,10 @@ def submit(*, label: str, shard_i: int, num_shards: int, limit: int | None,
         "--job-name", name, "--no-wait", "--enable-extra-resources",
         "--priority", "batch", "--zone", zone, "--tpu", tpu,
         "--extra", "vllm", "--extra", "tpu",
-        "--cpu", "8", "--memory", "64GB", "--disk", "128GB",
+        # A v5p-8 VM offers 100 GiB of ephemeral disk; asking for more is
+        # rejected outright as unschedulable rather than queued. 64 GB holds the
+        # staged checkpoint (≤ 5.6 GiB) with room to spare.
+        "--cpu", "8", "--memory", "64GB", "--disk", "64GB",
         "--max-retries", "3",
         "--", "bash", "-lc",
         build_bootstrap(label=label, shard_i=shard_i, num_shards=num_shards, limit=limit),

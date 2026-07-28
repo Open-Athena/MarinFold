@@ -59,10 +59,14 @@ the CLI isn't on PATH in the vLLM image."""
 
 
 def stage_model(src: str, dst: Path) -> Path:
-    """Copy an S3 model directory to local disk (vLLM needs a real directory)."""
-    if not src.startswith("s3://"):
-        return Path(src)
+    """Copy a remote model directory to local disk (vLLM needs a real directory).
+
+    Any fsspec URL works — ``s3://`` on CoreWeave, ``gs://`` on the marin TPU
+    pool. A plain path is returned untouched.
+    """
     import fsspec
+    if "://" not in src:
+        return Path(src)
     dst.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     fs, root = fsspec.core.url_to_fs(src)

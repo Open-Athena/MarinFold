@@ -18,8 +18,11 @@ dependencies = [
     "safetensors",
     "huggingface-hub>=0.34",
     "fsspec",
+    # Both object stores: the checkpoints and shard parquets live on CoreWeave S3
+    # for a GPU run and on GCS for the TPU run.
     "s3fs",
     "boto3",
+    "gcsfs",
     "pyarrow",
     "numpy",
     # Metrics + plots (exp89 compute_metrics semantics, run over the fetched
