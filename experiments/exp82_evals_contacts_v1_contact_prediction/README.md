@@ -425,7 +425,7 @@ than "doesn't know the fold", and points at calibration rather than capacity.
 
 **Pipeline** — [`score_rollout_vllm.py`](score_rollout_vllm.py) (single local GPU)
 or [`dispatch_rollout_eval_cw.py`](dispatch_rollout_eval_cw.py) +
-[`score_rollout_worker_cw.py`](score_rollout_worker_cw.py) (12 single-H100
+[`score_rollout_worker.py`](score_rollout_worker.py) (12 single-H100
 CoreWeave shards at batch priority, ~4 min/checkpoint vs ~80 min) →
 [`fetch_cw_scores.py`](fetch_cw_scores.py) →
 [`build_rollout_rows.py`](build_rollout_rows.py) (exp89's metric code, verbatim) →

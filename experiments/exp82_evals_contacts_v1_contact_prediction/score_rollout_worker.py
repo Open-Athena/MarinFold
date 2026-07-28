@@ -26,7 +26,7 @@ Differences from the local version, all I/O:
 
 Run (the dispatcher's bootstrap does this)::
 
-    python score_rollout_worker_cw.py --model s3://…/model --targets s3://…/targets.parquet \
+    python score_rollout_worker.py --model s3://…/model --targets s3://…/targets.parquet \
         --out s3://…/scores --label exp117 --shard 3/16 --n-rollouts 100 --top-k -1
 """
 from __future__ import annotations
@@ -106,7 +106,10 @@ def done_stems(out_dir: str, shard_i: int, num_shards: int) -> set[str]:
     seen: set[str] = set()
     for p in parts:
         try:
-            t = read_parquet(f"s3://{p}", columns=["dataset", "stem"])
+            # `glob` returns bare keys, so the protocol has to go back on before
+            # fsspec can reopen them. `unstrip_protocol` is what keeps this worker
+            # backend-agnostic — exp169 runs the same file against gs:// on TPU.
+            t = read_parquet(fs.unstrip_protocol(p), columns=["dataset", "stem"])
             seen |= {f"{d}__{s}" for d, s in zip(t.column("dataset").to_pylist(),
                                                  t.column("stem").to_pylist())}
         except Exception as e:                       # a half-written part from a kill

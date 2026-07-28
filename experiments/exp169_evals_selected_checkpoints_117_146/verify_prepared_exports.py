@@ -27,6 +27,7 @@ import json
 from pathlib import Path
 
 import torch
+from safetensors.torch import safe_open
 from transformers import AutoConfig, AutoModelForCausalLM
 
 from marinfold.document_structures.contacts_v1 import (
@@ -75,6 +76,34 @@ def check_config(label: str, path: Path) -> None:
           f"rope_type={scaling['rope_type']}")
 
 
+def check_weights_complete(label: str, path: Path) -> None:
+    """Every parameter the architecture declares must be present, and in bf16.
+
+    `from_pretrained` only *warns* about missing keys and silently random-inits
+    them, so a shard dropped during the recast would survive the forward-pass
+    check below with plausible-looking logits. This makes it an error.
+    """
+    config = AutoConfig.from_pretrained(str(path))
+    skeleton = AutoModelForCausalLM.from_config(config)
+    # Rotary inv_freq buffers are recomputed from config, never serialised.
+    expected = {k for k in skeleton.state_dict() if not k.endswith("rotary_emb.inv_freq")}
+    index = json.loads((path / "model.safetensors.index.json").read_text())
+    present = set(index["weight_map"])
+
+    missing, unexpected = sorted(expected - present), sorted(present - expected)
+    if missing or unexpected:
+        raise SystemExit(f"{label}: weight set does not match the architecture — "
+                         f"missing={missing[:5]} unexpected={unexpected[:5]}")
+
+    dtypes: set[str] = set()
+    for shard in sorted(set(index["weight_map"].values())):
+        with safe_open(path / shard, framework="pt") as handle:
+            dtypes |= {str(handle.get_slice(k).get_dtype()) for k in handle.keys()}
+    if dtypes != {"BF16"}:
+        raise SystemExit(f"{label}: expected every tensor in bf16, found {sorted(dtypes)}")
+    print(f"  weights: {len(present)} tensors, all present, all bf16")
+
+
 def check_forward(label: str, path: Path) -> None:
     """Run one real contacts-v1 prompt through the weights on CPU."""
     tokenizer = load_tokenizer(path)
@@ -118,6 +147,7 @@ def main() -> int:
         print(f"== {label}  ({path})")
         facts = check_tokenizer(label, path, reference)
         check_config(label, path)
+        check_weights_complete(label, path)
         check_forward(label, path)
         if reference is None:
             reference = facts

@@ -3,7 +3,7 @@
 
 """Batch-priority Fray dispatch of the rollout contact eval to CoreWeave rno-2a.
 
-Fans ``score_rollout_worker_cw.py`` out over ``num_shards`` single-H100 iris jobs
+Fans ``score_rollout_worker.py`` out over ``num_shards`` single-H100 iris jobs
 **per checkpoint**, at batch priority, so re-scoring the 554-protein eval set
 under a changed sampling recipe costs minutes rather than the ~80 min/checkpoint
 one A5000 takes.
@@ -79,9 +79,9 @@ TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
 
-WORKER_SCRIPT = Path(__file__).with_name("score_rollout_worker_cw.py")
+WORKER_SCRIPT = Path(__file__).with_name("score_rollout_worker.py")
 WORK_DIR = "/tmp/eval_cw"
-WORKER_LOCAL = f"{WORK_DIR}/score_rollout_worker_cw.py"
+WORKER_LOCAL = f"{WORK_DIR}/score_rollout_worker.py"
 
 # CoreWeave object storage rejects path-style S3. Literal braces on purpose.
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
