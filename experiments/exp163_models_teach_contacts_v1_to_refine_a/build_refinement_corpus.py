@@ -87,19 +87,24 @@ def emit_draft(pairs, seq_pos, rng):
 
 
 def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap, rng,
-                         budget=CTX, order="ascending-f1"):
+                         budget=CTX, order="random"):
     """v2 document: K draft sections (worst -> best) then the TRUE section.
 
         <contacts-v1> <begin_sequence> …seq…
-        <begin_statements> …draft 1…            (lowest F1; no <end>)
+        <begin_statements> …draft 1…            (no <end>)
         <begin_statements> …draft 2…
         <begin_statements> …TRUE contacts… <end>
 
-    ``scores`` are per-rollout F1s used only to ORDER the drafts. Sorting by
-    quality was rejected in Phase 0 as "non-deployable" — but that objection was
-    about ranking candidates at *inference*. Here the ordering is a training
-    signal for a monotone refinement ramp; at inference the model produces the
-    ordering itself, so nothing needs ranking. Pass ``order="random"`` to ablate.
+    Drafts are shown in **random order** by default — Phase 0's conclusion, and
+    what v1 did, so the format change stays the only difference from the Phase-3
+    baseline.
+
+    ``order="ascending-f1"`` (needs ``scores``) instead sorts them worst-first
+    into a refinement ramp. That is an ABLATION, not the default, and it carries
+    two specific hazards: position alone then encodes quality, so the model can
+    learn "later = better" without reading the drafts at all; and every training
+    context ends on the best draft so far, so at generation time the model has
+    never seen what follows a GOOD draft.
 
     Budget accounting matches v1: a draft costs ``1 + 3n`` (its
     ``<begin_statements>`` plus the contact triples), since drafts carry no
@@ -121,10 +126,12 @@ def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap,
     drafts, kept = [], []
     if K > 0 and rollouts:
         pick = list(rng.choice(len(rollouts), min(K, len(rollouts)), replace=False))
-        if order == "ascending-f1" and scores is not None:
-            pick.sort(key=lambda t: scores[t])             # worst draft first
+        if order == "ascending-f1":
+            if scores is None:
+                raise ValueError("--draft-order ascending-f1 needs per-rollout scores")
+            pick.sort(key=lambda t: scores[t])             # worst draft first (ablation)
         else:
-            rng.shuffle(pick)
+            rng.shuffle(pick)                              # default: unordered (Phase 0)
         for ri in pick:
             pairs = [(i, j) for (i, j) in canon(rollouts[ri]) if i < L and j < L]
             if not pairs or remaining < 4:                 # BEGIN + one triple
@@ -193,8 +200,12 @@ def main():
                     help="candidate = v1 (<CAND> blocks, loss on the answer only); "
                          "multi-draft = v2 (every section is <begin_statements>..<end>, "
                          "drafts ordered worst->best, weights set at tokenize time)")
-    ap.add_argument("--draft-order", choices=["ascending-f1", "random"], default="ascending-f1",
-                    help="multi-draft only: order drafts into a refinement ramp, or ablate")
+    ap.add_argument("--draft-order", choices=["random", "ascending-f1"], default="random",
+                    help="multi-draft only. RANDOM is the default and matches Phase 0's "
+                         "conclusion (train on unordered candidate sets). 'ascending-f1' "
+                         "builds a quality ramp -- an ABLATION, not the default: it lets "
+                         "the model learn 'later = better' positionally without reading "
+                         "the drafts, and it never shows what follows a GOOD draft.")
     ap.add_argument("--validate", action="store_true")
     a = ap.parse_args()
     if a.format == "candidate":
