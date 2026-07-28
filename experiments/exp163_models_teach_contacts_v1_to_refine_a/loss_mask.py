@@ -14,15 +14,13 @@ loss was armed *only* on the single ``<begin_statements> … <end>`` answer span
     <begin_statements> …TRUE contacts… <end>       weight 1
 
 **v2 — "multi-draft" format** (``span_weights``). The ``<CAND>`` marker is gone:
-every section — draft or answer — is an ordinary ``<begin_statements> … <end>``
-statements section, and ``<begin_statements>`` now means *"discard what came
-before; here is a new candidate structure"*::
+``<begin_statements>`` now means *"discard what came before; here is a new
+candidate structure"*, and **only the final section is closed by ``<end>``**::
 
     <contacts-v1> <begin_sequence> …sequence…      w_header
-    <begin_statements> …draft 1…      <end>        w_draft
-    <begin_statements> …draft 2…      <end>        w_draft   (conditions on draft 1)
+    <begin_statements> …draft 1…                   w_draft
+    <begin_statements> …draft 2…                   w_draft   (conditions on draft 1)
     <begin_statements> …TRUE contacts… <end>       w_final
-    <eos>
 
 Drafts are ordered by ascending quality, so the document is a refinement ramp and
 the LAST section is the answer.
@@ -33,21 +31,24 @@ on the last) without any candidate/output distinction. The cost is that the
 model no longer gets a syntactic "this is untrusted" signal and must infer draft
 vs answer from position.
 
+Both tokens keep their existing meanings, so ``<end>`` remains the generation
+stop token and no inference path changes.
+
 WEIGHT CONVENTION. levanter computes ``target_y = roll(true_ids, -1)``, so
-``weight[i]`` weights the loss on predicting ``tokens[i+1]``. Each section is
-weighted over the **closed** range ``[begin, end]``:
+``weight[i]`` weights the loss on predicting ``tokens[i+1]``. Sections are
+half-open ``[start, stop)``, which puts the branch decisions in the right place:
 
-* ``weight[b]``     -> predicts the first ``<contact>``
-* ``weight[e-1]``   -> predicts ``<end>``  (the section terminator)
-* ``weight[e]``     -> predicts whatever follows the section: the **next**
-  ``<begin_statements>`` for a draft, or ``<eos>`` for the final section.
+* ``weight[start]``  -> predicts the section's first ``<contact>``
+* for a draft, ``weight[stop-1]`` -> predicts the next ``<begin_statements>``:
+  the **restart** decision, at ``w_draft``
+* for the final section, ``weight[stop-1]`` -> predicts ``<end>``: the **stop**
+  decision, at ``w_final``
+* ``weight[stop]`` for the final section (the ``<end>`` position itself, which
+  predicts the packing ``<eos>``) falls through to ``w_header`` — matching v1,
+  where the packed ``<eos>`` was never trained.
 
-That last row is load-bearing. In v1 the document ended at ``<end>`` and that was
-the generation stop token. In v2 ``<end>`` only closes a *section*; the document
-terminator is ``<eos>``. Including ``e`` in the span is what trains the
-continue-vs-stop decision — drafts learn "start another section" at ``w_draft``,
-the final section learns "stop" at ``w_final``. Every inference path that stops on
-``<end>`` must move to ``<eos>`` or it will halt after the first (worst) draft.
+So with ``(0, 0, 1)`` on a single-section document the profile is **identical** to
+v1's ``answer_span_loss_weights``.
 """
 
 from __future__ import annotations
@@ -96,32 +97,34 @@ def find_sections(
     begin_id: int = BEGIN_STATEMENTS_ID,
     end_id: int = END_ID,
 ) -> list[tuple[int, int]]:
-    """``[(begin_idx, end_idx), …]`` for every statements section, in order.
+    """``[(start, stop_exclusive), …]`` for every statements section, in order.
 
-    Validates the grammar the weight profile depends on: sections must be
-    balanced and strictly alternating (``begin … end begin … end``), never
-    nested and never crossing. A malformed document would mis-weight its
-    neighbours once packed, so every document is checked.
+    v2 grammar: a new section begins at each ``<begin_statements>``, and **only
+    the final section is closed by ``<end>``**. Drafts are simply superseded by
+    the next ``<begin_statements>``.
+
+    That keeps both tokens' existing meanings — ``<end>`` still terminates the
+    document, so it remains the generation stop token and no inference path has
+    to change. Termination becomes a learned choice: after a contact triple the
+    model emits another ``<contact>``, or ``<begin_statements>`` to start over,
+    or ``<end>`` to finish.
+
+    Ranges are half-open so ``ids[start:stop]`` is the section's own tokens:
+    draft *k* runs up to the next ``<begin_statements>``, and the final section
+    runs up to (not including) ``<end>``.
     """
     ids = np.asarray(ids)
-    marks = np.flatnonzero((ids == begin_id) | (ids == end_id))
-    sections: list[tuple[int, int]] = []
-    open_at: int | None = None
-    for idx in marks:
-        if ids[idx] == begin_id:
-            if open_at is not None:
-                raise ValueError(f"nested <begin_statements> at {idx} (previous opened at {open_at})")
-            open_at = int(idx)
-        else:
-            if open_at is None:
-                raise ValueError(f"<end> at {idx} with no open <begin_statements>")
-            sections.append((open_at, int(idx)))
-            open_at = None
-    if open_at is not None:
-        raise ValueError(f"unterminated <begin_statements> at {open_at}")
-    if not sections:
-        raise ValueError("document has no <begin_statements> … <end> section")
-    return sections
+    begins = [int(i) for i in np.flatnonzero(ids == begin_id)]
+    ends = [int(i) for i in np.flatnonzero(ids == end_id)]
+    if not begins:
+        raise ValueError("document has no <begin_statements> section")
+    if len(ends) != 1:
+        raise ValueError(f"expected exactly one <end> (document terminator), got {len(ends)}")
+    stop = ends[0]
+    if stop < begins[-1]:
+        raise ValueError(f"<end> at {stop} precedes the last <begin_statements> at {begins[-1]}")
+    bounds = begins[1:] + [stop]
+    return list(zip(begins, bounds))
 
 
 def span_weights(
@@ -136,10 +139,10 @@ def span_weights(
     """Per-position float32 loss weight for ONE multi-draft document.
 
     The last statements section is the answer (``w_final``); any earlier ones are
-    drafts (``w_draft``); everything else — the sequence header, and the gap
-    before the first section — is ``w_header``. Sections are weighted over the
-    closed range ``[begin, end]``; see the module docstring for why ``end`` is
-    included.
+    drafts (``w_draft``); everything else — the sequence header, and the ``<end>``
+    position itself — is ``w_header``. Sections are the half-open ranges
+    :func:`find_sections` returns; see the module docstring for why that puts the
+    restart / stop decisions at the right positions.
 
     This is deliberately a per-document function, not a packed-sequence one: the
     corpus tokenizer computes it per document and concatenates, so "which section
@@ -150,8 +153,8 @@ def span_weights(
     ids = np.asarray(ids)
     w = np.full(len(ids), float(w_header), dtype=np.float32)
     sections = find_sections(ids, begin_id=begin_id, end_id=end_id)
-    for k, (b, e) in enumerate(sections):
-        w[b : e + 1] = w_final if k == len(sections) - 1 else w_draft
+    for k, (start, stop) in enumerate(sections):
+        w[start:stop] = w_final if k == len(sections) - 1 else w_draft
     return w
 
 

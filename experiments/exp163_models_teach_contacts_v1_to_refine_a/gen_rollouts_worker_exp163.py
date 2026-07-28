@@ -132,10 +132,9 @@ def main():
                     help="reprocess all assigned targets; drops this shard's existing "
                          "part files + timings first (a clean redo)")
     ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
-                    help="multi-draft: the model emits SEVERAL <begin_statements>..<end> "
-                         "sections in one completion. Changes the stop token from <end> "
-                         "(which now only closes a section) to <eos>, and scores each "
-                         "section separately.")
+                    help="multi-draft: the model emits SEVERAL <begin_statements> "
+                         "sections in one completion, the last closed by <end>. Scores "
+                         "each section separately; <end> remains the stop token.")
     ap.add_argument("--max-sections", type=int, default=8,
                     help="multi-draft: token budget is sized for this many sections")
     ap.add_argument("--save-texts", action="store_true",
@@ -204,10 +203,10 @@ def main():
               tensor_parallel_size=a.tensor_parallel_size, enforce_eager=True, dtype="bfloat16")
     tok = llm.get_tokenizer()
     end_id = tok.convert_tokens_to_ids("<end>")
-    eos_id = tok.eos_token_id
-    # v2 multi-draft: <end> closes a SECTION, <eos> ends the document. Stopping on
-    # <end> here would truncate after the FIRST (worst) draft.
-    stop_id = eos_id if a.format == "multi-draft" else end_id
+    # v2 multi-draft keeps <end> as the document terminator (drafts are closed by
+    # the next <begin_statements>, not by <end>), so the stop token is unchanged.
+    # Only the token BUDGET grows, to leave room for several sections.
+    stop_id = end_id
     sections_budget = a.max_sections if a.format == "multi-draft" else 1
     startup_s = time.time() - t_load
     print(f"model loaded in {startup_s:.0f}s (end_id={end_id})", flush=True)

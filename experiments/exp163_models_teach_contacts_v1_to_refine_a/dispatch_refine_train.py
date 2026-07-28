@@ -66,7 +66,7 @@ Env knobs (so a smoke run needs no code edit):
   EXP163_MAX_STEPS        cap steps for a smoke run (default: full 1-epoch count)
   EXP163_ARMS             comma list of multi-draft loss-weight arms to run, e.g.
                           "A,B,C,D". Each arm N reads the corpus tokenized with its
-                          own weight profile from .../md_tokenized_<N> and gets its
+                          own weight profile from .../md2_tokenized_<N> and gets its
                           own run name. Unset = the v1 single-corpus behaviour.
   EXP163_STEPS_PER_EVAL   override the eval cadence (default: a quarter epoch).
                           Set to 1 with EXP163_MAX_STEPS=1 for a warm-start anchor probe.
@@ -209,12 +209,12 @@ def corpus_for(arm: str | None) -> str:
     ``loss_weights``, never in ``input_ids``."""
     if arm is None:
         return REFINEMENT_TOKENIZED_GLOB
-    return f"{EXP163_S3_PREFIX}/val10k/md_tokenized_{arm}/*.parquet"
+    return f"{EXP163_S3_PREFIX}/val10k/md2_tokenized_{arm}/*.parquet"
 
 
 def run_name_for(lr: float, epochs: int, arm: str | None = None) -> str:
     # W&B-safe (alnum + hyphens, < 64 chars).
-    suffix = f"-md{arm}" if arm else ""
+    suffix = f"-md2{arm}" if arm else ""
     return f"plm-exp163-refine-cv1-1_5b-lr{_lr_tag(lr)}-e{epochs}-cos{suffix}"
 
 

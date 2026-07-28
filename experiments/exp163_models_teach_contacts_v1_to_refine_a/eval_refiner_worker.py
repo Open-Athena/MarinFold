@@ -227,18 +227,17 @@ def emit_block(pairs, seq_pos, rng, fmt: str = "candidate") -> list[str]:
     """One block of candidate contacts, in whichever format the model was trained on.
 
     v1 ``candidate``: ``<CAND> <contact> pi pj …`` (a repurposed spare marker).
-    v2 ``multi-draft``: ``<begin_statements> <contact> pi pj … <end>`` — a draft is
-    syntactically an ordinary statements section. Feeding a multi-draft model
-    v1-format context (or vice versa) is out of distribution and meaningless, so
-    this must match the corpus the checkpoint was trained on.
+    v2 ``multi-draft``: ``<begin_statements> <contact> pi pj …`` with **no**
+    ``<end>`` — a draft is superseded by the next ``<begin_statements>``, and only
+    the final section is closed. Feeding a multi-draft model v1-format context
+    (or vice versa) is out of distribution and meaningless, so this must match
+    the corpus the checkpoint was trained on.
     """
     order = list(pairs); rng.shuffle(order)
     toks = [BEGIN] if fmt == "multi-draft" else [MARKER]
     for (i, j) in order:
         a, b = (i, j) if rng.random() < 0.5 else (j, i)
         toks += ["<contact>", f"<p{seq_pos[a]}>", f"<p{seq_pos[b]}>"]
-    if fmt == "multi-draft":
-        toks.append("<end>")
     return toks
 
 

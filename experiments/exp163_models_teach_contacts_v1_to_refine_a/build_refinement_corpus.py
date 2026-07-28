@@ -70,15 +70,20 @@ def emit(pairs, seq_pos, rng, marker=None):
         toks += ["<contact>", position_token(seq_pos[a]), position_token(seq_pos[b])]
     return toks
 
-def emit_section(pairs, seq_pos, rng):
-    """A complete statements section: ``<begin_statements> …contacts… <end>``.
+def emit_draft(pairs, seq_pos, rng):
+    """A v2 draft section: ``<begin_statements> …contacts…`` — deliberately NOT
+    closed by ``<end>``.
 
-    The v2 "multi-draft" unit. Unlike v1's ``emit(..., marker=CAND)``, a draft is
-    syntactically identical to the answer — that is the whole point of the format:
-    a rollout and its own drafts become the same object, so one generation can
-    emit N successive structures and be RL'd on best-of-N.
+    A draft is superseded by the next ``<begin_statements>``; only the FINAL
+    section is closed by ``<end>``. That leaves both tokens with exactly their
+    existing meanings — ``<end>`` still terminates the document, so it stays the
+    generation stop token and no inference path changes — while
+    ``<begin_statements>`` means "discard the previous structure, here is a new
+    candidate". Termination becomes a learned choice: after a contact triple,
+    emit another ``<contact>``, or ``<begin_statements>`` to start over, or
+    ``<end>`` to finish.
     """
-    return [BEGIN] + emit(pairs, seq_pos, rng) + ["<end>"]
+    return [BEGIN] + emit(pairs, seq_pos, rng)
 
 
 def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap, rng,
@@ -86,8 +91,8 @@ def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap,
     """v2 document: K draft sections (worst -> best) then the TRUE section.
 
         <contacts-v1> <begin_sequence> …seq…
-        <begin_statements> …draft 1… <end>      (lowest F1)
-        <begin_statements> …draft 2… <end>
+        <begin_statements> …draft 1…            (lowest F1; no <end>)
+        <begin_statements> …draft 2…
         <begin_statements> …TRUE contacts… <end>
 
     ``scores`` are per-rollout F1s used only to ORDER the drafts. Sorting by
@@ -96,8 +101,9 @@ def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap,
     signal for a monotone refinement ramp; at inference the model produces the
     ordering itself, so nothing needs ranking. Pass ``order="random"`` to ablate.
 
-    Budget accounting differs from v1 only in that a section costs ``2 + 3n``
-    (its own ``<begin_statements>`` and ``<end>``) rather than ``1 + 3n``.
+    Budget accounting matches v1: a draft costs ``1 + 3n`` (its
+    ``<begin_statements>`` plus the contact triples), since drafts carry no
+    ``<end>``.
     """
     r = seq_section(entry_id, seq)
     if r is None:
@@ -121,15 +127,15 @@ def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap,
             rng.shuffle(pick)
         for ri in pick:
             pairs = [(i, j) for (i, j) in canon(rollouts[ri]) if i < L and j < L]
-            if not pairs or remaining < 5:                 # BEGIN + triple + <end>
+            if not pairs or remaining < 4:                 # BEGIN + one triple
                 continue
             cap = min(len(pairs), N_cap)
             n = int(rng.integers(1, cap + 1))              # subsample Uniform[1,cap]
-            n = min(n, (remaining - 2) // 3)               # fit budget (2 = BEGIN+<end>)
+            n = min(n, (remaining - 1) // 3)               # fit budget (1 = BEGIN)
             if n <= 0:
                 continue
             sub = [pairs[t] for t in rng.choice(len(pairs), n, replace=False)]
-            sec = emit_section(sub, seq_pos, rng)
+            sec = emit_draft(sub, seq_pos, rng)
             drafts += sec
             remaining -= len(sec)
             kept.append(float(scores[ri]) if scores is not None else float("nan"))
