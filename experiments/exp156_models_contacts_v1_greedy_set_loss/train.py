@@ -563,7 +563,10 @@ def _run_with_gpu_telemetry(pod_config: TrainLmOnPodConfig, train_fn: Callable[[
     try:
         from marin.monitoring.gpu_telemetry import NvidiaSmiTelemetryConfig, nvidia_smi_telemetry
     except ModuleNotFoundError:
-        from exp156_gpu_telemetry import NvidiaSmiTelemetryConfig, nvidia_smi_telemetry
+        from experiments.exp156_models_contacts_v1_greedy_set_loss.exp156_gpu_telemetry import (
+            NvidiaSmiTelemetryConfig,
+            nvidia_smi_telemetry,
+        )
 
     output_uri = f"{pod_config.output_path.rstrip('/')}/telemetry/gpu"
     telemetry_config = NvidiaSmiTelemetryConfig(
