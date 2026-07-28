@@ -298,6 +298,18 @@ def main() -> int:
             continue
         diag = diagnose_label(f"{a.scores.rstrip('/')}/{label}/streams", gt)
         point, lo, hi = bootstrap_enrichment(diag["per_protein"])
+        # Compute spent, so the accuracy comparison can be read honestly: the
+        # two arms are matched on rollout *count*, and retraction lengthens
+        # documents, so the backtracking arm gets somewhat more tokens. A
+        # strictly token-matched comparison would give it fewer rollouts.
+        roll = diag["rollouts"]
+        print(f"\n=== {label}: rollout compute ===")
+        print(f"rollouts:             {len(roll):,} "
+              f"({100 * (~roll.finished.astype(bool)).mean():.2f}% hit the token budget)")
+        print(f"mean tokens/rollout:  {roll.n_tokens.mean():.0f}  "
+              f"(total {roll.n_tokens.sum() / 1e6:.1f}M)")
+        print(f"mean statements/rollout: {roll.n_statements.mean():.1f} "
+              f"({roll.n_in_universe.mean():.1f} in-universe)")
         print(f"\n=== {label}: retraction diagnostics (in-universe) ===")
         print(format_report(diag["summary"]))
         print(f"enrichment 95% CI (protein bootstrap): [{lo:.2f}, {hi:.2f}]  point {point:.2f}")
