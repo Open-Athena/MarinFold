@@ -78,12 +78,25 @@ one vocabulary and one set of special-token ids, that llama3 rope survived the
 config downgrade, and that a real contacts-v1 prompt through the real weights
 puts its next-token mass on the format-legal tokens.
 
-**4. Score.** [`run_eval_cw.sh`](run_eval_cw.sh) fans exp82's worker out over
-3 × 12 single-H100 CoreWeave jobs at batch priority. **The #117 final checkpoint
-is re-scored rather than reusing exp167's published matrices** — the headline
-comparison is a 0.0076-nat difference between two #117 checkpoints, which deserves
-to be measured in one submission, and reproducing the published 0.535 is itself
-the harness check.
+**4. Score — on whichever accelerator has room.** exp82's worker is the same file
+either way; only the fsspec URLs and the launcher differ.
+
+- [`run_eval_cw.sh`](run_eval_cw.sh) → 3 × 12 single-H100 CoreWeave jobs.
+- [`dispatch_eval_tpu.py`](dispatch_eval_tpu.py) → 3 × 4 marin `v5p-8` slices.
+
+**This run used the TPU path**, because on 2026-07-28 every amd64 CoreWeave
+cluster was fully committed — rno-2a at 512/512 GPUs with 229 more of pending
+demand (one job alone holding 328), us-east-02a at 256/256 — and the workstation
+A5000 was busy with another job. That the same worker runs on both is what makes
+the numbers comparable to the published CoreWeave ones; the only code change it
+needed was replacing a hard-coded `s3://` in its resume path with
+`fs.unstrip_protocol`, so it is now `score_rollout_worker.py`, not `…_cw.py`.
+
+**The #117 final checkpoint is re-scored rather than reusing exp167's published
+matrices** — the headline comparison is a 0.0076-nat difference between two #117
+checkpoints, which deserves to be measured in one submission, and reproducing the
+published 0.535 is itself the harness check (and here, the cross-accelerator
+check as well).
 
 **5. Report paired.** [`summarize_results.py`](summarize_results.py) reports the
 aggregate table *and* the per-protein paired differences. At a 0.008-nat

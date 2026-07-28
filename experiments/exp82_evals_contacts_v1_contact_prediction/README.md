@@ -435,6 +435,14 @@ CoreWeave shards at batch priority, ~4 min/checkpoint vs ~80 min) →
 CoreWeave fan-out gotchas are recorded in the root
 [`AGENTS.md`](../../AGENTS.md#single-gpu-inference-fan-out-n-independent-shards-no-gang).
 
+`score_rollout_worker.py` is **accelerator-agnostic** — it does all of its I/O
+through fsspec, so the same file runs against `s3://` on a CoreWeave H100 and
+`gs://` on a marin TPU slice. exp169 uses it on `v5p-8` (see
+[`../exp169_evals_selected_checkpoints_117_146/dispatch_eval_tpu.py`](../exp169_evals_selected_checkpoints_117_146/dispatch_eval_tpu.py)),
+which is what lets a run scheduled on whichever accelerator has capacity be
+compared against the CoreWeave numbers above. (It was `score_rollout_worker_cw.py`
+until exp169; the rename came with dropping the one hard-coded `s3://`.)
+
 ## Conclusion
 
 **Headline (strong model).** Re-running the inference search on the tuned #61/#75

@@ -26,8 +26,8 @@ TPU specifics, all in the bootstrap rather than the worker:
   shards the checkpoint as it loads: handing it fp32 weights is a known failure
   rather than a silent cast. ``prepare_hf_export.py`` + the staging jobs do this.
 
-Submitted from a small scratch directory — ``iris job run`` bundles the CWD as
-the job workspace, so submitting from a large tree uploads the whole thing::
+Submitted from the marin checkout, because that is the workspace ``--extra vllm
+--extra tpu`` refer to; the dispatcher sets the CWD itself::
 
     uv run python dispatch_eval_tpu.py --num-shards 4
     uv run python dispatch_eval_tpu.py --num-shards 4 --shards 0 --limit 2   # smoke
@@ -39,9 +39,15 @@ import os
 import subprocess
 from pathlib import Path
 
-IRIS = os.environ.get("IRIS_BIN", "/home/bizon/git/marin-freshiris/.venv/bin/iris")
-# `iris job run` bundles the CWD; keep it small and dedicated.
-SUBMIT_WORKSPACE = Path(os.environ.get("EVAL_TPU_WORKSPACE", "/tmp/exp169_submit"))
+MARIN = Path(os.environ.get("MARIN_CHECKOUT", "/home/bizon/git/marin-freshiris"))
+IRIS = os.environ.get("IRIS_BIN", str(MARIN / ".venv/bin/iris"))
+# `iris job run` bundles the CWD as the job's workspace and then runs `uv sync`
+# in it on the pod. `--extra vllm --extra tpu` are marin's extras, so the
+# workspace has to BE the marin checkout — submitting from an empty scratch dir
+# gets "No `pyproject.toml` found" on the pod, and submitting from a large
+# non-repo tree (/tmp) hangs uploading it. It must also be the *fresh* checkout:
+# iris rejects a client more than 14 days old.
+SUBMIT_WORKSPACE = Path(os.environ.get("EVAL_TPU_WORKSPACE", str(MARIN)))
 
 GCS_PREFIX = os.environ.get(
     "EVAL_TPU_PREFIX", "gs://marin-us-central1/protein-structure/MarinFold/exp169")
