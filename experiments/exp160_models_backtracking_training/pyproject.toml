@@ -22,7 +22,11 @@ dependencies = [
     "marin-fray>=0.2.40.dev202607080801",
     "marin-iris>=0.2.40.dev202607080801",
     # marin training path (build_train_lm_on_pod_config -> run_levanter_train_lm).
-    "marin-core>=0.2.40.dev202607080801",
+    # [dedup] pulls marin-dupekit: marin.processing.tokenize -> marin.datakit
+    # .normalize imports it unconditionally, and marinfold_models.defaults
+    # imports marin.training.training, so training needs it even though we do
+    # no dedup.
+    "marin-core[dedup]>=0.2.40.dev202607080801",
     "marinfold-models",
     "httpx>=0.28.1,<1",
 ]

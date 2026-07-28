@@ -30,13 +30,17 @@ from datetime import timedelta
 
 import jmp
 from haliax.partitioning import ResourceAxis
+# NB: import from the DEFINING submodule, not the package. levanter 1.2 /
+# marin 0.2.57 turned `levanter.data.text` and `levanter.optim` into lazy
+# plugin registries with empty __init__s, so `from levanter.data.text import
+# LmDataConfig` and `from levanter.optim import OptimizerConfig` now raise.
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
-from levanter.data.text import LmDataConfig
+from levanter.data.text.datasets import LmDataConfig
 from levanter.eval_harness import LmEvalHarnessConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.lm_model import LmConfig
-from levanter.optim import OptimizerConfig
+from levanter.optim.config import OptimizerConfig
 from levanter.tracker.wandb import WandbConfig
 from levanter.trainer import TrainerConfig
 from levanter.utils.mesh import MeshConfig
