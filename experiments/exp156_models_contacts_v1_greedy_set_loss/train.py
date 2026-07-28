@@ -34,7 +34,8 @@ from iris.client.client import get_iris_ctx
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
 from levanter.compat.hf_checkpoints import HFCompatConfig
-from levanter.data.text.datasets import DatasetComponent, LmDataConfig
+from levanter.data.text.datasets import DatasetComponent, LmDataConfig, UrlDatasetSourceConfig
+from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.qwen import Qwen3Config
@@ -179,20 +180,22 @@ def _tokenized_step(*, split: str, paths: list[str]) -> ArtifactStep[TokenizedCa
     )
 
 
-def _cached_tokenized_step(*, split: str, paths: list[str], cache_root: str | None) -> ArtifactStep[TokenizedCache]:
-    """Return an adopted mirror when both copied cache roots are configured."""
-    if cache_root is None:
-        return _tokenized_step(split=split, paths=paths)
-    return ArtifactStep.adopt(
-        name=f"tokenized/contacts-v1-{split}",
-        version=DATA_VERSION,
-        source=cache_root,
-        kind=TokenizedCache,
-        config={
-            "tokenizer": CONTACTS_TOKENIZER_REPO,
-            "format": {"text_key": "document"},
-        },
+def _mirrored_cache_component(cache_root: str) -> DatasetComponent:
+    """Build a Levanter component for a legacy mirrored cache without an artifact record.
+
+    The exp67 cache's ``.artifact.json`` is the legacy JSON literal ``null``, so
+    ``TokenizedCache.raw_load`` cannot adopt it. Its Levanter cache layout is
+    nevertheless complete and validated; construct the same component that a
+    typed cache would expose, with contacts-v1's document-text format.
+    """
+    source = UrlDatasetSourceConfig(
+        tags=[],
+        train_urls=[],
+        validation_urls=[],
+        cache_dir=cache_root,
+        format=TextLmDatasetFormat(text_key="document"),
     )
+    return DatasetComponent(source=source, cache_dir=source.cache_dir, format=source.format, tags=source.tags)
 
 
 def _component(cache: TokenizedCache) -> DatasetComponent:
@@ -636,8 +639,8 @@ def _train_job(pod_config: TrainLmOnPodConfig) -> None:
 
 def _identity_config(
     ctx: StepContext,
-    train: ArtifactStep[TokenizedCache],
-    validation: ArtifactStep[TokenizedCache],
+    train: ArtifactStep[TokenizedCache] | None,
+    validation: ArtifactStep[TokenizedCache] | None,
     *,
     name: str,
     steps: int,
@@ -666,8 +669,8 @@ def _identity_config(
             "implementation": "stock Levanter CE" if LOSS_KIND == "next-token" else "custom Trainer greedy set loss",
         },
         "data": {
-            "train": ctx.artifact_path(train),
-            "validation": ctx.artifact_path(validation),
+            "train": TOKENIZED_TRAIN_CACHE or ctx.artifact_path(train),
+            "validation": TOKENIZED_VAL_CACHE or ctx.artifact_path(validation),
             "tokenizer": CONTACTS_TOKENIZER,
             "format": "contacts-v1 serialized parquet documents",
             "shuffle": True,
@@ -715,16 +718,8 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         raise ValueError(
             "EXP156_TOKENIZED_TRAIN_CACHE and EXP156_TOKENIZED_VAL_CACHE must be set together"
         )
-    train = _cached_tokenized_step(
-        split="train",
-        paths=[CONTACTS_V1_TRAIN_GLOB],
-        cache_root=TOKENIZED_TRAIN_CACHE,
-    )
-    validation = _cached_tokenized_step(
-        split="val",
-        paths=[CONTACTS_V1_VAL_GLOB],
-        cache_root=TOKENIZED_VAL_CACHE,
-    )
+    train = None if TOKENIZED_TRAIN_CACHE else _tokenized_step(split="train", paths=[CONTACTS_V1_TRAIN_GLOB])
+    validation = None if TOKENIZED_VAL_CACHE else _tokenized_step(split="val", paths=[CONTACTS_V1_VAL_GLOB])
     steps = int(os.environ.get("EXP156_STEPS", "10"))
     steps_per_eval = int(os.environ.get("EXP156_STEPS_PER_EVAL", "10"))
     train_batch_size = int(os.environ.get("EXP156_TRAIN_BATCH_SIZE", "16"))
@@ -755,8 +750,12 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         val_key = "tokenized/contacts-v1-val"
         data = LmDataConfig(
             components={
-                train_key: _component(ctx.resolved(train)),
-                val_key: _component(ctx.resolved(validation)),
+                train_key: _mirrored_cache_component(TOKENIZED_TRAIN_CACHE)
+                if TOKENIZED_TRAIN_CACHE
+                else _component(ctx.resolved(train)),
+                val_key: _mirrored_cache_component(TOKENIZED_VAL_CACHE)
+                if TOKENIZED_VAL_CACHE
+                else _component(ctx.resolved(validation)),
             },
             train_weights={train_key: 1.0, val_key: 0.0},
             tokenizer=CONTACTS_TOKENIZER,
@@ -837,7 +836,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         artifact_type=LevanterCheckpoint,
         run=_train_job,
         build_config=build_config,
-        deps=(train, validation),
+        deps=tuple(step for step in (train, validation) if step is not None),
         runtime_args={"train_resources": RESOURCES},
     )
 
