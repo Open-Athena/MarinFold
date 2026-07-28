@@ -327,6 +327,18 @@ def main() -> int:
         print(f"\n=== {label}: retraction diagnostics (in-universe) ===")
         print(format_report(diag["summary"]))
         print(f"enrichment 95% CI (protein bootstrap): [{lo:.2f}, {hi:.2f}]  point {point:.2f}")
+        # Enrichment is bounded by 1 / FP-base-rate: a model whose emissions are
+        # mostly wrong has little headroom above 1.0 no matter how well it
+        # discriminates. The #159 corpus reaches 5.85x from a base rate of
+        # 0.166 (ceiling 6.02x); rollouts on the experimental eval set are far
+        # less precise, so their ceiling is much lower and the raw enrichments
+        # are NOT comparable. Fraction-of-ceiling is.
+        base = diag["summary"].get("fp_base_rate", float("nan"))
+        ceiling = (1.0 / base) if base else float("nan")
+        if ceiling == ceiling and point == point:
+            print(f"ceiling (1/base rate):{ceiling:.2f}x  -> achieved "
+                  f"{100 * (point - 1) / (ceiling - 1):.0f}% of the available headroom "
+                  f"(#159 corpus: 5.85x of 6.02x = 97%)")
         print(f"--- {label}: unrestricted (all emitted statements) ---")
         print(format_report(diag["summary_unrestricted"]))
         rec = {"model": label, **diag["summary"],
