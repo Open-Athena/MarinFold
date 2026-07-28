@@ -85,6 +85,8 @@ else:
     default_val_glob = f"{ROOT}/exp53_contacts_v1_5x/documents/val/*.parquet"
 CONTACTS_V1_TRAIN_GLOB = os.environ.get("EXP156_TRAIN_GLOB", default_train_glob)
 CONTACTS_V1_VAL_GLOB = os.environ.get("EXP156_VAL_GLOB", default_val_glob)
+TOKENIZED_TRAIN_CACHE = os.environ.get("EXP156_TOKENIZED_TRAIN_CACHE")
+TOKENIZED_VAL_CACHE = os.environ.get("EXP156_TOKENIZED_VAL_CACHE")
 
 CONTACTS_TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
 CONTACTS_TOKENIZER_REVISION = "5d68a24a899f"
@@ -174,6 +176,22 @@ def _tokenized_step(*, split: str, paths: list[str]) -> ArtifactStep[TokenizedCa
             disk="10g",
             zone=TPU_ZONE if EXP156_ACCELERATOR == "tpu" else None,
         ),
+    )
+
+
+def _cached_tokenized_step(*, split: str, paths: list[str], cache_root: str | None) -> ArtifactStep[TokenizedCache]:
+    """Return an adopted mirror when both copied cache roots are configured."""
+    if cache_root is None:
+        return _tokenized_step(split=split, paths=paths)
+    return ArtifactStep.adopt(
+        name=f"tokenized/contacts-v1-{split}",
+        version=DATA_VERSION,
+        source=cache_root,
+        kind=TokenizedCache,
+        config={
+            "tokenizer": CONTACTS_TOKENIZER_REPO,
+            "format": {"text_key": "document"},
+        },
     )
 
 
@@ -693,8 +711,20 @@ def _identity_config(
 
 def build_step() -> ArtifactStep[LevanterCheckpoint]:
     """Build the lazy training artifact without submitting it."""
-    train = _tokenized_step(split="train", paths=[CONTACTS_V1_TRAIN_GLOB])
-    validation = _tokenized_step(split="val", paths=[CONTACTS_V1_VAL_GLOB])
+    if (TOKENIZED_TRAIN_CACHE is None) != (TOKENIZED_VAL_CACHE is None):
+        raise ValueError(
+            "EXP156_TOKENIZED_TRAIN_CACHE and EXP156_TOKENIZED_VAL_CACHE must be set together"
+        )
+    train = _cached_tokenized_step(
+        split="train",
+        paths=[CONTACTS_V1_TRAIN_GLOB],
+        cache_root=TOKENIZED_TRAIN_CACHE,
+    )
+    validation = _cached_tokenized_step(
+        split="val",
+        paths=[CONTACTS_V1_VAL_GLOB],
+        cache_root=TOKENIZED_VAL_CACHE,
+    )
     steps = int(os.environ.get("EXP156_STEPS", "10"))
     steps_per_eval = int(os.environ.get("EXP156_STEPS_PER_EVAL", "10"))
     train_batch_size = int(os.environ.get("EXP156_TRAIN_BATCH_SIZE", "16"))

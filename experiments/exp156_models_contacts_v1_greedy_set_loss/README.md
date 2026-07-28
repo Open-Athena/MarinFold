@@ -39,6 +39,14 @@ For CoreWeave/Iris runs, defaults are:
 - data globs: `s3://marin-us-east-02a/MarinFold/data/document_structures/contacts_v1/{train,val}/*.parquet`
 - optimizer LR: `EXP156_LEARNING_RATE` if set, otherwise `3.1623e-3`
 - optional durable GPU telemetry: `EXP156_ENABLE_GPU_TELEMETRY=1`
+- tokenized-cache mirror: set both cache roots below to adopt the validated exp67 caches directly, rather than rebuilding from parquet:
+
+```bash
+EXP156_TOKENIZED_TRAIN_CACHE=s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp156_contacts_v1_greedy_set_loss/tokenized/contacts-v1-663ba6
+EXP156_TOKENIZED_VAL_CACHE=s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp156_contacts_v1_greedy_set_loss/tokenized/contacts-v1-val-92827b
+```
+
+The two variables must be set together. `train.py` adopts these as typed `TokenizedCache` artifacts, so no raw-parquet tokenization job is scheduled.
 
 Example smoke launch:
 
