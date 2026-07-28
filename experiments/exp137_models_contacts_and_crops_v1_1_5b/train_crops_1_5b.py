@@ -119,6 +119,7 @@ def build_steps() -> list:
             max_eval_batches=max_eval_batches,
             contacts_v1_mix=cv1_mix,
             esm_atlas_mix=esm_atlas_mix,
+            init_checkpoint=os.environ.get("EXP137_INIT_CHECKPOINT") or None,
             extra_tags=(f"steps{steps}",),
             wandb_name=name,
         )

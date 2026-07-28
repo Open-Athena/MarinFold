@@ -244,6 +244,7 @@ def build_train_step(
     data_seed: int = CROPS_DATA_SEED,
     contacts_v1_mix: float = 0.0,
     esm_atlas_mix: float = 0.0,
+    init_checkpoint: str | None = None,
     extra_tags: Sequence[str] = (),
     wandb_name: str | None = None,
     resources: ResourceConfig = PROTEIN_RESOURCES,
@@ -282,7 +283,14 @@ def build_train_step(
         max_eval_batches=max_eval_batches,
         data_seed=versioned(data_seed),
         env_vars=env_vars,
-        # From scratch: no initialize_from_checkpoint_path, no pad_tokenizer.
+        # From scratch by default (no init checkpoint). ``init_checkpoint`` turns
+        # this into a WARM RESTART: weights are loaded from that levanter checkpoint
+        # but step / optimizer state / LR schedule / data loader all start fresh
+        # (``reset_data_loader_on_init`` defaults True). That is exactly what we
+        # want when restarting from a pre-spike checkpoint at a DIFFERENT peak LR --
+        # a plain resume would restore the old schedule and step and ignore the new
+        # learning rate. Losing the Adam moments is inherent to changing schedule.
+        initialize_from_checkpoint_path=init_checkpoint,
     )
 
     # Train mixture. Default: crops-only (weight 1.0). With contacts_v1_mix > 0,
