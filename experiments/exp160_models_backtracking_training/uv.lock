@@ -1600,7 +1600,7 @@ wheels = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&branch=exp160-backtracking-training#4f28226a3e13b71ad8ffc7f1aa4aa8e888c02d49" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&branch=exp160-backtracking-training#99252a057a70329e36a0714f8301ca51e75e4ac9" }
 dependencies = [
     { name = "marin-core", marker = "sys_platform == 'linux'" },
     { name = "marin-iris", marker = "sys_platform == 'linux'" },
