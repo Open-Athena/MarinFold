@@ -78,7 +78,12 @@ from fsspec.core import url_to_fs
 from rollout_metrics import BANDS, gt_by_band, parse_pred, parse_sections, score_rollout
 
 # Accumulate rollout rows across this many targets before flushing a part file.
-FLUSH_EVERY = 2000
+# MUST be well below targets-per-shard or the shard only ever writes at the END,
+# and a preemption loses the whole shard. That is not hypothetical: the 10k run
+# used 16 shards x 586 targets against FLUSH_EVERY=2000, so its one preempted
+# shard restarted from zero (recorded at the time as "resume is automatic" --
+# resume only skips what was actually FLUSHED). Override with --flush-every.
+FLUSH_EVERY = 200
 _PART_RE = re.compile(r"-part-(\d+)\.parquet$")
 
 
@@ -137,6 +142,9 @@ def main():
                          "each section separately; <end> remains the stop token.")
     ap.add_argument("--max-sections", type=int, default=8,
                     help="multi-draft: token budget is sized for this many sections")
+    ap.add_argument("--flush-every", type=int, default=FLUSH_EVERY,
+                    help="write a part file every N targets. Keep it well under "
+                         "targets-per-shard so a preemption costs at most N targets.")
     ap.add_argument("--save-texts", action="store_true",
                     help="also dump every rollout's text for the first target (debug)")
     a = ap.parse_args()
@@ -334,7 +342,7 @@ def main():
 
         # Flush a part file every FLUSH_EVERY targets; rewrite the aggregate
         # timings CSV alongside it for crash-safety.
-        if (n + 1) % FLUSH_EVERY == 0:
+        if (n + 1) % a.flush_every == 0:
             flush_part()
             write_timings()
 
