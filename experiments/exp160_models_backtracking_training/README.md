@@ -50,10 +50,45 @@ recovery rate:        0.688
 
 Note `recall = 1.000` is **by construction** — the corpus engine's correctness flush retracts every surviving false positive. A trained model has no flush, so its recall will be lower; **precision and enrichment are the meaningful comparisons.**
 
+### Evaluation harness
+
+Both questions are answered from **one** inference pass per arm — the rollouts
+that vote on contacts are the same rollouts whose edit lists carry the
+retractions, and re-sampling for the second question would measure a different
+set of rollouts than the first.
+
+| script | env | what it does |
+|---|---|---|
+| `export_trained_to_hf.py` | marin venv | levanter/orbax → fp32 HF, superset tokenizer co-located, `--step` asserted |
+| `prepare_eval_model.py` | marin venv | fp32 → bf16 + transformers-4.x config (jax/safetensors; no torch) |
+| `verify_eval_model.py` | exp159 venv | reads the export back under transformers **4.57** — the runtime the workers use |
+| `score_backtracking_worker.py` | TPU pod | the rollout worker; 12 unit tests pin its readout |
+| `dispatch_eval_tpu.py` | marin checkout | both arms over `v5p-8` in `us-east5-a`, interactive band |
+| `score_eval.py` | standalone `uv run --no-project` | exp89 metrics + retraction diagnostics |
+
+Two departures from exp82's worker, both load-bearing:
+
+- **Votes come from the #158 fold, not a `<contact>` regex.** A pair the rollout
+  later took back must not vote. For a model that never retracts the two agree
+  exactly, which is what keeps the control comparable.
+- **Each rollout's ordered edit list is kept.** Rollouts are sampled, so nothing
+  downstream can reconstruct *which* pairs were retracted and *when*.
+
+The **exp120 control is re-measured with this same worker**, not quoted from
+#82/#169: those ran `contact_mult=6` and a readout that predates `<retract>`, so
+quoting them would confound the training effect with the harness. Both arms run
+`contact_mult=8` — retraction lengthens documents, and a budget that truncates
+one arm and not the other is not a fair comparison.
+
+**Universe.** Truth is defined only where #89 defines it: both residues resolved
+and `|i-j| >= 6`. The primary diagnostic scores in-universe statements; the
+unrestricted variant is reported beside it, since the #159 corpus reference was
+computed with no restriction (its proteins are predicted structures, so every
+residue is resolved).
+
 ### Remaining
-1. **Training** — continue-train exp120 on the backtracking corpus, matched-budget vs a clean-corpus control, sweeping the clean:backtracking mixing ratio (100:0 control, 75:25, 50:50). Needs the scale corpus (#159's 1M run) — 370 docs is far too small to train a 1.5B. Train under the **superset tokenizer** (crops/ccoord vocab, which now carries `<retract>`) so the model is mixture-native.
-2. **Standard eval** — #89 benchmark, retract-aware parsing: did retraction training cost anything?
-3. **Decisive eval** — resample+vote baseline vs retraction rollouts vs the retract-probe, at matched **token** compute (retraction lengthens documents, so equal rollout *count* would hand the arm more compute).
+1. **Decisive eval** — resample+vote baseline vs retraction rollouts vs the retract-probe, at matched **token** compute (retraction lengthens documents, so equal rollout *count* would hand the arm more compute).
+2. **Mixing-ratio sweep** — 100:0 control and 75:25, against the 50:50 run here.
 
 ### Vocab / checkpoint compatibility (verified)
 
