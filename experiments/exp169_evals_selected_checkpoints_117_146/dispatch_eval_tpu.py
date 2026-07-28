@@ -103,12 +103,18 @@ exec uv run --no-sync python {WORKER_LOCAL} \\
 
 
 def submit(*, label: str, shard_i: int, num_shards: int, limit: int | None,
-           tpu: str, zone: str, dry_run: bool) -> str:
+           tpu: str, zone: str, priority: str, dry_run: bool) -> str:
     name = f"exp169-tpu-{label.replace('_', '-')}-s{shard_i}of{num_shards}"
     command = [
         IRIS, "--cluster=marin", "job", "run",
         "--job-name", name, "--no-wait", "--enable-extra-resources",
-        "--priority", "batch", "--zone", zone, "--tpu", tpu,
+        # `interactive` (the CLI default), not `batch`. The v5p pool is fully
+        # subscribed by other people's interactive jobs, so a batch-band job
+        # yields to them indefinitely — and this is exactly the bounded,
+        # minutes-long shape interactive is for, not bulk work that should wait.
+        # (The CoreWeave-GPU always-batch rule is about long training jobs on
+        # that cluster and does not carry over here.)
+        "--priority", priority, "--zone", zone, "--tpu", tpu,
         "--extra", "vllm", "--extra", "tpu",
         # A v5p-8 VM offers 100 GiB of ephemeral disk; asking for more is
         # rejected outright as unschedulable rather than queued. 64 GB holds the
@@ -134,6 +140,8 @@ def main() -> int:
     ap.add_argument("--shards", default=None, help="comma-separated subset, e.g. '0'")
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N targets per shard")
     ap.add_argument("--tpu", default="v5p-8")
+    ap.add_argument("--priority", default="interactive",
+                    choices=["production", "interactive", "batch"])
     ap.add_argument("--zone", default="us-central1-a")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
@@ -145,7 +153,7 @@ def main() -> int:
           f"limit={a.limit}\n           targets={TARGETS}\n           out={OUT}")
 
     submitted = [submit(label=label, shard_i=i, num_shards=a.num_shards, limit=a.limit,
-                        tpu=a.tpu, zone=a.zone, dry_run=a.dry_run)
+                        tpu=a.tpu, zone=a.zone, priority=a.priority, dry_run=a.dry_run)
                  for label in labels for i in which]
     print(f"[eval-tpu] submitted {len(submitted)} job(s)")
     for name in submitted:
