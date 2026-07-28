@@ -98,6 +98,7 @@ def build_train_lm_on_pod_config(
     tags: Sequence[str] = (),
     env_vars: dict[str, str] | None = None,
     mp: str = MARIN_PRECISION,
+    auto_build_caches: bool = False,
 ) -> TrainLmOnPodConfig:
     """Assemble a concrete ``TrainLmOnPodConfig`` for a MarinFold training run.
 
@@ -112,7 +113,9 @@ def build_train_lm_on_pod_config(
       latter inside ``run_levanter_train_lm``), and
     * takes ``data`` (a levanter ``LmDataConfig``) directly rather than via
       ``mixture(ctx, ...)``, and
-    * takes ``optimizer`` from the caller (no baked-in default).
+    * takes ``optimizer`` from the caller (no baked-in default), and
+    * exposes ``auto_build_caches``, which marin reads off the OUTER pod config
+      and uses to override the inner data config (see the call site below).
 
     The returned config is a plain dataclass: the caller submits it as its own
     ``fray.types.JobRequest`` (with a batch priority band for #108) rather than
@@ -162,6 +165,15 @@ def build_train_lm_on_pod_config(
         resources=resources,
         output_path=output_path,
         env_vars=env_vars,
+        # This OUTER flag is the one that counts. ``_prepare_training_run``
+        # calls ``_maybe_override_auto_build_caches(train_config,
+        # config.auto_build_caches)``, so whatever the caller set on the inner
+        # ``LmDataConfig`` is overwritten by this field — and its default is
+        # False. Setting ``LmDataConfig(auto_build_caches=True)`` alone gets
+        # you "Cache not found at ... and auto_build_caches is disabled" once
+        # the pod is up. Pass it here instead when there is no separate
+        # tokenize step and the run must build its cache on the workers.
+        auto_build_caches=auto_build_caches,
     )
 
 

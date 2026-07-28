@@ -174,6 +174,11 @@ def main() -> None:
         train_batch_size=args.train_batch_size,
         seq_len=SEQ_LEN,
         data_seed=args.data_seed,
+        # Must be set HERE, on the pod config — marin overrides the inner
+        # LmDataConfig's flag with this one, whose default is False. There is
+        # no separate tokenize step for this corpus, so the workers build the
+        # cache from the parquet URLs on first run.
+        auto_build_caches=True,
         # Warm start: weights only, fresh optimizer/LR/step-0.
         initialize_from_checkpoint_path=args.init,
         wandb_project="MarinFold",
