@@ -134,6 +134,13 @@ def main() -> int:
     ap.add_argument("--top-k", type=int, default=-1)
     ap.add_argument("--contact-mult", type=int, default=6)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--no-per-request-seed", dest="per_request_seed", action="store_false",
+                    help="Required on TPU: the JAX backend rejects SamplingParams.seed "
+                         "outright (`ValueError: JAX does not support per-request seed.`). "
+                         "The engine-level --seed still applies, and the 100 rollouts per "
+                         "protein are independent draws from the same distribution either "
+                         "way, so the estimator is unchanged — only bitwise replay of one "
+                         "specific run is lost.")
     ap.add_argument("--gpu-frac", type=float, default=0.90)
     ap.add_argument("--chunk", type=int, default=8)
     ap.add_argument("--max-num-seqs", type=int, default=512)
@@ -158,7 +165,7 @@ def main() -> int:
         todo = todo[: a.limit]
     print(f"[worker] shard {shard_i}/{num_shards}: {len(mine)} assigned, {len(skip)} already done, "
           f"{len(todo)} to do | n_rollouts={a.n_rollouts} top_k={a.top_k} top_p={a.top_p} "
-          f"T={a.temperature} label={a.label}", flush=True)
+          f"T={a.temperature} per_request_seed={a.per_request_seed} label={a.label}", flush=True)
     if not todo:
         print("[worker] nothing to do")
         return 0
@@ -188,7 +195,8 @@ def main() -> int:
             sps += [SamplingParams(temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
                                    max_tokens=max_new, stop_token_ids=[end_id],
                                    skip_special_tokens=False,
-                                   seed=a.seed * 1_000_003 + first + k)
+                                   **({"seed": a.seed * 1_000_003 + first + k}
+                                      if a.per_request_seed else {}))
                     for k in range(a.n_rollouts)]
         ts = time.time()
         outs = llm.generate(prompts, sps, use_tqdm=False)

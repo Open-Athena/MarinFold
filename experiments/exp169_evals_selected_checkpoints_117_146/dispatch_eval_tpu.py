@@ -24,7 +24,12 @@ TPU specifics, all in the bootstrap rather than the worker:
   fsspec + numpy on top) so nothing repins the fork's pinned stack;
 * weights must already be **bf16** on GCS. TPU parameters are bf16, and vLLM
   shards the checkpoint as it loads: handing it fp32 weights is a known failure
-  rather than a silent cast. ``prepare_hf_export.py`` + the staging jobs do this.
+  rather than a silent cast. ``prepare_hf_export.py`` + the staging jobs do this;
+* ``--no-per-request-seed``. The JAX backend rejects ``SamplingParams.seed``
+  outright (``ValueError: JAX does not support per-request seed.``). The
+  engine-level seed still applies and the 100 rollouts per protein are
+  independent draws either way, so the estimator is identical — only bitwise
+  replay of one particular run is given up.
 
 Submitted from the marin checkout, because that is the workspace ``--extra vllm
 --extra tpu`` refer to; the dispatcher sets the CWD itself::
@@ -104,7 +109,8 @@ exec uv run --no-sync python {WORKER_LOCAL} \\
     --n-rollouts {N_ROLLOUTS} \\
     --temperature {TEMPERATURE} \\
     --top-p {TOP_P} \\
-    --top-k {TOP_K}{limit_arg}
+    --top-k {TOP_K} \\
+    --no-per-request-seed{limit_arg}
 """.strip()
 
 
