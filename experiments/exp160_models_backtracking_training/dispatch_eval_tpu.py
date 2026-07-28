@@ -16,10 +16,23 @@ The control is re-measured here rather than quoted.
 
 Structured after exp169's ``dispatch_eval_tpu.py``, with the differences:
 
-* **zone ``us-east5-a``.** Both models and the targets live in
-  ``gs://marin-us-east5``, a US-EAST5 regional bucket, and the v5p pool spans
-  two regions — pinning the zone keeps every read slice-local. (``us-central1-a``,
-  the zone exp169 used, reported "no more capacity in the zone" on 2026-07-28.)
+* **zone ``us-central1-a``.** The training run went to ``us-east5-a`` because
+  that was where v5p-**32** slices were being provisioned; the v5p-**8** picture
+  is the opposite. Live autoscaler counts on 2026-07-28:
+
+  | scale group | ready | demand |
+  |---|---|---|
+  | ``tpu_v5p-preemptible_8-us-east5-a`` | 7 | 0 |
+  | ``tpu_v5p-preemptible_8-us-central1-a`` | 84 | 62 |
+
+  A v5p-8 submitted to ``us-east5-a`` sat pending for 13 minutes against those
+  7 fully-occupied slices while registering no autoscaler demand at all. Read
+  the per-*size* group, not the zone's reputation.
+
+  Eval assets are therefore mirrored into ``gs://marin-us-central1`` so reads
+  stay slice-local. That mirror is a **server-side bucket-to-bucket copy** —
+  2.7 GiB in 48 s, and it never touches the workstation uplink, which moves the
+  same bytes in ~16 minutes.
 * **``marinfold`` comes from this branch, pinned to a commit.** The
   ``<retract>`` fold (``read.py``, #158) is not on ``main``, so a worker
   installed from ``main`` would parse retractions with a contact-only regex and
@@ -53,7 +66,7 @@ SUBMIT_WORKSPACE = Path(os.environ.get("EVAL_TPU_WORKSPACE", str(MARIN)))
 
 PREFIX = os.environ.get(
     "EXP160_EVAL_PREFIX",
-    "gs://marin-us-east5/protein-structure/MarinFold/exp160_backtracking_training/eval")
+    "gs://marin-us-central1/protein-structure/MarinFold/exp160_backtracking_training/eval")
 TARGETS = os.environ.get("EXP160_EVAL_TARGETS", f"{PREFIX}/eval_targets.parquet")
 OUT = os.environ.get("EXP160_EVAL_OUT", f"{PREFIX}/scores")
 MODELS_PREFIX = f"{PREFIX}/models"
@@ -172,7 +185,7 @@ def main() -> int:
     ap.add_argument("--tpu", default="v5p-8")
     ap.add_argument("--priority", default="interactive",
                     choices=["production", "interactive", "batch"])
-    ap.add_argument("--zone", default="us-east5-a")
+    ap.add_argument("--zone", default="us-central1-a")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
