@@ -2,7 +2,7 @@
 name = "exp160-backtracking-training"
 version = "0.0.0"
 description = "Backtracking training + retraction diagnostics (issue #160)"
-requires-python = ">=3.12,<3.14"  # marin-fray supports 3.12-3.13
+requires-python = ">=3.12,<3.13"  # fasttext-wheel (via marin-core) ships no cp313 wheel; on 3.13 it source-builds and needs Python.h
 dependencies = [
     # GPU inference of the exp120 1.5B model. The host runs CUDA 12.2, so torch
     # is pinned to a +cu121 wheel (the pin exp89/exp20 settled on for this box)
