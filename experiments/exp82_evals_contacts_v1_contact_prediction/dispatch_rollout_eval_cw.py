@@ -62,6 +62,10 @@ MARINFOLD_GIT = os.environ.get(
 S3_PREFIX = os.environ.get("EVAL_CW_S3_PREFIX", "s3://marin-us-east-02a/MarinFold/exp167_eval")
 TARGETS_S3 = os.environ.get("EVAL_CW_TARGETS", f"{S3_PREFIX}/eval_targets.parquet")
 OUT_S3 = os.environ.get("EVAL_CW_OUT", f"{S3_PREFIX}/scores")
+# Job names are how a run is found in `iris job list` on a shared cluster, so a
+# re-use of this dispatcher from another experiment should name its jobs after
+# itself (exp169 does).
+JOB_PREFIX = os.environ.get("EVAL_CW_JOB_PREFIX", "exp167-rolleval")
 
 # The two checkpoints. exp75 is already on S3 from exp163; exp117 was uploaded by
 # this experiment (bf16, to halve the ~2.5 MB/s workstation uplink).
@@ -143,7 +147,7 @@ def build_request(*, label: str, model: str, shard_i: int, num_shards: int,
         "H100", count=1, image=VLLM_IMAGE, cpu=8, ram="64g", disk="128g",
     )
     return JobRequest(
-        name=f"exp167-rolleval-{label.replace('_', '-')}-s{shard_i}of{num_shards}{name_suffix}",
+        name=f"{JOB_PREFIX}-{label.replace('_', '-')}-s{shard_i}of{num_shards}{name_suffix}",
         entrypoint=Entrypoint.from_binary(
             "bash", ["-lc", build_bootstrap(label=label, model=model, shard_i=shard_i,
                                             num_shards=num_shards, limit=limit)]),
