@@ -45,6 +45,9 @@ from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
 
 gcs_root, s3_root, assets = sys.argv[1], sys.argv[2], sys.argv[3].split(",")
+# "src=dst" renames on the way across; bare "src" keeps its name. The run's own
+# export is named for its step, which is not the name the eval arm is keyed on.
+assets = [tuple(a.split("=", 1)) if "=" in a else (a, a) for a in assets]
 fs = gcsfs.GCSFileSystem()
 bucket, prefix = s3_root[len("s3://"):].split("/", 1)
 s3 = boto3.client("s3", endpoint_url="https://cwobject.com",
@@ -54,7 +57,7 @@ s3 = boto3.client("s3", endpoint_url="https://cwobject.com",
 transfer = TransferConfig(multipart_threshold=64 * 1024**2,
                           multipart_chunksize=64 * 1024**2, max_concurrency=8)
 
-for asset in assets:
+for asset, dst_name in assets:
     src = f"{gcs_root.rstrip('/')}/{asset}"
     keys = [k for k in fs.find(src[len("gs://"):]) if not k.endswith("/")]
     if not keys:
@@ -66,7 +69,8 @@ for asset in assets:
         local.parent.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         fs.get(k, str(local))
-        key = f"{prefix.rstrip('/')}/{asset}/{rel}" if rel else f"{prefix.rstrip('/')}/{asset}"
+        key = (f"{prefix.rstrip('/')}/{dst_name}/{rel}" if rel
+               else f"{prefix.rstrip('/')}/{dst_name}")
         s3.upload_file(str(local), bucket, key, Config=transfer)
         mb = local.stat().st_size / 1e6
         print(f"[stage]   {key}  {mb:.1f} MB in {time.time() - t0:.0f}s", flush=True)
@@ -78,7 +82,7 @@ print("[stage] DONE", flush=True)
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--assets", required=True,
-                    help="comma-separated paths relative to the eval prefix")
+                    help="comma-separated paths relative to --gcs; 'src=dst' renames")
     ap.add_argument("--gcs", default=GCS)
     ap.add_argument("--s3", default=S3)
     ap.add_argument("--job-name", default="exp160-stage-to-cw")

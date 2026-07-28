@@ -66,7 +66,7 @@ OUT_S3 = os.environ.get("EVAL_CW_OUT", f"{S3_PREFIX}/scores")
 JOB_PREFIX = os.environ.get("EVAL_CW_JOB_PREFIX", "exp160-eval-cw")
 
 ARMS = {
-    "exp160-bt50": f"{S3_PREFIX}/models/exp160-bt50-step2059",
+    "exp160-bt50": f"{S3_PREFIX}/models/exp160-bt50-step2058",
     "exp120-base": f"{S3_PREFIX}/models/exp120-base",
 }
 
