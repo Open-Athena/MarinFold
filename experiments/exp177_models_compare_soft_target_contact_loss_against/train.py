@@ -34,9 +34,7 @@ import levanter.tracker
 from marin.execution.lazy import ArtifactStep, StepContext, lower
 from marin.execution.remote import remote
 from marin.execution.step_runner import StepRunner
-from marin.experiment.data import tokenized
 from marin.experiment.namespacing import user_namespaced_name
-from marin.processing.tokenize.tokenize import TokenizedCache
 from marin.training.training import (
     LevanterCheckpoint,
     TrainLmOnPodConfig,
@@ -69,7 +67,17 @@ CONTACTS_PREFIX = os.environ.get(
     "EXP177_CONTACTS_PREFIX",
     f"{ROOT}/exp147_on_the_fly_contacts_v1_pilot/pilot_data/contacts",
 ).rstrip("/")
-CONTACTS_V1_VAL_GLOB = f"{ROOT}/exp53_contacts_v1_5x/documents/val/*.parquet"
+# Reuse the existing exp117-compatible tokenized contacts-v1 caches for the
+# stock CE arm. These live at the historical Marin root prefix because exp117
+# was run from marin before MarinFold tightened its artifact-prefix policy.
+CONTACTS_V1_TRAIN_CACHE = os.environ.get(
+    "EXP177_TRAIN_CACHE",
+    f"{BUCKET}/tokenized/contacts-v1/2026.07.13.1",
+).rstrip("/")
+CONTACTS_V1_VAL_CACHE = os.environ.get(
+    "EXP177_VAL_CACHE",
+    f"{BUCKET}/tokenized/contacts-v1-val/2026.07.13.1",
+).rstrip("/")
 
 CONTACTS_TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
 CONTACTS_TOKENIZER_REVISION = "5d68a24a899f"
@@ -85,8 +93,6 @@ TOKENIZER_ALLOW_PATTERNS = (
     "*.tiktoken",
 )
 ARTIFACT_VERSION = os.environ.get("EXP177_VERSION", "2026.07.20.1")
-VALIDATION_VERSION = os.environ.get("EXP177_VALIDATION_VERSION", "2026.07.23")
-
 MODEL_CONFIG = Qwen3Config(
     max_seq_len=8192,
     hidden_dim=2048,
@@ -123,20 +129,12 @@ def _loss_kind() -> LossKind:
     return LossKind(os.environ.get("EXP177_LOSS", LossKind.NEXT_TOKEN.value))
 
 
-def _validation_step() -> ArtifactStep[TokenizedCache]:
-    return tokenized(
-        name="tokenized/contacts-v1-val",
-        paths=[CONTACTS_V1_VAL_GLOB],
-        tokenizer=CONTACTS_TOKENIZER_REPO,
-        version=VALIDATION_VERSION,
-        validation=True,
-        text_key="document",
-        resources=ResourceConfig.with_cpu(cpu=4, ram="16g", disk="10g", zone=TPU_ZONE),
-    )
+def _train_cache_component() -> DatasetComponent:
+    return DatasetComponent(cache_dir=CONTACTS_V1_TRAIN_CACHE, pack=True)
 
 
-def _validation_component(cache: TokenizedCache) -> DatasetComponent:
-    return dataclasses.replace(cache.as_component(), pack=True)
+def _validation_component() -> DatasetComponent:
+    return DatasetComponent(cache_dir=CONTACTS_V1_VAL_CACHE, pack=True)
 
 
 def _with_local_tokenizer(pod_config: TrainLmOnPodConfig, tokenizer_path: str) -> TrainLmOnPodConfig:
@@ -244,7 +242,6 @@ def _run_name(loss_kind: LossKind, steps: int, train_batch_size: int) -> str:
 
 def _identity_config(
     ctx: StepContext,
-    validation: ArtifactStep[TokenizedCache],
     *,
     loss_kind: LossKind,
     name: str,
@@ -268,7 +265,8 @@ def _identity_config(
             "examples_per_shard": examples_per_shard,
             "seed": 0,
             "max_seq_len": SEQ_LEN,
-            "validation": ctx.artifact_path(validation),
+            "train_cache": CONTACTS_V1_TRAIN_CACHE,
+            "validation_cache": CONTACTS_V1_VAL_CACHE,
             "tokenizer": CONTACTS_TOKENIZER,
             "shuffle": False,
             "mixture_block_size": 1,
@@ -290,7 +288,6 @@ def _identity_config(
 
 def build_step() -> ArtifactStep[LevanterCheckpoint]:
     """Build one exp177 arm from environment variables."""
-    validation = _validation_step()
     loss_kind = _loss_kind()
     steps = int(os.environ.get("EXP177_STEPS", str(EXP117_STEPS)))
     steps_per_eval = int(os.environ.get("EXP177_STEPS_PER_EVAL", str(max(1, EXP117_STEPS // 32))))
@@ -305,7 +302,6 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
     def build_config(ctx: StepContext) -> TrainLmOnPodConfig | dict[str, object]:
         identity = _identity_config(
             ctx,
-            validation,
             loss_kind=loss_kind,
             name=name,
             steps=steps,
@@ -319,20 +315,23 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         if ctx.is_fingerprint:
             return identity
 
-        dataset_cls = FixedQuotaSoftTargetContactsDataset if loss_kind == LossKind.SOFT_TARGET else FixedQuotaPremadeContactsDataset
-        train_dataset = dataset_cls(
-            data_prefix=CONTACTS_PREFIX,
-            num_shards=num_shards,
-            examples_per_shard=examples_per_shard,
-            seed=0,
-            max_seq_len=SEQ_LEN,
-        )
         train_key = f"contacts-v1/{loss_kind.value}"
         val_key = "tokenized/contacts-v1-val"
+        if loss_kind == LossKind.SOFT_TARGET:
+            train_dataset = FixedQuotaSoftTargetContactsDataset(
+                data_prefix=CONTACTS_PREFIX,
+                num_shards=num_shards,
+                examples_per_shard=examples_per_shard,
+                seed=0,
+                max_seq_len=SEQ_LEN,
+            )
+            train_component = DirectDatasetComponent(datasets={"train": train_dataset})
+        else:
+            train_component = _train_cache_component()
         data = LmDataConfig(
             components={
-                train_key: DirectDatasetComponent(datasets={"train": train_dataset}),
-                val_key: _validation_component(ctx.resolved(validation)),
+                train_key: train_component,
+                val_key: _validation_component(),
             },
             train_weights={train_key: 1.0, val_key: 0.0},
             tokenizer=CONTACTS_TOKENIZER,
@@ -408,7 +407,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         artifact_type=LevanterCheckpoint,
         run=_train_job,
         build_config=build_config,
-        deps=(validation,),
+        deps=(),
         runtime_args={"train_resources": RESOURCES},
     )
 
