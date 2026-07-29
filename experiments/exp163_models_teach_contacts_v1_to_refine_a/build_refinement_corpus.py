@@ -40,8 +40,13 @@ from marinfold.document_structures.contacts_v1.vocab import (
 
 CTX = 8192
 MIN_SEP = 6
-DEFAULT_MARKER = "<contacts-and-distances-v1>"  # repurposed spare; zero vocab change
-VOCAB = set(all_domain_tokens())
+DEFAULT_MARKER = "<contacts-and-distances-v1>"  # v1 <CAND>; repurposed spare
+# v2 doc-type sentinel: id 7 renamed in place (see make_multi_tokenizer.py), so a
+# multi-draft document announces its mode in position 0 instead of masquerading as
+# a plain contacts-v1 document. Same id, same embedding row -- only the spelling.
+MULTI_DOC_TOKEN = "<contacts-v1.multi>"
+PLAIN_DOC_TOKEN = "<contacts-v1>"
+VOCAB = set(all_domain_tokens()) | {MULTI_DOC_TOKEN}
 
 def canon(flat) -> list[tuple[int, int]]:
     a = np.asarray(flat).reshape(-1, 2)
@@ -146,6 +151,13 @@ def build_doc_multidraft(entry_id, seq, gt_pairs, rollouts, scores, Kmax, N_cap,
             drafts += sec
             remaining -= len(sec)
             kept.append(float(scores[ri]) if scores is not None else float("nan"))
+    # Announce refine mode in position 0. WITHOUT this, a multi-draft document is
+    # prefix-identical to a plain contacts-v1 one, so the SAME prefix is supervised
+    # toward true contacts in only the K=0 draws (~6% of documents) and toward a
+    # ~13%-precision draft in the rest -- a direct train-time conflict on the base
+    # task's own prefix, and the leading suspect for the K0 collapse.
+    assert head[0] == PLAIN_DOC_TOKEN, f"expected {PLAIN_DOC_TOKEN} at position 0, got {head[0]}"
+    head = [MULTI_DOC_TOKEN] + head[1:]
     toks = head + drafts + [BEGIN] + gt_toks + ["<end>"]
     meta = dict(entry_id=entry_id, L=L, K=len(kept), n_gt=len(gt), n_tokens=len(toks),
                 draft_f1_first=kept[0] if kept else float("nan"),
@@ -200,6 +212,16 @@ def main():
                     help="candidate = v1 (<CAND> blocks, loss on the answer only); "
                          "multi-draft = v2 (every section is <begin_statements>..<end>, "
                          "drafts ordered worst->best, weights set at tokenize time)")
+    ap.add_argument("--mix-plain", type=float, default=0.0, metavar="FRAC",
+                    help="multi-draft only: fraction of the FINAL corpus that is plain "
+                         "contacts-v1 documents, read from --plain-corpus. These carry no "
+                         "drafts and open with <contacts-v1>, so with the mode token they "
+                         "no longer collide with refine mode -- they train the base task "
+                         "at full weight, which is the mechanistic anti-forgetting lever "
+                         "(the header-weight lever was falsified in the 100k sweep).")
+    ap.add_argument("--plain-corpus", default=None,
+                    help="parquet glob of real contacts-v1 documents (a `document` column) "
+                         "-- exactly what E8 trained on")
     ap.add_argument("--draft-order", choices=["random", "ascending-f1"], default="random",
                     help="multi-draft only. RANDOM is the default and matches Phase 0's "
                          "conclusion (train on unordered candidate sets). 'ascending-f1' "
@@ -252,9 +274,51 @@ def main():
                 if meta["n_tokens"] > CTX:
                     over += 1
             if out:
-                out.write(json.dumps({"entry_id": eid, "text": doc}) + "\n")
+                out.write(json.dumps({"entry_id": eid, "text": doc,
+                                      "doc_type": "multi" if a.format == "multi-draft"
+                                                  else "candidate"}) + "\n")
         if a.n_docs and made >= a.n_docs:
             break
+
+    # ---- mix in real plain contacts-v1 documents -------------------------------
+    # These open with <contacts-v1> and contain no drafts. With the mode token they
+    # no longer share a prefix with refine mode, so they can train the base task at
+    # full weight without the two objectives fighting over the same prefix. This is
+    # the mechanistic anti-forgetting lever; the header-weight lever was falsified
+    # in the 100k sweep (four arms within 0.002 on K0).
+    n_plain = 0
+    if a.format == "multi-draft" and a.mix_plain > 0:
+        if not a.plain_corpus:
+            raise SystemExit("--mix-plain needs --plain-corpus")
+        if not 0 < a.mix_plain < 1:
+            raise SystemExit(f"--mix-plain must be in (0, 1), got {a.mix_plain}")
+        # frac of the FINAL corpus -> n_plain / (made + n_plain) = frac
+        want = int(round(made * a.mix_plain / (1.0 - a.mix_plain)))
+        print(f"\nmixing in plain contacts-v1 docs: target {want} "
+              f"({a.mix_plain:.0%} of the final corpus) from {a.plain_corpus}", flush=True)
+        import glob as _g
+        import pyarrow.parquet as _pq
+        shards = sorted(_g.glob(a.plain_corpus))
+        if not shards:
+            raise SystemExit(f"no shards matched {a.plain_corpus}")
+        for sh in shards:
+            if n_plain >= want:
+                break
+            docs = _pq.read_table(sh, columns=["document"]).column("document").to_pylist()
+            for d in docs:
+                if n_plain >= want:
+                    break
+                toks = d.split()
+                if len(toks) > CTX or toks[0] != PLAIN_DOC_TOKEN:
+                    continue
+                n_plain += 1
+                if out:
+                    out.write(json.dumps({"entry_id": f"plain-{n_plain}", "text": d,
+                                          "doc_type": "plain"}) + "\n")
+            print(f"  {sh.split('/')[-1]}: plain={n_plain}/{want}", flush=True)
+        print(f"  mixed {n_plain} plain docs -> final corpus {made + n_plain} "
+              f"({n_plain/(made+n_plain):.1%} plain)", flush=True)
+
     if out:
         out.close()
     m = pd.DataFrame(metas)

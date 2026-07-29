@@ -81,22 +81,34 @@ def _strip_protocol(url: str) -> str:
     return url.split("://", 1)[1] if "://" in url else url
 
 
-def read_documents(in_url: str, text_key: str) -> list[str]:
-    """Read the ``text_key`` column from every parquet shard matched by ``in_url``."""
+def read_documents(in_url: str, text_key: str) -> tuple[list[str], list[str]]:
+    """``(texts, doc_types)`` from every parquet shard matched by ``in_url``.
+
+    ``doc_type`` marks how a document should be weighted: ``"plain"`` documents are
+    real contacts-v1 documents mixed in to preserve the base task and are weighted
+    UNIFORMLY at 1.0 (E8's original objective), while ``"multi"`` documents get the
+    three-way header/draft/final profile. Corpora without the column are treated as
+    all-``multi`` so older corpora still tokenize.
+    """
     fs = _fs_for(in_url)
     paths = sorted(fs.glob(_strip_protocol(in_url)))
     if not paths:
         raise SystemExit(f"no parquet shards matched {in_url}")
     docs: list[str] = []
+    kinds: list[str] = []
     for path in paths:
         with fs.open(path, "rb") as handle:
-            table = pq.read_table(handle, columns=[text_key])
+            table = pq.read_table(handle)
         docs.extend(table.column(text_key).to_pylist())
+        if "doc_type" in table.schema.names:
+            kinds.extend(table.column("doc_type").to_pylist())
+        else:
+            kinds.extend(["multi"] * table.num_rows)
         print(f"  read {path} ({table.num_rows} docs)", flush=True)
-    return docs
+    return docs, kinds
 
 
-def encode_documents(docs: list[str], tokenizer, seq_len: int, *, fmt: str = "candidate",
+def encode_documents(docs: list[str], tokenizer, seq_len: int, *, kinds=None, fmt: str = "candidate",
                      w_header: float = 0.0, w_draft: float = 0.0,
                      w_final: float = 1.0) -> list[tuple[np.ndarray, np.ndarray]]:
     """Tokenize each document and compute its per-token loss weights.
@@ -118,6 +130,8 @@ def encode_documents(docs: list[str], tokenizer, seq_len: int, *, fmt: str = "ca
 
     encoded: list[tuple[np.ndarray, np.ndarray]] = []
     n_too_long = 0
+    n_plain = 0
+    kinds = kinds if kinds is not None else ["multi"] * len(docs)
     for i, text in enumerate(docs):
         ids = np.asarray(tokenizer.encode(text, add_special_tokens=False), dtype=np.int32)
         if fmt == "candidate":
@@ -134,7 +148,13 @@ def encode_documents(docs: list[str], tokenizer, seq_len: int, *, fmt: str = "ca
             # <end>; +1 for eos can only bite at the exact boundary.
             n_too_long += 1
             continue
-        if fmt == "candidate":
+        if kinds[i] == "plain":
+            # A real contacts-v1 document: no drafts, and the base task is exactly
+            # what we are trying NOT to forget, so reproduce E8's unmasked objective
+            # (every position weight 1.0) rather than masking to the answer span.
+            weights = np.ones(len(ids), dtype=np.float32)
+            n_plain += 1
+        elif fmt == "candidate":
             weights = answer_span_loss_weights(ids, begin_id=begin_id, end_id=end_id)
         else:
             weights = span_weights(ids, w_header=w_header, w_draft=w_draft,
@@ -142,6 +162,8 @@ def encode_documents(docs: list[str], tokenizer, seq_len: int, *, fmt: str = "ca
         encoded.append((ids, weights))
         if (i + 1) % 5000 == 0:
             print(f"  tokenized {i + 1}/{len(docs)}", flush=True)
+    if n_plain:
+        print(f"  {n_plain} plain contacts-v1 doc(s) weighted uniformly at 1.0", flush=True)
     if n_too_long:
         print(f"  WARNING: dropped {n_too_long} document(s) longer than seq_len={seq_len}", flush=True)
     return encoded
@@ -246,12 +268,12 @@ def main() -> None:
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
 
     print(f"[exp163] reading {a.in_url}", flush=True)
-    docs = read_documents(a.in_url, a.text_key)
+    docs, kinds = read_documents(a.in_url, a.text_key)
     if a.limit:
-        docs = docs[: a.limit]
+        docs, kinds = docs[: a.limit], kinds[: a.limit]
     print(f"[exp163] {len(docs)} documents; tokenizing with {a.tokenizer}", flush=True)
 
-    encoded = encode_documents(docs, tokenizer, a.seq_len, fmt=a.format,
+    encoded = encode_documents(docs, tokenizer, a.seq_len, kinds=kinds, fmt=a.format,
                                w_header=a.w_header, w_draft=a.w_draft, w_final=a.w_final)
     doc_tokens = sum(len(ids) for ids, _ in encoded)
     answer_tokens = sum(float(w.sum()) for _, w in encoded)     # weighted, not a count
