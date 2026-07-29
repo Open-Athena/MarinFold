@@ -296,6 +296,52 @@ structures. So the −0.02 confounds "backtracking hurts" with "this fine-tune's
 domain shift hurts", and the 100:0 clean-only arm is exactly the run that
 separates them. Treat the regression as an upper bound on backtracking's cost.
 
+### 3. Is the retraction mechanism itself worth obeying? — yes, and it partly offsets the cost
+
+The −0.020 above is a *net* of two effects pulling opposite ways. Scoring the
+**same 55,400 rollouts** under both readouts separates them (`ablate_retraction.py`,
+`plots/ablation_retraction.png`): "retraction off" counts every emitted contact
+regardless of a later `<retract>`, which is exactly what exp82's pre-#158 regex
+readout would have measured.
+
+| | R all | R long | AUC all |
+|---|---|---|---|
+| before fine-tune (`exp120-base`) | **0.4357** | **0.3787** | 0.9057 |
+| after fine-tune, retraction **disabled** | 0.4106 | 0.3524 | 0.8975 |
+| after fine-tune, retraction **enabled** | 0.4158 | 0.3562 | 0.8975 |
+
+Paired, on − off, same rollouts:
+
+| metric | Δ | 95% CI | ties |
+|---|---|---|---|
+| R-precision (all) | **+0.0052** | [+0.0037, +0.0068] | 38% |
+| R-precision (long) | **+0.0037** | [+0.0019, +0.0056] | 53% |
+| P@L (all) | +0.0051 | [+0.0040, +0.0063] | 40% |
+| AUC (all) | +0.0000 | [−0.0005, +0.0005] | — |
+| AUC (long) | −0.0013 | [−0.0021, −0.0005] | — |
+
+So the decomposition of the headline number is:
+
+```
+0.4357  base model
+0.4106  after fine-tune, retraction ignored   (-0.0251  the fine-tune's own cost)
+0.4158  after fine-tune, retraction honoured  (+0.0052  what obeying retraction buys)
+-0.0199 net                                   (retraction recovers 21% of the loss)
+```
+
+**Obeying the model's retractions is a strictly better readout than ignoring
+them** — the CI excludes zero on every top-K cut. It is just not large enough to
+pay for what the fine-tune did to the underlying emissions. Note also that the
+gain is entirely in **top-K precision, not ranking**: AUC is flat (+0.0000 all,
+−0.0013 long). Retraction sharpens the head of the ranking by removing pairs the
+model disowned; it adds no information to the tail, where a once-emitted,
+once-retracted pair drops from one vote to zero and joins the tie mass.
+
+Two checks are asserted rather than assumed: the rebuilt "honoured" matrices
+reproduce the committed vote matrices bit-for-bit, and for `exp120-base` the two
+readouts are identical on **0/554** proteins differing — as they must be for a
+model that never emits `<retract>`.
+
 ### Harness validation
 
 The control's numbers land where the loss ordering says they should, which is
@@ -308,8 +354,8 @@ README reports.
 
 ## Conclusion
 
-**Backtracking installs a real but weak self-correction signal, and on this
-evidence it is not free.**
+**Backtracking installs a real but weak self-correction signal. The mechanism
+itself is a net positive at inference; the fine-tune that installs it is not.**
 
 Training on #159's traces gives a model that uses `<retract>` on its own
 initiative (24 per rollout), takes back contacts that really are wrong 90% of
@@ -318,10 +364,15 @@ the time, and — the part that most easily could have failed — retracts at
 statement. The pass/fail criterion of this experiment is met: retraction is
 discriminative, with a CI that excludes noise.
 
-But it captures only half the achievable discrimination, it catches only 14% of
-its own false positives, and folded contact prediction gets **worse** by ~0.02
-R-precision at 1.24x the token cost. A mechanism that identifies 14% of your
-mistakes at 90% precision is not yet worth what it costs to run.
+And obeying those retractions is measurably the better readout: +0.0052
+R-precision against ignoring them, CI excluding zero. But that only recovers 21%
+of what the fine-tune itself cost (−0.0251), so the model still lands ~0.02 below
+the base model at 1.24x the token cost. It also captures only half the achievable
+discrimination and catches only 14% of its own false positives.
+
+The useful way to state the result: **the retraction mechanism works and pays for
+itself; the training run that installs it does not pay for itself.** Those are
+separable problems, and the second is the one to attack.
 
 The two things that would change the picture are both cheap and both listed
 above as remaining work: the **100:0 clean-only control**, which decides how much
