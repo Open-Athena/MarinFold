@@ -1,0 +1,11 @@
+# Ground-truth bundle, generated prediction trees, per-record score CSVs.
+# 69 MB of third-party-derived structures — published to the HF bucket by
+# publish_gt_bundle.py, which is the source of truth. Rebuildable with
+# prepare_gt_structures.py + run_baselines.py.
+_scratch/
+
+# US-align source + compiled binary. Rebuild with `bash setup_usalign.sh`;
+# the version string it prints is recorded in every scores CSV.
+_bin/
+
+.venv/

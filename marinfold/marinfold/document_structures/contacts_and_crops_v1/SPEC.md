@@ -259,3 +259,14 @@ Kept current as implementation and spec evolve (per repo convention).
 - **Pass-1 fills its whole cap** even for small proteins (repeated coarse
   boxes of the same atoms), matching ccoord's "extra independent noisy
   mentions are useful signal, not wasted tokens" rationale.
+- **Blank author chain ids.** The residue list comes from pyconfind and the
+  per-atom coordinates from a gemmi polymer walk; the two are joined on
+  `(chain, author-resnum)`. The libraries spell a *blank* author chain id
+  differently — gemmi `""`, pyconfind `"_"` — so a structure with no chain id
+  (CASP target files and other hand-built PDBs; never AFDB, which is always
+  chain `A`) joined nothing and produced a document with an **empty**
+  coordinate section. `parse._chain_key` now normalizes both spellings to
+  `"_"`, and `analyze_coordinates` raises if a non-empty residue list joins to
+  zero atoms rather than emitting a coordinate-free document. Same fix applied
+  to ccoord's identical parse layer. Found while building the #174 structural
+  eval's ground-truth bundle (19 of 554 eval proteins hit it).

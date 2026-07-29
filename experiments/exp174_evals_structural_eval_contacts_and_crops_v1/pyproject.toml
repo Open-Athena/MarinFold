@@ -1,0 +1,41 @@
+[project]
+name = "exp174-evals-structural-eval-contacts-and-crops-v1"
+version = "0.1.0"
+description = "3D coordinate-based structural eval (CA-RMSD / all-atom RMSD / LDDT / LDDT-CA / TM-score) for contacts-and-crops-v1 models — issue #174."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Structure IO + chain extraction (shared with exp74/exp78/exp89).
+    "gemmi>=0.6",
+    # Kabsch superposition + RMSD + the reference lDDT implementation.
+    "biotite>=1.2",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    # GT residues + per-atom coordinates in the document format's own terms
+    # (canonical resnames, the 37-name heavy-atom vocab). The contacts-v1
+    # extra pulls pyconfind, which analyze_coordinates runs for contacts.
+    "marinfold[contacts-v1]",
+    # Publishing GT + prediction bundles to the open-athena HF bucket.
+    "huggingface-hub>=0.24",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+# Editable: this experiment reads the document-structure parse layer directly
+# and fixed a bug in it (the blank-author-chain join in
+# ``contacts_and_crops_v1/parse.py``). A non-editable path dep installs a
+# snapshot copy, so a library edit silently does not reach the experiment.
+marinfold = { path = "../../marinfold", editable = true }
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
