@@ -208,6 +208,12 @@ def main() -> int:
     ap.add_argument("--chunk", type=int, default=8)
     ap.add_argument("--max-num-seqs", type=int, default=512)
     ap.add_argument("--limit", type=int, default=None)
+    # #175: prompt under the retraction-mode doc type
+    # (`<contacts-v1.backtracking>`) instead of `<contacts-v1>`. Off by
+    # default, so every #160 number stays reproducible byte-for-byte; a model
+    # whose vocab predates the token cannot be run with it on.
+    ap.add_argument("--backtracking-mode", action="store_true",
+                    help="prompt with <contacts-v1.backtracking> (#175)")
     a = ap.parse_args()
 
     shard_i, num_shards = (int(x) for x in a.shard.split("/"))
@@ -245,6 +251,23 @@ def main() -> int:
     print(f"[worker] tokenizer vocab={len(tok)} <end>={end_id} "
           f"<retract>={retract_id if has_retract else 'absent'}", flush=True)
 
+    gen_config = GenerationConfig(backtracking=a.backtracking_mode)
+    if a.backtracking_mode:
+        # Fail loudly rather than emit a prompt whose first token maps to UNK:
+        # a pre-#175 tokenizer has no such token, and the run would look like a
+        # model that simply ignores the mode.
+        from marinfold.document_structures.contacts_v1.vocab import (
+            BACKTRACKING_DOC_TYPE_TOKEN,
+        )
+
+        mode_id = tok.convert_tokens_to_ids(BACKTRACKING_DOC_TYPE_TOKEN)
+        assert mode_id is not None and mode_id >= 0 and mode_id != tok.unk_token_id, (
+            f"--backtracking-mode needs {BACKTRACKING_DOC_TYPE_TOKEN} in the "
+            f"tokenizer; this one resolves it to {mode_id} (unk={tok.unk_token_id})"
+        )
+        print(f"[worker] prompting in retraction mode "
+              f"({BACKTRACKING_DOC_TYPE_TOKEN}={mode_id})", flush=True)
+
     llm = LLM(model=str(model_dir), dtype="bfloat16", max_model_len=8192,
               gpu_memory_utilization=a.gpu_frac, enable_prefix_caching=False,
               generation_config="vllm", max_num_seqs=a.max_num_seqs, seed=a.seed)
@@ -258,7 +281,7 @@ def main() -> int:
             residues = residues_from_sequence(r["input_seq"])
             first, maps = len(prompts), []
             for k in range(a.n_rollouts):
-                doc = build_document(f"{r['stem']}:r{k}", residues, [], config=GenerationConfig())
+                doc = build_document(f"{r['stem']}:r{k}", residues, [], config=gen_config)
                 prompts.append(doc.document[: doc.document.index(BEGIN) + len(BEGIN)])
                 maps.append({(doc.n_term_index + t) % NUM_POS: t for t in range(doc.seq_len)})
             plen = len(tok(prompts[first], add_special_tokens=False).input_ids)
