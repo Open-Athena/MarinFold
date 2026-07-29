@@ -146,6 +146,10 @@ def build_one(stem: str, input_seq: str, gt_cif: Path, gt_chain: str | None):
     row = dict(
         stem=stem,
         gt_chain=chain,
+        # The sequence the model is conditioned on. Carried in the index so the
+        # bundle is self-contained: inference needs it, and the ground-truth
+        # structure alone cannot supply the unresolved residues.
+        input_seq=input_seq,
         L=len(input_seq),
         n_resolved=len(analyzed.residues),
         n_mapped=len(mapped_positions),
