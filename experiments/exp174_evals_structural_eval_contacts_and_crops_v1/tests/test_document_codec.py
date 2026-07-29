@@ -227,3 +227,40 @@ def test_sequence_prefix_is_the_documents_own_sequence_section():
     tokens = full.document.split()
     assert tokens[: len(prefix)] == prefix
     assert start_index("prefix-test", _SEQUENCE) == full.start_index
+
+
+def test_place_in_cube_moves_a_negative_frame_into_range():
+    """Ground-truth frames have negative coordinates; the cube is [0, 1000).
+
+    Teacher-forcing true coordinates without placing them first clamps every
+    negative value to 0, which turns "here are the correct boxes" into "every
+    atom is at the origin". This is the guard on that.
+    """
+    from document_codec import place_in_cube
+
+    estimate = CoordinateEstimate()
+    truth = {}
+    for k in range(30):
+        position = np.array([-52.0 + k, 38.7 - 0.5 * k, -84.7 + 2.0 * k])
+        truth[(k, "CA")] = position
+        estimate.add(
+            Observation(k, "CA", position, variance=1.0, source="crop", visit_index=0)
+        )
+    assert estimate.position((0, "CA")).min() < 0
+
+    placed = place_in_cube(estimate, random.Random(0))
+    positions = np.stack([placed.position(key) for key in sorted(placed.keys())])
+    assert positions.min() >= 10.0 - 1e-9      # the cube margin
+    assert positions.max() <= 990.0 + 1e-9
+
+    # A pure translation: every pairwise distance is unchanged, which is what
+    # makes it free data augmentation rather than a distortion.
+    original = np.stack([truth[key] for key in sorted(placed.keys())])
+    assert np.allclose(
+        np.linalg.norm(positions[:, None] - positions[None], axis=-1),
+        np.linalg.norm(original[:, None] - original[None], axis=-1),
+        atol=1e-6,
+    )
+    # And every cell index is now expressible by the <xyz-DDD> vocabulary.
+    for cell in placed.occupied_cells():
+        assert all(0 <= c < 100 for c in cell)

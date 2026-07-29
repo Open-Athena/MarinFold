@@ -435,6 +435,64 @@ def synthesize_pass1(
     return tokens
 
 
+def place_in_cube(
+    estimate: "CoordinateEstimate",
+    rng: random.Random,
+    *,
+    cube_size: float = GenerationConfig().cube_size,
+    margin: float = GenerationConfig().cube_margin,
+) -> "CoordinateEstimate":
+    """Translate an estimate into the format's coordinate cube.
+
+    Ground-truth structures live in whatever frame their depositor used, which
+    routinely has negative coordinates; the format's ``<xyz-DDD>`` vocabulary
+    covers ``[0, 999.9]`` only. Anything that teacher-forces *true* coordinates
+    into a prompt (E2's Pass-1 section, the E3 probe's crops) therefore has to
+    place them the way the generator does first — otherwise every negative
+    coordinate clamps to 0 and the "correct boxes" handed to the model are a
+    heap at the origin.
+
+    This applies the translation half of the format's frame (SPEC → Coordinate
+    frame): put the bounding box at a uniformly random position inside
+    ``[margin, cube_size - margin)`` per axis. The rotation half is omitted on
+    purpose — it is uniform over SO(3), so the structure's own orientation is
+    already in-distribution, and skipping it keeps the placement reproducible
+    from the estimate alone.
+
+    Raises:
+        ValueError: the structure is too large for the cube (never true of a
+            real single chain).
+    """
+    keys = sorted(estimate.keys())
+    if not keys:
+        return estimate
+    positions = np.stack([estimate.position(key) for key in keys])
+    lo = positions.min(axis=0)
+    span = positions.max(axis=0) - lo
+    limit = cube_size - 2.0 * margin
+    if float(span.max()) > limit:
+        raise ValueError(f"structure spans {span.max():.1f} Å, larger than the cube")
+
+    offset = np.empty(3)
+    for axis in range(3):
+        slack = limit - float(span[axis])
+        offset[axis] = margin + rng.uniform(0.0, slack) - float(lo[axis])
+
+    placed = CoordinateEstimate()
+    for key, position in zip(keys, positions):
+        placed.add(
+            Observation(
+                seq_index=key[0],
+                atom_name=key[1],
+                position=position + offset,
+                variance=1.0,
+                source="crop",
+                visit_index=0,
+            )
+        )
+    return placed
+
+
 def crop_header(cell: Sequence[int]) -> list[str]:
     """The three tokens that open a crop on ``cell``."""
     return [

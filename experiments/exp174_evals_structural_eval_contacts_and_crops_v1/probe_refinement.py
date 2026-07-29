@@ -51,6 +51,7 @@ from document_codec import (
     crop_header,
     pass1_budget,
     parse_observations,
+    place_in_cube,
     render_crop,
     sequence_prefix,
     start_index,
@@ -142,7 +143,9 @@ def main(argv: list[str] | None = None) -> int:
         gt = canonical_pdb.read_structure(
             args.gt_dir / "gt_structures" / record["dataset"] / f"{record['stem']}.pdb"
         )
-        truth = truth_estimate(gt)
+        # Place into the format's cube first: a depositor's frame has negative
+        # coordinates, which the <xyz-DDD> vocabulary cannot express.
+        truth = place_in_cube(truth_estimate(gt), random.Random(args.seed))
         cap, _ = pass1_budget(len(sequence))
         pass1_tokens = synthesize_pass1(
             truth, start=start, cap_tokens=cap, rng=random.Random(args.seed)

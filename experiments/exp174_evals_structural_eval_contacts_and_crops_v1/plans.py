@@ -41,6 +41,7 @@ from document_codec import (
     estimate_to_atom_array,
     pass1_budget,
     parse_observations,
+    place_in_cube,
     render_crop,
     sequence_prefix,
     start_index,
@@ -209,6 +210,10 @@ def plan_e2(sampler, record, gt, *, config: SamplingConfig, seed: int = 0) -> Pl
 
     cap, structure_budget = pass1_budget(len(sequence))
     rng = random.Random(seed)
+    # Ground-truth frames routinely have negative coordinates; the format's
+    # cube is [0, 1000). Place before boxing, or every negative coordinate
+    # clamps to 0 and the "correct boxes" are a heap at the origin.
+    truth = place_in_cube(truth, rng)
     pass1_tokens = synthesize_pass1(truth, start=start, cap_tokens=cap, rng=rng)
     prompt = prefix + pass1_tokens
     prompt_ids = sampler.encode(prompt)
