@@ -180,6 +180,38 @@ the *only* context that helps.
 
 See [WRITEUP.md](WRITEUP.md) §8 for the full analysis and next levers.
 
+### v2 — multi-draft format + 100k-document sweep (DONE 2026-07-29)
+
+`<begin_statements>` became the only section marker (drafts unterminated; `<end>`
+keeps its meaning as the document terminator, so no inference path changed), and the
+corpus was scaled to **50,000 proteins × 2 docs = 100,000 documents** (275 steps/epoch,
+5.3× the previous signal). Four arms swept the loss-weight profile over identical
+`input_ids`, differing only in `loss_weights`.
+
+| model | K0 | consensus | cons − K0 | K0 vs base |
+|---|---|---|---|---|
+| base | **0.3355** | 0.2020 | −0.1335 (9% win) | — |
+| mdA (0/0/1) | 0.1884 | 0.1483 | −0.0402 (38%) | −43.8% |
+| mdB (0.1/0/1) | 0.1870 | 0.1524 | −0.0346 (40%) | −44.3% |
+| mdC (0.1/0.1/1) | 0.1879 | 0.1549 | −0.0331 (42%) | −44.0% |
+| mdD (0.1/0.3/1) | 0.1886 | 0.1509 | −0.0378 (40%) | −43.8% |
+
+**Three falsifications:**
+1. **Loss-weight profile does nothing** — all four arms within 0.002 on K0 (mdB−mdA
+   = −0.0014 ± 0.0013, wrong direction and ~40× too small). Header loss, the
+   anti-forgetting lever Phase 3 pointed at, does not work.
+2. **Scale does not fix forgetting** — 5.3× more documents/diversity gave −44% vs
+   v1's −41%.
+3. **The format cost v1's one success** — v1's refiner *gained* from a consensus
+   block (+0.024, 63% of proteins); every multi-draft arm *loses* (−0.033 to −0.040,
+   ~40%). Removing the distinct `<CAND>` marker removed the discrimination signal.
+
+**The pattern that survives:** LoRA (900 proteins) −7% · full FT (18,750 docs) −41% ·
+full FT (100,000 docs, ×4 profiles) −44%. The discriminating variable is **LoRA vs
+full fine-tune**, not scale, format, or weighting — that is where the next run belongs.
+
+bpb misled a third time: +5% (0.3915 → ~0.411) standing in for a −44% task collapse.
+
 ## Conclusion
 
 _(Fill in after results are in.)_

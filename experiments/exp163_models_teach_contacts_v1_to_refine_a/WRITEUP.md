@@ -1,6 +1,6 @@
 # exp163 — teaching contacts-v1 to refine a set of candidate rollouts
 
-**Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164) · **Status as of 2026-07-27:** Phases 0–3 complete — **kill criterion met**, mechanism confirmed, forgetting is the blocker
+**Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164) · **Status as of 2026-07-29:** v1 Phases 0–3 + v2 multi-draft sweep complete. **Kill criterion met.** The mechanism is real but the binding constraint is catastrophic forgetting, and it is caused by full fine-tuning — not by scale, format, or loss weighting.
 
 ---
 
@@ -444,7 +444,134 @@ The eval worker is deliberately self-contained (no repo checkout on the pod, no
 `marinfold`, no sklearn); its metrics are verified against exp89's reference —
 R-precision bit-identical, AUC to 1e-16 over 25 randomized cases.
 
-## 10. Cost of the 1M push
+## 10. v2 — the multi-draft format
+
+The v1 format keeps candidates and output syntactically distinct. That is fine for
+supervised refinement but blocks the intended destination: a single generation that
+emits N successive structures, RL'd on best-of-N. So the ``<CAND>`` marker was
+dropped and ``<begin_statements>`` became the only section marker, meaning
+*"discard what came before; here is a new candidate structure"*::
+
+    <contacts-v1> <begin_sequence> …sequence…      w_header
+    <begin_statements> …draft 1…                   w_draft
+    <begin_statements> …draft 2…                   w_draft   (conditions on draft 1)
+    <begin_statements> …TRUE contacts… <end>       w_final
+
+**Only the final section is closed by ``<end>``.** An earlier iteration closed every
+section, which forced the document terminator onto ``<eos>`` and would have dragged
+every generation path with it. Leaving drafts unterminated keeps both tokens'
+existing meanings — ``<end>`` remains the stop token, no inference path changes —
+and stops the format fighting E8's prior. Termination becomes a learned three-way
+choice after each contact triple: another ``<contact>``, ``<begin_statements>`` to
+restart, or ``<end>`` to finish.
+
+Drafts are shown in **random order** (Phase 0's conclusion). An ascending-F1 "ramp"
+was tried and rejected: it lets *position alone* encode quality, so "later = better"
+is learnable without reading the drafts at all, and every training context then ends
+on the best draft so far, so the model never sees what follows a good one. It
+survives as an explicit ablation flag.
+
+### The weight profile, and why it was swept rather than assumed
+
+"Some loss on the whole document" decomposes into two effects with opposite signs:
+
+| span | loss here means | expected effect |
+|---|---|---|
+| sequence header | the original contacts-v1 LM task | anti-forgetting |
+| draft sections | emit ~13%-precision contacts | **pro-forgetting** |
+| final section | the task | the objective |
+
+Since Phase 3 established forgetting as the binding constraint, training on wrong
+contacts could plausibly make things worse. Hence four arms over the *same*
+documents, differing only in ``loss_weights`` (identical ``input_ids``):
+
+| arm | header | draft | final | weighted-token share |
+|---|---|---|---|---|
+| A | 0 | 0 | 1 | 25.3% |
+| B | 0.1 | 0 | 1 | 27.2% |
+| C | 0.1 | 0.1 | 1 | 32.7% |
+| D | 0.1 | 0.3 | 1 | 43.8% |
+
+### Scale
+
+The 18,750-document corpus gave only 52 steps/epoch — too few to separate four
+arms, with the cosine schedule barely clearing warmup. Rebuilt at **50,000 proteins
+× 2 documents = 100,000 documents** → 35,133 packed sequences → **275 steps/epoch**,
+5.3× the signal *and* 5.3× the fold diversity (more proteins rather than more
+documents per protein, since re-sampling the same 9,375 would reproduce the
+900-protein MVP's overfitting).
+
+Generation: **1,200,000 rollouts over exactly 50,000 proteins**, 24 each, 0 missing,
+mean single-rollout `all_f1` 0.1151 (the 10k batch gave 0.114).
+
+## 11. v2 results — three falsifications
+
+553 exp89 proteins, paired, all five models under identical candidate contexts.
+
+### all band — R-precision
+
+| model | K0 | K1 | K2 | K4 | K8 | K16 | consensus |
+|---|---|---|---|---|---|---|---|
+| base | **0.3355** | 0.1423 | 0.1055 | 0.0683 | 0.0267 | 0.0212 | 0.2020 |
+| mdA (0/0/1) | 0.1884 | 0.0942 | 0.0514 | 0.0270 | 0.0161 | 0.0142 | 0.1483 |
+| mdB (0.1/0/1) | 0.1870 | 0.0949 | 0.0518 | 0.0258 | 0.0158 | 0.0134 | 0.1524 |
+| mdC (0.1/0.1/1) | 0.1879 | 0.0976 | 0.0633 | 0.0298 | 0.0169 | 0.0151 | 0.1549 |
+| mdD (0.1/0.3/1) | 0.1886 | 0.0938 | 0.0519 | 0.0273 | 0.0156 | 0.0132 | 0.1509 |
+| *candidate contacts* | 0 | 97 | 193 | 387 | 775 | 1553 | 58 |
+
+Long band is the same shape (base K0 0.2697; arms 0.1425–0.1449).
+
+**(1) The loss-weight profile does nothing.** All four arms land within 0.002 of
+each other on K0. Paired against arm A: mdB −0.0014 (95% CI ±0.0013), mdC −0.0005
+(±0.0014), mdD +0.0002 (±0.0012). Only mdB is nominally significant, and it is in
+the *wrong* direction and ~40× too small to matter. **Putting loss back on the
+sequence header — the anti-forgetting lever Phase 3 pointed at — is falsified.**
+
+**(2) Scale does not fix the forgetting.** 5.3× more documents and fold diversity
+gave −44% vs v1's −41% at 18,750 documents. Marginally worse, not better.
+
+**(3) The format change cost v1's one real success.** v1's refiner *gained* from a
+high-precision consensus block (+0.0242, better on 63% of proteins). Every
+multi-draft arm now *loses* from it (−0.033 to −0.040, ~40%). They remain partially
+immunised relative to base (which loses 0.134, gaining on only 9%), but the
+constructive use is gone. This is the predicted cost of removing the distinct
+``<CAND>`` marker: dropping the syntactic "this is untrusted" signal removed exactly
+the discrimination that was v1's one working result.
+
+### The pattern that survives
+
+| setup | K0 vs base 0.3355 |
+|---|---|
+| **LoRA**, 900 proteins, v1 format | **−7%** (0.229 → 0.213) |
+| full fine-tune, 18,750 docs, v1 format | −41% (→ 0.1978) |
+| full fine-tune, 100,000 docs, multi-draft ×4 | **−44%** (→ ~0.188) |
+
+Across everything varied — corpus size, fold diversity, document format, loss
+profile — the one discriminating variable is **LoRA vs full fine-tune**. A full
+fine-tune at lr 1e-4 destroys ~42% of the base contact ability regardless. That,
+not scale and not weighting, is where the next experiment belongs.
+
+### bpb misled again — the third time
+
+| | base-task bpb | contact R-precision |
+|---|---|---|
+| E8 reference | 0.39151 | 0.3355 |
+| all four v2 arms | 0.4105 – 0.4117 (**+5%**) | ~0.188 (**−44%**) |
+
+Nearly identical bpb across arms, and a 5% move standing in for a 44% task collapse.
+Train loss is *not* comparable across arms at all (each is a weighted mean over a
+different profile — arm C's higher 2.0037 is its heavier weighting, not worse
+fitting). Only the task metric decides anything here.
+
+### Still unmeasured
+
+Phase C — does draft *t+1* actually beat draft *t* under generation — has not run.
+That is the premise best-of-N RL rests on, and it is orthogonal to the forgetting
+result. The plumbing exists (section-aware parsing, per-section F1, `frac_improving`,
+and a `mean_jaccard` copy diagnostic), but with K0 at 0.188 those generations would
+be poor regardless, so it is worth running only after retention is fixed.
+
+## 12. Cost of the 1M push
 
 Measured, not estimated: the 10k batch did 225,072 rollouts in ~59 min on 16 H100s ⇒
 **~14,350 rollouts/GPU-hour**. So 1M proteins × 24 rollouts = 24M rollouts ⇒
@@ -452,7 +579,12 @@ Measured, not estimated: the 10k batch did 225,072 rollouts in ~59 min on 16 H10
 pre-run estimate, because the top-k fix roughly doubled rollout length (which is the
 point: n_pred 201 vs 95).
 
-Two things to settle before committing:
+**v2 makes this decision easier, and the answer is "not yet".** Going 18,750 →
+100,000 documents (9,375 → 50,000 proteins) moved K0 from −41% to −44%. A further
+10× would be buying more of something that has now been measured not to help.
+Fix retention first; then scale is worth paying for.
+
+Two things to settle when it is:
 
 * **Is 1M the right number?** 250k proteins is ~420 H100-hours (~26h on 16 shards) and
   plausibly buys most of the fold diversity for a quarter of the spend.

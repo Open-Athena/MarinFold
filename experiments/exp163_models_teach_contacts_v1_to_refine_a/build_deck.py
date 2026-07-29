@@ -57,7 +57,7 @@ def box(s, x, y, w, h, text, size=16, color=INK, bold=False, font=BODY,
     return tb
 
 
-def bullets(s, x, y, w, h, items, size=15, color=INK, gap=8):
+def bullets(s, x, y, w, h, items, size=15, color=INK, gap=8, lead=None):
     tb = s.shapes.add_textbox(In(x), In(y), In(w), In(h))
     tf = tb.text_frame
     tf.word_wrap = True
@@ -67,10 +67,11 @@ def bullets(s, x, y, w, h, items, size=15, color=INK, gap=8):
         p.space_after = Pt(gap)
         p.line_spacing = 1.15
         if isinstance(it, tuple):
-            lead, rest = it
-            r = p.add_run(); r.text = lead
+            head, rest = it          # NB: not `lead` -- that is the colour param
+            r = p.add_run(); r.text = head
             r.font.size, r.font.bold, r.font.name = Pt(size), True, BODY
-            r.font.color.rgb = MID
+            # MID on a dark slide is invisible; callers on dark backgrounds pass lead=
+            r.font.color.rgb = lead if lead is not None else MID
             r2 = p.add_run(); r2.text = rest
             r2.font.size, r2.font.name = Pt(size), BODY
             r2.font.color.rgb = color
@@ -597,7 +598,85 @@ bullets(s, 0.9, 4.5, 11.5, 2.4, [
      "contacts-v1 documents in so K=0 stays anchored."),
 ], size=14, gap=13)
 
-# ============================================================ 17. 1M decision
+# ============================================================ 17. v2 format
+s = sl()
+title(s, "v2 — one marker, for RL", "<begin_statements> means \u201cdiscard the previous structure; here is a new candidate\u201d.")
+mono(s, 0.9, 2.05, 7.4, 2.5, [
+    ("<contacts-v1> <begin_sequence> \u2026seq\u2026", C(0x9A, 0xB4, 0xD8), False),
+    ("<begin_statements> \u2026draft 1\u2026            (no <end>)", C(0xE8, 0x8B, 0x2F), False),
+    ("<begin_statements> \u2026draft 2\u2026", C(0xE8, 0x8B, 0x2F), False),
+    ("<begin_statements> \u2026TRUE contacts\u2026 <end>", C(0x7A, 0xD6, 0xA8), True),
+], size=12)
+box(s, 0.9, 4.7, 7.4, 0.55, "Drafts and the answer are the SAME object — so one generation can emit N structures and be RL'd on best-of-N.", size=13, color=MUTE, italic=True, spacing=1.2)
+bullets(s, 8.6, 2.1, 3.85, 4.4, [
+    ("Only the final section closes. ", "Drafts are superseded by the next "
+     "<begin_statements>, so <end> keeps its meaning as the document terminator "
+     "\u2014 it stays the stop token and no inference path changes."),
+    ("Random draft order. ", "An ascending-F1 ramp lets position alone encode "
+     "quality, so \u201clater = better\u201d is learnable without reading the drafts."),
+    ("Three-way weight profile. ", "header / draft / final \u2014 swept, because loss on "
+     "~13%-precision drafts trains the model to emit WRONG contacts."),
+], size=12.5, gap=11)
+footer(s, "100,000 documents over 50,000 proteins \u00b7 35,133 packed sequences \u00b7 275 steps/epoch \u00b7 5.3\u00d7 the previous signal.")
+
+# ============================================================ 18. v2 results
+s = sl()
+title(s, "v2 results \u2014 three falsifications", "553 exp89 proteins, paired. Four arms differ ONLY in loss_weights.")
+table(s, 0.75, 2.0, 11.85, [
+    ["model (header/draft/final)", "K0", "consensus", "cons \u2212 K0", "wins", "K0 vs base"],
+    ["base", "0.3355", "0.2020", "\u22120.1335", "9%", "\u2014"],
+    ["mdA  (0 / 0 / 1)", "0.1884", "0.1483", "\u22120.0402", "38%", "\u221243.8%"],
+    ["mdB  (0.1 / 0 / 1)", "0.1870", "0.1524", "\u22120.0346", "40%", "\u221244.3%"],
+    ["mdC  (0.1 / 0.1 / 1)", "0.1879", "0.1549", "\u22120.0331", "42%", "\u221244.0%"],
+    ["mdD  (0.1 / 0.3 / 1)", "0.1886", "0.1509", "\u22120.0378", "40%", "\u221243.8%"],
+], [3.6, 1.6, 1.9, 1.7, 1.35, 1.7], size=12.5, row_h=0.37, hilite={(1, 1)})
+for i2, (n, t) in enumerate([
+        (1, "Loss-weight profile does NOTHING \u2014 all four arms within 0.002 on K0 "
+            "(mdB\u2212mdA = \u22120.0014 \u00b1 0.0013: wrong direction, ~40\u00d7 too small)"),
+        (2, "Scale does NOT fix forgetting \u2014 5.3\u00d7 more docs gave \u221244% vs v1's \u221241%"),
+        (3, "The format cost v1's one success \u2014 v1 GAINED from consensus (+0.024, 63%); "
+            "every v2 arm loses (\u22120.033 to \u22120.040)")]):
+    y = 4.75 + i2 * 0.62
+    circle_num(s, 0.85, y, 0.38, n, fill=CORAL)
+    box(s, 1.4, y + 0.04, 11.0, 0.5, t, size=13, color=INK)
+footer(s, "bpb misled a third time: +5% (0.3915 \u2192 ~0.411) standing in for a \u221244% task collapse.")
+
+# ============================================================ 19. the pattern
+s = sl(dark=True)
+title(s, "The variable that actually matters", "Everything else was varied and did not move it.", dark=True)
+cd = CategoryChartData()
+cd.categories = ["LoRA\n900 proteins", "full FT\n18,750 docs", "full FT\n100,000 docs"]
+cd.add_series("K0 loss vs base", (-7, -41, -44))
+gf = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, In(0.9), In(2.15), In(7.0), In(4.0), cd)
+ch = gf.chart
+chart_style(ch, legend=False)
+ser = ch.plots[0].series[0]
+for idx, col in enumerate([GREEN, CORAL, CORAL]):
+    ser.points[idx].format.fill.solid(); ser.points[idx].format.fill.fore_color.rgb = col
+pl = ch.plots[0]
+pl.has_data_labels = True
+pl.data_labels.number_format = '0"%"'
+pl.data_labels.number_format_is_linked = False
+pl.data_labels.font.size = Pt(13); pl.data_labels.font.bold = True; pl.data_labels.font.name = BODY
+pl.data_labels.font.color.rgb = WHITE
+pl.data_labels.position = XL_LABEL_POSITION.INSIDE_END
+for ax in (ch.category_axis, ch.value_axis):
+    ax.tick_labels.font.color.rgb = C(0xC9, 0xD4, 0xE8)
+# with all-negative bars the category labels default to the TOP, on top of the bars
+from pptx.enum.chart import XL_TICK_LABEL_POSITION
+ch.category_axis.tick_label_position = XL_TICK_LABEL_POSITION.LOW
+bullets(s, 8.3, 2.3, 4.15, 4.2, [
+    ("LoRA vs full fine-tune. ", "That is the only discriminating variable across "
+     "corpus size, fold diversity, document format and loss profile."),
+    ("A full FT at lr 1e-4 destroys ~42% of the base contact ability regardless.", ""),
+    ("So the next run is LoRA (or a much lower LR) \u2014 not more data, not more "
+     "weight tuning.", ""),
+], size=13, color=C(0xDE, 0xE7, 0xF5), gap=13, lead=AMBER)
+card(s, 8.3, 6.0, 4.15, 0.75, fill=C(0x2E, 0x38, 0x74))
+box(s, 8.6, 6.2, 3.6, 0.45, "Still unmeasured: does draft t+1 beat draft t?",
+    size=12.5, color=AMBER, bold=True)
+
+# ============================================================ 20. 1M decision
 s = sl(dark=True)
 title(s, "The 1M push — now a harder call",
       "Cost measured on the 10k batch, not estimated. But scale is not the blocker.", dark=True)
@@ -617,7 +696,7 @@ bullets(s, 0.9, 4.4, 11.5, 2.3, [
     ("Phase 3 changes the question. ", "The kill criterion is met and the binding "
      "constraint is forgetting, not data volume — so spending ~1,700 H100-hours on the "
      "same recipe would buy a better-trained version of a model that loses to its own base."),
-], size=14, color=C(0xDE, 0xE7, 0xF5), gap=12)
+], size=14, color=C(0xDE, 0xE7, 0xF5), gap=12, lead=AMBER)
 
 prs.save("exp163_deck.pptx")
 print("saved exp163_deck.pptx", len(prs.slides.__iter__.__self__._sldIdLst), "slides")
