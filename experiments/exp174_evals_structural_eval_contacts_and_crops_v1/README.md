@@ -26,9 +26,14 @@ lDDT-CA and TM-score against the 554-protein eval set
 The issue splits into two components with different gates.
 
 **Component 1 — inference (document → coordinates).** Plans first, no
-implementation, by design. Five approaches are written up in
-[`PLANS.md`](PLANS.md) with tradeoffs, compute costs, failure modes and a
-recommendation, for discussion on the issue before anything is built.
+implementation, by design. Six approaches are written up in
+[`PLANS.md`](PLANS.md) with tradeoffs, compute costs and failure modes.
+**Decided on #174: Plan F** — neighbour-conditioned iterative refinement, a
+spatially coherent "scanning flashlight" over voxels that conditions each crop
+on its already-refined neighbours and iterates until coordinates stop moving —
+with sampling rather than greedy decoding and two independent temperatures
+(coordinate tokens vs structural choices). Plan C is its ablation. Build order
+and the still-open questions are in `PLANS.md` §8. Still unimplemented.
 
 **Component 2 — scoring (prediction → metrics).** Built, tested and validated;
 that is what the code in this directory is. It takes a directory of predicted
@@ -196,9 +201,10 @@ published to the public HF bucket by
    honest account of coverage/truncation effects.
 5. Results written up in the experiment README + a summary comment on this issue.
 
-Status: **3 done** — the harness is built, tested and validated against a
-measured ceiling. **1 open for discussion** ([`PLANS.md`](PLANS.md)). **2, 4 and
-5 blocked** on that discussion.
+Status: **1 and 3 done** — the inference approach is agreed (Plan F, see
+[`PLANS.md`](PLANS.md) §8) and the harness is built, tested and validated
+against a measured ceiling. **2, 4 and 5** are the remaining work: implement
+Plan F, score both checkpoints, write it up.
 
 ## Conclusion
 

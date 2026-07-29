@@ -18,8 +18,8 @@ normally scored: CA-RMSD, all-atom RMSD, lDDT, lDDT-CA and TM-score against the
 ## Two components, two gates
 
 Component 1 — inference (document to coordinates) — is plans-first by design.
-Five approaches are written up in PLANS.md for discussion before anything is
-built.
+Six approaches are written up in PLANS.md. Plan F is now the plan of record:
+neighbour-conditioned iterative refinement. Not yet implemented.
 
 Component 2 — scoring — is done. It takes a directory of predicted coordinate
 files in a documented one-PDB-per-protein contract and needs to know nothing
@@ -83,8 +83,35 @@ The Pass-2 refined fraction is the entire ballgame. Going from 15% to 50%
 refined moves the achievable lDDT from 0.36 to 0.53 and TM from 0.58 to 0.75.
 That is a format finding as much as an inference one.
 
+## The plan of record: a scanning flashlight
+
+Plan F. Generate Pass 1 once, which fixes the frame. Then sweep a spatially
+coherent path over the occupied voxels: for each one, build a prompt ending in
+its crop header, draw K sampled crop bodies, and fold them into a running
+precision-weighted per-atom estimate. Repeat the sweep, because a voxel's
+neighbours have moved since it was last visited, until the coordinates stop
+moving.
+
+Two things make this fit the format rather than fight it. Each crop is
+conditioned on its already-refined neighbours, and Pass-2's own box selection
+is 45% frontier and 10% re-show, so a local scan with revisits is the
+training-time crop distribution, not a departure from it. And the prompt —
+sequence, full Pass 1, up to about twenty prior crops, one new header — is
+exactly the shape of a real training document, because the fine reserve holds
+about twenty crops.
+
+Sampling, not greedy: averaging K draws recovers the same estimate and hands
+back a per-atom variance for free, which is what the B-factor column and the
+precision weighting both want. Two independent temperatures, one for
+coordinate tokens and one for structural choices.
+
+Cost: about 1.5 to 2 H100-hours for all 554 proteins, provided the synthesized
+Pass-1 section is held byte-identical within a sweep so the prefix cache hits.
+That one decision is worth 10x.
+
 ## Status
 
 Harness built, tested (34 tests) and validated against a measured ceiling.
-Inference plans written and awaiting discussion on the issue. Model scoring is
-blocked on that discussion; both #137/#155 checkpoints are staged and ready.
+Inference approach agreed: Plan F. Remaining work is E2 and E3 as gates, A and
+C as controls, then F itself, then scoring both #137/#155 checkpoints — which
+are staged and ready.

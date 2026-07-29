@@ -1,14 +1,20 @@
 # exp174 Component 1 — inference plans: document → 3D coordinates
 
-**Status: for discussion. Nothing here is implemented.** Issue
-[#174](https://github.com/Open-Athena/MarinFold/issues/174) gates Component 1
-behind a design conversation; this is the input to it. Component 2 (the
-scoring harness) is built and its numbers are used below.
+**Status: decided, not yet implemented.** Issue
+[#174](https://github.com/Open-Athena/MarinFold/issues/174) gated Component 1
+behind a design conversation; this was the input to it and now records the
+outcome. Component 2 (the scoring harness) is built and its numbers are used
+below.
 
-Five plans, most to least conservative, then a recommendation. The decisions
+Six plans, most to least conservative, then the plan of record. The decisions
 that are *the same* in every plan — how tokens become xyz, how repeat
 observations combine, what to do with an atom that was never refined — are
 factored out first so the plans differ only where they actually differ.
+
+**Update (2026-07-29).** After discussion on #174, **Plan F** — neighbour-
+conditioned iterative refinement, §7 — is the plan of record, with sampling
+rather than greedy decoding and two independent temperatures. Plan C is now
+its ablation. §8 has the build order.
 
 ---
 
@@ -73,8 +79,8 @@ translated frame. Every metric in Component 2 is frame-invariant (RMSD and
 TM-score superimpose; lDDT is superposition-free), so a **single-document**
 plan needs no registration at all. Any plan that merges *across* documents
 must first estimate a rigid transform between them from their shared atoms —
-a real cost, and a real failure mode, that Plans A, C, D and E simply do not
-have.
+a real cost, and a real failure mode, that Plans A, C, D, E and F simply do not
+have. Only Plan B pays it.
 
 **Token → xyz.** Invert the SPEC's digit rule exactly. A Pass-1 mention
 `<pXXX> <ATOM> <xyz-HHH> <xyz-TTT>` gives the atom's 10 Å cell
@@ -119,17 +125,28 @@ v1 and treat the second as a clearly-labelled variant:
 scorer counts them against the prediction (see Component 2's convention), which
 is what makes coverage a first-class result rather than a footnote.
 
-**Sampling temperature — the one genuinely surprising knob.** The training
-coordinates are *deliberately noisy*: σ=2 Å in Pass 1, σ=1/(i+1)² in Pass 2, in
-both cases zero-mean. So the model's next-token distribution over an
-`<xyz-DDD>` token is (roughly) the true digit convolved with that noise, and
-its **mode is the noise-free digit**. Sampling coordinate tokens reproduces the
-training noise; taking the argmax *denoises* it. That argues for a hybrid:
-**greedy on the coordinate tokens, sampled on the structural choices** (which
-atom to mention, which box to crop), which is a two-line logits-processor given
-the token classes are disjoint by vocabulary block. Pure greedy risks the usual
-degenerate repetition on the structural choices; pure sampling throws away a
-free accuracy win. Worth measuring all three.
+**Sampling temperature — two temperatures, and sample rather than go greedy.**
+The training coordinates are *deliberately noisy*: σ=2 Å in Pass 1,
+σ=1/(i+1)² in Pass 2, in both cases zero-mean. So the model's next-token
+distribution over an `<xyz-DDD>` token is (roughly) the true digit convolved
+with that noise, and its **mode is the noise-free digit**.
+
+An earlier draft read that as an argument for greedy decoding of coordinate
+tokens. It is not, quite. If the emitted distribution really is "truth plus
+zero-mean noise", then **averaging K sampled positions converges on the same
+estimate the mode gives, at 1/√K, and hands you a per-atom variance for free** —
+which is exactly what populates the B-factor column the scorer's
+`--refined-max-sigma` reads, and what the precision-weighted aggregation above
+needs. Greedy gives a point estimate and no uncertainty at all. Sampling is the
+better default, not a compromise, and it is what we run first.
+
+The token classes are disjoint by vocabulary block, so the useful control is
+**two temperatures** — one for the `<xyz-DDD>` coordinate tokens, one for the
+structural choices (which atom to mention, which box to crop) — set
+independently by a small logits processor. Lowering the coordinate temperature
+sharpens each sampled position; lowering the structural temperature risks the
+usual degenerate repetition. Sweep them separately on a dev split; there is no
+reason for one number to serve both.
 
 **Cost model.** Qwen3 1.5B on one H100 under vLLM ran ~25,000 tok/s on
 contacts-v1 rollouts (root `AGENTS.md`, exp82's fan-out). A full 8192-token
@@ -201,15 +218,18 @@ context, to walk it up the σ=1/(i+1)² refinement schedule.
   200-residue protein has on the order of 100–200 occupied boxes.
 * **Ceiling:** every occupied box refined → the `tenths` row, lDDT → 1.0, with
   the realized number set by how well the model actually places atoms.
-* **Main failure mode:** **out-of-distribution prompting.** The model never saw
-  a document whose crops tile the structure in an order it did not choose, and
-  the 8192-token budget means it never saw more than ~20 crops at all. Forcing
-  a header for a box the model would not have picked may produce a confidently
-  wrong crop body — and, worse, the membership rule is "atoms whose noised
-  position falls in this box", so a bad header invites the model to invent
-  members. Mitigation: only force boxes the model's own Pass 1 actually
-  occupied (as above), and compare against Plan A on the same proteins to
-  measure the OOD cost directly.
+* **Main failure mode:** **out-of-distribution prompting.** Each continuation
+  branches independently from the same prefix, so the model sees a crop with no
+  neighbouring crops before it — whereas 45 % of training crops are drawn from
+  the *frontier* of already-shown boxes. Forcing a header for a box the model
+  would not have picked may produce a confidently wrong crop body, and the
+  membership rule is "atoms whose noised position falls in this box", so a bad
+  header invites the model to invent members. Mitigation: only force boxes the
+  model's own Pass 1 actually occupied, and compare against Plan A to price the
+  gap.
+* **Superseded by Plan F**, which fixes exactly this failure mode by putting the
+  neighbouring crops back in context. Keep C as F's one-sweep, no-neighbour,
+  K=1 ablation rather than as a separate destination.
 
 ## 5. Plan D — constrained decoding (grammar + coverage)
 
@@ -248,48 +268,166 @@ Two variants, both cheap, neither a legitimate headline number:
   every atom, generate only Pass 2. Isolates the refinement ability, which is
   the thing the crops format exists to test and the thing Plan C is betting on.
 
+And one probe that is not an oracle but belongs with them, because it gates
+Plan F:
+
+* **E3 — does the model actually sharpen on re-show?** Build documents from
+  ground truth in which a chosen box appears `i = 0, 1, 2, …` times, decode the
+  final crop, and plot the emitted tenths error against the training schedule's
+  `1/(i+1)²`. The format bakes progressive refinement in; whether the model
+  *learned* to condition on visit count is an open empirical question, and it is
+  the assumption Plan F's inner loop rests on. Half a day of work, no new
+  infrastructure — the format's own generator builds the prompts.
+
 * **Cost:** ~1 × Plan A each.
-* **Value:** E2 in particular tells us whether Plan C is worth building. If the
-  model cannot refine a box even when handed the correct boxes, Plan C's whole
-  premise is wrong and we should not spend the engineering.
-* **Failure mode:** none, as long as they are reported as oracle rows and never
+* **Value:** E2 tells us whether Plans C/F are worth building at all — if the
+  model cannot refine a box even when handed the correct boxes, their premise is
+  wrong. E3 tells us whether F's re-visits buy anything beyond re-sampling.
+* **Failure mode:** none, as long as E1/E2 are reported as oracle rows and never
   compared against other predictors.
 
 ---
 
-## 7. Recommendation
+## 7. Plan F — neighbour-conditioned iterative refinement ("scanning flashlight")
 
-Run **E2 first** (a day of work, answers the load-bearing question), then
-**A** as the in-distribution control, then **C** as the real predictor, with
-**D**'s grammar-only constraints on throughout.
+**The plan we intend to run.** Proposed by @timodonnell; it generalizes Plan C
+and is the reason C is now an ablation rather than a destination.
 
-Reasoning:
+**Condition on:** sequence section, then a Pass-1 section, then the crops
+already refined *around* the box being refined. **Generate:** one crop body at a
+time, K samples each, sweeping over space and repeating until the coordinates
+stop moving.
+
+### The loop
+
+1. **Pass 1, once.** Sample the sequence section → contacts → Pass 1 as in Plan
+   A, and stop at the end of Pass 1. This fixes the frame and gives every atom a
+   starting box. All later work happens in this frame, so — as in Plan C —
+   **there is nothing to register.**
+2. **Sweep over occupied boxes in a spatially coherent order** (the flashlight):
+   walk the frontier of already-refined boxes rather than tiling in index order.
+3. **For each target box `b`, build a prompt that is a legal mid-document
+   state** (see below), ending in `<crop> <box(b)>`, and decode K sampled crop
+   bodies.
+4. **Fold the samples into a running per-atom estimate** by the precision-weighted
+   mean of §1, with the sample spread giving the per-atom variance that becomes
+   the B-factor.
+5. **Repeat the sweep.** Neighbours have moved since a box was last visited, so
+   revisit it. Stop when the mean per-atom displacement between sweeps falls
+   below the format's own resolution floor (~0.1 Å), or at a max sweep count.
+
+### The context-construction rule, which is the whole trick
+
+Every prompt must be a **plausible prefix of a real training document**. The
+budget arithmetic makes that easy rather than hard. For L=200 with no contacts:
+sequence 408 tokens, Pass-1 cap 5784, fine reserve 2000 — and a crop of a
+mean occupied box (~22.7 atoms) is ~94 tokens, so the reserve holds ~21 crops.
+A prompt of *sequence + full Pass 1 + up to ~20 prior crops + one new header* is
+therefore not merely legal, it is **exactly the shape of the training
+documents**, right down to the crop count.
+
+That leaves two knobs, and both matter:
+
+* **The Pass-1 section is the feedback channel for the global estimate.** Rather
+  than reusing the original Pass-1 tokens forever, re-synthesize it between
+  sweeps from the current coordinate estimate, using the format's own atom-draw
+  weighting to fill the cap. Reuse the generator itself to emit it, which
+  guarantees token-level plausibility. Open question worth testing: emit those
+  boxes **noise-matched** (σ=2 Å, as in training) or **clean** from the current
+  estimate. Clean carries more information but is a distribution shift, and — see
+  the failure mode below — the noise is also what stops the loop locking in.
+* **The prior crops are the feedback channel for local detail**, and they are
+  what makes F in-distribution where C is not: 45 % of training crops are frontier
+  picks, i.e. a box adjacent to one already shown. Include `b`'s own earlier
+  visits among them and the model sees visit index `i`, which is how F gets the
+  format-native σ=1/(i+1)² sharpening for free — *if* E3 says the model learned
+  it.
+
+### Cost
+
+Per crop: ~8k prefill + K × ~94 decode. A 200-residue protein has ~70 occupied
+boxes; at K=8 and 3 sweeps that is 210 crops, and 554 proteins is ~931 M prefill
+plus ~88 M decode tokens. At an H100's ~50k tok/s prefill and ~25k tok/s decode
+that is **~6 GPU-hours**, or ~30 minutes across a 12-shard CoreWeave fan-out.
+
+**Keep the synthesized Pass-1 section byte-identical within a sweep.** Then
+every crop in that sweep shares a ~6.2k-token prefix, vLLM's prefix cache holds
+it, and only the ~600-token crop-history suffix is recomputed — roughly a 10×
+cut in prefill, bringing the whole run to ~1.5–2 GPU-hours. This one decision
+dominates the cost model.
+
+### Main failure modes
+
+* **Self-conditioning drift.** The loop feeds the model its own emissions, so
+  errors can be amplified rather than averaged away, and it can converge
+  confidently on a wrong structure — the same hazard exp159 hit building the
+  model-in-the-loop decoy corpus. Two mitigations, both cheap: keep the Pass-1
+  feedback **noisy** at the training σ so the loop cannot lock in too hard, and
+  damp the update (precision-weighted running mean, never replace).
+* **A fixed point is not a correct answer.** Displacement between sweeps is a
+  convergence diagnostic, not an accuracy one. Score lDDT against ground truth
+  **per sweep** on a dev split, so we can see whether it is converging to the
+  right structure or merely converging. If lDDT peaks at sweep 2 and decays, that
+  is drift and the stopping rule should be early.
+* **Depends on E3.** If the model does not sharpen with visit index, the
+  revisits still help (neighbours have moved; K more samples) but the
+  format-native refinement half of the plan contributes nothing, and the sweep
+  budget should go into K instead.
+
+---
+
+## 8. Plan of record
+
+**Decided (2026-07-29, @timodonnell on #174): Plan F**, with sampling — not
+greedy — and two independent temperatures. Build order:
+
+| # | step | why it comes here | cost |
+|---|---|---|---|
+| 1 | **E2** — teacher-force true Pass-1 boxes, generate crops | the gate on F's premise: if the model cannot refine a box handed the correct boxes, F is dead | ~1 × A |
+| 2 | **E3** — does emitted error fall as `1/(i+1)²` with visit index? | decides whether F's revisits buy format-native sharpening or only more samples | half a day |
+| 3 | **A** — one free-running document | the in-distribution control that prices F's prompt engineering | ~3 GPU-min |
+| 4 | **C** — one forced sweep, no neighbours, K=1 | F's ablation; isolates what neighbour conditioning and iteration are worth | ~2–3 × A |
+| 5 | **F** — the full loop | the predictor | ~1.5–2 GPU-h |
+
+**D**'s grammar-only constraints stay on throughout (they cost nothing and stop
+the model spending budget on impossible atoms); D's *forced-coverage* variant
+stays off and gets its own row if we try it. **B** is not scheduled: its
+cross-document registration is a failure mode F does not have, and its one real
+advantage — best-of-N — is already inside F as the K samples per crop.
+
+Reasoning for F over the alternatives:
 
 * The ceiling table says a single document cannot exceed lDDT 0.17, so Plan A
-  alone cannot answer "is contacts-and-crops-v1 structure-capable". We need a
-  coverage-raising plan to say anything.
-* Between the two coverage-raising plans, **C beats B on the axis that actually
-  bites**: C keeps one frame and one document's worth of self-consistency,
-  while B's cross-document registration is both an extra failure mode and
-  dependent on a fold consistency we have no evidence for. B's advantage —
-  giving best-of-N for free — can be recovered later by wrapping C in an
-  N-sample outer loop.
-* E2 is the cheap gate on C. If teacher-forced Pass 1 does not produce good
-  crops, C is dead and B (or a format change) is the conversation instead.
-* Report Plan A and Plan C side by side, always with coverage, and always with
-  the ceiling row for the coverage each achieved. A model at lDDT 0.15 against
-  a 0.17 ceiling is a *success*; the same 0.15 against a 0.53 ceiling is not,
-  and the table has to make that legible.
+  alone cannot answer "is contacts-and-crops-v1 structure-capable". Only a
+  coverage-raising plan can.
+* Of the coverage-raising plans, **F is the one that stays in-distribution**.
+  Pass-2's own box selection is 45 % frontier and 10 % re-show ∝ prior count, so
+  a spatially local scan with revisits is the training-time crop distribution,
+  not a departure from it. That was C's headline risk and F removes it.
+* **F keeps one frame.** Everything hangs off a single Pass-1 generation, so
+  unlike B there is no rigid transform to estimate and nothing to get wrong when
+  two samples disagree about the fold.
+* Sampling with K draws per crop gives the posterior mean *and* a per-atom
+  variance, which is what the B-factor column and the precision-weighted
+  aggregation both want. Greedy would give neither.
+* Report A, C and F side by side, always with coverage, and always against the
+  ceiling row for the coverage each achieved. A model at lDDT 0.15 against a
+  0.17 ceiling is a *success*; the same 0.15 against a 0.53 ceiling is not, and
+  the table has to make that legible.
 
-**Open questions worth settling in the discussion, in rough priority order:**
+**Still open, in rough priority order:**
 
-1. Is Plan C's forced tiling acceptable, or does prompting the model outside
-   its training distribution disqualify the number? (My view: acceptable if
-   Plan A is reported next to it, since A measures exactly that gap.)
-2. Ideal-geometry completion of box-only atoms — in scope for v1, or a separate
-   row? (My view: separate row, off by default.)
-3. Greedy vs sampled coordinate tokens: measure, or just pick greedy on the
-   denoising argument above?
+1. **Noise-matched or clean Pass-1 feedback?** Re-emitting the current estimate
+   at the training σ=2 Å keeps the prompt in-distribution and damps
+   self-conditioning drift; emitting clean boxes carries more information. Cheap
+   to test both; I lean noise-matched for the first run.
+2. **Stopping rule.** Displacement between sweeps measures convergence, not
+   accuracy. Score lDDT per sweep on a dev split first, and set the rule from
+   where lDDT peaks rather than from where movement stops.
+3. Ideal-geometry completion of box-only atoms — in scope for v1, or a separate
+   row? (My view: separate row, off by default; it is a structure prior doing
+   the work, not the model.)
 4. Does anything here change the case for a **contacts-and-crops-v2** with a
    larger fine reserve? The ceiling table says the fine fraction is the whole
-   ballgame, which is a format-design finding as much as an inference one.
+   ballgame, which is a format-design finding as much as an inference one — and
+   if F's iteration works, it partly substitutes for a bigger reserve.
