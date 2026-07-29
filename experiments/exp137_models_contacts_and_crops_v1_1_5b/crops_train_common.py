@@ -298,14 +298,19 @@ def build_train_step(
     # proteins) so that fraction of TRAINING tokens comes from contacts-v1 and the
     # rest from crops (a la #121, to keep pure-contacts capability sharp). The two
     # runs share the same num_train_steps (token budget), so they A/B cleanly.
-    if contacts_v1_mix < 0 or esm_atlas_mix < 0 or contacts_v1_mix + esm_atlas_mix >= 1.0:
+    if contacts_v1_mix < 0 or esm_atlas_mix < 0 or contacts_v1_mix + esm_atlas_mix > 1.0 + 1e-9:
         raise ValueError(
-            f"contacts_v1_mix ({contacts_v1_mix}) + esm_atlas_mix ({esm_atlas_mix}) must be "
-            f"in [0, 1) so crops keeps a positive weight"
+            f"contacts_v1_mix ({contacts_v1_mix}) + esm_atlas_mix ({esm_atlas_mix}) must sum to <= 1"
         )
     crops_key = "contacts-and-crops-v1-train"
-    components = {crops_key: _component(CROPS_TRAIN_TOK), **VAL_COMPONENTS}
-    weights: dict[str, float] = {crops_key: 1.0 - contacts_v1_mix - esm_atlas_mix}
+    crops_weight = 1.0 - contacts_v1_mix - esm_atlas_mix
+    components = dict(VAL_COMPONENTS)
+    weights: dict[str, float] = {}
+    # crops_weight == 0 (the contacts-v1-only ablation: drop the crops corpus from
+    # TRAINING entirely, keeping crops-val as an eval-only generalization metric).
+    if crops_weight > 1e-9:
+        components[crops_key] = _component(CROPS_TRAIN_TOK)
+        weights[crops_key] = crops_weight
     if contacts_v1_mix > 0.0:
         components["contacts-v1-train"] = _component(CONTACTS_V1_TRAIN_TOK)
         weights["contacts-v1-train"] = contacts_v1_mix
@@ -326,6 +331,8 @@ def build_train_step(
 
     if contacts_v1_mix <= 0.0 and esm_atlas_mix <= 0.0:
         mix_tag = "crops-only"
+    elif crops_weight <= 1e-9:
+        mix_tag = f"no-crops-cv1mix{contacts_v1_mix:g}-esmmix{esm_atlas_mix:g}"
     else:
         mix_tag = f"cv1mix{contacts_v1_mix:g}-esmmix{esm_atlas_mix:g}"
     return default_train(
