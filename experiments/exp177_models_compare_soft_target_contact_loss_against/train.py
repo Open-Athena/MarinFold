@@ -130,7 +130,14 @@ def _loss_kind() -> LossKind:
 
 
 def _train_cache_component() -> DatasetComponent:
-    return DatasetComponent(cache_dir=CONTACTS_V1_TRAIN_CACHE, pack=True)
+    # This component is train-only. `flat_cache=True` prevents Levanter's
+    # validation-set builder from looking for a nonexistent
+    # `<train-cache>/validation` sibling.
+    return DatasetComponent(
+        cache_dir=f"{CONTACTS_V1_TRAIN_CACHE}/train",
+        pack=True,
+        flat_cache=True,
+    )
 
 
 def _validation_component() -> DatasetComponent:
