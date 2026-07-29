@@ -188,11 +188,22 @@ class Scorer:
     def ptoken(self, pos):
         return self.tok.convert_tokens_to_ids(f"<p{pos}>")
 
-    def score_matrix(self, prefix: str, seq_positions: list[int]) -> np.ndarray:
-        """Symmetrized geo-mean log-score [L, L] in input-sequence coords."""
+    def score_matrix(self, prefix: str, seq_positions: list[int],
+                     mode_id: int | None = None) -> np.ndarray:
+        """Symmetrized geo-mean log-score [L, L] in input-sequence coords.
+
+        ``mode_id`` overwrites the document-type sentinel at position 0 AFTER
+        encoding. Doing it on ids rather than text is deliberate: the v3 mode token
+        is vocab id 7 RENAMED in place, so whether a given checkpoint's co-located
+        tokenizer spells id 7 ``<contacts-and-distances-v1>`` (published) or
+        ``<contacts-v1.multi>`` (renamed) is irrelevant — the id is the same and
+        putting the string in the prefix would tokenize to UNK under the wrong one.
+        """
         import torch.nn.functional as F
         torch = self.torch
         prefix_ids = self.tok(prefix, add_special_tokens=False).input_ids
+        if mode_id is not None:
+            prefix_ids = [mode_id] + list(prefix_ids[1:])
         pos_ids = [self.ptoken(p) for p in seq_positions]
         base = list(prefix_ids) + [self.contact_id]
         with torch.no_grad():
@@ -296,6 +307,12 @@ def main() -> int:
     ap.add_argument("--cons-pool", type=int, default=24)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--max-len", type=int, default=None, help="skip proteins longer than this")
+    ap.add_argument("--mode-id", type=int, default=None,
+                    help="v3: doc-type sentinel id for refine mode (7). When set, the "
+                         "candidate-conditioned arms use it and a SEPARATE base-mode K0 "
+                         "is also recorded, so base-task retention and refine-mode "
+                         "one-shot become distinct measurements. The old eval probed K0 "
+                         "with the colliding plain prefix, which may have understated it.")
     ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
                     help="candidate context format — MUST match what the checkpoint "
                          "was trained on (v1 <CAND> blocks vs v2 statements sections)")
@@ -350,10 +367,18 @@ def main() -> int:
         gts = set(gt)
 
         out = dict(entry_id=eid, L=L, n_gt=len(gt))
-        # K0
+        # K0 in BASE mode (plain <contacts-v1> prefix) -- base-task retention,
+        # directly comparable to the base model's 0.3355.
         m = band_metrics(scorer.score_matrix(prefix, seq_pos), tmat, pi, pj, psep)
         for b in ("all", "long"):
             out[f"R0_{b}"], out[f"A0_{b}"] = m[b]
+        # K0 in REFINE mode (mode sentinel, still no drafts) -- what the model does
+        # when told it is refining but given nothing to refine.
+        if a.mode_id is not None:
+            m = band_metrics(scorer.score_matrix(prefix, seq_pos, a.mode_id),
+                             tmat, pi, pj, psep)
+            for b in ("all", "long"):
+                out[f"R0multi_{b}"], out[f"A0multi_{b}"] = m[b]
         # raw candidate blocks, swept over K (test-time scaling).
         #
         # STAY IN DISTRIBUTION. The training corpus caps the candidate section by a
@@ -373,7 +398,7 @@ def main() -> int:
                 if p:
                     blocks.append(emit_block(p[: a.n_cap], seq_pos, rng, a.format))
             n_con = sum((len(b) - 1) // 3 for b in blocks)
-            m = band_metrics(scorer.score_matrix(prefix_with(prefix, blocks), seq_pos),
+            m = band_metrics(scorer.score_matrix(prefix_with(prefix, blocks), seq_pos, a.mode_id),
                              tmat, pi, pj, psep)
             for b in ("all", "long"):
                 out[f"Rraw{K}_{b}"], out[f"Araw{K}_{b}"] = m[b]
@@ -384,7 +409,8 @@ def main() -> int:
         out["cons_n"] = len(cons)
         out["cons_prec"] = (len(set(cons) & gts) / len(cons)) if cons else float("nan")
         m = band_metrics(
-            scorer.score_matrix(prefix_with(prefix, [emit_block(cons, seq_pos, rng, a.format)]), seq_pos),
+            scorer.score_matrix(prefix_with(prefix, [emit_block(cons, seq_pos, rng, a.format)]),
+                                seq_pos, a.mode_id),
             tmat, pi, pj, psep)
         for b in ("all", "long"):
             out[f"Rcons_{b}"], out[f"Acons_{b}"] = m[b]
@@ -393,7 +419,8 @@ def main() -> int:
         if (n + 1) % 10 == 0 or n == 0:
             el = time.time() - t0
             sweep = " ".join(f"K{K}={out[f'Rraw{K}_all']:.3f}" for K in ks)
-            print(f"  [{n+1}/{len(mine)}] {eid} L={L} K0={out['R0_all']:.3f} {sweep} "
+            k0m = f" K0multi={out['R0multi_all']:.3f}" if a.mode_id is not None else ""
+            print(f"  [{n+1}/{len(mine)}] {eid} L={L} K0base={out['R0_all']:.3f}{k0m} {sweep} "
                   f"cons={out['Rcons_all']:.3f} ncon@{ks[-1]}={out[f'ncon{ks[-1]}']}  ({el:.0f}s)",
                   flush=True)
 
@@ -404,8 +431,9 @@ def main() -> int:
     def mean(key):
         return np.nanmean([r[key] for r in rows]) if rows else float("nan")
     sweep = " ".join(f"K{K}={mean(f'Rraw{K}_all'):.4f}(n{mean(f'ncon{K}'):.0f})" for K in ks)
+    k0m = f" K0multi={mean('R0multi_all'):.4f}" if a.mode_id is not None else ""
     print(f"SHARD_DONE {si}/{sm}: {len(rows)} proteins in {time.time()-t0:.0f}s | "
-          f"all-band K0={mean('R0_all'):.4f} {sweep} cons={mean('Rcons_all'):.4f} -> {dest}",
+          f"all-band K0base={mean('R0_all'):.4f}{k0m} {sweep} cons={mean('Rcons_all'):.4f} -> {dest}",
           flush=True)
     return 0
 
