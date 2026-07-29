@@ -82,15 +82,37 @@ def build_fixed_meta(export: str, out: Path) -> None:
     print(f"[finalize] <contacts-v1.backtracking> = {tid}", flush=True)
 
 
-def stage(export: str, step_dir: str) -> None:
+def stage(export: str, step_dir: str, job: str = "exp175-stage-model") -> None:
+    """Submit the cloud-side copy AND WAIT for it.
+
+    ``stage_to_cw.py`` submits with ``--no-wait`` and exits 0 as soon as the job
+    is accepted, so treating its return as "staged" is wrong: the first version
+    of this script did exactly that, uploaded the fixed JSONs against an empty
+    prefix, and then the staging job copied the export's *unfixed* config.json
+    and tokenizer_config.json straight over them. The result loaded with a
+    defaulted rope -- the failure that degrades worse the longer the protein is,
+    i.e. the one most easily mistaken for a finding. Hence: wait, then fix.
+    """
     subprocess.run(
         [sys.executable, str(EXP160 / "stage_to_cw.py"),
-         "--job-name", "exp175-stage-model",
+         "--job-name", job,
          "--gcs", export.rsplit("/", 1)[0],
          "--s3", S3_MODELS,
          "--assets", f"{step_dir}={LABEL}"],
         check=True,
     )
+    iris = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
+    while True:
+        out = subprocess.run([iris, "--cluster=marin", "job", "summary", f"/bizon/{job}"],
+                             capture_output=True, text=True).stdout
+        state = next((ln for ln in out.splitlines() if ln.startswith("State:")), "")
+        if "succeeded" in state:
+            print(f"[finalize] staging {state.strip()}", flush=True)
+            return
+        if "failed" in state or "killed" in state:
+            raise SystemExit(f"[finalize] staging did not succeed: {state.strip()}")
+        print(f"[finalize] staging in progress ({state.strip() or 'pending'})", flush=True)
+        time.sleep(30)
 
 
 def upload_meta(fixed: Path) -> None:
