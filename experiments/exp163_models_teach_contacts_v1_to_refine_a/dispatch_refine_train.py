@@ -204,17 +204,26 @@ def _arms() -> list[str | None]:
 
 
 def corpus_for(arm: str | None) -> str:
-    """Each arm trains on the SAME documents, tokenized with a different weight
-    profile (header / draft / final) — so the corpora differ only in
-    ``loss_weights``, never in ``input_ids``."""
+    """Corpus glob for an arm.
+
+    Within a sweep, arms train on the SAME documents tokenized with different
+    weight profiles — the corpora differ only in ``loss_weights``, never in
+    ``input_ids``. An arm name containing ``/`` is taken as a literal path under
+    the exp163 prefix (e.g. ``v3/tok_mix50``), which is how a differently-BUILT
+    corpus is selected rather than a differently-weighted one.
+    """
     if arm is None:
         return REFINEMENT_TOKENIZED_GLOB
+    if "/" in arm:
+        return f"{EXP163_S3_PREFIX}/{arm}/*.parquet"
     return f"{EXP163_S3_PREFIX}/scale50k/tok_{arm}/*.parquet"
 
 
 def run_name_for(lr: float, epochs: int, arm: str | None = None) -> str:
-    # W&B-safe (alnum + hyphens, < 64 chars).
-    suffix = f"-md{arm}" if arm else ""
+    # W&B-safe (alnum + hyphens, < 64 chars). A path-style arm is flattened so the
+    # run name (and therefore its checkpoint prefix) stays distinct from the sweeps.
+    suffix = f"-{arm.replace('/', '-').replace('_', '-')}" if arm and "/" in arm else (
+        f"-md{arm}" if arm else "")
     return f"plm-exp163-refine-cv1-1_5b-lr{_lr_tag(lr)}-e{epochs}-cos{suffix}"
 
 
