@@ -83,9 +83,29 @@ on the same 554-protein set, through #160's `score_backtracking_worker.py` and e
 - **Retraction sharpens** — enrichment beyond #160's 52% of headroom.
 - **Headline** — best-of-both-modes beats `exp120-base` on the #89 benchmark at matched token compute. The bar #160 did not clear.
 
+### Artifacts
+
+```
+corpus + tokenizer  gs://marin-us-east5/protein-structure/MarinFold/exp175_backtracking_mode/corpus
+resized init        .../exp175_backtracking_mode/init/exp120-step-1005-vocab3850
+run output          .../exp175_backtracking_mode/runs/exp175-cv1-1_5b-mode50-lr3e-4-e1-cos
+```
+
+The resize ran **locally**, not on a pod: it is a CPU-only job that asks for a
+TPU purely for host RAM, and on 2026-07-29 every v5p-8 in both zones reported
+`Insufficient TPUs (need 4, available 0)`. This workstation has 503 GB, so it
+took 37 min end-to-end (`resized embeddings (2845, 2048) -> (3850, 2048)`,
+`verified rows 0..2844 are bit-identical`) rather than waiting on a queue.
+Two smaller notes for anyone re-running it: `resize_init_vocab.py` imports
+`marinfold_models` transitively, so it needs `PYTHONPATH=<repo>/models` outside
+a pod; and exp160's documented `--cpu 200` no longer fits — the v5p VMs now
+advertise 176 allocatable cores.
+
 ## Results
 
-_(Training pending.)_
+_(Training queued. The v5p-32 needs 4 co-scheduled workers and the marin TPU
+fleet has been saturated since 2026-07-28 — the same capacity crunch that moved
+#160's eval to CoreWeave. Pending jobs cost nothing, so it holds position.)_
 
 ## Conclusion
 
