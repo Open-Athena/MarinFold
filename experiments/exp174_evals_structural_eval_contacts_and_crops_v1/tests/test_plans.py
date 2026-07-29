@@ -58,6 +58,9 @@ class StubSampler:
     """
 
     device = "cpu"
+    # A crop body stops at the next <crop>; the plans pass this through as a
+    # stop token, so the stub has to carry one.
+    crop_id = -1
 
     def __init__(self, seed: int = 0, atoms_per_crop: int = 4):
         self._vocab: list[str] = []
@@ -105,7 +108,7 @@ class StubSampler:
 
     def sample_from_cache(self, cache, last_logits, prompt_length, *, n_samples,
                           config, max_new_tokens=None, forced_ids=None,
-                          generator=None):
+                          stop_token_ids=None, generator=None):
         cell = None
         if forced_ids:
             forced = self.decode(forced_ids)
@@ -120,11 +123,12 @@ class StubSampler:
         return [self.encode(self._crop_body(cell)) for _ in range(n_samples)]
 
     def sample(self, prompt_ids, *, n_samples=1, config=None, max_new_tokens=None,
-               forced_ids=None, generator=None):
+               forced_ids=None, stop_token_ids=None, generator=None):
         cache, length = self.prefill(prompt_ids)
         return self.sample_from_cache(
             cache, length, len(prompt_ids), n_samples=n_samples, config=config,
-            max_new_tokens=max_new_tokens, forced_ids=forced_ids, generator=generator,
+            max_new_tokens=max_new_tokens, forced_ids=forced_ids,
+            stop_token_ids=stop_token_ids, generator=generator,
         )
 
 
@@ -208,3 +212,29 @@ def test_spatial_order_covers_every_cell_from_the_frontier():
     for cell in order[1:]:
         assert any(n in visited for n in _neighbors(cell)), cell
         visited.add(cell)
+
+
+def test_crop_bodies_stop_at_the_next_crop_token():
+    """A crop ends at the next ``<crop>``, not at ``<end>``.
+
+    ``<end>`` terminates the whole document; in training a crop is delimited by
+    the header that follows it. A sampler that only stopped on ``<end>`` would
+    run every crop call to its token cap and free-run the rest of Pass 2 —
+    several times the compute, and "forced tiling" that is not forced.
+    """
+    class RecordingStub(StubSampler):
+        crop_id = -99
+
+        def __init__(self):
+            super().__init__()
+            self.stop_tokens = []
+
+        def sample_from_cache(self, *args, stop_token_ids=None, **kwargs):
+            self.stop_tokens.append(stop_token_ids)
+            return super().sample_from_cache(*args, **kwargs)
+
+    stub = RecordingStub()
+    plan_c(stub, _RECORD, config=SamplingConfig(), gt=_gt_array())
+    crop_calls = [s for s in stub.stop_tokens if s is not None]
+    assert crop_calls, "no crop-body call recorded"
+    assert all(s == [RecordingStub.crop_id] for s in crop_calls)

@@ -185,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
                     config=config,
                     max_new_tokens=4 * (len(members) + 8),
                     forced_ids=sampler.encode(forced),
+                    stop_token_ids=[sampler.crop_id],
                     generator=generator,
                 )[0]
 

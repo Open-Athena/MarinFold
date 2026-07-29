@@ -446,8 +446,12 @@ def _sweep_plan(
                 len(base_ids),
                 n_samples=n_samples,
                 config=config,
+                # An occupied box holds ~23 atoms on average and 69 at the
+                # observed maximum (SPEC → Coverage), so 4 x 80 tokens is a
+                # generous cap; the `<crop>` stop is what normally ends a body.
                 max_new_tokens=min(room, 4 * 80),
                 forced_ids=sampler.encode(forced_tokens),
+                stop_token_ids=[sampler.crop_id],
                 generator=generator,
             )
 

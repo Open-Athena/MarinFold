@@ -85,6 +85,11 @@ class Sampler:
         mask[torch.tensor(coord_ids)] = True
         self.coord_token_mask = mask.to(device)
         self.eos_id = self.tokenizer.convert_tokens_to_ids("<end>")
+        # A crop ends when the *next* `<crop>` header starts — `<end>`
+        # terminates the whole document, not a crop. Callers that want one crop
+        # body must therefore stop on `<crop>` too, or they free-run the rest of
+        # Pass 2 and the "forced tiling" is not forced at all.
+        self.crop_id = self.tokenizer.convert_tokens_to_ids("<crop>")
 
     def encode(self, tokens: list[str]) -> list[int]:
         """Token strings → ids. The tokenizer is WordLevel, so this is 1:1."""
@@ -133,6 +138,7 @@ class Sampler:
         config: SamplingConfig,
         max_new_tokens: int | None = None,
         forced_ids: list[int] | None = None,
+        stop_token_ids: list[int] | None = None,
         generator: torch.Generator | None = None,
     ) -> list[list[int]]:
         """Sample ``n_samples`` continuations from a prefilled prompt.
@@ -147,8 +153,11 @@ class Sampler:
                 pin a crop header (and, for F, the neighbouring crops) onto a
                 cached prefix without recomputing that prefix. They are not
                 included in the returned continuations.
+            stop_token_ids: extra tokens that terminate a row, on top of
+                ``<end>``. Pass ``[crop_id]`` to get exactly one crop body:
+                without it the model simply opens the next crop and keeps going.
 
-        Returns one list of generated ids per row, ``<end>`` excluded.
+        Returns one list of generated ids per row, stop tokens excluded.
         """
         from transformers import DynamicCache
 
@@ -180,12 +189,15 @@ class Sampler:
         outputs: list[list[int]] = [[] for _ in range(n_samples)]
         finished = torch.zeros(n_samples, dtype=torch.bool, device=self.device)
         position = prompt_length
+        stops = torch.tensor(
+            [self.eos_id] + list(stop_token_ids or []), device=self.device
+        )
 
         for _ in range(cap):
             probs = torch.softmax(self._apply_temperatures(logits, config), dim=-1)
             next_ids = torch.multinomial(probs, num_samples=1, generator=generator)
             flat = next_ids.squeeze(-1)
-            newly_done = flat == self.eos_id
+            newly_done = (flat[:, None] == stops[None, :]).any(dim=-1)
             for row in range(n_samples):
                 if not finished[row] and not newly_done[row]:
                     outputs[row].append(int(flat[row]))
@@ -212,6 +224,7 @@ class Sampler:
         config: SamplingConfig = SamplingConfig(),
         max_new_tokens: int | None = None,
         forced_ids: list[int] | None = None,
+        stop_token_ids: list[int] | None = None,
         generator: torch.Generator | None = None,
     ) -> list[list[int]]:
         """Prefill ``prompt_ids`` and sample from it — the one-shot convenience."""
@@ -224,6 +237,7 @@ class Sampler:
             config=config,
             max_new_tokens=max_new_tokens,
             forced_ids=forced_ids,
+            stop_token_ids=stop_token_ids,
             generator=generator,
         )
 
