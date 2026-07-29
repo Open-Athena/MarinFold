@@ -33,7 +33,9 @@ every reused token plus the rest of its vocab, carried so the fine-tuning
 path keeps a single tokenizer), then two trailing tokens appended in the
 order they were introduced: the sequence-only variant
 (``<contacts-v1.sequence_only>``; see :data:`SEQUENCE_ONLY_TOKENS`) and the
-retraction token (``<retract>``; see :data:`RETRACT_TOKENS`, issue #158).
+retraction token (``<retract>``; see :data:`RETRACT_TOKENS`, issue #158),
+and the retraction-mode doc type (``<contacts-v1.backtracking>``; see
+:data:`BACKTRACKING_TOKENS`, issue #175).
 The groups are disjoint, and each trailing token was appended **last** when
 added so introducing it left every pre-existing token id unchanged
 (append-only) — an existing checkpoint only grows its embedding table by
@@ -113,6 +115,29 @@ SEQUENCE_ONLY_TOKENS = [SEQUENCE_ONLY_DOC_TYPE_TOKEN]
 RETRACT_TOKEN = "<retract>"
 RETRACT_TOKENS = [RETRACT_TOKEN]
 
+# --- Retraction-mode doc type (issue #175) ---
+# Doc type for a document that MAY contain ``<retract>`` statements. The
+# statements themselves are unchanged; this only tells the model, at token 0,
+# which mode it is generating in.
+#
+# #160 trained on a 50:50 mixture of retraction-bearing and clean documents
+# that began with the *identical* prefix, so nothing distinguished them --
+# and 20.1% of the retraction half happened to contain no ``<retract>`` at
+# all, making that fifth indistinguishable in the body too. A model in that
+# position has to marginalise over "may I take this back later?" at every
+# step, which shows up as retracting on only 43% of rollouts and, more
+# expensively, as a -0.0251 R-precision regression in *emission* quality
+# before any retraction is honoured: in retraction mode the optimal policy is
+# more speculative, and with no marker that speculativeness leaks into clean
+# generation.
+#
+# Same treatment as SEQUENCE_ONLY_TOKENS and RETRACT_TOKENS: minted here,
+# deliberately OUT of NATIVE_TOKENS, and appended LAST in all_domain_tokens()
+# so every pre-existing id is unchanged (append-only) and an existing
+# checkpoint grows by exactly one embedding row.
+BACKTRACKING_DOC_TYPE_TOKEN = "<contacts-v1.backtracking>"
+BACKTRACKING_TOKENS = [BACKTRACKING_DOC_TYPE_TOKEN]
+
 
 def position_token(index: int) -> str:
     """Token for a residue position index — reused ``<pX>`` from c-and-d-v1."""
@@ -187,6 +212,21 @@ def retract_tokens() -> list[str]:
     return list(RETRACT_TOKENS)
 
 
+def backtracking_tokens() -> list[str]:
+    """The retraction-mode doc type, appended last (issue #175).
+
+    Currently just ``<contacts-v1.backtracking>``. Its own trailing group,
+    after the retraction token, so introducing it left every pre-existing id
+    (including ``<retract>``'s) unchanged.
+
+    The two coordinate formats exclude this group from the vocab they inherit
+    for the same reason they exclude :func:`retract_tokens` — see their
+    ``inherited_tokens``. Anything appended here must be added to that filter
+    too, or the whole xyz/crop block shifts up by one id.
+    """
+    return list(BACKTRACKING_TOKENS)
+
+
 def all_domain_tokens() -> list[str]:
     """Return the full ordered contacts-v1 domain vocabulary.
 
@@ -195,11 +235,13 @@ def all_domain_tokens() -> list[str]:
 
     The group order (the native tokens, then the contacts-and-distances-v1
     block, then the trailing sequence-only token, then the trailing
-    retraction token) and the within-group order are both load-bearing.
+    retraction token, then the trailing retraction-mode doc type) and the
+    within-group order are both load-bearing.
     """
     return [
         *contacts_v1_native_tokens(),
         *additional_tokens(),
         *sequence_only_tokens(),
         *retract_tokens(),
+        *backtracking_tokens(),
     ]
