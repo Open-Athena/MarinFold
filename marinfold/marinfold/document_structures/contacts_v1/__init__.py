@@ -71,6 +71,7 @@ from .vocab import (
     NAME,
     NUM_POSITION_INDICES,
     SEQUENCE_ONLY_DOC_TYPE_TOKEN,
+    VOCABULARY,
     all_domain_tokens,
 )
 
@@ -82,6 +83,7 @@ __all__ = [
     "NAME",
     "NUM_POSITION_INDICES",
     "SEQUENCE_ONLY_DOC_TYPE_TOKEN",
+    "VOCABULARY",
     "AnalyzedStructure",
     "ContactStructure",
     "EmittedContact",

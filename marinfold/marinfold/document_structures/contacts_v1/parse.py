@@ -151,11 +151,6 @@ class AnalyzedStructure:
     source_path: Path
 
 
-# Column names for the flat, parquet-friendly serialization of an
-# :class:`AnalyzedStructure` (see :func:`analyzed_to_row`). The residue and
-# contact fields are stored as parallel arrays; residue ``seq_index`` is
-# implicit in array order (``0..L-1``), matching how ``analyze_structure``
-# numbers them.
 ANALYZED_ROW_COLUMNS: tuple[str, ...] = (
     "entry_id",
     "seq_len",
@@ -170,33 +165,19 @@ ANALYZED_ROW_COLUMNS: tuple[str, ...] = (
 )
 
 
-def analyzed_to_row(analyzed: "AnalyzedStructure") -> dict[str, Any]:
-    """Serialize an :class:`AnalyzedStructure` to a flat, parquet-friendly row.
-
-    This is the reusable **pyconfind-output** record: it carries the residue
-    sequence (name / author-number / chain) and the **raw** contacts (all
-    ``degree > 0`` pairs, *before* any document-format filtering such as
-    ``min_seq_separation`` / ``min_contact_degree``), so a downstream document
-    generator (contacts-v1, contacts-and-crops-v1, …) can reconstruct the
-    :class:`AnalyzedStructure` with :func:`analyzed_from_row` and build a
-    document **without re-running pyconfind**. Residues are stored as parallel
-    arrays in sequence order (``seq_index`` implicit); contacts as parallel
-    ``seq_i`` / ``seq_j`` (``seq_i < seq_j``, 0-based) / ``degree`` arrays.
-    ``source_path`` is provenance-only and intentionally not serialized.
-    """
-    residues = analyzed.residues
-    contacts = analyzed.contacts
+def analyzed_to_row(analyzed: AnalyzedStructure) -> dict[str, Any]:
+    """Serialize an analyzed structure to the reusable parquet row format."""
     return {
         "entry_id": analyzed.entry_id,
-        "seq_len": len(residues),
+        "seq_len": len(analyzed.residues),
         "global_plddt": float(analyzed.global_plddt),
-        "num_contacts": len(contacts),
-        "residue_resname": [r.resname for r in residues],
-        "residue_resnum": [int(r.resnum) for r in residues],
-        "residue_chain": [r.chain for r in residues],
-        "contact_seq_i": [int(c.seq_i) for c in contacts],
-        "contact_seq_j": [int(c.seq_j) for c in contacts],
-        "contact_degree": [float(c.degree) for c in contacts],
+        "num_contacts": len(analyzed.contacts),
+        "residue_resname": [residue.resname for residue in analyzed.residues],
+        "residue_resnum": [int(residue.resnum) for residue in analyzed.residues],
+        "residue_chain": [residue.chain for residue in analyzed.residues],
+        "contact_seq_i": [int(contact.seq_i) for contact in analyzed.contacts],
+        "contact_seq_j": [int(contact.seq_j) for contact in analyzed.contacts],
+        "contact_degree": [float(contact.degree) for contact in analyzed.contacts],
     }
 
 
@@ -206,46 +187,44 @@ def analyzed_from_row(
     entry_id: str | None = None,
     source_path: str | Path | None = None,
 ) -> AnalyzedStructure:
-    """Reconstruct an :class:`AnalyzedStructure` from an :func:`analyzed_to_row` row.
-
-    The inverse of :func:`analyzed_to_row`. Array fields may arrive as Python
-    lists, numpy arrays, or pyarrow list scalars (whatever a parquet reader
-    yields); they are coerced element-wise. ``entry_id`` / ``source_path``
-    override the row's values when given (``source_path`` is not stored in the
-    row, so it defaults to a ``"<row>"`` placeholder). Rebuilds residues in
-    sequence order (``seq_index = 0..L-1``) exactly as ``analyze_structure``
-    numbered them, so a document built from the result is byte-identical to one
-    built from the original :class:`AnalyzedStructure`.
-    """
+    """Reconstruct an analyzed structure from a reusable parquet row."""
     resnames = list(row["residue_resname"])
     resnums = list(row["residue_resnum"])
     chains = list(row["residue_chain"])
-    residues = tuple(
-        ResidueInfo(
-            seq_index=i,
-            resname=str(resnames[i]),
-            resnum=int(resnums[i]),
-            chain=str(chains[i]),
-        )
-        for i in range(len(resnames))
-    )
+    if not (len(resnames) == len(resnums) == len(chains)):
+        raise ValueError("Residue columns must have equal lengths")
+
     seq_i = list(row["contact_seq_i"])
     seq_j = list(row["contact_seq_j"])
-    degree = list(row["contact_degree"])
+    degrees = list(row["contact_degree"])
+    if not (len(seq_i) == len(seq_j) == len(degrees)):
+        raise ValueError("Contact columns must have equal lengths")
+
+    residues = tuple(
+        ResidueInfo(
+            seq_index=index,
+            resname=str(resname),
+            resnum=int(resnum),
+            chain=str(chain),
+        )
+        for index, (resname, resnum, chain) in enumerate(
+            zip(resnames, resnums, chains, strict=True)
+        )
+    )
     contacts = tuple(
-        RawContact(seq_i=int(seq_i[k]), seq_j=int(seq_j[k]), degree=float(degree[k]))
-        for k in range(len(seq_i))
+        RawContact(seq_i=int(i), seq_j=int(j), degree=float(degree))
+        for i, j, degree in zip(seq_i, seq_j, degrees, strict=True)
     )
     raw_plddt = row.get("global_plddt")
     global_plddt = float(raw_plddt) if raw_plddt is not None else math.nan
-    resolved_id = entry_id if entry_id is not None else row["entry_id"]
-    resolved_path = Path(source_path) if source_path is not None else Path("<row>")
+    resolved_entry_id = entry_id if entry_id is not None else row["entry_id"]
+    resolved_source_path = Path(source_path) if source_path is not None else Path("<row>")
     return AnalyzedStructure(
-        entry_id=str(resolved_id),
+        entry_id=str(resolved_entry_id),
         residues=residues,
         contacts=contacts,
         global_plddt=global_plddt,
-        source_path=resolved_path,
+        source_path=resolved_source_path,
     )
 
 
