@@ -238,3 +238,51 @@ def test_crop_bodies_stop_at_the_next_crop_token():
     crop_calls = [s for s in stub.stop_tokens if s is not None]
     assert crop_calls, "no crop-body call recorded"
     assert all(s == [RecordingStub.crop_id] for s in crop_calls)
+
+
+def test_plan_e1_forces_real_contacts_capped_at_the_formats_maximum():
+    """E1 must write real contacts, and no more than a document ever shows.
+
+    The format caps a document at ``n_contacts_max`` (50) and samples them
+    uniformly rather than strongest-first, so forcing every true contact — often
+    hundreds — would be a prompt shape the model has never seen.
+    """
+    from marinfold.document_structures.contacts_and_crops_v1 import GenerationConfig
+    from marinfold.document_structures.contacts_and_crops_v1.vocab import CONTACT_TOKEN
+
+    from plans import plan_e1
+
+    contacts = [(i, i + 7, 0.5) for i in range(len(_SEQUENCE) - 7)]  # 43 available
+
+    class PromptRecordingStub(StubSampler):
+        def __init__(self):
+            super().__init__()
+            self.prompts = []
+
+        def prefill(self, prompt_ids):
+            self.prompts.append(self.decode(prompt_ids))
+            return super().prefill(prompt_ids)
+
+    stub = PromptRecordingStub()
+    result = plan_e1(stub, _RECORD, _gt_array(), config=SamplingConfig(),
+                     contacts=contacts)
+    assert result.stats["plan"] == "E1"
+    assert result.stats["contacts_available"] == len(contacts)
+    assert result.stats["contacts_forced"] == len(contacts)  # under the cap
+    forced = stub.prompts[0].count(CONTACT_TOKEN)
+    assert forced == len(contacts)
+
+    # Over the cap, only n_contacts_max are written.
+    many = [(i, j, 0.5) for i in range(20) for j in range(i + 7, 30)]
+    assert len(many) > GenerationConfig().n_contacts_max
+    stub2 = PromptRecordingStub()
+    capped = plan_e1(stub2, _RECORD, _gt_array(), config=SamplingConfig(), contacts=many)
+    assert capped.stats["contacts_forced"] == GenerationConfig().n_contacts_max
+    assert stub2.prompts[0].count(CONTACT_TOKEN) == GenerationConfig().n_contacts_max
+
+
+def test_plan_a_records_the_models_own_contact_count():
+    # Nothing is teacher-forced in A, so this column is the model's own choice.
+    result = plan_a(StubSampler(), _RECORD, config=SamplingConfig(), gt=_gt_array())
+    assert "self_emitted_contacts" in result.stats
+    assert result.stats["self_emitted_contacts"] >= 0

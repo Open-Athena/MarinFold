@@ -54,6 +54,7 @@ from marinfold.document_structures.contacts_and_crops_v1 import (
 )
 from marinfold.document_structures.contacts_and_crops_v1.vocab import (
     BEGIN_STRUCTURE_TOKEN,
+    CONTACT_TOKEN,
     CROP_TOKEN,
     END_TOKEN,
     atom_token,
@@ -226,7 +227,7 @@ def parse_observations(
             visit_counts[cell] = current_visit + 1
             current_cell = cell
             continue
-        if token.startswith("<contact>"):
+        if token == CONTACT_TOKEN:
             i += 3
             continue
 
@@ -491,6 +492,30 @@ def place_in_cube(
             )
         )
     return placed
+
+
+def count_contacts(tokens: Sequence[str]) -> int:
+    """How many ``<contact>`` statements a token stream carries.
+
+    Contacts hold no coordinates, so :func:`parse_observations` skips them — but
+    whether a *sampled* document chose to emit any, and how many, is a
+    diagnostic worth recording: it says what the model conditioned its own
+    coordinate section on.
+    """
+    tokens = list(tokens)
+    if BEGIN_STRUCTURE_TOKEN in tokens:
+        tokens = tokens[tokens.index(BEGIN_STRUCTURE_TOKEN) + 1 :]
+    count = 0
+    i = 0
+    while i < len(tokens):
+        if tokens[i] == END_TOKEN:
+            break
+        if tokens[i] == CONTACT_TOKEN:
+            count += 1
+            i += 3
+            continue
+        i += 1 if tokens[i] == CROP_TOKEN else 4
+    return count
 
 
 def crop_header(cell: Sequence[int]) -> list[str]:

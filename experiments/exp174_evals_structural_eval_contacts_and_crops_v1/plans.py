@@ -9,6 +9,9 @@ the decode contract in ``document_codec`` and differ only in what they put in
 the prompt and how many times they ask.
 
 * :func:`plan_a` — one free-running document. The in-distribution control.
+* :func:`plan_e1` — teacher-force the *true contacts*, generate the coordinate
+  section. The diagnostic that splits "cannot predict the contact map" from
+  "cannot turn a contact map into 3D".
 * :func:`plan_e2` — teacher-force the *true* Pass-1 boxes, generate only crops.
   The oracle that gates C and F: can the model refine a box it was handed?
 * :func:`plan_c` — one forced crop sweep off a shared Pass-1 prefix, no
@@ -37,6 +40,7 @@ from document_codec import (
     CROP_ATOM_TOKENS,
     CROP_HEADER_TOKENS,
     CoordinateEstimate,
+    count_contacts,
     crop_header,
     estimate_to_atom_array,
     pass1_budget,
@@ -47,7 +51,15 @@ from document_codec import (
     start_index,
     synthesize_pass1,
 )
-from marinfold.document_structures.contacts_and_crops_v1 import CONTEXT_LENGTH
+from marinfold.document_structures.contacts_and_crops_v1 import (
+    CONTEXT_LENGTH,
+    GenerationConfig,
+)
+from marinfold.document_structures.contacts_and_crops_v1.vocab import (
+    CONTACT_TOKEN,
+    position_token,
+)
+from marinfold.document_structures.contacts_and_crops_v1 import NUM_POSITION_INDICES
 from sampler import SamplingConfig
 
 # How many neighbouring crops Plan F puts in context around a target box. The
@@ -165,6 +177,95 @@ def plan_a(sampler, record, *, config: SamplingConfig, gt=None, seed: int = 0) -
             "generated_tokens": len(sampled),
             "decoded_pass1": n_pass1,
             "decoded_crop": n_crop,
+            # Nothing is teacher-forced in Plan A, so any contacts here are the
+            # model's own — worth recording, since they are what it conditioned
+            # its coordinate section on.
+            "self_emitted_contacts": count_contacts(tokens),
+            "decoded_atoms": len(estimate),
+            "refined_atoms": len(estimate.refined_keys()),
+            "elapsed_seconds": elapsed,
+        },
+    )
+
+
+def plan_e1(
+    sampler, record, gt=None, *, config: SamplingConfig, seed: int = 0,
+    contacts: list | None = None, n_contacts: int | None = None,
+) -> PlanResult:
+    """Teacher-force the true contacts, then generate the coordinate section.
+
+    E2 showed that the model refines a box it is handed about as well as ground
+    truth does, so the deficit is Pass 1 — the fold. E1 asks whether the fold
+    fails because the model cannot infer the contact map, or because it cannot
+    turn one into 3D coordinates: it writes real contacts into the contacts
+    section and lets the model generate everything downstream.
+
+    **How many contacts.** The format never shows more than
+    ``n_contacts_max`` (50) in a document, and it samples them *uniformly* from
+    the eligible pool rather than strongest-first (SPEC → Contacts). So
+    "teacher-force the true contacts" can only mean "the 50-ish the format is
+    able to show", sampled the same way — anything more would be a prompt the
+    model has never seen. The contacts also cost 3 tokens each, which the
+    Pass-1 budget accounts for.
+
+    Args:
+        contacts: ``(i, j, degree)`` triples in 0-based input-sequence
+            coordinates (the ``gt_contacts.jsonl`` payload). Empty or ``None``
+            degrades to Plan A.
+        n_contacts: how many to force; defaults to the format's own maximum.
+    """
+    import torch
+
+    sequence = record["input_seq"]
+    entry_id = record["record_id"]
+    prefix = sequence_prefix(entry_id, sequence)
+    if prefix is None:
+        return PlanResult(CoordinateEstimate(), {"status": "unserializable"})
+    start = start_index(entry_id, sequence)
+    limit = n_contacts if n_contacts is not None else GenerationConfig().n_contacts_max
+
+    rng = random.Random(seed)
+    pool = list(contacts or [])
+    chosen = pool if len(pool) <= limit else rng.sample(pool, limit)
+    contact_tokens: list[str] = []
+    for i, j, _degree in chosen:
+        # The format coin-flips each pair's order; do the same.
+        a, b = (j, i) if rng.random() < 0.5 else (i, j)
+        contact_tokens += [
+            CONTACT_TOKEN,
+            position_token((start + a) % NUM_POSITION_INDICES),
+            position_token((start + b) % NUM_POSITION_INDICES),
+        ]
+
+    prompt = prefix + contact_tokens
+    prompt_ids = sampler.encode(prompt)
+    generator = torch.Generator(device=sampler.device).manual_seed(seed)
+    started = time.time()
+    sampled = sampler.sample(
+        prompt_ids,
+        n_samples=1,
+        config=config,
+        max_new_tokens=max(0, CONTEXT_LENGTH - len(prompt_ids)),
+        generator=generator,
+    )[0]
+    elapsed = time.time() - started
+
+    tokens = sampler.decode(sampled)
+    valid_atoms = _valid_atoms_from_gt(gt, len(sequence)) if gt is not None else None
+    estimate = CoordinateEstimate()
+    for observation in parse_observations(
+        tokens, start=start, length=len(sequence), valid_atoms=valid_atoms
+    ):
+        estimate.add(observation)
+
+    return PlanResult(
+        estimate,
+        {
+            "status": "ok",
+            "plan": "E1",
+            "contacts_available": len(pool),
+            "contacts_forced": len(chosen),
+            "generated_tokens": len(sampled),
             "decoded_atoms": len(estimate),
             "refined_atoms": len(estimate.refined_keys()),
             "elapsed_seconds": elapsed,
@@ -501,6 +602,7 @@ def _sweep_plan(
             "plan": label,
             "n_sweeps_run": len(sweep_stats),
             "pass1_tokens": len(pass1_tokens),
+            "self_emitted_contacts": count_contacts(pass1_tokens),
             "crop_statements": n_crop_statements,
             "decoded_atoms": len(estimate),
             "refined_atoms": len(estimate.refined_keys()),
@@ -510,4 +612,4 @@ def _sweep_plan(
     )
 
 
-PLANS = {"A": plan_a, "C": plan_c, "F": plan_f, "E2": plan_e2}
+PLANS = {"A": plan_a, "C": plan_c, "F": plan_f, "E1": plan_e1, "E2": plan_e2}

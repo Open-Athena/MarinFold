@@ -150,6 +150,13 @@ def main(argv: list[str] | None = None) -> int:
     model_name = args.model_name or Path(str(args.model).rstrip("/")).name
 
     records = [json.loads(line) for line in (gt_root / "gt_index.jsonl").open()]
+    # Plan E1 teacher-forces real contacts, so it needs the bundle's contact
+    # payload; every other plan generates its own and ignores this.
+    contacts_by_record: dict[str, list] = {}
+    if args.plan == "E1":
+        for line in (gt_root / "gt_contacts.jsonl").open():
+            row = json.loads(line)
+            contacts_by_record[row["record_id"]] = row["contacts"]
     # Interleave a length-sorted list so no shard collects all the long chains.
     records.sort(key=lambda r: (-int(r["L"]), r["record_id"]))
     records = [r for i, r in enumerate(records) if i % num_shards == shard_i]
@@ -194,13 +201,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             gt = canonical_pdb.read_structure(gt_path)
             total_started = time.time()
+            per_record = dict(plan_kwargs)
+            if args.plan == "E1":
+                per_record["contacts"] = contacts_by_record.get(record["record_id"], [])
             result = plan(
                 sampler,
                 record,
                 config=config,
                 gt=gt,
                 seed=args.seed,
-                **plan_kwargs,
+                **per_record,
             )
             total_seconds = time.time() - total_started
 

@@ -206,7 +206,7 @@ def build_request(*, plan: str, model: str, shard_i: int, num_shards: int,
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--plan", required=True, choices=["A", "C", "F", "E2", "E3"])
+    ap.add_argument("--plan", required=True, choices=["A", "C", "F", "E1", "E2", "E3"])
     ap.add_argument("--model", default="cc1mix5-step50000")
     ap.add_argument("--num-shards", type=int, default=4)
     ap.add_argument("--shards", default=None, help="comma-separated subset to (re)submit")
