@@ -32,8 +32,10 @@ LENGTH_LABELS = ["<=100", "101-200", "201-400", ">400"]
 
 # Report order and display names. Anything not listed still plots, at the end.
 RUN_LABELS = {
-    "oracle-document": "oracle document (ceiling)",
+    "oracle-doc": "oracle document (1-doc ceiling)",
+    "oracle-document": "oracle document (1-doc ceiling)",
     "e2-cc1mix5-step50000": "E2 oracle boxes",
+    "e1-cc1mix5-step50000": "E1 oracle contacts",
     "f-cc1mix5-step50000": "F  mix5",
     "c-cc1mix5-step50000": "C  mix5",
     "a-cc1mix5-step50000": "A  mix5",
@@ -43,15 +45,20 @@ RUN_LABELS = {
 
 
 def ordered_runs(scores: pd.DataFrame) -> list[str]:
+    """The runs to plot, in report order.
+
+    Only the model runs and the oracle ceiling; the model-free quantization
+    baselines live in ``plots/ceiling.png`` and would crowd this figure.
+    """
     present = set(scores.run.unique())
-    return [r for r in RUN_LABELS if r in present] + sorted(present - set(RUN_LABELS))
+    return [r for r in RUN_LABELS if r in present]
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--scores", type=Path, default=Path("data/scores_all.csv"))
     ap.add_argument("--out", type=Path, default=Path("plots"))
-    ap.add_argument("--ceiling-run", default="oracle-document")
+    ap.add_argument("--ceiling-run", default="oracle-doc")
     args = ap.parse_args(argv)
 
     scores = pd.read_csv(args.scores)

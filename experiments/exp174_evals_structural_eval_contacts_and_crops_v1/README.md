@@ -155,13 +155,118 @@ The 65 %/25 % row uses the SPEC's own coverage table for a 150–500-residue cha
 Re-measuring it from real generated documents rather than the SPEC's summary is
 a small, worthwhile follow-up.
 
-### Model scores
+### Inference: what the plans are, and what they cost
 
-Not yet — Component 1 is gated on the plan discussion. The two
-[#137](https://github.com/Open-Athena/MarinFold/issues/137) /
-[#155](https://github.com/Open-Athena/MarinFold/issues/155) checkpoints are ready
-to score as soon as an inference approach is agreed (`exp137-cc1mix5-…` has HF
-exports through step-50000; the 3-way restart through step-10000).
+Component 1 shipped as `document_codec.py` (tokens ↔ coordinates), `sampler.py`
+(two temperatures — coordinate `<xyz-DDD>` tokens vs structural choices — plus
+explicit KV-cache reuse) and `plans.py`. Everything ran on CoreWeave RNO2A at
+batch priority; ~57 single-H100 shards, models cast to bf16 before upload.
+
+| plan | conditioned on | generated |
+|---|---|---|
+| **A** | sequence section only | contacts, Pass 1, Pass 2 — one free-running document |
+| **C** | sequence + the model's own Pass 1 | one forced crop per occupied box, no neighbour context, K=1 |
+| **F** | sequence + own Pass 1 + already-refined neighbours + own earlier visits | 2 spatially coherent sweeps, K=3 samples per crop |
+| **E1** | sequence + **true contacts** (≤50, the format's cap) | everything downstream |
+| **E2** | sequence + **true Pass-1 boxes** | Pass 2 only |
+| **E3** | probe: a box shown *i* times, from ground truth | that box's crop |
+
+A, C and F are fully de-novo: nothing is teacher-forced, and the model writes
+its own contacts section before Pass 1. E1/E2/E3 are oracle diagnostics and are
+never compared against a predictor.
+
+### E3 — the model learned the refinement schedule
+
+The format trains a box's *i*-th appearance with σ = 1/(i+1)² Å noise. Whether
+the model conditions on visit count at all was the gate on Plan F's inner loop
+(`data/probe_refinement.csv`, 720 trials):
+
+| visit index | training σ (Å) | measured error (Å) |
+|---|---|---|
+| 0 | 1.000 | 2.11 |
+| 1 | 0.250 | 1.13 |
+| 2 | 0.111 | 0.44 |
+| 3 | 0.063 | 0.25 |
+| 4 | 0.040 | 0.16 |
+| 5 | 0.028 | **0.13** |
+
+Error falls 16× over six visits, tracking the schedule down to ~0.13 Å and then
+flattening — right at the format's own 0.1 Å tenths floor. **The refinement
+machinery works and is worth re-showing boxes for.**
+
+### Model scores (554 proteins, mean; `data/scores_all.csv`, `plots/results.png`)
+
+| run | atom cov. | refined | lDDT | lDDT-CA | TM-score | median CA-RMSD |
+|---|---|---|---|---|---|---|
+| *0.1 Å, all atoms* | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.05 |
+| *10 Å box centres, all atoms* | 1.000 | 0.000 | 0.323 | 0.327 | 0.511 | 4.96 |
+| **oracle document — 1-doc ceiling** | 0.769 | 0.319 | **0.290** | 0.300 | **0.537** | **4.16** |
+| **E2** — true Pass-1 boxes | 0.772 | 0.321 | **0.278** | 0.291 | **0.522** | **4.33** |
+| **F** — 2 sweeps, K=3 | **0.999** | **0.999** | **0.290** | **0.319** | 0.277 | 16.28 |
+| **C** — one forced sweep | 0.935 | 0.815 | 0.223 | 0.246 | 0.245 | 16.55 |
+| **E1** — true contacts (≤50) | 0.754 | 0.317 | 0.161 | 0.169 | 0.222 | 12.96 |
+| **A** — mix5 step-50000 | 0.758 | 0.313 | 0.141 | 0.158 | 0.193 | 16.62 |
+| **A** — 3way step-20000 | 0.753 | 0.306 | 0.144 | 0.160 | 0.197 | 16.85 |
+
+**Plan F works, and it escapes the token budget.** Coverage 0.999 and refined
+fraction 0.999, against 0.31 for a single document. lDDT doubles Plan A
+(0.141 → 0.290) and *equals the single-document ceiling*. Per length it goes
+past that ceiling, because the ceiling collapses with chain length (fixed 8192
+budget, growing atom count) while F just re-prompts:
+
+| lDDT by length | ≤100 | 101–200 | 201–400 | >400 |
+|---|---|---|---|---|
+| oracle document (1 doc) | 0.519 | 0.313 | 0.158 | 0.062 |
+| **F** | 0.338 | 0.297 | **0.267** | **0.164** |
+| A | 0.258 | 0.153 | 0.075 | 0.018 |
+
+F is **1.7× the one-document ceiling at 201–400 residues and 2.6× above it past
+400**. That is the plan doing exactly what it was designed to do.
+
+**But the fold is wrong, and no de-novo plan fixes it.** CA-RMSD is ~16.5 Å for
+A, C and F alike (12.4 Å at ≤100 residues rising to 26 Å past 400), and TM-score
+never passes 0.28. F makes a wrong fold complete and locally precise. The
+decisive comparison is E2 against F: **same model, same refinement machinery,
+less coverage — and TM 0.522 vs 0.277, CA-RMSD 4.33 Å vs 16.28 Å.** The only
+difference is whether the coarse boxes are right.
+
+**E1 says the contact map is not the whole story either.** Handing the model 50
+true contacts cuts CA-RMSD 16.6 → 13.0 Å (−22 %) and lifts lDDT 0.141 → 0.161 —
+real, and nowhere near E2's 4.33 Å. Caveat worth stating plainly: the format
+caps a document at **50** contacts and samples them uniformly, so E1 could only
+ever supply a small slice of a real contact map. It bounds the effect from
+below; it does not exonerate contact prediction.
+
+**The two checkpoints are indistinguishable.** 0.141 vs 0.144 lDDT, 0.193 vs
+0.197 TM. The 3-way restart at step-20000 has caught up with mix5 at
+step-50000; neither is better.
+
+**Plan F had not converged.** Mean per-atom displacement between sweeps was
+4.03 Å after sweep 0 and 2.02 Å after sweep 1, against a 0.1 Å stopping
+threshold — it was still halving when the 2-sweep compute cap stopped it. The F
+numbers are a lower bound on F.
+
+### Interactive viewer
+
+[`explore_predictions.ipynb`](explore_predictions.ipynb) — open in
+[Colab](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/claude/github-issue-174-0d4157/experiments/exp174_evals_structural_eval_contacts_and_crops_v1/explore_predictions.ipynb).
+Superimposes prediction and experimental structure in 3D, coloured by the
+resolution tier the document actually reached (blue = Pass-2 refined, orange =
+Pass-1 box-only drawn at its box centre, grey = ground truth), with per-protein
+metrics and a plan-comparison cell. Runs anonymously — no login, no token.
+
+The committed outputs show all four plans on `denovo_pdb/7sq4_A` (L=48), which is
+the whole result on one protein:
+
+| plan | coverage | refined | lDDT | TM | CA-RMSD |
+|---|---|---|---|---|---|
+| A | 0.974 | 0.512 | 0.470 | 0.298 | 7.52 Å |
+| F | 1.000 | 1.000 | 0.650 | 0.456 | 6.69 Å |
+| E2 (oracle boxes) | 0.982 | 0.571 | 0.563 | **0.626** | **2.53 Å** |
+| oracle document | 0.995 | 0.692 | 0.658 | 0.739 | 1.81 Å |
+
+F wins on coverage and lDDT; E2 wins on the global metrics. Local precision and
+global correctness come apart, and they come apart at Pass 1.
 
 ## Reproducing
 
@@ -201,20 +306,53 @@ published to the public HF bucket by
    honest account of coverage/truncation effects.
 5. Results written up in the experiment README + a summary comment on this issue.
 
-Status: **1 and 3 done** — the inference approach is agreed (Plan F, see
-[`PLANS.md`](PLANS.md) §8) and the harness is built, tested and validated
-against a measured ceiling. **2, 4 and 5** are the remaining work: implement
-Plan F, score both checkpoints, write it up.
+Status: **1, 2, 3 and 4 done.** Plan F agreed and implemented; the pipeline
+produces full-atom coordinates per protein for a given checkpoint; the harness
+reports all five metrics per-protein and in aggregate with coverage; both
+checkpoints are scored and compared with length stratification and an explicit
+coverage/truncation account. **5** is this README plus the issue comment.
+
+One run is still in flight: Plan F on the 3-way checkpoint (8 shards, ~3 h
+remaining). Given that the two checkpoints are indistinguishable under Plan A
+(0.141 vs 0.144 lDDT), it is not expected to change any conclusion, but the
+table will be updated when it lands.
 
 ## Conclusion
 
-_(Fill in once the models are scored.)_
+**contacts-and-crops-v1 at 1.5B is not yet structure-capable de novo, and the
+bottleneck is Pass 1 — the coarse fold — not Pass 2 refinement and not the
+format's resolution.** Three independent measurements agree:
 
-The ceiling result already stands on its own, though, and is worth carrying into
-the format design as much as into this eval: **the Pass-2 refined fraction is the
-entire ballgame.** Going from 15 % to 50 % of atoms refined moves the achievable
-lDDT from 0.36 to 0.53 and TM-score from 0.58 to 0.75, while the 0.1 Å digit
-encoding contributes no loss at all and the coarse boxes contribute nothing
-beyond a 0.32 lDDT floor. Anything that raises that fraction — a bigger
-`fine_reserve` in a v2 format, or an inference plan that re-prompts for more
-crops — buys more than any other lever available.
+1. **The format's coordinate encoding is not the problem.** 0.1 Å quantization
+   of ground truth scores a perfect 1.000 lDDT / 1.000 TM. A real generated
+   document decodes to lDDT 0.290 / TM 0.537 / CA-RMSD 4.16 Å — that is the
+   ceiling, and it is set by coverage and the 10 Å coarse tier, not by the digit
+   vocabulary.
+2. **The model's refinement is near-perfect given correct boxes.** E2 reaches
+   96 % of the ceiling (lDDT 0.278 vs 0.290, TM 0.522 vs 0.537, CA-RMSD 4.33 Å
+   vs 4.16 Å), and E3 shows it follows the σ=1/(i+1)² schedule down to the
+   format's own 0.1 Å floor. Pass 2 works.
+3. **Every de-novo plan is stuck at CA-RMSD ~16.5 Å and TM ≤0.28**, regardless
+   of how much inference is spent. Plan F drives coverage and refined fraction
+   to 0.999 and doubles lDDT — it beats the single-document ceiling 2.6× on long
+   chains — and moves the global metrics barely at all. It produces a complete,
+   locally precise, *wrong* structure.
+
+The practical reading: **inference compute is not the lever, and neither is a
+bigger `fine_reserve` in a v2 format.** The earlier ceiling analysis said the
+Pass-2 refined fraction was "the whole ballgame"; that was right about the
+*format's* ceiling and wrong about where this *model* sits relative to it. Plan
+F already buys the refined fraction outright, and the fold does not improve.
+Whatever comes next should target Pass 1 — the coarse spatial layout — with
+training rather than decoding.
+
+Two things worth carrying forward:
+
+- **lDDT and TM-score come apart here, sharply, and reporting only one would
+  mislead.** F is at the ceiling on lDDT and a third of it on TM. A local metric
+  rewards a well-refined wrong fold; a global one does not. Any future
+  contacts-and-crops eval should report both, with coverage.
+- **E1's ≤50-contact cap is a live confound.** 50 true contacts bought a 22 %
+  RMSD reduction. Whether a *full* contact map would fix the fold is untested
+  and untestable in this format — which is itself an argument about the format,
+  not just about the eval.

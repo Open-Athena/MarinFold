@@ -22,10 +22,13 @@ import argparse
 import json
 from pathlib import Path
 
-BUCKET_HTTPS = (
-    "https://huggingface.co/api/buckets/open-athena/MarinFold/resolve/"
-    "data/exp174-structural-eval"
-)
+# Anonymous read of a public HF bucket. The path after ``/resolve/`` is
+# **fully URL-quoted** — slashes included — which is what huggingface_hub
+# builds internally; the un-quoted form 404s. Doing it with plain ``requests``
+# rather than the hub client keeps the notebook free of a huggingface_hub
+# version pin and of any token (experiments/AGENTS.md rule 2).
+BUCKET_RESOLVE = "https://huggingface.co/buckets/open-athena/MarinFold/resolve"
+BUCKET_PREFIX = "data/exp174-structural-eval"
 
 CELLS: list[tuple[str, str]] = [
     (
@@ -59,21 +62,28 @@ Runs anonymously — no login, no token. Open in Colab straight from GitHub.""",
     ),
     (
         "code",
-        f'''import io, json, tarfile, warnings
+        f'''import io, tarfile
 from pathlib import Path
+from urllib.parse import quote
 
 import pandas as pd
 import requests
 
-BUCKET = "{BUCKET_HTTPS}"
+RESOLVE = "{BUCKET_RESOLVE}"
+PREFIX = "{BUCKET_PREFIX}"
 CACHE = Path("exp174_data"); CACHE.mkdir(exist_ok=True)
 
 
 def fetch(name: str) -> Path:
-    """Download one published artifact (cached), anonymously."""
+    """Download one published artifact (cached), anonymously.
+
+    The bucket path is quoted whole (``safe=""``), so its slashes become
+    %2F — the form the resolve endpoint expects.
+    """
     local = CACHE / name.replace("/", "_")
     if not local.exists():
-        response = requests.get(f"{{BUCKET}}/{{name}}", timeout=600)
+        path = quote(f"{{PREFIX}}/{{name}}", safe="")
+        response = requests.get(f"{{RESOLVE}}/{{path}}", timeout=600)
         response.raise_for_status()
         local.write_bytes(response.content)
     return local
@@ -88,10 +98,23 @@ def fetch_structures(name: str) -> Path:
     return root
 
 
+# scores_all.csv carries every scored run, including the model-free
+# quantization baselines from the ceiling table. Only the runs below have their
+# structures published, so only those can be viewed in 3D.
+VIEWABLE = [
+    "oracle-doc",
+    "e2-cc1mix5-step50000",
+    "e1-cc1mix5-step50000",
+    "f-cc1mix5-step50000",
+    "c-cc1mix5-step50000",
+    "a-cc1mix5-step50000",
+    "a-3way-step20000",
+]
+
 scores = pd.read_csv(fetch("results/scores_all.csv"))
 gt_root = fetch_structures("gt/gt_structures.tar.gz")
-print(f"{{len(scores):,}} scored (record, plan) rows")
-print("plans:", sorted(scores.run.unique()))''',
+print(f"{{len(scores):,}} scored (record, run) rows across {{scores.run.nunique()}} runs")
+print("viewable in 3D:", [r for r in VIEWABLE if r in set(scores.run)])''',
     ),
     (
         "markdown",
@@ -100,7 +123,8 @@ print("plans:", sorted(scores.run.unique()))''',
     (
         "code",
         """summary = (
-    scores.groupby("run")
+    scores[scores.run.isin(VIEWABLE)]
+    .groupby("run")
     .agg(n=("record_id", "size"),
          atom_coverage=("atom_coverage", "mean"),
          lddt=("lddt_all", "mean"),
@@ -122,12 +146,11 @@ would score, so it is the honest comparator for every model row.""",
     ),
     (
         "code",
-        '''RUN = "f-cc1mix5-step50000"      # try: a-cc1mix5-step50000, oracle-document, e2-cc1mix5-step50000
+        '''RUN = "f-cc1mix5-step50000"      # any name from VIEWABLE above
 TOP_N = 25
 
-available = sorted(scores.run.unique())
-if RUN not in available:
-    raise SystemExit(f"{RUN!r} not published; choose from {available}")
+if RUN not in VIEWABLE:
+    raise SystemExit(f"{RUN!r} has no published structures; pick from {VIEWABLE}")
 
 ranked = (
     scores[(scores.run == RUN) & (scores.status == "ok")]
@@ -227,8 +250,9 @@ the difference is entirely in how much inference was spent.""",
     ),
     (
         "code",
-        '''for run in [r for r in ["a-cc1mix5-step50000", "f-cc1mix5-step50000", "oracle-document"]
-            if r in set(scores.run)]:
+        '''for run in [r for r in ["a-cc1mix5-step50000", "f-cc1mix5-step50000",
+                        "e2-cc1mix5-step50000", "oracle-doc"]
+            if r in VIEWABLE and r in set(scores.run)]:
     try:
         show(RECORD_ID, run=run)
     except (ValueError, StopIteration) as exc:
@@ -248,7 +272,8 @@ fixed. This is the plot that shows why.""",
 
 fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 for metric, axis in zip(["atom_coverage", "lddt_all", "tm_score"], axes):
-    for run, group in scores[scores.status == "ok"].groupby("run"):
+    subset = scores[(scores.status == "ok") & scores.run.isin(VIEWABLE)]
+    for run, group in subset.groupby("run"):
         binned = group.groupby(pd.cut(group.L, [0, 100, 200, 400, 10_000]),
                                observed=True)[metric].mean()
         axis.plot([str(i) for i in binned.index], binned.values, marker="o", label=run)

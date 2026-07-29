@@ -50,6 +50,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--skip-structures", action="store_true",
                     help="publish the CSVs only (structures are the slow part)")
+    ap.add_argument(
+        "--runs",
+        default=None,
+        help="comma-separated run names whose structures to publish. Default is "
+        "everything under --pred-dir, which includes the model-free quantization "
+        "baselines - those are just requantized ground truth, so on a ~3 MB/s "
+        "uplink they are 25 minutes of wasted upload.",
+    )
     args = ap.parse_args(argv)
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -84,7 +92,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # --- one tarball of predicted structures per run ---
+    wanted = set(args.runs.split(",")) if args.runs else None
     for run_dir in sorted(p for p in args.pred_dir.iterdir() if p.is_dir()):
+        if wanted is not None and run_dir.name not in wanted:
+            continue
         pdbs = list(run_dir.rglob("*.pdb"))
         if not pdbs:
             continue

@@ -69,49 +69,60 @@ TM 0.41.
 lDDT falls as coverage squared (a contact needs both its atoms); TM-score falls
 linearly (a residue needs only itself).
 
-## What that implies for inference
+## E3: the model learned the refinement schedule
 
-An inference plan that samples one document per protein is competing for lDDT
-0.17. A result from such a plan cannot distinguish "the model cannot fold" from
-"the format did not get a chance", which is the central argument in PLANS.md
-for spending inference compute to raise the refined fraction.
+The format trains a box's i-th appearance with sigma = 1/(i+1)^2 A of noise.
+Whether the model conditions on visit count at all was the gate on the whole
+iterative plan.
 
-Inference cost is not the constraint: a full 8192-token document for all 554
-proteins is about three GPU-minutes on one H100.
+It does. Emitted error falls from 2.11 A at the first read to 0.13 A by the
+sixth, tracking the schedule down to the format's own 0.1 A tenths floor and
+then flattening. Re-showing a box is worth doing.
 
-The Pass-2 refined fraction is the entire ballgame. Going from 15% to 50%
-refined moves the achievable lDDT from 0.36 to 0.53 and TM from 0.58 to 0.75.
-That is a format finding as much as an inference one.
+## E2: refinement is not the bottleneck
 
-## The plan of record: a scanning flashlight
+Teacher-force the correct 10 A boxes and let the model generate only the crops,
+and it reaches 96% of the ceiling: lDDT 0.278 against 0.290, TM 0.522 against
+0.537, CA-RMSD 4.33 A against 4.16 A.
 
-Plan F. Generate Pass 1 once, which fixes the frame. Then sweep a spatially
-coherent path over the occupied voxels: for each one, build a prompt ending in
-its crop header, draw K sampled crop bodies, and fold them into a running
-precision-weighted per-atom estimate. Repeat the sweep, because a voxel's
-neighbours have moved since it was last visited, until the coordinates stop
-moving.
+Given correct coarse boxes, the model's Pass-2 crops are about as good as
+ground-truth crops. Pass 2 works.
 
-Two things make this fit the format rather than fight it. Each crop is
-conditioned on its already-refined neighbours, and Pass-2's own box selection
-is 45% frontier and 10% re-show, so a local scan with revisits is the
-training-time crop distribution, not a departure from it. And the prompt —
-sequence, full Pass 1, up to about twenty prior crops, one new header — is
-exactly the shape of a real training document, because the fine reserve holds
-about twenty crops.
+## Plan F works, and escapes the token budget
 
-Sampling, not greedy: averaging K draws recovers the same estimate and hands
-back a per-atom variance for free, which is what the B-factor column and the
-precision weighting both want. Two independent temperatures, one for
-coordinate tokens and one for structural choices.
+Neighbour-conditioned iterative refinement drives atom coverage and refined
+fraction to 0.999, against 0.31 for a single document, and doubles Plan A's
+lDDT from 0.141 to 0.290 — equal to the single-document ceiling.
 
-Cost: about 1.5 to 2 H100-hours for all 554 proteins, provided the synthesized
-Pass-1 section is held byte-identical within a sweep so the prefix cache hits.
-That one decision is worth 10x.
+Per length it goes past that ceiling, because the ceiling collapses with chain
+length while F simply re-prompts: at 201-400 residues F is 1.7x the
+one-document ceiling, and past 400 residues 2.6x above it.
 
-## Status
+## But the fold is wrong, and inference does not fix it
 
-Harness built, tested (34 tests) and validated against a measured ceiling.
-Inference approach agreed: Plan F. Remaining work is E2 and E3 as gates, A and
-C as controls, then F itself, then scoring both #137/#155 checkpoints — which
-are staged and ready.
+CA-RMSD is about 16.5 A for A, C and F alike, and TM-score never passes 0.28.
+Plan F produces a complete, locally precise, wrong structure.
+
+The decisive comparison is E2 against F: same model, same refinement machinery,
+less coverage — TM 0.522 versus 0.277 and CA-RMSD 4.33 A versus 16.28 A. The
+only difference is whether the coarse boxes are right.
+
+Handing the model 50 true contacts (E1, the format's cap) cuts CA-RMSD by 22%
+but gets nowhere near E2. The two checkpoints are indistinguishable.
+
+## Conclusion
+
+contacts-and-crops-v1 at 1.5B is not yet structure-capable de novo, and the
+bottleneck is Pass 1 — the coarse fold — not Pass 2 refinement and not the
+format's resolution.
+
+The earlier ceiling analysis called the Pass-2 refined fraction "the whole
+ballgame". That was right about the format's ceiling and wrong about where this
+model sits relative to it: Plan F buys the refined fraction outright and the
+fold does not improve. Inference compute is not the lever, and neither is a
+bigger fine reserve in a v2 format. The next move belongs to training, aimed at
+the coarse spatial layout.
+
+One reporting lesson: lDDT and TM-score come apart sharply here. Plan F is at
+the ceiling on lDDT and a third of it on TM, because a local metric rewards a
+well-refined wrong fold and a global one does not. Report both, with coverage.
