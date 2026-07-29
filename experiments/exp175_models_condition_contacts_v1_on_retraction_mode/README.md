@@ -101,9 +101,34 @@ Two smaller notes for anyone re-running it: `resize_init_vocab.py` imports
 a pod; and exp160's documented `--cpu 200` no longer fits — the v5p VMs now
 advertise 176 allocatable cores.
 
+### Warm-start check (and a correction to #160)
+
+#160's launch comment claimed the run "opens at ~2.45-2.50", below exp120's
+converged 2.7213, and treated that as proof the warm start was intact. **That
+was wrong** — 2.45 was the loss at step ~586. Pulled from W&B, exp160 actually
+opened at **3.87** and did not cross 2.7213 until **step 35**.
+
+The right test is the *rate*, not the opening value: a scrambled vocab or a
+wrong rope starts near `log(3850) = 8.3` and needs thousands of steps, so
+crossing a converged model's loss in ~35 steps is only reachable from a warm
+start that kept its embeddings' meaning.
+
+By that test exp175 is healthy — it converges onto its control within 50 steps:
+
+| step | 2 | 10 | 20 | 30 | 40 | 50 |
+|---|---|---|---|---|---|---|
+| exp160 | 3.866 | 3.480 | 3.007 | 2.784 | 2.671 | 2.632 |
+| exp175 | 5.212 | 3.768 | 3.191 | 2.894 | 2.717 | 2.657 |
+| **delta** | +1.345 | +0.288 | +0.183 | +0.110 | +0.046 | **+0.025** |
+
+The residual +1.3 nats at step 2 decaying to +0.025 by step 50 is what one
+brand-new untrained token at the head of half the documents should cost: it is
+unpredictable exactly once per marked document, and the model learns it almost
+immediately.
+
 ## Results
 
-_(Training queued. The v5p-32 needs 4 co-scheduled workers and the marin TPU
+_(Training running. The v5p-32 needs 4 co-scheduled workers and the marin TPU
 fleet has been saturated since 2026-07-28 — the same capacity crunch that moved
 #160's eval to CoreWeave. Pending jobs cost nothing, so it holds position.)_
 
