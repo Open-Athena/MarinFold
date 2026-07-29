@@ -6,19 +6,20 @@
 import argparse
 import dataclasses
 import logging
+import math
 import os
 from datetime import timedelta
 from enum import StrEnum
 
 import jmp
-from fray.types import ResourceConfig
+from fray.types import ResourceConfig, get_tpu_topology, tpu_family, tpu_hbm_capacity_bytes
 from haliax import Axis
 from haliax.partitioning import ResourceAxis, round_axis_for_partitioning
 from huggingface_hub import snapshot_download
 from iris.client.client import get_iris_ctx
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
-from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
+from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, DirectDatasetComponent, LmDataConfig
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.lm_model import LmHeadModel
@@ -107,22 +108,79 @@ SEQ_LEN = 8192
 TRAIN_TOKENS = 4_676_753_425
 EXP117_STEPS = round(16 * TRAIN_TOKENS / (256 * SEQ_LEN))
 
-TPU_TYPE = os.environ.get("EXP177_TPU", "v5p-8")
+TPU_TYPE = os.environ.get("EXP177_TPU", "v5p-32")
 TPU_ZONE = os.environ.get("EXP177_ZONE", "us-east5-a")
+TPU_SLICE_COUNT = int(os.environ.get("EXP177_TPU_SLICE_COUNT", "1"))
 RESOURCES = ResourceConfig.with_tpu(
     TPU_TYPE,
-    slice_count=1,
+    slice_count=TPU_SLICE_COUNT,
     cpu=32,
     ram="128g",
     disk="50g",
     zone=TPU_ZONE,
 )
+SHUFFLE = BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel")
+CORRECTION_FACTORS = {"v5e": 0.5, "v6e": 0.3, "v5p": 0.45, "v4": 0.45}
 
 TOKEN_AXES = (
     ResourceAxis.REPLICA_DCN,
     ResourceAxis.REPLICA,
     ResourceAxis.DATA,
 )
+
+
+def _placement_axes(tpu: str, batch_size: int, slice_count: int) -> tuple[int, int]:
+    chip_count = get_tpu_topology(tpu).chip_count * slice_count
+    data_axis_size = math.gcd(chip_count, batch_size)
+    return data_axis_size, chip_count // data_axis_size
+
+
+def _dense_transformer_bytes(batch_size: int) -> tuple[int, int]:
+    params = MODEL_CONFIG.total_trainable_params(VOCAB_SIZE)
+    hidden_activation_bytes = batch_size * SEQ_LEN * MODEL_CONFIG.hidden_dim * 2
+    attention_activation_bytes = batch_size * SEQ_LEN * MODEL_CONFIG.hidden_dim * 4 * 2
+    mlp_activation_bytes = batch_size * SEQ_LEN * MODEL_CONFIG.intermediate_dim * 2
+    per_layer_activation_bytes = hidden_activation_bytes + attention_activation_bytes + mlp_activation_bytes
+    saved_activation_layers = max(math.floor(MODEL_CONFIG.num_layers * 0.75), 4)
+    return params * 4, per_layer_activation_bytes * saved_activation_layers
+
+
+def _batch_memory_bytes(batch_size: int, correction_factor: float) -> int:
+    params = MODEL_CONFIG.total_trainable_params(VOCAB_SIZE)
+    parameter_bytes, activation_bytes = _dense_transformer_bytes(batch_size)
+    optimizer_bytes = params * 8
+    return math.ceil((parameter_bytes + optimizer_bytes + activation_bytes) * correction_factor)
+
+
+def _correction_factor(tpu: str) -> float:
+    if raw := os.environ.get("EXP177_CORRECTION_FACTOR"):
+        return float(raw)
+    family = tpu_family(tpu)
+    if family not in CORRECTION_FACTORS:
+        raise ValueError(f"No exp117 correction factor for TPU family {family!r}; set EXP177_CORRECTION_FACTOR")
+    return CORRECTION_FACTORS[family]
+
+
+def _batch_fit(tpu: str, batch_size: int, slice_count: int) -> tuple[int, int, int, int]:
+    chips_per_slice = get_tpu_topology(tpu).chip_count
+    if batch_size % slice_count != 0:
+        raise ValueError(f"batch_size {batch_size} must be divisible by slice_count {slice_count}")
+    examples_per_slice = batch_size // slice_count
+    data_parallelism_per_slice = math.gcd(examples_per_slice, chips_per_slice)
+    data_parallelism = slice_count * data_parallelism_per_slice
+    tensor_parallelism = chips_per_slice // data_parallelism_per_slice
+    batch_bytes = _batch_memory_bytes(batch_size, _correction_factor(tpu))
+    capacity_bytes = tpu_hbm_capacity_bytes(tpu) * slice_count
+    full_per_device_batch = batch_size // data_parallelism
+    if batch_bytes <= capacity_bytes:
+        return data_parallelism, tensor_parallelism, full_per_device_batch, 1
+    for per_device_parallelism in range(full_per_device_batch, 0, -1):
+        if full_per_device_batch % per_device_parallelism != 0:
+            continue
+        microbatch_size = per_device_parallelism * data_parallelism
+        if math.ceil(batch_bytes * microbatch_size / batch_size) <= capacity_bytes:
+            return data_parallelism, tensor_parallelism, per_device_parallelism, batch_size // microbatch_size
+    raise ValueError(f"Batch size {batch_size} does not fit on {tpu} x {slice_count}")
 
 
 def _loss_kind() -> LossKind:
@@ -256,6 +314,9 @@ def _identity_config(
     steps_per_eval: int,
     train_batch_size: int,
     per_device_parallelism: int,
+    gradient_accumulation: int,
+    data_parallelism: int,
+    tensor_parallelism: int,
     max_eval_batches: int | None,
     num_shards: int,
     examples_per_shard: int,
@@ -275,18 +336,24 @@ def _identity_config(
             "train_cache": CONTACTS_V1_TRAIN_CACHE,
             "validation_cache": CONTACTS_V1_VAL_CACHE,
             "tokenizer": CONTACTS_TOKENIZER,
-            "shuffle": False,
+            "shuffle": "exp117-block-feistel",
             "mixture_block_size": 1,
             "block_cross_document_attention": True,
         },
         "trainer": {
             "train_batch_size": train_batch_size,
             "per_device_parallelism": per_device_parallelism,
+            "gradient_accumulation": gradient_accumulation,
+            "tpu": TPU_TYPE,
+            "slice_count": TPU_SLICE_COUNT,
+            "data_parallelism": data_parallelism,
+            "tensor_parallelism": tensor_parallelism,
+            "correction_factor": _correction_factor(TPU_TYPE),
             "num_train_steps": steps,
             "steps_per_eval": steps_per_eval,
             "max_eval_batches": max_eval_batches,
             "precision": "p=f32,c=bfloat16",
-            "mesh": {"replica": 1, "data": -1, "model": 1},
+            "mesh": {"replica": 1, "data": -1, "model": tensor_parallelism},
         },
         "hf_save_steps": steps,
         "data_seed": 0,
@@ -299,7 +366,10 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
     steps = int(os.environ.get("EXP177_STEPS", str(EXP117_STEPS)))
     steps_per_eval = int(os.environ.get("EXP177_STEPS_PER_EVAL", str(max(1, EXP117_STEPS // 32))))
     train_batch_size = int(os.environ.get("EXP177_TRAIN_BATCH_SIZE", "256"))
-    per_device_parallelism = int(os.environ.get("EXP177_PER_DEVICE_PARALLELISM", "16"))
+    data_parallelism, tensor_parallelism, fit_per_device_parallelism, gradient_accumulation = _batch_fit(
+        TPU_TYPE, train_batch_size, TPU_SLICE_COUNT
+    )
+    per_device_parallelism = int(os.environ.get("EXP177_PER_DEVICE_PARALLELISM", str(fit_per_device_parallelism)))
     max_eval_batches_env = os.environ.get("EXP177_MAX_EVAL_BATCHES")
     max_eval_batches = int(max_eval_batches_env) if max_eval_batches_env is not None else None
     num_shards = int(os.environ.get("EXP177_NUM_SHARDS", "3338"))
@@ -315,6 +385,9 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             steps_per_eval=steps_per_eval,
             train_batch_size=train_batch_size,
             per_device_parallelism=per_device_parallelism,
+            gradient_accumulation=gradient_accumulation,
+            data_parallelism=data_parallelism,
+            tensor_parallelism=tensor_parallelism,
             max_eval_batches=max_eval_batches,
             num_shards=num_shards,
             examples_per_shard=examples_per_shard,
@@ -344,7 +417,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             tokenizer=CONTACTS_TOKENIZER,
             cache_dir=None,
             auto_build_caches=False,
-            shuffle=False,
+            shuffle=SHUFFLE,
             mixture_block_size=1,
             block_cross_document_attention=True,
         )
@@ -374,7 +447,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             steps_per_eval=steps_per_eval,
             checkpointer=CheckpointerConfig(save_interval=timedelta(minutes=10), keep=[{"every": steps}]),
             mesh=MeshConfig(
-                axes={"replica": 1, "data": -1, "model": 1},
+                axes={"replica": 1, "data": -1, "model": tensor_parallelism},
                 compute_mapping={"token": TOKEN_AXES, "token_repeat": TOKEN_AXES},
             ),
             per_device_eval_parallelism=-1,
@@ -396,6 +469,12 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "WANDB_ENTITY": "open-athena",
             "WANDB_PROJECT": "MarinFold",
             "EXP177_LOSS": loss_kind.value,
+            "EXP177_TPU": TPU_TYPE,
+            "EXP177_TPU_SLICE_COUNT": str(TPU_SLICE_COUNT),
+            "EXP177_DATA_PARALLELISM": str(data_parallelism),
+            "EXP177_TENSOR_PARALLELISM": str(tensor_parallelism),
+            "EXP177_PER_DEVICE_PARALLELISM": str(per_device_parallelism),
+            "EXP177_GRADIENT_ACCUMULATION": str(gradient_accumulation),
         }
         for key in ("WANDB_API_KEY", "HUGGING_FACE_HUB_TOKEN"):
             if value := os.environ.get(key):
