@@ -157,8 +157,7 @@ RPRECISION_ROWS = [
 # Recomputed from exp89's per-protein table rather than transcribed, so the
 # baselines and the LM points come out of one code path.
 # ---------------------------------------------------------------------------
-EXP89_ROWS = (HERE / ".." / ".." / "experiments"
-              / "exp89_evals_contacts_v1_model_on_eval_set"
+EXP89_ROWS = (HERE / ".." / "exp89_evals_contacts_v1_model_on_eval_set"
               / "data" / "contact_precision_all.csv").resolve()
 BASELINES = [
     # (label, model, mode, predictor)
@@ -210,7 +209,7 @@ LOSS_KEYS = [
 ]
 # Runs that report a contacts-v1 val loss but are not contacts-v1 *models*
 # (smoke tests, throughput probes, and mixture runs whose loss is logged
-# through a superset tokenizer). Kept out of the frontier; see NOTES.md.
+# through a superset tokenizer). Kept out of the frontier; see README.md.
 EXCLUDE_SUBSTRINGS = ("smoke", "probe", "profile", "-prof", "vet-", "nemo")
 
 

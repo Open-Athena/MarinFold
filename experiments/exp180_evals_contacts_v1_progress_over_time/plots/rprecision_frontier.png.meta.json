@@ -1,4 +1,7 @@
 {
+  "caption": "Best contacts-v1 model to date on contact R-precision. Two jumps, both from the base model: #75 E8 (Jun 21) and #117 E16 (Jul 22).",
+  "script": "plot_progress.py",
+  "args": [],
   "figure": "rprecision_frontier",
   "metric": "R-precision, range=all, n=554",
   "baselines": {

@@ -73,7 +73,13 @@ def _date_axis(ax, lo=None, hi=None, pad_lo=4.0, pad_hi=4.5) -> None:
                     pd.Timestamp(hi) + pd.Timedelta(days=pad_hi))
 
 
-def _write_meta(path: Path, meta: dict) -> None:
+def _write_meta(path: Path, meta: dict, caption: str) -> None:
+    """Sidecar for ``build_summary.py``'s plot appendix + the numbers behind the figure.
+
+    Keep ``caption`` to at most two printed lines — longer captions silently
+    overlap the plot on the generated slide.
+    """
+    meta = dict(caption=caption, script="plot_progress.py", args=[], **meta)
     path.with_suffix(path.suffix + ".meta.json").write_text(json.dumps(meta, indent=2))
 
 
@@ -196,7 +202,9 @@ def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Pat
         figure="rprecision_frontier", metric="R-precision, range=all, n=554",
         baselines={b["label"]: float(b["r_precision"]) for _, b in baselines.iterrows()},
         frontier=[dict(date=str(pd.Timestamp(d).date()), r_precision=float(v))
-                  for d, v in zip(fx, fy)]))
+                  for d, v in zip(fx, fy)]),
+        caption="Best contacts-v1 model to date on contact R-precision. Two jumps, "
+                "both from the base model: #75 E8 (Jun 21) and #117 E16 (Jul 22).")
     print(f"wrote {out}")
 
 
@@ -299,7 +307,9 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
     _write_meta(out, dict(
         figure="val_loss_frontier", n_runs=len(done), n_above_axis=n_above,
         frontier=[dict(date=str(pd.Timestamp(x).date()), val_loss=float(y), run=n)
-                  for x, y, n in steps]))
+                  for x, y, n in steps]),
+        caption="Best held-out contacts-v1 val loss to date over 153 finished runs. "
+                "The loss frontier has many more steps than the accuracy one.")
     print(f"wrote {out}")
 
 
@@ -374,7 +384,7 @@ def plot_rprecision_vs_loss(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.text(0.5, 0.010,
              "#120's loss is `contacts-v1-val-orig`, the others `contacts-v1-val` - the same held-out split under "
-             "different cache names (see NOTES.md).",
+             "different cache names (see README.md).",
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.tight_layout(rect=(0, 0.055, 1, 1))
     fig.savefig(out, dpi=170, facecolor=SURFACE)
@@ -383,7 +393,9 @@ def plot_rprecision_vs_loss(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path
         figure="rprecision_vs_val_loss",
         points=[dict(label=r["label"], inference=r["inference"],
                      val_loss=float(r["val_loss"]), r_precision=float(r["r_precision"]))
-                for _, r in sub.iterrows()]))
+                for _, r in sub.iterrows()]),
+        caption="R-precision against val loss. ~2 R-precision per nat across "
+                "generations; flat inside one run (#117 early vs final).")
     print(f"wrote {out}")
 
 

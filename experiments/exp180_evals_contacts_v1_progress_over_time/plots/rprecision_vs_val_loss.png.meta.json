@@ -1,4 +1,7 @@
 {
+  "caption": "R-precision against val loss. ~2 R-precision per nat across generations; flat inside one run (#117 early vs final).",
+  "script": "plot_progress.py",
+  "args": [],
   "figure": "rprecision_vs_val_loss",
   "points": [
     {
