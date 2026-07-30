@@ -210,8 +210,9 @@ def plan_e1(
 
     Args:
         contacts: ``(i, j, degree)`` triples in 0-based input-sequence
-            coordinates (the ``gt_contacts.jsonl`` payload). Empty or ``None``
-            degrades to Plan A.
+            coordinates (the ``gt_contacts.jsonl`` payload, which is *unfiltered*
+            — this function applies the format's eligibility rule itself).
+            Empty or ``None`` degrades to Plan A.
         n_contacts: how many to force; defaults to the format's own maximum.
     """
     import torch
@@ -225,7 +226,21 @@ def plan_e1(
     limit = n_contacts if n_contacts is not None else GenerationConfig().n_contacts_max
 
     rng = random.Random(seed)
-    pool = list(contacts or [])
+    # Filter to the contacts a real contacts section can contain, THEN sample.
+    # The gt bundle carries every degree>0 pair, but the format emits only
+    # separation >= min_seq_separation and degree >= min_contact_degree — and
+    # only ~39 % of the raw list clears that bar. Sampling the raw list wastes
+    # most of the 50-contact budget on short-range pairs the model never saw in
+    # a contacts section and which are nearly implied by the chain anyway, which
+    # makes the diagnostic far weaker than it looks.
+    config = GenerationConfig()
+    pool = [
+        c
+        for c in (contacts or [])
+        if (c[1] - c[0]) >= config.min_seq_separation
+        and c[2] >= config.min_contact_degree
+    ]
+    n_raw = len(contacts or [])
     chosen = pool if len(pool) <= limit else rng.sample(pool, limit)
     contact_tokens: list[str] = []
     for i, j, _degree in chosen:
@@ -263,7 +278,8 @@ def plan_e1(
         {
             "status": "ok",
             "plan": "E1",
-            "contacts_available": len(pool),
+            "contacts_raw": n_raw,
+            "contacts_eligible": len(pool),
             "contacts_forced": len(chosen),
             "generated_tokens": len(sampled),
             "decoded_atoms": len(estimate),

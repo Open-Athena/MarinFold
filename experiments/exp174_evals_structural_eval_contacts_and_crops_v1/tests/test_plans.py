@@ -252,7 +252,7 @@ def test_plan_e1_forces_real_contacts_capped_at_the_formats_maximum():
 
     from plans import plan_e1
 
-    contacts = [(i, i + 7, 0.5) for i in range(len(_SEQUENCE) - 7)]  # 43 available
+    contacts = [(i, i + 7, 0.5) for i in range(len(_SEQUENCE) - 7)]  # 43 eligible
 
     class PromptRecordingStub(StubSampler):
         def __init__(self):
@@ -267,13 +267,13 @@ def test_plan_e1_forces_real_contacts_capped_at_the_formats_maximum():
     result = plan_e1(stub, _RECORD, _gt_array(), config=SamplingConfig(),
                      contacts=contacts)
     assert result.stats["plan"] == "E1"
-    assert result.stats["contacts_available"] == len(contacts)
+    assert result.stats["contacts_eligible"] == len(contacts)
     assert result.stats["contacts_forced"] == len(contacts)  # under the cap
     forced = stub.prompts[0].count(CONTACT_TOKEN)
     assert forced == len(contacts)
 
     # Over the cap, only n_contacts_max are written.
-    many = [(i, j, 0.5) for i in range(20) for j in range(i + 7, 30)]
+    many = [(i, j, 0.5) for i in range(20) for j in range(i + 7, 40)]
     assert len(many) > GenerationConfig().n_contacts_max
     stub2 = PromptRecordingStub()
     capped = plan_e1(stub2, _RECORD, _gt_array(), config=SamplingConfig(), contacts=many)
@@ -286,3 +286,38 @@ def test_plan_a_records_the_models_own_contact_count():
     result = plan_a(StubSampler(), _RECORD, config=SamplingConfig(), gt=_gt_array())
     assert "self_emitted_contacts" in result.stats
     assert result.stats["self_emitted_contacts"] >= 0
+
+
+def test_plan_e1_drops_contacts_the_format_would_never_emit():
+    """The 50-contact budget must go to *format-eligible* pairs only.
+
+    The ground-truth bundle carries every degree>0 pair, but a real contacts
+    section only ever holds separation >= 6 and degree >= 0.001 — about 39 % of
+    the raw list on this eval set. Spending the budget on short-range pairs
+    would feed the model contacts it never saw in training and which are nearly
+    implied by the chain, gutting the diagnostic.
+    """
+    from marinfold.document_structures.contacts_and_crops_v1.vocab import CONTACT_TOKEN
+
+    from plans import plan_e1
+
+    short = [(i, i + 2, 0.5) for i in range(30)]        # separation 2 — ineligible
+    weak = [(i, i + 9, 0.0) for i in range(30)]         # degree 0 — ineligible
+    good = [(i, i + 11, 0.5) for i in range(5)]         # eligible
+
+    class PromptRecordingStub(StubSampler):
+        def __init__(self):
+            super().__init__()
+            self.prompts = []
+
+        def prefill(self, prompt_ids):
+            self.prompts.append(self.decode(prompt_ids))
+            return super().prefill(prompt_ids)
+
+    stub = PromptRecordingStub()
+    result = plan_e1(stub, _RECORD, _gt_array(), config=SamplingConfig(),
+                     contacts=short + weak + good)
+    assert result.stats["contacts_raw"] == len(short) + len(weak) + len(good)
+    assert result.stats["contacts_eligible"] == len(good)
+    assert result.stats["contacts_forced"] == len(good)
+    assert stub.prompts[0].count(CONTACT_TOKEN) == len(good)
