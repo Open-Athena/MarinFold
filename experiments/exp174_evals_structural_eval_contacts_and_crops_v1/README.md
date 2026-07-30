@@ -202,7 +202,8 @@ machinery works and is worth re-showing boxes for.**
 | *10 Å box centres, all atoms* | 1.000 | 0.000 | 0.323 | 0.327 | 0.511 | 4.96 |
 | **oracle document — 1-doc ceiling** | 0.769 | 0.319 | **0.290** | 0.300 | **0.537** | **4.16** |
 | **E2** — true Pass-1 boxes | 0.772 | 0.321 | **0.278** | 0.291 | **0.522** | **4.33** |
-| **F** — 2 sweeps, K=3 | **0.999** | **0.999** | **0.290** | **0.319** | 0.277 | 16.28 |
+| **F** — mix5, 2 sweeps, K=3 | **0.999** | **0.999** | **0.290** | **0.319** | 0.277 | 16.28 |
+| **F** — 3way, 2 sweeps, K=3 | 0.998 | 0.998 | 0.294 | 0.323 | 0.279 | 16.48 |
 | **C** — one forced sweep | 0.935 | 0.815 | 0.223 | 0.246 | 0.245 | 16.55 |
 | **E1** — true contacts (≤50) | 0.754 | 0.317 | 0.161 | 0.169 | 0.222 | 12.96 |
 | **A** — mix5 step-50000 | 0.758 | 0.313 | 0.141 | 0.158 | 0.193 | 16.62 |
@@ -237,9 +238,11 @@ caps a document at **50** contacts and samples them uniformly, so E1 could only
 ever supply a small slice of a real contact map. It bounds the effect from
 below; it does not exonerate contact prediction.
 
-**The two checkpoints are indistinguishable.** 0.141 vs 0.144 lDDT, 0.193 vs
-0.197 TM. The 3-way restart at step-20000 has caught up with mix5 at
-step-50000; neither is better.
+**The two checkpoints are indistinguishable, under both plans.** Under A,
+0.141 vs 0.144 lDDT and 0.193 vs 0.197 TM. Under F, the paired per-protein
+difference (3way − mix5, 554 proteins) is **lDDT +0.0044 ± 0.0027** and
+**TM +0.0022 ± 0.0047** — 1.6σ and 0.5σ, i.e. nothing. The 3-way mixture restart
+at step-20000 has caught up with mix5 at step-50000 and neither is better.
 
 **Plan F had not converged.** Mean per-atom displacement between sweeps was
 4.03 Å after sweep 0 and 2.02 Å after sweep 1, against a 0.1 Å stopping
@@ -306,16 +309,12 @@ published to the public HF bucket by
    honest account of coverage/truncation effects.
 5. Results written up in the experiment README + a summary comment on this issue.
 
-Status: **1, 2, 3 and 4 done.** Plan F agreed and implemented; the pipeline
-produces full-atom coordinates per protein for a given checkpoint; the harness
-reports all five metrics per-protein and in aggregate with coverage; both
-checkpoints are scored and compared with length stratification and an explicit
-coverage/truncation account. **5** is this README plus the issue comment.
-
-One run is still in flight: Plan F on the 3-way checkpoint (8 shards, ~3 h
-remaining). Given that the two checkpoints are indistinguishable under Plan A
-(0.141 vs 0.144 lDDT), it is not expected to change any conclusion, but the
-table will be updated when it lands.
+Status: **all five done.** Plan F agreed and implemented; the pipeline produces
+full-atom coordinates per protein for a given checkpoint; the harness reports all
+five metrics per-protein and in aggregate with coverage; both checkpoints are
+scored and compared under both A and F, with length stratification and an
+explicit coverage/truncation account; and the write-up is this README plus the
+issue comment.
 
 ## Conclusion
 

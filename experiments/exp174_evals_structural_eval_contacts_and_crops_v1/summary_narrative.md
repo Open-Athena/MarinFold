@@ -108,7 +108,12 @@ less coverage — TM 0.522 versus 0.277 and CA-RMSD 4.33 A versus 16.28 A. The
 only difference is whether the coarse boxes are right.
 
 Handing the model 50 true contacts (E1, the format's cap) cuts CA-RMSD by 22%
-but gets nowhere near E2. The two checkpoints are indistinguishable.
+but gets nowhere near E2.
+
+The two checkpoints are indistinguishable under both plans. Under Plan F the
+paired per-protein difference is lDDT +0.004 and TM +0.002, both inside one
+standard error — the 3-way mixture restart at step 20000 has caught up with mix5
+at step 50000 and neither is better.
 
 ## Conclusion
 

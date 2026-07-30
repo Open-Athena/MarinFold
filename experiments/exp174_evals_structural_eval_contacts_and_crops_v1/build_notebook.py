@@ -106,6 +106,7 @@ VIEWABLE = [
     "e2-cc1mix5-step50000",
     "e1-cc1mix5-step50000",
     "f-cc1mix5-step50000",
+    "f-3way-step20000",
     "c-cc1mix5-step50000",
     "a-cc1mix5-step50000",
     "a-3way-step20000",
