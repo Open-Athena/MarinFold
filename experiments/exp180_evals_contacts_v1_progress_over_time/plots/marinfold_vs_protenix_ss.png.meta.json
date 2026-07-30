@@ -1,10 +1,12 @@
 {
-  "caption": "Per-protein R-precision, MarinFold #117 vs Protenix-v2 single-seq (n=554). Means 0.534 vs 0.603; the difference varies with length.",
+  "caption": "Per-protein R-precision, MarinFold #117 vs Protenix-v2 SS (n=554). Means 0.534 vs 0.603; the difference varies with length.",
   "script": "plot_vs_protenix.py",
-  "args": [],
-  "figure": "marinfold_vs_protenix",
+  "args": [
+    "--baseline single_seq"
+  ],
+  "figure": "marinfold_vs_protenix_ss",
   "marinfold": "exp117_e16_final_step35679",
-  "protenix": {
+  "baseline": {
     "model": "protenix-v2",
     "mode": "single_seq",
     "predictor": "structure"
@@ -16,7 +18,7 @@
     "mean_delta": -0.06873961965229707,
     "ci_low": -0.09175018014294993,
     "ci_high": -0.0457290591616442,
-    "win_rate": 0.3267148014440433,
+    "higher_rate": 0.3267148014440433,
     "tie_rate": 0.019855595667870037,
     "pearson": 0.5474246958858318,
     "spearman": 0.6231807112588452
@@ -27,28 +29,32 @@
       "n": 81,
       "mf": 0.5455626196162171,
       "px": 0.6619608512831417,
-      "mf_wins": 0.2345679012345679
+      "delta": -0.11639823166692465,
+      "mf_higher": 0.2345679012345679
     },
     {
       "bin": "100-200",
       "n": 285,
       "mf": 0.5604912602674503,
       "px": 0.6386569273177739,
-      "mf_wins": 0.28421052631578947
+      "delta": -0.07816566705032357,
+      "mf_higher": 0.28421052631578947
     },
     {
       "bin": "200-400",
       "n": 171,
       "mf": 0.5044063722614675,
       "px": 0.5496608564244234,
-      "mf_wins": 0.39766081871345027
+      "delta": -0.045254484162955966,
+      "mf_higher": 0.39766081871345027
     },
     {
       "bin": "> 400",
       "n": 17,
       "mf": 0.34609547920281275,
       "px": 0.2659637510348116,
-      "mf_wins": 0.7647058823529411
+      "delta": 0.08013172816800113,
+      "mf_higher": 0.7647058823529411
     }
   ]
 }

@@ -63,10 +63,10 @@ Two tables and three figures, all code in the experiment dir.
   R-precision vs val loss. Both date figures draw a running-best staircase;
   both R-precision figures carry the structure predictors as dotted reference
   lines.
-- `plot_vs_protenix.py` — the fourth figure: the current best model against
-  Protenix-v2 single-sequence, one point per eval protein. The frontier figures
-  say how far along we are; this one says *which proteins* the number is made
-  of.
+- `plot_vs_protenix.py` — two more figures: the current best model against
+  Protenix-v2 single-sequence and against Protenix-v2 with MSAs, one point per
+  eval protein. The frontier figures say how far along we are; these say *which
+  proteins* the number is made of.
 
 **The one methodological trap, handled explicitly:** the same weights score
 **~0.086 higher** under exp82's rollout recipe than under exp89's original
@@ -173,7 +173,9 @@ these figures and start a second set.
 
 `plot_vs_protenix.py` hard-codes `MARINFOLD_MODEL = "exp117_e16_final_step35679"`
 and reads its per-protein scores from
-`../exp169_evals_selected_checkpoints_117_146/data/exp169_rows.csv.gz`.
+`../exp169_evals_selected_checkpoints_117_146/data/exp169_rows.csv.gz`. It emits
+one figure per entry in `BASELINES` (currently Protenix-v2 single-seq and MSA);
+`--baseline` restricts it to one.
 
 **When a new model takes the accuracy frontier, re-point it**: set
 `MARINFOLD_MODEL` / `MARINFOLD_LABEL`, and point `EXP169` at whichever
@@ -181,13 +183,14 @@ experiment holds the new per-protein rows. It needs *per-protein* precision,
 not a summary — a mean is not enough to draw the scatter, so the scoring run
 has to have published its rows CSV.
 
-The comparison is against Protenix-v2 in **single-sequence** mode on purpose:
-MarinFold reads contacts from sequence alone, so the MSA row is not the
-like-for-like baseline. Both come from exp89's `compute_metrics` on the same
-ground truth. Switching the x-axis to another predictor is a one-line change to
-`PROTENIX` — the four rows in exp89's CSV are
-`(protenix-v2, single_seq|msa, structure|distogram)`, `(esmfold, single_seq,
-structure)` and `(esmfold2, single_seq, structure)`.
+Adding another baseline is one entry in `BASELINES`. The rows available in
+exp89's CSV are `(protenix-v2, single_seq|msa, structure|distogram)`,
+`(esmfold, single_seq, structure)` and `(esmfold2, single_seq, structure)`.
+
+**Do not write the commentary block by hand.** `describe()` generates it from
+each figure's own numbers precisely because the two current baselines trend in
+opposite directions with length — a written-once summary was wrong on one of
+them, and would be again for any new baseline.
 
 ### 6. Cross-check
 
@@ -208,35 +211,58 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 
 ![R-precision vs validation loss](plots/rprecision_vs_val_loss.png)
 
-### Per-protein comparison with Protenix-v2 (single-sequence)
+### Per-protein comparison with Protenix-v2
 
-The frontier figures compress each model to one number. This is the same
-comparison unrolled over the 554 proteins, for the current best model.
+The frontier figures compress each model to one number. These unroll the same
+comparison over the 554 proteins, for the current best model, against both
+Protenix-v2 configurations.
 
-![MarinFold vs Protenix-v2 single-sequence](plots/marinfold_vs_protenix.png)
+**Single-sequence** — the like-for-like baseline, since MarinFold also reads
+sequence alone:
 
-| length | n | MarinFold #117 | Protenix-v2 SS | MarinFold higher |
-|---|---:|---:|---:|---:|
-| < 100 | 81 | 0.546 | 0.662 | 23% |
-| 100–200 | 285 | 0.560 | 0.639 | 28% |
-| 200–400 | 171 | 0.504 | 0.550 | 40% |
-| > 400 | 17 | 0.346 | 0.266 | 76% |
-| all | 554 | 0.534 | 0.603 | 33% |
+![MarinFold vs Protenix-v2 single-sequence](plots/marinfold_vs_protenix_ss.png)
 
-MarinFold is lower on average: paired difference **−0.069** (95% CI
-[−0.092, −0.046]), higher on 33% of proteins. The difference is not constant
-across the set — it narrows as length rises and changes sign in the > 400 bin.
+**With MSAs** — not like-for-like, and much the stronger baseline:
 
-That bin holds **17 proteins**, so it is a weak estimate; the eval set contains
-few long chains. Both predictors decline with length, MarinFold less steeply,
-so the sign change happens at an absolute R-precision (~0.3) below what either
-reaches on short chains — it is a smaller decline, not better performance in
-absolute terms.
+![MarinFold vs Protenix-v2 with MSAs](plots/marinfold_vs_protenix_msa.png)
 
-Spearman between the two is 0.62. They disagree about *which* proteins are
-hard more than a shared difficulty axis would predict, and the upper-left of
-the scatter — high for MarinFold, low for single-sequence Protenix — is
-populated by more than just the long chains.
+| | Protenix-v2 SS | Protenix-v2 + MSA |
+|---|---:|---:|
+| baseline mean | 0.603 | 0.812 |
+| paired difference | −0.069 | −0.277 |
+| 95% CI | [−0.092, −0.046] | [−0.298, −0.257] |
+| MarinFold higher on | 33% | 6.9% |
+| Spearman | 0.62 | 0.46 |
+
+By length (MarinFold is 0.546 / 0.560 / 0.504 / 0.346 across the four bins):
+
+| length | n | Δ vs SS | MF higher | Δ vs MSA | MF higher |
+|---|---:|---:|---:|---:|---:|
+| < 100 | 81 | −0.116 | 23% | −0.205 | 14% |
+| 100–200 | 285 | −0.078 | 28% | −0.245 | 8% |
+| 200–400 | 171 | −0.045 | 40% | −0.343 | 2% |
+| > 400 | 17 | **+0.080** | 76% | **−0.512** | 0% |
+
+**The two baselines trend in opposite directions with length, and that is the
+main thing to take from this pair.** Against single-sequence Protenix the gap
+narrows monotonically and changes sign in the longest bin. Against MSA Protenix
+it widens monotonically, and MarinFold does not win a single protein above 400
+residues.
+
+The reason is visible in the marginals: MarinFold declines with length
+(0.55 → 0.35) and so does single-sequence Protenix, only faster (0.66 → 0.27) —
+whereas MSA Protenix *improves* with length (0.75 → 0.86), presumably because
+longer chains have deeper, more informative alignments.
+
+So "MarinFold holds up better on long proteins" is a statement about the
+single-sequence baseline only. It is a shallower decline, not an absolute
+strength: the > 400 bin is where MarinFold is weakest in absolute terms
+(0.346), and it is also where the MSA gap is widest. That bin holds **17
+proteins** either way, so both readings of it are weak estimates.
+
+The Spearman values are worth noting too — 0.62 against single-sequence, 0.46
+against MSA. MarinFold's notion of which proteins are hard tracks the
+single-sequence predictor considerably better than the MSA-informed one.
 
 ### The accuracy frontier
 
@@ -412,12 +438,12 @@ exp146 / exp153 (n=153 after exclusions).
 |---|---|
 | `build_dataset.py` | assembles both tables; W&B pull + the hand-curated benchmark rows |
 | `plot_progress.py` | the three progress figures |
-| `plot_vs_protenix.py` | the head-to-head scatter + `data/marinfold_vs_protenix.csv` |
+| `plot_vs_protenix.py` | the two comparison scatters + their paired CSVs |
 | `data/rprecision_checkpoints.csv` | 13 rows (11 checkpoints; 2 measured under both recipes), one source citation each |
 | `data/structure_baselines.csv` | the four dotted lines, recomputed from exp89 |
 | `data/val_loss_runs.csv` | 318 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
 | `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints |
-| `data/marinfold_vs_protenix.csv` | the 554 paired per-protein scores behind the head-to-head figure |
+| `data/marinfold_vs_protenix_{ss,msa}.csv` | the 554 paired per-protein scores behind each comparison figure |
 | `plots/*.png.meta.json` | the numbers behind each figure |
 
 Sources for every R-precision value are in the `source` column of

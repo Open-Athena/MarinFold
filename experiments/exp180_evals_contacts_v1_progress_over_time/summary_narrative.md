@@ -65,18 +65,25 @@ the exp169 dispatcher is rollout. Never infer the recipe from the magnitude.
 
 ## Per-protein comparison with Protenix-v2
 
-Against Protenix-v2 in single-sequence mode, over the 554 proteins: MarinFold
-0.534, Protenix-v2 0.603, paired difference -0.069, MarinFold higher on 33%.
+Over the 554 proteins, MarinFold #117 scores 0.534. Protenix-v2 single-sequence
+scores 0.603 (paired difference -0.069, MarinFold higher on 33%). Protenix-v2
+with MSAs scores 0.812 (paired difference -0.277, MarinFold higher on 7%).
 
-The difference is not constant across the set. Below 100 residues it is -0.116;
-at 200-400 it is -0.046; in the > 400 bin it is +0.080.
+## The two baselines trend opposite ways with length
 
-That bin holds 17 proteins, so it is a weak estimate. Both predictors decline
-with length, MarinFold less steeply, so the sign change happens at an absolute
-R-precision around 0.3 - below what either reaches on short chains.
+Against single-sequence Protenix the gap narrows with length and changes sign
+in the > 400 bin: -0.116 below 100 residues, +0.080 above 400.
 
-Spearman between the two is 0.62 - they disagree about which proteins are hard
-more than a shared difficulty axis would predict.
+Against MSA Protenix it widens: -0.205 below 100 residues, -0.512 above 400.
+MarinFold does not win a single protein above 400 residues in that comparison.
+
+The reason is in the marginals. MarinFold declines with length (0.55 to 0.35)
+and single-sequence Protenix declines faster (0.66 to 0.27), while MSA Protenix
+improves with length (0.75 to 0.86).
+
+So "MarinFold holds up better on long proteins" is about the single-sequence
+baseline only, it is a shallower decline rather than absolute strength, and
+that bin holds 17 proteins either way.
 
 ## Open gap
 
