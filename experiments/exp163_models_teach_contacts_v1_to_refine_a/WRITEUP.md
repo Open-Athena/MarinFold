@@ -571,7 +571,125 @@ result. The plumbing exists (section-aware parsing, per-section F1, `frac_improv
 and a `mean_jaccard` copy diagnostic), but with K0 at 0.188 those generations would
 be poor regardless, so it is worth running only after retention is fixed.
 
-## 12. Cost of the 1M push
+## 12. v3 — the mode token and rehearsal (two more falsifications)
+
+v2 left one leading explanation for the forgetting: **prefix collision**. In the
+multi-draft corpus, the text after the first `<begin_statements>` is the ground-truth
+answer in only 5,862/100,000 documents (5.9%) and a ~13%-precision *draft* in the other
+94.1% — identically across all four arms. The same prefix therefore demanded two
+incompatible continuations, and the base task lives on the 5.9% side. If that were the
+mechanism, telling the model which task it is in should fix it.
+
+So v3 changed two things at once, both aimed at that hypothesis:
+
+1. **A mode token.** Vocab id 7 was renamed in place — `<contacts-and-distances-v1>` →
+   `<contacts-v1.multi>` — so multi-draft documents open with a sentinel distinct from
+   plain `<contacts-v1>` (id 2). Renamed *in place*, so vocab size (2,845) and every
+   existing id are untouched; no embedding resize, no id drift. `make_multi_tokenizer.py`
+   does it and verifies a clean round-trip.
+2. **Rehearsal.** 99,996 plain contacts-v1 documents mixed in alongside the 100,000
+   multi-draft ones, weighted **1.0 on every token** — i.e. E8's own original objective,
+   verbatim, interleaved with the refinement objective.
+
+Corpus: 51,724 packed sequences, 405 steps/epoch, 178,526,110 weighted tokens.
+`shuffle=True` (full Feistel permutation), so although the shards are segregated by
+document type (0–6 multi at ~20.8% weighted, 7–10 plain at ~85.5–87.6%), every *batch*
+is a proper mixture. The split of the weighted budget is the number that matters:
+
+| supervision | weighted tokens | share |
+|---|---|---|
+| refinement (multi-draft final sections) | ~59.6M | 33% |
+| **base task (plain docs, unmasked)** | **~119.2M** | **67%** |
+
+Two-thirds of the gradient signal was the base task itself.
+
+### v3 results — 553 proteins, paired per-protein
+
+`--mode-id 7` lets the same checkpoint be scored in both modes: the eval swaps token 0
+of the prompt numerically, so it works regardless of which tokenizer JSON ships with the
+export. Verified on the real staged prompts (token 0 is id 2; id 7 is the renamed slot).
+
+| metric | base | v3mix50 | paired Δ ± sem | retention |
+|---|---|---|---|---|
+| `R0_all` — **base mode** (id 2), no drafts | 0.3355 | 0.1599 | −0.1756 ± 0.0058 | **47.7%** |
+| `R0multi_all` — **refine mode** (id 7), no drafts | 0.3122 | 0.1308 | −0.1813 ± 0.0061 | 41.9% |
+| `Rraw1_all` | 0.1346 | 0.0829 | −0.0517 ± 0.0044 | 61.6% |
+| `Rraw16_all` | 0.0143 | 0.0143 | +0.0000 ± 0.0010 | 100.2% |
+| `Rcons_all` | 0.1918 | 0.1273 | −0.0645 ± 0.0052 | 66.4% |
+| `R0_long` | 0.2697 | 0.1196 | −0.1501 ± 0.0065 | 44.4% |
+
+**Falsification 4 — the mode token does nothing.** The hypothesis predicted base-mode K0
+recovering toward 0.3355. It came out at 0.1599, against the v2 arms' 0.1884 / 0.1870 /
+0.1879 / 0.1886. No recovery whatsoever. Prefix ambiguity was not the mechanism.
+
+**Falsification 5 — rehearsal does not protect the base task.** 119.2M tokens of the
+exact original objective, two-thirds of the weighted budget, fully interleaved, and
+base-task R-precision still fell to 47.7% of base. Data-side rehearsal at 2:1 in favour
+of the base task buys nothing measurable.
+
+Two smaller observations from the same table:
+
+* The refiner is **worse in its own native mode** (0.1308) than in base mode (0.1599),
+  and its consensus-conditioned score (0.1273) sits *below* its own no-draft score.
+  Conditioning on candidates actively hurts it.
+* The base model also collapses under the multi-draft format (0.3355 → 0.1918 consensus,
+  0.1346 at K=1). The format is costly *per se*, not just to the fine-tuned model.
+
+### What is NOT claimed
+
+v3's 0.1599 is below every v2 arm (~0.188), but that is **not** a clean single-variable
+comparison and should not be read as "the mode token made things worse". v3 changed four
+things at once relative to v2 arm D: the mode token, +119.2M rehearsal tokens, refinement
+tokens cut 103.5M → 59.6M, and 405 vs 275 optimizer steps. The defensible statement is
+the weaker one: neither intervention *improved* retention.
+
+### Harness validation, free of charge
+
+The base model was re-scored from scratch in this run. `R0_all` and `R0_long` came back
+**bit-identical** to the v2 run (max |Δ| = 0.00e+00) — the deterministic no-draft path
+reproduces exactly. `Rcons_all` moved 0.2020 → 0.1918, which is the *draft-sampling* RNG
+(`rng.permutation` over the candidate pool is not seeded per run). That usefully
+calibrates a noise floor of ~±0.01 on the draft-conditioned metrics, against which the
+−0.0645 consensus delta is ~6×.
+
+### The pattern that survives, updated
+
+| setup | K0 vs base 0.3355 |
+|---|---|
+| **LoRA**, 900 proteins, v1 format | **−7%** (0.229 → 0.213) |
+| full fine-tune, 18,750 docs, v1 format | −41% (→ 0.1978) |
+| full fine-tune, 100,000 docs, multi-draft ×4 | −44% (→ ~0.188) |
+| full fine-tune, +mode token, +67% rehearsal | −52% (→ 0.1599) |
+
+Five variables have now been moved with no effect on forgetting: corpus size, fold
+diversity, document format, loss-weight profile, task-identity signalling, and
+base-task rehearsal. The one variable that ever mattered is **how much of the network is
+allowed to move**. Everything points at the parameter space, not the data.
+
+The next experiment is therefore LoRA (or another restricted-update scheme) at the 100k
+scale — not more data, not a different format, not a different mask.
+
+### Operational note — the OOM that looked like preemption
+
+The v3 run died twice near step 205. The first death presented as a preemption (SIGTERM
+from the JAX preemption notifier, preceded by a 5× slowdown: 10.3 → 50 s/it); the second
+gave the real cause, `RESOURCE_EXHAUSTED: Out of memory while trying to allocate
+29.91GiB [executable_name='jit__train_step']`. JAX preallocates only **75%** of each
+H100 by default, so ~20GiB per device sat unusable outside the arena while this recipe
+(batch 128 × seq 8192, `per_device_parallelism=-1` ⇒ 16 seqs × 8192 tokens per GPU, no
+microbatching) peaked right at the ceiling. Two fixes:
+
+* `XLA_PYTHON_CLIENT_MEM_FRACTION=0.94`, and
+* `_FORWARD_ENV_PREFIXES` widened from `XLA_FLAGS` to `XLA_` — the CPU driver and the GPU
+  gang are separate pods, and the old prefix silently dropped the variable in between.
+
+Microbatching would have been the conventional fix and was **deliberately rejected**:
+levanter re-normalizes per-token loss weights per microbatch, which changes the effective
+objective and would have broken comparability with the v2 loss-weight arms. Raising the
+arena leaves the gradient bit-identical. Levanter resumed cleanly from the step-202
+checkpoint both times.
+
+## 13. Cost of the 1M push
 
 Measured, not estimated: the 10k batch did 225,072 rollouts in ~59 min on 16 H100s ⇒
 **~14,350 rollouts/GPU-hour**. So 1M proteins × 24 rollouts = 24M rollouts ⇒
@@ -579,7 +697,7 @@ Measured, not estimated: the 10k batch did 225,072 rollouts in ~59 min on 16 H10
 pre-run estimate, because the top-k fix roughly doubled rollout length (which is the
 point: n_pred 201 vs 95).
 
-**v2 makes this decision easier, and the answer is "not yet".** Going 18,750 →
+**v2 and v3 make this decision easier, and the answer is "not yet".** Going 18,750 →
 100,000 documents (9,375 → 50,000 proteins) moved K0 from −41% to −44%. A further
 10× would be buying more of something that has now been measured not to help.
 Fix retention first; then scale is worth paying for.
