@@ -44,6 +44,7 @@ from marin.training.training import (
     run_levanter_train_lm,
 )
 
+from marinfold.document_structures.contacts_v1.vocab import VOCABULARY as CONTACTS_V1_VOCABULARY
 from marinfold_models.document_loss import LevanterDocumentBatch, document_loss
 from premade_contacts_dataset import FixedQuotaPremadeContactsDataset, FixedQuotaSoftTargetContactsDataset
 
@@ -258,7 +259,7 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
 
         train_length = config.train_seq_len or config.model.max_seq_len
         Pos = config.model.max_Pos.resize(train_length)
-        vocab_size = len(tokenizer)
+        vocab_size = max(len(tokenizer), CONTACTS_V1_VOCABULARY.size)
         Vocab = round_axis_for_partitioning(Axis("vocab", vocab_size), trainer.parameter_axis_mapping)
         train_sets = config.data.train_sets(
             Pos,
