@@ -1,0 +1,77 @@
+{
+  "figure": "rprecision_vs_val_loss",
+  "points": [
+    {
+      "label": "#67 quick 1.5B",
+      "inference": "pairwise",
+      "val_loss": 2.979953,
+      "r_precision": 0.0294637
+    },
+    {
+      "label": "#75 E1",
+      "inference": "pairwise",
+      "val_loss": 3.0457733,
+      "r_precision": 0.028027
+    },
+    {
+      "label": "#75 E2",
+      "inference": "pairwise",
+      "val_loss": 2.9420996,
+      "r_precision": 0.0289797
+    },
+    {
+      "label": "#75 E4",
+      "inference": "pairwise",
+      "val_loss": 2.9238107,
+      "r_precision": 0.0306772
+    },
+    {
+      "label": "#61/#75 E8",
+      "inference": "pairwise",
+      "val_loss": 2.756602,
+      "r_precision": 0.3389373
+    },
+    {
+      "label": "#61/#75 E8",
+      "inference": "rollout",
+      "val_loss": 2.756602,
+      "r_precision": 0.4245291
+    },
+    {
+      "label": "#120 re-epoch",
+      "inference": "pairwise",
+      "val_loss": 2.7213,
+      "r_precision": 0.3495
+    },
+    {
+      "label": "#120 re-epoch",
+      "inference": "rollout",
+      "val_loss": 2.7213,
+      "r_precision": 0.4357296
+    },
+    {
+      "label": "#117 E8 bs64",
+      "inference": "pairwise",
+      "val_loss": 2.7130589,
+      "r_precision": 0.4192084
+    },
+    {
+      "label": "#117 E16 early stop",
+      "inference": "rollout",
+      "val_loss": 2.696074,
+      "r_precision": 0.5318058
+    },
+    {
+      "label": "#117 E16 final",
+      "inference": "rollout",
+      "val_loss": 2.7037086,
+      "r_precision": 0.5344182
+    },
+    {
+      "label": "#146 3B E8",
+      "inference": "rollout",
+      "val_loss": 2.7024784,
+      "r_precision": 0.5118632
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "figure": "rprecision_frontier",
+  "metric": "R-precision, range=all, n=554",
+  "baselines": {
+    "Protenix-v2 single-seq": 0.6031578401726864,
+    "ESMFold": 0.7553286610904633,
+    "ESMFold2": 0.7862849202602139,
+    "Protenix-v2 + MSA": 0.8118214040198143
+  },
+  "frontier": [
+    {
+      "date": "2026-06-14",
+      "r_precision": 0.0294637
+    },
+    {
+      "date": "2026-06-14",
+      "r_precision": 0.0294637
+    },
+    {
+      "date": "2026-06-20",
+      "r_precision": 0.0294637
+    },
+    {
+      "date": "2026-06-21",
+      "r_precision": 0.4245291
+    },
+    {
+      "date": "2026-06-21",
+      "r_precision": 0.4245291
+    },
+    {
+      "date": "2026-07-16",
+      "r_precision": 0.4357296
+    },
+    {
+      "date": "2026-07-19",
+      "r_precision": 0.4357296
+    },
+    {
+      "date": "2026-07-22",
+      "r_precision": 0.5318058
+    },
+    {
+      "date": "2026-07-22",
+      "r_precision": 0.5344182
+    },
+    {
+      "date": "2026-07-27",
+      "r_precision": 0.5344182
+    },
+    {
+      "date": "2026-07-28",
+      "r_precision": 0.5344182
+    }
+  ]
+}

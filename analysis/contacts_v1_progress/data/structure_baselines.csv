@@ -1,0 +1,5 @@
+label,model,mode,predictor,r_precision,n,source
+Protenix-v2 single-seq,protenix-v2,single_seq,structure,0.6031578401726864,554,exp89 data/contact_precision_all.csv
+ESMFold,esmfold,single_seq,structure,0.7553286610904633,554,exp89 data/contact_precision_all.csv
+ESMFold2,esmfold2,single_seq,structure,0.7862849202602139,554,exp89 data/contact_precision_all.csv
+Protenix-v2 + MSA,protenix-v2,msa,structure,0.8118214040198143,554,exp89 data/contact_precision_all.csv
