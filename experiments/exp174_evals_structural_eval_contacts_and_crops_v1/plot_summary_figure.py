@@ -7,7 +7,13 @@ Three panels, chosen so each answers a different question and none needs the
 others to be legible:
 
 * **(a) Accuracy by condition** — lDDT and TM-score together, with the
-  oracle-document ceiling marked. The point of putting them on one axis (both
+  oracle-document ceiling marked. That ceiling is the ceiling for **one
+  8192-token document**, not for the format: a single document leaves 39 % of
+  atoms unmentioned, gives 38 % nothing but a 10 Å box (median error 4.9 Å), and
+  reads most of the rest only once, at the schedule's σ=1 Å first read (median
+  1.2 Å) rather than at 0.1 Å. The format's own encoding ceiling is the
+  ``tenths`` baseline — lDDT 1.000 — so none of this is the coordinate
+  vocabulary's doing. The point of putting them on one axis (both
   are 0–1 fractions, so this is one scale, not a dual axis) is that the *gap
   between the two bars* is the finding: Plan F reaches the ceiling on lDDT and a
   third of it on TM-score, because a local metric rewards a well-refined wrong
@@ -54,7 +60,7 @@ CEILING = "oracle-doc"
 # real explanatory variable — panel (b) colours by it, because the RMSD split
 # tracks it and nothing else.
 CONDITIONS = [
-    (CEILING, "oracle document\n(format ceiling)", True),
+    (CEILING, "oracle document\n(ONE-document ceiling)", True),
     ("e2-cc1mix5-step50000", "E2 · true Pass-1 boxes", True),
     ("e1b-cc1mix5-step50000", "E1 · true contacts", False),
     ("e1-cc1mix5-step50000", "E1 · true contacts", False),

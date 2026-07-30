@@ -123,6 +123,25 @@ document, regression tests in `marinfold/tests/`, and a note in the crops SPEC.
 
 ### The model-free ceiling
 
+**Read "ceiling" carefully.** The oracle-document row below is the ceiling for
+**one 8192-token document**, not for the format. A single perfect document
+spends its atom budget like this (measured over 246k ground-truth atoms):
+
+| tier | share of atoms | median error |
+|---|---|---|
+| refined by Pass 2 | 22.6 % | 1.20 Å |
+| 10 Å box only (Pass 1) | 38.4 % | 4.91 Å |
+| never mentioned | 39.0 % | total miss |
+
+Three separate budget losses, none of them about the coordinate encoding:
+39 % of atoms do not fit; the boxed 38 % carry ±5 Å, which is coarser than
+lDDT's 0.5–4 Å thresholds (all-boxes lDDT works out to 0.335 predicted vs 0.323
+measured); and because Pass 2 re-shows a box only 10 % of the time, most
+"refined" atoms are *first reads* at the schedule's σ=1 Å rather than converged
+0.1 Å ones. The format's actual encoding ceiling is the ``tenths`` row —
+lDDT 1.000, TM 1.000, RMSD 0.05 Å. Plan F breaks all three budget losses at
+once, which is why it runs *above* the one-document ceiling on long chains.
+
 `run_baselines.py` degrades the ground truth to each of the format's resolution
 tiers and scores it with the same harness (`data/baseline_ceiling.csv`,
 `plots/ceiling.png`). No model — this is what a *perfect* model would score.
