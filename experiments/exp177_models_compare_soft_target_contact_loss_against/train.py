@@ -397,6 +397,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
 
         train_key = f"contacts-v1/{loss_kind.value}"
         val_key = "tokenized/contacts-v1-val"
+        training_shuffle: bool | BlockShuffleConfig
         if loss_kind == LossKind.SOFT_TARGET:
             train_dataset = FixedQuotaSoftTargetContactsDataset(
                 data_prefix=CONTACTS_PREFIX,
@@ -406,8 +407,10 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
                 max_seq_len=SEQ_LEN,
             )
             train_component = DirectDatasetComponent(datasets={"train": train_dataset})
+            training_shuffle = False
         else:
             train_component = _train_cache_component()
+            training_shuffle = SHUFFLE
         data = LmDataConfig(
             components={
                 train_key: train_component,
@@ -417,7 +420,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             tokenizer=CONTACTS_TOKENIZER,
             cache_dir=None,
             auto_build_caches=False,
-            shuffle=SHUFFLE,
+            shuffle=training_shuffle,
             mixture_block_size=1,
             block_cross_document_attention=True,
         )
