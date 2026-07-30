@@ -43,7 +43,7 @@ class LevanterDocumentBatch(eqx.Module):
     target_weights: jax.Array
     position_ids: hax.NamedArray
     attention_mask: AttentionMask
-    target_position_count: int = eqx.field(static=True)
+    target_position_count: jax.Array
     vocabulary: VocabularyIdentity | None = eqx.field(static=True)
 
 
@@ -97,6 +97,7 @@ def levanter_document_batch(
     Pos: hax.Axis,
     position_coordinate: Coordinate = POSITION_IDS,
     batch_axis_name: str = "batch",
+    sparse_target_factor: int = 8,
 ) -> LevanterDocumentBatch:
     """Convert packed documents and their weighted targets to Levanter inputs."""
     if packed.token_ids.ndim != 2:
@@ -131,13 +132,30 @@ def levanter_document_batch(
         attention_mask = attention_mask.with_segment_ids(segment_ids)
 
         targets = _flatten_targets(packed)
+        max_targets = sparse_target_factor * Pos.size * Batch.size
+        if targets.weights.shape[0] > max_targets:
+            raise ValueError(
+                f"Packed document has {targets.weights.shape[0]} sparse targets, "
+                f"exceeding fixed budget {max_targets}"
+            )
+
+        padded_rows = np.zeros(max_targets, dtype=np.int32)
+        padded_positions = np.zeros(max_targets, dtype=np.int32)
+        padded_ids = np.zeros(max_targets, dtype=np.int32)
+        padded_weights = np.zeros(max_targets, dtype=np.float32)
+        target_count = targets.weights.shape[0]
+        padded_rows[:target_count] = targets.rows
+        padded_positions[:target_count] = targets.positions
+        padded_ids[:target_count] = targets.token_ids
+        padded_weights[:target_count] = targets.weights
+
         return LevanterDocumentBatch(
             tokens=tokens,
-            target_rows=jnp.asarray(targets.rows),
-            target_positions=jnp.asarray(targets.positions),
-            target_ids=jnp.asarray(targets.token_ids),
-            target_weights=jnp.asarray(targets.weights),
-            target_position_count=targets.position_count,
+            target_rows=jnp.asarray(padded_rows),
+            target_positions=jnp.asarray(padded_positions),
+            target_ids=jnp.asarray(padded_ids),
+            target_weights=jnp.asarray(padded_weights),
+            target_position_count=jnp.asarray(targets.position_count),
             position_ids=position_ids,
             attention_mask=attention_mask,
             vocabulary=packed.vocabulary,
