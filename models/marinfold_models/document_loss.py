@@ -93,7 +93,7 @@ def levanter_document_batch(
     Pos: hax.Axis,
     position_coordinate: Coordinate = POSITION_IDS,
     batch_axis_name: str = "batch",
-    sparse_target_factor: int = 256,
+    sparse_target_factor: int = 160,
 ) -> LevanterDocumentBatch:
     """Convert one packed document row and its weighted targets to a Levanter example."""
     del batch_axis_name

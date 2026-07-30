@@ -116,7 +116,7 @@ RESOURCES = ResourceConfig.with_tpu(
     TPU_TYPE,
     slice_count=TPU_SLICE_COUNT,
     cpu=32,
-    ram="128g",
+    ram=os.environ.get("EXP177_RAM", "128g"),
     disk="50g",
     zone=TPU_ZONE,
 )
