@@ -1,5 +1,5 @@
 {
-  "caption": "Best contacts-v1 model vs Protenix-v2 single-seq, per protein. MarinFold trails overall but overtakes above ~400 residues.",
+  "caption": "Per-protein R-precision, MarinFold #117 vs Protenix-v2 single-seq (n=554). Means 0.534 vs 0.603; the difference varies with length.",
   "script": "plot_vs_protenix.py",
   "args": [],
   "figure": "marinfold_vs_protenix",

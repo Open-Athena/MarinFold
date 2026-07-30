@@ -1,16 +1,16 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""``plots/marinfold_vs_protenix.png`` — the head-to-head, one point per protein.
+"""``plots/marinfold_vs_protenix.png`` — the comparison, one point per protein.
 
 The progress figures show where the frontier is; this one shows *which
-proteins* it is made of. Our best contacts-v1 model (#117 E16 final) against
-Protenix-v2 in single-sequence mode, R-precision (all ranges) on each of the
-554 eval proteins, so the y = x diagonal separates wins from losses.
+proteins* it is made of. The current best contacts-v1 model (#117 E16 final)
+against Protenix-v2 in single-sequence mode, R-precision (all ranges) on each
+of the 554 eval proteins, so the y = x diagonal separates the two.
 
-Colour encodes **sequence length** — a magnitude, so a single-hue sequential
-ramp (the data-viz reference blue, steps 200-700). Length is the variable that
-actually moves this comparison: the two predictors cross over above ~400
+Colour, and only colour, encodes **sequence length** — a magnitude, so a
+single-hue ordinal ramp (the data-viz reference blue). Length is the variable
+that actually moves this comparison: the two predictors cross over above ~400
 residues.
 
     uv run python plot_vs_protenix.py
@@ -57,11 +57,10 @@ BIN_LABEL = {(0, 100): "< 100", (100, 200): "100-200",
 # continuous ramp was tried first and is unreadable at 554 overlapping points.
 BIN_COLOR = {(0, 100): "#86b6ef", (100, 200): "#3987e5",
              (200, 400): "#1c5cab", (400, 10_000): "#0d366b"}
-# Size is REDUNDANT with colour — same variable, no second meaning. It exists
-# because the 17 longest proteins are the finding and would otherwise be lost
-# under the other 537. The legend chips are drawn at these same sizes so the
-# redundancy is visible rather than looking like a separate encoding.
-BIN_SIZE = {(0, 100): 34, (100, 200): 42, (200, 400): 54, (400, 10_000): 88}
+# One size for every point: colour alone carries the length bin, so nothing on
+# the plot can be mistaken for a second encoding. The 17 longest proteins stay
+# findable because their bin is the darkest step and is drawn last, on top.
+MARKER_SIZE = 46
 
 
 def load(exp169: Path, exp89: Path) -> pd.DataFrame:
@@ -138,8 +137,8 @@ def plot(j: pd.DataFrame, out: Path) -> None:
     corner = dict(fontsize=10.5, color=TEXT_SECONDARY, zorder=8,
                   bbox=dict(boxstyle="square,pad=0.3", facecolor=SURFACE,
                             edgecolor="none"))
-    ax.text(0.02, 1.0, "MarinFold better", ha="left", va="top", **corner)
-    ax.text(1.0, 0.0, "Protenix-v2 better", ha="right", va="bottom", **corner)
+    ax.text(0.02, 1.0, "MarinFold higher", ha="left", va="top", **corner)
+    ax.text(1.0, 0.0, "Protenix-v2 higher", ha="right", va="bottom", **corner)
 
     # Longest bin drawn last so its 17 points sit on top of the pile.
     for i, (lo, hi) in enumerate(LENGTH_BINS):
@@ -147,7 +146,7 @@ def plot(j: pd.DataFrame, out: Path) -> None:
         if s.empty:
             continue
         ax.scatter(s["precision_px"], s["precision_mf"],
-                   s=BIN_SIZE[(lo, hi)], color=BIN_COLOR[(lo, hi)],
+                   s=MARKER_SIZE, color=BIN_COLOR[(lo, hi)],
                    alpha=0.85, linewidth=0.7, edgecolor="white", zorder=3 + i)
 
     ax.set_xlim(-0.03, 1.03)
@@ -180,7 +179,7 @@ def plot(j: pd.DataFrame, out: Path) -> None:
     for label, value in (
         ("paired delta", f"{st['mean_delta']:+.3f}"),
         ("95% CI", f"[{st['ci_low']:+.3f}, {st['ci_high']:+.3f}]"),
-        ("MarinFold wins", f"{st['win_rate']:.0%}"),
+        ("MarinFold higher on", f"{st['win_rate']:.0%}"),
         ("Spearman", f"{st['spearman']:.2f}"),
     ):
         tx.text(0.0, y, label, fontsize=10, color=TEXT_SECONDARY, va="top")
@@ -192,10 +191,10 @@ def plot(j: pd.DataFrame, out: Path) -> None:
     tx.text(0.0, y, "By sequence length", fontsize=11, fontweight="bold",
             color=TEXT_PRIMARY, va="top")
     y -= 0.042
-    tx.text(0.0, y, "darker + larger = longer", fontsize=8.5,
+    tx.text(0.0, y, "darker = longer", fontsize=8.5,
             color=TEXT_MUTED, va="top")
     y -= 0.05
-    tx.text(0.0, y, f"{'':>9}{'n':>5}{'MF':>8}{'PX':>8}{'MF win':>9}",
+    tx.text(0.0, y, f"{'':>9}{'n':>5}{'MF':>8}{'PX':>8}{'MF hi':>9}",
             fontsize=9, color=TEXT_MUTED, va="top", family="DejaVu Sans Mono")
     y -= 0.045
     for b, (lo, hi) in zip(bins, LENGTH_BINS):
@@ -204,25 +203,25 @@ def plot(j: pd.DataFrame, out: Path) -> None:
                 f"{b['mf_wins']:>8.0%}",
                 fontsize=9, color=TEXT_PRIMARY, va="top",
                 family="DejaVu Sans Mono")
-        # Chip at the bin's *own* marker size and colour, so the legend
-        # states both encodings — size is redundant with colour here, and a
-        # fixed-size chip makes it look like it means something else.
-        tx.scatter([-0.05], [y - 0.014], s=BIN_SIZE[(lo, hi)],
+        # Chip at the plot's marker size, so the legend matches the cloud.
+        tx.scatter([-0.05], [y - 0.014], s=MARKER_SIZE,
                    color=BIN_COLOR[(lo, hi)], edgecolor="white",
                    linewidth=0.7, clip_on=False)
         y -= 0.045
 
     y -= 0.05
     tx.text(0.0, y,
-            "MarinFold trails overall, but the gap\n"
-            "closes monotonically with length and\n"
-            "reverses above ~400 residues (n=17).",
+            "MarinFold is lower on average. The\n"
+            "difference narrows as length rises and\n"
+            "changes sign in the > 400 bin, where\n"
+            "n = 17. Both predictors decline with\n"
+            "length; MarinFold declines less.",
             fontsize=9.5, color=TEXT_SECONDARY, va="top", linespacing=1.5)
 
     tx.set_xlim(-0.09, 1.0)
     tx.set_ylim(0, 1)
 
-    fig.suptitle("Where our best contacts-v1 model beats Protenix-v2, protein by protein",
+    fig.suptitle("Contact R-precision per protein: MarinFold #117 vs Protenix-v2 (single-sequence)",
                  fontsize=13.5, color=TEXT_PRIMARY, x=0.045, y=0.975, ha="left")
     fig.text(0.5, 0.022,
              "Each point is one eval protein. MarinFold reads contacts from sequence alone; Protenix-v2 here is "
@@ -237,8 +236,8 @@ def plot(j: pd.DataFrame, out: Path) -> None:
     plt.close(fig)
 
     meta = dict(
-        caption="Best contacts-v1 model vs Protenix-v2 single-seq, per protein. "
-                "MarinFold trails overall but overtakes above ~400 residues.",
+        caption="Per-protein R-precision, MarinFold #117 vs Protenix-v2 single-seq "
+                "(n=554). Means 0.534 vs 0.603; the difference varies with length.",
         script="plot_vs_protenix.py", args=[],
         figure="marinfold_vs_protenix",
         marinfold=MARINFOLD_MODEL, protenix=PROTENIX,

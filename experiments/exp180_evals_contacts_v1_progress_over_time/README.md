@@ -208,37 +208,35 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 
 ![R-precision vs validation loss](plots/rprecision_vs_val_loss.png)
 
-### Head-to-head with Protenix-v2, protein by protein
+### Per-protein comparison with Protenix-v2 (single-sequence)
 
 The frontier figures compress each model to one number. This is the same
 comparison unrolled over the 554 proteins, for the current best model.
 
 ![MarinFold vs Protenix-v2 single-sequence](plots/marinfold_vs_protenix.png)
 
-| length | n | MarinFold #117 | Protenix-v2 SS | MarinFold wins |
+| length | n | MarinFold #117 | Protenix-v2 SS | MarinFold higher |
 |---|---:|---:|---:|---:|
 | < 100 | 81 | 0.546 | 0.662 | 23% |
 | 100–200 | 285 | 0.560 | 0.639 | 28% |
 | 200–400 | 171 | 0.504 | 0.550 | 40% |
-| **> 400** | 17 | **0.346** | 0.266 | **76%** |
+| > 400 | 17 | 0.346 | 0.266 | 76% |
 | all | 554 | 0.534 | 0.603 | 33% |
 
-**The aggregate gap is not uniform — it is a length effect that reverses.**
-Overall MarinFold trails by a paired 0.069 (95% CI [0.046, 0.092]) and wins on
-a third of proteins. But the deficit shrinks monotonically with length and
-flips sign above ~400 residues, where MarinFold leads 0.346 to 0.266 and wins
-76% of 17 proteins.
+MarinFold is lower on average: paired difference **−0.069** (95% CI
+[−0.092, −0.046]), higher on 33% of proteins. The difference is not constant
+across the set — it narrows as length rises and changes sign in the > 400 bin.
 
-Two cautions on that last row. **n = 17**, so it is suggestive, not
-established — the eval set simply contains few long proteins. And *both*
-predictors degrade with length; MarinFold degrades more slowly, so "MarinFold
-wins" here means "loses less", at an absolute R-precision (0.35) well below
-what either achieves on short proteins.
+That bin holds **17 proteins**, so it is a weak estimate; the eval set contains
+few long chains. Both predictors decline with length, MarinFold less steeply,
+so the sign change happens at an absolute R-precision (~0.3) below what either
+reaches on short chains — it is a smaller decline, not better performance in
+absolute terms.
 
-The Spearman correlation of 0.62 is the other useful read: the two disagree
-about *which* proteins are hard far more than a shared difficulty axis would
-predict. The upper-left of the scatter — proteins MarinFold gets right and
-single-sequence Protenix does not — is populated, and not only by long ones.
+Spearman between the two is 0.62. They disagree about *which* proteins are
+hard more than a shared difficulty axis would predict, and the upper-left of
+the scatter — high for MarinFold, low for single-sequence Protenix — is
+populated by more than just the long chains.
 
 ### The accuracy frontier
 
