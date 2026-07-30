@@ -94,6 +94,7 @@
 * Looks like our quick-and-dirty model trained on contacts-v1 does not [perform well](https://github.com/Open-Athena/MarinFold/issues/82#issuecomment-4720288663) at all.
 * However, [Eric&#39;s sweep](https://github.com/Open-Athena/MarinFold/issues/61#issuecomment-4752161683) generated models with significantly improved eval perplexities than my quick-and-dirty model. So we are evaluating his best model now ([#89](https://github.com/Open-Athena/MarinFold/issues/89)). We will see if this changes the story.
 * While we were waiting for @Eric Czech 's sweep, I tried re-heating my quick-and-dirty model and doing another epoch. That improved eval loss somewhat but is still worse than best model from Eric's sweep ([#85](https://github.com/Open-Athena/MarinFold/issues/85))
+  * _[Editor's note, 2026-07-30: the re-heat did **not** improve eval loss. It finished at `contacts-v1-val` **2.9801** against #67's **2.9800**, and its five eval points run 2.9825 / 2.9828 / 2.9843 / 2.9820 / 2.9801 — no progress over the checkpoint it restarted from. The rest of the sentence stands: it was well short of Eric's sweep. Found while assembling the progress tracker in [#180](https://github.com/Open-Athena/MarinFold/issues/180).]_
 * Implemented a simple inference algorithm for our contacts-v1 models ([#82](https://github.com/Open-Athena/MarinFold/issues/82))
 * Evals: we now include ESMFold2 as a comparison ([#78](https://github.com/Open-Athena/MarinFold/issues/78))
 
