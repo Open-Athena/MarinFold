@@ -186,6 +186,27 @@ class ModelAdapter:
             canon(self.seq_positions[i], self.seq_positions[j]) for (i, j) in gt_seq
         )
 
+    def document_folds_to(self, document: str, expected_seq: frozenset[Pair]) -> bool:
+        """Does the *rendered* document fold back to ``expected_seq``?
+
+        This is the round-trip check: it catches a bug in rendering or in the
+        position<->sequence mapping, which is what would silently corrupt a
+        corpus. Pass the engine's own ``live_final``.
+
+        It used to be spelled only as "folds to GT" (below), which conflated
+        the round trip with the separate claim that the engine reached GT. That
+        conflation dropped **every** document under ``flush="none"``, where
+        reaching GT is deliberately not the goal — silently, since the worker
+        just skipped them and wrote an empty shard.
+        """
+        return live_contacts(document) == frozenset(
+            canon(self.seq_positions[i], self.seq_positions[j]) for (i, j) in expected_seq
+        )
+
     def document_folds_to_gt(self, document: str, gt_seq: frozenset[Pair]) -> bool:
-        """The corpus's hard invariant, checked on the *rendered* document."""
-        return live_contacts(document) == self.gt_positions(gt_seq)
+        """The flush-era invariant: the rendered document folds to exactly GT.
+
+        Equivalent to ``document_folds_to(document, gt)``. Only meaningful when
+        a closing flush ran, since that is what forces ``live_final == gt``.
+        """
+        return self.document_folds_to(document, gt_seq)

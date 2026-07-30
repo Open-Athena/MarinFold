@@ -177,3 +177,23 @@ def test_targeted_score_matches_full_fwd_matrix():
     )
     for i, j in targets:
         assert np.isclose(got[(i, j)], full[i, j], rtol=1e-9, atol=1e-12)
+
+
+def test_document_folds_to_engine_final_set_not_only_gt():
+    """The no-flush regression: an empty shard, written with no error.
+
+    `document_folds_to_gt` conflated the round-trip check (does the rendered
+    document parse back to what the engine produced?) with the claim that the
+    engine reached GT. Under flush="none" the second is deliberately false, so
+    the worker skipped every document and wrote nothing -- silently. The
+    generalised check must accept a final set that is a strict subset of GT.
+    """
+    gt = frozenset({(0, 12), (2, 16), (4, 20)})
+    partial = frozenset({(0, 12), (2, 16)})          # what a no-flush run leaves
+    adapter = _make(gt, script=[])          # what a no-flush run leaves
+    doc = adapter.assemble_document(
+        [("contact", i, j) for i, j in sorted(partial)]
+    )
+    assert adapter.document_folds_to(doc, partial)
+    assert not adapter.document_folds_to(doc, gt)
+    assert not adapter.document_folds_to_gt(doc, gt)   # old check: would drop it

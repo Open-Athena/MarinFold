@@ -131,8 +131,14 @@ def generate_chunk(backend, structures, args, policy: RetractionPolicy) -> pd.Da
     for entry_id, result in results.items():
         adapter, gt, analyzed = by_id[entry_id]
         document = adapter.assemble_document(result.statements)
-        if not adapter.document_folds_to_gt(document, gt):
-            continue  # never write a document that does not fold to GT
+        # Round-trip check, not a GT assertion: the rendered document must fold
+        # back to what the ENGINE says it produced. With a flush that is exactly
+        # GT (unchanged behaviour); with flush="none" it is the model's own
+        # final set, and checking against GT here would drop every document --
+        # which is precisely what the first no-flush pilot did, writing an empty
+        # shard with no error.
+        if not adapter.document_folds_to(document, result.live_final):
+            continue  # rendering / position-mapping bug -- never write it
         fp_trigger = sum(1 for _, _, was_true, t in result.retractions
                          if not was_true and t in _TRIGGER)
         fp_total = sum(1 for _, _, was_true, _ in result.retractions if not was_true)
