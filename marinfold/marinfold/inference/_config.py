@@ -82,10 +82,11 @@ def repair_rope(config: dict) -> dict:
     if rope_type in _UNSCALED_ROPE_TYPES:
         out["rope_scaling"] = None
     else:
-        # transformers 4.x reads `rope_type`; older configs used `type`. Write
-        # both so either validator is satisfied.
+        # `rope_type` is what transformers >=4.36 reads; the legacy `type`
+        # alias is deliberately not added. Under transformers 5.x
+        # `rope_scaling` is an alias of `rope_parameters`, so anything put here
+        # is surfaced there too — keep it to what the loader needs.
         params.setdefault("rope_type", rope_type)
-        params.setdefault("type", rope_type)
         out["rope_scaling"] = params
     return out
 
@@ -97,6 +98,32 @@ def read_config(model_path: Path) -> dict:
         return {}
     with open(path) as fh:
         return json.load(fh)
+
+
+def repair_config_file(config_path: Path) -> bool:
+    """Rewrite a ``config.json`` in place so *any* loader reads the right rope.
+
+    marinfold's own backends repair on load, but a checkpoint published to the
+    Hub is read by plenty of code that is not marinfold — a bare
+    ``AutoModelForCausalLM.from_pretrained``, someone else's eval worker, a
+    Colab. Those all silently get the wrong rope. Fixing the artifact is the
+    only thing that helps them.
+
+    The result carries **both** shapes: ``rope_parameters`` is left in place
+    and ``rope_theta`` / ``rope_scaling`` are added. Verified to load correctly
+    under transformers 4.57 *and* 5.14 — under 5.x ``rope_scaling`` is an alias
+    of ``rope_parameters``, and the added top-level ``rope_theta`` is ignored
+    in favour of the one inside the block, so 5.x behaviour is unchanged.
+
+    Returns True if the file was rewritten, False if it already read correctly.
+    """
+    config_path = Path(config_path)
+    with open(config_path) as fh:
+        raw = json.load(fh)
+    if not needs_rope_repair(raw):
+        return False
+    config_path.write_text(json.dumps(repair_rope(raw), indent=2) + "\n")
+    return True
 
 
 def load_config(model_path: Path):

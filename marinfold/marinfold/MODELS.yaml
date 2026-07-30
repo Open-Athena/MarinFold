@@ -10,15 +10,18 @@
 # (#169, exp82 rollout inference; see experiments/exp180_.../README.md for the
 # full progression). contacts-v1 tokenizer co-located.
 #
-# This export was written by transformers 5.12.1 and states rope as a
-# `rope_parameters` block, which the pinned transformers 4.x ignores in favour
-# of the architecture default. marinfold's inference path repairs it on load
-# (see marinfold/inference/_config.py) — worth 0.77 nats/token on real
-# documents. A bare AutoModelForCausalLM.from_pretrained on this directory
-# loads a broken model without complaining.
+# This is OUR republished copy of eric-czech's export, not the original. The
+# weights are byte-identical; only config.json differs. His export was written
+# by transformers 5.12.1 and states rope as a `rope_parameters` block, which
+# the pinned transformers 4.x ignores in favour of the architecture default —
+# loading rope_theta 10000 where the model was trained with 500000, worth 0.77
+# nats/token on real documents, silently. Our copy states rope in both 4.x and
+# 5.x terms, so a plain AutoModelForCausalLM.from_pretrained is correct with no
+# marinfold code in the loop. See the PROVENANCE.md beside the weights,
+# scripts/repair_checkpoint_config.py, and issue #180.
 - nickname: contacts-v1-exp117-1.5B
   default: true
-  url: https://huggingface.co/open-athena/marinfold-exp117/tree/main/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/hf/step-35679
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/hf/step-35679
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4
   document_structures:
     - contacts-v1
