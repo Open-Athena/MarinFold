@@ -120,6 +120,16 @@ def build_steps() -> list:
             contacts_v1_mix=cv1_mix,
             esm_atlas_mix=esm_atlas_mix,
             init_checkpoint=os.environ.get("EXP137_INIT_CHECKPOINT") or None,
+            # Pin the output path explicitly when resuming a specific run. The
+            # executor's step-identity hash is sensitive to the *order* of the
+            # (async-resolved) tokenize-step dependency list, which is not
+            # guaranteed stable across relaunches even with byte-identical
+            # config -- observed 2026-07-30: switching EXP137_TPU and switching
+            # back still landed a NEW output_path/hash, silently starting a
+            # fresh run instead of resuming. Setting EXP137_OVERRIDE_OUTPUT_PATH
+            # to the known-good gs://.../checkpoints/<name>-<hash> path bypasses
+            # the hash entirely and guarantees the intended resume target.
+            override_output_path=os.environ.get("EXP137_OVERRIDE_OUTPUT_PATH") or None,
             extra_tags=(f"steps{steps}",),
             wandb_name=name,
         )
