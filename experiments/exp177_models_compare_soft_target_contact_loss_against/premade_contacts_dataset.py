@@ -6,6 +6,7 @@
 from collections.abc import Mapping
 from typing import Any
 
+import numpy as np
 from haliax import Axis
 
 from marinfold.document_structures.contacts_v1 import (
@@ -24,6 +25,7 @@ from marinfold.document_structures.documents import Document, pack
 from marinfold_models.document_loss import LevanterDocumentBatch, levanter_document_batch
 from marinfold_models.shard_documents import (
     FixedQuotaShardDocumentDataset,
+    PackedDocuments,
     causal_lm_example_from_documents,
 )
 
@@ -105,6 +107,25 @@ class FixedQuotaPremadeContactsDataset(FixedQuotaShardDocumentDataset):
 
 class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
     """Build fixed-quota soft-target contacts-v1 examples from premade contacts."""
+
+    def _construct_shard(
+        self, epoch: int, shard_index: int
+    ) -> tuple[PackedDocuments | None, ...]:
+        slots = super()._construct_shard(epoch, shard_index)
+        if all(slot is not None for slot in slots):
+            return slots
+
+        real_slots = tuple(slot for slot in slots if slot is not None)
+        if not real_slots:
+            raise ValueError(f"Shard {shard_index} yielded no soft-target packs")
+
+        rng = np.random.default_rng(
+            np.random.SeedSequence([self.seed, epoch, shard_index, 2])
+        )
+        return tuple(
+            slot if slot is not None else real_slots[int(rng.integers(len(real_slots)))]
+            for slot in slots
+        )
 
     def __init__(
         self,
