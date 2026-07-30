@@ -260,7 +260,14 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
         Pos = config.model.max_Pos.resize(train_length)
         vocab_size = len(tokenizer)
         Vocab = round_axis_for_partitioning(Axis("vocab", vocab_size), trainer.parameter_axis_mapping)
-        train_dataset = config.data.train_set(Pos, config.trainer.batch_schedule, key=data_key)
+        train_sets = config.data.train_sets(
+            Pos,
+            initial_batch_size=config.trainer.batch_schedule.batch_size_at_step(0),
+            key=data_key,
+        )
+        if len(train_sets) != 1:
+            raise ValueError(f"Soft-target training expects one direct train dataset, got {tuple(train_sets)}")
+        train_dataset = next(iter(train_sets.values()))
         tagged_eval_datasets = config.data.tagged_eval_sets(Pos)
         state = trainer.initial_state(training_key, model_init=lambda: config.model.build(Vocab, key=model_key))
         levanter.tracker.log_summary({"parameter_count": parameter_count(state.model)})
