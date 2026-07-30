@@ -10,6 +10,8 @@ dependencies = [
     "wandb>=0.19",
     "pandas>=2.2",
     "numpy",
+    # pandas delegates Spearman to scipy (plot_vs_protenix.py).
+    "scipy>=1.11",
     "matplotlib>=3.8",
 ]
 

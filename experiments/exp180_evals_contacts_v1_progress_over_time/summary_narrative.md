@@ -63,6 +63,22 @@ The figures keep the two recipes visually separate. Anything from the
 eval-checkpoint skill is pairwise; anything from exp82's rollout workers or
 the exp169 dispatcher is rollout. Never infer the recipe from the magnitude.
 
+## Head-to-head with Protenix-v2
+
+Against Protenix-v2 in single-sequence mode, protein by protein, the aggregate
+gap is not uniform — it is a length effect that reverses.
+
+Below 100 residues MarinFold trails 0.546 to 0.662 and wins 23% of proteins.
+The deficit shrinks monotonically with length and flips above ~400 residues,
+where MarinFold leads 0.346 to 0.266 and wins 76% of 17 proteins.
+
+Two cautions: n = 17 in that last bin, and both predictors degrade with
+length, so "MarinFold wins" there means "loses less" at an absolute
+R-precision well below what either gets on short proteins.
+
+Spearman between the two is 0.62 — they disagree about which proteins are hard
+far more than a shared difficulty axis would predict.
+
 ## Open gap
 
 #108's 3B on CoreWeave held the loss frontier from 2026-07-11 to 07-16 at

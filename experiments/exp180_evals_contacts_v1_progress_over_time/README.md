@@ -59,10 +59,14 @@ Two tables and three figures, all code in the experiment dir.
   hand-curated benchmark scores (one source citation per row, since these live
   in issue comments and per-experiment CSVs rather than in W&B). Recomputes the
   structure-predictor lines from exp89's per-protein table.
-- `plot_progress.py` — the three figures: R-precision vs date, val loss vs
-  date, R-precision vs val loss. Both date figures draw a running-best
-  staircase; both R-precision figures carry the structure predictors as dotted
-  reference lines.
+- `plot_progress.py` — three figures: R-precision vs date, val loss vs date,
+  R-precision vs val loss. Both date figures draw a running-best staircase;
+  both R-precision figures carry the structure predictors as dotted reference
+  lines.
+- `plot_vs_protenix.py` — the fourth figure: the current best model against
+  Protenix-v2 single-sequence, one point per eval protein. The frontier figures
+  say how far along we are; this one says *which proteins* the number is made
+  of.
 
 **The one methodological trap, handled explicitly:** the same weights score
 **~0.086 higher** under exp82's rollout recipe than under exp89's original
@@ -165,7 +169,27 @@ y-axis changes with it. That is a rebuild, not a refresh: every historical
 number would have to be re-scored, and the honest interim move is to freeze
 these figures and start a second set.
 
-### 5. Cross-check
+### 5. The head-to-head figure pins a specific model
+
+`plot_vs_protenix.py` hard-codes `MARINFOLD_MODEL = "exp117_e16_final_step35679"`
+and reads its per-protein scores from
+`../exp169_evals_selected_checkpoints_117_146/data/exp169_rows.csv.gz`.
+
+**When a new model takes the accuracy frontier, re-point it**: set
+`MARINFOLD_MODEL` / `MARINFOLD_LABEL`, and point `EXP169` at whichever
+experiment holds the new per-protein rows. It needs *per-protein* precision,
+not a summary — a mean is not enough to draw the scatter, so the scoring run
+has to have published its rows CSV.
+
+The comparison is against Protenix-v2 in **single-sequence** mode on purpose:
+MarinFold reads contacts from sequence alone, so the MSA row is not the
+like-for-like baseline. Both come from exp89's `compute_metrics` on the same
+ground truth. Switching the x-axis to another predictor is a one-line change to
+`PROTENIX` — the four rows in exp89's CSV are
+`(protenix-v2, single_seq|msa, structure|distogram)`, `(esmfold, single_seq,
+structure)` and `(esmfold2, single_seq, structure)`.
+
+### 6. Cross-check
 
 `data/rprecision_footnotes.csv` holds measurements that are alternate
 realisations of a checkpoint rather than new checkpoints. Nothing in it should
@@ -183,6 +207,38 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 ![Validation loss over time](plots/val_loss_frontier.png)
 
 ![R-precision vs validation loss](plots/rprecision_vs_val_loss.png)
+
+### Head-to-head with Protenix-v2, protein by protein
+
+The frontier figures compress each model to one number. This is the same
+comparison unrolled over the 554 proteins, for the current best model.
+
+![MarinFold vs Protenix-v2 single-sequence](plots/marinfold_vs_protenix.png)
+
+| length | n | MarinFold #117 | Protenix-v2 SS | MarinFold wins |
+|---|---:|---:|---:|---:|
+| < 100 | 81 | 0.546 | 0.662 | 23% |
+| 100–200 | 285 | 0.560 | 0.639 | 28% |
+| 200–400 | 171 | 0.504 | 0.550 | 40% |
+| **> 400** | 17 | **0.346** | 0.266 | **76%** |
+| all | 554 | 0.534 | 0.603 | 33% |
+
+**The aggregate gap is not uniform — it is a length effect that reverses.**
+Overall MarinFold trails by a paired 0.069 (95% CI [0.046, 0.092]) and wins on
+a third of proteins. But the deficit shrinks monotonically with length and
+flips sign above ~400 residues, where MarinFold leads 0.346 to 0.266 and wins
+76% of 17 proteins.
+
+Two cautions on that last row. **n = 17**, so it is suggestive, not
+established — the eval set simply contains few long proteins. And *both*
+predictors degrade with length; MarinFold degrades more slowly, so "MarinFold
+wins" here means "loses less", at an absolute R-precision (0.35) well below
+what either achieves on short proteins.
+
+The Spearman correlation of 0.62 is the other useful read: the two disagree
+about *which* proteins are hard far more than a shared difficulty axis would
+predict. The upper-left of the scatter — proteins MarinFold gets right and
+single-sequence Protenix does not — is populated, and not only by long ones.
 
 ### The accuracy frontier
 
@@ -357,11 +413,13 @@ exp146 / exp153 (n=153 after exclusions).
 | path | what |
 |---|---|
 | `build_dataset.py` | assembles both tables; W&B pull + the hand-curated benchmark rows |
-| `plot_progress.py` | the three figures |
+| `plot_progress.py` | the three progress figures |
+| `plot_vs_protenix.py` | the head-to-head scatter + `data/marinfold_vs_protenix.csv` |
 | `data/rprecision_checkpoints.csv` | 13 rows (11 checkpoints; 2 measured under both recipes), one source citation each |
 | `data/structure_baselines.csv` | the four dotted lines, recomputed from exp89 |
 | `data/val_loss_runs.csv` | 318 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
 | `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints |
+| `data/marinfold_vs_protenix.csv` | the 554 paired per-protein scores behind the head-to-head figure |
 | `plots/*.png.meta.json` | the numbers behind each figure |
 
 Sources for every R-precision value are in the `source` column of
