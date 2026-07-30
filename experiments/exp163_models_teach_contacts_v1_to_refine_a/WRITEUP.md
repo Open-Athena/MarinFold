@@ -720,6 +720,29 @@ cd experiments/exp163_models_teach_contacts_v1_to_refine_a
 set -a; source ~/.config/marin/cw-rno2a.env; set +a
 WK=$(python -c "import netrc; print(netrc.netrc().authenticators('api.wandb.ai')[2])")
 
+# ---- v3: mode token + rehearsal (the current state) --------------------------
+P=s3://marin-us-east-02a/MarinFold/exp163
+python -m make_multi_tokenizer                 # rename vocab id 7 in place, no id drift
+python -m build_refinement_corpus --format multi-draft --mix-plain 0.5 \
+    --draft-order random --out corpus_v3.parquet
+python -m tokenize_refinement_corpus --format multi-draft \
+    --w-header 0 --w-draft 0 --w-final 1.0     # prints steps/epoch = 405
+
+# train. XLA_PYTHON_CLIENT_MEM_FRACTION is REQUIRED -- see section 12's OOM note.
+uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
+    --enable-extra-resources --cpu=2 --memory=6GB --disk=16GB --extra gpu \
+    -e WANDB_API_KEY "$WK" -e XLA_PYTHON_CLIENT_MEM_FRACTION 0.94 \
+    -e EXP163_LRS 1e-4 -e EXP163_ARMS v3/tok_mix50 -e EXP163_STEPS_PER_EPOCH 405 \
+    -- python -m dispatch_refine_train
+
+# dual-mode eval: base-mode K0, refine-mode K0, refine-mode @K, all in one pass
+uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
+    --enable-extra-resources --cpu=2 --memory=6GB --disk=16GB \
+    -e EXP163_EVAL_MODELS "base=$P/model/step-35679,v3mix50=$P/checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-v3-tok-mix50/hf/step-404" \
+    -- python -m dispatch_refine_eval --shards 4 --ks 1,2,4,8,16 \
+       --format multi-draft --mode-id 7
+
+# ---- v1: the original single-candidate format --------------------------------
 # corpus -> tokenized + masked
 uv run python tokenize_refinement_corpus.py \
     --in  s3://marin-us-east-02a/MarinFold/exp163/val10k/refinement_corpus/'*.parquet' \
@@ -734,5 +757,6 @@ uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
 
 Key files: `loss_mask.py` · `tokenize_refinement_corpus.py` · `refine_ft_common.py` ·
 `dispatch_refine_train.py` · `build_refinement_corpus.py` · `select_targets_eval_set.py` ·
-`gen_prompts_exp163.py` · `dispatch_rollouts.py`. Narrative + operational detail in
+`gen_prompts_exp163.py` · `dispatch_rollouts.py` · `make_multi_tokenizer.py` ·
+`eval_refiner_worker.py` · `dispatch_refine_eval.py`. Narrative + operational detail in
 `SCALE_PLAN.md`.
