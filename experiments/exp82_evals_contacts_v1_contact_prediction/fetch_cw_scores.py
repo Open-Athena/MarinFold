@@ -3,7 +3,7 @@
 
 """Rebuild local ``[L, L]`` npz score matrices from the CoreWeave shard parquets.
 
-``score_rollout_worker_cw.py`` emits sparse upper-triangle triplets
+``score_rollout_worker.py`` emits sparse upper-triangle triplets
 (``dataset``/``stem``/``L``/``i``/``j``/``votes``) — one parquet part per chunk —
 because per-protein npz on S3 would be thousands of tiny objects. This
 reconstitutes the exact dense float16 matrices ``score_rollout_vllm.py`` writes
