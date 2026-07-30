@@ -1663,7 +1663,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp176%2Fsoft-target-loss-h2h#6140d3d272e6fc6bf491c304683c6fdd5ff31dc4" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp176%2Fsoft-target-loss-h2h#413b4e19bdb48e2a869598c9d756530d7533bdcf" }
 dependencies = [
     { name = "gemmi" },
     { name = "huggingface-hub" },
@@ -1678,7 +1678,7 @@ dependencies = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp176%2Fsoft-target-loss-h2h#6140d3d272e6fc6bf491c304683c6fdd5ff31dc4" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp176%2Fsoft-target-loss-h2h#413b4e19bdb48e2a869598c9d756530d7533bdcf" }
 dependencies = [
     { name = "marin-core" },
     { name = "marin-iris" },
