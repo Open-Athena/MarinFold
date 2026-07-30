@@ -259,7 +259,7 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
 
         train_length = config.train_seq_len or config.model.max_seq_len
         Pos = config.model.max_Pos.resize(train_length)
-        vocab_size = max(len(tokenizer), CONTACTS_V1_VOCABULARY.size)
+        vocab_size = max(len(tokenizer), len(CONTACTS_V1_VOCABULARY))
         Vocab = round_axis_for_partitioning(Axis("vocab", vocab_size), trainer.parameter_axis_mapping)
         train_sets = config.data.train_sets(
             Pos,
