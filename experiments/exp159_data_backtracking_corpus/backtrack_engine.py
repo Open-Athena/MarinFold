@@ -32,11 +32,22 @@ The design (see the experiment README and issue #159):
   collapse — this must be forced, not queued) and re-emitted later, teaching
   that retraction is exploratory and reversible.
 
-- **Correctness = a budget-reserved flush.** Whatever the trajectory, the
-  main loop always leaves enough budget to (a) retract every still-live
-  non-GT pair and (b) emit every missing GT pair, so the final live set
-  equals GT exactly (recall philosophy F). Running out of context is the only
-  way an FP survives — reported (``truncated``), not silently allowed.
+- **Correctness = a budget-reserved flush** (``policy.flush``). Whatever the
+  trajectory, the main loop can leave enough budget to (a) retract every
+  still-live non-GT pair and (b) emit every missing GT pair, so the final live
+  set equals GT exactly (recall philosophy F). Running out of context is then
+  the only way an FP survives — reported (``truncated``), not silently allowed.
+
+  **The flush is off by default in new corpora** (``flush="none"``). It cannot
+  happen at inference — it appends contacts the model never proposed — so it
+  gives training documents a shape the model can never produce on its own, and
+  the model learns the shape rather than the behaviour (#159's flush bug:
+  #175's retraction-mode rollouts came out 83% fully sorted). With
+  ``flush="none"`` the document ends where the model stopped, the only
+  synthetic tokens are the ``<retract>`` statements the trigger placed — which
+  is what this corpus always claimed to be — and ``live_final`` no longer
+  equals GT: roughly the fraction of false positives the trigger misses
+  survives to ``<end>``, which is honest about what the trigger can do.
 
 The engine is agnostic to token rendering: it returns the ordered edit list
 (and rich metrics); the caller prepends the sequence prefix and renders
@@ -120,6 +131,20 @@ class RetractionPolicy:
     noise_retract_prob: float = 0.0
     # After this many retract cycles on the same pair, ban it (loop guard).
     loop_cap: int = 2
+    # What the closing flush does. See the module docstring's "Correctness"
+    # note and issue #159's flush bug.
+    #
+    #   "sorted"   - the original: retract surviving FPs, then append every
+    #                missing GT pair IN SORTED ORDER. Reproduces the published
+    #                corpus; kept only for that. Do not use for new corpora.
+    #   "shuffled" - same, but the appended block is shuffled. Removes the
+    #                ordering signal; keeps the terminal block.
+    #   "none"     - no flush. The document ends where the model stopped.
+    #                Nothing is appended and nothing is force-retracted, so the
+    #                only synthetic tokens are the <retract> statements the
+    #                trigger placed -- which is what this corpus always claimed
+    #                to be. `live_final` then does NOT equal GT.
+    flush: str = "shuffled"
 
 
 @dataclass
@@ -217,6 +242,11 @@ def backtracking_structure_gen(
     def flush_needed() -> int:
         # Statements to reach live == gt: retract every live non-GT + emit
         # every missing GT (+1 margin for <end>, appended by the caller).
+        # With flush="none" there is nothing to reserve but the <end> margin,
+        # which is what lets the model actually run to its own stopping point
+        # instead of being cut short to make room for an answer key.
+        if policy.flush == "none":
+            return 1
         return len(live_set - gt) + len(gt - live_set) + 1
 
     def budget_ok() -> bool:
@@ -306,20 +336,37 @@ def backtracking_structure_gen(
         if stopped:
             break
 
-    # --- closing flush: force live == gt exactly (philosophy F) -----------
+    # --- closing flush ----------------------------------------------------
     # Retract every still-live non-GT pair (queued FPs the trigger didn't
     # catch), then emit every missing GT pair (recall gap + any noise-retracted
-    # true not yet re-emitted).
-    for pair in list(live_set - gt):
-        emit_retract(pair, delay=step - emitted_at_step.get(pair, step), trigger="flush")
-    for pair in sorted(gt - live_set):
-        if len(out) + 1 >= max_statements:
-            res.truncated = True
-            break
-        was_pending = pair in pending_reemit
-        emit_contact(pair)
-        if was_pending:
-            res.n_reemit += 1
+    # true not yet re-emitted), giving live == gt exactly (philosophy F).
+    #
+    # `flush="none"` skips both halves. The flush cannot happen at inference --
+    # it appends contacts the model never proposed -- so training on it gives
+    # documents a shape the model can never produce, and the model learns the
+    # shape: #175's retraction-mode rollouts came out 83% fully sorted,
+    # reproducing the sorted append almost exactly. Retraction then reads as
+    # something done at a POSITION rather than on evidence, which is the most
+    # likely source of the over-retraction those runs measured.
+    if policy.flush != "none":
+        for pair in list(live_set - gt):
+            emit_retract(pair, delay=step - emitted_at_step.get(pair, step),
+                         trigger="flush")
+        # sorted() here was the bug: contacts-v1 shuffles contact order by
+        # design, and this block is ~80% of a backtracking document, so a
+        # sorted append taught a degree-free position ordering the format
+        # exists to prevent.
+        missing = sorted(gt - live_set)
+        if policy.flush == "shuffled":
+            rng.shuffle(missing)
+        for pair in missing:
+            if len(out) + 1 >= max_statements:
+                res.truncated = True
+                break
+            was_pending = pair in pending_reemit
+            emit_contact(pair)
+            if was_pending:
+                res.n_reemit += 1
 
     res.live_final = frozenset(live_set)
     return res
