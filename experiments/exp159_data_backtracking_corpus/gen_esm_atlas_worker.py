@@ -180,13 +180,20 @@ def main() -> None:
     ap.add_argument("--tau", type=float, default=0.35)
     ap.add_argument("--s-floor", type=float, default=1e-3)
     ap.add_argument("--noise-prob", type=float, default=0.05)
+    ap.add_argument("--flush", default="none", choices=["none", "shuffled", "sorted"],
+                    help="closing-flush mode; see backtrack_engine.RetractionPolicy. "
+                         "'none' (default) ends the document where the model stopped; "
+                         "'shuffled' keeps the flush but removes its ordering signal "
+                         "(the control); 'sorted' reproduces the #159 corpus bug.")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
     policy = RetractionPolicy(
         min_delay=args.min_delay, eval_cadence=args.eval_cadence,
         tau=args.tau, s_floor=args.s_floor, noise_retract_prob=args.noise_prob,
+        flush=args.flush,
     )
+    print(f"worker: flush={args.flush}", flush=True)
     shards = [s for i, s in enumerate(parse_shards(args.shards))
               if i % args.num_workers == args.worker_id]
     print(f"worker {args.worker_id}/{args.num_workers}: {len(shards)} shards", flush=True)
