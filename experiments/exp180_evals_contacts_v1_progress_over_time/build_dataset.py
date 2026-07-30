@@ -18,7 +18,7 @@ R-precision here is always **R-precision, all ranges (sep ≥ 6), mean over the
 554-protein eval set**, computed by exp89's ``compute_metrics``. Two inference
 recipes appear and they are *not* interchangeable — see INFERENCE below.
 
-    uv run --with wandb --with pandas python build_dataset.py
+    uv run python build_dataset.py
 """
 
 from __future__ import annotations

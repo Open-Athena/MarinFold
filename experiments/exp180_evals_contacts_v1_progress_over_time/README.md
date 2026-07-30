@@ -93,8 +93,9 @@ refresh:
 
 ```bash
 cd experiments/exp180_evals_contacts_v1_progress_over_time
-uv run --with wandb --with pandas python build_dataset.py
-uv run --with pandas --with matplotlib python plot_progress.py
+uv run python build_dataset.py     # re-pull W&B, rebuild the tables
+uv run python plot_progress.py     # redraw the three figures
+uv run python build_summary.py     # optional: refresh plots/summary.pdf
 ```
 
 `build_dataset.py` re-pulls every run from `open-athena/MarinFold` and from

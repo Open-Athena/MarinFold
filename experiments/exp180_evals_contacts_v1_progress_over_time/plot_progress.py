@@ -15,7 +15,7 @@ must never have to guess which one a point is). Two slots of the data-viz
 reference palette, slot 1 (blue) and slot 2 (orange); every point is also
 directly labelled, so identity never rests on colour alone.
 
-    uv run --with pandas --with matplotlib python plot_progress.py
+    uv run python plot_progress.py
 """
 
 from __future__ import annotations
