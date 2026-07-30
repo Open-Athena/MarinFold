@@ -97,7 +97,7 @@ def levanter_document_batch(
     Pos: hax.Axis,
     position_coordinate: Coordinate = POSITION_IDS,
     batch_axis_name: str = "batch",
-    sparse_target_factor: int = 8,
+    sparse_target_factor: int = 128,
 ) -> LevanterDocumentBatch:
     """Convert packed documents and their weighted targets to Levanter inputs."""
     if packed.token_ids.ndim != 2:
