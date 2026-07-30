@@ -152,7 +152,16 @@ assert "priority" in {f.name for f in dataclasses.fields(JobRequest)}, (
 # driver, so anything passed to the driver via `iris job run -e XLA_FLAGS ...` (or
 # NCCL_*/JAX_*) must be re-exported explicitly onto the gang (verbatim from exp108).
 # JAX_PLATFORMS is excluded so the CPU driver's value can't leak onto the GPU gang.
-_FORWARD_ENV_PREFIXES = ("XLA_FLAGS", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
+# The prefix is ``XLA_`` (not just ``XLA_FLAGS``) so ``XLA_PYTHON_CLIENT_MEM_FRACTION``
+# gets through. That one matters on H100s: JAX preallocates only **75%** of each device
+# by default, and this recipe (batch 128 x seq 8192 with ``per_device_parallelism=-1``
+# => 16 seqs x 8192 tokens per GPU, no microbatching) peaks close enough to that ceiling
+# that ``jit__train_step`` OOM'd on a 29.91GiB allocation while ~20GiB per H100 sat
+# unusable outside the arena. Raising the fraction is allocator-only -- it does not touch
+# the gradient, so runs stay numerically comparable to ones launched without it (unlike
+# microbatching, which would re-normalize the per-token loss weights per microbatch and
+# so change the effective objective).
+_FORWARD_ENV_PREFIXES = ("XLA_", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
 _FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS",)
 
 
