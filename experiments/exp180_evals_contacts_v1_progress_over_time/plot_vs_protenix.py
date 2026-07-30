@@ -57,8 +57,10 @@ BIN_LABEL = {(0, 100): "< 100", (100, 200): "100-200",
 # continuous ramp was tried first and is unreadable at 554 overlapping points.
 BIN_COLOR = {(0, 100): "#86b6ef", (100, 200): "#3987e5",
              (200, 400): "#1c5cab", (400, 10_000): "#0d366b"}
-# Redundant size encoding on the same variable — the 17 longest proteins are
-# the finding, and they must be findable in the cloud.
+# Size is REDUNDANT with colour — same variable, no second meaning. It exists
+# because the 17 longest proteins are the finding and would otherwise be lost
+# under the other 537. The legend chips are drawn at these same sizes so the
+# redundancy is visible rather than looking like a separate encoding.
 BIN_SIZE = {(0, 100): 34, (100, 200): 42, (200, 400): 54, (400, 10_000): 88}
 
 
@@ -189,7 +191,10 @@ def plot(j: pd.DataFrame, out: Path) -> None:
     y -= 0.05
     tx.text(0.0, y, "By sequence length", fontsize=11, fontweight="bold",
             color=TEXT_PRIMARY, va="top")
-    y -= 0.058
+    y -= 0.042
+    tx.text(0.0, y, "darker + larger = longer", fontsize=8.5,
+            color=TEXT_MUTED, va="top")
+    y -= 0.05
     tx.text(0.0, y, f"{'':>9}{'n':>5}{'MF':>8}{'PX':>8}{'MF win':>9}",
             fontsize=9, color=TEXT_MUTED, va="top", family="DejaVu Sans Mono")
     y -= 0.045
@@ -199,9 +204,12 @@ def plot(j: pd.DataFrame, out: Path) -> None:
                 f"{b['mf_wins']:>8.0%}",
                 fontsize=9, color=TEXT_PRIMARY, va="top",
                 family="DejaVu Sans Mono")
-        # Colour chip so a table row maps back to the cloud.
-        tx.scatter([-0.05], [y - 0.014], s=44, color=BIN_COLOR[(lo, hi)],
-                   edgecolor="white", linewidth=0.7, clip_on=False)
+        # Chip at the bin's *own* marker size and colour, so the legend
+        # states both encodings — size is redundant with colour here, and a
+        # fixed-size chip makes it look like it means something else.
+        tx.scatter([-0.05], [y - 0.014], s=BIN_SIZE[(lo, hi)],
+                   color=BIN_COLOR[(lo, hi)], edgecolor="white",
+                   linewidth=0.7, clip_on=False)
         y -= 0.045
 
     y -= 0.05
