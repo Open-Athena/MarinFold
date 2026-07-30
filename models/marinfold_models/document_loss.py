@@ -26,7 +26,6 @@ from marinfold.document_structures.documents import (
 
 @dataclass(frozen=True)
 class _FlatTargets:
-    rows: np.ndarray
     positions: np.ndarray
     token_ids: np.ndarray
     weights: np.ndarray
@@ -37,7 +36,6 @@ class LevanterDocumentBatch(eqx.Module):
     """Named model inputs plus flattened sparse target distributions."""
 
     tokens: hax.NamedArray
-    target_rows: jax.Array
     target_positions: jax.Array
     target_ids: jax.Array
     target_weights: jax.Array
@@ -48,7 +46,6 @@ class LevanterDocumentBatch(eqx.Module):
 
 
 def _flatten_targets(packed: PackedBatch) -> _FlatTargets:
-    rows: list[int] = []
     positions: list[int] = []
     token_ids: list[int] = []
     weights: list[float] = []
@@ -57,9 +54,10 @@ def _flatten_targets(packed: PackedBatch) -> _FlatTargets:
     for target_range in packed.score_ranges:
         if not target_range.scored:
             continue
+        if target_range.row != 0:
+            raise ValueError("Document examples must contain exactly one packed row")
         if target_range.target_ids is None:
             for position in range(target_range.start, target_range.stop - 1):
-                rows.append(target_range.row)
                 positions.append(position)
                 token_ids.append(int(packed.token_ids[target_range.row, position + 1]))
                 weights.append(1.0)
@@ -74,7 +72,6 @@ def _flatten_targets(packed: PackedBatch) -> _FlatTargets:
                 raise AssertionError("Normalized target row unexpectedly has no mass")
             position = target_range.start + relative_position
             for target_index in nonzero:
-                rows.append(target_range.row)
                 positions.append(position)
                 token_ids.append(target_range.target_ids[int(target_index)])
                 weights.append(float(weight_row[int(target_index)]))
@@ -83,7 +80,6 @@ def _flatten_targets(packed: PackedBatch) -> _FlatTargets:
     if position_count == 0:
         raise ValueError("Packed document batch has no scored target positions")
     return _FlatTargets(
-        rows=np.asarray(rows, dtype=np.int32),
         positions=np.asarray(positions, dtype=np.int32),
         token_ids=np.asarray(token_ids, dtype=np.int32),
         weights=np.asarray(weights, dtype=np.float32),
@@ -97,61 +93,60 @@ def levanter_document_batch(
     Pos: hax.Axis,
     position_coordinate: Coordinate = POSITION_IDS,
     batch_axis_name: str = "batch",
-    sparse_target_factor: int = 128,
+    sparse_target_factor: int = 32,
 ) -> LevanterDocumentBatch:
-    """Convert packed documents and their weighted targets to Levanter inputs."""
+    """Convert one packed document row and its weighted targets to a Levanter example."""
+    del batch_axis_name
     if packed.token_ids.ndim != 2:
         raise ValueError(
             f"Packed document tokens must have rank 2, got {packed.token_ids.shape}"
         )
+    if packed.token_ids.shape[0] != 1:
+        raise ValueError(f"Document examples must contain exactly one row, got {packed.token_ids.shape[0]}")
     if packed.token_ids.shape[1] != Pos.size:
         raise ValueError(
             f"Packed sequence length {packed.token_ids.shape[1]} does not match "
             f"Levanter Pos axis size {Pos.size}"
         )
 
-    Batch = hax.Axis(batch_axis_name, packed.token_ids.shape[0])
-    axes = (Batch, Pos)
+    axes = (Pos,)
     with local_cpu_mesh():
-        tokens = hax.named(jnp.asarray(packed.token_ids), axes)
-        segment_ids = hax.named(jnp.asarray(packed.segment_ids), axes)
-        raw_position_ids = np.asarray(packed[position_coordinate])
+        tokens = hax.named(jnp.asarray(packed.token_ids[0]), axes)
+        segment_ids = hax.named(jnp.asarray(packed.segment_ids[0]), axes)
+        raw_position_ids = np.asarray(packed[position_coordinate])[0]
         position_ids = hax.named(jnp.asarray(np.maximum(raw_position_ids, 0)), axes)
 
         attention_mask = AttentionMask()
         if packed.attention == AttentionLayout.CAUSAL:
             attention_mask = AttentionMask.causal()
         elif packed.attention == AttentionLayout.BLOCK_CAUSAL:
-            attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK]), axes)
+            attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK][0]), axes)
             KPos = hax.Axis("key_position", Pos.size)
             key_blocks = attention_blocks.rename({Pos: KPos})
             explicit_mask = (
                 attention_blocks.broadcast_axis(KPos) >= key_blocks.broadcast_axis(Pos)
-            ).rearrange((Batch, Pos, KPos))
+            ).rearrange((Pos, KPos))
             attention_mask = AttentionMask.explicit(explicit_mask)
         attention_mask = attention_mask.with_segment_ids(segment_ids)
 
         targets = _flatten_targets(packed)
-        max_targets = sparse_target_factor * Pos.size * Batch.size
+        max_targets = sparse_target_factor * Pos.size
         if targets.weights.shape[0] > max_targets:
             raise ValueError(
                 f"Packed document has {targets.weights.shape[0]} sparse targets, "
                 f"exceeding fixed budget {max_targets}"
             )
 
-        padded_rows = np.zeros(max_targets, dtype=np.int32)
         padded_positions = np.zeros(max_targets, dtype=np.int32)
         padded_ids = np.zeros(max_targets, dtype=np.int32)
         padded_weights = np.zeros(max_targets, dtype=np.float32)
         target_count = targets.weights.shape[0]
-        padded_rows[:target_count] = targets.rows
         padded_positions[:target_count] = targets.positions
         padded_ids[:target_count] = targets.token_ids
         padded_weights[:target_count] = targets.weights
 
         return LevanterDocumentBatch(
             tokens=tokens,
-            target_rows=jnp.asarray(padded_rows),
             target_positions=jnp.asarray(padded_positions),
             target_ids=jnp.asarray(padded_ids),
             target_weights=jnp.asarray(padded_weights),
@@ -181,12 +176,13 @@ def document_loss(
             f"{batch.vocabulary.name!r} with {batch.vocabulary.size} tokens"
         )
     log_probs = jax.nn.log_softmax(logits.array, axis=-1)
+    batch_indices = jnp.arange(log_probs.shape[0])[:, None]
     selected = log_probs[
-        batch.target_rows,
+        batch_indices,
         batch.target_positions,
         batch.target_ids,
     ]
-    return -jnp.sum(batch.target_weights * selected) / batch.target_position_count
+    return -jnp.sum(batch.target_weights * selected) / jnp.sum(batch.target_position_count)
 
 
 __all__ = [
