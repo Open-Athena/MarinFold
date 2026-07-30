@@ -12,6 +12,7 @@ import jax.numpy as jnp
 import numpy as np
 from levanter.layers.attention import AttentionMask
 from levanter.models.lm_model import LmHeadModel
+from levanter.utils.jax_utils import local_cpu_mesh
 
 from marinfold.document_structures.core import VocabularyIdentity
 from marinfold.document_structures.documents import (
@@ -110,36 +111,37 @@ def levanter_document_batch(
 
     Batch = hax.Axis(batch_axis_name, packed.token_ids.shape[0])
     axes = (Batch, Pos)
-    tokens = hax.named(jnp.asarray(packed.token_ids), axes)
-    segment_ids = hax.named(jnp.asarray(packed.segment_ids), axes)
-    raw_position_ids = np.asarray(packed[position_coordinate])
-    position_ids = hax.named(jnp.asarray(np.maximum(raw_position_ids, 0)), axes)
+    with local_cpu_mesh():
+        tokens = hax.named(jnp.asarray(packed.token_ids), axes)
+        segment_ids = hax.named(jnp.asarray(packed.segment_ids), axes)
+        raw_position_ids = np.asarray(packed[position_coordinate])
+        position_ids = hax.named(jnp.asarray(np.maximum(raw_position_ids, 0)), axes)
 
-    attention_mask = AttentionMask()
-    if packed.attention == AttentionLayout.CAUSAL:
-        attention_mask = AttentionMask.causal()
-    elif packed.attention == AttentionLayout.BLOCK_CAUSAL:
-        attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK]), axes)
-        KPos = hax.Axis("key_position", Pos.size)
-        key_blocks = attention_blocks.rename({Pos: KPos})
-        explicit_mask = (
-            attention_blocks.broadcast_axis(KPos) >= key_blocks.broadcast_axis(Pos)
-        ).rearrange((Batch, Pos, KPos))
-        attention_mask = AttentionMask.explicit(explicit_mask)
-    attention_mask = attention_mask.with_segment_ids(segment_ids)
+        attention_mask = AttentionMask()
+        if packed.attention == AttentionLayout.CAUSAL:
+            attention_mask = AttentionMask.causal()
+        elif packed.attention == AttentionLayout.BLOCK_CAUSAL:
+            attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK]), axes)
+            KPos = hax.Axis("key_position", Pos.size)
+            key_blocks = attention_blocks.rename({Pos: KPos})
+            explicit_mask = (
+                attention_blocks.broadcast_axis(KPos) >= key_blocks.broadcast_axis(Pos)
+            ).rearrange((Batch, Pos, KPos))
+            attention_mask = AttentionMask.explicit(explicit_mask)
+        attention_mask = attention_mask.with_segment_ids(segment_ids)
 
-    targets = _flatten_targets(packed)
-    return LevanterDocumentBatch(
-        tokens=tokens,
-        target_rows=jnp.asarray(targets.rows),
-        target_positions=jnp.asarray(targets.positions),
-        target_ids=jnp.asarray(targets.token_ids),
-        target_weights=jnp.asarray(targets.weights),
-        target_position_count=targets.position_count,
-        position_ids=position_ids,
-        attention_mask=attention_mask,
-        vocabulary=packed.vocabulary,
-    )
+        targets = _flatten_targets(packed)
+        return LevanterDocumentBatch(
+            tokens=tokens,
+            target_rows=jnp.asarray(targets.rows),
+            target_positions=jnp.asarray(targets.positions),
+            target_ids=jnp.asarray(targets.token_ids),
+            target_weights=jnp.asarray(targets.weights),
+            target_position_count=targets.position_count,
+            position_ids=position_ids,
+            attention_mask=attention_mask,
+            vocabulary=packed.vocabulary,
+        )
 
 
 def document_loss(
