@@ -6,21 +6,22 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "fsspec",
     "gcsfs",
-    "marin-core>=0.2.56.dev202607230804,<0.3",
+    "marin-core==0.2.0",
     "marin-dupekit<0.3",
-    "marin-iris>=0.2.56.dev202607230804,<0.3",
-    "marin-levanter>=0.2.56.dev202607230804,<0.3",
-    "marin-rigging>=0.2.56.dev202607230804,<0.3",
-    "marin-zephyr>=0.2.56.dev202607230804,<0.3",
+    "marin-iris==0.2.0",
+    "marin-levanter==0.2.0",
+    "marin-rigging==0.2.0",
+    "marin-zephyr==0.2.0",
     "marinfold",
     "marinfold-models",
-    "numpy",
-    "pyarrow",
-    "transformers",
+    "numpy==2.3.5",
+    "pyarrow==23.0.1",
+    "transformers==5.12.1",
+    "wandb==0.26.0",
 ]
 
 [project.optional-dependencies]
-tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
+tpu = ["marin-core[tpu]==0.2.0; sys_platform == 'linux'"]
 cpu = [
     "marin-core[cpu]",
     "torch==2.11.0",
@@ -44,7 +45,14 @@ override-dependencies = [
     "equinox>=0.11.10",
     "omegaconf>=2.4.0.dev4",
     "python-multipart>=0.0.22",
-    "transformers>=5.5.3,<6",
+    "transformers==5.12.1",
+    "jax==0.10.1",
+    "jaxlib==0.10.1",
+    "libtpu==0.0.41; sys_platform == 'linux'",
+    "flax==0.12.4",
+    "numpy==2.3.5",
+    "pyarrow==23.0.1",
+    "wandb==0.26.0",
     "wheel>=0.46.2",
 ]
 find-links = [
@@ -64,5 +72,12 @@ explicit = true
 resiliparse = { index = "marin-resiliparse" }
 torch = [{ index = "pytorch-cpu", extra = "cpu" }]
 torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+marin-core = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/marin", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
+marin-fray = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/fray", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
+marin-haliax = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/haliax", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
+marin-iris = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/iris", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
+marin-levanter = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/levanter", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
+marin-rigging = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/rigging", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr", rev = "e0f3da13754169833115a9314496d4369ec33ff2" }
 marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "exp176/soft-target-loss-h2h" }
 marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "exp176/soft-target-loss-h2h" }
