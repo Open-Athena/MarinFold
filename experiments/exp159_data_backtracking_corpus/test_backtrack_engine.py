@@ -237,3 +237,64 @@ def test_no_flush_never_invents_a_contact():
         emitted = {(a, b) for k, a, b in res.statements if k == "contact"}
         assert emitted <= set(proposed), "no-flush must never invent a contact"
         assert set(res.live_final) <= set(proposed)
+
+
+# --- forced-true draws (issue #159 accuracy/length fix) ------------------
+
+
+def _run_forced(gt, *, p, seed=0, proposals=None, scores=None):
+    """Drive the engine, answering ScoreRequests from a fixed score table."""
+    rng = random.Random(seed)
+    offers = list(proposals if proposals is not None else [])
+    gen = backtracking_structure_gen(
+        frozenset(gt),
+        RetractionPolicy(flush="none", force_true_prob=p, min_delay=0, eval_cadence=99),
+        max_statements=400, rng=rng,
+    )
+    try:
+        req = next(gen)
+        while True:
+            if isinstance(req, ProposeRequest):
+                req = gen.send(offers.pop(0) if offers else None)
+            else:
+                req = gen.send({t: (scores or {}).get(t, 1.0) for t in req.targets})
+    except StopIteration as stop:
+        return stop.value
+
+
+FORCE_GT = [(1, 20), (2, 30), (3, 40), (5, 60), (8, 70)]
+
+
+def test_forced_draws_only_ever_emit_true_contacts():
+    """A forced step must never invent a pair outside GT."""
+    res = _run_forced(FORCE_GT, p=1.0, proposals=[])
+    emitted = [(a, b) for k, a, b in res.statements if k == "contact"]
+    assert emitted, "p=1.0 with no proposals should still fill GT"
+    assert set(emitted) <= set(FORCE_GT)
+    assert res.n_forced_true == len(emitted)
+
+
+def test_forcing_exhausts_gt_then_stops_rather_than_looping():
+    """Once GT is live there is nothing to force; the run must terminate."""
+    res = _run_forced(FORCE_GT, p=1.0, proposals=[])
+    assert set(res.live_final) == set(FORCE_GT)
+    assert res.n_forced_true == len(FORCE_GT)
+
+
+def test_forcing_respects_the_model_scores():
+    """Restrict-and-renormalise: a pair the model scores at 0 is not chosen
+    while a positively-scored one remains. Uniform picking would ignore this,
+    and that is the variant that would force in contacts the model disbelieves.
+    """
+    scores = {(1, 20): 1.0, (2, 30): 0.0, (3, 40): 0.0, (5, 60): 0.0, (8, 70): 0.0}
+    first = []
+    for seed in range(10):
+        res = _run_forced(FORCE_GT, p=1.0, proposals=[], scores=scores, seed=seed)
+        emitted = [(a, b) for k, a, b in res.statements if k == "contact"]
+        first.append(emitted[0])
+    assert all(f == (1, 20) for f in first), f"score-weighting ignored: {set(first)}"
+
+
+def test_p_zero_is_the_unforced_path():
+    res = _run_forced(FORCE_GT, p=0.0, proposals=[(1, 20)])
+    assert res.n_forced_true == 0

@@ -151,6 +151,7 @@ def generate_chunk(backend, structures, args, policy: RetractionPolicy) -> pd.Da
             "n_contact_stmts": result.n_contact_statements,
             "n_retract_stmts": result.n_retract_statements,
             "n_reemit": result.n_reemit,
+            "n_forced_true": result.n_forced_true,
             "n_fp_emitted": fp_total,
             "fp_retracted_by_trigger": fp_trigger,
             "tp_retracted_by_trigger": sum(
@@ -191,15 +192,21 @@ def main() -> None:
                          "'none' (default) ends the document where the model stopped; "
                          "'shuffled' keeps the flush but removes its ordering signal "
                          "(the control); 'sorted' reproduces the #159 corpus bug.")
+    ap.add_argument("--force-true-prob", type=float, default=0.0,
+                    help="probability a contact step is forced to a ground-truth "
+                         "pair, sampled in proportion to the model's own score on "
+                         "the GT pairs not yet live. Length scales as 1/(1-p) "
+                         "because only free draws can stop the loop.")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
     policy = RetractionPolicy(
         min_delay=args.min_delay, eval_cadence=args.eval_cadence,
         tau=args.tau, s_floor=args.s_floor, noise_retract_prob=args.noise_prob,
-        flush=args.flush,
+        flush=args.flush, force_true_prob=args.force_true_prob,
     )
-    print(f"worker: flush={args.flush}", flush=True)
+    print(f"worker: flush={args.flush} force_true_prob={args.force_true_prob}",
+          flush=True)
     shards = [s for i, s in enumerate(parse_shards(args.shards))
               if i % args.num_workers == args.worker_id]
     print(f"worker {args.worker_id}/{args.num_workers}: {len(shards)} shards", flush=True)

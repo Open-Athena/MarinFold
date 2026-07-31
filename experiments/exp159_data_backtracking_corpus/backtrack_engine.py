@@ -131,6 +131,30 @@ class RetractionPolicy:
     noise_retract_prob: float = 0.0
     # After this many retract cycles on the same pair, ban it (loop guard).
     loop_cap: int = 2
+    # Probability that a contact step is FORCED to emit a true contact
+    # instead of a free model draw (issue #159's accuracy/length fix).
+    #
+    # The forced pair is drawn from the ground-truth contacts not yet live,
+    # sampled in proportion to the MODEL'S OWN score on them -- restrict and
+    # renormalise, never a uniform pick. That distinction decides whether this
+    # works: forcing in a true contact the model actively disbelieves is
+    # exactly the setup where the posterior trigger later retracts it, which
+    # manufactures the error the whole mechanism exists to avoid. Watch
+    # `tp_retracted_by_trigger` (0 in every run so far) to tell.
+    #
+    # Length falls out of this for free: the loop can only stop on a FREE
+    # draw, so total contacts scale as 1/(1 - force_true_prob). At the
+    # measured 44.5 free draws and 94.6 GT pairs per protein, p = 0.68 gives
+    # ~139 contacts of which ~95 are forced -- i.e. GT is exactly covered.
+    force_true_prob: float = 0.0
+    # Re-score the GT candidates at most every this many committed contacts.
+    # A forced draw needs the model's score over ~|GT| pairs, which is close to
+    # a full tail pass -- doing that on 68% of steps would dominate generation
+    # cost. The weights only choose *which* true contact comes next, so a few
+    # steps of staleness is cheap; pairs already live are filtered out of the
+    # candidate list every time regardless.
+    force_score_cadence: int = 8
+
     # What the closing flush does. See the module docstring's "Correctness"
     # note and issue #159's flush bug.
     #
@@ -167,6 +191,7 @@ class BacktrackResult:
     n_contact_statements: int = 0
     n_retract_statements: int = 0
     n_reemit: int = 0
+    n_forced_true: int = 0    # contacts drawn from GT rather than proposed
     truncated: bool = False   # ran out of budget before a clean flush
 
     @property
@@ -255,10 +280,36 @@ def backtracking_structure_gen(
     since_eval = 0
     stopped = False
     no_progress = 0
+    force_scores: dict | None = None    # cached GT weights (see force_score_cadence)
+    force_scored_at = -10**9
 
     while budget_ok():
         # --- propose one contact (conditioned on the live set) -------------
         if not stopped:
+            # Forced-true step: sample from the model's distribution RESTRICTED
+            # to ground-truth pairs that are not already live. Falls back to a
+            # free draw once GT is exhausted, so p self-limits rather than
+            # stalling. Note the loop cannot stop here -- only a free draw
+            # returns None -- which is what makes documents longer.
+            missing_gt = [g for g in gt if g not in live_set and g not in banned]
+            if (policy.force_true_prob > 0 and missing_gt
+                    and rng.random() < policy.force_true_prob):
+                if (force_scores is None
+                        or step - force_scored_at >= policy.force_score_cadence):
+                    force_scores = yield ScoreRequest(committed(), missing_gt)
+                    force_scored_at = step
+                weights = [max(float(force_scores.get(g, 0.0)), 0.0) for g in missing_gt]
+                total = sum(weights)
+                # A degenerate all-zero score would make random.choices raise;
+                # fall back to uniform over GT rather than crash the shard.
+                pair = (rng.choices(missing_gt, weights=weights, k=1)[0] if total > 0
+                        else rng.choice(missing_gt))
+                res.n_forced_true += 1
+                no_progress = 0
+                emit_contact(pair)
+                since_eval += 1
+                continue
+
             pair = yield ProposeRequest(list(live))
             if pair is None:
                 stopped = True
