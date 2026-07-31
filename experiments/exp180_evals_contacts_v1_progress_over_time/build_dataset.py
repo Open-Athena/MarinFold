@@ -150,6 +150,18 @@ RPRECISION_ROWS = [
         r_precision=0.4158492, inference=ROLLOUT,
         source="exp160 data/exp160_summary.csv (model=exp160-bt50, retraction enabled)",
     ),
+    dict(
+        label="#155 3-way restart",
+        model="exp137-3way-restart30k-lr2p5e-3-9e7568 / step-60000",
+        # Checkpoint date, not run-finish date: this run is still training
+        # (target step 74800) -- see the README caveat on in-flight checkpoints.
+        date="2026-07-31", params="1.5B", issue=155,
+        val_loss=None, val_loss_key="",   # superset crops tokenizer (3848) -> not comparable
+        r_precision=0.5531834, inference=ROLLOUT,
+        source="this session's eval: score_rollout_worker.py x8 v5p-8 TPU shards (us-east5) "
+               "+ fetch_cw_scores.py + build_rollout_rows.py, 554/554 proteins; "
+               "data/exp155_3way_restart_step60000_rollout_summary.csv",
+    ),
 ]
 
 # ---------------------------------------------------------------------------
