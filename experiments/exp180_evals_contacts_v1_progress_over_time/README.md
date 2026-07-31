@@ -17,7 +17,7 @@ R-precision and on held-out validation loss — and how tightly do those two
 track each other?
 
 Every number exists somewhere already (#67, #75, #82, #89, #108, #117, #120,
-#146, #160, #169), but they are scattered across issue comments, per-experiment
+#146, #155, #160, #169), but they are scattered across issue comments, per-experiment
 CSVs and two W&B projects, with two different inference recipes mixed in. This
 experiment collects them into one dataset and three standing figures, and keeps
 them refreshable as new models land.
@@ -199,6 +199,7 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 | **2026-07-22** | **#117 E16 final** | **2.7037** | **0.534** | rollout |
 | 2026-07-27 | #146 3B E8 | 2.7025 | 0.512 | rollout |
 | 2026-07-28 | #160 backtracking | — | 0.416 | rollout |
+| **2026-07-31** | **#155 3-way restart** (step 60000, in flight) | — | **0.553** | rollout |
 
 Structure predictors on the same 554 proteins and the same metric:
 Protenix-v2 single-seq **0.603**, ESMFold **0.755**, ESMFold2 **0.786**,
@@ -208,18 +209,22 @@ Protenix-v2 + MSA **0.812**.
 
 3.15 → 2.98 → **2.7566** (#61/#75 E8, 06-21) → **2.7418** (#108's 3B on
 CoreWeave H100s, 07-11) → **2.7213** (#120, 07-16) → 2.7131 → 2.7112 →
-**2.7037** (#117 E16 final, 07-22) → **2.7025** (#146 3B, 07-27), over 153
+**2.7037** (#117 E16 final, 07-22) → **2.7025** (#146 3B, 07-27), over 155
 finished runs.
 
 ### What the figures show
 
-- **The accuracy frontier moved in exactly two jumps**, both from the base
-  model, neither from inference or post-training: ~0.03 → **0.425** when #75's
-  E8 rung finished (2026-06-21), and 0.436 → **0.534** when #117's 16-epoch
-  bs256 run finished (2026-07-22). Between them, five weeks of post-training
-  and inference work moved it by +0.011 (#120's re-epoch). (#75's E4 winner,
-  0.031, landed the same day as E8, so the pre-jump frontier reads 0.029 —
-  #67's.)
+- **The accuracy frontier moved in three jumps**, all from the base model,
+  none from inference or post-training: ~0.03 → **0.425** when #75's
+  E8 rung finished (2026-06-21), 0.436 → **0.534** when #117's 16-epoch
+  bs256 run finished (2026-07-22), and 0.534 → **0.553** at #155's 3-way
+  mixture restart's step 60000 (2026-07-31). Between the first two, five weeks
+  of post-training and inference work moved it by +0.011 (#120's re-epoch).
+  (#75's E4 winner, 0.031, landed the same day as E8, so the pre-jump frontier
+  reads 0.029 — #67's.) The third jump is the odd one out: unlike every other
+  row, that run has not finished training (target step 74800) and its
+  checkpoint's vocab is a superset, so it has no comparable val loss — see the
+  caveat below.
 - **Loss and accuracy agree across generations and stop agreeing inside one.**
   The 0.053-nat #75→#117 gap buys +0.109 R-precision (~2 R-precision per nat).
   The 0.008-nat gap between #117's early-stop and final checkpoints buys
@@ -237,7 +242,7 @@ finished runs.
 - **#67 never held the loss frontier.** It finished 2026-06-14 15:36 at 2.9800,
   about two hours after `prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p05-v1` reached
   2.9787.
-- **All of this is still below single-sequence Protenix-v2** (0.534 vs 0.603),
+- **All of this is still below single-sequence Protenix-v2** (0.553 vs 0.603),
   and well below ESMFold2 (0.786).
 
 ## Conclusion
@@ -246,10 +251,13 @@ Both success criteria are met: `data/rprecision_checkpoints.csv` carries a
 source citation per number, and the figures regenerate from two commands.
 
 The substantive read is that **contact accuracy has come from the base model
-and essentially nowhere else**. Two training results account for the entire
+and essentially nowhere else**. Three training results account for the entire
 frontier; the settled inference recipe is worth a large constant (+0.086) but
 was banked once in June and has not moved since; and the post-training line
-(#120, #160) has produced +0.011 and −0.020 respectively.
+(#120, #160) has produced +0.011 and −0.020 respectively. The third jump —
+#155's crops+contacts-v1+ESM-Atlas 3-way mixture, still mid-training — is the
+first frontier point to come from a *data* change rather than a hyperparameter
+sweep or an epoch count.
 
 Validation loss remains a good *cross-generation* proxy — ~2 R-precision per
 nat over the measured range — and a useless *within-generation* one. Since this
@@ -313,12 +321,12 @@ structure readout is the one the project quotes.
 
 ### What is in, what is out
 
-**In the accuracy figure** — the 11 checkpoints with a benchmark score
+**In the accuracy figure** — the 12 checkpoints with a benchmark score
 (`data/rprecision_checkpoints.csv`, one citation per row).
 
 **In the loss figure** — every *finished* W&B run reporting a contacts-v1 val
 loss across `open-athena/MarinFold` and `eric-czech/marin` tags exp75 / exp117 /
-exp146 / exp153 (n=153 after exclusions).
+exp146 / exp153 (n=155 after exclusions).
 
 **Excluded, and why:**
 
@@ -331,9 +339,16 @@ exp146 / exp153 (n=153 after exclusions).
 - **#160 backtracking** appears in the accuracy figure (R 0.4158) but not the
   loss one: it has a 3849-token superset vocabulary, so its val loss is not
   comparable to the 2845-vocab runs.
-- **In-flight runs** (#155's 3-way mixture and siblings) are drawn as hollow
-  diamonds but kept off the frontier — they have not finished. The best of them
-  read `contacts-v1-val` 2.7110 as of 2026-07-30.
+- **In-flight runs** are drawn as hollow diamonds on the loss figure and kept
+  off *that* frontier — they have not finished training. Four such runs are
+  live as of 2026-07-31 (the original #155 3-way mix, its no-crops ablation,
+  its restart, and an unrelated exp124 run); the best of them is #155's
+  restart at `contacts-v1-val` 2.6843. **One exception:** #155's 3-way restart *does* appear on the
+  **accuracy** frontier at step 60000 (R 0.553) — the #89 benchmark scores a
+  specific checkpoint, not a finished run, so an in-flight run's intermediate
+  checkpoint can still be scored and plotted like any other. It stays off the
+  loss figure's frontier because that figure is specifically about *finished*
+  runs.
 
 ### Caveats worth carrying
 
@@ -351,6 +366,12 @@ exp146 / exp153 (n=153 after exclusions).
    TPU worker and 0.5350 through exp82's — a 0.0006 backend difference, inside
    the ≤0.006 TPU-vs-CUDA agreement #89 established. Either is fine; the plots
    use exp169's for that checkpoint.
+5. **#155's 3-way restart is an in-flight checkpoint, not a finished run** —
+   step 60000 of a run targeting step 74800. Its position on the accuracy
+   frontier (R 0.553) could still move, up or down, once the run finishes;
+   unlike every other frontier point, it is not yet a settled result. It also
+   has no val loss on these figures (3848-token superset crops tokenizer,
+   same reason as #160).
 
 ## Files
 
@@ -358,13 +379,15 @@ exp146 / exp153 (n=153 after exclusions).
 |---|---|
 | `build_dataset.py` | assembles both tables; W&B pull + the hand-curated benchmark rows |
 | `plot_progress.py` | the three figures |
-| `data/rprecision_checkpoints.csv` | 13 rows (11 checkpoints; 2 measured under both recipes), one source citation each |
+| `data/rprecision_checkpoints.csv` | 14 rows (12 checkpoints; 2 measured under both recipes), one source citation each |
 | `data/structure_baselines.csv` | the four dotted lines, recomputed from exp89 |
-| `data/val_loss_runs.csv` | 318 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
+| `data/val_loss_runs.csv` | 320 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
 | `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints |
+| `data/exp155_3way_restart_step60000_rollout_summary.csv` | aggregate R-precision/AUC for #155's step-60000 checkpoint, this session's rollout eval |
+| `data/exp155_3way_restart_step60000_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
 | `plots/*.png.meta.json` | the numbers behind each figure |
 
 Sources for every R-precision value are in the `source` column of
-`data/rprecision_checkpoints.csv` — exp82 / exp89 / exp120 / exp160 / exp169
+`data/rprecision_checkpoints.csv` — exp82 / exp89 / exp120 / exp155 / exp160 / exp169
 data CSVs, plus [eric-czech's checkpoint gist](https://gist.github.com/eric-czech/bfa78571dcb8f673884bf70e6cc68e14)
 for #117 E8 bs64.

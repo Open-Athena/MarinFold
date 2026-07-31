@@ -3,7 +3,7 @@
   "script": "plot_progress.py",
   "args": [],
   "figure": "val_loss_frontier",
-  "n_runs": 153,
+  "n_runs": 155,
   "n_above_axis": 11,
   "frontier": [
     {

@@ -126,6 +126,7 @@ RP_LABEL_OFFSET = {
     "#117 E16 final": (-58, 26),
     "#146 3B E8": (6, 24),
     "#160 backtracking": (0, -28),
+    "#155 3-way restart": (28, -22),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
@@ -267,7 +268,7 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
         best_live = live.loc[live["val_loss"].idxmin()]
         ax.annotate(f"#155 3-way mix, in flight  {best_live['val_loss']:.4f}",
                     (best_live["finished"], best_live["val_loss"]),
-                    textcoords="offset points", xytext=(-96, -22), ha="center",
+                    textcoords="offset points", xytext=(30, -38), ha="center",
                     fontsize=9, color=TEXT_PRIMARY,
                     arrowprops=dict(arrowstyle="-", color="#c3c2b7", linewidth=1.0,
                                     shrinkA=1, shrinkB=7))
