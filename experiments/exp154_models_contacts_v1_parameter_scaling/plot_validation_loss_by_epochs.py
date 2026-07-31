@@ -18,9 +18,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
 from matplotlib.lines import Line2D
 
-from build_summary import save_plot_with_meta
-
-
 HERE = Path(__file__).resolve().parent
 SOURCE_CSV = HERE / "data" / "wandb_runs.csv"
 PLOT_CSV = HERE / "data" / "validation_loss_vs_epochs.csv"
@@ -266,12 +263,9 @@ def plot(rows: Sequence[dict[str, Any]]) -> None:
         columnspacing=1.2,
     )
 
-    caption = (
-        "All 129 finished runs; color = model size, marker = issue, rings = best per size/epoch, "
-        "carets = loss above 3.2."
-    )
-    save_plot_with_meta(fig, PNG_PATH, caption=caption, dpi=150)
-    save_plot_with_meta(fig, SVG_PATH, caption=caption)
+    PNG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(PNG_PATH, dpi=150)
+    fig.savefig(SVG_PATH)
     SVG_PATH.write_text(
         "\n".join(line.rstrip() for line in SVG_PATH.read_text().splitlines()) + "\n"
     )

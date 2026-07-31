@@ -1,0 +1,11 @@
+# One-off hyperparameter modeling outputs.
+/pyproject.toml
+/uv.lock
+/data/divergence_screen.csv
+/data/hyperparameter_guidance.csv
+/data/model_fit_vs_actual.csv
+/data/ordinal_coefficients.csv
+/plots/divergence_screen.*
+/plots/hyperparameter_guidance.*
+/plots/model_fit_vs_actual.*
+/plots/ordinal_coefficients.*
