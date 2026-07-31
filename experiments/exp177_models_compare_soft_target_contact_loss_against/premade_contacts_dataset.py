@@ -76,13 +76,13 @@ def soft_target_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Documen
         VOCABULARY.token(f"<{residue.resname}>") for residue in generated.residues
     ]
     prefix_tokens = [DOC_TYPE, BEGIN_SEQUENCE, *sequence_tokens, BEGIN_STRUCTURE]
-    suffix_tokens: list[int] = []
+    suffix_tokens = []
     for contact in generated.contacts:
         first, second = POSITIONS[contact.seq_i], POSITIONS[contact.seq_j]
         if contact.flipped:
             first, second = second, first
-        suffix_tokens.extend((int(CONTACT), int(first), int(second)))
-    suffix_tokens.append(int(END))
+        suffix_tokens.extend((CONTACT, first, second))
+    suffix_tokens.append(END)
 
     token_ids = (*prefix_tokens, *suffix_tokens)
     if len(token_ids) > CONTEXT_LENGTH:
