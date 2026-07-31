@@ -107,7 +107,7 @@ MODEL_CONFIG = Qwen3Config(
 VOCAB_SIZE = 2845
 SEQ_LEN = 8192
 TRAIN_TOKENS = 4_676_753_425
-EXP117_STEPS = round(16 * TRAIN_TOKENS / (256 * SEQ_LEN))
+EXP117_STEPS = 16 * (TRAIN_TOKENS // (256 * SEQ_LEN))
 
 TPU_TYPE = os.environ.get("EXP177_TPU", "v5p-32")
 TPU_ZONE = os.environ.get("EXP177_ZONE", "us-east5-a")
@@ -188,7 +188,13 @@ def _loss_kind() -> LossKind:
     return LossKind(os.environ.get("EXP177_LOSS", LossKind.NEXT_TOKEN.value))
 
 
-def _train_cache_component() -> DatasetComponent:
+def _next_token_data_config_mode() -> str:
+    return os.environ.get("EXP177_NEXT_TOKEN_DATA_CONFIG", "legacy").strip().lower()
+
+
+def _train_cache_component(*, parity: bool) -> DatasetComponent:
+    if parity:
+        return DatasetComponent(cache_dir=CONTACTS_V1_TRAIN_CACHE, pack=True)
     # This component is train-only. `flat_cache=True` prevents Levanter's
     # validation-set builder from looking for a nonexistent
     # `<train-cache>/validation` sibling.
@@ -345,7 +351,7 @@ def _identity_config(
             "validation_cache": CONTACTS_V1_VAL_CACHE,
             "tokenizer": CONTACTS_TOKENIZER,
             "shuffle": "exp117-block-feistel",
-            "mixture_block_size": 1,
+            "mixture_block_size": 2048 if _next_token_data_config_mode() == "parity" else 1,
             "block_cross_document_attention": True,
         },
         "trainer": {
@@ -403,7 +409,8 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         if ctx.is_fingerprint:
             return identity
 
-        train_key = f"contacts-v1/{loss_kind.value}"
+        use_next_token_parity = loss_kind == LossKind.NEXT_TOKEN and _next_token_data_config_mode() == "parity"
+        train_key = "tokenized/contacts-v1" if use_next_token_parity else f"contacts-v1/{loss_kind.value}"
         val_key = "tokenized/contacts-v1-val"
         training_shuffle: bool | BlockShuffleConfig
         if loss_kind == LossKind.SOFT_TARGET:
@@ -417,7 +424,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             train_component = DirectDatasetComponent(datasets={"train": train_dataset})
             training_shuffle = False
         else:
-            train_component = _train_cache_component()
+            train_component = _train_cache_component(parity=use_next_token_parity)
             training_shuffle = SHUFFLE
         data = LmDataConfig(
             components={
@@ -429,7 +436,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             cache_dir=None,
             auto_build_caches=False,
             shuffle=training_shuffle,
-            mixture_block_size=1,
+            mixture_block_size=2048 if use_next_token_parity else 1,
             block_cross_document_attention=True,
         )
         tags = [
@@ -470,7 +477,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             trainer=trainer,
             model=MODEL_CONFIG,
             optimizer=_optimizer(),
-            z_loss_weight=0.0,
+            z_loss_weight=None,
             train_seq_len=SEQ_LEN,
             hf_save_steps=steps,
             data_seed=0,
@@ -486,6 +493,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "EXP177_TENSOR_PARALLELISM": str(tensor_parallelism),
             "EXP177_PER_DEVICE_PARALLELISM": str(per_device_parallelism),
             "EXP177_GRADIENT_ACCUMULATION": str(gradient_accumulation),
+            "EXP177_NEXT_TOKEN_DATA_CONFIG": _next_token_data_config_mode(),
         }
         for key in ("WANDB_API_KEY", "HUGGING_FACE_HUB_TOKEN"):
             if value := os.environ.get(key):
