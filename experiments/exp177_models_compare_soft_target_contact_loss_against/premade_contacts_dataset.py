@@ -16,13 +16,31 @@ from marinfold.document_structures.contacts_v1 import (
     build_document,
 )
 from marinfold.document_structures.contacts_v1.training_documents import (
-    ContactDocumentStyle,
-    DocumentConstructionConfig,
-    build_contact_training_document,
+    RELATIVE_POSITION,
     causal_document_from_generation,
 )
-from marinfold.document_structures.documents import Document, pack
-from marinfold_models.document_loss import LevanterDocumentBatch, levanter_document_batch
+from marinfold.document_structures.contacts_v1.vocab import (
+    BEGIN_SEQUENCE,
+    BEGIN_STRUCTURE,
+    CONTACT,
+    DOC_TYPE,
+    END,
+    POSITIONS,
+    VOCABULARY,
+)
+from marinfold.document_structures.documents import (
+    ATTENTION_BLOCK,
+    QUERY,
+    AttentionLayout,
+    Document,
+    pack,
+)
+from marinfold_models.document_loss import (
+    CompactContactDocumentBatch,
+    LevanterDocumentBatch,
+    compact_contact_document_batch,
+    levanter_document_batch,
+)
 from marinfold_models.shard_documents import (
     FixedQuotaShardDocumentDataset,
     PackedDocuments,
@@ -49,17 +67,51 @@ def causal_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Document | N
 
 
 def soft_target_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Document | None:
-    """Build the block-causal soft-target contacts-v1 training document."""
+    """Build a compact block-causal contacts-v1 training document."""
     generated = _generation_from_row(row)
     if generated is None:
         return None
-    return build_contact_training_document(
-        generated,
-        config=DocumentConstructionConfig(
-            style=ContactDocumentStyle.BLOCK_CAUSAL_RELATIVE,
-            max_seq_len=CONTEXT_LENGTH,
-        ),
+
+    sequence_tokens = [
+        VOCABULARY.token(f"<{residue.resname}>") for residue in generated.residues
+    ]
+    prefix_tokens = [DOC_TYPE, BEGIN_SEQUENCE, *sequence_tokens, BEGIN_STRUCTURE]
+    suffix_tokens: list[int] = []
+    for contact in generated.contacts:
+        first, second = POSITIONS[contact.seq_i], POSITIONS[contact.seq_j]
+        if contact.flipped:
+            first, second = second, first
+        suffix_tokens.extend((int(CONTACT), int(first), int(second)))
+    suffix_tokens.append(int(END))
+
+    token_ids = (*prefix_tokens, *suffix_tokens)
+    if len(token_ids) > CONTEXT_LENGTH:
+        raise ValueError(
+            f"Block-causal document needs {len(token_ids)} tokens, "
+            f"exceeding max_seq_len={CONTEXT_LENGTH}"
+        )
+
+    prediction_start = len(prefix_tokens) - 1
+    query = np.zeros(len(token_ids), dtype=np.bool_)
+    query[prediction_start : prediction_start + len(suffix_tokens)] = True
+    attention_blocks = (0,) * len(prefix_tokens) + tuple(
+        range(1, len(suffix_tokens) + 1)
     )
+    relative_positions = (
+        (RELATIVE_POSITION.missing,) * 2
+        + tuple(range(len(sequence_tokens)))
+        + (RELATIVE_POSITION.missing,)
+        + tuple(range(len(suffix_tokens)))
+    )
+    return Document(
+        token_ids,
+        {
+            RELATIVE_POSITION: relative_positions,
+            QUERY: query,
+            ATTENTION_BLOCK: attention_blocks,
+        },
+        attention=AttentionLayout.BLOCK_CAUSAL,
+    ).unscored()
 
 
 def document_batch_from_documents(
@@ -73,6 +125,23 @@ def document_batch_from_documents(
     if packed.token_ids.shape[0] != 1:
         raise AssertionError("Shard packing bin unexpectedly produced multiple rows")
     return levanter_document_batch(packed, Pos=Axis("position", max_seq_len))
+
+
+def compact_contact_batch_from_documents(
+    documents: tuple[Document, ...],
+    max_seq_len: int,
+    max_segments_per_example: int,
+) -> CompactContactDocumentBatch:
+    """Convert one compact contacts-v1 document to a Levanter batch item."""
+    del max_segments_per_example
+    if len(documents) != 1:
+        raise ValueError(
+            f"Compact soft-target batches require one document, got {len(documents)}"
+        )
+    packed = pack(documents, max_seq_len=max_seq_len)
+    if packed.token_ids.shape[0] != 1:
+        raise AssertionError("Shard packing bin unexpectedly produced multiple rows")
+    return compact_contact_document_batch(packed, Pos=Axis("position", max_seq_len))
 
 
 class FixedQuotaPremadeContactsDataset(FixedQuotaShardDocumentDataset):
@@ -136,7 +205,7 @@ class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
         examples_per_shard: int = 2650,
         seed: int = 0,
         max_seq_len: int = CONTEXT_LENGTH,
-        max_segments_per_example: int = 64,
+        max_segments_per_example: int = 1,
         shard_cache_size: int = 2,
     ):
         super().__init__(
@@ -148,7 +217,7 @@ class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
             examples_per_shard=examples_per_shard,
             seed=seed,
             max_seq_len=max_seq_len,
-            example_builder=document_batch_from_documents,
+            example_builder=compact_contact_batch_from_documents,
             max_segments_per_example=max_segments_per_example,
             shard_cache_size=shard_cache_size,
         )
@@ -158,5 +227,6 @@ __all__ = [
     "FixedQuotaPremadeContactsDataset",
     "FixedQuotaSoftTargetContactsDataset",
     "causal_contacts_v1_document_from_row",
+    "compact_contact_batch_from_documents",
     "soft_target_contacts_v1_document_from_row",
 ]

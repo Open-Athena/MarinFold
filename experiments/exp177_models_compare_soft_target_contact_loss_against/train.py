@@ -45,7 +45,7 @@ from marin.training.training import (
 )
 
 from marinfold.document_structures.contacts_v1.vocab import VOCABULARY as CONTACTS_V1_VOCABULARY
-from marinfold_models.document_loss import LevanterDocumentBatch, document_loss
+from marinfold_models.document_loss import CompactContactDocumentBatch, compact_contact_document_loss
 from premade_contacts_dataset import FixedQuotaPremadeContactsDataset, FixedQuotaSoftTargetContactsDataset
 
 logger = logging.getLogger(__name__)
@@ -238,8 +238,8 @@ def _train_job(pod_config: TrainLmOnPodConfig) -> None:
     remote(target, resources=pod_config.resources)(pod_config)
 
 
-def _soft_loss(model: LmHeadModel, batch: LevanterDocumentBatch, *, key=None):
-    return document_loss(model, batch, key=key), {}
+def _soft_loss(model: LmHeadModel, batch: CompactContactDocumentBatch, *, key=None):
+    return compact_contact_document_loss(model, batch, key=key), {}
 
 
 def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
