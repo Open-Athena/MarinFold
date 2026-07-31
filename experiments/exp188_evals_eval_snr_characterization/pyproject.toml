@@ -1,0 +1,17 @@
+[project]
+name = "exp188-evals-eval-snr-characterization"
+version = "0.1.0"
+description = "Document-level Poisson bootstrap characterization of contacts-v1 eval-loss noise."
+requires-python = ">=3.11"
+dependencies = [
+    "marinfold-evals",
+    "numpy",
+    "pandas>=2.2",
+    "pyarrow",
+]
+
+[tool.uv.sources]
+marinfold-evals = { path = "../../evals" }
+
+[tool.uv]
+package = false
