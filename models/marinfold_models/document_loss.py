@@ -240,8 +240,6 @@ def compact_contact_document_batch(
     if suffix.size % 3 != 0:
         raise ValueError(f"Contact suffix before END is not triples: {suffix.size} tokens")
     contact_count = suffix.size // 3
-    if contact_count == 0:
-        raise ValueError("Compact contacts document has no contacts")
     if np.any(suffix[0::3] != int(CONTACT)):
         raise ValueError("Contact suffix triples do not start with CONTACT tokens")
     max_contact_count = max_contacts or ((Pos.size - 2) // 3)
