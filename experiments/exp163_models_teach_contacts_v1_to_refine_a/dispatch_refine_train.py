@@ -228,12 +228,21 @@ def corpus_for(arm: str | None) -> str:
     return f"{EXP163_S3_PREFIX}/scale50k/tok_{arm}/*.parquet"
 
 
+def _run_suffix() -> str:
+    """EXP163_RUN_SUFFIX distinguishes a run that shares an arm's CORPUS but must not
+    share its output path — otherwise levanter would resume from the finished run's
+    checkpoint instead of warm-starting from E8 again."""
+    v = os.environ.get("EXP163_RUN_SUFFIX", "").strip().strip("-")
+    return f"-{v}" if v else ""
+
+
 def run_name_for(lr: float, epochs: int, arm: str | None = None) -> str:
     # W&B-safe (alnum + hyphens, < 64 chars). A path-style arm is flattened so the
     # run name (and therefore its checkpoint prefix) stays distinct from the sweeps.
     suffix = f"-{arm.replace('/', '-').replace('_', '-')}" if arm and "/" in arm else (
         f"-md{arm}" if arm else "")
-    return f"plm-exp163-refine-cv1-1_5b-lr{_lr_tag(lr)}-e{epochs}-cos{suffix}"
+    return (f"plm-exp163-refine-cv1-1_5b-lr{_lr_tag(lr)}-e{epochs}-cos"
+            f"{suffix}{_run_suffix()}")
 
 
 def build_request(
@@ -248,6 +257,7 @@ def build_request(
     env_vars: dict[str, str],
     steps_per_eval: int,
     steps_per_checkpoint: int,
+    hf_save_steps: int | None,
     tags: tuple[str, ...],
     max_retries_failure: int = 3,
 ) -> JobRequest:
@@ -266,6 +276,7 @@ def build_request(
         env_vars=env_vars,
         steps_per_eval=steps_per_eval,
         steps_per_checkpoint=steps_per_checkpoint,
+        hf_save_steps=hf_save_steps,
         tags=tags,
     )
 
@@ -317,6 +328,11 @@ def main() -> None:
     # anchor, run a 1-step probe: EXP163_MAX_STEPS=1 EXP163_STEPS_PER_EVAL=1.
     steps_per_eval = int(os.environ.get("EXP163_STEPS_PER_EVAL") or max(1, spe // 4))
     steps_per_checkpoint = max(1, spe // 2)
+    # EXP163_HF_SAVE_STEPS writes an HF export every N steps. Off by default: each
+    # export is a full weight copy (~5.9GB for the 1.5B), so this is for a
+    # deliberately short probe, not a production run.
+    _hf_every = os.environ.get("EXP163_HF_SAVE_STEPS")
+    hf_save_steps = int(_hf_every) if _hf_every else None
 
     warm_start = INIT_FROM_LEVANTER or INIT_FROM_HF
     warm_kind = "Levanter ckpt" if INIT_FROM_LEVANTER else "HF export"
@@ -355,6 +371,7 @@ def main() -> None:
                     env_vars=env_vars,
                     steps_per_eval=steps_per_eval,
                     steps_per_checkpoint=steps_per_checkpoint,
+                    hf_save_steps=hf_save_steps,
                     tags=tags,
                 )
             )

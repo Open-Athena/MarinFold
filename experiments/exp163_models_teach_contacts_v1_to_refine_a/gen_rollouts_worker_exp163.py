@@ -140,6 +140,11 @@ def main():
                     help="multi-draft: the model emits SEVERAL <begin_statements> "
                          "sections in one completion, the last closed by <end>. Scores "
                          "each section separately; <end> remains the stop token.")
+    ap.add_argument("--mode-id", type=int, default=None,
+                    help="overwrite the document-type sentinel at position 0 with this "
+                         "vocab id (7 = <contacts-v1.multi>). Done on IDS, not text, so "
+                         "it works whichever spelling the checkpoint's tokenizer carries "
+                         "for that id -- same convention as eval_refiner_worker.py.")
     ap.add_argument("--max-sections", type=int, default=8,
                     help="multi-draft: token budget is sized for this many sections")
     ap.add_argument("--flush-every", type=int, default=FLUSH_EVERY,
@@ -256,6 +261,8 @@ def main():
 
         if a.mode == "resample":
             ids_list = [tok(p["prefix"], add_special_tokens=False).input_ids for p in prows]
+            if a.mode_id is not None:
+                ids_list = [[a.mode_id] + list(x[1:]) for x in ids_list]
             maps = [{int(pos): i for i, pos in enumerate(p["seq_positions"])} for p in prows]
             rkeys = [p["r"] for p in prows]
             prefixes = [p["prefix"] for p in prows]

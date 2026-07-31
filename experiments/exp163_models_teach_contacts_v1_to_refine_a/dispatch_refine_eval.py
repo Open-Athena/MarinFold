@@ -78,10 +78,12 @@ def models() -> dict[str, str]:
 
 
 def build_bootstrap(*, name: str, uri: str, shard_i: int, shards: int, ks: str,
-                    limit: int | None, fmt: str = "candidate", mode_id: int | None = None) -> str:
+                    limit: int | None, fmt: str = "candidate", mode_id: int | None = None,
+                    k0_only: bool = False) -> str:
     worker_b64 = base64.b64encode(WORKER.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
     mode_arg = f" --mode-id {mode_id}" if mode_id is not None else ""
+    k0_arg = " --k0-only" if k0_only else ""
     return f"""
 set -euo pipefail
 echo "[exp163-eval] host=$(hostname) model={name} shard={shard_i}/{shards}"
@@ -110,16 +112,18 @@ exec "$PY" {WORKER_LOCAL} \\
     --out {EVAL_PREFIX}/scores/{name} \\
     --shard {shard_i}/{shards} \\
     --ks {ks} \\
-    --format {fmt}{mode_arg}{limit_arg}
+    --format {fmt}{mode_arg}{k0_arg}{limit_arg}
 """.strip()
 
 
 def build_request(*, name: str, uri: str, shard_i: int, shards: int, ks: str,
-                  limit: int | None, fmt: str = "candidate", mode_id: int | None = None) -> JobRequest:
+                  limit: int | None, fmt: str = "candidate", mode_id: int | None = None,
+                  k0_only: bool = False) -> JobRequest:
     resources = ResourceConfig.with_gpu("H100", count=1, image=IMAGE, cpu=16,
                                         ram="128g", disk="256g")
     bootstrap = build_bootstrap(name=name, uri=uri, shard_i=shard_i, shards=shards,
-                                ks=ks, limit=limit, fmt=fmt, mode_id=mode_id)
+                                ks=ks, limit=limit, fmt=fmt, mode_id=mode_id,
+                                k0_only=k0_only)
     environment = create_environment(docker_image=IMAGE, env_vars={})
     return JobRequest(
         name=f"exp163-eval-{name}-shard{shard_i}-of{shards}",
@@ -145,6 +149,8 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N proteins per shard")
     ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
                     help="MUST match the corpus the checkpoints were trained on")
+    ap.add_argument("--k0-only", action="store_true",
+                    help="forwarded to the worker: no-draft prefixes only (~4x cheaper)")
     ap.add_argument("--mode-id", type=int, default=None,
                     help="v3 refine-mode doc-type sentinel id (7); also records base-mode K0")
     a = ap.parse_args()
@@ -152,7 +158,7 @@ def main() -> None:
     mods = models()
     requests = [
         build_request(name=n, uri=u, shard_i=i, shards=a.shards, ks=a.ks, limit=a.limit,
-                      fmt=a.format, mode_id=a.mode_id)
+                      fmt=a.format, mode_id=a.mode_id, k0_only=a.k0_only)
         for n, u in mods.items()
         for i in range(a.shards)
     ]

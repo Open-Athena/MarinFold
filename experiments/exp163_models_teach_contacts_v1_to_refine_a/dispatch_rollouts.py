@@ -124,6 +124,12 @@ OUT_S3 = os.environ.get("EXP163_OUT", f"{VAL_PREFIX}/runs")
 # vLLM convention + the #142 under-generation fix), one H100 per shard so
 # tensor-parallel size 1.
 N_ROLLOUTS = int(os.environ.get("EXP163_N_ROLLOUTS", "24"))
+# v2/v3 multi-draft generation: the model emits SEVERAL <begin_statements> sections
+# in ONE rollout, so best-of-N can be scored *within* a single generation -- which is
+# the shape the RL post-training wants. MODE_ID announces refine mode at position 0.
+FORMAT = os.environ.get("EXP163_FORMAT", "candidate")
+MAX_SECTIONS = int(os.environ.get("EXP163_MAX_SECTIONS", "8"))
+MODE_ID = os.environ.get("EXP163_MODE_ID")
 TOP_K = int(os.environ.get("EXP163_TOP_K", "-1"))
 TENSOR_PARALLEL_SIZE = int(os.environ.get("EXP163_TP", "1"))
 
@@ -148,6 +154,7 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
 
 
 def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None) -> str:
+    mode_arg = f" \\\n    --mode-id {MODE_ID}" if MODE_ID else ""
     """Bash bootstrap for one vLLM rollout pod (shard ``shard_i``/``num_shards``).
 
     Decodes the inlined worker + its ``rollout_metrics`` import to ``/tmp/exp163``,
@@ -200,6 +207,8 @@ exec "$VLLM_PY" {WORKER_LOCAL} \\
     --shard {shard_i}/{num_shards} \\
     --n-rollouts {N_ROLLOUTS} \\
     --top-k {TOP_K} \\
+    --format {FORMAT} \\
+    --max-sections {MAX_SECTIONS}{mode_arg} \\
     --tensor-parallel-size {TENSOR_PARALLEL_SIZE}{limit_arg}
 """.strip()
 

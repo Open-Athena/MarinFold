@@ -1,6 +1,53 @@
 # exp163 — teaching contacts-v1 to refine a set of candidate rollouts
 
-**Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164) · **Status as of 2026-07-29:** v1 Phases 0–3 + v2 multi-draft sweep complete. **Kill criterion met.** The mechanism is real but the binding constraint is catastrophic forgetting, and it is caused by full fine-tuning — not by scale, format, or loss weighting.
+**Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164)
+
+> ## ⚠️ RETRACTION (2026-07-31) — read before anything below
+>
+> **Every R-precision number reported for a fine-tuned checkpoint in this document is
+> invalid.** All of them were measured with the **wrong rotary embeddings**, while the
+> base model they were compared against was measured with the correct ones.
+>
+> Levanter's HF export writes the Llama3 rope under the new `rope_parameters` key and
+> leaves top-level `rope_theta` / `rope_scaling` **null**. The eval pods ran
+> **transformers 4.53.1**, which does not know that key. Measured directly:
+>
+> | checkpoint | `rope_theta` under 4.53.1 | `rope_scaling` |
+> |---|---|---|
+> | E8 base (`model/step-35679`) | 500000 ✓ | llama3 ✓ |
+> | *every* fine-tuned export | **10000.0** (Qwen3 default) ✗ | **None** ✗ |
+>
+> A 50x wrong base frequency and no length scaling — applied only to the models being
+> compared against the base. All 8 exports were affected (v1 `step-51` at both LRs, the
+> four v2 arms, v3 `step-404`, probe `step-5`).
+>
+> **What this plausibly explains — i.e. what must NOT be believed below:**
+> * the 0.3355 -> ~0.16-0.20 "catastrophic forgetting" collapse, and its apparent
+>   onset within the first ~52 steps (it is not step-dependent; it is present in any export);
+> * **why the long band was always hit hardest** (`R0_long` 0.2697 -> 0.1196). Rope error
+>   grows with positional distance. This asymmetry was noted repeatedly and not followed up
+>   — it was the tell, and it was missed;
+> * why *no* data-side intervention ever moved it — corpus scale, loss-weight profile,
+>   mode token, 67% rehearsal. All six "falsifications" were measured through the same
+>   broken rope, so none of them are established;
+> * why LoRA looked immune at -7%: that MVP ran on a different local path and probably
+>   never had the bug. "LoRA vs full fine-tune is the only discriminating variable" may
+>   really have been "which `config.json` shape the checkpoint had".
+>
+> **What survives.** Training was correct — levanter used its own rope config, not the
+> exported JSON. So every training-loss comparison stands, as does levanter's own unmasked
+> val loss (3.169 base -> 3.503 at step 404, computed with correct rope). That indicates
+> *some* real degradation, but ~5% in bpb terms — nothing like -52%.
+>
+> **Fix applied.** All 8 configs rewritten to mirror E8's exact shape (`config.json.orig`
+> kept as backup), asserting the values are identical to E8's first — this re-spells the
+> same rope under the keys old readers use; it changes no model's actual rope. Verified
+> correct under both 4.53.1 and 5.12.1. Corrected eval is running as
+> `base-ropefix` / `v3mix50-ropefix`; the pre-fix scores are retained for comparison.
+>
+> Sections 8, 11 and 12 below are preserved **as originally written** so the error is
+> auditable, not silently rewritten. Treat their conclusions as withdrawn pending the
+> corrected numbers.
 
 ---
 

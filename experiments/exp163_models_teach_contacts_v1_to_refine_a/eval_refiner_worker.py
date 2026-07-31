@@ -313,6 +313,12 @@ def main() -> int:
                          "is also recorded, so base-task retention and refine-mode "
                          "one-shot become distinct measurements. The old eval probed K0 "
                          "with the colliding plain prefix, which may have understated it.")
+    ap.add_argument("--k0-only", action="store_true",
+                    help="score ONLY the no-draft prefixes (R0, and R0multi if "
+                         "--mode-id is set) and skip the K sweep + consensus. Those "
+                         "are ~4x the work and are the only draft-SAMPLED (hence "
+                         "run-to-run noisy) metrics; R0 is deterministic. Use for a "
+                         "base-task-retention profile across many checkpoints.")
     ap.add_argument("--format", choices=["candidate", "multi-draft"], default="candidate",
                     help="candidate context format — MUST match what the checkpoint "
                          "was trained on (v1 <CAND> blocks vs v2 statements sections)")
@@ -379,6 +385,11 @@ def main() -> int:
                              tmat, pi, pj, psep)
             for b in ("all", "long"):
                 out[f"R0multi_{b}"], out[f"A0multi_{b}"] = m[b]
+        if a.k0_only:
+            rows.append(out)
+            if (n + 1) % 25 == 0 or n == 0:
+                print(f"  [{n+1}/{len(targets)}] {eid} R0={out['R0_all']:.3f}", flush=True)
+            continue
         # raw candidate blocks, swept over K (test-time scaling).
         #
         # STAY IN DISTRIBUTION. The training corpus caps the candidate section by a

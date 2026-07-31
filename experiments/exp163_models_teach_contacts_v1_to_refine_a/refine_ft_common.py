@@ -75,6 +75,7 @@ refine.
 
 from __future__ import annotations
 
+import dataclasses
 import os
 
 from fray.types import ResourceConfig
@@ -246,6 +247,7 @@ def build_on_pod_config(
     env_vars: dict[str, str] | None = None,
     steps_per_eval: int = 100,
     steps_per_checkpoint: int | None = None,
+    hf_save_steps: int | None = None,
     tags: tuple[str, ...] = (),
     wandb_group: str = "exp163-rollout-refinement",
 ) -> TrainLmOnPodConfig:
@@ -278,7 +280,7 @@ def build_on_pod_config(
         lr_schedule=LR_SCHEDULE,
     )
 
-    return build_train_lm_on_pod_config(
+    cfg = build_train_lm_on_pod_config(
         run_name=run_name,
         model=MODEL_CONFIG,
         optimizer=optimizer,
@@ -307,6 +309,20 @@ def build_on_pod_config(
         tags=tags,
         env_vars=env_vars,
     )
+
+    if hf_save_steps:
+        # HF-format exports every N steps, so a downstream transformers eval can
+        # measure the task metric ALONG the run rather than only at its end.
+        # Applied to the BUILT config rather than passed to the shared builder:
+        # ``marinfold_models`` is installed from a pinned git rev, so a new builder
+        # kwarg would not reach the training pod without bumping that pin. levanter's
+        # own default is 10_000 -- i.e. in practice one export, at the end.
+        # Each export is a full copy of the weights (~5.9GB here), so this is for a
+        # deliberately SHORT probe run, not a production one.
+        cfg = dataclasses.replace(
+            cfg, train_config=dataclasses.replace(cfg.train_config,
+                                                  hf_save_steps=hf_save_steps))
+    return cfg
 
 
 __all__ = [
