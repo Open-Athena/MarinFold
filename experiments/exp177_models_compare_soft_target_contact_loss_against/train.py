@@ -193,11 +193,11 @@ def _next_token_data_config_mode() -> str:
 
 
 def _train_cache_component(*, parity: bool) -> DatasetComponent:
-    if parity:
-        return DatasetComponent(cache_dir=CONTACTS_V1_TRAIN_CACHE, pack=True)
     # This component is train-only. `flat_cache=True` prevents Levanter's
     # validation-set builder from looking for a nonexistent
-    # `<train-cache>/validation` sibling.
+    # `<train-cache>/validation` sibling. Parity mode still uses the exp117
+    # component name and mixture block size, but the train/val caches are split
+    # across two roots in this mirror.
     return DatasetComponent(
         cache_dir=f"{CONTACTS_V1_TRAIN_CACHE}/train",
         pack=True,
