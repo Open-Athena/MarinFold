@@ -38,6 +38,12 @@ HERE = Path(__file__).parent
 PAIRWISE = "pairwise"           # exp89 original: autoregressive P(contact), symmetrised
 ROLLOUT = "rollout"             # exp82 settled recipe: n=100 rollouts + document
                                 # resampling + pairwise tie-break, top-k OFF (#142)
+ORACLE_BEST100 = "oracle_best_of_100"  # NOT a deployable recipe: for each protein, the
+                                # single BEST of the same 100 rollouts (first-R precision
+                                # of that one rollout's own emission order), instead of the
+                                # votes-aggregated ranking. An upper-bound/headroom diagnostic
+                                # -- you cannot know which rollout is best without GT -- kept
+                                # as a separate series from PAIRWISE/ROLLOUT, never blended in.
 
 # ---------------------------------------------------------------------------
 # R-precision (all ranges), 554-protein eval set, exp89 compute_metrics.
@@ -171,6 +177,32 @@ RPRECISION_ROWS = [
         source="this session's eval: score_rollout_worker.py x8 v5p-8 TPU shards (us-east5) "
                "+ fetch_cw_scores.py + build_rollout_rows.py, 554/554 proteins; "
                "data/exp155_3way_restart_step70000_rollout_summary.csv",
+    ),
+    dict(
+        # The run finished at step 74793 (target 74800) -- unlike the 60k/70k
+        # rows above, this is a settled result, not an in-flight snapshot.
+        label="#155 3-way restart final",
+        model="exp137-3way-restart30k-lr2p5e-3-9e7568 / step-74793",
+        date="2026-08-01", params="1.5B", issue=155,
+        val_loss=None, val_loss_key="",   # superset crops tokenizer (3848) -> not comparable
+        r_precision=0.5545, inference=ROLLOUT,
+        source="this session's eval: score_rollout_worker_oracle.py x8 v5p-8 TPU shards "
+               "(us-east5) + fetch_cw_scores.py + build_rollout_rows.py, 554/554 proteins; "
+               "data/exp155_3way_restart_step74793_rollout_summary.csv",
+    ),
+    dict(
+        # Oracle best-of-100: same checkpoint, same 100 rollouts per protein,
+        # but scored by each rollout's OWN first-R precision (emission order)
+        # and taking the max over the 100 -- not a deployable recipe, an
+        # upper-bound/headroom diagnostic. See build_oracle_best_rollout.py.
+        label="#155 3-way restart final",
+        model="exp137-3way-restart30k-lr2p5e-3-9e7568 / step-74793",
+        date="2026-08-01", params="1.5B", issue=155,
+        val_loss=None, val_loss_key="",
+        r_precision=0.594827, inference=ORACLE_BEST100,
+        source="this session's eval: score_rollout_worker_oracle.py (per-rollout detail) "
+               "+ build_oracle_best_rollout.py, 554/554 proteins, n=100 rollouts/protein; "
+               "data/exp155_3way_restart_step74793_oracle_best100_summary.csv",
     ),
 ]
 

@@ -35,9 +35,14 @@ import pandas as pd  # noqa: E402
 
 HERE = Path(__file__).parent
 
+# Matches build_dataset.py's ORACLE_BEST100 string value (kept as a plain
+# string there too, not imported, to keep the two scripts decoupled).
+ORACLE_BEST100 = "oracle_best_of_100"
+
 # data-viz reference palette, light mode.
 ROLLOUT_C = "#2a78d6"     # slot 1 — the settled exp82 rollout recipe
 PAIRWISE_C = "#eb6834"    # slot 2 — the original exp89 pairwise scorer
+ORACLE_C = "#008300"      # slot 3 — best-of-100 diagnostic, NOT a deployable recipe
 FRONTIER_C = "#0b0b0b"
 CLOUD_C = "#898781"
 TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED = "#0b0b0b", "#52514e", "#898781"
@@ -46,9 +51,10 @@ GRID, SURFACE = "#e1e0d9", "#fcfcfb"
 RECIPE_LABEL = {
     "rollout": "rollout + resample, n=100 (exp82; top-k off)",
     "pairwise": "pairwise scoring (exp89 original)",
+    "oracle_best_of_100": "oracle best-of-100 (upper bound, not deployable)",
 }
-RECIPE_COLOR = {"rollout": ROLLOUT_C, "pairwise": PAIRWISE_C}
-RECIPE_MARKER = {"rollout": "o", "pairwise": "^"}
+RECIPE_COLOR = {"rollout": ROLLOUT_C, "pairwise": PAIRWISE_C, "oracle_best_of_100": ORACLE_C}
+RECIPE_MARKER = {"rollout": "o", "pairwise": "^", "oracle_best_of_100": "*"}
 
 
 def _style(ax) -> None:
@@ -127,10 +133,13 @@ RP_LABEL_OFFSET = {
     "#146 3B E8": (6, 24),
     "#160 backtracking": (0, -28),
     "#155 3-way restart 60k": (-56, -30),
-    "#155 3-way restart 70k": (30, -16),
+    "#155 3-way restart 70k": (-150, 38),
+    "#155 3-way restart final": (95, -42),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
+# Where the oracle_best_of_100 reading goes (always a separate, bare label).
+RP_ORACLE_OFFSET = {"#155 3-way restart final": (95, 40)}
 # The #117 early-stop checkpoint is step 33450 of the run that ends at 35679,
 # so at day resolution it plots on top of the final. Both markers stay (they
 # genuinely are indistinguishable); one label carries both numbers.
@@ -143,10 +152,15 @@ RP_LABEL_SKIP = {"#117 E16 early stop"}
 def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path) -> None:
     rp = rp.sort_values(["date", "r_precision"]).reset_index(drop=True)
 
-    # The frontier is the running max over the best measurement available for
-    # each checkpoint — literally "the best contact accuracy we had by then".
-    per_ckpt = (rp.groupby(["date", "label"], as_index=False)["r_precision"].max()
-                  .sort_values("date"))
+    # oracle_best_of_100 is a diagnostic upper bound, not a deployable recipe --
+    # it must never win "best model trained to date" or the headline label.
+    deployable = rp[rp["inference"] != ORACLE_BEST100]
+
+    # The frontier is the running max over the best *deployable* measurement
+    # available for each checkpoint — "the best contact accuracy we could
+    # actually have shipped by then".
+    per_ckpt = (deployable.groupby(["date", "label"], as_index=False)["r_precision"].max()
+                          .sort_values("date"))
     fx = per_ckpt["date"].to_numpy()
     fy = _running_best(per_ckpt["r_precision"].to_numpy(), "max")
 
@@ -164,13 +178,18 @@ def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Pat
                    edgecolor="white", linewidth=2.0, zorder=4,
                    label=RECIPE_LABEL[recipe])
 
-    # The headline label goes on each checkpoint's *best* reading; a checkpoint
-    # measured under both recipes gets a bare value on its lower (pairwise) one.
-    headline = set(rp.groupby("label")["r_precision"].idxmax())
+    # The headline label goes on each checkpoint's best *deployable* reading;
+    # a checkpoint measured under both pairwise/rollout gets a bare value on
+    # its lower (pairwise) one. oracle_best_of_100 always gets its own bare,
+    # clearly-marked label — it never competes for headline status.
+    headline = set(deployable.groupby("label")["r_precision"].idxmax())
     for i, r in rp.iterrows():
         if r["label"] in RP_LABEL_SKIP:
             continue
-        if i in headline:
+        if r["inference"] == ORACLE_BEST100:
+            text = f"oracle {r['r_precision']:.3f}"
+            dx, dy = RP_ORACLE_OFFSET.get(r["label"], (4, 22))
+        elif i in headline:
             text = RP_LABEL_TEXT.get(r["label"], f"{r['label']}  {r['r_precision']:.3f}")
             dx, dy = RP_LABEL_OFFSET.get(r["label"], (0, 20))
         else:
@@ -205,8 +224,9 @@ def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Pat
         baselines={b["label"]: float(b["r_precision"]) for _, b in baselines.iterrows()},
         frontier=[dict(date=str(pd.Timestamp(d).date()), r_precision=float(v))
                   for d, v in zip(fx, fy)]),
-        caption="Best contacts-v1 model to date on contact R-precision. Two jumps, "
-                "both from the base model: #75 E8 (Jun 21) and #117 E16 (Jul 22).")
+        caption="Best contacts-v1 model to date on contact R-precision. Three jumps, "
+                "all from the base model: #75 E8 (Jun 21), #117 E16 (Jul 22), #155 "
+                "3-way restart (Jul 31-Aug 1).")
     print(f"wrote {out}")
 
 
@@ -222,6 +242,7 @@ VL_LABEL_OFFSET = {
     "exp120-cv1-1_5b-orig-lr3e-4-e1-cos": (-6, 26),
     "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4": (-46, -38),
     "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1": (14, 26),
+    "exp137-3way-restart30k-lr2p5e-3": (30, -34),
 }
 # Short human names for the frontier steps worth calling out.
 VL_NAMES = {
@@ -233,6 +254,9 @@ VL_NAMES = {
     "exp120-cv1-1_5b-orig-lr3e-4-e1-cos": "#120 re-epoch",
     "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4": "#117 E16 final",
     "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1": "#146 3B E8",
+    "exp137-3way-restart30k-lr2p5e-3": "#155 3-way restart (finished)",
+    "exp137-crops1ep-cv11ep-esm1ep-1_5b-lr3p162e-3-wd0p2-bs128": "#155 3-way mix (original)",
+    "exp137-crops0ep-cv11ep-esm1ep-1_5b-lr3p162e-3-wd0p2-bs128": "#155 no-crops ablation",
 }
 YTOP = 3.26
 
@@ -267,7 +291,13 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
                    facecolor="none", edgecolor=PAIRWISE_C, linewidth=1.8, zorder=4,
                    label="still training (not on the frontier)")
         best_live = live.loc[live["val_loss"].idxmin()]
-        ax.annotate(f"#155 3-way mix, in flight  {best_live['val_loss']:.4f}",
+        # Name derived from the actual run, not hand-picked: which run is the
+        # best in-flight one is a moving target -- #155's 3-way restart held
+        # this label until it finished (see VL_NAMES above), at which point
+        # a hardcoded name would have gone stale and silently mislabeled
+        # whichever run took its place.
+        live_name = VL_NAMES.get(best_live["name"], best_live["name"])
+        ax.annotate(f"{live_name}, in flight  {best_live['val_loss']:.4f}",
                     (best_live["finished"], best_live["val_loss"]),
                     textcoords="offset points", xytext=(30, -38), ha="center",
                     fontsize=9, color=TEXT_PRIMARY,
@@ -310,7 +340,7 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
         figure="val_loss_frontier", n_runs=len(done), n_above_axis=n_above,
         frontier=[dict(date=str(pd.Timestamp(x).date()), val_loss=float(y), run=n)
                   for x, y, n in steps]),
-        caption="Best held-out contacts-v1 val loss to date over 153 finished runs. "
+        caption="Best held-out contacts-v1 val loss to date over 157 finished runs. "
                 "The loss frontier has many more steps than the accuracy one.")
     print(f"wrote {out}")
 
