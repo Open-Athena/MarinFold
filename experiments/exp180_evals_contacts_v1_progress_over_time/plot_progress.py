@@ -126,7 +126,8 @@ RP_LABEL_OFFSET = {
     "#117 E16 final": (-58, 26),
     "#146 3B E8": (6, 24),
     "#160 backtracking": (0, -28),
-    "#155 3-way restart": (28, -22),
+    "#155 3-way restart 60k": (-56, -30),
+    "#155 3-way restart 70k": (30, -16),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
