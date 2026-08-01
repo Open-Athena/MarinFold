@@ -1,0 +1,72 @@
+[project]
+name = "exp166-models-contacts-v1-aa-augmentation"
+version = "0.1.0"
+description = "Evaluate the exp166 contacts-v1 AA-augmentation checkpoint against the exp117 control."
+requires-python = ">=3.12,<3.13"
+# This directory is the complete Iris workspace. MarinFold's library manifest
+# does not include the Iris client or TPU inference stack, while using a Marin
+# source checkout would couple the job to a large, mutable sibling repository.
+# Keep submission, worker, and analysis dependencies isolated and locked here.
+dependencies = [
+    # Marin publishes fresh, co-versioned development wheels to PyPI. Iris
+    # rejects stale root clients, so keep this floor current when submitting.
+    "marin-iris>=0.2.65.dev30616178224,<0.3",
+    # With prereleases enabled, an unconstrained resolution can select the
+    # incompatible httpx 1.0 development line.
+    "httpx>=0.28.1,<1",
+]
+
+[project.optional-dependencies]
+analysis = [
+    "huggingface-hub>=1.26,<2",
+    "matplotlib>=3.10,<4",
+    "pandas>=2.3,<3",
+    "pyarrow>=23,<24",
+    "scikit-learn>=1.7,<2",
+]
+tpu = [
+    "marin-core[tpu]>=0.2.65.dev30616178224,<0.3; sys_platform == 'linux'",
+    "marinfold==0.1.0",
+    "huggingface-hub>=1.26,<2",
+    "httpx>=0.28.1,<1",
+    "numpy>=2,<3",
+    "pyarrow>=23,<24",
+    "safetensors>=0.6,<0.7",
+    "transformers==5.12.1; sys_platform == 'linux'",
+    "tpu-inference==0.23.0; sys_platform == 'linux'",
+    "vllm; sys_platform == 'linux'",
+    # 0.2.4 currently publishes only aarch64 wheels; v6e workers are x86_64.
+    "xgrammar==0.2.3; sys_platform == 'linux'",
+    # Source mappings apply only to direct dependencies, so repeat the
+    # CPU-tagged Torch pins required by marin-core here.
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+no-build-isolation-package = ["vllm"]
+override-dependencies = [
+    # The pinned TPU inference stack requires Transformers 5. MarinFold's
+    # contacts-v1 document APIs are compatible (and are exercised here), but
+    # its base package still conservatively declares an older upper bound.
+    "transformers==5.12.1; sys_platform == 'linux'",
+]
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", rev = "0dcb7f56b1ea03ebd38e2337d69c1fff5203b426", subdirectory = "marinfold" }
+tpu-inference = { git = "https://github.com/marin-community/tpu-inference.git", rev = "e8809d492d5d6c7008369919a00384eb1c4de969" }
+torch = [{ index = "pytorch-cpu", extra = "tpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "tpu" }]
+vllm = { git = "https://github.com/marin-community/vllm.git", rev = "afb26719464d5957e695bde478ae93a160b11d14" }
