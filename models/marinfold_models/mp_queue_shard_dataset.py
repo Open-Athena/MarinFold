@@ -125,6 +125,10 @@ class MPQueueShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
         shard_index = self._shard_order(epoch)[shard_position]
         return epoch, shard_index, slot_index
 
+    def start_workers(self) -> None:
+        """Start worker processes before accelerator/JAX initialization."""
+        self._pool()
+
     def close(self) -> None:
         """Stop worker processes and drop pending futures."""
         executor = self._executor

@@ -260,13 +260,27 @@ def _with_local_tokenizer(pod_config: TrainLmOnPodConfig, tokenizer_path: str) -
     return dataclasses.replace(pod_config, train_config=train_config)
 
 
+def _start_direct_dataset_workers(config: TrainLmConfig) -> None:
+    """Start MP direct-dataset workers before Levanter initializes JAX."""
+    for component in config.data.components.values():
+        datasets = getattr(component, "datasets", None)
+        if not datasets:
+            continue
+        for dataset in datasets.values():
+            start_workers = getattr(dataset, "start_workers", None)
+            if start_workers is not None:
+                start_workers()
+
+
 def _run_next_token_with_pinned_tokenizer(pod_config: TrainLmOnPodConfig) -> None:
     tokenizer_path = snapshot_download(
         repo_id=CONTACTS_TOKENIZER_REPO,
         revision=CONTACTS_TOKENIZER_REVISION,
         allow_patterns=list(TOKENIZER_ALLOW_PATTERNS),
     )
-    run_levanter_train_lm(_with_local_tokenizer(pod_config, tokenizer_path))
+    pod_config = _with_local_tokenizer(pod_config, tokenizer_path)
+    _start_direct_dataset_workers(pod_config.train_config)
+    run_levanter_train_lm(pod_config)
 
 
 def _run_soft_target_with_pinned_tokenizer(pod_config: TrainLmOnPodConfig) -> None:

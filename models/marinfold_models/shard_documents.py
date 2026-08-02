@@ -492,6 +492,10 @@ class MPFixedQuotaShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
     def location_for_index(self, index: int) -> tuple[int, int, int]:
         return self._slot_dataset.location_for_index(index)
 
+    def start_workers(self) -> None:
+        """Start worker processes before accelerator/JAX initialization."""
+        self._slot_dataset.start_workers()
+
     def close(self) -> None:
         self._slot_dataset.close()
 
