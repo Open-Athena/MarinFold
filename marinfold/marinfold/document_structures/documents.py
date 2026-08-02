@@ -250,6 +250,23 @@ class Document:
             f"vocabulary={None if self.vocabulary is None else self.vocabulary.name!r})"
         )
 
+    def __getstate__(self) -> dict[str, Any]:
+        """Return a pickle-friendly state for process-pool document transport."""
+        return {
+            "token_ids": self.token_ids,
+            "vocabulary": self.vocabulary,
+            "attention": self.attention,
+            "coordinates": dict(self._coordinates),
+            "score_ranges": self._score_ranges,
+        }
+
+    def __setstate__(self, state: Mapping[str, Any]) -> None:
+        self.token_ids = state["token_ids"]
+        self.vocabulary = state["vocabulary"]
+        self.attention = state["attention"]
+        self._coordinates = MappingProxyType(dict(state["coordinates"]))
+        self._score_ranges = state["score_ranges"]
+
     def unscored(self, *, start: int = 0, stop: int | None = None) -> "Document":
         """Return a copy whose selected range contributes no training score."""
         normalized_start, normalized_stop = _normalize_range(
