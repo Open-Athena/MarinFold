@@ -15,10 +15,13 @@ does not have to re-vendor the marin training plumbing.
 """
 
 from marinfold_models.defaults import MARIN_PRECISION, build_train_lm_on_pod_config
+from marinfold_models.mp_queue_shard_dataset import MPQueueShardDatasetStats, MPQueueShardDocumentDataset
 from marinfold_models.simple_train_config import SimpleTrainConfig
 
 __all__ = [
     "MARIN_PRECISION",
+    "MPQueueShardDatasetStats",
+    "MPQueueShardDocumentDataset",
     "SimpleTrainConfig",
     "build_train_lm_on_pod_config",
 ]
