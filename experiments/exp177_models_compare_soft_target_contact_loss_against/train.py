@@ -11,7 +11,7 @@ import os
 from datetime import timedelta
 from enum import StrEnum
 
-import draccus.encode
+import draccus
 import jmp
 from fray.types import ResourceConfig, get_tpu_topology, tpu_family, tpu_hbm_capacity_bytes
 from haliax import Axis
