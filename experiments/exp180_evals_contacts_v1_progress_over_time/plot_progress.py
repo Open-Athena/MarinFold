@@ -132,14 +132,12 @@ RP_LABEL_OFFSET = {
     "#117 E16 final": (-58, 26),
     "#146 3B E8": (6, 24),
     "#160 backtracking": (0, -28),
-    "#155 3-way restart 60k": (-56, -30),
-    "#155 3-way restart 70k": (-150, 38),
-    "#155 3-way restart final": (95, -42),
+    "#155 3-way restart final": (-40, -140),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
 # Where the oracle_best_of_100 reading goes (always a separate, bare label).
-RP_ORACLE_OFFSET = {"#155 3-way restart final": (95, 40)}
+RP_ORACLE_OFFSET = {"#155 3-way restart final": (55, 26)}
 # The #117 early-stop checkpoint is step 33450 of the run that ends at 35679,
 # so at day resolution it plots on top of the final. Both markers stay (they
 # genuinely are indistinguishable); one label carries both numbers.

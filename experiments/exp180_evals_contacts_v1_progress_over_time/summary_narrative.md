@@ -33,11 +33,10 @@ piecemeal:
 The accuracy frontier moved in three jumps, all from the base model, none
 from inference or post-training: ~0.03 to 0.425 when #75's E8 rung finished
 (2026-06-21), 0.436 to 0.534 when #117's 16-epoch bs256 run finished
-(2026-07-22), and 0.534 to 0.556 across #155's crops+contacts-v1+ESM-Atlas
-3-way mixture restart, which finished training 2026-08-01 (peak at its step
-70000 checkpoint; the final checkpoint reads 0.554, a 0.002 dip inside
-noise). #155 is the first jump from a *data* change rather than a
-hyperparameter sweep or epoch count.
+(2026-07-22), and 0.534 to 0.554 when #155's crops+contacts-v1+ESM-Atlas
+3-way mixture restart finished training, 2026-08-01 (step 74793). #155 is
+the first jump from a *data* change rather than a hyperparameter sweep or
+epoch count.
 
 Between the first two, five weeks of post-training and inference work moved
 it by +0.011 (#120's re-epoch), and #160's backtracking fine-tune moved it by

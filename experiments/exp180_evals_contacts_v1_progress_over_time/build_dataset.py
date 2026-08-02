@@ -157,30 +157,10 @@ RPRECISION_ROWS = [
         source="exp160 data/exp160_summary.csv (model=exp160-bt50, retraction enabled)",
     ),
     dict(
-        label="#155 3-way restart 60k",
-        model="exp137-3way-restart30k-lr2p5e-3-9e7568 / step-60000",
-        # Checkpoint date, not run-finish date: this run is still training
-        # (target step 74800) -- see the README caveat on in-flight checkpoints.
-        date="2026-07-31", params="1.5B", issue=155,
-        val_loss=None, val_loss_key="",   # superset crops tokenizer (3848) -> not comparable
-        r_precision=0.5531834, inference=ROLLOUT,
-        source="this session's eval: score_rollout_worker.py x8 v5p-8 TPU shards (us-east5) "
-               "+ fetch_cw_scores.py + build_rollout_rows.py, 554/554 proteins; "
-               "data/exp155_3way_restart_step60000_rollout_summary.csv",
-    ),
-    dict(
-        label="#155 3-way restart 70k",
-        model="exp137-3way-restart30k-lr2p5e-3-9e7568 / step-70000",
-        date="2026-08-01", params="1.5B", issue=155,
-        val_loss=None, val_loss_key="",   # superset crops tokenizer (3848) -> not comparable
-        r_precision=0.5558576, inference=ROLLOUT,
-        source="this session's eval: score_rollout_worker.py x8 v5p-8 TPU shards (us-east5) "
-               "+ fetch_cw_scores.py + build_rollout_rows.py, 554/554 proteins; "
-               "data/exp155_3way_restart_step70000_rollout_summary.csv",
-    ),
-    dict(
-        # The run finished at step 74793 (target 74800) -- unlike the 60k/70k
-        # rows above, this is a settled result, not an in-flight snapshot.
+        # The run finished at step 74793 (target 74800), a settled result.
+        # Earlier in-flight checkpoints from this run (step 60000: R 0.5532,
+        # step 70000: R 0.5559) were scored during training but are not
+        # plotted -- only the final checkpoint represents this run here.
         label="#155 3-way restart final",
         model="exp137-3way-restart30k-lr2p5e-3-9e7568 / step-74793",
         date="2026-08-01", params="1.5B", issue=155,

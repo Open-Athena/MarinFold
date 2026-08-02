@@ -199,9 +199,7 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 | **2026-07-22** | **#117 E16 final** | **2.7037** | **0.534** | rollout |
 | 2026-07-27 | #146 3B E8 | 2.7025 | 0.512 | rollout |
 | 2026-07-28 | #160 backtracking | — | 0.416 | rollout |
-| 2026-07-31 | #155 3-way restart 60k (step 60000) | — | 0.553 | rollout |
-| **2026-08-01** | **#155 3-way restart 70k** (step 70000) | — | **0.556** | rollout |
-| 2026-08-01 | #155 3-way restart final (step 74793, run complete) | — | 0.554 | rollout |
+| **2026-08-01** | **#155 3-way restart final** (step 74793, run complete) | — | **0.554** | rollout |
 | 2026-08-01 | #155 3-way restart final, oracle best-of-100 | — | 0.595 | oracle (not deployable) |
 
 Structure predictors on the same 554 proteins and the same metric:
@@ -220,16 +218,16 @@ CoreWeave H100s, 07-11) → **2.7213** (#120, 07-16) → 2.7131 → 2.7112 →
 - **The accuracy frontier moved in three jumps**, all from the base model,
   none from inference or post-training: ~0.03 → **0.425** when #75's
   E8 rung finished (2026-06-21), 0.436 → **0.534** when #117's 16-epoch
-  bs256 run finished (2026-07-22), and 0.534 → **0.556** across #155's 3-way
-  mixture restart (step 60000 on 07-31: 0.553; step 70000 on 08-01: 0.556,
-  the eventual peak; step 74793, where the run finished, actually reads
-  0.554 — a 0.002 dip, inside noise). Between the first two, five weeks of
-  post-training and inference work moved it by +0.011 (#120's re-epoch).
-  (#75's E4 winner, 0.031, landed the same day as E8, so the pre-jump
-  frontier reads 0.029 — #67's.) Two checkpoints 10k steps apart buying only
-  +0.003, and the final checkpoint reading *below* the 70k one, both echo
-  #169's "matched loss doesn't mean matched accuracy" finding — here inside
-  one run's late training, not across model sizes.
+  bs256 run finished (2026-07-22), and 0.534 → **0.554** when #155's 3-way
+  mixture restart finished training (step 74793, 2026-08-01). Between the
+  first two, five weeks of post-training and inference work moved it by
+  +0.011 (#120's re-epoch). (#75's E4 winner, 0.031, landed the same day as
+  E8, so the pre-jump frontier reads 0.029 — #67's.) Only the final,
+  finished checkpoint is plotted for #155 — two earlier checkpoints from the
+  same run were also scored while it was still training (step 60000: R
+  0.553, step 70000: R 0.556) but are intentionally left off the figures now
+  that a settled result exists; see the caveats section for why the 70k
+  point briefly read higher than the final.
 - **The oracle best-of-100 diagnostic (new, #155 final checkpoint only):**
   scoring each of the 100 sampled rollouts per protein on its own first-R
   precision and taking the max, instead of voting them together, reads
@@ -263,7 +261,7 @@ CoreWeave H100s, 07-11) → **2.7213** (#120, 07-16) → 2.7131 → 2.7112 →
 - **#67 never held the loss frontier.** It finished 2026-06-14 15:36 at 2.9800,
   about two hours after `prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p05-v1` reached
   2.9787.
-- **All of this is still below single-sequence Protenix-v2** (0.556 deployable
+- **All of this is still below single-sequence Protenix-v2** (0.554 deployable
   / 0.595 oracle ceiling vs 0.603), and well below ESMFold2 (0.786). The
   oracle ceiling alone would essentially close the single-seq structure-model
   gap — but it is not a number the pipeline can actually deliver.
@@ -366,8 +364,8 @@ structure readout is the one the project quotes.
 
 ### What is in, what is out
 
-**In the accuracy figure** — the 14 checkpoints with a benchmark score
-(`data/rprecision_checkpoints.csv`, 17 rows: 3 checkpoints measured under two
+**In the accuracy figure** — the 12 checkpoints with a benchmark score
+(`data/rprecision_checkpoints.csv`, 15 rows: 2 checkpoints measured under two
 recipes, plus the oracle diagnostic row, one citation per row).
 
 **In the loss figure** — every *finished* W&B run reporting a contacts-v1 val
@@ -387,20 +385,23 @@ exp146 / exp153 (n=157 after exclusions).
   loss one: it has a 3849-token superset vocabulary, so its val loss is not
   comparable to the 2845-vocab runs.
 - **In-flight runs** are drawn as hollow diamonds on the loss figure and kept
-  off *that* frontier — they have not finished training. Four such runs are
-  live as of 2026-08-01 (the original #155 3-way mix at 2.8080, its no-crops
-  ablation at 2.7622, and two new exp177 tokenization-variant runs — a
-  `next_token` run at 2.9385 and a `soft_target` run still far from
-  converged at 13.91); the best of them is the no-crops ablation. #155's
+  off *that* frontier — they have not finished training. Five such runs are
+  live as of 2026-08-02 (the original #155 3-way mix at 2.8080, its no-crops
+  ablation at 2.7622, and three exp177 tokenization-variant runs — two
+  `next_token` runs at 2.9340 and 3.4099, plus a `soft_target` run still far
+  from converged at 13.91); the best of them is the no-crops ablation. The
+  two runs above 3.26 nats sit off the top of this figure's axis, same as
+  the finished-run outliers the caption already accounts for. #155's
   3-way *restart* — previously in this set — **finished training on 08-01 at
   2.6819** and is now a regular point on the finished-run frontier (see "The
-  loss frontier" above), labelled `#155 3-way restart (finished)`. It also
-  holds two spots on the **accuracy** frontier from before it finished — step
-  60000 (R 0.553) and step 70000 (R 0.556) — since the #89 benchmark scores a
-  specific checkpoint, not a finished run, so an in-flight run's intermediate
-  checkpoints could already be scored and plotted like any other; its final
-  checkpoint (step 74793, R 0.554) is now a third, settled point alongside
-  them.
+  loss frontier" above), labelled `#155 3-way restart (finished)`. While it
+  was still training, two of its intermediate checkpoints were also scored
+  on the accuracy benchmark (step 60000: R 0.553, step 70000: R 0.556) —
+  the #89 benchmark scores a specific checkpoint, not a finished run, so
+  this was possible before the run finished. Now that the run has a settled
+  final checkpoint (step 74793, R 0.554), only that final point is plotted;
+  the two earlier ones are dropped from the figures, though the underlying
+  eval outputs are still in `data/` (see Files table).
 
 ### Caveats worth carrying
 
@@ -419,15 +420,18 @@ exp146 / exp153 (n=157 after exclusions).
    the ≤0.006 TPU-vs-CUDA agreement #89 established. Either is fine; the plots
    use exp169's for that checkpoint.
 5. **#155's 3-way restart finished training on 08-01 at step 74793** (target
-   74800), R-precision 0.5545 — a settled result, not an in-flight snapshot.
-   Its two earlier scored checkpoints (step 60000: R 0.553, step 70000: R
-   0.556, the eventual peak) remain on the accuracy frontier alongside it as
-   ordinary historical points; the final checkpoint reading 0.002 below the
-   70k one is itself a small, likely-noise dip, not a still-open question.
-   It has no val loss on these figures (3848-token superset crops tokenizer,
-   same reason as #160) — its loss-figure label reads `(finished)` to
-   distinguish it from the still-live original 3-way mix and no-crops
-   ablation runs of the same experiment family.
+   74800), R-precision 0.5545 — a settled result, not an in-flight snapshot,
+   and the only checkpoint from this run plotted on the accuracy figure. Two
+   earlier checkpoints scored while the run was still training (step 60000:
+   R 0.553, step 70000: R 0.556, briefly the higher of the two) are excluded
+   from the figures now that a final result exists — the 0.002 gap between
+   the 70k checkpoint and the final is itself a small, likely-noise dip, not
+   a reason to keep the intermediate point around. Their raw eval outputs
+   remain in `data/` if needed. It has no val loss on these figures
+   (3848-token superset crops tokenizer, same reason as #160) — its
+   loss-figure label reads `(finished)` to distinguish it from the still-live
+   original 3-way mix and no-crops ablation runs of the same experiment
+   family.
 6. **The oracle best-of-100 diagnostic is scored for one checkpoint only**
    (#155's final, step 74793). It shares the same 100 rollouts as that
    checkpoint's `rollout` row — same TPU eval run, same per-protein samples —
@@ -441,15 +445,15 @@ exp146 / exp153 (n=157 after exclusions).
 |---|---|
 | `build_dataset.py` | assembles both tables; W&B pull + the hand-curated benchmark rows |
 | `plot_progress.py` | the three figures |
-| `data/rprecision_checkpoints.csv` | 17 rows (14 checkpoints; 3 measured under both pairwise/rollout recipes, plus the oracle diagnostic row), one source citation each |
+| `data/rprecision_checkpoints.csv` | 15 rows (12 checkpoints; 2 measured under both pairwise/rollout recipes, plus the oracle diagnostic row), one source citation each |
 | `data/structure_baselines.csv` | the four dotted lines, recomputed from exp89 |
 | `data/val_loss_runs.csv` | 324 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
 | `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints |
-| `data/exp155_3way_restart_step60000_rollout_summary.csv` | aggregate R-precision/AUC for #155's step-60000 checkpoint, this session's rollout eval |
+| `data/exp155_3way_restart_step60000_rollout_summary.csv` | aggregate R-precision/AUC for #155's step-60000 checkpoint, this session's rollout eval — not plotted, superseded by the run's final checkpoint (see caveat 5) |
 | `data/exp155_3way_restart_step60000_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
-| `data/exp155_3way_restart_step70000_rollout_summary.csv` | same, for the step-70000 checkpoint |
+| `data/exp155_3way_restart_step70000_rollout_summary.csv` | same, for the step-70000 checkpoint — also not plotted |
 | `data/exp155_3way_restart_step70000_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
-| `data/exp155_3way_restart_step74793_rollout_summary.csv` | same, for the final checkpoint (step 74793, run complete) |
+| `data/exp155_3way_restart_step74793_rollout_summary.csv` | same, for the final checkpoint (step 74793, run complete) — the one point plotted for this run |
 | `data/exp155_3way_restart_step74793_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
 | `data/exp155_3way_restart_step74793_oracle_best100_summary.csv` | oracle best-of-100 mean R-precision by range, same checkpoint and rollouts as the summary above |
 | `data/exp155_3way_restart_step74793_oracle_best100_rows.csv.gz` | per-protein, per-range oracle rows behind that summary |
