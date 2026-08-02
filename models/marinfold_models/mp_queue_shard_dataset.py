@@ -13,13 +13,13 @@ and the training process serves examples from a bounded in-memory shard cache.
 
 import asyncio
 import multiprocessing as mp
-import random
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
+import numpy as np
 from levanter.data.dataset import AsyncDataset
 
 
@@ -204,9 +204,8 @@ class MPQueueShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
         cached = self._shard_orders.get(epoch)
         if cached is not None:
             return cached
-        order_list = list(range(self.num_shards))
-        random.Random(f"{self.seed}:{epoch}").shuffle(order_list)
-        order = tuple(order_list)
+        rng = np.random.default_rng(np.random.SeedSequence([self.seed, epoch]))
+        order = tuple(int(index) for index in rng.permutation(self.num_shards))
         self._shard_orders[epoch] = order
         self._shard_positions[epoch] = {shard_index: position for position, shard_index in enumerate(order)}
         return order
