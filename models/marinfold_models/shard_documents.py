@@ -497,10 +497,15 @@ class MPFixedQuotaShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
         self._slot_dataset.start_workers()
 
     def close(self) -> None:
-        self._slot_dataset.close()
+        if hasattr(self, "_slot_dataset"):
+            self._slot_dataset.close()
 
     def __del__(self):
         self.close()
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> str:
+        """Represent this live dataset inertly during hparam logging."""
+        return repr(self)
 
     def _examples_from_slots(self, slots: tuple[PackedDocuments | None, ...]) -> list[Example]:
         output: list[Example] = []
