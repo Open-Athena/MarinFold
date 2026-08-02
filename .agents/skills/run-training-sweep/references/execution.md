@@ -32,8 +32,8 @@ policy from unfamiliar Iris internals.
 
 ## Handle Unschedulable Targets
 
-`unschedulable` means the requested placement is permanently unavailable, not merely
-waiting for capacity.
+On an unproven target, `unschedulable` normally exposes an invalid region and slice
+combination admitted to the grid; it does not mean temporary scarcity.
 
 1. Verify the dispatch requested the intended region, slice, and chip count.
 2. Record `target_unschedulable`; do not retry the exact target.
@@ -41,9 +41,9 @@ waiting for capacity.
    entry naming the grid change and its cause.
 4. Reslice or relocate immediately to another eligible target.
 
-Do not generalize one result to a region or TPU family. If many previously valid
-targets become `unschedulable` together, pause target changes and investigate a
-systemic problem before continuing.
+Do not generalize one result to a region or TPU family. If the exact target worked
+previously, pause it and investigate before changing eligibility. Treat simultaneous
+results across previously valid targets as a systemic problem.
 
 ## Make Every Dispatch Unique
 
@@ -55,30 +55,6 @@ systemic problem before continuing.
 - Allow at most one active dispatch per regional run.
 
 Resume comes from the regional checkpoint, not the Iris name.
-
-## Time Stalls
-
-Set `stall_since` to the last increase in the `run_progress` high-water mark. Before any
-increase, use the first dispatch submission. Only a new high-water mark resets it.
-
-For an unknown two-week sweep, begin near:
-
-- Restart after 3 hours.
-- Reslice after 12 hours.
-- Relocate after 4 days.
-
-Confirm these defaults during the operator interview and use them unless evidence
-warrants a deliberate change. If a timeout changes, rewrite Operating Policy and add
-a `Change Record` entry; do not make document maintenance part of every heartbeat.
-
-Actions:
-
-- **Restart:** new dispatch, same region and slice, same regional checkpoint.
-- **Reslice:** new dispatch, same region, different eligible slice, same checkpoint.
-- **Relocate:** new regional run, different region, starts from zero, no transferred data.
-
-A terminal dispatch may be replaced immediately, but replacement does not reset the regional
-stall timer. Do not let repeated restarts prevent reslicing or relocation.
 
 ## Classify Failures Before Retry
 
@@ -92,45 +68,64 @@ Observe the whole W&B fleet before acting on a `failed` run.
 - Resume with a concrete basis, contain or stop affected work, or wait for operator
   direction when the safe response is unclear. Do not blindly retry.
 
-## Place Actively
+## Rebalance Every Heartbeat
 
-No command reveals available TRC capacity. Submission is the measurement.
+No command reveals available TRC capacity. Submission is the measurement. Begin an
+unknown two-week sweep with:
 
-### Enforce Placement Diversity
+```text
+heartbeat_every = 30 minutes
+reslice_after = 1 hour
+restart_after = 12 hours
+relocate_after = 3 days
+pending_target_limit = 1
+```
 
-> [!IMPORTANT]
-> These are hard constraints. Apply them before every dispatch; placement rankings
-> never override them.
+Confirm the four timing settings during the interview; record them and
+`pending_target_limit` in Operating Policy. Retain the defaults unless a concrete
+condition warrants changing them. Each heartbeat preserves dispatches with progress
+within `reslice_after` and considers every other dispatch for reslicing. A dispatch
+becomes restart-eligible after neither moving nor progressing for `restart_after`;
+its regional run becomes relocation-eligible after no progress for `relocate_after`.
+Only a new W&B `run_progress` high-water mark proves progress.
 
-- If at least two placement opportunities exist in one heartbeat and at least two
-  targets are eligible, use at least two targets.
-- Never make more than three consecutive dispatches to the same target while another
-  eligible target exists.
+A replacement starts a new dispatch clock. Restarting or reslicing never resets the
+regional clock; only progress does.
 
-Never stop progressing work, delay a dispatch, or create a replica solely for diversity.
-An immediate retry after an intermittent failure may use the same target, but it counts
-toward the consecutive-dispatch limit. Stall-driven reslices are the preferred exploration
-opportunities.
+### Admit Destinations
 
-Within these constraints, choose every placement, including a required alternative, in
-this order:
+A target's pending count is its active dispatches without progress during
+`reslice_after`; productive dispatches do not count. Treat a planned dispatch as
+pending until it proves progress. Its placement must leave the count at or below
+`pending_target_limit`.
 
-1. Eligible targets with the highest `target_rate`.
-2. A fresh optional fleet-utilization hint, combined with any relevant prior
-   experiment throughput.
-3. Remaining eligible targets across the grid, favoring untested ones.
+Build one fleet plan, reserving pending headroom after each proposed placement so
+later decisions see it. This limit controls admission only: never stop progressing
+work or evict dispatches merely because the count later rises.
 
-Fall through quickly when a higher-ranked target stops placing or progressing.
-Utilization never defines the grid or proves capacity. Include zero-progress
-submissions as evidence and keep quiet regions visible.
+### Choose An Action
 
-- Recompute rankings every heartbeat. Never write throughput rankings or transient
-  placement preferences into Operations.
-- Probe with real trials, never filler jobs.
-- Change placement when productive chips stay flat across repeated heartbeats.
-- Reslice stalled work across untried or recently granted shapes; descending sizes is a useful
-  default when large gangs do not place.
-- Do not change the priority band to solve scarcity.
+For each reslice candidate:
+
+1. Search for a different eligible target in the same region with pending headroom.
+2. Rank credible targets with `target_rate` and judgment informed by current
+   progress, prior experiments, optional fleet utilization, and useful exploration.
+3. If no same-region move is justified and relocation is due, repeat the search in a
+   different validated region.
+4. If no move is justified and restart is due, restart the current target.
+5. Otherwise leave the dispatch unchanged and state the reason.
+
+Reslice by default when a credible alternative exists; a no-op requires a concrete
+reason. Apply the same target accounting to new trials and requested replicas. Stop
+before replacing, and replan when an action changes material facts.
+
+- **Restart:** same region, slice, and regional checkpoint.
+- **Reslice:** different target in the same region, same checkpoint.
+- **Relocate:** different validated region, separate regional run from zero, no
+  transferred data.
+
+Recompute evidence every heartbeat and never copy rankings into Operations. Probe
+with real trials; never change the priority band to solve scarcity.
 
 ## Race Regions Optionally
 
@@ -168,10 +163,3 @@ On rejection:
 
 Record in-loop `BUILD_DATE` or floor changes in Operations. Never restart or reconfigure
 the shared Iris cluster.
-
-## Stay Active
-
-Run one heartbeat at a time as an agent decision pass. As its final action, schedule exactly
-one next pass with a time-based trigger such as `CronTask`; never rely on event-based
-monitoring. Every pass must refresh the full state and context before deciding. Never
-delegate decisions to a shell script, daemon, or scheduled task.

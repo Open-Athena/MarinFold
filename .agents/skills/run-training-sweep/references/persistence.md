@@ -12,8 +12,8 @@ The bundled SQLite schema represents these concepts:
 | --- | --- |
 | Sweep | Identity, schema version, creation and start times |
 | Trial | Opaque ID, experiment parameters, current status |
-| Run | Trial, region, W&B ID, checkpoint root, status, winner flag, `run_progress` high-water state, stall clock |
-| Dispatch | Immutable attempt, run, Iris ID, actual TPU slice and chips, priority, redacted command, submission and end state |
+| Run | Trial, region, W&B ID, checkpoint root, status, winner flag, `run_progress` high-water state, regional progress clock |
+| Dispatch | Immutable attempt, run, Iris ID, actual TPU slice and chips, priority, redacted command, submission, progress clock, and end state |
 | Observation | UTC time, run and dispatch, W&B state, `run_progress`, and binary Iris running state |
 | Event | UTC time, kind, associated identities, concise evidence |
 
@@ -45,18 +45,17 @@ action history; it does not own transient rankings or duplicate the Operations
 
 The model supports these recurring queries:
 
-- **Placement:** `target_rate` is derived for each `(region, slice, chips)` across
-  the sweep from immutable dispatch intervals and non-overlapping `run_progress`
-  high-water increases. Zero-progress and pre-W&B dispatches still contribute wall
-  time. Rankings are recomputed, not persisted as policy.
-- **Stalls:** the clock begins at the most recent `run_progress` high-water increase,
-  or at the first dispatch submission before any increase. Restarts and reslices
-  preserve that history.
+- **Placement:** each target combines historical `target_rate` with current productive
+  and pending dispatch counts. Rates include zero-progress and pre-W&B wall time;
+  rankings remain ephemeral.
+- **Recovery:** a dispatch clock begins at submission or its latest progress. The
+  regional clock begins at first submission or the regional run's latest progress;
+  same-region replacements preserve it.
 - **Liveness:** the latest observation attributed to the active dispatch establishes
   its W&B state and progress; its Iris flag answers only whether it is running.
 - **Accounting:** active dispatch placement yields submitted chips; that dispatch's
   W&B state separates submitted chips from chips currently training.
-- **Recovery:** attempt history, end state, failure events, and placement make
+- **Failures:** attempt history, end state, failure events, and placement make
   isolated retries and correlated failures distinguishable.
 - **Racing and completion:** run high-water progress, winner state, and
   checkpoint verification identify race winners and completed trials.
@@ -70,13 +69,13 @@ again after recording fresh observations to support decisions:
 
 ```bash
 uv run .agents/skills/run-training-sweep/scripts/persistence.py \
-  snapshot scratch/<sweep>/expXXX_sweep.sqlite
+  snapshot scratch/<sweep>/expXXX_sweep.sqlite --reslice-after-hours <hours>
 ```
 
-The JSON includes every unfinished trial and its runs, current dispatches, latest
-observations and deltas, stall clocks, actionable conditions, fleet accounting,
-placement aggregates, event counts, and a bounded recent-event window. Coverage
-counts make omitted completed trials and older events explicit.
+The JSON includes every unfinished trial and its runs, current dispatches, regional
+and dispatch progress clocks, latest observations, target rates and current
+productive/pending counts, fleet accounting, actionable conditions, event counts,
+and a bounded recent-event window. Coverage counts expose omitted stable history.
 
 The snapshot is read-only and ephemeral. It summarizes history inside SQLite; it
 does not become another status file or durable report. Query raw rows only to

@@ -279,11 +279,16 @@ def _structural_errors(path: Path) -> list[str]:
     return errors
 
 
-def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
+def _build_snapshot(
+    path: Path, recent_event_limit: int, reslice_after_hours: float
+) -> dict[str, object]:
     if recent_event_limit < 0:
         raise RuntimeError("recent event limit must be nonnegative")
+    if reslice_after_hours <= 0:
+        raise RuntimeError("reslice-after hours must be positive")
 
     snapshot_at = datetime.now(timezone.utc)
+    reslice_after_seconds = reslice_after_hours * 3600
     with _connect(path) as connection:
         connection.row_factory = sqlite3.Row
         trials = list(connection.execute("SELECT * FROM trials ORDER BY trial_id"))
@@ -356,6 +361,24 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
         )
     for run_observations in observations_by_run.values():
         run_observations.sort(key=lambda item: (item[1], item[0]["observation_id"]))
+
+    progress_by_dispatch: dict[str, float] = defaultdict(float)
+    first_progress_at_by_dispatch: dict[str, datetime] = {}
+    last_progress_at_by_dispatch: dict[str, datetime] = {}
+    for run_observations in observations_by_run.values():
+        progress_high_water = 0.0
+        for observation, observed_at in run_observations:
+            progress = observation["run_progress"]
+            if progress is None or progress <= progress_high_water:
+                continue
+            progress_delta = progress - progress_high_water
+            progress_high_water = progress
+            dispatch_id = observation["dispatch_id"]
+            if dispatch_id is None:
+                continue
+            progress_by_dispatch[dispatch_id] += progress_delta
+            first_progress_at_by_dispatch.setdefault(dispatch_id, observed_at)
+            last_progress_at_by_dispatch[dispatch_id] = observed_at
 
     completed_trial_ids = {
         trial["trial_id"]
@@ -467,6 +490,13 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
             ]
             if active_observations:
                 active_latest_row, active_latest_at = active_observations[-1]
+            active_last_progress_at = last_progress_at_by_dispatch.get(
+                active_dispatch["dispatch_id"]
+            )
+            dispatch_stall_since = active_last_progress_at or submitted_at
+            dispatch_stall_seconds = (
+                snapshot_at - dispatch_stall_since
+            ).total_seconds()
             active_dispatch_snapshot = {
                 "dispatch_id": active_dispatch["dispatch_id"],
                 "attempt": active_dispatch["attempt"],
@@ -475,6 +505,17 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
                 "chips": active_dispatch["chips"],
                 "submitted_at": active_dispatch["submitted_at"],
                 "age_seconds": round((snapshot_at - submitted_at).total_seconds(), 3),
+                "last_progress_at": (
+                    None
+                    if active_last_progress_at is None
+                    else active_last_progress_at.isoformat()
+                ),
+                "stall_since": dispatch_stall_since.isoformat(),
+                "stall_seconds": round(dispatch_stall_seconds, 3),
+                "recent_progress": (
+                    active_last_progress_at is not None
+                    and dispatch_stall_seconds <= reslice_after_seconds
+                ),
                 "latest_observation": (
                     None
                     if active_latest_row is None or active_latest_at is None
@@ -600,22 +641,6 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
             }
         )
 
-    progress_by_dispatch: dict[str, float] = defaultdict(float)
-    first_progress_at_by_dispatch: dict[str, datetime] = {}
-    for run_observations in observations_by_run.values():
-        progress_high_water = 0.0
-        for observation, observed_at in run_observations:
-            progress = observation["run_progress"]
-            if progress is None or progress <= progress_high_water:
-                continue
-            progress_delta = progress - progress_high_water
-            progress_high_water = progress
-            dispatch_id = observation["dispatch_id"]
-            if dispatch_id is None:
-                continue
-            progress_by_dispatch[dispatch_id] += progress_delta
-            first_progress_at_by_dispatch.setdefault(dispatch_id, observed_at)
-
     placement_groups: dict[tuple[str, str, int], dict[str, object]] = {}
     for dispatch in dispatches:
         run = run_by_id[dispatch["regional_run_id"]]
@@ -668,6 +693,9 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
                 "dispatch_count": 0,
                 "dispatches_with_progress": 0,
                 "zero_progress_dispatches": 0,
+                "active_dispatches": 0,
+                "productive_dispatches": 0,
+                "pending_dispatches": 0,
                 "total_progress": 0.0,
                 "total_wall_time_seconds": 0.0,
                 "first_progress_seconds": [],
@@ -682,6 +710,19 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
             group["zero_progress_dispatches"] += 1
         if first_progress_seconds is not None:
             group["first_progress_seconds"].append(first_progress_seconds)
+        if dispatch["active"]:
+            group["active_dispatches"] += 1
+            last_progress_at = last_progress_at_by_dispatch.get(
+                dispatch["dispatch_id"]
+            )
+            if (
+                last_progress_at is not None
+                and (snapshot_at - last_progress_at).total_seconds()
+                <= reslice_after_seconds
+            ):
+                group["productive_dispatches"] += 1
+            else:
+                group["pending_dispatches"] += 1
 
     placement_snapshots: list[dict[str, object]] = []
     for group in placement_groups.values():
@@ -740,6 +781,7 @@ def _build_snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
 
     return {
         "snapshot_at_utc": snapshot_at.isoformat(),
+        "reslice_after_seconds": reslice_after_seconds,
         "coverage": {
             "trials_total": len(trials),
             "unfinished_trials_included": len(trial_snapshots),
@@ -784,17 +826,19 @@ def check(path: Path) -> list[str]:
     if errors:
         return errors
     try:
-        _build_snapshot(path, recent_event_limit=0)
+        _build_snapshot(path, recent_event_limit=0, reslice_after_hours=1)
     except (RuntimeError, sqlite3.Error) as error:
         errors.append(f"semantic_check: {error}")
     return errors
 
 
-def snapshot(path: Path, recent_event_limit: int) -> dict[str, object]:
+def snapshot(
+    path: Path, recent_event_limit: int, reslice_after_hours: float = 1
+) -> dict[str, object]:
     errors = _structural_errors(path)
     if errors:
         raise RuntimeError("; ".join(errors))
-    return _build_snapshot(path, recent_event_limit)
+    return _build_snapshot(path, recent_event_limit, reslice_after_hours)
 
 
 def main() -> int:
@@ -818,6 +862,7 @@ def main() -> int:
     snapshot_parser = subparsers.add_parser("snapshot")
     snapshot_parser.add_argument("database", type=Path)
     snapshot_parser.add_argument("--recent-events", type=int, default=20)
+    snapshot_parser.add_argument("--reslice-after-hours", type=float, default=1)
 
     args = parser.parse_args()
     if args.command == "init":
@@ -845,7 +890,9 @@ def main() -> int:
         return 0
     if args.command == "snapshot":
         try:
-            result = snapshot(args.database, args.recent_events)
+            result = snapshot(
+                args.database, args.recent_events, args.reslice_after_hours
+            )
         except (RuntimeError, sqlite3.Error) as error:
             print(f"ERROR: {error}")
             return 1

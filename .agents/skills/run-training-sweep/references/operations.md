@@ -33,8 +33,9 @@ regions and TPU families, exclusions, priority band, and document location.
 
 ## Operating Policy
 
-State the observation cadence, restart/reslice/relocate rules, placement logic,
-isolated/systemic failure handling, regional racing rules, and completion behavior.
+State `heartbeat_every`, `reslice_after`, `restart_after`, `relocate_after`, and
+`pending_target_limit`; isolated/systemic failure handling; regional racing; and
+completion behavior.
 
 Maintain the authoritative target grid here:
 
@@ -49,7 +50,9 @@ only for `ineligible` targets and names that restriction.
 
 Keep every considered region and slice visible. Only `eligible` targets may be
 dispatched. A trial-specific failure does not make a target globally ineligible. A
-verified Iris `unschedulable` result makes only its exact target ineligible.
+verified invalid-target result, including Iris `unschedulable`, makes only its exact
+target ineligible. Treat `unschedulable` on a previously working target as an anomaly
+to investigate rather than routine grid pruning.
 
 ## Change Record
 

@@ -20,10 +20,10 @@ For example, `0.12` progress across eight dispatch-hours gives a `target_rate` o
 `0.015` progress per hour, including any zero-progress time in those eight hours.
 
 The persistence helper calculates one rate per `(region, slice, chips)` across the
-sweep. Use the emitted value; do not reconstruct it with routine SQL. Rank eligible
-targets by `target_rate`, higher first, and recompute every heartbeat. Never normalize
-by chip count. Other accounting may explain the rate but does not replace it for
-placement.
+sweep. Use the emitted value; do not reconstruct it with routine SQL. Recompute every
+heartbeat and prefer a higher rate when other evidence is comparable, but combine it
+with current target progress, pending headroom, and agent judgment. Never normalize
+by chip count.
 
 For fleet progress under regional racing, use the maximum regional `run_progress`
 for each logical trial. Do not sum replicas.
@@ -31,8 +31,9 @@ for each logical trial. Do not sum replicas.
 ## Determine Liveness
 
 - `training now`: W&B state is `running`.
-- `making progress`: the `run_progress` high-water mark increased.
-- `stalled`: time since the last progress exceeds its current threshold.
+- `recent progress`: the `run_progress` high-water mark increased within
+  `reslice_after`.
+- `pending`: the current dispatch has not made progress within `reslice_after`.
 - Iris running: the dispatch may execute; never proof of training.
 
 Completion requires `run_progress >= 1` and a reachable expected checkpoint.
@@ -48,8 +49,8 @@ Always include:
 - **Control context:** UTC observation time.
 - **Fleet accounting:** submitted dispatches and chips, W&B-running regional runs
   and chips, and the gap between submitted and training capacity.
-- **Trial accounting:** counts of complete, progressing, stalled, and not-yet-running
-  trials. Identify the affected trials, not only aggregate counts.
+- **Trial accounting:** counts of complete, recently progressing, pending, and
+  not-yet-running trials. Identify affected trials, not only aggregate counts.
 - **Active progress:** for each live or recently active regional run, give trial,
   region, slice, W&B state, current and high-water `run_progress`, change since the
   prior heartbeat, and time since the last increase.
@@ -59,9 +60,9 @@ Always include:
 - **Recovery:** every failed, stalled, or unregistered run; whether failures appear
   isolated or systemic; its time since progress; the next restart/reslice/relocate
   threshold; and the action due.
-- **Placement evidence:** which targets are producing progress, which have produced
-  zero progress, their `target_rate` and time to first progress when
-  known, and any eligibility or regional-input blocker affecting the next placement.
+- **Placement evidence:** each relevant target's productive and pending dispatches,
+  `target_rate`, time to first progress when known, and any eligibility or regional
+  input blocker affecting the next placement.
 - **Next check:** a specific UTC time backed by a scheduled trigger, plus the actions
   expected if progress remains unchanged.
 

@@ -5,7 +5,7 @@ import copy
 import importlib.util
 import sqlite3
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import ModuleType
 
@@ -153,6 +153,9 @@ def test_target_rate_pools_trials_and_zero_progress_time(tmp_path: Path) -> None
             "dispatch_count": 2,
             "dispatches_with_progress": 1,
             "zero_progress_dispatches": 1,
+            "active_dispatches": 0,
+            "productive_dispatches": 0,
+            "pending_dispatches": 0,
             "total_progress": 0.12,
             "total_wall_time_seconds": 10800.0,
             "target_rate": 0.04,
@@ -228,6 +231,40 @@ def test_replacement_uses_only_its_own_observations(tmp_path: Path) -> None:
     }
     assert progress_by_slice == {"v5p-8": 0.2, "v5p-16": 0.1}
     assert after["fleet"]["wandb_running_chips"] == 16
+
+
+def test_snapshot_classifies_current_target_headroom(tmp_path: Path) -> None:
+    database = tmp_path / "sweep.sqlite"
+    persistence.init(database)
+    now = datetime.now(UTC)
+    old = (now.replace(microsecond=0) - timedelta(hours=2)).isoformat()
+    recent = (now.replace(microsecond=0) - timedelta(minutes=30)).isoformat()
+    with sqlite3.connect(database) as connection:
+        _insert_trial_run(connection, "trial-1", "run-1", "wandb-1", 0.1)
+        _insert_trial_run(connection, "trial-2", "run-2", "wandb-2", 0.0)
+        _insert_dispatch(
+            connection, "dispatch-1", "run-1", 1, "v5p-8", 8, old, None
+        )
+        _insert_dispatch(
+            connection, "dispatch-2", "run-2", 1, "v5p-8", 8, old, None
+        )
+        _insert_observation(connection, "run-1", "dispatch-1", recent, 0.1, True)
+        _insert_observation(connection, "run-2", "dispatch-2", recent, 0.0, True)
+
+    result = persistence.snapshot(database, recent_event_limit=0)
+    placement = result["placements"][0]
+
+    assert placement["active_dispatches"] == 2
+    assert placement["productive_dispatches"] == 1
+    assert placement["pending_dispatches"] == 1
+    assert result["runs"][0]["active_dispatch"]["recent_progress"] is True
+    assert result["runs"][1]["active_dispatch"]["recent_progress"] is False
+
+    shorter_window = persistence.snapshot(
+        database, recent_event_limit=0, reslice_after_hours=0.25
+    )["placements"][0]
+    assert shorter_window["productive_dispatches"] == 0
+    assert shorter_window["pending_dispatches"] == 2
 
 
 def test_check_and_snapshot_reject_the_same_semantic_error(tmp_path: Path) -> None:

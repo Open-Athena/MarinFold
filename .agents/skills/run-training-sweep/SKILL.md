@@ -53,10 +53,10 @@ Investigate utilization failures when useful, but continue without that hint.
 
 ```mermaid
 flowchart TD
-    A["Initialize, validate, and dispatch"] --> B["Refresh context and state"]
+    A["Initialize, validate, and dispatch"] --> B["Refresh context and inventory"]
     B --> C["Observe, reconcile, decide, and act"]
     C --> D{"Finished or time limit reached?"}
-    D -- "No" --> E["Record, report, and schedule the next pass"]
+    D -- "No" --> E["Report and schedule the next pass"]
     E --> B
     D -- "Yes" --> F["Stop, verify, and summarize"]
 ```
@@ -75,11 +75,10 @@ Ask only for missing information. Offer the recommended answer first.
    otherwise allowed regions. Accept plain-English scopes or exclusions such as
    “training chips only,” “4–16-chip inference TPUs in `euw4`,” or “32+-chip
    TPUs in any region.”
-5. **Stall recovery timing.** Recommend `3h / 12h / 4d`: after no W&B
-   progress for 3 hours, restart the same target; after 12 hours, try another
-   slice in the same region; after 4 days, start separately in another region.
-   Explain that only W&B progress resets the stall timer and ask whether to use these
-   defaults.
+5. **Sweep timing.** Recommend `heartbeat_every=30m`, `reslice_after=1h`,
+   `restart_after=12h`, and `relocate_after=3d`. Explain that they define the major
+   scheduled behavior to expect and should remain unchanged without a concrete
+   reason. Ask whether to use the defaults.
 
 Create the document from [operations.md](references/operations.md). Default to
 `scratch/<sweep>/expXXX_operations.md`; offer a tracked experiment-side file only
@@ -106,30 +105,30 @@ monitor, dispatcher, scheduled loop, or recovery script.
 
 At every heartbeat:
 
-1. **Refresh:** reread Operations in full, inspect the current experiment and needed
-   helpers, and rebuild the SQLite inventory snapshot. Do not rely on prior context.
-2. **Observe and reconcile:** query W&B first and use Iris only as allowed by
-   [execution.md](references/execution.md). Persist current observations before acting.
-3. **Assess:** rebuild the decision snapshot, then evaluate the whole sweep using
-   [execution.md](references/execution.md) and [throughput.md](references/throughput.md).
-4. **Act or wait:** before any submission, apply the mandatory placement-diversity
-   gate in [execution.md](references/execution.md). Perform justified actions, state a
-   no-change reason, or pause affected work and request a decision when no safe
-   authorized action remains.
-5. **Record, report, and schedule:** persist every action result, report the heartbeat
-   in session chat, and, as the final action, schedule exactly one next pass with a
-   time-based trigger such as `CronTask`. Never rely on event-based monitoring.
+1. **Refresh context and inventory:** enter from authoritative state, not memory.
+   Reread Operations and relevant code, then build the inventory snapshot.
+2. **Observe, reconcile, decide, and act:** establish what is progressing before
+   changing anything. Query W&B first, use Iris only as allowed, persist observations,
+   and rebuild the decision snapshot. Protect recent progress, resolve exceptions,
+   reconsider every dispatch, and coordinate one fleet plan with
+   [execution.md](references/execution.md). Persist each result and revise the plan
+   when an action changes material facts.
+3. **Finish or continue:** if finished or out of time, stop, verify, and summarize.
+   Otherwise report in chat and schedule exactly one next pass for
+   `heartbeat_every`, using a time-based trigger such as `CronTask`. Never rely on
+   event-based monitoring.
 
-Build both snapshots with:
+Build the inventory and decision snapshots with:
 
 ```bash
 uv run .agents/skills/run-training-sweep/scripts/persistence.py \
-  snapshot scratch/<sweep>/expXXX_sweep.sqlite
+  snapshot scratch/<sweep>/expXXX_sweep.sqlite --reslice-after-hours <hours>
 ```
 
-The snapshot is an ephemeral, decision-complete projection, not another status
-record. It must cover every unfinished trial and actionable condition while
-summarizing stable history. Query raw history only when a decision needs it.
+Rebuild after material actions when needed. A snapshot is an ephemeral,
+decision-complete projection, not another status record. It covers every unfinished
+trial and actionable condition while summarizing stable history. Query raw history
+only for a specific decision.
 
 ## Finish
 

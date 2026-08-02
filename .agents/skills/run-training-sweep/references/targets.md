@@ -15,6 +15,6 @@ TPUs in any region.” Resolve terms such as training and inference from current
 pool definitions, not TPU-family assumptions. Show the interpretation when it is
 ambiguous.
 
-Add every candidate to Operations as `unvalidated`. Validation alone changes target
-eligibility. Fleet utilization and measured throughput rank eligible targets; they
-never define or narrow the candidate grid.
+Add every candidate to Operations as `unvalidated`. Only validation or a verified
+invalid-target result changes eligibility. Fleet utilization and measured throughput
+rank eligible targets; they never define or narrow the candidate grid.
