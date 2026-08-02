@@ -13,6 +13,7 @@ and the training process serves examples from a bounded in-memory shard cache.
 
 import asyncio
 import multiprocessing as mp
+import os
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor
@@ -39,6 +40,10 @@ class MPQueueShardDatasetStats:
 
 def _build_shard_in_worker(builder: ShardBuilder[Example], epoch: int, shard_index: int) -> tuple[Example, ...]:
     return tuple(builder(epoch, shard_index))
+
+
+def _worker_pid() -> int:
+    return os.getpid()
 
 
 class MPQueueShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
@@ -127,7 +132,10 @@ class MPQueueShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
 
     def start_workers(self) -> None:
         """Start worker processes before accelerator/JAX initialization."""
-        self._pool()
+        pool = self._pool()
+        futures = [pool.submit(_worker_pid) for _ in range(self.transform_workers)]
+        for future in futures:
+            future.result()
 
     def close(self) -> None:
         """Stop worker processes and drop pending futures."""
