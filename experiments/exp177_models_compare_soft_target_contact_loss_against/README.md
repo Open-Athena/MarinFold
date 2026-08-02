@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 177
   title: 'exp: compare soft-target contact loss against next-token CE on TPUs'
   kind: models
-  branch: exp176/soft-target-loss-h2h
+  branch: exp177/mp-queue-shard-dataset
 ---
 
 # exp: compare soft-target contact loss against next-token CE on TPUs
 
-**Issue:** [#177](https://github.com/Open-Athena/MarinFold/issues/177) · **Kind:** `models` · **Branch:** `exp176/soft-target-loss-h2h`
+**Issue:** [#177](https://github.com/Open-Athena/MarinFold/issues/177) · **Kind:** `models` · **Branch:** `exp177/mp-queue-shard-dataset`
 
 ## Question
 
