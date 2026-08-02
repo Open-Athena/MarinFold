@@ -3,20 +3,13 @@
 
 """Shared library code for MarinFold model-training experiments.
 
-The core export is :func:`build_train_lm_on_pod_config` — a StepContext-free
-builder that assembles a concrete ``TrainLmOnPodConfig`` for a training run,
-modelled on modern marin's ``marin.experiment.train.train_lm`` but returning a
-plain config the caller submits itself (so experiments can dispatch at iris
-**batch** priority; see exp108). ``SimpleTrainConfig`` is kept as a MarinFold
-convenience container but is no longer required by the builder.
-
-Experiments under ``experiments/exp<N>_models_<name>/`` import these so each one
-does not have to re-vendor the marin training plumbing.
+This package intentionally keeps top-level imports lazy. Some helpers depend on
+fast-moving Marin/Levanter training APIs, while lightweight submodules such as
+``marinfold_models.document_loss`` should remain importable without importing the
+whole training stack.
 """
 
-from marinfold_models.defaults import MARIN_PRECISION, build_train_lm_on_pod_config
-from marinfold_models.mp_queue_shard_dataset import MPQueueShardDatasetStats, MPQueueShardDocumentDataset
-from marinfold_models.simple_train_config import SimpleTrainConfig
+from typing import Any
 
 __all__ = [
     "MARIN_PRECISION",
@@ -25,3 +18,19 @@ __all__ = [
     "SimpleTrainConfig",
     "build_train_lm_on_pod_config",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in {"MARIN_PRECISION", "build_train_lm_on_pod_config"}:
+        from marinfold_models import defaults
+
+        return getattr(defaults, name)
+    if name in {"MPQueueShardDatasetStats", "MPQueueShardDocumentDataset"}:
+        from marinfold_models import mp_queue_shard_dataset
+
+        return getattr(mp_queue_shard_dataset, name)
+    if name == "SimpleTrainConfig":
+        from marinfold_models.simple_train_config import SimpleTrainConfig
+
+        return SimpleTrainConfig
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
