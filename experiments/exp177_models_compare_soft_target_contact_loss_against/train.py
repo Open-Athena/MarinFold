@@ -11,6 +11,7 @@ import os
 from datetime import timedelta
 from enum import StrEnum
 
+import draccus.encode
 import jmp
 from fray.types import ResourceConfig, get_tpu_topology, tpu_family, tpu_hbm_capacity_bytes
 from haliax import Axis
@@ -51,6 +52,9 @@ from premade_contacts_dataset import (
     FixedQuotaSoftTargetContactsDataset,
     MPFixedQuotaPremadeContactsDataset,
 )
+
+
+draccus.encode.register(MPFixedQuotaPremadeContactsDataset, lambda obj, decl_type=None: repr(obj))
 
 logger = logging.getLogger(__name__)
 
@@ -266,9 +270,10 @@ def _start_direct_dataset_workers(config: TrainLmConfig) -> None:
         datasets = getattr(component, "datasets", None)
         if not datasets:
             continue
-        for dataset in datasets.values():
+        for split, dataset in datasets.items():
             start_workers = getattr(dataset, "start_workers", None)
             if start_workers is not None:
+                logger.info("Starting direct dataset workers for component=%s split=%s dataset=%r", component, split, dataset)
                 start_workers()
 
 
