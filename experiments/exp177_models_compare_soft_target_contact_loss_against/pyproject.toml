@@ -64,5 +64,5 @@ explicit = true
 resiliparse = { index = "marin-resiliparse" }
 torch = [{ index = "pytorch-cpu", extra = "cpu" }]
 torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
-marinfold = { path = "../../marinfold", editable = true }
-marinfold-models = { path = "../../models", editable = true }
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "exp177/mp-queue-shard-dataset" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "exp177/mp-queue-shard-dataset" }
