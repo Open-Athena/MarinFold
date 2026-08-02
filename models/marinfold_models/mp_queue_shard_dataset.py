@@ -17,7 +17,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import numpy as np
 from levanter.data.dataset import AsyncDataset
@@ -138,7 +138,12 @@ class MPQueueShardDocumentDataset(AsyncDataset[Example], Generic[Example]):
             executor.shutdown(wait=False, cancel_futures=True)
 
     def __del__(self):
-        self.close()
+        if hasattr(self, "_executor"):
+            self.close()
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> str:
+        """Represent this live dataset inertly during hparam logging."""
+        return repr(self)
 
     def _get_batch_sync(self, indices: tuple[int, ...]) -> list[Example]:
         locations = [self.location_for_index(index) for index in indices]
