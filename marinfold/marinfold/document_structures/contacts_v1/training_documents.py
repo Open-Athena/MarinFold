@@ -86,12 +86,13 @@ def build_contact_training_document(
 
 def causal_document_from_generation(generation: GenerationResult) -> Document:
     """Strictly encode a canonical generated document under contacts-v1."""
-    if len(generation.tokens) != generation.num_tokens:
+    tokens = VOCABULARY.encode(generation.document.split())
+    if len(tokens) != generation.num_tokens:
         raise ValueError(
-            f"Encoded {len(generation.tokens)} ids for "
+            f"Encoded {len(tokens)} ids for "
             f"{generation.num_tokens} contacts-v1 tokens"
         )
-    return causal_training_document((*generation.tokens, EOS))
+    return causal_training_document((*tokens, EOS))
 
 
 def _endpoint_tokens(contact: EmittedContact) -> tuple[Token, Token]:
