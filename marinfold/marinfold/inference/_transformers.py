@@ -29,6 +29,8 @@ import torch
 from transformers import AutoModelForCausalLM
 from transformers.cache_utils import DynamicCache
 
+from marinfold.inference._config import load_config as _load_config
+
 # Re-exported for backward compatibility: the shared loader used to live
 # here. Tests and callers may still import it from this module.
 from marinfold.inference._tokenizer import load_tokenizer as _load_tokenizer
@@ -94,8 +96,14 @@ class TransformersBackend:
         self._tail_batch_size = tail_batch_size
         torch_dtype = _resolve_dtype(dtype)
         self._tokenizer = _load_tokenizer(model_path)
+        # Pass the config explicitly rather than letting from_pretrained read
+        # it: a transformers-5 export states rope as `rope_parameters`, which
+        # our pinned transformers 4.x silently ignores in favour of the
+        # architecture default (theta 10000, no scaling). See _config.
         self._model = (
-            AutoModelForCausalLM.from_pretrained(str(model_path), dtype=torch_dtype)
+            AutoModelForCausalLM.from_pretrained(
+                str(model_path), config=_load_config(model_path), dtype=torch_dtype
+            )
             .to(self._device)
             .eval()
         )
