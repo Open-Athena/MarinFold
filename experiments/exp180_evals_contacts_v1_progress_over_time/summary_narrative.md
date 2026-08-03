@@ -76,6 +76,28 @@ A third recipe, oracle best-of-100, is a diagnostic upper bound, not a
 deployable score (see Results so far) — it never enters the "best model
 trained to date" frontier line or headline labelling, only its own marker.
 
+## Per-protein comparison with Protenix-v2
+
+Over the 554 proteins, MarinFold #117 scores 0.534. Protenix-v2 single-sequence
+scores 0.603 (paired difference -0.069, MarinFold higher on 33%). Protenix-v2
+with MSAs scores 0.812 (paired difference -0.277, MarinFold higher on 7%).
+
+## The two baselines trend opposite ways with length
+
+Against single-sequence Protenix the gap narrows with length and changes sign
+in the > 400 bin: -0.116 below 100 residues, +0.080 above 400.
+
+Against MSA Protenix it widens: -0.205 below 100 residues, -0.512 above 400.
+MarinFold does not win a single protein above 400 residues in that comparison.
+
+The reason is in the marginals. MarinFold declines with length (0.55 to 0.35)
+and single-sequence Protenix declines faster (0.66 to 0.27), while MSA Protenix
+improves with length (0.75 to 0.86).
+
+So "MarinFold holds up better on long proteins" is about the single-sequence
+baseline only, it is a shallower decline rather than absolute strength, and
+that bin holds 17 proteins either way.
+
 ## Open gap
 
 #108's 3B on CoreWeave held the loss frontier from 2026-07-11 to 07-16 at
