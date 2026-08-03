@@ -122,6 +122,7 @@ from refine_ft_common import (
     INIT_FROM_LEVANTER,
     LR_SCHEDULE,
     PROTEIN_RESOURCES_H100,
+    PROTEIN_RESOURCES_TPU,
     REFINEMENT_TOKENIZED_GLOB,
     SEQ_LEN,
     TRAIN_BATCH,
@@ -137,6 +138,30 @@ logger = logging.getLogger(__name__)
 # maps JobRequest.priority (int) straight to the iris band (iris_backend.submit():
 # priority_band=request.priority).
 IRIS_PRIORITY_BAND_BATCH = 3
+IRIS_PRIORITY_BAND_INTERACTIVE = 0
+
+
+def _device_label(resources, replicas: int) -> str:
+    """Human-readable device string for the launch banner (GPU count or TPU type)."""
+    dev = getattr(resources, "device", None)
+    variant = getattr(dev, "variant", None) or getattr(dev, "tpu_type", None)
+    count = getattr(dev, "count", None)
+    if count:                                  # GpuConfig
+        return f"{replicas * count} {variant}/run"
+    return f"{variant} x{replicas}/run"        # TpuConfig
+
+
+def priority_band() -> int:
+    """Batch on CoreWeave GPUs (#108's hard requirement); interactive on marin TPU.
+
+    Not an inconsistency: the bands mean different things in the two pools. On
+    CoreWeave, batch keeps long training runs from displacing interactive work. On the
+    marin v5p pool, nearly everything IS interactive, so a batch job simply never gets
+    scheduled and never signals demand to the autoscaler.
+    """
+    if os.environ.get("EXP163_DEVICE", "gpu").lower() == "tpu":
+        return IRIS_PRIORITY_BAND_INTERACTIVE
+    return IRIS_PRIORITY_BAND_BATCH
 
 # Fail loudly on the frozen 0.99.dev fray, whose JobRequest has no `priority` field,
 # so `priority=3` would be silently dropped -> interactive band (which would disrupt
@@ -292,7 +317,7 @@ def build_request(
         resources=resources,                 # with_gpu("H100", count=8)
         environment=environment,
         replicas=replicas,                   # nodes in the gang
-        priority=IRIS_PRIORITY_BAND_BATCH,   # -> iris BATCH band (the whole point)
+        priority=priority_band(),            # CoreWeave: BATCH (#108). TPU: interactive.
         processes_per_task=1,                # one JAX process driving all 8 local GPUs
         max_retries_failure=max_retries_failure,
     )
@@ -309,9 +334,16 @@ def main() -> None:
 
     replicas = int(os.environ.get("EXP163_REPLICAS", "1"))
     assert 1 <= replicas <= 4, f"EXP163_REPLICAS must be in [1, 4], got {replicas}"
-    resources = PROTEIN_RESOURCES_H100
+    # EXP163_DEVICE=tpu switches the gang to the marin v5p pool. The priority band
+    # flips WITH it, deliberately and in the opposite direction to the CoreWeave rule:
+    # the v5p pool is dominated by other people's *interactive* jobs, so a batch-band
+    # TPU job yields indefinitely on "Insufficient TPUs (need N, available 0)" and
+    # registers no autoscaler demand. Interactive is correct for a bounded run there.
+    # On CoreWeave the batch band remains mandatory (#108).
+    device = os.environ.get("EXP163_DEVICE", "gpu").lower()
+    resources = PROTEIN_RESOURCES_TPU if device == "tpu" else PROTEIN_RESOURCES_H100
     if replicas != 1:
-        resources = dataclasses.replace(PROTEIN_RESOURCES_H100, replicas=replicas)
+        resources = dataclasses.replace(resources, replicas=replicas)
 
     # W&B routing — the pod does NOT inherit the launcher's shell, so forward the key
     # from the driver env (set at launch with `-e WANDB_API_KEY <key>`). Never hard-coded.
@@ -340,7 +372,7 @@ def main() -> None:
         f"[exp163] refiner fine-tune (direct batch dispatch): "
         f"LRs={[_lr_tag(lr) for lr in lrs]} wd={WEIGHT_DECAY} warmup={WARMUP} "
         f"sched={LR_SCHEDULE} batch={TRAIN_BATCH} seq={SEQ_LEN} "
-        f"replicas={replicas} ({replicas * 8} H100/run) | "
+        f"replicas={replicas} ({_device_label(resources, replicas)}) | "
         f"{spe} steps/epoch x {epochs} epoch(s) = {spe * epochs} steps"
         + (f" (capped to {num_train_steps} for smoke)" if _max_steps else "")
         + f" | {len(lrs) * len(_arms())} job(s)\n"
@@ -400,7 +432,8 @@ def main() -> None:
         job = client.submit(req)
         handles.append((req.name, job))
         print(f"[exp163] submitted {req.name} (job_id={job.job_id})", flush=True)
-    print(f"[exp163] submitted {len(handles)} gang(s) at iris batch priority; awaiting completion.")
+    band = "batch" if priority_band() == IRIS_PRIORITY_BAND_BATCH else "interactive"
+    print(f"[exp163] submitted {len(handles)} gang(s) at iris {band} priority; awaiting completion.")
 
     # Wait for every gang, reporting per-run status WITHOUT aborting siblings on one
     # failure. Fail the driver at the end if any run did not succeed (visible in iris).

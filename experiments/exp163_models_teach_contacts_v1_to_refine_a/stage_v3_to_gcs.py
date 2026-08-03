@@ -146,17 +146,43 @@ def stage_data(src: str, dst: str) -> None:
     print(f"[stage] data done -> {dst}", flush=True)
 
 
+def mirror(src_glob: str, dst: str) -> None:
+    """Copy an arbitrary S3 glob to a GCS prefix, preserving basenames.
+
+    Used for the contacts-v1 val split, which the TPU training run needs on GCS
+    (the marin pods cannot see CoreWeave S3).
+    """
+    s3, gcs = _s3(), _gcs()
+    pat = _strip(src_glob)
+    files = sorted(s3.glob(pat))
+    if not files:
+        raise SystemExit(f"no objects matched {src_glob}")
+    D = _strip(dst)
+    print(f"[stage] mirror {len(files)} object(s) -> {dst}", flush=True)
+    for n, f in enumerate(files):
+        with s3.open(f, "rb") as fh:
+            blob = fh.read()
+        with gcs.open(f"{D}/{f.rsplit('/', 1)[-1]}", "wb") as fh:
+            fh.write(blob)
+        if (n + 1) % 10 == 0 or n + 1 == len(files):
+            print(f"[stage]   {n+1}/{len(files)}", flush=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--model-src")
     ap.add_argument("--model-dst")
     ap.add_argument("--data-src")
     ap.add_argument("--data-dst")
+    ap.add_argument("--mirror-src", help="arbitrary S3 glob to copy verbatim")
+    ap.add_argument("--mirror-dst")
     a = ap.parse_args()
     if a.model_src:
         stage_model(a.model_src, a.model_dst)
     if a.data_src:
         stage_data(a.data_src, a.data_dst)
+    if a.mirror_src:
+        mirror(a.mirror_src, a.mirror_dst)
     print("[stage] ALL DONE", flush=True)
 
 

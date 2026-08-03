@@ -154,15 +154,15 @@ wheels = [
 
 [[package]]
 name = "apache-tvm-ffi"
-version = "0.1.13rc1"
+version = "0.1.13.post0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/22/e0ac7942f6f442886f4f4b8a2a7196407309267566b2fe377c44f7ae881f/apache_tvm_ffi-0.1.13rc1.tar.gz", hash = "sha256:bbece765876cabc0a18396dc72c8c085a30c4c637cf057a2c6402ddb64de58aa", size = 2976419, upload-time = "2026-07-21T07:37:07.054Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/07/79626e43086a49cda2cdc088337b3a0ac5d8a734993a0720fc5be58e688e/apache_tvm_ffi-0.1.13.post0.tar.gz", hash = "sha256:46718a282bbeb8bf0458faedd9767da8eacfa35ef0d295072f960f246086d985", size = 2989525, upload-time = "2026-08-01T02:39:00.999Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/69/6c50610effe897fded3fdb3935448f0044ed09c0286521bd694238dc8b22/apache_tvm_ffi-0.1.13rc1-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:33fa833757f45dd394a86ce6a5695311b6246fe59deec3e5bf595ed0fba44af7", size = 2753498, upload-time = "2026-07-21T07:36:43.968Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/32/92ff78860328ce525f233eab908d1670926eee52ed60479dc632afbbda8d/apache_tvm_ffi-0.1.13rc1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b965b8b35e10ba42e6ff3ce9f5db8c314c045c9f9fe6f5763f8c242ff6a66a57", size = 2949568, upload-time = "2026-07-21T07:36:46.026Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/5a/a6faba6ed4b8e667ed382b06b9670a816e3ead59cb23f9cacded4b806b59/apache_tvm_ffi-0.1.13.post0-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:81b1f7cad78b67d31b5e63750f4ccf118143db47bc2b1617cfb68115d939e1eb", size = 2755757, upload-time = "2026-08-01T02:38:36.757Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/04/a480447a3cc48f065254401646695ca739a1a5a665a812227d2e4c90a0d4/apache_tvm_ffi-0.1.13.post0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:42d089872196c5513724dce677ade5be3f070d8966b609bb3c2f07ff07249728", size = 2956209, upload-time = "2026-08-01T02:38:38.403Z" },
 ]
 
 [[package]]
@@ -642,6 +642,9 @@ cpu = [
 gpu = [
     { name = "marin-core", extra = ["gpu"], marker = "sys_platform == 'linux'" },
 ]
+tpu = [
+    { name = "marin-core", extra = ["tpu"], marker = "sys_platform == 'linux'" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -650,6 +653,7 @@ requires-dist = [
     { name = "marin-core", specifier = ">=0.2.5.dev202606020954,<0.3" },
     { name = "marin-core", extras = ["cpu"], marker = "extra == 'cpu'" },
     { name = "marin-core", extras = ["gpu"], marker = "sys_platform == 'linux' and extra == 'gpu'" },
+    { name = "marin-core", extras = ["tpu"], marker = "extra == 'tpu'" },
     { name = "marin-dupekit", specifier = "<0.3" },
     { name = "marin-iris", extras = ["controller"], specifier = ">=0.2.5.dev202606020954,<0.3" },
     { name = "marin-levanter", specifier = ">=0.2.5.dev202606020954,<0.3" },
@@ -664,7 +668,7 @@ requires-dist = [
     { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cpu'", specifier = "==0.26.0+cpu", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp163-models-teach-contacts-v1-refine", extra = "cpu" } },
     { name = "transformers" },
 ]
-provides-extras = ["gpu", "cpu"]
+provides-extras = ["gpu", "tpu", "cpu"]
 
 [package.metadata.requires-dev]
 dev = []
@@ -1439,6 +1443,14 @@ wheels = [
 ]
 
 [[package]]
+name = "libtpu"
+version = "0.0.41"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/bb/70a97644f2114fe5dff0fb7ac58922e2188b6355a0439ea6ae14358a61d0/libtpu-0.0.41-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:47feeac3cd4cd88c58342c20f3cb3635d1f2d53f8689aa24bbe9690e664629de", size = 211768760, upload-time = "2026-05-13T22:40:22.982Z" },
+]
+
+[[package]]
 name = "marin-core"
 version = "0.2.57.dev202607240800"
 source = { registry = "https://pypi.org/simple" }
@@ -1499,6 +1511,14 @@ gpu = [
     { name = "torchvision", version = "0.26.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' and sys_platform == 'linux'" },
     { name = "torchvision", version = "0.26.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "triton", marker = "sys_platform == 'linux'" },
+]
+tpu = [
+    { name = "jax", marker = "sys_platform == 'linux'" },
+    { name = "jaxlib", marker = "sys_platform == 'linux'" },
+    { name = "libtpu", marker = "sys_platform == 'linux'" },
+    { name = "torch", marker = "sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 
 [[package]]

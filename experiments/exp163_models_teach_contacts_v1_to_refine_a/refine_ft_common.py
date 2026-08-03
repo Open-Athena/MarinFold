@@ -165,6 +165,31 @@ PROTEIN_RESOURCES_H100 = ResourceConfig.with_gpu(
     replicas=1,       # nodes; 1 node = 8 H100.
 )
 
+# ---------------------------------------------------------------------------
+# Device — marin iris TPU (v5p). The CoreWeave H100 *batch* band produced nothing
+# across three days and five submissions (~10h queued unplaced, one mass preemption
+# sweep, one OOM), so training moves to the pool that actually schedules. levanter is
+# JAX-native, so this is a resource + path change, not a code port.
+#
+# ``extras_for_resources`` maps a TpuConfig to the ``tpu`` uv extra automatically, so
+# the pod environment follows from the resource choice.
+#
+# Slice size: EXP163_TPU_TYPE (default v5p-32 = 16 chips). The 1.5B at batch 128 x
+# seq 8192 fits a v5p-8, but a larger slice is both faster and, in this pool, often
+# EASIER to place than it looks -- see the zone note in the writeup.
+# ---------------------------------------------------------------------------
+PROTEIN_RESOURCES_TPU = ResourceConfig.with_tpu(
+    os.environ.get("EXP163_TPU_TYPE", "v5p-16"),
+    slice_count=int(os.environ.get("EXP163_TPU_SLICES", "1")),
+    # REQUIRED. ``with_tpu`` leaves ``regions`` unset, and the scheduler then inferred
+    # ``us-west4`` -- where no v5p groups exist -- so the gang died with
+    # "unschedulable: no groups in region us-west4; did you mean us-east5?" *after*
+    # placing and starting its cache build. Pinning the region is also the right call
+    # for data locality: the corpus, val split and warm-start all live in the
+    # ``marin-us-east5`` bucket, so anything else reads cross-region.
+    regions=(os.environ.get("EXP163_TPU_REGION", "us-east5"),),
+)
+
 TRAIN_COMPONENT_KEY = "refinement-train"
 VAL_COMPONENT_KEY = "contacts-v1-val"
 
@@ -336,6 +361,7 @@ __all__ = [
     "MIN_LR_RATIO",
     "MODEL_CONFIG",
     "PROTEIN_RESOURCES_H100",
+    "PROTEIN_RESOURCES_TPU",
     "REFINEMENT_TOKENIZED_GLOB",
     "SEQ_LEN",
     "TRAIN_BATCH",

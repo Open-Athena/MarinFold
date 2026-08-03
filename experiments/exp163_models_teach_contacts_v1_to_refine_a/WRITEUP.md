@@ -149,9 +149,43 @@ section 0 came from the **marin iris TPU pool** instead. Practical notes:
   `origin/main` with `uv sync --package marin-iris` (873MB) fixes it without touching
   their tree.
 
-**Still blocked:** training the E/F arms. That needs GPUs or a port of the fine-tune to
-marin TPU (`refine_ft_common` currently hardcodes `PROTEIN_RESOURCES_H100`, S3 paths and
-an S3 warm-start).
+### 0.5 The fine-tune is ported to marin TPU (done); awaiting a v5p-16 slot
+
+levanter is JAX-native and every path in `refine_ft_common` was already env-overridable,
+so the port was resources + paths, not a rewrite:
+
+* `PROTEIN_RESOURCES_TPU` (`ResourceConfig.with_tpu`), selected by `EXP163_DEVICE=tpu`;
+  `extras_for_resources` maps `TpuConfig -> ["tpu"]` so the pod env follows automatically;
+* `priority_band()` — **interactive on TPU, batch on CoreWeave**. Not an inconsistency:
+  on CoreWeave batch keeps long runs from displacing interactive work, whereas on the
+  marin v5p pool nearly everything IS interactive, so a batch job never schedules and
+  never signals autoscaler demand;
+* val split mirrored to GCS (22 shards, 0.13GB) — marin pods cannot see CoreWeave S3.
+
+All four documented warm-start-on-TPU traps cleared first try. **Two new ones**, both of
+which cost a launch:
+
+1. **`uv sync --extra tpu` runs against the BUNDLED CWD's pyproject**, i.e. the
+   experiment's — so `tpu = ["marin-core[tpu]"]` has to be declared there even though the
+   dependency is marin's. Otherwise: ``Extra `tpu` is not defined in any project's
+   optional-dependencies table``.
+2. **`ResourceConfig.with_tpu` leaves `regions` unset**, and the scheduler then inferred
+   `us-west4`, where no v5p groups exist. The gang *placed*, started its JAX coordinator
+   and began building the val cache before dying with "unschedulable: no groups in region
+   us-west4" — so it looked healthy for ~15 minutes first. Pin
+   `regions=("us-east5",)`, which is also correct for locality (corpus, val and
+   warm-start all live in `marin-us-east5`).
+
+Blocked only on **capacity**: a v5p-16 (2 hosts) has not placed in ~2.5h, while
+single-host v5p-8 places in minutes. Deliberately NOT dropping to v5p-8 blind — this
+recipe used 94% of the arena on 8xH100 (640GB) and a v5p-8 is 380GB; the usual fix,
+gradient accumulation, would re-normalise the per-token loss weights per microbatch and
+change the effective objective, destroying comparability with every arm measured so far.
+A 3-step v5p-8 **memory probe** is queued to settle whether it fits.
+
+**Operational lesson, learned twice:** a parent job reads `running` while its child gang
+is still `pending`, and a gang can place and do real work while carrying a fatal
+constraint. Only per-task child state plus a numbered training step counts as "healthy".
 
 ---
 

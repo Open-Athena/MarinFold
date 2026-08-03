@@ -20,6 +20,10 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
+# marin iris TPU (v5p) training -- `extras_for_resources` maps a TpuConfig to the
+# `tpu` extra, and iris runs `uv sync --extra tpu` against THIS pyproject in the
+# bundled CWD, so the extra has to exist here even though the dependency is marin's.
+tpu = ["marin-core[tpu]"]
 cpu = [
     "marin-core[cpu]",
     "torch==2.11.0",
