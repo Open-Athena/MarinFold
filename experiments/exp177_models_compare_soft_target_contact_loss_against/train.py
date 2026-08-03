@@ -51,10 +51,12 @@ from premade_contacts_dataset import (
     FixedQuotaPremadeContactsDataset,
     FixedQuotaSoftTargetContactsDataset,
     MPFixedQuotaPremadeContactsDataset,
+    MPFixedQuotaSoftTargetContactsDataset,
 )
 
 
 draccus.encode.register(MPFixedQuotaPremadeContactsDataset, lambda obj, decl_type=None: repr(obj))
+draccus.encode.register(MPFixedQuotaSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +87,10 @@ CONTACTS_PREFIX = os.environ.get(
     "EXP177_CONTACTS_PREFIX",
     f"{ROOT}/exp147_on_the_fly_contacts_v1_pilot/pilot_data/contacts",
 ).rstrip("/")
+CONTACTS_SHARD_NAME_TEMPLATE = os.environ.get(
+    "EXP177_CONTACTS_SHARD_NAME_TEMPLATE",
+    "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+)
 # Reuse the existing exp117-compatible tokenized contacts-v1 caches for the
 # stock CE arm. These live at the historical Marin root prefix because exp117
 # was run from marin before MarinFold tightened its artifact-prefix policy.
@@ -251,6 +257,7 @@ def _next_token_train_component(
         examples_per_shard=examples_per_shard,
         seed=0,
         max_seq_len=SEQ_LEN,
+        shard_name_template=CONTACTS_SHARD_NAME_TEMPLATE,
         **kwargs,
     )
     return DirectDatasetComponent(datasets={"train": train_dataset}), False
@@ -295,6 +302,7 @@ def _run_soft_target_with_pinned_tokenizer(pod_config: TrainLmOnPodConfig) -> No
         allow_patterns=list(TOKENIZER_ALLOW_PATTERNS),
     )
     pod_config = _with_local_tokenizer(pod_config, tokenizer_path)
+    _start_direct_dataset_workers(pod_config.train_config)
     _, train_config, env = _prepare_training_run(pod_config)
     _apply_env_to_process(env)
     _run_soft_target_train_lm(train_config)
@@ -405,6 +413,7 @@ def _identity_config(
         "optimizer": _optimizer(),
         "data": {
             "contacts_prefix": CONTACTS_PREFIX,
+            "shard_name_template": CONTACTS_SHARD_NAME_TEMPLATE,
             "num_shards": num_shards,
             "total_shards": 3338,
             "examples_per_shard": examples_per_shard,
@@ -484,13 +493,24 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         val_key = "tokenized/contacts-v1-val"
         training_shuffle: bool | BlockShuffleConfig
         if loss_kind == LossKind.SOFT_TARGET:
-            train_dataset = FixedQuotaSoftTargetContactsDataset(
-                data_prefix=CONTACTS_PREFIX,
-                num_shards=num_shards,
-                examples_per_shard=examples_per_shard,
-                seed=0,
-                max_seq_len=SEQ_LEN,
-            )
+            soft_target_kwargs = {
+                "data_prefix": CONTACTS_PREFIX,
+                "num_shards": num_shards,
+                "examples_per_shard": examples_per_shard,
+                "seed": 0,
+                "max_seq_len": SEQ_LEN,
+                "shard_name_template": CONTACTS_SHARD_NAME_TEMPLATE,
+            }
+            if os.environ.get("EXP177_SOFT_TARGET_MP", "0") == "1":
+                train_dataset = MPFixedQuotaSoftTargetContactsDataset(
+                    **soft_target_kwargs,
+                    transform_workers=int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
+                    prefetch_shards=int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
+                    shard_cache_size=int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
+                    mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "spawn"),
+                )
+            else:
+                train_dataset = FixedQuotaSoftTargetContactsDataset(**soft_target_kwargs)
             train_component = DirectDatasetComponent(datasets={"train": train_dataset})
             training_shuffle = False
         else:
@@ -567,6 +587,8 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "EXP177_PER_DEVICE_PARALLELISM": str(per_device_parallelism),
             "EXP177_GRADIENT_ACCUMULATION": str(gradient_accumulation),
             "EXP177_NEXT_TOKEN_DATA": next_token_data_kind.value,
+            "EXP177_SOFT_TARGET_MP": os.environ.get("EXP177_SOFT_TARGET_MP", "0"),
+            "EXP177_CONTACTS_SHARD_NAME_TEMPLATE": CONTACTS_SHARD_NAME_TEMPLATE,
             "EXP177_TRANSFORM_WORKERS": os.environ.get("EXP177_TRANSFORM_WORKERS", "8"),
             "EXP177_PREFETCH_SHARDS": os.environ.get("EXP177_PREFETCH_SHARDS", "8"),
             "EXP177_SHARD_CACHE_SIZE": os.environ.get("EXP177_SHARD_CACHE_SIZE", "16"),

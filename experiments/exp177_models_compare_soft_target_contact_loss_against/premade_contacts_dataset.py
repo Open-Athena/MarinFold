@@ -159,6 +159,7 @@ class FixedQuotaPremadeContactsDataset(FixedQuotaShardDocumentDataset):
         max_seq_len: int = CONTEXT_LENGTH,
         max_segments_per_example: int = 64,
         shard_cache_size: int = 2,
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
     ):
         super().__init__(
             data_prefix=data_prefix,
@@ -172,6 +173,7 @@ class FixedQuotaPremadeContactsDataset(FixedQuotaShardDocumentDataset):
             example_builder=causal_lm_example_from_documents,
             max_segments_per_example=max_segments_per_example,
             shard_cache_size=shard_cache_size,
+            shard_name_template=shard_name_template,
         )
 
 
@@ -192,6 +194,7 @@ class MPFixedQuotaPremadeContactsDataset(MPFixedQuotaShardDocumentDataset):
         prefetch_shards: int | None = None,
         shard_cache_size: int | None = None,
         mp_start_method: str = "spawn",
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
     ):
         super().__init__(
             data_prefix=data_prefix,
@@ -208,6 +211,7 @@ class MPFixedQuotaPremadeContactsDataset(MPFixedQuotaShardDocumentDataset):
             prefetch_shards=prefetch_shards,
             shard_cache_size=shard_cache_size,
             mp_start_method=mp_start_method,
+            shard_name_template=shard_name_template,
         )
 
 
@@ -244,6 +248,7 @@ class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
         max_seq_len: int = CONTEXT_LENGTH,
         max_segments_per_example: int = 1,
         shard_cache_size: int = 2,
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
     ):
         super().__init__(
             data_prefix=data_prefix,
@@ -257,6 +262,45 @@ class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
             example_builder=compact_contact_batch_from_documents,
             max_segments_per_example=max_segments_per_example,
             shard_cache_size=shard_cache_size,
+            shard_name_template=shard_name_template,
+        )
+
+
+class MPFixedQuotaSoftTargetContactsDataset(MPFixedQuotaShardDocumentDataset):
+    """Multiprocess fixed-quota soft-target contacts-v1 dataset."""
+
+    def __init__(
+        self,
+        *,
+        data_prefix: str,
+        num_shards: int,
+        total_shards: int = 3338,
+        examples_per_shard: int = 2650,
+        seed: int = 0,
+        max_seq_len: int = CONTEXT_LENGTH,
+        max_segments_per_example: int = 1,
+        transform_workers: int = 4,
+        prefetch_shards: int | None = None,
+        shard_cache_size: int | None = None,
+        mp_start_method: str = "spawn",
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+    ):
+        super().__init__(
+            data_prefix=data_prefix,
+            columns=ANALYZED_ROW_COLUMNS,
+            generate_document=soft_target_contacts_v1_document_from_row,
+            num_shards=num_shards,
+            total_shards=total_shards,
+            examples_per_shard=examples_per_shard,
+            seed=seed,
+            max_seq_len=max_seq_len,
+            example_builder=compact_contact_batch_from_documents,
+            max_segments_per_example=max_segments_per_example,
+            transform_workers=transform_workers,
+            prefetch_shards=prefetch_shards,
+            shard_cache_size=shard_cache_size,
+            mp_start_method=mp_start_method,
+            shard_name_template=shard_name_template,
         )
 
 
@@ -264,6 +308,7 @@ __all__ = [
     "FixedQuotaPremadeContactsDataset",
     "FixedQuotaSoftTargetContactsDataset",
     "MPFixedQuotaPremadeContactsDataset",
+    "MPFixedQuotaSoftTargetContactsDataset",
     "causal_contacts_v1_document_from_row",
     "compact_contact_batch_from_documents",
     "soft_target_contacts_v1_document_from_row",
