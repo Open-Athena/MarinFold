@@ -130,9 +130,10 @@ RP_LABEL_OFFSET = {
     "#120 re-epoch": (-58, 18),
     "#117 E8 bs64": (-52, -22),
     "#117 E16 final": (-58, 26),
-    "#146 3B E8": (6, 24),
+    "#146 3B E8": (-34, 26),
     "#160 backtracking": (0, -28),
     "#155 3-way restart final": (-40, -140),
+    "#166 AA aug": (-66, 68),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
@@ -223,8 +224,8 @@ def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Pat
         frontier=[dict(date=str(pd.Timestamp(d).date()), r_precision=float(v))
                   for d, v in zip(fx, fy)]),
         caption="Best contacts-v1 model to date on contact R-precision. Three jumps, "
-                "all from the base model: #75 E8 (Jun 21), #117 E16 (Jul 22), #155 "
-                "3-way restart (Jul 31-Aug 1).")
+                "all from the base model: #75 E8 (Jun 21), #117 E16 (Jul 22), #166 "
+                "AA augmentation (Jul 31).")
     print(f"wrote {out}")
 
 
@@ -241,6 +242,7 @@ VL_LABEL_OFFSET = {
     "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4": (-46, -38),
     "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1": (14, 26),
     "exp137-3way-restart30k-lr2p5e-3": (30, -34),
+    "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1": (-56, 16),
 }
 # Short human names for the frontier steps worth calling out.
 VL_NAMES = {
@@ -253,10 +255,33 @@ VL_NAMES = {
     "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4": "#117 E16 final",
     "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1": "#146 3B E8",
     "exp137-3way-restart30k-lr2p5e-3": "#155 3-way restart (finished)",
+    "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1": "#166 AA aug",
     "exp137-crops1ep-cv11ep-esm1ep-1_5b-lr3p162e-3-wd0p2-bs128": "#155 3-way mix (original)",
     "exp137-crops0ep-cv11ep-esm1ep-1_5b-lr3p162e-3-wd0p2-bs128": "#155 no-crops ablation",
 }
 YTOP = 3.26
+
+
+def _source_blurb(runs: pd.DataFrame) -> str:
+    """"open-athena/MarinFold + eric-czech/marin exp75/exp117/..." from the data.
+
+    Read off the `project`/`tag` columns rather than hardcoded, because
+    build_dataset.py's WANDB_SOURCES is where new sweeps get added and a
+    hand-written list here goes stale silently — the figure would keep
+    claiming a set of sources that no longer matches the cloud it plots.
+    """
+    def tag_key(tag: str) -> tuple[int, str]:
+        # exp75 before exp117: plain string order would read exp117/exp146/exp75.
+        digits = "".join(c for c in tag if c.isdigit())
+        return (int(digits) if digits else 0, tag)
+
+    parts = []
+    # Untagged projects (the whole project is a source) read first.
+    for project, grp in runs.groupby("project", sort=True):
+        tags = sorted({t for t in grp["tag"].dropna().unique() if str(t).strip()},
+                      key=tag_key)
+        parts.append((bool(tags), f"{project} {'/'.join(tags)}" if tags else str(project)))
+    return " + ".join(text for _, text in sorted(parts))
 
 
 def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> None:
@@ -297,7 +322,7 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
         live_name = VL_NAMES.get(best_live["name"], best_live["name"])
         ax.annotate(f"{live_name}, in flight  {best_live['val_loss']:.4f}",
                     (best_live["finished"], best_live["val_loss"]),
-                    textcoords="offset points", xytext=(30, -38), ha="center",
+                    textcoords="offset points", xytext=(34, 36), ha="center",
                     fontsize=9, color=TEXT_PRIMARY,
                     arrowprops=dict(arrowstyle="-", color="#c3c2b7", linewidth=1.0,
                                     shrinkA=1, shrinkB=7))
@@ -325,7 +350,7 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
                  fontsize=13.5, color=TEXT_PRIMARY, pad=12, loc="left")
     ax.legend(loc="upper right", frameon=False, fontsize=9, labelcolor=TEXT_SECONDARY)
     fig.text(0.5, 0.030,
-             "Every finished contacts-v1 run in W&B (open-athena/MarinFold + eric-czech/marin exp75/117/146/153); "
+             f"Every finished contacts-v1 run in W&B ({_source_blurb(runs)}); "
              f"{n_above} runs sit above the top of the axis.",
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.text(0.5, 0.010,
@@ -338,8 +363,8 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
         figure="val_loss_frontier", n_runs=len(done), n_above_axis=n_above,
         frontier=[dict(date=str(pd.Timestamp(x).date()), val_loss=float(y), run=n)
                   for x, y, n in steps]),
-        caption="Best held-out contacts-v1 val loss to date over 157 finished runs. "
-                "The loss frontier has many more steps than the accuracy one.")
+        caption=f"Best held-out contacts-v1 val loss to date over {len(done)} finished "
+                "runs. The loss frontier has many more steps than the accuracy one.")
     print(f"wrote {out}")
 
 
@@ -359,6 +384,7 @@ S3_OFFSET = {
     ("#117 E16 final", "rollout"): (-46, 34),
     ("#117 E16 early stop", "rollout"): (18, 34),
     ("#146 3B E8", "rollout"): (56, -14),
+    ("#166 AA aug", "rollout"): (2, 64),
 }
 
 

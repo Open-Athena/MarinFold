@@ -184,6 +184,21 @@ RPRECISION_ROWS = [
                "+ build_oracle_best_rollout.py, 554/554 proteins, n=100 rollouts/protein; "
                "data/exp155_3way_restart_step74793_oracle_best100_summary.csv",
     ),
+    dict(
+        # Continues from #117 rather than training from scratch, so it inherits
+        # that run's tokenizer and its val loss IS comparable -- unlike #155,
+        # which shares the accuracy axis but not the loss axis. #190 scored it
+        # and re-scored its own #117 init in the same run (0.5336 against
+        # #169's 0.5344), so the +0.0282 delta is a within-run paired result,
+        # not a cross-harness subtraction.
+        label="#166 AA aug",
+        model="prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1 "
+              "/ step-35679",
+        date="2026-07-31", params="1.5B", issue=166,
+        val_loss=2.6641791, val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.5617739, inference=ROLLOUT,
+        source="exp166 data/exp166_summary.csv (exp166_aaaug_step35679); PR #190",
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -235,6 +250,7 @@ WANDB_SOURCES = [
     ("eric-czech/marin", "exp117"),
     ("eric-czech/marin", "exp146"),
     ("eric-czech/marin", "exp153"),
+    ("eric-czech/marin", "exp166"),
 ]
 LOSS_KEYS = [
     "eval/tokenized/contacts-v1-val/loss",
