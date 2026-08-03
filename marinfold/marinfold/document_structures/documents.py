@@ -264,7 +264,13 @@ class Document:
         self.token_ids = state["token_ids"]
         self.vocabulary = state["vocabulary"]
         self.attention = state["attention"]
-        self._coordinates = MappingProxyType(dict(state["coordinates"]))
+        runtime_by_name = {coordinate.name: coordinate for coordinate in RUNTIME_COORDINATES}
+        self._coordinates = MappingProxyType(
+            {
+                runtime_by_name.get(coordinate.name, coordinate): values
+                for coordinate, values in dict(state["coordinates"]).items()
+            }
+        )
         self._score_ranges = state["score_ranges"]
 
     def unscored(self, *, start: int = 0, stop: int | None = None) -> "Document":
