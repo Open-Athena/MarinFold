@@ -174,7 +174,7 @@ def dispatch(wait: bool = True):
     )
     logger.info("Dispatching CoreWeave exp177 soft-target run %s -> %s", run_name, pod_config.output_path)
     job = current_client().submit(request)
-    print(job.id)
+    print(getattr(job, "name", str(job)))
     if wait:
         job.wait(raise_on_failure=True)
     return job
