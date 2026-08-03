@@ -1,0 +1,5 @@
+range,mean_r_oracle,model
+all,0.5948265813505612,3way-restart-step74793
+long,0.5970537297377222,3way-restart-step74793
+medium,0.7065536244664643,3way-restart-step74793
+short,0.762359055620104,3way-restart-step74793

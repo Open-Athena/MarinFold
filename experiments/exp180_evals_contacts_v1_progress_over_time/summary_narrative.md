@@ -11,10 +11,10 @@ R-precision and on held-out validation loss — and how tightly do those two
 track each other?
 
 Every number exists somewhere already (#67, #75, #82, #89, #108, #117, #120,
-#146, #160, #169), but they are scattered across issue comments, per-experiment
-CSVs and two W&B projects, with two different inference recipes mixed in. This
-experiment collects them into one dataset and three standing figures, and keeps
-them refreshable as new models land.
+#146, #155, #160, #169), but they are scattered across issue comments,
+per-experiment CSVs and two W&B projects, with three different inference
+recipes mixed in. This experiment collects them into one dataset and three
+standing figures, and keeps them refreshable as new models land.
 
 ## Why
 
@@ -30,18 +30,27 @@ piecemeal:
 
 ## Results so far
 
-The accuracy frontier moved in exactly two jumps, both from the base model,
-neither from inference or post-training: ~0.03 to 0.425 when #75's E8 rung
-finished (2026-06-21), and 0.436 to 0.534 when #117's 16-epoch bs256 run
-finished (2026-07-22).
+The accuracy frontier moved in three jumps, all from the base model, none
+from inference or post-training: ~0.03 to 0.425 when #75's E8 rung finished
+(2026-06-21), 0.436 to 0.534 when #117's 16-epoch bs256 run finished
+(2026-07-22), and 0.534 to 0.554 when #155's crops+contacts-v1+ESM-Atlas
+3-way mixture restart finished training, 2026-08-01 (step 74793). #155 is
+the first jump from a *data* change rather than a hyperparameter sweep or
+epoch count.
 
-Between them, five weeks of post-training and inference work moved it by
-+0.011 (#120's re-epoch), and #160's backtracking fine-tune moved it by
+Between the first two, five weeks of post-training and inference work moved
+it by +0.011 (#120's re-epoch), and #160's backtracking fine-tune moved it by
 -0.020.
+
+A new diagnostic on #155's final checkpoint: scoring each of its 100 sampled
+rollouts per protein on its own best contacts, instead of voting them
+together, reads 0.595 — +0.041 of headroom that isn't reachable without
+ground truth, but points at reranking/selection as an unexplored lever.
 
 Structure predictors on the same 554 proteins: Protenix-v2 single-seq 0.603,
 ESMFold 0.755, ESMFold2 0.786, Protenix-v2 + MSA 0.812. We are still below
-all of them.
+all of them (the oracle ceiling alone would essentially close the gap to
+Protenix-v2 single-seq, but it isn't a deliverable number).
 
 ## Loss tracks accuracy across generations, not inside one
 
@@ -59,9 +68,13 @@ The same weights score ~0.086 higher under exp82's rollout recipe than under
 exp89's original pairwise scorer (#61/#75 E8: 0.339 to 0.425; #120: 0.350 to
 0.436). That is comparable to two generations of model progress.
 
-The figures keep the two recipes visually separate. Anything from the
+The figures keep pairwise and rollout visually separate. Anything from the
 eval-checkpoint skill is pairwise; anything from exp82's rollout workers or
 the exp169 dispatcher is rollout. Never infer the recipe from the magnitude.
+
+A third recipe, oracle best-of-100, is a diagnostic upper bound, not a
+deployable score (see Results so far) — it never enters the "best model
+trained to date" frontier line or headline labelling, only its own marker.
 
 ## Open gap
 
