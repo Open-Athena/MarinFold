@@ -32,7 +32,7 @@ import jmp
 from haliax.partitioning import ResourceAxis
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
-from levanter.data.text import LmDataConfig
+from levanter.data.text.datasets import LmDataConfig
 from levanter.eval_harness import LmEvalHarnessConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.lm_model import LmConfig
