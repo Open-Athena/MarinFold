@@ -41,7 +41,7 @@ CW_OUTPUT_PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp177_so
 CW_SHARD_TEMPLATE = "analyzed-{shard_index:05d}-of-{total_shards:05d}.parquet"
 
 _FORWARD_ENV_PREFIXES = ("XLA_FLAGS", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
-_FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS",)
+_FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS", "JAX_COMPILATION_CACHE_DIR")
 
 
 def _forwarded_perf_env() -> dict[str, str]:
@@ -116,6 +116,9 @@ def _pod_config(run_name: str):
         "EXP177_PREFETCH_SHARDS": os.environ.get("EXP177_PREFETCH_SHARDS", "28"),
         "EXP177_SHARD_CACHE_SIZE": os.environ.get("EXP177_SHARD_CACHE_SIZE", "8"),
         "EXP177_MP_START_METHOD": os.environ.get("EXP177_MP_START_METHOD", "fork"),
+        # CoreWeave pods do not have GCS credentials. Set an explicit local cache
+        # so resolve_training_env() does not default to marin's GCS temp bucket.
+        "JAX_COMPILATION_CACHE_DIR": os.environ.get("EXP177_CW_JAX_CACHE_DIR", "/tmp/jax-compilation-cache"),
     }
     for key in ("WANDB_API_KEY", "HUGGING_FACE_HUB_TOKEN"):
         if value := os.environ.get(key):
