@@ -5,6 +5,7 @@ description = "Document-level Poisson bootstrap characterization of contacts-v1 
 requires-python = ">=3.11"
 dependencies = [
     "marinfold-evals",
+    "matplotlib",
     "numpy",
     "pandas>=2.2",
     "pyarrow",

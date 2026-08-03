@@ -1,0 +1,9 @@
+{
+  "eval_loss": 3.0836491807483473,
+  "input": "gs://marin-us-central1/protein-structure/MarinFold/exp188/per_doc_loss/exp117_e16_final_step35679",
+  "n_bootstrap": 10000,
+  "n_units": 41954,
+  "seed": 0,
+  "stderr": 0.0019573972720316546,
+  "token_count": 47780004
+}

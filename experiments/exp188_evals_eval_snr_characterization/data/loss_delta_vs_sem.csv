@@ -1,0 +1,3 @@
+run,val_loss,source
+#75 E8,2.7566,exp169 table / exp180 frontier
+#117 E16 final,2.7037,exp169 table / W&B old loss

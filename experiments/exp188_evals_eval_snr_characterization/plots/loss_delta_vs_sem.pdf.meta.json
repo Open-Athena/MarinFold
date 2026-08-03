@@ -1,0 +1,12 @@
+{
+  "script": "plot_loss_delta_vs_sem.py",
+  "args": [
+    "--losses",
+    "/Users/zack/projects/agent_workspaces/beta/experiments/exp188_evals_eval_snr_characterization/data/loss_delta_vs_sem.csv",
+    "--bootstrap-summary",
+    "/Users/zack/projects/agent_workspaces/beta/experiments/exp188_evals_eval_snr_characterization/data/exp117_e16_final_step35679_bootstrap_summary.json",
+    "--output",
+    "/Users/zack/projects/agent_workspaces/beta/experiments/exp188_evals_eval_snr_characterization/plots/loss_delta_vs_sem.png"
+  ],
+  "caption": "Validation loss for #75 E8 and #117 E16 final, with document-level Poisson-bootstrap SEM error bars from exp188."
+}
