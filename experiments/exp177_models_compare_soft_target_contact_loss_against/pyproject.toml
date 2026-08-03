@@ -16,11 +16,14 @@ dependencies = [
     "marinfold-models",
     "numpy",
     "pyarrow",
+    "s3fs",
+    "boto3",
     "transformers",
 ]
 
 [project.optional-dependencies]
 tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
+gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
 cpu = [
     "marin-core[cpu]",
     "torch==2.11.0",
@@ -35,7 +38,6 @@ package = false
 fork-strategy = "fewest"
 prerelease = "allow"
 environments = [
-    "sys_platform == 'darwin'",
     "sys_platform == 'linux'",
 ]
 override-dependencies = [
