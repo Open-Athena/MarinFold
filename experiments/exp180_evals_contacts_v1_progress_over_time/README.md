@@ -17,7 +17,7 @@ R-precision and on held-out validation loss — and how tightly do those two
 track each other?
 
 Every number exists somewhere already (#67, #75, #82, #89, #108, #117, #120,
-#146, #160, #169), but they are scattered across issue comments, per-experiment
+#146, #155, #160, #169), but they are scattered across issue comments, per-experiment
 CSVs and two W&B projects, with two different inference recipes mixed in. This
 experiment collects them into one dataset and three standing figures, and keeps
 them refreshable as new models land.
@@ -63,10 +63,10 @@ Two tables and three figures, all code in the experiment dir.
   R-precision vs val loss. Both date figures draw a running-best staircase;
   both R-precision figures carry the structure predictors as dotted reference
   lines.
-- `plot_vs_protenix.py` — two more figures: the current best model against
-  Protenix-v2 single-sequence and against Protenix-v2 with MSAs, one point per
-  eval protein. The frontier figures say how far along we are; these say *which
-  proteins* the number is made of.
+- `plot_vs_protenix.py` — two more figures: one pinned contacts-v1 checkpoint
+  against Protenix-v2 single-sequence and against Protenix-v2 with MSAs, one
+  point per eval protein. The frontier figures say how far along we are; these
+  say *which proteins* the number is made of.
 
 **The one methodological trap, handled explicitly:** the same weights score
 **~0.086 higher** under exp82's rollout recipe than under exp89's original
@@ -214,8 +214,10 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 ### Per-protein comparison with Protenix-v2
 
 The frontier figures compress each model to one number. These unroll the same
-comparison over the 554 proteins, for the current best model, against both
-Protenix-v2 configurations.
+comparison over the 554 proteins, for one pinned checkpoint — **#117 E16 final**
+(0.534) — against both Protenix-v2 configurations. #155's 3-way restart has
+since taken the frontier at 0.554; the pair has not been redrawn for it (see
+"The head-to-head figure pins a specific model" above).
 
 **Single-sequence** — the like-for-like baseline, since MarinFold also reads
 sequence alone:
@@ -279,6 +281,8 @@ single-sequence predictor considerably better than the MSA-informed one.
 | **2026-07-22** | **#117 E16 final** | **2.7037** | **0.534** | rollout |
 | 2026-07-27 | #146 3B E8 | 2.7025 | 0.512 | rollout |
 | 2026-07-28 | #160 backtracking | — | 0.416 | rollout |
+| **2026-08-01** | **#155 3-way restart final** (step 74793, run complete) | — | **0.554** | rollout |
+| 2026-08-01 | #155 3-way restart final, oracle best-of-100 | — | 0.595 | oracle (not deployable) |
 
 Structure predictors on the same 554 proteins and the same metric:
 Protenix-v2 single-seq **0.603**, ESMFold **0.755**, ESMFold2 **0.786**,
@@ -288,18 +292,40 @@ Protenix-v2 + MSA **0.812**.
 
 3.15 → 2.98 → **2.7566** (#61/#75 E8, 06-21) → **2.7418** (#108's 3B on
 CoreWeave H100s, 07-11) → **2.7213** (#120, 07-16) → 2.7131 → 2.7112 →
-**2.7037** (#117 E16 final, 07-22) → **2.7025** (#146 3B, 07-27), over 153
-finished runs.
+**2.7037** (#117 E16 final, 07-22) → **2.7025** (#146 3B, 07-27) →
+**2.6819** (#155 3-way restart, finished 08-01), over 157 finished runs.
 
 ### What the figures show
 
-- **The accuracy frontier moved in exactly two jumps**, both from the base
-  model, neither from inference or post-training: ~0.03 → **0.425** when #75's
-  E8 rung finished (2026-06-21), and 0.436 → **0.534** when #117's 16-epoch
-  bs256 run finished (2026-07-22). Between them, five weeks of post-training
-  and inference work moved it by +0.011 (#120's re-epoch). (#75's E4 winner,
-  0.031, landed the same day as E8, so the pre-jump frontier reads 0.029 —
-  #67's.)
+- **The accuracy frontier moved in three jumps**, all from the base model,
+  none from inference or post-training: ~0.03 → **0.425** when #75's
+  E8 rung finished (2026-06-21), 0.436 → **0.534** when #117's 16-epoch
+  bs256 run finished (2026-07-22), and 0.534 → **0.554** when #155's 3-way
+  mixture restart finished training (step 74793, 2026-08-01). Between the
+  first two, five weeks of post-training and inference work moved it by
+  +0.011 (#120's re-epoch). (#75's E4 winner, 0.031, landed the same day as
+  E8, so the pre-jump frontier reads 0.029 — #67's.) Only the final,
+  finished checkpoint is plotted for #155 — two earlier checkpoints from the
+  same run were also scored while it was still training (step 60000: R
+  0.553, step 70000: R 0.556) but are intentionally left off the figures now
+  that a settled result exists; see the caveats section for why the 70k
+  point briefly read higher than the final.
+- **The oracle best-of-100 diagnostic (new, #155 final checkpoint only):**
+  scoring each of the 100 sampled rollouts per protein on its own first-R
+  precision and taking the max, instead of voting them together, reads
+  **0.595** — **+0.041** over the same checkpoint's deployable rollout+vote
+  number (0.554). That is real headroom left on the table by the
+  aggregation step, not by the base model: the *union* of information across
+  100 samples ranks higher than any one of them (that's why voting beats a
+  single rollout, per exp82), but picking a *specific* best-performing rollout
+  per protein beats the vote too. Both can be true because voting and
+  cherry-picking extract different structure from the sample — voting favors
+  contacts many rollouts agree on, while the oracle rewards a rollout that
+  happens to get the high-value ones right even if it disagrees elsewhere.
+  0.595 is a **ceiling that assumes free ground truth** (you cannot know
+  which of the 100 rollouts is best without it) — it bounds how much a better
+  *selection* method could close the gap to Protenix-v2 single-seq's 0.603,
+  not a number the current pipeline can bank without one.
 - **Loss and accuracy agree across generations and stop agreeing inside one.**
   The 0.053-nat #75→#117 gap buys +0.109 R-precision (~2 R-precision per nat).
   The 0.008-nat gap between #117's early-stop and final checkpoints buys
@@ -317,8 +343,10 @@ finished runs.
 - **#67 never held the loss frontier.** It finished 2026-06-14 15:36 at 2.9800,
   about two hours after `prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p05-v1` reached
   2.9787.
-- **All of this is still below single-sequence Protenix-v2** (0.534 vs 0.603),
-  and well below ESMFold2 (0.786).
+- **All of this is still below single-sequence Protenix-v2** (0.554 deployable
+  / 0.595 oracle ceiling vs 0.603), and well below ESMFold2 (0.786). The
+  oracle ceiling alone would essentially close the single-seq structure-model
+  gap — but it is not a number the pipeline can actually deliver.
 
 ## Conclusion
 
@@ -326,10 +354,20 @@ Both success criteria are met: `data/rprecision_checkpoints.csv` carries a
 source citation per number, and the figures regenerate from two commands.
 
 The substantive read is that **contact accuracy has come from the base model
-and essentially nowhere else**. Two training results account for the entire
+and essentially nowhere else**. Three training results account for the entire
 frontier; the settled inference recipe is worth a large constant (+0.086) but
 was banked once in June and has not moved since; and the post-training line
-(#120, #160) has produced +0.011 and −0.020 respectively.
+(#120, #160) has produced +0.011 and −0.020 respectively. The third jump —
+#155's crops+contacts-v1+ESM-Atlas 3-way mixture restart, which finished
+training on 08-01 at R 0.554 — is the first frontier point to come from a
+*data* change rather than a hyperparameter sweep or an epoch count.
+
+The new **oracle best-of-100** diagnostic adds a second, orthogonal lever:
++0.041 R-precision sits in the *inference* step even after the settled
+rollout+vote recipe, unreachable without ground truth but a real signal that
+better *selection among* already-sampled rollouts (not more sampling, not a
+better base model) is worth investigating — e.g. a learned reranker, or a
+cheaper proxy for "is this rollout one of the good ones."
 
 Validation loss remains a good *cross-generation* proxy — ~2 R-precision per
 nat over the measured range — and a useless *within-generation* one. Since this
@@ -357,7 +395,7 @@ contacts-v1 split: 41,954 documents / 47,821,958 tokens.
 checkpoint came into existence. Not when it was evaluated; several checkpoints
 were scored weeks later.
 
-### The two inference recipes
+### The three inference recipes
 
 The same weights score **~0.086 higher** under the settled rollout recipe than
 under exp89's original pairwise scorer, on both checkpoints measured under both:
@@ -374,14 +412,29 @@ a checkpoint measured both ways shows both points. Recipes:
   original scorer; still what the `eval-checkpoint` skill runs.
 - **rollout** — n=100 sampled rollouts + per-rollout document resampling +
   pairwise tie-break, **top-k off**. Settled in exp82; `top_k=50` was removed
-  in #142 (it cost ~0.007–0.012 R-precision by truncating long rollouts).
+  in #142 (it cost ~0.007–0.012 R-precision by truncating long rollouts). This
+  is the only one of the three that is actually **deployable** — the other two
+  either require the ground truth being scored against (oracle) or are
+  strictly worse (pairwise).
+- **oracle_best_of_100** *(new)* — same 100 rollouts as `rollout`, but instead
+  of voting them into one `[L,L]` matrix, each rollout is scored on its own
+  first-*R* precision (its emitted contacts, in generation order, restricted
+  to resolved pairs — same *R* definition as the standard "R" cut), and the
+  reported number is the **max over the 100**. Requires ground truth to know
+  *which* rollout was best, so it is a diagnostic upper bound, never a
+  deployable score — kept in its own marker/colour, excluded from the "best
+  model trained to date" frontier line and from headline-label selection
+  (see `plot_rprecision_frontier`'s `deployable` filter). Currently computed
+  for one checkpoint (#155's final, #155 issue) via
+  `exp82_evals_contacts_v1_contact_prediction/score_rollout_worker_oracle.py`
+  + `build_oracle_best_rollout.py`.
 
 Consequence for the accuracy frontier: it is the running max over each
-checkpoint's *best available* measurement. Every step of it happens to be a
-rollout number, and the pairwise-only points (#67, #75 E1/E2/E4, #117 E8 bs64)
-never touch it, so the mixture does not change the staircase. If a rollout
-number is ever produced for #117 E8 bs64 it would land near 0.50 and still sit
-under the #117 E16 step.
+checkpoint's *best available deployable* measurement. Every step of it happens
+to be a rollout number, and the pairwise-only points (#67, #75 E1/E2/E4, #117
+E8 bs64) never touch it, so the mixture does not change the staircase. If a
+rollout number is ever produced for #117 E8 bs64 it would land near 0.50 and
+still sit under the #117 E16 step.
 
 ### Structure-predictor reference lines
 
@@ -393,27 +446,44 @@ structure readout is the one the project quotes.
 
 ### What is in, what is out
 
-**In the accuracy figure** — the 11 checkpoints with a benchmark score
-(`data/rprecision_checkpoints.csv`, one citation per row).
+**In the accuracy figure** — the 12 checkpoints with a benchmark score
+(`data/rprecision_checkpoints.csv`, 15 rows: 2 checkpoints measured under two
+recipes, plus the oracle diagnostic row, one citation per row).
 
 **In the loss figure** — every *finished* W&B run reporting a contacts-v1 val
 loss across `open-athena/MarinFold` and `eric-czech/marin` tags exp75 / exp117 /
-exp146 / exp153 (n=153 after exclusions).
+exp146 / exp153 (n=157 after exclusions).
 
 **Excluded, and why:**
 
-- **Crashed / preempted runs** (94 of them). Their last logged loss is
-  mid-training, not a trained model. Several would otherwise punch spurious
-  holes in the frontier — e.g. a preempted exp117 run sitting at 2.7309.
+- **Crashed / preempted / failed runs** (94 crashed, 12 failed). Their last
+  logged loss is mid-training, not a trained model. Several would otherwise
+  punch spurious holes in the frontier — e.g. a preempted exp117 run sitting
+  at 2.7309.
 - **Smoke tests, batch-calibration probes, profiling runs, the NeMo #112
   throughput runs, and the bio2token vetting run** — matched on name
   (`smoke`, `probe`, `profile`, `-prof`, `vet-`, `nemo`).
 - **#160 backtracking** appears in the accuracy figure (R 0.4158) but not the
   loss one: it has a 3849-token superset vocabulary, so its val loss is not
   comparable to the 2845-vocab runs.
-- **In-flight runs** (#155's 3-way mixture and siblings) are drawn as hollow
-  diamonds but kept off the frontier — they have not finished. The best of them
-  read `contacts-v1-val` 2.7110 as of 2026-07-30.
+- **In-flight runs** are drawn as hollow diamonds on the loss figure and kept
+  off *that* frontier — they have not finished training. Five such runs are
+  live as of 2026-08-02 (the original #155 3-way mix at 2.8080, its no-crops
+  ablation at 2.7622, and three exp177 tokenization-variant runs — two
+  `next_token` runs at 2.9340 and 3.4099, plus a `soft_target` run still far
+  from converged at 13.91); the best of them is the no-crops ablation. The
+  two runs above 3.26 nats sit off the top of this figure's axis, same as
+  the finished-run outliers the caption already accounts for. #155's
+  3-way *restart* — previously in this set — **finished training on 08-01 at
+  2.6819** and is now a regular point on the finished-run frontier (see "The
+  loss frontier" above), labelled `#155 3-way restart (finished)`. While it
+  was still training, two of its intermediate checkpoints were also scored
+  on the accuracy benchmark (step 60000: R 0.553, step 70000: R 0.556) —
+  the #89 benchmark scores a specific checkpoint, not a finished run, so
+  this was possible before the run finished. Now that the run has a settled
+  final checkpoint (step 74793, R 0.554), only that final point is plotted;
+  the two earlier ones are dropped from the figures, though the underlying
+  eval outputs are still in `data/` (see Files table).
 
 ### Caveats worth carrying
 
@@ -431,6 +501,25 @@ exp146 / exp153 (n=153 after exclusions).
    TPU worker and 0.5350 through exp82's — a 0.0006 backend difference, inside
    the ≤0.006 TPU-vs-CUDA agreement #89 established. Either is fine; the plots
    use exp169's for that checkpoint.
+5. **#155's 3-way restart finished training on 08-01 at step 74793** (target
+   74800), R-precision 0.5545 — a settled result, not an in-flight snapshot,
+   and the only checkpoint from this run plotted on the accuracy figure. Two
+   earlier checkpoints scored while the run was still training (step 60000:
+   R 0.553, step 70000: R 0.556, briefly the higher of the two) are excluded
+   from the figures now that a final result exists — the 0.002 gap between
+   the 70k checkpoint and the final is itself a small, likely-noise dip, not
+   a reason to keep the intermediate point around. Their raw eval outputs
+   remain in `data/` if needed. It has no val loss on these figures
+   (3848-token superset crops tokenizer, same reason as #160) — its
+   loss-figure label reads `(finished)` to distinguish it from the still-live
+   original 3-way mix and no-crops ablation runs of the same experiment
+   family.
+6. **The oracle best-of-100 diagnostic is scored for one checkpoint only**
+   (#155's final, step 74793). It shares the same 100 rollouts as that
+   checkpoint's `rollout` row — same TPU eval run, same per-protein samples —
+   scored a second way, not an independent measurement. Treat it as a
+   headroom bound on *that specific checkpoint*, not yet established as a
+   general property of the model family.
 
 ## Files
 
@@ -439,14 +528,24 @@ exp146 / exp153 (n=153 after exclusions).
 | `build_dataset.py` | assembles both tables; W&B pull + the hand-curated benchmark rows |
 | `plot_progress.py` | the three progress figures |
 | `plot_vs_protenix.py` | the two comparison scatters + their paired CSVs |
-| `data/rprecision_checkpoints.csv` | 13 rows (11 checkpoints; 2 measured under both recipes), one source citation each |
+| `data/rprecision_checkpoints.csv` | 15 rows (12 checkpoints; 2 measured under both pairwise/rollout recipes, plus the oracle diagnostic row), one source citation each |
 | `data/structure_baselines.csv` | the four dotted lines, recomputed from exp89 |
-| `data/val_loss_runs.csv` | 318 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
+| `data/val_loss_runs.csv` | 324 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
 | `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints |
 | `data/marinfold_vs_protenix_{ss,msa}.csv` | the 554 paired per-protein scores behind each comparison figure |
+| `data/exp155_3way_restart_step60000_rollout_summary.csv` | aggregate R-precision/AUC for #155's step-60000 checkpoint, this session's rollout eval — not plotted, superseded by the run's final checkpoint (see caveat 5) |
+| `data/exp155_3way_restart_step60000_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
+| `data/exp155_3way_restart_step70000_rollout_summary.csv` | same, for the step-70000 checkpoint — also not plotted |
+| `data/exp155_3way_restart_step70000_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
+| `data/exp155_3way_restart_step74793_rollout_summary.csv` | same, for the final checkpoint (step 74793, run complete) — the one point plotted for this run |
+| `data/exp155_3way_restart_step74793_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
+| `data/exp155_3way_restart_step74793_oracle_best100_summary.csv` | oracle best-of-100 mean R-precision by range, same checkpoint and rollouts as the summary above |
+| `data/exp155_3way_restart_step74793_oracle_best100_rows.csv.gz` | per-protein, per-range oracle rows behind that summary |
 | `plots/*.png.meta.json` | the numbers behind each figure |
+| `../exp82_evals_contacts_v1_contact_prediction/score_rollout_worker_oracle.py` | rollout-eval TPU worker; additive fork of exp82's `score_rollout_worker.py` that also writes a per-rollout, emission-order detail table |
+| `../exp82_evals_contacts_v1_contact_prediction/build_oracle_best_rollout.py` | scores that detail table into the oracle best-of-100 summary/rows CSVs above |
 
 Sources for every R-precision value are in the `source` column of
-`data/rprecision_checkpoints.csv` — exp82 / exp89 / exp120 / exp160 / exp169
+`data/rprecision_checkpoints.csv` — exp82 / exp89 / exp120 / exp155 / exp160 / exp169
 data CSVs, plus [eric-czech's checkpoint gist](https://gist.github.com/eric-czech/bfa78571dcb8f673884bf70e6cc68e14)
 for #117 E8 bs64.

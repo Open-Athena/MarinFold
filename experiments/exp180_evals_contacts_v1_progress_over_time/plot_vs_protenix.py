@@ -4,7 +4,7 @@
 """Per-protein comparison against a Protenix-v2 baseline, one point per protein.
 
 The progress figures show where the frontier is; these show *which proteins*
-it is made of. The current best contacts-v1 model (#117 E16 final) against a
+it is made of. One pinned contacts-v1 checkpoint (#117 E16 final) against a
 Protenix-v2 baseline, R-precision (all ranges) on each of the 554 eval
 proteins, so the y = x diagonal separates the two.
 
@@ -49,7 +49,8 @@ EXP169 = HERE / ".." / "exp169_evals_selected_checkpoints_117_146" / "data" / "e
 EXP89 = (HERE / ".." / "exp89_evals_contacts_v1_model_on_eval_set" / "data"
          / "contact_precision_all.csv")
 
-# Our best contacts-v1 model, same checkpoint that tops the progress figures.
+# The contacts-v1 checkpoint this pair is drawn for. Re-point when a new model
+# takes the frontier *and* has published per-protein rows (see README step 5).
 MARINFOLD_MODEL = "exp117_e16_final_step35679"
 MARINFOLD_LABEL = "MarinFold #117 E16 final"
 MARINFOLD_SHORT = "MarinFold #117"

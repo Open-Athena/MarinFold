@@ -1,9 +1,9 @@
 {
-  "caption": "Best held-out contacts-v1 val loss to date over 153 finished runs. The loss frontier has many more steps than the accuracy one.",
+  "caption": "Best held-out contacts-v1 val loss to date over 157 finished runs. The loss frontier has many more steps than the accuracy one.",
   "script": "plot_progress.py",
   "args": [],
   "figure": "val_loss_frontier",
-  "n_runs": 153,
+  "n_runs": 157,
   "n_above_axis": 11,
   "frontier": [
     {
@@ -110,6 +110,11 @@
       "date": "2026-07-27",
       "val_loss": 2.702478408813477,
       "run": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1"
+    },
+    {
+      "date": "2026-08-01",
+      "val_loss": 2.6819448471069336,
+      "run": "exp137-3way-restart30k-lr2p5e-3"
     }
   ]
 }
