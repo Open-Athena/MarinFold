@@ -15,7 +15,9 @@ dependencies = [
     "marin-zephyr>=0.2.56.dev202607230804,<0.3",
     "marinfold",
     "marinfold-models",
+    "matplotlib",
     "numpy",
+    "pandas>=2.2",
     "pyarrow",
     "transformers",
 ]

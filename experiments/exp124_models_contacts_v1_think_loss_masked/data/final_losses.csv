@@ -1,0 +1,5 @@
+run,loss,metric,comparable_to_contacts_v1,source
+#117 E16 final,2.7037086486816406,contacts-v1 val,true,W&B old loss / exp169
+#75 E8,2.7566,contacts-v1 val,true,exp169/exp180
+exp124 think-masked,3.131303071975708,contacts-v1 val,true,W&B summary eval/tokenized/contacts-v1-val/loss
+exp124 think-masked,3.0855870246887207,think-masked val,false,W&B summary eval/contacts-v1-think-masked/loss

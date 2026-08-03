@@ -1,0 +1,10 @@
+{
+  "script": "plot_final_losses.py",
+  "args": [
+    "--input",
+    "/private/tmp/marinfold-exp124-wrap/experiments/exp124_models_contacts_v1_think_loss_masked/data/final_losses.csv",
+    "--output",
+    "/private/tmp/marinfold-exp124-wrap/experiments/exp124_models_contacts_v1_think_loss_masked/plots/final_losses.png"
+  ],
+  "caption": "Final exp124 contacts-v1 validation loss versus #75/#117 baselines."
+}
