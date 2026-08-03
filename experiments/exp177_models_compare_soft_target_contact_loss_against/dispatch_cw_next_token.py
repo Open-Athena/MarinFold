@@ -34,7 +34,7 @@ CONTACTS_V1_S3_CORPUS_BASE = "s3://marin-us-east-02a/MarinFold/data/document_str
 CONTACTS_V1_CACHE_BASE = "s3://marin-us-east-02a/MarinFold/exp108_qwen_3b_contacts_v1/tokenized"
 
 _FORWARD_ENV_PREFIXES = ("XLA_FLAGS", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
-_FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS",)
+_FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS", "JAX_COMPILATION_CACHE_DIR")
 
 
 def _forwarded_perf_env() -> dict[str, str]:
@@ -95,6 +95,9 @@ def _pod_config(run_name: str):
         "EXP177_BACKEND": "coreweave",
         "EXP177_CW_NODES": str(resources.replicas),
         "EXP177_CW_BATCH_SIZE": str(batch_size),
+        # CoreWeave pods do not have GCS credentials. Set an explicit local cache
+        # so resolve_training_env() does not default to marin's GCS temp bucket.
+        "JAX_COMPILATION_CACHE_DIR": os.environ.get("EXP177_CW_JAX_CACHE_DIR", "/tmp/jax-compilation-cache"),
     }
     for key in ("WANDB_API_KEY", "HUGGING_FACE_HUB_TOKEN"):
         if value := os.environ.get(key):
@@ -151,7 +154,7 @@ def dispatch(wait: bool = True):
     )
     logger.info("Dispatching CoreWeave exp177 run %s -> %s", run_name, pod_config.output_path)
     job = current_client().submit(request)
-    print(job.id)
+    print(getattr(job, "name", str(job)))
     if wait:
         job.wait(raise_on_failure=True)
     return job
