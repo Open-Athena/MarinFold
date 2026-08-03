@@ -75,6 +75,12 @@
       "inference": "rollout",
       "val_loss": 2.7024784,
       "r_precision": 0.5118632
+    },
+    {
+      "label": "#166 AA aug",
+      "inference": "rollout",
+      "val_loss": 2.6641791,
+      "r_precision": 0.5617739
     }
   ]
 }

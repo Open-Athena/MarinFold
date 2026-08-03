@@ -4,7 +4,7 @@
 """Per-protein comparison against a Protenix-v2 baseline, one point per protein.
 
 The progress figures show where the frontier is; these show *which proteins*
-it is made of. One pinned contacts-v1 checkpoint (#117 E16 final) against a
+it is made of. One pinned contacts-v1 checkpoint (#166 AA aug) against a
 Protenix-v2 baseline, R-precision (all ranges) on each of the 554 eval
 proteins, so the y = x diagonal separates the two.
 
@@ -45,15 +45,19 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 HERE = Path(__file__).parent
-EXP169 = HERE / ".." / "exp169_evals_selected_checkpoints_117_146" / "data" / "exp169_rows.csv.gz"
+# Per-protein rows for the pinned checkpoint. Whichever experiment scored it
+# owns this file, so the path moves with MARINFOLD_MODEL.
+ROWS_CSV = (HERE / ".." / "exp166_models_contacts_v1_aa_augmentation" / "data"
+            / "exp166_rows.csv.gz")
 EXP89 = (HERE / ".." / "exp89_evals_contacts_v1_model_on_eval_set" / "data"
          / "contact_precision_all.csv")
 
-# The contacts-v1 checkpoint this pair is drawn for. Re-point when a new model
-# takes the frontier *and* has published per-protein rows (see README step 5).
-MARINFOLD_MODEL = "exp117_e16_final_step35679"
-MARINFOLD_LABEL = "MarinFold #117 E16 final"
-MARINFOLD_SHORT = "MarinFold #117"
+# The contacts-v1 checkpoint this pair is drawn for: the top of the accuracy
+# frontier. Re-point (with ROWS_CSV) when a new model takes it *and* has
+# published per-protein rows — see README step 5.
+MARINFOLD_MODEL = "exp166_aaaug_step35679"
+MARINFOLD_LABEL = "MarinFold #166 AA aug"
+MARINFOLD_SHORT = "MarinFold #166"
 
 # The exp89 rows to compare against. `predictor="structure"` is the readout the
 # project quotes; the same CSV also holds Protenix distogram rows.
@@ -94,9 +98,9 @@ BIN_COLOR = {(0, 100): "#86b6ef", (100, 200): "#3987e5",
 MARKER_SIZE = 46
 
 
-def load(exp169: Path, exp89: Path, baseline: dict) -> pd.DataFrame:
+def load(rows_csv: Path, exp89: Path, baseline: dict) -> pd.DataFrame:
     """One row per protein: both R-precisions and the length."""
-    mf = pd.read_csv(exp169)
+    mf = pd.read_csv(rows_csv)
     mf = mf[(mf["model"] == MARINFOLD_MODEL) & (mf["cut"] == "R")
             & (mf["range"] == "all")]
     px = pd.read_csv(exp89)
@@ -313,7 +317,7 @@ def plot(j: pd.DataFrame, baseline: dict, out: Path) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", choices=(*BASELINES, "both"), default="both")
-    ap.add_argument("--exp169-rows", type=Path, default=EXP169)
+    ap.add_argument("--rows-csv", type=Path, default=ROWS_CSV)
     ap.add_argument("--exp89-csv", type=Path, default=EXP89)
     ap.add_argument("--out-dir", type=Path, default=HERE / "plots")
     ap.add_argument("--data-dir", type=Path, default=HERE / "data")
@@ -324,7 +328,7 @@ def main() -> int:
     a.data_dir.mkdir(parents=True, exist_ok=True)
     for key in wanted:
         baseline = BASELINES[key]
-        j = load(a.exp169_rows, a.exp89_csv, baseline)
+        j = load(a.rows_csv, a.exp89_csv, baseline)
         csv_out = a.data_dir / f"marinfold_vs_protenix_{baseline['slug']}.csv"
         j.to_csv(csv_out, index=False)
         print(f"wrote {csv_out} ({len(j)} proteins)")

@@ -1,11 +1,11 @@
 {
-  "caption": "Per-protein R-precision, MarinFold #117 vs Protenix-v2 MSA (n=554). Means 0.534 vs 0.812; the difference varies with length.",
+  "caption": "Per-protein R-precision, MarinFold #166 vs Protenix-v2 MSA (n=554). Means 0.562 vs 0.812; the difference varies with length.",
   "script": "plot_vs_protenix.py",
   "args": [
     "--baseline msa"
   ],
   "figure": "marinfold_vs_protenix_msa",
-  "marinfold": "exp117_e16_final_step35679",
+  "marinfold": "exp166_aaaug_step35679",
   "baseline": {
     "model": "protenix-v2",
     "mode": "msa",
@@ -13,47 +13,47 @@
   },
   "stats": {
     "n": 554,
-    "mean_mf": 0.5344182205203893,
+    "mean_mf": 0.5617738681420615,
     "mean_px": 0.8118214040198143,
-    "mean_delta": -0.2774031834994249,
-    "ci_low": -0.2978203871107919,
-    "ci_high": -0.2569859798880579,
-    "higher_rate": 0.06859205776173286,
-    "tie_rate": 0.016245487364620937,
-    "pearson": 0.33933092794615893,
-    "spearman": 0.4579740777374341
+    "mean_delta": -0.25004753587775264,
+    "ci_low": -0.2700043780755315,
+    "ci_high": -0.23009069367997373,
+    "higher_rate": 0.08303249097472924,
+    "tie_rate": 0.02527075812274368,
+    "pearson": 0.3681198950034098,
+    "spearman": 0.49115066896131093
   },
   "by_length": [
     {
       "bin": "< 100",
       "n": 81,
-      "mf": 0.5455626196162171,
+      "mf": 0.5553503409724733,
       "px": 0.7506900015525294,
-      "delta": -0.2051273819363123,
-      "mf_higher": 0.13580246913580246
+      "delta": -0.19533966058005614,
+      "mf_higher": 0.18518518518518517
     },
     {
       "bin": "100-200",
       "n": 285,
-      "mf": 0.5604912602674503,
+      "mf": 0.5878285359775794,
       "px": 0.8051950601381734,
-      "delta": -0.2447037998707231,
-      "mf_higher": 0.08421052631578947
+      "delta": -0.217366524160594,
+      "mf_higher": 0.10175438596491228
     },
     {
       "bin": "200-400",
       "n": 171,
-      "mf": 0.5044063722614675,
+      "mf": 0.5387052105489041,
       "px": 0.8472036917707603,
-      "delta": -0.3427973195092928,
-      "mf_higher": 0.017543859649122806
+      "delta": -0.3084984812218562,
+      "mf_higher": 0.011695906432748537
     },
     {
       "bin": "> 400",
       "n": 17,
-      "mf": 0.34609547920281275,
+      "mf": 0.38762479849758846,
       "px": 0.8582790746495738,
-      "delta": -0.5121835954467611,
+      "delta": -0.4706542761519853,
       "mf_higher": 0.0
     }
   ]

@@ -11,7 +11,7 @@ R-precision and on held-out validation loss — and how tightly do those two
 track each other?
 
 Every number exists somewhere already (#67, #75, #82, #89, #108, #117, #120,
-#146, #155, #160, #169), but they are scattered across issue comments,
+#146, #155, #160, #166, #169), but they are scattered across issue comments,
 per-experiment CSVs and two W&B projects, with three different inference
 recipes mixed in. This experiment collects them into one dataset and three
 standing figures, and keeps them refreshable as new models land.
@@ -33,24 +33,30 @@ piecemeal:
 The accuracy frontier moved in three jumps, all from the base model, none
 from inference or post-training: ~0.03 to 0.425 when #75's E8 rung finished
 (2026-06-21), 0.436 to 0.534 when #117's 16-epoch bs256 run finished
-(2026-07-22), and 0.534 to 0.554 when #155's crops+contacts-v1+ESM-Atlas
-3-way mixture restart finished training, 2026-08-01 (step 74793). #155 is
-the first jump from a *data* change rather than a hyperparameter sweep or
-epoch count.
+(2026-07-22), and 0.534 to 0.562 when #166's amino-acid augmentation
+continue-train of #117 finished, 2026-07-31. #166 is the first jump from a
+*data* change rather than a hyperparameter sweep or epoch count.
 
 Between the first two, five weeks of post-training and inference work moved
 it by +0.011 (#120's re-epoch), and #160's backtracking fine-tune moved it by
 -0.020.
 
-A new diagnostic on #155's final checkpoint: scoring each of its 100 sampled
+Two data-side results landed a day apart. #155's crops+contacts-v1+ESM-Atlas
+3-way mixture restart finished 08-01 at 0.554 — 0.008 below #166 and a day
+later, so it never appears as a step. They were not run against each other.
+
+#166 is also the only frontier point with a within-run control: #190 re-scored
+its own #117 initialization alongside it (0.5336 vs #169's 0.5344), making the
++0.0282 a paired result rather than a cross-harness subtraction.
+
+A diagnostic on #155's final checkpoint: scoring each of its 100 sampled
 rollouts per protein on its own best contacts, instead of voting them
 together, reads 0.595 — +0.041 of headroom that isn't reachable without
 ground truth, but points at reranking/selection as an unexplored lever.
 
 Structure predictors on the same 554 proteins: Protenix-v2 single-seq 0.603,
 ESMFold 0.755, ESMFold2 0.786, Protenix-v2 + MSA 0.812. We are still below
-all of them (the oracle ceiling alone would essentially close the gap to
-Protenix-v2 single-seq, but it isn't a deliverable number).
+all of them, though the single-sequence gap is now 0.041.
 
 ## Loss tracks accuracy across generations, not inside one
 
@@ -78,19 +84,23 @@ trained to date" frontier line or headline labelling, only its own marker.
 
 ## Per-protein comparison with Protenix-v2
 
-Over the 554 proteins, MarinFold #117 scores 0.534. Protenix-v2 single-sequence
-scores 0.603 (paired difference -0.069, MarinFold higher on 33%). Protenix-v2
-with MSAs scores 0.812 (paired difference -0.277, MarinFold higher on 7%).
+Over the 554 proteins, MarinFold #166 scores 0.562. Protenix-v2 single-sequence
+scores 0.603 (paired difference -0.041, MarinFold higher on 34%). Protenix-v2
+with MSAs scores 0.812 (paired difference -0.250, MarinFold higher on 8%).
+
+Re-pointed from #117 to #166 the shape did not change, only the gap: every
+length bin improved and the single-sequence deficit halved.
 
 ## The two baselines trend opposite ways with length
 
 Against single-sequence Protenix the gap narrows with length and changes sign
-in the > 400 bin: -0.116 below 100 residues, +0.080 above 400.
+in the > 400 bin: -0.107 below 100 residues, +0.122 above 400. The 200-400 bin
+is now -0.011, which on 171 proteins is a tie.
 
-Against MSA Protenix it widens: -0.205 below 100 residues, -0.512 above 400.
+Against MSA Protenix it widens: -0.195 below 100 residues, -0.471 above 400.
 MarinFold does not win a single protein above 400 residues in that comparison.
 
-The reason is in the marginals. MarinFold declines with length (0.55 to 0.35)
+The reason is in the marginals. MarinFold declines with length (0.56 to 0.39)
 and single-sequence Protenix declines faster (0.66 to 0.27), while MSA Protenix
 improves with length (0.75 to 0.86).
 
@@ -107,6 +117,9 @@ that is an inference, not a measurement.
 
 ## Keeping this current
 
-Two commands: build_dataset.py re-pulls W&B, plot_progress.py redraws. New
-benchmark scores are hand-added to RPRECISION_ROWS with a source citation and
-an explicit inference recipe. Full procedure in the README.
+Two commands: build_dataset.py re-pulls W&B, plot_progress.py redraws (plus
+plot_vs_protenix.py for the head-to-head pair). New benchmark scores are
+hand-added to RPRECISION_ROWS with a source citation and an explicit inference
+recipe; a new W&B sweep tag goes in WANDB_SOURCES. When a new model takes the
+frontier, re-point MARINFOLD_MODEL and ROWS_CSV in plot_vs_protenix.py — it
+needs published per-protein rows, not a summary. Full procedure in the README.
