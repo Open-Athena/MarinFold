@@ -1,0 +1,140 @@
+{
+  "figure": "where_we_stand_rprecision",
+  "metric": "R-precision, range=all",
+  "boxplot": {
+    "labels": [
+      "MarinFold #75\n1.5B \u00b7 E8",
+      "MarinFold #146\n3B \u00b7 E8",
+      "Control #117\n1.5B \u00b7 E16",
+      "Candidate #166\nAA augmentation",
+      "Protenix-v2\nsingle-seq"
+    ],
+    "counts": [
+      554,
+      554,
+      554,
+      554,
+      554
+    ],
+    "means": [
+      0.4245291213628376,
+      0.5118632021052502,
+      0.5335961341539802,
+      0.5617738681420615,
+      0.6031578401726864
+    ],
+    "provenance": [
+      {
+        "label": "MarinFold #75\n1.5B \u00b7 E8",
+        "origin": "historical evaluation",
+        "generated_in_this_evaluation": false,
+        "source": "experiments/exp82_evals_contacts_v1_contact_prediction/data/where_we_stand_rows.csv.gz"
+      },
+      {
+        "label": "MarinFold #146\n3B \u00b7 E8",
+        "origin": "historical evaluation",
+        "generated_in_this_evaluation": false,
+        "source": "data/historical_exp146_rprecision.csv.gz",
+        "upstream_experiment": "exp169 / PR #170"
+      },
+      {
+        "label": "Control #117\n1.5B \u00b7 E16",
+        "origin": "this evaluation",
+        "generated_in_this_evaluation": true,
+        "source": "data/exp166_rows.csv.gz"
+      },
+      {
+        "label": "Candidate #166\nAA augmentation",
+        "origin": "this evaluation",
+        "generated_in_this_evaluation": true,
+        "source": "data/exp166_rows.csv.gz"
+      },
+      {
+        "label": "Protenix-v2\nsingle-seq",
+        "origin": "historical evaluation",
+        "generated_in_this_evaluation": false,
+        "source": "experiments/exp89_evals_contacts_v1_model_on_eval_set/data/contact_precision_all.csv",
+        "upstream_experiment": "exp74"
+      }
+    ]
+  },
+  "scatter": {
+    "points": [
+      {
+        "model": "marinfold-cv1-exp75-rollout",
+        "label": "#75",
+        "val_loss": 2.756602,
+        "color": "#9b938c",
+        "origin": "historical evaluation",
+        "generated_in_this_evaluation": false,
+        "r_precision_source": "experiments/exp82_evals_contacts_v1_contact_prediction/data/where_we_stand_rows.csv.gz",
+        "val_loss_source": "PR #170 / issue #169 training-run record",
+        "marker": "o",
+        "fit_in_1_5b_trend": true,
+        "r_precision": 0.4245291213628376,
+        "ci95": 0.019635187909531084,
+        "n_proteins": 554
+      },
+      {
+        "model": "exp117_control_step35679",
+        "label": "#117",
+        "val_loss": 2.703709,
+        "color": "#eb6834",
+        "origin": "this evaluation",
+        "generated_in_this_evaluation": true,
+        "r_precision_source": "data/exp166_rows.csv.gz",
+        "val_loss_source": "exp117 training-run record",
+        "marker": "o",
+        "fit_in_1_5b_trend": true,
+        "r_precision": 0.5335961341539802,
+        "ci95": 0.020763090161408138,
+        "n_proteins": 554
+      },
+      {
+        "model": "exp146_3b_e8_step17839",
+        "label": "#146 \u00b7 3B",
+        "val_loss": 2.702478,
+        "color": "#9b938c",
+        "origin": "historical evaluation",
+        "generated_in_this_evaluation": false,
+        "r_precision_source": "data/historical_exp146_rprecision.csv.gz",
+        "val_loss_source": "PR #170 / issue #169 training-run record",
+        "marker": "s",
+        "fit_in_1_5b_trend": false,
+        "r_precision": 0.5118632021052502,
+        "ci95": 0.020719294548020902,
+        "n_proteins": 554
+      },
+      {
+        "model": "exp166_aaaug_step35679",
+        "label": "#166",
+        "val_loss": 2.664179,
+        "color": "#eb6834",
+        "origin": "this evaluation",
+        "generated_in_this_evaluation": true,
+        "r_precision_source": "data/exp166_rows.csv.gz",
+        "val_loss_source": "open-athena/marinfold-exp166 checkpoint inventory",
+        "marker": "o",
+        "fit_in_1_5b_trend": true,
+        "r_precision": 0.5617738681420615,
+        "ci95": 0.020631553412090196,
+        "n_proteins": 554
+      }
+    ],
+    "fit": {
+      "equation": "R-precision = slope * validation_loss + intercept",
+      "slope": -1.5165758527939217,
+      "intercept": 4.613768157974855,
+      "baseline_crossover_loss": 2.644516797767547
+    },
+    "baseline": {
+      "label": "Protenix-v2 single-sequence",
+      "r_precision": 0.6031578401726864,
+      "n_proteins": 554,
+      "origin": "historical evaluation",
+      "source": "experiments/exp89_evals_contacts_v1_model_on_eval_set/data/contact_precision_all.csv",
+      "upstream_experiment": "exp74"
+    }
+  },
+  "source_note": "Generated here: #117 and #166 \u00b7 Historical evaluations: #75, #146, and Protenix-v2 single-sequence"
+}
