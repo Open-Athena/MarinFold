@@ -2,52 +2,156 @@
 
 **Issue:** [#163](https://github.com/Open-Athena/MarinFold/issues/163) · **PR:** [#164](https://github.com/Open-Athena/MarinFold/pull/164)
 
-> ## ⚠️ RETRACTION (2026-07-31) — read before anything below
+**Status (2026-08-03).** The reported "catastrophic forgetting" was a **rope config
+artifact** and is retracted; corrected generation numbers show the fine-tunes level with
+the base model. The refinement question itself is **still unmeasured** with correct rope.
+Separately, no checkpoint can yet emit the multi-draft format the planned RL
+post-training needs — the cause is understood (draft/final size asymmetry) and two
+corpora are built to address it, awaiting compute. **Read section 0 first.**
+
+> ## ⚠️ CORRECTION NOTICE (2026-08-03) — read before anything below
 >
-> **Every R-precision number reported for a fine-tuned checkpoint in this document is
-> invalid.** All of them were measured with the **wrong rotary embeddings**, while the
-> base model they were compared against was measured with the correct ones.
+> **Every R-precision number reported for a fine-tuned checkpoint in sections 8, 11 and
+> 12 is invalid.** They were measured with the **wrong rotary embeddings**, while the
+> base model they were compared against was measured with the correct ones. Those
+> sections are preserved **as originally written** so the error is auditable; their
+> conclusions are withdrawn. Section 0 below has the corrected picture.
 >
 > Levanter's HF export writes the Llama3 rope under the new `rope_parameters` key and
 > leaves top-level `rope_theta` / `rope_scaling` **null**. The eval pods ran
-> **transformers 4.53.1**, which does not know that key. Measured directly:
+> **transformers 4.53.1**, which does not know that key:
 >
 > | checkpoint | `rope_theta` under 4.53.1 | `rope_scaling` |
 > |---|---|---|
 > | E8 base (`model/step-35679`) | 500000 ✓ | llama3 ✓ |
 > | *every* fine-tuned export | **10000.0** (Qwen3 default) ✗ | **None** ✗ |
 >
-> A 50x wrong base frequency and no length scaling — applied only to the models being
-> compared against the base. All 8 exports were affected (v1 `step-51` at both LRs, the
-> four v2 arms, v3 `step-404`, probe `step-5`).
+> A 50x wrong base frequency and no length scaling, applied only to the models being
+> compared against the base. All 8 exports were affected. It explains the reported
+> "catastrophic forgetting" (0.3355 -> ~0.16), its apparent onset within 52 steps (it is
+> not step-dependent — it is present in any export), **why the long band was always hit
+> hardest** (rope error grows with positional distance — the tell that was missed), why
+> no data-side intervention ever moved it, and LoRA's apparent immunity (a different
+> local path that probably never had the bug).
 >
-> **What this plausibly explains — i.e. what must NOT be believed below:**
-> * the 0.3355 -> ~0.16-0.20 "catastrophic forgetting" collapse, and its apparent
->   onset within the first ~52 steps (it is not step-dependent; it is present in any export);
-> * **why the long band was always hit hardest** (`R0_long` 0.2697 -> 0.1196). Rope error
->   grows with positional distance. This asymmetry was noted repeatedly and not followed up
->   — it was the tell, and it was missed;
-> * why *no* data-side intervention ever moved it — corpus scale, loss-weight profile,
->   mode token, 67% rehearsal. All six "falsifications" were measured through the same
->   broken rope, so none of them are established;
-> * why LoRA looked immune at -7%: that MVP ran on a different local path and probably
->   never had the bug. "LoRA vs full fine-tune is the only discriminating variable" may
->   really have been "which `config.json` shape the checkpoint had".
+> Training was NOT affected: levanter uses its own rope config, not the exported JSON.
+> All training-loss comparisons stand.
 >
-> **What survives.** Training was correct — levanter used its own rope config, not the
-> exported JSON. So every training-loss comparison stands, as does levanter's own unmasked
-> val loss (3.169 base -> 3.503 at step 404, computed with correct rope). That indicates
-> *some* real degradation, but ~5% in bpb terms — nothing like -52%.
->
-> **Fix applied.** All 8 configs rewritten to mirror E8's exact shape (`config.json.orig`
-> kept as backup), asserting the values are identical to E8's first — this re-spells the
-> same rope under the keys old readers use; it changes no model's actual rope. Verified
-> correct under both 4.53.1 and 5.12.1. Corrected eval is running as
-> `base-ropefix` / `v3mix50-ropefix`; the pre-fix scores are retained for comparison.
->
-> Sections 8, 11 and 12 below are preserved **as originally written** so the error is
-> auditable, not silently rewritten. Treat their conclusions as withdrawn pending the
-> corrected numbers.
+> **Fixed** by rewriting all 8 configs to mirror E8's exact shape (`config.json.orig`
+> kept, values asserted identical to E8's first, so this re-spells the same rope rather
+> than changing any model's rope). Verified under 4.53.1 and 5.12.1.
+
+---
+
+## 0. Where this stands (2026-08-03)
+
+### 0.1 Corrected result: there was no catastrophic forgetting, and no large gain either
+
+Measured by **free generation under vLLM on TPU** (an entirely independent path from the
+CUDA teacher-forced scoring that produced the retracted numbers), 553 proteins x 4
+rollouts, correct rope on every model:
+
+| model | `all_f1` | short | med | long | `n_sections` |
+|---|---|---|---|---|---|
+| base E8 | 0.2373 | 0.3267 | 0.2722 | 0.1885 | 1.00 |
+| v3 (draft w=0) | 0.2379 | 0.3263 | 0.2734 | 0.1898 | 1.00 |
+| mdC (draft w=0.1) | **0.2439** | 0.3398 | 0.2819 | 0.1920 | 1.00 |
+
+Paired on identical `(entry_id, rollout)`, n=2216:
+
+| | Δ`all_f1` | Δ`long_f1` |
+|---|---|---|
+| v3 vs base | +0.0006 ± 0.0025 (0.2σ) | +0.0014 ± 0.0027 (0.5σ) |
+| mdC vs base | +0.0066 ± 0.0031 (2.1σ, win 58.2%) | +0.0035 ± 0.0032 (1.1σ) |
+
+So the fine-tunes are **statistically indistinguishable from the base model** on
+single-shot generation, mdC marginally ahead. The -52% collapse was the rope artifact;
+it is gone. But nothing here shows the fine-tune *helping* much either.
+
+**A caution recorded deliberately.** An 8-protein smoke of this same comparison showed
+mdC at +0.048 (2.7σ) and the long band 2.4-2.8x better, and that was briefly reported as
+a reversal of the experiment's conclusion. It did not survive the full 553 — those 8
+proteins were unusually hard (base scored 0.1003 on them vs 0.2373 overall). Small
+generative samples on this task are badly behaved; label them provisional.
+
+**What is still unmeasured:** this eval supplies **no drafts** — the prompt ends at the
+first `<begin_statements>` — so it measures base-task generation, not refinement. The
+question the experiment was built to answer (does conditioning on K candidate rollouts
+beat any of them?) needs the teacher-forced @K eval re-run with correct rope, which has
+not been possible (see 0.4).
+
+### 0.2 The model cannot yet emit the multi-draft format — and why
+
+For the RL plan (emit several candidate structures in one document, reward best-of-N),
+the model must produce **several** `<begin_statements>` sections per generation. It does
+not. Every checkpoint tested emits exactly **one** section and then `<end>`, with
+`finished` at 100% — nothing is being truncated:
+
+| model | draft weight | `n_sections` | `n_pred` |
+|---|---|---|---|
+| base E8 | (n/a) | 1.00 | 159.5 |
+| v3 | 0 | 1.00 | 174.6 |
+| mdC | 0.1 | 1.00 | 163.3 |
+| mdD | 0.3 | 1.00 | 198.2 (smoke) |
+
+The cause is a **size asymmetry**, measured on the real corpus: a draft section averages
+**53.7** contacts, the final section **200.6**. The models emit ~160-200 contacts —
+final-shaped — then stop. Because finals are ~4x longer, they dominate the weighted-token
+budget at every profile tried:
+
+| w_draft | w_final | share of weighted signal on drafts | outcome |
+|---|---|---|---|
+| 0 | 1 | 0% | 1 section |
+| 0.1 | 1 | 18% | 1 section |
+| 0.3 | 1 | 39% | 1 section |
+
+Note the base model also emits exactly one section — contacts-v1 documents *have* one
+section, so this is not something fine-tuning destroyed. Multi-draft generation has to be
+trained for explicitly, and no arm has done so.
+
+### 0.3 Two arms built to fix it (not yet trained)
+
+Both re-weight the *same* `input_ids` (`reweight_corpus.py`; a weight profile changes only
+`loss_weights`), and both put drafts at or above half the signal:
+
+| arm | header | draft | final | weighted tokens | draft share |
+|---|---|---|---|---|---|
+| **E** | 0.1 | 1.0 | **2.0** | 373.3M (88.1% of slots) | ~52% |
+| **F** | 0.1 | 1.0 | 1.0 | 313.5M (74.0% of slots) | ~68% |
+
+E keeps the "higher weight on the final" shape (2x per token); drafts still reach ~half
+the aggregate signal purely because there are more of them. Both live at
+`gs://marin-us-east5/MarinFold/exp163/v3/tok_mix50_{E,F}`.
+
+Building these surfaced a **latent packing bug**: `weight[i]` supervises predicting
+`token[i+1]`, so the slot on a document's terminating `<eos>` supervises the *first token
+of the next document* in a packed row. Every previous arm had `w_header=0`, which zeroed
+that slot by accident; at `w_header=0.1` it becomes real cross-document leakage. Now
+explicitly zeroed, with a self-test asserting the `(0,0,1)` profile still reproduces the
+original masks bit-for-bit.
+
+### 0.4 Infrastructure: CoreWeave produced nothing this week
+
+Five submissions over three days at iris **batch** priority (the standing rule for
+MarinFold GPU work) yielded zero results: ~10h queued unplaced, one mass preemption sweep
+that killed all five tasks in the same minute, and one OOM. Everything reported in
+section 0 came from the **marin iris TPU pool** instead. Practical notes:
+
+* a parent job reads `running` while its task is still `building` (unplaced) — always
+  check **per-task** state via `iris job summary`, or a multi-hour stall is invisible;
+* zone-pinning to `us-east5-a` restricted us to one slice of the v5p pool and sat
+  pending on `Insufficient TPUs (need 4, available 0)`; **dropping the pin** got a slot
+  within minutes, at the cost of a possible cross-region read;
+* TPU work must NOT go in the batch band (opposite of the CoreWeave rule) — the v5p pool
+  is dominated by interactive jobs;
+* the shared marin checkout was on another session's branch and failed the iris client
+  freshness gate (build 2026-07-07 vs a 2026-07-17 minimum); a detached worktree at
+  `origin/main` with `uv sync --package marin-iris` (873MB) fixes it without touching
+  their tree.
+
+**Still blocked:** training the E/F arms. That needs GPUs or a port of the fine-tune to
+marin TPU (`refine_ft_common` currently hardcodes `PROTEIN_RESOURCES_H100`, S3 paths and
+an S3 warm-start).
 
 ---
 
@@ -399,6 +503,10 @@ target is exposed to the same effect** — #137, #150 and #155 all do.
 
 ## 8. Phase 3 — evaluation (DONE): the kill criterion is met, but the mechanism is real
 
+> **SUPERSEDED — measured with broken rope.** Retained verbatim for audit; see the
+> correction notice and section 0. The conclusions below are withdrawn.
+
+
 553 proteins from the exp89 eval set, paired, both models scored under identical
 candidate contexts. Harness validation first: **base K0 = 0.3355** against exp89's
 published E8 value of **0.3389** — the pipeline reproduces the reference.
@@ -553,6 +661,10 @@ mean single-rollout `all_f1` 0.1151 (the 10k batch gave 0.114).
 
 ## 11. v2 results — three falsifications
 
+> **SUPERSEDED — measured with broken rope.** Retained verbatim for audit; see the
+> correction notice and section 0. The conclusions below are withdrawn.
+
+
 553 exp89 proteins, paired, all five models under identical candidate contexts.
 
 ### all band — R-precision
@@ -619,6 +731,10 @@ and a `mean_jaccard` copy diagnostic), but with K0 at 0.188 those generations wo
 be poor regardless, so it is worth running only after retention is fixed.
 
 ## 12. v3 — the mode token and rehearsal (two more falsifications)
+
+> **SUPERSEDED — measured with broken rope.** Retained verbatim for audit; see the
+> correction notice and section 0. The conclusions below are withdrawn.
+
 
 v2 left one leading explanation for the forgetting: **prefix collision**. In the
 multi-draft corpus, the text after the first `<begin_statements>` is the ground-truth
@@ -767,7 +883,35 @@ cd experiments/exp163_models_teach_contacts_v1_to_refine_a
 set -a; source ~/.config/marin/cw-rno2a.env; set +a
 WK=$(python -c "import netrc; print(netrc.netrc().authenticators('api.wandb.ai')[2])")
 
-# ---- v3: mode token + rehearsal (the current state) --------------------------
+# ---- TPU generation (the working path; the CoreWeave batch band yielded nothing)
+# 1. stage a checkpoint S3 -> bf16 -> GCS, cloud-side. vLLM/TPU needs bf16 ON DISK;
+#    config.json + tokenizer are copied VERBATIM to preserve rope + tokenizer class.
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
+    --cpu=8 --memory=48GB --disk=48GB --zone=us-east5-a --extra cpu \
+    -e AWS_ACCESS_KEY_ID ... -e AWS_SECRET_ACCESS_KEY ... -e AWS_ENDPOINT_URL ... \
+    -- python -m stage_v3_to_gcs --model-src s3://.../hf/step-404 \
+       --model-dst gs://marin-us-east5/MarinFold/exp163/tpu/<name>-bf16/step-404 \
+       --data-src s3://.../eval554 --data-dst gs://.../eval554
+# 2. generate. NOTE: no --zone (pinning starves on "Insufficient TPUs"), and NOT
+#    --priority batch (the v5p pool is interactive-dominated). Submit from a FRESH
+#    marin worktree -- the iris client has a 14-day freshness gate.
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
+    --tpu=v5p-8 --cpu=16 --memory=64GB --disk=64GB --extra=vllm --extra=tpu \
+    -- python gen_rollouts_worker_exp163.py --model gs://.../step-404 \
+       --targets gs://.../targets.parquet --prompts gs://.../prompts \
+       --out gs://.../gen_<name>_tpu_full --shard 0/2 --n-rollouts 4 \
+       --format multi-draft --max-sections 12 --mode-id 7 \
+       --top-k -1 --tensor-parallel-size 4 --tpu-type v5p-8
+
+# ---- re-weight a tokenized corpus into a new arm (no re-tokenization needed) --
+uv run python -m reweight_corpus --selftest      # always; it guards the packing logic
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
+    --cpu=8 --memory=32GB --disk=32GB --zone=us-east5-a --extra cpu \
+    -e AWS_ACCESS_KEY_ID ... -e AWS_SECRET_ACCESS_KEY ... -e AWS_ENDPOINT_URL ... \
+    -- python -m reweight_corpus --src "s3://.../v3/tok_mix50/*.parquet" \
+       --dst gs://.../v3/tok_mix50_E --w-header 0.1 --w-draft 1.0 --w-final 2.0
+
+# ---- v3: mode token + rehearsal ----------------------------------------------
 P=s3://marin-us-east-02a/MarinFold/exp163
 python -m make_multi_tokenizer                 # rename vocab id 7 in place, no id drift
 python -m build_refinement_corpus --format multi-draft --mix-plain 0.5 \
@@ -805,5 +949,6 @@ uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
 Key files: `loss_mask.py` · `tokenize_refinement_corpus.py` · `refine_ft_common.py` ·
 `dispatch_refine_train.py` · `build_refinement_corpus.py` · `select_targets_eval_set.py` ·
 `gen_prompts_exp163.py` · `dispatch_rollouts.py` · `make_multi_tokenizer.py` ·
+`stage_v3_to_gcs.py` · `reweight_corpus.py` ·
 `eval_refiner_worker.py` · `dispatch_refine_eval.py`. Narrative + operational detail in
 `SCALE_PLAN.md`.
