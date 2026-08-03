@@ -1,0 +1,185 @@
+# Copyright The MarinFold Authors
+# SPDX-License-Identifier: Apache-2.0
+
+"""Dispatch exp177 soft-target training on CoreWeave H100s.
+
+Uses the exp139 partially-digested contacts-v1 ESM-Atlas rows that already live
+in CoreWeave S3. The training gang is submitted directly through Fray with Iris
+batch priority, so child H100 jobs do not inherit the driver's interactive band.
+"""
+
+import dataclasses
+import logging
+import os
+from datetime import timedelta
+
+from fray.current_client import current_client
+from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
+from levanter.checkpoint import CheckpointerConfig
+from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
+from marin.training.run_environment import extras_for_resources
+from marin.training.training import resolve_training_env
+
+from marinfold_models import build_train_lm_on_pod_config
+from premade_contacts_dataset import MPFixedQuotaSoftTargetContactsDataset
+from train import (
+    CONTACTS_TOKENIZER,
+    EXP117_STEPS,
+    MODEL_CONFIG,
+    SEQ_LEN,
+    _optimizer,
+    _run_soft_target_with_pinned_tokenizer,
+)
+
+logger = logging.getLogger(__name__)
+
+IRIS_PRIORITY_BAND_BATCH = 3
+
+CW_ANALYZED_PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp139_esm_atlas_contacts_v1/analyzed"
+CW_VAL_CACHE = "s3://marin-us-east-02a/MarinFold/exp108_qwen_3b_contacts_v1/tokenized/contacts-v1-val"
+CW_OUTPUT_PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp177_soft_target_loss_h2h/checkpoints"
+CW_SHARD_TEMPLATE = "analyzed-{shard_index:05d}-of-{total_shards:05d}.parquet"
+
+_FORWARD_ENV_PREFIXES = ("XLA_FLAGS", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
+_FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS",)
+
+
+def _forwarded_perf_env() -> dict[str, str]:
+    return {
+        key: value
+        for key, value in os.environ.items()
+        if key.startswith(_FORWARD_ENV_PREFIXES) and key not in _FORWARD_ENV_EXCLUDE
+    }
+
+
+def _resources() -> ResourceConfig:
+    return ResourceConfig.with_gpu(
+        "H100",
+        count=8,
+        cpu=float(os.environ.get("EXP177_CW_CPU", "32")),
+        ram=os.environ.get("EXP177_CW_RAM", "256g"),
+        disk=os.environ.get("EXP177_CW_DISK", "256g"),
+        replicas=int(os.environ.get("EXP177_CW_NODES", "4")),
+    )
+
+
+def _data_config() -> LmDataConfig:
+    train_dataset = MPFixedQuotaSoftTargetContactsDataset(
+        data_prefix=os.environ.get("EXP177_CW_CONTACTS_PREFIX", CW_ANALYZED_PREFIX).rstrip("/"),
+        num_shards=int(os.environ.get("EXP177_NUM_SHARDS", "3338")),
+        total_shards=3338,
+        examples_per_shard=int(os.environ.get("EXP177_EXAMPLES_PER_SHARD", "2650")),
+        seed=0,
+        max_seq_len=SEQ_LEN,
+        transform_workers=int(os.environ.get("EXP177_TRANSFORM_WORKERS", "28")),
+        prefetch_shards=int(os.environ.get("EXP177_PREFETCH_SHARDS", "28")),
+        shard_cache_size=int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "8")),
+        mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "fork"),
+        shard_name_template=os.environ.get("EXP177_CONTACTS_SHARD_NAME_TEMPLATE", CW_SHARD_TEMPLATE),
+    )
+    return LmDataConfig(
+        components={
+            "contacts-v1/soft_target": DirectDatasetComponent(datasets={"train": train_dataset}),
+            "tokenized/contacts-v1-val": DatasetComponent(
+                cache_dir=os.environ.get("EXP177_CW_VAL_CACHE", CW_VAL_CACHE).rstrip("/"),
+                pack=True,
+            ),
+        },
+        train_weights={"contacts-v1/soft_target": 1.0, "tokenized/contacts-v1-val": 0.0},
+        tokenizer=CONTACTS_TOKENIZER,
+        cache_dir=None,
+        auto_build_caches=False,
+        shuffle=False,
+        mixture_block_size=1,
+        block_cross_document_attention=True,
+    )
+
+
+def _pod_config(run_name: str):
+    resources = _resources()
+    batch_size = int(os.environ.get("EXP177_CW_BATCH_SIZE", "128"))
+    steps = int(os.environ.get("EXP177_CW_STEPS", str(EXP117_STEPS * 256 // batch_size)))
+    steps_per_eval = int(os.environ.get("EXP177_CW_STEPS_PER_EVAL", str(max(1, steps // 32))))
+    max_eval_batches = int(os.environ.get("EXP177_CW_MAX_EVAL_BATCHES", "16"))
+    version = os.environ.get("EXP177_VERSION", "2026.08.03.2")
+    output_path = f"{CW_OUTPUT_PREFIX}/{run_name}/{version}"
+    env_vars = {
+        **_forwarded_perf_env(),
+        "WANDB_ENTITY": "open-athena",
+        "WANDB_PROJECT": "MarinFold",
+        "EXP177_LOSS": "soft_target",
+        "EXP177_BACKEND": "coreweave",
+        "EXP177_SOFT_TARGET_MP": "1",
+        "EXP177_CONTACTS_PREFIX": os.environ.get("EXP177_CW_CONTACTS_PREFIX", CW_ANALYZED_PREFIX).rstrip("/"),
+        "EXP177_CONTACTS_SHARD_NAME_TEMPLATE": os.environ.get("EXP177_CONTACTS_SHARD_NAME_TEMPLATE", CW_SHARD_TEMPLATE),
+        "EXP177_TRANSFORM_WORKERS": os.environ.get("EXP177_TRANSFORM_WORKERS", "28"),
+        "EXP177_PREFETCH_SHARDS": os.environ.get("EXP177_PREFETCH_SHARDS", "28"),
+        "EXP177_SHARD_CACHE_SIZE": os.environ.get("EXP177_SHARD_CACHE_SIZE", "8"),
+        "EXP177_MP_START_METHOD": os.environ.get("EXP177_MP_START_METHOD", "fork"),
+    }
+    for key in ("WANDB_API_KEY", "HUGGING_FACE_HUB_TOKEN"):
+        if value := os.environ.get(key):
+            env_vars[key] = value
+
+    pod_config = build_train_lm_on_pod_config(
+        run_name=run_name,
+        model=MODEL_CONFIG,
+        optimizer=_optimizer(),
+        data=_data_config(),
+        resources=resources,
+        output_path=output_path,
+        num_train_steps=steps,
+        train_batch_size=batch_size,
+        seq_len=SEQ_LEN,
+        steps_per_eval=steps_per_eval,
+        z_loss_weight=0.0,
+        tensor_parallel_size=int(os.environ.get("EXP177_CW_TENSOR_PARALLELISM", "1")),
+        data_seed=0,
+        wandb_project="MarinFold",
+        wandb_group="exp177-soft-target-loss-h2h-coreweave",
+        wandb_name=run_name,
+        tags=("protein", "contacts-v1", "exp177", "qwen3", "from-scratch", "loss=soft_target", "coreweave"),
+        env_vars=env_vars,
+    )
+    trainer = dataclasses.replace(
+        pod_config.train_config.trainer,
+        max_eval_batches=max_eval_batches,
+        checkpointer=CheckpointerConfig(save_interval=timedelta(minutes=10), keep=[{"every": steps}]),
+    )
+    train_config = dataclasses.replace(pod_config.train_config, trainer=trainer, hf_save_steps=steps)
+    return dataclasses.replace(pod_config, train_config=train_config, auto_build_caches=False)
+
+
+def dispatch(wait: bool = True):
+    batch_size = int(os.environ.get("EXP177_CW_BATCH_SIZE", "128"))
+    nodes = int(os.environ.get("EXP177_CW_NODES", "4"))
+    default_name = (
+        "exp177-cv1-1_5b-e16-lr3p162e-3-wd0p2-"
+        f"bs{batch_size}-soft_target-cw-h100x{nodes}-full-mp"
+    )
+    run_name = os.environ.get("EXP177_NAME", default_name)
+    pod_config = _pod_config(run_name)
+    environment = create_environment(
+        env_vars=resolve_training_env(base_env=dict(pod_config.env_vars or {}), resources=pod_config.resources),
+        extras=extras_for_resources(pod_config.resources),
+    )
+    request = JobRequest(
+        name=run_name,
+        entrypoint=Entrypoint.from_callable(_run_soft_target_with_pinned_tokenizer, args=[pod_config]),
+        resources=pod_config.resources,
+        environment=environment,
+        priority=IRIS_PRIORITY_BAND_BATCH,
+        processes_per_task=1,
+        max_retries_failure=int(os.environ.get("EXP177_CW_MAX_RETRIES", "3")),
+    )
+    logger.info("Dispatching CoreWeave exp177 soft-target run %s -> %s", run_name, pod_config.output_path)
+    job = current_client().submit(request)
+    print(job.id)
+    if wait:
+        job.wait(raise_on_failure=True)
+    return job
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    dispatch(wait=os.environ.get("EXP177_CW_WAIT", "1") != "0")
