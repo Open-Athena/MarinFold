@@ -30,11 +30,20 @@ a contacts-v1 document emits:
 The vocab is therefore: the 5 native tokens, then the entire
 contacts-and-distances-v1 ``all_domain_tokens()`` list (which supplies
 every reused token plus the rest of its vocab, carried so the fine-tuning
-path keeps a single tokenizer), then one trailing token for the
-sequence-only variant (``<contacts-v1.sequence_only>``; see
-:data:`SEQUENCE_ONLY_TOKENS`). The three groups are disjoint, and the
-sequence-only token is appended **last** so introducing it left every
-pre-existing token id unchanged (append-only).
+path keeps a single tokenizer), then two trailing tokens appended in the
+order they were introduced: the sequence-only variant
+(``<contacts-v1.sequence_only>``; see :data:`SEQUENCE_ONLY_TOKENS`) and the
+retraction token (``<retract>``; see :data:`RETRACT_TOKENS`, issue #158).
+The groups are disjoint, and each trailing token was appended **last** when
+added so introducing it left every pre-existing token id unchanged
+(append-only) — an existing checkpoint only grows its embedding table by
+one row per trailing token.
+
+The sibling ``contacts-and-coordinates-v1`` format inherits this vocab as
+its own leading block but freezes it at the pre-retraction 2844 tokens (it
+has no retraction), so ``<retract>`` lives in the contacts-v1 tokenizer
+only and no coordinate-format token id moves. See that format's
+``vocab.inherited_tokens``.
 """
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
@@ -89,6 +98,21 @@ END_TOKEN = "<end>"
 SEQUENCE_ONLY_DOC_TYPE_TOKEN = "<contacts-v1.sequence_only>"
 SEQUENCE_ONLY_TOKENS = [SEQUENCE_ONLY_DOC_TYPE_TOKEN]
 
+# --- Retraction extension (issue #158) ---
+# ``<retract> <pX> <pY>`` takes back a previously emitted ``<contact> <pX>
+# <pY>``: the structure section becomes an ordered edit list, and the final
+# contact set is whatever is still live at ``<end>`` (see ``read.py`` for the
+# fold). Native-minted by contacts-v1 (no analog in any prior format), but —
+# exactly like SEQUENCE_ONLY_TOKENS — deliberately kept OUT of NATIVE_TOKENS
+# and appended LAST in all_domain_tokens(): adding it left every pre-existing
+# contacts-v1 / contacts-and-distances-v1 / sequence-only id unchanged
+# (append-only), so an existing checkpoint just grows its embedding by one
+# row. The generator never emits it (retraction documents are synthesised by
+# the model-in-the-loop corpus job, issue #159); it is reserved here so the
+# tokenizer and inference fold are ready for retraction-trained models.
+RETRACT_TOKEN = "<retract>"
+RETRACT_TOKENS = [RETRACT_TOKEN]
+
 
 def position_token(index: int) -> str:
     """Token for a residue position index — reused ``<pX>`` from c-and-d-v1."""
@@ -140,13 +164,27 @@ def additional_tokens() -> list[str]:
 
 
 def sequence_only_tokens() -> list[str]:
-    """The token(s) the sequence-only variant mints, appended last.
+    """The token(s) the sequence-only variant mints, appended second-to-last.
 
     Currently just ``<contacts-v1.sequence_only>``. Kept as its own
     trailing group (rather than folded into the leading native tokens) so
-    that adding it preserved every pre-existing token id.
+    that adding it preserved every pre-existing token id. The retraction
+    token (:func:`retract_tokens`) was appended after it, so this group is
+    no longer the very last one — but its id is unchanged (append-only).
     """
     return list(SEQUENCE_ONLY_TOKENS)
+
+
+def retract_tokens() -> list[str]:
+    """The retraction token(s), appended last (issue #158).
+
+    Currently just ``<retract>``. Its own trailing group, after the
+    sequence-only token, so introducing it left every pre-existing id
+    (including the sequence-only token's) unchanged. The
+    contacts-and-coordinates-v1 format excludes this group from the vocab it
+    inherits (it has no retraction), so no coordinate-format id moves.
+    """
+    return list(RETRACT_TOKENS)
 
 
 def all_domain_tokens() -> list[str]:
@@ -156,11 +194,12 @@ def all_domain_tokens() -> list[str]:
     and 1); this function returns the domain tokens only, starting at id 2.
 
     The group order (the native tokens, then the contacts-and-distances-v1
-    block, then the trailing sequence-only token) and the within-group
-    order are both load-bearing.
+    block, then the trailing sequence-only token, then the trailing
+    retraction token) and the within-group order are both load-bearing.
     """
     return [
         *contacts_v1_native_tokens(),
         *additional_tokens(),
         *sequence_only_tokens(),
+        *retract_tokens(),
     ]

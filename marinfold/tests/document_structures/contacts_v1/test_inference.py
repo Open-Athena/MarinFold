@@ -340,3 +340,59 @@ def test_evaluate_rollout_recovers_planted(monkeypatch):
     result = inf.evaluate(cfg, structures=[structure])
     assert result.extras["method"] == "rollout"
     assert result.metrics["r_precision_all"] == 1.0
+
+
+class _RetractingBackend(_PlantedBackend):
+    """Like ``_PlantedBackend`` but each rollout also RETRACTS one seq pair.
+
+    Emits ``<contact>`` for every planted pair, then a ``<retract>`` for the
+    designated pair — so the rollout vote-counter must fold the edit list and
+    end up voting only the pairs still live (issue #158).
+    """
+
+    def __init__(self, tokenizer, seq_positions, planted=(), retract=None):
+        super().__init__(tokenizer, seq_positions, planted=planted)
+        self._retract = None if retract is None else tuple(sorted(retract))
+
+    def sample_completions(self, prefix_token_ids_batch, **kwargs):
+        completions = []
+        for prefix_ids in prefix_token_ids_batch:
+            text = self._tok.decode(prefix_ids, skip_special_tokens=False)
+            nterm = int(re.search(r"<n-term>\s+<p(\d+)>", text).group(1))
+            positions = sorted(
+                {int(p) for p in re.findall(r"<p(\d+)>", text)},
+                key=lambda p: (p - nterm) % 2000,
+            )
+            toks: list[str] = []
+            for pair in self._planted:
+                a, b = sorted(pair)
+                toks += ["<contact>", f"<p{positions[a]}>", f"<p{positions[b]}>"]
+            if self._retract is not None:
+                a, b = self._retract
+                toks += ["<retract>", f"<p{positions[a]}>", f"<p{positions[b]}>"]
+            completions.append(
+                list(self._tok.encode(" ".join(toks), add_special_tokens=False))
+            )
+        return completions
+
+
+def test_rollout_honors_retraction(monkeypatch):
+    # Both (0,12) and (2,16) are emitted, but (0,12) is retracted in every
+    # rollout, so only (2,16) should collect votes.
+    s = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    canonical_positions = inf._prefix_and_positions(s, entry_id="demo")[1]
+    backend = _RetractingBackend(
+        _tokenizer(), canonical_positions, planted=[(0, 12), (2, 16)], retract=(0, 12)
+    )
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
+
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="transformers", method="rollout", n_rollouts=4
+    )
+    rec = list(inf.predict(cfg, structures=[s]))[0]
+    score = {tuple(p): sc for p, sc in zip(rec["pairs"], rec["score"])}
+    # The live pair wins with full votes; the retracted pair keeps only the
+    # sub-1.0 pairwise tie-break mass (no votes).
+    assert tuple(rec["pairs"][int(np.argmax(rec["score"]))]) == (3, 17)  # (2,16)
+    assert score[(3, 17)] >= 4.0
+    assert score[(1, 13)] < 1.0  # (0,12) retracted → no votes

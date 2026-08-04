@@ -31,8 +31,10 @@ The token order is chosen so a checkpoint trained on **either** contacts-v1
   only token ccoord's tokenizer does not already have.
 
 So ``contacts-and-crops-v1`` is literally ccoord's native block with one
-``<crop>`` token appended. Total domain vocab: 3846 tokens (3848 with
-``<pad>``/``<eos>``).
+``<crop>`` token appended. contacts-v1's ``<retract>`` is then appended last
+so this vocab is a retraction-capable **superset tokenizer** for mixtures
+(see :func:`all_domain_tokens`); this format itself never emits it. Total
+domain vocab: 3847 tokens (3849 with ``<pad>``/``<eos>``).
 """
 
 from marinfold.document_structures.contacts_and_distances_v1.vocab import (
@@ -64,6 +66,9 @@ from marinfold.document_structures.contacts_v1.vocab import (
 )
 from marinfold.document_structures.contacts_v1.vocab import (
     position_token as _contacts_v1_position_token,
+)
+from marinfold.document_structures.contacts_v1.vocab import (
+    retract_tokens as _contacts_v1_retract_tokens,
 )
 
 
@@ -136,14 +141,23 @@ def atom_token(atom_name: str) -> str:
 
 
 def inherited_tokens() -> list[str]:
-    """The full contacts-v1 domain vocab, carried forward unchanged.
+    """The contacts-v1 domain vocab (minus retraction), carried forward unchanged.
 
-    This is contacts-v1's entire ``all_domain_tokens()`` list (its 5 native
-    tokens, the contacts-and-distances-v1 block, and its trailing
-    sequence-only token) — 2844 tokens — reused verbatim so every id is
-    byte-stable against contacts-v1's own tokenizer.
+    This is contacts-v1's ``all_domain_tokens()`` list (its 5 native tokens,
+    the contacts-and-distances-v1 block, and its trailing sequence-only
+    token) — 2844 tokens — reused verbatim so every id is byte-stable
+    against contacts-v1's own tokenizer.
+
+    contacts-v1's later ``<retract>`` extension (issue #158) is **excluded**:
+    this format has no retraction, and inheriting that trailing token would
+    shove the whole coordinate/crop block up by one id and break every
+    published crops checkpoint (and desync the xyz ids from ccoord's).
+    ``all_domain_tokens`` re-appends it at the very end instead. Filtering it
+    out (rather than slicing a fixed length) keeps this robust to any further
+    contacts-v1 growth while pinning the 2844-token inherited block.
     """
-    return _contacts_v1_all_domain_tokens()
+    retract = set(_contacts_v1_retract_tokens())
+    return [t for t in _contacts_v1_all_domain_tokens() if t not in retract]
 
 
 def native_tokens() -> list[str]:
@@ -178,6 +192,15 @@ def _validate_reuse() -> None:
             f"contacts-and-crops-v1 native tokens collide with the "
             f"inherited block: {sorted(clashes)}"
         )
+    # The trailing <retract> token (appended by all_domain_tokens for mixture
+    # tokenizers) must be disjoint from both, so appending it adds no dup id.
+    retract = set(_contacts_v1_retract_tokens())
+    retract_clashes = retract & (inherited | set(NATIVE_TOKENS))
+    if retract_clashes:
+        raise ValueError(
+            f"contacts-and-crops-v1 retract token collides with an existing "
+            f"token: {sorted(retract_clashes)}"
+        )
 
 
 _validate_reuse()
@@ -189,9 +212,17 @@ def all_domain_tokens() -> list[str]:
     ``build_tokenizer`` prepends the ``<pad>`` / ``<eos>`` specials (ids 0
     and 1); this function returns the domain tokens only, starting at id 2.
 
-    The group order — the entire inherited contacts-v1 block first, then
-    this format's native tokens (doc type, then ``<xyz-000>`` ..
-    ``<xyz-999>``, then ``<crop>``) — and the within-group order are both
-    load-bearing.
+    The group order is load-bearing: the inherited contacts-v1 block first
+    (2844 tokens, retraction excluded), then this format's native tokens (doc
+    type, then ``<xyz-000>`` .. ``<xyz-999>``, then ``<crop>``), then
+    contacts-v1's ``<retract>`` appended **last**.
+
+    ``<retract>`` is carried even though this format never emits it: this
+    vocab is a **superset tokenizer** for mixtures (crops + contacts-v1 +
+    esm_atlas, cf. #155), and a mixture that includes retraction-bearing
+    contacts-v1 documents needs the token in its shared tokenizer. Appending
+    it after the crop block keeps every coordinate/crop id fixed (published
+    crops checkpoints stay byte-stable, xyz ids stay equal to ccoord's) and
+    costs one embedding row.
     """
-    return [*inherited_tokens(), *native_tokens()]
+    return [*inherited_tokens(), *native_tokens(), *_contacts_v1_retract_tokens()]
