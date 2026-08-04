@@ -82,7 +82,8 @@ def build_fixed_meta(export: str, out: Path) -> None:
     print(f"[finalize] <contacts-v1.backtracking> = {tid}", flush=True)
 
 
-def stage(export: str, step_dir: str, job: str = "exp175-stage-model") -> None:
+def stage(export: str, step_dir: str, label: str = LABEL,
+          job: str = "exp175-stage-model") -> None:
     """Submit the cloud-side copy AND WAIT for it.
 
     ``stage_to_cw.py`` submits with ``--no-wait`` and exits 0 as soon as the job
@@ -98,7 +99,7 @@ def stage(export: str, step_dir: str, job: str = "exp175-stage-model") -> None:
          "--job-name", job,
          "--gcs", export.rsplit("/", 1)[0],
          "--s3", S3_MODELS,
-         "--assets", f"{step_dir}={LABEL}"],
+         "--assets", f"{step_dir}={label}"],
         check=True,
     )
     iris = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
@@ -115,7 +116,7 @@ def stage(export: str, step_dir: str, job: str = "exp175-stage-model") -> None:
         time.sleep(30)
 
 
-def upload_meta(fixed: Path) -> None:
+def upload_meta(fixed: Path, label: str = LABEL) -> None:
     import os
 
     import fsspec
@@ -124,7 +125,7 @@ def upload_meta(fixed: Path) -> None:
                            key=os.environ["CW_KEY_ID"],
                            secret=os.environ["CW_KEY_SECRET"],
                            config_kwargs={"s3": {"addressing_style": "virtual"}})
-    base = f"{S3_MODELS[len('s3://'):]}/{LABEL}"
+    base = f"{S3_MODELS[len('s3://'):]}/{label}"
     for name in META:
         fs.put_file(str(fixed / name), f"{base}/{name}")
         print(f"[finalize] uploaded {name}", flush=True)
@@ -134,15 +135,17 @@ def upload_meta(fixed: Path) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--step", default="step-2058")
+    ap.add_argument("--run", default=RUN, help="run dir holding hf/<step>/")
+    ap.add_argument("--label", default=LABEL, help="model dir name under the S3 prefix")
     ap.add_argument("--work", type=Path, default=Path("/home/bizon/exp175_eval/meta"))
     a = ap.parse_args()
 
-    export = f"{RUN}/hf/{a.step}"
+    export = f"{a.run}/hf/{a.step}"
     wait_for_export(export)
     build_fixed_meta(export, a.work)
-    stage(export, a.step)
-    upload_meta(a.work / "fixed")
-    print(f"[finalize] MODEL READY  {S3_MODELS}/{LABEL}")
+    stage(export, a.step, label=a.label, job=f"exp175-stage-{a.label}")
+    upload_meta(a.work / "fixed", label=a.label)
+    print(f"[finalize] MODEL READY  {S3_MODELS}/{a.label}")
     return 0
 
 
