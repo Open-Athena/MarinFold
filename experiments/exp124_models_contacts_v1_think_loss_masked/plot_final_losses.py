@@ -13,6 +13,12 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE / "data" / "final_losses.csv"
 DEFAULT_OUTPUT = HERE / "plots" / "final_losses.png"
+METRIC_ORDER = ["ordinary contacts-v1 val", "think-augmented masked val"]
+RUN_COLORS = {
+    "#117 E16 final": "#4f83cc",
+    "#75 E8": "#8aa6c8",
+    "exp124 think-masked": "#d95f02",
+}
 
 
 def main() -> int:
@@ -24,55 +30,61 @@ def main() -> int:
     import matplotlib.pyplot as plt
 
     df = pd.read_csv(args.input)
-    contacts = df[df["comparable_to_contacts_v1"].astype(bool)].copy()
-    think = df[~df["comparable_to_contacts_v1"].astype(bool)].copy()
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.4), sharey=False)
 
-    fig, ax = plt.subplots(figsize=(7.0, 4.5))
-    colors = ["#4f83cc", "#8aa6c8", "#d95f02"]
-    bars = ax.bar(contacts["run"], contacts["loss"], color=colors, edgecolor="#333333")
-
-    if not think.empty:
-        think_loss = float(think.iloc[0]["loss"])
-        ax.axhline(think_loss, color="#d95f02", linestyle="--", linewidth=1.2)
-        ax.text(
-            0.02,
-            think_loss + 0.008,
-            f"exp124 think-masked val = {think_loss:.3f} (not contacts-v1 comparable)",
-            transform=ax.get_yaxis_transform(),
-            color="#8c3b00",
-            fontsize=9,
-            va="bottom",
+    for ax, metric in zip(axes, METRIC_ORDER, strict=True):
+        metric_df = df[df["metric"] == metric].copy()
+        bars = ax.bar(
+            metric_df["run"],
+            metric_df["loss"],
+            color=[RUN_COLORS[run] for run in metric_df["run"]],
+            edgecolor="#333333",
         )
+        for bar, value in zip(bars, metric_df["loss"], strict=True):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                float(value) + 0.008,
+                f"{float(value):.3f}",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+            )
+        ax.set_title(metric)
+        ax.grid(axis="y", alpha=0.25)
+        ax.tick_params(axis="x", rotation=15)
 
-    for bar, value in zip(bars, contacts["loss"], strict=True):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            float(value) + 0.012,
-            f"{float(value):.3f}",
-            ha="center",
-            va="bottom",
-            fontsize=10,
-        )
-
-    baseline = float(contacts.iloc[0]["loss"])
-    exp124_loss = float(contacts.iloc[-1]["loss"])
-    delta = exp124_loss - baseline
-    ax.text(
+    contacts = df[df["metric"] == "ordinary contacts-v1 val"]
+    exp124_contacts = float(contacts[contacts["run"] == "exp124 think-masked"].iloc[0]["loss"])
+    exp117_contacts = float(contacts[contacts["run"] == "#117 E16 final"].iloc[0]["loss"])
+    axes[0].text(
         0.98,
         0.95,
-        f"exp124 − #117 = +{delta:.3f} nats",
-        transform=ax.transAxes,
+        f"exp124 − #117 = +{exp124_contacts - exp117_contacts:.3f} nats",
+        transform=axes[0].transAxes,
         ha="right",
         va="top",
-        fontsize=10,
+        fontsize=9,
         bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#cccccc"},
     )
+    axes[0].set_ylim(2.62, 3.22)
+    axes[0].set_ylabel("validation loss (nats)")
 
-    ax.set_ylabel("contacts-v1 validation loss (nats)")
-    ax.set_title("Think-masked training regressed contacts-v1 validation loss")
-    ax.set_ylim(2.62, 3.22)
-    ax.grid(axis="y", alpha=0.25)
-    ax.tick_params(axis="x", rotation=12)
+    think = df[df["metric"] == "think-augmented masked val"]
+    exp124_think = float(think[think["run"] == "exp124 think-masked"].iloc[0]["loss"])
+    exp117_think = float(think[think["run"] == "#117 E16 final"].iloc[0]["loss"])
+    axes[1].text(
+        0.98,
+        0.95,
+        f"exp124 − #117 = {exp124_think - exp117_think:+.3f} nats",
+        transform=axes[1].transAxes,
+        ha="right",
+        va="top",
+        fontsize=9,
+        bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#cccccc"},
+    )
+    axes[1].set_ylim(3.06, 3.13)
+
+    fig.suptitle("exp124 regresses ordinary contacts-v1 loss but improves native think-masked loss")
     fig.tight_layout()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -83,7 +95,7 @@ def main() -> int:
     meta = {
         "script": Path(__file__).name,
         "args": ["--input", str(args.input), "--output", str(args.output)],
-        "caption": "Final exp124 contacts-v1 validation loss versus #75/#117 baselines.",
+        "caption": "Final exp124 validation losses versus #75/#117 baselines on ordinary and think-masked metrics.",
     }
     args.output.with_suffix(args.output.suffix + ".meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     pdf_output.with_suffix(pdf_output.suffix + ".meta.json").write_text(json.dumps(meta, indent=2) + "\n")

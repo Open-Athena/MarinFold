@@ -76,6 +76,10 @@ preserving ordinary contacts-v1 validation quality.
    - `eval/tokenized/contacts-v1-val/loss` on the ordinary contacts-v1 validation
      cache, for comparison to prior contacts-v1 CE runs.
 
+   After training, #117 E16 final was also recomputed on the exact exp124
+   think-augmented validation cache with `<think>` targets masked, so the native
+   think-mode validation result has an apples-to-apples baseline.
+
 ## Success criteria
 
 - Think-masked train and validation caches build successfully in `us-east5` and
@@ -91,7 +95,9 @@ preserving ordinary contacts-v1 validation quality.
 
 All infrastructure criteria were met: cache smokes passed, the full resumed
 `v5p-128` run succeeded, and step-35680 checkpoint/HF export completed. The model
-result was negative.
+result is mixed: exp124 regressed ordinary no-`<think>` contacts-v1 validation,
+but improved over #117 when both are evaluated on the native think-augmented
+masked validation metric.
 
 **Final W&B run:**
 [`exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3`](https://wandb.ai/open-athena/MarinFold/runs/exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3)
@@ -110,38 +116,51 @@ result was negative.
 | `eval/contacts-v1-think-masked/loss` | 3.0855870246887207 |
 | `eval/tokenized/contacts-v1-val/loss` | **3.131303071975708** |
 
-The ordinary contacts-v1 validation loss is the important number. It is far
-worse than both reference contacts-v1 models:
+The ordinary contacts-v1 validation result is much worse than both reference
+contacts-v1 models, but that is not the same metric as the think-augmented
+objective exp124 trained on:
 
 ![Final validation losses](plots/final_losses.png)
 
-| model/run | contacts-v1 val loss | Δ vs exp124 |
-|---|---:|---:|
-| #117 E16 final | 2.7037 | +0.4276 |
-| #75 E8 | 2.7566 | +0.3747 |
-| **exp124 think-masked** | **3.1313** | — |
+| model/run | metric | val loss | exp124 − model |
+|---|---|---:|---:|
+| #117 E16 final | ordinary contacts-v1 val | 2.7037 | +0.4276 |
+| #75 E8 | ordinary contacts-v1 val | 2.7566 | +0.3747 |
+| **exp124 think-masked** | ordinary contacts-v1 val | **3.1313** | — |
+| #117 E16 final | think-augmented masked val | 3.0996 | -0.0141 |
+| **exp124 think-masked** | think-augmented masked val | **3.0856** | — |
+
+The #117 think-masked baseline was recomputed with
+[`recompute_think_masked_val.py`](recompute_think_masked_val.py) on Iris job
+`/zack/exp124-think-val-exp117-full-v5e-west4-r1`; the output JSON is stored at
+`gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/eval_loss/exp117-full-v5e-west4-r1.json`
+and summarized in [`data/exp117_think_masked_eval.json`](data/exp117_think_masked_eval.json).
 
 The exp188 padding-target-loss investigation found sub-0.01-nat objective-scale
-issues for comparable contacts-v1 runs. That is irrelevant to this verdict: the
-exp124 regression is hundreds of millinats, not a bookkeeping-scale drift.
+issues for comparable contacts-v1 runs. That is too small to explain the ordinary
+contacts-v1 regression, which is hundreds of millinats.
 
 ## Conclusion
 
-The hypothesis did **not** survive the base validation check. Training on
-think-augmented contacts-v1 documents while masking `<think>` targets out of the
-loss produces a model that is substantially worse on ordinary contacts-v1
-validation loss: **3.1313** versus 2.7566 for #75 and 2.7037 for #117 final.
+Exp124 answers two different questions differently.
 
-Because the base CE objective regressed by +0.37 to +0.43 nats, this experiment
-should not be treated as a promising checkpoint for the 554-protein contact
-benchmark. A downstream contact eval would answer a different question — whether
-this damaged base model has some special inference-time `<think>` behavior — but
-it is not the right next step if the goal is to improve contacts-v1 accuracy.
+On ordinary no-`<think>` contacts-v1 validation, the result is clearly negative:
+training on think-augmented documents while masking `<think>` targets produces a
+model with loss **3.1313**, versus 2.7566 for #75 and 2.7037 for #117 final. This
+means the run did not preserve the base contacts-v1 language-modeling objective.
 
-The likely lesson is that inserting `<think>` tokens into the training documents
-changes the sequence distribution enough that simply masking their targets is not
-an apples-to-apples improvement. If pause tokens are revisited, stronger designs
-would include at least one of:
+On the native think-augmented validation cache with target `<think>` tokens
+masked, however, exp124 is better than #117: **3.0856** vs **3.0996**. That
+supports the narrower claim that the model adapted to the think-augmented masked
+objective.
+
+The open question is whether that native-metric gain transfers to downstream
+contact prediction when `<think>` tokens are inserted at inference time. The
+ordinary validation regression means this checkpoint is risky as a general
+contacts-v1 replacement; the think-masked gain means it is no longer fair to call
+the experiment simply negative without a downstream think-mode contact eval.
+
+If pause tokens are revisited, stronger designs would include at least one of:
 
 - train/eval recipes that explicitly exercise `<think>` insertion at inference
   time and score the downstream contact metric;
@@ -162,5 +181,8 @@ would include at least one of:
   `gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/cache/think-masked/2026.07.29.2`
 - Run history:
   `history/runs/20260730_exp124_models_contacts_v1_think_loss_masked_exp124_cv1_think_masked_e16_lr3p162e_3_wd0p2_bs256_next_token_exp177recipe_v5p128_r3.md`
+- Think-masked #117 recompute:
+  `data/exp117_think_masked_eval.json`,
+  `gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/eval_loss/exp117-full-v5e-west4-r1.json`
 - Plot source/output:
   `data/final_losses.csv`, `plots/final_losses.png`, `plots/final_losses.pdf`

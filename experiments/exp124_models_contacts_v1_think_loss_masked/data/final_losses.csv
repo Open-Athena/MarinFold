@@ -1,5 +1,6 @@
-run,loss,metric,comparable_to_contacts_v1,source
-#117 E16 final,2.7037086486816406,contacts-v1 val,true,W&B old loss / exp169
-#75 E8,2.7566,contacts-v1 val,true,exp169/exp180
-exp124 think-masked,3.131303071975708,contacts-v1 val,true,W&B summary eval/tokenized/contacts-v1-val/loss
-exp124 think-masked,3.0855870246887207,think-masked val,false,W&B summary eval/contacts-v1-think-masked/loss
+run,metric,loss,source,artifact,notes
+#117 E16 final,ordinary contacts-v1 val,2.7037086486816406,W&B old loss / exp169,,Reference model evaluated on ordinary contacts-v1 validation
+#75 E8,ordinary contacts-v1 val,2.7566,exp169/exp180,,Best exp75 reference evaluated on ordinary contacts-v1 validation
+exp124 think-masked,ordinary contacts-v1 val,3.131303071975708,W&B summary eval/tokenized/contacts-v1-val/loss,,Think-trained model evaluated on ordinary contacts-v1 validation
+#117 E16 final,think-augmented masked val,3.099645097316767,exp124 recompute on 2026.07.29.2 cache,gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/eval_loss/exp117-full-v5e-west4-r1.json,#117 evaluated on exp124 think-augmented validation cache with target think tokens masked
+exp124 think-masked,think-augmented masked val,3.0855870246887207,W&B summary eval/contacts-v1-think-masked/loss,,Think-trained model evaluated during training on its native think-masked validation cache

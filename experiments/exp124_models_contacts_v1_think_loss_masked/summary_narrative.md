@@ -6,6 +6,12 @@ The README is the canonical result record. The plot in
 
 - Full v5p-128 run succeeded and exported step-35680.
 - Final standard contacts-v1 validation loss: 3.131303071975708.
-- Reference contacts-v1 validation losses: #117 final 2.7037, #75 E8 2.7566.
-- Verdict: think-token masked-loss training badly regressed the base contacts-v1
-  objective, so this is not a promising checkpoint for downstream contact eval.
+- Reference standard contacts-v1 validation losses: #117 final 2.7037, #75 E8
+  2.7566.
+- Apples-to-apples think-masked validation comparison:
+  - exp124: 3.0855870246887207.
+  - #117 recompute: 3.099645097316767.
+- Verdict: exp124 regressed ordinary no-`<think>` contacts-v1 validation, but it
+  improved over #117 on the native think-augmented masked validation metric. A
+  downstream think-mode contact eval is needed before calling the think-token
+  idea negative overall.
