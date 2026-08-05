@@ -11,7 +11,13 @@ The README is the canonical result record. The plot in
 - Apples-to-apples think-masked validation comparison:
   - exp124: 3.0855870246887207.
   - #117 recompute: 3.099645097316767.
-- Verdict: exp124 regressed ordinary no-`<think>` contacts-v1 validation, but it
-  improved over #117 on the native think-augmented masked validation metric. A
-  downstream think-mode contact eval is needed before calling the think-token
-  idea negative overall.
+- Downstream rollout+resample contact eval (`n=100`, 554 proteins):
+  - standard prompt: all R=0.3365, long R=0.2856, all AUC=0.8119.
+  - forced one-`<think>` prompt: all R=0.3359, long R=0.2822, all AUC=0.8103.
+  - recall deltas were similarly tiny/mixed; long recall@L decreased by 0.0048.
+- Verdict: exp124 regressed ordinary no-`<think>` contacts-v1 validation. It
+  improved over #117 on the native think-augmented masked validation metric, but
+  that metric teacher-forces oracle `<think>` tokens in context while masking the
+  target `<think>` positions. Because the model is not directly trained to emit
+  `<think>` tokens, the native-metric gain did not transfer to autonomous contact
+  prediction or to the one-token forced prompt intervention.

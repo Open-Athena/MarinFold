@@ -95,9 +95,12 @@ preserving ordinary contacts-v1 validation quality.
 
 All infrastructure criteria were met: cache smokes passed, the full resumed
 `v5p-128` run succeeded, and step-35680 checkpoint/HF export completed. The model
-result is mixed: exp124 regressed ordinary no-`<think>` contacts-v1 validation,
-but improved over #117 when both are evaluated on the native think-augmented
-masked validation metric.
+result is negative for autonomous contact prediction: exp124 regressed ordinary
+no-`<think>` contacts-v1 validation, and forcing `<think>` at inference time did
+not improve downstream contact-map metrics. It did improve over #117 when both
+are evaluated on the native think-augmented masked validation metric, but that
+metric is an oracle-context teacher-forced evaluation rather than evidence that
+the model learns to emit useful `<think>` tokens on its own.
 
 **Final W&B run:**
 [`exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3`](https://wandb.ai/open-athena/MarinFold/runs/exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3)
@@ -140,6 +143,33 @@ The exp188 padding-target-loss investigation found sub-0.01-nat objective-scale
 issues for comparable contacts-v1 runs. That is too small to explain the ordinary
 contacts-v1 regression, which is hundreds of millinats.
 
+### Downstream prompt intervention
+
+We also evaluated the step-35680 checkpoint on the 554-protein contact-prediction
+benchmark with the exp82 rollout+resample scorer (`n=100`, temperature 1.0,
+top-p 0.95, no top-k), comparing the standard prompt against an intervention
+that appends exactly one literal `<think>` after the protein sequence /
+`<begin_statements>` prefix. Both conditions completed all 12 CoreWeave shards
+and were scored with the same exp89 metric implementation.
+
+| metric | standard prompt | forced `<think>` | forced − standard |
+|---|---:|---:|---:|
+| all R-precision | 0.3365 | 0.3359 | -0.0006 |
+| long R-precision | 0.2856 | 0.2822 | -0.0034 |
+| all AUC | 0.8119 | 0.8103 | -0.0016 |
+| long AUC | 0.7798 | 0.7757 | -0.0041 |
+| all recall@L | 0.3725 | 0.3719 | -0.0006 |
+| long recall@L | 0.3834 | 0.3786 | -0.0048 |
+| all recall@L/5 | 0.1268 | 0.1278 | +0.0011 |
+| long recall@L/5 | 0.1652 | 0.1656 | +0.0004 |
+
+The prompt intervention therefore did not materially change contact-prediction
+quality. The small mixed deltas are consistent with sampling noise; the main
+ranked metrics are slightly worse with the forced token.
+
+Full summaries are in [`data/prompt_intervention_precision.csv`](data/prompt_intervention_precision.csv)
+and [`data/prompt_intervention_recall.csv`](data/prompt_intervention_recall.csv).
+
 ## Conclusion
 
 Exp124 answers two different questions differently.
@@ -150,20 +180,21 @@ model with loss **3.1313**, versus 2.7566 for #75 and 2.7037 for #117 final. Thi
 means the run did not preserve the base contacts-v1 language-modeling objective.
 
 On the native think-augmented validation cache with target `<think>` tokens
-masked, however, exp124 is better than #117: **3.0856** vs **3.0996**. That
-supports the narrower claim that the model adapted to the think-augmented masked
-objective.
+masked, exp124 is better than #117: **3.0856** vs **3.0996**. This supports only
+the narrower claim that the model can use oracle `<think>` tokens when they are
+teacher-forced in the context. Because the target `<think>` positions are masked,
+there is no direct loss gradient teaching the model to emit those tokens.
 
-The open question is whether that native-metric gain transfers to downstream
-contact prediction when `<think>` tokens are inserted at inference time. The
-ordinary validation regression means this checkpoint is risky as a general
-contacts-v1 replacement; the think-masked gain means it is no longer fair to call
-the experiment simply negative without a downstream think-mode contact eval.
+The downstream prompt intervention resolves the transfer question: adding one
+forced `<think>` token at inference time does **not** improve contact prediction
+(all R-precision 0.3359 vs 0.3365 standard; long R-precision 0.2822 vs 0.2856
+standard). The native validation gain is therefore best interpreted as an
+oracle-context effect, not as an autonomous useful-thinking behavior.
 
 If pause tokens are revisited, stronger designs would include at least one of:
 
-- train/eval recipes that explicitly exercise `<think>` insertion at inference
-  time and score the downstream contact metric;
+- train/eval recipes that explicitly exercise the same `<think>` protocol at
+  training and inference time, then score the downstream contact metric;
 - an ablation that **does not** mask `<think>` targets, so generation of pause
   tokens is part of the learned behavior;
 - a mixture with ordinary contacts-v1 documents to preserve the base objective;
@@ -184,5 +215,9 @@ If pause tokens are revisited, stronger designs would include at least one of:
 - Think-masked #117 recompute:
   `data/exp117_think_masked_eval.json`,
   `gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/eval_loss/exp117-full-v5e-west4-r1.json`
+- Prompt-intervention contact eval summaries:
+  `data/prompt_intervention_precision.csv`, `data/prompt_intervention_recall.csv`,
+  `s3://marin-us-east-02a/MarinFold/exp124/standard_prompt_eval/metrics/`,
+  `s3://marin-us-east-02a/MarinFold/exp124/think_prompt_eval/metrics/`
 - Plot source/output:
   `data/final_losses.csv`, `plots/final_losses.png`, `plots/final_losses.pdf`
