@@ -1,7 +1,7 @@
 # Backtracking series — status
 
 **Issues:** [#158](https://github.com/Open-Athena/MarinFold/issues/158) format · [#159](https://github.com/Open-Athena/MarinFold/issues/159) corpus · [#160](https://github.com/Open-Athena/MarinFold/issues/160) training · [#175](https://github.com/Open-Athena/MarinFold/issues/175) mode marker
-**PRs:** [#161](https://github.com/Open-Athena/MarinFold/pull/161) → [#171](https://github.com/Open-Athena/MarinFold/pull/171) → [#172](https://github.com/Open-Athena/MarinFold/pull/172) → [#176](https://github.com/Open-Athena/MarinFold/pull/176) (stacked)
+**PRs:** [#161](https://github.com/Open-Athena/MarinFold/pull/161) → [#171](https://github.com/Open-Athena/MarinFold/pull/171) → [#172](https://github.com/Open-Athena/MarinFold/pull/172) → [#197](https://github.com/Open-Athena/MarinFold/pull/197) (stacked)
 **Model:** `hf://buckets/open-athena/MarinFold/checkpoints/exp175-cv1-1_5b-mode50-v2-lr3e-4-e1-cos/hf/step-2070` · [playground notebook](../notebooks/retraction_mode_playground.ipynb)
 
 ## The one-paragraph version
