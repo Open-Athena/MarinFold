@@ -47,10 +47,13 @@ time.
 - **Training target:** in the cache built here, causal positions whose **target**
   token is `<think>` have loss weight 0. The model sees `<think>` in context but
   is not directly optimized to emit it.
-- **Baseline scale:** #75 E8 had contacts-v1 validation loss 2.7566; #117 E16
-  final is the current nearby 1.5B reference at 2.7037. The exp124 run used the
-  exp177/exp117-style TPU recipe rather than literally re-running #75's 8-epoch
-  schedule, because that was the validated v5p-128 training path at the time.
+- **Baseline scale:** historical #75/#117 W&B contacts-v1 validation losses are
+  on an older Marin/Levanter loss scale and should not be directly subtracted
+  from exp124's ordinary validation loss. The most relevant same-era/same-stack
+  ordinary next-token control is the exp177 CE baseline, which ended around
+  `eval/tokenized/contacts-v1-val/loss ≈ 3.119`. Historical #75/#117 losses are
+  still useful as context for model lineage, but not as an apples-to-apples
+  absolute-loss baseline.
 
 ## Approach
 
@@ -67,9 +70,10 @@ time.
    gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/cache/think-masked/2026.07.29.2
    ```
 
-   Exp126 has two missing train shard objects (`00858`, `01423`), so the builder
-   skips them. The intended train/val/test sizes are 4,129,682 / 41,954 / 41,567
-   documents; the built train cache contains 4,125,682 documents.
+   At cache-build time the builder skipped two train shard slots (`00858`,
+   `01423`) due the then-present HF shard-availability workaround. The intended
+   train/val/test sizes are 4,129,682 / 41,954 / 41,567 documents; the built
+   train cache contains 4,125,682 documents.
 
 2. **Train from scratch on TPU.** [`train.py`](train.py) launches a Qwen3 1.47B
    model with the exp177/exp117 TPU recipe: `seq_len=8192`, global batch 256,
@@ -103,11 +107,12 @@ time.
 All infrastructure criteria were met: cache smokes passed, the full resumed
 `v5p-128` run succeeded, and step-35680 checkpoint/HF export completed. The model
 result is negative for this small contacts-v1 reproduction of pause-token
-training: exp124 regressed ordinary no-`<think>` contacts-v1 validation, and
-forcing `<think>` at inference time did not improve downstream contact-map
-metrics. It did improve over #117 when both are evaluated on the native
-think-augmented masked validation metric, but that improvement did not transfer
-to the downstream contact prediction setup we tested.
+training: exp124 was slightly worse than the same-stack ordinary next-token
+control on ordinary no-`<think>` contacts-v1 validation, and forcing `<think>` at
+inference time did not improve downstream contact-map metrics. It did improve
+over #117 when both are evaluated on the native think-augmented masked validation
+metric, but that improvement did not transfer to the downstream contact
+prediction setup we tested.
 
 **Final W&B run:**
 [`exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3`](https://wandb.ai/open-athena/MarinFold/runs/exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3)
@@ -126,19 +131,22 @@ to the downstream contact prediction setup we tested.
 | `eval/contacts-v1-think-masked/loss` | 3.0855870246887207 |
 | `eval/tokenized/contacts-v1-val/loss` | **3.131303071975708** |
 
-The ordinary contacts-v1 validation result is much worse than both reference
-contacts-v1 models, but that is not the same metric as the think-augmented
-objective exp124 trained on:
+The ordinary contacts-v1 validation result should be compared on the newer
+Marin/Levanter loss scale. On that scale, the relevant ordinary next-token
+control is the exp177 CE baseline at approximately **3.119**, not the historical
+#75/#117 W&B numbers. The historical runs were logged under older loss semantics
+and are included below only as old-scale context.
 
 ![Final validation losses](plots/final_losses.png)
 
-| model/run | metric | val loss | exp124 − model |
+| model/run | metric | val loss | comparison |
 |---|---|---:|---:|
-| #117 E16 final | ordinary contacts-v1 val | 2.7037 | +0.4276 |
-| #75 E8 | ordinary contacts-v1 val | 2.7566 | +0.3747 |
-| **exp124 think-masked** | ordinary contacts-v1 val | **3.1313** | — |
-| #117 E16 final | think-augmented masked val | 3.0996 | -0.0141 |
-| **exp124 think-masked** | think-augmented masked val | **3.0856** | — |
+| exp177 CE baseline | ordinary contacts-v1 val, newer scale | ~3.119 | exp124 +~0.012 |
+| **exp124 think-masked** | ordinary contacts-v1 val, newer scale | **3.1313** | — |
+| #117 E16 final | ordinary contacts-v1 val, historical W&B scale | 2.7037 | not directly comparable |
+| #75 E8 | ordinary contacts-v1 val, historical W&B scale | 2.7566 | not directly comparable |
+| #117 E16 final | think-augmented masked val, recomputed same setup | 3.0996 | exp124 -0.0141 |
+| **exp124 think-masked** | think-augmented masked val, same setup | **3.0856** | — |
 
 The #117 think-masked baseline was recomputed with
 [`recompute_think_masked_val.py`](recompute_think_masked_val.py) on Iris job
@@ -146,9 +154,11 @@ The #117 think-masked baseline was recomputed with
 `gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/eval_loss/exp117-full-v5e-west4-r1.json`
 and summarized in [`data/exp117_think_masked_eval.json`](data/exp117_think_masked_eval.json).
 
-The exp188 padding-target-loss investigation found sub-0.01-nat objective-scale
-issues for comparable contacts-v1 runs. That is too small to explain the ordinary
-contacts-v1 regression, which is hundreds of millinats.
+The exp188 padding-target-loss investigation found that historical W&B losses
+and newer Levanter losses can be on different absolute scales. Consequently, the
+apparent ~0.43-nat gap between exp124 and historical #117 should not be treated
+as an apples-to-apples model-quality delta. Using the newer-stack exp177 CE
+control, the ordinary-validation gap is roughly **0.012 nats**.
 
 ### Downstream prompt intervention
 
@@ -184,9 +194,11 @@ Goyal et al. It did not reproduce the paper's reported improvement in this
 setting.
 
 On ordinary no-`<think>` contacts-v1 validation, training on the think-augmented
-corpus with masked `<think>` targets produced a model with loss **3.1313**, versus
-2.7566 for #75 and 2.7037 for #117 final. This means the run did not preserve the
-base contacts-v1 language-modeling objective.
+corpus with masked `<think>` targets produced a model with loss **3.1313**. The
+same-stack ordinary next-token exp177 CE control ended around **3.119**, so the
+ordinary-validation gap is about **+0.012 nats** on the comparable newer scale.
+The older #75/#117 W&B losses are lower in absolute terms, but are not directly
+comparable because they used older Marin/Levanter loss semantics.
 
 On the native think-augmented validation cache with target `<think>` tokens
 masked, exp124 is better than #117: **3.0856** vs **3.0996**. However, the

@@ -15,6 +15,7 @@ DEFAULT_INPUT = HERE / "data" / "final_losses.csv"
 DEFAULT_OUTPUT = HERE / "plots" / "final_losses.png"
 METRIC_ORDER = ["ordinary contacts-v1 val", "think-augmented masked val"]
 RUN_COLORS = {
+    "exp177 CE baseline": "#4f83cc",
     "#117 E16 final": "#4f83cc",
     "#75 E8": "#8aa6c8",
     "exp124 think-masked": "#d95f02",
@@ -55,18 +56,18 @@ def main() -> int:
 
     contacts = df[df["metric"] == "ordinary contacts-v1 val"]
     exp124_contacts = float(contacts[contacts["run"] == "exp124 think-masked"].iloc[0]["loss"])
-    exp117_contacts = float(contacts[contacts["run"] == "#117 E16 final"].iloc[0]["loss"])
+    exp177_contacts = float(contacts[contacts["run"] == "exp177 CE baseline"].iloc[0]["loss"])
     axes[0].text(
         0.98,
         0.95,
-        f"exp124 − #117 = +{exp124_contacts - exp117_contacts:.3f} nats",
+        f"exp124 − exp177 CE ≈ {exp124_contacts - exp177_contacts:+.3f} nats",
         transform=axes[0].transAxes,
         ha="right",
         va="top",
         fontsize=9,
         bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#cccccc"},
     )
-    axes[0].set_ylim(2.62, 3.22)
+    axes[0].set_ylim(3.09, 3.15)
     axes[0].set_ylabel("validation loss (nats)")
 
     think = df[df["metric"] == "think-augmented masked val"]
@@ -84,7 +85,7 @@ def main() -> int:
     )
     axes[1].set_ylim(3.06, 3.13)
 
-    fig.suptitle("exp124 regresses ordinary contacts-v1 loss but improves native think-masked loss")
+    fig.suptitle("exp124 pause-token run: same-scale ordinary val and think-masked val")
     fig.tight_layout()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -95,7 +96,7 @@ def main() -> int:
     meta = {
         "script": Path(__file__).name,
         "args": ["--input", str(args.input), "--output", str(args.output)],
-        "caption": "Final exp124 validation losses versus #75/#117 baselines on ordinary and think-masked metrics.",
+        "caption": "Final exp124 validation losses. Ordinary contacts-v1 loss is compared to the same-era exp177 CE baseline; historical #75/#117 W&B ordinary losses use an older loss scale and are not plotted as direct baselines.",
     }
     args.output.with_suffix(args.output.suffix + ".meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     pdf_output.with_suffix(pdf_output.suffix + ".meta.json").write_text(json.dumps(meta, indent=2) + "\n")

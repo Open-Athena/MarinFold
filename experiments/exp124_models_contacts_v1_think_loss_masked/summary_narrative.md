@@ -6,8 +6,11 @@ The README is the canonical result record. The plot in
 
 - Full v5p-128 run succeeded and exported step-35680.
 - Final standard contacts-v1 validation loss: 3.131303071975708.
-- Reference standard contacts-v1 validation losses: #117 final 2.7037, #75 E8
-  2.7566.
+- Same-stack ordinary next-token reference: exp177 CE baseline ended around
+  `eval/tokenized/contacts-v1-val/loss ≈ 3.119`, so the comparable ordinary-val
+  gap is about +0.012 nats.
+- Historical #117/#75 W&B losses (2.7037 / 2.7566) are old-scale context, not
+  directly comparable absolute-loss baselines for exp124.
 - Apples-to-apples think-masked validation comparison:
   - exp124: 3.0855870246887207.
   - #117 recompute: 3.099645097316767.
@@ -18,7 +21,8 @@ The README is the canonical result record. The plot in
 - Verdict: this was a small contacts-v1 test of the pause-token training setup
   from Goyal et al. 2023 / ICLR 2024 ("Think before you speak: Training Language
   Models With Pause Tokens"). It did not reproduce the paper's reported
-  improvement in this setting: ordinary contacts-v1 validation regressed, and
-  inserting one `<think>` token at inference time did not improve downstream
-  contact prediction. The native think-masked validation metric improved, but
-  that gain did not transfer to the contact metric we care about here.
+  improvement in this setting: ordinary contacts-v1 validation was slightly
+  worse than the same-stack CE control, and inserting one `<think>` token at
+  inference time did not improve downstream contact prediction. The native
+  think-masked validation metric improved, but that gain did not transfer to the
+  contact metric we care about here.
