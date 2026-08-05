@@ -71,7 +71,9 @@ def stage_model(src: str, dst: str) -> None:
     import torch
     from safetensors.torch import load_file, save_file
 
-    s3, gcs = _fs(src), _gcs()
+    # Both ends are scheme-aware: S3->GCS for the TPU path, GCS->S3 to bring a
+    # TPU-trained checkpoint back for the CUDA teacher-forced R-precision eval.
+    s3, gcs = _fs(src), _fs(dst)
     S, D = _strip(src), _strip(dst)
     names = [p.rsplit("/", 1)[-1] for p in s3.ls(S)]
     shards = sorted(n for n in names if n.endswith(".safetensors"))
@@ -130,7 +132,8 @@ def stage_model(src: str, dst: str) -> None:
     # So translate it here, at the one place every checkpoint passes through. This
     # only RE-SPELLS the same rope: the values are copied out of rope_parameters and
     # the result is asserted non-null before we continue.
-    cfg = json.loads(gcs.cat(f"{D}/config.json"))
+    with gcs.open(f"{D}/config.json", "rb") as fh:      # .cat() is GCS-only
+        cfg = json.loads(fh.read())
     if cfg.get("rope_theta") is None and cfg.get("rope_parameters"):
         rp = dict(cfg["rope_parameters"])
         theta = rp.pop("rope_theta", None)

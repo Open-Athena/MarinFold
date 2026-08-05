@@ -188,6 +188,10 @@ def main():
                     help="multi-draft: the model emits SEVERAL <begin_statements> "
                          "sections in one completion, the last closed by <end>. Scores "
                          "each section separately; <end> remains the stop token.")
+    ap.add_argument("--section-contacts", type=int, default=220,
+                    help="expected contacts per emitted section; sets the generation "
+                         "token budget as max_sections * (3*this + 8). Default 220 is "
+                         "the measured section size (training finals average 199).")
     ap.add_argument("--cond-k", type=int, default=0,
                     help="prepend K of this protein's OWN prior rollouts as "
                          "<begin_statements> draft blocks before the answer section, so "
@@ -292,6 +296,12 @@ def main():
     # Only the token BUDGET grows, to leave room for several sections.
     stop_id = end_id
     sections_budget = a.max_sections if a.format == "multi-draft" else 1
+    # A section is <begin_statements> + n triples. MEASURED on the trained arms: the
+    # emitted sections track the training final's ~200 contacts, i.e. ~600 tokens --
+    # NOT the (4L+64) worst case, which for L>=200 exceeds the context and let the
+    # model run to the 8192 limit instead of stopping (only ~56% of generations
+    # terminated). Budget from the observed size so --max-sections is a real cap.
+    per_section = 3 * a.section_contacts + 8
     startup_s = time.time() - t_load
     print(f"model loaded in {startup_s:.0f}s (end_id={end_id})", flush=True)
 
@@ -348,7 +358,7 @@ def main():
             rkeys = [p["r"] for p in prows]
             prefixes = texts        # conditioned when --cond-k > 0
             max_new = min(a.max_model_len - max(len(x) for x in ids_list),
-                          (4 * L + 64) * sections_budget)
+                          per_section * sections_budget)
             sp = SamplingParams(n=1, temperature=a.temperature, top_p=a.top_p,
                                 top_k=a.top_k, max_tokens=max_new, stop_token_ids=[stop_id])
             t0 = time.time()
@@ -360,7 +370,7 @@ def main():
             p0 = prows[0]
             ids = tok(p0["prefix"], add_special_tokens=False).input_ids
             m0 = {int(pos): i for i, pos in enumerate(p0["seq_positions"])}
-            max_new = min(a.max_model_len - len(ids), (4 * L + 64) * sections_budget)
+            max_new = min(a.max_model_len - len(ids), per_section * sections_budget)
             sp = SamplingParams(n=a.n_rollouts, temperature=a.temperature, top_p=a.top_p,
                                 top_k=a.top_k, max_tokens=max_new, stop_token_ids=[stop_id])
             t0 = time.time()
@@ -379,6 +389,12 @@ def main():
             extra: dict = {}
             if a.format == "multi-draft":
                 secs = parse_sections(text, m)
+                # Hard cap. The token budget bounds compute, but a generation that
+                # ends mid-section (or one tuned to a different section size) can
+                # still overshoot; RL scores a FIXED number of candidates, so make
+                # the contract explicit rather than budget-dependent.
+                n_raw = len(secs)
+                secs = secs[: a.max_sections]
                 f1s = [score_rollout(p, gtb)["all_f1"] for p in secs]
                 pred = secs[-1]                      # the LAST section is the answer
                 # Diagnostics for the premise the RL plan rests on: do successive
@@ -386,6 +402,7 @@ def main():
                 jac = [len(x & y) / max(1, len(x | y)) for x, y in zip(secs, secs[1:])]
                 extra = dict(
                     n_sections=len(secs),
+                    n_sections_raw=n_raw,        # before the --max-sections cap
                     section_f1=[float(v) for v in f1s],
                     best_f1=float(max(f1s)) if f1s else float("nan"),
                     last_f1=float(f1s[-1]) if f1s else float("nan"),
