@@ -86,8 +86,12 @@ JOB_PREFIX = os.environ.get("EVAL_CW_JOB_PREFIX", "exp175-eval-cw")
 # the comparison happen at generation time, which is where the decision actually
 # is. exp120-base is carried so all three sit on one axis.
 ARMS = {
-    "exp175-clean": (f"{S3_PREFIX}/models/exp175-mode-step2058", False),
-    "exp175-backtracking": (f"{S3_PREFIX}/models/exp175-mode-step2058", True),
+    # v2 = trained on the REGENERATED corpus (sorted-flush artifact removed).
+    # The v1 pair is kept so the four arms sit on one axis.
+    "exp175-clean": (f"{S3_PREFIX}/models/exp175-mode-v2-step2070", False),
+    "exp175-backtracking": (f"{S3_PREFIX}/models/exp175-mode-v2-step2070", True),
+    "exp175v1-clean": (f"{S3_PREFIX}/models/exp175-mode-step2058", False),
+    "exp175v1-backtracking": (f"{S3_PREFIX}/models/exp175-mode-step2058", True),
     "exp120-base": (f"{S3_PREFIX}/models/exp120-base", False),
 }
 

@@ -49,9 +49,14 @@ def wait_for_export(export: str, expect: int = 6) -> None:
     import gcsfs
 
     fs = gcsfs.GCSFileSystem()
+    path = export[len("gs://"):]
     while True:
-        files = [f for f in fs.ls(export[len("gs://"):]) if not f.endswith("/")] \
-            if fs.exists(export[len("gs://"):]) else []
+        # invalidate_cache is load-bearing: gcsfs memoises directory listings,
+        # so a poll loop started BEFORE the export exists caches the empty
+        # result and then waits on it forever -- the run finishes, the objects
+        # appear, and this still sees nothing.
+        fs.invalidate_cache(path)
+        files = [f for f in fs.ls(path) if not f.endswith("/")] if fs.exists(path) else []
         if len(files) >= expect:
             print(f"[finalize] export present: {len(files)} objects", flush=True)
             return
