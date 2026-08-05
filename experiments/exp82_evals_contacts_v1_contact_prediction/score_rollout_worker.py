@@ -42,7 +42,7 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-BEGIN, NUM_POS, MIN_SEP = "<begin_statements>", 2000, 6
+BEGIN, THINK, NUM_POS, MIN_SEP = "<begin_statements>", "<think>", 2000, 6
 CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
 
 SCHEMA = pa.schema([
@@ -98,6 +98,34 @@ def load_targets(path: str):
     return recs
 
 
+def normalize_tokenizer_metadata(model_dir: Path) -> None:
+    """Make Marin's HF export tokenizer loadable by vanilla Transformers/vLLM.
+
+    The export writes ``tokenizer_class=TokenizersBackend`` because that is the
+    in-repo wrapper used during training. The vLLM image has only stock
+    Transformers, which can load the same ``tokenizer.json`` as a
+    ``PreTrainedTokenizerFast`` once the metadata names the stock class.
+    """
+    import json
+
+    tokenizer_config = model_dir / "tokenizer_config.json"
+    if not tokenizer_config.exists():
+        return
+    with tokenizer_config.open() as handle:
+        cfg = json.load(handle)
+    if cfg.get("tokenizer_class") == "TokenizersBackend":
+        cfg["tokenizer_class"] = "PreTrainedTokenizerFast"
+        with tokenizer_config.open("w") as handle:
+            json.dump(cfg, handle, indent=2, sort_keys=True)
+        print("[worker] rewrote tokenizer_class TokenizersBackend -> PreTrainedTokenizerFast", flush=True)
+    special_tokens_map = model_dir / "special_tokens_map.json"
+    if not special_tokens_map.exists():
+        special = {key: cfg[key] for key in ("unk_token", "eos_token", "pad_token") if key in cfg}
+        with special_tokens_map.open("w") as handle:
+            json.dump(special, handle, indent=2, sort_keys=True)
+        print("[worker] wrote special_tokens_map.json", flush=True)
+
+
 def done_stems(out_dir: str, shard_i: int, num_shards: int) -> tuple[set[str], int]:
     """Stems this shard has already covered, and how many part files hold them.
 
@@ -149,6 +177,12 @@ def main() -> int:
                          "protein are independent draws from the same distribution either "
                          "way, so the estimator is unchanged — only bitwise replay of one "
                          "specific run is lost.")
+    ap.add_argument("--prompt-think-after-sequence", action="store_true",
+                    help="Append one literal <think> token after the sequence prefix. "
+                         "Deprecated alias for --prompt-think-count 1.")
+    ap.add_argument("--prompt-think-count", type=int, default=0,
+                    help="Append this many literal <think> tokens after the sequence prefix "
+                         "before generating contacts.")
     ap.add_argument("--gpu-frac", type=float, default=0.90)
     ap.add_argument("--chunk", type=int, default=8)
     ap.add_argument("--max-num-seqs", type=int, default=512)
@@ -157,6 +191,9 @@ def main() -> int:
 
     shard_i, num_shards = (int(x) for x in a.shard.split("/"))
     out_dir = f"{a.out.rstrip('/')}/{a.label}"
+    prompt_think_count = max(a.prompt_think_count, 1 if a.prompt_think_after_sequence else 0)
+    if prompt_think_count < 0:
+        raise ValueError(f"--prompt-think-count must be nonnegative, got {prompt_think_count}")
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from marinfold.document_structures.contacts_v1 import (
@@ -173,12 +210,14 @@ def main() -> int:
         todo = todo[: a.limit]
     print(f"[worker] shard {shard_i}/{num_shards}: {len(mine)} assigned, {len(skip)} already done, "
           f"{len(todo)} to do | n_rollouts={a.n_rollouts} top_k={a.top_k} top_p={a.top_p} "
-          f"T={a.temperature} per_request_seed={a.per_request_seed} label={a.label}", flush=True)
+          f"T={a.temperature} per_request_seed={a.per_request_seed} "
+          f"prompt_think_count={prompt_think_count} label={a.label}", flush=True)
     if not todo:
         print("[worker] nothing to do")
         return 0
 
     model_dir = stage_model(a.model, Path("/tmp/marinfold_model"))
+    normalize_tokenizer_metadata(model_dir)
     tok = AutoTokenizer.from_pretrained(str(model_dir))
     end_id = tok.convert_tokens_to_ids("<end>")
     assert end_id is not None and end_id >= 0, "no <end> token in the tokenizer"
@@ -196,7 +235,10 @@ def main() -> int:
             first, maps = len(prompts), []
             for k in range(a.n_rollouts):
                 doc = build_document(f"{r['stem']}:r{k}", residues, [], config=GenerationConfig())
-                prompts.append(doc.document[: doc.document.index(BEGIN) + len(BEGIN)])
+                prompt = doc.document[: doc.document.index(BEGIN) + len(BEGIN)]
+                if prompt_think_count:
+                    prompt = f"{prompt} {' '.join([THINK] * prompt_think_count)}"
+                prompts.append(prompt)
                 maps.append({(doc.n_term_index + t) % NUM_POS: t for t in range(doc.seq_len)})
             plen = len(tok(prompts[first], add_special_tokens=False).input_ids)
             max_new = min(8192 - plen, a.contact_mult * r["L"] + 128)
@@ -245,7 +287,8 @@ def main() -> int:
               f"-> {dest} (elapsed {(time.time() - t0) / 60:.1f}m)", flush=True)
 
     print(f"[worker] DONE shard {shard_i}/{num_shards}: {len(todo)} proteins in "
-          f"{(time.time() - t0) / 60:.1f} min | unfinished {n_unfinished}/{n_total} "
+          f"{(time.time() - t0) / 60:.1f} min | prompt_think_count={prompt_think_count} "
+          f"| unfinished {n_unfinished}/{n_total} "
           f"({100 * n_unfinished / max(n_total, 1):.2f}%)", flush=True)
     return 0
 

@@ -1,0 +1,16 @@
+{
+  "cache_dir": "gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/cache/think-masked/2026.07.29.2",
+  "eval/contacts-v1-think-masked/loss": 3.099645097316767,
+  "eval/contacts-v1-think-masked/timing/load_time": 5.4165380001068115,
+  "eval/contacts-v1-think-masked/timing/loss_time": 490.4047439098358,
+  "eval/contacts-v1-think-masked/timing/num_batches": 1679.0,
+  "eval/loss": 3.099645097316767,
+  "eval_batch_size": 4,
+  "iris_job": "/zack/exp124-think-val-exp117-full-v5e-west4-r1",
+  "label": "exp117_e16_final_step35679",
+  "max_eval_batches": null,
+  "metric": "think_augmented_validation_loss_with_think_targets_masked",
+  "model": "gs://marin-us-central1/protein-structure/MarinFold/exp169/models/exp117_e16_final_step35679",
+  "output": "gs://marin-us-east5/protein-structure/MarinFold/exp124_contacts_v1_think_loss_masked/eval_loss/exp117-full-v5e-west4-r1.json",
+  "vocab_size": 2845
+}

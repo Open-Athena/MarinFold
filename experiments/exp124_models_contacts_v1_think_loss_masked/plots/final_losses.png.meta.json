@@ -1,0 +1,10 @@
+{
+  "script": "plot_final_losses.py",
+  "args": [
+    "--input",
+    "/private/tmp/marinfold-exp124-pr/experiments/exp124_models_contacts_v1_think_loss_masked/data/final_losses.csv",
+    "--output",
+    "/private/tmp/marinfold-exp124-pr/experiments/exp124_models_contacts_v1_think_loss_masked/plots/final_losses.png"
+  ],
+  "caption": "Final exp124 validation losses. Ordinary contacts-v1 loss is compared to the same-era exp177 CE baseline; historical #75/#117 W&B ordinary losses use an older loss scale and are not plotted as direct baselines."
+}
