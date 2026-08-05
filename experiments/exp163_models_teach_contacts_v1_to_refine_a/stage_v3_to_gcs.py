@@ -61,11 +61,17 @@ def _strip(u: str) -> str:
     return u.split("://", 1)[1].rstrip("/") if "://" in u else u.rstrip("/")
 
 
+def _fs(url: str):
+    """Filesystem for a URL. The SOURCE is not always S3: checkpoints trained on the
+    marin TPU pool are already on GCS, and only need the bf16 cast + rope repair."""
+    return _gcs() if url.startswith("gs://") else _s3()
+
+
 def stage_model(src: str, dst: str) -> None:
     import torch
     from safetensors.torch import load_file, save_file
 
-    s3, gcs = _s3(), _gcs()
+    s3, gcs = _fs(src), _gcs()
     S, D = _strip(src), _strip(dst)
     names = [p.rsplit("/", 1)[-1] for p in s3.ls(S)]
     shards = sorted(n for n in names if n.endswith(".safetensors"))
@@ -114,8 +120,30 @@ def stage_model(src: str, dst: str) -> None:
             fh.write(json.dumps(j, indent=2).encode())
         print(f"[stage] index rewritten: total_size={total_bytes:,}", flush=True)
 
-    # Fail loudly here rather than 5 minutes into a TPU warmup.
+    # levanter's HF export ALWAYS writes the Llama3 rope under the newer
+    # ``rope_parameters`` key and leaves top-level ``rope_theta``/``rope_scaling``
+    # null. Readers older than transformers 5.x (marin's vLLM, and the transformers
+    # 4.53.1 on the CUDA eval image) see null and silently fall back to DEFAULT rope
+    # -- a 50x wrong base frequency whose error grows with sequence distance. That
+    # bug invalidated an entire round of exp163 R-precision numbers.
+    #
+    # So translate it here, at the one place every checkpoint passes through. This
+    # only RE-SPELLS the same rope: the values are copied out of rope_parameters and
+    # the result is asserted non-null before we continue.
     cfg = json.loads(gcs.cat(f"{D}/config.json"))
+    if cfg.get("rope_theta") is None and cfg.get("rope_parameters"):
+        rp = dict(cfg["rope_parameters"])
+        theta = rp.pop("rope_theta", None)
+        if theta is None:
+            raise SystemExit(f"[stage] FATAL: {D}/config.json rope_parameters has no "
+                             "rope_theta to translate.")
+        cfg["rope_theta"] = theta
+        cfg["rope_scaling"] = rp
+        cfg.pop("rope_parameters", None)
+        with gcs.open(f"{D}/config.json", "wb") as fh:
+            fh.write(json.dumps(cfg, indent=2).encode())
+        print(f"[stage] REPAIRED rope: rope_parameters -> rope_theta={theta} + "
+              f"rope_scaling={rp}", flush=True)
     if cfg.get("rope_theta") is None:
         raise SystemExit(f"[stage] FATAL: {D}/config.json has no top-level rope_theta; "
                          "marin's vLLM would fall back to default rope.")

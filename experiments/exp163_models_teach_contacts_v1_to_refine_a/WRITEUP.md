@@ -109,7 +109,74 @@ Note the base model also emits exactly one section — contacts-v1 documents *ha
 section, so this is not something fine-tuning destroyed. Multi-draft generation has to be
 trained for explicitly, and no arm has done so.
 
-### 0.3 Two arms built to fix it (not yet trained)
+### 0.3 SOLVED — arms E/F emit multi-draft documents, and best-of-N beats everything
+
+Trained on marin TPU (v5p-16, us-central1), 405 steps, val loss **3.139** for both --
+*below* E8's own 3.169, so the heavier supervision (88%/74% of slots vs v3's 42%) does
+not cost base-task fit. Generation, full 553 proteins x 4 rollouts:
+
+| model | `n_sections` | jaccard | first | **best** | last | improving | finished |
+|---|---|---|---|---|---|---|---|
+| v3 (draft w=0) | 1.00 | -- | 0.2379 | 0.2379 | 0.2379 | -- | 98% |
+| arm E (draft 1.0, final 2.0) | 14.86 | 0.071 | 0.1814 | **0.3012** | 0.2470 | 0.552 | 57% |
+| arm F (draft 1.0, final 1.0) | 14.99 | 0.071 | 0.1840 | **0.3025** | 0.2493 | 0.552 | 56% |
+
+Paired on identical (protein, rollout):
+
+| comparison | Δ`all_f1` |
+|---|---|
+| arm F best-of-~15 vs **base E8** single-shot | **+0.0652 ± 0.0025** (+26.5σ, win 72.6%) |
+| arm F best-of-~15 vs **v3** single-shot | **+0.0646 ± 0.0026** (+24.7σ, win 70.9%) |
+| arm F *last* section vs v3 single-shot | +0.0114 ± 0.0029 (+4.0σ) |
+
+Per-protein best over 4 rollouts: arm F **0.3565** vs v3 0.3148.
+
+So the multi-draft model with best-of-N selection is **the best contact predictor in this
+experiment** -- +27% over the base model, at 26σ. Three properties make it a usable RL
+starting point:
+
+* **~15 sections per generation**, so best-of-N is scoreable *inside one rollout*;
+* **jaccard 0.071** -- the sections are nearly disjoint, so there is real spread to
+  select over (the "model copies its own draft" failure mode does not occur);
+* **best 0.3025 > last 0.2493 > first 0.1840** with `frac_improving` 0.552 -- a mild
+  genuine refinement trend, but the *spread* is worth far more than the trend. Reward
+  the best, not the last.
+
+Caveat: only ~56% of generations terminate; the rest run to the 8192-token context
+limit. `max_sections` must be enforced in the sampler rather than trusted to the model.
+
+E and F are statistically indistinguishable, so the 2x final weighting bought nothing --
+**F (uniform 1.0) is the simpler choice**.
+
+### 0.3b Conditioning on EXTERNAL drafts still hurts (and my first test was confounded)
+
+Feeding the model someone else's rollouts as context, with draft sizes matched to
+training's `Uniform[1, cap]` distribution:
+
+| k drafts | `all_f1` | paired Δ vs k=0 | (earlier, OOD-size drafts) |
+|---|---|---|---|
+| 0 | 0.2379 | -- | -- |
+| 4 | 0.2028 | −0.0351 ± 0.0031 | 0.1546 |
+| 8 | 0.1852 | −0.0527 ± 0.0031 | 0.1248 |
+| 16 | 0.1214 | −0.1165 ± 0.0036 | 0.0467 |
+
+Matching the draft-size distribution improved every conditioned number substantially
+(0.1546 → 0.2028 at k=4) -- the first sweep used a flat `[:120]` prefix per draft, ~2x
+denser than training, and was therefore out of distribution. But the conclusion survives
+the fix: **external drafts monotonically hurt**.
+
+The contrast is the interesting part. Conditioning on *another* model's noisy drafts
+degrades prediction; generating its *own* chain of candidates and taking the best is the
+best predictor we have. That is precisely the best-of-N RL setup, and it argues for
+on-policy self-generated candidates rather than a fixed offline draft pool.
+
+Also checked and cleared: the corpus does NOT truncate the ground-truth section as K
+grows (|final| = 199 contacts at every K, corr **+0.000**), so training always
+demonstrated "after K drafts, write the complete answer".
+
+### 0.3c The arms as originally built
+
+### 0.3 Two arms built to fix it (now trained -- see 0.3)
 
 Both re-weight the *same* `input_ids` (`reweight_corpus.py`; a weight profile changes only
 `loss_weights`), and both put drafts at or above half the signal:

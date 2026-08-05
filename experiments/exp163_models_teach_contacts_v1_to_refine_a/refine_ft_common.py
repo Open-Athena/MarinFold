@@ -186,8 +186,15 @@ PROTEIN_RESOURCES_TPU = ResourceConfig.with_tpu(
     # "unschedulable: no groups in region us-west4; did you mean us-east5?" *after*
     # placing and starting its cache build. Pinning the region is also the right call
     # for data locality: the corpus, val split and warm-start all live in the
-    # ``marin-us-east5`` bucket, so anything else reads cross-region.
-    regions=(os.environ.get("EXP163_TPU_REGION", "us-east5"),),
+    # ``marin-us-east5`` bucket.
+    #
+    # But pinning to us-east5 ALONE starves -- that region's v5p was full for hours
+    # while single-host jobs submitted without a region pin placed immediately. The
+    # v5p pool also spans us-central1, so list both: this excludes the regions that
+    # have no v5p groups at all (the us-west4 failure) without restricting to one
+    # busy region. Landing in us-central1 costs a one-time cross-region read of the
+    # corpus + warm-start (~6.5GB), which is worth it against hours of queueing.
+    regions=tuple(os.environ.get("EXP163_TPU_REGIONS", "us-east5,us-central1").split(",")),
 )
 
 TRAIN_COMPONENT_KEY = "refinement-train"

@@ -115,6 +115,54 @@ def _part_index(path):
     return int(m.group(1)) if m else -1
 
 
+def _canon(flat):
+    """Flat [i,j,i,j,...] -> sorted unique (lo,hi) pairs past the separation floor."""
+    from rollout_metrics import MIN_SEP
+    arr = np.asarray(flat).reshape(-1, 2)
+    if arr.size == 0:
+        return []
+    lo = np.minimum(arr[:, 0], arr[:, 1]); hi = np.maximum(arr[:, 0], arr[:, 1])
+    keep = (hi - lo) >= MIN_SEP
+    return sorted(set(zip(lo[keep].tolist(), hi[keep].tolist())))
+
+
+def _draft_block(pairs, seq_pos, rng):
+    """One <begin_statements> draft section, with the same shuffle + orientation
+    jitter as build_refinement_corpus.emit_draft, so the context matches training."""
+    order = list(pairs); rng.shuffle(order)
+    toks = ["<begin_statements>"]
+    for (i, j) in order:
+        x, y = (i, j) if rng.random() < 0.5 else (j, i)
+        toks += ["<contact>", f"<p{seq_pos[x]}>", f"<p{seq_pos[y]}>"]
+    return toks
+
+
+def condition_prefix(prefix, pool, seq_pos, L, k, cap, rng):
+    """Rewrite a prompt so the model GENERATES its answer after k draft sections.
+
+    The prompt already ends with the marker that opens the answer section: drop it,
+    splice in k drafts, re-open. Mirrors ``eval_refiner_worker.prefix_with``, but the
+    result is fed to generation rather than teacher-forced scoring -- which is the
+    setting the RL post-training will actually be in.
+    """
+    head = prefix[: prefix.rindex("<begin_statements>")].rstrip()
+    toks = [head]
+    for t in rng.permutation(len(pool))[:k]:
+        pairs = [(i, j) for (i, j) in _canon(pool[t]) if i < L and j < L]
+        if not pairs:
+            continue
+        # Match TRAINING's draft-size distribution. build_refinement_corpus draws
+        # n ~ Uniform[1, min(len, N_cap)] per draft (mean 53.7 contacts); taking a
+        # flat [:cap] prefix instead gives ~120 each, >2x denser, so at k=16 the
+        # context carries ~1,920 contacts against training's ~859 -- out of
+        # distribution, and it confounds any "more drafts hurt" reading.
+        n = int(rng.integers(1, min(len(pairs), cap) + 1))
+        sub = [pairs[i] for i in rng.choice(len(pairs), n, replace=False)]
+        toks += _draft_block(sub, seq_pos, rng)
+    toks.append("<begin_statements>")
+    return " ".join(toks)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
@@ -140,6 +188,15 @@ def main():
                     help="multi-draft: the model emits SEVERAL <begin_statements> "
                          "sections in one completion, the last closed by <end>. Scores "
                          "each section separately; <end> remains the stop token.")
+    ap.add_argument("--cond-k", type=int, default=0,
+                    help="prepend K of this protein's OWN prior rollouts as "
+                         "<begin_statements> draft blocks before the answer section, so "
+                         "the model GENERATES conditioned on them. 0 = the usual "
+                         "contacts-v1 setting (no drafts). Needs --rollouts.")
+    ap.add_argument("--rollouts", default=None,
+                    help="dir of rollout_metrics parquet parts supplying the draft pool")
+    ap.add_argument("--cond-cap", type=int, default=120,
+                    help="max contacts per prepended draft block (matches training's N_cap)")
     ap.add_argument("--mode-id", type=int, default=None,
                     help="overwrite the document-type sentinel at position 0 with this "
                          "vocab id (7 = <contacts-v1.multi>). Done on IDS, not text, so "
@@ -211,6 +268,20 @@ def main():
         print(f"SHARD_DONE {si}/{sm}: nothing to do", flush=True)
         return
 
+    cond_pool: dict = {}
+    if a.cond_k:
+        if not a.rollouts:
+            raise SystemExit("--cond-k needs --rollouts (the draft pool)")
+        pfs, proot = url_to_fs(a.rollouts)
+        for f in sorted(pfs.glob(f"{proot.rstrip('/')}/*.parquet")):
+            with pfs.open(f, "rb") as fh:
+                t = pq.read_table(fh, columns=["entry_id", "pred"])
+            for e, pr in zip(t.column("entry_id").to_pylist(), t.column("pred").to_pylist()):
+                cond_pool.setdefault(e, []).append(pr)
+        print(f"draft pool: {len(cond_pool)} proteins, "
+              f"{sum(len(v) for v in cond_pool.values())} rollouts | cond_k={a.cond_k}",
+              flush=True)
+
     t_load = time.time()
     llm = LLM(model=stage(a.model), max_model_len=a.max_model_len,
               tensor_parallel_size=a.tensor_parallel_size, enforce_eager=True, dtype="bfloat16")
@@ -260,12 +331,22 @@ def main():
         prows = prows[: a.n_rollouts]
 
         if a.mode == "resample":
-            ids_list = [tok(p["prefix"], add_special_tokens=False).input_ids for p in prows]
+            texts = [p["prefix"] for p in prows]
+            if a.cond_k:
+                pool = cond_pool.get(entry, [])
+                if pool:
+                    texts = [
+                        condition_prefix(px, pool, [int(x) for x in pr["seq_positions"]],
+                                         L, a.cond_k, a.cond_cap,
+                                         np.random.default_rng(abs(hash((entry, ri))) % (2**32)))
+                        for ri, (px, pr) in enumerate(zip(texts, prows))
+                    ]
+            ids_list = [tok(t_, add_special_tokens=False).input_ids for t_ in texts]
             if a.mode_id is not None:
                 ids_list = [[a.mode_id] + list(x[1:]) for x in ids_list]
             maps = [{int(pos): i for i, pos in enumerate(p["seq_positions"])} for p in prows]
             rkeys = [p["r"] for p in prows]
-            prefixes = [p["prefix"] for p in prows]
+            prefixes = texts        # conditioned when --cond-k > 0
             max_new = min(a.max_model_len - max(len(x) for x in ids_list),
                           (4 * L + 64) * sections_budget)
             sp = SamplingParams(n=1, temperature=a.temperature, top_p=a.top_p,
