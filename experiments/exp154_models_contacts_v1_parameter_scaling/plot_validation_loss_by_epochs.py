@@ -20,7 +20,7 @@ from matplotlib.lines import Line2D
 
 HERE = Path(__file__).resolve().parent
 SOURCE_CSV = HERE / "data" / "wandb_runs.csv"
-PLOT_CSV = HERE / "data" / "validation_loss_vs_epochs.csv"
+PLOT_DATA_CSV = HERE / "data" / "validation_loss_vs_epochs.csv"
 PNG_PATH = HERE / "plots" / "validation_loss_vs_epochs.png"
 SVG_PATH = HERE / "plots" / "validation_loss_vs_epochs.svg"
 
@@ -30,20 +30,6 @@ MODEL_COLORS = {"1_5b": "#2563EB", "3b": "#EA580C"}
 ISSUE_MARKERS = {75: "o", 117: "s", 146: "^"}
 Y_AXIS_MAX = 3.2
 CLIPPED_Y = 3.185
-
-PLOT_FIELDS = (
-    "issue",
-    "run_id",
-    "run_name",
-    "model_size",
-    "epochs",
-    "val_loss",
-    "plot_y",
-    "is_y_clipped",
-    "is_group_best",
-    "plot_x",
-)
-
 
 def load_source_rows(path: Path = SOURCE_CSV) -> list[dict[str, str]]:
     """Load the normalized W&B source table."""
@@ -102,32 +88,25 @@ def build_plot_rows(source_rows: Sequence[dict[str, str]]) -> list[dict[str, Any
     return plot_rows
 
 
-def write_plot_csv(rows: Sequence[dict[str, Any]], path: Path = PLOT_CSV) -> None:
-    """Write the exact data consumed by the figure."""
+def write_plot_rows(rows: Sequence[dict[str, Any]], path: Path = PLOT_DATA_CSV) -> None:
+    """Write the exact derived rows used by the validation-loss figure."""
+    fieldnames = (
+        "issue",
+        "run_id",
+        "run_name",
+        "model_size",
+        "epochs",
+        "val_loss",
+        "plot_x",
+        "plot_y",
+        "is_y_clipped",
+        "is_group_best",
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=PLOT_FIELDS, lineterminator="\n")
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
-        writer.writerows(rows)
-
-
-def load_plot_csv(path: Path = PLOT_CSV) -> list[dict[str, Any]]:
-    """Load typed plotting rows from the derived CSV."""
-    with path.open(newline="") as file:
-        raw_rows = list(csv.DictReader(file))
-    return [
-        {
-            **row,
-            "issue": int(row["issue"]),
-            "epochs": int(row["epochs"]),
-            "val_loss": float(row["val_loss"]),
-            "plot_y": float(row["plot_y"]),
-            "is_y_clipped": row["is_y_clipped"] == "True",
-            "is_group_best": row["is_group_best"] == "True",
-            "plot_x": float(row["plot_x"]),
-        }
-        for row in raw_rows
-    ]
+        writer.writerows({field: row[field] for field in fieldnames} for row in rows)
 
 
 def plot(rows: Sequence[dict[str, Any]]) -> None:
@@ -274,11 +253,8 @@ def plot(rows: Sequence[dict[str, Any]]) -> None:
 
 def main() -> int:
     plot_rows = build_plot_rows(load_source_rows())
-    write_plot_csv(plot_rows)
-    plot(load_plot_csv())
-    print(f"Wrote {PLOT_CSV}")
-    print(f"Wrote {PNG_PATH} (150 dpi)")
-    print(f"Wrote {SVG_PATH}")
+    write_plot_rows(plot_rows)
+    plot(plot_rows)
     return 0
 
 

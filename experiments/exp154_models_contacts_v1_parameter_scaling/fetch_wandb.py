@@ -30,6 +30,7 @@ LOSS_KEYS = (
     "eval/tokenized/contacts-v1-val/loss",
     "eval/contacts-v1-val/loss",
 )
+TRAIN_LOSS_KEYS = ("train/loss",)
 EXCLUDED_MARKERS = ("smoke", "probe", "profile", "batchcal")
 
 
@@ -73,6 +74,8 @@ FIELDNAMES = (
     "learning_rate_source",
     "batch_size",
     "batch_size_source",
+    "train_loss",
+    "train_loss_key",
     "val_loss",
     "val_loss_key",
     "summary_step",
@@ -214,6 +217,18 @@ def select_loss(summary: Mapping[str, Any], run_name: str) -> tuple[float, str] 
     return value, key
 
 
+def select_train_loss(summary: Mapping[str, Any], run_name: str) -> tuple[float, str] | None:
+    """Select the final training loss when W&B recorded one."""
+    found = [(key, parse_float(summary[key])) for key in TRAIN_LOSS_KEYS if key in summary]
+    if not found:
+        return None
+    values = {value for _, value in found}
+    if len(values) != 1:
+        raise ValueError(f"{run_name}: conflicting training losses: {found!r}")
+    key, value = found[0]
+    return value, key
+
+
 def is_excluded_run(run_name: str, tags: Sequence[str]) -> bool:
     """Return whether a finished job is a smoke/calibration run, not a sweep cell."""
     searchable = " ".join((run_name, *tags)).lower()
@@ -234,6 +249,8 @@ def normalize_run(source: Source, run: Any) -> dict[str, Any] | None:
     if selected_loss is None:
         return None
     val_loss, val_loss_key = selected_loss
+    selected_train_loss = select_train_loss(summary, run.name)
+    train_loss, train_loss_key = selected_train_loss if selected_train_loss is not None else ("", "")
 
     tag_values = parse_tags(tags)
     config = run.config if isinstance(run.config, Mapping) else {}
@@ -312,6 +329,8 @@ def normalize_run(source: Source, run: Any) -> dict[str, Any] | None:
         "learning_rate_source": learning_rate_source,
         "batch_size": batch_size,
         "batch_size_source": batch_size_source,
+        "train_loss": train_loss,
+        "train_loss_key": train_loss_key,
         "val_loss": val_loss,
         "val_loss_key": val_loss_key,
         "summary_step": summary.get("_step", ""),

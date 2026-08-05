@@ -1,5 +1,0 @@
-{
-  "script": "plot_validation_loss_by_epochs.py",
-  "args": [],
-  "caption": "All 129 finished runs; color = model size, marker = issue, rings = best per size/epoch, carets = loss above 3.2."
-}
