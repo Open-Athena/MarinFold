@@ -16,13 +16,16 @@ The README is the canonical result record. The plot in
   - #117 recompute: 3.099645097316767.
 - Downstream rollout+resample contact eval (`n=100`, 554 proteins):
   - standard prompt: all R=0.3365, long R=0.2856, all AUC=0.8119.
-  - forced one-`<think>` prompt: all R=0.3359, long R=0.2822, all AUC=0.8103.
-  - recall deltas were similarly tiny/mixed; long recall@L decreased by 0.0048.
+  - 1 × `<think>`: all R=0.3359, long R=0.2822, all AUC=0.8103.
+  - 2 × `<think>`: all R=0.3347, long R=0.2805, all AUC=0.8093.
+  - 3 × `<think>`: all R=0.3353, long R=0.2806, all AUC=0.8093.
+  - recall deltas were similarly tiny or negative; long recall@L was below
+    standard for all inserted-token settings.
 - Verdict: this was a small contacts-v1 test of the pause-token training setup
   from Goyal et al. 2023 / ICLR 2024 ("Think before you speak: Training Language
   Models With Pause Tokens"). It did not reproduce the paper's reported
   improvement in this setting: ordinary contacts-v1 validation was slightly
-  worse than the same-stack CE control, and inserting one `<think>` token at
-  inference time did not improve downstream contact prediction. The native
-  think-masked validation metric improved, but that gain did not transfer to the
-  contact metric we care about here.
+  worse than the same-stack CE control, and inserting one, two, or three `<think>`
+  tokens at inference time did not improve downstream contact prediction. The
+  native think-masked validation metric improved, but that gain did not transfer
+  to the contact metric we care about here.

@@ -178,8 +178,11 @@ def main() -> int:
                          "way, so the estimator is unchanged — only bitwise replay of one "
                          "specific run is lost.")
     ap.add_argument("--prompt-think-after-sequence", action="store_true",
-                    help="Append one literal <think> token after the sequence prefix "
-                         "(<begin_statements> <think>) before generating contacts.")
+                    help="Append one literal <think> token after the sequence prefix. "
+                         "Deprecated alias for --prompt-think-count 1.")
+    ap.add_argument("--prompt-think-count", type=int, default=0,
+                    help="Append this many literal <think> tokens after the sequence prefix "
+                         "before generating contacts.")
     ap.add_argument("--gpu-frac", type=float, default=0.90)
     ap.add_argument("--chunk", type=int, default=8)
     ap.add_argument("--max-num-seqs", type=int, default=512)
@@ -188,6 +191,9 @@ def main() -> int:
 
     shard_i, num_shards = (int(x) for x in a.shard.split("/"))
     out_dir = f"{a.out.rstrip('/')}/{a.label}"
+    prompt_think_count = max(a.prompt_think_count, 1 if a.prompt_think_after_sequence else 0)
+    if prompt_think_count < 0:
+        raise ValueError(f"--prompt-think-count must be nonnegative, got {prompt_think_count}")
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from marinfold.document_structures.contacts_v1 import (
@@ -204,7 +210,8 @@ def main() -> int:
         todo = todo[: a.limit]
     print(f"[worker] shard {shard_i}/{num_shards}: {len(mine)} assigned, {len(skip)} already done, "
           f"{len(todo)} to do | n_rollouts={a.n_rollouts} top_k={a.top_k} top_p={a.top_p} "
-          f"T={a.temperature} per_request_seed={a.per_request_seed} label={a.label}", flush=True)
+          f"T={a.temperature} per_request_seed={a.per_request_seed} "
+          f"prompt_think_count={prompt_think_count} label={a.label}", flush=True)
     if not todo:
         print("[worker] nothing to do")
         return 0
@@ -229,8 +236,8 @@ def main() -> int:
             for k in range(a.n_rollouts):
                 doc = build_document(f"{r['stem']}:r{k}", residues, [], config=GenerationConfig())
                 prompt = doc.document[: doc.document.index(BEGIN) + len(BEGIN)]
-                if a.prompt_think_after_sequence:
-                    prompt = f"{prompt} {THINK}"
+                if prompt_think_count:
+                    prompt = f"{prompt} {' '.join([THINK] * prompt_think_count)}"
                 prompts.append(prompt)
                 maps.append({(doc.n_term_index + t) % NUM_POS: t for t in range(doc.seq_len)})
             plen = len(tok(prompts[first], add_special_tokens=False).input_ids)
@@ -280,7 +287,7 @@ def main() -> int:
               f"-> {dest} (elapsed {(time.time() - t0) / 60:.1f}m)", flush=True)
 
     print(f"[worker] DONE shard {shard_i}/{num_shards}: {len(todo)} proteins in "
-          f"{(time.time() - t0) / 60:.1f} min | prompt_think_after_sequence={a.prompt_think_after_sequence} "
+          f"{(time.time() - t0) / 60:.1f} min | prompt_think_count={prompt_think_count} "
           f"| unfinished {n_unfinished}/{n_total} "
           f"({100 * n_unfinished / max(n_total, 1):.2f}%)", flush=True)
     return 0

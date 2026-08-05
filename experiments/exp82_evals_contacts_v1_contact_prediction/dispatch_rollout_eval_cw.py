@@ -79,6 +79,7 @@ TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
 PROMPT_THINK_AFTER_SEQUENCE = os.environ.get("EVAL_CW_PROMPT_THINK_AFTER_SEQUENCE", "0") in {"1", "true", "True", "yes"}
+PROMPT_THINK_COUNT = int(os.environ.get("EVAL_CW_PROMPT_THINK_COUNT", "1" if PROMPT_THINK_AFTER_SEQUENCE else "0"))
 
 WORKER_SCRIPT = Path(__file__).with_name("score_rollout_worker.py")
 WORK_DIR = "/tmp/eval_cw"
@@ -94,7 +95,7 @@ def build_bootstrap(*, label: str, model: str, shard_i: int, num_shards: int,
                     limit: int | None) -> str:
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
-    prompt_think_arg = " --prompt-think-after-sequence" if PROMPT_THINK_AFTER_SEQUENCE else ""
+    prompt_think_arg = f" --prompt-think-count {PROMPT_THINK_COUNT}" if PROMPT_THINK_COUNT else ""
     return f"""
 set -euo pipefail
 echo "[eval-cw] host=$(hostname) label={label} shard={shard_i}/{num_shards} image={VLLM_IMAGE}"
@@ -189,7 +190,7 @@ def main() -> None:
     print(f"[eval-cw] {len(reqs)} job(s) = {len(models)} model(s) x {a.num_shards} shard(s), "
           f"1xH100 batch band | image={VLLM_IMAGE}\n"
           f"          n_rollouts={N_ROLLOUTS} top_k={TOP_K} top_p={TOP_P} T={TEMPERATURE} "
-          f"prompt_think_after_sequence={PROMPT_THINK_AFTER_SEQUENCE} limit={a.limit}\n"
+          f"prompt_think_count={PROMPT_THINK_COUNT} limit={a.limit}\n"
           f"          targets={TARGETS_S3}\n          out={OUT_S3}")
     for lbl, uri in models:
         print(f"          model {lbl}: {uri}")

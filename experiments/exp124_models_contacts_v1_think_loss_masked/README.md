@@ -164,25 +164,21 @@ control, the ordinary-validation gap is roughly **0.012 nats**.
 
 We also evaluated the step-35680 checkpoint on the 554-protein contact-prediction
 benchmark with the exp82 rollout+resample scorer (`n=100`, temperature 1.0,
-top-p 0.95, no top-k), comparing the standard prompt against an intervention
-that appends exactly one literal `<think>` after the protein sequence /
-`<begin_statements>` prefix. Both conditions completed all 12 CoreWeave shards
-and were scored with the same exp89 metric implementation.
+top-p 0.95, no top-k), comparing the standard prompt against interventions that
+append one, two, or three literal `<think>` tokens after the protein sequence /
+`<begin_statements>` prefix. All conditions completed all 12 CoreWeave shards and
+were scored with the same exp89 metric implementation.
 
-| metric | standard prompt | forced `<think>` | forced − standard |
-|---|---:|---:|---:|
-| all R-precision | 0.3365 | 0.3359 | -0.0006 |
-| long R-precision | 0.2856 | 0.2822 | -0.0034 |
-| all AUC | 0.8119 | 0.8103 | -0.0016 |
-| long AUC | 0.7798 | 0.7757 | -0.0041 |
-| all recall@L | 0.3725 | 0.3719 | -0.0006 |
-| long recall@L | 0.3834 | 0.3786 | -0.0048 |
-| all recall@L/5 | 0.1268 | 0.1278 | +0.0011 |
-| long recall@L/5 | 0.1652 | 0.1656 | +0.0004 |
+| condition | all R | long R | all AUC | long AUC | all recall@L | long recall@L |
+|---|---:|---:|---:|---:|---:|---:|
+| standard prompt | 0.3365 | 0.2856 | 0.8119 | 0.7798 | 0.3725 | 0.3834 |
+| 1 × `<think>` | 0.3359 | 0.2822 | 0.8103 | 0.7757 | 0.3719 | 0.3786 |
+| 2 × `<think>` | 0.3347 | 0.2805 | 0.8093 | 0.7745 | 0.3703 | 0.3770 |
+| 3 × `<think>` | 0.3353 | 0.2806 | 0.8093 | 0.7747 | 0.3700 | 0.3777 |
 
-The prompt intervention therefore did not materially change contact-prediction
-quality. The small mixed deltas are consistent with sampling noise; the main
-ranked metrics are slightly worse with the forced token.
+The prompt intervention therefore did not improve contact-prediction quality.
+Increasing from one to two or three inserted `<think>` tokens did not reveal a
+hidden gain; the main ranked metrics stay slightly below the standard prompt.
 
 Full summaries are in [`data/prompt_intervention_precision.csv`](data/prompt_intervention_precision.csv)
 and [`data/prompt_intervention_recall.csv`](data/prompt_intervention_recall.csv).
@@ -203,12 +199,13 @@ comparable because they used older Marin/Levanter loss semantics.
 On the native think-augmented validation cache with target `<think>` tokens
 masked, exp124 is better than #117: **3.0856** vs **3.0996**. However, the
 downstream contact-prediction test is the metric we care about for this use case,
-and adding one forced `<think>` token at inference time did **not** improve it
-(all R-precision 0.3359 vs 0.3365 standard; long R-precision 0.2822 vs 0.2856
-standard).
+and adding one, two, or three forced `<think>` tokens at inference time did
+**not** improve it. The best all-range R among the inserted-token settings was
+0.3359, versus 0.3365 for the standard prompt; the best long-range R was 0.2822,
+versus 0.2856 standard.
 
 So the concrete result is: under this contacts-v1 setup, our pause/`<think>`
-training run did not improve contact prediction, and the inference-time token
+training run did not improve contact prediction, and inference-time token
 insertion did not help.
 
 If pause tokens are revisited, stronger follow-ups would include:
