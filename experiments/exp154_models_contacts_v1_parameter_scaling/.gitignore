@@ -3,4 +3,6 @@
 /data/*
 !/data/wandb_runs.csv
 !/data/validation_loss_vs_epochs.csv
+!/data/exp117_lr_training_validation.csv
+!/data/exp117_lr_weight_decay_heatmap.csv
 /plots/*.meta.json
