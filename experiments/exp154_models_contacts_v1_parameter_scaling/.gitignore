@@ -5,4 +5,9 @@
 !/data/validation_loss_vs_epochs.csv
 !/data/exp117_lr_training_validation.csv
 !/data/exp117_lr_weight_decay_heatmap.csv
+!/data/exp166_wandb_runs.csv
+!/data/exp166_final_comparisons.csv
+!/data/exp166_epoch_distributions.csv
+!/data/exp166_validation_trajectories.csv
+!/data/exp166_augmentation_schematic.csv
 /plots/*.meta.json

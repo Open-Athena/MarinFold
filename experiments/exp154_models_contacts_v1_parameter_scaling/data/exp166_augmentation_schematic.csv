@@ -1,0 +1,10 @@
+record_type,element_id,label,section,original_order,augmented_order,is_moved,affected_by_augmentation
+document_section,doc_type,<contacts-v1>,document type,,,False,False
+document_section,sequence,<begin_sequence>  sequence statements,sequence,,,False,True
+document_section,structure,<begin_statements>  contact statements,structure,,,False,False
+document_section,end,<end>,end,,,False,False
+sequence_statement,s1,<p22> <PHE>,residue,1,2,True,True
+sequence_statement,s2,<n-term> <p20>,terminus,2,4,True,True
+sequence_statement,s3,<p21> <ALA>,residue,3,1,True,True
+sequence_statement,s4,<c-term> <p22>,terminus,4,5,True,True
+sequence_statement,s5,<p20> <ALA>,residue,5,3,True,True
