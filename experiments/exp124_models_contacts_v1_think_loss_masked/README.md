@@ -12,25 +12,32 @@ marinfold_experiment:
 
 ## Question
 
-Does training from scratch on the think-augmented contacts-v1 corpus improve the
-contacts-v1 model, when `<think>` tokens are present in the context but masked
-out of the training loss?
+Does the pause-token setup from Goyal et al. 2023 improve contacts-v1 modeling
+and downstream contact prediction in MarinFold? In this setup, the training data
+contains inserted `<think>`/pause tokens, loss is masked on positions that predict
+those pause tokens, and inference can append pause tokens before extracting the
+model's contact predictions.
 
-Operationally, the decisive first check is simpler: can this model preserve
-ordinary contacts-v1 validation loss? If it badly regresses the base
-contacts-v1 objective, then downstream contact evaluation with inference-time
-`<think>` insertion is unlikely to be the next best use of compute.
+Operationally, the first check is whether the model preserves ordinary
+contacts-v1 validation loss, followed by the downstream contact metric with and
+without inference-time `<think>` insertion.
 
 ## Hypothesis
 
-Pause tokens give the model extra autoregressive compute before committing to
-contact statements. If the model learns to use those positions as scratch/pause
-context without being directly rewarded for predicting them, it may improve
-downstream contact prediction under inference-time `<think>` insertion while
-preserving ordinary contacts-v1 validation quality.
+Pause tokens may give the model extra computation before committing to contact
+statements. Following the original pause-token intuition, a model trained with
+these inserted tokens may learn to use the extra positions and improve downstream
+contact prediction when the same kind of pause tokens are inserted at inference
+time.
 
 ## Background
 
+- **Reference paper:** Goyal et al., ["Think before you speak: Training Language
+  Models With Pause Tokens"](https://arxiv.org/abs/2310.02226) (ICLR 2024),
+  introduce a learnable pause token and report downstream gains when models are
+  trained and evaluated with pause delays. Their pretraining recipe masks the
+  loss on positions whose target is `<pause>`, and their inference recipe appends
+  pause tokens to the prefix before reading out the answer.
 - **Dataset:** exp126 published a think-augmented contacts-v1 corpus at
   `hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1_think/`.
   It is a 1:1 transform of exp53 over the same proteins, rounds and splits, with
@@ -95,12 +102,12 @@ preserving ordinary contacts-v1 validation quality.
 
 All infrastructure criteria were met: cache smokes passed, the full resumed
 `v5p-128` run succeeded, and step-35680 checkpoint/HF export completed. The model
-result is negative for autonomous contact prediction: exp124 regressed ordinary
-no-`<think>` contacts-v1 validation, and forcing `<think>` at inference time did
-not improve downstream contact-map metrics. It did improve over #117 when both
-are evaluated on the native think-augmented masked validation metric, but that
-metric is an oracle-context teacher-forced evaluation rather than evidence that
-the model learns to emit useful `<think>` tokens on its own.
+result is negative for this small contacts-v1 reproduction of pause-token
+training: exp124 regressed ordinary no-`<think>` contacts-v1 validation, and
+forcing `<think>` at inference time did not improve downstream contact-map
+metrics. It did improve over #117 when both are evaluated on the native
+think-augmented masked validation metric, but that improvement did not transfer
+to the downstream contact prediction setup we tested.
 
 **Final W&B run:**
 [`exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3`](https://wandb.ai/open-athena/MarinFold/runs/exp124-cv1-think-masked-e16-lr3p162e-3-wd0p2-bs256_next_token-exp177recipe-v5p128-r3)
@@ -172,31 +179,30 @@ and [`data/prompt_intervention_recall.csv`](data/prompt_intervention_recall.csv)
 
 ## Conclusion
 
-Exp124 answers two different questions differently.
+Exp124 was a small contacts-v1 test of the pause-token training setup from
+Goyal et al. It did not reproduce the paper's reported improvement in this
+setting.
 
-On ordinary no-`<think>` contacts-v1 validation, the result is clearly negative:
-training on think-augmented documents while masking `<think>` targets produces a
-model with loss **3.1313**, versus 2.7566 for #75 and 2.7037 for #117 final. This
-means the run did not preserve the base contacts-v1 language-modeling objective.
+On ordinary no-`<think>` contacts-v1 validation, training on the think-augmented
+corpus with masked `<think>` targets produced a model with loss **3.1313**, versus
+2.7566 for #75 and 2.7037 for #117 final. This means the run did not preserve the
+base contacts-v1 language-modeling objective.
 
 On the native think-augmented validation cache with target `<think>` tokens
-masked, exp124 is better than #117: **3.0856** vs **3.0996**. This supports only
-the narrower claim that the model can use oracle `<think>` tokens when they are
-teacher-forced in the context. Because the target `<think>` positions are masked,
-there is no direct loss gradient teaching the model to emit those tokens.
-
-The downstream prompt intervention resolves the transfer question: adding one
-forced `<think>` token at inference time does **not** improve contact prediction
+masked, exp124 is better than #117: **3.0856** vs **3.0996**. However, the
+downstream contact-prediction test is the metric we care about for this use case,
+and adding one forced `<think>` token at inference time did **not** improve it
 (all R-precision 0.3359 vs 0.3365 standard; long R-precision 0.2822 vs 0.2856
-standard). The native validation gain is therefore best interpreted as an
-oracle-context effect, not as an autonomous useful-thinking behavior.
+standard).
 
-If pause tokens are revisited, stronger designs would include at least one of:
+So the concrete result is: under this contacts-v1 setup, our pause/`<think>`
+training run did not improve contact prediction, and the inference-time token
+insertion did not help.
 
-- train/eval recipes that explicitly exercise the same `<think>` protocol at
-  training and inference time, then score the downstream contact metric;
-- an ablation that **does not** mask `<think>` targets, so generation of pause
-  tokens is part of the learned behavior;
+If pause tokens are revisited, stronger follow-ups would include:
+
+- closer matching of the Goyal et al. pause-finetuning/inference protocol, e.g.
+  number and placement of inserted pause tokens;
 - a mixture with ordinary contacts-v1 documents to preserve the base objective;
 - shorter pilot runs that compare standard contacts-v1 val loss before spending a
   full 16-epoch-equivalent run.

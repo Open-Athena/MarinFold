@@ -15,9 +15,10 @@ The README is the canonical result record. The plot in
   - standard prompt: all R=0.3365, long R=0.2856, all AUC=0.8119.
   - forced one-`<think>` prompt: all R=0.3359, long R=0.2822, all AUC=0.8103.
   - recall deltas were similarly tiny/mixed; long recall@L decreased by 0.0048.
-- Verdict: exp124 regressed ordinary no-`<think>` contacts-v1 validation. It
-  improved over #117 on the native think-augmented masked validation metric, but
-  that metric teacher-forces oracle `<think>` tokens in context while masking the
-  target `<think>` positions. Because the model is not directly trained to emit
-  `<think>` tokens, the native-metric gain did not transfer to autonomous contact
-  prediction or to the one-token forced prompt intervention.
+- Verdict: this was a small contacts-v1 test of the pause-token training setup
+  from Goyal et al. 2023 / ICLR 2024 ("Think before you speak: Training Language
+  Models With Pause Tokens"). It did not reproduce the paper's reported
+  improvement in this setting: ordinary contacts-v1 validation regressed, and
+  inserting one `<think>` token at inference time did not improve downstream
+  contact prediction. The native think-masked validation metric improved, but
+  that gain did not transfer to the contact metric we care about here.
