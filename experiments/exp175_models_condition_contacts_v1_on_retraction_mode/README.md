@@ -86,10 +86,30 @@ on the same 554-protein set, through #160's `score_backtracking_worker.py` and e
 ### Artifacts
 
 ```
-corpus + tokenizer  gs://marin-us-east5/protein-structure/MarinFold/exp175_backtracking_mode/corpus
-resized init        .../exp175_backtracking_mode/init/exp120-step-1005-vocab3850
-run output          .../exp175_backtracking_mode/runs/exp175-cv1-1_5b-mode50-lr3e-4-e1-cos
+corpus v1 (published corpus, sorted flush)
+    gs://marin-us-east5/protein-structure/MarinFold/exp175_backtracking_mode/corpus
+corpus v2 (regenerated, shuffled flush)   <- the one that counts
+    gs://marin-us-central1/protein-structure/MarinFold/exp175_backtracking_mode/corpus_v2/train
+resized init   .../exp175_backtracking_mode/init/exp120-step-1005-vocab3850
+runs           .../exp175_backtracking_mode/runs/exp175-cv1-1_5b-mode50{,-v2}-lr3e-4-e1-cos
+eval           s3://marin-us-east-02a/.../exp175_backtracking_mode/eval/scores{,_v2}
+published      hf://buckets/open-athena/MarinFold/checkpoints/
+                   exp175-cv1-1_5b-mode50-v2-lr3e-4-e1-cos/hf/step-2070
 ```
+
+The two runs live under separate prefixes on purpose. The eval worker resumes by
+*skipping outputs that already exist*, and `--name-suffix` renames the job
+without renaming its output path — so pointing a second run at the first's
+prefix produces `[worker] nothing to do` and a set of scores that silently
+belong to the wrong model. That happened once here and was caught only because
+the numbers matched v1 to four decimal places and the backtracking arm reported
+0.0% retractions.
+
+`corpus_v2` sits in `us-central1` rather than `us-east5` because `us-east5-a`'s
+v5p-32 pool had scaled to zero (`No workers match constraints`). marin's TPU
+path hard-fails on cross-region GCS reads, so the 9.0 GiB corpus was mirrored
+server-side — 64 seconds — and the run relaunched in the region that had
+capacity.
 
 The resize ran **locally**, not on a pod: it is a CPU-only job that asks for a
 TPU purely for host RAM, and on 2026-07-29 every v5p-8 in both zones reported
@@ -128,10 +148,146 @@ immediately.
 
 ## Results
 
-_(Training running. The v5p-32 needs 4 co-scheduled workers and the marin TPU
-fleet has been saturated since 2026-07-28 — the same capacity crunch that moved
-#160's eval to CoreWeave. Pending jobs cost nothing, so it holds position.)_
+**Two runs, not one.** The first (`v1`, step 2058) trained on the mix built from
+the corpus as published. Partway through its eval we found the corpus bug
+described in [#159](https://github.com/Open-Athena/MarinFold/issues/159) — the
+ground-truth flush emitted contacts in `sorted()` order, and that block is ~80%
+of a backtracking document. The corpus was regenerated with a shuffled flush and
+the run repeated identically (`v2`, step 2070). **`v2` is the result; `v1` is
+reported beside it because the difference between them is the cleanest
+measurement of what the artifact was costing.**
+
+Everything below: 554 proteins, 100 rollouts each, exp82 rollout+vote inference,
+exp89 `compute_metrics`, paired per-protein against `exp120-base`.
+
+### 1. The marker is obeyed — completely
+
+| prompt token 0 | retracts / rollout | proteins with ≥1 retraction |
+|---|---|---|
+| `<contacts-v1>` | **0.12** | 0.9% |
+| `<contacts-v1.backtracking>` | **41.96** | 98.2% |
+
+One checkpoint, two behaviours, selected by a single token. #160's unconditioned
+model *sampled* the mode instead (43% of rollouts). ✅
+
+The 0.9% leak is new in `v2` (`v1` was exactly 0) and comes to 5 proteins out of
+554; it is not zero, so it is reported rather than rounded away.
+
+### 2. The artifact is gone from the model
+
+Sortedness of contact-emission order — 0.5 is a random order, and the published
+corpus scored 0.869:
+
+| arm | trained on published corpus (`v1`) | trained on shuffled corpus (`v2`) |
+|---|---|---|
+| retraction mode | **0.833** (7.8% of rollouts fully sorted) | **0.499** (0.0%) |
+| clean mode | 0.501 | 0.500 |
+
+Measured on the models' own rollouts by `measure_sortedness.py`. The fix worked
+end-to-end: corpus → training → generation. ✅
+
+### 3. Retraction is discriminative — and the artifact was not why
+
+| | `v1` | `v2` |
+|---|---|---|
+| P(FP \| retracted) | 0.894 | 0.888 |
+| P(FP) base rate | 0.813 | 0.807 |
+| enrichment | 1.098 [1.08, 1.12] | 1.101 [1.08, 1.12] |
+| ceiling (`1/P(FP)`) | 1.23 | 1.24 |
+| **fraction of headroom** | **43%** | **42%** |
+| retraction delay, mean / median | 18.7 / 9 | 19.6 / 9 |
+| recovery rate | 0.235 | 0.265 |
+
+The CI excludes 1.0: when this model retracts, it is retracting something that
+really is wrong, more often than chance. But it captures **42% of the available
+discrimination against the corpus's 97%**, and removing the ordering artifact
+moved that number by one point. Whatever limits the transfer, it is not the
+sort. ✳️ (#160's 52% is on a slightly different footing — a readout-time
+ablation of an unconditioned model, not a generation-time mode.)
+
+![retraction](plots_v2/retraction.png)
+
+### 4. Accuracy: the marker recovers most of the cost, the fixed corpus recovers most of the rest — and it still does not win
+
+R-precision, paired Δ vs `exp120-base` (95% CI):
+
+| arm | all-range | long-range |
+|---|---|---|
+| `exp120-base` | 0.4354 | 0.3783 |
+| **clean mode** | 0.4291 (**−0.0063** ±0.0042) | 0.3698 (−0.0085 ±0.0049) |
+| **retraction mode** | 0.4201 (**−0.0153** ±0.0043) | 0.3600 (−0.0184 ±0.0065) |
+
+![accuracy](plots_v2/mode_comparison.png)
+
+Against the two things this experiment was testing:
+
+**The hypothesis held.** #160's unconditioned model scored −0.0199 (all-range).
+Its two modes, once separated, sit on either side of that: −0.0063 and −0.0153.
+An unconditioned model behaving as a mixture of the two is the prediction, and
+−0.0199 against a midpoint of −0.0108 is roughly what it looks like. Telling the
+model which mode it is in recovers **two thirds** of the clean-mode regression.
+
+**The artifact cost accuracy, not discrimination.** Retraction mode went from
+−0.0414 to −0.0153 across the corpus fix — 63% of the gap — while clean mode
+(−0.0068 → −0.0063) and enrichment (43% → 42%) did not move at all. That is a
+clean dissociation: the sorted sweep was collapsing the 100-rollout vote, which
+is an *accuracy* mechanism, and it was never what taught the model to retract.
+
+**And the headline criterion is still not met.** −0.0063 is small but its CI
+excludes zero, and retraction mode costs 51% more tokens (757 vs 502 per
+rollout, 4.6% truncated) to land further behind. On the #89 benchmark, at any
+token budget, the honest summary is that **the best arm of this experiment is
+the model we started from.** ❌
+
+### Success criteria, scored
+
+| | |
+|---|---|
+| Format is append-only | ✅ 0 id mismatches on 3,849 pre-existing tokens |
+| The marker is obeyed | ✅ 0.12 vs 41.96 retracts/rollout, one checkpoint |
+| Emission cost recovered | ✅ mostly — −0.0199 → −0.0063, but not to zero |
+| Retraction sharpens | ❌ 42% of headroom, flat vs #160 |
+| **Beats `exp120-base` on #89** | ❌ **−0.0063 clean, −0.0153 retraction** |
 
 ## Conclusion
 
-_(Fill in after the run.)_
+**The mode marker does its job. Retraction still does not pay for itself.**
+
+Three things are now settled that were not before:
+
+1. **Conditioning works and is cheap.** One appended token, no format change, no
+   regeneration — and the model splits cleanly into two behaviours it previously
+   had to average over. Two thirds of #160's emission regression was the cost of
+   *not* being able to tell the modes apart.
+
+2. **The corpus artifact is fixed and it mattered — for accuracy.** Removing the
+   sorted flush cut retraction mode's cost by 63% and drove the model's own
+   sortedness to the null. It changed the discrimination measurement by one
+   point.
+
+3. **The 42% transfer gap is the real open problem.** It survived a mode marker
+   *and* a corpus regeneration. The corpus retracts 97% of its available
+   false positives because a ground-truth flush tells it which ones they are;
+   the model gets 42% from the same traces. The gap is between "can be shown
+   the answer" and "can tell from the inside", and nothing tried so far touches
+   it.
+
+What that implies for the series: the next lever is not another supervised
+corpus variant. A model that discriminates at 42% of ceiling is being asked to
+learn a judgement from demonstrations of an oracle's judgement, and imitation
+gets it partway. The natural continuation is to let the model retract and score
+the *outcome* — the RFT setup #98 already has data for — rather than to keep
+demonstrating retractions it cannot yet justify.
+
+The trained model is published and there is a notebook for poking at it:
+[`notebooks/retraction_mode_playground.ipynb`](../../notebooks/retraction_mode_playground.ipynb).
+
+```
+hf://buckets/open-athena/MarinFold/checkpoints/
+    exp175-cv1-1_5b-mode50-v2-lr3e-4-e1-cos/hf/step-2070
+```
+
+**It is not the accuracy frontier and should not be used as one** — for contact
+prediction, `exp120-base` beats it in both modes, and [#166](https://github.com/Open-Athena/MarinFold/issues/166)
+beats that. It is published because a checkpoint whose behaviour you can switch
+with one token is a useful object to have.

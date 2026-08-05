@@ -32,23 +32,22 @@ import pandas as pd  # noqa: E402
 ANCHOR = "exp120-base"
 SERIES = [
     ("exp120-base", "base model\n(exp120)", "#8c8c8c"),
-    ("exp160-bt50", "#160 unconditioned\n(no marker)", "#c07a4e"),
-    ("exp175-clean", "#175 clean mode\n<contacts-v1>", "#3b6ea5"),
-    ("exp175-backtracking", "#175 retraction mode\n<contacts-v1.backtracking>", "#7a4e8c"),
+    ("exp175-clean", "clean mode\n<contacts-v1>", "#3b6ea5"),
+    ("exp175-backtracking", "retraction mode\n<contacts-v1.backtracking>", "#7a4e8c"),
 ]
+# The same two arms trained on the SORTED-flush corpus, for the before/after.
+V1 = {"exp175-clean": -0.0068, "exp175-backtracking": -0.0414}
+V1_LONG = {"exp175-clean": -0.0095, "exp175-backtracking": -0.0462}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--exp175", type=Path, default=Path("data/exp160_rows.csv.gz"))
-    ap.add_argument("--exp160", type=Path,
-                    default=Path("../exp160_models_backtracking_training/data/exp160_rows.csv.gz"))
-    ap.add_argument("--out", type=Path, default=Path("plots/mode_comparison.png"))
+    ap.add_argument("--exp175", type=Path, default=Path("data_v2/exp160_rows.csv.gz"))
+    ap.add_argument("--exp160", type=Path, default=None)
+    ap.add_argument("--out", type=Path, default=Path("plots_v2/mode_comparison.png"))
     a = ap.parse_args()
 
-    r175 = pd.read_csv(a.exp175)
-    r160 = pd.read_csv(a.exp160)
-    rows = pd.concat([r175, r160[r160.model == "exp160-bt50"]], ignore_index=True)
+    rows = pd.read_csv(a.exp175)
     a.out.parent.mkdir(parents=True, exist_ok=True)
 
     fig, axes = plt.subplots(1, 2, figsize=(13, 5.2))
@@ -57,7 +56,7 @@ def main() -> int:
         # Anchor #160's arm on ITS OWN exp120-base run, so each delta is paired
         # within the experiment that produced it rather than across two
         # independent rollout samples.
-        anchors = {"exp160-bt50": r160, "exp175-clean": r175, "exp175-backtracking": r175}
+        v1ref = V1 if rng == "all" else V1_LONG
         means, errs, labels, colors = [], [], [], []
         for key, label, color in SERIES:
             v = sub[sub.model == key].precision
@@ -74,14 +73,17 @@ def main() -> int:
                     fontsize=9.5, fontweight="bold")
             if k == 0:
                 continue
-            src = anchors[SERIES[k][0]]
-            s = src[(src["cut"] == "R") & (src["range"] == rng)]
+            s = rows[(rows["cut"] == "R") & (rows["range"] == rng)]
             w = s.pivot_table(index=["dataset", "stem"], columns="model",
                               values="precision").dropna()
             d = (w[SERIES[k][0]] - w[ANCHOR]).to_numpy()
             ci = 1.96 * d.std(ddof=1) / np.sqrt(d.size)
-            ax.text(k, 0.012, f"{d.mean():+.4f}\n±{ci:.4f}", ha="center", fontsize=8.5,
-                    color="white", fontweight="bold")
+            old = v1ref.get(SERIES[k][0])
+            lbl = f"{d.mean():+.4f}\n±{ci:.4f}"
+            if old is not None:
+                lbl += f"\n(was {old:+.4f})"
+            ax.text(k, 0.012, lbl, ha="center", fontsize=8, color="white",
+                    fontweight="bold")
         ax.axhline(base, color="#333", ls=":", lw=1.2)
         ax.set_xticks(x)
         ax.set_xticklabels(labels, fontsize=8.5)
@@ -89,8 +91,8 @@ def main() -> int:
         ax.set_ylabel("R-precision" if rng == "all" else "")
         ax.set_title(f"{rng}-range contacts (n=554; paired Δ vs base in bars)")
 
-    fig.suptitle("The marker recovers clean-mode accuracy and exposes retraction mode's real cost",
-                 fontsize=12.5)
+    fig.suptitle("Trained on the FIXED corpus: retraction mode's cost falls from "
+                 "-0.0414 to -0.0153", fontsize=12.5)
     fig.tight_layout()
     fig.savefig(a.out, dpi=150)
     print(f"[plot] wrote {a.out}")

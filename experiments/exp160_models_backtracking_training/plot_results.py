@@ -42,11 +42,14 @@ import pandas as pd  # noqa: E402
 CORPUS = {"enrichment": 5.85, "precision": 0.974, "base_rate": 0.166,
           "mean_distance": 17.9, "median_distance": 9}
 
+# Defaults are #160's arm labels; --trained / --control retarget the same two
+# figures at #175's, whose backtracking arm is a *generation-time* mode of one
+# checkpoint rather than a separate model.
 TRAINED = "exp160-bt50"
 CONTROL = "exp120-base"
 
 
-def plot_retraction(retraction: pd.DataFrame, out: Path) -> None:
+def plot_retraction(retraction: pd.DataFrame, out: Path, trained: str = TRAINED) -> None:
     """Model vs corpus, normalised by headroom — the only fair comparison.
 
     Enrichment is bounded by ``1 / P(FP)``, so a model whose rollouts are mostly
@@ -57,9 +60,9 @@ def plot_retraction(retraction: pd.DataFrame, out: Path) -> None:
     captured, with raw enrichment and ceiling annotated; the right panel shows
     the precision-vs-base-rate gap those numbers come from.
     """
-    row = retraction[retraction.model == TRAINED]
+    row = retraction[retraction.model == trained]
     if row.empty:
-        print(f"[plot] no retraction row for {TRAINED}; skipping")
+        print(f"[plot] no retraction row for {trained}; skipping")
         return
     r = row.iloc[0]
     enrich = float(r["retract_enrichment"])
@@ -106,9 +109,10 @@ def plot_retraction(retraction: pd.DataFrame, out: Path) -> None:
     print(f"[plot] wrote {out}")
 
 
-def plot_accuracy(rows: pd.DataFrame, out: Path) -> None:
+def plot_accuracy(rows: pd.DataFrame, out: Path, trained: str = TRAINED,
+                  control: str = CONTROL) -> None:
     models = set(rows.model.unique())
-    if not {TRAINED, CONTROL} <= models:
+    if not {trained, control} <= models:
         print(f"[plot] need both arms, have {sorted(models)}; skipping")
         return
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
@@ -116,13 +120,13 @@ def plot_accuracy(rows: pd.DataFrame, out: Path) -> None:
         sub = rows[(rows["cut"] == "R") & (rows["range"] == rng)]
         wide = sub.pivot_table(index=["dataset", "stem"], columns="model",
                                values="precision").dropna()
-        delta = (wide[TRAINED] - wide[CONTROL]).to_numpy()
+        delta = (wide[trained] - wide[control]).to_numpy()
         n = delta.size
         sem = delta.std(ddof=1) / np.sqrt(n) if n > 1 else np.nan
         ax.hist(delta, bins=41, color="#3b6ea5", alpha=0.85)
         ax.axvline(0, color="#333", lw=1)
         ax.axvline(delta.mean(), color="#b03030", lw=1.6)
-        ax.set_xlabel(f"R-precision  {TRAINED} − {CONTROL}  ({rng})")
+        ax.set_xlabel(f"R-precision  {trained} − {control}  ({rng})")
         ax.set_ylabel("proteins")
         ax.set_title(f"{rng}: Δ = {delta.mean():+.4f} ± {1.96 * sem:.4f} (95% CI), "
                      f"n = {n}, wins {100 * (delta > 0).mean():.0f}%")
@@ -136,11 +140,13 @@ def main() -> int:
     ap.add_argument("--rows", type=Path, required=True)
     ap.add_argument("--retraction", type=Path, required=True)
     ap.add_argument("--out-dir", type=Path, required=True)
+    ap.add_argument("--trained", default=TRAINED, help="arm label to plot")
+    ap.add_argument("--control", default=CONTROL, help="arm it is paired against")
     a = ap.parse_args()
 
     a.out_dir.mkdir(parents=True, exist_ok=True)
-    plot_retraction(pd.read_csv(a.retraction), a.out_dir / "retraction.png")
-    plot_accuracy(pd.read_csv(a.rows), a.out_dir / "accuracy.png")
+    plot_retraction(pd.read_csv(a.retraction), a.out_dir / "retraction.png", a.trained)
+    plot_accuracy(pd.read_csv(a.rows), a.out_dir / "accuracy.png", a.trained, a.control)
     return 0
 
 
