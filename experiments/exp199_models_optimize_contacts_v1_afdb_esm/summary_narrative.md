@@ -18,4 +18,4 @@ The smoke script adopts the completed regional Llama-3-tokenized DCLM cache as a
 
 ## Results so far
 
-_(Fill in after the smoke run.)_
+The DCLM preflight passed (1,024 complete Llama-3-tokenized shards), and the graph contained only an adopted cache plus training. Iris launched `run_levanter_train_lm-ad08751d`; the runtime confirmed a `v6e-4` and `auto_build_caches=False`. The run stopped before step 0 because the authenticated account lacks Models write access to `open-athena`. Grant that permission, then rerun unchanged.

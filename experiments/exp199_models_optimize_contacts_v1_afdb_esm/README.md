@@ -72,8 +72,13 @@ uv run --extra tpu --frozen iris --cluster=marin job run \
 
 ## Results
 
-_(Fill in after the smoke run.)_
+- Preflight passed against `gs://marin-eu-west4/tokenized/dclm_baseline-0206f1/`: the ledger is complete, contains 1,024 shards and 2,918,356,905 rows, and identifies `meta-llama/Meta-Llama-3.1-8B` as the tokenizer.
+- The lowered graph contained exactly the adopted DCLM artifact and the training artifact. It contained no tokenize or cache-build step.
+- Iris coordinator [`/eczech/exp199-dclm-nano-v6e4-smoke`](https://iris.oa.dev/#/job/%2Feczech%2Fexp199-dclm-nano-v6e4-smoke) spawned child `run_levanter_train_lm-ad08751d` on 2026-08-06.
+- The child initialized JAX through Iris with `device=TpuConfig(variant='v6e-4', kind='tpu')`, used the regional output and compilation-cache paths, and logged `Overriding auto_build_caches to False`.
+- Training stopped before step 0 while initializing W&B. The authenticated `eric-czech (open-athena)` account was rejected with `wandb.errors.errors.CommError: user does not have models write access for this org`.
+- No retry was submitted because changing the W&B entity or disabling required tracking would depart from the repository's `open-athena/MarinFold` practice.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The MarinFold package-only path successfully lowered and dispatched a DCLM training task through Iris to the requested `v6e-4`, with the no-retokenization invariant enforced at planning and runtime. Reaching an optimizer step is blocked only by external W&B organization permissions. Grant Models write access for the supplied account, then rerun the unchanged command above.
