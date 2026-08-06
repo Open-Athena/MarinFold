@@ -30,7 +30,7 @@ from marin.training.training import LevanterCheckpoint
 
 DCLM_CACHE_URI = "gs://marin-eu-west4/tokenized/dclm_baseline-0206f1/"
 DCLM_TOKENIZER = "meta-llama/Meta-Llama-3.1-8B"
-RUN_ID = "exp199-dclm-nano-v6e4-smoke"
+RUN_ID = "exp199-dclm-nano-v6e4-smoke-streaming"
 
 SEQ_LEN = 512
 BATCH_SIZE = 32
@@ -55,7 +55,7 @@ LLAMA_NANO = LlamaConfig(
 
 
 class DclmTrainingCache(TokenizedCache):
-    """Legacy DCLM cache with explicit training-split and packing semantics."""
+    """Legacy DCLM cache read as an explicit continuous training stream."""
 
     def as_component(self) -> DatasetComponent:
         source = UrlDatasetSourceConfig(
@@ -71,7 +71,7 @@ class DclmTrainingCache(TokenizedCache):
             format=source.format,
             tags=source.tags,
             split="train",
-            pack=True,
+            pack=False,
         )
 
 

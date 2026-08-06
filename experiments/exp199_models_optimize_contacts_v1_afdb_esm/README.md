@@ -27,6 +27,7 @@ Issue #199 follows [#196](https://github.com/Open-Athena/MarinFold/issues/196), 
 - `train_dclm_nano.py` trains the tutorial-sized Llama model for ten steps on one `v6e-4` slice.
 - The input is the completed Llama-3-tokenized DCLM cache at `gs://marin-eu-west4/tokenized/dclm_baseline-0206f1/`.
 - The script uses `ArtifactStep.adopt`; it neither imports nor constructs a tokenization recipe. A missing cache therefore fails instead of rebuilding.
+- The smoke test reads the cache as a continuous token stream; eager document packing would index all 2.9 billion rows before step 0.
 - The outer Iris job is pinned to `europe-west4`, and `MARIN_PREFIX` points to the co-located `marin-eu-west4` bucket.
 - Marin is installed from pinned published packages in this experiment's isolated `uv.lock`; the sibling Marin checkout is reference material only.
 
@@ -49,11 +50,11 @@ set +a
 export MARIN_PREFIX=gs://marin-eu-west4/protein-structure/MarinFold/exp199_models_optimize_contacts_v1_afdb_esm
 
 uv run --extra tpu --frozen python verify_dclm_cache.py
-uv run --extra tpu --frozen python train_dclm_nano.py --version 2026.08.06.1
+uv run --extra tpu --frozen python train_dclm_nano.py --version 2026.08.06
 
 uv run --extra tpu --frozen iris --cluster=marin job run \
   --user eczech \
-  --job-name exp199-dclm-nano-v6e4-smoke-r2 \
+  --job-name exp199-dclm-nano-v6e4-smoke-streaming \
   --no-wait \
   --priority interactive \
   --enable-extra-resources \
@@ -67,7 +68,7 @@ uv run --extra tpu --frozen iris --cluster=marin job run \
   -e WANDB_API_KEY "$WANDB_API_KEY" \
   -e WANDB_ENTITY "$WANDB_ENTITY" \
   -e WANDB_PROJECT "$WANDB_PROJECT" \
-  -- python train_dclm_nano.py --version 2026.08.06.1 --run
+  -- python train_dclm_nano.py --version 2026.08.06 --run
 ```
 
 ## Results

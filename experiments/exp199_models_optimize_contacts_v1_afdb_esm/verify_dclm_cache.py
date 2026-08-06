@@ -42,14 +42,14 @@ def main() -> None:
         raise ValueError("DCLM must be an adopted artifact, never a buildable pinned recipe")
     cache = handle.artifact_type.raw_load(DCLM_CACHE_URI)
     component = cache.as_component()
-    if component.split != "train" or component.pack is not True:
-        raise ValueError("DCLM component must read the train split with document packing")
+    if component.split != "train" or component.pack is not False:
+        raise ValueError("DCLM component must read the train split as a continuous token stream")
 
     print(f"cache: {DCLM_CACHE_URI}")
     print(f"tokenizer: {DCLM_TOKENIZER}")
     print(f"shards: {len(ledger['shard_rows']):,}")
     print(f"ledger rows: {ledger['total_num_rows']:,}")
-    print("component: split=train, pack=True")
+    print("component: split=train, pack=False (continuous token stream)")
     print("status: complete; training graph has no tokenization step")
 
 
