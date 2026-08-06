@@ -75,11 +75,14 @@ uv run --extra tpu --frozen iris --cluster=marin job run \
 
 - Preflight passed against `gs://marin-eu-west4/tokenized/dclm_baseline-0206f1/`: the ledger is complete, contains 1,024 shards and 2,918,356,905 rows, and identifies `meta-llama/Meta-Llama-3.1-8B` as the tokenizer.
 - The lowered graph contained exactly the adopted DCLM artifact and the training artifact. It contained no tokenize or cache-build step.
-- Iris coordinator [`/eczech/exp199-dclm-nano-v6e4-smoke`](https://iris.oa.dev/#/job/%2Feczech%2Fexp199-dclm-nano-v6e4-smoke) spawned child `run_levanter_train_lm-ad08751d` on 2026-08-06.
-- The child initialized JAX through Iris with `device=TpuConfig(variant='v6e-4', kind='tpu')`, used the regional output and compilation-cache paths, and logged `Overriding auto_build_caches to False`.
-- Training stopped before step 0 while initializing W&B. The authenticated `eric-czech (open-athena)` account was rejected with `wandb.errors.errors.CommError: user does not have models write access for this org`.
-- No retry was submitted because changing the W&B entity or disabling required tracking would depart from the repository's `open-athena/MarinFold` practice.
+- The initial attempt exposed a stale hard-coded W&B destination. A second attempt using `marin.env` authenticated correctly, but `pack=True` made this Levanter version eagerly index all 2.9 billion document offsets; it was stopped after a live stack trace confirmed the bottleneck.
+- The continuous-stream run [`/eczech/exp199-dclm-nano-v6e4-smoke-streaming`](https://iris.oa.dev/#/job/%2Feczech%2Fexp199-dclm-nano-v6e4-smoke-streaming) and child `run_levanter_train_lm-60342421` both succeeded with no failures or preemptions.
+- Runtime logged `device=TpuConfig(variant='v6e-4', kind='tpu')`, and [W&B](https://wandb.ai/eric-czech/marin/runs/exp199-dclm-nano-v6e4-smoke-streaming) recorded one host with four TPU v6 lite devices.
+- Runtime logged `Overriding auto_build_caches to False`, then loaded `dclm_baseline-0206f1/train/shard_ledger.json` directly. The Iris job tree contained no tokenization child.
+- The first batch loaded in 3.6 seconds, step 0 completed after 14.9 seconds including compilation, and all ten steps completed through global step 9.
+- The final logged loss was 11.9435 over 163,840 tokens. Mean throughput was 579,847 tokens/s with 39.8% mean MFU.
+- Step-9 Levanter and HF-compatible checkpoints were written under `gs://marin-eu-west4/protein-structure/MarinFold/exp199_models_optimize_contacts_v1_afdb_esm/checkpoints/exp199-dclm-nano-v6e4-smoke-streaming/2026.08.06/`.
 
 ## Conclusion
 
-The MarinFold package-only path successfully lowered and dispatched a DCLM training task through Iris to the requested `v6e-4`, with the no-retokenization invariant enforced at planning and runtime. Reaching an optimizer step is blocked only by external W&B organization permissions. Grant Models write access for the supplied account, then rerun the unchanged command above.
+The MarinFold package-only path successfully trained a model through Iris on the requested regional `v6e-4`. The adopted-cache design enforced the no-retokenization invariant at planning and runtime, and continuous token streaming avoided an impractical full-corpus document-packing index. The infrastructure smoke milestone is complete; the protein optimization sweep can build on this launch pattern.
