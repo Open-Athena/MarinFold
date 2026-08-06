@@ -5,9 +5,12 @@
 **Status (2026-08-03).** The reported "catastrophic forgetting" was a **rope config
 artifact** and is retracted; corrected generation numbers show the fine-tunes level with
 the base model. The refinement question itself is **still unmeasured** with correct rope.
-Separately, no checkpoint can yet emit the multi-draft format the planned RL
-post-training needs — the cause is understood (draft/final size asymmetry) and two
-corpora are built to address it, awaiting compute. **Read section 0 first.**
+**Multi-draft generation now works**: arm F emits ~15 near-disjoint candidate contact
+maps per generation, and best-of-N beats the base model by **+27% (+26σ)** — the best
+predictor in this experiment, and a usable RL starting point. The base task is not
+degraded (+4.6σ vs base). Published at `open-athena/MarinFold`
+`checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404`, with an
+anonymous Colab notebook (`exp163_multidraft_demo.ipynb`). **Read section 0 first.**
 
 > ## ⚠️ CORRECTION NOTICE (2026-08-03) — read before anything below
 >
@@ -148,7 +151,79 @@ limit. `max_sections` must be enforced in the sampler rather than trusted to the
 E and F are statistically indistinguishable, so the 2x final weighting bought nothing --
 **F (uniform 1.0) is the simpler choice**.
 
-### 0.3b Conditioning on EXTERNAL drafts still hurts (and my first test was confounded)
+### 0.4 Base-task retention: NOT degraded — arm F is slightly better than base
+
+Arm F scored in **plain `<contacts-v1>` mode** (no mode token, no drafts), so this is the
+base task exactly as contacts-v1 defines it. Generation, 553 proteins x 4:
+
+| model | `all_f1` | prec | rec | `long_f1` | `n_sections` |
+|---|---|---|---|---|---|
+| base E8 | 0.2373 | 0.2471 | 0.2361 | 0.1885 | 1.00 |
+| v3 (draft w=0) | 0.2379 | 0.2476 | 0.2412 | 0.1898 | 1.00 |
+| **arm F, base mode** | **0.2481** | 0.2575 | 0.2480 | 0.1977 | 2.94 |
+| arm F, multi mode | 0.2493 | 0.2612 | 0.2555 | 0.2106 | 14.99 |
+
+Paired vs base E8 on identical (protein, rollout): arm F **+0.0108 ± 0.0024 (+4.6σ,
+win 54.2%)**; v3 +0.0006 ± 0.0025 (0.2σ). Training for multi-draft did not cost the base
+task — it improved it slightly, long band included (0.1885 -> 0.1977).
+
+One behavioural caveat: arm F emits **~2.94 sections even under the plain sentinel**, so
+the multi-draft habit leaks into base mode. Accuracy does not suffer (the last section
+still beats base), but the mode token is not a clean on/off switch.
+
+(The teacher-forced **R-precision** version of this comparison is queued on CoreWeave;
+the above is generation F1, the same comparison through a different lens.)
+
+### 0.5 `--max-sections` is now a real cap
+
+It previously was not. The token budget used a `(4L+64)` worst case per section, which
+for L>=200 **exceeds the 8192 context**, so the model ran to the context limit instead of
+the section limit — that is *why* only ~56% of generations terminated. Now the budget
+comes from the measured section size (~220 contacts -> 668 tokens) and the parsed
+sections are truncated as well, so the cap binds on compute *and* on what is scored:
+
+| | `--max-sections 8` |
+|---|---|
+| `n_sections` after cap | mean **7.55**, max **8** |
+| `n_sections_raw` (pre-cap) | mean 17.03, max 42 |
+| rollouts where the cap bound | **89%** |
+| generated tokens | 4,219 (budget 5,344, flat in L) |
+
+`n_sections_raw` is recorded so the pre-cap behaviour stays visible. Do not compare that
+run's `best_f1` (0.138) with the full run's 0.303: it was a 60-protein subset that
+happens to be hard — the same small-sample trap noted in 0.1.
+
+### 0.6 Published checkpoint + an interactive notebook
+
+**Arm F is on the public `open-athena/MarinFold` bucket**, byte-verified identical to the
+checkpoint every number above was measured on:
+
+```
+checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404   (2.94 GB bf16)
+```
+
+`publish_to_hf_bucket.py` pushes it cloud-side and **refuses** to publish a checkpoint
+whose `config.json` lacks a top-level `rope_theta`, so the rope bug cannot escape into a
+public artifact.
+
+`exp163_multidraft_demo.ipynb` is an anonymous Colab notebook against that exact path:
+paste a sequence, generate a capped chain of candidates, and see every section's contact
+map plus the section-vs-section Jaccard matrix (the diversity best-of-N depends on),
+a temperature sweep, and — given ground truth — per-section F1 with the best-of-N gain.
+
+Two things had to be fixed for it to actually work, both caught before shipping:
+
+* **the published tokenizer did not contain `<contacts-v1.multi>`.** levanter exports
+  whatever tokenizer it trained with — the *published* contacts-v1 one, where id 7 still
+  spells `<contacts-and-distances-v1>`. A notebook writing the literal string would have
+  tokenized to garbage. The **renamed** tokenizer (same 2,845 ids, id 7 re-spelled) is now
+  co-located with the weights; verified anonymously that the prompt head resolves to
+  `[7, 8, ...]`.
+* `download_bucket_files` takes explicit `(remote, local)` pairs — there is no
+  `local_dir` argument. Verified by running the notebook's exact fetch path with
+  `token=False`.
+
+### 0.7 Conditioning on EXTERNAL drafts still hurts (and my first test was confounded)
 
 Feeding the model someone else's rollouts as context, with draft sizes matched to
 training's `Uniform[1, cap]` distribution:
@@ -174,9 +249,9 @@ Also checked and cleared: the corpus does NOT truncate the ground-truth section 
 grows (|final| = 199 contacts at every K, corr **+0.000**), so training always
 demonstrated "after K drafts, write the complete answer".
 
-### 0.3c The arms as originally built
+### 0.8 The arms as originally built
 
-### 0.3 Two arms built to fix it (now trained -- see 0.3)
+#### how E and F were built
 
 Both re-weight the *same* `input_ids` (`reweight_corpus.py`; a weight profile changes only
 `loss_weights`), and both put drafts at or above half the signal:
@@ -197,7 +272,7 @@ that slot by accident; at `w_header=0.1` it becomes real cross-document leakage.
 explicitly zeroed, with a self-test asserting the `(0,0,1)` profile still reproduces the
 original masks bit-for-bit.
 
-### 0.4 Infrastructure: CoreWeave produced nothing this week
+### 0.9 Infrastructure: CoreWeave produced nothing this week
 
 Five submissions over three days at iris **batch** priority (the standing rule for
 MarinFold GPU work) yielded zero results: ~10h queued unplaced, one mass preemption sweep
@@ -216,7 +291,7 @@ section 0 came from the **marin iris TPU pool** instead. Practical notes:
   `origin/main` with `uv sync --package marin-iris` (873MB) fixes it without touching
   their tree.
 
-### 0.5 The fine-tune is ported to marin TPU (done); awaiting a v5p-16 slot
+### 0.10 The fine-tune is ported to marin TPU (done — E and F trained on v5p-16)
 
 levanter is JAX-native and every path in `refine_ft_common` was already env-overridable,
 so the port was resources + paths, not a rewrite:
@@ -243,12 +318,16 @@ which cost a launch:
    `regions=("us-east5",)`, which is also correct for locality (corpus, val and
    warm-start all live in `marin-us-east5`).
 
-Blocked only on **capacity**: a v5p-16 (2 hosts) has not placed in ~2.5h, while
-single-host v5p-8 places in minutes. Deliberately NOT dropping to v5p-8 blind — this
-recipe used 94% of the arena on 8xH100 (640GB) and a v5p-8 is 380GB; the usual fix,
-gradient accumulation, would re-normalise the per-token loss weights per microbatch and
-change the effective objective, destroying comparability with every arm measured so far.
-A 3-step v5p-8 **memory probe** is queued to settle whether it fits.
+Capacity was the last obstacle: a v5p-16 would not place in `us-east5` for hours, and
+widening `regions` to include `us-central1` tripped marin's own locality guard
+(`cache_dir is not in the same region as the VM`). Resolved by server-side mirroring the
+corpora, val split and warm-start into `marin-us-central1` (7GB, GCS->GCS) and running
+fully in that region. Both arms then trained end to end in ~80 minutes.
+
+Three separate zone/region lessons, all of which cost hours: **pin the region** when a
+locality guard demands it, never the **zone** (zone-pinning starved three different jobs);
+`with_tpu` leaves `regions` unset and the scheduler picks one with no v5p at all; and a
+multi-region job needs its *data* mirrored, not just its constraint widened.
 
 **Operational lesson, learned twice:** a parent job reads `running` while its child gang
 is still `pending`, and a gang can place and do real work while carrying a fatal
@@ -1012,6 +1091,15 @@ uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
     -- python -m reweight_corpus --src "s3://.../v3/tok_mix50/*.parquet" \
        --dst gs://.../v3/tok_mix50_E --w-header 0.1 --w-draft 1.0 --w-final 2.0
 
+# ---- publish an artifact to the PUBLIC bucket (what the notebook reads) --------
+# Refuses to publish a config.json without a top-level rope_theta. Co-locate the
+# RENAMED tokenizer too, or `<contacts-v1.multi>` will not tokenize to id 7.
+uv run iris --cluster=marin job run --no-wait --enable-extra-resources \
+    --cpu=8 --memory=32GB --disk=32GB --extra cpu -e HF_TOKEN "$OA_TOKEN" \
+    -- python -m publish_to_hf_bucket \
+       --src gs://marin-us-east5/MarinFold/exp163/tpu/tpuF-bf16/step-404 \
+       --dest-prefix checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404
+
 # ---- v3: mode token + rehearsal ----------------------------------------------
 P=s3://marin-us-east-02a/MarinFold/exp163
 python -m make_multi_tokenizer                 # rename vocab id 7 in place, no id drift
@@ -1050,6 +1138,7 @@ uv run iris --cluster=cw-rno2a job run --no-wait --priority batch \
 Key files: `loss_mask.py` · `tokenize_refinement_corpus.py` · `refine_ft_common.py` ·
 `dispatch_refine_train.py` · `build_refinement_corpus.py` · `select_targets_eval_set.py` ·
 `gen_prompts_exp163.py` · `dispatch_rollouts.py` · `make_multi_tokenizer.py` ·
-`stage_v3_to_gcs.py` · `reweight_corpus.py` ·
+`stage_v3_to_gcs.py` · `reweight_corpus.py` · `publish_to_hf_bucket.py` ·
+`exp163_multidraft_demo.ipynb` ·
 `eval_refiner_worker.py` · `dispatch_refine_eval.py`. Narrative + operational detail in
 `SCALE_PLAN.md`.
