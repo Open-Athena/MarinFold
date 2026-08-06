@@ -91,25 +91,26 @@ def dclm_tokens() -> ArtifactStep[TokenizedCache]:
 
 
 def training_env() -> dict[str, str]:
-    """Validate credentials and return only non-secret training metadata.
+    """Validate credentials and return W&B routing from ``marin.env``.
 
     Fray forwards ``HF_TOKEN`` and ``WANDB_API_KEY`` from the driver process via
     its job environment defaults. Keeping their values out of this config also
     keeps them out of artifact fingerprints and provenance records.
     """
-    required = ("WANDB_API_KEY", "HF_TOKEN")
+    required = ("WANDB_API_KEY", "HF_TOKEN", "WANDB_ENTITY", "WANDB_PROJECT")
     missing = [name for name in required if not os.environ.get(name)]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
     return {
-        "WANDB_ENTITY": "open-athena",
-        "WANDB_PROJECT": "MarinFold",
+        "WANDB_ENTITY": os.environ["WANDB_ENTITY"],
+        "WANDB_PROJECT": os.environ["WANDB_PROJECT"],
     }
 
 
 def build() -> ArtifactStep[LevanterCheckpoint]:
     """Assemble the complete ten-step smoke-training artifact."""
     tokens = dclm_tokens()
+    env = training_env()
     return train_lm(
         name=f"checkpoints/{RUN_ID}",
         run_id=RUN_ID,
@@ -123,10 +124,10 @@ def build() -> ArtifactStep[LevanterCheckpoint]:
         evals=None,
         resources=TRAIN_RESOURCES,
         steps_per_eval=NUM_TRAIN_STEPS,
-        wandb_project="MarinFold",
+        wandb_project=env["WANDB_PROJECT"],
         wandb_group="exp199",
         tags=["exp199", "dclm", "llama", "nano", "smoke", "v6e-4"],
-        env_vars=training_env(),
+        env_vars=env,
     )
 
 

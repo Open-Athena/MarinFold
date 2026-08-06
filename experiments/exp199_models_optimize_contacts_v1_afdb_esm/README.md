@@ -49,11 +49,11 @@ set +a
 export MARIN_PREFIX=gs://marin-eu-west4/protein-structure/MarinFold/exp199_models_optimize_contacts_v1_afdb_esm
 
 uv run --extra tpu --frozen python verify_dclm_cache.py
-uv run --extra tpu --frozen python train_dclm_nano.py --version 2026.08.06
+uv run --extra tpu --frozen python train_dclm_nano.py --version 2026.08.06.1
 
 uv run --extra tpu --frozen iris --cluster=marin job run \
   --user eczech \
-  --job-name exp199-dclm-nano-v6e4-smoke \
+  --job-name exp199-dclm-nano-v6e4-smoke-r2 \
   --no-wait \
   --priority interactive \
   --enable-extra-resources \
@@ -65,9 +65,9 @@ uv run --extra tpu --frozen iris --cluster=marin job run \
   -e MARIN_PREFIX "$MARIN_PREFIX" \
   -e HF_TOKEN "$HF_TOKEN" \
   -e WANDB_API_KEY "$WANDB_API_KEY" \
-  -e WANDB_ENTITY open-athena \
-  -e WANDB_PROJECT MarinFold \
-  -- python train_dclm_nano.py --version 2026.08.06 --run
+  -e WANDB_ENTITY "$WANDB_ENTITY" \
+  -e WANDB_PROJECT "$WANDB_PROJECT" \
+  -- python train_dclm_nano.py --version 2026.08.06.1 --run
 ```
 
 ## Results
