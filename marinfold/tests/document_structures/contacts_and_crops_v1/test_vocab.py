@@ -73,10 +73,10 @@ def test_inherited_block_is_contacts_v1_minus_retraction():
     # The inherited block is contacts-v1's vocab with its later <retract>
     # extension (issue #158) removed — this format has no retraction, and
     # inheriting that trailing token would shift the whole crop block.
-    from marinfold.document_structures.contacts_v1.vocab import retract_tokens
+    from marinfold.document_structures.contacts_v1.vocab import backtracking_tokens, retract_tokens
 
     full = contacts_v1_all_domain_tokens()
-    retract = set(retract_tokens())
+    retract = set(retract_tokens()) | set(backtracking_tokens())
     assert inherited_tokens() == [t for t in full if t not in retract]
     assert set(full) - set(inherited_tokens()) == retract
     assert len(inherited_tokens()) == 2844
@@ -88,11 +88,11 @@ def test_all_domain_tokens_order_and_count():
     # Inherited block is a byte-identical PREFIX (every inherited id stable).
     assert tokens[: len(inherited)] == inherited
     # Native (crop) block next, then contacts-v1's <retract> appended last.
-    from marinfold.document_structures.contacts_v1.vocab import retract_tokens
+    from marinfold.document_structures.contacts_v1.vocab import backtracking_tokens, retract_tokens
 
-    assert tokens[len(inherited):-1] == native_tokens()
-    assert tokens[-1:] == retract_tokens()
-    assert len(tokens) == 3847
+    assert tokens[len(inherited):-2] == native_tokens()
+    assert tokens[-2:] == [*retract_tokens(), *backtracking_tokens()]
+    assert len(tokens) == 3848
     # No duplicates anywhere.
     assert len(set(tokens)) == len(tokens)
 
@@ -103,14 +103,14 @@ def test_contacts_v1_ids_are_byte_stable():
     # one exception — this superset carries it at the very END (after the crop
     # block) so no coordinate/crop id moves, so it has a different id than in
     # contacts-v1's own standalone tokenizer. See all_domain_tokens().
-    from marinfold.document_structures.contacts_v1.vocab import retract_tokens
+    from marinfold.document_structures.contacts_v1.vocab import backtracking_tokens, retract_tokens
 
     ours = all_domain_tokens()
-    retract = set(retract_tokens())
-    stable = [t for t in contacts_v1_all_domain_tokens() if t not in retract]
+    trailing = set(retract_tokens()) | set(backtracking_tokens())
+    stable = [t for t in contacts_v1_all_domain_tokens() if t not in trailing]
     for i, tok in enumerate(stable):
         assert ours[i] == tok
-    assert ours[-1:] == list(retract)
+    assert ours[-2:] == [*retract_tokens(), *backtracking_tokens()]
 
 
 def test_xyz_ids_match_ccoord_and_only_crop_is_new():
@@ -118,6 +118,9 @@ def test_xyz_ids_match_ccoord_and_only_crop_is_new():
     # keeps the exact id it has in ccoord (both put the doc type at the same
     # position and the xyz block right after it), so a ccoord checkpoint's xyz
     # embeddings transfer at their own ids; <crop> is the single new row.
+    from marinfold.document_structures.contacts_v1.vocab import (
+        backtracking_tokens as backtracking_tokens_,
+    )
     from marinfold.document_structures.contacts_v1.vocab import (
         retract_tokens as retract_tokens_,
     )
@@ -132,7 +135,8 @@ def test_xyz_ids_match_ccoord_and_only_crop_is_new():
     # the same id — a benign reuse on warm-start), and <crop> is the single
     # genuinely new row, appended after ccoord's whole vocab.
     assert ours_ids[DOC_TYPE_TOKEN] == ccoord_ids["<contacts-and-coordinates-v1>"]
-    ccoord_no_retract = [t for t in ccoord if t not in set(retract_tokens_())]
+    trailing_ = set(retract_tokens_()) | set(backtracking_tokens_())
+    ccoord_no_retract = [t for t in ccoord if t not in trailing_]
     assert ours_ids[CROP_TOKEN] == len(ccoord_no_retract)
     assert set(ours) - set(ccoord) == {DOC_TYPE_TOKEN, CROP_TOKEN}
 
@@ -151,7 +155,7 @@ def test_native_block_disjoint_from_inherited():
 def test_tokenizer_roundtrips_native_tokens():
     tokenizer = build_tokenizer(all_domain_tokens())
     # 3847 domain tokens (incl. trailing <retract>) + <pad>/<eos>.
-    assert len(tokenizer) == 3849
+    assert len(tokenizer) == 3850
     sample = "<contacts-and-crops-v1> <crop> <xyz-129> <p26> <CA> <xyz-360>"
     ids = tokenizer.encode(sample, add_special_tokens=False)
     assert tokenizer.decode(ids) == sample

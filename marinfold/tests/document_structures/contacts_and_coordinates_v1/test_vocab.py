@@ -68,37 +68,42 @@ def test_inherited_block_is_contacts_v1_minus_retraction():
     # The inherited block is contacts-v1's vocab with its later <retract>
     # extension (issue #158) removed — this format has no retraction, and
     # inheriting that trailing token would shift all 1001 coordinate ids.
-    from marinfold.document_structures.contacts_v1.vocab import retract_tokens
+    from marinfold.document_structures.contacts_v1.vocab import backtracking_tokens, retract_tokens
 
     full = contacts_v1_all_domain_tokens()
-    retract = set(retract_tokens())
+    retract = set(retract_tokens()) | set(backtracking_tokens())
     assert inherited_tokens() == [t for t in full if t not in retract]
     assert set(full) - set(inherited_tokens()) == retract
     assert len(inherited_tokens()) == 2844
 
 
 def test_all_domain_tokens_order_and_count():
-    from marinfold.document_structures.contacts_v1.vocab import retract_tokens
+    from marinfold.document_structures.contacts_v1.vocab import backtracking_tokens, retract_tokens
 
     tokens = all_domain_tokens()
     inherited = inherited_tokens()
     # Inherited block is a byte-identical PREFIX (every inherited id stable).
     assert tokens[: len(inherited)] == inherited
     # Native (coordinate) block next, then contacts-v1's <retract> appended last.
-    assert tokens[len(inherited):-1] == native_tokens()
-    assert tokens[-1:] == retract_tokens()
-    assert len(tokens) == 3846
+    assert tokens[len(inherited):-2] == native_tokens()
+    assert tokens[-2:] == [*retract_tokens(), *backtracking_tokens()]
+    assert len(tokens) == 3847
     # No duplicates anywhere.
     assert len(set(tokens)) == len(tokens)
 
 
 def test_retract_appended_last_leaves_coordinate_ids_fixed():
-    # The superset carries <retract> for retraction-bearing mixtures, appended
-    # AFTER the coordinate block so no coordinate id moves.
-    from marinfold.document_structures.contacts_v1.vocab import RETRACT_TOKEN
+    # The superset carries <retract> and the #175 backtracking doc type for
+    # retraction-bearing mixtures, both appended AFTER the coordinate block so
+    # no coordinate id moves.
+    from marinfold.document_structures.contacts_v1.vocab import (
+        BACKTRACKING_DOC_TYPE_TOKEN,
+        RETRACT_TOKEN,
+    )
 
     tok = build_tokenizer(all_domain_tokens())
-    assert tok.convert_tokens_to_ids(RETRACT_TOKEN) == len(tok) - 1
+    assert tok.convert_tokens_to_ids(BACKTRACKING_DOC_TYPE_TOKEN) == len(tok) - 1
+    assert tok.convert_tokens_to_ids(RETRACT_TOKEN) == len(tok) - 2
     # Coordinate native block is unmoved: doc type right after the 2844-token
     # inherited block (ids 0-1 are pad/eos), then the xyz run.
     assert tok.convert_tokens_to_ids(DOC_TYPE_TOKEN) == 2 + 2844
@@ -121,7 +126,7 @@ def test_native_block_disjoint_from_inherited():
 def test_tokenizer_roundtrips_native_tokens():
     tokenizer = build_tokenizer(all_domain_tokens())
     # 3846 domain tokens (incl. trailing <retract>) + <pad>/<eos>.
-    assert len(tokenizer) == 3848
+    assert len(tokenizer) == 3849
     sample = "<contacts-and-coordinates-v1> <p26> <CA> <xyz-129> <xyz-360> <retract>"
     ids = tokenizer.encode(sample, add_special_tokens=False)
     assert tokenizer.decode(ids) == sample
