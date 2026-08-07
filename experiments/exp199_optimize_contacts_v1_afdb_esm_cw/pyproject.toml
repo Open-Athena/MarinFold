@@ -1,0 +1,43 @@
+[project]
+name = "exp199-models-optimize-contacts-v1-afdb-esm-cw"
+version = "0.1.0"
+description = "CoreWeave GPU AFDB/ESM contacts-v1 sweep for MarinFold issue #199."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marin-core==0.2.73.dev30987879744",
+    "marin-iris==0.2.73.dev30987879744",
+    "marin-finelog==0.2.22.dev31066648311",
+    "marin-dupekit==0.1.5.dev30957455498",
+    "marin-dupekit-native==0.1.5.dev30957455498",
+    # Keep indirect Marin runtime packages aligned with the sibling TRC lock.
+    "marin-finelog-server==0.2.22.dev31066648311",
+    "marin-iris-native==0.1.5.dev30223685542",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "marin-core[gpu]==0.2.73.dev30987879744; sys_platform == 'linux'",
+    # Match Marin's CUDA 12.8 Torch / CUDA 13 JAX GPU environment. Direct
+    # pins are required because uv source mappings do not propagate through
+    # transitive extras.
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" }]
