@@ -62,6 +62,7 @@ from .vocab import (
     CONTACT_TOKEN,
     CONTEXT_LENGTH,
     C_TERM_TOKEN,
+    BACKTRACKING_DOC_TYPE_TOKEN,
     DOC_TYPE_TOKEN,
     END_TOKEN,
     NUM_POSITION_INDICES,
@@ -99,7 +100,19 @@ class GenerationConfig:
     sequence-only document type (``<contacts-v1.sequence_only>``): it emits
     the sequence section only — no structure section, no contacts — and the
     pyconfind geometry / contact-selection knobs above are then ignored.
+    ``backtracking`` swaps token 0 to ``<contacts-v1.backtracking>``, marking
+    the document as one that may contain ``<retract>`` statements (#175); it
+    is mutually exclusive with ``sequence_only``.
     """
+
+    # Retraction-mode doc type (issue #175). Swaps token 0 to
+    # ``<contacts-v1.backtracking>``, declaring that this document MAY contain
+    # ``<retract>`` statements. It changes nothing else: the generator itself
+    # never emits ``<retract>`` (retraction documents are synthesised by the
+    # model-in-the-loop corpus job, #159), so this is purely the conditioning
+    # signal a model needs to know which mode it is in. Default False keeps
+    # every existing corpus byte-identical.
+    backtracking: bool = False
 
     native_only: bool = True
     contact_distance: float = 3.0
@@ -370,6 +383,12 @@ def build_document(
     # residues would have produced. The contact-statistics fields are not
     # meaningful here and are reported as 0 / None.
     if config.sequence_only:
+        if config.backtracking:
+            raise ValueError(
+                "sequence_only and backtracking are mutually exclusive: a "
+                "sequence-only document has no structure section, so there is "
+                "nothing it could retract"
+            )
         tokens = [SEQUENCE_ONLY_DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
         for statement in seq_statements:
             tokens.extend(statement)
@@ -468,7 +487,8 @@ def build_document(
             slot = rng.randint(0, n_stmts - 1)
             think_at_slot[slot] = think_at_slot.get(slot, 0) + length
 
-    tokens: list[str] = [DOC_TYPE_TOKEN, BEGIN_SEQUENCE_TOKEN]
+    doc_type = BACKTRACKING_DOC_TYPE_TOKEN if config.backtracking else DOC_TYPE_TOKEN
+    tokens: list[str] = [doc_type, BEGIN_SEQUENCE_TOKEN]
     for statement in seq_statements:
         tokens.extend(statement)
     tokens.append(BEGIN_STRUCTURE_TOKEN)

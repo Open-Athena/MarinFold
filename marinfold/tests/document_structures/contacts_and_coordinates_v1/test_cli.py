@@ -52,7 +52,7 @@ def test_tokenizer_subcommand_builds(capsys):
     # No --save-local / --push: just builds and prints a sample (no network).
     cli.main(["tokenizer"])
     out = capsys.readouterr()
-    assert "built tokenizer with 3848 tokens" in out.err
+    assert "built tokenizer with 3849 tokens" in out.err
 
 
 def test_missing_required_args_exit():

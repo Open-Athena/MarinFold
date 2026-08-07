@@ -131,8 +131,14 @@ def generate_chunk(backend, structures, args, policy: RetractionPolicy) -> pd.Da
     for entry_id, result in results.items():
         adapter, gt, analyzed = by_id[entry_id]
         document = adapter.assemble_document(result.statements)
-        if not adapter.document_folds_to_gt(document, gt):
-            continue  # never write a document that does not fold to GT
+        # Round-trip check, not a GT assertion: the rendered document must fold
+        # back to what the ENGINE says it produced. With a flush that is exactly
+        # GT (unchanged behaviour); with flush="none" it is the model's own
+        # final set, and checking against GT here would drop every document --
+        # which is precisely what the first no-flush pilot did, writing an empty
+        # shard with no error.
+        if not adapter.document_folds_to(document, result.live_final):
+            continue  # rendering / position-mapping bug -- never write it
         fp_trigger = sum(1 for _, _, was_true, t in result.retractions
                          if not was_true and t in _TRIGGER)
         fp_total = sum(1 for _, _, was_true, _ in result.retractions if not was_true)
@@ -145,6 +151,7 @@ def generate_chunk(backend, structures, args, policy: RetractionPolicy) -> pd.Da
             "n_contact_stmts": result.n_contact_statements,
             "n_retract_stmts": result.n_retract_statements,
             "n_reemit": result.n_reemit,
+            "n_forced_true": result.n_forced_true,
             "n_fp_emitted": fp_total,
             "fp_retracted_by_trigger": fp_trigger,
             "tp_retracted_by_trigger": sum(
@@ -180,13 +187,26 @@ def main() -> None:
     ap.add_argument("--tau", type=float, default=0.35)
     ap.add_argument("--s-floor", type=float, default=1e-3)
     ap.add_argument("--noise-prob", type=float, default=0.05)
+    ap.add_argument("--flush", default="none", choices=["none", "shuffled", "sorted"],
+                    help="closing-flush mode; see backtrack_engine.RetractionPolicy. "
+                         "'none' (default) ends the document where the model stopped; "
+                         "'shuffled' keeps the flush but removes its ordering signal "
+                         "(the control); 'sorted' reproduces the #159 corpus bug.")
+    ap.add_argument("--force-true-prob", type=float, default=0.0,
+                    help="probability a contact step is forced to a ground-truth "
+                         "pair, sampled in proportion to the model's own score on "
+                         "the GT pairs not yet live. Length scales as 1/(1-p) "
+                         "because only free draws can stop the loop.")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
     policy = RetractionPolicy(
         min_delay=args.min_delay, eval_cadence=args.eval_cadence,
         tau=args.tau, s_floor=args.s_floor, noise_retract_prob=args.noise_prob,
+        flush=args.flush, force_true_prob=args.force_true_prob,
     )
+    print(f"worker: flush={args.flush} force_true_prob={args.force_true_prob}",
+          flush=True)
     shards = [s for i, s in enumerate(parse_shards(args.shards))
               if i % args.num_workers == args.worker_id]
     print(f"worker {args.worker_id}/{args.num_workers}: {len(shards)} shards", flush=True)

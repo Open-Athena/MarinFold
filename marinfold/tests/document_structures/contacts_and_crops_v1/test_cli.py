@@ -56,7 +56,7 @@ def test_assembly_arg(raw, expected):
 def test_tokenizer_subcommand_builds(capsys):
     cli.main(["tokenizer"])
     out = capsys.readouterr()
-    assert "built tokenizer with 3849 tokens" in out.err
+    assert "built tokenizer with 3850 tokens" in out.err
 
 
 def test_missing_required_args_exit():

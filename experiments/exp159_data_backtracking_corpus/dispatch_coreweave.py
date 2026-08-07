@@ -94,10 +94,13 @@ def build_request(worker_id: int, num_workers: int, args: dict) -> JobRequest:
         f"--chunk-docs {args['chunk_docs']} "
         f"--batch {args['batch']} "
         f"--noise-prob {args['noise_prob']} "
+        f"--flush {args['flush']} "
+        f"--force-true-prob {args['force_true_prob']} "
         f"--out {args['out']}"
     )
     return JobRequest(
-        name=f"exp159-bt-esm-{worker_id:03d}",
+        name=f"exp159-bt-{args['flush']}-p{int(args['force_true_prob'] * 100):02d}"
+             f"-{worker_id:03d}",
         entrypoint=Entrypoint.from_binary("bash", ["-lc", command]),
         resources=resources,
         environment=environment,
@@ -131,6 +134,13 @@ def main() -> None:
         "chunk_docs": int(os.environ.get("EXP159_CHUNK_DOCS", "250")),
         "batch": int(os.environ.get("EXP159_BATCH", "48")),
         "noise_prob": float(os.environ.get("EXP159_NOISE_PROB", "0.05")),
+        # Closing-flush mode. "none" is the arm; "shuffled" is the control that
+        # isolates "the flush's ordering" from "the flush at all". Both must be
+        # dispatched to DIFFERENT --out prefixes: the worker's resume logic
+        # skips parts that already exist, so a shared prefix would have each arm
+        # silently adopt the other's documents.
+        "flush": os.environ.get("EXP159_FLUSH", "none"),
+        "force_true_prob": float(os.environ.get("EXP159_FORCE_TRUE", "0.0")),
         "out": os.environ.get("EXP159_OUT", DEFAULT_OUT),
     }
     print(f"dispatching {num_workers} workers: {args}", flush=True)

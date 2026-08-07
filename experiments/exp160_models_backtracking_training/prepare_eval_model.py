@@ -107,7 +107,7 @@ def copy_tokenizer(src: Path, dst: Path) -> None:
           f"(from {src})")
 
 
-def recast_weights(src: Path, dst: Path) -> int:
+def recast_weights(src: Path, dst: Path, max_shard_bytes: int | None = None) -> int:
     """Copy the safetensors shards with every floating tensor cast to bf16.
 
     Tensors are streamed one at a time (``safe_open``) rather than loading a
@@ -122,23 +122,48 @@ def recast_weights(src: Path, dst: Path) -> int:
         raise SystemExit(f"no model.safetensors.index.json under {src}")
     index = json.loads(index_path.read_text())
 
-    total = 0
+    # Load every tensor once, cast, and (optionally) repack into shards below
+    # `max_shard_bytes`. Repacking matters for the HF *bucket* uploader, which
+    # panics partway through a multi-GB object ("is not fully completed:
+    # 2257162240/2261618688 bytes") -- so a 2.3 GiB shard is not publishable
+    # even though it is a perfectly good file locally.
+    tensors: dict = {}
     for shard in sorted(set(index["weight_map"].values())):
-        recast = {}
         with safe_open(str(src / shard), framework="np") as fh:
             for name in fh.keys():                                  # noqa: SIM118
                 arr = jnp.asarray(fh.get_tensor(name))
-                recast[name] = arr.astype(jnp.bfloat16) if jnp.issubdtype(
+                tensors[name] = arr.astype(jnp.bfloat16) if jnp.issubdtype(
                     arr.dtype, jnp.floating) else arr
+
+    def nbytes(a):
+        return a.size * a.dtype.itemsize
+
+    limit = max_shard_bytes or float("inf")
+    groups, cur, cur_bytes = [], {}, 0
+    for name in index["weight_map"]:            # preserve the original order
+        a = tensors[name]
+        if cur and cur_bytes + nbytes(a) > limit:
+            groups.append(cur); cur, cur_bytes = {}, 0
+        cur[name] = a
+        cur_bytes += nbytes(a)
+    if cur:
+        groups.append(cur)
+
+    total, weight_map = 0, {}
+    n = len(groups)
+    for i, group in enumerate(groups, 1):
+        shard = f"model-{i:05d}-of-{n:05d}.safetensors"
         # metadata format=pt is what transformers/vLLM expect to see; the file
         # is framework-neutral either way.
-        save_file(recast, str(dst / shard), metadata={"format": "pt"})
+        save_file(group, str(dst / shard), metadata={"format": "pt"})
         size = (dst / shard).stat().st_size
         total += size
-        print(f"[prepare]   {shard}: {size / 2**30:.2f} GiB ({len(recast)} tensors)")
+        for name in group:
+            weight_map[name] = shard
+        print(f"[prepare]   {shard}: {size / 2**30:.2f} GiB ({len(group)} tensors)")
 
-    index.setdefault("metadata", {})["total_size"] = total
-    (dst / "model.safetensors.index.json").write_text(json.dumps(index))
+    (dst / "model.safetensors.index.json").write_text(json.dumps(
+        {"metadata": {"total_size": total}, "weight_map": weight_map}))
     return total
 
 
@@ -148,6 +173,9 @@ def main() -> int:
     ap.add_argument("--dst", type=Path, required=True, help="vLLM-loadable bf16 output dir")
     ap.add_argument("--tokenizer", type=Path, default=None,
                     help="take tokenizer files from here instead of --src")
+    ap.add_argument("--max-shard-bytes", type=int, default=None,
+                    help="repack into shards below this size; needed to publish to "
+                         "the HF bucket, whose uploader fails on multi-GB objects")
     ap.add_argument("--expect-vocab", type=int, default=None,
                     help="assert config.json vocab_size (3849 superset / 2845 contacts-v1)")
     a = ap.parse_args()
@@ -155,7 +183,7 @@ def main() -> int:
     a.dst.mkdir(parents=True, exist_ok=True)
     downgrade_config(a.src, a.dst, vocab_size=a.expect_vocab)
     copy_tokenizer(a.tokenizer or a.src, a.dst)
-    total = recast_weights(a.src, a.dst)
+    total = recast_weights(a.src, a.dst, a.max_shard_bytes)
 
     for extra in ("generation_config.json",):
         if (a.src / extra).exists():
