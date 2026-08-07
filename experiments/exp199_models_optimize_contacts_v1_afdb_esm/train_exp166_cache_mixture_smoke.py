@@ -55,19 +55,19 @@ from rigging.filesystem import prefix_join
 AFDB_CACHE_RELATIVE = "tokenized/contacts-v1/2026.07.13.1"
 VALIDATION_CACHE_RELATIVE = "tokenized/contacts-v1-val/2026.07.13.1"
 
-# The completed exp137 ESM cache. It was produced with the crops tokenizer,
-# which is also the canonical tokenizer for this experiment.
+# The completed exp137 ESM cache. It was produced with the larger crops
+# tokenizer, whose contacts-v1 token ids occupy the same 0--2844 prefix used by
+# this experiment's tokenizer.
 ESM_CACHE_RELATIVE = (
     "protein-structure/MarinFold/"
     "exp137_contacts_and_crops_v1_1_5b/tokenized/contacts-v1-esm-atlas-train-568225"
 )
 
-# Levanter's tokenizer loader currently accepts a Hub repo id but not
-# ``repo@revision``. Keep the verified revision visible and validate the runtime
-# vocabulary contract below; the upstream repository currently has one revision.
-TOKENIZER = "timodonnell/contacts-and-crops-v1-tokenizer"
-TOKENIZER_REVISION = "80fe4ee788708cb96e1de6ef74309a71d42c8323"
-VOCAB_SIZE = 3848
+# This repository republishes exp166's pinned contacts-v1 tokenizer as its
+# latest revision, so Marin can load it without an unsupported ``repo@revision``
+# suffix. Validate its vocabulary contract at training startup below.
+TOKENIZER = "eczech/contacts-v1-tokenizer-5d68a24a899f"
+VOCAB_SIZE = 2845
 TEXT_KEY = "document"
 
 TPU = "v6e-4"
@@ -109,14 +109,14 @@ MODEL_PARAMS = MODEL_CONFIG.total_trainable_params(VOCAB_SIZE)
 TRAIN_TOKENS = BATCH_SIZE * SEQ_LEN * NUM_TRAIN_STEPS
 
 
-class ExistingCropsTokenizerCache(TokenizedCache):
+class ExistingContactsV1TokenizerCache(TokenizedCache):
     """Describe an existing compatible cache with the experiment tokenizer.
 
-    AFDB and validation contain ids in the crops tokenizer's identical
-    contacts-v1 prefix. ESM was produced with the crops tokenizer itself, but
-    has a legacy ``.artifact.json`` containing JSON ``null``. This explicit
-    path-only view gives every mixture component one tokenizer contract. It
-    has no tokenization, transformation, or copy implementation.
+    AFDB and validation use the contacts-v1 tokenizer. ESM was produced with
+    the larger crops tokenizer but contains ids from its identical contacts-v1
+    prefix, and has a legacy ``.artifact.json`` containing JSON ``null``. This
+    explicit path-only view gives every mixture component one tokenizer
+    contract. It has no tokenization, transformation, or copy implementation.
     """
 
     @classmethod
@@ -164,7 +164,7 @@ def _existing_cache(
         name,
         version,
         source=source,
-        kind=ExistingCropsTokenizerCache,
+        kind=ExistingContactsV1TokenizerCache,
         config={
             "tokenizer": TOKENIZER,
             "format": {"text_key": TEXT_KEY},
@@ -477,7 +477,7 @@ def build(region: str) -> ArtifactStep[LevanterCheckpoint]:
             "smoke",
             f"params={MODEL_PARAMS}",
             f"tokens={TRAIN_TOKENS}",
-            f"tokenizer_revision={TOKENIZER_REVISION}",
+            f"tokenizer={TOKENIZER}",
             f"region={region}",
             f"tpu={TPU}",
         ],
