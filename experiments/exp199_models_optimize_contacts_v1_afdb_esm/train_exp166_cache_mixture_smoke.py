@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Two-step exp199 smoke test over existing AFDB and ESM token caches.
+"""Ten-step exp199 smoke test over existing AFDB and ESM token caches.
 
 This temporary test isolates the modern Marin cache-consumption path. It keeps
 exp166's model, optimizer, packing, block shuffle, and training-only amino-acid
@@ -21,7 +21,6 @@ Print the plan without executing it::
 Do not pass ``--run`` until the script and lowered plan have been reviewed.
 """
 
-import logging
 import os
 from collections.abc import Sequence
 from dataclasses import dataclass, fields, replace
@@ -75,8 +74,8 @@ RUN_PREFIX = "prot-exp199-smoke-cache-validation"
 
 SEQ_LEN = 8192
 BATCH_SIZE = 64
-NUM_TRAIN_STEPS = 2
-STEPS_PER_EVAL = 1
+NUM_TRAIN_STEPS = 10
+STEPS_PER_EVAL = NUM_TRAIN_STEPS
 PER_DEVICE_PARALLELISM = 16
 
 LEARNING_RATE = 3.1623e-3
@@ -85,8 +84,6 @@ WARMUP = 0.1
 LR_SCHEDULE = "cosine"
 DATA_SEED = 0
 AA_AUGMENTATION_SEED = 166
-AA_AUGMENTATION_LOG_LIMIT = 4
-_augmentation_log_count = 0
 
 CONTACTS_V1_TOKEN_IDS: dict[str, int] = {
     "<contacts-v1>": 2,
@@ -298,40 +295,62 @@ def _augmentation_rng(seed: int, index: int) -> np.random.Generator:
     return np.random.default_rng(np.random.SeedSequence(entropy))
 
 
-def _augment_lm_example(example: LmExample, *, seed: int, index: int) -> LmExample:
-    global _augmentation_log_count
+def augmentation_probability(step: int, num_train_steps: int) -> float:
+    """Linearly ramp augmentation from 0 at step 0 to 1 at the final step."""
+    if step < 0:
+        raise ValueError(f"training step must be nonnegative, got {step}")
+    if num_train_steps < 2:
+        raise ValueError(
+            f"augmentation ramp requires at least two training steps, got {num_train_steps}"
+        )
+    return min(step, num_train_steps - 1) / (num_train_steps - 1)
+
+
+def _augment_lm_example(
+    example: LmExample,
+    *,
+    seed: int,
+    index: int,
+    probability: float,
+) -> LmExample:
+    if not 0.0 <= probability <= 1.0:
+        raise ValueError(
+            f"augmentation probability must be in [0, 1], got {probability}"
+        )
+
+    rng = _augmentation_rng(seed, index)
+    selected = probability >= 1.0 or (probability > 0.0 and rng.random() < probability)
+    if not selected:
+        return example
 
     original = np.asarray(jax.device_get(example.tokens.array))
-    augmented, stats = shuffle_amino_acid_statements(
-        original, _augmentation_rng(seed, index)
-    )
+    augmented, stats = shuffle_amino_acid_statements(original, rng)
     if stats.documents == 0:
         raise ValueError(
             "packed contacts-v1 training example contains no complete document"
         )
+    if stats.changed_token_positions == 0:
+        raise ValueError("selected contacts-v1 augmentation was a silent no-op")
 
     token_array = jax.device_put(augmented, example.tokens.array.sharding)
-    result = replace(example, tokens=replace(example.tokens, array=token_array))
-
-    if jax.process_index() == 0 and _augmentation_log_count < AA_AUGMENTATION_LOG_LIMIT:
-        logging.getLogger(__name__).info(
-            "exp166 AA augmentation runtime effect: documents=%d residue_statements=%d "
-            "moved_statements=%d changed_token_positions=%d",
-            stats.documents,
-            stats.residue_statements,
-            stats.moved_statements,
-            stats.changed_token_positions,
-        )
-        _augmentation_log_count += 1
-    return result
+    return replace(example, tokens=replace(example.tokens, array=token_array))
 
 
 class AminoAcidAugmentedDataset(AsyncDataset[LmExample]):
-    """Apply deterministic, occurrence-indexed training augmentation."""
+    """Apply deterministic scheduled augmentation to the indexed training stream."""
 
-    def __init__(self, dataset: AsyncDataset[LmExample], seed: int):
+    def __init__(
+        self,
+        dataset: AsyncDataset[LmExample],
+        *,
+        seed: int,
+        batch_schedule: BatchSchedule,
+        num_train_steps: int,
+    ):
         self.dataset = dataset
         self.seed = seed
+        self.batch_schedule = batch_schedule
+        self.num_train_steps = num_train_steps
 
     async def async_len(self) -> int:
         return await self.dataset.async_len()
@@ -342,7 +361,15 @@ class AminoAcidAugmentedDataset(AsyncDataset[LmExample]):
     async def get_batch(self, indices: Sequence[int]) -> Sequence[LmExample]:
         examples = await self.dataset.get_batch(indices)
         return [
-            _augment_lm_example(example, seed=self.seed, index=index)
+            _augment_lm_example(
+                example,
+                seed=self.seed,
+                index=index,
+                probability=augmentation_probability(
+                    self.batch_schedule.find_step_containing_offset(index),
+                    self.num_train_steps,
+                ),
+            )
             for index, example in zip(indices, examples, strict=True)
         ]
 
@@ -361,6 +388,7 @@ class AminoAcidAugmentedDataConfig(LmDataConfig):
     """LmDataConfig variant that augments only the indexed training stream."""
 
     augmentation_seed: int = AA_AUGMENTATION_SEED
+    augmentation_num_train_steps: int = NUM_TRAIN_STEPS
 
     def train_set(
         self,
@@ -371,7 +399,12 @@ class AminoAcidAugmentedDataConfig(LmDataConfig):
     ) -> AsyncDataset[LmExample]:
         _validate_contacts_v1_tokenizer(self)
         dataset = super().train_set(Pos, batch_schedule, key=key)
-        return AminoAcidAugmentedDataset(dataset, self.augmentation_seed)
+        return AminoAcidAugmentedDataset(
+            dataset,
+            seed=self.augmentation_seed,
+            batch_schedule=batch_schedule,
+            num_train_steps=self.augmentation_num_train_steps,
+        )
 
 
 def augment_amino_acids(data: LmDataConfig) -> LmDataConfig:
@@ -442,7 +475,7 @@ def _apply_exp166_overrides(
 
 
 def build(region: str) -> ArtifactStep[LevanterCheckpoint]:
-    """Assemble the reviewed-only two-step cache compatibility smoke test."""
+    """Assemble the reviewed-only ten-step cache compatibility smoke test."""
     afdb = afdb_cache(region)
     esm = esm_cache(region)
     validation = validation_cache(region)
