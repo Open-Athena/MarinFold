@@ -9,3 +9,9 @@ _scratch/
 _bin/
 
 .venv/
+
+# The notebook's download cache. explore_predictions.ipynb pulls the published
+# ground-truth and prediction tarballs here and unpacks them; that is ~300 MB of
+# regenerable PDBs whose source of truth is the public HF bucket. It was
+# committed once by accident (2776 files) and stripped from history.
+exp174_data/
