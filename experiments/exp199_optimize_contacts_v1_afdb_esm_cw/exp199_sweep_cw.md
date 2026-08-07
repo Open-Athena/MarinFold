@@ -10,16 +10,19 @@ TRC workspace.
   mixtures (`m1`, `m2`) × two augmentation variants (`base`, `aug`).
 - Scratch initialization with model seed 0 and data seed 0.
 - Linear WSD: 10% warmup, 70% stable, 20% decay to 10% of peak LR.
-- Global batch 128, sequence length 8192, 72,600 steps, 76,126,617,600 tokens.
+- Global batch 128, sequence length 8192, 145,200 steps, 152,253,235,200
+  tokens (two step-rounded combined-cache epochs).
 - Full validation every 2,230 steps.
-- Permanent checkpoint every 8,920 steps plus the final save: nine per trial.
+- Permanent checkpoint every 14,520 steps (each 10% boundary through 90%) plus
+  the final save: ten per trial. Step 116,160 is the 80% checkpoint immediately
+  before WSD decay begins.
 - Production W&B/checkpoint identity is independent of cluster and gang size.
 - Priority is always `batch`; the child GPU gang inherits it from the driver.
 
 Production W&B IDs have this form:
 
 ```text
-prot-exp199-cw-cv1-s01-m1-p01-base
+prot-exp199-cw-cv1-s02-m1-p01-base
 ```
 
 ## Shared storage
@@ -135,12 +138,12 @@ CW_PREFIX=s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimi
 CW_CLUSTER=cw-us-east-08a
 CW_NODES=4
 TRIAL=m1-p01-base
-VERSION=2026.08.07.1
+VERSION=2026.08.07.2
 
 uv run --frozen iris --cluster marin job run \
   --target-cluster "$CW_CLUSTER" \
   --priority batch \
-  --job-name "exp199-cw-s01-${TRIAL}-${CW_CLUSTER}-n${CW_NODES}" \
+  --job-name "exp199-cw-s02-${TRIAL}-${CW_CLUSTER}-n${CW_NODES}" \
   --enable-extra-resources \
   --no-wait --cpu 1 --memory 4GB --disk 16GB \
   -e MARIN_PREFIX "$CW_PREFIX" \

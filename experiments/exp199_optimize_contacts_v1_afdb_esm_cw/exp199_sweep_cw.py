@@ -90,7 +90,7 @@ VALIDATION_CACHE_VERSION = "2026.07.25"
 
 SEQ_LEN = 8192
 GLOBAL_BATCH_SIZE = 128
-NUM_TRAIN_STEPS = 72_600
+NUM_TRAIN_STEPS = 145_200
 TOKENS_PER_STEP = GLOBAL_BATCH_SIZE * SEQ_LEN
 EFFECTIVE_TRAIN_TOKENS = NUM_TRAIN_STEPS * TOKENS_PER_STEP
 
@@ -98,11 +98,12 @@ AFDB_TOKENS = 4_676_753_425
 ESM_TOKENS = 71_450_105_324
 TARGET_TRAIN_TOKENS = AFDB_TOKENS + ESM_TOKENS
 
-# One eval about every half AFDB epoch. Four eval intervals separate permanent
-# checkpoints: 8 interval checkpoints plus the forced final save, 9 per trial.
+# One eval about every half AFDB epoch. Permanent checkpoints land at each 10%
+# boundary through 90%, plus the forced final save: 10 per trial. In particular,
+# step 116,160 captures the state at the 80% stable/decay boundary.
 EVAL_TARGET_TOKENS = 2_338_376_712
 STEPS_PER_EVAL = round(EVAL_TARGET_TOKENS / TOKENS_PER_STEP)
-PERMANENT_CHECKPOINT_EVERY = 4 * STEPS_PER_EVAL
+PERMANENT_CHECKPOINT_EVERY = NUM_TRAIN_STEPS // 10
 
 MODEL_SEED = 0
 DATA_SEED = 0
