@@ -1,6 +1,13 @@
 # exp174 Component 1 — inference plans: document → 3D coordinates
 
-**Status: decided, not yet implemented.** Issue
+**Status: decided, implemented, and run — see the experiment README for
+results.** Plan F was built and evaluated on all 554 proteins along with A, C,
+E1, E2 and the E3 probe. The short version: refinement works (E2 reaches 96 % of
+the ceiling, E3 confirms the σ=1/(i+1)² schedule was learned), Plan F escapes
+the token budget as designed, and none of it fixes the coarse fold — ~90 % of
+atoms end up in the wrong 10 Å box, which is an error refinement cannot reach.
+The plan comparison below is kept as written, since it is the reasoning the
+experiment tested. Issue
 [#174](https://github.com/Open-Athena/MarinFold/issues/174) gated Component 1
 behind a design conversation; this was the input to it and now records the
 outcome. Component 2 (the scoring harness) is built and its numbers are used

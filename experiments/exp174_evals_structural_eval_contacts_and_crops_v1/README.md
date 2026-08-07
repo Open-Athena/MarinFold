@@ -250,12 +250,23 @@ decisive comparison is E2 against F: **same model, same refinement machinery,
 less coverage — and TM 0.522 vs 0.277, CA-RMSD 4.33 Å vs 16.28 Å.** The only
 difference is whether the coarse boxes are right.
 
-**E1 says the contact map is not the whole story either.** Handing the model 50
-true contacts cuts CA-RMSD 16.6 → 13.0 Å (−22 %) and lifts lDDT 0.141 → 0.161 —
-real, and nowhere near E2's 4.33 Å. Caveat worth stating plainly: the format
-caps a document at **50** contacts and samples them uniformly, so E1 could only
-ever supply a small slice of a real contact map. It bounds the effect from
-below; it does not exonerate contact prediction.
+**E1 is the one de-novo lever that moved the fold — and its number is a floor.**
+Handing the model 50 true contacts cuts CA-RMSD 16.6 → 13.0 Å (−22 %), lifts
+lDDT 0.141 → 0.161, and lifts box accuracy 9.0 % → 15.6 % (see the error-scale
+table below). Two caveats, both making that an underestimate:
+
+1. **The run in the table is flawed.** It sampled its 50 forced contacts from
+   the *unfiltered* ground-truth list, of which only ~39 % clears the format's
+   own bar (separation ≥ 6, degree ≥ 0.001) — so roughly 31 of the 50 were
+   short-range pairs the model never sees in a contacts section and which are
+   nearly implied by the chain. `plan_e1` was fixed to filter first
+   (regression-tested), and a corrected rerun was launched, but the CoreWeave
+   object-storage credentials were rotated before its output could be
+   retrieved. **The corrected number is not in this experiment**; the table's
+   E1 row is the flawed run, kept because it is still a valid lower bound.
+2. **Even a correct E1 is capped at 50 contacts** — the format's own
+   `n_contacts_max`, about 36 % of a median protein's 138-contact eligible map.
+   What a *full* contact map would buy is not testable in this format.
 
 **The two checkpoints are indistinguishable, under both plans.** Under A,
 0.141 vs 0.144 lDDT and 0.193 vs 0.197 TM. Under F, the paired per-protein
@@ -267,6 +278,40 @@ at step-20000 has caught up with mix5 at step-50000 and neither is better.
 4.03 Å after sweep 0 and 2.02 Å after sweep 1, against a 0.1 Å stopping
 threshold — it was still halving when the 2-sweep compute cap stopped it. The F
 numbers are a lower bound on F.
+
+### At what scale is the error? (the reason no inference plan can fix it)
+
+A Pass-2 crop body emits only ones + tenths; the `<crop>` header supplies
+hundreds + tens. **Refinement is confined to the named 10 Å cell by
+construction.** So the question that decides whether more inference could ever
+help is: how far off is the typical atom, measured in boxes?
+[`analyze_box_accuracy.py`](analyze_box_accuracy.py) → `data/box_accuracy.csv`:
+
+| run | atoms within 5 Å (right box) | within 10 Å (adjacent) | median atom error |
+|---|---|---|---|
+| oracle document | 73.4 % | 99.2 % | 3.08 Å |
+| **E2** true Pass-1 boxes | 72.4 % | 98.9 % | 3.31 Å |
+| **E1** true contacts (flawed, see below) | 15.6 % | 47.2 % | 10.83 Å |
+| **F** iterative refinement | 10.9 % | 34.3 % | 14.06 Å |
+| **C** one forced sweep | 9.7 % | 32.9 % | 14.33 Å |
+| **A** one document | 9.0 % | 32.3 % | 14.31 Å |
+
+**~90 % of the atoms in every de-novo plan are in the wrong box, and two thirds
+are not even in an adjacent one.** The median atom is ~14 Å out — about 1.4 box
+widths. Refinement operates below 10 Å; the error is above it. That is the
+mechanical reason Plan F sharpens positions without moving RMSD, and it is why
+the answer is not "iterate harder".
+
+Two things this table says that the aggregate metrics do not:
+
+- **Plan F barely moves box accuracy** (9.0 % → 10.9 %). Two sweeps of
+  neighbour-conditioned iteration re-placed almost nothing; they sharpened
+  atoms inside boxes that were already wrong.
+- **Contacts move it most.** Even the flawed E1 lifts box accuracy 9.0 % →
+  15.6 % and the median error 14.3 → 10.8 Å — a bigger effect on the *fold*
+  than anything on the refinement side. That is the one positive signal in the
+  de-novo half of this experiment, and it points at the contact map rather than
+  at decoding.
 
 ### Interactive viewer
 
@@ -337,40 +382,53 @@ issue comment.
 
 ## Conclusion
 
-**contacts-and-crops-v1 at 1.5B is not yet structure-capable de novo, and the
-bottleneck is Pass 1 — the coarse fold — not Pass 2 refinement and not the
-format's resolution.** Three independent measurements agree:
+**Negative result, and a clean one.** contacts-and-crops-v1 at 1.5B does not
+produce usable structures de novo: every inference plan lands at CA-RMSD ~16.5 Å
+and TM-score ≤ 0.28, and ~90 % of its atoms sit in the wrong 10 Å box. Neither
+checkpoint is better than the other, and spending ~100× more inference (Plan F
+vs Plan A) does not change the fold.
 
-1. **The format's coordinate encoding is not the problem.** 0.1 Å quantization
-   of ground truth scores a perfect 1.000 lDDT / 1.000 TM. A real generated
-   document decodes to lDDT 0.290 / TM 0.537 / CA-RMSD 4.16 Å — that is the
-   ceiling, and it is set by coverage and the 10 Å coarse tier, not by the digit
-   vocabulary.
-2. **The model's refinement is near-perfect given correct boxes.** E2 reaches
-   96 % of the ceiling (lDDT 0.278 vs 0.290, TM 0.522 vs 0.537, CA-RMSD 4.33 Å
-   vs 4.16 Å), and E3 shows it follows the σ=1/(i+1)² schedule down to the
-   format's own 0.1 Å floor. Pass 2 works.
-3. **Every de-novo plan is stuck at CA-RMSD ~16.5 Å and TM ≤0.28**, regardless
-   of how much inference is spent. Plan F drives coverage and refined fraction
-   to 0.999 and doubles lDDT — it beats the single-document ceiling 2.6× on long
-   chains — and moves the global metrics barely at all. It produces a complete,
-   locally precise, *wrong* structure.
+What the experiment does establish, and why it was worth running:
 
-The practical reading: **inference compute is not the lever, and neither is a
-bigger `fine_reserve` in a v2 format.** The earlier ceiling analysis said the
-Pass-2 refined fraction was "the whole ballgame"; that was right about the
-*format's* ceiling and wrong about where this *model* sits relative to it. Plan
-F already buys the refined fraction outright, and the fold does not improve.
-Whatever comes next should target Pass 1 — the coarse spatial layout — with
-training rather than decoding.
+1. **The bottleneck is Pass 1, not Pass 2 and not the format's resolution.**
+   Given the correct coarse boxes, the model's crops reach **96 % of the
+   ceiling** (E2: lDDT 0.278 vs 0.290, TM 0.522 vs 0.537, CA-RMSD 4.33 vs
+   4.16 Å) — 88–90 % of the accuracy that *ground-truth* crops would add. And
+   E3 shows it follows the σ=1/(i+1)² schedule down to the format's own 0.1 Å
+   floor (2.11 Å → 0.13 Å over six re-shows). The refinement machinery works.
+2. **Refinement cannot fix the fold, for a structural reason.** A crop body
+   emits ones + tenths only; the header fixes the box. Refinement is confined
+   below 10 Å while the median atom is ~14 Å out. Plan F drives coverage and
+   refined fraction to 0.999 and lifts box accuracy by 1.9 points. This is not
+   a tuning problem — it is the wrong operation for the error.
+3. **Inference compute is not the lever, and neither is a bigger
+   `fine_reserve`.** An earlier reading of the ceiling ("the refined fraction is
+   the whole ballgame") was right about what the *format* permits and wrong
+   about where this *model* sits inside it. Plan F buys the refined fraction
+   outright and the fold does not move.
+4. **The one thing that did move the fold was contacts** (E1: box accuracy
+   9.0 % → 15.6 %, median error 14.3 → 10.8 Å), even in a flawed run capped at
+   50 pairs. If there is a cheap next lever it is there, not in decoding.
 
-Two things worth carrying forward:
+**Reporting lesson worth keeping.** lDDT and TM-score come apart sharply here —
+Plan F is at the one-document ceiling on lDDT and a third of it on TM — because
+a local metric rewards a well-refined wrong fold. Any future contacts-and-crops
+evaluation should report both, with coverage, and should quote the *error scale*
+(`analyze_box_accuracy.py`) rather than only the aggregate.
 
-- **lDDT and TM-score come apart here, sharply, and reporting only one would
-  mislead.** F is at the ceiling on lDDT and a third of it on TM. A local metric
-  rewards a well-refined wrong fold; a global one does not. Any future
-  contacts-and-crops eval should report both, with coverage.
-- **E1's ≤50-contact cap is a live confound.** 50 true contacts bought a 22 %
-  RMSD reduction. Whether a *full* contact map would fix the fold is untested
-  and untestable in this format — which is itself an argument about the format,
-  not just about the eval.
+**What this leaves for a follow-up.** Two experiments this work makes cheap and
+well-posed, neither run here:
+
+- **Let the iteration relocate atoms, not just sharpen them.** The estimator in
+  `document_codec` weights a crop observation ~12× a Pass-1 one, so an atom is
+  pinned in its first crop's box and the sweep loop never re-opens the box
+  assignment. Decaying crop precision between sweeps — or re-deriving boxes from
+  a fresh Pass 1 — would test "iterate until atoms stop moving" in the sense
+  that could actually change a fold. As implemented, Plan F converges *within*
+  boxes.
+- **The corrected E1**, whose result this experiment does not have.
+
+The harness itself is the durable deliverable: a documented file contract, a
+554-protein ground-truth bundle, five metrics with an explicit partial-prediction
+convention, a measured ceiling, and 56 tests. Any future contacts-and-crops
+model can be scored by pointing `score_structures.py` at a directory.
