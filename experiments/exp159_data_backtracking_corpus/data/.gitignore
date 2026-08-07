@@ -1,0 +1,3 @@
+# Per-document intermediates (resumable; regenerate with gen_corpus.py) and logs.
+corpus/
+gen_corpus.log
