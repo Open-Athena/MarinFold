@@ -3,14 +3,47 @@
 # is omitted) to the HF URL below, downloads it, and dispatches to the first
 # `document_structures` impl the entry lists. See registry.py.
 
-# Current best: exp120 (issue #120) — a 1-epoch, re-heated-LR continue-train of
-# the #75 model on the ORIGINAL contacts-v1 round-0 data (the "re-epoch" arm that
-# beat fine-tuning on the exp100 regenerated docs). Best downstream contact
-# prediction so far: long-range R-precision 0.279 / AUC 0.886 vs the #75 base's
-# 0.270 / 0.881 (554-protein eval set, exp89 harness). contacts-v1 tokenizer
-# co-located; exported to the bucket by exp120.
-- nickname: contacts-v1-exp120-1.5B
+# Current best: exp166 (issue #166) — eric-czech's contacts-v1 amino-acid
+# augmentation run, continued from the #117 sweep winner. Qwen3 1.47B, 8
+# epochs, lr 3.1623e-3 / wd 0.1 / global batch 128, exp117 init;
+# eval/tokenized/contacts-v1-val/loss 2.6642. R-precision 0.562 (all) / 0.513
+# (long), AUC 0.939 on the 554-protein eval set — vs #117's 0.534 / 0.482, a
+# paired +0.028 (95% CI 0.023–0.034), higher on 67% of proteins (#190, exp82
+# rollout inference; see experiments/exp180_.../README.md for the full
+# progression). contacts-v1 tokenizer co-located.
+#
+# This is OUR republished copy of eric-czech's export, not the original. The
+# weights are byte-identical (both shards sha256-verified against the source);
+# only config.json differs. His export was written by transformers 5.12.1 and
+# states rope as a `rope_parameters` block, which the pinned transformers 4.x
+# ignores in favour of the architecture default — loading rope_theta 10000
+# where the model was trained with 500000, worth 0.76 nats/token on real
+# documents, silently. Our copy states rope in both 4.x and 5.x terms, so a
+# plain AutoModelForCausalLM.from_pretrained is correct with no marinfold code
+# in the loop. See the PROVENANCE.md beside the weights,
+# scripts/repair_checkpoint_config.py, and issue #180.
+- nickname: contacts-v1-exp166-1.5B
   default: true
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1/hf/step-35679
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1
+  document_structures:
+    - contacts-v1
+# Previous default, and the checkpoint exp166 initializes from: exp117 (issue
+# #117) — eric-czech's expanded contacts-v1 sweep winner. Qwen3 1.47B, 16
+# epochs, lr 3.1623e-3 / wd 0.2 / global batch 256;
+# eval/tokenized/contacts-v1-val/loss 2.7037. R-precision 0.534 (all) / 0.482
+# (long), AUC 0.933. Also a republished copy with the same config.json repair.
+- nickname: contacts-v1-exp117-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/hf/step-35679
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4
+  document_structures:
+    - contacts-v1
+# Earlier default: exp120 (issue #120) — a 1-epoch, re-heated-LR continue-train
+# of the #75 model on the ORIGINAL contacts-v1 round-0 data (the "re-epoch" arm
+# that beat fine-tuning on the exp100 regenerated docs). Long-range R-precision
+# 0.279 / AUC 0.886 vs the #75 base's 0.270 / 0.881 under the exp89 pairwise
+# harness. contacts-v1 tokenizer co-located; exported to the bucket by exp120.
+- nickname: contacts-v1-exp120-1.5B
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/exp120-cv1-1_5b-orig-lr3e-4-e1-cos/hf/step-1005
   wandb_url: https://wandb.ai/open-athena/MarinFold/runs/exp120-cv1-1_5b-orig-lr3e-4-e1-cos-fb79f7
   document_structures:

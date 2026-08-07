@@ -1,0 +1,33 @@
+{
+  "metric": "R-precision",
+  "labels": [
+    "Control\nAll",
+    "Candidate\nAll",
+    "Control\nShort",
+    "Candidate\nShort",
+    "Control\nMedium",
+    "Candidate\nMedium",
+    "Control\nLong",
+    "Candidate\nLong"
+  ],
+  "counts": [
+    554,
+    554,
+    554,
+    554,
+    553,
+    553,
+    553,
+    553
+  ],
+  "means": [
+    0.5335961341539802,
+    0.5617738681420615,
+    0.6284087546857455,
+    0.6477287376956615,
+    0.5853640942736399,
+    0.6147081088536219,
+    0.4825581312405502,
+    0.5132940813079712
+  ]
+}

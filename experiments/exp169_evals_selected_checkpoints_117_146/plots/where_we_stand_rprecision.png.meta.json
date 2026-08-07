@@ -1,0 +1,15 @@
+{
+  "figure": "where_we_stand_rprecision",
+  "metric": "R-precision, range=all",
+  "n_proteins": 554,
+  "means": {
+    "MarinFold #61/#75\n1.5B \u00b7 E8 \u00b7 2.7566": 0.4245291213628376,
+    "MarinFold #117\n1.5B \u00b7 final \u00b7 2.7037": 0.5344182205203893,
+    "MarinFold #117\n1.5B \u00b7 early \u00b7 2.6961": 0.5318057613938924,
+    "MarinFold #146\n3B \u00b7 E8 \u00b7 2.7025": 0.5118632021052502,
+    "Protenix-v2\nsingle-seq": 0.6031578401726864,
+    "Protenix-v2\n+ MSA": 0.8118214040198143,
+    "ESMFold": 0.7553286610904633,
+    "ESMFold2": 0.7862849202602139
+  }
+}

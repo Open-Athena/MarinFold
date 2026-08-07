@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 from vllm import LLM, SamplingParams, TokensPrompt
 
-from marinfold.inference._tokenizer import tokenizer_source_path
+from marinfold.inference._tokenizer import model_source_path
 
 
 class VllmBackend:
@@ -46,15 +46,17 @@ class VllmBackend:
             )
         self._tail_batch_size = tail_batch_size
         self._top_k_logprobs = top_k_logprobs
-        # vLLM builds its tokenizer internally from a path via
-        # AutoTokenizer, which chokes on marinfold training-export
-        # checkpoints (tokenizer_class == "TokenizersBackend"). Point it at
-        # a repaired tokenizer dir when the checkpoint's own config is
-        # unresolvable; otherwise this returns model_path unchanged.
-        tokenizer_path = tokenizer_source_path(model_path)
+        # vLLM loads both the weights and, internally via AutoTokenizer, the
+        # tokenizer from paths — so neither a repaired config object nor a
+        # repaired tokenizer object can be handed to it. model_source_path
+        # supplies a symlink overlay carrying whichever of the two a
+        # transformers-5 export broke (unresolvable tokenizer_class; rope
+        # stated as `rope_parameters`), and returns model_path unchanged when
+        # nothing needs repair.
+        source_path = model_source_path(model_path)
         self._llm = LLM(
-            model=str(model_path),
-            tokenizer=tokenizer_path,
+            model=source_path,
+            tokenizer=source_path,
             dtype=dtype,
             gpu_memory_utilization=gpu_memory_utilization,
             enforce_eager=True,

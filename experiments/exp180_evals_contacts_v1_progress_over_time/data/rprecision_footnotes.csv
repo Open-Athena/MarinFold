@@ -1,0 +1,4 @@
+description,r_precision_all,source
+"#61/#75 E8, K=10 document-resampling ensemble of pairwise",0.375595,exp89 data/marinfold_precision.csv (marinfold-cv1-ens10)
+"#61/#75 E8, rollout with the old top_k=50 (pre-#142)",0.4130525,exp82 data/where_we_stand_summary.csv (marinfold-cv1-exp75-rollout-topk50)
+"#117 E16 final, rollout with the old top_k=50 (pre-#142)",0.5279264,exp82 data/where_we_stand_summary.csv (marinfold-cv1-exp117-rollout-topk50)
