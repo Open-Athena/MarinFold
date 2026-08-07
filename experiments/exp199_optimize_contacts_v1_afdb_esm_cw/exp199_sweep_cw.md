@@ -15,6 +15,8 @@
 - Use existing S3 token caches only. Never copy, rebuild, or retokenize data in the
   experiment DAG or operating loop.
 - Use `batch` priority on the root driver and let the child GPU gang inherit it.
+- Source `USERNAME` from `~/marin.env` and pass it as `--user "$USERNAME"` on
+  every Iris command; never hard-code an Iris user.
 - Use whole GPU nodes. Never target `cw-us-west-04a`.
 
 ## Sweep Definition
@@ -88,4 +90,5 @@ is stored in SQLite's generic `chips` field.
 
 ## Change Record
 
-None.
+- 2026-08-07: Iris ownership must always come from `USERNAME` in
+  `~/marin.env`; the current value resolves to `eczech`.
