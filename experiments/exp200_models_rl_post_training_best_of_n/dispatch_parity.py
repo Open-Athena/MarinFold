@@ -91,7 +91,7 @@ def check_workspace() -> None:
 
 
 def build_bootstrap(*, limit: int, n_generations: int, max_sections: int,
-                    tensor_parallel_size: int) -> str:
+                    tensor_parallel_size: int, tag: str) -> str:
     writes = "\n".join(
         f"echo {base64.b64encode((HERE / name).read_bytes()).decode()} | base64 -d > {WORKDIR}/{name}"
         for name in MODULES
@@ -117,7 +117,8 @@ exec uv run --no-sync python {WORKDIR}/phase1_parity.py \\
     --limit {limit} \\
     --n-generations {n_generations} \\
     --max-sections {max_sections} \\
-    --tensor-parallel-size {tensor_parallel_size}
+    --tensor-parallel-size {tensor_parallel_size} \\
+    --tag {tag}
 """.strip()
 
 
@@ -141,6 +142,7 @@ def main() -> int:
     bootstrap = build_bootstrap(
         limit=a.limit, n_generations=a.n_generations,
         max_sections=a.max_sections, tensor_parallel_size=a.tensor_parallel_size,
+        tag=a.job_name,
     )
     placement = ["--zone", a.zone] if a.zone else ["--region", a.region]
     command = [
@@ -161,7 +163,7 @@ def main() -> int:
     subprocess.run(command, cwd=MARIN, check=True)
     print(f"[exp200-parity] submitted {a.job_name}")
     print(f"  monitor: {IRIS} --cluster=marin job list | grep {a.job_name}")
-    print(f"  results: {OUT}/parity_summary.json")
+    print(f"  results: {OUT}/{a.job_name}/parity_summary.json")
     return 0
 
 

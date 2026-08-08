@@ -95,6 +95,8 @@ def main() -> int:
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--top-p", type=float, default=0.95)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tag", default="run",
+                    help="output subdirectory, so a smoke cannot clobber a real run")
     a = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -237,7 +239,7 @@ def main() -> int:
     print(f"  {'n_pred':16s} {mean('n_pred'):10.1f}")
     print("=" * 72 + "\n")
 
-    out = a.out.rstrip("/")
+    out = f"{a.out.rstrip('/')}/{a.tag}"
     with fsspec.open(f"{out}/parity_rollouts.parquet", "wb") as fh:
         pq.write_table(pa.Table.from_pylist(rows), fh)
     summary = {
