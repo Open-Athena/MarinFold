@@ -41,6 +41,7 @@ validates the whole config assembly with no cluster time. Do that first.
 import argparse
 import dataclasses
 import os
+from pathlib import Path
 import sys
 
 from fray.types import Entrypoint, JobRequest, create_environment
@@ -76,6 +77,10 @@ from exp201_arm_common import (
 LR_MULTIPLIERS = (1.0, 2.0, 3.1623)
 
 CLUSTER = os.environ.get("EXP201_CLUSTER", "marin")
+# The directory iris bundles to build the pod environment: this experiment,
+# whose pyproject/uv.lock pin marin and the git rev of marinfold-models that
+# carries the masked and soft-target model configs.
+WORKSPACE = Path(__file__).resolve().parent
 
 SWEEP_EPOCHS = 2
 EXTEND_EPOCHS = 4
@@ -229,7 +234,15 @@ def main() -> None:
     # in-cluster driver; this launcher does not.) open_iris_client is a context
     # manager that owns the tunnel, so submission happens inside it. The jobs
     # become ROOT jobs and survive this process exiting.
-    with open_iris_client(cluster_name=CLUSTER, workspace=None) as iris_client:
+    #
+    # `workspace` must be THIS directory, not None. iris bundles it and runs
+    # `uv sync --extra tpu` against the bundled `pyproject.toml` to build the pod
+    # environment; with `workspace=None` there is no bundle and the setup step
+    # dies with ``No `pyproject.toml` found`` before the entrypoint runs. (exp82
+    # passes None and disables setup entirely with `setup_scripts=[]` -- fine for
+    # a foreign container that already carries its deps, useless for a training
+    # pod that needs marin + levanter + jax installed.)
+    with open_iris_client(cluster_name=CLUSTER, workspace=WORKSPACE) as iris_client:
         client = FrayIrisClient.from_iris_client(iris_client)
         print(f"\n[exp201] submitting to cluster {CLUSTER!r}:")
         for request in requests:
