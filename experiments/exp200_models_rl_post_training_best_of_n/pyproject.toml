@@ -1,0 +1,67 @@
+[project]
+name = "exp200-models-rl-post-training-best-of-n"
+version = "0.1.0"
+description = "exp200 RL post-training: dense per-contact rewards + document-level best-of-N over self-generated contact candidates — issue #200."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # marin SOURCE dists from PyPI (fixed 0.2.x.dev cache-ledger reader; <0.3 keeps
+    # the frozen 0.99.dev wheels from winning on version ordering). Same rationale as exp163.
+    # marin-core is what carries `marin.rl` (RLJob, RLOOLoss, TrainWorker, the vLLM
+    # inference contexts) — this experiment's whole RL stack.
+    "marin-core>=0.2.5.dev202606020954,<0.3",
+    "marin-levanter>=0.2.5.dev202606020954,<0.3",
+    "marin-iris[controller]>=0.2.5.dev202606020954,<0.3",
+    "marin-zephyr>=0.2.5.dev202606020954,<0.3",
+    "marin-rigging>=0.2.5.dev202606020954,<0.3",
+    "marinfold-models",
+    "marin-dupekit<0.3",
+    "fsspec", "numpy", "pyarrow", "transformers", "tokenizers",
+    "s3fs", "boto3",
+    # NB: no huggingface-hub>=1.5 pin (marin-levanter's transformers needs hf<1.0).
+]
+
+[project.optional-dependencies]
+gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
+# marin iris TPU (v5p). `extras_for_resources` maps a TpuConfig to the `tpu` extra, and
+# iris runs `uv sync --extra tpu` against THIS pyproject in the bundled CWD, so the extra
+# has to exist here even though the dependency is marin's. The rollout worker additionally
+# needs marin's own `vllm` extra, passed at submit time.
+tpu = ["marin-core[tpu]"]
+cpu = [
+    "marin-core[cpu]",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4", "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.22", "wheel>=0.46.2",
+    "datasets>=3.1.0,<4.0.0", "equinox>=0.11.10",
+]
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+torch = [{ index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "b28cb86bc369917f4b3ce8f5d129bdf4d5c632ee" }
