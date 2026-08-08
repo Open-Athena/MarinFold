@@ -38,7 +38,7 @@ def write_targets(tmp_path, rows):
             {
                 "entry_id": pa.array([r[0] for r in rows], pa.string()),
                 "L": pa.array([r[1] for r in rows], pa.int32()),
-                "gt_contacts": pa.array([r[2] for r in rows], pa.list_(pa.int32())),
+                "gt_contacts": pa.array([r[2] for r in rows], pa.list_(pa.list_(pa.int32()))),
             }
         ),
         path,
@@ -69,11 +69,11 @@ def env_paths(tmp_path):
     targets = write_targets(
         tmp_path,
         [
-            ("prot_a", 100, [0, 10, 1, 20, 2, 30]),
-            ("prot_b", 250, [0, 40, 5, 60]),
-            ("prot_c", 512, [3, 70, 4, 80]),
+            ("prot_a", 100, [[0, 10], [1, 20], [2, 30]]),
+            ("prot_b", 250, [[0, 40], [5, 60]]),
+            ("prot_c", 512, [[3, 70], [4, 80]]),
             # Only a sub-MIN_SEP pair: no usable ground truth, must be dropped.
-            ("prot_dropped", 90, [0, 2]),
+            ("prot_dropped", 90, [[0, 2]]),
         ],
     )
     prompts = write_prompts(tmp_path, "prot_a", 4)
@@ -95,7 +95,7 @@ def test_targets_drop_proteins_with_no_usable_ground_truth(env_paths):
 
 def test_ground_truth_pairs_are_normalized_and_separation_filtered(tmp_path):
     # (30, 2) arrives reversed and must normalize; (0, 3) is below MIN_SEP.
-    targets = write_targets(tmp_path, [("p", 50, [30, 2, 0, 3, 9, 40])])
+    targets = write_targets(tmp_path, [("p", 50, [[30, 2], [0, 3], [9, 40]])])
     write_prompts(tmp_path, "p", 2)
     env = ContactsV1RLEnv(
         targets_path=targets, prompts_path=str(tmp_path / "prompts"), eval_fraction=0.0

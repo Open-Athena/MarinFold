@@ -131,11 +131,16 @@ class ContactsV1RLEnv(MarinEnv):
         with fsspec.open(path, "rb") as fh:
             table = pq.read_table(fh, columns=["entry_id", "L", "gt_contacts"])
         out: dict[str, dict] = {}
-        for entry_id, length, flat in zip(
+        for entry_id, length, pairs in zip(
             table["entry_id"].to_pylist(), table["L"].to_pylist(), table["gt_contacts"].to_pylist()
         ):
-            flat = list(flat)
-            gt = {(min(i, j), max(i, j)) for i, j in zip(flat[0::2], flat[1::2])}
+            # `gt_contacts` is a list of [i, j] PAIRS in sequence-index space, the
+            # schema exp98's select_targets.py writes and exp163's worker reads as
+            # `{(int(i), int(j)) for i, j in t["gt_contacts"]}`. It is not a flat
+            # [i0, j0, i1, j1, ...] vector — that is the shape the rollout workers
+            # use for PREDICTIONS, and confusing the two silently halves the
+            # ground truth and pairs up unrelated residues.
+            gt = {(min(int(i), int(j)), max(int(i), int(j))) for i, j in pairs}
             gt = {p for p in gt if cr.in_band(p)}
             if not gt:
                 continue
