@@ -1,0 +1,5 @@
+{
+  "script": "plot_ceiling.py",
+  "args": [],
+  "caption": "Model-free ceiling on the 554-protein eval set: ground truth degraded to each contacts-and-crops-v1 resolution tier, scored by the same harness. Left: lDDT falls as coverage^2, TM-score linearly. Right: the Pass-2 refined fraction is the whole ballgame; a single document reaches lDDT 0.17 / TM 0.41."
+}

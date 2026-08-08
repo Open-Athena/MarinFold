@@ -1,0 +1,5 @@
+{
+  "script": "plot_summary_figure.py",
+  "args": [],
+  "caption": "exp174 summary. (a) Plan F matches the format's one-document ceiling on lDDT while reaching only a third of it on TM-score \u2014 a local metric rewards a well-refined wrong fold. (b) Median CA-RMSD splits cleanly: ~4 \u00c5 whenever the coarse boxes are correct, ~16.5 \u00c5 whenever they come from the model, regardless of inference spend. (c) The one-document ceiling collapses with chain length because the 8192-token budget is fixed; Plan F re-prompts and runs above it."
+}
