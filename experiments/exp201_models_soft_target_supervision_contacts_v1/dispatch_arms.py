@@ -92,14 +92,19 @@ def build_request(
     epochs: int,
     env_vars: dict[str, str],
     max_retries_failure: int,
+    max_steps: int | None = None,
 ) -> JobRequest:
     """One arm at one learning rate, as a self-contained JobRequest."""
     name = run_name(arm, learning_rate, epochs)
+    num_train_steps = steps_for_epochs(epochs)
+    if max_steps is not None:
+        num_train_steps = min(num_train_steps, max_steps)
+        name = f"{name}-smoke{num_train_steps}"
     on_pod_config = build_on_pod_config(
         arm=arm,
         run_name=name,
         learning_rate=learning_rate,
-        num_train_steps=steps_for_epochs(epochs),
+        num_train_steps=num_train_steps,
         output_path=f"{OUTPUT_PREFIX}/{name}",
         resources=PROTEIN_RESOURCES,
         env_vars=env_vars,
@@ -127,6 +132,15 @@ def build_request(
 
 def planned_points(phase: str, lr: float | None) -> list[tuple[str, float, int]]:
     """The (arm, learning_rate, epochs) points a phase submits."""
+    if phase == "smoke":
+        # One masked job at #117's LR, step-capped by --max-steps. Nothing in
+        # this path has ever run on a pod: the config has to deserialize (which
+        # means marinfold_models must import and register its draccus plugin),
+        # the #150 caches have to be readable with auto_build_caches off, and the
+        # mask has to actually engage. Watch `train/kept_slot_fraction` -- it
+        # should sit near 0.763, and a value of 1.0 means the mask silently did
+        # nothing. Cheaper to learn that here than across four full gangs.
+        return [("masked", BASE_LR, SWEEP_EPOCHS)]
     if phase == "sweep":
         points = [("masked", BASE_LR * m, SWEEP_EPOCHS) for m in LR_MULTIPLIERS]
         # One control at #117's own LR: the reference both the masked arm and
@@ -158,12 +172,16 @@ def training_env(*, dry_run: bool) -> dict[str, str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("sweep", "extend"), required=True)
+    parser.add_argument("--phase", choices=("smoke", "sweep", "extend"), required=True)
     parser.add_argument("--lr", type=float, default=None,
                         help="winning masked LR, for --phase extend")
     parser.add_argument("--dry-run", action="store_true",
                         help="build and print the JobRequests without submitting")
     parser.add_argument("--max-retries-failure", type=int, default=3)
+    parser.add_argument("--max-steps", type=int, default=None,
+                        help="cap num_train_steps (smoke runs); the LR schedule "
+                             "still spans the full epoch count, so a capped run "
+                             "is NOT a short training run, only a plumbing check")
     args = parser.parse_args()
 
     if not args.dry_run and not os.environ.get("WANDB_API_KEY"):
@@ -184,9 +202,10 @@ def main() -> None:
             epochs=epochs,
             env_vars=env_vars,
             max_retries_failure=args.max_retries_failure,
+            max_steps=args.max_steps,
         )
         requests.append(request)
-        steps = steps_for_epochs(epochs)
+        steps = min(steps_for_epochs(epochs), args.max_steps or steps_for_epochs(epochs))
         print(
             f"  {request.name:<34} arm={arm:<7} lr={learning_rate:.4e} "
             f"epochs={epochs} steps={steps:,} model={_model_name(arm)}"
