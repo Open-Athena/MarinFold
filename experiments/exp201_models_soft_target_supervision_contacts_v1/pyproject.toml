@@ -18,6 +18,10 @@ dependencies = [
     # reviewed, not whatever main holds at submit time.
     "marinfold-models",
     "fsspec", "gcsfs", "numpy", "pyarrow", "transformers", "tokenizers",
+    # levanter.tracker.helpers hard-imports GitPython at package import time, and
+    # it does not arrive transitively in this resolution -- the pod died with
+    # `ModuleNotFoundError: No module named 'git'` before reaching the trainer.
+    "GitPython",
 ]
 
 [project.optional-dependencies]
