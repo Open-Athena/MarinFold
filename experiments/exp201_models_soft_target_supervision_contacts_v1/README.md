@@ -123,7 +123,7 @@ predicting endpoints), and only some of them relate to contact accuracy. If the
 endpoint-slot KL orders the #169 checkpoints by R-precision where the aggregate
 does not, that is a usable model-selection signal and it ships on its own.
 
-### Phase 1b — the mask-only arm (cheap, no custom kernel)
+### Phase 1b — the mask-only arm (cheap, no custom kernel) — *implemented*
 
 Phase 0 found the single largest nuisance component is not in the structure
 section at all: the **sequence-statement shuffle is 1.13 nats/token, 42 % of the
@@ -147,6 +147,38 @@ It is not strictly dominated by arm 2: masking drops those slots entirely, while
 soft targets keep a low-variance gradient there that still teaches "these
 positions remain undefined". Which is better is empirical, and arm 1 answers it
 for a fraction of the engineering.
+
+**Status: code complete and verified; the training run is not launched.**
+
+- [`models/marinfold_models/loss_masks.py`](../../models/marinfold_models/loss_masks.py)
+  builds the mask from token ids. Packing-safe by construction: both "most
+  recent marker" lookups are running maxima over position indices, so a later
+  document's `<begin_sequence>` beats an earlier document's closer with no
+  per-document reset, and a window that starts mid-document masks nothing rather
+  than masking the wrong thing.
+- [`models/marinfold_models/masked_loss_model.py`](../../models/marinfold_models/masked_loss_model.py)
+  is a `Qwen3Config` + LM-head **subclass** overriding `compute_next_token_loss`
+  — levanter's own injection point, no monkey-patching. The architecture is
+  untouched, so checkpoints and the HF export path stay interchangeable with a
+  plain `qwen3` run.
+- 28 tests in [`models/tests/`](../../models/tests/), and
+  [`verify_mask.py`](verify_mask.py) re-checks everything against real exp53
+  documents before any TPU time is spent.
+
+Two loss-reporting decisions worth knowing, both discovered while wiring it up:
+
+- levanter's weighted mean divides by the **sum of weights**, so `train/loss`
+  here is the mean over surviving slots — a different denominator *and* slot mix
+  than any historical run. `train/loss_unmasked` is logged alongside from the
+  same forward pass; that is the comparable series.
+- **Evaluation is deliberately not masked.** `levanter.eval` pairs the
+  per-position loss it requests with the *unmasked* `loss_weight`, so returning
+  a masked numerator would give a meaningless hybrid of two denominators. The
+  eval path returns the standard loss, keeping `eval/.../loss` comparable with
+  #117/#150 — and the masked arm should be expected to score **worse** on it,
+  because it deliberately stopped fitting 23.7 % of slots that are pure
+  permutation noise. That is the intervention working, which is exactly why
+  R-precision, not val loss, is the primary endpoint (#169).
 
 ### Phase 2 — the JAX loss (~2-3 days)
 
@@ -279,6 +311,24 @@ currently weakest.
 `<eos>` transition inside packed windows. That makes the shares above high by
 ~0.1 % relative — immaterial at this resolution.
 
+### Phase 1b — mask verified against the real corpus
+
+[`verify_mask.py`](verify_mask.py) over 400 exp53 validation documents, plus a
+7,656-token packed window of 9 documents (what the trainer actually sees):
+
+```
+[ok] token ids match the mask defaults: {'<begin_sequence>': 8, '<begin_statements>': 9, '<end>': 10}
+[ok] mask == oracle on 400 individual documents
+[ok] mask == oracle on a 7,656-token packed window (9 documents)
+
+masked slots         : 115,758 / 488,361 (23.7% of supervised slots)
+nuisance nats removed: 1.1659 of 2.1190 nats/token (55.0% of the nuisance floor)
+```
+
+So the mask drops **23.7 % of supervised slots** and with them **1.166
+nats/token — 43 % of the total training loss and 55 % of its nuisance floor** —
+without touching the structure section, the amino acids or any section marker.
+
 ### A correction the tests forced
 
 The Monte-Carlo test contradicted the framing this experiment was written with.
@@ -305,7 +355,8 @@ clearly the only first-order claim.
 
 ## Conclusion
 
-*Phase 0 complete; Phases 1–4 not yet run.*
+*Phase 0 complete. Phase 1b implemented and verified; no training run launched
+yet. Phases 1, 2, 3, 4 not started.*
 
 Phase 0 clears its gate with room to spare: **77 % of the contacts-v1 training
 loss is nuisance permutation entropy**, rising to **91 % for proteins over 700

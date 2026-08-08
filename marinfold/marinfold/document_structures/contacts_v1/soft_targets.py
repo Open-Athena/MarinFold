@@ -376,6 +376,33 @@ def soft_targets(tokens: Sequence[str]) -> list[SoftTarget]:
     return targets
 
 
+def statement_head_slots(tokens: Sequence[str]) -> list[int]:
+    """Loss-weight indices whose target is a sequence-statement head.
+
+    These are the slots the mask-only arm of
+    `#201 <https://github.com/Open-Athena/MarinFold/issues/201>`_ zeroes. Their
+    target is a uniform draw over the statements not yet emitted — pure nuisance,
+    and the single largest component of the contacts-v1 loss (1.13 nats/token,
+    42 % of the total, measured over the exp53 validation split).
+
+    Note the indexing convention: entry ``i`` weights the prediction of
+    ``tokens[i + 1]``, matching levanter's ``LmExample.loss_weight``, so this
+    returns ``target_index - 1``. It is the reference the on-device mask in
+    ``marinfold_models.loss_masks`` is tested against.
+
+    Args:
+        tokens: The document's tokens.
+
+    Returns:
+        The statement-head slot indices, ascending.
+    """
+    return [
+        target.target_index - 1
+        for target in soft_targets(tokens)
+        if target.kind == STATEMENT_HEAD
+    ]
+
+
 def permutation_entropy(
     tokens: Sequence[str], *, targets: Sequence[SoftTarget] | None = None
 ) -> EntropyBreakdown:
@@ -470,4 +497,5 @@ __all__ = [
     "permutation_entropy",
     "soft_cross_entropy",
     "soft_targets",
+    "statement_head_slots",
 ]
