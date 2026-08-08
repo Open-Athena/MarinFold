@@ -9,6 +9,8 @@ would silently produce *plausible but wrong* prompts or budgets: the mode
 sentinel splice, the token budgets, the train/eval split, and the precision EMA.
 """
 
+import inspect
+
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -19,16 +21,20 @@ from contacts_env import ContactsV1RLEnv
 
 
 class FakeTokenizer:
-    """Encodes ``"<contacts-v1> <a> <b> ..."``-style text as ids by position."""
+    """Stand-in for levanter's ``HfMarinTokenizer``.
+
+    Deliberately exposes ONLY ``encode`` and is deliberately NOT callable. An
+    earlier version of this fake mimicked the HF ``__call__``/``BatchEncoding``
+    interface, so the suite passed green while the real thing died on the pod with
+    ``TypeError: 'HfMarinTokenizer' object is not callable``. A fake that is more
+    permissive than production is worse than no fake at all.
+    """
 
     def __init__(self, ids):
         self._ids = list(ids)
 
-    def __call__(self, text, add_special_tokens=False):
-        class Out:
-            input_ids = self._ids
-
-        return Out()
+    def encode(self, text: str, *, add_special_tokens: bool = False) -> list[int]:
+        return list(self._ids)
 
 
 def write_targets(tmp_path, rows):
@@ -222,3 +228,18 @@ def test_budget_never_exceeds_the_lesson_declared_cap(env_paths):
     env = make_env(env_paths, mode="multi", max_sections=8, section_contacts=220)
     assert env._response_budget(max_prompt_len=1000, max_length=512, declared=2000) == 2000
     assert env._response_budget(max_prompt_len=1000, max_length=512, declared=99999) == 5344
+
+
+def test_fake_tokenizer_matches_the_real_wrapper_surface():
+    """Guard against the fake drifting back to a more permissive interface."""
+    from levanter.tokenizers import HfMarinTokenizer
+
+    assert not callable(FakeTokenizer([1]))
+    # An INSTANCE is callable only if some class in the MRO defines __call__.
+    # (The class object itself is always callable — that is just its constructor.)
+    assert not any(
+        "__call__" in klass.__dict__ for klass in HfMarinTokenizer.__mro__ if klass is not object
+    ), "HfMarinTokenizer instances became callable; the fake may now be too strict"
+    assert list(inspect.signature(HfMarinTokenizer.encode).parameters) == list(
+        inspect.signature(FakeTokenizer.encode).parameters
+    )

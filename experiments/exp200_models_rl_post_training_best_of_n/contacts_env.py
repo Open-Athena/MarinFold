@@ -175,8 +175,13 @@ class ContactsV1RLEnv(MarinEnv):
         ``<contacts-and-distances-v1>`` while exp163's renamed one spells it
         ``<contacts-v1.multi>``, so doing this by string would silently produce a
         different prompt depending on which tokenizer shipped with the weights.
+
+        Uses ``.encode()``, not the HF ``__call__`` interface exp163's worker used:
+        ``inference_ctx.tokenizer`` is levanter's ``HfMarinTokenizer`` wrapper, which
+        is NOT callable and returns a plain ``list[int]`` rather than a
+        ``BatchEncoding``.
         """
-        ids = list(tokenizer(prefix, add_special_tokens=False).input_ids)
+        ids = list(tokenizer.encode(prefix, add_special_tokens=False))
         if not ids:
             raise ValueError("empty prompt tokenization")
         if ids[0] != cr.PLAIN_DOC_ID:
