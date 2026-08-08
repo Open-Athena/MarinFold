@@ -40,6 +40,7 @@ top_k: #142 traced under-generation to exactly that.
 import datetime
 import json
 import logging
+import os
 
 import fsspec
 import jmp
@@ -151,6 +152,36 @@ def preflight_checkpoint(checkpoint: str) -> int:
         raise ValueError(f"{url} has no vocab_size")
     logger.info("[exp200] checkpoint preflight OK: vocab_size=%d rope_theta=%s", vocab_size, cfg["rope_theta"])
     return int(vocab_size)
+
+
+def check_engine_model_path(checkpoint: str) -> None:
+    """Refuse a checkpoint path the rollout worker's tokenizer loader cannot read.
+
+    ``vLLMInferenceContext.__init__`` calls ``levanter.tokenizers.load_tokenizer``
+    on ``VLLMEngineConfig.model_name``, and that resolver handles exactly three
+    things: a local directory, a ``mirror://`` ref, and an HF Hub repo id. A
+    ``gs://`` URL raises ``HFValidationError`` ("Repo id must be in the form
+    'repo_name' or 'namespace/repo_name'") — deep inside a rollout worker, after
+    the gang has been scheduled and the engine has begun to start.
+
+    vLLM itself CAN stream weights from GCS (that is what ``load_format=
+    "runai_streamer"`` is for), which makes this trap easy to walk into: the
+    weights path is fine and only the tokenizer path is not.
+
+    Args:
+        checkpoint: The value destined for ``VLLMEngineConfig.model_name``.
+    """
+    if os.path.isdir(checkpoint) or checkpoint.startswith("mirror://"):
+        return
+    if "://" in checkpoint:
+        raise ValueError(
+            f"{checkpoint!r} cannot be used as VLLMEngineConfig.model_name: levanter's "
+            "load_tokenizer accepts a local directory, a mirror:// ref, or an HF Hub repo "
+            "id, and will raise HFValidationError on a URL. Publish the export to an HF "
+            "repo and pass the repo id, or stage it to a local path on the worker first. "
+            "(The parity worker sidesteps this by staging to local disk before it builds "
+            "the inference context.)"
+        )
 
 
 def build_curriculum(
@@ -270,6 +301,7 @@ def build_rl_job_config(
             no v5p at all.
     """
     vocab_size = preflight_checkpoint(checkpoint)
+    check_engine_model_path(checkpoint)
     prefix = output_prefix.rstrip("/")
 
     curriculum = build_curriculum(
@@ -404,6 +436,7 @@ def build_rl_job_config(
 
 __all__ = [
     "CANONICAL_MODEL_NAME",
+    "check_engine_model_path",
     "MODEL_CONFIG",
     "SEQ_LEN",
     "build_curriculum",

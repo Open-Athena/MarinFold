@@ -202,3 +202,19 @@ def test_the_fifty_fifty_pin_actually_resists_adaptive_drift(checkpoint):
     pinned = weights(curriculum.minimum_sample_probability)
     assert pinned["contacts_plain"] == pytest.approx(0.5)
     assert pinned["contacts_multi"] == pytest.approx(0.5)
+
+
+def test_rejects_a_gcs_checkpoint_for_the_inference_engine(checkpoint, tmp_path, monkeypatch):
+    """levanter's load_tokenizer cannot read gs://, and vLLM's weight loader can.
+
+    That asymmetry makes this easy to walk into: the weights path works, and only
+    the tokenizer path fails — inside a rollout worker, after the gang scheduled.
+    """
+    with pytest.raises(ValueError, match="load_tokenizer accepts a local directory"):
+        rl_config.check_engine_model_path("gs://bucket/exp163/tpuF-bf16/step-404")
+
+
+def test_accepts_local_dirs_mirrors_and_repo_ids(checkpoint):
+    rl_config.check_engine_model_path(checkpoint)                       # local dir
+    rl_config.check_engine_model_path("mirror://tokenizers/x/y")        # mirror ref
+    rl_config.check_engine_model_path("timodonnell/contacts-v1-multi")  # HF repo id
