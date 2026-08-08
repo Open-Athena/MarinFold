@@ -303,6 +303,60 @@ everything else.
 This will be split into its own issue if Phase 3 lands, per the
 "different hypothesis -> new issue" rule.
 
+## Launch notes (Phase 1b) — five plumbing bugs and one open blocker
+
+Nothing here is about the science; all of it is about getting a workstation-
+submitted training job onto the marin cluster. Recorded because each one is a
+documented gotcha in this repo's history that applies *differently* to a
+launcher with this shape.
+
+| # | symptom | cause | fix |
+|---|---|---|---|
+| 1 | job named `local-…`, dies on `Could not determine the region of the VM` | `current_client()` falls back to `LocalClient` off-cluster and tried to run the v5p job on the workstation | build the client explicitly over the controller tunnel (`open_iris_client` + `FrayIrisClient`), as exp82/exp174 do |
+| 2 | `marin-iris client is too old (build 2026-07-07; minimum 2026-07-25)` | the local marin checkout sits on a July feature branch; PyPI's newest `marin-*` under `<0.3` is 2026-06-17 | submit from a checkout at `origin/main` |
+| 3 | `cannot import name 'ResourceConfig' from 'fray'` | moved to `fray.types` in current fray | import from `fray.types` |
+| 4 | pending forever, autoscaler `Demand 0`, scheduler reports `Insufficient memory (need 224.0GB, available 208…)` | **v5p-128 was 16× oversized.** exp163 notes the 1.5B at batch 128 × seq 8192 fits a **v5p-8**; the scheduler kept trying to squeeze the 16-host gang onto an idle v5p-8 and no demand ever registered for the 128 group | request v5p-8 — it places immediately on workers already up in us-east5-a |
+| 5 | `No pyproject.toml found in current directory or any parent directory` | `open_iris_client(workspace=None)` ships no bundle, so iris's setup step runs `uv sync` in an empty `$IRIS_WORKDIR`. exp82 pairs `workspace=None` with `setup_scripts=[]` — right for a foreign container carrying its own deps, useless for a training pod | pass the experiment directory as the workspace |
+
+Plus one missing dependency: `levanter.tracker.helpers` hard-imports **GitPython**
+at package-import time, so `import levanter` fails outright without it and it does
+not arrive transitively through the marin pins. Now pinned explicitly.
+
+### The open blocker: launcher / pod version skew
+
+```
+AttributeError: Can't get attribute 'XprofUploadConfig'
+  on <module 'levanter.callbacks.profiler'>
+```
+
+`Entrypoint.from_callable(run_levanter_train_lm, args=[on_pod_config])` **pickles
+the assembled config**, so the levanter that builds it and the levanter that
+loads it must agree. They cannot, as things stand:
+
+* the **launcher** must be recent — iris rejects a `marin-iris` client older than
+  14 days, which forces marin at `origin/main` (2026-08-08);
+* the **pod** installs `marin-levanter` from PyPI, whose newest release under the
+  `<0.3` pin is **2026-06-17**.
+
+Seven weeks apart, and the newer levanter's config references a class the older
+one does not have. exp85/exp163 do not hit this because they submit from an
+in-cluster driver whose environment *is* the pod's.
+
+Two ways out, neither yet taken:
+
+1. **Match the pod to the launcher** — resolve `marin-core` / `marin-levanter` /
+   `marin-iris` / `marin-fray` from the marin git repo at the launcher's rev
+   instead of PyPI. Principled and direct; costs a source build on the pod and a
+   heavier lock.
+2. **Stop serializing a levanter object across the boundary** — make the
+   entrypoint a function in the *bundled workspace* that constructs the config on
+   the pod from plain arguments, so only primitives cross and the pod's own
+   levanter builds its own config. Version skew stops mattering at all, and the
+   bundle already carries `exp201_arm_common.py`. A cleaner architecture, and a
+   larger change to `dispatch_arms.py`.
+
+Option 2 is the better end state; option 1 is the faster unblock.
+
 ## Success criteria
 
 **Phase 0 (done).** The nuisance share of the reported val loss is >= 40 %.
