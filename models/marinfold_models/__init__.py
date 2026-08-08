@@ -24,10 +24,16 @@ from marinfold_models.masked_loss_model import (
     Qwen3StatementHeadMaskedConfig,
     Qwen3StatementHeadMaskedLMHeadModel,
 )
+from marinfold_models.soft_loss_model import (
+    Qwen3SoftTargetConfig,
+    Qwen3SoftTargetLMHeadModel,
+)
 from marinfold_models.simple_train_config import SimpleTrainConfig
 
 __all__ = [
     "MARIN_PRECISION",
+    "Qwen3SoftTargetConfig",
+    "Qwen3SoftTargetLMHeadModel",
     "Qwen3StatementHeadMaskedConfig",
     "Qwen3StatementHeadMaskedLMHeadModel",
     "SimpleTrainConfig",
