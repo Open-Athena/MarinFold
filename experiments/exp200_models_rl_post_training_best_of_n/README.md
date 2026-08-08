@@ -35,8 +35,9 @@ Fully online `RLJob` (`marin.rl`): vLLM rollout workers and a train worker with 
 
 - `contact_rewards.py` — the dense reward, walking **token ids** rather than decoded text so rewards land on specific positions. Per-section F1 is verified equal to exp163's `rollout_metrics.score_rollout`, so the document return is the same number the published #163 figures came from.
 - `dense_loss.py` — `ContactsDenseLoss(RLOOLoss)`, returning one per-token advantage array per rollout: `A_t = lam_step · token_rewards[t] + lam_doc · (R_doc − RLOO baseline)`.
-- `raw_completion_ctx.py` — a raw-completion inference context; marin's vLLM path renders every prompt through a chat template, and this vocab has neither a chat template nor `<|im_end|>`.
-- `contacts_env.py` — `ContactsV1RLEnv(MarinEnv)`, two curriculum lessons (plain / multi) at equal weight.
+- `contacts_env.py` — `ContactsV1RLEnv(MarinEnv)`; one instance per lesson, plain and multi at equal curriculum weight.
+
+marin's vLLM path renders every prompt through a chat template, and this vocab has neither a chat template nor `<|im_end|>`. The context class is picked by a hardcoded `if inference_type == "vllm"` in `rollout_worker.py`, so a subclass cannot be injected. Instead the environment builds prompt token ids itself and calls `inference_ctx.llm.generate` with `TokensPrompt` — the renderer is touched nowhere outside `batch_completions`, and its constructor validates nothing, so setting `canonical_model_name` to a qwen-containing string is enough to get past construction. This is also what exp163's validated `gen_rollouts_worker_exp163.py` does, which makes the Phase-1 parity check a like-for-like comparison rather than a comparison against a reimplementation.
 
 Starting model: `checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404`.
 

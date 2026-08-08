@@ -15,6 +15,17 @@ dependencies = [
     "marin-rigging>=0.2.5.dev202606020954,<0.3",
     "marinfold-models",
     "marin-dupekit<0.3",
+    # PIN, DO NOT RELAX. marin-finelog 0.2.26 deleted `finelog/telltale.py`, but
+    # marin-iris 0.2.57 still does an unguarded `from finelog.telltale import
+    # FinelogMetricSink` in `iris/runtime/telltale.py`. Since levanter.trainer ->
+    # levanter.distributed -> iris.runtime.jax_init pulls that in, the newer finelog
+    # breaks `import levanter.trainer` outright — and with it every marin.rl
+    # environments import. 0.2.13 is the version exp163's committed lock resolved,
+    # i.e. the one the #163 TPU runs actually used.
+    "marin-finelog==0.2.13.dev30223685542",
+    # Co-pinned: exp163's known-good lock had both halves at the same version, and a
+    # split (client 0.2.13 / server 0.2.26) is not a combination anything has run on.
+    "marin-finelog-server==0.2.13.dev30223685542",
     "fsspec", "numpy", "pyarrow", "transformers", "tokenizers",
     "s3fs", "boto3",
     # NB: no huggingface-hub>=1.5 pin (marin-levanter's transformers needs hf<1.0).

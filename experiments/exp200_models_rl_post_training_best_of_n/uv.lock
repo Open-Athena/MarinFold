@@ -621,6 +621,8 @@ dependencies = [
     { name = "fsspec", marker = "sys_platform == 'linux'" },
     { name = "marin-core", marker = "sys_platform == 'linux'" },
     { name = "marin-dupekit", marker = "sys_platform == 'linux'" },
+    { name = "marin-finelog", marker = "sys_platform == 'linux'" },
+    { name = "marin-finelog-server", marker = "sys_platform == 'linux'" },
     { name = "marin-iris", extra = ["controller"], marker = "sys_platform == 'linux'" },
     { name = "marin-levanter", marker = "sys_platform == 'linux'" },
     { name = "marin-rigging", marker = "sys_platform == 'linux'" },
@@ -637,7 +639,7 @@ dependencies = [
 cpu = [
     { name = "marin-core", extra = ["cpu"], marker = "sys_platform == 'linux'" },
     { name = "torch", marker = "sys_platform == 'linux'" },
-    { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 gpu = [
     { name = "marin-core", extra = ["gpu"], marker = "sys_platform == 'linux'" },
@@ -658,6 +660,8 @@ requires-dist = [
     { name = "marin-core", extras = ["gpu"], marker = "sys_platform == 'linux' and extra == 'gpu'" },
     { name = "marin-core", extras = ["tpu"], marker = "extra == 'tpu'" },
     { name = "marin-dupekit", specifier = "<0.3" },
+    { name = "marin-finelog", specifier = "==0.2.13.dev30223685542" },
+    { name = "marin-finelog-server", specifier = "==0.2.13.dev30223685542" },
     { name = "marin-iris", extras = ["controller"], specifier = ">=0.2.5.dev202606020954,<0.3" },
     { name = "marin-levanter", specifier = ">=0.2.5.dev202606020954,<0.3" },
     { name = "marin-rigging", specifier = ">=0.2.5.dev202606020954,<0.3" },
@@ -1510,7 +1514,8 @@ wheels = [
 cpu = [
     { name = "jax", marker = "sys_platform == 'linux'" },
     { name = "torch", marker = "sys_platform == 'linux'" },
-    { name = "torchvision", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
+    { name = "torchvision", version = "0.26.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 gpu = [
     { name = "flash-attn-4", extra = ["cu13"], marker = "sys_platform == 'linux'" },
@@ -1520,7 +1525,8 @@ gpu = [
     { name = "nvidia-cutlass-dsl", extra = ["cu13"], marker = "sys_platform == 'linux'" },
     { name = "nvidia-nccl-cu13", marker = "sys_platform == 'linux'" },
     { name = "torch", marker = "sys_platform == 'linux'" },
-    { name = "torchvision", marker = "sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' and sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "triton", marker = "sys_platform == 'linux'" },
 ]
 tpu = [
@@ -1528,7 +1534,8 @@ tpu = [
     { name = "jaxlib", marker = "sys_platform == 'linux'" },
     { name = "libtpu", marker = "sys_platform == 'linux'" },
     { name = "torch", marker = "sys_platform == 'linux'" },
-    { name = "torchvision", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
+    { name = "torchvision", version = "0.26.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "torchvision", version = "0.26.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 
 [[package]]
@@ -1558,7 +1565,7 @@ wheels = [
 
 [[package]]
 name = "marin-finelog"
-version = "0.2.26.dev31236403028"
+version = "0.2.13.dev30223685542"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click", marker = "sys_platform == 'linux'" },
@@ -1572,19 +1579,19 @@ dependencies = [
     { name = "pyyaml", marker = "sys_platform == 'linux'" },
     { name = "zstandard", marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/74/b99dad34780e43d74da040fb2d24005b878b39a4b0e7b72590f9a470116e/marin_finelog-0.2.26.dev31236403028.tar.gz", hash = "sha256:0a6d32f6e4890f4b5bb78acb136372e3965b7a3a4335284484f061a190d8e82b", size = 102740, upload-time = "2026-08-08T03:35:50.439Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/c7/f4a70b1012b7d4560991ce0c854c57083b2e850c033af8ed3996a1750ec3/marin_finelog-0.2.13.dev30223685542.tar.gz", hash = "sha256:782b2d3bd770c72b7c4a4d2800fc3001236d9aca8e2633c614c71e91e4a1e7b8", size = 70538, upload-time = "2026-07-26T23:25:31.515Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/0a/f01095443bbd861cd1a5e9e11be6941d69da1cd6b8c5422e4cdd3b75fe70/marin_finelog-0.2.26.dev31236403028-py3-none-any.whl", hash = "sha256:c074726fa9106e4c1d381ac2dae6227ca801506c2928c529edfda813d817f035", size = 100971, upload-time = "2026-08-08T03:35:30.335Z" },
+    { url = "https://files.pythonhosted.org/packages/02/fa/5174a45984c83f7cd234f97c69ef0c188671f31cd40884836b0c572f7a4e/marin_finelog-0.2.13.dev30223685542-py3-none-any.whl", hash = "sha256:224af5cfd5c29c0679a18a212e7f86a12e558e07ecb5d0c707c65f33135bc3c5", size = 68488, upload-time = "2026-07-26T23:25:18.674Z" },
 ]
 
 [[package]]
 name = "marin-finelog-server"
-version = "0.2.26.dev31236403028"
+version = "0.2.13.dev30223685542"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d6/2d/5b7d1213ba16ebcb252c94a3e0f8b12abb45e33b6453d5343f3b30608fca/marin_finelog_server-0.2.26.dev31236403028.tar.gz", hash = "sha256:8d889ee063116fcedcaf8827ba616cc233d68cf2e500681b5d883c8a5d0b058f", size = 366238, upload-time = "2026-08-08T03:35:51.643Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/39/38/40b58b3f8da5aef5cfe6f9500fe674f6c6f3d1f7dccc079e0fc59b77c758/marin_finelog_server-0.2.13.dev30223685542.tar.gz", hash = "sha256:759122a012e5d9b2179add3103aaf412e4e7a03f13604b7605ac50f6ea894e50", size = 275998, upload-time = "2026-07-26T23:25:32.603Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/3b/62c32cea3e94e32245b64e897c27bf34b689e462ec22aa53e0551c23d94b/marin_finelog_server-0.2.26.dev31236403028-cp312-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:958fab569bb05aff3a00abc8fcfc6b584d6262469bb787680ee0b3a65d8caaee", size = 40469725, upload-time = "2026-08-08T03:35:42.87Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/ef/6d0c4e875291c23286236951edcfabdb4ef5765540e12c8180df702385be/marin_finelog_server-0.2.26.dev31236403028-cp312-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:a49b06c7ec7b700ea44c347fb1732305c241d6b672035d1788e8f04f4e58e27b", size = 43029753, upload-time = "2026-08-08T03:35:48.006Z" },
+    { url = "https://files.pythonhosted.org/packages/83/79/c0869c2e0950558052c1203ae8fae3adf744be5c8e1571354a908c8f3251/marin_finelog_server-0.2.13.dev30223685542-cp312-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:58098da3e77f62e242481541d8b4dee5837e3b6799f5288dc244c1dd6a93feff", size = 40120589, upload-time = "2026-07-26T23:25:26.134Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/86/9f91d526a0e3e63d1646a521cfaf6b71ec4418505d4133d7493259e53f33/marin_finelog_server-0.2.13.dev30223685542-cp312-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:9b2a8c50dfc2936172f3fde87c4b79a33c7c72b7dd575568983f039e36e26888", size = 42629326, upload-time = "2026-07-26T23:25:29.255Z" },
 ]
 
 [[package]]
@@ -3199,15 +3206,35 @@ wheels = [
 
 [[package]]
 name = "torchvision"
-version = "0.26.0+cpu"
-source = { registry = "https://download.pytorch.org/whl/cpu" }
+version = "0.26.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux'",
+]
 dependencies = [
-    { name = "numpy", marker = "sys_platform == 'linux'" },
-    { name = "pillow", marker = "sys_platform == 'linux'" },
-    { name = "torch", marker = "sys_platform == 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'x86_64' and sys_platform == 'linux'" },
+    { name = "pillow", marker = "platform_machine != 'x86_64' and sys_platform == 'linux'" },
+    { name = "torch", marker = "platform_machine != 'x86_64' and sys_platform == 'linux'" },
 ]
 wheels = [
-    { url = "https://download-r2.pytorch.org/whl/cpu/torchvision-0.26.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:17f0b542331fc94230b4214c6d123f038af7330fd81019608c0d2402f3bc3079", upload-time = "2026-03-23T15:36:09Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/ec/5c31c92c08b65662fe9604a4067ae8232582805949f11ddc042cebe818ed/torchvision-0.26.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:406557718e62fdf10f5706e88d8a5ec000f872da913bf629aab9297622585547", size = 7767944, upload-time = "2026-03-23T18:12:42.805Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/d8/cb6ccda1a1f35a6597645818641701207b3e8e13553e75fce5d86bac74b2/torchvision-0.26.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:d61a5abb6b42a0c0c311996c2ac4b83a94418a97182c83b055a2a4ae985e05aa", size = 7522205, upload-time = "2026-03-23T18:12:54.654Z" },
+]
+
+[[package]]
+name = "torchvision"
+version = "0.26.0+cpu"
+source = { registry = "https://download.pytorch.org/whl/cpu" }
+resolution-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "pillow", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "torch", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+]
+wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torchvision-0.26.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:cf547dc0975eb40bc3249be4ccbeb736597d2c3ece305b1c4e5b7a5dd7363567", upload-time = "2026-03-23T15:36:09Z" },
 ]
 
