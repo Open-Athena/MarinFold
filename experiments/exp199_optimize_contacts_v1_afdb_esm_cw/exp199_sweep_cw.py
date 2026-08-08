@@ -12,8 +12,8 @@ uses a warmup-stable-decay learning-rate schedule.
 ``TRIAL`` selects one of the 20 logical trials (for example ``m1-p01-base``).
 ``CLUSTER`` and ``NODES`` are placement only: they do not enter production run
 or checkpoint identity, so a retry can move between CoreWeave clusters while
-resuming the same output. Four nodes is the normal production gang; two nodes
-is the crowded-cluster fallback. One node is reserved for smoke/calibration.
+resuming the same output. Production supports 2-, 4-, 8-, and 16-node gangs;
+one node is reserved for smoke/calibration.
 
 The CalVer suffix passed to ``--version`` becomes the sweep subversion. A
 version ending in ``.1`` uses ``s01`` in W&B and checkpoint identities.
@@ -598,7 +598,7 @@ def _parse_nodes(*, smoke: bool) -> int:
     if raw is None:
         raise SystemExit("missing required env var NODES")
     nodes = int(raw)
-    allowed = {1, 2, 4} if smoke else {2, 4}
+    allowed = {1, 2, 4} if smoke else {2, 4, 8, 16}
     if nodes not in allowed:
         choices = ", ".join(str(value) for value in sorted(allowed))
         raise SystemExit(f"NODES must be one of {choices} for this run, got {nodes}")
