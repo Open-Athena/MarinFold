@@ -34,7 +34,7 @@ loud failure, not a silent rebuild into another experiment's prefix.
 
 import os
 
-from fray import ResourceConfig
+from fray.types import ResourceConfig
 from levanter.data.text.datasets import (
     BlockShuffleConfig,
     DatasetComponent,
