@@ -1,0 +1,5 @@
+{
+  "script": "plot_entropy.py",
+  "args": [],
+  "caption": "Nuisance floor per document as a percentage of the #117 val loss, against chain length. The share rises with length because the permutation entropy grows like log(N!) while the token count grows like N \u2014 the same direction as the long-protein weakness in #142."
+}

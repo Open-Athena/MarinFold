@@ -96,7 +96,8 @@ class SoftTarget:
         target_index: Index into the document's token list of the token being
             predicted. It is predicted from the prefix ending at
             ``target_index - 1``.
-        support: Tokens with non-zero probability, in a deterministic order.
+        support: Tokens with non-zero probability, in a deterministic (but not
+            necessarily sorted) order.
         probs: Probabilities matching ``support``; sums to 1.
         kind: One of the module-level slot-kind constants.
     """
@@ -334,10 +335,6 @@ def soft_targets(tokens: Sequence[str]) -> list[SoftTarget]:
         remaining_degree[second] += 1
         incident.setdefault(first, []).append((k, second))
         incident.setdefault(second, []).append((k, first))
-    # A stable support order for the first-endpoint targets, sorted once. Each
-    # slot filters it by "still has remaining degree", so support order is
-    # deterministic without re-sorting a shrinking set N times.
-    all_positions = sorted(remaining_degree)
 
     for k, (first, second) in enumerate(parsed.contacts):
         contact_index = parsed.structure_start + 3 * k
@@ -347,13 +344,16 @@ def soft_targets(tokens: Sequence[str]) -> list[SoftTarget]:
         # document says how many contacts the structure has).
         targets.append(_one_hot(contact_index, CONTACT_TOKEN, FRAME))
 
-        # First endpoint: deg_R(p) / (2 |R|).
+        # First endpoint: deg_R(p) / (2 |R|). ``remaining_degree`` IS the support
+        # -- positions are deleted as they run out -- so this is one pass over
+        # the dict with no membership tests. That matters: this is the hot loop
+        # (support size ~ chain length, once per contact), and it dominates the
+        # cost of walking a document.
         norm = 2.0 * remaining
-        support = tuple(p for p in all_positions if p in remaining_degree)
         targets.append(SoftTarget(
             target_index=contact_index + 1,
-            support=support,
-            probs=tuple(remaining_degree[p] / norm for p in support),
+            support=tuple(remaining_degree),
+            probs=tuple(degree / norm for degree in remaining_degree.values()),
             kind=FIRST_ENDPOINT,
         ))
 
