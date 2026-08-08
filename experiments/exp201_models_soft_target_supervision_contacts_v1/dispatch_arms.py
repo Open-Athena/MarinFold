@@ -75,6 +75,8 @@ from exp201_arm_common import (
 # larger step -- so the sweep goes up from #117's value, not down.
 LR_MULTIPLIERS = (1.0, 2.0, 3.1623)
 
+CLUSTER = os.environ.get("EXP201_CLUSTER", "marin")
+
 SWEEP_EPOCHS = 2
 EXTEND_EPOCHS = 4
 
@@ -215,14 +217,26 @@ def main() -> None:
         print("\n[exp201] DRY RUN -- JobRequests built, not submitting.")
         return
 
-    from fray import current_client  # local: only needed on the submit path
+    # Local imports: only the submit path needs the controller tunnel.
+    from fray.iris_backend import FrayIrisClient
+    from iris.cli.connect import open_iris_client
 
-    client = current_client()
-    jobs = [client.submit(request) for request in requests]
-    print(f"\n[exp201] submitted {len(jobs)} jobs:")
-    for job in jobs:
-        print(f"  {job.id}")
-    print("\nMonitor with: uv run iris job list | grep exp201")
+    # Explicit iris-backed client. `current_client()` finds no iris context off
+    # cluster and silently falls back to LocalClient, which tries to run the
+    # whole v5p training job on the workstation -- it dies at marin's
+    # "Could not determine the region of the VM" path check, having named the job
+    # `local-...`. (exp163 can use current_client() because it runs as an
+    # in-cluster driver; this launcher does not.) open_iris_client is a context
+    # manager that owns the tunnel, so submission happens inside it. The jobs
+    # become ROOT jobs and survive this process exiting.
+    with open_iris_client(cluster_name=CLUSTER, workspace=None) as iris_client:
+        client = FrayIrisClient.from_iris_client(iris_client)
+        print(f"\n[exp201] submitting to cluster {CLUSTER!r}:")
+        for request in requests:
+            job = client.submit(request)
+            print(f"  {request.name} -> {job.job_id}")
+    print(f"\n[exp201] {len(requests)} job(s) submitted.")
+    print(f"Monitor with: iris --cluster={CLUSTER} job list | grep exp201")
 
 
 def _model_name(arm: str) -> str:
