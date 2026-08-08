@@ -1,5 +1,5 @@
 {
   "script": "plot_entropy.py",
   "args": [],
-  "caption": "The #117 validation loss decomposed. Everything left of the blue bar is the entropy of the two shuffles the generator applies (sequence statements, contact order + endpoint flips) \u2014 an oracle that knew the structure exactly would still pay it. Only the blue remainder can be driven down by learning."
+  "caption": "The #117 val loss decomposed. Everything left of the blue bar is the entropy of the generator's two shuffles: an oracle that knew the structure exactly would still pay it."
 }

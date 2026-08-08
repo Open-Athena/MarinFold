@@ -80,11 +80,9 @@ def plot_loss_budget(summary: dict[str, float], out: Path) -> None:
     save_plot_with_meta(
         fig, out,
         caption=(
-            "The #117 validation loss decomposed. Everything left of the blue bar "
-            "is the entropy of the two shuffles the generator applies (sequence "
-            "statements, contact order + endpoint flips) — an oracle that knew the "
-            "structure exactly would still pay it. Only the blue remainder can be "
-            "driven down by learning."
+            "The #117 val loss decomposed. Everything left of the blue bar is the "
+            "entropy of the generator's two shuffles: an oracle that knew the "
+            "structure exactly would still pay it."
         ),
         dpi=150,
     )
@@ -120,10 +118,9 @@ def plot_nuisance_vs_length(docs: dict[str, np.ndarray], out: Path) -> None:
     save_plot_with_meta(
         fig, out,
         caption=(
-            "Nuisance floor per document as a percentage of the #117 val loss, "
-            "against chain length. The share rises with length because the "
-            "permutation entropy grows like log(N!) while the token count grows "
-            "like N — the same direction as the long-protein weakness in #142."
+            "Nuisance floor per document vs chain length, as a % of the 2.7112 "
+            "corpus-average val loss. Rises because log(N!) outpaces N: worst "
+            "exactly where the model is weakest (#142)."
         ),
         dpi=150,
     )
