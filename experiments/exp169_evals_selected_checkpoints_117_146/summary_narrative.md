@@ -71,3 +71,35 @@ this checkpoint, not scale as such.)
 Practical consequence: `contacts-v1-val/loss` is not a usable tie-breaker below
 ~0.01 nats, and must not be compared across model sizes to pick a contact
 predictor.
+
+## Training trajectories
+
+The follow-up scores all eight permanent checkpoints from the 3B E8 and 1.5B
+E8 BS64 runs, plus every second permanent 1.5B E16 checkpoint. Every point uses
+the full 554-protein evaluation with 100 rollouts per protein. The E16 sample
+spans twice as many tokens with the same eight plotted checkpoints.
+
+BS64 performs four optimizer updates per BS256 update at a fixed token budget.
+Its E8 schedule also ends sooner than E16, so this is a comparison of complete
+training configurations rather than a controlled batch-size ablation.
+
+The BS64 run learns contact prediction first. At 14.03B tokens its all-range
+R-precision is 0.192, while the 3B remains at 0.023. At 18.71B the three runs
+are ordered BS64 0.339, 3B 0.283, and E16 0.026. Their validation losses have
+the same ordering.
+
+BS64 leads through 23.38B tokens. The 3B passes it between 23.38B and 28.06B,
+then finishes at 0.508 versus 0.494 near 37.41B. BS64 remains 0.071 ahead of E16
+at that budget. Continued E16 training reaches 0.534 at 74.82B tokens.
+
+## Does the 3B overfit?
+
+No overfitting is visible in the measured 3B trajectory. From epoch 7 to 8,
+loss improves by 0.0115 and all-range R-precision improves by 0.0225, paired 95%
+CI [0.0181, 0.0269]. Short, medium, and long R-precision all improve too.
+
+The 1.5B's loss worsens by 0.0067 from epoch 14 to 16 while all-range
+R-precision improves by 0.0058, paired 95% CI [0.0020, 0.0095]. This helps
+explain the original comparison. Across all three runs, useful contact
+prediction appears as loss approaches 2.9. Small late loss differences no
+longer order contact accuracy reliably.

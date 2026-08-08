@@ -173,6 +173,45 @@ checkpoint; 95% CI on the mean difference):
 So the new rows are on the published scale, and the cross-checkpoint deltas
 above are backend-controlled regardless (all three ran on the same stack).
 
+## Training trajectories
+
+The trajectory evaluation scores all eight permanent #146 3B E8 checkpoints,
+all eight permanent #117 1.5B E8 BS64 checkpoints, and every second permanent
+#117 1.5B E16 checkpoint. The E8 runs cover 4.68B–37.41B tokens; the E16 sample
+covers 9.35B–74.82B. Every checkpoint uses the same full 554-protein,
+100-rollout evaluation described above.
+
+BS64 gives the new 1.5B run four optimizer updates per BS256 update at the same
+token budget. Its E8 schedule also ends earlier than E16, so the curves compare
+the complete training configurations rather than isolate batch size.
+
+The BS64 run learns contact prediction first. At 14.03B tokens its all-range
+R-precision is 0.1918 while the 3B remains at 0.0231. It leads the 3B through
+23.38B tokens, then the 3B passes it and finishes at 0.5077 versus 0.4944 near
+37.41B. That paired difference is 0.0133 (95% CI [0.0093, 0.0173]). At the same
+token budget, BS64 remains 0.0712 ahead of E16. Continued E16 training reaches
+0.5338 after 74.82B tokens.
+
+The trajectory does not support 3B overfitting. Its epoch-7 to epoch-8 loss
+falls from 2.7140 to 2.7025 while all-range R-precision rises by 0.0225 (paired
+95% CI [0.0181, 0.0269]); short, medium, and long R-precision also improve. The
+three contact-learning transitions occur as validation loss approaches 2.9,
+despite different token counts. E16's loss later rises from 2.6970 to 2.7037
+while R-precision still gains 0.0058, so small late loss differences do not
+reliably order contact accuracy.
+
+![Checkpoint trajectories](plots/checkpoint_trajectory.png)
+
+The implementation, execution notes, and artifact layout are documented in
+[`trajectory/README.md`](trajectory/README.md). The plot-ready table is
+[`data/trajectory_checkpoint_metrics.csv`](data/trajectory_checkpoint_metrics.csv),
+adjacent-checkpoint paired changes are in
+[`data/trajectory_paired_changes.csv`](data/trajectory_paired_changes.csv), and
+matched-token paired comparisons are in
+[`data/trajectory_matched_token_changes.csv`](data/trajectory_matched_token_changes.csv).
+All 265,920 per-protein metric rows are in
+[`data/trajectory_metric_rows.csv.gz`](data/trajectory_metric_rows.csv.gz).
+
 ## Conclusion
 
 **1. The #117 final checkpoint is the best of the three, and #169's selection

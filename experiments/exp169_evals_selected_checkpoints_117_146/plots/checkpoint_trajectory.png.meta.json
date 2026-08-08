@@ -1,0 +1,5 @@
+{
+  "args": [],
+  "caption": "Validation loss and all/short/medium/long R-precision versus training tokens for a 1.5B E8 control and two comparison configurations that add epochs or parameters. Maxima are tabulated and exact W&B run IDs appear in the side panel.",
+  "script": "plot_trajectory.py"
+}

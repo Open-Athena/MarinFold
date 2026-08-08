@@ -54,6 +54,34 @@ rows from the two prefixes concatenate directly.
 | `scores/<label>/<dataset>__<stem>.npz` | the `[L, L]` float16 vote matrix per protein per checkpoint |
 | `plots/*.png` | the two figures, with `.meta.json` sidecars carrying the plotted numbers |
 
+## Training-trajectory extension
+
+`trajectory/` contains the permanent-checkpoint comparison for the #146 3B E8,
+#117 1.5B E8 BS64, and #117 1.5B E16 runs. All permanent checkpoints were used
+for both E8 runs, while alternating E16 checkpoints give eight points over
+twice the token span.
+
+The BS64 run performs four optimizer updates per BS256 update at a fixed token
+budget. Its shorter E8 schedule also changes the learning-rate trajectory, so
+the results compare configurations rather than batch size in isolation.
+
+| path | what |
+|---|---|
+| `trajectory/runs/<run>/step-<N>/` | immutable inputs, provenance, sparse rollout votes, and durable timing parts for one full evaluation |
+| `trajectory/derived/<run>/step-<N>/` | validated per-protein metrics, summary, timings, and checksums for one checkpoint |
+| `trajectory/summary/trajectory_checkpoint_metrics.csv` | plot-ready loss and all/short/medium/long R-precision by tokens and step |
+| `trajectory/summary/trajectory_paired_changes.csv` | paired per-protein R-precision changes between adjacent evaluated checkpoints |
+| `trajectory/summary/trajectory_matched_token_changes.csv` | paired differences between runs at shared nominal token budgets |
+| `trajectory/summary/trajectory_metric_rows.csv.gz` | all 265,920 per-protein metric rows |
+| `trajectory/summary/trajectory_timings.csv.gz` | completion and generation telemetry for all 13,296 checkpoint-protein evaluations |
+| `trajectory/summary/checkpoint_trajectory.png` | loss and R-precision trajectory figure, with its provenance sidecar |
+
+The raw trajectory uses sparse nonzero vote triplets rather than dense score
+matrices. Durable parts allow a replacement worker to resume at the first
+unfinished protein. This path was exercised when the 1.5B step-22300 worker was
+reclaimed after 480 of 554 proteins and again when the BS64 step-44600 worker
+was replaced after its first 16-protein part.
+
 The score matrices are the expensive artifact — ~100 sampled rollouts × 554
 proteins × 3 checkpoints of H100 time — and every table here is derivable from
 them plus `gt_universe.jsonl`. They are published so the eval can be re-scored

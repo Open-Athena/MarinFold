@@ -1,0 +1,539 @@
+{
+  "artifacts": {
+    "trajectory_checkpoint_metrics.csv": {
+      "bytes": 21279,
+      "sha256": "8c99a23da107fe6d0f4e3ac1513ead35d1973979f62544a9332693964f4b53d8"
+    },
+    "trajectory_checkpoint_status.csv": {
+      "bytes": 10123,
+      "sha256": "4af2bb1d8de05697fd1c4da78ba9bbac0f50702d04a2d011d36d36ff5c2dd5ef"
+    },
+    "trajectory_matched_token_changes.csv": {
+      "bytes": 18279,
+      "sha256": "4c64a50c7810c1f592fbb249796a52026194b366156bf9e8dc0f0f4906ade8b3"
+    },
+    "trajectory_metric_rows.csv.gz": {
+      "bytes": 3539400,
+      "sha256": "70ecd2eb4298f34342e54993010175bd90f8b500552780518ad60ba31010ef3f"
+    },
+    "trajectory_paired_changes.csv": {
+      "bytes": 23367,
+      "sha256": "0b692e83c2b2fc096753886c362e977c6def80bc1e05f9a761778aed51b551ea"
+    },
+    "trajectory_timings.csv.gz": {
+      "bytes": 656923,
+      "sha256": "100d9390a1a58688535ee88e737ff7f545f23f41d0be4e9548c8b8d8a57e582a"
+    }
+  },
+  "created_at": "2026-08-08T15:17:15.911147+00:00",
+  "hf_prefix": "hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp169/trajectory",
+  "n_complete": 24,
+  "n_selected": 24,
+  "schema_version": 1,
+  "selected_checkpoints": [
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-2230",
+      "epoch": 1,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step2230",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 2230,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 4676648960,
+      "validation_loss": 3.602867841720581
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-4460",
+      "epoch": 2,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step4460",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 4460,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 9353297920,
+      "validation_loss": 3.184345006942749
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-6690",
+      "epoch": 3,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step6690",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 6690,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 14029946880,
+      "validation_loss": 3.026846408843994
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-8920",
+      "epoch": 4,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step8920",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 8920,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 18706595840,
+      "validation_loss": 2.8735108375549316
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-11150",
+      "epoch": 5,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step11150",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 11150,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 23383244800,
+      "validation_loss": 2.807288885116577
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-13380",
+      "epoch": 6,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step13380",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 13380,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 28059893760,
+      "validation_loss": 2.746565818786621
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-15610",
+      "epoch": 7,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step15610",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 15610,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 32736542720,
+      "validation_loss": 2.714020013809204
+    },
+    {
+      "checkpoint_uri": "gs://marin-us-east1/checkpoints/protein/prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1/2026.07.23.01/checkpoints/step-17839",
+      "epoch": 8,
+      "geometry": {
+        "head_dim": 64,
+        "hidden_dim": 2560,
+        "intermediate_dim": 10240,
+        "num_heads": 48,
+        "num_kv_heads": 16,
+        "num_layers": 30
+      },
+      "key": "exp146-3b-e8-step17839",
+      "model_label": "3B E8",
+      "region": "us-east1",
+      "run_key": "exp146-3b-e8",
+      "run_name": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "step": 17839,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 37411094528,
+      "validation_loss": 2.7024784088134766
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-4460",
+      "epoch": 2,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step4460",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 4460,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 9353297920,
+      "validation_loss": 3.031233072280884
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-8920",
+      "epoch": 4,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step8920",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 8920,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 18706595840,
+      "validation_loss": 2.968775510787964
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-13380",
+      "epoch": 6,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step13380",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 13380,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 28059893760,
+      "validation_loss": 2.8245866298675537
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-17840",
+      "epoch": 8,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step17840",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 17840,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 37413191680,
+      "validation_loss": 2.768697500228882
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-22300",
+      "epoch": 10,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step22300",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 22300,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 46766489600,
+      "validation_loss": 2.7385761737823486
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-26760",
+      "epoch": 12,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step26760",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 26760,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 56119787520,
+      "validation_loss": 2.705306053161621
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-31220",
+      "epoch": 14,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step31220",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 31220,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 65473085440,
+      "validation_loss": 2.696971893310547
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/2026.07.13.02/checkpoints/step-35679",
+      "epoch": 16,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e16-step35679",
+      "model_label": "1.5B E16",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e16",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "step": 35679,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 74824286208,
+      "validation_loss": 2.7037086486816406
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-8920",
+      "epoch": 1,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step8920",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 8920,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 4676648960,
+      "validation_loss": 3.224363088607788
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-17840",
+      "epoch": 2,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step17840",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 17840,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 9353297920,
+      "validation_loss": 2.997375249862671
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-26760",
+      "epoch": 3,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step26760",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 26760,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 14029946880,
+      "validation_loss": 2.9025375843048096
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-35680",
+      "epoch": 4,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step35680",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 35680,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 18706595840,
+      "validation_loss": 2.844377279281616
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-44600",
+      "epoch": 5,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step44600",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 44600,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 23383244800,
+      "validation_loss": 2.801011323928833
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-53520",
+      "epoch": 6,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step53520",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 53520,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 28059893760,
+      "validation_loss": 2.768310785293579
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-62440",
+      "epoch": 7,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step62440",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 62440,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 32736542720,
+      "validation_loss": 2.724397659301758
+    },
+    {
+      "checkpoint_uri": "gs://marin-eu-west4/checkpoints/protein/prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4/2026.07.13.02/checkpoints/step-71359",
+      "epoch": 8,
+      "geometry": {
+        "head_dim": null,
+        "hidden_dim": 2048,
+        "intermediate_dim": 8192,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 24
+      },
+      "key": "exp117-1_5b-e8-bs64-step71359",
+      "model_label": "1.5B E8, BS64",
+      "region": "europe-west4",
+      "run_key": "exp117-1_5b-e8-bs64",
+      "run_name": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "step": 71359,
+      "tokenizer_repo": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+      "training_tokens": 37412667392,
+      "validation_loss": 2.7130589485168457
+    }
+  ]
+}
