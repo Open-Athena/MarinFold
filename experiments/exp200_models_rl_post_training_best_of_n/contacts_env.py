@@ -115,7 +115,7 @@ class ContactsV1RLEnv(MarinEnv):
         self._p_bar = float(initial_precision)
         self._prompt_cache: dict[str, list[dict]] = {}
 
-        self._targets = self._load_targets(targets_path, limit)
+        self._targets = self._load_targets(targets_path, limit, seed=seed)
         ids = sorted(self._targets)
         order = np.random.default_rng(seed).permutation(len(ids))
         n_eval = max(1, int(round(eval_fraction * len(ids)))) if eval_fraction > 0 else 0
@@ -127,7 +127,16 @@ class ContactsV1RLEnv(MarinEnv):
         )
 
     @staticmethod
-    def _load_targets(path: str, limit: int | None) -> dict[str, dict]:
+    def _load_targets(path: str, limit: int | None, seed: int = 0) -> dict[str, dict]:
+        """Load targets, optionally down to a RANDOM `limit`-sized subset.
+
+        Sampling, not truncation. Target files are grouped by source dataset, so
+        taking the first N rows takes whole benchmarks: `limit=100` on the exp163
+        eval set yields 100% foldbench100, where the same model scores 0.1296
+        against 0.2928 on the denovo_pdb rows that are 71% of the file. A parity
+        run on that subset reads as a 50% regression and is really just a
+        different, harder protein set.
+        """
         with fsspec.open(path, "rb") as fh:
             table = pq.read_table(fh, columns=["entry_id", "L", "gt_contacts"])
         out: dict[str, dict] = {}
@@ -145,10 +154,12 @@ class ContactsV1RLEnv(MarinEnv):
             if not gt:
                 continue
             out[entry_id] = {"L": int(length), "gt": gt}
-            if limit is not None and len(out) >= limit:
-                break
         if not out:
             raise ValueError(f"no usable targets in {path}")
+        if limit is not None and 0 < limit < len(out):
+            keys = sorted(out)
+            picked = np.random.default_rng(seed).choice(len(keys), size=limit, replace=False)
+            out = {keys[int(i)]: out[keys[int(i)]] for i in sorted(picked)}
         return out
 
     def _prompts_for(self, entry_id: str) -> list[dict]:

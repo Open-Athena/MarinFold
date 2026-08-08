@@ -243,3 +243,36 @@ def test_fake_tokenizer_matches_the_real_wrapper_surface():
     assert list(inspect.signature(HfMarinTokenizer.encode).parameters) == list(
         inspect.signature(FakeTokenizer.encode).parameters
     )
+
+
+def test_limit_samples_randomly_rather_than_truncating(tmp_path):
+    """Truncation takes whole benchmarks, not a representative subset.
+
+    On the exp163 eval file, `limit=100` by truncation yielded 100% foldbench100,
+    where the reference model scores 0.1296 against 0.2928 on the denovo_pdb rows
+    that make up 71% of the file — turning a parity run into an apparent 50%
+    regression that was really just a harder protein set.
+    """
+    rows = [(f"{ds}__p{i:03d}", 100, [[0, 10]]) for ds in ("aaa", "zzz") for i in range(50)]
+    targets = write_targets(tmp_path, rows)
+
+    picked = ContactsV1RLEnv._load_targets(targets, 20, seed=0)
+    assert len(picked) == 20
+    prefixes = {k.split("__")[0] for k in picked}
+    assert prefixes == {"aaa", "zzz"}, f"limit collapsed onto one dataset: {prefixes}"
+
+
+def test_limit_is_deterministic_for_a_given_seed(tmp_path):
+    rows = [(f"p{i:03d}", 100, [[0, 10]]) for i in range(60)]
+    targets = write_targets(tmp_path, rows)
+    a = ContactsV1RLEnv._load_targets(targets, 10, seed=7)
+    b = ContactsV1RLEnv._load_targets(targets, 10, seed=7)
+    c = ContactsV1RLEnv._load_targets(targets, 10, seed=8)
+    assert sorted(a) == sorted(b)
+    assert sorted(a) != sorted(c)
+
+
+def test_limit_above_the_population_keeps_everything(tmp_path):
+    rows = [(f"p{i:03d}", 100, [[0, 10]]) for i in range(5)]
+    targets = write_targets(tmp_path, rows)
+    assert len(ContactsV1RLEnv._load_targets(targets, 999, seed=0)) == 5
