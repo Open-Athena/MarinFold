@@ -187,6 +187,48 @@ Two loss-reporting decisions worth knowing, both discovered while wiring it up:
 the NumPy reference on real documents, packed multi-document windows, and the
 Phase-0 MC identity.
 
+**Scope decision, from the Phase 0 numbers: v1 covers statement heads and first
+endpoints, and leaves second endpoints one-hot.** The three soft slot kinds are
+worth very different amounts —
+
+| soft slot kind | floor (nats/token) | share of the nuisance floor |
+|---|---:|---:|
+| statement head | 1.1265 | 53.9 % |
+| contact 1st endpoint | 0.8423 | 40.3 % |
+| contact 2nd endpoint | 0.1201 | **5.7 %** |
+
+— and they differ just as much in implementation cost. Statement heads and first
+endpoints are both **reverse cumulative counts** over the token stream: at a
+statement-head slot the target is uniform over the heads still to come, and at a
+first-endpoint slot it is `deg_R(p) / 2|R|`, which is the running count of
+endpoint tokens still to come. Both are a reverse cumsum of one-hots, minus the
+tail belonging to the next document in the packed window.
+
+The second endpoint is not. Its target is "partners of `X_k` among the remaining
+contacts", which is *conditioned on the token at the slot*, so it is a
+**segmented** reverse cumsum keyed by token value rather than a plain one. The
+three ways to get it are a dense `[vocab, vocab]` emission-time adjacency (~18 MB
+per example, and it collides across documents in a packed window unless keyed by
+document), a segmented scan after sorting endpoint positions by `(document,
+token)`, or a host-side sparse side-channel through the cache. All three are
+real work, and none is needed to capture **94 % of the available nuisance
+reduction**.
+
+So v1 implements the two cheap kinds and keeps second endpoints as one-hot —
+still an unbiased loss, just a partially Rao-Blackwellized one. The residual
+0.12 nats/token is a follow-up, and the decision gets revisited only if Phase 3
+shows the intervention working.
+
+**Design notes for the implementation.** The soft supports all fall inside one
+contiguous vocab slice: ids **3–2142** (`<n-term>` through `<p1999>`) cover every
+token a contacts-v1 document emits except the leading `<contacts-v1>`, so a
+single dense `[position, 2140]` weight matrix serves hard and soft slots alike.
+The loss is then `logsumexp(z) - <q, z>` with the `<q, z>` term computed as
+`h · (W_slice^T q) / norm` — one extra matmul of lm-head shape, ~0.3 % of a 1.5B
+forward at 8k. Slot classification reuses the packing-safe running-maximum trick
+from `loss_masks.py`; the within-document reverse cumsum subtracts the tail
+gathered at the next document's `<begin_sequence>` / `<begin_statements>`.
+
 ### Phase 3 — the training A/B (the decisive experiment)
 
 - Recipe = #150's #117 reproduction verbatim. Control curve already exists.
