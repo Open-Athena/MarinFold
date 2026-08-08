@@ -181,7 +181,16 @@ class ContactsV1RLEnv(MarinEnv):
             )
         return [self.doc_token_id] + ids[1:]
 
-    def _response_budget(self, max_prompt_len: int, max_length: int) -> int:
+    def _response_budget(self, max_prompt_len: int, max_length: int, declared: int | None = None) -> int:
+        """Response token budget for one batch.
+
+        Three bounds, all real. The task formula (exp163's per-section budget for
+        multi, exp98's per-residue budget for plain) is what the model actually
+        needs; the context window is what the engine can hold; and ``declared`` is
+        the lesson's own ``max_output_tokens``, which must not be exceeded because
+        ``curriculum.max_seq_len`` is derived from it and ``train_batch`` raises
+        when a padded sequence overruns that.
+        """
         if self.mode == "multi":
             per_section = MULTI_TOKENS_PER_CONTACT * self.section_contacts + MULTI_SECTION_SLACK
             budget = per_section * self.max_sections
@@ -190,6 +199,8 @@ class ContactsV1RLEnv(MarinEnv):
         room = self.max_model_len - max_prompt_len
         if room <= 0:
             raise ValueError(f"prompt of {max_prompt_len} tokens leaves no room in {self.max_model_len}")
+        if declared is not None:
+            budget = min(budget, declared)
         return int(min(budget, room))
 
     def sample(
@@ -246,7 +257,9 @@ class ContactsV1RLEnv(MarinEnv):
         max_length = max(self._targets[s["entry_id"]]["L"] for s in specs)
         applied = replace(
             decoding,
-            max_output_tokens=self._response_budget(max_prompt_len, max_length),
+            max_output_tokens=self._response_budget(
+                max_prompt_len, max_length, declared=decoding.max_output_tokens
+            ),
             stop_token_ids=[cr.END_ID],
             # TPU vLLM rejects per-request seeds ("JAX does not support per-request
             # seed"); engine-level seeding is VLLMEngineConfig.seed.

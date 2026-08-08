@@ -214,3 +214,11 @@ def test_metrics_survive_all_nan_diagnostics(env_paths):
 def test_rejects_an_unknown_mode(env_paths):
     with pytest.raises(ValueError, match="mode must be one of"):
         make_env(env_paths, mode="bogus")
+
+
+def test_budget_never_exceeds_the_lesson_declared_cap(env_paths):
+    """`curriculum.max_seq_len` is derived from the declared cap, and `train_batch`
+    raises when a padded sequence overruns it — so the env must not out-generate it."""
+    env = make_env(env_paths, mode="multi", max_sections=8, section_contacts=220)
+    assert env._response_budget(max_prompt_len=1000, max_length=512, declared=2000) == 2000
+    assert env._response_budget(max_prompt_len=1000, max_length=512, declared=99999) == 5344
