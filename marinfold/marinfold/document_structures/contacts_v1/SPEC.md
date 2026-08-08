@@ -297,6 +297,47 @@ together under one tokenizer.
   `c_term_index`, `num_tokens`, `sha1` carry through as usual, so the parquet
   schema stays compatible with the contacts-v1 corpus.
 
+### Order-marginalized (soft) next-token targets
+
+`soft_targets.py` computes, for every slot in a document, the **exact
+conditional distribution of the next token** implied by the generation process
+above. It exists because both shuffles in this spec — the sequence statements
+(*Sequence section*) and the selected contacts (*Structure section*) — are
+nuisance randomness: one-hot supervision spends most of its budget asking the
+model to predict which permutation was drawn. See
+[#201](https://github.com/Open-Athena/MarinFold/issues/201).
+
+The targets are a **pure function of the token stream** (the document is the
+contact list in emission order), so nothing here changes generation, the vocab,
+or the corpus. Writing the structure section as `<contact> X_k Y_k` for
+`k = 0..N-1`, with `R_k` the contacts not yet emitted at slot `k`
+(`|R_k| = N - k`) and `deg_R(p)` the number of contacts in `R` incident to `p`:
+
+- **Statement head** (`<pX>` / `<n-term>` / `<c-term>` opening a sequence
+  statement) — uniform over the heads of the statements not yet emitted. All
+  heads are distinct, so uniform over its support.
+- **First endpoint** (after `<contact>`) — `deg_R_k(p) / (2 * |R_k|)`. The
+  generator draws the next contact uniformly from `R_k` then flips a fair coin
+  for endpoint order, so each remaining contact contributes 1/2 to each of its
+  two endpoints.
+- **Second endpoint** (after `X_k`) — uniform over `X_k`'s **remaining**
+  partners. Conditioned on "first endpoint = X", the posterior over which
+  contact was drawn is uniform over the remaining contacts incident to X.
+- **Everything else** — one-hot. Section markers, the amino acid of a residue
+  statement, the index of a terminus statement, and `<contact>` vs `<end>` all
+  carry real information.
+
+Two properties worth stating, because they are easy to get wrong:
+
+- The one-hot target is a **sample** from this distribution, so the two losses
+  share an expectation (and an expected gradient) and share the floor `H(q)`.
+  The soft target is a lower-variance *estimator* of the same objective, **not
+  a smaller loss number**. The zero-at-optimum quantity is `KL = CE - H(q)`.
+- `permutation_entropy()` returns that floor. Measured over the exp53
+  validation split it is **~2.11 nats/token, ~78 % of the 2.7112 val loss** that
+  [#117](https://github.com/Open-Athena/MarinFold/issues/117) reports — with the
+  sequence-statement shuffle alone accounting for ~1.16 of it.
+
 ### Not yet implemented
 
 - Multiple protein chains (multiple `<n-term>`/`<c-term>`, spaced-out

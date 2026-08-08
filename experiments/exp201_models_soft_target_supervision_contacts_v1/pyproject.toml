@@ -1,0 +1,15 @@
+[project]
+name = "exp201-soft-target-supervision-contacts-v1"
+version = "0.1.0"
+description = "exp201: order-marginalized (soft-target) supervision for contacts-v1"
+requires-python = ">=3.11"
+dependencies = [
+    "gcsfs",
+    "marinfold",
+    "matplotlib",
+    "numpy",
+    "pyarrow",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
