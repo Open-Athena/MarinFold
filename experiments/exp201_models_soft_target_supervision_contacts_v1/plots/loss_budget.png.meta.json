@@ -1,0 +1,5 @@
+{
+  "script": "plot_entropy.py",
+  "args": [],
+  "caption": "The #117 val loss decomposed. Everything left of the blue bar is the entropy of the generator's two shuffles: an oracle that knew the structure exactly would still pay it."
+}

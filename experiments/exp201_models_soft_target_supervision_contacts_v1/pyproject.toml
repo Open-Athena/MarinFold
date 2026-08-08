@@ -1,0 +1,58 @@
+[project]
+name = "exp201-soft-target-supervision-contacts-v1"
+version = "0.1.0"
+description = "exp201: order-marginalized (soft-target) supervision for contacts-v1 — issue #201."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # marin SOURCE dists from PyPI (the fixed 0.2.x.dev cache-ledger reader; <0.3
+    # keeps the frozen 0.99.dev wheels from winning on version ordering). Same
+    # rationale and pins as exp163/exp108.
+    "marin-core>=0.2.5.dev202606020954,<0.3",
+    "marin-levanter>=0.2.5.dev202606020954,<0.3",
+    "marin-iris[controller]>=0.2.5.dev202606020954,<0.3",
+    "marin-zephyr>=0.2.5.dev202606020954,<0.3",
+    "marin-rigging>=0.2.5.dev202606020954,<0.3",
+    "marin-dupekit<0.3",
+    # Carries the statement-head mask and the Qwen3 subclass the training pod
+    # deserializes. Pinned by git rev so the pod gets exactly the code that was
+    # reviewed, not whatever main holds at submit time.
+    "marinfold-models",
+    "fsspec", "gcsfs", "numpy", "pyarrow", "transformers", "tokenizers",
+]
+
+[project.optional-dependencies]
+# iris maps a TpuConfig to the `tpu` extra and runs `uv sync --extra tpu` against
+# THIS pyproject in the bundled dir, so the extra must exist here even though the
+# dependency is marin's.
+tpu = ["marin-core[tpu]"]
+# Local-only: the Phase 0 entropy analysis and the Phase 1b mask verifier need
+# the `marinfold` inference package. Deliberately NOT a default dependency --
+# the training pod has no use for gemmi/matplotlib, and keeping it out of the
+# `tpu` sync keeps the pod's resolution narrow.
+analysis = ["marinfold", "matplotlib"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4", "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.22", "wheel>=0.46.2",
+    "datasets>=3.1.0,<4.0.0", "equinox>=0.11.10",
+]
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "bacc00b1db9387f43a42d64f8e05457d225960f1" }
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "bacc00b1db9387f43a42d64f8e05457d225960f1" }

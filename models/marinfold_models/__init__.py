@@ -15,10 +15,27 @@ does not have to re-vendor the marin training plumbing.
 """
 
 from marinfold_models.defaults import MARIN_PRECISION, build_train_lm_on_pod_config
+# Imported for its side effect as much as its exports: the module carries the
+# ``@LmConfig.register_subclass("qwen3_contacts_v1_statement_head_masked")``
+# decorator, and draccus can only resolve that config on a training pod if the
+# module has been imported. Re-exporting here means importing the package is
+# enough (#201).
+from marinfold_models.masked_loss_model import (
+    Qwen3StatementHeadMaskedConfig,
+    Qwen3StatementHeadMaskedLMHeadModel,
+)
+from marinfold_models.soft_loss_model import (
+    Qwen3SoftTargetConfig,
+    Qwen3SoftTargetLMHeadModel,
+)
 from marinfold_models.simple_train_config import SimpleTrainConfig
 
 __all__ = [
     "MARIN_PRECISION",
+    "Qwen3SoftTargetConfig",
+    "Qwen3SoftTargetLMHeadModel",
+    "Qwen3StatementHeadMaskedConfig",
+    "Qwen3StatementHeadMaskedLMHeadModel",
     "SimpleTrainConfig",
     "build_train_lm_on_pod_config",
 ]

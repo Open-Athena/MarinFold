@@ -1,0 +1,5 @@
+{
+  "script": "plot_entropy.py",
+  "args": [],
+  "caption": "Nuisance floor per document vs chain length, as a % of the 2.7112 corpus-average val loss. Rises because log(N!) outpaces N: worst exactly where the model is weakest (#142)."
+}
