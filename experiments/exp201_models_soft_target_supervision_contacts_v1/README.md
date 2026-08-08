@@ -180,7 +180,7 @@ Two loss-reporting decisions worth knowing, both discovered while wiring it up:
   permutation noise. That is the intervention working, which is exactly why
   R-precision, not val loss, is the primary endpoint (#169).
 
-### Phase 2 — the JAX loss (~2-3 days)
+### Phase 2 — the JAX loss — *implemented*
 
 `models/marinfold_models/soft_targets.py` (target construction + loss) and
 `soft_loss_model.py` (`Qwen3SoftTargetConfig` + LM-head subclass). Tests: JAX vs
@@ -228,6 +228,27 @@ The loss is then `logsumexp(z) - <q, z>` with the `<q, z>` term computed as
 forward at 8k. Slot classification reuses the packing-safe running-maximum trick
 from `loss_masks.py`; the within-document reverse cumsum subtracts the tail
 gathered at the next document's `<begin_sequence>` / `<begin_statements>`.
+
+**Status: code complete and tested (48 tests); no training run launched.**
+
+- [`models/marinfold_models/soft_targets.py`](../../models/marinfold_models/soft_targets.py)
+  builds the targets. The design note below predicted a dense
+  `[position, 2140]` matrix; it is not needed. Because the loss only ever needs
+  `<q, z>`, the vocabulary can be contracted **before** accumulating, which
+  collapses the construction to `[position, embed]` — one activation-sized
+  tensor, no vocabulary axis, no matmul.
+- [`models/marinfold_models/soft_loss_model.py`](../../models/marinfold_models/soft_loss_model.py)
+  is the `Qwen3Config` + LM-head subclass. It needs **no custom kernel and never
+  materializes logits**: levanter's fused kernel already returns
+  `logsumexp(z) - z[y]`, so one gather plus one dot recovers `logsumexp(z)`, and
+  the soft loss follows.
+- Verified by passing an **identity** output embedding (the contraction then
+  returns the raw weight vector, comparable element-by-element against the
+  plain-Python oracle) and, for the loss itself, by rebuilding it the slow way —
+  materialize the logits, apply the oracle's probabilities — and requiring
+  agreement to 1e-4, so the `logsumexp` recovery is checked against something
+  that does not share its derivation. Packed multi-document windows are covered,
+  which is where the boundary subtraction is easiest to get wrong.
 
 ### Phase 3 — the training A/B (the decisive experiment)
 
