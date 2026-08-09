@@ -126,12 +126,43 @@ def describe(config) -> str:
     )
 
 
+def wandb_api_key() -> str:
+    """W&B key from the environment, else ~/.netrc.
+
+    `fray.create_environment` forwards WANDB_API_KEY from `os.getenv` of whatever
+    process calls it — the driver when it submits the coordinator, the coordinator
+    when it submits the workers. Nothing else in marin's RL path propagates it:
+    the coordinator builds worker env from `{"EQX_ON_ERROR": ...}` plus
+    `add_run_env_variables`, which adds only GIT/HF vars, and RLJobConfig has no
+    worker-env hook. So if the driver is launched without the key, both workers
+    die on `wandb.errors.UsageError: No API key configured` after the gang has
+    scheduled and the model has loaded. Reading netrc here makes that
+    unforgettable rather than a documented step.
+    """
+    key = os.environ.get("WANDB_API_KEY")
+    if key:
+        return key
+    import netrc
+
+    try:
+        auth = netrc.netrc().authenticators("api.wandb.ai")
+    except FileNotFoundError:
+        auth = None
+    if not auth or not auth[2]:
+        raise SystemExit(
+            "no W&B API key: set WANDB_API_KEY or log in so ~/.netrc has an "
+            "api.wandb.ai entry. Both RL workers call wandb.init() and will fail without it."
+        )
+    return auth[2]
+
+
 def submit_driver(argv: list[str]) -> int:
     """Submit this script as a CPU driver job carrying the EXP200_* environment."""
     from _submit import check_clean, submit
 
     check_clean()
-    env = {k: v for k, v in os.environ.items() if k.startswith("EXP200_") or k == "WANDB_API_KEY"}
+    env = {k: v for k, v in os.environ.items() if k.startswith("EXP200_")}
+    env["WANDB_API_KEY"] = wandb_api_key()
     for item in argv:
         key, _, value = item.partition("=")
         env[key] = value
