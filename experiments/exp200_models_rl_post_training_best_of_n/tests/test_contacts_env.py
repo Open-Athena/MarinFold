@@ -276,3 +276,29 @@ def test_limit_above_the_population_keeps_everything(tmp_path):
     rows = [(f"p{i:03d}", 100, [[0, 10]]) for i in range(5)]
     targets = write_targets(tmp_path, rows)
     assert len(ContactsV1RLEnv._load_targets(targets, 999, seed=0)) == 5
+
+
+def test_seed_from_accepts_both_halves_of_marins_prng_union():
+    """RolloutWorker passes a JAX key OR a plain int, chosen by inference_type.
+
+    `use_jax_rng = (inference_type == "levanter")`, so a vLLM rollout worker — what
+    exp200 runs — always passes an int, and jax.random.randint on it raises
+    "JAX encountered invalid PRNG key data". marin's own mock_env calls
+    jax.random.randint unguarded, so this union is easy to miss.
+    """
+    import jax
+
+    from contacts_env import seed_from
+
+    assert seed_from(425801368) == 425801368
+    assert isinstance(seed_from(jax.random.PRNGKey(0)), int)
+    # Deterministic for a given input, either way.
+    assert seed_from(jax.random.PRNGKey(7)) == seed_from(jax.random.PRNGKey(7))
+    assert seed_from(np.int64(12345)) == 12345
+
+
+def test_seed_from_stays_in_numpy_seed_range():
+    from contacts_env import seed_from
+
+    assert 0 <= seed_from(2**62) < 2**31 - 1
+    np.random.default_rng(seed_from(2**62))  # must not raise

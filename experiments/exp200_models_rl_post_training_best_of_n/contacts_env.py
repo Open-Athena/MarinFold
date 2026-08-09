@@ -45,6 +45,24 @@ import contact_rewards as cr
 
 logger = logging.getLogger(__name__)
 
+def seed_from(prng_key) -> int:
+    """Derive an int seed from marin's `prng_key`, which is a UNION type.
+
+    `RolloutWorker` sets `use_jax_rng = (inference_type == "levanter")` and then
+    either splits a JAX key or draws `py_rng.randint(0, 2**31 - 1)`. So a vLLM
+    rollout worker — which is what exp200 runs — always hands an environment a
+    plain Python int, and `jax.random.randint` on it dies with
+    "JAX encountered invalid PRNG key data ... Got 425801368".
+
+    marin's own `mock_env` calls `jax.random.randint(prng_key, ...)` unguarded, so
+    it has presumably only ever been exercised against levanter inference. Accept
+    both rather than assume the branch we happen to be on.
+    """
+    if isinstance(prng_key, (int, np.integer)):
+        return int(prng_key) % (2**31 - 1)
+    return int(jax.random.randint(prng_key, (), 0, 2**31 - 1))
+
+
 DOC_TOKEN_BY_MODE = {"plain": cr.PLAIN_DOC_ID, "multi": cr.MULTI_DOC_ID}
 
 # exp98's per-target budget for a single contacts-v1 statement section.
@@ -246,8 +264,7 @@ class ContactsV1RLEnv(MarinEnv):
         if not pool:
             raise ValueError(f"no proteins available for mode={mode!r}")
 
-        seed = int(jax.random.randint(prng_key, (), 0, 1_000_000))
-        rng = np.random.default_rng(seed)
+        rng = np.random.default_rng(seed_from(prng_key))
         n_take = min(n_examples, len(pool))
         entry_ids = [pool[i] for i in rng.choice(len(pool), size=n_take, replace=False)]
 
@@ -404,4 +421,4 @@ class ContactsV1RLEnv(MarinEnv):
         return out
 
 
-__all__ = ["ContactsV1RLEnv", "DOC_TOKEN_BY_MODE"]
+__all__ = ["ContactsV1RLEnv", "DOC_TOKEN_BY_MODE", "seed_from"]
