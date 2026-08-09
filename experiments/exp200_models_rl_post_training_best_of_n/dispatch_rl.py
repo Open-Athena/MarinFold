@@ -3,34 +3,28 @@
 
 """Launch exp200 RL jobs, one coordinator per learning rate — issue #200.
 
-RUN THIS AS AN IRIS JOB, NOT FROM THE WORKSTATION. ``submit_rl_job`` resolves its
-client through ``current_client()``, which silently falls back to a ``LocalClient``
-when no cluster context exists — an off-cluster invocation would quietly run the
-coordinator on the workstation instead of the pool. Submitting a small CPU driver
-that submits the coordinators is exp163's settled pattern::
+Two modes.
 
-    cd experiments/exp200_models_rl_post_training_best_of_n
-    WK=$(python -c "import netrc; print(netrc.netrc().authenticators('api.wandb.ai')[2])")
-    uv run iris --cluster=marin job run --no-wait --enable-extra-resources \\
-        --cpu=2 --memory=6GB --disk=16GB -e WANDB_API_KEY "$WK" \\
-        -e EXP200_LRS 1e-6,3e-6,1e-5 \\
-        -e EXP200_CHECKPOINT gs://.../exp163/tpu/tpuF-bf16/step-404 \\
-        -e EXP200_TOKENIZER gs://.../exp163/tpu/tpuF-bf16/step-404 \\
-        -e EXP200_TARGETS gs://.../exp200/train/targets.parquet \\
-        -e EXP200_PROMPTS gs://.../exp200/train/prompts \\
-        -e EXP200_OUTPUT_PREFIX gs://marin-us-central1/protein-structure/MarinFold/exp200 \\
-        -- python -m dispatch_rl
+``--submit`` (from the workstation) submits THIS script as a small CPU driver
+job. That indirection is required: ``submit_rl_job`` resolves its client through
+``current_client()``, which silently falls back to a ``LocalClient`` when no
+cluster context exists, so an off-cluster invocation would quietly run the
+coordinator on the workstation instead of the pool.
 
-TPU work goes in the INTERACTIVE band on the marin v5p pool — the opposite of the
-CoreWeave rule. ``submit_rl_job`` never sets a priority, so the default band (0,
-interactive) is already what we want; do not "fix" that to batch.
+Without ``--submit`` (on the pod) it builds one ``RLJobConfig`` per learning rate,
+submits a coordinator for each, and waits — iris finalizes a job's children when
+the parent exits, so a driver that returned early would kill the run.
 
-The driver waits on its coordinators on purpose: iris finalizes a job's children
-when the parent exits, so a driver that returns early would kill the run.
+This directory is the iris workspace (see :mod:`_submit`), so the pod resolves
+exp200's own pinned manifest: marin 0.2.76, the last release that still ships
+``marin.rl``. TPU work goes in the INTERACTIVE band on the marin v5p pool — the
+opposite of the CoreWeave rule. ``submit_rl_job`` never sets a priority, so the
+default band is already correct; do not "fix" it to batch.
 
-Dry run (no cluster, no submission — builds and prints every config)::
+    uv run python dispatch_rl.py --submit \
+        -e EXP200_LRS=1e-6,3e-6,1e-5 -e EXP200_TARGETS=gs://... -e EXP200_PROMPTS=gs://...
 
-    EXP200_DRY_RUN=1 EXP200_CHECKPOINT=/tmp/ckpt ... uv run python -m dispatch_rl
+    EXP200_DRY_RUN=1 EXP200_TARGETS=... uv run python dispatch_rl.py   # build only
 """
 
 import logging
@@ -125,8 +119,31 @@ def describe(config) -> str:
     )
 
 
+def submit_driver(argv: list[str]) -> int:
+    """Submit this script as a CPU driver job carrying the EXP200_* environment."""
+    from _submit import check_clean, submit
+
+    check_clean()
+    env = {k: v for k, v in os.environ.items() if k.startswith("EXP200_") or k == "WANDB_API_KEY"}
+    for item in argv:
+        key, _, value = item.partition("=")
+        env[key] = value
+    submit(
+        job_name=os.environ.get("EXP200_JOB_NAME", "exp200-rl-driver"),
+        extras=("cpu",),
+        cpu=2, memory="6GB", disk="16GB",
+        region=os.environ.get("EXP200_REGION", "us-east5"),
+        command=["python", "-m", "dispatch_rl"],
+        env=env,
+    )
+    return 0
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    if "--submit" in sys.argv:
+        rest = [a for a in sys.argv[1:] if a not in ("--submit", "-e")]
+        return submit_driver(rest)
     configs = build_configs()
 
     for config in configs:
