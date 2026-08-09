@@ -58,5 +58,5 @@ url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
 resiliparse = { index = "marin-resiliparse" }
-marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "bacc00b1db9387f43a42d64f8e05457d225960f1" }
-marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "bacc00b1db9387f43a42d64f8e05457d225960f1" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "5b8690320c0da6d7dbc0cb7b99a020c2b9adae23" }
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "5b8690320c0da6d7dbc0cb7b99a020c2b9adae23" }

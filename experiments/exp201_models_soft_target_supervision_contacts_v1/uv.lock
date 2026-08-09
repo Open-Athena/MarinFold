@@ -635,8 +635,8 @@ requires-dist = [
     { name = "marin-levanter", specifier = ">=0.2.5.dev202606020954,<0.3" },
     { name = "marin-rigging", specifier = ">=0.2.5.dev202606020954,<0.3" },
     { name = "marin-zephyr", specifier = ">=0.2.5.dev202606020954,<0.3" },
-    { name = "marinfold", marker = "extra == 'analysis'", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=bacc00b1db9387f43a42d64f8e05457d225960f1" },
-    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=bacc00b1db9387f43a42d64f8e05457d225960f1" },
+    { name = "marinfold", marker = "extra == 'analysis'", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=5b8690320c0da6d7dbc0cb7b99a020c2b9adae23" },
+    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=5b8690320c0da6d7dbc0cb7b99a020c2b9adae23" },
     { name = "matplotlib", marker = "extra == 'analysis'" },
     { name = "numpy" },
     { name = "pyarrow" },
@@ -1740,7 +1740,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=bacc00b1db9387f43a42d64f8e05457d225960f1#bacc00b1db9387f43a42d64f8e05457d225960f1" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=5b8690320c0da6d7dbc0cb7b99a020c2b9adae23#5b8690320c0da6d7dbc0cb7b99a020c2b9adae23" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
@@ -1755,7 +1755,7 @@ dependencies = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=bacc00b1db9387f43a42d64f8e05457d225960f1#bacc00b1db9387f43a42d64f8e05457d225960f1" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=5b8690320c0da6d7dbc0cb7b99a020c2b9adae23#5b8690320c0da6d7dbc0cb7b99a020c2b9adae23" }
 dependencies = [
     { name = "marin-core", marker = "sys_platform == 'linux'" },
     { name = "marin-iris", marker = "sys_platform == 'linux'" },
