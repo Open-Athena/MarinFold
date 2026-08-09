@@ -93,6 +93,25 @@ file. Kept as [`data/parity_100_foldbench_biased.json`](data/parity_100_foldbenc
 
 _(Pending.)_
 
+**Known prerequisite: the checkpoint needs an HF repo id.**
+`vLLMInferenceContext.__init__` calls `levanter.tokenizers.load_tokenizer` on
+`VLLMEngineConfig.model_name`, and that resolver accepts only a local directory,
+a `mirror://` ref, or an HF Hub repo id — a `gs://` URL raises
+`HFValidationError`. The trap is that vLLM *itself* streams weights from GCS
+happily (`load_format="runai_streamer"`), so the weights path works and only the
+tokenizer path fails, inside a rollout worker after the gang has scheduled.
+`rl_config.check_engine_model_path` now rejects it at config-build time.
+
+Note this is specific to the *engine*. `build_worker_configs` resolves
+`RLJobConfig.tokenizer` once in the coordinator and ships the object to both
+workers, so that half accepts anything loadable at submit time.
+
+The fix is to publish exp163's arm-F export — weights plus the renamed tokenizer
+where id 7 is `<contacts-v1.multi>` — as an HF **model repo** and pass the repo
+id. It currently lives only in the open-athena *bucket*
+(`checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404`), and
+bucket paths are not repo ids. Creating the repo needs an org-scoped token.
+
 ## Conclusion
 
 _(Fill in after results are in.)_
