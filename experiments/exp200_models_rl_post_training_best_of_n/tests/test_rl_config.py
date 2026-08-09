@@ -155,10 +155,12 @@ def test_rollout_file_cap_is_above_one_steps_output(checkpoint):
 
 
 def test_regions_are_pinned_and_no_zone_is_set(checkpoint):
-    """exp163: zone-pinning starved three jobs, and with_tpu leaves regions unset
-    so the scheduler may pick a region with no v5p at all."""
+    """exp163: `with_tpu` leaves regions unset and the scheduler may pick one with
+    no v5p at all, while zone-pinning starved three jobs. Pin the region, and pin
+    it to where capacity was actually measured — us-central1 held 103 ready v5p-8
+    on 2026-08-09 against 3 in us-east5."""
     run_config = build(checkpoint).run_config
-    assert run_config.regions == ["us-east5", "us-central1"]
+    assert run_config.regions == ["us-central1"]
     assert run_config.zone is None
 
 
@@ -218,3 +220,38 @@ def test_accepts_local_dirs_mirrors_and_repo_ids(checkpoint):
     rl_config.check_engine_model_path(checkpoint)                       # local dir
     rl_config.check_engine_model_path("mirror://tokenizers/x/y")        # mirror ref
     rl_config.check_engine_model_path("timodonnell/contacts-v1-multi")  # HF repo id
+
+
+def test_canonical_model_name_satisfies_both_of_its_consumers():
+    """It feeds a substring match AND an exact-key lookup, which pull apart.
+
+    `_get_renderer` only needs "qwen" or "llama" in the string, so a descriptive
+    invented name passes it — and then `reload_model` raises
+    `KeyError: No MODEL_MAPPING registered` when it looks the same string up as an
+    exact key. That failure appears only on the weight-transfer path, so a
+    generation-only run (the Phase 1 gate) cannot catch it.
+    """
+    from marin.rl.environments.inference_ctx.vllm_utils import (
+        MODEL_MAPPINGS,
+        MODEL_TRANSPOSE_KEYS,
+    )
+
+    name = rl_config.CANONICAL_MODEL_NAME
+    assert "qwen" in name.lower() or "llama" in name.lower(), "renderer selection would raise"
+    assert MODEL_MAPPINGS[name], "weight transfer would raise KeyError"
+    assert MODEL_TRANSPOSE_KEYS[name], "weight transfer would raise KeyError"
+
+
+def test_borrowed_qwen3_key_is_exact_not_approximate(checkpoint):
+    """Borrowing the 1.7B key for a 1.5B model is only safe because the mapping is
+    per-architecture. If upstream ever makes it size-dependent, this fails."""
+    from marin.rl.environments.inference_ctx.vllm_utils import (
+        _MODEL_MAPPINGS,
+        _MODEL_TRANSPOSE_KEYS,
+    )
+
+    qwen3 = [k for k in _MODEL_MAPPINGS if "Qwen3" in k]
+    assert len(qwen3) > 1
+    assert all(_MODEL_MAPPINGS[k] == _MODEL_MAPPINGS[qwen3[0]] for k in qwen3)
+    assert all(_MODEL_TRANSPOSE_KEYS[k] == _MODEL_TRANSPOSE_KEYS[qwen3[0]] for k in qwen3)
+    assert rl_config.CANONICAL_MODEL_NAME in qwen3

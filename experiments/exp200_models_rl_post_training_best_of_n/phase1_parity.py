@@ -53,6 +53,7 @@ from marin.rl.environments.inference_ctx import (
 
 import _exp163_rollout_metrics as rm
 import contact_rewards as cr
+import rl_config
 from contacts_env import ContactsV1RLEnv
 
 logger = logging.getLogger(__name__)
@@ -109,8 +110,9 @@ def main() -> int:
         inference_config=vLLMInferenceContextConfig(
             engine=VLLMEngineConfig(
                 model_name=local_model,
-                # Substring-matched to pick a renderer this path never reaches.
-                canonical_model_name="qwen3-1_5b-contacts-v1-multi",
+                # Same string rl_config uses: a registered Qwen3 key, so the
+                # renderer constructs AND the weight-transfer mapping resolves.
+                canonical_model_name=rl_config.CANONICAL_MODEL_NAME,
                 max_model_len=a.max_model_len,
                 tensor_parallel_size=a.tensor_parallel_size,
                 gpu_memory_utilization=0.90,

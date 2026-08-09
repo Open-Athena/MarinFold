@@ -88,8 +88,21 @@ MODEL_CONFIG = Qwen3Config(
 )
 SEQ_LEN = 8192
 
-# See the module docstring: substring-matched to pick a renderer we never use.
-CANONICAL_MODEL_NAME = "qwen3-1_5b-contacts-v1-multi"
+# `canonical_model_name` has TWO consumers, and they want different things:
+#   1. `vLLMInferenceContext._get_renderer` substring-matches it for "qwen"/"llama"
+#      and raises otherwise. (The renderer is then never used — see contacts_env.)
+#   2. `reload_model` looks it up as an EXACT KEY in `MODEL_MAPPINGS` /
+#      `_MODEL_TRANSPOSE_KEYS` to convert levanter weights into vLLM's layout.
+# A descriptive invented name satisfies (1) and fails (2) with
+# `KeyError: No MODEL_MAPPING registered` — and only on the weight-transfer path,
+# so pure-generation runs like the Phase 1 gate never surface it.
+#
+# All three registered Qwen3 entries (0.6B / 1.7B / 8B) resolve to the identical
+# `levanter_qwen_to_vllm_mapping()` and `llama_transpose_keys`: the mapping is
+# per-ARCHITECTURE, not per-size, so borrowing the 1.7B key for this 1.5B model is
+# exact rather than approximate. The real model config comes from
+# `VLLMEngineConfig.model_name`, which this does not touch.
+CANONICAL_MODEL_NAME = "Qwen/Qwen3-1.7B"
 
 WANDB_PROJECT = "MarinFold"
 WANDB_ENTITY = "open-athena"
