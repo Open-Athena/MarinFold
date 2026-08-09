@@ -50,7 +50,6 @@ from haliax import Axis, NamedArray
 from jaxtyping import PRNGKeyArray
 from levanter.models.lm_model import LmConfig, LmExample
 from levanter.models.qwen import Qwen3Config, Qwen3LMHeadModel
-from levanter.tracker import jit_log
 
 from marinfold_models.loss_masks import (
     BEGIN_SEQUENCE_ID,
@@ -150,17 +149,7 @@ class Qwen3StatementHeadMaskedLMHeadModel(Qwen3LMHeadModel):
         )
         weight = _next_token_weight(Pos, example.loss_weight)
 
-        masked_loss = _weighted_mean(weighted * keep, weight * keep, reduction_axis)
-        if reduction_axis is None:
-            unmasked_loss = _weighted_mean(weighted, weight, None)
-            kept_fraction = hax.sum(weight * keep) / hax.sum(weight)
-            jit_log(
-                {
-                    "train/loss_unmasked": unmasked_loss,
-                    "train/kept_slot_fraction": kept_fraction,
-                }
-            )
-        return masked_loss
+        return _weighted_mean(weighted * keep, weight * keep, reduction_axis)
 
 
 def _next_token_weight(Pos: Axis, loss_weight: NamedArray) -> NamedArray:

@@ -33,10 +33,19 @@ a single embedding row each — negligible beside the transformer, and the
 Loss reporting
 --------------
 
-``train/loss`` is the soft loss (what is optimized). ``train/loss_hard`` is the
-ordinary one-hot loss from the same forward pass — the series comparable with
-every historical contacts-v1 run — and ``train/target_entropy`` is their
-difference in expectation, i.e. the nuisance the soft target absorbs.
+``train/loss`` is the soft loss (what is optimized). The comparable one-hot
+series comes from the eval path below.
+
+**Why the auxiliary metrics are not logged from here.** ``levanter.tracker
+.jit_log`` goes through ``jax.experimental.io_callback``, and an io callback
+cannot be differentiated — levanter's train step JVPs the loss, so logging the
+hard loss from inside it fails with ``ValueError: IO callbacks do not support
+JVP.``. levanter's own ``jit_log`` calls sit in the train step, outside the
+differentiated region, and the ``loss_function`` contract returns a bare scalar
+with no aux channel. The comparable hard-loss series therefore comes from the
+**eval** path, which reports the ordinary one-hot loss and is logged every
+``steps_per_eval``.
+
 
 Evaluation (``reduction=None``) returns the **hard** per-position loss, so
 ``eval/.../loss`` stays directly comparable with #117/#150. Unlike the masked
@@ -56,7 +65,6 @@ from haliax import Axis, NamedArray
 from jaxtyping import PRNGKeyArray
 from levanter.models.lm_model import LmConfig, LmExample
 from levanter.models.qwen import Qwen3Config, Qwen3LMHeadModel
-from levanter.tracker import jit_log
 
 from marinfold_models.soft_targets import (
     BEGIN_SEQUENCE_ID,
@@ -166,19 +174,7 @@ class Qwen3SoftTargetLMHeadModel(Qwen3LMHeadModel):
         z_soft = hax.dot(activations, direction, axis=self.Embed) / safe_normalizer
         soft = hax.where(is_soft & (normalizer > 0), log_normalizer - z_soft, hard)
 
-        soft_loss = _weighted_mean(soft * weight, weight, reduction_axis)
-        if reduction_axis is None:
-            hard_loss = _weighted_mean(hard * weight, weight, None)
-            jit_log(
-                {
-                    "train/loss_hard": hard_loss,
-                    "train/target_entropy": hard_loss - soft_loss,
-                    "train/soft_slot_fraction": (
-                        hax.sum(weight * is_soft.astype(weight.dtype)) / hax.sum(weight)
-                    ),
-                }
-            )
-        return soft_loss + aux_loss
+        return _weighted_mean(soft * weight, weight, reduction_axis) + aux_loss
 
 
 def _next_token_weight(Pos: Axis, loss_weight: NamedArray) -> NamedArray:
