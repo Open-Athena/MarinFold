@@ -89,6 +89,34 @@ target list instead of sampling it, returning 100% foldbench100, where exp163's
 own numbers give 0.1296 against 0.2928 on the denovo_pdb rows that are 71% of the
 file. Kept as [`data/parity_100_foldbench_biased.json`](data/parity_100_foldbench_biased.json).
 
+### Phase 2 — RL training pool (built)
+
+10,000 proteins x 16 resampled realizations, built in 69s on one CPU pod in
+us-east5 (job `/bizon/exp200-prep-pool`). Source:
+[`data/train_pool_summary.json`](data/train_pool_summary.json).
+
+`gs://marin-us-east5/protein-structure/MarinFold/exp200/train/{targets.parquet,prompts/}`
+
+| | |
+|---|---|
+| source | exp53 contacts-v1 train split, AFDB **round 0** (highest pLDDT) |
+| mean global pLDDT | 89.0 (min 70.5) |
+| L | 31 / 159 / 359 / 512 (min / median / p90 / max) |
+| n_gt | 5 / 105 / 139 (min / median / mean) |
+| distinct entry ids | 10,000 |
+| distinct struct clusters | 10,000 |
+| exact sequence overlap with eval554 | **0** |
+
+The zero-overlap number is a real measurement, not a filter that silently never
+fired: both sides use the same one-letter alphabet (eval554 additionally contains
+`X` for unknown residues), so a match could have fired. Length distribution also
+lands close to the eval set (median 159 against eval554's 161), so the training
+and evaluation protein populations are comparable in the axis that most drives
+contact difficulty.
+
+Homology-level overlap is **not** addressed — only exact sequence identity. exp41
+(foldseek train-similarity) is the tool if that gap needs closing.
+
 ### Phase 3+ — RL training
 
 _(Pending.)_
