@@ -51,7 +51,47 @@ Kill criteria: mean contacts per section below 60% of baseline (reward hacking t
 
 ## Results
 
-_(Fill in after the run completes.)_
+### Phase 1 — sampling-path parity (PASSED)
+
+All 554 eval proteins x 4 rollouts, uncapped, on one v5p-8 (job
+`/bizon/exp200-parity-all554`, 47m). Source: [`data/parity_all554.json`](data/parity_all554.json),
+[`data/parity_all554_rollouts.csv`](data/parity_all554_rollouts.csv).
+
+exp200 generates through `ContactsV1RLEnv` and scores by walking **token ids**;
+exp163 generated through its own worker and scored by regexing **decoded text**.
+Running both over the same 2,216 rollouts is a check on two independent
+implementations, not a smoke test.
+
+| metric | exp200 | #163 §4.1 | delta |
+|---|---|---|---|
+| best_f1 | 0.3015 | 0.3025 | −0.0010 |
+| last_f1 | 0.2456 | 0.2493 | −0.0037 |
+| first_f1 | 0.1849 | 0.1840 | +0.0009 |
+| n_sections | 14.23 | 14.99 | −0.76 |
+| mean_jaccard | 0.0677 | 0.0710 | −0.0033 |
+
+Agreement between the two scorers: **max |best_f1 delta| 0.0**, **max |section_f1
+delta| 0.0**, 0/2216 malformed prompts. Free-generation termination reproduced
+independently at 0.569 against the published ~0.56.
+
+3/2216 rollouts disagree on section COUNT, all of them truncated at the token
+budget: exp163's regex keeps a trailing empty section after the final
+`<begin_statements>` where the token walk does not. `best_f1` is identical on all
+three — an empty section scores zero and never wins a max — so no score is
+affected.
+
+Measured per-contact precision is **0.2294**, which sets `p_bar`; the configured
+starting value of 0.30 is close enough not to bias the first steps much.
+
+One earlier run on 100 proteins read best_f1 0.1498 and looked like a 50%
+regression. It was a sampling bug, not a model result — `--limit` truncated the
+target list instead of sampling it, returning 100% foldbench100, where exp163's
+own numbers give 0.1296 against 0.2928 on the denovo_pdb rows that are 71% of the
+file. Kept as [`data/parity_100_foldbench_biased.json`](data/parity_100_foldbench_biased.json).
+
+### Phase 3+ — RL training
+
+_(Pending.)_
 
 ## Conclusion
 
