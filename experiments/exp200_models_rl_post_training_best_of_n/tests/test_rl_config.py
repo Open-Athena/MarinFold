@@ -111,10 +111,17 @@ def test_decoding_disables_top_k_and_stops_on_end(checkpoint):
         assert decoding.temperature == 1.0
 
 
-def test_on_policy_training_is_applied(checkpoint):
-    config = build(checkpoint)
-    assert config.weight_transfer.sync_interval_steps == 1
-    assert config.train_params.replay_buffer.max_rollout_step_delay == 0
+def test_weight_sync_is_amortized_and_the_buffer_admits_that_staleness(checkpoint):
+    """sync_interval_steps=1 measured at 6.2 min/step with generation at 0.4% of it.
+
+    The freshness window must match the sync interval: max_rollout_step_delay=0
+    (what with_on_policy_training forces) drops everything the rollout worker
+    produces between syncs, and the trainer starves.
+    """
+    config = build(checkpoint, sync_interval_steps=8)
+    assert config.weight_transfer.sync_interval_steps == 8
+    assert config.train_params.replay_buffer.max_rollout_step_delay == 8
+    # Each rollout still trains exactly once.
     assert config.train_params.replay_buffer.max_samples == 1
 
 

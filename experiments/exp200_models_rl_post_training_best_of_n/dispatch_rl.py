@@ -95,6 +95,7 @@ def build_configs():
                 num_rollout_workers=int(os.environ.get("EXP200_ROLLOUT_WORKERS", "2")),
                 regions=tuple(os.environ.get("EXP200_REGIONS", "us-central1").split(",")),
                 steps_per_eval=int(os.environ.get("EXP200_STEPS_PER_EVAL", "50")),
+                sync_interval_steps=int(os.environ.get("EXP200_SYNC_INTERVAL", "8")),
                 limit=int(limit) if limit else None,
             )
         )

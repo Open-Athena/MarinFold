@@ -311,6 +311,7 @@ def build_rl_job_config(
     # few hundred MB over a whole run. Immaterial next to waiting for a v5p-16.
     regions: tuple[str, ...] = ("us-central1",),
     steps_per_eval: int = 50,
+    sync_interval_steps: int = 8,
     limit: int | None = None,
     seed: int = 0,
 ) -> RLJobConfig:
@@ -333,6 +334,20 @@ def build_rl_job_config(
         regions: Regions, NOT zones. exp163 zone-pinning starved three jobs, and
             ``with_tpu`` leaves regions unset so the scheduler may pick one with
             no v5p at all.
+        sync_interval_steps: Train steps between weight transfers. NOT 1.
+            Measured on the nano run: a step took 372 s, of which generation was
+            1.5 s — 0.4%. The rest is shipping a 2.9 GB bf16 model over Arrow
+            Flight every step and blocking both workers on it. At 1, a 150-step
+            arm is 15.5 h and the three-arm sweep is nearly two days; at 8 an arm
+            is about 2 h.
+
+            The cost is that training is no longer strictly on-policy, which is
+            what PPO clipping exists to bound — and we have real sampler logprobs
+            because vLLM always returns them, so the ratio is exact rather than
+            assumed. The dense reward is also centred on an EMA of the policy's
+            own recent precision, which already lags by construction, so a few
+            steps of staleness is consistent with the objective rather than a
+            departure from it.
     """
     vocab_size = preflight_checkpoint(checkpoint)
     check_engine_model_path(checkpoint)
@@ -402,9 +417,16 @@ def build_rl_job_config(
         replay_buffer=ReplayBufferConfig(
             capacity=n_prompts * n_generations * 4,
             alpha=3.0,
+            # Each rollout trains once: it was drawn from a policy this run is
+            # actively moving away from.
             max_samples=1,
-            max_rollout_step_delay=0,
+            # Must admit rollouts generated since the last weight transfer, or the
+            # freshness filter drops everything the rollout worker produces between
+            # syncs and the trainer starves.
+            max_rollout_step_delay=sync_interval_steps,
             max_rollout_timestamp_delay=3600.0,
+            # Keys off episode_reward only, so it would drop groups whose document
+            # returns happen to tie despite informative per-contact advantages.
             filter_out_groups_with_no_variance=False,
         ),
     )
@@ -440,7 +462,7 @@ def build_rl_job_config(
         ),
         weight_transfer=WeightTransferConfig(
             mode=WeightTransferMode.ARROW_FLIGHT,
-            sync_interval_steps=1,
+            sync_interval_steps=sync_interval_steps,
             convert_to_bfloat16=True,
         ),
         run_config=RunConfig(
@@ -463,9 +485,10 @@ def build_rl_job_config(
         ),
         pip_dependency_groups=[],
     )
-    # Lockstep rollout/train: freshest possible on-policy data, which matters here
-    # because the dense reward is centred on the policy's OWN recent precision.
-    return config.with_on_policy_training()
+    # Deliberately NOT config.with_on_policy_training(): that forces
+    # sync_interval_steps=1, which measured at 6.2 min/step with generation
+    # accounting for 0.4% of it. See the sync_interval_steps docstring.
+    return config
 
 
 __all__ = [
