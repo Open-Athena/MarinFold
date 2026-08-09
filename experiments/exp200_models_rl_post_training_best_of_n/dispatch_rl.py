@@ -37,7 +37,14 @@ from rl_config import build_rl_job_config
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CHECKPOINT = "gs://marin-us-east5/MarinFold/exp163/tpu/tpuF-bf16/step-404"
+# An HF repo id, not a gs:// path: the rollout worker resolves its tokenizer from
+# this string via levanter's load_tokenizer, which cannot read object-store URLs.
+# Published by dispatch_publish.py from the open-athena bucket copy (the one with
+# the renamed <contacts-v1.multi> tokenizer).
+DEFAULT_CHECKPOINT = "timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404"
+DEFAULT_TARGETS = "gs://marin-us-east5/protein-structure/MarinFold/exp200/train/targets.parquet"
+DEFAULT_PROMPTS = "gs://marin-us-east5/protein-structure/MarinFold/exp200/train/prompts"
+DEFAULT_OUTPUT_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp200"
 
 
 def _env(name: str, default: str | None = None) -> str:
@@ -70,12 +77,12 @@ def build_configs():
                 run_name=run_name,
                 checkpoint=checkpoint,
                 tokenizer=_env("EXP200_TOKENIZER", checkpoint),
-                targets_path=_env("EXP200_TARGETS"),
-                prompts_path=_env("EXP200_PROMPTS"),
-                output_prefix=_env("EXP200_OUTPUT_PREFIX"),
+                targets_path=_env("EXP200_TARGETS", DEFAULT_TARGETS),
+                prompts_path=_env("EXP200_PROMPTS", DEFAULT_PROMPTS),
+                output_prefix=_env("EXP200_OUTPUT_PREFIX", DEFAULT_OUTPUT_PREFIX),
                 learning_rate=lr,
                 num_train_steps=int(os.environ.get("EXP200_STEPS", "150")),
-                train_batch_size=int(os.environ.get("EXP200_TRAIN_BATCH", "128")),
+                train_batch_size=int(os.environ.get("EXP200_TRAIN_BATCH", "32")),
                 n_prompts=int(os.environ.get("EXP200_N_PROMPTS", "16")),
                 n_generations=int(os.environ.get("EXP200_N_GENERATIONS", "8")),
                 max_sections=max_sections,
@@ -83,10 +90,10 @@ def build_configs():
                 lam_doc=float(os.environ.get("EXP200_LAM_DOC", "1.0")),
                 err_decay=float(os.environ.get("EXP200_ERR_DECAY", "0.5")),
                 kl_beta=float(os.environ.get("EXP200_KL_BETA", "0.01")),
-                train_tpu_type=os.environ.get("EXP200_TRAIN_TPU", "v5p-16"),
+                train_tpu_type=os.environ.get("EXP200_TRAIN_TPU", "v5p-8"),
                 inference_tpu_type=os.environ.get("EXP200_INFERENCE_TPU", "v5p-8"),
                 num_rollout_workers=int(os.environ.get("EXP200_ROLLOUT_WORKERS", "2")),
-                regions=tuple(os.environ.get("EXP200_REGIONS", "us-east5,us-central1").split(",")),
+                regions=tuple(os.environ.get("EXP200_REGIONS", "us-central1").split(",")),
                 steps_per_eval=int(os.environ.get("EXP200_STEPS_PER_EVAL", "50")),
                 limit=int(limit) if limit else None,
             )

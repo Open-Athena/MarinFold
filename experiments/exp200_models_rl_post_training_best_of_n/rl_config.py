@@ -101,7 +101,11 @@ DEFAULT_MAX_PROTEIN_LEN = 512
 
 # exp163 arm F's measured per-contact precision on held-out proteins. Only the
 # starting point for p_bar; the environment tracks it from there.
-INITIAL_PRECISION = 0.30
+# Measured on the Phase 1 gate: per-contact precision over 2,216 uncapped rollouts
+# was 0.2294. Only the starting point — the environment tracks it from there — but
+# starting close matters, because a p_bar above the truth makes every contact look
+# like a loss for the first few steps.
+INITIAL_PRECISION = 0.23
 
 
 def multi_output_tokens(max_sections: int, section_contacts: int) -> int:
@@ -136,9 +140,17 @@ def preflight_checkpoint(checkpoint: str) -> int:
     Returns:
         The checkpoint's ``vocab_size``.
     """
-    url = f"{checkpoint.rstrip('/')}/config.json"
-    with fsspec.open(url, "r") as fh:
-        cfg = json.load(fh)
+    if "://" in checkpoint or os.path.isdir(checkpoint):
+        url = f"{checkpoint.rstrip('/')}/config.json"
+        with fsspec.open(url, "r") as fh:
+            cfg = json.load(fh)
+    else:
+        # An HF repo id — the form the rollout worker's tokenizer loader requires.
+        from huggingface_hub import hf_hub_download
+
+        url = f"{checkpoint}/config.json"
+        with open(hf_hub_download(checkpoint, "config.json")) as fh:
+            cfg = json.load(fh)
 
     if cfg.get("rope_theta") is None:
         raise ValueError(
@@ -261,8 +273,8 @@ def build_rl_job_config(
     output_prefix: str,
     learning_rate: float,
     num_train_steps: int,
-    train_batch_size: int = 128,
-    n_prompts: int = 32,
+    train_batch_size: int = 32,
+    n_prompts: int = 16,
     n_generations: int = 8,
     max_sections: int = DEFAULT_MAX_SECTIONS,
     lam_step: float = 1.0,
@@ -271,12 +283,20 @@ def build_rl_job_config(
     kl_beta: float = 0.01,
     weight_decay: float = 0.0,
     max_grad_norm: float = 1.0,
-    train_tpu_type: str = "v5p-16",
+    # v5p-8 for BOTH workers, not exp163's v5p-16 trainer. Measured 2026-08-09:
+    # v5p-16 had 0 ready and 0 booting in both zones while v5p-8 had 103 ready in
+    # us-central1-a. The v5p-16 scale group exists and submitting would set Demand,
+    # but exp163 lost days to v5p gang scheduling, and a shape with 100+ idle
+    # slices is worth more than a larger one that may never place.
+    train_tpu_type: str = "v5p-8",
     inference_tpu_type: str = "v5p-8",
     num_rollout_workers: int = 2,
     inference_tensor_parallel_size: int = 4,
     gpu_memory_utilization: float = 0.90,
-    regions: tuple[str, ...] = ("us-east5", "us-central1"),
+    # Where the v5p capacity is. The training pool lives in us-east5, so prompt
+    # reads are cross-region — ~30 KB per protein and 16 proteins per step, so a
+    # few hundred MB over a whole run. Immaterial next to waiting for a v5p-16.
+    regions: tuple[str, ...] = ("us-central1",),
     steps_per_eval: int = 50,
     limit: int | None = None,
     seed: int = 0,
@@ -291,8 +311,9 @@ def build_rl_job_config(
             same region the workers run in.
         learning_rate: RL needs far less than exp163's 1e-4 fine-tune LR. Note
             marin's DAPO normalisation divides by the batch token count and then
-            again by batch size, so learning rates do not transfer from other
-            codebases — sweep it.
+            again by batch size, so learning rates transfer neither from other
+            codebases NOR across a change in ``train_batch_size`` — a batch-32
+            sweep does not hand its winner to a batch-128 run.
         kl_beta: KL anchor to the warm-start checkpoint. Non-zero by default:
             exp163's v1/v2 refiners lost 41-44% of base-task R-precision to a
             single unanchored full fine-tune.
