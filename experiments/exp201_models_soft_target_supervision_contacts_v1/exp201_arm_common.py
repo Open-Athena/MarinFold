@@ -32,8 +32,12 @@ and removes any chance of the two arms disagreeing on their corpus.
 loud failure, not a silent rebuild into another experiment's prefix.
 """
 
+import dataclasses
 import os
+from collections.abc import Sequence
+from typing import Any
 
+import numpy as np
 from fray.types import ResourceConfig
 from levanter.data.text.datasets import (
     BlockShuffleConfig,
@@ -41,6 +45,7 @@ from levanter.data.text.datasets import (
     LmDataConfig,
     UrlDatasetSourceConfig,
 )
+from levanter.data.text._batch_tokenizer import BatchTokenizer
 from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.models.lm_model import LmConfig
@@ -78,6 +83,50 @@ VAL_GLOB = f"{_DATA_PREFIX}/val/*.parquet"
 # Bare repo id: MarinFold's tokenizer-load path rejects `repo@rev`
 # (huggingface_hub's validate_repo_id -- the recurring exp85/exp120 gotcha).
 CONTACTS_V1_TOKENIZER = "timodonnell/contacts-v1-tokenizer"
+
+class ArrayExemplarBatchTokenizer(BatchTokenizer):
+    """``BatchTokenizer`` whose exemplar treats token sequences as array leaves."""
+
+    def __call__(self, batch: Sequence[dict]) -> list[dict]:
+        examples = super().__call__(batch)
+        return [{key: np.asarray(value) for key, value in example.items()} for example in examples]
+
+    @property
+    def output_exemplar(self) -> dict[str, np.ndarray]:
+        exemplar = super().output_exemplar
+        return {key: np.asarray(value) for key, value in exemplar.items()}
+
+
+@dataclasses.dataclass(frozen=True)
+class ArrayExemplarTextLmDatasetFormat(TextLmDatasetFormat):
+    """Text format that keeps packing semantics but matches the array ledger field.
+
+    Required, not belt-and-braces, for reading #150's caches. Their ledger records
+    one flat ``input_ids`` field per shard, while the reader in the marin the pod
+    installs demands the nested ``input_ids/0`` -- the #6008/#6014 cache-ledger
+    reader bug. A plain ``TextLmDatasetFormat`` therefore dies with
+    ``Sharded cache ledger missing input_ids/0 count for shard part-00000-of-00133``
+    before the first step. Returning numpy arrays from the tokenizer makes the
+    exemplar an array leaf, which is the layout the ledger actually has.
+
+    Verbatim from #150 (itself from #120/#137), which built these caches.
+    """
+
+    def build_preprocessor(
+        self, tokenizer: Any, *, enforce_eos: bool = True, enforce_bos: bool = True
+    ) -> ArrayExemplarBatchTokenizer:
+        return ArrayExemplarBatchTokenizer(
+            tokenizer,
+            enforce_bos=enforce_bos,
+            enforce_eos=enforce_eos,
+            text_field=self.text_key,
+        )
+
+
+# Registered at import. This module is imported on the pod too (it builds the
+# config there), so the registration happens where the format has to resolve.
+TextLmDatasetFormat.register_subclass("array_exemplar_text", ArrayExemplarTextLmDatasetFormat)
+
 
 TRAIN_COMPONENT_KEY = "contacts-v1-train"
 VAL_COMPONENT_KEY = "contacts-v1-val"
@@ -204,7 +253,7 @@ def build_data_config() -> LmDataConfig:
     documents are never concat-and-split, so a training window never contains a
     partial protein.
     """
-    fmt = TextLmDatasetFormat(text_key="document")
+    fmt = ArrayExemplarTextLmDatasetFormat(text_key="document")
 
     def component(cache_dir: str, urls: list[str], split: str) -> DatasetComponent:
         source = UrlDatasetSourceConfig(
