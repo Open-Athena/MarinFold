@@ -47,6 +47,8 @@ from levanter.models.lm_model import LmConfig
 from levanter.models.qwen import Qwen3Config
 from levanter.optim.config import AdamConfig
 
+from marin.training.training import run_levanter_train_lm
+
 from marinfold_models import (
     Qwen3StatementHeadMaskedConfig,
     build_train_lm_on_pod_config,
@@ -119,14 +121,38 @@ END_ID = 10
 # Must be co-located with us-east5 (marin blocks cross-region training). v5p
 # gangs only register autoscaler demand under the REGION form -- a zone= request
 # sits in coscheduling with Demand=0 forever (exp150).
-PROTEIN_RESOURCES = ResourceConfig.with_tpu(
-    os.environ.get("EXP201_TPU", "v5p-128"),
-    slice_count=int(os.environ.get("EXP201_SLICES", "1")),
-    cpu=32,
-    ram="128g",
-    disk="50g",
-    regions=[os.environ.get("EXP201_REGION", "us-east5").lower()],
-)
+TPU_TYPE = os.environ.get("EXP201_TPU", "v5p-8")
+TPU_SLICES = int(os.environ.get("EXP201_SLICES", "1"))
+TPU_REGION = os.environ.get("EXP201_REGION", "us-east5").lower()
+
+
+def build_resources(
+    tpu_type: str = TPU_TYPE,
+    slices: int = TPU_SLICES,
+    region: str = TPU_REGION,
+) -> ResourceConfig:
+    """The TPU slice for one arm.
+
+    Built by a function rather than held as a module constant because this module
+    is imported on BOTH sides -- the launcher (to size the ``JobRequest``) and the
+    training pod (to assemble its own config). Each side constructs it with its
+    own fray.
+
+    #163 measured that the 1.5B at batch 128 x seq 8192 fits a **v5p-8**, which is
+    also what places: a v5p-128 request never registered autoscaler demand and the
+    scheduler spent an hour trying to squeeze the 16-host gang onto an idle v5p-8.
+    """
+    return ResourceConfig.with_tpu(
+        tpu_type,
+        slice_count=slices,
+        cpu=32,
+        ram="128g",
+        disk="50g",
+        regions=[region],
+    )
+
+
+PROTEIN_RESOURCES = build_resources()
 
 
 def steps_per_epoch(batch_size: int = TRAIN_BATCH, seq_len: int = SEQ_LEN) -> int:
@@ -264,6 +290,53 @@ def build_on_pod_config(
     )
 
 
+def train_arm_on_pod(
+    *,
+    arm: str,
+    run_name: str,
+    learning_rate: float,
+    num_train_steps: int,
+    output_path: str,
+    tpu_type: str,
+    tpu_slices: int,
+    tpu_region: str,
+    steps_per_eval: int,
+    steps_per_checkpoint: int,
+    env_vars: dict[str, str],
+    tags: tuple[str, ...],
+) -> None:
+    """Assemble the training config **on the pod**, then run it.
+
+    This is the job entrypoint, and every argument is a primitive on purpose.
+    iris cloudpickles ``(fn, args, kwargs)``; passing an assembled
+    ``TrainLmOnPodConfig`` instead would mean the levanter that *builds* it and
+    the levanter that *loads* it have to agree, and they cannot: iris rejects a
+    ``marin-iris`` client older than 14 days, which forces the launcher onto
+    marin ``origin/main``, while the pod installs ``marin-levanter`` from PyPI,
+    whose newest release under the ``<0.3`` pin is seven weeks older. That skew
+    failed with ``AttributeError: Can't get attribute 'XprofUploadConfig'``
+    before the trainer ever started.
+
+    Because this function lives in a module (not ``__main__``) that iris bundles
+    into the workspace, cloudpickle stores it **by reference** — so the pod
+    imports this file fresh and builds the config with its own libraries. Only
+    strings and numbers cross the wire.
+    """
+    config = build_on_pod_config(
+        arm=arm,
+        run_name=run_name,
+        learning_rate=learning_rate,
+        num_train_steps=num_train_steps,
+        output_path=output_path,
+        resources=build_resources(tpu_type, tpu_slices, tpu_region),
+        env_vars=dict(env_vars),
+        steps_per_eval=steps_per_eval,
+        steps_per_checkpoint=steps_per_checkpoint,
+        tags=tuple(tags),
+    )
+    run_levanter_train_lm(config)
+
+
 __all__ = [
     "ARMS",
     "BASE_LR",
@@ -274,9 +347,11 @@ __all__ = [
     "TRAIN_CACHE_DIR",
     "VAL_CACHE_DIR",
     "build_data_config",
+    "build_resources",
     "build_on_pod_config",
     "evals_per_epoch_steps",
     "model_config",
     "steps_for_epochs",
     "steps_per_epoch",
+    "train_arm_on_pod",
 ]

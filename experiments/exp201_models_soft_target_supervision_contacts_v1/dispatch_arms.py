@@ -46,7 +46,7 @@ import sys
 
 from fray.types import Entrypoint, JobRequest, create_environment
 from marin.training.run_environment import extras_for_resources
-from marin.training.training import resolve_training_env, run_levanter_train_lm
+from marin.training.training import resolve_training_env
 
 # Fail loudly on a stale fray. The frozen `marin-*-latest` wheels predate both
 # `priority` (batch-band dispatch) and `processes_per_task`, and iris separately
@@ -63,12 +63,15 @@ from exp201_arm_common import (
     BASE_LR,
     OUTPUT_PREFIX,
     PROTEIN_RESOURCES,
+    TPU_REGION,
+    TPU_SLICES,
+    TPU_TYPE,
     TRAIN_CACHE_DIR,
     VAL_CACHE_DIR,
-    build_on_pod_config,
     evals_per_epoch_steps,
     steps_for_epochs,
     steps_per_epoch,
+    train_arm_on_pod,
 )
 
 # The mini-sweep: multiples of #117's tuned peak LR. Masking removes 24 % of the
@@ -107,16 +110,20 @@ def build_request(
     if max_steps is not None:
         num_train_steps = min(num_train_steps, max_steps)
         name = f"{name}-smoke{num_train_steps}"
-    on_pod_config = build_on_pod_config(
+    # Primitives only -- the pod assembles the config itself. See
+    # `train_arm_on_pod` for why passing an assembled config does not work.
+    entrypoint_kwargs = dict(
         arm=arm,
         run_name=name,
         learning_rate=learning_rate,
         num_train_steps=num_train_steps,
         output_path=f"{OUTPUT_PREFIX}/{name}",
-        resources=PROTEIN_RESOURCES,
-        env_vars=env_vars,
+        tpu_type=TPU_TYPE,
+        tpu_slices=TPU_SLICES,
+        tpu_region=TPU_REGION,
         steps_per_eval=evals_per_epoch_steps(),
         steps_per_checkpoint=steps_per_epoch(),
+        env_vars=dict(env_vars),
         tags=(f"epochs-{epochs}",),
     )
     environment = create_environment(
@@ -126,7 +133,7 @@ def build_request(
     )
     return JobRequest(
         name=name,
-        entrypoint=Entrypoint.from_callable(run_levanter_train_lm, args=[on_pod_config]),
+        entrypoint=Entrypoint.from_callable(train_arm_on_pod, kwargs=entrypoint_kwargs),
         resources=PROTEIN_RESOURCES,
         environment=environment,
         replicas=1,
