@@ -76,7 +76,7 @@ unknown two-week sweep with:
 ```text
 heartbeat_every = 30 minutes
 reslice_after = 1 hour
-restart_after = 12 hours
+restart_after = 3 hours
 relocate_after = 3 days
 pending_target_limit = 1
 ```

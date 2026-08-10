@@ -76,7 +76,7 @@ Ask only for missing information. Offer the recommended answer first.
    “training chips only,” “4–16-chip inference TPUs in `euw4`,” or “32+-chip
    TPUs in any region.”
 5. **Sweep timing.** Recommend `heartbeat_every=30m`, `reslice_after=1h`,
-   `restart_after=12h`, and `relocate_after=3d`. Explain that they define the major
+   `restart_after=3h`, and `relocate_after=3d`. Explain that they define the major
    scheduled behavior to expect and should remain unchanged without a concrete
    reason. Ask whether to use the defaults.
 
