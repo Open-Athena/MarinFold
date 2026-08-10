@@ -61,6 +61,7 @@ from marinfold.inference._config import (  # noqa: E402
 SURVEY_REPOS = (
     "open-athena/marinfold-exp117",
     "open-athena/marinfold-exp146",
+    "open-athena/marinfold-exp199",
     "open-athena/marinfold-exp75",
 )
 

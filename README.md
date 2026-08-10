@@ -25,10 +25,14 @@ The progression tracked over time, with every number's source, is in [exp180](ex
 
 MarinFold predicts a **residue–residue contact map** from a single sequence —
 no MSA, no template, no structure. The default model in
-[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is `contacts-v1-exp166-1.5B` —
-the `#166 best` bar in *Current performance* above, an amino-acid augmentation
-continue-train of [#117](https://github.com/Open-Athena/MarinFold/issues/117)
-from [#166](https://github.com/Open-Athena/MarinFold/issues/166).
+[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is `contacts-v1-exp199-1.5B` —
+a 1.47B Qwen3 trained from scratch on a 50/50 AFDB + ESM-Atlas mixture on
+CoreWeave H100s, from [#199](https://github.com/Open-Athena/MarinFold/issues/199)
+and scored in [#204](https://github.com/Open-Athena/MarinFold/issues/204).
+R-precision **0.587** on the 554-protein contact benchmark, against
+single-sequence Protenix-v2's 0.603 — a paired difference of −0.016 with a 95%
+CI of [−0.041, +0.009], i.e. no longer distinguishable on that benchmark. The
+previous default, `contacts-v1-exp166-1.5B`, is 0.562.
 
 ### GPU example
 
@@ -58,10 +62,10 @@ uv run marinfold infer \
 
 `--out` holds one `P(contact)` score per residue pair; `--out-plots` is the
 contact-map heatmap. The first run downloads our 1.5B contacts-v1 model
-(~6 gb). Omitting `--model` uses the default (`contacts-v1-exp166-1.5B`); the
-earlier contacts-v1 checkpoints are available as `--model contacts-v1-exp117-1.5B`
-/ `contacts-v1-exp120-1.5B` / `contacts-v1-exp75-1.5B`, and the older distogram
-models as `--model 1B` / `1.5B` (see below).
+(~6 gb). Omitting `--model` uses the default (`contacts-v1-exp199-1.5B`); the
+earlier contacts-v1 checkpoints are available as `--model contacts-v1-exp166-1.5B`
+/ `contacts-v1-exp117-1.5B` / `contacts-v1-exp120-1.5B` / `contacts-v1-exp75-1.5B`,
+and the older distogram models as `--model 1B` / `1.5B` (see below).
 
 The command above uses the fast **`pairwise`** readout (~0.3 s/protein). Our
 **best** inference — what every MarinFold bar in *Current performance* uses —
@@ -73,7 +77,7 @@ surface narrow):
 
 ```bash
 uv run contacts-v1 infer \
-    --backend vllm --model contacts-v1-exp166-1.5B \
+    --backend vllm --model contacts-v1-exp199-1.5B \
     --method rollout --n-rollouts 100 \
     --input-sequence $SEQUENCE \
     --out ~/prediction.json --out-plots ~/contact_map.pdf
@@ -222,8 +226,8 @@ uv run contacts-and-distances-v1 evaluate \
 
 ## Colab Notebooks
 
-- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run the default `contacts-v1-exp166-1.5B` model on a structure from RCSB and plot the ground-truth vs predicted contact map (choose `pairwise` or `rollout` inference).
-- [Fold From Contacts 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/fold_from_contacts1.ipynb) — a classical "approximate AlphaFold" (Floyd–Warshall + MDS) that folds a 3D backbone from predicted contacts, following [sokrypton/ml4me](https://colab.research.google.com/github/sokrypton/ml4me/blob/main/AlphaFold_approx_v2.ipynb) but sourcing contacts from `contacts-v1-exp166-1.5B` (from sequence alone) instead of the MSA. Takes any RCSB PDB id (MSA built via the ColabFold MMseqs2 API) or an AlphaFold-DB UniProt id; compares MarinFold vs MSA-coevolution contact maps side by side, and toggles which one drives the fold (with a py3Dmol overlay vs the reference). Ready-made examples plus a `custom` option for any PDB/UniProt id; the default `1R69` (434 repressor) has a deep MSA, and `1QYS` (Top7) is a designed protein with a nearly empty MSA.
+- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run the default `contacts-v1-exp199-1.5B` model on a structure from RCSB and plot the ground-truth vs predicted contact map (choose `pairwise` or `rollout` inference).
+- [Fold From Contacts 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/fold_from_contacts1.ipynb) — a classical "approximate AlphaFold" (Floyd–Warshall + MDS) that folds a 3D backbone from predicted contacts, following [sokrypton/ml4me](https://colab.research.google.com/github/sokrypton/ml4me/blob/main/AlphaFold_approx_v2.ipynb) but sourcing contacts from `contacts-v1-exp199-1.5B` (from sequence alone) instead of the MSA. Takes any RCSB PDB id (MSA built via the ColabFold MMseqs2 API) or an AlphaFold-DB UniProt id; compares MarinFold vs MSA-coevolution contact maps side by side, and toggles which one drives the fold (with a py3Dmol overlay vs the reference). Ready-made examples plus a `custom` option for any PDB/UniProt id; the default `1R69` (434 repressor) has a deep MSA, and `1QYS` (Top7) is a designed protein with a nearly empty MSA.
 - [Inspect Data 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inspect_data1.ipynb) — browse legacy `timodonnell/protein-docs` subsets plus newer `open-athena/MarinFold` bucket parquet data, with sample documents and parquet schema previews.
 - [Short-Document Bias](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/short_document_bias.ipynb) — does `contacts-v1-exp75-1.5B` under-generate contacts / emit too-short rollout documents vs the ground truth? ([issue #142](https://github.com/Open-Athena/MarinFold/issues/142)) Part A reproduces the published 12-protein × 200-rollout finding (no GPU); Part B regenerates rollouts on a GPU. The shortfall is mild-to-moderate (`pred/gt ≈ 0.70`), never truncated (100% finish), and tracks difficulty (`corr(pred/gt, recall) = +0.84`) — a symptom of the model being unsure of the fold, not a decoding bug.
 - [Retraction Mode Playground](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/retraction_mode_playground.ipynb) — `exp175-cv1-1.5B-mode50-v2`, a contacts-v1 model that can take back its own predictions mid-rollout with a `<retract>` statement, and whose first token decides whether it may ([#175](https://github.com/Open-Athena/MarinFold/issues/175)). Same weights, same protein, one token different: `<contacts-v1>` gives 0.1 retractions per rollout, `<contacts-v1.backtracking>` gives 42. Shows what it retracts and how far back it reaches, votes rollouts into a contact map, and compares the two modes side by side. Free Colab T4, no login. **It is deliberately not the accuracy frontier** — it scores −0.006 (clean) / −0.015 (retraction) R-precision against the `exp120` model it was fine-tuned from; use `1.5B` for prediction.
