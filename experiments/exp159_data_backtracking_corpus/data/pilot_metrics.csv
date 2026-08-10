@@ -1,0 +1,4 @@
+entry_id,L,n_gt,wall_s,propose_calls,score_calls,n_contact_stmts,n_retract_stmts,n_reemit,n_fp_emitted,fp_retracted_by_trigger,fp_retracted_at_flush,tp_retracted_by_trigger,trigger_recall,mean_trigger_delay,doc_tokens,correct,folds_to_gt,truncated
+AF-A0A0E3P1D7-F1,55,33,14.37,38,13,57,24,0,24,14,10,0,0.583,15.3,361,True,True,False
+AF-A0A0R2QD14-F1,65,23,14.77,40,12,52,29,0,29,23,6,0,0.793,4.5,381,True,True,False
+AF-A0A0W8FZR3-F1,69,6,9.68,27,9,32,26,0,26,9,17,0,0.346,4.0,320,True,True,False

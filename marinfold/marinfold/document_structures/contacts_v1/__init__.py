@@ -65,6 +65,12 @@ from .parse import (
     iter_parquet_analyzed_structures,
     residues_from_sequence,
 )
+from .read import (
+    FoldResult,
+    fold_statements,
+    iter_structure_statements,
+    live_contacts,
+)
 from .plots import plot_evaluate_pdf, plot_infer_pdf
 from .vocab import (
     CONTEXT_LENGTH,
@@ -85,6 +91,7 @@ __all__ = [
     "AnalyzedStructure",
     "ContactStructure",
     "EmittedContact",
+    "FoldResult",
     "GenerationConfig",
     "GenerationResult",
     "InferenceConfig",
@@ -96,11 +103,14 @@ __all__ = [
     "analyzed_to_row",
     "build_document",
     "evaluate",
+    "fold_statements",
     "generate_document",
     "generate_documents",
     "generate_sequence_only_document",
     "iter_analyzed_structures",
     "iter_parquet_analyzed_structures",
+    "iter_structure_statements",
+    "live_contacts",
     "plot_evaluate_pdf",
     "plot_infer_pdf",
     "predict",
