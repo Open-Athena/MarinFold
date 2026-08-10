@@ -209,6 +209,41 @@ def check_engine_model_path(checkpoint: str) -> None:
         )
 
 
+def check_region_locality(regions: tuple[str, ...], **paths: str) -> None:
+    """Refuse a config whose data lives in a different region from the compute.
+
+    AGENTS.md requires the bucket region to match the zone the workers run in, and
+    marin enforces it: `rigging.filesystem.cross_region.TransferBudgetExceeded`.
+    That is not a soft warning — it killed a three-arm sweep an hour in, after the
+    trainers had started and the rollout workers had written thousands of rollouts.
+
+    The trap is that the read volume looks trivial. Prompts are ~30 KB per protein,
+    so cross-region prompt fetches really are immaterial. What is not immaterial is
+    everything ELSE on the same prefix: rollout spill (128 rollouts per batch,
+    thousands of batches, four workers) and checkpoints. Reasoning about only the
+    reads is how this was justified the first time.
+
+    Args:
+        regions: the compute regions from RunConfig.
+        **paths: named object-store URLs to check, e.g. ``targets=...``.
+    """
+    allowed = set(regions)
+    for name, url in paths.items():
+        if not url or not url.startswith("gs://"):
+            continue
+        bucket = url[len("gs://") :].split("/", 1)[0]
+        if not bucket.startswith("marin-"):
+            continue
+        region = bucket[len("marin-") :]
+        if region not in allowed:
+            raise ValueError(
+                f"{name} is in {region} but the workers run in {sorted(allowed)}: {url}\n"
+                "Co-locate the data with the compute (AGENTS.md), or marin will abort the "
+                "job with TransferBudgetExceeded once rollout spill and checkpoints start "
+                "flowing. Prompt READS are small; the spill and checkpoints are not."
+            )
+
+
 def build_curriculum(
     *,
     targets_path: str,
@@ -356,6 +391,9 @@ def build_rl_job_config(
     """
     vocab_size = preflight_checkpoint(checkpoint)
     check_engine_model_path(checkpoint)
+    check_region_locality(
+        regions, targets=targets_path, prompts=prompts_path, output_prefix=output_prefix
+    )
     prefix = output_prefix.rstrip("/")
 
     curriculum = build_curriculum(
@@ -502,6 +540,7 @@ def build_rl_job_config(
 __all__ = [
     "CANONICAL_MODEL_NAME",
     "check_engine_model_path",
+    "check_region_locality",
     "MODEL_CONFIG",
     "SEQ_LEN",
     "build_curriculum",

@@ -42,9 +42,13 @@ logger = logging.getLogger(__name__)
 # Published by dispatch_publish.py from the open-athena bucket copy (the one with
 # the renamed <contacts-v1.multi> tokenizer).
 DEFAULT_CHECKPOINT = "timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404"
-DEFAULT_TARGETS = "gs://marin-us-east5/protein-structure/MarinFold/exp200/train/targets.parquet"
-DEFAULT_PROMPTS = "gs://marin-us-east5/protein-structure/MarinFold/exp200/train/prompts"
-DEFAULT_OUTPUT_PREFIX = "gs://marin-us-east5/protein-structure/MarinFold/exp200"
+# us-central1, matching where the v5p capacity is. The pool was built in us-east5
+# (next to the exp53 corpus) and mirrored here; running compute in one region
+# against data in another aborts with TransferBudgetExceeded once rollout spill
+# starts flowing. check_region_locality enforces the match.
+DEFAULT_TARGETS = "gs://marin-us-central1/protein-structure/MarinFold/exp200/train/targets.parquet"
+DEFAULT_PROMPTS = "gs://marin-us-central1/protein-structure/MarinFold/exp200/train/prompts"
+DEFAULT_OUTPUT_PREFIX = "gs://marin-us-central1/protein-structure/MarinFold/exp200"
 
 
 def _env(name: str, default: str | None = None) -> str:

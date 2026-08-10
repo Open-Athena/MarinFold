@@ -262,3 +262,29 @@ def test_borrowed_qwen3_key_is_exact_not_approximate(checkpoint):
     assert all(_MODEL_MAPPINGS[k] == _MODEL_MAPPINGS[qwen3[0]] for k in qwen3)
     assert all(_MODEL_TRANSPOSE_KEYS[k] == _MODEL_TRANSPOSE_KEYS[qwen3[0]] for k in qwen3)
     assert rl_config.CANONICAL_MODEL_NAME in qwen3
+
+
+def test_rejects_data_in_a_different_region_from_the_compute(checkpoint):
+    """marin aborts with TransferBudgetExceeded, an hour into a run, after the
+    rollout workers have already written thousands of rollouts."""
+    with pytest.raises(ValueError, match="but the workers run in"):
+        build(
+            checkpoint,
+            targets_path="gs://marin-us-east5/protein-structure/MarinFold/exp200/train/targets.parquet",
+            regions=("us-central1",),
+        )
+
+
+def test_accepts_colocated_data(checkpoint):
+    build(
+        checkpoint,
+        targets_path="gs://marin-us-central1/x/targets.parquet",
+        prompts_path="gs://marin-us-central1/x/prompts",
+        output_prefix="gs://marin-us-central1/x",
+        regions=("us-central1",),
+    )
+
+
+def test_region_check_ignores_non_marin_buckets(checkpoint):
+    # HF repo ids and third-party buckets carry no region signal.
+    rl_config.check_region_locality(("us-central1",), a="gs://some-other-bucket/x", b="hf://repo/x")
