@@ -17,8 +17,9 @@ R-precision and on held-out validation loss — and how tightly do those two
 track each other?
 
 Every number exists somewhere already (#67, #75, #82, #89, #108, #117, #120,
-#146, #155, #160, #166, #169), but they are scattered across issue comments, per-experiment
-CSVs and two W&B projects, with two different inference recipes mixed in. This
+#146, #155, #160, #166, #169, #199/#204), but they are scattered across issue comments, per-experiment
+CSVs and two W&B projects, with three different inference recipes and two
+different validation-loss objectives mixed in. This
 experiment collects them into one dataset and three standing figures, and keeps
 them refreshable as new models land.
 
@@ -42,9 +43,19 @@ piecemeal:
 - **#82** — settled the best LM-only inference: n=100 rollouts + per-rollout
   document resampling + pairwise tie-break. **#142** then removed the
   `top_k=50` that was truncating rollouts.
-- **#75 / #117 / #146 / #166** — Eric's LR/WD/epoch sweeps and the AA-augmentation
-  run (`eric-czech/marin`, tags `exp75`, `exp117`, `exp146`, `exp153`, `exp166`); **#67 / #85 / #108 / #120 / #137 /
+- **#75 / #117 / #146 / #166 / #199** — Eric's LR/WD/epoch sweeps, the
+  AA-augmentation run and the AFDB+ESM-Atlas mixture sweep
+  (`eric-czech/marin`, tags `exp75`, `exp117`, `exp146`, `exp153`, `exp166`,
+  `exp199`); **#67 / #85 / #108 / #120 / #137 /
   #150 / #155** — MarinFold-side runs (`open-athena/MarinFold`).
+- **#204** — scored #199's final checkpoints on the same 554 proteins and the
+  same rollout path as #190, *and* re-ran the #117 control three times
+  alongside them. Those replicates are the first noise estimate this tracker
+  has for the rollout recipe (span 0.0023), which is what makes several of the
+  small gaps here readable as ties rather than results.
+- **marin #7209** — changed the packed-LM objective to mask padding targets and
+  so moved the validation-loss scale by ~0.38 nats partway through this
+  tracker's history. See "The two loss scales".
 - **#169** — showed val loss is not a usable checkpoint selector at the
   0.01-nat scale, and that matched loss does not mean matched accuracy across
   model sizes. This experiment is the longitudinal version of its panel A.
@@ -68,10 +79,16 @@ Two tables and three figures, all code in the experiment dir.
   point per eval protein. The frontier figures say how far along we are; these
   say *which proteins* the number is made of.
 
-**The one methodological trap, handled explicitly:** the same weights score
-**~0.086 higher** under exp82's rollout recipe than under exp89's original
-pairwise scorer (#61/#75 E8: 0.339 → 0.425; #120: 0.350 → 0.436). The figures
-keep the two recipes visually separate rather than pooling them.
+**Two methodological traps, both handled explicitly:**
+
+1. *Inference recipe.* The same weights score **~0.086 higher** under exp82's
+   rollout recipe than under exp89's original pairwise scorer (#61/#75 E8:
+   0.339 → 0.425; #120: 0.350 → 0.436). The figures keep the recipes visually
+   separate rather than pooling them.
+2. *Loss scale.* The same weights score **~0.38 nats lower** under the
+   pre-marin#7209 objective than under the current one. Losses are declared
+   per source, converted onto one axis, and converted points are drawn in their
+   own ink with a `~`.
 
 Metric throughout: **R-precision, all ranges (seq-sep ≥ 6), mean over the 554
 proteins**. Date = when the training run finished, not when it was evaluated.
@@ -103,13 +120,30 @@ uv run python build_summary.py     # optional: refresh plots/summary.pdf
 ```
 
 `build_dataset.py` re-pulls every run from `open-athena/MarinFold` and from
-`eric-czech/marin` tags `exp75` / `exp117` / `exp146` / `exp153` / `exp166`.
+`eric-czech/marin` tags `exp75` / `exp117` / `exp146` / `exp153` / `exp166` /
+`exp199`.
 The loss figure's source footnote is generated from those columns, so it can
 never disagree with what was actually pulled. **If a new
 sweep lands under a new tag, add it to `WANDB_SOURCES` first** — otherwise its
 runs are silently absent and the loss frontier will look flat when it isn't.
 
-Two other things to check when adding a source:
+Three other things to check when adding a source:
+
+- **The loss scale.** Every `WANDB_SOURCES` entry declares `HISTORICAL` or
+  `CURRENT`, and getting it wrong moves the whole source by 0.38 nats — far
+  more than any real result on this figure. It is a property of the **pinned
+  marin version**, not of the run date: MarinFold-side runs launched in August
+  2026 still pin a June `marin-core` and are still `HISTORICAL`. Read it off
+  the run itself rather than guessing:
+
+  ```python
+  api.runs(project, filters={"display_name": name})[0].file("requirements.txt")
+  ```
+
+  `marin-core` at or after the version carrying marin#7209 (merged
+  2026-07-16) → `CURRENT`; before it → `HISTORICAL`. If a single sweep spans
+  the boundary, split it into two entries or the frontier will get a step that
+  is pure bookkeeping.
 
 - **The loss key.** `LOSS_KEYS` is tried in order. A run that logs the
   contacts-v1 val loss under some new component name will be dropped, not
@@ -132,6 +166,7 @@ Each row needs:
 | `date` | when the **training run finished** (W&B `heartbeatAt`), not when it was scored |
 | `params`, `issue` | 1.5B / 3B / …; the issue number the checkpoint came from |
 | `val_loss`, `val_loss_key` | `None` / `""` if the model's vocab makes its loss non-comparable (see #160) |
+| `val_loss_scale` | omit for `HISTORICAL`; set `CURRENT` for anything trained on marin ≥ #7209. `normalise_rows()` then fills `val_loss_raw` and rewrites `val_loss` onto the plotting axis |
 | `r_precision` | **R-precision, all ranges**, mean over 554 — the `range=all, cut=R` cell |
 | `inference` | `ROLLOUT` or `PAIRWISE` — **never guess this**, see below |
 | `source` | the CSV or gist the number came from, precisely enough to re-find |
@@ -173,9 +208,10 @@ these figures and start a second set.
 
 ### 5. The head-to-head figure pins a specific model
 
-`plot_vs_protenix.py` hard-codes `MARINFOLD_MODEL = "exp166_aaaug_step35679"`
+`plot_vs_protenix.py` hard-codes
+`MARINFOLD_MODEL = "prot-exp199-cw-cv1-s02-m1-p06-aug-step-145199"`
 and reads its per-protein scores from `ROWS_CSV`, currently
-`../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz`. It emits
+`data/exp199_cw_p06_aug_step145199_rows.csv.gz`. It emits
 one figure per entry in `BASELINES` (currently Protenix-v2 single-seq and MSA);
 `--baseline` restricts it to one.
 
@@ -185,6 +221,14 @@ at whichever experiment holds the new per-protein rows (the two move together �
 the model string is a value *inside* that file). It needs *per-protein*
 precision, not a summary — a mean is not enough to draw the scatter, so the
 scoring run has to have published its rows CSV.
+
+`ROWS_CSV` used to be a read across experiment directories, so it could not
+drift from the published scores. #199 keeps per-protein rows only in the HF
+bucket — git holds manifests and summaries — so this is now a **local copy**,
+and the drift protection is a hash instead: `ROWS_SHA256` is the
+`source_sha256` #199 records for `cw-p06-aug` in its
+`contact_eval_pr_comparison_summary.csv`, and `ROWS_URL` re-fetches the file.
+If a future frontier model does keep its rows in git, prefer the read.
 
 Adding another baseline is one entry in `BASELINES`. The rows available in
 exp89's CSV are `(protenix-v2, single_seq|msa, structure|distogram)`,
@@ -217,8 +261,8 @@ the 554-protein eval set**, computed by exp89's `compute_metrics.py`.
 ### Per-protein comparison with Protenix-v2
 
 The frontier figures compress each model to one number. These unroll the same
-comparison over the 554 proteins, for the current best model — **#166 AA aug**
-(0.562) — against both Protenix-v2 configurations.
+comparison over the 554 proteins, for the current best model — **#199 CoreWeave
+p06-aug** (0.587) — against both Protenix-v2 configurations.
 
 **Single-sequence** — the like-for-like baseline, since MarinFold also reads
 sequence alone:
@@ -232,47 +276,56 @@ sequence alone:
 | | Protenix-v2 SS | Protenix-v2 + MSA |
 |---|---:|---:|
 | baseline mean | 0.603 | 0.812 |
-| paired difference | −0.041 | −0.250 |
-| 95% CI | [−0.065, −0.018] | [−0.270, −0.230] |
-| MarinFold higher on | 34% | 8.3% |
-| Spearman | 0.61 | 0.49 |
+| paired difference | **−0.016** | −0.224 |
+| 95% CI | **[−0.041, +0.009]** | [−0.243, −0.206] |
+| MarinFold higher on | 36% | 8.7% |
+| Spearman | 0.56 | 0.54 |
 
-By length (MarinFold is 0.555 / 0.588 / 0.539 / 0.388 across the four bins):
+By length (MarinFold is 0.583 / 0.612 / 0.563 / 0.449 across the four bins):
 
 | length | n | Δ vs SS | MF higher | Δ vs MSA | MF higher |
 |---|---:|---:|---:|---:|---:|
-| < 100 | 81 | −0.107 | 30% | −0.195 | 19% |
-| 100–200 | 285 | −0.051 | 29% | −0.217 | 10% |
-| 200–400 | 171 | −0.011 | 42% | −0.308 | 1% |
-| > 400 | 17 | **+0.122** | 71% | **−0.471** | 0% |
+| < 100 | 81 | −0.079 | 36% | −0.168 | 21% |
+| 100–200 | 285 | −0.027 | 31% | −0.194 | 10% |
+| 200–400 | 171 | **+0.013** | 43% | −0.285 | 1% |
+| > 400 | 17 | **+0.183** | 76% | **−0.409** | 0% |
 
-**The two baselines trend in opposite directions with length, and that is the
-main thing to take from this pair.** Against single-sequence Protenix the gap
-narrows monotonically and changes sign in the longest bin. Against MSA Protenix
-it widens monotonically, and MarinFold does not win a single protein above 400
-residues.
+**The headline moved: the single-sequence gap's confidence interval now crosses
+zero.** At #166 the paired difference was −0.041 [−0.065, −0.018] — a real
+deficit. At #199 CW it is −0.016 [−0.041, +0.009]. On this benchmark MarinFold
+is no longer distinguishable from single-sequence Protenix-v2; it is not ahead
+of it either, and "0.587 vs 0.603" is still a mean that favours Protenix.
+
+**The two baselines still trend in opposite directions with length, and that
+remains the main thing to take from this pair.** Against single-sequence
+Protenix the gap narrows monotonically and changes sign — now in *two* bins,
+not one. Against MSA Protenix it widens monotonically, and MarinFold does not
+win a single protein above 400 residues.
 
 The reason is visible in the marginals: MarinFold declines with length
-(0.56 → 0.39) and so does single-sequence Protenix, only faster (0.66 → 0.27) —
-whereas MSA Protenix *improves* with length (0.75 → 0.86), presumably because
-longer chains have deeper, more informative alignments.
+(0.58 → 0.45) and so does single-sequence Protenix, only much faster
+(0.66 → 0.27) — whereas MSA Protenix *improves* with length (0.75 → 0.86),
+presumably because longer chains have deeper, more informative alignments.
 
 So "MarinFold holds up better on long proteins" is a statement about the
 single-sequence baseline only. It is a shallower decline, not an absolute
 strength: the > 400 bin is where MarinFold is weakest in absolute terms
-(0.388), and it is also where the MSA gap is widest. That bin holds **17
+(0.449), and it is also where the MSA gap is widest. That bin holds **17
 proteins** either way, so both readings of it are weak estimates.
 
-The Spearman values are worth noting too — 0.61 against single-sequence, 0.49
-against MSA. MarinFold's notion of which proteins are hard tracks the
-single-sequence predictor considerably better than the MSA-informed one.
+The Spearman values are worth noting too — 0.56 against single-sequence, 0.54
+against MSA. At #166 these were 0.61 / 0.49, so the two have converged:
+MarinFold's notion of which proteins are hard no longer tracks the
+single-sequence predictor much better than the MSA-informed one.
 
-**Both figures moved with the model, and the shape did not.** Re-pointed from
-#117 (0.534) to #166 (0.562), every bin improved and the single-sequence gap
-halved (−0.069 → −0.041), but the two baselines still trend in opposite
-directions and the sign change is still confined to the same 17-protein bin.
-The one qualitative change is the 200–400 bin, now −0.011 against
-single-sequence: on 171 proteins that is a tie, not a deficit.
+**Both figures moved with the model, and the shape did not.** Re-pointed
+#117 (0.534) → #166 (0.562) → #199 CW (0.587), every bin has improved at each
+step and the single-sequence gap has gone −0.069 → −0.041 → −0.016, but the two
+baselines still trend in opposite directions. What has changed twice is where
+the sign flips: at #166 only the 17-protein > 400 bin was positive; at #199 CW
+the 200–400 bin joins it at +0.013 on 171 proteins. MarinFold now wins the
+upper half of the length range against a single-sequence structure predictor
+and loses the lower half.
 
 ### The accuracy frontier
 
@@ -292,35 +345,96 @@ single-sequence: on 171 proteins that is a tie, not a deficit.
 | **2026-07-31** | **#166 AA aug** (from #117 init) | **2.6642** | **0.562** | rollout |
 | 2026-08-01 | #155 3-way restart final (step 74793, run complete) | — | 0.554 | rollout |
 | 2026-08-01 | #155 3-way restart final, oracle best-of-100 | — | 0.595 | oracle (not deployable) |
+| 2026-08-08 | #199 TRC p06-aug | ~2.6728 | 0.524 | rollout |
+| 2026-08-09 | #199 TRC p03-aug | ~2.6298 | 0.574 | rollout |
+| **2026-08-09** | **#199 TRC p03-base** | **~2.6257** | **0.578** | rollout |
+| **2026-08-10** | **#199 CoreWeave p06-aug** | **~2.5895** | **0.587** | rollout |
 
-Bold = took the accuracy frontier on its date. **#155's 3-way restart no longer
-does**: it finished 08-01 at 0.554, one day after #166 reached 0.562, so it
-lands 0.008 below a frontier that had already moved. It held the frontier for
-exactly as long as it took to notice #166 had been scored.
+Bold = took the accuracy frontier on its date. `~` = the loss was recorded on
+the current scale and converted (see below); the R-precision values are all
+directly measured. **#155's 3-way restart never took the frontier**: it
+finished 08-01 at 0.554, one day after #166 reached 0.562, so it lands 0.008
+below a frontier that had already moved.
 
 Structure predictors on the same 554 proteins and the same metric:
 Protenix-v2 single-seq **0.603**, ESMFold **0.755**, ESMFold2 **0.786**,
 Protenix-v2 + MSA **0.812**.
+
+### The two loss scales
+
+marin **#7209** (merged 2026-07-16) changed the packed-LM objective to mask
+positions whose next token is padding. Padding targets are nearly free to
+predict, so dropping them raises the mean: **the same checkpoint reads ~0.38
+nats lower under the old objective than under the current one.** Eric measured
+this directly by re-evaluating four #166 checkpoints under both
+([gist](https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049)):
+offsets +0.37934 … +0.38511, so `current ≈ historical + 0.38171`.
+
+Everything through #166 is on the historical scale; #199 is the first sweep on
+the current one. This tracker plots the **historical** axis — not because it is
+better but because 97% of the runs are natively on it, so the approximate
+conversion lands on the few rather than the many. Converted points are drawn in
+green with a `~`.
+
+The conversion is not free. Its residual across the four measured checkpoints
+is 0.0023, and the gist's alternative *line* fit disagrees with its *offset*
+fit by ~0.025 nats once you extrapolate a third of a nat below the range it was
+fitted on — which is exactly where #199's CoreWeave run sits. For scale, the
+#146 → #166 frontier step is 0.038 nats and the #117-early-vs-final gap is
+0.008. **So #199's position on the loss axis is a real result at the 0.1-nat
+scale and unreadable at the 0.01-nat scale.** Its R-precision carries no such
+caveat.
+
+The scale is a property of the pinned marin version, not the run date, and is
+not in the W&B config — `build_dataset.py` declares it per source and the
+README's refresh section says how to verify it from the run's own
+`requirements.txt`.
 
 ### The loss frontier
 
 3.15 → 2.98 → **2.7566** (#61/#75 E8, 06-21) → **2.7418** (#108's 3B on
 CoreWeave H100s, 07-11) → **2.7213** (#120, 07-16) → 2.7131 → 2.7112 →
 **2.7037** (#117 E16 final, 07-22) → **2.7025** (#146 3B, 07-27) →
-**2.6642** (#166 AA aug, finished 07-31), over 173 finished runs. #155's 3-way
+**2.6642** (#166 AA aug, finished 07-31) → **~2.6298** and **~2.6257**
+(#199's two TRC p03 runs, 08-09) → **~2.5895** (#199 CoreWeave p06-aug,
+08-10), over 190 finished runs. #155's 3-way
 restart reached 2.6819 on 08-01 — below #146 but above #166, so it does not
 take this frontier either.
 
+The last three steps are conversions, and the two on 08-09 are 0.004 apart, so
+the honest reading of the tail is one step of roughly 0.04–0.07 nats rather
+than three resolvable ones. Those two are left unlabelled on the figure for
+that reason.
+
 ### What the figures show
 
-- **The accuracy frontier moved in three jumps**, all from the base model,
+- **The accuracy frontier moved in four jumps**, all from the base model,
   none from inference or post-training: ~0.03 → **0.425** when #75's
   E8 rung finished (2026-06-21), 0.436 → **0.534** when #117's 16-epoch
-  bs256 run finished (2026-07-22), and 0.534 → **0.562** when #166's
-  AA-augmentation continue-train of #117 finished (2026-07-31). Between the
-  first two, five weeks of post-training and inference work moved it by
-  +0.011 (#120's re-epoch). (#75's E4 winner, 0.031, landed the same day as
-  E8, so the pre-jump frontier reads 0.029 — #67's.)
+  bs256 run finished (2026-07-22), 0.534 → **0.562** when #166's
+  AA-augmentation continue-train of #117 finished (2026-07-31), and
+  0.562 → **0.587** when #199's AFDB+ESM-Atlas sweep finished (2026-08-09/10).
+  Between the first two, five weeks of post-training and inference work moved
+  it by +0.011 (#120's re-epoch). (#75's E4 winner, 0.031, landed the same day
+  as E8, so the pre-jump frontier reads 0.029 — #67's.)
+- **#199 is the largest single-experiment gain since #117, and the first from
+  adding data rather than reshaping it.** #166 augmented contacts-v1 with
+  amino-acid permutations; #199 trains on AFDB *plus* 71.4B tokens of
+  ESM-Atlas. Its best checkpoint is +0.025 over #166 and +0.054 over the #117
+  control re-scored in the same batch. It is also the first frontier point
+  trained **from scratch on CoreWeave H100s** rather than continued from a
+  #117 TPU checkpoint.
+- **Within #199, the CoreWeave/TRC gap is not a hardware result.** CW p06-aug
+  (0.587) and TRC p06-aug (0.524) share a hyperparameter point and differ by
+  0.063, but CW trained from scratch for 145,199 steps on a WSD schedule while
+  TRC continued a #117 checkpoint for 72,599 on cosine. Different
+  initialisation, schedule and budget: nothing here isolates the platform.
+- **#199's p03-base vs p03-aug is a tie, and this is the first time the
+  tracker can say that with a measurement.** They differ by 0.0036, and #204's
+  four evaluations of one unchanged #117 checkpoint span 0.0023. Every earlier
+  "X beat Y by 0.00n" in this experiment was a between-run subtraction with no
+  noise estimate at all; now there is one, and it is the same size as the
+  smaller differences being quoted.
 - **Two data-side results landed a day apart, and only one of them is on the
   frontier.** #166 (AA augmentation on top of #117, 07-31, 0.562) and #155's
   3-way crops+contacts-v1+ESM-Atlas mixture restart (08-01, 0.554) are both
@@ -356,10 +470,25 @@ take this frontier either.
   *selection* method could close the gap to Protenix-v2 single-seq's 0.603,
   not a number the current pipeline can bank without one.
 - **Loss and accuracy agree across generations and stop agreeing inside one.**
-  The 0.053-nat #75→#117 gap buys +0.109 R-precision (~2 R-precision per nat).
   The 0.008-nat gap between #117's early-stop and final checkpoints buys
   nothing (paired Δ +0.0026 in the *final*'s favour, CI crosses zero), and
   #146's 3B is 0.0012 *better* on loss and 0.023 *worse* on R-precision.
+- **The cross-generation exchange rate is collapsing.** Successive frontier
+  steps buy less and less R-precision per nat:
+
+  | step | Δ loss | Δ R-precision | R per nat |
+  |---|---:|---:|---:|
+  | #75 E8 → #117 E16 | 0.053 | +0.109 | 2.06 |
+  | #117 E16 → #166 AA aug | 0.040 | +0.028 | 0.71 |
+  | #166 AA aug → #199 CW | ~0.075 | +0.025 | ~0.33 |
+
+  The last row uses a converted loss, so read it as ~0.33 with a range of
+  roughly 0.25–0.50 — the conclusion survives the whole range. This is what
+  #204's sigmoid fit describes from the other direction: an upper asymptote of
+  **0.5955**, which #199 CW is already at 98.6% of. Either the relationship
+  saturates near there and loss stops being a useful proxy at all, or the fit
+  is extrapolating past its four-point support. This tracker cannot tell those
+  apart yet, but the next frontier point will.
 - **#108's 3B on CoreWeave held the loss frontier from 2026-07-11 to 07-16 at
   2.7418** and was never contact-scored. Given #146's result — a 3B at matched
   loss under-performing the 1.5B — it is probably not a missed frontier point
@@ -372,12 +501,21 @@ take this frontier either.
 - **#67 never held the loss frontier.** It finished 2026-06-14 15:36 at 2.9800,
   about two hours after `prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p05-v1` reached
   2.9787.
-- **All of this is still below single-sequence Protenix-v2** (0.562 deployable
-  vs 0.603; #155's 0.595 oracle ceiling is a different checkpoint), and well
-  below ESMFold2 (0.786). The remaining single-seq gap is now **0.041** — less
-  than the 0.041 of headroom the oracle diagnostic found inside *one*
-  checkpoint's own rollouts, which is a coincidence of magnitude rather than a
-  result, but does put the two levers on the same scale.
+- **The single-sequence Protenix-v2 gap is no longer statistically
+  distinguishable from zero** — 0.587 vs 0.603, paired Δ −0.016 with a 95% CI
+  of [−0.041, +0.009] over the 554 proteins. Protenix still has the higher
+  mean and this is not a claim to have passed it; it is a claim that the
+  benchmark can no longer tell them apart. Two months ago the same comparison
+  read 0.029 vs 0.603. ESMFold2 (0.786) and MSA Protenix (0.812) remain far
+  ahead, and the MSA gap has barely moved.
+- **The oracle headroom and the remaining single-seq gap have swapped
+  places.** At #166 both were ~0.041. The gap is now 0.016 while the oracle
+  diagnostic found +0.041 inside one checkpoint's own rollouts — so, taking
+  the diagnostic at face value, better *selection among already-sampled
+  rollouts* is now worth more than the entire remaining distance to
+  single-sequence Protenix. That comparison crosses two checkpoints (#155's for
+  the oracle, #199 CW's for the gap) and should be treated as a rough
+  ordering, not an arithmetic one.
 
 ## Conclusion
 
@@ -385,38 +523,51 @@ Both success criteria are met: `data/rprecision_checkpoints.csv` carries a
 source citation per number, and the figures regenerate from two commands.
 
 The substantive read is that **contact accuracy has come from the base model
-and essentially nowhere else**. Three training results account for the entire
+and essentially nowhere else**. Four training results account for the entire
 frontier; the settled inference recipe is worth a large constant (+0.086) but
 was banked once in June and has not moved since; and the post-training line
-(#120, #160) has produced +0.011 and −0.020 respectively. The third jump —
-#166's amino-acid augmentation, which continued #117 for 8 epochs and finished
-on 07-31 at R 0.562 — is the first frontier point to come from a *data* change
-rather than a hyperparameter sweep or an epoch count, and the only one carrying
-a within-run control (+0.0282 paired against its own #117 initialisation).
+(#120, #160) has produced +0.011 and −0.020 respectively.
 
-Two things about that jump are worth separating. It is **+0.028 for a
-continue-train**, which is nearly three times what the post-training line has
-ever returned and came from changing what the data looks like rather than how
-long it is trained on. And it **arrived one day before #155's 3-way mixture
-restart** (0.554), the other data-side result in flight — so the honest summary
-is that two different data interventions landed within a day of each other at
-0.562 and 0.554, neither was run against the other, and the frontier records
-only the first. Whether AA augmentation and the ESM-Atlas mixture compose is an
-open question this tracker cannot answer.
+The last two jumps are both *data* changes rather than hyperparameter sweeps or
+epoch counts, and they are the two largest since #117:
 
-The new **oracle best-of-100** diagnostic adds a second, orthogonal lever:
-+0.041 R-precision sits in the *inference* step even after the settled
-rollout+vote recipe, unreachable without ground truth but a real signal that
-better *selection among* already-sampled rollouts (not more sampling, not a
-better base model) is worth investigating — e.g. a learned reranker, or a
-cheaper proxy for "is this rollout one of the good ones."
+- **#166** (07-31, 0.562) augmented contacts-v1 with amino-acid permutations —
+  +0.028 for a continue-train, with a within-run control (+0.0282 paired
+  against its own #117 initialisation).
+- **#199** (08-09/10, 0.587) added 71.4B tokens of ESM-Atlas alongside AFDB and
+  trained from scratch on CoreWeave — +0.025 over #166, +0.054 over the #117
+  control re-scored in the same batch.
 
-Validation loss remains a good *cross-generation* proxy — ~2 R-precision per
-nat over the measured range — and a useless *within-generation* one. Since this
-experiment costs nothing to keep current and a benchmark run costs ~10 min on 4
-TPU slices, the practical recommendation from #169 stands: select checkpoints
-on the contact metric, and use the loss frontier only to decide which
-checkpoints are worth scoring.
+**The single-sequence structure-predictor gap has effectively closed.**
+0.587 against Protenix-v2's 0.603 is a paired Δ of −0.016 with a CI of
+[−0.041, +0.009]: Protenix still has the higher mean, but this benchmark can no
+longer separate them. Two months ago the same comparison read 0.029 vs 0.603.
+The MSA-informed baseline (0.812) and ESMFold2 (0.786) are untouched by any of
+this, and that is where the remaining distance is.
+
+Three things this cannot settle. **#155 and #199 both add ESM-Atlas and were
+never run against each other** (0.554 vs 0.587, different data, initialisation
+and budget). **Whether AA augmentation composes with the ESM-Atlas mixture** is
+still open — #199 ran `base` and `aug` variants and they tied within noise on
+p03, which is a hint, not an answer. And **#199's CoreWeave-vs-TRC gap is not a
+platform result**: different schedule, initialisation and step count.
+
+The **oracle best-of-100** diagnostic remains a second, orthogonal lever, and
+it has grown in relative importance: +0.041 R-precision sits in the *inference*
+step even after the settled rollout+vote recipe. That is now larger than the
+0.016 still separating the best model from single-sequence Protenix. It is
+unreachable without ground truth, but it says better *selection among*
+already-sampled rollouts (not more sampling, not a better base model) is worth
+investigating — a learned reranker, or a cheap proxy for "is this rollout one
+of the good ones."
+
+Validation loss remains a useless *within-generation* proxy and an
+increasingly weak *cross-generation* one: successive frontier steps have bought
+2.06, 0.71 and ~0.33 R-precision per nat. Since this experiment costs nothing
+to keep current and a benchmark run costs ~10 min on 4 TPU slices, #169's
+recommendation stands and has got stronger: select checkpoints on the contact
+metric, and use the loss frontier only to decide which checkpoints are worth
+scoring.
 
 ## Method and provenance
 
@@ -431,7 +582,10 @@ contacts@L exist in the source CSVs but are not plotted.
 
 **Validation loss** — `eval/contacts-v1-val/loss` (Eric's runs log the same
 quantity as `eval/tokenized/contacts-v1-val/loss`), the full held-out
-contacts-v1 split: 41,954 documents / 47,821,958 tokens.
+contacts-v1 split: 41,954 documents / 47,821,958 tokens. Reported on the
+**historical** (pre-marin#7209) scale throughout; `data/*.csv` carry
+`val_loss_raw` and `val_loss_scale` alongside, so the as-logged value is never
+lost. See "The two loss scales".
 
 **Date** — when the training run *finished* (W&B `heartbeatAt`), i.e. when the
 checkpoint came into existence. Not when it was evaluated; several checkpoints
@@ -488,13 +642,14 @@ structure readout is the one the project quotes.
 
 ### What is in, what is out
 
-**In the accuracy figure** — the 12 checkpoints with a benchmark score
-(`data/rprecision_checkpoints.csv`, 15 rows: 2 checkpoints measured under two
+**In the accuracy figure** — the 17 checkpoints with a benchmark score
+(`data/rprecision_checkpoints.csv`, 20 rows: 2 checkpoints measured under two
 recipes, plus the oracle diagnostic row, one citation per row).
 
 **In the loss figure** — every *finished* W&B run reporting a contacts-v1 val
 loss across `open-athena/MarinFold` and `eric-czech/marin` tags exp75 / exp117 /
-exp146 / exp153 (n=157 after exclusions).
+exp146 / exp153 / exp166 / exp199 (n=190 after exclusions, of which 10 are on
+the current loss scale and converted).
 
 **Excluded, and why:**
 
@@ -509,12 +664,12 @@ exp146 / exp153 (n=157 after exclusions).
   loss one: it has a 3849-token superset vocabulary, so its val loss is not
   comparable to the 2845-vocab runs.
 - **In-flight runs** are drawn as hollow diamonds on the loss figure and kept
-  off *that* frontier — they have not finished training. Five such runs are
-  live as of 2026-08-02 (the original #155 3-way mix at 2.8080, its no-crops
-  ablation at 2.7622, and three exp177 tokenization-variant runs — two
-  `next_token` runs at 2.9340 and 3.4099, plus a `soft_target` run still far
-  from converged at 13.91); the best of them is the no-crops ablation. The
-  two runs above 3.26 nats sit off the top of this figure's axis, same as
+  off *that* frontier — they have not finished training. Six such runs are
+  live as of 2026-08-10: #155's 2-epoch no-crops variant at 2.9894 and five
+  #199 runs — four CoreWeave sweep points still training (~2.727 / 2.741 /
+  2.751 / 3.419 converted) and one `-cont-` continuation run at ~2.6248
+  converted, which is the best of them and is labelled on the figure. The
+  run above 3.26 nats sits off the top of this figure's axis, same as
   the finished-run outliers the caption already accounts for. #155's
   3-way *restart* — previously in this set — **finished training on 08-01 at
   2.6819** and is now a regular point on the finished-run frontier (see "The
@@ -572,7 +727,30 @@ exp146 / exp153 (n=157 after exclusions).
    checkpoint's `rollout` row — same TPU eval run, same per-protein samples —
    scored a second way, not an independent measurement. Treat it as a
    headroom bound on *that specific checkpoint*, not yet established as a
-   general property of the model family.
+   general property of the model family. Note it is now compared against a
+   *different* checkpoint's gap to Protenix (#199 CW's), which is a rough
+   ordering rather than arithmetic.
+9. **#199's four losses are converted, not measured, on this axis.** The
+   offset was fitted on four #166 checkpoints spanning 0.026 nats of
+   historical loss; #199 CW sits ~0.075 nats below the bottom of that range,
+   and the gist's line fit and offset fit disagree by ~0.025 nats there. Their
+   *rank* against #166 is safe (0.38 ≫ 0.025); their *spacing* on the loss
+   axis is not. The R-precision values are unaffected — they were measured on
+   the same 554 proteins by the same code as everything else here.
+10. **#199's CoreWeave and TRC runs are not a hardware comparison.** CW trained
+    from scratch, WSD schedule, 145,199 steps; TRC continued a #117 checkpoint,
+    cosine, 72,599 steps. The 0.063 gap between the two p06-aug runs confounds
+    all four differences.
+11. **#199's R-precision numbers are single evaluations per candidate.** Only
+    the #117 control was replicated (four times, span 0.0023). Differences
+    between two #199 candidates smaller than ~0.005 should be read as ties;
+    that covers p03-base vs p03-aug (0.0036) but not CW vs TRC p06-aug (0.063)
+    or #199 CW vs #166 (0.025).
+12. **The #117 control has now been evaluated four times and #166 once.** The
+    +0.0282 paired #166 result quoted above came from #190's single control
+    run (0.5336); the mean of the four controls is 0.5341. This does not move
+    #166's number materially, but a future paired claim should use the
+    replicate mean rather than whichever single control shared its batch.
 
 ## Files
 
@@ -581,10 +759,10 @@ exp146 / exp153 (n=157 after exclusions).
 | `build_dataset.py` | assembles both tables; W&B pull + the hand-curated benchmark rows |
 | `plot_progress.py` | the three progress figures |
 | `plot_vs_protenix.py` | the two comparison scatters + their paired CSVs |
-| `data/rprecision_checkpoints.csv` | 16 rows (13 checkpoints; 2 measured under both pairwise/rollout recipes, plus the oracle diagnostic row), one source citation each |
+| `data/rprecision_checkpoints.csv` | 20 rows (17 checkpoints; 2 measured under both pairwise/rollout recipes, plus the oracle diagnostic row), one source citation each. `val_loss` is on the historical axis; `val_loss_raw` + `val_loss_scale` carry the as-logged value |
 | `data/structure_baselines.csv` | the four dotted lines, recomputed from exp89 |
-| `data/val_loss_runs.csv` | 368 W&B runs with a contacts-v1 val loss, with state + exclusion flag |
-| `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints |
+| `data/val_loss_runs.csv` | 436 W&B runs with a contacts-v1 val loss, with state, loss scale + exclusion flag |
+| `data/rprecision_footnotes.csv` | measurements that are alternate realisations of a checkpoint, not new checkpoints — including #204's three fresh #117 control evaluations, the tracker's only noise estimate |
 | `data/marinfold_vs_protenix_{ss,msa}.csv` | the 554 paired per-protein scores behind each comparison figure |
 | `data/exp155_3way_restart_step60000_rollout_summary.csv` | aggregate R-precision/AUC for #155's step-60000 checkpoint, this session's rollout eval — not plotted, superseded by the run's final checkpoint (see caveat 5) |
 | `data/exp155_3way_restart_step60000_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
@@ -594,13 +772,22 @@ exp146 / exp153 (n=157 after exclusions).
 | `data/exp155_3way_restart_step74793_rollout_rows.csv.gz` | per-protein rows behind that summary (554 × 20) |
 | `data/exp155_3way_restart_step74793_oracle_best100_summary.csv` | oracle best-of-100 mean R-precision by range, same checkpoint and rollouts as the summary above |
 | `data/exp155_3way_restart_step74793_oracle_best100_rows.csv.gz` | per-protein, per-range oracle rows behind that summary |
-| `../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz` | per-protein rows for the pinned head-to-head checkpoint — read, not copied, so the scatter can never drift from #190's published scores |
+| `data/exp199_cw_p06_aug_step145199_rows.csv.gz` | per-protein rows for the pinned head-to-head checkpoint (#199 CoreWeave p06-aug). A copy of the HF-published file, not a read: #199 keeps rows in the bucket, not in git. Verified by SHA-256 against #199's own `contact_eval_pr_comparison_summary.csv`; `ROWS_URL` in `plot_vs_protenix.py` re-fetches it |
 | `plots/*.png.meta.json` | the numbers behind each figure |
 | `../exp82_evals_contacts_v1_contact_prediction/score_rollout_worker_oracle.py` | rollout-eval TPU worker; additive fork of exp82's `score_rollout_worker.py` that also writes a per-rollout, emission-order detail table |
 | `../exp82_evals_contacts_v1_contact_prediction/build_oracle_best_rollout.py` | scores that detail table into the oracle best-of-100 summary/rows CSVs above |
 
 Sources for every R-precision value are in the `source` column of
 `data/rprecision_checkpoints.csv` — exp82 / exp89 / exp120 / exp155 / exp160 /
-exp166 / exp169 data CSVs, plus
+exp166 / exp169 / exp199 data CSVs, plus
 [eric-czech's checkpoint gist](https://gist.github.com/eric-czech/bfa78571dcb8f673884bf70e6cc68e14)
-for #117 E8 bs64.
+for #117 E8 bs64. The loss-scale conversion comes from
+[the same-checkpoint gist](https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049).
+
+#199's own artifacts, for anything this tracker summarises:
+[TRC](https://api.wandb.ai/links/eric-czech/582mdeag) and
+[CoreWeave](https://api.wandb.ai/links/eric-czech/g2x1fbj5) sweep reports,
+[exported checkpoints](https://huggingface.co/open-athena/marinfold-exp199),
+[eval code and README](https://github.com/Open-Athena/MarinFold/tree/exp/199-evals/experiments/exp199_optimize_contacts_v1_afdb_esm/evals/contact_prediction),
+and the
+[public evaluation artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199).

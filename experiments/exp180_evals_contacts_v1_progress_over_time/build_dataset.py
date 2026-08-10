@@ -18,6 +18,10 @@ R-precision here is always **R-precision, all ranges (sep ≥ 6), mean over the
 554-protein eval set**, computed by exp89's ``compute_metrics``. Two inference
 recipes appear and they are *not* interchangeable — see INFERENCE below.
 
+Validation loss has the same problem one axis over: marin changed the objective
+partway through this tracker's history, so a raw loss is only meaningful once
+you know which implementation produced it — see LOSS SCALE below.
+
     uv run python build_dataset.py
 """
 
@@ -28,6 +32,55 @@ import csv
 from pathlib import Path
 
 HERE = Path(__file__).parent
+
+# ---------------------------------------------------------------------------
+# LOSS SCALE. marin #7209 (merged 2026-07-16) changed the default packed-LM
+# objective to MASK positions whose next token is padding. Padding targets are
+# nearly free to predict, so including them pulls the mean *down*: the same
+# checkpoint reads ~0.38 nats LOWER under the old implementation than under the
+# current one. Everything in this tracker up to and including #166 was recorded
+# under the old one; exp199 is the first sweep recorded under the new one.
+#
+# Runs do not carry the objective in their W&B config, so the scale is declared
+# per source in WANDB_SOURCES / per row in RPRECISION_ROWS. Get it wrong and a
+# current-scale run looks 0.38 nats worse than a model it in fact beats.
+#
+# The conversion is empirical: Eric re-evaluated four exp166 checkpoints under
+# the current implementation and fitted both an offset and a line.
+#   https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049
+# The offset is the more stable of the two over the observed range and is what
+# exp199 and PR #204 quote, so it is what this tracker uses.
+# ---------------------------------------------------------------------------
+HISTORICAL = "historical"   # padding-target positions INCLUDED in the mean
+CURRENT = "current"         # padding-target positions MASKED (marin >= #7209)
+SCALE_OFFSET = 0.38171      # current ≈ historical + 0.38171
+# Spread across the four measured checkpoints (+0.37934 … +0.38511); the
+# alternative line fit `current = 0.86358*historical + 0.75716` disagrees by
+# ~0.025 nats once you extrapolate a third of a nat past the four points it was
+# fitted on. Both numbers are carried so figure footnotes can quote them.
+SCALE_OFFSET_RANGE = (0.37934, 0.38511)
+SCALE_LINE = (0.86358, 0.75716)   # current = a*historical + b
+
+
+def to_historical(loss: float | None, scale: str) -> float | None:
+    """Put a loss on the tracker's plotting axis (the historical scale).
+
+    The historical scale is the axis rather than the current one purely because
+    that is where the overwhelming majority of the runs natively are — the
+    approximate conversion is then applied to the few, not the many.
+    """
+    if loss is None or loss == "":
+        return None
+    return float(loss) if scale == HISTORICAL else float(loss) - SCALE_OFFSET
+
+
+def historical_via_line(loss: float) -> float:
+    """The same conversion under the gist's fitted line instead of its offset.
+
+    Only used to quote the disagreement between the two; never plotted.
+    """
+    a, b = SCALE_LINE
+    return (float(loss) - b) / a
 
 # ---------------------------------------------------------------------------
 # Inference recipes. The same checkpoint scores ~0.086 higher under `rollout`
@@ -199,7 +252,87 @@ RPRECISION_ROWS = [
         r_precision=0.5617739, inference=ROLLOUT,
         source="exp166 data/exp166_summary.csv (exp166_aaaug_step35679); PR #190",
     ),
+    # ---- #199: AFDB + ESM-Atlas mixture sweep (PR #205), scored in #204 -----
+    # Four final checkpoints, all n=100 rollout under the same harness as #190
+    # and validated against it: the analyzer first rescored #190's archived
+    # votes for the #117 control and recovered 0.5335961 exactly, then three
+    # fresh control evaluations landed at 0.5348 / 0.5352 / 0.5329. So these
+    # numbers sit on the same axis as #166's and #117's without a cross-harness
+    # subtraction -- see FOOTNOTE_ROWS for the control replicates themselves.
+    #
+    # Their losses are the FIRST on the CURRENT scale (marin >= #7209); the
+    # conversion above is what puts them on this tracker's axis.
+    dict(
+        label="#199 TRC p06-aug",
+        model="prot-exp199-cv1-s01-m1-p06-aug-us-east1 / step-72599",
+        date="2026-08-08", params="1.5B", issue=199,
+        val_loss=3.054504156112671, val_loss_scale=CURRENT,
+        val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.5244069975064393, inference=ROLLOUT,
+        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
+               "(rerun02-20260809); issue #204",
+    ),
+    dict(
+        label="#199 TRC p03-aug",
+        model="prot-exp199-cv1-s01-m1-p03-aug-us-east1 / step-72599",
+        date="2026-08-09", params="1.5B", issue=199,
+        val_loss=3.011530637741089, val_loss_scale=CURRENT,
+        val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.5743326909766765, inference=ROLLOUT,
+        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
+               "(rerun02-20260809); issue #204",
+    ),
+    dict(
+        label="#199 TRC p03-base",
+        model="prot-exp199-cv1-s01-m1-p03-base-us-east5 / step-72599",
+        date="2026-08-09", params="1.5B", issue=199,
+        val_loss=3.00742244720459, val_loss_scale=CURRENT,
+        val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.5779648259578161, inference=ROLLOUT,
+        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
+               "(finals03-20260810); issue #204",
+    ),
+    dict(
+        # Not a continue-train: trained from scratch on CoreWeave H100s with a
+        # WSD schedule for 2x the TRC step count (145,199 vs 72,599), so its
+        # gap to the TRC p06-aug row is training history, not hardware.
+        label="#199 CW p06-aug",
+        model="prot-exp199-cw-cv1-s02-m1-p06-aug / step-145199",
+        date="2026-08-10", params="1.5B", issue=199,
+        val_loss=2.971200942993164, val_loss_scale=CURRENT,
+        val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.5873483777949621, inference=ROLLOUT,
+        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
+               "(finals03-20260810); issue #204",
+    ),
 ]
+
+# Column order for rprecision_checkpoints.csv. Fixed here rather than read off
+# the first row, because the scale columns are filled in by normalise_rows().
+RPRECISION_FIELDS = [
+    "label", "model", "date", "params", "issue",
+    "val_loss", "val_loss_raw", "val_loss_scale", "val_loss_key",
+    "r_precision", "inference", "source",
+]
+
+
+def normalise_rows(rows: list[dict]) -> list[dict]:
+    """Fill in the loss-scale columns and put every loss on the plotting axis.
+
+    ``val_loss`` is always the historical-scale value the figures use;
+    ``val_loss_raw`` preserves what the source actually reported, so a reader
+    who wants the current scale can recover it without re-deriving anything.
+    """
+    out = []
+    for r in rows:
+        r = dict(r)
+        scale = r.get("val_loss_scale", HISTORICAL)
+        raw = r.get("val_loss")
+        r["val_loss_scale"] = scale if raw is not None else ""
+        r["val_loss_raw"] = raw
+        r["val_loss"] = to_historical(raw, scale)
+        out.append({k: r.get(k, "") for k in RPRECISION_FIELDS})
+    return out
 
 # ---------------------------------------------------------------------------
 # Structure-predictor reference lines, same metric / same 554 proteins.
@@ -241,16 +374,40 @@ FOOTNOTE_ROWS = [
      "exp82 data/where_we_stand_summary.csv (marinfold-cv1-exp75-rollout-topk50)"),
     ("#117 E16 final, rollout with the old top_k=50 (pre-#142)", 0.5279264,
      "exp82 data/where_we_stand_summary.csv (marinfold-cv1-exp117-rollout-topk50)"),
+    # #204's three fresh evaluations of the #117 E16 final checkpoint. Same
+    # weights, same recipe, three independent generation runs -- so together
+    # with #190's 0.5335961 they are the first direct estimate of how much of a
+    # gap between two checkpoints is just sampling noise: the four span 0.0023.
+    # That is the yardstick for the exp199 rows above (p03-base beats p03-aug
+    # by 0.0036, i.e. barely more than this span).
+    ("#117 E16 final, fresh rollout replicate r1 (#204)", 0.5347972614575084,
+     "exp199 data/contact_eval_pr_comparison_summary.csv (control-r1)"),
+    ("#117 E16 final, fresh rollout replicate r2 (#204)", 0.535215598085612,
+     "exp199 data/contact_eval_pr_comparison_summary.csv (control-r2, rerun02-20260809)"),
+    ("#117 E16 final, fresh rollout replicate r3 (#204)", 0.5328883690891095,
+     "exp199 data/contact_eval_pr_comparison_summary.csv (control-r3, finals03-20260810)"),
 ]
 
-# W&B sources for the val-loss cloud.
+# W&B sources for the val-loss cloud, each with the loss scale its runs were
+# recorded under. A new sweep added here without the right scale will be off by
+# 0.38 nats — the single easiest way to corrupt the loss frontier.
+#
+# The scale is a property of the pinned marin version, NOT of the run date, and
+# it is not in the run config. Read it off the run's own `requirements.txt`
+# artifact in W&B (`api.runs(...)[0].file("requirements.txt")`) and compare the
+# marin-core version against #7209. As checked 2026-08-10:
+#   open-athena/MarinFold  marin-core 0.2.19.dev202606171019  (Jun 17) -> historical
+#     ...including runs *launched* in August: the pin, not the calendar, decides.
+#   eric-czech/marin exp166 marin-core 0.2.0                          -> historical
+#   eric-czech/marin exp199 marin-core 0.2.73.dev30987879744          -> current
 WANDB_SOURCES = [
-    ("open-athena/MarinFold", None),
-    ("eric-czech/marin", "exp75"),
-    ("eric-czech/marin", "exp117"),
-    ("eric-czech/marin", "exp146"),
-    ("eric-czech/marin", "exp153"),
-    ("eric-czech/marin", "exp166"),
+    ("open-athena/MarinFold", None, HISTORICAL),
+    ("eric-czech/marin", "exp75", HISTORICAL),
+    ("eric-czech/marin", "exp117", HISTORICAL),
+    ("eric-czech/marin", "exp146", HISTORICAL),
+    ("eric-czech/marin", "exp153", HISTORICAL),
+    ("eric-czech/marin", "exp166", HISTORICAL),
+    ("eric-czech/marin", "exp199", CURRENT),
 ]
 LOSS_KEYS = [
     "eval/tokenized/contacts-v1-val/loss",
@@ -268,7 +425,7 @@ def fetch_val_loss_runs() -> list[dict]:
 
     api = wandb.Api(timeout=180)
     rows = []
-    for project, tag in WANDB_SOURCES:
+    for project, tag, scale in WANDB_SOURCES:
         runs = (api.runs(project, filters={"tags": tag}, per_page=200) if tag
                 else api.runs(project, per_page=200))
         for r in runs:
@@ -286,7 +443,11 @@ def fetch_val_loss_runs() -> list[dict]:
                 state=r.state,
                 started=str(r.created_at)[:19].replace("T", " "),
                 finished=str(getattr(r, "heartbeatAt", ""))[:19].replace("T", " "),
-                step=s.get("_step"), val_loss=loss, val_loss_key=key,
+                step=s.get("_step"),
+                # val_loss is always on the historical plotting axis; val_loss_raw
+                # is what the run itself logged. See LOSS SCALE at the top.
+                val_loss=to_historical(loss, scale), val_loss_raw=loss,
+                val_loss_scale=scale, val_loss_key=key,
                 excluded=any(x in name.lower() for x in EXCLUDE_SUBSTRINGS),
             ))
     rows.sort(key=lambda r: r["finished"])
@@ -302,11 +463,14 @@ def main() -> int:
     out = HERE / "data"
     out.mkdir(parents=True, exist_ok=True)
 
+    rows = normalise_rows(RPRECISION_ROWS)
     with (out / "rprecision_checkpoints.csv").open("w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(RPRECISION_ROWS[0]))
+        w = csv.DictWriter(fh, fieldnames=RPRECISION_FIELDS)
         w.writeheader()
-        w.writerows(RPRECISION_ROWS)
-    print(f"wrote {out / 'rprecision_checkpoints.csv'} ({len(RPRECISION_ROWS)} rows)")
+        w.writerows(rows)
+    n_conv = sum(1 for r in rows if r["val_loss_scale"] == CURRENT)
+    print(f"wrote {out / 'rprecision_checkpoints.csv'} ({len(rows)} rows, "
+          f"{n_conv} loss values converted from the current scale)")
 
     baselines = build_baselines()
     with (out / "structure_baselines.csv").open("w", newline="") as fh:
@@ -326,7 +490,9 @@ def main() -> int:
             w = csv.DictWriter(fh, fieldnames=list(runs[0]))
             w.writeheader()
             w.writerows(runs)
-        print(f"wrote {out / 'val_loss_runs.csv'} ({len(runs)} runs)")
+        n_conv = sum(1 for r in runs if r["val_loss_scale"] == CURRENT)
+        print(f"wrote {out / 'val_loss_runs.csv'} ({len(runs)} runs, "
+              f"{n_conv} on the current scale and converted)")
     return 0
 
 

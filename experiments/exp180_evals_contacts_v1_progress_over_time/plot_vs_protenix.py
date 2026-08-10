@@ -47,17 +47,30 @@ import pandas as pd  # noqa: E402
 HERE = Path(__file__).parent
 # Per-protein rows for the pinned checkpoint. Whichever experiment scored it
 # owns this file, so the path moves with MARINFOLD_MODEL.
-ROWS_CSV = (HERE / ".." / "exp166_models_contacts_v1_aa_augmentation" / "data"
-            / "exp166_rows.csv.gz")
+#
+# #199 publishes per-protein rows only to the HF bucket — git keeps manifests
+# and summaries — so unlike #166's this one is a local copy rather than a read
+# across experiment directories. It is byte-verified: its SHA-256 equals the
+# `source_sha256` #199 records for `cw-p06-aug` in
+# exp199 data/contact_eval_pr_comparison_summary.csv, so the copy is provably
+# the published file. Re-fetch or re-check with:
+#   curl -sL -o data/exp199_cw_p06_aug_step145199_rows.csv.gz "$ROWS_URL" \
+#     && sha256sum data/exp199_cw_p06_aug_step145199_rows.csv.gz
+ROWS_CSV = HERE / "data" / "exp199_cw_p06_aug_step145199_rows.csv.gz"
+ROWS_SHA256 = "2ae1e57417e0cfd918937a4345e149628b149f9ac6dba063f853963b7075fa2b"
+ROWS_URL = ("https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/"
+            "contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/"
+            "prot-exp199-cw-cv1-s02-m1-p06-aug/step-145199/"
+            "contact_eval_cw_s02_m1_p06_aug_step145199_finals03_20260810_rows.csv.gz")
 EXP89 = (HERE / ".." / "exp89_evals_contacts_v1_model_on_eval_set" / "data"
          / "contact_precision_all.csv")
 
 # The contacts-v1 checkpoint this pair is drawn for: the top of the accuracy
 # frontier. Re-point (with ROWS_CSV) when a new model takes it *and* has
 # published per-protein rows — see README step 5.
-MARINFOLD_MODEL = "exp166_aaaug_step35679"
-MARINFOLD_LABEL = "MarinFold #166 AA aug"
-MARINFOLD_SHORT = "MarinFold #166"
+MARINFOLD_MODEL = "prot-exp199-cw-cv1-s02-m1-p06-aug-step-145199"
+MARINFOLD_LABEL = "MarinFold #199 CoreWeave p06-aug"
+MARINFOLD_SHORT = "MarinFold #199 CW"
 
 # The exp89 rows to compare against. `predictor="structure"` is the readout the
 # project quotes; the same CSV also holds Protenix distogram rows.
