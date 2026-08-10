@@ -263,6 +263,13 @@ Paired per protein, n=554. Source:
 
 **Primary criterion (≥ +0.02 at ≥3σ): NOT MET.** best_f1 is flat at +0.4σ.
 
+![paired effect sizes](plots/effect_sizes.png)
+
+The per-protein view ([`plots/quality_vs_spread.png`](plots/quality_vs_spread.png)) is
+worth reading honestly: better-and-fewer is the plurality quadrant at 41%, and the
+trade is weak protein-by-protein (r = −0.20) even though both means shift clearly. The
+effect is a distributional shift, not a per-protein rule.
+
 **But the reward did exactly what it was designed to do.** Per-contact precision
 rose +0.0085 at +4.6σ and first-section F1 rose +0.0128 at +5.1σ — individual
 candidates got better, which is precisely what a dense per-contact reward targets.
@@ -290,6 +297,34 @@ rate — and they are independent knobs.
 `<contacts-v1>` mode, needs exp163's `rprec_worker_tpu.py` against arm F's 0.3374.
 Given precision rose and per-section quality improved, base-task damage looks
 unlikely, but it is unmeasured and the kill criterion is therefore unverified.
+
+### Where to pick this up
+
+Everything needed to run the next iteration is in place and verified:
+
+- **Reward + loss** — `contact_rewards.py` already supports `mode="plain"`;
+  `dense_loss.py` takes `lam_step` / `lam_doc`, so the λ ratio is a config change.
+- **Launchers** — `dispatch_rl.py` (env-knob sweep, `--submit` for the CPU driver),
+  `dispatch_parity.py --model` (eval any checkpoint against the same 554 proteins),
+  `dispatch_export.py`, `dispatch_prep.py`, `dispatch_publish.py`, over `_submit.py`.
+- **Observability** — `_trace.py` / `read_trace.py` (the environment reports to object
+  storage, because `iris job logs` is empty for a *running* child) and `reap.py`
+  (stops a finished run, which marin cannot do itself).
+- **Data** — the 10,000-protein pool in both us-east5 and us-central1, and the
+  arm-F baseline measured on all 554 eval proteins.
+
+Two things a rerun should change, both learned the hard way: launch arms as
+**independent jobs** so one driver preemption cannot strand its siblings, and
+checkpoint on a **step interval** rather than a 20-minute timer — that is why two of
+three arms here have nothing clean to evaluate.
+
+**Follow-up: [#208](https://github.com/Open-Athena/MarinFold/issues/208)** — the same
+dense reward on the base `<contacts-v1>` format only, where the spread axis disappears
+entirely, starting from `contacts-v1-exp199-1.5B` and with the document term redefined
+as a rollout's leave-one-out marginal contribution to the n=100 consensus vote. That
+last change is the direct consequence of this experiment: it aligns the objective with
+the metric actually reported, and defends diversity by construction rather than by a
+hyperparameter.
 
 ### Published artifacts
 
