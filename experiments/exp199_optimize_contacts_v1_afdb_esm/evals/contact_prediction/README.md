@@ -100,9 +100,10 @@ The figure retains PR #190's historical #75, #146, #166, and Protenix-v2
 single-sequence references. Their old losses use the same conversion. The four
 #117 boxes and scatter points are separate evaluations of one checkpoint. The
 scatter dodges those points horizontally for visibility while keeping their
-shared converted loss explicit. The loss conversion affects only the x-axis;
-all plotted R-precision values come from the original per-protein evaluations.
-Lower loss runs to the right.
+shared converted loss explicit. The primary x-axis uses the current loss scale,
+and a subtle lower axis provides the approximate historical scale. The loss
+conversion affects only the axes; all plotted R-precision values come from the
+original per-protein evaluations. Lower loss runs to the right.
 
 The scatter includes a descriptive three-parameter sigmoid fit with its lower
 asymptote fixed at zero. It uses the unique 1.5B checkpoints. The four #117

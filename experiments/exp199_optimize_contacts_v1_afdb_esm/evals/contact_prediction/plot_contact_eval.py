@@ -98,6 +98,7 @@ LOSS_CONVERSION = {
         "1533900986446385202/1535720900165369906"
     ),
 }
+LOSS_OFFSET = 0.38171
 
 
 def sha256(path: Path) -> str:
@@ -399,9 +400,8 @@ def draw_scatter(
         zorder=1,
     )
     dodge = (-0.003, -0.001, 0.001, 0.003)
-    text_offsets = ((-8, -13), (-5, 13), (8, 13), (10, -13))
-    for (_, row), x_offset, text_offset, y in zip(
-        controls.iterrows(), dodge, text_offsets, control_ys, strict=True
+    for (_, row), x_offset, y in zip(
+        controls.iterrows(), dodge, control_ys, strict=True
     ):
         shown_x = control_x + x_offset
         axis.plot(
@@ -421,15 +421,6 @@ def draw_scatter(
             edgecolor=COLORS["control"],
             linewidth=1.8,
             zorder=4,
-        )
-        axis.annotate(
-            row.display_name.split()[-1],
-            (shown_x, y),
-            xytext=text_offset,
-            textcoords="offset points",
-            ha="center",
-            fontsize=7.5,
-            color="#335950",
         )
     axis.annotate(
         "#117 control\nfour evals",
@@ -482,6 +473,29 @@ def draw_scatter(
     axis.set_ylim(0.402, 0.625)
     axis.set_xlabel("contacts-v1 validation loss on current scale (lower is better →)")
     axis.set_ylabel("Mean all-range R-precision")
+    old_loss_axis = axis.secondary_xaxis(
+        -0.20,
+        functions=(
+            lambda current: current - LOSS_OFFSET,
+            lambda old: old + LOSS_OFFSET,
+        ),
+    )
+    old_loss_axis.set_xlabel(
+        "Approximate historical loss scale",
+        color="#77746f",
+        fontsize=8.2,
+        labelpad=4,
+    )
+    old_loss_axis.tick_params(
+        axis="x",
+        colors="#77746f",
+        labelsize=7.8,
+        length=3,
+        width=0.7,
+        pad=2,
+    )
+    old_loss_axis.spines["bottom"].set_color("#aaa7a1")
+    old_loss_axis.spines["bottom"].set_linewidth(0.7)
     axis.set_title("B · Validation loss and mean R-precision", pad=13)
     axis.grid(color="#d8d7d2", linewidth=0.8)
     axis.set_axisbelow(True)
@@ -565,7 +579,7 @@ def run(*, output: Path, scratch: Path) -> None:
     )
     figure.text(
         0.5,
-        0.044,
+        0.054,
         (
             "Each box is one 554-protein evaluation. #117 r0 is PR #190; "
             "r1–r3 are fresh repeats. Scatter points are dodged only for visibility; "
@@ -577,7 +591,7 @@ def run(*, output: Path, scratch: Path) -> None:
     )
     figure.text(
         0.5,
-        0.014,
+        0.020,
         (
             "Historical losses for #75, #117, #146, and #166 use the empirical "
             "conversion current ≈ old + 0.38171. The sigmoid uses each unique "
@@ -586,7 +600,7 @@ def run(*, output: Path, scratch: Path) -> None:
         ha="center",
         fontsize=8,
     )
-    figure.tight_layout(rect=(0, 0.078, 1, 0.955), w_pad=2.6)
+    figure.tight_layout(rect=(0, 0.15, 1, 0.955), w_pad=2.6)
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, dpi=180)
     plt.close(figure)

@@ -74,5 +74,5 @@
   ],
   "table": "experiments/exp199_optimize_contacts_v1_afdb_esm/data/contact_eval_pr_comparison_summary.csv",
   "table_sha256": "925b8bec7292f18454bc912f490396827ed430ea2f5b0951a25d0b1a8188ec89",
-  "plot_sha256": "408e203e443c9d23d4d79a2496dbaee0be43bd4fbddcc99ebc5648711dd9dc6d"
+  "plot_sha256": "2a5955e452cb422aa7c1c2c9d815930f2edd3c338a28cc1c6a774c9e5917a20c"
 }
