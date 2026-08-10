@@ -16,6 +16,7 @@ analysis = [
     "pandas>=3,<4",
     "pyarrow>=23,<24",
     "scikit-learn>=1.8,<2",
+    "scipy>=1.17,<2",
 ]
 eval = [
     "marin-core[tpu]==0.2.73.dev30987879744; sys_platform == 'linux'",

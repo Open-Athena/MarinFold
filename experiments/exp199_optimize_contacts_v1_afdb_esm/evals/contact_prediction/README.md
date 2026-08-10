@@ -102,6 +102,17 @@ single-sequence references. Their old losses use the same conversion. The four
 scatter dodges those points horizontally for visibility while keeping their
 shared converted loss explicit. The loss conversion affects only the x-axis;
 all plotted R-precision values come from the original per-protein evaluations.
+Lower loss runs to the right.
+
+The scatter includes a descriptive three-parameter sigmoid fit with its lower
+asymptote fixed at zero. It uses the unique 1.5B checkpoints. The four #117
+evaluations enter that fit once through their mean. The 3B #146 point and
+Protenix-v2 are references rather than fit inputs. The fitted equation is
+`R = 0.595529 / (1 + exp((loss - 3.188702) / 0.054182))` with R² `0.951167`.
+Its upper asymptote `0.595529` remains below the Protenix-v2 baseline
+`0.603158`, so the fit has no finite baseline crossing. The dotted portion is
+an extrapolation below the lowest observed loss. This describes a small,
+mixed-history sample whose historical x values use an approximate conversion.
 
 CoreWeave p06-aug is the strongest exp199 checkpoint at R-all `0.587348`,
 `0.015809` below Protenix-v2. TRC p03-base and p03-aug reach `0.577965` and

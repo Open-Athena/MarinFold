@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
+from scipy.optimize import curve_fit
+from scipy.special import expit
 
 plt.switch_backend("Agg")
 
@@ -45,10 +47,10 @@ MODELS = {
 BOX_LABELS = {
     "exp75": "#75\nhistorical",
     "exp146": "#146 3B\nhistorical",
-    "control-r0": "#117 r0\nPR #190",
-    "control-r1": "#117 r1\nfresh",
-    "control-r2": "#117 r2\nfresh",
-    "control-r3": "#117 r3\nfresh",
+    "control-r0": "r0\n#190",
+    "control-r1": "r1",
+    "control-r2": "r2",
+    "control-r3": "r3",
     "exp166": "#166\nhistorical",
     "trc-p06-aug": "TRC p06\naug",
     "trc-p03-aug": "TRC p03\naug",
@@ -72,10 +74,10 @@ MARKERS = {
 }
 ANNOTATIONS = {
     "exp75": ((9, 15), "left"),
-    "exp146": ((10, -31), "left"),
+    "exp146": ((-8, -31), "right"),
     "exp166": ((12, 18), "left"),
-    "trc-p06-aug": ((-8, 20), "right"),
-    "trc-p03-aug": ((29, -30), "left"),
+    "trc-p06-aug": ((12, -30), "left"),
+    "trc-p03-aug": ((-12, -34), "right"),
     "trc-p03-base": ((-20, 29), "right"),
     "cw-p06-aug": ((0, -31), "center"),
 }
@@ -168,14 +170,34 @@ def ordered_boxes(
     return sorted((row for _, row in table.iterrows()), key=order)
 
 
+def box_positions(rows: list[pd.Series]) -> np.ndarray:
+    positions = []
+    cursor = 1.0
+    in_controls = False
+    for row in rows:
+        if row.category == "control":
+            if in_controls:
+                cursor += 0.28
+            positions.append(cursor)
+            in_controls = True
+            continue
+        if in_controls:
+            cursor += 0.75
+            in_controls = False
+        positions.append(cursor)
+        cursor += 1.0
+    return np.asarray(positions)
+
+
 def draw_boxplot(
     axis: plt.Axes, rows: list[pd.Series], values: dict[str, np.ndarray]
 ) -> None:
-    positions = np.arange(1, len(rows) + 1)
+    positions = box_positions(rows)
+    widths = [0.14 if row.category == "control" else 0.34 for row in rows]
     boxes = axis.boxplot(
         [values[row.key] for row in rows],
         positions=positions,
-        widths=0.34,
+        widths=widths,
         patch_artist=True,
         showmeans=True,
         meanprops={
@@ -197,23 +219,32 @@ def draw_boxplot(
         if row.category == "control"
     ]
     axis.axvspan(
-        min(control_positions) - 0.47,
-        max(control_positions) + 0.47,
+        min(control_positions) - 0.18,
+        max(control_positions) + 0.18,
         color=COLORS["control"],
         alpha=0.08,
         zorder=0,
     )
     axis.text(
         float(np.mean(control_positions)),
-        1.066,
-        "same #117 checkpoint · four separate evals",
+        1.055,
+        (
+            "same #117 checkpoint · four evals\n"
+            + " · ".join(
+                f"{values[row.key].mean():.4f}"
+                for row in rows
+                if row.category == "control"
+            )
+        ),
         ha="center",
         va="bottom",
-        fontsize=8.5,
+        fontsize=7.7,
         color="#335950",
         weight="bold",
     )
     for position, row in zip(positions, rows, strict=True):
+        if row.category == "control":
+            continue
         axis.text(
             position,
             1.018,
@@ -229,6 +260,53 @@ def draw_boxplot(
     axis.grid(axis="y", color="#d8d7d2", linewidth=0.8)
     axis.set_axisbelow(True)
     axis.spines[["top", "right"]].set_visible(False)
+
+
+def sigmoid(
+    loss: np.ndarray, upper: float, midpoint: float, width: float
+) -> np.ndarray:
+    return upper * expit((midpoint - loss) / width)
+
+
+def fit_sigmoid(
+    table: pd.DataFrame, values: dict[str, np.ndarray]
+) -> dict[str, object]:
+    fit_rows = table[(~table.category.isin(["baseline"])) & (table.key != "exp146")]
+    controls = fit_rows[fit_rows.category == "control"]
+    xs = [float(controls.iloc[0].loss_current_scale)]
+    ys = [float(np.mean([values[key].mean() for key in controls.key]))]
+    input_keys = ["control-mean"]
+    for _, row in fit_rows[fit_rows.category != "control"].iterrows():
+        xs.append(float(row.loss_current_scale))
+        ys.append(float(values[row.key].mean()))
+        input_keys.append(row.key)
+    fit_x = np.asarray(xs)
+    fit_y = np.asarray(ys)
+    parameters, _ = curve_fit(
+        sigmoid,
+        fit_x,
+        fit_y,
+        p0=(0.60, 3.18, 0.05),
+        bounds=([0.5, 2.5, 0.001], [1.0, 3.5, 2.0]),
+        maxfev=100_000,
+    )
+    upper, midpoint, width = (float(value) for value in parameters)
+    predicted = sigmoid(fit_x, upper, midpoint, width)
+    residual_sum = float(np.square(fit_y - predicted).sum())
+    total_sum = float(np.square(fit_y - fit_y.mean()).sum())
+    return {
+        "equation": "R = upper / (1 + exp((loss - midpoint) / width))",
+        "upper": upper,
+        "midpoint": midpoint,
+        "width": width,
+        "r_squared": 1.0 - residual_sum / total_sum,
+        "rmse": float(np.sqrt(residual_sum / fit_y.size)),
+        "input_keys": input_keys,
+        "minimum_observed_loss": float(fit_x.min()),
+        "maximum_observed_loss": float(fit_x.max()),
+        "control_replicates_enter_fit_as_mean": True,
+        "excluded": ["exp146", "protenix"],
+    }
 
 
 def annotate(
@@ -261,8 +339,35 @@ def annotate(
 
 def draw_scatter(
     axis: plt.Axes, table: pd.DataFrame, values: dict[str, np.ndarray]
-) -> None:
+) -> dict[str, object]:
+    fit = fit_sigmoid(table, values)
+    upper = float(fit["upper"])
+    midpoint = float(fit["midpoint"])
+    width = float(fit["width"])
+    observed_grid = np.linspace(
+        float(fit["minimum_observed_loss"]),
+        float(fit["maximum_observed_loss"]),
+        240,
+    )
+    extrapolated_grid = np.linspace(2.92, float(fit["minimum_observed_loss"]), 100)
+    axis.plot(
+        observed_grid,
+        sigmoid(observed_grid, upper, midpoint, width),
+        color="#52514e",
+        linewidth=1.8,
+        zorder=2,
+    )
+    axis.plot(
+        extrapolated_grid,
+        sigmoid(extrapolated_grid, upper, midpoint, width),
+        color="#52514e",
+        linewidth=1.5,
+        linestyle=":",
+        zorder=2,
+    )
     baseline_r = float(values["protenix"].mean())
+    fit["protenix_r"] = baseline_r
+    fit["has_protenix_crossing"] = upper >= baseline_r
     axis.axhline(
         baseline_r,
         color=COLORS["baseline"],
@@ -329,9 +434,9 @@ def draw_scatter(
     axis.annotate(
         "#117 control\nfour evals",
         (control_x, max(control_ys) + 0.004),
-        xytext=(0, 24),
+        xytext=(-18, 28),
         textcoords="offset points",
-        ha="center",
+        ha="right",
         fontsize=8.2,
         color="#335950",
         arrowprops={
@@ -358,9 +463,24 @@ def draw_scatter(
         )
         annotate(axis, row, x, y)
 
-    axis.set_xlim(2.952, 3.153)
+    axis.text(
+        0.31,
+        0.04,
+        (
+            "1.5B sigmoid (descriptive)\n"
+            f"R = {upper:.3f} / [1 + exp((loss − {midpoint:.3f}) / {width:.3f})]\n"
+            f"R² = {float(fit['r_squared']):.3f} · fitted upper asymptote = {upper:.3f}"
+        ),
+        transform=axis.transAxes,
+        ha="left",
+        fontsize=8.1,
+        linespacing=1.45,
+        color="#52514e",
+        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.82, "pad": 3},
+    )
+    axis.set_xlim(3.153, 2.92)
     axis.set_ylim(0.402, 0.625)
-    axis.set_xlabel("contacts-v1 validation loss on current scale (← lower is better)")
+    axis.set_xlabel("contacts-v1 validation loss on current scale (lower is better →)")
     axis.set_ylabel("Mean all-range R-precision")
     axis.set_title("B · Validation loss and mean R-precision", pad=13)
     axis.grid(color="#d8d7d2", linewidth=0.8)
@@ -408,12 +528,20 @@ def draw_scatter(
                 linewidth=1.6,
                 label="Protenix-v2 baseline",
             ),
+            Line2D(
+                [0],
+                [0],
+                color="#52514e",
+                linewidth=1.8,
+                label="1.5B sigmoid fit",
+            ),
         ],
-        loc="lower left",
+        loc="lower right",
         fontsize=7.8,
         frameon=True,
         framealpha=0.92,
     )
+    return fit
 
 
 def run(*, output: Path, scratch: Path) -> None:
@@ -431,7 +559,7 @@ def run(*, output: Path, scratch: Path) -> None:
         gridspec_kw={"width_ratios": [1.42, 1.0]},
     )
     draw_boxplot(box_axis, rows, values)
-    draw_scatter(scatter_axis, table, values)
+    fit = draw_scatter(scatter_axis, table, values)
     figure.suptitle(
         "AFDB/ESM mixing checkpoint contact prediction", fontsize=14, y=0.988
     )
@@ -440,7 +568,8 @@ def run(*, output: Path, scratch: Path) -> None:
         0.044,
         (
             "Each box is one 554-protein evaluation. #117 r0 is PR #190; "
-            "r1–r3 are fresh repeats of the same checkpoint."
+            "r1–r3 are fresh repeats. Scatter points are dodged only for visibility; "
+            "the dotted curve is extrapolated."
         ),
         ha="center",
         fontsize=8.5,
@@ -451,8 +580,8 @@ def run(*, output: Path, scratch: Path) -> None:
         0.014,
         (
             "Historical losses for #75, #117, #146, and #166 use the empirical "
-            "conversion current ≈ old + 0.38171. #117 scatter points are "
-            "horizontally dodged for visibility."
+            "conversion current ≈ old + 0.38171. The sigmoid uses each unique "
+            "1.5B checkpoint once; #146 3B and Protenix are references."
         ),
         ha="center",
         fontsize=8,
@@ -468,6 +597,7 @@ def run(*, output: Path, scratch: Path) -> None:
         "metric": "all-range R-precision",
         "box_order": [row.key for row in rows],
         "loss_conversion": LOSS_CONVERSION,
+        "sigmoid_fit": fit,
         "control_replicates": [
             {
                 "key": row.key,

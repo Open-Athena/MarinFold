@@ -24,6 +24,32 @@
     "issue": "https://github.com/Open-Athena/MarinFold/issues/173#issuecomment-5227639661",
     "discord": "https://discord.com/channels/1354881461060243556/1533900986446385202/1535720900165369906"
   },
+  "sigmoid_fit": {
+    "equation": "R = upper / (1 + exp((loss - midpoint) / width))",
+    "upper": 0.5955290842354987,
+    "midpoint": 3.1887021814382597,
+    "width": 0.05418204704654205,
+    "r_squared": 0.9511668779667807,
+    "rmse": 0.011496036071873297,
+    "input_keys": [
+      "control-mean",
+      "exp75",
+      "exp166",
+      "trc-p06-aug",
+      "trc-p03-aug",
+      "trc-p03-base",
+      "cw-p06-aug"
+    ],
+    "minimum_observed_loss": 2.971200942993164,
+    "maximum_observed_loss": 3.138312,
+    "control_replicates_enter_fit_as_mean": true,
+    "excluded": [
+      "exp146",
+      "protenix"
+    ],
+    "protenix_r": 0.6031578401726864,
+    "has_protenix_crossing": false
+  },
   "control_replicates": [
     {
       "key": "control-r0",
@@ -48,5 +74,5 @@
   ],
   "table": "experiments/exp199_optimize_contacts_v1_afdb_esm/data/contact_eval_pr_comparison_summary.csv",
   "table_sha256": "925b8bec7292f18454bc912f490396827ed430ea2f5b0951a25d0b1a8188ec89",
-  "plot_sha256": "2ce4784f91dbc1b408da0fd115e835fbb4b0b77522b78749be8fae140b1ab55a"
+  "plot_sha256": "8b311ba10be63fa589411366b579ef5caaeb2e8182a866b1eaea92b6bad4b6e3"
 }

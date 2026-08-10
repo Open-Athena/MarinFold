@@ -803,6 +803,7 @@ analysis = [
     { name = "pandas", marker = "sys_platform == 'linux'" },
     { name = "pyarrow", marker = "sys_platform == 'linux'" },
     { name = "scikit-learn", marker = "sys_platform == 'linux'" },
+    { name = "scipy", marker = "sys_platform == 'linux'" },
 ]
 eval = [
     { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
@@ -841,6 +842,7 @@ requires-dist = [
     { name = "s3fs", marker = "extra == 'upload'", specifier = ">=2026.1,<2027" },
     { name = "safetensors", marker = "extra == 'eval'", specifier = ">=0.6,<0.7" },
     { name = "scikit-learn", marker = "extra == 'analysis'", specifier = ">=1.8,<2" },
+    { name = "scipy", marker = "extra == 'analysis'", specifier = ">=1.17,<2" },
     { name = "torch", marker = "extra == 'eval'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-contact-prediction-evals", extra = "eval" } },
     { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'eval'", specifier = "==0.26.0+cpu", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-contact-prediction-evals", extra = "eval" } },
     { name = "tpu-inference", marker = "sys_platform == 'linux' and extra == 'eval'", git = "https://github.com/marin-community/tpu-inference.git?rev=e8809d492d5d6c7008369919a00384eb1c4de969" },

@@ -67,13 +67,20 @@ and combines them with the committed #75, #146, #166, and Protenix-v2 rows.
 The boxplot shows PR #190 plus all three fresh #117 evaluations as four
 separate distributions. The scatter shows four separately marked control
 points at one shared loss. Their x positions are lightly dodged and documented
-as such. Exp199 losses were computed by the current code. Historical #75,
-#117, #146, and #166 losses are placed on the current scale with
-`current ≈ old + 0.38171` from the
+as such, and lower losses run to the right. Exp199 losses were computed by the
+current code. Historical #75, #117, #146, and #166 losses are placed on the
+current scale with `current ≈ old + 0.38171` from the
 [same-checkpoint conversion](https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049).
 Issue #173 and the linked Discord discussion record why the scales changed.
+
+The descriptive three-parameter sigmoid fixes its lower asymptote at zero and
+uses every unique 1.5B checkpoint once. The four #117 replicates enter through
+their mean. It excludes the 3B #146 reference and Protenix-v2 baseline. Its
+fitted upper asymptote is `0.5955290842354987` with R²
+`0.9511668779667807`, below the Protenix-v2
+R-precision `0.6031578401726864`, so the model has no finite baseline crossing.
 The plot metadata and comparison CSV retain the raw losses, converted losses,
-row hashes, source paths, and unrounded R-all values.
+row hashes, source paths, unrounded R-all values, and fit parameters.
 
 ## Placement and storage
 

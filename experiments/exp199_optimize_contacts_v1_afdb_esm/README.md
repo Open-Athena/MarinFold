@@ -98,7 +98,9 @@ p06-aug checkpoints reached `0.5743326909766765`, `0.5244069975064393`,
 [boxplot and loss scatter](plots/final_checkpoint_rprecision.png) shows all
 four control evaluations separately. Historical losses are converted to the
 current scale with the empirical offset documented in the detailed eval
-README. The range metrics, public artifacts, run order, and reusable layout are
+README. A bounded sigmoid fit across the unique 1.5B checkpoints has an upper
+asymptote of `0.595529`, below the Protenix-v2 baseline `0.603158`. The range
+metrics, public artifacts, run order, and reusable layout are
 in [`evals/contact_prediction/README.md`](evals/contact_prediction/README.md) and
 [`evals/contact_prediction/PLAN.md`](evals/contact_prediction/PLAN.md).
 
