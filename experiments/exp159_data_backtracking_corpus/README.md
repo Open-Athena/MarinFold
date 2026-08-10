@@ -24,7 +24,7 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 ## Approach
 
-### Status: engine + adapter + pilot + a 370-doc corpus done (see Results). Scale-up is the open lift.
+### Status: engine + adapter + pilot + a 1.02M-document corpus DONE (see Results).
 
 **`backtrack_engine.py` — the pure state machine (done).** No torch / no marinfold model; the base model is reached only through two injected callables, so the whole loop is unit-tested with a stub backend (`test_backtrack_engine.py`, 6 tests, CPU, <1s):
 
@@ -40,10 +40,8 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 **GPU adapter + pilot (done).** `backtrack_adapter.py` wraps exp120 into `Proposer`/`Scorer` (unit-tested GPU-free in `test_backtrack_adapter.py`); `run_pilot.py` runs the engine on real proteins from exp98's `targets.parquet` (GT + sequences, no pyconfind) and reports the gating numbers. Pilot ran on an RTX A5000 — see Results.
 
-### Remaining (not started)
-1. **10% single-retract probe class** — a policy mode of the same engine (hold one FP to a designated end/random position).
-2. **Scale-up** — the pilot's ~13 s/doc (no KV reuse) is far too slow for a 4.2M-doc corpus; needs KV-cache reuse across the growing prompt, batching across proteins, and likely TPU. This is the real engineering lift before a full run.
-3. **Publish** to `data/document_structures/contacts_v1_backtracking/` (per #126) once scaled.
+### Remaining
+1. **10% single-retract probe class** — deferred (a policy mode of the same engine: hold one FP to a designated end/random position). Without it, #160's cheap retract-probe eval arm has no on-distribution training support.
 
 
 ### Throughput work — 8.8x (14.7 -> 1.68 s/doc)
@@ -94,6 +92,110 @@ contacts-v1 document filters (`min_seq_separation=6`,
 `min_contact_degree=0.001`); without them ~2/3 of the "ground truth" would be
 weak/local pairs the base model was never trained to emit, and the engine would
 score them all as false positives.
+
+
+### Scale run — 1M documents on CoreWeave H100s
+
+`gen_esm_atlas_worker.py` (sharded, resumable) + `dispatch_coreweave.py` (fan-out).
+Ran 2026-07-26 on `cw-rno2a` at **batch priority**: 48 independent 1-GPU
+workers over shards 0-255, 4,000 docs/shard -> 1,023,997 documents, writing
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`.
+
+Single-worker smoke on one H100 first: **24 docs in 32 s (1.32 s/doc)**, all
+folding to exactly GT, written to and read back from S3. Per-doc time should
+improve at scale — in the smoke the batch drained to stragglers after 24 docs,
+whereas a 4,000-doc shard keeps the scheduler saturated.
+
+Launch plumbing that had to be right (each one cost a failed submission; the
+recipe is now in the CoreWeave memory note):
+
+| symptom | cause / fix |
+|---|---|
+| CLI refuses `--memory 8GB` | needs `--enable-extra-resources` |
+| `Group 'dev' is not defined` | add `[dependency-groups] dev = []` |
+| `cannot normalize a relative path beyond the base directory` | the pod only gets the experiment dir -> marinfold must be a **git dep**, not `../../marinfold` |
+| `No module named 'fray'` | the job env installs **base** deps only -> marin-fray/iris cannot live in an extra |
+| `cannot import name 'ResourceConfig' from 'fray'` | this fray build exports nothing at top level -> import from `fray.types` / `fray.current_client` |
+| `No module named 'pandas'` after a clean sync | child entrypoint must be **`uv run python ...`**, not bare `python` |
+| torch downloaded twice per worker | a `.python-version` pin made `uv run` rebuild the venv iris had just synced |
+
+Two design points that matter for correctness at this scale: **batch priority is
+set on each child `JobRequest` (`priority=3`)** — the CLI flag bands only the
+driver — and workers are **independent `replicas=1` jobs**, not a co-scheduled
+gang, so preemption on the batch band retries one worker instead of the fleet.
+Workers resume by skipping shards whose output already exists.
+
+**First 5,000 documents (20 parts) — validated at scale, 2026-07-26:**
+
+```
+fold == n_gt:     5,000/5,000 (OK)      truncated: 0
+docs with a retraction: 83.7%           mean retracts/doc: 36.2
+FP emitted: 175,890  caught by trigger: 136,785 (77.8%)  false alarms: 0
+FP base rate: 0.182   retract precision: 0.975
+ENRICHMENT:   5.37x   (ceiling 1/0.182 = 5.49x -> 98% of max)
+retract distance: mean 17.8 / median 9 statements (0.1% immediate)
+recovery rate: 0.771
+```
+
+Throughput at scale is **1.09 s/doc** (250-doc part in 273 s), better than the
+1.32 s/doc single-worker smoke — the batch stays saturated instead of draining
+to stragglers. ~1.02M documents across 48 workers projects to ~6.5 h.
+
+Two things worth noting against the AFDB reference corpus (2.73x enrichment):
+
+- ESM-Atlas enrichment is **higher (5.37x)**, but that is mostly because its FP
+  base rate is lower (0.182 vs 0.360) so the ceiling is higher; in both cases
+  the trigger reaches ~98% of the achievable maximum. Enrichment is
+  base-rate-normalised, which is exactly why it is the metric to compare on.
+- An earlier single-worker smoke suggested ESM-Atlas had a *weaker* retraction
+  rate (45% of FPs caught). That was an artifact of a 24-doc batch draining to
+  stragglers; at scale it is 77.8%, above AFDB's 61.8%.
+
+### DONE — 1,023,997 documents (2026-07-26)
+
+Full-corpus QA over all 4,096 parts (`consolidate_esm_atlas.py`), with the
+invariant re-derived per document rather than read off the worker's columns:
+
+```
+documents:        1,023,997        unique entry_ids: 1,023,997
+tokens:           1,076,910,057    mean seq_len: 193.7
+truncated:        0
+fold == n_gt:     1,023,997/1,023,997 (OK)
+
+docs with a retraction: 79.7%      mean retracts/doc: 33.1
+FP emitted: 32,849,569  caught by trigger: 25,105,853 (76.4%)
+trigger false alarms:   0
+FP base rate: 0.166   retract precision: 0.974
+ENRICHMENT:   5.85x   (ceiling 1/0.166 = 6.02x -> 97% of max)
+retract distance: mean 17.9 / median 9 statements (0.1% immediate)
+recovery rate: 0.778
+```
+
+**Every one of 1.02M documents folds to exactly its ground truth, none
+truncated, and the posterior trigger never once retracted a true contact**
+across 32.8M emitted false positives. (The 16k "true contacts retracted" in the
+diagnostics sample are the deliberate 5% noise retractions, which the trigger
+column separates out.)
+
+Metrics were stable from 5k -> 30k -> 1.02M documents (precision 0.975 ->
+0.974 -> 0.974; distance 17.8 -> 18.1 -> 17.9), so the generator did not drift
+across proteins.
+
+Run: 48 x 1 H100 on `cw-rno2a` at batch priority, ~4.5 h wall-clock, 0 worker
+failures after the `max_task_failures` fix. Output:
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`
+(4,096 parquet parts).
+
+**Published** (2026-07-27) to
+`hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1_backtracking/`
+— 16 shards (`train/shard-{00000..00015}.parquet`, 1.5 GB zstd), tokenizer
+co-located, README. Verified by an **anonymous** (no-token) download of
+shard-00000: 64,000 rows, 2000/2000 sampled documents fold to exactly GT.
+
+Write-up: [`WRITEUP.md`](WRITEUP.md) · slides:
+[`plots/summary.pdf`](plots/summary.pdf) (17 slides).
+
+The 10% single-retract probe class remains deferred.
 
 ## Success criteria
 

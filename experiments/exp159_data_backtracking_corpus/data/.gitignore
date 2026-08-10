@@ -1,3 +1,5 @@
 # Per-document intermediates (resumable; regenerate with gen_corpus.py) and logs.
 corpus/
 gen_corpus.log
+# Staged copy of the published corpus (2.7 GB); lives in the HF bucket.
+publish/

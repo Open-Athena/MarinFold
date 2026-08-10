@@ -20,7 +20,9 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
 from backtrack_engine import (  # noqa: E402
+    ProposeRequest,
     RetractionPolicy,
+    backtracking_structure_gen,
     build_backtracking_structure,
     canon,
 )
@@ -170,3 +172,129 @@ def test_truncation_flag_when_budget_too_small():
     )
     assert res.truncated
     assert res.live_final.issubset(gt)   # never asserts a non-GT pair as final
+
+
+# --- flush modes (issue #159's flush bug) --------------------------------
+
+
+def _run(gt, *, flush, seed=0, proposals=None):
+    """Drive the engine with a stub proposer offering a fixed pair sequence."""
+    rng = random.Random(seed)
+    offers = list(proposals if proposals is not None else [])
+    gen = backtracking_structure_gen(
+        frozenset(gt), RetractionPolicy(flush=flush, min_delay=0, eval_cadence=1),
+        max_statements=400, rng=rng,
+    )
+    try:
+        req = next(gen)
+        while True:
+            if isinstance(req, ProposeRequest):
+                req = gen.send(offers.pop(0) if offers else None)
+            else:
+                # Score everything at the floor so the trigger fires on all of it.
+                req = gen.send({p: 0.0 for p in req.targets})
+    except StopIteration as stop:
+        return stop.value
+
+
+FLUSH_GT = [(1, 20), (2, 30), (3, 40), (5, 60), (8, 70)]
+
+
+def test_sorted_flush_is_sorted():
+    """Pins the original behaviour so the bug stays visible rather than folklore."""
+    res = _run(FLUSH_GT, flush="sorted")
+    appended = [(a, b) for k, a, b in res.statements if k == "contact"]
+    assert appended == sorted(appended)
+    assert res.correct
+
+
+def test_shuffled_flush_still_folds_to_gt():
+    res = _run(FLUSH_GT, flush="shuffled")
+    assert res.correct
+    assert set(res.live_final) == set(FLUSH_GT)
+
+
+def test_shuffled_flush_is_not_always_sorted():
+    """Some seed must break the order, or the shuffle is a no-op."""
+    orders = [[(a, b) for k, a, b in _run(FLUSH_GT, flush="shuffled", seed=s).statements
+               if k == "contact"] for s in range(12)]
+    assert any(o != sorted(o) for o in orders), "shuffle never changed the order"
+
+
+def test_no_flush_appends_nothing():
+    """The point of the mode: sorted/shuffled would emit all 5 GT pairs here
+    from thin air; `none` emits nothing, because the model proposed nothing."""
+    res = _run(FLUSH_GT, flush="none")
+    assert res.statements == []
+    assert res.live_final == frozenset()
+    assert not res.correct          # documents no longer fold to GT -- expected
+
+
+def test_no_flush_never_invents_a_contact():
+    proposed = [(1, 20), (9, 99), (2, 30)]     # (9, 99) is a false positive
+    for seed in range(8):
+        res = _run(FLUSH_GT, flush="none", proposals=list(proposed), seed=seed)
+        emitted = {(a, b) for k, a, b in res.statements if k == "contact"}
+        assert emitted <= set(proposed), "no-flush must never invent a contact"
+        assert set(res.live_final) <= set(proposed)
+
+
+# --- forced-true draws (issue #159 accuracy/length fix) ------------------
+
+
+def _run_forced(gt, *, p, seed=0, proposals=None, scores=None):
+    """Drive the engine, answering ScoreRequests from a fixed score table."""
+    rng = random.Random(seed)
+    offers = list(proposals if proposals is not None else [])
+    gen = backtracking_structure_gen(
+        frozenset(gt),
+        RetractionPolicy(flush="none", force_true_prob=p, min_delay=0, eval_cadence=99),
+        max_statements=400, rng=rng,
+    )
+    try:
+        req = next(gen)
+        while True:
+            if isinstance(req, ProposeRequest):
+                req = gen.send(offers.pop(0) if offers else None)
+            else:
+                req = gen.send({t: (scores or {}).get(t, 1.0) for t in req.targets})
+    except StopIteration as stop:
+        return stop.value
+
+
+FORCE_GT = [(1, 20), (2, 30), (3, 40), (5, 60), (8, 70)]
+
+
+def test_forced_draws_only_ever_emit_true_contacts():
+    """A forced step must never invent a pair outside GT."""
+    res = _run_forced(FORCE_GT, p=1.0, proposals=[])
+    emitted = [(a, b) for k, a, b in res.statements if k == "contact"]
+    assert emitted, "p=1.0 with no proposals should still fill GT"
+    assert set(emitted) <= set(FORCE_GT)
+    assert res.n_forced_true == len(emitted)
+
+
+def test_forcing_exhausts_gt_then_stops_rather_than_looping():
+    """Once GT is live there is nothing to force; the run must terminate."""
+    res = _run_forced(FORCE_GT, p=1.0, proposals=[])
+    assert set(res.live_final) == set(FORCE_GT)
+    assert res.n_forced_true == len(FORCE_GT)
+
+
+def test_forcing_respects_the_model_scores():
+    """Restrict-and-renormalise: a pair the model scores at 0 is not chosen
+    while a positively-scored one remains. Uniform picking would ignore this,
+    and that is the variant that would force in contacts the model disbelieves.
+    """
+    scores = {(1, 20): 1.0, (2, 30): 0.0, (3, 40): 0.0, (5, 60): 0.0, (8, 70): 0.0}
+    first = []
+    for seed in range(10):
+        res = _run_forced(FORCE_GT, p=1.0, proposals=[], scores=scores, seed=seed)
+        emitted = [(a, b) for k, a, b in res.statements if k == "contact"]
+        first.append(emitted[0])
+    assert all(f == (1, 20) for f in first), f"score-weighting ignored: {set(first)}"
+
+
+def test_p_zero_is_the_unforced_path():
+    res = _run_forced(FORCE_GT, p=0.0, proposals=[(1, 20)])
+    assert res.n_forced_true == 0

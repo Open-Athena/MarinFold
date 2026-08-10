@@ -272,6 +272,41 @@ documents) revise an earlier decision partway through the structure section
   Retraction documents are synthesised by the model-in-the-loop corpus job
   (#159), not by `build_document`.
 
+### Retraction mode (`<contacts-v1.backtracking>`, issue #175)
+
+A **variant doc type**, swapped in as token 0, declaring that a document *may*
+contain `<retract>` statements. It changes nothing else — the statements,
+sections and fold are identical.
+
+- **Why.** #160 trained on a 50:50 mixture of retraction-bearing and clean
+  documents that began with the *identical* prefix, and 20.1% of the
+  retraction half happened to contain no `<retract>` at all, so a fifth of it
+  was indistinguishable in the body too. A model in that position must
+  marginalise over "may I take this back later?" at every step. Measured
+  consequences: it retracted on only 43% of rollouts, reached only 52% of the
+  achievable enrichment headroom, and — isolated by a readout ablation — lost
+  **0.0251 R-precision in emission quality alone**, before any retraction was
+  honoured. In retraction mode the optimal emission policy is more
+  speculative; with no marker that speculativeness leaks into clean
+  generation.
+- **Semantics.** The marker is a *mode declaration*, not a guarantee: a
+  `<contacts-v1.backtracking>` document may contain zero retractions. Corpora
+  should mark by **which generator produced the document**, not by whether it
+  happens to contain a `<retract>` — marking by content would instead teach
+  "this token implies a retraction follows", which is a different target and
+  destroys the token's use as a mode switch.
+- **Vocab.** Minted by contacts-v1 and, like `<contacts-v1.sequence_only>` and
+  `<retract>`, kept out of `NATIVE_TOKENS` and **appended last** — every
+  pre-existing id unchanged, one new embedding row (contacts-v1 2847 → 2848).
+  Both coordinate supersets exclude it from their inherited block and
+  re-append it after their own native block, exactly as they do for
+  `<retract>`: inheriting it inline would shove the whole xyz/crop block up by
+  one id and desync the two formats (crops 3849 → 3850).
+- **Generation.** `GenerationConfig(backtracking=True)` swaps token 0 and
+  nothing else; with the default `False` output is byte-identical to before.
+  Mutually exclusive with `sequence_only` (no structure section to retract
+  from).
+
 ### Metadata tracked (beyond the spec)
 
 The spec does not define output metadata; the issue asks to track
