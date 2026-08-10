@@ -70,6 +70,7 @@ from marinfold.document_structures.contacts_v1.vocab import (
     position_token as _contacts_v1_position_token,
 )
 from marinfold.document_structures.contacts_v1.vocab import (
+    backtracking_tokens as _contacts_v1_backtracking_tokens,
     retract_tokens as _contacts_v1_retract_tokens,
 )
 
@@ -147,15 +148,16 @@ def inherited_tokens() -> list[str]:
     token) — 2844 tokens — reused verbatim so every id is byte-stable
     against contacts-v1's own tokenizer.
 
-    contacts-v1's later ``<retract>`` extension (issue #158) is **excluded**:
+    contacts-v1's later trailing extensions -- ``<retract>`` (issue #158) and
+    ``<contacts-v1.backtracking>`` (issue #175) -- are **excluded**:
     this format has no retraction, and inheriting that trailing token would
     shove all 1001 coordinate tokens up by one id and break every published
     coordinate-format checkpoint. Filtering it out (rather than slicing a
     fixed length) keeps this robust to any further contacts-v1 growth while
     pinning the 2844-token inherited block.
     """
-    retract = set(_contacts_v1_retract_tokens())
-    return [t for t in _contacts_v1_all_domain_tokens() if t not in retract]
+    trailing = set(_contacts_v1_retract_tokens()) | set(_contacts_v1_backtracking_tokens())
+    return [t for t in _contacts_v1_all_domain_tokens() if t not in trailing]
 
 
 def native_tokens() -> list[str]:
@@ -192,7 +194,7 @@ def _validate_reuse() -> None:
         )
     # The trailing <retract> token (appended by all_domain_tokens for mixture
     # tokenizers) must be disjoint from both, so appending it adds no dup id.
-    retract = set(_contacts_v1_retract_tokens())
+    retract = set(_contacts_v1_retract_tokens()) | set(_contacts_v1_backtracking_tokens())
     retract_clashes = retract & (inherited | set(NATIVE_TOKENS))
     if retract_clashes:
         raise ValueError(
@@ -228,4 +230,5 @@ def all_domain_tokens() -> list[str]:
     tokenizer throughout, and existing checkpoints warm-start append-only into
     either.
     """
-    return [*inherited_tokens(), *native_tokens(), *_contacts_v1_retract_tokens()]
+    return [*inherited_tokens(), *native_tokens(),
+            *_contacts_v1_retract_tokens(), *_contacts_v1_backtracking_tokens()]

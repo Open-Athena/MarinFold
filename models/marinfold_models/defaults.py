@@ -30,11 +30,12 @@ from datetime import timedelta
 
 import jmp
 from haliax.partitioning import ResourceAxis
+# NB: import from the DEFINING submodule, not the package. levanter 1.2 /
+# marin 0.2.57 turned `levanter.data.text` and `levanter.optim` into lazy
+# plugin registries with empty __init__s, so `from levanter.data.text import
+# LmDataConfig` and `from levanter.optim import OptimizerConfig` now raise.
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
-# levanter >= 1.2 emptied the ``levanter.data.text`` / ``levanter.optim`` package
-# __init__s (their registries discover submodules lazily now), so these configs
-# must be imported from their DEFINING submodule.
 from levanter.data.text.datasets import LmDataConfig
 from levanter.eval_harness import LmEvalHarnessConfig
 from levanter.main.train_lm import TrainLmConfig
@@ -96,6 +97,15 @@ def build_train_lm_on_pod_config(
     initialize_from_checkpoint_path: str | None = None,
     initialize_from_hf: str | bool = False,
     pad_tokenizer_to_match_model: bool = False,
+    # Weights-only warm start. Despite the near-identical name this is a
+    # DIFFERENT levanter field from ``initialize_from_checkpoint_path``: that
+    # one performs a full-state restore and demands `step`, `opt_state/*` and
+    # `training_key` in the checkpoint, while ``initialize_model_from_...``
+    # reads only the `model` subtree and leaves a fresh optimizer at step 0.
+    # Use this one for a checkpoint that holds weights alone (e.g. one
+    # produced by a vocab resize) — the other fails with "Missing 34 arrays
+    # in OCDBT checkpoint".
+    initialize_model_from_checkpoint_path: str | None = None,
     wandb_project: str = "MarinFold",
     wandb_group: str | None = None,
     wandb_name: str | None = None,
@@ -116,7 +126,9 @@ def build_train_lm_on_pod_config(
       latter inside ``run_levanter_train_lm``), and
     * takes ``data`` (a levanter ``LmDataConfig``) directly rather than via
       ``mixture(ctx, ...)``, and
-    * takes ``optimizer`` from the caller (no baked-in default).
+    * takes ``optimizer`` from the caller (no baked-in default), and
+    * exposes ``auto_build_caches``, which marin reads off the OUTER pod config
+      and uses to override the inner data config (see the call site below).
 
     The returned config is a plain dataclass: the caller submits it as its own
     ``fray.types.JobRequest`` (with a batch priority band for #108) rather than
@@ -182,17 +194,26 @@ def build_train_lm_on_pod_config(
         initialize_from_checkpoint_path=initialize_from_checkpoint_path,
         initialize_from_hf=initialize_from_hf,
         pad_tokenizer_to_match_model=pad_tokenizer_to_match_model,
+        initialize_model_from_checkpoint_path=initialize_model_from_checkpoint_path,
         eval_harness=harness,
         eval_harness_steps=eval_harness_steps,
         adapter=NoAdaptorConfig(),
     )
 
     return TrainLmOnPodConfig(
-        auto_build_caches=auto_build_caches,
         train_config=inner,
         resources=resources,
         output_path=output_path,
         env_vars=env_vars,
+        # This OUTER flag is the one that counts. ``_prepare_training_run``
+        # calls ``_maybe_override_auto_build_caches(train_config,
+        # config.auto_build_caches)``, so whatever the caller set on the inner
+        # ``LmDataConfig`` is overwritten by this field — and its default is
+        # False. Setting ``LmDataConfig(auto_build_caches=True)`` alone gets
+        # you "Cache not found at ... and auto_build_caches is disabled" once
+        # the pod is up. Pass it here instead when there is no separate
+        # tokenize step and the run must build its cache on the workers.
+        auto_build_caches=auto_build_caches,
     )
 
 
