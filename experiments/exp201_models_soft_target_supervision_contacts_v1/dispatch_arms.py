@@ -175,7 +175,21 @@ def training_env(*, dry_run: bool) -> dict[str, str]:
     placeholder so config assembly can be validated without a credential
     (marin's ``resolve_training_env`` refuses to build an env without one).
     """
-    env = {"WANDB_ENTITY": "open-athena", "WANDB_PROJECT": "MarinFold"}
+    env = {
+        "WANDB_ENTITY": "open-athena",
+        "WANDB_PROJECT": "MarinFold",
+        # Every host assembles its own config (see `train_arm_on_pod`), so that
+        # assembly must be bit-identical across them: a multi-host JAX program is
+        # compiled independently per host and the collectives only line up if the
+        # HLO matches. Python salts `hash()` per process by default, so any set or
+        # dict-of-sets iteration anywhere in draccus's plugin registry or levanter's
+        # config tree can order differently on different hosts. The v5p-32 sweep
+        # died exactly that way -- "An unexpected peer shows up in the launch group
+        # with a different launch id", then a `scheckne` core halt -- on both arms
+        # that scheduled, on different physical nodes, immediately after
+        # "Lowered train_step". Pinning the seed makes the build deterministic.
+        "PYTHONHASHSEED": "0",
+    }
     key = os.environ.get("WANDB_API_KEY")
     if key:
         env["WANDB_API_KEY"] = key
