@@ -133,19 +133,33 @@ RP_LABEL_OFFSET = {
     "#146 3B E8": (-34, 26),
     "#160 backtracking": (0, -28),
     "#155 3-way restart final": (-40, -140),
-    "#166 AA aug": (-66, 68),
+    "#166 AA aug": (-84, 60),
+    # The four #199 points land inside 3 days of each other and the top three
+    # inside 0.013 R-precision, so they fan out rather than stack. The CW label
+    # has to clear the Protenix-v2 baseline label, which lives at the far right
+    # of this axis at y = 0.603 — hence the large positive dy.
+    "#199 TRC p06-aug": (12, -64),
+    "#199 TRC p03-base": (-70, -56),
+    "#199 CW p06-aug": (-46, 58),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
 # Where the oracle_best_of_100 reading goes (always a separate, bare label).
-RP_ORACLE_OFFSET = {"#155 3-way restart final": (55, 26)}
-# The #117 early-stop checkpoint is step 33450 of the run that ends at 35679,
-# so at day resolution it plots on top of the final. Both markers stay (they
-# genuinely are indistinguishable); one label carries both numbers.
+RP_ORACLE_OFFSET = {"#155 3-way restart final": (-8, 30)}
+# Two pairs of checkpoints are indistinguishable at this resolution. Both
+# markers stay in each case (they genuinely are indistinguishable); one label
+# carries both numbers.
+#   - #117's early-stop checkpoint is step 33450 of the run that ends at 35679,
+#     so at day resolution it plots on top of the final.
+#   - #199's p03-base and p03-aug finished the same day 0.0036 apart, which is
+#     inside the 0.0023-wide span of #204's four evaluations of one unchanged
+#     checkpoint. Drawing them as two labelled steps would assert a difference
+#     the measurement cannot support.
 RP_LABEL_TEXT = {
     "#117 E16 final": "#117 E16 final  0.534\n(early-stop ckpt, same run: 0.532)",
+    "#199 TRC p03-base": "#199 TRC p03-base  0.578\n(p03-aug, same sweep: 0.574)",
 }
-RP_LABEL_SKIP = {"#117 E16 early stop"}
+RP_LABEL_SKIP = {"#117 E16 early stop", "#199 TRC p03-aug"}
 
 
 def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path) -> None:
@@ -223,9 +237,9 @@ def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Pat
         baselines={b["label"]: float(b["r_precision"]) for _, b in baselines.iterrows()},
         frontier=[dict(date=str(pd.Timestamp(d).date()), r_precision=float(v))
                   for d, v in zip(fx, fy)]),
-        caption="Best contacts-v1 model to date on contact R-precision. Three jumps, "
-                "all from the base model: #75 E8 (Jun 21), #117 E16 (Jul 22), #166 "
-                "AA augmentation (Jul 31).")
+        caption="Best contacts-v1 model to date on contact R-precision. Every step "
+                "is a base-model result: #75 E8 (Jun 21), #117 E16 (Jul 22), #166 "
+                "AA aug (Jul 31), #199 AFDB+ESM (Aug 9-10).")
     print(f"wrote {out}")
 
 
@@ -243,7 +257,12 @@ VL_LABEL_OFFSET = {
     "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1": (14, 26),
     "exp137-3way-restart30k-lr2p5e-3": (30, -34),
     "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1": (-56, 16),
+    "prot-exp199-cw-cv1-s02-m1-p06-aug": (-124, 14),
 }
+# Where the "best run still training" callout goes. Hand-placed like the rest:
+# it anchors to whichever live run is currently lowest, which is always in the
+# congested right-hand end of the figure.
+VL_LIVE_OFFSET = (-96, 58)
 # Short human names for the frontier steps worth calling out.
 VL_NAMES = {
     "prot-exp75-cv1-1_5b-e1-lr8.75e-5-wd0p05-v1": "#75 sweep opens (E1)",
@@ -258,8 +277,19 @@ VL_NAMES = {
     "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1": "#166 AA aug",
     "exp137-crops1ep-cv11ep-esm1ep-1_5b-lr3p162e-3-wd0p2-bs128": "#155 3-way mix (original)",
     "exp137-crops0ep-cv11ep-esm1ep-1_5b-lr3p162e-3-wd0p2-bs128": "#155 no-crops ablation",
+    # #199's two TRC steps (~2.6298, ~2.6257) are deliberately left unnamed:
+    # they are 0.004 apart and 3 px apart on this axis, and both are superseded
+    # a day later. Only a named step gets a label, so omitting them here is the
+    # whole fix -- the steps themselves stay in the staircase.
+    "prot-exp199-cw-cv1-s02-m1-p06-aug": "#199 CoreWeave p06-aug",
+    "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1": "#199 cont. aug100",
 }
 YTOP = 3.26
+# Colour for runs whose loss was recorded on the current (post-marin#7209)
+# scale and converted onto this figure's historical axis. Slot 3 of the
+# palette, the same ink the oracle diagnostic uses on the accuracy figures:
+# in both cases it marks "this number is not measured the way the others are".
+CONVERTED_C = "#008300"
 
 
 def _source_blurb(runs: pd.DataFrame) -> str:
@@ -297,8 +327,19 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
                pad_lo=3.0, pad_hi=6.0)
 
     n_above = int((done["val_loss"] > YTOP).sum())
-    ax.scatter(done["finished"], done["val_loss"], s=26, color=CLOUD_C, alpha=0.45,
+    native = done[done["val_loss_scale"] != "current"]
+    converted = done[done["val_loss_scale"] == "current"]
+    ax.scatter(native["finished"], native["val_loss"], s=26, color=CLOUD_C, alpha=0.45,
                linewidth=0, zorder=1, label=f"finished training run (n={len(done)})")
+    # Drawn in their own ink because the y position of these is an estimate,
+    # not a measurement: they were recorded under the post-#7209 objective and
+    # shifted onto this axis by a constant fitted on four checkpoints. The
+    # shift (0.382) is fourteen times the last frontier step it sits above.
+    if len(converted):
+        ax.scatter(converted["finished"], converted["val_loss"], s=34,
+                   marker="s", facecolor="none", edgecolor=CONVERTED_C,
+                   linewidth=1.3, alpha=0.85, zorder=2,
+                   label=f"...recorded on the current loss scale, converted (n={len(converted)})")
     ax.step(fx, fy, where="post", color=FRONTIER_C, linewidth=2.0, zorder=3,
             label="best val loss to date")
 
@@ -320,51 +361,63 @@ def plot_val_loss_frontier(runs: pd.DataFrame, rp: pd.DataFrame, out: Path) -> N
         # a hardcoded name would have gone stale and silently mislabeled
         # whichever run took its place.
         live_name = VL_NAMES.get(best_live["name"], best_live["name"])
-        ax.annotate(f"{live_name}, in flight  {best_live['val_loss']:.4f}",
+        live_conv = best_live["val_loss_scale"] == "current"
+        ax.annotate(f"{live_name}, in flight  "
+                    f"{'~' if live_conv else ''}{best_live['val_loss']:.4f}",
                     (best_live["finished"], best_live["val_loss"]),
-                    textcoords="offset points", xytext=(34, 36), ha="center",
-                    fontsize=9, color=TEXT_PRIMARY,
+                    textcoords="offset points", xytext=VL_LIVE_OFFSET, ha="center",
+                    fontsize=9, color=CONVERTED_C if live_conv else TEXT_PRIMARY,
                     arrowprops=dict(arrowstyle="-", color="#c3c2b7", linewidth=1.0,
                                     shrinkA=1, shrinkB=7))
 
     # Label the frontier steps worth naming, plus whichever step is current.
     steps, prev = [], np.inf
-    for x, y, name in zip(fx, fy, done["name"]):
+    for x, y, name, scale in zip(fx, fy, done["name"], done["val_loss_scale"]):
         if y < prev - 1e-12:
-            steps.append((x, y, name))
+            steps.append((x, y, name, scale))
             prev = y
-    for i, (x, y, name) in enumerate(steps):
+    for i, (x, y, name, scale) in enumerate(steps):
         if name not in VL_NAMES and i != len(steps) - 1:
             continue
         dx, dy = VL_LABEL_OFFSET.get(name, (0, 20))
-        ax.annotate(f"{VL_NAMES.get(name, name)}  {y:.4f}", (x, y),
+        # A converted step is labelled in the converted ink and carries the
+        # tilde, so a reader quoting a number off this figure cannot miss that
+        # it is a conversion rather than a logged value.
+        conv = scale == "current"
+        ax.annotate(f"{VL_NAMES.get(name, name)}  {'~' if conv else ''}{y:.4f}", (x, y),
                     textcoords="offset points", xytext=(dx, dy), ha="center",
-                    fontsize=9, color=TEXT_PRIMARY, zorder=5,
+                    fontsize=9, color=CONVERTED_C if conv else TEXT_PRIMARY, zorder=5,
                     arrowprops=dict(arrowstyle="-", color="#c3c2b7", linewidth=1.0,
                                     shrinkA=1, shrinkB=7))
 
-    ax.set_ylim(2.632, YTOP)
+    ax.set_ylim(min(2.632, float(fy.min()) - 0.02), YTOP)
     ax.set_ylabel("held-out contacts-v1 val loss  (nats/token, lower is better)",
                   fontsize=10.5, color=TEXT_SECONDARY)
     ax.set_title("Best contacts-v1 model trained to date - validation loss",
                  fontsize=13.5, color=TEXT_PRIMARY, pad=12, loc="left")
     ax.legend(loc="upper right", frameon=False, fontsize=9, labelcolor=TEXT_SECONDARY)
+    # Both footnote lines have to stay inside ~180 characters: at fontsize 8 on
+    # an 11.6in canvas they run off the edge past that, silently.
     fig.text(0.5, 0.030,
              f"Every finished contacts-v1 run in W&B ({_source_blurb(runs)}); "
-             f"{n_above} runs sit above the top of the axis.",
+             f"{n_above} above the axis; crashed/preempted excluded.",
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.text(0.5, 0.010,
-             "Preempted/crashed runs are excluded - their last logged loss is mid-training, not a trained model.",
+             "Axis = the pre-marin#7209 objective. Green runs were logged under the current one (padding targets masked) "
+             "and shifted by -0.382: read their y as ~, not exact.",
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.tight_layout(rect=(0, 0.055, 1, 1))
     fig.savefig(out, dpi=170, facecolor=SURFACE)
     plt.close(fig)
     _write_meta(out, dict(
         figure="val_loss_frontier", n_runs=len(done), n_above_axis=n_above,
-        frontier=[dict(date=str(pd.Timestamp(x).date()), val_loss=float(y), run=n)
-                  for x, y, n in steps]),
+        n_converted=len(converted), loss_axis="historical (pre-marin#7209)",
+        frontier=[dict(date=str(pd.Timestamp(x).date()), val_loss=float(y), run=n,
+                       scale=s, converted=bool(s == "current"))
+                  for x, y, n, s in steps]),
         caption=f"Best held-out contacts-v1 val loss to date over {len(done)} finished "
-                "runs. The loss frontier has many more steps than the accuracy one.")
+                "runs. The loss frontier has many more steps than the accuracy one; "
+                "the last three are converted from the current loss scale.")
     print(f"wrote {out}")
 
 
@@ -382,9 +435,15 @@ S3_OFFSET = {
     ("#120 re-epoch", "rollout"): (-46, 44),
     ("#117 E8 bs64", "pairwise"): (74, -18),
     ("#117 E16 final", "rollout"): (-46, 34),
-    ("#117 E16 early stop", "rollout"): (18, 34),
-    ("#146 3B E8", "rollout"): (56, -14),
-    ("#166 AA aug", "rollout"): (2, 64),
+    ("#117 E16 early stop", "rollout"): (36, 54),
+    ("#146 3B E8", "rollout"): (-46, -30),
+    ("#166 AA aug", "rollout"): (-30, 78),
+    # #199 crowds the right-hand end: four points inside 0.09 nats, three of
+    # them inside 0.013 R-precision. They stack down rather than fan out.
+    ("#199 TRC p06-aug", "rollout"): (40, -102),
+    ("#199 TRC p03-aug", "rollout"): (26, -62),
+    ("#199 TRC p03-base", "rollout"): (34, 26),
+    ("#199 CW p06-aug", "rollout"): (10, 44),
 }
 
 
@@ -411,11 +470,21 @@ def plot_rprecision_vs_loss(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path
                    edgecolor="white", linewidth=2.0, zorder=3,
                    label=RECIPE_LABEL[recipe])
 
+    # Same convention as the loss figure: a converted x gets the converted ink
+    # and a tilde. Only the x of these points is an estimate -- their
+    # R-precision is measured exactly like every other point here.
+    conv = sub["val_loss_scale"] == "current"
+    ax.scatter(sub.loc[conv, "val_loss"], sub.loc[conv, "r_precision"], s=310,
+               marker="s", facecolor="none", edgecolor=CONVERTED_C, linewidth=1.4,
+               zorder=2, label="val loss converted from the current scale (x only)")
+
     for _, r in sub.iterrows():
         dx, dy = S3_OFFSET.get((r["label"], r["inference"]), (0, 20))
-        ax.annotate(f"{r['label']}\n{r['val_loss']:.4f} -> {r['r_precision']:.3f}",
+        c = r["val_loss_scale"] == "current"
+        ax.annotate(f"{r['label']}\n{'~' if c else ''}{r['val_loss']:.4f} -> {r['r_precision']:.3f}",
                     (r["val_loss"], r["r_precision"]), textcoords="offset points",
-                    xytext=(dx, dy), ha="center", fontsize=8.5, color=TEXT_PRIMARY,
+                    xytext=(dx, dy), ha="center", fontsize=8.5,
+                    color=CONVERTED_C if c else TEXT_PRIMARY,
                     zorder=4,
                     arrowprops=dict(arrowstyle="-", color="#c3c2b7", linewidth=1.0,
                                     shrinkA=1, shrinkB=8))
@@ -439,8 +508,8 @@ def plot_rprecision_vs_loss(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path
              "so they can only be horizontal here.",
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.text(0.5, 0.010,
-             "#120's loss is `contacts-v1-val-orig`, the others `contacts-v1-val` - the same held-out split under "
-             "different cache names (see README.md).",
+             "#120's loss is `contacts-v1-val-orig`, the others `contacts-v1-val`. Green x values are converted "
+             "from the current (post-marin#7209) loss scale by -0.382; see README.md for both caveats.",
              ha="center", fontsize=8, color=TEXT_MUTED)
     fig.tight_layout(rect=(0, 0.055, 1, 1))
     fig.savefig(out, dpi=170, facecolor=SURFACE)
@@ -448,10 +517,13 @@ def plot_rprecision_vs_loss(rp: pd.DataFrame, baselines: pd.DataFrame, out: Path
     _write_meta(out, dict(
         figure="rprecision_vs_val_loss",
         points=[dict(label=r["label"], inference=r["inference"],
-                     val_loss=float(r["val_loss"]), r_precision=float(r["r_precision"]))
+                     val_loss=float(r["val_loss"]), val_loss_scale=r["val_loss_scale"],
+                     val_loss_raw=float(r["val_loss_raw"]),
+                     r_precision=float(r["r_precision"]))
                 for _, r in sub.iterrows()]),
-        caption="R-precision against val loss. ~2 R-precision per nat across "
-                "generations; flat inside one run (#117 early vs final).")
+        caption="R-precision against val loss. Across generations the exchange "
+                "rate is collapsing (2.06 -> 0.71 -> ~0.33 R per nat); inside one "
+                "run it is flat (#117 early vs final).")
     print(f"wrote {out}")
 
 
