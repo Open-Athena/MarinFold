@@ -47,9 +47,23 @@ def wandb_api():
     return wandb.Api()
 
 
-def max_step(api, project: str, run_name: str) -> tuple[int | None, str | None]:
-    """Highest logged step for a run, and its state. (None, None) if absent."""
-    runs = list(api.runs(project, filters={"display_name": run_name}, order="-created_at"))
+def max_step(api, project: str, run_name: str, after: float) -> tuple[int | None, str | None]:
+    """Highest logged step and state for the run created after `after`.
+
+    The `after` filter matters: relaunching a sweep reuses the same W&B display
+    names, so without it this reads the PREVIOUS attempt. Observed live — a stale
+    crashed run from an aborted sweep was counted as a finished arm of the new one.
+    """
+    import datetime
+
+    stamp = datetime.datetime.utcfromtimestamp(after).strftime("%Y-%m-%dT%H:%M:%S")
+    runs = list(
+        api.runs(
+            project,
+            filters={"display_name": run_name, "created_at": {"$gte": stamp}},
+            order="-created_at",
+        )
+    )
     if not runs:
         return None, None
     run = runs[0]
@@ -69,11 +83,15 @@ def main() -> int:
                     help="seconds to wait after the last step before stopping, so the "
                          "trainer can finish writing a checkpoint")
     ap.add_argument("--timeout-h", type=float, default=12.0)
+    ap.add_argument("--after", type=float, default=None,
+                    help="epoch seconds; ignore W&B runs created before this. Defaults to "
+                         "now, so a relaunch never reads the previous attempt's runs.")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
     api = wandb_api()
     runs = [r.strip() for r in a.runs.split(",") if r.strip()]
+    after = a.after if a.after is not None else time.time() - 300
     target = a.steps - 1
     deadline = time.time() + a.timeout_h * 3600
     done_since: float | None = None
@@ -81,12 +99,21 @@ def main() -> int:
     while time.time() < deadline:
         status = {}
         for name in runs:
-            step, state = max_step(api, a.project, name)
+            step, state = max_step(api, a.project, name, after)
             status[name] = (step, state)
         line = "  ".join(f"{n.split('-lr')[-1]}={s}/{target}({st})" for n, (s, st) in status.items())
+        # A crashed or failed arm is NOT a completed arm. Counting it as one is how
+        # a still-training sweep gets killed: two arms mid-flight plus one dead
+        # sibling would have read as "all complete".
+        broken = [n for n, (_, st) in status.items() if st in ("failed", "crashed")]
         complete = [n for n, (s, st) in status.items()
-                    if (s is not None and s >= target) or st in ("finished", "failed", "crashed")]
-        print(f"[reap] {len(complete)}/{len(runs)} complete  {line}", flush=True)
+                    if (s is not None and s >= target) or st == "finished"]
+        print(f"[reap] {len(complete)}/{len(runs)} complete"
+              f"{f', {len(broken)} BROKEN' if broken else ''}  {line}", flush=True)
+        if broken:
+            print(f"[reap] arms failed: {broken} — leaving {a.job} alone for inspection "
+                  "rather than stopping it", flush=True)
+            return 2
 
         if len(complete) == len(runs):
             if done_since is None:
