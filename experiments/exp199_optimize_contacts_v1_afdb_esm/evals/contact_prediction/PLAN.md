@@ -51,8 +51,29 @@ not assign per-request TPU seeds, so each fresh decode is a stochastic
 replicate. The first produced `0.5347972614575084`, a delta of
 `+0.001201127303528171`. Its paired standard error against PR #190's 554 values
 is `0.0012401813924336504`. The isolated `rerun02-20260809` control produced
-`0.535215598085612`, a delta of `+0.001619463931631815`. Both passed the 0.006
-gate, while neither exactly reproduced the archived generation.
+`0.535215598085612`, a delta of `+0.001619463931631815`. The
+`finals03-20260810` control produced `0.5328883690891095`, a delta of
+`-0.0007077650648706912`. All three passed the 0.006 gate. Together with PR
+#190, the four evaluations span `0.002327228996502506` R-all.
+
+## PR comparison figure
+
+No additional inference is needed for the PR figure. The four exp199 finals,
+three fresh controls, and PR #190 control already have complete 554-protein
+row tables. `plot_contact_eval.py` downloads the public exp199 tables
+sequentially into `scratch/exp199-pr-figure`, verifies their manifest hashes,
+and combines them with the committed #75, #146, #166, and Protenix-v2 rows.
+
+The boxplot shows PR #190 plus all three fresh #117 evaluations as four
+separate distributions. The scatter shows four separately marked control
+points at one shared loss. Their x positions are lightly dodged and documented
+as such. Exp199 losses were computed by the current code. Historical #75,
+#117, #146, and #166 losses are placed on the current scale with
+`current ≈ old + 0.38171` from the
+[same-checkpoint conversion](https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049).
+Issue #173 and the linked Discord discussion record why the scales changed.
+The plot metadata and comparison CSV retain the raw losses, converted losses,
+row hashes, source paths, and unrounded R-all values.
 
 ## Placement and storage
 

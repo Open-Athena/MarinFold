@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "figure": "final_checkpoint_rprecision",
+  "metric": "all-range R-precision",
+  "box_order": [
+    "exp75",
+    "exp146",
+    "trc-p06-aug",
+    "control-r0",
+    "control-r1",
+    "control-r2",
+    "control-r3",
+    "exp166",
+    "trc-p03-aug",
+    "trc-p03-base",
+    "cw-p06-aug",
+    "protenix"
+  ],
+  "loss_conversion": {
+    "method": "offset",
+    "equation": "current ~= old + 0.38171",
+    "reason": "The four-point empirical study found the offset more stable than its fitted slope over the narrow observed loss range.",
+    "gist": "https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049",
+    "issue": "https://github.com/Open-Athena/MarinFold/issues/173#issuecomment-5227639661",
+    "discord": "https://discord.com/channels/1354881461060243556/1533900986446385202/1535720900165369906"
+  },
+  "control_replicates": [
+    {
+      "key": "control-r0",
+      "evaluation": "PR #190",
+      "r_all": 0.5335961341539802
+    },
+    {
+      "key": "control-r1",
+      "evaluation": "fresh 1",
+      "r_all": 0.5347972614575084
+    },
+    {
+      "key": "control-r2",
+      "evaluation": "fresh 2",
+      "r_all": 0.535215598085612
+    },
+    {
+      "key": "control-r3",
+      "evaluation": "fresh 3",
+      "r_all": 0.5328883690891095
+    }
+  ],
+  "table": "experiments/exp199_optimize_contacts_v1_afdb_esm/data/contact_eval_pr_comparison_summary.csv",
+  "table_sha256": "925b8bec7292f18454bc912f490396827ed430ea2f5b0951a25d0b1a8188ec89",
+  "plot_sha256": "2ce4784f91dbc1b408da0fd115e835fbb4b0b77522b78749be8fae140b1ab55a"
+}

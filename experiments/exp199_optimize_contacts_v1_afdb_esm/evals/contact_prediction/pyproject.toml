@@ -11,6 +11,7 @@ dependencies = [
 [project.optional-dependencies]
 analysis = [
     "huggingface-hub>=1.26,<2",
+    "matplotlib>=3.10,<4",
     "numpy>=2,<3",
     "pandas>=3,<4",
     "pyarrow>=23,<24",

@@ -26,9 +26,9 @@ The control is the exact exp117 1.5B, 16-epoch step 35,679 HF export used by PR
 #190. Its repository revision is pinned. The exp199 analyzer first rescored PR
 #190's lossless sparse votes and recovered mean all-range R-precision
 `0.5335961341539802` across 554 proteins. End-to-end generation is stochastic.
-The two fresh control runs produced `0.5347972614575084` and
-`0.535215598085612`. Both passed PR #190's 0.006 tolerance, but neither exactly
-reproduced the archived value.
+Three fresh control runs produced `0.5347972614575084`, `0.535215598085612`,
+and `0.5328883690891095`. All passed PR #190's 0.006 tolerance. Across the
+archived run and three repeats, R-all spans `0.002327228996502506`.
 
 Submit or resume each checkpoint independently. HF-backed checkpoints omit a
 region so the main cluster can place them wherever capacity is available:
@@ -72,19 +72,60 @@ attempt:
 
 ## Final checkpoint results
 
-| Run | Step | contacts-v1 loss | R-all | R-short | R-medium | R-long |
+![Final checkpoint R-precision comparison](../../plots/final_checkpoint_rprecision.png)
+
+| Run | Step | contacts-v1 loss, current scale | R-all | R-short | R-medium | R-long |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [exp117 1.5B E16 control](https://wandb.ai/eric-czech/marin/runs/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4) | 35,679 | 2.703709 | 0.532888 | 0.627580 | 0.584631 | 0.483040 |
+| [exp117 control, PR #190](https://github.com/Open-Athena/MarinFold/pull/190) | 35,679 | ≈3.085419 | 0.533596 | 0.628409 | 0.585364 | 0.482558 |
+| [exp117 control, fresh r1](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679) | 35,679 | ≈3.085419 | 0.534797 | 0.630044 | 0.585700 | 0.485725 |
+| [exp117 control, fresh r2](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679) | 35,679 | ≈3.085419 | 0.535216 | 0.629265 | 0.585215 | 0.484878 |
+| [exp117 control, fresh r3](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679) | 35,679 | ≈3.085419 | 0.532888 | 0.627580 | 0.584631 | 0.483040 |
 | [exp199 p03-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p03-aug-us-east1) | 72,599 | 3.011531 | 0.574333 | 0.660688 | 0.623301 | 0.526172 |
 | [exp199 p06-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p06-aug-us-east1) | 72,599 | 3.054504 | 0.524407 | 0.629089 | 0.579260 | 0.469668 |
 | [exp199 p03-base](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p03-base-us-east5) | 72,599 | 3.007422 | 0.577965 | 0.657243 | 0.627441 | 0.529338 |
 | [exp199 CoreWeave p06-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug) | 145,199 | 2.971201 | 0.587348 | 0.665621 | 0.635742 | 0.542181 |
 
 Loss is `eval/tokenized/contacts-v1-val/loss` from W&B at the listed checkpoint
-step. The p03-aug and p06-aug R values come from `rerun02-20260809`; the
-control, p03-base, and CoreWeave rows come from `finals03-20260810`. Every
-manifest records the same evaluator revision, 554 targets, target hashes, 100
-rollouts, sampling settings, and tensor parallelism.
+step. Exp199 used the current loss implementation. The exp117 raw loss
+`2.7037086486816406` came from the historical implementation and is shown after
+the empirical conversion `current ≈ old + 0.38171`. The change is traced in
+[issue #173](https://github.com/Open-Athena/MarinFold/issues/173#issuecomment-5227639661)
+and the linked
+[Discord message](https://discord.com/channels/1354881461060243556/1533900986446385202/1535720900165369906).
+The [same-checkpoint study](https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049)
+found the offset more stable than its fitted slope across the narrow observed
+loss range.
+
+The figure retains PR #190's historical #75, #146, #166, and Protenix-v2
+single-sequence references. Their old losses use the same conversion. The four
+#117 boxes and scatter points are separate evaluations of one checkpoint. The
+scatter dodges those points horizontally for visibility while keeping their
+shared converted loss explicit. The loss conversion affects only the x-axis;
+all plotted R-precision values come from the original per-protein evaluations.
+
+CoreWeave p06-aug is the strongest exp199 checkpoint at R-all `0.587348`,
+`0.015809` below Protenix-v2. TRC p03-base and p03-aug reach `0.577965` and
+`0.574333`. Their difference is `0.003632`, the same order as the `0.002327`
+total span observed across the four control evaluations. TRC p06-aug reaches
+`0.524407`. These are single evaluations of each exp199 checkpoint. The
+CoreWeave and TRC p06 runs also have different training histories. CoreWeave
+starts from scratch and ends at step 145,199, while TRC continues an exp117
+checkpoint through step 72,599, so their difference does not isolate hardware.
+
+The p03-aug and p06-aug results come from `rerun02-20260809`; p03-base and
+CoreWeave p06-aug come from `finals03-20260810`. Every manifest records the
+same evaluator revision, 554 targets, target hashes, 100 rollouts, sampling
+settings, and tensor parallelism.
+
+Rebuild the comparison from the published rows without running inference:
+
+```bash
+uv run --frozen --extra analysis python plot_contact_eval.py
+```
+
+The script downloads one result table at a time into repository `scratch/`,
+checks every SHA-256, and validates the means against the compact comparison
+CSV before writing the figure and its metadata.
 
 The CoreWeave p06-aug checkpoint has the highest R-precision in every range.
 It generated 49,135,390 tokens and reached the stop token in 90.03% of
@@ -116,10 +157,11 @@ lives beside the per-checkpoint artifacts.
 Public derived artifacts:
 
 - [canonical PR #190 exp117 control](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp166/derived)
-- [fresh exp117 control replicate](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
+- [fresh exp117 control r1](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
+- [fresh exp117 control r2](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
 - [exp199 p03-aug step 72,599](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp199-cv1-s01-m1-p03-aug-us-east1/step-72599)
 - [exp199 p06-aug step 72,599](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp199-cv1-s01-m1-p06-aug-us-east1/step-72599)
-- [finals03 exp117 control](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
+- [fresh exp117 control r3](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
 - [exp199 p03-base step 72,599](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp199-cv1-s01-m1-p03-base-us-east5/step-72599)
 - [exp199 CoreWeave p06-aug step 145,199](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp199-cw-cv1-s02-m1-p06-aug/step-145199)
 

@@ -89,14 +89,17 @@ The p06-aug final checkpoint is also step 72,599 in `us-east1`. A shared helper
 keeps later finished exp199 runs to a one-line catalog entry.
 
 The current scorer exactly reproduces PR #190's archived control votes at
-R-all `0.5335961341539802`. The fresh `rerun02-20260809` control generation
-reached `0.535215598085612`, a `+0.001619463931631815` mismatch that passed the
-declared 0.006 tolerance. The final p03-aug and p06-aug checkpoints reached
-`0.5743326909766765` and `0.5244069975064393`, respectively. All three used the
-same evaluator revision, inputs, rollout recipe, and scoring pipeline. Their
-concurrent jobs completed without a failure or preemption. The detailed range
-metrics, public artifacts, run order, and reusable layout are in
-[`evals/contact_prediction/README.md`](evals/contact_prediction/README.md) and
+R-all `0.5335961341539802`. Three fresh generations of that checkpoint reached
+`0.5347972614575084`, `0.535215598085612`, and `0.5328883690891095`. The four
+evaluations span `0.002327228996502506`, and every fresh result passed the
+declared 0.006 tolerance. The final p03-aug, p06-aug, p03-base, and CoreWeave
+p06-aug checkpoints reached `0.5743326909766765`, `0.5244069975064393`,
+`0.5779648259578162`, and `0.587348377794962`, respectively. The combined
+[boxplot and loss scatter](plots/final_checkpoint_rprecision.png) shows all
+four control evaluations separately. Historical losses are converted to the
+current scale with the empirical offset documented in the detailed eval
+README. The range metrics, public artifacts, run order, and reusable layout are
+in [`evals/contact_prediction/README.md`](evals/contact_prediction/README.md) and
 [`evals/contact_prediction/PLAN.md`](evals/contact_prediction/PLAN.md).
 
 The first completed evaluation covers

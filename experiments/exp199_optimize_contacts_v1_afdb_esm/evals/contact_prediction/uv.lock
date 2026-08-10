@@ -798,6 +798,7 @@ dependencies = [
 [package.optional-dependencies]
 analysis = [
     { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
+    { name = "matplotlib", marker = "sys_platform == 'linux'" },
     { name = "numpy", marker = "sys_platform == 'linux'" },
     { name = "pandas", marker = "sys_platform == 'linux'" },
     { name = "pyarrow", marker = "sys_platform == 'linux'" },
@@ -831,6 +832,7 @@ requires-dist = [
     { name = "marin-core", extras = ["tpu"], marker = "sys_platform == 'linux' and extra == 'eval'", specifier = "==0.2.73.dev30987879744" },
     { name = "marin-iris", specifier = "==0.2.73.dev30987879744" },
     { name = "marinfold", marker = "extra == 'eval'", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=d79c99f17a7c9abd0d3717ec35cee90bf6649752" },
+    { name = "matplotlib", marker = "extra == 'analysis'", specifier = ">=3.10,<4" },
     { name = "numpy", marker = "extra == 'analysis'", specifier = ">=2,<3" },
     { name = "numpy", marker = "extra == 'eval'", specifier = ">=2,<3" },
     { name = "pandas", marker = "extra == 'analysis'", specifier = ">=3,<4" },
