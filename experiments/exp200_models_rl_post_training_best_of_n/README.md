@@ -242,6 +242,55 @@ conservative. A flat result here bounds the useful range from below; it does not
 speak to whether the dense reward works, which the training-time metrics already
 answer affirmatively.
 
+### Phase 5 — evaluation of the 1e-6 arm (primary criterion NOT met; mechanism identified)
+
+Trained arm scored on all 554 eval proteins x 4 rollouts, uncapped, by the same
+code that produced the arm-F reference, so the comparison is matched rather than
+approximate (job `/bizon/exp200-eval-lr1em06`; scorer agreement on the trained run
+was again exact — max |best_f1 delta| 0.0, 0 mismatches, 0 malformed prompts).
+Paired per protein, n=554. Source:
+[`data/eval_lr1em06_vs_armF_per_protein.csv`](data/eval_lr1em06_vs_armF_per_protein.csv).
+
+| metric | arm F | RL 1e-6 | paired Δ | σ | win % |
+|---|---|---|---|---|---|
+| **best_f1** (primary) | 0.3015 | 0.3022 | **+0.0008** | +0.4 | 54.5 |
+| last_f1 | 0.2456 | 0.2528 | +0.0072 | +2.7 | 54.5 |
+| first_f1 | 0.1849 | 0.1977 | **+0.0128** | **+5.1** | 59.4 |
+| precision | 0.2294 | 0.2379 | **+0.0085** | **+4.6** | 64.3 |
+| n_sections | 14.23 | 12.88 | **−1.35** | **−7.5** | 31.0 |
+| mean_jaccard | 0.0770 | 0.0828 | **+0.0087** | **+7.7** | 72.6 |
+| n_pred | 1319 | 1195 | −125 | −9.1 | 31.9 |
+
+**Primary criterion (≥ +0.02 at ≥3σ): NOT MET.** best_f1 is flat at +0.4σ.
+
+**But the reward did exactly what it was designed to do.** Per-contact precision
+rose +0.0085 at +4.6σ and first-section F1 rose +0.0128 at +5.1σ — individual
+candidates got better, which is precisely what a dense per-contact reward targets.
+There is also no reward hacking: `n_pred_per_section` is unchanged (92.7 -> 92.8),
+so the drop in total predictions comes entirely from emitting **fewer sections**,
+not shorter ones.
+
+**The gain was cancelled by lost diversity.** Sections fell by 1.35 (−7.5σ) and
+Jaccard between them rose by 0.0087 (+7.7σ, 72.6% of proteins). best-of-N is a
+product of per-candidate quality and spread, and this run traded one for the
+other almost exactly evenly.
+
+That is the tension the reward design anticipated: the stepwise term pushes every
+section toward the model's single best guess, and the document-level best-of-N
+term exists to pay for spread. At `lam_step = lam_doc = 1.0` the stepwise term
+won. **The specific next lever is the ratio**, not the learning rate: raise
+`lam_doc` relative to `lam_step`, or make the document term reward spread
+explicitly rather than only the best section's F1.
+
+Note also that the KL of 0.00051 means this is the effect of a policy that barely
+moved. Both readings point the same way — a larger `lam_doc` and a higher learning
+rate — and they are independent knobs.
+
+**Not yet measured:** the guardrail, teacher-forced R-precision in plain
+`<contacts-v1>` mode, needs exp163's `rprec_worker_tpu.py` against arm F's 0.3374.
+Given precision rose and per-section quality improved, base-task damage looks
+unlikely, but it is unmeasured and the kill criterion is therefore unverified.
+
 ### Published artifacts
 
 - **Checkpoint** — [`timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404`](https://huggingface.co/timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404),
@@ -295,7 +344,33 @@ batch 32 does not transfer to a batch-128 run.
 
 ## Conclusion
 
-_(Pending the sweep.)_
+**The dense per-contact reward works; best-of-N did not move because the gain was
+spent on diversity.**
+
+The mechanism is not in doubt. Per-contact precision rose +0.0085 (+4.6σ) and
+first-section F1 rose +0.0128 (+5.1σ) — candidates got better, which is exactly
+what a per-contact reward targets — and `train/mean_advantages` sat at 0.0028
+through training, so the p̄-centring behaved as designed rather than biasing toward
+silence. `n_pred_per_section` was unchanged, so nothing collapsed toward emitting
+less.
+
+The primary metric is flat anyway (+0.0008, +0.4σ) because sections fell 1.35
+(−7.5σ) and inter-section Jaccard rose 0.0087 (+7.7σ). best-of-N is quality times
+spread, and this run traded one for the other almost exactly evenly. At
+`lam_step = lam_doc = 1.0` the stepwise term overwhelmed the document-level term
+that exists to pay for spread.
+
+So the result is a specific, actionable negative rather than an uninformative one.
+The next lever is **the λ ratio, not the learning rate**: raise `lam_doc` relative
+to `lam_step`, or reward spread explicitly rather than only the best section's F1.
+A higher learning rate is worth combining with it — KL of 0.00051 says this policy
+barely moved — but on its own it would likely just buy a larger version of the same
+trade.
+
+Two caveats stated plainly. The guardrail (teacher-forced R-precision in plain
+mode) is **unmeasured**, so that kill criterion is unverified. And only one of
+three learning-rate arms survived preemption, so this is a single point rather than
+a sweep.
 
 What can be said before any accuracy result: the dense per-contact reward works
 as designed on real hardware. `train/mean_advantages` sits at 0.0028 — the
