@@ -92,7 +92,7 @@ def build_configs():
                 kl_beta=float(os.environ.get("EXP200_KL_BETA", "0.01")),
                 train_tpu_type=os.environ.get("EXP200_TRAIN_TPU", "v5p-8"),
                 inference_tpu_type=os.environ.get("EXP200_INFERENCE_TPU", "v5p-8"),
-                num_rollout_workers=int(os.environ.get("EXP200_ROLLOUT_WORKERS", "2")),
+                num_rollout_workers=int(os.environ.get("EXP200_ROLLOUT_WORKERS", "4")),
                 regions=tuple(os.environ.get("EXP200_REGIONS", "us-central1").split(",")),
                 steps_per_eval=int(os.environ.get("EXP200_STEPS_PER_EVAL", "50")),
                 sync_interval_steps=int(os.environ.get("EXP200_SYNC_INTERVAL", "8")),

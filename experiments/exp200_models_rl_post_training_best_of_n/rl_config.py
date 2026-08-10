@@ -305,7 +305,10 @@ def build_rl_job_config(
     # slices is worth more than a larger one that may never place.
     train_tpu_type: str = "v5p-8",
     inference_tpu_type: str = "v5p-8",
-    num_rollout_workers: int = 2,
+    # The binding constraint: the trainer waits 36 s per 37 s iteration for
+    # rollouts. Four workers roughly quarter that stall, and us-central1-a had
+    # 103 ready v5p-8 slices, so the capacity is there.
+    num_rollout_workers: int = 4,
     inference_tensor_parallel_size: int = 4,
     gpu_memory_utilization: float = 0.90,
     # Where the v5p capacity is. The training pool lives in us-east5, so prompt
@@ -336,20 +339,20 @@ def build_rl_job_config(
         regions: Regions, NOT zones. exp163 zone-pinning starved three jobs, and
             ``with_tpu`` leaves regions unset so the scheduler may pick one with
             no v5p at all.
-        sync_interval_steps: Train steps between weight transfers. NOT 1.
-            Measured on the nano run: a step took 372 s, of which generation was
-            1.5 s — 0.4%. The rest is shipping a 2.9 GB bf16 model over Arrow
-            Flight every step and blocking both workers on it. At 1, a 150-step
-            arm is 15.5 h and the three-arm sweep is nearly two days; at 8 an arm
-            is about 2 h.
+        sync_interval_steps: Train steps between weight transfers.
 
-            The cost is that training is no longer strictly on-policy, which is
-            what PPO clipping exists to bound — and we have real sampler logprobs
-            because vLLM always returns them, so the ratio is exact rather than
-            assumed. The dense reward is also centred on an EMA of the policy's
-            own recent precision, which already lags by construction, so a few
-            steps of staleness is consistent with the objective rather than a
-            departure from it.
+            The trainer is ROLLOUT-STARVED, not transfer-bound. W&B throughput
+            metrics from the nano run: `train_step_duration` 1.14 s against
+            `rollout_wait_duration` 36.1 s of a 37.3 s iteration. An earlier
+            reading of this as a weight-transfer cost was wrong — it inferred step
+            time from the spacing between rollout batches, which measures the
+            rollout worker's whole cycle rather than the training step.
+
+            So the lever is `num_rollout_workers`, and this mostly buys back the
+            per-transfer stall. Raising it does make training slightly off-policy,
+            which PPO clipping bounds; the ratio is exact rather than assumed
+            because vLLM always returns sampler logprobs (measured
+            `ratio_mean` 1.0024, so clipping is inert in practice).
     """
     vocab_size = preflight_checkpoint(checkpoint)
     check_engine_model_path(checkpoint)

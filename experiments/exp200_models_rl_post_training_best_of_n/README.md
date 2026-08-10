@@ -131,24 +131,28 @@ extremes are the design arithmetic exactly — `(1 − p̄)/3 = 0.267` and
 `−p̄/3 = −0.067` at the observed p̄ ≈ 0.20. Environment, dense reward, weight
 transfer and serialization all work.
 
-**Throughput was the first real obstacle.** A training step took 372 s, of which
-generation was 1.5 s — **0.4%**. The rest is shipping a 2.9 GB bf16 model over
-Arrow Flight every step and blocking both workers, which is what
-`with_on_policy_training()` forces by pinning `sync_interval_steps=1`. At that
-rate a 150-step arm is 15.5 h and the three-arm sweep is nearly two days.
-`sync_interval_steps` is now a knob (default 8, about 2 h per arm), and
-`max_rollout_step_delay` moves with it — leaving it at 0 drops everything the
-rollout worker produces between syncs and starves the trainer. The cost is that
-training is no longer strictly on-policy, which is what PPO clipping bounds; the
-ratio is exact rather than assumed because vLLM always returns sampler logprobs.
+**Training completes, and the loop is healthy.** W&B for the nano run:
+`finished`, 10/10 steps, `train/max_advantages` 0.4746 (dense advantages reach
+the loss), `train/mean_advantages` 0.0028 (≈0, which is exactly what centring the
+reward on p̄ is designed to produce), `train/ratio_mean` 1.0024 (sampler and
+trainer logprobs agree, so clipping is inert and the logprob path is validated),
+`train/kl_k3_mean` 0.00052 with `kl_beta` 0.01.
 
-**The open problem.** No nano run has completed 10 steps. Across 102 rollout
-batches the reported `weight_step` cycled `−1 → 4 → −1 → 4 → −1 → 4 → 8 → −1`
-while the gang reported `failures=0 preemptions=0`. Something recycles below the
-job level, and `iris job logs` returns output for a FAILED child but nothing for
-a RUNNING one, so the process could not be asked what it was doing. The
-environment now writes a diagnostic trace to object storage keyed by a per-
-interpreter boot id, which answers "did it restart?" directly.
+**The bottleneck is rollout supply, not weight transfer.** Throughput metrics:
+`train_step_duration` **1.14 s** against `rollout_wait_duration` **36.1 s** of a
+37.3 s iteration. An earlier reading of this as a weight-transfer cost was wrong
+— it inferred step time from the spacing between rollout batches, which measures
+the rollout worker's whole cycle rather than the training step. The lever is
+`num_rollout_workers` (now 4).
+
+**What actually looked broken.** Runs never terminated, and `weight_step` cycled
+`−1 → 4 → −1` while the gang reported `failures=0 preemptions=0`. The
+object-storage trace settled it: **one boot id, one worker_id, zero failures**
+across 106 batches, so nothing was restarting. The trainer finishes its steps and
+exits; the rollout worker then generates forever and the coordinator waits on it,
+and the client falls back to the "no weights yet" sentinel once its server is
+gone. A completed run therefore has to be detected (W&B `_step`) and stopped,
+rather than being waited on.
 
 #### Bring-up failures, and why the earlier gates could not catch them
 
