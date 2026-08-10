@@ -36,12 +36,23 @@ import time
 from _submit import CLUSTER, IRIS
 
 
-def wandb_api():
+def ensure_credentials() -> None:
     if "WANDB_API_KEY" not in os.environ:
         auth = netrc.netrc().authenticators("api.wandb.ai")
         if not auth or not auth[2]:
             raise SystemExit("no W&B credentials: set WANDB_API_KEY or log in")
         os.environ["WANDB_API_KEY"] = auth[2]
+
+
+def wandb_api():
+    """A FRESH Api per poll.
+
+    `wandb.Api()` caches run objects and their summaries, so a long-lived instance
+    keeps returning the values it first saw. Observed live: the reaper sat reporting
+    step 78 while the run was actually at 120, which would have meant never seeing
+    149 and never stopping the sweep — exactly the failure this script exists to
+    prevent. Constructing an Api is cheap next to a 180 s poll interval.
+    """
     import wandb
 
     return wandb.Api()
@@ -89,7 +100,7 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
-    api = wandb_api()
+    ensure_credentials()
     runs = [r.strip() for r in a.runs.split(",") if r.strip()]
     after = a.after if a.after is not None else time.time() - 300
     target = a.steps - 1
@@ -97,6 +108,7 @@ def main() -> int:
     done_since: float | None = None
 
     while time.time() < deadline:
+        api = wandb_api()  # fresh each poll; see wandb_api()
         status = {}
         for name in runs:
             step, state = max_step(api, a.project, name, after)
