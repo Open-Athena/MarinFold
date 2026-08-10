@@ -471,31 +471,19 @@ def draw_scatter(
     )
     axis.set_xlim(3.153, 2.92)
     axis.set_ylim(0.402, 0.625)
-    axis.set_xlabel("contacts-v1 validation loss on current scale (lower is better →)")
+    loss_ticks = np.asarray([3.15, 3.10, 3.05, 3.00, 2.95])
+    axis.set_xticks(
+        loss_ticks,
+        [
+            f"{current:.2f}\n({current - LOSS_OFFSET:.2f})"
+            for current in loss_ticks
+        ],
+    )
+    axis.set_xlabel(
+        "contacts-v1 validation loss · current scale above, approximate historical "
+        "equivalent in parentheses (lower is better →)"
+    )
     axis.set_ylabel("Mean all-range R-precision")
-    old_loss_axis = axis.secondary_xaxis(
-        -0.20,
-        functions=(
-            lambda current: current - LOSS_OFFSET,
-            lambda old: old + LOSS_OFFSET,
-        ),
-    )
-    old_loss_axis.set_xlabel(
-        "Approximate historical loss scale",
-        color="#77746f",
-        fontsize=8.2,
-        labelpad=4,
-    )
-    old_loss_axis.tick_params(
-        axis="x",
-        colors="#77746f",
-        labelsize=7.8,
-        length=3,
-        width=0.7,
-        pad=2,
-    )
-    old_loss_axis.spines["bottom"].set_color("#aaa7a1")
-    old_loss_axis.spines["bottom"].set_linewidth(0.7)
     axis.set_title("B · Validation loss and mean R-precision", pad=13)
     axis.grid(color="#d8d7d2", linewidth=0.8)
     axis.set_axisbelow(True)
@@ -579,7 +567,7 @@ def run(*, output: Path, scratch: Path) -> None:
     )
     figure.text(
         0.5,
-        0.054,
+        0.088,
         (
             "Each box is one 554-protein evaluation. #117 r0 is PR #190; "
             "r1–r3 are fresh repeats. Scatter points are dodged only for visibility; "
@@ -591,7 +579,7 @@ def run(*, output: Path, scratch: Path) -> None:
     )
     figure.text(
         0.5,
-        0.020,
+        0.052,
         (
             "Historical losses for #75, #117, #146, and #166 use the empirical "
             "conversion current ≈ old + 0.38171. The sigmoid uses each unique "
@@ -600,7 +588,7 @@ def run(*, output: Path, scratch: Path) -> None:
         ha="center",
         fontsize=8,
     )
-    figure.tight_layout(rect=(0, 0.15, 1, 0.955), w_pad=2.6)
+    figure.tight_layout(rect=(0, 0.13, 1, 0.955), w_pad=2.6)
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, dpi=180)
     plt.close(figure)
