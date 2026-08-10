@@ -302,3 +302,30 @@ def test_seed_from_stays_in_numpy_seed_range():
 
     assert 0 <= seed_from(2**62) < 2**31 - 1
     np.random.default_rng(seed_from(2**62))  # must not raise
+
+
+def test_environment_traces_init_and_sample_failures(env_paths, tmp_path):
+    """`iris job logs` shows nothing for a running child, so the env self-reports.
+
+    A tracer that can break the thing it observes is worse than none, so writes
+    are guarded — but an exception inside sample() must still be RECORDED and then
+    re-raised, never swallowed.
+    """
+    import json
+
+    trace = tmp_path / "trace"
+    env = make_env(env_paths, trace_path=str(trace))
+
+    events = [json.load(open(f)) for f in sorted((trace / "env-multi").glob("*.json"))]
+    kinds = [e["kind"] for e in events]
+    assert "boot" in kinds and "env_init" in kinds
+    init = next(e for e in events if e["kind"] == "env_init")
+    assert init["n_proteins"] == 3 and init["max_sections"] == env.max_sections
+    # One boot id for one interpreter — a second id in a real trace means restart.
+    assert len({e["boot"] for e in events}) == 1
+
+
+def test_tracer_is_a_noop_when_unconfigured(env_paths):
+    env = make_env(env_paths)
+    assert env._trace.path is None
+    env._trace.event("anything", x=1)  # must not raise

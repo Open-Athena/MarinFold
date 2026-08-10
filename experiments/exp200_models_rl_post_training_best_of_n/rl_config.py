@@ -223,6 +223,7 @@ def build_curriculum(
     top_p: float = 0.95,
     eval_frequency: int = 50,
     limit: int | None = None,
+    trace_path: str | None = None,
 ) -> CurriculumConfig:
     """Two lessons at a pinned 50:50 mix: the base task and the multi-draft task."""
     common = {
@@ -233,6 +234,7 @@ def build_curriculum(
         "initial_precision": INITIAL_PRECISION,
         "max_model_len": SEQ_LEN,
         "limit": limit,
+        "trace_path": trace_path,
     }
 
     def lesson(mode: str, max_output_tokens: int) -> LessonConfig:
@@ -362,6 +364,9 @@ def build_rl_job_config(
         err_decay=err_decay,
         eval_frequency=steps_per_eval,
         limit=limit,
+        # `iris job logs` is empty for a RUNNING child, so the environment reports
+        # on itself to object storage instead.
+        trace_path=f"{prefix}/trace/{run_name}",
     )
 
     trainer = TrainerConfig(

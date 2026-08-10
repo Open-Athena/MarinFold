@@ -29,6 +29,7 @@ spelled.
 
 import logging
 import math
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
@@ -42,6 +43,7 @@ from marin.rl.environments.inference_ctx.base import BaseInferenceContext
 from marin.rl.types import Rollout, RolloutGroup
 
 import contact_rewards as cr
+from _trace import Tracer
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +101,9 @@ class ContactsV1RLEnv(MarinEnv):
             the caller's ``prng_key``).
         limit: Optional cap on proteins, for smoke tests.
         fetch_workers: Concurrency for per-protein prompt reads.
+        trace_path: Optional object-store prefix for diagnostic events. `iris job
+            logs` shows nothing for a RUNNING child, so without this a worker that
+            misbehaves without dying is unobservable from outside the cluster.
     """
 
     def __init__(
@@ -117,6 +122,7 @@ class ContactsV1RLEnv(MarinEnv):
         seed: int = 0,
         limit: int | None = None,
         fetch_workers: int = 8,
+        trace_path: str | None = None,
     ):
         if mode not in DOC_TOKEN_BY_MODE:
             raise ValueError(f"mode must be one of {sorted(DOC_TOKEN_BY_MODE)}, got {mode!r}")
@@ -132,6 +138,8 @@ class ContactsV1RLEnv(MarinEnv):
 
         self._p_bar = float(initial_precision)
         self._prompt_cache: dict[str, list[dict]] = {}
+        self._trace = Tracer(trace_path, run=f"env-{mode}")
+        self._calls = 0
 
         self._targets = self._load_targets(targets_path, limit, seed=seed)
         ids = sorted(self._targets)
@@ -142,6 +150,11 @@ class ContactsV1RLEnv(MarinEnv):
         logger.info(
             "[exp200/%s] %d proteins (%d train / %d eval), max_sections=%d",
             mode, len(ids), len(self._train_ids), len(self._eval_ids), self.max_sections,
+        )
+        self._trace.event(
+            "env_init", mode=mode, n_proteins=len(ids), n_train=len(self._train_ids),
+            n_eval=len(self._eval_ids), max_sections=self.max_sections,
+            initial_precision=self._p_bar,
         )
 
     @staticmethod
@@ -260,6 +273,27 @@ class ContactsV1RLEnv(MarinEnv):
         """
         from vllm import SamplingParams, TokensPrompt
 
+        self._calls += 1
+        call_started = time.time()
+        self._trace.event(
+            "sample_start", call=self._calls, mode=mode, lesson=self.mode,
+            n_examples=n_examples, n_generations=n_generations,
+            prng_key_type=type(prng_key).__name__, p_bar=self._p_bar,
+        )
+        try:
+            return self._sample(
+                inference_ctx, n_examples, n_generations, decoding, prng_key, mode,
+                SamplingParams, TokensPrompt, call_started,
+            )
+        except BaseException as exc:
+            self._trace.exception("sample_failed", exc, call=self._calls, mode=mode)
+            raise
+
+    def _sample(
+        self, inference_ctx, n_examples, n_generations, decoding, mode_prng, mode,
+        SamplingParams, TokensPrompt, call_started,
+    ):
+        prng_key = mode_prng
         pool = self._train_ids if mode == "train" else self._eval_ids
         if not pool:
             raise ValueError(f"no proteins available for mode={mode!r}")
@@ -312,9 +346,11 @@ class ContactsV1RLEnv(MarinEnv):
             stop_token_ids=[cr.END_ID],
             logprobs=1,
         )
+        gen_started = time.time()
         outputs = inference_ctx.llm.generate(
             [TokensPrompt(prompt_token_ids=s["ids"]) for s in specs], params, use_tqdm=False
         )
+        gen_elapsed = time.time() - gen_started
 
         trace = applied.as_trace()
         by_entry: dict[str, list[Rollout]] = {}
@@ -372,8 +408,20 @@ class ContactsV1RLEnv(MarinEnv):
         if not groups:
             raise ValueError("every rollout group was ragged or empty; nothing to train on")
 
+        p_bar_before = self._p_bar
         self._update_precision(batch_scored, batch_correct)
-        return groups, self._metrics(diagnostics, n_empty, n_dropped, applied)
+        metrics = self._metrics(diagnostics, n_empty, n_dropped, applied)
+        self._trace.event(
+            "sample_done", call=self._calls, mode=mode, lesson=self.mode,
+            n_specs=len(specs), n_rollouts=len(diagnostics), n_groups=len(groups),
+            n_empty=n_empty, n_dropped=n_dropped,
+            gen_s=round(gen_elapsed, 1), total_s=round(time.time() - call_started, 1),
+            max_output_tokens=applied.max_output_tokens, max_prompt_len=max_prompt_len,
+            p_bar_before=round(p_bar_before, 4), p_bar_after=round(self._p_bar, 4),
+            best_f1=metrics.get(f"contacts_{self.mode}/best_f1"),
+            n_pred=metrics.get(f"contacts_{self.mode}/n_pred"),
+        )
+        return groups, metrics
 
     def _update_precision(self, scored: float, correct: float) -> None:
         """EMA-update ``p_bar`` AFTER scoring, so one step shares one baseline."""
