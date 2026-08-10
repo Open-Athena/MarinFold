@@ -36,6 +36,9 @@ def main() -> int:
     # zero demand. Measured, not guessed — which is the only good reason to pin a
     # zone rather than a region.
     ap.add_argument("--zone", default="us-central1-a")
+    ap.add_argument("--model", default=MODEL,
+                    help="checkpoint to score. A gs:// HF export works: phase1_parity "
+                         "stages it locally, so the tokenizer loader never sees a URL.")
     ap.add_argument("--job-name", default="exp200-phase1-parity")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
@@ -50,7 +53,7 @@ def main() -> int:
         zone=a.zone,
         command=[
             "python", "phase1_parity.py",
-            "--model", MODEL, "--targets", TARGETS, "--prompts", PROMPTS, "--out", OUT,
+            "--model", a.model, "--targets", TARGETS, "--prompts", PROMPTS, "--out", OUT,
             "--limit", str(a.limit),
             "--n-generations", str(a.n_generations),
             "--max-sections", str(a.max_sections),
