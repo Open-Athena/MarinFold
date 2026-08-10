@@ -3,10 +3,12 @@
 ## Scope
 
 Evaluate final checkpoints from each completed exp199 run against the exp117
-control used by PR #190. The initial set contains
+control used by PR #190. The completed set currently contains
 `prot-exp199-cv1-s01-m1-p03-aug-us-east1` and
-`prot-exp199-cv1-s01-m1-p06-aug-us-east1`. Keep the same catalog and artifact
-layout ready for new runs as they finish and for other permanent p03 steps.
+`prot-exp199-cv1-s01-m1-p06-aug-us-east1`, plus the newly archived
+`prot-exp199-cv1-s01-m1-p03-base-us-east5` and
+`prot-exp199-cw-cv1-s02-m1-p06-aug`. Keep the same catalog and artifact layout
+ready for new runs as they finish and for other permanent p03 steps.
 
 ## Fixed inputs
 
@@ -16,6 +18,12 @@ layout ready for new runs as they finish and for other permanent p03 steps.
 - Initial candidate selection: step 72,599.
 - Second completed run: p06-aug forced final step 72,599 under its read-only
   `marin-us-east1` checkpoint prefix.
+- Third completed run: p03-base final HF export at step 72,599.
+- Fourth completed run: CoreWeave p06-aug final HF export at step 145,199. Its
+  Levanter step 116,160 remains a training-continuation checkpoint and is not
+  part of the final-checkpoint evaluation.
+- Exp199 HF sources are pinned at revision
+  `ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed`.
 - Control: `open-athena/marinfold-exp117` step 35,679 from the 1.5B, 16-epoch
   run, pinned at HF revision `f07366720aee0f62d7629ad3bd91dbcacc80ddef`.
 - Targets and ground truth: the same checksummed 554-protein exp169 inputs used
@@ -48,8 +56,10 @@ gate, while neither exactly reproduced the archived generation.
 
 ## Placement and storage
 
-- Submit every job to `marin-dev` with Iris `--user eczech`.
-- Run exp199 checkpoints in `us-east1` and the exp117 control in `europe-west4`.
+- Submit the next evaluation batch to `marin` with Iris `--user eczech` and
+  `--priority interactive`.
+- Leave HF-backed jobs region-free so Iris can use available capacity across
+  the main cluster. Native GCS checkpoints retain region-local placement.
 - Request one `v6e-4` per independent checkpoint job.
 - Keep prepared weights only in worker-local `/app/scratch`.
 - Write raw votes, timings, exact inputs, and manifests below
@@ -63,8 +73,9 @@ gate, while neither exactly reproduced the archived generation.
 
 ## Execution order
 
-1. Run the exp117 control and each completed exp199 final checkpoint as separate,
-   concurrent jobs.
+1. Run the exp117 control and each newly added exp199 final checkpoint as
+   separate, concurrent jobs. Reuse validated earlier results in the
+   consolidated comparison.
 2. Finalize every complete 554-protein output independently.
 3. Report the control's unrounded all-range R-precision and reference-gate result.
 4. Compare exp199 runs only after their outputs validate.
@@ -73,8 +84,9 @@ gate, while neither exactly reproduced the archived generation.
 
 ## CoreWeave checkpoint archive
 
-The completed `prot-exp199-cw-cv1-s02-m1-p06-aug` run is staged for a later
-contact evaluation. Its source is version `2026.08.07.2` below the shared
+The completed `prot-exp199-cw-cv1-s02-m1-p06-aug` run is staged for contact
+evaluation from its final HF export. Its source is version `2026.08.07.2`
+below the shared
 `s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/checkpoints/protein/`
 prefix. HF now contains Levanter steps 116,160 and 145,199 and HF step 145,199
 under the run's top-level path. The source objects remain unchanged.
@@ -103,6 +115,6 @@ parallelism.
 | p03-aug rerun02 step 72,599 | 43m 57s | 0.5743326909766765 | complete |
 | p06-aug rerun02 step 72,599 | 44m 53s | 0.5244069975064393 | complete |
 
-Future final runs follow the same path. Add one `exp199_final_checkpoint()`
-catalog entry, submit its independent region-local job, finalize it, and append
-the validated row to `data/contact_eval_final_checkpoint_summary.csv`.
+Future final runs follow the same path. Add one native or revision-pinned HF
+catalog entry, submit its independent job, finalize it, and append the validated
+row to `data/contact_eval_final_checkpoint_summary.csv`.

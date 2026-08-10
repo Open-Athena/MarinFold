@@ -12,10 +12,15 @@ checkpoints. The forced final checkpoint is step 72,599. All nine steps are in
 `checkpoint_specs.py`, so a later trajectory evaluation only requires selecting
 another catalog key.
 
-The only other completed trial is
+The other previously evaluated trial is
 `prot-exp199-cv1-s01-m1-p06-aug-us-east1`. Its forced final checkpoint is also
 step 72,599. `exp199_final_checkpoint()` makes each future completed trial a
 one-line catalog addition.
+
+Two more final HF exports are ready for evaluation. The TRC p03-base run is
+`prot-exp199-cv1-s01-m1-p03-base-us-east5` at step 72,599. The CoreWeave
+p06-aug run is `prot-exp199-cw-cv1-s02-m1-p06-aug` at step 145,199. Both are
+pinned to an immutable `open-athena/marinfold-exp199` revision.
 
 The control is the exact exp117 1.5B, 16-epoch step 35,679 HF export used by PR
 #190. Its repository revision is pinned. The exp199 analyzer first rescored PR
@@ -25,30 +30,30 @@ The two fresh control runs produced `0.5347972614575084` and
 `0.535215598085612`. Both passed PR #190's 0.006 tolerance, but neither exactly
 reproduced the archived value.
 
-Submit or resume each checkpoint independently:
+Submit or resume each checkpoint independently. HF-backed checkpoints omit a
+region so the main cluster can place them wherever capacity is available:
 
 ```bash
 uv run --frozen python submit_contact_eval.py \
   --checkpoint exp117-control-step35679 \
   --run-tag <unique-tag> \
-  --cluster marin-dev \
+  --cluster marin \
   --user eczech
 
 uv run --frozen python submit_contact_eval.py \
-  --checkpoint s01-m1-p03-aug-step72599 \
+  --checkpoint s01-m1-p03-base-step72599 \
   --run-tag <unique-tag> \
-  --cluster marin-dev \
+  --cluster marin \
   --user eczech
 
 uv run --frozen python submit_contact_eval.py \
-  --checkpoint s01-m1-p06-aug-step72599 \
+  --checkpoint cw-s02-m1-p06-aug-step145199 \
   --run-tag <unique-tag> \
-  --cluster marin-dev \
+  --cluster marin \
   --user eczech
 ```
 
-Catalog placement sends the control to `europe-west4` and exp199 checkpoints to
-`us-east1`. Each job requests one `v6e-4`.
+Each submission explicitly uses interactive priority and requests one `v6e-4`.
 
 The isolated `rerun02-20260809` jobs were submitted concurrently on 2026-08-09.
 All three succeeded without a failure or preemption:

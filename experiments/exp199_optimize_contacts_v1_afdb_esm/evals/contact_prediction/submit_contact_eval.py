@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Submit one exp199 checkpoint contact evaluation to marin-dev."""
+"""Submit one exp199 checkpoint contact evaluation through Iris."""
 
 import argparse
 import os
@@ -32,7 +32,7 @@ def build_command(
     hf_token: str,
     cluster: str,
     tpu: str,
-    region: str,
+    region: str | None,
     user: str,
     job_suffix: str | None,
     run_tag: str | None,
@@ -56,46 +56,52 @@ def build_command(
         job_name,
         "--no-wait",
         "--enable-extra-resources",
+        "--priority",
+        "interactive",
         "--preemptible",
-        "--region",
-        region,
-        "--tpu",
-        tpu,
-        "--cpu",
-        "4",
-        "--memory",
-        "32GB",
-        "--disk",
-        "96GB",
-        "--max-retries",
-        "3",
-        "--timeout",
-        "21600",
-        "--extra",
-        "eval",
-        "-e",
-        "HF_TOKEN",
-        hf_token,
-        "-e",
-        "MARINFOLD_ACCELERATOR",
-        tpu,
-        "-e",
-        "VLLM_TARGET_DEVICE",
-        "tpu",
-        "-e",
-        "VLLM_WORKER_MULTIPROC_METHOD",
-        "spawn",
-        "--",
-        "/app/.venv/bin/python",
-        "eval_contact_checkpoint.py",
-        "--checkpoint",
-        checkpoint,
-        "--scratch",
-        f"/app/scratch/{checkpoint}{suffix}",
-        "--output-prefix",
-        output_prefix(checkpoint, run_tag),
     ]
-    if region != spec.region:
+    if region is not None:
+        command.extend(["--region", region])
+    command.extend(
+        [
+            "--tpu",
+            tpu,
+            "--cpu",
+            "4",
+            "--memory",
+            "32GB",
+            "--disk",
+            "96GB",
+            "--max-retries",
+            "3",
+            "--timeout",
+            "21600",
+            "--extra",
+            "eval",
+            "-e",
+            "HF_TOKEN",
+            hf_token,
+            "-e",
+            "MARINFOLD_ACCELERATOR",
+            tpu,
+            "-e",
+            "VLLM_TARGET_DEVICE",
+            "tpu",
+            "-e",
+            "VLLM_WORKER_MULTIPROC_METHOD",
+            "spawn",
+            "--",
+            "/app/.venv/bin/python",
+            "eval_contact_checkpoint.py",
+            "--checkpoint",
+            checkpoint,
+            "--scratch",
+            f"/app/scratch/{checkpoint}{suffix}",
+            "--output-prefix",
+            output_prefix(checkpoint, run_tag),
+        ]
+    )
+    if region is not None and spec.region is not None and region != spec.region:
         print(
             f"[submit] warning: checkpoint is in {spec.region}, job requested {region}",
             flush=True,
@@ -107,7 +113,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", choices=sorted(CHECKPOINTS), required=True)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--cluster", default="marin-dev")
+    parser.add_argument("--cluster", default="marin")
     parser.add_argument("--tpu", default="v6e-4")
     parser.add_argument("--region")
     parser.add_argument("--user", default="eczech")

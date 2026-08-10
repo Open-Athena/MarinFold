@@ -15,7 +15,7 @@ class CheckpointSpec:
     key: str
     run_name: str
     step: int
-    region: str
+    region: str | None
     checkpoint_uri: str | None = None
     tokenizer_repo: str | None = None
     hf_repo_id: str | None = None
@@ -61,6 +61,8 @@ EXP199_GCS_ROOT = (
 EXP199_VERSION = "2026.08.07.1"
 EXP199_TOKENIZER = "eczech/contacts-v1-tokenizer-5d68a24a899f"
 EXP199_FINAL_STEP = 72599
+EXP199_HF_REPO_ID = "open-athena/marinfold-exp199"
+EXP199_HF_REVISION = "ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed"
 
 
 def exp199_checkpoint(
@@ -90,6 +92,20 @@ def exp199_final_checkpoint(trial: str) -> CheckpointSpec:
         run_name=f"{checkpoint_run_name}-us-east1",
         checkpoint_run_name=checkpoint_run_name,
         step=EXP199_FINAL_STEP,
+    )
+
+
+def exp199_hf_checkpoint(*, key: str, run_name: str, step: int) -> CheckpointSpec:
+    """Build one revision-pinned exp199 HF-checkpoint selection."""
+
+    return CheckpointSpec(
+        key=key,
+        run_name=run_name,
+        step=step,
+        region=None,
+        hf_repo_id=EXP199_HF_REPO_ID,
+        hf_subfolder=f"{run_name}/hf/step-{step}",
+        hf_revision=EXP199_HF_REVISION,
     )
 
 
@@ -127,13 +143,23 @@ CHECKPOINTS = {
             for step in P03_PERMANENT_STEPS
         ),
         exp199_final_checkpoint("s01-m1-p06-aug"),
+        exp199_hf_checkpoint(
+            key="s01-m1-p03-base-step72599",
+            run_name="prot-exp199-cv1-s01-m1-p03-base-us-east5",
+            step=72599,
+        ),
+        exp199_hf_checkpoint(
+            key="cw-s02-m1-p06-aug-step145199",
+            run_name="prot-exp199-cw-cv1-s02-m1-p06-aug",
+            step=145199,
+        ),
         CheckpointSpec(
             key="exp117-control-step35679",
             run_name=(
                 "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4"
             ),
             step=35679,
-            region="europe-west4",
+            region=None,
             hf_repo_id="open-athena/marinfold-exp117",
             hf_subfolder=(
                 "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-"
