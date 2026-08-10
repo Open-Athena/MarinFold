@@ -1,0 +1,4 @@
+# Per-protein rows and worker timings are published to the HF bucket. Keep only
+# compact manifests and aggregate summaries in Git.
+contact_eval_*_rows.csv.gz
+contact_eval_*_timings.csv.gz

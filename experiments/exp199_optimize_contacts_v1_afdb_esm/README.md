@@ -56,3 +56,51 @@ uv run --extra tpu --frozen python exp199_sweep_trc.py \
 Add `--run` only after reviewing the lowered plan. For a short isolated run,
 set `SMOKE=yes` and optionally `SMOKE_STEPS` (default 10); smoke runs still use
 the complete validation cache.
+
+## Contact evaluation
+
+The `exp/199-evals` branch keeps a reusable catalog and worker for contact
+evaluation of exp199 checkpoints. Exp199 jobs restore Levanter checkpoints
+directly from their region-local GCS bucket. The control downloads a pinned HF
+export. Each job prepares BF16 weights on ephemeral worker disk and runs the
+complete settled 554-protein, 100-rollout recipe.
+
+The catalog now includes every permanent checkpoint from the completed
+`prot-exp199-cv1-s01-m1-p03-aug-us-east1` run and the exp117 control used by PR
+#190. It also includes the final checkpoint from the completed
+`prot-exp199-cv1-s01-m1-p06-aug-us-east1` run. Submit one checkpoint per job
+from the isolated evaluation workspace:
+
+```bash
+cd evals/contact_prediction
+uv run --frozen python submit_contact_eval.py \
+  --checkpoint s01-m1-p03-aug-step72599 \
+  --run-tag <unique-tag> \
+  --cluster marin-dev \
+  --user eczech
+```
+
+The submitter always passes `--user eczech`, defaults to `marin-dev` and
+`v6e-4`, and uses the checkpoint's source region. Results live under
+`hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp199/replicates/<run-tag>/runs/`.
+The final p03 checkpoint is step 72,599 in `us-east1`. The control is the pinned
+exp117 1.5B, 16-epoch HF export at step 35,679 and runs in `europe-west4`.
+The p06-aug final checkpoint is also step 72,599 in `us-east1`. A shared helper
+keeps later finished exp199 runs to a one-line catalog entry.
+
+The current scorer exactly reproduces PR #190's archived control votes at
+R-all `0.5335961341539802`. The fresh `rerun02-20260809` control generation
+reached `0.535215598085612`, a `+0.001619463931631815` mismatch that passed the
+declared 0.006 tolerance. The final p03-aug and p06-aug checkpoints reached
+`0.5743326909766765` and `0.5244069975064393`, respectively. All three used the
+same evaluator revision, inputs, rollout recipe, and scoring pipeline. Their
+concurrent jobs completed without a failure or preemption. The detailed range
+metrics, public artifacts, run order, and reusable layout are in
+[`evals/contact_prediction/README.md`](evals/contact_prediction/README.md) and
+[`evals/contact_prediction/PLAN.md`](evals/contact_prediction/PLAN.md).
+
+The first completed evaluation covers
+`prot-exp199-cv1-s01-m1-p06-base` at step 26,760. Its mean all-range
+R-precision is 0.461997 across the fixed 554-protein set. The full run record,
+range metrics, timings, and public artifact links are in
+[`evals/contact_prediction/README.md`](evals/contact_prediction/README.md).

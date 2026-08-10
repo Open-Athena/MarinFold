@@ -1,0 +1,58 @@
+[project]
+name = "exp199-contact-prediction-evals"
+version = "0.1.0"
+description = "Evaluate exp199 checkpoints with the settled contacts-v1 rollout recipe."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marin-iris==0.2.73.dev30987879744",
+    "httpx>=0.28.1,<1",
+]
+
+[project.optional-dependencies]
+analysis = [
+    "huggingface-hub>=1.26,<2",
+    "numpy>=2,<3",
+    "pandas>=3,<4",
+    "pyarrow>=23,<24",
+    "scikit-learn>=1.8,<2",
+]
+eval = [
+    "marin-core[tpu]==0.2.73.dev30987879744; sys_platform == 'linux'",
+    "marinfold==0.1.0",
+    "huggingface-hub>=1.26,<2",
+    "numpy>=2,<3",
+    "pyarrow>=23,<24",
+    "safetensors>=0.6,<0.7",
+    "transformers==5.12.1; sys_platform == 'linux'",
+    "tpu-inference==0.23.0; sys_platform == 'linux'",
+    "vllm; sys_platform == 'linux'",
+    "xgrammar==0.2.3; sys_platform == 'linux'",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+# Iris includes the development group in its worker-side sync command.
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+no-build-isolation-package = ["vllm"]
+override-dependencies = [
+    "transformers==5.12.1; sys_platform == 'linux'",
+]
+environments = ["sys_platform == 'linux'"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", rev = "d79c99f17a7c9abd0d3717ec35cee90bf6649752", subdirectory = "marinfold" }
+tpu-inference = { git = "https://github.com/marin-community/tpu-inference.git", rev = "e8809d492d5d6c7008369919a00384eb1c4de969" }
+torch = [{ index = "pytorch-cpu", extra = "eval" }]
+torchvision = [{ index = "pytorch-cpu", extra = "eval" }]
+vllm = { git = "https://github.com/marin-community/vllm.git", rev = "afb26719464d5957e695bde478ae93a160b11d14" }
