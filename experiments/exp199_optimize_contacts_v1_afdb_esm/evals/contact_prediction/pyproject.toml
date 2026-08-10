@@ -30,6 +30,10 @@ eval = [
     "torch==2.11.0",
     "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
+upload = [
+    "huggingface-hub>=1.26,<2",
+    "s3fs>=2026.1,<2027",
+]
 
 # Iris includes the development group in its worker-side sync command.
 [dependency-groups]

@@ -817,12 +817,17 @@ eval = [
     { name = "vllm", marker = "sys_platform == 'linux'" },
     { name = "xgrammar", marker = "sys_platform == 'linux'" },
 ]
+upload = [
+    { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
+    { name = "s3fs", marker = "sys_platform == 'linux'" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "huggingface-hub", marker = "extra == 'analysis'", specifier = ">=1.26,<2" },
     { name = "huggingface-hub", marker = "extra == 'eval'", specifier = ">=1.26,<2" },
+    { name = "huggingface-hub", marker = "extra == 'upload'", specifier = ">=1.26,<2" },
     { name = "marin-core", extras = ["tpu"], marker = "sys_platform == 'linux' and extra == 'eval'", specifier = "==0.2.73.dev30987879744" },
     { name = "marin-iris", specifier = "==0.2.73.dev30987879744" },
     { name = "marinfold", marker = "extra == 'eval'", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=d79c99f17a7c9abd0d3717ec35cee90bf6649752" },
@@ -831,6 +836,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'analysis'", specifier = ">=3,<4" },
     { name = "pyarrow", marker = "extra == 'analysis'", specifier = ">=23,<24" },
     { name = "pyarrow", marker = "extra == 'eval'", specifier = ">=23,<24" },
+    { name = "s3fs", marker = "extra == 'upload'", specifier = ">=2026.1,<2027" },
     { name = "safetensors", marker = "extra == 'eval'", specifier = ">=0.6,<0.7" },
     { name = "scikit-learn", marker = "extra == 'analysis'", specifier = ">=1.8,<2" },
     { name = "torch", marker = "extra == 'eval'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-contact-prediction-evals", extra = "eval" } },
@@ -840,7 +846,7 @@ requires-dist = [
     { name = "vllm", marker = "sys_platform == 'linux' and extra == 'eval'", git = "https://github.com/marin-community/vllm.git?rev=afb26719464d5957e695bde478ae93a160b11d14" },
     { name = "xgrammar", marker = "sys_platform == 'linux' and extra == 'eval'", specifier = "==0.2.3" },
 ]
-provides-extras = ["analysis", "eval"]
+provides-extras = ["analysis", "eval", "upload"]
 
 [package.metadata.requires-dev]
 dev = []
