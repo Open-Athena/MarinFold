@@ -17,7 +17,7 @@ The other previously evaluated trial is
 step 72,599. `exp199_final_checkpoint()` makes each future completed trial a
 one-line catalog addition.
 
-Two more final HF exports are ready for evaluation. The TRC p03-base run is
+Two more final HF exports were evaluated. The TRC p03-base run is
 `prot-exp199-cv1-s01-m1-p03-base-us-east5` at step 72,599. The CoreWeave
 p06-aug run is `prot-exp199-cw-cv1-s02-m1-p06-aug` at step 145,199. Both are
 pinned to an immutable `open-athena/marinfold-exp199` revision.
@@ -62,18 +62,34 @@ All three succeeded without a failure or preemption:
 - [`/eczech/marinfold-exp199-s01-m1-p03-aug-step72599-eval-rerun02-20260809`](https://iris-dev.oa.dev/#/job/%2Feczech%2Fmarinfold-exp199-s01-m1-p03-aug-step72599-eval-rerun02-20260809), 43m 57s
 - [`/eczech/marinfold-exp199-s01-m1-p06-aug-step72599-eval-rerun02-20260809`](https://iris-dev.oa.dev/#/job/%2Feczech%2Fmarinfold-exp199-s01-m1-p06-aug-step72599-eval-rerun02-20260809), 44m 53s
 
+The `finals03-20260810` control and two new candidates ran concurrently on the
+main cluster at interactive priority. All three succeeded on their first
+attempt:
+
+- [`/eczech/marinfold-exp199-exp117-control-step35679-eval-finals03-20260810`](https://iris.oa.dev/#/job/%2Feczech%2Fmarinfold-exp199-exp117-control-step35679-eval-finals03-20260810), 46m 26s
+- [`/eczech/marinfold-exp199-s01-m1-p03-base-step72599-eval-finals03-20260810`](https://iris.oa.dev/#/job/%2Feczech%2Fmarinfold-exp199-s01-m1-p03-base-step72599-eval-finals03-20260810), 45m 8s
+- [`/eczech/marinfold-exp199-cw-s02-m1-p06-aug-step145199-eval-finals03-20260810`](https://iris.oa.dev/#/job/%2Feczech%2Fmarinfold-exp199-cw-s02-m1-p06-aug-step145199-eval-finals03-20260810), 1h 16m 51s
+
 ## Final checkpoint results
 
 | Run | Step | contacts-v1 loss | R-all | R-short | R-medium | R-long |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [exp117 1.5B E16 control](https://wandb.ai/eric-czech/marin/runs/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4) | 35,679 | 2.703709 | 0.535216 | 0.629265 | 0.585215 | 0.484878 |
+| [exp117 1.5B E16 control](https://wandb.ai/eric-czech/marin/runs/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4) | 35,679 | 2.703709 | 0.532888 | 0.627580 | 0.584631 | 0.483040 |
 | [exp199 p03-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p03-aug-us-east1) | 72,599 | 3.011531 | 0.574333 | 0.660688 | 0.623301 | 0.526172 |
 | [exp199 p06-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p06-aug-us-east1) | 72,599 | 3.054504 | 0.524407 | 0.629089 | 0.579260 | 0.469668 |
+| [exp199 p03-base](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p03-base-us-east5) | 72,599 | 3.007422 | 0.577965 | 0.657243 | 0.627441 | 0.529338 |
+| [exp199 CoreWeave p06-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug) | 145,199 | 2.971201 | 0.587348 | 0.665621 | 0.635742 | 0.542181 |
 
 Loss is `eval/tokenized/contacts-v1-val/loss` from W&B at the listed checkpoint
-step. Every R value in the table comes from the fresh `rerun02-20260809` jobs.
-The three manifests agree on the evaluator revision, 554 targets, target hashes,
-100 rollouts, sampling settings, and tensor parallelism.
+step. The p03-aug and p06-aug R values come from `rerun02-20260809`; the
+control, p03-base, and CoreWeave rows come from `finals03-20260810`. Every
+manifest records the same evaluator revision, 554 targets, target hashes, 100
+rollouts, sampling settings, and tensor parallelism.
+
+The CoreWeave p06-aug checkpoint has the highest R-precision in every range.
+It generated 49,135,390 tokens and reached the stop token in 90.03% of
+rollouts, compared with about 27 million tokens and 100% stop rates for the
+same-batch control and p03-base jobs. This accounts for its longer evaluation.
 
 The current scorer can separately reproduce PR #190's archived lossless votes:
 
@@ -82,15 +98,15 @@ uv run --frozen --extra analysis python analyze_contact_eval.py \
   --verify-pr190-control
 ```
 
-That deterministic rescore returns R-all `0.5335961341539802`. The fresh control
-generation returned `0.535215598085612`, a `+0.001619463931631815` mismatch.
-The gate passed because its declared absolute tolerance is 0.006. PR #190 did
-not assign per-request TPU seeds, so decoded samples vary across runs. The p03
-and p06 jobs used the same stochastic generation, vote, and metric pipeline as
-the fresh control.
+That deterministic rescore returns R-all `0.5335961341539802`. The
+`finals03-20260810` control returned `0.5328883690891095`, a
+`-0.0007077650648706912` delta that passed the 0.006 gate. PR #190 did not
+assign per-request TPU seeds, so decoded samples vary across runs. Every
+candidate used the same stochastic generation, vote, and metric pipeline as a
+validated control replicate.
 
-Within `rerun02-20260809`, the p03-aug final is `+0.0391170928910645` R-all
-above the fresh control and p06-aug is `-0.0108086005791727` below it. The local
+Within `finals03-20260810`, p03-base is `+0.04507645686870665` R-all above the
+fresh control and CoreWeave p06-aug is `+0.054460008705852436` above it. The local
 [`contact_eval_final_checkpoint_summary.csv`](../../data/contact_eval_final_checkpoint_summary.csv)
 index preserves unrounded range values, the PR #190 reference and delta, run
 identities, job names, and artifact prefixes. A
@@ -103,6 +119,9 @@ Public derived artifacts:
 - [fresh exp117 control replicate](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
 - [exp199 p03-aug step 72,599](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp199-cv1-s01-m1-p03-aug-us-east1/step-72599)
 - [exp199 p06-aug step 72,599](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/rerun02-20260809/derived/prot-exp199-cv1-s01-m1-p06-aug-us-east1/step-72599)
+- [finals03 exp117 control](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/step-35679)
+- [exp199 p03-base step 72,599](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp199-cv1-s01-m1-p03-base-us-east5/step-72599)
+- [exp199 CoreWeave p06-aug step 145,199](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp199-cw-cv1-s02-m1-p06-aug/step-145199)
 
 The exp199 raw votes, timings, exact inputs, and manifests use exact run
 identities:

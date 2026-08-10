@@ -1,0 +1,101 @@
+{
+  "artifacts": {
+    "contact_eval_s01_m1_p03_base_step72599_finals03_20260810_rows.csv.gz": {
+      "bytes": 148523,
+      "sha256": "6ea217b2910dbc9a0bf33d34c13c0d23a99e033cb8233b64d158fca76b0c1758"
+    },
+    "contact_eval_s01_m1_p03_base_step72599_finals03_20260810_summary.csv": {
+      "bytes": 3478,
+      "sha256": "71393aa4f351878044be0f1d50baa00e6e980a50974920b8d1038f800296b7b8"
+    },
+    "contact_eval_s01_m1_p03_base_step72599_finals03_20260810_timings.csv.gz": {
+      "bytes": 27952,
+      "sha256": "1a2d90f9881ecff3f0773af0089a3a1e8a560738e6625f1ada3b5b8d07f67ede"
+    }
+  },
+  "checkpoint": {
+    "hf_repo_id": "open-athena/marinfold-exp199",
+    "hf_revision": "ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed",
+    "hf_subfolder": "prot-exp199-cv1-s01-m1-p03-base-us-east5/hf/step-72599",
+    "key": "s01-m1-p03-base-step72599",
+    "run_name": "prot-exp199-cv1-s01-m1-p03-base-us-east5",
+    "step": 72599
+  },
+  "created_at": "2026-08-10T13:55:00.337325+00:00",
+  "derived_prefix": "hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/prot-exp199-cv1-s01-m1-p03-base-us-east5/step-72599",
+  "metric_recipe": {
+    "cuts": [
+      "L",
+      "L/2",
+      "L/5",
+      "R",
+      "AUC"
+    ],
+    "minimum_contact_degree": 0.001,
+    "minimum_sequence_separation": 6,
+    "ranges": {
+      "all": [
+        6,
+        null
+      ],
+      "long": [
+        24,
+        null
+      ],
+      "medium": [
+        12,
+        23
+      ],
+      "short": [
+        6,
+        11
+      ]
+    },
+    "ranking": "descending integer rollout votes; stable mergesort for ties"
+  },
+  "run_tag": "finals03-20260810",
+  "schema_version": 1,
+  "source_manifest": {
+    "checkpoint": {
+      "hf_repo_id": "open-athena/marinfold-exp199",
+      "hf_revision": "ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed",
+      "hf_subfolder": "prot-exp199-cv1-s01-m1-p03-base-us-east5/hf/step-72599",
+      "key": "s01-m1-p03-base-step72599",
+      "run_name": "prot-exp199-cv1-s01-m1-p03-base-us-east5",
+      "step": 72599
+    },
+    "ground_truth_sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9",
+    "ground_truth_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp169/gt_universe.jsonl",
+    "marinfold_revision": "d79c99f17a7c9abd0d3717ec35cee90bf6649752",
+    "max_num_seqs": 128,
+    "max_tokens": "min(8192-prompt_tokens, 6*L+128)",
+    "min_sequence_separation": 6,
+    "n_rollouts": 100,
+    "n_targets": 554,
+    "schema_version": 1,
+    "targets_sha256": "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111",
+    "targets_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp169/eval_targets.parquet",
+    "temperature": 1.0,
+    "tensor_parallel_size": 4,
+    "top_k": -1,
+    "top_p": 0.95,
+    "versions": {
+      "marin-core": "0.2.73.dev30987879744",
+      "marin-levanter": "0.2.73.dev30987879744",
+      "marinfold": "0.1.0",
+      "torch": "2.11.0+cpu",
+      "tpu-inference": "0.23.0",
+      "transformers": "5.12.1",
+      "vllm": "1+tpu"
+    }
+  },
+  "source_prefix": "hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp199/replicates/finals03-20260810/runs/prot-exp199-cv1-s01-m1-p03-base-us-east5/step-72599",
+  "validation": {
+    "n_metric_rows": 11080,
+    "n_rollouts": 100,
+    "n_sparse_vote_rows": 1496529,
+    "n_targets": 554,
+    "r_all_precision": 0.5779648259578162,
+    "reference": null
+  }
+}

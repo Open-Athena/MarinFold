@@ -84,8 +84,8 @@ gate, while neither exactly reproduced the archived generation.
 
 ## CoreWeave checkpoint archive
 
-The completed `prot-exp199-cw-cv1-s02-m1-p06-aug` run is staged for contact
-evaluation from its final HF export. Its source is version `2026.08.07.2`
+The completed `prot-exp199-cw-cv1-s02-m1-p06-aug` run was evaluated from its
+final HF export. Its source is version `2026.08.07.2`
 below the shared
 `s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/checkpoints/protein/`
 prefix. HF now contains Levanter steps 116,160 and 145,199 and HF step 145,199
@@ -114,6 +114,19 @@ parallelism.
 | exp117 fresh rerun02 step 35,679 | 45m 54s | 0.535215598085612 | passed tolerance; not exact |
 | p03-aug rerun02 step 72,599 | 43m 57s | 0.5743326909766765 | complete |
 | p06-aug rerun02 step 72,599 | 44m 53s | 0.5244069975064393 | complete |
+| exp117 fresh finals03 step 35,679 | 46m 26s | 0.5328883690891095 | passed tolerance; not exact |
+| p03-base finals03 step 72,599 | 45m 8s | 0.5779648259578162 | complete |
+| CoreWeave p06-aug finals03 step 145,199 | 1h 16m 51s | 0.587348377794962 | complete |
+
+The `finals03-20260810` jobs ran concurrently on region-unrestricted `v6e-4`
+workers in the main `marin` cluster with interactive priority. All three
+succeeded on their first attempts without a failure or preemption. The control
+delta from the canonical PR #190 result was `-0.0007077650648706912` and passed
+the 0.006 gate. Every finalizer validated 554 proteins and 11,080 metric rows.
+
+CoreWeave p06-aug generated 49,135,390 tokens with a 90.03% stop-token rate,
+compared with 27,303,226 tokens and a 100% stop rate for p03-base. The extra
+decoding explains the longer TPU runtime.
 
 Future final runs follow the same path. Add one native or revision-pinned HF
 catalog entry, submit its independent job, finalize it, and append the validated
