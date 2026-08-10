@@ -220,3 +220,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# exp200 reaper log (operational, not a result)
+experiments/exp200_models_rl_post_training_best_of_n/data/reap_sweep.log

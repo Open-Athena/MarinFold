@@ -36,10 +36,17 @@ Fully online `RLJob` (`marin.rl`): vLLM rollout workers and a train worker with 
 - `contact_rewards.py` — the dense reward, walking **token ids** rather than decoded text so rewards land on specific positions. Per-section F1 is verified equal to exp163's `rollout_metrics.score_rollout`, so the document return is the same number the published #163 figures came from.
 - `dense_loss.py` — `ContactsDenseLoss(RLOOLoss)`, returning one per-token advantage array per rollout: `A_t = lam_step · token_rewards[t] + lam_doc · (R_doc − RLOO baseline)`.
 - `contacts_env.py` — `ContactsV1RLEnv(MarinEnv)`; one instance per lesson, plain and multi at equal curriculum weight.
+- `rl_config.py` — assembles the `RLJobConfig`; also the checkpoint preflight (`rope_theta`, `vocab_size`) and the guards that refuse a config which would fail deep inside a worker.
+- `dispatch_rl.py` / `dispatch_parity.py` / `dispatch_prep.py` / `dispatch_publish.py`, over `_submit.py` — launchers. This directory is the complete iris workspace (exp166's pattern), so the pod resolves exp200's own pinned manifest.
+- `prep_prompt_pool.py` — builds the training pool. `publish_checkpoint_hf.py` — publishes the starting model as an HF repo, which the rollout worker's tokenizer loader requires.
+- `_trace.py` / `read_trace.py` — the environment reports to object storage, because `iris job logs` is empty for a *running* child.
+- `reap.py` — stops a finished run, which marin cannot do itself (see Phase 3).
+- `phase1_parity.py` — the parity gate, with exp163's scorer vendored as `_exp163_rollout_metrics.py` for cross-checking.
 
 marin's vLLM path renders every prompt through a chat template, and this vocab has neither a chat template nor `<|im_end|>`. The context class is picked by a hardcoded `if inference_type == "vllm"` in `rollout_worker.py`, so a subclass cannot be injected. Instead the environment builds prompt token ids itself and calls `inference_ctx.llm.generate` with `TokensPrompt` — the renderer is touched nowhere outside `batch_completions`, and its constructor validates nothing, so setting `canonical_model_name` to a qwen-containing string is enough to get past construction. This is also what exp163's validated `gen_rollouts_worker_exp163.py` does, which makes the Phase-1 parity check a like-for-like comparison rather than a comparison against a reimplementation.
 
-Starting model: `checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404`.
+Starting model: exp163 arm F, republished as the HF repo
+[`timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404`](https://huggingface.co/timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404).
 
 ## Success criteria
 
@@ -50,6 +57,12 @@ Starting model: `checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/st
 Kill criteria: mean contacts per section below 60% of baseline (reward hacking toward silence), `mean_jaccard` above 0.3 (diversity collapse), or R-precision Δ below −0.01 (the exp163 v1/v2 forgetting failure).
 
 ## Results
+
+**Status.** The sampling path reproduces #163's published numbers (Phase 1); the
+training pool is built (Phase 2); the RL loop trains correctly and its one real
+defect — runs that cannot terminate themselves — is root-caused upstream and
+worked around (Phase 3); the learning-rate sweep is running (Phase 4). No
+accuracy claim yet: nothing has been evaluated against the success criteria.
 
 ### Phase 1 — sampling-path parity (PASSED)
 
@@ -117,7 +130,7 @@ contact difficulty.
 Homology-level overlap is **not** addressed — only exact sequence identity. exp41
 (foldseek train-similarity) is the tool if that gap needs closing.
 
-### Phase 3 — RL loop bring-up (in progress)
+### Phase 3 — RL loop bring-up (resolved)
 
 Everything up to the training loop is done and verified. The loop itself runs but
 does not yet complete a run.
@@ -191,6 +204,28 @@ None of these were reachable from the Phase 1 parity gate, which exercises
 generation and scoring rather than the RL loop. That is an argument for the nano
 gate, not against parity: the two cover different surfaces.
 
+### Phase 4 — LR sweep (running)
+
+Launched 2026-08-10 as `/bizon/exp200-rl-sweep`: three arms at
+**1e-6 / 3e-6 / 1e-5**, 150 steps each, `train_batch_size=32`,
+16 prompts x 8 generations per step, `max_sections=8`, `sync_interval_steps=8`,
+KL k3 at beta 0.01, on the full 10,000-protein pool. Each arm is 1 v5p-8 trainer
+plus **4 v5p-8 rollout workers** — the trainer was measured waiting 36.1 s of a
+37.3 s iteration, so rollout supply is the binding constraint. us-central1-a had
+121 ready v5p-8 slices at launch, so 15 slices across three arms is comfortable.
+
+`reap.py` watches all three arms and stops the driver once the last one reaches
+step 149, since the run cannot end itself.
+
+Two numbers to read first when it lands: `throughput/rollout_wait_duration_seconds`
+(does 4 workers actually clear the starvation, or is the answer more workers), and
+`contacts_*/n_pred_per_section` against `mean_jaccard` (the reward-hacking and
+diversity-collapse detectors from the kill criteria).
+
+Learning rates were chosen an order of magnitude below exp163's 1e-4 fine-tune
+value. Note they will not transfer to a different batch size: marin's DAPO
+normalisation divides by the batch token count and then again by batch size.
+
 ### Published artifacts
 
 - **Checkpoint** — [`timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404`](https://huggingface.co/timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404),
@@ -244,4 +279,21 @@ batch 32 does not transfer to a batch-128 run.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+_(Pending the sweep.)_
+
+What can be said before any accuracy result: the dense per-contact reward works
+as designed on real hardware. `train/mean_advantages` sits at 0.0028 — the
+p̄-centred reward is doing exactly what it was built to do, which is to make the
+gradient say "beat your own current precision" rather than "emit fewer contacts".
+And `train/ratio_mean` 1.0024 means the sampler and trainer agree on logprobs to
+within a quarter of a percent, so the importance ratio is exact and clipping is
+inert; that validates the whole logprob path, which is the part of a policy-
+gradient setup that is easiest to get silently wrong.
+
+The methodological lesson worth carrying forward is that the two gates caught
+disjoint classes of bug. Parity (2,216 rollouts, two independent scorers agreeing
+to floating point) proved the measurement; it could not have caught any of the
+five bring-up failures, because it exercises generation and scoring rather than
+the RL loop. The 10-step nano caught all five for a few v5p-minutes each. Neither
+substitutes for the other, and three of the four bugs found across both were
+silent-wrong rather than loud-fail.
