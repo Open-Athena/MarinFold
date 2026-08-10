@@ -204,27 +204,43 @@ None of these were reachable from the Phase 1 parity gate, which exercises
 generation and scoring rather than the RL loop. That is an argument for the nano
 gate, not against parity: the two cover different surfaces.
 
-### Phase 4 — LR sweep (running)
+### Phase 4 — LR sweep (one arm completed; two lost to preemption)
 
-Launched 2026-08-10 as `/bizon/exp200-rl-sweep`: three arms at
-**1e-6 / 3e-6 / 1e-5**, 150 steps each, `train_batch_size=32`,
-16 prompts x 8 generations per step, `max_sections=8`, `sync_interval_steps=8`,
-KL k3 at beta 0.01, on the full 10,000-protein pool. Each arm is 1 v5p-8 trainer
-plus **4 v5p-8 rollout workers** — the trainer was measured waiting 36.1 s of a
-37.3 s iteration, so rollout supply is the binding constraint. us-central1-a had
-121 ready v5p-8 slices at launch, so 15 slices across three arms is comfortable.
+Launched 2026-08-10 as `/bizon/exp200-rl-sweep3`: three arms at **1e-6 / 3e-6 /
+1e-5**, 150 steps, `train_batch_size=32`, 16 prompts x 8 generations,
+`max_sections=8`, `sync_interval_steps=8`, KL k3 at beta 0.01, on the full
+10,000-protein pool. Each arm was 1 v5p-8 trainer plus 4 v5p-8 rollout workers.
 
-`reap.py` watches all three arms and stops the driver once the last one reaches
-step 149, since the run cannot end itself.
+| arm | W&B step | checkpoint | outcome |
+|---|---|---|---|
+| **1e-6** | **149/149, finished** | **step-149** | completed, exported, evaluated |
+| 1e-5 | 120 | step-90 | trainer stalled; stopped |
+| 3e-6 | 100 | step-72 | trainer stalled; stopped |
 
-Two numbers to read first when it lands: `throughput/rollout_wait_duration_seconds`
-(does 4 workers actually clear the starvation, or is the answer more workers), and
-`contacts_*/n_pred_per_section` against `mean_jaccard` (the reward-hacking and
-diversity-collapse detectors from the kill criteria).
+**The loop works at full scale.** Four rollout workers removed the starvation
+entirely — `throughput/rollout_wait_duration_seconds` read **0.0** on all three
+arms against 36.1 s with one worker. `n_pred` held flat (~620 multi, ~130 plain)
+and p̄ flat at 0.13-0.16 through training, so nothing drifted toward emitting
+fewer, safer contacts. KL rose monotonically with learning rate (0.00051 /
+0.00079 / 0.00133), which is the expected ordering and a useful sanity check on
+the anchor.
 
-Learning rates were chosen an order of magnitude below exp163's 1e-4 fine-tune
-value. Note they will not transfer to a different batch size: marin's DAPO
-normalisation divides by the batch token count and then again by batch size.
+**Two arms were lost to preemption, not to a bug.** The driver was preempted
+twice; the two trailing arms' trainers stopped advancing while their rollout
+workers kept generating, and after ~25 minutes with no step progress they were
+stopped to return the slices. The identical config completed cleanly on 1e-6, so
+this is preemptible-v5p attrition rather than a defect. A rerun should either
+accept the attrition and launch arms independently — so one preemption cannot
+strand two siblings under a shared driver — or checkpoint far more often than
+every 20 minutes, since the stalled arms' rolling checkpoints lagged their
+training step by ~30 steps.
+
+**Expect a small effect.** KL of 0.00051 on the completed arm means the policy
+barely moved over 150 steps. The learning rates were chosen an order of magnitude
+below exp163's 1e-4 fine-tune value, and the evidence now says that was
+conservative. A flat result here bounds the useful range from below; it does not
+speak to whether the dense reward works, which the training-time metrics already
+answer affirmatively.
 
 ### Published artifacts
 
