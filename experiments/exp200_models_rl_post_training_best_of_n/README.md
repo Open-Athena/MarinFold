@@ -117,28 +117,106 @@ contact difficulty.
 Homology-level overlap is **not** addressed — only exact sequence identity. exp41
 (foldseek train-similarity) is the tool if that gap needs closing.
 
-### Phase 3+ — RL training
+### Phase 3 — RL loop bring-up (in progress)
 
-_(Pending.)_
+Everything up to the training loop is done and verified. The loop itself runs but
+does not yet complete a run.
 
-**Known prerequisite: the checkpoint needs an HF repo id.**
-`vLLMInferenceContext.__init__` calls `levanter.tokenizers.load_tokenizer` on
-`VLLMEngineConfig.model_name`, and that resolver accepts only a local directory,
-a `mirror://` ref, or an HF Hub repo id — a `gs://` URL raises
-`HFValidationError`. The trap is that vLLM *itself* streams weights from GCS
-happily (`load_format="runai_streamer"`), so the weights path works and only the
-tokenizer path fails, inside a rollout worker after the gang has scheduled.
-`rl_config.check_engine_model_path` now rejects it at config-build time.
+**The reward mechanism is confirmed on real hardware.** Reading a rollout batch
+written by a TPU worker: 4 groups of 4 (uniform, which the replay buffer's
+rectangular indexing requires), prompt 413 / response 433 / logprobs 433 /
+token_rewards 433 (all aligned), `episode_reward` 0.1533, and `token_rewards`
+spanning −0.0669 to 0.2665 with 432/433 nonzero and **not constant**. Those two
+extremes are the design arithmetic exactly — `(1 − p̄)/3 = 0.267` and
+`−p̄/3 = −0.067` at the observed p̄ ≈ 0.20. Environment, dense reward, weight
+transfer and serialization all work.
 
-Note this is specific to the *engine*. `build_worker_configs` resolves
-`RLJobConfig.tokenizer` once in the coordinator and ships the object to both
-workers, so that half accepts anything loadable at submit time.
+**Throughput was the first real obstacle.** A training step took 372 s, of which
+generation was 1.5 s — **0.4%**. The rest is shipping a 2.9 GB bf16 model over
+Arrow Flight every step and blocking both workers, which is what
+`with_on_policy_training()` forces by pinning `sync_interval_steps=1`. At that
+rate a 150-step arm is 15.5 h and the three-arm sweep is nearly two days.
+`sync_interval_steps` is now a knob (default 8, about 2 h per arm), and
+`max_rollout_step_delay` moves with it — leaving it at 0 drops everything the
+rollout worker produces between syncs and starves the trainer. The cost is that
+training is no longer strictly on-policy, which is what PPO clipping bounds; the
+ratio is exact rather than assumed because vLLM always returns sampler logprobs.
 
-The fix is to publish exp163's arm-F export — weights plus the renamed tokenizer
-where id 7 is `<contacts-v1.multi>` — as an HF **model repo** and pass the repo
-id. It currently lives only in the open-athena *bucket*
-(`checkpoints/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF/hf/step-404`), and
-bucket paths are not repo ids. Creating the repo needs an org-scoped token.
+**The open problem.** No nano run has completed 10 steps. Across 102 rollout
+batches the reported `weight_step` cycled `−1 → 4 → −1 → 4 → −1 → 4 → 8 → −1`
+while the gang reported `failures=0 preemptions=0`. Something recycles below the
+job level, and `iris job logs` returns output for a FAILED child but nothing for
+a RUNNING one, so the process could not be asked what it was doing. The
+environment now writes a diagnostic trace to object storage keyed by a per-
+interpreter boot id, which answers "did it restart?" directly.
+
+#### Bring-up failures, and why the earlier gates could not catch them
+
+Five distinct failures, each found by the 10-step nano rather than by a
+three-arm sweep:
+
+| # | Failure | Why it was invisible earlier |
+|---|---|---|
+| 1 | marin deleted the `vllm` extra and `marin.rl` (`e7ef104402`, 2026-08-07) while iris rejects clients older than 14 days | Packaging; surfaces only at pod build |
+| 2 | `WANDB_API_KEY` never propagated to workers | `create_environment` forwards it from `os.getenv` of the *calling* process, so the chain works only if the driver was launched with it |
+| 3 | `canonical_model_name` is both a renderer substring match and an exact `MODEL_MAPPINGS` key | The exact-key lookup is on the weight-transfer path, which pure generation never touches — the Phase 1 gate ran 2,216 rollouts through the same context without hitting it |
+| 4 | `prng_key` is a union of JAX key and plain int, selected by `use_jax_rng = (inference_type == "levanter")` | marin's own `mock_env` calls `jax.random.randint` unguarded, so the union is invisible until you run vLLM inference |
+| 5 | `sync_interval_steps=1` costs 372 s/step | Only measurable once the loop actually ran |
+
+None of these were reachable from the Phase 1 parity gate, which exercises
+generation and scoring rather than the RL loop. That is an argument for the nano
+gate, not against parity: the two cover different surfaces.
+
+### Published artifacts
+
+- **Checkpoint** — [`timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404`](https://huggingface.co/timodonnell/plm-exp163-refine-cv1-1_5b-lr1e-4-e1-cos-tpuF-step404),
+  bf16, `rope_theta=500000`, `vocab_size=2845`, id 7 = `<contacts-v1.multi>`,
+  verified anonymously loadable. Sourced from the open-athena bucket, **not** the
+  GCS bf16 dir: only the bucket copy carries exp163's renamed tokenizer.
+- **Training pool** —
+  `gs://marin-us-east5/protein-structure/MarinFold/exp200/train/{targets.parquet,prompts/}`
+- **Parity evidence** — `data/parity_all554.json`, `data/parity_all554_rollouts.csv`
+
+## Reproducing
+
+This directory is the complete iris workspace (exp166's pattern) — no marin
+checkout, and the iris CLI comes from its own venv. The bundle is built from
+`git ls-files`, so **commit before submitting**; `_submit.check_clean` enforces it.
+
+```bash
+uv sync --extra cpu --extra test
+PYTHONPATH=../../marinfold uv run pytest tests/ -q
+```
+
+```bash
+uv run python dispatch_parity.py --limit 554 --n-generations 4 --max-sections 0
+```
+
+```bash
+uv run python dispatch_prep.py --n 10000 -k 16
+```
+
+```bash
+uv run python dispatch_publish.py
+```
+
+```bash
+EXP200_LRS=1e-6,3e-6,1e-5 EXP200_STEPS=150 uv run python dispatch_rl.py --submit
+```
+
+```bash
+uv run python read_trace.py --path gs://marin-us-east5/protein-structure/MarinFold/exp200/trace/<run-name>
+```
+
+The marin pin is `0.2.76.dev31155643335` and **cannot be advanced**: 0.2.77
+(2026-08-08) is the first release without `marin.rl`, which is
+`ContactsDenseLoss`'s base class and the whole environment API. marin's RL
+direction is now SkyRL, so moving forward is a rewrite rather than a bump.
+
+Capacity note: v5p-16 had 0 ready slices in both zones on 2026-08-09 while v5p-8
+had 103 in us-central1-a, so training runs on v5p-8 at `train_batch_size=32`.
+marin's DAPO normalisation divides by batch size, so a learning rate swept at
+batch 32 does not transfer to a batch-128 run.
 
 ## Conclusion
 
