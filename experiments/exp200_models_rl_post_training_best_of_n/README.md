@@ -145,14 +145,34 @@ trainer logprobs agree, so clipping is inert and the logprob path is validated),
 the rollout worker's whole cycle rather than the training step. The lever is
 `num_rollout_workers` (now 4).
 
-**What actually looked broken.** Runs never terminated, and `weight_step` cycled
-`−1 → 4 → −1` while the gang reported `failures=0 preemptions=0`. The
-object-storage trace settled it: **one boot id, one worker_id, zero failures**
-across 106 batches, so nothing was restarting. The trainer finishes its steps and
-exits; the rollout worker then generates forever and the coordinator waits on it,
-and the client falls back to the "no weights yet" sentinel once its server is
-gone. A completed run therefore has to be detected (W&B `_step`) and stopped,
-rather than being waited on.
+**Runs cannot terminate themselves, and the cause is upstream.** The
+object-storage trace ruled out the obvious explanations first: **one boot id, one
+worker_id, zero failures** across 106 rollout batches, so nothing was restarting,
+and the `weight_step` cycling `−1 → 4 → −1` was just the weight client falling
+back to its "no weights yet" sentinel after the trainer stopped serving.
+
+The coordinator *does* have reaping logic — `train_job.wait()` then
+`_terminate_rollout_jobs()`. It never runs because the completion handshake has no
+safety on either side:
+
+| side | code | failure mode |
+|---|---|---|
+| trainer | `runtime.run_state.mark_completed.remote().result()` (`orchestration.py:308`) | **no timeout** — blocks forever if the RPC does not land |
+| rollout | `get_snapshot.remote().result(timeout=5.0)` inside `except Exception: pass  # best-effort` | a persistent failure is indistinguishable from "still running" — loops forever |
+
+Either way `train_job.wait()` never returns and nothing reaps the rollout workers.
+Measured directly: trace1 logged steps 2→9 and its W&B runtime stopped at **688 s**,
+while the rollout worker kept generating for another 40+ minutes.
+
+Two hypotheses were checked and rejected on the way, which is worth recording so
+nobody re-runs them: hosted actors are served on a background thread
+(`serve_background()`), so the coordinator blocking in `wait()` is not a deadlock;
+and the trainer's only background thread is the replay buffer's, which is
+`daemon=True`, so a lingering non-daemon thread is not holding the process open.
+
+`reap.py` therefore detects completion through W&B — the channel that demonstrably
+works — and stops the job from outside. Fixing the handshake itself would mean
+patching marin, whose RL module was deleted upstream two days after this pin.
 
 #### Bring-up failures, and why the earlier gates could not catch them
 
