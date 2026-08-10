@@ -71,6 +71,21 @@ gate, while neither exactly reproduced the archived generation.
 5. Add another finished exp199 trial with `exp199_final_checkpoint(<trial>)`.
 6. Add other p03 permanent steps by selecting their existing catalog keys.
 
+## CoreWeave checkpoint archive
+
+The completed `prot-exp199-cw-cv1-s02-m1-p06-aug` run is staged for a later
+contact evaluation. Its source is version `2026.08.07.2` below the shared
+`s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/checkpoints/protein/`
+prefix. HF now contains Levanter steps 116,160 and 145,199 and HF step 145,199
+under the run's top-level path. The source objects remain unchanged.
+
+The single-worker transfer validated 25 files and 17,656,716,004 bytes for
+Levanter step 116,160, 36 files and 17,656,751,789 bytes for Levanter step
+145,199, and 6 files and 5,885,614,712 bytes for HF step 145,199. Iris job
+`/eczech/marinfold-exp199-cw-p06-aug-checkpoints-to-hf-01` succeeded on
+`cw-us-east-02a` without a failure or preemption. The resulting HF revision is
+`e2b1e27d92a0cef41d13242b2067519a87685829`.
+
 ## Completion record
 
 The isolated `rerun02-20260809` control, p03 final, and p06-aug final jobs ran

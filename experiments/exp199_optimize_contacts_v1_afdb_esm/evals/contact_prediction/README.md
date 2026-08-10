@@ -126,6 +126,23 @@ and later analyses can be rebuilt without another TPU run. Git retains only
 manifests, aggregate summaries, and the consolidated index. Per-protein rows
 and timing archives remain in HF.
 
+## CoreWeave checkpoint archive
+
+The finished `prot-exp199-cw-cv1-s02-m1-p06-aug` run is available for future
+evaluation from its [HF directory](https://huggingface.co/open-athena/marinfold-exp199/tree/e2b1e27d92a0cef41d13242b2067519a87685829/prot-exp199-cw-cv1-s02-m1-p06-aug).
+It contains Levanter checkpoints at step 116,160, before cooldown, and final
+step 145,199, plus the final HF export at step 145,199. The 67 files total
+41,199,082,505 bytes.
+
+[`upload_cw_checkpoint.py`](upload_cw_checkpoint.py) copied the three subtrees
+serially from the read-only
+`s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/checkpoints/protein/prot-exp199-cw-cv1-s02-m1-p06-aug/2026.08.07.2/`
+source. It staged one subtree at a time on ephemeral disk and used one HF
+upload worker. The
+[`/eczech/marinfold-exp199-cw-p06-aug-checkpoints-to-hf-01`](https://iris.oa.dev/#/job/%2Feczech%2Fmarinfold-exp199-cw-p06-aug-checkpoints-to-hf-01)
+CPU job ran on `cw-us-east-02a` for 6m 44s without a failure or preemption.
+Every destination path, size, and content hash was verified before completion.
+
 ## Step 26760 pilot record
 
 The temporary Iris job
