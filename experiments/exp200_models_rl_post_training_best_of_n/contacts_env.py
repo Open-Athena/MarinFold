@@ -420,6 +420,14 @@ class ContactsV1RLEnv(MarinEnv):
             p_bar_before=round(p_bar_before, 4), p_bar_after=round(self._p_bar, 4),
             best_f1=metrics.get(f"contacts_{self.mode}/best_f1"),
             n_pred=metrics.get(f"contacts_{self.mode}/n_pred"),
+            # The two named kill criteria have to be readable DURING training, not
+            # only at eval. An earlier version recorded best_f1 and n_pred but not
+            # these, which left diversity collapse unobservable for a whole sweep.
+            mean_jaccard=metrics.get(f"contacts_{self.mode}/mean_jaccard"),
+            n_sections=metrics.get(f"contacts_{self.mode}/n_sections"),
+            n_pred_per_section=metrics.get(f"contacts_{self.mode}/n_pred_per_section"),
+            precision=metrics.get(f"contacts_{self.mode}/precision"),
+            last_f1=metrics.get(f"contacts_{self.mode}/last_f1"),
         )
         return groups, metrics
 

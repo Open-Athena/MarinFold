@@ -63,8 +63,13 @@ def main() -> int:
         print(f"{boot:14s} {len(evs):7d} {evs[-1]['uptime_s']:9.1f} {calls:6d} "
               f"{dict(sorted(kinds.items()))}")
 
-    print(f"\nDISTINCT BOOTS: {len(boots)}"
-          f"  -> {'process is being RESTARTED' if len(boots) > 1 else 'single process, no restart'}")
+    hosts = {e["host"] for e in events}
+    print(f"\nDISTINCT BOOTS: {len(boots)} across {len(hosts)} host(s)")
+    if len(boots) > len(hosts):
+        print("  -> more boots than hosts: some process RESTARTED")
+    else:
+        print("  -> one boot per host: no restart (N rollout workers give N boot ids, "
+              "which is expected, not a restart)")
 
     done = [e for e in events if e["kind"] == "sample_done"]
     if done:
