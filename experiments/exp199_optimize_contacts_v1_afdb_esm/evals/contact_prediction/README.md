@@ -85,6 +85,11 @@ attempt:
 | [exp199 p03-base](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cv1-s01-m1-p03-base-us-east5) | 72,599 | 3.007422 | 0.577965 | 0.657243 | 0.627441 | 0.529338 |
 | [exp199 CoreWeave p06-aug](https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug) | 145,199 | 2.971201 | 0.587348 | 0.665621 | 0.635742 | 0.542181 |
 
+![R-precision by contact range and validation loss](../../plots/rprecision_ranges_vs_loss.png)
+
+The best exp199 checkpoint exceeds the Protenix-v2 short- and medium-range
+references while remaining below its all- and long-range scores.
+
 Loss is `eval/tokenized/contacts-v1-val/loss` from W&B at the listed checkpoint
 step. Exp199 used the current loss implementation. The exp117 raw loss
 `2.7037086486816406` came from the historical implementation and is shown after
@@ -133,11 +138,12 @@ Rebuild the comparison from the published rows without running inference:
 
 ```bash
 uv run --frozen --extra analysis python plot_contact_eval.py
+uv run --frozen --extra analysis python plot_rprecision_ranges.py
 ```
 
-The script downloads one result table at a time into repository `scratch/`,
+The scripts download one result table at a time into repository `scratch/`,
 checks every SHA-256, and validates the means against the compact comparison
-CSV before writing the figure and its metadata.
+CSV before writing each figure and its metadata.
 
 The CoreWeave p06-aug checkpoint has the highest R-precision in every range.
 It generated 49,135,390 tokens and reached the stop token in 90.03% of

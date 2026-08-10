@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "figure": "rprecision_ranges_vs_loss",
+  "ranges": [
+    "short",
+    "medium",
+    "all",
+    "long"
+  ],
+  "loss_conversion": {
+    "method": "offset",
+    "equation": "current ~= old + 0.38171",
+    "reason": "The four-point empirical study found the offset more stable than its fitted slope over the narrow observed loss range.",
+    "gist": "https://gist.github.com/eric-czech/9c40252457790a513eeb62a6a965c049",
+    "issue": "https://github.com/Open-Athena/MarinFold/issues/173#issuecomment-5227639661",
+    "discord": "https://discord.com/channels/1354881461060243556/1533900986446385202/1535720900165369906"
+  },
+  "fits": {
+    "short": {
+      "upper": 0.6702485850469084,
+      "midpoint": 3.2189388325502275,
+      "width": 0.052801026753328505,
+      "r_squared": 0.9745600738838411,
+      "input_keys": [
+        "control-mean",
+        "exp75",
+        "exp166",
+        "trc-p06-aug",
+        "trc-p03-aug",
+        "trc-p03-base",
+        "cw-p06-aug"
+      ],
+      "minimum_observed_loss": 2.971200942993164,
+      "maximum_observed_loss": 3.138312
+    },
+    "medium": {
+      "upper": 0.6381161104521151,
+      "midpoint": 3.1832740830343806,
+      "width": 0.045470234043189624,
+      "r_squared": 0.9630904156271662,
+      "input_keys": [
+        "control-mean",
+        "exp75",
+        "exp166",
+        "trc-p06-aug",
+        "trc-p03-aug",
+        "trc-p03-base",
+        "cw-p06-aug"
+      ],
+      "minimum_observed_loss": 2.971200942993164,
+      "maximum_observed_loss": 3.138312
+    },
+    "all": {
+      "upper": 0.5955287948819038,
+      "midpoint": 3.1887020092495577,
+      "width": 0.05418179756469043,
+      "r_squared": 0.951166877972303,
+      "input_keys": [
+        "control-mean",
+        "exp75",
+        "exp166",
+        "trc-p06-aug",
+        "trc-p03-aug",
+        "trc-p03-base",
+        "cw-p06-aug"
+      ],
+      "minimum_observed_loss": 2.971200942993164,
+      "maximum_observed_loss": 3.138312
+    },
+    "long": {
+      "upper": 0.5499908443447845,
+      "midpoint": 3.176409865461675,
+      "width": 0.053520254513501384,
+      "r_squared": 0.9411425711737789,
+      "input_keys": [
+        "control-mean",
+        "exp75",
+        "exp166",
+        "trc-p06-aug",
+        "trc-p03-aug",
+        "trc-p03-base",
+        "cw-p06-aug"
+      ],
+      "minimum_observed_loss": 2.971200942993164,
+      "maximum_observed_loss": 3.138312
+    }
+  },
+  "counts": {
+    "exp75": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "exp146": {
+      "all": 554
+    },
+    "control-r0": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "control-r1": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "control-r2": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "control-r3": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "exp166": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "trc-p06-aug": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "trc-p03-aug": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "trc-p03-base": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "cw-p06-aug": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    },
+    "protenix": {
+      "short": 554,
+      "medium": 553,
+      "all": 554,
+      "long": 553
+    }
+  },
+  "table": "experiments/exp199_optimize_contacts_v1_afdb_esm/data/contact_eval_pr_comparison_summary.csv",
+  "table_sha256": "925b8bec7292f18454bc912f490396827ed430ea2f5b0951a25d0b1a8188ec89",
+  "plot_sha256": "f2eca9d3024a6c7f01818915c06d735ab3724a59d2b67a4f6d46da5b0e0ae164"
+}
