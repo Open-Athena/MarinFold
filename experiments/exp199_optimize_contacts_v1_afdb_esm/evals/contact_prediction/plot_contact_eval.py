@@ -74,11 +74,11 @@ MARKERS = {
 }
 ANNOTATIONS = {
     "exp75": ((9, 15), "left"),
-    "exp146": ((-8, -31), "right"),
+    "exp146": ((8, -38), "left"),
     "exp166": ((12, 18), "left"),
     "trc-p06-aug": ((12, -30), "left"),
-    "trc-p03-aug": ((-12, -34), "right"),
-    "trc-p03-base": ((-20, 29), "right"),
+    "trc-p03-aug": ((8, -34), "left"),
+    "trc-p03-base": ((-20, 21), "right"),
     "cw-p06-aug": ((0, -31), "center"),
 }
 
@@ -556,12 +556,12 @@ def run(*, output: Path, scratch: Path) -> None:
         1,
         2,
         figsize=(18.4, 6.9),
-        gridspec_kw={"width_ratios": [1.42, 1.0]},
+        gridspec_kw={"width_ratios": [1.0, 1.0]},
     )
     draw_boxplot(box_axis, rows, values)
     fit = draw_scatter(scatter_axis, table, values)
     figure.suptitle(
-        "AFDB/ESM mixing checkpoint contact prediction", fontsize=14, y=0.988
+        "AFDB/ESM mixing checkpoint contact prediction", fontsize=14, y=0.972
     )
     figure.text(
         0.5,
