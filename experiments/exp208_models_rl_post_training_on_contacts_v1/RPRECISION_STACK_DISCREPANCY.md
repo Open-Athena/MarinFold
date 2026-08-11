@@ -50,6 +50,26 @@ are byte-identical in size (4,979,485,528 and 906,042,048) between
 `open-athena/marinfold-exp199` @ `ed7103b` (what #199 evaluated) and the
 open-athena bucket copy (what exp208 evaluated).
 
+**Not a checkpoint that trained further since it was benchmarked.** A natural
+reading of "the same checkpoint scores higher now" is that the artifact moved —
+the run continued and the export at `step-145199` was overwritten. It did not:
+
+* the source repo's shard-1 LFS sha256 is **`e8db3b66…` at both
+  `ed7103bfd7da`** (the revision #199's manifest pins) **and at current `main`**,
+  and shard 2 likewise. The weights have not been rewritten since #199 evaluated
+  them.
+* the repo's last weight-bearing commits are `e2b1e27d` / `84d842e5` at
+  2026-08-10 12:39-12:55 UTC, while #199's eval manifest is stamped
+  2026-08-10 14:25 UTC — the evaluation **postdates** the final weight upload.
+* the bucket copy's `PROVENANCE.md` records that both shards were sha256-verified
+  byte-identical to that source (`e8db3b66…`, `a7a38503…`), with **only
+  `config.json` differing**. That identity is documented by the #198 republish
+  rather than independently re-hashed here, but it names the same shard-1 hash
+  this document verified against HF.
+
+So all three copies in play — repo @ `ed7103b`, repo @ `main`, and the bucket —
+carry the same weights.
+
 **Not rope, despite the configs differing.** The two copies' `config.json` do
 differ — the bucket copy carries #198's repair, stating rope as top-level
 `rope_theta` + `rope_scaling` *and* the transformers-5 `rope_parameters` block,
