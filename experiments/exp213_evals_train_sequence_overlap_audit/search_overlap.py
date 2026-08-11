@@ -120,13 +120,19 @@ def read_manifest_meta(manifests: list[Path],
     return meta
 
 
-def concat_targets(work: Path) -> Path:
-    """One FASTA over both arms; skipped if already built and newer than both."""
-    parts = [work / "train_afdb.fasta", work / "train_esm_atlas.fasta"]
+def concat_targets(work: Path, arms: tuple[str, ...] = ARMS) -> Path:
+    """One FASTA over the selected arms; reused if newer than all of them.
+
+    ``arms`` exists so a single arm can be searched on its own — used to
+    cross-check the AFDB-only result against exp94's published numbers, and to
+    quantify what the ESM-Atlas half adds.
+    """
+    parts = [work / f"train_{arm}.fasta" for arm in arms]
     missing = [p for p in parts if not p.exists()]
     if missing:
         raise SystemExit(f"missing {missing}; run fetch_train_sequences.py first")
-    out = work / "train_all.fasta"
+    out = work / ("train_all.fasta" if tuple(arms) == ARMS
+                  else f"train_only_{'_'.join(arms)}.fasta")
     if out.exists() and out.stat().st_mtime >= max(p.stat().st_mtime for p in parts):
         print(f"[targets] reusing {out} ({out.stat().st_size / 1e9:.1f} GB)", flush=True)
         return out
@@ -145,16 +151,24 @@ def concat_targets(work: Path) -> Path:
 
 def search(work: Path, query_fasta: Path, target_fasta: Path, *,
            sensitivity: float, max_seqs: int, evalue: float, threads: int,
-           split_memory_limit: str) -> Path:
+           split_memory_limit: str, tag: str = "") -> Path:
+    """Search the queries against ``target_fasta``; returns the ``.m8`` path.
+
+    ``tag`` namespaces the mmseqs databases and the output so an arm-only run
+    can sit beside the full one without clobbering its (expensive) target DB.
+    """
     mmseqs = ensure_mmseqs()
     print(f"[mmseqs] binary: {mmseqs}", flush=True)
-    query_db, target_db, aln_db = work / "queryDB", work / "targetDB", work / "alnDB"
-    tmp = work / "mmseqs_tmp"
+    suffix = f"_{tag}" if tag else ""
+    query_db = work / f"queryDB{suffix}"
+    target_db = work / f"targetDB{suffix}"
+    aln_db = work / f"alnDB{suffix}"
+    tmp = work / f"mmseqs_tmp{suffix}"
 
     # mmseqs refuses to overwrite an existing result DB or search tmp, so a
     # re-run must clear them; the target DB is expensive and is reused.
     shutil.rmtree(tmp, ignore_errors=True)
-    for stale in list(work.glob("alnDB*")) + list(work.glob("queryDB*")):
+    for stale in list(work.glob(f"alnDB{suffix}*")) + list(work.glob(f"queryDB{suffix}*")):
         stale.unlink()
 
     run([mmseqs, "createdb", query_fasta, query_db])
@@ -171,7 +185,7 @@ def search(work: Path, query_fasta: Path, target_fasta: Path, *,
          "--threads", threads, "--split-memory-limit", split_memory_limit])
     print(f"[mmseqs] search in {time.time() - t0:.0f}s", flush=True)
 
-    m8 = work / "aln.m8"
+    m8 = work / f"aln{suffix}.m8"
     run([mmseqs, "convertalis", query_db, target_db, aln_db, m8,
          "--format-output", FORMAT, "--threads", threads])
     print(f"[mmseqs] alignments -> {m8}", flush=True)
@@ -259,21 +273,27 @@ def main() -> int:
                          f"at {HOMOLOGY_EVALUE:g}")
     ap.add_argument("--threads", type=int, default=64)
     ap.add_argument("--split-memory-limit", default="200G")
+    ap.add_argument("--arms", nargs="+", choices=ARMS, default=list(ARMS),
+                    help="training arms to search against (default: both). A "
+                         "single arm cross-checks against exp94's AFDB-only run.")
     ap.add_argument("--skip-search", action="store_true",
                     help="reuse an existing aln.m8 and only rebuild the table")
     args = ap.parse_args()
 
+    arms = tuple(args.arms)
+    tag = "" if arms == ARMS else "only_" + "_".join(arms)
     n_queries = build_query_fasta(args.manifests, args.query_fasta)
     meta = read_manifest_meta(args.manifests, args.exp41_foldbench)
     print(f"[queries] {n_queries} eval proteins -> {args.query_fasta}", flush=True)
+    print(f"[targets] arms: {', '.join(arms)}", flush=True)
 
-    m8 = args.work / "aln.m8"
+    m8 = args.work / (f"aln_{tag}.m8" if tag else "aln.m8")
     if not args.skip_search:
-        target_fasta = concat_targets(args.work)
+        target_fasta = concat_targets(args.work, arms)
         m8 = search(args.work, args.query_fasta, target_fasta,
                     sensitivity=args.sensitivity, max_seqs=args.max_seqs,
                     evalue=args.evalue, threads=args.threads,
-                    split_memory_limit=args.split_memory_limit)
+                    split_memory_limit=args.split_memory_limit, tag=tag)
     elif not m8.exists():
         raise SystemExit(f"--skip-search but {m8} does not exist")
 
