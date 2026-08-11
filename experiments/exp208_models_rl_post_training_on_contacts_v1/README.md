@@ -657,6 +657,62 @@ pool is AFDB round-0 with pyconfind labels, and only the PDB-derived eval set ha
 been measured). The environment EMA-tracks it from there, so this shapes only the
 opening steps.
 
+### Phase 2 — nano gate: BLOCKED on `RuntimeError: Loss is NaN`
+
+Six RL gangs. **No arm has trained a step.** Every configuration dies at the
+first training step (`last_update_step=0`, W&B history empty), while generation
+is demonstrably healthy throughout.
+
+| run | doc term | lam_doc | live rho | lr | KL beta | outcome |
+|---|---|---|---|---|---|---|
+| nano | consensus | 30 (guess) | 6.7 | 1e-5 | 0.01 | preempted at 37 min, then NaN |
+| nano3 B | consensus | 4.5 (calibrated) | 2.2 | 1e-5 | 0.01 | **NaN** |
+| nano3 F | own F1 | 0.59 (calibrated) | 3.6 | 1e-5 | 0.01 | **NaN** |
+| nanolr | consensus | 4.5 | — | **1e-6** | 0.01 | **NaN** |
+| minimal | **none** | 0 | 0 | **1e-6** | **0** | **NaN** |
+
+The `minimal` row is the important one: arm S carries no document term at all and
+the KL anchor is off, so the advantage is nothing but the dense per-contact
+stepwise reward — and 1e-6 is the learning rate exp200 completed 150 steps at.
+That exonerates everything #208 added: **the document term (two structurally
+different ones), the lambda scale, the learning rate, and the KL**.
+
+**Generation is not the problem.** Across the failing runs the environment
+produced 35-39 sampling calls each, 64 rollouts per call, **0 empty and 0 ragged
+groups**, `n_pred` ~130, per-contact precision ~0.22, group consensus ~0.43,
+`union_over_r` ~12 and inter-rollout Jaccard ~0.10. Nothing is collapsing and
+nothing is malformed.
+
+**What was ruled out by reading marin rather than by launching jobs:**
+
+* `compute_rloo_advantages` — plain leave-one-out, no division by a standard
+  deviation that could be zero for a group of identical rewards;
+* `compute_dapo_loss` — normalises by the **global** token count, so a short or
+  fully-masked row cannot produce 0/0;
+* `compute_ppo_loss_objective`'s `per_batch_loss` **does** divide per row and
+  would go 0/0 on an all-masked row, but it only feeds metadata metrics;
+* the dense-advantage broadcast, which `tests/test_dense_advantage_broadcast.py`
+  pins and which passes.
+
+**The surviving hypothesis is the levanter-side model load.** Generation and
+training load the model twice, independently: vLLM from the HF repo, levanter
+from `initial_checkpoint`. A levanter load that disagrees with vLLM leaves
+rollouts looking perfect while `exp(policy_logp - vllm_logp)` overflows on the
+first step. exp200 measured `train/ratio_mean` at 1.0024 and called it the check
+that validates the whole logprob path; exp208 crashes before it can be logged.
+
+exp208 is the first run to warm-start from an **exp199** export — exp200 used
+exp163 arm F. Their configs were diffed field by field and are semantically
+identical, including rope (`rope_theta` 500000 and the same llama3
+`rope_scaling`); exp199 additionally carries a redundant transformers-5
+`rope_parameters` block with the *same* values, so rope is not the difference.
+
+**The one decisive experiment left** is to run exp208's code unchanged against
+exp163 arm F, exp200's own warm start. If it trains, the harness is sound and
+the exp199 export is at fault; if it NaNs, the fault is in exp208's training
+path and the environment metrics above are beside the point. That is one gang
+and it separates the two hypotheses cleanly.
+
 ### Artifacts
 
 - Baseline of record: `gs://marin-us-central1/protein-structure/MarinFold/exp208/phase0/scores/exp199_cw_p06_aug_step145199`
