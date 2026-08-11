@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Paired per-protein effect sizes, 1e-6 arm vs #163 arm F. Quality rose at 4.6-5.1 sigma, spread fell at 7.5-7.7; their product, best-of-N F1, sits at +0.0008."
+}
