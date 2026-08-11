@@ -35,10 +35,57 @@ A null here is a real result — it would say the joint has to be taught, not de
 |---|---|
 | Phase 0 — is the metric viable at all? | **done** (in the issue; reproduced by `validate_phase0.py`) |
 | A — calibrate bounds on 554 GT structures (`calibrate_bounds.py`) | **done** |
-| B — calibration gate on ground truth (`run_gt_gate.py`) | running |
-| 1 — per-rollout generation (`gen_rollouts_worker.py`) | written, not launched |
-| 1b — CoreWeave dispatch | not started |
+| B — calibration gate on ground truth (`run_gt_gate.py`) | **done — PASS** |
+| B2 — sensitivity at the operating point (`power_check.py`) | **done** |
+| 1 — per-rollout generation (`gen_rollouts_worker.py`) | written; needs the model on CoreWeave S3 |
+| 1b — CoreWeave dispatch (`dispatch_rollouts_cw.py`) | written, not launched |
 | 2–4 — arms, scoring, analysis | not started |
+
+### The gate result (step B, all 554 proteins)
+
+Ground truth beats a separation-matched random set of the same size and the same
+`|i−j|` profile by **5.6× in median per-contact excess, on 89.6 % of proteins** —
+95.4 % at L 100–200, 88.3 % at L 200–350, 100 % at L ≥ 350. The metric works.
+
+Two of the issue's three stated criteria were wrong, and fixing them is part of the
+result:
+
+* **"GT must score ≈ 0" was incoherent against the bounds it was paired with.**
+  `u_contact` is the p99.5 of real contact CA–CA distances, so ~0.5 % of real
+  contacts exceed it *by construction*; the ground truth carries a structural
+  nonzero floor and only reaches < 0.01 per contact on 33 % of proteins. The gate is
+  now **relative**, which is the only form the arms need — every arm is scored under
+  identical bounds, so the scale cancels.
+* **Arm 7 (decoy protein) is not a floor.** A different real protein's contact map
+  scores the same as the true one (0.0384 vs 0.0337; the truth wins on 49.6 %, a coin
+  flip). Correct behaviour — the score sees the contact graph and never the sequence
+  — but it bounds the claim: this experiment can detect *"not a fold at all"*, not
+  *"wrong fold copied from a real one"*.
+
+**Scope limit found here:** below L ≈ 100 the metric is nearly uninformative (GT
+0.0000 vs random 0.0011, GT lower on only 69.7 %) — a short chain embeds almost
+anything. Those 76 proteins are reported separately; power comes from the 394 at
+L ≥ 100. 84 of 554 proteins (15 %) have a chain break and are scored but reported
+apart.
+
+### The sensitivity result (step B2)
+
+The gate contrast is easy; the experiment's real contrast is a rollout against a
+chimera built from the *same* rollouts with the *same* marginals. Sweeping corruption
+across the band #199 occupies (R-precision ≈ 0.59 ⇒ ~40 % wrong), 60 proteins at
+L ≥ 100:
+
+| corruption step | sign consistency | Wilcoxon p | verdict |
+|---|---|---|---|
+| 0.05 | 53–65 % | 0.04–0.35 | **not reliably separable at n = 60** |
+| 0.10 | 58.3 % | 0.006 | separable |
+| 0.20 | 73.3 % | 2.3e−05 | strongly separable |
+
+So the resolvable effect is bounded and the experiment's power has to come from its
+scale — 394 proteins × 100 rollouts per arm, against 60 single draws here. And the
+sweep is an **upper bound** on the real effect: the chimera keeps every pair the
+model proposed and only breaks their co-occurrence, a gentler perturbation than
+swapping pairs for random ones.
 
 ### What is already known (Phase 0, and why the design is what it is)
 
