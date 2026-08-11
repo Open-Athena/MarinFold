@@ -46,6 +46,7 @@ made exp200's parity check a like-for-like comparison.
 import logging
 import math
 import time
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
@@ -63,6 +64,13 @@ import contact_rewards as cr
 from _trace import Tracer
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=64)
+def _candidate_universe(length: int):
+    """Module-level so the LRU cannot pin an environment instance alive."""
+    return cs.candidate_index(length)
+
 
 DOC_TERMS = ("consensus", "own_f1", "none")
 
@@ -146,9 +154,6 @@ class ContactsV1RLEnv(MarinEnv):
 
         self._p_bar = float(initial_precision)
         self._prompt_cache: dict[str, list[dict]] = {}
-        # Candidate universes are ~L^2/2 entries and pure functions of L, so they
-        # are built once per protein rather than once per step.
-        self._universe_cache: dict[int, tuple[np.ndarray, dict[tuple[int, int], int]]] = {}
         self._trace = Tracer(trace_path, run=f"env-{doc_term}")
         self._calls = 0
 
@@ -198,19 +203,26 @@ class ContactsV1RLEnv(MarinEnv):
             out = {keys[int(i)]: out[keys[int(i)]] for i in sorted(picked)}
         return out
 
-    def _universe(self, length: int):
-        """Candidate pair universe for a protein length, cached.
+    @staticmethod
+    def _universe(length: int):
+        """Candidate pair universe for a protein length, LRU-cached.
 
         No ``resolved`` restriction: the training pool is AFDB documents, where
         every residue is present. The eval metric restricts to residues resolved
         in the GT structure, which is a property of the eval set rather than of
         the scoring function.
+
+        THE BOUND IS LOAD-BEARING. A universe is ~L^2/2 entries and is a pure
+        function of L, so an unbounded dict keyed on length looks free — but the
+        exp200 training pool holds **482 distinct lengths** between 31 and 512,
+        which is 22.4M dict entries (a few GB in CPython) if every one is
+        retained. That grows gradually as the sampler works through 10,000
+        proteins, so it would OOM a rollout worker deep into a run rather than at
+        startup. 64 entries covers the reuse that matters (a step touches 8
+        proteins) at a bounded cost, and a miss is ~0.1 s against a ~37 s
+        sampling call.
         """
-        cached = self._universe_cache.get(length)
-        if cached is None:
-            cached = cs.candidate_index(length)
-            self._universe_cache[length] = cached
-        return cached
+        return _candidate_universe(length)
 
     def _prompts_for(self, entry_id: str) -> list[dict]:
         """Realizations for one protein: ``prefix`` text plus its position map."""
