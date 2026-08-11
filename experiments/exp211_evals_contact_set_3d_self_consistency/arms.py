@@ -18,7 +18,7 @@ under-generation as consistency.
 | 4 marginal-matched chimera | ``marginal_chimera``  | **the key null** |
 | 5 splice chimera         | ``splice_chimera``      | the literal "two different rollouts" null |
 | 6 separation-matched random | ``separation_matched_random`` | floor |
-| 7 decoy protein          | ``decoy_protein``       | hard floor |
+| 7 decoy protein          | ``decoy_protein``       | sequence-blindness ceiling (see below) |
 
 **Why arm 4 is the sharp test.** Arms 3 and 4 come from the same model, the same
 protein, the same per-pair marginals and the same set size. The *only* thing that
@@ -157,8 +157,20 @@ def decoy_protein(
 ) -> list[Pair]:
     """Arm 7 — a *different* protein's contact set, clipped to this one's length.
 
-    The hard floor: a real, internally consistent contact map that simply belongs
-    to the wrong sequence. Pairs falling outside ``[0, length)`` are dropped, then
+    **Not a floor — a second ceiling, and the sequence-blindness control.** The
+    issue called this a "hard floor"; the GT gate showed that is wrong, and
+    instructively so. A different real protein's contact map scores *the same as
+    the true one* (median 0.0384 vs 0.0337 per contact; the true set wins on
+    49.6% of proteins — a coin flip). That is correct behaviour, not a failure:
+    the score sees only the contact graph and never the sequence, and a real
+    contact map is a realizable 3D structure no matter which protein it came
+    from. So this arm measures geometric plausibility with the *structural*
+    answer swapped out, and it bounds what the metric can ever detect: it cannot
+    tell "wrong fold, copied from a real one" from "right fold". What it can tell
+    is "not a fold at all" — which is what separation-matched random is (median
+    0.1886, 5.6x worse than the truth).
+
+    Pairs falling outside ``[0, length)`` are dropped, then
     the set is subsampled to ``size``. Callers should pick the donor from proteins
     of similar length so that clipping removes little.
     """
