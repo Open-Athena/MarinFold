@@ -36,7 +36,7 @@ def build(checkpoint, **kwargs):
         prompts_path="gs://bucket/prompts",
         output_prefix="gs://bucket/exp208",
         learning_rate=3e-6,
-        num_train_steps=150,
+        num_train_steps=400,
     )
     return rl_config.build_rl_job_config(**{**defaults, **kwargs})
 
@@ -267,3 +267,17 @@ def test_accepts_colocated_data(checkpoint):
 def test_region_check_ignores_non_marin_buckets(checkpoint):
     # HF repo ids and third-party buckets carry no region signal.
     rl_config.check_region_locality(("us-central1",), a="gs://some-other-bucket/x", b="hf://repo/x")
+
+
+def test_rejects_a_step_count_the_weight_transfer_hook_cannot_align_with(checkpoint):
+    """exp208's exp163 control trained 10 clean steps and then died at step 9 with
+    "weight transfer hook ran at step 9, which is not aligned with
+    sync_interval_steps=8".
+
+    The final transfer fires at num_train_steps - 1, so any step count that is not
+    a multiple of the sync interval throws that away 25 minutes into a gang. Fail
+    at config time instead.
+    """
+    with pytest.raises(ValueError, match="not a multiple of"):
+        build(checkpoint, num_train_steps=10, sync_interval_steps=8)
+    build(checkpoint, num_train_steps=16, sync_interval_steps=8)   # aligned: fine

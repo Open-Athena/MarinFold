@@ -707,11 +707,40 @@ identical, including rope (`rope_theta` 500000 and the same llama3
 `rope_scaling`); exp199 additionally carries a redundant transformers-5
 `rope_parameters` block with the *same* values, so rope is not the difference.
 
-**The one decisive experiment left** is to run exp208's code unchanged against
-exp163 arm F, exp200's own warm start. If it trains, the harness is sound and
-the exp199 export is at fault; if it NaNs, the fault is in exp208's training
-path and the environment metrics above are beside the point. That is one gang
-and it separates the two hypotheses cleanly.
+**The control settled it: the harness is sound, and the exp199 export is at
+fault.** exp208's code, unchanged, warm-started from exp163 arm F (exp200's own
+checkpoint) instead of exp199 — same arm S, same lr 1e-6, same `kl_beta=0`, same
+everything else — trained **10 clean steps with no NaN**:
+
+| step | `train/ratio_mean` | `train/max_advantages` | `train/policy_entropy` |
+|---|---|---|---|
+| 0 | 0.999794 | 0.1833 | 2.599 |
+| 4 | 0.999862 | 0.2047 | 2.381 |
+| 9 | 1.000513 | 0.2376 | 2.324 |
+
+`ratio_mean` holds at 1.0000 ± 0.0005 for every step — sampler and trainer agree
+on logprobs to within 0.05%, which is the check exp200 used (1.0024) to validate
+the whole policy-gradient path. Advantages are non-zero and reach the loss, and
+entropy sits where exp200 measured it (2.618). So the environment, the dense
+reward, `ContactsDenseLoss`, the config assembly and the weight-transfer path are
+all correct; **only the choice of warm start separates a clean run from NaN.**
+
+That run then died at step 9 with `ValueError: weight transfer hook ran at step
+9, which is not aligned with sync_interval_steps=8` — unrelated to the NaN, and
+an exp208 config bug: the final transfer fires at `num_train_steps - 1`, so a
+10-step nano with sync 8 cannot align. `build_rl_job_config` now rejects a
+misaligned pair at config time (the real arms use 400 steps, which is aligned).
+
+**Open: why does the exp199 export NaN in levanter?** Its config is semantically
+identical to exp163 arm F's, rope included, and vLLM loads the same files and
+generates well (precision 0.22, consensus 0.43), so the weights are finite and
+correctly mapped for inference. What differs is the model itself. The next
+diagnostic is a weight-statistics comparison between the two exports — exp199 is
+a much stronger model trained under marin's newer loss scale, and larger
+activations overflowing levanter's bf16 compute (`mp="p=f32,c=bfloat16"`) in the
+backward pass would produce exactly this: healthy inference, NaN on the first
+training step.
+
 
 ### Artifacts
 

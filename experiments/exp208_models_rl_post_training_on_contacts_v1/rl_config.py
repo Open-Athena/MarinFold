@@ -303,6 +303,18 @@ def build_rl_job_config(
         checkpoint_every_steps: Permanent step-indexed checkpoints. See the
             module docstring for why this is not a timer.
     """
+    if num_train_steps % sync_interval_steps:
+        # marin's weight-transfer hook asserts it only ever fires on a multiple of
+        # sync_interval_steps, and the FINAL transfer fires at num_train_steps - 1.
+        # A 10-step run with sync 8 therefore dies at step 9 with "weight transfer
+        # hook ran at step 9, which is not aligned with sync_interval_steps=8" --
+        # after training perfectly well for all 10 steps. Caught at config time
+        # rather than 25 minutes into a gang.
+        raise ValueError(
+            f"num_train_steps={num_train_steps} is not a multiple of "
+            f"sync_interval_steps={sync_interval_steps}; the final weight-transfer hook "
+            f"would fire at step {num_train_steps - 1} and marin asserts alignment."
+        )
     vocab_size = preflight_checkpoint(checkpoint)
     check_engine_model_path(checkpoint)
     check_region_locality(regions, targets=targets_path, prompts=prompts_path,
