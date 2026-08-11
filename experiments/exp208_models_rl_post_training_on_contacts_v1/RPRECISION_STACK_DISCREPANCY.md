@@ -98,40 +98,42 @@ top of the ranking and flattens the tail that AUC integrates over. So the two
 runs are not drawing from the same effective sampling distribution, even though
 both requested T = 1.0 / top_p = 0.95 / top_k off.
 
-## Leading hypothesis
+## The hypothesis I had, and why it is now weak
 
-exp199 is numerically unusual. A per-tensor comparison against exp163 arm F
-(cloud-side, job `/bizon/exp208-compare-weights`) found **no non-finite entries in
-either**, but materially larger magnitudes in exp199:
+exp199 looked numerically unusual. A per-tensor comparison against exp163 arm F
+found **no non-finite entries in either** but much larger magnitudes in exp199 —
+`input_layernorm.weight` 5.20x, `mlp.up_proj.weight` 2.75x,
+`post_attention_layernorm.weight` 2.52x. A model sitting closer to bf16's
+precision limits would plausibly be sensitive both to which bf16 kernels execute
+it and to a bf16 backward pass, which would explain the cross-stack gap *and* the
+first-step NaN with one cause.
 
-| tensor family | max&#124;w&#124; ratio, exp199 / exp163-F |
-|---|---|
-| `input_layernorm.weight` | **5.20×** |
-| `mlp.up_proj.weight` | 2.75× |
-| `post_attention_layernorm.weight` | 2.52× |
-| `self_attn.v_proj.weight` | 2.29× |
+**Extending the comparison to exp117 — the checkpoint that actually reproduces
+across the two stacks — mostly dissolves that.** Job
+`/bizon/exp208-compare-weights-3way`, 267 tensors shared by all three sources, no
+non-finite entries anywhere:
 
-A model whose activations sit closer to bf16's precision limits is more sensitive
-to which bf16 kernels execute it, and CUDA vLLM and the TPU/JAX vLLM fork are
-entirely different implementations. That would produce stack-dependent sampling
-for exp199 while leaving exp117 and exp163 reproducible — which is what is
-observed.
+| comparison | median max&#124;w&#124; ratio | range across families |
+|---|---|---|
+| exp199 / **exp117** | **1.27x** | 0.67x - 2.29x |
+| exp163 arm F / **exp117** | **0.70x** | 0.31x - 1.72x |
 
-The same property may explain a second, independent exp208 result: exp199 **NaNs
-on the first training step** under levanter's `mp="p=f32,c=bfloat16"`, while
-exp163 arm F trains cleanly through the identical code path with
-`train/ratio_mean` at 1.0000 ± 0.0005. Two unrelated symptoms, one candidate
-cause.
+The ordering is exp163F (0.70) < exp117 (1.00) < exp199 (1.27), so exp199 *is* the
+largest of the three — but the 5.20x headline was mostly **exp163 arm F being
+small**, not exp199 being large. Against the control the median gap is 1.27x and
+the worst family is 2.29x, which sits within the ordinary spread between these
+checkpoints. That is a thin basis for "exp199 is uniquely fragile in bf16 while
+exp117 is not", so the hypothesis is **weakened, not supported**.
 
-**This is a hypothesis, not a finding.** The weight comparison was made against
-exp163 arm F, not against exp117, so "exp199 is the numerical outlier" is not yet
-established against the checkpoint that actually serves as the control here.
+What it does not settle either way: exp199 remains the largest of the three, and
+it remains both the one that disagrees across stacks and the one that NaNs in
+levanter. The direction is consistent; the magnitude is not compelling.
 
 ## What would settle it
 
-1. **Extend the weight comparison to exp117** (~one CPU pod). If exp117's
-   magnitudes resemble exp163 arm F's and exp199 is the outlier, the hypothesis
-   is supported; if exp117 is equally large, it is dead.
+1. ~~Extend the weight comparison to exp117.~~ **Done — see above; it weakens
+   the numerical-sensitivity hypothesis rather than supporting it**, which makes
+   the remaining two load-bearing.
 2. **Re-score exp199 on CoreWeave with exp82's worker.** exp82's
    `score_rollout_worker.py` runs unmodified on both backends (that is #169's
    whole premise). Same code, same weights, one variable — the accelerator.
@@ -139,6 +141,18 @@ established against the checkpoint that actually serves as the control here.
    not a single anomalous draw. exp208 measured it once.
 
 Until at least (2) is done, neither number should be treated as *the* value.
+
+**(2) and (3) are in flight as of 2026-08-11.** The CoreWeave re-score mirrors the
+*same artifact* exp208 evaluated (`timodonnell/marinfold-contacts-v1-exp199-1_5b-step145199`,
+bf16, carrying the repaired config that states rope in both 4.x and 5.x terms) to
+`s3://marin-us-east-02a/MarinFold/exp208_eval/model_exp199`, so the accelerator is
+the only variable. That choice of config matters: the CoreWeave eval image is vLLM
+0.9.2, whose transformers is 4.x, and #199's own model-repo config states rope
+*only* under `rope_parameters` — using it there would silently fall back to
+default rope and confound the comparison. The v5p replicate re-runs at engine seed
+1 (the parity run used 0); with `--no-per-request-seed` the engine seed is the
+only source of sampling randomness, so an unchanged seed would risk reproducing
+the same 100 rollouts and measuring nothing.
 
 ## Consequences if it holds
 
