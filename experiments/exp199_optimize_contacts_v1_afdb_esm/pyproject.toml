@@ -1,0 +1,42 @@
+[project]
+name = "exp199-models-optimize-contacts-v1-afdb-esm"
+version = "0.1.0"
+description = "Packaged-Marin AFDB/ESM contacts-v1 optimization sweep for MarinFold issue #199."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marin-core>=0.2.65.dev30616178224,<0.3",
+    "marin-iris>=0.2.65.dev30616178224,<0.3",
+    # Current Iris imports finelog.telltale; keep the library aligned with the
+    # server generation selected by this Marin release.
+    "marin-finelog>=0.2.16.dev30657475018,<0.3",
+    # marin.processing.tokenize imports dupekit while loading TokenizedCache.
+    # It is needed to read cache metadata, never to tokenize this experiment.
+    "marin-dupekit<0.3",
+]
+
+[project.optional-dependencies]
+tpu = [
+    "marin-core[tpu]>=0.2.65.dev30616178224,<0.3; sys_platform == 'linux'",
+    # uv source mappings do not propagate through transitive extras, so these
+    # direct pins route Marin's CPU-tagged Torch dependencies correctly.
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", extra = "tpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "tpu" }]
