@@ -96,9 +96,9 @@ scoring, and useless for picking between two checkpoints of one run.
 **Inference recipe.** The same weights score ~0.086 higher under exp82's
 rollout recipe than under exp89's original pairwise scorer (#61/#75 E8: 0.339
 to 0.425; #120: 0.350 to 0.436). The figures keep them visually separate.
-Anything from the eval-checkpoint skill is pairwise; anything from exp82's
-rollout workers or the exp169 dispatcher is rollout. Never infer the recipe
-from the magnitude. A third recipe, oracle best-of-100, is a diagnostic upper
+Eval-checkpoint skill output is pairwise before 2026-08-11 and rollout from
+that date on; anything from exp82's rollout workers or the exp169 dispatcher
+is rollout. Never infer the recipe from the magnitude. A third recipe, oracle best-of-100, is a diagnostic upper
 bound and never enters the frontier line.
 
 **Loss scale.** marin #7209 changed the packed-LM objective to mask padding
