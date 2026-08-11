@@ -470,6 +470,8 @@ class ContactsV1RLEnv(MarinEnv):
             n_pred=metrics.get("contacts_plain/n_pred"),
             precision=metrics.get("contacts_plain/precision"),
             doc_abs=metrics.get("contacts_plain/doc_reward_abs_mean"),
+            doc_integral=metrics.get("contacts_plain/doc_reward_integral_mean"),
+            rho_unscaled=metrics.get("contacts_plain/rho_unscaled"),
             step_abs=metrics.get("contacts_plain/step_reward_abs_mean"),
         )
         return groups, metrics
@@ -502,9 +504,20 @@ class ContactsV1RLEnv(MarinEnv):
             doc = np.array([it["reward"].episode_reward for it in items], dtype=np.float64)
         else:
             doc = np.zeros(len(items), dtype=np.float64)
+        # THE TWO TERMS MUST BE COMPARED PER TOKEN, NOT PER ROLLOUT. `doc` is one
+        # scalar per rollout, but `dense_loss` broadcasts it to EVERY response
+        # token, so its influence on the gradient is |doc| * n_response_tokens.
+        # `token_rewards` is already a per-token array. Comparing the scalar to
+        # the summed array understates the document term by the response length
+        # (~400 tokens here) -- measured on the first nano: it read rho 0.02 when
+        # the integrated ratio was 6.2, i.e. document-DOMINATED, which is the
+        # regime that produced `RuntimeError: Loss is NaN`.
+        lengths = np.array([len(it["reward"].token_rewards) for it in items], dtype=np.float64)
         gdiag["doc_reward_abs_mean"] = float(np.mean(np.abs(doc)))
+        gdiag["doc_reward_integral_mean"] = float(np.mean(np.abs(doc) * lengths))
         gdiag["step_reward_abs_mean"] = float(
             np.mean([np.abs(it["reward"].token_rewards).sum() for it in items]))
+        gdiag["mean_response_tokens"] = float(lengths.mean())
         return doc, gdiag
 
     def _update_precision(self, scored: float, correct: float) -> None:
@@ -538,18 +551,21 @@ class ContactsV1RLEnv(MarinEnv):
 
         rename = {"mean_jaccard": "inter_rollout_jaccard"}
         for key in ("consensus_rprec", "union", "union_over_r", "mean_jaccard", "vote_entropy",
-                    "mean_vote_top_r", "mean_pairs_per_rollout",
-                    "doc_reward_abs_mean", "step_reward_abs_mean"):
+                    "mean_vote_top_r", "mean_pairs_per_rollout", "mean_response_tokens",
+                    "doc_reward_abs_mean", "doc_reward_integral_mean", "step_reward_abs_mean"):
             values = [g[key] for g in group_diags if not math.isnan(g.get(key, math.nan))]
             if values:
                 out[f"{prefix}/{rename.get(key, key)}"] = float(np.mean(values))
-        # rho: the measured balance between the two reward terms. #208's primary
-        # axis is this ratio, and raw lambdas are not interpretable because the
-        # terms differ by an order of magnitude in natural scale -- so log it
-        # rather than assume it.
+        # rho: the measured balance between the two reward terms, INTEGRATED over
+        # the response so the broadcast document scalar is counted once per token
+        # the way the loss actually applies it. #208's primary axis is this ratio,
+        # and raw lambdas do not express it -- the calibrated lam_doc came out ~65x
+        # from a plausible-looking guess. Reported UNSCALED by lam_step/lam_doc,
+        # which live in the loss: rho = lam_doc * this / lam_step.
         step_abs = out.get(f"{prefix}/step_reward_abs_mean", 0.0)
         if step_abs > 0:
-            out[f"{prefix}/rho_doc_over_step"] = out.get(f"{prefix}/doc_reward_abs_mean", 0.0) / step_abs
+            out[f"{prefix}/rho_unscaled"] = (
+                out.get(f"{prefix}/doc_reward_integral_mean", 0.0) / step_abs)
         return out
 
 

@@ -45,21 +45,31 @@ DEFAULT_TARGETS = "gs://marin-us-central1/protein-structure/MarinFold/exp200/tra
 DEFAULT_PROMPTS = "gs://marin-us-central1/protein-structure/MarinFold/exp200/train/prompts"
 DEFAULT_OUTPUT_PREFIX = "gs://marin-us-central1/protein-structure/MarinFold/exp208"
 
-# The #208 arms. `rho_target` is the MEASURED ratio of the document term's
-# magnitude to the stepwise term's, not a raw lambda: the two differ by roughly an
-# order of magnitude in natural scale (a per-contact reward of ~p_bar/3 per token
-# over ~300 contact tokens, against a consensus marginal of order 0.01 broadcast
-# over the whole response), so raw lambdas do not express the axis the issue calls
-# primary. The environment logs `rho_doc_over_step` every step so the realised
-# ratio is observable rather than assumed.
+# The #208 arms. `lam_doc` is CALIBRATED from measured reward magnitudes, not
+# chosen. #208's primary axis is rho -- the ratio of the document term's
+# contribution to the gradient against the stepwise term's -- and raw lambdas do
+# not express it, because the two terms live on different scales AND the document
+# scalar is broadcast to every response token while the stepwise term is already
+# per token.
+#
+# Measured on the first nano (arm B, G=16, AFDB pool): mean |consensus marginal|
+# 0.0103, mean summed |token_rewards| 19.98, ~432 response tokens, so the
+# unscaled ratio is 0.222 and lam_doc = 4.5 gives rho = 1. Measured on #208's own
+# Phase 0 rollouts, the own-F1 term's within-group spread is 0.078, an unscaled
+# ratio of 1.685, so arm F needs lam_doc = 0.59.
+#
+# The first nano ran at a GUESSED lam_doc = 30 and died with `RuntimeError: Loss
+# is NaN`. That was rho 6.7 for arm B, and would have been rho 51 for arm F.
+# `contacts_plain/rho_unscaled` is logged every step so this stays checkable
+# rather than assumed -- multiply it by lam_doc to read the live rho.
 ARMS = {
     # name: (doc_term, lam_doc, what it tests)
     "S": ("none", 0.0,
-          "step-only — the issue's literal question with the minimum machinery, "
+          "step-only -- the issue's literal question with the minimum machinery, "
           "and the vote-collapse prediction"),
-    "B": ("consensus", 30.0, "the main arm: dense step + consensus marginal at rho ~ 1"),
-    "F": ("own_f1", 30.0,
-          "exp200's document term in plain mode — the ablation that decides whether "
+    "B": ("consensus", 4.5, "the main arm: dense step + consensus marginal at rho ~ 1"),
+    "F": ("own_f1", 0.59,
+          "exp200's document term in plain mode -- the ablation that decides whether "
           "the consensus FORM is load-bearing or only its weight"),
 }
 # Same config as B, used for the learning-rate probe.

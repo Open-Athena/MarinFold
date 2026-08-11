@@ -222,15 +222,20 @@ def test_metrics_carry_the_GROUP_level_collapse_detectors(env_paths):
                     "n_too_close": 0.0, "n_truncated": 0.0}]
     group = [{"consensus_rprec": 0.5, "union": 120.0, "union_over_r": 1.2,
               "mean_jaccard": 0.3, "vote_entropy": 4.0, "mean_vote_top_r": 8.0,
-              "mean_pairs_per_rollout": 90.0,
-              "doc_reward_abs_mean": 0.02, "step_reward_abs_mean": 0.5}]
+              "mean_pairs_per_rollout": 90.0, "mean_response_tokens": 400.0,
+              "doc_reward_abs_mean": 0.02, "doc_reward_integral_mean": 8.0,
+              "step_reward_abs_mean": 0.5}]
     metrics = env._metrics(diagnostics, group, n_empty=0, n_dropped=0, applied=_FakeApplied(2112))
 
     for key in ("consensus_rprec", "union_over_r", "inter_rollout_jaccard",
-                "vote_entropy", "mean_vote_top_r", "rho_doc_over_step"):
+                "vote_entropy", "mean_vote_top_r", "rho_unscaled"):
         assert f"contacts_plain/{key}" in metrics, key
-    # rho is the experiment's primary axis, measured rather than assumed.
-    assert metrics["contacts_plain/rho_doc_over_step"] == pytest.approx(0.04)
+    # rho must INTEGRATE the document scalar over the response, because that is
+    # how dense_loss applies it: one broadcast value per token. Comparing the
+    # scalar (0.02) to the summed token rewards (0.5) would read 0.04 and be
+    # wrong by the response length -- the first nano read 0.02 that way while the
+    # true integrated ratio was 6.2, and the run died with "Loss is NaN".
+    assert metrics["contacts_plain/rho_unscaled"] == pytest.approx(8.0 / 0.5)
     # plain mode has one section, so exp200's section vocabulary is renamed
     assert "contacts_plain/rollout_f1" in metrics
     assert "contacts_plain/first_f1" not in metrics
