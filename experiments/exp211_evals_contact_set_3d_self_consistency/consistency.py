@@ -47,8 +47,16 @@ contact set.
 
 Batched: every contact set for one protein has the same ``L`` and solves in
 lockstep, so a protein's ~600 arm/rollout sets go through as one ``(B, L, 3)``
-tensor. On CPU this is ~3.5 s per set at L=92; batched on an H100 it is the only
-way the 1.3M-embedding budget closes.
+tensor. On CPU this is ~3.5 s per set at L=92; batched it is the only way the
+1.3M-embedding budget closes.
+
+**Batch as wide as memory allows.** Profiled on an A5000 at ``n_restarts=4,
+iters=3000`` with 5 sets per call: L=66 took 9.6 s, L=214 took 7.5 s and L=591
+took 17.1 s — 1.8x the wall clock for 80x the pairs. The loop is bound by kernel
+*launch* overhead (a few thousand iterations of a handful of tiny kernels), not
+arithmetic, so widening the batch is close to free and narrowing it wastes the
+device. Score a protein's arms and all its rollouts in **one** call, never per
+arm.
 
 **The bounds are statistical, not physical.** Phase 0 measured, on a real
 structure, contact CA-CA distances spanning 4.0-13.7 A and non-contact CA-CA

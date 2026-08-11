@@ -21,7 +21,54 @@ or a bag of independently-drawn contacts that happen to be emitted in one docume
 
 ## Hypothesis
 
-_(Copy from the issue.)_
+The model generates a **coherent structural hypothesis**, not a bag of independently
+drawn contacts — so a single rollout's contact set should be measurably closer to 3D
+realizability than a set with the same per-pair marginals assembled across rollouts.
+The prior is genuinely uncertain: #201 Phase 0 showed 77 % of the val loss is nuisance
+permutation entropy (so next-token CE barely scores the joint) and #163 showed the joint
+signal is large when *supplied*, but neither says the model uses it when generating.
+A null here is a real result — it would say the joint has to be taught, not decoded.
+
+## Status
+
+| step | state |
+|---|---|
+| Phase 0 — is the metric viable at all? | **done** (in the issue; reproduced by `validate_phase0.py`) |
+| A — calibrate bounds on 554 GT structures (`calibrate_bounds.py`) | **done** |
+| B — calibration gate on ground truth (`run_gt_gate.py`) | running |
+| 1 — per-rollout generation (`gen_rollouts_worker.py`) | written, not launched |
+| 1b — CoreWeave dispatch | not started |
+| 2–4 — arms, scoring, analysis | not started |
+
+### What is already known (Phase 0, and why the design is what it is)
+
+The obvious implementation — Floyd–Warshall bound smoothing over the distances implied
+by the contacts and the CA(i)–CA(i+1) bond — **does not work**, and the reason is
+structural rather than a tuning failure. Measured on 1QYS:
+
+* the bounds do not separate. Contact CA–CA runs p50 7.21 / p99 11.71 / max 13.65 Å;
+  non-contact CA–CA runs min 4.06 / p1 6.05. Across all 554 GT proteins
+  (`calibrate_bounds.py`), **10.7 % of non-contact pairs sit closer than the contact
+  p99.5**. pyconfind contacts are *side-chain* contacts, so CA–CA distance is only a
+  proxy and no threshold pair separates the populations;
+* and even with idealized non-overlapping bounds, triangle smoothing reports **0
+  violations for the true contact set and 0 for a separation-matched random one**, at
+  four different bound pairs. A violation needs a path of upper bounds summing below a
+  lower bound; any 2-hop contact path is `2·U ≈ 20–24 Å` and a contact plus *k* backbone
+  steps is `U + 3.8k`, so nothing reaches under a ~10 Å lower bound once
+  `min_seq_separation = 6` has excluded the close-in-sequence pairs.
+
+Triangle smoothing tests feasibility in an arbitrary **metric space**, which a contact
+graph satisfies nearly for free. It does not test feasibility in **ℝ³**. It is kept as
+step 1 of 3 — it is the bound-smoothing step of Crippen–Havel EMBED and the right
+preconditioner for the embedding — but it is not the metric.
+
+What does work is the **3D embedding residual**, and it is graded rather than binary
+(corrupting 0 → 100 % of a true set moves the score 0.00 → 0.66 → 0.87 → 2.19 → 4.94 →
+6.41 → 7.14), which matters because a rollout at R-precision ≈ 0.59 is a ~60/40 mixture,
+not a clean arm. Per-instance variance is comparable to the signal in the 10–30 %
+corruption band, so **no single contact set can be called inconsistent on its own** —
+every claim is made on the paired aggregate over 554 proteins × 100 rollouts.
 
 ## Approach
 
