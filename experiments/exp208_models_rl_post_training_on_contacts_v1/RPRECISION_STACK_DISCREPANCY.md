@@ -157,12 +157,27 @@ levanter. The direction is consistent; the magnitude is not compelling.
 2. **Re-score exp199 on CoreWeave with exp82's worker.** exp82's
    `score_rollout_worker.py` runs unmodified on both backends (that is #169's
    whole premise). Same code, same weights, one variable — the accelerator.
-3. **A within-stack replicate on v5p** to confirm exp208's 0.6099 is stable and
-   not a single anomalous draw. exp208 measured it once.
+3. ~~A within-stack replicate on v5p.~~ **Done — the v5p measurement reproduces.**
+   A second full 554 x 100 run at engine seed 1 (the parity run used 0; with
+   `--no-per-request-seed` the engine seed is the only randomness) gives:
+
+   | band | v5p seed 0 | v5p seed 1 | paired Δ | SE | vs CoreWeave |
+   |---|---|---|---|---|---|
+   | all | 0.609926 | **0.611398** | +0.001472 | 0.001200 | **+0.024050** |
+   | long | 0.563922 | **0.564085** | +0.000163 | 0.001579 | **+0.021904** |
+
+   Both within-stack deltas sit **inside** #180's 0.0023 four-repeat span, so
+   0.6099 was not an anomalous draw — the v5p figure is stable to ~0.0015 — while
+   the gap to the published CoreWeave number is unchanged at ~+0.023. Whatever
+   this is, it is reproducible on at least one side.
 
 Until at least (2) is done, neither number should be treated as *the* value.
 
-**(2) and (3) are in flight as of 2026-08-11.** The CoreWeave re-score mirrors the
+**(3) is done (above). (2) is BLOCKED as of 2026-08-11** — the CoreWeave
+credentials in `~/.config/marin/cw-rno2a.env` (dated 2026-07-06) are rejected by
+the object store with "The access key ID you provided does not exist in our
+records", so neither the weight mirror nor the eval fan-out can run until they
+are refreshed. The design, for when they are: The CoreWeave re-score mirrors the
 *same artifact* exp208 evaluated (`timodonnell/marinfold-contacts-v1-exp199-1_5b-step145199`,
 bf16, carrying the repaired config that states rope in both 4.x and 5.x terms) to
 `s3://marin-us-east-02a/MarinFold/exp208_eval/model_exp199`, so the accelerator is
