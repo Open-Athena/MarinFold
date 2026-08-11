@@ -582,25 +582,29 @@ top_p=0.95 / top_k=-1, same `6 * L + 128` budget, same bf16. They are the same
 measurement written twice.
 
 **The cause is NOT the accelerator** — an earlier version of this section said
-it was, and that was wrong. #199's pipeline also evaluated an **exp117 control**
+it was, and that was wrong. Running exp82's worker on CoreWeave H100, the very
+hardware #199 used, reproduces the v5p figure to **+0.0004 (σ +0.3)**; the gap to
+#199's published number persists at **+0.0229 (σ +16.1)** on that same hardware.
+The difference is in #199's evaluation pipeline. #199's pipeline also evaluated an **exp117 control**
 on CoreWeave, and exp117 has an independent v5p measurement from #169: they agree
 to **−0.0015**, inside the 0.0023 repeat span. Same two stacks, no gap. So the
 discrepancy is specific to the **exp199 checkpoint**, not a property of either
 pipeline. The full analysis, including what else was ruled out (rope, weights,
 metric, recipe) and the leading hypothesis (exp199's unusually large weights make
 it numerically sensitive in bf16), is in
-[`RPRECISION_STACK_DISCREPANCY.md`](RPRECISION_STACK_DISCREPANCY.md).
+[`RPRECISION_PIPELINE_DISCREPANCY.md`](RPRECISION_PIPELINE_DISCREPANCY.md).
 
 Two consequences:
 
 1. **exp208's baseline of record is its own parity run (0.6099 / 0.5639)**, not
    the committed rows. Every arm is scored through the identical path, so the
    paired comparison stays valid; comparing an arm to 0.5873 would not be.
-2. **The published exp199 R-precision may be understated by ~0.023**, which
-   would make #180's #166 → #199 frontier step ~0.048 rather than ~0.026. The
-   cause is unresolved and is specific to that checkpoint. **That belongs to #180
+2. **The published exp199 R-precision is understated by ~0.023.** Scored the way
+   every other frontier row was scored, #199 reads 0.6103 rather than 0.5873, so
+   #180's #166 → #199 step is ~0.048 rather than ~0.026. The cause is localised to
+   #199's pipeline; the mechanism is not yet identified. **That belongs to #180
    and #204, not to #208**, but it is filed here because this is where it was
-   measured — see [`RPRECISION_STACK_DISCREPANCY.md`](RPRECISION_STACK_DISCREPANCY.md).
+   measured — see [`RPRECISION_PIPELINE_DISCREPANCY.md`](RPRECISION_PIPELINE_DISCREPANCY.md).
 
 ### Phase 0 — the consensus marginal: gate 1 passes, gate 2 does not
 
