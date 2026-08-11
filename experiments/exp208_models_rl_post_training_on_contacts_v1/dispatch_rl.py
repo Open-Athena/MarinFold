@@ -58,7 +58,6 @@ ARMS = {
           "step-only — the issue's literal question with the minimum machinery, "
           "and the vote-collapse prediction"),
     "B": ("consensus", 30.0, "the main arm: dense step + consensus marginal at rho ~ 1"),
-    "D": ("consensus", 90.0, "more document weight — is the axis monotone here"),
     "F": ("own_f1", 30.0,
           "exp200's document term in plain mode — the ablation that decides whether "
           "the consensus FORM is load-bearing or only its weight"),
@@ -184,8 +183,14 @@ def submit_drivers(arms: list[str], extra_env: dict[str, str]) -> int:
     names = []
     for arm in arms:
         env = dict(base, EXP208_ARM=arm)
+        # Unique per (arm, lr, suffix). The LR probe submits ONE arm at three
+        # learning rates, so a name keyed only on the arm would collide three ways
+        # and iris would reject or shadow the siblings.
+        lr_tag = f"{float(env.get('EXP208_LR', '1e-5')):.0e}".replace("-", "m").replace("+", "")
+        suffix = env.get("EXP208_RUN_SUFFIX", "")
+        job = f"exp208-rl-arm{arm.lower()}-lr{lr_tag}" + (f"-{suffix}" if suffix else "")
         names.append(submit(
-            job_name=f"exp208-rl-arm{arm.lower()}",
+            job_name=job,
             command=["python", "-m", "dispatch_rl"],
             extras=("cpu",), cpu=2, memory="6GB", disk="16GB",
             region=os.environ.get("EXP208_REGION", "us-central1"),
@@ -205,7 +210,7 @@ def main() -> int:
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--submit", action="store_true")
-    ap.add_argument("--arms", default="S,B,D,F",
+    ap.add_argument("--arms", default="S,B,F",
                     help="comma-separated arm names, or 'probe' for the LR probe")
     ap.add_argument("--lrs", default=None, help="probe only: comma-separated learning rates")
     ap.add_argument("--steps", type=int, default=None)
@@ -221,11 +226,7 @@ def main() -> int:
             # why its flat result cannot separate "the reward is wrong" from
             # "nothing happened". Pick the LR from the KL trajectory instead.
             lrs = [x for x in (a.lrs or "3e-6,1e-5,3e-5").split(",") if x]
-            names = []
             for lr in lrs:
-                os.environ["EXP208_LR"] = lr
-                os.environ["EXP208_RUN_SUFFIX"] = "probe"
-                names.append(lr)
                 submit_drivers([PROBE_ARM], {"EXP208_LR": lr, "EXP208_RUN_SUFFIX": "probe",
                                              "EXP208_STEPS": str(a.steps or 30)})
             return 0
