@@ -189,6 +189,31 @@ default rope and confound the comparison. The v5p replicate re-runs at engine se
 only source of sampling randomness, so an unchanged seed would risk reproducing
 the same 100 rollouts and measuring nothing.
 
+## A separate finding: the published exp199 export cannot be read by transformers 4.x
+
+Independent of the R-precision question, and surfaced while staging the CoreWeave
+re-score. MarinFold **pins transformers 4.x**, and the exp199 export as published
+fails a 4.x reader twice over:
+
+| file | as published | on transformers 4.x |
+|---|---|---|
+| `config.json` | rope only under `rope_parameters` (model repo) | **silent** fallback to `rope_theta` 10000 against a model trained at 500000 |
+| `tokenizer_config.json` | `"tokenizer_class": "TokenizersBackend"` | **hard failure**: `Tokenizer class TokenizersBackend does not exist or is not currently imported` |
+
+The bucket copy fixes the first via #198's repair but **still carries
+`TokenizersBackend`**, so anything loading it through a plain
+`AutoTokenizer.from_pretrained` on a 4.x stack breaks outright. Verified against
+transformers 4.57.6: as-published fails; setting `tokenizer_class` to
+`PreTrainedTokenizerFast` loads with **identical ids** (`<contact>` 5, `<p0>` 143,
+vocab 2845) and leaves `tokenizer.json` — the actual vocabulary — untouched.
+
+exp169 hit both halves and repaired them together in `prepare_hf_export.py`. The
+lesson worth carrying: an export written by transformers 5 needs *two* repairs to
+be portable, and only the rope one is currently applied when republishing to the
+bucket. The one-key tokenizer fix is now applied to
+`timodonnell/marinfold-contacts-v1-exp199-1_5b-step145199`; the open-athena bucket
+copy still has the issue.
+
 ## Consequences if it holds
 
 - **#180's frontier table mixes measurements** it treats as comparable. #117 and
