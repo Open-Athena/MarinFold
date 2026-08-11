@@ -1,0 +1,17 @@
+{
+  "bond": 3.808699253025894,
+  "bond_sd": 0.3173385819717846,
+  "u_contact": 13.015979896239536,
+  "l_noncontact": 6.460927697904686,
+  "d_min": 3.5349743361939447,
+  "min_sep": 6,
+  "min_contact_degree": 0.001,
+  "u_contact_quantile": 99.5,
+  "l_noncontact_quantile": 0.5,
+  "max_degree_observed": 13,
+  "max_degree_p99": 12.0,
+  "n_proteins": 554,
+  "n_contact_pairs": 91525,
+  "n_noncontact_pairs": 11053753,
+  "noncontact_frac_below_u_contact": 0.10721326955650266
+}

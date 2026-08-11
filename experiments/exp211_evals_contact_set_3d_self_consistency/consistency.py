@@ -283,16 +283,45 @@ def embed_residual(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     dev = torch.device(device)
 
-    (cb, ci, cj), (nb, ni, nj) = _pair_index(masks, bounds)
+    # Restarts run as extra batch rows, not as an outer loop. Each iteration is a
+    # handful of tiny kernels, so at these sizes the wall clock is dominated by
+    # launch overhead, not arithmetic — replicating the batch n_restarts-fold
+    # costs almost nothing and divides the number of launches by n_restarts.
+    # Row (r * b + k) is restart r of set k.
+    (cb0, ci0, cj0), (nb0, ni0, nj0) = _pair_index(masks, bounds)
+    eff = b * n_restarts
+    tile = lambda idx, off: np.concatenate(  # noqa: E731
+        [idx + r * off for r in range(n_restarts)]
+    )
+    rep = lambda idx: np.tile(idx, n_restarts)  # noqa: E731
+
     t = lambda a: torch.as_tensor(a, device=dev, dtype=torch.long)  # noqa: E731
-    cb_, ci_, cj_ = t(cb), t(ci), t(cj)
-    nb_, ni_, nj_ = t(nb), t(ni), t(nj)
+    cb_, ci_, cj_ = t(tile(cb0, b)), t(rep(ci0)), t(rep(cj0))
+    nb_, ni_, nj_ = t(tile(nb0, b)), t(rep(ni0)), t(rep(nj0))
     n_contacts = torch.as_tensor(
-        np.triu(masks, 1).sum(axis=(1, 2)), device=dev, dtype=torch.float32
+        np.tile(np.triu(masks, 1).sum(axis=(1, 2)), n_restarts),
+        device=dev,
+        dtype=torch.float32,
     )
 
     bi = torch.arange(length - 1, device=dev)
-    au, av = torch.triu_indices(length, length, offset=1, device=dev)
+
+    # The steric floor does NOT need an all-pairs term. Partition the pairs:
+    #   sep == 1              -> the bond equality already pins them at 3.81 A
+    #   2 <= sep < min_sep    -> steric is the only constraint (O(L) pairs)
+    #   sep >= min_sep, contact     -> upper bound + steric (O(n_contacts) pairs)
+    #   sep >= min_sep, non-contact -> lower bound l_noncontact, which is above
+    #                                  d_min, so it already implies the floor
+    # so steric only has to be evaluated on the middle two groups. Dropping the
+    # O(L^2) all-pairs term for these O(L) ones is exact, not an approximation —
+    # and it is what makes long proteins affordable (measured 3.3 s/set at L=400
+    # with the all-pairs term).
+    sep_np = separation(length)
+    sk_np, sl_np = np.nonzero(
+        np.triu(np.ones((length, length), dtype=bool), 2) & (sep_np < bounds.min_sep)
+    )
+    sk = torch.as_tensor(sk_np, device=dev, dtype=torch.long)
+    sl = torch.as_tensor(sl_np, device=dev, dtype=torch.long)
 
     # Initial coordinate scale. A compact globule of L residues has
     # Rg ~ 2.2 * L^0.38 A, and an isotropic gaussian cloud with per-axis sigma s
@@ -303,62 +332,78 @@ def embed_residual(
     # collapsing the globule instead of satisfying bounds.
     scale = 2.2 * length**0.38 / np.sqrt(3.0)
 
-    best: dict[str, torch.Tensor] | None = None
-    for r in range(n_restarts):
-        g = torch.Generator(device=dev).manual_seed(seed + r)
-        x = torch.randn(b, length, 3, generator=g, device=dev) * scale
-        x.requires_grad_(True)
-        opt = torch.optim.Adam([x], lr=lr)
-
-        for _ in range(iters):
-            opt.zero_grad(set_to_none=True)
-            db = (x[:, bi] - x[:, bi + 1]).norm(dim=-1)
-            dc = (x[cb_, ci_] - x[cb_, cj_]).norm(dim=-1)
-            dn = (x[nb_, ni_] - x[nb_, nj_]).norm(dim=-1)
-            da = (x[:, au] - x[:, av]).norm(dim=-1)
-            loss = (
-                ((db - bounds.bond) ** 2).sum()
-                + (torch.clamp(dc - bounds.u_contact, min=0) ** 2).sum()
-                + (torch.clamp(bounds.l_noncontact - dn, min=0) ** 2).sum()
-                + (torch.clamp(bounds.d_min - da, min=0) ** 2).sum()
+    # Draw each restart's initial cloud from its own generator, rather than
+    # taking one (eff, L, 3) draw. torch's normal_ does not fill a larger tensor
+    # with the same leading values as a smaller one, so a single draw would make
+    # restart r's starting point depend on how many restarts were requested —
+    # and then raising n_restarts could *raise* the reported min, which is
+    # nonsense for a quantity defined as a minimum. Per-restart generators make
+    # the restart-sensitivity curve the issue promises actually readable.
+    x = torch.cat(
+        [
+            torch.randn(
+                b,
+                length,
+                3,
+                generator=torch.Generator(device=dev).manual_seed(seed + r),
+                device=dev,
             )
-            loss.backward()
-            opt.step()
+            for r in range(n_restarts)
+        ]
+    ) * scale
+    x.requires_grad_(True)
+    opt = torch.optim.Adam([x], lr=lr)
 
-        with torch.no_grad():
-            db = (x[:, bi] - x[:, bi + 1]).norm(dim=-1)
-            dc = (x[cb_, ci_] - x[cb_, cj_]).norm(dim=-1)
-            dn = (x[nb_, ni_] - x[nb_, nj_]).norm(dim=-1)
-            zeros = lambda: torch.zeros(b, device=dev)  # noqa: E731
+    for _ in range(iters):
+        opt.zero_grad(set_to_none=True)
+        db = (x[:, bi] - x[:, bi + 1]).norm(dim=-1)
+        dc = (x[cb_, ci_] - x[cb_, cj_]).norm(dim=-1)
+        dn = (x[nb_, ni_] - x[nb_, nj_]).norm(dim=-1)
+        ds = (x[:, sk] - x[:, sl]).norm(dim=-1)
+        loss = (
+            ((db - bounds.bond) ** 2).sum()
+            + (torch.clamp(dc - bounds.u_contact, min=0) ** 2).sum()
+            + (torch.clamp(bounds.l_noncontact - dn, min=0) ** 2).sum()
+            # Steric floor on the two groups no other constraint covers: the
+            # close-in-sequence pairs, and the contacts (which have only an
+            # upper bound and could otherwise collapse onto each other).
+            + (torch.clamp(bounds.d_min - ds, min=0) ** 2).sum()
+            + (torch.clamp(bounds.d_min - dc, min=0) ** 2).sum()
+        )
+        loss.backward()
+        opt.step()
 
-            excess = zeros().index_add_(0, cb_, torch.clamp(dc - bounds.u_contact, min=0))
-            unsat = zeros().index_add_(
+    with torch.no_grad():
+        db = (x[:, bi] - x[:, bi + 1]).norm(dim=-1)
+        dc = (x[cb_, ci_] - x[cb_, cj_]).norm(dim=-1)
+        dn = (x[nb_, ni_] - x[nb_, nj_]).norm(dim=-1)
+        zeros = lambda: torch.zeros(eff, device=dev)  # noqa: E731
+
+        per_row = {
+            "contact_excess": zeros().index_add_(
+                0, cb_, torch.clamp(dc - bounds.u_contact, min=0)
+            ),
+            "unsat_frac": zeros().index_add_(
                 0, cb_, ((dc - bounds.u_contact) > 0.5).float()
-            ) / n_contacts.clamp(min=1)
-            ncviol = zeros().index_add_(0, nb_, torch.clamp(bounds.l_noncontact - dn, min=0))
-            bond_err = (db - bounds.bond).abs().mean(dim=1)
-            rg = (x - x.mean(dim=1, keepdim=True)).pow(2).sum(-1).mean(-1).sqrt()
+            ) / n_contacts.clamp(min=1),
+            "noncontact_violation": zeros().index_add_(
+                0, nb_, torch.clamp(bounds.l_noncontact - dn, min=0)
+            ),
+            "bond_err": (db - bounds.bond).abs().mean(dim=1),
+            "rg": (x - x.mean(dim=1, keepdim=True)).pow(2).sum(-1).mean(-1).sqrt(),
+        }
 
-            cand = {
-                "contact_excess": excess,
-                "unsat_frac": unsat,
-                "noncontact_violation": ncviol,
-                "bond_err": bond_err,
-                "rg": rg,
-            }
-            if best is None:
-                best = cand
-            else:
-                # Keep, per set, the restart with the lowest contact excess —
-                # every other field follows that same restart so the row stays a
-                # coherent description of one embedding.
-                take = cand["contact_excess"] < best["contact_excess"]
-                best = {k: torch.where(take, cand[k], best[k]) for k in cand}
+        # Reduce over the restart axis: take, per set, the restart with the
+        # lowest contact excess, and carry every other field from that same
+        # restart so a row stays a coherent description of one embedding.
+        stacked = {k: v.view(n_restarts, b) for k, v in per_row.items()}
+        pick = stacked["contact_excess"].argmin(dim=0, keepdim=True)
+        best = {k: v.gather(0, pick).squeeze(0) for k, v in stacked.items()}
 
-    assert best is not None
-    n_c = n_contacts.clamp(min=1)
     out = {k: v.cpu().numpy() for k, v in best.items()}
-    out["contact_excess_per_contact"] = out["contact_excess"] / n_c.cpu().numpy()
+    out["contact_excess_per_contact"] = out["contact_excess"] / np.maximum(
+        np.triu(masks, 1).sum(axis=(1, 2)), 1
+    )
     rows = [{k: float(v[i]) for k, v in out.items()} for i in range(b)]
     return rows[0] if single else rows
 
