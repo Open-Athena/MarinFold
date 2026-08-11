@@ -101,8 +101,10 @@ class ContactsV1RLEnv(MarinEnv):
             document term, the arm-F ablation), or ``"none"`` (step-only).
         err_decay: Geometric decay on the penalty for repeat errors in a rollout.
         precision_ema_decay: Smoothing for ``p_bar``. Higher is smoother.
-        initial_precision: ``p_bar`` before any rollouts are scored. 0.23 is the
-            per-contact precision #200 measured over 2,216 uncapped rollouts.
+        initial_precision: ``p_bar`` before any rollouts are scored. #208 Phase 0
+            measured 0.482 for this model over 10,000 plain rollouts; the default
+            is 0.45 because the training pool is AFDB rather than the PDB-derived
+            eval set. exp200's 0.23 was exp163 arm F in multi-draft mode.
         max_protein_len: Longest protein in the pool, for the token budget.
         max_model_len: Engine context length; the response budget is clamped to fit.
         eval_fraction: Fraction of proteins held out for ``mode="eval"``.
@@ -123,7 +125,7 @@ class ContactsV1RLEnv(MarinEnv):
         doc_term: str = "consensus",
         err_decay: float = 0.5,
         precision_ema_decay: float = 0.9,
-        initial_precision: float = 0.23,
+        initial_precision: float = 0.45,
         max_protein_len: int = 512,
         max_model_len: int = 8192,
         eval_fraction: float = 0.05,

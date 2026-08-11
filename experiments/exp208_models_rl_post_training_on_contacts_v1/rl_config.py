@@ -98,11 +98,19 @@ WANDB_ENTITY = "open-athena"
 WANDB_GROUP = "exp208-rl-dense-contacts"
 
 DEFAULT_MAX_PROTEIN_LEN = 512
-# Per-contact precision #200 measured over 2,216 uncapped rollouts. Only the
-# starting point — the environment tracks it from there — but starting close
-# matters, because a p_bar above the truth makes every contact look like a loss
-# for the first few steps.
-INITIAL_PRECISION = 0.23
+# p_bar's starting value. #208 Phase 0 measured single-rollout per-contact
+# precision for THIS model at **0.482** over 10,000 plain rollouts on the eval
+# set. exp200's 0.23 came from exp163 arm F in multi-draft mode and is stale by
+# a factor of two here: starting p_bar far below the truth makes every correct
+# contact look like a large win and every error nearly free, which biases the
+# first steps toward over-emission — the opposite of the collapse the design
+# guards against, but a bias either way. The environment EMA-tracks it from
+# there, so this only shapes the first few steps.
+#
+# 0.45 rather than 0.482: the training pool is AFDB round-0 with pyconfind
+# labels while 0.482 was measured on the PDB-derived eval set, and nothing has
+# measured the training distribution directly.
+INITIAL_PRECISION = 0.45
 
 
 def plain_output_tokens(max_protein_len: int) -> int:

@@ -545,29 +545,114 @@ New to exp208:
 
 ## Results
 
-**Status: Phase 0 code ready, unrun.** No compute has been spent and there is no
-accuracy claim. `consensus.py` is tested against the published metric
-implementation, and the analysis has been exercised end-to-end on a synthetic
-fixture (see Phase 0 above for what that dry run suggests, and why it predicts
-nothing about the real answer). Everything from Phase 2 on is blocked on
-[#203](https://github.com/Open-Athena/MarinFold/pull/203) landing.
+**Status: Phases 0 and 1 done. No arm has been trained; no accuracy claim.**
 
-To run Phase 0:
+### Phase 1 — baseline parity: FAILED, and it mattered
 
-```bash
-./stage_model_gcs.sh                                        # exp199 -> GCS, bf16
-uv run python dispatch_phase0.py --num-shards 4 --dump-rollouts 25
-uv run python phase0_marginal_analysis.py \
-    --scores gs://marin-us-central1/protein-structure/MarinFold/exp208/phase0/scores/exp199_cw_p06_aug_step145199 \
-    --gt ~/git/MarinFold/experiments/exp89_evals_contacts_v1_model_on_eval_set/data/gt_universe.jsonl \
-    --out-per-rollout data/phase0_per_rollout.csv.gz \
-    --out-per-protein data/phase0_per_protein.csv \
-    --out-summary data/phase0_summary.csv
-```
+Re-measuring the **unchanged exp199 checkpoint** through exp208's own eval path,
+all 554 proteins x 100 rollouts on 4 v5p-8 (11 min/shard, 0/13900 truncated):
 
-`gt_universe.jsonl` is **not committed** — it is exp89's `prepare_gt_universe.py`
-output and needs pyconfind plus the staged GT structures, so it lives in the main
-checkout rather than in git. A worktree does not inherit it.
+| band | exp208 (TPU) | committed #180 row | delta | paired SE |
+|---|---|---|---|---|
+| all | **0.609926** | 0.587348 | **+0.022578** | 0.001515 |
+| long | **0.563922** | 0.542181 | **+0.021741** | 0.002699 |
+
+That is ~15σ and ~10x #180's four-repeat span of 0.0023. The gate exists to catch
+exactly this, and had it not run, every arm would have inherited a fabricated
++0.023 "improvement" over the committed baseline.
+
+**It is not the metric.** `n_true`, `n_candidate` and `n_top` are identical on
+**100%** of rows, so the GT universe and the top-R cut agree exactly. The
+difference is entirely in the score matrix.
+
+**It is not the recipe either.** #199's eval code (branch `exp/199-evals`) was read
+end to end against exp82's worker: same `build_document(f"{stem}:r{k}", residues,
+[], config=GenerationConfig())` prompt construction, same prefix cut, same
+position map, same per-rollout dedup, same `MIN_SEP`, same n=100, same T=1.0 /
+top_p=0.95 / top_k=-1, same `6 * L + 128` budget, same bf16. They are the same
+measurement written twice.
+
+**What differs is the accelerator.** #199 ran on CoreWeave H100 (CUDA vLLM);
+exp208 ran on v5p (marin's TPU vLLM fork, JAX backend). The signature fits: top-K
+precision is **higher** on TPU at every cut (P@L +0.018, P@L/2 +0.020, P@L/5
++0.015, P@R +0.023) while **AUC is lower** (-0.0035 all, -0.0051 long). Better at
+the head, worse over the tail, is what a *more concentrated* rollout ensemble
+looks like — the TPU stack appears to sample slightly less diversely for the same
+nominal T/top_p.
+
+Two consequences:
+
+1. **exp208's baseline of record is its own parity run (0.6099 / 0.5639)**, not
+   the committed rows. Every arm is scored through the identical path, so the
+   paired comparison stays valid; comparing an arm to 0.5873 would not be.
+2. **Rollout R-precision is not comparable across accelerators at the 0.02
+   level.** exp169's `dispatch_eval_tpu.py` states that running the same bytes on
+   both backends "is what lets these numbers be compared to the published
+   CoreWeave ones". This measurement says that is wrong by ~10x the within-stack
+   repeat noise, and #180's frontier table mixes the two — #117/#166 on one stack,
+   #199 on the other. **That belongs to #180, not to #208**, but it is filed here
+   because this is where it was measured.
+
+### Phase 0 — the consensus marginal: gate 1 passes, gate 2 does not
+
+100 proteins x 100 rollouts, dumped per rollout and verified to reconstruct the
+vote matrix exactly. Sources: [`data/phase0_summary.csv`](data/phase0_summary.csv),
+[`data/phase0_per_protein.csv`](data/phase0_per_protein.csv),
+[`data/phase0_per_rollout.csv.gz`](data/phase0_per_rollout.csv.gz).
+
+**Gate 1 — is the marginal just precision in disguise? No.** Within-protein
+corr(rollout precision, LOO marginal) = **0.236** (Spearman 0.237, p10-p90
+0.01-0.43). The document term carries information the stepwise term does not, so
+the design premise holds and the arms are worth distinguishing.
+
+**Gate 2 — is it estimable at an affordable group size? Not against the n=100
+marginal.** corr(single-draw marginal at G, n=100 marginal) = **0.198 / 0.185 /
+0.214** at G = 8 / 16 / 32 — and, unlike the synthetic dry run, it does **not**
+improve with G.
+
+The reason is visible in the same table, and it is more interesting than the
+correlation:
+
+| | |
+|---|---|
+| n=100 marginals that are **exactly zero** | **85.8%** (median protein: 95.5%) |
+| sd of the n=100 marginal | 0.00867 |
+| mean votes on a top-R pair | 57.7 of 100 |
+| union of predictions / R | 10.8x |
+
+**The deployed metric is nearly insensitive to any individual rollout.** Top-R is
+decided by pairs that ~58 of 100 rollouts agree on, so removing one rollout moves
+nothing 86% of the time. Coverage is nowhere near binding (union is 10.8x R), and
+only 2.5% of top-R is settled by index-order ties.
+
+That reframes gate 2 rather than simply failing it. The n=100 leave-one-out
+marginal is itself a **near-degenerate target** — 86% zeros, sd 0.0087 — so a
+correlation measured against it is attenuated by construction, and "does the
+G-marginal predict the n=100 marginal" is close to the wrong question. The
+question that matters is whether optimizing consensus-at-G shifts the whole
+rollout distribution enough to move consensus-at-100, which is a distributional
+effect no leave-one-out statistic can predict and only a trained arm can answer.
+
+It also cuts in favour of the step-only arm on the merits: if no single rollout
+matters to the consensus, the only route to the reported metric is making *every*
+rollout better, which is precisely what the dense per-contact term does.
+
+### A stale constant Phase 0 caught
+
+Single-rollout per-contact precision for this model is **0.482** over 10,000
+plain rollouts. exp200's `INITIAL_PRECISION = 0.23` was exp163 arm F in
+multi-draft mode — stale by a factor of two. Starting `p_bar` far below the truth
+makes every correct contact look like a large win and every error nearly free,
+biasing the first steps toward over-emission. Now 0.45 (not 0.482: the training
+pool is AFDB round-0 with pyconfind labels, and only the PDB-derived eval set has
+been measured). The environment EMA-tracks it from there, so this shapes only the
+opening steps.
+
+### Artifacts
+
+- Baseline of record: `gs://marin-us-central1/protein-structure/MarinFold/exp208/phase0/scores/exp199_cw_p06_aug_step145199`
+- Warm start: [`timodonnell/marinfold-contacts-v1-exp199-1_5b-step145199`](https://huggingface.co/timodonnell/marinfold-contacts-v1-exp199-1_5b-step145199) (bf16, tokenizer co-located, `rope_theta` 500000, vocab 2845)
+- bf16 weights on GCS: `.../exp208/models/exp199` (5.48 GiB fp32 -> 2.74 GiB)
 
 ## Conclusion
 
