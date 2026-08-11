@@ -8,6 +8,9 @@ Agent harnesses that recognize `.agents/skills/` (or that we explicitly
 configure to look here) will surface these skills to the model.
 Otherwise, agents can read them on demand like any other docs.
 
+`eval-checkpoint` is indexed here but lives under `.claude/skills/`, the
+path Claude Code auto-discovers; the table links to it in place.
+
 The convention is borrowed from `marin-community/marin`'s
 `.agents/skills/` tree — many of these skills are direct ports.
 
@@ -15,6 +18,7 @@ The convention is borrowed from `marin-community/marin`'s
 
 | Skill | Purpose | Origin |
 |---|---|---|
+| [eval-checkpoint](../../.claude/skills/eval-checkpoint/SKILL.md) | Take a contacts-v1 checkpoint to R-precision/AUC on the fixed exp89 benchmark, scored with exp82's rollout+resample recipe | MarinFold-native |
 | [babysit-job](babysit-job/SKILL.md) | Monitor an Iris job, recover on failure | ported from marin |
 | [babysit-zephyr](babysit-zephyr/SKILL.md) | Same, for Zephyr pipeline jobs | ported from marin |
 | [run-training-sweep](run-training-sweep/SKILL.md) | Actively operate Google/TRC TPU training sweeps to completion | MarinFold-native |
