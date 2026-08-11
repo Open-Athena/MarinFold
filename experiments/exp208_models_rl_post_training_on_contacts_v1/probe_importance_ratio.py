@@ -40,6 +40,8 @@ import jax.numpy as jnp
 import numpy as np
 from jax.sharding import Mesh
 
+from levanter.layers.attention import AttentionMask
+
 from rl_config import MODEL_CONFIG
 
 SPILL = "gs://marin-us-central1/protein-structure/MarinFold/exp208/rollouts"
@@ -77,9 +79,24 @@ def ratios_for(model, cfg, rollout):
     sampler = np.asarray(rollout.response_logprobs, dtype=np.float32)
     ids = np.concatenate([prompt, response])
 
+    # levanter's flash attention requires the query axis to be a multiple of its
+    # 1024 block ("q axis size 1723 is not a multiple of 1024"). The trainer never
+    # trips this because train_batch pads to curriculum.max_seq_len (8192). Pad
+    # right to the next multiple: attention is causal, so tokens appended after
+    # the real sequence cannot influence any position we read.
+    BLOCK = 1024
+    n_real = len(ids)
+    if n_real % BLOCK:
+        ids = np.concatenate([ids, np.zeros(BLOCK - n_real % BLOCK, dtype=np.int32)])
+
     Pos = cfg.max_Pos.resize(len(ids))
     tokens = hax.named(jnp.array(ids, dtype=jnp.int32)[None, :], ("batch", Pos))
-    out = model(tokens, attn_mask=None, key=None)
+    # CAUSAL MASK, EXPLICITLY. `attn_mask=None` is not "default causal" -- it is
+    # no mask at all, i.e. bidirectional attention over the whole sequence. With
+    # it the reconstructed logprobs are garbage: the exp163 arm F control, whose
+    # own run logged train/ratio_mean 1.0000, reconstructed to 0.0011. That
+    # control is the reason this probe is trustworthy at all.
+    out = model(tokens, attn_mask=AttentionMask.causal(), key=None)
     logits = jnp.asarray(out.array if hasattr(out, "array") else out).astype(jnp.float32)[0]
     logp = jax.nn.log_softmax(logits, axis=-1)
 
@@ -111,12 +128,35 @@ def main() -> int:
             for k, r in enumerate(rollouts):
                 policy, sampler = ratios_for(model, cfg, r)
                 d = policy - sampler
-                ratio = np.exp(d)
-                finite = np.isfinite(ratio)
-                print(f"    rollout {k}: n={len(d):5d}  "
-                      f"mean_ratio={np.mean(ratio[finite]):9.4f}  max_ratio={np.max(ratio[finite]):12.4g}  "
-                      f"max|dlogp|={np.max(np.abs(d)):8.3f}  non-finite={int((~finite).sum())}",
-                      flush=True)
+                # SIGN MATTERS AND ABS HIDES IT. The trainer computes
+                # exp(policy - sampler) in float32, which overflows to +inf above
+                # log(3.4e38) = 88.7. A large NEGATIVE difference underflows to 0
+                # and is harmless; a large POSITIVE one is +inf, and inf * 0 is
+                # NaN -- and arm S gives exactly-zero advantage to every token
+                # outside a <contact> <pI> <pJ> triple.
+                F32_OVERFLOW = float(np.log(np.finfo(np.float32).max))
+                over = int((d > F32_OVERFLOW).sum())
+                under = int((d < -F32_OVERFLOW).sum())
+                ratio32 = np.exp(d.astype(np.float32))
+                # WHERE are the outliers? Position within the response, and which
+                # token id. A structural cause (all at the truncation boundary, all
+                # one token id, all after <end>) looks completely different from
+                # numerical drift, and the two demand different fixes.
+                bad = np.where(d < -20)[0]
+                if len(bad):
+                    resp = np.asarray(r.response_tokens, dtype=np.int32)
+                    ids_bad = resp[bad]
+                    uniq, cnt = np.unique(ids_bad, return_counts=True)
+                    top = sorted(zip(cnt.tolist(), uniq.tolist()), reverse=True)[:6]
+                    print(f"      outliers(d<-20): {len(bad)}  "
+                          f"pos_frac[min/med/max]={bad.min()/len(d):.2f}/"
+                          f"{np.median(bad)/len(d):.2f}/{bad.max()/len(d):.2f}  "
+                          f"top_token_ids={[(int(i), int(c)) for c, i in top]}", flush=True)
+                print(f"    rollout {k}: n={len(d):5d}  mean_ratio={np.mean(np.exp(d)):8.4f}  "
+                      f"dlogp max={np.max(d):+8.3f} min={np.min(d):+8.3f}  "
+                      f"| >+{F32_OVERFLOW:.1f}: {over}  <-{F32_OVERFLOW:.1f}: {under}  "
+                      f"| f32 ratio inf={int(np.isinf(ratio32).sum())} "
+                      f"nan={int(np.isnan(ratio32).sum())}", flush=True)
             del model
     return 0
 

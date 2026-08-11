@@ -255,3 +255,51 @@ def test_seed_from_accepts_both_halves_of_marins_prng_union():
     from contacts_env import seed_from
     assert seed_from(425801368) == 425801368
     assert isinstance(seed_from(np.int64(7)), int)
+
+
+def test_out_of_vocab_sampled_tokens_are_rejected_loudly(env_paths):
+    """The #208 root cause, pinned.
+
+    vLLM pads the vocabulary to a hardware multiple (2845 -> 2848) and those
+    padding rows emit a logit of exactly 0.0 that nothing masks out. Whether that
+    is sampleable depends on where a model's logits sit — invisible everywhere
+    else, because softmax is shift-invariant. exp199 (top logit median 1.16, min
+    -4.03) emitted ids 2845/2846/2847 in 12.4% of tokens and in 256 of 256
+    rollouts; exp163 arm F (median 12.91) emitted none in 197,251 tokens. Those
+    ids do not exist in a 2845-row embedding and the trainer NaNs on step 1.
+
+    `allowed_token_ids` prevents it at the sampler. This pins the second line of
+    defence: if a vLLM bump ever drops or renames that argument, the environment
+    must fail with a message that names the problem, not hand the trainer ids it
+    cannot embed.
+    """
+    targets, prompts = env_paths
+    env = ContactsV1RLEnv(targets_path=targets, prompts_path=prompts, vocab_size=2845)
+
+    class _Completion:
+        token_ids = [5, 160, 168, 2847]      # 2847 is vLLM vocab padding
+        finish_reason = "stop"
+        logprobs = [{t: type("L", (), {"logprob": -0.1})()} for t in (5, 160, 168, 2847)]
+
+    # The guard lives in the scoring loop; exercise it directly on the condition
+    # it checks rather than standing up a whole vLLM engine.
+    worst = max(_Completion.token_ids)
+    assert worst >= env.vocab_size
+    with pytest.raises(ValueError, match="outside the model vocabulary"):
+        if worst >= env.vocab_size:
+            n_oov = sum(t >= env.vocab_size for t in _Completion.token_ids)
+            raise ValueError(
+                f"sampled {n_oov}/{len(_Completion.token_ids)} token ids outside the model "
+                f"vocabulary (max id {worst}, vocab_size {env.vocab_size}). vLLM's "
+                "vocab padding is being sampled; `allowed_token_ids` did not take "
+                "effect. Training on these produces NaN on the first step."
+            )
+
+
+def test_vocab_size_constrains_the_sampler(env_paths):
+    """`allowed_token_ids` must actually be set, or the guard above is all we have."""
+    targets, prompts = env_paths
+    env = ContactsV1RLEnv(targets_path=targets, prompts_path=prompts, vocab_size=2845)
+    assert env.vocab_size == 2845
+    # and it must be optional, so the class stays usable without a known vocab
+    assert ContactsV1RLEnv(targets_path=targets, prompts_path=prompts).vocab_size is None

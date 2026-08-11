@@ -134,6 +134,7 @@ class ContactsV1RLEnv(MarinEnv):
         err_decay: float = 0.5,
         precision_ema_decay: float = 0.9,
         initial_precision: float = 0.45,
+        vocab_size: int | None = None,
         max_protein_len: int = 512,
         max_model_len: int = 8192,
         eval_fraction: float = 0.05,
@@ -147,6 +148,7 @@ class ContactsV1RLEnv(MarinEnv):
         self.doc_term = doc_term
         self.err_decay = err_decay
         self.precision_ema_decay = precision_ema_decay
+        self.vocab_size = vocab_size
         self.max_protein_len = max_protein_len
         self.max_model_len = max_model_len
         self.prompts_path = prompts_path.rstrip("/")
@@ -364,7 +366,25 @@ class ContactsV1RLEnv(MarinEnv):
             # seed"); engine-level seeding is VLLMEngineConfig.seed.
             seed=None,
         )
-        params = SamplingParams(
+        # CONSTRAIN SAMPLING TO THE REAL VOCABULARY. vLLM pads the vocab to a
+        # hardware-friendly multiple — 2845 -> 2848 here — and those padding rows
+        # are ZERO, so they emit a logit of exactly 0.0 that nothing masks out of
+        # the sampling distribution.
+        #
+        # Whether that matters depends entirely on where a model's logits sit,
+        # which softmax makes invisible everywhere else. Measured on the two #208
+        # warm starts: exp163 arm F's top logit has median 12.91, so a 0.0 row has
+        # probability ~0 and it emitted zero out-of-range ids in 197,251 tokens.
+        # exp199's top logit has median 1.16 and dips to -4.03, so a 0.0 row takes
+        # ~1.6% per position and is sometimes the argmax — it emitted ids
+        # 2845/2846/2847 in **12.4% of all tokens and in 256 of 256 rollouts**.
+        # Those ids do not exist in a 2845-row embedding, and the trainer NaNs on
+        # the first step trying to score them.
+        #
+        # Nothing downstream notices: contact_rewards walks for <contact>/<pN> ids
+        # and silently ignores anything else, so every generation metric looks
+        # healthy while the rollouts are corrupt.
+        sampling_kwargs = dict(
             n=1,
             temperature=applied.temperature,
             top_p=applied.top_p,
@@ -373,6 +393,9 @@ class ContactsV1RLEnv(MarinEnv):
             stop_token_ids=[cr.END_ID],
             logprobs=1,
         )
+        if self.vocab_size:
+            sampling_kwargs["allowed_token_ids"] = list(range(self.vocab_size))
+        params = SamplingParams(**sampling_kwargs)
         gen_started = time.time()
         outputs = inference_ctx.llm.generate(
             [TokensPrompt(prompt_token_ids=s["ids"]) for s in specs], params, use_tqdm=False)
@@ -391,6 +414,20 @@ class ContactsV1RLEnv(MarinEnv):
             if not token_ids:
                 n_empty += 1
                 continue
+            if self.vocab_size:
+                # Belt and braces: if `allowed_token_ids` is ever dropped or
+                # renamed by a vLLM bump, fail LOUDLY here rather than hand the
+                # trainer ids it cannot embed. A NaN 25 minutes into a gang is a
+                # much worse error message than this.
+                worst = max(token_ids)
+                if worst >= self.vocab_size:
+                    n_oov = sum(t >= self.vocab_size for t in token_ids)
+                    raise ValueError(
+                        f"sampled {n_oov}/{len(token_ids)} token ids outside the model "
+                        f"vocabulary (max id {worst}, vocab_size {self.vocab_size}). vLLM's "
+                        "vocab padding is being sampled; `allowed_token_ids` did not take "
+                        "effect. Training on these produces NaN on the first step."
+                    )
 
             reward = cr.dense_rewards(
                 token_ids, spec["pos_to_seq"], spec["gt"],
