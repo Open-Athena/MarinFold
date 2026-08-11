@@ -1,0 +1,155 @@
+# A +0.023 R-precision discrepancy on one unchanged checkpoint
+
+**Status:** unresolved. Measured in [#208](https://github.com/Open-Athena/MarinFold/issues/208);
+the consequences belong to [#180](https://github.com/Open-Athena/MarinFold/issues/180)
+and [#204](https://github.com/Open-Athena/MarinFold/issues/204).
+**Date:** 2026-08-11.
+
+## The observation
+
+exp208 re-measured the **exp199 checkpoint** (`prot-exp199-cw-cv1-s02-m1-p06-aug`,
+step 145199) as a parity gate before using it as an RL warm start. It read
+**0.0226 higher** than the number published for the same checkpoint:
+
+| band | exp208 (v5p) | published #199 (CoreWeave H100) | paired Δ | paired SE | σ |
+|---|---|---|---|---|---|
+| all (sep ≥ 6) | **0.609926** | 0.587348 | **+0.022578** | 0.001515 | +14.9 |
+| long (sep ≥ 24) | **0.563922** | 0.542181 | **+0.021741** | 0.002699 | +8.1 |
+
+n = 554 / 553 proteins, paired per protein. For scale, #180 records that **four
+evaluations of one unchanged #117 checkpoint span 0.0023** — this gap is ten times
+that, and larger than the #166 → #199 frontier step it sits next to.
+
+Sources: exp208's parity run is `gs://marin-us-central1/protein-structure/MarinFold/exp208/phase0/scores/exp199_cw_p06_aug_step145199`;
+the published rows are
+[`../exp180_evals_contacts_v1_progress_over_time/data/exp199_cw_p06_aug_step145199_rows.csv.gz`](../exp180_evals_contacts_v1_progress_over_time/data/exp199_cw_p06_aug_step145199_rows.csv.gz).
+
+## What it is not
+
+Each of these was checked rather than assumed.
+
+**Not the metric.** `n_true`, `n_candidate` and `n_top` are identical on **100% of
+rows**, so the two agree on the candidate universe, the range filter and the size
+of the top-R cut. The two implementations — exp89's `compute_metrics` (via exp82's
+`build_rollout_rows`) and #199's `analyze_contact_eval.metric_rows` — were read
+side by side and are functionally the same code, independently written: same
+`np.triu_indices` over resolved residues, same `degree >= 0.001` and `sep >= 6`
+truth matrix, same `np.argsort(-scores, kind="mergesort")` stable sort, same
+`min(target, n_candidate)`, same `roc_auc_score`.
+
+**Not the sampling recipe.** #199's `eval_contact_checkpoint.py` and exp82's
+`score_rollout_worker.py` were read end to end. Both build prompts with
+`build_document(f"{stem}:r{k}", residues, [], config=GenerationConfig())`, cut at
+`<begin_statements>`, use the same `(n_term + offset) % 2000` position map,
+dedupe pairs within a rollout, apply `MIN_SEP` 6, and sample n = 100 at T = 1.0 /
+top_p = 0.95 / top_k = -1 with `max_tokens = min(8192 - prompt, 6L + 128)` in
+bfloat16 with engine-level seed 0.
+
+**Not the weights.** Both evaluations resolve to the same export. The safetensors
+are byte-identical in size (4,979,485,528 and 906,042,048) between
+`open-athena/marinfold-exp199` @ `ed7103b` (what #199 evaluated) and the
+open-athena bucket copy (what exp208 evaluated).
+
+**Not rope, despite the configs differing.** The two copies' `config.json` do
+differ — the bucket copy carries #198's repair, stating rope as top-level
+`rope_theta` + `rope_scaling` *and* the transformers-5 `rope_parameters` block,
+while the model-repo copy states only `rope_parameters`. This looked like the
+[transformers-5 rope export bug](https://github.com/Open-Athena/MarinFold/issues/180)
+that has bitten this project before. It is not: **both stacks run transformers
+5.12.1**, and loading the bucket config on exp208's stack resolves rope to
+`rope_theta` 500000 inside the rope block — the same value #199's stack reads from
+`rope_parameters`. Both evaluations used the correct rope.
+
+## The control that refutes the obvious explanation
+
+The obvious reading is "CoreWeave CUDA vLLM vs marin's TPU vLLM fork give
+different results", and **exp208's README asserted exactly that before this
+document was written. That claim was wrong, and is corrected here.**
+
+#199's pipeline also evaluated an **exp117 control** on CoreWeave, and exp117 has
+an independent TPU measurement from #169. Those agree:
+
+| checkpoint | v5p (TPU) | CoreWeave H100 | Δ | within the 0.0023 repeat span? |
+|---|---|---|---|---|
+| **#117 final** step 35679 | 0.534418 (#169) | 0.532888 (#199 control) | **−0.001530** | **yes** |
+| **#199 CW p06-aug** step 145199 | 0.609926 (exp208) | 0.587348 (#199) | **+0.022578** | **no** |
+
+Both rows are the same two stacks. If the accelerator were the cause, exp117
+would show a comparable gap; it does not. **Whatever this is, it is specific to
+the exp199 checkpoint rather than a general property of either pipeline.**
+
+## What the shape of the difference says
+
+exp208's score matrix is *better at the head of the ranking and worse over the
+tail*:
+
+| cut (all band) | exp208 | #199 | Δ |
+|---|---|---|---|
+| P@L | 0.55052 | 0.53230 | +0.01822 |
+| P@L/2 | 0.71224 | 0.69249 | +0.01975 |
+| P@L/5 | 0.81705 | 0.80202 | +0.01504 |
+| P@R | 0.60993 | 0.58735 | +0.02258 |
+| **AUC** | **0.94805** | **0.95153** | **−0.00348** |
+
+AUC moves the *other way*, in both bands (long: 0.93415 vs 0.93920, −0.00505).
+Higher precision at every cut with lower AUC is the signature of a **more
+concentrated rollout ensemble**: votes pile onto fewer pairs, which sharpens the
+top of the ranking and flattens the tail that AUC integrates over. So the two
+runs are not drawing from the same effective sampling distribution, even though
+both requested T = 1.0 / top_p = 0.95 / top_k off.
+
+## Leading hypothesis
+
+exp199 is numerically unusual. A per-tensor comparison against exp163 arm F
+(cloud-side, job `/bizon/exp208-compare-weights`) found **no non-finite entries in
+either**, but materially larger magnitudes in exp199:
+
+| tensor family | max&#124;w&#124; ratio, exp199 / exp163-F |
+|---|---|
+| `input_layernorm.weight` | **5.20×** |
+| `mlp.up_proj.weight` | 2.75× |
+| `post_attention_layernorm.weight` | 2.52× |
+| `self_attn.v_proj.weight` | 2.29× |
+
+A model whose activations sit closer to bf16's precision limits is more sensitive
+to which bf16 kernels execute it, and CUDA vLLM and the TPU/JAX vLLM fork are
+entirely different implementations. That would produce stack-dependent sampling
+for exp199 while leaving exp117 and exp163 reproducible — which is what is
+observed.
+
+The same property may explain a second, independent exp208 result: exp199 **NaNs
+on the first training step** under levanter's `mp="p=f32,c=bfloat16"`, while
+exp163 arm F trains cleanly through the identical code path with
+`train/ratio_mean` at 1.0000 ± 0.0005. Two unrelated symptoms, one candidate
+cause.
+
+**This is a hypothesis, not a finding.** The weight comparison was made against
+exp163 arm F, not against exp117, so "exp199 is the numerical outlier" is not yet
+established against the checkpoint that actually serves as the control here.
+
+## What would settle it
+
+1. **Extend the weight comparison to exp117** (~one CPU pod). If exp117's
+   magnitudes resemble exp163 arm F's and exp199 is the outlier, the hypothesis
+   is supported; if exp117 is equally large, it is dead.
+2. **Re-score exp199 on CoreWeave with exp82's worker.** exp82's
+   `score_rollout_worker.py` runs unmodified on both backends (that is #169's
+   whole premise). Same code, same weights, one variable — the accelerator.
+3. **A within-stack replicate on v5p** to confirm exp208's 0.6099 is stable and
+   not a single anomalous draw. exp208 measured it once.
+
+Until at least (2) is done, neither number should be treated as *the* value.
+
+## Consequences if it holds
+
+- **#180's frontier table mixes measurements** it treats as comparable. #117 and
+  #166 come from exp82/#169 (v5p), #199 from its own pipeline (CoreWeave). If the
+  exp199 row is understated by ~0.023, the #166 → #199 step is roughly **0.048
+  rather than 0.026**, and #199 is further ahead than recorded.
+- **#169's premise needs qualification.** `dispatch_eval_tpu.py` states that
+  running the same bytes on both backends "is what lets these numbers be compared
+  to the published CoreWeave ones". The exp117 control supports that for exp117;
+  exp199 shows it is not unconditional.
+- **exp208 baselines against its own parity run** (0.609926 / 0.563922) rather
+  than the published rows, since every arm is scored through the identical path.
+  That decision is unaffected by how this resolves.

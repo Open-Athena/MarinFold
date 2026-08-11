@@ -581,26 +581,26 @@ position map, same per-rollout dedup, same `MIN_SEP`, same n=100, same T=1.0 /
 top_p=0.95 / top_k=-1, same `6 * L + 128` budget, same bf16. They are the same
 measurement written twice.
 
-**What differs is the accelerator.** #199 ran on CoreWeave H100 (CUDA vLLM);
-exp208 ran on v5p (marin's TPU vLLM fork, JAX backend). The signature fits: top-K
-precision is **higher** on TPU at every cut (P@L +0.018, P@L/2 +0.020, P@L/5
-+0.015, P@R +0.023) while **AUC is lower** (-0.0035 all, -0.0051 long). Better at
-the head, worse over the tail, is what a *more concentrated* rollout ensemble
-looks like — the TPU stack appears to sample slightly less diversely for the same
-nominal T/top_p.
+**The cause is NOT the accelerator** — an earlier version of this section said
+it was, and that was wrong. #199's pipeline also evaluated an **exp117 control**
+on CoreWeave, and exp117 has an independent v5p measurement from #169: they agree
+to **−0.0015**, inside the 0.0023 repeat span. Same two stacks, no gap. So the
+discrepancy is specific to the **exp199 checkpoint**, not a property of either
+pipeline. The full analysis, including what else was ruled out (rope, weights,
+metric, recipe) and the leading hypothesis (exp199's unusually large weights make
+it numerically sensitive in bf16), is in
+[`RPRECISION_STACK_DISCREPANCY.md`](RPRECISION_STACK_DISCREPANCY.md).
 
 Two consequences:
 
 1. **exp208's baseline of record is its own parity run (0.6099 / 0.5639)**, not
    the committed rows. Every arm is scored through the identical path, so the
    paired comparison stays valid; comparing an arm to 0.5873 would not be.
-2. **Rollout R-precision is not comparable across accelerators at the 0.02
-   level.** exp169's `dispatch_eval_tpu.py` states that running the same bytes on
-   both backends "is what lets these numbers be compared to the published
-   CoreWeave ones". This measurement says that is wrong by ~10x the within-stack
-   repeat noise, and #180's frontier table mixes the two — #117/#166 on one stack,
-   #199 on the other. **That belongs to #180, not to #208**, but it is filed here
-   because this is where it was measured.
+2. **The published exp199 R-precision may be understated by ~0.023**, which
+   would make #180's #166 → #199 frontier step ~0.048 rather than ~0.026. The
+   cause is unresolved and is specific to that checkpoint. **That belongs to #180
+   and #204, not to #208**, but it is filed here because this is where it was
+   measured — see [`RPRECISION_STACK_DISCREPANCY.md`](RPRECISION_STACK_DISCREPANCY.md).
 
 ### Phase 0 — the consensus marginal: gate 1 passes, gate 2 does not
 
