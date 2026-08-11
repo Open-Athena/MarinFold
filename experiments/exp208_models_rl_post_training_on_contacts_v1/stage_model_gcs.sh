@@ -39,7 +39,9 @@ src, dest = sys.argv[1], sys.argv[2]
 bucket, prefix = src.split("/", 2)[0] + "/" + src.split("/", 2)[1], src.split("/", 2)[2]
 
 t0 = time.time()
-entries = [e for e in list_bucket_tree(bucket, path=prefix, recursive=True, token=False)
+# `prefix` is POSITIONAL (there is no `path=` kwarg), and the listing yields
+# BucketFile / BucketFolder -- only the former carries a size.
+entries = [e for e in list_bucket_tree(bucket, prefix, recursive=True, token=False)
            if getattr(e, "size", None) is not None]
 names = [Path(e.path).name for e in entries]
 print(f"[stage] {src} holds {sorted(names)}", flush=True)
@@ -48,10 +50,14 @@ print(f"[stage] {src} holds {sorted(names)}", flush=True)
 # a failure minutes into a TPU job rather than at submit time.
 assert "tokenizer.json" in names, f"no tokenizer beside the weights in {src}"
 
-local = Path("/tmp/hf_src")
-download_bucket_files(bucket, [e.path for e in entries], local_dir=str(local), token=False)
-staged = local / prefix
-print(f"[stage] downloaded in {time.time() - t0:.0f}s", flush=True)
+# `download_bucket_files` takes explicit (remote, local) PAIRS; there is no
+# `local_dir` argument that mirrors the remote tree for you.
+staged = Path("/tmp/hf_src")
+staged.mkdir(parents=True, exist_ok=True)
+download_bucket_files(
+    bucket, [(e, str(staged / Path(e.path).name)) for e in entries], token=False)
+nbytes = sum(e.size for e in entries)
+print(f"[stage] downloaded {nbytes / 2**30:.2f} GiB in {time.time() - t0:.0f}s", flush=True)
 
 fs, root = fsspec.core.url_to_fs(dest)
 total = 0

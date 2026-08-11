@@ -3,44 +3,47 @@
 
 """Phase 0 — generate the exp199 baseline rollouts, with per-rollout dumps — issue #208.
 
-This is exp169's ``dispatch_eval_tpu.py`` pointed at exp199 and asking exp82's
-``score_rollout_worker.py`` for ``--dump-rollouts``. It runs the worker
-**unmodified in every other respect**, which is the whole point: the vote
-matrices it produces are directly comparable to every published MarinFold
-R-precision, and the per-rollout dump is strictly additional output.
+Runs exp82's ``score_rollout_worker.py`` **unmodified except for its opt-in
+``--dump-rollouts`` flag**, which is the point: the vote matrices are directly
+comparable to every published MarinFold R-precision, and the per-rollout dump is
+strictly additional output.
 
-Two jobs in one run, and it is worth being explicit about which is which:
+Two jobs in one run:
 
 * the **vote parquets** re-measure the exp199 baseline through exp208's own eval
   invocation — the Phase 1 parity gate. It should land within 0.0023 (#180's
-  four-repeat span) of the committed 0.587348 / 0.542181, and if it does not,
+  four-repeat span) of the committed 0.587348 / 0.542181; if it does not,
   something about this experiment's eval path differs from the published one and
   every later comparison is suspect.
 * the **rollout dumps** feed ``phase0_marginal_analysis.py``, which decides
   whether #208's consensus-marginal document term is worth building.
 
-Targets are exp169's ``eval_targets.parquet``, already in us-central1 next to the
-v5p capacity — no new staging, and identical protein set to the committed
-baseline rows.
+SUBMITTED FROM THIS DIRECTORY, NOT FROM A MARIN CHECKOUT. exp169's equivalent
+dispatcher submits from the marin source tree because ``--extra vllm --extra tpu``
+are marin's own extras. That stopped working on 2026-08-07, when marin main
+deleted the ``vllm`` extra (e7ef104402) — a checkout new enough to clear iris's
+14-day client freshness gate no longer defines the extra at all, and the pod
+fails at build with ``Extra `vllm` is not defined in any project's
+optional-dependencies table``. Measured here on 2026-08-10 against a 2026-08-08
+checkout: all four shards failed identically. exp200 already solved this by making
+the experiment directory the complete iris workspace with marin pinned at
+0.2.76.dev31155643335 and the vLLM TPU fork reproduced, so exp208 submits through
+:mod:`_submit` like every other exp208 job.
+
+The worker travels base64-embedded rather than as a workspace file, so exp82
+stays the single source of truth for it.
 
     ./stage_model_gcs.sh                          # once: exp199 -> GCS, bf16
     uv run python dispatch_phase0.py --num-shards 4 --dump-rollouts 25
-    uv run python dispatch_phase0.py --num-shards 4 --shards 0 --limit 2 --dry-run
+    uv run python dispatch_phase0.py --shards 0 --limit 2 --dry-run
 """
 
 import argparse
 import base64
 import os
-import subprocess
 from pathlib import Path
 
-MARIN = Path(os.environ.get("MARIN_CHECKOUT", "/home/bizon/git/marin-freshiris"))
-IRIS = os.environ.get("IRIS_BIN", str(MARIN / ".venv/bin/iris"))
-# `iris job run` bundles the CWD and runs `uv sync` on the pod; `--extra vllm
-# --extra tpu` are marin's own extras, so the workspace has to BE the marin
-# checkout. It must also be the FRESH one -- iris rejects a client over 14 days
-# old, and the frozen marin-*-latest wheels are always older than that.
-SUBMIT_WORKSPACE = Path(os.environ.get("EXP208_WORKSPACE", str(MARIN)))
+from _submit import check_clean, submit
 
 GCS_PREFIX = os.environ.get(
     "EXP208_PREFIX", "gs://marin-us-central1/protein-structure/MarinFold/exp208")
@@ -59,8 +62,8 @@ MARINFOLD_GIT = os.environ.get(
 )
 
 # exp82's settled recipe, unchanged. top_k OFF: #142 traced under-generation to a
-# finite top_k, and #82 found T=1.0/p=0.95 near-optimal -- sharpening past it
-# collapses the vote, which is the very effect #208 is trying not to cause.
+# finite top_k, and #82 found T=1.0/p=0.95 near-optimal — sharpening past it
+# collapses the vote, which is the very effect #208 must not cause.
 N_ROLLOUTS = int(os.environ.get("EXP208_N_ROLLOUTS", "100"))
 TOP_K = int(os.environ.get("EXP208_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EXP208_TOP_P", "0.95"))
@@ -72,9 +75,9 @@ WORKER_LOCAL = "/tmp/exp208/score_rollout_worker.py"
 
 
 def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None, dump: int) -> str:
-    """Pod bootstrap: install marinfold into marin's synced venv, run the worker.
+    """Pod bootstrap: drop the worker on disk, add marinfold, run it.
 
-    ``--no-deps`` so marinfold cannot repin anything in marin's vLLM-TPU fork
+    ``--no-deps`` so marinfold cannot repin anything in the pinned vLLM-TPU
     stack; the contacts-v1 generator needs only fsspec + numpy on top.
     """
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
@@ -105,34 +108,6 @@ exec uv run --no-sync python {WORKER_LOCAL} \\
 """.strip()
 
 
-def submit(*, shard_i: int, num_shards: int, limit: int | None, dump: int,
-           tpu: str, zone: str, priority: str, dry_run: bool) -> str:
-    name = f"exp208-phase0-s{shard_i}of{num_shards}"
-    command = [
-        IRIS, "--cluster=marin", "job", "run",
-        "--job-name", name, "--no-wait", "--enable-extra-resources",
-        # `interactive`, not `batch`: the v5p pool is fully subscribed by other
-        # people's interactive jobs, so a batch-band job yields to them
-        # indefinitely, and this is the bounded minutes-long shape interactive
-        # exists for. The always-batch rule is a CoreWeave-GPU rule and does not
-        # carry over to the marin TPU pool.
-        "--priority", priority, "--zone", zone, "--tpu", tpu,
-        "--extra", "vllm", "--extra", "tpu",
-        # A v5p-8 VM offers 100 GiB ephemeral disk; asking for more is rejected
-        # as unschedulable rather than queued.
-        "--cpu", "8", "--memory", "64GB", "--disk", "64GB",
-        "--max-retries", "3",
-        "--", "bash", "-lc",
-        build_bootstrap(shard_i=shard_i, num_shards=num_shards, limit=limit, dump=dump),
-    ]
-    if dry_run:
-        print(f"[phase0] DRY RUN {name}\n{command[-1]}\n")
-        return name
-    SUBMIT_WORKSPACE.mkdir(parents=True, exist_ok=True)
-    subprocess.run(command, cwd=SUBMIT_WORKSPACE, check=True)
-    return name
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--num-shards", type=int, default=4)
@@ -153,20 +128,34 @@ def main() -> int:
     if "--dump-rollouts" not in WORKER_SCRIPT.read_text():
         raise SystemExit(
             f"{WORKER_SCRIPT} has no --dump-rollouts flag. Phase 0 needs the per-rollout "
-            "dump; the flag is added by exp208 and is opt-in, so a checkout without it "
-            "would run a normal eval and silently produce no marginal data."
+            "dump; the flag is opt-in and added by exp208, so a checkout without it would "
+            "run an ordinary eval and silently produce no marginal data."
         )
+    if not a.dry_run:
+        check_clean()
 
     which = [int(x) for x in a.shards.split(",")] if a.shards else list(range(a.num_shards))
     print(f"[phase0] {len(which)} shard(s) on {a.tpu} in {a.zone} | n_rollouts={N_ROLLOUTS} "
           f"dump={a.dump_rollouts} limit={a.limit}\n         model={MODEL}\n"
           f"         targets={TARGETS}\n         out={OUT}/{LABEL}")
 
-    submitted = [submit(shard_i=i, num_shards=a.num_shards, limit=a.limit,
-                        dump=a.dump_rollouts, tpu=a.tpu, zone=a.zone,
-                        priority=a.priority, dry_run=a.dry_run) for i in which]
-    print(f"[phase0] submitted {len(submitted)} job(s)")
-    for name in submitted:
+    names = []
+    for shard_i in which:
+        names.append(submit(
+            job_name=f"exp208-phase0-s{shard_i}of{a.num_shards}",
+            command=["bash", "-lc", build_bootstrap(
+                shard_i=shard_i, num_shards=a.num_shards, limit=a.limit, dump=a.dump_rollouts)],
+            raw=True,
+            extras=("tpu", "vllm"),
+            tpu=a.tpu,
+            zone=a.zone,
+            priority=a.priority,
+            cpu=8, memory="64GB", disk="64GB",
+            max_retries=3,
+            dry_run=a.dry_run,
+        ))
+    print(f"[phase0] submitted {len(names)} job(s)")
+    for name in names:
         print(f"    /bizon/{name}")
     return 0
 

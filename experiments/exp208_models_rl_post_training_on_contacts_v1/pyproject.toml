@@ -1,24 +1,144 @@
 [project]
-name = "exp208-rl-dense-contact-reward"
+name = "exp208-models-rl-post-training-on-contacts-v1"
 version = "0.1.0"
-description = "exp208 — RL post-training on contacts-v1 with a dense per-contact reward (issue #208)"
-requires-python = ">=3.11"
-# Phase 0 + analysis only. The RL loop's dependency is marin 0.2.76.dev31155643335
-# (the last release that still ships `marin.rl`), which arrives with the training
-# code copied from #200 — adding it here before that code exists would pin a heavy
-# jax/levanter stack into an analysis-only env for no reason.
+description = "exp208 RL post-training on contacts-v1 with a dense per-contact reward and a consensus-marginal document term — issue #208."
+requires-python = ">=3.12,<3.13"
+# THIS DIRECTORY IS THE COMPLETE IRIS WORKSPACE (exp166's pattern, via exp200).
+#
+# `iris job run` bundles the CWD and runs `uv sync` in it on the pod, so the
+# workspace has to declare every extra the job asks for. Submitting from a marin
+# source checkout instead couples this experiment to a large, mutable sibling
+# repo — and that coupling broke on 2026-08-07, when marin main deleted both the
+# `vllm` extra and `marin.rl` itself (e7ef104402, "Externalize the TPU vLLM stack
+# and drop legacy marin.rl") while iris kept rejecting clients more than 14 days
+# old. A checkout new enough to submit no longer contained what the job needed.
+#
+# 0.2.76.dev31155643335 (2026-08-07) is the LAST release that still ships
+# marin.rl: 0.2.77 (2026-08-08) is the first without it. Verified by inspecting
+# the published wheels for marin/rl/rl_losses.py. It is also recent enough to
+# clear the iris client freshness gate, so submission and the RL stack can stay
+# co-versioned instead of being split across two checkouts.
+#
+# Consequence: this pin CANNOT be advanced. Moving to 0.2.77+ removes marin.rl
+# and with it ContactsDenseLoss's base class and the whole environment API.
+# marin's own RL direction is now SkyRL; migrating there is a rewrite, not a bump.
 dependencies = [
-    "numpy>=1.26",
-    "pandas>=2.0",
-    "pyarrow>=15",
-    "fsspec>=2024.2",
-    "gcsfs>=2024.2",
-    "scikit-learn>=1.4",   # build_rollout_rows' roc_auc_score, used by the fidelity test
-    "matplotlib>=3.8",
+    "marin-iris[controller]==0.2.76.dev31155643335",
+    "marin-core==0.2.76.dev31155643335",
+    "marin-levanter==0.2.76.dev31155643335",
+    "marin-zephyr==0.2.76.dev31155643335",
+    "marin-rigging==0.2.76.dev31155643335",
+    "marin-dupekit<0.3",
+    # With prereleases enabled, an unconstrained resolve can pick the
+    # incompatible httpx 1.0 development line (exp166 hit this).
+    "httpx>=0.28.1,<1",
+    "fsspec", "numpy", "pyarrow", "transformers", "tokenizers",
+    "s3fs", "boto3",
 ]
 
 [project.optional-dependencies]
+# marin.rl.orchestration derives worker extras by NAME: rollout workers get
+# {"tpu", "vllm"}, train workers get {"tpu"} - {"vllm"}, and the CPU coordinator
+# gets neither. Both names must therefore exist here verbatim.
+tpu = [
+    "marin-core[tpu]==0.2.76.dev31155643335",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+# marin's own `vllm` extra, reproduced. The forks are pinned to the SHAs marin
+# itself used at 0.2.76 (read from its root [tool.uv.sources] at e7ef104402^),
+# so the TPU stack matches the one these releases were tested against.
+vllm = [
+    "jax==0.10.1",
+    "jaxlib==0.10.1",
+    "libtpu==0.0.41",
+    "vllm",
+    "tpu-inference==0.23.0",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+cpu = [
+    "marin-core[cpu]==0.2.76.dev31155643335",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
 test = ["pytest>=8"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
+[dependency-groups]
+# Iris's remote worker runs `uv sync --all-packages --no-group dev`, so a dev
+# group must exist for `--no-group` to resolve.
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+# Mirrors marin's own resolution environment at this release, rather than an
+# older experiment's. The differences are load-bearing: `datasets<4.0.0` (exp163's
+# value) caps fsspec at 2025.3.0, which cannot satisfy tpu-inference 0.23.0's
+# gcsfs==2026.1.0 -> fsspec==2026.1.0, and `prerelease = "allow"` lets
+# unconstrained transitives drift onto development lines.
+# "allow", not marin's "explicit": marin's sub-packages are workspace members, so
+# it never has to opt a PyPI pre-release in. Here marin-core pulls marin-finestore
+# and friends transitively as 0.2.76.dev* prereleases, which "explicit" refuses.
+prerelease = "allow"
+constraint-dependencies = [
+    # Transitive deps that publish no stable release at all; a constraint
+    # intersects rather than replaces, so this only flips uv's per-package opt-in.
+    "tfp-nightly>=0.1.dev0",
+    "opentelemetry-semantic-conventions>=0.1b0",
+]
+environments = ["sys_platform == 'linux'"]
+# NB: no `no-build-isolation-package = ["vllm"]`. marin does not set it at this
+# fork SHA, and disabling isolation makes vllm's own build-system.requires
+# (setuptools_rust and friends) unavailable, failing the metadata build.
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4",
+    "aiofiles>=24.1.0",
+    "anthropic>=0.71.0",
+    "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.27",
+    "wheel>=0.46.2",
+    "datasets>=3.1.0,<5.0.0",
+    "equinox>=0.11.10",
+    "authlib>=1.7.2",
+    "cbor2>=6.0.1",
+    "click>=8.3.1",
+    "gitpython>=3.1.50",
+    "lxml>=6.1.0",
+    "orjson>=3.11.9",
+    "pillow>=12.2.0",
+    "pyasn1>=0.6.3",
+    "python-dotenv>=1.1.1",
+    "ray>=2.55.1",
+    "rich>=14.1.0",
+    "setuptools>=82.0.1",
+    "tiktoken>=0.12.0",
+    "tornado>=6.5.5",
+]
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[tool.uv.extra-build-variables]
+vllm = { VLLM_TARGET_DEVICE = "tpu" }
+
+[tool.uv.extra-build-dependencies]
+vllm = [
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl ; python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+torch = [{ index = "pytorch-cpu", extra = "tpu" }, { index = "pytorch-cpu", extra = "vllm" }, { index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "tpu" }, { index = "pytorch-cpu", extra = "vllm" }, { index = "pytorch-cpu", extra = "cpu" }]
+vllm = { git = "https://github.com/marin-community/vllm.git", rev = "244808e7863d53ac319a22beb548afd854d48d57" }
+tpu-inference = { git = "https://github.com/marin-community/tpu-inference.git", rev = "e8809d492d5d6c7008369919a00384eb1c4de969" }
