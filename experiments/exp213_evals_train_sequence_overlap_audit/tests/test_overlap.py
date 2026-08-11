@@ -35,6 +35,7 @@ from stratify_and_compare import (  # noqa: E402
     MARINFOLD,
     load_predictors,
     paired_bootstrap,
+    spearman,
 )
 
 
@@ -303,3 +304,38 @@ def test_paired_bootstrap_ci_brackets_the_mean():
     a, b = rng.normal(0.6, 0.2, 300), rng.normal(0.5, 0.2, 300)
     mean, lo, hi = paired_bootstrap(a, b)
     assert lo < mean < hi
+
+
+# ---------------------------------------------------------------------------
+# Spearman rho (the continuous "does accuracy track identity" statistic)
+# ---------------------------------------------------------------------------
+
+
+def test_spearman_is_one_for_any_monotone_relation():
+    x = np.linspace(0.2, 0.95, 40)
+    assert spearman(x, np.exp(5 * x)) == pytest.approx(1.0)
+    assert spearman(x, -x) == pytest.approx(-1.0)
+
+
+def test_spearman_handles_ties_with_average_ranks():
+    # Perfectly monotone once the tie is averaged; a naive ordinal rank would
+    # depend on input order here.
+    x = np.array([1.0, 2.0, 2.0, 3.0])
+    y = np.array([10.0, 20.0, 20.0, 30.0])
+    assert spearman(x, y) == pytest.approx(1.0)
+
+
+def test_spearman_is_nan_when_a_side_is_constant():
+    # The case that fires when every protein shares one identity value: there
+    # is no ranking to correlate, and a 0.0 would read as "no relationship".
+    assert np.isnan(spearman(np.full(20, 0.4), np.linspace(0, 1, 20)))
+
+
+def test_spearman_is_nan_with_too_few_points():
+    assert np.isnan(spearman(np.array([0.1, 0.2]), np.array([0.3, 0.4])))
+
+
+def test_spearman_ignores_nan_pairs():
+    x = np.array([0.1, 0.2, 0.3, 0.4, np.nan])
+    y = np.array([1.0, 2.0, 3.0, 4.0, 99.0])
+    assert spearman(x, y) == pytest.approx(1.0)

@@ -151,7 +151,7 @@ def wide_table(tidy: pd.DataFrame, identity: pd.DataFrame) -> pd.DataFrame:
     wide.columns.name = None
     merged = wide.merge(
         identity[["dataset", "stem", "stratum", "designed", "query_len",
-                  "n_hits_significant", "best_identity_covered",
+                  "n_hits_significant", "best_identity_covered", "fold_verdict",
                   "afdb_n_hits_significant", "esm_atlas_n_hits_significant"]],
         on=["dataset", "stem"], how="left", validate="many_to_one",
     )
@@ -180,9 +180,86 @@ def paired_bootstrap(a: np.ndarray, b: np.ndarray, *, n: int = N_BOOTSTRAP,
     return float(diff.mean()), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
+def _rankdata(values: np.ndarray) -> np.ndarray:
+    """Average ranks, ties shared — the ranking Spearman's rho is defined on."""
+    order = np.argsort(values, kind="mergesort")
+    ranks = np.empty(values.size, dtype=float)
+    ranks[order] = np.arange(1, values.size + 1, dtype=float)
+    sorted_values = values[order]
+    start = 0
+    for stop in range(1, values.size + 1):
+        if stop == values.size or sorted_values[stop] != sorted_values[start]:
+            if stop - start > 1:
+                ranks[order[start:stop]] = ranks[order[start:stop]].mean()
+            start = stop
+    return ranks
+
+
+def spearman(x: np.ndarray, y: np.ndarray) -> float:
+    ok = np.isfinite(x) & np.isfinite(y)
+    if ok.sum() < 3:
+        return float("nan")
+    rx, ry = _rankdata(x[ok]), _rankdata(y[ok])
+    if rx.std() == 0 or ry.std() == 0:
+        return float("nan")
+    return float(np.corrcoef(rx, ry)[0, 1])
+
+
+def identity_slopes(wide: pd.DataFrame, *, n: int = N_BOOTSTRAP,
+                    seed: int = SEED) -> pd.DataFrame:
+    """Spearman rho between best training identity and accuracy, per predictor.
+
+    The binned view spends most of its statistical power on the thinly
+    populated tails. This uses every protein that has a covered training hit
+    and asks the same question continuously: *does accuracy track proximity to
+    the training set?* — which is exp94's "the robust, confound-resistant
+    signal is the slope".
+
+    seq-KNN is the calibration: it copies its nearest neighbour, so its rho
+    must be strongly positive. A predictor whose rho is ~0 is not retrieving.
+    Reported pooled and on natural proteins only, since designed proteins
+    cluster at the low-identity end for reasons unrelated to our training set.
+    """
+    rng = np.random.default_rng(seed)
+    predictors = [p for p in PREDICTOR_ORDER if p in wide.columns]
+    rows = []
+    for split, subset in (("all", wide),
+                          ("natural", wide[wide["designed"] == 0]),
+                          ("designed", wide[wide["designed"] == 1])):
+        for (range_, cut), group in subset.groupby(["range", "cut"]):
+            # Only proteins with a covered hit have a defined identity.
+            group = group[group["best_identity_covered"].notna()]
+            identity = group["best_identity_covered"].to_numpy(dtype=float)
+            if identity.size < 10:
+                continue
+            for predictor in predictors:
+                values = group[predictor].to_numpy(dtype=float)
+                rho = spearman(identity, values)
+                idx = rng.integers(0, identity.size, size=(n, identity.size))
+                boot = np.array([spearman(identity[i], values[i]) for i in idx[:1000]])
+                boot = boot[np.isfinite(boot)]
+                rows.append({
+                    "split": split, "range": range_, "cut": cut,
+                    "predictor": predictor, "n": int(identity.size), "spearman_rho": rho,
+                    "ci_lo": float(np.percentile(boot, 2.5)) if boot.size else float("nan"),
+                    "ci_hi": float(np.percentile(boot, 97.5)) if boot.size else float("nan"),
+                })
+    return pd.DataFrame(rows)
+
+
+#: Columns the two aggregators always emit, so an empty subset (e.g. a cut that
+#: no protein satisfies) still merges and still reports n=0 rather than
+#: vanishing from the table.
+MEAN_COLUMNS = ["predictor", "n", "n_valid", "mean", "sem"]
+DELTA_COLUMNS = ["comparator", "n_pairs", "delta_marinfold_minus_comparator",
+                 "ci_lo", "ci_hi", "significant"]
+
+
 def stratum_means(wide: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     rows = []
     predictors = [p for p in PREDICTOR_ORDER if p in wide.columns]
+    if wide.empty:
+        return pd.DataFrame(columns=[*group_cols, *MEAN_COLUMNS])
     for keys, group in wide.groupby(group_cols, dropna=False):
         keys = keys if isinstance(keys, tuple) else (keys,)
         for predictor in predictors:
@@ -204,6 +281,8 @@ def deltas_vs_marinfold(wide: pd.DataFrame, group_cols: list[str]) -> pd.DataFra
     rows = []
     comparators = [p for p in PREDICTOR_ORDER
                    if p != MARINFOLD and p in wide.columns]
+    if wide.empty:
+        return pd.DataFrame(columns=[*group_cols, *DELTA_COLUMNS])
     for keys, group in wide.groupby(group_cols, dropna=False):
         keys = keys if isinstance(keys, tuple) else (keys,)
         mf = group[MARINFOLD].to_numpy(dtype=float)
@@ -260,13 +339,32 @@ def main() -> int:
     deltas.to_csv(args.out_dir / "paired_deltas.csv", index=False)
 
     # (3) the pre-registered headline: no detectable training homolog.
+    #     `no_homolog_and_novel_fold` is the strictest cut available: sequence
+    #     novelty *and* Foldseek novelty (TM < 0.5 to any AFDB train
+    #     representative, #41/#65). Sequence novelty alone does not imply the
+    #     fold is new — #94 found most of its no-hit proteins were still
+    #     same_fold — and for contact prediction the fold is the channel that
+    #     matters. Caveat: no Foldseek DB exists for the ESM-Atlas arm, so this
+    #     cut removes AFDB fold redundancy only.
     headline_mask = wide["stratum"] == STRATUM_NO_HIT
     relaxed_mask = wide["stratum"].isin([STRATUM_NO_HIT, STRATUM_REMOTE])
     subsets = {"no_homolog": headline_mask, "no_or_remote_homolog": relaxed_mask,
+               "no_homolog_and_novel_fold": headline_mask
+               & (wide["fold_verdict"] == "novel_fold"),
                "all_554": pd.Series(True, index=wide.index)}
     headline_rows = []
     for name, mask in subsets.items():
         subset = wide[mask]
+        n_proteins = subset[["dataset", "stem"]].drop_duplicates().shape[0]
+        if subset.empty:
+            print(f"[headline] subset {name!r} is empty — reported with n=0")
+            headline_rows.append(pd.DataFrame({
+                "range": "all", "cut": "R", "stratum": name,
+                "predictor": [p for p in PREDICTOR_ORDER if p in wide.columns],
+                "n": 0, "n_valid": 0, "mean": np.nan, "sem": np.nan,
+            }))
+            continue
+        print(f"[headline] subset {name!r}: {n_proteins} proteins")
         means = stratum_means(subset.assign(stratum=name), ["range", "cut", "stratum"])
         deltas_here = deltas_vs_marinfold(subset.assign(stratum=name),
                                           ["range", "cut", "stratum"])
@@ -279,12 +377,27 @@ def main() -> int:
     headline = headline.rename(columns={"stratum": "subset"})
     headline.to_csv(args.out_dir / "headline.csv", index=False)
 
-    # (4) counts, for the README and the plots' annotations.
-    counts = (wide[(wide["range"] == "all") & (wide["cut"] == "R")]
+    # (4) the continuous version of the same question, using every protein
+    #     with a covered hit rather than just the tails.
+    slopes = identity_slopes(wide)
+    slopes.to_csv(args.out_dir / "identity_slopes.csv", index=False)
+
+    # (5) counts, for the README and the plots' annotations.
+    one_row_per_protein = wide[(wide["range"] == "all") & (wide["cut"] == "R")]
+    counts = (one_row_per_protein
               .groupby(["stratum", "dataset"], observed=False).size()
               .unstack(fill_value=0))
     counts["total"] = counts.sum(axis=1)
     counts.to_csv(args.out_dir / "strata_counts.csv")
+
+    # (6) sequence novelty vs *structural* novelty — two different leakage
+    #     channels, and a protein can be novel on one and redundant on the other.
+    cross = (one_row_per_protein
+             .assign(fold_verdict=one_row_per_protein["fold_verdict"]
+                     .fillna("unlabelled").replace("", "unlabelled"))
+             .groupby(["stratum", "fold_verdict"], observed=False)
+             .size().unstack(fill_value=0))
+    cross.to_csv(args.out_dir / "sequence_vs_fold_novelty.csv")
 
     n_units = wide[["dataset", "stem"]].drop_duplicates().shape[0]
     summary = {
@@ -299,10 +412,18 @@ def main() -> int:
     print(f"eval units: {n_units}")
     print("\nstratum counts:")
     print(counts.to_string())
+    print("\nsequence novelty x Foldseek fold novelty (vs AFDB train reps):")
+    print(cross.to_string())
     show = headline[(headline["range"] == "all") & (headline["cut"] == "R")]
     print("\nR-precision (all ranges), by subset:")
     print(show[["subset", "predictor", "n", "mean",
                 "delta_marinfold_minus_comparator", "ci_lo", "ci_hi"]]
+          .to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+
+    slope_show = slopes[(slopes["range"] == "all") & (slopes["cut"] == "R")
+                        & (slopes["split"].isin(["all", "natural"]))]
+    print("\nSpearman rho (R-precision vs best training identity):")
+    print(slope_show[["split", "predictor", "n", "spearman_rho", "ci_lo", "ci_hi"]]
           .to_string(index=False, float_format=lambda v: f"{v:.4f}"))
     return 0
 
