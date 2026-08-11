@@ -148,12 +148,14 @@ def plot_rprecision_vs_identity(metrics: pd.DataFrame, out: Path,
 
 
 def plot_headline(headline: pd.DataFrame, out: Path, args: list[str]) -> None:
-    data = headline[(headline["range"] == "all") & (headline["cut"] == "R")]
-    subsets = ["all_554", "no_homolog"]
+    data = headline[(headline["range"] == "all") & (headline["cut"] == "R")
+                    & (headline["split"] == "all")]
+    subsets = ["all_554", "no_homolog", "no_hit_at_all"]
     titles = {"all_554": "All 554 eval proteins",
-              "no_homolog": "No detectable training homolog"}
+              "no_homolog": "No significant training homolog\n(E ≤ 1e-3)",
+              "no_hit_at_all": "No MMseqs2 alignment at all\n(not even E ≤ 10)"}
     predictors = _present(data)
-    fig, axes = plt.subplots(1, len(subsets), figsize=(12.5, 4.6), sharey=True)
+    fig, axes = plt.subplots(1, len(subsets), figsize=(16.5, 4.8), sharey=True)
     for ax, subset in zip(np.atleast_1d(axes), subsets):
         rows = (data[data["subset"] == subset].set_index("predictor")
                 .reindex(predictors))
@@ -173,10 +175,69 @@ def plot_headline(headline: pd.DataFrame, out: Path, args: list[str]) -> None:
     fig.tight_layout()
     save_plot_with_meta(
         fig, out,
-        caption=("The pre-registered cut. Left: the published benchmark. Right: only "
-                 "eval proteins with no MMseqs2 hit (E ≤ 1e-3, -s 7.5) against either "
-                 "training corpus. Error bars are ±SEM over proteins; the paired "
-                 "MarinFold-minus-baseline CIs are in data/headline.csv."),
+        caption=("The pre-registered cut. Left: the published benchmark. Middle and "
+                 "right: only eval proteins with no homolog in either training "
+                 "corpus, under the conventional significance line and under the "
+                 "strictest possible one — shown together because that threshold is "
+                 "the experiment's one judgement call. Error bars are ±SEM over "
+                 "proteins; paired MarinFold-minus-baseline CIs are in "
+                 "data/headline.csv."),
+        script="plot_overlap.py", args=args,
+    )
+    plt.close(fig)
+
+
+def plot_delta_across_subsets(headline: pd.DataFrame, out: Path,
+                              args: list[str]) -> None:
+    """The result: how MarinFold's gap to each baseline moves as homologs are removed.
+
+    Paired differences, so protein difficulty cancels — a bar that moves between
+    subsets means MarinFold gained *less* than that baseline did on the harder,
+    homology-free proteins, which is the leakage signature. Natural proteins get
+    their own panel because the pooled number is mostly de novo designs.
+    """
+    subsets = ["all_554", "no_homolog", "no_hit_at_all"]
+    subset_labels = {"all_554": "all 554", "no_homolog": "no homolog\n(E ≤ 1e-3)",
+                     "no_hit_at_all": "no hit at all\n(E ≤ 10)"}
+    comparators = [p for p in PREDICTOR_ORDER if p != MARINFOLD and p != KNN_LABEL]
+    splits = [("all", "Pooled (designed + natural)"), ("natural", "Natural proteins only")]
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.0), sharey=True)
+    width = 0.8 / len(comparators)
+    for ax, (split, title) in zip(axes, splits):
+        data = headline[(headline["range"] == "all") & (headline["cut"] == "R")
+                        & (headline["split"] == split)]
+        x = np.arange(len(subsets))
+        for k, predictor in enumerate(comparators):
+            rows = (data[data["predictor"] == predictor]
+                    .set_index("subset").reindex(subsets))
+            deltas = rows["delta_marinfold_minus_comparator"].to_numpy(dtype=float)
+            lo = deltas - rows["ci_lo"].to_numpy(dtype=float)
+            hi = rows["ci_hi"].to_numpy(dtype=float) - deltas
+            offset = (k - (len(comparators) - 1) / 2) * width
+            ax.bar(x + offset, deltas, width, yerr=[lo, hi], capsize=2,
+                   color=COLORS.get(predictor, "#777"), label=predictor)
+        ax.axhline(0, color="black", lw=1)
+        counts = (data[data["predictor"] == comparators[0]]
+                  .set_index("subset").reindex(subsets)["n"])
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"{subset_labels[s]}\nn={int(counts[s])}" for s in subsets],
+                           fontsize=9)
+        ax.set_title(title, fontsize=11)
+        ax.grid(axis="y", alpha=0.25)
+    axes[0].set_ylabel("MarinFold #199 − baseline\n(R-precision, paired, 95% CI)")
+    axes[0].legend(frameon=False, fontsize=8.5, loc="lower left")
+    fig.suptitle("Does MarinFold's standing change once training homologs are removed?",
+                 fontsize=12.5)
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, out,
+        caption=("Paired MarinFold-minus-baseline R-precision as the eval set is "
+                 "restricted to proteins with no training homolog. Above zero means "
+                 "MarinFold wins. Bars are 95% percentile CIs from 10,000 paired "
+                 "bootstrap resamples over proteins. The right panel drops the de "
+                 "novo designs, which make up 80–92% of the homology-free subsets "
+                 "and which structure predictors find unusually easy."),
         script="plot_overlap.py", args=args,
     )
     plt.close(fig)
@@ -236,8 +297,9 @@ def main() -> int:
     plot_overlap_profile(identity, args.out_dir / "overlap_profile.png", argv)
     plot_rprecision_vs_identity(metrics, args.out_dir / "rprecision_vs_identity.png", argv)
     plot_headline(headline, args.out_dir / "headline_homology_free.png", argv)
+    plot_delta_across_subsets(headline, args.out_dir / "delta_across_subsets.png", argv)
     plot_designed_vs_natural(wide, args.out_dir / "designed_vs_natural.png", argv)
-    print(f"wrote 4 figures -> {args.out_dir}")
+    print(f"wrote 5 figures -> {args.out_dir}")
     return 0
 
 

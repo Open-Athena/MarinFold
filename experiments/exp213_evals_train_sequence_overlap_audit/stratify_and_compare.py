@@ -150,7 +150,7 @@ def wide_table(tidy: pd.DataFrame, identity: pd.DataFrame) -> pd.DataFrame:
     ).reset_index()
     wide.columns.name = None
     merged = wide.merge(
-        identity[["dataset", "stem", "stratum", "designed", "query_len",
+        identity[["dataset", "stem", "stratum", "designed", "query_len", "n_hits",
                   "n_hits_significant", "best_identity_covered", "fold_verdict",
                   "afdb_n_hits_significant", "esm_atlas_n_hits_significant"]],
         on=["dataset", "stem"], how="left", validate="many_to_one",
@@ -346,33 +346,57 @@ def main() -> int:
     #     same_fold — and for contact prediction the fold is the channel that
     #     matters. Caveat: no Foldseek DB exists for the ESM-Atlas arm, so this
     #     cut removes AFDB fold redundancy only.
+    #     `no_hit_at_all` is the *strict* companion to `no_homolog`, and the
+    #     two bracket the one judgement call in this experiment. `no_homolog`
+    #     applies the conventional E <= 1e-3 significance line; `no_hit_at_all`
+    #     demands that MMseqs2 reported no alignment whatsoever, even the
+    #     noise-level ones it emits up to E = 10. Against the AFDB arm alone
+    #     that is 269 vs 120 proteins — a big enough gap that the headline must
+    #     be shown to survive both, rather than resting on one threshold.
+    #     (exp94 counted *any* alignment as a hit, which is why its AFDB-only
+    #     "no homolog" bin was 139 rather than 269.)
     headline_mask = wide["stratum"] == STRATUM_NO_HIT
     relaxed_mask = wide["stratum"].isin([STRATUM_NO_HIT, STRATUM_REMOTE])
-    subsets = {"no_homolog": headline_mask, "no_or_remote_homolog": relaxed_mask,
+    subsets = {"no_homolog": headline_mask,
+               "no_hit_at_all": wide["n_hits"] == 0,
+               "no_or_remote_homolog": relaxed_mask,
                "no_homolog_and_novel_fold": headline_mask
                & (wide["fold_verdict"] == "novel_fold"),
                "all_554": pd.Series(True, index=wide.index)}
+    # Every subset is reported pooled *and* split designed/natural. It is not
+    # optional here: the homology-free subsets are dominated by de novo designs
+    # (they have no homologs anywhere, by construction), and structure
+    # predictors find their idealised backbones easy — so a pooled number is
+    # mostly a statement about designed proteins.
     headline_rows = []
     for name, mask in subsets.items():
-        subset = wide[mask]
-        n_proteins = subset[["dataset", "stem"]].drop_duplicates().shape[0]
-        if subset.empty:
-            print(f"[headline] subset {name!r} is empty — reported with n=0")
-            headline_rows.append(pd.DataFrame({
-                "range": "all", "cut": "R", "stratum": name,
-                "predictor": [p for p in PREDICTOR_ORDER if p in wide.columns],
-                "n": 0, "n_valid": 0, "mean": np.nan, "sem": np.nan,
-            }))
-            continue
-        print(f"[headline] subset {name!r}: {n_proteins} proteins")
-        means = stratum_means(subset.assign(stratum=name), ["range", "cut", "stratum"])
-        deltas_here = deltas_vs_marinfold(subset.assign(stratum=name),
-                                          ["range", "cut", "stratum"])
-        merged = means.merge(
-            deltas_here.rename(columns={"comparator": "predictor"}),
-            on=["range", "cut", "stratum", "predictor"], how="left",
-        )
-        headline_rows.append(merged)
+        for split, split_mask in (("all", pd.Series(True, index=wide.index)),
+                                  ("natural", wide["designed"] == 0),
+                                  ("designed", wide["designed"] == 1)):
+            subset = wide[mask & split_mask]
+            n_proteins = subset[["dataset", "stem"]].drop_duplicates().shape[0]
+            if subset.empty:
+                print(f"[headline] {name!r}/{split}: empty — reported with n=0")
+                headline_rows.append(pd.DataFrame({
+                    "range": "all", "cut": "R", "stratum": name, "split": split,
+                    "predictor": [p for p in PREDICTOR_ORDER if p in wide.columns],
+                    "n": 0, "n_valid": 0, "mean": np.nan, "sem": np.nan,
+                }))
+                continue
+            if split == "all":
+                print(f"[headline] {name!r}: {n_proteins} proteins "
+                      f"({int(subset[(subset['range'] == 'all') & (subset['cut'] == 'R')]['designed'].sum())}"
+                      f" designed)")
+            means = stratum_means(subset.assign(stratum=name),
+                                  ["range", "cut", "stratum"])
+            deltas_here = deltas_vs_marinfold(subset.assign(stratum=name),
+                                              ["range", "cut", "stratum"])
+            merged = means.merge(
+                deltas_here.rename(columns={"comparator": "predictor"}),
+                on=["range", "cut", "stratum", "predictor"], how="left",
+            )
+            merged["split"] = split
+            headline_rows.append(merged)
     headline = pd.concat(headline_rows, ignore_index=True)
     headline = headline.rename(columns={"stratum": "subset"})
     headline.to_csv(args.out_dir / "headline.csv", index=False)
@@ -414,9 +438,11 @@ def main() -> int:
     print(counts.to_string())
     print("\nsequence novelty x Foldseek fold novelty (vs AFDB train reps):")
     print(cross.to_string())
-    show = headline[(headline["range"] == "all") & (headline["cut"] == "R")]
-    print("\nR-precision (all ranges), by subset:")
-    print(show[["subset", "predictor", "n", "mean",
+    show = headline[(headline["range"] == "all") & (headline["cut"] == "R")
+                    & (headline["split"].isin(["all", "natural"]))]
+    print("\nR-precision (all ranges), by subset "
+          "(split=natural excludes the de novo designs):")
+    print(show[["subset", "split", "predictor", "n", "mean",
                 "delta_marinfold_minus_comparator", "ci_lo", "ci_hi"]]
           .to_string(index=False, float_format=lambda v: f"{v:.4f}"))
 
