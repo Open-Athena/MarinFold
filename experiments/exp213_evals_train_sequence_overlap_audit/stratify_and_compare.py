@@ -255,6 +255,58 @@ DELTA_COLUMNS = ["comparator", "n_pairs", "delta_marinfold_minus_comparator",
                  "ci_lo", "ci_hi", "significant"]
 
 
+def interaction_test(wide: pd.DataFrame, homology_free: pd.Series, *,
+                     label: str, n: int = N_BOOTSTRAP,
+                     seed: int = SEED) -> pd.DataFrame:
+    """Does removing training homologs change MarinFold's standing? (difference of differences)
+
+    Reading two subsets' CIs side by side is not a test — the subsets contain
+    different proteins, and an apparent shift can be nothing but a change in
+    which proteins are averaged. This is the actual claim:
+
+        d_i    = MarinFold_i - baseline_i          (paired, per protein)
+        effect = mean(d | homology-free) - mean(d | has a homolog)
+
+    ``d_i`` is a within-protein difference, so protein difficulty cancels
+    inside each group; the two group means are then compared across
+    independent protein sets by a bootstrap that resamples each group
+    separately. A negative effect whose CI clears zero means MarinFold loses
+    ground specifically on the proteins with no training relative — the
+    leakage signature. An effect indistinguishable from zero means its
+    standing does not depend on training proximity.
+    """
+    rng = np.random.default_rng(seed)
+    comparators = [p for p in PREDICTOR_ORDER
+                   if p != MARINFOLD and p in wide.columns]
+    rows = []
+    for split, split_mask in (("all", pd.Series(True, index=wide.index)),
+                              ("natural", wide["designed"] == 0),
+                              ("designed", wide["designed"] == 1)):
+        for (range_, cut), group in wide[split_mask].groupby(["range", "cut"]):
+            free = homology_free.reindex(group.index).fillna(False).to_numpy()
+            for predictor in comparators:
+                diff = (group[MARINFOLD].to_numpy(dtype=float)
+                        - group[predictor].to_numpy(dtype=float))
+                ok = np.isfinite(diff)
+                a, b = diff[ok & free], diff[ok & ~free]
+                if a.size < 3 or b.size < 3:
+                    continue
+                effect = float(a.mean() - b.mean())
+                boot = (a[rng.integers(0, a.size, size=(n, a.size))].mean(axis=1)
+                        - b[rng.integers(0, b.size, size=(n, b.size))].mean(axis=1))
+                lo, hi = np.percentile(boot, [2.5, 97.5])
+                rows.append({
+                    "subset_definition": label, "split": split,
+                    "range": range_, "cut": cut, "comparator": predictor,
+                    "n_homology_free": int(a.size), "n_with_homolog": int(b.size),
+                    "delta_homology_free": float(a.mean()),
+                    "delta_with_homolog": float(b.mean()),
+                    "effect": effect, "ci_lo": float(lo), "ci_hi": float(hi),
+                    "significant": bool(lo > 0 or hi < 0),
+                })
+    return pd.DataFrame(rows)
+
+
 def stratum_means(wide: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     rows = []
     predictors = [p for p in PREDICTOR_ORDER if p in wide.columns]
@@ -406,6 +458,17 @@ def main() -> int:
     slopes = identity_slopes(wide)
     slopes.to_csv(args.out_dir / "identity_slopes.csv", index=False)
 
+    # (4b) the inferential claim: is the change in MarinFold's standing between
+    #      the full set and the homology-free subset bigger than sampling noise?
+    #      Run under both homology definitions, since that threshold is the
+    #      experiment's one judgement call.
+    interactions = pd.concat([
+        interaction_test(wide, wide["stratum"] == STRATUM_NO_HIT,
+                         label="no_homolog"),
+        interaction_test(wide, wide["n_hits"] == 0, label="no_hit_at_all"),
+    ], ignore_index=True)
+    interactions.to_csv(args.out_dir / "interaction.csv", index=False)
+
     # (5) counts, for the README and the plots' annotations.
     one_row_per_protein = wide[(wide["range"] == "all") & (wide["cut"] == "R")]
     counts = (one_row_per_protein
@@ -450,6 +513,16 @@ def main() -> int:
                         & (slopes["split"].isin(["all", "natural"]))]
     print("\nSpearman rho (R-precision vs best training identity):")
     print(slope_show[["split", "predictor", "n", "spearman_rho", "ci_lo", "ci_hi"]]
+          .to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+
+    inter_show = interactions[(interactions["range"] == "all")
+                              & (interactions["cut"] == "R")
+                              & (interactions["split"].isin(["all", "natural"]))]
+    print("\nInteraction: (MarinFold - baseline | homology-free) "
+          "- (MarinFold - baseline | has a homolog)")
+    print(inter_show[["subset_definition", "split", "comparator", "n_homology_free",
+                      "n_with_homolog", "delta_homology_free", "delta_with_homolog",
+                      "effect", "ci_lo", "ci_hi"]]
           .to_string(index=False, float_format=lambda v: f"{v:.4f}"))
     return 0
 

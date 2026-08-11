@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -33,6 +34,7 @@ from overlap_lib import (  # noqa: E402
 from search_overlap import read_manifest_meta, reduce_alignments  # noqa: E402
 from stratify_and_compare import (  # noqa: E402
     MARINFOLD,
+    interaction_test,
     load_predictors,
     paired_bootstrap,
     spearman,
@@ -250,8 +252,6 @@ def test_distogram_rows_are_not_pooled_into_the_structure_baseline(tmp_path):
     Pooling the two moved Protenix-single-seq's R-precision by 0.22 during
     development, with no error raised — hence this regression test.
     """
-    import pandas as pd
-
     base = pd.DataFrame([
         {"dataset": "foldbench100", "stem": "aaa_A", "model": "protenix-v2",
          "mode": "single_seq", "predictor": "structure", "range": "all",
@@ -339,3 +339,52 @@ def test_spearman_ignores_nan_pairs():
     x = np.array([0.1, 0.2, 0.3, 0.4, np.nan])
     y = np.array([1.0, 2.0, 3.0, 4.0, 99.0])
     assert spearman(x, y) == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# Interaction test (difference of differences)
+# ---------------------------------------------------------------------------
+
+
+def _interaction_frame(free_gap: float, homolog_gap: float, n: int = 60):
+    """Two protein groups with prescribed MarinFold-minus-baseline gaps."""
+    rng = np.random.default_rng(0)
+    base = rng.uniform(0.2, 0.8, 2 * n)
+    marinfold = base + np.concatenate([np.full(n, free_gap), np.full(n, homolog_gap)])
+    return pd.DataFrame({
+        "dataset": "foldbench100",
+        "stem": [f"s{i}" for i in range(2 * n)],
+        "range": "all", "cut": "R",
+        "designed": 0,
+        MARINFOLD: marinfold,
+        "Protenix-v2 single-seq": base,
+    }), pd.Series([True] * n + [False] * n)
+
+
+def test_interaction_recovers_a_planted_effect():
+    # MarinFold is +0.30 on proteins with a homolog and -0.10 without, so
+    # removing homologs should cost it exactly 0.40.
+    wide, free = _interaction_frame(free_gap=-0.10, homolog_gap=0.30)
+    out = interaction_test(wide, free, label="test")
+    row = out[(out["split"] == "all") & (out["comparator"] == "Protenix-v2 single-seq")]
+    assert len(row) == 1
+    assert row["effect"].iloc[0] == pytest.approx(-0.40, abs=1e-9)
+    assert row["ci_hi"].iloc[0] < 0
+    assert bool(row["significant"].iloc[0])
+    assert row["n_homology_free"].iloc[0] == 60
+    assert row["n_with_homolog"].iloc[0] == 60
+
+
+def test_interaction_is_null_when_the_gap_does_not_move():
+    wide, free = _interaction_frame(free_gap=0.15, homolog_gap=0.15)
+    out = interaction_test(wide, free, label="test")
+    row = out[(out["split"] == "all") & (out["comparator"] == "Protenix-v2 single-seq")]
+    assert row["effect"].iloc[0] == pytest.approx(0.0, abs=1e-9)
+    assert not bool(row["significant"].iloc[0])
+
+
+def test_interaction_skips_groups_that_are_too_small():
+    wide, free = _interaction_frame(free_gap=-0.1, homolog_gap=0.3, n=60)
+    # Leave only two homology-free proteins: below the minimum, so no row.
+    free = pd.Series([True, True] + [False] * (len(wide) - 2))
+    assert interaction_test(wide, free, label="test").empty
