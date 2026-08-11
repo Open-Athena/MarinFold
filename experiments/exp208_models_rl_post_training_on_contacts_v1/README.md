@@ -321,8 +321,17 @@ every step so ρ is observable rather than assumed.
 |---|---|---|---|
 | **S** | 0 (`lam_doc = 0`) | — | the issue's literal question with the minimum machinery; the vote-collapse prediction |
 | **B** | ≈ 1 | consensus marginal | the main arm |
-| **D** | ≈ 3 | consensus marginal | is more doc weight better, i.e. is the axis monotone here |
 | **F** | ≈ 1 | **own F1**, RLOO-baselined | #200's document term in plain mode — the ablation that justifies the consensus form |
+
+**Arm D (ρ ≈ 3, consensus) was dropped after Phase 0.** It existed to test whether
+the λ axis is monotone, which is only worth an hour if the document term is a
+sharp signal. Phase 0 measured the n=100 marginal it targets to be 86% exactly
+zero with sd 0.0087, and the G-estimator correlating ~0.2 with it at every group
+size — so more weight on that estimator is the least informative arm available.
+Arm F gains importance in its place: its document term is a **per-rollout**
+quantity with no estimability problem, so S / B / F separate "dense per-contact
+reward", "a well-estimated document term", and "a weakly-estimated one that is
+literally the deployed metric".
 
 Arm F is the control that makes arm B's result mean something. If B > F, the
 consensus form is load-bearing; if B ≈ F, the document term's *form* does not
