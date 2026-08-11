@@ -1,12 +1,19 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Read a contacts-v1 structure section back into a contact set.
+"""Read a contacts-v1 document back into its sequence and contact set.
 
-Pure (regex + a set fold) — no pyconfind, no torch, no tokenizer. This is
-the inverse of the ``<contact>`` / ``<retract>`` statements a document's
-structure section carries, and the **semantic definition of retraction**
-(issue #158):
+Pure (regex + a set fold) — no pyconfind, no torch, no tokenizer. Two
+inverses live here:
+
+* :func:`sequence_from_document` — the **sequence section** back to a
+  one-letter amino-acid string, undoing the resampled emission order and
+  the modulo-``NUM_POSITION_INDICES`` N-terminus offset.
+* :func:`live_contacts` / :func:`fold_statements` — the **structure
+  section** back to a contact set.
+
+The structure-section fold is also the **semantic definition of
+retraction** (issue #158):
 
     the structure section is an ordered *edit list*, not an unordered set.
     ``<contact> <pX> <pY>`` asserts a pair; ``<retract> <pX> <pY>`` takes
@@ -37,16 +44,67 @@ import re
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 
+from .parse import _ONE_LETTER_TO_THREE
+from .vocab import BEGIN_STRUCTURE_TOKEN, NUM_POSITION_INDICES
+
 # One structure-section statement: <contact>/<retract> then two <pN> tokens.
 # Whitespace-tolerant (documents are single-space-joined, but decoded
 # rollouts may vary), mirroring exp82's CONTACT_RE with <retract> added.
 _STATEMENT_RE = re.compile(r"<(contact|retract)>\s+<p(\d+)>\s+<p(\d+)>")
+
+# One sequence-section statement: <pN> <RES3>. The `<pN>`-first order is what
+# distinguishes it from the `<n-term> <pN>` / `<c-term> <pN>` markers, which
+# this pattern therefore skips for free.
+_RESIDUE_RE = re.compile(r"<p(\d+)>\s+<([A-Z]{3})>")
+
+# Canonical 3-letter -> one-letter, inverted from the generator's map so the
+# two can never drift. Anything else a document can carry (only ever `<UNK>`)
+# reads back as "X", the standard any-residue code.
+_THREE_TO_ONE = {three: one for one, three in _ONE_LETTER_TO_THREE.items()}
+UNKNOWN_ONE_LETTER = "X"
 
 CONTACT = "contact"
 RETRACT = "retract"
 
 # A canonicalised structure-section pair: sorted (min, max) position indices.
 Pair = tuple[int, int]
+
+
+def sequence_from_document(
+    document: str,
+    seq_len: int,
+    n_term_index: int,
+    *,
+    num_position_indices: int = NUM_POSITION_INDICES,
+) -> str:
+    """The document's sequence section back as a one-letter string of length ``seq_len``.
+
+    :func:`generate.generate_document` writes residue ``k`` at position token
+    ``(start + k) % num_position_indices`` and records ``n_term_index`` (the
+    token of residue 0) in the metadata, then emits the residues in a
+    *resampled* order. Both are inverted here:
+    ``seq_index = (token - n_term_index) % num_position_indices``, keeping the
+    residue iff that index lands in ``[0, seq_len)``.
+
+    ``seq_len`` and ``n_term_index`` come from the corpus row's ``seq_len`` /
+    ``n_term_index`` columns (:meth:`GenerationResult.metadata_row`). Positions
+    never written by the document — impossible in authored corpora, possible in
+    a truncated model rollout — read back as ``"X"``, as do ``<UNK>`` residues.
+
+    Only the text before ``<begin_statements>`` is scanned, so a document's
+    contact statements can't be mistaken for residues.
+    """
+    if seq_len < 0:
+        raise ValueError(f"seq_len must be non-negative, got {seq_len}")
+    cut = document.find(BEGIN_STRUCTURE_TOKEN)
+    sequence_section = document if cut < 0 else document[:cut]
+
+    residues = [UNKNOWN_ONE_LETTER] * seq_len
+    for token, resname in _RESIDUE_RE.findall(sequence_section):
+        seq_index = (int(token) - n_term_index) % num_position_indices
+        if seq_index < seq_len:
+            residues[seq_index] = _THREE_TO_ONE.get(resname, UNKNOWN_ONE_LETTER)
+    return "".join(residues)
 
 
 def iter_structure_statements(text: str) -> Iterator[tuple[str, int, int]]:
