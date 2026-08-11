@@ -68,6 +68,11 @@ N_ROLLOUTS = int(os.environ.get("EXP208_N_ROLLOUTS", "100"))
 TOP_K = int(os.environ.get("EXP208_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EXP208_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EXP208_TEMPERATURE", "1.0"))
+# Engine-level seed. With --no-per-request-seed (required on TPU) this is the ONLY
+# source of sampling randomness, so a replicate must change it: re-running with
+# the same seed on the same stack risks reproducing the same 100 rollouts and
+# measuring nothing. exp208's first parity run used 0.
+SEED = int(os.environ.get("EXP208_SEED", "0"))
 
 WORKER_SCRIPT = (Path(__file__).resolve().parent.parent
                  / "exp82_evals_contacts_v1_contact_prediction" / "score_rollout_worker.py")
@@ -104,6 +109,7 @@ exec uv run --no-sync python {WORKER_LOCAL} \\
     --temperature {TEMPERATURE} \\
     --top-p {TOP_P} \\
     --top-k {TOP_K} \\
+    --seed {SEED} \\
     --no-per-request-seed{limit_arg}{dump_arg}
 """.strip()
 
