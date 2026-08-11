@@ -1,0 +1,24 @@
+[project]
+name = "exp208-rl-dense-contact-reward"
+version = "0.1.0"
+description = "exp208 — RL post-training on contacts-v1 with a dense per-contact reward (issue #208)"
+requires-python = ">=3.11"
+# Phase 0 + analysis only. The RL loop's dependency is marin 0.2.76.dev31155643335
+# (the last release that still ships `marin.rl`), which arrives with the training
+# code copied from #200 — adding it here before that code exists would pin a heavy
+# jax/levanter stack into an analysis-only env for no reason.
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "pyarrow>=15",
+    "fsspec>=2024.2",
+    "gcsfs>=2024.2",
+    "scikit-learn>=1.4",   # build_rollout_rows' roc_auc_score, used by the fidelity test
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
