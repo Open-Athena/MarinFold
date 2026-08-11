@@ -31,6 +31,16 @@ import consensus as C  # noqa: E402
 
 def _exp89_rprecision(score, resolved, true_pairs, length, rng="all"):
     """R-precision through exp82/exp89's own code, as an independent oracle."""
+    # build_rollout_rows imports sklearn for AUC at module scope. The RL workspace
+    # venv deliberately does not carry the analysis stack (pandas/sklearn would
+    # join a pinned, fragile marin resolution), so this oracle is only available
+    # in an ordinary env. Skip loudly rather than let the most important test in
+    # this file quietly not run.
+    pytest.importorskip(
+        "sklearn",
+        reason="run the fidelity test in an analysis env (system python or a venv with "
+               "scikit-learn); the exp208 RL workspace pins marin and omits it on purpose",
+    )
     from build_rollout_rows import RANGES, metric_rows, resolved_pairs
 
     tmat = np.zeros((length, length), bool)
