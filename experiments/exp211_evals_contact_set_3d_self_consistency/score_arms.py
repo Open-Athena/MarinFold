@@ -144,9 +144,15 @@ def main() -> int:
             named.append(("rollout", rep, own))
             named.append(("chimera_marginal", rep,
                           marginal_chimera(dict(votes), len(own), rng)))
-            other = per_rollout[int(rng.integers(len(per_rollout)))]
+            # Splice against a *different* rollout. Drawing uniformly would pick
+            # the same one about 1 in n times, and splicing a rollout with
+            # itself just returns that rollout — silently seeding the null arm
+            # with copies of the treatment.
+            oi = int(rng.integers(len(per_rollout) - 1))
+            if oi >= ri:
+                oi += 1
             named.append(("chimera_splice", rep,
-                          splice_chimera(own, other, len(own), rng,
+                          splice_chimera(own, per_rollout[oi], len(own), rng,
                                          pool=sorted(votes))))
         if not named:
             continue
