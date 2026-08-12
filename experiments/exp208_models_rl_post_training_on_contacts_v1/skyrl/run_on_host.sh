@@ -52,5 +52,10 @@ if [[ ${#ARGS[@]} -eq 0 ]]; then
   echo "[run] nothing to run; pass a command after --" >&2
   exit 2
 fi
+# The venv python is prepended, so a leading `python` would be passed to it as a
+# filename ("can't open file '.../python'"). Drop it if present.
+if [[ "${ARGS[0]}" == "python" || "${ARGS[0]}" == "python3" ]]; then
+  ARGS=("${ARGS[@]:1}")
+fi
 echo "[run] ${ARGS[*]}"
 ssh "$HOST" "cd $REMOTE && PYTHONPATH=$REMOTE $VENV ${ARGS[*]}"
