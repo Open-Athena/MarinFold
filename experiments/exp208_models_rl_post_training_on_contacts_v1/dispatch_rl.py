@@ -120,6 +120,8 @@ def build_config(arm: str):
         train_tpu_type=os.environ.get("EXP208_TRAIN_TPU", "v5p-8"),
         inference_tpu_type=os.environ.get("EXP208_INFERENCE_TPU", "v5p-8"),
         num_rollout_workers=int(os.environ.get("EXP208_ROLLOUT_WORKERS", "4")),
+        train_ram=os.environ.get("EXP208_TRAIN_RAM", "96GB"),
+        inference_ram=os.environ.get("EXP208_INFERENCE_RAM", "96GB"),
         regions=tuple(os.environ.get("EXP208_REGIONS", "us-central1").split(",")),
         steps_per_eval=int(os.environ.get("EXP208_STEPS_PER_EVAL", "50")),
         checkpoint_every_steps=int(os.environ.get("EXP208_CKPT_EVERY", "25")),

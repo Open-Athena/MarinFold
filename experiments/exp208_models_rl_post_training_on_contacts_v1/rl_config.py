@@ -278,6 +278,14 @@ def build_rl_job_config(
     train_tpu_type: str = "v5p-8",
     inference_tpu_type: str = "v5p-8",
     num_rollout_workers: int = 4,
+    # marin.rl passes these straight to ResourceConfig and, left unset, asks for
+    # the whole node — 224 GB. A 1.5B model needs nowhere near that (f32 params
+    # 5.9 GB + Adam states ~12 GB on the trainer; the rollout worker stages a
+    # 2.7 GB checkpoint), and the oversized ask is a real scheduling tax on a
+    # shared pool: measured 2026-08-12, a nano sat pending on "Insufficient
+    # memory (need 224.0GB, available 10.8GB)" while the pool had TPUs free.
+    train_ram: str = "96GB",
+    inference_ram: str = "96GB",
     inference_tensor_parallel_size: int = 4,
     gpu_memory_utilization: float = 0.90,
     regions: tuple[str, ...] = ("us-central1",),
@@ -438,6 +446,8 @@ def build_rl_job_config(
             train_tpu_type=train_tpu_type,
             inference_tpu_type=inference_tpu_type,
             num_rollout_workers=num_rollout_workers,
+            train_ram=train_ram,
+            inference_ram=inference_ram,
             regions=list(regions),
         ),
         inference_config=vLLMInferenceContextConfig(
