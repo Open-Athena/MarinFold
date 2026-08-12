@@ -67,6 +67,10 @@ class Exp208Config(SkyRLTrainConfig):
     # token, so comparing them per rollout understates the document term by the
     # response length; a plausible guess was off by ~65x on the marin.rl path.
     lam_doc: float = 4.5
+    # "none" (arm S, dense stepwise only), "consensus" (arm B), "own_f1" (arm F).
+    # B and F additionally need the GeneratorOutput mapping in
+    # dense_generator._fold_document_term, which currently raises.
+    doc_term: str = "none"
     # Constrains sampling to real token ids. vLLM pads the vocabulary (2845 ->
     # 2848) with zero rows that emit a logit of exactly 0.0, and exp199's logits
     # sit low enough (top-logit median 1.16) that those rows were sampled in
@@ -90,7 +94,8 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
                 ENV_NAME, ADV_ESTIMATOR, vocab_size)
 
 
-def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int]):
+def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
+              doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0):
     """A ``BasePPOExp`` whose generator emits exp208's dense per-contact reward."""
     from skyrl.backends.skyrl_train.inference_servers.utils import resolve_policy_model_name
     from skyrl.train.entrypoints.main_base import BasePPOExp
@@ -108,6 +113,9 @@ def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int])
                 p_bar=p_bar,
                 err_decay=err_decay,
                 vocab_size=vocab_size,
+                doc_term=doc_term,
+                lam_step=lam_step,
+                lam_doc=lam_doc,
             )
 
     return Exp208PPOExp(cfg)
@@ -123,8 +131,8 @@ def skyrl_entrypoint(cfg: Exp208Config):
     selected and the dense reward silently ignored.
     """
     register_everything(vocab_size=cfg.vocab_size)
-    build_exp(cfg, p_bar=cfg.p_bar, err_decay=cfg.err_decay,
-              vocab_size=cfg.vocab_size).run()
+    build_exp(cfg, p_bar=cfg.p_bar, err_decay=cfg.err_decay, vocab_size=cfg.vocab_size,
+              doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc).run()
 
 
 def main() -> int:

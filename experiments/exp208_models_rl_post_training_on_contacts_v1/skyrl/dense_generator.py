@@ -104,8 +104,13 @@ class DenseContactsGenerator(SkyRLGymGenerator):
     """
 
     def __init__(self, *args, p_bar: float = 0.45, err_decay: float = 0.5,
-                 precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None, **kwargs):
+                 precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None,
+                 doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
+                 **kwargs):
         super().__init__(*args, **kwargs)
+        self.doc_term = doc_term
+        self.lam_step = float(lam_step)
+        self.lam_doc = float(lam_doc)
         self.p_bar = float(p_bar)
         self.err_decay = float(err_decay)
         self.precision_ema_decay = float(precision_ema_decay)
@@ -238,6 +243,50 @@ class DenseContactsGenerator(SkyRLGymGenerator):
                 share = float(lam_doc) * float(marg) / max(len(row), 1)
                 rewards_by_key[key] = [lam_step * v + share for v in row]
         return rewards_by_key
+
+    async def generate(self, input_batch):
+        """Run SkyRL's batch generation, then fold in the consensus term.
+
+        A rollout's marginal is ``C(all) - C(all \\ {i})``, so it is undefined
+        until every sibling exists. `agent_loop` sees one trajectory at a time;
+        this is the first place the whole group is available, which is why the
+        document term is applied here rather than alongside the stepwise term.
+
+        With ``doc_term="none"`` (arm S) this is a no-op beyond clearing state,
+        so the stepwise-only arm runs through exactly the same code path.
+        """
+        self.reset_groups()
+        out = await super().generate(input_batch)
+        if self.doc_term == "none" or self.lam_doc == 0.0:
+            return out
+        try:
+            out = self._fold_document_term(out)
+        except Exception:
+            # Never let the document term take down a run that has already paid
+            # for its rollouts; the stepwise signal is still valid without it.
+            logger.exception("[exp208] consensus term failed; stepwise reward stands")
+        return out
+
+    def _fold_document_term(self, out):
+        """Add the group-centred consensus marginal to each rollout's rewards.
+
+        NOT YET IMPLEMENTED, and deliberately loud rather than a silent no-op.
+
+        The maths is done and tested (`apply_consensus_term` above, and
+        `consensus.loo_marginals`, which is pinned equal to the published metric
+        implementation). What is missing is the mapping from SkyRL's
+        `GeneratorOutput` rows back to `(instance_id, repetition_id)` so each
+        rollout's marginal lands on the right reward vector. Getting that mapping
+        wrong would attribute one protein's consensus contribution to another —
+        silently, because a misattributed marginal is still a plausible number.
+
+        Arm S (`doc_term="none"`) never reaches here, so the stepwise-only arm is
+        unaffected. Arms B and F must not run until this is written.
+        """
+        raise NotImplementedError(
+            "the consensus/own-F1 document term is not wired into GeneratorOutput yet; "
+            "run arm S (doc_term=none) or implement the rollout->reward mapping first"
+        )
 
     def group_pairs(self) -> Dict[str, Dict[str, set]]:
         """Per-protein rollout pair sets, for the consensus-marginal term."""
