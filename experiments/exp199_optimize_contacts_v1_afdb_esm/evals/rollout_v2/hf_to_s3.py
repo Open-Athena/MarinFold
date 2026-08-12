@@ -14,8 +14,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import fsspec
-from checkpoint_specs import Checkpoint, HfFile, model_s3_uri
 from huggingface_hub import snapshot_download
+
+from checkpoint_specs import Checkpoint, HfFile, model_s3_uri
 
 CHUNK_BYTES = 8 * 1024**2
 PROGRESS_BYTES = 1024**3

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 EXP199_HF_REPO_ID = "open-athena/marinfold-exp199"
 EXP199_HF_REVISION = "ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed"
+CONTINUATION_HF_REVISION = "00eddb761fd028f07ce7bc088930271516da9866"
 E8_HF_REPO_ID = "open-athena/marinfold-exp75"
 E8_HF_REVISION = "4c9e7779635b585730180823e0ab4b3319b82f67"
 MARINFOLD_REVISION = "d1bea417a64cc042ad931422200c3edeb873f2e0"
@@ -174,6 +175,28 @@ CHECKPOINTS = (
     ),
 )
 
+CONTINUATION_CHECKPOINT = Checkpoint(
+    label="trc_cont_srcbase_aug100_step145199",
+    job_label="contbase",
+    run_name="prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1",
+    step=145_199,
+    hf_repo_id=EXP199_HF_REPO_ID,
+    hf_revision=CONTINUATION_HF_REVISION,
+    checkpoint_files=exp199_files(
+        (
+            "3aaa2198ccf399813da9d68a8d08355354be4f7b60eced074bcc8209d69b0cf0",
+            "bbfaad34189c5292970255395e1566f4f9a6f83b528085e7ff1b3b58dcfd9d34",
+        )
+    ),
+    weight_shard_digests=(
+        "3aaa2198ccf399813da9d68a8d08355354be4f7b60eced074bcc8209d69b0cf0",
+        "bbfaad34189c5292970255395e1566f4f9a6f83b528085e7ff1b3b58dcfd9d34",
+    ),
+    source_dtype="float32",
+    train_loss=2.8641889095306396,
+    eval_loss=2.9638261795043945,
+)
+
 E8_REFERENCE_CHECKPOINT = Checkpoint(
     label="e8_reference_step35679",
     job_label="e8ref",
@@ -232,6 +255,7 @@ E8_REFERENCE_CHECKPOINT = Checkpoint(
 
 CHECKPOINT_SUITES = {
     "exp199": CHECKPOINTS,
+    "continuation": (CONTINUATION_CHECKPOINT,),
     "e8-reference": (E8_REFERENCE_CHECKPOINT,),
 }
 
