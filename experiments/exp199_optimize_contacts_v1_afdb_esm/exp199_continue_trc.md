@@ -168,10 +168,17 @@ evidence about that region, or when it would free capacity a productive region
 needs. This suspends timer-driven churn only; the runs stay live as insurance and
 resume normal placement policy the moment that region registers a run.
 
-Non-scheduling as of 2026-08-11: `europe-west4` and `us-west4`, which have never
-registered on any eligible shape, and `us-east5`, which stopped scheduling after
-00:28 and has since refused v6e-64, v6e-128, and v5p-128. Prefer probing an
-untried pool over an untried size when a slot must be spent on such a region.
+No region is non-scheduling as of 2026-08-12 05:53: `europe-west4`, `us-east5`,
+and `us-west4` have each registered, so all four approved regions are under
+normal placement policy. The hold above remains the standing response should a
+region go dark again. Prefer probing an untried pool over an untried size when a
+slot must be spent on such a region.
+
+Within `us-east1`, prefer v6e-128 over v6e-64. Dispatch lifetime there is roughly
+3 to 4 hours on v6e-128 against about 26 minutes on v6e-64, which ended six
+consecutive generations on 2026-08-11 evening. Both shapes still end in terminal
+parents, so budget a replacement every few hours rather than treating one as a
+fix.
 
 At every heartbeat, query all eight exact W&B IDs first, then reconcile only the
 exact active Iris dispatch IDs stored in SQLite. Persist observations and actions
@@ -189,6 +196,9 @@ Remove the hourly heartbeat only after both trials finish or the time limit expi
 
 ## Change record
 
+- 2026-08-12: All four approved regions registered, so the non-scheduling hold is
+  inactive and retained only as the standing response. Recorded the us-east1
+  shape preference for v6e-128 over v6e-64 on measured dispatch lifetime.
 - 2026-08-11: Generalized the non-scheduling-region hold to any region that fails
   across its distinct accelerator pools, and added `us-east5`, which refused
   v6e-64, v6e-128, and v5p-128 over more than nine hours after 00:28.
