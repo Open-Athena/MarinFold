@@ -813,26 +813,43 @@ Four candidate causes, each excluded by a measurement rather than by argument:
   into the engines — after which the two "agree" at 0.08 and generation is dead.
   The ordering (disagree → sync → agree → collapse) is the signature.
 
-**Confirmed: it is the multi-GPU FSDP2 sharding.** Removing sharding and changing
-nothing else fixes it completely:
+**Confirmed: FSDP2 policy sharding, isolated from tensor parallelism.** The first
+comparison (8 GPUs vs 1) changed two things at once — shard count *and* vLLM TP —
+so it did not actually establish which. Four configurations separate them:
 
-| | step-0 logprob gap | precision | pred/gt | response length |
-|---|---|---|---|---|
-| 8×A100, `policy_num_gpus_per_node=8` | **1.33 nats** | 0.267 → 0.04 | 1.11 → 0.006 | 483 → 985 (cap) |
-| 1×A100, `policy_num_gpus_per_node=1` | **0.017 nats** | 0.15–0.44, no trend | 0.99–1.31 | 419–573, stable |
+| policy sharding | engines | step-0 gap | outcome |
+|---|---|---|---|
+| none (1 GPU) | 1 × TP1 | 0.0174 | **stable, 12 steps** |
+| 2-way, colocated | 2 × TP1 | 0.3759 | zero contacts at step 0; died on the dense-signal guard |
+| 2-way, separate engine | 1 × TP1 | 0.0175 | healthy 2 steps → collapse at step 2, gap **66.46** |
+| 8-way, colocated | 4 × TP2 | 1.33 | collapse at step 1 |
 
-The single-GPU gap of 0.0174 nats reproduces the standalone HF-vs-vLLM probe
-(0.0173) to three decimals — with one GPU the trainer and the engines run the same
-model, the sync is harmless, and the policy survives. With eight they do not.
-Precision on the 1-GPU run fluctuates between 0.15 and 0.44 with no trend; at
-8 prompts × 8 samples that is 64 rollouts/step, far too noisy to read as learning.
-The claim here is only that it does not collapse.
+Row 3 is the decisive one: engine configuration **identical** to the stable 1-GPU
+run (one engine, TP 1, its own GPU via `colocate_all=false`), with the policy
+sharded 2-way as the only difference. It still collapses. So tensor parallelism
+and engine colocation are both excluded, and sharding the policy is sufficient on
+its own. Shard count sets the timing rather than the outcome: 8-way is already
+wrong at step 0 (1.33 nats, before any sync), 2-way stays correct to 0.017 for two
+syncs and then explodes to 66 nats.
 
-So arm S is runnable today at `policy_num_gpus_per_node=1`, and the 8-GPU
-configuration must not be used until the sharding path is fixed — a sharded run
-looks superficially fine (it trains, it logs, it reports a falling reward) while
-generating from a destroyed policy. Throughput can be recovered without sharding
-by setting `colocate_all=False` and giving the spare GPUs to inference engines.
+The unsharded gap of 0.0174 reproduces the standalone HF-vs-vLLM probe (0.0173) to
+three decimals — with no sharding the trainer and the engines run the same model
+and the sync is harmless. Precision there fluctuates between 0.15 and 0.44 with no
+trend; at 8 prompts × 8 samples that is 64 rollouts/step, far too noisy to read as
+learning. The claim is only that it does not collapse.
+
+So arm S is runnable today at `policy_num_gpus_per_node=1`, and **no sharded
+configuration may be used** until this is fixed — a sharded run looks superficially
+fine (it trains, it logs, it reports a falling reward) while generating from a
+destroyed policy. Throughput has to come from elsewhere: `colocate_all=false` with
+an unsharded policy and the spare GPUs given to additional inference engines, which
+for a 1.5B model is the right shape anyway (generation dominates the step:
+18.1 s of a 56.8 s step even at 8-way).
+
+The 2-way run also shows the collapse is detectable for free —
+`rollout_train_logprobs_abs_diff_mean` sat at 0.017 for two steps and then read
+66.46. Any run of this harness should abort when that metric exceeds ~0.1; it is
+the cheapest possible tripwire and it fires before the wasted compute, not after.
 
 Worth noting what made this findable. Reward and response length alone were
 consistent with a plausible and completely wrong story (length-gaming);
