@@ -159,11 +159,147 @@ Per-protein spread is large — CALM1_HUMAN 0.729 (calmodulin, hyper-conserved) 
 R1AB_SARS2 0.097 (at its own composition floor). Expect that heterogeneity to reappear as
 per-assay variance in Phase 1.
 
-### Phase 1 — full benchmark
+### Phase 1 — full benchmark: **0.2964**, about ESM2-35M
 
-_(running; 212 assays at K=200, ~9,000 tok/s on the A5000)_
+212 assays, K = 200 orderings, 29.1 M tokens, **54.5 min on one A5000** (8,912 tok/s —
+the cost forecast in #218 said 29.1 M tokens, which is what it took).
+
+| | average Spearman (212 assays) |
+|---|---:|
+| ESM2 (650M) | 0.4152 |
+| ESM2 (150M) | 0.3892 |
+| ESM2 (35M) | 0.3213 |
+| **MarinFold contacts-v1-exp199-1.5B** | **0.2964** |
+| ESM2 (8M) | 0.2272 |
+| ProtGPT2 (broken-readout floor) | 0.188 |
+
+**The prediction was ~0.35 with an 80% interval of 0.22–0.45. The result is inside the
+interval and below the point estimate.** It ranks 88th of 97 published baselines, sits
+between ESM2-8M and ESM2-35M, and is 0.119 behind ESM-2 650M. So: a structure-objective
+model does acquire real, usable zero-shot fitness signal for free — worth roughly a 35M
+-parameter dedicated PLM — but it is not competitive with a 650M one.
+
+**Both any-order knobs work, and together they double the score.**
+
+| | ctx≥0 | ctx≥0.5 | ctx≥0.75 | ctx≥0.9 |
+|---|---:|---:|---:|---:|
+| K=1 | 0.1471 | | | |
+| K=4 | 0.2117 | | | |
+| K=16 | 0.2250 | 0.2640 | 0.2823 | |
+| K=64 | 0.2306 | 0.2684 | 0.2866 | 0.2953 |
+| K=200 | 0.2315 | 0.2688 | 0.2870 | **0.2964** |
+
+The ordering ensemble saturates fast — most of its gain is in by K=16 (0.147 → 0.225),
+and K=64 → K=200 buys 0.0011. The context threshold keeps paying to the end. The
+pre-registered primary rule (K=200, ctx≥0.9) also happens to be the best cell of the
+grid, so nothing here rests on test-set selection.
+
+**The readout approximation is not what costs us the gap.** At ctx≥0.9 a residue is
+conditioned on ≥90% of the others, never on exactly all-but-one. The context increments
+are diminishing (+0.038, +0.018, +0.009 across the four thresholds), so extrapolating to
+true all-but-one is worth ≲0.01 — against a 0.119 gap to ESM-2. **The gap is model
+quality, not estimator error.** (Constructing orderings that place each target strictly
+last, instead of waiting for random shuffles to do it, would reach exact masked marginals
+at the same cost and is the obvious next efficiency step; it will not change the ranking.)
+
+### The category-profile prediction fails, once level is controlled
+
+#218 predicted a structure-trained model would tilt toward Stability. It does — but so
+does an equally-weak sequence model, which is the control that makes the prediction
+falsifiable:
+
+| model | avg | Activity | Binding | Expression | OrgFitness | **Stability** |
+|---|---:|---:|---:|---:|---:|---:|
+| MarinFold (0.296) | 1.00 | 0.90 | 0.91 | 1.12 | 0.71 | **1.36** |
+| **ESM2 (35M)** (0.321) | 1.00 | 0.97 | 0.90 | 1.06 | 0.71 | **1.36** |
+| ESM2 (650M) (0.415) | 1.00 | 1.02 | 0.81 | 1.00 | 0.90 | 1.26 |
+| ESM-IF1 (0.424, structure) | 1.00 | 0.87 | 0.92 | 0.96 | 0.79 | **1.47** |
+
+(Each row is that model's per-category Spearman divided by its own average, so the
+comparison is shape, not level.) MarinFold's profile is **indistinguishable from
+ESM2-35M's** — identical on Stability (1.36) and OrganismalFitness (0.71) — and not
+ESM-IF1's. Whatever this model has learned, it presents as a small *sequence* model, not
+as a structure model wearing a sequence readout. The Stability tilt is a property of weak
+variant-effect predictors generally, not evidence of structural knowledge.
+
+### Where it wins, and where it is worst
+
+MarinFold beats ESM-2 650M on **34 of 212 assays (16%)**; median Δ −0.106.
+
+| stratum | n | win rate | MarinFold | ESM-2 |
+|---|---:|---:|---:|---:|
+| Stability | 66 | **29%** | 0.403 | 0.523 |
+| Expression | 18 | 22% | 0.331 | 0.415 |
+| Binding | 13 | 15% | 0.258 | 0.327 |
+| Activity | 43 | 9% | 0.275 | 0.436 |
+| OrganismalFitness | 72 | 7% | 0.211 | 0.398 |
+| Taxon: Virus | 28 | **7%** | **0.111** | 0.272 |
+| MSA depth: Low | 35 | 23% | 0.209 | 0.357 |
+
+**Viruses are the standout weakness (0.111).** That is worth flagging because the prior
+ran the other way: exp199 trains on ESM-Atlas metagenomic data, so one might have
+expected *better* generalisation to under-represented sequence space. It does not
+materialise — and ESM-2 650M is itself weak on viruses (0.261 overall), so this is a
+weakness on top of a known hard stratum.
+
+### Mutational depth — the Phase 2 baseline
+
+Additive masked-marginals for both (this is the *baseline* for the exact-joint comparison,
+not yet the result):
+
+| depth | MarinFold | vs own depth-1 | ESM2-650M | vs own depth-1 |
+|---|---:|---:|---:|---:|
+| 1 | 0.2795 | 1.00 | 0.422 | 1.00 |
+| 2 | 0.2089 | **0.75** | 0.248 | **0.59** |
+| 3 | 0.1241 | 0.44 | 0.205 | 0.49 |
+| 4 | 0.1502 | 0.54 | 0.163 | 0.39 |
+| 5+ | 0.1925 | 0.69 | 0.218 | 0.52 |
+
+MarinFold degrades *relatively* less with depth at 2, 4 and 5+. Do not over-read this:
+both arms use the additive approximation, and a lower depth-1 leaves less room to fall.
+Phase 2 (exact joint scoring via the chain rule) is what turns this into a real test.
+
+### Per-assay agreement with ESM-2
+
+r = 0.696 across the 212 assays — substantially decorrelated, which is the precondition
+for an ensemble adding something. **The actual ensemble test was not run**: it needs
+ProteinGym's per-variant score archive (1.9 GB) and the workstation is at 100% disk with
+7.8 GB free, with other sessions running. It is a one-command follow-up when there is
+room.
 
 ## Status
+
+Readout primitive landed with tests (18 tests, including an oracle-backend identity check
+that recovers the input sequence from the conditionals — a deliberate non-tautological
+check on the slot mapping, verified to fail under a one-statement shift). Harness built
+and preflighted. **Phase 0 passed; Phase 1 complete.** Phases 2–4 (exact joint scoring,
+checkpoint ablations, structure-conditioned scoring) not started.
+
+## Conclusion
+
+**contacts-v1 is a real but weak bidirectional protein language model.** Half of its
+pretraining is sequence modelling and it shows: the conditional is genuinely contextual
+(Phase 0 — the scrambled control is flat in context while the model nearly triples), and
+it converts to 0.2964 zero-shot Spearman on ProteinGym, well clear of the 0.188
+broken-readout floor. But that is ESM2-35M territory, 0.119 behind ESM-2 650M, and the
+gap is model quality rather than readout approximation (worth ≲0.01).
+
+The more interesting finding is the negative one. **On the axis that was supposed to
+reveal structural knowledge — the function-category profile — MarinFold is
+indistinguishable from a small sequence-only model** and unlike a genuine structure model.
+Training on a structure objective bought sequence understanding roughly in proportion to
+the sequence tokens seen, and nothing extra that this benchmark can detect.
+
+Two things remain genuinely open, and both are cheap now that the harness exists:
+
+1. **Exact joint scoring for multi-mutants (Phase 2).** 1.77 M of the 2.44 M variants are
+   multi-mutant, every single-sequence baseline scores them additively, and an any-order
+   model does not have to. The internal comparison (additive-MarinFold vs
+   exact-joint-MarinFold) is informative regardless of our absolute level.
+2. **The `p03-base` vs `p03-aug` ablation (Phase 3).** exp199's own sweep has matched
+   pairs that tie on contact R-precision (0.0036, inside #204's 0.0023 noise floor).
+   ProteinGym measures exactly what the sequence-statement order augmentation was for, and
+   this run establishes the harness to measure it.
 
 Readout primitive landed with tests (18 tests, including an oracle-backend identity check
 that recovers the input sequence from the conditionals — a deliberate non-tautological

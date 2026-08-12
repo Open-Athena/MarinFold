@@ -258,6 +258,17 @@ def baseline_table(
 
     Used to re-aggregate the leaderboard on exactly the assays we scored — the
     only way a subset comparison is honest.
+
+    ProteinGym's file interleaves *metadata* columns among the 97 model score
+    columns: four text ones (``Selection Type``, ``UniProt ID``,
+    ``MSA_Neff_L_category``, ``Taxon``) and one numeric (``Number of
+    Mutants``). All are dropped here so that "every column except ``DMS_id``
+    is a model" holds for callers — otherwise a caller iterating the columns
+    tries to average a taxon name, or reports an assay size as a Spearman.
+
+    The numeric one is caught by range rather than by name: a Spearman lives
+    in [-1, 1], so any column outside that is not a model score whatever
+    ProteinGym decides to call it in a future release.
     """
     frame = pd.read_csv(data_dir(data_root) / "baselines_Spearman_DMS_level.csv")
     frame = frame.rename(columns={"DMS ID": "DMS_id"})
@@ -267,6 +278,14 @@ def baseline_table(
             f"{len(missing)} scored assays are absent from the baseline table, "
             f"e.g. {sorted(missing)[:3]}"
         )
+    scores = [
+        column
+        for column in frame.columns
+        if column != "DMS_id"
+        and pd.api.types.is_numeric_dtype(frame[column])
+        and frame[column].abs().max() <= 1.0
+    ]
+    frame = frame[["DMS_id", *scores]]
     return frame[frame.DMS_id.isin(dms_ids)].reset_index(drop=True)
 
 

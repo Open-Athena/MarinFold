@@ -317,8 +317,8 @@ def plot_category_profile(table: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def plot_vs_esm(frame: pd.DataFrame, rule: dict) -> None:
-    """Per-assay agreement with ESM-2 650M, and what an ensemble would buy."""
+def plot_vs_esm(frame: pd.DataFrame, rule: dict) -> float:
+    """Per-assay agreement with ESM-2 650M. Returns the correlation."""
     chunk = frame[
         (frame.orderings == rule["orderings"])
         & (frame.min_context_fraction == rule["min_context_fraction"])

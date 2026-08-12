@@ -24,18 +24,46 @@ Usage::
 """
 
 import argparse
+import datetime
+import platform
+import socket
 import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import torch
 
 import proteingym
 from marinfold.document_structures.contacts_v1 import sequence_likelihood as sl
 from marinfold.document_structures.contacts_v1.parse import residues_from_sequence
 from marinfold.inference.core import load_backend
+from marinfold.registry import default_model_nickname
 
 HERE = Path(__file__).resolve().parent
+
+
+def worker_metadata() -> dict:
+    """Static per-run fields of the repo-wide timings schema (root AGENTS.md).
+
+    Captured once so `data/timings.csv` joins with every other experiment's on
+    ``(stem, n_residues)`` — that is what makes cross-predictor scaling curves
+    (MarinFold vs Protenix vs ESMFold) work without bespoke munging.
+    """
+    meta = {
+        "gpu_name": "",
+        "gpu_total_memory_gb": float("nan"),
+        "gpu_compute_capability": "",
+        "hostname": socket.gethostname(),
+        "platform": platform.platform(),
+        "torch_version": torch.__version__,
+    }
+    if torch.cuda.is_available():
+        properties = torch.cuda.get_device_properties(0)
+        meta["gpu_name"] = properties.name
+        meta["gpu_total_memory_gb"] = round(properties.total_memory / 2**30, 2)
+        meta["gpu_compute_capability"] = f"{properties.major}.{properties.minor}"
+    return meta
 
 
 def cache_path(out_dir: Path, dms_id: str) -> Path:
@@ -88,11 +116,17 @@ def main() -> None:
         f"{len(skipped)} skipped ({', '.join(skipped.DMS_id)})"
     )
 
+    load_started = time.time()
     backend = load_backend(
         args.backend,
         model=args.model,
         **({"device": args.device} if args.device else {}),
     )
+    model_load_seconds = round(time.time() - load_started, 3)
+    static = worker_metadata()
+    static["model_nickname"] = args.model or default_model_nickname()
+    static["runner_tag"] = "local"
+    static["model_load_seconds"] = model_load_seconds
     timings = []
     for index, row in scorable.iterrows():
         path = cache_path(args.out_dir, row.DMS_id)
@@ -120,9 +154,17 @@ def main() -> None:
             {
                 "stem": row.DMS_id,
                 "n_residues": int(row.seq_len),
-                "orderings": args.orderings,
-                "seconds": round(elapsed, 3),
+                "n_pairs": "",  # not a pairwise predictor; kept for schema join
+                "mode": f"masked-marginals-K{args.orderings}",
+                "elapsed_seconds": round(elapsed, 3),
+                "total_seconds": round(elapsed, 3),
+                "n_orderings": args.orderings,
+                "batch_size": args.batch_size,
                 "tokens": int(args.orderings * (2 * row.seq_len + 7)),
+                "timestamp_utc": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat(timespec="seconds"),
+                **static,
             }
         )
         print(
@@ -138,7 +180,7 @@ def main() -> None:
             frame = pd.concat([pd.read_csv(path), frame], ignore_index=True)
         frame.to_csv(path, index=False)
         print(f"\n{len(timings)} assays cached; timings -> {path}")
-        print(f"total GPU time: {frame.seconds.sum() / 60:.1f} min")
+        print(f"total GPU time: {frame.elapsed_seconds.sum() / 60:.1f} min")
 
 
 if __name__ == "__main__":
