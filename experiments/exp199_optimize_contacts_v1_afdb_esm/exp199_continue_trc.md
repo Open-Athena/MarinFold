@@ -180,6 +180,13 @@ consecutive generations on 2026-08-11 evening. Both shapes still end in terminal
 parents, so budget a replacement every few hours rather than treating one as a
 fix.
 
+Once a lineage leader is close enough to finish that no sibling can overtake it,
+stop spending timer-driven actions on that lineage's other regional runs. A
+replacement can only help if that run could still win or could still serve as
+fallback, so compare the sibling's remaining work at its own measured rate
+against the leader's. Leave such runs live and untouched; act on them only if the
+leader is lost. This suspends churn, not the runs.
+
 At every heartbeat, query all eight exact W&B IDs first, then reconcile only the
 exact active Iris dispatch IDs stored in SQLite. Persist observations and actions
 atomically and check SQLite integrity before returning. Protect recent progress;
@@ -196,6 +203,8 @@ Remove the hourly heartbeat only after both trials finish or the time limit expi
 
 ## Change record
 
+- 2026-08-12: Added the endgame rule suspending timer-driven actions on regional
+  runs that can no longer win or serve as fallback for their lineage.
 - 2026-08-12: All four approved regions registered, so the non-scheduling hold is
   inactive and retained only as the standing response. Recorded the us-east1
   shape preference for v6e-128 over v6e-64 on measured dispatch lifetime.
