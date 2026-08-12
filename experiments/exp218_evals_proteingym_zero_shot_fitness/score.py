@@ -47,8 +47,8 @@ class ScoringRule:
         return f"K{self.orderings}_ctx{self.min_context_fraction:g}"
 
 
-def load_conditionals(path: Path, orderings: int) -> sl.AAConditionals:
-    """Read a cached tensor, truncated to the first ``orderings`` permutations.
+def load_conditionals(path: Path, orderings: int | None = None) -> sl.AAConditionals:
+    """Read a cached tensor, optionally truncated to its first ``orderings``.
 
     Truncation (rather than resampling) is what makes the K-sweep a nested
     comparison: K=4 uses the same first four orderings K=200 starts with, so
@@ -56,6 +56,8 @@ def load_conditionals(path: Path, orderings: int) -> sl.AAConditionals:
     """
     with np.load(path) as data:
         available = int(data["logprobs"].shape[0])
+        if orderings is None:
+            orderings = available
         if available < orderings:
             raise ValueError(
                 f"{path.name} holds {available} orderings; {orderings} requested."
@@ -67,6 +69,22 @@ def load_conditionals(path: Path, orderings: int) -> sl.AAConditionals:
             context_sizes=data["context_sizes"][:orderings],
             target_mass=data["target_mass"][:orderings],
         )
+
+
+def truncate(conditionals: sl.AAConditionals, orderings: int) -> sl.AAConditionals:
+    """Same nested truncation, without re-reading the file."""
+    if orderings > conditionals.num_orderings:
+        raise ValueError(
+            f"{conditionals.entry_id} holds {conditionals.num_orderings} "
+            f"orderings; {orderings} requested."
+        )
+    return sl.AAConditionals(
+        entry_id=conditionals.entry_id,
+        seq_len=conditionals.seq_len,
+        logprobs=conditionals.logprobs[:orderings],
+        context_sizes=conditionals.context_sizes[:orderings],
+        target_mass=conditionals.target_mass[:orderings],
+    )
 
 
 def score_assay(
@@ -128,8 +146,11 @@ def score_all(
         if not path.exists():
             continue
         assay = proteingym.load_assay(meta, data_root)
+        # One decompression per assay, then slice — reading the .npz once per
+        # rule would dominate the runtime of an otherwise trivial CPU stage.
+        cached = load_conditionals(path)
         for rule in rules:
-            conditionals = load_conditionals(path, rule.orderings)
+            conditionals = truncate(cached, rule.orderings)
             scores, reasons = score_assay(conditionals, assay, rule)
             keep = np.isfinite(scores)
             if keep.sum() < 2:

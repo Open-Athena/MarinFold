@@ -79,10 +79,19 @@ def score_one(backend, sequence: str, entry_id: str, orderings: int, batch: int)
     logprobs = conditionals.logprobs
     correct = logprobs.argmax(axis=-1) == truth_grid
     nll = -np.take_along_axis(logprobs, truth_grid[:, :, None], axis=2)[:, :, 0]
+    # Sharpness is not the whole story: a model that has memorized the
+    # wild-type puts ~all its mass there, and then the *ranking of the other
+    # 19* — which is the only thing a variant-effect score reads — lives in a
+    # thin tail. Entropy and P(wt) say how thin, and so how much of Phase 1's
+    # signal has to come out of it.
+    probs = np.exp(logprobs)
+    entropy = -(probs * logprobs).sum(axis=-1)
     return {
         "context_fraction": conditionals.context_fractions().ravel(),
         "correct": correct.ravel(),
         "nll": nll.ravel(),
+        "p_wt": np.exp(-nll).ravel(),
+        "entropy": entropy.ravel(),
         "target_mass": conditionals.target_mass.ravel(),
     }
 
@@ -109,6 +118,8 @@ def bucketize(rows: dict) -> pd.DataFrame:
                 "top1": float(chunk.correct.mean()),
                 "nll": float(chunk.nll.mean()),
                 "perplexity": float(np.exp(chunk.nll.mean())),
+                "p_wt": float(chunk.p_wt.mean()),
+                "entropy": float(chunk.entropy.mean()),
                 "target_mass": float(chunk.target_mass.mean()),
             }
         )
@@ -123,6 +134,11 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--model", default=None, help="MODELS.yaml nickname")
     parser.add_argument("--backend", default="transformers")
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="torch device; default picks CUDA when free. Use cpu to share the box.",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out-dir", type=Path, default=HERE / "data")
     args = parser.parse_args()
@@ -134,7 +150,11 @@ def main() -> None:
         f"K={args.orderings}"
     )
 
-    backend = load_backend(args.backend, model=args.model)
+    backend = load_backend(
+        args.backend,
+        model=args.model,
+        **({"device": args.device} if args.device else {}),
+    )
     rng = random.Random(args.seed)
     arms: dict[str, list[dict]] = {"model": [], "scrambled": []}
     floors, per_protein = [], []

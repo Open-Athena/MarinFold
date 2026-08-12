@@ -6,7 +6,12 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "marinfold[transformers]",  # sequence_likelihood readout + torch/accelerate
     "transformers>=4.51,<5",    # Qwen3 support; <5 so the levanter llama3 rope config loads
-    "torch>=2.4",
+    # This box runs driver 535.54.03 (CUDA 12.2). A default-index torch is built
+    # against a newer CUDA and does not merely warn — it reports no devices and
+    # silently falls back to CPU, which is ~80 tok/s here versus a few thousand.
+    # +cu121 from PyTorch's own index is the pin exp9/exp20/exp27/exp159 settled
+    # on for this machine; routed through the explicit index below.
+    "torch==2.5.1+cu121",
     "accelerate>=0.30",
     "huggingface_hub>=0.24",
     "pandas>=2.0",
@@ -25,6 +30,12 @@ test = ["pytest>=8"]
 
 [tool.uv.sources]
 marinfold = { path = "../../marinfold", editable = true }
+torch = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
 
 [dependency-groups]
 dev = []

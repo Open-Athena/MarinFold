@@ -65,12 +65,24 @@ HEADLINE_BASELINES = (
 )
 
 
+# A residue's statement clears a context threshold `c` in a fraction `1 - c` of
+# orderings, so a (K, c) pair yields about `K * (1 - c)` samples per residue.
+# Below this many, a non-trivial share of residues get *no* qualifying ordering,
+# their log-ratio is undefined, and the variants touching them are dropped — so
+# the rule would be compared on a different variant subset than its neighbours.
+# Rather than let that happen quietly, the grid excludes those combinations.
+MIN_EXPECTED_SAMPLES = 4.0
+
+
 def rules() -> list[scoring.ScoringRule]:
-    return [
-        scoring.ScoringRule(orderings=k, min_context_fraction=c)
-        for k in ORDERINGS
-        for c in CONTEXT_THRESHOLDS
-    ]
+    out = []
+    for k in ORDERINGS:
+        for c in CONTEXT_THRESHOLDS:
+            # c = 0 keeps every slot by construction, so K alone is the budget.
+            if c > 0 and k * (1 - c) < MIN_EXPECTED_SAMPLES:
+                continue
+            out.append(scoring.ScoringRule(orderings=k, min_context_fraction=c))
+    return out
 
 
 def per_assay_table(rescore: bool) -> pd.DataFrame:
@@ -88,24 +100,48 @@ def per_assay_table(rescore: bool) -> pd.DataFrame:
     return frame
 
 
-def best_rule(frame: pd.DataFrame, reference: pd.DataFrame) -> tuple[dict, dict]:
-    """Aggregate every rule; return (all results keyed by label, the winner).
+def label_for(orderings: int, context: float) -> str:
+    return f"K={orderings}, ctx>={context:g}"
 
-    "Best" is by the aggregated headline, chosen over the whole grid. That is a
-    selection on the test set — stated plainly rather than hidden — so the
-    per-rule table is reported in full alongside it, and the K=200/ctx=0 corner
-    (the no-tuning default) is called out separately.
-    """
+
+# The headline rule is chosen *a priori*, not from the sweep. "Masked
+# marginals" means conditioning on everything else, so the faithful
+# implementation is the largest ensemble at the highest context threshold that
+# still has enough samples per residue — which the grid filter fixes at
+# K=200 / ctx>=0.9 (20 qualifying orderings per residue). Picking the best cell
+# of a 13-point grid by its benchmark score would be selection on the test set;
+# that number is still reported, labelled as the upper bound it is.
+PRIMARY_RULE = (200, 0.9)
+
+
+def aggregate_rules(frame: pd.DataFrame, reference: pd.DataFrame) -> dict:
+    """Aggregate every rule in the sweep, keyed by label."""
     results = {}
     for (k, c), chunk in frame.groupby(["orderings", "min_context_fraction"]):
-        label = f"K={k}, ctx>={c:g}"
-        results[label] = {
+        results[label_for(int(k), float(c))] = {
             "orderings": int(k),
             "min_context_fraction": float(c),
+            "variants_dropped": int(chunk.n_dropped.sum()),
             **proteingym.aggregate(chunk[["DMS_id", "spearman"]], reference),
         }
-    winner = max(results.items(), key=lambda kv: kv[1]["average_spearman"])
-    return results, {"label": winner[0], **winner[1]}
+    return results
+
+
+def pick_rules(results: dict) -> tuple[dict, dict]:
+    """Return (the pre-registered primary rule, the best cell of the grid)."""
+    primary_label = label_for(*PRIMARY_RULE)
+    if primary_label not in results:
+        raise SystemExit(
+            f"primary rule {primary_label} missing from the sweep; the cache "
+            f"probably holds fewer than {PRIMARY_RULE[0]} orderings."
+        )
+    best_label, best = max(
+        results.items(), key=lambda kv: kv[1]["average_spearman"]
+    )
+    return (
+        {"label": primary_label, **results[primary_label]},
+        {"label": best_label, **best},
+    )
 
 
 def leaderboard(frame: pd.DataFrame, reference: pd.DataFrame, rule: dict) -> pd.DataFrame:
@@ -327,26 +363,27 @@ def main() -> None:
     PLOTS.mkdir(parents=True, exist_ok=True)
     reference = proteingym.reference()
     frame = per_assay_table(args.rescore)
-    results, winner = best_rule(frame, reference)
+    results = aggregate_rules(frame, reference)
+    primary, best = pick_rules(results)
 
-    default_label = f"K={max(ORDERINGS)}, ctx>=0"
-    table = leaderboard(frame, reference, winner)
+    table = leaderboard(frame, reference, primary)
     table.to_csv(DATA / "leaderboard_comparison.csv", index=False)
-    depths = depth_breakdown(frame, winner)
+    depths = depth_breakdown(frame, primary)
     depths.to_csv(DATA / "depth_breakdown.csv", index=False)
 
     plot_sweeps(results)
     plot_category_profile(table)
-    correlation = plot_vs_esm(frame, winner)
+    correlation = plot_vs_esm(frame, primary)
 
+    esm2 = float(table[table.model == "ESM2 (650M)"].average_spearman.iloc[0])
     summary = {
         "n_assays_scored": int(frame.DMS_id.nunique()),
-        "best_rule": winner,
-        "untuned_rule": results.get(default_label),
+        "primary_rule": primary,
+        "best_rule_upper_bound": best,
+        "cheapest_rule": results.get(label_for(1, 0.0)),
         "per_rule": results,
-        "esm2_650m_on_same_assays": float(
-            table[table.model == "ESM2 (650M)"].average_spearman.iloc[0]
-        ),
+        "esm2_650m_on_same_assays": esm2,
+        "gap_to_esm2_650m": primary["average_spearman"] - esm2,
         "per_assay_correlation_with_esm2": correlation,
         "spearman_by_depth": {
             str(d): float(c.spearman.mean()) for d, c in depths.groupby("depth")
@@ -355,12 +392,15 @@ def main() -> None:
     (DATA / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
 
     print(f"\nassays scored: {summary['n_assays_scored']}")
-    print(f"best rule: {winner['label']}  ->  {winner['average_spearman']:.4f}")
-    if summary["untuned_rule"]:
-        print(f"untuned  : {default_label}  ->  {summary['untuned_rule']['average_spearman']:.4f}")
+    print(f"PRIMARY (pre-registered) {primary['label']:<22s} -> {primary['average_spearman']:.4f}")
+    print(f"best cell of the grid    {best['label']:<22s} -> {best['average_spearman']:.4f}  (test-set selection)")
+    if summary["cheapest_rule"]:
+        print(f"cheapest (one pass)      {label_for(1, 0.0):<22s} -> {summary['cheapest_rule']['average_spearman']:.4f}")
+    print(f"\nESM-2 650M on the same {summary['n_assays_scored']} assays: {esm2:.4f}"
+          f"   (gap {summary['gap_to_esm2_650m']:+.4f})")
     print(f"\n{table.head(14).to_string(index=False)}")
     print(f"\nper-assay correlation with ESM-2 650M: r = {correlation:.3f}")
-    print("\nSpearman by mutational depth:")
+    print("\nSpearman by mutational depth (additive approximation):")
     for depth, value in summary["spearman_by_depth"].items():
         print(f"  depth {depth}: {value:+.4f}")
 

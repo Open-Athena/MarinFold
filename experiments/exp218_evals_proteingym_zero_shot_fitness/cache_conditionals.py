@@ -65,6 +65,11 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--model", default=None, help="MODELS.yaml nickname")
     parser.add_argument("--backend", default="transformers")
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="torch device; default picks CUDA when free. Use cpu to share the box.",
+    )
     parser.add_argument("--limit", type=int, default=None, help="first N assays only")
     parser.add_argument(
         "--out-dir", type=Path, default=HERE / "data" / "conditionals"
@@ -83,7 +88,11 @@ def main() -> None:
         f"{len(skipped)} skipped ({', '.join(skipped.DMS_id)})"
     )
 
-    backend = load_backend(args.backend, model=args.model)
+    backend = load_backend(
+        args.backend,
+        model=args.model,
+        **({"device": args.device} if args.device else {}),
+    )
     timings = []
     for index, row in scorable.iterrows():
         path = cache_path(args.out_dir, row.DMS_id)
