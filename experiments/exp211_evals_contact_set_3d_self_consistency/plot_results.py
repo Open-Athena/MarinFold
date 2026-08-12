@@ -35,7 +35,8 @@ def fig_arms(df, out):
     fig, ax = plt.subplots(figsize=(9, 5))
     colors = [C_TREAT if a == "rollout" else C_NULL if a.startswith("chimera")
               else C_REF for a in arms]
-    bp = ax.boxplot([w[a].dropna() for a in arms], labels=[ARM_LABEL[a] for a in arms],
+    bp = ax.boxplot([w[a].dropna() for a in arms],
+                tick_labels=[ARM_LABEL[a] for a in arms],
                     showfliers=False, patch_artist=True, medianprops=dict(color="k"))
     for patch, c in zip(bp["boxes"], colors):
         patch.set_facecolor(c); patch.set_alpha(0.65)
