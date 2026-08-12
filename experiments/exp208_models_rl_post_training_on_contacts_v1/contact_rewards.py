@@ -24,14 +24,32 @@ section)::
         -p_bar * decay**e      if x == 0     (e = # earlier errors in section k)
 
 spread evenly over the triple's three tokens. ``p_bar`` is the policy's own
-recent per-contact precision, so ``E[r] ~ 0`` at current performance and the
-gradient says only "beat yourself". This matters more than any other constant
-here: precision is ~0.3, so a *fixed* penalty would make "emit nothing" the
-optimal policy and the run would collapse to empty sections. ``decay`` < 1
-implements the observation that once a section has gone wrong, later contacts in
-it may be logical consequences of the first mistake rather than independent
-errors (``decay=1`` recovers flat penalties, ``decay=0`` penalizes only the
-first error in each section).
+recent per-contact precision, so ``E[r] = p - p_bar ~ 0`` at current performance
+and the gradient says only "beat yourself". A contact is worth emitting exactly
+when its correctness probability beats p_bar. That centring is what stops "emit
+nothing" being optimal — a penalty of *fixed* size (say -1) would collapse the
+run to empty sections, but ``-p_bar`` scales with the policy and does not.
+
+**``decay`` defaults to 1.0, i.e. off.** It was introduced for a real
+observation — once a section has gone wrong, later contacts in it may be
+consequences of the first mistake rather than independent errors — but it buys
+that by destroying the centring above, because the k-th error costs
+``p_bar*decay**k`` while a correct contact always pays a full ``1 - p_bar``. The
+marginal contact is then worth ``p - p_bar*decay**k``, which is positive for
+ANY contact once a few errors are in.
+
+Measured on 9,900 Phase 0 rollouts (``analyze_err_decay.py``), at the p_bar the
+policy actually settles to: with ``decay=0.5`` penalties are **2.3%** of the
+positive term and the next wrong contact costs a median of **0.000000** against
++0.745 for a correct one — errors are free and the baseline does not exist. The
+median rollout makes 25 errors, and 0.5**25 is 3e-8. There is no intermediate
+setting to retreat to: ranking quality is flat from 0.0 to 0.9 (Spearman with F1
+0.861-0.878) and only recovers at 1.0 (0.9215), which also tracks precision
+better (0.906 vs 0.827) and raw volume less (0.471 vs 0.677).
+
+At ``decay=1`` the total reward is exactly ``n_scored * (precision - p_bar)``,
+which is the intended signal written plainly. ``decay=0`` penalizes only the
+first error in each section.
 
 The document-level best-of-N term is deliberately NOT applied here: it needs a
 baseline over the whole group of rollouts for a protein, which only the loss
@@ -259,7 +277,7 @@ def dense_rewards(
     *,
     mode: str,
     precision_baseline: float,
-    err_decay: float = 0.5,
+    err_decay: float = 1.0,
     max_sections: int | None = None,
     starts_in_section: bool = True,
     vocab: ContactVocab = DEFAULT_VOCAB,

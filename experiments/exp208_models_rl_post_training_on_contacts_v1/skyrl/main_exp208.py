@@ -59,8 +59,16 @@ class Exp208Config(SkyRLTrainConfig):
     # the AFDB training pool, so a FIXED penalty makes silence the best policy.
     # Phase 0 measured 0.482 on the eval set, but the marin.rl nano's EMA settled
     # near 0.20 on the training distribution, which is the one that matters.
-    p_bar: float = 0.45
-    err_decay: float = 0.5
+    p_bar: float = 0.26
+    # 1.0, i.e. NO decay. Measured on 9,900 Phase 0 rollouts
+    # ([analyze_err_decay.py](../analyze_err_decay.py)): at 0.5 the penalty is
+    # 2.3% of the positive term and the next wrong contact costs a median of
+    # 0.000000 against +0.745 for a correct one, so errors are free and the
+    # p_bar baseline -- the whole point of the reward -- does not exist. There is
+    # no intermediate setting: ranking quality is flat from 0.0 to 0.9
+    # (rho with f1 0.861-0.878) and only recovers at 1.0 (0.9215), which also
+    # tracks precision better (0.906 vs 0.827) and volume less (0.471 vs 0.677).
+    err_decay: float = 1.0
     lam_step: float = 1.0
     # CALIBRATED, not chosen. The two terms differ by ~an order of magnitude in
     # natural scale AND the document scalar is broadcast over every response

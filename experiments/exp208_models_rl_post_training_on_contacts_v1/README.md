@@ -858,12 +858,53 @@ consistent with a plausible and completely wrong story (length-gaming);
 the original metric set, and the zero-LR control is what turned a hypothesis into
 an exclusion.
 
-`err_decay` remains theoretically dubious for the reason first suspected — the k-th
-error in a section costs `p̄·δ^k`, a convergent series bounded near `p̄/(1−δ)`, while
-each correct contact pays a full `1−p̄`, so the marginal contact is worth
-`p − p̄·δ^k` and the p̄-centring's zero baseline does not hold. But that is now an
-untested concern, not an observed one, and it cannot be tested until the policy
-survives a weight sync.
+### `err_decay` settled: it goes to 1.0, and `p̄` was wrong too
+
+The concern raised above turned out to be right, and it is measurable offline —
+no GPU, no surviving policy required. Scored on the 9,900 Phase 0 rollouts with
+the production `dense_rewards`, via a closed form that reproduces it exactly
+(max |diff| 0.0; the k-th error costs `p̄·δ^k` wherever it falls, so a rollout's
+total penalty is `p̄·(1−δ^n_wrong)/(1−δ)` regardless of ordering):
+[`analyze_err_decay.py`](analyze_err_decay.py).
+
+At `p̄ = 0.2547`, the value the EMA actually settles to:
+
+| δ | penalty as % of positive term | cost of the NEXT wrong contact | ρ(reward, F1) | ρ(reward, precision) | ρ(reward, n_pred) |
+|---|---|---|---|---|---|
+| 0.5 | 2.3% | **median 0.000000** | 0.8675 | 0.8269 | 0.6771 |
+| 1.0 | 32.7% | 0.2547 | **0.9215** | **0.9057** | **0.4711** |
+
+A correct contact pays +0.745. At δ=0.5 the next error costs a median of exactly
+zero, and for 92.8% of rollouts it costs under 1% of what a correct contact earns
+— the median rollout makes 25 errors and 0.5²⁵ is 3×10⁻⁸. The penalty term is 2.3%
+of the reward's magnitude, so the "baseline" the whole design rests on is not
+there. δ=1.0 also *ranks* rollouts better on every axis: higher agreement with F1
+and precision, lower agreement with raw contact count.
+
+There is no intermediate setting to retreat to. Ranking quality is flat across
+δ ∈ [0, 0.9] (ρ with F1 0.861→0.878) and only recovers at 0.99–1.0. The decay's
+motivating observation — that later errors in a spoiled section may be
+consequences of the first — is real, but it cannot be bought at any δ that leaves
+the baseline standing.
+
+**A second, independent bug fell out of the same analysis.** At δ=1 the reward is
+exactly `n_scored·(precision − p̄)`, so p̄ must track the pool's true precision: set
+above it, the policy is paid to say nothing — the very collapse the decay was
+introduced to prevent. `INITIAL_PRECISION` was 0.45, chosen as a compromise
+because nothing had measured the RL training pool. The SkyRL runs measure it
+directly, at step 0 before any update: **0.267, 0.259, 0.250, 0.263, 0.281** across
+five configurations. 0.45 was ~0.19 too high, which is a silence pressure on every
+contact in the opening steps. Now 0.26.
+
+δ=1 does not reintroduce the silence failure at a correct p̄: 70.6% of Phase 0
+rollouts still earn positive reward (mean +14.49), and at the pool's own precision
+the per-contact expectation is ~0.01 — near-zero and correctly centred, which is
+the design intent.
+
+Defaults changed to `err_decay=1.0` and `p̄=0.26` in both the SkyRL and marin.rl
+paths, and `contact_rewards.py`'s docstring corrected: it justified the decay by
+claiming a fixed penalty would make silence optimal, but the penalty is already
+`−p̄`, so `E[r] = p − p̄` and the centring alone handles it.
 
 ### Artifacts
 

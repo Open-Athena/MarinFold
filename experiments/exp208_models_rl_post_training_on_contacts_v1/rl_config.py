@@ -98,19 +98,21 @@ WANDB_ENTITY = "open-athena"
 WANDB_GROUP = "exp208-rl-dense-contacts"
 
 DEFAULT_MAX_PROTEIN_LEN = 512
-# p_bar's starting value. #208 Phase 0 measured single-rollout per-contact
-# precision for THIS model at **0.482** over 10,000 plain rollouts on the eval
-# set. exp200's 0.23 came from exp163 arm F in multi-draft mode and is stale by
-# a factor of two here: starting p_bar far below the truth makes every correct
-# contact look like a large win and every error nearly free, which biases the
-# first steps toward over-emission — the opposite of the collapse the design
-# guards against, but a bias either way. The environment EMA-tracks it from
-# there, so this only shapes the first few steps.
+# p_bar's starting value, MEASURED on the training pool rather than inferred.
 #
-# 0.45 rather than 0.482: the training pool is AFDB round-0 with pyconfind
-# labels while 0.482 was measured on the PDB-derived eval set, and nothing has
-# measured the training distribution directly.
-INITIAL_PRECISION = 0.45
+# Phase 0 measured 0.482 for this model over 10,000 plain rollouts, but on the
+# PDB-derived EVAL set; the RL training pool is AFDB round-0 with pyconfind
+# labels, and 0.45 was a compromise between the two with nothing measuring the
+# pool directly. The SkyRL runs now do, reporting step-0 per-contact precision
+# before any update: 0.267, 0.259, 0.250, 0.263, 0.281 across five
+# configurations. The pool sits near 0.26, so 0.45 was ~0.19 too high.
+#
+# That gap is not cosmetic once err_decay is 1.0 (see analyze_err_decay.py). The
+# reward pays `p - p_bar` per contact, so a p_bar above the pool's true precision
+# pays the policy to say nothing at all — the exact collapse the design exists to
+# avoid. The environment EMA-tracks p_bar and converges within one batch, but
+# batch 0's gradient is computed on the way there.
+INITIAL_PRECISION = 0.26
 
 
 def plain_output_tokens(max_protein_len: int) -> int:
@@ -204,7 +206,7 @@ def build_curriculum(
     doc_term: str,
     vocab_size: int,
     max_protein_len: int = DEFAULT_MAX_PROTEIN_LEN,
-    err_decay: float = 0.5,
+    err_decay: float = 1.0,
     temperature: float = 1.0,
     top_p: float = 0.95,
     eval_frequency: int = 50,
@@ -271,7 +273,7 @@ def build_rl_job_config(
     n_generations: int = 16,
     lam_step: float = 1.0,
     lam_doc: float = 1.0,
-    err_decay: float = 0.5,
+    err_decay: float = 1.0,
     kl_beta: float = 0.01,
     weight_decay: float = 0.0,
     max_grad_norm: float = 1.0,
