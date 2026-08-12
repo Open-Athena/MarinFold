@@ -115,7 +115,11 @@ def main() -> int:
         s = df[df["range"] == rng]["r_precision"]
         print(f"  {rng:7s} {s.mean():.4f}   (n={len(s)})")
     allv = df[df["range"] == "all"]["r_precision"].mean()
-    n_scored = df["stem"].nunique()
+    # Count RECORDS, not stems: 7ur7_A and 8ah9_A each appear in two eval
+    # datasets with different sequences and different ground truth, so the
+    # key is <dataset>/<stem> (exp174 hit the same trap). Counting stems
+    # gives 552 for a complete 554-record run and trips the partial guard.
+    n_scored = len(df[["dataset", "stem"]].drop_duplicates())
     print(f"\n  reference: 0.6103 under exp82's worker (0.5873 as #199 published it)")
 
     # The reference is a macro-average over ALL 554 proteins, and the generator
