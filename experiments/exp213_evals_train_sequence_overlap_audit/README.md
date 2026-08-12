@@ -123,8 +123,174 @@ implementing:
 
 ## Results
 
-_(Fill in after the run completes.)_
+All 554 eval proteins searched against **70,889,604** training sequences —
+**4,129,682** AFDB + **66,759,922** ESM-Atlas, both matching their corpora's
+published document counts exactly (#94's AFDB index and #139's ESM-Atlas
+generation respectively). MMseqs2 `-s 7.5`; the whole search took 7 minutes.
+Per-protein table: [`data/eval_train_identity.csv`](data/eval_train_identity.csv).
+
+**The decoded sequences are the training set's, verified externally.** 39/39
+resolvable entries in a 40-record AFDB sample are byte-identical to AlphaFold
+DB's `uniprotSequence` ([`data/sequence_validation.json`](data/sequence_validation.json)).
+And the pipeline reproduces #94: 434/554 eval proteins have *some* AFDB
+alignment here vs its 415, so the two agree on the raw hit rate and differ only
+in that #94 counted any alignment while this applies an E ≤ 1e-3 significance
+line.
+
+### 1. The eval set is homology-rich, and ESM-Atlas is the bigger contributor
+
+| | proteins | % |
+| --- | ---: | ---: |
+| Significant homolog in **either** arm | **323** | 58 % |
+| … in both arms | 248 | 45 % |
+| … only AFDB | 27 | 5 % |
+| … only ESM-Atlas | 48 | 9 % |
+| **No significant homolog** (E ≤ 1e-3) | **231** | 42 % |
+| **No MMseqs2 alignment at all** (E ≤ 10) | **62** | 11 % |
+
+ESM-Atlas alone hits 296/554 proteins, *more* than AFDB's 275, and adding it
+shrinks the homology-free set from 269 (AFDB only) to 231. So the half of the
+training data nobody had checked does supply real homology — 48 eval proteins
+have a training relative that exists **only** in the metagenomic corpus.
+
+→ [`plots/overlap_profile.png`](plots/overlap_profile.png)
+
+### 2. Sequence novelty is not fold novelty
+
+Of the 231 sequence-novel proteins, only **37** are also Foldseek-novel against
+the AFDB training representatives; 133 are `same_fold` and 61 `redundant`
+([`data/sequence_vs_fold_novelty.csv`](data/sequence_vs_fold_novelty.csv)).
+Removing sequence homologs leaves most of the *fold* space intact — and for
+contact prediction the fold is the channel that carries information. #94 saw
+the same thing against AFDB alone; it survives the ESM-Atlas addition.
+
+### 3. MarinFold's accuracy does not track training-set identity
+
+Spearman ρ between best training identity and R-precision, over the 315
+proteins that have a covered hit ([`data/identity_slopes.csv`](data/identity_slopes.csv)):
+
+| predictor | ρ (all) | ρ (natural only) |
+| --- | ---: | ---: |
+| **MarinFold #199** | **−0.117** [−0.231, −0.008] | **+0.042** [−0.151, +0.229] |
+| Protenix-v2 single-seq | −0.354 [−0.444, −0.261] | +0.044 [−0.129, +0.228] |
+| ESMFold | −0.071 [−0.180, +0.038] | −0.049 [−0.244, +0.143] |
+| ESMFold2 | +0.077 [−0.029, +0.181] | +0.075 [−0.120, +0.258] |
+| Protenix-v2 + MSA | +0.095 [−0.014, +0.203] | +0.030 [−0.170, +0.244] |
+| **seq-KNN k=10 (null)** | **+0.534** [+0.442, +0.621] | **+0.357** [+0.161, +0.524] |
+
+seq-KNN is the calibration: a copy-the-nearest-neighbour model *must* track
+identity, and it does, strongly. MarinFold does not. **A model whose score came
+from retrieving memorised homologs would look like the last row; it looks like
+the rows above it.** This is #94's finding, now against the whole training set
+and for a model 0.26 R-precision stronger.
+
+→ [`plots/rprecision_vs_identity.png`](plots/rprecision_vs_identity.png)
+
+### 4. But the parity with Protenix-v2 single-seq does not survive
+
+R-precision (all ranges), and the paired MarinFold-minus-baseline difference
+with a 95 % bootstrap CI ([`data/headline.csv`](data/headline.csv)):
+
+| | all 554 | no homolog (231) | no hit at all (62) |
+| --- | ---: | ---: | ---: |
+| **MarinFold #199** | **0.611** | **0.549** | **0.496** |
+| Protenix-v2 single-seq | 0.603 (**+0.008** [−0.017, +0.033]) | 0.718 (−0.169 [−0.198, −0.139]) | 0.711 (−0.215 [−0.289, −0.136]) |
+| ESMFold | 0.755 (−0.144) | 0.697 (−0.149) | 0.706 (−0.210) |
+| ESMFold2 | 0.786 (−0.175) | 0.748 (−0.199) | 0.778 (−0.282) |
+| Protenix-v2 + MSA | 0.812 (−0.201) | 0.764 (−0.215) | 0.722 (−0.227) |
+| seq-KNN k=10 (null) | 0.345 (+0.266) | **0.035** (+0.514) | **0.011** (+0.485) |
+
+The **difference of differences** ([`data/interaction.csv`](data/interaction.csv)) is
+the actual test — two subsets' CIs read side by side are not one, because the
+subsets contain different proteins:
+
+| comparator | effect, pooled | effect, natural only |
+| --- | ---: | ---: |
+| **Protenix-v2 single-seq** | **−0.303** [−0.346, −0.259] | **−0.327** [−0.407, −0.249] |
+| ESMFold | −0.007 [−0.039, +0.025] | **+0.099** [+0.028, +0.169] |
+| ESMFold2 | −0.041 [−0.078, −0.004] | **+0.077** [+0.007, +0.146] |
+| Protenix-v2 + MSA | −0.025 [−0.063, +0.015] | +0.024 [−0.065, +0.114] |
+| seq-KNN k=10 (null) | +0.425 [+0.380, +0.473] | +0.361 [+0.292, +0.432] |
+
+**The effect is specific to Protenix-v2 single-seq.** MarinFold gives up
+0.30–0.33 of R-precision relative to it on homology-free proteins, while its
+standing against ESMFold and ESMFold2 on natural proteins *improves*, and
+against Protenix+MSA does not move. That asymmetry is the opposite of what
+uniform homology leakage predicts: a model reaching MSA-derived signal through
+its training homologs should lose ground against **every** comparator when
+those homologs are removed.
+
+→ [`plots/delta_across_subsets.png`](plots/delta_across_subsets.png),
+[`plots/headline_homology_free.png`](plots/headline_homology_free.png)
+
+### 5. On genuinely novel proteins, MarinFold is well behind everything
+
+The strictest cut — no sequence homolog **and** Foldseek-novel vs the AFDB
+training folds (n=37, of which 19 natural):
+
+| predictor | R-precision |
+| --- | ---: |
+| **MarinFold #199** | **0.328** |
+| Protenix-v2 single-seq | 0.547 |
+| ESMFold | 0.547 |
+| ESMFold2 | 0.620 |
+| Protenix-v2 + MSA | 0.670 |
+| seq-KNN k=10 (null) | 0.019 |
+
+### Two things that shape how far this can be pushed
+
+- **The homology-free subsets are 80 % de novo designs** (184/231; 52/62 for
+  the strict cut). Designed proteins have no homologs anywhere by construction
+  and structure predictors find their idealised backbones easy, so every number
+  above is also reported split. The natural-only homology-free set is **n=47**
+  — and n=10 under the strict definition, where the CIs stop being informative.
+  That is the binding constraint on this eval set, not the analysis.
+- **The baselines keep their own leakage.** Protenix is PDB-trained and much of
+  this eval set *is* PDB; ESMFold2's PLM saw UniRef. This experiment removes
+  MarinFold's homology advantage and nobody else's, so every comparison here is
+  conservative *for* MarinFold — which makes result 4 harder to explain away,
+  not easier.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**The headline eval number is not substantially inflated by homology leakage,
+but one specific claim we make from it is.**
+
+The eval set is homology-rich — 58 % of it has a training relative, and only
+11 % has no detectable alignment at all — so the concern was well founded as a
+question. The answer, though, is that MarinFold's accuracy does not depend on
+that proximity. Its Spearman ρ against training identity is −0.12 pooled and
++0.04 on natural proteins, where the seq-KNN null that works *only* by
+homology transfer sits at +0.53. Restricting to the 231 proteins with no
+significant training homolog moves R-precision 0.611 → 0.549, and against
+ESMFold/ESMFold2 on natural proteins MarinFold actually gains ground. This is
+**H0**, and it extends #94's AFDB-only result to the full 70.9 M-sequence
+training set and to a model 0.26 R-precision stronger.
+
+The exception is sharp and worth acting on. **Our parity with Protenix-v2
+single-sequence (#180's +0.008 tie on 554 proteins) is a homology-dependent
+result.** On proteins with a training homolog MarinFold leads it by +0.13; on
+proteins without one it trails by −0.17, a shift of −0.303 [−0.346, −0.259]
+that is 100× the tracker's 0.0023 noise floor. On the 37 proteins that are
+novel in both sequence and fold, MarinFold scores 0.328 against Protenix-SS's
+0.547 and ESMFold2's 0.620. So "we have caught up with single-sequence
+Protenix" should be stated as "on proteins resembling our training data" until
+that gap closes.
+
+Because the effect does not appear against ESMFold, ESMFold2 or Protenix+MSA,
+the most likely reading is not that MarinFold leaks, but that **Protenix-v2
+single-seq is differentially strong exactly where MarinFold is weak** — the
+novel-fold, low-homology regime. Distinguishing "MarinFold is weak on novel
+folds" from "Protenix-SS is strong on them" needs a predictor-side experiment,
+not another eval-set audit; that is the natural follow-up.
+
+Two things to carry into any future eval work:
+
+1. **Report the homology-free subset alongside the headline.**
+   [`data/eval_train_identity.csv`](data/eval_train_identity.csv) is committed
+   per-protein and joins on `(dataset, stem)`, so it costs one merge.
+2. **The current eval set cannot answer this question much better than it just
+   did.** The natural, homology-free, fold-novel corner is n≈19. If we want to
+   measure novel-protein performance rather than bound it, the eval set needs
+   more natural low-homology proteins — which is what #65 was originally for,
+   and is now the clearest gap.
