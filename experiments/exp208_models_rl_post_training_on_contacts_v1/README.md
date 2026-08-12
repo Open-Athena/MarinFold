@@ -746,6 +746,46 @@ backward pass would produce exactly this: healthy inference, NaN on the first
 training step.
 
 
+### SkyRL port: arm S trains on 8×A100, and `err_decay` looks exploitable
+
+The marin.rl path stayed blocked on TPU capacity, so the harness was ported to
+SkyRL (`skyrl/`, [PORT_DESIGN.md](skyrl/PORT_DESIGN.md)) and arm S now trains
+end-to-end on the private 8×A100 box: 8-way FSDP2 policy + ref, 4 vLLM engines at
+TP 2, 512 trajectories (32 prompts × 16 samples) per step, **~53 s/step** and
+~3900 tok/s/GPU. Getting real placement took three config knobs, each of which
+failed loudly and separately: `policy_num_gpus_per_node`, `ref_num_gpus_per_node`
+(colocated models must match), and `num_engines × tensor_parallel_size` = policy
+GPUs. Left at defaults, SkyRL runs the whole job on **one** GPU at 136 s/step.
+
+The document term (arms B and F) is now implemented and tested. It maps rewards
+via the **per-row `trajectory_ids`** on `GeneratorOutput`, not row position: SkyRL
+does document that `generate` preserves input order, but a marginal attributed to
+the wrong rollout is still a plausible number, so the test
+([`test_document_term_mapping.py`](skyrl/tests/test_document_term_mapping.py))
+hands rows over shuffled and asserts the result differs from what a positional
+implementation would produce.
+
+**The open concern is the reward shape, not the plumbing.** Over the first four
+steps arm S's reward rose (0.0010 → 0.0453) but mean response length rose with it,
+488 → 985 tokens against a 1024 cap. That is the signature of length-gaming, and
+this reward has a structural incentive for it. The p̄-centring is designed so that
+emitting a contact has expected value `p − p̄` — a proper zero baseline, worth it
+only if the contact beats current precision. `err_decay = 0.5` breaks exactly that
+property: the k-th error *within a section* costs `p̄·δ^k`, a convergent series
+bounded at `p̄/(1−δ) ≈ 0.9`, while every correct contact pays a full `1 − p̄ ≈ 0.55`
+with no bound. So the marginal contact is worth `p − p̄·δ^k`, which turns positive
+for **any** contact once a few errors have been made. And `p̄` is an EMA of observed
+precision, so a policy that spams drives p̄ down, which makes errors cheaper still.
+
+This is not yet a measured result — reward and response length alone cannot
+separate "better at contacts" from "emitting more of them". The tallies needed to
+tell them apart were computed and discarded; they are now logged as
+`contacts/precision` and `contacts/pred_per_gt`. **Arm S results must not be read
+before those two are checked**, and if this is confirmed, `err_decay` is in direct
+tension with the p̄ baseline and should go to 1.0 (its documented purpose — not
+punishing errors that are consequences of earlier ones — is real, but it cannot be
+bought by breaking the baseline that makes the reward honest).
+
 ### Artifacts
 
 - Baseline of record: `gs://marin-us-central1/protein-structure/MarinFold/exp208/phase0/scores/exp199_cw_p06_aug_step145199`

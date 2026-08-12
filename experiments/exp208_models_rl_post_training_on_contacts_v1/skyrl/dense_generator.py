@@ -42,6 +42,9 @@ import contact_rewards as cr
 
 logger = logging.getLogger(__name__)
 
+# Consecutive document-term failures tolerated before the run is declared invalid.
+_MAX_DOC_TERM_FAILURES = 3
+
 
 def _unwrap_extras(env_extras: Any) -> Dict[str, Any]:
     """Get to exp208's payload inside whatever SkyRL hands the generator.
@@ -117,7 +120,17 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         self.vocab_size = vocab_size
         # instance_id -> {repetition_id: dedup'd pair set}, for the consensus term.
         self._group_pairs: Dict[str, Dict[str, set]] = {}
+        # instance_id -> {"gt", "L"}. Captured in `agent_loop` rather than re-read
+        # from the batch in `_fold_document_term`, so the consensus term is scored
+        # against exactly the ground truth the stepwise reward used.
+        self._group_meta: Dict[str, Dict[str, Any]] = {}
+        self._doc_term_failures = 0
         self._announced = False
+        # Per-batch contact tallies. Without these the run reports only reward and
+        # response length, and those two cannot distinguish "the policy got better
+        # at contacts" from "the policy learned to emit more of them" -- the
+        # failure mode this reward shape is most exposed to (see `err_decay`).
+        self._diag: Dict[str, float] = {}
 
     async def agent_loop(self, prompt, env_class, env_extras, max_tokens, max_input_length,
                          sampling_params=None, trajectory_id=None, cache_salt=None):
@@ -130,13 +143,17 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         """
         extras = _unwrap_extras(env_extras)
         gt = {(min(int(i), int(j)), max(int(i), int(j))) for i, j in extras.get("gt_contacts", [])}
+        in_band_gt = {p for p in gt if cr.in_band(p)}
+        instance_id = str(getattr(trajectory_id, "instance_id", extras.get("entry_id", "")))
+        length = int(extras.get("L", 0))
         token = _TRAJECTORY.set({
-            "gt": {p for p in gt if cr.in_band(p)},
+            "gt": in_band_gt,
             "pos_to_seq": {int(p): i for i, p in enumerate(extras.get("seq_positions", []) or [])},
-            "instance_id": str(getattr(trajectory_id, "instance_id", extras.get("entry_id", ""))),
+            "instance_id": instance_id,
             "repetition_id": str(getattr(trajectory_id, "repetition_id", "0")),
-            "L": int(extras.get("L", 0)),
+            "L": length,
         })
+        self._group_meta[instance_id] = {"gt": in_band_gt, "L": length}
         try:
             return await super().agent_loop(
                 prompt, env_class, env_extras, max_tokens, max_input_length,
@@ -199,6 +216,13 @@ class DenseContactsGenerator(SkyRLGymGenerator):
             observed = correct / scored
             self.p_bar = self.precision_ema_decay * self.p_bar + (1 - self.precision_ema_decay) * observed
 
+        d = self._diag
+        d["n_rollouts"] = d.get("n_rollouts", 0.0) + 1.0
+        d["scored"] = d.get("scored", 0.0) + float(scored)
+        d["correct"] = d.get("correct", 0.0) + float(correct)
+        d["gt"] = d.get("gt", 0.0) + float(len(state["gt"]))
+        d["resp_tokens"] = d.get("resp_tokens", 0.0) + float(len(response_ids))
+
         pairs = {c.pair for c in cr.walk_contacts(response_ids, state["pos_to_seq"], state["gt"])
                  if c.pair is not None and c.reason == "ok"}
         self._group_pairs.setdefault(state["instance_id"], {})[state["repetition_id"]] = pairs
@@ -258,35 +282,154 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         self.reset_groups()
         out = await super().generate(input_batch)
         if self.doc_term == "none" or self.lam_doc == 0.0:
-            return out
+            # `apply_consensus_term` is what normally applies `lam_step`; on this
+            # path it never runs, so a non-unit lam_step would be silently dropped.
+            if self.lam_step != 1.0 and out.get("rewards"):
+                out["rewards"] = [[self.lam_step * v for v in row] for row in out["rewards"]]
+            return self._emit_contact_metrics(out)
         try:
-            out = self._fold_document_term(out)
+            out = self._fold_document_term(out, input_batch)
+            self._doc_term_failures = 0
         except Exception:
-            # Never let the document term take down a run that has already paid
-            # for its rollouts; the stepwise signal is still valid without it.
-            logger.exception("[exp208] consensus term failed; stepwise reward stands")
+            # Don't let one bad batch take down a run that has already paid for its
+            # rollouts -- but a mapping bug fails EVERY batch, and silently falling
+            # back to stepwise-only would turn arm B/F into arm S without saying so.
+            self._doc_term_failures += 1
+            logger.exception(
+                "[exp208] consensus term failed (%d consecutive); stepwise reward stands",
+                self._doc_term_failures,
+            )
+            if self._doc_term_failures >= _MAX_DOC_TERM_FAILURES:
+                raise RuntimeError(
+                    f"[exp208] the {self.doc_term!r} document term failed "
+                    f"{self._doc_term_failures} batches running -- this arm is not testing what "
+                    f"it claims to. Fix the mapping or run doc_term=none deliberately."
+                )
+        return self._emit_contact_metrics(out)
+
+    def _emit_contact_metrics(self, out):
+        """Attach per-contact tallies to `rollout_metrics`.
+
+        `precision` and `pred_per_gt` are the pair that makes the run readable:
+        rising reward with rising `pred_per_gt` and falling `precision` is the
+        policy emitting more contacts, not better ones. `err_decay` < 1 makes that
+        strategy profitable (the k-th error in a section costs only p_bar*decay^k,
+        a convergent series, while every correct contact pays a full 1-p_bar), and
+        `p_bar` is an EMA of observed precision, so the cheaper errors get, the
+        cheaper they get. This is the number that catches it.
+        """
+        d = self._diag
+        if not d.get("n_rollouts"):
+            return out
+        scored, gt = d.get("scored", 0.0), d.get("gt", 0.0)
+        metrics = out.setdefault("rollout_metrics", {}) or {}
+        metrics.update({
+            "contacts/precision": (d.get("correct", 0.0) / scored) if scored else 0.0,
+            "contacts/pred_per_gt": (scored / gt) if gt else 0.0,
+            "contacts/scored_per_rollout": scored / d["n_rollouts"],
+            "contacts/correct_per_rollout": d.get("correct", 0.0) / d["n_rollouts"],
+            "contacts/p_bar": self.p_bar,
+        })
+        out["rollout_metrics"] = metrics
+        logger.info(
+            "[exp208] contacts: precision=%.4f pred/gt=%.3f scored/rollout=%.1f p_bar=%.4f",
+            metrics["contacts/precision"], metrics["contacts/pred_per_gt"],
+            metrics["contacts/scored_per_rollout"], self.p_bar,
+        )
         return out
 
-    def _fold_document_term(self, out):
+    def _fold_document_term(self, out, input_batch=None):
         """Add the group-centred consensus marginal to each rollout's rewards.
 
-        NOT YET IMPLEMENTED, and deliberately loud rather than a silent no-op.
+        The row -> rollout mapping is read from `out["trajectory_ids"]`, which
+        carries `(instance_id, repetition_id)` PER ROW. That is deliberate: SkyRL
+        documents that `generate` returns rows in input order, but relying on that
+        would make a misattributed marginal — one protein's consensus landing on
+        another's tokens — a silent, plausible-looking number. Explicit per-row ids
+        cannot drift. Index alignment against `input_batch` is only a fallback, and
+        if neither source is available this raises rather than guesses.
 
-        The maths is done and tested (`apply_consensus_term` above, and
-        `consensus.loo_marginals`, which is pinned equal to the published metric
-        implementation). What is missing is the mapping from SkyRL's
-        `GeneratorOutput` rows back to `(instance_id, repetition_id)` so each
-        rollout's marginal lands on the right reward vector. Getting that mapping
-        wrong would attribute one protein's consensus contribution to another —
-        silently, because a misattributed marginal is still a plausible number.
-
-        Arm S (`doc_term="none"`) never reaches here, so the stepwise-only arm is
-        unaffected. Arms B and F must not run until this is written.
+        Any instance whose rollouts are not all present in `_group_pairs` is
+        SKIPPED (stepwise reward stands). A missing sibling changes `C(all)`, so
+        its marginals would be computed against a different group than the one
+        that was actually sampled.
         """
-        raise NotImplementedError(
-            "the consensus/own-F1 document term is not wired into GeneratorOutput yet; "
-            "run arm S (doc_term=none) or implement the rollout->reward mapping first"
+        rewards = out.get("rewards")
+        if not rewards:
+            raise RuntimeError("[exp208] generator output has no rewards to fold into")
+
+        traj = out.get("trajectory_ids") or (input_batch or {}).get("trajectory_ids")
+        if traj is None:
+            raise RuntimeError(
+                "[exp208] no trajectory_ids on the generator output or input batch; refusing to "
+                "map consensus marginals by position alone"
+            )
+        if len(traj) != len(rewards):
+            raise RuntimeError(
+                f"[exp208] trajectory_ids ({len(traj)}) and rewards ({len(rewards)}) disagree"
+            )
+
+        keys, rows_by_key = [], {}
+        for i, tid in enumerate(traj):
+            key = f"{getattr(tid, 'instance_id', '')}:{getattr(tid, 'repetition_id', '')}"
+            keys.append(key)
+            rows_by_key.setdefault(key, []).append(i)
+
+        # Every rollout must be scored, and no key may appear twice: a duplicate
+        # key means two rollouts would share one marginal.
+        dupes = {k: v for k, v in rows_by_key.items() if len(v) > 1}
+        if dupes:
+            raise RuntimeError(f"[exp208] duplicate trajectory ids in one batch: {list(dupes)[:3]}")
+
+        # Drop instances whose group is incomplete -- see the docstring.
+        seen_by_instance: Dict[str, set] = {}
+        for key in keys:
+            inst, _, rep = key.rpartition(":")
+            seen_by_instance.setdefault(inst, set()).add(rep)
+        usable, skipped = {}, []
+        for inst, reps in seen_by_instance.items():
+            scored = set(self._group_pairs.get(inst, {}))
+            if scored != reps:
+                skipped.append(inst)
+                continue
+            usable[inst] = reps
+        if skipped:
+            logger.warning(
+                "[exp208] consensus term skipped for %d/%d instances with incomplete groups "
+                "(stepwise reward stands); first: %s",
+                len(skipped), len(seen_by_instance), skipped[:3],
+            )
+
+        rewards_by_key = {}
+        for key, idxs in rows_by_key.items():
+            inst, _, _ = key.rpartition(":")
+            if inst in usable:
+                rewards_by_key[key] = list(rewards[idxs[0]])
+
+        if not rewards_by_key:
+            logger.warning("[exp208] no complete rollout groups this batch; document term is a no-op")
+            return out
+
+        gt_by_instance = {i: self._group_meta[i]["gt"] for i in usable if i in self._group_meta}
+        lengths = {i: self._group_meta[i]["L"] for i in usable if i in self._group_meta}
+        folded = self.apply_consensus_term(
+            rewards_by_key, gt_by_instance, lengths,
+            lam_step=self.lam_step, lam_doc=self.lam_doc,
         )
+
+        n = 0
+        for key, row in folded.items():
+            i = rows_by_key[key][0]
+            if len(row) != len(rewards[i]):
+                raise RuntimeError(
+                    f"[exp208] folded reward length {len(row)} != original {len(rewards[i])} for {key}"
+                )
+            rewards[i] = row
+            n += 1
+        logger.info("[exp208] consensus term folded into %d/%d rollouts (lam_doc=%.3g)",
+                    n, len(rewards), self.lam_doc)
+        out["rewards"] = rewards
+        return out
 
     def group_pairs(self) -> Dict[str, Dict[str, set]]:
         """Per-protein rollout pair sets, for the consensus-marginal term."""
@@ -294,6 +437,8 @@ class DenseContactsGenerator(SkyRLGymGenerator):
 
     def reset_groups(self) -> None:
         self._group_pairs.clear()
+        self._group_meta.clear()
+        self._diag.clear()
 
 
 __all__ = ["DenseContactsGenerator"]
