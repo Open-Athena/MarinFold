@@ -40,6 +40,7 @@ import numpy as np
 import pandas as pd
 
 MIN_DEG, MIN_SEP = 0.001, 6
+N_EVAL_PROTEINS = 554
 RANGES = {"all": (6, None), "short": (6, 11), "medium": (12, 23), "long": (24, None)}
 
 
@@ -114,11 +115,25 @@ def main() -> int:
         s = df[df["range"] == rng]["r_precision"]
         print(f"  {rng:7s} {s.mean():.4f}   (n={len(s)})")
     allv = df[df["range"] == "all"]["r_precision"].mean()
+    n_scored = df["stem"].nunique()
     print(f"\n  reference: 0.6103 under exp82's worker (0.5873 as #199 published it)")
-    delta = allv - 0.6103
-    print(f"  delta vs exp82 reference: {delta:+.4f}  "
-          f"({'within' if abs(delta) < 0.02 else 'OUTSIDE'} the 0.02 band that "
-          f"vote-tiebreak-only readout can explain)")
+
+    # The reference is a macro-average over ALL 554 proteins, and the generator
+    # emits them length-sorted, so a partial run holds only the short ones —
+    # which score higher (measured here: short 0.71 vs long 0.60, matching
+    # #180's length story). Comparing a length-truncated subset against the
+    # full-set reference reads as a real discrepancy and is not one.
+    if n_scored < N_EVAL_PROTEINS:
+        print(f"  PARTIAL RUN: {n_scored}/{N_EVAL_PROTEINS} proteins, and they are "
+              f"the SHORTEST ones (the generator is length-sorted).")
+        print(f"  Subset mean is {allv:.4f}, but no verdict is meaningful until all "
+              f"{N_EVAL_PROTEINS} are scored — short proteins score higher, so a "
+              f"partial set is biased upward.")
+    else:
+        delta = allv - 0.6103
+        print(f"  delta vs exp82 reference: {delta:+.4f}  "
+              f"({'within' if abs(delta) < 0.02 else 'OUTSIDE'} the 0.02 band that "
+              f"vote-tiebreak-only readout can explain)")
     print(f"\nwrote {args.out}")
     return 0
 
