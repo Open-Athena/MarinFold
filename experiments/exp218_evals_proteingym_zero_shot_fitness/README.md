@@ -122,16 +122,53 @@ Three things that would each have produced plausible-looking but wrong numbers:
 | Site-Independent | MSA | 0.3591 |
 | ESM2 (8M) | single sequence | 0.2272 |
 
+## Results
+
+### Phase 0 — the conditional is real, and it is not degenerate. **GATE: PASS**
+
+14 ProteinGym target proteins (L = 37–306, one per UniProt id, spread across the length
+range), K = 8 orderings, `data/phase0_context_curve.csv`:
+
+| context fraction | top-1 (model) | top-1 (scrambled) | perplexity (model) | perplexity (scrambled) | P(wt) | entropy |
+|---|---:|---:|---:|---:|---:|---:|
+| 0.0–0.2 | 0.103 | 0.094 | 17.43 | 17.81 | 0.064 | 2.86 |
+| 0.2–0.4 | 0.165 | 0.098 | 14.46 | 17.77 | 0.101 | 2.69 |
+| 0.4–0.6 | 0.259 | 0.099 | 10.63 | 18.29 | 0.171 | 2.42 |
+| 0.6–0.8 | 0.317 | 0.097 | 9.02 | 18.31 | 0.206 | 2.26 |
+| **0.8–1.0** | **0.345** | **0.088** | **8.15** | **18.72** | 0.231 | 2.15 |
+
+Composition floor (always guess the protein's modal amino acid): **0.132**.
+
+Three things worth taking from this:
+
+- **It clears both controls by a wide margin** — 0.345 vs 0.132 (composition) and 0.088
+  (scrambled). Perplexity 8.15 vs 18.72, where 20 is the uniform bound.
+- **The scrambled arm is flat in context (0.094 → 0.088) while the model arm nearly
+  triples (0.103 → 0.345).** This is the load-bearing observation. Composition is
+  identical in both arms, so the only thing extra context can buy in the scrambled arm is
+  composition, and it buys nothing. Everything the model gains from seeing more of the
+  protein is real sequence structure.
+- **The conditional is soft, not memorised.** P(wt) is only 0.231 at high context and the
+  entropy is 2.15 nats against a 3.00-nat maximum — so the ranking of the other 19 amino
+  acids, which is the only thing a variant-effect score reads, sits in a broad
+  distribution rather than a thin tail under a spike. This resolves the over-confidence
+  risk flagged when a ubiquitin smoke test returned top-1 = 0.98: **ubiquitin is a
+  memorisation outlier, not the typical case.**
+
+Per-protein spread is large — CALM1_HUMAN 0.729 (calmodulin, hyper-conserved) down to
+R1AB_SARS2 0.097 (at its own composition floor). Expect that heterogeneity to reappear as
+per-assay variance in Phase 1.
+
+### Phase 1 — full benchmark
+
+_(running; 212 assays at K=200, ~9,000 tok/s on the A5000)_
+
 ## Status
 
 Readout primitive landed with tests (18 tests, including an oracle-backend identity check
 that recovers the input sequence from the conditionals — a deliberate non-tautological
 check on the slot mapping, verified to fail under a one-statement shift). Harness built
-and preflighted. Model weights and GPU runs pending.
-
-## Results
-
-_(Fill in after the run completes.)_
+and preflighted. Phase 0 passed. Phase 1 caching in flight.
 
 ## Conclusion
 
