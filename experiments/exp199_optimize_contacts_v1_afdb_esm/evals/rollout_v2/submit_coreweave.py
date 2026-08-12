@@ -57,7 +57,7 @@ def main() -> None:
         "batch",
         "--enable-extra-resources",
         "--user",
-        "exedev",
+        "eczech",
         "--job-name",
         job_name,
         "--cpu",

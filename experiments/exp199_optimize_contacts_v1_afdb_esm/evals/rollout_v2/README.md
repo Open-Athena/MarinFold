@@ -1,6 +1,6 @@
 # Exp199 rollout-v2 checkpoint evaluation
 
-This directory evaluates the three selected exp199 Hugging Face exports with the
+This directory evaluates the four selected exp199 Hugging Face exports with the
 fixed exp89 universe and exp82 rollout+resample recipe. It also reproduces the
 historical exp75 E8 checkpoint as an acceptance test for the evaluation path. The
 driver and every GPU worker run in CoreWeave. Exp199 snapshots are downloaded
@@ -8,7 +8,9 @@ from a pinned Hugging Face revision inside CoreWeave and verified before upload
 to CoreWeave S3. The E8 validation reuses an existing CoreWeave S3 copy only
 after hashing all seven files in CoreWeave against its pinned Hugging Face
 manifest. Eval inputs stream from Hugging Face into the same bucket. This
-workflow contains no GCS source or destination.
+CoreWeave evaluation path contains no GCS source or destination. The one-time
+continuation publisher is separate and copies only its final Levanter and HF
+checkpoints from TRC GCS into durable Hugging Face storage.
 
 ## Fixed recipe
 
@@ -42,6 +44,15 @@ uv run python submit_coreweave.py \
   --seed 1
 ```
 
+Run the continuation checkpoint without rerunning the original three models:
+
+```bash
+uv run python submit_coreweave.py \
+  --run-id contbase-v2-YYYYMMDD-NN \
+  --suite continuation \
+  --seed 1
+```
+
 To resume the same S3 run from a distinct Iris root job, add a unique
 `--job-suffix`. Workers use atomic completion markers and skip finished units:
 
@@ -69,35 +80,48 @@ resumable after preemption or failure.
 
 ## Results
 
-Run `v2-20260812-06` completed on 2026-08-12 with sampling seed 1. The seed-0
+Run `v2-20260812-06` evaluated the original three checkpoints and run
+`contbase-v2-20260812-01` evaluated the continuation checkpoint on 2026-08-12.
+Both used sampling seed 1 and have zero unfinished rollouts. The earlier seed-0
 attempt was rejected rather than scored because one p06 rollout hit the fixed
-token cap. The completed run has zero unfinished rollouts for every model.
+token cap.
 
 | Model | All R | Long R | All AUC | Long AUC |
 |---|---:|---:|---:|---:|
 | TRC p03-aug, step 72,599 | 0.5736 | 0.5264 | 0.9407 | 0.9249 |
 | TRC p03-base, step 72,599 | 0.5792 | 0.5327 | 0.9427 | 0.9272 |
 | CoreWeave p06-aug, step 145,199 | **0.6088** | **0.5633** | **0.9480** | **0.9334** |
+| TRC continuation srcbase-aug100, step 145,199 | 0.6033 | 0.5551 | 0.9472 | **0.9335** |
 
 The p06 checkpoint improves over p03-base by 0.0296 all-range R-precision and
 0.0306 long-range R-precision. At p03, base is ahead of aug by 0.0056 and
-0.0063 respectively.
+0.0063 respectively. The continuation improves over p03-base by 0.0241 all-range
+and 0.0224 long-range R-precision, but remains 0.0056 and 0.0082 behind p06-aug.
+Its long-range AUC is effectively tied with p06-aug (+0.0001).
 
 The full aggregate table is checked in at `data/aggregate_metrics.csv`. Complete
-per-unit metrics, matrices, and the provenance manifest are under:
+per-unit metrics, matrices, and provenance manifests are under:
 
 ```text
 s3://marin-us-east-02a/marin/protein-structure/MarinFold/
   exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/v2-20260812-06/
+s3://marin-us-east-02a/marin/protein-structure/MarinFold/
+  exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/contbase-v2-20260812-01/
 ```
 
-Validation: 554 `(dataset, stem)` units, 552 unique stems, 55,400/55,400
-finished rollouts, zero unfinished rollouts, 554 dense matrices, and 11,080
-metric rows per model. Long-range R and AUC have 553 valid values out of 554;
+Each model passed validation with 554 `(dataset, stem)` units, 552 unique stems,
+55,400/55,400 finished rollouts, zero unfinished rollouts, 554 dense matrices,
+and 11,080 metric rows. Long-range R and AUC have 553 valid values out of 554;
 all-range R and AUC have 554/554.
 
-`data/timings.csv` contains the required per-input timing records for all three
-exp199 checkpoints and the E8 validation checkpoint (2,216 rows total).
+The continuation export is pinned at Hugging Face revision
+`00eddb761fd028f07ce7bc088930271516da9866`. CoreWeave downloaded and verified
+only its six-file, 5,885,614,712-byte HF export, then stored it at the eval-local
+`models/` path. `data/continuation_checkpoint_verification.json` records the
+source, destination, sizes, and digests.
+
+`data/timings.csv` contains the required per-input timing records for all four
+exp199 checkpoints and the E8 validation checkpoint (2,770 rows total).
 
 ## Historical E8 validation
 
@@ -135,4 +159,24 @@ s3://marin-us-east-02a/marin/protein-structure/MarinFold/
 For clarity, the exp199 result run `v2-20260812-06` evaluated exactly the three
 requested checkpoints: TRC p03-aug step 72,599, TRC p03-base step 72,599, and
 CoreWeave p06-aug step 145,199. The E8 checkpoint was evaluated only in the
-separate reference run above.
+separate reference run above. The continuation checkpoint was evaluated only in
+`contbase-v2-20260812-01`.
+
+## PR comparison
+
+`data/pr_comparison.csv` records the corrected exp199 results, both exp75 E8
+measurements, and the historical exp146 and exp166 context with explicit
+evaluation provenance, W&B run IDs, steps, HF paths, and verified CoreWeave paths
+where available. `plot_pr_comparison.py` renders
+`plots/rprecision_ranges_vs_loss.png` from that table and the checked-in exp89
+Protenix-v2 rows. `build_pr_all_r_rows.py` derives the compact, checked-in
+per-protein all-range table from the exact historical and CoreWeave result files;
+`plot_primary_comparison.py` uses it to render the primary boxplot-and-scatterplot
+figure at `plots/final_checkpoint_rprecision.png`.
+
+The plot shows the two exp75 evaluations separately but averages them before
+fitting, so one checkpoint contributes one fit observation. Only unique 1.5B
+checkpoints enter the descriptive curves; the historical exp146 3B checkpoint is
+shown but excluded. Circles identify the five results computed here through the
+`/eval-checkpoint` workflow from PR #214, while squares identify values taken from
+previous evaluations.

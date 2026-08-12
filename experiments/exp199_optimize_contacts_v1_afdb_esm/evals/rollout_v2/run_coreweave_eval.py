@@ -19,6 +19,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import fsspec
+from fray.client import JobHandle, wait_all
+from fray.current_client import current_client
+from fray.types import (
+    Entrypoint,
+    JobRequest,
+    JobStatus,
+    ResourceConfig,
+    create_environment,
+)
+
 from checkpoint_specs import (
     CHECKPOINT_SUITES,
     GROUND_TRUTH_SHA256,
@@ -34,15 +44,6 @@ from checkpoint_specs import (
     run_root,
 )
 from finalize_coreweave import finalize
-from fray.client import JobHandle, wait_all
-from fray.current_client import current_client
-from fray.types import (
-    Entrypoint,
-    JobRequest,
-    JobStatus,
-    ResourceConfig,
-    create_environment,
-)
 from hf_to_s3 import (
     expected_manifest,
     mirror_checkpoint,

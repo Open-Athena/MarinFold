@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "description": "Finite per-protein all-range R-precision rows for the PR primary figure.",
+  "rows": 4986,
+  "rows_per_key": {
+    "cw-p06-aug": 554,
+    "exp146": 554,
+    "exp166": 554,
+    "exp75-historical": 554,
+    "exp75-reproduced": 554,
+    "protenix": 554,
+    "trc-cont": 554,
+    "trc-p03-aug": 554,
+    "trc-p03-base": 554
+  },
+  "sources": {
+    "exp75-historical": {
+      "path": "experiments/exp82_evals_contacts_v1_contact_prediction/data/where_we_stand_rows.csv.gz",
+      "sha256": "34422eb04de0d9dee2113457235cfa7a199941171d7ffcc8bd17cb6902e1c8a3"
+    },
+    "exp146": {
+      "path": "experiments/exp166_models_contacts_v1_aa_augmentation/data/historical_exp146_rprecision.csv.gz",
+      "sha256": "daf8b31cddae3898bee11b6c7214daa83e29630626718f886654689c97b6e1f0"
+    },
+    "exp166": {
+      "path": "experiments/exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz",
+      "sha256": "51789f4eba28c6d5a0ced1d269d7b7b80b6b1649aed7cb02121e2c83d5f75095"
+    },
+    "protenix": {
+      "path": "experiments/exp89_evals_contacts_v1_model_on_eval_set/data/contact_precision_all.csv",
+      "sha256": "00c1cb5c03ee63f1901bc14a2f0f00e98e3876aa4f1bc7916c14e94f5b5144d2"
+    },
+    "exp199": {
+      "s3_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/v2-20260812-06/results/contact_precision_all.csv",
+      "sha256": "9f6b311c44ada37ae33ea857b0879ebc5c0061ea65be38197b107534d54defb9"
+    },
+    "continuation": {
+      "s3_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/contbase-v2-20260812-01/results/contact_precision_all.csv",
+      "sha256": "aa149e2501d54dfbf1381c96a75c5e8b1e9b28adcd0cf068ed7b4b91b2ab5e9e"
+    },
+    "e8": {
+      "s3_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/e8ref-v2-20260812-01/results/contact_precision_all.csv",
+      "sha256": "b0d81ad7fd2849bdba31d075576a71864fa3c6f042a469eb6e19325fd53aa973"
+    }
+  },
+  "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
+  "comparison_table_sha256": "7876fc97463d86d2a4c230f29b34ae7a17fce5b35a671a4542f48a3e8e5c1cf7",
+  "output": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
+  "output_sha256": "9b294ef29e5f5bd513488f4f0d2751414c977a137821a7a1b0ad3154606d835c"
+}

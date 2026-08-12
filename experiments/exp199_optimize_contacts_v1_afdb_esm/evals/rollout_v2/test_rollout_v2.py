@@ -6,12 +6,18 @@
 import base64
 import dataclasses
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+
 import run_coreweave_eval
+import submit_coreweave
 from checkpoint_specs import (
+    CHECKPOINT_SUITES,
     CHECKPOINTS,
+    CONTINUATION_CHECKPOINT,
+    CONTINUATION_HF_REVISION,
     E8_HF_REVISION,
     E8_REFERENCE_CHECKPOINT,
     E8_REFERENCE_METRICS,
@@ -39,6 +45,34 @@ def test_checkpoint_manifests_are_immutable_and_complete() -> None:
         assert all(
             file.digest_kind in {"sha256", "git-sha1"} for file in checkpoint.files
         )
+
+
+def test_continuation_checkpoint_is_an_isolated_pinned_suite() -> None:
+    checkpoint = CONTINUATION_CHECKPOINT
+    assert CHECKPOINT_SUITES["continuation"] == (checkpoint,)
+    assert CHECKPOINT_SUITES["exp199"] == CHECKPOINTS
+    assert checkpoint.hf_revision == CONTINUATION_HF_REVISION
+    assert checkpoint.run_name == (
+        "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1"
+    )
+    assert checkpoint.step == 145_199
+    assert checkpoint.weight_shard_digests == (
+        "3aaa2198ccf399813da9d68a8d08355354be4f7b60eced074bcc8209d69b0cf0",
+        "bbfaad34189c5292970255395e1566f4f9a6f83b528085e7ff1b3b58dcfd9d34",
+    )
+    manifest = expected_manifest(checkpoint)
+    assert len(manifest["files"]) == 6
+    assert sum(file["size"] for file in manifest["files"]) == 5_885_614_712
+    assert all(
+        CONTINUATION_HF_REVISION in hf_file_url(checkpoint, file)
+        for file in checkpoint.files
+    )
+    assert model_s3_uri("contbase-v2-20260812-01", checkpoint) == (
+        "s3://marin-us-east-02a/marin/protein-structure/MarinFold/"
+        "exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/"
+        "contbase-v2-20260812-01/models/"
+        "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1/hf/step-145199"
+    )
 
 
 def test_run_paths_are_coreweave_s3_only() -> None:
@@ -108,13 +142,30 @@ def test_checked_in_e8_evidence_matches_checkpoint_spec() -> None:
     )
 
 
-def test_checked_in_timings_cover_all_four_evaluated_checkpoints() -> None:
+def test_checked_in_continuation_verification_matches_checkpoint_spec() -> None:
+    verification = json.loads(
+        (
+            Path(__file__).with_name("data")
+            / "continuation_checkpoint_verification.json"
+        ).read_text()
+    )
+    checkpoint = CONTINUATION_CHECKPOINT
+    assert verification["verified_from_huggingface"]
+    assert verification["source"] == expected_manifest(checkpoint)["source"]
+    assert verification["files"] == expected_manifest(checkpoint)["files"]
+    assert verification["destination"] == model_s3_uri(
+        "contbase-v2-20260812-01", checkpoint
+    )
+
+
+def test_checked_in_timings_cover_all_five_evaluated_checkpoints() -> None:
     timings = pd.read_csv(Path(__file__).with_name("data") / "timings.csv")
-    assert len(timings) == 4 * 554
+    assert len(timings) == 5 * 554
     assert set(timings.model_nickname) == {
         "trc_p03_aug_step72599",
         "trc_p03_base_step72599",
         "cw_p06_aug_step145199",
+        "trc_cont_srcbase_aug100_step145199",
         "e8_reference_step35679",
     }
     assert timings.complete.all()
@@ -159,3 +210,20 @@ def test_child_request_has_fixed_recipe_and_batch_h100_shape() -> None:
     assert request_data["resources"]["device"]["variant"] == "H100"
     assert request_data["resources"]["device"]["count"] == 1
     assert request.environment.env_vars["MARIN_PREFIX"] == MARIN_PREFIX
+
+
+def test_root_submission_uses_marin_cluster_and_eczech_user(monkeypatch) -> None:
+    observed = {}
+
+    def capture(command, **kwargs):
+        observed["command"] = command
+        observed["kwargs"] = kwargs
+
+    monkeypatch.setattr(sys, "argv", ["submit_coreweave.py"])
+    monkeypatch.setattr(submit_coreweave.subprocess, "run", capture)
+    submit_coreweave.main()
+
+    command = observed["command"]
+    assert "--cluster=marin" in command
+    assert command[command.index("--user") + 1] == "eczech"
+    assert command[command.index("--target-cluster") + 1] == "cw-us-east-02a"

@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+
 from checkpoint_specs import (
     E8_REFERENCE_METRICS,
     E8_REFERENCE_TOLERANCE,

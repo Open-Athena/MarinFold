@@ -6,15 +6,18 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "aiobotocore==2.26.0",
     "fsspec==2026.1.0",
+    "gcsfs==2026.1.0",
     "huggingface-hub[hf-xet]>=0.34,<1",
     "httpx==0.28.1",
     "marin-fray==0.2.73.dev30987879744",
     "marin-iris==0.2.73.dev30987879744",
+    "matplotlib>=3.10,<4",
     "numpy>=2,<3",
     "pandas>=3,<4",
     "pyarrow>=23,<24",
     "s3fs==2026.1.0",
     "scikit-learn>=1.8,<2",
+    "scipy>=1.17,<2",
 ]
 
 [dependency-groups]
