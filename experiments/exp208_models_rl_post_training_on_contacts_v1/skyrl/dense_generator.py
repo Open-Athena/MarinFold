@@ -105,6 +105,45 @@ class DenseContactsGenerator(SkyRLGymGenerator):
 
         return [float(x) for x in reward.token_rewards]
 
+    def apply_consensus_term(self, rewards_by_key: Dict[str, List[float]],
+                             gt_by_instance: Dict[str, set], lengths: Dict[str, int],
+                             lam_step: float = 1.0, lam_doc: float = 4.5) -> Dict[str, List[float]]:
+        """Fold the leave-one-out consensus marginal into the per-token rewards.
+
+        MUST run once the whole group exists. A rollout's marginal is
+        ``C(all) - C(all \\ {i})``, so it is undefined until every sibling has
+        been generated — which is why this is a group-level pass rather than
+        something `_build_per_token_rewards` could do inline.
+
+        The marginal is spread evenly over the rollout's response tokens, because
+        that is how a per-sequence advantage reaches a per-token loss; `lam_doc`
+        is calibrated so the two terms contribute comparably (measured on the
+        marin.rl path: the document term must be integrated over the response
+        before comparing, or it reads ~400x too small).
+        """
+        import consensus as cs
+
+        for instance_id, per_rep in self._group_pairs.items():
+            gt = gt_by_instance.get(instance_id)
+            length = lengths.get(instance_id)
+            if not gt or not length:
+                continue
+            reps = sorted(per_rep)
+            pairs, position = cs.candidate_index(length)
+            is_true = cs.truth_mask(pairs, gt)
+            votes = cs.vote_counts([per_rep[r] for r in reps], position, len(pairs))
+            _, marginals = cs.loo_marginals(votes, is_true, int(is_true.sum()))
+            marginals = np.nan_to_num(marginals, nan=0.0)
+            marginals = marginals - marginals.mean()      # centre across the group
+            for rep, marg in zip(reps, marginals):
+                key = f"{instance_id}:{rep}"
+                row = rewards_by_key.get(key)
+                if not row:
+                    continue
+                share = float(lam_doc) * float(marg) / max(len(row), 1)
+                rewards_by_key[key] = [lam_step * v + share for v in row]
+        return rewards_by_key
+
     def group_pairs(self) -> Dict[str, Dict[str, set]]:
         """Per-protein rollout pair sets, for the consensus-marginal term."""
         return self._group_pairs
