@@ -48,12 +48,13 @@ from run_gt_gate import bounds_from_json, chain_break_count, gt_pairs
 
 def load_rollouts(path: Path) -> dict[tuple[str, str], list[list[tuple[int, int]]]]:
     """Per-protein list of per-rollout distinct contact sets, in rollout order."""
-    files = sorted(Path(path).rglob("*.parquet"))
+    files = sorted((Path(path) / "contacts").glob("*.parquet"))
     if not files:
-        raise FileNotFoundError(f"no parquet under {path}")
-    tbl = pq.read_table(files[0]).schema
-    frames = [pq.read_table(f).to_pandas() for f in files]
-    df = pd.concat(frames, ignore_index=True)
+        raise FileNotFoundError(f"no parquet under {path}/contacts")
+    df = pd.concat([pq.read_table(f).to_pandas() for f in files], ignore_index=True)
+    # An empty part (a protein whose rollouts emitted nothing) makes pandas widen
+    # the bool column to float on concat, and `~` on a float column raises.
+    df["duplicate"] = df["duplicate"].fillna(False).astype(bool)
     df = df[~df["duplicate"]]  # distinct contacts only, matching exp82's readout
     out: dict[tuple[str, str], list[list[tuple[int, int]]]] = {}
     for (ds, stem), g in df.groupby(["dataset", "stem"], sort=False):
@@ -99,6 +100,8 @@ def main() -> int:
     ap.add_argument("--max-pairs", type=int, default=40_000_000)
     ap.add_argument("--min-length", type=int, default=0)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--device", default=None,
+                    help="torch device; defaults to cuda when available")
     args = ap.parse_args()
 
     bounds = bounds_from_json(args.bounds)
@@ -163,7 +166,8 @@ def main() -> int:
             block = named[s0:s0 + step]
             masks = np.stack([contact_matrix(s, length) for _, _, s in block])
             emb = embed_residual(masks, bounds, n_restarts=args.n_restarts,
-                                 iters=args.iters, seed=n * 977 + s0)
+                                 iters=args.iters, seed=n * 977 + s0,
+                                 device=args.device)
             for (arm, rep, s), mask, e in zip(block, masks, emb):
                 rows.append(dict(
                     record_id=info["record_id"], dataset=info["dataset"], L=length,
