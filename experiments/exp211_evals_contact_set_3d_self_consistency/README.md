@@ -37,9 +37,56 @@ A null here is a real result — it would say the joint has to be taught, not de
 | A — calibrate bounds on 554 GT structures (`calibrate_bounds.py`) | **done** |
 | B — calibration gate on ground truth (`run_gt_gate.py`) | **done — PASS** |
 | B2 — sensitivity at the operating point (`power_check.py`) | **done** |
-| 1 — per-rollout generation (`gen_rollouts_worker.py`) | written; needs the model on CoreWeave S3 |
-| 1b — CoreWeave dispatch (`dispatch_rollouts_cw.py`) | written, not launched |
-| 2–4 — arms, scoring, analysis | not started |
+| 0 — rebuild eval targets from public artifacts (`prepare_targets.py`) | **done** |
+| 1 — per-rollout generation | **running locally** (`run_rollouts_local.py`) |
+| 1b — CoreWeave dispatch (`dispatch_rollouts_cw.py`) | written; **blocked on dead credentials**, and unnecessary |
+| 1c — reproduce published R-precision (`verify_against_exp82.py`) | **done — Δ −0.0026** |
+| 2–3 — arms + scoring (`score_arms.py`) | written, pending rollouts |
+| 4 — analysis + figures (`analyze.py`, `plot_results.py`) | written, pending scores |
+
+### Why the run is local
+
+The CoreWeave path is blocked by environment, not code: this workstation's
+credentials are rejected outright (*"the access key ID you provided does not exist in
+our records"*) and the fresh iris checkout no longer declares a `coreweave` store.
+Neither is fixable from here.
+
+It also turns out not to matter — exp82 measured the full 554-protein eval set at
+n = 100 rollouts as **~80 min on one A5000**. The 16-way fan-out existed to make that
+5 minutes, not to make it possible. `run_rollouts_local.py` imports `parse_rollout`
+and both schemas from `gen_rollouts_worker` so the readout cannot drift from the
+cluster version.
+
+Three blockers had to be cleared, each worth knowing about:
+
+* **The targets parquet lives on the unreachable S3.** Rebuilt from *public*
+  artifacts: exp89's published `ensemble_prompts.parquet` spells each input sequence
+  as `<pX> <AA>` statements and carries the realization's position map, so the
+  sequence is exactly recoverable. Verified lossless over all 554. The `UNK` round
+  trip is what makes it work — the only non-canonical token is `<UNK>`, one-letter
+  `X`, and `residues_from_sequence` maps `X` straight back. Deriving sequences from
+  the GT *structures* would have been wrong: those hold only **resolved** residues,
+  while contacts are indexed in input-sequence coordinates.
+* **#199's tokenizer is not transformers-4.x readable** — it declares
+  `tokenizer_class: TokenizersBackend`, a transformers-5 class, and 4.x fails hard on
+  it (unlike the rope bug in the same export, which failed *silently*). This box runs
+  CUDA driver 12.2, so the only vLLM that understands transformers 5 is out (its torch
+  needs ≥ 12.8), forcing vLLM 0.9.2 + transformers 4.53. `repair_tokenizer_for_4x.py`
+  rewrites the class — a config change, not a retokenization, since the vocab lives in
+  the backend-agnostic `tokenizer.json` — and **verifies it is id-preserving** against
+  a reference captured under transformers 5 first. A contacts-v1 document is almost
+  entirely special tokens, so a one-id shift would have silently turned every position
+  token into its neighbour.
+* **vLLM needs `ninja` on `PATH`**, or engine startup dies inside memory profiling.
+  The compiled path is 3.5× faster than `--enforce-eager` (5019 vs 1423 tok/s).
+
+### The rollouts reproduce the published number
+
+`verify_against_exp82.py` rebuilds exp82's vote matrix from our per-rollout table (an
+exact function of it) and scores it exp89's way. On the first 84 proteins: **R-precision
+0.6077 vs the 0.6103 exp82's worker reports for #199 — Δ −0.0026**, at #204's 0.0023
+replicate noise floor. (0.6103 rather than the 0.5873 #199 published: that 0.023 gap is
+#199's own eval pipeline, not the accelerator.)
 
 ### The gate result (step B, all 554 proteins)
 
