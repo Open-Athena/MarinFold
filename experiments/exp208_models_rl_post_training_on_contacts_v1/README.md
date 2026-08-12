@@ -765,26 +765,64 @@ the wrong rollout is still a plausible number, so the test
 hands rows over shuffled and asserts the result differs from what a positional
 implementation would produce.
 
-**The open concern is the reward shape, not the plumbing.** Over the first four
-steps arm S's reward rose (0.0010 → 0.0453) but mean response length rose with it,
-488 → 985 tokens against a 1024 cap. That is the signature of length-gaming, and
-this reward has a structural incentive for it. The p̄-centring is designed so that
-emitting a contact has expected value `p − p̄` — a proper zero baseline, worth it
-only if the contact beats current precision. `err_decay = 0.5` breaks exactly that
-property: the k-th error *within a section* costs `p̄·δ^k`, a convergent series
-bounded at `p̄/(1−δ) ≈ 0.9`, while every correct contact pays a full `1 − p̄ ≈ 0.55`
-with no bound. So the marginal contact is worth `p − p̄·δ^k`, which turns positive
-for **any** contact once a few errors have been made. And `p̄` is an EMA of observed
-precision, so a policy that spams drives p̄ down, which makes errors cheaper still.
+### The blocker: SkyRL destroys the policy on its first weight sync
 
-This is not yet a measured result — reward and response length alone cannot
-separate "better at contacts" from "emitting more of them". The tallies needed to
-tell them apart were computed and discarded; they are now logged as
-`contacts/precision` and `contacts/pred_per_gt`. **Arm S results must not be read
-before those two are checked**, and if this is confirmed, `err_decay` is in direct
-tension with the p̄ baseline and should go to 1.0 (its documented purpose — not
-punishing errors that are consequences of earlier ones — is real, but it cannot be
-bought by breaking the baseline that makes the reward honest).
+Arm S does not train. It collapses after exactly one step, and the collapse is
+**not** in the reward, the gradient, the export, or the rope config — all four are
+excluded by measurement below.
+
+On first look the run seemed to be length-gaming: reward rising (0.0010 → 0.0453)
+alongside response length (488 → 985 against a 1024 cap), which `err_decay` gives a
+real incentive for. **The contact tallies refuted that**, and in the opposite
+direction — the policy does not emit *more* contacts, it stops emitting them:
+
+| step | contacts/rollout | precision | pred/gt | resp. length | reward |
+|------|-----------------|-----------|---------|--------------|--------|
+| 0    | 160.2           | 0.267     | 1.11    | 483          | 29.56  |
+| 1    | 0.86            | 0.039     | 0.006   | 982          | 0.017  |
+| 2    | 0.94            | 0.044     | 0.007   | 975          | 0.033  |
+| 3    | 0.71            | 0.064     | 0.005   | 987          | 0.036  |
+
+Step 0 is the model behaving correctly (160 contacts/rollout at precision 0.267,
+matching its known quality). After one step it emits **0.9 contacts per rollout**
+and runs to the token cap — length rises because the document never completes, not
+because contacts are being spammed. Reward "rising" from 0.017 was noise near zero
+*after* a fall from 29.56.
+
+Four candidate causes, each excluded by a measurement rather than by argument:
+
+* **The gradient.** A zero-learning-rate control collapses *identically*
+  (precision 0.259 → 0.022, pred/gt 1.13 → 0.005, length 489 → 996). With `lr=0`
+  no gradient can move a weight, so nothing about the reward, the advantage, or
+  `err_decay` can be responsible. This single control retires the whole reward-shape
+  hypothesis.
+* **The rope config.** The export declares llama3 scaling at `factor: 8.0` in both
+  `rope_scaling` and `rope_parameters` — exp199's known export hazard. Scoring real
+  prompts under each interpretation gives 3.6804 vs 3.6861 nats/token
+  ([`probe_rope_config.py`](skyrl/probe_rope_config.py)). A 0.006 difference; a wrong
+  rope costs whole nats. Not it.
+* **The export / loaders.** transformers and vLLM score the same 1870 tokens at
+  3.7273 vs 3.7267 nats, mean |diff| 0.017
+  ([`probe_hf_vs_vllm.py`](skyrl/probe_hf_vs_vllm.py)). The two stacks read this
+  checkpoint identically, so the export is sound.
+* **Therefore: SkyRL's own trainer-side copy.** SkyRL reports
+  `rollout_train_logprobs_abs_diff_mean` = **1.33 nats at step 0**, dropping to
+  0.08 from step 1 on. Since the loaders agree to 0.017 nats outside SkyRL, that
+  1.33 is manufactured inside it: at step 0 the engines hold the real model and the
+  FSDP2 policy holds something else. `sync_weights` then pushes the policy's copy
+  into the engines — after which the two "agree" at 0.08 and generation is dead.
+  The ordering (disagree → sync → agree → collapse) is the signature.
+
+The suspect is the FSDP2 path: either its forward is wrong (packing / position ids
+/ attention mask over the 512 padded sequences) or the sharded→full gather that
+feeds the engines is. A single-GPU run with no sharding separates the two.
+
+`err_decay` remains theoretically dubious for the reason first suspected — the k-th
+error in a section costs `p̄·δ^k`, a convergent series bounded near `p̄/(1−δ)`, while
+each correct contact pays a full `1−p̄`, so the marginal contact is worth
+`p − p̄·δ^k` and the p̄-centring's zero baseline does not hold. But that is now an
+untested concern, not an observed one, and it cannot be tested until the policy
+survives a weight sync.
 
 ### Artifacts
 
