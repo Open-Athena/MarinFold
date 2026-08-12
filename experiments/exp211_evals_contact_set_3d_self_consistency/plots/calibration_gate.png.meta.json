@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Ground truth sits 5.6\u00d7 below random. A decoy protein ties with the truth \u2014 the score is sequence-blind."
+}
