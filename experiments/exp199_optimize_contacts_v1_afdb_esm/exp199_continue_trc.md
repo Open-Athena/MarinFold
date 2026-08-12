@@ -201,8 +201,18 @@ Stop only that source trial's losing regional siblings, record its winner and
 checkpoint verification atomically, and continue operating the other source trial.
 Remove the hourly heartbeat only after both trials finish or the time limit expires.
 
+## Outcome
+
+Both lineages completed on 2026-08-12 from `us-east1` on `v6e-128`, each with a
+verified permanent `step-145199` checkpoint under its region-local prefix:
+`srcbase` at 12:19:59Z and `srcaug` at 18:33:26Z. Every other regional run was
+stopped as a race loss between 0.52 and 0.62. The hourly heartbeat has been
+removed and no sweep dispatches remain active.
+
 ## Change record
 
+- 2026-08-12: Both lineages completed with verified final checkpoints; recorded
+  the outcome and removed the hourly heartbeat.
 - 2026-08-12: Added the endgame rule suspending timer-driven actions on regional
   runs that can no longer win or serve as fallback for their lineage.
 - 2026-08-12: All four approved regions registered, so the non-scheduling hold is
