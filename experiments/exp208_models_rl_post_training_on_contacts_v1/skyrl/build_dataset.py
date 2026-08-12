@@ -105,9 +105,16 @@ def main() -> int:
     for entry_id, reals in zip(ids, realizations):
         for row in reals[: a.realizations]:
             rows.append({
-                # Raw contacts-v1 text. It is NOT a chat exchange; see the module
-                # docstring for the custom_chat_template requirement.
-                "prompt": json.dumps([{"role": "user", "content": row["prefix"]}]),
+                # A REAL list of message dicts, not a JSON string. SkyRL's
+                # PromptDataset passes doc["prompt"] straight to
+                # `apply_chat_template`, so a string would be iterated
+                # CHARACTER BY CHARACTER: each "message" is one char,
+                # `message['content']` is Jinja Undefined, and Undefined
+                # stringifies to "" — so the template renders empty and vLLM is
+                # asked to generate from zero tokens. Worse, the max-prompt-length
+                # filter *passes* such rows precisely because they tokenize to 0,
+                # so nothing upstream complains. Cost an hour to find.
+                "prompt": [{"role": "user", "content": row["prefix"]}],
                 "env_class": ENV_CLASS,
                 "split": a.split,
                 "extras": json.dumps({
@@ -121,7 +128,13 @@ def main() -> int:
 
     a.out.parent.mkdir(parents=True, exist_ok=True)
     import pyarrow as pa
-    pq.write_table(pa.table({k: [r[k] for r in rows] for k in rows[0]}), a.out)
+    schema = pa.schema([
+        ("prompt", pa.list_(pa.struct([("role", pa.string()), ("content", pa.string())]))),
+        ("env_class", pa.string()),
+        ("split", pa.string()),
+        ("extras", pa.string()),
+    ])
+    pq.write_table(pa.table({k: [r[k] for r in rows] for k in rows[0]}, schema=schema), a.out)
     print(f"[dataset] wrote {len(rows)} rows -> {a.out}", flush=True)
     return 0
 

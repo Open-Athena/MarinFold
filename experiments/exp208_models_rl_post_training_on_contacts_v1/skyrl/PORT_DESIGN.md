@@ -90,3 +90,57 @@ marin.rl's, but it lives in the generator and the advantage registry, not in
    NaN came from vLLM sampling its own vocab padding (2845 -> 2848); the same
    trap exists on any engine that pads, so the `allowed_token_ids` guard ports
    across regardless of framework.
+
+
+## Status: the port trains (2026-08-12)
+
+A smoke run on 8x A100-80GB completed a policy update with exp208's dense reward
+reaching the loss — the first time any exp208 arm has trained a step, on either
+harness.
+
+```
+_build_per_token_rewards  has_state=True  gt=8  pos=49  n_resp=23
+dense reward: len=23  nonzero=21  distinct=8
+Finished: 'policy_train', time cost: 19.57s
+avg_final_rewards: 16.02   avg_response_length: 358.6
+```
+
+Every link verified: the generator is ours, per-trajectory state propagates
+across concurrent trajectories, ground truth arrives, the reward is dense (8
+distinct values over 23 tokens), the estimator accepts it, the policy updates —
+and **the vocab-padding guard never fires**, which is the bug that killed the
+marin.rl path from this same warm start.
+
+### What it cost, and why
+
+Five silent failures, each caught only because something refused to run on
+degenerate input:
+
+1. **`prompt` written as a JSON string.** `PromptDataset` passes `doc["prompt"]`
+   straight to `apply_chat_template`, so Jinja iterated the string CHARACTER BY
+   CHARACTER, `message['content']` was Undefined, Undefined stringifies to `""`,
+   and vLLM was asked to generate from zero tokens. The max-prompt-length filter
+   *passed* every row precisely because they tokenized to 0.
+2. **`tokenizer.chat_template` unset.** The dataset path templates through the
+   tokenizer, not through `generator.chat_template`. Fixed by baking an identity
+   template into the published tokenizer, verified byte-identical.
+3. **The trajectory side-channel was never populated** — `_pending` was read and
+   never written, so every call fell back to sparse rewards.
+4. **`self` is unsafe for that state.** SkyRL runs trajectories concurrently
+   under `asyncio.gather`; an attribute would be overwritten by whichever
+   coroutine ran last and rollouts would score against another protein's ground
+   truth, silently, since a mismatched pair set merely scores as wrong. Now a
+   `ContextVar`.
+5. **SkyRL nests the dataset's extra columns.** `env_extras` arrives as
+   `{"extras": <json>, "split": ...}`, so `gt_contacts` was not at the top level;
+   the generator found no ground truth and fell back. `_unwrap_extras` accepts
+   both shapes.
+
+(1) and (5) share a root cause worth remembering: **parquet round-trips nested
+structures in more than one shape, and SkyRL's row-to-env mapping adds a nesting
+level.** Neither raised; both produced plausible-looking runs.
+
+The advantage estimator's constant-advantage guard caught (3), (4) and (5). It
+exists because marin.rl's dense path could silently degrade to constant
+advantages and read as "RL didn't help" rather than as a bug — and it earned its
+keep three times in one afternoon.

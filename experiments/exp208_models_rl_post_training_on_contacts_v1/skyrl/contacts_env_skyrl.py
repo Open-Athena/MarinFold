@@ -47,6 +47,13 @@ class ContactsV1Env(BaseTextEnv):
         super().__init__()
         self.max_turns = 1                    # single-shot generation, no tools
         extras = extras or {}
+        # Accept a JSON string as well as a dict: parquet round-trips nested
+        # structures either way depending on how the dataset was written, and a
+        # silent AttributeError here would surface as an empty ground truth
+        # (every contact scored wrong) rather than as a load failure.
+        if isinstance(extras, str):
+            import json as _json
+            extras = _json.loads(extras)
         self.entry_id: str = extras.get("entry_id", "")
         self.length: int = int(extras.get("L", 0))
         pairs = extras.get("gt_contacts", []) or []

@@ -131,6 +131,14 @@ def main() -> int:
     from skyrl.train.utils import initialize_ray, validate_cfg
 
     cfg = Exp208Config.from_cli_overrides(sys.argv[1:])
+    # Register HERE TOO, before validate_cfg. The validator checks
+    # `advantage_estimator` against the live registry, so registering only inside
+    # the ray task (which runs later) fails with "invalid advantage_estimator:
+    # contacts_dense. Must be one of [...]". Both registrations are needed and
+    # neither is redundant: this one satisfies validation in the launching
+    # process, the one in `skyrl_entrypoint` makes the estimator and env visible
+    # to the ray actors that actually construct them.
+    register_everything(vocab_size=cfg.vocab_size)
     validate_cfg(cfg)
     initialize_ray(cfg)
     ray.get(skyrl_entrypoint.remote(cfg))

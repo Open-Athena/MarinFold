@@ -31,12 +31,64 @@ rollout-within-protein. It is accumulated per instance and applied by the
 registered advantage estimator, which receives SkyRL's own `index` grouping.
 """
 
-from typing import Dict, List, Optional, Tuple
+import contextvars
+import logging
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from skyrl.train.generators.skyrl_gym_generator import SkyRLGymGenerator
 
 import contact_rewards as cr
+
+logger = logging.getLogger(__name__)
+
+
+def _unwrap_extras(env_extras: Any) -> Dict[str, Any]:
+    """Get to exp208's payload inside whatever SkyRL hands the generator.
+
+    SkyRL passes the dataset row's NON-STANDARD COLUMNS as `env_extras`, so a
+    dataset with an `extras` column arrives as ``{"extras": <payload>, "split":
+    ...}`` — the payload nested one level down, and still a JSON string because
+    that is how it was written to parquet. Measured directly: the override saw
+    ``extras_keys=['extras', 'split']`` while looking for `gt_contacts`, found
+    nothing, and silently fell back to SkyRL's sparse rewards.
+
+    Handles both shapes so the generator does not care how the dataset was
+    written, and returns {} rather than raising — the caller checks for empty
+    ground truth and falls back, and the advantage estimator's constant-advantage
+    guard catches it downstream either way.
+    """
+    import json as _json
+
+    if isinstance(env_extras, str):
+        try:
+            env_extras = _json.loads(env_extras)
+        except (ValueError, TypeError):
+            return {}
+    if not isinstance(env_extras, dict):
+        return {}
+    if "gt_contacts" not in env_extras and "extras" in env_extras:
+        inner = env_extras["extras"]
+        if isinstance(inner, str):
+            try:
+                inner = _json.loads(inner)
+            except (ValueError, TypeError):
+                return {}
+        if isinstance(inner, dict):
+            return inner
+    return env_extras
+
+# Per-trajectory state, carried from `agent_loop` to `_build_per_token_rewards`.
+#
+# A ContextVar rather than an attribute on `self`: SkyRL runs trajectories
+# CONCURRENTLY under `asyncio.gather`, so a single `self._pending` would be
+# overwritten by whichever coroutine ran last and every rollout would be scored
+# against another protein's ground truth — quietly, since a mismatched pair set
+# just scores as wrong rather than raising. ContextVars are per-task, which is
+# exactly the isolation needed here.
+_TRAJECTORY: contextvars.ContextVar[Optional[Dict[str, Any]]] = contextvars.ContextVar(
+    "exp208_trajectory", default=None
+)
 
 
 class DenseContactsGenerator(SkyRLGymGenerator):
@@ -60,7 +112,34 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         self.vocab_size = vocab_size
         # instance_id -> {repetition_id: dedup'd pair set}, for the consensus term.
         self._group_pairs: Dict[str, Dict[str, set]] = {}
-        self._pending: Optional[Dict] = None
+        self._announced = False
+
+    async def agent_loop(self, prompt, env_class, env_extras, max_tokens, max_input_length,
+                         sampling_params=None, trajectory_id=None, cache_salt=None):
+        """Publish this trajectory's per-protein state, then run SkyRL's loop.
+
+        `_build_per_token_rewards` is called deep inside `agent_loop` and receives
+        only `(per_step_rewards, response_ids, appended_eos_token)` — no env, no
+        ground truth, no trajectory id. This is the narrowest place that has all
+        of them, so the state is published here and read there.
+        """
+        extras = _unwrap_extras(env_extras)
+        gt = {(min(int(i), int(j)), max(int(i), int(j))) for i, j in extras.get("gt_contacts", [])}
+        token = _TRAJECTORY.set({
+            "gt": {p for p in gt if cr.in_band(p)},
+            "pos_to_seq": {int(p): i for i, p in enumerate(extras.get("seq_positions", []) or [])},
+            "instance_id": str(getattr(trajectory_id, "instance_id", extras.get("entry_id", ""))),
+            "repetition_id": str(getattr(trajectory_id, "repetition_id", "0")),
+            "L": int(extras.get("L", 0)),
+        })
+        try:
+            return await super().agent_loop(
+                prompt, env_class, env_extras, max_tokens, max_input_length,
+                sampling_params=sampling_params, trajectory_id=trajectory_id,
+                cache_salt=cache_salt,
+            )
+        finally:
+            _TRAJECTORY.reset(token)
 
     def _build_per_token_rewards(
         self, per_step_rewards: List[Tuple[float, Optional[int]]],
@@ -72,7 +151,23 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         missing, so a misconfigured run degrades to ordinary turn-level rewards
         rather than to silently-zero ones.
         """
-        state = self._pending
+        state = _TRAJECTORY.get()
+        if not self._announced:
+            # ONE line, once. Getting here with empty ground truth is the failure
+            # that cost this port an afternoon: SkyRL nests the dataset's extra
+            # columns, so `gt_contacts` was not where it was looked for, the
+            # generator fell back to sparse rewards, and every advantage came out
+            # constant. Silent at every layer until the estimator refused it.
+            self._announced = True
+            logger.warning(
+                "[exp208] dense reward active: state=%s gt=%d positions=%d response=%d",
+                state is not None, len(state.get("gt", ())) if state else -1,
+                len(state.get("pos_to_seq", ())) if state else -1, len(response_ids))
+            if not state or not state.get("gt"):
+                logger.error(
+                    "[exp208] NO GROUND TRUTH -- falling back to SkyRL's sparse rewards, so "
+                    "the dense per-contact signal is absent. Check that the dataset's extras "
+                    "reach the generator (see _unwrap_extras).")
         if not state or not state.get("gt"):
             return super()._build_per_token_rewards(per_step_rewards, response_ids, appended_eos_token)
 
