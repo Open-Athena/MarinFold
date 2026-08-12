@@ -156,6 +156,42 @@ def test_lam_step_scales_the_stepwise_term():
     assert all(r == pytest.approx([3.0] * ROW_LEN) for r in folded["rewards"])
 
 
+def _collapse_generator(ratio=0.2):
+    gen = _generator(instances=("A",))
+    gen.collapse_ratio = ratio
+    gen._pred_per_gt_baseline = None
+    return gen
+
+
+def test_collapse_tripwire_fires_on_the_observed_collapse():
+    """The measured 8-way collapse (pred/gt 1.11 -> 0.006) must abort the run."""
+    gen = _collapse_generator()
+    gen._check_for_collapse(1.11, gt=140.0)          # step 0 sets the baseline
+    with pytest.raises(RuntimeError, match="POLICY COLLAPSE"):
+        gen._check_for_collapse(0.006, gt=140.0)
+
+
+@pytest.mark.parametrize("pred_per_gt", [0.9941, 1.0208, 1.0493, 1.1033, 1.3108])
+def test_collapse_tripwire_tolerates_healthy_variation(pred_per_gt):
+    """Every pred/gt observed in a non-collapsed run must pass.
+
+    These are the actual values logged by the stable 1-GPU run; a tripwire that
+    fires on any of them would be worse than none, because it would train people
+    to ignore it.
+    """
+    gen = _collapse_generator()
+    gen._check_for_collapse(1.1298, gt=140.0)
+    gen._check_for_collapse(pred_per_gt, gt=140.0)   # must not raise
+
+
+def test_collapse_tripwire_ignores_batches_without_ground_truth():
+    """pred/gt is 0/0 when no ground truth is present; that is not a collapse."""
+    gen = _collapse_generator()
+    gen._check_for_collapse(1.10, gt=140.0)
+    gen._check_for_collapse(0.0, gt=0.0)             # must not raise
+    assert gen._pred_per_gt_baseline == pytest.approx(1.10)
+
+
 def test_reward_row_lengths_are_preserved():
     """A folded row must stay token-aligned with its response."""
     gen = _generator(instances=("A",))

@@ -77,6 +77,12 @@ class Exp208Config(SkyRLTrainConfig):
     # 12.4% of tokens, in 256 of 256 rollouts, NaN-ing the marin.rl trainer on
     # step 1. The trap belongs to the engine, not the framework, so it travels.
     vocab_size: Optional[int] = None
+    # Abort when contacts/pred_per_gt falls below this fraction of its opening
+    # value. SkyRL's sharded policy diverges from the engines and the weight sync
+    # destroys the policy (pred/gt 1.11 -> 0.006), and nothing else in the stack
+    # notices -- it trains and logs a plausible falling reward on rollouts that
+    # are no longer contacts-v1 documents. Healthy pred/gt is 0.99-1.31.
+    collapse_ratio: float = 0.2
 
 
 def register_everything(vocab_size: Optional[int] = None) -> None:
@@ -95,7 +101,8 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
 
 
 def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
-              doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0):
+              doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
+              collapse_ratio: float = 0.2):
     """A ``BasePPOExp`` whose generator emits exp208's dense per-contact reward."""
     from skyrl.backends.skyrl_train.inference_servers.utils import resolve_policy_model_name
     from skyrl.train.entrypoints.main_base import BasePPOExp
@@ -116,6 +123,7 @@ def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
                 doc_term=doc_term,
                 lam_step=lam_step,
                 lam_doc=lam_doc,
+                collapse_ratio=collapse_ratio,
             )
 
     return Exp208PPOExp(cfg)
@@ -132,7 +140,8 @@ def skyrl_entrypoint(cfg: Exp208Config):
     """
     register_everything(vocab_size=cfg.vocab_size)
     build_exp(cfg, p_bar=cfg.p_bar, err_decay=cfg.err_decay, vocab_size=cfg.vocab_size,
-              doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc).run()
+              doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc,
+              collapse_ratio=cfg.collapse_ratio).run()
 
 
 def main() -> int:

@@ -109,8 +109,9 @@ class DenseContactsGenerator(SkyRLGymGenerator):
     def __init__(self, *args, p_bar: float = 0.45, err_decay: float = 0.5,
                  precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None,
                  doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
-                 **kwargs):
+                 collapse_ratio: float = 0.2, **kwargs):
         super().__init__(*args, **kwargs)
+        self.collapse_ratio = float(collapse_ratio)
         self.doc_term = doc_term
         self.lam_step = float(lam_step)
         self.lam_doc = float(lam_doc)
@@ -125,6 +126,8 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         # against exactly the ground truth the stepwise reward used.
         self._group_meta: Dict[str, Dict[str, Any]] = {}
         self._doc_term_failures = 0
+        # First observed pred/gt, the reference for the collapse tripwire below.
+        self._pred_per_gt_baseline: Optional[float] = None
         self._announced = False
         # Per-batch contact tallies. Without these the run reports only reward and
         # response length, and those two cannot distinguish "the policy got better
@@ -336,7 +339,39 @@ class DenseContactsGenerator(SkyRLGymGenerator):
             metrics["contacts/precision"], metrics["contacts/pred_per_gt"],
             metrics["contacts/scored_per_rollout"], self.p_bar,
         )
+        self._check_for_collapse(metrics["contacts/pred_per_gt"], gt)
         return out
+
+    def _check_for_collapse(self, pred_per_gt: float, gt: float) -> None:
+        """Abort if the policy has stopped emitting contacts.
+
+        SkyRL's FSDP2 policy sharding diverges from the inference engines and the
+        first weight sync pushes the divergent copy into them, after which the
+        policy is destroyed: measured pred/gt 1.11 -> 0.006 at 8-way, and 1.10 ->
+        0.000 at 2-way after two syncs. Nothing else in the stack objects. The run
+        keeps training, keeps logging, and reports a falling reward, so the wasted
+        compute is only discovered when someone reads the contact tallies.
+
+        pred/gt is stable in a healthy run (0.99-1.31 observed across every
+        non-collapsed configuration), so a fall to a fifth of the opening value is
+        far outside normal variation and means the rollouts are no longer
+        contacts-v1 documents. Fail loudly instead of training on them.
+        """
+        if not gt:      # no ground truth in this batch: pred/gt is meaningless
+            return
+        if self._pred_per_gt_baseline is None:
+            self._pred_per_gt_baseline = pred_per_gt
+            return
+        floor = self.collapse_ratio * self._pred_per_gt_baseline
+        if pred_per_gt < floor:
+            raise RuntimeError(
+                f"[exp208] POLICY COLLAPSE: contacts/pred_per_gt fell to {pred_per_gt:.4f}, "
+                f"below {self.collapse_ratio:g}x the opening {self._pred_per_gt_baseline:.4f} "
+                f"(floor {floor:.4f}). The rollouts are no longer contacts-v1 documents. "
+                f"If the policy is sharded (trainer.placement.policy_num_gpus_per_node > 1) "
+                f"this is the known SkyRL sharding divergence -- run unsharded. Check "
+                f"rollout_train_logprobs_abs_diff_mean: healthy is ~0.017, collapse reads >1."
+            )
 
     def _fold_document_term(self, out, input_batch=None):
         """Add the group-centred consensus marginal to each rollout's rewards.
