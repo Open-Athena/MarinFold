@@ -2,18 +2,22 @@
 name: eval-checkpoint
 description: >-
   Evaluate a MarinFold contacts-v1 checkpoint with the fixed exp89 contact
-  benchmark. Use for checkpoint scoring, R-precision/AUC requests, comparisons
-  with structure baselines, or reproducing contact metrics on local, CUDA, or
-  Iris TPU execution.
+  benchmark, scored with exp82's rollout+resample recipe. Use for checkpoint
+  scoring, R-precision/AUC requests, comparisons with structure baselines, or
+  reproducing contact metrics on local, CUDA, or Iris TPU execution.
 ---
 
 # Evaluate a contacts-v1 checkpoint
 
 Treat the [exp89 evaluator](https://github.com/Open-Athena/MarinFold/issues/89),
 fixed ground truth, candidate-pair universe, and metric implementation as the
-measurement specification. Its standard pairwise score comes from
-[exp82](https://github.com/Open-Athena/MarinFold/issues/82). Infer environment-
-specific commands from the checked-out revisions and current tooling.
+measurement specification. Score it with the **rollout + resample** recipe
+[exp82](https://github.com/Open-Athena/MarinFold/issues/82) settled on — never
+the older pairwise readout. The two are not interchangeable: identical weights
+score ~0.086 higher in R-precision under rollout, comparable to two generations
+of model progress, so a number filed under the wrong recipe reads as a jump that
+never happened. Infer environment-specific commands from the checked-out
+revisions and current tooling.
 
 ## Establish identity and locality
 
@@ -41,18 +45,46 @@ Prefer the approach with checkpoint-local compute and fewer unpinned
 dependencies. Do not install the full MarinFold dependency set into a TPU vLLM
 environment when a smaller source/package surface avoids version conflicts.
 
+Size the host for sampling, not for a single forward pass: 100 rollouts per
+protein is ~150x the compute of the old pairwise readout, about 80 minutes per
+checkpoint on one A5000. Sharded fan-out is the fast path — 12 single-H100
+CoreWeave shards at batch priority cover all 554 proteins in ~4 minutes.
+
 ## Evaluate
 
 1. Fetch the published exp89 ground-truth universe; do not rebuild it during a
    normal checkpoint evaluation. Verify 554 `(dataset, stem)` units and 552
    unique stems. Require canonical baseline inputs when baseline comparison is
    requested.
-2. Use exp89's pairwise scorer and `compute_metrics.py`; do not substitute
-   another candidate universe or metric implementation. Make scoring resumable
-   by `(dataset, stem)`.
+2. Score with exp82's rollout+resample workers
+   (`score_rollout_vllm.py` for one local GPU;
+   `dispatch_rollout_eval_cw.py` + `score_rollout_worker.py` +
+   `fetch_cw_scores.py` for sharded fan-out) and exp89's `compute_metrics.py`.
+   Do not substitute the pairwise readout, another candidate universe, or
+   another metric implementation. Make scoring resumable by `(dataset, stem)`.
+   The recipe is fixed:
+   - 100 rollouts per protein, each sampled from a **fresh** document
+     realization — resampled N-terminus and `<pX> <AA>` statement order. The
+     resampling is the cheap half of the recipe; all realizations share a
+     prefix length, so they batch.
+   - Temperature `1.0`, top-p `0.95`, and **top-k disabled** (`-1` in vLLM, `0`
+     in HF `generate`). Top-k is the trap: HF's default of 50 rides in from an
+     export's `config.json` when no `generation_config.json` exists, inflates
+     `<end>`, and costs ~0.011 R-precision and ~0.020 AUC.
+   - Token budget `6L+128`. The older `4L+64` truncates the longer documents
+     untruncated sampling produces.
+   - Rank pairs by occurrence frequency across the rollouts, voting only the
+     contacts still live at the end of each rollout. No pairwise tie-break: it
+     moves R-precision by 0.0007 and costs a second inference pass.
+   - Write the votes as a symmetric `[L,L]` matrix in input-sequence
+     coordinates so `compute_metrics.py` scores it unchanged.
+   This needs a **sampling** backend (vLLM or transformers, not MLX) and
+   `marinfold`'s contacts-v1 document builder for the resampled realizations —
+   install it `--no-deps` into a vLLM image so the image's transformers pin
+   survives.
 3. Gate the full run on one real protein: load the actual weights and tokenizer,
-   execute a forward pass, obtain the complete position-token log-probabilities,
-   and write a valid score matrix.
+   sample its full rollout set, parse every completion back to contacts, confirm
+   none hit the token cap, and write a valid vote matrix.
 4. On TPU vLLM, derive the expected parameter dtype from the model/runtime
    configuration and inspect the tensors in every safetensor shard. If they
    differ—for example, `float32` exported weights with `bfloat16` TPU
@@ -65,9 +97,12 @@ environment when a smaller source/package surface avoids version conflicts.
 
 ## Expected outputs
 
-- `scores/<dataset>__<stem>.npz`: 554 `[L,L]` score matrices.
+- `scores/<dataset>__<stem>.npz`: 554 `[L,L]` vote matrices.
 - Timing and provenance records: evaluated run/step, source and evaluated
   checkpoint paths, revisions, tokenizer, regions, runtime, topology, and job.
+  Record the sampling recipe with them — rollout count, temperature, top-p,
+  top-k, token budget, seed — and the unfinished-rollout count, since these
+  determine the number as much as the weights do.
 - `marinfold_precision.csv` and the unified `contact_precision_all.csv` (or
   equivalent wrapper outputs): per-protein precision at `L`, `L/2`, `L/5`, and
   `R`, plus AUC, for `all`, `short`, `medium`, and `long` ranges—20 rows per
@@ -88,19 +123,32 @@ artifact that best fits the runtime and data locality:
 - Levanter format: [HF mirror](https://huggingface.co/open-athena/marinfold-exp75/tree/main/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/checkpoints/step-35679)
   or `gs://marin-us-east5/checkpoints/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/checkpoints/step-35679/`.
 
-With exp89 semantics, one realization, and no ensembling, the
-[PR #93 E8 row](https://github.com/Open-Athena/MarinFold/pull/93#issue-4738130859)
-reports long-range AUC `0.881` and R-precision `0.339` (all) / `0.269` (long).
-The reproduced metrics should match at the reported precision. Investigate
-discrepancies before evaluating a new checkpoint.
+With the recipe above and exp89 metrics over all 554 proteins, exp82 reports
+R-precision `0.4245` (all) / `0.3656` (long) and AUC `0.9010` (all) / `0.8738`
+(long) — row `marinfold-cv1-exp75-rollout` in
+`experiments/exp82_evals_contacts_v1_contact_prediction/data/where_we_stand_summary.csv`.
+
+Rollout scoring is stochastic, so match to a tolerance rather than to the digit.
+Two independent stacks of this same E8 pass (12 CoreWeave H100s on vLLM 0.9.2,
+one workstation A5000 on vLLM 0.11.0) agreed within 0.0015 R-precision and
+0.0002 AUC, and [#204](https://github.com/Open-Athena/MarinFold/issues/204)'s
+four evaluations of one unchanged checkpoint span 0.0023. Investigate a gap
+above ~0.005 before evaluating a new checkpoint.
+
+Reproducing `0.339` (all) / `0.269` (long) with AUC `0.881` instead means the
+pairwise readout ran: those are the
+[PR #93](https://github.com/Open-Athena/MarinFold/pull/93#issue-4738130859)
+numbers for the same checkpoint under the superseded recipe. Fix the scorer, do
+not report them.
 
 ## Validate completeness
 
 - Account for every expected `(dataset, stem)` unit and report skips or failures
   explicitly. Do not deduplicate on `stem` alone.
-- Check that each score matrix matches its protein length and that every
-  required position-token log probability was returned rather than replaced by
-  a fallback value.
+- Check that each vote matrix matches its protein length, that every protein got
+  its full complement of rollouts, and that no rollout hit the token cap. At
+  `6L+128` exp82 saw 0/55,400 unfinished on this eval set; a nonzero count means
+  the budget or the sampling knobs are wrong and the scores are truncated.
 - Check that metric outputs cover the evaluator's expected ranges and cuts for
   every scored unit, and report valid-value counts where a metric may be
   undefined.

@@ -15,6 +15,7 @@ The convention is borrowed from `marin-community/marin`'s
 
 | Skill | Purpose | Origin |
 |---|---|---|
+| [eval-checkpoint](eval-checkpoint/SKILL.md) | Take a contacts-v1 checkpoint to R-precision/AUC on the fixed exp89 benchmark, scored with exp82's rollout+resample recipe | MarinFold-native |
 | [babysit-job](babysit-job/SKILL.md) | Monitor an Iris job, recover on failure | ported from marin |
 | [babysit-zephyr](babysit-zephyr/SKILL.md) | Same, for Zephyr pipeline jobs | ported from marin |
 | [run-training-sweep](run-training-sweep/SKILL.md) | Actively operate Google/TRC TPU training sweeps to completion | MarinFold-native |
