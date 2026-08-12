@@ -259,21 +259,51 @@ MarinFold degrades *relatively* less with depth at 2, 4 and 5+. Do not over-read
 both arms use the additive approximation, and a lower depth-1 leaves less room to fall.
 Phase 2 (exact joint scoring via the chain rule) is what turns this into a real test.
 
-### Per-assay agreement with ESM-2
+### Does MarinFold add anything on top of ESM-2? **No.**
 
-r = 0.696 across the 212 assays — substantially decorrelated, which is the precondition
-for an ensemble adding something. **The actual ensemble test was not run**: it needs
-ProteinGym's per-variant score archive (1.9 GB) and the workstation is at 100% disk with
-7.8 GB free, with other sessions running. It is a one-command follow-up when there is
-room.
+Per-assay Spearman correlation with ESM-2 650M is r = 0.696 — loose enough that the two
+might have failed on different assays, which would make a weaker model still worth having.
+[`ensemble.py`](ensemble.py) settles it properly, joining ProteinGym's per-variant score
+archive to our cached conditionals on `mutant` and combining by within-assay rank (the two
+score scales are unrelated, so rank-averaging is the scale-free combiner).
+
+| weight on MarinFold | 0.0 | 0.1 | 0.2 | 0.3 | 0.5 | 0.7 | 1.0 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| average Spearman | 0.4152 | **0.4170** | 0.4162 | 0.4120 | 0.3903 | 0.3551 | 0.2964 |
+
+**The pre-registered equal-weight ensemble is 0.3903 — a lift of −0.0249.** Mixing
+MarinFold in at 50% makes ESM-2 measurably *worse* (bootstrap over assays: −0.0256, 95% CI
+[−0.0328, −0.0191], P(lift > 0) = 0.00).
+
+The best cell of the weight sweep is w = 0.1, worth **+0.0016** (95% CI [+0.0004,
++0.0027]). That is reproducibly positive and completely negligible: +0.4% relative, and
+smaller than the 0.0023 noise floor [#204](https://github.com/Open-Athena/MarinFold/issues/204)
+measured by evaluating one unchanged checkpoint four times. It is also selected on the
+benchmark — the bootstrap holds `w` fixed at a value chosen from the same data, so even
+that interval is optimistic.
+
+**So the decorrelation does not translate into complementary signal.** MarinFold is not a
+weak-but-useful ensemble member; it is a weaker model whose errors overlap ESM-2's enough
+that adding it only dilutes.
+
+**This also cross-validates the whole pipeline.** The weight curve's endpoints are computed
+here from *per-variant* archive data through a different code path, and they reproduce both
+headline numbers exactly: w = 1.0 gives 0.2964 (matching `analyze.py`) and w = 0.0 gives
+0.4152 (matching the published re-aggregation).
 
 ## Status
 
 Readout primitive landed with tests (18 tests, including an oracle-backend identity check
 that recovers the input sequence from the conditionals — a deliberate non-tautological
 check on the slot mapping, verified to fail under a one-statement shift). Harness built
-and preflighted. **Phase 0 passed; Phase 1 complete.** Phases 2–4 (exact joint scoring,
-checkpoint ablations, structure-conditioned scoring) not started.
+and preflighted. **Phase 0 passed; Phase 1 complete, including every pre-registered
+control.** Phases 2–4 (exact joint scoring, checkpoint ablations, structure-conditioned
+scoring) not started.
+
+**Large artifacts live on `/data`**, not the root filesystem (which runs at 100%):
+`/data/exp218_proteingym/conditionals` (623 MB of `(K, L, 20)` tensors, symlinked from
+`data/conditionals`) and `/data/exp218_proteingym/zero_shot_substitutions_scores.zip`
+(1.9 GB, ProteinGym's per-variant archive).
 
 ## Conclusion
 
@@ -284,11 +314,15 @@ it converts to 0.2964 zero-shot Spearman on ProteinGym, well clear of the 0.188
 broken-readout floor. But that is ESM2-35M territory, 0.119 behind ESM-2 650M, and the
 gap is model quality rather than readout approximation (worth ≲0.01).
 
-The more interesting finding is the negative one. **On the axis that was supposed to
-reveal structural knowledge — the function-category profile — MarinFold is
-indistinguishable from a small sequence-only model** and unlike a genuine structure model.
-Training on a structure objective bought sequence understanding roughly in proportion to
-the sequence tokens seen, and nothing extra that this benchmark can detect.
+The more interesting finding is the negative one, and it now has two independent legs.
+**On the axis that was supposed to reveal structural knowledge — the function-category
+profile — MarinFold is indistinguishable from a small sequence-only model** and unlike a
+genuine structure model. And **it adds nothing in an ensemble with ESM-2**: despite a
+loose per-assay correlation (r = 0.696), the best achievable lift is +0.0016 and the
+pre-registered equal weighting costs −0.025. Training on a structure objective bought
+sequence understanding roughly in proportion to the sequence tokens seen, and nothing
+extra that this benchmark can detect — not as a level, not as a profile, and not as
+complementary signal.
 
 Two things remain genuinely open, and both are cheap now that the harness exists:
 

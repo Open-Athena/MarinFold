@@ -118,9 +118,27 @@ flagging because the prior ran the other way — exp199 trains on ESM-Atlas
 metagenomic data, so one might have expected better generalisation to
 under-represented sequence space. It does not materialise.
 
-Per-assay correlation with ESM-2 is r = 0.696, decorrelated enough that an ensemble
-is worth testing. That test was not run: it needs ProteinGym's per-variant archive
-(1.9 GB) and the workstation is at 100% disk with 7.8 GB free.
+## Does it add anything on top of ESM-2? No.
+
+Per-assay correlation with ESM-2 is r = 0.696, loose enough that the two might have
+failed on different assays — which would make a weaker model still worth having. Joining
+ProteinGym's per-variant archive to our conditionals and combining by within-assay rank
+settles it.
+
+Weight on MarinFold's rank, against average Spearman: 0.0 gives 0.4152, 0.1 gives 0.4170,
+0.2 gives 0.4162, 0.3 gives 0.4120, 0.5 gives 0.3903, 1.0 gives 0.2964.
+
+The pre-registered equal-weight ensemble scores 0.3903, a lift of -0.0249. Mixing
+MarinFold in at 50% makes ESM-2 measurably worse (bootstrap -0.0256, 95% CI -0.0328 to
+-0.0191). The best cell is w=0.1 at +0.0016, reproducibly positive and negligible:
+smaller than the 0.0023 noise floor #204 measured on one unchanged checkpoint, and
+selected on the benchmark besides.
+
+The decorrelation does not translate into complementary signal. MarinFold is not a
+weak-but-useful ensemble member; its errors overlap ESM-2's enough that adding it
+dilutes. This also cross-validates the pipeline: the curve's endpoints come from
+per-variant archive data through a different code path and reproduce both headline
+numbers exactly, 0.2964 at w=1 and 0.4152 at w=0.
 
 ## Conclusion and what is next
 
@@ -128,9 +146,9 @@ contacts-v1 is a real but weak bidirectional protein language model. The conditi
 is genuinely contextual and converts to 0.2964 zero-shot Spearman, well clear of the
 0.188 broken-readout floor — but that is ESM2-35M territory.
 
-The more interesting finding is the negative one. On the axis that was supposed to
-reveal structural knowledge, the function-category profile, MarinFold is
-indistinguishable from a small sequence-only model. Training on a structure
+The more interesting finding is the negative one, and it has two independent legs. On
+the function-category profile MarinFold is indistinguishable from a small sequence-only
+model. And it adds nothing in an ensemble with ESM-2, despite the loose correlation. Training on a structure
 objective bought sequence understanding roughly in proportion to the sequence tokens
 seen, and nothing extra this benchmark can detect.
 
