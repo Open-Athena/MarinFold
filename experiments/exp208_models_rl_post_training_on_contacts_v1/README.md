@@ -813,9 +813,33 @@ Four candidate causes, each excluded by a measurement rather than by argument:
   into the engines — after which the two "agree" at 0.08 and generation is dead.
   The ordering (disagree → sync → agree → collapse) is the signature.
 
-The suspect is the FSDP2 path: either its forward is wrong (packing / position ids
-/ attention mask over the 512 padded sequences) or the sharded→full gather that
-feeds the engines is. A single-GPU run with no sharding separates the two.
+**Confirmed: it is the multi-GPU FSDP2 sharding.** Removing sharding and changing
+nothing else fixes it completely:
+
+| | step-0 logprob gap | precision | pred/gt | response length |
+|---|---|---|---|---|
+| 8×A100, `policy_num_gpus_per_node=8` | **1.33 nats** | 0.267 → 0.04 | 1.11 → 0.006 | 483 → 985 (cap) |
+| 1×A100, `policy_num_gpus_per_node=1` | **0.017 nats** | 0.15–0.44, no trend | 0.99–1.31 | 419–573, stable |
+
+The single-GPU gap of 0.0174 nats reproduces the standalone HF-vs-vLLM probe
+(0.0173) to three decimals — with one GPU the trainer and the engines run the same
+model, the sync is harmless, and the policy survives. With eight they do not.
+Precision on the 1-GPU run fluctuates between 0.15 and 0.44 with no trend; at
+8 prompts × 8 samples that is 64 rollouts/step, far too noisy to read as learning.
+The claim here is only that it does not collapse.
+
+So arm S is runnable today at `policy_num_gpus_per_node=1`, and the 8-GPU
+configuration must not be used until the sharding path is fixed — a sharded run
+looks superficially fine (it trains, it logs, it reports a falling reward) while
+generating from a destroyed policy. Throughput can be recovered without sharding
+by setting `colocate_all=False` and giving the spare GPUs to inference engines.
+
+Worth noting what made this findable. Reward and response length alone were
+consistent with a plausible and completely wrong story (length-gaming);
+`contacts/pred_per_gt` is what separated "emits more" from "emits none", and
+`rollout_train_logprobs_abs_diff_mean` is what pointed at the sync. Neither was in
+the original metric set, and the zero-LR control is what turned a hypothesis into
+an exclusion.
 
 `err_decay` remains theoretically dubious for the reason first suspected — the k-th
 error in a section costs `p̄·δ^k`, a convergent series bounded near `p̄/(1−δ)`, while
