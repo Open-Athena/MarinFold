@@ -1,0 +1,35 @@
+[project]
+name = "exp218-evals-proteingym-zero-shot-fitness"
+version = "0.1.0"
+description = "Score contacts-v1-exp199-1.5B on the ProteinGym v1.3 zero-shot DMS substitution benchmark by reading its any-order amino-acid conditional (issue #218). Local-GPU (HF transformers)."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold[transformers]",  # sequence_likelihood readout + torch/accelerate
+    "transformers>=4.51,<5",    # Qwen3 support; <5 so the levanter llama3 rope config loads
+    "torch>=2.4",
+    "accelerate>=0.30",
+    "huggingface_hub>=0.24",
+    "pandas>=2.0",
+    "numpy",
+    "scipy",                    # spearmanr
+    "requests",
+    "tqdm",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+# ESM-2 650M, run through our own scoring + aggregation code as a pipeline
+# validation (it must reproduce ProteinGym's published 0.414).
+esm = ["fair-esm>=2.0"]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]

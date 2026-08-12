@@ -189,6 +189,59 @@ class TransformersBackend:
                 )
         return out
 
+    def teacher_forced_target_probs(
+        self,
+        token_ids_batch: list[list[int]],
+        target_token_ids: list[int],
+        *,
+        batch_size: int | None = None,
+    ) -> np.ndarray:
+        n_targets = len(target_token_ids)
+        if not token_ids_batch:
+            return np.zeros((0, 0, n_targets), dtype=np.float32)
+
+        lengths = {len(row) for row in token_ids_batch}
+        if len(lengths) != 1:
+            raise ValueError(
+                "teacher_forced_target_probs requires equal-length rows in a "
+                f"single call; got lengths {sorted(lengths)}."
+            )
+        seq_len = lengths.pop()
+        if seq_len == 0:
+            raise ValueError(
+                "teacher_forced_target_probs requires rows of length >= 1."
+            )
+
+        # Peak memory is the (rows, T, vocab) logits tensor, not the KV
+        # cache — the whole point is that there is no cache to keep. Default
+        # small and let callers raise it.
+        rows_per_pass = batch_size if batch_size is not None else 8
+        if rows_per_pass < 1:
+            raise ValueError(f"batch_size must be >= 1; got {rows_per_pass}.")
+
+        target_ids = torch.tensor(
+            target_token_ids, dtype=torch.long, device=self._device
+        )
+        out = np.empty(
+            (len(token_ids_batch), seq_len, n_targets), dtype=np.float32
+        )
+        with torch.inference_mode():
+            for start in range(0, len(token_ids_batch), rows_per_pass):
+                chunk = token_ids_batch[start : start + rows_per_pass]
+                input_ids = torch.tensor(
+                    chunk, dtype=torch.long, device=self._device
+                )
+                logits = self._model(input_ids=input_ids, use_cache=False).logits
+                probs = torch.softmax(logits.float(), dim=-1)
+                target_probs = probs.index_select(dim=-1, index=target_ids)
+                out[start : start + len(chunk)] = (
+                    target_probs.detach()
+                    .cpu()
+                    .numpy()
+                    .astype(np.float32, copy=False)
+                )
+        return out
+
     def sample_completions(
         self,
         prefix_token_ids_batch: list[list[int]],
