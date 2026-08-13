@@ -546,6 +546,17 @@ longer separate them. Two months ago the same comparison read 0.029 vs 0.603.
 The MSA-informed baseline (0.812) and ESMFold2 (0.786) are untouched by any of
 this, and that is where the remaining distance is.
 
+> **Qualify this one.** [#213](https://github.com/Open-Athena/MarinFold/issues/213)
+> stratified the same 554 proteins by sequence identity to #199's training
+> corpora and found the Protenix-v2 single-seq parity is **homology-dependent**:
+> MarinFold leads by +0.13 on the 323 proteins with a training homolog and
+> trails by −0.17 on the 231 without one (difference of differences −0.303
+> [−0.346, −0.259]). The tie above is real for this eval set as a whole; it
+> does not hold on proteins unlike our training data. Notably the effect is
+> specific to Protenix-SS — the ESMFold2 and MSA-Protenix gaps do not widen —
+> so it reads more as Protenix-SS being strong on novel folds than as leakage.
+> See `experiments/exp213_evals_train_sequence_overlap_audit/`.
+
 Three things this cannot settle. **#155 and #199 both add ESM-Atlas and were
 never run against each other** (0.554 vs 0.587, different data, initialisation
 and budget). **Whether AA augmentation composes with the ESM-Atlas mixture** is
