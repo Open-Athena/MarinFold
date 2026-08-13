@@ -914,4 +914,49 @@ claiming a fixed penalty would make silence optimal, but the penalty is already
 
 ## Conclusion
 
-_(Pending.)_
+**Neither reward beat the warm start on consensus R-precision, and the dense one
+actively hurt.** Full write-ups: [ARM_S_RESULTS.md](ARM_S_RESULTS.md),
+[ARM_D_RESULTS.md](ARM_D_RESULTS.md), [VOTE_COVERAGE.md](VOTE_COVERAGE.md),
+[ERR_DECAY_ANALYSIS.md](ERR_DECAY_ANALYSIS.md).
+
+| checkpoint | R-precision (all) | Δ vs warm start | AUC | vote coverage |
+|---|---|---|---|---|
+| baseline exp199 | **0.6111** | — | **0.9487** | 2267 pairs |
+| arm S step 40 (its peak) | 0.6087 | −0.0023 (p = 0.12) | 0.9436 | −12.8% |
+| arm S step 125 | 0.5898 | −0.0213 (p = 5.7e-19) | 0.8977 | **−52.9%** |
+| arm D step 60 | 0.6099 | −0.0012 (p = 0.39) | 0.9481 | −3.5% |
+
+Four things this experiment established, in rough order of how much they should
+change what anyone does next:
+
+1. **A per-rollout objective is the wrong target for a consensus metric.** Arm S
+   doubled single-rollout precision (0.252 → 0.473) and *lost* 0.021 R-precision
+   and 0.051 AUC, because it became selective and halved the number of distinct
+   pairs receiving any vote. Consensus scoring cannot rank a pair that never gets
+   emitted. On paired within-protein data, ρ(Δcoverage, ΔAUC) = **+0.781**
+   (p = 6e-115). AUC absorbs almost all of the damage while R-precision hides it,
+   because R-precision reads only the top R — where the surviving contacts really
+   are better.
+2. **A document-level F1 reward is the safe version of the same idea, and it is
+   not enough.** Arm D held coverage (−3.5%), moved precision and recall together,
+   never triggered the collapse guard, and finished statistically indistinguishable
+   from where it started. Safety was the hypothesis; improvement was not delivered.
+3. **Two reward bugs, both found by measurement rather than review.** `err_decay`
+   at 0.5 made the k-th error cost `p̄·δ^k` — a median of *exactly zero* for the
+   next wrong contact against +0.745 for a correct one, i.e. no baseline at all.
+   And `p̄` was an unweighted mean over rollouts of per-rollout precision ratios
+   rather than the count-weighted aggregate, so it drifted above true precision
+   (0.5501 vs 0.4733) and paid the policy to go quiet. Both fixed.
+4. **SkyRL's FSDP2 policy sharding silently destroys the policy** at any shard
+   count, via a weight sync that pushes a divergent copy into the inference
+   engines. Every run here is unsharded for that reason.
+
+The open question is the one arm B was specified for and which was never run: an
+objective computed over the **group** of rollouts (the leave-one-out consensus
+marginal) rather than over each rollout independently. Phase 0 measured its
+correlation with per-rollout precision at ρ = 0.22, so it is not precision in
+disguise — it is the only term in the design that targets the vote distribution the
+metric is actually built on. It is implemented and tested. Before running it,
+enlarge the prompt pool: both arms peak around step 40 of a single epoch over
+2,000 prompts and decline after, which is the shape of an exhausted pool rather
+than of either reward.
