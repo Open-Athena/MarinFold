@@ -1,0 +1,14 @@
+{
+  "tier": "A",
+  "rule": "identity >= 30% over >= 50% qcov, or E <= 0.001",
+  "sensitivity": "7.5",
+  "report_evalue_ceiling": 10.0,
+  "queries": {
+    "n": 776,
+    "sha256": "e290bf2d3183bf0e7ad26db3b4cdbedeaa889eac577c4500571899298a62a5ac"
+  },
+  "pdb_corpus_sequences": 41647,
+  "dropped_by_arm": {
+    "pdb": 2254
+  }
+}

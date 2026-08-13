@@ -1,0 +1,29 @@
+[project]
+name = "exp230-models-contacts-v1-multi-from-exp199"
+version = "0.1.0"
+description = "exp230 — fine-tune contacts-v1-exp199-1.5B into a clean <contacts-v1.multi> multi-draft model"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # >=1.5 is required for the `buckets` API (list_bucket_tree /
+    # download_bucket_files); snapshot_download does not see buckets at all.
+    "huggingface_hub>=1.5",
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "pyarrow>=15",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+# Corpus building needs the contacts-v1 document generator. marinfold pins
+# transformers, which pins huggingface_hub<1 — so the bucket staging above and
+# the corpus build must not run in the same interpreter. Stage first, build
+# second, both against local files.
+corpus = [
+    "marinfold",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+
+[tool.setuptools]
+py-modules = []
