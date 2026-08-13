@@ -98,6 +98,34 @@ So "document-level" is not one thing: two document-level rewards here differ by 
 in how far they moved the policy, and both are 50–200× below the dense arms.
 **Neither has been tested at a learning rate that trains the model.**
 
+## 2b. The re-runs at lr 1e-5
+
+Both document-level arms were re-run at **10× the learning rate**, the change their
+KL numbers called for. Both now train.
+
+![arm D](plots/exp208_armD_lr.png)
+
+![arm C](plots/exp208_armC_lr.png)
+
+Faint traces are per-step values; bold is an 11-step rolling mean. Per-step noise
+has sd ~0.056, which is why the block means in earlier drafts of these documents
+looked like structure that was not there — the rolling mean is what makes the
+comparison readable.
+
+| arm | reward | lr 1e-6, last 20 steps | lr 1e-5, last 20 steps |
+|---|---|---|---|
+| D | document F1 | 0.3171 | **0.3967** (at step 78) |
+| C | consensus marginal | 0.3118 | **0.3334** (at step 71) |
+
+**Arm D separates clearly**; arm C's improvement is real but much smaller, matching
+their KL ratios (11.5× vs 2.5× over their originals). Both re-runs raise precision
+*and* recall *and* correct-contacts-per-rollout while `pred/gt` stays near 1.0 —
+the opposite of arm S, which bought precision by emitting less.
+
+These are **training-set** curves on **partial runs**, and both arms have previously
+looked like they were improving on this axis before the held-out number said
+otherwise. Only the 554-protein consensus score settles it.
+
 ## 3. The consensus marginal does real work — inside a dense reward
 
 Arm B (dense + consensus) beats arm S on identical data and LR:
