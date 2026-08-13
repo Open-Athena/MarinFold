@@ -16,6 +16,15 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+# Ground-truth contacts for the 23 eval2 proteins that #89's frozen universe
+# does not cover. Kept out of the base install because it drags in marinfold
+# and the pyconfind extension, which nothing else in this experiment needs —
+# the identity search is pure mmseqs + pandas. Same dependency exp78 declares,
+# so the geometry defaults are the ones contacts_v1 generates with.
+gt = ["marinfold[contacts-v1]", "gemmi>=0.6"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
 
 [dependency-groups]
 dev = []

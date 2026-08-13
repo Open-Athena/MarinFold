@@ -15,6 +15,7 @@ Three things here can be wrong in a way the pipeline would not notice:
 * **Fisher's exact test**, checked against textbook tables, because the
   newer-vs-older verdict rests on it and the counts are small.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -24,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from analyze_survival import fisher_exact_two_sided, survives  # noqa: E402
 from build_eval2 import build as build_eval2  # noqa: E402
+from build_gt_contacts import load_targets as load_gt_targets  # noqa: E402
+from publish_gt_to_hf import merge as merge_universes  # noqa: E402
 from build_query_set import (  # noqa: E402
     MonomerTarget,
     N_FOLDBENCH_MONOMERS,
@@ -271,3 +274,68 @@ def test_eval2_marks_which_proteins_are_scorable_today():
 def test_eval2_carries_the_sequence_and_its_length():
     kept = build_eval2([eval2_row("keep", "0.1")], EVAL2_SEQS, 0.40, keep_boundary=False)
     assert kept[0]["input_seq"] == "MKV" and kept[0]["length"] == 3
+
+
+def test_eval2_marks_ground_truth_once_it_has_been_generated():
+    """`has_ground_truth` is read off the GT files, not the dataset label."""
+    rows = [eval2_row("new", "0.1", dataset="foldbench_rest")]
+    without = build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False)
+    with_gt = build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False,
+                          gt_stems={"new"})
+    assert without[0]["has_ground_truth"] == 0
+    assert with_gt[0]["has_ground_truth"] == 1
+
+
+# --- the ground-truth universe ----------------------------------------------
+
+
+def test_merge_refuses_to_double_count_a_shared_stem(tmp_path):
+    """Concatenating two universes that overlap would weight a protein twice."""
+    record = {"stem": "1abc_A", "dataset": "d", "L": 1, "n_resolved": 1,
+              "gt_chain": "A", "gt_align_identity": 1.0, "resolved": [0],
+              "contacts": [], "strata": {}}
+    a, b = tmp_path / "a.jsonl", tmp_path / "b.jsonl"
+    a.write_text(json.dumps(record) + "\n")
+    b.write_text(json.dumps(record) + "\n")
+    with pytest.raises(SystemExit, match="appear in both universes"):
+        merge_universes(a, b, tmp_path / "out.jsonl")
+
+
+def test_merge_refuses_mismatched_record_schemas(tmp_path):
+    base = {"stem": "1abc_A", "dataset": "d", "L": 1, "n_resolved": 1,
+            "gt_chain": "A", "gt_align_identity": 1.0, "resolved": [0],
+            "contacts": [], "strata": {}}
+    a, b = tmp_path / "a.jsonl", tmp_path / "b.jsonl"
+    a.write_text(json.dumps(base) + "\n")
+    b.write_text(json.dumps({**base, "stem": "2xyz_A", "extra": 1}) + "\n")
+    with pytest.raises(SystemExit, match="schemas differ"):
+        merge_universes(a, b, tmp_path / "out.jsonl")
+
+
+def test_merge_concatenates_disjoint_universes(tmp_path):
+    base = {"stem": "1abc_A", "dataset": "d", "L": 1, "n_resolved": 1,
+            "gt_chain": "A", "gt_align_identity": 1.0, "resolved": [0],
+            "contacts": [], "strata": {}}
+    a, b = tmp_path / "a.jsonl", tmp_path / "b.jsonl"
+    a.write_text(json.dumps(base) + "\n")
+    b.write_text(json.dumps({**base, "stem": "2xyz_A"}) + "\n")
+    stats = merge_universes(a, b, tmp_path / "out.jsonl")
+    assert stats["n_total"] == 2 and stats["n_unique_stems"] == 2
+
+
+def test_load_targets_selects_only_ungrounded_rows_and_the_auth_chain(tmp_path):
+    """The auth id is what gemmi names the chain; FoldBench's may be the label."""
+    eval2 = tmp_path / "eval2.csv"
+    eval2.write_text(
+        "dataset,stem,input_seq,has_ground_truth,best_identity,designed_any\n"
+        "foldbench_rest,8ork_A,MKV,0,0.1,0\n"
+        "cameo_hard,done_A,MKV,1,0.1,0\n"
+    )
+    targets = tmp_path / "targets.csv"
+    targets.write_text(
+        "stem,pdb_id,chain_id,auth_asym_ids\n"
+        "8ork_A,8ork,A,AAA\n"
+    )
+    got = load_gt_targets(eval2, targets)
+    assert [t["stem"] for t in got] == ["8ork_A"]
+    assert got[0]["prefer_chain"] == "AAA"

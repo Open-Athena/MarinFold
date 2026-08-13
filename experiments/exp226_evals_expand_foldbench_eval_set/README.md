@@ -76,6 +76,9 @@ almost all of it the MMseqs2 search.
 | `analyze_survival.py` | **Step 3** — survival counts, designed/natural split, the newer-vs-older test. |
 | `plot_survival.py` | **Step 4** — the four figures. |
 | `build_eval2.py` | **Step 5** — the homology-filtered eval set + its identity annotation. |
+| `build_gt_contacts.py` | **Step 6** — pyconfind ground-truth contacts for the 23 eval2 proteins #89's universe misses. |
+| `validate_gt_against_exp89.py` | **Step 6b** — the control: re-derive #89's own FoldBench-100 records through the new path. |
+| `publish_gt_to_hf.py` | **Step 6c** — merge into the 577-unit universe and publish to the bucket. |
 | `tests/test_expand.py` | Unit tests for chain resolution, the survival predicate and Fisher's exact test. |
 
 ```bash
@@ -267,11 +270,9 @@ columns rather than left in prose:
   confound #213 raised. `designed_any` splits it; the natural subset is **78**
   at 40 % and **61** at 30 %. Any headline computed on pooled eval2 is mostly a
   statement about designed backbones.
-- **23 of the 307 are not scorable yet.** They are #226's net-new FoldBench
-  monomers, which are not in #89's frozen GT universe and have no contacts
-  computed. `has_ground_truth` marks the **284** that run today. Scoring the
-  remaining 23 needs a GT-contact pass (structures + pyconfind), which #226 did
-  not scope.
+- **All 307 are scorable.** 284 come from #89's frozen GT universe; the other
+  23 had no contacts computed, so this experiment computed them — see §7.
+  `has_ground_truth` is read off the GT files rather than assumed.
 
 Threshold semantics: "at or above 40 %" is excluded, matching #213/#226's
 published counts. Exactly one protein sits on the boundary — `6sa6_A` at
@@ -282,6 +283,45 @@ is wanted.
 uv run python build_eval2.py                              # 307 @ <40%
 uv run python build_eval2.py --threshold 0.30 \
     --out data/eval2_strict.csv --out-fasta data/eval2_strict.fasta
+```
+
+### 7. Ground truth for the 23, and the control that validates it
+
+The 23 net-new proteins in eval2 had no ground-truth contacts. They do now
+([`data/gt_universe_eval2_new.jsonl`](data/gt_universe_eval2_new.jsonl)),
+computed with **#89's own `pyconfind_contacts.compute_contacts`** — imported,
+not reimplemented — on RCSB `-assembly1` mmCIFs, the same structure source
+exp12 used for the FoldBench-100. Records are emitted in #89's exact
+`gt_universe.jsonl` schema, so the two files concatenate into a **577-unit**
+universe (575 unique stems).
+
+All 23 come out clean: **alignment identity 1.000 for every one**, resolved/L
+between 0.83 and 1.00 (median 0.94), 202–1046 contacts each.
+
+**The control is what makes them usable.** Running the *new* code path on the
+100 FoldBench proteins #89 already published reproduces **100/100 records
+exactly** — `L`, `n_resolved`, `gt_chain`, `gt_align_identity`, the resolved
+set, and every `(i, j, degree)` contact
+([`data/gt_validation.json`](data/gt_validation.json)). That includes all six
+label-chain entries, where #89 passed FoldBench's label id, silently fell back
+to the longest polymer chain, and landed on the same auth chain this passes
+explicitly (`5sbj_A` → C, `8gmy_A` → D). So the 23 are scored on the same
+definition of "contact" as the 554 and can be pooled with them.
+
+Published to the bucket under `data/contacts-v1-eval2-exp226/`, so a downstream
+eval needs one prefix and no access to this checkout:
+
+```bash
+hf buckets cp hf://buckets/open-athena/MarinFold/data/contacts-v1-eval2-exp226/gt_universe_eval2.jsonl .
+# also there: gt_universe_eval2_new_23.jsonl, eval2_manifest.csv, eval2.fasta
+```
+
+Nothing under #89's prefix was modified. Rebuild with:
+
+```bash
+uv run --extra gt python build_gt_contacts.py          # the 23
+uv run --extra gt python validate_gt_against_exp89.py --n 100   # the control
+uv run python publish_gt_to_hf.py
 ```
 
 ## Conclusion
@@ -308,25 +348,35 @@ uv run python build_eval2.py --threshold 0.30 \
   554 rows exactly, so it is a drop-in replacement for any future eval that
   wants to stratify on training identity — against either arm or both.
 
+- **eval2 is ready to score.** 307 proteins, all with ground truth, published at
+  `data/contacts-v1-eval2-exp226/` on the bucket.
+
 **Not done here:** the **fold-novel** count for the 222. That axis needs a
 Foldseek pass against exp41's AFDB training-representative DB, which lives on a
-Modal volume rather than on this workstation, plus 222 structure downloads —
-real compute beyond this issue's "sequence search plus aggregation" budget. The
-sequence-novel n is what #226 measured; if the fold-novel n matters for the next
-eval, that is a separate short experiment on top of exp41's `query_similarity.py`.
+Modal volume rather than on this workstation — real compute beyond this issue's
+"sequence search plus aggregation" budget. The sequence-novel n is what #226
+measured; if the fold-novel n matters for the next eval, that is a separate
+short experiment on top of exp41's `query_similarity.py`.
+
+Also not done: **no model has been scored on eval2.** This experiment delivers
+the decontaminated set and its ground truth; running a checkpoint over it is the
+`eval-checkpoint` path with `--gt gt_universe_eval2.jsonl`, and the 23 new
+proteins have no predictions from any comparator (Protenix, ESMFold, ESMFold2)
+either — so a like-for-like baseline table over the full 307 needs those runs
+first. The 284 subset is comparable today.
 
 **Recommendation:** add `foldbench_rest` to the eval set as its own stratum
 rather than merging it into `foldbench100` — the two have measurably different
 training-set proximity, and the deposition-date ordering means any future
-"take the first N FoldBench rows" would inherit the same bias. Note also that
-running contact metrics on these 222 requires structures and predictions that do
-not exist yet; this experiment delivers the decontamination table, not scores.
+"take the first N FoldBench rows" would inherit the same bias.
 
 ## Artifacts
 
 | File | Contents |
 | --- | --- |
 | [`data/eval2_manifest.csv`](data/eval2_manifest.csv) · [`eval2.fasta`](data/eval2.fasta) | **eval2** — 307 proteins under 40 % training identity, annotated for a retrospective 30 % cut. |
+| [`data/gt_universe_eval2_new.jsonl`](data/gt_universe_eval2_new.jsonl) · [`eval2_new_gt_manifest.csv`](data/eval2_new_gt_manifest.csv) | Ground-truth contacts for the 23 proteins #89's universe misses. |
+| [`data/gt_validation.json`](data/gt_validation.json) | The 100/100 control reproducing #89's own records through the new path. |
 | [`data/eval_train_identity_expanded.csv`](data/eval_train_identity_expanded.csv) | Per-protein identity table, 776 rows, exp213's schema. |
 | [`data/foldbench_targets.csv`](data/foldbench_targets.csv) | All 334 FoldBench monomers: resolved entity, chain-match axis, source organism, sequence. |
 | [`data/eval_queries_expanded.fasta`](data/eval_queries_expanded.fasta) | The 776 queries (exp213's 554 verbatim + 222). |

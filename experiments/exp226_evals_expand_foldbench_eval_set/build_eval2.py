@@ -23,9 +23,11 @@ than left in prose:
   choice made here — it is what survives a homology filter, and it is the exact
   confound #213 flagged. ``designed_any`` splits it; the natural subset is 78 at
   40 % and 61 at 30 %.
-* **23 of the 307 have no ground-truth contacts yet.** They come from #226's
-  net-new FoldBench monomers, which are not in #89's frozen GT universe.
-  ``has_ground_truth`` marks the 284 that are scorable today.
+* **Every protein is scorable.** 284 come from #89's frozen GT universe; the
+  other 23 are #226's net-new FoldBench monomers, whose contacts
+  :mod:`build_gt_contacts` computes through a path proven bit-identical to
+  #89's on all 100 FoldBench controls. ``has_ground_truth`` is derived from the
+  GT files rather than assumed, so it reads 0 until that step has run.
 
     uv run python build_eval2.py
     uv run python build_eval2.py --threshold 0.30 --out data/eval2_strict.csv
@@ -84,8 +86,24 @@ def read_fasta(path: Path) -> dict[str, str]:
     return records
 
 
+def read_gt_stems(paths: list[Path]) -> set[str]:
+    """Stems present in any `gt_universe.jsonl`-shaped file that exists.
+
+    Derived rather than assumed so `has_ground_truth` cannot drift: it is 0
+    before :mod:`build_gt_contacts` runs and 1 after, with no edit here.
+    """
+    stems: set[str] = set()
+    for path in paths:
+        if not path.exists():
+            continue
+        for line in path.read_text().splitlines():
+            if line.strip():
+                stems.add(json.loads(line)["stem"])
+    return stems
+
+
 def build(rows: list[dict], sequences: dict[str, str], threshold: float,
-          keep_boundary: bool) -> list[dict]:
+          keep_boundary: bool, gt_stems: set[str] | None = None) -> list[dict]:
     """Filter to the homology-free set and annotate every survivor."""
     def keep(row: dict) -> bool:
         if survives(row, threshold):
@@ -115,9 +133,12 @@ def build(rows: list[dict], sequences: dict[str, str], threshold: float,
             "synthetic": row["synthetic"],
             "designed_any": row["designed_any"],
             "source_organism": row["source_names"],
-            # #89's frozen GT universe is the 554; #226's net-new monomers have
-            # no contacts computed yet, so they are annotated but not scorable.
-            "has_ground_truth": int(row["dataset"] != DATASET_NEW),
+            # #89's frozen GT universe covers the 554; the net-new monomers are
+            # covered only once build_gt_contacts.py has run, so this is read
+            # off the GT files rather than inferred from the dataset label.
+            "has_ground_truth": int(row["dataset"] != DATASET_NEW
+                                    or (gt_stems is not None
+                                        and row["stem"] in gt_stems)),
             **{c: row[c] for c in ("neff_tier", "fold_verdict", "seq_leakage",
                                    "msa_neff")},
         }
@@ -178,11 +199,17 @@ def main() -> int:
                          "exactly is dropped (default, matching #213/#226's "
                          "published counts) or kept. Affects exactly one "
                          "protein at 0.40: 6sa6_A.")
+    ap.add_argument("--new-gt", type=Path, nargs="*",
+                    default=[DATA / "gt_universe_eval2_new.jsonl"],
+                    help="gt_universe.jsonl files covering proteins outside #89's "
+                         "554; missing files are simply not counted")
     args = ap.parse_args()
 
     rows = load_rows(args.table, args.targets)
     sequences = read_fasta(args.fasta)
-    entries = build(rows, sequences, args.threshold, args.boundary == "keep")
+    gt_stems = read_gt_stems(args.new_gt)
+    entries = build(rows, sequences, args.threshold, args.boundary == "keep",
+                    gt_stems=gt_stems)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="") as fh:

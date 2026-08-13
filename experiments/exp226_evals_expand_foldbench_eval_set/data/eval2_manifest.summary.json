@@ -3,8 +3,8 @@
   "n": 307,
   "n_designed": 229,
   "n_natural": 78,
-  "n_with_ground_truth": 284,
-  "n_needing_ground_truth": 23,
+  "n_with_ground_truth": 307,
+  "n_needing_ground_truth": 0,
   "by_dataset": {
     "cameo_hard": 24,
     "casp_fm": 19,
@@ -16,7 +16,7 @@
     "<30%": {
       "n": 275,
       "n_natural": 61,
-      "n_with_ground_truth": 264
+      "n_with_ground_truth": 275
     },
     "<40% ungated": {
       "n": 289,

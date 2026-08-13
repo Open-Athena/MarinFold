@@ -119,13 +119,31 @@ compute.
 ESM-Atlas alone, and `best_identity_ungated` is the paranoid bound — 18 of the
 307 clear 40% only because of the 50% coverage gate.
 
-Two properties constrain what eval2 can measure, and both are columns rather
-than caveats in prose. **75% of it (229 of 307) is de novo designed protein** —
-not a choice made here, but what survives a homology filter, and exactly the
-confound #213 raised; `designed_any` splits it and the natural subset is **78**
-at 40% and **61** at 30%. And **23 of the 307 are not scorable yet**: they are
-the net-new FoldBench monomers, absent from #89's frozen GT universe, so
-`has_ground_truth` marks the **284** that run today.
+One property constrains what eval2 can measure, and it is a column rather than a
+caveat in prose. **75% of it (229 of 307) is de novo designed protein** — not a
+choice made here, but what survives a homology filter, and exactly the confound
+#213 raised; `designed_any` splits it and the natural subset is **78** at 40%
+and **61** at 30%.
+
+## Ground truth for all 307
+
+23 of eval2's proteins were outside #89's frozen GT universe and so unscorable.
+Their contacts are now computed with **#89's own `compute_contacts`** —
+imported, not reimplemented — on the RCSB `-assembly1` mmCIFs exp12 used for the
+FoldBench-100, emitted in #89's exact schema. The two files concatenate into a
+**577-unit** universe. All 23 come out clean: alignment identity **1.000** for
+every one, resolved/L 0.83–1.00, 202–1046 contacts each.
+
+**The control is what makes them usable.** Running the *new* code path on the
+100 FoldBench proteins #89 already published reproduces **100/100 records
+exactly** — L, n_resolved, chain, alignment identity, the resolved set and every
+(i, j, degree) contact. That includes all six label-chain entries, where #89
+passed FoldBench's label id and fell back to the longest polymer chain, landing
+on the same auth chain this now passes explicitly. So the 23 are scored on the
+same definition of "contact" as the 554 and can be pooled with them.
+
+Published to the bucket at `data/contacts-v1-eval2-exp226/`; nothing under #89's
+prefix was touched.
 
 ## Verdict
 
@@ -145,5 +163,8 @@ proximity and any future "first N FoldBench rows" would inherit the same
 deposition-date bias.
 
 Not measured here: the fold-novel count for the 222, which needs a Foldseek
-pass against exp41's Modal-hosted AFDB representative DB plus 222 structure
-downloads — beyond this issue's sequence-search budget.
+pass against exp41's Modal-hosted AFDB representative DB — beyond this issue's
+sequence-search budget. And **no model has been scored on eval2 yet**: this
+delivers the decontaminated set plus its ground truth, and the 23 new proteins
+have no predictions from any comparator either, so a like-for-like baseline over
+the full 307 needs those runs first. The 284 subset is comparable today.
