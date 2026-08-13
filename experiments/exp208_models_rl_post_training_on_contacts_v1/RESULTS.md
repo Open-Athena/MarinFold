@@ -2,8 +2,19 @@
 
 **Issue [#208](https://github.com/Open-Athena/MarinFold/issues/208) · five arms × 125 steps · 554-protein held-out eval · 8×A100**
 
-**The one-paragraph version.** Every arm that actually trained the model made it
-**worse**, and every arm that left the metric intact did so by not training. Raising
+**The one-paragraph version.** Nine runs across five reward designs. Eight made the
+model worse or left it unchanged; the ninth — the leave-one-out consensus marginal
+at lr 4e-5 — is the first to **significantly beat the warm start** (AUC +0.0032,
+p = 4e-05, better on 61% of 554 proteins) while holding R-precision flat. The
+mechanism running through all of it is **vote diversity**: the eval is a consensus
+over 100 rollouts, and a reward that makes each rollout individually better makes
+the hundred redundant. Every arm containing the dense per-contact term collapsed
+coverage 60–65%; the consensus marginal, which pays a rollout for what it *adds*
+to the group, held it at −6.4% and raised total votes 23%.
+
+The older framing below — that any sufficient policy movement destroys diversity —
+was refuted by that last run and is kept, marked, because the refutation is the
+most useful thing in this document. Raising
 the learning rate 10× on the two document-level arms confirmed this rather than
 overturning it: they finally moved, and the one that moved most (arm D v2, terminal
 KL 0.0836) went from −0.0001 to **−0.0083** — while looking excellent on every
@@ -240,6 +251,43 @@ KL ≈ 0.098 from arm C's own scaling KL ∝ lr^1.53). Two outcomes, both worth 
   scaling it up is the right direction.
 
 That run is in progress.
+
+## 3c. Arm C at arm S's step size: the first thing to beat baseline
+
+The decisive run above — arm C's reward at lr 4e-5, chosen to reach arm S's
+terminal KL — overshot to **KL 0.168**, the largest policy movement of any arm, and
+did *not* collapse:
+
+| arm | terminal KL | R-precision | Δ base | AUC | Δ base | union pairs | total votes | votes/pair |
+|---|---|---|---|---|---|---|---|---|
+| baseline `exp199` | — | **0.6111** | — | 0.9487 | — | 2267 | 16,191 | 7.14 |
+| arm C v2 (lr 1e-5) | 0.0123 | 0.6112 | +0.0001 (p = 0.95) | 0.9445 | −0.0043 | −24.6% | 15,668 | 9.17 |
+| **arm C v3 (lr 4e-5)** | **0.168** | 0.6099 | −0.0012 (p = 0.53) | **0.9519** | **+0.0032** (p = 4e-05) | **−6.4%** | **19,871** | 9.36 |
+| arm D v2 (lr 1e-5) | 0.0836 | 0.6027 | −0.0083 | 0.9184 | −0.0303 | −61.0% | 14,519 | 16.41 |
+| arm S (dense) | 0.0976 | 0.5898 | −0.0213 | 0.8976 | −0.0511 | −65.2% | 8,438 | 10.71 |
+
+**AUC +0.0032, p = 4e-05, better on 61% of proteins — the first statistically
+significant improvement over the warm start anywhere in this experiment.**
+R-precision is unchanged (−0.0012, p = 0.53).
+
+**This refutes §3b.** The R² = 0.95 fit predicted ~−67% coverage at KL 0.168; the
+measured value is −6.4%, and total votes went *up* 23% (16,191 → 19,871). The fit
+was confounded: every high-KL point in it contained the stepwise term, so what
+looked like "distance moved destroys diversity" was really "the stepwise term
+destroys diversity, and only the stepwise arms had moved far." The consensus
+marginal differs in kind, not merely in degree.
+
+Its training trace shows the same thing from the inside — `pred/gt` **rises**
+(1.16 → 1.21) and contacts per rollout climb 153.6 → 162.8, where every other arm
+at every learning rate shrank. A reward that pays a rollout for what it *adds* to
+the group's vote makes the policy emit more, and more varied, candidates.
+
+The honest reading: this moves the ranking metric (AUC) and not the headline one
+(R-precision). AUC rewards getting the whole candidate ordering right, which is
+what better vote coverage buys; R-precision reads only the top R, where the extra
+coverage does not yet help. Whether more training converts the AUC gain into an
+R-precision gain is exactly the open question — so the next run is this
+configuration on **10,000 prompts (625 steps, 5×)**, checkpointing every 50 steps.
 
 ## 4. Four instrumentation failures, none visible in the eval numbers
 
