@@ -109,13 +109,15 @@ class DenseContactsGenerator(SkyRLGymGenerator):
     def __init__(self, *args, p_bar: float = 0.45, err_decay: float = 0.5,
                  precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None,
                  doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
-                 collapse_ratio: float = 0.2, reward_mode: str = "dense", **kwargs):
+                 collapse_ratio: float = 0.2, reward_mode: str = "dense",
+                 p_bar_count_weighted: bool = True, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in ("dense", "document_f1"):
             raise ValueError(f"reward_mode must be 'dense' or 'document_f1', got {reward_mode!r}")
         super().__init__(*args, **kwargs)
         self.reward_mode = reward_mode
+        self.p_bar_count_weighted = bool(p_bar_count_weighted)
         self.collapse_ratio = float(collapse_ratio)
         self.doc_term = doc_term
         self.lam_step = float(lam_step)
@@ -222,7 +224,22 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         correct = reward.diagnostics.get("n_contacts_correct", 0.0)
         if scored > 0:      # EMA update AFTER scoring, so one step shares a baseline
             observed = correct / scored
-            self.p_bar = self.precision_ema_decay * self.p_bar + (1 - self.precision_ema_decay) * observed
+            if self.p_bar_count_weighted:
+                # Weight the update by how many contacts the rollout actually
+                # emitted, i.e. run the EMA per CONTACT rather than per rollout.
+                #
+                # The unweighted form is what arm S ran, and it drifts UP: a
+                # 3-contact rollout that got 2 right moves p_bar as hard as a
+                # 200-contact rollout at 0.25, so p_bar estimates the mean of
+                # per-rollout ratios instead of the count-weighted precision the
+                # reward's zero point needs. Measured over 125 steps, p_bar ended
+                # at 0.5501 against a true 0.4733, which makes every contact
+                # net-negative and shrinks the policy -- and shorter rollouts have
+                # noisier, higher ratios, so the drift feeds itself.
+                w = 1.0 - self.precision_ema_decay ** scored
+            else:
+                w = 1.0 - self.precision_ema_decay
+            self.p_bar = (1.0 - w) * self.p_bar + w * observed
 
         d = self._diag
         d["n_rollouts"] = d.get("n_rollouts", 0.0) + 1.0

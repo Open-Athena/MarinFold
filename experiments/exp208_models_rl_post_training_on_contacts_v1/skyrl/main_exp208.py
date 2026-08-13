@@ -97,6 +97,11 @@ class Exp208Config(SkyRLTrainConfig):
     #                   contacts_dense refuses it by design, since a constant
     #                   per-token advantage is exactly the failure it guards.
     reward_mode: str = "dense"
+    # Weight p_bar's EMA by each rollout's contact count. False reproduces arm S,
+    # whose p_bar drifted to 0.5501 against a true precision of 0.4733 and shrank
+    # the policy; see ARM_S_RESULTS.md. Irrelevant to reward_mode=document_f1,
+    # which has no p_bar at all.
+    p_bar_count_weighted: bool = True
 
 
 def register_everything(vocab_size: Optional[int] = None) -> None:
@@ -116,7 +121,8 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
 
 def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
               doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
-              collapse_ratio: float = 0.2, reward_mode: str = "dense"):
+              collapse_ratio: float = 0.2, reward_mode: str = "dense",
+              p_bar_count_weighted: bool = True):
     """A ``BasePPOExp`` whose generator emits exp208's dense per-contact reward."""
     from skyrl.backends.skyrl_train.inference_servers.utils import resolve_policy_model_name
     from skyrl.train.entrypoints.main_base import BasePPOExp
@@ -139,6 +145,7 @@ def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
                 lam_doc=lam_doc,
                 collapse_ratio=collapse_ratio,
                 reward_mode=reward_mode,
+                p_bar_count_weighted=p_bar_count_weighted,
             )
 
     return Exp208PPOExp(cfg)
@@ -185,7 +192,8 @@ def skyrl_entrypoint(cfg: Exp208Config):
     register_everything(vocab_size=cfg.vocab_size)
     build_exp(cfg, p_bar=cfg.p_bar, err_decay=cfg.err_decay, vocab_size=cfg.vocab_size,
               doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc,
-              collapse_ratio=cfg.collapse_ratio, reward_mode=cfg.reward_mode).run()
+              collapse_ratio=cfg.collapse_ratio, reward_mode=cfg.reward_mode,
+              p_bar_count_weighted=cfg.p_bar_count_weighted).run()
 
 
 def main() -> int:
