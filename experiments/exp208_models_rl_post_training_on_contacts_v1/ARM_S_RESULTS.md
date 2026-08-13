@@ -2,7 +2,14 @@
 
 **Issue #208 · 125 steps, 2,000 AFDB prompts × 16 rollouts, unsharded on 8×A100**
 
-**Summary.** The dense per-contact reward works — for about 50 steps. While the
+**Summary.** The dense per-contact reward drives real learning for about 50 steps
+and then reverses, and the finished checkpoint is **worse than its warm start on
+the metric of record**: consensus R-precision 0.5898 vs 0.6111 (paired
+p = 5.7e-19), AUC 0.8977 vs 0.9487 (worse on 98.4% of proteins). Single-rollout
+precision nearly doubled over the same run, 0.252 → 0.473. Both statements are
+true, which is the point of this document.
+
+In more detail. While the
 p̄ baseline sat below the policy's true precision, the run improved on both axes
 at once: precision 0.275 → 0.322 *and* correct contacts per rollout 38.8 → 46.3.
 Then p̄ crossed above precision, every contact became net-negative, and the policy
@@ -76,7 +83,37 @@ run.
 
 ## 4. Held-out evaluation
 
-<!--EVAL-->
+**Arm S is worse on the metric of record**, despite doubling single-rollout
+precision. Consensus R-precision at n=100 rollouts on the 554-protein eval set,
+generated with exp82's `score_rollout_worker.py` and scored with the published
+`build_rollout_rows.py` (exp89's metric implementation, not a re-derivation):
+
+| model | R-precision (all) | AUC (all) | R (long) | R (short) |
+|---|---|---|---|---|
+| baseline exp199 | **0.6111** | **0.9487** | 0.5637 | 0.6814 |
+| arm S step 125 | 0.5898 | 0.8977 | 0.5354 | 0.6649 |
+| Δ | **−0.0213** | **−0.0511** | −0.0283 | −0.0165 |
+
+The baseline's 0.6111 reproduces the 0.6103 on record for this checkpoint under
+exp82's worker, which is the check that the pipeline above is measuring the right
+thing.
+
+Paired over the 554 proteins:
+
+| metric | mean Δ | median Δ | t | p | arm S better on |
+|---|---|---|---|---|---|
+| R-precision | −0.0213 | −0.0180 | −9.23 | 5.7e-19 | 18.8% of proteins |
+| AUC | −0.0511 | −0.0347 | −23.53 | 2.4e-85 | **1.4%** of proteins |
+
+The AUC column is the one that explains the mechanism. AUC ranks *every* candidate
+pair, and arm S is worse on 98.4% of proteins — nearly universal, not a
+distributional shift. A pair the policy never emits gets zero votes and cannot be
+ranked at all, so shrinking the output degrades the ranking everywhere at once.
+R-precision falls less (−0.021) because it only looks at the top R, where the
+surviving contacts really are more precise.
+
+This is the precision/recall trade the plan warned about, and it is not a wash:
+paid out on the metric the experiment is judged by, it is a loss.
 
 ## 5. What this says about #208's question
 
