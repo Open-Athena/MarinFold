@@ -187,30 +187,53 @@ def build_plain(doc_id, seq, gt_pairs):
                      n_tokens=len(doc.split()), draft_f1_mean=float("nan"))
 
 
-def load_rollouts(path: Path, log) -> dict[str, tuple[list, list]]:
-    """``target_id -> (list of flat pred arrays, list of f1)``."""
-    files = sorted(path.glob("*.parquet")) if path.is_dir() else [path]
+def load_rollouts(path, log) -> dict[str, tuple[list, list]]:
+    """``target_id -> (flat pred arrays, per-rollout f1)``, local dir or ``gs://``.
+
+    Predictions are kept as numpy int16 arrays rather than Python lists: at
+    2.5 M rollouts of ~300 values each, the list-of-int representation costs
+    several GB of pure object overhead for data that is never indexed
+    element-wise.
+    """
+    uri = str(path)
+    if "://" in uri:
+        import fsspec
+
+        fs = fsspec.core.url_to_fs(uri)[0]
+        scheme = uri.split("://", 1)[0]
+        files = [p if "://" in p else f"{scheme}://{p}"
+                 for p in sorted(fs.glob(f"{uri.rstrip('/')}/*.parquet"))]
+        opener = lambda f: fs.open(f, "rb")  # noqa: E731
+    else:
+        local = Path(uri)
+        files = sorted(local.glob("*.parquet")) if local.is_dir() else [local]
+        opener = lambda f: open(f, "rb")  # noqa: E731
     if not files:
-        raise SystemExit(f"no rollout parquets under {path}")
+        raise SystemExit(f"no rollout parquets under {uri}")
+
     by_target: dict[str, tuple[list, list]] = {}
     n = 0
     for f in files:
-        t = pq.read_table(f, columns=["target_id", "pred", "f1"])
-        for tid, pred, f1 in zip(t.column("target_id").to_pylist(),
-                                 t.column("pred").to_pylist(),
-                                 t.column("f1").to_pylist()):
+        with opener(f) as fh:
+            t = pq.read_table(fh, columns=["target_id", "pred", "f1"])
+        tids = t.column("target_id").to_pylist()
+        f1s_all = t.column("f1").to_pylist()
+        preds_col = t.column("pred")
+        for k, (tid, f1) in enumerate(zip(tids, f1s_all)):
             preds, f1s = by_target.setdefault(tid, ([], []))
-            preds.append(pred)
+            preds.append(np.asarray(preds_col[k].as_py(), dtype=np.int16))
             f1s.append(f1)
             n += 1
-    log(f"[rollouts] {n:,} rollouts over {len(by_target):,} proteins from {len(files)} file(s)")
+    log(f"[rollouts] {n:,} rollouts over {len(by_target):,} proteins "
+        f"from {len(files)} file(s)")
     return by_target
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", type=Path, required=True)
-    ap.add_argument("--rollouts", type=Path, required=True)
+    ap.add_argument("--rollouts", required=True,
+                    help="local dir or gs:// prefix of the rollout parquets")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--docs-per-protein", type=int, default=3)
     ap.add_argument("--kmax", type=int, default=16)
