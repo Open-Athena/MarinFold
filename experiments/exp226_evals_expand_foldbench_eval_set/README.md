@@ -399,7 +399,10 @@ is not retrieval.
   wants to stratify on training identity — against either arm or both.
 
 - **eval2 is ready to score.** 307 proteins, all with ground truth, published at
-  `data/contacts-v1-eval2-exp226/` on the bucket.
+  `data/contacts-v1-eval2-exp226/` on the bucket. The
+  [`eval-checkpoint`](../../.claude/skills/eval-checkpoint/SKILL.md) skill now
+  defaults to the 577-unit universe, which yields the legacy 554 numbers and
+  eval2 from one run.
 
 **Not done here:** the **fold-novel** count for the 222. That axis needs a
 Foldseek pass against exp41's AFDB training-representative DB, which lives on a
