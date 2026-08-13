@@ -922,9 +922,10 @@ actively hurt.** Full write-ups: [ARM_S_RESULTS.md](ARM_S_RESULTS.md),
 | checkpoint | R-precision (all) | Δ vs warm start | AUC | vote coverage |
 |---|---|---|---|---|
 | baseline exp199 | **0.6111** | — | **0.9487** | 2267 pairs |
-| arm S step 40 (its peak) | 0.6087 | −0.0023 (p = 0.12) | 0.9436 | −12.8% |
-| arm S step 125 | 0.5898 | −0.0213 (p = 5.7e-19) | 0.8977 | **−52.9%** |
-| arm D step 60 | 0.6099 | −0.0012 (p = 0.39) | 0.9481 | −3.5% |
+| arm S step 40 (its peak) | 0.6087 | −0.0023 (p = 0.12) | 0.9436 | −15.8% |
+| arm S step 125 | 0.5898 | −0.0213 (p = 5.7e-19) | 0.8977 | **−65.2%** |
+| arm D step 60 | 0.6099 | −0.0012 (p = 0.39) | 0.9481 | −4.6% |
+| **arm D step 125** | **0.6109** | **−0.0001 (p = 0.93)** | 0.9467 | −11.6% |
 
 **The pre-registered predictions above were confirmed, including the mechanism.**
 Prediction 1 ("per-rollout precision rises in every arm with a stepwise term"):
@@ -948,9 +949,11 @@ change what anyone does next:
    because R-precision reads only the top R — where the surviving contacts really
    are better.
 2. **A document-level F1 reward is the safe version of the same idea, and it is
-   not enough.** Arm D held coverage (−3.5%), moved precision and recall together,
-   never triggered the collapse guard, and finished statistically indistinguishable
-   from where it started. Safety was the hypothesis; improvement was not delivered.
+   not enough.** Arm D moved precision and recall together, never triggered the
+   collapse guard, and finished at **−0.0001 (p = 0.93)** — statistically identical
+   to its warm start. A full epoch, 125 steps, 32,000 rollouts, and the reported
+   metric moved by one ten-thousandth. Safety was the hypothesis; improvement was
+   not delivered.
 3. **Two reward bugs, both found by measurement rather than review.** `err_decay`
    at 0.5 made the k-th error cost `p̄·δ^k` — a median of *exactly zero* for the
    next wrong contact against +0.745 for a correct one, i.e. no baseline at all.
