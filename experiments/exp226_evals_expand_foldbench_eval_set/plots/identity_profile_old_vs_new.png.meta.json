@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "Left: cumulative distribution of best training-set identity; proteins with no covered hit are plotted at 0. The new curve sits to the right of the old one below 40 %, which is the shortfall against the extrapolation. Right: the length profiles match, so length is not the explanation."
+}

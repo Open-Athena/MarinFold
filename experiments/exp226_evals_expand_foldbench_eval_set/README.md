@@ -1,0 +1,252 @@
+---
+marinfold_experiment:
+  issue: 226
+  title: 'exp: expand the contact eval set with the other 234 FoldBench monomers, and measure homology-free survival at 40% / 30% id'
+  kind: evals
+  branch: claude/github-issue-226-6aef7a
+---
+
+# exp: expand the contact eval set with the other 234 FoldBench monomers, and measure homology-free survival at 40% / 30% id
+
+**Issue:** [#226](https://github.com/Open-Athena/MarinFold/issues/226) · **Kind:** `evals` · **Branch:** `claude/github-issue-226-6aef7a`
+
+## Question
+
+**If we grow the contact eval set with the FoldBench monomers we never used, how
+many of the expanded set survive a sequence-identity filter against our training
+data — at 40 % and at 30 %?**
+
+[#213](https://github.com/Open-Athena/MarinFold/issues/213) closed with a hard
+limit: its homology-free subsets are mostly de novo designs, and the *natural*
+half bottoms out around n≈50. That is too thin to **measure** novel-protein
+performance rather than bound it. FoldBench is the obvious place to look for
+more natural proteins, because we have only ever used **100 of its 334**
+monomers.
+
+## Hypothesis
+
+Extrapolating the FoldBench-100 survival rate to the rest predicted **~33
+survivors at <40 %** and **~24 at <30 %**, taking the decontaminated natural
+count from 58 to roughly 91 (+57 %).
+
+The extrapolation's own caveat was the thing worth testing: our 100 are the
+**first 100 rows** of a roughly PDB-ID-sorted file — the *oldest-deposited*
+entries, not a random sample.
+
+## Approach
+
+Reuse exp213's 70.9 M-sequence MMseqs2 target database (4,129,682 AFDB +
+66,759,922 ESM-Atlas training sequences — the corpora
+`contacts-v1-exp199-1.5B` was trained on). Append the net-new FoldBench
+monomers to exp213's 554 queries, search the union, and reduce with exp213's
+rule verbatim: a hit counts toward the identity axis only if `evalue <= 1e-3`
+**and** `qcov >= 0.50`; the reported identity is the max `fident` over those
+hits.
+
+Set construction, all derived and then checked rather than copied from the
+issue:
+
+- FoldBench `targets/monomer_protein.csv` at exp12's pinned commit
+  [`4273f687`](https://github.com/BEAM-Labs/FoldBench/tree/4273f6877d82bd0b2fa476d1b2f34d121cbccc70),
+  sha256 `43c2a5e9…` — **334 rows**, verified.
+- Our `foldbench100` is exactly the **first 100 rows** — verified, not assumed.
+  → **234 unused**.
+- **12** of those 234 are already eval proteins under exp65's `denovo_pdb`
+  dataset and must not be double-counted. → **222 net-new**, and an expanded
+  set of **776**.
+- Sequences are the canonical `entity_poly.pdbx_seq_one_letter_code_can` per
+  entity, from RCSB's GraphQL data API.
+
+## Code & how to run
+
+CPU-only, no cluster job, no model inference. The whole thing is ~7 minutes,
+almost all of it the MMseqs2 search.
+
+| File | Role |
+| --- | --- |
+| `exp213_link.py` | The single seam onto exp213's `overlap_lib` / reduction and its committed artifacts. |
+| `build_query_set.py` | **Step 1** — pinned FoldBench list → 222 net-new queries + RCSB sequences and source organisms. |
+| `search_expanded.py` | **Step 2** — 776-query MMseqs2 search against exp213's existing target DB → the per-protein table. |
+| `analyze_survival.py` | **Step 3** — survival counts, designed/natural split, the newer-vs-older test. |
+| `plot_survival.py` | **Step 4** — the three figures. |
+| `tests/test_expand.py` | Unit tests for chain resolution, the survival predicate and Fisher's exact test. |
+
+```bash
+uv sync --extra test
+uv run --extra test pytest tests/            # 22 tests, <1 s
+
+uv run python build_query_set.py             # RCSB, ~4 s
+uv run python search_expanded.py --work /data/exp213_overlap   # the long step, ~6 min
+uv run python analyze_survival.py
+uv run python plot_survival.py
+uv run python build_summary.py               # plots/summary.pdf
+```
+
+**Two corrections to the issue's plan**, both found while implementing:
+
+1. **The search parameters.** The issue's quoted command line says
+   `--max-seqs 2000`. exp213's published two-arm table was actually built with
+   **`--max-seqs 5000`** (its run log and its `provenance.json` both say so;
+   2000 was the AFDB-only cross-check's value). Parity means matching the
+   published table, so this uses 5000 — and reproduces it exactly.
+2. **The label-chain gotcha is bigger than stated.** The issue lists 5 entries
+   whose FoldBench `chain_id` is the mmCIF *label* asym id rather than the auth
+   chain. There are **10**: `5sbj_A 8bgb_A 8bke_A 8c4y_A 8ci9_A 8gmy_A 8ork_A
+   8qq1_A 8rdd_A 8uds_A`. The 5 it missed are all inside our existing 100, so
+   the net-new set is unaffected — and the byte-for-byte check below proves all
+   10 resolve correctly.
+
+## Results
+
+### 0. Parameter parity with #213 is exact
+
+The validation anchor passes and then some. Re-running exp213's 554 queries
+through the expanded search reproduces **284 / 264** survivors gated and
+**273 / 255** ungated — and **0 of the 554 rows** changed their best identity or
+their stratum. The expanded table is a strict superset of exp213's, joinable on
+`(dataset, stem)`.
+
+The sequence-fetch path is validated the same way: all **100/100** FoldBench
+sequences we already use are reproduced **byte-for-byte** from RCSB through the
+new code (the issue asked for 8 length comparisons). Both residue checksums
+land exactly: 234 unused = **66,692 aa**, 222 net-new = **64,624 aa**.
+
+### 1. The answer: +23 at <40 %, +11 at <30 %
+
+[`data/survival_headline.csv`](data/survival_headline.csv) —
+
+| filter | eval set today (554) | expanded (776) | gain |
+| --- | ---: | ---: | ---: |
+| **<40 % id** | 284 | **307** | **+23** |
+| **<30 % id** | 264 | **275** | **+11** |
+| <40 %, ungated | 273 | 289 | +16 |
+| <30 %, ungated | 255 | 264 | +9 |
+
+Of the 222 net-new proteins, **23 survive at <40 %** and **11 at <30 %**.
+
+### 2. The newer monomers are dirtier than the ones we already use
+
+This is the question the extrapolation could not answer, and the answer is that
+the extrapolation was optimistic — in the same direction at both thresholds
+([`data/newer_vs_older.csv`](data/newer_vs_older.csv)):
+
+| filter | our 100 | the other 222 | predicted | actual | Fisher *p* |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| <40 % | 15.0 % | **10.4 %** | 33.3 | **23** | 0.26 |
+| <30 % | 11.0 % | **5.0 %** | 24.4 | **11** | 0.057 |
+
+At <30 % the yield is **less than half** what was predicted, and the deposition-
+date effect the issue flagged as "a reason to measure rather than assume" was
+worth measuring. Neither difference clears *p* < 0.05 on its own, so the honest
+reading is a consistent shortfall at both thresholds rather than a proven rate
+difference — but the *counts* are what the eval set gets, and those are 23 and
+11, not 33 and 24.
+
+Length is not the explanation: median 242 aa for our 100 vs 247.5 aa for the
+234, matching the issue's own check. → [`plots/identity_profile_old_vs_new.png`](plots/identity_profile_old_vs_new.png)
+
+### 3. FoldBench really is the dirtiest slice of the eval set
+
+[`data/survival_by_dataset.csv`](data/survival_by_dataset.csv) —
+
+| dataset | n | survive <40 % | survive <30 % |
+| --- | ---: | ---: | ---: |
+| `foldbench100` | 100 | 15 (15.0 %) | 11 (11.0 %) |
+| **`foldbench_rest`** | **222** | **23 (10.4 %)** | **11 (5.0 %)** |
+| `denovo_pdb` (designed) | 396 | 226 (57.1 %) | 212 (53.5 %) |
+| `cameo_hard` | 32 | 24 (75.0 %) | 22 (68.8 %) |
+| `casp_fm` | 26 | 19 (73.1 %) | 19 (73.1 %) |
+
+**89.6 % of the net-new FoldBench monomers fail a 40 % filter.** And every one
+of the 222 has *some* MMseqs2 alignment into the training set (0 have none at
+E ≤ 10, against 62/554 in exp213); only 8 have no *significant* homolog. So the
+expansion adds just **8** proteins to exp213's pre-registered "no detectable
+homolog" stratum (231 → 239) — it moves the <40 %/<30 % filters, not that one.
+
+→ [`plots/survival_by_dataset.png`](plots/survival_by_dataset.png)
+
+### 4. The natural count — the number that decides whether this was worth doing
+
+Every one of the 23 net-new survivors is a **natural** protein
+([`plots/natural_gain.png`](plots/natural_gain.png)):
+
+| filter | natural today | natural expanded | gain |
+| --- | ---: | ---: | ---: |
+| **<40 %** | 55 | **78** | **+23 (+42 %)** |
+| **<30 %** | 50 | **61** | **+11 (+22 %)** |
+
+Two things to read carefully here.
+
+**The baseline is 55, not 58.** exp213 splits designed from natural on the
+dataset label (`denovo_pdb`), which cannot see a designed protein sitting in a
+FoldBench row — and one demonstrably can, since 12 FoldBench monomers are
+themselves in exp65's de novo set. Resolving each FoldBench entity's RCSB source
+organism finds **3 of exp213's 15 FoldBench-100 survivors at <40 % are synthetic
+constructs** (2 of 11 at <30 %). So the pre-existing natural count was 55 / 50,
+and the expansion takes it to 78 / 61.
+
+The proxy is deliberately conservative — "no natural source organism" also
+catches engineered variants of natural proteins, so it over-flags rather than
+under-flags — and it is calibrated: it flags **12/12** of the known de novo
+designs. Only **4 of the 222** net-new monomers trip it, and none of those 4
+survive either filter.
+
+**The <40 % gain lands, the <30 % gain does not.** +42 % against the predicted
++57 % is a real, useful increase in the axis #213 said bottoms out. At <30 % the
++22 % is small enough that it does not change what the eval set can measure.
+
+### 5. Where the homology comes from
+
+[`data/arm_attribution.csv`](data/arm_attribution.csv) — of the 199 net-new
+proteins dropped at <40 %, **174 hit both training arms, 9 AFDB-only, 16
+ESM-Atlas-only**. Same shape as exp213 found for the 554 (237 / 21 / 12 of 270):
+the metagenomic ESM-Atlas half is not the marginal contaminator here — most of
+these proteins are reachable from both corpora.
+
+## Conclusion
+
+**The expansion is worth folding in at <40 %, and not worth much at <30 %.**
+
+- The expanded eval set is **776 proteins**, of which **307 survive a <40 %
+  identity filter** and **275 survive <30 %**.
+- The decontaminated **natural** count — the axis #213 said bottoms out — goes
+  **55 → 78 (+42 %)** at <40 %, and all 23 additions are natural proteins. At
+  <30 % it goes 50 → 61 (+22 %).
+- The extrapolation on the issue was optimistic at both thresholds because the
+  100 monomers we already use are the oldest-deposited rows, and the newer
+  entries are *more* homologous to our training data, not less. Predicted 33/24,
+  measured 23/11.
+- The per-protein table for all 776
+  ([`data/eval_train_identity_expanded.csv`](data/eval_train_identity_expanded.csv))
+  shares exp213's schema and reproduces its 554 rows exactly, so it is a drop-in
+  replacement for any future eval that wants to stratify on training identity.
+
+**Not done here:** the **fold-novel** count for the 222. That axis needs a
+Foldseek pass against exp41's AFDB training-representative DB, which lives on a
+Modal volume rather than on this workstation, plus 222 structure downloads —
+real compute beyond this issue's "sequence search plus aggregation" budget. The
+sequence-novel n is what #226 measured; if the fold-novel n matters for the next
+eval, that is a separate short experiment on top of exp41's `query_similarity.py`.
+
+**Recommendation:** add `foldbench_rest` to the eval set as its own stratum
+rather than merging it into `foldbench100` — the two have measurably different
+training-set proximity, and the deposition-date ordering means any future
+"take the first N FoldBench rows" would inherit the same bias. Note also that
+running contact metrics on these 222 requires structures and predictions that do
+not exist yet; this experiment delivers the decontamination table, not scores.
+
+## Artifacts
+
+| File | Contents |
+| --- | --- |
+| [`data/eval_train_identity_expanded.csv`](data/eval_train_identity_expanded.csv) | Per-protein identity table, 776 rows, exp213's schema. |
+| [`data/foldbench_targets.csv`](data/foldbench_targets.csv) | All 334 FoldBench monomers: resolved entity, chain-match axis, source organism, sequence. |
+| [`data/eval_queries_expanded.fasta`](data/eval_queries_expanded.fasta) | The 776 queries (exp213's 554 verbatim + 222). |
+| [`data/foldbench_rest_queries.fasta`](data/foldbench_rest_queries.fasta) | Just the 222 net-new. |
+| [`data/query_set_validation.json`](data/query_set_validation.json) | Every set-construction checksum and validation. |
+| [`data/survival_headline.csv`](data/survival_headline.csv) · [`survival_by_dataset.csv`](data/survival_by_dataset.csv) · [`newer_vs_older.csv`](data/newer_vs_older.csv) · [`arm_attribution.csv`](data/arm_attribution.csv) | The result tables. |
+| [`plots/summary.pdf`](plots/summary.pdf) | Narrative + plot appendix. |
+
+The MMseqs2 intermediates (`queryDB_expanded`, `alnDB_expanded`,
+`aln_expanded.m8`) stay in `/data/exp213_overlap/` alongside exp213's; the
+17 GB `targetDB` is shared and was not rebuilt.

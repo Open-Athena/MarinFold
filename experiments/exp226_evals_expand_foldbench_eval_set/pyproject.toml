@@ -1,0 +1,30 @@
+[project]
+name = "exp226-evals-expand-foldbench-eval-set"
+version = "0.1.0"
+description = "Expand the 554-protein contact eval set with the 222 FoldBench monomers we never used, and measure sequence-identity survival against exp199's training set — issue #226. CPU-only, no GPU, no model inference."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # No marinfold: unlike exp213 this never decodes a training document —
+    # it reuses exp213's already-built 70.9 M-sequence mmseqs targetDB. The
+    # only network I/O is RCSB (sequences) and GitHub (the pinned FoldBench
+    # target list); both go through urllib from the stdlib.
+    # mmseqs itself is a binary, installed by exp213's overlap_lib.ensure_mmseqs.
+    "numpy",
+    "pandas>=2.0",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
