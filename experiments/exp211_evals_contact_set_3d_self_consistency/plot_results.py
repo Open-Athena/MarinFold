@@ -185,7 +185,7 @@ def fig_power(out):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--scores", type=Path, default=Path("data/arm_scores.csv"))
+    ap.add_argument("--scores", type=Path, default=Path("data/arm_scores.csv.gz"))
     ap.add_argument("--out", type=Path, default=Path("plots"))
     ap.add_argument("--min-length", type=int, default=100)
     a = ap.parse_args()

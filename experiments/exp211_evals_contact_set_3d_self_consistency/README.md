@@ -38,11 +38,11 @@ A null here is a real result — it would say the joint has to be taught, not de
 | B — calibration gate on ground truth (`run_gt_gate.py`) | **done — PASS** |
 | B2 — sensitivity at the operating point (`power_check.py`) | **done** |
 | 0 — rebuild eval targets from public artifacts (`prepare_targets.py`) | **done** |
-| 1 — per-rollout generation | **running locally** (`run_rollouts_local.py`) |
+| 1 — per-rollout generation | **done** — 554 × 100 in 95.8 min (`run_rollouts_local.py`) |
 | 1b — CoreWeave dispatch (`dispatch_rollouts_cw.py`) | written; **blocked on dead credentials**, and unnecessary |
-| 1c — reproduce published R-precision (`verify_against_exp82.py`) | **done — Δ −0.0026** |
-| 2–3 — arms + scoring (`score_arms.py`) | written, pending rollouts |
-| 4 — analysis + figures (`analyze.py`, `plot_results.py`) | written, pending scores |
+| 1c — reproduce published R-precision (`verify_against_exp82.py`) | **done — Δ +0.0016** |
+| 2–3 — arms + scoring (`score_arms.py`) | **done** — 51,890 sets, 494 min |
+| 4 — analysis + figures (`analyze.py`, `plot_results.py`) | **done** |
 
 ### Why the run is local
 
@@ -83,10 +83,13 @@ Three blockers had to be cleared, each worth knowing about:
 ### The rollouts reproduce the published number
 
 `verify_against_exp82.py` rebuilds exp82's vote matrix from our per-rollout table (an
-exact function of it) and scores it exp89's way. On the first 84 proteins: **R-precision
-0.6077 vs the 0.6103 exp82's worker reports for #199 — Δ −0.0026**, at #204's 0.0023
-replicate noise floor. (0.6103 rather than the 0.5873 #199 published: that 0.023 gap is
-#199's own eval pipeline, not the accelerator.)
+exact function of it) and scores it exp89's way. Over all 554: **R-precision 0.6119 vs
+the 0.6103 exp82's worker reports for #199 — Δ +0.0016**, inside #204's 0.0023 replicate
+noise floor. Short 0.6790, medium 0.6579, long 0.5657. (0.6103 rather than the 0.5873
+#199 published: that 0.023 gap is #199's own eval pipeline, not the accelerator.)
+
+Locally-generated rollouts, from a reconstructed targets file and a repaired tokenizer
+on a different accelerator, **are** the published measurement.
 
 ### The gate result (step B, all 554 proteins)
 
@@ -253,8 +256,78 @@ jointly or independently.
 
 ## Results
 
-_(Fill in after the run completes.)_
+554 proteins × 100 rollouts, 30 replicates per arm, **51,890 scored contact sets**.
+Headline on the 394 chain-break-free proteins at L ≥ 100.
+
+### Primary — the model generates a coherent structure
+
+| contrast | mean Δ per contact | 95 % CI | rollout better on | Wilcoxon p |
+|---|---|---|---|---|
+| **rollout vs marginal-matched chimera** | **+0.0655** | [+0.0561, +0.0752] | **89.8 %** | 1.4e−58 |
+| rollout vs splice chimera | +0.0339 | [+0.0304, +0.0373] | 93.1 % | 2.4e−62 |
+
+Per-arm means: rollout **0.0562**, GT 0.0639, GT size-matched 0.0630, decoy 0.0668,
+splice chimera 0.0900, marginal chimera 0.1216, separation-matched random 0.2715.
+
+For scale, the metric's whole ground-truth-to-random range is 0.064 → 0.272. The
+effect is 0.0655 — **about 31 % of that full range**, not a marginal result. Sampling
+the *same* contacts with the *same* per-pair marginals but *independently* costs
+roughly a third of the distance from a real fold to a random one.
+
+### The effect grows with length
+
+| length | n | Δ | rollout better on |
+|---|---|---|---|
+| 100–200 | 240 | +0.0473 | 88.3 % |
+| 200–350 | 128 | +0.0771 | 90.6 % |
+| 350–761 | 26 | +0.1763 | **100.0 %** |
+
+That is #180's predicted direction and the opposite of an artifact: metric slack would
+*shrink* the effect as constraints multiply, not grow it. The excluded subsets behave as
+expected — L < 100 gives +0.0029 (70.4 %), where the gate already said the metric is
+blind; the 84 chain-break proteins give +0.0915 (95.2 %).
+
+### Secondary — but consistency does *not* rank rollouts by accuracy
+
+- Spearman ρ(excess, precision) within a protein: mean **−0.0175**, useful on **51.8 %**
+  of proteins — a coin flip.
+- Selecting the most-consistent of 30 rollouts gains **+0.0110** precision (95 % CI
+  [+0.0032, +0.0188]) against an oracle headroom of **+0.1299** — about **8 %** of what
+  is available. Statistically nonzero, practically weak.
+
+The calibration gate already explained this: a decoy protein's contact map scores the
+same as the truth (0.0668 vs 0.0639) because the score is **sequence-blind**. It cannot
+tell a coherent *wrong* fold from a coherent *right* one — and a rollout can be highly
+self-consistent and still wrong.
+
+### Caveats, stated plainly
+
+- **The score is statistical, not a proof.** 10.7 % of real non-contact pairs sit closer
+  than the contact upper bound, so a nonzero residual means "less geometrically
+  consistent", never "provably unrealizable".
+- **The rollout-beats-ground-truth reading is confounded and is not claimed.** The model
+  preferentially emits short-range contacts (precision 0.679 short vs 0.566 long), which
+  are geometrically easier to satisfy. The *primary* contrast is not confounded this way:
+  the chimera is drawn from the same pooled rollout contacts with the same marginals, so
+  it carries the same separation profile.
+- **Cost ran well over estimate.** Scoring took 494 min against a ~2 h projection —
+  the O(L²) non-contact term dominates at the long tail, where per-protein cost is set by
+  chunk count rather than launch overhead.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**The model generates a coherent structural hypothesis, not a bag of independently drawn
+contacts.** Redrawing the same contacts with the same marginals but independently costs
+0.0655 per contact on 89.8 % of proteins, and the gap widens with length to 100 % of the
+longest. Autoregressive generation is doing real joint work that every marginals-only
+eval (#82 / #89 / #180) discards at the vote-counting step.
+
+**That coherence is not accuracy-aligned.** Self-consistency is essentially uncorrelated
+with whether a rollout is *right*, so it is not a best-of-N selector and, on its own, not
+an RL reward — it would reinforce coherence the model already has. For #200 / #208 that
+is the useful negative result: pair it with an accuracy signal, or skip it.
+
+Read together with **#163** — where conditioning on *true* partial contact maps lifts
+R-precision 0.145 → 0.556 — the picture is that the model's remaining gap is about
+**correctness, not coherence**. It already commits to a single self-consistent structure.
+It commits to the wrong one.

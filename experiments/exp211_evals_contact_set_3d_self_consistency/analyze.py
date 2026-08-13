@@ -136,7 +136,7 @@ def secondary(df, label, out):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--scores", type=Path, default=Path("data/arm_scores.csv"))
+    ap.add_argument("--scores", type=Path, default=Path("data/arm_scores.csv.gz"))
     ap.add_argument("--out-json", type=Path, default=Path("data/results.json"))
     ap.add_argument("--out-txt", type=Path, default=Path("data/results.txt"))
     ap.add_argument("--min-length", type=int, default=100)
