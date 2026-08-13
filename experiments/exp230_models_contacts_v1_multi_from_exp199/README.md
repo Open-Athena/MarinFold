@@ -179,7 +179,87 @@ Three interpreters, and they cannot be merged:
 
 ## Results
 
-_(Fill in after the run completes.)_
+**Status.** The pipeline is built and smoke-verified end to end on real hardware;
+the at-scale rollout generation is running. No accuracy claim yet — nothing has
+been trained or scored against the success criteria.
+
+### Stage 0 — decontamination (DONE)
+
+Tier A at 30 % identity (#225's rule) against #226's **776** eval queries, which
+this run verifies key-for-key and sequence-for-sequence to be a strict superset
+of #225's 554 rather than assuming it.
+
+| arm | corpus documents | dropped | rate |
+|---|---|---|---|
+| `afdb` (#53) | 4,129,682 | 109,085 | 2.64 % |
+| `esm_atlas` (#139) | 66,759,922 | 1,311,485 | 1.96 % |
+| **`pdb`** (#222 deduped monomers) | 41,647 | 2,254 | **5.41 %** |
+
+Two findings worth carrying out of this stage:
+
+- **The experimental-PDB arm is ~3x more contaminated than AFDB.** That is what
+  #222's 50.2 % eval-side leakage predicted: it excluded the eval set's 552 PDB
+  entries **by id**, and id exclusion is not identity exclusion. Within the
+  quality-filtered pool the rate is higher still (2,010 / 29,120 = 6.9 %) —
+  contaminated PDB entries skew toward well-resolved structures, which are
+  exactly the ones that pass a quality gate.
+- **The 222 net-new eval2 queries are not a rounding error** on top of #225's
+  554. They add **31,198** fresh AFDB drops (+40 % on #225's 77,887) and ~286k
+  fresh ESM-Atlas drops. This is #226's finding from the other side: newer PDB
+  entries are **more** homologous to training data, not less.
+
+Pool: **107,110 proteins** — 40,000 AFDB (round 0), 40,000 ESM-Atlas, 27,110 PDB
+— feeding *both* halves of the corpus, so the token-0 mode marker is the only
+systematic difference between them.
+
+| arm | n | L median | L p90 | GT contacts median |
+|---|---|---|---|---|
+| afdb | 40,000 | 170 | 368 | 118 |
+| esm_atlas | 40,000 | 204 | 383 | 172 |
+| pdb | 27,110 | 182 | 380 | 155 |
+
+### Stage 1 — on-policy drafts are 3.4x more precise than #163's
+
+A 6-protein x 8-rollout local smoke of exp199 under the settled sampling recipe:
+
+| | exp199 (this run) | #163 arm F | #163 E8 |
+|---|---|---|---|
+| per-rollout precision | **0.411** | 0.229 | ~0.12 |
+| `n_pred / n_gt` | 1.03 | — | — |
+| finished | 100 % | 56 % (multi) | 98 % |
+
+This is the concrete reason to regenerate rather than inherit #98/#163's
+rollouts, and it sharpens the preregistered risk in H3: a stronger sampler is a
+*more consistent* one, so **candidate diversity (Jaccard), not draft quality, is
+the number to watch** when the multi-mode report lands.
+
+### Format plumbing — verified, not asserted
+
+- Renaming vocab id 7 in exp199's own tokenizer leaves vocab at **2845** with
+  **zero id drift** and an exact round trip; published as
+  [`timodonnell/contacts-v1-multi-tokenizer`](https://huggingface.co/timodonnell/contacts-v1-multi-tokenizer).
+- Regenerating a rehearsal document from ground truth parsed out of the
+  published document is **lossless** — sequence, length and contact set
+  identical on 300/300 PDB rows (`test_corpus.py`).
+- Profile F materialises with the restart slot and the stop slot at **exactly
+  equal weight**, which is the property #163 showed decides whether the model
+  ever emits a second section.
+- `<eos>` and pad positions carry weight 0, so no document's last weight can
+  supervise the first token of the next one in a packed row.
+
+### Hardware notes
+
+The **CoreWeave path is unavailable**: the workstation's object-storage key is
+revoked (every request, every bucket, and anonymously). This run is therefore on
+marin TPU — the cluster #163 used for this pipeline. Three further submission
+traps are documented in `dispatch_rollouts.py`: current marin has **dropped the
+`vllm` extra**, the IAP credential cache is keyed on cluster *name* (so
+`--cluster=<path>` submits unauthenticated), and name resolution reads the CWD's
+checkout.
+
+A v6e-4 generates 24 rollouts x 20 proteins in **0.4 min** after a ~2 min engine
+init; the 2.94 GB checkpoint stages from GCS in **13 s** cloud-side.
+
 
 ## Conclusion
 
