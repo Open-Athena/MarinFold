@@ -157,8 +157,132 @@ entries to the final corpora is attributable line by line — no silent drops.
 
 ## Results
 
-_(Fill in after the run completes.)_
+Both corpora are built, validated and published. The whole pipeline is 82 min of
+header scan plus 161 min of generation on 60 cores.
+
+### The corpora
+
+| | `contacts_v1_pdb_monomers` | `contacts_v1_pdb_multimers` |
+| --- | --- | --- |
+| documents | **602,859** | **85,660** |
+| distinct PDB entries | 177,468 | 85,660 |
+| distinct resolved sequences | 247,675 | 70,756 |
+| distinct 40% clusters | 38,572 | 24,075 |
+| tokens | 695.5 M | 299.9 M |
+| mean tokens / document | 1,154 | 3,501 |
+| median / max residues | 205 / 1,997 | 562 / 1,996 |
+| mean / max chains | 1.0 / 1 | 2.93 / 60 |
+| contacts | 133.7 M | 61.0 M |
+| **interface contacts** | — | **9.19 M (15.1%)** |
+| truncated by the 8192-token budget | 0.04% | 7.1% |
+| on disk (zstd parquet) | 1.2 GB | 529 MB |
+
+Together **688,519 documents / 995 M tokens** — fine-tuning scale by design, next
+to the 138 B-token AFDB corpus of exp105.
+
+The multimer corpus is mostly small complexes: 62% dimers, 17% tetramers, 12%
+trimers, and a 1,190-document tail at ≥ 10 chains. In 0.79% of documents *every*
+emitted contact crosses a chain boundary — those are assemblies of short peptides
+(e.g. `6wl1`, 52 copies of a 36-mer) where almost no intra-chain pair clears the
+sequence-separation-6 rule. That is correct, not a defect: for an amyloid-like
+fibril the interface really is the entire structure.
+
+### The funnel, with nothing unaccounted for
+
+195,858 entries → 177,710 selected → 688,519 documents, every drop named
+([`data/funnel.csv`](data/funnel.csv)):
+
+| Entry level | | Chain level (ASU) | |
+| --- | --- | --- | --- |
+| released after 2021-09-30 | 13,321 | not protein | 28,775 |
+| resolution ≥ 9 Å | 763 | all unknown residues | 2,851 |
+| no protein entity | 3,881 | > 2000 residues | 733 |
+| eval-set holdout | 183 | Cα break > 10 Å | 354 |
+| | | ≥ 1/3 atoms clashing | 186 |
+| | | < 2 residues | 55 |
+
+Of the 603,198 chains that survive, 339 (0.06%) still fail to serialize —
+pyconfind counts "legal protein residues" slightly differently from gemmi, so a
+handful fall below the 2-residue floor. They are counted, not swallowed.
+
+Multimer outcomes over the same 177,710 entries: 85,660 documents, 80,304 not a
+complex, 10,530 too large for the 2000-index ring, 1,210 with too many chains,
+6 with no assembly 1. The `error` column is **empty**.
+
+### Validation
+
+[`validate.py`](validate.py) on a 36,505-document sample (19,794 monomer, 16,711
+multimer — every shard sampled):
+
+- **Structural round-trip: 36,505 / 36,505 clean.** Parsing each document back
+  from its own text recovers the right residue count, one `<n-term>`/`<c-term>`
+  pair per chain, chain runs that are contiguous, pairwise disjoint and exactly
+  cover the assigned positions, and contacts referencing only assigned positions.
+- **Geometry cross-check: 40 / 40 clean.** For 40 multimers, rebuilding the
+  assembly from the mirror and re-running pyconfind reproduces the document's
+  interface contacts exactly.
+
+### Leakage
+
+The 552 eval PDB entries are excluded by id, and **0** appear in either corpus.
+What remains ([`data/leakage_audit.csv`](data/leakage_audit.csv)):
+
+| | monomers | multimers |
+| --- | --- | --- |
+| exact resolved-sequence matches | 44 (0.007%) | 1 (0.001%) |
+| corpus documents sharing a 40% cluster with the eval set | 8,400 (1.4%) | 2,410 (2.8%) |
+| **eval entries with a 40% homolog in the corpus** | **50.2%** | 31.3% |
+
+The last row is the one comparable to
+[#213](https://github.com/Open-Athena/MarinFold/issues/213), which measured the
+eval set as **58% homologous to exp199's AFDB training data**. This corpus is
+therefore *slightly less* homologous to the benchmark than the data the current
+best model already trained on — and #213 found that overlap does not inflate the
+score (rank correlation ~0 against sequence identity). No homology purge is
+warranted; the number is the deliverable.
+
+### Published
+
+`https://huggingface.co/buckets/open-athena/MarinFold` under
+`data/document_structures/`:
+
+- `contacts_v1_pdb_monomers/{documents,tokenizer}/`
+- `contacts_v1_pdb_multimers/{documents,tokenizer}/`
+- `contacts_v1_pdb_curation/{metadata,ledger}/` — the entry scan, the RCSB
+  cluster file and the per-entry ledger, so the funnel can be re-derived and
+  audited without the local mirror.
+
+The tokenizer (2,848 tokens) is built from the library rather than pulled from a
+pinned Hub revision, so it is provably the vocabulary the documents were
+generated under.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**Both corpora exist, round-trip cleanly, and are ready to fine-tune on.**
+688,519 documents / 995 M tokens of experimental structure, of which 85,660
+describe protein complexes and 9.19 M individual contacts cross a chain boundary
+— a class of contact no previous MarinFold corpus contained at all.
+
+The contacts-v1 format needed no new tokens to express a complex. Laying *k*
+chains disjointly around the existing 2000-index ring, with one
+`<n-term>`/`<c-term>` pair each, is enough, and single-chain documents come out
+byte-identical to before — so every existing checkpoint stays token-compatible
+and a mixed corpus trains under one tokenizer.
+
+Three things worth carrying forward:
+
+1. **The eval set is no more exposed than before.** 50.2% of eval entries have a
+   40% homolog here against 58% for the AFDB data exp199 already trained on.
+2. **`global_plddt` means the opposite thing here.** Same column, mean Cα
+   B-factor in both corpora — but for AFDB that *is* pLDDT (higher is better) and
+   here it is a B-factor (lower is better). Any mixture weighting on it must
+   branch on the corpus.
+3. **The multimer corpus is dimer-dominated.** 62% of it is two chains. Training
+   on it teaches interfaces, but not large-assembly organisation; the 2000-residue
+   ring drops 10,530 complexes that were otherwise fine.
+
+Training on these corpora is deliberately **not** part of this experiment. Two
+follow-ups suggest themselves: fine-tuning `contacts-v1-exp199-1.5B` on the
+monomer corpus (does experimental structure beat predicted?), and a multimer
+curriculum (can the model learn to place an interface at all?). Each needs its own
+controls.
