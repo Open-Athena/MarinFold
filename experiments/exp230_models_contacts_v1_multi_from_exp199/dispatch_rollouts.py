@@ -125,7 +125,7 @@ exec uv run --no-sync python {WORKER_LOCAL} \\
 
 
 def submit(*, shard_i: int, num_shards: int, limit: int | None, tpu: str, zone: str,
-           priority: str, suffix: str, dry_run: bool) -> str:
+           priority: str, suffix: str, mem: str, dry_run: bool) -> str:
     name = f"exp230-rollouts-s{shard_i}of{num_shards}{suffix}"
     command = [
         # Resolve the cluster BY NAME, never by config path: the IAP credential
@@ -138,7 +138,13 @@ def submit(*, shard_i: int, num_shards: int, limit: int | None, tpu: str, zone: 
         "--job-name", name, "--no-wait", "--enable-extra-resources",
         "--priority", priority, "--zone", zone, "--tpu", tpu,
         "--extra", "vllm", "--extra", "tpu",
-        "--cpu", "16", "--memory", "64GB", "--disk", "64GB",
+        # A v6e-4 host advertises ~52 GB allocatable, so 64GB (exp169's value,
+        # sized for a v5p-8) is rejected at SCHEDULE time, not at submit: the
+        # job sits pending forever on "Insufficient memory (need 64.0GB,
+        # available 52.2GB)" while ready workers stand idle. 47 of 48 shards
+        # queued on this. The worker's own footprint is small -- the target
+        # table is 71 MB and rows flush every 250 proteins.
+        "--cpu", "16", "--memory", mem, "--disk", "64GB",
         "--max-retries", "3",
         "--", "bash", "-lc",
         build_bootstrap(shard_i=shard_i, num_shards=num_shards, limit=limit),
@@ -163,18 +169,20 @@ def main() -> int:
     # zone before submitting, not to widen the pin and leave the data behind.
     ap.add_argument("--zone", default=os.environ.get("EXP230_ZONE", "us-central1-a"))
     ap.add_argument("--priority", default="interactive")
+    ap.add_argument("--memory", default=os.environ.get("EXP230_MEMORY", "32GB"),
+                    help="must fit the host: a v6e-4 advertises ~52GB, a v5p-8 more")
     ap.add_argument("--name-suffix", default="", help="iris names are unique; a retry needs one")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
     which = [int(x) for x in a.shards.split(",")] if a.shards else list(range(a.num_shards))
-    print(f"[exp230] {len(which)} shard(s) on {a.tpu} in {a.zone}, {a.priority} band\n"
+    print(f"[exp230] {len(which)} shard(s) on {a.tpu} in {a.zone}, {a.priority} band, mem={a.memory}\n"
           f"         n_rollouts={N_ROLLOUTS} T={TEMPERATURE} top_p={TOP_P} top_k={TOP_K} "
           f"tp={TENSOR_PARALLEL} limit={a.limit}\n"
           f"         model={MODEL}\n         targets={TARGETS}\n         out={OUT}")
     names = [submit(shard_i=i, num_shards=a.num_shards, limit=a.limit, tpu=a.tpu,
                     zone=a.zone, priority=a.priority, suffix=a.name_suffix,
-                    dry_run=a.dry_run) for i in which]
+                    mem=a.memory, dry_run=a.dry_run) for i in which]
     print("[exp230] submitted:")
     for n in names:
         print(f"    {n}")
