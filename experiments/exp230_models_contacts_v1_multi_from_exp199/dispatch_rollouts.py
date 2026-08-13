@@ -1,59 +1,55 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
-"""Fan ``gen_rollouts_worker.py`` out over marin v5p-8 TPUs — exp230's on-policy
+"""Fan ``gen_rollouts_worker.py`` out over marin v5p-8 TPUs - exp230's on-policy
 rollout generation.
 
-**Why marin TPU and not CoreWeave.**  The standing rule is that GPU work goes to
-a CoreWeave H100 cluster at batch priority, and the exp82/exp163 dispatchers this
-is forked from do exactly that.  It is not available here: the workstation's
-CoreWeave object-storage key
-(``~/.config/marin/cw-rno2a.env``) is **revoked** — every request returns *"The
-access key ID you provided does not exist in our records"*, against every bucket
-and anonymously.  The iris controller is healthy, so jobs could still be
+**Why marin TPU and not CoreWeave.** The standing rule sends GPU work to a
+CoreWeave H100 cluster at batch priority, and exp82's dispatcher does exactly
+that. It is not available here: the workstation's CoreWeave object-storage key
+(``~/.config/marin/cw-rno2a.env``) is **revoked** - every request, against every
+bucket and anonymously, returns *"The access key ID you provided does not exist
+in our records"*. The iris controller is healthy, so jobs could still be
 submitted, but neither the model nor the targets could be staged into CW S3 from
-here and no result could be read back.  marin's GCS is reachable, has v5p-8
-capacity, and is the cluster #163 actually ran this pipeline on after CoreWeave's
-batch band starved it for three days.  Restore the key and the CoreWeave path is
-a two-line change (``--cluster``, and the S3 prefix).
+here and no result could be read back. marin's GCS works, v5p-8 capacity is
+ready, and it is the cluster #163 actually ran this pipeline on after
+CoreWeave's batch band starved it for three days. Restore the key and the
+CoreWeave path is exp82's dispatcher with a different ``--targets``.
 
-**TPU submissions go in the INTERACTIVE band** — the opposite of the CoreWeave
-rule — because the v5p pool is interactive-dominated and a batch job there never
-schedules (#163 §7).
+Structure is exp169's ``dispatch_eval_tpu.py``, which is the validated TPU
+shape, with three things it teaches carried over verbatim:
 
-Two placement rules from #163, both of which cost it real time:
+* **Submit from the marin checkout.** ``iris job run`` bundles the CWD and runs
+  ``uv sync`` in it on the pod; ``--extra vllm --extra tpu`` are *marin's*
+  extras, so the workspace has to BE the marin checkout. An empty scratch dir
+  fails on the pod with ``No `pyproject.toml` found``; ``/tmp`` hangs uploading.
+  It must also be the **fresh** checkout - iris rejects a client over 14 days
+  old.
+* **Interactive band, not batch.** The v5p pool is fully subscribed by other
+  people's interactive jobs, so a batch-band job yields indefinitely and
+  registers no autoscaler demand. This does not contradict the CoreWeave
+  always-batch rule, which is about that cluster.
+* **``--disk 64GB``.** A v5p-8 VM has 100 GiB of ephemeral disk; asking for more
+  is rejected at submit as unschedulable rather than queued.
 
-* pin the **region**, never the **zone**.  Zone-pinning starved three separate
-  jobs; ``with_tpu`` otherwise leaves ``regions`` unset and the scheduler may
-  pick a region with no v5p at all.
-* a multi-region job needs its **data** mirrored, not just its constraint
-  widened.  exp230's model and targets live in ``us-central1`` only, so that is
-  the region this pins.
+``marinfold`` is installed on the pod with ``--no-deps`` so it cannot repin
+marin's vLLM/transformers; the contacts-v1 generator needs only numpy + fsspec
+on top, both already there.
 
-Submitted from the workstation as ROOT jobs (exp82's pattern): ``current_client()``
-off-cluster silently falls back to ``LocalClient``, so the iris-backed client is
-built explicitly over the CLI's controller tunnel.  Root jobs survive this
-process exiting, so there is no driver-must-wait rule and no pod-side ``uv sync``.
-
-    python dispatch_rollouts.py --num-shards 8
-    EXP230_DRY_RUN=1 python dispatch_rollouts.py --num-shards 2   # build, don't submit
+    uv run python dispatch_rollouts.py --num-shards 8
+    uv run python dispatch_rollouts.py --num-shards 8 --shards 0 --limit 20  # smoke
 """
 from __future__ import annotations
 
 import argparse
 import base64
-import dataclasses
 import os
+import subprocess
+import sys
 from pathlib import Path
 
-from fray.types import Entrypoint, JobRequest, JobStatus, ResourceConfig, create_environment
-
-#: iris ``PRIORITY_BAND_INTERACTIVE``.  See the module docstring — this is
-#: deliberately NOT the batch band the CoreWeave rule mandates.
-IRIS_PRIORITY_BAND_INTERACTIVE = 1
-assert "priority" in {f.name for f in dataclasses.fields(JobRequest)}, (
-    "this fray build has no JobRequest.priority — a frozen 0.99.dev wheel has won "
-    "the resolution and the band would silently be the default"
-)
+MARIN = Path(os.environ.get("MARIN_CHECKOUT", "/home/bizon/git/marin-freshiris"))
+IRIS = os.environ.get("IRIS_BIN", str(MARIN / ".venv/bin/iris"))
+SUBMIT_WORKSPACE = Path(os.environ.get("EXP230_WORKSPACE", str(MARIN)))
 
 GCS_PREFIX = os.environ.get(
     "EXP230_GCS_PREFIX",
@@ -62,43 +58,43 @@ GCS_PREFIX = os.environ.get(
 MODEL = os.environ.get("EXP230_MODEL", f"{GCS_PREFIX}/model/exp199_bf16")
 TARGETS = os.environ.get("EXP230_TARGETS", f"{GCS_PREFIX}/targets.parquet")
 OUT = os.environ.get("EXP230_OUT", f"{GCS_PREFIX}/rollouts")
-REGIONS = os.environ.get("EXP230_TPU_REGIONS", "us-central1").split(",")
-TPU_TYPE = os.environ.get("EXP230_TPU_TYPE", "v5p-8")
-JOB_PREFIX = os.environ.get("EXP230_JOB_PREFIX", "exp230-rollouts")
 
+MARINFOLD_GIT = os.environ.get(
+    "EXP230_MARINFOLD",
+    "marinfold @ git+https://github.com/Open-Athena/MarinFold.git#subdirectory=marinfold",
+)
+
+# exp82/exp142's settled sampling recipe. top_k DISABLED: 50 is the HF default
+# that rides in from an export's config.json and suppresses contacts (0.67x GT
+# instead of 0.96x).
 N_ROLLOUTS = int(os.environ.get("EXP230_N_ROLLOUTS", "24"))
 TOP_K = int(os.environ.get("EXP230_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EXP230_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EXP230_TEMPERATURE", "1.0"))
-#: v5p-8 is 4 chips; shard the 1.5B across all of them (#163's setting).
-TENSOR_PARALLEL = int(os.environ.get("EXP230_TP", "4"))
+TENSOR_PARALLEL = int(os.environ.get("EXP230_TP", "4"))  # v5p-8 is 4 chips
 
-WORKER = Path(__file__).with_name("gen_rollouts_worker.py")
-WORK_DIR = "/tmp/exp230"
+WORKER_SCRIPT = Path(__file__).with_name("gen_rollouts_worker.py")
+WORKER_LOCAL = "/tmp/exp230/gen_rollouts_worker.py"
 
 
-def build_bootstrap(shard_i: int, num_shards: int, limit: int | None) -> str:
-    worker_b64 = base64.b64encode(WORKER.read_bytes()).decode()
+def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None) -> str:
+    worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
     return f"""
 set -euo pipefail
-echo "[exp230] host=$(hostname) shard={shard_i}/{num_shards} tpu={TPU_TYPE}"
-mkdir -p {WORK_DIR}
-echo {worker_b64} | base64 -d > {WORK_DIR}/gen_rollouts_worker.py
+echo "[exp230] host=$(hostname) shard={shard_i}/{num_shards}"
 
-PY=python
-# marinfold WITHOUT its dependency set: a plain install repins transformers out
-# from under the image's vLLM. The contacts_v1 document generator needs only
-# numpy + fsspec on top, both already present.
-uv pip install --quiet --no-deps \
-    "marinfold @ git+https://github.com/Open-Athena/MarinFold.git#subdirectory=marinfold" \
-  || "$PY" -m pip install --quiet --no-deps \
-    "marinfold @ git+https://github.com/Open-Athena/MarinFold.git#subdirectory=marinfold"
-uv pip install --quiet gcsfs || "$PY" -m pip install --quiet gcsfs
-"$PY" -c "from marinfold.document_structures.contacts_v1 import build_document; print('[exp230] marinfold OK')"
+mkdir -p /tmp/exp230
+echo {worker_b64} | base64 -d > {WORKER_LOCAL}
 
-export PYTHONPATH={WORK_DIR}:${{PYTHONPATH:-}}
-exec "$PY" {WORK_DIR}/gen_rollouts_worker.py \\
+# marin's synced venv already has vLLM (its TPU fork), torch, transformers,
+# pyarrow, fsspec and gcsfs. marinfold goes in --no-deps so it cannot repin any
+# of that.
+uv pip install --quiet --no-deps "{MARINFOLD_GIT}"
+uv run --no-sync python -c \\
+  "from marinfold.document_structures.contacts_v1 import build_document; print('[exp230] marinfold OK')"
+
+exec uv run --no-sync python {WORKER_LOCAL} \\
     --model {MODEL} \\
     --targets {TARGETS} \\
     --out {OUT} \\
@@ -111,91 +107,56 @@ exec "$PY" {WORK_DIR}/gen_rollouts_worker.py \\
 """.strip()
 
 
-def build_request(shard_i: int, num_shards: int, limit: int | None, suffix: str) -> JobRequest:
-    # with_tpu leaves `regions` unset and the scheduler may then pick a region
-    # with no v5p at all — and, worse, one where the data is not mirrored.
-    # REGION, never zone: zone-pinning starved three separate #163 jobs.
-    resources = ResourceConfig.with_tpu(
-        TPU_TYPE, cpu=16, ram="64g", disk="64g", regions=REGIONS,
-    )
-    assert resources.regions == list(REGIONS) or resources.regions == REGIONS, (
-        f"regions did not stick on ResourceConfig: {resources.regions!r}"
-    )
-    return JobRequest(
-        name=f"{JOB_PREFIX}-s{shard_i}of{num_shards}{suffix}",
-        entrypoint=Entrypoint.from_binary(
-            "bash", ["-lc", build_bootstrap(shard_i, num_shards, limit)]),
-        resources=resources,
-        environment=create_environment(env_vars={}, setup_scripts=[]),
-        replicas=1,
-        priority=IRIS_PRIORITY_BAND_INTERACTIVE,
-        processes_per_task=1,
-        max_retries_failure=3,
-        # Preemptible pool; the worker resumes from its own written parts.
-        max_retries_preemption=100,
-    )
+def submit(*, shard_i: int, num_shards: int, limit: int | None, tpu: str, zone: str,
+           priority: str, suffix: str, dry_run: bool) -> str:
+    name = f"exp230-rollouts-s{shard_i}of{num_shards}{suffix}"
+    command = [
+        IRIS, "--cluster=marin", "job", "run",
+        "--job-name", name, "--no-wait", "--enable-extra-resources",
+        "--priority", priority, "--zone", zone, "--tpu", tpu,
+        "--extra", "vllm", "--extra", "tpu",
+        "--cpu", "16", "--memory", "64GB", "--disk", "64GB",
+        "--max-retries", "3",
+        "--", "bash", "-lc",
+        build_bootstrap(shard_i=shard_i, num_shards=num_shards, limit=limit),
+    ]
+    if dry_run:
+        print(f"[exp230] DRY RUN {name}\n{command[-1][:900]}\n...")
+        return name
+    subprocess.run(command, cwd=SUBMIT_WORKSPACE, check=True)
+    return name
 
 
-def main() -> None:
+def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--num-shards", type=int, default=int(os.environ.get("EXP230_SHARDS", "8")))
+    ap.add_argument("--num-shards", type=int, default=8)
     ap.add_argument("--shards", default=None, help="comma-separated subset to (re)submit")
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N targets per shard")
+    ap.add_argument("--tpu", default=os.environ.get("EXP230_TPU_TYPE", "v5p-8"))
+    # Zone, not just region, because the model and targets live only in
+    # us-central1 and a cross-region read of a 2.7 GiB checkpoint per pod is the
+    # dominant fixed cost. #163 warns that zone-pinning can starve a job; the
+    # mitigation is to check `iris cluster status` for ready capacity in this
+    # zone before submitting, not to widen the pin and leave the data behind.
+    ap.add_argument("--zone", default=os.environ.get("EXP230_ZONE", "us-central1-a"))
+    ap.add_argument("--priority", default="interactive")
     ap.add_argument("--name-suffix", default="", help="iris names are unique; a retry needs one")
-    ap.add_argument("--cluster", default=os.environ.get("EXP230_CLUSTER", "marin"))
+    ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
-    which = ([int(x) for x in a.shards.split(",")] if a.shards else list(range(a.num_shards)))
-    reqs = [build_request(i, a.num_shards, a.limit, a.name_suffix) for i in which]
-
-    print(f"[exp230] {len(reqs)} job(s), {TPU_TYPE} interactive band, regions={REGIONS}\n"
+    which = [int(x) for x in a.shards.split(",")] if a.shards else list(range(a.num_shards))
+    print(f"[exp230] {len(which)} shard(s) on {a.tpu} in {a.zone}, {a.priority} band\n"
           f"         n_rollouts={N_ROLLOUTS} T={TEMPERATURE} top_p={TOP_P} top_k={TOP_K} "
           f"tp={TENSOR_PARALLEL} limit={a.limit}\n"
           f"         model={MODEL}\n         targets={TARGETS}\n         out={OUT}")
-
-    if os.environ.get("EXP230_DRY_RUN"):
-        print("[exp230] DRY RUN — JobRequests built, not submitting.")
-        r = reqs[0]
-        print(f"  {r.name}: priority={r.priority} resources={r.resources}")
-        print(r.entrypoint.binary_entrypoint.args[1])
-        return
-
-    from fray.iris_backend import FrayIrisClient
-    from iris.client.client import get_iris_ctx
-
-    if get_iris_ctx() is not None:
-        from fray.current_client import current_client
-        _submit(current_client(), reqs, must_wait=True)
-        return
-
-    from iris.cli.connect import open_iris_client
-
-    print(f"[exp230] submitting from the workstation via the {a.cluster} controller tunnel")
-    with open_iris_client(cluster_name=a.cluster, workspace=None) as iris_client:
-        _submit(FrayIrisClient.from_iris_client(iris_client), reqs, must_wait=False)
-
-
-def _submit(client, reqs, *, must_wait: bool) -> None:
-    jobs = [client.submit(r) for r in reqs]
-    print(f"[exp230] submitted {len(jobs)} job(s)", flush=True)
-    for r in reqs:
-        print(f"    {r.name}")
-    if not must_wait and os.environ.get("EXP230_NO_WAIT", "1") == "1":
-        print("[exp230] not waiting — these are root jobs and keep running")
-        return
-    # j.wait() RAISES on a failed job, abandoning every remaining wait and
-    # reporting only the first failure. Catch per job.
-    results = []
-    for j in jobs:
-        try:
-            results.append(j.wait())
-        except Exception as exc:  # noqa: BLE001 — report, don't abort
-            results.append(f"{type(exc).__name__}: {exc}")
-    bad = [(r.name, s) for r, s in zip(reqs, results) if s != JobStatus.SUCCEEDED]
-    print(f"[exp230] finished: {len(results) - len(bad)}/{len(results)} succeeded")
-    for name, status in bad:
-        print(f"  FAILED {name}: {status}")
+    names = [submit(shard_i=i, num_shards=a.num_shards, limit=a.limit, tpu=a.tpu,
+                    zone=a.zone, priority=a.priority, suffix=a.name_suffix,
+                    dry_run=a.dry_run) for i in which]
+    print("[exp230] submitted:")
+    for n in names:
+        print(f"    {n}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
