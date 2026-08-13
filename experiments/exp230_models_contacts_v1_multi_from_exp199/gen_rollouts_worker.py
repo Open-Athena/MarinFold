@@ -219,6 +219,9 @@ def main() -> int:
             return
         uri = f"{a.out.rstrip('/')}/shard-{shard_i:04d}-part-{part:04d}.parquet"
         table = pa.Table.from_pylist(rows, schema=SCHEMA)
+        # S3 creates prefixes implicitly; a local filesystem does not, and the
+        # local path is the one the smoke test uses.
+        fs.makedirs(a.out.rstrip("/"), exist_ok=True)
         with fs.open(uri, "wb") as fh:
             pq.write_table(table, fh)
         print(f"[gen] wrote {len(rows):,} rows -> {uri}", flush=True)
