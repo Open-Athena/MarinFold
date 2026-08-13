@@ -47,9 +47,26 @@ import subprocess
 import sys
 from pathlib import Path
 
-MARIN = Path(os.environ.get("MARIN_CHECKOUT", "/home/bizon/git/marin-freshiris"))
-IRIS = os.environ.get("IRIS_BIN", str(MARIN / ".venv/bin/iris"))
-SUBMIT_WORKSPACE = Path(os.environ.get("EXP230_WORKSPACE", str(MARIN)))
+# The iris CLIENT and the bundled WORKSPACE are two different marin checkouts,
+# deliberately.
+#
+# * The client must be **fresh**: iris rejects a client more than 14 days old.
+# * The workspace must still define the ``vllm`` extra. Current marin
+#   (2026-08-13) **has dropped it** -- `uv sync` on the pod dies with
+#   ``error: Extra `vllm` is not defined in any project's optional-dependencies
+#   table`` before the entrypoint ever runs. The 2026-07-13 checkout still has
+#   it (``lib/marin/pyproject.toml`` + the vllm git source pinned in the root),
+#   and the workspace is only unpacked and synced on the pod, so its age is not
+#   what the freshness gate checks.
+#
+# Submitting the fresh client from the older tree is the split that satisfies
+# both. If marin restores a TPU-inference extra, collapse these back into one.
+MARIN_CLIENT = Path(os.environ.get("MARIN_CLIENT", "/home/bizon/git/marin-freshiris"))
+IRIS = os.environ.get("IRIS_BIN", str(MARIN_CLIENT / ".venv/bin/iris"))
+SUBMIT_WORKSPACE = Path(os.environ.get("EXP230_WORKSPACE", "/data/exp230_multi/marin_vllm_ws"))
+#: Set up once (see the module docstring):
+#:     git -C /home/bizon/git/marin worktree add --detach <ws> HEAD
+#:     cp <fresh>/lib/iris/config/marin.yaml <ws>/lib/iris/config/marin.yaml
 
 GCS_PREFIX = os.environ.get(
     "EXP230_GCS_PREFIX",
@@ -111,6 +128,12 @@ def submit(*, shard_i: int, num_shards: int, limit: int | None, tpu: str, zone: 
            priority: str, suffix: str, dry_run: bool) -> str:
     name = f"exp230-rollouts-s{shard_i}of{num_shards}{suffix}"
     command = [
+        # Resolve the cluster BY NAME, never by config path: the IAP credential
+        # cache is keyed on the cluster name, so `--cluster=<abs path>` submits
+        # unauthenticated and dies with "No credentials to authenticate to this
+        # IAP-protected cluster". Name resolution reads the CWD's checkout, which
+        # is why SUBMIT_WORKSPACE carries a copy of the CURRENT marin.yaml (the
+        # 2026-07-13 tree's own config predates the required top-level `name:`).
         IRIS, "--cluster=marin", "job", "run",
         "--job-name", name, "--no-wait", "--enable-extra-resources",
         "--priority", priority, "--zone", zone, "--tpu", tpu,
