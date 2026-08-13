@@ -78,3 +78,31 @@ def test_science_modules_are_byte_identical_to_the_marin_path():
         assert (here / name).read_bytes() == (there / name).read_bytes(), (
             f"{name} has drifted between the SkyRL port and the marin.rl path"
         )
+
+
+def test_constant_advantage_is_refused_even_with_padding():
+    """The guard must see through padding.
+
+    `advantages * response_mask` zeroes the padded tail, so taking `.std()` across
+    the whole row makes a constant-per-token advantage look like it varies. The
+    original guard did exactly that and passed arm C -- a purely document-level
+    reward whose advantage is constant within each rollout by construction --
+    through 125 steps of training without firing.
+    """
+    rewards = torch.zeros(2, 8)
+    mask = torch.zeros(2, 8)
+    mask[:, :5] = 1.0            # 5 real tokens, 3 padded
+    rewards[:, :5] = 0.031       # constant across the response, as arm C produces
+    with pytest.raises(ValueError, match="constant across its response tokens"):
+        compute_contacts_dense_advantage(rewards, mask, index=None)
+
+
+def test_padding_alone_does_not_trip_the_guard():
+    """A genuinely dense reward with padding must still pass."""
+    rewards = torch.zeros(2, 8)
+    mask = torch.zeros(2, 8)
+    mask[:, :5] = 1.0
+    rewards[0, :5] = torch.tensor([0.2, 0.0, -0.1, 0.0, 0.3])
+    rewards[1, :5] = torch.tensor([0.0, 0.4, 0.0, -0.2, 0.0])
+    adv, ret = compute_contacts_dense_advantage(rewards, mask, index=None)
+    assert adv.shape == rewards.shape

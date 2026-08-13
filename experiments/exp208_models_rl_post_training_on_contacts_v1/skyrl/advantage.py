@@ -72,9 +72,19 @@ def compute_contacts_dense_advantage(
         # generator that never wrote the dense reward -- the SkyRL analogue of
         # marin.rl's `np.full` failure mode, which reads as "RL didn't help"
         # rather than as a bug. Refuse it.
+        # std over the RESPONSE tokens only. Taking `.std()` across the full
+        # padded row silently defeats this check: padding contributes zeros, so a
+        # genuinely constant-per-token advantage still reads as varying and the
+        # guard passes. That is not hypothetical -- it is how arm C
+        # (`lam_step=0`, a purely document-level reward whose advantage IS
+        # constant within each rollout by construction) trained for 125 steps
+        # without tripping the one assertion written to catch it.
         live = response_mask.sum(dim=-1) > 1
         if live.any():
-            varying = (advantages * response_mask).std(dim=-1)[live]
+            n = response_mask.sum(dim=-1, keepdim=True).clamp(min=1)
+            mean = (advantages * response_mask).sum(dim=-1, keepdim=True) / n
+            var = (((advantages - mean) ** 2) * response_mask).sum(dim=-1, keepdim=True) / n
+            varying = var.sqrt().squeeze(-1)[live]
             if torch.all(varying == 0):
                 raise ValueError(
                     "every rollout's advantage is constant across its response tokens; "
