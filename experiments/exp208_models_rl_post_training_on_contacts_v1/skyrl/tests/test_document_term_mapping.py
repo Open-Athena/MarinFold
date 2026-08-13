@@ -198,3 +198,37 @@ def test_reward_row_lengths_are_preserved():
     rows = [("A", "0"), ("A", "1"), ("A", "2")]
     out = gen._fold_document_term(_out(rows))
     assert [len(r) for r in out["rewards"]] == [ROW_LEN] * len(rows)
+
+
+# --- document_f1 reward mode ------------------------------------------------
+#
+# The second exp208 arm: one scalar per rollout (section F1) instead of a
+# per-token per-contact reward, with the baseline coming from the GROUP rather
+# than from p_bar's EMA. Arm S showed why that matters -- its p_bar drifted
+# ABOVE the true precision (0.5501 vs 0.4733 by the end), which makes every
+# contact net-negative and shrinks the policy's output.
+
+
+def test_document_f1_mode_is_validated():
+    """A typo in reward_mode must not fall through to dense."""
+    with pytest.raises(ValueError, match="reward_mode"):
+        DenseContactsGenerator.__init__(
+            object.__new__(DenseContactsGenerator), reward_mode="f1")
+
+
+def test_reward_mode_and_estimator_must_agree():
+    """document_f1 + contacts_dense fails minutes in; dense + grpo fails silently."""
+    from main_exp208 import ADV_ESTIMATOR, check_reward_mode
+
+    class _Cfg:
+        def __init__(self, mode, est):
+            self.reward_mode = mode
+            self.trainer = type("T", (), {"algorithm": type("A", (), {"advantage_estimator": est})()})()
+
+    with pytest.raises(ValueError, match="one scalar per rollout"):
+        check_reward_mode(_Cfg("document_f1", ADV_ESTIMATOR))
+    # The dangerous direction: a group estimator silently discards the dense signal.
+    with pytest.raises(ValueError, match="WITHOUT error"):
+        check_reward_mode(_Cfg("dense", "grpo"))
+    check_reward_mode(_Cfg("document_f1", "grpo"))       # both valid pairings
+    check_reward_mode(_Cfg("dense", ADV_ESTIMATOR))

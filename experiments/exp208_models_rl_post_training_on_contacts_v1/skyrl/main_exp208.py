@@ -91,6 +91,12 @@ class Exp208Config(SkyRLTrainConfig):
     # notices -- it trains and logs a plausible falling reward on rollouts that
     # are no longer contacts-v1 documents. Healthy pred/gt is 0.99-1.31.
     collapse_ratio: float = 0.2
+    # "dense"        -- per-token per-contact reward (arm S), needs advantage_estimator=contacts_dense
+    # "document_f1"  -- ONE scalar per rollout, the section F1, with the baseline
+    #                   coming from the group. Needs a group estimator (grpo/rloo);
+    #                   contacts_dense refuses it by design, since a constant
+    #                   per-token advantage is exactly the failure it guards.
+    reward_mode: str = "dense"
 
 
 def register_everything(vocab_size: Optional[int] = None) -> None:
@@ -110,7 +116,7 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
 
 def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
               doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
-              collapse_ratio: float = 0.2):
+              collapse_ratio: float = 0.2, reward_mode: str = "dense"):
     """A ``BasePPOExp`` whose generator emits exp208's dense per-contact reward."""
     from skyrl.backends.skyrl_train.inference_servers.utils import resolve_policy_model_name
     from skyrl.train.entrypoints.main_base import BasePPOExp
@@ -132,9 +138,39 @@ def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
                 lam_step=lam_step,
                 lam_doc=lam_doc,
                 collapse_ratio=collapse_ratio,
+                reward_mode=reward_mode,
             )
 
     return Exp208PPOExp(cfg)
+
+
+def check_reward_mode(cfg) -> None:
+    """The reward shape and the advantage estimator have to agree.
+
+    ``document_f1`` returns ONE scalar per rollout, so its advantage is constant
+    across the response by construction — which is precisely what
+    ``contacts_dense`` raises on. Pairing them fails at the first optimiser step,
+    minutes into a run, with an error about a missing dense signal that describes
+    a different problem entirely. Conversely a group estimator (grpo/rloo) given
+    the dense per-token reward collapses it to a single number per rollout,
+    discarding the per-contact signal #208 exists to test — silently, with no
+    error at all. That direction is the dangerous one.
+    """
+    estimator = cfg.trainer.algorithm.advantage_estimator
+    mode = cfg.reward_mode
+    if mode == "document_f1" and estimator == ADV_ESTIMATOR:
+        raise ValueError(
+            f"reward_mode='document_f1' emits one scalar per rollout, but "
+            f"advantage_estimator='{ADV_ESTIMATOR}' requires a per-token signal and will "
+            f"refuse it at the first step. Use advantage_estimator=grpo (or rloo)."
+        )
+    if mode == "dense" and estimator != ADV_ESTIMATOR:
+        raise ValueError(
+            f"reward_mode='dense' emits a per-token reward, but advantage_estimator="
+            f"'{estimator}' would reduce it to one number per rollout and discard the "
+            f"per-contact signal WITHOUT error. Use advantage_estimator={ADV_ESTIMATOR}."
+        )
+    logger.info("[exp208] reward_mode=%s advantage_estimator=%s", mode, estimator)
 
 
 @ray.remote(num_cpus=1)
@@ -149,7 +185,7 @@ def skyrl_entrypoint(cfg: Exp208Config):
     register_everything(vocab_size=cfg.vocab_size)
     build_exp(cfg, p_bar=cfg.p_bar, err_decay=cfg.err_decay, vocab_size=cfg.vocab_size,
               doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc,
-              collapse_ratio=cfg.collapse_ratio).run()
+              collapse_ratio=cfg.collapse_ratio, reward_mode=cfg.reward_mode).run()
 
 
 def main() -> int:
@@ -164,6 +200,7 @@ def main() -> int:
     # process, the one in `skyrl_entrypoint` makes the estimator and env visible
     # to the ray actors that actually construct them.
     register_everything(vocab_size=cfg.vocab_size)
+    check_reward_mode(cfg)
     validate_cfg(cfg)
     initialize_ray(cfg)
     ray.get(skyrl_entrypoint.remote(cfg))

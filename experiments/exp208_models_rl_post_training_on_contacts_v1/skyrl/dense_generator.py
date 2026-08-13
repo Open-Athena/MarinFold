@@ -109,8 +109,13 @@ class DenseContactsGenerator(SkyRLGymGenerator):
     def __init__(self, *args, p_bar: float = 0.45, err_decay: float = 0.5,
                  precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None,
                  doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
-                 collapse_ratio: float = 0.2, **kwargs):
+                 collapse_ratio: float = 0.2, reward_mode: str = "dense", **kwargs):
+        # BEFORE super().__init__: a bad mode should fail on the config, not after
+        # a tokenizer, an engine client and a Ray actor have been constructed.
+        if reward_mode not in ("dense", "document_f1"):
+            raise ValueError(f"reward_mode must be 'dense' or 'document_f1', got {reward_mode!r}")
         super().__init__(*args, **kwargs)
+        self.reward_mode = reward_mode
         self.collapse_ratio = float(collapse_ratio)
         self.doc_term = doc_term
         self.lam_step = float(lam_step)
@@ -225,10 +230,26 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         d["correct"] = d.get("correct", 0.0) + float(correct)
         d["gt"] = d.get("gt", 0.0) + float(len(state["gt"]))
         d["resp_tokens"] = d.get("resp_tokens", 0.0) + float(len(response_ids))
+        # Accumulated in BOTH modes: it is the reward in document_f1 and a free
+        # diagnostic in dense, and the two arms have to be read on one axis.
+        d["doc_f1"] = d.get("doc_f1", 0.0) + float(reward.episode_reward)
 
         pairs = {c.pair for c in cr.walk_contacts(response_ids, state["pos_to_seq"], state["gt"])
                  if c.pair is not None and c.reason == "ok"}
         self._group_pairs.setdefault(state["instance_id"], {})[state["repetition_id"]] = pairs
+
+        if self.reward_mode == "document_f1":
+            # ONE scalar for the whole rollout: the section's F1 against ground
+            # truth. No per-token shaping, no p_bar, no err_decay -- those
+            # constants do not enter the return value at all here, and the
+            # baseline comes from the GROUP (GRPO/RLOO centre a scalar reward
+            # against its siblings) rather than from an EMA that can drift away
+            # from the quantity it is meant to track.
+            #
+            # F1 is also the thing arm S could not express: its reward is
+            # `n_scored * (precision - p_bar)`, which pays for precision and is
+            # indifferent to recall except through the count. F1 prices both.
+            return float(reward.episode_reward)
 
         return [float(x) for x in reward.token_rewards]
 
@@ -332,6 +353,11 @@ class DenseContactsGenerator(SkyRLGymGenerator):
             "contacts/scored_per_rollout": scored / d["n_rollouts"],
             "contacts/correct_per_rollout": d.get("correct", 0.0) / d["n_rollouts"],
             "contacts/p_bar": self.p_bar,
+            # Logged in BOTH modes so the two arms are compared on one number.
+            # In document_f1 this is the reward; in dense it is a free diagnostic,
+            # and it is the axis arm S cannot optimise directly.
+            "contacts/doc_f1": d.get("doc_f1", 0.0) / d["n_rollouts"],
+            "contacts/recall": (d.get("correct", 0.0) / gt) if gt else 0.0,
         })
         out["rollout_metrics"] = metrics
         logger.info(
