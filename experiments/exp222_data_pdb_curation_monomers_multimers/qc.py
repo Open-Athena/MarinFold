@@ -96,6 +96,7 @@ def funnel(root: Path, out_dir: Path) -> None:
         {"stage": "monomer documents",
          "count": sum(table.column("monomer_docs").to_pylist())},
     ]
+    # One ledger entry per dropped chain, so these sum to the total above.
     rows += [
         {"stage": f"ASU chain drop: {reason}", "count": count}
         for reason, count in asu_drop_reasons.most_common()

@@ -169,7 +169,7 @@ def process_entry(task: Task) -> dict[str, Any]:
         )
         ledger["asu_chains_kept"] = len(asu.kept)
         ledger["asu_chains_dropped"] = len(asu.dropped)
-        ledger["asu_drop_reasons"] = sorted(set(asu.dropped.values()))
+        ledger["asu_drop_reasons"] = sorted(asu.dropped.values())
         for chain in asu.kept:
             entry_id = f"{task.pdb_id}_{chain.chain_id}"
             try:
@@ -218,7 +218,7 @@ def process_entry(task: Task) -> dict[str, Any]:
             )
             ledger["assembly_chains_kept"] = len(built.kept)
             ledger["assembly_chains_dropped"] = len(built.dropped)
-            ledger["assembly_drop_reasons"] = sorted(set(built.dropped.values()))
+            ledger["assembly_drop_reasons"] = sorted(built.dropped.values())
             n_chains = len(built.kept)
             total_residues = sum(c.n_residues for c in built.kept)
             if n_chains < 2:
