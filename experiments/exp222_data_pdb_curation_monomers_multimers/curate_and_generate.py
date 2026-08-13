@@ -49,6 +49,7 @@ from curate import (
     curate_chains,
     load_clusters,
     protein_subchains,
+    read_entry,
     single_chain_structure,
 )
 from marinfold.document_structures.contacts_v1 import (
@@ -150,7 +151,11 @@ def process_entry(task: Task) -> dict[str, Any]:
     multimer_rows: list[dict[str, Any]] = []
 
     try:
-        structure = clean_structure(task.path)
+        # The raw entry is kept because assembly expansion needs it: the
+        # assembly generator references ligand and water asym ids that
+        # cleaning removes.
+        raw = read_entry(task.path)
+        structure = clean_structure(raw.clone())
     except Exception as exc:  # noqa: BLE001 - recorded in the ledger
         ledger["error"] = f"read: {type(exc).__name__}: {exc}"
         return {"monomers": [], "multimers": [], "ledger": ledger}
@@ -201,7 +206,8 @@ def process_entry(task: Task) -> dict[str, Any]:
 
     # --- multimer pass: biological assembly 1, kept whole ------------------
     try:
-        assembly = build_assembly(structure, "1")
+        expanded = build_assembly(raw, "1")
+        assembly = clean_structure(expanded) if expanded is not None else None
         if assembly is None:
             ledger["multimer_status"] = "no_assembly_1"
         else:
@@ -241,9 +247,11 @@ def _build_multimer(task: Task, assembly, built) -> dict[str, Any] | str:
     """Generate the multimer document, or return a rejection reason string."""
     keep = {c.chain_id for c in built.kept}
     for model in assembly:
-        for chain in list(model):
-            if chain.name not in keep:
-                model.remove_chain(chain.name)
+        # Names first -- removing a chain shifts the index-backed proxies of
+        # every chain after it, so a live iteration skips half of them.
+        for name in [chain.name for chain in model]:
+            if name not in keep:
+                model.remove_chain(name)
     assembly.setup_entities()
 
     entry_id = f"{task.pdb_id}_assembly1"

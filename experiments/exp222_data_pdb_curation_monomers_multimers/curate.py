@@ -88,8 +88,21 @@ class ChainLedger:
         self.dropped[chain_id] = reason
 
 
-def clean_structure(path: str) -> gemmi.Structure:
-    """Read an mmCIF and strip everything contacts-v1 cannot represent.
+def read_entry(path: str) -> gemmi.Structure:
+    """Read an mmCIF with its entity table set up, but otherwise untouched.
+
+    Assemblies must be built from *this*, not from the cleaned structure:
+    ``_pdbx_struct_assembly_gen`` names every asym id in the entry, ligands
+    and waters included, so expanding a structure those have been stripped
+    from raises ``RuntimeError: no subchain X``.
+    """
+    structure = gemmi.read_structure(path)
+    structure.setup_entities()
+    return structure
+
+
+def clean_structure(structure: gemmi.Structure) -> gemmi.Structure:
+    """Strip everything contacts-v1 cannot represent, in place.
 
     Removes alternative conformations (keeping the first), hydrogens, waters
     and every non-polymer molecule, then any chain left empty. Atoms whose
@@ -99,9 +112,8 @@ def clean_structure(path: str) -> gemmi.Structure:
 
     Non-protein *polymers* (DNA, RNA, D-peptides) survive this call and are
     filtered by entity type in :func:`protein_subchains`, which needs the
-    entity table this function leaves intact.
+    entity table this leaves intact.
     """
-    structure = gemmi.read_structure(path)
     structure.setup_entities()
     structure.remove_alternative_conformations()
     structure.remove_hydrogens()
@@ -313,9 +325,12 @@ def single_chain_structure(
     """
     copy = structure.clone()
     for model in copy:
-        for chain in list(model):
-            if chain.name != chain_id:
-                model.remove_chain(chain.name)
+        # Collect the names BEFORE removing anything: gemmi's chain objects
+        # are index-backed proxies, so deleting one shifts every later chain
+        # down and a live iteration silently skips half of them.
+        for name in [chain.name for chain in model]:
+            if name != chain_id:
+                model.remove_chain(name)
     copy.setup_entities()
     return copy
 
@@ -325,10 +340,12 @@ def build_assembly(
 ) -> gemmi.Structure | None:
     """Expand ``structure`` to a biological assembly, as its own Structure.
 
-    Returns ``None`` when the entry declares no such assembly (a handful of
-    old entries have no ``_pdbx_struct_assembly`` at all), which the caller
-    records as a named rejection rather than silently falling back to the
-    asymmetric unit -- the ASU of a crystal is not a biological complex.
+    ``structure`` must be the **raw** entry (see :func:`read_entry`); the
+    caller cleans the result. Returns ``None`` when the entry declares no such
+    assembly (a handful of old entries have no ``_pdbx_struct_assembly`` at
+    all), which the caller records as a named rejection rather than silently
+    falling back to the asymmetric unit -- the ASU of a crystal is not a
+    biological complex.
     """
     assembly = next((a for a in structure.assemblies if a.name == assembly_id), None)
     if assembly is None:
