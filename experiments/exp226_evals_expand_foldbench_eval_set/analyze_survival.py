@@ -183,6 +183,70 @@ def length_profiles(rows: list[dict]) -> dict:
     }
 
 
+def survival_by_arm(rows: list[dict]) -> list[dict]:
+    """Survival under each training arm alone, and under the union.
+
+    exp199 was trained on **both** corpora, so the union is the filter that
+    matters and it is what the headline reports. But the two arms are worth
+    separating, because every prior overlap analysis (#41, #65, #94) only ever
+    checked AFDB — and the AFDB-only column is what those would have concluded.
+    """
+    subsets = (("net_new222", [r for r in rows if r["dataset"] == DATASET_NEW]),
+               ("foldbench100", [r for r in rows if r["dataset"] == "foldbench100"]),
+               ("orig554", [r for r in rows if r["dataset"] != DATASET_NEW]),
+               ("expanded776", rows))
+    filters = (("afdb_only", f"{ARMS[0]}_{GATED}"),
+               ("esm_atlas_only", f"{ARMS[1]}_{GATED}"),
+               ("union", GATED))
+    out = []
+    for name, subset in subsets:
+        for threshold in THRESHOLDS:
+            entry = {"subset": name, "n": len(subset),
+                     "threshold": f"<{threshold:.0%}"}
+            for label, column in filters:
+                survivors = [r for r in subset if survives(r, threshold, column)]
+                entry[f"survive_{label}"] = len(survivors)
+                entry[f"natural_{label}"] = sum(1 for r in survivors
+                                                if not r["designed_any"])
+            entry["esm_atlas_removes_beyond_afdb"] = (
+                entry["survive_afdb_only"] - entry["survive_union"])
+            entry["afdb_removes_beyond_esm_atlas"] = (
+                entry["survive_esm_atlas_only"] - entry["survive_union"])
+            out.append(entry)
+    return out
+
+
+def arm_complementarity(rows: list[dict]) -> list[dict]:
+    """Which arm supplies the >=threshold homolog that filters a protein out.
+
+    Distinct from :func:`arm_attribution`, which asks only whether an arm has
+    *any* significant hit (exp213's statistic). This asks whether an arm has a
+    hit at or above the identity threshold — i.e. whether that arm alone would
+    have been enough to remove the protein.
+    """
+    def blocks(row: dict, arm: str, threshold: float) -> bool:
+        return not survives(row, threshold, f"{arm}_{GATED}")
+
+    subsets = (("net_new222", [r for r in rows if r["dataset"] == DATASET_NEW]),
+               ("orig554", [r for r in rows if r["dataset"] != DATASET_NEW]),
+               ("expanded776", rows))
+    out = []
+    for name, subset in subsets:
+        for threshold in THRESHOLDS:
+            afdb = [r for r in subset if blocks(r, ARMS[0], threshold)]
+            esm = [r for r in subset if blocks(r, ARMS[1], threshold)]
+            both = [r for r in subset if blocks(r, ARMS[0], threshold)
+                    and blocks(r, ARMS[1], threshold)]
+            out.append({
+                "subset": name, "n": len(subset), "threshold": f"<{threshold:.0%}",
+                "dropped": len(afdb) + len(esm) - len(both),
+                "both_arms": len(both),
+                "afdb_only": len(afdb) - len(both),
+                "esm_atlas_only": len(esm) - len(both),
+            })
+    return out
+
+
 def arm_attribution(rows: list[dict], threshold: float) -> list[dict]:
     """Which training arm supplies the homology that filters a protein out."""
     out = []
@@ -258,11 +322,15 @@ def main() -> int:
     head = headline(rows)
     newer = newer_vs_older(rows)
     arms = [e for t in THRESHOLDS for e in arm_attribution(rows, t)]
+    by_arm = survival_by_arm(rows)
+    complementarity = arm_complementarity(rows)
 
     write_csv(by_dataset, DATA / "survival_by_dataset.csv")
     write_csv(head, DATA / "survival_headline.csv")
     write_csv(newer, DATA / "newer_vs_older.csv")
     write_csv(arms, DATA / "arm_attribution.csv")
+    write_csv(by_arm, DATA / "survival_by_arm.csv")
+    write_csv(complementarity, DATA / "arm_complementarity.csv")
 
     summary = {
         "parity_with_exp213": parity,
@@ -270,6 +338,8 @@ def main() -> int:
         "headline": head,
         "newer_vs_older": newer,
         "length_profiles": length_profiles(rows),
+        "survival_by_arm": by_arm,
+        "arm_complementarity": complementarity,
         "designed_flag": {
             "note": "exp213's `designed` is the denovo_pdb dataset label; "
                     "`synthetic` is RCSB source-organism (taxid 32630 / no natural "
@@ -295,6 +365,14 @@ def main() -> int:
               f"{row['new_pct']}%; extrapolation predicted "
               f"{row['predicted_from_old_rate']}, got {row['new_survive']} "
               f"({row['shortfall']:+.1f}); Fisher p={row['fisher_p']}", flush=True)
+    for row in by_arm:
+        if row["subset"] != "net_new222":
+            continue
+        print(f"[arms] net-new 222 {row['threshold']}: AFDB-only would leave "
+              f"{row['survive_afdb_only']}, ESM-Atlas-only {row['survive_esm_atlas_only']}, "
+              f"union {row['survive_union']} "
+              f"(ESM-Atlas removes {row['esm_atlas_removes_beyond_afdb']} that AFDB "
+              f"alone would have kept)", flush=True)
     return 0
 
 

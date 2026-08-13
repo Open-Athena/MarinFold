@@ -35,13 +35,19 @@ entries, not a random sample.
 
 ## Approach
 
-Reuse exp213's 70.9 M-sequence MMseqs2 target database (4,129,682 AFDB +
-66,759,922 ESM-Atlas training sequences — the corpora
-`contacts-v1-exp199-1.5B` was trained on). Append the net-new FoldBench
-monomers to exp213's 554 queries, search the union, and reduce with exp213's
-rule verbatim: a hit counts toward the identity axis only if `evalue <= 1e-3`
-**and** `qcov >= 0.50`; the reported identity is the max `fident` over those
-hits.
+Reuse exp213's 70.9 M-sequence MMseqs2 target database. That database is the
+union of **both** corpora `contacts-v1-exp199-1.5B` was trained on —
+**4,129,682 AFDB** (AlphaFold2 labels, #53) + **66,759,922 ESM-Atlas**
+(ESMFold2 distillation labels, #139) — and every training sequence carries its
+arm in its FASTA header (`{arm}|{id}`), so each hit is attributable back to one
+and the per-protein table has per-arm columns as well as pooled ones. Survival
+is reported against the union (the filter that matches how the model was
+trained) and against each arm alone.
+
+Append the net-new FoldBench monomers to exp213's 554 queries, search the
+union, and reduce with exp213's rule verbatim: a hit counts toward the identity
+axis only if `evalue <= 1e-3` **and** `qcov >= 0.50`; the reported identity is
+the max `fident` over those hits.
 
 Set construction, all derived and then checked rather than copied from the
 issue:
@@ -195,13 +201,42 @@ survive either filter.
 +57 % is a real, useful increase in the axis #213 said bottoms out. At <30 % the
 +22 % is small enough that it does not change what the eval set can measure.
 
-### 5. Where the homology comes from
+### 5. Both training arms, separately — and one arm alone overcounts 3×
 
-[`data/arm_attribution.csv`](data/arm_attribution.csv) — of the 199 net-new
-proteins dropped at <40 %, **174 hit both training arms, 9 AFDB-only, 16
-ESM-Atlas-only**. Same shape as exp213 found for the 554 (237 / 21 / 12 of 270):
-the metagenomic ESM-Atlas half is not the marginal contaminator here — most of
-these proteins are reachable from both corpora.
+exp199 trained on **both** corpora, so the union is the filter that counts and
+is what every number above uses. But the two arms are worth separating, because
+every prior overlap check (#41, #65, #94) only ever looked at AFDB
+([`data/survival_by_arm.csv`](data/survival_by_arm.csv)):
+
+| the 222 net-new, survivors vs… | <40 % | <30 % |
+| --- | ---: | ---: |
+| AFDB only (4.13 M seqs) | 76 | 40 |
+| ESM-Atlas only (66.76 M seqs) | 62 | 29 |
+| **both — exp199's actual training set** | **23** | **11** |
+
+**An AFDB-only check would have called 76 of the 222 clean at <40 %. The real
+number is 23.** The arms are largely complementary rather than redundant:
+ESM-Atlas removes 53 proteins that AFDB alone would have kept, and AFDB removes
+39 that ESM-Atlas alone would have kept.
+
+Of the 199 net-new dropped at <40 %
+([`data/arm_complementarity.csv`](data/arm_complementarity.csv)): **107 are
+reachable from both arms, 39 from AFDB alone, 53 from ESM-Atlas alone.**
+
+**The pattern reverses between the two FoldBench slices.** For the existing 554
+the same computation gives **183 / 60 / 27** — reproducing the issue's own
+figures exactly, a third independent parity check — where AFDB is the larger
+sole contaminator. For the net-new 222 it is **ESM-Atlas** that is the larger
+sole contaminator (53 vs 39). The metagenomic ESMFold2-distillation half is
+doing *more* of the contaminating on the newer PDB entries, not less, which is
+part of why the extrapolation from the older 100 came out optimistic.
+
+→ [`plots/per_arm_survival.png`](plots/per_arm_survival.png)
+
+(The separate [`data/arm_attribution.csv`](data/arm_attribution.csv) reports the
+weaker "does this arm have *any* significant hit" statistic — 174 / 9 / 16 for
+the net-new set — which is a different question and not the one the identity
+filter turns on.)
 
 ## Conclusion
 
@@ -216,10 +251,16 @@ these proteins are reachable from both corpora.
   100 monomers we already use are the oldest-deposited rows, and the newer
   entries are *more* homologous to our training data, not less. Predicted 33/24,
   measured 23/11.
+- **Both training arms matter and neither is redundant.** Filtering against
+  AFDB alone would have left 76 of the 222 looking clean at <40 % instead of 23.
+  For the net-new set the ESM-Atlas / ESMFold2 distillation corpus is the
+  *larger* sole contaminator (53 proteins vs AFDB's 39) — the reverse of the
+  existing 554, where AFDB dominates (60 vs 27).
 - The per-protein table for all 776
   ([`data/eval_train_identity_expanded.csv`](data/eval_train_identity_expanded.csv))
-  shares exp213's schema and reproduces its 554 rows exactly, so it is a drop-in
-  replacement for any future eval that wants to stratify on training identity.
+  shares exp213's schema, carries per-arm identity columns, and reproduces its
+  554 rows exactly, so it is a drop-in replacement for any future eval that
+  wants to stratify on training identity — against either arm or both.
 
 **Not done here:** the **fold-novel** count for the 222. That axis needs a
 Foldseek pass against exp41's AFDB training-representative DB, which lives on a
@@ -244,7 +285,8 @@ not exist yet; this experiment delivers the decontamination table, not scores.
 | [`data/eval_queries_expanded.fasta`](data/eval_queries_expanded.fasta) | The 776 queries (exp213's 554 verbatim + 222). |
 | [`data/foldbench_rest_queries.fasta`](data/foldbench_rest_queries.fasta) | Just the 222 net-new. |
 | [`data/query_set_validation.json`](data/query_set_validation.json) | Every set-construction checksum and validation. |
-| [`data/survival_headline.csv`](data/survival_headline.csv) · [`survival_by_dataset.csv`](data/survival_by_dataset.csv) · [`newer_vs_older.csv`](data/newer_vs_older.csv) · [`arm_attribution.csv`](data/arm_attribution.csv) | The result tables. |
+| [`data/survival_headline.csv`](data/survival_headline.csv) · [`survival_by_dataset.csv`](data/survival_by_dataset.csv) · [`newer_vs_older.csv`](data/newer_vs_older.csv) | The result tables. |
+| [`data/survival_by_arm.csv`](data/survival_by_arm.csv) · [`arm_complementarity.csv`](data/arm_complementarity.csv) · [`arm_attribution.csv`](data/arm_attribution.csv) | AFDB vs ESM-Atlas vs both. |
 | [`plots/summary.pdf`](plots/summary.pdf) | Narrative + plot appendix. |
 
 The MMseqs2 intermediates (`queryDB_expanded`, `alnDB_expanded`,

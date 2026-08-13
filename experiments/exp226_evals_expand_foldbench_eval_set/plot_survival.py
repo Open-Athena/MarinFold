@@ -127,6 +127,69 @@ def plot_natural_gain(headline: pd.DataFrame, newer: pd.DataFrame,
     )
 
 
+def plot_per_arm(by_arm: pd.DataFrame, complementarity: pd.DataFrame,
+                 out: Path, args: list[str]) -> None:
+    fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(11.8, 4.4))
+
+    # Left: what each training arm alone would have concluded, against the
+    # union that exp199 actually trained on.
+    net_new = by_arm[by_arm["subset"] == "net_new222"].reset_index(drop=True)
+    x = np.arange(len(net_new))
+    width = 0.26
+    for offset, column, color, label in (
+        (-width, "survive_afdb_only", "#8e44ad", "vs AFDB only (4.1 M seqs)"),
+        (0.0, "survive_esm_atlas_only", "#16a085", "vs ESM-Atlas only (66.8 M)"),
+        (width, "survive_union", COLOR_NEW, "vs both (70.9 M) — exp199's actual training set"),
+    ):
+        bars = ax_left.bar(x + offset, net_new[column], width, color=color,
+                           edgecolor="white", linewidth=0.6, label=label)
+        for bar, value in zip(bars, net_new[column]):
+            ax_left.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1,
+                         str(value), ha="center", fontsize=9)
+    ax_left.set_xticks(x)
+    ax_left.set_xticklabels([f"{t} identity" for t in net_new["threshold"]])
+    ax_left.set_ylabel("survivors of the 222 net-new")
+    ax_left.set_title("Checking one arm would have overcounted 3x", fontsize=11)
+    ax_left.legend(frameon=False, fontsize=8)
+    ax_left.set_ylim(0, net_new["survive_afdb_only"].max() * 1.35)
+
+    # Right: for the proteins that ARE filtered out, which arm was sufficient.
+    subsets = ["orig554", "net_new222"]
+    frame = complementarity[complementarity["threshold"] == "<40%"].set_index("subset")
+    y = np.arange(len(subsets))
+    left = np.zeros(len(subsets))
+    for column, color, label in (("both_arms", "#34495e", "both arms"),
+                                 ("afdb_only", "#8e44ad", "AFDB alone"),
+                                 ("esm_atlas_only", "#16a085", "ESM-Atlas alone")):
+        values = frame.loc[subsets, column].to_numpy()
+        ax_right.barh(y, values, left=left, color=color, label=label,
+                      edgecolor="white", linewidth=0.6)
+        for yi, (value, start) in enumerate(zip(values, left)):
+            if value:
+                ax_right.text(start + value / 2, yi, str(value), ha="center",
+                              va="center", fontsize=9, color="white")
+        left += values
+    ax_right.set_yticks(y)
+    ax_right.set_yticklabels(["the 554\neval set", "the 222\nnet-new"], fontsize=9)
+    ax_right.set_xlabel("proteins removed by a <40 % filter")
+    ax_right.set_title("Which arm supplies the disqualifying homolog", fontsize=11)
+    ax_right.set_ylim(-0.6, 1.9)  # headroom so the legend clears the top bar
+    ax_right.legend(frameon=False, fontsize=8.5, loc="upper right", ncol=3)
+
+    for ax in (ax_left, ax_right):
+        ax.spines[["top", "right"]].set_visible(False)
+    save_plot_with_meta(
+        fig, out, args=args,
+        caption="exp199 trained on both corpora, so the union is the filter that "
+                "counts — but every prior overlap check (#41, #65, #94) looked at "
+                "AFDB only. Left: AFDB alone would have left 76 of the 222 looking "
+                "clean at <40 %; the union leaves 23. Right: for the net-new set "
+                "the metagenomic ESM-Atlas arm is the *larger* sole contaminator "
+                "(53 vs 39), reversing the pattern in the existing 554 (27 vs 60, "
+                "which reproduces #213's split exactly).",
+    )
+
+
 def plot_identity_profile(rows: pd.DataFrame, lengths: dict,
                           out: Path, args: list[str]) -> None:
     fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(11.5, 4.3))
@@ -188,9 +251,13 @@ def main() -> int:
     newer = pd.read_csv(DATA / "newer_vs_older.csv")
     lengths = json.loads((DATA / "survival_summary.json").read_text())["length_profiles"]
 
+    by_arm = pd.read_csv(DATA / "survival_by_arm.csv")
+    complementarity = pd.read_csv(DATA / "arm_complementarity.csv")
+
     PLOTS.mkdir(parents=True, exist_ok=True)
     plot_survival_by_dataset(by_dataset, PLOTS / "survival_by_dataset.png", argv)
     plot_natural_gain(headline, newer, PLOTS / "natural_gain.png", argv)
+    plot_per_arm(by_arm, complementarity, PLOTS / "per_arm_survival.png", argv)
     plot_identity_profile(rows, lengths, PLOTS / "identity_profile_old_vs_new.png", argv)
     print(f"[plots] -> {PLOTS}", flush=True)
     return 0

@@ -98,6 +98,168 @@
       "max": 1596
     }
   },
+  "survival_by_arm": [
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<40%",
+      "survive_afdb_only": 76,
+      "natural_afdb_only": 72,
+      "survive_esm_atlas_only": 62,
+      "natural_esm_atlas_only": 62,
+      "survive_union": 23,
+      "natural_union": 23,
+      "esm_atlas_removes_beyond_afdb": 53,
+      "afdb_removes_beyond_esm_atlas": 39
+    },
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<30%",
+      "survive_afdb_only": 40,
+      "natural_afdb_only": 36,
+      "survive_esm_atlas_only": 29,
+      "natural_esm_atlas_only": 29,
+      "survive_union": 11,
+      "natural_union": 11,
+      "esm_atlas_removes_beyond_afdb": 29,
+      "afdb_removes_beyond_esm_atlas": 18
+    },
+    {
+      "subset": "foldbench100",
+      "n": 100,
+      "threshold": "<40%",
+      "survive_afdb_only": 31,
+      "natural_afdb_only": 28,
+      "survive_esm_atlas_only": 28,
+      "natural_esm_atlas_only": 25,
+      "survive_union": 15,
+      "natural_union": 12,
+      "esm_atlas_removes_beyond_afdb": 16,
+      "afdb_removes_beyond_esm_atlas": 13
+    },
+    {
+      "subset": "foldbench100",
+      "n": 100,
+      "threshold": "<30%",
+      "survive_afdb_only": 18,
+      "natural_afdb_only": 15,
+      "survive_esm_atlas_only": 16,
+      "natural_esm_atlas_only": 14,
+      "survive_union": 11,
+      "natural_union": 9,
+      "esm_atlas_removes_beyond_afdb": 7,
+      "afdb_removes_beyond_esm_atlas": 5
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<40%",
+      "survive_afdb_only": 311,
+      "natural_afdb_only": 72,
+      "survive_esm_atlas_only": 344,
+      "natural_esm_atlas_only": 73,
+      "survive_union": 284,
+      "natural_union": 55,
+      "esm_atlas_removes_beyond_afdb": 27,
+      "afdb_removes_beyond_esm_atlas": 60
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<30%",
+      "survive_afdb_only": 286,
+      "natural_afdb_only": 58,
+      "survive_esm_atlas_only": 291,
+      "natural_esm_atlas_only": 60,
+      "survive_union": 264,
+      "natural_union": 50,
+      "esm_atlas_removes_beyond_afdb": 22,
+      "afdb_removes_beyond_esm_atlas": 27
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<40%",
+      "survive_afdb_only": 387,
+      "natural_afdb_only": 144,
+      "survive_esm_atlas_only": 406,
+      "natural_esm_atlas_only": 135,
+      "survive_union": 307,
+      "natural_union": 78,
+      "esm_atlas_removes_beyond_afdb": 80,
+      "afdb_removes_beyond_esm_atlas": 99
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<30%",
+      "survive_afdb_only": 326,
+      "natural_afdb_only": 94,
+      "survive_esm_atlas_only": 320,
+      "natural_esm_atlas_only": 89,
+      "survive_union": 275,
+      "natural_union": 61,
+      "esm_atlas_removes_beyond_afdb": 51,
+      "afdb_removes_beyond_esm_atlas": 45
+    }
+  ],
+  "arm_complementarity": [
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<40%",
+      "dropped": 199,
+      "both_arms": 107,
+      "afdb_only": 39,
+      "esm_atlas_only": 53
+    },
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<30%",
+      "dropped": 211,
+      "both_arms": 164,
+      "afdb_only": 18,
+      "esm_atlas_only": 29
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<40%",
+      "dropped": 270,
+      "both_arms": 183,
+      "afdb_only": 60,
+      "esm_atlas_only": 27
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<30%",
+      "dropped": 290,
+      "both_arms": 241,
+      "afdb_only": 27,
+      "esm_atlas_only": 22
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<40%",
+      "dropped": 469,
+      "both_arms": 290,
+      "afdb_only": 99,
+      "esm_atlas_only": 80
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<30%",
+      "dropped": 501,
+      "both_arms": 405,
+      "afdb_only": 45,
+      "esm_atlas_only": 51
+    }
+  ],
   "designed_flag": {
     "note": "exp213's `designed` is the denovo_pdb dataset label; `synthetic` is RCSB source-organism (taxid 32630 / no natural source), resolved only for FoldBench rows; `designed_any` is their union.",
     "foldbench100_synthetic": 3,

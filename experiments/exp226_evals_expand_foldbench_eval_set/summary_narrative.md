@@ -83,6 +83,29 @@ constructs. The proxy is calibrated, flagging 12 of 12 known designs, and
 deliberately conservative, since it also catches engineered variants of natural
 proteins. Only 4 of the 222 trip it, and none of those 4 survive either filter.
 
+## Both arms, and why one is not enough
+
+exp199 trained on **both** corpora, so the union is the filter that counts —
+4.13M AFDB sequences with AlphaFold2 labels plus 66.76M ESM-Atlas sequences
+with ESMFold2 distillation labels. Every number above uses the union. But every
+prior overlap check (#41, #65, #94) only ever looked at AFDB, and that turns
+out to matter a great deal.
+
+Against **AFDB alone**, 76 of the 222 net-new monomers would look clean at
+<40%. Against **ESM-Atlas alone**, 62. Against **both**, only **23**. A
+single-arm check overcounts the clean set by about 3x, and the two arms are
+largely complementary rather than redundant: ESM-Atlas removes 53 proteins
+AFDB alone would have kept, and AFDB removes 39 ESM-Atlas alone would have kept.
+
+**The pattern reverses between the two FoldBench slices.** Of the 199 net-new
+dropped at <40%, 107 are reachable from both arms, 39 from AFDB alone and **53
+from ESM-Atlas alone** — the metagenomic half is the larger sole contaminator.
+For the existing 554 the same computation gives 183 / 60 / 27, where AFDB
+dominates, and reproduces the figures on the issue exactly — a third
+independent parity check. The ESMFold2-distillation corpus is doing *more* of
+the contaminating on newer PDB entries, which is part of why extrapolating from
+the older 100 came out optimistic.
+
 ## Verdict
 
 **Fold it in at <40%; it changes little at <30%.** A +42% increase in
@@ -93,9 +116,7 @@ measure.
 FoldBench is confirmed as the dirtiest slice we have. **89.6%** of the net-new
 monomers fail a 40% filter, and **all 222** have at least some alignment into
 the training set, so the expansion adds only **8** proteins to #213's
-"no detectable homolog" stratum, 231 to 239. Of the 199 dropped at <40%, 174
-hit both training arms — the metagenomic half is not the marginal contaminator
-here.
+"no detectable homolog" stratum, 231 to 239.
 
 Recommendation: add `foldbench_rest` as its own stratum rather than merging it
 into `foldbench100`, since the two have measurably different training-set
