@@ -287,6 +287,9 @@ def leakage_audit(
 def plots(tables: dict, plots_dir: Path) -> None:
     plots_dir.mkdir(parents=True, exist_ok=True)
 
+    # The deduped corpus is a subset of these two, so it gets statistics and a
+    # leakage row but no separate figure -- its distributions are the same
+    # shapes with the redundancy taken out.
     monomers, multimers = tables.get("monomers"), tables.get("multimers")
 
     if monomers is not None:
@@ -367,6 +370,7 @@ def main(argv: list[str] | None = None) -> int:
     tables = {
         "monomers": load_docs(args.root, "monomers"),
         "multimers": load_docs(args.root, "multimers"),
+        "deduped": load_docs(args.root, "deduped"),
     }
     funnel(args.root, args.data_dir)
     corpus_stats(tables, args.data_dir)

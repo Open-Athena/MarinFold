@@ -1,3 +1,4 @@
 subset,documents,distinct_pdb_entries,distinct_resolved_sequences,distinct_clusters_40pct,total_tokens,mean_tokens,median_seq_len,mean_seq_len,max_seq_len,mean_chains,max_chains,mean_contacts,total_contacts,inter_chain_contacts,inter_chain_fraction,truncated_fraction
 monomers,602859,177468,247675,38572,695474753,1153.6,205,240.2,1997,1.0,1,221.8,133692387,0,0.0,0.0004
 multimers,85660,85660,70756,24075,299937748,3501.5,562,675.0,1996,2.933,60,711.9,60981618,9188598,0.1507,0.0711
+deduped,72522,46827,69470,38582,128425980,1770.9,251,350.5,1997,1.888,60,352.8,25584274,2913280,0.1139,0.0196

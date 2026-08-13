@@ -21,6 +21,16 @@ Those 9.19 M inter-chain contacts are a class of contact no previous MarinFold c
 
 Fine-tuning scale by design: the AFDB corpus of exp105 is 138 B tokens.
 
+## A third corpus you can just train on
+
+PDB redundancy is extreme: the largest 40%-identity group in the raw corpora holds 4,055 near-duplicate documents, so a uniform pass spends most of its gradient on a handful of over-crystallised proteins. Protenix/AF3 fix this with cluster-weighted sampling at training time.
+
+contacts_v1_pdb_deduped bakes that intent into the data instead: 72,522 documents / 128 M tokens, one representative per cluster composition (41,660 monomers + 30,862 multimers), pre-shuffled with a fixed seed so a sequential read is already in random order. No sampler, no subsampling logic.
+
+Grouping is by the chain's 40% cluster id for a monomer and by the SORTED TUPLE of its chains' cluster ids for a multimer, so composition and stoichiometry both count — a homodimer, a homotetramer and a heterodimer of the same protein are three different things to learn, not three copies of one. The representative is the best-resolution member.
+
+One-per-cluster is the strictest reading of "deduplicated". build_deduped.py --max-per-cluster N regenerates at any size: cap 2 gives 112k docs / 202 M tokens, cap 5 gives 183k / 322 M, cap 10 gives 251k / 433 M.
+
 ## Two corpora, and why the monomer one is built the way it is
 
 The monomer corpus is one document per protein chain of the asymmetric unit, with that chain analyzed ALONE. The multimer corpus is one document per entry whose biological assembly 1 holds two or more protein chains, analyzed as the whole assembly.
@@ -45,7 +55,7 @@ Single-chain documents are byte-identical to the pre-change generator: with k = 
 
 Every rejection is attributed to a named filter: 13,321 released after the cutoff, 763 below 9 A resolution, 3,881 with no protein entity, 183 held out as eval set; then at the chain level 28,775 non-protein, 2,851 all-unknown, 733 over 2000 residues, 354 with a CA break, 186 clashing, 55 too short; and 10,530 complexes too large for the index ring. The 339 chains (0.06%) that pass curation but still fail to serialize are counted too.
 
-Validation on 36,505 sampled documents: all clean. Chains land on contiguous, disjoint index runs that exactly cover the assigned positions, with one terminus pair each. For 40 multimers, a fresh pyconfind run on the rebuilt assembly reproduces the document's interface contacts exactly.
+Validation on 56,505 sampled documents across all three corpora: all clean. Chains land on contiguous, disjoint index runs that exactly cover the assigned positions, with one terminus pair each. For 40 multimers, a fresh pyconfind run on the rebuilt assembly reproduces the document's interface contacts exactly.
 
 ## Leakage: no worse than what the model already trained on
 
@@ -55,8 +65,8 @@ Residual homology, measured from the eval side so it is comparable to #213: 50.2
 
 ## Conclusion, and one trap to carry forward
 
-Both corpora exist, round-trip cleanly, and are published to the public open-athena/MarinFold bucket with the tokenizer co-located.
+All three corpora exist, round-trip cleanly, and are published to the public open-athena/MarinFold bucket, each with the tokenizer co-located and a README rendered on the bucket's web view.
 
-The trap: global_plddt means the opposite thing here. It is the mean CA B-factor in both corpora, but for AFDB that IS pLDDT (higher is better, 0-100) and here it is a B-factor (lower is better). Any mixture that filters or weights on it must branch on the corpus.
+The trap, now defused: global_plddt is 0.0 here and carries no information. The library fills it with the mean CA B-factor, which for AFDB IS pLDDT (higher is better, 0-100) and here is a B-factor (lower is better) — same column, opposite sign, so a mixture filtering on it would have silently kept the good AFDB documents and the bad PDB ones. Zeroed rather than documented-around. Use resolution, which is stored separately.
 
-Training is deliberately a separate experiment. Two follow-ups suggest themselves: fine-tune contacts-v1-exp199-1.5B on the monomer corpus (does experimental structure beat predicted?), and a multimer curriculum (can the model place an interface at all?). Each needs its own controls.
+Training is deliberately a separate experiment. Two follow-ups suggest themselves: fine-tune contacts-v1-exp199-1.5B on contacts_v1_pdb_deduped (does experimental structure beat predicted?), and a multimer curriculum (can the model place an interface at all?). Each needs its own controls.

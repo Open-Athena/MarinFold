@@ -125,6 +125,17 @@ def _document_row(
     row = result.metadata_row()
     sequence = "".join(r.resname for r in result.residues)
     row.update({
+        # Zeroed deliberately. The library fills this with the mean CA
+        # B-factor, which for an AFDB model IS pLDDT (0-100, higher is
+        # better) but for a crystal structure is a B-factor (typically
+        # 10-100, LOWER is better). Same column, opposite sign: a mixture
+        # that filters `global_plddt > 70` would silently keep the good AFDB
+        # documents and the bad PDB ones. There is no defensible common
+        # scale, and a per-residue B-factor average is a weak quality signal
+        # for a crystal structure anyway, so the column carries no claim at
+        # all here. Resolution is the meaningful quality field for this
+        # corpus and is stored separately.
+        "global_plddt": 0.0,
         "pdb_id": pdb_id,
         "subset": subset,
         "release_date": release_date,

@@ -14,9 +14,14 @@ Uploads, under ``data/document_structures/``:
 
 * ``contacts_v1_pdb_monomers/documents/``  -- the document shards
 * ``contacts_v1_pdb_multimers/documents/`` -- ditto
+* ``contacts_v1_pdb_deduped/documents/``   -- one representative per sequence
+  cluster, pre-shuffled and directly trainable
 * ``contacts_v1_pdb_curation/{metadata,ledger}/`` -- the entry scan, the RCSB
   cluster file and the per-entry curation ledger, so the corpora can be
   re-derived and audited without the local mirror.
+
+Each prefix also gets a ``README.md`` rendered on the bucket's web view, sourced
+from ``<root>/readme/<name>/README.md``.
 
 The contacts-v1 tokenizer is written next to each corpus (repo convention:
 a corpus ships with the tokenizer that reads it). Build it from the library
@@ -49,12 +54,22 @@ PREFIX = "data/document_structures"
 # pipeline was developed against.
 EXCLUDE = ["_smoke*", "*.log"]
 
+# Sanity ceiling on the per-prefix README, which is synced into a prefix that
+# also holds `documents/` and `tokenizer/`. sync_bucket does not delete by
+# default, so the subdirectories are untouched, but a stray large file in the
+# readme dir would be silently published.
+MAX_README_BYTES = 64 * 1024
+
 
 def sync(api: HfApi, local: Path, remote: str, dry_run: bool) -> int:
     files = sorted(
         p for p in local.rglob("*")
         if p.is_file() and not p.name.startswith("_")
     )
+    if local.name in ("monomers", "multimers", "deduped", "curation") and "readme" in local.parts:
+        for f in files:
+            if f.suffix != ".md" or f.stat().st_size > MAX_README_BYTES:
+                raise SystemExit(f"unexpected file in a README dir: {f}")
     total = sum(p.stat().st_size for p in files)
     destination = f"{BUCKET_URI}/{remote}"
     print(f"  {local} -> {destination}  ({len(files)} files, {total/1e9:.2f} GB)")
@@ -88,13 +103,19 @@ def main(argv: list[str] | None = None) -> int:
             f"    uv run contacts-v1 tokenizer --save-local {tokenizer}"
         )
 
-    plan = [
-        (args.root / "docs" / "monomers", f"{PREFIX}/contacts_v1_pdb_monomers/documents"),
-        (tokenizer, f"{PREFIX}/contacts_v1_pdb_monomers/tokenizer"),
-        (args.root / "docs" / "multimers", f"{PREFIX}/contacts_v1_pdb_multimers/documents"),
-        (tokenizer, f"{PREFIX}/contacts_v1_pdb_multimers/tokenizer"),
+    plan = []
+    for subset, name in [
+        ("monomers", "contacts_v1_pdb_monomers"),
+        ("multimers", "contacts_v1_pdb_multimers"),
+        ("deduped", "contacts_v1_pdb_deduped"),
+    ]:
+        plan.append((args.root / "docs" / subset, f"{PREFIX}/{name}/documents"))
+        plan.append((tokenizer, f"{PREFIX}/{name}/tokenizer"))
+        plan.append((args.root / "readme" / subset, f"{PREFIX}/{name}"))
+    plan += [
         (args.root / "metadata", f"{PREFIX}/contacts_v1_pdb_curation/metadata"),
         (args.root / "ledger", f"{PREFIX}/contacts_v1_pdb_curation/ledger"),
+        (args.root / "readme" / "curation", f"{PREFIX}/contacts_v1_pdb_curation"),
     ]
     uploaded = 0
     for local, remote in plan:

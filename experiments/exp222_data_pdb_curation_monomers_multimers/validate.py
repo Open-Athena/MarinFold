@@ -235,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
 
     failed = 0
-    for subset in ("monomers", "multimers"):
+    for subset in ("monomers", "multimers", "deduped"):
         directory = args.root / "docs" / subset
         shards = sorted(directory.glob("*.parquet")) if directory.is_dir() else []
         if not shards:
@@ -254,8 +254,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         failed += sum(problems.values())
 
-        if subset == "multimers":
-            sample = rows[: args.pyconfind_sample]
+        if subset in ("multimers", "deduped"):
+            multimer_rows = [r for r in rows if r["num_chains"] > 1]
+            sample = multimer_rows[: args.pyconfind_sample]
             geometry: Counter = Counter()
             for row in sample:
                 for problem in check_against_pyconfind(row, args.mirror):

@@ -41,6 +41,7 @@ Two corpora plus the format change that makes the second expressible.
 | --- | --- | --- |
 | `contacts_v1_pdb_monomers` | protein chain of the asymmetric unit | that chain **alone** (`assembly=None`) |
 | `contacts_v1_pdb_multimers` | entry whose assembly 1 has ≥ 2 protein chains | the **whole assembly** |
+| `contacts_v1_pdb_deduped` | sequence-cluster composition | (one representative drawn from the two above) |
 
 The monomer convention is deliberate: pulling the chain out and analyzing it in
 isolation is exactly how the AFDB training corpus and the exp74/exp89 eval ground
@@ -116,22 +117,38 @@ that, `qc.py` measures what remains: exact resolved-sequence matches, and RCSB
 set is already 58% homologous to exp199's AFDB training data *without* the score
 being homology-inflated. The measurement is the deliverable; no homology purge.
 
-### One caveat for mixed-corpus training
+### `global_plddt` is zeroed
 
-The `global_plddt` column is filled, as always, with the mean Cα B-factor.
-For AFDB that column really is pLDDT (0–100, **higher** is better); for a crystal
-structure it is a B-factor (typically 10–100, **lower** is better). The column name
-is kept for schema compatibility with the exp53/exp105/exp132 corpora, but the two
-are not on the same scale or even the same sign. Any mixture that filters or weights
-on `global_plddt` must branch on the corpus.
+The column is kept for schema compatibility with exp53/exp105/exp132 but carries
+**0.0 and no information**. For AFDB that column genuinely is pLDDT (0–100,
+**higher** is better); the crystal analogue the library computes is the mean Cα
+B-factor, which runs the **opposite** direction and is not on a comparable scale.
+A mixture filtering `global_plddt > 70` would have kept the good AFDB documents
+and the bad PDB ones. Since there is no defensible common scale — and a B-factor
+average is a weak quality signal for a crystal structure anyway — the column makes
+no claim at all here. **`resolution` is the meaningful quality field** and is
+stored separately.
 
 ### Redundancy
 
-Kept, not removed. PDB is enormously redundant, but each copy is a genuinely
-different experimental structure. Every passing chain/assembly is emitted and the
-metadata carries an RCSB 40% `cluster_ids` list plus a `resolved_seq_sha1`, so
-downstream training can weight or subsample — what Protenix/AF3 do with their
-`cluster_id` column.
+Kept in the two source corpora, removed in a third.
+
+PDB is enormously redundant — the largest 40%-identity group here holds **4,055**
+near-duplicate documents — but each copy is a genuinely different experimental
+structure, so the monomer and multimer corpora emit every passing chain and
+assembly and carry an RCSB 40% `cluster_ids` list plus a `resolved_seq_sha1` for
+downstream weighting. That is what Protenix/AF3 do with their `cluster_id` column.
+
+Because "weight it yourself" is a real cost to impose on every consumer,
+[`build_deduped.py`](build_deduped.py) also emits **`contacts_v1_pdb_deduped`**:
+one representative per cluster composition, pre-shuffled, trainable by sequential
+read with no sampling logic. Grouping is by the chain's 40% cluster id for a
+monomer and by the **sorted tuple** of its chains' cluster ids for a multimer, so
+composition *and stoichiometry* both count (a homodimer, a homotetramer and a
+heterodimer of the same protein are three things to learn, not three copies of
+one). Documents whose chains are absent from the RCSB cluster file — short
+peptides — dedupe by exact sequence instead. The representative is the
+best-resolution member, ties broken by residue count then entry id.
 
 ### Pipeline
 
@@ -140,7 +157,9 @@ downstream training can weight or subsample — what Protenix/AF3 do with their
 | [`scan_metadata.py`](scan_metadata.py) | header scan of all 195,858 entries → `entries.parquet` (date, resolution, method, entity types, assembly-1 composition). No coordinates, ~40 ms/entry. |
 | [`curate.py`](curate.py) | the chain-level filters, as a testable library |
 | [`curate_and_generate.py`](curate_and_generate.py) | one coordinate pass: curate → pyconfind → contacts-v1 documents → parquet shards + per-entry ledger |
+| [`build_deduped.py`](build_deduped.py) | one representative per cluster composition → the directly-trainable corpus |
 | [`qc.py`](qc.py) | funnel, corpus statistics, leakage audit, plots |
+| [`validate.py`](validate.py) | round-trip every corpus against its own metadata and against pyconfind |
 | [`publish_to_hf.py`](publish_to_hf.py) | push to the public `open-athena/MarinFold` bucket |
 
 Every rejection is named and counted in the ledger, so the funnel from 195,858
@@ -162,23 +181,38 @@ header scan plus 161 min of generation on 60 cores.
 
 ### The corpora
 
-| | `contacts_v1_pdb_monomers` | `contacts_v1_pdb_multimers` |
-| --- | --- | --- |
-| documents | **602,859** | **85,660** |
-| distinct PDB entries | 177,468 | 85,660 |
-| distinct resolved sequences | 247,675 | 70,756 |
-| distinct 40% clusters | 38,572 | 24,075 |
-| tokens | 695.5 M | 299.9 M |
-| mean tokens / document | 1,154 | 3,501 |
-| median / max residues | 205 / 1,997 | 562 / 1,996 |
-| mean / max chains | 1.0 / 1 | 2.93 / 60 |
-| contacts | 133.7 M | 61.0 M |
-| **interface contacts** | — | **9.19 M (15.1%)** |
-| truncated by the 8192-token budget | 0.04% | 7.1% |
-| on disk (zstd parquet) | 1.2 GB | 529 MB |
+| | `..._monomers` | `..._multimers` | `..._deduped` |
+| --- | --- | --- | --- |
+| documents | **602,859** | **85,660** | **72,522** |
+| distinct PDB entries | 177,468 | 85,660 | 46,827 |
+| distinct resolved sequences | 247,675 | 70,756 | 69,470 |
+| distinct 40% clusters | 38,572 | 24,075 | 38,582 |
+| tokens | 695.5 M | 299.9 M | 128.4 M |
+| mean tokens / document | 1,154 | 3,501 | 1,771 |
+| median / max residues | 205 / 1,997 | 562 / 1,996 | 251 / 1,997 |
+| mean / max chains | 1.0 / 1 | 2.93 / 60 | 1.89 / 60 |
+| contacts | 133.7 M | 61.0 M | 25.6 M |
+| **interface contacts** | — | **9.19 M (15.1%)** | 2.91 M (11.4%) |
+| truncated by the 8192-token budget | 0.04% | 7.1% | 2.0% |
+| on disk (zstd parquet) | 1.2 GB | 529 MB | 243 MB |
 
-Together **688,519 documents / 995 M tokens** — fine-tuning scale by design, next
-to the 138 B-token AFDB corpus of exp105.
+The two source corpora together are **688,519 documents / 995 M tokens** —
+fine-tuning scale by design, next to the 138 B-token AFDB corpus of exp105.
+
+**`contacts_v1_pdb_deduped`** is the one to train on without further thought:
+one representative per cluster composition (41,660 monomers + 30,862 multimers),
+pre-shuffled with a fixed seed so a sequential read is already in random order.
+688,519 → 72,522 documents. If that is too aggressive, `build_deduped.py
+--max-per-cluster N` regenerates at any size:
+
+| cap | documents | tokens |
+| --- | --- | --- |
+| **1 (published)** | **72,522** | **128 M** |
+| 2 | 112,014 | 202 M |
+| 5 | 183,069 | 322 M |
+| 10 | 251,324 | 433 M |
+| 25 | 351,311 | 589 M |
+| none | 688,519 | 995 M |
 
 The multimer corpus is mostly small complexes: 62% dimers, 17% tetramers, 12%
 trimers, and a 1,190-document tail at ≥ 10 chains. In 0.79% of documents *every*
@@ -211,27 +245,27 @@ complex, 10,530 too large for the 2000-index ring, 1,210 with too many chains,
 
 ### Validation
 
-[`validate.py`](validate.py) on a 36,505-document sample (19,794 monomer, 16,711
-multimer — every shard sampled):
+[`validate.py`](validate.py) on a 56,505-document sample (19,794 monomer, 16,711
+multimer, 20,000 deduped — every shard sampled):
 
-- **Structural round-trip: 36,505 / 36,505 clean.** Parsing each document back
+- **Structural round-trip: 56,505 / 56,505 clean.** Parsing each document back
   from its own text recovers the right residue count, one `<n-term>`/`<c-term>`
   pair per chain, chain runs that are contiguous, pairwise disjoint and exactly
   cover the assigned positions, and contacts referencing only assigned positions.
-- **Geometry cross-check: 40 / 40 clean.** For 40 multimers, rebuilding the
-  assembly from the mirror and re-running pyconfind reproduces the document's
-  interface contacts exactly.
+- **Geometry cross-check: 50 / 50 clean.** For 25 multimers from each of the
+  multimer and deduped corpora, rebuilding the assembly from the mirror and
+  re-running pyconfind reproduces the document's interface contacts exactly.
 
 ### Leakage
 
 The 552 eval PDB entries are excluded by id, and **0** appear in either corpus.
 What remains ([`data/leakage_audit.csv`](data/leakage_audit.csv)):
 
-| | monomers | multimers |
-| --- | --- | --- |
-| exact resolved-sequence matches | 44 (0.007%) | 1 (0.001%) |
-| corpus documents sharing a 40% cluster with the eval set | 8,400 (1.4%) | 2,410 (2.8%) |
-| **eval entries with a 40% homolog in the corpus** | **50.2%** | 31.3% |
+| | monomers | multimers | deduped |
+| --- | --- | --- | --- |
+| exact resolved-sequence matches | 44 (0.007%) | 1 (0.001%) | 5 (0.007%) |
+| corpus documents sharing a 40% cluster with the eval set | 8,400 (1.4%) | 2,410 (2.8%) | 1,464 (2.0%) |
+| **eval entries with a 40% homolog in the corpus** | **50.2%** | 31.3% | **50.2%** |
 
 The last row is the one comparable to
 [#213](https://github.com/Open-Athena/MarinFold/issues/213), which measured the
@@ -248,9 +282,13 @@ warranted; the number is the deliverable.
 
 - `contacts_v1_pdb_monomers/{documents,tokenizer}/`
 - `contacts_v1_pdb_multimers/{documents,tokenizer}/`
+- `contacts_v1_pdb_deduped/{documents,tokenizer}/`
 - `contacts_v1_pdb_curation/{metadata,ledger}/` — the entry scan, the RCSB
   cluster file and the per-entry ledger, so the funnel can be re-derived and
   audited without the local mirror.
+
+Each prefix carries a `README.md` rendered on the bucket's web view, sourced from
+`/data/exp222_pdb_curation/readme/<name>/` and synced by `publish_to_hf.py`.
 
 The tokenizer (2,848 tokens) is built from the library rather than pulled from a
 pinned Hub revision, so it is provably the vocabulary the documents were
@@ -258,10 +296,11 @@ generated under.
 
 ## Conclusion
 
-**Both corpora exist, round-trip cleanly, and are ready to fine-tune on.**
+**Three corpora exist, round-trip cleanly, and are ready to fine-tune on.**
 688,519 documents / 995 M tokens of experimental structure, of which 85,660
 describe protein complexes and 9.19 M individual contacts cross a chain boundary
-— a class of contact no previous MarinFold corpus contained at all.
+— a class of contact no previous MarinFold corpus contained at all. Plus a
+72,522-document deduplicated cut that needs no sampling logic to train on.
 
 The contacts-v1 format needed no new tokens to express a complex. Laying *k*
 chains disjointly around the existing 2000-index ring, with one
@@ -273,16 +312,22 @@ Three things worth carrying forward:
 
 1. **The eval set is no more exposed than before.** 50.2% of eval entries have a
    40% homolog here against 58% for the AFDB data exp199 already trained on.
-2. **`global_plddt` means the opposite thing here.** Same column, mean Cα
-   B-factor in both corpora — but for AFDB that *is* pLDDT (higher is better) and
-   here it is a B-factor (lower is better). Any mixture weighting on it must
-   branch on the corpus.
+2. **`global_plddt` is 0.0 here and means nothing.** The library fills it with
+   the mean Cα B-factor, which for AFDB *is* pLDDT (higher is better) and here is
+   a B-factor (lower is better) — same column, opposite sign, so a mixture
+   filtering on it would have silently kept the wrong documents from each side.
+   Zeroed rather than documented-around. Use `resolution`.
 3. **The multimer corpus is dimer-dominated.** 62% of it is two chains. Training
    on it teaches interfaces, but not large-assembly organisation; the 2000-residue
    ring drops 10,530 complexes that were otherwise fine.
 
+And one number that justifies the deduplicated cut: the largest 40%-identity
+group in the raw corpora holds **4,055 near-duplicate documents**, so a uniform
+pass over them spends most of its gradient on a handful of over-crystallised
+proteins.
+
 Training on these corpora is deliberately **not** part of this experiment. Two
-follow-ups suggest themselves: fine-tuning `contacts-v1-exp199-1.5B` on the
-monomer corpus (does experimental structure beat predicted?), and a multimer
-curriculum (can the model learn to place an interface at all?). Each needs its own
-controls.
+follow-ups suggest themselves: fine-tuning `contacts-v1-exp199-1.5B` on
+`contacts_v1_pdb_deduped` (does experimental structure beat predicted?), and a
+multimer curriculum (can the model learn to place an interface at all?). Each
+needs its own controls.
