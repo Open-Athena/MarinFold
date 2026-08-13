@@ -270,6 +270,29 @@ did *not* collapse:
 significant improvement over the warm start anywhere in this experiment.**
 R-precision is unchanged (−0.0012, p = 0.53).
 
+**But it is a redistribution, not a uniform gain, and the loss is more significant
+than the win.** By separation band and cut:
+
+| band | cut | baseline | arm C v3 | Δ | p |
+|---|---|---|---|---|---|
+| all | AUC | 0.9487 | 0.9519 | **+0.0032** | 4e-05 |
+| **long** | **AUC** | 0.9340 | 0.9398 | **+0.0058** | 7.1e-07 |
+| medium / short | AUC | — | — | +0.0006 / +0.0004 | 0.54 / 0.66 |
+| all | **L/5** | 0.8189 | 0.8051 | **−0.0138** | **1.9e-07** |
+| long | L/5 | 0.7105 | 0.6991 | −0.0113 | 0.00023 |
+| short | R | 0.6814 | 0.6746 | −0.0068 | 0.022 |
+| all | R | 0.6111 | 0.6099 | −0.0012 | 0.53 |
+
+The gain is **concentrated in long-range AUC** (+0.0058, the hardest and most
+valuable band) and the loss is **at the top of the ranking** (L/5 precision −0.0138,
+a smaller p-value than the AUC gain). That is exactly what wider vote coverage
+should do: spreading mass over more candidates improves the global ordering,
+especially where the model was previously blind, and dilutes the very top of the
+list. Reporting only the AUC line would be choosing the favourable metric.
+
+Whether longer training converts this into a net win, or simply deepens both sides
+of the trade, is the question the 10k run is being used to answer.
+
 **This refutes §3b.** The R² = 0.95 fit predicted ~−67% coverage at KL 0.168; the
 measured value is −6.4%, and total votes went *up* 23% (16,191 → 19,871). The fit
 was confounded: every high-KL point in it contained the stepwise term, so what
