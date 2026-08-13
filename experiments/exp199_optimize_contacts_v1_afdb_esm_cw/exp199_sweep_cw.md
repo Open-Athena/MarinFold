@@ -150,3 +150,13 @@ is stored in SQLite's generic `chips` field.
   capacity to be recycled. Its `cw-rno2a/H100/n16` slot went to `m1-p02-aug`,
   which had lost its child gang three times on `cw-us-east-02a`. Three trials
   remain.
+- 2026-08-13: Sweep complete for the retained set. All four retained trials
+  finished and were checkpoint-verified: `m1-p06-aug` (2026-08-12 11:22 UTC),
+  `m2-p03-base` and `m1-p02-aug` (2026-08-12 10:07 UTC), and `m2-p06-aug`
+  (2026-08-13 01:49 UTC). Each reached `run_progress` 1.0 at step 145199 with
+  `checkpoints/step-145199` and a 5.89GB `hf/step-145199` export present. No
+  dispatches remain active. Measured placement finding: `cw-us-east-08a/GB200/n16`
+  sustains about 0.028/h, the best rate observed, despite a low historical
+  `target_rate` inflated by queue time; prefer recent measurements over that
+  statistic when placing.
+
