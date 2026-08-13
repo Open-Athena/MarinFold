@@ -145,6 +145,50 @@ same definition of "contact" as the 554 and can be pooled with them.
 Published to the bucket at `data/contacts-v1-eval2-exp226/`; nothing under #89's
 prefix was touched.
 
+## The scoreboard — six predictors, 307 proteins
+
+Every comparator was run on the 23 new proteins and joined to the 284 already
+scored, giving the first complete measurement on a decontaminated set.
+R-precision (all ranges):
+
+pooled eval2 (307) — MarinFold **0.545**, Protenix single-seq 0.679, ESMFold
+0.694, ESMFold2 0.740, Protenix+MSA 0.778, seq-KNN 0.074. On that pooled number
+MarinFold is last among the real predictors.
+
+But pooled eval2 is **75% de novo design**. On the 78 **natural** proteins the
+ordering changes: MarinFold **0.337** against Protenix single-seq **0.326**.
+
+## The Protenix parity comes back
+
+#213 concluded the parity with Protenix-v2 single-seq "does not survive"
+homology removal — it lost by 0.169 there. **That subset was ~80% de novo
+designs.** Paired bootstrap, 10,000 resamples:
+
+eval2 natural (78) **+0.011** [-0.044, +0.069] — a tie. eval2 natural at <30%
+(61), -0.041 [-0.101, +0.019] — also a tie. The 23 net-new (23), **+0.164**
+[+0.063, +0.263] — MarinFold wins outright. Pooled (307), -0.133 — Protenix wins.
+
+So #213's finding was a **composition effect, not a homology effect**. Protenix
+single-seq is unusually strong on idealised de novo backbones and unusually weak
+on novel natural proteins: it collapses to **0.243** on the 23 (against 0.603 on
+the full 554) while its MSA mode reaches **0.805** — the widest single-seq/MSA
+gap in the experiment. What that comparison turned on was removing *designs*,
+not removing *homologs*.
+
+**The tie is a cancellation, not a match.** Protein by protein the two agree only
+weakly (Pearson r=0.40); the mean absolute difference is 0.192, seventeen times
+the +0.011 mean. MarinFold alone clears 0.5 on 8 proteins, Protenix alone on 13,
+both on only 5. They are strong on largely disjoint sets, which makes an ensemble
+the obvious follow-up.
+
+**What has not changed:** MarinFold still loses to ESMFold (-0.125), ESMFold2
+(-0.192) and Protenix+MSA (-0.361) on eval2-natural, all significant. This does
+not close the gap to the structure predictors.
+
+**The null collapses as designed:** seq-KNN falls to 0.074 pooled and 0.148
+natural, with MarinFold +0.189 [+0.141, +0.236] over it. The decontamination did
+what it was meant to do and the score is not retrieval.
+
 ## Verdict
 
 **Fold it in at <40%; it changes little at <30%.** A +42% increase in
@@ -162,9 +206,13 @@ into `foldbench100`, since the two have measurably different training-set
 proximity and any future "first N FoldBench rows" would inherit the same
 deposition-date bias.
 
-Not measured here: the fold-novel count for the 222, which needs a Foldseek
+**Read eval2-natural, not eval2 pooled.** The pooled number is 75% designed and
+mostly reports how well each model folds idealised backbones; it is the reason
+#213's conclusion needed revising. n=78 is still thin, so treat the tie as a tie
+rather than a result in either direction.
+
+Not measured here: the **fold-novel** count for the 222, which needs a Foldseek
 pass against exp41's Modal-hosted AFDB representative DB — beyond this issue's
-sequence-search budget. And **no model has been scored on eval2 yet**: this
-delivers the decontaminated set plus its ground truth, and the 23 new proteins
-have no predictions from any comparator either, so a like-for-like baseline over
-the full 307 needs those runs first. The 284 subset is comparable today.
+sequence-search budget. The obvious follow-ups are that Foldseek axis, and a
+MarinFold + Protenix-single-seq ensemble, which the r=0.40 per-protein
+disagreement says should beat either alone.

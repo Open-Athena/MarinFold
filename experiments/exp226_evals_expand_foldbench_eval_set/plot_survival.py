@@ -42,6 +42,9 @@ COLOR_NEW = "#2980b9"      # the 222 net-new ones
 COLOR_OTHER = "#95a5a6"
 COLOR_PREDICTED = "#d68910"
 
+#: The eval2 scoreboard's MarinFold column name (exp213's display label).
+MARINFOLD_COL = "MarinFold #199 (1.5B, seq only)"
+
 DATASET_LABELS = {
     "foldbench100": "FoldBench-100\n(ours already)",
     DATASET_NEW: "FoldBench rest\n(+222, new)",
@@ -261,9 +264,12 @@ def main() -> int:
     plot_identity_profile(rows, lengths, PLOTS / "identity_profile_old_vs_new.png", argv)
     eval2_headline = DATA / "eval2_headline.csv"
     if eval2_headline.exists():
-        plot_eval2_scoreboard(pd.read_csv(eval2_headline),
-                              pd.read_csv(DATA / "eval2_paired_deltas.csv"),
+        deltas = pd.read_csv(DATA / "eval2_paired_deltas.csv")
+        plot_eval2_scoreboard(pd.read_csv(eval2_headline), deltas,
                               PLOTS / "eval2_scoreboard.png", argv)
+        plot_natural_head_to_head(pd.read_csv(DATA / "eval2_per_protein.csv.gz"),
+                                  deltas, PLOTS / "eval2_natural_head_to_head.png",
+                                  argv)
     print(f"[plots] -> {PLOTS}", flush=True)
     return 0
 
@@ -337,6 +343,52 @@ def plot_eval2_scoreboard(headline: pd.DataFrame, deltas: pd.DataFrame,
                 "with 10,000-resample bootstrap CIs; intervals crossing the dashed "
                 "line are ties.",
     )
+
+def plot_natural_head_to_head(per_protein: pd.DataFrame, deltas: pd.DataFrame,
+                              out: Path, args: list[str]) -> None:
+    """Per-protein MarinFold vs Protenix single-seq on the natural subset.
+
+    The headline tie is a mean over 78 proteins; a mean can hide two predictors
+    that are strong on disjoint halves. This shows whether the tie is a real
+    per-protein match or an average of large opposite errors.
+    """
+    cell = per_protein[(per_protein["range"] == "all")
+                       & (per_protein["cut"] == "R")
+                       & (per_protein["designed_any"] == 0)]
+    x = cell["Protenix-v2 single-seq"].to_numpy()
+    y = cell[MARINFOLD_COL].to_numpy()
+    is_new = (cell["dataset"] == DATASET_NEW).to_numpy()
+
+    fig, ax = plt.subplots(figsize=(6.0, 5.6))
+    ax.plot([0, 1], [0, 1], ls="--", lw=1.2, color="#7f8c8d", zorder=1)
+    ax.scatter(x[~is_new], y[~is_new], s=34, alpha=0.75, color="#34495e",
+               edgecolor="white", linewidth=0.5, zorder=2,
+               label=f"pre-existing ({int((~is_new).sum())})")
+    ax.scatter(x[is_new], y[is_new], s=52, alpha=0.9, color=COLOR_NEW,
+               edgecolor="white", linewidth=0.6, zorder=3,
+               label=f"net-new ({int(is_new.sum())})")
+
+    row = deltas[(deltas["subset"] == "eval2 natural")
+                 & (deltas["baseline"] == "Protenix-v2 single-seq")].iloc[0]
+    wins = int((y > x).sum())
+    ax.set_xlabel("Protenix-v2 single-seq, R-precision")
+    ax.set_ylabel("MarinFold #199, R-precision")
+    ax.set_title("eval2-natural, protein by protein\n"
+                 f"paired {row['delta']:+.3f} [{row['ci_lo']:+.3f}, {row['ci_hi']:+.3f}]"
+                 f" — MarinFold ahead on {wins}/{len(y)}", fontsize=10.5)
+    ax.set_xlim(-0.02, 1.02)
+    ax.set_ylim(-0.02, 1.02)
+    ax.set_aspect("equal")
+    ax.legend(frameon=False, fontsize=9, loc="upper left")
+    ax.spines[["top", "right"]].set_visible(False)
+    save_plot_with_meta(
+        fig, out, args=args,
+        caption="Each point is one natural eval2 protein. The tie is a "
+                "cancellation, not a per-protein match: they agree only weakly "
+                "(r=0.40) and the mean absolute difference is 0.192, 17x the "
+                "+0.011 mean.",
+    )
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
