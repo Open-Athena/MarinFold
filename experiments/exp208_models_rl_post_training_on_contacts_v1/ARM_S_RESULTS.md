@@ -2,12 +2,13 @@
 
 **Issue #208 · 125 steps, 2,000 AFDB prompts × 16 rollouts, unsharded on 8×A100**
 
-**Summary.** The dense per-contact reward drives real learning for about 50 steps
-and then reverses, and the finished checkpoint is **worse than its warm start on
-the metric of record**: consensus R-precision 0.5898 vs 0.6111 (paired
-p = 5.7e-19), AUC 0.8977 vs 0.9487 (worse on 98.4% of proteins). Single-rollout
-precision nearly doubled over the same run, 0.252 → 0.473. Both statements are
-true, which is the point of this document.
+**Summary.** Single-rollout precision nearly doubled (0.252 → 0.473) and the model
+got **worse**. On the metric of record — consensus R-precision over the 554-protein
+eval set — the finished checkpoint scores 0.5898 against its warm start's 0.6111
+(paired p = 5.7e-19), and its AUC is worse on 98.4% of proteins. At its internal
+peak (step 40) it is a wash: −0.0023, p = 0.12, exactly the noise floor. So the
+dense per-contact reward never beat the warm start at any checkpoint measured, and
+the run's most impressive-looking number is the one that misleads.
 
 In more detail. While the
 p̄ baseline sat below the policy's true precision, the run improved on both axes
@@ -91,8 +92,12 @@ generated with exp82's `score_rollout_worker.py` and scored with the published
 | model | R-precision (all) | AUC (all) | R (long) | R (short) |
 |---|---|---|---|---|
 | baseline exp199 | **0.6111** | **0.9487** | 0.5637 | 0.6814 |
-| arm S step 125 | 0.5898 | 0.8977 | 0.5354 | 0.6649 |
-| Δ | **−0.0213** | **−0.0511** | −0.0283 | −0.0165 |
+| arm S step 40 (internal peak) | 0.6087 | 0.9436 | 0.5597 | 0.6812 |
+| arm S step 125 (final) | 0.5898 | 0.8977 | 0.5354 | 0.6649 |
+
+Step 40 is included because it is where the training metrics peak — precision and
+correct-contacts both still rising, p̄ still below true precision. It is the best
+this reward ever looked from the inside.
 
 The baseline's 0.6111 reproduces the 0.6103 on record for this checkpoint under
 exp82's worker, which is the check that the pipeline above is measuring the right
@@ -100,10 +105,20 @@ thing.
 
 Paired over the 554 proteins:
 
-| metric | mean Δ | median Δ | t | p | arm S better on |
+| checkpoint | metric | mean Δ | t | p | arm S better on |
 |---|---|---|---|---|---|
-| R-precision | −0.0213 | −0.0180 | −9.23 | 5.7e-19 | 18.8% of proteins |
-| AUC | −0.0511 | −0.0347 | −23.53 | 2.4e-85 | **1.4%** of proteins |
+| step 40 | R-precision | **−0.0023** | −1.56 | **0.119** (n.s.) | 35.7% |
+| step 40 | AUC | −0.0052 | −6.10 | 2.0e-09 | 32.9% |
+| step 125 | R-precision | −0.0213 | −9.23 | 5.7e-19 | 18.8% |
+| step 125 | AUC | −0.0511 | −23.53 | 2.4e-85 | **1.4%** |
+
+**At its internal peak the reward is not an improvement — it is a wash.** −0.0023
+is indistinguishable from zero (p = 0.12) and sits exactly on this experiment's
+measured noise floor of 0.0023 (#204). So the story is not "it worked and then the
+baseline drifted". It is: the dense reward never beat the warm start at any
+checkpoint measured, and after p̄ crossed it actively destroyed the model. Even at
+step 40 the AUC is already down a small but unambiguous −0.0052, which is the
+shrinkage beginning.
 
 The AUC column is the one that explains the mechanism. AUC ranks *every* candidate
 pair, and arm S is worse on 98.4% of proteins — nearly universal, not a
@@ -118,12 +133,28 @@ paid out on the metric the experiment is judged by, it is a loss.
 ## 5. What this says about #208's question
 
 The experiment asks whether a dense per-contact reward beats a document-level one.
-Arm S answers half of it: the dense signal *does* drive learning — 50 steps of
-simultaneous precision and recall improvement is not noise, and it came from a
-per-token reward with no group baseline at all. But its baseline is an EMA of the
-policy's own behaviour, and that is a feedback loop the reward does not control.
+Arm S's answer is that the dense reward, as specified, does not beat *doing
+nothing*: neutral at its peak, harmful by the end.
 
-A document-level F1 reward (arm D) has no p̄: the baseline comes from the group of
-16 sibling rollouts, which is an unbiased comparison by construction, and F1 prices
-recall directly rather than reaching it through a contact count. Arm D is the
-natural control for exactly the failure documented here, and it is running.
+Two distinct things went wrong, and they should not be conflated.
+
+**The baseline drifts.** p̄ is an EMA of the policy's own behaviour, and it is
+biased upward by the unweighted average over rollouts. That is a genuine bug with
+a one-line fix (now applied), and it explains the second half of the run.
+
+**The reward optimises the wrong functional even when its baseline is honest.**
+This is the more interesting failure, and the step-40 number is what exposes it.
+Over steps 0–50, with p̄ still below true precision, the policy improved on both
+internal axes — and bought nothing on the eval metric. The reward pays
+`n_scored·(precision − p̄)`, which is a per-contact quantity; consensus
+R-precision is a property of the *vote distribution over 100 rollouts*. Raising
+per-rollout precision by becoming more selective is exactly the wrong move for a
+consensus metric, because a pair that is never emitted gets zero votes and cannot
+be ranked. Fixing p̄ would make the run stop degrading; it would not make the
+objective the right one.
+
+That reframes arm D. It is not merely the control for a drifting baseline — it
+optimises F1, which prices recall directly and therefore does not reward
+selectivity. Whether that is enough to move a *consensus* metric is a separate
+question, and the honest prior after arm S is that a document-level scalar may run
+into the same gap between "better rollouts" and "better vote distribution".
