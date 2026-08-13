@@ -948,12 +948,17 @@ change what anyone does next:
    (p = 6e-115). AUC absorbs almost all of the damage while R-precision hides it,
    because R-precision reads only the top R — where the surviving contacts really
    are better.
-2. **A document-level F1 reward is the safe version of the same idea, and it is
-   not enough.** Arm D moved precision and recall together, never triggered the
-   collapse guard, and finished at **−0.0001 (p = 0.93)** — statistically identical
-   to its warm start. A full epoch, 125 steps, 32,000 rollouts, and the reported
-   metric moved by one ten-thousandth. Safety was the hypothesis; improvement was
-   not delivered.
+2. **A document-level F1 reward is safe, and this run did not test it.** Arm D
+   moved precision and recall together, never triggered the collapse guard, and
+   finished at −0.0001 (p = 0.93) — statistically identical to its warm start. But
+   its policy **barely moved**: mean KL 0.00069 against arm S's 0.0318, and 0.00135
+   vs 0.09763 over the last 25 steps, a factor of 72. Its own training reward is
+   flat across all 125 steps (trend p = 0.87). A single scalar per rollout, group-
+   normalised, simply does not deliver enough gradient at lr 1e-6 to change the
+   model — the same trap the Background section flags for #200, whose KL was
+   0.00051. The flat eval is a measurement of an untrained checkpoint, not a
+   verdict on the reward. **Arm D must be re-run at an LR that reaches a
+   comparable KL before it can be compared to arm S at all.**
 3. **Two reward bugs, both found by measurement rather than review.** `err_decay`
    at 0.5 made the k-th error cost `p̄·δ^k` — a median of *exactly zero* for the
    next wrong contact against +0.745 for a correct one, i.e. no baseline at all.
@@ -964,12 +969,19 @@ change what anyone does next:
    count, via a weight sync that pushes a divergent copy into the inference
    engines. Every run here is unsharded for that reason.
 
-The open question is the one arm B was specified for and which was never run: an
-objective computed over the **group** of rollouts (the leave-one-out consensus
-marginal) rather than over each rollout independently. Phase 0 measured its
-correlation with per-rollout precision at ρ = 0.22, so it is not precision in
-disguise — it is the only term in the design that targets the vote distribution the
-metric is actually built on. It is implemented and tested. Before running it,
-enlarge the prompt pool: both arms peak around step 40 of a single epoch over
-2,000 prompts and decline after, which is the shape of an exhausted pool rather
-than of either reward.
+The open question is the one arm B was specified for: an objective computed over
+the **group** of rollouts (the leave-one-out consensus marginal) rather than over
+each rollout independently. Phase 0 measured its correlation with per-rollout
+precision at ρ = 0.22, so it is not precision in disguise — it is the only term in
+the design that targets the vote distribution the metric is actually built on. It
+is implemented, tested, and now verified end-to-end in a live loop (`consensus term
+folded into 128/128 rollouts`), and a full run at arm S's settings is in progress.
+Being a dense reward, it should move the policy like arm S rather than stalling
+like arm D.
+
+Two caveats worth carrying forward. **Comparisons at matched nominal LR are not
+comparisons of rewards** — arm S and arm D differ 72× in terminal KL, so they were
+never taking the same size step. And **the interesting effects here are large**:
+arm S's coverage collapse is −65% and its AUC loss is significant on 98.4% of
+proteins, while everything ambiguous in these runs turned out to be noise on
+inspection.

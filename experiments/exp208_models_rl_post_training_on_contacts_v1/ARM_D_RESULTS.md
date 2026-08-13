@@ -4,11 +4,18 @@
 
 **Summary.** Replacing arm S's dense per-contact reward with **one scalar per
 rollout — the section F1 — and a group baseline (GRPO)** removes every pathology
-arm S showed. Vote coverage holds at −3.5% instead of −53%, the eval metrics are
-statistically indistinguishable from the warm start rather than significantly
-below it, and precision and recall rise together instead of trading off. It also
-does not improve the model. After 125 steps arm D is back where it started on its
-own reward (0.3056 vs 0.3011).
+arm S showed: vote coverage holds, precision and recall move together, the
+collapse guard never fires, and the eval metrics land statistically identical to
+the warm start (R −0.0001, p = 0.93).
+
+**But this run does not evaluate the reward, because the policy barely moved.**
+Mean KL from the reference is **0.00069** against arm S's **0.0318**, and by the
+last 25 steps the gap is 0.00135 vs 0.09763 — a factor of 72. Arm D's own training
+reward is statistically flat across all 125 steps (linear trend p = 0.87; first 40
+steps vs remaining 85, p = 0.94). Nothing happened. The correct reading is not
+"the document-level reward does not help" but "at this learning rate a single
+scalar per rollout does not train the model at all", and the eval numbers below
+are measuring a checkpoint that is nearly its own warm start.
 
 ---
 
@@ -45,10 +52,13 @@ which is what a reward that prices both should do, and what arm S could not do.
 `pred/gt` never leaves 1.05–1.09. There is no shrinkage to detect, and the collapse
 tripwire never fires.
 
-Both arms peak in the same block (25–50) and decline afterwards. That is worth
-noting precisely because the two rewards are so different: a common peak points at
-something shared — 2,000 prompts exhausted in one epoch, or the LR — rather than
-at either reward's shape.
+The block means suggest a peak at 25–50 and a decline after. **They do not survive
+a test.** Per-step doc F1 has sd 0.0556, which swamps the block differences: peak
+block vs final block p = 0.196, linear trend over 125 steps −0.000023/step
+(p = 0.87), first 40 steps vs remaining 85 p = 0.94. Arm D is flat, not peaked, and
+an earlier draft of this document read a shape into that noise and then explained
+it with an exhausted prompt pool — which is doubly wrong, since at step 40 only 640
+of 2,000 prompts have been seen.
 
 ## 3. Held-out evaluation
 
@@ -92,15 +102,21 @@ consensus metric far more clearly than what improves one.
 
 ## 5. What to try next, in order of what the evidence supports
 
-1. **Score the group, not the rollout.** Both arms optimise a per-rollout
+1. **Re-run arm D at a learning rate that actually moves the policy.** This is
+   first because until it is done, arm D has not been tested. Target a terminal KL
+   comparable to arm S's ~0.098; at lr 1e-6 arm D reached 0.00135. Comparing two
+   rewards at matched *nominal* LR compares them at wildly different effective step
+   sizes, which is not a comparison of rewards.
+2. **Score the group, not the rollout.** Both arms optimise a per-rollout
    quantity, and the metric is a property of the vote distribution over 100
-   rollouts. The consensus leave-one-out marginal (arm B) is the term that
-   actually targets it, is implemented and tested, and was never run. Phase 0
-   measured its correlation with per-rollout precision at ρ = 0.22 — it is
-   *not* precision in disguise, which is the whole reason it was specified.
-2. **More data before more steps.** Both arms peak at step ~40 of a single epoch
-   over 2,000 prompts and then decline. That is the shape of exhausting the
-   prompt pool, and the pool can be enlarged cheaply — exp200's is 10,000.
+   rollouts. The consensus leave-one-out marginal (arm B) targets it directly,
+   is implemented and tested, and Phase 0 measured its correlation with
+   per-rollout precision at ρ = 0.22 — it is *not* precision in disguise. It is
+   also a dense reward, so it should move the policy like arm S rather than
+   stalling like arm D.
 3. **Then revisit the dense reward with the fixed p̄.** `p_bar_count_weighted`
    removes the drift that destroyed arm S's second half. It does not make the
    objective right, so this is third, not first.
+
+Note what is *not* on this list: enlarging the prompt pool. An earlier draft
+recommended it on the strength of a decline that turns out to be noise.
