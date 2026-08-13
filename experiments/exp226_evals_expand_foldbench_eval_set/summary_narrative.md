@@ -106,6 +106,27 @@ independent parity check. The ESMFold2-distillation corpus is doing *more* of
 the contaminating on newer PDB entries, which is part of why extrapolating from
 the older 100 came out optimistic.
 
+## eval2 — the filtered set
+
+`data/eval2_manifest.csv` is the deliverable that follows from all of this: the
+expanded set with **every protein at or above 40% training identity removed**,
+leaving **307**, sequences included and annotated so a stricter cut costs no new
+compute.
+
+`best_identity` is the coverage-gated maximum over **both** arms, so
+`best_identity < 0.30` reproduces the 30% set (**275** proteins) exactly;
+`passes_30` is precomputed. Per-arm columns allow the same cut against AFDB or
+ESM-Atlas alone, and `best_identity_ungated` is the paranoid bound — 18 of the
+307 clear 40% only because of the 50% coverage gate.
+
+Two properties constrain what eval2 can measure, and both are columns rather
+than caveats in prose. **75% of it (229 of 307) is de novo designed protein** —
+not a choice made here, but what survives a homology filter, and exactly the
+confound #213 raised; `designed_any` splits it and the natural subset is **78**
+at 40% and **61** at 30%. And **23 of the 307 are not scorable yet**: they are
+the net-new FoldBench monomers, absent from #89's frozen GT universe, so
+`has_ground_truth` marks the **284** that run today.
+
 ## Verdict
 
 **Fold it in at <40%; it changes little at <30%.** A +42% increase in

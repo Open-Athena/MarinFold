@@ -74,7 +74,8 @@ almost all of it the MMseqs2 search.
 | `build_query_set.py` | **Step 1** — pinned FoldBench list → 222 net-new queries + RCSB sequences and source organisms. |
 | `search_expanded.py` | **Step 2** — 776-query MMseqs2 search against exp213's existing target DB → the per-protein table. |
 | `analyze_survival.py` | **Step 3** — survival counts, designed/natural split, the newer-vs-older test. |
-| `plot_survival.py` | **Step 4** — the three figures. |
+| `plot_survival.py` | **Step 4** — the four figures. |
+| `build_eval2.py` | **Step 5** — the homology-filtered eval set + its identity annotation. |
 | `tests/test_expand.py` | Unit tests for chain resolution, the survival predicate and Fisher's exact test. |
 
 ```bash
@@ -85,6 +86,7 @@ uv run python build_query_set.py             # RCSB, ~4 s
 uv run python search_expanded.py --work /data/exp213_overlap   # the long step, ~6 min
 uv run python analyze_survival.py
 uv run python plot_survival.py
+uv run python build_eval2.py                 # data/eval2_manifest.csv
 uv run python build_summary.py               # plots/summary.pdf
 ```
 
@@ -238,6 +240,50 @@ weaker "does this arm have *any* significant hit" statistic — 174 / 9 / 16 for
 the net-new set — which is a different question and not the one the identity
 filter turns on.)
 
+### 6. eval2 — the homology-filtered eval set
+
+[`data/eval2_manifest.csv`](data/eval2_manifest.csv) is the expanded set with
+every protein at or above **40 % training-set identity removed**: **307
+proteins**, sequences included, annotated so a stricter cut needs no new
+compute.
+
+| | n | natural | scorable today |
+| --- | ---: | ---: | ---: |
+| **eval2 (<40 % id)** | **307** | 78 | 284 |
+| retrospective <30 % (`passes_30`) | 275 | 61 | 264 |
+| retrospective <40 % ungated (`passes_40_ungated`) | 289 | 68 | 273 |
+
+`best_identity` is the coverage-gated maximum over **both** training arms, so
+`best_identity < 0.30` reproduces the 30 % set exactly; `passes_30` is
+precomputed. `afdb_best_identity` and `esm_atlas_best_identity` allow the same
+cut against either arm alone. `best_identity_ungated` is the paranoid bound —
+18 of the 307 clear 40 % only because of the 50 % coverage gate.
+
+**Two properties of eval2 that constrain what it can measure**, both carried as
+columns rather than left in prose:
+
+- **75 % of it (229/307) is de novo designed protein.** That is not a choice
+  made here — it is what survives a homology filter, and it is exactly the
+  confound #213 raised. `designed_any` splits it; the natural subset is **78**
+  at 40 % and **61** at 30 %. Any headline computed on pooled eval2 is mostly a
+  statement about designed backbones.
+- **23 of the 307 are not scorable yet.** They are #226's net-new FoldBench
+  monomers, which are not in #89's frozen GT universe and have no contacts
+  computed. `has_ground_truth` marks the **284** that run today. Scoring the
+  remaining 23 needs a GT-contact pass (structures + pyconfind), which #226 did
+  not scope.
+
+Threshold semantics: "at or above 40 %" is excluded, matching #213/#226's
+published counts. Exactly one protein sits on the boundary — `6sa6_A` at
+fident 0.400 — and `--boundary keep` includes it (n=308) if the other reading
+is wanted.
+
+```bash
+uv run python build_eval2.py                              # 307 @ <40%
+uv run python build_eval2.py --threshold 0.30 \
+    --out data/eval2_strict.csv --out-fasta data/eval2_strict.fasta
+```
+
 ## Conclusion
 
 **The expansion is worth folding in at <40 %, and not worth much at <30 %.**
@@ -280,6 +326,7 @@ not exist yet; this experiment delivers the decontamination table, not scores.
 
 | File | Contents |
 | --- | --- |
+| [`data/eval2_manifest.csv`](data/eval2_manifest.csv) · [`eval2.fasta`](data/eval2.fasta) | **eval2** — 307 proteins under 40 % training identity, annotated for a retrospective 30 % cut. |
 | [`data/eval_train_identity_expanded.csv`](data/eval_train_identity_expanded.csv) | Per-protein identity table, 776 rows, exp213's schema. |
 | [`data/foldbench_targets.csv`](data/foldbench_targets.csv) | All 334 FoldBench monomers: resolved entity, chain-match axis, source organism, sequence. |
 | [`data/eval_queries_expanded.fasta`](data/eval_queries_expanded.fasta) | The 776 queries (exp213's 554 verbatim + 222). |

@@ -1,0 +1,26 @@
+{
+  "threshold": 0.4,
+  "n": 307,
+  "n_designed": 229,
+  "n_natural": 78,
+  "n_with_ground_truth": 284,
+  "n_needing_ground_truth": 23,
+  "by_dataset": {
+    "cameo_hard": 24,
+    "casp_fm": 19,
+    "denovo_pdb": 226,
+    "foldbench100": 15,
+    "foldbench_rest": 23
+  },
+  "retrospective": {
+    "<30%": {
+      "n": 275,
+      "n_natural": 61,
+      "n_with_ground_truth": 264
+    },
+    "<40% ungated": {
+      "n": 289,
+      "n_natural": 68
+    }
+  }
+}

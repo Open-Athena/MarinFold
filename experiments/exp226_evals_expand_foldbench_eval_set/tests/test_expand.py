@@ -23,6 +23,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from analyze_survival import fisher_exact_two_sided, survives  # noqa: E402
+from build_eval2 import build as build_eval2  # noqa: E402
 from build_query_set import (  # noqa: E402
     MonomerTarget,
     N_FOLDBENCH_MONOMERS,
@@ -198,3 +199,75 @@ def test_fisher_is_one_for_identical_proportions():
 def test_fisher_never_exceeds_one():
     for table in [(1, 1, 1, 1), (0, 10, 0, 10), (2, 3, 4, 5), (7, 0, 0, 7)]:
         assert 0.0 <= fisher_exact_two_sided(*table) <= 1.0
+
+
+# --- eval2 construction -----------------------------------------------------
+
+
+def eval2_row(stem: str, covered: str, ungated: str = "", dataset: str = "cameo_hard",
+              designed_any: int = 0) -> dict:
+    return {
+        "dataset": dataset, "stem": stem,
+        "best_identity_covered": covered,
+        "best_identity_any": ungated or covered,
+        "best_arm": "afdb", "best_evalue": "1e-9", "best_target": "afdb|x",
+        "n_hits_significant": "1", "stratum": "id_30_50",
+        "designed": str(designed_any), "synthetic": "", "designed_any": designed_any,
+        "source_names": "", "neff_tier": "", "fold_verdict": "",
+        "seq_leakage": "", "msa_neff": "",
+        "afdb_best_identity_covered": covered,
+        "esm_atlas_best_identity_covered": "",
+    }
+
+
+EVAL2_SEQS = {
+    "cameo_hard__keep": "MKV", "cameo_hard__drop": "MKVMKV",
+    "cameo_hard__edge": "MK", "cameo_hard__novel": "MKVA",
+    "foldbench_rest__new": "MKVAA",
+}
+
+
+def test_eval2_drops_proteins_at_or_above_the_threshold():
+    rows = [eval2_row("keep", "0.39"), eval2_row("drop", "0.55")]
+    kept = build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False)
+    assert [e["stem"] for e in kept] == ["keep"]
+
+
+def test_eval2_keeps_proteins_with_no_measurable_identity():
+    """No covered hit means no training relative — the most novel proteins."""
+    kept = build_eval2([eval2_row("novel", "")], EVAL2_SEQS, 0.40, keep_boundary=False)
+    assert [e["stem"] for e in kept] == ["novel"]
+    assert kept[0]["best_identity"] == ""
+
+
+def test_eval2_boundary_is_configurable():
+    """`6sa6_A` sits at exactly 0.400; the two readings differ only there."""
+    rows = [eval2_row("edge", "0.4")]
+    assert build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False) == []
+    assert len(build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=True)) == 1
+
+
+def test_eval2_annotates_the_retrospective_30_percent_cut():
+    rows = [eval2_row("keep", "0.35"), eval2_row("novel", "0.10")]
+    kept = {e["stem"]: e for e in build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False)}
+    assert kept["keep"]["passes_30"] == 0
+    assert kept["novel"]["passes_30"] == 1
+
+
+def test_eval2_flags_the_ungated_paranoid_bound_separately():
+    """A short high-identity match is hidden by the coverage gate, not gone."""
+    rows = [eval2_row("keep", "0.20", ungated="0.95")]
+    kept = build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False)
+    assert kept[0]["passes_40_ungated"] == 0 and kept[0]["best_identity_ungated"] == "0.95"
+
+
+def test_eval2_marks_which_proteins_are_scorable_today():
+    rows = [eval2_row("keep", "0.1"), eval2_row("new", "0.1", dataset="foldbench_rest")]
+    kept = {e["stem"]: e for e in build_eval2(rows, EVAL2_SEQS, 0.40, keep_boundary=False)}
+    assert kept["keep"]["has_ground_truth"] == 1
+    assert kept["new"]["has_ground_truth"] == 0
+
+
+def test_eval2_carries_the_sequence_and_its_length():
+    kept = build_eval2([eval2_row("keep", "0.1")], EVAL2_SEQS, 0.40, keep_boundary=False)
+    assert kept[0]["input_seq"] == "MKV" and kept[0]["length"] == 3
