@@ -4,7 +4,7 @@
 
 **Summary.** Arm S doubled its single-rollout precision and lost 0.021 R-precision
 and 0.051 AUC. The mechanism is not that its contacts got worse — they got better.
-It is that it emitted **53% fewer distinct pairs**, and a pair that receives no
+It is that it emitted **65% fewer distinct pairs**, and a pair that receives no
 votes cannot be ranked at all. Across proteins, how much coverage a checkpoint
 lost predicts how much AUC it lost with ρ = **+0.781** (p = 6e-115).
 
@@ -20,9 +20,15 @@ the candidate band (separation ≥ 6) that receive at least one vote separates t
 | checkpoint | distinct pairs voted | vs baseline | contacts emitted / 100 rollouts | R-precision | AUC |
 |---|---|---|---|---|---|
 | baseline exp199 | 2267 | — | 16,191 | 0.6111 | 0.9487 |
-| arm S step 40 | 1910 | −12.8% | 14,659 | 0.6087 | 0.9436 |
-| arm S step 125 | **788** | **−52.9%** | 8,438 | 0.5898 | 0.8977 |
-| arm D step 60 | 2164 | −3.5% | 16,058 | 0.6099 | 0.9481 |
+| arm S step 40 | 1910 | −15.8% | 14,659 | 0.6087 | 0.9436 |
+| arm S step 125 | **788** | **−65.2%** | 8,438 | 0.5898 | 0.8977 |
+| arm D step 60 | 2164 | −4.6% | 16,058 | 0.6099 | 0.9481 |
+| arm D step 125 | 2005 | −11.6% | — | 0.6109 | 0.9467 |
+
+Percentages are ratios of the means in the column beside them. Averaging each
+protein's *own* relative change instead gives smaller magnitudes (−12.8%, −52.9%,
+−3.5%) because short proteins have few candidate pairs and shrink less; the
+conclusion is the same either way.
 
 ## The mechanism, on paired data
 
@@ -66,8 +72,9 @@ Arm D's F1 reward prices recall explicitly, which is why its coverage held at
 
 ## What this does not show
 
-Arm D preserved coverage and preserved the score. It did **not** improve the score
-(R −0.0012, p = 0.39 at step 60). Not damaging the model is a necessary condition,
+Arm D preserved coverage and preserved the score. It did **not** improve the score:
+R −0.0012 (p = 0.39) at step 60 and −0.0001 (p = 0.93) at step 125, the latter
+being as close to "identical to the warm start" as this metric can report. Not damaging the model is a necessary condition,
 not a result. The open question after both arms is whether *any* per-rollout
 objective can move a consensus metric, or whether the target has to be the vote
 distribution itself — which would mean scoring a whole group of rollouts jointly

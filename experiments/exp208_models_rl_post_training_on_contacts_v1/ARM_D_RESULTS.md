@@ -52,7 +52,29 @@ at either reward's shape.
 
 ## 3. Held-out evaluation
 
-<!--EVALD-->
+Consensus R-precision at n=100 over the 554-protein eval set, same pipeline as
+arm S (exp82's `score_rollout_worker.py`, scored by the published
+`build_rollout_rows.py`), paired per protein against the shared warm start:
+
+| checkpoint | R-precision | Δ | p | AUC | Δ | p | coverage |
+|---|---|---|---|---|---|---|---|
+| baseline exp199 | **0.6111** | — | — | **0.9487** | — | — | 2267 |
+| arm D step 60 | 0.6099 | −0.0012 | 0.392 | 0.9481 | −0.0006 | 0.293 | −4.6% |
+| **arm D step 125** | **0.6109** | **−0.0001** | **0.925** | 0.9467 | −0.0020 | 0.0019 | −11.6% |
+| arm S step 125 | 0.5898 | −0.0213 | 5.7e-19 | 0.8977 | −0.0511 | 2.4e-85 | −65.2% |
+
+**Arm D finishes statistically identical to its warm start.** −0.0001 on
+R-precision at p = 0.93 is as close to "no change" as this metric reports, against
+arm S's −0.0213 at p = 5.7e-19 from the same budget on the same data.
+
+AUC is the one place arm D moves at all: −0.0020, small but significant
+(p = 0.0019), tracking its −11.6% coverage. That is the same mechanism as arm S,
+three-and-a-half times smaller — arm D drifts slightly toward selectivity late in
+the run rather than racing there. Coverage at step 60 (−4.6%) is better than at
+step 125 (−11.6%), consistent with its own reward peaking at step ~40.
+
+A full epoch of RL, 125 steps and 32,000 rollouts, moved the reported metric by
+one ten-thousandth. That is the result.
 
 ## 4. Reading this against arm S
 
