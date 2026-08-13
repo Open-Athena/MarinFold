@@ -36,7 +36,6 @@ pool cleaner.
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
 import json
 import shutil
@@ -308,7 +307,7 @@ def main() -> int:
 
     mmseqs = ensure_mmseqs(log=log)
     log(f"[mmseqs] binary: {mmseqs}")
-    q776, q_new = stage_queries(work, log)
+    q776, _ = stage_queries(work, log)
 
     frames: list[pd.DataFrame] = []
     provenance: dict = {
