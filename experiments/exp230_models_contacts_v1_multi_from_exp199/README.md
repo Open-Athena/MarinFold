@@ -125,6 +125,58 @@ Two gates and one report. Everything scored with **exp82's rollout+resample work
 - plain-mode R-precision Δ < **−0.02** → this is #163's v1/v2 forgetting failure reappearing; stop and diagnose rather than tune
 - mean contacts per section < 60% of base → degenerate short sections
 
+## Run book
+
+Every stage writes its own provenance JSON into `data/`. Paths below are the
+defaults each script carries.
+
+```bash
+# 0. stage bucket shards + write the shard manifest (needs huggingface_hub>=1.5,
+#    which cannot share an interpreter with marinfold -- see stage.py)
+/home/bizon/anaconda3/bin/python stage.py --work /data/exp230_multi --arm pdb
+/home/bizon/anaconda3/bin/python stage.py --work /data/exp230_multi --arm afdb --n-shards 44
+/home/bizon/anaconda3/bin/python stage.py --work /data/exp230_multi --arm esm_atlas --n-shards 10
+
+# 1. Tier-A/30% drop list against #226's 776 eval queries
+python decontam.py --work /data/exp230_multi
+
+# 2. the decontaminated protein pool
+python select_targets.py --work /data/exp230_multi --n-afdb 40000 --n-esm 40000 --n-pdb 0
+
+# 3. on-policy rollouts from exp199 (marin TPU; see dispatch_rollouts.py for the
+#    client-vs-workspace split and why this is not CoreWeave)
+python dispatch_rollouts.py --num-shards 32 --tpu v6e-4 --zone us-east5-b
+
+# 4. multi-draft + plain-rehearsal corpus, then profile F
+python build_corpus.py --targets /data/exp230_multi/targets.parquet \
+    --rollouts /data/exp230_multi/rollouts --out /data/exp230_multi/corpus
+python make_multi_tokenizer.py --source /data/exp208_replication/model/C_bf16 \
+    --out /data/exp230_multi/tokenizer_multi
+python tokenize_corpus.py --in /data/exp230_multi/corpus \
+    --out /data/exp230_multi/tokenized --tokenizer /data/exp230_multi/tokenizer_multi
+#   ^ prints STEPS_PER_EPOCH, which the training dispatcher needs
+
+# 5. fine-tune (train_common.py holds the recipe)
+# 6. evaluate
+python build_eval_targets.py --work /data/exp230_multi          # 554 units
+#   Gate A  -- exp82's score_rollout_worker.py + exp89's compute_metrics.py,
+#              with the exp199 BASE re-scored in the same batch (#209: exp82's
+#              worker is the reference scorer, not #199's own pipeline)
+#   Gate B  -- eval_modes_worker.py --mode plain
+#   report  -- eval_modes_worker.py --mode multi --max-sections 8
+python summarize_modes.py --rollouts gs://.../eval/step-N --label step-N
+```
+
+### Environments
+
+Three interpreters, and they cannot be merged:
+
+| what | interpreter | why |
+|---|---|---|
+| bucket staging | system python (`huggingface_hub` 1.5) | the bucket API does not exist below 1.5; `snapshot_download` cannot see buckets at all |
+| corpus / tokenizer / local generation | `/data/exp208_replication/venv` | has `marinfold` + vLLM + a transformers that pins `huggingface_hub<1` |
+| iris submission | `/home/bizon/git/marin-freshiris/.venv` | iris rejects a client more than 14 days old |
+
 ## Results
 
 _(Fill in after the run completes.)_
