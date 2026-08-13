@@ -400,7 +400,7 @@ is not retrieval.
 
 - **eval2 is ready to score.** 307 proteins, all with ground truth, published at
   `data/contacts-v1-eval2-exp226/` on the bucket. The
-  [`eval-checkpoint`](../../.claude/skills/eval-checkpoint/SKILL.md) skill now
+  [`eval-checkpoint`](../../.agents/skills/eval-checkpoint/SKILL.md) skill now
   defaults to the 577-unit universe, which yields the legacy 554 numbers and
   eval2 from one run.
 

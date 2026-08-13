@@ -183,8 +183,9 @@ score **~0.086 higher** under rollout than under pairwise, which is comparable
 to two generations of model progress. If a new score is filed under the wrong
 recipe it will look like a jump that never happened.
 
-- The **`eval-checkpoint` skill** runs exp89's **pairwise** scorer. Anything
-  produced by it is `PAIRWISE`.
+- The **`eval-checkpoint` skill** runs the settled **rollout** recipe as of
+  2026-08-11, so anything it produces from that date is `ROLLOUT`. Everything
+  it produced earlier used exp89's pairwise scorer and is `PAIRWISE`.
 - exp82's `score_rollout_*.py` workers and the exp169 dispatcher produce
   `ROLLOUT` (n=100, resampled, top-k off).
 - If a score came with `top_k=50` (anything predating #142), it is a **third**
@@ -616,7 +617,7 @@ So the figures never merge them — marker shape and colour carry the recipe, an
 a checkpoint measured both ways shows both points. Recipes:
 
 - **pairwise** — autoregressive `P(<contact> <pi> <pj>)`, symmetrised. exp89's
-  original scorer; still what the `eval-checkpoint` skill runs.
+  original scorer; what the `eval-checkpoint` skill ran until 2026-08-11.
 - **rollout** — n=100 sampled rollouts + per-rollout document resampling +
   pairwise tie-break, **top-k off**. Settled in exp82; `top_k=50` was removed
   in #142 (it cost ~0.007–0.012 R-precision by truncating long rollouts). This
