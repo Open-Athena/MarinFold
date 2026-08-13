@@ -1,0 +1,11 @@
+{
+  "sensitivity": 7.5,
+  "max_seqs": 5000,
+  "reporting_evalue": 10.0,
+  "mmseqs": "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+  "target_db": "/data/exp213_overlap/targetDB",
+  "target_db_from": "exp213 (issue #213); 70,889,604 training sequences",
+  "n_queries": 776,
+  "n_queries_from_exp213": 554,
+  "n_queries_net_new": 222
+}

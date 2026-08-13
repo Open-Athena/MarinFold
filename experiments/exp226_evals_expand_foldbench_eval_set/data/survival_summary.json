@@ -1,0 +1,268 @@
+{
+  "parity_with_exp213": {
+    "rows_compared": 554,
+    "rows_changed": 0,
+    "counts": {
+      "best_identity_covered_40": {
+        "got": 284,
+        "expected": 284
+      },
+      "best_identity_covered_30": {
+        "got": 264,
+        "expected": 264
+      },
+      "best_identity_any_40": {
+        "got": 273,
+        "expected": 273
+      },
+      "best_identity_any_30": {
+        "got": 255,
+        "expected": 255
+      }
+    }
+  },
+  "expanded_set_size": 776,
+  "headline": [
+    {
+      "threshold": "<40%",
+      "orig554_n": 554,
+      "orig554_survive": 284,
+      "orig554_natural": 55,
+      "orig554_designed": 229,
+      "orig554_survive_ungated": 273,
+      "expanded776_n": 776,
+      "expanded776_survive": 307,
+      "expanded776_natural": 78,
+      "expanded776_designed": 229,
+      "expanded776_survive_ungated": 289,
+      "gain_survive": 23,
+      "gain_natural": 23,
+      "gain_natural_pct": 41.8
+    },
+    {
+      "threshold": "<30%",
+      "orig554_n": 554,
+      "orig554_survive": 264,
+      "orig554_natural": 50,
+      "orig554_designed": 214,
+      "orig554_survive_ungated": 255,
+      "expanded776_n": 776,
+      "expanded776_survive": 275,
+      "expanded776_natural": 61,
+      "expanded776_designed": 214,
+      "expanded776_survive_ungated": 264,
+      "gain_survive": 11,
+      "gain_natural": 11,
+      "gain_natural_pct": 22.0
+    }
+  ],
+  "newer_vs_older": [
+    {
+      "threshold": "<40%",
+      "old_n": 100,
+      "old_survive": 15,
+      "old_pct": 15.0,
+      "new_n": 222,
+      "new_survive": 23,
+      "new_pct": 10.4,
+      "predicted_from_old_rate": 33.3,
+      "shortfall": -10.3,
+      "fisher_p": 0.2635
+    },
+    {
+      "threshold": "<30%",
+      "old_n": 100,
+      "old_survive": 11,
+      "old_pct": 11.0,
+      "new_n": 222,
+      "new_survive": 11,
+      "new_pct": 5.0,
+      "predicted_from_old_rate": 24.4,
+      "shortfall": -13.4,
+      "fisher_p": 0.0569
+    }
+  ],
+  "length_profiles": {
+    "foldbench100": {
+      "n": 100,
+      "median": 241.5,
+      "mean": 265.5,
+      "min": 30,
+      "max": 761
+    },
+    "foldbench_rest": {
+      "n": 222,
+      "median": 254.0,
+      "mean": 291.1,
+      "min": 65,
+      "max": 1596
+    }
+  },
+  "survival_by_arm": [
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<40%",
+      "survive_afdb_only": 76,
+      "natural_afdb_only": 72,
+      "survive_esm_atlas_only": 62,
+      "natural_esm_atlas_only": 62,
+      "survive_union": 23,
+      "natural_union": 23,
+      "esm_atlas_removes_beyond_afdb": 53,
+      "afdb_removes_beyond_esm_atlas": 39
+    },
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<30%",
+      "survive_afdb_only": 40,
+      "natural_afdb_only": 36,
+      "survive_esm_atlas_only": 29,
+      "natural_esm_atlas_only": 29,
+      "survive_union": 11,
+      "natural_union": 11,
+      "esm_atlas_removes_beyond_afdb": 29,
+      "afdb_removes_beyond_esm_atlas": 18
+    },
+    {
+      "subset": "foldbench100",
+      "n": 100,
+      "threshold": "<40%",
+      "survive_afdb_only": 31,
+      "natural_afdb_only": 28,
+      "survive_esm_atlas_only": 28,
+      "natural_esm_atlas_only": 25,
+      "survive_union": 15,
+      "natural_union": 12,
+      "esm_atlas_removes_beyond_afdb": 16,
+      "afdb_removes_beyond_esm_atlas": 13
+    },
+    {
+      "subset": "foldbench100",
+      "n": 100,
+      "threshold": "<30%",
+      "survive_afdb_only": 18,
+      "natural_afdb_only": 15,
+      "survive_esm_atlas_only": 16,
+      "natural_esm_atlas_only": 14,
+      "survive_union": 11,
+      "natural_union": 9,
+      "esm_atlas_removes_beyond_afdb": 7,
+      "afdb_removes_beyond_esm_atlas": 5
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<40%",
+      "survive_afdb_only": 311,
+      "natural_afdb_only": 72,
+      "survive_esm_atlas_only": 344,
+      "natural_esm_atlas_only": 73,
+      "survive_union": 284,
+      "natural_union": 55,
+      "esm_atlas_removes_beyond_afdb": 27,
+      "afdb_removes_beyond_esm_atlas": 60
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<30%",
+      "survive_afdb_only": 286,
+      "natural_afdb_only": 58,
+      "survive_esm_atlas_only": 291,
+      "natural_esm_atlas_only": 60,
+      "survive_union": 264,
+      "natural_union": 50,
+      "esm_atlas_removes_beyond_afdb": 22,
+      "afdb_removes_beyond_esm_atlas": 27
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<40%",
+      "survive_afdb_only": 387,
+      "natural_afdb_only": 144,
+      "survive_esm_atlas_only": 406,
+      "natural_esm_atlas_only": 135,
+      "survive_union": 307,
+      "natural_union": 78,
+      "esm_atlas_removes_beyond_afdb": 80,
+      "afdb_removes_beyond_esm_atlas": 99
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<30%",
+      "survive_afdb_only": 326,
+      "natural_afdb_only": 94,
+      "survive_esm_atlas_only": 320,
+      "natural_esm_atlas_only": 89,
+      "survive_union": 275,
+      "natural_union": 61,
+      "esm_atlas_removes_beyond_afdb": 51,
+      "afdb_removes_beyond_esm_atlas": 45
+    }
+  ],
+  "arm_complementarity": [
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<40%",
+      "dropped": 199,
+      "both_arms": 107,
+      "afdb_only": 39,
+      "esm_atlas_only": 53
+    },
+    {
+      "subset": "net_new222",
+      "n": 222,
+      "threshold": "<30%",
+      "dropped": 211,
+      "both_arms": 164,
+      "afdb_only": 18,
+      "esm_atlas_only": 29
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<40%",
+      "dropped": 270,
+      "both_arms": 183,
+      "afdb_only": 60,
+      "esm_atlas_only": 27
+    },
+    {
+      "subset": "orig554",
+      "n": 554,
+      "threshold": "<30%",
+      "dropped": 290,
+      "both_arms": 241,
+      "afdb_only": 27,
+      "esm_atlas_only": 22
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<40%",
+      "dropped": 469,
+      "both_arms": 290,
+      "afdb_only": 99,
+      "esm_atlas_only": 80
+    },
+    {
+      "subset": "expanded776",
+      "n": 776,
+      "threshold": "<30%",
+      "dropped": 501,
+      "both_arms": 405,
+      "afdb_only": 45,
+      "esm_atlas_only": 51
+    }
+  ],
+  "designed_flag": {
+    "note": "exp213's `designed` is the denovo_pdb dataset label; `synthetic` is RCSB source-organism (taxid 32630 / no natural source), resolved only for FoldBench rows; `designed_any` is their union.",
+    "foldbench100_synthetic": 3,
+    "foldbench_rest_synthetic": 4
+  }
+}
