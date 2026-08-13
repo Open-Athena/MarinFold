@@ -95,8 +95,17 @@ def read_entry(path: str) -> gemmi.Structure:
     ``_pdbx_struct_assembly_gen`` names every asym id in the entry, ligands
     and waters included, so expanding a structure those have been stripped
     from raises ``RuntimeError: no subchain X``.
+
+    Only the **first model** is kept. An NMR entry deposits an ensemble of
+    (typically 10-20) models of the same molecule; the first is the
+    conventional representative, and everything downstream -- gemmi's
+    assembly expansion, the neighbour search, pyconfind -- already looks only
+    at model 0. Dropping the rest here makes that explicit rather than
+    incidental, and saves cleaning 19 copies we will not use.
     """
     structure = gemmi.read_structure(path)
+    if len(structure) > 1:
+        del structure[1:]
     structure.setup_entities()
     return structure
 

@@ -116,6 +116,15 @@ that, `qc.py` measures what remains: exact resolved-sequence matches, and RCSB
 set is already 58% homologous to exp199's AFDB training data *without* the score
 being homology-inflated. The measurement is the deliverable; no homology purge.
 
+### One caveat for mixed-corpus training
+
+The `global_plddt` column is filled, as always, with the mean Cα B-factor.
+For AFDB that column really is pLDDT (0–100, **higher** is better); for a crystal
+structure it is a B-factor (typically 10–100, **lower** is better). The column name
+is kept for schema compatibility with the exp53/exp105/exp132 corpora, but the two
+are not on the same scale or even the same sign. Any mixture that filters or weights
+on `global_plddt` must branch on the corpus.
+
 ### Redundancy
 
 Kept, not removed. PDB is enormously redundant, but each copy is a genuinely
