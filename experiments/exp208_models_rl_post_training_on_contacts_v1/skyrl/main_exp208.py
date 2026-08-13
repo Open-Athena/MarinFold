@@ -176,6 +176,26 @@ def check_reward_mode(cfg) -> None:
     """
     estimator = cfg.trainer.algorithm.advantage_estimator
     mode = cfg.reward_mode
+
+    # lam_step=0 makes the reward SEQUENCE-level even in "dense" mode: every
+    # response token carries the same document share, so there is no per-token
+    # signal to preserve and `contacts_dense` (a pass-through with no baseline)
+    # would feed the raw, unnormalised marginal straight to the optimiser. That
+    # is what arm C did: terminal KL 0.00036, the least movement of any arm, and
+    # a checkpoint indistinguishable from its warm start. A group estimator both
+    # fits the reward's shape and normalises it.
+    if mode == "dense" and cfg.lam_step == 0.0:
+        if estimator == ADV_ESTIMATOR:
+            raise ValueError(
+                "lam_step=0 makes the per-token reward constant within each rollout, so "
+                f"advantage_estimator='{ADV_ESTIMATOR}' has nothing per-token to propagate and "
+                "will hand the optimiser an unnormalised sequence-level advantage (arm C: "
+                "terminal KL 0.00036, no measurable training). Use advantage_estimator=grpo."
+            )
+        logger.info("[exp208] lam_step=0: sequence-level reward from the document term, "
+                    "estimator=%s", estimator)
+        return
+
     if mode == "document_f1" and estimator == ADV_ESTIMATOR:
         raise ValueError(
             f"reward_mode='document_f1' emits one scalar per rollout, but "
