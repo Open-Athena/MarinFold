@@ -145,11 +145,13 @@ python select_targets.py --work /data/exp230_multi --n-afdb 40000 --n-esm 40000 
 
 # 3. on-policy rollouts from exp199 (marin TPU; see dispatch_rollouts.py for the
 #    client-vs-workspace split and why this is not CoreWeave)
-python dispatch_rollouts.py --num-shards 32 --tpu v6e-4 --zone us-east5-b
+EXP230_N_ROLLOUTS=12 python dispatch_rollouts.py --num-shards 48 \
+    --tpu v6e-4 --zone us-east5-b
 
 # 4. multi-draft + plain-rehearsal corpus, then profile F
 python build_corpus.py --targets /data/exp230_multi/targets.parquet \
-    --rollouts /data/exp230_multi/rollouts --out /data/exp230_multi/corpus
+    --rollouts gs://marin-us-east5/.../rollouts --out /data/exp230_multi/corpus \
+    --kmax 12 --docs-per-protein 3      # kmax matches --n-rollouts above
 python make_multi_tokenizer.py --source /data/exp208_replication/model/C_bf16 \
     --out /data/exp230_multi/tokenizer_multi
 python tokenize_corpus.py --in /data/exp230_multi/corpus \
@@ -218,20 +220,44 @@ systematic difference between them.
 | esm_atlas | 40,000 | 204 | 383 | 172 |
 | pdb | 27,110 | 182 | 380 | 155 |
 
-### Stage 1 — on-policy drafts are 3.4x more precise than #163's
+### Stage 1 — on-policy drafts (running)
 
-A 6-protein x 8-rollout local smoke of exp199 under the settled sampling recipe:
+Two provisional measurements, and the second corrects the first:
 
-| | exp199 (this run) | #163 arm F | #163 E8 |
-|---|---|---|---|
-| per-rollout precision | **0.411** | 0.229 | ~0.12 |
-| `n_pred / n_gt` | 1.03 | — | — |
-| finished | 100 % | 56 % (multi) | 98 % |
+| sample | n | median L | precision | `n_pred / n_gt` | finished |
+|---|---|---|---|---|---|
+| 6-protein local smoke | 48 rollouts | ~250 | 0.411 | 1.03 | 100 % |
+| first 4 GCS parts | 24,000 rollouts | 88 | 0.297 | 1.47 | 99 % |
 
-This is the concrete reason to regenerate rather than inherit #98/#163's
-rollouts, and it sharpens the preregistered risk in H3: a stronger sampler is a
-*more consistent* one, so **candidate diversity (Jaccard), not draft quality, is
-the number to watch** when the multi-mode report lands.
+Both are biased and neither is the number to quote. Each shard walks its
+targets in **ascending length**, so the parts that land first are the shortest
+proteins in the pool — where there are few valid pairs, the model over-generates
+by ~47 %, and precision is correspondingly low. The 6-protein smoke drew a more
+typical length mix but is far too small to trust (#163: a 40-protein probe read
++0.048 where the full 553 read +0.065). **The honest figure comes from the
+complete set and will replace both.**
+
+What is already safe to say is the qualitative claim the design rests on: an
+exp199 draft is far more precise than the ~0.12 of #163's E8 drafts. That
+sharpens the preregistered risk in H3 rather than softening it — a stronger
+sampler is a *more consistent* one, so **candidate diversity (Jaccard), not
+draft quality, is the number to watch**.
+
+#### Sizing: 12 rollouts per protein, not 24
+
+Generation cost is close to linear in sequence length, and the pool's length
+distribution is the whole budget: 107,110 proteins, mean L 210.5, **22.5 M
+residues total**. Calibrated against a shard that had processed 500 targets
+(250 targets of mean L 103.5 in 13.5 min = **1,917 residue-units/min/shard**),
+the full run at 24 rollouts is **196 shard-hours** — 17.8 h wall clock against
+the 11-slot `v6e-4` cap in `us-east5-b`.
+
+Halving to **12 rollouts** halves it to ~8.9 h while keeping every protein.
+The alternative — cutting the pool — was rejected: protein diversity is what
+the rehearsal half needs, and #163's own failure mode was forgetting the base
+task. `--kmax` drops to 12 with it, so `K ~ Uniform{0..12}` stays a clean
+distribution instead of `Uniform{0..16}` clipped at the number of drafts that
+exist.
 
 ### Format plumbing — verified, not asserted
 
