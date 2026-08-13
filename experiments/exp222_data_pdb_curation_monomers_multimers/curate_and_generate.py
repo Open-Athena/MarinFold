@@ -145,6 +145,26 @@ def _cluster_id(pdb_id: str, entity_id: str) -> int:
     return _CLUSTERS.get(f"{pdb_id.upper()}_{entity_id}", -1)
 
 
+def _done(
+    task: Task,
+    monomers: list[dict[str, Any]],
+    multimers: list[dict[str, Any]],
+    ledger: dict[str, Any],
+) -> dict[str, Any]:
+    """Package a worker's result, carrying the entry's cost back to the driver.
+
+    Results come back out of order, so the driver cannot tell which task a
+    result belongs to; it needs ``est_residues`` echoed to track how much of
+    the *work* (rather than how many entries) is finished.
+    """
+    return {
+        "monomers": monomers,
+        "multimers": multimers,
+        "ledger": ledger,
+        "est_residues": task.est_residues,
+    }
+
+
 def process_entry(task: Task) -> dict[str, Any]:
     """Curate one entry and build every document it yields.
 
@@ -176,7 +196,7 @@ def process_entry(task: Task) -> dict[str, Any]:
         structure = clean_structure(raw.clone())
     except Exception as exc:  # noqa: BLE001 - recorded in the ledger
         ledger["error"] = f"read: {type(exc).__name__}: {exc}"
-        return {"monomers": [], "multimers": [], "ledger": ledger}
+        return _done(task, [], [], ledger)
 
     asu_protein_subchains = protein_subchains(structure)
 
@@ -231,13 +251,13 @@ def process_entry(task: Task) -> dict[str, Any]:
     header_chains = task.assembly1_protein_chains
     if header_chains == 0:
         ledger["multimer_status"] = "no_assembly_1_protein_chains"
-        return {"monomers": monomer_rows, "multimers": [], "ledger": ledger}
+        return _done(task, monomer_rows, [], ledger)
     if header_chains == 1:
         ledger["multimer_status"] = "not_a_complex"
-        return {"monomers": monomer_rows, "multimers": [], "ledger": ledger}
+        return _done(task, monomer_rows, [], ledger)
     if header_chains > MAX_ASSEMBLY_CHAINS_BEFORE_EXPANSION:
         ledger["multimer_status"] = "too_many_chains_by_header"
-        return {"monomers": monomer_rows, "multimers": [], "ledger": ledger}
+        return _done(task, monomer_rows, [], ledger)
 
     try:
         expanded = build_assembly(raw, "1")
@@ -274,7 +294,7 @@ def process_entry(task: Task) -> dict[str, Any]:
         detail = f"multimer: {type(exc).__name__}: {exc}"
         ledger["error"] = detail if previous is None else f"{previous}; {detail}"
 
-    return {"monomers": monomer_rows, "multimers": multimer_rows, "ledger": ledger}
+    return _done(task, monomer_rows, multimer_rows, ledger)
 
 
 def _build_multimer(task: Task, assembly, built) -> dict[str, Any] | str:
@@ -517,6 +537,12 @@ def main(argv: list[str] | None = None) -> int:
     # Report ~20 times over the run, so a smoke test of a few hundred entries
     # is as observable as the full 160k-entry pass.
     report_every = max(1, min(2_000, len(tasks) // 20))
+    # The ETA is projected from *work* done, not entries done. Because tasks
+    # are handed out largest-first, entries/s climbs steadily through the run
+    # and an entry-count ETA reads absurdly high early on -- 6,000 of 177,710
+    # entries is 3% of the count but 32% of the work.
+    total_work = sum(t.est_residues for t in tasks) or 1
+    work_done = 0
     try:
         with Pool(args.workers, initializer=_init_worker, initargs=(str(args.clusters),)) as pool:
             for result in pool.imap_unordered(process_entry, tasks, chunksize=1):
@@ -524,12 +550,14 @@ def main(argv: list[str] | None = None) -> int:
                 multimers.add(result["multimers"])
                 ledger.add([result["ledger"]])
                 done += 1
+                work_done += result["est_residues"]
                 if done % report_every == 0:
-                    rate = done / (time.time() - started)
-                    eta = (len(tasks) - done) / rate
+                    elapsed = time.time() - started
+                    fraction = work_done / total_work
+                    eta = elapsed / fraction - elapsed if fraction else float("nan")
                     print(
-                        f"  {done}/{len(tasks)}  {rate:.1f} entries/s  "
-                        f"eta {eta/60:.1f} min  "
+                        f"  {done}/{len(tasks)}  {done/elapsed:.1f} entries/s  "
+                        f"{fraction*100:.1f}% of work  eta {eta/60:.1f} min  "
                         f"mono={monomers.total} multi={multimers.total}",
                         flush=True,
                     )
