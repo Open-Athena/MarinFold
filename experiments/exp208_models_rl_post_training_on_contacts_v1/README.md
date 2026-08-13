@@ -924,8 +924,10 @@ actively hurt.** Full write-ups: [ARM_S_RESULTS.md](ARM_S_RESULTS.md),
 | baseline exp199 | **0.6111** | — | **0.9487** | 2267 pairs |
 | arm S step 40 (its peak) | 0.6087 | −0.0023 (p = 0.12) | 0.9436 | −15.8% |
 | arm S step 125 | 0.5898 | −0.0213 (p = 5.7e-19) | 0.8977 | **−65.2%** |
+| arm B v1 step 125 (`lam_doc` inert) | 0.5879 | −0.0232 | 0.8986 | −65.3% |
+| **arm B v2 step 125** | **0.5946** | −0.0165 | **0.9087** | −60.1% |
 | arm D step 60 | 0.6099 | −0.0012 (p = 0.39) | 0.9481 | −4.6% |
-| **arm D step 125** | **0.6109** | **−0.0001 (p = 0.93)** | 0.9467 | −11.6% |
+| **arm D step 125** (untrained) | **0.6109** | **−0.0001 (p = 0.93)** | 0.9467 | −11.6% |
 
 **The pre-registered predictions above were confirmed, including the mechanism.**
 Prediction 1 ("per-rollout precision rises in every arm with a stepwise term"):
@@ -969,15 +971,18 @@ change what anyone does next:
    count, via a weight sync that pushes a divergent copy into the inference
    engines. Every run here is unsharded for that reason.
 
-The open question is the one arm B was specified for: an objective computed over
-the **group** of rollouts (the leave-one-out consensus marginal) rather than over
-each rollout independently. Phase 0 measured its correlation with per-rollout
-precision at ρ = 0.22, so it is not precision in disguise — it is the only term in
-the design that targets the vote distribution the metric is actually built on. It
-is implemented, tested, and now verified end-to-end in a live loop (`consensus term
-folded into 128/128 rollouts`), and a full run at arm S's settings is in progress.
-Being a dense reward, it should move the policy like arm S rather than stalling
-like arm D.
+**Prediction 3 is confirmed in direction and refuted in magnitude.** The
+leave-one-out consensus marginal beats the pure dense reward by +0.0048 R-precision
+(p = 3.8e-05) and +0.0110 AUC (p = 3.3e-28, better on 69.9% of proteins), recovering
+~22% of arm S's deficit — and still finishing 0.0165 below the warm start. See
+[ARM_B_RESULTS.md](ARM_B_RESULTS.md). It took two runs: at the shipped
+`lam_doc = 4.5` the document term carried 0.42% of the stepwise spread and arm B
+reproduced arm S to three decimals and to within one pair of its vote coverage.
+
+Notably, arm B v2 recovers only 7.9% of the coverage deficit while recovering 22%
+of the metric deficit, so the consensus term improves the *ordering* of votes as
+well as their spread — which is what a marginal contribution to the group's
+**correct** consensus should do.
 
 Two caveats worth carrying forward. **Comparisons at matched nominal LR are not
 comparisons of rewards** — arm S and arm D differ 72× in terminal KL, so they were
