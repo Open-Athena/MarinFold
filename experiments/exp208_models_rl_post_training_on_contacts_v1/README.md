@@ -926,6 +926,16 @@ actively hurt.** Full write-ups: [ARM_S_RESULTS.md](ARM_S_RESULTS.md),
 | arm S step 125 | 0.5898 | −0.0213 (p = 5.7e-19) | 0.8977 | **−52.9%** |
 | arm D step 60 | 0.6099 | −0.0012 (p = 0.39) | 0.9481 | −3.5% |
 
+**The pre-registered predictions above were confirmed, including the mechanism.**
+Prediction 1 ("per-rollout precision rises in every arm with a stepwise term"):
+yes, 0.252 → 0.473. Prediction 2 ("the step-only arm raises precision and moves
+consensus R-precision by ≤ 0 — union coverage shrinks and votes concentrate"):
+yes, −0.0213 with coverage down 52.9%, and the coverage/AUC link measured at
+ρ = +0.781. The hypothesis section named *vote collapse* as the mechanism to beat
+before any of this ran, and that is precisely what happened. Prediction 3 (the
+consensus-marginal arm moves the metric **up**) remains **untested** — arm B was
+implemented and never run.
+
 Four things this experiment established, in rough order of how much they should
 change what anyone does next:
 
