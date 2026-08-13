@@ -324,6 +324,56 @@ uv run --extra gt python validate_gt_against_exp89.py --n 100   # the control
 uv run python publish_gt_to_hf.py
 ```
 
+### 8. The eval2 scoreboard — and the parity with Protenix single-seq comes back
+
+All six predictors now cover all 307 proteins. The 284 older ones are exp213's
+rows verbatim (its published headline reproduces exactly as a gate); the 23 new
+ones were run here — Protenix-v2 in both modes and ESMFold / ESMFold2 on Modal,
+seq-KNN and MarinFold locally — and scored through the same `compute_metrics`
+implementation ([`data/eval2_headline.csv`](data/eval2_headline.csv)).
+
+R-precision, all ranges:
+
+| | n | MarinFold #199 | Protenix single-seq | ESMFold | ESMFold2 | Protenix + MSA | seq-KNN (null) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **eval2** (<40 % id) | 307 | 0.545 | 0.679 | 0.694 | 0.740 | 0.778 | 0.074 |
+| **eval2 natural** | 78 | **0.337** | **0.326** | 0.462 | 0.529 | 0.698 | 0.148 |
+| eval2 (<30 % id) | 275 | 0.543 | 0.700 | 0.692 | 0.739 | 0.770 | 0.044 |
+| eval2 natural (<30 %) | 61 | 0.301 | 0.342 | 0.410 | 0.477 | 0.658 | 0.065 |
+| the 23 net-new | 23 | **0.407** | **0.243** | 0.563 | 0.599 | 0.805 | 0.297 |
+
+**The headline finding.** #213 concluded that MarinFold's parity with Protenix-v2
+single-seq "does not survive" homology removal — it lost by 0.169 on the
+homology-free subset. That subset was ~80 % de novo designs. **On the natural
+half of eval2 the parity comes back**, paired bootstrap over 10,000 resamples
+([`data/eval2_paired_deltas.csv`](data/eval2_paired_deltas.csv)):
+
+| subset | MarinFold − Protenix single-seq | verdict |
+| --- | ---: | --- |
+| eval2 natural (78) | **+0.011** [−0.044, +0.069] | tie |
+| eval2 natural <30 % (61) | −0.041 [−0.101, +0.019] | tie |
+| **the 23 net-new (23)** | **+0.164** [+0.063, +0.263] | **MarinFold wins** |
+| eval2 pooled (307) | −0.133 [−0.160, −0.105] | Protenix wins |
+
+So #213's result was a **composition effect, not a homology effect**: Protenix-v2
+single-seq is unusually strong on idealised de novo backbones and unusually weak
+on novel natural proteins, where it collapses to 0.243 on the 23 (against 0.603
+on the full 554) while its MSA mode reaches 0.805 — the widest single-seq/MSA gap
+anywhere in this experiment. Removing designs, rather than removing homologs, is
+what the comparison turned on.
+
+**What has not changed:** MarinFold still loses to ESMFold (−0.125 [−0.173,
+−0.080]), ESMFold2 (−0.192) and Protenix+MSA (−0.361) on eval2-natural, all
+significant. The gap to the structure predictors is real and this does not close
+it.
+
+**The null collapses, as designed.** seq-KNN falls to **0.074** on eval2 pooled
+and 0.148 on eval2-natural, against MarinFold's +0.189 [+0.141, +0.236] margin
+over it — the decontamination did what it was meant to do, and MarinFold's score
+is not retrieval.
+
+→ [`plots/eval2_scoreboard.png`](plots/eval2_scoreboard.png)
+
 ## Conclusion
 
 **The expansion is worth folding in at <40 %, and not worth much at <30 %.**

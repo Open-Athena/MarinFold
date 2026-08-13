@@ -259,9 +259,84 @@ def main() -> int:
     plot_natural_gain(headline, newer, PLOTS / "natural_gain.png", argv)
     plot_per_arm(by_arm, complementarity, PLOTS / "per_arm_survival.png", argv)
     plot_identity_profile(rows, lengths, PLOTS / "identity_profile_old_vs_new.png", argv)
+    eval2_headline = DATA / "eval2_headline.csv"
+    if eval2_headline.exists():
+        plot_eval2_scoreboard(pd.read_csv(eval2_headline),
+                              pd.read_csv(DATA / "eval2_paired_deltas.csv"),
+                              PLOTS / "eval2_scoreboard.png", argv)
     print(f"[plots] -> {PLOTS}", flush=True)
     return 0
 
+
+
+def plot_eval2_scoreboard(headline: pd.DataFrame, deltas: pd.DataFrame,
+                          out: Path, args: list[str]) -> None:
+    """The six-predictor scoreboard, pooled vs natural-only."""
+    from analyze_survival import DATASET_NEW  # noqa: F401  (kept for symmetry)
+
+    fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(12.4, 4.6))
+    predictors = ["MarinFold #199 (1.5B, seq only)", "Protenix-v2 single-seq",
+                  "ESMFold", "ESMFold2", "Protenix-v2 + MSA", "seq-KNN k=10 (null)"]
+    short = ["MarinFold\n#199", "Protenix\nsingle-seq", "ESMFold", "ESMFold2",
+             "Protenix\n+MSA", "seq-KNN\n(null)"]
+    colors = ["#c0392b", "#2980b9", "#7f8c8d", "#16a085", "#8e44ad", "#d68910"]
+
+    rows = headline[(headline["cut"] == "R") & (headline["range"] == "all")]
+    pooled = rows[rows["subset"] == "eval2 (<40% id)"].iloc[0]
+    natural = rows[rows["subset"] == "eval2 natural"].iloc[0]
+    x = np.arange(len(predictors))
+    width = 0.38
+    for offset, series, hatch, label in (
+        (-width / 2, pooled, None, f"eval2 pooled, n={int(pooled['n'])} (75% designed)"),
+        (width / 2, natural, "//", f"eval2 natural, n={int(natural['n'])}"),
+    ):
+        bars = ax_left.bar(x + offset, [series[p] for p in predictors], width,
+                           color=colors, hatch=hatch, edgecolor="white",
+                           linewidth=0.6, label=label)
+        for bar, p in zip(bars, predictors):
+            ax_left.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.012,
+                         f"{series[p]:.3f}", ha="center", fontsize=7.5)
+    ax_left.set_xticks(x)
+    ax_left.set_xticklabels(short, fontsize=8)
+    ax_left.set_ylabel("R-precision (all ranges)")
+    ax_left.set_ylim(0, 0.95)
+    ax_left.set_title("Removing designs, not homologs, is what the ranking turns on",
+                      fontsize=10.5)
+    ax_left.legend(frameon=False, fontsize=8, loc="upper left")
+
+    # Paired MarinFold-minus-baseline, natural subsets only.
+    cut = deltas[deltas["subset"].isin(["eval2 natural", "the 23 net-new"])]
+    labels, centres, los, his, cols = [], [], [], [], []
+    for subset, colour in (("eval2 natural", "#34495e"), ("the 23 net-new", "#2980b9")):
+        for _, row in cut[cut["subset"] == subset].iterrows():
+            labels.append(f"{row['baseline'].split(' (')[0][:20]}\n({subset})")
+            centres.append(row["delta"])
+            los.append(row["delta"] - row["ci_lo"])
+            his.append(row["ci_hi"] - row["delta"])
+            cols.append(colour)
+    y = np.arange(len(labels))
+    ax_right.errorbar(centres, y, xerr=[los, his], fmt="o", ms=5,
+                      ecolor="#95a5a6", elinewidth=1.4, capsize=3, linestyle="none",
+                      markerfacecolor="none", markeredgewidth=0)
+    for yi, (c, col) in enumerate(zip(centres, cols)):
+        ax_right.plot(c, yi, "o", ms=6, color=col)
+    ax_right.axvline(0, color="#c0392b", ls="--", lw=1.2)
+    ax_right.set_yticks(y)
+    ax_right.set_yticklabels(labels, fontsize=7)
+    ax_right.set_xlabel("MarinFold #199 − baseline (R-precision), paired 95% CI")
+    ax_right.set_title("Parity with Protenix single-seq returns on natural proteins",
+                       fontsize=10.5)
+    for ax in (ax_left, ax_right):
+        ax.spines[["top", "right"]].set_visible(False)
+    save_plot_with_meta(
+        fig, out, args=args,
+        caption="Left: eval2 pooled is 75% de novo design, and every structure "
+                "predictor beats MarinFold there. Restricted to the 78 natural "
+                "proteins the ordering changes and MarinFold matches Protenix-v2 "
+                "single-seq. Right: paired MarinFold-minus-baseline differences "
+                "with 10,000-resample bootstrap CIs; intervals crossing the dashed "
+                "line are ties.",
+    )
 
 if __name__ == "__main__":
     raise SystemExit(main())
