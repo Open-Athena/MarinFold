@@ -1,0 +1,20 @@
+{
+  "reference_version": "v1",
+  "n_proteins": 554,
+  "by_dataset": {
+    "foldbench100": 100,
+    "denovo_pdb": 396,
+    "casp_fm": 26,
+    "cameo_hard": 32
+  },
+  "chain_resolution": {
+    "single": 533,
+    "by_name": 21
+  },
+  "manifests": [
+    "/home/bizon/git/MarinFold-exp78/experiments/exp78_evals_esmfold_contacts/data/eval_manifest_foldbench.csv",
+    "/home/bizon/git/MarinFold-exp78/experiments/exp78_evals_esmfold_contacts/data/eval_manifest_exp65.csv"
+  ],
+  "structures_staged_to": "/data/exp225_decontam/eval_structures",
+  "queries_cross_checked_against": "/tmp/claude-1000/exp213_queries.fasta"
+}
