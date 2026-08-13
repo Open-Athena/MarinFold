@@ -73,6 +73,20 @@ MONOMER_CONFIG = GenerationConfig()
 MAX_MULTIMER_CHAINS = 60
 MULTIMER_CONFIG = GenerationConfig(max_chains=MAX_MULTIMER_CHAINS)
 
+# Skip assembly expansion outright above this many protein chains in the
+# header. Expansion is where the cost lives: a viral capsid is a handful of
+# chains in the asymmetric unit and a symmetry operator that repeats them
+# thousands of times (5j7v: 3 -> 8,280 chains), and gemmi will faithfully
+# materialise all of it -- one worker reached 110 GB RSS before the built
+# assembly could be rejected for having too many chains.
+#
+# The threshold is 2x MAX_MULTIMER_CHAINS rather than MAX_MULTIMER_CHAINS
+# because the header counts protein *asyms* while curation counts gemmi
+# *chains*, and one author chain can carry more than one asym. The factor of
+# two makes the guard conservative: it only ever skips assemblies that could
+# not possibly survive the exact post-curation check.
+MAX_ASSEMBLY_CHAINS_BEFORE_EXPANSION = 2 * MAX_MULTIMER_CHAINS
+
 # Worker-global cluster table, populated once per process (see _init_worker).
 _CLUSTERS: dict[str, int] = {}
 
@@ -89,6 +103,10 @@ class Task:
     # steeply with size, and a 30-chain photosystem arriving last would sit
     # alone on one core for minutes after everything else is done.
     est_residues: int = 0
+    # Protein chains biological assembly 1 would have, read off the header
+    # (see MAX_ASSEMBLY_CHAINS_BEFORE_EXPANSION). Lets the multimer pass
+    # decline hopeless entries without materialising them.
+    assembly1_protein_chains: int = 0
 
 
 def _document_row(
@@ -205,6 +223,22 @@ def process_entry(task: Task) -> dict[str, Any]:
         ledger["error"] = f"monomer: {type(exc).__name__}: {exc}"
 
     # --- multimer pass: biological assembly 1, kept whole ------------------
+    # Decide from the header whether expansion is worth attempting at all;
+    # see MAX_ASSEMBLY_CHAINS_BEFORE_EXPANSION. The cheap cases (no assembly,
+    # a single chain) are skipped too -- there is no complex to describe and
+    # the expansion plus its neighbour search would be pure waste on well
+    # over half the PDB.
+    header_chains = task.assembly1_protein_chains
+    if header_chains == 0:
+        ledger["multimer_status"] = "no_assembly_1_protein_chains"
+        return {"monomers": monomer_rows, "multimers": [], "ledger": ledger}
+    if header_chains == 1:
+        ledger["multimer_status"] = "not_a_complex"
+        return {"monomers": monomer_rows, "multimers": [], "ledger": ledger}
+    if header_chains > MAX_ASSEMBLY_CHAINS_BEFORE_EXPANSION:
+        ledger["multimer_status"] = "too_many_chains_by_header"
+        return {"monomers": monomer_rows, "multimers": [], "ledger": ledger}
+
     try:
         expanded = build_assembly(raw, "1")
         assembly = clean_structure(expanded) if expanded is not None else None
@@ -427,6 +461,7 @@ def select_entries(
             resolution=resolution,
             method=row["method"] or "",
             est_residues=int(sum(lengths) * chains / entities),
+            assembly1_protein_chains=int(row["n_assembly1_protein_chains"]),
         ))
     return tasks, counts
 
