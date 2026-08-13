@@ -7,15 +7,29 @@ Run this one **outside** the experiment environment: the bucket API needs
 ``huggingface_hub>=1.5``, which conflicts with the ``transformers<5`` pin
 marinfold carries (see ``pyproject.toml``)::
 
+    uv run --no-project --with "huggingface_hub>=1.5" python publish_to_hf.py --dry-run
     uv run --no-project --with "huggingface_hub>=1.5" python publish_to_hf.py
 
 Uploads, under ``data/document_structures/``:
 
-* ``contacts_v1_pdb_monomers/``  -- the document shards
-* ``contacts_v1_pdb_multimers/`` -- ditto
-* each with the entry metadata, the curation ledger, and the contacts-v1
-  tokenizer co-located (repo rule: a corpus ships with the tokenizer that
-  reads it).
+* ``contacts_v1_pdb_monomers/documents/``  -- the document shards
+* ``contacts_v1_pdb_multimers/documents/`` -- ditto
+* ``contacts_v1_pdb_curation/{metadata,ledger}/`` -- the entry scan, the RCSB
+  cluster file and the per-entry curation ledger, so the corpora can be
+  re-derived and audited without the local mirror.
+
+The contacts-v1 tokenizer is written next to each corpus (repo convention:
+a corpus ships with the tokenizer that reads it). Build it from the library
+first, so it is provably the vocabulary the documents were generated under
+rather than whatever a pinned Hub revision happens to hold::
+
+    uv run contacts-v1 tokenizer --save-local /data/exp222_pdb_curation/tokenizer
+
+Buckets are **not** repos: ``upload_folder`` / ``upload_large_folder`` do not
+address them (and ``upload_large_folder`` has no ``path_in_repo`` at all).
+The bucket surface is ``HfApi.sync_bucket``, whose destinations are
+``hf://buckets/<namespace>/<name>/<prefix>`` -- the Python form of
+``hf buckets sync``.
 
 Writing needs an **open-athena-scoped** token; ``hf auth whoami`` must list
 the org. Reading back is anonymous.
@@ -28,22 +42,24 @@ from pathlib import Path
 from huggingface_hub import HfApi
 
 
-BUCKET = "open-athena/MarinFold"
+BUCKET_URI = "hf://buckets/open-athena/MarinFold"
 PREFIX = "data/document_structures"
-TOKENIZER_REPO = "timodonnell/contacts-v1-tokenizer"
+
+# Local scratch that should never be published: the smoke-test fixtures the
+# pipeline was developed against.
+EXCLUDE = ["_smoke*", "*.log"]
 
 
-def upload_tree(api: HfApi, local: Path, remote: str, dry_run: bool) -> int:
-    files = sorted(p for p in local.rglob("*") if p.is_file())
+def sync(api: HfApi, local: Path, remote: str, dry_run: bool) -> int:
+    files = sorted(
+        p for p in local.rglob("*")
+        if p.is_file() and not p.name.startswith("_")
+    )
     total = sum(p.stat().st_size for p in files)
-    print(f"  {local} -> {remote}  ({len(files)} files, {total/1e9:.2f} GB)")
-    if dry_run:
-        return len(files)
-    api.upload_large_folder(
-        repo_id=BUCKET,
-        repo_type="bucket",
-        folder_path=str(local),
-        path_in_repo=remote,
+    destination = f"{BUCKET_URI}/{remote}"
+    print(f"  {local} -> {destination}  ({len(files)} files, {total/1e9:.2f} GB)")
+    api.sync_bucket(
+        str(local), destination, exclude=EXCLUDE, dry_run=dry_run, verbose=False
     )
     return len(files)
 
@@ -58,37 +74,36 @@ def main(argv: list[str] | None = None) -> int:
     who = api.whoami()
     orgs = {o["name"] for o in who.get("orgs", [])}
     print(f"authenticated as {who.get('name')}; orgs={sorted(orgs)}")
-    if "open-athena" not in orgs and not args.dry_run:
+    if "open-athena" not in orgs:
         raise SystemExit(
             "token is not open-athena-scoped; bucket writes will 403. "
             "Switch to the org token (see AGENTS.md)."
         )
 
-    uploaded = 0
-    for subset in ("monomers", "multimers"):
-        local = args.root / "docs" / subset
-        if not local.is_dir():
-            print(f"  (skipping {subset}: {local} missing)")
-            continue
-        uploaded += upload_tree(
-            api, local, f"{PREFIX}/contacts_v1_pdb_{subset}/documents", args.dry_run
+    tokenizer = args.root / "tokenizer"
+    if not tokenizer.is_dir():
+        raise SystemExit(
+            f"{tokenizer} is missing. Build it first so the published corpus "
+            f"carries the exact vocabulary it was generated under:\n"
+            f"    uv run contacts-v1 tokenizer --save-local {tokenizer}"
         )
 
-    for name, local in [
-        ("metadata", args.root / "metadata"),
-        ("ledger", args.root / "ledger"),
-    ]:
-        if local.is_dir():
-            uploaded += upload_tree(
-                api, local, f"{PREFIX}/contacts_v1_pdb_curation/{name}", args.dry_run
-            )
+    plan = [
+        (args.root / "docs" / "monomers", f"{PREFIX}/contacts_v1_pdb_monomers/documents"),
+        (tokenizer, f"{PREFIX}/contacts_v1_pdb_monomers/tokenizer"),
+        (args.root / "docs" / "multimers", f"{PREFIX}/contacts_v1_pdb_multimers/documents"),
+        (tokenizer, f"{PREFIX}/contacts_v1_pdb_multimers/tokenizer"),
+        (args.root / "metadata", f"{PREFIX}/contacts_v1_pdb_curation/metadata"),
+        (args.root / "ledger", f"{PREFIX}/contacts_v1_pdb_curation/ledger"),
+    ]
+    uploaded = 0
+    for local, remote in plan:
+        if not local.is_dir():
+            print(f"  (skipping {remote}: {local} missing)")
+            continue
+        uploaded += sync(api, local, remote, args.dry_run)
 
-    print(f"{'would upload' if args.dry_run else 'uploaded'} {uploaded} files")
-    print(
-        "tokenizer: co-locate a copy of "
-        f"{TOKENIZER_REPO} under each corpus prefix (repo rule: "
-        "a corpus ships with the tokenizer that reads it)"
-    )
+    print(f"{'would sync' if args.dry_run else 'synced'} {uploaded} files")
     return 0
 
 
