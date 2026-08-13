@@ -375,6 +375,14 @@ class DenseContactsGenerator(SkyRLGymGenerator):
             # and it is the axis arm S cannot optimise directly.
             "contacts/doc_f1": d.get("doc_f1", 0.0) / d["n_rollouts"],
             "contacts/recall": (d.get("correct", 0.0) / gt) if gt else 0.0,
+            # DIVERSITY. votes_per_pair = total contacts emitted by a group divided
+            # by the distinct pairs it covers -- i.e. how many siblings agree on
+            # the average pair. `pred_per_gt` cannot see this: arm D v2 held
+            # pred/gt at 0.90 (healthy) while its votes/pair went 7.1 -> 16.4 and
+            # its eval vote coverage fell 61%. It kept emitting just as many
+            # contacts, but the SAME ones every time, which is the sharpening that
+            # destroys a consensus metric.
+            "contacts/votes_per_pair": self._votes_per_pair(),
         })
         out["rollout_metrics"] = metrics
         logger.info(
@@ -384,6 +392,24 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         )
         self._check_for_collapse(metrics["contacts/pred_per_gt"], gt)
         return out
+
+    def _votes_per_pair(self) -> float:
+        """Mean siblings-per-distinct-pair across this batch's rollout groups.
+
+        1.0 means every rollout proposed a disjoint set; G (the group size) means
+        they are identical. The eval metric is a vote over 100 rollouts, so this
+        is the training-time proxy for the quantity that actually decides it, and
+        it is invisible to per-rollout statistics.
+        """
+        ratios = []
+        for per_rep in self._group_pairs.values():
+            sets = [p for p in per_rep.values() if p]
+            if len(sets) < 2:
+                continue
+            union = set().union(*sets)
+            if union:
+                ratios.append(sum(len(p) for p in sets) / len(union))
+        return float(np.mean(ratios)) if ratios else 0.0
 
     def _check_for_collapse(self, pred_per_gt: float, gt: float) -> None:
         """Abort if the policy has stopped emitting contacts.

@@ -3,7 +3,11 @@
 **Issue [#208](https://github.com/Open-Athena/MarinFold/issues/208) · five arms × 125 steps · 554-protein held-out eval · 8×A100**
 
 **The one-paragraph version.** Every arm that actually trained the model made it
-**worse**, and every arm that left the metric intact did so by not training. A
+**worse**, and every arm that left the metric intact did so by not training. Raising
+the learning rate 10× on the two document-level arms confirmed this rather than
+overturning it: they finally moved, and the one that moved most (arm D v2, terminal
+KL 0.0836) went from −0.0001 to **−0.0083** — while looking excellent on every
+training metric. A
 dense per-contact reward moves the policy hard and costs 0.021 R-precision
 (p = 5.7e-19) — not through bad contacts but through missing ones: it learns to be
 selective, emits **65% fewer distinct pairs**, and consensus scoring cannot rank a
@@ -17,7 +21,9 @@ their KL says they never moved it, so they are **untested rather than ineffectiv
 |---|---|---|---|---|---|---|
 | — | baseline `exp199` | — | **0.6111** | — | **0.9487** | 2267 pairs |
 | **C** | consensus marginal **only** (`lam_step=0`) | **0.00036** | 0.6116 | +0.0005 (p = 0.74) | 0.9484 | −0.5% |
+| **C v2** | same, lr 1e-5 | 0.0123 | 0.6112 | +0.0001 (p = 0.95) | 0.9445 | −24.6% |
 | **D** | document F1 only, GRPO | **0.00135** | 0.6109 | −0.0001 (p = 0.93) | 0.9467 | −11.6% |
+| **D v2** | same, lr 1e-5 | 0.0836 | 0.6027 | **−0.0083** (p = 1.6e-05) | 0.9184 | −61.0% |
 | **S** | dense per-contact | 0.09763 | 0.5898 | **−0.0213** (p = 5.7e-19) | 0.8976 | **−65.2%** |
 | **B v1** | dense + consensus (`lam_doc` 4.5) | 0.09 | 0.5879 | −0.0232 | 0.8986 | −65.3% |
 | **B v2** | dense + consensus (`lam_doc` 1067) | 0.07308 | **0.5946** | −0.0165 | **0.9087** | −60.1% |
@@ -118,13 +124,59 @@ comparison readable.
 | C | consensus marginal | 0.3118 | **0.3334** (at step 71) |
 
 **Arm D separates clearly**; arm C's improvement is real but much smaller, matching
-their KL ratios (11.5× vs 2.5× over their originals). Both re-runs raise precision
-*and* recall *and* correct-contacts-per-rollout while `pred/gt` stays near 1.0 —
-the opposite of arm S, which bought precision by emitting less.
+their KL ratios. Both re-runs raise precision *and* recall *and*
+correct-contacts-per-rollout while `pred/gt` stays near 1.0 — the opposite of arm S,
+which bought precision by emitting less.
 
-These are **training-set** curves on **partial runs**, and both arms have previously
-looked like they were improving on this axis before the held-out number said
-otherwise. Only the 554-protein consensus score settles it.
+**Read these two charts as a cautionary tale, not a result.** They are training-set
+curves, and the held-out score below contradicts them: the arm whose curve rises
+most is the arm that lost the most on the metric of record.
+
+**The training gains did not transfer, and arm D v2 is the cleanest demonstration
+in this experiment of why.**
+
+| arm | R-precision | Δ baseline | AUC | union pairs | total votes | votes/pair |
+|---|---|---|---|---|---|---|
+| baseline `exp199` | **0.6111** | — | 0.9487 | 2267 | 16,191 | 7.14 |
+| arm D v1 (lr 1e-6) | 0.6109 | −0.0001 (p = 0.93) | 0.9467 | 2005 | 15,797 | 7.88 |
+| **arm D v2 (lr 1e-5)** | 0.6027 | **−0.0083** (p = 1.6e-05) | 0.9184 | **885** | 14,519 | **16.41** |
+| arm C v1 (lr 1e-6) | 0.6116 | +0.0005 (p = 0.74) | 0.9484 | 2256 | — | — |
+| **arm C v2 (lr 1e-5)** | 0.6112 | +0.0001 (p = 0.95) | 0.9445 | 1709 | 15,668 | 9.17 |
+| arm S (dense) | 0.5898 | −0.0213 | 0.8976 | 788 | 8,438 | 10.71 |
+
+Arm D v2 trained beautifully by every per-rollout measure — precision 0.4125 against
+arm S's 0.4354, **50.8** correct contacts per rollout against arm S's 33.8, `pred/gt`
+a healthy 0.90 — and it is **significantly worse than its warm start**.
+
+The last three columns say why, and they identify a **second, distinct failure mode**:
+
+- **Arm S collapsed volume.** Total votes fell 16,191 → 8,438 (−48%). It emitted
+  fewer contacts.
+- **Arm D v2 collapsed diversity.** Total votes barely moved (−10%), but the union
+  fell 2267 → 885 and votes-per-pair went **7.1 → 16.4**. It emitted just as many
+  contacts — *the same ones every time*.
+
+That is sharpening, and it is exactly what the hypothesis section predicted before
+any of this ran: *"a precision-only reward is a sharpening operator by
+construction: it pushes every rollout toward the model's single best guess. So it
+can raise per-rollout precision and lower consensus R-precision."* A document-level
+F1 reward turns out to be a precision-only reward in this sense; optimising each
+rollout to be individually excellent makes the 100 rollouts redundant, and a
+consensus over redundant rollouts carries less information than a consensus over
+diverse ones.
+
+**Arm C v2 resists it**, which is the one place the consensus marginal's design
+shows through: votes/pair 9.17 against arm D v2's 16.41, coverage −24.6% against
+−61.0%, and R-precision holding at baseline. Rewarding a rollout for what it adds
+to the group's vote is structurally an anti-sharpening objective. This is
+suggestive rather than conclusive — arm C v2's terminal KL is 0.0123 against arm D
+v2's 0.0836, so it also simply moved less, and the two are not matched.
+
+**This invalidates the tripwire built earlier in this experiment.** It watches
+`pred/gt`, which reads 0.90 — perfectly healthy — for a run whose eval coverage fell
+61%. Per-rollout statistics cannot see diversity collapse. `contacts/votes_per_pair`
+is now logged for exactly this: total emitted contacts over distinct pairs within a
+rollout group, 1.0 = disjoint proposals, G = identical ones.
 
 ## 3. The consensus marginal does real work — inside a dense reward
 
@@ -178,9 +230,16 @@ here is unsharded.
 
 ## 5. What to run next
 
-1. **Re-run arms C and D at 10–100× the learning rate**, targeting a terminal KL
-   near arm S's ~0.098. Both document-level arms are currently untested, and this is
-   the cheapest way to convert two null results into real ones.
+1. ~~Re-run arms C and D at 10–100× the learning rate.~~ **Done.** Arm D v2 reached
+   terminal KL 0.0836 (arm S is 0.098) and scored −0.0083, significantly below
+   baseline; arm C v2 reached 0.0123 and stayed at baseline. Both document-level
+   arms are now tested, and neither improved the metric.
+2. **Attack diversity directly.** Every failure here reduces to the same thing —
+   the 100 rollouts become less informative as a committee, whether by emitting
+   less (arm S) or by emitting the same thing (arm D v2). No reward tried so far
+   targets diversity, and the consensus marginal, which comes closest, is the only
+   one that preserved it. An explicit diversity term, or the consensus marginal at
+   arm S's effective step size, is the untried direction.
 2. **Sweep `lam_doc` in the dense+consensus arm.** It is the only lever shown to
    improve anything, and it demonstrably acts on the variable that sets the metric.
 3. **Normalise the advantage for sequence-level rewards.** Arm C's pass-through
