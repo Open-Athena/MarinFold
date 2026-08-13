@@ -42,6 +42,7 @@ Two corpora plus the format change that makes the second expressible.
 | `contacts_v1_pdb_monomers` | protein chain of the asymmetric unit | that chain **alone** (`assembly=None`) |
 | `contacts_v1_pdb_multimers` | entry whose assembly 1 has ≥ 2 protein chains | the **whole assembly** |
 | `contacts_v1_pdb_deduped` | sequence-cluster composition | (one representative drawn from the two above) |
+| `contacts_v1_pdb_deduped_monomers` | sequence cluster | (the same, restricted to single chains) |
 
 The monomer convention is deliberate: pulling the chain out and analyzing it in
 isolation is exactly how the AFDB training corpus and the exp74/exp89 eval ground
@@ -140,15 +141,27 @@ assembly and carry an RCSB 40% `cluster_ids` list plus a `resolved_seq_sha1` for
 downstream weighting. That is what Protenix/AF3 do with their `cluster_id` column.
 
 Because "weight it yourself" is a real cost to impose on every consumer,
-[`build_deduped.py`](build_deduped.py) also emits **`contacts_v1_pdb_deduped`**:
-one representative per cluster composition, pre-shuffled, trainable by sequential
-read with no sampling logic. Grouping is by the chain's 40% cluster id for a
-monomer and by the **sorted tuple** of its chains' cluster ids for a multimer, so
-composition *and stoichiometry* both count (a homodimer, a homotetramer and a
-heterodimer of the same protein are three things to learn, not three copies of
-one). Documents whose chains are absent from the RCSB cluster file — short
-peptides — dedupe by exact sequence instead. The representative is the
+[`build_deduped.py`](build_deduped.py) also emits two deduplicated cuts —
+**`contacts_v1_pdb_deduped`** (72,524 docs, monomers + multimers) and
+**`contacts_v1_pdb_deduped_monomers`** (41,661 docs, single-chain only, the
+drop-in replacement for an AFDB-style corpus). Both are one representative per
+cluster, pre-shuffled, trainable by sequential read with no sampling logic.
+
+Grouping is by the chain's 40% cluster id for a monomer and by the **sorted
+tuple** of its chains' cluster ids for a multimer, so composition *and
+stoichiometry* both count (a homodimer, a homotetramer and a heterodimer of the
+same protein are three things to learn, not three copies of one). Documents whose
+chains are absent from the RCSB cluster file — short peptides — dedupe by their
+chain count plus exact sequence instead. The representative is the
 best-resolution member, ties broken by residue count then entry id.
+
+Monomer and multimer keys therefore live in disjoint namespaces, which is what
+makes the monomers-only cut *exactly* the monomer rows of the mixed one — the
+restriction drops multimer rows without changing which monomers win. That held
+only after fixing the sequence-hash fallback to carry the chain count: the hash
+is over *concatenated* residues, so a 4-residue chain and two 2-residue chains
+spelling the same thing collided, and a complex displaced a monomer from the
+mixed corpus (pinned by `test_curate.py`).
 
 ### Pipeline
 
@@ -181,33 +194,32 @@ header scan plus 161 min of generation on 60 cores.
 
 ### The corpora
 
-| | `..._monomers` | `..._multimers` | `..._deduped` |
-| --- | --- | --- | --- |
-| documents | **602,859** | **85,660** | **72,522** |
-| distinct PDB entries | 177,468 | 85,660 | 46,827 |
-| distinct resolved sequences | 247,675 | 70,756 | 69,470 |
-| distinct 40% clusters | 38,572 | 24,075 | 38,582 |
-| tokens | 695.5 M | 299.9 M | 128.4 M |
-| mean tokens / document | 1,154 | 3,501 | 1,771 |
-| median / max residues | 205 / 1,997 | 562 / 1,996 | 251 / 1,997 |
-| mean / max chains | 1.0 / 1 | 2.93 / 60 | 1.89 / 60 |
-| contacts | 133.7 M | 61.0 M | 25.6 M |
-| **interface contacts** | — | **9.19 M (15.1%)** | 2.91 M (11.4%) |
-| truncated by the 8192-token budget | 0.04% | 7.1% | 2.0% |
-| on disk (zstd parquet) | 1.2 GB | 529 MB | 243 MB |
+| | `..._monomers` | `..._multimers` | `..._deduped` | `..._deduped_monomers` |
+| --- | --- | --- | --- | --- |
+| documents | **602,859** | **85,660** | **72,524** | **41,661** |
+| tokens | 695.5 M | 299.9 M | 128.4 M | 37.4 M |
+| mean tokens / document | 1,154 | 3,501 | 1,771 | 898 |
+| mean / max chains | 1.0 / 1 | 2.93 / 60 | 1.89 / 60 | 1.0 / 1 |
+| **interface contacts** | — | **9.19 M (15.1%)** | 2.91 M (11.4%) | — |
+| on disk (zstd parquet) | 1.2 GB | 529 MB | 243 MB | 68 MB |
 
 The two source corpora together are **688,519 documents / 995 M tokens** —
 fine-tuning scale by design, next to the 138 B-token AFDB corpus of exp105.
 
-**`contacts_v1_pdb_deduped`** is the one to train on without further thought:
-one representative per cluster composition (41,660 monomers + 30,862 multimers),
-pre-shuffled with a fixed seed so a sequential read is already in random order.
-688,519 → 72,522 documents. If that is too aggressive, `build_deduped.py
---max-per-cluster N` regenerates at any size:
+The two deduplicated cuts are the ones to train on without further thought — one
+representative per cluster, pre-shuffled with a fixed seed so a sequential read is
+already in random order. **`contacts_v1_pdb_deduped`** (41,661 monomers + 30,863
+multimers) if you want the model to see interfaces;
+**`contacts_v1_pdb_deduped_monomers`** if you want a drop-in replacement for an
+AFDB-style single-chain corpus. Its rows are exactly the monomer rows of the
+mixed cut.
+
+If one-per-cluster is too aggressive, `build_deduped.py --max-per-cluster N`
+regenerates at any size (mixed cut shown):
 
 | cap | documents | tokens |
 | --- | --- | --- |
-| **1 (published)** | **72,522** | **128 M** |
+| **1 (published)** | **72,524** | **128 M** |
 | 2 | 112,014 | 202 M |
 | 5 | 183,069 | 322 M |
 | 10 | 251,324 | 433 M |
@@ -283,6 +295,7 @@ warranted; the number is the deliverable.
 - `contacts_v1_pdb_monomers/{documents,tokenizer}/`
 - `contacts_v1_pdb_multimers/{documents,tokenizer}/`
 - `contacts_v1_pdb_deduped/{documents,tokenizer}/`
+- `contacts_v1_pdb_deduped_monomers/{documents,tokenizer}/`
 - `contacts_v1_pdb_curation/{metadata,ledger}/` — the entry scan, the RCSB
   cluster file and the per-entry ledger, so the funnel can be re-derived and
   audited without the local mirror.
@@ -296,11 +309,12 @@ generated under.
 
 ## Conclusion
 
-**Three corpora exist, round-trip cleanly, and are ready to fine-tune on.**
+**Four corpora exist, round-trip cleanly, and are ready to fine-tune on.**
 688,519 documents / 995 M tokens of experimental structure, of which 85,660
 describe protein complexes and 9.19 M individual contacts cross a chain boundary
-— a class of contact no previous MarinFold corpus contained at all. Plus a
-72,522-document deduplicated cut that needs no sampling logic to train on.
+— a class of contact no previous MarinFold corpus contained at all. Plus two
+deduplicated cuts that need no sampling logic to train on: 72,524 documents with
+complexes, or 41,661 single-chain.
 
 The contacts-v1 format needed no new tokens to express a complex. Laying *k*
 chains disjointly around the existing 2000-index ring, with one
@@ -328,6 +342,7 @@ proteins.
 
 Training on these corpora is deliberately **not** part of this experiment. Two
 follow-ups suggest themselves: fine-tuning `contacts-v1-exp199-1.5B` on
-`contacts_v1_pdb_deduped` (does experimental structure beat predicted?), and a
-multimer curriculum (can the model learn to place an interface at all?). Each
-needs its own controls.
+`contacts_v1_pdb_deduped_monomers` — the cleanest experimental-vs-predicted
+comparison, since it changes only the provenance of the structures and not the
+document shape — and a multimer curriculum on `contacts_v1_pdb_deduped` (can the
+model learn to place an interface at all?). Each needs its own controls.

@@ -16,6 +16,7 @@ Uploads, under ``data/document_structures/``:
 * ``contacts_v1_pdb_multimers/documents/`` -- ditto
 * ``contacts_v1_pdb_deduped/documents/``   -- one representative per sequence
   cluster, pre-shuffled and directly trainable
+* ``contacts_v1_pdb_deduped_monomers/documents/`` -- the same, single-chain only
 * ``contacts_v1_pdb_curation/{metadata,ledger}/`` -- the entry scan, the RCSB
   cluster file and the per-entry curation ledger, so the corpora can be
   re-derived and audited without the local mirror.
@@ -66,7 +67,7 @@ def sync(api: HfApi, local: Path, remote: str, dry_run: bool) -> int:
         p for p in local.rglob("*")
         if p.is_file() and not p.name.startswith("_")
     )
-    if local.name in ("monomers", "multimers", "deduped", "curation") and "readme" in local.parts:
+    if "readme" in local.parts:
         for f in files:
             if f.suffix != ".md" or f.stat().st_size > MAX_README_BYTES:
                 raise SystemExit(f"unexpected file in a README dir: {f}")
@@ -108,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         ("monomers", "contacts_v1_pdb_monomers"),
         ("multimers", "contacts_v1_pdb_multimers"),
         ("deduped", "contacts_v1_pdb_deduped"),
+        ("deduped_monomers", "contacts_v1_pdb_deduped_monomers"),
     ]:
         plan.append((args.root / "docs" / subset, f"{PREFIX}/{name}/documents"))
         plan.append((tokenizer, f"{PREFIX}/{name}/tokenizer"))

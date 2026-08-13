@@ -1,4 +1,5 @@
 subset,documents,eval_pdb_ids_present,exact_sequence_matches,exact_sequence_fraction,cluster40_homologous,cluster40_fraction,eval_entries_total,eval_entries_clustered,eval_entries_covered,eval_entries_covered_fraction,examples
 monomers,602859,0,44,7.3e-05,8400,0.013934,552,526,277,0.5018,6qoz_C->4n6t_A; 5vnw_C->5vnv_A; 5vnw_D->5vnv_A; 6g6n_A->6y7p_A; 6g6o_A->6g6p_A; 6g6o_B->6g6p_A; 6g6o_C->6g6p_A; 6reh_A->6qse_A; 6reh_B->6qse_A; 6qsf_B->6qse_A
 multimers,85660,0,1,1.2e-05,2410,0.028134,552,526,173,0.3134,6tjd_assembly1->6tjg_A
-deduped,72522,0,5,6.9e-05,1464,0.020187,552,526,277,0.5018,6g6o_A->6g6p_A; 6uf2_A->T1029-D1; 4qwv_A->8q52_A; 6w70_A->7hiy_A; 7d2o_A->T1027-D1
+deduped,72524,0,5,6.9e-05,1465,0.0202,552,526,277,0.5018,6g6o_A->6g6p_A; 6uf2_A->T1029-D1; 4qwv_A->8q52_A; 6w70_A->7hiy_A; 7d2o_A->T1027-D1
+deduped_monomers,41661,0,5,0.00012,93,0.002232,552,526,277,0.5018,6g6o_A->6g6p_A; 4qwv_A->8q52_A; 6w70_A->7hiy_A; 7d2o_A->T1027-D1; 6uf2_A->T1029-D1

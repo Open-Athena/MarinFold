@@ -235,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
 
     failed = 0
-    for subset in ("monomers", "multimers", "deduped"):
+    for subset in ("monomers", "multimers", "deduped", "deduped_monomers"):
         directory = args.root / "docs" / subset
         shards = sorted(directory.glob("*.parquet")) if directory.is_dir() else []
         if not shards:

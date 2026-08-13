@@ -18,8 +18,8 @@ script bakes the same intent into the data so a consumer can shuffle and read.
   ``(7, 7, 7, 7)`` and a heterodimer ``(7, 12)`` are three different things to
   learn, not three copies of one.
 * anything with an unclustered chain (short peptides are absent from the RCSB
-  file) -- its exact resolved-sequence hash, so it still dedupes, just by
-  identity rather than homology.
+  file) -- its chain count plus its exact resolved-sequence hash, so it still
+  dedupes, just by identity rather than homology.
 
 A monomer and a multimer of the same protein therefore both survive. That is
 deliberate: one teaches the fold, the other the interface.
@@ -32,9 +32,17 @@ they are still kept.
 **Output** is shuffled with a fixed seed before sharding, so a sequential read
 is already in random order and is not grouped by PDB id or cluster.
 
+``--from-subsets`` restricts which source corpora feed it. Monomer and multimer
+keys live in disjoint namespaces (a monomer key is a 1-tuple of cluster ids, a
+multimer key a k>=2-tuple), so a monomers-only run selects exactly the same
+monomer representatives it would in a mixed run -- the restriction drops the
+multimer rows, it does not reshuffle which monomers win.
+
 Usage::
 
     uv run python build_deduped.py --max-per-cluster 1
+    uv run python build_deduped.py --from-subsets monomers \
+        --out-subset deduped_monomers
 """
 
 import argparse
@@ -62,9 +70,18 @@ _KEY_COLUMNS = [
 
 
 def group_key(cluster_ids, resolved_seq_sha1: str) -> tuple:
-    """The identity a document is deduplicated against."""
+    """The identity a document is deduplicated against.
+
+    ``n_chains`` is part of the key on both paths. On the cluster path it is
+    implicit (a monomer's key is a 1-tuple, a k-chain complex's a k-tuple); on
+    the sequence-hash fallback it has to be explicit, because that hash is
+    taken over the *concatenated* residues and so cannot tell a 4-residue
+    chain apart from two 2-residue chains that happen to spell the same
+    thing. Those are different structures and belong in different groups —
+    exactly as a 1-tuple and a 2-tuple do on the cluster path.
+    """
     if not cluster_ids or any(c < 0 for c in cluster_ids):
-        return ("seq", resolved_seq_sha1)
+        return ("seq", len(cluster_ids or ()), resolved_seq_sha1)
     return ("cluster", tuple(sorted(cluster_ids)))
 
 
@@ -106,14 +123,21 @@ def main(argv: list[str] | None = None) -> int:
         "--max-per-cluster", type=int, default=1,
         help="documents to keep per group (1 = strict one-per-cluster)",
     )
+    parser.add_argument(
+        "--from-subsets", nargs="+", default=["monomers", "multimers"],
+        choices=["monomers", "multimers"],
+        help="source corpora to draw from; restrict to one for a "
+             "single-kind deduplicated cut",
+    )
     parser.add_argument("--out-subset", default="deduped")
     parser.add_argument("--rows-per-shard", type=int, default=20_000)
     parser.add_argument("--seed", type=int, default=222)
     args = parser.parse_args(argv)
 
-    groups = collect(args.root, ["monomers", "multimers"])
+    groups = collect(args.root, args.from_subsets)
     print(f"{len(groups)} distinct groups over "
-          f"{sum(len(v) for v in groups.values())} documents", flush=True)
+          f"{sum(len(v) for v in groups.values())} documents "
+          f"from {'+'.join(args.from_subsets)}", flush=True)
 
     # Choose each group's representatives, then shuffle globally so the output
     # is trainable by sequential read.

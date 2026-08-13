@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     total = 0
-    for subset in ("monomers", "multimers", "deduped"):
+    for subset in ("monomers", "multimers", "deduped", "deduped_monomers"):
         directory = args.root / "docs" / subset
         if not directory.is_dir():
             continue
@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Read back through the dataset API to confirm.
     import pyarrow.dataset as ds
-    for subset in ("monomers", "multimers", "deduped"):
+    for subset in ("monomers", "multimers", "deduped", "deduped_monomers"):
         directory = args.root / "docs" / subset
         if not directory.is_dir():
             continue

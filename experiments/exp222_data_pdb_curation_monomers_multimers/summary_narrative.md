@@ -21,15 +21,21 @@ Those 9.19 M inter-chain contacts are a class of contact no previous MarinFold c
 
 Fine-tuning scale by design: the AFDB corpus of exp105 is 138 B tokens.
 
-## A third corpus you can just train on
+## Two more corpora you can just train on
 
 PDB redundancy is extreme: the largest 40%-identity group in the raw corpora holds 4,055 near-duplicate documents, so a uniform pass spends most of its gradient on a handful of over-crystallised proteins. Protenix/AF3 fix this with cluster-weighted sampling at training time.
 
-contacts_v1_pdb_deduped bakes that intent into the data instead: 72,522 documents / 128 M tokens, one representative per cluster composition (41,660 monomers + 30,862 multimers), pre-shuffled with a fixed seed so a sequential read is already in random order. No sampler, no subsampling logic.
+Two deduplicated cuts bake that intent into the data instead, both one representative per cluster and pre-shuffled with a fixed seed so a sequential read is already in random order. No sampler, no subsampling logic.
+
+contacts_v1_pdb_deduped: 72,524 documents / 128 M tokens (41,661 monomers + 30,863 multimers) — use this when you want the model to see interfaces.
+
+contacts_v1_pdb_deduped_monomers: 41,661 documents / 37 M tokens, single-chain only — a drop-in replacement for an AFDB-style contacts-v1 corpus, changing only the provenance of the structures and not the document shape. Its rows are exactly the monomer rows of the mixed cut.
 
 Grouping is by the chain's 40% cluster id for a monomer and by the SORTED TUPLE of its chains' cluster ids for a multimer, so composition and stoichiometry both count — a homodimer, a homotetramer and a heterodimer of the same protein are three different things to learn, not three copies of one. The representative is the best-resolution member.
 
-One-per-cluster is the strictest reading of "deduplicated". build_deduped.py --max-per-cluster N regenerates at any size: cap 2 gives 112k docs / 202 M tokens, cap 5 gives 183k / 322 M, cap 10 gives 251k / 433 M.
+One-per-cluster is the strictest reading of "deduplicated". build_deduped.py --max-per-cluster N regenerates at any size: cap 2 gives 112k docs / 202 M tokens, cap 5 gives 183k / 322 M, cap 10 gives 251k / 433 M. --from-subsets picks which source corpora feed it.
+
+Monomer and multimer keys live in disjoint namespaces, which is what makes the monomers-only cut exactly the monomer rows of the mixed one. That held only after fixing the sequence-hash fallback to carry the chain count: the hash is over concatenated residues, so a 4-residue chain and two 2-residue chains spelling the same thing collided, and a complex displaced a monomer from the mixed corpus.
 
 ## Two corpora, and why the monomer one is built the way it is
 
@@ -55,7 +61,7 @@ Single-chain documents are byte-identical to the pre-change generator: with k = 
 
 Every rejection is attributed to a named filter: 13,321 released after the cutoff, 763 below 9 A resolution, 3,881 with no protein entity, 183 held out as eval set; then at the chain level 28,775 non-protein, 2,851 all-unknown, 733 over 2000 residues, 354 with a CA break, 186 clashing, 55 too short; and 10,530 complexes too large for the index ring. The 339 chains (0.06%) that pass curation but still fail to serialize are counted too.
 
-Validation on 56,505 sampled documents across all three corpora: all clean. Chains land on contiguous, disjoint index runs that exactly cover the assigned positions, with one terminus pair each. For 40 multimers, a fresh pyconfind run on the rebuilt assembly reproduces the document's interface contacts exactly.
+Validation on every corpus: all sampled documents clean. Chains land on contiguous, disjoint index runs that exactly cover the assigned positions, with one terminus pair each. For 40 multimers, a fresh pyconfind run on the rebuilt assembly reproduces the document's interface contacts exactly.
 
 ## Leakage: no worse than what the model already trained on
 
@@ -65,8 +71,8 @@ Residual homology, measured from the eval side so it is comparable to #213: 50.2
 
 ## Conclusion, and one trap to carry forward
 
-All three corpora exist, round-trip cleanly, and are published to the public open-athena/MarinFold bucket, each with the tokenizer co-located and a README rendered on the bucket's web view.
+All four corpora exist, round-trip cleanly, and are published to the public open-athena/MarinFold bucket, each with the tokenizer co-located and a README rendered on the bucket's web view.
 
 The trap, now defused: global_plddt is 0.0 here and carries no information. The library fills it with the mean CA B-factor, which for AFDB IS pLDDT (higher is better, 0-100) and here is a B-factor (lower is better) — same column, opposite sign, so a mixture filtering on it would have silently kept the good AFDB documents and the bad PDB ones. Zeroed rather than documented-around. Use resolution, which is stored separately.
 
-Training is deliberately a separate experiment. Two follow-ups suggest themselves: fine-tune contacts-v1-exp199-1.5B on contacts_v1_pdb_deduped (does experimental structure beat predicted?), and a multimer curriculum (can the model place an interface at all?). Each needs its own controls.
+Training is deliberately a separate experiment. Two follow-ups suggest themselves: fine-tune contacts-v1-exp199-1.5B on contacts_v1_pdb_deduped_monomers (does experimental structure beat predicted? -- that cut changes only the provenance, not the document shape), and a multimer curriculum (can the model place an interface at all?). Each needs its own controls.

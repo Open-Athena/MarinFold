@@ -20,6 +20,7 @@ from curate import (
     assembly_subchain_entities,
     load_clusters,
 )
+from build_deduped import group_key
 from scan_metadata import _count_operators
 
 
@@ -110,6 +111,43 @@ class TestAssemblySubchainEntities:
         asu = {"A": "1"}
         assembly = self._assembly(["A1", "C1"])
         assert assembly_subchain_entities(asu, assembly) == {"A1": "1"}
+
+
+class TestDedupGroupKey:
+    """Grouping for the deduplicated corpora (build_deduped.group_key)."""
+
+    def test_monomer_keys_on_its_cluster(self):
+        assert group_key([7], "abc") == ("cluster", (7,))
+
+    def test_multimer_key_is_order_independent(self):
+        """Chain order in the residue list must not change the group."""
+        assert group_key([12, 7], "abc") == group_key([7, 12], "abc")
+
+    def test_stoichiometry_is_part_of_the_key(self):
+        """A homodimer, a homotetramer and a monomer are three things to learn."""
+        keys = {group_key([7], "a"), group_key([7, 7], "a"), group_key([7, 7, 7, 7], "a")}
+        assert len(keys) == 3
+
+    def test_composition_is_part_of_the_key(self):
+        assert group_key([7, 7], "a") != group_key([7, 12], "a")
+
+    def test_unclustered_falls_back_to_sequence(self):
+        """Short peptides are absent from the RCSB file; dedupe them by identity."""
+        assert group_key([-1], "abc") == group_key([-1], "abc")
+        assert group_key([-1], "abc") != group_key([-1], "def")
+
+    def test_partially_unclustered_falls_back_too(self):
+        """One unclustered chain makes the whole cluster tuple unusable."""
+        assert group_key([7, -1], "abc")[0] == "seq"
+
+    def test_sequence_fallback_separates_monomer_from_complex(self):
+        """The hash is over CONCATENATED residues, so it cannot tell a
+        4-residue chain from two 2-residue chains spelling the same thing.
+        Without the chain count in the key they collide -- which really
+        happened: 1pfe_assembly1 (two 2-mers) displaced a 4-residue monomer
+        from the mixed corpus, so a monomers-only rebuild produced one MORE
+        document than the mixed one contained monomers."""
+        assert group_key([-1], "abc") != group_key([-1, -1], "abc")
 
 
 def test_load_clusters(tmp_path):

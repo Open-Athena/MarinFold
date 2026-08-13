@@ -371,6 +371,7 @@ def main(argv: list[str] | None = None) -> int:
         "monomers": load_docs(args.root, "monomers"),
         "multimers": load_docs(args.root, "multimers"),
         "deduped": load_docs(args.root, "deduped"),
+        "deduped_monomers": load_docs(args.root, "deduped_monomers"),
     }
     funnel(args.root, args.data_dir)
     corpus_stats(tables, args.data_dir)
