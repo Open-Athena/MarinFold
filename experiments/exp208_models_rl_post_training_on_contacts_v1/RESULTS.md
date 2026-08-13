@@ -197,6 +197,50 @@ a per-rollout objective cannot.
 Prediction 3 is **confirmed in direction, refuted in magnitude**: significant, and
 nowhere near enough to reach baseline.
 
+## 3b. Coverage loss tracks distance moved, not which reward
+
+Plotting every arm's vote coverage against how far its policy actually moved:
+
+![coverage vs KL](plots/exp208_coverage_vs_kl.png)
+
+| arm | terminal KL | coverage | fit | residual |
+|---|---|---|---|---|
+| arm C v1 | 0.00036 | −0.5% | +3.9 | −4.4 |
+| arm D v1 | 0.00135 | −11.6% | −11.5 | −0.1 |
+| **arm C v2** | 0.0123 | −24.6% | −37.1 | **+12.5** |
+| arm B2 | 0.07308 | −60.1% | −57.8 | −2.3 |
+| arm D v2 | 0.0836 | −61.0% | −59.3 | −1.7 |
+| arm S | 0.09763 | −65.2% | −61.1 | −4.1 |
+
+`coverage% ≈ −26.7·log10(KL) − 88.1`, **R² = 0.95**. Six arms with four different
+reward designs — dense per-contact, dense+consensus, document F1, consensus-only —
+lie on one line. To a first approximation the reward does not determine how much
+diversity is lost; *how far the policy moved* does.
+
+If that holds, it reframes every result above. The arms did not fail because their
+objectives were wrong in kind; they failed because training this policy at all
+costs vote diversity, and the metric is a vote. It also predicts that **more data
+will not help**: the runs already use `epochs=1` over 2,000 prompts with
+`train_batch_size=16`, i.e. exactly 125 steps and no prompt seen twice, so there is
+no repetition to relieve. More prompts buys more steps, more steps means more
+movement, and more movement is further down this line.
+
+The one crack in it is **arm C v2's +12.5 residual** — the only arm that lost
+meaningfully less coverage than its KL predicts, and the only one whose reward
+explicitly pays for what a rollout *adds* to the group. That is consistent with the
+consensus marginal being structurally anti-sharpening, and it is one point.
+
+**The decisive test is arm C at arm S's step size** (lr 4e-5, targeting terminal
+KL ≈ 0.098 from arm C's own scaling KL ∝ lr^1.53). Two outcomes, both worth having:
+
+- lands at ~−60% → the fit is the whole story, the reward is irrelevant to
+  diversity, and it has to be targeted **explicitly** (an entropy or diversity term
+  — nothing tried so far contains one).
+- holds near −25% → the consensus marginal genuinely resists sharpening, and
+  scaling it up is the right direction.
+
+That run is in progress.
+
 ## 4. Four instrumentation failures, none visible in the eval numbers
 
 Each was found by asking whether a run did what its config claimed — not by reading
