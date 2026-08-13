@@ -79,12 +79,18 @@ contributing to a correct group vote (which needs the marginal contact emitted
 *sometimes*). At parity the stepwise term still wins — coverage ends at −60%
 instead of −65%.
 
-The obvious experiment is therefore **`lam_step = 0`: the consensus term alone.**
-The evidence now says the stepwise term is the component that causes the damage and
-the consensus term is the component that repairs it, so running the repair without
-the damage is the natural next arm, and it is a one-flag change. A `lam_doc` sweep
-is the second, since the term demonstrably has leverage on exactly the variable
-that determines the metric.
+The obvious next experiment was **`lam_step = 0`: the consensus term alone** — and
+it has now been run (arm C). It does not answer the question: with no stepwise
+term the advantage is the raw consensus marginal under a pass-through estimator,
+which is both thinly spread (~0.03/token against the dense reward's 0.248
+concentrated on three tokens per contact) and unnormalised. Terminal KL 0.00036,
+the least of any arm; every training metric flat; held-out score 0.6116
+(+0.0005, p = 0.74) — i.e. the warm start. Its flat `pred/gt` is not evidence the
+consensus term prevents shrinkage; a policy that does not move does not shrink.
+
+What remains supported is a **`lam_doc` sweep inside the dense reward**, since that
+is the one lever measured to improve anything, and **re-running the document-level
+arms at a much higher LR**, since neither has yet trained the model.
 
 Neither should be confused with a fix for arm D, which is a separate open thread:
 that run's policy barely moved (KL 0.0014 against arm S's 0.098) and needs a
