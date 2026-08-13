@@ -70,11 +70,22 @@ class Exp208Config(SkyRLTrainConfig):
     # tracks precision better (0.906 vs 0.827) and volume less (0.471 vs 0.677).
     err_decay: float = 1.0
     lam_step: float = 1.0
-    # CALIBRATED, not chosen. The two terms differ by ~an order of magnitude in
-    # natural scale AND the document scalar is broadcast over every response
-    # token, so comparing them per rollout understates the document term by the
-    # response length; a plausible guess was off by ~65x on the marin.rl path.
-    lam_doc: float = 4.5
+    # RE-CALIBRATED 2026-08-13 against measured spreads, after lam_doc=4.5 made
+    # arm B numerically identical to arm S (precision and pred/gt agreeing to 3
+    # decimals across all 125 steps, same KL). At 4.5 the document term carries
+    # **0.42%** of the stepwise term's spread -- it was not a weak signal, it was
+    # no signal.
+    #
+    # Measured on the Phase 0 rollouts: per-rollout stepwise total
+    # `n_pred*(precision - p_bar)` has sd 18.6; the group-of-16 centred consensus
+    # marginal has sd 0.0174. The document term's TOTAL contribution to a
+    # rollout's summed reward is exactly `lam_doc * marginal` (it is spread over
+    # the response, so the per-token share times the length is the whole of it).
+    # Equal spread therefore needs lam_doc = 18.6/0.0174 ~= 1067.
+    #
+    # Prior calibrations of this constant have been wrong twice, in both
+    # directions, so the arithmetic is spelled out rather than asserted.
+    lam_doc: float = 1067.0
     # "none" (arm S, dense stepwise only), "consensus" (arm B), "own_f1" (arm F).
     # B and F additionally need the GeneratorOutput mapping in
     # dense_generator._fold_document_term, which currently raises.

@@ -232,3 +232,22 @@ def test_reward_mode_and_estimator_must_agree():
         check_reward_mode(_Cfg("dense", "grpo"))
     check_reward_mode(_Cfg("document_f1", "grpo"))       # both valid pairings
     check_reward_mode(_Cfg("dense", ADV_ESTIMATOR))
+
+
+def test_document_term_total_is_lam_doc_times_marginal():
+    """The doc term's whole contribution to a rollout is `lam_doc * marginal`.
+
+    This is the identity the lam_doc calibration rests on: the per-token share is
+    `lam_doc*marg/len(row)`, so summing over the response recovers `lam_doc*marg`
+    exactly. Getting it wrong is how lam_doc=4.5 shipped -- a value that carries
+    0.42% of the stepwise term's spread and made arm B a bit-for-bit rerun of
+    arm S. Pin the identity so the calibration can be checked by arithmetic.
+    """
+    lam_doc = 7.0
+    gen = _generator(lam_doc=lam_doc, instances=("A",))
+    rows = [("A", "0"), ("A", "1"), ("A", "2")]
+    out = gen._fold_document_term(_out(rows))
+    expected = _expected_marginals()
+    for (_, rep), reward in zip(rows, out["rewards"]):
+        assert sum(reward) == pytest.approx(lam_doc * expected[rep]), (
+            "summed document contribution must equal lam_doc * marginal")
