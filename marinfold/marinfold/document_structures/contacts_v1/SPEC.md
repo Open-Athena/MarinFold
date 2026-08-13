@@ -44,7 +44,7 @@ We support structures with up to 2000 residues
 
 Rather than numbering residues in a protein as e.g. 0 to 1999, each time we generate a document we pick a random number n in [0, 2000) to be the n-terminal residue. We start indexing from this residue. Residue indices "wrap around", so the residue after `<p1999>` is `<p0>`. The motivation here is that we want the model to be experienced in using all residue indices. Since most proteins are way less than 2000 residues, if we always started the protein chain off at `<p0>` the model would only rarely see the higher value indices.
 
-In the future we will support multiple protein chains, and we will just have multiple <n-term> and <c-term> statements for these. They will need to be spaced out enough to not overlap. For example we might have one protein that starts at index 1800 and continues until residue 100, and another that starts at residue 300 and continues until 800.
+Multiple protein chains share the same 2000-index clock. Each chain gets one unbroken run of indices, the runs are disjoint and separated by at least one unused index, and each chain contributes its own `<n-term>` and `<c-term>` statement. For example one chain might start at index 1800 and continue past the wrap to residue 100, and another start at 300 and continue to 800. See *Multiple protein chains* under the implementation notes for the exact layout procedure.
 
 ### Structure section
 The structure section consists of statements of the form `<contact>` `<pXXX>` `<pYYY>`, which indicates that residues at index XXX and YYY are in contact.
@@ -134,19 +134,30 @@ original example's `<c-term> <pos 22>` space typo is emitted as
   SEC, CSO, SEP, TPO, PTR) are canonicalized to their parent amino acid
   (e.g. MSE→MET, HSD→HIS, SEP→SER). Anything unexpected maps to `<UNK>`
   (reused from the contacts-and-distances-v1 vocab).
-- **Single chain only.** Multi-chain support is future work per the spec.
-  Structures with more than one protein chain are skipped (with a
-  warning); exactly one `<n-term>` and one `<c-term>` are emitted.
-- **Residue-count bounds.** "Up to 2000 residues" is enforced: chains
-  with fewer than 2 residues or more than 2000 (can't be uniquely
-  indexed under wrap-around) are skipped with a warning.
+- **Chain count is opt-in.** `GenerationConfig.max_chains` (default **1**)
+  is how many protein chains an input structure may have before
+  `generate_document` rejects it. The default reproduces the original
+  single-chain behavior — every corpus before exp222 is monomeric, so a
+  multi-chain AFDB / ESM-Atlas input means something went wrong upstream and
+  should fail loudly. Multimer corpora raise it (see *Multiple protein
+  chains* below). It is an input-acceptance policy only: `build_document`
+  serializes whatever chains it is handed.
+- **Residue-count bounds.** "Up to 2000 residues" is enforced: structures
+  with fewer than 2 residues or more than 2000 in total (can't be uniquely
+  indexed under wrap-around) are skipped with a warning. For a multi-chain
+  structure the *inter-chain gaps* count against the same budget, so the
+  real cap is `sum(chain lengths) + k * min_chain_gap <= 2000`.
 - **Minimum sequence separation.** A pair counts as a contact only if its
   residues are at least `config.min_seq_separation` (default 6) positions
   apart in the primary sequence (`seq_j - seq_i >= min_seq_separation`).
   This is *definitional* — closer pairs are filtered before anything is
   counted, so `contacts_pre_filter` (and the degree statistics) already
   exclude them. (`contacts-and-distances-v1` used the same minimum of 6 via
-  its `short_range_sep`.)
+  its `short_range_sep`.) The rule is **intra-chain only**: a pair whose
+  residues sit on different chains is a candidate contact at any separation.
+  "How far apart in the chain" is undefined across a chain break, and
+  applying the rule there would delete most of an interface — the entire
+  content of a multimer document.
 - **Minimum degree filter.** Contacts with degree below
   `config.min_contact_degree` (default 0.001) are dropped before anything
   else and are never emitted, regardless of budget. pyconfind returns a
@@ -187,6 +198,63 @@ original example's `<c-term> <pos 22>` space typo is emitted as
   re-minting — so no dedup is needed. The sequence-only token is appended
   **last**, so adding it left every pre-existing id unchanged. Total domain
   vocab = 2844 tokens (2846 with `<pad>`/`<eos>`).
+
+### Multiple protein chains (multimers, issue #222)
+
+A document may serialize a whole protein complex: *k* chains on one 2000-index
+ring, *k* `<n-term>` statements and *k* `<c-term>` statements. Nothing else
+about the format changes — same doc type, same statements, same vocabulary.
+
+- **Opt-in.** `GenerationConfig(max_chains=k)` is what lets a *k*-chain
+  structure through `analyze_structure`; the default of 1 keeps every
+  monomer pipeline rejecting complexes as before.
+- **Layout.** Given chains of lengths `L_1..L_k` in the residue list's order:
+  1. Shuffle the chains into a random **ring order**.
+  2. `slack = 2000 - sum(L) - k * min_chain_gap`. If `slack < 0` the structure
+     doesn't fit and `build_document` returns `None`.
+  3. Draw a uniformly random composition of `slack` into `k` non-negative
+     parts (stars and bars) and add `min_chain_gap` (default 1) to each — the
+     *k* gaps, one after each chain. Chains plus gaps tile the ring exactly.
+  4. Draw a global rotation `offset` in `[0, 2000)` and walk the ring from
+     there, laying down each chain's residues at consecutive indices
+     (wrapping past 1999 to 0 as usual) and skipping its gap before the next.
+  Every chain therefore occupies one **contiguous, disjoint** run of indices,
+  and no chain's N-terminus is adjacent to another chain's C-terminus.
+- **Residue order.** `residues` must be **grouped by chain** (pyconfind emits
+  positions that way). A chain split across two runs raises `ValueError` in
+  `chain_segments` rather than producing a document whose termini describe
+  chains that don't exist.
+- **Ring order is not structure order.** The chains are shuffled before
+  placement, so a chain's position in the residue list says nothing about
+  where it lands. Chain identity is recoverable from the termini and the
+  contiguity of the index runs, not from index order.
+- **No new doc type.** A multimer document is plain `<contacts-v1>`, and the
+  tokenizer is unchanged. Unlike the retraction mode of #175 there is nothing
+  to marginalize over: the whole sequence section — every `<n-term>` and
+  `<c-term>` — is in the prompt, so the chain count is known before a single
+  contact is generated.
+- **Single-chain output is byte-identical** to the pre-multimer generator.
+  With `k = 1` the ring order shuffle and the gap composition are both
+  skipped, the minimum gap is not applied (a lone chain may occupy the whole
+  ring, which is what keeps a 2000-residue chain serializable), and the only
+  RNG draw is the same single `rng.randrange(2000)` that used to pick the
+  n-terminal index. The terminus statements are appended in structure order,
+  so the pre-shuffle statement list is also unchanged. Pinned by
+  `tests/.../test_multimer.py::test_single_chain_layout_is_unchanged` and by a
+  180-case fingerprint diff against the pre-change generator.
+- **Sequence separation is intra-chain only** — see the note above.
+- **Contact selection is chain-blind.** Interface and intra-chain contacts
+  compete on contact degree alone for the same budget. A large complex whose
+  contacts don't all fit therefore keeps its *strongest* contacts, whichever
+  side of an interface they are on.
+- **Metadata.** `num_chains`, `chain_ids`, `chain_lengths`, `n_term_indices`,
+  `c_term_indices` (all in structure order), plus
+  `contacts_pre_filter_inter_chain` / `contacts_emitted_inter_chain`. The
+  scalar `n_term_index` / `c_term_index` remain the **first** chain's, so they
+  keep their meaning for monomers; `start_index` is the ring rotation offset,
+  which for a monomer is exactly the old random n-terminal index. Each
+  `EmittedContact` also carries `chain_i` / `chain_j` and an `inter_chain`
+  flag.
 
 ### Think (pause) tokens (`think=True`)
 
@@ -314,7 +382,10 @@ protein-docs-style metadata. Per document we record: `entry_id`,
 `seq_len`, `global_plddt` (mean CA B-factor), `start_index`,
 `n_term_index`, `c_term_index`, `min_seq_separation`, `num_tokens`,
 `think_tokens` (count of emitted `<think>` tokens; 0 unless `think=True`),
-`sha1` of the document, and the following contact statistics:
+`sha1` of the document, the multi-chain block (`num_chains`, `chain_ids`,
+`chain_lengths`, `n_term_indices`, `c_term_indices`,
+`contacts_pre_filter_inter_chain`, `contacts_emitted_inter_chain` — all
+trivial for a monomer), and the following contact statistics:
 
 - `min_seq_separation` — the minimum sequence separation used for this
   row's contact definition.
@@ -377,8 +448,7 @@ together under one tokenizer.
 
 ### Not yet implemented
 
-- Multiple protein chains (multiple `<n-term>`/`<c-term>`, spaced-out
-  index ranges) — see *Residue indexing* above.
-- Model inference / evaluation against this structure (there is no
-  trained contacts-v1 model yet); only `generate` / `view` / `tokenizer`
-  exist.
+- Model **inference** against a multi-chain document. Generation and
+  round-tripping work (see *Multiple protein chains* above), but
+  `inference.py`'s prompt builder still assumes one chain, so
+  `marinfold infer` / `evaluate` are monomer-only.
