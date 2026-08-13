@@ -31,7 +31,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-import pyarrow.dataset as ds
+import pyarrow.parquet as pq
 
 from curate import (
     assembly_subchain_entities,
@@ -191,6 +191,33 @@ def check_against_pyconfind(row: dict, mirror: Path) -> list[str]:
     return problems
 
 
+def sample_documents(
+    shards: list[Path], columns: list[str], sample: int, rng: random.Random
+) -> tuple[list[dict], int]:
+    """Read a random sample of documents, one shard at a time.
+
+    Deliberately *not* ``dataset(...).to_table()`` then ``take``: pyarrow's
+    default ``string`` type carries 32-bit offsets, and the ``document``
+    column across the monomer corpus's 31 shards is well past 2 GB, so
+    concatenating them raises "offset overflow while concatenating arrays".
+    Sampling per shard never materialises more than one shard's worth of
+    document text, and gives the same uniform sample as long as shards are
+    equal-sized (they are -- the writer flushes at a fixed row count, bar the
+    last one).
+    """
+    per_shard = max(1, sample // len(shards))
+    rows: list[dict] = []
+    total = 0
+    for shard in shards:
+        table = pq.read_table(shard, columns=columns)
+        total += table.num_rows
+        take = min(per_shard, table.num_rows)
+        indices = rng.sample(range(table.num_rows), take)
+        rows.extend(table.take(indices).to_pylist())
+        del table
+    return rows, total
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("/data/exp222_pdb_curation"))
@@ -210,13 +237,11 @@ def main(argv: list[str] | None = None) -> int:
     failed = 0
     for subset in ("monomers", "multimers"):
         directory = args.root / "docs" / subset
-        if not directory.is_dir() or not any(directory.glob("*.parquet")):
+        shards = sorted(directory.glob("*.parquet")) if directory.is_dir() else []
+        if not shards:
             print(f"{subset}: no shards, skipping")
             continue
-        table = ds.dataset(directory, format="parquet").to_table(columns=columns)
-        total = table.num_rows
-        indices = rng.sample(range(total), min(args.sample, total))
-        rows = table.take(indices).to_pylist()
+        rows, total = sample_documents(shards, columns, args.sample, rng)
 
         problems: Counter = Counter()
         for row in rows:

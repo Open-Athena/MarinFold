@@ -180,11 +180,21 @@ def leakage_audit(
        contacts-v1's own converter). This is a strict lower bound: the eval
        sequence is the *input* sequence, so a corpus chain with unresolved
        residues will not match even when it is the same protein.
-    2. **40% cluster** -- a corpus document sharing an RCSB 40%-identity
-       cluster with any entity of any eval entry. This is the directly
-       exp213-comparable number, and an upper bound in the other direction:
-       we credit every entity of an eval entry, not just the chain that was
-       actually evaluated.
+    2. **40% cluster**, reported from both ends, because the two answer
+       different questions and only one is comparable to exp213:
+
+       - ``cluster40_fraction`` -- what share of the *corpus* is homologous to
+         the eval set. Small by construction (the eval set is 554 chains and
+         the corpus is hundreds of thousands), and it says how much of the
+         training data is suspect.
+       - ``eval_chains_covered_fraction`` -- what share of the *eval set* has a
+         homolog somewhere in the corpus. This is the exp213 number: that
+         experiment found the eval set 58% homologous to exp199's AFDB
+         training data. It says how much of the benchmark is answerable from
+         memory.
+
+       Both credit every entity of an eval entry rather than only the chain
+       actually evaluated, so both are upper bounds.
 
     Neither is a filter. exp213 found the eval score is *not* homology-inflated
     (rho ~0 against sequence identity), so the useful output is the measured
@@ -216,11 +226,16 @@ def leakage_audit(
                 )
 
     clusters = load_clusters(str(clusters_path))
-    eval_clusters = {
-        cluster_id
-        for key, cluster_id in clusters.items()
-        if key.split("_")[0].lower() in eval_pdb_ids
-    }
+    # cluster id -> the eval PDB ids that land in it, so coverage can be
+    # counted from the eval side as well as the corpus side.
+    eval_clusters: dict[int, set[str]] = {}
+    for key, cluster_id in clusters.items():
+        pdb_id = key.split("_")[0].lower()
+        if pdb_id in eval_pdb_ids:
+            eval_clusters.setdefault(cluster_id, set()).add(pdb_id)
+    # An eval entry with no entity in the cluster file cannot be matched at
+    # all; count it so the denominator is honest.
+    eval_ids_clustered = {pid for ids in eval_clusters.values() for pid in ids}
 
     rows = []
     for subset, table in tables.items():
@@ -240,10 +255,14 @@ def leakage_audit(
             exact += 1
             if len(examples) < 10:
                 examples.append(f"{entry_id}->{stem}")
-        homologous = sum(
-            1 for ids in cluster_lists
-            if any(c in eval_clusters for c in (ids or []))
-        )
+        homologous = 0
+        covered_eval_ids: set[str] = set()
+        for ids in cluster_lists:
+            hit = [eval_clusters[c] for c in (ids or []) if c in eval_clusters]
+            if hit:
+                homologous += 1
+                for group in hit:
+                    covered_eval_ids |= group
         rows.append({
             "subset": subset,
             "documents": table.num_rows,
@@ -252,6 +271,12 @@ def leakage_audit(
             "exact_sequence_fraction": round(exact / table.num_rows, 6) if table.num_rows else 0.0,
             "cluster40_homologous": homologous,
             "cluster40_fraction": round(homologous / table.num_rows, 6) if table.num_rows else 0.0,
+            "eval_entries_total": len(eval_pdb_ids),
+            "eval_entries_clustered": len(eval_ids_clustered),
+            "eval_entries_covered": len(covered_eval_ids),
+            "eval_entries_covered_fraction": round(
+                len(covered_eval_ids) / len(eval_pdb_ids), 4
+            ) if eval_pdb_ids else 0.0,
             "examples": "; ".join(examples),
         })
     write_csv(out_dir / "leakage_audit.csv", rows)

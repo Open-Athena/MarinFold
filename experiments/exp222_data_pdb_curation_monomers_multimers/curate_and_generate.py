@@ -397,12 +397,24 @@ def _init_worker(cluster_path: str) -> None:
 
 
 class ShardWriter:
-    """Buffer rows and flush them as fixed-size parquet shards."""
+    """Buffer rows and flush them as fixed-size parquet shards.
 
-    def __init__(self, directory: Path, schema: pa.Schema, rows_per_shard: int):
+    ``prefix`` names the shards. A re-run over a subset of entries writes
+    under a different prefix into the same directory, so its output joins the
+    corpus without colliding with or rewriting the original shards.
+    """
+
+    def __init__(
+        self,
+        directory: Path,
+        schema: pa.Schema,
+        rows_per_shard: int,
+        prefix: str = "shard",
+    ):
         self.directory = directory
         self.schema = schema
         self.rows_per_shard = rows_per_shard
+        self.prefix = prefix
         self.buffer: list[dict[str, Any]] = []
         self.shard_index = 0
         self.total = 0
@@ -416,7 +428,7 @@ class ShardWriter:
             del self.buffer[: self.rows_per_shard]
 
     def _flush(self, rows: list[dict[str, Any]]) -> None:
-        path = self.directory / f"shard-{self.shard_index:05d}.parquet"
+        path = self.directory / f"{self.prefix}-{self.shard_index:05d}.parquet"
         pq.write_table(
             pa.Table.from_pylist(rows, schema=self.schema), path, compression="zstd"
         )
@@ -513,12 +525,36 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 8) - 4))
     parser.add_argument("--rows-per-shard", type=int, default=20_000)
     parser.add_argument("--limit", type=int, default=None, help="first N entries (smoke test)")
+    parser.add_argument(
+        "--only-pdb-ids", type=Path, default=None,
+        help="process only the PDB ids in this file (one per line) -- for "
+             "re-running a subset after a fix, alongside --shard-prefix",
+    )
+    parser.add_argument(
+        "--shard-prefix", default="shard",
+        help="shard filename prefix; use a distinct one for a re-run so its "
+             "output joins the corpus instead of overwriting it",
+    )
     args = parser.parse_args(argv)
 
     excluded = load_excluded_ids(args.exclude)
     tasks, counts = select_entries(
         args.entries, excluded, args.release_cutoff, args.max_resolution
     )
+    if args.only_pdb_ids:
+        wanted = {
+            line.strip().lower()
+            for line in args.only_pdb_ids.read_text().splitlines()
+            if line.strip()
+        }
+        tasks = [t for t in tasks if t.pdb_id in wanted]
+        missing = wanted - {t.pdb_id for t in tasks}
+        print(
+            f"--only-pdb-ids: {len(tasks)} of {len(wanted)} requested entries "
+            f"pass the entry-level filters"
+            + (f" (missing: {sorted(missing)[:5]})" if missing else ""),
+            flush=True,
+        )
     if args.limit:
         tasks = tasks[: args.limit]
     # Longest-processing-time-first: hand the biggest entries out while every
@@ -528,9 +564,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"entry-level funnel: {counts}", flush=True)
     print(f"processing {len(tasks)} entries with {args.workers} workers", flush=True)
 
-    monomers = ShardWriter(args.out / "docs" / "monomers", DOC_SCHEMA, args.rows_per_shard)
-    multimers = ShardWriter(args.out / "docs" / "multimers", DOC_SCHEMA, args.rows_per_shard)
-    ledger = ShardWriter(args.out / "ledger", LEDGER_SCHEMA, 50_000)
+    monomers = ShardWriter(
+        args.out / "docs" / "monomers", DOC_SCHEMA, args.rows_per_shard, args.shard_prefix
+    )
+    multimers = ShardWriter(
+        args.out / "docs" / "multimers", DOC_SCHEMA, args.rows_per_shard, args.shard_prefix
+    )
+    ledger = ShardWriter(args.out / "ledger", LEDGER_SCHEMA, 50_000, args.shard_prefix)
 
     started = time.time()
     done = 0

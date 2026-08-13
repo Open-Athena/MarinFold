@@ -199,12 +199,22 @@ def clashing_atom_counts(
 ) -> dict[str, int]:
     """Per chain, how many of its atoms sit within 1.7 A of another chain's.
 
-    Uses gemmi's C++ contact search restricted to different chains, and
-    ignores crystal-symmetry images (``image_idx != 0``) -- a neighbour in the
-    next unit cell is not a modelling error, and for the assembly pass the
-    symmetry copies we care about are already explicit chains.
+    Uses gemmi's C++ contact search restricted to different chains, over an
+    **empty unit cell**. That is deliberate, and it is doing two jobs:
+
+    * A neighbour in the next unit cell is not a modelling error, and for the
+      assembly pass the symmetry copies that matter are already explicit
+      chains -- so crystal images would be pure noise. With no cell, gemmi
+      generates none, rather than generating them for us to discard.
+    * The cell-aware search refuses to run on entries whose SCALE matrix is
+      not in the standard crystal-frame orientation
+      (``RuntimeError: Grids work only with the standard orientation of
+      crystal frame``). That is 154 of 177,710 entries -- mostly old ones --
+      and it took both passes down with it, losing the entries entirely.
     """
-    search = gemmi.NeighborSearch(structure, 5.0, model_index).populate()
+    search = gemmi.NeighborSearch(
+        structure[model_index], gemmi.UnitCell(), 5.0
+    ).populate()
     contacts = gemmi.ContactSearch(CLASH_DISTANCE)
     contacts.ignore = gemmi.ContactSearch.Ignore.SameChain
     # An atom can clash with several partners; the filter is about how much of
@@ -213,7 +223,7 @@ def clashing_atom_counts(
     # hands back short-lived proxy objects, so ``id()`` is not a stable key.
     counts: dict[str, set[tuple[str, int, str, str, str]]] = {}
     for result in contacts.find_contacts(search):
-        if result.image_idx != 0:
+        if result.image_idx != 0:  # unreachable with no cell; cheap insurance
             continue
         for partner in (result.partner1, result.partner2):
             key = (
