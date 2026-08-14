@@ -1,5 +1,25 @@
 # exp230 — what the fine-tuning documents actually look like
 
+> **STATUS (2026-08-14): this page describes the FIRST corpus build and is being
+> superseded.** Everything below was measured on a real corpus and none of it is
+> wrong about that corpus — but four design decisions changed after review, and
+> the numbers will be regenerated from the new build. What changed:
+>
+> | | this page (v1) | the run being built |
+> |---|---|---|
+> | documents per protein | 7 multi + 7 plain | **1 + 1** |
+> | proteins in the two halves | **identical set** | **disjoint**, 259,999 each, same arm mix |
+> | draft size | `Uniform{1, min(rollout, 250)}` | **`P(n) ∝ n^-0.5`** on `{1..rollout}`, **no cap** |
+> | sections per document | `K ~ Uniform{0..12}` | **as many as fit in 8192 tokens** (~29) |
+> | epochs | 2 | **1** |
+> | rollouts per protein | 12 | **32** |
+>
+> The parts of this page that do NOT change: the document grammar, the id-7
+> rename, what the 0.1 / 1.0 / 1.0 weighting applies to and why the restart and
+> stop slots must carry equal weight (§5), and the fact that plain rehearsal
+> documents are mixed 1:1 and weighted uniformly 1.0.
+
+
 Everything below is **measured on the built corpus**, not read off the code.
 Where a number is a sample statistic the sample size is given.
 
