@@ -291,7 +291,8 @@ especially where the model was previously blind, and dilutes the very top of the
 list. Reporting only the AUC line would be choosing the favourable metric.
 
 Whether longer training converts this into a net win, or simply deepens both sides
-of the trade, is the question the 10k run is being used to answer.
+of the trade, is the question the 10k run was used to answer — see §3d. It does
+neither: it diverges.
 
 **This refutes §3b.** The R² = 0.95 fit predicted ~−67% coverage at KL 0.168; the
 measured value is −6.4%, and total votes went *up* 23% (16,191 → 19,871). The fit
@@ -311,6 +312,44 @@ what better vote coverage buys; R-precision reads only the top R, where the extr
 coverage does not yet help. Whether more training converts the AUC gain into an
 R-precision gain is exactly the open question — so the next run is this
 configuration on **10,000 prompts (625 steps, 5×)**, checkpointing every 50 steps.
+
+## 3d. Training longer at the same LR diverges
+
+Arm C v3's configuration on 10,000 prompts (625 steps planned, 5×), checkpointing
+every 50, **stopped at step 270**:
+
+| checkpoint | R-precision | Δ base | AUC | Δ base | AUC (long) | coverage | KL |
+|---|---|---|---|---|---|---|---|
+| baseline `exp199` | **0.6111** | — | 0.9487 | — | 0.9340 | — | — |
+| arm C4 step 50 | 0.6036 | −0.0074 | 0.9391 | −0.0097 | 0.9199 | −32.5% | ~0.02 |
+| **arm C3 step 125** (2k) | 0.6099 | −0.0012 | **0.9519** | **+0.0032** | **0.9398** | −6.4% | 0.168 |
+| arm C4 step 200 | 0.5959 | **−0.0151** (p = 5.7e-07) | 0.9405 | −0.0082 | 0.9217 | −18.7% | ~0.7 |
+
+**It did not continue improving.** R-precision degrades monotonically
+(−0.0074 → −0.0151) and arm C3's AUC gain is gone (+0.0032 → −0.0082).
+
+The cause is **KL runaway, not the data**: 0.064 at step 60 → 0.77 at step 213 →
+**3.96 at step 270**. At lr 4e-5 the policy does not converge to a new operating
+point, it diverges, and the training metrics show it — precision falls to 0.265
+(below the base model's ~0.27) while `pred/gt` climbs to 1.44 and contacts/rollout
+to 200. That is over-emission: the consensus marginal pays a rollout for adding
+candidates to the group vote, and with the stepwise term at zero there is nothing
+opposing it.
+
+So the two failure modes now bracket the reward design:
+
+- **the stepwise per-contact term alone** sharpens — precision up, coverage −65%,
+  the model emits less and the committee becomes redundant;
+- **the consensus marginal alone** over-emits — coverage held, but at high KL the
+  model emits ever more, precision falls below baseline, and the run diverges.
+
+Arm C3's +0.0032 sits between them, at KL ≈ 0.168. That is a **narrow window**, not
+a direction that scales with more training.
+
+**One thing this does not settle**: arm C4 changed the prompt pool *and* ran past
+arm C3's KL, so "does more data help" is still open — it would need a lower LR (say
+1e-5) over 625 steps to land near KL 0.168 gradually. The question the run *was*
+asked, "does it keep improving with more training at this setting", is answered no.
 
 ## 4. Four instrumentation failures, none visible in the eval numbers
 
