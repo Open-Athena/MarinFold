@@ -52,10 +52,14 @@ import pyarrow.parquet as pq
 BEGIN, NUM_POS, MIN_SEP = "<begin_statements>", 2000, 6
 CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
 
-#: Flush a part file every this many proteins.  #163 lost a shard's work to a
-#: preemption between flushes; a smaller number costs more objects but bounds
-#: what a preemption can destroy.
-FLUSH_EVERY = 250
+#: Flush a part file every this many proteins -- the bound on what ONE preemption
+#: can destroy, and on a preemptible pool that is the number that matters.
+#:
+#: Measured on this run: shards see 2-4 preemptions each, and at 250 a flush is
+#: 12-30 min apart, so each preemption discarded ~6-15 min of generation. At 50
+#: that falls to ~1-3 min. The cost is 5x more part files (48 shards x ~45 =
+#: ~2,200 objects), which is nothing next to redoing the work.
+FLUSH_EVERY = int(os.environ.get("EXP230_FLUSH_EVERY", "50"))
 
 SCHEMA = pa.schema([
     ("target_id", pa.string()), ("arm", pa.string()), ("entry_id", pa.string()),
