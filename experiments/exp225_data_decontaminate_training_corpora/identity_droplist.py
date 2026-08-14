@@ -61,6 +61,9 @@ import json
 from itertools import combinations
 from pathlib import Path
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 from decontam_lib import (
     ARMS,
     CORPORA,
@@ -103,8 +106,29 @@ def dropped_keys(
     sensitivity can be swept, and reducing all of that would silently price a
     different rule than :mod:`sequence_droplist` does.
     """
+    return {arm: set(rows) for arm, rows in dropped_records(
+        m8, min_identity=min_identity, min_qcov=min_qcov, max_evalue=max_evalue,
+        report_ceiling=report_ceiling, coverage_mode=coverage_mode,
+    ).items()}
+
+
+def dropped_records(
+    m8: Path,
+    *,
+    min_identity: float,
+    min_qcov: float,
+    max_evalue: float | None,
+    report_ceiling: float = float("inf"),
+    coverage_mode: str = "shorter",
+) -> dict[str, dict[str, dict]]:
+    """As :func:`dropped_keys`, but keeping the evidence for each dropped row.
+
+    ``{arm: {entry_id: record}}``, where the record is the *strongest* alignment
+    by identity — enough to justify the removal of any particular training
+    protein after the fact, which a bare set of ids is not.
+    """
     combine = COVERAGE_MODES[coverage_mode]
-    dropped: dict[str, set[str]] = {arm: set() for arm in ARMS}
+    dropped: dict[str, dict[str, dict]] = {arm: {} for arm in ARMS}
     with m8.open() as fh:
         for line in fh:
             hit = dict(zip(FIELDS, line.rstrip("\n").split("\t")))
@@ -115,9 +139,22 @@ def dropped_keys(
             coverage = combine(float(hit["qcov"]), float(hit["tcov"]))
             by_identity = identity >= min_identity and coverage >= min_qcov
             by_evalue = max_evalue is not None and evalue <= max_evalue
-            if by_identity or by_evalue:
-                target = parse_target(hit["target"])
-                dropped[target.arm].add(target.entry_id)
+            if not (by_identity or by_evalue):
+                continue
+            target = parse_target(hit["target"])
+            current = dropped[target.arm].get(target.entry_id)
+            if current is not None and current["identity"] >= identity:
+                continue
+            dropped[target.arm][target.entry_id] = {
+                "arm": target.arm,
+                "entry_id": target.entry_id,
+                "shard": target.shard,
+                "row": target.row,
+                "identity": identity,
+                "coverage": coverage,
+                "evalue": evalue,
+                "nearest_reference_key": hit["query"],
+            }
     return dropped
 
 
@@ -138,6 +175,50 @@ def summarise(label: str, dropped: dict[str, set[str]], rule: str) -> list[dict]
             }
         )
     return rows
+
+
+DROPLIST_SCHEMA = pa.schema(
+    [
+        ("arm", pa.string()),
+        ("entry_id", pa.string()),
+        ("shard", pa.int32()),
+        ("row", pa.int32()),
+        ("identity", pa.float32()),
+        ("coverage", pa.float32()),
+        ("evalue", pa.float64()),
+        ("nearest_reference_key", pa.string()),
+        ("nearest_reference", pa.string()),
+    ]
+)
+
+
+def write_droplist(per_reference: dict[str, dict[str, dict[str, dict]]], out: Path) -> int:
+    """The union of every reference, one row per dropped training protein.
+
+    This is the artifact a corpus is actually filtered with, so it carries the
+    evidence too: which reference protein the row is homologous to, at what
+    identity and coverage. Where several references hit the same training row
+    the strongest alignment wins, and ``nearest_reference`` names the reference
+    it came from.
+    """
+    union: dict[tuple[str, str], dict] = {}
+    for label, records in per_reference.items():
+        for arm, by_id in records.items():
+            for entry_id, record in by_id.items():
+                key = (arm, entry_id)
+                current = union.get(key)
+                if current is None or record["identity"] > current["identity"]:
+                    union[key] = {**record, "nearest_reference": label}
+    ordered = sorted(union.values(), key=lambda r: (r["arm"], r["shard"], r["row"]))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(
+        pa.table({name: [r[name] for r in ordered] for name in DROPLIST_SCHEMA.names},
+                 schema=DROPLIST_SCHEMA),
+        out, compression="zstd",
+    )
+    print(f"[droplist] {len(ordered):,} rows -> {out} "
+          f"({out.stat().st_size / 1e6:.0f} MB)", flush=True)
+    return len(ordered)
 
 
 def parse_reference(text: str) -> tuple[str, Path]:
@@ -168,6 +249,9 @@ def main() -> int:
                          "to reproduce the Tier A tables exactly")
     ap.add_argument("--out", type=Path,
                     default=Path(__file__).resolve().parent / "data/identity_droplist.csv")
+    ap.add_argument("--droplist-out", type=Path, default=None,
+                    help="write the union as a per-row parquet — the artifact a corpus "
+                         "is filtered with. Large; keep it out of git.")
     args = ap.parse_args()
 
     max_evalue = SEQ_MAX_EVALUE if args.with_evalue_arm else None
@@ -180,17 +264,18 @@ def main() -> int:
     )
     print(f"[rule] {rule}", flush=True)
 
-    per_reference: dict[str, dict[str, set[str]]] = {}
+    per_reference: dict[str, dict[str, dict[str, dict]]] = {}
     rows: list[dict] = []
     for label, m8 in args.reference:
         if not m8.exists():
             raise SystemExit(f"{label}: {m8} does not exist")
-        dropped = dropped_keys(
+        records = dropped_records(
             m8, min_identity=args.min_identity, min_qcov=args.min_qcov,
             max_evalue=max_evalue, report_ceiling=args.report_evalue_ceiling,
             coverage_mode=args.coverage_mode,
         )
-        per_reference[label] = dropped
+        per_reference[label] = records
+        dropped = {arm: set(by_id) for arm, by_id in records.items()}
         rows += summarise(label, dropped, rule)
         for arm in ARMS:
             print(f"  {label:<16} {arm:<10} {len(dropped[arm]):>9,} "
@@ -200,7 +285,7 @@ def main() -> int:
     for size in range(2, len(labels) + 1):
         for combo in combinations(labels, size):
             union = {
-                arm: set().union(*(per_reference[label][arm] for label in combo))
+                arm: set().union(*(set(per_reference[label][arm]) for label in combo))
                 for arm in ARMS
             }
             label = " + ".join(combo)
@@ -216,6 +301,9 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(rows)
     print(f"[identity] -> {args.out}", flush=True)
+
+    if args.droplist_out:
+        write_droplist(per_reference, args.droplist_out)
 
     args.out.with_suffix(".provenance.json").write_text(
         json.dumps(

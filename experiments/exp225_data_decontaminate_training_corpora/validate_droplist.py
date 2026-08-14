@@ -70,6 +70,8 @@ def main() -> int:
     )
     ap.add_argument("--arm", choices=ARMS, required=True)
     ap.add_argument("--work", type=Path, default=Path("/data/exp225_decontam"))
+    ap.add_argument("--droplist", type=Path, default=None,
+                    help="default: <work>/droplist_sequence.parquet")
     ap.add_argument("--limit-shards", type=int, default=None,
                     help="validate against a sampled shard prefix instead of a full index; "
                          "only drop-list rows inside that prefix are checked")
@@ -85,7 +87,7 @@ def main() -> int:
             "would drop more rows than the list names"
         )
 
-    droplist = pd.read_parquet(args.work / "droplist_sequence.parquet")
+    droplist = pd.read_parquet(args.droplist or args.work / "droplist_sequence.parquet")
     dropped = droplist[droplist["arm"] == args.arm]
     if args.limit_shards is not None:
         dropped = dropped[dropped["shard"] < args.limit_shards]
@@ -104,6 +106,7 @@ def main() -> int:
         "coordinates_agreeing_with_entry_id": agree,
         "entry_id_unique_in_corpus": True,
         "limit_shards": args.limit_shards,
+        "droplist": str(args.droplist or args.work / "droplist_sequence.parquet"),
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2) + "\n")

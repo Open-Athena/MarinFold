@@ -57,7 +57,13 @@ def main() -> int:
     args = ap.parse_args()
 
     print(f"[publish] {BUCKET}/{PREFIX}/", flush=True)
-    for name in ("eval_queries.fasta", "eval_structures.csv", "reference.provenance.json"):
+    for name in (
+        "eval_queries.fasta",
+        "eval_structures.csv",
+        "reference.provenance.json",
+        "foldbench_all_queries.fasta",
+        "foldbench_all.provenance.json",
+    ):
         upload(HERE / "data/reference" / name, f"{PREFIX}/{name}", dry_run=args.dry_run)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -69,7 +75,8 @@ def main() -> int:
             print(f"[publish] tarball {tarball.stat().st_size / 1e6:.0f} MB", flush=True)
         upload(tarball, f"{PREFIX}/eval_structures.tar.gz", dry_run=args.dry_run)
 
-    for name in ("droplist_sequence.parquet", "droplist_structure_afdb.parquet"):
+    for name in ("droplist_sequence.parquet", "droplist_structure_afdb.parquet",
+                 "droplist_final.parquet"):
         path = args.work / name
         if not path.exists():
             print(f"[publish] skipping {name} (not built yet)", flush=True)
