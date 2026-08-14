@@ -1,8 +1,8 @@
 {
-  "n_per_half": 700000,
+  "n_per_half": 260000,
   "seed": 230,
-  "multi": 700000,
-  "plain": 700000,
-  "already_covered": 66736,
-  "need_generation": 633264
+  "multi": 259999,
+  "plain": 259999,
+  "already_covered": 0,
+  "need_generation": 259999
 }

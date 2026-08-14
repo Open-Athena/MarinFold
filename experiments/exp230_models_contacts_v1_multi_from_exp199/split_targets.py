@@ -111,9 +111,22 @@ def main() -> int:
     covered = covered_target_ids(a.rollouts, log)
     total = 2 * a.n_per_half
 
+    # Quotas are SHARES of the total, not fixed ceilings. Taking AFDB up to a
+    # fixed maximum first consumed the entire budget at small totals and left
+    # ESM-Atlas with ZERO -- which would have dropped 94 % of what exp199 was
+    # pretrained on out of the rehearsal half whose whole job is to preserve
+    # that pretraining.
+    #
+    # PDB is finite (~27k survive decontamination) so it is taken first in full;
+    # the two predicted corpora then split what remains evenly, which keeps the
+    # halves looking like exp199's own pretraining mixture.
     pools: dict[str, list[dict]] = {}
-    pools["pdb"] = collect_arm(PDB_MONOMERS, work=a.work, drop=drop, want=a.max_pdb, log=log)
-    pools["afdb"] = collect_arm(AFDB, work=a.work, drop=drop, want=a.max_afdb, log=log)
+    pools["pdb"] = collect_arm(PDB_MONOMERS, work=a.work, drop=drop,
+                               want=min(a.max_pdb, total), log=log)
+    remaining = max(0, total - len(pools["pdb"]))
+    pools["afdb"] = collect_arm(AFDB, work=a.work, drop=drop,
+                                want=min(a.max_afdb, remaining // 2), log=log)
+    # ESM-Atlas absorbs whatever AFDB could not supply; AFDB round-0 is finite.
     rest = max(0, total - len(pools["pdb"]) - len(pools["afdb"]))
     pools["esm_atlas"] = collect_arm(ESM_ATLAS, work=a.work, drop=drop, want=rest, log=log)
 
