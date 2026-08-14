@@ -1,51 +1,60 @@
 # exp208 results: RL post-training on contacts-v1
 
-**Issue [#208](https://github.com/Open-Athena/MarinFold/issues/208) · five arms × 125 steps · 554-protein held-out eval · 8×A100**
+**Issue [#208](https://github.com/Open-Athena/MarinFold/issues/208) · eleven scored runs · five reward designs · 554-protein held-out eval · 8×A100**
 
-**The one-paragraph version.** Thirteen runs across seven reward designs. Eight made the
-model worse or left it unchanged; the ninth — the leave-one-out consensus marginal
-at lr 4e-5 — is the first to **significantly beat the warm start** (AUC +0.0032,
-p = 4e-05, better on 61% of 554 proteins) while holding R-precision flat. The
-mechanism running through all of it is **vote diversity**: the eval is a consensus
-over 100 rollouts, and a reward that makes each rollout individually better makes
-the hundred redundant. Every arm containing the dense per-contact term collapsed
-coverage 60–65%; the consensus marginal, which pays a rollout for what it *adds*
-to the group, held it at −6.4% and raised total votes 23%.
+## The result
 
-The older framing below — that any sufficient policy movement destroys diversity —
-was refuted by that last run and is kept, marked, because the refutation is the
-most useful thing in this document. Raising
-the learning rate 10× on the two document-level arms confirmed this rather than
-overturning it: they finally moved, and the one that moved most (arm D v2, terminal
-KL 0.0836) went from −0.0001 to **−0.0083** — while looking excellent on every
-training metric. A
-dense per-contact reward moves the policy hard and costs 0.021 R-precision
-(p = 5.7e-19) — not through bad contacts but through missing ones: it learns to be
-selective, emits **65% fewer distinct pairs**, and consensus scoring cannot rank a
-pair that never receives a vote. Adding the leave-one-out consensus marginal
-significantly repairs part of that damage (+0.0048 R, +0.0110 AUC over the dense
-reward, both p < 1e-4). Two purely document-level rewards — a per-rollout F1 scalar
-and the consensus marginal alone — left the model statistically unchanged, but
-their KL says they never moved it, so they are **untested rather than ineffective**.
+**No reward tested here improves consensus R-precision, the metric #208 is judged
+by.** One — the leave-one-out consensus marginal at lr 4e-5 — significantly improves
+the *ranking* metric (AUC +0.0032, p = 4e-05, better on 61% of proteins) while
+leaving R-precision flat, and it is the only arm that does not damage the model.
 
-| arm | reward | terminal KL | R-precision | Δ warm start | AUC | vote coverage |
-|---|---|---|---|---|---|---|
-| — | baseline `exp199` | — | **0.6111** | — | **0.9487** | 2267 pairs |
-| **C** | consensus marginal **only** (`lam_step=0`) | **0.00036** | 0.6116 | +0.0005 (p = 0.74) | 0.9484 | −0.5% |
-| **C v2** | same, lr 1e-5 | 0.0123 | 0.6112 | +0.0001 (p = 0.95) | 0.9445 | −24.6% |
-| **D** | document F1 only, GRPO | **0.00135** | 0.6109 | −0.0001 (p = 0.93) | 0.9467 | −11.6% |
-| **D v2** | same, lr 1e-5 | 0.0836 | 0.6027 | **−0.0083** (p = 1.6e-05) | 0.9184 | −61.0% |
-| **S** | dense per-contact | 0.09763 | 0.5898 | **−0.0213** (p = 5.7e-19) | 0.8976 | **−65.2%** |
-| **B v1** | dense + consensus (`lam_doc` 4.5) | 0.09 | 0.5879 | −0.0232 | 0.8986 | −65.3% |
-| **B v2** | dense + consensus (`lam_doc` 1067) | 0.07308 | **0.5946** | −0.0165 | **0.9087** | −60.1% |
+Everything is explained by one mechanism: **the eval is a vote over 100 rollouts,
+and a reward that makes each rollout individually better makes the hundred
+redundant.** Consensus scoring cannot rank a pair that no rollout emits, so a
+policy that becomes more selective — the natural response to almost any
+per-contact reward — destroys the ranking underneath its own improving precision.
 
-Read the KL column alongside the score column. **The two arms with a moving policy
-both lost; the two that scored at baseline had terminal KLs 50–200× smaller.** No
-configuration tested here improved the metric.
+| arm | reward | lr | terminal KL | R-precision | Δ warm start | AUC | vote coverage |
+|---|---|---|---|---|---|---|---|
+| — | baseline `exp199` | — | — | **0.6111** | — | **0.9487** | 2267 pairs |
+| **C v1** | consensus marginal only | 1e-6 | 0.0004 | 0.6116 | +0.0005 (p = 0.74) | 0.9484 | −0.5% |
+| **C v2** | consensus marginal only | 1e-5 | 0.012 | 0.6112 | +0.0001 (p = 0.95) | 0.9445 | −24.6% |
+| **C v3** | consensus marginal only | 4e-5 | 0.168 | 0.6099 | −0.0012 (p = 0.53) | **0.9519** | **−6.4%** |
+| **D v1** | document F1 only (GRPO) | 1e-6 | 0.0014 | 0.6109 | −0.0001 (p = 0.93) | 0.9467 | −11.6% |
+| **D v2** | document F1 only (GRPO) | 1e-5 | 0.084 | 0.6027 | −0.0083 (p = 1.6e-05) | 0.9184 | −61.0% |
+| **C v4** | consensus only, 10k prompts | 4e-5 | **3.96** ⚠ | 0.5959 | −0.0151 (p = 5.7e-07) | 0.9405 | −18.7% |
+| **N2** | novelty-weighted, normalised | 1e-6 | 0.063 | 0.5991 | −0.0119 (p = 1.6e-09) | 0.9161 | −55.5% |
+| **N** | novelty-weighted, unnormalised | 1e-6 | 0.094 | 0.5954 | −0.0157 (p = 9.3e-15) | 0.9104 | −59.4% |
+| **B v2** | dense + consensus (`lam_doc` 1067) | 1e-6 | 0.098 | 0.5946 | −0.0165 (p = 1.9e-17) | 0.9087 | −60.1% |
+| **S** | dense per-contact | 1e-6 | 0.098 | 0.5898 | −0.0213 (p = 5.7e-19) | 0.8976 | −65.2% |
+| **B v1** | dense + consensus (`lam_doc` 4.5 — inert) | 1e-6 | 0.098 | 0.5879 | −0.0232 (p = 1.3e-24) | 0.8986 | −65.3% |
 
-Details: [ARM_S_RESULTS.md](ARM_S_RESULTS.md) · [ARM_B_RESULTS.md](ARM_B_RESULTS.md) ·
-[ARM_D_RESULTS.md](ARM_D_RESULTS.md) · [VOTE_COVERAGE.md](VOTE_COVERAGE.md) ·
-[ERR_DECAY_ANALYSIS.md](ERR_DECAY_ANALYSIS.md)
+Ordered by R-precision. **Vote coverage orders the table almost perfectly**, which
+is the whole finding in one column. ⚠ C v4 diverged and was stopped at step 270;
+its row is the step-200 checkpoint.
+
+## How to read this document
+
+Three things are worth taking away, in descending order of how portable they are:
+
+1. **§1 and §3f — the mechanism.** Per-contact rewards sharpen; only a
+   group-scored objective resists it. This is the finding.
+2. **§4 and §3e — the reward-design invariant.** Three separate modifications broke
+   `E[r] = p − p̄` by weighting one side of a centred reward, each costing a full
+   training run and each catchable by a five-line calculation beforehand.
+3. **§3b — a refuted analysis, kept deliberately.** A tempting fit (R² = 0.95) that
+   said diversity loss depends only on how far the policy moves. Arm C v3 refuted
+   it. It is retained with its refutation because the confound it fell into is easy
+   to repeat.
+
+Detailed write-ups: [ARM_S_RESULTS.md](ARM_S_RESULTS.md) ·
+[ARM_B_RESULTS.md](ARM_B_RESULTS.md) · [ARM_D_RESULTS.md](ARM_D_RESULTS.md) ·
+[VOTE_COVERAGE.md](VOTE_COVERAGE.md) · [ERR_DECAY_ANALYSIS.md](ERR_DECAY_ANALYSIS.md)
+
+All numbers come from exp82's `score_rollout_worker.py` and exp89's metric
+implementation via `build_rollout_rows.py` — the published scripts, not
+re-derivations. The pipeline reproduces the baseline's recorded 0.6103 at 0.6111.
 
 ---
 
@@ -113,7 +122,9 @@ Two reasons these signals are so weak, and they compound:
 
 So "document-level" is not one thing: two document-level rewards here differ by 4×
 in how far they moved the policy, and both are 50–200× below the dense arms.
-**Neither has been tested at a learning rate that trains the model.**
+**Neither had, at this point, been tested at a learning rate that trains the
+model.** Both were re-run at higher LR (§2b, §3c, §3d), which is what turned these
+two null results into real ones.
 
 ## 2b. The re-runs at lr 1e-5
 
@@ -208,7 +219,7 @@ a per-rollout objective cannot.
 Prediction 3 is **confirmed in direction, refuted in magnitude**: significant, and
 nowhere near enough to reach baseline.
 
-## 3b. Coverage loss tracks distance moved, not which reward
+## 3b. ~~Coverage loss tracks distance moved, not which reward~~ (REFUTED — see §3c)
 
 Plotting every arm's vote coverage against how far its policy actually moved:
 
@@ -245,14 +256,16 @@ consensus marginal being structurally anti-sharpening, and it is one point.
 KL ≈ 0.098 from arm C's own scaling KL ∝ lr^1.53). Two outcomes, both worth having:
 
 - lands at ~−60% → the fit is the whole story, the reward is irrelevant to
-  diversity, and it has to be targeted **explicitly** (an entropy or diversity term
-  — nothing tried so far contains one).
-- holds near −25% → the consensus marginal genuinely resists sharpening, and
-  scaling it up is the right direction.
+  diversity, and it has to be targeted **explicitly**.
+- holds near −25% → the consensus marginal genuinely resists sharpening.
 
-That run is in progress.
+**It landed at −6.4%** (§3c), refuting the fit outright. Every high-KL point in the
+fit contained the stepwise term, so "distance moved destroys diversity" was really
+"the stepwise term destroys diversity, and only the stepwise arms had moved far."
+This section is kept because the confound is an easy one to repeat: five points
+across four reward designs, R² = 0.95, and still wrong about the causal variable.
 
-## 3c. Arm C at arm S's step size: the first thing to beat baseline
+## 3c. Arm C at arm S's step size: the only arm to beat baseline on anything
 
 The decisive run above — arm C's reward at lr 4e-5, chosen to reach arm S's
 terminal KL — overshot to **KL 0.168**, the largest policy movement of any arm, and
@@ -397,7 +410,9 @@ Fix: normalise the novelty weights to mean 1 over the group's correct contacts, 
 the term redistributes (novel pays more, redundant less) with the average — and
 therefore the baseline — unchanged. Pinned by a test that asserts mean reward per
 correct contact equals `(1-p̄)` whatever the novelty distribution.
-`novelty_normalize=false` reproduces arm N. That run is in progress.
+`novelty_normalize=false` reproduces arm N. **Result in §3f: it helped
+significantly and not nearly enough** — R −0.0119 against arm N's −0.0157, coverage
+−55.5% against −59.4%, still far below baseline.
 
 ## 3f. The per-contact family forms a ladder, and none of it escapes
 
@@ -437,7 +452,7 @@ withholds an uncertain-but-true contact is penalised by the group's worse consen
 reward here that raised coverage-dependent metrics, and why it is the only one
 whose training trace shows `pred/gt` going **up**.
 
-## 4. Four instrumentation failures, none visible in the eval numbers
+## 4. Instrumentation failures, none visible in the eval numbers
 
 Each was found by asking whether a run did what its config claimed — not by reading
 its score.
@@ -470,29 +485,56 @@ here is unsharded.
 
 ## 5. What to run next
 
-1. ~~Re-run arms C and D at 10–100× the learning rate.~~ **Done.** Arm D v2 reached
-   terminal KL 0.0836 (arm S is 0.098) and scored −0.0083, significantly below
-   baseline; arm C v2 reached 0.0123 and stayed at baseline. Both document-level
-   arms are now tested, and neither improved the metric.
-2. **Attack diversity directly.** Every failure here reduces to the same thing —
-   the 100 rollouts become less informative as a committee, whether by emitting
-   less (arm S) or by emitting the same thing (arm D v2). No reward tried so far
-   targets diversity, and the consensus marginal, which comes closest, is the only
-   one that preserved it. An explicit diversity term, or the consensus marginal at
-   arm S's effective step size, is the untried direction.
-2. **Sweep `lam_doc` in the dense+consensus arm.** It is the only lever shown to
-   improve anything, and it demonstrably acts on the variable that sets the metric.
-3. **Normalise the advantage for sequence-level rewards.** Arm C's pass-through
-   estimator left its signal unnormalised; GRPO-style normalisation is the obvious
-   fix and explains part of the 4× gap to arm D.
+Everything below is what the evidence supports, in order.
+
+1. **Group-scored objectives, not per-contact ones.** This is the conclusion of
+   §3f. A p̄-centred per-contact reward is intrinsically a sharpening operator, and
+   the four arms in that family form a ladder (S → N → N2 → B v2) where every
+   increment of diversity-awareness helps and none escapes. The consensus marginal
+   is the only tested reward that scores a *rollout* for its contribution to the
+   group rather than a *contact* for being correct, and it is the only one that
+   preserved coverage. Variants worth trying are all of that shape: the marginal
+   against a larger group, a coverage-explicit group reward, or a marginal computed
+   on the eval's own 100-rollout scale rather than the training group of 16.
+2. **Settle whether more data helps, at a matched KL.** Arm C v4 confounded pool
+   size with KL runaway — it diverged (KL 3.96) rather than testing the 10,000-prompt
+   pool. The clean version is lr 1e-5 over 625 steps, landing near arm C v3's
+   KL ≈ 0.168 gradually. The dataset is built and staged
+   (`data/skyrl_train_10k.parquet`).
+3. **Find the KL sweet spot.** Arm C's three learning rates trace a curve — 0.0004
+   (nothing), 0.012 (nothing), 0.168 (AUC +0.0032), 3.96 (divergence). The useful
+   window is narrow and only three points wide; 2–3 more runs would locate it.
+
+Explicitly **not** recommended: more per-contact reward shaping. Four attempts, a
+clean monotone ladder, and none of them reaches baseline.
 
 ## 6. Limitations
 
-- One epoch over 2,000 prompts per arm, lr 1e-6, single seed. Arm-to-arm
+- **One epoch, one seed, 2,000 prompts per arm** (except C v4). Arm-to-arm
   differences are paired over 554 proteins and well-powered; absolute claims about
   what RL can achieve on this task are not supported by this budget.
-- The eval pipeline reproduces the baseline's published 0.6103 at **0.6111** using
-  exp82's worker and exp89's metric implementation, so the numbers are comparable to
-  the record. All scoring uses the published scripts, not re-derivations.
-- No arm improved the metric. The honest headline is a negative result plus one
-  significant intra-arm effect (consensus > no consensus, inside a dense reward).
+- **The AUC gain is one run.** Arm C v3's +0.0032 has not been replicated, and the
+  two attempts to extend it (more data, more steps) both failed. Treat it as a
+  located effect, not a robust one.
+- **Arm C v3 is a redistribution, not a uniform gain** (§3c): +0.0058 long-range
+  AUC against −0.0138 L/5 precision, the latter with a smaller p-value.
+- **No run used a KL penalty.** `init_kl_coef` was never set, which is why C v4
+  could diverge to 3.96 unchecked. A KL-regularised re-run of any of these arms
+  might behave quite differently and none was tried.
+- **Every number is from the published scoring path** — exp82's
+  `score_rollout_worker.py`, exp89's metric via `build_rollout_rows.py` — and the
+  pipeline reproduces the baseline's recorded 0.6103 at 0.6111. Nothing here is
+  scored by code written for this experiment.
+
+## 7. Conclusions that were wrong along the way
+
+Recorded because the corrections were more informative than the claims, and because
+each was caught by measurement rather than review.
+
+| claim | why it looked right | what refuted it |
+|---|---|---|
+| Arm S was length-gaming its reward | reward rose while response length hit the cap | contact tallies: it emitted *fewer* contacts (pred/gt 1.11 → 0.006); the length was a policy collapse from FSDP2 sharding |
+| Diversity loss depends only on how far the policy moves (R² = 0.95) | six arms, four reward designs, one clean line | arm C v3 at the largest KL of any run lost 6.4%, not the predicted 67% — every high-KL point in the fit shared the stepwise term |
+| Arm C v3 "beats baseline" | AUC +0.0032, p = 4e-05 | the band breakdown: L/5 precision −0.0138 at a *smaller* p-value; it redistributes |
+| Arm C's flat pred/gt showed the consensus term prevents shrinkage | pred/gt held 1.09–1.11 where arm S fell to 0.57 | terminal KL 0.00036 — the policy never moved. A policy that does not move does not shrink |
+| Novelty weighting would oppose sharpening | it pays more for contacts the group missed | it scaled the *positive* term down while the penalty stayed fixed, making `E[emit]` more negative and *strengthening* the shrink |
