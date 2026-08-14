@@ -47,7 +47,9 @@
 - Time limit: 14 days from the first production dispatch.
 - Regional replicas per trial: 1; represented as one shared CoreWeave run.
 - Maximum active compute: 640 GPUs.
-- Approved clusters: `cw-us-east-02a`, `cw-rno2a`, and `cw-us-east-08a`.
+- Approved clusters: `cw-us-east-02a` and `cw-rno2a`.
+- Unsupported cluster: `cw-us-east-08a`. Its GB200 workers are ARM, while the
+  locked CUDA 13 cuDNN version publishes only an x86_64 wheel.
 - Approved production node counts: 2, 4, 8, and 16, subject to the target grid.
 - Excluded cluster: `cw-us-west-04a`.
 - Priority band: `batch`.
@@ -100,11 +102,14 @@
 | `cw-rno2a` | `marin-us-east-02a` | H100 | 4 | 32 | `eligible` | — |
 | `cw-rno2a` | `marin-us-east-02a` | H100 | 8 | 64 | `eligible` | — |
 | `cw-rno2a` | `marin-us-east-02a` | H100 | 16 | 128 | `eligible` | — |
-| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 2 | 8 | `eligible` | — |
-| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 4 | 16 | `eligible` | — |
-| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 8 | 32 | `eligible` | — |
-| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 16 | 64 | `eligible` | — |
+| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 2 | 8 | `invalid` | locked CUDA 13 cuDNN wheel has no ARM build |
+| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 4 | 16 | `invalid` | locked CUDA 13 cuDNN wheel has no ARM build |
+| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 8 | 32 | `invalid` | locked CUDA 13 cuDNN wheel has no ARM build |
+| `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 16 | 64 | `invalid` | locked CUDA 13 cuDNN wheel has no ARM build |
 
 ## Change Record
 
-None.
+- 2026-08-14: Removed `cw-us-east-08a` from production eligibility after its
+  ARM root exposed that CUDA 13 cuDNN `9.26.0.28.dev61599045` publishes only an
+  x86_64 wheel. The H100 lock now pins that exact wheel URL directly, avoiding
+  correlated multi-node cold-start failures in NVIDIA's placeholder package.

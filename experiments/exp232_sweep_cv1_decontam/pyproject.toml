@@ -21,6 +21,10 @@ dependencies = [
 [project.optional-dependencies]
 gpu = [
     "marin-core[gpu]==0.2.73.dev30987879744; sys_platform == 'linux'",
+    # Bypass NVIDIA's PyPI placeholder package on x86 workers. Multi-node
+    # cold starts otherwise fail nondeterministically while the placeholder
+    # discovers this exact wheel from pypi.nvidia.com.
+    "nvidia-cudnn-cu13 @ https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl ; sys_platform == 'linux' and platform_machine == 'x86_64'",
     "torch==2.11.0",
     "torchvision==0.26.0",
 ]
