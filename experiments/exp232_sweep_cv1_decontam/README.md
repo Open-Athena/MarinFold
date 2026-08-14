@@ -40,13 +40,17 @@ unaugmented arm, leaving ten trials:
 m{1,2}-p{01,02,03,04,06}-aug
 ```
 
-`m1` samples AFDB and ESM equally. `m2` reads the completed caches' token totals
-and samples in corpus proportion. Validation remains the exp199 contacts-v1
-cache at
+`m1` samples AFDB and ESM equally. `m2` uses the pinned completed-cache token
+totals and samples 5.9522% AFDB / 94.0478% ESM; every launch verifies the live
+cache statistics match the pinned document and token counts exactly. Validation
+remains the exp199 contacts-v1 cache at
 `s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25`.
 
-Permanent checkpoints retain exp199's 14,520-step cadence plus the forced final
-save. Temporary checkpoints save every 15 minutes. Production runs share one
+The exp199 budget remains fixed at 152,253,235,200 training tokens, equal to
+2.0443 proportional passes over exp232's 74,475,864,003 source tokens. Evaluation
+uses half an exp232 AFDB epoch (2,216,470,419 tokens, or 2,114 steps). Permanent
+checkpoints retain exp199's 14,520-step cadence plus the forced final save, and
+temporary checkpoints save every 15 minutes. Production runs share one
 W&B/checkpoint identity across CoreWeave placement retries; never run two writers
 for one trial.
 
