@@ -105,16 +105,23 @@ The later sweep operator launches one selected trial at a time. This is the
 single-trial shape used for smoke validation; production placement is chosen by
 the sweep operator and always uses batch priority.
 
+The living autonomous-operations policy is tracked in
+[`exp232_cw_operations.md`](exp232_cw_operations.md); dynamic attempts,
+observations, and progress remain in its ignored SQLite ledger under `scratch/`.
+
 ```bash
 uv run iris --cluster marin job run \
   --target-cluster cw-us-east-02a \
   --priority batch \
   --user eczech \
   --job-name exp232-s01-m1-p06-aug-smoke \
+  --enable-extra-resources \
   --cpu 2 --memory 6GB --disk 32GB --extra gpu \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
+  -e WANDB_API_KEY "$WANDB_API_KEY" \
   -e WANDB_ENTITY open-athena \
   -e WANDB_PROJECT MarinFold \
+  -e HF_TOKEN "$HF_TOKEN" \
   -e TRIAL m1-p06-aug \
   -e CLUSTER cw-us-east-02a \
   -e NODES 1 \
