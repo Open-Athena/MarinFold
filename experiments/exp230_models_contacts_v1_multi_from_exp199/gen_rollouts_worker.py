@@ -188,7 +188,10 @@ def main() -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--targets", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--shard", required=True, help="i/N")
+    ap.add_argument("--shard", required=True,
+                    help="i/N, or a comma list i,j,k/N to run several shards in ONE "
+                         "process. Building the engine costs minutes, so a process per "
+                         "shard pays that once per SHARD instead of once per device.")
     ap.add_argument("--n-rollouts", type=int, default=24)
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--top-p", type=float, default=0.95)
@@ -197,18 +200,22 @@ def main() -> int:
     ap.add_argument("--max-num-seqs", type=int, default=256)
     ap.add_argument("--gpu-memory-utilization", type=float, default=0.90)
     ap.add_argument("--tensor-parallel-size", type=int, default=1)
+    ap.add_argument("--enforce-eager", action="store_true",
+                    help="skip inductor compilation. Slower per token, but immune to "
+                         "the compile-cache races that crash simultaneous engine starts")
     ap.add_argument("--skip-targets", default=None,
                     help="parquet of target_ids already generated ELSEWHERE. Per-shard "
                          "resume only sees this shard's own parts, so it cannot help "
-                         "when the target file is re-split and a protein moves shard; "
-                         "this does, and it is one read rather than a full listing.")
+                         "when the target file is re-split and a protein moves shard.")
     ap.add_argument("--chunk", type=int, default=32,
-                    help="proteins per generate() call. chunk x n_rollouts should be at\n"
+                    help="proteins per generate() call. chunk x n_rollouts should be at "
                          "least max_num_seqs, or the engine runs half empty")
-    ap.add_argument("--limit", type=int, default=None, help="smoke: first N targets of the shard")
+    ap.add_argument("--limit", type=int, default=None, help="smoke: first N targets per shard")
     a = ap.parse_args()
 
-    shard_i, num_shards = (int(x) for x in a.shard.split("/"))
+    shard_spec, num_shards_s = a.shard.rsplit("/", 1)
+    num_shards = int(num_shards_s)
+    shard_list = [int(x) for x in shard_spec.split(",") if x.strip()]
 
     from marinfold.document_structures.contacts_v1 import (
         GenerationConfig, build_document, residues_from_sequence,
@@ -217,27 +224,22 @@ def main() -> int:
 
     targets = read_parquet(a.targets).to_pylist()
     # Interleave the length-sorted order so every shard gets the same mix of
-    # short and long proteins; otherwise the long tail decides the job's wall
-    # clock (exp82's lesson, and it costs nothing).
+    # short and long proteins; otherwise the long tail decides the wall clock
+    # (exp82's lesson, and it costs nothing). It also means any PREFIX of the
+    # fleet is a uniform sample, so a partial run is unbiased.
     targets.sort(key=lambda r: (r["L"], r["target_id"]))
-    mine = [r for k, r in enumerate(targets) if k % num_shards == shard_i]
-    done = existing_target_ids(a.out, shard_i)
+    print(f"[gen] {len(targets):,} targets | shards {shard_list} of {num_shards}", flush=True)
+
+    prior: set[str] = set()
     if a.skip_targets:
         prior = set(read_parquet(a.skip_targets, columns=["target_id"])
                     .column("target_id").to_pylist())
-        n_before = len(mine)
-        mine = [r for r in mine if r["target_id"] not in prior]
-        print(f"[gen] skip-list: {n_before - len(mine):,} of {n_before:,} targets already "
-              f"generated elsewhere ({len(prior):,} in the list)", flush=True)
-    if done:
-        print(f"[gen] resuming: {len(done):,} of {len(mine):,} targets already written", flush=True)
-        mine = [r for r in mine if r["target_id"] not in done]
-    if a.limit:
-        mine = mine[: a.limit]
-    print(f"[gen] shard {shard_i}/{num_shards}: {len(mine):,} targets to generate", flush=True)
-    if not mine:
-        return 0
+        print(f"[gen] skip-list: {len(prior):,} target_ids generated elsewhere", flush=True)
 
+    # ONE engine for ALL this process's shards. Building it costs minutes (weight
+    # load plus inductor compile); a process per shard paid that once per shard,
+    # and simultaneous starts raced on the compile cache -- which is what killed
+    # 5 of 8 GPUs on the first launch of this fleet.
     model_dir = stage_model(a.model, Path("/tmp/exp230_model"))
     llm = LLM(
         model=model_dir,
@@ -245,121 +247,131 @@ def main() -> int:
         gpu_memory_utilization=a.gpu_memory_utilization,
         tensor_parallel_size=a.tensor_parallel_size,
         max_num_seqs=a.max_num_seqs,
-        enforce_eager=False,
+        enforce_eager=a.enforce_eager,
         trust_remote_code=False,
     )
     tok = llm.get_tokenizer()
     end_id = tok.convert_tokens_to_ids("<end>")
     if end_id is None or end_id < 0:
-        raise SystemExit("tokenizer has no <end> token — wrong tokenizer shipped with the model")
-    print(f"[gen] <end> id={end_id} vocab={len(tok)}", flush=True)
+        raise SystemExit("tokenizer has no <end> token -- wrong tokenizer shipped with the model")
+    print(f"[gen] <end> id={end_id} vocab={len(tok)} eager={a.enforce_eager}", flush=True)
 
     fs = fs_for(a.out)
-    rows: list[dict] = []
-    part = 0
-    t_start = time.time()
-    n_done = 0
 
-    def flush():
-        nonlocal rows, part
-        if not rows:
+    def run_shard(shard_i: int) -> None:
+        mine = [r for k, r in enumerate(targets) if k % num_shards == shard_i]
+        n0 = len(mine)
+        if prior:
+            mine = [r for r in mine if r["target_id"] not in prior]
+        done = existing_target_ids(a.out, shard_i)
+        if done:
+            mine = [r for r in mine if r["target_id"] not in done]
+        if a.limit:
+            mine = mine[: a.limit]
+        print(f"[gen] shard {shard_i}/{num_shards}: {len(mine):,} of {n0:,} to generate",
+              flush=True)
+        if not mine:
             return
-        uri = f"{a.out.rstrip('/')}/shard-{shard_i:04d}-part-{part:04d}.parquet"
-        table = pa.Table.from_pylist(rows, schema=SCHEMA)
-        # S3 creates prefixes implicitly; a local filesystem does not, and the
-        # local path is the one the smoke test uses.
-        fs.makedirs(a.out.rstrip("/"), exist_ok=True)
-        with fs.open(uri, "wb") as fh:
-            pq.write_table(table, fh)
-        print(f"[gen] wrote {len(rows):,} rows -> {uri}", flush=True)
-        rows = []
-        part += 1
 
-    # Start the part counter past anything already on disk so a resume cannot
-    # overwrite a completed part.
-    try:
-        part = 1 + max(
-            (int(p.rsplit("-", 1)[-1].split(".")[0])
-             for p in fs.glob(f"{a.out.rstrip('/')}/shard-{shard_i:04d}-part-*.parquet")),
-            default=-1,
-        )
-    except FileNotFoundError:
-        part = 0
+        rows: list[dict] = []
+        # Start the part counter past anything on disk so a resume cannot
+        # overwrite a completed part.
+        try:
+            part = 1 + max(
+                (int(q.rsplit("-", 1)[-1].split(".")[0])
+                 for q in fs.glob(f"{a.out.rstrip('/')}/shard-{shard_i:04d}-part-*.parquet")),
+                default=-1,
+            )
+        except FileNotFoundError:
+            part = 0
 
-    # Generate CHUNK proteins at a time, not one. One protein is only
-    # `n_rollouts` prompts (12), against an engine configured for hundreds of
-    # concurrent sequences -- so a per-protein call fills ~2-5 % of the batch and
-    # the accelerator idles between calls. Grouping proteins is what exp82's
-    # worker did (`--chunk 8` x 100 rollouts = 800 prompts a call) and it is the
-    # difference between using the device and merely occupying it.
-    #
-    # max_tokens is per-protein (6L+128), so SamplingParams is a LIST aligned
-    # with prompts -- vLLM accepts that and it is why proteins of different
-    # lengths can share one call.
-    for s0 in range(0, len(mine), a.chunk):
-        group = mine[s0: s0 + a.chunk]
-        prompts: list[str] = []
-        params: list = []
-        per: list[tuple[dict, int, list[int]]] = []   # (rec, first prompt idx, nterms)
-        for rec in group:
-            L = int(rec["L"])
-            residues = residues_from_sequence(rec["sequence"])
-            first, nterms = len(prompts), []
-            for k in range(a.n_rollouts):
-                # A fresh realization per rollout: resampled N-terminus and
-                # statement order. exp82's "resample" half of the recipe -- free,
-                # and all realizations of a protein share a prefix length.
-                built = build_document(f"{rec['target_id']}:r{k}", residues, [],
-                                       config=GenerationConfig())
-                if built is None:
+        def flush() -> None:
+            nonlocal rows, part
+            if not rows:
+                return
+            uri = f"{a.out.rstrip('/')}/shard-{shard_i:04d}-part-{part:04d}.parquet"
+            fs.makedirs(a.out.rstrip("/"), exist_ok=True)
+            with fs.open(uri, "wb") as fh:
+                pq.write_table(pa.Table.from_pylist(rows, schema=SCHEMA), fh)
+            print(f"[gen] wrote {len(rows):,} rows -> {uri}", flush=True)
+            rows = []
+            part += 1
+
+        t0 = time.time()
+        n_done = 0
+        # Generate CHUNK proteins at a time. One protein is only n_rollouts
+        # prompts, against an engine configured for hundreds of concurrent
+        # sequences, so a per-protein call fills a few percent of the batch and
+        # the device idles between calls. max_tokens is per-protein, so
+        # SamplingParams is a LIST aligned with prompts.
+        for s0 in range(0, len(mine), a.chunk):
+            group = mine[s0: s0 + a.chunk]
+            prompts: list[str] = []
+            params: list = []
+            per: list[tuple[dict, int, list[int]]] = []
+            for rec in group:
+                L = int(rec["L"])
+                residues = residues_from_sequence(rec["sequence"])
+                first, nterms = len(prompts), []
+                for k in range(a.n_rollouts):
+                    # Fresh realization per rollout: resampled N-terminus and
+                    # statement order -- exp82's "resample" half of the recipe.
+                    built = build_document(f"{rec['target_id']}:r{k}", residues, [],
+                                           config=GenerationConfig())
+                    if built is None:
+                        continue
+                    doc = built.document
+                    prompts.append(doc[: doc.index(BEGIN) + len(BEGIN)])
+                    nterms.append(built.n_term_index)
+                if not nterms:
                     continue
-                doc = built.document
-                prompts.append(doc[: doc.index(BEGIN) + len(BEGIN)])
-                nterms.append(built.n_term_index)
-            if not nterms:
-                print(f"[gen] WARN {rec['target_id']}: no realization built", flush=True)
+                plen = len(tok(prompts[first], add_special_tokens=False).input_ids)
+                max_new = min(a.max_model_len - plen, 6 * L + 128)
+                params += [SamplingParams(
+                    temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
+                    max_tokens=max_new, n=1,
+                    # <end> terminates a document, and the position/residue/contact
+                    # tokens are all "special" in this vocab -- detokenising with
+                    # skip_special_tokens would return an EMPTY string and every
+                    # rollout would silently parse to zero contacts.
+                    stop_token_ids=[end_id], skip_special_tokens=False,
+                )] * len(nterms)
+                per.append((rec, first, nterms))
+            if not prompts:
                 continue
-            plen = len(tok(prompts[first], add_special_tokens=False).input_ids)
-            max_new = min(a.max_model_len - plen, 6 * L + 128)
-            params += [SamplingParams(
-                temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
-                max_tokens=max_new, n=1,
-                # <end> terminates a document, and the position/residue/contact
-                # tokens are all "special" in this vocab -- detokenising with
-                # skip_special_tokens would return an EMPTY string and every
-                # rollout would silently parse to zero contacts.
-                stop_token_ids=[end_id], skip_special_tokens=False,
-            )] * len(nterms)
-            per.append((rec, first, nterms))
-        if not prompts:
-            continue
-        outs = llm.generate(prompts, params, use_tqdm=False)
-        for rec, first, nterms in per:
-            L = int(rec["L"])
-            gt = {(int(i), int(j)) for i, j in rec["gt_contacts"]}
-            for r, nterm in enumerate(nterms):
-                comp = outs[first + r].outputs[0]
-                pred = parse_pred(comp.text, nterm, L)
-                tp, precision, recall, f1 = score(pred, gt)
-                rows.append({
-                    "target_id": rec["target_id"], "arm": rec["arm"],
-                    "entry_id": rec["entry_id"], "r": r, "L": L,
-                    "n_gen_tokens": len(comp.token_ids),
-                    "finished": comp.finish_reason == "stop",
-                    "n_pred": len(pred),
-                    "pred": [int(v) for pair in pred for v in pair],
-                    "n_gt": len(gt), "tp": tp,
-                    "precision": precision, "recall": recall, "f1": f1,
-                })
-            n_done += 1
-        if n_done % FLUSH_EVERY < a.chunk:
-            flush()
-            rate = n_done / max(time.time() - t_start, 1)
-            print(f"[gen] {n_done:,}/{len(mine):,} targets, {rate * 3600:.0f}/h "
-                  f"({len(prompts)} prompts/call)", flush=True)
-    flush()
-    print(f"[gen] shard {shard_i} done: {n_done:,} targets in "
-          f"{(time.time() - t_start) / 60:.1f} min", flush=True)
+            outs = llm.generate(prompts, params, use_tqdm=False)
+            for rec, first, nterms in per:
+                L = int(rec["L"])
+                gt = {(int(i), int(j)) for i, j in rec["gt_contacts"]}
+                for r, nterm in enumerate(nterms):
+                    comp = outs[first + r].outputs[0]
+                    pred = parse_pred(comp.text, nterm, L)
+                    tp, precision, recall, f1 = score(pred, gt)
+                    rows.append({
+                        "target_id": rec["target_id"], "arm": rec["arm"],
+                        "entry_id": rec["entry_id"], "r": r, "L": L,
+                        "n_gen_tokens": len(comp.token_ids),
+                        "finished": comp.finish_reason == "stop",
+                        "n_pred": len(pred),
+                        "pred": [int(v) for pair in pred for v in pair],
+                        "n_gt": len(gt), "tp": tp,
+                        "precision": precision, "recall": recall, "f1": f1,
+                    })
+                n_done += 1
+            if n_done % FLUSH_EVERY < a.chunk:
+                flush()
+                rate = n_done / max(time.time() - t0, 1)
+                print(f"[gen] shard {shard_i}: {n_done:,}/{len(mine):,}, {rate * 3600:.0f}/h "
+                      f"({len(prompts)} prompts/call)", flush=True)
+        flush()
+        print(f"[gen] shard {shard_i} done: {n_done:,} targets in "
+              f"{(time.time() - t0) / 60:.1f} min", flush=True)
+
+    for shard_i in shard_list:
+        try:
+            run_shard(shard_i)
+        except Exception as exc:  # noqa: BLE001 -- one bad shard must not end the process
+            print(f"[gen] ERROR shard {shard_i}: {type(exc).__name__}: {exc}", flush=True)
     return 0
 
 
