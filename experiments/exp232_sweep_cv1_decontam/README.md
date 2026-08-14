@@ -59,7 +59,7 @@ the boundary explicitly.
 
 Before the full run, exercise the same HF-to-S3 and Marin tokenization paths on
 the smallest parquet shard from each corpus. `--smoke-test` writes only below
-`tmp/tokenization-smoke/2026.08.14`, derives the expected document counts from
+`tmp/tokenization-smoke/2026.08.14.1`, derives the expected document counts from
 the mirrored parquet footers, and requires each output cache to contain exactly
 that many documents. The fixed prefix makes this command safely resumable.
 
@@ -69,7 +69,8 @@ uv run iris --cluster marin job run \
   --priority batch \
   --user eczech \
   --job-name exp232-tokenize-smoke \
-  --cpu 4 --memory 16GB --disk 32GB --extra cpu \
+  --enable-extra-resources \
+  --cpu 4 --memory 16GB --disk 32GB \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
   -e HF_TOKEN "$HF_TOKEN" \
   -- python exp232_tokenize.py --smoke-test
@@ -87,7 +88,8 @@ uv run iris --cluster marin job run \
   --priority batch \
   --user eczech \
   --job-name exp232-tokenize \
-  --cpu 4 --memory 16GB --disk 32GB --extra cpu \
+  --enable-extra-resources \
+  --cpu 4 --memory 16GB --disk 32GB \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
   -e HF_TOKEN "$HF_TOKEN" \
   -- python exp232_tokenize.py
@@ -118,7 +120,14 @@ uv run iris --cluster marin job run \
 
 ## Results
 
-Pending tokenization and sweep execution.
+The isolated tokenization smoke test completed successfully on `cw-rno2a` on
+2026-08-14 as Iris job `/eczech/exp232-tokenize-smoke-v3` (exit 0, 4m34s):
+
+- AFDB: 971 input documents, 971 cached documents, 833,682 tokens.
+- ESM Atlas: 19,624 input documents, 19,624 cached documents, 20,498,326
+  tokens.
+
+Full tokenization and sweep execution remain pending review.
 
 ## Conclusion
 
