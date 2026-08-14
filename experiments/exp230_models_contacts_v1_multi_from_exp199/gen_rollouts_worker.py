@@ -133,7 +133,29 @@ def score(pred: list[tuple[int, int]], gt: set[tuple[int, int]]) -> tuple[int, f
     return tp, precision, recall, f1
 
 
+def with_scheme(path: str, like: str) -> str:
+    """Re-attach ``like``'s URI scheme to a bare path returned by ``fs.glob``.
+
+    fsspec's ``glob`` strips the protocol, so a GCS listing comes back as
+    ``bucket/key`` with no ``gs://``.  Hardcoding a scheme here is the bug this
+    function exists to prevent: re-attaching ``s3://`` to a GCS key produced a
+    URI that resolved to a different filesystem, every read raised, the failure
+    was swallowed by the resume path's ``except``, and resume silently became a
+    no-op -- on a *preemptible* pool, where a shard killed at 90 % then redoes
+    the entire shard.
+    """
+    if "://" in path or "://" not in like:
+        return path
+    return f"{like.split('://', 1)[0]}://{path}"
+
+
 def existing_target_ids(out_uri: str, shard_i: int) -> set[str]:
+    """Target ids already written for this shard, so a restart resumes.
+
+    A part that cannot be read is skipped but LOUD: the only benign cause is a
+    write truncated by a preemption, and any other cause means work is about to
+    be redone silently.
+    """
     fs = fs_for(out_uri)
     pattern = f"{out_uri.rstrip('/')}/shard-{shard_i:04d}-part-*.parquet"
     try:
@@ -141,12 +163,19 @@ def existing_target_ids(out_uri: str, shard_i: int) -> set[str]:
     except FileNotFoundError:
         return set()
     done: set[str] = set()
+    n_bad = 0
     for part in parts:
-        uri = part if "://" in part else f"s3://{part}"
+        uri = with_scheme(part, out_uri)
         try:
             done |= set(read_parquet(uri, columns=["target_id"]).column("target_id").to_pylist())
         except Exception as exc:  # a part truncated by a preemption mid-write
-            print(f"[gen] WARN unreadable part {uri}: {exc}", flush=True)
+            n_bad += 1
+            print(f"[gen] WARN unreadable part {uri}: {type(exc).__name__}: {exc}", flush=True)
+    if parts and not done:
+        print(f"[gen] WARN {len(parts)} part(s) found but NONE readable -- resume is "
+              "not working and this shard is about to redo its work", flush=True)
+    elif n_bad:
+        print(f"[gen] {n_bad}/{len(parts)} part(s) unreadable (truncated writes)", flush=True)
     return done
 
 
