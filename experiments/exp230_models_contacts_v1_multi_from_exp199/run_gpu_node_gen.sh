@@ -1,32 +1,14 @@
 #!/bin/bash
-# exp230 rollout generation on a standalone 8-GPU node (8x A100-80GB).
+# exp230 rollout generation on 8x A100-80GB.
 #
-# Not an iris job: this node is a plain SSH box, so the fan-out is 8 local
-# processes rather than 8 pods. Used because the marin v5p-16 pool sat at zero
-# ready / zero booting / zero registered demand while training queued on it, and
-# because the v6e pool preempts hard.
+# ONE process per GPU, ONE engine each, walking that GPU's whole shard list.
+# A process per shard rebuilt the engine every time (128 builds) and eight
+# simultaneous builds raced on the inductor compile cache. --enforce-eager
+# removes the compile path entirely.
 #
-# FOUR things here were each learned the expensive way:
-#
-#  1. ONE engine per GPU, walking that GPU's whole shard list. A process per
-#     shard rebuilt the engine every time -- 128 builds across the fleet -- and
-#     eight simultaneous builds raced on the inductor compile cache, killing 5
-#     of 8 GPUs at init. Each then silently advanced to its next shard, so
-#     shards were skipped at speed while every GPU read 0% utilisation.
-#  2. --enforce-eager removes the compile path entirely, which removes that race
-#     and minutes of startup, at a modest per-token cost.
-#  3. vLLM RENAMES its child to "VLLM::EngineCore", so pkill on the worker name
-#     kills parents and orphans engines holding ~74 GB each. vLLM sizes its KV
-#     cache from FREE memory at startup, so the next launch then fails all 8
-#     engines at once. Kill CUDA holders BY PID from nvidia-smi, and refuse to
-#     start if the GPUs have not drained.
-#  4. chunk x n_rollouts must reach max_num_seqs. One protein is only n_rollouts
-#     prompts; a per-protein generate() call filled ~2% of the batch.
-#
-# NOT tensor-parallel: a 1.5B model fits one A100 with room to spare, so eight
+# NOT tensor-parallel: a 1.5B model fits one A100 with room to spare, so 8
 # independent engines give 8x the batch concurrency and no cross-GPU traffic.
-#
-#     MAXSHARD=64 ./run_gpu_node_gen.sh     # leave shards 64+ to the TPU fleet
+# chunk x n_rollouts = 512 fills max_num_seqs exactly.
 set -u
 NSHARDS=${NSHARDS:-128}
 MAXSHARD=${MAXSHARD:-128}    # exclusive; shards at or above this belong to the TPU fleet
@@ -68,12 +50,17 @@ cd $HOME/MarinFold/experiments/exp230_models_contacts_v1_multi_from_exp199
 for (( g=0; g<NGPU; g++ )); do
   LIST=$(python3 -c "print(','.join(str(s) for s in range($g, $MAXSHARD, $NGPU)))")
   [ -z "$LIST" ] && continue
+  # Per-GPU compile cache: sharing one cache is what made eight simultaneous
+  # engine builds race and killed 5 of 8 GPUs. With the cache split, compilation
+  # is safe -- and measured 23% faster than --enforce-eager on identical work
+  # (200 proteins: 1.0 min compiled vs 1.3 min eager, same GPU).
+  export VLLM_CACHE_ROOT=$HOME/.vllm_cache_g$g
   CUDA_VISIBLE_DEVICES=$g setsid nohup $HOME/exp230_vllm/bin/python gen_rollouts_worker.py \
     --model $HOME/exp230_data/model/exp199 \
     --targets $HOME/exp230_data/targets_multi.parquet \
     --out $OUT --shard "$LIST/$NSHARDS" \
     --n-rollouts $ROLL --chunk $CHUNK --max-num-seqs $MAXSEQ \
-    --gpu-memory-utilization 0.90 --tensor-parallel-size 1 --enforce-eager \
+    --gpu-memory-utilization 0.90 --tensor-parallel-size 1 \
     > $HOME/exp230_logs/gpu$g.log 2>&1 &
   echo "GPU $g -> shards $LIST"
   sleep 3
