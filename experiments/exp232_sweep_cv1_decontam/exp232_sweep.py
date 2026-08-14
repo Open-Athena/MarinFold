@@ -10,6 +10,8 @@ so one writer can resume on another production CoreWeave cluster.
 
 import os
 import re
+import sys
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, fields, replace
 from datetime import timedelta
@@ -19,8 +21,10 @@ from typing import Self
 import click
 import jax
 import numpy as np
-from fray.types import ResourceConfig
+from fray.current_client import current_client
+from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
 from haliax import Axis
+from iris.cluster.setup_scripts import cuda_toolchain_setup_script, default_setup_script
 from jaxtyping import PRNGKeyArray
 from levanter.callbacks.watch import WatchConfig
 from levanter.data.dataset import AsyncDataset
@@ -38,7 +42,16 @@ from marin.experiment.cli import build_options
 from marin.experiment.train import train_lm
 from marin.processing.tokenize.cache_stats import read_tokenized_cache_stats
 from marin.processing.tokenize.tokenize import TokenizedCache
-from marin.training.training import LevanterCheckpoint
+from marin.training.run_environment import (
+    dependency_groups_for_resources,
+    env_vars_for_dependency_groups,
+)
+from marin.training.training import (
+    LevanterCheckpoint,
+    TrainLmOnPodConfig,
+    resolve_training_env,
+    run_levanter_train_lm,
+)
 from rigging.filesystem import marin_prefix, marin_temp_bucket
 
 # --- Identity and storage ---------------------------------------------------
@@ -48,6 +61,12 @@ TOKENIZER = "eczech/contacts-v1-tokenizer-5d68a24a899f"
 VOCAB_SIZE = 2845
 TEXT_KEY = "document"
 CACHE_VERSION = "2026.08.14"
+
+CUDNN_WHEEL = (
+    "https://pypi.nvidia.com/nvidia-cudnn-cu13/"
+    "nvidia_cudnn_cu13-9.26.0.17.dev59162438-"
+    "py3-none-manylinux_2_27_x86_64.whl"
+)
 
 EXPERIMENT_PREFIX = "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam"
 TOKENIZED_PREFIX = f"{EXPERIMENT_PREFIX}/tokenized/contacts_v1"
@@ -113,6 +132,58 @@ CONTACTS_V1_TOKEN_IDS = {
     "<begin_sequence>": 8,
     "<begin_statements>": 9,
 }
+
+
+def _pinned_cuda_toolchain_setup_script() -> str:
+    """Keep Iris's CUDA precedence repair deterministic for the locked cuDNN."""
+    script = cuda_toolchain_setup_script()
+    install_marker = '    uv pip install --python "$IRIS_VENV/bin/python" \\\n'
+    package_marker = '      "$_cuda13_package==$_cuda13_version"'
+    if script.count(install_marker) != 1 or script.count(package_marker) != 1:
+        raise ValueError("Iris CUDA setup script changed; update the exp232 pin")
+    choose_spec = f"""    if [ "$_cuda13_package" = "nvidia-cudnn-cu13" ]; then
+      _cuda13_spec={CUDNN_WHEEL!r}
+    else
+      _cuda13_spec="$_cuda13_package==$_cuda13_version"
+    fi
+"""
+    return script.replace(install_marker, choose_spec + install_marker).replace(
+        package_marker,
+        '      "$_cuda13_spec"',
+    )
+
+
+def _run_exp232_train_job(pod_config: TrainLmOnPodConfig) -> None:
+    """Dispatch training with the normal GPU setup plus the pinned cuDNN repair."""
+    env_vars = resolve_training_env(pod_config.env_vars, pod_config.resources)
+    dependency_groups = dependency_groups_for_resources(pod_config.resources, None)
+    child_env = env_vars_for_dependency_groups(
+        pod_config.resources,
+        dependency_groups,
+        env_vars,
+    )
+    setup_scripts = [
+        default_setup_script(
+            extras=dependency_groups,
+            python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
+        ),
+        _pinned_cuda_toolchain_setup_script(),
+    ]
+    handle = current_client().submit(
+        JobRequest(
+            name=f"run_levanter_train_lm-{uuid.uuid4().hex[:8]}",
+            entrypoint=Entrypoint.from_callable(
+                lambda: run_levanter_train_lm(pod_config)
+            ),
+            resources=pod_config.resources,
+            environment=create_environment(
+                extras=dependency_groups,
+                env_vars=child_env,
+                setup_scripts=setup_scripts,
+            ),
+        )
+    )
+    handle.wait(raise_on_failure=True)
 
 
 @dataclass(frozen=True)
@@ -764,7 +835,11 @@ def _apply_recipe_overrides(
         )
         return replace(pod, train_config=train_config)
 
-    return replace(step, build_config=build_config)
+    return replace(
+        step,
+        build_config=build_config,
+        run=_run_exp232_train_job,
+    )
 
 
 def build_run(

@@ -658,6 +658,7 @@ dependencies = [
 gpu = [
     { name = "marin-core", extra = ["gpu"], marker = "sys_platform == 'linux'" },
     { name = "nvidia-cudnn-cu13", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "nvidia-nccl-cu13", marker = "sys_platform == 'linux'" },
     { name = "torch", marker = "sys_platform == 'linux'" },
     { name = "torchvision", marker = "sys_platform == 'linux'" },
 ]
@@ -676,7 +677,8 @@ requires-dist = [
     { name = "marin-finelog-server", specifier = "==0.2.22.dev31066648311" },
     { name = "marin-iris", specifier = "==0.2.73.dev30987879744" },
     { name = "marin-iris-native", specifier = "==0.1.5.dev30223685542" },
-    { name = "nvidia-cudnn-cu13", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'gpu'", url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl" },
+    { name = "nvidia-cudnn-cu13", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'gpu'", url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_x86_64.whl" },
+    { name = "nvidia-nccl-cu13", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==2.30.7" },
     { name = "s3fs" },
     { name = "torch", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "exp232-models-sweep-cv1-decontam", extra = "gpu" } },
     { name = "torch", marker = "sys_platform != 'linux' and extra == 'gpu'", specifier = "==2.11.0" },
@@ -2116,14 +2118,14 @@ wheels = [
 
 [[package]]
 name = "nvidia-cudnn-cu13"
-version = "9.26.0.28.dev61599045"
-source = { url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl" }
+version = "9.26.0.17.dev59162438"
+source = { url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_x86_64.whl" }
 dependencies = [
     { name = "nvidia-cublas", marker = "sys_platform == 'linux'" },
     { name = "nvidia-cuda-nvrtc", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
-    { url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:79c2d9a9f9748b1be0160af1f749737e2b16277615968d520d53e01bd1130963" },
+    { url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:8a700e1e2877f514212aa64dc35b6b7c36fc782b06bb563db85a0328c553eef2" },
 ]
 
 [package.metadata]
@@ -2329,11 +2331,11 @@ wheels = [
 
 [[package]]
 name = "nvidia-nccl-cu13"
-version = "2.31.2"
+version = "2.30.7"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/a0/530efd7db8857c0436868bb7df9764f09fde2bd4d1f0bae546eec9fc40d0/nvidia_nccl_cu13-2.31.2-py3-none-manylinux_2_18_aarch64.whl", hash = "sha256:b5563f8e2534f363d93ace022670ba016d3717e190ac4eba564d05fbbe8495b1", size = 252479893, upload-time = "2026-08-11T23:22:01.53Z" },
-    { url = "https://files.pythonhosted.org/packages/14/fb/94933e00bb3dcfdf66ea3456739c6a51d322353f7cc64fa1f5f660e695ac/nvidia_nccl_cu13-2.31.2-py3-none-manylinux_2_18_x86_64.whl", hash = "sha256:0bcaf0308854cb55fcc35af72e2c83143f3b71e65a4e865e2c586b1cdcdb5ae0", size = 252442223, upload-time = "2026-08-11T23:22:40.341Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/21/a73174c6157101bdf1ffc22b517f76ff0082613989dd9bc8f43e8034caac/nvidia_nccl_cu13-2.30.7-py3-none-manylinux_2_18_aarch64.whl", hash = "sha256:ca786ffa5a647c75d4d1f5cc72a6c4f537947e2ba8823d7c8aaf768e7a7b9f77", size = 215983881, upload-time = "2026-06-09T03:23:15.633Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/34/c500f90c7ae641b8e0f98965b36b8a7ac79cc8b296e8d251fe3eb592ee54/nvidia_nccl_cu13-2.30.7-py3-none-manylinux_2_18_x86_64.whl", hash = "sha256:cefa7fdb9710efd0f39c5f1be1d61ff6fc9a996c451265bd7fbdcf9455ed4b50", size = 215965170, upload-time = "2026-06-09T03:23:39.73Z" },
 ]
 
 [[package]]
