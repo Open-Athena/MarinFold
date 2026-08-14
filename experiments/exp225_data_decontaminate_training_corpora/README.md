@@ -158,6 +158,9 @@ workstation, and #41's Foldseek DB on the HF bucket.
 | `identity_droplist.py` | Prices a pure "≥ 30 % identity" rule, over one reference or the union of several. |
 | `structure_droplist.py` | **Stage 2b** — Foldseek the 554 against #41's representative DB → per-cluster drop list. |
 | `survival.py` | **Stage 3** — per-tier survival and the per-axis decomposition. |
+| `filter_corpus.py` | **Stage 4** — row-filter a corpus by the drop list, preserving shard numbering, row order and the source parquet codec. |
+| `verify_published.py` | Read the *published* prefix back and prove no dropped `entry_id` survives. |
+| `validate_droplist.py` | Prove the drop list names real corpus rows before anything is filtered with it. |
 | `plot_decontam.py` | The four figures. |
 | `tests/test_decontam.py` | Pure unit tests for the three places a bug would silently *under*-filter. |
 
@@ -174,7 +177,26 @@ uv run python structure_droplist.py --work $WORK        # hours; TM-align over 1
 uv run python sweep_evalue.py       --work $WORK
 uv run python survival.py           --work $WORK
 uv run python plot_decontam.py && uv run python build_summary.py
+
+# Stage 4 — rebuild and publish (run the upload where the bandwidth is)
+uv run python identity_droplist.py \
+    --reference eval554=$WORK/aln_all_hits.m8 \
+    --reference foldbench_all=$WORK/foldbench_all/aln_all_hits.m8 \
+    --coverage-mode shorter --droplist-out $WORK/droplist_final.parquet
+uv run python validate_droplist.py --arm afdb --droplist $WORK/droplist_final.parquet
+uv run python filter_corpus.py --arm afdb
+hf buckets sync $WORK/contacts_v1_decontam \
+    hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1_decontam/train
+uv run python verify_published.py --arm afdb
 ```
+
+The ESM-Atlas arm is the same three commands with `--arm esm_atlas`. Its 130.7 GB
+upload is the only part that is not comfortable on a workstation: this one's
+uplink measures 2.45 MB/s (and 3 parallel streams give 2.48 MB/s aggregate — it is
+the physical link, not concurrency), so publishing it locally would take ~15 hours
+against ~25 minutes from a well-connected host. Reads cap out around 40 MB/s
+either way, authenticated or not, so the *filter* takes ~70 minutes wherever it
+runs.
 
 `build_reference.py` cross-checks its FASTA against #213's committed copy.
 #213 is still on a branch ([PR #216](https://github.com/Open-Athena/MarinFold/pull/216)),
@@ -186,9 +208,10 @@ git show origin/claude/eval-sequence-overlap-analysis-33a77a:experiments/exp213_
 
 ## Results
 
-Stages 1–3 are complete. Stage 4 (republish) and Stage 5 (retrain) are not
-started — they were gated on the numbers below, and the numbers change what is
-worth doing.
+Stages 1–4 are complete: the reference is pinned, both drop lists are built, the
+tiers are priced, and both corpora are rebuilt and published. Stage 5 (the
+retrain) has not started — it is the actual test of H1, and nothing here
+measures accuracy.
 
 ### 0. The reference is pinned, and the drop list is verified rather than trusted
 
@@ -385,6 +408,57 @@ Either way the conclusion is unchanged: **even the widest reference and the
 most permissive coverage gate leave 96–98 % of the training data intact**,
 against the 37 % Tier C alone would delete from AFDB.
 
+### 6. Stage 4 — both corpora rebuilt and published
+
+The rule the rebuild applies is the one from §5: **≥ 30 % identity covering
+≥ 50 % of the shorter sequence, against the 554 ∪ all of FoldBench, with no
+E-value arm.** Sequence axis only — the structural tiers are measured above but
+not applied (Tier C was declined at 37 %, and Tier B's 0.54 % was not worth
+coupling this build to a second axis).
+
+| corpus | before | removed | **after** | size |
+| --- | ---: | ---: | ---: | ---: |
+| [`contacts_v1_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_decontam) | 4,129,682 | 166,679 (4.04 %) | **3,963,003** | 12.1 GB |
+| [`contacts_v1_esm_atlas_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_esm_atlas_decontam) | 66,759,922 | 1,206,744 (1.81 %) | **65,553,178** | 130.7 GB |
+
+Published as **new prefixes**; the originals are untouched, so every existing
+checkpoint stays reproducible against the corpus it actually saw. The pinned
+reference and the exact drop list applied are under
+`data/decontamination/contacts_v1_eval_reference/v1/`.
+
+**The rebuild is a row filter and nothing else.** One output shard per input
+shard, same index, same name, rows in the same order, same parquet codec — so
+the surviving documents are byte-identical to the originals and both corpora's
+physical ordering survives (AFDB's round-descending layout from #53,
+ESM-Atlas's 1:1 correspondence with its source parts from #139). Shards simply
+come out slightly smaller and uneven.
+
+**Verified on the bucket, not on the build.**
+[`verify_published.py`](verify_published.py) reads the `entry_id` column back
+off every published shard and checks it against the drop list — not against the
+filter's own output ([`data/published_verification_afdb.json`](data/published_verification_afdb.json),
+[`data/published_verification_esm_atlas.json`](data/published_verification_esm_atlas.json)):
+
+| check | AFDB | ESM-Atlas |
+| --- | --- | --- |
+| shards missing | 0 of 2,067 | 0 of 3,338 |
+| rows found = expected | ✓ 3,963,003 | ✓ 65,553,178 |
+| **contaminated rows surviving** | **0** | **0** |
+| `entry_id` still unique | ✓ | ✓ |
+
+Two things that cost real time and are worth writing down:
+
+- **The parquet codec differs between the two corpora** — AFDB is SNAPPY,
+  ESM-Atlas is ZSTD — and assuming SNAPPY for both inflated the ESM-Atlas
+  rebuild from 130.7 GB to **191 GB**, for a corpus with 1.2 M *fewer* rows
+  than the original. `filter_corpus.py` now reads the codec off the source
+  shard. A silent 44 % size regression is exactly the kind of thing a row-count
+  assertion does not catch.
+- **Hand pyarrow bytes, not an fsspec handle.** Reading a shard straight off
+  the file object pulls it through many small Python-level reads that hold the
+  GIL, which serialises a thread pool down to roughly single-stream throughput.
+  One `read()` into a buffer fixes it.
+
 ## Conclusion
 
 **H1 holds through Tier B. H0 holds for Tier C, and the number that settles it
@@ -420,6 +494,13 @@ decontaminated model moving materially, the build becomes worth revisiting.
 The one caveat is that ESM-Atlas is metagenomic and its fold distribution
 against this eval set need not match AFDB's — the AFDB number bounds the shape
 of the answer, not the answer.
+
+**Both corpora are now rebuilt and published** (§6) — not at Tier A or B as
+originally specified, but under a rule chosen after seeing these numbers:
+≥ 30 % identity over ≥ 50 % of the *shorter* sequence, against the 554 ∪ all
+of FoldBench, no E-value arm. That costs 4.04 % of AFDB and 1.81 % of
+ESM-Atlas, and the published prefixes are verified to contain zero rows from
+the drop list.
 
 **What this does not settle.** Stage 5 is the actual test of H1: whether a
 #199-recipe model retrained on the decontaminated mixture is unchanged on the

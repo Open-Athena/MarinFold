@@ -104,12 +104,35 @@ remote-homology arm on top takes it to 5.69% / 3.03%.
 Even the widest reference with the most permissive coverage gate leaves 96-98%
 of the training data intact, against the 37% Tier C alone would delete.
 
+## What was published
+
+Both corpora were rebuilt under the rule chosen after seeing these numbers:
+30% identity over at least half of the shorter sequence, against the 554 and
+all of FoldBench, with no E-value arm. Sequence axis only.
+
+  contacts_v1_decontam            4,129,682 -> 3,963,003  (166,679 removed, 12.1 GB)
+  contacts_v1_esm_atlas_decontam 66,759,922 -> 65,553,178 (1,206,744 removed, 130.7 GB)
+
+Both are published as new prefixes; the originals are untouched, so every
+existing checkpoint stays reproducible against the corpus it actually saw. The
+rebuild is a row filter and nothing else — same shard numbering, same row
+order, same parquet codec, byte-identical surviving documents.
+
+Verified on the bucket rather than on the build: reading the entry_id column
+back off all 2,067 and 3,338 published shards finds no missing shard, exactly
+the expected row counts, and zero surviving rows from the drop list.
+
 ## Where it lands
 
-H1 holds through Tier B; H0 holds for Tier C. The recommendation is to publish
-Tier B for AFDB and Tier A for ESM-Atlas, and to decline Tier C with 37.31% as
-the number that justifies declining it. The 9.38% natural-only variant is a
+H1 holds through Tier B; H0 holds for Tier C. Tier C is declined, with 37.31%
+as the number that justifies declining it; the 9.38% natural-only variant is a
 real middle option if fold novelty later becomes load-bearing.
+
+What was actually published is neither Tier A nor B but the rule above —
+sequence-only, but against a wider reference (the 554 plus all of FoldBench)
+and with the symmetric coverage gate. It costs 4.04% of AFDB and 1.81% of
+ESM-Atlas, more than Tier A's 1.89%/1.57% and on a broader reference, and it
+leaves the structural axis unapplied.
 
 Do not pay for the ESM-Atlas Foldseek build (about $1k) yet. It was gated on
 this table. The only tier it could serve is B, since C is declined, and on the
