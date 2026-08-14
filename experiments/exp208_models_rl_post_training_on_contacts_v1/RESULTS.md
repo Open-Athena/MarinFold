@@ -2,7 +2,7 @@
 
 **Issue [#208](https://github.com/Open-Athena/MarinFold/issues/208) · five arms × 125 steps · 554-protein held-out eval · 8×A100**
 
-**The one-paragraph version.** Nine runs across five reward designs. Eight made the
+**The one-paragraph version.** Thirteen runs across seven reward designs. Eight made the
 model worse or left it unchanged; the ninth — the leave-one-out consensus marginal
 at lr 4e-5 — is the first to **significantly beat the warm start** (AUC +0.0032,
 p = 4e-05, better on 61% of 554 proteins) while holding R-precision flat. The
@@ -398,6 +398,44 @@ the term redistributes (novel pays more, redundant less) with the average — an
 therefore the baseline — unchanged. Pinned by a test that asserts mean reward per
 correct contact equals `(1-p̄)` whatever the novelty distribution.
 `novelty_normalize=false` reproduces arm N. That run is in progress.
+
+## 3f. The per-contact family forms a ladder, and none of it escapes
+
+Normalising the novelty weights (§3e) fixed the algebra and helped — significantly,
+and not nearly enough:
+
+| arm | reward | R-precision | Δ base | AUC | coverage | final pred/gt |
+|---|---|---|---|---|---|---|
+| baseline `exp199` | — | **0.6111** | — | 0.9487 | — | — |
+| **arm C3** | consensus marginal | 0.6099 | −0.0012 (p = 0.53) | **0.9519** | **−6.4%** | 1.21 |
+| arm N2 | novelty, **normalised** | 0.5991 | −0.0119 | 0.9161 | −55.5% | 0.69 |
+| arm N | novelty, unnormalised | 0.5954 | −0.0157 | 0.9104 | −59.4% | 0.64 |
+| arm S | plain per-contact | 0.5898 | −0.0213 | 0.8976 | −65.2% | 0.57 |
+
+Every step of diversity-awareness helps by a significant margin — N2 beats N by
++0.0038 (p = 8e-04), N2 beats S by +0.0094 (p = 1.2e-14) — and **vote coverage
+tracks the ordering exactly**, −65.2% → −59.4% → −55.5%. The mechanism is
+consistent throughout.
+
+But the whole per-contact family sits 0.012–0.021 below baseline, and the gap to
+arm C3 (−0.0012, coverage −6.4%) is far larger than the gaps within it. Making a
+per-contact reward diversity-aware mitigates the damage; it does not remove it.
+
+**Why, and this is the experiment's most general conclusion.** A p̄-centred
+per-contact reward is *intrinsically a sharpening operator*. Emitting a contact has
+expected value `p - p̄`, so any candidate below the policy's current precision is
+net-negative, and the optimal move — as the model gets better at ranking its own
+candidates — is to emit fewer and better ones. That is a **first-order** pressure
+built into the reward's definition. Novelty weighting is a **second-order**
+redistribution among contacts that are already being emitted, and it cannot
+overcome the term that decides whether to emit at all.
+
+The consensus marginal escapes because it never scores a contact for being correct.
+It scores a *rollout* for what it contributes to the group's vote, so a rollout that
+withholds an uncertain-but-true contact is penalised by the group's worse consensus
+— exactly the pressure the per-contact family lacks. That is why it is the only
+reward here that raised coverage-dependent metrics, and why it is the only one
+whose training trace shows `pred/gt` going **up**.
 
 ## 4. Four instrumentation failures, none visible in the eval numbers
 
