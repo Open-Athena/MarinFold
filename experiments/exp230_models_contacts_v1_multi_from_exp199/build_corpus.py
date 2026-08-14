@@ -122,7 +122,34 @@ def canon(flat) -> list[tuple[int, int]]:
     return sorted(set(zip(lo[keep].tolist(), hi[keep].tolist())))
 
 
-def build_multi(doc_id, seq, gt_pairs, rollouts, f1s, *, kmax, n_cap, rng, budget=CTX):
+def draft_size(m: int, alpha: float, rng) -> int:
+    """Draw a draft length from a truncated power law on {1, ..., m}.
+
+    ``P(n) proportional to n**-alpha``, so the density decays smoothly from a
+    single contact upward and the support reaches the **whole rollout** -- there
+    is no fixed cap. The previous ``Uniform{1, min(m, 250)}`` could never emit a
+    draft longer than 250, and 32 % of real rollouts are longer than that, so a
+    large *complete* candidate -- exactly what every prior section looks like at
+    generation time -- was impossible to train on.
+
+    Sampled by inverting the continuous CDF, which is closed-form and O(1):
+    for ``F(x) = (x**(1-a) - 1) / ((m+1)**(1-a) - 1)`` on ``[1, m+1)``,
+    ``x = (1 + u * ((m+1)**(1-a) - 1))**(1/(1-a))``. Discretising by floor costs
+    nothing at these magnitudes and avoids an O(m) table per draw.
+
+    At ``alpha = 0.5`` over the measured rollout-size distribution this gives
+    mean 81 contacts (the old scheme's realised mean was 80), median 46, and
+    5.8 % of drafts at or above 90 % of their rollout.
+    """
+    if m <= 1:
+        return max(1, m)
+    b = 1.0 - alpha
+    hi = (m + 1) ** b
+    x = (1.0 + rng.random() * (hi - 1.0)) ** (1.0 / b)
+    return int(min(m, max(1, int(x))))
+
+
+def build_multi(doc_id, seq, gt_pairs, rollouts, f1s, *, alpha, rng, budget=CTX):
     """One multi-draft document.  Budget: ground truth is prioritised over drafts.
 
     A draft costs ``1 + 3n`` tokens (its ``<begin_statements>`` plus the triples)
@@ -140,18 +167,21 @@ def build_multi(doc_id, seq, gt_pairs, rollouts, f1s, *, kmax, n_cap, rng, budge
     gt_toks = emit(gt, seq_pos, rng)
     remaining = budget - fixed - len(gt_toks)
 
-    K = int(rng.integers(0, kmax + 1))                      # Uniform{0..kmax}
+    # PACK the context: use as many rollout slots as fit, rather than drawing a
+    # count. Every slot is treated identically -- same size law, same weight, no
+    # positional privilege -- and the number of sections is decided by the
+    # budget, not by a Uniform{0..K} draw.
     drafts: list[str] = []
     kept_f1: list[float] = []
-    if K > 0 and len(rollouts):
-        pick = list(rng.choice(len(rollouts), min(K, len(rollouts)), replace=False))
-        rng.shuffle(pick)                                   # unordered: #163 Phase 0
+    if len(rollouts):
+        pick = list(rng.permutation(len(rollouts)))         # unordered: #163 Phase 0
         for ri in pick:
+            if remaining < 4:                               # BEGIN + one triple
+                break
             pairs = [(i, j) for (i, j) in canon(rollouts[ri]) if i < L and j < L]
-            if not pairs or remaining < 4:                  # BEGIN + one triple
+            if not pairs:
                 continue
-            cap = min(len(pairs), n_cap)
-            n = int(rng.integers(1, cap + 1))               # subsample Uniform[1,cap]
+            n = draft_size(len(pairs), alpha, rng)
             n = min(n, (remaining - 1) // 3)
             if n <= 0:
                 continue
@@ -236,11 +266,9 @@ def main() -> int:
                     help="local dir or gs:// prefix of the rollout parquets")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--docs-per-protein", type=int, default=3)
-    ap.add_argument("--kmax", type=int, default=16)
-    ap.add_argument("--n-cap", type=int, default=250,
-                    help="max contacts shown per draft. #163 used 120 against ~54-contact "
-                         "E8 drafts; exp199's are near-full-size, so a higher cap keeps "
-                         "full-length candidates in distribution")
+    ap.add_argument("--alpha", type=float, default=0.5,
+                    help="draft-size power law exponent; P(n) ~ n**-alpha on "
+                         "{1..|rollout|}. 0 = the old uniform draw")
     ap.add_argument("--mix-plain", type=float, default=0.5)
     ap.add_argument("--rows-per-file", type=int, default=100_000)
     ap.add_argument("--seed", type=int, default=230)
@@ -281,7 +309,7 @@ def main() -> int:
         gt = [(int(i), int(j)) for i, j in rec["gt_contacts"]]
         for d in range(a.docs_per_protein):
             built = build_multi(f"{tid}:m{d}", rec["sequence"], gt, preds, f1s,
-                                kmax=a.kmax, n_cap=a.n_cap, rng=rng)
+                                alpha=a.alpha, rng=rng)
             if built is None:
                 stats["skipped_build"] += 1
                 continue
@@ -311,7 +339,7 @@ def main() -> int:
         f"{stats['skipped_build']:,} unbuildable")
     (a.out / "corpus.provenance.json").write_text(json.dumps({
         "seed": a.seed, "docs_per_protein": a.docs_per_protein, "mix_plain": a.mix_plain,
-        "kmax": a.kmax, "n_cap": a.n_cap, "stats": stats,
+        "alpha": a.alpha, "stats": stats,
         "targets": str(a.targets), "rollouts": str(a.rollouts),
         "multi_doc_token": MULTI_DOC_TOKEN,
     }, indent=2))
