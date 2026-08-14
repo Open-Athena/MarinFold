@@ -536,7 +536,7 @@ epy = [
 ]
 
 [[package]]
-name = "exp199-models-optimize-contacts-v1-afdb-esm"
+name = "exp199-models-optimize-contacts-v1-afdb-esm-trc"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -560,8 +560,8 @@ requires-dist = [
     { name = "marin-dupekit", specifier = "<0.3" },
     { name = "marin-finelog", specifier = ">=0.2.16.dev30657475018,<0.3" },
     { name = "marin-iris", specifier = ">=0.2.65.dev30616178224,<0.3" },
-    { name = "torch", marker = "extra == 'tpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-models-optimize-contacts-v1-afdb-esm", extra = "tpu" } },
-    { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'tpu'", specifier = "==0.26.0+cpu", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-models-optimize-contacts-v1-afdb-esm", extra = "tpu" } },
+    { name = "torch", marker = "extra == 'tpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-models-optimize-contacts-v1-afdb-esm-trc", extra = "tpu" } },
+    { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'tpu'", specifier = "==0.26.0+cpu", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp199-models-optimize-contacts-v1-afdb-esm-trc", extra = "tpu" } },
 ]
 provides-extras = ["tpu"]
 

@@ -43,8 +43,8 @@
       "sha256": "b0d81ad7fd2849bdba31d075576a71864fa3c6f042a469eb6e19325fd53aa973"
     }
   },
-  "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
+  "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/pr_comparison.csv",
   "comparison_table_sha256": "7876fc97463d86d2a4c230f29b34ae7a17fce5b35a671a4542f48a3e8e5c1cf7",
-  "output": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
+  "output": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
   "output_sha256": "9b294ef29e5f5bd513488f4f0d2751414c977a137821a7a1b0ad3154606d835c"
 }

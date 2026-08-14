@@ -800,6 +800,6 @@ for #117 E8 bs64. The loss-scale conversion comes from
 [TRC](https://api.wandb.ai/links/eric-czech/582mdeag) and
 [CoreWeave](https://api.wandb.ai/links/eric-czech/g2x1fbj5) sweep reports,
 [exported checkpoints](https://huggingface.co/open-athena/marinfold-exp199),
-[eval code and README](https://github.com/Open-Athena/MarinFold/tree/exp/199-evals/experiments/exp199_optimize_contacts_v1_afdb_esm/evals/contact_prediction),
+[eval code and README](https://github.com/Open-Athena/MarinFold/tree/main/experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2),
 and the
 [public evaluation artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp199).
