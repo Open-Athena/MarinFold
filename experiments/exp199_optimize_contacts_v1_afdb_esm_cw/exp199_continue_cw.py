@@ -19,6 +19,7 @@ full-state validation run. Omit ``--run`` to preview the lowered plan.
 import os
 from collections.abc import Sequence
 from dataclasses import dataclass, fields, replace
+from datetime import timedelta
 
 import click
 from fray.types import ResourceConfig
@@ -78,6 +79,13 @@ REWARMUP = 0.0
 DECAY = 0.2
 LR_SCHEDULE = "linear"
 AUGMENTATION_KEY = "aug100"
+# Temporary (time-policy) checkpoints block training while they serialize. On
+# CoreWeave each 16.4 GiB write to S3 measured about eight minutes, so the stock
+# cadence spent roughly 44% of wall clock saving rather than training. Thirty
+# minutes cuts that to about 18% and costs at most 30 minutes of redone work
+# after an unclean stop. Permanent checkpoints are unaffected; they stay on the
+# sweep's PERMANENT_CHECKPOINT_EVERY step cadence.
+TEMPORARY_CHECKPOINT_INTERVAL = timedelta(minutes=30)
 PRODUCTION_GANG_NODES = {
     "H100": 8,
     "GB200": 8,
@@ -378,6 +386,7 @@ def _apply_continuation_overrides(
             watch=WANDB_WATCH,
             checkpointer=replace(
                 pod.train_config.trainer.checkpointer,
+                save_interval=TEMPORARY_CHECKPOINT_INTERVAL,
                 keep=(
                     [{"every": shape.permanent_checkpoint_every}]
                     if shape.permanent_checkpoint_every is not None
