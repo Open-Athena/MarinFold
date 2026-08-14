@@ -1,5 +1,5 @@
 [project]
-name = "exp199-models-optimize-contacts-v1-afdb-esm-cw"
+name = "exp199-models-optimize-contacts-v1-afdb-esm-gpu"
 version = "0.1.0"
 description = "CoreWeave GPU AFDB/ESM contacts-v1 sweep for MarinFold issue #199."
 requires-python = ">=3.12,<3.13"

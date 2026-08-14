@@ -42,9 +42,9 @@
     "minimum_observed_loss": 2.9638261795043945,
     "maximum_observed_loss": 3.138312048873902
   },
-  "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/pr_comparison.csv",
+  "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
   "comparison_table_sha256": "7876fc97463d86d2a4c230f29b34ae7a17fce5b35a671a4542f48a3e8e5c1cf7",
-  "per_protein_rows": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
+  "per_protein_rows": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
   "per_protein_rows_sha256": "9b294ef29e5f5bd513488f4f0d2751414c977a137821a7a1b0ad3154606d835c",
   "plot_sha256": "cf3e5112a2c1151cbfb3cf6422387f69472b60d7349a451c4557009b73a4f7ac"
 }

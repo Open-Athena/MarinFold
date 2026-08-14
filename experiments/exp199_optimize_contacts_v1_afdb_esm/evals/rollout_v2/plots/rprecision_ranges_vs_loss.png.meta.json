@@ -142,7 +142,7 @@
       "fit_group": "exp75",
       "hf_checkpoint": "https://huggingface.co/open-athena/marinfold-exp75/tree/4c9e7779635b585730180823e0ab4b3319b82f67/prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679",
       "coreweave_checkpoint": "s3://marin-us-east-02a/MarinFold/exp163/model/step-35679",
-      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/e8_reference_aggregate_metrics.csv"
+      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/e8_reference_aggregate_metrics.csv"
     },
     {
       "key": "exp146",
@@ -202,7 +202,7 @@
       "fit_group": "trc-p03-aug",
       "hf_checkpoint": "https://huggingface.co/open-athena/marinfold-exp199/tree/ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed/prot-exp199-cv1-s01-m1-p03-aug-us-east1/hf/step-72599",
       "coreweave_checkpoint": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/v2-20260812-02/models/prot-exp199-cv1-s01-m1-p03-aug-us-east1/hf/step-72599",
-      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/aggregate_metrics.csv"
+      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/aggregate_metrics.csv"
     },
     {
       "key": "trc-p03-base",
@@ -222,7 +222,7 @@
       "fit_group": "trc-p03-base",
       "hf_checkpoint": "https://huggingface.co/open-athena/marinfold-exp199/tree/ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed/prot-exp199-cv1-s01-m1-p03-base-us-east5/hf/step-72599",
       "coreweave_checkpoint": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/v2-20260812-02/models/prot-exp199-cv1-s01-m1-p03-base-us-east5/hf/step-72599",
-      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/aggregate_metrics.csv"
+      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/aggregate_metrics.csv"
     },
     {
       "key": "cw-p06-aug",
@@ -242,7 +242,7 @@
       "fit_group": "cw-p06-aug",
       "hf_checkpoint": "https://huggingface.co/open-athena/marinfold-exp199/tree/ed7103bfd7dac3f75ba759e5ec827da3d75ff0ed/prot-exp199-cw-cv1-s02-m1-p06-aug/hf/step-145199",
       "coreweave_checkpoint": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/v2-20260812-02/models/prot-exp199-cw-cv1-s02-m1-p06-aug/hf/step-145199",
-      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/aggregate_metrics.csv"
+      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/aggregate_metrics.csv"
     },
     {
       "key": "trc-cont",
@@ -262,10 +262,10 @@
       "fit_group": "trc-cont",
       "hf_checkpoint": "https://huggingface.co/open-athena/marinfold-exp199/tree/00eddb761fd028f07ce7bc088930271516da9866/prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1/hf/step-145199",
       "coreweave_checkpoint": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/contbase-v2-20260812-01/models/prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1/hf/step-145199",
-      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/aggregate_metrics.csv"
+      "metrics_source": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/aggregate_metrics.csv"
     }
   ],
-  "table": "experiments/exp199_optimize_contacts_v1_afdb_esm_trc/evals/rollout_v2/data/pr_comparison.csv",
+  "table": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
   "table_sha256": "7876fc97463d86d2a4c230f29b34ae7a17fce5b35a671a4542f48a3e8e5c1cf7",
   "protenix_source": "experiments/exp89_evals_contacts_v1_model_on_eval_set/data/contact_precision_all.csv",
   "protenix_source_sha256": "00c1cb5c03ee63f1901bc14a2f0f00e98e3876aa4f1bc7916c14e94f5b5144d2",

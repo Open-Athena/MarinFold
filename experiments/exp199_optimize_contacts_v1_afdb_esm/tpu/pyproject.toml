@@ -1,5 +1,5 @@
 [project]
-name = "exp199-models-optimize-contacts-v1-afdb-esm-trc"
+name = "exp199-models-optimize-contacts-v1-afdb-esm-tpu"
 version = "0.1.0"
 description = "Packaged-Marin AFDB/ESM contacts-v1 optimization sweep for MarinFold issue #199."
 requires-python = ">=3.12,<3.13"
