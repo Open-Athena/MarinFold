@@ -18,6 +18,11 @@
 - W&B routing is `open-athena/MarinFold`. Validate that the authenticated account
   has the required model seat before smoke; if access fails, stop and ask the
   operator rather than falling back to a personal entity or project.
+- The child GPU environment retains exp199's pinned Marin, Iris, JAX, Torch,
+  cuDNN, and NCCL versions. The root is a CPU driver and intentionally omits the
+  `gpu` extra; `ResourceConfig.with_gpu` selects it for the training child. The
+  child differs from exp199 only by using exp199's exact direct cuDNN wheel URL
+  during Iris's CUDA-precedence reinstall, bypassing the failing placeholder.
 - Use only the existing exp232 training caches and exp199 validation cache. Never
   copy, retokenize, or rewrite them during sweep operation.
 - Production begins only after the configured smoke run succeeds and its W&B
@@ -109,7 +114,12 @@
 
 ## Change Record
 
+- 2026-08-14: Restored exp199's exact cuDNN `9.26.0.17.dev59162438` and NCCL
+  `2.30.7` versions after detecting transitive lock drift. The exp232 child-job
+  CUDA setup reuses that exact direct cuDNN wheel during Iris's post-sync CUDA
+  precedence repair; the stock repair bypasses the lock and intermittently
+  fetched NVIDIA's placeholder package with a mismatched hash.
 - 2026-08-14: Removed `cw-us-east-08a` from production eligibility after its
-  ARM root exposed that CUDA 13 cuDNN `9.26.0.28.dev61599045` publishes only an
+  ARM root exposed that the then-locked CUDA 13 cuDNN package publishes only an
   x86_64 wheel. The H100 lock now pins that exact wheel URL directly, avoiding
   correlated multi-node cold-start failures in NVIDIA's placeholder package.

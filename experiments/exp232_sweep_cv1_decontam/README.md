@@ -105,6 +105,13 @@ The later sweep operator launches one selected trial at a time. This is the
 single-trial shape used for smoke validation; production placement is chosen by
 the sweep operator and always uses batch priority.
 
+The dependency project retains exp199's exact GPU stack. The Iris root is only a
+CPU driver, so it uses the base environment; the GPU child automatically selects
+the `gpu` extra from `ResourceConfig.with_gpu`. Exp232 additionally pins exp199's
+exact cuDNN wheel URL for Iris's post-sync CUDA-precedence reinstall because the
+NVIDIA placeholder downloader returned mismatched payload hashes during
+multi-node cold starts.
+
 The living autonomous-operations policy is tracked in
 [`exp232_cw_operations.md`](exp232_cw_operations.md); dynamic attempts,
 observations, and progress remain in its ignored SQLite ledger under `scratch/`.
@@ -116,7 +123,7 @@ uv run iris --cluster marin job run \
   --user eczech \
   --job-name exp232-s01-m1-p06-aug-smoke \
   --enable-extra-resources \
-  --cpu 2 --memory 6GB --disk 32GB --extra gpu \
+  --cpu 2 --memory 6GB --disk 32GB \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
   -e WANDB_API_KEY "$WANDB_API_KEY" \
   -e WANDB_ENTITY open-athena \
