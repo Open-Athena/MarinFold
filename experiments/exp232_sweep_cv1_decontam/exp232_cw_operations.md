@@ -8,7 +8,7 @@
 
 - The experiment code owns training semantics; operate only the ten trials
   declared by `experiments/exp232_sweep_cv1_decontam/exp232_sweep.py` at version
-  `2026.08.14.1` (`s01`).
+  `2026.08.14.2` (`s02`).
 - Maintain at most one active writer for each trial's shared W&B ID and S3
   checkpoint root. CoreWeave target changes are reslices of that same run; never
   race clusters or GPU families.
@@ -61,7 +61,7 @@
 - Operations document:
   `experiments/exp232_sweep_cv1_decontam/exp232_cw_operations.md`.
 - Authoritative ledger:
-  `scratch/exp232_cw_s01/exp232_cw_sweep.sqlite`.
+  `scratch/exp232_cw_s02/exp232_cw_sweep.sqlite`.
 - In the TPU-oriented persistence schema, `chips` means GPU count, `region` is the
   shared CoreWeave run domain, and `tpu_slice` stores the exact CoreWeave target.
 
@@ -114,6 +114,11 @@
 
 ## Change Record
 
+- 2026-08-14: Abandoned s01 by explicit operator instruction after discovering
+  that seven early runs had started under transitive cuDNN/NCCL drift. Stopped
+  its eight exact active roots, retained its W&B, checkpoint, and SQLite history,
+  and restarted all ten trials from scratch as s02 with the exact exp199 GPU
+  stack.
 - 2026-08-14: Restored exp199's exact cuDNN `9.26.0.17.dev59162438` and NCCL
   `2.30.7` versions after detecting transitive lock drift. The exp232 child-job
   CUDA setup reuses that exact direct cuDNN wheel during Iris's post-sync CUDA
