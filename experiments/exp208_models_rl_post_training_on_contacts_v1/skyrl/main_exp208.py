@@ -116,6 +116,10 @@ class Exp208Config(SkyRLTrainConfig):
     # duplicating the consensus pay less than finding what the group missed.
     reward_mode: str = "dense"
     novelty_floor: float = 0.25
+    # Normalise novelty weights to mean 1 over the group's correct contacts, so
+    # the term REDISTRIBUTES rather than shrinking the positive reward. False
+    # reproduces arm N, which shrank pred/gt 1.08 -> 0.64 for exactly that reason.
+    novelty_normalize: bool = True
     # Weight p_bar's EMA by each rollout's contact count. False reproduces arm S,
     # whose p_bar drifted to 0.5501 against a true precision of 0.4733 and shrank
     # the policy; see ARM_S_RESULTS.md. Irrelevant to reward_mode=document_f1,
@@ -141,7 +145,8 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
 def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
               doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
               collapse_ratio: float = 0.2, reward_mode: str = "dense",
-              p_bar_count_weighted: bool = True, novelty_floor: float = 0.25):
+              p_bar_count_weighted: bool = True, novelty_floor: float = 0.25,
+              novelty_normalize: bool = True):
     """A ``BasePPOExp`` whose generator emits exp208's dense per-contact reward."""
     from skyrl.backends.skyrl_train.inference_servers.utils import resolve_policy_model_name
     from skyrl.train.entrypoints.main_base import BasePPOExp
@@ -166,6 +171,7 @@ def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
                 reward_mode=reward_mode,
                 p_bar_count_weighted=p_bar_count_weighted,
                 novelty_floor=novelty_floor,
+                novelty_normalize=novelty_normalize,
             )
 
     return Exp208PPOExp(cfg)
@@ -238,7 +244,8 @@ def skyrl_entrypoint(cfg: Exp208Config):
               doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc,
               collapse_ratio=cfg.collapse_ratio, reward_mode=cfg.reward_mode,
               p_bar_count_weighted=cfg.p_bar_count_weighted,
-              novelty_floor=cfg.novelty_floor).run()
+              novelty_floor=cfg.novelty_floor,
+              novelty_normalize=cfg.novelty_normalize).run()
 
 
 def main() -> int:

@@ -110,7 +110,8 @@ class DenseContactsGenerator(SkyRLGymGenerator):
                  precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None,
                  doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
                  collapse_ratio: float = 0.2, reward_mode: str = "dense",
-                 p_bar_count_weighted: bool = True, novelty_floor: float = 0.25, **kwargs):
+                 p_bar_count_weighted: bool = True, novelty_floor: float = 0.25,
+                 novelty_normalize: bool = True, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in ("dense", "document_f1", "novelty"):
@@ -120,6 +121,7 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         self.reward_mode = reward_mode
         self.p_bar_count_weighted = bool(p_bar_count_weighted)
         self.novelty_floor = float(novelty_floor)
+        self.novelty_normalize = bool(novelty_normalize)
         self.collapse_ratio = float(collapse_ratio)
         self.doc_term = doc_term
         self.lam_step = float(lam_step)
@@ -408,6 +410,32 @@ class DenseContactsGenerator(SkyRLGymGenerator):
             for r in reps:
                 for pair, _, _ in per_rep[r][0]:
                     counts[pair] = counts.get(pair, 0) + 1
+            # NORMALISE the weights to mean 1 over the group's correct contacts.
+            #
+            # Without this, novelty weighting is a net REDUCTION of the positive
+            # term: a redundant correct contact pays `floor` instead of 1, so the
+            # expected value of emitting becomes p*(1-p_bar)*w_bar - (1-p)*p_bar
+            # with w_bar < 1 -- strictly more negative than the p - p_bar the
+            # centring is built on. Measured: arm N shrank pred/gt 1.08 -> 0.64,
+            # essentially reproducing the sharpening it was designed to prevent,
+            # because scaling the reward for correct contacts DOWN strengthens the
+            # pressure to emit fewer of them.
+            #
+            # Dividing by the mean makes novelty a pure redistribution among
+            # correct contacts -- novel ones pay more, redundant ones less, the
+            # average is unchanged -- so the baseline survives.
+            if self.novelty_normalize:
+                ws = []
+                for r in reps:
+                    for pair, _, correct in per_rep[r][0]:
+                        if correct:
+                            others = counts.get(pair, 1) - 1
+                            ws.append(self.novelty_floor + (1.0 - self.novelty_floor) *
+                                      (1.0 - others / max(len(reps) - 1, 1)))
+                w_mean = float(np.mean(ws)) if ws else 1.0
+            else:
+                w_mean = 1.0
+
             for r in reps:
                 key = f"{inst}:{r}"
                 if key not in row_of:
@@ -419,8 +447,8 @@ class DenseContactsGenerator(SkyRLGymGenerator):
                         # counts includes this rollout, so subtract it.
                         others = counts.get(pair, 1) - 1
                         novelty = 1.0 - (others / max(len(reps) - 1, 1))
-                        val = (1.0 - self.p_bar) * (self.novelty_floor
-                                                    + (1.0 - self.novelty_floor) * novelty)
+                        w = self.novelty_floor + (1.0 - self.novelty_floor) * novelty
+                        val = (1.0 - self.p_bar) * (w / max(w_mean, 1e-6))
                     else:
                         val = -self.p_bar
                     vec[start:start + 3] += np.float32(val / 3.0)

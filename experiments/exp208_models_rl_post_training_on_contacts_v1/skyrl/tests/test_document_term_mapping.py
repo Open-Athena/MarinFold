@@ -270,11 +270,43 @@ def test_document_term_total_is_lam_doc_times_marginal():
 # the run diverged to KL 3.96 with precision below the base model.
 
 
-def _novelty_generator(floor=0.25, p_bar=0.26):
+def _novelty_generator(floor=0.25, p_bar=0.26, normalize=False):
     gen = object.__new__(DenseContactsGenerator)
     gen.reward_mode = "novelty"; gen.novelty_floor = floor; gen.p_bar = p_bar
+    gen.novelty_normalize = normalize
     gen._diag = {}; gen._group_contacts = {}
     return gen
+
+
+def test_normalisation_preserves_the_p_bar_baseline():
+    """Normalised novelty must REDISTRIBUTE, not shrink, the positive term.
+
+    Unnormalised, a redundant correct contact pays `floor` instead of 1, so the
+    mean positive reward drops below (1-p_bar) and emitting anything becomes
+    net-negative — strictly stronger shrink pressure than the plain stepwise
+    reward. That is measured, not hypothetical: arm N shrank pred/gt 1.08 -> 0.64
+    and reproduced the sharpening it was built to prevent.
+
+    With normalisation the mean reward per correct contact must be exactly
+    (1-p_bar), whatever the novelty distribution.
+    """
+    gen = _novelty_generator(normalize=True)
+    # One unique correct contact and two shared ones, so weights genuinely vary.
+    gen._group_contacts["A"] = {
+        "0": ([((0, 10), 0, True), ((1, 20), 3, True)], 6),
+        "1": ([((1, 20), 0, True)], 3),
+        "2": ([((1, 20), 0, True)], 3),
+    }
+    rows = [("A", "0"), ("A", "1"), ("A", "2")]
+    out = {"rewards": [[0.0] * 6, [0.0] * 3, [0.0] * 3],
+           "trajectory_ids": [_TID(i, r) for i, r in rows]}
+    got = gen._apply_novelty(out)["rewards"]
+    total = sum(sum(r) for r in got)
+    n_correct = 4
+    assert total / n_correct == pytest.approx(1 - gen.p_bar), (
+        "mean reward per correct contact must stay (1-p_bar) under normalisation")
+    # And it must still discriminate: the unique contact outscores a shared one.
+    assert sum(got[0][0:3]) > sum(got[0][3:6])
 
 
 def test_novelty_pays_more_for_contacts_the_group_missed():
