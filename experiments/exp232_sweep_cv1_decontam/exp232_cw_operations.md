@@ -37,9 +37,10 @@
 - Training starts from scratch. All production clusters use the script's shared
   CoreWeave S3 namespace, so checkpoint-preserving moves do not create regional
   runs or require data transfer.
-- The validation-only smoke is `m1-p06-aug` on one `cw-us-east-02a` H100 node for
-  ten steps. Its script-generated W&B/checkpoint identity is distinct from every
-  production run.
+- The training-and-validation smoke is `m1-p06-aug` on one `cw-us-east-02a`
+  H100 node for ten steps followed by the full validation set. Its
+  script-generated W&B/checkpoint identity is distinct from every production
+  run.
 
 ## Operator Choices
 
