@@ -57,6 +57,26 @@ phase mirrors both corpora, verifies the mirror, and tokenizes AFDB followed by
 ESM. Use `--phase mirror` or `--phase tokenize` only when reviewing or resuming
 the boundary explicitly.
 
+Before the full run, exercise the same HF-to-S3 and Marin tokenization paths on
+the smallest parquet shard from each corpus. `--smoke-test` writes only below
+`tmp/tokenization-smoke/2026.08.14`, derives the expected document counts from
+the mirrored parquet footers, and requires each output cache to contain exactly
+that many documents. The fixed prefix makes this command safely resumable.
+
+```bash
+uv run iris --cluster marin job run \
+  --target-cluster cw-rno2a \
+  --priority batch \
+  --user eczech \
+  --job-name exp232-tokenize-smoke \
+  --cpu 4 --memory 16GB --disk 32GB --extra cpu \
+  -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
+  -e HF_TOKEN "$HF_TOKEN" \
+  -- python exp232_tokenize.py --smoke-test
+```
+
+After that succeeds, launch the complete mirror and tokenization:
+
 ```bash
 set -a
 source ~/marin.env

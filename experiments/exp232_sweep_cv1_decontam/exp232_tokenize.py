@@ -14,20 +14,16 @@ import os
 import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 
 import click
 import fsspec
+import pyarrow.parquet as pq
 from fray.types import ResourceConfig
 from huggingface_hub import HfFileSystem
 from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.store.cache import CacheLedger, ShardedCacheLayout
-from rigging.filesystem import StoragePath, marin_prefix, prefix_join
-from zephyr.dataset import Dataset, FileEntry
-from zephyr.execution import ZephyrContext
-from zephyr.readers import load_file
-
 from marin.processing.tokenize._core import (
     bundle_files_by_size,
     compute_target_group_bytes,
@@ -43,6 +39,10 @@ from marin.processing.tokenize.store_builder import (
     write_stats_json,
 )
 from marin.processing.tokenize.tokenize import TokenizeConfig
+from rigging.filesystem import StoragePath, marin_prefix, prefix_join
+from zephyr.dataset import Dataset, FileEntry
+from zephyr.execution import ZephyrContext
+from zephyr.readers import load_file
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,8 @@ ESM_HF_PREFIX = (
     "contacts_v1_esm_atlas_decontam/train"
 )
 MIRROR_MANIFEST = f"{DATA_PREFIX}/mirror-{CACHE_VERSION}.json"
+SMOKE_PREFIX = f"{EXPERIMENT_PREFIX}/tmp/tokenization-smoke/{CACHE_VERSION}"
+SMOKE_MANIFEST = f"{SMOKE_PREFIX}/mirror.json"
 
 COPY_BUFFER_BYTES = 32 * 1024 * 1024
 COPY_RETRIES = 5
@@ -116,6 +118,19 @@ CORPORA = (
         expected_parquet_bytes=130_662_915_211,
     ),
 )
+
+
+def _smoke_corpora() -> tuple[Corpus, ...]:
+    """Point the real corpus definitions at isolated, disposable S3 outputs."""
+    return tuple(
+        replace(
+            corpus,
+            s3_prefix=f"{SMOKE_PREFIX}/data/{corpus.key}",
+            cache_path=f"{SMOKE_PREFIX}/tokenized/contacts_v1/{corpus.key}",
+            expected_documents=0,
+        )
+        for corpus in CORPORA
+    )
 
 
 def _validate_launch_prefix() -> None:
@@ -180,16 +195,18 @@ def _copy_one(
                 if destination_size == source.size:
                     return False
 
-            with hf_fs.open(source_path, "rb") as source_file:
-                with s3_fs.open(destination_path, "wb") as destination_file:
-                    shutil.copyfileobj(
-                        source_file,
-                        destination_file,
-                        length=COPY_BUFFER_BYTES,
-                    )
+            with (
+                hf_fs.open(source_path, "rb") as source_file,
+                s3_fs.open(destination_path, "wb") as destination_file,
+            ):
+                shutil.copyfileobj(
+                    source_file,
+                    destination_file,
+                    length=COPY_BUFFER_BYTES,
+                )
             destination_size = int(s3_fs.info(destination_path).get("size") or 0)
             if destination_size != source.size:
-                raise IOError(
+                raise OSError(
                     f"size mismatch for {destination_path}: "
                     f"expected {source.size}, found {destination_size}"
                 )
@@ -230,14 +247,44 @@ def _validate_s3_mirror(
         )
 
 
-def mirror_training_data(copy_workers: int) -> dict[str, list[MirrorFile]]:
+def _select_sources(
+    sources: list[MirrorFile], parquet_file_limit: int | None
+) -> list[MirrorFile]:
+    if parquet_file_limit is None:
+        return sources
+    parquet_files = [
+        source
+        for source in sources
+        if source.relative_path.endswith(".parquet") and source.size > 0
+    ]
+    selected = sorted(
+        parquet_files,
+        key=lambda source: (source.size, source.relative_path),
+    )[:parquet_file_limit]
+    if len(selected) != parquet_file_limit:
+        raise ValueError(
+            f"requested {parquet_file_limit} parquet files, found {len(selected)}"
+        )
+    return sorted(selected, key=lambda source: source.relative_path)
+
+
+def mirror_training_data(
+    copy_workers: int,
+    *,
+    corpora: tuple[Corpus, ...] = CORPORA,
+    parquet_file_limit: int | None = None,
+    manifest_path: str = MIRROR_MANIFEST,
+) -> dict[str, list[MirrorFile]]:
     """Mirror both issue #232 corpora and return their immutable file catalogs."""
     hf_fs = HfFileSystem(token=os.environ.get("HF_TOKEN") or False)
     s3_fs = fsspec.filesystem("s3")
     catalogs: dict[str, list[MirrorFile]] = {}
 
-    for corpus in CORPORA:
-        sources = _hf_files(hf_fs, corpus)
+    for corpus in corpora:
+        sources = _select_sources(
+            _hf_files(hf_fs, corpus),
+            parquet_file_limit,
+        )
         catalogs[corpus.key] = sources
         copied = 0
         completed = 0
@@ -273,25 +320,57 @@ def mirror_training_data(copy_workers: int) -> dict[str, list[MirrorFile]]:
                 "files": [asdict(source) for source in catalogs[corpus.key]],
                 "total_bytes": sum(source.size for source in catalogs[corpus.key]),
             }
-            for corpus in CORPORA
+            for corpus in corpora
         },
     }
-    manifest_fs, manifest_path = fsspec.core.url_to_fs(MIRROR_MANIFEST)
-    with manifest_fs.open(manifest_path, "wt") as destination:
+    manifest_fs, manifest_fs_path = fsspec.core.url_to_fs(manifest_path)
+    with manifest_fs.open(manifest_fs_path, "wt") as destination:
         json.dump(manifest, destination, indent=2, sort_keys=True)
         destination.write("\n")
-    logger.info("mirror complete: %s", MIRROR_MANIFEST)
+    logger.info("mirror complete: %s", manifest_path)
     return catalogs
 
 
-def validate_training_data_mirror() -> dict[str, list[MirrorFile]]:
+def validate_training_data_mirror(
+    *,
+    corpora: tuple[Corpus, ...] = CORPORA,
+    parquet_file_limit: int | None = None,
+) -> dict[str, list[MirrorFile]]:
     """Require a complete S3 mirror before any tokenizer worker is created."""
     hf_fs = HfFileSystem(token=os.environ.get("HF_TOKEN") or False)
     s3_fs = fsspec.filesystem("s3")
-    catalogs = {corpus.key: _hf_files(hf_fs, corpus) for corpus in CORPORA}
-    for corpus in CORPORA:
+    catalogs = {
+        corpus.key: _select_sources(
+            _hf_files(hf_fs, corpus),
+            parquet_file_limit,
+        )
+        for corpus in corpora
+    }
+    for corpus in corpora:
         _validate_s3_mirror(s3_fs, corpus, catalogs[corpus.key])
     return catalogs
+
+
+def _with_observed_document_counts(
+    corpora: tuple[Corpus, ...],
+    catalogs: dict[str, list[MirrorFile]],
+) -> tuple[Corpus, ...]:
+    """Read parquet footers so smoke caches must preserve every input row."""
+    s3_fs = fsspec.filesystem("s3")
+    updated: list[Corpus] = []
+    for corpus in corpora:
+        documents = 0
+        for source in catalogs[corpus.key]:
+            if not source.relative_path.endswith(".parquet"):
+                continue
+            path = _destination_path(corpus.s3_prefix, source.relative_path)
+            with s3_fs.open(path, "rb") as parquet_file:
+                documents += pq.ParquetFile(parquet_file).metadata.num_rows
+        if documents <= 0:
+            raise ValueError(f"no documents found in {corpus.key} smoke input")
+        logger.info("%s smoke input contains %d documents", corpus.key, documents)
+        updated.append(replace(corpus, expected_documents=documents))
+    return tuple(updated)
 
 
 def _validate_ledger(corpus: Corpus, ledger: CacheLedger) -> None:
@@ -386,7 +465,10 @@ def tokenize_corpus(corpus: Corpus, *, max_workers: int, num_input_files: int) -
         resources=config.worker_resources,
         max_workers=min(config.max_workers, len(groups)),
         coordinator_resources=COORDINATOR_RESOURCES,
-        chunk_storage_prefix=f"{EXPERIMENT_PREFIX}/tmp/zephyr",
+        chunk_storage_prefix=(
+            f"{EXPERIMENT_PREFIX}/tmp/zephyr/"
+            f"{corpus.cache_path.removeprefix(EXPERIMENT_PREFIX).strip('/').replace('/', '-')}"
+        ),
         name=f"exp232-tokenize-{corpus.key}",
     )
     context.put("tokenizer_name", config.tokenizer)
@@ -427,15 +509,40 @@ def tokenize_corpus(corpus: Corpus, *, max_workers: int, num_input_files: int) -
     default=128,
     show_default=True,
 )
-def main(phase: str, copy_workers: int, tokenize_workers: int) -> None:
+@click.option(
+    "--smoke-test",
+    is_flag=True,
+    help=(
+        "Mirror the smallest parquet shard from each corpus and tokenize it under "
+        "the isolated tmp/tokenization-smoke prefix."
+    ),
+)
+def main(
+    phase: str,
+    copy_workers: int,
+    tokenize_workers: int,
+    smoke_test: bool,
+) -> None:
     logging.basicConfig(level=logging.INFO)
     _validate_launch_prefix()
+    corpora = _smoke_corpora() if smoke_test else CORPORA
+    parquet_file_limit = 1 if smoke_test else None
     if phase in {"all", "mirror"}:
-        catalogs = mirror_training_data(copy_workers)
+        catalogs = mirror_training_data(
+            copy_workers,
+            corpora=corpora,
+            parquet_file_limit=parquet_file_limit,
+            manifest_path=SMOKE_MANIFEST if smoke_test else MIRROR_MANIFEST,
+        )
     else:
-        catalogs = validate_training_data_mirror()
+        catalogs = validate_training_data_mirror(
+            corpora=corpora,
+            parquet_file_limit=parquet_file_limit,
+        )
     if phase in {"all", "tokenize"}:
-        for corpus in CORPORA:
+        if smoke_test:
+            corpora = _with_observed_document_counts(corpora, catalogs)
+        for corpus in corpora:
             parquet_count = sum(
                 source.relative_path.endswith(".parquet")
                 for source in catalogs[corpus.key]
