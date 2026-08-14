@@ -16,6 +16,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
+from functools import partial
+from unittest.mock import patch
 
 import click
 import fsspec
@@ -23,6 +25,7 @@ import pyarrow.parquet as pq
 from fray.types import ResourceConfig
 from huggingface_hub import HfFileSystem
 from levanter.data.text.formats import TextLmDatasetFormat
+from levanter.store import cache as levanter_cache
 from levanter.store.cache import CacheLedger, ShardedCacheLayout
 from marin.processing.tokenize._core import (
     bundle_files_by_size,
@@ -67,7 +70,7 @@ ESM_HF_PREFIX = (
     "contacts_v1_esm_atlas_decontam/train"
 )
 MIRROR_MANIFEST = f"{DATA_PREFIX}/mirror-{CACHE_VERSION}.json"
-SMOKE_PREFIX = f"{EXPERIMENT_PREFIX}/tmp/tokenization-smoke/{CACHE_VERSION}"
+SMOKE_PREFIX = f"{EXPERIMENT_PREFIX}/tmp/tokenization-smoke/{CACHE_VERSION}.1"
 SMOKE_MANIFEST = f"{SMOKE_PREFIX}/mirror.json"
 
 COPY_BUFFER_BYTES = 32 * 1024 * 1024
@@ -461,25 +464,37 @@ def tokenize_corpus(corpus: Corpus, *, max_workers: int, num_input_files: int) -
         sample_parquet_path=parquet_window_hint(groups),
         levanter_batch_size=config.levanter_batch_size,
     )
+    chunk_storage_prefix = (
+        f"{EXPERIMENT_PREFIX}/tmp/zephyr/"
+        f"{corpus.cache_path.removeprefix(EXPERIMENT_PREFIX).strip('/').replace('/', '-')}"
+    )
     context = ZephyrContext(
         resources=config.worker_resources,
         max_workers=min(config.max_workers, len(groups)),
         coordinator_resources=COORDINATOR_RESOURCES,
-        chunk_storage_prefix=(
-            f"{EXPERIMENT_PREFIX}/tmp/zephyr/"
-            f"{corpus.cache_path.removeprefix(EXPERIMENT_PREFIX).strip('/').replace('/', '-')}"
-        ),
+        chunk_storage_prefix=chunk_storage_prefix,
         name=f"exp232-tokenize-{corpus.key}",
     )
     context.put("tokenizer_name", config.tokenizer)
     context.put("tokenizer_backend", config.tokenizer_backend)
-    ledger = build_from_datasets(
-        ctx=context,
-        dataset=tokenized_dataset,
-        output_path=prefix_join(config.cache_path, "train"),
-        batch_size=batch_size,
-        task_resources=config.map_task_resources,
-    )
+    # Levanter's shard consolidator creates a second ZephyrContext internally.
+    # Scope its otherwise-default 1GB coordinator to the same CoreWeave floor.
+    with patch.object(
+        levanter_cache,
+        "ZephyrContext",
+        partial(
+            ZephyrContext,
+            coordinator_resources=COORDINATOR_RESOURCES,
+            chunk_storage_prefix=f"{chunk_storage_prefix}/cache-probe",
+        ),
+    ):
+        ledger = build_from_datasets(
+            ctx=context,
+            dataset=tokenized_dataset,
+            output_path=prefix_join(config.cache_path, "train"),
+            batch_size=batch_size,
+            task_resources=config.map_task_resources,
+        )
     _validate_ledger(corpus, ledger)
     stats_path, _ = write_stats_json(
         prefix_join(config.cache_path, "train"),
