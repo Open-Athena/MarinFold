@@ -121,7 +121,7 @@ uv run iris --cluster marin job run \
   --target-cluster cw-us-east-02a \
   --priority batch \
   --user eczech \
-  --job-name exp232-s01-m1-p06-aug-smoke \
+  --job-name exp232-s02-m1-p06-aug-smoke \
   --enable-extra-resources \
   --cpu 2 --memory 6GB --disk 32GB \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
@@ -133,7 +133,7 @@ uv run iris --cluster marin job run \
   -e CLUSTER cw-us-east-02a \
   -e NODES 1 \
   -e SMOKE 1 \
-  -- python exp232_sweep.py --version 2026.08.14.1 --run
+  -- python exp232_sweep.py --version 2026.08.14.2 --run
 ```
 
 ## Results
@@ -167,10 +167,12 @@ The final production caches are:
 Every production record passed the same ID-range, OOV, padding, and contacts-v1
 boundary checks before it was written. Both consolidated cache ledgers and
 statistics matched their expected document counts and positive token totals.
-Sweep execution remains pending review.
+The s01 production attempts were explicitly abandoned after detecting GPU
+dependency drift. Their W&B, checkpoint, and SQLite history is retained; the
+clean exact-exp199 restart uses version `2026.08.14.2` (`s02`).
 
 ## Conclusion
 
 The issue #232 training data is mirrored and fully tokenized in the dated
-production caches. The ten-trial sweep is ready for its separate smoke and
-execution review.
+production caches. The ten-trial s02 sweep starts with a distinct full-validation
+smoke before production dispatch.
