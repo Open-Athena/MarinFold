@@ -2,6 +2,86 @@
 
 **Issue [#208](https://github.com/Open-Athena/MarinFold/issues/208) · eleven scored runs · five reward designs · 554-protein held-out eval · 8×A100**
 
+## Definitions
+
+Everything in this document is measured on one of three things: the **held-out
+eval**, the **vote structure** underneath it, or the **training run**. Terms are
+grouped that way.
+
+### The eval, and the metric of record
+
+The model is a generative LM: given a protein sequence it emits a `<contacts-v1>`
+document, a list of `<contact> <pI> <pJ>` triples. It is scored by **sampling it
+100 times and voting**, not by reading one output.
+
+| term | precise meaning |
+|---|---|
+| **rollout** | one sampled document for one protein, deduplicated to a set of residue pairs (i, j). Eval sampling is T = 1.0, top-p = 0.95, no per-request seed. |
+| **candidate pair** | an (i, j) pair of *resolved* residues with **separation** j − i ≥ 6. Pairs closer than 6 are excluded everywhere — they are trivially predictable from the backbone. |
+| **separation band** | `all` = sep ≥ 6, `short` = 6–11, `medium` = 12–23, `long` = ≥ 24. Long-range contacts are the hard, structurally informative ones. |
+| **vote matrix** | the `[L, L]` integer matrix counting, for each candidate pair, how many of the 100 rollouts emitted it. This is the model's actual prediction. |
+| **R** | the number of *true* contacts for that protein in the band being scored. A pair is a true contact if its recorded contact degree (the third field in the GT universe) is ≥ 0.001 and sep ≥ 6. |
+| **consensus R-precision** | **the metric of record.** Rank candidate pairs by vote count (stable mergesort), take the top R, report the fraction that are true contacts. Reported as `R (all)` unless stated. |
+| **L/5, L/2, L** | the same precision-at-top-k with k = L/5, L/2, L instead of R, where L is the protein length. `L/5` reads only the very top of the ranking. |
+| **AUC** | ROC AUC of vote count as a score for "is this pair a true contact", over all candidate pairs. Unlike R-precision it reads the **whole ranking**, not just the top — which is why the two can move in opposite directions. |
+
+Every number is produced by exp82's `score_rollout_worker.py` (generation) and
+exp89's metric implementation via `build_rollout_rows.py` (scoring) — the published
+scripts, not re-derivations. The pipeline reproduces the baseline's recorded 0.6103
+at 0.6111.
+
+### Vote structure — the diagnostics this experiment turns on
+
+These are not part of the published metric. They were added here because reward and
+accuracy alone could not distinguish the failure modes.
+
+| term | precise meaning |
+|---|---|
+| **vote coverage** (also "union pairs") | the number of **distinct** candidate pairs receiving **at least one** vote from the 100 rollouts, averaged over the 554 eval proteins (so it is a mean per protein, not a total). Baseline is 2267. A pair with zero votes is unrankable, so this bounds what the metric can possibly see. |
+| **total votes** | the sum of the vote matrix — i.e. the total contacts emitted across all 100 rollouts, after per-rollout deduplication. Baseline is 16,191. |
+| **votes/pair** | total votes ÷ union pairs: the mean number of rollouts that agree on a pair which got any vote. Baseline 7.14. **Low = diverse rollouts, high = redundant ones.** A group of identical rollouts has votes/pair = 100. |
+
+Coverage and total votes separate the two failure modes cleanly: arm S dropped
+*total votes* 48% (it emitted fewer contacts), while arm D v2 held total votes and
+dropped *coverage* 61% (it emitted the same contacts every time).
+
+One caveat on exactness: coverage and votes/pair are computed over all upper-triangle
+pairs with sep ≥ 6, whereas the published metric restricts to pairs of *resolved*
+residues. The candidate set is therefore slightly larger for these diagnostics than
+for R-precision. They are used only for within-comparison contrasts, where the
+difference cancels.
+
+### Training-run terms
+
+| term | precise meaning |
+|---|---|
+| **group** | the rollouts sampled from one prompt in one training step — 16 here. Note the mismatch with the eval's 100: a rollout's influence on a 16-vote consensus is a cruder thing than the quantity being measured. |
+| **pred/gt** (`contacts/pred_per_gt`) | contacts emitted per rollout ÷ true contacts for that protein. ≈ 1.0 means the model emits about as many as exist; < 1 means it is being selective; > 1 means over-emission. |
+| **contacts/rollout** | mean number of scoreable contacts a rollout emits (`scored_per_rollout`). |
+| **correct/rollout** | of those, how many are true contacts. |
+| **precision / recall** | per-contact, within a rollout: correct ÷ emitted, and correct ÷ true. |
+| **doc F1** | harmonic mean of a single rollout's precision and recall. This is arm D's reward. |
+| **p̄** (`p_bar`) | an EMA of the policy's own recent per-contact precision, used to centre the reward. |
+| **terminal KL** | `policy_kl` at the end of training: how far the policy has moved from the warm start. **The single most useful column in this document** — several arms "did nothing" simply because they never moved. |
+
+### Reward components and arm names
+
+| term | precise meaning |
+|---|---|
+| **stepwise term** | dense per-contact reward: `+(1−p̄)` on a correct contact, `−p̄` on a wrong one, spread over the contact's three tokens. Scaled by `lam_step`. |
+| **document term** | a single scalar per rollout, spread across its response tokens. Scaled by `lam_doc`. |
+| **consensus marginal** | the document term of arms B and C: `C(all) − C(all \ {i})`, where C is the group's consensus R-precision. What rollout *i* contributes to the group getting the right answer. Zero for a rollout that duplicates its siblings. |
+| **novelty** | per-contact weight `1 − n_others/(G−1)`: 1.0 for a contact no sibling found, 0 for one all of them found. |
+| **`err_decay`** | geometric discount on repeated wrong contacts within a section. Set to 1.0 (off) — see [ERR_DECAY_ANALYSIS.md](ERR_DECAY_ANALYSIS.md). |
+| **arm S** | stepwise term only. |
+| **arm B** | stepwise + consensus marginal. |
+| **arm C** | consensus marginal only (`lam_step = 0`). |
+| **arm D** | document F1 only, with a GRPO group baseline. |
+| **arm N** | novelty-weighted stepwise term. |
+
+`v1/v2/v3` suffixes are re-runs of the same arm at a different learning rate or
+dataset, not different rewards.
+
 ## The result
 
 **No reward tested here improves consensus R-precision, the metric #208 is judged
