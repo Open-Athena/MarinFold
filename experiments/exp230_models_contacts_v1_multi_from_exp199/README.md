@@ -273,6 +273,30 @@ exist.
 - `<eos>` and pad positions carry weight 0, so no document's last weight can
   supervise the first token of the next one in a packed row.
 
+### Corpus path — validated at scale (47k documents)
+
+Built and tokenized against the live rollout prefix while generation was still
+running, because the only prior test was six proteins:
+
+| | |
+|---|---|
+| documents | 46,926 (23,463 multi + 23,463 plain) |
+| sequences | 8,609 of 8,192 tokens |
+| packing density | 84.5 % |
+| token-weight armed | 88.8 % |
+| max token id | 2142 (vocab 2845) |
+| documents longer than `seq_len` | 0 |
+| peak RSS / wall | 3.1 GB / ~1.3 min per 47k docs |
+
+`K` averages 6.05, which is `Uniform{0..12}` as configured. `STEPS_PER_EPOCH` is
+taken from the tokenizer's own printout rather than estimated, and
+`--docs-per-protein` is the knob that lands it on the ~2,500 steps H2 needs.
+
+One gap this caught: the interpreter that has `marinfold` had **no `gcsfs`**, so
+the corpus build — the one stage that must read `gs://` from the workstation —
+could not read its input at all. It failed in under four seconds with an
+`ImportError` that an output filter had hidden.
+
 ### Hardware notes
 
 The **CoreWeave path is unavailable**: the workstation's object-storage key is
