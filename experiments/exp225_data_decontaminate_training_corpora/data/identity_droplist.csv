@@ -1,0 +1,7 @@
+reference,rule,arm,n_documents,n_dropped,pct_dropped,n_surviving
+eval554,identity >= 30% over >= 50% of the shorter sequence,afdb,4129682,57482,1.3919,4072200
+eval554,identity >= 30% over >= 50% of the shorter sequence,esm_atlas,66759922,782179,1.1716,65977743
+foldbench_all,identity >= 30% over >= 50% of the shorter sequence,afdb,4129682,130409,3.1578,3999273
+foldbench_all,identity >= 30% over >= 50% of the shorter sequence,esm_atlas,66759922,573382,0.8589,66186540
+eval554 + foldbench_all,identity >= 30% over >= 50% of the shorter sequence,afdb,4129682,166679,4.0361,3963003
+eval554 + foldbench_all,identity >= 30% over >= 50% of the shorter sequence,esm_atlas,66759922,1206744,1.8076,65553178

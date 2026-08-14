@@ -72,6 +72,38 @@ are small idealised bundles that share a fold with an enormous share of AFDB,
 and they are the proteins with no evolutionary relatives to leak through in the
 first place.
 
+## A wider reference, and a symmetric coverage gate
+
+Two variants were priced on top of the tier ladder.
+
+A wider reference: all of FoldBench, not just the 100 monomers we score. Its
+protein-protein, antibody-antigen, protein-peptide, protein-ligand, protein-DNA
+and protein-RNA tasks carry protein chains too — 1,940 of them across 1,493
+entries, and all 100 scored monomers are inside that set.
+
+A symmetric coverage gate: Tier A gates on coverage of the eval protein, which
+misses a short training protein aligning to one domain of a long eval protein.
+Gating on the shorter of the two sequences closes that.
+
+Under "30% identity over at least half of the shorter sequence", with no
+E-value arm at all, the union of the 554 and all of FoldBench drops 4.04% of
+AFDB and 1.81% of ESM-Atlas — 1,373,423 of 70,889,604 training proteins, or
+1.94% overall.
+
+All of FoldBench costs more AFDB than our own eval set does (3.16% vs 1.39%),
+which is expected: its chains are all natural PDB proteins with real
+evolutionary families, where 396 of our 554 are de novo designs with almost
+nothing to purge. The union is well below the sum, 86% of it in both arms,
+because the FoldBench monomers sit in both references and a training protein is
+routinely homologous to several eval proteins at once.
+
+The coverage choice is worth about 1.1 points of AFDB: the shorter-sequence
+gate drops 4.04% where the reference-side gate drops 2.92%. Adding Tier A's
+remote-homology arm on top takes it to 5.69% / 3.03%.
+
+Even the widest reference with the most permissive coverage gate leaves 96-98%
+of the training data intact, against the 37% Tier C alone would delete.
+
 ## Where it lands
 
 H1 holds through Tier B; H0 holds for Tier C. The recommendation is to publish

@@ -154,6 +154,8 @@ workstation, and #41's Foldseek DB on the HF bucket.
 | `build_corpus_index.py` | Stream a corpus's id columns (`entry_id`, `struct_cluster_id`) over `HfFileSystem` — column projection, so the AFDB index costs ~200 MB of transfer instead of 13 GB. |
 | `sequence_droplist.py` | **Stage 2a** — all-hits MMseqs2 search → per-training-row drop list. |
 | `sweep_evalue.py` | Prices Tier A's dependence on the reporting threshold off the same search. |
+| `foldbench_reference.py` | Builds a query FASTA for *all* of FoldBench (1,940 protein chains across every task), not just the 100 monomers the benchmark scores. |
+| `identity_droplist.py` | Prices a pure "≥ 30 % identity" rule, over one reference or the union of several. |
 | `structure_droplist.py` | **Stage 2b** — Foldseek the 554 against #41's representative DB → per-cluster drop list. |
 | `survival.py` | **Stage 3** — per-tier survival and the per-axis decomposition. |
 | `plot_decontam.py` | The four figures. |
@@ -316,6 +318,72 @@ seen from the eval side: designs have no relatives to leak through.
 This is not a recommendation to skip fold-decontaminating the designs. It is
 the price of doing so, stated separately, because the two halves of Tier C's
 third-of-the-corpus are not equally worth paying for.
+
+### 5. A wider reference and a symmetric coverage gate: still under 2 %
+
+Two variants worth pricing, because both are things one would plausibly want
+instead of Tier A as specified.
+
+**A wider reference.** The pinned v1 reference is the 554 we report on, of
+which 100 are FoldBench monomers. FoldBench itself is far larger — its
+protein-protein, antibody-antigen, protein-peptide, protein-ligand, protein-DNA
+and protein-RNA tasks carry protein chains too. [`foldbench_reference.py`](foldbench_reference.py)
+assembles all of them: **1,940 protein chains** (1,449 unique sequences) from
+1,493 entries, selected by each task file's explicit chain-type column, with
+assembly copies (`A-2`) folded back to their source chain. All 100 scored
+monomers are inside it. Three entries (8C0H, 8PNI, 8XNH → 6 chains) no longer
+exist in RCSB and are recorded as missing rather than silently skipped.
+
+**A symmetric coverage gate.** Tier A gates on `qcov` — coverage of the *eval*
+protein — following exp65 and #213. That misses a short training protein
+aligning to one domain of a long eval protein. Gating on the **shorter of the
+two sequences** (`max(qcov, tcov)`, since for a fixed aligned region the
+shorter sequence has the larger coverage) closes that.
+
+Under **≥ 30 % identity over ≥ 50 % of the shorter sequence, with no E-value
+arm at all** ([`data/identity_droplist.csv`](data/identity_droplist.csv)):
+
+| reference | AFDB | ESM-Atlas |
+| --- | ---: | ---: |
+| the 554 alone | 57,482 (1.39 %) | 782,179 (1.17 %) |
+| all of FoldBench alone | 130,409 (3.16 %) | 573,382 (0.86 %) |
+| **union** | **166,679 (4.04 %)** | **1,206,744 (1.81 %)** |
+
+1,373,423 of 70,889,604 training proteins — **1.94 %** across both corpora.
+
+Two things the table says. **All of FoldBench costs more AFDB than our own eval
+set does** (3.16 % vs 1.39 %), which is what you would expect: its 1,940 chains
+are all natural PDB proteins with real evolutionary families, where 396 of our
+554 are de novo designs with almost nothing to purge. And **the union is well
+below the sum** — 86 % of it in both arms — because the FoldBench monomers sit
+in both references and a training protein is routinely homologous to several
+eval proteins at once.
+
+What each choice is worth, on the union:
+
+| variant | AFDB | ESM-Atlas |
+| --- | ---: | ---: |
+| coverage of the **shorter** sequence | 4.04 % | 1.81 % |
+| coverage of the reference only (Tier A's gate) | 2.92 % | 1.46 % |
+| coverage of the training protein only | 2.39 % | 0.95 % |
+| coverage of **both** (near-global) | 1.26 % | 0.59 % |
+| shorter-gate **plus** Tier A's `E <= 1e-3` arm | 5.69 %¹ | 3.03 %¹ |
+
+¹ reference-side gate, reduced at the `E <= 10` ceiling
+([`data/identity_droplist_with_evalue.csv`](data/identity_droplist_with_evalue.csv)).
+
+**A caveat on "no E-value threshold".** The rule applies none, but the search
+only reported alignments to `E <= 1000`, and identity-plus-coverage has no
+significance floor of its own, so it keeps accreting weak alignments the deeper
+mmseqs reports. Reducing the same alignments only to `E <= 10` gives 3.63 % /
+1.52 % rather than 4.04 % / 1.81 %. At 30 % identity over half of a short
+sequence, chance alignments are reachable — the corpora contain sequences down
+to 10 residues — so the number is a function of the reporting depth in a way
+the E-value-armed tiers are not.
+
+Either way the conclusion is unchanged: **even the widest reference and the
+most permissive coverage gate leave 96–98 % of the training data intact**,
+against the 37 % Tier C alone would delete from AFDB.
 
 ## Conclusion
 

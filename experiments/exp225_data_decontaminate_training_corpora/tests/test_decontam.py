@@ -3,10 +3,10 @@
 
 """Pure-logic tests for the exp225 decontamination pass — no mmseqs, no network.
 
-The three things worth testing here are the three places a bug would silently
-*under*-filter the corpus rather than fail loudly: inverting a hit back to a
-corpus row, deciding whether an alignment is contamination, and resolving a
-Foldseek query name back to an eval protein.
+What is tested here are the places a bug would silently *under*-filter the
+corpus rather than fail loudly: inverting a hit back to a corpus row, deciding
+whether an alignment is contamination, combining two references, and resolving
+a Foldseek query name back to an eval protein.
 """
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ from decontam_lib import (  # noqa: E402
     parse_target,
     tiers_up_to,
 )
+from identity_droplist import dropped_keys  # noqa: E402
 from structure_droplist import normalize_query  # noqa: E402
 
 
@@ -103,6 +104,87 @@ class TestTierLadder:
     def test_unknown_tier_raises(self):
         with pytest.raises(ValueError):
             tiers_up_to("D")
+
+
+class TestIdentityRule:
+    """The pure identity rule, and that unioning references is set union.
+
+    Reducing two references separately and unioning is only valid because a
+    drop is a property of the training row, not of the pairing — the live check
+    is that `A + B` equals the reduction of the concatenated alignments, which
+    this reproduces in miniature.
+    """
+
+    @staticmethod
+    def _m8(path, rows):
+        # Columns are sequence_droplist.FIELDS:
+        # query, target, fident, alnlen, qcov, tcov, evalue, bits
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("".join("\t".join(str(v) for v in row) + "\n" for row in rows))
+        return path
+
+    #: query = eval protein, target = training protein. The three rows differ
+    #: only in which side the alignment covers, which is the whole point of
+    #: `coverage_mode`.
+    COVERAGE_ROWS = (
+        # A 12-residue match into a long training protein: covers neither side.
+        ("q1", "afdb|00000_0_FRAGMENT", 0.95, 12, 0.12, 0.012, 1.0, 30),
+        # Covers most of the eval protein, a sliver of a long training protein.
+        ("q1", "afdb|00000_1_LONG_TRAINING", 0.35, 80, 0.80, 0.090, 1.0, 60),
+        # A short training protein aligning to one domain of a long eval
+        # protein — invisible to a query-side gate, caught by `shorter`.
+        ("q2", "afdb|00000_2_SHORT_TRAINING", 0.35, 80, 0.10, 0.850, 1.0, 60),
+    )
+
+    @pytest.mark.parametrize(
+        "mode, expected",
+        [
+            ("shorter", {"LONG_TRAINING", "SHORT_TRAINING"}),
+            ("reference", {"LONG_TRAINING"}),
+            ("training", {"SHORT_TRAINING"}),
+            ("both", set()),
+        ],
+    )
+    def test_coverage_mode_decides_which_side_must_be_covered(self, tmp_path, mode, expected):
+        m8 = self._m8(tmp_path / "aln.m8", self.COVERAGE_ROWS)
+        dropped = dropped_keys(
+            m8, min_identity=0.30, min_qcov=0.50, max_evalue=None, coverage_mode=mode
+        )
+        assert dropped[ARM_AFDB] == expected
+
+    def test_a_high_identity_fragment_is_never_homology(self, tmp_path):
+        """95 % identical over 12 residues, covering neither sequence."""
+        m8 = self._m8(tmp_path / "aln.m8", self.COVERAGE_ROWS[:1])
+        for mode in ("shorter", "reference", "training", "both"):
+            dropped = dropped_keys(
+                m8, min_identity=0.30, min_qcov=0.50, max_evalue=None, coverage_mode=mode
+            )
+            assert dropped[ARM_AFDB] == set(), mode
+
+    def test_the_remote_arm_is_separable(self, tmp_path):
+        """Far below any identity bar, but unmistakably significant."""
+        m8 = self._m8(
+            tmp_path / "aln.m8",
+            [("q1", "afdb|00000_3_REMOTE", 0.10, 90, 0.80, 0.90, 1e-9, 90)],
+        )
+        kwargs = {"min_identity": 0.30, "min_qcov": 0.50, "coverage_mode": "shorter"}
+        assert dropped_keys(m8, max_evalue=None, **kwargs)[ARM_AFDB] == set()
+        assert dropped_keys(m8, max_evalue=1e-3, **kwargs)[ARM_AFDB] == {"REMOTE"}
+
+    def test_union_is_set_union_not_a_sum(self, tmp_path):
+        """A row homologous to both references must be counted once, not twice."""
+        shared = ("qX", "esm_atlas|00001_5_SHARED", 0.60, 90, 0.80, 0.9, 1e-30, 200)
+        only_a = ("qA", "esm_atlas|00001_6_A", 0.60, 90, 0.80, 0.9, 1e-30, 200)
+        only_b = ("qB", "esm_atlas|00001_7_B", 0.60, 90, 0.80, 0.9, 1e-30, 200)
+        a = self._m8(tmp_path / "a" / "aln.m8", [shared, only_a])
+        b = self._m8(tmp_path / "b" / "aln.m8", [shared, only_b])
+        both = self._m8(tmp_path / "ab" / "aln.m8", [shared, only_a, shared, only_b])
+
+        kwargs = {"min_identity": 0.30, "min_qcov": 0.50, "max_evalue": None}
+        left = dropped_keys(a, **kwargs)[ARM_ESM]
+        right = dropped_keys(b, **kwargs)[ARM_ESM]
+        assert left | right == dropped_keys(both, **kwargs)[ARM_ESM] == {"SHARED", "A", "B"}
+        assert len(left | right) < len(left) + len(right)
 
 
 class TestNormalizeQuery:
