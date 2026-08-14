@@ -21,12 +21,14 @@ from unittest.mock import patch
 
 import click
 import fsspec
+import numpy as np
 import pyarrow.parquet as pq
 from fray.types import ResourceConfig
 from huggingface_hub import HfFileSystem
-from levanter.data.text.formats import TextLmDatasetFormat
+from levanter.data.text.formats import TextLmDatasetFormat, preprocessor_for_format
 from levanter.store import cache as levanter_cache
-from levanter.store.cache import CacheLedger, ShardedCacheLayout
+from levanter.store.cache import CacheLedger, ShardedCacheLayout, TreeCache
+from levanter.tokenizers import load_tokenizer
 from marin.processing.tokenize._core import (
     bundle_files_by_size,
     compute_target_group_bytes,
@@ -52,6 +54,16 @@ logger = logging.getLogger(__name__)
 CACHE_VERSION = "2026.08.14"
 TOKENIZER = "eczech/contacts-v1-tokenizer-5d68a24a899f"
 TEXT_KEY = "document"
+VOCAB_SIZE = 2845
+EXPECTED_TOKEN_IDS = {
+    "<pad>": 0,
+    "<eos>": 1,
+    "<contacts-v1>": 2,
+    "<begin_sequence>": 8,
+    "<begin_statements>": 9,
+    "<end>": 10,
+    "<UNK>": 2844,
+}
 
 EXPERIMENT_PREFIX = "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam"
 DATA_PREFIX = f"{EXPERIMENT_PREFIX}/data"
@@ -75,6 +87,7 @@ SMOKE_MANIFEST = f"{SMOKE_PREFIX}/mirror.json"
 
 COPY_BUFFER_BYTES = 32 * 1024 * 1024
 COPY_RETRIES = 5
+SMOKE_AUDIT_BATCH_SIZE = 64
 COORDINATOR_RESOURCES = ResourceConfig(
     cpu=1,
     ram="6g",
@@ -376,6 +389,207 @@ def _with_observed_document_counts(
     return tuple(updated)
 
 
+def _load_validated_tokenizer():
+    tokenizer = load_tokenizer(TOKENIZER, backend="hf")
+    vocab = tokenizer.get_vocab()
+    observed = {token: vocab.get(token) for token in EXPECTED_TOKEN_IDS}
+    if len(tokenizer) != VOCAB_SIZE or observed != EXPECTED_TOKEN_IDS:
+        raise ValueError(
+            "contacts-v1 tokenizer contract changed: "
+            f"vocab_size={len(tokenizer)}, observed_token_ids={observed}"
+        )
+    return tokenizer
+
+
+def _validate_tokenized_record(record: dict) -> dict:
+    """Fail the distributed production pipeline on OOV or malformed output."""
+    input_ids = record.get("input_ids")
+    record_id = record.get("id", "<unknown>")
+    if input_ids is None or len(input_ids) < 5:
+        raise ValueError(f"tokenized record {record_id} has no usable input_ids")
+    if min(input_ids) < 0 or max(input_ids) >= VOCAB_SIZE:
+        raise ValueError(f"tokenized record {record_id} has out-of-range token IDs")
+    if EXPECTED_TOKEN_IDS["<UNK>"] in input_ids:
+        raise ValueError(
+            f"tokenized record {record_id} contains OOV token ID "
+            f"{EXPECTED_TOKEN_IDS['<UNK>']}"
+        )
+    if EXPECTED_TOKEN_IDS["<pad>"] in input_ids:
+        raise ValueError(f"tokenized record {record_id} contains unexpected padding")
+    if (
+        input_ids[0] != EXPECTED_TOKEN_IDS["<contacts-v1>"]
+        or EXPECTED_TOKEN_IDS["<begin_sequence>"] not in input_ids
+        or EXPECTED_TOKEN_IDS["<begin_statements>"] not in input_ids
+        or input_ids[-2] != EXPECTED_TOKEN_IDS["<end>"]
+        or input_ids[-1] != EXPECTED_TOKEN_IDS["<eos>"]
+    ):
+        raise ValueError(f"tokenized record {record_id} has malformed boundaries")
+    return record
+
+
+def _validate_smoke_tokenization(
+    corpus: Corpus,
+    sources: list[MirrorFile],
+) -> None:
+    """Compare every smoke cache row with fresh tokenization of its S3 source."""
+    tokenizer = _load_validated_tokenizer()
+
+    data_format = TextLmDatasetFormat(text_key=TEXT_KEY)
+    processor = preprocessor_for_format(data_format, tokenizer)
+    if hasattr(processor, "_long_string_workaround"):
+        processor._long_string_workaround = True
+
+    split_path = prefix_join(corpus.cache_path, "train")
+    cache = TreeCache.load(
+        split_path,
+        {"input_ids": np.zeros((1,), dtype=np.int32)},
+    )
+    if len(cache) != corpus.expected_documents:
+        raise ValueError(
+            f"{corpus.key} smoke cache has {len(cache)} rows; "
+            f"expected {corpus.expected_documents}"
+        )
+
+    s3_fs = fsspec.filesystem("s3")
+    token_counts = np.zeros(len(tokenizer), dtype=np.int64)
+    document_count = 0
+    min_document_tokens: int | None = None
+    max_document_tokens = 0
+
+    for source in sources:
+        if not source.relative_path.endswith(".parquet"):
+            continue
+        path = _destination_path(corpus.s3_prefix, source.relative_path)
+        with s3_fs.open(path, "rb") as parquet_file:
+            batches = pq.ParquetFile(parquet_file).iter_batches(
+                batch_size=SMOKE_AUDIT_BATCH_SIZE,
+                columns=[TEXT_KEY],
+            )
+            for batch in batches:
+                texts = batch.column(0).to_pylist()
+                fresh_records = processor([{TEXT_KEY: text} for text in texts])
+                cached_records = cache.get_batch_sync(
+                    slice(document_count, document_count + len(texts))
+                )
+                if len(fresh_records) != len(texts) or len(cached_records) != len(
+                    texts
+                ):
+                    raise ValueError(
+                        f"{corpus.key} audit batch changed cardinality at "
+                        f"document {document_count}"
+                    )
+
+                for offset, (fresh, cached) in enumerate(
+                    zip(fresh_records, cached_records, strict=True)
+                ):
+                    document_index = document_count + offset
+                    fresh_ids = np.asarray(fresh["input_ids"], dtype=np.int64)
+                    cached_ids = np.asarray(cached["input_ids"], dtype=np.int64)
+                    if not np.array_equal(cached_ids, fresh_ids):
+                        if len(cached_ids) == len(fresh_ids):
+                            mismatch = np.flatnonzero(cached_ids != fresh_ids)
+                            first = int(mismatch[0]) if len(mismatch) else None
+                        else:
+                            first = None
+                        raise ValueError(
+                            f"{corpus.key} cached tokens differ from fresh tokenization "
+                            f"at document {document_index}, token {first}: "
+                            f"cached_length={len(cached_ids)}, "
+                            f"fresh_length={len(fresh_ids)}"
+                        )
+                    if len(cached_ids) < 5:
+                        raise ValueError(
+                            f"{corpus.key} document {document_index} has only "
+                            f"{len(cached_ids)} cached tokens"
+                        )
+                    invalid = cached_ids[(cached_ids < 0) | (cached_ids >= VOCAB_SIZE)]
+                    if len(invalid):
+                        raise ValueError(
+                            f"{corpus.key} document {document_index} has out-of-range "
+                            f"token IDs: {np.unique(invalid).tolist()}"
+                        )
+                    if EXPECTED_TOKEN_IDS["<UNK>"] in cached_ids:
+                        raise ValueError(
+                            f"{corpus.key} document {document_index} contains OOV "
+                            f"token ID {EXPECTED_TOKEN_IDS['<UNK>']}"
+                        )
+                    if EXPECTED_TOKEN_IDS["<pad>"] in cached_ids:
+                        raise ValueError(
+                            f"{corpus.key} document {document_index} contains padding "
+                            "in the unpadded cache"
+                        )
+
+                    begin_sequence = np.flatnonzero(
+                        cached_ids == EXPECTED_TOKEN_IDS["<begin_sequence>"]
+                    )
+                    begin_statements = np.flatnonzero(
+                        cached_ids == EXPECTED_TOKEN_IDS["<begin_statements>"]
+                    )
+                    if (
+                        cached_ids[0] != EXPECTED_TOKEN_IDS["<contacts-v1>"]
+                        or len(begin_sequence) != 1
+                        or len(begin_statements) != 1
+                        or begin_sequence[0] >= begin_statements[0]
+                        or cached_ids[-2] != EXPECTED_TOKEN_IDS["<end>"]
+                        or cached_ids[-1] != EXPECTED_TOKEN_IDS["<eos>"]
+                    ):
+                        raise ValueError(
+                            f"{corpus.key} document {document_index} has malformed "
+                            "contacts-v1 boundaries"
+                        )
+
+                    token_counts += np.bincount(
+                        cached_ids,
+                        minlength=len(tokenizer),
+                    )
+                    min_document_tokens = (
+                        len(cached_ids)
+                        if min_document_tokens is None
+                        else min(min_document_tokens, len(cached_ids))
+                    )
+                    max_document_tokens = max(max_document_tokens, len(cached_ids))
+                document_count += len(texts)
+
+    if document_count != corpus.expected_documents:
+        raise ValueError(
+            f"{corpus.key} audit read {document_count} documents; "
+            f"expected {corpus.expected_documents}"
+        )
+    total_tokens = int(token_counts.sum())
+    ledger_tokens = cache.ledger.field_counts.get("input_ids", 0)
+    if total_tokens != ledger_tokens:
+        raise ValueError(
+            f"{corpus.key} audit counted {total_tokens} tokens; "
+            f"ledger records {ledger_tokens}"
+        )
+
+    used_ids = np.flatnonzero(token_counts)
+    top_ids = sorted(
+        used_ids,
+        key=lambda token_id: int(token_counts[token_id]),
+        reverse=True,
+    )[:10]
+    top_tokens = [
+        (tokenizer.convert_ids_to_tokens(int(token_id)), int(token_counts[token_id]))
+        for token_id in top_ids
+    ]
+    logger.info(
+        "%s smoke token audit passed: %d documents, %d tokens, %d/%d token IDs "
+        "used, token ID range %d..%d, document lengths %d..%d, 0 OOV, 0 pad, "
+        "all cached rows exactly match fresh tokenization; most common: %s",
+        corpus.key,
+        document_count,
+        total_tokens,
+        len(used_ids),
+        len(tokenizer),
+        int(used_ids[0]),
+        int(used_ids[-1]),
+        min_document_tokens,
+        max_document_tokens,
+        top_tokens,
+    )
+
+
 def _validate_ledger(corpus: Corpus, ledger: CacheLedger) -> None:
     total_tokens = ledger.field_counts.get("input_ids", 0)
     if ledger.total_num_rows != corpus.expected_documents or total_tokens <= 0:
@@ -464,6 +678,7 @@ def tokenize_corpus(corpus: Corpus, *, max_workers: int, num_input_files: int) -
         sample_parquet_path=parquet_window_hint(groups),
         levanter_batch_size=config.levanter_batch_size,
     )
+    tokenized_dataset = tokenized_dataset.map(_validate_tokenized_record)
     chunk_storage_prefix = (
         f"{EXPERIMENT_PREFIX}/tmp/zephyr/"
         f"{corpus.cache_path.removeprefix(EXPERIMENT_PREFIX).strip('/').replace('/', '-')}"
@@ -555,6 +770,7 @@ def main(
             parquet_file_limit=parquet_file_limit,
         )
     if phase in {"all", "tokenize"}:
+        _load_validated_tokenizer()
         if smoke_test:
             corpora = _with_observed_document_counts(corpora, catalogs)
         for corpus in corpora:
@@ -567,6 +783,8 @@ def main(
                 max_workers=tokenize_workers,
                 num_input_files=parquet_count,
             )
+            if smoke_test:
+                _validate_smoke_tokenization(corpus, catalogs[corpus.key])
 
 
 if __name__ == "__main__":

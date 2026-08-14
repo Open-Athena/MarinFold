@@ -127,6 +127,13 @@ The isolated tokenization smoke test completed successfully on `cw-rno2a` on
 - ESM Atlas: 19,624 input documents, 19,624 cached documents, 20,498,326
   tokens.
 
+Follow-up Iris job `/eczech/exp232-token-audit` independently scanned every
+smoke cache row and compared it with fresh tokenization of its mirrored source.
+All 20,595 documents and 21,332,008 tokens matched exactly. It found zero
+`<UNK>` (ID 2844), zero pad tokens, no out-of-range IDs, and no malformed
+contacts-v1 boundaries. The production pipeline applies the ID-range, OOV,
+padding, and boundary checks to every tokenized record before writing it.
+
 Full tokenization and sweep execution remain pending review.
 
 ## Conclusion
