@@ -107,7 +107,15 @@ class Exp208Config(SkyRLTrainConfig):
     #                   coming from the group. Needs a group estimator (grpo/rloo);
     #                   contacts_dense refuses it by design, since a constant
     #                   per-token advantage is exactly the failure it guards.
+    # "novelty" -- dense per-contact, but a CORRECT contact is weighted by how few
+    # siblings also found it: r = (1-p_bar)*(floor + (1-floor)*novelty), while a
+    # wrong one still costs a full -p_bar. Synthesis of the two failure modes:
+    # the stepwise term alone sharpens (coverage -65%), the consensus marginal
+    # alone over-emits (KL diverged to 3.96, precision below baseline). Keeping the
+    # full wrong-contact penalty makes volume never free; the novelty weight makes
+    # duplicating the consensus pay less than finding what the group missed.
     reward_mode: str = "dense"
+    novelty_floor: float = 0.25
     # Weight p_bar's EMA by each rollout's contact count. False reproduces arm S,
     # whose p_bar drifted to 0.5501 against a true precision of 0.4733 and shrank
     # the policy; see ARM_S_RESULTS.md. Irrelevant to reward_mode=document_f1,
@@ -133,7 +141,7 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
 def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
               doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
               collapse_ratio: float = 0.2, reward_mode: str = "dense",
-              p_bar_count_weighted: bool = True):
+              p_bar_count_weighted: bool = True, novelty_floor: float = 0.25):
     """A ``BasePPOExp`` whose generator emits exp208's dense per-contact reward."""
     from skyrl.backends.skyrl_train.inference_servers.utils import resolve_policy_model_name
     from skyrl.train.entrypoints.main_base import BasePPOExp
@@ -157,6 +165,7 @@ def build_exp(cfg, *, p_bar: float, err_decay: float, vocab_size: Optional[int],
                 collapse_ratio=collapse_ratio,
                 reward_mode=reward_mode,
                 p_bar_count_weighted=p_bar_count_weighted,
+                novelty_floor=novelty_floor,
             )
 
     return Exp208PPOExp(cfg)
@@ -202,6 +211,10 @@ def check_reward_mode(cfg) -> None:
             f"advantage_estimator='{ADV_ESTIMATOR}' requires a per-token signal and will "
             f"refuse it at the first step. Use advantage_estimator=grpo (or rloo)."
         )
+    if mode == "novelty" and estimator != ADV_ESTIMATOR:
+        raise ValueError(
+            f"reward_mode='novelty' emits a per-token reward and needs "
+            f"advantage_estimator={ADV_ESTIMATOR}, got '{estimator}'.")
     if mode == "dense" and estimator != ADV_ESTIMATOR:
         raise ValueError(
             f"reward_mode='dense' emits a per-token reward, but advantage_estimator="
@@ -224,7 +237,8 @@ def skyrl_entrypoint(cfg: Exp208Config):
     build_exp(cfg, p_bar=cfg.p_bar, err_decay=cfg.err_decay, vocab_size=cfg.vocab_size,
               doc_term=cfg.doc_term, lam_step=cfg.lam_step, lam_doc=cfg.lam_doc,
               collapse_ratio=cfg.collapse_ratio, reward_mode=cfg.reward_mode,
-              p_bar_count_weighted=cfg.p_bar_count_weighted).run()
+              p_bar_count_weighted=cfg.p_bar_count_weighted,
+              novelty_floor=cfg.novelty_floor).run()
 
 
 def main() -> int:

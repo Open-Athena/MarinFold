@@ -110,14 +110,16 @@ class DenseContactsGenerator(SkyRLGymGenerator):
                  precision_ema_decay: float = 0.9, vocab_size: Optional[int] = None,
                  doc_term: str = "none", lam_step: float = 1.0, lam_doc: float = 0.0,
                  collapse_ratio: float = 0.2, reward_mode: str = "dense",
-                 p_bar_count_weighted: bool = True, **kwargs):
+                 p_bar_count_weighted: bool = True, novelty_floor: float = 0.25, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
-        if reward_mode not in ("dense", "document_f1"):
-            raise ValueError(f"reward_mode must be 'dense' or 'document_f1', got {reward_mode!r}")
+        if reward_mode not in ("dense", "document_f1", "novelty"):
+            raise ValueError(
+                f"reward_mode must be 'dense', 'document_f1' or 'novelty', got {reward_mode!r}")
         super().__init__(*args, **kwargs)
         self.reward_mode = reward_mode
         self.p_bar_count_weighted = bool(p_bar_count_weighted)
+        self.novelty_floor = float(novelty_floor)
         self.collapse_ratio = float(collapse_ratio)
         self.doc_term = doc_term
         self.lam_step = float(lam_step)
@@ -141,6 +143,8 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         # at contacts" from "the policy learned to emit more of them" -- the
         # failure mode this reward shape is most exposed to (see `err_decay`).
         self._diag: Dict[str, float] = {}
+        # instance_id -> {repetition_id: ([(pair, start, correct)], n_response_tokens)}
+        self._group_contacts: Dict[str, Dict[str, Any]] = {}
 
     async def agent_loop(self, prompt, env_class, env_extras, max_tokens, max_input_length,
                          sampling_params=None, trajectory_id=None, cache_salt=None):
@@ -255,6 +259,18 @@ class DenseContactsGenerator(SkyRLGymGenerator):
                  if c.pair is not None and c.reason == "ok"}
         self._group_pairs.setdefault(state["instance_id"], {})[state["repetition_id"]] = pairs
 
+        if self.reward_mode == "novelty":
+            # Keep each contact's POSITION as well as its pair, so the group pass
+            # can rewrite per-token rewards in place. Storing only pair sets (as
+            # the consensus term does) is not enough: novelty is a per-contact
+            # weight and has to land on that contact's three tokens.
+            self._group_contacts.setdefault(state["instance_id"], {})[state["repetition_id"]] = (
+                [(c.pair, c.start, c.correct)
+                 for c in cr.walk_contacts(response_ids, state["pos_to_seq"], state["gt"])
+                 if c.pair is not None and c.reason == "ok"],
+                len(response_ids),
+            )
+
         if self.reward_mode == "document_f1":
             # ONE scalar for the whole rollout: the section's F1 against ground
             # truth. No per-token shaping, no p_bar, no err_decay -- those
@@ -322,6 +338,8 @@ class DenseContactsGenerator(SkyRLGymGenerator):
         """
         self.reset_groups()
         out = await super().generate(input_batch)
+        if self.reward_mode == "novelty":
+            return self._emit_contact_metrics(self._apply_novelty(out, input_batch))
         if self.doc_term == "none" or self.lam_doc == 0.0:
             # `apply_consensus_term` is what normally applies `lam_step`; on this
             # path it never runs, so a non-unit lam_step would be silently dropped.
@@ -347,6 +365,75 @@ class DenseContactsGenerator(SkyRLGymGenerator):
                     f"it claims to. Fix the mapping or run doc_term=none deliberately."
                 )
         return self._emit_contact_metrics(out)
+
+    def _apply_novelty(self, out, input_batch=None):
+        """Re-weight each correct contact by how few siblings also found it.
+
+        For contact `c` in rollout `i` of a group of G:
+
+            n_others = siblings that also emitted c
+            novelty  = 1 - n_others/(G-1)                     in [0, 1]
+            r(c)     = +(1-p_bar) * (beta + (1-beta)*novelty)   if correct
+                     = -p_bar                                   if wrong
+
+        This is the synthesis the two failure modes point at. The stepwise reward
+        alone SHARPENS -- a contact pays the same whether or not every sibling
+        already found it, so the cheapest way to raise it is to emit only the
+        confident ones, and coverage fell 65%. The consensus marginal alone
+        OVER-EMITS -- it nets correct against wrong at the document level, so
+        volume is nearly free, and at lr 4e-5 the run diverged to KL 3.96 with
+        precision below the base model.
+
+        Novelty weighting keeps the full `-p_bar` penalty on every wrong contact,
+        so volume is never free, while paying more for true contacts the group
+        would otherwise miss. Duplicating the consensus earns `beta`; finding what
+        nobody else found earns 1.0.
+        """
+        rewards = out.get("rewards")
+        traj = out.get("trajectory_ids") or (input_batch or {}).get("trajectory_ids")
+        if not rewards or traj is None:
+            raise RuntimeError("[exp208] novelty mode needs per-row trajectory_ids and rewards")
+
+        row_of = {}
+        for i, tid in enumerate(traj):
+            row_of[f"{getattr(tid, 'instance_id', '')}:{getattr(tid, 'repetition_id', '')}"] = i
+
+        n_rewritten = 0
+        for inst, per_rep in self._group_contacts.items():
+            reps = sorted(per_rep)
+            if len(reps) < 2:
+                continue
+            # How many rollouts emitted each pair, over the whole group.
+            counts: Dict[Any, int] = {}
+            for r in reps:
+                for pair, _, _ in per_rep[r][0]:
+                    counts[pair] = counts.get(pair, 0) + 1
+            for r in reps:
+                key = f"{inst}:{r}"
+                if key not in row_of:
+                    continue
+                contacts, n_tok = per_rep[r]
+                vec = np.zeros(n_tok, dtype=np.float32)
+                for pair, start, correct in contacts:
+                    if correct:
+                        # counts includes this rollout, so subtract it.
+                        others = counts.get(pair, 1) - 1
+                        novelty = 1.0 - (others / max(len(reps) - 1, 1))
+                        val = (1.0 - self.p_bar) * (self.novelty_floor
+                                                    + (1.0 - self.novelty_floor) * novelty)
+                    else:
+                        val = -self.p_bar
+                    vec[start:start + 3] += np.float32(val / 3.0)
+                row = row_of[key]
+                if len(vec) != len(rewards[row]):
+                    raise RuntimeError(
+                        f"[exp208] novelty vector {len(vec)} != reward row {len(rewards[row])} for {key}")
+                rewards[row] = [float(x) for x in vec]
+                n_rewritten += 1
+        logger.info("[exp208] novelty re-weighted %d/%d rollouts (floor=%.2g)",
+                    n_rewritten, len(rewards), self.novelty_floor)
+        out["rewards"] = rewards
+        return out
 
     def _emit_contact_metrics(self, out):
         """Attach per-contact tallies to `rollout_metrics`.
@@ -542,6 +629,7 @@ class DenseContactsGenerator(SkyRLGymGenerator):
     def reset_groups(self) -> None:
         self._group_pairs.clear()
         self._group_meta.clear()
+        self._group_contacts.clear()
         self._diag.clear()
 
 

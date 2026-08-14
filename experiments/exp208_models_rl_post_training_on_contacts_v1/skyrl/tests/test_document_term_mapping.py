@@ -221,8 +221,9 @@ def test_reward_mode_and_estimator_must_agree():
     from main_exp208 import ADV_ESTIMATOR, check_reward_mode
 
     class _Cfg:
-        def __init__(self, mode, est):
+        def __init__(self, mode, est, lam_step=1.0):
             self.reward_mode = mode
+            self.lam_step = lam_step
             self.trainer = type("T", (), {"algorithm": type("A", (), {"advantage_estimator": est})()})()
 
     with pytest.raises(ValueError, match="one scalar per rollout"):
@@ -232,6 +233,12 @@ def test_reward_mode_and_estimator_must_agree():
         check_reward_mode(_Cfg("dense", "grpo"))
     check_reward_mode(_Cfg("document_f1", "grpo"))       # both valid pairings
     check_reward_mode(_Cfg("dense", ADV_ESTIMATOR))
+    # novelty is dense per-token, so it needs the dense estimator too.
+    check_reward_mode(_Cfg("novelty", ADV_ESTIMATOR))
+    with pytest.raises(ValueError, match="novelty"):
+        check_reward_mode(_Cfg("novelty", "grpo"))
+    # lam_step=0 makes even "dense" sequence-level, which needs a group estimator.
+    check_reward_mode(_Cfg("dense", "grpo", lam_step=0.0))
 
 
 def test_document_term_total_is_lam_doc_times_marginal():
@@ -251,3 +258,56 @@ def test_document_term_total_is_lam_doc_times_marginal():
     for (_, rep), reward in zip(rows, out["rewards"]):
         assert sum(reward) == pytest.approx(lam_doc * expected[rep]), (
             "summed document contribution must equal lam_doc * marginal")
+
+
+# --- novelty-weighted reward ------------------------------------------------
+#
+# The synthesis of the two measured failure modes. The stepwise term alone
+# SHARPENS: a contact pays the same whether or not every sibling already found
+# it, so emitting only confident contacts is the cheapest way to score, and
+# coverage fell 65%. The consensus marginal alone OVER-EMITS: it nets correct
+# against wrong at the document level, so volume is nearly free, and at lr 4e-5
+# the run diverged to KL 3.96 with precision below the base model.
+
+
+def _novelty_generator(floor=0.25, p_bar=0.26):
+    gen = object.__new__(DenseContactsGenerator)
+    gen.reward_mode = "novelty"; gen.novelty_floor = floor; gen.p_bar = p_bar
+    gen._diag = {}; gen._group_contacts = {}
+    return gen
+
+
+def test_novelty_pays_more_for_contacts_the_group_missed():
+    """A correct contact only this rollout found must outscore a unanimous one."""
+    gen = _novelty_generator()
+    # rep 0 finds (0,10) alone; all three find (1,20). Both correct.
+    gen._group_contacts["A"] = {
+        "0": ([((0, 10), 0, True), ((1, 20), 3, True)], 6),
+        "1": ([((1, 20), 0, True)], 3),
+        "2": ([((1, 20), 0, True)], 3),
+    }
+    rows = [("A", "0"), ("A", "1"), ("A", "2")]
+    out = {"rewards": [[0.0] * 6, [0.0] * 3, [0.0] * 3],
+           "trajectory_ids": [_TID(i, r) for i, r in rows]}
+    got = gen._apply_novelty(out)["rewards"][0]
+    unique_total, shared_total = sum(got[0:3]), sum(got[3:6])
+    assert unique_total > shared_total, "a contact nobody else found must pay more"
+    # floor=0.25: unanimous pays 0.25 of the full (1-p_bar); unique pays all of it.
+    assert shared_total == pytest.approx(0.25 * (1 - gen.p_bar))
+    assert unique_total == pytest.approx(1.0 * (1 - gen.p_bar))
+
+
+def test_novelty_keeps_the_full_penalty_on_wrong_contacts():
+    """Volume must never be free — this is what stops the over-emission failure."""
+    gen = _novelty_generator()
+    gen._group_contacts["A"] = {
+        "0": ([((2, 9), 0, False)], 3),
+        "1": ([((5, 15), 0, False)], 3),
+    }
+    rows = [("A", "0"), ("A", "1")]
+    out = {"rewards": [[0.0] * 3, [0.0] * 3],
+           "trajectory_ids": [_TID(i, r) for i, r in rows]}
+    got = gen._apply_novelty(out)["rewards"][0]
+    # A wrong contact costs -p_bar regardless of how novel it is: novelty must not
+    # make junk cheaper, or the reward degenerates into spam.
+    assert sum(got) == pytest.approx(-gen.p_bar)
