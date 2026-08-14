@@ -297,6 +297,43 @@ the corpus build — the one stage that must read `gs://` from the workstation �
 could not read its input at all. It failed in under four seconds with an
 `ImportError` that an output filter had hidden.
 
+### Stage 2 — the corpus (DONE)
+
+Built from a **50.3 % snapshot** of the rollout run — 49,916 proteins — and that
+partial coverage is not a length or provenance bias. Targets are sharded by
+`idx % 48` over the length-sorted pool, so every shard carries the same length
+distribution and arm mix and any prefix of the fleet is a *uniform* sample. The
+arm shares came out within 1.4 points of the source pool:
+
+| arm | proteins | corpus share | pool share |
+|---|---|---|---|
+| afdb | 19,161 | 38.4 % | 37.3 % |
+| esm_atlas | 17,915 | 35.9 % | 37.3 % |
+| **pdb** | **12,840** | 25.7 % | 25.3 % |
+
+| | |
+|---|---|
+| documents | 698,812 (349,400 multi + 349,412 plain) |
+| sequences | **163,838** of 8,192 |
+| tokens | 1.10 B |
+| packing density | 82.2 % |
+| token-weight armed | 89.3 % |
+| max token id | 2142 (vocab 2845) |
+| dropped as oversized | 12 (0.002 %) |
+| **steps/epoch at batch 128** | **1,280** |
+
+`--docs-per-protein 7` was chosen so that the preregistered **2 epochs** lands on
+**2,560 steps**, rather than compensating for the smaller protein pool by
+stacking extra epochs. Seven is within precedent — #163's builder defaulted to
+8 — and each document redraws K, which drafts are shown, how far each is
+subsampled, the N-terminal offset and the statement order, so repeated exposures
+are different presentations rather than replays.
+
+Why 50.3 % and not more: coverage was growing ~3 points/hour against a pool
+that had shrunk to 9 workers with the autoscaler reporting zero demand, so
+reaching 65 % meant five more hours for data that more epochs can substitute
+for. The remaining shards kept running; anything past the snapshot is unused.
+
 ### Hardware notes
 
 The **CoreWeave path is unavailable**: the workstation's object-storage key is
