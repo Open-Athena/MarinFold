@@ -657,6 +657,7 @@ dependencies = [
 [package.optional-dependencies]
 gpu = [
     { name = "marin-core", extra = ["gpu"], marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cudnn-cu13", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "torch", marker = "sys_platform == 'linux'" },
     { name = "torchvision", marker = "sys_platform == 'linux'" },
 ]
@@ -675,6 +676,7 @@ requires-dist = [
     { name = "marin-finelog-server", specifier = "==0.2.22.dev31066648311" },
     { name = "marin-iris", specifier = "==0.2.73.dev30987879744" },
     { name = "marin-iris-native", specifier = "==0.1.5.dev30223685542" },
+    { name = "nvidia-cudnn-cu13", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'gpu'", url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl" },
     { name = "s3fs" },
     { name = "torch", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "exp232-models-sweep-cv1-decontam", extra = "gpu" } },
     { name = "torch", marker = "sys_platform != 'linux' and extra == 'gpu'", specifier = "==2.11.0" },
@@ -2115,12 +2117,20 @@ wheels = [
 [[package]]
 name = "nvidia-cudnn-cu13"
 version = "9.26.0.28.dev61599045"
-source = { registry = "https://pypi.org/simple" }
+source = { url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl" }
 dependencies = [
     { name = "nvidia-cublas", marker = "sys_platform == 'linux'" },
     { name = "nvidia-cuda-nvrtc", marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/ca/fba02c0c98c3d84762ea90ae0738f35568c17a0a7380f202e0b645b2fa64/nvidia_cudnn_cu13-9.26.0.28.dev61599045.tar.gz", hash = "sha256:d10c9b6af18ea540cad5eed1966ff3decb9947fee5fb08028088054c008ab17e", size = 11394, upload-time = "2026-08-07T19:53:49.581Z" }
+wheels = [
+    { url = "https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.28.dev61599045-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:79c2d9a9f9748b1be0160af1f749737e2b16277615968d520d53e01bd1130963" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nvidia-cublas", specifier = ">=13,<14" },
+    { name = "nvidia-cuda-nvrtc", specifier = ">=13,<14" },
+]
 
 [[package]]
 name = "nvidia-cufft"
