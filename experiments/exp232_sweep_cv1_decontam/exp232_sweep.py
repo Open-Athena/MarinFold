@@ -69,7 +69,16 @@ NUM_TRAIN_STEPS = 145_200
 TOKENS_PER_STEP = GLOBAL_BATCH_SIZE * SEQ_LEN
 EFFECTIVE_TRAIN_TOKENS = NUM_TRAIN_STEPS * TOKENS_PER_STEP
 
-EVAL_TARGET_TOKENS = 2_338_376_712
+AFDB_DOCUMENTS = 3_963_003
+AFDB_TOKENS = 4_432_940_838
+ESM_DOCUMENTS = 65_553_178
+ESM_TOKENS = 70_042_923_165
+TARGET_TRAIN_DOCUMENTS = AFDB_DOCUMENTS + ESM_DOCUMENTS
+TARGET_TRAIN_TOKENS = AFDB_TOKENS + ESM_TOKENS
+
+# Evaluate about every half exp232 AFDB epoch. Keep the exp199 training-token
+# budget and permanent checkpoint steps fixed for direct recipe comparability.
+EVAL_TARGET_TOKENS = AFDB_TOKENS // 2
 STEPS_PER_EVAL = round(EVAL_TARGET_TOKENS / TOKENS_PER_STEP)
 PERMANENT_CHECKPOINT_EVERY = NUM_TRAIN_STEPS // 10
 TEMPORARY_CHECKPOINT_INTERVAL = timedelta(minutes=15)
@@ -125,12 +134,17 @@ POINTS = (
 @dataclass(frozen=True)
 class Mixture:
     key: str
-    proportional: bool
+    afdb_weight: float
+    esm_weight: float
 
 
 MIXTURES = (
-    Mixture("m1", proportional=False),
-    Mixture("m2", proportional=True),
+    Mixture("m1", afdb_weight=0.5, esm_weight=0.5),
+    Mixture(
+        "m2",
+        afdb_weight=AFDB_TOKENS / TARGET_TRAIN_TOKENS,
+        esm_weight=ESM_TOKENS / TARGET_TRAIN_TOKENS,
+    ),
 )
 
 
@@ -152,22 +166,20 @@ TRIALS = {
 
 
 @cache
-def _decontaminated_token_counts() -> tuple[int, int]:
-    afdb_tokens = read_tokenized_cache_stats(AFDB_CACHE, "train").total_tokens
-    esm_tokens = read_tokenized_cache_stats(ESM_CACHE, "train").total_tokens
-    if afdb_tokens <= 0 or esm_tokens <= 0:
-        raise ValueError(
-            f"invalid tokenized cache totals: {afdb_tokens=}, {esm_tokens=}"
-        )
-    return afdb_tokens, esm_tokens
-
-
-def mixture_weights(mixture: Mixture) -> tuple[float, float]:
-    if not mixture.proportional:
-        return 0.5, 0.5
-    afdb_tokens, esm_tokens = _decontaminated_token_counts()
-    total_tokens = afdb_tokens + esm_tokens
-    return afdb_tokens / total_tokens, esm_tokens / total_tokens
+def _verify_decontaminated_cache_counts() -> None:
+    expected = (
+        ("afdb", AFDB_CACHE, AFDB_DOCUMENTS, AFDB_TOKENS),
+        ("esm", ESM_CACHE, ESM_DOCUMENTS, ESM_TOKENS),
+    )
+    for name, cache_path, expected_documents, expected_tokens in expected:
+        stats = read_tokenized_cache_stats(cache_path, "train")
+        observed = (stats.total_elements, stats.total_tokens)
+        pinned = (expected_documents, expected_tokens)
+        if observed != pinned:
+            raise ValueError(
+                f"{name} cache stats do not match the pinned exp232 data: "
+                f"{observed=}, {pinned=}, {cache_path=}"
+            )
 
 
 # --- Existing token caches -------------------------------------------------
@@ -203,7 +215,17 @@ def _existing_cache(
     version: str,
     source: str,
     tags: list[str],
+    expected_documents: int | None = None,
+    expected_tokens: int | None = None,
 ) -> ArtifactStep[TokenizedCache]:
+    if (expected_documents is None) != (expected_tokens is None):
+        raise ValueError("expected document and token counts must be provided together")
+    expected_counts: dict[str, int] = {}
+    if expected_documents is not None and expected_tokens is not None:
+        expected_counts = {
+            "expected_documents": expected_documents,
+            "expected_tokens": expected_tokens,
+        }
     return ArtifactStep[TokenizedCache].adopt(
         name,
         version,
@@ -213,6 +235,7 @@ def _existing_cache(
             "tokenizer": TOKENIZER,
             "format": {"text_key": TEXT_KEY},
             "tags": tags,
+            **expected_counts,
         },
     )
 
@@ -223,6 +246,8 @@ def afdb_cache() -> ArtifactStep[TokenizedCache]:
         version=CACHE_VERSION,
         source=AFDB_CACHE,
         tags=["protein", "contacts-v1", "decontaminated", "afdb"],
+        expected_documents=AFDB_DOCUMENTS,
+        expected_tokens=AFDB_TOKENS,
     )
 
 
@@ -232,6 +257,8 @@ def esm_cache() -> ArtifactStep[TokenizedCache]:
         version=CACHE_VERSION,
         source=ESM_CACHE,
         tags=["protein", "contacts-v1", "decontaminated", "esm"],
+        expected_documents=ESM_DOCUMENTS,
+        expected_tokens=ESM_TOKENS,
     )
 
 
@@ -632,6 +659,8 @@ def _run_shape(
         f"params={MODEL_PARAMS}",
         f"steps={num_train_steps}",
         f"tokens={num_train_steps * TOKENS_PER_STEP}",
+        f"source_documents={TARGET_TRAIN_DOCUMENTS}",
+        f"source_tokens={TARGET_TRAIN_TOKENS}",
         "schedule=wsd",
         "initialization=scratch",
     ]
@@ -747,6 +776,7 @@ def build_run(
     nodes: int,
     smoke: bool,
 ) -> ArtifactStep[LevanterCheckpoint]:
+    _verify_decontaminated_cache_counts()
     shape = _run_shape(
         trial,
         subversion=subversion,
@@ -756,7 +786,6 @@ def build_run(
         smoke=smoke,
     )
     batch = gpu_batch_fit(spec, nodes=nodes, smoke=smoke)
-    afdb_weight, esm_weight = mixture_weights(trial.mixture)
     env = _training_env()
 
     step = train_lm(
@@ -772,8 +801,8 @@ def build_run(
             lr_schedule=LR_SCHEDULE,
         ),
         datasets={
-            afdb_cache(): afdb_weight,
-            esm_cache(): esm_weight,
+            afdb_cache(): trial.mixture.afdb_weight,
+            esm_cache(): trial.mixture.esm_weight,
         },
         validation=[validation_cache()],
         init_from=None,
