@@ -351,6 +351,54 @@ arm C3's KL, so "does more data help" is still open — it would need a lower LR
 1e-5) over 625 steps to land near KL 0.168 gradually. The question the run *was*
 asked, "does it keep improving with more training at this setting", is answered no.
 
+## 3e. Novelty weighting, and a reward-design rule this experiment keeps proving
+
+Arm N pays a correct contact by how few siblings also found it —
+`r = (1-p̄)·(floor + (1-floor)·novelty)`, wrong contacts still `-p̄` — intended as
+the synthesis of the two bracketing failures. At a **matched** terminal KL
+(0.0936 against arm S's 0.0976):
+
+| arm | R-precision | Δ base | AUC | union pairs | votes/pair |
+|---|---|---|---|---|---|
+| baseline `exp199` | **0.6111** | — | 0.9487 | 2267 | 7.14 |
+| arm C3 (consensus, lr 4e-5) | 0.6099 | −0.0012 | **0.9519** | −6.4% | 9.36 |
+| **arm N (novelty, unnormalised)** | 0.5954 | **−0.0157** (p = 9.3e-15) | 0.9104 | **−59.4%** | 10.46 |
+| arm S (dense stepwise) | 0.5898 | −0.0213 | 0.8976 | −65.2% | 10.71 |
+
+**Arm N landed next to arm S, not next to arm C3.** It is significantly better than
+arm S (+0.0056, p = 4.5e-06) and still far below baseline: the same sharpening
+failure, slightly softened.
+
+The cause is algebra that should have been checked before the GPU time. Novelty
+scales the **positive** term down — a redundant correct contact pays `floor` = 0.25
+instead of 1 — while the penalty stays at a full `-p̄`. So
+
+    E[emit] = p·(1-p̄)·w̄ - (1-p)·p̄     with mean weight w̄ < 1
+
+which is strictly **more negative** than the `p - p̄` the centring is built on.
+Scaling the reward for correct contacts *down* strengthens the pressure to emit
+fewer of them: the design pushed in the opposite direction to its intent, and the
+training trace shows it plainly (pred/gt 1.08 → 0.64 against arm S's 1.08 → 0.57).
+
+**The rule this experiment keeps re-proving.** Three separate reward modifications
+have now broken the same invariant:
+
+| change | what it did | effect |
+|---|---|---|
+| `err_decay = 0.5` | discounted the k-th error | penalty → 2.3% of the positive term; baseline gone |
+| `p̄` unweighted mean | over-counted short rollouts | p̄ drifted above true precision; paid for silence |
+| novelty, unnormalised | scaled the positive term down | E[emit] below `p - p̄`; strengthened the shrink |
+
+Every one is a weight applied to **one side** of a centred reward. The invariant is
+`E[r] = p - p̄`, and any modification must be checked against it *before* it runs —
+it is a five-line calculation and each of these cost a full training run.
+
+Fix: normalise the novelty weights to mean 1 over the group's correct contacts, so
+the term redistributes (novel pays more, redundant less) with the average — and
+therefore the baseline — unchanged. Pinned by a test that asserts mean reward per
+correct contact equals `(1-p̄)` whatever the novelty distribution.
+`novelty_normalize=false` reproduces arm N. That run is in progress.
+
 ## 4. Four instrumentation failures, none visible in the eval numbers
 
 Each was found by asking whether a run did what its config claimed — not by reading
