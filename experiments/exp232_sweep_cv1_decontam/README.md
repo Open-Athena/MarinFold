@@ -134,8 +134,25 @@ All 20,595 documents and 21,332,008 tokens matched exactly. It found zero
 contacts-v1 boundaries. The production pipeline applies the ID-range, OOV,
 padding, and boundary checks to every tokenized record before writing it.
 
-Full tokenization and sweep execution remain pending review.
+Full Iris job [`/eczech/exp232-tokenize`](https://iris.oa.dev/#/job/%2Feczech%2Fexp232-tokenize)
+then completed on `cw-rno2a` (exit 0, 47m15s, zero failures or preemptions).
+It mirrored and verified all 2,070 AFDB objects and 3,341 ESM Atlas objects,
+then wrote the immutable source manifest to
+`s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/data/mirror-2026.08.14.json`.
+The final production caches are:
+
+- AFDB: 3,963,003 documents and 4,432,940,838 tokens at
+  `s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14`.
+- ESM Atlas: 65,553,178 documents and 70,042,923,165 tokens at
+  `s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14`.
+
+Every production record passed the same ID-range, OOV, padding, and contacts-v1
+boundary checks before it was written. Both consolidated cache ledgers and
+statistics matched their expected document counts and positive token totals.
+Sweep execution remains pending review.
 
 ## Conclusion
 
-Pending results.
+The issue #232 training data is mirrored and fully tokenized in the dated
+production caches. The ten-trial sweep is ready for its separate smoke and
+execution review.
