@@ -11,7 +11,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from levanter.layers.attention import AttentionMask
-from levanter.models.lm_model import LmHeadModel
+from levanter.models.lm_model import LmHeadModel, split_activations
+from levanter.models.loss import fused_cross_entropy_loss_and_logsumexp_penalty
 from levanter.utils.jax_utils import local_cpu_mesh
 
 from marinfold.document_structures.contacts_v1.vocab import CONTACT, END
@@ -56,7 +57,8 @@ class CompactContactDocumentBatch(eqx.Module):
     contact_count: jax.Array
     prediction_start: jax.Array
     position_ids: hax.NamedArray
-    attention_mask: AttentionMask
+    segment_ids: hax.NamedArray
+    attention_blocks: hax.NamedArray
     target_position_count: jax.Array
     vocabulary: VocabularyIdentity | None = eqx.field(static=True)
 
@@ -173,7 +175,7 @@ def levanter_document_batch(
         )
 
 
-def _model_log_probs(model: LmHeadModel, batch, *, key=None) -> jax.Array:
+def _model_logits(model: LmHeadModel, batch, *, key=None) -> jax.Array:
     logits = model(
         batch.tokens,
         batch.attention_mask,
@@ -185,7 +187,7 @@ def _model_log_probs(model: LmHeadModel, batch, *, key=None) -> jax.Array:
             f"Model vocabulary has {logits.array.shape[-1]} logits, but documents use "
             f"{batch.vocabulary.name!r} with {batch.vocabulary.size} tokens"
         )
-    return jax.nn.log_softmax(logits.array, axis=-1)
+    return logits.array
 
 
 def document_loss(
@@ -195,13 +197,15 @@ def document_loss(
     key=None,
 ) -> jnp.ndarray:
     """Run one model forward pass and apply weighted categorical cross-entropy."""
-    log_probs = _model_log_probs(model, batch, key=key)
-    batch_indices = jnp.arange(log_probs.shape[0])[:, None]
-    selected = log_probs[
+    logits = _model_logits(model, batch, key=key)
+    batch_indices = jnp.arange(logits.shape[0])[:, None]
+    selected_logits = logits[
         batch_indices,
         batch.target_positions,
         batch.target_ids,
     ]
+    selected_rows = logits[batch_indices, batch.target_positions]
+    selected = selected_logits - jax.nn.logsumexp(selected_rows, axis=-1)
     return -jnp.sum(batch.target_weights * selected) / jnp.sum(batch.target_position_count)
 
 
@@ -258,18 +262,9 @@ def compact_contact_document_batch(
         raw_position_ids = np.asarray(packed[position_coordinate])[0]
         position_ids = hax.named(jnp.asarray(np.maximum(raw_position_ids, 0)), axes)
 
-        attention_mask = AttentionMask()
-        if packed.attention == AttentionLayout.CAUSAL:
-            attention_mask = AttentionMask.causal()
-        elif packed.attention == AttentionLayout.BLOCK_CAUSAL:
-            attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK][0]), axes)
-            KPos = hax.Axis("key_position", Pos.size)
-            key_blocks = attention_blocks.rename({Pos: KPos})
-            explicit_mask = (
-                attention_blocks.broadcast_axis(KPos) >= key_blocks.broadcast_axis(Pos)
-            ).rearrange((Pos, KPos))
-            attention_mask = AttentionMask.explicit(explicit_mask)
-        attention_mask = attention_mask.with_segment_ids(segment_ids)
+        if packed.attention != AttentionLayout.BLOCK_CAUSAL:
+            raise ValueError(f"Compact contacts require block-causal attention, got {packed.attention}")
+        attention_blocks = hax.named(jnp.asarray(packed[ATTENTION_BLOCK][0]), axes)
 
         return CompactContactDocumentBatch(
             tokens=tokens,
@@ -278,10 +273,23 @@ def compact_contact_document_batch(
             contact_count=jnp.asarray(contact_count, dtype=jnp.int32),
             prediction_start=jnp.asarray(prediction_start, dtype=jnp.int32),
             position_ids=position_ids,
-            attention_mask=attention_mask,
+            segment_ids=segment_ids,
+            attention_blocks=attention_blocks,
             target_position_count=jnp.asarray(3 * contact_count + 1, dtype=jnp.int32),
             vocabulary=packed.vocabulary,
         )
+
+
+def _compact_contact_attention_mask(batch: CompactContactDocumentBatch) -> AttentionMask:
+    """Build block-causal attention from compact per-token block ids."""
+    Pos = batch.tokens.axes[-1]
+    KPos = hax.Axis("key_position", Pos.size)
+    query_blocks = batch.attention_blocks
+    key_blocks = query_blocks.rename({Pos: KPos})
+    explicit_mask = (query_blocks.broadcast_axis(KPos) >= key_blocks.broadcast_axis(Pos)).rearrange(
+        (*query_blocks.axes, KPos)
+    )
+    return AttentionMask.explicit(explicit_mask).with_segment_ids(batch.segment_ids)
 
 
 def compact_contact_document_loss(
@@ -290,76 +298,102 @@ def compact_contact_document_loss(
     *,
     key=None,
 ) -> jnp.ndarray:
-    """Contacts-v1 soft-target loss from compact endpoint lists."""
-    log_probs = _model_log_probs(model, batch, key=key)
+    """Contacts-v1 soft-target loss from compact endpoint lists.
+
+    This is algebraically the same objective as the dense-logit version, but it
+    computes ``CE(q, z) = logsumexp(z) - E_q[z]`` directly. ``logsumexp(z)`` is
+    recovered from Levanter's fused linear-CE kernel, and ``E_q[z]`` is computed
+    by dotting the position activation with weighted LM-head rows. That keeps the
+    custom loss off the memory-heavy ``[batch, position, vocab]`` logits path.
+    """
+    activations, aux_loss = split_activations(
+        model.activations(
+            batch.tokens,
+            _compact_contact_attention_mask(batch),
+            key=key,
+            pos_ids=batch.position_ids,
+        )
+    )
+    Pos = batch.tokens.axes[-1]
+    lm_head = model.get_lm_head()
+    target_y = hax.roll(batch.tokens, -1, Pos)
+    hard_ce = fused_cross_entropy_loss_and_logsumexp_penalty(
+        activations,
+        lm_head,
+        Contract=model.Embed,
+        Label=model.Vocab,
+        target_y=target_y,
+        reduction=None,
+        dtype=jnp.float32,
+    )
+    target_rows = lm_head.take(model.Vocab, target_y)
+    z_target = hax.dot(activations, target_rows, axis=model.Embed)
+    log_normalizers = hard_ce + z_target
+
+    activations_array = activations.rearrange((..., Pos, model.Embed)).array
+    log_normalizers_array = log_normalizers.rearrange((..., Pos)).array
+    lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
+
     max_contacts = batch.contact_first_ids.shape[-1]
     contact_token_id = jnp.asarray(int(CONTACT), dtype=jnp.int32)
     end_token_id = jnp.asarray(int(END), dtype=jnp.int32)
     contact_axis = jnp.arange(max_contacts, dtype=jnp.int32)
 
-    def one_example_loss(
-        log_probs_one, first_ids, second_ids, contact_count, prediction_start
-    ):
-        valid = contact_axis < contact_count
-        contact_positions = prediction_start + 1 + 3 * contact_axis
-        first_positions = contact_positions + 1
-        second_positions = contact_positions + 2
-        contact_predict_positions = jnp.where(
-            contact_axis == 0, prediction_start, second_positions - 3
-        )
-        contact_predict_positions = jnp.clip(contact_predict_positions, 0, log_probs_one.shape[0] - 1)
-        contact_loss = -jnp.sum(
-            jnp.where(valid, log_probs_one[contact_predict_positions, contact_token_id], 0.0)
-        )
-        end_position = jnp.clip(prediction_start + 3 * contact_count, 0, log_probs_one.shape[0] - 1)
-        end_loss = -log_probs_one[end_position, end_token_id]
+    def one_example_loss(activations_one, log_z_one, first_ids, second_ids, contact_count, prediction_start):
+        def logit(position, token_ids):
+            position = jnp.clip(position, 0, activations_one.shape[0] - 1)
+            rows = lm_head_by_vocab[token_ids]
+            return jnp.sum(activations_one[position] * rows, axis=-1)
 
-        c = contact_axis[:, None]
-        r = contact_axis[None, :]
-        remaining = (r >= c) & (r < contact_count) & (c < contact_count)
-        first_row_positions = jnp.clip(contact_positions[:, None], 0, log_probs_one.shape[0] - 1)
-        first_endpoint_loss = -(
-            log_probs_one[first_row_positions, first_ids[None, :]]
-            + log_probs_one[first_row_positions, second_ids[None, :]]
-        )
-        first_denominator = jnp.maximum(2 * (contact_count - contact_axis), 1)
-        first_loss_by_contact = (
-            jnp.sum(jnp.where(remaining, first_endpoint_loss, 0.0), axis=1)
-            / first_denominator
-        )
-        first_loss = jnp.sum(jnp.where(valid, first_loss_by_contact, 0.0))
+        def cross_entropy(position, expected_logit):
+            position = jnp.clip(position, 0, log_z_one.shape[0] - 1)
+            return log_z_one[position] - expected_logit
 
-        actual_first = first_ids[:, None]
-        incident_first = remaining & (first_ids[None, :] == actual_first)
-        incident_second = remaining & (second_ids[None, :] == actual_first)
-        second_row_positions = jnp.clip(first_positions[:, None], 0, log_probs_one.shape[0] - 1)
-        second_loss_terms = -(
-            jnp.where(
-                incident_first,
-                log_probs_one[second_row_positions, second_ids[None, :]],
-                0.0,
+        end_position = jnp.clip(prediction_start + 3 * contact_count, 0, log_z_one.shape[0] - 1)
+        end_loss = cross_entropy(end_position, logit(end_position, end_token_id))
+
+        def body(c, total):
+            valid = c < contact_count
+            contact_position = prediction_start + 1 + 3 * c
+            first_position = contact_position + 1
+            contact_predict_position = jnp.where(c == 0, prediction_start, contact_position - 1)
+
+            remaining = (contact_axis >= c) & (contact_axis < contact_count)
+            contact_loss = cross_entropy(contact_predict_position, logit(contact_predict_position, contact_token_id))
+
+            first_endpoint_logits = logit(contact_position, first_ids) + logit(contact_position, second_ids)
+            first_expected_logit = (
+                jnp.sum(jnp.where(remaining, first_endpoint_logits, 0.0))
+                / jnp.maximum(2 * (contact_count - c), 1)
             )
-            + jnp.where(
-                incident_second,
-                log_probs_one[second_row_positions, first_ids[None, :]],
-                0.0,
+            first_loss = cross_entropy(contact_position, first_expected_logit)
+
+            actual_first = first_ids[c]
+            incident_first = remaining & (first_ids == actual_first)
+            incident_second = remaining & (second_ids == actual_first)
+            second_endpoint_logits = (
+                jnp.where(incident_first, logit(first_position, second_ids), 0.0)
+                + jnp.where(incident_second, logit(first_position, first_ids), 0.0)
             )
-        )
-        second_denominator = jnp.maximum(
-            jnp.sum(incident_first | incident_second, axis=1), 1
-        )
-        second_loss_by_contact = jnp.sum(second_loss_terms, axis=1) / second_denominator
-        second_loss = jnp.sum(jnp.where(valid, second_loss_by_contact, 0.0))
-        return contact_loss + end_loss + first_loss + second_loss
+            second_expected_logit = (
+                jnp.sum(second_endpoint_logits)
+                / jnp.maximum(jnp.sum(incident_first | incident_second), 1)
+            )
+            second_loss = cross_entropy(first_position, second_expected_logit)
+
+            return total + jnp.where(valid, contact_loss + first_loss + second_loss, 0.0)
+
+        return jax.lax.fori_loop(0, max_contacts, jax.checkpoint(body), end_loss)
 
     losses = jax.vmap(one_example_loss)(
-        log_probs,
+        activations_array,
+        log_normalizers_array,
         batch.contact_first_ids,
         batch.contact_second_ids,
         batch.contact_count,
         batch.prediction_start,
     )
-    return jnp.sum(losses) / jnp.sum(batch.target_position_count)
+    return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
 
 
 __all__ = [

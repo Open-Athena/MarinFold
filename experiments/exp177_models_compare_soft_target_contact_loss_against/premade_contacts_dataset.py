@@ -3,11 +3,22 @@
 
 """Contacts-v1 dataset adapters for exp177."""
 
-from collections.abc import Mapping
+from collections import OrderedDict
+from collections.abc import Mapping, Sequence
+from concurrent.futures import Future, ProcessPoolExecutor
+from dataclasses import dataclass
 from typing import Any
 
+import asyncio
+import multiprocessing as mp
+import fsspec
+import jax.numpy as jnp
 import numpy as np
+import pyarrow.parquet as pq
+import haliax as hax
 from haliax import Axis
+from levanter.data.dataset import AsyncDataset
+from levanter.utils.jax_utils import local_cpu_mesh
 
 from marinfold.document_structures.contacts_v1 import (
     ANALYZED_ROW_COLUMNS,
@@ -30,6 +41,7 @@ from marinfold.document_structures.contacts_v1.vocab import (
 )
 from marinfold.document_structures.documents import (
     ATTENTION_BLOCK,
+    POSITION_IDS,
     QUERY,
     AttentionLayout,
     Document,
@@ -266,6 +278,475 @@ class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
         )
 
 
+PRECOMPUTED_SOFT_TARGET_COLUMNS = (
+    "token_ids",
+    "position_ids",
+    "segment_ids",
+    "attention_blocks",
+    "prediction_start",
+    "contact_first_ids",
+    "contact_second_ids",
+    "contact_count",
+    "target_position_count",
+)
+
+
+@dataclass(frozen=True)
+class RawPrecomputedSoftTargetExample:
+    """Pure-NumPy compact example built in prefetch workers."""
+
+    token_ids: np.ndarray
+    position_ids: np.ndarray
+    segment_ids: np.ndarray
+    attention_blocks: np.ndarray
+    first_ids: np.ndarray
+    second_ids: np.ndarray
+    contact_count: int
+    prediction_start: int
+    target_position_count: int
+
+
+@dataclass(frozen=True)
+class PrecomputedSoftTargetDatasetConfig:
+    """Serializable precomputed soft-target dataset parameters for workers."""
+
+    data_prefix: str
+    num_shards: int
+    total_shards: int = 3338
+    examples_per_shard: int = 2650
+    max_seq_len: int = CONTEXT_LENGTH
+    seed: int = 0
+    shard_cache_size: int = 2
+    shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet"
+
+
+_WORKER_PRECOMPUTED_DATASETS: dict[PrecomputedSoftTargetDatasetConfig, "PrecomputedSoftTargetContactsDataset"] = {}
+
+
+def _precomputed_worker_dataset(config: PrecomputedSoftTargetDatasetConfig) -> "PrecomputedSoftTargetContactsDataset":
+    dataset = _WORKER_PRECOMPUTED_DATASETS.get(config)
+    if dataset is None:
+        dataset = PrecomputedSoftTargetContactsDataset(
+            data_prefix=config.data_prefix,
+            num_shards=config.num_shards,
+            total_shards=config.total_shards,
+            examples_per_shard=config.examples_per_shard,
+            max_seq_len=config.max_seq_len,
+            seed=config.seed,
+            shard_cache_size=config.shard_cache_size,
+            shard_name_template=config.shard_name_template,
+        )
+        _WORKER_PRECOMPUTED_DATASETS[config] = dataset
+    return dataset
+
+
+def _build_precomputed_chunk(
+    config: PrecomputedSoftTargetDatasetConfig,
+    indices: tuple[int, ...],
+) -> tuple[tuple[int, RawPrecomputedSoftTargetExample], ...]:
+    dataset = _precomputed_worker_dataset(config)
+    return tuple((index, dataset._raw_example_for_index(index)) for index in indices)
+
+
+def _precomputed_worker_pid() -> int:
+    return mp.current_process().pid
+
+
+def _initialize_precomputed_worker() -> None:
+    """Keep prefetch workers off accelerator backends.
+
+    Worker processes only do parquet/Python/Numpy example construction. If JAX
+    sees the H100s from those processes, each worker can initialize CUDA and
+    reserve device memory before the trainer does useful work.
+    """
+
+    import os
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    os.environ["JAX_PLATFORMS"] = "cpu"
+    os.environ["JAX_PLATFORM_NAME"] = "cpu"
+    os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+
+
+class PrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBatch]):
+    """Read exp177 precomputed compact soft-target rows from parquet shards."""
+
+    def __init__(
+        self,
+        *,
+        data_prefix: str,
+        num_shards: int,
+        total_shards: int = 3338,
+        examples_per_shard: int = 2650,
+        max_seq_len: int = CONTEXT_LENGTH,
+        seed: int = 0,
+        shard_cache_size: int = 2,
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+    ):
+        if num_shards <= 0:
+            raise ValueError("num_shards must be positive")
+        if num_shards > total_shards:
+            raise ValueError("num_shards cannot exceed total_shards")
+        if examples_per_shard <= 0:
+            raise ValueError("examples_per_shard must be positive")
+        if shard_cache_size <= 0:
+            raise ValueError("shard_cache_size must be positive")
+        self.data_prefix = data_prefix.rstrip("/")
+        self.num_shards = num_shards
+        self.total_shards = total_shards
+        self.examples_per_shard = examples_per_shard
+        self.max_seq_len = max_seq_len
+        self.seed = seed
+        self.shard_cache_size = shard_cache_size
+        self.shard_name_template = shard_name_template
+        self._shard_orders: dict[int, tuple[int, ...]] = {}
+        self._shard_cache: dict[tuple[int, int], list[dict[str, Any]]] = {}
+        self._shard_cache_order: list[tuple[int, int]] = []
+        self._lock = asyncio.Lock()
+        self._config = PrecomputedSoftTargetDatasetConfig(
+            data_prefix=self.data_prefix,
+            num_shards=self.num_shards,
+            total_shards=self.total_shards,
+            examples_per_shard=self.examples_per_shard,
+            max_seq_len=self.max_seq_len,
+            seed=self.seed,
+            shard_cache_size=self.shard_cache_size,
+            shard_name_template=self.shard_name_template,
+        )
+
+    def is_finite(self) -> bool:
+        return False
+
+    async def async_len(self) -> int:
+        raise ValueError("PrecomputedSoftTargetContactsDataset is an infinite stream")
+
+    async def getitem_async(self, index: int) -> CompactContactDocumentBatch:
+        return (await self.get_batch([index]))[0]
+
+    async def get_batch(self, indices: Sequence[int]) -> Sequence[CompactContactDocumentBatch]:
+        if not indices:
+            return []
+        async with self._lock:
+            return await asyncio.to_thread(self._get_batch_sync, tuple(indices))
+
+    def _get_batch_sync(self, indices: tuple[int, ...]) -> list[CompactContactDocumentBatch]:
+        return [self._example_for_index(index) for index in indices]
+
+    def _example_for_index(self, index: int) -> CompactContactDocumentBatch:
+        return self._batch_from_raw(self._raw_example_for_index(index))
+
+    def _raw_example_for_index(self, index: int) -> RawPrecomputedSoftTargetExample:
+        epoch, shard_index, slot_index = self.location_for_index(index)
+        rows = self._rows_for_shard(epoch, shard_index)
+        return self._raw_example_from_row(rows[slot_index])
+
+    def location_for_index(self, index: int) -> tuple[int, int, int]:
+        if index < 0:
+            raise IndexError("dataset indices must be non-negative")
+        examples_per_epoch = self.num_shards * self.examples_per_shard
+        epoch, index_within_epoch = divmod(index, examples_per_epoch)
+        shard_position, slot_index = divmod(index_within_epoch, self.examples_per_shard)
+        shard_index = self._shard_order(epoch)[shard_position]
+        return epoch, shard_index, slot_index
+
+    def _shard_order(self, epoch: int) -> tuple[int, ...]:
+        cached = self._shard_orders.get(epoch)
+        if cached is not None:
+            return cached
+        rng = np.random.default_rng(np.random.SeedSequence([self.seed, epoch]))
+        order = tuple(int(index) for index in rng.permutation(self.num_shards))
+        self._shard_orders[epoch] = order
+        return order
+
+    def _rows_for_shard(self, epoch: int, shard_index: int) -> list[dict[str, Any]]:
+        key = (epoch, shard_index)
+        cached = self._shard_cache.get(key)
+        if cached is not None:
+            self._shard_cache_order.remove(key)
+            self._shard_cache_order.append(key)
+            return cached
+
+        shard_path = self._shard_path(shard_index)
+        with fsspec.open(shard_path, "rb") as source:
+            parquet_file = pq.ParquetFile(source)
+            available_columns = set(parquet_file.schema_arrow.names)
+            columns = [column for column in PRECOMPUTED_SOFT_TARGET_COLUMNS if column in available_columns]
+            table = parquet_file.read(columns=columns)
+        if table.num_rows != self.examples_per_shard:
+            raise ValueError(
+                f"{shard_path} contains {table.num_rows} rows; expected {self.examples_per_shard}"
+            )
+        rows = table.to_pylist()
+        self._shard_cache[key] = rows
+        self._shard_cache_order.append(key)
+        while len(self._shard_cache_order) > self.shard_cache_size:
+            old_key = self._shard_cache_order.pop(0)
+            self._shard_cache.pop(old_key, None)
+        return rows
+
+    def _shard_path(self, shard_index: int) -> str:
+        shard_name = self.shard_name_template.format(
+            shard_index=shard_index,
+            total_shards=self.total_shards,
+        )
+        return f"{self.data_prefix}/{shard_name}"
+
+    def _raw_example_from_row(self, row: Mapping[str, Any]) -> RawPrecomputedSoftTargetExample:
+        raw_token_ids = np.asarray(row["token_ids"], dtype=np.int32)
+        if raw_token_ids.shape[0] > self.max_seq_len:
+            raise ValueError(f"Precomputed row has {raw_token_ids.shape[0]} tokens, max_seq_len={self.max_seq_len}")
+        raw_position_ids = np.asarray(row["position_ids"], dtype=np.int32)
+        if raw_position_ids.shape[0] != raw_token_ids.shape[0]:
+            raise ValueError("Precomputed row position_ids length does not match token_ids")
+
+        prediction_start = int(row["prediction_start"])
+        max_contacts = (self.max_seq_len - 2) // 3
+        if "contact_count" in row:
+            contact_count = int(row["contact_count"])
+            contact_suffix = None
+        else:
+            suffix = raw_token_ids[prediction_start + 1 :]
+            end_offsets = np.flatnonzero(suffix == int(END))
+            if end_offsets.size == 0:
+                raise ValueError("Precomputed compact row suffix has no END token")
+            contact_suffix = suffix[: int(end_offsets[0])]
+            if contact_suffix.size % 3 != 0:
+                raise ValueError(f"Contact suffix before END is not triples: {contact_suffix.size} tokens")
+            if np.any(contact_suffix[0::3] != int(CONTACT)):
+                raise ValueError("Contact suffix triples do not start with CONTACT tokens")
+            contact_count = contact_suffix.size // 3
+        if contact_count > max_contacts:
+            raise ValueError(f"Document has {contact_count} contacts, exceeding compact budget {max_contacts}")
+
+        token_ids = np.zeros(self.max_seq_len, dtype=np.int32)
+        position_ids = np.zeros(self.max_seq_len, dtype=np.int32)
+        segment_ids = np.full(self.max_seq_len, -1, dtype=np.int32)
+        attention_blocks = np.zeros(self.max_seq_len, dtype=np.int32)
+        token_ids[: raw_token_ids.shape[0]] = raw_token_ids[: self.max_seq_len]
+        position_ids[: raw_position_ids.shape[0]] = np.maximum(raw_position_ids[: self.max_seq_len], 0)
+        if "segment_ids" in row:
+            raw_segment_ids = np.asarray(row["segment_ids"], dtype=np.int32)
+            segment_ids[: raw_segment_ids.shape[0]] = raw_segment_ids[: self.max_seq_len]
+        else:
+            segment_ids[: raw_token_ids.shape[0]] = 0
+        if "attention_blocks" in row:
+            raw_attention_blocks = np.asarray(row["attention_blocks"], dtype=np.int32)
+            attention_blocks[: raw_attention_blocks.shape[0]] = raw_attention_blocks[: self.max_seq_len]
+        elif prediction_start + 1 < raw_token_ids.shape[0]:
+            attention_blocks[prediction_start + 1 : raw_token_ids.shape[0]] = np.arange(
+                1,
+                raw_token_ids.shape[0] - prediction_start,
+                dtype=np.int32,
+            )
+
+        first_ids = np.zeros(max_contacts, dtype=np.int32)
+        second_ids = np.zeros(max_contacts, dtype=np.int32)
+        if "contact_first_ids" in row and "contact_second_ids" in row:
+            raw_first_ids = np.asarray(row["contact_first_ids"], dtype=np.int32)
+            raw_second_ids = np.asarray(row["contact_second_ids"], dtype=np.int32)
+            first_ids[: min(raw_first_ids.shape[0], max_contacts)] = raw_first_ids[:max_contacts]
+            second_ids[: min(raw_second_ids.shape[0], max_contacts)] = raw_second_ids[:max_contacts]
+        else:
+            if contact_suffix is None:
+                raise ValueError("Precomputed row has contact_count but no contact id columns")
+            first_ids[:contact_count] = contact_suffix[1::3]
+            second_ids[:contact_count] = contact_suffix[2::3]
+        return RawPrecomputedSoftTargetExample(
+            token_ids=token_ids,
+            position_ids=position_ids,
+            segment_ids=segment_ids,
+            attention_blocks=attention_blocks,
+            first_ids=first_ids,
+            second_ids=second_ids,
+            contact_count=contact_count,
+            prediction_start=prediction_start,
+            target_position_count=int(row.get("target_position_count", 3 * contact_count + 1)),
+        )
+
+    def _batch_from_raw(self, raw: RawPrecomputedSoftTargetExample) -> CompactContactDocumentBatch:
+        Pos = Axis("position", self.max_seq_len)
+        axes = (Pos,)
+        with local_cpu_mesh():
+            tokens = hax.named(jnp.asarray(raw.token_ids), axes)
+            segment_ids = hax.named(jnp.asarray(raw.segment_ids), axes)
+            position_ids = hax.named(jnp.asarray(raw.position_ids), axes)
+            attention_blocks = hax.named(jnp.asarray(raw.attention_blocks), axes)
+            return CompactContactDocumentBatch(
+                tokens=tokens,
+                contact_first_ids=jnp.asarray(raw.first_ids),
+                contact_second_ids=jnp.asarray(raw.second_ids),
+                contact_count=jnp.asarray(raw.contact_count, dtype=jnp.int32),
+                prediction_start=jnp.asarray(raw.prediction_start, dtype=jnp.int32),
+                position_ids=position_ids,
+                segment_ids=segment_ids,
+                attention_blocks=attention_blocks,
+                target_position_count=jnp.asarray(raw.target_position_count, dtype=jnp.int32),
+                vocabulary=None,
+            )
+
+
+class MPPrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBatch]):
+    """Multiprocess chunk-prefetch reader for precomputed soft-target rows.
+
+    Levanter commonly asks a direct dataset for ``batch_size * prefetch_size``
+    examples at once. The plain precomputed reader served those requests through
+    one Python thread, so a bs16 smoke had to reconstruct 512 compact examples
+    serially before the trainer could advance. This wrapper schedules bounded
+    chunks in worker processes and caches individual examples in the parent,
+    keeping the memory footprint much smaller than whole-shard caching.
+    """
+
+    def __init__(
+        self,
+        *,
+        data_prefix: str,
+        num_shards: int,
+        total_shards: int = 3338,
+        examples_per_shard: int = 2650,
+        max_seq_len: int = CONTEXT_LENGTH,
+        seed: int = 0,
+        shard_cache_size: int = 2,
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+        transform_workers: int = 8,
+        prefetch_chunks: int | None = None,
+        chunk_size: int = 64,
+        example_cache_size: int | None = None,
+        mp_start_method: str = "spawn",
+    ):
+        if transform_workers <= 0:
+            raise ValueError("transform_workers must be positive")
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
+        self.config = PrecomputedSoftTargetDatasetConfig(
+            data_prefix=data_prefix.rstrip("/"),
+            num_shards=num_shards,
+            total_shards=total_shards,
+            examples_per_shard=examples_per_shard,
+            max_seq_len=max_seq_len,
+            seed=seed,
+            shard_cache_size=shard_cache_size,
+            shard_name_template=shard_name_template,
+        )
+        self.transform_workers = transform_workers
+        self.prefetch_chunks = transform_workers if prefetch_chunks is None else prefetch_chunks
+        self.chunk_size = chunk_size
+        self.example_cache_size = max(
+            chunk_size,
+            chunk_size * (transform_workers + self.prefetch_chunks + 2)
+            if example_cache_size is None
+            else example_cache_size,
+        )
+        self.mp_start_method = mp_start_method
+        self._executor: ProcessPoolExecutor | None = None
+        self._lock = asyncio.Lock()
+        self._example_cache: OrderedDict[int, CompactContactDocumentBatch] = OrderedDict()
+        self._futures: dict[int, Future[tuple[tuple[int, RawPrecomputedSoftTargetExample], ...]]] = {}
+
+    def is_finite(self) -> bool:
+        return False
+
+    async def async_len(self) -> int:
+        raise ValueError("MPPrecomputedSoftTargetContactsDataset is an infinite stream")
+
+    async def getitem_async(self, index: int) -> CompactContactDocumentBatch:
+        return (await self.get_batch([index]))[0]
+
+    async def get_batch(self, indices: Sequence[int]) -> Sequence[CompactContactDocumentBatch]:
+        if not indices:
+            return []
+        async with self._lock:
+            return await asyncio.to_thread(self._get_batch_sync, tuple(int(index) for index in indices))
+
+    def start_workers(self) -> None:
+        pool = self._pool()
+        futures = [pool.submit(_precomputed_worker_pid) for _ in range(self.transform_workers)]
+        for future in futures:
+            future.result()
+
+    def close(self) -> None:
+        executor = self._executor
+        self._executor = None
+        self._futures.clear()
+        if executor is not None:
+            executor.shutdown(wait=False, cancel_futures=True)
+
+    def __del__(self):
+        if hasattr(self, "_executor"):
+            self.close()
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> str:
+        return repr(self)
+
+    def _get_batch_sync(self, indices: tuple[int, ...]) -> list[CompactContactDocumentBatch]:
+        for chunk_start in self._chunk_starts_for_indices(indices):
+            self._schedule_prefetch_window(chunk_start)
+        return [self._example_for_index(index) for index in indices]
+
+    def _example_for_index(self, index: int) -> CompactContactDocumentBatch:
+        cached = self._example_cache.get(index)
+        if cached is not None:
+            self._example_cache.move_to_end(index)
+            return cached
+        chunk_start = self._chunk_start(index)
+        self._ensure_scheduled(chunk_start)
+        future = self._futures.pop(chunk_start)
+        self._remember_examples(future.result())
+        cached = self._example_cache.get(index)
+        if cached is None:
+            raise KeyError(f"Worker chunk {chunk_start} did not return requested index {index}")
+        self._example_cache.move_to_end(index)
+        return cached
+
+    def _schedule_prefetch_window(self, chunk_start: int) -> None:
+        self._ensure_scheduled(chunk_start)
+        for offset in range(1, self.prefetch_chunks + 1):
+            self._ensure_scheduled(chunk_start + offset * self.chunk_size)
+
+    def _ensure_scheduled(self, chunk_start: int) -> None:
+        if self._chunk_cached(chunk_start) or chunk_start in self._futures:
+            return
+        indices = tuple(range(chunk_start, chunk_start + self.chunk_size))
+        self._futures[chunk_start] = self._pool().submit(_build_precomputed_chunk, self.config, indices)
+
+    def _remember_examples(self, examples: tuple[tuple[int, RawPrecomputedSoftTargetExample], ...]) -> None:
+        plain_dataset = PrecomputedSoftTargetContactsDataset(
+            data_prefix=self.config.data_prefix,
+            num_shards=self.config.num_shards,
+            total_shards=self.config.total_shards,
+            examples_per_shard=self.config.examples_per_shard,
+            max_seq_len=self.config.max_seq_len,
+            seed=self.config.seed,
+            shard_cache_size=self.config.shard_cache_size,
+            shard_name_template=self.config.shard_name_template,
+        )
+        for index, raw in examples:
+            self._example_cache[index] = plain_dataset._batch_from_raw(raw)
+            self._example_cache.move_to_end(index)
+        while len(self._example_cache) > self.example_cache_size:
+            self._example_cache.popitem(last=False)
+
+    def _chunk_cached(self, chunk_start: int) -> bool:
+        return all(index in self._example_cache for index in range(chunk_start, chunk_start + self.chunk_size))
+
+    def _chunk_start(self, index: int) -> int:
+        if index < 0:
+            raise IndexError("dataset indices must be non-negative")
+        return (index // self.chunk_size) * self.chunk_size
+
+    def _chunk_starts_for_indices(self, indices: tuple[int, ...]) -> tuple[int, ...]:
+        return tuple(dict.fromkeys(self._chunk_start(index) for index in indices))
+
+    def _pool(self) -> ProcessPoolExecutor:
+        if self._executor is None:
+            context = mp.get_context(self.mp_start_method)
+            self._executor = ProcessPoolExecutor(
+                max_workers=self.transform_workers,
+                mp_context=context,
+                initializer=_initialize_precomputed_worker,
+            )
+        return self._executor
+
+
 class MPFixedQuotaSoftTargetContactsDataset(MPFixedQuotaShardDocumentDataset):
     """Multiprocess fixed-quota soft-target contacts-v1 dataset."""
 
@@ -309,6 +790,8 @@ __all__ = [
     "FixedQuotaSoftTargetContactsDataset",
     "MPFixedQuotaPremadeContactsDataset",
     "MPFixedQuotaSoftTargetContactsDataset",
+    "MPPrecomputedSoftTargetContactsDataset",
+    "PrecomputedSoftTargetContactsDataset",
     "causal_contacts_v1_document_from_row",
     "compact_contact_batch_from_documents",
     "soft_target_contacts_v1_document_from_row",
