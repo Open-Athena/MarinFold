@@ -41,6 +41,10 @@ def main() -> int:
     ap.add_argument("--val", required=True, help="glob of raw contacts-v1 val parquets")
     ap.add_argument("--init", required=True, help="exp199 HF export to warm-start from")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--cache", default=None,
+                    help="levanter token-cache dir. Defaults to <out>/cache -- it must be "
+                         "LOCAL: the cache path is derived from the GCS prefix otherwise, "
+                         "and this node has no GCS credentials.")
     ap.add_argument("--steps", type=int, required=True,
                     help="ONE epoch: use tokenize_corpus.py's printed STEPS_PER_EPOCH")
     ap.add_argument("--lr", type=float, default=1e-4)
@@ -63,6 +67,7 @@ def main() -> int:
         num_train_steps=a.steps,
         output_path=a.out,
         corpus_glob=a.corpus,
+        cache_base=a.cache or f"{a.out.rstrip('/')}/cache",
         val_glob=a.val,
         init_from_hf=a.init,
         resources=resources,
