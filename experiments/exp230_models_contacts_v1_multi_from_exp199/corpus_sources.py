@@ -10,11 +10,15 @@
 
 The arm names are #213's, so a row here joins straight onto #225's drop list.
 
-**One pool, both halves.**  The multi-draft documents and the plain rehearsal
-documents are built from the *same* proteins.  That is not a convenience: if the
-two halves came from different protein distributions the model could infer its
-mode from protein statistics instead of from the token-0 marker, and the marker
-is the thing this run has to make into a clean switch.  #163 did the same.
+**One pool, two disjoint halves.**  The multi-draft documents and the plain
+rehearsal documents are drawn from this one pool but share **no proteins**
+(``split_targets.py``; verified overlap 0).  The draw is arm-stratified, so the
+two halves match on source mix and on length to within 0.03 residues of mean L.
+That matters: if the halves came from visibly different protein distributions
+the model could infer its mode from protein statistics rather than from the
+token-0 marker, and the marker is what this run has to turn into a clean switch.
+#163 achieved that by reusing the same proteins in both halves; exp230 gets it
+from stratification instead, so no protein is ever seen twice.
 
 **Quality gates differ by arm and that is deliberate.**  AFDB and ESM-Atlas gate
 on ``global_plddt`` — genuinely a confidence in both.  The PDB corpus gates on

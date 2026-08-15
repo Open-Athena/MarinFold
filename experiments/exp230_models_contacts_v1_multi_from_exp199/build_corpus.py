@@ -19,25 +19,32 @@ drift, and exp200's RL stack already assumes id 7 means this.
 Three things are exp230's, not #163's:
 
 * **Drafts are on-policy.**  They are exp199's own rollouts (``gen_rollouts_worker``),
-  not E8's.  Measured on the smoke sample, an exp199 draft is **0.41** precise
-  against ground truth where #163's E8 drafts were ~0.12 and arm F's were 0.23.
-* **The plain rehearsal half is generated from the same proteins**, by calling
-  the ordinary contacts-v1 generator on the same ground truth.  #163 mixed in
-  documents from a different corpus; drawing both halves from one pool makes the
-  token-0 marker the *only* systematic difference between them, which is the
-  property that has to hold for the marker to become a clean switch.
-* **``--docs-per-protein`` defaults to 3** (#163 used 2).  Each document redraws
-  K, which drafts are shown, how far each is subsampled, the N-terminal offset
-  and the statement order — the same nuisance-symmetry augmentation #166 got
-  +0.026 R-precision from.
+  not E8's.  Measured over all **8,319,968** generated rollouts, an exp199 draft
+  scores precision **0.4095** / recall 0.4142 / F1 0.4090 against ground truth,
+  where #163's E8 drafts were ~0.12 and arm F's ~0.23.  Drafts are subsampled
+  from these rollouts, which preserves precision in expectation.
+* **The two halves use DISJOINT proteins.**  ``targets_multi`` and
+  ``targets_plain`` are drawn arm-stratified from one decontaminated pool and
+  share no protein (verified: overlap 0).  This reverses #163, which drew both
+  halves from the same proteins so the token-0 marker would be their only
+  systematic difference.  Disjoint halves make that inference available in
+  principle, but the arm-stratified draw matches the two length distributions to
+  within 0.03 residues of mean L, leaving little to infer.
+* **``--docs-per-protein`` defaults to 1**, and training is a **single epoch**.
+  Every rollout a protein contributes is packed into that one document rather
+  than spread over several, so no protein is ever seen twice.
 
 The 50:50 plain mix is **not optional**.  #163's v2 sweep trained four weight
 profiles on 100k multi-draft documents with *no* rehearsal and every arm lost
 ~44 % of the base task; the published arm F differs in exactly two ways —
-``w_draft = 1.0`` and this mix — and is a statistical tie with base.
+``w_draft = 1.0`` and this mix — and is a statistical tie with base.  Note the
+mix is 50:50 by *document* and by *protein*; because a multi document is ~5.8x
+longer, plain is **15.6 % of the supervised loss weight** (see ``DOCUMENTS.md``).
 
-    uv run python build_corpus.py --targets /data/exp230_multi/targets.parquet \\
-        --rollouts /data/exp230_multi/rollouts --out /data/exp230_multi/corpus
+    uv run python build_corpus.py --work /data/exp230_multi \\
+        --targets-multi targets_multi.parquet \\
+        --targets-plain targets_plain.parquet \\
+        --docs-per-protein 1 --alpha 0.5 --seed 230
 """
 from __future__ import annotations
 

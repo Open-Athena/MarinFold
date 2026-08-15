@@ -17,7 +17,8 @@ import pytest
 import corpus_sources as cs
 from _contacts_v1_doc import parse_doc
 from _loss_mask import span_weights
-from build_corpus import MULTI_DOC_TOKEN, PLAIN_DOC_TOKEN, build_multi, build_plain
+from build_corpus import (MULTI_DOC_TOKEN, PLAIN_DOC_TOKEN, build_multi, build_plain,
+                          draft_size)
 
 WORK = Path("/data/exp230_multi")
 N = 100
@@ -54,7 +55,13 @@ def test_plain_regeneration_is_lossless():
 
 
 def test_multi_document_shape():
-    """K drafts + one final section, mode marker at position 0, closed by <end>."""
+    """K drafts + one final section, mode marker at position 0, closed by <end>.
+
+    ``K`` is not passed in: the packer fills the context until the rollouts or the
+    budget run out, and section sizes are drawn from the alpha power law.  So the
+    invariant is the *shape* -- one ``<begin_statements>`` per draft plus one for
+    the final section, exactly one ``<end>``, and never over budget.
+    """
     rng = np.random.default_rng(0)
     for rec in sample_rows(40):
         gt = [(int(i), int(j)) for i, j in rec["gt_contacts"]]
@@ -65,7 +72,7 @@ def test_multi_document_shape():
             [v for pair in [(i, j) for i, j in gt if i + 1 < j] for v in pair],
         ]
         built = build_multi(f"{rec['entry_id']}:m0", rec["sequence"], gt, rollouts,
-                            [0.3, 0.2], kmax=4, n_cap=50, rng=rng)
+                            [0.3, 0.2], alpha=0.5, rng=rng)
         if built is None:
             continue
         doc, meta = built
@@ -75,6 +82,29 @@ def test_multi_document_shape():
         assert doc.count("<begin_statements>") == meta["K"] + 1
         assert doc.count("<end>") == 1
         assert meta["n_tokens"] <= 8192
+        assert meta["K"] <= len(rollouts)
+
+
+def test_draft_size_law_is_bounded_and_reaches_full_length():
+    """The alpha law stays in ``[1, m]`` and its tail actually reaches ``m``.
+
+    The point of alpha=0.5 over the old hard cap is that a full-length section is
+    reachable, not merely large; a law that never returns ``m`` would silently
+    reintroduce the cap this run removed.
+    """
+    rng = np.random.default_rng(0)
+    for m in (1, 2, 7, 50, 250, 1000):
+        draws = [draft_size(m, 0.5, rng) for _ in range(4000)]
+        assert min(draws) >= 1
+        assert max(draws) <= m
+        # The tail must reach the TOP of the range -- that is the whole point of
+        # the law over the old hard cap.  Asserting `max == m` exactly would be
+        # flaky: under P(n) ~ n^-0.5 the single value n=m has probability
+        # ~1/(2*sqrt(m)) / ... , about 5e-4 at m=1000, so 4000 draws land a few
+        # short of m as often as not.  Reaching 90% of full length is the honest
+        # form of "full-length sections are reachable".
+        assert max(draws) >= 0.9 * m, f"tail never neared full length for m={m}"
+        assert np.mean(draws) < 0.5 * m or m <= 2, "law should still favour short drafts"
 
 
 def test_plain_document_has_one_section():

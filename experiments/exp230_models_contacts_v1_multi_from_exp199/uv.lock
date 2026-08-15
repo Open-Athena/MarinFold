@@ -664,8 +664,8 @@ requires-dist = [
     { name = "pyarrow" },
     { name = "s3fs" },
     { name = "tokenizers" },
-    { name = "torch", marker = "extra == 'cpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp163-models-teach-contacts-v1-refine", extra = "cpu" } },
-    { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cpu'", specifier = "==0.26.0+cpu", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp163-models-teach-contacts-v1-refine", extra = "cpu" } },
+    { name = "torch", marker = "extra == 'cpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp230-models-contacts-v1-multi-from-exp199", extra = "cpu" } },
+    { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'cpu'", specifier = "==0.26.0+cpu", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "exp230-models-contacts-v1-multi-from-exp199", extra = "cpu" } },
     { name = "transformers" },
 ]
 provides-extras = ["gpu", "tpu", "cpu"]
