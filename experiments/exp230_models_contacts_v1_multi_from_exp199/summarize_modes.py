@@ -90,17 +90,29 @@ def main() -> int:
     plain = df[df["mode"] == "plain"]
     verdict = {"label": a.label}
     if len(plain):
-        mean_sections = float(plain["n_sections"].mean())
-        frac_single = float((plain["n_sections"] == 1).mean())
+        # n_sections_raw, NOT n_sections: the latter is clipped to --max-sections
+        # (8) when the sections are decoded, and a count clipped at 8 can only
+        # UNDERSTATE leaking -- a model emitting 20 plain sections would report 8.
+        # Below the cap the two are identical, so this changes nothing for a
+        # healthy model and tells the truth about an unhealthy one. Both are
+        # reported. (Even the raw count is bounded by the 6L+128 plain-mode token
+        # budget, which is inherent to any finite measurement.)
+        mean_sections = float(plain["n_sections_raw"].mean())
+        frac_single = float((plain["n_sections_raw"] == 1).mean())
+        mean_clipped = float(plain["n_sections"].mean())
         verdict.update({
             "plain_mean_sections": mean_sections,
+            "plain_mean_sections_clipped": mean_clipped,
             "plain_frac_single_section": frac_single,
+            "plain_max_sections_seen": int(plain["n_sections_raw"].max()),
             "gate_b_pass": bool(mean_sections <= MAX_MEAN_SECTIONS
                                 and frac_single >= MIN_SINGLE_SECTION_FRACTION),
         })
         print(f"\nGATE B  mean sections {mean_sections:.3f} (<= {MAX_MEAN_SECTIONS}) - "
               f"single-section {frac_single:.1%} (>= {MIN_SINGLE_SECTION_FRACTION:.0%}) - "
               f"{'PASS' if verdict['gate_b_pass'] else 'FAIL'}")
+        print(f"        max seen {int(plain['n_sections_raw'].max())} sections; "
+              f"clipped mean would read {mean_clipped:.3f}")
         print("        #163 arm F read 2.94 mean sections here.")
 
     multi = df[df["mode"] == "multi"]
@@ -111,6 +123,7 @@ def main() -> int:
         se = float((multi["best_f1"] - multi["last_f1"]).std(ddof=1) / np.sqrt(len(multi)))
         verdict.update({
             "multi_mean_sections": float(multi["n_sections"].mean()),
+            "multi_mean_sections_raw": float(multi["n_sections_raw"].mean()),
             "multi_mean_jaccard": jac,
             "multi_best_minus_last": gap,
             "multi_best_minus_last_se": se,
