@@ -182,9 +182,15 @@ def build_multi(doc_id, seq, gt_pairs, rollouts, f1s, *, alpha, rng, budget=CTX)
             if not pairs:
                 continue
             n = draft_size(len(pairs), alpha, rng)
-            n = min(n, (remaining - 1) // 3)
-            if n <= 0:
-                continue
+            # STOP when the natural draw does not fit; do NOT shrink it to what
+            # is left. Clipping to the remaining budget made later slots
+            # systematically smaller (measured: ~56 contacts in slots 0-10 vs
+            # 36-45 in slots 20-30), which is a positional signal the model
+            # could learn instead of reading the candidates. Every section is
+            # now a genuine draw from the size law and only the section COUNT
+            # is decided by the budget.
+            if 1 + 3 * n > remaining:
+                break
             sub = [pairs[t] for t in rng.choice(len(pairs), n, replace=False)]
             sec = [BEGIN] + emit(sub, seq_pos, rng)
             drafts += sec
