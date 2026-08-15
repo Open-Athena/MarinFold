@@ -261,29 +261,43 @@ def load_rollouts(path, log) -> dict[str, tuple[list, list]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--targets", type=Path, required=True)
+    ap.add_argument("--targets-multi", type=Path, required=True,
+                    help="proteins for the multi-draft half; these need rollouts")
+    ap.add_argument("--targets-plain", type=Path, required=True,
+                    help="a DISJOINT protein set for the rehearsal half; needs no rollouts")
     ap.add_argument("--rollouts", required=True,
                     help="local dir or gs:// prefix of the rollout parquets")
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--docs-per-protein", type=int, default=3)
+    ap.add_argument("--docs-per-protein", type=int, default=1,
+                    help="1 is the default on purpose: repetition belongs in the epoch "
+                         "loop, not baked into the corpus as near-duplicate documents")
     ap.add_argument("--alpha", type=float, default=0.5,
                     help="draft-size power law exponent; P(n) ~ n**-alpha on "
                          "{1..|rollout|}. 0 = the old uniform draw")
-    ap.add_argument("--mix-plain", type=float, default=0.5)
     ap.add_argument("--rows-per-file", type=int, default=100_000)
     ap.add_argument("--seed", type=int, default=230)
-    ap.add_argument("--limit", type=int, default=None, help="smoke: first N proteins")
+    ap.add_argument("--limit", type=int, default=None, help="smoke: first N proteins per half")
     a = ap.parse_args()
 
     def log(*msg):
         print(" ".join(str(m) for m in msg), flush=True)
 
     a.out.mkdir(parents=True, exist_ok=True)
-    targets = pq.read_table(a.targets).to_pylist()
+    multi_targets = pq.read_table(a.targets_multi).to_pylist()
+    plain_targets = pq.read_table(a.targets_plain).to_pylist()
     if a.limit:
-        targets = targets[: a.limit]
-    rollouts = load_rollouts(a.rollouts, log)
+        multi_targets = multi_targets[: a.limit]
+        plain_targets = plain_targets[: a.limit]
 
+    overlap = ({r["target_id"] for r in multi_targets}
+               & {r["target_id"] for r in plain_targets})
+    if overlap:
+        raise SystemExit(f"halves overlap on {len(overlap):,} proteins -- they must be "
+                         "disjoint, or a protein's ground truth is seen twice per epoch")
+    log(f"[corpus] {len(multi_targets):,} multi proteins, {len(plain_targets):,} plain, "
+        "disjoint")
+
+    rollouts = load_rollouts(a.rollouts, log)
     rng = np.random.default_rng(a.seed)
     rows: list[dict] = []
     n_file = 0
@@ -300,10 +314,15 @@ def main() -> int:
         rows = []
         n_file += 1
 
-    for rec in targets:
+    # --- multi-draft half: needs rollouts -----------------------------------
+    for rec in multi_targets:
         tid = rec["target_id"]
         preds, f1s = rollouts.get(tid, ([], []))
         if not preds:
+            # A protein whose rollouts never landed simply does not appear. The
+            # shard interleave is over the LENGTH-SORTED pool, so whatever
+            # subset arrived is a uniform sample rather than a short-protein
+            # bias.
             stats["skipped_no_rollouts"] += 1
             continue
         gt = [(int(i), int(j)) for i, j in rec["gt_contacts"]]
@@ -317,16 +336,27 @@ def main() -> int:
             rows.append({"doc_id": f"{tid}:m{d}", "target_id": tid, "arm": rec["arm"],
                          "kind": "multi", "document": doc, **meta})
             stats["multi"] += 1
-        # The plain half is drawn 1:1 against the multi half, from the SAME
-        # protein, so mode is the only thing the marker has to explain.
-        n_plain = int(round(a.docs_per_protein * a.mix_plain / (1.0 - a.mix_plain)))
-        for d in range(n_plain):
-            built = build_plain(f"{tid}:p{d}", rec["sequence"], gt)
+        if len(rows) >= a.rows_per_file:
+            flush()
+
+    # --- rehearsal half: DIFFERENT proteins, no rollouts needed --------------
+    # Sized 1:1 against the multi half that actually got built, so the ratio
+    # holds even when some rollouts are missing.
+    want_plain = stats["multi"]
+    for rec in plain_targets:
+        if stats["plain"] >= want_plain:
+            break
+        gt = [(int(i), int(j)) for i, j in rec["gt_contacts"]]
+        for d in range(a.docs_per_protein):
+            if stats["plain"] >= want_plain:
+                break
+            built = build_plain(f"{rec['target_id']}:p{d}", rec["sequence"], gt)
             if built is None:
                 stats["skipped_build"] += 1
                 continue
             doc, meta = built
-            rows.append({"doc_id": f"{tid}:p{d}", "target_id": tid, "arm": rec["arm"],
+            rows.append({"doc_id": f"{rec['target_id']}:p{d}",
+                         "target_id": rec["target_id"], "arm": rec["arm"],
                          "kind": "plain", "document": doc, **meta})
             stats["plain"] += 1
         if len(rows) >= a.rows_per_file:
@@ -335,13 +365,13 @@ def main() -> int:
 
     log(f"[corpus] {stats['multi']:,} multi + {stats['plain']:,} plain "
         f"= {stats['multi'] + stats['plain']:,} documents in {(time.time() - t0) / 60:.1f} min")
-    log(f"[corpus] skipped: {stats['skipped_no_rollouts']:,} without rollouts, "
-        f"{stats['skipped_build']:,} unbuildable")
+    log(f"[corpus] skipped: {stats['skipped_no_rollouts']:,} multi proteins without "
+        f"rollouts, {stats['skipped_build']:,} unbuildable")
     (a.out / "corpus.provenance.json").write_text(json.dumps({
-        "seed": a.seed, "docs_per_protein": a.docs_per_protein, "mix_plain": a.mix_plain,
-        "alpha": a.alpha, "stats": stats,
-        "targets": str(a.targets), "rollouts": str(a.rollouts),
-        "multi_doc_token": MULTI_DOC_TOKEN,
+        "seed": a.seed, "docs_per_protein": a.docs_per_protein, "alpha": a.alpha,
+        "stats": stats, "targets_multi": str(a.targets_multi),
+        "targets_plain": str(a.targets_plain), "rollouts": str(a.rollouts),
+        "multi_doc_token": MULTI_DOC_TOKEN, "disjoint_halves": True,
     }, indent=2))
     return 0
 
