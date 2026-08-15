@@ -6,9 +6,9 @@
 
 ## Invariants
 
-- The experiment code owns training semantics; operate only the ten trials
-  declared by `experiments/exp232_sweep_cv1_decontam/exp232_sweep.py` at version
-  `2026.08.14.2` (`s02`).
+- The experiment code owns training semantics. Its catalog declares ten trials at
+  version `2026.08.14.2` (`s02`), but `m1-p01-aug` is operator-abandoned after
+  divergence; operate only the remaining nine and never redispatch it.
 - Maintain at most one active writer for each trial's shared W&B ID and S3
   checkpoint root. CoreWeave target changes are reslices of that same run; never
   race clusters or GPU families.
@@ -64,6 +64,7 @@
   `scratch/exp232_cw_s02/exp232_cw_sweep.sqlite`.
 - PR #233 updates are operator-directed only. Do not post sweep status or
   heartbeat updates unless the operator explicitly supplies or requests the post.
+- Abandoned trial: `m1-p01-aug`. It is outside recovery and completion scope.
 - In the TPU-oriented persistence schema, `chips` means GPU count, `region` is the
   shared CoreWeave run domain, and `tpu_slice` stores the exact CoreWeave target.
 
@@ -116,6 +117,9 @@
 
 ## Change Record
 
+- 2026-08-15T15:48:44Z: The operator declared `m1-p01-aug` diverged and
+  abandoned it. Stopped its exact active Iris root, verified no root or child job
+  remained running, and removed the trial from recovery and completion scope.
 - 2026-08-15T13:31:47Z: The operator reserved PR #233 updates for explicit
   prompts. Added that communication restriction to Operator Choices; autonomous
   sweep heartbeats remain in chat and will not be posted to the PR.
