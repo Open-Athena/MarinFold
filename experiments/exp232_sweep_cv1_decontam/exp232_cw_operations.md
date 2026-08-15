@@ -62,6 +62,8 @@
   `experiments/exp232_sweep_cv1_decontam/exp232_cw_operations.md`.
 - Authoritative ledger:
   `scratch/exp232_cw_s02/exp232_cw_sweep.sqlite`.
+- PR #233 updates are operator-directed only. Do not post sweep status or
+  heartbeat updates unless the operator explicitly supplies or requests the post.
 - In the TPU-oriented persistence schema, `chips` means GPU count, `region` is the
   shared CoreWeave run domain, and `tpu_slice` stores the exact CoreWeave target.
 
@@ -114,6 +116,9 @@
 
 ## Change Record
 
+- 2026-08-15T13:31:47Z: The operator reserved PR #233 updates for explicit
+  prompts. Added that communication restriction to Operator Choices; autonomous
+  sweep heartbeats remain in chat and will not be posted to the PR.
 - 2026-08-14: Abandoned s01 by explicit operator instruction after discovering
   that seven early runs had started under transitive cuDNN/NCCL drift. Stopped
   its eight exact active roots, retained its W&B, checkpoint, and SQLite history,
