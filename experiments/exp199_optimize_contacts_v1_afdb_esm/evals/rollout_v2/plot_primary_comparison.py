@@ -12,9 +12,8 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
-from matplotlib.lines import Line2D
-
 import plot_pr_comparison as shared
+from matplotlib.lines import Line2D
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -32,6 +31,7 @@ BOX_ORDER = (
     "trc-cont",
     "protenix",
     "cw-p06-aug",
+    "cw-p06-cool",
 )
 BOX_LABELS = {
     "exp75-historical": "#75 E8\nexp82",
@@ -42,7 +42,8 @@ BOX_LABELS = {
     "trc-p03-base": "TRC p03\nbase",
     "trc-cont": "TRC\ncontinuation",
     "protenix": "Protenix-v2\nsingle-seq",
-    "cw-p06-aug": "CoreWeave p06\naug",
+    "cw-p06-aug": "CW p06\naug",
+    "cw-p06-cool": "CW p06\ncooldown",
 }
 COLORS = {
     "previous": "#8f8b86",
@@ -58,6 +59,7 @@ ANNOTATIONS = {
     "trc-p03-base": ((-18, 21), "right", "TRC p03 base"),
     "cw-p06-aug": ((-12, 24), "right", "CoreWeave p06 aug"),
     "trc-cont": ((-10, -31), "right", "TRC continuation"),
+    "cw-p06-cool": ((-10, -27), "right", "CoreWeave p06 cooldown"),
 }
 
 
@@ -171,7 +173,7 @@ def draw_scatter(
         float(fit["minimum_observed_loss"]),
         240,
     )
-    extrapolated = np.linspace(float(fit["minimum_observed_loss"]), 2.94, 80)
+    extrapolated = np.linspace(float(fit["minimum_observed_loss"]), 2.92, 80)
     axis.plot(
         observed,
         shared.sigmoid(observed, *parameters),
@@ -231,6 +233,7 @@ def draw_scatter(
         "trc-p03-base": table.loc[table.key == "trc-p03-base"].iloc[0],
         "cw-p06-aug": table.loc[table.key == "cw-p06-aug"].iloc[0],
         "trc-cont": table.loc[table.key == "trc-cont"].iloc[0],
+        "cw-p06-cool": table.loc[table.key == "cw-p06-cool"].iloc[0],
     }
     for key, row in annotation_rows.items():
         draw_key = "exp75" if key == "exp75" else key
@@ -262,8 +265,8 @@ def draw_scatter(
         color=COLORS["fit"],
         bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.82, "pad": 3},
     )
-    axis.set_xlim(3.153, 2.94)
-    axis.set_ylim(0.402, 0.625)
+    axis.set_xlim(3.153, 2.92)
+    axis.set_ylim(0.402, 0.650)
     loss_ticks = np.asarray([3.15, 3.10, 3.05, 3.00, 2.95])
     axis.set_xticks(
         loss_ticks,
@@ -342,7 +345,7 @@ def run(output: Path) -> None:
     draw_boxplot(box_axis, values)
     fit = draw_scatter(scatter_axis, table, values)
     figure.suptitle(
-        "Corrected exp199 final-checkpoint contact prediction", fontsize=14, y=0.972
+        "Exp199 final-checkpoint contact prediction", fontsize=14, y=0.972
     )
     figure.text(
         0.5,

@@ -54,6 +54,7 @@ EXPECTED_KEYS = {
     "trc-p03-aug",
     "trc-p03-base",
     "cw-p06-aug",
+    "cw-p06-cool",
     "trc-cont",
 }
 EXPECTED_PROTENIX = {
@@ -96,8 +97,8 @@ def load_comparison() -> pd.DataFrame:
     table = pd.read_csv(TABLE)
     if set(table.key) != EXPECTED_KEYS:
         raise ValueError(f"unexpected comparison keys: {sorted(table.key)}")
-    if (table.evaluation == "computed_here").sum() != 5:
-        raise ValueError("expected five /eval-checkpoint results computed here")
+    if (table.evaluation == "computed_here").sum() != 6:
+        raise ValueError("expected six /eval-checkpoint results computed here")
     if (table.evaluation == "previous").sum() != 3:
         raise ValueError("expected three rows from previous evaluations")
     if (table.fit_group == "exp75").sum() != 2:

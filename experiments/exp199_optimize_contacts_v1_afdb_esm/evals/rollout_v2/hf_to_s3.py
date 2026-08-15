@@ -14,9 +14,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import fsspec
-from huggingface_hub import snapshot_download
-
 from checkpoint_specs import Checkpoint, HfFile, model_s3_uri
+from huggingface_hub import snapshot_download
 
 CHUNK_BYTES = 8 * 1024**2
 PROGRESS_BYTES = 1024**3
@@ -25,6 +24,8 @@ PROGRESS_BYTES = 1024**3
 def hf_file_url(checkpoint: Checkpoint, file: HfFile) -> str:
     """Return an immutable resolve URL for one checkpoint file."""
 
+    if checkpoint.hf_repo_id is None or checkpoint.hf_revision is None:
+        raise ValueError(f"{checkpoint.label} is not sourced from Hugging Face")
     path = urllib.parse.quote(f"{checkpoint.hf_subfolder}/{file.name}", safe="/")
     return (
         f"https://huggingface.co/{checkpoint.hf_repo_id}/resolve/"
@@ -45,12 +46,19 @@ def authorization_headers() -> dict[str, str]:
 def expected_manifest(checkpoint: Checkpoint) -> dict:
     """Return the immutable source identity expected at the mirror."""
 
-    return {
-        "source": {
+    if checkpoint.hf_repo_id is None:
+        source = {
+            "kind": "coreweave-s3",
+            "uri": checkpoint.coreweave_uri,
+        }
+    else:
+        source = {
             "repo_id": checkpoint.hf_repo_id,
             "revision": checkpoint.hf_revision,
             "subfolder": checkpoint.hf_subfolder,
-        },
+        }
+    return {
+        "source": source,
         "checkpoint": {
             "label": checkpoint.label,
             "run_name": checkpoint.run_name,
@@ -104,21 +112,31 @@ def verify_checkpoint_at_uri(
         read = 0
         next_progress = PROGRESS_BYTES
         start = time.monotonic()
-        with filesystem.open(entry["name"], "rb") as handle:
-            while chunk := handle.read(CHUNK_BYTES):
-                sha256.update(chunk)
-                git_sha1.update(chunk)
-                read += len(chunk)
-                if read >= next_progress:
-                    print(
-                        f"[verify] {source_uri}/{name}: "
-                        f"{read / 2**30:.1f}/{file.size / 2**30:.1f} GiB",
-                        flush=True,
-                    )
-                    next_progress += PROGRESS_BYTES
-        actual_digest = (
-            sha256.hexdigest() if file.digest_kind == "sha256" else git_sha1.hexdigest()
-        )
+        if file.digest_kind == "s3-etag":
+            read = entry["size"]
+            actual_digest = str(entry.get("ETag") or entry.get("etag") or "").strip(
+                '"'
+            )
+            if not actual_digest:
+                raise ValueError(f"CoreWeave object has no S3 ETag: {entry}")
+        else:
+            with filesystem.open(entry["name"], "rb") as handle:
+                while chunk := handle.read(CHUNK_BYTES):
+                    sha256.update(chunk)
+                    git_sha1.update(chunk)
+                    read += len(chunk)
+                    if read >= next_progress:
+                        print(
+                            f"[verify] {source_uri}/{name}: "
+                            f"{read / 2**30:.1f}/{file.size / 2**30:.1f} GiB",
+                            flush=True,
+                        )
+                        next_progress += PROGRESS_BYTES
+            actual_digest = (
+                sha256.hexdigest()
+                if file.digest_kind == "sha256"
+                else git_sha1.hexdigest()
+            )
         if read != file.size or actual_digest != file.digest:
             raise ValueError(
                 f"CoreWeave object does not match pinned HF {file.digest_kind}: "
@@ -133,14 +151,16 @@ def verify_checkpoint_at_uri(
                 "elapsed_seconds": time.monotonic() - start,
             }
         )
-        print(f"[verify] matched pinned HF: {source_uri}/{name}", flush=True)
+        print(f"[verify] matched pinned identity: {source_uri}/{name}", flush=True)
 
     record = {
         **expected,
         "coreweave_uri": source_uri,
         "verified_at": datetime.now(UTC).isoformat(),
         "verification": (
-            "streamed and hashed inside CoreWeave; no checkpoint copy was created"
+            "matched exact S3 object sizes and ETags; no checkpoint copy was created"
+            if all(file.digest_kind == "s3-etag" for file in checkpoint.files)
+            else "streamed and hashed inside CoreWeave; no checkpoint copy was created"
         ),
         "verified_files": verified_files,
     }
@@ -297,6 +317,8 @@ def upload_verified_file(
 def mirror_checkpoint(run_id: str, checkpoint: Checkpoint) -> dict:
     """Mirror and verify one complete HF export in the shared CW namespace."""
 
+    if checkpoint.hf_repo_id is None or checkpoint.hf_revision is None:
+        raise ValueError(f"{checkpoint.label} has no Hugging Face source to mirror")
     destination_uri = model_s3_uri(run_id, checkpoint)
     filesystem, destination_root = fsspec.core.url_to_fs(destination_uri)
     identity_path = f"{destination_root}/identity.json"
