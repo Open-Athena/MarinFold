@@ -64,13 +64,14 @@ EXPECTED_PROTENIX = {
     "long": (0.571710332452209, 553),
 }
 ANNOTATIONS = {
-    "exp75": ((8, -2), "left", "#75 E8 · exp82 + reproduced"),
+    "exp75": ((8, -2), "left", "#75 E8 · #82 + reproduced"),
     "exp146": ((8, -18), "left", "#146 · 3B (not fit)"),
     "exp166": ((-10, -24), "right", "#166 AA aug"),
     "trc-p03-aug": ((10, -20), "left", "TRC p03 aug"),
     "trc-p03-base": ((-10, 18), "right", "TRC p03 base"),
-    "cw-p06-aug": ((-12, 22), "right", "CoreWeave p06 aug"),
+    "cw-p06-aug": ((-12, 22), "right", "CW p06 aug"),
     "trc-cont": ((-10, -26), "right", "TRC continuation"),
+    "cw-p06-cool": ((6, 24), "right", "CW p06 cooldown"),
 }
 
 
@@ -250,6 +251,7 @@ def plot_points(axis: plt.Axes, table: pd.DataFrame) -> None:
         "trc-p03-base": table.loc[table.key == "trc-p03-base"].iloc[0],
         "cw-p06-aug": table.loc[table.key == "cw-p06-aug"].iloc[0],
         "trc-cont": table.loc[table.key == "trc-cont"].iloc[0],
+        "cw-p06-cool": table.loc[table.key == "cw-p06-cool"].iloc[0],
     }
     for key, row in annotation_rows.items():
         offset, alignment, label = ANNOTATIONS[key]
@@ -293,7 +295,7 @@ def plot_figure(
             float(fit["minimum_observed_loss"]),
             240,
         )
-        extrapolated = np.linspace(float(fit["minimum_observed_loss"]), 2.94, 80)
+        extrapolated = np.linspace(float(fit["minimum_observed_loss"]), 2.92, 80)
         axis.plot(
             observed,
             sigmoid(observed, *parameters),
@@ -318,14 +320,14 @@ def plot_figure(
         loss_ticks,
         [f"{current:.2f}\n({current - LOSS_OFFSET:.2f})" for current in loss_ticks],
     )
-    axis.set_xlim(3.153, 2.94)
+    axis.set_xlim(3.153, 2.92)
     axis.set_ylim(0.34, 0.70)
     axis.set_xlabel(
         "contacts-v1 validation loss · current scale above, approximate historical "
         "equivalent in parentheses (lower is better →)"
     )
     axis.set_ylabel("Mean R-precision")
-    axis.set_title("Corrected exp199 contact-range R-precision", pad=14)
+    axis.set_title("Exp199 contact-range R-precision", pad=14)
     axis.grid(color="#d8d7d2", linewidth=0.8)
     axis.set_axisbelow(True)
     axis.spines[["top", "right"]].set_visible(False)
