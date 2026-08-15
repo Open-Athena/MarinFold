@@ -49,5 +49,5 @@
   "comparison_table_sha256": "5a49ca5b4a6ce8bb8f96b377bec513c56b5a6f63af8e300dd3a658b50794ec33",
   "per_protein_rows": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
   "per_protein_rows_sha256": "b48126caadce813b7913a7bbc60667dc0c28759f8bfe4a2cf930caeb2fd64f29",
-  "plot_sha256": "08c62507890f209e509fab55bfae2863a83ee6fd7a5c3ea00defdf8ee9d8a674"
+  "plot_sha256": "517f21c839137404a2ec607b8526554496a383059bf48b6d7c2eca6bc6870aa4"
 }

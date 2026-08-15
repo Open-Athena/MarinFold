@@ -12,8 +12,9 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
-import plot_pr_comparison as shared
 from matplotlib.lines import Line2D
+
+import plot_pr_comparison as shared
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -52,14 +53,14 @@ COLORS = {
     "fit": "#52514e",
 }
 ANNOTATIONS = {
-    "exp75": ((8, 16), "left", "#75 E8\nexp82 + reproduced"),
+    "exp75": ((10, -12), "left", "#75 E8\n#82 + reproduced"),
     "exp146": ((8, -36), "left", "#146 · 3B"),
     "exp166": ((10, 20), "left", "#166 AA aug"),
     "trc-p03-aug": ((8, -33), "left", "TRC p03 aug"),
     "trc-p03-base": ((-18, 21), "right", "TRC p03 base"),
-    "cw-p06-aug": ((-12, 24), "right", "CoreWeave p06 aug"),
+    "cw-p06-aug": ((-12, 24), "right", "CW p06 aug"),
     "trc-cont": ((-10, -31), "right", "TRC continuation"),
-    "cw-p06-cool": ((-10, -27), "right", "CoreWeave p06 cooldown"),
+    "cw-p06-cool": ((6, 18), "right", "CW p06 cooldown"),
 }
 
 
