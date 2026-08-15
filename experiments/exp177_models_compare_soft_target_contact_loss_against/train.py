@@ -21,12 +21,14 @@ from iris.client.client import get_iris_ctx
 from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, DirectDatasetComponent, LmDataConfig
+from levanter.layers.attention import AttentionBackend
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.lm_model import LmHeadModel
 from levanter.models.qwen import Qwen3Config
 from levanter.optim.config import AdamConfig
 from levanter.tracker.wandb import WandbConfig
+from levanter.data.loader import DataLoader
 from levanter.trainer import Trainer, TrainerConfig, initialize as initialize_trainer
 from levanter.utils.jax_utils import parameter_count
 from levanter.utils.mesh import MeshConfig
@@ -52,11 +54,13 @@ from premade_contacts_dataset import (
     FixedQuotaSoftTargetContactsDataset,
     MPFixedQuotaPremadeContactsDataset,
     MPFixedQuotaSoftTargetContactsDataset,
+    PrecomputedSoftTargetContactsDataset,
 )
 
 
 draccus.encode.register(MPFixedQuotaPremadeContactsDataset, lambda obj, decl_type=None: repr(obj))
 draccus.encode.register(MPFixedQuotaSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
+draccus.encode.register(PrecomputedSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +80,13 @@ class NextTokenDataKind(StrEnum):
     PREMADE_MP = "premade_mp"
 
 
+class SoftTargetDataKind(StrEnum):
+    """Training data source for the soft-target arm."""
+
+    ON_THE_FLY = "on_the_fly"
+    PRECOMPUTED = "precomputed"
+
+
 # Existing GCS data. The analyzed-contact shards are already staged in GCS; no
 # experiment launch should copy data as part of training.
 BUCKET = os.environ.get("EXP177_BUCKET", "gs://marin-us-east5").rstrip("/")
@@ -89,6 +100,14 @@ CONTACTS_PREFIX = os.environ.get(
 ).rstrip("/")
 CONTACTS_SHARD_NAME_TEMPLATE = os.environ.get(
     "EXP177_CONTACTS_SHARD_NAME_TEMPLATE",
+    "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+)
+PRECOMPUTED_SOFT_TARGET_PREFIX = os.environ.get(
+    "EXP177_PRECOMPUTED_SOFT_TARGET_PREFIX",
+    f"{MARIN_PREFIX}/preprocessed/soft_target_compact_v1/2026.08.05.3",
+).rstrip("/")
+PRECOMPUTED_SOFT_TARGET_SHARD_NAME_TEMPLATE = os.environ.get(
+    "EXP177_PRECOMPUTED_SOFT_TARGET_SHARD_NAME_TEMPLATE",
     "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
 )
 # Reuse the existing exp117-compatible tokenized contacts-v1 caches for the
@@ -117,6 +136,17 @@ TOKENIZER_ALLOW_PATTERNS = (
     "*.tiktoken",
 )
 ARTIFACT_VERSION = os.environ.get("EXP177_VERSION", "2026.07.20.1")
+
+
+def _attention_backend() -> AttentionBackend | None:
+    raw = os.environ.get("EXP177_ATTN_BACKEND", "").strip()
+    if not raw:
+        return None
+    if raw in AttentionBackend.__members__:
+        return AttentionBackend[raw]
+    return AttentionBackend(raw)
+
+
 MODEL_CONFIG = Qwen3Config(
     max_seq_len=8192,
     hidden_dim=2048,
@@ -125,6 +155,7 @@ MODEL_CONFIG = Qwen3Config(
     num_kv_heads=8,
     num_layers=24,
     rope=Llama3RotaryEmbeddingsConfig(),
+    attn_backend=_attention_backend(),
 )
 VOCAB_SIZE = 2845
 SEQ_LEN = 8192
@@ -132,15 +163,17 @@ TRAIN_TOKENS = 4_676_753_425
 EXP117_STEPS = round(16 * TRAIN_TOKENS / (256 * SEQ_LEN))
 
 TPU_TYPE = os.environ.get("EXP177_TPU", "v5p-32")
-TPU_ZONE = os.environ.get("EXP177_ZONE", "us-east5-a")
+TPU_REGION = os.environ.get("EXP177_REGION", "us-east5").lower()
+TPU_ZONE = os.environ.get("EXP177_ZONE", "").strip()
 TPU_SLICE_COUNT = int(os.environ.get("EXP177_TPU_SLICE_COUNT", "1"))
+_tpu_placement_kwargs = {"zone": TPU_ZONE} if TPU_ZONE else {"regions": [TPU_REGION]}
 RESOURCES = ResourceConfig.with_tpu(
     TPU_TYPE,
     slice_count=TPU_SLICE_COUNT,
     cpu=32,
     ram=os.environ.get("EXP177_RAM", "128g"),
     disk="50g",
-    zone=TPU_ZONE,
+    **_tpu_placement_kwargs,
 )
 SHUFFLE = BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel")
 CORRECTION_FACTORS = {"v5e": 0.5, "v6e": 0.3, "v5p": 0.45, "v4": 0.45}
@@ -212,6 +245,10 @@ def _loss_kind() -> LossKind:
 
 def _next_token_data_kind() -> NextTokenDataKind:
     return NextTokenDataKind(os.environ.get("EXP177_NEXT_TOKEN_DATA", NextTokenDataKind.CACHE.value))
+
+
+def _soft_target_data_kind() -> SoftTargetDataKind:
+    return SoftTargetDataKind(os.environ.get("EXP177_SOFT_TARGET_DATA", SoftTargetDataKind.ON_THE_FLY.value))
 
 
 def _train_cache_component() -> DatasetComponent:
@@ -311,7 +348,7 @@ def _run_soft_target_with_pinned_tokenizer(pod_config: TrainLmOnPodConfig) -> No
 def _train_job(pod_config: TrainLmOnPodConfig) -> None:
     loss_kind = LossKind(pod_config.env_vars["EXP177_LOSS"])
     target = _run_soft_target_with_pinned_tokenizer if loss_kind == LossKind.SOFT_TARGET else _run_next_token_with_pinned_tokenizer
-    remote(target, resources=pod_config.resources)(pod_config)
+    remote(target, resources=pod_config.resources, pip_dependency_groups=["tpu"])(pod_config)
 
 
 def _soft_loss(model: LmHeadModel, batch: CompactContactDocumentBatch, *, key=None):
@@ -368,7 +405,18 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
                 every=config.trainer.steps_per_eval,
             )
 
-        train_loader = trainer.data_loader(train_dataset)
+        prefetch_size = int(os.environ.get("EXP177_DATALOADER_PREFETCH_SIZE", "8"))
+        max_buffered_batches = int(os.environ.get("EXP177_DATALOADER_MAX_BUFFERED_BATCHES", "64"))
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=config.trainer.train_batch_size,
+            max_buffered_batches=max_buffered_batches,
+            mesh=trainer.device_mesh,
+            axis_resources=trainer.compute_axis_mapping,
+            prefetch_size=prefetch_size,
+            batch_axis_name=config.trainer.batch_axis_name,
+            allow_nondivisible_batch_size=config.trainer.allow_nondivisible_batch_size,
+        )
         trainer.train(state, train_loader)
 
 
@@ -493,24 +541,36 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
         val_key = "tokenized/contacts-v1-val"
         training_shuffle: bool | BlockShuffleConfig
         if loss_kind == LossKind.SOFT_TARGET:
-            soft_target_kwargs = {
-                "data_prefix": CONTACTS_PREFIX,
-                "num_shards": num_shards,
-                "examples_per_shard": examples_per_shard,
-                "seed": 0,
-                "max_seq_len": SEQ_LEN,
-                "shard_name_template": CONTACTS_SHARD_NAME_TEMPLATE,
-            }
-            if os.environ.get("EXP177_SOFT_TARGET_MP", "0") == "1":
-                train_dataset = MPFixedQuotaSoftTargetContactsDataset(
-                    **soft_target_kwargs,
-                    transform_workers=int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
-                    prefetch_shards=int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
+            soft_target_data_kind = _soft_target_data_kind()
+            if soft_target_data_kind == SoftTargetDataKind.PRECOMPUTED:
+                train_dataset = PrecomputedSoftTargetContactsDataset(
+                    data_prefix=PRECOMPUTED_SOFT_TARGET_PREFIX,
+                    num_shards=num_shards,
+                    examples_per_shard=examples_per_shard,
+                    seed=0,
+                    max_seq_len=SEQ_LEN,
                     shard_cache_size=int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
-                    mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "spawn"),
+                    shard_name_template=PRECOMPUTED_SOFT_TARGET_SHARD_NAME_TEMPLATE,
                 )
             else:
-                train_dataset = FixedQuotaSoftTargetContactsDataset(**soft_target_kwargs)
+                soft_target_kwargs = {
+                    "data_prefix": CONTACTS_PREFIX,
+                    "num_shards": num_shards,
+                    "examples_per_shard": examples_per_shard,
+                    "seed": 0,
+                    "max_seq_len": SEQ_LEN,
+                    "shard_name_template": CONTACTS_SHARD_NAME_TEMPLATE,
+                }
+                if os.environ.get("EXP177_SOFT_TARGET_MP", "0") == "1":
+                    train_dataset = MPFixedQuotaSoftTargetContactsDataset(
+                        **soft_target_kwargs,
+                        transform_workers=int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
+                        prefetch_shards=int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
+                        shard_cache_size=int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
+                        mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "spawn"),
+                    )
+                else:
+                    train_dataset = FixedQuotaSoftTargetContactsDataset(**soft_target_kwargs)
             train_component = DirectDatasetComponent(datasets={"train": train_dataset})
             training_shuffle = False
         else:
@@ -581,6 +641,8 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "WANDB_PROJECT": "MarinFold",
             "EXP177_LOSS": loss_kind.value,
             "EXP177_TPU": TPU_TYPE,
+            "EXP177_REGION": TPU_REGION,
+            "EXP177_ZONE": TPU_ZONE,
             "EXP177_TPU_SLICE_COUNT": str(TPU_SLICE_COUNT),
             "EXP177_DATA_PARALLELISM": str(data_parallelism),
             "EXP177_TENSOR_PARALLELISM": str(tensor_parallelism),
@@ -588,11 +650,15 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "EXP177_GRADIENT_ACCUMULATION": str(gradient_accumulation),
             "EXP177_NEXT_TOKEN_DATA": next_token_data_kind.value,
             "EXP177_SOFT_TARGET_MP": os.environ.get("EXP177_SOFT_TARGET_MP", "0"),
+            "EXP177_SOFT_TARGET_DATA": os.environ.get("EXP177_SOFT_TARGET_DATA", SoftTargetDataKind.ON_THE_FLY.value),
             "EXP177_CONTACTS_SHARD_NAME_TEMPLATE": CONTACTS_SHARD_NAME_TEMPLATE,
+            "EXP177_PRECOMPUTED_SOFT_TARGET_PREFIX": PRECOMPUTED_SOFT_TARGET_PREFIX,
+            "EXP177_PRECOMPUTED_SOFT_TARGET_SHARD_NAME_TEMPLATE": PRECOMPUTED_SOFT_TARGET_SHARD_NAME_TEMPLATE,
             "EXP177_TRANSFORM_WORKERS": os.environ.get("EXP177_TRANSFORM_WORKERS", "8"),
             "EXP177_PREFETCH_SHARDS": os.environ.get("EXP177_PREFETCH_SHARDS", "8"),
             "EXP177_SHARD_CACHE_SIZE": os.environ.get("EXP177_SHARD_CACHE_SIZE", "16"),
             "EXP177_MP_START_METHOD": os.environ.get("EXP177_MP_START_METHOD", "spawn"),
+            "PYTHONHASHSEED": os.environ.get("PYTHONHASHSEED", "0"),
         }
         for key in ("WANDB_API_KEY", "HUGGING_FACE_HUB_TOKEN"):
             if value := os.environ.get(key):
