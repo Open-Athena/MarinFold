@@ -152,3 +152,8 @@ case "$WHAT" in
   *)     echo "FATAL: WHAT must be all|rprec|modes"; exit 1 ;;
 esac
 echo "ALL DONE -> $OUT"
+echo
+echo "Next -- reduce the votes into the Gate A verdict:"
+echo "  python score_gate_a.py --rprec $OUT/rprec --targets $TARGETS \\"
+echo "      --base base --finetune finetune --out $OUT/gate_a"
+echo "Gate B (section counts) comes from summarize_modes.py over $OUT/modes/*."
