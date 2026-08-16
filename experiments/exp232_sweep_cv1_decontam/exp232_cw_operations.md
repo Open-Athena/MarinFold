@@ -80,6 +80,9 @@
   `--user eczech` submission invariant in every heartbeat report.
 - Preserve any dispatch with a new W&B `run_progress` high-water mark within one
   hour. Consider any other dispatch for a different eligible node shape or cluster.
+- An explicit operator request to consume newly visible batch H100 capacity may
+  reslice recently progressing dispatches to larger eligible gangs. Preserve the
+  one-writer invariant, stop before replacement, and remain within the 640-GPU cap.
 - After three hours without progress, restart or reslice from the latest shared
   checkpoint. After roughly three rapid preemptions with short runtimes, a fresh
   unique same-target submission may be used earlier because repeated Kueue gating
@@ -117,6 +120,10 @@
 
 ## Change Record
 
+- 2026-08-16T01:28:41Z: The operator requested aggressive use of free H100
+  capacity at batch priority. Added an explicit exception allowing
+  checkpoint-preserving enlargement of recently progressing gangs, still bounded
+  by one writer per trial and the 640-GPU fleet cap.
 - 2026-08-15T15:48:44Z: The operator declared `m1-p01-aug` diverged and
   abandoned it. Stopped its exact active Iris root, verified no root or child job
   remained running, and removed the trial from recovery and completion scope.
