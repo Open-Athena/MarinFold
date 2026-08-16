@@ -68,7 +68,7 @@ Rebuild a compact snapshot at the start of a heartbeat to inventory work, then
 again after recording fresh observations to support decisions:
 
 ```bash
-uv run .agents/skills/run-training-sweep/scripts/persistence.py \
+uv run .agents/skills/run-training-sweep-trc/scripts/persistence.py \
   snapshot scratch/<sweep>/expXXX_sweep.sqlite --reslice-after-hours <hours>
 ```
 
@@ -104,5 +104,5 @@ The bundled helper initializes the model, records events, emits snapshots, and
 checks integrity:
 
 ```bash
-uv run .agents/skills/run-training-sweep/scripts/persistence.py --help
+uv run .agents/skills/run-training-sweep-trc/scripts/persistence.py --help
 ```
