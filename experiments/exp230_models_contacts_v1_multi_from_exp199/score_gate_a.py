@@ -93,8 +93,31 @@ def load_truth(path: str) -> dict:
     for r in t:
         gt = {(int(i), int(j)) if int(i) < int(j) else (int(j), int(i))
               for i, j in r["gt_contacts"]}
-        out[(r["dataset"], r["stem"])] = dict(L=int(r["L"]), gt=gt)
+        out[(r["dataset"], r["stem"])] = dict(
+            L=int(r["L"]), gt=gt,
+            in_legacy554=bool(r.get("in_legacy554", True)),
+            in_eval2=bool(r.get("in_eval2", False)),
+            designed_any=bool(r.get("designed_any", False)),
+            passes_30=bool(r.get("passes_30", False)))
     return out
+
+
+def cuts_of(truth: dict) -> dict:
+    """The reported slices.
+
+    eval2 POOLED is 75% de novo design -- designs are what survive a homology
+    filter -- so exp226's standing rule is to lead with eval2-natural. On exp199
+    the two read 0.545 and 0.337, so this is a difference in conclusion, not in
+    presentation.
+    """
+    return {
+        "legacy554": {k for k, v in truth.items() if v["in_legacy554"]},
+        "eval2": {k for k, v in truth.items() if v["in_eval2"]},
+        "eval2_natural": {k for k, v in truth.items()
+                          if v["in_eval2"] and not v["designed_any"]},
+        "eval2_lt30": {k for k, v in truth.items()
+                       if v["in_eval2"] and v["passes_30"]},
+    }
 
 
 def metrics_for(score, gt: set, L: int) -> dict:
@@ -129,9 +152,14 @@ def metrics_for(score, gt: set, L: int) -> dict:
     return out
 
 
-def paired_report(a: dict, b: dict, key="all:R", n_boot=10000, seed=230) -> dict:
+def paired_report(a: dict, b: dict, key="all:R", n_boot=10000, seed=230,
+                  only: set | None = None) -> dict:
     """Per-protein difference (b - a) with a bootstrap CI over the shared units."""
     units = sorted(set(a) & set(b))
+    if only is not None:
+        units = [u for u in units if u in only]
+    if not units:
+        return dict(n=0)
     da = np.array([a[u][key] for u in units], float)
     db = np.array([b[u][key] for u in units], float)
     ok = ~(np.isnan(da) | np.isnan(db))
@@ -175,23 +203,41 @@ def main() -> int:
         flag = "OK" if n == a.expect else f"INCOMPLETE (expected {a.expect})"
         print(f"[{label}] {n} units {flag}")
 
+    cuts = cuts_of(truth)
     rep = {"per_label_mean": {
         lab: {k: float(np.nanmean([v.get(k, np.nan) for v in d.values()]))
               for k in ("all:R", "all:L", "all:L/5", "long:R", "short:R")}
         for lab, d in per_label.items()}}
-    rep["paired_all_R"] = paired_report(per_label[a.base], per_label[a.finetune])
-    rep["paired_long_R"] = paired_report(per_label[a.base], per_label[a.finetune],
-                                         key="long:R")
 
-    print(json.dumps(rep, indent=2))
-    p = rep["paired_all_R"]
-    lo, hi = p["delta_ci95"]
-    verdict = ("NO SIGNIFICANT LOSS" if lo > -0.005 else
-               "REGRESSION" if hi < 0 else "INCONCLUSIVE")
-    print(f"\nGATE A: base {p['base_mean']:.4f} -> finetune {p['finetune_mean']:.4f}  "
-          f"delta {p['delta_mean']:+.4f} [95% CI {lo:+.4f}, {hi:+.4f}]  => {verdict}")
-    print(f"        (#204's noise floor is 0.0023; #209: exp199 reads ~0.6103 on this "
-          f"scorer, never 0.5873)")
+    rep["cuts"] = {}
+    print(f"\n{'cut':<16}{'n':>5}{'base':>9}{'finetune':>10}{'delta':>9}"
+          f"{'  95% CI':>18}   verdict")
+    for cut, keys in cuts.items():
+        r = paired_report(per_label[a.base], per_label[a.finetune], only=keys)
+        if not r.get("n"):
+            continue
+        r_long = paired_report(per_label[a.base], per_label[a.finetune],
+                               key="long:R", only=keys)
+        rep["cuts"][cut] = {"all_R": r, "long_R": r_long}
+        lo, hi = r["delta_ci95"]
+        verdict = ("no significant loss" if lo > -0.005 else
+                   "REGRESSION" if hi < 0 else "inconclusive")
+        print(f"{cut:<16}{r['n']:>5}{r['base_mean']:>9.4f}{r['finetune_mean']:>10.4f}"
+              f"{r['delta_mean']:>+9.4f}   [{lo:+.4f},{hi:+.4f}]   {verdict}")
+
+    # The headline Gate A verdict is the legacy 554, for continuity with every
+    # published figure; eval2-natural is the honest low-homology readout.
+    p = rep["cuts"].get("legacy554", {}).get("all_R")
+    if p:
+        lo, hi = p["delta_ci95"]
+        verdict = ("NO SIGNIFICANT LOSS" if lo > -0.005 else
+                   "REGRESSION" if hi < 0 else "INCONCLUSIVE")
+        print(f"\nGATE A (legacy 554): base {p['base_mean']:.4f} -> finetune "
+              f"{p['finetune_mean']:.4f}  delta {p['delta_mean']:+.4f} "
+              f"[{lo:+.4f},{hi:+.4f}]  => {verdict}")
+    print("        #204 noise floor 0.0023 | #209: exp199 reads ~0.6103 here, "
+          "never its published 0.5873")
+    print("        lead with eval2_natural, NOT eval2 pooled (75% de novo design)")
 
     if a.out:
         out = Path(a.out)
