@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "description": "Finite per-protein all-range R-precision rows for the PR primary figure.",
-  "rows": 4986,
+  "rows": 5540,
   "rows_per_key": {
     "cw-p06-aug": 554,
+    "cw-p06-cool": 554,
     "exp146": 554,
     "exp166": 554,
     "exp75-historical": 554,
@@ -41,10 +42,14 @@
     "e8": {
       "s3_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/e8ref-v2-20260812-01/results/contact_precision_all.csv",
       "sha256": "b0d81ad7fd2849bdba31d075576a71864fa3c6f042a469eb6e19325fd53aa973"
+    },
+    "cooldown": {
+      "s3_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/results/contact_precision_all.csv",
+      "sha256": "cf644cc79d4dcb811825be6e9e0c7f57c28ccc443f70d725238d41dea10d8711"
     }
   },
   "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
-  "comparison_table_sha256": "7876fc97463d86d2a4c230f29b34ae7a17fce5b35a671a4542f48a3e8e5c1cf7",
+  "comparison_table_sha256": "5a49ca5b4a6ce8bb8f96b377bec513c56b5a6f63af8e300dd3a658b50794ec33",
   "output": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
-  "output_sha256": "9b294ef29e5f5bd513488f4f0d2751414c977a137821a7a1b0ad3154606d835c"
+  "output_sha256": "b48126caadce813b7913a7bbc60667dc0c28759f8bfe4a2cf930caeb2fd64f29"
 }

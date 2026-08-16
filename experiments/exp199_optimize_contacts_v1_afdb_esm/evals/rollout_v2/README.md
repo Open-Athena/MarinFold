@@ -1,20 +1,10 @@
 # Exp199 rollout-v2 checkpoint evaluation
 
-This directory evaluates the four selected exp199 Hugging Face exports with the
-fixed exp89 universe and exp82 rollout+resample recipe. It also reproduces the
-historical exp75 E8 checkpoint as an acceptance test for the evaluation path. The
-driver and every GPU worker run in CoreWeave. Exp199 snapshots are downloaded
-from a pinned Hugging Face revision inside CoreWeave and verified before upload
-to CoreWeave S3. The E8 validation reuses an existing CoreWeave S3 copy only
-after hashing all seven files in CoreWeave against its pinned Hugging Face
-manifest. Eval inputs stream from Hugging Face into the same bucket. This
-CoreWeave evaluation path contains no GCS source or destination. The one-time
-continuation publisher is separate and copies only its final Levanter and HF
-checkpoints from TRC GCS into durable Hugging Face storage.
+This directory evaluates five selected exp199 exports with the exp82 rollout+resample recipe. It also reproduces the historical exp75 E8 checkpoint as an acceptance test for the evaluation path. The driver and every GPU worker run in CoreWeave. Four exp199 snapshots were downloaded from pinned Hugging Face revisions inside CoreWeave and verified before upload to CoreWeave S3. The cooldown export already existed in CoreWeave and was verified and evaluated in place without a checkpoint copy. The E8 validation reuses an existing CoreWeave S3 copy only after hashing all seven files in CoreWeave against its pinned Hugging Face manifest. Eval inputs stream from Hugging Face into the same bucket. This CoreWeave evaluation path contains no GCS source or destination. The one-time continuation publisher is separate and copies only its final Levanter and HF checkpoints from TRC GCS into durable Hugging Face storage.
 
 ## Fixed recipe
 
-- 554 `(dataset, stem)` units / 552 unique stems
+- 577 `(dataset, stem)` units / 575 unique stems, with the unchanged legacy 554 reported separately
 - 100 fresh contacts-v1 realizations per unit
 - temperature 1.0, top-p 0.95, top-k disabled (`-1`)
 - token budget `min(8192 - prompt_tokens, 6L + 128)`
@@ -22,10 +12,7 @@ checkpoints from TRC GCS into durable Hugging Face storage.
 - 12 independent single-H100 shards per checkpoint, batch priority
 - one real-protein, 100-rollout smoke gate per checkpoint before full fanout
 
-The public HF model revision, individual file sizes/digests, source losses, eval
-input digests, MarinFold revision, and CoreWeave S3 root are fixed in
-`checkpoint_specs.py`. Exported tensors are float32 and vLLM evaluates them as
-bfloat16, matching the established CoreWeave path.
+The model source identities, individual file sizes/digests, source losses, eval input digests, MarinFold revision, and CoreWeave S3 root are fixed in `checkpoint_specs.py`. Exported tensors are float32 and vLLM evaluates them as bfloat16, matching the established CoreWeave path.
 
 ## Run
 
@@ -53,6 +40,15 @@ uv run python submit_coreweave.py \
   --seed 1
 ```
 
+Run the CoreWeave cooldown directly from its existing final HF-format export:
+
+```bash
+uv run python submit_coreweave.py \
+  --run-id cooldown-v2-YYYYMMDD-NN \
+  --suite cooldown \
+  --seed 1
+```
+
 To resume the same S3 run from a distinct Iris root job, add a unique
 `--job-suffix`. Workers use atomic completion markers and skip finished units:
 
@@ -73,10 +69,7 @@ s3://marin-us-east-02a/marin/protein-structure/MarinFold/
   exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/<run-id>/
 ```
 
-`results/run_manifest.json` is the completion authority. It is written only after
-all checkpoints have 554 matrices, 55,400 finished rollouts, complete timing rows,
-and 11,080 metric rows each. Partial sparse parts and completion markers remain
-resumable after preemption or failure.
+`results/run_manifest.json` is the completion authority. New runs score 577 units and write it only after each checkpoint has 577 matrices, 57,700 finished rollouts, complete timing rows, and 11,540 metric rows. The same run reports the legacy 554, eval2 pooled, eval2-natural, and <30% cuts. Partial sparse parts and completion markers remain resumable after preemption or failure.
 
 ## Results
 
@@ -92,12 +85,23 @@ token cap.
 | TRC p03-base, step 72,599 | 0.5792 | 0.5327 | 0.9427 | 0.9272 |
 | CoreWeave p06-aug, step 145,199 | **0.6088** | **0.5633** | **0.9480** | **0.9334** |
 | TRC continuation srcbase-aug100, step 145,199 | 0.6033 | 0.5551 | 0.9472 | **0.9335** |
+| CoreWeave p06 cooldown, step 290,400 | **0.6307** | **0.5837** | **0.9511** | **0.9383** |
 
-The p06 checkpoint improves over p03-base by 0.0296 all-range R-precision and
-0.0306 long-range R-precision. At p03, base is ahead of aug by 0.0056 and
-0.0063 respectively. The continuation improves over p03-base by 0.0241 all-range
-and 0.0224 long-range R-precision, but remains 0.0056 and 0.0082 behind p06-aug.
-Its long-range AUC is effectively tied with p06-aug (+0.0001).
+The cooldown improves over its earlier p06-aug checkpoint by 0.0218 all-range and 0.0204 long-range R-precision on the exact legacy 554. Its validation loss falls from 2.9712 to 2.9397. At p03, base is ahead of aug by 0.0056 all-range and 0.0063 long-range R-precision. The continuation remains 0.0056 and 0.0082 behind p06-aug on those cuts.
+
+### CoreWeave p06 cooldown
+
+Run `cooldown-v2-20260815-01` evaluated only W&B run `prot-exp199-cw-cv1-p06-cool-s01` at final step 290,400. It used the existing export at `s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_continue_contacts_v1_cw/checkpoints/protein/prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400`; no checkpoint was copied and no HF publication was created.
+
+| Reporting cut | n | All R | Long R | All AUC | Long AUC |
+|---|---:|---:|---:|---:|---:|
+| **eval2 natural (<40% identity)** | 78 | **0.3579** | **0.2998** | **0.8702** | **0.8426** |
+| eval2 pooled (<40% identity) | 307 | 0.5539 | 0.4955 | 0.9328 | 0.9152 |
+| eval2 natural (<30% identity) | 61 | 0.3202 | 0.2538 | 0.8568 | 0.8252 |
+| eval2 pooled (<30% identity) | 275 | 0.5503 | 0.4896 | 0.9322 | 0.9140 |
+| Legacy exp89 | 554 | 0.6307 | 0.5837 | 0.9511 | 0.9383 |
+
+Completeness passed with 577 `(dataset, stem)` units, 575 unique stems, 57,700/57,700 finished rollouts, zero unfinished rollouts, 577 dense matrices, and 11,540 metric rows. The worker SHA-256 is `f28829f9826a7089f082cb55de45582c7cbc389ea3d700e5c5869ff29bb6bc82`, exactly the worker accepted by the E8 reproduction below. `data/cooldown_run_manifest.json`, `data/cooldown_checkpoint_verification.json`, and `data/cooldown_subset_aggregate_metrics.csv` are the checked-in evidence. Full outputs remain under `s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/`.
 
 The full aggregate table is checked in at `data/aggregate_metrics.csv`. Complete
 per-unit metrics, matrices, and provenance manifests are under:
@@ -120,8 +124,7 @@ only its six-file, 5,885,614,712-byte HF export, then stored it at the eval-loca
 `models/` path. `data/continuation_checkpoint_verification.json` records the
 source, destination, sizes, and digests.
 
-`data/timings.csv` contains the required per-input timing records for all four
-exp199 checkpoints and the E8 validation checkpoint (2,770 rows total).
+`data/timings.csv` contains the required per-input timing records for all five exp199 checkpoints and the E8 validation checkpoint (3,347 rows total).
 
 ## Historical E8 validation
 
@@ -174,9 +177,4 @@ per-protein all-range table from the exact historical and CoreWeave result files
 `plot_primary_comparison.py` uses it to render the primary boxplot-and-scatterplot
 figure at `plots/final_checkpoint_rprecision.png`.
 
-The plot shows the two exp75 evaluations separately but averages them before
-fitting, so one checkpoint contributes one fit observation. Only unique 1.5B
-checkpoints enter the descriptive curves; the historical exp146 3B checkpoint is
-shown but excluded. Circles identify the five results computed here through the
-`/eval-checkpoint` workflow from PR #214, while squares identify values taken from
-previous evaluations.
+The plot shows the two exp75 evaluations separately but averages them before fitting, so one checkpoint contributes one fit observation. Only unique 1.5B checkpoints enter the descriptive curve; the historical exp146 3B checkpoint is shown but excluded. Circles identify the six results computed through the `/eval-checkpoint` workflow from PR #214, while squares identify values taken from previous evaluations. The cooldown box and point use its legacy-554 slice so they remain directly comparable to PR #219.

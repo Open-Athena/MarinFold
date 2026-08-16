@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-
 import run_coreweave_eval
 import submit_coreweave
 from checkpoint_specs import (
@@ -18,6 +17,7 @@ from checkpoint_specs import (
     CHECKPOINTS,
     CONTINUATION_CHECKPOINT,
     CONTINUATION_HF_REVISION,
+    COOLDOWN_CHECKPOINT,
     E8_HF_REVISION,
     E8_REFERENCE_CHECKPOINT,
     E8_REFERENCE_METRICS,
@@ -75,6 +75,28 @@ def test_continuation_checkpoint_is_an_isolated_pinned_suite() -> None:
     )
 
 
+def test_cooldown_checkpoint_is_the_existing_final_coreweave_export() -> None:
+    checkpoint = COOLDOWN_CHECKPOINT
+    assert CHECKPOINT_SUITES["cooldown"] == (checkpoint,)
+    assert checkpoint.run_name == "prot-exp199-cw-cv1-p06-cool-s01"
+    assert checkpoint.step == 290_400
+    assert checkpoint.hf_repo_id is None
+    assert checkpoint.hf_revision is None
+    assert checkpoint.coreweave_uri == (
+        "s3://marin-us-east-02a/marin/protein-structure/MarinFold/"
+        "exp199_continue_contacts_v1_cw/checkpoints/protein/"
+        "prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400"
+    )
+    manifest = expected_manifest(checkpoint)
+    assert manifest["source"] == {
+        "kind": "coreweave-s3",
+        "uri": checkpoint.coreweave_uri,
+    }
+    assert len(manifest["files"]) == 6
+    assert sum(file["size"] for file in manifest["files"]) == 5_885_614_712
+    assert {file["digest_kind"] for file in manifest["files"]} == {"s3-etag"}
+
+
 def test_run_paths_are_coreweave_s3_only() -> None:
     root = run_root("v2-test-01")
     assert root.startswith(f"{MARIN_PREFIX}/")
@@ -106,6 +128,7 @@ def test_e8_reference_acceptance_gate() -> None:
     rows = [
         {
             "model": "marinfold-e8-reference-step35679",
+            "subset": "legacy_554",
             "range": range_name,
             "cut": cut,
             "precision": expected,
@@ -158,19 +181,61 @@ def test_checked_in_continuation_verification_matches_checkpoint_spec() -> None:
     )
 
 
-def test_checked_in_timings_cover_all_five_evaluated_checkpoints() -> None:
+def test_checked_in_cooldown_evidence_matches_checkpoint_spec() -> None:
+    data_directory = Path(__file__).with_name("data")
+    verification = json.loads(
+        (data_directory / "cooldown_checkpoint_verification.json").read_text()
+    )
+    run_manifest = json.loads(
+        (data_directory / "cooldown_run_manifest.json").read_text()
+    )
+    checkpoint = COOLDOWN_CHECKPOINT
+    assert verification["coreweave_uri"] == checkpoint.coreweave_uri
+    assert verification["source"] == expected_manifest(checkpoint)["source"]
+    assert verification["files"] == expected_manifest(checkpoint)["files"]
+    assert run_manifest["sampling"] == {
+        "n_rollouts": 100,
+        "recipe": "rollout_resample",
+        "seed": 1,
+        "temperature": 1.0,
+        "tie_break": None,
+        "token_budget": "min(8192-prompt_tokens, 6*L+128)",
+        "top_k": -1,
+        "top_p": 0.95,
+    }
+    assert run_manifest["validation"][checkpoint.label] == {
+        "dense_matrices": 577,
+        "rollouts": 57_700,
+        "unfinished_rollouts": 0,
+        "unique_stems": 575,
+        "units": 577,
+    }
+
+
+def test_checked_in_timings_cover_all_six_evaluated_checkpoints() -> None:
     timings = pd.read_csv(Path(__file__).with_name("data") / "timings.csv")
-    assert len(timings) == 5 * 554
+    assert len(timings) == 5 * 554 + 577
     assert set(timings.model_nickname) == {
         "trc_p03_aug_step72599",
         "trc_p03_base_step72599",
         "cw_p06_aug_step145199",
         "trc_cont_srcbase_aug100_step145199",
         "e8_reference_step35679",
+        "cw_p06_cool_step290400",
     }
     assert timings.complete.all()
     assert timings.unfinished_rollouts.sum() == 0
     assert set(timings.n_rollouts) == {100}
+
+
+def test_primary_figure_rows_include_cooldown_on_the_legacy_universe() -> None:
+    rows = pd.read_csv(Path(__file__).with_name("data") / "pr_all_r_rows.csv.gz")
+    assert len(rows) == 10 * 554
+    assert rows.groupby("key").size().to_dict()["cw-p06-cool"] == 554
+    cooldown = rows[rows.key == "cw-p06-cool"]
+    comparison = pd.read_csv(Path(__file__).with_name("data") / "pr_comparison.csv")
+    expected = comparison.loc[comparison.key == "cw-p06-cool", "r_all"].item()
+    assert abs(float(cooldown.precision.mean()) - expected) < 1e-14
 
 
 def test_child_request_has_fixed_recipe_and_batch_h100_shape() -> None:
@@ -210,6 +275,46 @@ def test_child_request_has_fixed_recipe_and_batch_h100_shape() -> None:
     assert request_data["resources"]["device"]["variant"] == "H100"
     assert request_data["resources"]["device"]["count"] == 1
     assert request.environment.env_vars["MARIN_PREFIX"] == MARIN_PREFIX
+
+
+def test_eval2_targets_append_23_units_without_deduplicating_stems(tmp_path) -> None:
+    legacy = pd.DataFrame(
+        {
+            "dataset": ["legacy"] * 552 + ["legacy-duplicate"] * 2,
+            "stem": [f"old-{index}" for index in range(552)] + ["old-0", "old-1"],
+            "L": [3] * 554,
+            "input_seq": ["AAA"] * 554,
+        }
+    )
+    added = pd.DataFrame(
+        {
+            "dataset": ["foldbench_rest"] * 23,
+            "stem": [f"new-{index}" for index in range(23)],
+            "length": [4] * 23,
+            "input_seq": ["AAAA"] * 23,
+            "has_ground_truth": [1] * 23,
+        }
+    )
+    legacy_path = tmp_path / "legacy.parquet"
+    manifest_path = tmp_path / "manifest.csv"
+    output_path = tmp_path / "eval2.parquet"
+    legacy.to_parquet(legacy_path, index=False)
+    added.to_csv(manifest_path, index=False)
+    validation = run_coreweave_eval._build_eval2_targets(
+        legacy_uri=str(legacy_path),
+        manifest_uri=str(manifest_path),
+        destination_uri=str(output_path),
+    )
+    assert validation == {
+        "legacy_units": 554,
+        "legacy_unique_stems": 552,
+        "added_units": 23,
+        "combined_units": 577,
+        "combined_unique_stems": 575,
+    }
+    combined = pd.read_parquet(output_path)
+    assert len(combined) == 577
+    assert combined.stem.nunique() == 575
 
 
 def test_root_submission_uses_marin_cluster_and_eczech_user(monkeypatch) -> None:

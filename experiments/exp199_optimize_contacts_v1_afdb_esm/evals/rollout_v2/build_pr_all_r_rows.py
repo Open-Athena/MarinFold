@@ -58,6 +58,7 @@ MODELS = {
     "trc-p03-aug": "marinfold-trc-p03-aug-step72599",
     "trc-p03-base": "marinfold-trc-p03-base-step72599",
     "cw-p06-aug": "marinfold-cw-p06-aug-step145199",
+    "cw-p06-cool": "marinfold-cw-p06-cool-step290400",
     "trc-cont": "marinfold-trc-cont-srcbase-aug100-step145199",
     "protenix": "protenix-v2",
 }
@@ -77,6 +78,11 @@ S3_SOURCES = {
         "exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/"
         "e8ref-v2-20260812-01/results/contact_precision_all.csv"
     ),
+    "cooldown": (
+        "s3://marin-us-east-02a/marin/protein-structure/MarinFold/"
+        "exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/"
+        "cooldown-v2-20260815-01/results/contact_precision_all.csv"
+    ),
 }
 
 
@@ -90,7 +96,12 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def select(frame: pd.DataFrame, key: str) -> pd.DataFrame:
+def select(
+    frame: pd.DataFrame,
+    key: str,
+    *,
+    units: set[tuple[str, str]] | None = None,
+) -> pd.DataFrame:
     """Select one model's finite all-range R-precision rows."""
 
     rows = frame[
@@ -102,6 +113,9 @@ def select(frame: pd.DataFrame, key: str) -> pd.DataFrame:
         predictor = "structure" if key == "protenix" else "lm"
         rows = rows[rows.predictor == predictor]
     rows = rows.loc[np.isfinite(rows.precision), ["dataset", "stem", "precision"]]
+    if units is not None:
+        index = pd.MultiIndex.from_frame(rows[["dataset", "stem"]])
+        rows = rows.loc[index.isin(units)]
     if len(rows) != 554:
         raise ValueError(f"{key} has {len(rows)} rows; expected 554")
     if rows.duplicated(["dataset", "stem"]).any():
@@ -114,6 +128,7 @@ def run(
     exp199_results: Path,
     continuation_results: Path,
     e8_results: Path,
+    cooldown_results: Path,
     output: Path,
     provenance: Path,
 ) -> None:
@@ -124,6 +139,7 @@ def run(
         "exp199": exp199_results,
         "continuation": continuation_results,
         "e8": e8_results,
+        "cooldown": cooldown_results,
     }
     frames = {name: pd.read_csv(path) for name, path in source_paths.items()}
     rows = {
@@ -137,6 +153,18 @@ def run(
         "trc-cont": select(frames["continuation"], "trc-cont"),
         "protenix": select(frames["protenix"], "protenix"),
     }
+    legacy_units = set(
+        zip(
+            rows["cw-p06-aug"].dataset,
+            rows["cw-p06-aug"].stem,
+            strict=True,
+        )
+    )
+    rows["cw-p06-cool"] = select(
+        frames["cooldown"],
+        "cw-p06-cool",
+        units=legacy_units,
+    )
 
     comparison = pd.read_csv(COMPARISON).set_index("key")
     for key, values in rows.items():
@@ -189,6 +217,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exp199-results", type=Path, required=True)
     parser.add_argument("--continuation-results", type=Path, required=True)
     parser.add_argument("--e8-results", type=Path, required=True)
+    parser.add_argument("--cooldown-results", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE)
     return parser.parse_args()
@@ -200,6 +229,7 @@ if __name__ == "__main__":
         exp199_results=arguments.exp199_results,
         continuation_results=arguments.continuation_results,
         e8_results=arguments.e8_results,
+        cooldown_results=arguments.cooldown_results,
         output=arguments.output,
         provenance=arguments.provenance,
     )

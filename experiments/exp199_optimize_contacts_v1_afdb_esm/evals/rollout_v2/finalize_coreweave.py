@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-
 from checkpoint_specs import (
     E8_REFERENCE_METRICS,
     E8_REFERENCE_TOLERANCE,
@@ -26,8 +25,8 @@ from checkpoint_specs import (
     checkpoint_model_uri,
 )
 
-EXPECTED_UNITS = 554
-EXPECTED_UNIQUE_STEMS = 552
+EXPECTED_UNITS = 577
+EXPECTED_UNIQUE_STEMS = 575
 EXPECTED_ROLLOUTS_PER_UNIT = 100
 EXP89_OUTPUT_COLUMNS = [
     "dataset",
@@ -264,7 +263,9 @@ def validate_e8_reference(aggregate: pd.DataFrame, suite: str) -> dict | None:
     if suite != "e8-reference":
         return None
     headline = aggregate[
-        aggregate["range"].isin(["all", "long"]) & aggregate["cut"].isin(["R", "AUC"])
+        (aggregate["subset"] == "legacy_554")
+        & aggregate["range"].isin(["all", "long"])
+        & aggregate["cut"].isin(["R", "AUC"])
     ]
     if len(headline) != len(E8_REFERENCE_METRICS):
         raise ValueError(f"E8 headline metric set is incomplete: {headline}")
@@ -294,11 +295,94 @@ def validate_e8_reference(aggregate: pd.DataFrame, suite: str) -> dict | None:
     }
 
 
+def ground_truth_units(path: Path) -> list[tuple[str, str]]:
+    """Return ordered evaluation-unit identities from the published JSONL."""
+
+    units = []
+    with path.open() as handle:
+        for line in handle:
+            record = json.loads(line)
+            units.append((record["dataset"], record["stem"]))
+    if len(units) != EXPECTED_UNITS or len(set(units)) != EXPECTED_UNITS:
+        raise ValueError("ground truth does not contain 577 distinct evaluation units")
+    if len({stem for _, stem in units}) != EXPECTED_UNIQUE_STEMS:
+        raise ValueError("ground truth does not contain 575 unique stems")
+    return units
+
+
+def aggregate_subsets(
+    precision: pd.DataFrame,
+    *,
+    ordered_units: list[tuple[str, str]],
+    eval2_manifest: pd.DataFrame,
+) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Aggregate the 577 outputs over the legacy and eval2 reporting cuts."""
+
+    legacy_units = set(ordered_units[:554])
+    eval2_units = set(
+        zip(eval2_manifest.dataset, eval2_manifest.stem, strict=True)
+    )
+    natural_units = set(
+        zip(
+            eval2_manifest.loc[eval2_manifest.designed_any == 0, "dataset"],
+            eval2_manifest.loc[eval2_manifest.designed_any == 0, "stem"],
+            strict=True,
+        )
+    )
+    strict_manifest = eval2_manifest[eval2_manifest.passes_30 == 1]
+    strict_units = set(zip(strict_manifest.dataset, strict_manifest.stem, strict=True))
+    strict_natural = strict_manifest[strict_manifest.designed_any == 0]
+    strict_natural_units = set(
+        zip(strict_natural.dataset, strict_natural.stem, strict=True)
+    )
+    subsets = {
+        "universe_577": set(ordered_units),
+        "legacy_554": legacy_units,
+        "eval2": eval2_units,
+        "eval2_natural": natural_units,
+        "eval2_30": strict_units,
+        "eval2_natural_30": strict_natural_units,
+    }
+    expected_counts = {
+        "universe_577": 577,
+        "legacy_554": 554,
+        "eval2": 307,
+        "eval2_natural": 78,
+        "eval2_30": 275,
+        "eval2_natural_30": 61,
+    }
+    counts = {name: len(units) for name, units in subsets.items()}
+    if counts != expected_counts:
+        raise ValueError(f"reporting subset counts changed: {counts} != {expected_counts}")
+    if not all(units <= subsets["universe_577"] for units in subsets.values()):
+        raise ValueError("a reporting subset contains an unknown evaluation unit")
+
+    unit_index = pd.MultiIndex.from_frame(precision[["dataset", "stem"]])
+    frames = []
+    for name, units in subsets.items():
+        mask = unit_index.isin(units)
+        frame = (
+            precision.loc[mask]
+            .groupby(["model", "range", "cut"], as_index=False)
+            .agg(
+                precision=("precision", "mean"),
+                valid_values=("precision", "count"),
+                total_values=("precision", "size"),
+            )
+        )
+        frame.insert(0, "subset", name)
+        if set(frame.total_values) != {len(units)}:
+            raise ValueError(f"metric rows are incomplete for subset {name}")
+        frames.append(frame)
+    return pd.concat(frames, ignore_index=True), counts
+
+
 def finalize(
     *,
     run_root: str,
     score_root: str,
     ground_truth_uri: str,
+    eval2_manifest_uri: str,
     worker_sha256: str,
     job_ids: list[str],
     started_at: str,
@@ -317,6 +401,11 @@ def finalize(
     download_file(filesystem, ground_truth_path, ground_truth)
     if sha256_file(ground_truth) != GROUND_TRUTH_SHA256:
         raise ValueError("ground-truth SHA-256 does not match the exp89 universe")
+    ordered_units = ground_truth_units(ground_truth)
+    _, eval2_manifest_path = fsspec.core.url_to_fs(eval2_manifest_uri)
+    eval2_manifest_local = scratch / "eval2_manifest.csv"
+    download_file(filesystem, eval2_manifest_path, eval2_manifest_local)
+    eval2_manifest = pd.read_csv(eval2_manifest_local)
 
     score_directories: dict[str, Path] = {}
     timing_frames: list[pd.DataFrame] = []
@@ -382,16 +471,31 @@ def finalize(
     )
     aggregate_path = scratch / "aggregate_metrics.csv"
     aggregate.to_csv(aggregate_path, index=False)
+    subset_aggregate, subset_counts = aggregate_subsets(
+        precision,
+        ordered_units=ordered_units,
+        eval2_manifest=eval2_manifest,
+    )
+    subset_aggregate_path = scratch / "subset_aggregate_metrics.csv"
+    subset_aggregate.to_csv(subset_aggregate_path, index=False)
     filesystem.put_file(
         str(precision_path), f"{root}/results/contact_precision_all.csv"
     )
     filesystem.put_file(str(marinfold_path), f"{root}/results/marinfold_precision.csv")
     filesystem.put_file(str(aggregate_path), f"{root}/results/aggregate_metrics.csv")
+    filesystem.put_file(
+        str(subset_aggregate_path),
+        f"{root}/results/subset_aggregate_metrics.csv",
+    )
 
-    headline = aggregate[
-        aggregate["range"].isin(["all", "long"]) & aggregate["cut"].isin(["R", "AUC"])
+    headline = subset_aggregate[
+        subset_aggregate["subset"].isin(
+            ["legacy_554", "eval2", "eval2_natural", "eval2_30", "eval2_natural_30"]
+        )
+        & subset_aggregate["range"].isin(["all", "long"])
+        & subset_aggregate["cut"].isin(["R", "AUC"])
     ].to_dict(orient="records")
-    reference_validation = validate_e8_reference(aggregate, suite)
+    reference_validation = validate_e8_reference(subset_aggregate, suite)
     if reference_validation is not None:
         write_json(
             filesystem,
@@ -403,15 +507,6 @@ def finalize(
                 "E8 reference validation exceeded the allowed tolerance: "
                 f"{reference_validation}"
             )
-    source_identities = {
-        (checkpoint.hf_repo_id, checkpoint.hf_revision, checkpoint.source_dtype)
-        for checkpoint in checkpoints
-    }
-    if len(source_identities) != 1:
-        raise ValueError(
-            f"a run must use one pinned HF source identity: {source_identities}"
-        )
-    hf_repo_id, hf_revision, source_dtype = source_identities.pop()
     reused_existing_coreweave = all(
         checkpoint.coreweave_uri is not None for checkpoint in checkpoints
     )
@@ -422,18 +517,29 @@ def finalize(
         "completed_at": datetime.now(UTC).isoformat(),
         "run_root": run_root,
         "checkpoint_source": {
-            "repo_id": hf_repo_id,
-            "revision": hf_revision,
+            "identities": [
+                {
+                    "kind": (
+                        "coreweave-s3"
+                        if checkpoint.hf_repo_id is None
+                        else "huggingface"
+                    ),
+                    "repo_id": checkpoint.hf_repo_id,
+                    "revision": checkpoint.hf_revision,
+                    "coreweave_uri": checkpoint.coreweave_uri,
+                }
+                for checkpoint in checkpoints
+            ],
             "transport": (
-                "pre-existing CoreWeave S3 checkpoint, streamed and hashed inside "
-                "CoreWeave against the pinned Hugging Face file manifest"
+                "pre-existing CoreWeave S3 checkpoint verified in place against "
+                "its pinned file manifest"
                 if reused_existing_coreweave
                 else "pinned Hugging Face snapshot download on ephemeral CoreWeave "
                 "disk, then CoreWeave S3 upload"
             ),
             "checkpoint_copied": not reused_existing_coreweave,
             "gcs_used": False,
-            "source_dtype": source_dtype,
+            "source_dtypes": sorted({checkpoint.source_dtype for checkpoint in checkpoints}),
             "evaluated_dtype": "bfloat16",
             "mirror_run_id": model_mirror_run_id,
         },
@@ -468,6 +574,7 @@ def finalize(
             "tie_break": None,
         },
         "validation": validations,
+        "reporting_subset_units": subset_counts,
         "headline_metrics": headline,
         "reference_validation": reference_validation,
         "worker_sha256": worker_sha256,
@@ -479,6 +586,9 @@ def finalize(
             "marinfold_precision": f"{run_root}/results/marinfold_precision.csv",
             "contact_precision_all": f"{run_root}/results/contact_precision_all.csv",
             "aggregate_metrics": f"{run_root}/results/aggregate_metrics.csv",
+            "subset_aggregate_metrics": (
+                f"{run_root}/results/subset_aggregate_metrics.csv"
+            ),
         },
     }
     write_json(filesystem, f"{root}/results/run_manifest.json", manifest)

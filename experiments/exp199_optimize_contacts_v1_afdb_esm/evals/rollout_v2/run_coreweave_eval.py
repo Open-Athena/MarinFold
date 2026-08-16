@@ -19,6 +19,27 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import fsspec
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+from checkpoint_specs import (
+    CHECKPOINT_SUITES,
+    EVAL2_MANIFEST_SHA256,
+    EVAL2_MANIFEST_SIZE,
+    EVAL2_MANIFEST_URL,
+    GROUND_TRUTH_SHA256,
+    GROUND_TRUTH_SIZE,
+    GROUND_TRUTH_URL,
+    LEGACY_TARGETS_SHA256,
+    LEGACY_TARGETS_SIZE,
+    LEGACY_TARGETS_URL,
+    MARIN_PREFIX,
+    MARINFOLD_REVISION,
+    Checkpoint,
+    checkpoint_model_uri,
+    run_root,
+)
+from finalize_coreweave import finalize
 from fray.client import JobHandle, wait_all
 from fray.current_client import current_client
 from fray.types import (
@@ -28,22 +49,6 @@ from fray.types import (
     ResourceConfig,
     create_environment,
 )
-
-from checkpoint_specs import (
-    CHECKPOINT_SUITES,
-    GROUND_TRUTH_SHA256,
-    GROUND_TRUTH_SIZE,
-    GROUND_TRUTH_URL,
-    MARIN_PREFIX,
-    MARINFOLD_REVISION,
-    TARGETS_SHA256,
-    TARGETS_SIZE,
-    TARGETS_URL,
-    Checkpoint,
-    checkpoint_model_uri,
-    run_root,
-)
-from finalize_coreweave import finalize
 from hf_to_s3 import (
     expected_manifest,
     mirror_checkpoint,
@@ -233,6 +238,64 @@ def _validate_smokes(smoke_root: str, checkpoints: tuple[Checkpoint, ...]) -> No
             raise RuntimeError(f"Invalid smoke result for {checkpoint.label}: {record}")
 
 
+def _read_parquet(uri: str) -> pd.DataFrame:
+    """Read a small parquet input through the configured CoreWeave filesystem."""
+
+    with fsspec.open(uri, "rb") as handle:
+        return pq.read_table(handle).to_pandas()
+
+
+def _write_parquet(frame: pd.DataFrame, uri: str) -> None:
+    """Write a small parquet input through the configured CoreWeave filesystem."""
+
+    with fsspec.open(uri, "wb") as handle:
+        pq.write_table(pa.Table.from_pandas(frame, preserve_index=False), handle)
+
+
+def _build_eval2_targets(
+    *, legacy_uri: str, manifest_uri: str, destination_uri: str
+) -> dict:
+    """Append eval2's 23 new inputs to the unchanged legacy 554 targets."""
+
+    legacy = _read_parquet(legacy_uri)[["dataset", "stem", "L", "input_seq"]]
+    with fsspec.open(manifest_uri, "rt") as handle:
+        manifest = pd.read_csv(handle)
+    added = manifest[
+        (manifest["dataset"] == "foldbench_rest")
+        & (manifest["has_ground_truth"] == 1)
+    ][["dataset", "stem", "length", "input_seq"]].rename(
+        columns={"length": "L"}
+    )
+    combined = pd.concat([legacy, added], ignore_index=True)
+    units = list(zip(combined.dataset, combined.stem, strict=True))
+    validation = {
+        "legacy_units": len(legacy),
+        "legacy_unique_stems": int(legacy.stem.nunique()),
+        "added_units": len(added),
+        "combined_units": len(combined),
+        "combined_unique_stems": int(combined.stem.nunique()),
+    }
+    expected = {
+        "legacy_units": 554,
+        "legacy_unique_stems": 552,
+        "added_units": 23,
+        "combined_units": 577,
+        "combined_unique_stems": 575,
+    }
+    if validation != expected:
+        raise ValueError(f"eval2 target counts changed: {validation} != {expected}")
+    if len(set(units)) != len(units):
+        raise ValueError("eval2 targets contain duplicate (dataset, stem) units")
+    if (combined.input_seq.str.len() != combined.L).any():
+        raise ValueError("eval2 target sequence lengths do not match L")
+    _write_parquet(combined, destination_uri)
+    filesystem, destination = fsspec.core.url_to_fs(destination_uri)
+    with filesystem.open(f"{destination}.validation.json", "wt") as handle:
+        json.dump(validation, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+    return validation
+
+
 def _submit_phase(
     *,
     client,
@@ -308,7 +371,10 @@ def main() -> None:
                 "run_root": root,
                 "model_mirror_run_id": model_mirror_run_id,
                 "marin_prefix": MARIN_PREFIX,
-                "source": "huggingface",
+                "checkpoint_sources": [
+                    checkpoint.coreweave_uri or "huggingface"
+                    for checkpoint in checkpoints
+                ],
                 "seed": args.seed,
                 "suite": args.suite,
             }
@@ -328,13 +394,26 @@ def main() -> None:
         else:
             mirror_checkpoint(run_id=model_mirror_run_id, checkpoint=checkpoint)
 
-    targets_uri = f"{root}/inputs/eval_targets.parquet"
-    ground_truth_uri = f"{root}/inputs/gt_universe.jsonl"
+    legacy_targets_uri = f"{root}/inputs/eval_targets_legacy.parquet"
+    eval2_manifest_uri = f"{root}/inputs/eval2_manifest.csv"
+    targets_uri = f"{root}/inputs/eval_targets_eval2.parquet"
+    ground_truth_uri = f"{root}/inputs/gt_universe_eval2.jsonl"
     mirror_public_input(
-        url=TARGETS_URL,
+        url=LEGACY_TARGETS_URL,
+        destination_uri=legacy_targets_uri,
+        expected_size=LEGACY_TARGETS_SIZE,
+        expected_sha256=LEGACY_TARGETS_SHA256,
+    )
+    mirror_public_input(
+        url=EVAL2_MANIFEST_URL,
+        destination_uri=eval2_manifest_uri,
+        expected_size=EVAL2_MANIFEST_SIZE,
+        expected_sha256=EVAL2_MANIFEST_SHA256,
+    )
+    _build_eval2_targets(
+        legacy_uri=legacy_targets_uri,
+        manifest_uri=eval2_manifest_uri,
         destination_uri=targets_uri,
-        expected_size=TARGETS_SIZE,
-        expected_sha256=TARGETS_SHA256,
     )
     mirror_public_input(
         url=GROUND_TRUTH_URL,
@@ -377,6 +456,7 @@ def main() -> None:
         run_root=root,
         score_root=rollout_root,
         ground_truth_uri=ground_truth_uri,
+        eval2_manifest_uri=eval2_manifest_uri,
         worker_sha256=worker_sha256,
         job_ids=[job.job_id for job in smoke_jobs + full_jobs],
         started_at=started_at,

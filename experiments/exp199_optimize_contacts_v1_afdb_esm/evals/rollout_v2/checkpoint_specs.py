@@ -16,18 +16,30 @@ S3_ROOT = (
     f"{MARIN_PREFIX}/protein-structure/MarinFold/"
     "exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2"
 )
-TARGETS_URL = (
+LEGACY_TARGETS_URL = (
     "https://huggingface.co/buckets/open-athena/MarinFold/resolve/"
     "data/contacts-v1-model-eval-exp169/eval_targets.parquet"
 )
-TARGETS_SIZE = 43_077
-TARGETS_SHA256 = "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111"
+LEGACY_TARGETS_SIZE = 43_077
+LEGACY_TARGETS_SHA256 = (
+    "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111"
+)
 GROUND_TRUTH_URL = (
     "https://huggingface.co/buckets/open-athena/MarinFold/resolve/"
-    "data/contacts-v1-model-eval-exp169/gt_universe.jsonl"
+    "data/contacts-v1-eval2-exp226/gt_universe_eval2.jsonl"
 )
-GROUND_TRUTH_SIZE = 7_956_102
-GROUND_TRUTH_SHA256 = "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9"
+GROUND_TRUTH_SIZE = 8_362_085
+GROUND_TRUTH_SHA256 = (
+    "86116d7961e77d2948bc17f938c076a264992a7bbae8c173989e64b5d03cd1fc"
+)
+EVAL2_MANIFEST_URL = (
+    "https://huggingface.co/buckets/open-athena/MarinFold/resolve/"
+    "data/contacts-v1-eval2-exp226/eval2_manifest.csv"
+)
+EVAL2_MANIFEST_SIZE = 81_591
+EVAL2_MANIFEST_SHA256 = (
+    "7c8b144d79153d87f10ad095d879003b4d8972d61f315b746e53889658bcdd6d"
+)
 
 
 @dataclass(frozen=True)
@@ -42,14 +54,14 @@ class HfFile:
 
 @dataclass(frozen=True)
 class Checkpoint:
-    """One selected checkpoint and its pinned Hugging Face export."""
+    """One selected checkpoint and its pinned model export."""
 
     label: str
     job_label: str
     run_name: str
     step: int
-    hf_repo_id: str
-    hf_revision: str
+    hf_repo_id: str | None
+    hf_revision: str | None
     checkpoint_files: tuple[HfFile, ...]
     weight_shard_digests: tuple[str, str]
     source_dtype: str
@@ -59,6 +71,8 @@ class Checkpoint:
 
     @property
     def hf_subfolder(self) -> str:
+        if self.hf_repo_id is None or self.hf_revision is None:
+            raise ValueError(f"{self.label} is not sourced from Hugging Face")
         return f"{self.run_name}/hf/step-{self.step}"
 
     @property
@@ -175,6 +189,60 @@ CHECKPOINTS = (
     ),
 )
 
+COOLDOWN_CHECKPOINT = Checkpoint(
+    label="cw_p06_cool_step290400",
+    job_label="p06cool",
+    run_name="prot-exp199-cw-cv1-p06-cool-s01",
+    step=290_400,
+    hf_repo_id=None,
+    hf_revision=None,
+    checkpoint_files=(
+        HfFile("config.json", 1_557, "d8e904f8170ddf00d74c864f31d258a4", "s3-etag"),
+        HfFile(
+            "model-00001-of-00002.safetensors",
+            4_979_485_528,
+            "c4685b3b45694c66418a6f1ff779af91-95",
+            "s3-etag",
+        ),
+        HfFile(
+            "model-00002-of-00002.safetensors",
+            906_042_048,
+            "3788cd21299125acfe3e2d04e91e84e0-18",
+            "s3-etag",
+        ),
+        HfFile(
+            "model.safetensors.index.json",
+            20_882,
+            "bc0a5fd2c9aae096abae4caf9040c79c",
+            "s3-etag",
+        ),
+        HfFile(
+            "tokenizer.json",
+            64_407,
+            "c4b3a16978e30eb150cca4fd8934b6ae",
+            "s3-etag",
+        ),
+        HfFile(
+            "tokenizer_config.json",
+            290,
+            "336f4e2ca951fa13a20cb1c4b68b2040",
+            "s3-etag",
+        ),
+    ),
+    weight_shard_digests=(
+        "c4685b3b45694c66418a6f1ff779af91-95",
+        "3788cd21299125acfe3e2d04e91e84e0-18",
+    ),
+    source_dtype="float32",
+    coreweave_uri=(
+        "s3://marin-us-east-02a/marin/protein-structure/MarinFold/"
+        "exp199_continue_contacts_v1_cw/checkpoints/protein/"
+        "prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400"
+    ),
+    train_loss=2.86245059967041,
+    eval_loss=2.9396727085113525,
+)
+
 CONTINUATION_CHECKPOINT = Checkpoint(
     label="trc_cont_srcbase_aug100_step145199",
     job_label="contbase",
@@ -256,6 +324,7 @@ E8_REFERENCE_CHECKPOINT = Checkpoint(
 CHECKPOINT_SUITES = {
     "exp199": CHECKPOINTS,
     "continuation": (CONTINUATION_CHECKPOINT,),
+    "cooldown": (COOLDOWN_CHECKPOINT,),
     "e8-reference": (E8_REFERENCE_CHECKPOINT,),
 }
 
