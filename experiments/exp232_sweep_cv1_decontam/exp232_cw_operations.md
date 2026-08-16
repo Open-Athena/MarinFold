@@ -7,8 +7,9 @@
 ## Invariants
 
 - The experiment code owns training semantics. Its catalog declares ten trials at
-  version `2026.08.14.2` (`s02`), but `m1-p01-aug` is operator-abandoned after
-  divergence; operate only the remaining nine and never redispatch it.
+  version `2026.08.14.2` (`s02`), but `m1-p01-aug` and `m1-p04-aug` are
+  operator-abandoned after divergence; operate only the remaining eight and never
+  redispatch either one.
 - Maintain at most one active writer for each trial's shared W&B ID and S3
   checkpoint root. CoreWeave target changes are reslices of that same run; never
   race clusters or GPU families.
@@ -64,7 +65,8 @@
   `scratch/exp232_cw_s02/exp232_cw_sweep.sqlite`.
 - PR #233 updates are operator-directed only. Do not post sweep status or
   heartbeat updates unless the operator explicitly supplies or requests the post.
-- Abandoned trial: `m1-p01-aug`. It is outside recovery and completion scope.
+- Abandoned trials: `m1-p01-aug` and `m1-p04-aug`. They are outside recovery and
+  completion scope.
 - In the TPU-oriented persistence schema, `chips` means GPU count, `region` is the
   shared CoreWeave run domain, and `tpu_slice` stores the exact CoreWeave target.
 
@@ -120,6 +122,10 @@
 
 ## Change Record
 
+- 2026-08-16T12:24:51Z: The operator declared `m1-p04-aug` diverged and
+  unrecoverable. Stopped and verified its exact Iris root, removed the trial from
+  recovery and completion scope, and made its east H100 allocation available for
+  redistribution to healthy trials.
 - 2026-08-16T01:28:41Z: The operator requested aggressive use of free H100
   capacity at batch priority. Added an explicit exception allowing
   checkpoint-preserving enlargement of recently progressing gangs, still bounded
