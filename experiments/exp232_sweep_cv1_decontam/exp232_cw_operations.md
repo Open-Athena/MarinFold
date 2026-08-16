@@ -7,9 +7,9 @@
 ## Invariants
 
 - The experiment code owns training semantics. Its catalog declares ten trials at
-  version `2026.08.14.2` (`s02`), but `m1-p01-aug` and `m1-p04-aug` are
-  operator-abandoned after divergence; operate only the remaining eight and never
-  redispatch either one.
+  version `2026.08.14.2` (`s02`), but `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`,
+  and `m2-p01-aug` are operator-abandoned after divergence; operate only the
+  remaining six and never redispatch any of them.
 - Maintain at most one active writer for each trial's shared W&B ID and S3
   checkpoint root. CoreWeave target changes are reslices of that same run; never
   race clusters or GPU families.
@@ -65,8 +65,9 @@
   `scratch/exp232_cw_s02/exp232_cw_sweep.sqlite`.
 - PR #233 updates are operator-directed only. Do not post sweep status or
   heartbeat updates unless the operator explicitly supplies or requests the post.
-- Abandoned trials: `m1-p01-aug` and `m1-p04-aug`. They are outside recovery and
-  completion scope.
+- Abandoned trials: `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`, and `m2-p01-aug`.
+  They are outside recovery and completion scope. Six trials remain: `m1-p02-aug`,
+  `m1-p06-aug`, `m2-p02-aug`, `m2-p03-aug`, `m2-p04-aug`, and `m2-p06-aug`.
 - In the TPU-oriented persistence schema, `chips` means GPU count, `region` is the
   shared CoreWeave run domain, and `tpu_slice` stores the exact CoreWeave target.
 
@@ -121,6 +122,16 @@
 | `cw-us-east-08a` | `marin-us-east-02a` | GB200 | 16 | 64 | `invalid` | locked CUDA 13 cuDNN wheel has no ARM build |
 
 ## Change Record
+
+- 2026-08-16T17:48:20Z: The operator declared `m2-p01-aug` diverged and directed
+  abandonment with all jobs stopped. Stopped and verified its exact active RNO n8
+  root, removed the trial from recovery and completion scope, and released 64 RNO
+  H100 for redistribution. Its loss was trending down at abandonment, so the
+  retained checkpoints make the call reversible.
+- 2026-08-16T17:46:46Z: The operator declared `m1-p03-aug` diverged and directed
+  abandonment with all jobs stopped. It had already self-terminated on a rank-0
+  exit 139; issued an explicit stop and verified no root, child, or pod remained.
+  Removed from recovery and completion scope. Six in-scope trials remain.
 
 - 2026-08-16T12:24:51Z: The operator declared `m1-p04-aug` diverged and
   unrecoverable. Stopped and verified its exact Iris root, removed the trial from
