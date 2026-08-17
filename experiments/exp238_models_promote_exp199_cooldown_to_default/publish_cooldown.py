@@ -297,11 +297,16 @@ def run() -> int:
 
 
 def hf_token() -> str:
-    """The workstation's open-athena-scoped token.
+    """The org-scoped token that can write the open-athena bucket.
 
-    The active token writes the bucket; ``write2`` is the one that can also
-    create repos. Read from the stored-token file so a submit is reproducible
-    rather than depending on which token happens to be active.
+    Bucket writes and repo creation want *different* tokens on this
+    workstation, and picking the wrong one fails late and unhelpfully: the
+    write shows up as a 403 from `.../buckets/open-athena/MarinFold/
+    xet-write-token` after the whole checkpoint has been staged. ``write2`` is
+    the one that can create model repos and cannot write this bucket;
+    ``oa-marinfold`` is the reverse, and is the one wanted here. Named
+    explicitly rather than taken from whichever token is active, so a submit
+    does not depend on the state of `hf auth switch`.
     """
     if os.environ.get("HF_TOKEN"):
         return os.environ["HF_TOKEN"]
@@ -310,10 +315,9 @@ def hf_token() -> str:
     path = Path.home() / ".cache/huggingface/stored_tokens"
     parser = configparser.ConfigParser()
     parser.read(path)
-    for name in ("write2", "DEFAULT"):
-        if parser.has_option(name, "hf_token"):
-            return parser.get(name, "hf_token")
-    raise SystemExit(f"no HF_TOKEN and no usable entry in {path}")
+    if parser.has_option("oa-marinfold", "hf_token"):
+        return parser.get("oa-marinfold", "hf_token")
+    raise SystemExit(f"no HF_TOKEN and no 'oa-marinfold' entry in {path}")
 
 
 def submit(iris_bin: str, dry_run: bool) -> int:
