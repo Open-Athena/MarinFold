@@ -45,31 +45,57 @@ hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp89/
     gt_universe.jsonl              # the legacy 554 units, unchanged
 ```
 
-In-repo (`experiments/exp226_evals_expand_foldbench_eval_set/data/`):
-`eval2_manifest.csv`, `eval2_per_protein.csv.gz` (six predictors × 307),
-`eval2_headline.csv`, `eval2_paired_deltas.csv`.
+> **Use `eval2_manifest_v2.csv`, not exp226's `eval2_manifest.csv`.** exp226
+> resolved RCSB source organisms only for its FoldBench rows, so every
+> `cameo_hard` / `casp_fm` row got `designed_any = 0` **by default — nothing
+> looked**. [exp241](https://github.com/Open-Athena/MarinFold/issues/241) looked
+> and found **15 de novo designs inside the 78 published as eval2-natural**. v2
+> is exp226's manifest with every original column preserved and that flag
+> corrected, so it is a drop-in replacement.
+
+In-repo:
+- `experiments/exp241_evals_why_does_eval2_natural_exist_audit/data/` —
+  **`eval2_manifest_v2.csv`** (307 rows, corrected `designed_any`, plus
+  `designed_any_exp226`, `designed_source`, `kingdom`, `is_viral`,
+  `escape_mechanism`, `entry_title`), `eval2_headline_v2.csv`,
+  `eval2_paired_deltas_v2.csv`, `correction_effect.csv`.
+- `experiments/exp226_evals_expand_foldbench_eval_set/data/` —
+  `eval2_per_protein.csv.gz` (six predictors × 307; **join v2 on
+  `(dataset, stem)` and use its `designed_any`**), and the superseded
+  `eval2_manifest.csv` / `eval2_headline.csv` / `eval2_paired_deltas.csv`.
 
 **Reporting rules — these change the conclusion, not just the presentation:**
 
-- **Lead with eval2-natural (n=78), not eval2 pooled (n=307).** Pooled eval2 is
-  **75 % de novo designed protein**, because designs are what survives a homology
+- **Lead with eval2-natural (n=63), not eval2 pooled (n=307).** Pooled eval2 is
+  **79 % de novo designed protein**, because designs are what survives a homology
   filter. A pooled number mostly reports how well a model folds idealised
-  backbones. Split on `designed_any` (which unions exp65's de novo dataset with
-  an RCSB synthetic-source flag — the dataset label alone misses designed
-  proteins sitting in FoldBench rows).
+  backbones. Split on v2's `designed_any`.
+- **Stratify eval2-natural by `is_viral`: 27 of the 63 are viral.** Both training
+  corpora systematically miss viruses (viral eval proteins hit the AFDB arm 22 %
+  of the time vs 88 % for bacteria), so viral proteins survive the filter at
+  66 % vs 15 %. An unstratified eval2-natural headline is substantially a
+  statement about viral protein structure, and the predictors rank differently
+  on the two halves.
+- **"No homolog in the training set" means *unsampled*, not *novel*.** The AFDB
+  arm is 1.9 % of AFDB, filtered twice against structurally singular proteins;
+  45 of the 63 have an AlphaFold model we simply did not train on, and UniProt
+  first published these sequences a median of 15 years ago. A generalisation
+  claim about *novel* proteins needs the fold-novelty axis (#41's Foldseek
+  verdict), not this filter alone.
 - **The stricter cut is a column, not a re-run.** `passes_30 == 1` gives the
-  275-protein <30 % set (61 natural); `best_identity` supports any threshold;
-  `best_identity_ungated` is the paranoid bound; `afdb_best_identity` /
-  `esm_atlas_best_identity` cut against one training arm.
+  275-protein <30 % set (**46 natural** under v2); `best_identity` supports any
+  threshold; `best_identity_ungated` is the paranoid bound; `afdb_best_identity`
+  / `esm_atlas_best_identity` cut against one training arm.
 - **eval2 is 307 units over 305 unique stems.** `7ur7_A` and `8ah9_A` each appear
-  in two datasets with different sequences.
+  in two datasets with different sequences — never join or dedupe on stem alone.
 - Baselines for all 307 already exist in `eval2_per_protein.csv.gz` (MarinFold
   #199, Protenix-v2 single-seq and +MSA, ESMFold, ESMFold2, seq-KNN null) — do
   not re-run them for a comparison table.
 
 Reference values for `contacts-v1-exp199-1.5B` under the rollout recipe, for
 sanity-checking a new path: R-precision (all) **0.545** on eval2 pooled,
-**0.337** on eval2-natural, **0.611** on the legacy 554.
+**0.313** on eval2-natural (n=63; 0.253 viral / 0.359 non-viral), **0.611** on
+the legacy 554. The pre-correction eval2-natural figure was 0.337 on n=78.
 
 ## Establish identity and locality
 
@@ -166,9 +192,9 @@ CoreWeave shards at batch priority cover all 577 proteins in ~4 minutes.
 - A concise aggregate table led by all/long R-precision, with AUC and precision
   cuts, completeness counts, output paths, and the checkpoint's W&B train/val
   losses when requested. Record the source W&B metric keys. When the universe is
-  the 577, report **legacy 554, eval2 pooled (307) and eval2-natural (78)** as
-  separate rows — they can rank checkpoints differently, and the pooled eval2
-  row is the least informative of the three.
+  the 577, report **legacy 554, eval2 pooled (307) and eval2-natural (63,
+  split viral / non-viral)** as separate rows — they can rank checkpoints
+  differently, and the pooled eval2 row is the least informative of the three.
 
 ## Validate against the E8 reference
 

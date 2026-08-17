@@ -83,6 +83,36 @@ training set — 95% CI 5.2% to 9.5%. One in fourteen, before any eval curation.
 The kingdom effect reproduces independently: viral 31.4% versus bacterial 1.8%,
 Fisher odds ratio 25.6, p = 4e-09.
 
+## The correction helps MarinFold
+
+Moving the 15 designs to the designed side and re-aggregating exp226's own
+per-protein scores — same bootstrap, same seed, only membership changes — moves
+the baselines further than it moves MarinFold. Protenix-v2 single-seq drops from
+0.326 to 0.230; MarinFold drops from 0.337 to 0.313.
+
+So exp226's finding gets stronger, not weaker. It reported parity with Protenix
+single-seq on the natural half: +0.011, a tie. On the audited natural half
+MarinFold wins by +0.083, CI +0.031 to +0.136. The 15 designs were where the
+baseline was strong.
+
+Everything else holds: MarinFold still loses to ESMFold, ESMFold2 and
+Protenix+MSA on eval2-natural, all significant, and still beats the seq-KNN null.
+
+## Viral and non-viral rank differently
+
+27 of the 63 are viral, so the stratification is not cosmetic. On viral proteins
+MarinFold scores 0.253 and ties ESMFold — paired delta -0.004, not significant.
+On non-viral it scores 0.359 and loses to ESMFold by 0.145.
+
+The mirror holds against Protenix single-seq: MarinFold is +0.113 on non-viral
+and +0.043 on viral. A single pooled eval2-natural number averages two regimes
+with different rankings.
+
+Caveat on the checkpoint: the bars are exp199 p06, the model every baseline was
+scored beside. The current default is the p06 cooldown, which scores 0.358
+against p06's 0.337 on the published n=78. Its per-protein eval2 rows are on
+CoreWeave S3 and need one in-cluster job to re-cut to n=63.
+
 ## Conclusion
 
 eval2-natural exists because our training corpus is not everything known — it is

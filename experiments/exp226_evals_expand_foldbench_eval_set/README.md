@@ -245,6 +245,19 @@ filter turns on.)
 
 ### 6. eval2 — the homology-filtered eval set
 
+> **Superseded in part by [#241](https://github.com/Open-Athena/MarinFold/issues/241).**
+> The `designed_any` split below is a *default*, not a measurement, for every
+> `cameo_hard` and `casp_fm` row — this experiment resolved RCSB source organisms
+> only for its FoldBench monomers. #241 resolved the rest and found **15 de novo
+> designs inside the 78 published here as natural**, so **eval2-natural is 63 and
+> eval2 is 79 % designed**. Use
+> `experiments/exp241_evals_why_does_eval2_natural_exist_audit/data/eval2_manifest_v2.csv`
+> (a drop-in replacement) and its recomputed `eval2_headline_v2.csv` /
+> `eval2_paired_deltas_v2.csv`. The §8 headline below *strengthens* under the
+> correction: MarinFold beats Protenix-v2 single-seq by +0.083 [+0.031, +0.136]
+> on the audited natural set, where the n=78 figure said tie.
+
+
 [`data/eval2_manifest.csv`](data/eval2_manifest.csv) is the expanded set with
 every protein at or above **40 % training-set identity removed**: **307
 proteins**, sequences included, annotated so a stricter cut needs no new

@@ -156,3 +156,48 @@ def test_mechanism_table_covers_every_one_of_the_78():
     assert len(rows) == U.EXPECTED_EVAL2_NATURAL_N
     counts = analyze.read_csv(analyze.DATA / "mechanism_counts.csv")
     assert sum(int(r["n"]) for r in counts) == len(rows)
+
+
+# --- the applied correction --------------------------------------------------
+
+def test_manifest_v2_is_a_drop_in_replacement():
+    """Every exp226 column survives, so downstream joins keep working."""
+    v2 = {r["dataset"] + "/" + r["stem"]: r
+          for r in analyze.read_csv(analyze.DATA / "eval2_manifest_v2.csv")}
+    original = {r["dataset"] + "/" + r["stem"]: r for r in U.read_eval2()}
+    assert set(v2) == set(original)
+    for key, row in original.items():
+        for column, value in row.items():
+            if column == "designed_any":   # the one column this corrects
+                continue
+            assert v2[key][column] == value, f"{key}.{column} changed"
+
+
+def test_manifest_v2_corrects_exactly_the_audited_designs():
+    v2 = analyze.read_csv(analyze.DATA / "eval2_manifest_v2.csv")
+    flipped = [r for r in v2
+               if r["designed_any"] == "1" and r["designed_any_exp226"] == "0"]
+    assert len(flipped) == 15
+    # The flag only ever moves natural -> designed; nothing is un-designed.
+    assert not [r for r in v2
+                if r["designed_any"] == "0" and r["designed_any_exp226"] == "1"]
+    assert all(r["designed_source"].startswith("exp241_") for r in flipped)
+    assert sum(1 for r in v2 if r["designed_any"] == "0") == 63
+
+
+def test_manifest_v2_viral_flag_matches_the_kingdom_column():
+    v2 = analyze.read_csv(analyze.DATA / "eval2_manifest_v2.csv")
+    for row in v2:
+        assert row["is_viral"] == ("1" if row["kingdom"] == "virus" else "0")
+    natural_viral = sum(1 for r in v2
+                        if r["designed_any"] == "0" and r["is_viral"] == "1")
+    assert natural_viral == 27
+
+
+def test_rescored_headline_uses_the_audited_n():
+    rows = analyze.read_csv(analyze.DATA / "eval2_headline_v2.csv")
+    natural = [r for r in rows if r["subset"] == "eval2 natural (audited)"]
+    assert natural and all(int(r["n"]) == 63 for r in natural)
+    halves = {r["subset"]: int(r["n"]) for r in rows
+              if r["subset"].startswith("eval2 natural, ")}
+    assert halves["eval2 natural, viral"] + halves["eval2 natural, non-viral"] == 63

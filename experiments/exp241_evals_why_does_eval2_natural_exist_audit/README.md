@@ -76,7 +76,9 @@ EBI-AFDB REST traffic. One new MMseqs2 search (§6, the base rate), 260 s.
 | `check_training_reachability.py` | **Step 2** — is the sequence unknown or just unsampled? AFDB API, exact accession membership in the arm, UniRef50/90 cluster intersection. Also the positive control. |
 | `measure_base_rate.py` | **Step 3** — the unconditioned rate: 585 random recent PDB chains through eval2's own filter and target DB. |
 | `analyze.py` | **Step 4** — the mechanism ladder and the cross-tabs. |
-| `plot_mechanisms.py` | **Step 5** — the four figures. |
+| `plot_mechanisms.py` | **Step 5** — the four mechanism figures. |
+| `apply_correction.py` | **Step 6** — the corrected manifest, and exp226's scoreboard recomputed on it. |
+| `plot_eval2_natural_scoreboard.py` | **Step 7** — where MarinFold stands on the audited n=63. |
 | `tests/test_audit.py` | 22 unit tests, no network. |
 
 ```bash
@@ -88,6 +90,8 @@ uv run python check_training_reachability.py      # UniProt/AFDB, ~4 min
 uv run python measure_base_rate.py --n 1400       # RCSB + one mmseqs search, ~15 min
 uv run python analyze.py
 uv run python plot_mechanisms.py
+uv run python apply_correction.py             # manifest v2 + rescored headline
+uv run python plot_eval2_natural_scoreboard.py
 ```
 
 ## Results
@@ -261,6 +265,79 @@ survival is 16 % (2022), 12 % (2023), 23 % (2024) — no monotone trend. Newer
 depositions are not more novel; exp226 found the same thing from the other
 direction (its newer FoldBench monomers were *more* homologous, not less).
 
+### 9. Applying the correction changes the scoreboard — in MarinFold's favour
+
+[`apply_correction.py`](apply_correction.py) emits
+[`data/eval2_manifest_v2.csv`](data/eval2_manifest_v2.csv): exp226's manifest,
+every original column preserved so it is a drop-in replacement, with
+`designed_any` corrected and the evidence carried beside it
+(`designed_any_exp226`, `designed_source`, `kingdom`, `is_viral`,
+`escape_mechanism`, `entry_title`). eval2 becomes **244 designed / 63 natural**.
+
+Moving the 15 changes the numbers, so they are recomputed — importing exp226's
+own `aggregate` and `paired_deltas` (same seed, same 10,000 resamples, same
+estimator), so the only thing that differs is membership
+([`data/correction_effect.csv`](data/correction_effect.csv)):
+
+| R-precision (all) | published, n=78 | audited, n=63 | change |
+| --- | ---: | ---: | ---: |
+| MarinFold #199 | 0.3372 | **0.3133** | −0.024 |
+| Protenix-v2 single-seq | 0.3259 | **0.2303** | **−0.096** |
+| ESMFold | 0.4623 | 0.3980 | −0.064 |
+| ESMFold2 | 0.5293 | 0.4845 | −0.045 |
+| Protenix-v2 + MSA | 0.6979 | 0.6909 | −0.007 |
+| seq-KNN (null) | 0.1478 | 0.1754 | +0.028 |
+
+The 15 designs were where the *baselines* were strong, not MarinFold — so
+removing them **strengthens** #226's headline rather than softening it:
+
+| paired delta (R, all) | published, n=78 | audited, n=63 |
+| --- | --- | --- |
+| **MarinFold − Protenix-v2 single-seq** | +0.011 [−0.044, +0.069] — tie | **+0.083 [+0.031, +0.136] — MarinFold wins** |
+| MarinFold − ESMFold | −0.125 [−0.173, −0.080] | −0.085 [−0.135, −0.039] |
+| MarinFold − ESMFold2 | −0.192 [−0.239, −0.146] | −0.171 [−0.224, −0.121] |
+| MarinFold − Protenix-v2 + MSA | −0.361 [−0.418, −0.301] | −0.378 [−0.443, −0.309] |
+| MarinFold − seq-KNN (null) | +0.189 [+0.141, +0.236] | +0.138 [+0.088, +0.184] |
+
+#226 reported that MarinFold's parity with Protenix-v2 single-seq "comes back" on
+the natural half. On the *audited* natural half it is no longer a tie:
+**MarinFold beats Protenix-v2 single-seq by +0.083, significant.** At <30 %
+(n=46) the sign flips from −0.041 to +0.040 but stays a tie.
+
+Everything else #226 concluded holds: MarinFold still loses to ESMFold, ESMFold2
+and Protenix+MSA on eval2-natural, all significant, and still beats the seq-KNN
+null by a wide margin.
+
+### 10. The viral half and the non-viral half do not rank alike
+
+Because 27 of the 63 are viral, the stratification is not cosmetic
+([`data/eval2_headline_v2.csv`](data/eval2_headline_v2.csv)):
+
+| R-precision (all) | viral (27) | non-viral (36) |
+| --- | ---: | ---: |
+| Protenix-v2 + MSA | 0.621 | 0.743 |
+| ESMFold2 | 0.358 | 0.580 |
+| ESMFold | 0.257 | 0.504 |
+| **MarinFold #199** | **0.253** | 0.359 |
+| Protenix-v2 single-seq | 0.210 | 0.246 |
+| seq-KNN (null) | 0.073 | 0.252 |
+
+**On viral proteins MarinFold ties ESMFold** — paired delta −0.004 [−0.059,
++0.045], not significant — while on non-viral it loses by 0.145 [−0.216,
+−0.080]. MarinFold's margin over Protenix single-seq is the mirror image: +0.113
+[+0.036, +0.192] non-viral, +0.043 [−0.017, +0.102] viral. A single pooled
+eval2-natural number averages two regimes with different rankings.
+
+→ [`plots/eval2_natural_scoreboard.png`](plots/eval2_natural_scoreboard.png)
+
+**Which MarinFold checkpoint.** The bars are `contacts-v1-exp199-1.5B` (CoreWeave
+p06) — the checkpoint every baseline in `eval2_per_protein.csv.gz` was scored
+beside. The current default is the **p06 cooldown**, which scores **0.3579**
+against p06's 0.3372 on the *published* n=78 (directly comparable on that
+subset). Its per-protein eval2 rows live on CoreWeave S3, which is not reachable
+from the workstation, so re-cutting it to n=63 needs one in-cluster job — worth
+doing before any eval2-natural number is published for the current default.
+
 ## Conclusion
 
 **eval2-natural exists because "our training corpus" is not "everything known" —
@@ -286,14 +363,17 @@ and wrong on the one step it takes for granted:
 [`reference_eval2_default_eval_set`](../../.agents/skills/eval-checkpoint/SKILL.md)
 and the [#180](https://github.com/Open-Athena/MarinFold/issues/180) tracker:
 
-1. **The n is 63, not 78, and the 15 should be moved to the designed side.** Any
-   published eval2-natural number computed on 78 mixes 15 de novo designs into
-   the natural set — the exact confound eval2 exists to remove.
+1. **The n is 63, not 78 — done.** `data/eval2_manifest_v2.csv` is the drop-in
+   replacement, the scoreboard is recomputed on it (§9), and the
+   `eval-checkpoint` skill now points at it. Applying the correction *raises*
+   MarinFold's standing: it beats Protenix-v2 single-seq by +0.083 on the
+   audited natural set, where the published n=78 said tie.
 2. **"No homolog in the training set" ≠ "novel protein".** It means unsampled.
    A claim about generalisation to *novel* proteins needs the fold-novelty axis
    (#41's Foldseek verdict), not this filter alone.
-3. **eval2-natural is 43 % viral.** A headline on it is substantially a statement
-   about viral protein structure, and should be reported stratified.
+3. **eval2-natural is 43 % viral, and the halves rank differently** (§10) — on
+   viral proteins MarinFold ties ESMFold; on non-viral it loses by 0.145. The
+   skill now requires the `is_viral` split.
 
 **Cheapest way to grow the set**, now that the mechanism is known: the 7 % base
 rate over 183 k recent PDB entities is ~13 k candidate natural chains. Sampling
@@ -302,13 +382,18 @@ route to an eval2-natural of several hundred, and unlike #226's FoldBench
 expansion it does not run out.
 
 **Not done here:** the fold-novelty axis for the 63 (needs exp41's Foldseek DB,
-which lives on a Modal volume), and no model was scored — this experiment
-changes what eval2-natural *means*, not any measured accuracy.
+which lives on a Modal volume), and **the current default checkpoint's
+eval2-natural score on n=63** — the p06 cooldown's per-protein eval2 rows are on
+CoreWeave S3 and need one in-cluster job to re-cut. No model was run for this
+experiment; §9's numbers are exp226's existing per-protein scores re-aggregated
+under the corrected split.
 
 ## Artifacts
 
 | File | Contents |
 | --- | --- |
+| [`data/eval2_manifest_v2.csv`](data/eval2_manifest_v2.csv) | **The corrected eval2 manifest** — drop-in replacement for exp226's, `designed_any` fixed, evidence columns attached. |
+| [`data/eval2_headline_v2.csv`](data/eval2_headline_v2.csv) · [`eval2_paired_deltas_v2.csv`](data/eval2_paired_deltas_v2.csv) · [`correction_effect.csv`](data/correction_effect.csv) | exp226's scoreboard on the audited split, with viral / non-viral strata, and old-vs-new side by side. |
 | [`data/mechanism_table.csv`](data/mechanism_table.csv) | The 78, one row each: mechanism, kingdom, UniProt/AFDB status, UniRef cluster stats, dates, title. |
 | [`data/mechanism_counts.csv`](data/mechanism_counts.csv) | The ladder, with the CASP/CAMEO split. |
 | [`data/label_audit.csv`](data/label_audit.csv) | The 19 proteins whose designed/natural label changed, with the evidence and the entry title. |
