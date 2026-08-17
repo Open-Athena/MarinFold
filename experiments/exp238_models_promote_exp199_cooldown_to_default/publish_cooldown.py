@@ -339,7 +339,11 @@ def submit(iris_bin: str, dry_run: bool) -> int:
         "--", "python", "publish_cooldown.py",
     ]
     if dry_run:
-        log("DRY RUN " + " ".join(a for a in argv if len(a) < 200))
+        # Redact rather than truncate: the token is short enough to survive a
+        # length filter, and a dry run is exactly when someone pastes the output
+        # into an issue.
+        secrets = {hf_token(), base64.b64encode(payload).decode()}
+        log("DRY RUN " + " ".join("<redacted>" if a in secrets else a for a in argv))
         return 0
     subprocess.run(argv, cwd=HERE, check=True)
     log(f"submitted; logs: {iris_bin} --cluster=marin job logs "
