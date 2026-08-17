@@ -26,7 +26,16 @@ Inputs, both already in git and both already verified:
   scores plus the `designed_any` and `passes_30` flags, from the experiment
   that built the eval set.
 
-    uv run python plot_eval2_comparison.py
+**Every run writes the joined per-protein table it actually plotted** to
+`data/eval2_per_protein_scores.csv.gz` — one row per (protein, range, cut) with
+every predictor's score side by side. That file, not the two inputs, is this
+experiment's record of what these figures are made of, and `--per-protein`
+redraws from it alone. The inputs are owned by other experiments and will move:
+#180's rows file gets re-pointed the next time the accuracy frontier does, at
+which point rebuilding from upstream stops reproducing *these* figures.
+
+    uv run python plot_eval2_comparison.py              # rebuild from upstream
+    uv run python plot_eval2_comparison.py --per-protein data/eval2_per_protein_scores.csv.gz
 """
 
 import argparse
@@ -79,22 +88,36 @@ def _style(ax) -> None:
     ax.tick_params(colors=TEXT_SECONDARY, labelsize=9)
 
 
-def load(metric_range: str = "all", cut: str = "R") -> pd.DataFrame:
-    """One row per eval2 protein: every predictor's score plus the flags."""
+def build_joined() -> pd.DataFrame:
+    """Join the cooldown onto every baseline, for every (range, cut) in common.
+
+    Kept wider than the figures need — `long` and `AUC` come along with `all`
+    and `R` — so a later question about long-range contacts or ranking quality
+    does not have to re-derive this from two other experiments' data
+    directories.
+    """
     cool = pd.read_csv(COOLDOWN_ROWS)
-    cool = cool[(cool["range"] == metric_range) & (cool["cut"] == cut)]
-    cool = cool[["dataset", "stem", "precision"]].rename(columns={"precision": OURS})
-
+    cool = cool[["dataset", "stem", "range", "cut", "precision"]].rename(
+        columns={"precision": OURS})
     everyone = pd.read_csv(EVAL2_ROWS)
-    everyone = everyone[(everyone["range"] == metric_range) & (everyone["cut"] == cut)]
 
-    joined = everyone.merge(cool, on=["dataset", "stem"], how="left",
-                            validate="one_to_one")
+    joined = everyone.merge(cool, on=["dataset", "stem", "range", "cut"],
+                            how="left", validate="one_to_one")
     missing = joined[OURS].isna().sum()
     if missing:
-        raise SystemExit(f"{missing} eval2 proteins have no cooldown score — the "
-                         f"rows file does not cover this eval set")
+        raise SystemExit(f"{missing} of {len(joined)} eval2 rows have no cooldown "
+                         f"score — the rows file does not cover this eval set")
     return joined
+
+
+def load(per_protein: Path | None, metric_range: str = "all",
+         cut: str = "R") -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return (the full joined table, the slice the figures use)."""
+    joined = pd.read_csv(per_protein) if per_protein else build_joined()
+    sliced = joined[(joined["range"] == metric_range) & (joined["cut"] == cut)]
+    if sliced.empty:
+        raise SystemExit(f"no rows with range={metric_range!r} cut={cut!r}")
+    return joined, sliced
 
 
 def paired(sub: pd.DataFrame, other: str) -> dict:
@@ -222,11 +245,20 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out-dir", type=Path, default=HERE / "plots")
     parser.add_argument("--data-dir", type=Path, default=HERE / "data")
+    parser.add_argument(
+        "--per-protein", type=Path, default=None,
+        help="redraw from a previously written joined table instead of "
+             "rebuilding it from the two upstream experiments")
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     args.data_dir.mkdir(parents=True, exist_ok=True)
 
-    data = load()
+    joined, data = load(args.per_protein)
+    if args.per_protein is None:
+        rows_out = args.data_dir / "eval2_per_protein_scores.csv.gz"
+        joined.to_csv(rows_out, index=False, compression={"method": "gzip", "mtime": 0})
+        print(f"wrote {rows_out} ({len(joined)} rows, "
+              f"{joined['stem'].nunique()} proteins)")
     table = summarise(data)
     csv_out = args.data_dir / "eval2_comparison.csv"
     table.to_csv(csv_out, index=False)

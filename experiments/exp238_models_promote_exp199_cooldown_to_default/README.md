@@ -174,7 +174,23 @@ Four things fall out of this, and three of them are cautions.
 Per protein, against the two baselines that also read sequence alone. The blue
 cloud (natural) sits low and straddles the diagonal against Protenix-v2
 single-seq; the orange cloud (de novo) sits high and almost entirely below it.
-Source numbers for both figures: `data/eval2_comparison.csv`.
+
+**Both figures are regenerable from this directory alone.**
+`data/eval2_per_protein_scores.csv.gz` is the joined per-protein table they were
+drawn from — 1,226 rows, one per (protein, range, cut), every predictor's score
+side by side with `designed_any`, `best_identity` and `length`. It carries
+`long` and `AUC` as well as the `all`/`R` slice the figures use, so a later
+question about long-range contacts does not have to re-derive anything.
+
+```bash
+uv run python plot_eval2_comparison.py --per-protein data/eval2_per_protein_scores.csv.gz
+```
+
+reproduces both PNGs byte-for-byte. Without the flag the script rebuilds the
+join from #180's and #226's data directories and rewrites that file — correct
+today, and *not* a stable way to reproduce these figures later: #180's rows file
+gets re-pointed the next time the accuracy frontier moves. Aggregate numbers,
+including every paired interval quoted above, are in `data/eval2_comparison.csv`.
 
 ### #180 refreshed
 
