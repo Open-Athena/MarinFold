@@ -75,6 +75,12 @@ busy=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | awk '$
 [ "$busy" -eq 0 ] || { echo "FATAL: GPUs still busy"; nvidia-smi --query-compute-apps=pid,used_memory --format=csv; exit 1; }
 
 echo "=== agg sections: $ARM step $STEP, $ROLL rollouts x 577 proteins ==="
+# vLLM shells out to `ninja` when it compiles, and finds it only on PATH -- the
+# venv's bin dir is not on PATH just because its python is invoked by absolute
+# path. Without this every engine dies with `FileNotFoundError: 'ninja'` wrapped
+# in "Engine core initialization failed", which names neither ninja nor PATH.
+# #230's launchers export it for the same reason.
+export PATH=$HOME/exp230_vllm/bin:$PATH
 cd "$EXP230" || exit 1
 pids=()
 for (( g=0; g<NGPU; g++ )); do
@@ -90,7 +96,16 @@ done
 wait "${pids[@]}"
 
 # 3. Score. The five #230 aggregation modes, every eval cut, offline.
-echo "=== scoring $ARM step $STEP ==="
+#    Refuse to "succeed" on an empty generation: `score_agg_modes.py` exits 0 with
+#    a one-line complaint when it finds no parquets, and a pipeline that treats
+#    that as a completed stage reports an arm as evaluated when it was not.
+n_parts=$(ls "$OUT/agg_sections"/*.parquet 2>/dev/null | wc -l)
+if [ "$n_parts" -eq 0 ]; then
+  echo "FATAL: generation produced no section parquets for $ARM step $STEP."
+  echo "       First worker log:"; tail -25 "$LOGS/agg_${TAG}_${STEP}_g0.log"
+  exit 1
+fi
+echo "=== scoring $ARM step $STEP ($n_parts shards) ==="
 $PY230 score_agg_modes.py --sections "$OUT/agg_sections" --targets "$TARGETS" \
     --out "$OUT" --label "${TAG}_step${STEP}" 2>&1 | tee "$LOGS/score_${TAG}_${STEP}.log"
 echo "ALL DONE -> $OUT"

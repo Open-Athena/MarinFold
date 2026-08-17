@@ -105,22 +105,35 @@ def main() -> int:
             v = row.get(col)
             return float(v) if v is not None and v == v else None
 
+        def final(col):
+            """Last NON-NaN value of a column.
+
+            An arm stopped by a kill criterion writes a partial final row -- the
+            generator raises before SkyRL logs that step's metric dict -- so
+            `last["policy_kl"]` is NaN on exactly the arms whose terminal KL
+            matters most.
+            """
+            if col not in df:
+                return None
+            v = df[col].dropna()
+            return float(v.iloc[-1]) if len(v) else None
+
         summary[arm] = dict(
             lr=lr, steps=int(len(df)), killed=parsed["killed"],
-            terminal_kl=get("policy_kl"),
+            terminal_kl=final("policy_kl"),
             max_logprob_gap=float(df["minibatch_rollout_logprobs_abs_diff_mean"].max())
             if "minibatch_rollout_logprobs_abs_diff_mean" in df else None,
             sections_first=get("sections_per_rollout", first),
-            sections_last=get("sections_per_rollout"),
-            union_first=get("union_pairs", first), union_last=get("union_pairs"),
+            sections_last=final("sections_per_rollout"),
+            union_first=get("union_pairs", first), union_last=final("union_pairs"),
             votes_per_pair_first=get("votes_per_pair", first),
-            votes_per_pair_last=get("votes_per_pair"),
-            jaccard_first=get("mean_jaccard", first), jaccard_last=get("mean_jaccard"),
+            votes_per_pair_last=final("votes_per_pair"),
+            jaccard_first=get("mean_jaccard", first), jaccard_last=final("mean_jaccard"),
             consensus_first=get("consensus_rprec", first),
-            consensus_last=get("consensus_rprec"),
-            last_f1_first=get("last_f1", first), last_f1_last=get("last_f1"),
-            best_f1_first=get("best_f1", first), best_f1_last=get("best_f1"),
-            precision_first=get("precision", first), precision_last=get("precision"),
+            consensus_last=final("consensus_rprec"),
+            last_f1_first=get("last_f1", first), last_f1_last=final("last_f1"),
+            best_f1_first=get("best_f1", first), best_f1_last=final("best_f1"),
+            precision_first=get("precision", first), precision_last=final("precision"),
             dead_prompts=get("dead_prompts"),
         )
 
