@@ -8,8 +8,8 @@
 
 - The experiment code owns training semantics. Its catalog declares ten trials at
   version `2026.08.14.2` (`s02`), but `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`,
-  and `m2-p01-aug` are operator-abandoned after divergence; operate only the
-  remaining six and never redispatch any of them.
+  `m2-p01-aug`, and `m2-p04-aug` are operator-abandoned after divergence; operate
+  only the remaining five and never redispatch any of them.
 - Maintain at most one active writer for each trial's shared W&B ID and S3
   checkpoint root. CoreWeave target changes are reslices of that same run; never
   race clusters or GPU families.
@@ -65,9 +65,10 @@
   `scratch/exp232_cw_s02/exp232_cw_sweep.sqlite`.
 - PR #233 updates are operator-directed only. Do not post sweep status or
   heartbeat updates unless the operator explicitly supplies or requests the post.
-- Abandoned trials: `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`, and `m2-p01-aug`.
-  They are outside recovery and completion scope. Six trials remain: `m1-p02-aug`,
-  `m1-p06-aug`, `m2-p02-aug`, `m2-p03-aug`, `m2-p04-aug`, and `m2-p06-aug`.
+- Abandoned trials: `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`, `m2-p01-aug`, and
+  `m2-p04-aug`. They are outside recovery and completion scope. Five trials
+  remain: `m1-p02-aug`, `m1-p06-aug`, `m2-p02-aug`, `m2-p03-aug`, and
+  `m2-p06-aug`.
 - In the TPU-oriented persistence schema, `chips` means GPU count, `region` is the
   shared CoreWeave run domain, and `tpu_slice` stores the exact CoreWeave target.
 
@@ -123,6 +124,11 @@
 
 ## Change Record
 
+- 2026-08-17T00:30:18Z: The operator declared `m2-p04-aug` diverged and directed
+  abandonment with its compute redistributed. Its earlier loss recovery did not
+  hold and the p04 point resumed spiking. Stopped and verified its exact east n16
+  root, removed the trial from recovery and completion scope, and redistributed
+  its 128 east H100 to the remaining laggards. Five in-scope trials remain.
 - 2026-08-16T17:48:20Z: The operator declared `m2-p01-aug` diverged and directed
   abandonment with all jobs stopped. Stopped and verified its exact active RNO n8
   root, removed the trial from recovery and completion scope, and released 64 RNO
