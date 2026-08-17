@@ -69,6 +69,18 @@ if [ "$busy" -ne 0 ]; then
   nvidia-smi --query-compute-apps=pid,used_memory --format=csv
   exit 1
 fi
+# Free memory is NOT the same as a clean slate. Arm M-B died on its first attempt
+# with "Engine core initialization failed" 80 seconds after an eval's eight vLLM
+# engines exited: the cards read 4 MiB, but the engines' IPC sockets, shared
+# memory segments and ports had not all been reclaimed, and six new engines
+# racing that teardown lost. The error names none of it. So wait for the named
+# processes to be gone, then settle.
+for i in $(seq 1 60); do
+  pgrep -f "VLLM::EngineCore" >/dev/null || break
+  [ "$i" = "1" ] && echo "waiting for stale vLLM engine cores to exit..."
+  sleep 5
+done
+sleep "${SETTLE_SECONDS:-30}"
 
 echo "=== exp237 $ARM: reward_mode=$MODE estimator=$EST lr=$LR ==="
 echo "    group=$GROUP prompts/step=$PROMPTS -> $((GROUP * PROMPTS)) rollouts/step, $STEPS steps"
