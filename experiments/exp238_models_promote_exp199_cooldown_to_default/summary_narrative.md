@@ -34,12 +34,25 @@ The cooldown itself was nearly free — no new data, no new hyperparameters,
 ## eval2
 
 Not re-run: #234 had already scored the full 577-unit universe and checked in
-every cut. On the 78 natural proteins under 40% identity to training the model
-scores 0.358, against the previous default's 0.337, single-sequence
-Protenix-v2's 0.326 and ESMFold2's 0.529.
+every cut. Split on whether the protein was designed:
 
-The gain survives homology control. The 0.17 gap to ESMFold2 there is the
-honest answer to "how good is this model".
+Natural (n=78): MarinFold 0.358, previous default 0.337, Protenix-v2
+single-seq 0.326, ESMFold2 0.529.
+
+De novo (n=229): MarinFold 0.621, previous default 0.616, Protenix-v2
+single-seq 0.799, ESMFold2 0.811.
+
+The cooldown's gain over the previous default is real on natural proteins
+(+0.021, interval clear of zero) and a tie on designed ones (+0.004).
+
+## What eval2 says that the 554 does not
+
+The 554-protein win over single-sequence Protenix-v2 does not survive the move
+to eval2. On natural proteins we lead by +0.032 with an interval that crosses
+zero; on de novo proteins we trail by 0.178 with an interval that does not.
+
+The gap to ESMFold2 is ~0.18 in both halves — the one number here that does not
+care how the set is cut, and the honest answer to "how good is this model".
 
 ## The rope repair cost 1.300 nats
 

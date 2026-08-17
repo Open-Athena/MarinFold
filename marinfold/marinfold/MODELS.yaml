@@ -25,9 +25,14 @@
 #
 # On eval2 (#226), the homology-controlled set that is now the default: 0.358
 # all / 0.300 long on the 78 NATURAL proteins under 40% identity to training,
-# and 0.554 / 0.496 pooled over all 307. Lead with the natural cut — the
-# pooled number is 75% designed proteins. The checkpoint it displaces scored
-# 0.337 natural, so the gain survives homology control.
+# 0.621 on the 229 de novo designed ones, 0.554 / 0.496 pooled over all 307.
+# The checkpoint it displaces scored 0.337 natural, so the gain survives
+# homology control — but it is a tie on the designed half (+0.004).
+#
+# Do NOT read the 554-protein win over Protenix-v2 as general. On eval2 we
+# lead single-sequence Protenix-v2 by +0.032 on natural proteins (interval
+# crosses zero) and TRAIL it by 0.178 on de novo ones, and ESMFold2 is ~0.18
+# ahead in both halves. See experiments/exp238_.../README.md.
 #
 # Its val loss is 2.9397, which looks WORSE than exp166's 2.6642 below and is
 # not: marin #7209 changed the objective to mask padding targets partway

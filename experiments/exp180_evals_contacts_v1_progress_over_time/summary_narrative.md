@@ -154,10 +154,14 @@ the > 400 bin holds 17 proteins either way.
 
 The 554-protein set is ~75% designed proteins and not homology-controlled. On
 eval2 (#226) the same checkpoint scores 0.358 on the 78 natural proteins under
-40% identity to anything in training, against Protenix-v2 single-sequence's
-0.326 and ESMFold2's 0.529. Quote that cut when the question is
-generalization, and the 554 number only when the question is progress against
-everything published before it.
+40% identity to anything in training and 0.621 on the 229 de novo ones, against
+ESMFold2's 0.529 / 0.811 and Protenix-v2 single-seq's 0.326 / 0.799.
+
+So the +0.028 lead over single-sequence Protenix-v2 above is a property of this
+554-protein set: on eval2 it holds only on the natural cut and only within
+noise. Quote these cuts when the question is generalization, and the 554 number
+only when the question is progress against everything published before it. Full
+split in #238.
 
 ## The unexplored lever
 

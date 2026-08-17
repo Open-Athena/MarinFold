@@ -38,9 +38,13 @@ on the 554-protein contact benchmark, against single-sequence Protenix-v2's
 On [eval2](experiments/exp226_evals_expand_foldbench_eval_set/README.md) — the
 homology-controlled set, where nothing scores near its 554-protein number — it
 is **0.358** on the 78 natural proteins under 40% identity to anything in
-training, against Protenix-v2 single-sequence's 0.326 and ESMFold2's 0.529.
-That cut is the honest one for "how well does this generalise"; the 554-protein
-number above is the one comparable to everything published before it.
+training and **0.621** on the 229 de novo designed ones, against ESMFold2's
+0.529 / 0.811 and Protenix-v2 single-sequence's 0.326 / 0.799. So the win over
+single-sequence Protenix-v2 above is a property of the 554-protein set, which
+is 75% designed and not homology-controlled; on eval2 it holds only on the
+natural cut and only within noise. Quote the 554 number as progress against our
+own history, and the eval2 cuts when the question is how well this generalises
+— see [exp238](experiments/exp238_models_promote_exp199_cooldown_to_default/README.md).
 
 ### GPU example
 

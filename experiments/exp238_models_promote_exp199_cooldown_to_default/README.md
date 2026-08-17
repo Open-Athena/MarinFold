@@ -117,27 +117,64 @@ exist, so this experiment reports them instead:
 | legacy exp89 | 554 | 0.6307 | 0.5837 | 0.9511 |
 | full 577-unit universe | 577 | 0.6231 | 0.5762 | 0.9489 |
 
-Against the field on the cut that matters (eval2 natural, <40%, all-range R,
-from #226's headline table):
+### eval2 against the field, split natural vs de novo
 
-| predictor | R (all) |
-|---|---:|
-| Protenix-v2 + MSA | 0.6979 |
-| ESMFold2 | 0.5293 |
-| ESMFold | 0.4623 |
-| **MarinFold #199 cooldown** | **0.3579** |
-| MarinFold #199 p06-aug (previous default) | 0.3372 |
-| Protenix-v2 single-sequence | 0.3259 |
-| seq-KNN k=10 (null) | 0.1478 |
+eval2 is ~75% designed proteins, so its pooled number is mostly a statement
+about de novo design. `plot_eval2_comparison.py` cuts it on #226's
+`designed_any` flag and scores every predictor on both halves.
 
-Two things to take from this. The **+0.021 gain over the previous default
-survives homology control** — it is not a 554-protein artifact. And the ranking
-is the same as on the 554 in one respect and not another: MarinFold is still
-ahead of single-sequence Protenix-v2, by more than it is on the 554 in relative
-terms, but the structure predictors that use no MSA either (ESMFold2, 0.529)
-are far ahead of both. **On unfamiliar natural proteins the gap to ESMFold2 is
-0.17 R-precision, and that is the number to quote when someone asks how good
-this model actually is.**
+![eval2 predictor comparison](plots/eval2_predictor_comparison.png)
+
+| predictor | natural (n=78) | de novo (n=229) |
+|---|---:|---:|
+| Protenix-v2 + MSA | 0.6979 | 0.8051 |
+| ESMFold2 | 0.5293 | **0.8114** |
+| ESMFold | 0.4623 | 0.7732 |
+| Protenix-v2 single-sequence | 0.3259 | 0.7987 |
+| **MarinFold #199 cooldown** | **0.3579** | **0.6207** |
+| MarinFold #199 p06-aug (previous) | 0.3372 | 0.6162 |
+| seq-KNN k=10 (null) | 0.1478 | 0.0486 |
+
+**The bar order is the natural cut's, held fixed on the right, because the
+ranking does not survive the split.** On natural proteins MarinFold is
+mid-field and every predictor is weak. On de novo proteins every predictor is
+strong and MarinFold is last of the four real ones — 0.62 against 0.77–0.81.
+
+Paired against the new default, over the same proteins:
+
+| comparison | natural (n=78) | de novo (n=229) |
+|---|---|---|
+| vs Protenix-v2 single-seq | **+0.032** [−0.027, +0.091] | **−0.178** [−0.207, −0.149] |
+| vs ESMFold2 | −0.171 [−0.219, −0.124] | −0.191 [−0.219, −0.163] |
+| vs #199 p06-aug (previous default) | **+0.021** [+0.009, +0.032] | +0.004 [−0.007, +0.016] |
+
+Four things fall out of this, and three of them are cautions.
+
+1. **The cooldown's gain is concentrated on natural proteins.** +0.021 with an
+   interval clear of zero there; +0.004 and a tie on de novo. Whatever the
+   extra 152B tokens bought, it was not de novo design.
+2. **On eval2 we do not beat single-sequence Protenix-v2.** The +0.032 on the
+   natural cut has an interval that crosses zero at n=78, and the de novo cut
+   is −0.178 with an interval nowhere near it. The +0.028 win on the
+   554-protein benchmark is a statement about a set that is neither
+   homology-controlled nor natural — [#213](https://github.com/Open-Athena/MarinFold/issues/213)
+   said the same thing from the homology side and this is the design side of
+   it. Quote the 554 number as progress against everything published before
+   it, never as "we passed Protenix".
+3. **The gap to ESMFold2 is ~0.18 in both halves** — the one number here that
+   does not care how the set is cut, and the honest answer to "how good is
+   this model".
+4. **The null tells you the two halves are different problems**, not one
+   problem at two difficulties: sequence-KNN scores 0.148 on natural proteins
+   and 0.049 on de novo ones. Designed proteins have no informative neighbours
+   to memorise, and every real predictor still does *better* on them.
+
+![eval2 vs sequence-only baselines](plots/eval2_vs_sequence_only_baselines.png)
+
+Per protein, against the two baselines that also read sequence alone. The blue
+cloud (natural) sits low and straddles the diagonal against Protenix-v2
+single-seq; the orange cloud (de novo) sits high and almost entirely below it.
+Source numbers for both figures: `data/eval2_comparison.csv`.
 
 ### #180 refreshed
 
@@ -165,10 +202,16 @@ changed as a result — the single-sequence Protenix gap reverses to **+0.028
 reachable with `marinfold infer` and no arguments.
 
 On the 554-protein benchmark it scores **0.631**, and it is the first
-contacts-v1 model measurably ahead of single-sequence Protenix-v2 (+0.028,
-95% CI [+0.001, +0.054]) — barely clear of zero, but ahead. On eval2's 78
-natural low-identity proteins it scores **0.358**, ahead of single-sequence
-Protenix-v2 (0.326) and well behind ESMFold2 (0.529).
+contacts-v1 model measurably ahead of single-sequence Protenix-v2 there
+(+0.028, 95% CI [+0.001, +0.054]) — barely clear of zero, but ahead.
+
+**That result does not survive the move to eval2.** On the 78 natural
+low-identity proteins it scores 0.358 against Protenix-v2 single-seq's 0.326,
+a +0.032 whose interval crosses zero; on the 229 de novo ones it scores 0.621
+against 0.799, a −0.178 whose interval does not. ESMFold2 is ~0.18 ahead in
+both halves. The 554-protein win is a statement about a set that is 75%
+designed and not homology-controlled, and it should be quoted as progress
+against our own history rather than as passing a structure predictor.
 
 Two things are worth carrying out of this beyond the promotion itself.
 
