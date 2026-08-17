@@ -50,10 +50,22 @@ logger = logging.getLogger(__name__)
 
 #: Batches a diversity gate may be violated before the run is stopped. The gates
 #: are #237's preregistered kill criteria, so tripping them IS the result; the
-#: patience only keeps a single noisy batch from ending a run early.
+#: patience only keeps a noisy window from ending a run early.
 _GATE_PATIENCE = 3
-#: Batches to let the run settle before the gates arm at all.
-_GATE_WARMUP = 2
+#: Batches whose MEDIAN forms the reference the coverage gate compares against.
+#: The gates arm after these.
+_GATE_WARMUP = 6
+#: Batches in the rolling window the gates are evaluated on.
+#:
+#: A batch is 8 proteins, and the diversity statistics are dominated by which 8.
+#: Measured on the first six batches of arm M-C at lr 1e-5, with the policy
+#: barely moved (KL 0.0012): union pairs per rollout ranged 440-892, sections
+#: 16.4-28.1, Jaccard 0.074-0.279. A gate reading single batches against a single
+#: baseline batch would have fired on the protein draw, killed a healthy run, and
+#: reported it as #237's preregistered diversity collapse -- the most expensive
+#: kind of wrong answer this experiment could produce. Medians over a window,
+#: both sides, are what make the comparison about the policy.
+_GATE_WINDOW = 6
 
 
 def _unwrap_extras(env_extras: Any) -> Dict[str, Any]:
@@ -136,7 +148,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self._announced = False
         self._batches = 0
         self._gate_strikes: Dict[str, int] = {}
-        #: Opening union-pairs-per-rollout, the reference the coverage gate uses.
+        #: Per-batch gate metrics, newest last; only the last _GATE_WINDOW matter.
+        self._history: List[Dict[str, float]] = []
+        #: Median over the warmup window, the reference the coverage gate uses.
         self._union_baseline: Optional[float] = None
 
     # ------------------------------------------------------------------ hooks
@@ -360,32 +374,49 @@ class MultiSectionGenerator(SkyRLGymGenerator):
     def _check_gates(self, m: Dict[str, float]) -> None:
         """#237's preregistered kill criteria, evaluated on the training rollouts.
 
-        The eval-time versions of these are computed on the #230 checkpoint's own
-        658 union pairs and 22.0 sections; here the reference is the run's OWN
-        opening batch, so the gate measures what RL did rather than what the
-        harness's sampling settings did.
+        Every quantity here is a MEDIAN over the last `_GATE_WINDOW` batches, and
+        the coverage reference is the median over the warmup window -- not the
+        opening batch. See `_GATE_WINDOW` for the measurement that forced that:
+        at 8 proteins a batch, the protein draw moves union coverage by 2x while
+        the policy has barely moved, so a single-batch gate fires on the data and
+        reports it as diversity collapse.
+
+        The eval-time versions of these gates are computed against #230's own
+        658 union pairs and 22.0 sections; here the reference is the run's own
+        warmup, so the gate measures what RL did rather than what the harness's
+        sampling settings did.
         """
-        if self._batches <= _GATE_WARMUP:
-            if self._batches == _GATE_WARMUP:
-                self._union_baseline = m["multi/union_pairs"]
-                logger.warning("[exp237] coverage baseline set to %.1f union pairs/rollout",
-                               self._union_baseline)
+        self._history.append(m)
+        window = self._history[-_GATE_WINDOW:]
+
+        def med(key: str, rows=None) -> float:
+            vals = [r[key] for r in (rows or window) if r.get(key) == r.get(key)]
+            return float(np.median(vals)) if vals else float("nan")
+
+        if self._batches == _GATE_WARMUP:
+            self._union_baseline = med("multi/union_pairs", self._history)
+            logger.warning(
+                "[exp237] coverage baseline set to %.1f union pairs/rollout "
+                "(median of the first %d batches)", self._union_baseline, _GATE_WARMUP)
+        if self._batches < _GATE_WARMUP + _GATE_WINDOW:
             return
 
         violations = []
-        if m["multi/sections_per_rollout"] < self.min_sections:
+        sections = med("multi/sections_per_rollout")
+        if sections < self.min_sections:
             violations.append(
-                f"sections/rollout {m['multi/sections_per_rollout']:.2f} < {self.min_sections:g} "
+                f"sections/rollout median {sections:.2f} < {self.min_sections:g} "
                 "(the multi format is collapsing back toward a single document)")
-        jac = m["multi/mean_jaccard"]
+        jac = med("multi/mean_jaccard")
         if jac == jac and jac > self.max_jaccard:
             violations.append(
-                f"mean pairwise Jaccard {jac:.3f} > {self.max_jaccard:g} (diversity collapse)")
+                f"mean pairwise Jaccard median {jac:.3f} > {self.max_jaccard:g} "
+                "(diversity collapse)")
         if self._union_baseline:
-            ratio = m["multi/union_pairs"] / self._union_baseline
+            ratio = med("multi/union_pairs") / self._union_baseline
             if ratio < self.min_union_ratio:
                 violations.append(
-                    f"union pairs/rollout fell to {100 * ratio:.0f}% of the opening "
+                    f"union pairs/rollout median fell to {100 * ratio:.0f}% of the warmup "
                     f"{self._union_baseline:.0f} (< {100 * self.min_union_ratio:.0f}%)")
 
         for key in list(self._gate_strikes):
