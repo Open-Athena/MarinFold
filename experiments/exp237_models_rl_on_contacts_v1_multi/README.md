@@ -336,18 +336,22 @@ by reward shape, on one model and one data order.
 **Two things for the next reward design, both cheap and both learned the
 expensive way:**
 
-1. **`E[r] = p − p̄` is necessary and not sufficient, and the reason is not what
-   it first looked like.** M-C's advantage is centred so `E[A] = 0` holds
-   *exactly* per prompt, and the policy still halved its output. The tempting
-   explanation — 55 % of section marginals are an atom at exactly zero, and those
-   sections average −0.062 after centring — **is refuted by M-F**, whose reward is
-   a continuous scalar with no atom and which collapsed volume by the same factor
-   (0.51× against 0.52×). What M-C and M-F share, and M-B does not, is that they
-   **price each candidate's own quality**, which is a selectivity pressure however
-   the reward is centred. M-B prices only the *best* candidate, so a bad contact
-   elsewhere costs nothing — and M-B held its volume (0.97×) and paid in
-   redundancy instead (votes/pair 1.73×). The rule to carry: ask whether a reward
-   prices quality *per candidate*, not just whether it is centred.
+1. **A per-candidate reward must be scale-free in the number of candidates, and
+   centring cannot enforce that.** Arm M-C pays each section its leave-one-out
+   contribution to its own rollout's consensus — a quantity that grows as the
+   rollout emits fewer sections, because each survivor is then more load-bearing.
+   Measured by truncating real rollouts: the reward per section is **366× larger
+   at 1 section than at 22**, while the rollout's own consensus *falls* from
+   0.5431 to 0.3413. In groups differing in nothing but section count, a
+   one-section rollout receives **+4.80** advantage and a 22-section rollout
+   **−0.22**. `E[A] = 0` holds exactly throughout — centring is computed *within*
+   the quantity being gamed, so it cannot see the problem. This explains
+   everything M-C did, including why the collapse accelerates (the payoff for
+   shortening grows as sections disappear) and why M-F and M-B, which have no
+   such term, kept or increased their section counts instead.
+
+   The check is cheap and belongs before any run: truncate a few real rollouts,
+   plot the reward against the number of candidates, look for a slope.
 2. **Gate on `union/R`, not on union relative to the run's own start** — and gate
    on precision too. The preregistered coverage criterion stopped all three arms;
    union/R never left 2.8–4.6 in any of them, including the one that collapsed to
@@ -360,9 +364,14 @@ expensive way:**
   earliest. The interesting region is KL 0.005–0.02, which this run sampled with
   three points by accident. A proper sweep is cheap and is the only obvious route
   to the remaining 0.0146.
-- **A reward that does not price per-candidate quality.** M-B is the existence
-  proof that one is possible — it held volume — but it pays in redundancy, and it
-  needs ground truth. Something between M-B and M-C is the open design question.
+- **Fix M-C's reward before re-running it.** The scale pathology has a clean fix:
+  compute each section's marginal against a **fixed-size** reference — subsample
+  the rollout's sections to a constant *G* before the leave-one-out — so the
+  reward no longer depends on how many the rollout emitted. Equivalently,
+  decompose a rollout-level `C(all)` advantage across its sections rather than
+  scoring each section independently. Arm M-C's 0.5750 was obtained *despite* this
+  term, in the 18 steps before it took hold; the fixed version is the obvious
+  thing to test next.
 - **A rank-transformed marginal**, separately: 55 % of section marginals are an
   atom at exactly zero, which is why 7.6 % of rollouts contribute no gradient at
   all. A second-order fix, not the main one.

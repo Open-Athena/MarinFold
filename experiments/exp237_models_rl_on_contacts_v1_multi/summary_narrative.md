@@ -66,20 +66,30 @@ Both routes end at the same coverage floor. #208 found these two modes across
 different reward families; here they are produced deliberately by reward shape,
 on one model and one data order.
 
-## Two lessons for the next reward
+## Why M-C collapsed: the reward is not scale-free
 
-**`E[r] = p − p̄` is necessary and not sufficient — and not because of the atom.**
-M-C's advantage is centred so `E[A] = 0` holds exactly, and it still halved the
-output. The tempting explanation (55 % of marginals are an atom at zero, averaging
-−0.062 after centring) is **refuted by M-F**, which has no atom and collapsed by
-the same factor. What M-C and M-F share, and M-B does not, is that they price each
-candidate's *own* quality — a selectivity pressure however the reward is centred.
-M-B prices only the best candidate, held its volume, and paid in redundancy.
+`m_k = C(all) − C(all \ {k})` grows as a rollout emits *fewer* sections, because
+each survivor is then more load-bearing. So a rollout can raise the reward on
+every one of its sections by making its own consensus worse.
 
-**Gate on `union/R`, and on precision.** The preregistered coverage gate stopped
-all three arms; union/R never left 2.8–4.6 in any of them, including the collapsed
-one, whose union/R was *higher* than the warm start's. Coverage was never binding.
-Precision (0.50 → 0.14) was.
+Measured by truncating real rollouts: the reward per section is **366× larger at
+1 section than at 22**, while the rollout's own consensus falls 0.543 → 0.341. In
+groups differing in nothing but section count, a one-section rollout gets **+4.80**
+advantage and a 22-section rollout **−0.22**.
+
+`E[A] = 0` holds exactly throughout — centring is computed *within* the quantity
+being gamed. This explains the accelerating collapse (13.7 → 1.1 sections over
+five steps) and why M-F and M-B, which have no such term, kept or grew theirs.
+
+**The clause for #208's rule:** `E[r] = 0` constrains the mean over the candidates
+the policy emitted; it says nothing about whether the reward's *scale* depends on
+how many that was.
+
+## The other lesson: gate on `union/R`, and on precision
+
+The preregistered coverage gate stopped all three arms; union/R never left 2.8–4.6
+in any of them, including the collapsed one, whose union/R was *higher* than the
+warm start's. Coverage was never binding. Precision (0.50 → 0.14) was.
 
 ## Figures
 
@@ -90,5 +100,8 @@ aggregation modes, with the budget-matched bar drawn on.
 
 `plots/reward_shape.png` — arm M-C's marginal distribution and its
 group-centred advantage, i.e. the mechanism this run proposed and then refuted.
+
+`plots/section_count_incentive.png` — the scale pathology: 366x the reward for
+a worse answer.
 
 `plots/coverage_vs_kl.png` — coverage against distance, #208's question re-asked.

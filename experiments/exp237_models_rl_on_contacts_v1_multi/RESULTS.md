@@ -234,48 +234,87 @@ because **total volume collapsed by half**. #208's two failure modes were arm S
 reached from the opposite direction — and the pair `union pairs` / `votes per
 pair`, which #237 mandates reporting, is the only thing that distinguishes them.
 
-### Why volume collapsed — a proposed mechanism, and its refutation
+### Why M-C collapsed: the reward is not scale-free in the section count
 
-`A_k = (m_k − mean_g) / std_g` centres the **mean**, not the median, and Phase 0
-had already measured a reason that might matter: **55 % of sections change no
-vote at all**, so their marginal is exactly zero. The group mean marginal is
-positive on 68 % of proteins, so those sections get pushed down. Measured on
-#230's own generations, group-centred exactly as the reward does it:
+**This is the mechanism, and it is a design flaw in arm M-C's reward rather than
+a property of RL.** `m_k = C(all) − C(all \ {k})` measures what section *k*
+contributes to its own rollout's consensus — and that quantity depends on **how
+many sections there are to contribute against**. With 22 sections, removing one
+barely moves an integer vote count and `m_k ≈ 0`. With two, removing one halves
+the vote. With one, `C(all \ {k})` is the consensus of nothing.
 
-| section | share | mean advantage |
-|---|---:|---:|
-| changes no vote (`m_k = 0`) | **54.9 %** | **−0.062** |
-| changes the vote | 45.1 % | +0.075 |
+So a rollout can raise the reward on *every one of its sections* simply by
+**emitting fewer of them** — by making its own consensus worse, so each surviving
+section is more load-bearing. Group centring does not remove this, because the
+group is the prompt's rollouts and the *shorter* rollout is the one above the
+mean.
 
-![the shape of arm M-C's reward](plots/reward_shape.png)
+Measured directly, by truncating #230's real rollouts to a controlled number of
+sections and re-running the reward
+([`analyze_section_count_incentive.py`](analyze_section_count_incentive.py),
+544 rollouts / 128 synthetic groups):
 
-That is a small, consistent downward push on the majority of sections, while
-`E[A] = 0` holds exactly. It is a tidy story, and **it is not the explanation.**
+| sections emitted | mean `m_k` | × vs 22 | the rollout's own consensus | **group-centred advantage** |
+|---:|---:|---:|---:|---:|
+| 1 | 0.33547 | **366×** | 0.3413 | **+4.80** |
+| 2 | 0.07053 | 77× | 0.4048 | +1.08 |
+| 4 | 0.01916 | 21× | 0.4577 | +0.21 |
+| 8 | 0.00668 | 7.3× | 0.5049 | −0.02 |
+| 16 | 0.00122 | 1.3× | 0.5336 | −0.18 |
+| 22 | 0.00092 | 1.0× | 0.5431 | **−0.22** |
 
-**Arm M-F's reward has no atom at zero** — it is the F1 of one section, a
-continuous scalar — and it collapsed volume by the *same* factor: total votes
-0.51× against M-C's 0.52×, contacts-per-ground-truth 0.56× against 0.57×. A
-mechanism that only M-C has cannot explain a collapse that both show.
+![the section-count incentive](plots/section_count_incentive.png)
 
-**What M-C and M-F share, and M-B does not, is that they price a section's own
-quality.** Under either, a marginal contact that lowers the section's precision
-is net-negative, so the cheapest way to raise the reward is to emit fewer and
-better contacts — #208's first-order sharpening argument, restated at the section
-level. M-B prices only the **maximum** over sections, so a bad contact in a
-non-best section costs exactly nothing; M-B duly held its volume (0.97×) and paid
-in diversity instead (votes/pair 1.73×).
+The right-hand column is the decisive one. Those are groups constructed to differ
+in **nothing but section count**, centred exactly as `centred_section_advantages`
+does it. A rollout that emits one section receives **+4.80** on it; a rollout that
+emits 22 receives **−0.22** on each of them. The reward pays, enormously, for
+producing a worse answer.
 
-So the clause to add to #208's reward-design rule is not about atoms:
+**Everything M-C did follows from that one table:**
 
-> `E[r] = p − p̄` is necessary and not sufficient. What decides whether a centred
-> reward shrinks the policy is **whether it prices quality per candidate**. A
-> reward on each candidate's own quality is a selectivity pressure however it is
-> centred; a reward on the best candidate is not, and pays in redundancy instead.
+- Section count falls (0.89× by step 26) rather than holding.
+- The fall **accelerates**: the payoff for shortening *grows* as sections
+  disappear — 7× at 8 sections, 21× at 4, 366× at 1 — so it is a positive
+  feedback loop, not a drift. Measured, over global steps 28→33: 13.7 → 11.4 →
+  4.5 → 2.2 → 2.3 → **1.1**.
+- The terminal state is ~1 section, which is the pathology's global optimum and
+  also the destruction of the format the experiment exists to use.
+- **M-F does not do this** (sections 1.14×) and **M-B does the opposite**
+  (1.31×), because neither reward has a term whose magnitude depends on the
+  section count. The divergence between the arms is explained by the term only
+  M-C has.
 
-The 55 % atom is still worth knowing — it is why 7.6 % of rollouts contribute no
-gradient at all, and it argues for a rank-transformed marginal — but it is a
-second-order effect, and this experiment can say so because it ran an arm without
-it.
+**Why the observational test missed it.** Correlating section count against
+marginal across #230's own generations gives ρ = **−0.04**: the base model fills
+the context every time, so 95 % of rollouts sit within ±5 % of their group's
+median section count and there is almost nothing to correlate. The incentive is
+**latent** — invisible in the base distribution, and precisely what gradient
+ascent goes looking for. It had to be measured by intervention, not observation.
+
+#### The clause this adds to #208's reward-design rule
+
+> `E[r] = 0` constrains the reward's **mean over the candidates the policy
+> emitted**. It says nothing about whether the reward's *scale* depends on **how
+> many candidates that was**. A per-candidate reward whose magnitude grows as the
+> candidate set shrinks is an instruction to shrink the candidate set, and
+> centring cannot see it because centring is computed *within* the very quantity
+> being gamed.
+
+Checkable before any run, and cheaply: truncate a handful of real rollouts, plot
+the reward against the number of candidates, and look for a slope. The table
+above took ten minutes of CPU on generations that already existed.
+
+#### What was written here before, and why it was wrong
+
+An earlier version of this document blamed the collapse on the reward's **atom at
+zero** — 54.9 % of sections change no vote, and those sections average −0.062
+after centring ([`plots/reward_shape.png`](plots/reward_shape.png)). That
+measurement is real and is kept, because it explains why 7.6 % of rollouts
+contribute no gradient at all. But it was **refuted as the cause** by arm M-F,
+whose reward is a continuous scalar with no atom and which reduced *volume* by
+the same factor — and it never explained the fact that most needed explaining,
+which is that only M-C lost **sections**. The scale pathology explains both.
 
 ### The one thing that improved
 

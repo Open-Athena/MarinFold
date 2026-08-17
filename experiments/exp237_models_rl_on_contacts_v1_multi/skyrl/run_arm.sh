@@ -64,6 +64,14 @@ CKPT=$ROOT/ckpts_$TAG
 EXPORT=$ROOT/exports_$TAG
 LOG=$HOME/exp237_logs/${RUN}.log
 mkdir -p "$CKPT" "$EXPORT" "$HOME/exp237_logs"
+# ROTATE, never truncate. A resumed arm reuses the same run name, and `> "$LOG"`
+# destroyed arm M-B's first 41 batches when it was continued -- the trajectory had
+# to be recovered from a committed CSV. Each attempt now gets its own file.
+if [ -s "$LOG" ]; then
+  n=1; while [ -e "${LOG%.log}.part$n.log" ]; do n=$((n + 1)); done
+  mv "$LOG" "${LOG%.log}.part$n.log"
+  echo "rotated previous log -> ${LOG%.log}.part$n.log"
+fi
 
 # Refuse to start on busy cards. vLLM sizes its KV cache from FREE memory, so
 # launching into a stale engine kills every new engine at once -- and vLLM

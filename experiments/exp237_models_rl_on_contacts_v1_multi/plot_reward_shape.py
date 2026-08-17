@@ -163,6 +163,51 @@ def reward_shape(data: Path, out: Path) -> None:
     print(f"wrote {out}/reward_shape.png")
 
 
+def section_count_incentive(data: Path, out: Path) -> None:
+    """The scale pathology: the reward pays for emitting fewer sections."""
+    f = data / "section_count_incentive.json"
+    if not f.exists():
+        print(f"skipping section-count figure: no {f}")
+        return
+    j = json.loads(f.read_text())
+    r1 = pd.DataFrame(j["per_section_reward"])
+    r2 = pd.DataFrame(j["group_centred_advantage"])
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
+    ax = axes[0]
+    ax.plot(r1["keep"], r1["mean_marginal"], "o-", color="#1f77b4", label="reward per section")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlabel("sections the rollout emitted")
+    ax.set_ylabel("mean leave-one-out marginal", color="#1f77b4")
+    ax.grid(alpha=0.25, which="both")
+    ax2 = ax.twinx()
+    ax2.plot(r1["keep"], r1["consensus"], "s--", color="crimson", label="the rollout's consensus")
+    ax2.set_ylabel("consensus R-precision", color="crimson")
+    ax.set_title("fewer sections: 366x the reward, a worse answer", fontsize=10)
+
+    ax = axes[1]
+    colors = ["crimson" if v > 0 else "#1f77b4" for v in r2["mean_advantage"]]
+    ax.bar(range(len(r2)), r2["mean_advantage"], color=colors)
+    ax.set_xticks(range(len(r2)))
+    ax.set_xticklabels(r2["keep"])
+    ax.axhline(0, color="k", lw=1.0)
+    ax.set_xlabel("sections the rollout emitted")
+    ax.set_ylabel("mean group-centred advantage")
+    ax.set_title(f"groups differing ONLY in section count (n={j['n_groups']})", fontsize=10)
+    ax.grid(alpha=0.25, axis="y")
+
+    fig.suptitle("exp237 — arm M-C's reward pays a rollout for emitting fewer sections",
+                 fontsize=11)
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, out / "section_count_incentive.png", dpi=150,
+        caption=(
+            "m_k is not scale-free in the section count: at 1 section it is 366x its value "
+            "at 22, while the rollout's own consensus falls 0.543 -> 0.341. Centring does "
+            "not remove it -- the shorter rollout is the one above its group's mean."))
+    print(f"wrote {out}/section_count_incentive.png")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path, default=Path("data"))
@@ -171,6 +216,7 @@ def main() -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     dose_response(a.data, a.out)
     reward_shape(a.data, a.out)
+    section_count_incentive(a.data, a.out)
     return 0
 
 
