@@ -250,8 +250,81 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-_Pending — see [RESULTS.md](RESULTS.md) as arms land._
+**Full detail in [RESULTS.md](RESULTS.md).** R-precision (all), legacy 554,
+ordered by how far the policy moved:
+
+| checkpoint | KL | consensus | best *ORACLE* | last |
+|---|---:|---:|---:|---:|
+| **plain, 22 rollouts — the bar** | — | **0.5896** | 0.5680 | — |
+| #230 warm start | 0 | 0.5673 | 0.5342 | 0.4566 |
+| M-0, lr 0 | 0 | 0.5678 | 0.5364 | 0.4594 |
+| **M-C step-18** | 0.0072 | **0.5750** | **0.5578** | **0.5267** |
+| M-F step-18 | 0.0136 | 0.5647 | 0.5283 | 0.4949 |
+| M-B step-36 | 0.0163 | 0.5741 | 0.5574 | 0.4908 |
+| M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 |
+| M-B step-80 | 0.4863 | 0.3969 | 0.3440 | 0.1905 |
+
+- **Primary criterion: NOT met.** Nothing beats 0.5896. M-C step-18 comes within
+  **0.0146**, the closest a multi-mode number has come, and is still short.
+- **Both secondary criteria: met** — final-section 0.5267 > 0.4566, oracle-best
+  0.5578 > 0.5342 — but by **arm M-C**, not by the arms designed for them.
+- M-C step-18 improves every mode on every cut, all paired CIs excluding zero:
+  consensus +0.0077, oracle-best +0.0235, last **+0.0701** (480 wins / 69 losses).
+  On eval2-natural, last goes 0.1696 → **0.2421**.
+- Gates: all three arms tripped the preregistered coverage criterion. It was in
+  the wrong units — see below.
 
 ## Conclusion
 
-_Pending._
+**The hypothesis is half right, and the half that is right is the interesting
+half.** Moving the reward's unit from *rollouts of a group* to *sections of one
+rollout* does produce what #208 could not: **an RL checkpoint that improves
+consensus R-precision** (+0.0077, and +0.0109 on eval2-natural). Arm M-C, the arm
+#237 singled out, is the best checkpoint on every aggregation mode. But it does
+not close the gap to independent sampling: 22 plain rollouts still beat one
+rollout's 22 sections, 0.5896 against 0.5750.
+
+**#208's negative result is the far end of a dose-response, not a verdict.**
+Consensus against distance moved reads 0.5673 → **0.5750** (KL 0.007) → 0.5741
+(0.016) → 0.5529 (0.031) → 0.3969 (0.486). Every reward here helps at small KL and
+damages at large. #208 ran its arms at KL 0.06–0.10 and to 3.96 — past the peak on
+every one — and its two arms under KL 0.0015 were too small to move at all. **The
+window it needed lay between the two learning rates it tried.** That is the most
+portable thing this experiment produced, and it is a statement about *how far*
+rather than about *what reward*.
+
+**Reward shape decides how a run fails, not whether.** M-C and M-F halve the
+contacts emitted while becoming *more* diverse; M-B holds the volume and emits the
+same contacts 1.7× more often. Both routes end at the same place. #208 found these
+two modes across different reward families; here they are produced deliberately,
+by reward shape, on one model and one data order.
+
+**Two things for the next reward design, both cheap and both learned the
+expensive way:**
+
+1. **`E[r] = p − p̄` is necessary and not sufficient.** M-C's advantage is centred
+   so that `E[A] = 0` holds *exactly* per prompt — and the policy still shrank,
+   because 45 % of section marginals are an atom at exactly zero and the rest are
+   skewed positive, so the *median* section carries a negative advantage while the
+   mean is zero. A centred reward whose mass sits at an atom below its mean is a
+   shrinking operator. Checkable from a histogram, before the run — Phase 0 had
+   already measured the 45 % without anyone noticing what it implied.
+2. **Gate on `union/R`, not on union relative to the run's own start** — and gate
+   on precision too. The preregistered coverage criterion stopped all three arms;
+   union/R never left 2.8–4.6 in any of them, including the one that collapsed to
+   0.3969, whose union/R was *higher* than the warm start's. Coverage was never the
+   binding constraint. Per-contact precision (0.50 → 0.14) was.
+
+**What would be worth doing next**, in order:
+
+- **An LR/step sweep around the peak.** Every arm's best checkpoint was its
+  earliest. The interesting region is KL 0.005–0.02, which this run sampled with
+  three points by accident. A proper sweep is cheap and is the only obvious route
+  to the remaining 0.0146.
+- **A reward without the zero atom.** Ranking or tie-broken marginals would give
+  the 45 % of sections that change no vote a defined position instead of a lump at
+  the bottom of a mean-centred distribution.
+- **The diversity gap is a corpus question, not an RL one.** #230 said this and
+  this run does not contradict it: one rollout's sections cover 658 pairs against
+  1,065 for 22 independent rollouts, and no reward here closed that — the two that
+  improved diversity did so by emitting less.

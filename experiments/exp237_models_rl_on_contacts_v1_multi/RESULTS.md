@@ -110,6 +110,69 @@ number in the arms below is therefore attributable to the reward and not to the
 export, the cast, the sampler or the scorer** — which is the entire reason a
 zero-LR arm is worth a GPU-hour.
 
+## The whole result, ordered by how far the policy moved
+
+R-precision (all), legacy 554, every checkpoint scored by #230's
+`eval_agg_worker.py` + `score_agg_modes.py` unchanged, 8 rollouts × 577 proteins:
+
+| checkpoint | KL | consensus | best *ORACLE* | last | second_last | union/R |
+|---|---:|---:|---:|---:|---:|---:|
+| **plain, 22 rollouts — the bar** | — | **0.5896** | 0.5680 | — | — | — |
+| #230 warm start | 0 | 0.5673 | 0.5342 | 0.4566 | 0.4284 | 3.98 |
+| M-0, lr 0 | 0 | 0.5678 | 0.5364 | 0.4594 | 0.4300 | 3.98 |
+| **M-C step-18** | 0.0072 | **0.5750** | **0.5578** | **0.5267** | 0.4795 | 3.17 |
+| M-F step-18 | 0.0136 | 0.5647 | 0.5283 | 0.4949 | 0.3464 | 3.69 |
+| M-B step-36 | 0.0163 | 0.5741 | 0.5574 | 0.4908 | **0.4933** | 2.76 |
+| M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 | 2.80 |
+| M-B step-80 | 0.4863 | 0.3969 | 0.3440 | 0.1905 | 0.2469 | 4.63 |
+
+eval2-natural (78 proteins, the honest low-homology readout):
+
+| checkpoint | consensus | last |
+|---|---:|---:|
+| #230 warm start | 0.2889 | 0.1696 |
+| **M-C step-18** | 0.2998 | **0.2421** |
+| **M-B step-36** | **0.3040** | 0.2329 |
+| M-F step-36 | 0.2742 | 0.2232 |
+
+### Four things this says
+
+**1. The primary criterion is not met.** Nothing beats 0.5896, the budget-matched
+plain baseline. M-C step-18 gets within **0.0146** of it, which is the closest any
+multi-mode number has come, and it is still short. *At matched sampling budget,
+22 independent rollouts remain better than one rollout's 22 sections.*
+
+**2. Both secondary criteria are met, and by the wrong arm.** M-F's target was
+final-section R-precision > 0.4566: met at 0.5075 — but **M-C reaches 0.5267**,
+higher than the arm designed for it. M-B's target was oracle-best > 0.5342: met at
+0.5574 — but **M-C reaches 0.5578**. The arm #237's hypothesis singled out is the
+best checkpoint on every mode, which is the one prediction in the issue that came
+out right.
+
+**3. #208's result is the far end of a dose-response, not a verdict.** Consensus
+against distance moved: 0.5673 at KL 0, **0.5750 at 0.007**, 0.5741 at 0.016,
+0.5529 at 0.031, 0.3969 at 0.486. Every arm improves consensus at small KL and
+damages it at large. #208 ran its arms at KL 0.06–0.10 and to 3.96, i.e. past the
+peak on every one — and its two arms that stayed under 0.015 (C v1 at 0.0004, D v1
+at 0.0014) were too small to move at all. **The window it needed was between the
+two learning rates it tried.**
+
+**4. Reward shape decides *how* a run fails, not *whether*.** Training medians,
+first 13 batches against the last 5 before each arm was stopped:
+
+| arm | total votes | votes/pair | Jaccard | what it did |
+|---|---:|---:|---:|---|
+| M-C | **0.52×** | 0.75× | 0.60× | halve the contacts, become **more** diverse |
+| M-F | **0.51×** | 0.89× | 0.44× | halve the contacts, become **more** diverse |
+| M-B | 0.97× | **1.73×** | **1.48×** | hold the contacts, emit the **same** ones |
+
+That is exactly what each reward asks for. M-B pays for the *best* section, so the
+optimal policy finds its best mode and repeats it — nothing pays for being
+different. M-C pays for marginal contribution, so being different pays. M-F pays
+for the last section, so the earlier ones become scratch (its `second_last` falls
+to 0.2649). #208 found these two modes across different reward *families*; here
+they are produced deliberately by reward *shape*, on one model and one data order.
+
 ## Arm M-C — the arm the hypothesis predicted, and what it actually did
 
 **Stopped at step 26 of 72 on #237's preregistered coverage kill criterion**:
@@ -250,12 +313,63 @@ The vote lost 53 % of its mass and 44 % of its coverage, and consensus paid
 single-candidate number gained 0.051. **Both arms bought the same thing with the
 same currency**: selectivity, priced in vote coverage.
 
-## Arm M-B
+## Arm M-B — the ORACLE arm, and what happened when it was let run
 
-_Re-running: its first attempt died 80 s after the previous stage's vLLM engines
-exited, on a teardown race that reports itself as "Engine core initialization
-failed"._
+**Stopped at step 36** on the preregistered coverage criterion, scored, then
+**resumed from its own step-36 checkpoint to step 80** under the corrected gate
+(see below). Terminal KL **0.4863**.
 
-## Evaluation
+| | step 36 (KL 0.016) | step 80 (KL 0.486) |
+|---|---:|---:|
+| consensus | **0.5741** | 0.3969 |
+| best *ORACLE* | **0.5574** | 0.3440 |
+| last | 0.4908 | 0.1905 |
+| per-contact precision (train) | 0.50 | **0.14** |
+| union/R | 2.76 | 4.63 |
 
-_Pending._
+**The extension destroyed the model, and neither coverage gate saw it coming.**
+union/R at step 80 is 4.63 — *higher* than the warm start's 3.98 — because the
+policy emitted more pairs, not fewer. They were simply wrong: per-contact
+precision fell from 0.50 to 0.14. Coverage was never the binding constraint; the
+votes were.
+
+So the corrected gate is necessary and still not sufficient. `contacts/precision`
+is the metric that catches this, it was already being reported, and it is the one
+to gate on next time.
+
+## The gate that was measuring the wrong thing
+
+All three arms were stopped by #237's preregistered coverage criterion — union
+pairs per rollout below 80 % of the run's own warmup. Every one of them was
+stopped **past its own optimum but for the wrong reason**.
+
+#208's coverage mechanism is that R-precision cuts a ranking at R = |gt|, so
+zero-vote pairs begin padding the top-R **only once the union falls below R**.
+Measured at eval, union/R was 3.98 for the warm start and **never left 2.8–4.6 in
+any arm, including the collapsed one**. The coverage that triggered the gate was
+headroom nothing was using.
+
+`min_union_over_r` (default 1.25) is the same criterion in the units the
+mechanism is in. `min_union_ratio` is retained and defaults to 0, with this
+measurement recorded where the default lives.
+
+**The honest reading:** the preregistration named a real failure mode and
+specified it in the wrong units, and the cost was three arms stopped early — which
+turned out not to matter, because every arm's best checkpoint was *earlier* than
+where the gate fired anyway.
+
+## Reproducing
+
+```bash
+python phase0_marginals.py --sections <#230 agg_sections> --targets <eval577>
+./skyrl/run_on_host.sh --host <user@host> --smoke
+./skyrl/run_on_host.sh --host <user@host> -- bash ~/exp237/skyrl/run_pipeline.sh
+python summarize_runs.py --logs ~/exp237_logs --out data/
+python build_results.py --eval ~/exp237_data/eval --out data/
+python compare_arms.py --arm <arm per-rollout parquet> --ref <#230 per-rollout parquet>
+python make_plots.py --steps data/training_steps.csv.gz --out plots/
+```
+
+![the diversity gates over training](plots/gates_over_training.png)
+
+![coverage against distance moved](plots/coverage_vs_kl.png)
