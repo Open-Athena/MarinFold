@@ -160,9 +160,83 @@ against a falling best-section F1. The model learned to commit — which is arm
 M-F's objective, obtained here as a side effect of shorter sections leaving room
 to terminate.
 
-## Arms M-F and M-B
+## Arm M-F — the model learns to commit, and it is worth +0.051
 
-_Running._
+**Stopped at step 42 of 72** on the same coverage kill criterion (union pairs to
+60 % of the warmup median). Terminal KL **0.0306**.
+
+### What it did during training
+
+Medians, first 13 batches against the last 5:
+
+| quantity | steps 1–13 | steps 38–42 | ratio |
+|---|---:|---:|---:|
+| **last-section F1** | 0.333 | **0.479** | **1.44×** |
+| best-section F1 | 0.475 | 0.497 | 1.05× |
+| **best − last gap** | **0.142** | **0.018** | 0.13× |
+| sections per rollout | 24.1 | **27.0** | 1.12× |
+| mean pairwise Jaccard | 0.170 | **0.065** | 0.38× |
+| rollouts emitting `<end>` | 0.52 | **1.00** | 1.94× |
+| per-contact precision | 0.403 | 0.491 | 1.22× |
+| contacts emitted / true contacts | 11.4 | 6.3 | 0.55× |
+| union pairs per rollout | 645 | 360 | 0.56× |
+
+The best-minus-last gap went from 0.142 to **0.018**. Best-section F1 barely
+moved: the model did not get better at *producing* a good candidate, it got
+better at **ending on one**. That is precisely what arm M-F was chartered to ask.
+
+### Evaluation — 577-unit universe, #230's scorer, unchanged
+
+R-precision (all), paired per protein against the #230 warm start, 10,000
+bootstrap resamples:
+
+| cut | mode | M-F step-36 | #230 | Δ | 95 % CI | win/loss |
+|---|---|---:|---:|---:|---|---|
+| legacy554 | **last** | **0.5075** | 0.4566 | **+0.0509** | [+0.0433, +0.0584] | 379/170 |
+| legacy554 | consensus | 0.5529 | 0.5673 | −0.0144 | [−0.0176, −0.0111] | 182/363 |
+| legacy554 | best *ORACLE* | 0.5189 | 0.5342 | −0.0154 | [−0.0199, −0.0110] | 196/355 |
+| legacy554 | second_last | 0.2649 | 0.4281 | −0.1631 | [−0.1784, −0.1479] | 78/467 |
+| **eval2-natural** | **last** | **0.2232** | 0.1696 | **+0.0535** | [+0.0379, +0.0690] | 63/15 |
+| eval2-natural | consensus | 0.2742 | 0.2889 | −0.0147 | [−0.0254, −0.0054] | 29/47 |
+| eval2 | last | 0.4419 | 0.3781 | +0.0637 | [+0.0530, +0.0750] | 219/84 |
+| eval2 | consensus | 0.4874 | 0.5029 | −0.0155 | [−0.0203, −0.0107] | 106/197 |
+
+Every one of these excludes zero. **Final-section R-precision beats #237's
+secondary criterion (> 0.4566) by 0.051** on the legacy 554 and by 0.054 on
+eval2-natural — a 32 % relative gain on the low-homology cut, winning on 63 of 78
+proteins. It closes **66 %** of the 0.078 selection headroom #230 identified, and
+M-F's own last is now within **0.011** of its own oracle best.
+
+`second_last` falling to 0.2649 is the same finding from the other side: the model
+now treats every non-final section as scratch and the final one as the answer.
+
+### And it is cheaper
+
+Measured on the eval generations themselves, per rollout:
+
+| | #230 step-1988 | M-F step-36 |
+|---|---:|---:|
+| generated tokens | 6,825 | **3,697** (0.54×) |
+| sections | 22.20 | **23.97** (1.08×) |
+| contacts emitted | 2,264 | 1,199 (0.53×) |
+| rollouts emitting `<end>` | 0.677 | **0.966** |
+
+**46 % fewer tokens, 8 % more candidates, and a final section 0.051 better.** The
+format did not collapse — sections went *up* — and the candidates became more
+complementary, not less (Jaccard −62 % in training).
+
+### The trade, stated plainly
+
+The vote lost 53 % of its mass and 44 % of its coverage, and consensus paid
+0.014 for it. Every individual candidate improved and the deployable
+single-candidate number gained 0.051. **Both arms bought the same thing with the
+same currency**: selectivity, priced in vote coverage.
+
+## Arm M-B
+
+_Re-running: its first attempt died 80 s after the previous stage's vLLM engines
+exited, on a teardown race that reports itself as "Engine core initialization
+failed"._
 
 ## Evaluation
 
