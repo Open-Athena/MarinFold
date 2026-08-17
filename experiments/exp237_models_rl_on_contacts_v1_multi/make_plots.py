@@ -28,6 +28,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from build_summary import save_plot_with_meta  # noqa: E402
+
 #: Preregistered kill criteria, drawn as horizontal lines.
 GATES = {
     "sections_per_rollout": (12.0, "kill below 12"),
@@ -42,6 +44,7 @@ PANELS = [
     ("mean_jaccard", "mean pairwise Jaccard between sections"),
     ("consensus_rprec", "within-rollout consensus R-precision (train)"),
 ]
+GATE_WINDOW = 6
 COLORS = {"M-C": "#1f77b4", "M-F": "#d62728", "M-B": "#2ca02c", "M-0": "#7f7f7f"}
 
 
@@ -60,15 +63,24 @@ def main() -> int:
             ax.set_visible(False)
             continue
         for arm, g in df.groupby("arm"):
-            g = g.dropna(subset=[col])
+            g = g.dropna(subset=[col]).sort_values("step")
             if g.empty:
                 continue
-            ax.plot(g["step"], g[col], label=arm, color=COLORS.get(arm),
-                    lw=2.0 if arm != "M-0" else 1.2,
+            # RAW, faint. Every arm draws the same 8 proteins in the same order
+            # at the same step, so these curves share their jaggedness: the
+            # batch-to-batch swing is the protein draw, and it is 2-4x larger
+            # than anything the reward does (see the M-0 control, which produced
+            # the same swing with a policy that did not change at all).
+            ax.plot(g["step"], g[col], color=COLORS.get(arm), lw=0.6, alpha=0.28)
+            # ROLLING MEDIAN, window 6 -- the quantity the kill criteria are
+            # evaluated on, and the only one in which the arms are separable.
+            ax.plot(g["step"], g[col].rolling(GATE_WINDOW, min_periods=3).median(),
+                    label=arm, color=COLORS.get(arm),
+                    lw=2.2 if arm != "M-0" else 1.4,
                     ls="--" if arm == "M-0" else "-")
         if col in EXP230:
             ax.axhline(EXP230[col], color="k", lw=0.8, ls=":",
-                       label="_#230 eval" if ax is not axes[0, 0] else "#230, at eval")
+                       label="#230, at eval" if ax is axes[0, 0] else "_nolegend_")
         if col in GATES:
             y, txt = GATES[col]
             ax.axhline(y, color="crimson", lw=1.0, ls="-.")
@@ -79,11 +91,20 @@ def main() -> int:
     for ax in axes[1]:
         ax.set_xlabel("training step")
     axes[0, 0].legend(fontsize=8, loc="best")
-    fig.suptitle("exp237 — the diversity gates, measured every batch\n"
-                 "dashed grey is the zero-LR control: whatever it does is the harness, "
-                 "not the reward", fontsize=11)
+    fig.suptitle("exp237 — the diversity gates, rolling median over 6 batches\n"
+                 "faint lines are raw batches: that swing is the protein draw, and the "
+                 "zero-LR control produced it with an unchanged policy", fontsize=11)
     fig.tight_layout()
-    fig.savefig(a.out / "gates_over_training.png", dpi=150)
+    save_plot_with_meta(
+        fig, a.out / "gates_over_training.png", dpi=150,
+        caption=(
+            "The three preregistered diversity gates, per training batch, rolling median "
+            "over 6 batches. Jaccard is the panel that separates the arms: M-B (best-section "
+            "reward) rises past #230's 0.304 -- it pays to emit your best guess repeatedly -- "
+            "while M-C and M-F fall, i.e. their sections became MORE complementary. All three "
+            "nonetheless hit the union-coverage floor and were stopped. Faint lines are raw "
+            "batches; that swing is the protein draw, and the zero-LR control reproduced it "
+            "with a policy that did not change."))
     print(f"wrote {a.out}/gates_over_training.png")
 
     if {"policy_kl", "union_pairs"} <= set(df.columns):
@@ -92,9 +113,14 @@ def main() -> int:
             g = g.dropna(subset=["policy_kl", "union_pairs"])
             if g.empty or g["union_pairs"].isna().all():
                 continue
-            base = g["union_pairs"].iloc[0]
-            ax.plot(g["policy_kl"], 100 * g["union_pairs"] / base, "o-", ms=3,
-                    label=arm, color=COLORS.get(arm), alpha=0.85)
+            g = g.sort_values("step")
+            med = g["union_pairs"].rolling(GATE_WINDOW, min_periods=3).median()
+            base = med.dropna().iloc[0] if med.notna().any() else g["union_pairs"].iloc[0]
+            # SCATTER, not a line. policy_kl is not monotone in the step index --
+            # it dips and recovers batch to batch -- so joining the points in step
+            # order draws a zigzag that reads as structure and is not.
+            ax.plot(g["policy_kl"], 100 * med / base, "o", ms=4,
+                    label=arm, color=COLORS.get(arm), alpha=0.75)
         ax.axhline(80, color="crimson", lw=1.0, ls="-.")
         ax.text(0.99, 80, "kill below 80 %", color="crimson", fontsize=7,
                 ha="right", va="bottom", transform=ax.get_yaxis_transform())
@@ -105,7 +131,16 @@ def main() -> int:
         ax.grid(alpha=0.25)
         ax.legend(fontsize=8)
         fig.tight_layout()
-        fig.savefig(a.out / "coverage_vs_kl.png", dpi=150)
+        save_plot_with_meta(
+            fig, a.out / "coverage_vs_kl.png", dpi=150,
+            caption=(
+                "Union coverage against distance moved. #208 fitted, and then refuted, a "
+                "model in which diversity loss depends only on how far the policy travels. "
+                "It does not hold here either: M-C crosses the 80% floor by KL 0.013, M-B "
+                "around 0.016, and M-F not until 0.036 -- so per unit of KL the three "
+                "rewards cost very different amounts of coverage. They differ in HOW they "
+                "lose it (volume for M-C and M-F, redundancy for M-B) and in how fast, but "
+                "not in WHETHER."))
         print(f"wrote {a.out}/coverage_vs_kl.png")
     return 0
 
