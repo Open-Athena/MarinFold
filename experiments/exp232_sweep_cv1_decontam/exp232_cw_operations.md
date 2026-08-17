@@ -69,7 +69,12 @@
   heartbeat updates unless the operator explicitly supplies or requests the post.
 - Abandoned trials: `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`, `m2-p01-aug`,
   `m2-p04-aug`, and `m2-p03-aug`. They are outside recovery and completion scope.
-  Four trials remain: `m1-p02-aug`, `m1-p06-aug`, `m2-p02-aug`, and `m2-p06-aug`.
+- Completed and checkpoint-verified: `m1-p06-aug` and `m1-p02-aug`. Never
+  redispatch them. Two trials remain in scope: `m2-p02-aug` and `m2-p06-aug`.
+- Both remaining trials are at the `n16` 128-GPU ceiling, the largest approved
+  node count. No further enlargement is possible, so the sweep can draw at most
+  256 GPUs regardless of visible free capacity, and GPUs freed by a completing
+  trial cannot be redistributed.
 - Keep deliberate free-node slack on `cw-us-east-02a`. Its 32 GPU nodes are shared
   with a production band that outranks batch, so filling all 32 forces an eviction
   of one of our gangs; that happened six times. Leaving at least 8 free nodes
@@ -129,6 +134,18 @@
 
 ## Change Record
 
+- 2026-08-17T18:33:11Z: `m1-p02-aug` completed, the second trial to finish. W&B
+  reported `finished` with `run_progress` 1.0 at `global_step` 145199, and its
+  final checkpoint verified reachable with `step-145199` holding 25 files and
+  16.44 GiB, `.executor_status` SUCCESS, the `hf` export present, and all ten
+  permanent checkpoints intact. Its Iris root and child both reported
+  `succeeded`, so no stop was required. Its 128 RNO H100 were released but could
+  not be redistributed because both remaining trials already sit at the `n16`
+  ceiling. Also corrected the remaining ETAs: estimates drawn from single
+  fifteen-minute progress deltas ran optimistic because an eval-free window
+  overstates the rate. Rates computed over multi-hour baselines are stable near
+  0.0235 to 0.0244 progress per hour, which moves `m2-p06` to roughly
+  08-18 06:10Z and `m2-p02`, the final finisher, to roughly 08-18 07:40Z.
 - 2026-08-17T10:10:19Z: The operator declared `m2-p03-aug` diverged and directed
   abandonment with compute rebalanced, and re-confirmed `m2-p04-aug` (already
   abandoned at 00:30Z, re-verified clean). Stopped and verified `m2-p03-aug`'s
