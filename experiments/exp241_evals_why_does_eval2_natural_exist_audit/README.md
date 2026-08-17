@@ -338,6 +338,39 @@ subset). Its per-protein eval2 rows live on CoreWeave S3, which is not reachable
 from the workstation, so re-cutting it to n=63 needs one in-cluster job — worth
 doing before any eval2-natural number is published for the current default.
 
+### 11. The 63 are 52 proteins — and the viral half is 16
+
+[`data/audited_set_pdb_ids.csv`](data/audited_set_pdb_ids.csv) resolves every one
+of the 78 to its RCSB entry, so the audited set can be pulled without this
+checkout. Doing that exposes a caveat the unit count hides: **CASP stems are
+*domains*, and several are cut from the same protein.**
+
+| | units | unique PDB entries | unique parent proteins |
+| --- | ---: | ---: | ---: |
+| audited natural | 63 | 53 | **52** |
+| ...viral | 27 | — | **16** |
+| ...non-viral | 36 | — | 36 |
+
+Three clusters do all the damage, and all three are viral:
+
+- **8 units** are domains of one 2,194-residue protein — `S0A2C3`, the
+  virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2
+  (PDB `6VR4`); CASP14 split it into `T1033/T1035/T1037/T1039/T1040/T1041/T1042/T1043-D1`.
+- **4 units** are domains of `A7XXD0`, the gp96 RNA polymerase of phage P2345
+  (`8H2N`): `T1125-D1/D2/D4/D5`.
+- **2 units** are `T1038-D1/D2`, both from `P36291`.
+
+The resolution is not an artifact — RCSB's sequence search returns `6VR4_1` at
+0.959–1.000 identity for all eight and the entry has exactly one polymer entity.
+It is a property of the eval set.
+
+**This weakens the viral statistic specifically.** "43 % of eval2-natural is
+viral" is 27 of 63 *units* but 16 of 52 *proteins* (31 %), and half the viral
+units come from two phage polymerases. §10's viral/non-viral comparison should be
+read as 16 vs 36 independent proteins, and a per-protein bootstrap would be
+wider than the per-unit one reported there. The non-viral half is unaffected —
+36 units, 36 proteins.
+
 ## Conclusion
 
 **eval2-natural exists because "our training corpus" is not "everything known" —

@@ -70,7 +70,13 @@ In-repo:
   **79 % de novo designed protein**, because designs are what survives a homology
   filter. A pooled number mostly reports how well a model folds idealised
   backbones. Split on v2's `designed_any`.
-- **Stratify eval2-natural by `is_viral`: 27 of the 63 are viral.** Both training
+- **eval2-natural is 63 units but 52 proteins.** CASP stems are *domains*: eight
+  are cut from one phage RNA polymerase (`S0A2C3`/`6VR4`), four from another
+  (`A7XXD0`/`8H2N`), two from `P36291`. Group on `parent_protein` in
+  `exp241/data/audited_set_pdb_ids.csv` before any per-protein bootstrap, and
+  never treat the 63 as independent draws.
+- **Stratify eval2-natural by `is_viral`: 27 of the 63 units are viral — but only
+  16 distinct proteins, since both domain clusters above are phage.** Both training
   corpora systematically miss viruses (viral eval proteins hit the AFDB arm 22 %
   of the time vs 88 % for bacteria), so viral proteins survive the filter at
   66 % vs 15 %. An unstratified eval2-natural headline is substantially a
