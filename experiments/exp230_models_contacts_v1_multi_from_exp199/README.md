@@ -200,12 +200,16 @@ Three interpreters, and they cannot be merged:
 
 ## Results
 
-**Status.** Decontamination, rollouts and corpus are **DONE**; the single-epoch
-fine-tune is **running** (step ~1,050 of 1,989, ~5.6 h left, zero errors). The
-evaluation tooling is built and tested but **has not been run**, so there is
-still **no accuracy claim** — nothing has been scored against the success
-criteria. Base-task *loss* is holding at every checkpoint (§ Stage 3), which is
-encouraging but is not the gate; R-precision is.
+**Status: COMPLETE.** Both gates pass. The fine-tune holds plain-mode
+R-precision (−0.0025 on the legacy 554, inside the −0.005 tolerance; **+0.0027**
+on eval2-natural) and switches modes cleanly (1.008 sections under plain against
+#163's 2.94). The checkpoint and the corpus are published.
+
+The one negative result, stated up front: **at matched sampling budget the multi
+format is not an accuracy win**. 22 independent plain rollouts, consensus-voted,
+read 0.5896 where one multi rollout's 22 sections read 0.5673. The format's value
+is that it carries many candidates inside a single sequence — which is what the
+RL hand-off needs — not that it predicts contacts better per unit of compute.
 
 ### Stage 0 — decontamination (DONE)
 
@@ -345,59 +349,211 @@ one gap that would have stopped this stage dead: the interpreter that has
 `marinfold` had **no `gcsfs`**, so the corpus build could not read its own input.
 It failed in under four seconds with an `ImportError` an output filter had hidden.
 
-### Stage 3 — the fine-tune (RUNNING)
+### Stage 3 — the fine-tune (DONE)
 
 `train_local.py` in-process on the 8x A100 node, warm-started from exp199.
 Single epoch, **1,989 steps**, run name
 `plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100`
 ([W&B](https://wandb.ai/timodonnell/MarinFold/runs/plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100)).
-21.5 s/it, ~11.9 h end to end.
+21.5 s/it, 11.9 h end to end, zero errors.
 
-Base-task retention, on exp53's canonical held-out split, unmasked:
+Base-task retention on exp53's canonical held-out split, unmasked — **monotonic
+at every checkpoint**:
 
-| step | contacts-v1 val loss |
-|---:|---:|
-| 250 | 2.9818 |
-| 500 | 2.9788 |
-| 750 | 2.9778 |
-| 1000 | **2.9764** |
+| step | 250 | 500 | 750 | 1000 | 1250 | 1500 | 1750 | 1988 |
+|---|---|---|---|---|---|---|---|---|
+| val loss | 2.9818 | 2.9788 | 2.9778 | 2.9764 | 2.9747 | 2.9731 | 2.9720 | **2.9714** |
 
-Monotonically improving. The failure mode #163 hit — four un-rehearsed weight
-profiles each losing ~44 % of the base task — is not happening at 15.6 %
-rehearsal weight. **This is the weak form of the evidence**: cross-harness
-per-token loss is not strictly comparable, and H1/H3 are decided by R-precision,
-not loss.
+#163's four un-rehearsed weight profiles each lost ~44 % of the base task. At
+15.6 % rehearsal weight that does not happen.
 
-### Stage 4 — evaluation (tooling built, nothing scored)
+**Published:**
+`checkpoints/plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100/hf/step-1988/` on the
+public bucket — 5.89 GB, tokenizer co-located, rope repaired for
+transformers-4.x, verified anonymously readable.
 
-Gate A, Gate B and the multi-mode report run from `run_gpu_node_eval.sh`, which
-scores the **base and the fine-tune concurrently, 4 GPUs each** — same machine,
-same driver, same wall clock, everything identical except the weights. #209 is
-why that matters: exp199 reads 0.6103 under exp82's worker against its published
-0.5873, and that 0.023 is the eval pipeline, not the accelerator.
+### Gate A — plain-mode accuracy is not lost (PASS)
 
-Building it turned up three defects, all in the measurement path:
+Base and fine-tune scored in **one run** by exp82's worker, 4 GPUs each, paired
+per protein. R-precision (all), 100 rollouts per protein:
 
-- **Gate B was measuring the leak with a clipped count.** `summarize_modes.py`
-  used `n_sections`, which the worker clips to `--max-sections` (8) when
-  decoding; a model emitting 20 plain sections would have reported 8. The
-  pass/fail verdict survived that, but the *number* would not have, and #163's
-  arm F is quoted at 2.94 for comparison — a figure that has to mean the same
-  thing on both sides. Now uses the uncapped `n_sections_raw`.
-- **The HF export carries the transformers-5 rope bug** — `rope_theta: None` with
-  `rope_parameters` only, the shape that silently costs 0.76 nats/token on a 4.x
-  reader and forced the #163 retraction. The live question was whether Gate A
-  itself was compromised, since a mis-loaded rope reads as a catastrophic false
-  regression. It is not: both configs resolve to **bit-identical `inv_freq`**
-  under the node's transformers 5.15. `publish_to_hf_bucket.py` repairs the
-  config before upload anyway, for older readers.
-- **`test_corpus.py` had been failing, not passing** — it called `build_multi`
-  with `kmax`/`n_cap`, removed by the power-law rewrite.
+| cut | n | base | fine-tune | Δ | 95 % CI | |
+|---|---:|---:|---:|---:|---|---|
+| legacy 554 | 554 | 0.6083 | 0.6058 | **−0.0025** | [−0.0053, +0.0001] | within tolerance |
+| eval2 | 307 | 0.5430 | 0.5403 | −0.0027 | [−0.0064, +0.0010] | |
+| **eval2-natural** | 78 | 0.3354 | **0.3381** | **+0.0027** | [−0.0033, +0.0088] | *lead with this* |
+| eval2 <30 % | 275 | 0.5406 | 0.5388 | −0.0018 | [−0.0058, +0.0022] | |
 
-21 tests now cover the corpus, the Gate A reducer, the publisher and the mode
-counters. The Gate A reducer carries exp89's metric **verbatim** rather than a
-re-implementation, because that is the difference between a number that joins
-#180's frontier table and one that merely resembles it.
+Long-range (criterion base − 0.010) is met everywhere; worst case −0.0051 on
+eval2 pooled.
+
+**The base reproduces its published reference**, which is what makes this
+trustworthy rather than merely self-consistent: 0.6083 / 0.5430 / 0.3354 measured
+against 0.611 / 0.545 / 0.337 published — all within 0.003, *including* the
+MIN_DEG ground-truth fix. Had that fix been wrong, the base would have missed its
+own number.
+
+**One nuance the mean hides.** The fine-tune wins on 198 proteins and loses on
+258 of the legacy 554. That direction is consistent enough to be significant
+under a sign test, even though the magnitude sits at #204's 0.0023 noise floor
+and inside the preregistered −0.005 tolerance. A small *consistent* cost, not
+noise — and it reverses on eval2-natural.
+
+### Gate B — the mode switch is clean (PASS)
+
+| | measured | bar | |
+|---|---:|---:|---|
+| mean sections, plain mode | **1.008** | ≤ 1.05 | PASS |
+| rollouts emitting exactly one set | **99.8 %** | ≥ 95 % | PASS |
+
+#163's arm F read **2.94** here. Counts are uncapped (`n_sections_raw`).
+
+### The leak-vs-steps curve
+
+![contact sets per rollout by mode](plots/leak_curve.png)
+
+| step | 0 (base) | 250 | 500 | 750 | 1000 | 1250 | 1500 | 1750 | 1988 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| plain, mean sets | 0.998 | 1.019 | 1.023 | 1.154 | 1.105 | 1.001 | **1.000** | **1.000** | 1.008 |
+| plain, % single | 99.3 | 98.4 | 99.0 | 96.3 | 96.5 | 99.9 | **100.0** | **100.0** | 99.8 |
+| multi, mean sets | — | 16.78 | 18.80 | 20.71 | 21.36 | 19.79 | 21.23 | 21.98 | **22.02** |
+| multi, finished | — | 0.92 | 0.77 | 0.51 | 0.54 | 0.78 | 0.56 | 0.60 | 0.65 |
+
+**H2 is answered, but not the way it was posed.** The prediction was that the
+leak closes somewhere between 405 and ~2,000 steps. In fact it **never opened**:
+plain mode sits at ~1.0 from step 250, peaks at 1.15 around step 750, and is
+exactly 1.000 at steps 1500 and 1750. #163's 2.94 is not on this curve's scale.
+So the leak was never a step-count problem at this rehearsal ratio — 50 % plain
+documents by count was enough on its own, and the extra optimization bought
+stability rather than the fix itself.
+
+Both curves are plotted together on purpose: plain falling to 1.0 *alone* is
+equally consistent with the model having **lost** the format, and multi staying
+high alone says nothing about the leak. Only the pair distinguishes a mode
+*switch* from a mode *collapse*.
+
+Note `finished` in multi mode is 0.51–0.65: about a third to a half of multi
+rollouts run to the context limit instead of emitting `<end>`. #163 reported
+~56 % finishing, so this is in family.
+
+### The five aggregation modes, and the budget-matched baseline
+
+The obvious comparison — Gate A's plain 0.6058 against the multi modes — is not
+budget-matched: Gate A votes **100 rollouts** where each multi number uses **one**
+rollout's ~22 sections. So plain was re-run at **22 rollouts** and the *same three
+aggregation rules* were applied to the 22 rollouts that were applied to the 22
+sections. Same model, same sampler, same metric; the only difference is whether
+the 22 candidate contact sets came from 22 independent rollouts or from one
+rollout.
+
+R-precision (all), legacy 554:
+
+| aggregation | plain, 22 rollouts | multi, 1 rollout (~22 sections) |
+|---|---:|---:|
+| single candidate | 0.4454 | 0.4566 *(`last`)* / 0.4284 *(`second_last`)* |
+| best — **ORACLE** | 0.5680 | 0.5342 |
+| consensus | **0.5896** | 0.5673 |
+| *(reference: plain, 100 rollouts)* | *0.6058* | — |
+
+| cut | plain single | plain best* | plain consensus | multi consensus | multi best* |
+|---|---:|---:|---:|---:|---:|
+| legacy 554 | 0.4454 | 0.5680 | **0.5896** | 0.5673 | 0.5342 |
+| eval2 | 0.3626 | 0.5107 | **0.5236** | 0.5029 | 0.4727 |
+| eval2-natural | 0.1718 | 0.3017 | **0.3130** | 0.2889 | 0.2600 |
+| eval2 <30 % | 0.3612 | 0.5127 | **0.5229** | 0.5024 | 0.4731 |
+
+\* ORACLE selects using ground truth — a ceiling, not a deployable result.
+
+Four things fall out, and one of them is a negative result:
+
+1. **At matched budget, independent rollouts beat one rollout's sections** —
+   consensus 0.5896 vs 0.5673, oracle-best 0.5680 vs 0.5342, on every cut. The
+   multi format is not an accuracy win over simply sampling more.
+2. **Consensus beats the ORACLE best single candidate**, in both regimes
+   (0.5896 > 0.5680; 0.5673 > 0.5342). Voting across candidates is better than
+   the best candidate *even with ground-truth selection* — they carry
+   complementary information rather than being noisy copies of one guess. This is
+   the finding that matters for best-of-N RL.
+3. **A multi rollout's last section beats a single plain rollout** (0.4566 vs
+   0.4454), and `last` > `second_last` (0.4284). The ordering is meaningful: the
+   model treats its final section as a commitment, which is what the training
+   format taught even though drafts were shown in random order.
+4. **The diversity gap is measurable directly.** The union of 22 independent
+   plain rollouts covers **1,065** distinct pairs; 22 sections of one multi
+   rollout cover **658**. Independent sampling explores ~62 % more of the space,
+   which is exactly why its consensus is better.
+
+### H3's preregistered risk materialized
+
+Mean pairwise Jaccard between a multi rollout's sections is **0.304**, against
+#163 arm F's **0.071** — 4.3x more similar, and just past exp200's 0.30
+diversity-collapse criterion. This was called in advance: exp199 is a stronger
+and therefore *more consistent* sampler, and best-of-N is paid for by spread.
+
+The spread that matters is nonetheless real and not subtle: best-section F1
+exceeds last-section F1 by **+0.0845 ± 0.0039**, over 20σ. Lower diversity than
+#163, still productive diversity — but finding 4 above says an RL loop that can
+afford independent rollouts should prefer them.
+
+### Parameters, in full
+
+**Protein pool and decontamination**
+
+| | |
+|---|---|
+| sources | AFDB `contacts_v1/train` (round-0 shards 1596–2066 only), ESM-Atlas `contacts_v1_esm_atlas/train`, PDB `contacts_v1_pdb_deduped_monomers` |
+| quality gates | AFDB/ESM `global_plddt >= 80`; PDB `resolution <= 9 Å` (NMR, which reports none, kept) |
+| shared filters | `seq_len <= 512`, `>= 5` contacts, not `truncated` |
+| decontamination | Tier A (#225): identity **>= 30 %** over >= 50 % query coverage, **or** E <= 1e-3 |
+| search | MMseqs2 `-s 7.5`, report ceiling E <= 10, against #226's **776** eval queries |
+| drop rates | afdb 2.64 %, esm_atlas 1.96 %, pdb 5.41 % |
+
+**Rollout generation** (`run_gpu_node_gen.sh`)
+
+| | |
+|---|---|
+| model | exp199 `step-145199` |
+| rollouts per protein | **32** |
+| sampler | `T=1.0`, `top_p=0.95`, **`top_k=-1` (disabled)**, budget `6L+128` |
+| engine | vLLM, **one engine per GPU**, `tensor_parallel_size=1`, `gpu_memory_utilization=0.90`, `max_num_seqs=512`, chunk 16 |
+| total | 8,319,968 rollouts; precision 0.4095 / recall 0.4142 / F1 0.4090 |
+
+**Corpus** (`build_corpus.py`)
+
+| | |
+|---|---|
+| seed | 230 |
+| documents per protein | **1** |
+| halves | 259,999 multi + 259,999 plain, **disjoint proteins**, arm-stratified |
+| section-size law | truncated power law `P(n) ∝ n^-α` on `{1..m}`, **α = 0.5**, no cap |
+| section count K | **packed**, not drawn — slots added until rollouts or context run out |
+| context | 8,192 |
+| tokenizer | id 7 renamed in place, vocab **2,845**, no resize |
+| loss weights | **profile F**: header 0.1 / each draft 1.0 / final 1.0; plain documents uniform 1.0; `<eos>` slot 0 |
+
+**Training** (`train_local.py`)
+
+| | |
+|---|---|
+| init | exp199, weights only (fresh optimizer, fresh schedule, step 0) |
+| lr | **1e-4** cosine → `min_lr_ratio` 0.1, warmup 10 % |
+| optimizer | AdamW, wd **0.2** |
+| batch | **128 × 8,192**, `per_device_parallelism=-1`, **no microbatching** (levanter renormalises loss weights per microbatch) |
+| schedule | **1 epoch = 1,989 steps**; levanter checkpoint every 29, HF export every 250 |
+| hardware | 8 × A100-80GB, 21.5 s/it, 11.9 h |
+
+**Evaluation**
+
+| | |
+|---|---|
+| targets | **577-unit universe** = exp89's 554 + exp226's 23; `MIN_SEP 6`, **`MIN_DEG 0.001`** |
+| cuts | legacy554 (554), eval2 (307), **eval2-natural (78)**, eval2 <30 % (275) |
+| Gate A | exp82's `score_rollout_worker.py` **verbatim**, 100 rollouts, `T=1.0 top_p=0.95 top_k=-1`, `--no-per-request-seed`, `gpu_frac 0.90`; base + fine-tune concurrent, 4 GPUs each |
+| metric | exp89's `compute_metrics` **imported, not copied**; R at `cut = n_true` |
+| Gate B / curve | `eval_modes_worker.py`, 4 rollouts, `max_sections 16`, seeded 200-protein subset identical across checkpoints |
+| aggregation modes | `eval_agg_worker.py --mode multi`, 8 rollouts, full context |
+| budget-matched plain | `eval_agg_worker.py --mode plain`, **22 rollouts**, budget `6L+128` |
+| CI | paired per-protein bootstrap, 10,000 resamples, seed 230 |
 
 ### Hardware notes
 
@@ -427,4 +583,48 @@ deleting during training risks clobbering an in-flight write.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**The format ports to exp199 at essentially no cost to the base task, and the
+mode marker is a clean switch.** Gate A: −0.0025 R-precision on the legacy 554
+(inside the preregistered −0.005), **+0.0027** on eval2-natural. Gate B: 1.008
+sections under the plain sentinel, 99.8 % single-set, against #163 arm F's 2.94.
+The checkpoint is published and ready for #200/#208.
+
+**H1 confirmed.** Arm F's weight profile plus a 50 % plain-rehearsal mix
+reproduces from a much stronger base, exactly as the mechanism predicted.
+
+**H2 answered, but the premise was wrong.** The leak was framed as an
+under-training artifact that more steps would close. It never opened: plain mode
+sits at ~1.0 sections from step 250 and is exactly 1.000 at steps 1500/1750. At
+this rehearsal ratio the 50 % plain mix was sufficient on its own; the extra
+optimization bought stability, not the fix. A future run could likely spend far
+fewer than 1,989 steps.
+
+**H3's risk materialized, and it has a consequence.** Jaccard 0.304 vs #163's
+0.071 — a stronger sampler is a more consistent one, as preregistered. The
+concrete cost shows up in the budget-matched comparison: **22 independent plain
+rollouts beat one multi rollout's 22 sections** under every aggregation rule
+(consensus 0.5896 vs 0.5673). The union of 22 independent rollouts covers 1,065
+distinct pairs against 658 for one rollout's sections — ~62 % more of the space.
+
+**H4 is not answered here.** PDB is 5.2 % of each half, which is the whole
+eligible experimental pool after decontamination, and nothing in this run
+isolates its contribution. It would need an ablation.
+
+**What this means for the RL hand-off (#200/#208).** Two results point in
+opposite directions and both matter:
+
+* **Consensus beats the ORACLE best single candidate** in both regimes. Candidate
+  sets carry complementary information rather than being noisy copies, so a
+  reward that can exploit *combinations* has more to work with than best-of-N
+  over individual candidates.
+* **Independent rollouts are more diverse than one rollout's sections.** If the
+  RL loop can afford N independent rollouts, it should prefer them to N sections
+  of one. The multi format's advantage is that it puts many candidates inside a
+  *single sequence* — which is what makes in-context refinement expressible at
+  all — not that its candidates are better.
+
+**Open, in order of value:** an ablation isolating the PDB component (H4); a
+shorter run to find where the mode switch actually becomes clean (the curve says
+well before 1,989 steps); and whether the diversity gap can be widened at
+generation time (temperature or an explicit diversity term) without giving back
+the accuracy.

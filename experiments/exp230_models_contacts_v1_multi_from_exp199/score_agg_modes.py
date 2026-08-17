@@ -44,6 +44,10 @@ import pyarrow.parquet as pq
 from score_gate_a import metrics_for      # the SAME metric Gate A reports
 
 MODES = ("consensus", "best", "last", "second_last")
+#: The budget-matched plain baseline. `last`/`second_last` have no meaning
+#: across INDEPENDENT rollouts -- there is no ordering to be last in -- so the
+#: grouped path reports only the three rules that do.
+PLAIN_MODES = ("single", "best", "consensus")
 
 
 def load_sections(root: str) -> dict:
@@ -111,6 +115,10 @@ def main() -> int:
     ap.add_argument("--targets", required=True)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--label", default="finetune")
+    ap.add_argument("--group-rollouts", action="store_true",
+                    help="plain baseline: pool each protein's ROLLOUTS into one "
+                         "candidate list, so N independent rollouts are aggregated "
+                         "exactly as N sections of one multi rollout are")
     a = ap.parse_args()
 
     tgt = {(r["dataset"], r["stem"]): r for r in pq.read_table(a.targets).to_pylist()}
@@ -124,6 +132,40 @@ def main() -> int:
             continue
         L = int(rec["L"])
         gt = {(int(i), int(j)) for i, j in rec["gt_contacts"]}
+
+        if a.group_rollouts:
+            # Each plain rollout contributes exactly one contact set; pool them
+            # so the SAME rules that combined 22 sections now combine 22 rollouts.
+            cands = [secs[0] for secs in rolls.values() if secs]
+            if not cands:
+                continue
+            common = dict(dataset=key[0], stem=key[1], n_sections=len(cands),
+                          n_gt=len(gt), in_legacy554=bool(rec["in_legacy554"]),
+                          in_eval2=bool(rec["in_eval2"]),
+                          designed_any=bool(rec["designed_any"]),
+                          passes_30=bool(rec["passes_30"]))
+            # `single` is the mean over the individual candidates, NOT one of
+            # them: quoting a single arbitrary rollout would carry the sampling
+            # noise of that draw into the comparison.
+            for ci, c in enumerate(cands):
+                M = np.zeros((L, L), np.float32)
+                for i, j in c:
+                    if 0 <= i < L and 0 <= j < L:
+                        M[i, j] = M[j, i] = 1.0
+                m = metrics_for(M.astype(np.float16), gt, L)
+                rows.append(dict(r=ci, mode="single", n_pred=len(c),
+                                 r_prec=m.get("all:R", float("nan")),
+                                 r_prec_long=m.get("long:R", float("nan")),
+                                 prec_L=m.get("all:L", float("nan")), **common))
+            for mode in ("best", "consensus"):
+                M, n_pred = score_matrix(mode, cands, gt, L)
+                m = metrics_for(M.astype(np.float16), gt, L)
+                rows.append(dict(r=0, mode=mode, n_pred=n_pred,
+                                 r_prec=m.get("all:R", float("nan")),
+                                 r_prec_long=m.get("long:R", float("nan")),
+                                 prec_L=m.get("all:L", float("nan")), **common))
+            continue
+
         for r, secs in rolls.items():
             for mode in MODES:
                 if mode == "second_last" and len(secs) < 2:
@@ -162,8 +204,9 @@ def main() -> int:
     report = {}
     print(f"\n{'cut':<15}{'mode':<14}{'n_prot':>7}{'R-prec':>9}{'long':>9}"
           f"{'n_pred':>8}{'n_gt':>7}{'sections':>10}")
+    modes = PLAIN_MODES if a.group_rollouts else MODES
     for cut, mask in CUTS.items():
-        for mode in MODES:
+        for mode in modes:
             d = df[mask & (df["mode"] == mode)]
             if d.empty:
                 continue

@@ -1,6 +1,12 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
-"""Generate `<contacts-v1.multi>` rollouts and emit **one row per section**.
+"""Generate rollouts and emit **one row per contact set**, for both modes.
+
+With ``--mode multi`` a single rollout yields many sections and the aggregation
+rules combine *sections within one rollout*.  With ``--mode plain`` each rollout
+yields exactly one section, so the same rules combine *rollouts*.  That is what
+makes the two budget-matched: ~22 sections from one multi rollout against ~22
+plain rollouts, aggregated identically.
 
 The five aggregation modes (#230 follow-up) all read the same generations:
 
@@ -53,6 +59,7 @@ def main() -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--targets", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--mode", choices=["plain", "multi"], default="multi")
     ap.add_argument("--shard", required=True, help="i/N")
     ap.add_argument("--n-rollouts", type=int, default=8)
     # Generous on purpose: these modes need the model's NATURAL section count.
@@ -79,7 +86,8 @@ def main() -> int:
     mine = [r for k, r in enumerate(targets) if k % num_shards == shard_i]
     if a.limit:
         mine = mine[: a.limit]
-    print(f"[agg] shard {shard_i}/{num_shards}: {len(mine)} proteins", flush=True)
+    print(f"[agg] mode={a.mode} shard {shard_i}/{num_shards}: {len(mine)} proteins",
+          flush=True)
 
     model_dir = stage_model(a.model, Path("/tmp/exp230_agg_model"))
     llm = LLM(model=model_dir, max_model_len=a.max_model_len,
@@ -87,12 +95,14 @@ def main() -> int:
               max_num_seqs=a.max_num_seqs, trust_remote_code=False)
     tok = llm.get_tokenizer()
     end_id = tok.convert_tokens_to_ids(END)
-    mode_id = tok.convert_tokens_to_ids(MULTI_TOKEN)
+    mode_token = PLAIN_TOKEN if a.mode == "plain" else MULTI_TOKEN
+    mode_id = tok.convert_tokens_to_ids(mode_token)
     unk = getattr(tok, "unk_token_id", None)
     if mode_id is None or mode_id < 0 or (unk is not None and mode_id == unk):
-        raise SystemExit(f"tokenizer does not know {MULTI_TOKEN!r} -- the RENAMED "
+        raise SystemExit(f"tokenizer does not know {mode_token!r} -- the RENAMED "
                          "tokenizer (id 7) must ship with these weights")
-    print(f"[agg] {MULTI_TOKEN} id={mode_id} <end> id={end_id} vocab={len(tok)}", flush=True)
+    print(f"[agg] mode={a.mode} {mode_token} id={mode_id} <end> id={end_id} "
+          f"vocab={len(tok)}", flush=True)
 
     fs = fs_for(a.out)
     out_dir = a.out.rstrip("/")
@@ -124,15 +134,19 @@ def main() -> int:
             doc = built.document
             head = doc[: doc.index(BEGIN) + len(BEGIN)]
             assert head.startswith(PLAIN_TOKEN)
-            prompts.append(MULTI_TOKEN + head[len(PLAIN_TOKEN):])
+            prompts.append(mode_token + head[len(PLAIN_TOKEN):])
             nterms.append(built.n_term_index)
         if not prompts:
             continue
 
         plen = len(tok(prompts[0], add_special_tokens=False).input_ids)
+        # plain gets exp82's 6L+128 budget -- the settled recipe, and the budget
+        # every published plain number was produced under. multi gets the whole
+        # context, because its section count is the thing being measured.
+        budget = (6 * L + 128) if a.mode == "plain" else (a.max_model_len - plen)
         params = SamplingParams(
             temperature=a.temperature, top_p=a.top_p, top_k=a.top_k,
-            max_tokens=max(16, a.max_model_len - plen), n=1,
+            max_tokens=max(16, min(budget, a.max_model_len - plen)), n=1,
             stop_token_ids=[end_id], skip_special_tokens=False,
         )
         outs = llm.generate(prompts, params, use_tqdm=False)
