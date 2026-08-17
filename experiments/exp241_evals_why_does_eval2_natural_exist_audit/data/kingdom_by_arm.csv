@@ -1,0 +1,8 @@
+kingdom,n,n_afdb_hit,n_esm_atlas_hit,share_esm_atlas_hit,n_in_eval2,share_in_eval2
+archaea,8,6,6,0.7500,2,0.2500
+bacteria,227,199,191,0.8414,33,0.1454
+eukaryote,114,98,90,0.7895,15,0.1316
+synthetic,354,131,159,0.4492,222,0.6271
+unclassified,14,7,7,0.5000,7,0.5000
+unknown,18,17,18,1.0000,1,0.0556
+virus,41,9,17,0.4146,27,0.6585

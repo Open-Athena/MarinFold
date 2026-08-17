@@ -1,0 +1,5 @@
+# API response caches: large, regenerable, and re-fetched by --offline runs.
+# The derived tables in data/*.csv are what this experiment publishes.
+data/rcsb_cache.json
+data/reachability_cache.json
+data/base_rate_cache.json

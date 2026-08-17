@@ -1,0 +1,5 @@
+{
+  "script": "plot_mechanisms.py",
+  "args": [],
+  "caption": "The 63 audited-natural eval2 proteins: how many are in UniProt, how many AlphaFold folded, and how many our AFDB training arm contains. Right: the year UniProt first published each sequence."
+}

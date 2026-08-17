@@ -1,0 +1,6 @@
+dataset,n,selection,n_no_significant_homolog,median_length
+cameo_hard,24,novelty-curated,20,151
+casp_fm,19,novelty-curated,19,148
+foldbench100,12,recent PDB,6,168
+foldbench_rest,23,recent PDB,8,208
+TOTAL,78,,53,170
