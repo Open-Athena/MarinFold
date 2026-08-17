@@ -101,6 +101,11 @@
   checkpoint. After roughly three rapid preemptions with short runtimes, a fresh
   unique same-target submission may be used earlier because repeated Kueue gating
   can attach to the workload rather than the target.
+- Treat a W&B heartbeat older than roughly 60 seconds as a prompt to check that
+  trial's exact Iris root in the same pass. A fresh progress high-water in the
+  same window does not clear it, because the last logged progress can precede
+  the crash. The Iris check is cheap and the alternative is losing a full
+  heartbeat interval on a run that gates completion.
 - Observe the whole W&B fleet before classifying a failure. Retry an isolated
   failure after stopping its exact root; pause replacements and investigate when
   failures recur or correlate across independent trials or targets.
@@ -134,6 +139,20 @@
 
 ## Change Record
 
+- 2026-08-17T23:14:12Z: `m2-p02-aug`, the sweep's final finisher, failed in
+  isolation and was replaced. Iris reported `failures=1`, `preemptions=0`, task
+  exit 1 after 12h59m, surfacing a nanobind crash through marin's `StepRunner`.
+  That is the failure signature rather than the preemption signature, so
+  preserving the gang would have been wrong; it is also a distinct mode from the
+  exit-139 SIGSEGV family, whose tally stays at six. `m2-p06-aug` was healthy on
+  RNO throughout, confirming the failure was not correlated. The exact root was
+  stopped, root and child verified terminal, and same-target attempt `a12` was
+  submitted at `n16` from the shared checkpoint; it admitted within 30 seconds.
+  Taking 16 of east's 32 nodes preserves the free-node slack rule.
+  Detection lag: the crash occurred at 22:41:51Z but was caught at 23:14Z. At the
+  22:43Z pass the W&B heartbeat was 82 seconds old and was recorded as ordinary
+  logging cadence, which was defensible because progress had just advanced, but
+  it cost one heartbeat interval on the critical path. New rule below.
 - 2026-08-17T18:33:11Z: `m1-p02-aug` completed, the second trial to finish. W&B
   reported `finished` with `run_progress` 1.0 at `global_step` 145199, and its
   final checkpoint verified reachable with `step-145199` holding 25 files and
