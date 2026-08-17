@@ -104,7 +104,10 @@ _MAX_RETRIES = 8
 _BASE_BACKOFF = 5.0
 
 TARGET_CLUSTER = "cw-us-east-02a"
-DEFAULT_IRIS = "/home/bizon/git/marin/.venv/bin/iris"
+# NOT /home/bizon/git/marin — that checkout is months old, so the controller's
+# 14-day client-freshness gate rejects it, and its CLI predates
+# `--target-cluster` entirely.
+DEFAULT_IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
 
 
 def log(message: str) -> None:
@@ -345,7 +348,11 @@ def submit(iris_bin: str, dry_run: bool) -> int:
         secrets = {hf_token(), base64.b64encode(payload).decode()}
         log("DRY RUN " + " ".join("<redacted>" if a in secrets else a for a in argv))
         return 0
-    subprocess.run(argv, cwd=HERE, check=True)
+    # Not check=True: CalledProcessError puts the whole argv — token included —
+    # into a traceback that ends up in logs and pasted terminal output.
+    if subprocess.run(argv, cwd=HERE).returncode != 0:
+        raise SystemExit("iris job run failed; rerun with --dry-run to see the "
+                         "(redacted) command line")
     log(f"submitted; logs: {iris_bin} --cluster=marin job logs "
         f"/bizon/exp238-publish-cooldown-step{STEP}")
     return 0
