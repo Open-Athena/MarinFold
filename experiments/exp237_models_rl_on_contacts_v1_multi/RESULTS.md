@@ -30,7 +30,7 @@ Measured offline on #230's own generations — 577 proteins × 8 multi rollouts 
 |---|---:|---|
 | rollouts with a non-degenerate marginal spread | **92.4 %** | **Gate 1.** Below ~50 % and M-C trains mostly on zeros |
 | ρ(section marginal, section F1) | **0.337** | **Gate 2.** Near 1.0 and M-C is M-B with extra steps |
-| individual section marginals that are exactly 0 | 45.2 % | the honest cost: within a rollout about half the sections change no vote |
+| individual section marginals that are exactly 0 | 45.2 % per rollout, **54.9 % pooled** | the honest cost: more than half of all sections change no vote |
 | ρ(marginal, section novelty) | −0.087 | it is not novelty either |
 | ρ(marginal, section size) | 0.045 | and it is not rewarding volume |
 | pooled sd of section marginals | 0.0119 | the scale the unit normalisation removes |
@@ -135,6 +135,35 @@ eval2-natural (78 proteins, the honest low-homology readout):
 | **M-B step-36** | **0.3040** | 0.2329 |
 | M-F step-36 | 0.2742 | 0.2232 |
 
+### Every checkpoint, paired against the warm start
+
+**legacy 554** — Δ against the #230 warm start, paired per protein:
+
+| checkpoint | consensus | best *ORACLE* | last | second_last |
+|---|---|---|---|---|
+| M-C step-18 | +0.0077 \*<br><sub>327/213</sub> | +0.0235 \*<br><sub>425/120</sub> | +0.0701 \*<br><sub>480/69</sub> | +0.0511 \*<br><sub>486/61</sub> |
+| M-B step-36 | +0.0068 \*<br><sub>301/246</sub> | +0.0232 \*<br><sub>409/142</sub> | +0.0341 \*<br><sub>389/161</sub> | +0.0652 \*<br><sub>464/82</sub> |
+| M-F step-36 | -0.0144 \*<br><sub>182/363</sub> | -0.0154 \*<br><sub>196/355</sub> | +0.0509 \*<br><sub>379/170</sub> | -0.1631 \*<br><sub>78/467</sub> |
+| M-F step-18 | -0.0026 \*<br><sub>231/306</sub> | -0.0059 \*<br><sub>238/308</sub> | +0.0383 \*<br><sub>378/165</sub> | -0.0817 \*<br><sub>114/432</sub> |
+| M-B step-80 | -0.1704 \*<br><sub>49/503</sub> | -0.1903 \*<br><sub>39/514</sub> | -0.2661 \*<br><sub>76/474</sub> | -0.1797 \*<br><sub>85/460</sub> |
+| M-0 step-8 (lr 0) | +0.0006<br><sub>260/259</sub> | +0.0021 \*<br><sub>297/225</sub> | +0.0028<br><sub>273/260</sub> | +0.0016<br><sub>272/257</sub> |
+
+**eval2-natural (78)** — Δ against the #230 warm start, paired per protein:
+
+| checkpoint | consensus | best *ORACLE* | last | second_last |
+|---|---|---|---|---|
+| M-C step-18 | +0.0109 \*<br><sub>49/27</sub> | +0.0273 \*<br><sub>64/12</sub> | +0.0725 \*<br><sub>71/7</sub> | +0.0355 \*<br><sub>70/8</sub> |
+| M-B step-36 | +0.0151 \*<br><sub>56/22</sub> | +0.0319 \*<br><sub>62/15</sub> | +0.0633 \*<br><sub>65/13</sub> | +0.0493 \*<br><sub>69/9</sub> |
+| M-F step-36 | -0.0147 \*<br><sub>29/47</sub> | -0.0156 \*<br><sub>28/50</sub> | +0.0535 \*<br><sub>63/15</sub> | -0.0375 \*<br><sub>21/56</sub> |
+| M-F step-18 | -0.0035<br><sub>27/45</sub> | -0.0063<br><sub>32/45</sub> | +0.0263 \*<br><sub>52/23</sub> | -0.0255 \*<br><sub>23/55</sub> |
+| M-B step-80 | -0.0664 \*<br><sub>12/65</sub> | -0.0716 \*<br><sub>9/69</sub> | -0.0767 \*<br><sub>26/51</sub> | -0.0403 \*<br><sub>15/61</sub> |
+| M-0 step-8 (lr 0) | +0.0002<br><sub>41/32</sub> | +0.0026<br><sub>46/29</sub> | +0.0046<br><sub>40/34</sub> | +0.0010<br><sub>40/34</sub> |
+
+\* the 95 % paired bootstrap CI excludes zero (10,000 resamples, seed 237).
+Cell subscript is wins/losses over proteins. **M-0's consensus CI includes zero
+and its record is 260/259** — the harness is a coin flip against its own input,
+which is what makes every other row readable.
+
 ### Four things this says
 
 **1. The primary criterion is not met.** Nothing beats 0.5896, the budget-matched
@@ -205,33 +234,48 @@ because **total volume collapsed by half**. #208's two failure modes were arm S
 reached from the opposite direction — and the pair `union pairs` / `votes per
 pair`, which #237 mandates reporting, is the only thing that distinguishes them.
 
-### Why volume collapsed, when `E[A] = 0` holds exactly
+### Why volume collapsed — a proposed mechanism, and its refutation
 
-This is the finding worth carrying forward, and Phase 0 had already measured the
-cause without knowing it:
+`A_k = (m_k − mean_g) / std_g` centres the **mean**, not the median, and Phase 0
+had already measured a reason that might matter: **55 % of sections change no
+vote at all**, so their marginal is exactly zero. The group mean marginal is
+positive on 68 % of proteins, so those sections get pushed down. Measured on
+#230's own generations, group-centred exactly as the reward does it:
 
-> **45.2 % of section marginals are exactly zero.**
+| section | share | mean advantage |
+|---|---:|---:|
+| changes no vote (`m_k = 0`) | **54.9 %** | **−0.062** |
+| changes the vote | 45.1 % | +0.075 |
 
-`A_k = (m_k − mean_g) / std_g` centres the **mean**. It says nothing about the
-**median**. With a 45 % atom at exactly zero and the remaining mass skewed
-positive, `mean_g > 0`, so *every one of those 45 % of sections receives a
-negative advantage* — as does every section below the mean among the rest. The
-majority of `<begin_statements>` markers and the majority of contact tokens in a
-batch are therefore being pushed down, while a minority are pushed up hard enough
-to keep the average at zero. Gradient ascent on that shape shrinks what is
-emitted, and it does so **without violating the invariant** the reward was
-designed around.
+![the shape of arm M-C's reward](plots/reward_shape.png)
 
-So #208's reward-design rule needs a clause:
+That is a small, consistent downward push on the majority of sections, while
+`E[A] = 0` holds exactly. It is a tidy story, and **it is not the explanation.**
 
-> `E[r] = p − p̄` is necessary and **not sufficient**. A centred reward with an
-> atom at zero holding most of its mass is a shrinking operator on whatever the
-> atom is attached to, because the policy gradient follows the median as much as
-> the mean.
+**Arm M-F's reward has no atom at zero** — it is the F1 of one section, a
+continuous scalar — and it collapsed volume by the *same* factor: total votes
+0.51× against M-C's 0.52×, contacts-per-ground-truth 0.56× against 0.57×. A
+mechanism that only M-C has cannot explain a collapse that both show.
 
-That is checkable on paper, from a histogram, before a run — the same class of
-five-line calculation #208 says would have saved it three training runs, applied
-to a distribution's shape rather than to its mean.
+**What M-C and M-F share, and M-B does not, is that they price a section's own
+quality.** Under either, a marginal contact that lowers the section's precision
+is net-negative, so the cheapest way to raise the reward is to emit fewer and
+better contacts — #208's first-order sharpening argument, restated at the section
+level. M-B prices only the **maximum** over sections, so a bad contact in a
+non-best section costs exactly nothing; M-B duly held its volume (0.97×) and paid
+in diversity instead (votes/pair 1.73×).
+
+So the clause to add to #208's reward-design rule is not about atoms:
+
+> `E[r] = p − p̄` is necessary and not sufficient. What decides whether a centred
+> reward shrinks the policy is **whether it prices quality per candidate**. A
+> reward on each candidate's own quality is a selectivity pressure however it is
+> centred; a reward on the best candidate is not, and pays in redundancy instead.
+
+The 55 % atom is still worth knowing — it is why 7.6 % of rollouts contribute no
+gradient at all, and it argues for a rank-transformed marginal — but it is a
+second-order effect, and this experiment can say so because it ran an arm without
+it.
 
 ### The one thing that improved
 

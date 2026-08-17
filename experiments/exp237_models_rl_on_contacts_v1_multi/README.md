@@ -223,6 +223,40 @@ oracle; oracle-best > 0.5342 (M-B); AUC ≥ the #230 checkpoint's on every arm.
 **Kill criteria.** The three diversity gates above; Gate A regression worse than
 −0.005; Gate B failure; terminal KL > 1.0.
 
+## Parameters, in full
+
+**Warm start and data**
+
+| | |
+|---|---|
+| checkpoint | `hf://buckets/open-athena/MarinFold/checkpoints/plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100/hf/step-1988` |
+| prepared as | bf16 (2.94 GB), top-level `rope_theta` 500000 + `rope_scaling` restored beside `rope_parameters`, pass-through chat template baked into the tokenizer and asserted token-identical |
+| verified | vocab 2,845; token id 7 = `<contacts-v1.multi>`; per-contact precision 0.4136 in SkyRL's vLLM against #230's 0.4095 over 8.3 M rollouts |
+| training prompts | #208's `skyrl_train_10k.parquet` — 10,000 AFDB proteins, one realization each, L median 159 / max 512 — with token 0 swapped to `<contacts-v1.multi>` and **nothing else changed** |
+
+**RL**
+
+| | |
+|---|---|
+| framework | SkyRL, `trainer.strategy=fsdp`, vLLM 0.23 / transformers 5.8 / torch 2.11 |
+| placement | **unsharded policy**: `policy_num_gpus_per_node=1`, `ref_num_gpus_per_node=1`, `colocate_all=false`, **6 inference engines** at `tensor_parallel_size=1` |
+| group / batch | `n_samples_per_prompt=8`, `train_batch_size=8` prompts → **64 rollouts/step**; `micro_train_batch_size_per_gpu=1` |
+| sampler | T 1.0, top-p 0.95, top-k −1, `max_generate_length=7000`, `max_prompt_length=2048`, ctx 8,192 |
+| optimizer | AdamW **lr 1e-5** constant-with-warmup, wd 0.01, `max_grad_norm` 1.0, `kl_loss_coef` 0.001 (k3), `loss_reduction=token_mean` |
+| estimator | `contacts_section` (M-C, M-0) / `grpo` (M-F, M-B) |
+| cost | ~103 s/step; 26–80 steps per arm on 8 × A100-80GB |
+
+**Evaluation**
+
+| | |
+|---|---|
+| targets | the **577-unit universe** (#89's 554 + #226's 23), `eval577_targets.parquet`, both of #89's filters (`MIN_SEP 6` **and** `MIN_DEG 0.001`) |
+| generation | #230's `eval_agg_worker.py --mode multi`, **8 rollouts/protein**, full context, T 1.0 / top-p 0.95 / top-k −1, 8 GPUs |
+| scoring | #230's `score_agg_modes.py`, which calls exp89's `compute_metrics` via `score_gate_a.metrics_for` — **imported, not re-derived** |
+| cuts | legacy554 (554), eval2 (307), **eval2-natural (78)**, eval2 <30 % (275) |
+| significance | paired per-protein bootstrap, 10,000 resamples, seed 237 (`compare_arms.py`) |
+| validation | the pipeline reproduces #230's published table exactly (0.5673 / 0.5342 / 0.4566 / 0.4284), and the lr-0 control returns within ±0.003 |
+
 ## Run book
 
 ```bash
@@ -302,13 +336,18 @@ by reward shape, on one model and one data order.
 **Two things for the next reward design, both cheap and both learned the
 expensive way:**
 
-1. **`E[r] = p − p̄` is necessary and not sufficient.** M-C's advantage is centred
-   so that `E[A] = 0` holds *exactly* per prompt — and the policy still shrank,
-   because 45 % of section marginals are an atom at exactly zero and the rest are
-   skewed positive, so the *median* section carries a negative advantage while the
-   mean is zero. A centred reward whose mass sits at an atom below its mean is a
-   shrinking operator. Checkable from a histogram, before the run — Phase 0 had
-   already measured the 45 % without anyone noticing what it implied.
+1. **`E[r] = p − p̄` is necessary and not sufficient, and the reason is not what
+   it first looked like.** M-C's advantage is centred so `E[A] = 0` holds
+   *exactly* per prompt, and the policy still halved its output. The tempting
+   explanation — 55 % of section marginals are an atom at exactly zero, and those
+   sections average −0.062 after centring — **is refuted by M-F**, whose reward is
+   a continuous scalar with no atom and which collapsed volume by the same factor
+   (0.51× against 0.52×). What M-C and M-F share, and M-B does not, is that they
+   **price each candidate's own quality**, which is a selectivity pressure however
+   the reward is centred. M-B prices only the *best* candidate, so a bad contact
+   elsewhere costs nothing — and M-B held its volume (0.97×) and paid in
+   redundancy instead (votes/pair 1.73×). The rule to carry: ask whether a reward
+   prices quality *per candidate*, not just whether it is centred.
 2. **Gate on `union/R`, not on union relative to the run's own start** — and gate
    on precision too. The preregistered coverage criterion stopped all three arms;
    union/R never left 2.8–4.6 in any of them, including the one that collapsed to
@@ -321,9 +360,12 @@ expensive way:**
   earliest. The interesting region is KL 0.005–0.02, which this run sampled with
   three points by accident. A proper sweep is cheap and is the only obvious route
   to the remaining 0.0146.
-- **A reward without the zero atom.** Ranking or tie-broken marginals would give
-  the 45 % of sections that change no vote a defined position instead of a lump at
-  the bottom of a mean-centred distribution.
+- **A reward that does not price per-candidate quality.** M-B is the existence
+  proof that one is possible — it held volume — but it pays in redundancy, and it
+  needs ground truth. Something between M-B and M-C is the open design question.
+- **A rank-transformed marginal**, separately: 55 % of section marginals are an
+  atom at exactly zero, which is why 7.6 % of rollouts contribute no gradient at
+  all. A second-order fix, not the main one.
 - **The diversity gap is a corpus question, not an RL one.** #230 said this and
   this run does not contradict it: one rollout's sections cover 658 pairs against
   1,065 for 22 independent rollouts, and no reward here closed that — the two that

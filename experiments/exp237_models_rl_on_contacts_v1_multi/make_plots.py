@@ -98,13 +98,8 @@ def main() -> int:
     save_plot_with_meta(
         fig, a.out / "gates_over_training.png", dpi=150,
         caption=(
-            "The three preregistered diversity gates, per training batch, rolling median "
-            "over 6 batches. Jaccard is the panel that separates the arms: M-B (best-section "
-            "reward) rises past #230's 0.304 -- it pays to emit your best guess repeatedly -- "
-            "while M-C and M-F fall, i.e. their sections became MORE complementary. All three "
-            "nonetheless hit the union-coverage floor and were stopped. Faint lines are raw "
-            "batches; that swing is the protein draw, and the zero-LR control reproduced it "
-            "with a policy that did not change."))
+            "The diversity gates per batch, rolling median over 6. Jaccard separates the "
+            "arms: M-B rises, M-C and M-F fall. Faint = raw batches, i.e. the protein draw."))
     print(f"wrote {a.out}/gates_over_training.png")
 
     if {"policy_kl", "union_pairs"} <= set(df.columns):
@@ -134,13 +129,9 @@ def main() -> int:
         save_plot_with_meta(
             fig, a.out / "coverage_vs_kl.png", dpi=150,
             caption=(
-                "Union coverage against distance moved. #208 fitted, and then refuted, a "
-                "model in which diversity loss depends only on how far the policy travels. "
-                "It does not hold here either: M-C crosses the 80% floor by KL 0.013, M-B "
-                "around 0.016, and M-F not until 0.036 -- so per unit of KL the three "
-                "rewards cost very different amounts of coverage. They differ in HOW they "
-                "lose it (volume for M-C and M-F, redundancy for M-B) and in how fast, but "
-                "not in WHETHER."))
+                "Union coverage against distance moved. M-C crosses the 80% floor by KL "
+                "0.013, M-B by 0.016, M-F not until 0.036 -- same destination, different "
+                "cost per unit of KL."))
         print(f"wrote {a.out}/coverage_vs_kl.png")
     return 0
 

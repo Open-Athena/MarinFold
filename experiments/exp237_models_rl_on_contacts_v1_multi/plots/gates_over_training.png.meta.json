@@ -6,5 +6,5 @@
     "--out",
     "plots/"
   ],
-  "caption": "The three preregistered diversity gates, per training batch, rolling median over 6 batches. Jaccard is the panel that separates the arms: M-B (best-section reward) rises past #230's 0.304 -- it pays to emit your best guess repeatedly -- while M-C and M-F fall, i.e. their sections became MORE complementary. All three nonetheless hit the union-coverage floor and were stopped. Faint lines are raw batches; that swing is the protein draw, and the zero-LR control reproduced it with a policy that did not change."
+  "caption": "The diversity gates per batch, rolling median over 6. Jaccard separates the arms: M-B rises, M-C and M-F fall. Faint = raw batches, i.e. the protein draw."
 }

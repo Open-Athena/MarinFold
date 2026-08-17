@@ -68,12 +68,27 @@ on one model and one data order.
 
 ## Two lessons for the next reward
 
-**`E[r] = p − p̄` is necessary and not sufficient.** M-C's advantage is centred so
-`E[A] = 0` holds exactly — and it still shrank the policy, because 45 % of section
-marginals are an atom at exactly zero, so the *median* section is negative while
-the mean is zero. Checkable from a histogram before the run.
+**`E[r] = p − p̄` is necessary and not sufficient — and not because of the atom.**
+M-C's advantage is centred so `E[A] = 0` holds exactly, and it still halved the
+output. The tempting explanation (55 % of marginals are an atom at zero, averaging
+−0.062 after centring) is **refuted by M-F**, which has no atom and collapsed by
+the same factor. What M-C and M-F share, and M-B does not, is that they price each
+candidate's *own* quality — a selectivity pressure however the reward is centred.
+M-B prices only the best candidate, held its volume, and paid in redundancy.
 
 **Gate on `union/R`, and on precision.** The preregistered coverage gate stopped
 all three arms; union/R never left 2.8–4.6 in any of them, including the collapsed
 one, whose union/R was *higher* than the warm start's. Coverage was never binding.
 Precision (0.50 → 0.14) was.
+
+## Figures
+
+`plots/dose_response.png` — R-precision against distance moved, three
+aggregation modes, with the budget-matched bar drawn on.
+
+`plots/gates_over_training.png` — the diversity gates per batch, rolling median.
+
+`plots/reward_shape.png` — arm M-C's marginal distribution and its
+group-centred advantage, i.e. the mechanism this run proposed and then refuted.
+
+`plots/coverage_vs_kl.png` — coverage against distance, #208's question re-asked.
