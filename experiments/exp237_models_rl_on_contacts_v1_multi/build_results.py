@@ -44,6 +44,10 @@ def load(root: str) -> dict[str, dict]:
         p = Path(path)
         if p.name.endswith("_per_rollout.parquet"):
             continue
+        if p.name == "agg_modes_all.json":
+            # This script's own output. Globbing it back in on a re-run would
+            # nest the whole table inside itself and print nonsense.
+            continue
         label = p.stem.replace("agg_modes_", "")
         out[label] = json.loads(p.read_text())
     return out
