@@ -43,7 +43,10 @@ def load(curve: Path) -> pd.DataFrame:
             continue
         step = 0 if m.group(1) == "base" else int(m.group(2))
         mode = m.group(3)
-        parts = sorted(glob.glob(str(d / "*.parquet")))
+        # eval_modes_worker nests its output under a {mode} subdirectory, so
+        # this has to recurse -- a flat glob silently finds nothing and the
+        # checkpoint is skipped without an error.
+        parts = sorted(glob.glob(str(d / "**" / "*.parquet"), recursive=True))
         if not parts:
             continue
         df = pd.concat([pq.read_table(p).to_pandas() for p in parts], ignore_index=True)
@@ -73,6 +76,11 @@ def main() -> int:
     df = load(a.curve)
     if df.empty:
         raise SystemExit(f"no curve output under {a.curve}")
+    missing = {"plain", "multi"} - set(df["mode"])
+    if missing:
+        raise SystemExit(f"curve is missing mode(s) {missing} -- both are needed: "
+                         "plain falling alone cannot distinguish a closed leak "
+                         "from a lost format")
     a.out.mkdir(parents=True, exist_ok=True)
     df.to_csv(a.out / "leak_curve.csv", index=False)
     print(df.to_string(index=False))

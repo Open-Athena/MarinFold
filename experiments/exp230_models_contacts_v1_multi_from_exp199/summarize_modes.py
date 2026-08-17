@@ -51,8 +51,14 @@ def load(uri: str) -> pd.DataFrame:
         except FileNotFoundError:
             paths = []
         for p in paths:
-            full = p if "://" in p else f"{uri.split('://')[0]}://{p}"
-            with fs.open(full, "rb") as fh:
+            # `fs.glob` returns bare keys, so the protocol has to go back on
+            # before fsspec can reopen them -- and `unstrip_protocol` is the only
+            # correct way to do it. Rebuilding it by hand as
+            # `uri.split('://')[0] + '://' + p` works for gs:// and s3:// and
+            # produces `/local/dir:///local/dir/file.parquet` for a LOCAL path,
+            # because a path with no protocol splits to itself. Gate B runs on
+            # local disk on the A100 node, so that is the case that matters here.
+            with fs.open(fs.unstrip_protocol(p), "rb") as fh:
                 frames.append(pq.read_table(fh).to_pandas())
     if not frames:
         raise SystemExit(f"no rollout parquets under {uri}")

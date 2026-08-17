@@ -1,0 +1,4 @@
+{
+  "caption": "Contact sets emitted per rollout under the plain <contacts-v1> sentinel versus <contacts-v1.multi>, across the fine-tuning run. Left: mean count (log axis), with #163's arm F leak at 2.94 and the exp199 base for reference. Right: fraction of rollouts emitting exactly one set, against Gate B's 95% bar. Counts are uncapped (n_sections_raw). 200 proteins, seeded and identical across checkpoints; 4 rollouts each.",
+  "script": "plot_leak_curve.py"
+}
