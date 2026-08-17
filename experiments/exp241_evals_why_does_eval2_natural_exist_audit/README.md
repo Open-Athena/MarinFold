@@ -120,8 +120,8 @@ Four more designs (`8gac_A`, `8k83_A`, `8k84_A`, `8oyy_A`) hide in
 The correction runs one way only: **0 of the 396 `denovo_pdb` rows look natural**
 under the same three tests, so nothing moves back.
 
-> **eval2-natural is 63, not 78** — and eval2 is **77 % designed** (244/307), not
-> 75 %.
+> **eval2-natural is 63, not 78** — and eval2 is **79 % designed** (244/307), not
+> the 75 % exp226 published.
 
 Chain resolution is controlled: 756/776 eval proteins match their resolved RCSB
 entity exactly, as a substring, or as a gapped subsequence; the 20 that do not
@@ -353,7 +353,7 @@ and wrong on the one step it takes for granted:
   train on a single one.
 - **15 of the 78 are de novo designs** that a proxy exp226 never ran on
   CAMEO/CASP rows silently passed as natural. The honest count is 63, and eval2
-  is 77 % designed.
+  is 79 % designed.
 - **7 % is the base rate**, measured on a random unconditioned sample of recent
   PDB. eval2-natural is not an anomaly needing explanation; it is that rate times
   an eval universe, amplified by two novelty-curated sources running at 74 %.

@@ -45,7 +45,7 @@ Fluorescent Proteins", "The designed serine hydrolase known as win1". CAMEO
 draws from weekly PDB pre-releases, which are full of design-lab depositions.
 
 The correction runs one way only — 0 of the 396 de novo rows look natural. So
-eval2-natural is 63, not 78, and eval2 is 77% designed.
+eval2-natural is 63, not 78, and eval2 is 79% designed.
 
 ## The sequences are old, and we did not train on them
 
