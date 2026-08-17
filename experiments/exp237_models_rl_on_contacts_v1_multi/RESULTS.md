@@ -92,9 +92,77 @@ It also sets the resolution of everything below: a Jaccard difference smaller
 than ~0.1, or a coverage difference smaller than ~25 %, measured on training
 batches, is not a finding.
 
-## Arms M-C / M-F / M-B
+## Arm M-C — the arm the hypothesis predicted, and what it actually did
 
-_Pending._
+**Stopped at step 26 of 72 on #237's preregistered coverage kill criterion**:
+union pairs per rollout fell to 80 % of the warmup median on three consecutive
+batches. Terminal KL **0.0173** — an order of magnitude above the ~0.0015 below
+which #208 calls an arm untested, so this is a result and not a non-event. The
+checkpoint at `global_step_18` is what gets evaluated.
+
+Medians over the first 13 batches against the last 5, so the batch noise measured
+on M-0 above is averaged out on both sides:
+
+| quantity | steps 1–13 | steps 22–26 | ratio |
+|---|---:|---:|---:|
+| **mean pairwise Jaccard** | 0.261 | **0.126** | **0.48×** |
+| **votes per pair** | 2.62 | **1.85** | **0.71×** |
+| total votes per rollout | 1,887 | 902 | 0.48× |
+| generated tokens | 5,687 | 2,734 | 0.48× |
+| contacts emitted / true contacts | 11.9 | 6.8 | 0.57× |
+| sections per rollout | 20.3 | 15.4 | 0.76× |
+| **union pairs per rollout** | 655 | 488 | **0.74×** |
+| rollouts emitting `<end>` | 0.58 | **1.00** | 1.73× |
+| per-contact precision | 0.424 | 0.299 | 0.71× |
+
+**The reward did the thing it was designed to do, and lost anyway.** Jaccard
+halved and votes-per-pair fell 29 %: the sections became genuinely *more*
+complementary, which is exactly what a leave-one-out consensus marginal is for
+and is the opposite of #208's diversity-collapse mode. Coverage still fell 26 %,
+because **total volume collapsed by half**. #208's two failure modes were arm S
+(fewer contacts) and arm D v2 (the same contacts every time); M-C is the first,
+reached from the opposite direction — and the pair `union pairs` / `votes per
+pair`, which #237 mandates reporting, is the only thing that distinguishes them.
+
+### Why volume collapsed, when `E[A] = 0` holds exactly
+
+This is the finding worth carrying forward, and Phase 0 had already measured the
+cause without knowing it:
+
+> **45.2 % of section marginals are exactly zero.**
+
+`A_k = (m_k − mean_g) / std_g` centres the **mean**. It says nothing about the
+**median**. With a 45 % atom at exactly zero and the remaining mass skewed
+positive, `mean_g > 0`, so *every one of those 45 % of sections receives a
+negative advantage* — as does every section below the mean among the rest. The
+majority of `<begin_statements>` markers and the majority of contact tokens in a
+batch are therefore being pushed down, while a minority are pushed up hard enough
+to keep the average at zero. Gradient ascent on that shape shrinks what is
+emitted, and it does so **without violating the invariant** the reward was
+designed around.
+
+So #208's reward-design rule needs a clause:
+
+> `E[r] = p − p̄` is necessary and **not sufficient**. A centred reward with an
+> atom at zero holding most of its mass is a shrinking operator on whatever the
+> atom is attached to, because the policy gradient follows the median as much as
+> the mean.
+
+That is checkable on paper, from a histogram, before a run — the same class of
+five-line calculation #208 says would have saved it three training runs, applied
+to a distribution's shape rather than to its mean.
+
+### The one thing that improved
+
+`finished` went from 0.58 to **1.00**: by step 22 every rollout closed itself with
+`<end>` instead of running into the context limit, and last-section F1 rose 11 %
+against a falling best-section F1. The model learned to commit — which is arm
+M-F's objective, obtained here as a side effect of shorter sections leaving room
+to terminate.
+
+## Arms M-F and M-B
+
+_Running._
 
 ## Evaluation
 
