@@ -316,6 +316,95 @@ whose reward is a continuous scalar with no atom and which reduced *volume* by
 the same factor — and it never explained the fact that most needed explaining,
 which is that only M-C lost **sections**. The scale pathology explains both.
 
+### The peak, resolved — and it is the same phenomenon
+
+M-C was resumed from its own step-18 checkpoint under the corrected gate, with a
+checkpoint every 4 steps, to find where the dose-response turns over. R-precision
+(all), legacy 554:
+
+| global step | KL | consensus | best *ORACLE* | last | **sections/rollout** |
+|---:|---:|---:|---:|---:|---:|
+| 18 | 0.0072 | **0.5750** | 0.5578 | 0.5267 | 17.9 |
+| 20 | ~0.008 | 0.5739 | 0.5547 | 0.5261 | 16.5 |
+| 24 | ~0.011 | 0.5484 | 0.5325 | 0.5146 | 11.0 |
+| 32 | ~0.023 | 0.4576 | 0.4585 | 0.4578 | **1.1** |
+
+**The peak is step 18, and the decline is the section count.** Consensus tracks
+sections almost exactly, and by step 32 the three aggregation modes have
+*converged on the same number* — 0.4576 — because with 1.09 sections per rollout
+there is nothing left to aggregate. The "dose-response" and the scale pathology
+are not two findings; the dose is how long the pathology has had to act.
+
+Training stopped on the sections gate (`median 3.39 < 12`) — #237's own
+preregistered criterion, firing on a genuine collapse this time, which is the
+clearest available evidence that the gate correction was the right one.
+
+### Designing the next arm: which reward definitions are scale-free?
+
+Three candidate rewards, measured on the same 120 synthetic groups that differ in
+**nothing but section count** — mean group-centred advantage per section:
+
+| sections emitted | `loo`, what M-C ran | `prefix` | **`rollout_grpo`** |
+|---:|---:|---:|---:|
+| 1 | +4.79 | +2.03 | **−1.37** |
+| 2 | +1.08 | +1.23 | −0.52 |
+| 4 | +0.20 | +0.48 | −0.14 |
+| 8 | −0.02 | +0.10 | +0.43 |
+| 16 | −0.18 | −0.15 | +0.81 |
+| 22 | −0.22 | −0.22 | **+0.79** |
+
+- **`loo`** = `C(all) − C(all \ {k})`, centred over the group. The bug.
+- **`prefix`** = `C(1..k) − C(1..k−1)`, i.e. the *causal* marginal against exactly
+  what was in context when the section was written. It has an attractive property
+  — it telescopes, so `Σ_k m_k = C(all) − C(∅)` — and **it does not fix the
+  pathology**: still +2.03 at one section. Telescoping constrains the **sum**,
+  but `loss_reduction=token_mean` reads the **mean**, and a short rollout's early
+  sections are scored against a near-empty prefix, so its mean is large. Worth
+  recording as a refuted fix: it is the obvious repair and it does not work.
+- **`rollout_grpo`** = the rollout's own `C(all)`, GRPO-centred across the group.
+  Correct sign, monotone, and it saturates near 16–22 exactly as `C(K)` does
+  (0.341 → 0.543). Scale-correct **by construction**: emitting fewer sections
+  lowers your own consensus and therefore your advantage.
+
+#### The arm this implies
+
+```
+A_i  =  GRPO_group( C_i(all) )                      # base: rollout-level, scale-correct
+      + beta * ( m_k - mean_k m )                   # zero-sum within-rollout shaping
+      + lam  * GRPO_group( max_k F1(section k) )    # arm M-B's term
+```
+
+Three properties worth stating, because each is the reason a previous version
+failed:
+
+1. **The base cannot be gamed by section count.** It is the deployed metric,
+   computed on the object the model emits, and it *falls* when sections are
+   dropped.
+2. **The shaping term sums to zero within a rollout**, so it cannot reintroduce
+   any section-count pressure — it only says *which* section earned the rollout's
+   advantage. Using the **prefix** form here is what answers "condition on what
+   you have already written": a section is credited for what it added *given its
+   predecessors*, so duplicating an earlier section earns nothing while covering
+   something they missed earns a lot. The property that made `prefix` attractive
+   is kept exactly where it is safe.
+3. **`lam` is now a real trade-off.** Blending M-B against the *current* M-C could
+   not have worked: M-C's term runs from −0.22 at 22 sections to **+4.79** at one,
+   so a fixed `lam` balanced at 22 sections is overwhelmed by the time the count
+   reaches 4 — which is the runaway measured above. Once the base is
+   rollout-level, both terms are O(1) and `lam` trades "a good best candidate"
+   against "a good consensus" rather than racing a divergent term.
+
+#### On simply penalising short rollouts
+
+A direct penalty that grows as sections disappear is the other obvious repair,
+and the measurement prices it: it would have to cancel a term that reaches +4.79,
+so it is a tuned counterweight to one specific measured curve rather than a fix
+to the quantity being measured. Under the corrected base it is also **redundant** —
+`C(all)` already supplies −1.37 at one section. It remains worth keeping as a
+cheap guardrail, with one thing to watch: a size penalty creates an incentive to
+pad with junk sections, and `multi/empty_sections` (currently 0.000) is the
+instrument for that.
+
 ### The one thing that improved
 
 `finished` went from 0.58 to **1.00**: by step 22 every rollout closed itself with

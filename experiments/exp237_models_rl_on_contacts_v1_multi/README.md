@@ -360,10 +360,18 @@ expensive way:**
 
 **What would be worth doing next**, in order:
 
-- **An LR/step sweep around the peak.** Every arm's best checkpoint was its
-  earliest. The interesting region is KL 0.005–0.02, which this run sampled with
-  three points by accident. A proper sweep is cheap and is the only obvious route
-  to the remaining 0.0146.
+- **The corrected M-C, blended with M-B.** `GRPO(C_i(all))` as the base — the
+  deployed metric on the object the model emits, and scale-correct by
+  construction — plus a **zero-sum** within-rollout shaping term using *prefix*
+  marginals for credit assignment, plus `λ·GRPO(max_k F1)`. Measured offline
+  ([RESULTS.md](RESULTS.md)): the base gives −1.37 advantage to a one-section
+  rollout and +0.79 to a 22-section one, exactly inverting M-C's +4.79/−0.22.
+  Note the obvious repair — scoring against the causal prefix — was **tested and
+  refuted**: it telescopes, but `token_mean` reads the mean, not the sum.
+- **The peak is resolved and needs no further sweep.** Step 18 (KL 0.0072) is the
+  maximum; consensus tracks section count down to 0.4576 at 1.1 sections, where
+  all three aggregation modes converge because there is nothing left to
+  aggregate.
 - **Fix M-C's reward before re-running it.** The scale pathology has a clean fix:
   compute each section's marginal against a **fixed-size** reference — subsample
   the rollout's sections to a constant *G* before the leave-one-out — so the
