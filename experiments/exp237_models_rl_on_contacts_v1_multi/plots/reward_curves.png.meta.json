@@ -1,0 +1,12 @@
+{
+  "script": "plot_reward_curves.py",
+  "args": [
+    "--csv",
+    "data/training_steps.csv.gz",
+    "--run",
+    "M-B lr3e-6=/tmp/claude-1000/logs_final/exp237_m_b_lr3e-6.log",
+    "--out",
+    "plots"
+  ],
+  "caption": "Each arm against its own reward (left) and the shared consensus axis (right), rolling median of 6 batches. Training-batch values on 8 proteins, not eval."
+}
