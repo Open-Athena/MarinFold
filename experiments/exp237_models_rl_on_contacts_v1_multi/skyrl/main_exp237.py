@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 ENV_NAME = "contacts_v1"
 ADV_ESTIMATOR = "contacts_section"
+ADV_ROLLOUT = "contacts_rollout"
 GROUP_ESTIMATORS = ("grpo", "rloo")
 
 
@@ -56,6 +57,12 @@ class Exp237Config(SkyRLTrainConfig):
     #                                   ceiling rather than the selector; reported
     #                                   knowing it optimises a quantity that is not
     #                                   deployable on its own.
+    # "best_plus_consensus" (arm M-BC) -- the two ROLLOUT-level scalars, each
+    #                                   GRPO-standardised over the prompt group and
+    #                                   then summed with `lam_consensus`. Neither
+    #                                   term can be gamed by section count, which is
+    #                                   why this blend and not M-B + M-C's marginal.
+    #                                   Needs advantage_estimator=contacts_rollout.
     reward_mode: str = "section_consensus"
     # Constrains sampling to real token ids. vLLM pads the vocabulary
     # (2845 -> 2848) with zero rows that emit a logit of exactly 0.0, and
@@ -68,6 +75,12 @@ class Exp237Config(SkyRLTrainConfig):
     # so this is the same units GRPO's own advantage is in, and the learning rate
     # is the knob to turn instead.
     lam: float = 1.0
+    # Arm M-BC's mixing weight. Because both terms are standardised SEPARATELY,
+    # this is a ratio of standardised quantities: 1.0 means the best-section and
+    # consensus objectives get equal weight in units of within-group spread. That
+    # interpretability is the point -- #208's `lam_doc` had to be calibrated
+    # against raw spreads and was wrong twice, in both directions.
+    lam_consensus: float = 1.0
 
     # ---- #237's preregistered diversity kill criteria, checked every batch ----
     # #230's checkpoint reads 22.0 sections, Jaccard 0.304 and 658 union pairs
@@ -97,14 +110,16 @@ def register_everything(vocab_size: Optional[int] = None) -> None:
     import skyrl_gym
 
     from advantage_section import register as register_advantage
+    from advantage_section import register_rollout
 
     try:
         skyrl_gym.register(id=ENV_NAME, entry_point="contacts_env_skyrl:ContactsV1Env")
     except Exception as exc:      # already registered on a re-entry
         logger.info("skyrl_gym.register(%s): %s", ENV_NAME, exc)
     register_advantage(ADV_ESTIMATOR)
-    logger.info("registered env=%s adv_estimator=%s vocab_size=%s",
-                ENV_NAME, ADV_ESTIMATOR, vocab_size)
+    register_rollout(ADV_ROLLOUT)
+    logger.info("registered env=%s adv_estimators=%s,%s vocab_size=%s",
+                ENV_NAME, ADV_ESTIMATOR, ADV_ROLLOUT, vocab_size)
 
 
 def build_exp(cfg):
@@ -129,6 +144,7 @@ def build_exp(cfg):
                 max_jaccard=cfg.max_jaccard,
                 min_union_ratio=cfg.min_union_ratio,
                 min_union_over_r=cfg.min_union_over_r,
+                lam_consensus=cfg.lam_consensus,
                 gates_fatal=cfg.gates_fatal,
             )
 
@@ -160,6 +176,12 @@ def check_reward_mode(cfg) -> None:
             f"advantage_estimator='{estimator}' would sum it to one number per rollout and "
             f"discard the within-rollout credit assignment WITHOUT error. Use "
             f"advantage_estimator={ADV_ESTIMATOR}.")
+    if mode == "best_plus_consensus" and estimator != ADV_ROLLOUT:
+        raise ValueError(
+            f"reward_mode='best_plus_consensus' writes a finished per-rollout advantage, so "
+            f"it needs advantage_estimator={ADV_ROLLOUT} (a pass-through). '{estimator}' would "
+            f"either re-standardise an already-standardised blend (grpo) or refuse it for "
+            f"being constant within the rollout ({ADV_ESTIMATOR}).")
     if mode in ("final_f1", "best_f1"):
         if estimator == ADV_ESTIMATOR:
             raise ValueError(

@@ -181,3 +181,76 @@ def test_diagnostics_report_the_diversity_gates():
     assert d["union_pairs"] == 3          # (0,10), (1,12), (2,20)
     assert d["total_votes"] == 4
     assert d["votes_per_pair"] == pytest.approx(4 / 3)
+
+
+# --- arm M-BC: GRPO() reproduced exactly, and the blend's scale-freedom -------
+
+def test_grpo_standardise_matches_skyrls_formula():
+    """Mean 0, UNBIASED sd 1, and eps on the sd rather than the variance.
+
+    SkyRL uses `torch.std` (ddof=1). Using numpy's default population sd would
+    make the denominator 7 % too small on a group of 8 — a silent, uniform
+    inflation of every advantage in the run.
+    """
+    v = [0.10, 0.50, 0.30, 0.70, 0.25, 0.65, 0.40, 0.55]
+    a = sr.grpo_standardise(v)
+    assert a.mean() == pytest.approx(0.0, abs=1e-12)
+    assert a.std(ddof=1) == pytest.approx(1.0, abs=1e-5)
+    expect = (np.array(v) - np.mean(v)) / (np.std(v, ddof=1) + 1e-6)
+    assert np.allclose(a, expect)
+
+
+def test_grpo_standardise_singleton_passes_through():
+    """SkyRL takes mean 0 / std 1 for a group of one, so the reward is uncentred."""
+    assert sr.grpo_standardise([0.42]) == pytest.approx([0.42])
+
+
+def test_grpo_standardise_constant_group_is_zero_not_huge():
+    """A degenerate group must contribute nothing, not 0/eps amplified noise."""
+    assert np.allclose(sr.grpo_standardise([0.3] * 8), 0.0)
+
+
+def test_blend_terms_are_separately_standardised():
+    """`lam` must weight STANDARDISED terms, so the raw scales cannot decide.
+
+    The two objectives are not commensurable: on a typical group the
+    best-section F1 spreads ~4x wider than the rollout consensus. Summing them
+    raw would silently hand most of the gradient to whichever happens to vary
+    more — the calibration #208 got wrong twice with `lam_doc`. Standardising
+    each term first makes `lam = 1` mean what it says.
+    """
+    best = [0.30, 0.50, 0.40, 0.60]
+    cons = [0.52, 0.55, 0.51, 0.58]          # ~4x narrower raw spread
+    assert np.std(best, ddof=1) > 3 * np.std(cons, ddof=1)
+
+    def corr(a, b):
+        return float(np.corrcoef(a, b)[0, 1])
+
+    separate = sr.grpo_standardise(best) + 1.0 * sr.grpo_standardise(cons)
+    raw_sum = np.array(best) + 1.0 * np.array(cons)
+
+    # Separately standardised: the two objectives pull EQUALLY on the result.
+    # Tolerance 1e-4, not 1e-6: SkyRL adds eps to the standard DEVIATION, and the
+    # two terms have different sds, so eps perturbs them by slightly different
+    # relative amounts. The residual asymmetry is ~1e-6 and is real, not noise.
+    assert corr(separate, best) == pytest.approx(corr(separate, cons), abs=1e-4)
+    # Raw sum: the wider-spread term dominates, and the narrow one is nearly lost.
+    assert corr(raw_sum, best) > corr(raw_sum, cons) + 0.05
+    assert np.var(best) / np.var(raw_sum) > 10 * (np.var(cons) / np.var(raw_sum))
+
+
+def test_blend_is_scale_free_in_section_count():
+    """Neither M-BC term can be raised by emitting fewer sections.
+
+    `max_k F1` ignores the count outright, and the rollout's own consensus FALLS
+    when sections are dropped — the opposite of M-C's marginal, which is 366x
+    larger at one section than at 22.
+    """
+    gt = {(0, 10), (1, 12), (2, 20), (3, 30)}
+    full = [{(0, 10), (1, 12)}, {(2, 20)}, {(3, 30)}, {(0, 10), (2, 20)}]
+    c_full, _ = sr.consensus_and_marginals(full, gt, 64)
+    c_one, _ = sr.consensus_and_marginals(full[:1], gt, 64)
+    assert c_one <= c_full, "dropping sections must not raise the rollout's consensus"
+    # max_k F1 over a prefix can only be <= the max over the whole set.
+    f_full, f_one = sr.section_f1s(full, gt), sr.section_f1s(full[:1], gt)
+    assert max(f_one) <= max(f_full)

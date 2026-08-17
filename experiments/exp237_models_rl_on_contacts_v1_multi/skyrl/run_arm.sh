@@ -18,7 +18,7 @@
 #   ARM=M-C LR=1e-6 STEPS=80 ./run_arm.sh
 set -u
 
-ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-0}
+ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-0}
 LR=${LR:-1e-6}
 STEPS=${STEPS:-80}
 GROUP=${GROUP:-8}                 # generator.n_samples_per_prompt
@@ -49,6 +49,14 @@ case "$ARM" in
   # Arm M-B -- ORACLE. Raises the ceiling rather than the selector. Not
   # deployable on its own; the upper rung of the ladder.
   M-B) MODE=best_f1;           EST=grpo ;;
+  # Arm M-BC -- the blend. Two ROLLOUT-level scalars, each GRPO-standardised over
+  # the prompt group and then summed: GRPO(max_k F1) + lam * GRPO(C_i(all)).
+  # Neither term can be gamed by section count -- max_k F1 does not depend on how
+  # many sections there are, and C_i(all) FALLS when sections are dropped (0.543
+  # at 22, 0.341 at one) -- which is why this is the blend and not M-B plus M-C's
+  # per-section marginal, whose magnitude diverges as sections vanish (+4.79 at
+  # one section against -0.22 at 22).
+  M-BC) MODE=best_plus_consensus; EST=contacts_rollout ;;
   # Arm M-0 -- zero-LR control. #208 needed one to prove that FSDP sharding, not
   # the gradient, was destroying the policy. Cheap, and it makes every other arm
   # interpretable: whatever M-0 does is the harness, not the reward.
@@ -146,6 +154,7 @@ $PY main_exp237.py \
   trainer.logger=console \
   trainer.project_name=exp237 \
   trainer.run_name="$RUN" \
+  lam_consensus="${LAM_CONSENSUS:-1.0}" \
   ${EXTRA_OVERRIDES:-} \
   > "$LOG" 2>&1
 rc=$?

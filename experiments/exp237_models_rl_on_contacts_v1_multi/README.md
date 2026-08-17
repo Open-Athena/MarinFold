@@ -164,6 +164,55 @@ a rollout that runs on into a second document — carry zero.
 novelty weighting is a second-order redistribution which cannot overcome it; that
 ladder is explicitly out of scope.
 
+### What `GRPO(·)` means here, precisely
+
+`GRPO(·)` appears throughout this write-up as shorthand. It is not a
+paraphrase — it is exactly SkyRL's `compute_grpo_outcome_advantage`, reproduced
+in `section_rewards.grpo_standardise` and pinned by test. For a prompt **group**
+`g` of `G` rollouts (here `G = n_samples_per_prompt = 8`, all sampled from the
+same prompt), with one scalar reward `R_i` per rollout:
+
+```
+GRPO(R)_i  =  ( R_i − mean_g(R) ) / ( std_g(R) + 1e-6 )
+```
+
+and that single number is then assigned to **every response token** of rollout
+`i` (padding zeroed). Four details that the name does not carry, each of which
+changes a number:
+
+| detail | value | why it matters |
+|---|---|---|
+| `std` | `torch.std`, the **unbiased sample** sd (`ddof = 1`) | numpy's default is `ddof = 0`; on a group of 8 that is a 7 % difference in every denominator |
+| `epsilon` | added to the **standard deviation**, not the variance | `1e-6` |
+| singleton group | `mean = 0`, `std = 1` | the raw reward passes through **uncentred** |
+| the scalar reward | recovered as `token_level_rewards.sum(dim=-1)` | a reward placed on one token is summed back out |
+
+One consequence worth stating because it interacts with section count: SkyRL's
+`loss_reduction` is `token_mean`, so a rollout's contribution to the loss is
+proportional to **its own token count**. Longer rollouts carry more gradient.
+
+**Arm M-BC then is:**
+
+```
+A_i  =  GRPO( max_k F1(section k) )_i  +  lam_consensus * GRPO( C_i(all) )_i
+```
+
+with each term standardised **separately** over the same group. That is a
+deliberate choice, not a convenience: because both terms are divided by their own
+within-group spread, `lam_consensus` is a ratio of *standardised* quantities, so
+`1.0` means "these two objectives get equal weight, in units of within-group
+standard deviations". Standardising the sum instead — `GRPO(best + lam·C)` —
+would let the raw scales decide, and on a typical group the best-section F1
+spreads ~4x wider than the rollout consensus, so the consensus term would
+contribute ~4 % of the variance while appearing to be weighted equally. That is
+the calibration #208 got wrong twice with `lam_doc`, in both directions.
+
+**Neither term can be gamed by section count**, which is the whole reason this is
+the blend rather than M-B + M-C's per-section marginal: `max_k F1` does not depend
+on how many sections exist, and `C_i(all)` *falls* when sections are dropped
+(0.543 at 22 sections, 0.341 at one) — against M-C's marginal, which is **+4.79**
+at one section and **−0.22** at 22.
+
 ### The diversity gates, as kill criteria
 
 #230's checkpoint reads Jaccard **0.304**, already past exp200's 0.30

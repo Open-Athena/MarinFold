@@ -72,6 +72,39 @@ def compute_section_advantage(
     return advantages, advantages
 
 
+def compute_rollout_advantage(
+    token_level_rewards: torch.Tensor,      # [batch, response_len]
+    response_mask: torch.Tensor,            # [batch, response_len]
+    index: np.ndarray,                      # [batch] — group id per rollout
+    **kwargs,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Pass-through for arm M-BC, whose advantage is constant within a rollout.
+
+    Separate from :func:`compute_section_advantage` **because its guard is the
+    opposite one**. A per-section reward that comes out constant across a
+    rollout's response means the dense signal was never written, and that must
+    raise. A rollout-level blend is constant across the response *by
+    construction* — it is one number per rollout — so the same guard would fire
+    on every correct run.
+
+    What can still go silently wrong here is the group pass not running at all,
+    which leaves every advantage at zero. That is what this checks.
+    """
+    if token_level_rewards.shape != response_mask.shape:
+        raise ValueError(
+            f"token_level_rewards {tuple(token_level_rewards.shape)} does not match "
+            f"response_mask {tuple(response_mask.shape)}")
+    with torch.no_grad():
+        advantages = token_level_rewards * response_mask
+        live = response_mask.sum(dim=-1) > 0
+        if live.any() and torch.all(advantages[live].abs().sum(dim=-1) == 0):
+            raise ValueError(
+                "every rollout's advantage is exactly zero; the group blend never ran. "
+                "Check that MultiSectionGenerator is the configured generator and that "
+                "reward_mode is a rollout-level mode.")
+    return advantages, advantages
+
+
 def register(name: str = "contacts_section") -> str:
     """Register with SkyRL's advantage registry.
 
@@ -84,4 +117,13 @@ def register(name: str = "contacts_section") -> str:
     return name
 
 
-__all__ = ["compute_section_advantage", "register"]
+def register_rollout(name: str = "contacts_rollout") -> str:
+    """Register the rollout-level pass-through (arm M-BC)."""
+    from skyrl.backends.skyrl_train.utils.ppo_utils import AdvantageEstimatorRegistry
+
+    AdvantageEstimatorRegistry.register(name, compute_rollout_advantage)
+    return name
+
+
+__all__ = ["compute_rollout_advantage", "compute_section_advantage", "register",
+           "register_rollout"]

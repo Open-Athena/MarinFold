@@ -23,6 +23,7 @@ machinery is identical, only the population changes.
 | **M-C** | ``m_k = C(all) − C(all \\ {k})``, the section's marginal contribution to its own rollout's consensus | per-section, dense | ``contacts_section`` |
 | **M-F** | ``F1(last section)`` | one scalar per rollout | ``grpo`` |
 | **M-B** | ``max_k F1(section k)`` — ORACLE | one scalar per rollout | ``grpo`` |
+| **M-BC** | ``GRPO(max_k F1) + lam * GRPO(C_i(all))`` | two scalars per rollout, standardised separately | ``contacts_rollout`` |
 
 ## The expectation calculation, done on paper first
 
@@ -87,7 +88,7 @@ _STD_EPS = 1e-8
 
 Pair = tuple[int, int]
 
-REWARD_MODES = ("section_consensus", "final_f1", "best_f1")
+REWARD_MODES = ("section_consensus", "final_f1", "best_f1", "best_plus_consensus")
 
 
 @dataclass
@@ -253,6 +254,47 @@ def scalar_reward(mode: str, walk: RolloutSections, gt: set[Pair]) -> float:
     raise ValueError(f"scalar_reward does not serve mode {mode!r}")
 
 
+def grpo_standardise(values: Sequence[float]) -> np.ndarray:
+    """SkyRL's GRPO group normalisation, reproduced exactly.
+
+    This is the ``GRPO(·)`` written in the README and RESULTS, and it is
+    reproduced here rather than described because two of its details are easy to
+    get wrong and neither is visible from the name.
+
+    From `skyrl/backends/skyrl_train/utils/ppo_utils.py::compute_grpo_outcome_advantage`,
+    for a group ``g`` of rollouts sharing a prompt, with per-rollout scalar
+    reward ``R_i``::
+
+        A_i = (R_i - mean_g(R)) / (std_g(R) + 1e-6)
+
+    * ``std`` is `torch.std`, the **unbiased sample** standard deviation
+      (``ddof = 1``) — *not* numpy's default population sd (``ddof = 0``). On a
+      group of 8 that is a 7 % difference in the denominator.
+    * ``epsilon = 1e-6`` is added to the **standard deviation**, not to the
+      variance.
+    * A **singleton** group takes ``mean = 0`` and ``std = 1``, i.e. the raw
+      reward passes through uncentred. That is SkyRL's behaviour, not an
+      approximation of it.
+
+    The resulting scalar is then assigned to **every response token** of rollout
+    ``i`` (``scores.unsqueeze(-1) * response_mask``), so with
+    ``loss_reduction=token_mean`` a rollout's contribution to the loss is
+    proportional to its own token count — longer rollouts carry more gradient.
+
+    Args:
+        values: One scalar reward per rollout, for a SINGLE prompt group.
+
+    Returns:
+        The standardised advantages, one per rollout, in the same order.
+    """
+    arr = np.asarray(values, dtype=np.float64)
+    if arr.size == 0:
+        return arr
+    if arr.size == 1:
+        return arr.copy()                       # SkyRL: mean 0, std 1
+    return (arr - arr.mean()) / (arr.std(ddof=1) + 1e-6)
+
+
 def centred_section_advantages(marginals_by_key: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     """Centre and scale every section marginal against the whole prompt group.
 
@@ -299,6 +341,7 @@ __all__ = [
     "RolloutSections",
     "centred_section_advantages",
     "consensus_and_marginals",
+    "grpo_standardise",
     "scalar_reward",
     "scored_length",
     "section_bounds",

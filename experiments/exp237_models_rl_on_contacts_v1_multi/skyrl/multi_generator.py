@@ -138,7 +138,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  vocab_size: Optional[int] = None, lam: float = 1.0,
                  min_sections: float = 12.0, max_jaccard: float = 0.45,
                  min_union_ratio: float = 0.0, min_union_over_r: float = 1.25,
-                 gates_fatal: bool = True,
+                 lam_consensus: float = 1.0, gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
@@ -148,6 +148,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.reward_mode = reward_mode
         self.vocab_size = vocab_size
         self.lam = float(lam)
+        self.lam_consensus = float(lam_consensus)
         self.min_sections = float(min_sections)
         self.max_jaccard = float(max_jaccard)
         self.min_union_ratio = float(min_union_ratio)
@@ -156,6 +157,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.collapse_ratio = float(collapse_ratio)
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
         self._group: Dict[str, Dict[str, Any]] = {}
+        # instance_id -> {repetition_id: (best_f1, consensus, n_response_tokens)}
+        # for arm M-BC, whose two terms are both ROLLOUT-level scalars.
+        self._rollout_scores: Dict[str, Dict[str, Any]] = {}
         self._diag: Dict[str, float] = {}
         self._announced = False
         self._batches = 0
@@ -239,6 +243,19 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         if self.reward_mode in ("final_f1", "best_f1"):
             return float(sr.scalar_reward(self.reward_mode, walk, state["gt"]))
 
+        if self.reward_mode == "best_plus_consensus":
+            best = float(sr.scalar_reward("best_f1", walk, state["gt"]))
+            # NaN consensus (no scoreable ground truth) becomes 0.0. Every rollout
+            # of such a prompt gets it, so the group is constant and standardising
+            # returns exactly 0 -- the prompt contributes nothing, which is right.
+            cons = 0.0 if consensus != consensus else float(consensus)
+            self._rollout_scores.setdefault(state["instance_id"], {})[state["repetition_id"]] = (
+                best, cons, walk.n_response_tokens,
+            )
+            # Placeholder of the right SHAPE; `generate` overwrites it with the
+            # blended advantage once the whole group exists.
+            return [best] * walk.n_response_tokens
+
         self._group.setdefault(state["instance_id"], {})[state["repetition_id"]] = (
             marginals, walk.bounds, walk.n_response_tokens,
         )
@@ -255,6 +272,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self._batches += 1
         if self.reward_mode == "section_consensus":
             out = self._apply_group_baseline(out, input_batch)
+        elif self.reward_mode == "best_plus_consensus":
+            out = self._apply_rollout_blend(out, input_batch)
         return self._emit_metrics(out)
 
     # -------------------------------------------------------------- internals
@@ -349,6 +368,64 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self._diag["n_prompts"] = float(len(self._group))
         logger.info("[exp237] group baseline applied to %d/%d rollouts; %d/%d prompts had zero "
                     "marginal spread", n_written, len(rewards), n_dead, len(self._group))
+        out["rewards"] = rewards
+        return out
+
+    def _apply_rollout_blend(self, out, input_batch=None):
+        """Arm M-BC: two rollout-level scalars, each GRPO-standardised, then summed.
+
+            A_i  =  GRPO( max_k F1(section k) )_i  +  lam * GRPO( C_i(all) )_i
+
+        **Standardised SEPARATELY, and that is the design choice.** Because each
+        term is divided by its own within-group standard deviation, ``lam`` is a
+        ratio of standardised quantities: ``lam = 1`` means "these two objectives
+        get equal weight, in units of within-group spread". Standardising the
+        *sum* instead — ``GRPO(best + lam * C)`` — would make ``lam`` depend on
+        the raw scales of two quantities that are not commensurable, which is
+        exactly the calibration #208 got wrong twice with ``lam_doc``.
+
+        Neither term can be gamed by section count: ``max_k F1`` does not depend
+        on how many sections there are (only on the best one), and ``C_i(all)``
+        *falls* when sections are dropped (0.543 at 22 sections, 0.341 at one).
+        That is the whole reason this arm exists rather than blending M-B with
+        M-C's per-section marginal, whose magnitude diverges as sections vanish.
+        """
+        rewards = out.get("rewards")
+        if not rewards:
+            raise RuntimeError("[exp237] generator output has no rewards to blend")
+        traj = out.get("trajectory_ids") or (input_batch or {}).get("trajectory_ids")
+        if traj is None:
+            raise RuntimeError("[exp237] no trajectory_ids; refusing to map by position")
+        row_of = {f"{getattr(t, 'instance_id', '')}:{getattr(t, 'repetition_id', '')}": i
+                  for i, t in enumerate(traj)}
+
+        n_written = 0
+        diag_best, diag_cons = [], []
+        for instance_id, per_rep in self._rollout_scores.items():
+            reps = sorted(per_rep)
+            a_best = sr.grpo_standardise([per_rep[r][0] for r in reps])
+            a_cons = sr.grpo_standardise([per_rep[r][1] for r in reps])
+            diag_best.append(float(np.mean([per_rep[r][0] for r in reps])))
+            diag_cons.append(float(np.mean([per_rep[r][1] for r in reps])))
+            for rep, ab, ac in zip(reps, a_best, a_cons):
+                row = row_of.get(f"{instance_id}:{rep}")
+                if row is None:
+                    continue
+                n_tok = per_rep[rep][2]
+                if n_tok != len(rewards[row]):
+                    raise RuntimeError(
+                        f"[exp237] rollout length {n_tok} != reward row {len(rewards[row])}")
+                adv = float(ab) + self.lam_consensus * float(ac)
+                rewards[row] = [adv] * n_tok
+                n_written += 1
+        if not n_written:
+            raise RuntimeError(
+                "[exp237] the rollout blend wrote no rewards -- the trajectory_id mapping is "
+                "wrong, and the reward is whatever _build_per_token_rewards left behind.")
+        self._diag["blend_best"] = float(np.mean(diag_best)) if diag_best else 0.0
+        self._diag["blend_cons"] = float(np.mean(diag_cons)) if diag_cons else 0.0
+        logger.info("[exp237] blend applied to %d/%d rollouts (lam_consensus=%.3g)",
+                    n_written, len(rewards), self.lam_consensus)
         out["rewards"] = rewards
         return out
 
@@ -464,6 +541,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
 
     def reset_groups(self) -> None:
         self._group.clear()
+        self._rollout_scores.clear()
         self._diag.clear()
 
 
