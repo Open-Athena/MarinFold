@@ -552,7 +552,17 @@ The vote lost 53 % of its mass and 44 % of its coverage, and consensus paid
 single-candidate number gained 0.051. **Both arms bought the same thing with the
 same currency**: selectivity, priced in vote coverage.
 
-## Arm M-B — the ORACLE arm, and what happened when it was let run
+## Arm M-B — one number for the whole rollout, and the only arm that improved everything
+
+**What it is, stated plainly because the shorthand hides it:** M-B scores the
+**entire rollout** by `max_k F1(section k)` — the oracle-best contact set
+anywhere in the generation — as a *single scalar*, centred by GRPO against the
+prompt's other 7 rollouts and broadcast to every token. It never looks inside the
+rollout; there is no per-section credit assignment. That is the whole of it, and
+it is the opposite end of this experiment's axis from M-C, which shapes each
+section's tokens individually.
+
+It is also, on the evidence so far, the best-performing design tried here.
 
 **Stopped at step 36** on the preregistered coverage criterion, scored, then
 **resumed from its own step-36 checkpoint to step 80** under the corrected gate

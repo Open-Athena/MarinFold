@@ -103,10 +103,15 @@ identical; only the population changes.
 
 | arm | reward | shape | estimator |
 |---|---|---|---|
-| **M-C** | `m_k = C(all) − C(all \ {k})`, section *k*'s marginal contribution to its **own rollout's** consensus | per-section, dense | `contacts_section` |
-| **M-F** | `F1(last section)` | one scalar per rollout | `grpo` |
-| **M-B** | `max_k F1(section k)` — **ORACLE** | one scalar per rollout | `grpo` |
+| **M-C** | `m_k = C(all) − C(all \ {k})`, section *k*'s marginal contribution to its **own rollout's** consensus | **per-section**, dense — each section's tokens carry their own advantage | `contacts_section` |
+| **M-F** | `F1(last section)` | **whole-rollout scalar** — one number for the entire generation, GRPO-centred against its 8 siblings and broadcast to every token | `grpo` |
+| **M-B** | `max_k F1(section k)` — **ORACLE** | **whole-rollout scalar**, same shape as M-F: score the whole generation by the best contact set anywhere in it, with no per-section credit assignment at all | `grpo` |
 | **M-0** | M-C's reward at **lr = 0** | — | `contacts_section` |
+
+The M-C / (M-F, M-B) split is the axis this experiment varies: M-C decides *which
+section* earned the reward and shapes those tokens specifically; M-F and M-B do
+not look inside the rollout at all — they reduce it to one number and let GRPO's
+group baseline do the rest.
 
 #### The expectation calculation, done on paper first
 
