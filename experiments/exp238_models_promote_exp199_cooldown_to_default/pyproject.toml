@@ -1,0 +1,19 @@
+[project]
+name = "exp238-promote-exp199-cooldown"
+version = "0.1.0"
+description = "Publish #199's CoreWeave cooldown export to the public MarinFold bucket."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "aiobotocore==2.26.0",
+    "fsspec==2026.1.0",
+    "huggingface-hub[hf-xet]>=1.5",
+    "s3fs==2026.1.0",
+]
+
+# `uv sync` on the pod fails with "Group `dev` is not defined" without this.
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'linux'"]
