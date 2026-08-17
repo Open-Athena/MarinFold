@@ -39,6 +39,41 @@ sections, past exp200's 0.30 diversity-collapse criterion **before any RL**.
 votes and votes-per-pair are reported every batch, and three diversity gates are
 kill criteria rather than diagnostics.
 
-## Results so far
+## Results — the hypothesis is half right
 
-_(Fill in as results come in.)_
+Moving the reward's unit from *rollouts of a group* to *sections of one rollout*
+produces what #208 could not: an RL checkpoint that **improves consensus
+R-precision**. Arm M-C step-18 is the best on every aggregation mode —
+consensus 0.5750 (+0.0077), oracle-best 0.5578 (+0.0235), last 0.5267 (+0.0701).
+On eval2-natural, last goes 0.1696 → 0.2421.
+
+It does not close the gap to independent sampling. 22 plain rollouts read 0.5896
+against 0.5750 — the closest a multi-mode number has come, and 0.0146 short.
+
+## #208's result is a dose-response, not a verdict
+
+Consensus against distance moved: 0.5673 at KL 0, **0.5750 at 0.007**, 0.5741 at
+0.016, 0.5529 at 0.031, 0.3969 at 0.486. Every reward here helps at small KL and
+damages at large. #208 ran its arms at KL 0.06–0.10 and to 3.96 — past the peak
+on all of them — and its two arms under 0.0015 never moved at all. The window it
+needed lay **between the two learning rates it tried**.
+
+## Reward shape decides how a run fails, not whether
+
+M-C and M-F halve the contacts emitted while becoming *more* diverse (Jaccard
+0.60× and 0.44×). M-B holds the volume and emits the same contacts 1.7× as often.
+Both routes end at the same coverage floor. #208 found these two modes across
+different reward families; here they are produced deliberately by reward shape,
+on one model and one data order.
+
+## Two lessons for the next reward
+
+**`E[r] = p − p̄` is necessary and not sufficient.** M-C's advantage is centred so
+`E[A] = 0` holds exactly — and it still shrank the policy, because 45 % of section
+marginals are an atom at exactly zero, so the *median* section is negative while
+the mean is zero. Checkable from a histogram before the run.
+
+**Gate on `union/R`, and on precision.** The preregistered coverage gate stopped
+all three arms; union/R never left 2.8–4.6 in any of them, including the collapsed
+one, whose union/R was *higher* than the warm start's. Coverage was never binding.
+Precision (0.50 → 0.14) was.
