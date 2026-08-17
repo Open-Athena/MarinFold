@@ -339,6 +339,73 @@ Training stopped on the sections gate (`median 3.39 < 12`) — #237's own
 preregistered criterion, firing on a genuine collapse this time, which is the
 clearest available evidence that the gate correction was the right one.
 
+### Where is the headroom in oracle-best? Two levers, one of them refuted
+
+Arm M-B's target is `max_k F1(section k)`, and two arms have already moved it —
+M-B step-36 to 0.5574 and M-C step-18 to 0.5578, from #230's 0.5342. A maximum
+over a sample has exactly two levers, **how many draws** and **what distribution
+they come from**, so both are priced offline on #230's own generations
+([`analyze_oracle_headroom.py`](analyze_oracle_headroom.py), 2,416 rollouts).
+
+**Lever 1 — more candidates. Not saturating.**
+
+| candidates | 1 | 2 | 4 | 8 | 16 | 22 |
+|---|---:|---:|---:|---:|---:|---:|
+| E[max F1] | 0.4269 | 0.4770 | 0.5132 | 0.5411 | 0.5643 | 0.5739 |
+
+About **+0.022 F1 per doubling**, still climbing at 22 — which is where the
+8,192-token context runs out. This is a real lever and it is *not* an RL lever:
+the cheapest way to get more draws is more rollouts, which is exactly #230's
+finding that 22 independent rollouts beat one rollout's 22 sections.
+
+**Lever 2 — a better distribution. Tested and refuted.** Per-section F1 against
+section size is strongly **non-monotone**: it peaks at ~80 contacts and collapses
+for small sections, of which #230's power-law size draw makes a great many.
+
+| section size (median) | 8 | 46 | 67 | **80** | 96 | 117 | 149 | 225 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| mean F1 | 0.157 | 0.342 | 0.479 | **0.552** | 0.506 | 0.480 | 0.410 | 0.476 |
+
+**36.6 % of sections are under 73 contacts, with mean F1 0.319.** The obvious
+conclusion is that uniform ~80-contact sections would raise the ceiling. Paired
+on the same 271 proteins, they do the opposite for anything but a single draw:
+
+| candidates | 1 | 2 | 4 | 8 | 16 | 22 |
+|---|---:|---:|---:|---:|---:|---:|
+| all sections | 0.4226 | 0.4652 | 0.4983 | 0.5243 | 0.5453 | 0.5536 |
+| in-band only | 0.4388 | 0.4720 | 0.4980 | 0.5206 | 0.5375 | 0.5434 |
+| gain | **+0.0162** | +0.0068 | −0.0002 | −0.0037 | −0.0078 | **−0.0102** |
+
+Restricting to the good size band raises the **mean** section F1 from 0.432 to
+0.532 and **lowers** E[max of 22]. The variance that makes the average candidate
+worse is precisely what best-of-N feeds on — the same trade this experiment keeps
+finding, now in the corpus's section-size law rather than in a reward. It also
+says something useful about *deployment*: size-uniformity is worth +0.016 if you
+are going to read one candidate, and a loss if you are going to aggregate.
+
+*Caveat:* this re-samples sections that were generated **under** the power law.
+It shows that selecting for size does not help; it does not prove that a model
+retrained to emit uniform sections would fail.
+
+### M-F is dominated by M-C, at M-F's own objective
+
+Worth stating separately, because it inverts the obvious plan for improving the
+deployable single-candidate number:
+
+| | last | best *ORACLE* | consensus |
+|---|---:|---:|---:|
+| M-F step-36 (rewards the last section) | 0.5075 | 0.5189 | 0.5529 |
+| **M-C step-18** (rewards section marginals) | **0.5267** | **0.5578** | **0.5750** |
+
+**M-C beats M-F on M-F's own target**, and on everything else. The likely reason
+is visible in the training metrics: M-F's reward touches one section out of ~24,
+so the other 23 receive no signal and decay (`second_last` falls to 0.2649, from
+0.4284) — and the final section is written in the context of those decayed
+predecessors. M-C rewards every section, so the whole rollout stays useful.
+
+So "make M-F better" is probably not the route to a better final section. Giving
+*every* section a signal appears to be, and the corrected M-C base is that.
+
 ### Designing the next arm: which reward definitions are scale-free?
 
 Three candidate rewards, measured on the same 120 synthetic groups that differ in
