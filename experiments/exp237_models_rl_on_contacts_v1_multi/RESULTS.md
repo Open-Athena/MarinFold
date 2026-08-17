@@ -92,6 +92,24 @@ It also sets the resolution of everything below: a Jaccard difference smaller
 than ~0.1, or a coverage difference smaller than ~25 %, measured on training
 batches, is not a finding.
 
+### And the control was scored too — the harness is a no-op to ±0.003
+
+M-0's step-8 checkpoint went through the whole downstream path — FSDP shard to
+HF directory, rope repair, bf16, re-generation on 577 proteins, #230's scorer —
+and came out where its warm start went in. R-precision (all), legacy 554:
+
+| mode | M-0 step-8 (lr 0) | #230 step-1988 | Δ |
+|---|---:|---:|---:|
+| consensus | 0.5678 | 0.5673 | +0.0005 |
+| best *ORACLE* | 0.5364 | 0.5342 | +0.0022 |
+| last | 0.4594 | 0.4566 | +0.0028 |
+| second_last | 0.4300 | 0.4284 | +0.0016 |
+
+Everything within 0.003, i.e. at #204's 0.0023 four-replicate noise span. **Every
+number in the arms below is therefore attributable to the reward and not to the
+export, the cast, the sampler or the scorer** — which is the entire reason a
+zero-LR arm is worth a GPU-hour.
+
 ## Arm M-C — the arm the hypothesis predicted, and what it actually did
 
 **Stopped at step 26 of 72 on #237's preregistered coverage kill criterion**:
