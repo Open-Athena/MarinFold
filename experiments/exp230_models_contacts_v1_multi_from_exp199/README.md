@@ -170,22 +170,46 @@ python tokenize_corpus.py --in /data/exp230_multi/corpus \
 python train_local.py --corpus '.../tokenized/*.parquet' --val '.../val/*.parquet' \
     --init .../model/exp199 --out .../checkpoints --steps 1989
 
-# 6. evaluate. Refuses to start while train_local.py is alive: the GPU drain
-#    kill -9's every process holding a card.
-python build_eval_targets.py --work /data/exp230_multi          # 554 units
-FT=$HOME/exp230_data/checkpoints/hf/step-1989 setsid nohup ./run_gpu_node_eval.sh
-#   Gate A  -- exp82's score_rollout_worker.py, BASE and fine-tune scored
-#              concurrently in one run (#209: exp82's worker is the reference
-#              scorer, not #199's own pipeline)
-#   Gate B  -- eval_modes_worker.py --mode plain
-#   report  -- eval_modes_worker.py --mode multi --max-sections 8
-python score_gate_a.py --rprec .../eval/rprec --targets .../eval554_targets.parquet \
-    --base base --finetune finetune --out .../eval/gate_a
-python summarize_modes.py --rollouts .../eval/modes/finetune-plain --label finetune
+# 6. eval targets: the 577-unit universe (554 legacy + 23), eval2 cuts as
+#    columns. Applies BOTH of #89's filters -- MIN_SEP 6 and MIN_DEG 0.001.
+python build_eval_targets.py --work /data/exp230_multi        # -> eval577_targets.parquet
 
-# 7. publish (repairs the transformers-4.x rope keys before upload)
-HF_TOKEN=... python publish_to_hf_bucket.py --src .../checkpoints/hf/step-1989 \
-    --run plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100 --step 1989
+# 7. Gate A. Refuses to start while train_local.py is alive: the drain step
+#    kill -9's every process holding a card.
+#    NB the final export is step-1988, not 1989 -- levanter exports on its own
+#    cadence and the last one lands one step short of the step count.
+FT=$HOME/exp230_data/checkpoints/hf/step-1988 \
+TARGETS=$HOME/exp230_data/eval577_targets.parquet WHAT=rprec \
+    setsid nohup ./run_gpu_node_eval.sh
+#   exp82's score_rollout_worker.py VERBATIM, base and fine-tune concurrent on
+#   4 GPUs each (#209: exp82's worker is the reference scorer, not #199's own)
+python score_gate_a.py --rprec .../eval/rprec --targets .../eval577_targets.parquet \
+    --base base --finetune finetune --out .../eval/gate_a
+
+# 8. aggregation modes, the budget-matched plain baseline, and the curve.
+#    run_all_evals.sh chains these; each stage waits for the GPUs to drain, so
+#    it can be launched while Gate A is still running.
+./run_agg_modes.sh          # 8a  multi, 8 rollouts, full context -> sections
+./run_plain_baseline.sh     # 8b  plain, 22 rollouts, 6L+128      -> sections
+./run_leak_curve.sh         # 8c  8 checkpoints x 2 modes, 200-protein subset
+
+python score_agg_modes.py --sections .../eval/agg_sections \
+    --targets .../eval577_targets.parquet --out data/ --label finetune
+python score_agg_modes.py --sections .../eval/plain_sections \
+    --targets .../eval577_targets.parquet --out data/ --label plain22 \
+    --group-rollouts         # pools ROLLOUTS as candidates, not sections
+python summarize_modes.py --rollouts .../curve/step-1988 --label step-1988   # Gate B
+python plot_leak_curve.py --curve .../eval/curve --out plots/
+
+# 9. publish. Both verify/repair before upload; neither ever passes delete=True.
+HF_TOKEN=... python publish_to_hf_bucket.py --src .../checkpoints/hf/step-1988 \
+    --run plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100 --step 1988
+HF_TOKEN=... python publish_corpus.py --data ~/exp230_data
+
+# tests (28): corpus invariants, the Gate A reducer, the publisher's rope
+# repair, the Gate B counters, and the five aggregation rules
+python -m pytest test_corpus.py test_gate_a.py test_publish.py \
+    test_modes.py test_agg_modes.py -q
 ```
 
 ### Environments
@@ -326,9 +350,19 @@ different distributions.
 
 Three findings from measuring it:
 
-- **1:1 by document is 84/16 by gradient.** A multi document is ~5.8x longer, so
-  plain rehearsal is **15.63 %** of the supervised loss weight (the 0.1 header
-  weighting recovers about a point over its 14.70 % raw-token share). 1:1
+- **1:1 by document is 84/16 by gradient.** A multi document is ~5.8x longer:
+
+  | | multi | plain |
+  |---|---:|---:|
+  | documents | 50.00 % | 50.00 % |
+  | raw tokens | 85.30 % | 14.70 % |
+  | **supervised loss weight** | **84.37 %** | **15.63 %** |
+
+  The 0.1 header weighting recovers about a point (14.70 → 15.63 %) because it
+  discounts the sequence section of multi documents but not of plain ones.
+  Summing the per-document weights gives 1,584,417,457 against the
+  1,582,200,150 actually written into the tokenized parquet — a 0.14 % gap,
+  which is the zeroed `<eos>` slot on each of the 254,493 packed rows. 1:1
   documents, 1 document per protein and full context packing cannot *all* hold
   and also give a 50/50 token split. This is the first knob to turn if Gate A
   regresses.
@@ -338,7 +372,8 @@ Three findings from measuring it:
   context-bound. Longer multi documents need *more rollouts per protein*; a bigger
   context would do nothing for two-thirds of the corpus.
 - **No positional bias in section size.** Sections are drawn from a truncated
-  power law (`P(n) ~ n^-0.5` on `{1..m}`): mean 58 contacts, p99 324, max 649,
+  power law (`P(n) ~ n^-0.5` on `{1..m}`): mean **58.01** contacts, median 33,
+  p90 148, p99 324, max **649**,
   **2.63 %** above the old 250 cap, so full-length drafts genuinely occur. Mean
   contacts by slot is flat at 61-66 across slots 0-11, where an earlier build that
   clipped each draw to the remaining budget ran ~56 early against 36-45 late — a
@@ -384,8 +419,18 @@ per protein. R-precision (all), 100 rollouts per protein:
 | **eval2-natural** | 78 | 0.3354 | **0.3381** | **+0.0027** | [−0.0033, +0.0088] | *lead with this* |
 | eval2 <30 % | 275 | 0.5406 | 0.5388 | −0.0018 | [−0.0058, +0.0022] | |
 
-Long-range (criterion base − 0.010) is met everywhere; worst case −0.0051 on
-eval2 pooled.
+Long-range R-precision (separation ≥ 24), criterion base − 0.010:
+
+| cut | base | fine-tune | Δ | 95 % CI |
+|---|---:|---:|---:|---|
+| legacy 554 | 0.5614 | 0.5583 | −0.0031 | [−0.0063, +0.0003] |
+| eval2 | 0.4886 | 0.4835 | −0.0051 | [−0.0093, −0.0007] |
+| eval2-natural | 0.2926 | 0.2913 | −0.0014 | [−0.0075, +0.0049] |
+| eval2 <30 % | 0.4853 | 0.4806 | −0.0047 | [−0.0093, −0.0001] |
+
+Met everywhere; worst case −0.0051. Note the eval2 pooled and <30 % CIs exclude
+zero — a small long-range loss that is statistically real but an order of
+magnitude inside the tolerance.
 
 **The base reproduces its published reference**, which is what makes this
 trustworthy rather than merely self-consistent: 0.6083 / 0.5430 / 0.3354 measured
@@ -408,6 +453,20 @@ noise — and it reverses on eval2-natural.
 
 #163's arm F read **2.94** here. Counts are uncapped (`n_sections_raw`).
 
+### Published artifacts
+
+| what | where | size |
+|---|---|---|
+| checkpoint | `checkpoints/plm-exp230-cv1-multi-1_5b-lr1e-4-e1-cos-a100/hf/step-1988/` | 5.89 GB |
+| corpus | `data/document_structures/contacts_v1_multi_exp230/` | 6.26 GB |
+
+Both on the public `open-athena/MarinFold` bucket and **verified anonymously
+readable**. The checkpoint ships its tokenizer co-located and its rope config
+repaired for transformers-4.x readers (`rope_theta` restored beside
+`rope_parameters`). The corpus carries `train/` (519,998 documents),
+`tokenized/` (`input_ids` + `loss_weights` — profile F as actually trained) and
+`tokenizer/`.
+
 ### The leak-vs-steps curve
 
 ![contact sets per rollout by mode](plots/leak_curve.png)
@@ -416,8 +475,19 @@ noise — and it reverses on eval2-natural.
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | plain, mean sets | 0.998 | 1.019 | 1.023 | 1.154 | 1.105 | 1.001 | **1.000** | **1.000** | 1.008 |
 | plain, % single | 99.3 | 98.4 | 99.0 | 96.3 | 96.5 | 99.9 | **100.0** | **100.0** | 99.8 |
-| multi, mean sets | — | 16.78 | 18.80 | 20.71 | 21.36 | 19.79 | 21.23 | 21.98 | **22.02** |
-| multi, finished | — | 0.92 | 0.77 | 0.51 | 0.54 | 0.78 | 0.56 | 0.60 | 0.65 |
+| multi, mean sets | **0.999** | 16.78 | 18.80 | 20.71 | 21.36 | 19.79 | 21.23 | 21.98 | **22.02** |
+| multi, % single | 99.9 | 1.1 | 1.0 | 0.5 | 0.9 | 1.5 | 0.9 | 0.6 | 0.9 |
+| multi, finished | 1.00 | 0.92 | 0.77 | 0.51 | 0.54 | 0.78 | 0.56 | 0.60 | 0.65 |
+
+**Step 0 is measured for both modes, not left blank.** Vocab id 7 is renamed *in
+place*, so the base model handed the multi marker sees the identical integer —
+pairing exp199's weights with the renamed tokenizer is the honest step-0 reading
+of "what does this model do with this token", not a trick. It emits **0.999**
+sets: the base is a single-document decoder under *either* marker. The fine-tune
+moves that one number from 1 to 22 while leaving the plain marker at 1.
+
+That is the cleanest statement of what this run did: **one token's behaviour
+changed, and nothing else did.**
 
 **H2 is answered, but not the way it was posed.** The prediction was that the
 leak closes somewhere between 405 and ~2,000 steps. In fact it **never opened**:
@@ -546,7 +616,8 @@ afford independent rollouts should prefer them.
 
 | | |
 |---|---|
-| targets | **577-unit universe** = exp89's 554 + exp226's 23; `MIN_SEP 6`, **`MIN_DEG 0.001`** |
+| targets | **577-unit universe** = exp89's 554 + exp226's 23 |
+| ground-truth filters | `MIN_SEP 6` **and `MIN_DEG 0.001`** — the degree filter drops **21.7 %** of separation≥6 pairs (minimum degree 1.2e-12). Omitting it inflates `n_gt` ~22 %, and since R-precision cuts at R = n_true that silently makes every number incomparable with #180's frontier |
 | cuts | legacy554 (554), eval2 (307), **eval2-natural (78)**, eval2 <30 % (275) |
 | Gate A | exp82's `score_rollout_worker.py` **verbatim**, 100 rollouts, `T=1.0 top_p=0.95 top_k=-1`, `--no-per-request-seed`, `gpu_frac 0.90`; base + fine-tune concurrent, 4 GPUs each |
 | metric | exp89's `compute_metrics` **imported, not copied**; R at `cut = n_true` |

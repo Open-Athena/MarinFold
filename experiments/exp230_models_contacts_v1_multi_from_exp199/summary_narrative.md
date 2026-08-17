@@ -46,6 +46,13 @@ never opened at all: plain mode sits at roughly 1.0 contact sets from step 250,
 peaks at 1.15 near step 750, and is exactly 1.000 at steps 1500 and 1750. Multi
 mode climbs from 16.8 to 22.0 sections over the same span.
 
+Step 0 is measured for both modes rather than left blank. Vocab id 7 is renamed
+in place, so the base model handed the multi marker sees the identical integer;
+pairing exp199's weights with the renamed tokenizer is the honest reading of
+what that token already meant. The base emits 0.999 sets under it -- a single
+document decoder under either marker. So the fine-tune moved exactly one token's
+behaviour from 1 to 22, and left the other one alone.
+
 So at a 50% plain-rehearsal mix the leak simply does not appear, and the extra
 optimization bought stability rather than the fix. A future run could probably
 spend far fewer than 1,989 steps.

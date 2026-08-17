@@ -89,44 +89,47 @@ def main() -> int:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.2))
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.6))
     for mode, colour, marker in (("plain", "#c1121f", "o"), ("multi", "#0353a4", "s")):
         d = df[df["mode"] == mode]
         if d.empty:
             continue
+        lbl = f"<contacts-v1{'.multi' if mode == 'multi' else ''}>"
         ax.errorbar(d["step"], d["mean_sections"], yerr=d["se_sections"],
-                    color=colour, marker=marker, capsize=3, lw=1.8, ms=5,
-                    label=f"<contacts-v1{'.multi' if mode == 'multi' else ''}>")
+                    color=colour, marker=marker, capsize=3, lw=1.8, ms=5, label=lbl)
         ax2.plot(d["step"], 100 * d["frac_single"], color=colour, marker=marker,
-                 lw=1.8, ms=5, label=f"<contacts-v1{'.multi' if mode == 'multi' else ''}>")
+                 lw=1.8, ms=5, label=lbl)
+        # Label every point: on a linear axis the plain curve is pinned to the
+        # floor and its shape is unreadable without the numbers.
+        for x, y in zip(d["step"], d["mean_sections"]):
+            ax.annotate(f"{y:.2f}" if y < 10 else f"{y:.1f}",
+                        xy=(x, y), textcoords="offset points",
+                        xytext=(0, 9 if mode == "multi" else -15),
+                        ha="center", fontsize=7.5, color=colour)
 
-    ax.axhline(1.0, color="0.4", ls=":", lw=1)
-    ax.annotate("1 section = clean", xy=(0.02, 1.0), xycoords=("axes fraction", "data"),
-                fontsize=8, color="0.35", va="bottom")
-    base_plain = df[(df["mode"] == "plain") & (df["step"] == 0)]["mean_sections"]
-    if len(base_plain):
-        ax.axhline(float(base_plain.iloc[0]), color="0.65", ls="--", lw=1)
-        ax.annotate("exp199 base", xy=(0.62, float(base_plain.iloc[0])),
-                    xycoords=("axes fraction", "data"), fontsize=8, color="0.5", va="bottom")
+    ax.axhline(1.0, color="0.55", ls=":", lw=1)
     ax.axhline(2.94, color="#e07a5f", ls="-.", lw=1)
-    ax.annotate("#163 arm F (405 steps)", xy=(0.02, 2.94),
-                xycoords=("axes fraction", "data"), fontsize=8, color="#e07a5f", va="bottom")
-
+    ax.annotate("#163 arm F leak (2.94, 405 steps)", xy=(0.30, 2.94),
+                xycoords=("axes fraction", "data"), fontsize=8,
+                color="#e07a5f", va="bottom")
     ax.set_xlabel("fine-tuning step")
     ax.set_ylabel("mean contact sets per rollout")
     ax.set_title("Contact sets emitted, by mode")
-    ax.legend(fontsize=9, frameon=False)
-    ax.set_yscale("log")
+    ax.legend(fontsize=9, frameon=False, loc="center right")
+    # A small negative floor is deliberate: both curves sit at 1.0 at step 0 and
+    # the plain curve never leaves it, so its point labels need clear space BELOW
+    # the line. With ylim starting at 0 they collide with the x-axis.
+    ax.set_ylim(-2.0, max(26, float(df["mean_sections"].max()) * 1.12))
     ax.spines[["top", "right"]].set_visible(False)
 
     ax2.axhline(95, color="0.4", ls=":", lw=1)
-    ax2.annotate("Gate B: 95%", xy=(0.02, 95), xycoords=("axes fraction", "data"),
+    ax2.annotate("Gate B: 95%", xy=(0.55, 95), xycoords=("axes fraction", "data"),
                  fontsize=8, color="0.35", va="bottom")
     ax2.set_xlabel("fine-tuning step")
     ax2.set_ylabel("% of rollouts emitting exactly one set")
     ax2.set_title("Single-set fraction")
     ax2.set_ylim(-3, 105)
-    ax2.legend(fontsize=9, frameon=False)
+    ax2.legend(fontsize=9, frameon=False, loc="center right")
     ax2.spines[["top", "right"]].set_visible(False)
 
     fig.tight_layout()
@@ -137,11 +140,14 @@ def main() -> int:
     meta = {
         "caption": ("Contact sets emitted per rollout under the plain "
                     "<contacts-v1> sentinel versus <contacts-v1.multi>, across the "
-                    "fine-tuning run. Left: mean count (log axis), with #163's arm F "
-                    "leak at 2.94 and the exp199 base for reference. Right: fraction "
-                    "of rollouts emitting exactly one set, against Gate B's 95% bar. "
-                    "Counts are uncapped (n_sections_raw). 200 proteins, seeded and "
-                    "identical across checkpoints; 4 rollouts each."),
+                    "fine-tuning run. Step 0 is the exp199 base, read for BOTH modes: "
+                    "token id 7 is renamed in place, so the base sees the same integer "
+                    "and simply has no multi-draft behaviour attached to it yet. Left: "
+                    "mean count, linear axis, every point labelled, with #163's arm F "
+                    "leak at 2.94 for reference. Right: fraction of rollouts emitting "
+                    "exactly one set, against Gate B's 95% bar. Counts are uncapped "
+                    "(n_sections_raw). 200 proteins, seeded and identical across "
+                    "checkpoints; 4 rollouts each."),
         "script": "plot_leak_curve.py",
     }
     (a.out / "leak_curve.png.meta.json").write_text(json.dumps(meta, indent=2))
