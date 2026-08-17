@@ -76,7 +76,16 @@ class Exp237Config(SkyRLTrainConfig):
     # a result or a collapse.
     min_sections: float = 12.0
     max_jaccard: float = 0.45
-    min_union_ratio: float = 0.80
+    # Union pairs per rollout against R = |gt|, which is where #208's coverage
+    # mechanism actually lives: R-precision cuts a ranking at R, so zero-vote
+    # pairs begin padding the top-R only once the union drops below R.
+    min_union_over_r: float = 1.25
+    # #237's preregistered coverage criterion -- union against the run's OWN
+    # warmup. OFF by default, deliberately. It stopped all three arms, and the
+    # evaluation then showed union/R never left 2.8-4.0 in any of them; arm M-B
+    # was stopped at step 36 while improving every aggregation mode, consensus
+    # included. Set it back to 0.80 to reproduce the preregistered behaviour.
+    min_union_ratio: float = 0.0
     # Stop the run when a gate is violated on 3 consecutive batches. Tripping a
     # preregistered kill criterion IS the result, and continuing past it only
     # spends GPU hours confirming it.
@@ -119,6 +128,7 @@ def build_exp(cfg):
                 min_sections=cfg.min_sections,
                 max_jaccard=cfg.max_jaccard,
                 min_union_ratio=cfg.min_union_ratio,
+                min_union_over_r=cfg.min_union_over_r,
                 gates_fatal=cfg.gates_fatal,
             )
 

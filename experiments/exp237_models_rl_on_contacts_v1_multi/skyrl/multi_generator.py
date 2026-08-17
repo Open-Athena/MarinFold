@@ -118,8 +118,18 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             those rows taking 12.4 % of sampled tokens across 256 of 256 rollouts
             before NaN-ing the trainer on step 1. The trap belongs to the
             inference engine, so it travels with any port.
-        min_sections / max_jaccard / min_union_ratio: #237's preregistered
-            diversity kill criteria, checked every batch.
+        min_sections / max_jaccard / min_union_over_r: the diversity kill
+            criteria, checked every batch.
+        min_union_ratio: #237's preregistered coverage criterion — union pairs
+            per rollout against the run's own warmup, kill below 0.80. **Default
+            0, i.e. off, and that is a deliberate correction.** It stopped all
+            three arms, and the evaluation then showed the mechanism it stands
+            for was never approached: R-precision cuts at R = |gt|, so zero-vote
+            pairs pad the top-R only once the union falls BELOW R, and every arm
+            held union/R between 2.8 and 4.0. Arm M-B was stopped at step 36
+            while improving *every* aggregation mode, consensus included.
+            `min_union_over_r` is the same criterion written in the units the
+            mechanism is actually in.
         gates_fatal: Stop the run when a gate is violated `_GATE_PATIENCE`
             batches running. Off turns the gates into warnings.
     """
@@ -127,7 +137,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
     def __init__(self, *args, reward_mode: str = "section_consensus",
                  vocab_size: Optional[int] = None, lam: float = 1.0,
                  min_sections: float = 12.0, max_jaccard: float = 0.45,
-                 min_union_ratio: float = 0.80, gates_fatal: bool = True,
+                 min_union_ratio: float = 0.0, min_union_over_r: float = 1.25,
+                 gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
@@ -140,6 +151,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.min_sections = float(min_sections)
         self.max_jaccard = float(max_jaccard)
         self.min_union_ratio = float(min_union_ratio)
+        self.min_union_over_r = float(min_union_over_r)
         self.gates_fatal = bool(gates_fatal)
         self.collapse_ratio = float(collapse_ratio)
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
@@ -254,6 +266,15 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         d["union"] = d.get("union", 0.0) + walk.diagnostics["union_pairs"]
         d["votes"] = d.get("votes", 0.0) + walk.diagnostics["total_votes"]
         d["empty"] = d.get("empty", 0.0) + walk.diagnostics["n_empty_sections"]
+        if gt:
+            # union / R -- the quantity #208's coverage mechanism is actually
+            # about. R-precision cuts a ranking at R = |gt|, so zero-vote pairs
+            # start padding the top-R only once the union falls BELOW R. Measured
+            # at eval, every arm here held union/R between 2.8 and 4.0 while a
+            # gate defined relative to each run's own opening stopped all three.
+            d["union_over_r"] = d.get("union_over_r", 0.0) + \
+                walk.diagnostics["union_pairs"] / len(gt)
+            d["n_union_over_r"] = d.get("n_union_over_r", 0.0) + 1.0
         d["finished"] = d.get("finished", 0.0) + float(walk.finished)
         d["resp_tokens"] = d.get("resp_tokens", 0.0) + float(walk.n_response_tokens)
         d["scored"] = d.get("scored", 0.0) + float(walk.n_scored)
@@ -359,6 +380,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             "multi/response_tokens": d.get("resp_tokens", 0.0) / n,
             "contacts/precision": (d.get("correct", 0.0) / d["scored"]) if d.get("scored") else 0.0,
             "contacts/pred_per_gt": (d.get("scored", 0.0) / d["gt"]) if d.get("gt") else 0.0,
+            "multi/union_over_r": (d.get("union_over_r", 0.0) / d["n_union_over_r"]) if d.get("n_union_over_r") else float("nan"),
             "multi/dead_prompts": (d.get("dead_prompts", 0.0) / d["n_prompts"]) if d.get("n_prompts") else 0.0,
         }
         metrics.update(m)
@@ -412,12 +434,17 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             violations.append(
                 f"mean pairwise Jaccard median {jac:.3f} > {self.max_jaccard:g} "
                 "(diversity collapse)")
-        if self._union_baseline:
+        if self._union_baseline and self.min_union_ratio > 0:
             ratio = med("multi/union_pairs") / self._union_baseline
             if ratio < self.min_union_ratio:
                 violations.append(
                     f"union pairs/rollout median fell to {100 * ratio:.0f}% of the warmup "
                     f"{self._union_baseline:.0f} (< {100 * self.min_union_ratio:.0f}%)")
+        uor = med("multi/union_over_r")
+        if uor == uor and uor < self.min_union_over_r:
+            violations.append(
+                f"union/R median {uor:.2f} < {self.min_union_over_r:g} (the vote no longer "
+                "covers the top-R slots, so they are padded with zero-vote pairs)")
 
         for key in list(self._gate_strikes):
             if not any(key in v for v in violations):

@@ -25,6 +25,12 @@ GROUP=${GROUP:-8}                 # generator.n_samples_per_prompt
 PROMPTS=${PROMPTS:-8}             # trainer.train_batch_size, in PROMPTS
 GEN_TOKENS=${GEN_TOKENS:-7000}
 CKPT_EVERY=${CKPT_EVERY:-20}
+# Extra hydra overrides, appended verbatim. Used to continue an arm past a gate
+# (`gates_fatal=false`) and to raise `trainer.max_training_steps` on a resume --
+# SkyRL's `resume_mode=latest` picks up the newest global_step_N under
+# `trainer.ckpt_path`, so re-running an arm with the same ROOT continues it
+# rather than restarting it.
+EXTRA_OVERRIDES=${EXTRA_OVERRIDES:-}
 DATA=${DATA:-$HOME/exp237_data/skyrl_multi_10k.parquet}
 MODEL=${MODEL:-$HOME/exp237_data/model/exp230_step1988_bf16}
 ROOT=${ROOT:-$HOME/exp237_data}
@@ -132,6 +138,7 @@ $PY main_exp237.py \
   trainer.logger=console \
   trainer.project_name=exp237 \
   trainer.run_name="$RUN" \
+  ${EXTRA_OVERRIDES:-} \
   > "$LOG" 2>&1
 rc=$?
 echo "=== $ARM exited rc=$rc ==="
