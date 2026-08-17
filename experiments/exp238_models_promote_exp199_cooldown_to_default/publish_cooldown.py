@@ -57,7 +57,9 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parents[1]
+# On the pod this file lands at /app/publish_cooldown.py with no repo above it,
+# so the repo root is resolved lazily and only on the paths that need it.
+REPO_ROOT = HERE.parents[1] if len(HERE.parents) > 1 else None
 
 RUN_NAME = "prot-exp199-cw-cv1-p06-cool-s01"
 STEP = 290_400
@@ -96,8 +98,11 @@ EXPECTED_TOKEN_IDS = {
     "<p0>": 143, "<p1999>": 2142,
 }
 
-# The repair module, shipped by value into the job.
-ROPE_REPAIR_SOURCE = REPO_ROOT / "marinfold/marinfold/inference/_config.py"
+# The repair module, shipped by value into the job. Absent on the pod, where
+# it arrives through EXP238_ROPE_REPAIR_B64 instead.
+ROPE_REPAIR_SOURCE = (
+    REPO_ROOT / "marinfold/marinfold/inference/_config.py" if REPO_ROOT else None
+)
 
 # HF rate-limits the bucket write-token endpoint; exp139 saw sustained 429s.
 _MAX_RETRIES = 8
