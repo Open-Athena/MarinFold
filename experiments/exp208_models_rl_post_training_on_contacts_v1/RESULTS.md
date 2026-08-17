@@ -579,8 +579,10 @@ Everything below is what the evidence supports, in order.
 2. **Settle whether more data helps, at a matched KL.** Arm C v4 confounded pool
    size with KL runaway — it diverged (KL 3.96) rather than testing the 10,000-prompt
    pool. The clean version is lr 1e-5 over 625 steps, landing near arm C v3's
-   KL ≈ 0.168 gradually. The dataset is built and staged
-   (`data/skyrl_train_10k.parquet`).
+   KL ≈ 0.168 gradually. Regenerate the pool with
+   `python skyrl/build_dataset.py --out skyrl/data/skyrl_train_10k.parquet --n 10000`
+   (deterministic — it takes the first N targets from exp200's pool, so the first
+   2,000 rows are exactly the committed 2k set).
 3. **Find the KL sweet spot.** Arm C's three learning rates trace a curve — 0.0004
    (nothing), 0.012 (nothing), 0.168 (AUC +0.0032), 3.96 (divergence). The useful
    window is narrow and only three points wide; 2–3 more runs would locate it.
