@@ -3,39 +3,72 @@
 # is omitted) to the HF URL below, downloads it, and dispatches to the first
 # `document_structures` impl the entry lists. See registry.py.
 
-# Current best: exp199 (issues #199 / #204) — eric-czech's AFDB + ESM-Atlas
-# mixture sweep, CoreWeave arm. Qwen3 1.47B trained FROM SCRATCH on 16 H100
-# nodes (cw-rno2a), WSD schedule, 145,200 steps, lr 1e-3 / wd 0.2 / global
-# batch 128, 152.3B tokens over a 50/50 AFDB+ESM-Atlas mixture with amino-acid
-# augmentation. R-precision 0.587 (all) / 0.542 (long), 0.666 (short) / 0.636
-# (medium) on the 554-protein eval set — the best we have, +0.025 over exp166
-# and +0.054 over the exp117 control re-scored in the same batch (#204, exp82
-# rollout inference; see experiments/exp180_.../README.md for the full
-# progression). contacts-v1 tokenizer co-located.
+# Current best: exp199's COOLDOWN (issues #199 / #234, promoted in #238) —
+# eric-czech's AFDB + ESM-Atlas mixture sweep, CoreWeave arm, annealed. Qwen3
+# 1.47B, lr 1e-3 / wd 0.2 / global batch 128, a 50/50 AFDB+ESM-Atlas mixture
+# with amino-acid augmentation, 304.5B cumulative tokens. R-precision 0.631
+# (all) / 0.584 (long) on the 554-protein eval set. contacts-v1 tokenizer
+# co-located.
 #
-# Its val loss is 2.9712, which looks WORSE than exp166's 2.6642 below and is
+# Three runs, one model. The `p06-aug` entry below trained from scratch on 16
+# H100 nodes to step 145,200; a continuation resumed its step 116,160 and ran
+# to step 261,360; this run restored that and annealed linear-to-zero over
+# 29,040 further updates, ending at step 290,400. So it is the same recipe as
+# `p06-aug` given twice the tokens and a cooldown, not a new one.
+#
+# Scored by #234 against `p06-aug` under ONE harness, on the same 554
+# proteins: 0.6307 / 0.5837 against 0.6088 / 0.5633, i.e. +0.0218 all-range
+# and +0.0204 long-range, an order of magnitude outside the 0.0023 span of
+# #204's four control replicates. That harness reproduces the historical #75
+# E8 number to 0.00017, which is what puts it on the same axis as everything
+# before it. It also clears Protenix-v2 single-sequence (0.603 on this set).
+#
+# On eval2 (#226), the homology-controlled set that is now the default: 0.358
+# all / 0.300 long on the 78 NATURAL proteins under 40% identity to training,
+# and 0.554 / 0.496 pooled over all 307. Lead with the natural cut — the
+# pooled number is 75% designed proteins. The checkpoint it displaces scored
+# 0.337 natural, so the gain survives homology control.
+#
+# Its val loss is 2.9397, which looks WORSE than exp166's 2.6642 below and is
 # not: marin #7209 changed the objective to mask padding targets partway
 # through this model line, worth ~+0.38 nats. On exp166's scale this run is
-# ~2.5895. Never compare a loss across that boundary without converting —
+# ~2.5580. Never compare a loss across that boundary without converting —
 # experiments/exp180_.../README.md, "The two loss scales".
 #
-# This is OUR republished copy of eric-czech's export, not the original. The
-# weights are byte-identical (both shards sha256-verified against the source);
-# only config.json differs. His export was written by transformers 5.12.1 and
-# states rope as a `rope_parameters` block, which the pinned transformers 4.x
-# ignores in favour of the architecture default — loading rope_theta 10000
-# where the model was trained with 500000, worth 0.76 nats/token on real
-# documents, silently. Our copy states rope in both 4.x and 5.x terms, so a
-# plain AutoModelForCausalLM.from_pretrained is correct with no marinfold code
-# in the loop. See the PROVENANCE.md beside the weights,
+# This is OUR copy, republished from the CoreWeave export by
+# experiments/exp238_.../publish_cooldown.py. The weights are byte-identical
+# (every object verified against the S3 ETags #234 recorded); only config.json
+# differs. The export was written by transformers 5.x and states rope as a
+# `rope_parameters` block, which the pinned transformers 4.x ignores in favour
+# of the architecture default — loading rope_theta 10000 where the model was
+# trained with 500000, silently. Our copy states rope in both 4.x and 5.x
+# terms, so a plain AutoModelForCausalLM.from_pretrained is correct with no
+# marinfold code in the loop. See the PROVENANCE.md beside the weights,
 # scripts/repair_checkpoint_config.py, and issue #180.
-- nickname: contacts-v1-exp199-1.5B
+- nickname: contacts-v1-exp199-cooldown-1.5B
   default: true
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp199-cw-cv1-p06-cool-s01/hf/step-290400
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-p06-cool-s01
+  document_structures:
+    - contacts-v1
+# Previous default: the pre-cooldown CoreWeave run this one continues (issues
+# #199 / #204). Qwen3 1.47B trained FROM SCRATCH on 16 H100 nodes (cw-rno2a),
+# WSD schedule, 145,200 steps, 152.3B tokens, same mixture and same
+# augmentation. Val loss 2.9712 (current scale, ~2.5895 on exp166's).
+#
+# Its R-precision is 0.6088 (all) / 0.5633 (long) — NOT the 0.5873 / 0.5422
+# this file used to quote and that #204, #205 and a pile of issue comments
+# still do. Same weights, same recipe: #204's evaluation pipeline read this
+# particular checkpoint ~0.022 low. #208 got 0.6103 from exp82's own worker on
+# two accelerators and two seeds, and #234's harness got 0.6088 while
+# reproducing every other checkpoint #204 scored, so the outlier is that one
+# reading. See exp208's RPRECISION_PIPELINE_DISCREPANCY.md and #180's caveats.
+- nickname: contacts-v1-exp199-1.5B
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp199-cw-cv1-s02-m1-p06-aug/hf/step-145199
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug
   document_structures:
     - contacts-v1
-# Previous default: exp166 (issue #166) — eric-czech's contacts-v1 amino-acid
+# Earlier default: exp166 (issue #166) — eric-czech's contacts-v1 amino-acid
 # augmentation run, continued from the #117 sweep winner. Qwen3 1.47B, 8
 # epochs, lr 3.1623e-3 / wd 0.1 / global batch 128, exp117 init;
 # eval/tokenized/contacts-v1-val/loss 2.6642 (pre-#7209 scale). R-precision

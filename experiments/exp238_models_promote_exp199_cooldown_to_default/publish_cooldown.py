@@ -367,13 +367,36 @@ def submit(iris_bin: str, dry_run: bool) -> int:
     return 0
 
 
+def publish_provenance() -> int:
+    """Upload PROVENANCE.md beside the weights, from the workstation.
+
+    Separate from the checkpoint copy because its rope-cost table is measured
+    against the published copy — it cannot exist until the weights do. A few
+    kilobytes, so the uplink that rules out doing the rest locally is irrelevant
+    here.
+    """
+    from huggingface_hub import HfFileSystem
+
+    source = HERE / "PROVENANCE.md"
+    payload = source.read_bytes()
+    destination = f"buckets/{BUCKET_ID}/{BUCKET_PATH}/PROVENANCE.md"
+    with HfFileSystem(token=hf_token()).open(destination, "wb") as handle:
+        handle.write(payload)
+    log(f"put PROVENANCE.md ({len(payload)} B) -> {destination}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--submit", action="store_true",
                         help="run on a CoreWeave pod instead of here")
+    parser.add_argument("--provenance-only", action="store_true",
+                        help="upload PROVENANCE.md beside the already-published weights")
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.provenance_only:
+        return publish_provenance()
     if args.submit:
         return submit(args.iris_bin, args.dry_run)
     return run()
