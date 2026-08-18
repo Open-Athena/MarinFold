@@ -50,7 +50,13 @@ ESM_VOLUMES = {
     "esmfold": "esmfold-exp78-runs",
     "esmfold2": "esmfold2-exp78-runs",
 }
-PROTENIX_VOLUME = "exp245-protenix-runs"
+#: exp12's Modal app binds its output volume in the ``@app.cls`` decorator, so
+#: the ``--output-volume`` flag is applied *after* the binding and has no effect
+#: on where predictions land -- they go to exp12's own volume regardless, and
+#: the run prints the name it did not use. exp245's 209 proteins are disjoint
+#: from the 100 already there, so they coexist; the sync below takes only the
+#: stems this experiment asked for.
+PROTENIX_VOLUME = "foldbench-protenix-runs"
 PROTENIX_MODES = ("single_seq", "msa")
 MODELS = ("esmfold", "esmfold2", "protenix-v2_single_seq", "protenix-v2_msa")
 
@@ -106,8 +112,11 @@ def sync_protenix(stems: list[str], destination: Path) -> dict:
 
     #74 owns the selection rule -- top-1 of the 40 samples by the model's own
     ranking score -- so its ``select_best`` is imported and called rather than
-    restated.
+    restated. Only the stems this experiment ran are fetched: the volume also
+    holds exp12's original 100 monomers.
     """
+    import modal
+
     exp74 = U.EXP74_DIR
     if str(exp74) not in sys.path:
         sys.path.insert(0, str(exp74))
@@ -115,12 +124,25 @@ def sync_protenix(stems: list[str], destination: Path) -> dict:
 
     runs = U.WORK / "protenix_runs"
     runs.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run(
-        [MODAL_BIN, "volume", "get", "--force", PROTENIX_VOLUME, "**", str(runs)],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"modal volume get failed: {result.stderr[-2000:]}")
+    handle = modal.Volume.from_name(PROTENIX_VOLUME)
+    fetched = 0
+    for mode in PROTENIX_MODES:
+        for index, stem in enumerate(stems, 1):
+            for entry in handle.iterdir(f"/{mode}/{stem}", recursive=True):
+                if entry.type != modal.volume.FileEntryType.FILE:
+                    continue
+                target = runs / entry.path.lstrip("/")
+                if target.exists() and target.stat().st_size == entry.size:
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open("wb") as sink:
+                    for chunk in handle.read_file(entry.path):
+                        sink.write(chunk)
+                fetched += 1
+            if index % 50 == 0:
+                print(f"  [sync] protenix {mode}: {index}/{len(stems)}", flush=True)
+    print(f"  [sync] protenix: {fetched} files", flush=True)
+
     best = U.WORK / "protenix_best"
     select_best(runs_dir=runs, out_dir=best, modes=list(PROTENIX_MODES), stems=stems)
     moved = {}

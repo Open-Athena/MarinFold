@@ -74,6 +74,9 @@ CUTS = ("R", "AUC")
 
 EXP213_WIDE = (U.EXPERIMENTS / "exp213_evals_train_sequence_overlap_audit"
                / "data" / "per_protein_wide.csv.gz")
+#: #226 scored the 23 monomers it added, which are not in #213's 554-row table.
+#: Same predictors, same metric, same column names.
+EXP226_PER_PROTEIN = U.EVAL2_PER_PROTEIN
 BOOTSTRAP_DRAWS = 10_000
 BOOTSTRAP_SEED = 245
 
@@ -100,17 +103,24 @@ def load_new_baselines(path: Path) -> pd.DataFrame:
 
 
 def load_reused_baselines(stems: set[str]) -> pd.DataFrame:
-    """Published per-protein baseline rows for the units that can reuse them."""
-    wide = pd.read_csv(EXP213_WIDE)
-    wide = wide[wide.stem.isin(stems) & wide["range"].isin(RANGES)
-                & wide["cut"].isin(CUTS)]
-    rows = []
-    for name, column in EXP213_COLUMNS.items():
-        part = wide[["stem", "range", "cut", column]].rename(
-            columns={column: "precision"})
-        part["predictor"] = name
-        rows.append(part)
-    return pd.concat(rows, ignore_index=True)
+    """Published per-protein baseline rows for the units that can reuse them.
+
+    Two sources, because the eval set they were published against grew: #213's
+    table covers the 554, #226's covers the 23 monomers it added. A stem in both
+    is taken from #213, the older and more widely cited of the two.
+    """
+    frames = []
+    for path in (EXP213_WIDE, EXP226_PER_PROTEIN):
+        wide = pd.read_csv(path)
+        wide = wide[wide.stem.isin(stems) & wide["range"].isin(RANGES)
+                    & wide["cut"].isin(CUTS)]
+        for name, column in EXP213_COLUMNS.items():
+            part = wide[["stem", "range", "cut", column]].rename(
+                columns={column: "precision"})
+            part["predictor"] = name
+            frames.append(part)
+    combined = pd.concat(frames, ignore_index=True)
+    return combined.drop_duplicates(subset=["stem", "range", "cut", "predictor"])
 
 
 def load_knn(path: Path | None) -> pd.DataFrame:

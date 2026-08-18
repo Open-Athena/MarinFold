@@ -1,0 +1,118 @@
+{
+  "units": 333,
+  "predictor_coverage": {
+    "#199 cooldown (contaminated)": 333,
+    "#232 m1-p02 (decontaminated)": 333,
+    "#232 m2-p06 (decontaminated)": 333,
+    "ESMFold": 333,
+    "ESMFold2": 333,
+    "Protenix-v2 + MSA": 124,
+    "Protenix-v2 single-seq": 124,
+    "seq-KNN (decontaminated corpus)": 333,
+    "seq-KNN (unfiltered corpus)": 333
+  },
+  "incomplete_predictors": {
+    "Protenix-v2 + MSA": 124,
+    "Protenix-v2 single-seq": 124
+  },
+  "r_all": {
+    "eval-val": {
+      "#232 m2-p06 (decontaminated)": 0.5198,
+      "#232 m1-p02 (decontaminated)": 0.4731,
+      "#199 cooldown (contaminated)": 0.589,
+      "Protenix-v2 single-seq": 0.2632,
+      "ESMFold": 0.7504,
+      "ESMFold2": 0.8015,
+      "Protenix-v2 + MSA": 0.846,
+      "seq-KNN (unfiltered corpus)": 0.5837,
+      "seq-KNN (decontaminated corpus)": 0.4071
+    },
+    "eval-test": {
+      "#232 m2-p06 (decontaminated)": 0.5377,
+      "#232 m1-p02 (decontaminated)": 0.4931,
+      "#199 cooldown (contaminated)": 0.6132,
+      "Protenix-v2 single-seq": 0.2434,
+      "ESMFold": 0.7534,
+      "ESMFold2": 0.7921,
+      "Protenix-v2 + MSA": 0.8054,
+      "seq-KNN (unfiltered corpus)": 0.582,
+      "seq-KNN (decontaminated corpus)": 0.4257
+    },
+    "eval-denovo": {
+      "#232 m2-p06 (decontaminated)": 0.5914,
+      "#232 m1-p02 (decontaminated)": 0.5879,
+      "#199 cooldown (contaminated)": 0.6188,
+      "Protenix-v2 single-seq": 0.8153,
+      "ESMFold": 0.7951,
+      "ESMFold2": 0.8635,
+      "Protenix-v2 + MSA": 0.8168,
+      "seq-KNN (unfiltered corpus)": 0.0659,
+      "seq-KNN (decontaminated corpus)": 0.0503
+    }
+  },
+  "val_minus_test": {
+    "#232 m2-p06 (decontaminated)": {
+      "gap": -0.0179,
+      "ci": [
+        -0.0679,
+        0.0335
+      ]
+    },
+    "#232 m1-p02 (decontaminated)": {
+      "gap": -0.0199,
+      "ci": [
+        -0.0701,
+        0.0278
+      ]
+    },
+    "#199 cooldown (contaminated)": {
+      "gap": -0.0242,
+      "ci": [
+        -0.0726,
+        0.0221
+      ]
+    },
+    "Protenix-v2 single-seq": {
+      "gap": 0.0198,
+      "ci": [
+        -0.0783,
+        0.0991
+      ]
+    },
+    "ESMFold": {
+      "gap": -0.003,
+      "ci": [
+        -0.0504,
+        0.0382
+      ]
+    },
+    "ESMFold2": {
+      "gap": 0.0094,
+      "ci": [
+        -0.0277,
+        0.0449
+      ]
+    },
+    "Protenix-v2 + MSA": {
+      "gap": 0.0406,
+      "ci": [
+        -0.0024,
+        0.0902
+      ]
+    },
+    "seq-KNN (unfiltered corpus)": {
+      "gap": 0.0017,
+      "ci": [
+        -0.0498,
+        0.0523
+      ]
+    },
+    "seq-KNN (decontaminated corpus)": {
+      "gap": -0.0186,
+      "ci": [
+        -0.0665,
+        0.0285
+      ]
+    }
+  }
+}

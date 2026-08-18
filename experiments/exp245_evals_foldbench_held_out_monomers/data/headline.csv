@@ -1,0 +1,289 @@
+eval_set,stratum,predictor,range,cut,value,n
+eval-denovo,all,#199 cooldown (contaminated),all,AUC,0.9668991432687108,19
+eval-denovo,all,#199 cooldown (contaminated),all,R,0.6188362267155597,19
+eval-denovo,all,#199 cooldown (contaminated),long,AUC,0.9553213531119651,19
+eval-denovo,all,#199 cooldown (contaminated),long,R,0.5726387157407323,19
+eval-denovo,all,#232 m1-p02 (decontaminated),all,AUC,0.9657666094306936,19
+eval-denovo,all,#232 m1-p02 (decontaminated),all,R,0.5878697377395716,19
+eval-denovo,all,#232 m1-p02 (decontaminated),long,AUC,0.9522777617997155,19
+eval-denovo,all,#232 m1-p02 (decontaminated),long,R,0.5481940978167771,19
+eval-denovo,all,#232 m2-p06 (decontaminated),all,AUC,0.9637388263427876,19
+eval-denovo,all,#232 m2-p06 (decontaminated),all,R,0.5913805855058719,19
+eval-denovo,all,#232 m2-p06 (decontaminated),long,AUC,0.9510462216543374,19
+eval-denovo,all,#232 m2-p06 (decontaminated),long,R,0.5489256295770376,19
+eval-denovo,all,ESMFold,all,AUC,0.9451433294582825,4
+eval-denovo,all,ESMFold,all,R,0.7950781980579187,19
+eval-denovo,all,ESMFold,long,AUC,0.9454875735853839,4
+eval-denovo,all,ESMFold,long,R,0.7721811325805167,19
+eval-denovo,all,ESMFold2,all,AUC,0.9430411213876742,4
+eval-denovo,all,ESMFold2,all,R,0.8635095533315522,19
+eval-denovo,all,ESMFold2,long,AUC,0.94745909938289,4
+eval-denovo,all,ESMFold2,long,R,0.8534924315828892,19
+eval-denovo,all,Protenix-v2 + MSA,all,AUC,0.9388716573769353,4
+eval-denovo,all,Protenix-v2 + MSA,all,R,0.816798297348582,4
+eval-denovo,all,Protenix-v2 + MSA,long,AUC,0.9180672662799125,4
+eval-denovo,all,Protenix-v2 + MSA,long,R,0.7858034795853774,4
+eval-denovo,all,Protenix-v2 single-seq,all,AUC,0.9396014289755376,4
+eval-denovo,all,Protenix-v2 single-seq,all,R,0.8152747149426466,4
+eval-denovo,all,Protenix-v2 single-seq,long,AUC,0.9182115042970259,4
+eval-denovo,all,Protenix-v2 single-seq,long,R,0.7815702148282956,4
+eval-denovo,all,seq-KNN (decontaminated corpus),all,AUC,0.5225576922344162,19
+eval-denovo,all,seq-KNN (decontaminated corpus),all,R,0.050284080503353604,19
+eval-denovo,all,seq-KNN (decontaminated corpus),long,AUC,0.5064968365906266,19
+eval-denovo,all,seq-KNN (decontaminated corpus),long,R,0.03024079504547062,19
+eval-denovo,all,seq-KNN (unfiltered corpus),all,AUC,0.5300019231818203,19
+eval-denovo,all,seq-KNN (unfiltered corpus),all,R,0.06594705197377539,19
+eval-denovo,all,seq-KNN (unfiltered corpus),long,AUC,0.5115673680652848,19
+eval-denovo,all,seq-KNN (unfiltered corpus),long,R,0.0397437190220788,19
+eval-test,all,#199 cooldown (contaminated),all,AUC,0.9583553369141693,217
+eval-test,all,#199 cooldown (contaminated),all,R,0.6131841080469917,217
+eval-test,all,#199 cooldown (contaminated),long,AUC,0.951995757348198,217
+eval-test,all,#199 cooldown (contaminated),long,R,0.5945341917549347,217
+eval-test,all,#232 m1-p02 (decontaminated),all,AUC,0.925439537578107,217
+eval-test,all,#232 m1-p02 (decontaminated),all,R,0.49309655879073966,217
+eval-test,all,#232 m1-p02 (decontaminated),long,AUC,0.9130539761142972,217
+eval-test,all,#232 m1-p02 (decontaminated),long,R,0.46202349377501456,217
+eval-test,all,#232 m2-p06 (decontaminated),all,AUC,0.9389570841307029,217
+eval-test,all,#232 m2-p06 (decontaminated),all,R,0.5376552851103138,217
+eval-test,all,#232 m2-p06 (decontaminated),long,AUC,0.9298624773573143,217
+eval-test,all,#232 m2-p06 (decontaminated),long,R,0.5128096398272495,217
+eval-test,all,ESMFold,all,AUC,,0
+eval-test,all,ESMFold,all,R,0.7534202975640663,217
+eval-test,all,ESMFold,long,AUC,,0
+eval-test,all,ESMFold,long,R,0.7386897586769073,217
+eval-test,all,ESMFold2,all,AUC,,0
+eval-test,all,ESMFold2,all,R,0.7921377010879589,217
+eval-test,all,ESMFold2,long,AUC,,0
+eval-test,all,ESMFold2,long,R,0.7815776113917947,217
+eval-test,all,Protenix-v2 + MSA,all,AUC,,0
+eval-test,all,Protenix-v2 + MSA,all,R,0.80542918601835,23
+eval-test,all,Protenix-v2 + MSA,long,AUC,,0
+eval-test,all,Protenix-v2 + MSA,long,R,0.7889425026400817,23
+eval-test,all,Protenix-v2 single-seq,all,AUC,,0
+eval-test,all,Protenix-v2 single-seq,all,R,0.24344272539401757,23
+eval-test,all,Protenix-v2 single-seq,long,AUC,,0
+eval-test,all,Protenix-v2 single-seq,long,R,0.21073340554788406,23
+eval-test,all,seq-KNN (decontaminated corpus),all,AUC,0.7810658617267646,217
+eval-test,all,seq-KNN (decontaminated corpus),all,R,0.42572468922968476,217
+eval-test,all,seq-KNN (decontaminated corpus),long,AUC,0.772077023163729,217
+eval-test,all,seq-KNN (decontaminated corpus),long,R,0.4156402845350393,217
+eval-test,all,seq-KNN (unfiltered corpus),all,AUC,0.8708987361275039,217
+eval-test,all,seq-KNN (unfiltered corpus),all,R,0.5819821492519804,217
+eval-test,all,seq-KNN (unfiltered corpus),long,AUC,0.8658555194087034,217
+eval-test,all,seq-KNN (unfiltered corpus),long,R,0.5746581802738032,217
+eval-val,all,#199 cooldown (contaminated),all,AUC,0.9511468990924388,97
+eval-val,all,#199 cooldown (contaminated),all,R,0.588994195620945,97
+eval-val,all,#199 cooldown (contaminated),long,AUC,0.9429864051831522,97
+eval-val,all,#199 cooldown (contaminated),long,R,0.5756649575748538,97
+eval-val,all,#232 m1-p02 (decontaminated),all,AUC,0.914172687869362,97
+eval-val,all,#232 m1-p02 (decontaminated),all,R,0.4731469398933442,97
+eval-val,all,#232 m1-p02 (decontaminated),long,AUC,0.8986847672795093,97
+eval-val,all,#232 m1-p02 (decontaminated),long,R,0.44804117837866153,97
+eval-val,all,#232 m2-p06 (decontaminated),all,AUC,0.930843513349874,97
+eval-val,all,#232 m2-p06 (decontaminated),all,R,0.5197991295291134,97
+eval-val,all,#232 m2-p06 (decontaminated),long,AUC,0.9182671025307647,97
+eval-val,all,#232 m2-p06 (decontaminated),long,R,0.5017295196551887,97
+eval-val,all,ESMFold,all,AUC,0.9002066309858588,97
+eval-val,all,ESMFold,all,R,0.7503759561708839,97
+eval-val,all,ESMFold,long,AUC,0.8944132766093084,97
+eval-val,all,ESMFold,long,R,0.7378319398590216,97
+eval-val,all,ESMFold2,all,AUC,0.927137340285411,97
+eval-val,all,ESMFold2,all,R,0.8015035339266381,97
+eval-val,all,ESMFold2,long,AUC,0.9232305052077753,97
+eval-val,all,ESMFold2,long,R,0.7919635485946235,97
+eval-val,all,Protenix-v2 + MSA,all,AUC,0.9526642775400964,97
+eval-val,all,Protenix-v2 + MSA,all,R,0.8460293840998715,97
+eval-val,all,Protenix-v2 + MSA,long,AUC,0.9484874247622921,97
+eval-val,all,Protenix-v2 + MSA,long,R,0.8341165308412977,97
+eval-val,all,Protenix-v2 single-seq,all,AUC,0.6424099879596272,97
+eval-val,all,Protenix-v2 single-seq,all,R,0.26319952597011453,97
+eval-val,all,Protenix-v2 single-seq,long,AUC,0.6289181779667969,97
+eval-val,all,Protenix-v2 single-seq,long,R,0.2351292321707239,97
+eval-val,all,seq-KNN (decontaminated corpus),all,AUC,0.7685892524587479,97
+eval-val,all,seq-KNN (decontaminated corpus),all,R,0.40714915060349316,97
+eval-val,all,seq-KNN (decontaminated corpus),long,AUC,0.7597649492536486,97
+eval-val,all,seq-KNN (decontaminated corpus),long,R,0.3921147797801755,97
+eval-val,all,seq-KNN (unfiltered corpus),all,AUC,0.8679397712196428,97
+eval-val,all,seq-KNN (unfiltered corpus),all,R,0.5836593962012714,97
+eval-val,all,seq-KNN (unfiltered corpus),long,AUC,0.8638517656009472,97
+eval-val,all,seq-KNN (unfiltered corpus),long,R,0.5790428913888078,97
+eval-test,viral,#199 cooldown (contaminated),all,AUC,0.931894792244792,13
+eval-test,viral,#199 cooldown (contaminated),all,R,0.49726128073446085,13
+eval-test,viral,#199 cooldown (contaminated),long,AUC,0.9229329188500228,13
+eval-test,viral,#199 cooldown (contaminated),long,R,0.4858419361566519,13
+eval-test,viral,#232 m1-p02 (decontaminated),all,AUC,0.8831552590058003,13
+eval-test,viral,#232 m1-p02 (decontaminated),all,R,0.3846957121552264,13
+eval-test,viral,#232 m1-p02 (decontaminated),long,AUC,0.862387957454791,13
+eval-test,viral,#232 m1-p02 (decontaminated),long,R,0.36773128721134013,13
+eval-test,viral,#232 m2-p06 (decontaminated),all,AUC,0.9203205181233067,13
+eval-test,viral,#232 m2-p06 (decontaminated),all,R,0.4649131506122589,13
+eval-test,viral,#232 m2-p06 (decontaminated),long,AUC,0.91191317792994,13
+eval-test,viral,#232 m2-p06 (decontaminated),long,R,0.4519256807282768,13
+eval-test,viral,ESMFold,all,AUC,,0
+eval-test,viral,ESMFold,all,R,0.607104516234987,13
+eval-test,viral,ESMFold,long,AUC,,0
+eval-test,viral,ESMFold,long,R,0.5848189216020802,13
+eval-test,viral,ESMFold2,all,AUC,,0
+eval-test,viral,ESMFold2,all,R,0.6083722604461849,13
+eval-test,viral,ESMFold2,long,AUC,,0
+eval-test,viral,ESMFold2,long,R,0.5968211562755402,13
+eval-test,viral,Protenix-v2 + MSA,all,AUC,,0
+eval-test,viral,Protenix-v2 + MSA,all,R,0.8106309811661454,5
+eval-test,viral,Protenix-v2 + MSA,long,AUC,,0
+eval-test,viral,Protenix-v2 + MSA,long,R,0.8057397242870996,5
+eval-test,viral,Protenix-v2 single-seq,all,AUC,,0
+eval-test,viral,Protenix-v2 single-seq,all,R,0.19860210263789524,5
+eval-test,viral,Protenix-v2 single-seq,long,AUC,,0
+eval-test,viral,Protenix-v2 single-seq,long,R,0.18214177072091678,5
+eval-test,viral,seq-KNN (decontaminated corpus),all,AUC,0.6427440345656245,13
+eval-test,viral,seq-KNN (decontaminated corpus),all,R,0.22933633750814042,13
+eval-test,viral,seq-KNN (decontaminated corpus),long,AUC,0.6397198451603143,13
+eval-test,viral,seq-KNN (decontaminated corpus),long,R,0.2357734991890928,13
+eval-test,viral,seq-KNN (unfiltered corpus),all,AUC,0.6675550834567091,13
+eval-test,viral,seq-KNN (unfiltered corpus),all,R,0.2618951106484825,13
+eval-test,viral,seq-KNN (unfiltered corpus),long,AUC,0.6673727294283786,13
+eval-test,viral,seq-KNN (unfiltered corpus),long,R,0.2623305847036682,13
+eval-val,viral,#199 cooldown (contaminated),all,AUC,0.8969515106565654,6
+eval-val,viral,#199 cooldown (contaminated),all,R,0.4749867718092802,6
+eval-val,viral,#199 cooldown (contaminated),long,AUC,0.872192850921579,6
+eval-val,viral,#199 cooldown (contaminated),long,R,0.45675923424071874,6
+eval-val,viral,#232 m1-p02 (decontaminated),all,AUC,0.8857682028288725,6
+eval-val,viral,#232 m1-p02 (decontaminated),all,R,0.40942592877326794,6
+eval-val,viral,#232 m1-p02 (decontaminated),long,AUC,0.8652959692387188,6
+eval-val,viral,#232 m1-p02 (decontaminated),long,R,0.38364282322157545,6
+eval-val,viral,#232 m2-p06 (decontaminated),all,AUC,0.8895261409845681,6
+eval-val,viral,#232 m2-p06 (decontaminated),all,R,0.45224274425732625,6
+eval-val,viral,#232 m2-p06 (decontaminated),long,AUC,0.8612661697306461,6
+eval-val,viral,#232 m2-p06 (decontaminated),long,R,0.4250890099927507,6
+eval-val,viral,ESMFold,all,AUC,0.8229314940282321,6
+eval-val,viral,ESMFold,all,R,0.6117899097717979,6
+eval-val,viral,ESMFold,long,AUC,0.805505905250992,6
+eval-val,viral,ESMFold,long,R,0.5714079579336245,6
+eval-val,viral,ESMFold2,all,AUC,0.867500739537614,6
+eval-val,viral,ESMFold2,all,R,0.6921853125995246,6
+eval-val,viral,ESMFold2,long,AUC,0.8612773727532165,6
+eval-val,viral,ESMFold2,long,R,0.6848932007678107,6
+eval-val,viral,Protenix-v2 + MSA,all,AUC,0.9223287251022313,6
+eval-val,viral,Protenix-v2 + MSA,all,R,0.783464879833374,6
+eval-val,viral,Protenix-v2 + MSA,long,AUC,0.9130834116783643,6
+eval-val,viral,Protenix-v2 + MSA,long,R,0.7700495534015821,6
+eval-val,viral,Protenix-v2 single-seq,all,AUC,0.6443008267498601,6
+eval-val,viral,Protenix-v2 single-seq,all,R,0.2652200138019798,6
+eval-val,viral,Protenix-v2 single-seq,long,AUC,0.6254983184791431,6
+eval-val,viral,Protenix-v2 single-seq,long,R,0.23490096576789707,6
+eval-val,viral,seq-KNN (decontaminated corpus),all,AUC,0.5905009799493111,6
+eval-val,viral,seq-KNN (decontaminated corpus),all,R,0.15107971266985823,6
+eval-val,viral,seq-KNN (decontaminated corpus),long,AUC,0.5833923243640113,6
+eval-val,viral,seq-KNN (decontaminated corpus),long,R,0.13781844677308122,6
+eval-val,viral,seq-KNN (unfiltered corpus),all,AUC,0.6354342042248319,6
+eval-val,viral,seq-KNN (unfiltered corpus),all,R,0.23499618901354621,6
+eval-val,viral,seq-KNN (unfiltered corpus),long,AUC,0.6279906302062748,6
+eval-val,viral,seq-KNN (unfiltered corpus),long,R,0.22069106641902972,6
+eval-denovo,non-viral,#199 cooldown (contaminated),all,AUC,0.9668991432687108,19
+eval-denovo,non-viral,#199 cooldown (contaminated),all,R,0.6188362267155597,19
+eval-denovo,non-viral,#199 cooldown (contaminated),long,AUC,0.9553213531119651,19
+eval-denovo,non-viral,#199 cooldown (contaminated),long,R,0.5726387157407323,19
+eval-denovo,non-viral,#232 m1-p02 (decontaminated),all,AUC,0.9657666094306936,19
+eval-denovo,non-viral,#232 m1-p02 (decontaminated),all,R,0.5878697377395716,19
+eval-denovo,non-viral,#232 m1-p02 (decontaminated),long,AUC,0.9522777617997155,19
+eval-denovo,non-viral,#232 m1-p02 (decontaminated),long,R,0.5481940978167771,19
+eval-denovo,non-viral,#232 m2-p06 (decontaminated),all,AUC,0.9637388263427876,19
+eval-denovo,non-viral,#232 m2-p06 (decontaminated),all,R,0.5913805855058719,19
+eval-denovo,non-viral,#232 m2-p06 (decontaminated),long,AUC,0.9510462216543374,19
+eval-denovo,non-viral,#232 m2-p06 (decontaminated),long,R,0.5489256295770376,19
+eval-denovo,non-viral,ESMFold,all,AUC,0.9451433294582825,4
+eval-denovo,non-viral,ESMFold,all,R,0.7950781980579187,19
+eval-denovo,non-viral,ESMFold,long,AUC,0.9454875735853839,4
+eval-denovo,non-viral,ESMFold,long,R,0.7721811325805167,19
+eval-denovo,non-viral,ESMFold2,all,AUC,0.9430411213876742,4
+eval-denovo,non-viral,ESMFold2,all,R,0.8635095533315522,19
+eval-denovo,non-viral,ESMFold2,long,AUC,0.94745909938289,4
+eval-denovo,non-viral,ESMFold2,long,R,0.8534924315828892,19
+eval-denovo,non-viral,Protenix-v2 + MSA,all,AUC,0.9388716573769353,4
+eval-denovo,non-viral,Protenix-v2 + MSA,all,R,0.816798297348582,4
+eval-denovo,non-viral,Protenix-v2 + MSA,long,AUC,0.9180672662799125,4
+eval-denovo,non-viral,Protenix-v2 + MSA,long,R,0.7858034795853774,4
+eval-denovo,non-viral,Protenix-v2 single-seq,all,AUC,0.9396014289755376,4
+eval-denovo,non-viral,Protenix-v2 single-seq,all,R,0.8152747149426466,4
+eval-denovo,non-viral,Protenix-v2 single-seq,long,AUC,0.9182115042970259,4
+eval-denovo,non-viral,Protenix-v2 single-seq,long,R,0.7815702148282956,4
+eval-denovo,non-viral,seq-KNN (decontaminated corpus),all,AUC,0.5225576922344162,19
+eval-denovo,non-viral,seq-KNN (decontaminated corpus),all,R,0.050284080503353604,19
+eval-denovo,non-viral,seq-KNN (decontaminated corpus),long,AUC,0.5064968365906266,19
+eval-denovo,non-viral,seq-KNN (decontaminated corpus),long,R,0.03024079504547062,19
+eval-denovo,non-viral,seq-KNN (unfiltered corpus),all,AUC,0.5300019231818203,19
+eval-denovo,non-viral,seq-KNN (unfiltered corpus),all,R,0.06594705197377539,19
+eval-denovo,non-viral,seq-KNN (unfiltered corpus),long,AUC,0.5115673680652848,19
+eval-denovo,non-viral,seq-KNN (unfiltered corpus),long,R,0.0397437190220788,19
+eval-test,non-viral,#199 cooldown (contaminated),all,AUC,0.9600415480940807,204
+eval-test,non-viral,#199 cooldown (contaminated),all,R,0.6205713470423981,204
+eval-test,non-viral,#199 cooldown (contaminated),long,AUC,0.9538478009779837,204
+eval-test,non-viral,#199 cooldown (contaminated),long,R,0.6014606590234527,204
+eval-test,non-viral,#232 m1-p02 (decontaminated),all,AUC,0.9281341239577148,204
+eval-test,non-viral,#232 m1-p02 (decontaminated),all,R,0.5000044558802577,204
+eval-test,non-viral,#232 m1-p02 (decontaminated),long,AUC,0.9162826929896578,204
+eval-test,non-viral,#232 m1-p02 (decontaminated),long,R,0.46803231085995456,204
+eval-test,non-viral,#232 m2-p06 (decontaminated),all,AUC,0.9401447084350958,204
+eval-test,non-viral,#232 m2-p06 (decontaminated),all,R,0.5422908132891113,204
+eval-test,non-viral,#232 m2-p06 (decontaminated),long,AUC,0.9310063052619998,204
+eval-test,non-viral,#232 m2-p06 (decontaminated),long,R,0.5166894999659095,204
+eval-test,non-viral,ESMFold,all,AUC,,0
+eval-test,non-viral,ESMFold,all,R,0.7627443424526841,204
+eval-test,non-viral,ESMFold,long,AUC,,0
+eval-test,non-viral,ESMFold,long,R,0.7484952531963817,204
+eval-test,non-viral,ESMFold2,all,AUC,,0
+eval-test,non-viral,ESMFold2,all,R,0.8038482438739545,204
+eval-test,non-viral,ESMFold2,long,AUC,,0
+eval-test,non-viral,ESMFold2,long,R,0.7933513070609679,204
+eval-test,non-viral,Protenix-v2 + MSA,all,AUC,,0
+eval-test,non-viral,Protenix-v2 + MSA,all,R,0.8039842429217401,18
+eval-test,non-viral,Protenix-v2 + MSA,long,AUC,,0
+eval-test,non-viral,Protenix-v2 + MSA,long,R,0.7842766077381322,18
+eval-test,non-viral,Protenix-v2 single-seq,all,AUC,,0
+eval-test,non-viral,Protenix-v2 single-seq,all,R,0.25589845393738486,18
+eval-test,non-viral,Protenix-v2 single-seq,long,AUC,,0
+eval-test,non-viral,Protenix-v2 single-seq,long,R,0.21867552633315276,18
+eval-test,non-viral,seq-KNN (decontaminated corpus),all,AUC,0.7898804879674256,204
+eval-test,non-viral,seq-KNN (decontaminated corpus),all,R,0.43823963321194,204
+eval-test,non-viral,seq-KNN (decontaminated corpus),long,AUC,0.7805115492129662,204
+eval-test,non-viral,seq-KNN (decontaminated corpus),long,R,0.42710238360120256,204
+eval-test,non-viral,seq-KNN (unfiltered corpus),all,AUC,0.8838569100722115,204
+eval-test,non-viral,seq-KNN (unfiltered corpus),all,R,0.6023798526923995,204
+eval-test,non-viral,seq-KNN (unfiltered corpus),long,AUC,0.8785039324956849,204
+eval-test,non-viral,seq-KNN (unfiltered corpus),long,R,0.5945614094032726,204
+eval-val,non-viral,#199 cooldown (contaminated),all,AUC,0.9547202214068918,91
+eval-val,non-viral,#199 cooldown (contaminated),all,R,0.5965111686195164,91
+eval-val,non-viral,#199 cooldown (contaminated),long,AUC,0.9476541120575417,91
+eval-val,non-viral,#199 cooldown (contaminated),long,R,0.5835048953771045,91
+eval-val,non-viral,#232 m1-p02 (decontaminated),all,AUC,0.9160455110588448,91
+eval-val,non-viral,#232 m1-p02 (decontaminated),all,R,0.47734832524192067,91
+eval-val,non-viral,#232 m1-p02 (decontaminated),long,AUC,0.90088622649099,91
+eval-val,non-viral,#232 m1-p02 (decontaminated),long,R,0.4522872237736343,91
+eval-val,non-viral,#232 m2-p06 (decontaminated),all,AUC,0.9335677357036304,91
+eval-val,non-viral,#232 m2-p06 (decontaminated),all,R,0.5242533966898907,91
+eval-val,non-viral,#232 m2-p06 (decontaminated),long,AUC,0.9220254057923111,91
+eval-val,non-viral,#232 m2-p06 (decontaminated),long,R,0.5067827400724924,91
+eval-val,non-viral,ESMFold,all,AUC,0.905301694961087,91
+eval-val,non-viral,ESMFold,all,R,0.7595134976917028,91
+eval-val,non-viral,ESMFold,long,AUC,0.900275301094472,91
+eval-val,non-viral,ESMFold,long,R,0.7488049496563006,91
+eval-val,non-viral,ESMFold2,all,AUC,0.9310694238511997,91
+eval-val,non-viral,ESMFold2,all,R,0.8087113287394149,91
+eval-val,non-viral,ESMFold2,long,AUC,0.9273153271278561,91
+eval-val,non-viral,ESMFold2,long,R,0.7990231319678199,91
+eval-val,non-viral,Protenix-v2 + MSA,all,AUC,0.9546644238546809,91
+eval-val,non-viral,Protenix-v2 + MSA,all,R,0.8501545162493109,91
+eval-val,non-viral,Protenix-v2 + MSA,long,AUC,0.9508217552952983,91
+eval-val,non-viral,Protenix-v2 + MSA,long,R,0.8383407271560042,91
+eval-val,non-viral,Protenix-v2 single-seq,all,AUC,0.6422853172701614,91
+eval-val,non-viral,Protenix-v2 single-seq,all,R,0.2630663069921893,91
+eval-val,non-viral,Protenix-v2 single-seq,long,AUC,0.6291436632077412,91
+eval-val,non-viral,Protenix-v2 single-seq,long,R,0.23514428270277843,91
+eval-val,non-viral,seq-KNN (decontaminated corpus),all,AUC,0.7803313363604691,91
+eval-val,non-viral,seq-KNN (decontaminated corpus),all,R,0.4240328498079086,91
+eval-val,non-viral,seq-KNN (decontaminated corpus),long,AUC,0.7713939135320862,91
+eval-val,non-viral,seq-KNN (decontaminated corpus),long,R,0.4088815709674564,91
+eval-val,non-viral,seq-KNN (unfiltered corpus),all,AUC,0.883269808603916,91
+eval-val,non-viral,seq-KNN (unfiltered corpus),all,R,0.6066481790927697,91
+eval-val,non-viral,seq-KNN (unfiltered corpus),long,AUC,0.8794030492533431,91
+eval-val,non-viral,seq-KNN (unfiltered corpus),long,R,0.602670484243958,91
