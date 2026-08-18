@@ -34,8 +34,13 @@
 
 - The completed validation used 16 H100s, one node per source across
   `cw-us-east-02a` and `cw-rno2a`.
-- Production defaults to every eligible CoreWeave GPU backend and the largest
-  FLOP-balanced gangs supported by current fleet capacity.
+- Production compute scope is H100 only, on `cw-us-east-02a` and `cw-rno2a`.
+  GB200 is out of scope unless the operator explicitly broadens it.
+- Hard limit of 16 nodes per dispatch (128 H100s). Prefer 16-node gangs;
+  use a smaller eligible gang only for a concrete scheduling, recovery, or
+  measured wall-clock reason, never merely because capacity is busy.
+- Two logical trials, one writer each, so the sweep maximum is two 16-node
+  gangs: 32 nodes / 256 H100s. Never duplicate a trial to consume free GPUs.
 - Iris user: `eczech`; priority: `batch` only.
 - Production SQLite:
   `scratch/exp232_train_cw/exp232_train_cw.sqlite`.
@@ -57,7 +62,7 @@
 
 | Cluster | GPU | Nodes | GPUs | State | Reason |
 | --- | --- | ---: | ---: | --- | --- |
-| `cw-us-east-08a` | GB200 | 2/4/8/16 | 8/16/32/64 | eligible | — |
+| `cw-us-east-08a` | GB200 | 2/4/8/16 | 8/16/32/64 | ineligible | Operator scoped selected training to H100 only |
 | `cw-us-east-02a` | H100 | 2/4/8/16 | 16/32/64/128 | eligible | — |
 | `cw-rno2a` | H100 | 2/4/8/16 | 16/32/64/128 | eligible | — |
 
@@ -78,3 +83,7 @@
   exp232 global-step ramp instead of jumping from about 80% to 100%. Renamed the
   selected-training entry point to `exp232_train_cw.py` and folded the inclusive
   LR schedule into that single script with a canonical serialization identity.
+- 2026-08-18 20:55 UTC — Operator restricted selected-training compute to H100 on
+  `cw-us-east-02a` and `cw-rno2a` with a hard 16-node/128-GPU per-dispatch limit.
+  Marked GB200 `cw-us-east-08a` ineligible and stated the two-gang (32-node/256-H100)
+  sweep maximum in Operator Choices. No training semantics changed.
