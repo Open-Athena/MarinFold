@@ -564,15 +564,15 @@ def finalize(
         "validation": validations,
         "reporting_subset_units": subset_counts,
         "headline_metrics": headline,
-        "reference_validation": reference_validation,
         "worker_sha256": worker_sha256,
         "score_worker_provenance": {
             "standard_worker_sha256": PR234_WORKER_SHA256,
             "standard_worker_scope": (
-                "All E8 and m2-p06 parts, plus m1-p02 shards 0-8 and 11."
+                "Every shard of every checkpoint; exp245 uses one worker build, "
+                "copied byte-for-byte from PR #244."
             ),
             "accepted_unfinished_worker_sha256": worker_sha256,
-            "accepted_unfinished_worker_scope": "m1-p02 shards 9 and 10.",
+            "accepted_unfinished_worker_scope": "unused (no unfinished rollouts).",
             "semantic_difference": (
                 "The accepted-unfinished worker omits nonterminating samples from "
                 "contact voting and records requested, usable, and unfinished counts. "
