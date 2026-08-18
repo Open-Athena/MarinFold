@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 245
   title: 'exp: FoldBench held-out monomer eval sets (eval-val / eval-test / eval-denovo) for the decontaminated #232 checkpoints'
   kind: evals
-  branch: exp/245-foldbench-eval-sets
+  branch: main
 ---
 
 # exp: FoldBench held-out monomer eval sets (eval-val / eval-test / eval-denovo) for the decontaminated #232 checkpoints
 
-**Issue:** [#245](https://github.com/Open-Athena/MarinFold/issues/245) · **Kind:** `evals` · **Branch:** `exp/245-foldbench-eval-sets`
+**Issue:** [#245](https://github.com/Open-Athena/MarinFold/issues/245) · **Kind:** `evals` · **Branch:** `main`
 
 ## Question
 
