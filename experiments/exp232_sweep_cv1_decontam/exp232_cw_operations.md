@@ -69,8 +69,9 @@
   heartbeat updates unless the operator explicitly supplies or requests the post.
 - Abandoned trials: `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`, `m2-p01-aug`,
   `m2-p04-aug`, and `m2-p03-aug`. They are outside recovery and completion scope.
-- Completed and checkpoint-verified: `m1-p06-aug`, `m1-p02-aug`, and
-  `m2-p06-aug`. Never redispatch them. One trial remains in scope: `m2-p02-aug`.
+- **The sweep is complete.** All four in-scope trials finished and were
+  checkpoint-verified: `m1-p06-aug`, `m1-p02-aug`, `m2-p06-aug`, `m2-p02-aug`.
+  No dispatches remain active. Never redispatch anything.
 - Both remaining trials are at the `n16` 128-GPU ceiling, the largest approved
   node count. No further enlargement is possible, so the sweep can draw at most
   256 GPUs regardless of visible free capacity, and GPUs freed by a completing
@@ -171,6 +172,20 @@
 
 ## Change Record
 
+- 2026-08-18T13:26:23Z: **SWEEP COMPLETE.** `m2-p02-aug`, the final finisher,
+  reached `run_progress` 1.0 at `global_step` 145199 and its checkpoint verified
+  with `step-145199` at 47 files / 16.44 GiB, `.executor_status` SUCCESS, the
+  `hf` export present, and the full ten-checkpoint permanent ladder. Root and
+  child both `succeeded`. All four completed trials were re-verified together:
+  each has `step-145199` at 16.44 GiB, SUCCESS, and a 6-file 5.48 GiB `hf`
+  export. No dispatches remain active.
+  Final tally: 10 trials declared, 8 entered production, 4 completed, 6
+  operator-abandoned after divergence. Every abandoned trial was a `p01`, `p03`
+  or `p04` point; both `p02` and both `p06` trials survived.
+  `m2-p02` needed 15 dispatch attempts and `m2-p06` needed 10. Through 08-18
+  dispatches died every 2–4 hours on both clusters, but all seven restarts that
+  day resumed near-current from temporary checkpoints rather than replaying
+  hours, which is the only reason prompt restarting stayed viable.
 - 2026-08-18T10:54:50Z: `m2-p06-aug` completed, the third trial to finish. W&B
   reported `finished` with `run_progress` 1.0 at `global_step` 145199, and its
   final checkpoint verified reachable with `step-145199` holding 37 files and
