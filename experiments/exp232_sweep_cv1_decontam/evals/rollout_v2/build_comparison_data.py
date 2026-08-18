@@ -16,10 +16,30 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent
 REFERENCE_KEYS = ("exp146", "exp166", "cw-p06-aug", "cw-p06-cool")
 REFERENCE_ROWS_KEYS = (*REFERENCE_KEYS, "protenix")
+DISPLAY_NAME_OVERRIDES = {
+    "cw-p06-aug": "CW m1-p06 aug",
+    "cw-p06-cool": "CW m1-p06 cooldown",
+}
+VALIDATION_MODELS = {
+    "marinfold-e8-reference-step35679": {
+        "key": "exp75-reproduced",
+        "display_name": "#75 E8 validation",
+        "parameters": "1.5B",
+        "evaluation": "validation",
+        "wandb_run_id": "prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1",
+        "loss": 3.138312048873902,
+        "fit_group": "exp75",
+        "coreweave_checkpoint": (
+            "s3://marin-us-east-02a/MarinFold/exp163/model/step-35679"
+        ),
+    }
+}
 NEW_MODELS = {
     "marinfold-exp232-decontam-m2-p06-step145199": {
         "key": "exp232-m2-p06-decontam",
-        "display_name": "#232 decontam m2-p06",
+        "display_name": "#232 m2-p06 decontam",
+        "parameters": "1.5B",
+        "evaluation": "computed_here",
         "wandb_run_id": "prot-exp232-cw-cv1-decontam-s02-m2-p06-aug",
         "loss": 2.9918437004089355,
         "fit_group": "exp232-m2-p06-decontam",
@@ -31,7 +51,9 @@ NEW_MODELS = {
     },
     "marinfold-exp232-decontam-m1-p02-step145199": {
         "key": "exp232-m1-p02-decontam",
-        "display_name": "#232 decontam m1-p02",
+        "display_name": "#232 m1-p02 decontam",
+        "parameters": "1.5B",
+        "evaluation": "computed_here",
         "wandb_run_id": "prot-exp232-cw-cv1-decontam-s02-m1-p02-aug",
         "loss": 3.0068159103393555,
         "fit_group": "exp232-m1-p02-decontam",
@@ -105,16 +127,21 @@ def build(arguments: argparse.Namespace) -> None:
         ]
     ].rename(columns={"loss_current_scale": "loss"})
     reference.insert(3, "evaluation", "previous")
+    reference["display_name"] = reference.apply(
+        lambda row: DISPLAY_NAME_OVERRIDES.get(row["key"], row["display_name"]),
+        axis=1,
+    )
 
     aggregate = pd.read_csv(arguments.subset_aggregate)
-    new_records = []
-    for model, identity in NEW_MODELS.items():
-        new_records.append(
+    evaluated_models = {**VALIDATION_MODELS, **NEW_MODELS}
+    evaluated_records = []
+    for model, identity in evaluated_models.items():
+        evaluated_records.append(
             {
                 "key": identity["key"],
                 "display_name": identity["display_name"],
-                "parameters": "1.5B",
-                "evaluation": "computed_here",
+                "parameters": identity["parameters"],
+                "evaluation": identity["evaluation"],
                 "wandb_run_id": identity["wandb_run_id"],
                 "loss": identity["loss"],
                 "r_all": metric_value(aggregate, model=model, range_name="all"),
@@ -124,10 +151,13 @@ def build(arguments: argparse.Namespace) -> None:
                 "metrics_source": str(arguments.subset_aggregate),
             }
         )
-    comparison = pd.concat([reference, pd.DataFrame(new_records)], ignore_index=True)
-    if len(comparison) != 6 or comparison.key.nunique() != 6:
+    comparison = pd.concat(
+        [reference, pd.DataFrame(evaluated_records)], ignore_index=True
+    )
+    if len(comparison) != 7 or comparison.key.nunique() != 7:
         raise ValueError(
-            "comparison must contain four references and two new checkpoints"
+            "comparison must contain four references, one validation checkpoint, "
+            "and two new checkpoints"
         )
 
     prior_rows = pd.read_csv(arguments.prior_rows)
@@ -144,7 +174,7 @@ def build(arguments: argparse.Namespace) -> None:
     precision = pd.read_csv(arguments.precision)
     precision_units = pd.MultiIndex.from_frame(precision[["dataset", "stem"]])
     new_rows = []
-    for model, identity in NEW_MODELS.items():
+    for model, identity in evaluated_models.items():
         selected = precision[
             (precision.model == model)
             & (precision["range"] == "all")
@@ -161,7 +191,7 @@ def build(arguments: argparse.Namespace) -> None:
     rows = pd.concat([reference_rows, *new_rows], ignore_index=True)
     expected_keys = {
         *REFERENCE_ROWS_KEYS,
-        *(value["key"] for value in NEW_MODELS.values()),
+        *(value["key"] for value in evaluated_models.values()),
     }
     if set(rows.key) != expected_keys:
         raise ValueError("combined per-protein row keys are incomplete")
@@ -179,6 +209,7 @@ def build(arguments: argparse.Namespace) -> None:
     metadata = {
         "schema_version": 1,
         "reference_keys": list(REFERENCE_KEYS),
+        "validation_keys": [value["key"] for value in VALIDATION_MODELS.values()],
         "new_keys": [value["key"] for value in NEW_MODELS.values()],
         "sources": {
             "prior_comparison": {

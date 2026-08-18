@@ -59,4 +59,4 @@ The validation checkpoint passed all four gates. It was read directly from `s3:/
 
 ## Comparison figure
 
-`build_comparison_data.py` combines the two new legacy-554 result slices with the prior #146 3B, #166 AA augmentation, CW p06 augmentation, CW p06 cooldown, and Protenix-v2 per-protein rows. `plot_primary_comparison.py` renders `plots/final_checkpoint_rprecision.png`; both the derived comparison data and plot have SHA-256 provenance sidecars.
+`build_comparison_data.py` combines the recomputed #75 E8 validation slice and the two new legacy-554 result slices with the prior #146 3B, #166 AA augmentation, CW m1-p06 augmentation, CW m1-p06 cooldown, and Protenix-v2 per-protein rows. `plot_primary_comparison.py` renders `plots/final_checkpoint_rprecision.png`, sorting its boxes by ascending mean R-precision and fitting its descriptive sigmoid to every plotted MarinFold checkpoint with a validation loss. Protenix-v2 is excluded from the fit because it has no contacts-v1 validation loss. Both the derived comparison data and plot have SHA-256 provenance sidecars.
