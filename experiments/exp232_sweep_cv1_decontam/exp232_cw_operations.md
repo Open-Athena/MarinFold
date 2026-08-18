@@ -101,6 +101,16 @@
   checkpoint. After roughly three rapid preemptions with short runtimes, a fresh
   unique same-target submission may be used earlier because repeated Kueue gating
   can attach to the workload rather than the target.
+- Before calling a flat or slow window a problem, check whether the run is at a
+  permanent-checkpoint boundary: a multiple of `PERMANENT_CHECKPOINT_EVERY`
+  (14520). Writing one blocks training for well over ten minutes and can span
+  more than one heartbeat pass, presenting as a frozen `global_step` alongside a
+  perfectly current W&B heartbeat. Confirm by listing the run's S3 checkpoint
+  prefix for a `step-<boundary>` directory with recent object timestamps and a
+  size below the roughly 16.4 GiB final figure. Never stop or replace a dispatch
+  in this state: doing so discards an in-flight permanent checkpoint and buys a
+  further ~32 minute startup. This is a distinct third category of apparent
+  stall, alongside the eval-cadence artifact and genuine failure.
 - Treat a W&B heartbeat older than roughly 60 seconds as a prompt to check that
   trial's exact Iris root in the same pass. A fresh progress high-water in the
   same window does not clear it, because the last logged progress can precede
