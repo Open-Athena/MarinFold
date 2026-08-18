@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 245
   title: 'exp: FoldBench held-out monomer eval sets (eval-val / eval-test / eval-denovo) for the decontaminated #232 checkpoints'
   kind: evals
-  branch: main
+  branch: exp/245-foldbench-eval-sets
 ---
 
 # exp: FoldBench held-out monomer eval sets (eval-val / eval-test / eval-denovo) for the decontaminated #232 checkpoints
 
-**Issue:** [#245](https://github.com/Open-Athena/MarinFold/issues/245) · **Kind:** `evals` · **Branch:** `main`
+**Issue:** [#245](https://github.com/Open-Athena/MarinFold/issues/245) · **Kind:** `evals` · **Branch:** `exp/245-foldbench-eval-sets`
 
 ## Question
 
@@ -41,12 +41,39 @@ Each protein carries a viral / non-viral flag so results can be stratified ([#24
 
 ## Approach
 
-1. **Confirm decontamination** — prove, not assume, that the two #244 checkpoints never saw any of these 334 proteins under the 30 % rule: every monomer sequence present in the #225 reference; every ≥30 %/≥50 %-shorter alignment into the training corpora present in the applied drop list; published corpus row counts and the #232 tokenizer/trainer pins matching end to end.
-2. **Build the three sets** — partition the 334 monomers on the #241 designed verdict (synthetic-taxon ∪ `DE NOVO PROTEIN` keyword; the two signals agree 19/19), annotate viral status from the NCBI lineage, and carry the residual-identity columns from step 1.
-3. **Ground truth** — pyconfind contacts for the 199 monomers that have none, via #226's `build_gt_contacts.py` path (RCSB `-assembly1` mmCIF, auth chain preferred), with #226's 100/100 re-derivation control.
-4. **Score MarinFold** — exp82 rollout+resample (100 rollouts, T=1.0, top-p 0.95, no top-k, 6L+128) + exp89 `compute_metrics.py`, over the 334 units, for three checkpoints: #232 `m2-p06`, #232 `m1-p02`, and #199 CoreWeave cooldown as the contaminated reference. CoreWeave fan-out, checkpoint-local.
-5. **Baselines** — Protenix-v2 single-seq and +MSA (exp12/exp74), ESMFold and ESMFold2 (exp78), seq-KNN null (exp94) for the 199 new proteins; reuse the published predictions for the 135 already scored.
-6. **Report** — R-precision (all / long) per set per predictor, paired deltas against the baselines, val→test deltas per checkpoint, and the viral / non-viral split.
+Four steps, each with its own script and its own control.
+
+**0. Confirm the decontamination** ([`confirm_decontamination.py`](confirm_decontamination.py)).
+Five links have to hold for these checkpoints to be clean on these proteins, and
+each is checked rather than assumed. See [Results §1](#1-the-232-checkpoints-are-verifiably-clean-on-all-334-monomers).
+
+**1. Cut the sets** ([`build_eval_sets.py`](build_eval_sets.py)). FoldBench's
+`monomer_protein.csv` has 334 rows; our historical eval set is its first 100.
+Designed-vs-natural is decided by two independent RCSB signals — the
+`synthetic construct` source taxon and the PDB's `DE NOVO PROTEIN` structural
+class, tested against both the curated keyword field and the depositor's free
+text — which agree on all 334 (19 designs, 315 natural). Viral status comes from
+the NCBI taxonomy lineage. #241's independent annotation of the same proteins is
+asserted to match, all 334 rows.
+
+**2. Ground truth for everything** ([`build_ground_truth.py`](build_ground_truth.py)).
+199 monomers have never been scored and have no ground truth. Rather than bolt
+new records onto #89's frozen universe and leave the sets with two provenances,
+all 334 are rebuilt through one path — #89's `pyconfind_contacts.compute_contacts`
+imported, RCSB `-assembly1` mmCIFs, the resolved auth chain — and the 126
+overlapping units built from the same input sequence must come back byte-identical.
+They do, 126/126.
+
+**3. Check the format can represent them** ([`check_context_budget.py`](check_context_budget.py)).
+The 554-protein set tops out at 761 residues; FoldBench's monomers reach 1,596,
+and contacts-v1 documents have to fit an 8,192-token context. Measured with the
+real tokenizer and the real document builder rather than assumed.
+
+**4. Score** — [`rollout/`](rollout) for the checkpoints (PR #244's harness with
+exp245's eval sets as reporting cuts), [`score_baselines.py`](score_baselines.py)
+and [`run_knn_baseline.py`](run_knn_baseline.py) for the baselines,
+[`analyze.py`](analyze.py) and [`plot_results.py`](plot_results.py) for the tables
+and figures.
 
 ## Success criteria
 
@@ -57,7 +84,69 @@ Each protein carries a viral / non-viral flag so results can be stratified ([#24
 
 ## Results
 
-_(Fill in after the run completes.)_
+### 1. The #232 checkpoints are verifiably clean on all 334 monomers
+
+Five links, all checked ([`data/decontamination_check.json`](data/decontamination_check.json)):
+
+| link | check | result |
+|---|---|---|
+| The eval proteins were queries | all 334 monomer sequences present byte-identically in #225's 1,940-chain FoldBench reference | **334/334**, by name and by sequence |
+| Nothing that matches them survived | every alignment into either corpus at ≥30 % identity over ≥50 % of the shorter sequence, checked against the applied drop list | **131,180 meet the rule, 0 survive** |
+| The published corpora are the filtered ones | #225's `verify_published.py` row counts | AFDB 3,963,003 (−166,679); ESM-Atlas 65,553,178 (−1,206,744) |
+| #232 tokenized those bytes | its tokenizer pins both bucket prefixes and requires those exact row counts, and its sweep pins the same totals for the mixture weights | counts agree |
+| The two runs read only those caches | live W&B config for both runs | only exp232's `afdb`/`esm` caches, plus #154's contacts-v1 **validation** cache (loss only, never trained on) |
+
+**What the rule does not cover, priced.** The gate is identity over half the
+*shorter* sequence, so a training protein matching an eval protein at high
+identity over a short stretch is kept by design. At the applied gate the highest
+surviving identity to any of the 334 is **0.299** — right up against the
+threshold, as it should be. Drop the coverage requirement to 40 % and 97/97
+eval-val and 217/218 eval-test proteins have a surviving training relative at
+≥30 % identity; with no coverage requirement at all, 19 eval-val and 46
+eval-test proteins have a surviving relative at ≥90 % identity over some
+fragment. Decontamination at 30 % means *this* rule, not "no shared subsequence".
+Per-protein residuals are in [`data/residual_identity.csv`](data/residual_identity.csv).
+
+### 2. The three sets
+
+| set | n | viral | median L | max L | ground truth | baselines |
+|---|---:|---:|---:|---:|---|---|
+| **eval-val** — the natural members of the historical FoldBench-100 | 97 | 6 | 245 | 761 | reproduced from #89's frozen universe, 97/97 identical | published, reused |
+| **eval-test** — every other natural monomer | 218 | 13 | 258 | 1,596 | built here | 194 run here, 23 reused |
+| **eval-denovo** — every designed monomer | 19 | 0 | 146 | 284 | built here or reproduced | 15 run here, 4 reused |
+
+The historical 100 is **97 natural + 3 designs** (`5sbj_A` "METP, miniaturized
+rubredoxin", `7ur7_A`, `8ah9_A`), so eval-val is 97 and the three designs sit in
+eval-denovo where they belong. The designed/natural verdict has two independent
+RCSB signals that agree on every one of the 334, and matches #241's independent
+annotation on all 334.
+
+**One protein is excluded from scoring.** `8uxt_A` (1,596 residues) is the only
+monomer whose contacts-v1 document does not fit an 8,192-token context:
+`build_document` truncates it to 1,664 of its 3,809 contacts, so no rollout can
+produce it in full and a score for it would measure the format's context limit
+rather than the model. It stays in
+[`data/eval_sets.csv`](data/eval_sets.csv) flagged, and out of the 333 scored
+units. Every other protein clears the budget with a median 2.3× headroom
+([`data/context_budget.csv`](data/context_budget.csv)).
+
+### 3. The evaluation reproduces PR #244 protein by protein
+
+The usual gate — #75 E8 on the legacy 554 — is not available on this eval set, so
+the path is validated against #244 directly: same two checkpoints, same 97
+proteins (all of eval-val is inside #244's `foldbench100`), independent runs.
+
+| checkpoint | n | mean R here | mean R in #244 | difference | per-protein r |
+|---|---:|---:|---:|---:|---:|
+| #232 m2-p06 | 97 | 0.5198 | 0.5229 | **−0.0031** | 0.996 |
+| #232 m1-p02 | 97 | 0.4731 | 0.4754 | **−0.0023** | 0.996 |
+
+Both inside the 0.0023 spread #204 measured across four evaluations of one
+unchanged checkpoint, and inside #244's own 0.005 gate. Everything this
+experiment rebuilt — ground truth, targets, dataset label, the adapted harness —
+is covered by that comparison. 333 units × 3 checkpoints, 33,300 rollouts each,
+**0 unfinished** ([`data/path_validation.json`](data/path_validation.json)).
+
 
 ## Conclusion
 
