@@ -1,0 +1,418 @@
+<title>Contact-Map RL Scoreboard</title>
+<style>
+  :root {
+    --paper:   #e9edf1;
+    --surface: #ffffff;
+    --ink:     #0c1218;
+    --muted:   #5d6b7a;
+    --hair:    #c8d1da;
+    --accent:  #2563d8;
+    --ceiling: #9a6f16;
+    --up:      #15795a;
+    --down:    #b03950;
+    --grid:    #dde3ea;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:   #0b1016;
+      --surface: #141c25;
+      --ink:     #e6edf4;
+      --muted:   #8d9dad;
+      --hair:    #27333f;
+      --accent:  #6f9dff;
+      --ceiling: #d8a63f;
+      --up:      #3fbd8f;
+      --down:    #e57a8e;
+      --grid:    #1e2933;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:   #0b1016;
+    --surface: #141c25;
+    --ink:     #e6edf4;
+    --muted:   #8d9dad;
+    --hair:    #27333f;
+    --accent:  #6f9dff;
+    --ceiling: #d8a63f;
+    --up:      #3fbd8f;
+    --down:    #e57a8e;
+    --grid:    #1e2933;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(20px, 3vw, 40px);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* ---- header ---------------------------------------------------------- */
+  header { display: flex; flex-direction: column; gap: 10px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 3.6vw, 44px);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 0;
+    max-width: 78ch;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+  .rule { height: 2px; background: var(--ink); opacity: .85; }
+
+  /* ---- the arc --------------------------------------------------------- */
+  .arc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--hair); }
+  .beat { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 7px; }
+  .beat .tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  .beat h3 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+  .beat p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .beat p em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+  /* ---- two-up body ----------------------------------------------------- */
+  .body { display: grid; grid-template-columns: 1.15fr 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 980px) { .body, .arc { grid-template-columns: 1fr; } }
+
+  h2 {
+    margin: 0 0 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .panel { background: var(--surface); border: 1px solid var(--hair); padding: 16px 18px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; }
+  thead th {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--hair); white-space: nowrap;
+  }
+  tbody tr + tr td { border-top: 1px solid var(--grid); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .arm { font-family: var(--mono); font-weight: 650; white-space: nowrap; }
+  .lead .num, .lead td { font-weight: 700; }
+  .lead { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+  .barrow td { color: var(--ceiling); font-weight: 650; }
+  .barrow .num { color: var(--ceiling); }
+  .refrow td, .refrow .num { color: var(--muted); }
+  .dead td, .dead .num { color: var(--down); }
+  .scroll { overflow-x: auto; }
+
+  .chip {
+    display: inline-block; font-family: var(--mono); font-size: 10.5px;
+    padding: 1px 6px; border: 1px solid currentColor; white-space: nowrap;
+  }
+  .c-up { color: var(--up); } .c-down { color: var(--down); }
+  .c-hold { color: var(--muted); } .c-run { color: var(--accent); }
+
+  figure { margin: 0; }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  figcaption strong { color: var(--ink); font-weight: 600; }
+  svg { display: block; width: 100%; height: auto; }
+  .sv-label { font-family: var(--mono); font-size: 9.5px; fill: var(--muted); }
+  .sv-pt { fill: var(--accent); }
+  .sv-peak { fill: var(--up); }
+  .sv-dead { fill: var(--down); }
+
+  .findings { display: flex; flex-direction: column; gap: 10px; }
+  .finding { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; }
+  .finding .k {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    font-weight: 700; letter-spacing: .04em;
+  }
+  .finding p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .finding p strong { color: var(--ink); font-weight: 600; }
+
+  footer {
+    display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: baseline;
+    border-top: 2px solid var(--ink); padding-top: 12px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+  }
+  footer b { color: var(--ink); font-weight: 650; }
+</style>
+
+<div class="slide">
+  <header>
+    <div class="eyebrow">MarinFold · issue #208 → #237 · SkyRL, 8 × A100-80GB</div>
+    <h1>Can RL improve contacts-v1?</h1>
+    <div class="rule"></div>
+    <p class="standfirst">
+      #208 ran <strong>eleven scored runs across five reward designs</strong> and none improved
+      consensus R-precision. #237 changes one thing — the <em>object</em> the reward acts on — and
+      gets the first checkpoints that do. <strong>Five rewards, ~25 scored checkpoints, complete.</strong>
+    </p>
+  </header>
+
+  <section class="arc">
+    <div class="beat">
+      <div class="tag">The problem</div>
+      <h3>A unit mismatch</h3>
+      <p>#208's reward scored <em>one rollout</em>; the metric votes over <em>100 independent
+      rollouts</em> — an object no rollout can see. Making each rollout better made the hundred
+      redundant.</p>
+    </div>
+    <div class="beat">
+      <div class="tag">The change</div>
+      <h3>Put the candidates inside the sequence</h3>
+      <p>Under <em>&lt;contacts-v1.multi&gt;</em> (#230) one rollout emits <em>~22 contact sets</em>
+      in a single generation. Reward that, and it acts on the kind of object the metric scores.</p>
+    </div>
+    <div class="beat">
+      <div class="tag">The result</div>
+      <h3>It works, and not enough</h3>
+      <p>Three arms beat the warm start on <em>every</em> mode. But at equal budget plain
+      sampling still wins, and at a larger one they draw level: RL <em>closed</em> the gap to
+      ordinary sampling — it did not open one.</p>
+    </div>
+  </section>
+
+  <div class="body">
+    <!-- ---------------- rewards ---------------- -->
+    <div>
+      <h2>The five rewards</h2>
+      <div class="panel scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Arm</th><th>What it scores</th><th>Shape</th><th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="arm">M-0</td>
+              <td>nothing — lr&nbsp;0 control</td>
+              <td>—</td>
+              <td><span class="chip c-hold">no-op ±0.003</span></td>
+            </tr>
+            <tr>
+              <td class="arm">M-C</td>
+              <td>each section's contribution to its own rollout's consensus</td>
+              <td>per-section</td>
+              <td><span class="chip c-up">best last 0.5267</span></td>
+            </tr>
+            <tr>
+              <td class="arm">M-F</td>
+              <td>F1 of the <em>last</em> section</td>
+              <td>rollout scalar</td>
+              <td><span class="chip c-down">dominated by M-C</span></td>
+            </tr>
+            <tr class="lead">
+              <td class="arm">M-B</td>
+              <td>F1 of the <em>best</em> section (oracle)</td>
+              <td>rollout scalar</td>
+              <td><span class="chip c-up">best overall</span></td>
+            </tr>
+            <tr>
+              <td class="arm">M-BC</td>
+              <td>GRPO(best) + λ·GRPO(consensus)</td>
+              <td>two rollout scalars</td>
+              <td><span class="chip c-down">loses to M-B alone</span></td>
+            </tr>
+            <tr>
+              <td class="arm">M-FC</td>
+              <td>GRPO(last) + λ·GRPO(consensus) — <em>synthesise the drafts</em></td>
+              <td>two rollout scalars</td>
+              <td><span class="chip c-hold">beats M-F, not M-C</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:22px">R-precision · legacy 554 · #230's scorer, unchanged</h2>
+      <div class="panel scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Checkpoint</th><th class="num">KL</th><th class="num">consensus</th>
+              <th class="num">best <span style="font-weight:400">(oracle)</span></th><th class="num">last</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="barrow">
+              <td>plain, 22 rollouts — <em>the bar</em></td>
+              <td class="num">—</td><td class="num">0.5896</td><td class="num">0.5680</td><td class="num">—</td>
+            </tr>
+            <tr>
+              <td class="arm">M-C step-18</td>
+              <td class="num">0.0072</td><td class="num">0.5750</td><td class="num">0.5578</td><td class="num"><b>0.5267</b></td>
+            </tr>
+            <tr class="lead">
+              <td class="arm">M-B lr3e-6 step-90</td>
+              <td class="num">0.0087</td><td class="num">0.5775</td><td class="num">0.5646</td><td class="num">0.5091</td>
+            </tr>
+            <tr>
+              <td class="arm">M-B lr1e-5 step-18</td>
+              <td class="num">0.0088</td><td class="num">0.5763</td><td class="num">0.5663</td><td class="num">0.5108</td>
+            </tr>
+            <tr>
+              <td class="arm">M-FC step-24</td>
+              <td class="num">0.0368</td><td class="num">0.5717</td><td class="num">0.5464</td><td class="num">0.5201</td>
+            </tr>
+            <tr>
+              <td class="arm">M-F step-36</td>
+              <td class="num">0.0306</td><td class="num">0.5529</td><td class="num">0.5189</td><td class="num">0.5075</td>
+            </tr>
+            <tr class="refrow">
+              <td>warm start · #230</td>
+              <td class="num">0</td><td class="num">0.5673</td><td class="num">0.5342</td><td class="num">0.4566</td>
+            </tr>
+            <tr class="refrow">
+              <td>M-0 · lr 0 <em>(control)</em></td>
+              <td class="num">0</td><td class="num">0.5678</td><td class="num">0.5364</td><td class="num">0.4594</td>
+            </tr>
+            <tr class="dead">
+              <td class="arm">M-B step-80</td>
+              <td class="num">0.4863</td><td class="num">0.3969</td><td class="num">0.3440</td><td class="num">0.1905</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+      <h2 style="margin-top:22px">At a larger budget, pooled across 8 rollouts</h2>
+      <div class="panel scroll">
+        <table>
+          <thead><tr><th>configuration</th><th class="num">tokens</th><th class="num">R-prec</th></tr></thead>
+          <tbody>
+            <tr class="barrow"><td>plain, 100 rollouts</td><td class="num">~50k</td><td class="num">0.6058</td></tr>
+            <tr class="lead"><td class="arm">M-B, 8 rollouts pooled</td><td class="num">54k</td><td class="num">0.6054</td></tr>
+            <tr class="refrow"><td>warm start, 8 pooled</td><td class="num">55k</td><td class="num">0.5992</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ---------------- chart + findings ---------------- -->
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div>
+        <h2>Every reward helps at small KL and damages at large</h2>
+        <div class="panel">
+          <figure>
+            <svg viewBox="0 0 660 232" role="img"
+                 aria-label="Consensus R-precision against policy KL. It peaks near KL 0.008 at 0.576 and falls to 0.397 by KL 0.49. The budget-matched plain baseline of 0.5896 is above every point.">
+              <!-- y grid -->
+              <g stroke="var(--grid)" stroke-width="1">
+                <line x1="62" y1="179.8" x2="624" y2="179.8"/>
+                <line x1="62" y1="139.4" x2="624" y2="139.4"/>
+                <line x1="62" y1="98.9"  x2="624" y2="98.9"/>
+                <line x1="62" y1="58.5"  x2="624" y2="58.5"/>
+              </g>
+              <g class="sv-label" text-anchor="end">
+                <text x="55" y="183">0.40</text>
+                <text x="55" y="142.8">0.45</text>
+                <text x="55" y="102.3">0.50</text>
+                <text x="55" y="61.9">0.55</text>
+                <text x="55" y="21.4">0.60</text>
+              </g>
+              <!-- the bar, and the warm start -->
+              <line x1="62" y1="26.4" x2="624" y2="26.4" stroke="var(--ceiling)"
+                    stroke-width="2" stroke-dasharray="7 4"/>
+              <text class="sv-label" x="624" y="21" text-anchor="end"
+                    fill="var(--ceiling)">plain, 22 rollouts — 0.5896</text>
+              <line x1="62" y1="44.5" x2="624" y2="44.5" stroke="var(--muted)"
+                    stroke-width="1" stroke-dasharray="2 3"/>
+              <text class="sv-label" x="66" y="55">warm start 0.5673</text>
+              <!-- trace -->
+              <polyline fill="none" stroke="var(--accent)" stroke-width="1.6" opacity=".55"
+                        points="84.2,38.2 108.7,37.2 161.9,46.6 184.0,39.0 260.8,56.1 328.3,68.5 523.1,88.5 598.4,182.3"/>
+              <g class="sv-pt">
+                <circle cx="84.2" cy="38.2" r="4"/>
+                <circle cx="161.9" cy="46.6" r="4"/>
+                <circle cx="184.0" cy="39.0" r="4"/>
+                <circle cx="260.8" cy="56.1" r="4"/>
+                <circle cx="328.3" cy="68.5" r="4"/>
+                <circle cx="523.1" cy="88.5" r="4"/>
+              </g>
+              <circle class="sv-peak" cx="108.7" cy="37.2" r="5.5"/>
+              <circle class="sv-dead" cx="598.4" cy="182.3" r="5"/>
+              <text class="sv-label" x="112" y="30" fill="var(--up)">M-B 18 · peak</text>
+              <text class="sv-label" x="592" y="196" text-anchor="end" fill="var(--down)">M-B 80 · destroyed</text>
+              <!-- x axis -->
+              <line x1="62" y1="206" x2="624" y2="206" stroke="var(--hair)" stroke-width="1"/>
+              <g class="sv-label" text-anchor="middle">
+                <text x="124.3" y="219">0.01</text>
+                <text x="405.3" y="219">0.10</text>
+                <text x="343" y="231">policy KL from the warm start (log)</text>
+              </g>
+            </svg>
+            <figcaption>
+              #208 ran its arms at <strong>KL 0.06–0.10 and to 3.96</strong> — past the peak on every
+              one — and its two arms below KL 0.0015 never moved at all. <strong>The window it
+              needed lay between the two learning rates it tried.</strong>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div>
+        <h2>What we learned</h2>
+        <div class="panel findings">
+          <div class="finding">
+            <div class="k">SCALE</div>
+            <p><strong>E[r] = 0 is necessary and not sufficient.</strong> M-C's per-section
+            reward is <strong>366× larger at 1 section than at 22</strong> — it paid the policy
+            to emit a worse answer — while <em>E[A] = 0 held exactly</em>, because centring is
+            computed inside the quantity being gamed.</p>
+          </div>
+          <div class="finding">
+            <div class="k">GRADIENT</div>
+            <p><strong>Every arm moved its candidate count where its own reward pointed.</strong>
+            M-C's gradient is strongly negative (collapsed to 1.1 sections), M-B's strongly
+            positive and self-paying (grew to ~26, held), M-F's nearly flat — and <em>a weak
+            gradient is not a safe one, it is an unconstrained one</em>: M-F ran to 259 sections
+            carrying 1.4 contacts each.</p>
+          </div>
+          <div class="finding">
+            <div class="k">GATES</div>
+            <p><strong>Criteria written against the failure you have seen will miss the next
+            one.</strong> All three original gates are one-sided; M-F's failure pushed every one
+            <em>away</em> from its threshold and none fired.</p>
+          </div>
+          <div class="finding">
+            <div class="k">SELECT</div>
+            <p><strong>Selection is dominated by aggregation.</strong> An ORACLE selector of one
+            draft reads 0.5646 where voting the same drafts reads <strong>0.5750</strong>. A final
+            section should synthesise its predecessors, not pick among them.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span><b>Status</b> complete — 5 rewards, ~25 scored checkpoints</span>
+    <span><b>Peak</b> KL ≈ 0.009 for every arm; two rates agree to 0.002 there</span>
+    <span><b>Validity</b> lr-0 control is a coin flip against its own input (260/259) · scorer reproduces #230 exactly</span>
+    <span><b>Next</b> fix M-C's scale bug and re-run it</span>
+  </footer>
+</div>
