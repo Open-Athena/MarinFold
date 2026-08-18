@@ -389,6 +389,55 @@ are going to read one candidate, and a loss if you are going to aggregate.
 It shows that selecting for size does not help; it does not prove that a model
 retrained to emit uniform sections would fail.
 
+### Continuing M-F: it diverges, and all three gates miss it
+
+M-F was the one arm whose own reward was still climbing when its first run
+stopped, so it was resumed from step 36 and given 84 more steps. It reached
+terminal KL **3.2568** — the scale of #208's diverged arm C v4 (3.96) — and
+**tripped no gate at any point**.
+
+Training, `last_f1` being M-F's own reward (global step = local batch + 36):
+
+| step | 42 | **48** | 54 | 66 | 72 | 78 | 96 | 120 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| sections/rollout | 25.6 | 24.8 | 36.5 | 49.3 | 93.4 | 166 | 191 | 146 |
+| **last_f1 (the reward)** | 0.538 | **0.608** | 0.442 | 0.361 | 0.418 | 0.120 | 0.029 | 0.006 |
+| per-contact precision | 0.495 | 0.551 | 0.396 | 0.346 | 0.265 | 0.113 | 0.069 | 0.169 |
+| total votes | 829 | 429 | 658 | 382 | 519 | 736 | 653 | 371 |
+
+The reward peaks at step 48 and then the policy discovers it can emit
+**unboundedly many nearly-empty sections** — 259 of them at the worst, carrying
+~370 contacts between them, i.e. **1.4 contacts per section**. Evaluated:
+
+| M-F step | consensus | best *ORACLE* | last | sections |
+|---:|---:|---:|---:|---:|
+| 36 *(first run)* | 0.5529 | 0.5189 | **0.5075** | 24.2 |
+| 60 | 0.5157 | 0.4989 | 0.4696 | 50.4 |
+| 84 | 0.3974 | 0.1993 | 0.0928 | 181.5 |
+| 120 | 0.3758 | 0.0695 | 0.0064 | 147.2 |
+
+#### The gates were built against the failures we had already seen
+
+This is the methodological finding, and it is the third time in this experiment
+that a criterion turned out to be specified against the *known* failure rather
+than the failure *space*:
+
+| gate | what it catches | M-F's value | fired? |
+|---|---|---:|---|
+| `min_sections` ≥ 12 | too **few** sections — arm M-C's collapse | 146–259 | no |
+| `max_jaccard` ≤ 0.45 | too **similar** sections — arm M-B's collapse | 0.003 | no |
+| `min_union_over_r` ≥ 1.25 | lost vote coverage | ~1.6 | no |
+
+Every one is one-sided in the direction of a failure already observed. M-F failed
+in a **third** direction — many, tiny, mutually disjoint sections — which pushes
+each gated quantity *away* from its threshold. Jaccard near zero and 259 sections
+look, to these gates, like a maximally healthy run.
+
+The instruments that did see it were already being reported and were not gated
+on: **per-contact precision** (0.55 → 0.07) and **contacts per section**
+(33 → 1.4). Both belong in the gate set, and a `max_sections` ceiling is the
+cheap direct fix.
+
 ### Arm M-BC — the blend is worse than M-B alone, at every distance
 
 `A_i = GRPO(max_k F1)_i + 1.0 * GRPO(C_i(all))_i`, 48 steps at lr 1e-5, **zero
