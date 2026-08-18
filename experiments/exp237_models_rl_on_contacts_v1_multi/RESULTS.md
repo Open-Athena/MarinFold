@@ -416,6 +416,59 @@ The reward peaks at step 48 and then the policy discovers it can emit
 | 84 | 0.3974 | 0.1993 | 0.0928 | 181.5 |
 | 120 | 0.3758 | 0.0695 | 0.0064 | 147.2 |
 
+#### Why *this* reward produced *that* behaviour
+
+The section count is a direction in policy space, and each reward has a gradient
+along it. Measured the same way M-C's scale bug was — truncate real rollouts to a
+controlled section count and re-run each reward
+([`analyze_reward_vs_count.py`](analyze_reward_vs_count.py), 120 rollouts):
+
+| the arm's own reward | 1 | 2 | 4 | 8 | 16 | 22 | direction |
+|---|---:|---:|---:|---:|---:|---:|---|
+| **M-B** `max_k F1` | 0.3762 | 0.4434 | 0.4712 | 0.5135 | 0.5483 | 0.5582 | **rises**, +48 % |
+| **M-F** `F1(last)` | 0.3762 | 0.3914 | 0.3797 | 0.4177 | 0.4194 | 0.4267 | **~flat**, +13 % |
+| **M-C** `mean m_k` | 0.3382 | 0.0740 | 0.0195 | 0.0075 | 0.0016 | 0.0003 | **falls**, 1000x |
+
+As group-centred advantage, in groups differing in nothing but section count:
+
+| | 1 | 2 | 4 | 8 | 16 | 22 | what the arm did |
+|---|---:|---:|---:|---:|---:|---:|---|
+| M-B | −1.09 | −0.49 | −0.22 | +0.31 | +0.69 | **+0.81** | grew to ~26, **stable** |
+| M-F | −0.28 | −0.16 | −0.21 | +0.12 | +0.21 | **+0.31** | **ran away to 259** |
+| M-C | **+1.59** | +0.17 | −0.26 | −0.42 | −0.54 | −0.54 | collapsed to **1.1** |
+
+![each reward against section count](plots/reward_vs_section_count.png)
+
+**Every arm moved its section count in the direction its own reward pointed, and
+the magnitude of the gradient set whether it stopped.** M-C's gradient is huge and
+negative, so it ran to the floor. M-B's is large and positive, so it grew — and
+kept being *paid* for growing, which is a restoring force: the reward keeps
+tracking the thing the policy is doing. M-F's is the weakest of the three, and
+that is exactly the problem.
+
+**A weak gradient is not a safe one; it is an unconstrained one.** Two properties
+combine in M-F and in neither of the others:
+
+1. *There is a mild upward pull.* `F1(last)` rises slightly with section count —
+   not because more sections are better, but because the model's later sections
+   are genuinely better than its earlier ones (#230's "the model treats its final
+   section as a commitment"). So emitting one more section is weakly rewarded.
+2. *Nothing pays for the quality of any section except the last.* Under `max_k`,
+   every section is a lottery ticket for the maximum, so improving **any** of them
+   can pay and degrading them all must cost. Under `F1(last)`, sections 1..K−1 are
+   invisible to the reward. They are free space.
+
+Together: adding sections is weakly encouraged, and keeping them good is not
+encouraged at all. The policy takes the free direction — more sections, each
+cheaper — until they carry **1.4 contacts each**, at which point the final section
+has degraded with everything else and the reward collapses with it. `second_last`
+falling to 0.2649 in M-F's *first* run was this mechanism already visible at step
+36; the continuation just let it run.
+
+That is also why M-F looked like the most promising arm from its reward curve. A
+rising reward with a weak gradient in an unconstrained direction is exactly what a
+slow, healthy improvement looks like right up until it isn't.
+
 #### The gates were built against the failures we had already seen
 
 This is the methodological finding, and it is the third time in this experiment
