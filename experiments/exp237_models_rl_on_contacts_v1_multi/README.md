@@ -338,106 +338,92 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-**Full detail in [RESULTS.md](RESULTS.md).** R-precision (all), legacy 554,
-ordered by how far the policy moved:
+**Full detail in [RESULTS.md](RESULTS.md).** Five reward designs, ~25 scored
+checkpoints, every number from #230's scorer unchanged. R-precision (all), legacy
+554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |
 |---|---:|---:|---:|---:|
 | **plain, 22 rollouts — the bar** | — | **0.5896** | 0.5680 | — |
 | #230 warm start | 0 | 0.5673 | 0.5342 | 0.4566 |
-| M-0, lr 0 | 0 | 0.5678 | 0.5364 | 0.4594 |
-| **M-C step-18** | 0.0072 | **0.5750** | **0.5578** | **0.5267** |
-| M-F step-18 | 0.0136 | 0.5647 | 0.5283 | 0.4949 |
-| M-B step-36 | 0.0163 | 0.5741 | 0.5574 | 0.4908 |
+| M-0, lr 0 *(control)* | 0 | 0.5678 | 0.5364 | 0.4594 |
+| **M-C step-18** | 0.0072 | 0.5750 | 0.5578 | **0.5267** |
+| **M-B lr3e-6 step-90** | 0.0087 | **0.5775** | 0.5646 | 0.5091 |
+| M-B lr1e-5 step-18 | 0.0088 | 0.5763 | **0.5663** | 0.5108 |
+| M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 |
 | M-B step-80 | 0.4863 | 0.3969 | 0.3440 | 0.1905 |
 
-- **Primary criterion: NOT met.** Nothing beats 0.5896. M-C step-18 comes within
-  **0.0146**, the closest a multi-mode number has come, and is still short.
-- **Both secondary criteria: met** — final-section 0.5267 > 0.4566, oracle-best
-  0.5578 > 0.5342 — but by **arm M-C**, not by the arms designed for them.
-- M-C step-18 improves every mode on every cut, all paired CIs excluding zero:
-  consensus +0.0077, oracle-best +0.0235, last **+0.0701** (480 wins / 69 losses).
-  On eval2-natural, last goes 0.1696 → **0.2421**.
-- Gates: all three arms tripped the preregistered coverage criterion. It was in
-  the wrong units — see below.
+At a **larger** budget — all sections of 8 rollouts pooled, ~54k tokens against
+plain-100's ~50k — M-B reads **0.6054** against plain's **0.6058**, with the warm
+start at 0.5992.
+
+- **Primary criterion: NOT met.** Nothing beats 0.5896. The best is 0.5775,
+  **0.0121** short.
+- **Secondary criteria: met** — oracle-best 0.5663 > 0.5342, final section
+  0.5267 > 0.4566 — but **no arm owns more than one**, and the arm that wins two
+  of the three is **M-B, the simplest reward tried**.
+- Three arms beat the warm start on **every** mode with paired CIs excluding zero.
+- Every arm was eventually stopped by a gate or by divergence. The peak is at
+  **KL ≈ 0.009** for all of them.
 
 ## Conclusion
 
-**The hypothesis is half right, and the half that is right is the interesting
-half.** Moving the reward's unit from *rollouts of a group* to *sections of one
-rollout* does produce what #208 could not: **an RL checkpoint that improves
-consensus R-precision** (+0.0077, and +0.0109 on eval2-natural). Arm M-C, the arm
-#237 singled out, is the best checkpoint on every aggregation mode. But it does
-not close the gap to independent sampling: 22 plain rollouts still beat one
-rollout's 22 sections, 0.5896 against 0.5750.
+**The hypothesis is half right.** Moving the reward's unit from *rollouts of a
+group* to *sections of one rollout* produces what #208 could not — RL checkpoints
+that improve consensus R-precision (+0.0102, and +0.0062 after pooling). It does
+not close the gap to independent sampling: **RL brought the multi format level
+with plain sampling rather than ahead of it** (0.6054 vs 0.6058 at ~50k tokens,
+where the warm start was 0.5992).
 
 **#208's negative result is the far end of a dose-response, not a verdict.**
-Consensus against distance moved reads 0.5673 → **0.5750** (KL 0.007) → 0.5741
-(0.016) → 0.5529 (0.031) → 0.3969 (0.486). Every reward here helps at small KL and
-damages at large. #208 ran its arms at KL 0.06–0.10 and to 3.96 — past the peak on
-every one — and its two arms under KL 0.0015 were too small to move at all. **The
-window it needed lay between the two learning rates it tried.** That is the most
-portable thing this experiment produced, and it is a statement about *how far*
-rather than about *what reward*.
+Consensus against distance reads 0.5673 → **0.5775** (KL 0.009) → 0.5529 (0.031)
+→ 0.3969 (0.486). Every reward here helps at small KL and damages at large. #208
+ran its arms at KL 0.06–0.10 and to 3.96 — past the peak on every one — and its
+two arms under KL 0.0015 never moved. **The window it needed lay between the two
+learning rates it tried.** Two runs at a 3.3× different rate agree to 0.002 at
+matched KL, so this is a property of distance, not of the schedule.
 
-**Reward shape decides how a run fails, not whether.** M-C and M-F halve the
-contacts emitted while becoming *more* diverse; M-B holds the volume and emits the
-same contacts 1.7× more often. Both routes end at the same place. #208 found these
-two modes across different reward families; here they are produced deliberately,
-by reward shape, on one model and one data order.
+**The most portable finding is about reward design, and it is three-part.**
 
-**Two things for the next reward design, both cheap and both learned the
-expensive way:**
+1. **`E[r] = 0` is necessary and not sufficient.** It constrains the reward's mean
+   over the candidates the policy emitted, and says nothing about whether the
+   reward's *scale* depends on how many candidates that was. M-C's per-section
+   marginal is **366× larger at 1 section than at 22**, so it paid the policy to
+   emit a worse answer; centring could not see it, because centring is computed
+   *inside* the quantity being gamed. Checkable from a histogram before any run.
+2. **Every arm moved its candidate count in the direction its own reward pointed,
+   and the gradient's magnitude decided whether it stopped.** M-C's is strongly
+   negative (collapsed to 1.1 sections), M-B's strongly positive and *self-paying*
+   (grew to ~26 and held), M-F's nearly flat — and **a weak gradient is not a safe
+   one, it is an unconstrained one**: M-F ran to 259 sections carrying 1.4 contacts
+   each.
+3. **Gates specified against the failure you have already seen will miss the next
+   one.** All three original criteria are one-sided; M-F failed in a third
+   direction that pushed every one of them *away* from its threshold, and none
+   fired. The instruments that saw it — per-contact precision and contacts per
+   section — were already being reported and simply were not gated on.
 
-1. **A per-candidate reward must be scale-free in the number of candidates, and
-   centring cannot enforce that.** Arm M-C pays each section its leave-one-out
-   contribution to its own rollout's consensus — a quantity that grows as the
-   rollout emits fewer sections, because each survivor is then more load-bearing.
-   Measured by truncating real rollouts: the reward per section is **366× larger
-   at 1 section than at 22**, while the rollout's own consensus *falls* from
-   0.5431 to 0.3413. In groups differing in nothing but section count, a
-   one-section rollout receives **+4.80** advantage and a 22-section rollout
-   **−0.22**. `E[A] = 0` holds exactly throughout — centring is computed *within*
-   the quantity being gamed, so it cannot see the problem. This explains
-   everything M-C did, including why the collapse accelerates (the payoff for
-   shortening grows as sections disappear) and why M-F and M-B, which have no
-   such term, kept or increased their section counts instead.
-
-   The check is cheap and belongs before any run: truncate a few real rollouts,
-   plot the reward against the number of candidates, look for a slope.
-2. **Gate on `union/R`, not on union relative to the run's own start** — and gate
-   on precision too. The preregistered coverage criterion stopped all three arms;
-   union/R never left 2.8–4.6 in any of them, including the one that collapsed to
-   0.3969, whose union/R was *higher* than the warm start's. Coverage was never the
-   binding constraint. Per-contact precision (0.50 → 0.14) was.
+**Two results worth carrying beyond this experiment.** *Selection is dominated by
+aggregation:* an ORACLE selector of one draft reads 0.5646 where voting the same
+drafts reads 0.5750, so a final section should synthesise its predecessors, not
+pick among them. And *the spread is the resource:* making candidates more uniform
+raises the mean section F1 from 0.432 to 0.532 and **lowers** best-of-22 — the
+same trade that defeats every sharpening reward here, showing up in the corpus's
+own section-size law.
 
 **What would be worth doing next**, in order:
 
-- **The corrected M-C, blended with M-B.** `GRPO(C_i(all))` as the base — the
-  deployed metric on the object the model emits, and scale-correct by
-  construction — plus a **zero-sum** within-rollout shaping term using *prefix*
-  marginals for credit assignment, plus `λ·GRPO(max_k F1)`. Measured offline
-  ([RESULTS.md](RESULTS.md)): the base gives −1.37 advantage to a one-section
-  rollout and +0.79 to a 22-section one, exactly inverting M-C's +4.79/−0.22.
-  Note the obvious repair — scoring against the causal prefix — was **tested and
-  refuted**: it telescopes, but `token_mean` reads the mean, not the sum.
-- **The peak is resolved and needs no further sweep.** Step 18 (KL 0.0072) is the
-  maximum; consensus tracks section count down to 0.4576 at 1.1 sections, where
-  all three aggregation modes converge because there is nothing left to
-  aggregate.
-- **Fix M-C's reward before re-running it.** The scale pathology has a clean fix:
-  compute each section's marginal against a **fixed-size** reference — subsample
-  the rollout's sections to a constant *G* before the leave-one-out — so the
-  reward no longer depends on how many the rollout emitted. Equivalently,
-  decompose a rollout-level `C(all)` advantage across its sections rather than
-  scoring each section independently. Arm M-C's 0.5750 was obtained *despite* this
-  term, in the 18 steps before it took hold; the fixed version is the obvious
-  thing to test next.
-- **A rank-transformed marginal**, separately: 55 % of section marginals are an
-  atom at exactly zero, which is why 7.6 % of rollouts contribute no gradient at
-  all. A second-order fix, not the main one.
-- **The diversity gap is a corpus question, not an RL one.** #230 said this and
-  this run does not contradict it: one rollout's sections cover 658 pairs against
-  1,065 for 22 independent rollouts, and no reward here closed that — the two that
-  improved diversity did so by emitting less.
+- **Fix M-C's scale bug and re-run it.** It is the best final-section arm
+  *despite* carrying the bug, and it collapsed at step 26 because of it. The fix
+  is a rollout-level `GRPO(C_i(all))` base — measured scale-correct, −1.37
+  advantage at one section against +0.79 at 22 — with a **zero-sum** within-rollout
+  shaping term for credit assignment. Note the obvious repair, scoring against the
+  causal prefix, was **tested and refuted**: it telescopes, but `token_mean` reads
+  the mean, not the sum.
+- **Nothing further on M-B.** Two learning rates, 13 checkpoints, a smooth
+  unimodal peak, and agreement to 0.002 at matched distance. A third sweep
+  re-measures 0.5775.
+- **The diversity gap is a corpus question, not an RL one.** One rollout's sections
+  cover 658 distinct pairs against 1,065 for 22 independent rollouts, and no reward
+  here closed that — the two that improved diversity did so by emitting less.

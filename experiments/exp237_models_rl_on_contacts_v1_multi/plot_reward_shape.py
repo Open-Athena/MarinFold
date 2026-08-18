@@ -40,12 +40,19 @@ from build_summary import save_plot_with_meta  # noqa: E402
 
 #: Terminal KL of each scored checkpoint, from `summarize_runs.py`.
 KL = {
-    "exp230_step1988": 0.0, "m_0_step8": 0.0, "m_c_step18": 0.0072,
-    "m_f_step18": 0.0136, "m_b_step36": 0.0163, "m_f_step36": 0.0306,
-    "m_b_step80": 0.4863,
+    "exp230_step1988": 0.0, "m_0_step8": 0.0,
+    "m_c_step18": 0.0072,
+    "m_f_step18": 0.0136, "m_f_step36": 0.0306,
+    "m_b_step18": 0.0088, "m_b_step36": 0.0163, "m_b_step80": 0.4863,
+    "lowlr_step30": 0.0018, "lowlr_step60": 0.0047, "lowlr_step75": 0.0079,
+    "lowlr_step90": 0.0087, "lowlr_step120": 0.0259,
+    "mbc_step12": 0.0024, "mbc_step24": 0.0107, "mbc_step36": 0.0246, "mbc_step48": 0.0626,
+    "mfc_step12": 0.0050, "mfc_step18": 0.0148, "mfc_step24": 0.0368, "mfc_step36": 0.0918,
 }
-ARM_OF = {"m_c": "M-C", "m_f": "M-F", "m_b": "M-B", "m_0": "M-0", "exp230": "warm start"}
-COLORS = {"M-C": "#1f77b4", "M-F": "#d62728", "M-B": "#2ca02c",
+ARM_OF = {"m_c": "M-C", "m_f": "M-F", "m_b": "M-B", "m_0": "M-0", "exp230": "warm start",
+          "lowlr": "M-B", "mbc": "M-BC", "mfc": "M-FC"}
+COLORS = {"M-C": "#1f77b4", "M-F": "#d62728", "M-B": "#1a7f4b",
+          "M-BC": "#9467bd", "M-FC": "#e08214",
           "M-0": "#7f7f7f", "warm start": "#000000"}
 #: #230's budget-matched plain baseline, legacy 554 — the primary criterion.
 PLAIN22 = {"consensus": 0.5896, "best": 0.5680}
@@ -78,18 +85,17 @@ def dose_response(data: Path, out: Path) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.3), sharex=True)
     for ax, (mode, title) in zip(axes, MODES):
         d = df[df["mode"] == mode].sort_values("kl")
-        # A line through the points ordered by KL: the arms differ, but the
-        # question is whether DISTANCE orders the outcome, so they belong on one
-        # trace as well as in their own colours.
-        ax.plot(d["kl"], d["r_prec"], "-", color="0.6", lw=1.0, zorder=1)
+        # NO connecting line. With 20 checkpoints from five different arms,
+        # joining them in KL order draws a zigzag between unrelated runs and
+        # reads as structure. The rise-then-fall is legible from the scatter.
         for arm, g in d.groupby("arm"):
             ax.scatter(g["kl"], g["r_prec"], s=70, color=COLORS.get(arm), zorder=3,
                        label=arm, edgecolor="white", linewidth=1.0)
         base = d[d["label"] == "exp230_step1988"]["r_prec"]
         if len(base):
             ax.axhline(base.iloc[0], color="k", lw=0.8, ls=":")
-            ax.text(0.02, base.iloc[0], "  warm start", fontsize=7, va="bottom",
-                    transform=ax.get_yaxis_transform())
+            ax.text(0.98, base.iloc[0], "warm start  ", fontsize=7, va="top",
+                    ha="right", transform=ax.get_yaxis_transform())
         if mode in PLAIN22:
             ax.axhline(PLAIN22[mode], color="crimson", lw=1.2, ls="-.")
             ax.text(0.98, PLAIN22[mode], "plain, 22 rollouts  ", color="crimson",
