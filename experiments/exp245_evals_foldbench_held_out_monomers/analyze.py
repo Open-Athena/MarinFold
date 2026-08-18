@@ -53,7 +53,12 @@ BASELINES = {
     "esmfold": "ESMFold",
     "esmfold2": "ESMFold2",
     "protenix-v2_msa": "Protenix-v2 + MSA",
-    "seq-knn-k10": "seq-KNN k=10 (null)",
+}
+#: The KNN null is run twice, over the two corpora the two model families
+#: trained on, so it is not reused from #213 and is not part of `BASELINES`.
+KNN = {
+    "seq-knn-k10": "seq-KNN (unfiltered corpus)",
+    "seq-knn-k10-decontam": "seq-KNN (decontaminated corpus)",
 }
 #: #213's column names for the baselines whose scores are reused verbatim.
 EXP213_COLUMNS = {
@@ -61,9 +66,8 @@ EXP213_COLUMNS = {
     "ESMFold2": "ESMFold2",
     "Protenix-v2 single-seq": "Protenix-v2 single-seq",
     "Protenix-v2 + MSA": "Protenix-v2 + MSA",
-    "seq-KNN k=10 (null)": "seq-KNN k=10 (null)",
 }
-ORDER = list(CHECKPOINTS.values()) + list(BASELINES.values())
+ORDER = list(CHECKPOINTS.values()) + list(BASELINES.values()) + list(KNN.values())
 SETS = ("eval-val", "eval-test", "eval-denovo")
 RANGES = ("all", "long")
 CUTS = ("R", "AUC")
@@ -110,12 +114,13 @@ def load_reused_baselines(stems: set[str]) -> pd.DataFrame:
 
 
 def load_knn(path: Path | None) -> pd.DataFrame:
-    """Per-protein rows for the sequence-KNN null on the newly run proteins."""
+    """Per-protein rows for both sequence-KNN nulls, over every scored unit."""
     if path is None or not path.exists():
         return pd.DataFrame(columns=["stem", "range", "cut", "predictor", "precision"])
     frame = pd.read_csv(path)
-    frame = frame[frame["range"].isin(RANGES) & frame["cut"].isin(CUTS)]
-    frame["predictor"] = BASELINES["seq-knn-k10"]
+    frame = frame[frame["range"].isin(RANGES) & frame["cut"].isin(CUTS)
+                  & frame.model.isin(KNN)]
+    frame = frame.assign(predictor=frame.model.map(KNN))
     return frame[["stem", "range", "cut", "predictor", "precision"]]
 
 
@@ -160,7 +165,7 @@ def paired_deltas(per_protein: pd.DataFrame, sets: pd.DataFrame) -> pd.DataFrame
                 for checkpoint in CHECKPOINTS.values():
                     if checkpoint not in table:
                         continue
-                    for baseline in BASELINES.values():
+                    for baseline in list(BASELINES.values()) + list(KNN.values()):
                         if baseline not in table:
                             continue
                         pair = table[[checkpoint, baseline]].dropna()

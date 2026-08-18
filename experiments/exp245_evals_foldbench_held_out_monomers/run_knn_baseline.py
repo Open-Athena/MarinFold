@@ -5,8 +5,10 @@
 
 The null asks how much of a protein's contact map you get by copying the
 contacts of its nearest training-set sequences. #94 built it and #213 published
-its per-protein scores for the 554; the 209 new monomers need it computed, and
-it has to be the same construction or the column means something different.
+its per-protein scores for the 554, but this runs it over **all 333 scored
+units** rather than reusing those rows: the second null below has no published
+counterpart, and a null that covered only part of the eval set would not be
+comparable across the three sets.
 
 So this reuses #94's machinery wholesale -- its MMseqs2 index over the 4.13 M
 AFDB training documents, its per-document contact store, and its scoring and
@@ -74,6 +76,10 @@ def main() -> int:
                         help="reuse an existing aln.m8 in the work dir")
     parser.add_argument("--decontaminated", action="store_true",
                         help="also score the null over the decontaminated corpus")
+    parser.add_argument("--manifest", type=Path,
+                        default=DATA / "predictor_manifest_all.csv",
+                        help="which proteins to run the null on (default: every "
+                             "scored unit, so both nulls cover the whole eval set)")
     args = parser.parse_args()
 
     for required in (EXP94_SCRATCH / "trainDB", EXP94_SCRATCH / "contacts_store"):
@@ -94,7 +100,7 @@ def main() -> int:
         if source.exists() and not link.exists():
             link.symlink_to(source)
 
-    manifest = pd.read_csv(DATA / "predictor_manifest_new.csv")
+    manifest = pd.read_csv(args.manifest)
     # #94's run_mmseqs builds the query FASTA itself from the manifest, keyed
     # `{dataset}__{stem}`, which is what its scorer joins on -- so the manifest
     # is the input and the FASTA is its output, not ours.
@@ -111,7 +117,7 @@ def main() -> int:
     if not args.skip_search:
         run([sys.executable, str(EXP94_DIR / "run_mmseqs.py"),
              "--scratch", str(args.work), "--query-fasta", str(queries),
-             "--manifests", str(DATA / "predictor_manifest_new.csv"),
+             "--manifests", str(args.manifest),
              "-s", "7.5", "--threads", str(args.threads)], cwd=EXP94_DIR)
     run([sys.executable, str(EXP94_DIR / "build_knn_scores.py"),
          "--scratch", str(args.work), "--gt", str(subset), "--ks", str(K)],
