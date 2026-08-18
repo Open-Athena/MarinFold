@@ -241,6 +241,115 @@ ESMFold2 0.608 vs 0.804, seq-KNN 0.262 vs 0.602 — and Protenix-v2 + MSA 0.812 
 0.847, essentially flat. #241's finding survives on new proteins: the viral gap
 tracks how much homology a predictor can reach, and an MSA closes it.
 
+### 7. Why designs look only slightly easier here, when #226 found a huge gap
+
+Prior work (#213, #226, #241) reported de novo designs as *much* easier than
+natural proteins. On these sets the design advantage is small for MarinFold
+(+0.054 [−0.043, +0.151] for m2-p06, +0.006 [−0.090, +0.097] for the #199
+cooldown) and moderate for ESMFold2 (+0.071 [+0.039, +0.105]). That is not a
+contradiction — the earlier comparison used a different designed population *and*
+a homology-filtered natural one, and both differences push the same way.
+
+**The designed population.** The published contrast is exp65's `denovo_pdb`: 396
+de novo PDB entries, mostly small idealised bundles and barrels. Published means
+on the 554 (all-range R, #199 p06): **denovo_pdb 0.673** vs **foldbench100 0.541**
+— +0.132 for MarinFold. exp245's `eval-denovo` is a different thing: the 19
+monomers FoldBench happens to contain that RCSB calls synthetic, which includes
+engineered binders and miniaturised natural folds ("high affinity CTLA-4 binder",
+"METP, miniaturized rubredoxin", extendable nanofibers) rather than 396 idealised
+designs. At n = 19 the interval is ±0.09, so these numbers cannot distinguish
+"similar" from "+0.13" anyway.
+
+**The natural population, which matters more.** The headline "designs are much
+easier" numbers were against **eval2-natural** — the natural proteins under 40 %
+identity to exp199's training set, where MarinFold scores ~0.31-0.36. exp245's
+`eval-test` is *every* natural FoldBench monomer, and it is not homology-filtered
+against the unfiltered corpus: only 23 of 217 sit under 40 % identity to #199's
+training sequences, and 139 are at or above 60 %. Split eval-test on that axis and
+the published pattern comes straight back:
+
+| predictor | natural, <40 % id (23) | natural, ≥40 % id (194) | designs (19) |
+|---|---:|---:|---:|
+| #232 m2-p06 (decontaminated) | 0.415 | 0.552 | 0.591 |
+| #199 cooldown (contaminated) | 0.442 | 0.633 | 0.619 |
+| ESMFold2 | 0.599 | 0.815 | 0.864 |
+| Protenix-v2 single-seq | 0.243 | 0.267 | 0.835 |
+| seq-KNN (unfiltered corpus) | 0.297 | 0.615 | 0.066 |
+
+Against the homology-hard natural slice the design advantage is **+0.177
+[+0.044, +0.306]** for m2-p06 and identically +0.177 for the #199 cooldown —
+the effect #226 and #241 measured, reproduced here.
+
+So both statements are true and they are about different comparisons: **designs
+are much easier than natural proteins we have no homolog for**, and **designs are
+about as easy as natural proteins in general**, because most natural proteins have
+homologs. Protenix-v2 single-sequence is the extreme case — +0.570 designs vs all
+natural, and it does not benefit from homology at all (0.243 vs 0.267 across the
+identity split), which is why it looked competitive on an eval set that was
+three-quarters designed and collapses on natural monomers.
+
+### How each baseline was run
+
+Every baseline is #74's / #78's / #94's driver invoked on exp245's manifest, at
+those experiments' own settings — the point is that the new proteins are scored
+by the same programs at the same knobs as the published rows this experiment
+reuses for the other 124 units. Per-protein timings are in
+`data/coreweave_results/timings.csv` (checkpoints) and each driver's
+`contact_eval_meta.csv` (baselines).
+
+**Protenix-v2, both modes** ([`build_protenix_inputs.py`](build_protenix_inputs.py)
+→ exp12 `cli.py run` → [`sync_protenix_best.py`](sync_protenix_best.py)):
+
+| setting | value |
+|---|---|
+| model | `protenix-v2` (`checkpoint/protenix-v2.pt`), released `protenix` PyPI package |
+| trunk recycles | `model.N_cycle = 10` |
+| seeds | `1,2,3,4,5` — five independent trunk+diffusion runs |
+| diffusion samples per seed | `sample_diffusion.N_sample = 8` |
+| samples per protein and mode | **40** (5 seeds × 8) |
+| selection | top-1 across all 40 by Protenix's own `ranking_score`, #74's rule |
+| single-sequence mode | `--use_msa false` |
+| MSA mode | `--use_msa true`, MSA precomputed once per protein through Protenix's own colabfold pipeline (`runner.msa_search.update_seq_msa(mode="colabfold")`, `MMSEQS_SERVICE_HOST_URL=https://api.colabfold.com`), giving `pairing.a3m` (a monomer stub) + `non_pairing.a3m` (the unpaired MSA) |
+| readout scored | **structure** — pyconfind on the selected mmCIF, ranked by contact degree. Not the distogram: #74/#78 emit both and #213 published the structure rows (the distogram roughly halves every baseline) |
+| hardware | one Modal H100 per (protein, mode) |
+
+The per-protein selection — which seed and sample won, and its ranking score — is
+in [`data/protenix_selection.csv`](data/protenix_selection.csv). Two mechanical
+notes for anyone rerunning it: exp12's Modal app binds its output volume inside
+the `@app.cls` decorator, so `--output-volume` is accepted and then ignored and
+predictions land in exp12's own `foldbench-protenix-runs` volume; and only the
+winning sample's mmCIF is downloaded here (5 ranking JSONs + 1 structure per
+protein and mode) because syncing all 40 samples plus per-seed distograms is
+~6 GB of small files at ~50 kB/s through the Modal API. Protenix sorts samples
+within a seed by `ranking_score`, and that is checked rather than assumed —
+24/24 complete seed directories from a full sync have `sample_0` as the maximum,
+and `--verify-all` re-reads all eight per seed.
+
+**ESMFold** (exp78 `esmfold_app.py`): `facebook/esmfold_v1` via
+`transformers.EsmForProteinFolding`, single sequence, `num_recycles=4` (model
+default), ESM-2 language-model stem cast to fp16, trunk attention
+`chunk_size=128`, one deterministic prediction per protein, one Modal H100.
+
+**ESMFold2** (exp78 `esmfold2_app.py`): `biohub/ESMFold2` (ESMC-6B + all-atom
+diffusion) via `transformers.models.esmfold2`, **single sequence**,
+`num_loops=20`, `num_sampling_steps=100` (documented defaults), best-of-N
+diffusion draws with distinct seeds keeping top-1 by the model's confidence —
+mirroring the Protenix top-1-of-40 selection.
+
+**seq-KNN null** ([`run_knn_baseline.py`](run_knn_baseline.py)): #94's index over
+the 4,129,682 AFDB training documents, MMseqs2 `-s 7.5`, k = 10 nearest
+sequences excluding verbatim self-hits, contacts averaged from the neighbours'
+own contact sets. Run twice — over the unfiltered corpus and over the rows #225
+kept — and scored through #82's `build_rollout_rows.py`, which carries #89's
+metric functions verbatim.
+
+**MarinFold checkpoints**: #82's rollout+resample recipe — 100 fresh document
+realizations per protein (resampled N-terminus and statement order), temperature
+1.0, top-p 0.95, **top-k disabled**, token budget `min(8192 − prompt, 6L + 128)`,
+occurrence-frequency voting over contacts still live at the end of each rollout,
+no pairwise tie-break. Twelve single-H100 CoreWeave shards per checkpoint at
+batch priority; float32 exports evaluated as bfloat16.
+
 ### Artifacts
 
 Everything public is under

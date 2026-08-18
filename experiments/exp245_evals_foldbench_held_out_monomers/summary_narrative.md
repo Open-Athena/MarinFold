@@ -102,6 +102,30 @@ non-viral: m2-p06 0.465/0.542, #199 cooldown 0.497/0.621, ESMFold2 0.608/0.804,
 seq-KNN 0.262/0.602, Protenix + MSA 0.812/0.847. #241's finding survives on new
 proteins, and the gap tracks reachable homology.
 
+## Designs are easier — against the right natural set
+
+Earlier work (#213, #226, #241) found de novo designs much easier than natural
+proteins. Here the design advantage looks small: **+0.054** for #232 m2-p06 and
+**+0.006** for the #199 cooldown against all of eval-test. Both statements are
+true, about different comparisons.
+
+The published contrast used exp65's 396 idealised `denovo_pdb` designs against
+the **homology-filtered** natural set (eval2-natural, where MarinFold scores
+~0.31-0.36). exp245's eval-denovo is instead the 19 synthetic monomers FoldBench
+happens to contain — engineered binders and miniaturised folds, n = 19, interval
++/-0.09 — and eval-test is *every* natural monomer, only 23 of 217 of which are
+under 40 % identity to #199's training sequences.
+
+Split eval-test on that axis and the old pattern returns exactly: against natural
+proteins with no close training homolog, designs are **+0.177 [+0.044, +0.306]**
+easier for m2-p06 and identically +0.177 for the cooldown. Designs are much
+easier than natural proteins we have no homolog for; they are about as easy as
+natural proteins in general, because most natural proteins have homologs.
+
+Protenix-v2 single-seq is the extreme: **+0.570** designs versus all natural, and
+flat across the identity split (0.243 vs 0.267). It looked competitive only on an
+eval set that was three-quarters designed protein.
+
 ## Use from here
 
 `eval-test` is the default set for a decontaminated-accuracy claim: 217 natural
