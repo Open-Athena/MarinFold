@@ -387,6 +387,52 @@ are going to read one candidate, and a loss if you are going to aggregate.
 It shows that selecting for size does not help; it does not prove that a model
 retrained to emit uniform sections would fail.
 
+### The reward curves, and the one arm still climbing when it stopped
+
+![reward over training](plots/reward_curves.png)
+
+There is no single reward curve for this experiment — the arms do not share a
+reward — so each is drawn against its own objective. Three things read off it:
+
+1. **M-F is the only clean "reward goes up" curve.** `last_f1` climbs 0.33 →
+   0.48 across 42 batches with no plateau, and the run was stopped by the
+   coverage criterion later shown to be in the wrong units (its union/R was
+   **2.80**, nowhere near the 1.25 floor where #208's mechanism binds). *M-F was
+   never trained to exhaustion.*
+2. **M-C and M-B both peak at step 15–20 and turn over** — the same peak the
+   evaluations found, visible from the training batches alone.
+3. **M-B at lr 3e-6 oscillates without trend from step ~40 onward.** If its
+   evaluations agree, KL ~0.009 is a genuine ceiling for that reward rather than
+   an artifact of how coarsely the 1e-5 run was checkpointed.
+
+M-F rising while *everything else about it degrades* (consensus −0.0144,
+oracle-best −0.0154, `second_last` −0.1631) is the sharpest illustration in this
+experiment that a rising reward is not a result.
+
+### The single-rollout case: what a final section costs, and what it buys
+
+A consensus prediction is a **ranking over pairs** that must be cut at `R` to
+become a contact set — and `R` is the number of true contacts, which comes from
+ground truth. A rollout's final section is already a set: one generation, one
+self-consistent answer, no vote and no cutoff. That difference is worth pricing.
+
+Generated tokens per protein, measured on the eval runs themselves:
+
+| prediction | tokens / protein | R-precision (legacy 554) |
+|---|---:|---:|
+| plain, one rollout | 500 | 0.4454 |
+| **M-F step-36, final section** | **3,697** | **0.5075** |
+| **M-C step-18, final section** | 5,503 | **0.5267** |
+| plain, 22 rollouts, consensus | 11,005 | 0.5896 |
+
+**Stated against itself rather than flattered:** at matched *tokens* a single
+multi rollout is probably not yet the better buy — 3,697 tokens would fund ~7
+plain rollouts, and consensus over 7 plain rollouts is untested but sits
+somewhere between 0.4454 and 0.5896. What the single rollout wins on is not
+tokens; it is that the output is a committed contact set rather than a ranking
+needing a ground-truth-derived cutoff, and that it needs no aggregation step at
+all. Whether it can also win on accuracy is what continuing M-F is for.
+
 ### M-F is dominated by M-C, at M-F's own objective
 
 Worth stating separately, because it inverts the obvious plan for improving the
