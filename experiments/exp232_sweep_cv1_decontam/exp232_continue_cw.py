@@ -1,12 +1,13 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Continue selected exp232 CoreWeave models from their final trainer state.
+"""Continue selected exp232 CoreWeave models from peak-LR trainer state.
 
-The supported sources are the final ``step-145199`` checkpoints evaluated in
-PR #244. Each continuation restores model, AdamW, RNG, data-position, and
-absolute-step state, starts a new LR cycle at the source run's original peak,
-holds it for 80% of the added training, and linearly decays to zero.
+The supported sources are the permanent ``step-116160`` checkpoints immediately
+before the selected PR #244 runs began their original cooldowns. Each
+continuation restores model, AdamW, RNG, data-position, and absolute-step state,
+holds the restored peak LR for 80% of the added training, and linearly decays to
+zero.
 
 ``SOURCE`` selects ``m2-p06-aug`` or ``m1-p02-aug``. ``CLUSTER`` and ``NODES``
 select placement without entering production identity. Set ``SMOKE=1`` and
@@ -74,8 +75,6 @@ CONTINUATION_EXPERIMENT_PREFIX = (
 
 # Match exp199's continuation budget: three original-run token budgets.
 ADDITIONAL_TRAIN_STEPS = 3 * NUM_TRAIN_STEPS
-# The completed sources reached 10% of peak; the continuation ends at zero.
-SOURCE_FINAL_LR_RATIO = 0.1
 MIN_LR_RATIO = 0.0
 WARMUP = 0.1
 REWARMUP = 0.0
@@ -109,10 +108,10 @@ class SourceModel:
 SOURCE_MODELS = {
     "m2-p06-aug": SourceModel(
         key="m2-p06-aug",
-        identity="srcfinal",
+        identity="srcpeak",
         run_id="prot-exp232-cw-cv1-decontam-s02-m2-p06-aug",
         version="2026.08.14.2",
-        checkpoint_step=145_199,
+        checkpoint_step=116_160,
         mixture_key="m2",
         point_key="p06",
         source_augmentation="aug",
@@ -123,10 +122,10 @@ SOURCE_MODELS = {
     ),
     "m1-p02-aug": SourceModel(
         key="m1-p02-aug",
-        identity="srcfinal",
+        identity="srcpeak",
         run_id="prot-exp232-cw-cv1-decontam-s02-m1-p02-aug",
         version="2026.08.14.2",
-        checkpoint_step=145_199,
+        checkpoint_step=116_160,
         mixture_key="m1",
         point_key="p02",
         source_augmentation="aug",
@@ -306,7 +305,7 @@ def _run_shape(
         f"source_augmentation={source_model.source_augmentation}",
         f"augmentation={AUGMENTATION_KEY}",
         f"lr={source_model.learning_rate:g}",
-        f"source_final_lr={source_model.learning_rate * SOURCE_FINAL_LR_RATIO:g}",
+        f"source_checkpoint_lr={source_model.learning_rate:g}",
         f"continuation_final_lr={source_model.learning_rate * MIN_LR_RATIO:g}",
         f"wd={source_model.weight_decay:g}",
         f"batch={GLOBAL_BATCH_SIZE}",
