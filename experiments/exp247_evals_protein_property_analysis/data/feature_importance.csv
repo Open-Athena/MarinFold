@@ -1,0 +1,541 @@
+predictor,feature,importance
+#232 m2-p06 (decontaminated),length,0.01134698759182389
+#232 m2-p06 (decontaminated),is_viral,0.0
+#232 m2-p06 (decontaminated),n_uniprot_xrefs,0.0
+#232 m2-p06 (decontaminated),exp199_best_identity,0.014502180749970107
+#232 m2-p06 (decontaminated),exp199_afdb_best_identity,-0.002597832923307175
+#232 m2-p06 (decontaminated),exp199_esm_atlas_best_identity,-0.003522778128072959
+#232 m2-p06 (decontaminated),n_contacts,0.005423074298837543
+#232 m2-p06 (decontaminated),contacts_per_residue,-0.0008204319229398405
+#232 m2-p06 (decontaminated),resolved_fraction,-0.0008784565412808254
+#232 m2-p06 (decontaminated),mean_contact_order,0.0037314510114134837
+#232 m2-p06 (decontaminated),relative_contact_order,0.008895526598913909
+#232 m2-p06 (decontaminated),median_contact_separation,0.0010329226522694745
+#232 m2-p06 (decontaminated),frac_long_contacts,0.003052673701192099
+#232 m2-p06 (decontaminated),n_long_contacts,-0.0020864182335460723
+#232 m2-p06 (decontaminated),long_contacts_per_residue,-0.0025334284799674034
+#232 m2-p06 (decontaminated),frac_hydrophobic,0.004724343545589158
+#232 m2-p06 (decontaminated),frac_polar,-0.008563019230511195
+#232 m2-p06 (decontaminated),frac_charged,-0.005153104504425768
+#232 m2-p06 (decontaminated),frac_glycine,-0.0015891727894081164
+#232 m2-p06 (decontaminated),frac_proline,0.01364679255664992
+#232 m2-p06 (decontaminated),mean_hydropathy,0.007447415423814191
+#232 m2-p06 (decontaminated),frac_low_complexity,0.002275154245461533
+#232 m2-p06 (decontaminated),train_n_hits_significant,0.045617644277881175
+#232 m2-p06 (decontaminated),train_log_n_hits,0.0
+#232 m2-p06 (decontaminated),train_best_evalue_log,-0.0010744466527237984
+#232 m2-p06 (decontaminated),train_afdb_n_hits,-0.003087674007325464
+#232 m2-p06 (decontaminated),train_esm_n_hits,0.04442930593544218
+#232 m2-p06 (decontaminated),residual_identity_cov40,0.0059952236593582425
+#232 m2-p06 (decontaminated),residual_identity_cov30,0.0012728167582095246
+#232 m2-p06 (decontaminated),residual_identity_anycov,-0.013557125991300104
+#232 m2-p06 (decontaminated),n_surviving_alignments,0.20990074373912676
+#232 m2-p06 (decontaminated),knn_n_hits,7.534734488352512e-05
+#232 m2-p06 (decontaminated),knn_best_bits,-0.004117091452777477
+#232 m2-p06 (decontaminated),knn_best_identity,0.002902384853761597
+#232 m2-p06 (decontaminated),knn_best_qcov,0.019796171025429195
+#232 m2-p06 (decontaminated),frac_helix,-0.009953966857990382
+#232 m2-p06 (decontaminated),frac_sheet,0.031700247111639726
+#232 m2-p06 (decontaminated),frac_coil,-0.001974758869295626
+#232 m2-p06 (decontaminated),n_sse,-0.001446989517781988
+#232 m2-p06 (decontaminated),radius_of_gyration,0.000169868093344408
+#232 m2-p06 (decontaminated),rg_over_length,0.00890237665838329
+#232 m2-p06 (decontaminated),msa_depth,0.03278732938586028
+#232 m2-p06 (decontaminated),msa_log_depth,0.0
+#232 m2-p06 (decontaminated),msa_n_near_identical,0.0030125100339023964
+#232 m2-p06 (decontaminated),msa_mean_coverage,0.0133877182223021
+#232 m2-p06 (decontaminated),n_pfam,0.004408550787531268
+#232 m2-p06 (decontaminated),n_interpro,-0.0010128294884778177
+#232 m2-p06 (decontaminated),n_go,0.006227266857839464
+#232 m2-p06 (decontaminated),has_ec,0.0
+#232 m2-p06 (decontaminated),n_uniprot_domains,0.006892739268509046
+#232 m2-p06 (decontaminated),n_transmembrane,0.0
+#232 m2-p06 (decontaminated),has_signal_peptide,0.0
+#232 m2-p06 (decontaminated),is_membrane,-0.0021720125773564414
+#232 m2-p06 (decontaminated),is_secreted,0.00011365646966220444
+#232 m2-p06 (decontaminated),is_cytoplasmic,-0.0002319342185450518
+#232 m2-p06 (decontaminated),is_nuclear,-2.9036965894640997e-05
+#232 m2-p06 (decontaminated),kingdom_bacteria,0.0005711940510400082
+#232 m2-p06 (decontaminated),kingdom_eukaryote,0.002627089776877098
+#232 m2-p06 (decontaminated),kingdom_archaea,0.0
+#232 m2-p06 (decontaminated),kingdom_virus,0.0
+#232 m1-p02 (decontaminated),length,0.0034714820967523376
+#232 m1-p02 (decontaminated),is_viral,0.0
+#232 m1-p02 (decontaminated),n_uniprot_xrefs,0.0
+#232 m1-p02 (decontaminated),exp199_best_identity,0.0018083817872225488
+#232 m1-p02 (decontaminated),exp199_afdb_best_identity,0.001172598348049092
+#232 m1-p02 (decontaminated),exp199_esm_atlas_best_identity,-0.010389503245646997
+#232 m1-p02 (decontaminated),n_contacts,0.00846243086805162
+#232 m1-p02 (decontaminated),contacts_per_residue,0.00208652301318073
+#232 m1-p02 (decontaminated),resolved_fraction,0.007783018754723428
+#232 m1-p02 (decontaminated),mean_contact_order,0.018672501223526768
+#232 m1-p02 (decontaminated),relative_contact_order,0.008098789658983743
+#232 m1-p02 (decontaminated),median_contact_separation,0.004236746013552869
+#232 m1-p02 (decontaminated),frac_long_contacts,-0.0046766026449357205
+#232 m1-p02 (decontaminated),n_long_contacts,0.0008829043522689706
+#232 m1-p02 (decontaminated),long_contacts_per_residue,0.001373692134373153
+#232 m1-p02 (decontaminated),frac_hydrophobic,0.003926041330235575
+#232 m1-p02 (decontaminated),frac_polar,8.816091066543574e-05
+#232 m1-p02 (decontaminated),frac_charged,-0.000435428580889502
+#232 m1-p02 (decontaminated),frac_glycine,-0.0010821531771963739
+#232 m1-p02 (decontaminated),frac_proline,0.002458191175105537
+#232 m1-p02 (decontaminated),mean_hydropathy,-0.00047121266322503743
+#232 m1-p02 (decontaminated),frac_low_complexity,0.004774856341620157
+#232 m1-p02 (decontaminated),train_n_hits_significant,0.003327400486481169
+#232 m1-p02 (decontaminated),train_log_n_hits,0.0
+#232 m1-p02 (decontaminated),train_best_evalue_log,0.0016920117306395504
+#232 m1-p02 (decontaminated),train_afdb_n_hits,-0.0012400397065382956
+#232 m1-p02 (decontaminated),train_esm_n_hits,0.004380492690182924
+#232 m1-p02 (decontaminated),residual_identity_cov40,0.00781458868706512
+#232 m1-p02 (decontaminated),residual_identity_cov30,0.00964537920733147
+#232 m1-p02 (decontaminated),residual_identity_anycov,0.0029119898599377332
+#232 m1-p02 (decontaminated),n_surviving_alignments,0.427874968548127
+#232 m1-p02 (decontaminated),knn_n_hits,0.0028869986257646805
+#232 m1-p02 (decontaminated),knn_best_bits,-0.020063842007716378
+#232 m1-p02 (decontaminated),knn_best_identity,-0.0014379009963396416
+#232 m1-p02 (decontaminated),knn_best_qcov,0.00650530222905433
+#232 m1-p02 (decontaminated),frac_helix,0.0011808395408956535
+#232 m1-p02 (decontaminated),frac_sheet,0.019906287112762155
+#232 m1-p02 (decontaminated),frac_coil,0.00033736079400580596
+#232 m1-p02 (decontaminated),n_sse,-0.0008224188915149005
+#232 m1-p02 (decontaminated),radius_of_gyration,0.008805703575862845
+#232 m1-p02 (decontaminated),rg_over_length,0.013017515866245315
+#232 m1-p02 (decontaminated),msa_depth,0.04733770501586318
+#232 m1-p02 (decontaminated),msa_log_depth,0.0
+#232 m1-p02 (decontaminated),msa_n_near_identical,0.008258110347559564
+#232 m1-p02 (decontaminated),msa_mean_coverage,-0.0020422867737264288
+#232 m1-p02 (decontaminated),n_pfam,0.0016204636051184245
+#232 m1-p02 (decontaminated),n_interpro,-0.0009609480390449177
+#232 m1-p02 (decontaminated),n_go,-0.0034438831794976034
+#232 m1-p02 (decontaminated),has_ec,4.725499856131355e-06
+#232 m1-p02 (decontaminated),n_uniprot_domains,-0.000909228064757886
+#232 m1-p02 (decontaminated),n_transmembrane,0.0003537141874449007
+#232 m1-p02 (decontaminated),has_signal_peptide,0.0
+#232 m1-p02 (decontaminated),is_membrane,-0.0036257406048687073
+#232 m1-p02 (decontaminated),is_secreted,0.0
+#232 m1-p02 (decontaminated),is_cytoplasmic,0.0
+#232 m1-p02 (decontaminated),is_nuclear,0.0009870021150249792
+#232 m1-p02 (decontaminated),kingdom_bacteria,-0.0003141185431851573
+#232 m1-p02 (decontaminated),kingdom_eukaryote,-0.000297786283350443
+#232 m1-p02 (decontaminated),kingdom_archaea,0.0
+#232 m1-p02 (decontaminated),kingdom_virus,0.0
+#199 cooldown (contaminated),length,0.010852705056499889
+#199 cooldown (contaminated),is_viral,0.0
+#199 cooldown (contaminated),n_uniprot_xrefs,0.0
+#199 cooldown (contaminated),exp199_best_identity,0.0014809751641237962
+#199 cooldown (contaminated),exp199_afdb_best_identity,9.693384733722721e-05
+#199 cooldown (contaminated),exp199_esm_atlas_best_identity,0.004809827059021721
+#199 cooldown (contaminated),n_contacts,0.001371451412258065
+#199 cooldown (contaminated),contacts_per_residue,0.0026057168906910315
+#199 cooldown (contaminated),resolved_fraction,-0.01930064408356303
+#199 cooldown (contaminated),mean_contact_order,0.016693158880424948
+#199 cooldown (contaminated),relative_contact_order,0.014352711175451963
+#199 cooldown (contaminated),median_contact_separation,0.00011421191941106412
+#199 cooldown (contaminated),frac_long_contacts,0.0041542705555305676
+#199 cooldown (contaminated),n_long_contacts,0.008365222291928879
+#199 cooldown (contaminated),long_contacts_per_residue,-0.001252051905768875
+#199 cooldown (contaminated),frac_hydrophobic,0.007994347573467994
+#199 cooldown (contaminated),frac_polar,0.0039025425571020873
+#199 cooldown (contaminated),frac_charged,-0.0008097508335012576
+#199 cooldown (contaminated),frac_glycine,0.010513752786050153
+#199 cooldown (contaminated),frac_proline,-0.0006087870857833493
+#199 cooldown (contaminated),mean_hydropathy,0.005757813730428557
+#199 cooldown (contaminated),frac_low_complexity,0.00030502198115150704
+#199 cooldown (contaminated),train_n_hits_significant,0.0399756762443329
+#199 cooldown (contaminated),train_log_n_hits,0.0
+#199 cooldown (contaminated),train_best_evalue_log,-1.1877698725226703e-05
+#199 cooldown (contaminated),train_afdb_n_hits,-0.004625052825104711
+#199 cooldown (contaminated),train_esm_n_hits,0.017901148959324646
+#199 cooldown (contaminated),residual_identity_cov40,0.0024202822226561003
+#199 cooldown (contaminated),residual_identity_cov30,0.00026601532107025093
+#199 cooldown (contaminated),residual_identity_anycov,0.004167647654510864
+#199 cooldown (contaminated),n_surviving_alignments,0.06255095128659124
+#199 cooldown (contaminated),knn_n_hits,0.04057002552512816
+#199 cooldown (contaminated),knn_best_bits,-0.004114556086838911
+#199 cooldown (contaminated),knn_best_identity,0.0012460517452848098
+#199 cooldown (contaminated),knn_best_qcov,0.024195209263555596
+#199 cooldown (contaminated),frac_helix,-0.006354588935602937
+#199 cooldown (contaminated),frac_sheet,0.0037628373093923167
+#199 cooldown (contaminated),frac_coil,-0.001710918815035828
+#199 cooldown (contaminated),n_sse,0.014815429547989187
+#199 cooldown (contaminated),radius_of_gyration,0.007831314099987519
+#199 cooldown (contaminated),rg_over_length,0.005344981845245097
+#199 cooldown (contaminated),msa_depth,0.2855792431813852
+#199 cooldown (contaminated),msa_log_depth,0.0
+#199 cooldown (contaminated),msa_n_near_identical,-0.0016679740752320177
+#199 cooldown (contaminated),msa_mean_coverage,-0.0023025723739632437
+#199 cooldown (contaminated),n_pfam,-2.4205227463344746e-05
+#199 cooldown (contaminated),n_interpro,0.0012365380991481074
+#199 cooldown (contaminated),n_go,0.0015759023537540273
+#199 cooldown (contaminated),has_ec,1.1676536924992709e-05
+#199 cooldown (contaminated),n_uniprot_domains,0.0008512126404841946
+#199 cooldown (contaminated),n_transmembrane,0.0
+#199 cooldown (contaminated),has_signal_peptide,0.0
+#199 cooldown (contaminated),is_membrane,0.0
+#199 cooldown (contaminated),is_secreted,-0.0005812970224988751
+#199 cooldown (contaminated),is_cytoplasmic,-3.277824380044925e-05
+#199 cooldown (contaminated),is_nuclear,0.0
+#199 cooldown (contaminated),kingdom_bacteria,-0.00022705254720367386
+#199 cooldown (contaminated),kingdom_eukaryote,0.0005593093461801729
+#199 cooldown (contaminated),kingdom_archaea,0.0
+#199 cooldown (contaminated),kingdom_virus,0.0
+Protenix-v2 single-seq,length,7.568887913945721e-05
+Protenix-v2 single-seq,is_viral,0.0
+Protenix-v2 single-seq,n_uniprot_xrefs,0.0
+Protenix-v2 single-seq,exp199_best_identity,0.0010890241254621984
+Protenix-v2 single-seq,exp199_afdb_best_identity,0.001519325028278351
+Protenix-v2 single-seq,exp199_esm_atlas_best_identity,-0.005631847251269098
+Protenix-v2 single-seq,n_contacts,0.00445090820943429
+Protenix-v2 single-seq,contacts_per_residue,-0.0015219333088001663
+Protenix-v2 single-seq,resolved_fraction,0.0009062435238202743
+Protenix-v2 single-seq,mean_contact_order,0.16579055966542705
+Protenix-v2 single-seq,relative_contact_order,0.025822703738882617
+Protenix-v2 single-seq,median_contact_separation,0.011053004296559293
+Protenix-v2 single-seq,frac_long_contacts,0.0034689164375795835
+Protenix-v2 single-seq,n_long_contacts,-0.008564880643328701
+Protenix-v2 single-seq,long_contacts_per_residue,-0.0035719101753986073
+Protenix-v2 single-seq,frac_hydrophobic,0.01651577106337905
+Protenix-v2 single-seq,frac_polar,0.005519259487407699
+Protenix-v2 single-seq,frac_charged,-0.007154121601788965
+Protenix-v2 single-seq,frac_glycine,0.0028063580404200537
+Protenix-v2 single-seq,frac_proline,-0.004441117816243456
+Protenix-v2 single-seq,mean_hydropathy,0.011241134799137173
+Protenix-v2 single-seq,frac_low_complexity,0.0006831361289888427
+Protenix-v2 single-seq,train_n_hits_significant,0.003079974801239546
+Protenix-v2 single-seq,train_log_n_hits,0.0
+Protenix-v2 single-seq,train_best_evalue_log,-0.006976962996343153
+Protenix-v2 single-seq,train_afdb_n_hits,0.0023526884917899225
+Protenix-v2 single-seq,train_esm_n_hits,-0.0015253763768027424
+Protenix-v2 single-seq,residual_identity_cov40,0.0064552540503884205
+Protenix-v2 single-seq,residual_identity_cov30,-0.0060239442957715685
+Protenix-v2 single-seq,residual_identity_anycov,0.009516870125033775
+Protenix-v2 single-seq,n_surviving_alignments,0.022641007090626525
+Protenix-v2 single-seq,knn_n_hits,0.004160494326122105
+Protenix-v2 single-seq,knn_best_bits,0.0005682718679450638
+Protenix-v2 single-seq,knn_best_identity,0.001504953124697317
+Protenix-v2 single-seq,knn_best_qcov,-0.0044096237755052005
+Protenix-v2 single-seq,frac_helix,0.09082774599688656
+Protenix-v2 single-seq,frac_sheet,0.03863450162431575
+Protenix-v2 single-seq,frac_coil,0.07495170854718093
+Protenix-v2 single-seq,n_sse,0.06585870840732258
+Protenix-v2 single-seq,radius_of_gyration,0.005899282065164077
+Protenix-v2 single-seq,rg_over_length,0.04248204748033831
+Protenix-v2 single-seq,msa_depth,-0.002959973630045648
+Protenix-v2 single-seq,msa_log_depth,0.0
+Protenix-v2 single-seq,msa_n_near_identical,0.001348354064006818
+Protenix-v2 single-seq,msa_mean_coverage,-0.01817873969292696
+Protenix-v2 single-seq,n_pfam,-0.00024201526979297227
+Protenix-v2 single-seq,n_interpro,0.005363874557209774
+Protenix-v2 single-seq,n_go,-1.3353013837308358e-05
+Protenix-v2 single-seq,has_ec,0.0
+Protenix-v2 single-seq,n_uniprot_domains,0.002918166513011544
+Protenix-v2 single-seq,n_transmembrane,0.00010555736905016322
+Protenix-v2 single-seq,has_signal_peptide,0.0014208520029424382
+Protenix-v2 single-seq,is_membrane,-0.00038541859325164074
+Protenix-v2 single-seq,is_secreted,-4.230543588537305e-05
+Protenix-v2 single-seq,is_cytoplasmic,0.0007821801020527014
+Protenix-v2 single-seq,is_nuclear,-5.420081007892486e-06
+Protenix-v2 single-seq,kingdom_bacteria,-0.0005593965868995632
+Protenix-v2 single-seq,kingdom_eukaryote,-0.0037520181252467394
+Protenix-v2 single-seq,kingdom_archaea,0.0
+Protenix-v2 single-seq,kingdom_virus,0.0
+ESMFold,length,0.0030817720418985645
+ESMFold,is_viral,0.0
+ESMFold,n_uniprot_xrefs,0.0
+ESMFold,exp199_best_identity,-0.0028808718046117675
+ESMFold,exp199_afdb_best_identity,-0.002899131569343613
+ESMFold,exp199_esm_atlas_best_identity,0.06777242866452468
+ESMFold,n_contacts,0.004988910432545313
+ESMFold,contacts_per_residue,0.0030061895037537282
+ESMFold,resolved_fraction,-0.007601588937249326
+ESMFold,mean_contact_order,0.0002511628565346702
+ESMFold,relative_contact_order,0.013897473514409953
+ESMFold,median_contact_separation,-0.0015267663980750828
+ESMFold,frac_long_contacts,-0.006083279736277383
+ESMFold,n_long_contacts,0.005839274604448072
+ESMFold,long_contacts_per_residue,-0.0012349731475722909
+ESMFold,frac_hydrophobic,0.004473910488608157
+ESMFold,frac_polar,-0.0008657972527810504
+ESMFold,frac_charged,-0.001309887642226093
+ESMFold,frac_glycine,-0.003612824829709088
+ESMFold,frac_proline,-0.005826069024839825
+ESMFold,mean_hydropathy,-0.003638556347308847
+ESMFold,frac_low_complexity,-0.0036040071146006326
+ESMFold,train_n_hits_significant,-0.00898502404703667
+ESMFold,train_log_n_hits,0.0
+ESMFold,train_best_evalue_log,0.00698170282827566
+ESMFold,train_afdb_n_hits,0.0019071699336421998
+ESMFold,train_esm_n_hits,0.08429649202358427
+ESMFold,residual_identity_cov40,-0.002720495660730801
+ESMFold,residual_identity_cov30,-0.00907509877902922
+ESMFold,residual_identity_anycov,-0.0037106794193173
+ESMFold,n_surviving_alignments,0.001999969269163254
+ESMFold,knn_n_hits,0.005760332050909661
+ESMFold,knn_best_bits,-0.003210925595960687
+ESMFold,knn_best_identity,0.008616746774931702
+ESMFold,knn_best_qcov,0.00015051868774965672
+ESMFold,frac_helix,0.011858851528485218
+ESMFold,frac_sheet,0.010712910449605298
+ESMFold,frac_coil,-0.0038155193198626757
+ESMFold,n_sse,0.044239338100619
+ESMFold,radius_of_gyration,-0.008676612024118426
+ESMFold,rg_over_length,-0.021032181481823203
+ESMFold,msa_depth,0.20918420872757562
+ESMFold,msa_log_depth,0.0
+ESMFold,msa_n_near_identical,-0.0011611475356790607
+ESMFold,msa_mean_coverage,-0.006904063189327308
+ESMFold,n_pfam,8.494682195195891e-05
+ESMFold,n_interpro,-0.0005295983190196751
+ESMFold,n_go,0.02032401664728239
+ESMFold,has_ec,-0.0004159574373040958
+ESMFold,n_uniprot_domains,0.0015543965327597608
+ESMFold,n_transmembrane,0.0
+ESMFold,has_signal_peptide,0.0
+ESMFold,is_membrane,-0.0003569381513089748
+ESMFold,is_secreted,0.0
+ESMFold,is_cytoplasmic,-0.0014436279872965447
+ESMFold,is_nuclear,0.0004969248572283064
+ESMFold,kingdom_bacteria,0.0006827895476418072
+ESMFold,kingdom_eukaryote,0.0
+ESMFold,kingdom_archaea,0.0
+ESMFold,kingdom_virus,0.0
+ESMFold2,length,-0.001875248743903224
+ESMFold2,is_viral,0.0
+ESMFold2,n_uniprot_xrefs,0.0
+ESMFold2,exp199_best_identity,-0.0024326895026202
+ESMFold2,exp199_afdb_best_identity,-0.0005500353924118212
+ESMFold2,exp199_esm_atlas_best_identity,0.29742268802860883
+ESMFold2,n_contacts,0.014898990396484818
+ESMFold2,contacts_per_residue,-0.0022203666684172787
+ESMFold2,resolved_fraction,-0.002448211096941158
+ESMFold2,mean_contact_order,0.013524199503421297
+ESMFold2,relative_contact_order,0.040180294754081046
+ESMFold2,median_contact_separation,-0.002536286627290882
+ESMFold2,frac_long_contacts,0.006251790458556517
+ESMFold2,n_long_contacts,0.029294114887847132
+ESMFold2,long_contacts_per_residue,-0.0015042645848329706
+ESMFold2,frac_hydrophobic,-0.010175020390218803
+ESMFold2,frac_polar,0.016173989271392956
+ESMFold2,frac_charged,0.010782517786827778
+ESMFold2,frac_glycine,-0.006173124042759023
+ESMFold2,frac_proline,-0.003235908578183419
+ESMFold2,mean_hydropathy,0.002075371587766281
+ESMFold2,frac_low_complexity,0.010515372077453742
+ESMFold2,train_n_hits_significant,0.013982930609467425
+ESMFold2,train_log_n_hits,0.0
+ESMFold2,train_best_evalue_log,-0.0036894116080999767
+ESMFold2,train_afdb_n_hits,-0.0056501616125795824
+ESMFold2,train_esm_n_hits,0.02563816379983256
+ESMFold2,residual_identity_cov40,-0.00044569246769473605
+ESMFold2,residual_identity_cov30,-0.007014608922455701
+ESMFold2,residual_identity_anycov,-0.007344648088037911
+ESMFold2,n_surviving_alignments,-0.007134159680673702
+ESMFold2,knn_n_hits,0.020752481813655316
+ESMFold2,knn_best_bits,-0.013148534310785881
+ESMFold2,knn_best_identity,-0.010248739198761436
+ESMFold2,knn_best_qcov,-0.007511275684486946
+ESMFold2,frac_helix,0.013675533012691702
+ESMFold2,frac_sheet,0.022434678098804627
+ESMFold2,frac_coil,0.009017343382166757
+ESMFold2,n_sse,0.009880919847399961
+ESMFold2,radius_of_gyration,-0.008154058539056616
+ESMFold2,rg_over_length,-0.032285886458339755
+ESMFold2,msa_depth,0.019436036907178187
+ESMFold2,msa_log_depth,0.0
+ESMFold2,msa_n_near_identical,-0.010490258817681416
+ESMFold2,msa_mean_coverage,0.009857107357928042
+ESMFold2,n_pfam,-0.0011496180939724043
+ESMFold2,n_interpro,-3.611662907471724e-05
+ESMFold2,n_go,-0.0034194395703936813
+ESMFold2,has_ec,0.0
+ESMFold2,n_uniprot_domains,-0.009124686435180118
+ESMFold2,n_transmembrane,0.0
+ESMFold2,has_signal_peptide,0.0
+ESMFold2,is_membrane,-0.00037019908156730454
+ESMFold2,is_secreted,-0.003584085745525459
+ESMFold2,is_cytoplasmic,-0.00456216155383686
+ESMFold2,is_nuclear,0.0
+ESMFold2,kingdom_bacteria,-0.005473024453492259
+ESMFold2,kingdom_eukaryote,-0.00011588151828086646
+ESMFold2,kingdom_archaea,0.0
+ESMFold2,kingdom_virus,0.0
+Protenix-v2 + MSA,length,0.013788332941779469
+Protenix-v2 + MSA,is_viral,0.0
+Protenix-v2 + MSA,n_uniprot_xrefs,0.0
+Protenix-v2 + MSA,exp199_best_identity,0.0005137466361966797
+Protenix-v2 + MSA,exp199_afdb_best_identity,-0.0040995170068076296
+Protenix-v2 + MSA,exp199_esm_atlas_best_identity,0.003785465858979009
+Protenix-v2 + MSA,n_contacts,-0.001815854207125034
+Protenix-v2 + MSA,contacts_per_residue,0.006226146352525111
+Protenix-v2 + MSA,resolved_fraction,-0.0075032082225193865
+Protenix-v2 + MSA,mean_contact_order,-0.007363704233921478
+Protenix-v2 + MSA,relative_contact_order,-0.03214188774238471
+Protenix-v2 + MSA,median_contact_separation,-0.003947970689479882
+Protenix-v2 + MSA,frac_long_contacts,0.022183812309595145
+Protenix-v2 + MSA,n_long_contacts,-0.0011299512086250102
+Protenix-v2 + MSA,long_contacts_per_residue,0.00159002181815521
+Protenix-v2 + MSA,frac_hydrophobic,0.0015097702578636158
+Protenix-v2 + MSA,frac_polar,-0.006715298296947272
+Protenix-v2 + MSA,frac_charged,0.040135968126027884
+Protenix-v2 + MSA,frac_glycine,0.009527174254103063
+Protenix-v2 + MSA,frac_proline,-0.012557694931809532
+Protenix-v2 + MSA,mean_hydropathy,0.03080412486504852
+Protenix-v2 + MSA,frac_low_complexity,-0.015764184699124308
+Protenix-v2 + MSA,train_n_hits_significant,-0.0466650809720912
+Protenix-v2 + MSA,train_log_n_hits,0.0
+Protenix-v2 + MSA,train_best_evalue_log,0.0009352176327885847
+Protenix-v2 + MSA,train_afdb_n_hits,0.013591705143330204
+Protenix-v2 + MSA,train_esm_n_hits,-0.05008053431855446
+Protenix-v2 + MSA,residual_identity_cov40,0.003770749588097033
+Protenix-v2 + MSA,residual_identity_cov30,-0.008774709521690013
+Protenix-v2 + MSA,residual_identity_anycov,-0.005081202594938846
+Protenix-v2 + MSA,n_surviving_alignments,0.10140311336481056
+Protenix-v2 + MSA,knn_n_hits,0.023455150617747007
+Protenix-v2 + MSA,knn_best_bits,-0.03645891702961381
+Protenix-v2 + MSA,knn_best_identity,-0.05403198760534385
+Protenix-v2 + MSA,knn_best_qcov,-0.05062001765336838
+Protenix-v2 + MSA,frac_helix,0.04515839338507753
+Protenix-v2 + MSA,frac_sheet,0.053420451820819295
+Protenix-v2 + MSA,frac_coil,-0.0031187777741332216
+Protenix-v2 + MSA,n_sse,0.0008806664210445292
+Protenix-v2 + MSA,radius_of_gyration,0.040586648481198855
+Protenix-v2 + MSA,rg_over_length,0.0025343223755593587
+Protenix-v2 + MSA,msa_depth,0.030769023109909872
+Protenix-v2 + MSA,msa_log_depth,0.0
+Protenix-v2 + MSA,msa_n_near_identical,0.019313960282265886
+Protenix-v2 + MSA,msa_mean_coverage,0.05585464756956149
+Protenix-v2 + MSA,n_pfam,-0.00025297272328291264
+Protenix-v2 + MSA,n_interpro,0.0027943067964429887
+Protenix-v2 + MSA,n_go,-0.013230846861882842
+Protenix-v2 + MSA,has_ec,0.0
+Protenix-v2 + MSA,n_uniprot_domains,-0.0004025862694653798
+Protenix-v2 + MSA,n_transmembrane,0.0
+Protenix-v2 + MSA,has_signal_peptide,0.0011392590455118535
+Protenix-v2 + MSA,is_membrane,0.0
+Protenix-v2 + MSA,is_secreted,0.01909973415142086
+Protenix-v2 + MSA,is_cytoplasmic,0.0
+Protenix-v2 + MSA,is_nuclear,0.0
+Protenix-v2 + MSA,kingdom_bacteria,-0.00023839200130463257
+Protenix-v2 + MSA,kingdom_eukaryote,0.03470934468344812
+Protenix-v2 + MSA,kingdom_archaea,0.0
+Protenix-v2 + MSA,kingdom_virus,0.0
+seq-KNN (unfiltered corpus),length,0.00255190594016573
+seq-KNN (unfiltered corpus),is_viral,0.0
+seq-KNN (unfiltered corpus),n_uniprot_xrefs,0.0
+seq-KNN (unfiltered corpus),exp199_best_identity,0.0017999050925889438
+seq-KNN (unfiltered corpus),exp199_afdb_best_identity,0.45733177209400466
+seq-KNN (unfiltered corpus),exp199_esm_atlas_best_identity,-0.0007381972925472851
+seq-KNN (unfiltered corpus),n_contacts,0.00021488044598560742
+seq-KNN (unfiltered corpus),contacts_per_residue,-0.0020198447508376406
+seq-KNN (unfiltered corpus),resolved_fraction,0.002686132800570934
+seq-KNN (unfiltered corpus),mean_contact_order,0.0010364822848481724
+seq-KNN (unfiltered corpus),relative_contact_order,0.0004097457422541223
+seq-KNN (unfiltered corpus),median_contact_separation,-0.001086597740177636
+seq-KNN (unfiltered corpus),frac_long_contacts,-5.3797220114243374e-05
+seq-KNN (unfiltered corpus),n_long_contacts,7.266604968425016e-05
+seq-KNN (unfiltered corpus),long_contacts_per_residue,0.001387775822118162
+seq-KNN (unfiltered corpus),frac_hydrophobic,0.0005095839186388784
+seq-KNN (unfiltered corpus),frac_polar,0.0028642554699764068
+seq-KNN (unfiltered corpus),frac_charged,-0.00031727380957027873
+seq-KNN (unfiltered corpus),frac_glycine,0.0003162719733949437
+seq-KNN (unfiltered corpus),frac_proline,0.00021960327399669634
+seq-KNN (unfiltered corpus),mean_hydropathy,0.0008578761591933271
+seq-KNN (unfiltered corpus),frac_low_complexity,-0.00010243072172387846
+seq-KNN (unfiltered corpus),train_n_hits_significant,-0.00013275331089587227
+seq-KNN (unfiltered corpus),train_log_n_hits,0.0
+seq-KNN (unfiltered corpus),train_best_evalue_log,-0.0003653487090595403
+seq-KNN (unfiltered corpus),train_afdb_n_hits,0.014042927560380475
+seq-KNN (unfiltered corpus),train_esm_n_hits,-0.0003641814943635219
+seq-KNN (unfiltered corpus),residual_identity_cov40,0.00016785477582544338
+seq-KNN (unfiltered corpus),residual_identity_cov30,-0.0005675975991211695
+seq-KNN (unfiltered corpus),residual_identity_anycov,0.001302547193365111
+seq-KNN (unfiltered corpus),n_surviving_alignments,0.0010520107526725247
+seq-KNN (unfiltered corpus),knn_n_hits,0.005491167434953348
+seq-KNN (unfiltered corpus),knn_best_bits,0.10742395662840484
+seq-KNN (unfiltered corpus),knn_best_identity,0.007239498955002347
+seq-KNN (unfiltered corpus),knn_best_qcov,0.04051553172317091
+seq-KNN (unfiltered corpus),frac_helix,-0.0005388861035426657
+seq-KNN (unfiltered corpus),frac_sheet,0.0026164859546731673
+seq-KNN (unfiltered corpus),frac_coil,-0.0003959372869987765
+seq-KNN (unfiltered corpus),n_sse,0.004265290239594791
+seq-KNN (unfiltered corpus),radius_of_gyration,-0.0005955395595311109
+seq-KNN (unfiltered corpus),rg_over_length,3.253550616975631e-05
+seq-KNN (unfiltered corpus),msa_depth,0.010629036755017054
+seq-KNN (unfiltered corpus),msa_log_depth,0.0
+seq-KNN (unfiltered corpus),msa_n_near_identical,-0.0009013528244283308
+seq-KNN (unfiltered corpus),msa_mean_coverage,0.008834131603689246
+seq-KNN (unfiltered corpus),n_pfam,-2.4149107708149044e-06
+seq-KNN (unfiltered corpus),n_interpro,-0.00015563418237459493
+seq-KNN (unfiltered corpus),n_go,0.000267465255756108
+seq-KNN (unfiltered corpus),has_ec,-8.650798708016994e-05
+seq-KNN (unfiltered corpus),n_uniprot_domains,-0.001758998771729464
+seq-KNN (unfiltered corpus),n_transmembrane,-4.579837120280983e-05
+seq-KNN (unfiltered corpus),has_signal_peptide,0.0
+seq-KNN (unfiltered corpus),is_membrane,1.784558473378328e-05
+seq-KNN (unfiltered corpus),is_secreted,0.0
+seq-KNN (unfiltered corpus),is_cytoplasmic,0.0
+seq-KNN (unfiltered corpus),is_nuclear,0.0
+seq-KNN (unfiltered corpus),kingdom_bacteria,-0.0002813905404236511
+seq-KNN (unfiltered corpus),kingdom_eukaryote,-5.752752380178417e-05
+seq-KNN (unfiltered corpus),kingdom_archaea,0.0
+seq-KNN (unfiltered corpus),kingdom_virus,0.0
+seq-KNN (decontaminated corpus),length,0.0034035439615367675
+seq-KNN (decontaminated corpus),is_viral,0.0
+seq-KNN (decontaminated corpus),n_uniprot_xrefs,0.0
+seq-KNN (decontaminated corpus),exp199_best_identity,-0.002815641745922895
+seq-KNN (decontaminated corpus),exp199_afdb_best_identity,0.028343921406496476
+seq-KNN (decontaminated corpus),exp199_esm_atlas_best_identity,-0.0014033650667623714
+seq-KNN (decontaminated corpus),n_contacts,0.0010372865165958257
+seq-KNN (decontaminated corpus),contacts_per_residue,-0.00114250662419782
+seq-KNN (decontaminated corpus),resolved_fraction,0.0001221459205920039
+seq-KNN (decontaminated corpus),mean_contact_order,0.00616859267040884
+seq-KNN (decontaminated corpus),relative_contact_order,-0.002031606659751067
+seq-KNN (decontaminated corpus),median_contact_separation,0.0030722341658926456
+seq-KNN (decontaminated corpus),frac_long_contacts,-0.0016252300324546636
+seq-KNN (decontaminated corpus),n_long_contacts,0.0022087882411085473
+seq-KNN (decontaminated corpus),long_contacts_per_residue,1.066369965724845e-05
+seq-KNN (decontaminated corpus),frac_hydrophobic,-8.435281948022955e-05
+seq-KNN (decontaminated corpus),frac_polar,-0.001449177338916577
+seq-KNN (decontaminated corpus),frac_charged,-0.0035893706789993846
+seq-KNN (decontaminated corpus),frac_glycine,-0.0056283962513574235
+seq-KNN (decontaminated corpus),frac_proline,-0.003625415332505366
+seq-KNN (decontaminated corpus),mean_hydropathy,0.0010403691936395453
+seq-KNN (decontaminated corpus),frac_low_complexity,-0.001435026824821431
+seq-KNN (decontaminated corpus),train_n_hits_significant,0.171680931055136
+seq-KNN (decontaminated corpus),train_log_n_hits,0.0
+seq-KNN (decontaminated corpus),train_best_evalue_log,0.010466624024125525
+seq-KNN (decontaminated corpus),train_afdb_n_hits,0.05690406258679441
+seq-KNN (decontaminated corpus),train_esm_n_hits,0.002399565005888371
+seq-KNN (decontaminated corpus),residual_identity_cov40,-0.0033515973511861613
+seq-KNN (decontaminated corpus),residual_identity_cov30,-0.002404124243476846
+seq-KNN (decontaminated corpus),residual_identity_anycov,0.009207722616944514
+seq-KNN (decontaminated corpus),n_surviving_alignments,-6.788177365853187e-05
+seq-KNN (decontaminated corpus),knn_n_hits,0.2157568137680793
+seq-KNN (decontaminated corpus),knn_best_bits,-0.003547217720854148
+seq-KNN (decontaminated corpus),knn_best_identity,-0.001434381406696661
+seq-KNN (decontaminated corpus),knn_best_qcov,0.00877475102737151
+seq-KNN (decontaminated corpus),frac_helix,0.002853807849703238
+seq-KNN (decontaminated corpus),frac_sheet,0.0043815509094097095
+seq-KNN (decontaminated corpus),frac_coil,-0.005130989152521725
+seq-KNN (decontaminated corpus),n_sse,0.0005673262986499533
+seq-KNN (decontaminated corpus),radius_of_gyration,-0.001048530821015009
+seq-KNN (decontaminated corpus),rg_over_length,0.00027117502841110254
+seq-KNN (decontaminated corpus),msa_depth,-0.0033160749904081106
+seq-KNN (decontaminated corpus),msa_log_depth,0.0
+seq-KNN (decontaminated corpus),msa_n_near_identical,0.0008402498048699858
+seq-KNN (decontaminated corpus),msa_mean_coverage,0.03307854716863014
+seq-KNN (decontaminated corpus),n_pfam,0.0001880600453538689
+seq-KNN (decontaminated corpus),n_interpro,-0.0017369682778724748
+seq-KNN (decontaminated corpus),n_go,0.0006624883584706948
+seq-KNN (decontaminated corpus),has_ec,-4.5142074665058264e-05
+seq-KNN (decontaminated corpus),n_uniprot_domains,-0.0002950432003106712
+seq-KNN (decontaminated corpus),n_transmembrane,0.0004121870703554575
+seq-KNN (decontaminated corpus),has_signal_peptide,-0.0003411301872717848
+seq-KNN (decontaminated corpus),is_membrane,0.0005593865950318522
+seq-KNN (decontaminated corpus),is_secreted,0.0
+seq-KNN (decontaminated corpus),is_cytoplasmic,0.0005466762493414101
+seq-KNN (decontaminated corpus),is_nuclear,0.0
+seq-KNN (decontaminated corpus),kingdom_bacteria,-0.0005977530544017063
+seq-KNN (decontaminated corpus),kingdom_eukaryote,0.00020319093831873414
+seq-KNN (decontaminated corpus),kingdom_archaea,0.0
+seq-KNN (decontaminated corpus),kingdom_virus,0.0

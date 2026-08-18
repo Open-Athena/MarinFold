@@ -1,0 +1,12 @@
+{
+  "script": "plot_properties.py",
+  "args": [],
+  "caption": "Mean all-range R-precision by quartile of MSA depth over the 314 natural FoldBench monomers. MSA depth stands in for how many relatives a protein has; it correlates 0.80 with the number of homologs in our training corpus and 0.87 with KNN neighbour count.",
+  "plot": "family_abundance.png",
+  "sha256": "f1b87b8de102215ca9f32f83706734f0bacfb9db4fee887c3bf26ad6a7e8af76",
+  "sources": {
+    "features": "experiments/exp247_evals_protein_property_analysis/data/protein_features.csv",
+    "associations": "experiments/exp247_evals_protein_property_analysis/data/associations.csv",
+    "scores": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz"
+  }
+}

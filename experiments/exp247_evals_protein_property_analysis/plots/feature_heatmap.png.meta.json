@@ -1,0 +1,12 @@
+{
+  "script": "plot_properties.py",
+  "args": [],
+  "caption": "Spearman \u03c1 between each protein property and each predictor's per-protein R-precision, pooled over the 314 natural monomers.",
+  "plot": "feature_heatmap.png",
+  "sha256": "2f02f4a750ffd202bc0b96a55f55a16f7eb8b5fba3a937f5586aac035a0185c5",
+  "sources": {
+    "features": "experiments/exp247_evals_protein_property_analysis/data/protein_features.csv",
+    "associations": "experiments/exp247_evals_protein_property_analysis/data/associations.csv",
+    "scores": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz"
+  }
+}
