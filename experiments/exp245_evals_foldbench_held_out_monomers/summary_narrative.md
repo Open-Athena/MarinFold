@@ -126,6 +126,25 @@ Protenix-v2 single-seq is the extreme: **+0.570** designs versus all natural, an
 flat across the identity split (0.243 vs 0.267). It looked competitive only on an
 eval set that was three-quarters designed protein.
 
+## Viral proteins: the penalty is ordered by homology dependence
+
+Pooled over the 314 natural monomers (295 non-viral / 19 viral), the drop from
+non-viral to viral is: seq-KNN over the unfiltered corpus **-0.351**, seq-KNN
+over the decontaminated corpus -0.229, ESMFold2 -0.170, ESMFold -0.153, #199
+cooldown -0.123, #232 m1-p02 -0.100, #232 m2-p06 -0.076, Protenix-v2 + MSA
+**-0.045**, Protenix-v2 single-seq **-0.002**.
+
+That ordering is the finding: the penalty tracks how much a predictor leans on
+homology. A KNN lookup is nothing but homology and loses a third of its score.
+ESM's stems are trained on databases where viruses are thin. Protenix
+single-sequence has no homology signal to lose, and Protenix + MSA fetches one at
+inference time. An MSA is what closes the viral gap.
+
+The caveat is size: FoldBench's monomers are 5.7 % viral, 19 in total and only 6
+in eval-val, where intervals span about +/-0.15. Only the pooled cell supports an
+argument. Growing this stratum means sampling recent PDB directly, as #241
+recommended.
+
 ## Use from here
 
 `eval-test` is the default set for a decontaminated-accuracy claim: 217 natural

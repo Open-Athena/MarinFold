@@ -288,6 +288,43 @@ natural, and it does not benefit from homology at all (0.243 vs 0.267 across the
 identity split), which is why it looked competitive on an eval set that was
 three-quarters designed and collapses on natural monomers.
 
+### 8. The viral split, and what it tracks
+
+![Viral split](plots/viral_split_scoreboard.png)
+
+*Figure 3. All-range R-precision split viral vs non-viral (hatched) on each
+natural set and on the two pooled. Rendered by `plot_viral_split.py`; per-cell
+means and intervals in [`data/viral_split.csv`](data/viral_split.csv).*
+
+Pooled over the 314 natural monomers (295 non-viral / 19 viral):
+
+| predictor | non-viral | viral | delta |
+|---|---:|---:|---:|
+| #232 m2-p06 (decontaminated) | 0.537 | 0.461 | −0.076 |
+| #232 m1-p02 (decontaminated) | 0.493 | 0.393 | −0.100 |
+| #199 cooldown (contaminated) | 0.613 | 0.490 | −0.123 |
+| Protenix-v2 single-seq | 0.264 | 0.262 | **−0.002** |
+| ESMFold | 0.762 | 0.609 | −0.153 |
+| ESMFold2 | 0.805 | 0.635 | −0.170 |
+| Protenix-v2 + MSA | 0.848 | 0.803 | **−0.045** |
+| seq-KNN (unfiltered corpus) | 0.604 | 0.253 | −0.351 |
+| seq-KNN (decontaminated corpus) | 0.434 | 0.205 | −0.229 |
+
+**The penalty is ordered by how much a predictor leans on homology.** The KNN
+null is nothing but homology and loses 0.351. ESMFold and ESMFold2, whose ESM
+stems are trained on sequence databases where viruses are thin, lose 0.15-0.17.
+MarinFold loses 0.076-0.123. Protenix-v2 + MSA loses 0.045, and Protenix-v2
+single-sequence loses nothing measurable — it had no homology signal to lose. An
+MSA at inference time is what closes the viral gap, and every model that cannot
+fetch one pays it.
+
+**The sample size caps what this can settle.** FoldBench's monomers are 5.7 %
+viral: 19 in total, 6 of them in eval-val, where the bootstrap intervals span
+about ±0.15 and swamp most of the differences. Only the pooled panel supports an
+argument, and thinly. #241's recommendation — sample recent PDB directly rather
+than filtering curated benchmarks — is the way to grow this stratum.
+eval-denovo is omitted: none of the 19 designs is viral.
+
 ### How each baseline was run
 
 Every baseline is #74's / #78's / #94's driver invoked on exp245's manifest, at
