@@ -533,6 +533,43 @@ so beat either alone. They do not, at the one weight where "equal" is
 well-defined. Chasing `lam` downward to approach an endpoint we have already
 measured is not worth a night of GPU time.
 
+### Does M-B's gain survive being cashed out? Pooling across rollouts
+
+M-B optimises an **oracle** quantity, so the number that matters is whether its
+gain survives an aggregator that does not get to see ground truth. The eval
+already generates 8 multi rollouts per protein; pooling **every section of all 8**
+into one vote costs nothing but a re-score
+([`pool_across_rollouts.py`](pool_across_rollouts.py)).
+
+R-precision (all), legacy 554, with the token cost measured on the generations
+themselves:
+
+| configuration | tokens | R-prec |
+|---|---:|---:|
+| plain, 1 rollout | ~500 | 0.4454 |
+| plain, 22 rollouts *(the budget-matched bar)* | ~11,000 | 0.5896 |
+| plain, 100 rollouts *(#230's Gate A)* | ~50,000 | **0.6058** |
+| multi warm start, 1 rollout | 6,825 | 0.5675 |
+| **M-B, 1 rollout** | 6,769 | **0.5775** |
+| multi warm start, 8 rollouts pooled | 54,601 | 0.5992 |
+| **M-B, 8 rollouts pooled** | 54,154 | **0.6054** |
+
+**The gain survives.** Pooled, M-B beats its own warm start by **+0.0062**
+[+0.0011, +0.0112], 261 wins to 186 — smaller than the +0.0102 it shows on a
+single rollout, but real and paired. So the improvement is a property of the
+policy, not an artifact of reading one rollout.
+
+**And it lands at parity, not ahead.** At ~54k tokens M-B reads 0.6054 against
+plain-100's 0.6058 at ~50k — a dead heat, at a slightly higher cost. What RL
+bought is the **0.0066 that separated the multi format from plain sampling at
+this budget**: the warm start was behind at 0.5992, M-B is level.
+
+That is the honest summary of the whole experiment in one line. **RL closed the
+gap between the multi format and ordinary independent sampling. It did not open
+one.** The premise that in-sequence candidates could beat independent rollouts
+remains undemonstrated at every budget measured — 0.5775 vs 0.5896 at the low
+end, 0.6054 vs 0.6058 at the high end.
+
 ### The slow walk: the peak is a function of distance, not of learning rate
 
 M-B re-run at **lr 3e-6** — a third the step size, 120 steps, eight checkpoints
