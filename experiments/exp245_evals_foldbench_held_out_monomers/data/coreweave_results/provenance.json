@@ -1,0 +1,30 @@
+{
+  "run_id": "fbmono-20260818-01",
+  "source": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/runs/fbmono-20260818-01/",
+  "files": {
+    "marinfold_precision.csv": {
+      "bytes": 2587963,
+      "sha256": "fc58eb7c9e83c7b868940cc85a262b9c44215b0f6b4b3c7a1fbc992c97161a31"
+    },
+    "contact_precision_all.csv": {
+      "bytes": 2587963,
+      "sha256": "0c0093b37d34935c089bc34cc7cdbfe9f546727bd37402a91817f7753bee9b2f"
+    },
+    "aggregate_metrics.csv": {
+      "bytes": 4763,
+      "sha256": "6b0398b65024fd7524f689012f2ccca5a1a6af68f4f959506f8ca30e29b3816f"
+    },
+    "subset_aggregate_metrics.csv": {
+      "bytes": 49372,
+      "sha256": "ad03efd65cefb1d7825421b9b716b7f6114e023c730d401d0173412b8856d70d"
+    },
+    "run_manifest.json": {
+      "bytes": 19769,
+      "sha256": "4495fa9890124c16ba59e88469a6c5e0003635c21ec09c7e944400489ae8ae9a"
+    },
+    "timings.csv": {
+      "bytes": 376984,
+      "sha256": "3b184817c2d243d5c830052dbfedef9045e16c3bfdf97195b593274ae328be08"
+    }
+  }
+}

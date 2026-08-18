@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "reference_keys": [
+    "exp146",
+    "exp166",
+    "cw-p06-aug",
+    "cw-p06-cool"
+  ],
+  "validation_keys": [
+    "exp75-reproduced"
+  ],
+  "new_keys": [
+    "exp232-m2-p06-decontam",
+    "exp232-m1-p02-decontam"
+  ],
+  "sources": {
+    "prior_comparison": {
+      "path": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
+      "sha256": "5a49ca5b4a6ce8bb8f96b377bec513c56b5a6f63af8e300dd3a658b50794ec33"
+    },
+    "prior_rows": {
+      "path": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
+      "sha256": "b48126caadce813b7913a7bbc60667dc0c28759f8bfe4a2cf930caeb2fd64f29"
+    },
+    "subset_aggregate": {
+      "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/coreweave_results/subset_aggregate_metrics.csv",
+      "sha256": "e1b2359a58e40515ad9a8a5442b4b4c9b748afd8ccc9f40f01dca3a568a5ebcd"
+    },
+    "precision": {
+      "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/coreweave_results/marinfold_precision.csv",
+      "sha256": "513a5a056411ce2ef9375eb73dda82e4b8050a30e60ce72a7f694ba0afecb8a2"
+    },
+    "legacy_targets": {
+      "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/coreweave_results/eval_targets_legacy.parquet",
+      "sha256": "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111"
+    }
+  },
+  "outputs": {
+    "comparison": {
+      "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/comparison.csv",
+      "sha256": "219c67395ae0ead5dbe602541041b7302d84301fc864ebb5d58d0b4f50c8ad09"
+    },
+    "all_r_rows": {
+      "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/all_r_rows.csv.gz",
+      "sha256": "507e3f2f549df2cc4cdcff4771178203b3c7c7d43b3200fc5667bcd6368ff2b1"
+    }
+  }
+}

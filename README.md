@@ -11,17 +11,201 @@ We welcome collaborators! If you would like to discuss or contribute, join the [
 
 ## Current performance
 
-Here we are prompting with the amino acid sequence and predicting residue/residue contacts.
+Here we are prompting with the amino acid sequence and predicting residue/residue
+contacts.
 
-<img src="experiments/exp82_evals_contacts_v1_contact_prediction/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold #61, #117 and #166-best n=100 rollouts vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
+<img src="experiments/exp245_evals_foldbench_held_out_monomers/plots/readme_performance.png" alt="Contact R-precision on the legacy 554-protein benchmark and on eval-test (217 held-out natural FoldBench monomers), for MarinFold generations, Protenix-v2, ESMFold, ESMFold2 and two sequence-KNN nulls" width="100%">
 
-All three MarinFold bars use our best test-time inference — 100 resampled rollouts, voted per residue pair (see [exp82](experiments/exp82_evals_contacts_v1_contact_prediction/README.md)) — so the differences between them are the model, not the decoding. `#61` is the model from [#61](https://github.com/Open-Athena/MarinFold/issues/61)/[#75](https://github.com/Open-Athena/MarinFold/issues/75) (eval loss 2.76); `#117` is [@eric-czech](https://github.com/eric-czech)'s [#117](https://github.com/Open-Athena/MarinFold/issues/117) tuning-sweep winner (2.70); `#166 best` is his [#166](https://github.com/Open-Athena/MarinFold/issues/166) amino-acid augmentation continued from #117 (2.66), which improves on its own initialization by a paired **+0.028**.
+Two panels because one set cannot answer both questions. **Left** is the legacy
+554-protein benchmark that every published MarinFold number lives on, so it is
+where the generations are comparable: #75 0.424 → #146 0.512 → #166 0.562 → #199
+0.609 → **#199 cooldown 0.631**, the current default. **Right** is
+[eval-test](#how-we-evaluate) — FoldBench's 217 natural monomers that nothing here
+had ever scored and that are provably absent from the
+[decontaminated](#training-data-decontamination) training corpora at 30 % identity.
+It is a held-out set we read [rarely and on the record](#using-eval-test-sparingly);
+this figure is one of those reads. Day-to-day work is tracked on eval-val and the
+legacy 554.
 
-**The figure predates the current default by two model generations.** It stops at `#166 best` (0.562); the default is now [#199](https://github.com/Open-Athena/MarinFold/issues/199)'s CoreWeave cooldown at **0.631**, which is above single-sequence Protenix-v2 (0.603) rather than below it. See [exp180](experiments/exp180_evals_contacts_v1_progress_over_time/README.md) for the current frontier.
+Three things to read off it:
 
-R-precision is a top-K metric. On **AUC** over the whole contact map, the current default reaches 0.951 — above Protenix-v2 with an MSA (0.941) and ESMFold2 (0.923).
+- **On natural proteins we are well ahead of single-sequence Protenix-v2** (0.613
+  vs 0.265 on eval-test) and well behind ESMFold (0.753), ESMFold2 (0.792) and
+  Protenix-v2 + MSA (0.845). The near-tie with Protenix-v2 single-seq on the left
+  panel is a property of that set: it is 75 % de novo designed protein, where
+  Protenix-v2 single-seq scores 0.835 and on natural monomers 0.265.
+- **The nulls are the yardstick.** Copying the contacts of a protein's ten nearest
+  training sequences scores 0.582 out of the corpus #199 trained on and 0.426 out
+  of the decontaminated corpus #232 trained on. Each model clears the null over
+  *its own* corpus — #199 cooldown by +0.031, #232 by +0.112 — and sits below the
+  null over the richer one. Decontamination removed 0.156 of memorisable contact
+  map per protein.
+- **#199 and #232 are not budget-matched** (290,400 vs 145,199 steps), so the gap
+  between them is not the price of decontamination; #232's own arms are where that
+  gets settled.
 
-The progression tracked over time, with every number's source, is in [exp180](experiments/exp180_evals_contacts_v1_progress_over_time/README.md).
+All MarinFold bars use our best test-time inference — 100 resampled rollouts voted
+per residue pair, see [exp82](experiments/exp82_evals_contacts_v1_contact_prediction/README.md)
+— so differences between them are the model, not the decoding. R-precision is a
+top-K metric; on **AUC** over the whole contact map the default reaches 0.951,
+above Protenix-v2 + MSA (0.941) and ESMFold2 (0.923).
+
+Numbers behind the figure:
+[`readme_performance.csv`](experiments/exp245_evals_foldbench_held_out_monomers/data/readme_performance.csv).
+The progression over time, with every number's source, is in
+[exp180](experiments/exp180_evals_contacts_v1_progress_over_time/README.md).
+
+## How we evaluate
+
+**One metric, one inference recipe, three protein sets.** Everything below is
+contact **R-precision** (precision at the number of true contacts, minimum
+sequence separation 6) computed by
+[exp89's `compute_metrics.py`](experiments/exp89_evals_contacts_v1_model_on_eval_set/compute_metrics.py),
+against pyconfind side-chain contacts on the experimental structure. MarinFold
+checkpoints are decoded with exp82's rollout+resample recipe (100 realizations,
+T = 1.0, top-p 0.95, top-k disabled, `6L + 128` token budget, occurrence-frequency
+voting). The same weights score ~0.086 *lower* under the older pairwise readout,
+so a number without its recipe is not interpretable.
+
+The current sets, all built from [FoldBench](https://github.com/BEAM-Labs/FoldBench)'s
+334 monomers in [exp245](experiments/exp245_evals_foldbench_held_out_monomers/README.md):
+
+| set | what it is | n | how often we look |
+|---|---|---:|---|
+| **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | **freely.** The working set: checkpoint selection, sweeps, mid-training curves, day-to-day comparisons |
+| **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **rarely, deliberately, and recorded.** A held-out confirmation set — see [Using eval-test sparingly](#using-eval-test-sparingly) |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | freely — a sanity check, not a designed-protein benchmark; FoldBench has no more designed monomers than this |
+| legacy 554 | exp89's benchmark: FoldBench-100 + exp65's 454 low-MSA/novel-fold candidates | 554 | freely, but only for comparing model generations to each other |
+| eval2 | the ≤40 %-identity subset of a 776-protein superset ([exp226](experiments/exp226_evals_expand_foldbench_eval_set/README.md)) | 307 | superseded by these sets for natural-protein claims; 75 % designed |
+
+**eval-val is the set to iterate against, and [exp245](experiments/exp245_evals_foldbench_held_out_monomers/README.md)
+is the evidence that this is safe.** Scoring both sets once showed every predictor
+lands within 0.03 of the same number on them (MarinFold +0.018 to +0.024 in
+eval-test's favour, all intervals covering zero), and the contaminated reference
+model showed no extra val→test drop. So eval-val is an unbiased stand-in for the
+held-out set today — which is exactly what lets us spend it freely and leave
+eval-test alone.
+
+**The exact proteins in each split** are one file with a split column:
+[`experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv`](experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv)
+— 334 rows, one per monomer, with `eval_set`, `designed`, `is_viral`, `kingdom`,
+`seq_len`, `scorable` / `exclusion_reason`, the RCSB entity and title, and each
+protein's best sequence identity to the pre-decontamination training corpora.
+Ground truth for the scored 333 is
+[`gt_universe_scored.jsonl`](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/gt_universe_scored.jsonl);
+per-protein scores for all nine predictors are
+[`per_protein.csv.gz`](experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz).
+The older sets have their own membership files:
+[`eval2_manifest.csv`](experiments/exp226_evals_expand_foldbench_eval_set/data/eval2_manifest.csv)
+(307 rows, identity-annotated) and the legacy universe
+[`gt_universe.jsonl`](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp89/gt_universe.jsonl).
+Everything is also on the public bucket under
+`data/contacts-v1-foldbench-monomers-exp245/`, readable with no auth.
+
+**Reporting rules that change conclusions, not presentation.**
+
+- **Never pool designs with natural proteins.** Predictors rank differently on
+  them: Protenix-v2 single-seq scores 0.835 on the 19 designs and 0.265 on the 314
+  natural monomers. Any set that is mostly designed (the legacy 554, eval2) reports
+  a different question than "how well does this fold a protein".
+- **Split viral vs non-viral.** The viral penalty tracks how much a predictor leans
+  on homology — seq-KNN −0.351, ESMFold2 −0.170, MarinFold −0.076 to −0.123,
+  Protenix-v2 + MSA −0.045, Protenix-v2 single-seq −0.002. `is_viral` is a column
+  on the split file; only 19 of 334 monomers are viral, so treat that stratum as
+  indicative.
+- **A set used to compare against baselines must postdate the *baselines'* training
+  cutoffs, not just ours.** Decontamination has two sides and we control one.
+  exp65's 396 de novo designs look like the obvious designed-protein benchmark —
+  20× eval-denovo, already scored — but **50.5 % of them were deposited on or before
+  Protenix-v2's 2021-09-30 cutoff** and 43 % predate 2020-05, so they are in the
+  baselines' training data; a MarinFold-versus-baseline number there is contaminated
+  for the baselines. The FoldBench sets satisfy the rule by construction (0 of
+  eval-test's 218 predate that cutoff). This is also why eval-denovo stays at 19:
+  designed protein is rare throughout FoldBench (43 designed entries across all
+  1,493), and it is a sanity check rather than a designed-protein benchmark. See
+  [exp245 §9](experiments/exp245_evals_foldbench_held_out_monomers/README.md#9-eval-denovo-is-19-proteins-and-that-is-all-foldbench-has)
+  and [`baseline_cutoff_exposure.csv`](experiments/exp245_evals_foldbench_held_out_monomers/data/baseline_cutoff_exposure.csv).
+- **Quote a sequence-KNN null beside any accuracy claim**, computed over the corpus
+  the model actually trained on. It bounds how much of the score is reachable by
+  copying a training homolog.
+- **Differences under ~0.005 are ties** — four evaluations of one unchanged
+  checkpoint span 0.0023 ([#204](https://github.com/Open-Athena/MarinFold/issues/204)).
+
+### Using eval-test sparingly
+
+A held-out set stops being held out once you select on it. eval-test exists so
+that a claim about generalisation can be checked against proteins no decision has
+ever been fitted to, and that only works if the reads stay rare:
+
+- **Do not use it for checkpoint or hyperparameter selection**, ever. Select on
+  eval-val (and contacts-v1 validation loss to decide what is worth scoring at
+  all — see [#169](https://github.com/Open-Athena/MarinFold/issues/169)).
+- **Score it when a result is being published or a direction is being closed out**,
+  not while iterating. A sweep reports eval-val; the winner of the sweep may be
+  worth one eval-test read.
+- **Record every read** in
+  [`data/eval_test_reads.md`](experiments/exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md)
+  — date, checkpoints, why, and the numbers. If that file grows a long tail of
+  routine entries, the set has been spent and needs replacing (sample recent PDB
+  directly, per [#241](https://github.com/Open-Athena/MarinFold/issues/241)).
+
+Scoring a checkpoint is a single workflow: the
+[`eval-checkpoint`](.agents/skills/eval-checkpoint/SKILL.md) skill carries the
+recipe, the bucket paths, the reporting cuts and the two validation gates.
+
+## Training-data decontamination
+
+Models trained before [#232](https://github.com/Open-Athena/MarinFold/issues/232)
+saw corpora that were **never filtered against the proteins we evaluate on**;
+[#213](https://github.com/Open-Athena/MarinFold/issues/213) measured 58 % of the
+554-protein eval set as homologous to training data. Every number from those
+models should be read with that in mind.
+
+[#225](https://github.com/Open-Athena/MarinFold/issues/225) built the fix and
+published both rebuilt corpora. **The rule as applied:** drop every training
+document with **≥ 30 % sequence identity over ≥ 50 % of the shorter sequence** to
+any protein in the reference — the 554 eval proteins **∪ all 1,940 FoldBench
+protein chains** (not just the monomers we score) — with no E-value arm. Cost:
+
+| corpus | documents | dropped |
+|---|---:|---:|
+| AFDB (`contacts_v1`) | 4,129,682 → **3,963,003** | 166,679 (4.04 %) |
+| ESM-Atlas (`contacts_v1_esm_atlas`) | 66,759,922 → **65,553,178** | 1,206,744 (1.81 %) |
+
+Both live on the bucket as
+`data/document_structures/contacts_v1_decontam/train` and
+`…/contacts_v1_esm_atlas_decontam/train`; the reference and the applied drop list
+are under `data/decontamination/contacts_v1_eval_reference/v1/`.
+
+**What that rule does and does not cover, measured rather than asserted**
+([exp245 §1](experiments/exp245_evals_foldbench_held_out_monomers/README.md#1-the-232-checkpoints-are-verifiably-clean-on-all-334-monomers),
+[`decontamination_check.json`](experiments/exp245_evals_foldbench_held_out_monomers/data/decontamination_check.json),
+[`residual_identity.csv`](experiments/exp245_evals_foldbench_held_out_monomers/data/residual_identity.csv)):
+
+- **It covers the sequence axis completely, at that coverage gate.** 131,180
+  training rows match one of the 334 FoldBench monomers under the rule, and *all*
+  of them are in the applied drop list — 0 survivors, verified against the drop
+  list rather than assumed. The highest surviving identity to any eval protein at
+  ≥ 50 % coverage is 0.299.
+- **It does not mean "no shared subsequence".** Relax the coverage requirement to
+  40 % and essentially every eval protein has a surviving training relative at
+  ≥ 30 % identity; with no coverage requirement, 65 of the 334 have one at ≥ 90 %
+  identity over some fragment. Domain-level similarity survives by design.
+- **It is not fold-level.** #225 priced a fold-disjoint purge (Foldseek TM ≥ 0.5)
+  at **37 % of AFDB** and declined it: a third of AFDB's structural clusters share
+  a fold with something in a 554-protein eval set. "Decontaminated at 30 %
+  identity" is a statement about sequences, never about novel folds.
+- **The chain of custody is checked end to end**, not trusted: published corpus row
+  counts, the tokenizer's pinned document counts, and the live W&B config of each
+  training run, so a model claimed to be clean can be shown to have read only
+  decontaminated caches.
+
+Models trained on the decontaminated corpora: #232's `m2-p06` and `m1-p02`
+(scored in [#244](https://github.com/Open-Athena/MarinFold/pull/244) and
+[#245](https://github.com/Open-Athena/MarinFold/issues/245)). The current default
+model, #199's cooldown, was **not** — it is kept as the default because it is the
+strongest checkpoint we have, and it is labelled as contaminated wherever it is
+compared.
 
 ## Try it out
 
@@ -35,16 +219,20 @@ no MSA, no template, no structure. The default model in
 on the 554-protein contact benchmark, against single-sequence Protenix-v2's
 0.603. The checkpoint it continues, `contacts-v1-exp199-1.5B`, is 0.609.
 
-On [eval2](experiments/exp226_evals_expand_foldbench_eval_set/README.md) — the
-homology-controlled set, where nothing scores near its 554-protein number — it
-is **0.358** on the 78 natural proteins under 40% identity to anything in
-training and **0.621** on the 229 de novo designed ones, against ESMFold2's
-0.529 / 0.811 and Protenix-v2 single-sequence's 0.326 / 0.799. So the win over
-single-sequence Protenix-v2 above is a property of the 554-protein set, which
-is 75% designed and not homology-controlled; on eval2 it holds only on the
-natural cut and only within noise. Quote the 554 number as progress against our
-own history, and the eval2 cuts when the question is how well this generalises
-— see [exp238](experiments/exp238_models_promote_exp199_cooldown_to_default/README.md).
+On **eval-test** — the held-out, decontaminated set of 217 natural FoldBench
+monomers described in [How we evaluate](#how-we-evaluate) — it is **0.613**,
+against ESMFold's 0.753, ESMFold2's 0.792, Protenix-v2 + MSA's 0.845 and
+single-sequence Protenix-v2's 0.265. So the near-tie with single-sequence
+Protenix-v2 on the 554 is a property of that set (75 % de novo designed, where
+Protenix-v2 single-seq reaches 0.835); on natural proteins we are far ahead of it
+and still well behind the MSA and PLM methods. Quote the 554 number as progress
+against our own history and eval-test when the question is how well this folds a
+protein — see [exp245](experiments/exp245_evals_foldbench_held_out_monomers/README.md).
+
+Note the default model was trained *before*
+[decontamination](#training-data-decontamination): its corpora were never filtered
+against the eval proteins. The strongest checkpoint trained on decontaminated data
+is #232's `m2-p06` at 0.538 on eval-test, and the two runs are not budget-matched.
 
 ### GPU example
 
