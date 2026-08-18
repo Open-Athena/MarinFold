@@ -116,6 +116,20 @@
   measure, and distinguish it from the training loop: poll `global_step` over a
   minute or two, because a gang can hold full in-loop speed while losing half its
   wall clock to IO, and the throughput metric will not show it.
+- Do not trust `.executor_status.lock` as proof of training. It is refreshed by
+  the CPU root driver, so a fresh lock only rules out total process death (the
+  `a06` wedge, whose lock went stale for 34 minutes); the training child can be
+  dead underneath it. The W&B-independent proof of training is
+  `checkpoints/eval_metrics.jsonl`, written from inside the training loop
+  straight to S3 every `STEPS_PER_EVAL` (2114) steps. If its mtime is well past
+  the next boundary's due time, training has stopped no matter what W&B or Iris
+  say.
+- When several trials go W&B-silent at once, suspect a W&B outage before
+  suspecting simultaneous training failures, and resolve it with the
+  `eval_metrics.jsonl` test rather than by stopping anything. A recovered
+  heartbeat with a still-frozen `global_step` refutes the outage reading: a real
+  reconnect flushes a large step jump. Stopping healthy runs during a monitoring
+  outage destroys hours of work, so the independent check is worth the wait.
 - Treat a W&B heartbeat older than roughly 60 seconds as a prompt to check that
   trial's exact Iris root in the same pass. A fresh progress high-water in the
   same window does not clear it, because the last logged progress can precede
