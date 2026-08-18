@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "figure": "final_checkpoint_rprecision",
+  "metric": "legacy-554 all-range R-precision",
+  "box_order": [
+    "exp146",
+    "exp166",
+    "cw-p06-aug",
+    "cw-p06-cool",
+    "protenix",
+    "exp232-m2-p06-decontam",
+    "exp232-m1-p02-decontam"
+  ],
+  "computed_here": [
+    "exp232-m2-p06-decontam",
+    "exp232-m1-p02-decontam"
+  ],
+  "previous_evaluations": [
+    "exp146",
+    "exp166",
+    "cw-p06-aug",
+    "cw-p06-cool"
+  ],
+  "sigmoid_fit": {
+    "upper": 0.9999999999999969,
+    "midpoint": 3.1300271534190345,
+    "width": 0.36281958346032556,
+    "r_squared": 0.9801808474898789,
+    "input_groups": [
+      "exp166",
+      "cw-p06-aug",
+      "cw-p06-cool",
+      "exp232-m2-p06-decontam",
+      "exp232-m1-p02-decontam"
+    ],
+    "minimum_observed_loss": 2.9396727085113525,
+    "maximum_observed_loss": 3.0458890866851807
+  },
+  "comparison_table": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/comparison.csv",
+  "comparison_table_sha256": "a8651fce9f4a40f52f7cf292fd1c97b43654842725ed88ac45277de641e18111",
+  "per_protein_rows": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/all_r_rows.csv.gz",
+  "per_protein_rows_sha256": "e6a69c112c54b50571ec2d11023bc9a0073787263a04cb808b68dfcc3100e75d",
+  "plot_sha256": "cc1f9e05b483c5cee48df786e635f66dd8ed40c0bbf61e3e1babf34f1849e53a"
+}
