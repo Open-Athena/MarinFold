@@ -311,6 +311,30 @@ oracle; oracle-best > 0.5342 (M-B); AUC ≥ the #230 checkpoint's on every arm.
 | significance | paired per-protein bootstrap, 10,000 resamples, seed 237 (`compare_arms.py`) |
 | validation | the pipeline reproduces #230's published table exactly (0.5673 / 0.5342 / 0.4566 / 0.4284), and the lr-0 control returns within ±0.003 |
 
+## Compute
+
+Eight A100-80GB. **1 policy (unsharded, mandatory — #208's sharding bug) + 1
+reference + 6 vLLM engines at `tensor_parallel_size=1`.** Measured over 420
+training steps:
+
+| phase | median | GPUs busy |
+|---|---:|---:|
+| `generate` | 35.9 s | 6 |
+| `fwd_logprobs` (old + ref) | 21.3 s | 2 |
+| `policy_train` | 39.1 s | **1** |
+| `sync_weights` | 2.4 s | 8 |
+| **step** | **100.9 s** | |
+
+The phases **do not overlap** (they sum to 98.7 s of a 100.9 s step), so node
+utilisation is **39 %** — 316 of 807 GPU-seconds. **The trainer is the
+bottleneck**: 61 % of the step runs on one or two cards. MFU is **33 % during
+`policy_train`** and **1.6 % node-wide** — a scheduling result, not a kernel one.
+Generation is bandwidth-bound and under-batched at ~11 concurrent sequences per
+engine. Full detail, including the memory figures and three infrastructure traps,
+in [RESULTS.md](RESULTS.md#compute-how-the-eight-gpus-are-used-and-what-limits-the-step).
+
+~37 h wall clock, 728 GB of checkpoints.
+
 ## Run book
 
 ```bash

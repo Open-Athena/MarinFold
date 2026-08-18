@@ -1037,6 +1037,93 @@ pad with junk sections, and `multi/empty_sections` (currently 0.000) is the
 instrument for that.
 
 
+## Compute: how the eight GPUs are used, and what limits the step
+
+Measured over **420 training steps** across every arm
+([`analyze_compute.py`](analyze_compute.py) parses SkyRL's own timing keys).
+
+### Placement
+
+| GPUs | role | why |
+|---:|---|---|
+| **1** | policy (FSDP, `world_size` 1) | **unsharded is mandatory.** #208 established that SkyRL's policy sharding diverges from the inference engines and the first weight sync destroys the policy — trainer/engine logprob gap 1.33 nats sharded against 0.017 unsharded. Measured here at **0.012–0.018** every run |
+| **1** | reference (KL) | `colocate_all=false`, `offload_after_step=true` — it reads 4 MiB between steps because it is offloaded to CPU |
+| **6** | vLLM engines, `tensor_parallel_size=1` | a 1.5B model fits one card with room to spare, so six independent engines beat one six-way split: six times the batch concurrency and no cross-GPU traffic |
+
+Memory, observed during runs: engines hold **69,675 MiB** each — exactly
+`0.85 × 81,920`, i.e. vLLM pre-allocates its `gpu_memory_utilization` fraction
+and the KV cache is sized from it — and the policy GPU runs **19–28 GB** at
+`micro_train_batch_size_per_gpu=1` on 8,192-token sequences with gradient
+checkpointing. Nothing is close to OOM; the constraint is not memory.
+
+### The step is serial, so most of the node is idle most of the time
+
+| phase | median | GPUs busy |
+|---|---:|---:|
+| `generate` | 35.9 s | 6 |
+| `fwd_logprobs_values_reward` (old + ref logprobs) | 21.3 s | 2 |
+| `policy_train` | 39.1 s | **1** |
+| `sync_weights` | 2.4 s | 8 |
+| **`step`** | **100.9 s** | |
+
+The phases sum to 98.7 s against a 100.9 s step, so **they do not overlap** —
+SkyRL runs generate → logprobs → train → sync in sequence. Counting GPU-seconds
+actually doing work against GPU-seconds available:
+
+> **316 of 807 GPU-seconds per step — 39 % node utilisation.**
+
+### The trainer is the bottleneck, and it is the bottleneck *because* sharding is unusable
+
+**61 % of the step (`policy_train` + `fwd_logprobs`, 60.4 s) runs on one or two
+GPUs** while the other six sit idle. Generation — the phase with six GPUs — is
+only 36 % of it. So the limiting resource is the single policy card, and it is
+single precisely because #208's sharding bug forbids splitting it. **Fixing that
+bug is worth roughly a 2× step-time improvement here**, more than any sampling
+change.
+
+Efficiency of each phase, computed against A100 bf16 peak (312 TFLOP/s), with
+N = 1.47 × 10⁹ non-embedding parameters read from `config.json`:
+
+| | |
+|---|---|
+| tokens per step (prompt + response) | 342 k |
+| training FLOPs per step (`8·N·T`, gradient checkpointing on) | 4,028 TFLOP |
+| **MFU during `policy_train`** | **33 %** |
+| MFU amortised over the step, that GPU | 13 % |
+| **MFU node-wide** | **1.6 %** |
+
+33 % during its own phase is healthy for a 1.5B model at sequence length 8,192.
+The 1.6 % node-wide figure is the honest one, and it is a scheduling result
+rather than a kernel one.
+
+**Generation is bandwidth-bound and under-batched.** 318 k tokens in 35.9 s over
+six engines is **8,871 tok/s** (1,478 per engine) — but 64 rollouts spread over
+six engines is only **~11 concurrent sequences per engine**, far below what
+saturates an A100's decode path. Decode arithmetic intensity is ~2·N per token,
+so that is 26 TFLOP/s across six cards, **1.4 % of peak** — the wrong metric,
+because decode is limited by weight-streaming bandwidth, not FLOPs. The practical
+consequence is that **fewer engines with more sequences each would generate just
+as fast**, and the freed cards would do nothing useful anyway while the trainer
+runs.
+
+### What this costs, and the three traps that are not obvious
+
+The whole experiment ran **2026-08-17 01:58 → 2026-08-18 14:48**, ~37 hours of
+wall clock on the node, producing **728 GB** of checkpoints (each FSDP checkpoint
+is ~17 GB: bf16 weights plus fp32 optimiser state; disk is 19 TB so this never
+threatened anything).
+
+| trap | symptom | fix |
+|---|---|---|
+| Ray's raylet dies at the login shell's **1,024** file descriptors — six engines plus a policy and a ref open more sockets than that | `LocalRayletDiedError` three minutes in, naming neither descriptors nor Ray | `ulimit -n 65536` in `run_arm.sh` (hard limit is 1,048,576) |
+| vLLM engine **teardown outlives the memory being freed** | cards read 4 MiB, six new engines race the old IPC sockets and lose: "Engine core initialization failed" | wait for `VLLM::EngineCore` to be gone, then settle 30 s |
+| vLLM shells out to **`ninja`** and finds it only on `PATH` | every engine dies with `FileNotFoundError` wrapped in "Engine core initialization failed" | export the venv's `bin` on `PATH` |
+
+A fourth is a repository hazard rather than a GPU one: `run_arm.sh` originally
+opened its log with `>`, so **resuming an arm destroyed the original run's log**
+— that is how arm M-B's first 41 steps were lost and had to be recovered from a
+committed CSV. Logs now rotate to `.partN.log`.
+
 ## The reward curves, and the one arm still climbing when it stopped
 
 ![reward over training](plots/reward_curves.png)
