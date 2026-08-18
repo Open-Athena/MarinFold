@@ -24,9 +24,15 @@ EVAL_STEPS=${EVAL_STEPS:-"120 84 60"}
 LOGS=$HOME/exp237_logs
 HERE=$HOME/exp237/skyrl
 
+# Watch EVERY driver log, not one named file. A chained stage that hands off with
+# `exec` keeps the *caller's* stdout, so M-BC's output landed in
+# insert75_driver.log rather than mbc_driver.log -- and a waiter watching the
+# named file would have blocked forever on a log nothing will write again.
+# Grepping the whole directory cannot be wrong-footed by where a stage was
+# launched from.
 if [ "${WAIT_FOR:-1}" = "1" ]; then
-  echo "[mfx] waiting for M-BC to finish"
-  until grep -q "^\[mbc\] DONE" "$LOGS/mbc_driver.log" 2>/dev/null; do sleep 60; done
+  echo "[mfx] waiting for '[mbc] DONE' in any driver log"
+  until grep -qs "^\[mbc\] DONE" "$LOGS"/*_driver.log; do sleep 60; done
 fi
 
 drain() {

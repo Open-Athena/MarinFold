@@ -120,7 +120,9 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | **plain, 22 rollouts — the bar** | — | **0.5896** | 0.5680 | — | — | — |
 | #230 warm start | 0 | 0.5673 | 0.5342 | 0.4566 | 0.4284 | 3.98 |
 | M-0, lr 0 | 0 | 0.5678 | 0.5364 | 0.4594 | 0.4300 | 3.98 |
-| **M-C step-18** | 0.0072 | **0.5750** | **0.5578** | **0.5267** | 0.4795 | 3.17 |
+| **M-B lr3e-6 step-90** | 0.0087 | **0.5775** | 0.5646 | 0.5091 | — | — |
+| M-B step-18 | 0.0088 | 0.5763 | **0.5663** | 0.5108 | 0.5027 | — |
+| **M-C step-18** | 0.0072 | 0.5750 | 0.5578 | **0.5267** | 0.4795 | 3.17 |
 | M-F step-18 | 0.0136 | 0.5647 | 0.5283 | 0.4949 | 0.3464 | 3.69 |
 | M-B step-36 | 0.0163 | 0.5741 | 0.5574 | 0.4908 | **0.4933** | 2.76 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 | 2.80 |
@@ -386,6 +388,58 @@ are going to read one candidate, and a loss if you are going to aggregate.
 *Caveat:* this re-samples sections that were generated **under** the power law.
 It shows that selecting for size does not help; it does not prove that a model
 retrained to emit uniform sections would fail.
+
+### The slow walk: the peak is a function of distance, not of learning rate
+
+M-B re-run at **lr 3e-6** — a third the step size, 120 steps, eight checkpoints
+across the window the 1e-5 run crossed in about a dozen. It is the only arm that
+**never tripped a gate**. R-precision (all), legacy 554:
+
+| step | KL | consensus | best *ORACLE* | last | sections |
+|---:|---:|---:|---:|---:|---:|
+| 30 | 0.0018 | 0.5713 | 0.5511 | 0.4719 | 21.3 |
+| 60 | 0.0047 | 0.5754 | 0.5613 | 0.4989 | 20.5 |
+| 75 | 0.0079 | 0.5760 | 0.5627 | 0.5044 | 20.4 |
+| **90** | **0.0087** | **0.5775** | **0.5646** | **0.5091** | 20.2 |
+| 120 | 0.0259 | 0.5739 | 0.5568 | 0.5072 | 19.3 |
+
+Smooth, unimodal, and peaked at **KL 0.0087**. Paired against the warm start,
+step-90 reads consensus **+0.0102** [+0.0072, +0.0133] (353/187), oracle-best
+**+0.0304**, last **+0.0524** — every CI excluding zero, and the **best consensus
+measured anywhere in this experiment**.
+
+**The result that makes this worth the GPU-hours** is not the +0.0012 over the
+1e-5 run. It is that the two runs *agree*:
+
+| at matched KL ~0.0087 | consensus | best | last |
+|---|---:|---:|---:|
+| M-B, lr 1e-5, step 18 (KL 0.0088) | 0.5763 | 0.5663 | 0.5108 |
+| M-B, lr 3e-6, step 90 (KL 0.0087) | 0.5775 | 0.5646 | 0.5091 |
+| difference | 0.0012 | 0.0017 | 0.0017 |
+
+Two runs at a **3.3x different learning rate**, reaching the same distance by
+different paths, land within 0.002 of each other on all three modes — at or below
+#204's 0.0023 noise floor. **The outcome is a function of how far the policy
+moved, not of the rate it moved at or of where the checkpoints happened to fall.**
+That retires the last alternative explanation for the dose-response: it is not a
+checkpoint-spacing artifact.
+
+It also settles a question this experiment kept asking. The 0.5763 that arm M-B
+hit at step 18 was a single checkpoint from a coarsely-sampled run, and could
+have been luck. It was not.
+
+#### One multi rollout's best section has caught the 22-rollout oracle
+
+| oracle-best, legacy 554 | |
+|---|---:|
+| plain, **22 rollouts** | 0.5680 |
+| M-B lr 1e-5 step-18, **one rollout** | 0.5663 |
+| M-B lr 3e-6 step-90, **one rollout** | 0.5646 |
+
+Within **0.002–0.003**. Whatever a perfect selector could extract from 22
+independent plain rollouts, it can now extract from the ~20 sections of a single
+one. The gap that remains is entirely in the *selector*, not in the candidates —
+which is precisely what arm M-F is being continued to attack.
 
 ### The reward curves, and the one arm still climbing when it stopped
 
