@@ -207,6 +207,20 @@ def _training_env() -> dict[str, str]:
         raise ValueError(
             f"missing required environment variables: {', '.join(missing)}"
         )
+    expected_wandb = {
+        "WANDB_ENTITY": "open-athena",
+        "WANDB_PROJECT": "MarinFold",
+    }
+    unexpected = {
+        key: os.environ[key]
+        for key, expected in expected_wandb.items()
+        if os.environ[key] != expected
+    }
+    if unexpected:
+        raise ValueError(
+            "continuation W&B routing must be open-athena/MarinFold, got "
+            + ", ".join(f"{key}={value!r}" for key, value in unexpected.items())
+        )
     env = {
         "MARIN_PREFIX": CONTINUATION_EXPERIMENT_PREFIX,
         "WANDB_ENTITY": os.environ["WANDB_ENTITY"],
