@@ -1,0 +1,29 @@
+{
+  "reference": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/all_r_rows.csv.gz",
+  "tolerance_on_mean": 0.005,
+  "comparisons": {
+    "exp232-m2-p06-decontam": {
+      "model": "marinfold-exp232-decontam-m2-p06-step145199",
+      "n_proteins": 97,
+      "mean_here": 0.5197991295291134,
+      "mean_pr244": 0.5228687366030286,
+      "mean_difference": -0.0030696070739151655,
+      "max_abs_per_protein": 0.06632653061224497,
+      "n_identical": 18,
+      "pearson_r": 0.9961144237975199,
+      "within_tolerance": true
+    },
+    "exp232-m1-p02-decontam": {
+      "model": "marinfold-exp232-decontam-m1-p02-step145199",
+      "n_proteins": 97,
+      "mean_here": 0.4731469398933442,
+      "mean_pr244": 0.47540024324003743,
+      "mean_difference": -0.0022533033466932578,
+      "max_abs_per_protein": 0.05454545454545451,
+      "n_identical": 15,
+      "pearson_r": 0.9959728346625916,
+      "within_tolerance": true
+    }
+  },
+  "passed": true
+}

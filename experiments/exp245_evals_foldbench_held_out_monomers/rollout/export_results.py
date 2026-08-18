@@ -18,15 +18,22 @@ older than the ``buckets`` API.
 import argparse
 import json
 import os
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 import fsspec
-from huggingface_hub import HfApi
 
 from checkpoint_specs import BUCKET_PREFIX, run_root
 
-BUCKET_REPO = "open-athena/MarinFold"
+#: Buckets are not a repo type the Python API writes to in ``huggingface_hub``
+#: 1.5 -- ``HfApi.upload_file`` rejects them and ``HfFileSystem`` reports the
+#: path as a missing repository. The ``hf buckets cp`` command is the supported
+#: writer, invoked here through the module so it works under ``uv run --with``
+#: without depending on a console script being on PATH.
+BUCKET_URI = "hf://buckets/open-athena/MarinFold"
+HF_CLI = ("-m", "huggingface_hub.cli.hf")
 
 
 def main() -> int:
@@ -47,7 +54,6 @@ def main() -> int:
     if not files:
         raise SystemExit(f"no files under {root}")
 
-    api = HfApi(token=token)
     destination = f"{BUCKET_PREFIX}/runs/{args.run_id}"
     exported = []
     with tempfile.TemporaryDirectory() as scratch:
@@ -56,11 +62,10 @@ def main() -> int:
             local = Path(scratch) / name
             local.parent.mkdir(parents=True, exist_ok=True)
             filesystem.get_file(remote, str(local))
-            api.upload_file(
-                path_or_fileobj=str(local),
-                path_in_repo=f"{destination}/{name}",
-                repo_id=BUCKET_REPO,
-                repo_type="bucket",
+            subprocess.run(
+                [sys.executable, *HF_CLI, "buckets", "cp",
+                 str(local), f"{BUCKET_URI}/{destination}/{name}"],
+                check=True, env={**os.environ, "HF_TOKEN": token},
             )
             exported.append({"name": name, "bytes": local.stat().st_size})
             print(json.dumps({"event": "exported", **exported[-1]}), flush=True)
