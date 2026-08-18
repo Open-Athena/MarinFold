@@ -146,8 +146,151 @@ unchanged checkpoint, and inside #244's own 0.005 gate. Everything this
 experiment rebuilt — ground truth, targets, dataset label, the adapted harness —
 is covered by that comparison. 333 units × 3 checkpoints, 33,300 rollouts each,
 **0 unfinished** ([`data/path_validation.json`](data/path_validation.json)).
+### 4. The scoreboard
 
+R-precision, all ranges, over the 333 scored units. Every predictor covers every
+unit ([`data/headline.csv`](data/headline.csv), per-protein rows in
+[`data/per_protein.csv.gz`](data/per_protein.csv.gz)).
+
+| predictor | eval-val (97) | eval-test (217) | eval-denovo (19) |
+|---|---:|---:|---:|
+| **#232 m2-p06 (decontaminated)** | **0.520** | **0.538** | **0.591** |
+| **#232 m1-p02 (decontaminated)** | **0.473** | **0.493** | **0.588** |
+| #199 cooldown (contaminated reference) | 0.589 | 0.613 | 0.619 |
+| Protenix-v2 single-seq | 0.263 | 0.265 | 0.835 |
+| ESMFold | 0.750 | 0.753 | 0.795 |
+| ESMFold2 | 0.802 | 0.792 | 0.864 |
+| Protenix-v2 + MSA | 0.846 | 0.845 | 0.844 |
+| seq-KNN null, **unfiltered** corpus | 0.584 | 0.582 | 0.066 |
+| seq-KNN null, **decontaminated** corpus | 0.407 | 0.426 | 0.050 |
+
+![Scoreboard](plots/eval_sets_scoreboard.png)
+
+*Figure 1. All-range R-precision per predictor on each set, with 95 % bootstrap
+intervals over proteins. MarinFold checkpoints coloured, baselines grey. Rendered
+by `plot_results.py`.*
+
+### 5. The historical set was not flattering us
+
+This is the result the experiment was filed for. **Every predictor scores the
+same or slightly better on the 217 monomers we had never touched**, and the
+contaminated reference moves in the same direction and by the same amount as the
+decontaminated checkpoints:
+
+| predictor | eval-val | eval-test | eval-test − eval-val | 95 % CI |
+|---|---:|---:|---:|---|
+| #232 m2-p06 (decontaminated) | 0.520 | 0.538 | **+0.018** | [−0.033, +0.068] |
+| #232 m1-p02 (decontaminated) | 0.473 | 0.493 | **+0.020** | [−0.028, +0.070] |
+| #199 cooldown (contaminated) | 0.589 | 0.613 | **+0.024** | [−0.022, +0.073] |
+| ESMFold | 0.750 | 0.753 | +0.003 | [−0.038, +0.046] |
+| ESMFold2 | 0.802 | 0.792 | −0.009 | [−0.045, +0.028] |
+| Protenix-v2 + MSA | 0.846 | 0.845 | −0.001 | [−0.022, +0.024] |
+| Protenix-v2 single-seq | 0.263 | 0.265 | +0.001 | [−0.052, +0.055] |
+
+![eval-val vs eval-test](plots/val_vs_test.png)
+
+*Figure 2. Each predictor's mean on the two natural sets. Rendered by
+`plot_results.py`.*
+
+**H2 is not supported, and the direction is worth stating.** The
+difference-in-differences the issue asked for — the contaminated model's val→test
+change minus a decontaminated one's — is **−0.006** (m2-p06) and **−0.004**
+(m1-p02): the contaminated model gains *slightly more* on the held-out set, not
+less, and both numbers are an order of magnitude inside the noise. If the
+historical FoldBench-100 were inflating #199's score through memorised homologs,
+this is where it would show, and it does not. H1 and H3 hold: all seven
+predictors move by less than 0.03 between the two sets.
+
+### 6. Where the #232 checkpoints actually stand
+
+Paired deltas on eval-test, bootstrap over proteins
+([`data/paired_deltas.csv`](data/paired_deltas.csv)):
+
+| #232 m2-p06 vs | delta | 95 % CI |
+|---|---:|---|
+| Protenix-v2 single-seq | **+0.273** | [+0.239, +0.307] |
+| seq-KNN null over its **own** (decontaminated) corpus | **+0.112** | [+0.083, +0.141] |
+| seq-KNN null over the **unfiltered** corpus | **−0.044** | [−0.078, −0.011] |
+| ESMFold | −0.216 | [−0.238, −0.194] |
+| ESMFold2 | −0.255 | [−0.278, −0.232] |
+| Protenix-v2 + MSA | −0.307 | [−0.333, −0.281] |
+
+Three things this says that the raw table does not.
+
+**The KNN null is the right yardstick, and it is corpus-specific.** Copying the
+contacts of a protein's ten nearest training sequences scores **0.582** on
+eval-test out of the unfiltered corpus and **0.426** out of the decontaminated
+one — decontamination removed 0.156 of *memorisable* contact map per protein on
+average, and more than 0.2 for 99 of the 314 natural proteins. Each model clears
+the null over the corpus it actually trained on (#232 m2-p06 +0.112, #199
+cooldown +0.031) and falls below the null over the richer corpus. Read that way,
+#199's 0.075 lead over m2-p06 is roughly what a nearest-neighbour lookup gains
+from the same extra data, and the two runs are not budget-matched anyway (290,400
+steps versus 145,199), so **this experiment does not measure a cost of
+decontamination** — #232's own budget-matched arms do.
+
+**Protenix-v2 single-sequence is not a real comparator on natural proteins.** It
+scores 0.835 on the 19 designs and 0.265 on the 314 natural monomers; the
+"MarinFold is at parity with Protenix-SS" framing that #213 and #226 tracked
+comes from an eval set that is three-quarters designed protein. On natural
+FoldBench monomers both #232 checkpoints beat it by more than 0.27.
+
+**Viral proteins are harder for everything except MSA.** On eval-test
+(13 viral / 204 non-viral): m2-p06 0.465 vs 0.542, #199 cooldown 0.497 vs 0.621,
+ESMFold2 0.608 vs 0.804, seq-KNN 0.262 vs 0.602 — and Protenix-v2 + MSA 0.812 vs
+0.847, essentially flat. #241's finding survives on new proteins: the viral gap
+tracks how much homology a predictor can reach, and an MSA closes it.
+
+### Artifacts
+
+Everything public is under
+`hf://buckets/open-athena/MarinFold/data/contacts-v1-foldbench-monomers-exp245/`:
+`eval_sets.csv` (all 334, with `scorable` / `exclusion_reason`),
+`eval_targets_foldbench_monomers.parquet` + `gt_universe_scored.jsonl` (the 333
+scored units), `eval_sets.fasta`, `per_protein.csv.gz` (9 predictors x 333 x 4
+metrics), `headline.csv`, `paired_deltas.csv`, `val_vs_test.csv`,
+`context_budget.csv`, `residual_identity.csv`, the two check reports, and
+`runs/fbmono-20260818-01/` (the CoreWeave run's metric tables and manifest).
+
+Checkpoints were read in place from CoreWeave S3; none was copied. The run root
+is `s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp245_foldbench_held_out_monomers/evals/rollout/fbmono-20260818-01/`.
+W&B runs: [`prot-exp232-cw-cv1-decontam-s02-m2-p06-aug`](https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug),
+[`prot-exp232-cw-cv1-decontam-s02-m1-p02-aug`](https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-cw-cv1-decontam-s02-m1-p02-aug),
+[`prot-exp199-cw-cv1-p06-cool-s01`](https://wandb.ai/open-athena/MarinFold/runs/prot-exp199-cw-cv1-p06-cool-s01).
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**The eval set we have been reporting on is honest.** FoldBench's other 217
+natural monomers — proteins no model or baseline here had ever seen scored, and
+which #225 provably removed from the #232 training corpora at 30 % identity —
+score **+0.018 to +0.024 higher**, not lower, for all three checkpoints, and the
+contaminated reference model's val→test change is indistinguishable from the
+decontaminated ones' (difference-in-differences −0.006 and −0.004, both far
+inside a ±0.05 interval). Whatever else is wrong with the historical
+FoldBench-100, it was not inflating our numbers through leaked homologs.
+
+**What the three sets are for from here.** `eval-test` (217 natural monomers) is
+now the default set for any claim about decontaminated accuracy: it is four times
+the size of eval2-natural's audited 63, it is not 75 % designed protein, and its
+ground truth and baselines are complete and published. `eval-val` keeps
+continuity with every published figure. `eval-denovo` (19) exists so designs stop
+being averaged into natural-protein claims — they behave completely differently
+(Protenix-v2 single-seq: 0.835 on designs, 0.265 on natural).
+
+**The finding that changes how to read the frontier.** A sequence-KNN null over
+the corpus a model trained on is the yardstick that makes #199-vs-#232
+interpretable. Copying the ten nearest training sequences' contacts scores 0.582
+on eval-test out of the unfiltered corpus and 0.426 out of the decontaminated
+one; each model clears the null over its own corpus by a modest margin (#232
+m2-p06 +0.112, #199 cooldown +0.031) and sits below the null over the richer one.
+So #199's 0.075 lead is not evidence that decontamination is free or that it is
+expensive — the runs are not budget-matched (290,400 vs 145,199 steps) — but it
+does put an upper bound on how much of any contacts-v1 score is reachable by
+memorisation.
+
+**Still open.** A budget-matched decontaminated-vs-contaminated comparison (#232's
+own arms). The fold-novelty axis, which none of this measures — "no 30 %-identity
+homolog" is not "novel fold", and #225 priced the fold-level purge at 37 % of
+AFDB. And the gap to ESMFold2 (−0.255) and Protenix + MSA (−0.307) on natural
+proteins, which is where the real headroom is.
+

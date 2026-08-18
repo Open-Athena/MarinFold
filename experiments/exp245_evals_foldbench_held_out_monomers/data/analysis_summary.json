@@ -6,15 +6,12 @@
     "#232 m2-p06 (decontaminated)": 333,
     "ESMFold": 333,
     "ESMFold2": 333,
-    "Protenix-v2 + MSA": 124,
-    "Protenix-v2 single-seq": 124,
+    "Protenix-v2 + MSA": 333,
+    "Protenix-v2 single-seq": 333,
     "seq-KNN (decontaminated corpus)": 333,
     "seq-KNN (unfiltered corpus)": 333
   },
-  "incomplete_predictors": {
-    "Protenix-v2 + MSA": 124,
-    "Protenix-v2 single-seq": 124
-  },
+  "incomplete_predictors": {},
   "r_all": {
     "eval-val": {
       "#232 m2-p06 (decontaminated)": 0.5198,
@@ -31,10 +28,10 @@
       "#232 m2-p06 (decontaminated)": 0.5377,
       "#232 m1-p02 (decontaminated)": 0.4931,
       "#199 cooldown (contaminated)": 0.6132,
-      "Protenix-v2 single-seq": 0.2434,
+      "Protenix-v2 single-seq": 0.2646,
       "ESMFold": 0.7534,
       "ESMFold2": 0.7921,
-      "Protenix-v2 + MSA": 0.8054,
+      "Protenix-v2 + MSA": 0.8446,
       "seq-KNN (unfiltered corpus)": 0.582,
       "seq-KNN (decontaminated corpus)": 0.4257
     },
@@ -42,10 +39,10 @@
       "#232 m2-p06 (decontaminated)": 0.5914,
       "#232 m1-p02 (decontaminated)": 0.5879,
       "#199 cooldown (contaminated)": 0.6188,
-      "Protenix-v2 single-seq": 0.8153,
+      "Protenix-v2 single-seq": 0.8351,
       "ESMFold": 0.7951,
       "ESMFold2": 0.8635,
-      "Protenix-v2 + MSA": 0.8168,
+      "Protenix-v2 + MSA": 0.8444,
       "seq-KNN (unfiltered corpus)": 0.0659,
       "seq-KNN (decontaminated corpus)": 0.0503
     }
@@ -73,45 +70,45 @@
       ]
     },
     "Protenix-v2 single-seq": {
-      "gap": 0.0198,
+      "gap": -0.0014,
       "ci": [
-        -0.0783,
-        0.0991
+        -0.0554,
+        0.0522
       ]
     },
     "ESMFold": {
       "gap": -0.003,
       "ci": [
-        -0.0504,
-        0.0382
+        -0.0461,
+        0.0384
       ]
     },
     "ESMFold2": {
       "gap": 0.0094,
       "ci": [
         -0.0277,
-        0.0449
+        0.0454
       ]
     },
     "Protenix-v2 + MSA": {
-      "gap": 0.0406,
+      "gap": 0.0014,
       "ci": [
-        -0.0024,
-        0.0902
+        -0.0238,
+        0.0221
       ]
     },
     "seq-KNN (unfiltered corpus)": {
       "gap": 0.0017,
       "ci": [
-        -0.0498,
-        0.0523
+        -0.051,
+        0.0532
       ]
     },
     "seq-KNN (decontaminated corpus)": {
       "gap": -0.0186,
       "ci": [
-        -0.0665,
-        0.0285
+        -0.0659,
+        0.0291
       ]
     }
   }

@@ -13,13 +13,15 @@
     Each predictor's eval-val score joined to its eval-test score. A baseline's
     slope is the sample difference between the two protein sets; a
     decontaminated checkpoint's should look like a baseline's; the contaminated
-    reference's excess slope over them is the contamination estimate.
+    reference's excess slope over them would be the contamination estimate. It
+    is not: every slope is small and they all point the same way.
 
     uv run python plot_results.py
 """
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -58,9 +60,17 @@ def interval(values: np.ndarray) -> tuple[float, float]:
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def stamp(path: Path, sources: dict[str, Path]) -> None:
-    """Write the sidecar every committed plot in this repo carries."""
+def stamp(path: Path, sources: dict[str, Path], caption: str) -> None:
+    """Write the sidecar `build_summary.py` reads, plus input provenance.
+
+    ``script`` / ``args`` / ``caption`` are the template's contract -- they land
+    in the slide footer so a reader can rerun the figure. The ``sha256`` fields
+    are exp245's addition: which exact tables the committed PNG was drawn from.
+    """
     meta = {
+        "script": Path(sys.argv[0]).name,
+        "args": sys.argv[1:],
+        "caption": caption,
         "plot": path.name,
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "sources": {
@@ -103,8 +113,8 @@ def scoreboard(frame: pd.DataFrame, order: list[str], out: Path) -> None:
         axis.bar(positions, heights, color=colors, width=0.72)
         axis.errorbar(positions, heights, yerr=[lows, highs], fmt="none",
                       ecolor="#33312e", elinewidth=1.1, capsize=3)
-        for position, height in zip(positions, heights, strict=True):
-            axis.text(position, height + 0.012, f"{height:.3f}", ha="center",
+        for position, height, high in zip(positions, heights, highs, strict=True):
+            axis.text(position, height + high + 0.018, f"{height:.3f}", ha="center",
                       fontsize=8.5, color="#33312e")
         axis.set_title(SET_LABELS[eval_set], fontsize=10.5)
         axis.set_xticks(range(len(order)))
@@ -142,9 +152,10 @@ def val_versus_test(frame: pd.DataFrame, order: list[str], out: Path) -> None:
     axis.set_xticklabels(["eval-val\n(97 natural, scored before)",
                           "eval-test\n(217 natural, never scored)"])
     axis.set_ylabel("Mean R-precision (all ranges)")
-    axis.set_title("Every predictor scores lower on the held-out monomers.\n"
-                   "The question is whether the contaminated model falls further.",
-                   fontsize=11.5)
+    axis.set_title(
+        "The monomers we never scored are not harder than the ones we did.\n"
+        "Every predictor moves by under 0.03, and the contaminated model moves\n"
+        "in the same direction as the decontaminated ones.", fontsize=11.5)
     axis.grid(axis="y", color="#dddad6", linewidth=0.6)
     axis.set_axisbelow(True)
     for spine in ("top", "right"):
@@ -165,10 +176,20 @@ def main() -> int:
                "eval_sets": DATA / "eval_sets.csv"}
     board = PLOTS / "eval_sets_scoreboard.png"
     scoreboard(frame, order, board)
-    stamp(board, sources)
+    stamp(board, sources, (
+        "All-range R-precision per predictor on each of the three FoldBench "
+        "monomer eval sets, with 95 % bootstrap intervals over proteins. "
+        "MarinFold checkpoints coloured (orange/amber = the decontaminated #232 "
+        "pair, blue = the contaminated #199 cooldown reference), baselines grey."
+    ))
     gap = PLOTS / "val_vs_test.png"
     val_versus_test(frame, order, gap)
-    stamp(gap, sources)
+    stamp(gap, sources, (
+        "Each predictor's mean R-precision on eval-val (the 97 natural monomers "
+        "we have always scored) joined to eval-test (the 217 we never had). "
+        "Every slope is under 0.03 and the contaminated model's is not steeper "
+        "than the decontaminated ones', which is the experiment's main result."
+    ))
     print(f"[plots] -> {board}\n[plots] -> {gap}", flush=True)
     return 0
 

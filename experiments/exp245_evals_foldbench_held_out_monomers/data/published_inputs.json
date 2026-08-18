@@ -27,6 +27,34 @@
     "size": 21388,
     "sha256": "dbe1fdcaee3d0b57f126a7a428bc7b41f712ed536865b94395bb414681ccd10e"
   },
+  "per_protein.csv.gz": {
+    "size": 112619,
+    "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+  },
+  "headline.csv": {
+    "size": 19512,
+    "sha256": "4f6f98822e450530f292c2f5cf8a0c9bd466746ed7600f32387729720e75b43a"
+  },
+  "paired_deltas.csv": {
+    "size": 26140,
+    "sha256": "4ddaf8e7340279899b9adb54b20d68d1efd48faa3aee9f765facb7d0749a47a8"
+  },
+  "val_vs_test.csv": {
+    "size": 4427,
+    "sha256": "dc731dd4f346bd307be83623905e496c24ff293b198649f8b386a6899064fa71"
+  },
+  "residual_identity.csv": {
+    "size": 97203,
+    "sha256": "fe39c019e509864f1dfaffffeb5905208a09a3ef48c2d7d37d18a5cb06f9462d"
+  },
+  "path_validation.json": {
+    "size": 967,
+    "sha256": "3a9f4b8897c1e271b22a12f4ef03fbea73b3bc44c9c8c0d8c10abe64a0431b25"
+  },
+  "analysis_summary.json": {
+    "size": 2611,
+    "sha256": "bf770eb1b6816829729a40e19e5667a0a0aa48f342c84f64deaf473ad96efc07"
+  },
   "_units": 333,
   "_sets": {
     "eval-test": 218,

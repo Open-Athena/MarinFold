@@ -153,6 +153,16 @@ def main() -> int:
         DATA / "decontamination_check.json", DATA / "gt_report.json",
         DATA / "context_budget.csv",
     ]
+    # Results, once they exist: the per-protein table is what anyone rescoring or
+    # re-slicing these sets actually needs, and it is small enough to publish.
+    published += [
+        path for path in (
+            DATA / "per_protein.csv.gz", DATA / "headline.csv",
+            DATA / "paired_deltas.csv", DATA / "val_vs_test.csv",
+            DATA / "residual_identity.csv", DATA / "path_validation.json",
+            DATA / "analysis_summary.json",
+        ) if path.exists()
+    ]
     pins = {
         path.name: {"size": path.stat().st_size, "sha256": U.sha256(path)}
         for path in published
