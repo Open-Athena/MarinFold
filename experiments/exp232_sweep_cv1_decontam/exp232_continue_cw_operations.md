@@ -59,3 +59,6 @@
   linear-decay endpoint fell one unexecuted update after training. Replaced the
   continuation decay with an inclusive endpoint, invalidated s01, and required
   both sources to pass again as s02 before production.
+- 2026-08-18 15:54 UTC — The s02 jobs exposed missing Draccus registration for
+  the new schedule while logging W&B configuration. Registered the schedule as
+  `linear_inclusive`, invalidated s02 before training, and required a clean s03.

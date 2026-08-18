@@ -85,6 +85,7 @@ AUGMENTATION_KEY = "aug100"
 TEMPORARY_CHECKPOINT_INTERVAL = timedelta(minutes=30)
 
 
+@LrSchedule.register_subclass("linear_inclusive")
 @dataclass(frozen=True)
 class InclusiveLinearLrSchedule(LrSchedule):
     """Linearly decay to the minimum on the last executed decay update."""
