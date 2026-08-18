@@ -44,26 +44,39 @@ WINDOW = 6
 
 #: Each arm's own reward, and the label for it.
 OBJECTIVE = {
-    "M-B": ("best_f1", "max$_k$ F1(section $k$)  — M-B's reward"),
-    "M-F": ("last_f1", "F1(last section)  — M-F's reward"),
-    "M-C": ("consensus_rprec", "the rollout's own consensus  — M-C's reward is derived from it"),
-    "M-0": ("consensus_rprec", "consensus (control, lr 0)"),
+    "M-B":  ("best_f1", "max$_k$ F1(section $k$)"),
+    "M-BC": ("best_f1", "max$_k$ F1 (blended with consensus)"),
+    "M-F":  ("last_f1", "F1(last section)"),
+    "M-FC": ("last_f1", "F1(last section) (blended with consensus)"),
+    # M-K's reward IS this column, exactly -- the rollout's own consensus
+    # R-precision. M-C's is derived from it (per-section leave-one-out marginals
+    # on the same quantity), and M-0 has no reward at all.
+    "M-C":  ("consensus_rprec", "the rollout's own consensus (M-C's marginals derive from it)"),
+    "M-K":  ("consensus_rprec", "the rollout's own consensus — M-K's reward, exactly"),
+    "M-0":  ("consensus_rprec", "consensus (control, lr 0)"),
 }
 #: Colour by ARM, so the two M-B runs read as one arm at two learning rates;
 #: they are separated by line style instead. Keyed on the arm alone because the
 #: lr reaches this script as a string from two sources ("1e-5" from a filename,
 #: "1e-05" from the reduced frame) and a lookup on the pair silently falls back
 #: to matplotlib's default cycle, which is how the first render came out.
-COLOR = {"M-B": "#1a7f4b", "M-C": "#1f77b4", "M-F": "#d62728", "M-0": "#7f7f7f"}
+COLOR = {"M-B": "#1a7f4b", "M-C": "#1f77b4", "M-F": "#d62728",
+         "M-BC": "#9467bd", "M-FC": "#e08214", "M-K": "#111111", "M-0": "#9aa5b1"}
 
 
 def style(label: str) -> dict:
     arm = label.split()[0]
     slow = "3e-6" in label
-    return dict(color=COLOR.get(arm, "#444"),
-                ls="--" if arm == "M-0" else ("-" if not slow else "-"),
-                alpha=0.75 if slow else 1.0,
-                lw=1.4 if arm == "M-0" else (2.6 if slow else 2.0))
+    # M-C and M-K plot the SAME column (the rollout's own consensus) and their
+    # early trajectories nearly coincide, so colour alone hides one behind the
+    # other. Dash patterns, not just hue, keep every run readable.
+    ls = {"M-0": (0, (4, 3)), "M-C": (0, (5, 2)), "M-FC": (0, (1, 1.2))}.get(arm, "-")
+    if slow:
+        ls = (0, (7, 2, 1, 2))
+    return dict(color=COLOR.get(arm, "#444"), ls=ls,
+                alpha=0.85 if (slow or arm == "M-0") else 1.0,
+                lw=1.4 if arm == "M-0" else (2.0 if slow else 2.4),
+                zorder=5 if arm == "M-C" else (4 if arm == "M-K" else 2))
 
 
 def pretty(label: str) -> str:
@@ -141,6 +154,9 @@ def main() -> int:
                 label=f"{pretty(label)} · {col}", **st)
     ax.set_xlabel("training step")
     ax.set_ylabel("reward (rolling median of 6 batches)")
+    ax.set_ylim(0.15, 0.63)
+    ax.annotate("M-F's continuation exits here → 0.006 by step 120",
+                xy=(60, 0.17), fontsize=7.5, color=COLOR["M-F"])
     ax.set_title("each arm against its OWN objective", fontsize=10)
     ax.grid(alpha=0.25)
     ax.legend(fontsize=7.5, loc="lower left")
@@ -156,6 +172,7 @@ def main() -> int:
                 label=pretty(label), **st)
     ax.set_xlabel("training step")
     ax.set_ylabel("within-rollout consensus R-precision")
+    ax.set_ylim(0.15, 0.63)
     ax.set_title("the one axis every arm shares (training batches, not eval)", fontsize=10)
     ax.grid(alpha=0.25)
     ax.legend(fontsize=7.5, loc="lower left")
