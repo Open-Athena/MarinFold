@@ -160,6 +160,30 @@
     "exp232_prefixes_present": true,
     "counts_agree": true
   },
+  "wandb": {
+    "prot-exp232-cw-cv1-decontam-s02-m1-p02-aug": {
+      "state": "finished",
+      "training_caches": [
+        "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
+        "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14"
+      ],
+      "other_caches": [
+        "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25"
+      ],
+      "decontaminated_only": true
+    },
+    "prot-exp232-cw-cv1-decontam-s02-m2-p06-aug": {
+      "state": "finished",
+      "training_caches": [
+        "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
+        "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14"
+      ],
+      "other_caches": [
+        "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25"
+      ],
+      "decontaminated_only": true
+    }
+  },
   "verdict": {
     "eval_proteins_in_reference": true,
     "no_surviving_match_at_rule": true,
