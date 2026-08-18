@@ -387,6 +387,20 @@ occurrence-frequency voting over contacts still live at the end of each rollout,
 no pairwise tie-break. Twelve single-H100 CoreWeave shards per checkpoint at
 batch priority; float32 exports evaluated as bfloat16.
 
+### The repository's headline figure
+
+[`plot_readme_performance.py`](plot_readme_performance.py) draws the two-panel
+figure the top-level [README](../../README.md) uses — the legacy-554 progression
+beside current standing on eval-test — from published per-protein rows only
+([`data/readme_performance.csv`](data/readme_performance.csv)). Regenerate it
+whenever a checkpoint takes the frontier.
+
+![Headline](plots/readme_performance.png)
+
+*Figure 4. Contact R-precision on the legacy 554 (left, where the model
+generations are comparable) and on eval-test (right, held out and decontaminated),
+with the two sequence-KNN nulls. Rendered by `plot_readme_performance.py`.*
+
 ### Artifacts
 
 Everything public is under

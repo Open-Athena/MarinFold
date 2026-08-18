@@ -1,11 +1,13 @@
 ---
 name: eval-checkpoint
 description: >-
-  Evaluate a MarinFold contacts-v1 checkpoint on the eval2 (homology-filtered)
-  or legacy exp89 contact benchmark, scored with exp82's rollout+resample
-  recipe. Use for checkpoint scoring, R-precision/AUC requests, comparisons with
-  structure baselines, novel-protein or decontaminated-accuracy claims, or
-  reproducing contact metrics on local, CUDA, or Iris TPU execution.
+  Evaluate a MarinFold contacts-v1 checkpoint on the FoldBench monomer eval sets
+  (eval-test / eval-val / eval-denovo, exp245) or the legacy exp89 554-protein
+  benchmark, scored with exp82's rollout+resample recipe. Use for checkpoint
+  scoring, R-precision/AUC requests, comparisons with structure baselines,
+  held-out or decontaminated-accuracy claims, designed-vs-natural or viral
+  splits, sequence-KNN nulls, or reproducing contact metrics on local, CUDA,
+  CoreWeave GPU or Iris TPU execution.
 ---
 
 # Evaluate a contacts-v1 checkpoint
@@ -20,56 +22,83 @@ of model progress, so a number filed under the wrong recipe reads as a jump that
 never happened. Infer environment-specific commands from the checked-out
 revisions and current tooling.
 
-## Which eval set — score the 577-unit universe
+## Which eval set — score the 333-unit FoldBench monomer universe
 
-**Default: score every unit in the 577-unit `gt_universe_eval2.jsonl`, then
-report both cuts.** That file is exp89's 554 units plus the 23 added by
-[exp226](https://github.com/Open-Athena/MarinFold/issues/226), so a single run
-yields the legacy 554 numbers (continuity with every published figure and the E8
-gate below) *and* eval2, at ~4 % more compute. Do not pick one and lose the other.
+**Default: score every unit in `gt_universe_scored.jsonl` (333 units), then report
+eval-test, eval-val and eval-denovo separately.** That universe is
+[exp245](https://github.com/Open-Athena/MarinFold/issues/245)'s cut of FoldBench's
+334 monomers, and the three sets answer different questions:
 
-**eval2** is the 307-protein subset with every protein at or above 40 % sequence
-identity to exp199's 70.9 M training sequences removed — the set to use for any
-claim about novel-protein or decontaminated accuracy. Membership is a column,
-not a separate file: join the manifest and filter.
+| set | what it is | n | role |
+|---|---|---:|---|
+| **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **the headline.** Held out — nothing in the repo had scored it before #245 — and provably absent from the decontaminated corpora at 30 % identity |
+| **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | continuity with every figure published before 2026-08-18 |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | designs, reported separately and never pooled |
+
+**Also score the legacy 554** when the checkpoint has to be placed against model
+generations: `gt_universe.jsonl` is unchanged and every published MarinFold number
+lives on it. The two universes overlap in 100 proteins but are separate files;
+running both is ~2.7× the sampling of one, and #245 ran 333 units × 3 checkpoints
+on 12 single-H100 CoreWeave shards each in about four minutes per checkpoint.
 
 Everything is public on the bucket (anonymous read):
 
 ```
-hf://buckets/open-athena/MarinFold/data/contacts-v1-eval2-exp226/
-    gt_universe_eval2.jsonl        # 577 units / 575 unique stems — score this
-    gt_universe_eval2_new_23.jsonl # just the 23 exp226 added
-    eval2_manifest.csv             # 307 rows: membership + identity annotation
-    eval2.fasta                    # 307 sequences
+hf://buckets/open-athena/MarinFold/data/contacts-v1-foldbench-monomers-exp245/
+    gt_universe_scored.jsonl       # 333 units — score this
+    eval_targets_foldbench_monomers.parquet   # dataset, stem, L, input_seq
+    eval_sets.csv                  # all 334 with eval_set / designed / is_viral /
+                                   # kingdom / scorable / exclusion_reason /
+                                   # pre-decontamination training identity
+    eval_sets.fasta
+    per_protein.csv.gz             # 9 predictors x 333 x {all,long} x {R,AUC}
+    headline.csv  paired_deltas.csv  val_vs_test.csv  viral_split.csv
+    decontamination_check.json  residual_identity.csv  context_budget.csv
 hf://buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp89/
     gt_universe.jsonl              # the legacy 554 units, unchanged
+hf://buckets/open-athena/MarinFold/data/contacts-v1-eval2-exp226/
+    gt_universe_eval2.jsonl        # the 577-unit superset; eval2 is a column on
+    eval2_manifest.csv             # eval2_manifest.csv (307 rows). Superseded by
+                                   # eval-test for natural-protein claims.
 ```
 
-In-repo (`experiments/exp226_evals_expand_foldbench_eval_set/data/`):
-`eval2_manifest.csv`, `eval2_per_protein.csv.gz` (six predictors × 307),
-`eval2_headline.csv`, `eval2_paired_deltas.csv`.
+In-repo: `experiments/exp245_evals_foldbench_held_out_monomers/data/`.
 
 **Reporting rules — these change the conclusion, not just the presentation:**
 
-- **Lead with eval2-natural (n=78), not eval2 pooled (n=307).** Pooled eval2 is
-  **75 % de novo designed protein**, because designs are what survives a homology
-  filter. A pooled number mostly reports how well a model folds idealised
-  backbones. Split on `designed_any` (which unions exp65's de novo dataset with
-  an RCSB synthetic-source flag — the dataset label alone misses designed
-  proteins sitting in FoldBench rows).
-- **The stricter cut is a column, not a re-run.** `passes_30 == 1` gives the
-  275-protein <30 % set (61 natural); `best_identity` supports any threshold;
-  `best_identity_ungated` is the paranoid bound; `afdb_best_identity` /
-  `esm_atlas_best_identity` cut against one training arm.
-- **eval2 is 307 units over 305 unique stems.** `7ur7_A` and `8ah9_A` each appear
-  in two datasets with different sequences.
-- Baselines for all 307 already exist in `eval2_per_protein.csv.gz` (MarinFold
-  #199, Protenix-v2 single-seq and +MSA, ESMFold, ESMFold2, seq-KNN null) — do
-  not re-run them for a comparison table.
+- **Lead with eval-test (n=217), never a pooled number.** The legacy 554 is 75 %
+  de novo designed and eval2 is 77 %; a pooled mean over either mostly reports how
+  well a model folds idealised backbones. Protenix-v2 single-seq scores **0.835**
+  on designs and **0.265** on natural monomers — that spread is what pooling hides.
+- **Designs are much easier than natural proteins you have no homolog for, and
+  about as easy as natural proteins in general.** On eval-test's 23 proteins under
+  40 % identity to training, designs beat natural by +0.177 [+0.044, +0.306]; over
+  all 217 natural monomers the gap is +0.054. Say which comparison you mean.
+- **Split viral vs non-viral** (`is_viral` on `eval_sets.csv`). The penalty tracks
+  homology dependence: seq-KNN −0.351, ESMFold2 −0.170, MarinFold −0.076 to
+  −0.123, Protenix-v2 + MSA −0.045, Protenix-v2 single-seq −0.002. Only 19 of 334
+  monomers are viral, so report it as indicative.
+- **Quote a sequence-KNN null beside the score, over the corpus the checkpoint
+  actually trained on.** On eval-test it is **0.582** out of the un-decontaminated
+  AFDB corpus and **0.426** out of #225's decontaminated one. A checkpoint that
+  does not clear the null over its own corpus has not demonstrated anything;
+  `run_knn_baseline.py` in exp245 rebuilds either null from #94's index.
+- **Baselines for all 333 units already exist** in `per_protein.csv.gz` (Protenix-v2
+  single-seq and +MSA, ESMFold, ESMFold2, both KNN nulls). Do not re-run them.
+- **Differences under ~0.005 are ties** (#204: four evaluations of one unchanged
+  checkpoint span 0.0023).
+- **`8uxt_A` is excluded** from the 333 and flagged in `eval_sets.csv`: its
+  contacts-v1 document truncates at the 8,192-token context, so no rollout can
+  produce it in full. Do not silently re-add it.
 
-Reference values for `contacts-v1-exp199-1.5B` under the rollout recipe, for
-sanity-checking a new path: R-precision (all) **0.545** on eval2 pooled,
-**0.337** on eval2-natural, **0.611** on the legacy 554.
+**Reference values under the rollout recipe**, for sanity-checking a new path
+(all-range R-precision):
+
+| checkpoint | eval-val (97) | eval-test (217) | eval-denovo (19) | legacy 554 |
+|---|---:|---:|---:|---:|
+| `contacts-v1-exp199-cooldown-1.5B` (default; contaminated data) | 0.589 | 0.613 | 0.619 | 0.631 |
+| #232 `m2-p06` (decontaminated data) | 0.520 | 0.538 | 0.591 | 0.592 |
+| #232 `m1-p02` (decontaminated data) | 0.473 | 0.493 | 0.588 | 0.579 |
 
 ## Establish identity and locality
 
@@ -100,15 +129,23 @@ environment when a smaller source/package surface avoids version conflicts.
 Size the host for sampling, not for a single forward pass: 100 rollouts per
 protein is ~150x the compute of the old pairwise readout, about 80 minutes per
 checkpoint on one A5000. Sharded fan-out is the fast path — 12 single-H100
-CoreWeave shards at batch priority cover all 577 proteins in ~4 minutes.
+CoreWeave shards at batch priority cover the 333-unit universe in ~4 minutes per
+checkpoint, so three checkpoints in one driver job is routine. exp245's
+`rollout/` directory is the current worked example: it verifies each checkpoint in
+place against a pinned file manifest, mirrors the public eval inputs into
+CoreWeave S3 by URL + digest, runs a one-protein smoke job per checkpoint before
+the fan-out, and exports its results to the public bucket from inside the cluster
+(the results prefix is not readable from a workstation).
 
 ## Evaluate
 
 1. Fetch the published ground-truth universe; do not rebuild it during a normal
-   checkpoint evaluation. Verify **577 `(dataset, stem)` units and 575 unique
-   stems** for `gt_universe_eval2.jsonl`, or 554 / 552 if deliberately scoring
-   the legacy set alone. Require canonical baseline inputs when baseline
-   comparison is requested.
+   checkpoint evaluation. Verify **333 `(dataset, stem)` units, all with the
+   `foldbench_monomer` dataset label and 333 unique stems**, for
+   `gt_universe_scored.jsonl`; 554 units / 552 unique stems for the legacy set;
+   577 / 575 for `gt_universe_eval2.jsonl` if that older superset is being scored
+   deliberately. Require canonical baseline inputs when baseline comparison is
+   requested.
 2. Score with exp82's rollout+resample workers
    (`score_rollout_vllm.py` for one local GPU;
    `dispatch_rollout_eval_cw.py` + `score_rollout_worker.py` +
@@ -150,7 +187,7 @@ CoreWeave shards at batch priority cover all 577 proteins in ~4 minutes.
 
 ## Expected outputs
 
-- `scores/<dataset>__<stem>.npz`: one `[L,L]` vote matrix per unit — 577 for the
+- `scores/<dataset>__<stem>.npz`: one `[L,L]` vote matrix per unit — 333 for the
   default universe, 554 for the legacy set. The sharded worker emits sparse
   parquet parts instead, so `fetch_cw_scores.py --parts <dir> --expect <n>` has
   to run before `build_rollout_rows.py`, which reads npz.
@@ -207,9 +244,11 @@ than scoring a second time.
 ## Validate completeness
 
 - Account for every expected `(dataset, stem)` unit and report skips or failures
-  explicitly. **Do not deduplicate on `stem` alone** — the universe has fewer
-  unique stems than units (577/575, 554/552, eval2 307/305) because `7ur7_A` and
-  `8ah9_A` recur across datasets with different sequences. Counting stems
+  explicitly. **Do not deduplicate on `stem` alone** in the legacy or eval2
+  universes — they have fewer unique stems than units (554/552, 577/575, eval2
+  307/305) because `7ur7_A` and `8ah9_A` recur across datasets with different
+  sequences. The 333-unit FoldBench monomer universe is the exception: one dataset
+  label, one row per stem, so units and stems are in bijection there. Counting stems
   silently drops proteins and was a real bug in exp226.
 - Check that each vote matrix matches its protein length, that every protein got
   its full complement of rollouts, and that no rollout hit the token cap. At

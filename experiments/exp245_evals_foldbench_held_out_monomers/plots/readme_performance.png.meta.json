@@ -1,0 +1,21 @@
+{
+  "script": "plot_readme_performance.py",
+  "args": [],
+  "caption": "Contact R-precision on the legacy 554-protein benchmark (left, where every published MarinFold number lives) and on exp245's eval-test (right, 217 natural FoldBench monomers held out and decontaminated at 30 % identity). Error bars are 95 % bootstrap intervals over proteins. The two sequence-KNN nulls copy the contacts of each protein's ten nearest training sequences, out of the corpus each model family actually trained on.",
+  "plot": "readme_performance.png",
+  "sha256": "9f5e61a28bbde70e1b70b1407c60973c53a1d2f3551e436087536100ccf7ac56",
+  "sources": {
+    "legacy_rows": {
+      "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/all_r_rows.csv.gz",
+      "sha256": "507e3f2f549df2cc4cdcff4771178203b3c7c7d43b3200fc5667bcd6368ff2b1"
+    },
+    "exp213_wide": {
+      "path": "experiments/exp213_evals_train_sequence_overlap_audit/data/per_protein_wide.csv.gz",
+      "sha256": "2eeadc36aaaa94276d0fbd2e39027204c8152066b688e210cdc899c7c1bf1d98"
+    },
+    "per_protein": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz",
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    }
+  }
+}
