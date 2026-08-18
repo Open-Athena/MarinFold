@@ -25,6 +25,7 @@ machinery is identical, only the population changes.
 | **M-B** | ``max_k F1(section k)`` — ORACLE | one scalar per rollout | ``grpo`` |
 | **M-BC** | ``GRPO(max_k F1) + lam * GRPO(C_i(all))`` | two scalars per rollout, standardised separately | ``contacts_rollout`` |
 | **M-FC** | ``GRPO(F1(last)) + lam * GRPO(C_i(all))`` — SYNTHESIS: write the consensus of your own drafts | two scalars per rollout | ``contacts_rollout`` |
+| **M-K** | ``C_i(all)`` — the deployed metric itself, on the object the model emits | one scalar per rollout | ``grpo`` |
 
 ## The expectation calculation, done on paper first
 
@@ -90,7 +91,7 @@ _STD_EPS = 1e-8
 Pair = tuple[int, int]
 
 REWARD_MODES = ("section_consensus", "final_f1", "best_f1", "best_plus_consensus",
-                "final_plus_consensus")
+                "final_plus_consensus", "consensus_only")
 
 
 @dataclass

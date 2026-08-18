@@ -243,6 +243,17 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             walk.sections, state["gt"], state["L"])
         self._accumulate(walk, consensus, state["gt"])
 
+        if self.reward_mode == "consensus_only":
+            # Arm M-K: the rollout's OWN consensus R-precision, one scalar, GRPO
+            # baseline. This is the deployed metric computed on the object the
+            # model emits, and it is the only reward here that is scale-correct
+            # in the section count BY CONSTRUCTION -- dropping sections lowers
+            # your own consensus (0.543 at 22 sections, 0.341 at one), so the
+            # direction that destroyed arm M-C is penalised rather than paid.
+            # NaN (no scoreable ground truth) becomes 0.0; every rollout of such
+            # a prompt gets it, so the group is constant and GRPO returns 0.
+            return 0.0 if consensus != consensus else float(consensus)
+
         if self.reward_mode in ("final_f1", "best_f1"):
             return float(sr.scalar_reward(self.reward_mode, walk, state["gt"]))
 

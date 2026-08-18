@@ -77,6 +77,15 @@ class Exp237Config(SkyRLTrainConfig):
     #                                   section-count runaway (0.33 at M-F's worst
     #                                   against ~0.50 healthy).
     #                                   Needs advantage_estimator=contacts_rollout.
+    # "consensus_only"    (arm M-K)  -- the rollout's OWN consensus R-precision,
+    #                                   one scalar, GRPO baseline. The deployed
+    #                                   metric computed on the object the model
+    #                                   emits, and the ONLY reward here that is
+    #                                   scale-correct in the section count by
+    #                                   construction: measured advantage -1.37 at
+    #                                   one section against +0.79 at 22, exactly
+    #                                   inverting M-C's +4.79 / -0.22. Needs a
+    #                                   group estimator (grpo).
     reward_mode: str = "section_consensus"
     # Constrains sampling to real token ids. vLLM pads the vocabulary
     # (2845 -> 2848) with zero rows that emit a logit of exactly 0.0, and
@@ -204,7 +213,7 @@ def check_reward_mode(cfg) -> None:
             f"it needs advantage_estimator={ADV_ROLLOUT} (a pass-through). '{estimator}' would "
             f"either re-standardise an already-standardised blend (grpo) or refuse it for "
             f"being constant within the rollout ({ADV_ESTIMATOR}).")
-    if mode in ("final_f1", "best_f1"):
+    if mode in ("final_f1", "best_f1", "consensus_only"):
         if estimator == ADV_ESTIMATOR:
             raise ValueError(
                 f"reward_mode='{mode}' emits one scalar per rollout, but advantage_estimator="

@@ -291,3 +291,24 @@ def test_consensus_term_opposes_a_section_count_runaway():
     c_healthy, _ = sr.consensus_and_marginals(healthy, gt, 64)
     c_shredded, _ = sr.consensus_and_marginals(shredded, gt, 64)
     assert c_healthy >= c_shredded
+
+
+# --- arm M-K: the deployed metric as the reward ------------------------------
+
+def test_consensus_only_is_a_registered_mode():
+    assert "consensus_only" in sr.REWARD_MODES
+
+
+def test_rollout_consensus_is_scale_correct_in_section_count():
+    """M-K's reward FALLS when sections are dropped — the inverse of M-C's bug.
+
+    Measured on real generations: 0.543 at 22 sections against 0.341 at one, and
+    a group-centred advantage of +0.79 vs −1.37. Here the same property is pinned
+    on a constructed rollout whose drafts are complementary.
+    """
+    gt = {(0, 10), (1, 12), (2, 20), (3, 30), (4, 40)}
+    drafts = [{(0, 10), (1, 12)}, {(2, 20), (3, 30)}, {(4, 40), (0, 10)}]
+    c_all, _ = sr.consensus_and_marginals(drafts, gt, 64)
+    for k in (1, 2):
+        c_fewer, _ = sr.consensus_and_marginals(drafts[:k], gt, 64)
+        assert c_fewer <= c_all, f"dropping to {k} sections must not raise the consensus"

@@ -18,7 +18,7 @@
 #   ARM=M-C LR=1e-6 STEPS=80 ./run_arm.sh
 set -u
 
-ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-FC, M-0}
+ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-FC, M-K, M-0}
 LR=${LR:-1e-6}
 STEPS=${STEPS:-80}
 GROUP=${GROUP:-8}                 # generator.n_samples_per_prompt
@@ -66,6 +66,14 @@ case "$ARM" in
   # The consensus term is also the restoring force M-F lacked: C(all) collapses
   # under a section-count runaway (0.33 at M-F's worst vs ~0.50 healthy).
   M-FC) MODE=final_plus_consensus; EST=contacts_rollout ;;
+  # Arm M-K -- the simplest thing that could work, and the last gap in the design
+  # space: reward the rollout for the number the metric reports, computed on the
+  # object it emits. C_i(all) is scale-correct BY CONSTRUCTION -- dropping
+  # sections lowers your own consensus -- so it cannot be gamed the way M-C was,
+  # and it needs no per-section machinery, no shaping term and no lambda. It has
+  # only ever appeared as a lambda-weighted INGREDIENT in M-BC and M-FC, where a
+  # second objective confounds it.
+  M-K) MODE=consensus_only; EST=grpo ;;
   # Arm M-0 -- zero-LR control. #208 needed one to prove that FSDP sharding, not
   # the gradient, was destroying the policy. Cheap, and it makes every other arm
   # interpretable: whatever M-0 does is the harness, not the reward.
