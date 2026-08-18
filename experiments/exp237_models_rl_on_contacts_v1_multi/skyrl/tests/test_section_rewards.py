@@ -254,3 +254,40 @@ def test_blend_is_scale_free_in_section_count():
     # max_k F1 over a prefix can only be <= the max over the whole set.
     f_full, f_one = sr.section_f1s(full, gt), sr.section_f1s(full[:1], gt)
     assert max(f_one) <= max(f_full)
+
+
+# --- arm M-FC: synthesis is a better target than selection -------------------
+
+def test_synthesis_beats_selection_on_a_constructed_rollout():
+    """The measurement that motivates M-FC, as an invariant.
+
+    On M-B's real generations the ORACLE best single section reads 0.5646 while
+    the consensus of the rollout's own preceding drafts reads 0.5750 — selecting
+    one draft is *dominated* by aggregating them. This pins the mechanism that
+    makes that possible: complementary drafts, none individually complete.
+    """
+    gt = {(0, 10), (1, 12), (2, 20), (3, 30)}
+    drafts = [{(0, 10), (1, 12)}, {(2, 20), (3, 30)}, {(0, 10), (2, 20)}]
+    best_single = max(sr.section_f1s(drafts, gt))
+    pooled = set().union(*drafts)
+    tp = len(pooled & gt)
+    pooled_f1 = 2 * (tp / len(pooled)) * (tp / len(gt)) / ((tp / len(pooled)) + (tp / len(gt)))
+    assert pooled_f1 > best_single, "aggregation must beat the best individual draft here"
+
+
+def test_final_plus_consensus_is_a_registered_mode():
+    assert "final_plus_consensus" in sr.REWARD_MODES
+
+
+def test_consensus_term_opposes_a_section_count_runaway():
+    """The restoring force M-F lacked.
+
+    Arm M-F ran to 259 sections carrying ~1.4 contacts each. C(all) must FALL
+    under that, so blending it in penalises exactly the direction M-F ran.
+    """
+    gt = {(i, i + 10) for i in range(12)}
+    healthy = [{(i, i + 10) for i in range(6)}, {(i, i + 10) for i in range(4, 12)}]
+    shredded = [{(i, i + 10)} for i in range(12)] + [set() for _ in range(30)]
+    c_healthy, _ = sr.consensus_and_marginals(healthy, gt, 64)
+    c_shredded, _ = sr.consensus_and_marginals(shredded, gt, 64)
+    assert c_healthy >= c_shredded

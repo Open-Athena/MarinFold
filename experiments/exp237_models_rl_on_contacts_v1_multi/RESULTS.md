@@ -533,6 +533,54 @@ so beat either alone. They do not, at the one weight where "equal" is
 well-defined. Chasing `lam` downward to approach an endpoint we have already
 measured is not worth a night of GPU time.
 
+### The selector gap is real, but "selector" is the wrong word
+
+M-B's oracle-best (0.5646) sits 0.056 above the section it actually commits to
+(0.5082), which looks like a selection problem. It is not. Measured on M-B's own
+generations, the readouts available from **one rollout**:
+
+| readout from one M-B rollout | R-prec |
+|---|---:|
+| last section — what is deployed today | 0.5082 |
+| **ORACLE** best single section | 0.5646 |
+| **consensus of sections 1..K−1** | **0.5750** |
+| consensus of all sections | 0.5775 |
+
+**A perfect selector of one draft lands 0.010 *below* simply voting the drafts.**
+Selection is dominated. The drafts are complementary rather than
+noisy copies — the same fact #230 recorded as "consensus beats the ORACLE best
+single candidate" — so the job of a final section is not to *pick* the best of
+what precedes it but to **aggregate** it.
+
+That target needs no ground truth and no extra sampling: every draft is already
+in context when the final section is written. Headroom over today's behaviour is
+**+0.067**, and the ceiling (0.5750) is above what any selector could reach.
+
+### Arm M-FC — synthesis, and the gates M-F earned
+
+```
+A_i  =  GRPO( F1(last section) )_i  +  lam * GRPO( C_i(all) )_i
+```
+
+The consensus term does two jobs here, which is why this blend is not M-BC. It
+keeps the drafts worth aggregating — a synthesis is only as good as what it reads
+— and it is **the restoring force M-F lacked**: `C(all)` collapses under a
+section-count runaway (0.33 at M-F's worst against ~0.50 healthy), so the exact
+direction M-F ran is now penalised. M-BC failed because `max_k F1` and `C(all)`
+both want to own the same sections; here one term shapes the drafts and the other
+shapes the synthesis.
+
+Two gates are added, both promoted from diagnostics that watched M-F fail without
+being allowed to stop it:
+
+| gate | value | would have caught M-F |
+|---|---|---|
+| `max_sections` ≤ 60 | M-F reached 146–259 | yes |
+| `min_precision` ≥ 0.15 | M-F fell to 0.069 | yes |
+
+Neither fires on a healthy run (25 sections, precision 0.45), and together they
+close the third failure direction that all three original gates were blind to.
+
 ### Does M-B's gain survive being cashed out? Pooling across rollouts
 
 M-B optimises an **oracle** quantity, so the number that matters is whether its

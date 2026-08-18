@@ -63,6 +63,20 @@ class Exp237Config(SkyRLTrainConfig):
     #                                   term can be gamed by section count, which is
     #                                   why this blend and not M-B + M-C's marginal.
     #                                   Needs advantage_estimator=contacts_rollout.
+    # "final_plus_consensus" (arm M-FC) -- SYNTHESIS rather than selection.
+    #                                   GRPO(F1(last)) + lam * GRPO(C_i(all)).
+    #                                   Measured on M-B's own generations: an
+    #                                   ORACLE selector of one section reads
+    #                                   0.5646, while the consensus of the
+    #                                   rollout's OWN preceding drafts reads
+    #                                   0.5750 -- so selecting is dominated, and
+    #                                   the target for a final section is to
+    #                                   synthesise the drafts it can already see.
+    #                                   The consensus term is also the restoring
+    #                                   force M-F lacked: C(all) collapses under a
+    #                                   section-count runaway (0.33 at M-F's worst
+    #                                   against ~0.50 healthy).
+    #                                   Needs advantage_estimator=contacts_rollout.
     reward_mode: str = "section_consensus"
     # Constrains sampling to real token ids. vLLM pads the vocabulary
     # (2845 -> 2848) with zero rows that emit a logit of exactly 0.0, and
@@ -89,6 +103,12 @@ class Exp237Config(SkyRLTrainConfig):
     # a result or a collapse.
     min_sections: float = 12.0
     max_jaccard: float = 0.45
+    # Added after arm M-F ran to 146-259 sections carrying 1.4 contacts each
+    # without tripping ANY gate: every criterion above is one-sided toward a
+    # failure already seen, and M-F's pushed all of them away from their
+    # thresholds. These are the two instruments that did see it.
+    max_sections: float = 60.0
+    min_precision: float = 0.15
     # Union pairs per rollout against R = |gt|, which is where #208's coverage
     # mechanism actually lives: R-precision cuts a ranking at R, so zero-vote
     # pairs begin padding the top-R only once the union drops below R.
@@ -145,6 +165,8 @@ def build_exp(cfg):
                 min_union_ratio=cfg.min_union_ratio,
                 min_union_over_r=cfg.min_union_over_r,
                 lam_consensus=cfg.lam_consensus,
+                max_sections=cfg.max_sections,
+                min_precision=cfg.min_precision,
                 gates_fatal=cfg.gates_fatal,
             )
 
@@ -176,9 +198,9 @@ def check_reward_mode(cfg) -> None:
             f"advantage_estimator='{estimator}' would sum it to one number per rollout and "
             f"discard the within-rollout credit assignment WITHOUT error. Use "
             f"advantage_estimator={ADV_ESTIMATOR}.")
-    if mode == "best_plus_consensus" and estimator != ADV_ROLLOUT:
+    if mode in ("best_plus_consensus", "final_plus_consensus") and estimator != ADV_ROLLOUT:
         raise ValueError(
-            f"reward_mode='best_plus_consensus' writes a finished per-rollout advantage, so "
+            f"reward_mode='{mode}' writes a finished per-rollout advantage, so "
             f"it needs advantage_estimator={ADV_ROLLOUT} (a pass-through). '{estimator}' would "
             f"either re-standardise an already-standardised blend (grpo) or refuse it for "
             f"being constant within the rollout ({ADV_ESTIMATOR}).")

@@ -138,7 +138,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  vocab_size: Optional[int] = None, lam: float = 1.0,
                  min_sections: float = 12.0, max_jaccard: float = 0.45,
                  min_union_ratio: float = 0.0, min_union_over_r: float = 1.25,
-                 lam_consensus: float = 1.0, gates_fatal: bool = True,
+                 lam_consensus: float = 1.0, max_sections: float = 60.0,
+                 min_precision: float = 0.15, gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
@@ -149,6 +150,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.vocab_size = vocab_size
         self.lam = float(lam)
         self.lam_consensus = float(lam_consensus)
+        self.max_sections = float(max_sections)
+        self.min_precision = float(min_precision)
         self.min_sections = float(min_sections)
         self.max_jaccard = float(max_jaccard)
         self.min_union_ratio = float(min_union_ratio)
@@ -243,8 +246,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         if self.reward_mode in ("final_f1", "best_f1"):
             return float(sr.scalar_reward(self.reward_mode, walk, state["gt"]))
 
-        if self.reward_mode == "best_plus_consensus":
-            best = float(sr.scalar_reward("best_f1", walk, state["gt"]))
+        if self.reward_mode in ("best_plus_consensus", "final_plus_consensus"):
+            which = "best_f1" if self.reward_mode == "best_plus_consensus" else "final_f1"
+            best = float(sr.scalar_reward(which, walk, state["gt"]))
             # NaN consensus (no scoreable ground truth) becomes 0.0. Every rollout
             # of such a prompt gets it, so the group is constant and standardising
             # returns exactly 0 -- the prompt contributes nothing, which is right.
@@ -272,7 +276,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self._batches += 1
         if self.reward_mode == "section_consensus":
             out = self._apply_group_baseline(out, input_batch)
-        elif self.reward_mode == "best_plus_consensus":
+        elif self.reward_mode in ("best_plus_consensus", "final_plus_consensus"):
             out = self._apply_rollout_blend(out, input_batch)
         return self._emit_metrics(out)
 
@@ -506,6 +510,22 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             violations.append(
                 f"sections/rollout median {sections:.2f} < {self.min_sections:g} "
                 "(the multi format is collapsing back toward a single document)")
+        # Arm M-F failed in a direction none of the gates below could see: 146-259
+        # sections carrying 1.4 contacts each. Every existing criterion is
+        # one-sided toward a failure already observed, so that run pushed all of
+        # them AWAY from their thresholds -- Jaccard 0.003 and 259 sections read
+        # as maximally healthy. These two are the instruments that did see it,
+        # promoted from diagnostics to gates.
+        secs_hi = med("multi/sections_per_rollout")
+        if secs_hi > self.max_sections:
+            violations.append(
+                f"sections/rollout median {secs_hi:.1f} > {self.max_sections:g} (the policy is "
+                "spamming section markers; check contacts per section)")
+        prec = med("contacts/precision")
+        if prec == prec and prec < self.min_precision:
+            violations.append(
+                f"per-contact precision median {prec:.3f} < {self.min_precision:g} "
+                "(the contacts themselves have stopped being right)")
         jac = med("multi/mean_jaccard")
         if jac == jac and jac > self.max_jaccard:
             violations.append(

@@ -18,7 +18,7 @@
 #   ARM=M-C LR=1e-6 STEPS=80 ./run_arm.sh
 set -u
 
-ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-0}
+ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-FC, M-0}
 LR=${LR:-1e-6}
 STEPS=${STEPS:-80}
 GROUP=${GROUP:-8}                 # generator.n_samples_per_prompt
@@ -57,6 +57,15 @@ case "$ARM" in
   # per-section marginal, whose magnitude diverges as sections vanish (+4.79 at
   # one section against -0.22 at 22).
   M-BC) MODE=best_plus_consensus; EST=contacts_rollout ;;
+  # Arm M-FC -- SYNTHESIS, not selection. GRPO(F1(last)) + lam * GRPO(C_i(all)).
+  # Measured on M-B's own generations: an ORACLE selector of one section reads
+  # 0.5646 while the consensus of the rollout's OWN preceding drafts reads
+  # 0.5750, so picking a draft is DOMINATED and the target for a final section is
+  # to aggregate the drafts already in its context. Today's last section reads
+  # 0.5082, so the headroom is +0.067 and needs no ground truth to claim.
+  # The consensus term is also the restoring force M-F lacked: C(all) collapses
+  # under a section-count runaway (0.33 at M-F's worst vs ~0.50 healthy).
+  M-FC) MODE=final_plus_consensus; EST=contacts_rollout ;;
   # Arm M-0 -- zero-LR control. #208 needed one to prove that FSDP sharding, not
   # the gradient, was destroying the policy. Cheap, and it makes every other arm
   # interpretable: whatever M-0 does is the harness, not the reward.
