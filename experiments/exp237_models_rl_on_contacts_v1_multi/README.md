@@ -164,6 +164,70 @@ a rollout that runs on into a second document — carry zero.
 novelty weighting is a second-order redistribution which cannot overcome it; that
 ladder is explicitly out of scope.
 
+### What "scale-correct" means, precisely
+
+The term is used throughout this write-up and it is **not** what it sounds like.
+It does not mean the reward is invariant to the number of candidates — the reward
+this document calls scale-correct is emphatically *not* invariant. It means the
+reward's dependence on the candidate count has **the same sign as the deployed
+metric's**.
+
+**The setup.** Take a real rollout's ordered sections `S = (s₁ … s_K)`. For
+`n ≤ K` let `R(n)` be the reward recomputed on the truncated rollout
+`(s₁ … s_n)` — same candidates, fewer of them. The deployed metric behaves like
+this, measured on #230's own generations and **monotone throughout**, not merely
+at the endpoints:
+
+| n | 1 | 2 | 4 | 8 | 12 | 16 | 22 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `C(n)`, the rollout's consensus | 0.341 | 0.405 | 0.458 | 0.505 | 0.525 | 0.534 | 0.543 |
+
+So **more candidates is genuinely better**, and any reward that pays *more* for
+fewer is pointing away from the thing being measured.
+
+**The definition.** What the gradient actually sees is not `R(n)` but the
+group-centred advantage a rollout receives as a function of *its own* count when
+its siblings differ — which is what the second table of
+[`analyze_section_count_incentive.py`](analyze_section_count_incentive.py)
+measures, on synthetic groups differing in nothing else:
+
+```
+A(n) = mean over groups of  ( R_i(n) − mean_g R ) / sd_g R
+```
+
+* **count-aligned** (what this document calls *scale-correct*): `A(n)` increases
+  in `n`, so emitting fewer candidates lowers the advantage — the same direction
+  as `C(n)`.
+* **count-adverse** (what it calls *pathological*): `A(n)` decreases in `n`, so
+  the policy is paid to emit fewer candidates and thereby produce a worse answer.
+
+| A(n) | 1 | 4 | 22 | |
+|---|---:|---:|---:|---|
+| M-C, per-section marginal | **+4.79** | +0.21 | −0.22 | count-adverse |
+| causal prefix marginal | +2.03 | +0.48 | −0.22 | count-adverse |
+| **`C_i(all)`, arm M-K** | **−1.37** | −0.14 | **+0.79** | **count-aligned** |
+
+**Two things the term does not claim, both of which matter.**
+
+1. **It is not scale-*invariance*.** `C_i(all)` rises with the count, steeply. The
+   claim is alignment of sign, not independence. A genuinely invariant reward
+   would be a third thing and is not what any arm here used.
+2. **It is not un-gameability.** Count-alignment is a statement about **one**
+   nuisance direction. Arm M-K is count-aligned and still raised its reward
+   partly through a different route — making its sections *more alike* (Jaccard
+   0.164 → 0.350, votes per pair 2.40 → 3.92), which lifts a vote count without
+   improving any individual candidate. **Scale-correct means "not gameable along
+   the candidate-count axis", nothing more.**
+
+A separate axis is **boundedness**. M-C's advantage is not merely adverse but
+*divergent* — 366× larger at one section than at 22 — which is why no fixed `lam`
+could have balanced it inside a blend, and why it ran away rather than drifting.
+An adverse but bounded reward would be a milder problem.
+
+Finally, `C(n)` rising is an **empirical** property of this model's sections, not
+a theorem: it holds because the drafts are complementary. If a model emitted
+redundant drafts, `C(n)` would be flat and the whole distinction would collapse.
+
 ### The RL algorithm
 
 **GRPO — PPO's clipped surrogate with a group-relative baseline instead of a
