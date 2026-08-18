@@ -164,6 +164,57 @@ a rollout that runs on into a second document — carry zero.
 novelty weighting is a second-order redistribution which cannot overcome it; that
 ladder is explicitly out of scope.
 
+### The RL algorithm
+
+**GRPO — PPO's clipped surrogate with a group-relative baseline instead of a
+learned critic, plus a KL penalty to the frozen reference.** There is no critic
+and no GAE anywhere in this experiment; every advantage estimator used
+(`grpo`, `contacts_section`, `contacts_rollout`) is critic-free. Resolved
+configuration, read from the run logs rather than from intent:
+
+| | |
+|---|---|
+| policy loss | `regular` — PPO clipped surrogate (not CISPO or GSPO) |
+| clip range | `eps_clip_low = eps_clip_high = 0.2` |
+| KL | **`use_kl_loss = true`, `kl_loss_coef = 0.001`, estimator `k3`** — a loss term, *not* folded into the reward (`use_kl_in_reward = false`) |
+| loss reduction | `token_mean` — a rollout's contribution is proportional to its own token count |
+| advantage | per-arm; `advantage_batch_normalize = false`, so the only normalisation is the per-group one described below |
+| optimiser | AdamW, `max_grad_norm = 1.0`, constant-with-warmup |
+| inner loop | `update_epochs_per_batch = 1`, `policy_mini_batch_size = train_batch_size = 8` |
+
+#### In effect this is REINFORCE with a group baseline, and the clipping is inert
+
+That last row has a consequence worth stating plainly, because "GRPO" invites the
+assumption that the trust region is doing work. It is not. With **one inner epoch
+and one minibatch**, and `recompute_old_logprobs_per_minibatch = true`, the
+"old" policy is recomputed and **equals the current policy at the moment of the
+update** — so the importance ratio is exactly 1 and can never leave [0.8, 1.2].
+
+Measured, not inferred: **`loss_metrics/clip_ratio` is 0.0 in every arm, at every
+one of 420 steps.**
+
+So the update actually applied is
+
+```
+grad  =  −E[ A · ∇ log π ]  +  0.001 · ∇ KL_k3( π ‖ π_ref )
+```
+
+— a vanilla policy gradient with a group-relative baseline and a weak KL pull.
+The clipping machinery is present, correct, and never activates.
+
+**This is load-bearing for how the results read.** There is no trust region
+limiting the step, and `kl_loss_coef = 0.001` is far too weak to act as one
+(terminal KLs of 0.09, 0.49 and 3.26 were all reached). Distance from the warm
+start is therefore governed only by learning rate × steps and by gradient
+clipping — which is exactly why the dose-response is so clean, why two runs at a
+3.3× different learning rate land on the same numbers at matched KL, and why
+"how far the policy moved" turned out to be the variable that orders every result
+in this experiment. **The runs are not being held anywhere; they walk until
+something breaks.** That is also why the diversity gates had to do the stopping.
+
+`policy_kl`, quoted throughout as "distance moved", is the k3 estimator of
+KL(π ‖ π_ref) against the frozen #230 checkpoint.
+
 ### What `GRPO(·)` means here, precisely
 
 `GRPO(·)` appears throughout this write-up as shorthand. It is not a

@@ -1037,6 +1037,48 @@ pad with junk sections, and `multi/empty_sections` (currently 0.000) is the
 instrument for that.
 
 
+## The algorithm: GRPO, whose clipping never fires
+
+**GRPO — PPO's clipped surrogate with a group-relative baseline in place of a
+learned critic, plus a k3 KL penalty to the frozen #230 reference.** No critic,
+no GAE; all three advantage estimators used here are critic-free. Clip range
+0.2, `kl_loss_coef` 0.001, `loss_reduction=token_mean`, AdamW with
+`max_grad_norm` 1.0, `update_epochs_per_batch=1`, and
+`policy_mini_batch_size = train_batch_size = 8`.
+
+That last setting means **one gradient step per batch of rollouts**, and with
+`recompute_old_logprobs_per_minibatch=true` the "old" policy is recomputed and
+equals the current one at the point of the update. The importance ratio is
+therefore exactly 1 and cannot leave [0.8, 1.2].
+
+> Measured across **420 steps and every arm**: `loss_metrics/clip_ratio` is
+> **0.0**, always.
+
+So the update actually applied is a **vanilla policy gradient with a
+group-relative baseline and a weak KL pull** —
+
+```
+grad = −E[ A · ∇ log π ] + 0.001 · ∇ KL_k3( π ‖ π_ref )
+```
+
+— and the clipping machinery, while correctly configured, never activates.
+
+**Why this is load-bearing.** Nothing limits the step size: there is no effective
+trust region, and `kl_loss_coef` 0.001 is far too weak to be one (terminal KLs of
+0.0918, 0.4863 and 3.2568 were all reached without the penalty arresting them).
+Distance from the warm start is governed only by learning rate × steps and by
+gradient clipping. That is precisely why
+
+* the dose-response is as clean as it is — KL is free to grow, so each checkpoint
+  is an honest sample of "policy at distance *d*";
+* two runs at a **3.3× different learning rate** land within 0.002 of each other
+  at matched KL — the schedule does not matter, only the distance;
+* **the diversity gates had to do the stopping.** Nothing in the optimiser was
+  ever going to.
+
+Anywhere this document says "distance moved", it means `policy_kl`: the k3
+estimator of KL(π ‖ π_ref) against the frozen #230 checkpoint.
+
 ## Compute: how the eight GPUs are used, and what limits the step
 
 Measured over **420 training steps** across every arm
