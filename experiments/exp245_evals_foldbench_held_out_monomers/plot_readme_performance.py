@@ -13,7 +13,9 @@ right panel exists.
 
 **Right — eval-test.** FoldBench's 217 natural monomers that nothing in this repo
 had ever scored, and which #225 verifiably removed from the #232 training corpora
-at 30 % identity. Two sequence-KNN nulls are drawn beside the models: copying the
+at 30 % identity. It is a held-out confirmation set, read rarely and logged in
+``data/eval_test_reads.md``; publishing this figure is one of those reads. Routine
+tracking happens on eval-val and the legacy 554. Two sequence-KNN nulls are drawn beside the models: copying the
 contacts of a protein's ten nearest training sequences, once out of the corpus
 #199 trained on and once out of the decontaminated corpus #232 trained on. A
 model only earns a number by clearing the null over its own corpus.
@@ -138,8 +140,8 @@ def draw(table: pd.DataFrame, out: Path) -> None:
                        "every MarinFold number is quoted on\n"
                        "(75 % de novo designed, no homology control)"),
         ("eval_test", "eval-test: 217 natural FoldBench monomers,\n"
-                      "held out and decontaminated at 30 % identity\n"
-                      "(the honest set)"),
+                      "decontaminated at 30 % identity and held out\n"
+                      "(read rarely, on the record)"),
     )
     figure, axes = plt.subplots(1, 2, figsize=(15.5, 6.6), sharey=True,
                                gridspec_kw={"width_ratios": [11, 8]})

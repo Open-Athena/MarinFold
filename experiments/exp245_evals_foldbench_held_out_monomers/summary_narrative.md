@@ -147,10 +147,19 @@ recommended.
 
 ## Use from here
 
-`eval-test` is the default set for a decontaminated-accuracy claim: 217 natural
-proteins, four times eval2-natural's audited 63, not three-quarters designed,
-ground truth and all five baselines published. `eval-val` keeps continuity with
-every published figure. `eval-denovo` keeps designs out of natural-protein means.
+The three sets have different **read budgets**, which is the point of the split.
+
+`eval-val` (97) is the working set — checkpoint selection, sweeps, mid-training
+curves, anything routine. `eval-test` (217) is a held-out confirmation set, read
+rarely and logged in `data/eval_test_reads.md`; this experiment's construction read
+is entry 1 and nothing was selected on it. `eval-denovo` (19) keeps designs out of
+natural-protein means.
+
+The result above is what makes that division workable: every predictor lands within
+0.03 of the same number on the two natural sets, so eval-val is an unbiased stand-in
+for held-out performance and does not need checking against eval-test "just in
+case". If the read ledger grows a routine tail, eval-test is spent and needs
+replacing by sampling recent PDB directly (#241).
 
 Everything is on the bucket under
 `data/contacts-v1-foldbench-monomers-exp245/`.

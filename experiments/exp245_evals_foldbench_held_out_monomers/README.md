@@ -18,11 +18,16 @@ Every contact number we publish today comes from a 554-protein set whose FoldBen
 
 This experiment cuts FoldBench's 334 monomers into three sets and scores them:
 
-| set | definition | n |
-|---|---|---:|
-| **eval-val** | the natural monomers inside the historical FoldBench-100 — what every previous eval reported on | 97 |
-| **eval-test** | every other natural FoldBench monomer — never scored by anything here | 218 |
-| **eval-denovo** | every de novo designed FoldBench monomer | 19 |
+| set | definition | n | read budget |
+|---|---|---:|---|
+| **eval-val** | the natural monomers inside the historical FoldBench-100 — what every previous eval reported on | 97 | free: the working set for selection and iteration |
+| **eval-test** | every other natural FoldBench monomer — never scored by anything here | 218 | rare and recorded: a held-out confirmation set |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | free, reported separately |
+
+The read budgets are the reason for the split: eval-val is what we look at while
+working, eval-test is what we look at to check that eval-val has not been lying to
+us. Every eval-test read is logged in
+[`data/eval_test_reads.md`](data/eval_test_reads.md).
 
 Each protein carries a viral / non-viral flag so results can be stratified ([#241](https://github.com/Open-Athena/MarinFold/issues/241) found MarinFold ties ESMFold on viral proteins and loses badly on non-viral ones, so the split is not cosmetic).
 
@@ -429,13 +434,24 @@ decontaminated ones' (difference-in-differences −0.006 and −0.004, both far
 inside a ±0.05 interval). Whatever else is wrong with the historical
 FoldBench-100, it was not inflating our numbers through leaked homologs.
 
-**What the three sets are for from here.** `eval-test` (217 natural monomers) is
-now the default set for any claim about decontaminated accuracy: it is four times
-the size of eval2-natural's audited 63, it is not 75 % designed protein, and its
-ground truth and baselines are complete and published. `eval-val` keeps
-continuity with every published figure. `eval-denovo` (19) exists so designs stop
-being averaged into natural-protein claims — they behave completely differently
-(Protenix-v2 single-seq: 0.835 on designs, 0.265 on natural).
+**What the three sets are for from here — and this is the point of the split.**
+`eval-val` (97) is the **working set**: checkpoint selection, sweeps, mid-training
+curves, anything routine. `eval-test` (217) is a **held-out confirmation set read
+rarely and on the record** — every read is logged in
+[`data/eval_test_reads.md`](data/eval_test_reads.md), and this experiment's own
+construction read is entry 1. Nothing here was selected on it.
+
+The result above is what makes that division workable: because every predictor
+lands within 0.03 of the same number on the two sets, and the contaminated model
+shows no extra val→test drop, **eval-val is an unbiased stand-in for held-out
+performance today**. Iterating on it does not need to be checked against eval-test
+"just in case" — that buys nothing and spends the set. `eval-denovo` (19) exists so
+designs stop being averaged into natural-protein claims; they behave completely
+differently (Protenix-v2 single-seq: 0.835 on designs, 0.265 on natural).
+
+If `eval_test_reads.md` ever grows a long tail of routine entries, eval-test has
+been spent and needs replacing — by sampling recent PDB directly, not by
+re-filtering a curated benchmark ([#241](https://github.com/Open-Athena/MarinFold/issues/241)).
 
 **The finding that changes how to read the frontier.** A sequence-KNN null over
 the corpus a model trained on is the yardstick that makes #199-vs-#232
