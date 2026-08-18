@@ -1,4 +1,0 @@
-interface:
-  display_name: "Run Training Sweep"
-  short_description: "Run and recover TPU training sweeps"
-  default_prompt: "Use $run-training-sweep to launch and actively operate this TPU training sweep until it finishes."

@@ -1,9 +1,9 @@
 ---
-name: run-training-sweep
+name: run-training-sweep-trc
 description: Maximize sweep throughput and minimize wall-clock time to completion across global preemptible Google TRC TPUs. Use when a training sweep defines multiple configurations as trials and an agent must autonomously validate regional inputs, adapt placement to changing TPU availability, dispatch and recover Iris jobs, monitor W&B progress, persist execution state, and report until every trial finishes.
 ---
 
-# Run Training Sweep
+# Run Google TPU Training Sweep
 
 Finish the declared sweep as fast as possible without violating its operations document.
 
@@ -86,7 +86,7 @@ if requested. Build its candidate grid from [targets.md](references/targets.md),
 initialize SQLite:
 
 ```bash
-uv run .agents/skills/run-training-sweep/scripts/persistence.py \
+uv run .agents/skills/run-training-sweep-trc/scripts/persistence.py \
   init scratch/<sweep>/expXXX_sweep.sqlite
 ```
 
@@ -121,7 +121,7 @@ At every heartbeat:
 Build the inventory and decision snapshots with:
 
 ```bash
-uv run .agents/skills/run-training-sweep/scripts/persistence.py \
+uv run .agents/skills/run-training-sweep-trc/scripts/persistence.py \
   snapshot scratch/<sweep>/expXXX_sweep.sqlite --reslice-after-hours <hours>
 ```
 

@@ -1,7 +1,7 @@
 # exp199 CoreWeave Sweep Operations
 
 > This document governs the CoreWeave exp199 training sweep managed with the
-> `run-training-sweep` skill. Read it in full at the start of every heartbeat
+> `run-training-sweep-cw` skill. Read it in full at the start of every heartbeat
 > before inspecting code, SQLite, W&B, or Iris.
 
 ## Invariants
