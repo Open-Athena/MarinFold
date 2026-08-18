@@ -116,14 +116,17 @@
   measure, and distinguish it from the training loop: poll `global_step` over a
   minute or two, because a gang can hold full in-loop speed while losing half its
   wall clock to IO, and the throughput metric will not show it.
-- Do not trust `.executor_status.lock` as proof of training. It is refreshed by
-  the CPU root driver, so a fresh lock only rules out total process death (the
-  `a06` wedge, whose lock went stale for 34 minutes); the training child can be
-  dead underneath it. The W&B-independent proof of training is
+- Do not use `.executor_status.lock` to judge health in EITHER direction. A
+  fresh lock does not prove training — it is refreshed by the CPU root driver,
+  and the training child can be dead underneath it. A stale lock does not prove
+  a wedge either: both trials were once observed with locks 27 minutes stale
+  while demonstrably training, with fresh evals and advancing steps. Treat it as
+  weak corroboration only, and never as a trigger to stop a dispatch.
+  The reliable, W&B-independent proof of training is
   `checkpoints/eval_metrics.jsonl`, written from inside the training loop
-  straight to S3 every `STEPS_PER_EVAL` (2114) steps. If its mtime is well past
-  the next boundary's due time, training has stopped no matter what W&B or Iris
-  say.
+  straight to S3 every `STEPS_PER_EVAL` (2114) steps — check its mtime AND size.
+  If it is well past the next boundary's due time, training has stopped no
+  matter what W&B, Iris, or the lock say.
 - When several trials go W&B-silent at once, suspect a W&B outage before
   suspecting simultaneous training failures, and resolve it with the
   `eval_metrics.jsonl` test rather than by stopping anything. A recovered
