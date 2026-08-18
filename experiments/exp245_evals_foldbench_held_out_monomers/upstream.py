@@ -65,6 +65,17 @@ EXPANDED_IDENTITY = EXP226_DIR / "data" / "eval_train_identity_expanded.csv"
 EVAL2_MANIFEST = EXP226_DIR / "data" / "eval2_manifest.csv"
 EVAL2_PER_PROTEIN = EXP226_DIR / "data" / "eval2_per_protein.csv.gz"
 
+#: The published 554-unit eval targets parquet -- the only place the *input
+#: sequences* the frozen ground truth was built from are recorded. The control
+#: in ``build_ground_truth.py`` needs them to tell a genuine mismatch from a
+#: frozen unit that was simply built from a different sequence for the same PDB
+#: stem. Same file, digest and size PR #244 pins as ``LEGACY_TARGETS_URL``.
+LEGACY_TARGETS = Path("/data/exp169_eval/eval_targets.parquet")
+LEGACY_TARGETS_SIZE = 43_077
+LEGACY_TARGETS_SHA256 = (
+    "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111"
+)
+
 #: The frozen 577-unit ground-truth universe, published by #226. Used only as a
 #: control: exp245 rebuilds ground truth for all 334 monomers through one path
 #: and checks that the units which overlap reproduce these records.
