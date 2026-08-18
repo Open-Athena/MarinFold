@@ -123,6 +123,7 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | **M-B lr3e-6 step-90** | 0.0087 | **0.5775** | 0.5646 | 0.5091 | — | — |
 | M-B step-18 | 0.0088 | 0.5763 | **0.5663** | 0.5108 | 0.5027 | — |
 | **M-C step-18** | 0.0072 | 0.5750 | 0.5578 | **0.5267** | 0.4795 | 3.17 |
+| M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — | — |
 | M-F step-18 | 0.0136 | 0.5647 | 0.5283 | 0.4949 | 0.3464 | 3.69 |
 | M-B step-36 | 0.0163 | 0.5741 | 0.5574 | 0.4908 | **0.4933** | 2.76 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 | 2.80 |
@@ -580,6 +581,43 @@ being allowed to stop it:
 
 Neither fires on a healthy run (25 sections, precision 0.45), and together they
 close the third failure direction that all three original gates were blind to.
+
+#### M-FC's result: better than M-F, still beaten by M-C
+
+| step | KL | consensus | best *ORACLE* | **last** |
+|---:|---:|---:|---:|---:|
+| 12 | 0.0050 | 0.5728 | 0.5454 | 0.5066 |
+| 18 | 0.0148 | 0.5732 | 0.5436 | 0.5150 |
+| **24** | 0.0368 | 0.5717 | 0.5464 | **0.5201** |
+| 36 | 0.0918 | 0.4818 | 0.4807 | 0.4715 |
+
+It stopped at step 37 on `min_sections` (8.73 < 12) — the **opposite** failure
+from M-F's runaway to 259, so the consensus term is the restoring force it was
+added to be. `last` improves monotonically with distance up to step 24 and beats
+M-F's 0.5075. But against the field:
+
+| best final section, legacy 554 | |
+|---|---:|
+| warm start #230 | 0.4566 |
+| M-F step-36 | 0.5075 |
+| M-B step-18 | 0.5108 |
+| **M-FC step-24** | **0.5201** |
+| **M-C step-18** | **0.5267** |
+| *the synthesis ceiling — consensus of the drafts* | *0.5750* |
+
+**M-FC is dominated.** M-B beats it on consensus (0.5775) and oracle-best
+(0.5663); **M-C beats it on the very number it was designed for**. And the
+synthesis target is not reached by anything: the best final section anywhere
+claims 59 % of the available headroom, and no arm that *directly rewards the
+final section* does as well as one that never mentions it.
+
+**That is the second time M-C has won a job it was not designed for** — it beat
+M-F on final-section quality earlier, and now M-FC. The pattern is consistent and
+is probably the most useful thing this line produced: **shaping every section
+toward complementarity yields a better final section than rewarding the final
+section does.** A final section is written in the context of its drafts, so
+improving the drafts improves it; rewarding it directly gives the drafts no
+signal (M-F) or a diluted one (M-FC).
 
 ### Does M-B's gain survive being cashed out? Pooling across rollouts
 
