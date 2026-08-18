@@ -28,7 +28,6 @@ import argparse
 import json
 import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -71,32 +70,34 @@ CONTROL_TOLERANCE = 0.02
 
 
 def sync_volume(volume: str, stems: list[str], destination: Path) -> list[str]:
-    """Download ``{stem}/structure.cif`` for each stem, one modal call each.
+    """Download ``{stem}/structure.cif`` for each stem from a Modal volume.
 
-    Folder-level ``modal volume get`` is unreliable on this workstation (it
-    fails with EISDIR partway through a large tree), so this fetches per stem
-    and in parallel, which is both faster and resumable.
+    Through the Python SDK rather than ``modal volume get``: the CLI issues a
+    ``VolumeListFiles`` call per invocation and a few hundred of those trip
+    Modal's rate limiter within seconds, while one ``Volume`` handle streams
+    files without listing. Resumable -- an existing non-empty file is skipped.
     """
-    destination.mkdir(parents=True, exist_ok=True)
-    missing: list[str] = []
+    import modal
 
-    def fetch(stem: str) -> str | None:
+    destination.mkdir(parents=True, exist_ok=True)
+    handle = modal.Volume.from_name(volume)
+    missing: list[str] = []
+    for index, stem in enumerate(stems, 1):
         target = destination / stem / "structure.cif"
         if target.exists() and target.stat().st_size > 0:
-            return None
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        result = subprocess.run(
-            [MODAL_BIN, "volume", "get", volume, f"{stem}/structure.cif", str(target)],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0 or not target.exists():
-            return stem
-        return None
-
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        for stem in pool.map(fetch, stems):
-            if stem is not None:
-                missing.append(stem)
+        try:
+            with target.open("wb") as handle_out:
+                for chunk in handle.read_file(f"{stem}/structure.cif"):
+                    handle_out.write(chunk)
+        except Exception as error:  # noqa: BLE001 - one absent prediction must
+            # not abort the sync; every missing stem is named in the report.
+            target.unlink(missing_ok=True)
+            missing.append(stem)
+            print(f"  [sync] {stem}: {type(error).__name__}", flush=True)
+        if index % 50 == 0:
+            print(f"  [sync] {volume}: {index}/{len(stems)}", flush=True)
     return missing
 
 
@@ -151,7 +152,9 @@ def score(manifest: Path, models: tuple[str, ...], out: Path) -> pd.DataFrame:
         manifest_csv=manifest, pred_root=PRED_ROOT, out_dir=out,
         models=models, gt_root=U.WORK / "cif", limit=None,
     )
-    return pd.read_csv(out / "contact_precision_all.csv")
+    # #78 writes `contact_precision.csv` per invocation; the `_all` name in its
+    # own data/ dir is the concatenation of its two manifests.
+    return pd.read_csv(out / "contact_precision.csv")
 
 
 def control(scored: pd.DataFrame) -> dict:

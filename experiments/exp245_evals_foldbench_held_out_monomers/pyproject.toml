@@ -18,7 +18,11 @@ test = ["pytest>=8"]
 # Kept out of the base install because it drags in marinfold and the pyconfind
 # extension, which the set construction and the analysis do not need. Same
 # extra, and the same reason, as exp226 declares.
-gt = ["marinfold[contacts-v1]", "gemmi>=0.6"]
+gt = [
+    "marinfold[contacts-v1]",
+    "gemmi>=0.6",
+    "modal>=1.5.5.dev5",
+]
 
 [tool.uv.sources]
 marinfold = { path = "../../marinfold" }
