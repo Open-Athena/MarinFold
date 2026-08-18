@@ -1,13 +1,14 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Continue selected exp232 CoreWeave models from peak-LR trainer state.
+"""Train selected exp232 CoreWeave sweep survivors from peak-LR trainer state.
 
 The supported sources are the permanent ``step-116160`` checkpoints immediately
-before the selected PR #244 runs began their original cooldowns. Each
-continuation restores model, AdamW, RNG, data-position, and absolute-step state,
+before the selected PR #244 runs began their original cooldowns. Each selected
+run restores model, AdamW, RNG, data-position, and absolute-step state,
 holds the restored peak LR for 80% of the added training, and linearly decays to
-zero.
+zero. Augmentation resumes the original exp232 global-step ramp, reaches 100% at
+the original final step, and remains at 100% thereafter.
 
 ``SOURCE`` selects ``m2-p06-aug`` or ``m1-p02-aug``. ``CLUSTER`` and ``NODES``
 select placement without entering production identity. Set ``SMOKE=1`` and
@@ -16,28 +17,21 @@ run. Omit ``--run`` to preview the lowered plan.
 """
 
 import os
-from collections.abc import Sequence
-from dataclasses import dataclass, fields, replace
+import sys
+from dataclasses import dataclass, replace
 from datetime import timedelta
 
 import click
+import optax
 from fray.types import ResourceConfig
-from haliax import Axis
-from jaxtyping import PRNGKeyArray
-from levanter.data.dataset import AsyncDataset
-from levanter.data.text.datasets import LmDataConfig
-from levanter.models.lm_model import LmExample
-from levanter.optim.config import AdamConfig
-from levanter.schedule import BatchSchedule
+from levanter.optim.config import AdamConfig, LrSchedule, LrScheduleContext
 from marin.execution.lazy import ArtifactStep
 from marin.experiment.cli import build_options
 from marin.experiment.train import train_lm
 from marin.training.training import LevanterCheckpoint
 from rigging.filesystem import marin_prefix, marin_temp_bucket, prefix_join
 
-from exp232_continue_schedule import LR_SCHEDULE
 from exp232_sweep import (
-    AA_AUGMENTATION_SEED,
     AFDB_TOKENS,
     DATA_SEED,
     ESM_TOKENS,
@@ -55,34 +49,60 @@ from exp232_sweep import (
     WANDB_WATCH,
     ClusterSpec,
     GpuBatchConfig,
-    _augment_lm_example,
     _parse_cluster,
     _parse_nodes,
     _run_exp232_train_job,
     _sweep_subversion,
     _truthy_env,
-    _validate_contacts_v1_tokenizer,
     _verify_decontaminated_cache_counts,
     afdb_cache,
+    augment_amino_acids,
+    augmentation_probability,
     esm_cache,
     gpu_batch_fit,
     validation_cache,
 )
 from exp232_sweep import EXPERIMENT_PREFIX as SWEEP_EXPERIMENT_PREFIX
 
-RUN_PREFIX = "prot-exp232-cw-cv1-decontam-cont"
-CONTINUATION_EXPERIMENT_PREFIX = (
-    "s3://marin-us-east-02a/MarinFold/exp232_continue_cv1_decontam"
-)
+RUN_PREFIX = "prot-exp232-cw-cv1-decontam-train"
+TRAIN_EXPERIMENT_PREFIX = "s3://marin-us-east-02a/MarinFold/exp232_train_cv1_decontam"
 
-# Match exp199's continuation budget: three original-run token budgets.
+# Match exp199's selected-training budget: three original-run token budgets.
 ADDITIONAL_TRAIN_STEPS = 3 * NUM_TRAIN_STEPS
 MIN_LR_RATIO = 0.0
 WARMUP = 0.1
 REWARMUP = 0.0
 DECAY = 0.2
-AUGMENTATION_KEY = "aug100"
+AUGMENTATION_KEY = "augcont"
+AUGMENTATION_RAMP_STEPS = NUM_TRAIN_STEPS
 TEMPORARY_CHECKPOINT_INTERVAL = timedelta(minutes=30)
+
+
+# Iris serializes the experiment graph before the training worker imports it.
+# Give this one-file entrypoint a canonical module identity even when launched
+# as ``python exp232_train_cw.py`` so Draccus can resolve the registered choice.
+if __name__ == "__main__":
+    sys.modules.setdefault("exp232_train_cw", sys.modules[__name__])
+
+
+@LrSchedule.register_subclass("linear_inclusive")
+@dataclass(frozen=True)
+class InclusiveLinearLrSchedule(LrSchedule):
+    """Linearly decay to the minimum on the last executed decay update."""
+
+    __module__ = "exp232_train_cw"
+
+    def build(self, ctx: LrScheduleContext):
+        if ctx.decay_steps < 2:
+            raise ValueError("inclusive linear decay requires at least two updates")
+        return optax.linear_schedule(
+            ctx.learning_rate,
+            ctx.min_lr,
+            transition_steps=ctx.decay_steps - 1,
+        )
+
+
+LR_SCHEDULE = InclusiveLinearLrSchedule()
 
 
 @dataclass(frozen=True)
@@ -138,55 +158,6 @@ SOURCE_MODELS = {
 }
 
 
-class FullRateAminoAcidDataset(AsyncDataset[LmExample]):
-    """Apply the validated contacts-v1 permutation to every example."""
-
-    def __init__(self, dataset: AsyncDataset[LmExample], *, seed: int):
-        self.dataset = dataset
-        self.seed = seed
-
-    async def async_len(self) -> int:
-        return await self.dataset.async_len()
-
-    def is_finite(self) -> bool:
-        return self.dataset.is_finite()
-
-    async def get_batch(self, indices: Sequence[int]) -> Sequence[LmExample]:
-        examples = await self.dataset.get_batch(indices)
-        return [
-            _augment_lm_example(
-                example,
-                seed=self.seed,
-                index=index,
-                probability=1.0,
-            )
-            for index, example in zip(indices, examples, strict=True)
-        ]
-
-
-@dataclass(frozen=True)
-class FullRateAminoAcidDataConfig(LmDataConfig):
-    augmentation_seed: int = AA_AUGMENTATION_SEED
-
-    def train_set(
-        self,
-        Pos: Axis,
-        batch_schedule: BatchSchedule,
-        *,
-        key: PRNGKeyArray,
-    ) -> AsyncDataset[LmExample]:
-        _validate_contacts_v1_tokenizer(self)
-        return FullRateAminoAcidDataset(
-            super().train_set(Pos, batch_schedule, key=key),
-            seed=self.augmentation_seed,
-        )
-
-
-def augment_every_example(data: LmDataConfig) -> LmDataConfig:
-    values = {field.name: getattr(data, field.name) for field in fields(LmDataConfig)}
-    return FullRateAminoAcidDataConfig(**values)
-
-
 def _parse_source() -> SourceModel:
     source = os.environ.get("SOURCE", "").strip().lower()
     try:
@@ -219,11 +190,11 @@ def _training_env() -> dict[str, str]:
     }
     if unexpected:
         raise ValueError(
-            "continuation W&B routing must be open-athena/MarinFold, got "
+            "training W&B routing must be open-athena/MarinFold, got "
             + ", ".join(f"{key}={value!r}" for key, value in unexpected.items())
         )
     env = {
-        "MARIN_PREFIX": CONTINUATION_EXPERIMENT_PREFIX,
+        "MARIN_PREFIX": TRAIN_EXPERIMENT_PREFIX,
         "WANDB_ENTITY": os.environ["WANDB_ENTITY"],
         "WANDB_PROJECT": os.environ["WANDB_PROJECT"],
     }
@@ -234,10 +205,10 @@ def _training_env() -> dict[str, str]:
 
 def _validate_launch_prefix() -> None:
     configured = marin_prefix().rstrip("/")
-    if configured != CONTINUATION_EXPERIMENT_PREFIX:
+    if configured != TRAIN_EXPERIMENT_PREFIX:
         raise ValueError(
             "MARIN_PREFIX must be exactly "
-            f"{CONTINUATION_EXPERIMENT_PREFIX!r}, got {configured!r}"
+            f"{TRAIN_EXPERIMENT_PREFIX!r}, got {configured!r}"
         )
 
 
@@ -248,7 +219,7 @@ def source_checkpoint(source_model: SourceModel) -> ArtifactStep[LevanterCheckpo
     )
     return ArtifactStep[LevanterCheckpoint].adopt(
         (
-            "checkpoints/protein/exp232-cw-continuation-source/"
+            "checkpoints/protein/exp232-cw-training-source/"
             f"{source_model.run_id}/step-{source_model.checkpoint_step}"
         ),
         source_model.version,
@@ -311,7 +282,7 @@ def _run_shape(
         "exp232",
         "contacts-v1",
         "decontaminated",
-        "continuation",
+        "selected-training",
         f"sweep={subversion}",
         f"source={source_model.key}",
         f"source_run={source_model.run_id}",
@@ -319,9 +290,15 @@ def _run_shape(
         f"point={source_model.point_key}",
         f"source_augmentation={source_model.source_augmentation}",
         f"augmentation={AUGMENTATION_KEY}",
+        "augmentation_schedule=exp232-linear-global-clamp100",
+        (
+            "augmentation_resume_probability="
+            f"{augmentation_probability(source_model.resume_step, AUGMENTATION_RAMP_STEPS):.12f}"
+        ),
+        f"augmentation_full_step={AUGMENTATION_RAMP_STEPS - 1}",
         f"lr={source_model.learning_rate:g}",
         f"source_checkpoint_lr={source_model.learning_rate:g}",
-        f"continuation_final_lr={source_model.learning_rate * MIN_LR_RATIO:g}",
+        f"final_lr={source_model.learning_rate * MIN_LR_RATIO:g}",
         f"wd={source_model.weight_decay:g}",
         f"batch={GLOBAL_BATCH_SIZE}",
         f"params={MODEL_PARAMS}",
@@ -358,7 +335,7 @@ def _run_shape(
     )
 
 
-def _apply_continuation_overrides(
+def _apply_training_overrides(
     step: ArtifactStep[LevanterCheckpoint],
     *,
     source_model: SourceModel,
@@ -375,18 +352,20 @@ def _apply_continuation_overrides(
         execution_prefix = ctx.prefix.rstrip("/")
         if (
             not ctx.is_fingerprint
-            and execution_prefix != CONTINUATION_EXPERIMENT_PREFIX
-            and not execution_prefix.startswith(f"{CONTINUATION_EXPERIMENT_PREFIX}/")
+            and execution_prefix != TRAIN_EXPERIMENT_PREFIX
+            and not execution_prefix.startswith(f"{TRAIN_EXPERIMENT_PREFIX}/")
         ):
             raise ValueError(
                 f"execution prefix {ctx.prefix!r} is outside "
-                f"{CONTINUATION_EXPERIMENT_PREFIX!r}"
+                f"{TRAIN_EXPERIMENT_PREFIX!r}"
             )
 
         pod = base_build_config(ctx)
         source_checkpoint_dir = pod.train_config.initialize_from_checkpoint_path
         if not ctx.is_fingerprint and source_checkpoint_dir is None:
-            raise ValueError("continuation requires the source checkpoint dependency")
+            raise ValueError(
+                "selected training requires the source checkpoint dependency"
+            )
         exact_checkpoint = (
             prefix_join(
                 source_checkpoint_dir,
@@ -421,7 +400,7 @@ def _apply_continuation_overrides(
             },
             block_cross_document_attention=True,
         )
-        data = augment_every_example(data)
+        data = augment_amino_acids(data, AUGMENTATION_RAMP_STEPS)
 
         if not ctx.is_fingerprint:
             tracker = trainer.tracker
@@ -528,7 +507,7 @@ def build_run(
             step,
             override_path=marin_temp_bucket(1, f"checkpoints/{shape.run_id}"),
         )
-    return _apply_continuation_overrides(
+    return _apply_training_overrides(
         step,
         source_model=source_model,
         shape=shape,
