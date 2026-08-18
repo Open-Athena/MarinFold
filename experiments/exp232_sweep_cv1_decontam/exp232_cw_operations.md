@@ -103,14 +103,19 @@
   can attach to the workload rather than the target.
 - Before calling a flat or slow window a problem, check whether the run is at a
   permanent-checkpoint boundary: a multiple of `PERMANENT_CHECKPOINT_EVERY`
-  (14520). Writing one blocks training for well over ten minutes and can span
-  more than one heartbeat pass, presenting as a frozen `global_step` alongside a
-  perfectly current W&B heartbeat. Confirm by listing the run's S3 checkpoint
-  prefix for a `step-<boundary>` directory with recent object timestamps and a
-  size below the roughly 16.4 GiB final figure. Never stop or replace a dispatch
-  in this state: doing so discards an in-flight permanent checkpoint and buys a
-  further ~32 minute startup. This is a distinct third category of apparent
-  stall, alongside the eval-cadence artifact and genuine failure.
+  (14520). A frozen `global_step` at such a boundary, alongside a current W&B
+  heartbeat, means a write is in flight; confirm by listing the run's S3
+  checkpoint prefix for that `step-<boundary>` directory and reading its object
+  timestamps. Never stop a dispatch mid-write — that discards the checkpoint and
+  buys a further ~32 minute startup.
+  A HEALTHY write is fast: `m2-p06` wrote all 16.44 GiB of `step-130680` in 19
+  seconds across 25 files and never visibly paused. So the duration is itself a
+  diagnostic. A boundary write that blocks for many minutes — `m2-p02` needed 24
+  minutes and 124 files for identical content — indicates a degraded write path
+  on that gang, not a normal cost. Treat the slow case as a performance fault to
+  measure, and distinguish it from the training loop: poll `global_step` over a
+  minute or two, because a gang can hold full in-loop speed while losing half its
+  wall clock to IO, and the throughput metric will not show it.
 - Treat a W&B heartbeat older than roughly 60 seconds as a prompt to check that
   trial's exact Iris root in the same pass. A fresh progress high-water in the
   same window does not clear it, because the last logged progress can precede
