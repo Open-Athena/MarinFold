@@ -330,6 +330,57 @@ argument, and thinly. #241's recommendation — sample recent PDB directly rathe
 than filtering curated benchmarks — is the way to grow this stratum.
 eval-denovo is omitted: none of the 19 designs is viral.
 
+### 9. eval-denovo is 19 proteins, and that is all FoldBench has
+
+FoldBench is much larger than the 334 monomers this experiment uses — 1,493 unique
+PDB entries across seven task files — but six of those tasks are *interfaces*
+(protein-protein, antibody-antigen, protein-peptide, protein-DNA, protein-RNA,
+protein-ligand), and **designed protein is rare throughout**:
+
+| FoldBench task | rows | entries | designed entries |
+|---|---:|---:|---:|
+| `monomer_protein` | 334 | 334 | **19** (5.7 %) |
+| `interface_protein_protein` | 279 | 239 | 18 (7.5 %) |
+| `interface_protein_peptide` | 51 | 51 | 3 |
+| `interface_protein_dna` | 330 | 190 | 2 |
+| `interface_protein_ligand` | 558 | 554 | 1 |
+| `interface_antibody_antigen` | 172 | 113 | 0 |
+| `interface_protein_rna` | 70 | 49 | 0 |
+| **union** | | **1,493** | **43** (2.9 %) |
+
+(Designed = RCSB `DE NOVO PROTEIN` structural class, or every polymer entity from
+taxon 32630 "synthetic construct"; annotated over all 1,493 entries at exp12's
+pinned FoldBench commit.) The 24 designed entries outside the monomer task are
+mostly designed *binders in complex* — "high affinity PD-L1 binder", designed
+helical repeat proteins bound to their targets, amyloidogenic peptide traps — so
+adding them to a monomer contact eval would mean scoring a chain whose fold and
+contacts were solved with a partner present. That is the multimer question
+([#222](https://github.com/Open-Athena/MarinFold/issues/222)), not this one.
+
+**So eval-denovo is not the designed-protein benchmark, and it should not be used
+as one.** Its 19 proteins exist to keep designs *out* of the natural means. The
+designed set worth quoting is the one we already have: exp65's `denovo_pdb`, **396
+de novo designed PDB entries** inside the legacy 554, with ground truth and every
+baseline already published — and per-protein rows for all three checkpoints in
+#244's table. On it ([`data/designed_sets.csv`](data/designed_sets.csv)):
+
+| predictor | denovo_pdb (396) | eval-denovo (19) |
+|---|---:|---:|
+| #199 cooldown (contaminated) | 0.685 | 0.619 |
+| #232 m2-p06 (decontaminated) | 0.648 | 0.591 |
+| #232 m1-p02 (decontaminated) | 0.644 | 0.588 |
+| Protenix-v2 single-seq | 0.723 | 0.835 |
+| ESMFold | 0.807 | 0.795 |
+| ESMFold2 | 0.829 | 0.864 |
+| Protenix-v2 + MSA | 0.828 | 0.844 |
+| seq-KNN (unfiltered corpus) | 0.314 | 0.066 |
+
+The two design sets are not interchangeable. The 19 are *harder for a homology
+lookup* (KNN 0.066 vs 0.314 — they are more novel relative to our training corpus)
+and *easier for Protenix-v2 single-seq* (0.835 vs 0.723). With n = 19 and a ±0.09
+interval, treat eval-denovo as a sanity check and quote the 396 when the question
+is actually about designed protein.
+
 ### How each baseline was run
 
 Every baseline is #74's / #78's / #94's driver invoked on exp245's manifest, at

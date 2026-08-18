@@ -23,6 +23,9 @@ where the generations are comparable: #75 0.424 → #146 0.512 → #166 0.562 �
 [eval-test](#how-we-evaluate) — FoldBench's 217 natural monomers that nothing here
 had ever scored and that are provably absent from the
 [decontaminated](#training-data-decontamination) training corpora at 30 % identity.
+It is a held-out set we read [rarely and on the record](#using-eval-test-sparingly);
+this figure is one of those reads. Day-to-day work is tracked on eval-val and the
+legacy 554.
 
 Three things to read off it:
 
@@ -67,13 +70,21 @@ so a number without its recipe is not interpretable.
 The current sets, all built from [FoldBench](https://github.com/BEAM-Labs/FoldBench)'s
 334 monomers in [exp245](experiments/exp245_evals_foldbench_held_out_monomers/README.md):
 
-| set | what it is | n | use it for |
+| set | what it is | n | how often we look |
 |---|---|---:|---|
-| **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | the default for any accuracy claim — held out, decontaminated, not design-heavy |
-| **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | continuity with every figure published before 2026-08-18 |
-| **eval-denovo** | every de novo designed FoldBench monomer | 19 | designs, kept out of natural-protein means |
-| legacy 554 | exp89's benchmark: FoldBench-100 + exp65's 454 low-MSA/novel-fold candidates | 554 | comparing model generations to each other, nothing else |
-| eval2 | the ≤40 %-identity subset of a 776-protein superset ([exp226](experiments/exp226_evals_expand_foldbench_eval_set/README.md)) | 307 | superseded by eval-test for natural proteins; 75 % designed |
+| **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | **freely.** The working set: checkpoint selection, sweeps, mid-training curves, day-to-day comparisons |
+| **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **rarely, deliberately, and recorded.** A held-out confirmation set — see [Using eval-test sparingly](#using-eval-test-sparingly) |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | freely — but it is a sanity check, not the designed-protein benchmark (see below) |
+| legacy 554 | exp89's benchmark: FoldBench-100 + exp65's 454 low-MSA/novel-fold candidates | 554 | freely, but only for comparing model generations to each other |
+| eval2 | the ≤40 %-identity subset of a 776-protein superset ([exp226](experiments/exp226_evals_expand_foldbench_eval_set/README.md)) | 307 | superseded by these sets for natural-protein claims; 75 % designed |
+
+**eval-val is the set to iterate against, and [exp245](experiments/exp245_evals_foldbench_held_out_monomers/README.md)
+is the evidence that this is safe.** Scoring both sets once showed every predictor
+lands within 0.03 of the same number on them (MarinFold +0.018 to +0.024 in
+eval-test's favour, all intervals covering zero), and the contaminated reference
+model showed no extra val→test drop. So eval-val is an unbiased stand-in for the
+held-out set today — which is exactly what lets us spend it freely and leave
+eval-test alone.
 
 **The exact proteins in each split** are one file with a split column:
 [`experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv`](experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv)
@@ -102,11 +113,37 @@ Everything is also on the public bucket under
   Protenix-v2 + MSA −0.045, Protenix-v2 single-seq −0.002. `is_viral` is a column
   on the split file; only 19 of 334 monomers are viral, so treat that stratum as
   indicative.
+- **For a designed-protein number, use exp65's `denovo_pdb` (396 proteins) inside
+  the legacy 554, not eval-denovo's 19.** Designed protein is rare in FoldBench —
+  43 of its 1,493 entries across all seven tasks, 19 of them monomers — so
+  eval-denovo exists to keep designs *out* of the natural means, and n=19 carries a
+  ±0.09 interval. The two sets also differ in character: the 19 are more novel
+  relative to our corpus (seq-KNN 0.066 vs 0.314) and easier for Protenix-v2
+  single-seq (0.835 vs 0.723). See
+  [exp245 §9](experiments/exp245_evals_foldbench_held_out_monomers/README.md#9-eval-denovo-is-19-proteins-and-that-is-all-foldbench-has).
 - **Quote a sequence-KNN null beside any accuracy claim**, computed over the corpus
   the model actually trained on. It bounds how much of the score is reachable by
   copying a training homolog.
 - **Differences under ~0.005 are ties** — four evaluations of one unchanged
   checkpoint span 0.0023 ([#204](https://github.com/Open-Athena/MarinFold/issues/204)).
+
+### Using eval-test sparingly
+
+A held-out set stops being held out once you select on it. eval-test exists so
+that a claim about generalisation can be checked against proteins no decision has
+ever been fitted to, and that only works if the reads stay rare:
+
+- **Do not use it for checkpoint or hyperparameter selection**, ever. Select on
+  eval-val (and contacts-v1 validation loss to decide what is worth scoring at
+  all — see [#169](https://github.com/Open-Athena/MarinFold/issues/169)).
+- **Score it when a result is being published or a direction is being closed out**,
+  not while iterating. A sweep reports eval-val; the winner of the sweep may be
+  worth one eval-test read.
+- **Record every read** in
+  [`data/eval_test_reads.md`](experiments/exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md)
+  — date, checkpoints, why, and the numbers. If that file grows a long tail of
+  routine entries, the set has been spent and needs replacing (sample recent PDB
+  directly, per [#241](https://github.com/Open-Athena/MarinFold/issues/241)).
 
 Scoring a checkpoint is a single workflow: the
 [`eval-checkpoint`](.agents/skills/eval-checkpoint/SKILL.md) skill carries the

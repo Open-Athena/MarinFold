@@ -2,8 +2,9 @@
 name: eval-checkpoint
 description: >-
   Evaluate a MarinFold contacts-v1 checkpoint on the FoldBench monomer eval sets
-  (eval-test / eval-val / eval-denovo, exp245) or the legacy exp89 554-protein
-  benchmark, scored with exp82's rollout+resample recipe. Use for checkpoint
+  (eval-val for routine work, eval-test as a rarely-read held-out set,
+  eval-denovo for designs; exp245) or the legacy exp89 554-protein benchmark,
+  scored with exp82's rollout+resample recipe. Use for checkpoint
   scoring, R-precision/AUC requests, comparisons with structure baselines,
   held-out or decontaminated-accuracy claims, designed-vs-natural or viral
   splits, sequence-KNN nulls, or reproducing contact metrics on local, CUDA,
@@ -22,30 +23,50 @@ of model progress, so a number filed under the wrong recipe reads as a jump that
 never happened. Infer environment-specific commands from the checked-out
 revisions and current tooling.
 
-## Which eval set — score the 333-unit FoldBench monomer universe
+## Which eval set — eval-val by default, eval-test only when asked
 
-**Default: score every unit in `gt_universe_scored.jsonl` (333 units), then report
-eval-test, eval-val and eval-denovo separately.** That universe is
-[exp245](https://github.com/Open-Athena/MarinFold/issues/245)'s cut of FoldBench's
-334 monomers, and the three sets answer different questions:
+The 333-unit universe is [exp245](https://github.com/Open-Athena/MarinFold/issues/245)'s
+cut of FoldBench's 334 monomers into three sets with **different read budgets**,
+and that distinction is the point of the split:
 
-| set | what it is | n | role |
+| set | what it is | n | read budget |
 |---|---|---:|---|
-| **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **the headline.** Held out — nothing in the repo had scored it before #245 — and provably absent from the decontaminated corpora at 30 % identity |
-| **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | continuity with every figure published before 2026-08-18 |
-| **eval-denovo** | every de novo designed FoldBench monomer | 19 | designs, reported separately and never pooled |
+| **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | **free.** The working set: checkpoint selection, sweeps, mid-training curves, any routine comparison |
+| **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **rare and recorded.** A held-out confirmation set. Score it only when the user asks for it or a result is being published, never for selection |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | free; a sanity check, not the designed-protein benchmark — for that use exp65's `denovo_pdb` (396) inside the legacy 554 |
 
-**Also score the legacy 554** when the checkpoint has to be placed against model
-generations: `gt_universe.jsonl` is unchanged and every published MarinFold number
-lives on it. The two universes overlap in 100 proteins but are separate files;
-running both is ~2.7× the sampling of one, and #245 ran 333 units × 3 checkpoints
-on 12 single-H100 CoreWeave shards each in about four minutes per checkpoint.
+**Default: score eval-val + eval-denovo (116 units) and, when the checkpoint needs
+placing against earlier generations, the legacy 554.** Leave eval-test out unless
+the request is explicitly about held-out or generalisation performance, or the work
+is being written up.
+
+**When you do score eval-test, append a row to
+`experiments/exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md`** —
+date, checkpoints, why it warranted a read, and the numbers. A held-out set stops
+being held out once decisions are fitted to it, and that ledger is the only thing
+tracking how much of it has been spent.
+
+**eval-val is a trustworthy stand-in.** #245 scored both sets once and found every
+predictor within 0.03 of the same number on them (MarinFold +0.018 to +0.024 in
+eval-test's favour, all intervals covering zero), with no extra val→test drop for
+the contaminated reference model. That result is what licenses iterating on
+eval-val, so do not "check against test" out of caution — it buys nothing and
+spends the set.
+
+**The legacy 554** (`gt_universe.jsonl`, unchanged) is where every published
+MarinFold number lives, so score it whenever a checkpoint has to be placed against
+earlier generations. It is free to look at as often as you like — it has been
+selected on for a year already, which is precisely why it cannot answer a
+generalisation question. The two universes overlap in 100 proteins but are separate
+files; #245 ran 333 units × 3 checkpoints on 12 single-H100 CoreWeave shards in
+about four minutes per checkpoint, so cost is never the reason to skip a set —
+read budget is.
 
 Everything is public on the bucket (anonymous read):
 
 ```
 hf://buckets/open-athena/MarinFold/data/contacts-v1-foldbench-monomers-exp245/
-    gt_universe_scored.jsonl       # 333 units — score this
+    gt_universe_scored.jsonl       # all 333 units; filter to the sets you may read
     eval_targets_foldbench_monomers.parquet   # dataset, stem, L, input_seq
     eval_sets.csv                  # all 334 with eval_set / designed / is_viral /
                                    # kingdom / scorable / exclusion_reason /
@@ -66,10 +87,20 @@ In-repo: `experiments/exp245_evals_foldbench_held_out_monomers/data/`.
 
 **Reporting rules — these change the conclusion, not just the presentation:**
 
-- **Lead with eval-test (n=217), never a pooled number.** The legacy 554 is 75 %
-  de novo designed and eval2 is 77 %; a pooled mean over either mostly reports how
-  well a model folds idealised backbones. Protenix-v2 single-seq scores **0.835**
-  on designs and **0.265** on natural monomers — that spread is what pooling hides.
+- **Lead with a natural-protein number — eval-val routinely, eval-test when the
+  question is generalisation — and never a pooled one.** The legacy 554 is 75 % de
+  novo designed and eval2 is 77 %; a pooled mean over either mostly reports how well
+  a model folds idealised backbones. Protenix-v2 single-seq scores **0.835** on
+  designs and **0.265** on natural monomers — that spread is what pooling hides.
+- **A designed-protein claim needs the 396, not the 19.** FoldBench holds only 43
+  designed entries across all seven of its tasks and 19 among its monomers, so
+  eval-denovo is underpowered (±0.09) and idiosyncratic — its proteins are more
+  novel relative to our corpus (seq-KNN 0.066 vs 0.314 on the 396) and easier for
+  Protenix-v2 single-seq (0.835 vs 0.723). exp65's `denovo_pdb` inside the legacy
+  554 is 396 designs with ground truth and every baseline already published;
+  reference values there: #199 cooldown 0.685, #232 m2-p06 0.648, Protenix-v2
+  single-seq 0.723, ESMFold 0.807, ESMFold2 0.829, Protenix-v2 + MSA 0.828, seq-KNN
+  0.314.
 - **Designs are much easier than natural proteins you have no homolog for, and
   about as easy as natural proteins in general.** On eval-test's 23 proteins under
   40 % identity to training, designs beat natural by +0.177 [+0.044, +0.306]; over
@@ -140,9 +171,11 @@ the fan-out, and exports its results to the public bucket from inside the cluste
 ## Evaluate
 
 1. Fetch the published ground-truth universe; do not rebuild it during a normal
-   checkpoint evaluation. Verify **333 `(dataset, stem)` units, all with the
-   `foldbench_monomer` dataset label and 333 unique stems**, for
-   `gt_universe_scored.jsonl`; 554 units / 552 unique stems for the legacy set;
+   checkpoint evaluation. `gt_universe_scored.jsonl` carries all **333
+   `(dataset, stem)` units** under the `foldbench_monomer` label, 333 unique
+   stems — filter the *targets* to the sets this run is allowed to read (join
+   `eval_sets.csv` on `stem`) rather than scoring eval-test by accident, and verify
+   the unit count of whatever subset you submit; 554 units / 552 unique stems for the legacy set;
    577 / 575 for `gt_universe_eval2.jsonl` if that older superset is being scored
    deliberately. Require canonical baseline inputs when baseline comparison is
    requested.

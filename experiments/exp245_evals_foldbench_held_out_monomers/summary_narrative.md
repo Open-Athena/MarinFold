@@ -145,6 +145,24 @@ in eval-val, where intervals span about +/-0.15. Only the pooled cell supports a
 argument. Growing this stratum means sampling recent PDB directly, as #241
 recommended.
 
+## eval-denovo is 19 because that is all FoldBench has
+
+FoldBench is 1,493 PDB entries across seven task files, but six of them are
+interfaces, and designed protein is rare throughout: **43 designed entries in
+total**, 19 of them in the monomer task. The 24 outside it are mostly designed
+binders in complex, where a monomer contact eval would be scoring a chain solved
+with its partner present.
+
+So eval-denovo is a sanity check, not the designed-protein benchmark. For that,
+use the set we already have: exp65's `denovo_pdb`, **396 de novo designs** inside
+the legacy 554, fully scored. #199 cooldown 0.685, #232 m2-p06 0.648, Protenix-v2
+single-seq 0.723, ESMFold 0.807, ESMFold2 0.829, Protenix + MSA 0.828, seq-KNN
+0.314.
+
+The two design sets are not interchangeable: the 19 are more novel relative to our
+training corpus (seq-KNN 0.066 vs 0.314) and easier for Protenix-v2 single-seq
+(0.835 vs 0.723).
+
 ## Use from here
 
 The three sets have different **read budgets**, which is the point of the split.
