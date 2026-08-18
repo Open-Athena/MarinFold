@@ -386,6 +386,7 @@ def finalize(
     sets_manifest_local = scratch / "eval_sets.csv"
     download_file(filesystem, sets_manifest_path, sets_manifest_local)
     sets_manifest = pd.read_csv(sets_manifest_local)
+    sets_manifest = sets_manifest[sets_manifest.scorable == 1]
     # The manifest is keyed by stem; the metric rows are keyed by (dataset,
     # stem), and every monomer carries the one dataset label this eval uses.
     sets_manifest["dataset"] = ordered_units[0][0]

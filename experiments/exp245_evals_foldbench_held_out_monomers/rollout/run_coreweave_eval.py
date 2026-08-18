@@ -279,13 +279,18 @@ def _validate_targets(*, targets_uri: str, sets_uri: str) -> dict:
     targets = _read_parquet(targets_uri)
     with fsspec.open(sets_uri, "rt") as handle:
         sets = pd.read_csv(handle)
+    # The manifest lists every FoldBench monomer, including the ones held out of
+    # the scored universe (a document that does not fit the model's context).
+    # The targets are the scorable ones, so the sizes are compared on those.
+    scorable = sets[sets.scorable == 1]
 
     units = list(zip(targets.dataset, targets.stem, strict=True))
     validation = {
         "units": len(targets),
         "unique_units": len(set(units)),
         "unique_stems": int(targets.stem.nunique()),
-        "set_sizes": sets.eval_set.value_counts().to_dict(),
+        "set_sizes": scorable.eval_set.value_counts().to_dict(),
+        "excluded": sets.loc[sets.scorable == 0, "stem"].tolist(),
     }
     if validation["units"] != EXPECTED_UNITS:
         raise ValueError(f"expected {EXPECTED_UNITS} units, got {validation['units']}")
@@ -293,7 +298,7 @@ def _validate_targets(*, targets_uri: str, sets_uri: str) -> dict:
         raise ValueError("targets contain duplicate (dataset, stem) units")
     if validation["set_sizes"] != EXPECTED_SET_SIZES:
         raise ValueError(f"eval set sizes changed: {validation['set_sizes']}")
-    if set(targets.stem) != set(sets.stem):
+    if set(targets.stem) != set(scorable.stem):
         raise ValueError("targets and the set manifest cover different proteins")
     if (targets.input_seq.str.len() != targets.L).any():
         raise ValueError("target sequence lengths do not match L")
