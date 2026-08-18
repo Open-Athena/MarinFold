@@ -1,0 +1,5 @@
+{
+  "script": "plot_reward_and_accuracy.py",
+  "args": [],
+  "caption": "Consensus R-precision on the 554-protein exp89 benchmark at every checkpoint that was scored. M-K is the only arm still rising at its last scored point."
+}
