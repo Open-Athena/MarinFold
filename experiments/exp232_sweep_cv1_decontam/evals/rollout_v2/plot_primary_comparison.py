@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 from pathlib import Path
 
@@ -24,36 +25,40 @@ TABLE = HERE / "data" / "comparison.csv"
 ROWS = HERE / "data" / "all_r_rows.csv.gz"
 DEFAULT_OUTPUT = HERE / "plots" / "final_checkpoint_rprecision.png"
 BOX_ORDER = (
+    "exp75-reproduced",
     "exp146",
     "exp166",
+    "exp232-m1-p02-decontam",
+    "exp232-m2-p06-decontam",
+    "protenix",
     "cw-p06-aug",
     "cw-p06-cool",
-    "protenix",
-    "exp232-m2-p06-decontam",
-    "exp232-m1-p02-decontam",
 )
 BOX_LABELS = {
+    "exp75-reproduced": "#75 E8\nvalidation",
     "exp146": "#146 3B",
     "exp166": "#166\nAA aug",
-    "cw-p06-aug": "CW p06\naug",
-    "cw-p06-cool": "CW p06\ncooldown",
+    "cw-p06-aug": "CW m1-p06\naug",
+    "cw-p06-cool": "CW m1-p06\ncooldown",
     "protenix": "Protenix-v2\nsingle-seq",
-    "exp232-m2-p06-decontam": "#232 decontam\nm2-p06",
-    "exp232-m1-p02-decontam": "#232 decontam\nm1-p02",
+    "exp232-m2-p06-decontam": "#232 m2-p06\ndecontam",
+    "exp232-m1-p02-decontam": "#232 m1-p02\ndecontam",
 }
 COLORS = {
     "previous": "#8f8b86",
     "computed_here": "#d55e00",
+    "validation": "#009e73",
     "protenix": "#2a78d6",
     "fit": "#52514e",
 }
 ANNOTATIONS = {
-    "exp146": ((10, 24), "left", "#146 · 3B"),
+    "exp75-reproduced": ((10, 30), "left", "#75 E8\nvalidation"),
+    "exp146": ((10, 20), "left", "#146 · 3B"),
     "exp166": ((8, 18), "left", "#166 AA aug"),
-    "cw-p06-aug": ((-10, 20), "right", "CW p06 aug"),
-    "cw-p06-cool": ((-6, 22), "right", "CW p06 cooldown"),
-    "exp232-m2-p06-decontam": ((10, 10), "left", "#232 decontam m2-p06"),
-    "exp232-m1-p02-decontam": ((10, -22), "left", "#232 decontam m1-p02"),
+    "cw-p06-aug": ((-10, 20), "right", "CW m1-p06\naug"),
+    "cw-p06-cool": ((-6, 22), "right", "CW m1-p06\ncooldown"),
+    "exp232-m2-p06-decontam": ((10, 10), "left", "#232 m2-p06\ndecontam"),
+    "exp232-m1-p02-decontam": ((10, -22), "left", "#232 m1-p02\ndecontam"),
 }
 
 
@@ -92,13 +97,16 @@ def load_values() -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
             raise ValueError(f"{key} has {key_values.size} values; expected 554")
         if not np.isclose(key_values.mean(), expected[key], atol=1e-14):
             raise ValueError(f"{key} mean does not match the comparison table")
+    box_means = [values[key].mean() for key in BOX_ORDER]
+    if any(left > right for left, right in itertools.pairwise(box_means)):
+        raise ValueError("boxplot order is not sorted by ascending mean R-precision")
     return table, values
 
 
 def fit_sigmoid(table: pd.DataFrame) -> dict[str, object]:
-    """Fit the descriptive curve to the five unique 1.5B checkpoints."""
+    """Fit the descriptive curve to every plotted MarinFold checkpoint."""
 
-    selected = table[table.fit_group.notna()]
+    selected = table[np.isfinite(table.loss)]
     x = selected.loss.to_numpy(dtype=float)
     y = selected.r_all.to_numpy(dtype=float)
     parameters, _ = curve_fit(
@@ -117,13 +125,15 @@ def fit_sigmoid(table: pd.DataFrame) -> dict[str, object]:
         "midpoint": float(parameters[1]),
         "width": float(parameters[2]),
         "r_squared": 1.0 - residual_sum / total_sum,
-        "input_groups": selected.fit_group.tolist(),
+        "input_keys": selected.key.tolist(),
         "minimum_observed_loss": float(x.min()),
         "maximum_observed_loss": float(x.max()),
     }
 
 
-def draw_boxplot(axis: plt.Axes, values: dict[str, np.ndarray]) -> None:
+def draw_boxplot(
+    axis: plt.Axes, table: pd.DataFrame, values: dict[str, np.ndarray]
+) -> None:
     """Draw legacy-554 per-protein distributions."""
 
     boxes = axis.boxplot(
@@ -140,14 +150,10 @@ def draw_boxplot(axis: plt.Axes, values: dict[str, np.ndarray]) -> None:
         medianprops={"color": "#111111", "linewidth": 1.3},
         flierprops={"marker": ".", "markersize": 2.1, "alpha": 0.23},
     )
-    new_keys = {"exp232-m2-p06-decontam", "exp232-m1-p02-decontam"}
+    evaluations = table.set_index("key").evaluation.to_dict()
     for patch, key in zip(boxes["boxes"], BOX_ORDER, strict=True):
         color = (
-            COLORS["protenix"]
-            if key == "protenix"
-            else COLORS["computed_here"]
-            if key in new_keys
-            else COLORS["previous"]
+            COLORS["protenix"] if key == "protenix" else COLORS[str(evaluations[key])]
         )
         patch.set_facecolor(color)
         patch.set_alpha(0.83)
@@ -209,12 +215,17 @@ def draw_scatter(
     )
     for row in table.itertuples(index=False):
         color = COLORS[row.evaluation]
+        marker = {
+            "computed_here": "o",
+            "validation": "D",
+            "previous": "s",
+        }[row.evaluation]
         axis.scatter(
             float(row.loss),
             float(row.r_all),
             s=90,
-            marker="o" if row.evaluation == "computed_here" else "s",
-            facecolor=color if row.evaluation == "computed_here" else "white",
+            marker=marker,
+            facecolor=color if row.evaluation != "previous" else "white",
             edgecolor=color,
             linewidth=1.8,
             zorder=4,
@@ -241,7 +252,7 @@ def draw_scatter(
         0.28,
         0.05,
         (
-            "1.5B sigmoid (descriptive)\n"
+            "MarinFold sigmoid (descriptive)\n"
             f"R = {parameters[0]:.3f} / [1 + exp((loss − {parameters[1]:.3f}) / "
             f"{parameters[2]:.3f})]\n"
             f"R² = {float(fit['r_squared']):.3f}"
@@ -252,8 +263,8 @@ def draw_scatter(
         color=COLORS["fit"],
         bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.82, "pad": 3},
     )
-    axis.set_xlim(3.10, 2.92)
-    axis.set_ylim(0.48, 0.67)
+    axis.set_xlim(3.15, 2.92)
+    axis.set_ylim(0.40, 0.67)
     axis.set_xlabel("contacts-v1 validation loss (lower is better →)")
     axis.set_ylabel("Mean all-range R-precision")
     axis.set_title("B · Validation loss and mean R-precision", pad=13)
@@ -271,6 +282,16 @@ def draw_scatter(
                 markeredgecolor=COLORS["computed_here"],
                 markersize=7,
                 label="exp232 decontaminated checkpoints",
+            ),
+            Line2D(
+                [0],
+                [0],
+                marker="D",
+                color="none",
+                markerfacecolor=COLORS["validation"],
+                markeredgecolor=COLORS["validation"],
+                markersize=6.5,
+                label="#75 validation recomputed here",
             ),
             Line2D(
                 [0],
@@ -296,7 +317,7 @@ def draw_scatter(
                 [0],
                 color=COLORS["fit"],
                 linewidth=1.8,
-                label="1.5B sigmoid fit",
+                label="all MarinFold points sigmoid fit",
             ),
         ],
         loc="lower right",
@@ -312,7 +333,7 @@ def run(output: Path) -> None:
 
     table, values = load_values()
     figure, (box_axis, scatter_axis) = plt.subplots(1, 2, figsize=(17.2, 6.8))
-    draw_boxplot(box_axis, values)
+    draw_boxplot(box_axis, table, values)
     fit = draw_scatter(scatter_axis, table, values)
     figure.suptitle(
         "Exp232 decontaminated contacts-v1 checkpoints", fontsize=14, y=0.973
@@ -321,8 +342,9 @@ def run(output: Path) -> None:
         0.5,
         0.055,
         (
-            "Orange marks the two checkpoints evaluated here; gray shows prior "
-            "MarinFold evaluations and blue shows the Protenix-v2 reference."
+            "Orange marks the two exp232 checkpoints; green marks the validation "
+            "checkpoint recomputed here, gray shows prior MarinFold evaluations, "
+            "and blue shows Protenix-v2."
         ),
         ha="center",
         fontsize=8.4,

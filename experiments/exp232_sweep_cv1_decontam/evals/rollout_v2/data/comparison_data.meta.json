@@ -6,6 +6,9 @@
     "cw-p06-aug",
     "cw-p06-cool"
   ],
+  "validation_keys": [
+    "exp75-reproduced"
+  ],
   "new_keys": [
     "exp232-m2-p06-decontam",
     "exp232-m1-p02-decontam"
@@ -35,11 +38,11 @@
   "outputs": {
     "comparison": {
       "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/comparison.csv",
-      "sha256": "a8651fce9f4a40f52f7cf292fd1c97b43654842725ed88ac45277de641e18111"
+      "sha256": "219c67395ae0ead5dbe602541041b7302d84301fc864ebb5d58d0b4f50c8ad09"
     },
     "all_r_rows": {
       "path": "experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/data/all_r_rows.csv.gz",
-      "sha256": "e6a69c112c54b50571ec2d11023bc9a0073787263a04cb808b68dfcc3100e75d"
+      "sha256": "507e3f2f549df2cc4cdcff4771178203b3c7c7d43b3200fc5667bcd6368ff2b1"
     }
   }
 }
