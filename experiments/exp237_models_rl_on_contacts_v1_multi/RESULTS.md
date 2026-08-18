@@ -389,6 +389,48 @@ are going to read one candidate, and a loss if you are going to aggregate.
 It shows that selecting for size does not help; it does not prove that a model
 retrained to emit uniform sections would fail.
 
+### Arm M-BC — the blend is worse than M-B alone, at every distance
+
+`A_i = GRPO(max_k F1)_i + 1.0 * GRPO(C_i(all))_i`, 48 steps at lr 1e-5, **zero
+gate strikes**. R-precision (all), legacy 554:
+
+| step | KL | consensus | best *ORACLE* | last | sections |
+|---:|---:|---:|---:|---:|---:|
+| 12 | 0.0024 | 0.5735 | 0.5543 | 0.4946 | 20.6 |
+| 24 | 0.0107 | 0.5646 | 0.5538 | 0.5086 | 17.3 |
+| 36 | 0.0246 | 0.5616 | 0.5473 | 0.4918 | 16.5 |
+| 48 | 0.0626 | 0.5504 | 0.5258 | 0.3775 | 14.5 |
+
+Head to head against **M-B alone** — which is the same reward at `lam = 0` — at
+each arm's own best checkpoint, paired per protein:
+
+| M-BC step-12 vs M-B lr3e-6 step-90 | Δ | 95 % CI | win/loss |
+|---|---:|---|---|
+| consensus | **−0.0040** | [−0.0070, −0.0011] | 234/304 |
+| best *ORACLE* | **−0.0103** | [−0.0133, −0.0074] | 182/363 |
+| last | **−0.0145** | [−0.0187, −0.0102] | 191/354 |
+
+**Adding the consensus term made every number worse, and all three CIs exclude
+zero.** The comparison is not confounded by distance: M-BC's step-12 sits at KL
+0.0024 and step-24 at 0.0107, bracketing M-B's optimum of 0.0087, and *both* are
+below M-B's 0.5775. Nor is it the scale pathology — `C_i(all)` used as a
+rollout-level scalar is scale-correct by construction, and the run never tripped
+a gate or lost its section count the way arm M-C did.
+
+**The two objectives compete rather than compose.** `max_k F1` is maximised by
+concentrating quality into one excellent section; `C(all)` is maximised by
+spreading coverage across many complementary ones. At `lam = 1` the blend lands
+between them and is beaten by either endpoint — M-B on every mode here, and M-C
+on final-section (0.5267) elsewhere.
+
+**What this does and does not license.** One `lam`, one learning rate,
+checkpoints every 12 steps: a smaller `lam` would sit closer to M-B and would
+presumably recover most of the difference. What the run rules out is the
+*motivating* claim — that the two terms counteract each other's failure modes and
+so beat either alone. They do not, at the one weight where "equal" is
+well-defined. Chasing `lam` downward to approach an endpoint we have already
+measured is not worth a night of GPU time.
+
 ### The slow walk: the peak is a function of distance, not of learning rate
 
 M-B re-run at **lr 3e-6** — a third the step size, 120 steps, eight checkpoints
