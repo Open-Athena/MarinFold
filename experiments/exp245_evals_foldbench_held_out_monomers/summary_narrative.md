@@ -153,15 +153,19 @@ total**, 19 of them in the monomer task. The 24 outside it are mostly designed
 binders in complex, where a monomer contact eval would be scoring a chain solved
 with its partner present.
 
-So eval-denovo is a sanity check, not the designed-protein benchmark. For that,
-use the set we already have: exp65's `denovo_pdb`, **396 de novo designs** inside
-the legacy 554, fully scored. #199 cooldown 0.685, #232 m2-p06 0.648, Protenix-v2
-single-seq 0.723, ESMFold 0.807, ESMFold2 0.829, Protenix + MSA 0.828, seq-KNN
-0.314.
+So eval-denovo is a sanity check, not a designed-protein benchmark -- and the
+obvious substitute does not work either. exp65's `denovo_pdb` (396 designs inside
+the legacy 554, already fully scored) has **50.5 % of its structures deposited on
+or before Protenix-v2's 2021-09-30 cutoff**, and 43 % predate 2020-05, so they sit
+in the baselines' training data. A MarinFold-versus-baseline number there is
+contaminated *for the baselines*.
 
-The two design sets are not interchangeable: the 19 are more novel relative to our
-training corpus (seq-KNN 0.066 vs 0.314) and easier for Protenix-v2 single-seq
-(0.835 vs 0.723).
+**The rule that follows: a set used against baselines has to postdate the
+baselines' cutoffs, not just our own corpora.** Decontamination has two sides and
+we control one. FoldBench satisfies this by construction -- 0 of eval-test's 218
+proteins predate Protenix-v2's cutoff -- and it retroactively qualifies #226's
+"designs are much easier" finding, which was measured on a set half of which
+Protenix-v2 trained on.
 
 ## Use from here
 

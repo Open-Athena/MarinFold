@@ -74,7 +74,7 @@ The current sets, all built from [FoldBench](https://github.com/BEAM-Labs/FoldBe
 |---|---|---:|---|
 | **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | **freely.** The working set: checkpoint selection, sweeps, mid-training curves, day-to-day comparisons |
 | **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **rarely, deliberately, and recorded.** A held-out confirmation set — see [Using eval-test sparingly](#using-eval-test-sparingly) |
-| **eval-denovo** | every de novo designed FoldBench monomer | 19 | freely — but it is a sanity check, not the designed-protein benchmark (see below) |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | freely — a sanity check, not a designed-protein benchmark; FoldBench has no more designed monomers than this |
 | legacy 554 | exp89's benchmark: FoldBench-100 + exp65's 454 low-MSA/novel-fold candidates | 554 | freely, but only for comparing model generations to each other |
 | eval2 | the ≤40 %-identity subset of a 776-protein superset ([exp226](experiments/exp226_evals_expand_foldbench_eval_set/README.md)) | 307 | superseded by these sets for natural-protein claims; 75 % designed |
 
@@ -113,14 +113,18 @@ Everything is also on the public bucket under
   Protenix-v2 + MSA −0.045, Protenix-v2 single-seq −0.002. `is_viral` is a column
   on the split file; only 19 of 334 monomers are viral, so treat that stratum as
   indicative.
-- **For a designed-protein number, use exp65's `denovo_pdb` (396 proteins) inside
-  the legacy 554, not eval-denovo's 19.** Designed protein is rare in FoldBench —
-  43 of its 1,493 entries across all seven tasks, 19 of them monomers — so
-  eval-denovo exists to keep designs *out* of the natural means, and n=19 carries a
-  ±0.09 interval. The two sets also differ in character: the 19 are more novel
-  relative to our corpus (seq-KNN 0.066 vs 0.314) and easier for Protenix-v2
-  single-seq (0.835 vs 0.723). See
-  [exp245 §9](experiments/exp245_evals_foldbench_held_out_monomers/README.md#9-eval-denovo-is-19-proteins-and-that-is-all-foldbench-has).
+- **A set used to compare against baselines must postdate the *baselines'* training
+  cutoffs, not just ours.** Decontamination has two sides and we control one.
+  exp65's 396 de novo designs look like the obvious designed-protein benchmark —
+  20× eval-denovo, already scored — but **50.5 % of them were deposited on or before
+  Protenix-v2's 2021-09-30 cutoff** and 43 % predate 2020-05, so they are in the
+  baselines' training data; a MarinFold-versus-baseline number there is contaminated
+  for the baselines. The FoldBench sets satisfy the rule by construction (0 of
+  eval-test's 218 predate that cutoff). This is also why eval-denovo stays at 19:
+  designed protein is rare throughout FoldBench (43 designed entries across all
+  1,493), and it is a sanity check rather than a designed-protein benchmark. See
+  [exp245 §9](experiments/exp245_evals_foldbench_held_out_monomers/README.md#9-eval-denovo-is-19-proteins-and-that-is-all-foldbench-has)
+  and [`baseline_cutoff_exposure.csv`](experiments/exp245_evals_foldbench_held_out_monomers/data/baseline_cutoff_exposure.csv).
 - **Quote a sequence-KNN null beside any accuracy claim**, computed over the corpus
   the model actually trained on. It bounds how much of the score is reachable by
   copying a training homolog.

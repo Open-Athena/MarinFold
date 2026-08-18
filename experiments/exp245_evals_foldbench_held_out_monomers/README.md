@@ -357,29 +357,37 @@ adding them to a monomer contact eval would mean scoring a chain whose fold and
 contacts were solved with a partner present. That is the multimer question
 ([#222](https://github.com/Open-Athena/MarinFold/issues/222)), not this one.
 
-**So eval-denovo is not the designed-protein benchmark, and it should not be used
-as one.** Its 19 proteins exist to keep designs *out* of the natural means. The
-designed set worth quoting is the one we already have: exp65's `denovo_pdb`, **396
-de novo designed PDB entries** inside the legacy 554, with ground truth and every
-baseline already published — and per-protein rows for all three checkpoints in
-#244's table. On it ([`data/designed_sets.csv`](data/designed_sets.csv)):
+**So eval-denovo is 19 and cannot be grown from FoldBench.** Its proteins exist to
+keep designs *out* of the natural means; at n = 19 (±0.09) it is a sanity check,
+not a designed-protein benchmark.
 
-| predictor | denovo_pdb (396) | eval-denovo (19) |
-|---|---:|---:|
-| #199 cooldown (contaminated) | 0.685 | 0.619 |
-| #232 m2-p06 (decontaminated) | 0.648 | 0.591 |
-| #232 m1-p02 (decontaminated) | 0.644 | 0.588 |
-| Protenix-v2 single-seq | 0.723 | 0.835 |
-| ESMFold | 0.807 | 0.795 |
-| ESMFold2 | 0.829 | 0.864 |
-| Protenix-v2 + MSA | 0.828 | 0.844 |
-| seq-KNN (unfiltered corpus) | 0.314 | 0.066 |
+**And the obvious substitute is not usable for baseline comparison.** exp65's
+`denovo_pdb` — 396 de novo designed PDB entries inside the legacy 554, already
+scored for every predictor — is 20× bigger, but **half of it predates the
+baselines' training cutoffs**
+([`data/baseline_cutoff_exposure.csv`](data/baseline_cutoff_exposure.csv)):
 
-The two design sets are not interchangeable. The 19 are *harder for a homology
-lookup* (KNN 0.066 vs 0.314 — they are more novel relative to our training corpus)
-and *easier for Protenix-v2 single-seq* (0.835 vs 0.723). With n = 19 and a ±0.09
-interval, treat eval-denovo as a sanity check and quote the 396 when the question
-is actually about designed protein.
+| set | n | deposited ≤ Protenix-v2's 2021-09-30 cutoff | median deposit |
+|---|---:|---:|---|
+| exp65 `denovo_pdb` | 396 | **200 (50.5 %)** | 2021-06-20 |
+| eval-val | 97 | 1 (1.0 %) | 2022-06-27 |
+| eval-test | 218 | **0 (0.0 %)** | 2023-07-08 |
+| eval-denovo | 19 | 1 (5.3 %) | 2023-07-27 |
+
+Those 200 structures are in Protenix-v2's training set, and the older ones (43 % of
+the set predates 2020-05) are in ESMFold's. A MarinFold-versus-baseline number on
+that set is contaminated **for the baselines**, in the opposite direction from
+everything else measured here, so it is excluded. Numbers from it are usable only
+for comparing our own checkpoints to each other, and this experiment does not
+quote them.
+
+**The general rule this makes explicit: a set used to compare against baselines has
+to postdate the baselines' training cutoffs, not just our own corpora.**
+Decontamination has two sides, and only one of them is under our control.
+FoldBench satisfies this by construction — it is built from recent PDB, and 0 of
+eval-test's 218 proteins predate Protenix-v2's cutoff. It also retroactively
+qualifies #226's and #241's "designs are much easier" finding: that was measured on
+a designed set half of which is in Protenix-v2's training data.
 
 ### How each baseline was run
 

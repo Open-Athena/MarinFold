@@ -33,7 +33,7 @@ and that distinction is the point of the split:
 |---|---|---:|---|
 | **eval-val** | the natural monomers inside the historical FoldBench-100 | 97 | **free.** The working set: checkpoint selection, sweeps, mid-training curves, any routine comparison |
 | **eval-test** | every natural FoldBench monomer outside the historical 100 | **217** | **rare and recorded.** A held-out confirmation set. Score it only when the user asks for it or a result is being published, never for selection |
-| **eval-denovo** | every de novo designed FoldBench monomer | 19 | free; a sanity check, not the designed-protein benchmark — for that use exp65's `denovo_pdb` (396) inside the legacy 554 |
+| **eval-denovo** | every de novo designed FoldBench monomer | 19 | free; a sanity check, not a designed-protein benchmark — FoldBench has no more designed monomers, and the bigger exp65 design set is inside the baselines' training data |
 
 **Default: score eval-val + eval-denovo (116 units) and, when the checkpoint needs
 placing against earlier generations, the legacy 554.** Leave eval-test out unless
@@ -92,15 +92,19 @@ In-repo: `experiments/exp245_evals_foldbench_held_out_monomers/data/`.
   novo designed and eval2 is 77 %; a pooled mean over either mostly reports how well
   a model folds idealised backbones. Protenix-v2 single-seq scores **0.835** on
   designs and **0.265** on natural monomers — that spread is what pooling hides.
-- **A designed-protein claim needs the 396, not the 19.** FoldBench holds only 43
-  designed entries across all seven of its tasks and 19 among its monomers, so
-  eval-denovo is underpowered (±0.09) and idiosyncratic — its proteins are more
-  novel relative to our corpus (seq-KNN 0.066 vs 0.314 on the 396) and easier for
-  Protenix-v2 single-seq (0.835 vs 0.723). exp65's `denovo_pdb` inside the legacy
-  554 is 396 designs with ground truth and every baseline already published;
-  reference values there: #199 cooldown 0.685, #232 m2-p06 0.648, Protenix-v2
-  single-seq 0.723, ESMFold 0.807, ESMFold2 0.829, Protenix-v2 + MSA 0.828, seq-KNN
-  0.314.
+- **Any baseline comparison must use proteins that postdate the baselines' training
+  cutoffs.** Decontamination has two sides and we control one. exp65's 396 de novo
+  designs (in the legacy 554) look like the designed-protein benchmark — 20×
+  eval-denovo, already scored — but **50.5 % were deposited on or before
+  Protenix-v2's 2021-09-30 cutoff** and 43 % predate 2020-05, so a
+  MarinFold-versus-baseline number there is contaminated *for the baselines*. Use it
+  only to compare our own checkpoints to each other, and say so. The FoldBench sets
+  satisfy the rule by construction: 0 of eval-test's 218 and 1 of eval-denovo's 19
+  predate that cutoff
+  (`experiments/exp245_evals_foldbench_held_out_monomers/data/baseline_cutoff_exposure.csv`).
+  This is also why eval-denovo stays at 19 — FoldBench holds only 43 designed
+  entries across all seven of its tasks — and why it is a sanity check rather than a
+  designed-protein benchmark.
 - **Designs are much easier than natural proteins you have no homolog for, and
   about as easy as natural proteins in general.** On eval-test's 23 proteins under
   40 % identity to training, designs beat natural by +0.177 [+0.044, +0.306]; over
