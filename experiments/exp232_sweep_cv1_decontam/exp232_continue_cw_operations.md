@@ -55,4 +55,7 @@
 
 ## Change Record
 
-None.
+- 2026-08-18 15:44 UTC — The s01 `m2-p06` smoke showed that the stock
+  linear-decay endpoint fell one unexecuted update after training. Replaced the
+  continuation decay with an inclusive endpoint, invalidated s01, and required
+  both sources to pass again as s02 before production.

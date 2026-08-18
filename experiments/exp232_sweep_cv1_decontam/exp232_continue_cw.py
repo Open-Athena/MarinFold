@@ -21,6 +21,21 @@ from dataclasses import dataclass, fields, replace
 from datetime import timedelta
 
 import click
+import optax
+from fray.types import ResourceConfig
+from haliax import Axis
+from jaxtyping import PRNGKeyArray
+from levanter.data.dataset import AsyncDataset
+from levanter.data.text.datasets import LmDataConfig
+from levanter.models.lm_model import LmExample
+from levanter.optim.config import AdamConfig, LrSchedule, LrScheduleContext
+from levanter.schedule import BatchSchedule
+from marin.execution.lazy import ArtifactStep
+from marin.experiment.cli import build_options
+from marin.experiment.train import train_lm
+from marin.training.training import LevanterCheckpoint
+from rigging.filesystem import marin_prefix, marin_temp_bucket, prefix_join
+
 from exp232_sweep import (
     AA_AUGMENTATION_SEED,
     AFDB_TOKENS,
@@ -54,19 +69,6 @@ from exp232_sweep import (
     validation_cache,
 )
 from exp232_sweep import EXPERIMENT_PREFIX as SWEEP_EXPERIMENT_PREFIX
-from fray.types import ResourceConfig
-from haliax import Axis
-from jaxtyping import PRNGKeyArray
-from levanter.data.dataset import AsyncDataset
-from levanter.data.text.datasets import LmDataConfig
-from levanter.models.lm_model import LmExample
-from levanter.optim.config import AdamConfig
-from levanter.schedule import BatchSchedule
-from marin.execution.lazy import ArtifactStep
-from marin.experiment.cli import build_options
-from marin.experiment.train import train_lm
-from marin.training.training import LevanterCheckpoint
-from rigging.filesystem import marin_prefix, marin_temp_bucket, prefix_join
 
 RUN_PREFIX = "prot-exp232-cw-cv1-decontam-cont"
 CONTINUATION_EXPERIMENT_PREFIX = (
@@ -79,9 +81,25 @@ MIN_LR_RATIO = 0.0
 WARMUP = 0.1
 REWARMUP = 0.0
 DECAY = 0.2
-LR_SCHEDULE = "linear"
 AUGMENTATION_KEY = "aug100"
 TEMPORARY_CHECKPOINT_INTERVAL = timedelta(minutes=30)
+
+
+@dataclass(frozen=True)
+class InclusiveLinearLrSchedule(LrSchedule):
+    """Linearly decay to the minimum on the last executed decay update."""
+
+    def build(self, ctx: LrScheduleContext):
+        if ctx.decay_steps < 2:
+            raise ValueError("inclusive linear decay requires at least two updates")
+        return optax.linear_schedule(
+            ctx.learning_rate,
+            ctx.min_lr,
+            transition_steps=ctx.decay_steps - 1,
+        )
+
+
+LR_SCHEDULE = InclusiveLinearLrSchedule()
 
 
 @dataclass(frozen=True)
