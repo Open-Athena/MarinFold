@@ -21,14 +21,13 @@ from dataclasses import dataclass, fields, replace
 from datetime import timedelta
 
 import click
-import optax
 from fray.types import ResourceConfig
 from haliax import Axis
 from jaxtyping import PRNGKeyArray
 from levanter.data.dataset import AsyncDataset
 from levanter.data.text.datasets import LmDataConfig
 from levanter.models.lm_model import LmExample
-from levanter.optim.config import AdamConfig, LrSchedule, LrScheduleContext
+from levanter.optim.config import AdamConfig
 from levanter.schedule import BatchSchedule
 from marin.execution.lazy import ArtifactStep
 from marin.experiment.cli import build_options
@@ -36,6 +35,7 @@ from marin.experiment.train import train_lm
 from marin.training.training import LevanterCheckpoint
 from rigging.filesystem import marin_prefix, marin_temp_bucket, prefix_join
 
+from exp232_continue_schedule import LR_SCHEDULE
 from exp232_sweep import (
     AA_AUGMENTATION_SEED,
     AFDB_TOKENS,
@@ -83,24 +83,6 @@ REWARMUP = 0.0
 DECAY = 0.2
 AUGMENTATION_KEY = "aug100"
 TEMPORARY_CHECKPOINT_INTERVAL = timedelta(minutes=30)
-
-
-@LrSchedule.register_subclass("linear_inclusive")
-@dataclass(frozen=True)
-class InclusiveLinearLrSchedule(LrSchedule):
-    """Linearly decay to the minimum on the last executed decay update."""
-
-    def build(self, ctx: LrScheduleContext):
-        if ctx.decay_steps < 2:
-            raise ValueError("inclusive linear decay requires at least two updates")
-        return optax.linear_schedule(
-            ctx.learning_rate,
-            ctx.min_lr,
-            transition_steps=ctx.decay_steps - 1,
-        )
-
-
-LR_SCHEDULE = InclusiveLinearLrSchedule()
 
 
 @dataclass(frozen=True)

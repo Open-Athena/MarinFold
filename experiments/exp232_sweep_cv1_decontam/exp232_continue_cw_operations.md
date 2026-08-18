@@ -62,3 +62,7 @@
 - 2026-08-18 15:54 UTC — The s02 jobs exposed missing Draccus registration for
   the new schedule while logging W&B configuration. Registered the schedule as
   `linear_inclusive`, invalidated s02 before training, and required a clean s03.
+- 2026-08-18 15:59 UTC — The s03 jobs showed that a class created under
+  `__main__` still loses its registry identity across the Iris serialization
+  boundary. Moved it to an importable module and required a subprocess
+  serialization check plus a clean s04.
