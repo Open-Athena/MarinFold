@@ -69,8 +69,8 @@
   heartbeat updates unless the operator explicitly supplies or requests the post.
 - Abandoned trials: `m1-p01-aug`, `m1-p04-aug`, `m1-p03-aug`, `m2-p01-aug`,
   `m2-p04-aug`, and `m2-p03-aug`. They are outside recovery and completion scope.
-- Completed and checkpoint-verified: `m1-p06-aug` and `m1-p02-aug`. Never
-  redispatch them. Two trials remain in scope: `m2-p02-aug` and `m2-p06-aug`.
+- Completed and checkpoint-verified: `m1-p06-aug`, `m1-p02-aug`, and
+  `m2-p06-aug`. Never redispatch them. One trial remains in scope: `m2-p02-aug`.
 - Both remaining trials are at the `n16` 128-GPU ceiling, the largest approved
   node count. No further enlargement is possible, so the sweep can draw at most
   256 GPUs regardless of visible free capacity, and GPUs freed by a completing
@@ -171,6 +171,17 @@
 
 ## Change Record
 
+- 2026-08-18T10:54:50Z: `m2-p06-aug` completed, the third trial to finish. W&B
+  reported `finished` with `run_progress` 1.0 at `global_step` 145199, and its
+  final checkpoint verified reachable with `step-145199` holding 37 files and
+  16.44 GiB, `.executor_status` SUCCESS, the `hf` export present, and all ten
+  permanent checkpoints intact. Root and child both reported `succeeded`, so no
+  stop was required. It was caught by polling rather than deferring, having been
+  84 steps short at the heartbeat. The trial needed ten dispatch attempts:
+  `a06`, `a07` and `a08` all failed on `cw-rno2a`, `a09` crashed on east, and
+  `a10` carried it home on east at `n8`. Sizing it `n8` rather than `n16` cost
+  the sweep nothing — it still finished well ahead of `m2-p02` — while leaving
+  east the free-node slack that protects the critical path.
 - 2026-08-17T23:14:12Z: `m2-p02-aug`, the sweep's final finisher, failed in
   isolation and was replaced. Iris reported `failures=1`, `preemptions=0`, task
   exit 1 after 12h59m, surfacing a nanobind crash through marin's `StepRunner`.
