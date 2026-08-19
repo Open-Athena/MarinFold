@@ -42,6 +42,9 @@
 - Two logical trials, one writer each, so the sweep maximum is two 16-node
   gangs: 32 nodes / 256 H100s. Never duplicate a trial to consume free GPUs.
 - Iris user: `eczech`; priority: `batch` only.
+- Take utilization snapshots with `--peer cw-us-east-02a --peer cw-rno2a`. The
+  default peer set includes the GB200 peer, whose accounting intermittently fails
+  validation and aborts the whole snapshot; that peer is ineligible here anyway.
 - Production SQLite:
   `scratch/exp232_train_cw/exp232_train_cw.sqlite`.
 - Historical validation SQLite:
@@ -87,3 +90,7 @@
   `cw-us-east-02a` and `cw-rno2a` with a hard 16-node/128-GPU per-dispatch limit.
   Marked GB200 `cw-us-east-08a` ineligible and stated the two-gang (32-node/256-H100)
   sweep maximum in Operator Choices. No training semantics changed.
+- 2026-08-19 03:30 UTC — Utilization snapshots intermittently exited 2 with
+  `peer cw-us-east-08a.backends[0] gb200 accounting disagrees` (held exceeded total),
+  producing no capacity reading. Narrowed routine snapshots to the two eligible H100
+  peers so a GB200 accounting fault cannot block H100 placement decisions.
