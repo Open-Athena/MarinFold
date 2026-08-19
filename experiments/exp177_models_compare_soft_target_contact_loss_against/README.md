@@ -71,6 +71,29 @@ a single sparse representation capped around `residue_count<=1024` and
 `max_degree<=32` would already cover this run exactly by the observed stats,
 with much smaller arrays than the current `(seq_len - 2) // 3` contact padding.
 
+### Sparse soft-target smoke (2026-08-19)
+
+Run `exp177-soft-target-cw-r50-sparse-8gpu-bs16-smoke20` tested the sparse
+loss path directly from the existing exp139 analyzed S3 shards; no new training
+corpus was materialized. It used 1 node × 8 H100, TP=8, global batch size 16,
+`EXP177_PRECOMPUTED_MP=0`, `EXP177_SOFT_TARGET_BATCH=sparse`,
+`EXP177_MAX_SPARSE_CONTACTS=2048`, and `EXP177_MAX_SPARSE_DEGREE=32`.
+
+Iris marked both driver and child jobs succeeded. The first batch loaded in
+0.1s, the first train step completed in 43.6s including compilation, and the
+post-compile training phase averaged about 9.6s/step by wall time from first
+step completion to checkpoint start. The short-run average including compile
+was about 11.4s/step over 20 steps. This is substantially faster than the prior
+compact padded soft-target smokes: r45 bs16 was ~51.5s/step and r47 bs24 was
+~78.8s/step. Final eval loss was 17.172 and the checkpoint was written to:
+
+```
+s3://marin-us-east-02a/protein-structure/MarinFold/exp177_soft_target_loss_h2h/checkpoints/exp177-soft-target-cw-r50-sparse-8gpu-bs16-smoke20/2026.08.19.r50/checkpoints/step-19
+```
+
+A non-fatal draccus config-encoding exception still appears for the sparse
+dataset object during startup, but training continued normally.
+
 ## Conclusion
 
 _(Fill in after results are in.)_
