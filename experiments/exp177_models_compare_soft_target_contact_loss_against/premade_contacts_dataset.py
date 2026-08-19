@@ -36,6 +36,7 @@ from marinfold.document_structures.contacts_v1.vocab import (
     CONTACT,
     DOC_TYPE,
     END,
+    NUM_POSITION_INDICES,
     POSITIONS,
     VOCABULARY,
 )
@@ -50,6 +51,7 @@ from marinfold.document_structures.documents import (
 from marinfold_models.document_loss import (
     CompactContactDocumentBatch,
     LevanterDocumentBatch,
+    SparseContactDocumentBatch,
     compact_contact_document_batch,
     levanter_document_batch,
 )
@@ -320,6 +322,9 @@ class PrecomputedSoftTargetDatasetConfig:
     shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet"
 
 
+POSITION_TOKEN_START = int(POSITIONS[0])
+
+
 _WORKER_PRECOMPUTED_DATASETS: dict[PrecomputedSoftTargetDatasetConfig, "PrecomputedSoftTargetContactsDataset"] = {}
 
 
@@ -366,6 +371,61 @@ def _initialize_precomputed_worker() -> None:
     os.environ["JAX_PLATFORMS"] = "cpu"
     os.environ["JAX_PLATFORM_NAME"] = "cpu"
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+
+
+def _sparse_second_endpoint_targets(
+    raw: RawPrecomputedSoftTargetExample,
+    *,
+    max_contacts: int,
+    max_degree: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    if raw.contact_count > max_contacts:
+        raise ValueError(f"contact_count={raw.contact_count} exceeds sparse max_contacts={max_contacts}")
+    first = raw.first_ids[: raw.contact_count].astype(np.int32)
+    second = raw.second_ids[: raw.contact_count].astype(np.int32)
+    local_first = first - POSITION_TOKEN_START
+    local_second = second - POSITION_TOKEN_START
+    if np.any((local_first < 0) | (local_first >= NUM_POSITION_INDICES)):
+        raise ValueError("Sparse first endpoint ids are outside the contacts-v1 position token range")
+    if np.any((local_second < 0) | (local_second >= NUM_POSITION_INDICES)):
+        raise ValueError("Sparse second endpoint ids are outside the contacts-v1 position token range")
+
+    adjacency: list[dict[int, int]] = [dict() for _ in range(NUM_POSITION_INDICES)]
+    for a, b in zip(local_first.tolist(), local_second.tolist(), strict=True):
+        token_a = int(a + POSITION_TOKEN_START)
+        token_b = int(b + POSITION_TOKEN_START)
+        adjacency[a][token_b] = adjacency[a].get(token_b, 0) + 1
+        adjacency[b][token_a] = adjacency[b].get(token_a, 0) + 1
+
+    padded_first = np.zeros(max_contacts, dtype=np.int32)
+    padded_second = np.zeros(max_contacts, dtype=np.int32)
+    neighbor_ids = np.zeros((max_contacts, max_degree), dtype=np.int32)
+    neighbor_counts = np.zeros((max_contacts, max_degree), dtype=np.float32)
+    neighbor_count = np.zeros(max_contacts, dtype=np.float32)
+    padded_first[: raw.contact_count] = first
+    padded_second[: raw.contact_count] = second
+
+    def decrement(row: dict[int, int], token_id: int) -> None:
+        count = row[token_id] - 1
+        if count:
+            row[token_id] = count
+        else:
+            del row[token_id]
+
+    for c, (a, b) in enumerate(zip(local_first.tolist(), local_second.tolist(), strict=True)):
+        row = adjacency[a]
+        if len(row) > max_degree:
+            raise ValueError(f"Sparse neighbor row degree {len(row)} exceeds max_degree={max_degree}")
+        items = sorted(row.items())
+        if items:
+            ids, counts = zip(*items, strict=True)
+            neighbor_ids[c, : len(items)] = np.asarray(ids, dtype=np.int32)
+            neighbor_counts[c, : len(items)] = np.asarray(counts, dtype=np.float32)
+            neighbor_count[c] = float(sum(counts))
+        decrement(adjacency[a], int(b + POSITION_TOKEN_START))
+        decrement(adjacency[b], int(a + POSITION_TOKEN_START))
+
+    return padded_first, padded_second, neighbor_ids, neighbor_counts, neighbor_count
 
 
 class PrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBatch]):
@@ -585,6 +645,69 @@ class PrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBa
             )
 
 
+class SparsePrecomputedSoftTargetContactsDataset(PrecomputedSoftTargetContactsDataset):
+    """Direct precomputed reader that builds sparse soft-target loss inputs."""
+
+    def __init__(
+        self,
+        *,
+        max_sparse_contacts: int = 2048,
+        max_sparse_degree: int = 32,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        if max_sparse_contacts <= 0:
+            raise ValueError("max_sparse_contacts must be positive")
+        if max_sparse_degree <= 0:
+            raise ValueError("max_sparse_degree must be positive")
+        self.max_sparse_contacts = max_sparse_contacts
+        self.max_sparse_degree = max_sparse_degree
+
+    async def getitem_async(self, index: int) -> SparseContactDocumentBatch:
+        return (await self.get_batch([index]))[0]
+
+    async def get_batch(self, indices: Sequence[int]) -> Sequence[SparseContactDocumentBatch]:
+        if not indices:
+            return []
+        async with self._lock:
+            return await asyncio.to_thread(self._get_batch_sync, tuple(indices))
+
+    def _get_batch_sync(self, indices: tuple[int, ...]) -> list[SparseContactDocumentBatch]:
+        return [self._example_for_index(index) for index in indices]
+
+    def _example_for_index(self, index: int) -> SparseContactDocumentBatch:
+        return self._batch_from_raw(self._raw_example_for_index(index))
+
+    def _batch_from_raw(self, raw: RawPrecomputedSoftTargetExample) -> SparseContactDocumentBatch:
+        first_ids, second_ids, neighbor_ids, neighbor_counts, neighbor_count = _sparse_second_endpoint_targets(
+            raw,
+            max_contacts=self.max_sparse_contacts,
+            max_degree=self.max_sparse_degree,
+        )
+        Pos = Axis("position", self.max_seq_len)
+        axes = (Pos,)
+        with local_cpu_mesh():
+            tokens = hax.named(jnp.asarray(raw.token_ids), axes)
+            segment_ids = hax.named(jnp.asarray(raw.segment_ids), axes)
+            position_ids = hax.named(jnp.asarray(raw.position_ids), axes)
+            attention_blocks = hax.named(jnp.asarray(raw.attention_blocks), axes)
+            return SparseContactDocumentBatch(
+                tokens=tokens,
+                contact_first_ids=jnp.asarray(first_ids),
+                contact_second_ids=jnp.asarray(second_ids),
+                second_neighbor_ids=jnp.asarray(neighbor_ids),
+                second_neighbor_counts=jnp.asarray(neighbor_counts),
+                second_neighbor_count=jnp.asarray(neighbor_count),
+                contact_count=jnp.asarray(raw.contact_count, dtype=jnp.int32),
+                prediction_start=jnp.asarray(raw.prediction_start, dtype=jnp.int32),
+                position_ids=position_ids,
+                segment_ids=segment_ids,
+                attention_blocks=attention_blocks,
+                target_position_count=jnp.asarray(raw.target_position_count, dtype=jnp.int32),
+                vocabulary=None,
+            )
+
+
 class MPPrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBatch]):
     """Multiprocess chunk-prefetch reader for precomputed soft-target rows.
 
@@ -792,6 +915,7 @@ __all__ = [
     "MPFixedQuotaSoftTargetContactsDataset",
     "MPPrecomputedSoftTargetContactsDataset",
     "PrecomputedSoftTargetContactsDataset",
+    "SparsePrecomputedSoftTargetContactsDataset",
     "causal_contacts_v1_document_from_row",
     "compact_contact_batch_from_documents",
     "soft_target_contacts_v1_document_from_row",
