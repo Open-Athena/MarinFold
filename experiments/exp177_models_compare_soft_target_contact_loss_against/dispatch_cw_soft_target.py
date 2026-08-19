@@ -20,6 +20,7 @@ from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import resolve_training_env
+from rigging.filesystem import StoragePath
 
 from marinfold_models import build_train_lm_on_pod_config
 from premade_contacts_dataset import (
@@ -236,6 +237,7 @@ def _pod_config(run_name: str):
         max_eval_batches=max_eval_batches,
         per_device_parallelism=per_device_parallelism,
         per_device_eval_parallelism=per_device_parallelism,
+        log_dir=StoragePath(output_path) / "logs" if profiler_enabled else pod_config.train_config.trainer.log_dir,
         checkpointer=CheckpointerConfig(
             save_interval=timedelta(minutes=checkpoint_interval_minutes),
             keep=[{"every": keep_every_steps}],
