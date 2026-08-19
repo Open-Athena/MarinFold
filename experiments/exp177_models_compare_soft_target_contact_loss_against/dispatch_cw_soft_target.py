@@ -25,6 +25,7 @@ from premade_contacts_dataset import (
     MPFixedQuotaSoftTargetContactsDataset,
     MPPrecomputedSoftTargetContactsDataset,
     PrecomputedSoftTargetContactsDataset,
+    SparsePrecomputedSoftTargetContactsDataset,
 )
 from train import (
     CONTACTS_TOKENIZER,
@@ -75,11 +76,16 @@ def _resources() -> ResourceConfig:
 def _data_config() -> LmDataConfig:
     data_kind = os.environ.get("EXP177_SOFT_TARGET_DATA", "precomputed")
     if data_kind == "precomputed":
-        dataset_cls = (
-            PrecomputedSoftTargetContactsDataset
-            if os.environ.get("EXP177_PRECOMPUTED_MP", "1") == "0"
-            else MPPrecomputedSoftTargetContactsDataset
-        )
+        if os.environ.get("EXP177_SOFT_TARGET_BATCH", "compact") == "sparse":
+            if os.environ.get("EXP177_PRECOMPUTED_MP", "1") != "0":
+                raise ValueError("Sparse precomputed soft-target batches currently require EXP177_PRECOMPUTED_MP=0")
+            dataset_cls = SparsePrecomputedSoftTargetContactsDataset
+        else:
+            dataset_cls = (
+                PrecomputedSoftTargetContactsDataset
+                if os.environ.get("EXP177_PRECOMPUTED_MP", "1") == "0"
+                else MPPrecomputedSoftTargetContactsDataset
+            )
         kwargs = {
             "data_prefix": os.environ.get("EXP177_PRECOMPUTED_SOFT_TARGET_PREFIX", CW_PRECOMPUTED_PREFIX).rstrip("/"),
             "num_shards": int(os.environ.get("EXP177_NUM_SHARDS", "3338")),
@@ -92,6 +98,11 @@ def _data_config() -> LmDataConfig:
                 "EXP177_PRECOMPUTED_SOFT_TARGET_SHARD_NAME_TEMPLATE", CW_PRECOMPUTED_SHARD_TEMPLATE
             ),
         }
+        if dataset_cls is SparsePrecomputedSoftTargetContactsDataset:
+            kwargs.update(
+                max_sparse_contacts=int(os.environ.get("EXP177_MAX_SPARSE_CONTACTS", "2048")),
+                max_sparse_degree=int(os.environ.get("EXP177_MAX_SPARSE_DEGREE", "32")),
+            )
         if dataset_cls is MPPrecomputedSoftTargetContactsDataset:
             kwargs.update(
                 transform_workers=int(os.environ.get("EXP177_PRECOMPUTED_WORKERS", "16")),
@@ -166,6 +177,9 @@ def _pod_config(run_name: str):
         "EXP177_SHARD_CACHE_SIZE": os.environ.get("EXP177_SHARD_CACHE_SIZE", "8"),
         "EXP177_MP_START_METHOD": os.environ.get("EXP177_MP_START_METHOD", "fork"),
         "EXP177_PRECOMPUTED_MP": os.environ.get("EXP177_PRECOMPUTED_MP", "1"),
+        "EXP177_SOFT_TARGET_BATCH": os.environ.get("EXP177_SOFT_TARGET_BATCH", "compact"),
+        "EXP177_MAX_SPARSE_CONTACTS": os.environ.get("EXP177_MAX_SPARSE_CONTACTS", "2048"),
+        "EXP177_MAX_SPARSE_DEGREE": os.environ.get("EXP177_MAX_SPARSE_DEGREE", "32"),
         "EXP177_PRECOMPUTED_WORKERS": os.environ.get("EXP177_PRECOMPUTED_WORKERS", "16"),
         "EXP177_PRECOMPUTED_PREFETCH_CHUNKS": os.environ.get("EXP177_PRECOMPUTED_PREFETCH_CHUNKS", "16"),
         "EXP177_PRECOMPUTED_CHUNK_SIZE": os.environ.get("EXP177_PRECOMPUTED_CHUNK_SIZE", "64"),

@@ -63,6 +63,24 @@ class CompactContactDocumentBatch(eqx.Module):
     vocabulary: VocabularyIdentity | None = eqx.field(static=True)
 
 
+class SparseContactDocumentBatch(eqx.Module):
+    """Contacts-v1 block-causal examples with sparse second-endpoint targets."""
+
+    tokens: hax.NamedArray
+    contact_first_ids: jax.Array
+    contact_second_ids: jax.Array
+    second_neighbor_ids: jax.Array
+    second_neighbor_counts: jax.Array
+    second_neighbor_count: jax.Array
+    contact_count: jax.Array
+    prediction_start: jax.Array
+    position_ids: hax.NamedArray
+    segment_ids: hax.NamedArray
+    attention_blocks: hax.NamedArray
+    target_position_count: jax.Array
+    vocabulary: VocabularyIdentity | None = eqx.field(static=True)
+
+
 def _flatten_targets(packed: PackedBatch) -> _FlatTargets:
     positions: list[int] = []
     token_ids: list[int] = []
@@ -292,20 +310,7 @@ def _compact_contact_attention_mask(batch: CompactContactDocumentBatch) -> Atten
     return AttentionMask.explicit(explicit_mask).with_segment_ids(batch.segment_ids)
 
 
-def compact_contact_document_loss(
-    model: LmHeadModel,
-    batch: CompactContactDocumentBatch,
-    *,
-    key=None,
-) -> jnp.ndarray:
-    """Contacts-v1 soft-target loss from compact endpoint lists.
-
-    This is algebraically the same objective as the dense-logit version, but it
-    computes ``CE(q, z) = logsumexp(z) - E_q[z]`` directly. ``logsumexp(z)`` is
-    recovered from Levanter's fused linear-CE kernel, and ``E_q[z]`` is computed
-    by dotting the position activation with weighted LM-head rows. That keeps the
-    custom loss off the memory-heavy ``[batch, position, vocab]`` logits path.
-    """
+def _compact_contact_forward(model: LmHeadModel, batch: CompactContactDocumentBatch | SparseContactDocumentBatch, *, key=None):
     activations, aux_loss = split_activations(
         model.activations(
             batch.tokens,
@@ -329,6 +334,24 @@ def compact_contact_document_loss(
     target_rows = lm_head.take(model.Vocab, target_y)
     z_target = hax.dot(activations, target_rows, axis=model.Embed)
     log_normalizers = hard_ce + z_target
+    return activations, log_normalizers, lm_head, aux_loss, Pos
+
+
+def compact_contact_document_loss(
+    model: LmHeadModel,
+    batch: CompactContactDocumentBatch,
+    *,
+    key=None,
+) -> jnp.ndarray:
+    """Contacts-v1 soft-target loss from compact endpoint lists.
+
+    This is algebraically the same objective as the dense-logit version, but it
+    computes ``CE(q, z) = logsumexp(z) - E_q[z]`` directly. ``logsumexp(z)`` is
+    recovered from Levanter's fused linear-CE kernel, and ``E_q[z]`` is computed
+    by dotting the position activation with weighted LM-head rows. That keeps the
+    custom loss off the memory-heavy ``[batch, position, vocab]`` logits path.
+    """
+    activations, log_normalizers, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
 
     activations_array = activations.rearrange((..., Pos, model.Embed)).array
     log_normalizers_array = log_normalizers.rearrange((..., Pos)).array
@@ -396,11 +419,105 @@ def compact_contact_document_loss(
     return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
 
 
+def sparse_contact_document_loss(
+    model: LmHeadModel,
+    batch: SparseContactDocumentBatch,
+    *,
+    key=None,
+) -> jnp.ndarray:
+    """Contacts-v1 soft-target loss using sparse neighbor rows.
+
+    The first endpoint target is represented by a running sum of remaining
+    endpoint LM-head embeddings. The second endpoint target is represented as a
+    padded sparse row for each teacher contact step, avoiding the old
+    per-contact scan over all remaining contacts.
+    """
+    activations, log_normalizers, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
+
+    activations_array = activations.rearrange((..., Pos, model.Embed)).array
+    log_normalizers_array = log_normalizers.rearrange((..., Pos)).array
+    lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
+
+    contact_token_id = jnp.asarray(int(CONTACT), dtype=jnp.int32)
+    end_token_id = jnp.asarray(int(END), dtype=jnp.int32)
+
+    def one_example_loss(
+        activations_one,
+        log_z_one,
+        first_ids,
+        second_ids,
+        second_neighbor_ids,
+        second_neighbor_counts,
+        second_neighbor_count,
+        contact_count,
+        prediction_start,
+    ):
+        contact_axis = jnp.arange(first_ids.shape[0], dtype=jnp.int32)
+        valid_contacts = contact_axis < contact_count
+        endpoint_rows = lm_head_by_vocab[first_ids] + lm_head_by_vocab[second_ids]
+        endpoint_sum0 = jnp.sum(jnp.where(valid_contacts[:, None], endpoint_rows, 0.0), axis=0)
+
+        def logit(position, token_id):
+            position = jnp.clip(position, 0, activations_one.shape[0] - 1)
+            return jnp.sum(activations_one[position] * lm_head_by_vocab[token_id], axis=-1)
+
+        def cross_entropy(position, expected_logit):
+            position = jnp.clip(position, 0, log_z_one.shape[0] - 1)
+            return log_z_one[position] - expected_logit
+
+        def body(c, carry):
+            endpoint_sum, total = carry
+            valid = c < contact_count
+            contact_position = prediction_start + 1 + 3 * c
+            first_position = contact_position + 1
+            contact_predict_position = jnp.where(c == 0, prediction_start, contact_position - 1)
+
+            contact_position = jnp.clip(contact_position, 0, activations_one.shape[0] - 1)
+            first_position = jnp.clip(first_position, 0, activations_one.shape[0] - 1)
+            contact_loss = cross_entropy(contact_predict_position, logit(contact_predict_position, contact_token_id))
+            first_expected_logit = jnp.sum(activations_one[contact_position] * endpoint_sum) / jnp.maximum(
+                2 * (contact_count - c), 1
+            )
+            first_loss = cross_entropy(contact_position, first_expected_logit)
+
+            neighbor_rows = lm_head_by_vocab[second_neighbor_ids[c]]
+            neighbor_logits = jnp.sum(activations_one[first_position] * neighbor_rows, axis=-1)
+            second_expected_logit = jnp.sum(second_neighbor_counts[c] * neighbor_logits) / jnp.maximum(
+                second_neighbor_count[c], 1
+            )
+            second_loss = cross_entropy(first_position, second_expected_logit)
+
+            current_endpoint_rows = lm_head_by_vocab[first_ids[c]] + lm_head_by_vocab[second_ids[c]]
+            next_endpoint_sum = endpoint_sum - jnp.where(valid, current_endpoint_rows, 0.0)
+            next_total = total + jnp.where(valid, contact_loss + first_loss + second_loss, 0.0)
+            return next_endpoint_sum, next_total
+
+        _, body_loss = jax.lax.fori_loop(0, first_ids.shape[0], body, (endpoint_sum0, jnp.asarray(0.0, jnp.float32)))
+        end_position = jnp.clip(prediction_start + 3 * contact_count, 0, log_z_one.shape[0] - 1)
+        end_loss = cross_entropy(end_position, logit(end_position, end_token_id))
+        return body_loss + end_loss
+
+    losses = jax.vmap(one_example_loss)(
+        activations_array,
+        log_normalizers_array,
+        batch.contact_first_ids,
+        batch.contact_second_ids,
+        batch.second_neighbor_ids,
+        batch.second_neighbor_counts,
+        batch.second_neighbor_count,
+        batch.contact_count,
+        batch.prediction_start,
+    )
+    return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
+
+
 __all__ = [
     "CompactContactDocumentBatch",
     "LevanterDocumentBatch",
+    "SparseContactDocumentBatch",
     "compact_contact_document_batch",
     "compact_contact_document_loss",
     "document_loss",
     "levanter_document_batch",
+    "sparse_contact_document_loss",
 ]
