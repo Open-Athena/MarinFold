@@ -169,7 +169,8 @@
     <p class="standfirst">
       #208 ran <strong>eleven scored runs across five reward designs</strong> and none improved
       consensus R-precision. #237 changes one thing — the <em>object</em> the reward acts on — and
-      gets the first checkpoints that do. <strong>Five rewards, ~25 scored checkpoints, complete.</strong>
+      gets the first checkpoints that do. <strong>Six rewards, seven runs, 37 scored checkpoints,
+      complete.</strong>
     </p>
   </header>
 
@@ -190,9 +191,9 @@
     <div class="beat">
       <div class="tag">The result</div>
       <h3>It works, and not enough</h3>
-      <p>Three arms beat the warm start on <em>every</em> mode. But at equal budget plain
-      sampling still wins, and at a larger one they draw level: RL <em>closed</em> the gap to
-      ordinary sampling — it did not open one.</p>
+      <p>The winner is <strong>M-K</strong> — reward = the rollout's own consensus, the deployed
+      metric itself. At equal budget plain sampling still wins by 0.0090; at a larger one they
+      draw level. RL <em>closed</em> the gap to ordinary sampling — it did not clearly open one.</p>
     </div>
   </section>
 
@@ -226,11 +227,11 @@
               <td>rollout scalar</td>
               <td><span class="chip c-down">dominated by M-C</span></td>
             </tr>
-            <tr class="lead">
+            <tr>
               <td class="arm">M-B</td>
               <td>F1 of the <em>best</em> section (oracle)</td>
               <td>rollout scalar</td>
-              <td><span class="chip c-up">best overall</span></td>
+              <td><span class="chip c-up">best oracle 0.5663</span></td>
             </tr>
             <tr>
               <td class="arm">M-BC</td>
@@ -243,6 +244,12 @@
               <td>GRPO(last) + λ·GRPO(consensus) — <em>synthesise the drafts</em></td>
               <td>two rollout scalars</td>
               <td><span class="chip c-hold">beats M-F, not M-C</span></td>
+            </tr>
+            <tr class="lead">
+              <td class="arm">M-K</td>
+              <td>the rollout's own <em>consensus R-precision</em> — the deployed metric</td>
+              <td>rollout scalar</td>
+              <td><span class="chip c-up">best overall 0.5806</span></td>
             </tr>
           </tbody>
         </table>
@@ -266,13 +273,21 @@
               <td class="arm">M-C step-18</td>
               <td class="num">0.0072</td><td class="num">0.5750</td><td class="num">0.5578</td><td class="num"><b>0.5267</b></td>
             </tr>
-            <tr class="lead">
+            <tr>
               <td class="arm">M-B lr3e-6 step-90</td>
               <td class="num">0.0087</td><td class="num">0.5775</td><td class="num">0.5646</td><td class="num">0.5091</td>
             </tr>
             <tr>
               <td class="arm">M-B lr1e-5 step-18</td>
               <td class="num">0.0088</td><td class="num">0.5763</td><td class="num">0.5663</td><td class="num">0.5108</td>
+            </tr>
+            <tr class="lead">
+              <td class="arm">M-K step-36</td>
+              <td class="num">0.0162</td><td class="num"><b>0.5806</b></td><td class="num">0.5602</td><td class="num">0.5178</td>
+            </tr>
+            <tr>
+              <td class="arm">M-K step-30</td>
+              <td class="num">0.0287</td><td class="num">0.5803</td><td class="num">0.5530</td><td class="num">0.5112</td>
             </tr>
             <tr>
               <td class="arm">M-FC step-24</td>
@@ -300,12 +315,16 @@
     </div>
 
       <h2 style="margin-top:22px">At a larger budget, pooled across 8 rollouts</h2>
+      <p class="note" style="margin:0 0 8px;font-size:12.5px;color:var(--muted)">
+        M-K's +0.0041 over plain-100 is paired per protein at
+        <b>CI [−0.0010, +0.0090]</b> — level, not a win.</p>
       <div class="panel scroll">
         <table>
           <thead><tr><th>configuration</th><th class="num">tokens</th><th class="num">R-prec</th></tr></thead>
           <tbody>
+            <tr class="lead"><td class="arm">M-K step-36, 8 pooled</td><td class="num">54k</td><td class="num">0.6098</td></tr>
             <tr class="barrow"><td>plain, 100 rollouts</td><td class="num">~50k</td><td class="num">0.6058</td></tr>
-            <tr class="lead"><td class="arm">M-B, 8 rollouts pooled</td><td class="num">54k</td><td class="num">0.6054</td></tr>
+            <tr><td class="arm">M-B step-90, 8 pooled</td><td class="num">54k</td><td class="num">0.6054</td></tr>
             <tr class="refrow"><td>warm start, 8 pooled</td><td class="num">55k</td><td class="num">0.5992</td></tr>
           </tbody>
         </table>
@@ -346,6 +365,7 @@
               <polyline fill="none" stroke="var(--accent)" stroke-width="1.6" opacity=".55"
                         points="84.2,38.2 108.7,37.2 161.9,46.6 184.0,39.0 260.8,56.1 328.3,68.5 523.1,88.5 598.4,182.3"/>
               <g class="sv-pt">
+                <circle cx="108.7" cy="37.2" r="4"/>
                 <circle cx="84.2" cy="38.2" r="4"/>
                 <circle cx="161.9" cy="46.6" r="4"/>
                 <circle cx="184.0" cy="39.0" r="4"/>
@@ -353,9 +373,9 @@
                 <circle cx="328.3" cy="68.5" r="4"/>
                 <circle cx="523.1" cy="88.5" r="4"/>
               </g>
-              <circle class="sv-peak" cx="108.7" cy="37.2" r="5.5"/>
+              <circle class="sv-peak" cx="183.2" cy="33.7" r="5.5"/>
               <circle class="sv-dead" cx="598.4" cy="182.3" r="5"/>
-              <text class="sv-label" x="112" y="30" fill="var(--up)">M-B 18 · peak</text>
+              <text class="sv-label" x="190" y="30" fill="var(--up)">M-K 36 · peak 0.5806</text>
               <text class="sv-label" x="592" y="196" text-anchor="end" fill="var(--down)">M-B 80 · destroyed</text>
               <!-- x axis -->
               <line x1="62" y1="206" x2="624" y2="206" stroke="var(--hair)" stroke-width="1"/>
@@ -366,9 +386,10 @@
               </g>
             </svg>
             <figcaption>
-              #208 ran its arms at <strong>KL 0.06–0.10 and to 3.96</strong> — past the peak on every
-              one — and its two arms below KL 0.0015 never moved at all. <strong>The window it
-              needed lay between the two learning rates it tried.</strong>
+              The line traces M-C, M-F and M-B; <strong>M-K sits above it</strong> and peaks
+              later, at KL 0.016. #208 ran its arms at <strong>KL 0.06–0.10 and to 3.96</strong>
+              — past the peak on every one — and its two arms below KL 0.0015 never moved at all.
+              <strong>The window it needed lay between the two learning rates it tried.</strong>
             </figcaption>
           </figure>
         </div>
@@ -399,6 +420,15 @@
             <em>away</em> from its threshold and none fired.</p>
           </div>
           <div class="finding">
+            <div class="k">MATCH</div>
+            <p><strong>The reward that won is the metric itself.</strong> M-K scores the rollout's
+            own consensus and broadcasts one number — no per-section credit assignment, the
+            mechanism the hypothesis was built on. <em>Within-sequence credit assignment turned
+            out not to be needed;</em> what was needed was a reward computable on the object the
+            metric scores. M-K is also the only arm neither killed by a gate nor diverged — it
+            ran out of scheduled steps.</p>
+          </div>
+          <div class="finding">
             <div class="k">SELECT</div>
             <p><strong>Selection is dominated by aggregation.</strong> An ORACLE selector of one
             draft reads 0.5646 where voting the same drafts reads <strong>0.5750</strong>. A final
@@ -410,9 +440,9 @@
   </div>
 
   <footer>
-    <span><b>Status</b> complete — 5 rewards, ~25 scored checkpoints</span>
-    <span><b>Peak</b> KL ≈ 0.009 for every arm; two rates agree to 0.002 there</span>
+    <span><b>Status</b> complete — 6 rewards, 7 runs, 37 scored checkpoints</span>
+    <span><b>Peak</b> KL ≈ 0.009 for five arms; M-K plateaus later, at 0.016</span>
     <span><b>Validity</b> lr-0 control is a coin flip against its own input (260/259) · scorer reproduces #230 exactly</span>
-    <span><b>Next</b> fix M-C's scale bug and re-run it</span>
+    <span><b>Next</b> train M-K longer — it stopped for its schedule, not for a reason</span>
   </footer>
 </div>
