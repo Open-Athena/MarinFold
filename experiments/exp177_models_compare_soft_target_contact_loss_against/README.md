@@ -94,6 +94,26 @@ s3://marin-us-east-02a/protein-structure/MarinFold/exp177_soft_target_loss_h2h/c
 A non-fatal draccus config-encoding exception still appears for the sparse
 dataset object during startup, but training continued normally.
 
+### Sparse soft-target batch-size smokes (2026-08-19)
+
+Follow-up single-node 8×H100 smokes swept larger sparse global batches using the
+same on-the-fly sparse precomputed path and caps (`max_sparse_contacts=2048`,
+`max_sparse_degree=32`):
+
+| Run | Batch | Outcome | Timing signal | Approx tokens/s |
+|---|---:|---|---|---:|
+| r50 | 16 | succeeded, 20 steps | ~9.6s/step post-compile | ~13.7k |
+| r51 | 32 | succeeded, 20 steps | ~18.1-18.6s/step post-compile | ~14.1-14.5k |
+| r52 | 64 | reached 15/20, then stopped during interval checkpoint after enough timing signal | ~36.2-36.8s/step | ~14.2-14.5k |
+| r53 | 128 | reached 3/8, then stopped after confirming no immediate OOM and poor scaling | ~78-95s/step early/tqdm | ~11-13k |
+
+No OOM was observed up to global batch 128, but throughput plateaus around
+batch 32-64 and then regresses at 128. For a larger sparse soft-target run, the
+best current single-node setting is likely **global batch 32**: it matches or
+slightly beats batch 64 tokens/s with shorter step latency and less checkpoint /
+activation risk. Batch 64 is viable if a larger effective batch is preferred,
+but it does not improve throughput in these smokes.
+
 ## Conclusion
 
 _(Fill in after results are in.)_
