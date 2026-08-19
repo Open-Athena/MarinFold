@@ -45,9 +45,9 @@ def _forwarded_perf_env() -> dict[str, str]:
 
 def _data_config() -> LmDataConfig:
     train_component = DatasetComponent(
-        cache_dir=f"{CONTACTS_V1_CACHE_BASE}/contacts-v1",
+        cache_dir=f"{CONTACTS_V1_CACHE_BASE}/contacts-v1/train",
         pack=True,
-        split="train",
+        flat_cache=True,
     )
     val_component = DatasetComponent(
         cache_dir=f"{CONTACTS_V1_CACHE_BASE}/contacts-v1-val",
