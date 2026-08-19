@@ -52,6 +52,14 @@ ESMFold2 does.
 A sequence LM trained on a sequence database inherits that database's family
 statistics. That is the finding.
 
+At the extreme -- the six proteins with ten or fewer MSA sequences -- the ordering
+changes but not in our favour. Protenix-v2 + MSA drops from 0.791 on Q1 to 0.410,
+and the KNN null to 0.139, so the MSA methods do lose their advantage. But
+MarinFold falls to 0.317, below its own Q1 average, while **ESMFold2 holds at
+0.694**. The regime where "no MSA available" is the whole argument is exactly
+where a PLM-based predictor is strongest and we are weakest. Six proteins is a
+pointer, not a measurement.
+
 ## Biology barely matters
 
 Controlling for length, contact order and training identity, nothing in the

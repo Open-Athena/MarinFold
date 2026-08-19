@@ -151,9 +151,9 @@ Depth is the number of sequences in the colabfold MSA the Protenix +MSA arm
 actually ran with (`msa_depth` in the feature matrix), so these are the same
 alignments one of the baselines was given. The set spans 2 to 19,393 sequences
 with a median of 3,016; the quartile boundaries are 784, 3,015 and 7,413. **Q1 is
-not an "orphan" bin** — a median of 160 sequences is a small family, not no
-family, and only 6 of the 314 proteins have fewer than 10. Whatever happens below
-that is unmeasured here.
+not an "orphan" bin** — its median is 160 sequences, a small family rather than no
+family. Only six proteins have ten sequences or fewer, and they are the subject of
+the next section.
 
 MarinFold loses **0.25 of R-precision** between the deepest and shallowest quartile;
 ESMFold2 loses 0.18 and Protenix-v2 + MSA loses 0.08. The gap to ESMFold2 *widens*
@@ -161,6 +161,45 @@ as the family gets smaller (ρ = +0.18 between MSA depth and the gap, p = 1.4e-3
 Of the 14 proteins where MarinFold matches or beats ESMFold2, the median MSA depth
 is 287 against 3,015 overall — so our wins are on small families, but they are 14
 of 314 and do not move the trend.
+
+### 3b. The six near-orphan proteins, where the ordering changes
+
+Six of the 314 have an MSA of ten sequences or fewer — the regime where a
+single-sequence model has its strongest claim, and the only place in this set
+where MSA-based prediction genuinely has nothing to work with. It is six proteins,
+so this is a pointer and not a measurement, but the pattern is not subtle
+([`data/near_orphan_proteins.csv`](data/near_orphan_proteins.csv)):
+
+| protein | depth | L | organism class | #232 m2-p06 | #199 cooldown | Protenix-ss | ESMFold | ESMFold2 | Protenix + MSA | seq-KNN |
+|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| `8ii8_A` pink-colored protein, *Pleurotus* | 2 | 226 | eukaryote | 0.333 | 0.333 | 0.522 | 0.355 | 0.493 | 0.362 | 0.000 |
+| `8qoh_A` kinetochore protein KKT14 | 2 | 278 | eukaryote | 0.320 | 0.342 | 0.053 | 0.436 | 0.669 | 0.143 | 0.019 |
+| `8wrx_A` Anti-CRISPR type II-A 28 | 3 | 88 | virus | 0.385 | 0.449 | 0.705 | 0.718 | 0.769 | 0.577 | 0.013 |
+| `8oxk_A` powdery-mildew effector AVRA10 | 5 | 99 | eukaryote | 0.326 | 0.316 | 0.158 | 0.505 | 0.905 | 0.095 | 0.084 |
+| `8ux2_A` ADP-ribosyltransferase CteC | 5 | 246 | bacteria | 0.153 | 0.333 | 0.088 | 0.208 | 0.481 | 0.421 | 0.051 |
+| `8j8y_A` phytoplasma immunodominant membrane protein | 10 | 141 | bacteria | 0.385 | 0.354 | 0.833 | 0.604 | 0.844 | 0.865 | **0.667** |
+| **mean** | | | | **0.317** | 0.355 | 0.393 | 0.471 | **0.694** | 0.410 | 0.139 |
+| *Q1 mean (n=79)* | | | | *0.378* | *0.421* | *0.282* | *0.592* | *0.673* | *0.791* | *0.398* |
+
+**The MSA methods lose their advantage entirely, and we do not pick it up.**
+Protenix-v2 + MSA falls from 0.791 on Q1 to **0.410** here — with no alignment to
+condition on it is no better than its own single-sequence mode. The seq-KNN null
+collapses to 0.139, which is what "no homolog" means mechanically. But MarinFold
+does not gain: 0.317, *below* its own Q1 average, and behind Protenix-v2
+single-sequence (0.393).
+
+**ESMFold2 is the one method that holds up** — 0.694 here against 0.673 on Q1 and
+0.795 overall, so it barely degrades at all. Whatever ESMC-6B has learned survives
+the absence of a family, and that, not the MSA methods, is the comparison a
+single-sequence model has to win. On these six it beats us on five of six, by
+0.16 to 0.58.
+
+Two caveats worth keeping attached to this table. Six proteins is anecdote
+territory — the per-protein spread within them (0.153 to 0.385 for MarinFold) is
+as large as the difference between bins. And `8j8y_A` at depth 10 has a KNN score
+of 0.667, so it has a close training relative despite a shallow MSA; MSA depth and
+training support are correlated but not the same thing, and at n = 6 that
+distinction is visible in individual rows.
 
 ### 4. Our corpus matters beyond nature's family size, a little
 
@@ -237,6 +276,13 @@ orphan bacterial and eukaryotic proteins.
 afterthought. A model comparison on a set with median MSA depth 3,000 says little
 about behaviour at depth 100, and the ordering of methods is not preserved: on Q1
 MarinFold reaches 56 % of ESMFold2's score, on Q4 74 %.
+
+**The comparison that matters is ESMFold2, not the MSA methods.** On the six
+proteins with ten or fewer MSA sequences, Protenix-v2 + MSA drops to 0.410 and the
+KNN null to 0.139 — but ESMFold2 holds at 0.694 while we fall to 0.317. The
+regime where "no MSA available" is the whole point is exactly where a PLM-based
+predictor is strongest and we are weakest. Six proteins is not a measurement, but
+it says where to look.
 
 **Open.** Whether family abundance is *causal* for us — a training-data intervention
 (upsample small families, or train on a de-duplicated corpus) would test it, and
