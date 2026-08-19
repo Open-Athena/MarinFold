@@ -799,19 +799,44 @@ So: arm M-K, lr 1e-5, 300 steps, **`kl_loss_coef = 0.05`** — 50×, chosen to m
 the penalty comparable to a unit-spread advantage rather than 0.1 % of it. The
 coefficient was a first guess and is recorded as one.
 
-**The leash binds.** At batch 30, `policy_kl` is **0.0037** and its growth is
-decelerating (0.0014 → 0.0025 → 0.0033 → 0.0037), against unleashed M-K at the
-same learning rate and the same step count reading **0.0317 by step 24**. Same
-reward, same lr, roughly **an order of magnitude less distance travelled**. Steps
-and distance are decoupled, which is the precondition the question needed.
+**Read at 30 batches, the leash looks like it binds.** `policy_kl` is **0.0037**
+and decelerating (0.0014 → 0.0025 → 0.0033 → 0.0037), against unleashed M-K at
+the same lr reading **0.0317 by step 24** — roughly 9× less distance at matched
+steps.
 
-> **Status: running.** What it is for is the one thing the other runs cannot
-> settle — whether *more optimisation at a fixed distance* buys anything. If KL
-> settles inside M-K's own optimum (~0.016–0.03) and the score keeps climbing,
-> long trajectories win and the leash is how you buy them. If KL settles and the
-> score does not move, **the distance is the ceiling** and no amount of
-> optimisation at that distance helps — a clean negative, and the one that would
-> retire this line.
+**Read at 130 batches, it is not a leash at all.**
+
+![distance travelled against steps taken](plots/distance_vs_steps.png)
+
+From step ~50 to ~130 the leashed run lies almost exactly on top of the **lr
+3e-6** trace. **A 50× KL penalty bought about what a 3× learning-rate cut
+bought.** It slows travel; it does not hold distance. And it ends worse than the
+smaller learning rate did: lr 3e-6 was stopped by a gate at KL 0.040, while the
+leashed run ran to **KL 0.5** with sections per rollout at 54 — arm M-F's
+section-count runaway, which tripped the `max_sections` gate **2 of 3** twice
+without ever hitting three consecutive batches.
+
+| leashed M-K | step 30 | 60 | 90 | 120 | 140 | 155 | 160 | 240 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `policy_kl` | 0.0037 | 0.0073 | 0.0089 | 0.0153 | 0.0357 | 0.193 | 0.372 | 0.560 |
+| sections/rollout | 23.9 | 22.8 | 23.0 | 25.4 | 30.2 | 41.2 | 54.6 | 37.4 |
+
+**So the experiment the leash was for has still not been run.** `kl_loss_coef` is
+the knob SkyRL offers for this, and at 50× it does not produce a fixed-distance
+regime — it produces a slower one, with a worse tail. Holding distance genuinely
+fixed would need a mechanism that reacts to the *measured* KL rather than paying
+a constant price per nat: an adaptive controller on the coefficient, or the trust
+region the PPO clip would provide if `update_epochs_per_batch > 1` made it fire
+at all.
+
+> **What the checkpoints can still answer.** The leashed run did take **120 steps
+> to reach KL 0.013**, where unleashed M-K took about 13. That is a matched-distance
+> comparison with ~9× the optimisation, which is the same test M-B's two learning
+> rates gave, now on the best arm. Steps 120 / 90 / 60 / 30 are being scored
+> first for exactly that reason; 240 and 300 are skipped, because at KL 0.56 they
+> measure a destroyed policy and arm M-B step-80 already did that.
+>
+> **Status: scoring.** Numbers go here when they land.
 
 
 ## Three mechanisms, each measured rather than argued
