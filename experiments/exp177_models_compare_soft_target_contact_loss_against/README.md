@@ -45,7 +45,31 @@ The soft-target objective removes arbitrary contact ordering/orientation from th
 
 ## Results
 
-_(Fill in after the run completes.)_
+### Sparse soft-target shape stats (2026-08-19)
+
+To debug soft-loss training throughput, we computed per-example sparse contact
+shape statistics on CoreWeave/S3 without materializing a new training corpus.
+The Zephyr job `/zack/exp177-sparse-target-stats-full-r1` read all 3,338 exp139
+analyzed shards and wrote 8,845,700 stats rows to:
+
+```
+s3://marin-us-east-02a/protein-structure/MarinFold/exp177_soft_target_loss_h2h/stats/sparse_target_shapes_v1/2026.08.19.1/
+```
+
+The distribution strongly supports a sparse neighbor-row loss: max incident
+degree is tiny compared with the current padded contact budget. Across the
+fixed-quota slots, `max_degree` has p50=8, p95=12, p99=13, p999=15, max=19.
+Residue counts are also modest: p50=195, p95=533, p99=791, max=1000. Candidate
+bucket coverage by `(residue_count, max_degree)` was:
+
+- r256-d32: 67.53%
+- r512-d64: 94.30%
+- r1024-d128: 100.00%
+
+This suggests we can likely avoid copying/bucketing the whole dataset at first:
+a single sparse representation capped around `residue_count<=1024` and
+`max_degree<=32` would already cover this run exactly by the observed stats,
+with much smaller arrays than the current `(seq_len - 2) // 3` contact padding.
 
 ## Conclusion
 
