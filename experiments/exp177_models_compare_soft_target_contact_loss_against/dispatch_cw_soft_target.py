@@ -152,6 +152,8 @@ def _pod_config(run_name: str):
     batch_size = int(os.environ.get("EXP177_CW_BATCH_SIZE", "128"))
     steps = int(os.environ.get("EXP177_CW_STEPS", str(EXP117_STEPS * 256 // batch_size)))
     steps_per_eval = int(os.environ.get("EXP177_CW_STEPS_PER_EVAL", str(max(1, steps // 32))))
+    checkpoint_interval_minutes = int(os.environ.get("EXP177_CW_CHECKPOINT_INTERVAL_MINUTES", "10"))
+    keep_every_steps = int(os.environ.get("EXP177_CW_KEEP_EVERY_STEPS", str(steps)))
     max_eval_batches = int(os.environ.get("EXP177_CW_MAX_EVAL_BATCHES", "16"))
     per_device_parallelism = int(os.environ.get("EXP177_CW_PER_DEVICE_PARALLELISM", "1"))
     version = os.environ.get("EXP177_VERSION", "2026.08.03.2")
@@ -229,7 +231,10 @@ def _pod_config(run_name: str):
         max_eval_batches=max_eval_batches,
         per_device_parallelism=per_device_parallelism,
         per_device_eval_parallelism=per_device_parallelism,
-        checkpointer=CheckpointerConfig(save_interval=timedelta(minutes=10), keep=[{"every": steps}]),
+        checkpointer=CheckpointerConfig(
+            save_interval=timedelta(minutes=checkpoint_interval_minutes),
+            keep=[{"every": keep_every_steps}],
+        ),
     )
     train_config = dataclasses.replace(pod_config.train_config, trainer=trainer, hf_save_steps=steps)
     return dataclasses.replace(pod_config, train_config=train_config, auto_build_caches=False)

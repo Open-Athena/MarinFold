@@ -12,9 +12,11 @@ job as a Fray/Iris batch-priority gang, matching the exp108 CoreWeave recipe.
 import dataclasses
 import logging
 import os
+from datetime import timedelta
 
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
+from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import resolve_training_env, run_levanter_train_lm
@@ -83,6 +85,9 @@ def _pod_config(run_name: str):
     batch_size = int(os.environ.get("EXP177_CW_BATCH_SIZE", "128"))
     steps = int(os.environ.get("EXP177_CW_STEPS", str(EXP117_STEPS * 256 // batch_size)))
     steps_per_eval = int(os.environ.get("EXP177_CW_STEPS_PER_EVAL", str(max(1, steps // 32))))
+    checkpoint_interval_minutes = int(os.environ.get("EXP177_CW_CHECKPOINT_INTERVAL_MINUTES", "10"))
+    keep_every_steps_env = os.environ.get("EXP177_CW_KEEP_EVERY_STEPS")
+    keep_every_steps = int(keep_every_steps_env) if keep_every_steps_env else None
     max_eval_batches_env = os.environ.get("EXP177_CW_MAX_EVAL_BATCHES")
     max_eval_batches = int(max_eval_batches_env) if max_eval_batches_env else None
     output_path = f"{CONTACTS_V1_S3_PREFIX}/checkpoints/{run_name}/{os.environ.get('EXP177_VERSION', '2026.08.03.1')}"
@@ -119,9 +124,15 @@ def _pod_config(run_name: str):
         tags=("protein", "contacts-v1", "exp177", "qwen3", "from-scratch", "next-token", "coreweave"),
         env_vars=env_vars,
     )
-    if max_eval_batches is None:
-        return pod_config
-    trainer = dataclasses.replace(pod_config.train_config.trainer, max_eval_batches=max_eval_batches)
+    checkpoint_keep = [] if keep_every_steps is None else [{"every": keep_every_steps}]
+    trainer = dataclasses.replace(
+        pod_config.train_config.trainer,
+        max_eval_batches=max_eval_batches,
+        checkpointer=CheckpointerConfig(
+            save_interval=timedelta(minutes=checkpoint_interval_minutes),
+            keep=checkpoint_keep,
+        ),
+    )
     train_config = dataclasses.replace(pod_config.train_config, trainer=trainer)
     return dataclasses.replace(pod_config, train_config=train_config)
 
