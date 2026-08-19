@@ -101,8 +101,11 @@ def load() -> pd.DataFrame:
 
 
 def family_abundance(frame: pd.DataFrame, out: Path) -> None:
-    quartiles = pd.qcut(frame.msa_log_depth, 4,
-                        labels=["Q1\nshallowest", "Q2", "Q3", "Q4\ndeepest"])
+    quartiles, edges = pd.qcut(frame.msa_log_depth, 4, retbins=True,
+                               labels=["Q1 shallowest", "Q2", "Q3", "Q4 deepest"])
+    # Bin boundaries in sequence counts, so a reader can place a protein of
+    # their own without going back to the table.
+    bounds = [int(round(10 ** edge)) for edge in edges]
     figure, axis = plt.subplots(figsize=(9.2, 6.2))
     for predictor in U.PREDICTORS:
         if predictor not in frame:
@@ -115,8 +118,11 @@ def family_abundance(frame: pd.DataFrame, out: Path) -> None:
                       xytext=(9, 0), va="center", fontsize=8.6, color=COLORS[predictor])
     counts = quartiles.value_counts().sort_index()
     axis.set_xticks(range(4))
-    axis.set_xticklabels([f"{label}\nn={n}" for label, n in
-                          zip(quartiles.cat.categories, counts, strict=True)], fontsize=9)
+    axis.set_xticklabels(
+        [f"{label}\n{low:,}–{high:,} seqs\nn={n}"
+         for label, low, high, n in zip(quartiles.cat.categories, bounds[:-1],
+                                        bounds[1:], counts, strict=True)],
+        fontsize=8.6)
     axis.set_xlim(-0.15, 4.9)
     axis.set_xlabel("MSA depth quartile — how many relatives the protein has")
     axis.set_ylabel("Mean R-precision (all ranges)")
@@ -212,10 +218,11 @@ def main() -> int:
     path = PLOTS / "family_abundance.png"
     family_abundance(frame, path)
     stamp(path, "Mean all-range R-precision by quartile of MSA depth over the 314 "
-                "natural FoldBench monomers. MSA depth stands in for how many "
-                "relatives a protein has; it correlates 0.80 with the number of "
-                "homologs in our training corpus and 0.87 with KNN neighbour count.",
-          sources)
+                "natural FoldBench monomers. Quartile boundaries are 784, 3,015 "
+                "and 7,413 sequences; the set spans 2 to 19,393. MSA depth stands "
+                "in for how many relatives a protein has — it correlates 0.80 with "
+                "the number of homologs in our training corpus and 0.87 with KNN "
+                "neighbour count.", sources)
 
     path = PLOTS / "explainable_variance.png"
     explainable_variance(path)

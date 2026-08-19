@@ -137,15 +137,23 @@ shallow. The opposite is true.
 
 ![Family abundance](plots/family_abundance.png)
 
-*Figure 3. Mean R-precision by MSA-depth quartile. Rendered by
-`plot_properties.py`.*
+*Figure 3. Mean R-precision by MSA-depth quartile, with each bin's sequence-count
+range on the axis. Rendered by `plot_properties.py`.*
 
-| MSA depth quartile | #232 m2-p06 | ESMFold2 | Protenix + MSA | gap to ESMFold2 |
-|---|---:|---:|---:|---:|
-| Q1 shallowest (n=79) | 0.378 | 0.673 | 0.791 | **−0.294** |
-| Q2 (n=78) | 0.507 | 0.804 | 0.851 | −0.297 |
-| Q3 (n=78) | 0.613 | 0.849 | 0.867 | −0.237 |
-| Q4 deepest (n=79) | 0.631 | 0.855 | 0.871 | −0.224 |
+| MSA depth quartile | sequences in the MSA | #232 m2-p06 | ESMFold2 | Protenix + MSA | gap to ESMFold2 |
+|---|---|---:|---:|---:|---:|
+| Q1 shallowest (n=79) | **2 – 784** (median 160) | 0.378 | 0.673 | 0.791 | **−0.294** |
+| Q2 (n=78) | 796 – 2,997 (median 1,803) | 0.507 | 0.804 | 0.851 | −0.297 |
+| Q3 (n=78) | 3,034 – 7,268 (median 4,985) | 0.613 | 0.849 | 0.867 | −0.237 |
+| Q4 deepest (n=79) | 7,462 – 19,393 (median 10,699) | 0.631 | 0.855 | 0.871 | −0.224 |
+
+Depth is the number of sequences in the colabfold MSA the Protenix +MSA arm
+actually ran with (`msa_depth` in the feature matrix), so these are the same
+alignments one of the baselines was given. The set spans 2 to 19,393 sequences
+with a median of 3,016; the quartile boundaries are 784, 3,015 and 7,413. **Q1 is
+not an "orphan" bin** — a median of 160 sequences is a small family, not no
+family, and only 6 of the 314 proteins have fewer than 10. Whatever happens below
+that is unmeasured here.
 
 MarinFold loses **0.25 of R-precision** between the deepest and shallowest quartile;
 ESMFold2 loses 0.18 and Protenix-v2 + MSA loses 0.08. The gap to ESMFold2 *widens*

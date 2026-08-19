@@ -36,8 +36,9 @@ difficulty axes everyone assumes matter do not move our model.
 ## We are the homology-dependent one
 
 The hypothesis going in was that a single-sequence model should hold up where
-MSAs are thin. **The opposite is true.** Between the deepest and shallowest
-quartile of MSA depth, MarinFold loses **0.25** R-precision (0.631 -> 0.378).
+MSAs are thin. **The opposite is true.** Between the deepest quartile (7,413 to
+19,393 sequences) and the shallowest (2 to 784, median 160), MarinFold loses
+**0.25** R-precision (0.631 -> 0.378).
 ESMFold2 loses 0.18 and Protenix-v2 + MSA loses 0.08. The gap to ESMFold2 widens
 as the family shrinks (rho = +0.18, p = 0.0014).
 
