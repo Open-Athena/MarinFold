@@ -106,7 +106,16 @@ identical; only the population changes.
 | **M-C** | `m_k = C(all) − C(all \ {k})`, section *k*'s marginal contribution to its **own rollout's** consensus | **per-section**, dense — each section's tokens carry their own advantage | `contacts_section` |
 | **M-F** | `F1(last section)` | **whole-rollout scalar** — one number for the entire generation, GRPO-centred against its 8 siblings and broadcast to every token | `grpo` |
 | **M-B** | `max_k F1(section k)` — **ORACLE** | **whole-rollout scalar**, same shape as M-F: score the whole generation by the best contact set anywhere in it, with no per-section credit assignment at all | `grpo` |
+| **M-BC** | `GRPO(max_k F1) + lam·GRPO(C_i(all))` — M-B's scalar blended with the rollout's own consensus, each standardised **separately** | **whole-rollout scalar** | `contacts_rollout` |
+| **M-FC** | `GRPO(F1(last)) + lam·GRPO(C_i(all))` — synthesis rather than selection: reward the last section, with the consensus as a restoring force | **whole-rollout scalar** | `contacts_rollout` |
+| **M-K** | `C_i(all)` — **the rollout's own consensus R-precision**, i.e. the deployed metric computed on the object the model emits | **whole-rollout scalar** | `grpo` |
 | **M-0** | M-C's reward at **lr = 0** | — | `contacts_section` |
+
+The last three did not exist when the experiment started. M-BC and M-FC were
+added to test whether a blend could hold two objectives at once; **M-K was
+designed from the diagnosis of M-C's failure** — it is the rollout-level,
+scale-correct base that M-C's per-section marginal should have been standing on,
+and it produced the best consensus in the experiment.
 
 The M-C / (M-F, M-B) split is the axis this experiment varies: M-C decides *which
 section* earned the reward and shapes those tokens specifically; M-F and M-B do
@@ -214,10 +223,13 @@ A(n) = mean over groups of  ( R_i(n) − mean_g R ) / sd_g R
    would be a third thing and is not what any arm here used.
 2. **It is not un-gameability.** Count-alignment is a statement about **one**
    nuisance direction. Arm M-K is count-aligned and still raised its reward
-   partly through a different route — making its sections *more alike* (Jaccard
-   0.164 → 0.350, votes per pair 2.40 → 3.92), which lifts a vote count without
-   improving any individual candidate. **Scale-correct means "not gameable along
-   the candidate-count axis", nothing more.**
+   partly through a different route — making its sections *more alike* (mean
+   pairwise Jaccard 0.255 → 0.328, votes per pair 2.64 → 3.28, medians of the
+   first 13 training batches against the last 5), which lifts a vote count
+   without improving any individual candidate. Its **section count held flat at
+   ~22** across all 48 steps, which is the count-alignment working; the drift is
+   on the other axis. **Scale-correct means "not gameable along the
+   candidate-count axis", nothing more.**
 
 A separate axis is **boundedness**. M-C's advantage is not merely adverse but
 *divergent* — 366× larger at one section than at 22 — which is why no fixed `lam`
@@ -255,7 +267,7 @@ and one minibatch**, and `recompute_old_logprobs_per_minibatch = true`, the
 update** — so the importance ratio is exactly 1 and can never leave [0.8, 1.2].
 
 Measured, not inferred: **`loss_metrics/clip_ratio` is 0.0 in every arm, at every
-one of 420 steps.**
+one of 468 steps.**
 
 So the update actually applied is
 
@@ -412,8 +424,8 @@ oracle; oracle-best > 0.5342 (M-B); AUC ≥ the #230 checkpoint's on every arm.
 | group / batch | `n_samples_per_prompt=8`, `train_batch_size=8` prompts → **64 rollouts/step**; `micro_train_batch_size_per_gpu=1` |
 | sampler | T 1.0, top-p 0.95, top-k −1, `max_generate_length=7000`, `max_prompt_length=2048`, ctx 8,192 |
 | optimizer | AdamW **lr 1e-5** constant-with-warmup, wd 0.01, `max_grad_norm` 1.0, `kl_loss_coef` 0.001 (k3), `loss_reduction=token_mean` |
-| estimator | `contacts_section` (M-C, M-0) / `grpo` (M-F, M-B) |
-| cost | ~103 s/step; 26–80 steps per arm on 8 × A100-80GB |
+| estimator | `contacts_section` (M-C, M-0) / `grpo` (M-F, M-B, **M-K**) / `contacts_rollout` (M-BC, M-FC) |
+| cost | ~101 s/step; 8–120 steps per arm on 8 × A100-80GB; ~90 GPU-h training, ~200 GPU-h evaluation |
 
 **Evaluation**
 
@@ -429,26 +441,27 @@ oracle; oracle-best > 0.5342 (M-B); AUC ≥ the #230 checkpoint's on every arm.
 ## Compute
 
 Eight A100-80GB. **1 policy (unsharded, mandatory — #208's sharding bug) + 1
-reference + 6 vLLM engines at `tensor_parallel_size=1`.** Measured over 420
+reference + 6 vLLM engines at `tensor_parallel_size=1`.** Measured over 468
 training steps:
 
 | phase | median | GPUs busy |
 |---|---:|---:|
-| `generate` | 35.9 s | 6 |
-| `fwd_logprobs` (old + ref) | 21.3 s | 2 |
-| `policy_train` | 39.1 s | **1** |
-| `sync_weights` | 2.4 s | 8 |
-| **step** | **100.9 s** | |
+| `generate` | 36.3 s | 6 |
+| `fwd_logprobs` (old + ref) | 21.8 s | 2 |
+| `policy_train` | 40.1 s | **1** |
+| `sync_weights` | 2.3 s | 8 |
+| **step** | **102.4 s** | |
 
-The phases **do not overlap** (they sum to 98.7 s of a 100.9 s step), so node
-utilisation is **39 %** — 316 of 807 GPU-seconds. **The trainer is the
+The phases **do not overlap** (they sum to 100.5 s of a 102.4 s step), so node
+utilisation is **39 %** — 320 of 819 GPU-seconds. **The trainer is the
 bottleneck**: 61 % of the step runs on one or two cards. MFU is **33 % during
 `policy_train`** and **1.6 % node-wide** — a scheduling result, not a kernel one.
 Generation is bandwidth-bound and under-batched at ~11 concurrent sequences per
 engine. Full detail, including the memory figures and three infrastructure traps,
 in [RESULTS.md](RESULTS.md#compute-how-the-eight-gpus-are-used-and-what-limits-the-step).
 
-~37 h wall clock, 728 GB of checkpoints.
+~39 h wall clock on the node across seven runs — ~90 GPU-h of training against
+~200 GPU-h of evaluation — and 728 GB of checkpoints.
 
 ## Run book
 
@@ -477,9 +490,9 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-**Full detail in [RESULTS.md](RESULTS.md).** Five reward designs, ~25 scored
-checkpoints, every number from #230's scorer unchanged. R-precision (all), legacy
-554, ordered by how far the policy moved:
+**Full detail in [RESULTS.md](RESULTS.md).** Six reward designs, seven runs,
+**37 scored checkpoints**, every number from #230's scorer unchanged.
+R-precision (all), legacy 554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |
 |---|---:|---:|---:|---:|
@@ -487,36 +500,51 @@ checkpoints, every number from #230's scorer unchanged. R-precision (all), legac
 | #230 warm start | 0 | 0.5673 | 0.5342 | 0.4566 |
 | M-0, lr 0 *(control)* | 0 | 0.5678 | 0.5364 | 0.4594 |
 | **M-C step-18** | 0.0072 | 0.5750 | 0.5578 | **0.5267** |
-| **M-B lr3e-6 step-90** | 0.0087 | **0.5775** | 0.5646 | 0.5091 |
+| M-B lr3e-6 step-90 | 0.0087 | 0.5775 | 0.5646 | 0.5091 |
 | M-B lr1e-5 step-18 | 0.0088 | 0.5763 | **0.5663** | 0.5108 |
+| **M-K step-36** | 0.0162 | **0.5806** | 0.5602 | 0.5178 |
+| M-K step-30 | 0.0287 | 0.5803 | 0.5530 | 0.5112 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 |
 | M-B step-80 | 0.4863 | 0.3969 | 0.3440 | 0.1905 |
 
 At a **larger** budget — all sections of 8 rollouts pooled, ~54k tokens against
-plain-100's ~50k — M-B reads **0.6054** against plain's **0.6058**, with the warm
-start at 0.5992.
+plain-100's ~50k — **M-K reads 0.6098** against plain's **0.6058** (paired
+Δ +0.0041, CI [−0.0010, +0.0090] — level, not a win), M-B 0.6054, warm start
+0.5992.
 
-- **Primary criterion: NOT met.** Nothing beats 0.5896. The best is 0.5775,
-  **0.0121** short.
-- **Secondary criteria: met** — oracle-best 0.5663 > 0.5342, final section
-  0.5267 > 0.4566 — but **no arm owns more than one**, and the arm that wins two
-  of the three is **M-B, the simplest reward tried**.
-- Three arms beat the warm start on **every** mode with paired CIs excluding zero.
-- Every arm was eventually stopped by a gate or by divergence. The peak is at
-  **KL ≈ 0.009** for all of them.
+- **Primary criterion: NOT met.** Nothing beats 0.5896. The best is **M-K's
+  0.5806**, **0.0090** short.
+- **Secondary criteria: met** — oracle-best 0.5663 > 0.5342 (M-B), final section
+  0.5267 > 0.4566 (M-C) — but **no arm owns more than one**, and the three go to
+  three different arms.
+- **M-K is the only arm that improves all four aggregation modes with every CI
+  excluding zero, on every cut**, including `second_last` (+0.0676) — it improved
+  the whole rollout rather than moving quality toward its end.
+- Five arms peak at **KL ≈ 0.009** and turn over. **M-K peaks at step 36 on a
+  broad plateau** and is the only arm neither killed by a gate nor diverged — it
+  ran out of scheduled steps.
 
 ## Conclusion
 
-**The hypothesis is half right.** Moving the reward's unit from *rollouts of a
-group* to *sections of one rollout* produces what #208 could not — RL checkpoints
-that improve consensus R-precision (+0.0102, and +0.0062 after pooling). It does
-not close the gap to independent sampling: **RL brought the multi format level
-with plain sampling rather than ahead of it** (0.6054 vs 0.6058 at ~50k tokens,
-where the warm start was 0.5992).
+**The hypothesis is half right, and right for a different reason than proposed.**
+Moving the reward's unit from *rollouts of a group* to *one rollout's candidate
+set* produces what #208 could not — RL checkpoints that improve consensus
+R-precision (+0.0133, and +0.0106 after pooling). But the unit that worked is the
+**whole rollout**, not the **section**: the arm the issue predicted (M-C,
+per-section credit assignment) is beaten on consensus by the arm that just scores
+the rollout's own consensus and broadcasts it (M-K). Within-sequence credit
+assignment was the hypothesis's mechanism, and it was not needed. What was needed
+was for the reward to be *computable on the object the metric scores* — which the
+multi format is what makes possible.
+
+It still does not clearly close the gap to independent sampling: **RL brought the
+multi format level with plain sampling rather than ahead of it** (M-K pooled
+0.6098 vs plain-100's 0.6058, a paired CI that includes zero, where the warm start
+was 0.5992).
 
 **#208's negative result is the far end of a dose-response, not a verdict.**
-Consensus against distance reads 0.5673 → **0.5775** (KL 0.009) → 0.5529 (0.031)
+Consensus against distance reads 0.5673 → **0.5806** (KL 0.016) → 0.5529 (0.031)
 → 0.3969 (0.486). Every reward here helps at small KL and damages at large. #208
 ran its arms at KL 0.06–0.10 and to 3.96 — past the peak on every one — and its
 two arms under KL 0.0015 never moved. **The window it needed lay between the two
@@ -553,16 +581,22 @@ own section-size law.
 
 **What would be worth doing next**, in order:
 
-- **Fix M-C's scale bug and re-run it.** It is the best final-section arm
-  *despite* carrying the bug, and it collapsed at step 26 because of it. The fix
-  is a rollout-level `GRPO(C_i(all))` base — measured scale-correct, −1.37
-  advantage at one section against +0.79 at 22 — with a **zero-sum** within-rollout
-  shaping term for credit assignment. Note the obvious repair, scoring against the
-  causal prefix, was **tested and refuted**: it telescopes, but `token_mean` reads
-  the mean, not the sum.
-- **Nothing further on M-B.** Two learning rates, 13 checkpoints, a smooth
-  unimodal peak, and agreement to 0.002 at matched distance. A third sweep
-  re-measures 0.5775.
+- **Train M-K further.** It is the only arm that stopped for its schedule rather
+  than for a reason — no gate strike, no divergence, a broad plateau instead of a
+  spike, and a rolling Jaccard still under the gate at step 48. Every other arm in
+  this experiment answers "how long can you train?" with "not long"; M-K has not
+  been asked. This is the one open question the existing runs cannot settle.
+- **Then turn on `beta` and `lam`.** M-K is the `beta = lam = 0` corner of the arm
+  derived in [RESULTS.md](RESULTS.md#the-arm-this-implies): a scale-correct
+  rollout-level base, plus a **zero-sum** within-rollout shaping term for credit
+  assignment, plus M-B's term. The base alone already beat every shaped and blended
+  arm, so the shaping term is now a hypothesis to test rather than a fix to apply.
+  Note the obvious form of that term, scoring against the causal prefix, was
+  **tested and refuted** as a standalone reward: it telescopes, but `token_mean`
+  reads the mean, not the sum — it is safe only *inside* a zero-sum shaping slot.
+- **Nothing further on M-B at lr 1e-5.** Two learning rates, 10 checkpoints, a
+  smooth unimodal peak, and agreement to 0.002 at matched distance.
 - **The diversity gap is a corpus question, not an RL one.** One rollout's sections
   cover 658 distinct pairs against 1,065 for 22 independent rollouts, and no reward
-  here closed that — the two that improved diversity did so by emitting less.
+  here closed that — the arms that improved diversity did so by emitting less, and
+  M-K, the best arm, *lost* union coverage (0.89×) on its way up.

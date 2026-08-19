@@ -42,14 +42,19 @@ REWARD_NAME = {"consensus_rprec": "the rollout's own consensus",
 
 #: Every scored checkpoint: arm -> {step: consensus R-precision, legacy 554}.
 ACC = {
-    "M-C":  {18: 0.5750, 20: 0.5739, 24: 0.5484, 32: 0.4576},
-    "M-F":  {18: 0.5647, 36: 0.5529, 60: 0.5157, 84: 0.3974, 120: 0.3758},
+    "M-C":  {18: 0.5750, 20: 0.5739, 24: 0.5484, 28: 0.4990, 32: 0.4576},
+    "M-F":  {18: 0.5647, 36: 0.5529, 48: 0.5237, 60: 0.5157, 84: 0.3974, 120: 0.3758},
     "M-B":  {18: 0.5763, 36: 0.5741, 54: 0.5376, 72: 0.5129, 80: 0.3969},
     "M-BC": {12: 0.5735, 24: 0.5646, 36: 0.5616, 48: 0.5504},
     "M-FC": {12: 0.5728, 18: 0.5732, 24: 0.5717, 36: 0.4818},
-    "M-K":  {12: 0.5739, 18: 0.5764, 24: 0.5787, 36: 0.5806},
+    "M-K":  {12: 0.5739, 18: 0.5764, 24: 0.5787, 30: 0.5803, 36: 0.5806,
+             42: 0.5776, 48: 0.5762},
     "M-0":  {8: 0.5678},
 }
+#: M-B was also run at lr 3e-6 -- a different schedule over the same reward, so it
+#: is a separate trace rather than more points on the 1e-5 one.
+ACC_SLOW = {"M-B": {30: 0.5713, 60: 0.5754, 75: 0.5760, 90: 0.5775, 120: 0.5739}}
+
 WARM, BAR = 0.5673, 0.5896
 
 
@@ -68,6 +73,10 @@ def main() -> int:
         f = a.logs / name
         if f.exists():
             runs[arm] = parse(f)
+    slow = {}
+    f = a.logs / "exp237_m_b_lr3e-6.log"
+    if f.exists():
+        slow["M-B"] = parse(f)
     # M-F's continuation, spliced at its true offset.
     f = a.logs / "exp237_m_f_lr1e-5.log"
     if f.exists() and "M-F" in runs:
@@ -87,11 +96,17 @@ def main() -> int:
         ax.plot(g["step"], g[col].rolling(6, min_periods=3).median(), color=COLOR[arm],
                 lw=1.5 if arm == "M-0" else 2.4, ls="--" if arm == "M-0" else "-",
                 label=f"{arm} · {REWARD_NAME[col]}")
+        # Same reward, slower schedule -- drawn here so the reward panel carries
+        # the same set of runs as the accuracy panel.
+        if arm in slow:
+            gs = slow[arm].dropna(subset=[col]).sort_values("step")
+            ax.plot(gs["step"], gs[col].rolling(6, min_periods=3).median(), color=COLOR[arm],
+                    lw=2.0, ls="-.", alpha=0.75, label=f"{arm} (lr 3e-6)")
     ax.set_ylim(0.15, 0.63)
-    ax.annotate("M-F exits here → 0.006 by step 120", xy=(62, 0.17), fontsize=8, color=COLOR["M-F"])
+    ax.annotate("M-F exits here → 0.006 by step 120", xy=(88, 0.20), fontsize=8, color=COLOR["M-F"])
     ax.set_xlabel("training step"); ax.set_ylabel("the arm's own reward (rolling median of 6)")
     ax.set_title("exp237 — reward during training", fontsize=11)
-    ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=2)
+    ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=2, framealpha=0.95)
     fig.tight_layout()
     save_plot_with_meta(fig, a.out / "curves_reward.png", dpi=150,
         caption=("Each arm against its OWN reward — the arms do not share one. Rolling median of "
@@ -114,14 +129,23 @@ def main() -> int:
         ax.plot(xs, ys, "o-", color=COLOR[arm], lw=2.2 if arm != "M-0" else 0,
                 ms=7 if arm == "M-K" else 5.5, label=arm,
                 mec="white", mew=1.2, zorder=4 if arm == "M-K" else 3)
+        if arm in ACC_SLOW:
+            xs2, ys2 = zip(*sorted(ACC_SLOW[arm].items()))
+            ax.plot(xs2, ys2, "o-.", color=COLOR[arm], lw=2.0, ms=5.5, alpha=0.75,
+                    mec="white", mew=1.2, label=f"{arm} (lr 3e-6)", zorder=3)
     ax.set_xlabel("training step")
     ax.set_ylabel("consensus R-precision  (legacy 554, 8 rollouts/protein)")
-    ax.set_title("exp237 — accuracy at every scored checkpoint", fontsize=11)
+    # No arrow: every path from a free area to (36, 0.5806) crosses three other
+    # curves. The label sits in the gap between M-K's tail and the bar instead.
+    ax.text(50, 0.5845, "M-K peaks 0.5806 at step 36 — best consensus measured here",
+            fontsize=8.5, color=COLOR["M-K"], fontweight="600", va="center")
+    ax.set_title("exp237 — accuracy at every scored checkpoint  (37 in total)", fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8.5, loc="lower left", ncol=2)
     fig.tight_layout()
     save_plot_with_meta(fig, a.out / "curves_accuracy.png", dpi=150,
-        caption=("Consensus R-precision on the 554-protein exp89 benchmark at every checkpoint "
-                 "that was scored. M-K is the only arm still rising at its last scored point."))
+        caption=("Consensus R-precision on the 554-protein exp89 benchmark at all 37 scored "
+                 "checkpoints. Five arms peak by step ~20 and fall away; M-K peaks later, at "
+                 "step 30-36, and highest."))
     print(f"wrote {a.out}/curves_accuracy.png")
     return 0
 

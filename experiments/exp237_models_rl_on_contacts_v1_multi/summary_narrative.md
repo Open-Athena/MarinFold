@@ -8,10 +8,11 @@
 RL on #230's `<contacts-v1.multi>` checkpoint, with the reward computed over the
 **sections of a single rollout** rather than over the rollouts of a group.
 
-Five reward designs, ~25 scored checkpoints, all on 8 × A100 via SkyRL:
-**M-C** each section's contribution to its own rollout's consensus · **M-F** the
-last section's F1 · **M-B** the best section's F1 (oracle) · **M-BC** best +
-consensus · **M-FC** last + consensus · **M-0** a zero-LR control.
+Six reward designs, seven runs, **37 scored checkpoints**, all on 8 × A100 via
+SkyRL: **M-C** each section's contribution to its own rollout's consensus ·
+**M-F** the last section's F1 · **M-B** the best section's F1 (oracle) ·
+**M-BC** best + consensus · **M-FC** last + consensus · **M-K** the rollout's own
+consensus R-precision · **M-0** a zero-LR control.
 
 ## Why
 
@@ -26,18 +27,18 @@ scores, with credit assignment inside the sequence.
 
 ## The result
 
-**Three arms beat the warm start on every mode**, all CIs excluding zero. Best
-consensus **0.5775** (M-B), best oracle **0.5663** (M-B), best final section
-**0.5267** (M-C).
+**Best consensus 0.5806 (M-K)**, best oracle 0.5663 (M-B), best final section
+0.5267 (M-C) — three criteria, three different arms. M-K is the only arm to
+improve **all four** aggregation modes with every CI excluding zero, on every cut.
 
-**The primary criterion is not met.** 22 independent plain rollouts read 0.5896.
-At a larger budget the two draw level — 0.6054 against plain-100's 0.6058. So RL
-**closed the gap between the multi format and ordinary sampling; it did not open
-one.**
+**The primary criterion is not met.** 22 independent plain rollouts read 0.5896;
+M-K is 0.0090 short. At a larger budget the two draw level — M-K pooled 0.6098
+against plain-100's 0.6058, a paired CI that includes zero. So RL **closed the gap
+between the multi format and ordinary sampling; it did not clearly open one.**
 
 ## #208's negative result is a dose-response, not a verdict
 
-Consensus against distance moved: 0.5673 at KL 0, **0.5775 at 0.009**, 0.5529 at
+Consensus against distance moved: 0.5673 at KL 0, **0.5806 at 0.016**, 0.5529 at
 0.031, 0.3969 at 0.486. Every reward helps at small KL and damages at large.
 
 #208 ran its arms at KL 0.06–0.10 and to 3.96 — past the peak on all of them —
@@ -62,6 +63,22 @@ carrying 1.4 contacts each.
 three original criteria are one-sided; M-F's failure pushed every one *away* from
 its threshold and none fired.
 
+## The arm that won was designed from a failure
+
+M-C's collapse was traced to a scale bug: its per-section marginal is 366× larger
+at one section than at 22, so it paid the policy to emit fewer candidates. The
+diagnosis named the repair — a **rollout-level** base that *falls* when sections
+are dropped.
+
+**M-K is that base with nothing else on top:** reward = the rollout's own
+consensus R-precision, GRPO-centred. Section count then held flat at ~22 for 48
+steps, and it produced the experiment's best consensus. It is also the only arm
+neither killed by a gate nor diverged — it ran out of scheduled steps.
+
+**Within-sequence credit assignment was the hypothesis's mechanism, and it turned
+out not to be needed.** What was needed was for the reward to be computable on
+the object the metric scores — which is what the multi format makes possible.
+
 ## Two results that outlive the experiment
 
 **Selection is dominated by aggregation.** An ORACLE selector of one draft reads
@@ -74,24 +91,30 @@ defeats every sharpening reward here, appearing in the corpus's own size law.
 
 ## What next
 
-**Fix M-C's scale bug and re-run it** — it is the best final-section arm *despite*
-the bug. The fix is a rollout-level `GRPO(C_i(all))` base (measured scale-correct)
-plus a **zero-sum** shaping term. The obvious repair — scoring against the causal
-prefix — was tested and **refuted**.
+**Train M-K further.** It is the only arm that stopped for its schedule rather
+than for a reason. Every other arm answers "how long can you train?" with "not
+long"; M-K has not been asked.
 
-**Nothing further on M-B.** Two rates, 13 checkpoints, a smooth peak, agreement to
-0.002.
+**Then turn on the shaping and blend terms.** M-K is the `beta = lam = 0` corner
+of the derived arm. The base alone beat every shaped and blended arm, so shaping
+is now a hypothesis to test, not a fix to apply.
+
+**Nothing further on M-B at lr 1e-5.** Two rates, 10 checkpoints, a smooth peak,
+agreement to 0.002.
 
 **The diversity gap is a corpus question.** One rollout's sections cover 658
 distinct pairs against 1,065 for 22 independent rollouts.
 
 ## Figures
 
-`dose_response.png` — 20 checkpoints, five arms, R-precision against distance.
+`curves_accuracy.png` — all 37 scored checkpoints against training step.
+
+`curves_reward.png` — each arm against its own reward.
+
+`dose_response.png` — R-precision against distance moved.
 
 `reward_vs_section_count.png` — each reward's gradient in the count direction.
 
 `section_count_incentive.png` — M-C's scale pathology, 366× at one section.
 
-`gates_over_training.png` · `reward_curves.png` · `reward_shape.png` ·
-`coverage_vs_kl.png`
+`gates_over_training.png` · `reward_shape.png` · `coverage_vs_kl.png`

@@ -190,13 +190,103 @@ def _new_slide(plt):
     return fig
 
 
+#: ``**bold**`` runs in the narrative. Matplotlib has no rich text, so a line is
+#: drawn as a sequence of `fig.text` calls whose x offsets are measured from the
+#: renderer -- markdown markers rendered literally as ``**`` on every slide
+#: otherwise, which is what they did until this was written.
+#: ``**bold**``, ``*italic*`` and ``` `code` ``` in one pass. Ordering matters:
+#: the bold alternative must precede the italic one or ``**x**`` matches as two
+#: empty italics. Backticks carry no style here -- they are stripped, because a
+#: monospace run would need its own font metrics for no gain on a slide.
+_MARKUP = re.compile(r"\*\*(?P<b>.+?)\*\*|\*(?P<i>[^*\n]+?)\*|`(?P<c>[^`]+?)`", re.S)
+
+
+def _runs(text: str) -> list[tuple[str, bool, bool]]:
+    """Split into ``(text, bold, italic)`` runs, dropping the markers."""
+    out, pos = [], 0
+    for m in _MARKUP.finditer(text):
+        if m.start() > pos:
+            out.append((text[pos:m.start()], False, False))
+        if m.group("b") is not None:
+            out.append((m.group("b"), True, False))
+        elif m.group("i") is not None:
+            out.append((m.group("i"), False, True))
+        else:
+            out.append((m.group("c"), False, False))
+        pos = m.end()
+    if pos < len(text):
+        out.append((text[pos:], False, False))
+    out = out or [(text, False, False)]
+    # A code span nested inside emphasis (``**`E[r] = 0` is ...**``) is captured
+    # whole by the outer alternative, so its backticks survive the pass above.
+    # They carry no style, so dropping them here is the whole fix.
+    return [(t.replace("`", ""), b, i) for t, b, i in out]
+
+
+def _words(runs) -> list[list[tuple[str, bool]]]:
+    """Split runs into words, each a list of sub-runs.
+
+    Splitting on the flattened character stream rather than per run is what keeps
+    ``**(M-K)**,`` from rendering as ``(M-K) ,`` — the comma belongs to the same
+    word as the bold text it follows, with no space between them.
+    """
+    chars = [(c, tuple(style)) for text, *style in runs for c in text]
+    words, cur = [], []
+    for c, st in chars:
+        if c.isspace():
+            if cur:
+                words.append(cur); cur = []
+            continue
+        if cur and cur[-1][1] == st:
+            cur[-1] = (cur[-1][0] + c, st)
+        else:
+            cur.append((c, st))
+    if cur:
+        words.append(cur)
+    return words
+
+
+def _wrap_runs(runs, width: int):
+    """Greedy word wrap over rich words."""
+    lines, cur, n = [], [], 0
+    for w in _words(runs):
+        length = sum(len(t) for t, _ in w)
+        if cur and n + 1 + length > width:
+            lines.append(cur); cur, n = [], 0
+        cur.append(w)
+        n += length + (1 if n else 0)
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def _draw_rich(fig, x: float, y: float, runs, *, fontsize: int, width: int,
+               line_step: float) -> float:
+    """Draw wrapped rich text from the top-left, returning the next free y."""
+    renderer = fig.canvas.get_renderer()
+    w_fig = fig.get_size_inches()[0] * fig.dpi
+    for line in _wrap_runs(runs, width):
+        cx = x
+        for i, word in enumerate(line):
+            for j, (text, (bold, italic)) in enumerate(word):
+                chunk = text if (i == 0 or j) else " " + text
+                t = fig.text(cx, y, chunk, fontsize=fontsize, va="top",
+                             fontweight="bold" if bold else "normal",
+                             fontstyle="italic" if italic else "normal")
+                cx += t.get_window_extent(renderer).width / w_fig
+        y -= line_step
+    return y
+
+
 def render_text_slide(plt, slide: Slide):
     fig = _new_slide(plt)
     fig.text(0.05, 0.92, slide.title, fontsize=26, fontweight="bold", va="top")
 
-    paragraphs = [p.strip() for p in (slide.body or "").split("\n\n") if p.strip()]
-    wrapped = "\n\n".join(textwrap.fill(p, width=90) for p in paragraphs)
-    fig.text(0.05, 0.82, wrapped, fontsize=14, va="top")
+    y = 0.82
+    for para in [p.strip() for p in (slide.body or "").split("\n\n") if p.strip()]:
+        y = _draw_rich(fig, 0.05, y, _runs(para.replace("\n", " ")),
+                       fontsize=14, width=90, line_step=0.045)
+        y -= 0.025
     return fig
 
 

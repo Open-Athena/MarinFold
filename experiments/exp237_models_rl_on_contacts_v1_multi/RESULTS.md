@@ -4,8 +4,9 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: in progress.** Sections are filled in as arms land; anything not yet
-> measured says so rather than being left to look measured.
+> **Status: complete.** Six reward designs, seven runs, **37 scored
+> checkpoints**. Anything not measured says so rather than being left to look
+> measured.
 
 
 ## The bar
@@ -34,12 +35,19 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | #230 warm start | 0 | 0.5673 | 0.5342 | 0.4566 | 0.4284 |
 | M-0, lr 0 *(control)* | 0 | 0.5678 | 0.5364 | 0.4594 | 0.4300 |
 | M-FC step-12 | 0.0050 | 0.5728 | 0.5454 | 0.5066 | 0.4398 |
+| M-K step-12 | 0.0054 | 0.5739 | 0.5555 | 0.4465 | 0.4149 |
 | **M-C step-18** | 0.0072 | 0.5750 | 0.5578 | **0.5267** | 0.4795 |
-| **M-B lr3e-6 step-90** | 0.0087 | **0.5775** | 0.5646 | 0.5091 | — |
+| **M-B lr3e-6 step-90** | 0.0087 | 0.5775 | 0.5646 | 0.5091 | — |
 | M-B lr1e-5 step-18 | 0.0088 | 0.5763 | **0.5663** | 0.5108 | 0.5027 |
+| M-K step-18 | 0.0095 | 0.5764 | 0.5493 | 0.4594 | 0.4295 |
 | M-F step-18 | 0.0136 | 0.5647 | 0.5283 | 0.4949 | 0.3464 |
 | M-FC step-18 | 0.0148 | 0.5732 | 0.5436 | 0.5150 | — |
+| **M-K step-36** | 0.0162 | **0.5806** | 0.5602 | 0.5178 | 0.4956 |
 | M-B step-36 | 0.0163 | 0.5741 | 0.5574 | 0.4908 | 0.4933 |
+| M-K step-42 | 0.0199 | 0.5776 | 0.5587 | 0.5146 | 0.4992 |
+| M-K step-30 | 0.0287 | 0.5803 | 0.5530 | 0.5112 | 0.4774 |
+| M-K step-24 | 0.0317 | 0.5787 | 0.5483 | 0.4917 | 0.4629 |
+| M-K step-48 | 0.0344 | 0.5762 | 0.5536 | 0.5118 | 0.4995 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — |
 | M-FC step-36 | 0.0918 | 0.4818 | 0.4807 | 0.4715 | — |
@@ -54,19 +62,41 @@ score — which is the experiment's central finding in one table.
 
 | | R-prec |
 |---|---:|
-| plain, 100 rollouts *(#230's Gate A)* | **0.6058** |
-| **M-B lr3e-6 step-90, 8 rollouts pooled** | **0.6054** |
+| **M-K step-30, 8 rollouts pooled** | **0.6100** |
+| **M-K step-36, 8 rollouts pooled** | **0.6098** |
+| plain, 100 rollouts *(#230's Gate A)* | 0.6058 |
+| M-B lr3e-6 step-90, 8 rollouts pooled | 0.6054 |
 | #230 warm start, 8 rollouts pooled | 0.5992 |
+
+**M-K's pooled number is the first multi figure to land above plain-100's point
+estimate — and it is not a significant win.** Paired per protein against #230's
+own Gate A table, on the same 554 proteins:
+
+| pooled 8 multi rollouts vs plain 100 | Δ | 95 % CI | win/loss |
+|---|---:|---|---|
+| **M-K step-36** | **+0.0041** | [−0.0010, +0.0090] | 260/203 |
+| M-B lr3e-6 step-90 | −0.0004 | [−0.0049, +0.0044] | 224/239 |
+
+Both CIs include zero. The honest reading is **drawn level**, with M-K's point
+estimate on the right side of it for the first time. Two things keep it from
+being more than that: the margin is 0.7 % on a metric whose measured noise floor
+(#204) is 0.0023, and the pooled multi vote spends ~54k generated tokens against
+plain-100's ~50k, so the budgets are matched only approximately.
 
 eval2-natural (78 proteins, the honest low-homology readout):
 
 | checkpoint | consensus | last |
 |---|---:|---:|
 | #230 warm start | 0.2889 | 0.1696 |
-| **M-C step-18** | 0.2998 | **0.2421** |
-| **M-B step-36** | **0.3040** | 0.2329 |
+| **M-K step-30** | **0.3072** | 0.2257 |
+| M-K step-36 | 0.3044 | 0.2320 |
+| M-B step-36 | 0.3040 | 0.2329 |
 | M-B lr3e-6 step-90 | 0.3009 | 0.2286 |
+| M-C step-18 | 0.2998 | **0.2421** |
 | M-F step-36 | 0.2742 | 0.2232 |
+
+M-K leads the low-homology cut too, so its consensus gain is not an artifact of
+the 43 % of the legacy 554 that are designed sequences.
 
 
 ### Every checkpoint, paired against the warm start
@@ -75,6 +105,8 @@ eval2-natural (78 proteins, the honest low-homology readout):
 
 | checkpoint | consensus | best *ORACLE* | last | second_last |
 |---|---|---|---|---|
+| **M-K step-36** | **+0.0133 \***<br><sub>354/190</sub> | +0.0260 \*<br><sub>427/120</sub> | +0.0612 \*<br><sub>429/116</sub> | +0.0676 \*<br><sub>502/46</sub> |
+| M-K step-30 | +0.0131 \*<br><sub>353/187</sub> | +0.0187 \*<br><sub>370/175</sub> | +0.0546 \*<br><sub>419/132</sub> | +0.0490 \*<br><sub>459/88</sub> |
 | M-C step-18 | +0.0077 \*<br><sub>327/213</sub> | +0.0235 \*<br><sub>425/120</sub> | +0.0701 \*<br><sub>480/69</sub> | +0.0511 \*<br><sub>486/61</sub> |
 | M-B step-36 | +0.0068 \*<br><sub>301/246</sub> | +0.0232 \*<br><sub>409/142</sub> | +0.0341 \*<br><sub>389/161</sub> | +0.0652 \*<br><sub>464/82</sub> |
 | M-F step-36 | -0.0144 \*<br><sub>182/363</sub> | -0.0154 \*<br><sub>196/355</sub> | +0.0509 \*<br><sub>379/170</sub> | -0.1631 \*<br><sub>78/467</sub> |
@@ -86,6 +118,8 @@ eval2-natural (78 proteins, the honest low-homology readout):
 
 | checkpoint | consensus | best *ORACLE* | last | second_last |
 |---|---|---|---|---|
+| **M-K step-36** | +0.0155 \*<br><sub>55/21</sub> | +0.0336 \*<br><sub>66/12</sub> | +0.0624 \*<br><sub>69/8</sub> | +0.0537 \*<br><sub>74/4</sub> |
+| M-K step-30 | **+0.0183 \***<br><sub>56/20</sub> | +0.0290 \*<br><sub>64/12</sub> | +0.0561 \*<br><sub>71/7</sub> | +0.0420 \*<br><sub>74/4</sub> |
 | M-C step-18 | +0.0109 \*<br><sub>49/27</sub> | +0.0273 \*<br><sub>64/12</sub> | +0.0725 \*<br><sub>71/7</sub> | +0.0355 \*<br><sub>70/8</sub> |
 | M-B step-36 | +0.0151 \*<br><sub>56/22</sub> | +0.0319 \*<br><sub>62/15</sub> | +0.0633 \*<br><sub>65/13</sub> | +0.0493 \*<br><sub>69/9</sub> |
 | M-F step-36 | -0.0147 \*<br><sub>29/47</sub> | -0.0156 \*<br><sub>28/50</sub> | +0.0535 \*<br><sub>63/15</sub> | -0.0375 \*<br><sub>21/56</sub> |
@@ -102,26 +136,36 @@ which is what makes every other row readable.
 ### Four things this says
 
 **1. The primary criterion is not met.** Nothing beats 0.5896, the budget-matched
-plain baseline. The best consensus anywhere is **M-B at lr 3e-6, step 90: 0.5775**
-— **0.0121** short, and the closest any multi-mode number has come. At a *larger*
-budget the two draw level (0.6054 vs plain-100's 0.6058), which is the honest
-statement of what RL bought: **it closed the gap between the multi format and
-ordinary independent sampling, and did not open one.**
+plain baseline. The best consensus anywhere is **M-K step-36: 0.5806** —
+**0.0090** short, and the closest any multi-mode number has come. At a *larger*
+budget the two draw level (M-K pooled 0.6098 against plain-100's 0.6058, CI
+including zero), which is the honest statement of what RL bought: **it closed the
+gap between the multi format and ordinary independent sampling, and did not
+clearly open one.**
 
 **2. Every secondary criterion is met, and no arm owns more than one of them.**
 
 | what | best arm | value | criterion |
 |---|---|---:|---|
-| consensus | **M-B** lr3e-6 step-90 | 0.5775 | — |
+| consensus | **M-K** step-36 | 0.5806 | — |
 | oracle-best | **M-B** lr1e-5 step-18 | 0.5663 | > 0.5342 ✓ |
 | final section | **M-C** step-18 | 0.5267 | > 0.4566 ✓ |
 
-The issue predicted arm M-C. M-C is the best on the **final-section** number and
-second on the other two — but the arm that wins consensus and oracle-best is
-**M-B, the simplest reward tried**: one scalar per rollout, no credit assignment,
-no within-sequence shaping. Twice over, the arm designed for a job lost it to one
-that never mentions it (M-C beats M-F and M-FC on final-section quality; M-B beats
-M-C on consensus).
+The issue predicted arm M-C. M-C is best on the **final-section** number, and the
+other two go to arms that were not in the original design: **M-B**, the simplest
+reward tried (one scalar per rollout, no credit assignment, no within-sequence
+shaping), and **M-K**, which was written *after* M-C's failure was diagnosed and
+is simply the deployed metric used as the reward.
+
+Two patterns, and they point opposite ways. **The arms designed for a job keep
+losing it to arms that never mention it** — M-C beats both M-F and M-FC on
+final-section quality; M-K reaches 0.5178 on the final section with a reward that
+never scores it, against M-F's 0.5075 from rewarding exactly that. But **the one
+arm whose reward *is* the deployed metric wins the deployed metric**, and it is
+the only arm that improves all four aggregation modes with every CI excluding
+zero, on every cut. Where the two patterns disagree, the second one is the
+actionable half: matching the reward to the metric worked; proxies for it did
+not.
 
 **3. #208's result is the far end of a dose-response, not a verdict.** Consensus
 against distance moved: 0.5673 at KL 0, **0.5750 at 0.007**, 0.5741 at 0.016,
@@ -139,6 +183,7 @@ first 13 batches against the last 5 before each arm was stopped:
 | M-C | **0.52×** | 0.75× | 0.60× | halve the contacts, become **more** diverse |
 | M-F | **0.51×** | 0.89× | 0.44× | halve the contacts, become **more** diverse |
 | M-B | 0.97× | **1.73×** | **1.48×** | hold the contacts, emit the **same** ones |
+| M-K | 0.92× | 1.24× | 1.29× | hold the count, converge the drafts **mildly** |
 
 That is exactly what each reward asks for. M-B pays for the *best* section, so the
 optimal policy finds its best mode and repeats it — nothing pays for being
@@ -246,9 +291,12 @@ export, the cast, the sampler or the scorer** — which is the entire reason a
 zero-LR arm is worth a GPU-hour.
 
 
-## The five arms, in the order they ran
+## The six arms, in the order they ran
 
 Each arm's training behaviour and its evaluation, in the order the runs happened.
+M-K comes last because it did not exist at the start: it was **designed from the
+diagnosis of M-C's failure**, and it is the arm this write-up would lead with if
+the runs could be re-ordered.
 
 
 ### Arm M-C — the arm the hypothesis predicted, and what it actually did
@@ -508,7 +556,8 @@ have been luck. It was not.
 Within **0.002–0.003**. Whatever a perfect selector could extract from 22
 independent plain rollouts, it can now extract from the ~20 sections of a single
 one. The gap that remains is entirely in the *selector*, not in the candidates —
-which is precisely what arm M-F is being continued to attack.
+which is what arms M-F, M-FC and M-C were each aimed at — and none of them
+closed it.
 
 
 ### Arm M-BC — the blend is worse than M-B alone, at every distance
@@ -616,6 +665,79 @@ toward complementarity yields a better final section than rewarding the final
 section does.** A final section is written in the context of its drafts, so
 improving the drafts improves it; rewarding it directly gives the drafts no
 signal (M-F) or a diluted one (M-FC).
+
+
+### Arm M-K — the deployed metric as the reward, and the best consensus measured here
+
+```
+A_i  =  GRPO_group( C_i(all) )
+```
+
+One scalar per rollout: **the rollout's own consensus R-precision**, computed
+over all its sections, GRPO-centred against its 7 siblings and broadcast to every
+response token. No per-section credit assignment, no blend, no shaping. It is the
+`rollout_grpo` base derived in *[Designing the next
+arm](#designing-the-next-arm-which-reward-definitions-are-scale-free)* with
+`beta = lam = 0`, and it was written after M-C's scale pathology was diagnosed.
+
+**48 steps at lr 1e-5, zero gate strikes, run to its planned budget and stopped
+there.** It is the **only arm in this experiment that was neither killed by a gate
+nor diverged** — it simply ran out of scheduled steps. R-precision (all),
+legacy 554:
+
+| step | KL | consensus | best *ORACLE* | last | second_last | sections (eval) | Jaccard (train) |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 12 | 0.0054 | 0.5739 | 0.5555 | 0.4465 | 0.4149 | 22.7 | 0.274 |
+| 18 | 0.0095 | 0.5764 | 0.5493 | 0.4594 | 0.4295 | 24.6 | 0.300 |
+| 24 | 0.0317 | 0.5787 | 0.5483 | 0.4917 | 0.4629 | 24.6 | 0.242 |
+| 30 | 0.0287 | 0.5803 | 0.5530 | 0.5112 | 0.4774 | 23.1 | 0.234 |
+| **36** | 0.0162 | **0.5806** | 0.5602 | 0.5178 | 0.4956 | 21.2 | 0.325 |
+| 42 | 0.0199 | 0.5776 | 0.5587 | 0.5146 | 0.4992 | 19.6 | 0.371 |
+| 48 | 0.0344 | 0.5762 | 0.5536 | 0.5118 | 0.4995 | 19.0 | 0.350 |
+
+Jaccard is the **rolling median of 6 training batches**, the same quantity the
+gate reads — single-batch values swing 3.6× under an unchanged policy (arm M-0),
+so a lone batch cannot be quoted here.
+
+**Three things separate M-K from every other arm.**
+
+**1. It has the best consensus number in the experiment, 0.5806** — +0.0133 over
+the warm start, and 0.0090 short of the plain-22 bar. Every other arm's consensus
+peaks at KL ≈ 0.009 and turns over; M-K's peak is at **step 36**, three times
+further along in steps, and the curve is a broad plateau (0.5787 / 0.5803 /
+0.5806 / 0.5776 across steps 24–42) rather than a spike.
+
+**2. It is the only arm that improves all four aggregation modes with every CI
+excluding zero, on every cut.** Against the warm start on legacy 554: consensus
+**+0.0133** [+0.0099, +0.0169], oracle-best +0.0260, last +0.0612, second_last
+**+0.0676**. That last column is the tell. M-F bought its final section by turning
+the earlier ones into scratch (`second_last` −0.1631); M-K improved the
+second-to-last section *more* than the last one. It made the whole rollout better
+rather than moving quality toward its end.
+
+**3. It leads the low-homology cut**, where the designed sequences that make up
+43 % of the legacy 554 cannot help: eval2-natural consensus 0.3072 at step 30 and
+0.3044 at step 36, against M-B's 0.3040 and the warm start's 0.2889.
+
+**What it did to the generations.** First 13 batches against the last 5:
+sections per rollout **22.5 → 22.7 (1.01×)** — flat, which is the scale-correctness
+showing up in behaviour rather than in a synthetic measurement; votes per pair
+2.64 → 3.28 (1.24×); Jaccard 0.255 → 0.328 (1.29×); union pairs 641 → 568
+(0.89×). So M-K *does* converge its drafts, but at roughly **half M-B's rate**
+(1.73×/1.48×) and without touching the count. That is the intended shape: the
+reward pays for a good vote, a good vote needs both agreement and coverage, and
+the policy traded a little coverage for more agreement.
+
+**The one thing it does not fix.** The rolling Jaccard runs 0.23 at step 30 →
+0.39 at step 43 → 0.35 at step 48 — rising, and its peak is inside the top half
+of the 0.45 gate's range, though it never reached it and no strike was recorded.
+Count-alignment is a statement about **one** nuisance axis; M-K raised its reward
+partly by making its sections more alike, which lifts a vote count without
+improving any individual candidate. Consensus turning over after step 36 while
+Jaccard climbs is consistent with that being the binding cost. **This is the limit
+of "scale-correct": it bought a longer runway, not an unlimited one — and how much
+longer is now an open question, because the run stopped for the schedule rather
+than for a reason.**
 
 
 ## Three mechanisms, each measured rather than argued
@@ -995,6 +1117,13 @@ Three candidate rewards, measured on the same 120 synthetic groups that differ i
   (0.341 → 0.543). Scale-correct **by construction**: emitting fewer sections
   lowers your own consensus and therefore your advantage.
 
+> **This was then built and run** — it is [arm M-K](#arm-m-k--the-deployed-metric-as-the-reward-and-the-best-consensus-measured-here),
+> the `beta = lam = 0` corner of the arm below. The prediction held: section count
+> stayed flat at ~22 through 48 steps where M-C's collapsed to 1.1 by step 32, and
+> the arm produced the best consensus in the experiment (0.5806). **The base term
+> alone was worth more than any of the shaped or blended arms.** `beta` and `lam`
+> remain untested.
+
 
 #### The arm this implies
 
@@ -1051,7 +1180,7 @@ That last setting means **one gradient step per batch of rollouts**, and with
 equals the current one at the point of the update. The importance ratio is
 therefore exactly 1 and cannot leave [0.8, 1.2].
 
-> Measured across **420 steps and every arm**: `loss_metrics/clip_ratio` is
+> Measured across **468 steps and every arm**: `loss_metrics/clip_ratio` is
 > **0.0**, always.
 
 So the update actually applied is a **vanilla policy gradient with a
@@ -1081,7 +1210,7 @@ estimator of KL(π ‖ π_ref) against the frozen #230 checkpoint.
 
 ## Compute: how the eight GPUs are used, and what limits the step
 
-Measured over **420 training steps** across every arm
+Measured over **468 training steps** across every arm
 ([`analyze_compute.py`](analyze_compute.py) parses SkyRL's own timing keys).
 
 ### Placement
@@ -1102,17 +1231,17 @@ checkpointing. Nothing is close to OOM; the constraint is not memory.
 
 | phase | median | GPUs busy |
 |---|---:|---:|
-| `generate` | 35.9 s | 6 |
-| `fwd_logprobs_values_reward` (old + ref logprobs) | 21.3 s | 2 |
-| `policy_train` | 39.1 s | **1** |
-| `sync_weights` | 2.4 s | 8 |
-| **`step`** | **100.9 s** | |
+| `generate` | 36.3 s | 6 |
+| `fwd_logprobs_values_reward` (old + ref logprobs) | 21.8 s | 2 |
+| `policy_train` | 40.1 s | **1** |
+| `sync_weights` | 2.3 s | 8 |
+| **`step`** | **102.4 s** | |
 
-The phases sum to 98.7 s against a 100.9 s step, so **they do not overlap** —
+The phases sum to 100.5 s against a 102.4 s step, so **they do not overlap** —
 SkyRL runs generate → logprobs → train → sync in sequence. Counting GPU-seconds
 actually doing work against GPU-seconds available:
 
-> **316 of 807 GPU-seconds per step — 39 % node utilisation.**
+> **320 of 819 GPU-seconds per step — 39 % node utilisation.**
 
 ### The trainer is the bottleneck, and it is the bottleneck *because* sharding is unusable
 
@@ -1128,8 +1257,8 @@ N = 1.47 × 10⁹ non-embedding parameters read from `config.json`:
 
 | | |
 |---|---|
-| tokens per step (prompt + response) | 342 k |
-| training FLOPs per step (`8·N·T`, gradient checkpointing on) | 4,028 TFLOP |
+| tokens per step (prompt + response) | 350 k |
+| training FLOPs per step (`8·N·T`, gradient checkpointing on) | 4,116 TFLOP |
 | **MFU during `policy_train`** | **33 %** |
 | MFU amortised over the step, that GPU | 13 % |
 | **MFU node-wide** | **1.6 %** |
@@ -1138,11 +1267,11 @@ N = 1.47 × 10⁹ non-embedding parameters read from `config.json`:
 The 1.6 % node-wide figure is the honest one, and it is a scheduling result
 rather than a kernel one.
 
-**Generation is bandwidth-bound and under-batched.** 318 k tokens in 35.9 s over
-six engines is **8,871 tok/s** (1,478 per engine) — but 64 rollouts spread over
+**Generation is bandwidth-bound and under-batched.** 326 k tokens in 36.3 s over
+six engines is **8,980 tok/s** (1,497 per engine) — but 64 rollouts spread over
 six engines is only **~11 concurrent sequences per engine**, far below what
 saturates an A100's decode path. Decode arithmetic intensity is ~2·N per token,
-so that is 26 TFLOP/s across six cards, **1.4 % of peak** — the wrong metric,
+so that is 26.4 TFLOP/s across six cards, **1.4 % of peak** — the wrong metric,
 because decode is limited by weight-streaming bandwidth, not FLOPs. The practical
 consequence is that **fewer engines with more sequences each would generate just
 as fast**, and the freed cards would do nothing useful anyway while the trainer
@@ -1150,7 +1279,7 @@ runs.
 
 ### What this costs, and the three traps that are not obvious
 
-The whole experiment ran **2026-08-17 01:58 → 2026-08-18 14:48**, ~37 hours of
+The whole experiment ran **2026-08-17 01:58 → 2026-08-18 16:55**, ~39 hours of
 wall clock on the node, producing **728 GB** of checkpoints (each FSDP checkpoint
 is ~17 GB: bf16 weights plus fp32 optimiser state; disk is 19 TB so this never
 threatened anything).
@@ -1168,10 +1297,12 @@ committed CSV. Logs now rotate to `.partN.log`.
 
 ## The reward curves, and the one arm still climbing when it stopped
 
-![reward over training](plots/reward_curves.png)
+![reward over training](plots/curves_reward.png)
+
+![accuracy at every scored checkpoint](plots/curves_accuracy.png)
 
 There is no single reward curve for this experiment — the arms do not share a
-reward — so each is drawn against its own objective. Three things read off it:
+reward — so each is drawn against its own objective. Four things read off it:
 
 1. **M-F is the only clean "reward goes up" curve.** `last_f1` climbs 0.33 →
    0.48 across 42 batches with no plateau, and the run was stopped by the
@@ -1180,9 +1311,16 @@ reward — so each is drawn against its own objective. Three things read off it:
    never trained to exhaustion.*
 2. **M-C and M-B both peak at step 15–20 and turn over** — the same peak the
    evaluations found, visible from the training batches alone.
-3. **M-B at lr 3e-6 oscillates without trend from step ~40 onward.** If its
-   evaluations agree, KL ~0.009 is a genuine ceiling for that reward rather than
-   an artifact of how coarsely the 1e-5 run was checkpointed.
+3. **M-B at lr 3e-6 oscillates without trend from step ~40 onward**, for 80 more
+   steps, and its evaluations agree: 0.5754 / 0.5760 / 0.5775 / 0.5739 at steps
+   60 / 75 / 90 / 120. Its peak is a plateau, not a spike, and the reward stays
+   healthy the whole way — the 1e-5 run's collapse at step 80 is a property of
+   the step size, not of the reward.
+4. **M-K's reward is the same series the metric reads**, so unlike every other
+   arm its training curve and its evaluation are commensurable: reward rising to
+   step ~40 and eval consensus peaking at step 36 are two views of one thing.
+   That is worth having — for M-F they pointed in opposite directions for 50
+   steps.
 
 M-F rising while *everything else about it degrades* (consensus −0.0144,
 oracle-best −0.0154, `second_last` −0.1631) is the sharpest illustration in this
