@@ -20,7 +20,7 @@ from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import resolve_training_env
-from rigging.filesystem import StoragePath
+from rigging.filesystem.storage_path import StoragePath
 
 from marinfold_models import build_train_lm_on_pod_config
 from premade_contacts_dataset import (
