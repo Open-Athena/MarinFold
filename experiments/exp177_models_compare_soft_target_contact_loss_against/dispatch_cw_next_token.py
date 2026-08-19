@@ -15,8 +15,7 @@ import os
 
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
-from levanter.data.text import DatasetComponent, LmDataConfig
-from levanter.data.text.datasets import BlockShuffleConfig
+from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import resolve_training_env, run_levanter_train_lm
 
