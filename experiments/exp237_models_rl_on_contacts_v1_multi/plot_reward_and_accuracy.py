@@ -59,6 +59,10 @@ ACC = {
 #: run did.
 ACC_SLOW = {"M-B": {30: 0.5713, 60: 0.5754, 75: 0.5760, 90: 0.5775, 120: 0.5739,
                     150: 0.5575}}
+#: Arm M-BP — the same lr-3e-6 run resumed from step 90 with a candidate-count
+#: floor on its reward. Drawn from step 90 so it visibly BRANCHES from the trace
+#: it is the A/B against: same policy, same lr, same data, one term added.
+ACC_PEN = {"M-B": {90: 0.5775, 120: 0.5757, 150: 0.5753}}
 
 WARM, BAR = 0.5673, 0.5896
 
@@ -134,6 +138,10 @@ def main() -> int:
         ax.plot(xs, ys, "o-", color=COLOR[arm], lw=2.2 if arm != "M-0" else 0,
                 ms=7 if arm == "M-K" else 5.5, label=arm,
                 mec="white", mew=1.2, zorder=4 if arm == "M-K" else 3)
+        if arm in ACC_PEN:
+            xs3, ys3 = zip(*sorted(ACC_PEN[arm].items()))
+            ax.plot(xs3, ys3, "D--", color="#c2410c", lw=2.2, ms=5.5, mec="white", mew=1.2,
+                    label=f"{arm}P (lr 3e-6 + count floor)", zorder=4)
         if arm in ACC_SLOW:
             xs2, ys2 = zip(*sorted(ACC_SLOW[arm].items()))
             ax.plot(xs2, ys2, "o-.", color=COLOR[arm], lw=2.0, ms=5.5, alpha=0.75,
@@ -144,10 +152,14 @@ def main() -> int:
     # curves. The label sits in the gap between M-K's tail and the bar instead.
     ax.text(50, 0.5845, "M-K peaks 0.5806 at step 36 — best consensus measured here",
             fontsize=8.5, color=COLOR["M-K"], fontweight="600", va="center")
-    ax.annotate("killed at step 180:\n11.0 sections/rollout", xy=(150, 0.5575),
-                xytext=(128, 0.532), fontsize=8, color=COLOR["M-B"],
+    ax.annotate("no penalty: killed at 180,\n11.0 sections/rollout", xy=(150, 0.5575),
+                xytext=(120, 0.526), fontsize=8, color=COLOR["M-B"],
                 arrowprops=dict(arrowstyle="->", color=COLOR["M-B"], lw=1.1))
-    ax.set_title("exp237 — accuracy at every scored checkpoint  (38 in total)", fontsize=11)
+    ax.annotate("+ count floor: decay stopped (+0.0178),\nbut it never beats its own step-90 start",
+                xy=(150, 0.5753), xytext=(58, 0.545), fontsize=8, color="#c2410c",
+                fontweight="600",
+                arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.1))
+    ax.set_title("exp237 — accuracy at every scored checkpoint  (45 in total)", fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8.5, loc="lower left", ncol=2)
     fig.tight_layout()
     save_plot_with_meta(fig, a.out / "curves_accuracy.png", dpi=150,

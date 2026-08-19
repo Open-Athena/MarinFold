@@ -109,6 +109,7 @@ identical; only the population changes.
 | **M-BC** | `GRPO(max_k F1) + lam·GRPO(C_i(all))` — M-B's scalar blended with the rollout's own consensus, each standardised **separately** | **whole-rollout scalar** | `contacts_rollout` |
 | **M-FC** | `GRPO(F1(last)) + lam·GRPO(C_i(all))` — synthesis rather than selection: reward the last section, with the consensus as a restoring force | **whole-rollout scalar** | `contacts_rollout` |
 | **M-K** | `C_i(all)` — **the rollout's own consensus R-precision**, i.e. the deployed metric computed on the object the model emits | **whole-rollout scalar** | `grpo` |
+| **M-BP** | `max_k F1 + beta·min(0, K − floor)` — M-B with a one-sided floor on the candidate count, added **raw** so the deadband survives standardisation | **whole-rollout scalar** | `grpo` |
 | **M-0** | M-C's reward at **lr = 0** | — | `contacts_section` |
 
 The last three did not exist when the experiment started. M-BC and M-FC were
@@ -490,8 +491,8 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-**Full detail in [RESULTS.md](RESULTS.md).** Six reward designs, eight runs,
-**43 scored checkpoints**, every number from #230's scorer unchanged.
+**Full detail in [RESULTS.md](RESULTS.md).** Seven reward designs, nine runs,
+**46 scored checkpoints**, every number from #230's scorer unchanged.
 R-precision (all), legacy 554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |

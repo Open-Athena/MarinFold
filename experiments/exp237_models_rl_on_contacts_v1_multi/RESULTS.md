@@ -4,7 +4,7 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: eight runs, 43 scored checkpoints.** The long-trajectory question is
+> **Status: nine runs, 46 scored checkpoints.** The long-trajectory question is
 > settled in both directions — see *[Do long trajectories beat short
 > ones?](#do-long-trajectories-beat-short-ones)*. One arm (**M-BP**, a candidate-count
 > floor on M-B's reward) is still running and says so where it matters. Anything
@@ -51,6 +51,9 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | M-K step-24 | 0.0317 | 0.5787 | 0.5483 | 0.4917 | 0.4629 |
 | M-K step-48 | 0.0344 | 0.5762 | 0.5536 | 0.5118 | 0.4995 |
 | M-B lr3e-6 step-150 | 0.0229 | 0.5575 | 0.5467 | 0.4952 | 0.4727 |
+| M-BP step-120 *(count floor)* | 0.0122 | 0.5757 | 0.5588 | 0.5049 | 0.4972 |
+| M-BP step-150 *(count floor)* | 0.0158 | 0.5753 | 0.5478 | 0.4907 | 0.4759 |
+| M-K leashed step-120 | 0.0153 | 0.5712 | 0.5442 | 0.4873 | 0.4716 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — |
 | M-FC step-36 | 0.0918 | 0.4818 | 0.4807 | 0.4715 | — |
@@ -741,6 +744,98 @@ Jaccard climbs is consistent with that being the binding cost. **This is the lim
 of "scale-correct": it bought a longer runway, not an unlimited one — and how much
 longer is now an open question, because the run stopped for the schedule rather
 than for a reason.**
+
+
+### Arm M-BP — a candidate-count floor on M-B's reward
+
+```
+R_i  =  max_k F1(section k)  +  beta * min(0, K_i - floor)      beta 0.03, floor 18
+```
+
+added to the **raw** scalar, before GRPO. Arm M-B's reward does not depend on
+`K` at all, so the arm has no first-order opinion about its own candidate count —
+and MBLONG's decline was exactly a count collapse. This gives it one.
+
+**Three design points**, each answering a way a previous version of this idea
+failed here:
+
+* **The floor is 18, not 10.** The section-count gate fires at 11, and M-B's
+  decline runs 20.2 → 19.3 → 15.9 → 11.0. A floor of 10 sits *below* the kill
+  point, so it would be identically zero through the whole decline and first
+  become non-zero after the run had already been stopped. 18 sits just under the
+  healthy band (19–26 on every good M-B checkpoint).
+* **Added raw, not standardised.** GRPO subtracts the group mean, so a term that
+  is the same constant across a group cancels *exactly* — a batch in which every
+  rollout clears the floor is bit-identical to the unpenalised one, which is
+  pinned by test. Standardising the penalty on its own column would amplify a
+  one-section difference between two healthy rollouts into a full unit of
+  advantage.
+* **Bounded, and it cannot pay for padding.** −0.51 at `K = 1` against a reward in
+  [0, 1]; arm M-C's marginal reached **+4.79** at one section, which is why no
+  fixed weight could balance it. `min(0, ·)` gives no gradient above the floor, so
+  arm M-F's 259-section runaway is unreachable from here — union/R stayed 3.1–5.7
+  and `empty_sections` stayed 0.000 throughout.
+
+A **controlled A/B**: resumed from M-B's best checkpoint (lr 3e-6 step-90,
+0.5775), same learning rate, same prompt pool and same data position as MBLONG,
+one term added.
+
+#### It does exactly what it was designed to do
+
+The count collapse is simply absent. At matched global steps, training rolling
+medians:
+
+| step | 135 | 150 | 165 | 170 | 175 | 180 |
+|---|---:|---:|---:|---:|---:|---:|
+| M-BP sections | 21.7 | 26.7 | 24.5 | 21.4 | 20.4 | **21.1** |
+| MBLONG sections | 20.0 | 21.6 | 19.0 | 15.8 | 14.3 | **11.0** → killed |
+| M-BP KL | 0.0109 | 0.0158 | 0.0194 | 0.0194 | 0.0228 | 0.0256 |
+| MBLONG KL | 0.0164 | 0.0229 | 0.0265 | 0.0279 | 0.0308 | 0.0397 |
+
+**And it stopped the accuracy decay**, which is the part that is not merely a
+restatement of the reward. R-precision (all), legacy 554, paired per protein:
+
+| | M-BP | MBLONG | Δ | 95 % CI | win/loss |
+|---|---:|---:|---:|---|---|
+| **step-150 consensus** | **0.5753** | 0.5575 | **+0.0178** | [+0.0146, +0.0211] | 375/167 \* |
+| step-150 eval2-natural | 0.3017 | 0.2920 | +0.0097 | [+0.0035, +0.0162] | 48/29 \* |
+| step-120 consensus | 0.5757 | 0.5739 | +0.0018 | [−0.0013, +0.0050] | 297/239 |
+
+At step 120 the two are tied — the unpenalised run had barely started to slide.
+By step 150 the gap is **+0.0178**, far outside the 0.0023 noise floor, and it
+holds on the low-homology cut. **The idea works.**
+
+#### And it still does not get past the peak
+
+The comparison that matters is not against the run it rescued but against **where
+it started**. M-BP step-150 against its own resume point, M-B lr3e-6 step-90:
+
+| | M-BP step-150 | step-90 | Δ | 95 % CI |
+|---|---:|---:|---:|---|
+| consensus | 0.5753 | 0.5775 | **−0.0022** | [−0.0051, +0.0006] |
+| best *ORACLE* | 0.5478 | 0.5646 | **−0.0168** | [−0.0201, −0.0136] \* |
+| last | 0.4907 | 0.5091 | −0.0184 | [−0.0230, −0.0139] \* |
+
+**Sixty further steps converted a decline into a plateau, and nothing more.**
+Consensus ties its own starting point; and **`max_k F1` — the quantity M-B's
+reward actually optimises — got significantly *worse*** (−0.0168, CI excluding
+zero). So the floor held the aggregate together while the objective underneath it
+continued to degrade.
+
+#### The failure moved rather than went away
+
+**M-BP was killed at step 183 by the *Jaccard* gate** (mean pairwise Jaccard
+0.454 > 0.45), not the section-count gate that stopped MBLONG. The count held at
+21.1 to the end; what gave way was diversity.
+
+That is the reward answering the constraint. `max_k F1` can be raised two ways:
+emit fewer, better sections, or emit many near-copies of your best one. The floor
+closed the first route, so the policy took the second.
+
+And the arithmetic is blunt: **MBLONG died at step 180, M-BP at 183.** The penalty
+bought **three steps**. It changed how the run ends, not when — which is the
+sharpest statement this experiment has of the same finding it keeps producing:
+*interventions can prevent degradation; none of them produce gain past the peak.*
 
 
 ## Do long trajectories beat short ones?
