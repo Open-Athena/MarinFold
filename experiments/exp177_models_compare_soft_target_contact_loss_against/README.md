@@ -114,6 +114,26 @@ slightly beats batch 64 tokens/s with shorter step latency and less checkpoint /
 activation risk. Batch 64 is viable if a larger effective batch is preferred,
 but it does not improve throughput in these smokes.
 
+### Matched stock next-token smoke (2026-08-19)
+
+Run `exp177-next-token-cw-r57-8gpu-bs128-smoke20` is the current matched
+CoreWeave stock baseline: same exp177 Qwen3 1.47B config, seq_len 8192,
+1 node × 8 H100, global batch size 128, stock next-token CE. It required two
+small launcher fixes first (`ResourceConfig` import from `fray.types`, and a
+flat train cache path so Levanter does not try to validate the train component
+at a non-existent `contacts-v1/validation` cache).
+
+The successful r57 run loaded the first batch in 13.1s, completed the first
+train step in 49.6s including compilation, and reached 15/20 at 10.5s/step.
+Wall time from first-step completion to checkpoint start gives ~10.6s/step
+post-compile, or about **99k tok/s** (`128 * 8192 / 10.6`). Final validation
+loss after 20 steps was 6.179 on `contacts-v1-val`.
+
+Compared directly on the same 1×8 H100 shape, the best sparse soft-target
+smokes were ~14-15k tok/s, so the sparse path is still about **6.8-7.0× slower
+per token** than current matched stock next-token CE, despite being ~5-6× faster
+than the old compact padded soft-target path.
+
 ## Conclusion
 
 _(Fill in after results are in.)_
