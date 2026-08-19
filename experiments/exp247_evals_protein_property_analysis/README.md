@@ -181,6 +181,12 @@ so this is a pointer and not a measurement, but the pattern is not subtle
 | **mean** | | | | **0.317** | 0.355 | 0.393 | 0.471 | **0.694** | 0.410 | 0.139 |
 | *Q1 mean (n=79)* | | | | *0.378* | *0.421* | *0.282* | *0.592* | *0.673* | *0.791* | *0.398* |
 
+![Near-orphan proteins](plots/near_orphan.png)
+
+*Figure 4. Left: each predictor's mean over three nested regimes — all 314 natural
+monomers, the shallowest MSA-depth quartile, and the six proteins with ≤10
+sequences. Right: those six individually. Rendered by `plot_properties.py`.*
+
 **The MSA methods lose their advantage entirely, and we do not pick it up.**
 Protenix-v2 + MSA falls from 0.791 on Q1 to **0.410** here — with no alignment to
 condition on it is no better than its own single-sequence mode. The seq-KNN null

@@ -18,6 +18,13 @@
     block structure is the point: homology features are dark, geometry and
     biology features are not.
 
+``near_orphan.png``
+    What happens at the end of the depth axis, where the six proteins with ten or
+    fewer MSA sequences live. Left panel: each predictor's mean across three
+    nested regimes, so the crossings are visible. Right panel: the six proteins
+    individually, because a six-protein mean hides a spread as wide as the
+    effect.
+
     uv run python plot_properties.py
 """
 import argparse
@@ -49,6 +56,11 @@ COLORS = {
     "seq-KNN (unfiltered corpus)": "#9fc8e8",
     "seq-KNN (decontaminated corpus)": "#c9dff0",
 }
+#: MSA depth at or below which a protein counts as near-orphan for the last
+#: figure. Six of the 314 qualify; below this there is effectively no family to
+#: align against, which is the regime a single-sequence model is meant to own.
+ORPHAN_DEPTH = 10
+
 #: Features worth showing by name, grouped the way the analysis groups them.
 HEATMAP_FEATURES = [
     ("family abundance", [
@@ -205,6 +217,66 @@ def feature_heatmap(out: Path) -> None:
     plt.close(figure)
 
 
+def near_orphan(frame: pd.DataFrame, out: Path) -> None:
+    """Three nested regimes on the left, the six proteins themselves on the right."""
+    predictors = [p for p in U.PREDICTORS if p in frame
+                  and p != "seq-KNN (decontaminated corpus)"
+                  and "m1-p02" not in p]
+    orphan = frame[frame.msa_depth <= ORPHAN_DEPTH].sort_values("msa_depth")
+    regimes = [
+        ("all natural\n(n=314)", frame),
+        ("shallowest quartile\n≤784 seqs (n=79)", frame[frame.msa_depth <= 784]),
+        ("≤10 seqs\n(n=6)", orphan),
+    ]
+    figure, axes = plt.subplots(
+        1, 2, figsize=(15.5, 6.6), gridspec_kw={"width_ratios": [5, 6]}, sharey=True)
+
+    axis = axes[0]
+    for predictor in predictors:
+        means = [part[predictor].mean() for _, part in regimes]
+        axis.plot(range(len(regimes)), means, marker="o", markersize=7,
+                  linewidth=3.0 if "#232 m2" in predictor else 1.9,
+                  color=COLORS[predictor],
+                  zorder=3 if "#232 m2" in predictor else 2)
+        axis.annotate(f"{predictor}  {means[-1]:.2f}", (len(regimes) - 1, means[-1]),
+                      textcoords="offset points", xytext=(9, 0), va="center",
+                      fontsize=8.8, color=COLORS[predictor])
+    axis.set_xticks(range(len(regimes)))
+    axis.set_xticklabels([label for label, _ in regimes], fontsize=9)
+    axis.set_xlim(-0.12, 3.45)
+    axis.set_ylabel("Mean R-precision (all ranges)")
+    axis.set_title("Where the ordering changes:\nthe MSA methods lose their "
+                   "advantage, ESMFold2 does not", fontsize=11)
+
+    axis = axes[1]
+    labels = [f"{stem}\n{int(depth)} seqs" for stem, depth in
+              zip(orphan.index, orphan.msa_depth, strict=True)]
+    width = 0.8 / len(predictors)
+    for index, predictor in enumerate(predictors):
+        offset = (index - (len(predictors) - 1) / 2) * width
+        axis.bar([x + offset for x in range(len(orphan))], orphan[predictor],
+                 width=width * 0.92, color=COLORS[predictor],
+                 label=predictor if index >= 0 else None)
+    axis.set_xticks(range(len(orphan)))
+    axis.set_xticklabels(labels, fontsize=8.2)
+    axis.set_title("Each of the six, individually — the within-group spread is as\n"
+                   "wide as the effect, so this is a pointer, not a measurement",
+                   fontsize=11)
+    axis.legend(frameon=False, fontsize=8.2, ncol=2, loc="upper left")
+
+    for axis in axes:
+        axis.grid(axis="y", color="#dddad6", linewidth=0.6)
+        axis.set_axisbelow(True)
+        for spine in ("top", "right"):
+            axis.spines[spine].set_visible(False)
+    axes[0].set_ylim(0, 1.0)
+    figure.suptitle("The regime a single-sequence model is supposed to own — "
+                    "proteins with almost no relatives", fontsize=12.5)
+    figure.tight_layout(rect=(0, 0, 1, 0.95))
+    figure.savefig(out, dpi=200)
+    plt.close(figure)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -236,7 +308,15 @@ def main() -> int:
     stamp(path, "Spearman ρ between each protein property and each predictor's "
                 "per-protein R-precision, pooled over the 314 natural monomers.",
           sources)
-    print("[plots] three figures written", flush=True)
+    path = PLOTS / "near_orphan.png"
+    near_orphan(frame, path)
+    stamp(path, "Left: mean all-range R-precision over three nested regimes — all "
+                "314 natural monomers, the shallowest MSA-depth quartile (≤784 "
+                "sequences, n=79), and the six proteins with ≤10 sequences. Right: "
+                "those six individually. Protenix-v2 + MSA falls from 0.791 on the "
+                "quartile to 0.410 with no alignment to condition on, while "
+                "ESMFold2 holds at 0.694 and MarinFold falls to 0.317.", sources)
+    print("[plots] four figures written", flush=True)
     return 0
 
 

@@ -58,7 +58,8 @@ and the KNN null to 0.139, so the MSA methods do lose their advantage. But
 MarinFold falls to 0.317, below its own Q1 average, while **ESMFold2 holds at
 0.694**. The regime where "no MSA available" is the whole argument is exactly
 where a PLM-based predictor is strongest and we are weakest. Six proteins is a
-pointer, not a measurement.
+pointer, not a measurement -- see the near-orphan figure, whose right panel shows
+a within-group spread as wide as the effect.
 
 ## Biology barely matters
 
