@@ -19,6 +19,13 @@
 # -- so if the leashed step-120 beats 0.5806 the answer is yes, and if it lands
 # near the unleashed step-12/18 numbers (0.5739 / 0.5764) then distance is the
 # ceiling and the extra 100 steps bought nothing.
+#
+# **Getting WAIT_PID right.** Capture the pid with `ps -eo pid,args | grep <script>
+# | grep -v "grep\|bash -c"`, NOT with `pgrep -f`. `pgrep -f` matches its own
+# `bash -c ...` wrapper whenever the wrapper's command line contains the pattern,
+# so it returns the wrapper's pid -- which exits immediately, leaving this script
+# to fall straight through the wait into `drain()` and time out an hour later
+# against cards that were never going to free. That happened once here.
 set -u
 
 ROOT=${ROOT:-$HOME/exp237_data_mk_leash}

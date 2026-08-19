@@ -31,6 +31,13 @@
 # `trainer.ckpt_path` and takes the newest global_step_N under it. The lr-3e-6
 # root now holds global_step_150 -- a checkpoint 0.0200 past its own peak -- so
 # pointing at that root would silently resume from the wrong policy.
+#
+# **Getting WAIT_PID right.** Capture the pid with `ps -eo pid,args | grep <script>
+# | grep -v "grep\|bash -c"`, NOT with `pgrep -f`. `pgrep -f` matches its own
+# `bash -c ...` wrapper whenever the wrapper's command line contains the pattern,
+# so it returns the wrapper's pid -- which exits immediately, leaving this script
+# to fall straight through the wait into `drain()` and time out an hour later
+# against cards that were never going to free. That happened once here.
 set -u
 
 SRC=${SRC:-$HOME/exp237_data_mb_lowlr/ckpts_m_b/global_step_90}
