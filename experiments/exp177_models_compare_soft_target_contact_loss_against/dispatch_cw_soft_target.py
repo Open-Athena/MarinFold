@@ -15,6 +15,7 @@ from datetime import timedelta
 
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
+from levanter.callbacks.profiler import ProfilerConfig, ProfileOptionsConfig
 from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
@@ -156,6 +157,10 @@ def _pod_config(run_name: str):
     keep_every_steps = int(os.environ.get("EXP177_CW_KEEP_EVERY_STEPS", str(steps)))
     max_eval_batches = int(os.environ.get("EXP177_CW_MAX_EVAL_BATCHES", "16"))
     per_device_parallelism = int(os.environ.get("EXP177_CW_PER_DEVICE_PARALLELISM", "1"))
+    profiler_enabled = os.environ.get("EXP177_CW_PROFILER", "0") == "1"
+    profiler_start_step = int(os.environ.get("EXP177_CW_PROFILER_START_STEP", "5"))
+    profiler_num_steps = int(os.environ.get("EXP177_CW_PROFILER_NUM_STEPS", "10"))
+    profiler_perfetto_link = os.environ.get("EXP177_CW_PROFILER_PERFETTO_LINK", "0") == "1"
     version = os.environ.get("EXP177_VERSION", "2026.08.03.2")
     output_path = f"{CW_OUTPUT_PREFIX}/{run_name}/{version}"
     env_vars = {
@@ -234,6 +239,26 @@ def _pod_config(run_name: str):
         checkpointer=CheckpointerConfig(
             save_interval=timedelta(minutes=checkpoint_interval_minutes),
             keep=[{"every": keep_every_steps}],
+        ),
+        profiler=ProfilerConfig(
+            enabled=profiler_enabled,
+            start_step=profiler_start_step,
+            num_steps=profiler_num_steps,
+            perfetto_link=profiler_perfetto_link,
+            profile_options=ProfileOptionsConfig(
+                host_tracer_level=int(os.environ["EXP177_CW_PROFILER_HOST_TRACER_LEVEL"])
+                if "EXP177_CW_PROFILER_HOST_TRACER_LEVEL" in os.environ
+                else None,
+                python_tracer_level=int(os.environ["EXP177_CW_PROFILER_PYTHON_TRACER_LEVEL"])
+                if "EXP177_CW_PROFILER_PYTHON_TRACER_LEVEL" in os.environ
+                else None,
+                device_tracer_level=int(os.environ["EXP177_CW_PROFILER_DEVICE_TRACER_LEVEL"])
+                if "EXP177_CW_PROFILER_DEVICE_TRACER_LEVEL" in os.environ
+                else None,
+                include_dataset_ops=os.environ.get("EXP177_CW_PROFILER_INCLUDE_DATASET_OPS") == "1"
+                if "EXP177_CW_PROFILER_INCLUDE_DATASET_OPS" in os.environ
+                else None,
+            ),
         ),
     )
     train_config = dataclasses.replace(pod_config.train_config, trainer=trainer, hf_save_steps=steps)
