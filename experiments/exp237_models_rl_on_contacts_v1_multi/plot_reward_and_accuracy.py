@@ -52,8 +52,13 @@ ACC = {
     "M-0":  {8: 0.5678},
 }
 #: M-B was also run at lr 3e-6 -- a different schedule over the same reward, so it
-#: is a separate trace rather than more points on the 1e-5 one.
-ACC_SLOW = {"M-B": {30: 0.5713, 60: 0.5754, 75: 0.5760, 90: 0.5775, 120: 0.5739}}
+#: is a separate trace rather than more points on the 1e-5 one. Extended to step
+#: 180, where it was killed by the section-count gate at 11.0 sections/rollout:
+#: the flat stretch from 60 to 120 is a plateau in STEPS while the policy kept
+#: travelling in KL (0.0087 -> 0.0397), and it then failed exactly as the lr 1e-5
+#: run did.
+ACC_SLOW = {"M-B": {30: 0.5713, 60: 0.5754, 75: 0.5760, 90: 0.5775, 120: 0.5739,
+                    150: 0.5575}}
 
 WARM, BAR = 0.5673, 0.5896
 
@@ -139,7 +144,10 @@ def main() -> int:
     # curves. The label sits in the gap between M-K's tail and the bar instead.
     ax.text(50, 0.5845, "M-K peaks 0.5806 at step 36 — best consensus measured here",
             fontsize=8.5, color=COLOR["M-K"], fontweight="600", va="center")
-    ax.set_title("exp237 — accuracy at every scored checkpoint  (37 in total)", fontsize=11)
+    ax.annotate("killed at step 180:\n11.0 sections/rollout", xy=(150, 0.5575),
+                xytext=(128, 0.532), fontsize=8, color=COLOR["M-B"],
+                arrowprops=dict(arrowstyle="->", color=COLOR["M-B"], lw=1.1))
+    ax.set_title("exp237 — accuracy at every scored checkpoint  (38 in total)", fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8.5, loc="lower left", ncol=2)
     fig.tight_layout()
     save_plot_with_meta(fig, a.out / "curves_accuracy.png", dpi=150,

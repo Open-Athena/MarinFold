@@ -4,9 +4,10 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: complete.** Six reward designs, seven runs, **37 scored
-> checkpoints**. Anything not measured says so rather than being left to look
-> measured.
+> **Status: eight runs, 38 scored checkpoints.** Everything is final except
+> **MKLEASH**, still training — see *[Do long trajectories beat short
+> ones?](#do-long-trajectories-beat-short-ones)*, which says so where it matters.
+> Anything not measured says so rather than being left to look measured.
 
 
 ## The bar
@@ -48,6 +49,7 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | M-K step-30 | 0.0287 | 0.5803 | 0.5530 | 0.5112 | 0.4774 |
 | M-K step-24 | 0.0317 | 0.5787 | 0.5483 | 0.4917 | 0.4629 |
 | M-K step-48 | 0.0344 | 0.5762 | 0.5536 | 0.5118 | 0.4995 |
+| M-B lr3e-6 step-150 | 0.0229 | 0.5575 | 0.5467 | 0.4952 | 0.4727 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — |
 | M-FC step-36 | 0.0918 | 0.4818 | 0.4807 | 0.4715 | — |
@@ -740,6 +742,78 @@ longer is now an open question, because the run stopped for the schedule rather
 than for a reason.**
 
 
+## Do long trajectories beat short ones?
+
+Every result above comes from a run of 26–120 steps, and five of the six arms
+peaked by step ~20. That invites an obvious objection: **maybe nothing here was
+trained long enough.** Two runs were built to test it, and they ask deliberately
+different questions, because at a fixed learning rate "more steps" and "more
+distance" are the same variable — and this experiment already established that
+distance is what orders the results.
+
+### MBLONG — the direct test, and it fails
+
+Arm M-B at lr 3e-6 looked like the best candidate for "just keep going": its
+evaluations read **0.5754 / 0.5760 / 0.5775 / 0.5739** at steps 60 / 75 / 90 /
+120 — a plateau, not a decay — with a healthy reward curve the whole way. It was
+resumed from its own step-120 checkpoint (full FSDP state, optimiser included)
+and given 240 more steps.
+
+**It was killed at step 180** on the section-count criterion: `sections/rollout`
+median **11.01**, below the floor of 12, three batches running — the multi format
+collapsing back toward a single document.
+
+| step | KL | sections | Jaccard | union/R | consensus (eval) |
+|---:|---:|---:|---:|---:|---:|
+| 90 | 0.0087 | 24.3 | 0.336 | 5.38 | **0.5775** ← peak |
+| 120 | 0.0184 | 21.1 | 0.307 | 5.08 | 0.5739 |
+| 150 | 0.0229 | 21.6 | 0.395 | 4.77 | 0.5575 |
+| 165 | 0.0265 | 19.0 | 0.338 | 4.78 | — |
+| **180** | **0.0397** | **11.0** | 0.357 | 2.92 | *killed* |
+
+Training-log columns are rolling medians of 6 batches; the generator's batch
+counter restarts at 1 on a resume while SkyRL's `global_step` continues, so the
+continuation is offset by hand in
+[`data/training_steps_mb_lowlr.csv.gz`](data/training_steps_mb_lowlr.csv.gz).
+
+**The plateau was a plateau in steps, not in distance.** Between the peak at step
+90 and the kill at 180 the policy's KL rose from 0.0087 to 0.0397 — it never
+stopped travelling; it travelled slowly enough that four consecutive evaluations
+looked flat. It then failed in exactly the way arm M-B failed at lr 1e-5 —
+section count collapsing, coverage draining — at about five times the steps.
+
+This is the strongest test the "**outcome tracks distance moved, not schedule**"
+finding has had, and it survives: a 3.3× smaller learning rate bought 5× the
+steps and **not one point of extra score**. For a fixed learning rate, *more
+steps is more distance*, and past KL ≈ 0.02 there is nothing further along.
+
+### MKLEASH — the version that "distance decides" cannot pre-answer
+
+If the outcome depends only on distance, the way to profit from a long run is to
+keep optimising while **not travelling** — which requires the KL penalty to
+actually bind. In this experiment it does not: `kl_loss_coef = 0.001` is inert
+(terminal KLs of 0.09, 0.49 and 3.26 were all reached with it in place) and the
+PPO clip never fires, so nothing in the optimiser limits the step.
+
+So: arm M-K, lr 1e-5, 300 steps, **`kl_loss_coef = 0.05`** — 50×, chosen to make
+the penalty comparable to a unit-spread advantage rather than 0.1 % of it. The
+coefficient was a first guess and is recorded as one.
+
+**The leash binds.** At batch 30, `policy_kl` is **0.0037** and its growth is
+decelerating (0.0014 → 0.0025 → 0.0033 → 0.0037), against unleashed M-K at the
+same learning rate and the same step count reading **0.0317 by step 24**. Same
+reward, same lr, roughly **an order of magnitude less distance travelled**. Steps
+and distance are decoupled, which is the precondition the question needed.
+
+> **Status: running.** What it is for is the one thing the other runs cannot
+> settle — whether *more optimisation at a fixed distance* buys anything. If KL
+> settles inside M-K's own optimum (~0.016–0.03) and the score keeps climbing,
+> long trajectories win and the leash is how you buy them. If KL settles and the
+> score does not move, **the distance is the ceiling** and no amount of
+> optimisation at that distance helps — a clean negative, and the one that would
+> retire this line.
+
+
 ## Three mechanisms, each measured rather than argued
 
 Every arm's failure was traced to a property of its reward, by intervention on real generations rather than by inference from the training curves.
@@ -1311,11 +1385,11 @@ reward — so each is drawn against its own objective. Four things read off it:
    never trained to exhaustion.*
 2. **M-C and M-B both peak at step 15–20 and turn over** — the same peak the
    evaluations found, visible from the training batches alone.
-3. **M-B at lr 3e-6 oscillates without trend from step ~40 onward**, for 80 more
-   steps, and its evaluations agree: 0.5754 / 0.5760 / 0.5775 / 0.5739 at steps
-   60 / 75 / 90 / 120. Its peak is a plateau, not a spike, and the reward stays
-   healthy the whole way — the 1e-5 run's collapse at step 80 is a property of
-   the step size, not of the reward.
+3. **M-B at lr 3e-6 oscillates without trend from step ~40 onward**, and its
+   evaluations agree: 0.5754 / 0.5760 / 0.5775 / 0.5739 at steps 60 / 75 / 90 /
+   120. That plateau is what motivated resuming the run — and it ends at step
+   180 in the same collapse the 1e-5 run reached at step 80. See *[Do long
+   trajectories beat short ones?](#do-long-trajectories-beat-short-ones)*.
 4. **M-K's reward is the same series the metric reads**, so unlike every other
    arm its training curve and its evaluation are commensurable: reward rising to
    step ~40 and eval consensus peaking at step 36 are two views of one thing.

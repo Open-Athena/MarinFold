@@ -490,8 +490,8 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-**Full detail in [RESULTS.md](RESULTS.md).** Six reward designs, seven runs,
-**37 scored checkpoints**, every number from #230's scorer unchanged.
+**Full detail in [RESULTS.md](RESULTS.md).** Six reward designs, eight runs,
+**38 scored checkpoints**, every number from #230's scorer unchanged.
 R-precision (all), legacy 554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |
@@ -581,11 +581,16 @@ own section-size law.
 
 **What would be worth doing next**, in order:
 
-- **Train M-K further.** It is the only arm that stopped for its schedule rather
-  than for a reason — no gate strike, no divergence, a broad plateau instead of a
-  spike, and a rolling Jaccard still under the gate at step 48. Every other arm in
-  this experiment answers "how long can you train?" with "not long"; M-K has not
-  been asked. This is the one open question the existing runs cannot settle.
+- **Train M-K further, on a KL leash.** Training longer at a fixed learning rate
+  was tested directly and **failed**: M-B at lr 3e-6, resumed from step 120, was
+  killed at step 180 with its section count collapsed to 11.0 — its four flat
+  evaluations at steps 60–120 were a plateau in *steps* while the policy kept
+  travelling in KL (0.0087 → 0.0397). More steps is more distance, and past
+  KL ≈ 0.02 there is nothing further along. The version that is not pre-answered
+  is to make the KL penalty **bind** (`kl_loss_coef` 0.001 → 0.05, measured to
+  cut distance ~10× at matched steps) and ask whether more optimisation at a
+  *fixed* distance buys anything. See
+  [RESULTS.md](RESULTS.md#do-long-trajectories-beat-short-ones).
 - **Then turn on `beta` and `lam`.** M-K is the `beta = lam = 0` corner of the arm
   derived in [RESULTS.md](RESULTS.md#the-arm-this-implies): a scale-correct
   rollout-level base, plus a **zero-sum** within-rollout shaping term for credit
