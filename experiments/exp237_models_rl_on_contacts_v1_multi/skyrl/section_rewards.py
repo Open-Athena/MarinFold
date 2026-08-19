@@ -257,6 +257,44 @@ def scalar_reward(mode: str, walk: RolloutSections, gt: set[Pair]) -> float:
     raise ValueError(f"scalar_reward does not serve mode {mode!r}")
 
 
+def count_penalty(n_sections: int, beta: float, floor: float) -> float:
+    """``beta * min(0, K - floor)`` — a one-sided barrier on the candidate count.
+
+    Added to the RAW scalar reward, before :func:`grpo_standardise`. Three
+    properties, each of which is the reason for a choice made elsewhere:
+
+    **The deadband is exact.** For ``K >= floor`` this is identically ``0.0``,
+    and because GRPO subtracts the group mean, a term that is the same constant
+    for every rollout in a group changes the standardised advantage by exactly
+    nothing. So a healthy batch is untouched — not "barely touched". That is why
+    the term is added raw rather than standardised on its own: ``GRPO`` of a
+    near-constant column amplifies noise into a ±1 signal, which would put
+    section-count pressure on batches that have no section-count problem.
+
+    **It is bounded.** At ``K = 1`` with the defaults it is ``-0.51`` against a
+    reward in ``[0, 1]`` — decisive but finite. Arm M-C's per-section marginal
+    reached ``+4.79`` at one section and **366x** its value at 22, which is why
+    no fixed weight could balance it inside a blend. This cannot run away.
+
+    **It cannot pay for padding.** ``min(0, .)`` means there is no gradient
+    above the floor, so the policy is never paid for emitting a 60th section.
+    The failure mode a two-sided count bonus would create — arm M-F's, 259
+    sections carrying 1.4 contacts each — is unreachable from here. Watch
+    ``multi/empty_sections`` anyway.
+
+    Args:
+        n_sections: The rollout's candidate count ``K``.
+        beta: Scale. ``0.0`` disables the term, which is the default everywhere.
+        floor: The count below which the penalty engages.
+
+    Returns:
+        ``0.0`` when ``n_sections >= floor``, else ``beta * (n_sections - floor)``.
+    """
+    if beta == 0.0:
+        return 0.0
+    return float(beta * min(0.0, float(n_sections) - float(floor)))
+
+
 def grpo_standardise(values: Sequence[float]) -> np.ndarray:
     """SkyRL's GRPO group normalisation, reproduced exactly.
 
@@ -344,6 +382,7 @@ __all__ = [
     "RolloutSections",
     "centred_section_advantages",
     "consensus_and_marginals",
+    "count_penalty",
     "grpo_standardise",
     "scalar_reward",
     "scored_length",

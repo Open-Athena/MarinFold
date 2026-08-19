@@ -312,3 +312,44 @@ def test_rollout_consensus_is_scale_correct_in_section_count():
     for k in (1, 2):
         c_fewer, _ = sr.consensus_and_marginals(drafts[:k], gt, 64)
         assert c_fewer <= c_all, f"dropping to {k} sections must not raise the consensus"
+
+
+# ---------------------------------------------------------------- count penalty
+
+def test_count_penalty_deadband_is_exact_above_the_floor():
+    for k in (18, 19, 22, 60):
+        assert sr.count_penalty(k, beta=0.03, floor=18.0) == 0.0
+
+
+def test_count_penalty_is_linear_and_negative_below_the_floor():
+    assert sr.count_penalty(11, 0.03, 18.0) == pytest.approx(-0.21)
+    assert sr.count_penalty(1, 0.03, 18.0) == pytest.approx(-0.51)
+
+
+def test_count_penalty_off_by_default_beta():
+    assert sr.count_penalty(1, beta=0.0, floor=18.0) == 0.0
+
+
+def test_a_constant_penalty_across_a_group_cancels_under_grpo():
+    """The deadband survives standardisation, which is why it is added RAW.
+
+    Every rollout clearing the floor gets the same 0.0, and GRPO subtracts the
+    group mean -- so a healthy batch's advantages must be *bit-identical* to the
+    unpenalised ones, not merely close. Standardising the penalty on its own
+    column instead would turn a group of equal zeros into 0/0 or, worse, amplify
+    a one-section difference into a full unit of advantage.
+    """
+    f1 = [0.51, 0.44, 0.62, 0.38, 0.55, 0.47, 0.60, 0.41]
+    counts = [22, 19, 25, 18, 30, 21, 24, 20]          # all >= floor
+    penalised = [v + sr.count_penalty(k, 0.03, 18.0) for v, k in zip(f1, counts)]
+    assert np.allclose(sr.grpo_standardise(penalised), sr.grpo_standardise(f1), atol=0, rtol=0)
+
+
+def test_the_penalty_reorders_a_group_when_one_rollout_is_short():
+    """A short rollout with the BEST section must still lose to a long mediocre one."""
+    f1 = [0.62, 0.50, 0.49, 0.48, 0.47, 0.46, 0.45, 0.44]
+    counts = [8, 22, 21, 20, 23, 19, 24, 20]           # the 0.62 came from 8 sections
+    plain = sr.grpo_standardise(f1)
+    pen = sr.grpo_standardise([v + sr.count_penalty(k, 0.03, 18.0) for v, k in zip(f1, counts)])
+    assert plain[0] == max(plain)                       # unpenalised: the short one wins
+    assert pen[0] < 0                                   # penalised: it is below the baseline

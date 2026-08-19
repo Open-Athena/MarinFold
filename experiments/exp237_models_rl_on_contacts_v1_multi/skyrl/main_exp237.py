@@ -104,6 +104,19 @@ class Exp237Config(SkyRLTrainConfig):
     # interpretability is the point -- #208's `lam_doc` had to be calibrated
     # against raw spreads and was wrong twice, in both directions.
     lam_consensus: float = 1.0
+    # `beta * min(0, K - floor)` on the candidate count, added to the RAW scalar
+    # of the final_f1 / best_f1 arms. OFF by default. Arm M-B's `max_k F1` is
+    # count-NEUTRAL -- it does not depend on K -- so unlike arm M-C there is no
+    # divergent term for this to fight, and unlike a two-sided bonus it cannot
+    # pay for padding. beta 0.03 puts a rollout at K = 11 against a floor of 18
+    # roughly two within-group standard deviations down; at K = 1 it is -0.51
+    # against a reward in [0, 1], i.e. decisive and bounded.
+    count_penalty_beta: float = 0.0
+    # Has to sit ABOVE the count at which the run dies, not at it. M-B's decline
+    # is 20.2 -> 19.3 -> 15.9 -> 11.0 sections/rollout and the gate fires at 11,
+    # so a floor of 10 is identically zero for the whole decline and engages only
+    # after the run has already been stopped.
+    count_penalty_floor: float = 18.0
 
     # ---- #237's preregistered diversity kill criteria, checked every batch ----
     # #230's checkpoint reads 22.0 sections, Jaccard 0.304 and 658 union pairs
@@ -177,6 +190,8 @@ def build_exp(cfg):
                 max_sections=cfg.max_sections,
                 min_precision=cfg.min_precision,
                 gates_fatal=cfg.gates_fatal,
+                count_penalty_beta=cfg.count_penalty_beta,
+                count_penalty_floor=cfg.count_penalty_floor,
             )
 
     return Exp237PPOExp(cfg)

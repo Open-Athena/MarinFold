@@ -132,6 +132,15 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             mechanism is actually in.
         gates_fatal: Stop the run when a gate is violated `_GATE_PATIENCE`
             batches running. Off turns the gates into warnings.
+        count_penalty_beta / count_penalty_floor: `beta * min(0, K - floor)`,
+            added to the RAW rollout scalar for the `final_f1` / `best_f1` arms.
+            **0.0 (off) everywhere by default.** Arm M-B's reward is `max_k F1`,
+            which does not depend on K at all, so the arm has no first-order
+            opinion about its own candidate count — and it declined 20.2 -> 19.3
+            -> 15.9 -> 11.0 sections before the gate stopped it. This is the term
+            that gives it one. See `section_rewards.count_penalty` for why it is
+            added raw rather than standardised, and why the floor has to sit
+            ABOVE the count at which the run dies rather than at it.
     """
 
     def __init__(self, *args, reward_mode: str = "section_consensus",
@@ -140,7 +149,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  min_union_ratio: float = 0.0, min_union_over_r: float = 1.25,
                  lam_consensus: float = 1.0, max_sections: float = 60.0,
                  min_precision: float = 0.15, gates_fatal: bool = True,
-                 collapse_ratio: float = 0.2, **kwargs):
+                 collapse_ratio: float = 0.2, count_penalty_beta: float = 0.0,
+                 count_penalty_floor: float = 18.0, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in sr.REWARD_MODES:
@@ -158,6 +168,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.min_union_over_r = float(min_union_over_r)
         self.gates_fatal = bool(gates_fatal)
         self.collapse_ratio = float(collapse_ratio)
+        self.count_penalty_beta = float(count_penalty_beta)
+        self.count_penalty_floor = float(count_penalty_floor)
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
         self._group: Dict[str, Dict[str, Any]] = {}
         # instance_id -> {repetition_id: (best_f1, consensus, n_response_tokens)}
@@ -255,7 +267,15 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             return 0.0 if consensus != consensus else float(consensus)
 
         if self.reward_mode in ("final_f1", "best_f1"):
-            return float(sr.scalar_reward(self.reward_mode, walk, state["gt"]))
+            # The penalty is added to the RAW scalar, before GRPO's group
+            # standardisation. Because GRPO subtracts the group mean, a term
+            # that is the same constant across the group cancels exactly -- so
+            # a batch in which every rollout clears the floor is untouched, not
+            # merely nudged. That exactness is the whole point of the deadband.
+            return float(sr.scalar_reward(self.reward_mode, walk, state["gt"])
+                         + sr.count_penalty(walk.diagnostics["n_sections"],
+                                            self.count_penalty_beta,
+                                            self.count_penalty_floor))
 
         if self.reward_mode in ("best_plus_consensus", "final_plus_consensus"):
             which = "best_f1" if self.reward_mode == "best_plus_consensus" else "final_f1"
