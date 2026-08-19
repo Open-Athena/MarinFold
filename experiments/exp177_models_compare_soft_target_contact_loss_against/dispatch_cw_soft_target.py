@@ -11,8 +11,12 @@ batch priority, so child H100 jobs do not inherit the driver's interactive band.
 import dataclasses
 import logging
 import os
+import shutil
+import socket
 from datetime import timedelta
+from pathlib import Path
 
+import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
 from levanter.callbacks.profiler import ProfilerConfig, ProfileOptionsConfig
@@ -20,7 +24,6 @@ from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import resolve_training_env
-from rigging.filesystem.storage_path import StoragePath
 
 from marinfold_models import build_train_lm_on_pod_config
 from premade_contacts_dataset import (
@@ -41,6 +44,7 @@ from train import (
 logger = logging.getLogger(__name__)
 
 IRIS_PRIORITY_BAND_BATCH = 3
+PROFILE_LOG_DIR = Path("/tmp/exp177-levanter-logs")
 
 CW_ANALYZED_PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp139_esm_atlas_contacts_v1/analyzed"
 CW_PRECOMPUTED_PREFIX = (
@@ -149,6 +153,32 @@ def _data_config() -> LmDataConfig:
     )
 
 
+def _upload_profile_logs(local_log_dir: Path, upload_prefix: str) -> None:
+    """Upload local JAX profiler artifacts to S3 after training finishes."""
+    if not local_log_dir.exists():
+        logger.warning("Profile log directory does not exist: %s", local_log_dir)
+        return
+
+    hostname = socket.gethostname()
+    for path in local_log_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        relative_path = path.relative_to(local_log_dir)
+        destination = f"{upload_prefix.rstrip('/')}/{hostname}/{relative_path.as_posix()}"
+        logger.info("Uploading profiler artifact %s -> %s", path, destination)
+        with path.open("rb") as src, fsspec.open(destination, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+
+
+def _run_soft_target_with_optional_profile_upload(pod_config, profile_upload_prefix: str | None = None):
+    """Run soft-target training and persist local profiler traces when requested."""
+    try:
+        return _run_soft_target_with_pinned_tokenizer(pod_config)
+    finally:
+        if profile_upload_prefix:
+            _upload_profile_logs(PROFILE_LOG_DIR, profile_upload_prefix)
+
+
 def _pod_config(run_name: str):
     resources = _resources()
     batch_size = int(os.environ.get("EXP177_CW_BATCH_SIZE", "128"))
@@ -237,7 +267,7 @@ def _pod_config(run_name: str):
         max_eval_batches=max_eval_batches,
         per_device_parallelism=per_device_parallelism,
         per_device_eval_parallelism=per_device_parallelism,
-        log_dir=StoragePath(output_path) / "logs" if profiler_enabled else pod_config.train_config.trainer.log_dir,
+        log_dir=PROFILE_LOG_DIR if profiler_enabled else pod_config.train_config.trainer.log_dir,
         checkpointer=CheckpointerConfig(
             save_interval=timedelta(minutes=checkpoint_interval_minutes),
             keep=[{"every": keep_every_steps}],
@@ -285,9 +315,15 @@ def dispatch(wait: bool = True):
         env_vars=resolve_training_env(base_env=dict(pod_config.env_vars or {}), resources=pod_config.resources),
         extras=extras_for_resources(pod_config.resources),
     )
+    profile_upload_prefix = None
+    if os.environ.get("EXP177_CW_PROFILER", "0") == "1":
+        profile_upload_prefix = f"{pod_config.output_path.rstrip('/')}/profile-logs"
     request = JobRequest(
         name=run_name,
-        entrypoint=Entrypoint.from_callable(_run_soft_target_with_pinned_tokenizer, args=[pod_config]),
+        entrypoint=Entrypoint.from_callable(
+            _run_soft_target_with_optional_profile_upload,
+            args=[pod_config, profile_upload_prefix],
+        ),
         resources=pod_config.resources,
         environment=environment,
         priority=IRIS_PRIORITY_BAND_BATCH,
@@ -307,6 +343,10 @@ if __name__ == "__main__":
     if os.environ.get("EXP177_CW_INLINE", "0") == "1":
         run_name = _run_name()
         logger.info("Running CoreWeave exp177 soft-target inline %s", run_name)
-        _run_soft_target_with_pinned_tokenizer(_pod_config(run_name))
+        pod_config = _pod_config(run_name)
+        profile_upload_prefix = None
+        if os.environ.get("EXP177_CW_PROFILER", "0") == "1":
+            profile_upload_prefix = f"{pod_config.output_path.rstrip('/')}/profile-logs"
+        _run_soft_target_with_optional_profile_upload(pod_config, profile_upload_prefix)
     else:
         dispatch(wait=os.environ.get("EXP177_CW_WAIT", "1") != "0")
