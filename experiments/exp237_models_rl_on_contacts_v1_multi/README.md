@@ -491,7 +491,7 @@ python -m pytest skyrl/tests -q
 ## Results
 
 **Full detail in [RESULTS.md](RESULTS.md).** Six reward designs, eight runs,
-**38 scored checkpoints**, every number from #230's scorer unchanged.
+**43 scored checkpoints**, every number from #230's scorer unchanged.
 R-precision (all), legacy 554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |
@@ -587,10 +587,13 @@ own section-size law.
   evaluations at steps 60–120 were a plateau in *steps* while the policy kept
   travelling in KL (0.0087 → 0.0397). More steps is more distance, and past
   KL ≈ 0.02 there is nothing further along. The version that is not pre-answered
-  is to make the KL penalty **bind** (`kl_loss_coef` 0.001 → 0.05, measured to
-  cut distance ~10× at matched steps) and ask whether more optimisation at a
-  *fixed* distance buys anything. See
-  [RESULTS.md](RESULTS.md#do-long-trajectories-beat-short-ones).
+  is to make the KL penalty bind (`kl_loss_coef` 0.001 → 0.05) and ask whether more
+  optimisation at a *fixed* distance buys anything. **That was run too, and the
+  answer is also no**: at matched KL the leashed arm is uniformly below the
+  unleashed one (0.5712 against 0.5806 at KL ~0.016, having taken 3.3× the steps)
+  and it never improves on its own first checkpoint. **The path to a distance is
+  not interchangeable**, which is a stronger statement than "outcome tracks
+  distance". See [RESULTS.md](RESULTS.md#do-long-trajectories-beat-short-ones).
 - **Then turn on `beta` and `lam`.** M-K is the `beta = lam = 0` corner of the arm
   derived in [RESULTS.md](RESULTS.md#the-arm-this-implies): a scale-correct
   rollout-level base, plus a **zero-sum** within-rollout shaping term for credit

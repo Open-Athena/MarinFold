@@ -4,10 +4,11 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: eight runs, 38 scored checkpoints.** Everything is final except
-> **MKLEASH**, still training — see *[Do long trajectories beat short
-> ones?](#do-long-trajectories-beat-short-ones)*, which says so where it matters.
-> Anything not measured says so rather than being left to look measured.
+> **Status: eight runs, 43 scored checkpoints.** The long-trajectory question is
+> settled in both directions — see *[Do long trajectories beat short
+> ones?](#do-long-trajectories-beat-short-ones)*. One arm (**M-BP**, a candidate-count
+> floor on M-B's reward) is still running and says so where it matters. Anything
+> not measured says so rather than being left to look measured.
 
 
 ## The bar
@@ -829,14 +830,53 @@ a constant price per nat: an adaptive controller on the coefficient, or the trus
 region the PPO clip would provide if `update_epochs_per_batch > 1` made it fire
 at all.
 
-> **What the checkpoints can still answer.** The leashed run did take **120 steps
-> to reach KL 0.013**, where unleashed M-K took about 13. That is a matched-distance
-> comparison with ~9× the optimisation, which is the same test M-B's two learning
-> rates gave, now on the best arm. Steps 120 / 90 / 60 / 30 are being scored
-> first for exactly that reason; 240 and 300 are skipped, because at KL 0.56 they
-> measure a destroyed policy and arm M-B step-80 already did that.
->
-> **Status: scoring.** Numbers go here when they land.
+#### And the checkpoints answer the question anyway: no
+
+The leashed run took **120 steps to reach KL 0.0153**, where unleashed M-K passed
+the same distance at about step 36. That is a matched-distance comparison with
+3.3× the optimisation — the test the other seven runs could not reach.
+
+![accuracy against distance, leashed against unleashed](plots/leash_vs_free.png)
+
+Consensus R-precision on the legacy 554, both traces arm M-K at lr 1e-5 with the
+same reward and the same prompt pool, ordered by distance:
+
+| KL | leashed | | unleashed | |
+|---:|---:|---:|---:|---:|
+| | R-prec | step | R-prec | step |
+| ~0.004–0.005 | 0.5728 | 30 | 0.5739 | 12 |
+| ~0.007 | 0.5718 | 60 | — | |
+| ~0.009 | 0.5678 | 90 | **0.5764** | 18 |
+| ~0.016 | 0.5712 | 120 | **0.5806** | 36 |
+
+**Two readings, and the second is the stronger one.**
+
+1. **The leashed trace is below the unleashed one at every matched distance** —
+   uniformly, not only late. At the closest matched pair (KL 0.0153 against
+   0.0162) it is **0.0094 worse** while having taken 3.3× the steps.
+2. **The leashed run never improves at all.** 0.5728 → 0.5718 → 0.5678 → 0.5712
+   across steps 30–120 is flat inside the ±0.0023 noise floor (#204); its best
+   checkpoint is its *first*. The unleashed run gained **+0.0067** over the same
+   distance in 36 steps. So 90 further steps of optimisation bought nothing —
+   not a smaller gain, no gain.
+
+**What this settles.** Distance is not merely the variable that *orders* the
+outcomes — **the path taken to a given distance is not interchangeable**, and the
+KL penalty's path is the worse one. That is a stronger claim than "outcome tracks
+distance moved", and it is what closes the long-trajectory question: you cannot
+reach the dose-response's peak by walking there slowly. The extra gradient the
+penalty adds pulls toward the reference and competes with the reward's; the
+policy arrives at the same radius, at a worse point on it.
+
+**The honest limit of the comparison.** The penalty changed the *direction*
+travelled, not only the speed — at step 120 the leashed policy was already
+drifting toward the section runaway (25.4 sections against the unleashed run's
+21.2 at step 36), and on eval2-natural it reads **0.2846**, below the warm
+start's 0.2889. So this rules out `kl_loss_coef` as the way to buy a long
+trajectory; it does not prove that *no* fixed-distance regime could help. A
+mechanism that reacts to measured KL rather than paying a constant price per nat
+— an adaptive controller, or the PPO trust region if `update_epochs_per_batch > 1`
+made it fire — remains untested.
 
 
 ## Three mechanisms, each measured rather than argued
