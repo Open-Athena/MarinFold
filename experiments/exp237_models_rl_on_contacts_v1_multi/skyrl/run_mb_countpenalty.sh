@@ -73,13 +73,16 @@ if [ ! -d "$ROOT/ckpts_m_b/global_step_$FROM" ]; then
   cp -r "$SRC" "$ROOT/ckpts_m_b/global_step_$FROM" || exit 1
   echo "$FROM" > "$ROOT/ckpts_m_b/latest_ckpt_global_step.txt"
 fi
-staged=$(ls "$ROOT/ckpts_m_b" | grep -c global_step)
+# Anchored: `latest_ckpt_global_step.txt` also contains "global_step", so an
+# unanchored grep counts it as a checkpoint and this guard fails on a
+# correctly-staged directory.
+staged=$(ls "$ROOT/ckpts_m_b" | grep -c "^global_step_[0-9]")
 [ "$staged" -eq 1 ] || { echo "[mbp] FATAL: $staged checkpoints staged, expected exactly 1"; exit 1; }
 
 cd "$HERE" || exit 1
 echo "[mbp] train M-B+penalty beta=$BETA floor=$FLOOR from step $FROM to $STEPS at $(date -u)"
 drain || { echo "[mbp] cards never drained"; exit 1; }
-ARM=M-B LR=3e-6 STEPS=$STEPS CKPT_EVERY=$CKPT_EVERY ROOT=$ROOT \
+ARM=M-B LR=3e-6 STEPS=$STEPS CKPT_EVERY=$CKPT_EVERY ROOT=$ROOT RUN_SUFFIX=_pen \
   EXTRA_OVERRIDES="min_union_ratio=0.0 min_union_over_r=1.25 count_penalty_beta=$BETA count_penalty_floor=$FLOOR" \
   bash run_arm.sh >> "$LOGS/mbp.log" 2>&1
 echo "[mbp] train rc=$? at $(date -u)"

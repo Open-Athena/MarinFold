@@ -84,7 +84,10 @@ esac
 for p in "$DATA" "$MODEL"; do [ -e "$p" ] || { echo "FATAL: missing $p"; exit 1; }; done
 
 TAG=$(echo "$ARM" | tr 'A-Z-' 'a-z_')
-RUN=exp237_${TAG}_lr${LR}
+# RUN_SUFFIX distinguishes two runs of the SAME arm at the SAME lr -- arm M-BP is
+# M-B at 3e-6 with a count penalty, and would otherwise write to (and rotate)
+# MBLONG's log, making the two trajectories hard to tell apart afterwards.
+RUN=exp237_${TAG}_lr${LR}${RUN_SUFFIX:-}
 CKPT=$ROOT/ckpts_$TAG
 EXPORT=$ROOT/exports_$TAG
 LOG=$HOME/exp237_logs/${RUN}.log
