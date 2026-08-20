@@ -132,11 +132,12 @@ def main() -> int:
     # ---------------- accuracy ----------------
     fig, ax = plt.subplots(figsize=(9, 4.8))
     ax.axhline(BAR, color="#9a6f16", lw=1.6, ls="-.")
-    ax.text(0.995, BAR, "plain, 22 rollouts — the bar  ", color="#9a6f16", fontsize=8,
-            ha="right", va="bottom", transform=ax.get_yaxis_transform())
+    ax.text(0.012, BAR, "plain, 22 rollouts — the bar", color="#9a6f16", fontsize=8,
+            ha="left", va="bottom", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6, transform=ax.get_yaxis_transform())
     ax.axhline(WARM, color="0.35", lw=1.0, ls=":")
-    ax.text(0.005, WARM, "  #230 warm start", color="0.35", fontsize=8, va="bottom",
-            transform=ax.get_yaxis_transform())
+    # BELOW the line on the right: M-BP's trace runs just above it there.
+    ax.text(0.60, WARM, "#230 warm start", color="0.35", fontsize=8, va="top",
+            ha="left", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6, transform=ax.get_yaxis_transform())
     for arm in ["M-0", "M-C", "M-F", "M-B", "M-BC", "M-FC", "M-KB", "M-KS2", "M-K"]:
         pts = sorted(ACC[arm].items())
         if not pts:
@@ -158,20 +159,13 @@ def main() -> int:
     ax.set_ylabel("consensus R-precision  (legacy 554, 8 rollouts/protein)")
     # No arrow: every path from a free area to (36, 0.5806) crosses three other
     # curves. The label sits in the gap between M-K's tail and the bar instead.
-    ax.text(50, 0.5845, "M-K peaks 0.5806 at step 36 — best consensus measured here",
-            fontsize=8.5, color=COLOR["M-K"], fontweight="600", va="center")
-    ax.annotate("M-KS2 step-24 — consensus ties M-K,\nbut ORACLE-best 0.5677, the best measured here",
-                xy=(24, 0.5795), xytext=(46, 0.470), fontsize=8, color=COLOR["M-KS2"],
-                fontweight="600",
-                arrowprops=dict(arrowstyle="->", color=COLOR["M-KS2"], lw=1.1))
-    ax.annotate("no penalty: killed at 180,\n11.0 sections/rollout", xy=(150, 0.5575),
-                xytext=(120, 0.526), fontsize=8, color=COLOR["M-B"],
-                arrowprops=dict(arrowstyle="->", color=COLOR["M-B"], lw=1.1))
-    ax.annotate("M-BP: + count floor — the decline is\ndelayed, not prevented",
-                xy=(168, 0.5735), xytext=(120, 0.505), fontsize=8, color="#c2410c",
-                fontweight="600",
-                arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.1))
-    ax.set_title("exp237 — accuracy at every scored checkpoint  (55 in total)", fontsize=11)
+    ax.annotate("M-K 0.5806 · M-KS2 0.5799\n(the two best)", xy=(30, 0.5802),
+                xytext=(62, 0.472), fontsize=8.5, fontweight="600", color=COLOR["M-K"], bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6,
+                arrowprops=dict(arrowstyle="->", color=COLOR["M-K"], lw=1.1))
+    ax.annotate("M-B lr3e-6 + count floor:\nthe decline is delayed, not prevented",
+                xy=(168, 0.5735), xytext=(103, 0.505), fontsize=8, color="#c2410c", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6,
+                arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.0))
+    ax.set_title("exp237 — accuracy at every scored checkpoint  (57 in total)", fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=3, framealpha=0.95)
     fig.tight_layout()
     save_plot_with_meta(fig, a.out / "curves_accuracy.png", dpi=150,

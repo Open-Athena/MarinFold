@@ -514,8 +514,8 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-**Full detail in [RESULTS.md](RESULTS.md).** Nine reward designs, thirteen runs,
-**55 scored checkpoints**, every number from #230's scorer unchanged.
+**Full detail in [RESULTS.md](RESULTS.md).** Ten reward designs, fifteen runs,
+**57 scored checkpoints**, every number from #230's scorer unchanged.
 R-precision (all), legacy 554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |

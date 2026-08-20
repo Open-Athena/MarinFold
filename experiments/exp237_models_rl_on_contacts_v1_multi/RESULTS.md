@@ -1048,8 +1048,46 @@ consensus marginal it shapes on happens to be a weak (r = +0.194) and
 partition-insensitive proxy for novelty. Making the proxy sharper made it worse.
 
 **The next form would have to be partition-invariant** — scored per *pair* rather
-than per *section*, or normalised by section size, which trades away the count
-sensitivity the aggregate needs. That tension is real and is not resolved here.
+than per *section*. That was then built and run.
+
+#### M-KP — per-pair shaping, and #208's per-contact result transfers
+
+Each `<contact> <pI> <pJ>` triple scored on its own three tokens: **+1/R** for a
+first-time true pair, **−1/R** for a first-time false one, and **exactly 0 for a
+repeat, true or false**. The partition never enters the arithmetic. Structural
+tokens carry no shaping at all and the zero-sum centring runs over triple tokens
+only — centring over *all* tokens would hand every `<begin_statements>` a
+positive advantage for existing, since most emitted pairs are false and the mean
+is therefore negative. That hazard was designed out rather than discovered.
+
+The novelty gate was the reason to expect this to escape #208's finding: a policy
+that sharpens by repeating its confident set earns nothing after the first
+section, so the only way to score is to add correct content that is not there
+yet. **It did not escape it.**
+
+**Killed at step 17 on `union/R` — the first time that criterion has fired in
+#237**, and it is the one gate that stands for a mechanism rather than for a
+previously-seen failure (R-precision cuts a ranking at R, so once the union falls
+below R the top-R slots are padded with zero-vote pairs).
+
+| batch | 1 | 5 | 8 | 12 | 15 | 17 |
+|---|---:|---:|---:|---:|---:|---:|
+| per-contact precision | 0.33 | 0.47 | 0.70 | 0.72 | 0.82 | **0.75** |
+| predictions per true contact | 11.4 | 9.4 | 7.8 | 7.9 | 4.2 | **4.4** |
+| union / R | 5.83 | 3.34 | 1.80 | 1.23 | 0.92 | **0.78** |
+| sections/rollout | 25.9 | 18.8 | 19.0 | 22.2 | 22.1 | 19.4 |
+
+Section count held. Jaccard held. **What moved was precision — it more than
+doubled — while the model emitted less than half as much.** That is a sharpening
+operator, exactly as #208 characterised per-contact rewards, and the novelty gate
+did not prevent it: emitting fewer and more confident pairs raises the ratio of
+first-time-true to first-time-false, which is precisely what the term pays for.
+
+**So the scope rule holds, and now for a stated reason.** #237 excluded
+per-contact-only rewards on #208's authority. This arm tested the boundary — the
+same signal as *shaping*, on a scale-correct rollout-level base, with repeats
+gated to zero — and it sharpened anyway. The exclusion is not an artifact of
+#208's particular setup.
 
 
 ### M-KB — a 4× larger batch, and the refutation of the noise hypothesis

@@ -64,8 +64,8 @@ def main() -> int:
 
     fig, ax = plt.subplots(figsize=(9, 4.8))
     ax.axhspan(*WINDOW, color="#f0c674", alpha=0.28, lw=0, zorder=0)
-    ax.text(2, WINDOW[1] * 0.92, "  the window every arm peaked in", fontsize=8.5,
-            color="#7a5c10", va="top")
+    ax.text(57, WINDOW[1] * 0.94, "the window every arm peaked in", fontsize=8.5,
+            color="#7a5c10", va="top", ha="left", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6),  zorder=6)
 
     for label, _, colour, dash, peak in SERIES:
         d = frames[label].dropna(subset=["policy_kl"]).sort_values("step")
