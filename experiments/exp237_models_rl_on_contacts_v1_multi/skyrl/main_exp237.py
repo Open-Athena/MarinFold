@@ -86,6 +86,13 @@ class Exp237Config(SkyRLTrainConfig):
     #                                   one section against +0.79 at 22, exactly
     #                                   inverting M-C's +4.79 / -0.22. Needs a
     #                                   group estimator (grpo).
+    # "consensus_shaped"  (arm M-KS) -- arm M-K's base plus a ZERO-SUM within-
+    #                                   rollout shaping term on the causal prefix
+    #                                   marginal. M-K reinforces all ~22 sections
+    #                                   of a good rollout identically, duplicates
+    #                                   included; this reinforces the ones that
+    #                                   added something. Needs
+    #                                   advantage_estimator=contacts_section.
     reward_mode: str = "section_consensus"
     # Constrains sampling to real token ids. vLLM pads the vocabulary
     # (2845 -> 2848) with zero rows that emit a logit of exactly 0.0, and
@@ -117,6 +124,12 @@ class Exp237Config(SkyRLTrainConfig):
     # so a floor of 10 is identically zero for the whole decline and engages only
     # after the run has already been stopped.
     count_penalty_floor: float = 18.0
+    # Arm M-KS's shaping weight: `A_i,k = GRPO(C_i(all))_i + beta_shape *
+    # (m_k - mean_k m)`, with m the CAUSAL prefix marginal. Zero-sum within the
+    # rollout, so it cannot move the level the base sets -- which is the whole
+    # reason the prefix form is safe here and was refuted as a standalone reward
+    # (it reads +2.03 at one section under `token_mean`). 0.0 reduces to arm M-K.
+    beta_shape: float = 0.0
 
     # ---- #237's preregistered diversity kill criteria, checked every batch ----
     # #230's checkpoint reads 22.0 sections, Jaccard 0.304 and 658 union pairs
@@ -192,6 +205,7 @@ def build_exp(cfg):
                 gates_fatal=cfg.gates_fatal,
                 count_penalty_beta=cfg.count_penalty_beta,
                 count_penalty_floor=cfg.count_penalty_floor,
+                beta_shape=cfg.beta_shape,
             )
 
     return Exp237PPOExp(cfg)
@@ -222,6 +236,12 @@ def check_reward_mode(cfg) -> None:
             f"advantage_estimator='{estimator}' would sum it to one number per rollout and "
             f"discard the within-rollout credit assignment WITHOUT error. Use "
             f"advantage_estimator={ADV_ESTIMATOR}.")
+    if mode == "consensus_shaped" and estimator != ADV_ESTIMATOR:
+        raise ValueError(
+            f"reward_mode='consensus_shaped' writes a finished PER-SECTION advantage, so it "
+            f"needs advantage_estimator={ADV_ESTIMATOR} (a pass-through). '{estimator}' would "
+            f"sum it to one number per rollout and discard the within-rollout shaping that is "
+            f"the entire difference from arm M-K -- with no error at all.")
     if mode in ("best_plus_consensus", "final_plus_consensus") and estimator != ADV_ROLLOUT:
         raise ValueError(
             f"reward_mode='{mode}' writes a finished per-rollout advantage, so "

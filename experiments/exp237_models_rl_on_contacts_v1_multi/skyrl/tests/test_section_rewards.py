@@ -353,3 +353,49 @@ def test_the_penalty_reorders_a_group_when_one_rollout_is_short():
     pen = sr.grpo_standardise([v + sr.count_penalty(k, 0.03, 18.0) for v, k in zip(f1, counts)])
     assert plain[0] == max(plain)                       # unpenalised: the short one wins
     assert pen[0] < 0                                   # penalised: it is below the baseline
+
+
+# ------------------------------------------------------- arm M-KS: zero-sum shaping
+
+def test_prefix_marginals_telescope_to_the_full_consensus():
+    """Sum of the causal marginals is C(all) - C(empty), by construction."""
+    L = 40
+    gt = {(2, 20), (3, 25), (5, 30), (8, 33), (1, 18)}
+    sections = [{(2, 20), (9, 40)}, {(3, 25), (2, 20)}, {(5, 30), (8, 33)}, {(1, 18)}]
+    m = sr.prefix_marginals(sections, gt, L)
+    total, _ = sr.consensus_and_marginals(sections, gt, L)
+    assert m.sum() == pytest.approx(total, abs=1e-9)
+
+
+def test_prefix_marginal_of_a_duplicate_section_is_zero():
+    """Repeating what is already in context adds nothing — the point of the term."""
+    L = 40
+    gt = {(2, 20), (3, 25)}
+    base = [{(2, 20)}, {(3, 25)}]
+    m = sr.prefix_marginals(base + [{(2, 20)}], gt, L)
+    assert m[-1] == pytest.approx(0.0, abs=1e-12)
+
+
+def test_shaping_is_exactly_zero_sum_within_the_rollout():
+    """No matter the marginals or beta, the shaping cannot move the rollout's total.
+
+    This is the entire safety argument for arm M-KS. Every count pathology
+    measured in #237 was about a reward's LEVEL as a function of the section
+    count; a term whose sum is identically zero has no level to move.
+    """
+    for beta in (0.0, 0.5, 3.0, -2.0):
+        for m in ([0.4, 0.0, 0.0, 0.1], [2.03], [0.0] * 22, [-0.1, 0.9, 0.2]):
+            adv = sr.shaped_section_advantages(1.7, np.asarray(m), beta)
+            assert adv.mean() == pytest.approx(1.7, abs=1e-12)
+            assert (adv - 1.7).sum() == pytest.approx(0.0, abs=1e-12)
+
+
+def test_beta_zero_reduces_to_arm_m_k_exactly():
+    adv = sr.shaped_section_advantages(-0.63, np.asarray([0.4, 0.0, 0.1]), 0.0)
+    assert np.all(adv == -0.63)
+
+
+def test_shaping_ranks_the_contributing_section_above_the_duplicate():
+    adv = sr.shaped_section_advantages(1.0, np.asarray([0.30, 0.0, 0.0]), beta=1.0)
+    assert adv[0] > adv[1] == adv[2]
+    assert adv[1] < 1.0                     # duplicates land BELOW the rollout's base

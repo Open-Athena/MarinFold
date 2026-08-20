@@ -150,7 +150,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  lam_consensus: float = 1.0, max_sections: float = 60.0,
                  min_precision: float = 0.15, gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, count_penalty_beta: float = 0.0,
-                 count_penalty_floor: float = 18.0, **kwargs):
+                 count_penalty_floor: float = 18.0, beta_shape: float = 0.0, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in sr.REWARD_MODES:
@@ -170,6 +170,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.collapse_ratio = float(collapse_ratio)
         self.count_penalty_beta = float(count_penalty_beta)
         self.count_penalty_floor = float(count_penalty_floor)
+        self.beta_shape = float(beta_shape)
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
         self._group: Dict[str, Dict[str, Any]] = {}
         # instance_id -> {repetition_id: (best_f1, consensus, n_response_tokens)}
@@ -277,6 +278,17 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                                             self.count_penalty_beta,
                                             self.count_penalty_floor))
 
+        if self.reward_mode == "consensus_shaped":
+            cons = 0.0 if consensus != consensus else float(consensus)
+            self._rollout_scores.setdefault(state["instance_id"], {})[state["repetition_id"]] = (
+                cons,
+                sr.prefix_marginals(walk.sections, state["gt"], state["L"]),
+                walk.bounds,
+                walk.n_response_tokens,
+            )
+            # Right SHAPE only; `generate` overwrites it once the group exists.
+            return [cons] * walk.n_response_tokens
+
         if self.reward_mode in ("best_plus_consensus", "final_plus_consensus"):
             which = "best_f1" if self.reward_mode == "best_plus_consensus" else "final_f1"
             best = float(sr.scalar_reward(which, walk, state["gt"]))
@@ -309,6 +321,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             out = self._apply_group_baseline(out, input_batch)
         elif self.reward_mode in ("best_plus_consensus", "final_plus_consensus"):
             out = self._apply_rollout_blend(out, input_batch)
+        elif self.reward_mode == "consensus_shaped":
+            out = self._apply_shaped_consensus(out, input_batch)
         return self._emit_metrics(out)
 
     # -------------------------------------------------------------- internals
@@ -403,6 +417,76 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self._diag["n_prompts"] = float(len(self._group))
         logger.info("[exp237] group baseline applied to %d/%d rollouts; %d/%d prompts had zero "
                     "marginal spread", n_written, len(rewards), n_dead, len(self._group))
+        out["rewards"] = rewards
+        return out
+
+    def _rows(self, out, input_batch=None):
+        """``(rewards, {"<instance>:<rep>": row_index})`` for a group pass.
+
+        Factored out of the three group passes rather than repeated: SkyRL
+        documents that `generate` returns rows in input order, but relying on
+        that would make a misattributed advantage — one protein's baseline
+        landing on another's tokens — a silent, plausible-looking number.
+        """
+        rewards = out.get("rewards")
+        if not rewards:
+            raise RuntimeError("[exp237] generator output has no rewards to write")
+        traj = out.get("trajectory_ids") or (input_batch or {}).get("trajectory_ids")
+        if traj is None:
+            raise RuntimeError(
+                "[exp237] no trajectory_ids on the generator output or input batch; refusing to "
+                "map advantages by position alone")
+        if len(traj) != len(rewards):
+            raise RuntimeError(
+                f"[exp237] trajectory_ids ({len(traj)}) and rewards ({len(rewards)}) disagree")
+        row_of: Dict[str, int] = {}
+        for i, tid in enumerate(traj):
+            key = f"{getattr(tid, 'instance_id', '')}:{getattr(tid, 'repetition_id', '')}"
+            if key in row_of:
+                raise RuntimeError(f"[exp237] duplicate trajectory id in one batch: {key}")
+            row_of[key] = i
+        return rewards, row_of
+
+    def _apply_shaped_consensus(self, out, input_batch=None):
+        """Arm M-KS: arm M-K's base, redistributed within each rollout.
+
+            A_i,k  =  GRPO_group( C_i(all) )_i  +  beta * ( m_k - mean_k m )
+
+        The base is arm M-K exactly — the best consensus measured in #237 —
+        and the shaping term is **zero-sum within the rollout**, so it cannot
+        move the level the base sets. It only decides *which* sections of a
+        good rollout are reinforced: those that added something their
+        predecessors had not, rather than every section equally.
+
+        Arm M-K reinforces all ~22 sections of a good rollout identically,
+        including the ones that merely repeat their siblings — which is the
+        mechanism most consistent with its Jaccard climbing 0.23 -> 0.39 as its
+        score turned over. This is the term that separates them.
+        """
+        rewards, row_of = self._rows(out, input_batch)
+        n_written = 0
+        for instance_id, per_rep in self._rollout_scores.items():
+            reps = sorted(per_rep)
+            base = sr.grpo_standardise([per_rep[r][0] for r in reps])
+            for b, rep in zip(base, reps):
+                row = row_of.get(f"{instance_id}:{rep}")
+                if row is None:
+                    continue
+                _, marginals, bounds, n_tok = per_rep[rep]
+                adv = sr.shaped_section_advantages(float(b), marginals, self.beta_shape)
+                vec = sr.token_advantages(adv, bounds, n_tok)
+                if len(vec) != len(rewards[row]):
+                    raise RuntimeError(
+                        f"[exp237] advantage vector {len(vec)} != reward row "
+                        f"{len(rewards[row])} for {instance_id}:{rep}")
+                rewards[row] = [float(x) for x in vec]
+                n_written += 1
+        if not n_written:
+            raise RuntimeError(
+                "[exp237] the shaped-consensus pass wrote no rewards; check the "
+                "trajectory_id mapping and that MultiSectionGenerator is configured.")
+        logger.info("[exp237] shaped consensus applied to %d/%d rollouts (beta_shape=%.3g)",
+                    n_written, len(rewards), self.beta_shape)
         out["rewards"] = rewards
         return out
 

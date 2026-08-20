@@ -91,6 +91,7 @@ _STD_EPS = 1e-8
 Pair = tuple[int, int]
 
 REWARD_MODES = ("section_consensus", "final_f1", "best_f1", "best_plus_consensus",
+                "consensus_shaped",
                 "final_plus_consensus", "consensus_only")
 
 
@@ -218,6 +219,90 @@ def consensus_and_marginals(
     if math.isnan(consensus):
         return math.nan, np.zeros(n_sections, dtype=np.float64)
     return float(consensus), np.nan_to_num(marginals, nan=0.0)
+
+
+def prefix_marginals(
+    sections: Sequence[set[Pair]], gt: set[Pair], length: int
+) -> np.ndarray:
+    """Each section's **causal** contribution: ``C(s_1..s_k) - C(s_1..s_{k-1})``.
+
+    The marginal against exactly what was in context when the section was
+    written, rather than the leave-one-out marginal against all its siblings
+    including ones that did not exist yet. This is the quantity that answers
+    "given what you have already emitted, what did this add?" — so duplicating an
+    earlier candidate earns nothing while covering a pair the predecessors missed
+    earns a lot.
+
+    **This is NOT safe as a standalone reward and was measured to be so.** It
+    telescopes (``sum_k m_k = C(all) - C(empty)``), which looks like it bounds the
+    total, but ``loss_reduction=token_mean`` reads the **mean**, not the sum — and
+    a short rollout's early sections are scored against a near-empty prefix, so
+    its mean is large. Measured group-centred advantage at one section: **+2.03**,
+    against −0.22 at 22. It is the same count-adverse pathology that destroyed arm
+    M-C, only milder.
+
+    It is safe **only** where the caller makes it zero-sum within the rollout, on
+    top of a scale-correct rollout-level base — which is how
+    :func:`shaped_section_advantages` uses it.
+
+    Returns:
+        ``[K]`` marginals, all zero when the protein has no scoreable ground
+        truth (so the caller's arithmetic stays total).
+    """
+    n = len(sections)
+    if n == 0 or not gt or length <= 0:
+        return np.zeros(n, dtype=np.float64)
+    pairs, position = cs.candidate_index(length)
+    is_true = cs.truth_mask(pairs, gt)
+    n_true = int(is_true.sum())
+    if n_true <= 0 or len(pairs) == 0:
+        return np.zeros(n, dtype=np.float64)
+    per_section = cs.vote_counts(sections, position, len(pairs))
+    out = np.zeros(n, dtype=np.float64)
+    running = np.zeros(len(pairs), dtype=np.int64)
+    prev = 0.0                     # C of the empty prefix: nothing ranked, 0.0
+    for k in range(n):
+        running += per_section[k]
+        cur = cs.rprecision(running, is_true, n_true)
+        cur = 0.0 if math.isnan(cur) else float(cur)
+        out[k] = cur - prev
+        prev = cur
+    return out
+
+
+def shaped_section_advantages(
+    base: float, marginals: np.ndarray, beta: float
+) -> np.ndarray:
+    """``base + beta * (m_k - mean_k m)`` — arm M-KS's per-token advantage source.
+
+    Args:
+        base: The rollout's already-standardised scalar advantage, i.e.
+            ``GRPO_group(C_i(all))_i``. Arm M-K is this alone.
+        marginals: ``[K]`` per-section marginals, from :func:`prefix_marginals`.
+        beta: Shaping weight. ``0.0`` reduces this to arm M-K exactly.
+
+    Returns:
+        ``[K]`` per-section advantages.
+
+    **The shaping term is centred within the rollout, and that is the whole
+    safety argument.** ``sum_k (m_k - mean_k m) = 0`` by construction, so no
+    matter how the marginals scale with the candidate count, the term contributes
+    **nothing** to the rollout's total advantage — it can only redistribute the
+    base among the sections that earned it. Every count pathology in this
+    experiment (M-C's +4.79 at one section, the prefix form's +2.03) was a
+    statement about a reward's *level* as a function of ``K``; a zero-sum term has
+    no level to move.
+
+    The base carries the level, and it is scale-correct on its own: ``C_i(all)``
+    *falls* when sections are dropped (0.543 at 22, 0.341 at one).
+    """
+    if len(marginals) == 0:
+        return np.zeros(0, dtype=np.float64)
+    adv = np.full(len(marginals), float(base), dtype=np.float64)
+    if beta != 0.0:
+        m = np.asarray(marginals, dtype=np.float64)
+        adv = adv + float(beta) * (m - m.mean())
+    return adv
 
 
 def section_f1s(sections: Sequence[set[Pair]], gt: set[Pair]) -> list[float]:
@@ -383,6 +468,8 @@ __all__ = [
     "centred_section_advantages",
     "consensus_and_marginals",
     "count_penalty",
+    "prefix_marginals",
+    "shaped_section_advantages",
     "grpo_standardise",
     "scalar_reward",
     "scored_length",

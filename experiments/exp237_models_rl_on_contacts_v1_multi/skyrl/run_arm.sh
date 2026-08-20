@@ -18,7 +18,7 @@
 #   ARM=M-C LR=1e-6 STEPS=80 ./run_arm.sh
 set -u
 
-ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-FC, M-K, M-0}
+ARM=${ARM:?set ARM to one of M-C, M-F, M-B, M-BC, M-FC, M-K, M-KS, M-0}
 LR=${LR:-1e-6}
 STEPS=${STEPS:-80}
 GROUP=${GROUP:-8}                 # generator.n_samples_per_prompt
@@ -74,6 +74,9 @@ case "$ARM" in
   # only ever appeared as a lambda-weighted INGREDIENT in M-BC and M-FC, where a
   # second objective confounds it.
   M-K) MODE=consensus_only; EST=grpo ;;
+  # Arm M-KS -- the one piece of the arm derived in RESULTS.md that has never
+  # been run. M-K validated the base; `beta_shape` is the untested half.
+  M-KS) MODE=consensus_shaped; EST=contacts_section ;;
   # Arm M-0 -- zero-LR control. #208 needed one to prove that FSDP sharding, not
   # the gradient, was destroying the policy. Cheap, and it makes every other arm
   # interpretable: whatever M-0 does is the harness, not the reward.
@@ -175,6 +178,7 @@ $PY main_exp237.py \
   trainer.project_name=exp237 \
   trainer.run_name="$RUN" \
   lam_consensus="${LAM_CONSENSUS:-1.0}" \
+  beta_shape="${BETA_SHAPE:-0.0}" \
   ${EXTRA_OVERRIDES:-} \
   > "$LOG" 2>&1
 rc=$?
