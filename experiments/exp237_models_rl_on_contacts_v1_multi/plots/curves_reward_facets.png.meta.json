@@ -1,0 +1,5 @@
+{
+  "script": "plot_reward_facets.py",
+  "args": [],
+  "caption": "Raw per-batch reward, one panel per run, no smoothing. Each arm is plotted against its OWN reward \u2014 the quantity is named in each panel \u2014 so the shared y-axis is a common range, not a common scale."
+}

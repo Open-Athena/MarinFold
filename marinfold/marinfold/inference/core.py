@@ -94,6 +94,59 @@ class Backend(Protocol):
         """
         ...
 
+    def teacher_forced_target_probs(
+        self,
+        token_ids_batch: list[list[int]],
+        target_token_ids: list[int],
+        *,
+        batch_size: int | None = None,
+    ) -> np.ndarray:
+        """Target-token mass at *every* position of a teacher-forced sequence.
+
+        The complement of :meth:`next_token_probs`. That method answers
+        "many continuations of one prefix"; this one answers "one
+        sequence, every next-token distribution along it" in a single
+        forward pass.
+
+        The motivating workload is contacts-v1's any-order sequence
+        section (see
+        :mod:`marinfold.document_structures.contacts_v1.sequence_likelihood`):
+        one pass over a document yields the amino-acid conditional at
+        every residue at once, so an ``L``-residue protein costs one
+        forward pass instead of ``L``.
+
+        Args:
+            token_ids_batch: One token-id sequence per row. All rows in
+                a single call must have the same length (≥ 1) — callers
+                scoring one protein under several orderings naturally
+                satisfy this. May be empty.
+            target_token_ids: Token ids whose probability the caller
+                wants at each position. Order is preserved in the last
+                output axis.
+            batch_size: Rows per forward pass, a memory bound (peak
+                memory is dominated by the ``(rows, T, vocab)`` logits).
+                ``None`` lets the backend choose.
+
+        Returns:
+            Float array of shape
+            ``(len(token_ids_batch), T, len(target_token_ids))`` where
+            ``T`` is the shared row length. Entry ``[b, t, k]`` is
+            ``P(target_token_ids[k] | token_ids_batch[b][: t + 1])`` —
+            i.e. indexed by the position *being conditioned on*, so the
+            distribution for the token at index ``t`` is at ``t - 1``.
+            The final row (``t = T - 1``) predicts one past the end of
+            the input and is included for shape regularity.
+
+            Mass is not renormalized over the targets; the caller
+            decides.
+
+        Raises:
+            NotImplementedError: the backend exposes no full-sequence
+                logits path (MLX and vLLM today); use the transformers
+                backend.
+        """
+        ...
+
     def sample_completions(
         self,
         prefix_token_ids_batch: list[list[int]],

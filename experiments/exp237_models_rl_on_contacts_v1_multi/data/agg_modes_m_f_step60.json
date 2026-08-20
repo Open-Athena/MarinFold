@@ -1,0 +1,146 @@
+{
+  "legacy554/consensus": {
+    "n_proteins": 554,
+    "r_prec": 0.5156839634229929,
+    "r_prec_long": 0.4679842588935328,
+    "n_pred": 318.10875451263536,
+    "n_gt": 165.20758122743683,
+    "n_sections": 50.420126353790614,
+    "oracle": false
+  },
+  "legacy554/best": {
+    "n_proteins": 554,
+    "r_prec": 0.4989021578820055,
+    "r_prec_long": 0.4507964699769882,
+    "n_pred": 143.2687274368231,
+    "n_gt": 165.20758122743683,
+    "n_sections": 50.420126353790614,
+    "oracle": true
+  },
+  "legacy554/last": {
+    "n_proteins": 554,
+    "r_prec": 0.4696014950730868,
+    "r_prec_long": 0.42880535512722584,
+    "n_pred": 135.7542870036101,
+    "n_gt": 165.20758122743683,
+    "n_sections": 50.420126353790614,
+    "oracle": false
+  },
+  "legacy554/second_last": {
+    "n_proteins": 554,
+    "r_prec": 0.13241218099938817,
+    "r_prec_long": 0.1189967415814959,
+    "n_pred": 52.18200962695547,
+    "n_gt": 165.20758122743683,
+    "n_sections": 50.44238868832732,
+    "oracle": false
+  },
+  "eval2/consensus": {
+    "n_proteins": 307,
+    "r_prec": 0.4504576393102856,
+    "r_prec_long": 0.3929422417271277,
+    "n_pred": 290.8175895765472,
+    "n_gt": 135.42345276872965,
+    "n_sections": 54.52198697068404,
+    "oracle": false
+  },
+  "eval2/best": {
+    "n_proteins": 307,
+    "r_prec": 0.4329613650261075,
+    "r_prec_long": 0.37531729991292084,
+    "n_pred": 103.35545602605863,
+    "n_gt": 135.42345276872965,
+    "n_sections": 54.52198697068404,
+    "oracle": true
+  },
+  "eval2/last": {
+    "n_proteins": 307,
+    "r_prec": 0.40315909835833513,
+    "r_prec_long": 0.35363158018986207,
+    "n_pred": 99.52931596091206,
+    "n_gt": 135.42345276872965,
+    "n_sections": 54.52198697068404,
+    "oracle": false
+  },
+  "eval2/second_last": {
+    "n_proteins": 307,
+    "r_prec": 0.10686659546269132,
+    "r_prec_long": 0.0899847403989183,
+    "n_pred": 34.923317046688375,
+    "n_gt": 135.42345276872965,
+    "n_sections": 54.562160694896846,
+    "oracle": false
+  },
+  "eval2_natural/consensus": {
+    "n_proteins": 78,
+    "r_prec": 0.24096956187485943,
+    "r_prec_long": 0.19570634329910502,
+    "n_pred": 462.4439102564103,
+    "n_gt": 164.65384615384616,
+    "n_sections": 63.618589743589745,
+    "oracle": false
+  },
+  "eval2_natural/best": {
+    "n_proteins": 78,
+    "r_prec": 0.2127295390649946,
+    "r_prec_long": 0.17434184037800268,
+    "n_pred": 95.0,
+    "n_gt": 164.65384615384616,
+    "n_sections": 63.618589743589745,
+    "oracle": true
+  },
+  "eval2_natural/last": {
+    "n_proteins": 78,
+    "r_prec": 0.1746911206675258,
+    "r_prec_long": 0.14591014025525997,
+    "n_pred": 93.96474358974359,
+    "n_gt": 164.65384615384616,
+    "n_sections": 63.618589743589745,
+    "oracle": false
+  },
+  "eval2_natural/second_last": {
+    "n_proteins": 78,
+    "r_prec": 0.062065165789186735,
+    "r_prec_long": 0.0520615666129752,
+    "n_pred": 43.181089743589745,
+    "n_gt": 164.65384615384616,
+    "n_sections": 63.618589743589745,
+    "oracle": false
+  },
+  "eval2_lt30/consensus": {
+    "n_proteins": 275,
+    "r_prec": 0.4502144321772652,
+    "r_prec_long": 0.3907132357084931,
+    "n_pred": 275.08181818181816,
+    "n_gt": 127.53454545454545,
+    "n_sections": 54.77590909090909,
+    "oracle": false
+  },
+  "eval2_lt30/best": {
+    "n_proteins": 275,
+    "r_prec": 0.4323466753475242,
+    "r_prec_long": 0.37204765952026203,
+    "n_pred": 96.43227272727273,
+    "n_gt": 127.53454545454545,
+    "n_sections": 54.77590909090909,
+    "oracle": true
+  },
+  "eval2_lt30/last": {
+    "n_proteins": 275,
+    "r_prec": 0.40327610516154655,
+    "r_prec_long": 0.3515670318742813,
+    "n_pred": 93.75363636363636,
+    "n_gt": 127.53454545454545,
+    "n_sections": 54.77590909090909,
+    "oracle": false
+  },
+  "eval2_lt30/second_last": {
+    "n_proteins": 275,
+    "r_prec": 0.10526021170305132,
+    "r_prec_long": 0.08760967223794018,
+    "n_pred": 31.95166666666666,
+    "n_gt": 127.53454545454545,
+    "n_sections": 54.82075757575757,
+    "oracle": false
+  }
+}

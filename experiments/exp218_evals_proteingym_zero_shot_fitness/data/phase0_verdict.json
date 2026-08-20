@@ -1,0 +1,10 @@
+{
+  "n_proteins": 14,
+  "orderings": 8,
+  "composition_floor_top1": 0.13226243261526624,
+  "model_top1_high_context": 0.34513274336283184,
+  "scrambled_top1_high_context": 0.0881268436578171,
+  "model_perplexity_high_context": 8.146926879882812,
+  "scrambled_perplexity_high_context": 18.722944259643555,
+  "passes_gate": true
+}
