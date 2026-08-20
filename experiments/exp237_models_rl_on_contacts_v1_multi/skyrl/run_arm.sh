@@ -181,6 +181,7 @@ $PY main_exp237.py \
   beta_shape="${BETA_SHAPE:-0.0}" \
   positional_shape="${POSITIONAL_SHAPE:-true}" \
   shape_signal="${SHAPE_SIGNAL:-prefix}" \
+  lam_false="${LAM_FALSE:-1.0}" \
   ${EXTRA_OVERRIDES:-} \
   > "$LOG" 2>&1
 rc=$?

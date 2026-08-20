@@ -151,7 +151,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  min_precision: float = 0.15, gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, count_penalty_beta: float = 0.0,
                  count_penalty_floor: float = 18.0, beta_shape: float = 0.0,
-                 positional_shape: bool = True, shape_signal: str = "prefix", **kwargs):
+                 positional_shape: bool = True, shape_signal: str = "prefix",
+                 lam_false: float = 1.0, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in sr.REWARD_MODES:
@@ -173,9 +174,11 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.count_penalty_floor = float(count_penalty_floor)
         self.beta_shape = float(beta_shape)
         self.positional_shape = bool(positional_shape)
-        if shape_signal not in ("prefix", "novelty"):
-            raise ValueError(f"shape_signal must be 'prefix' or 'novelty', got {shape_signal!r}")
+        if shape_signal not in ("prefix", "novelty", "pair"):
+            raise ValueError(
+                f"shape_signal must be 'prefix', 'novelty' or 'pair', got {shape_signal!r}")
         self.shape_signal = shape_signal
+        self.lam_false = float(lam_false)
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
         self._group: Dict[str, Dict[str, Any]] = {}
         # instance_id -> {repetition_id: (best_f1, consensus, n_response_tokens)}
@@ -287,7 +290,10 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             cons = 0.0 if consensus != consensus else float(consensus)
             self._rollout_scores.setdefault(state["instance_id"], {})[state["repetition_id"]] = (
                 cons,
-                (sr.novelty_marginals(walk.sections, state["gt"], state["L"])
+                (sr.pair_token_advantages(response_ids, state["pos_to_seq"], state["gt"],
+                                          lam_false=self.lam_false)
+                 if self.shape_signal == "pair"
+                 else sr.novelty_marginals(walk.sections, state["gt"], state["L"])
                  if self.shape_signal == "novelty"
                  else sr.prefix_marginals(walk.sections, state["gt"], state["L"])),
                 walk.bounds,
@@ -480,15 +486,21 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             # the prefix marginal decays in k by construction, and centring
             # within the rollout removes the level but not the shape.
             positional = (sr.positional_baseline({r: per_rep[r][1] for r in reps})
-                          if self.positional_shape else None)
+                          if self.positional_shape and self.shape_signal != "pair" else None)
             for b, rep in zip(base, reps):
                 row = row_of.get(f"{instance_id}:{rep}")
                 if row is None:
                     continue
                 _, marginals, bounds, n_tok = per_rep[rep]
-                adv = sr.shaped_section_advantages(float(b), marginals, self.beta_shape,
-                                                   positional=positional)
-                vec = sr.token_advantages(adv, bounds, n_tok)
+                if self.shape_signal == "pair":
+                    # Already a per-TOKEN vector, zero-sum over the pair tokens and
+                    # exactly zero on every structural token. No section machinery
+                    # touches it -- which is the point of the arm.
+                    vec = float(b) + self.beta_shape * np.asarray(marginals, dtype=np.float64)
+                else:
+                    adv = sr.shaped_section_advantages(float(b), marginals, self.beta_shape,
+                                                       positional=positional)
+                    vec = sr.token_advantages(adv, bounds, n_tok)
                 if len(vec) != len(rewards[row]):
                     raise RuntimeError(
                         f"[exp237] advantage vector {len(vec)} != reward row "

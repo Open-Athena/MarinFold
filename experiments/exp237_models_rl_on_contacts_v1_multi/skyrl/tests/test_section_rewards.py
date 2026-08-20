@@ -510,3 +510,71 @@ def test_novelty_is_not_invariant_to_how_the_content_is_SLICED():
     assert means[0] < means[1] < means[2]                    # finer slicing scores better
     assert means[2] > 3 * means[0]                           # and by a lot (it is negative)
     assert max(sums) - min(sums) < 0.15 * abs(np.mean(sums))  # while the sum barely moves
+
+
+# ------------------------------------------------ arm M-KP: per-pair token shaping
+
+def _mkp(pairs, gt, L=60):
+    """Build a response of `pairs` as one section and score it per pair."""
+    v = cr.DEFAULT_VOCAB
+    ids, pos_to_seq = [], {}
+    for a, b in pairs:
+        ids += [v.contact_id, v.p0_id + a, v.p0_id + b]
+        pos_to_seq[a] = a; pos_to_seq[b] = b
+    ids.append(v.end_id)
+    return sr.pair_token_advantages(ids, {i: i for i in range(L)}, gt), ids
+
+
+def test_pair_shaping_is_zero_sum_over_the_pair_tokens():
+    gt = {(1, 10), (2, 20), (3, 30)}
+    adv, _ = _mkp([(1, 10), (5, 40), (2, 20), (7, 50)], gt)
+    assert adv.sum() == pytest.approx(0.0, abs=1e-12)
+
+
+def test_structural_tokens_get_no_shaping_at_all():
+    """The `<begin_statements>`/`<end>` tokens must stay at exactly 0.
+
+    Centring over ALL tokens would hand every structural token `-mean`, and since
+    most emitted pairs are false the mean is negative — so opening a section
+    would be rewarded for existing. That is arm M-KS3's runaway, reachable
+    without emitting a single new pair.
+    """
+    v = cr.DEFAULT_VOCAB
+    gt = {(1, 10)}
+    ids = [v.contact_id, v.p0_id + 1, v.p0_id + 10,
+           v.begin_id,
+           v.contact_id, v.p0_id + 5, v.p0_id + 40,
+           v.end_id]
+    adv = sr.pair_token_advantages(ids, {i: i for i in range(60)}, gt)
+    assert adv[3] == 0.0                 # <begin_statements>
+    assert adv[7] == 0.0                 # <end>
+    assert adv[:3].sum() != 0.0          # the triples themselves do carry signal
+
+
+def test_a_repeated_pair_scores_zero_whether_true_or_false():
+    """The novelty gate: sharpening by repeating a confident set earns nothing."""
+    gt = {(1, 10)}
+    adv, _ = _mkp([(1, 10), (1, 10), (5, 40), (5, 40)], gt)
+    raw = adv + adv[adv != 0].mean() if (adv != 0).any() else adv
+    # second occurrence of each pair sits at the centred value of a raw 0.0
+    assert adv[3:6][0] == pytest.approx(adv[9:12][0], abs=1e-12)
+
+
+def test_pair_shaping_is_invariant_to_how_sections_are_sliced():
+    """The property both section-based arms lacked, and the reason for this one."""
+    v = cr.DEFAULT_VOCAB
+    gt = {(1, 10), (2, 20)}
+    pairs = [(1, 10), (5, 40), (2, 20), (7, 50)]
+    def build(splits):
+        ids = []
+        for i, (a, b) in enumerate(pairs):
+            if i in splits:
+                ids.append(v.begin_id)
+            ids += [v.contact_id, v.p0_id + a, v.p0_id + b]
+        ids.append(v.end_id)
+        return ids
+    m = {i: i for i in range(60)}
+    coarse = sr.pair_token_advantages(build(set()), m, gt)
+    fine = sr.pair_token_advantages(build({1, 2, 3}), m, gt)
+    assert coarse[coarse != 0].sum() == pytest.approx(fine[fine != 0].sum(), abs=1e-12)
+    assert sorted(np.round(coarse[coarse != 0], 9)) == sorted(np.round(fine[fine != 0], 9))

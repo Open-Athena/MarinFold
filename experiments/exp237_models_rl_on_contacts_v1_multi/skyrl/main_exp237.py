@@ -142,7 +142,14 @@ class Exp237Config(SkyRLTrainConfig):
     # consensus marginal, measured to correlate only +0.194 with actual novelty.
     # "novelty" (arm M-KS3) is the thing it was approximating, scored directly:
     # (new true - new false) / R against the prefix union.
+    # "pair" (arm M-KP) drops the section as the credit unit entirely: each
+    # emitted <contact> triple is scored on its own tokens, +1/R for a first-time
+    # TRUE pair, -lam_false/R for a first-time FALSE one, and exactly 0 for a
+    # repeat whether true or false. Partition-invariant by construction, which is
+    # what arms M-KS (stop early) and M-KS3 (fragment) both lacked.
     shape_signal: str = "prefix"
+    # Weight on a first-time FALSE pair, relative to +1 for a first-time true one.
+    lam_false: float = 1.0
 
     # ---- #237's preregistered diversity kill criteria, checked every batch ----
     # #230's checkpoint reads 22.0 sections, Jaccard 0.304 and 658 union pairs
@@ -221,6 +228,7 @@ def build_exp(cfg):
                 beta_shape=cfg.beta_shape,
                 positional_shape=cfg.positional_shape,
                 shape_signal=cfg.shape_signal,
+                lam_false=cfg.lam_false,
             )
 
     return Exp237PPOExp(cfg)

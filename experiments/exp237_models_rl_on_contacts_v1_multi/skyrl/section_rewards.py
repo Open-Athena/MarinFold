@@ -326,6 +326,84 @@ def novelty_marginals(
     return out
 
 
+def pair_token_advantages(
+    response_ids: Sequence[int],
+    pos_to_seq: Mapping[int, int],
+    gt: set[Pair],
+    *,
+    lam_false: float = 1.0,
+    vocab: cr.ContactVocab = cr.DEFAULT_VOCAB,
+) -> np.ndarray:
+    """Per-TOKEN shaping scored per emitted pair — arm M-KP.
+
+    The section stops being the credit unit. Each ``<contact> <pI> <pJ>`` triple
+    is scored on its own and its value lands on its own three tokens::
+
+        first time this pair appears in the rollout, and it is TRUE   ->  +1 / R
+        first time this pair appears in the rollout, and it is FALSE  ->  -lam / R
+        the pair has already appeared anywhere earlier                ->   0
+
+    **Why this is partition-invariant, where the section forms were not.** Arms
+    M-KS and M-KS3 both failed because a section's value depended on how the
+    predictions were sliced — on the section's index (decaying, so "stop early")
+    and on its size (finer slicing scores better, so "fragment"). Here the
+    partition never enters the arithmetic: cutting a section in two leaves every
+    pair's value and every pair's tokens exactly as they were.
+
+    **The novelty gate is what keeps this from being a precision reward.** #237
+    excludes per-contact-only rewards because #208 established they are
+    sharpening operators. This is not that, in two respects: it is *shaping* on
+    top of arm M-K's scale-correct rollout-level base rather than the whole
+    objective, and a pair already emitted scores **exactly zero whether it is
+    true or false**. A policy that sharpens by repeating its confident set earns
+    nothing after the first section; the only way to score is to add correct
+    content that is not already there.
+
+    **Structural tokens carry no shaping, and that is the load-bearing choice.**
+    ``<begin_statements>``, ``<end>`` and everything outside a triple keep a
+    shaping value of exactly 0, and the centring below runs over the triple
+    tokens *only*. Centring over all tokens instead would give every structural
+    token ``-mean``, and since most emitted pairs are false the mean is negative
+    — so each ``<begin_statements>`` would receive a **positive** advantage for
+    existing. That is precisely arm M-KS3's runaway, reachable here without a
+    single new pair being emitted. Under this construction the decision to open
+    a section receives no shaping signal in either direction.
+
+    Returns:
+        ``[len(response_ids)]`` shaping values, zero everywhere except the
+        contact triples, and summing to exactly zero across them.
+    """
+    n = len(response_ids)
+    out = np.zeros(n, dtype=np.float64)
+    if not gt or n == 0:
+        return out
+    r = float(len(gt))
+    eff = scored_length(response_ids, vocab=vocab)
+    contacts = cr.walk_contacts(response_ids, pos_to_seq, gt, starts_in_section=True, vocab=vocab)
+    seen: set[Pair] = set()
+    spans: list[tuple[int, int]] = []
+    for c in contacts:
+        if c.reason != "ok" or c.pair is None or c.start >= eff:
+            continue
+        lo, hi = c.start, min(c.start + 3, eff)     # <contact> <pI> <pJ>
+        if hi <= lo:
+            continue
+        if c.pair in seen:
+            val = 0.0
+        else:
+            val = (1.0 if c.pair in gt else -float(lam_false)) / r
+            seen.add(c.pair)
+        out[lo:hi] = val
+        spans.append((lo, hi))
+    if not spans:
+        return out
+    mask = np.zeros(n, dtype=bool)
+    for lo, hi in spans:
+        mask[lo:hi] = True
+    out[mask] -= out[mask].mean()                   # zero-sum over the pair tokens ONLY
+    return out
+
+
 def positional_baseline(marginals_by_rep: Mapping) -> np.ndarray:
     """Mean prefix marginal at each section POSITION, across a prompt group.
 
@@ -574,6 +652,7 @@ __all__ = [
     "consensus_and_marginals",
     "count_penalty",
     "novelty_marginals",
+    "pair_token_advantages",
     "positional_baseline",
     "prefix_marginals",
     "shaped_section_advantages",
