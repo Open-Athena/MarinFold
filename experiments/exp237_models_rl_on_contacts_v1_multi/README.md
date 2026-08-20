@@ -111,9 +111,31 @@ identical; only the population changes.
 | **M-K** | `C_i(all)` — **the rollout's own consensus R-precision**, i.e. the deployed metric computed on the object the model emits | **whole-rollout scalar** | `grpo` |
 | **M-BP** | `max_k F1 + beta·min(0, K − floor)` — M-B with a one-sided floor on the candidate count, added **raw** so the deadband survives standardisation | **whole-rollout scalar** | `grpo` |
 | **M-KS / M-KS2 / M-KS3** | `GRPO(C_i(all)) + beta·(shaped_k − mean_k)` — M-K's base with a **zero-sum within-rollout** shaping term crediting a section for what it added; the three differ in `shaped_k` (raw prefix marginal / positionally corrected / direct novelty) | **per-section**, dense | `contacts_section` |
+| **M-KP** | `GRPO(C_i(all)) + beta·v_token` — the same base with the **section dropped as the credit unit**: each emitted pair is scored on its own three tokens, +1/R first-time true, −lam/R first-time false, **0 for a repeat whether true or false** | **per-token**, dense — and structural tokens (`<begin_statements>`, `<end>`) carry *no* shaping at all | `contacts_section` |
 | **M-0** | M-C's reward at **lr = 0** | — | `contacts_section` |
 
-The last three did not exist when the experiment started. M-BC and M-FC were
+**The `estimator` column names SkyRL's `trainer.algorithm.advantage_estimator`,
+and it answers one question: who does the group arithmetic?** `grpo` is SkyRL's
+own — it sums the token rewards to one scalar per rollout, standardises across
+the 8-rollout prompt group, and broadcasts that number back to every token.
+`contacts_section` and `contacts_rollout` are exp237's, and both are
+**pass-throughs**: SkyRL hands an estimator only
+`(token_level_rewards, response_mask, index)` — no response ids, no ground
+truth, no section boundaries — so it cannot know which tokens belong to which
+candidate. Those three live in the generator, which therefore computes the
+finished per-token advantage itself.
+
+The two pass-throughs differ only in their guard, and the guards are opposites:
+`contacts_section` **refuses** an advantage that is constant across a rollout's
+response tokens (the dense signal was never written), while `contacts_rollout`
+**expects** constant-per-token and instead refuses an all-zero one (the group
+pass never ran). `check_reward_mode` enforces the pairing at startup because the
+two mismatches fail very differently — a scalar reward under `contacts_section`
+raises within minutes, but a **per-section reward under `grpo` is summed to one
+number per rollout and broadcast back, discarding the within-sequence credit
+assignment that is the whole of #237, with no error at all.**
+
+The last five arms did not exist when the experiment started. M-BC and M-FC were
 added to test whether a blend could hold two objectives at once; **M-K was
 designed from the diagnosis of M-C's failure** — it is the rollout-level,
 scale-correct base that M-C's per-section marginal should have been standing on,
