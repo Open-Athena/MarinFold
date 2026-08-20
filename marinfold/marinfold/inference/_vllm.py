@@ -119,6 +119,25 @@ class VllmBackend:
                         )
         return out
 
+    def teacher_forced_target_probs(
+        self,
+        token_ids_batch: list[list[int]],
+        target_token_ids: list[int],
+        *,
+        batch_size: int | None = None,
+    ) -> np.ndarray:
+        # vLLM can serve this via `prompt_logprobs`, but only as a truncated
+        # top-k per position: targets outside the top-k come back absent, and
+        # this readout's whole point is comparing amino acids that are often
+        # *not* the model's top few. A silently-zeroed target here is a wrong
+        # log-ratio, not a missing one. Left unimplemented until it is needed
+        # with an exactness argument attached.
+        raise NotImplementedError(
+            "teacher_forced_target_probs is not implemented for the vLLM "
+            "backend; its prompt_logprobs path is top-k truncated, which "
+            "silently drops low-probability targets. Use --backend transformers."
+        )
+
     def sample_completions(
         self,
         prefix_token_ids_batch: list[list[int]],
