@@ -454,47 +454,41 @@ def sparse_contact_document_loss(
     ):
         contact_axis = jnp.arange(first_ids.shape[0], dtype=jnp.int32)
         valid_contacts = contact_axis < contact_count
+        contact_positions = jnp.clip(prediction_start + 1 + 3 * contact_axis, 0, activations_one.shape[0] - 1)
+        first_positions = jnp.clip(contact_positions + 1, 0, activations_one.shape[0] - 1)
+        contact_predict_positions = jnp.clip(
+            jnp.where(contact_axis == 0, prediction_start, contact_positions - 1),
+            0,
+            activations_one.shape[0] - 1,
+        )
+
+        contact_activations = activations_one[contact_positions]
+        first_activations = activations_one[first_positions]
+        contact_predict_activations = activations_one[contact_predict_positions]
+        contact_logit = jnp.sum(contact_predict_activations * lm_head_by_vocab[contact_token_id], axis=-1)
+        contact_loss = log_z_one[contact_predict_positions] - contact_logit
+
         endpoint_rows = lm_head_by_vocab[first_ids] + lm_head_by_vocab[second_ids]
-        endpoint_sum0 = jnp.sum(jnp.where(valid_contacts[:, None], endpoint_rows, 0.0), axis=0)
+        masked_endpoint_rows = jnp.where(valid_contacts[:, None], endpoint_rows, 0.0)
+        remaining_endpoint_rows = jnp.flip(jnp.cumsum(jnp.flip(masked_endpoint_rows, axis=0), axis=0), axis=0)
+        first_expected_logit = jnp.sum(contact_activations * remaining_endpoint_rows, axis=-1) / jnp.maximum(
+            2 * (contact_count - contact_axis), 1
+        )
+        first_loss = log_z_one[contact_positions] - first_expected_logit
 
-        def logit(position, token_id):
-            position = jnp.clip(position, 0, activations_one.shape[0] - 1)
-            return jnp.sum(activations_one[position] * lm_head_by_vocab[token_id], axis=-1)
+        neighbor_rows = lm_head_by_vocab[second_neighbor_ids]
+        neighbor_logits = jnp.sum(first_activations[:, None, :] * neighbor_rows, axis=-1)
+        second_expected_logit = jnp.sum(second_neighbor_counts * neighbor_logits, axis=-1) / jnp.maximum(
+            second_neighbor_count, 1
+        )
+        second_loss = log_z_one[first_positions] - second_expected_logit
 
-        def cross_entropy(position, expected_logit):
-            position = jnp.clip(position, 0, log_z_one.shape[0] - 1)
-            return log_z_one[position] - expected_logit
+        per_contact_loss = jnp.where(valid_contacts, contact_loss + first_loss + second_loss, 0.0)
+        body_loss = jnp.sum(per_contact_loss)
 
-        def body(c, carry):
-            endpoint_sum, total = carry
-            valid = c < contact_count
-            contact_position = prediction_start + 1 + 3 * c
-            first_position = contact_position + 1
-            contact_predict_position = jnp.where(c == 0, prediction_start, contact_position - 1)
-
-            contact_position = jnp.clip(contact_position, 0, activations_one.shape[0] - 1)
-            first_position = jnp.clip(first_position, 0, activations_one.shape[0] - 1)
-            contact_loss = cross_entropy(contact_predict_position, logit(contact_predict_position, contact_token_id))
-            first_expected_logit = jnp.sum(activations_one[contact_position] * endpoint_sum) / jnp.maximum(
-                2 * (contact_count - c), 1
-            )
-            first_loss = cross_entropy(contact_position, first_expected_logit)
-
-            neighbor_rows = lm_head_by_vocab[second_neighbor_ids[c]]
-            neighbor_logits = jnp.sum(activations_one[first_position] * neighbor_rows, axis=-1)
-            second_expected_logit = jnp.sum(second_neighbor_counts[c] * neighbor_logits) / jnp.maximum(
-                second_neighbor_count[c], 1
-            )
-            second_loss = cross_entropy(first_position, second_expected_logit)
-
-            current_endpoint_rows = lm_head_by_vocab[first_ids[c]] + lm_head_by_vocab[second_ids[c]]
-            next_endpoint_sum = endpoint_sum - jnp.where(valid, current_endpoint_rows, 0.0)
-            next_total = total + jnp.where(valid, contact_loss + first_loss + second_loss, 0.0)
-            return next_endpoint_sum, next_total
-
-        _, body_loss = jax.lax.fori_loop(0, first_ids.shape[0], body, (endpoint_sum0, jnp.asarray(0.0, jnp.float32)))
         end_position = jnp.clip(prediction_start + 3 * contact_count, 0, log_z_one.shape[0] - 1)
-        end_loss = cross_entropy(end_position, logit(end_position, end_token_id))
+        end_logit = jnp.sum(activations_one[end_position] * lm_head_by_vocab[end_token_id], axis=-1)
+        end_loss = log_z_one[end_position] - end_logit
         return body_loss + end_loss
 
     losses = jax.vmap(one_example_loss)(
