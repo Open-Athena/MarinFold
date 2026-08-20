@@ -399,3 +399,41 @@ def test_shaping_ranks_the_contributing_section_above_the_duplicate():
     adv = sr.shaped_section_advantages(1.0, np.asarray([0.30, 0.0, 0.0]), beta=1.0)
     assert adv[0] > adv[1] == adv[2]
     assert adv[1] < 1.0                     # duplicates land BELOW the rollout's base
+
+
+# ---------------------------------------- the positional fix (arm M-KS2)
+
+def test_positional_baseline_handles_ragged_groups():
+    """Position k averages only the rollouts that reached k — no padded zeros."""
+    b = sr.positional_baseline({"a": np.array([1.0, 2.0, 3.0]), "b": np.array([3.0, 4.0])})
+    assert b[0] == pytest.approx(2.0)
+    assert b[1] == pytest.approx(3.0)
+    assert b[2] == pytest.approx(3.0)          # only "a" reached position 2
+
+
+def test_positional_correction_removes_the_stop_early_gradient():
+    """The bug arm M-KS died of, and the fix, in one test.
+
+    A group whose rollouts all share the SAME positional decay and differ in
+    nothing else must get zero shaping — under the plain centring it instead
+    gets a strongly positive first section and negative everything after, which
+    is a direct penalty on opening another candidate.
+    """
+    decay = np.array([0.36, 0.01, -0.01, -0.02, -0.02, -0.02])
+    group = {"a": decay.copy(), "b": decay.copy(), "c": decay.copy()}
+
+    plain = sr.shaped_section_advantages(1.0, decay, beta=3.0)
+    assert plain[0] > 1.9 and plain[-1] < 1.0          # "write one section and stop"
+
+    b = sr.positional_baseline(group)
+    fixed = sr.shaped_section_advantages(1.0, decay, beta=3.0, positional=b)
+    assert np.allclose(fixed, 1.0, atol=1e-12)          # nothing to say: all identical
+
+
+def test_positional_correction_still_credits_a_genuinely_better_section():
+    group = {"a": np.array([0.36, 0.01, 0.20]), "b": np.array([0.36, 0.01, 0.00]),
+             "c": np.array([0.36, 0.01, 0.00])}
+    b = sr.positional_baseline(group)
+    adv = sr.shaped_section_advantages(1.0, group["a"], beta=3.0, positional=b)
+    assert adv[2] > adv[0]                              # section 2 beat its own position
+    assert adv.mean() == pytest.approx(1.0, abs=1e-12)  # still zero-sum

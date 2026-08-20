@@ -130,6 +130,14 @@ class Exp237Config(SkyRLTrainConfig):
     # reason the prefix form is safe here and was refuted as a standalone reward
     # (it reads +2.03 at one section under `token_mean`). 0.0 reduces to arm M-K.
     beta_shape: float = 0.0
+    # Subtract the GROUP's mean marginal at the same section POSITION before
+    # centring. On by default because the alternative is a measured bug: the
+    # prefix marginal decays in k by construction (+0.357 at k=0, negative at
+    # every k>=2, negative slope in 100% of rollouts), centring removes the level
+    # but not the shape, and a section owns the token that OPENS it -- so the
+    # plain form is a "stop early" signal. Arm M-KS collapsed to 10.66 sections
+    # by step 21, the fastest count collapse in #237. False reproduces it.
+    positional_shape: bool = True
 
     # ---- #237's preregistered diversity kill criteria, checked every batch ----
     # #230's checkpoint reads 22.0 sections, Jaccard 0.304 and 658 union pairs
@@ -206,6 +214,7 @@ def build_exp(cfg):
                 count_penalty_beta=cfg.count_penalty_beta,
                 count_penalty_floor=cfg.count_penalty_floor,
                 beta_shape=cfg.beta_shape,
+                positional_shape=cfg.positional_shape,
             )
 
     return Exp237PPOExp(cfg)

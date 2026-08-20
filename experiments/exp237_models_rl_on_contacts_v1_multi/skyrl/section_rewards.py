@@ -79,6 +79,7 @@ out to be worth starting. The final section owns the ``<end>`` token.
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from typing import Optional
 
 import numpy as np
 
@@ -270,8 +271,50 @@ def prefix_marginals(
     return out
 
 
+def positional_baseline(marginals_by_rep: Mapping) -> np.ndarray:
+    """Mean prefix marginal at each section POSITION, across a prompt group.
+
+    The correction arm M-KS needed and did not have. ``prefix_marginals`` decays
+    in ``k`` **by construction** — ``C(s_1..s_k)`` saturates, and the first
+    section is scored against an empty prefix, so it captures nearly the whole
+    telescoped total. Measured on 566 real rollouts: the centred term is
+    **+0.357** at ``k = 0`` and negative at every ``k >= 2``, with a negative
+    slope in **100 %** of rollouts.
+
+    Centring within the rollout does not remove that. Zero-sum bounds the
+    rollout's total advantage — its *level* — while leaving the *shape* intact,
+    and because a section owns the ``<begin_statements>`` token that **opens**
+    it, a term decreasing in ``k`` is a direct penalty on the decision to write
+    another candidate. Arm M-KS collapsed to 10.66 sections by step 21, the
+    fastest count collapse in #237, entirely inside its own zero-sum guarantee.
+
+    Subtracting the group's mean marginal *at the same position* removes the
+    deterministic trend and leaves the question that was wanted all along: did
+    this section do better than a typical ``k``-th section?
+
+    Args:
+        marginals_by_rep: ``{repetition_id: marginals}`` for ONE prompt group.
+
+    Returns:
+        ``[max_K]`` positional means. Position ``k`` averages only over the
+        rollouts that actually reached ``k``, so a group of ragged lengths is
+        handled without padding a zero into the mean.
+    """
+    arrays = [np.asarray(m, dtype=np.float64) for m in marginals_by_rep.values()]
+    arrays = [a for a in arrays if a.size]
+    if not arrays:
+        return np.zeros(0, dtype=np.float64)
+    width = max(a.size for a in arrays)
+    out = np.zeros(width, dtype=np.float64)
+    for k in range(width):
+        vals = [a[k] for a in arrays if a.size > k]
+        out[k] = float(np.mean(vals)) if vals else 0.0
+    return out
+
+
 def shaped_section_advantages(
-    base: float, marginals: np.ndarray, beta: float
+    base: float, marginals: np.ndarray, beta: float,
+    positional: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """``base + beta * (m_k - mean_k m)`` — arm M-KS's per-token advantage source.
 
@@ -301,6 +344,13 @@ def shaped_section_advantages(
     adv = np.full(len(marginals), float(base), dtype=np.float64)
     if beta != 0.0:
         m = np.asarray(marginals, dtype=np.float64)
+        if positional is not None and len(positional):
+            # Remove the deterministic decay in k FIRST, then centre. Centring
+            # alone leaves the positional trend intact and turns the term into a
+            # "stop early" signal -- see `positional_baseline`.
+            b = np.asarray(positional, dtype=np.float64)
+            m = m - (b[:len(m)] if len(b) >= len(m)
+                     else np.concatenate([b, np.zeros(len(m) - len(b))]))
         adv = adv + float(beta) * (m - m.mean())
     return adv
 
@@ -468,6 +518,7 @@ __all__ = [
     "centred_section_advantages",
     "consensus_and_marginals",
     "count_penalty",
+    "positional_baseline",
     "prefix_marginals",
     "shaped_section_advantages",
     "grpo_standardise",

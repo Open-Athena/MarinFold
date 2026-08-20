@@ -150,7 +150,8 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  lam_consensus: float = 1.0, max_sections: float = 60.0,
                  min_precision: float = 0.15, gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, count_penalty_beta: float = 0.0,
-                 count_penalty_floor: float = 18.0, beta_shape: float = 0.0, **kwargs):
+                 count_penalty_floor: float = 18.0, beta_shape: float = 0.0,
+                 positional_shape: bool = True, **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in sr.REWARD_MODES:
@@ -171,6 +172,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.count_penalty_beta = float(count_penalty_beta)
         self.count_penalty_floor = float(count_penalty_floor)
         self.beta_shape = float(beta_shape)
+        self.positional_shape = bool(positional_shape)
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
         self._group: Dict[str, Dict[str, Any]] = {}
         # instance_id -> {repetition_id: (best_f1, consensus, n_response_tokens)}
@@ -468,12 +470,19 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         for instance_id, per_rep in self._rollout_scores.items():
             reps = sorted(per_rep)
             base = sr.grpo_standardise([per_rep[r][0] for r in reps])
+            # The positional baseline is a GROUP quantity, so it can only be
+            # formed here. Without it the shaping term is a "stop early" signal:
+            # the prefix marginal decays in k by construction, and centring
+            # within the rollout removes the level but not the shape.
+            positional = (sr.positional_baseline({r: per_rep[r][1] for r in reps})
+                          if self.positional_shape else None)
             for b, rep in zip(base, reps):
                 row = row_of.get(f"{instance_id}:{rep}")
                 if row is None:
                     continue
                 _, marginals, bounds, n_tok = per_rep[rep]
-                adv = sr.shaped_section_advantages(float(b), marginals, self.beta_shape)
+                adv = sr.shaped_section_advantages(float(b), marginals, self.beta_shape,
+                                                   positional=positional)
                 vec = sr.token_advantages(adv, bounds, n_tok)
                 if len(vec) != len(rewards[row]):
                     raise RuntimeError(
@@ -485,8 +494,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             raise RuntimeError(
                 "[exp237] the shaped-consensus pass wrote no rewards; check the "
                 "trajectory_id mapping and that MultiSectionGenerator is configured.")
-        logger.info("[exp237] shaped consensus applied to %d/%d rollouts (beta_shape=%.3g)",
-                    n_written, len(rewards), self.beta_shape)
+        logger.info("[exp237] shaped consensus applied to %d/%d rollouts "
+                    "(beta_shape=%.3g positional=%s)",
+                    n_written, len(rewards), self.beta_shape, self.positional_shape)
         out["rewards"] = rewards
         return out
 
