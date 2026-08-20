@@ -272,15 +272,29 @@ RPRECISION_ROWS = [
         source="exp199 data/contact_eval_final_checkpoint_summary.csv "
                "(rerun02-20260809); issue #204",
     ),
+    #
+    # RE-SCORED BY #234. The four rows below carry #234's CoreWeave rollout-v2
+    # numbers, not #204's. #234 re-ran the whole #199 family under one harness
+    # and included the #75 E8 checkpoint as an acceptance test: it came back
+    # 0.4246966 against the 0.4245291 this table has carried since exp82, a
+    # 0.00017 agreement. That is what puts its numbers on this axis.
+    #
+    # On the two TRC p03 checkpoints the two harnesses agree to 0.0007 and
+    # 0.0012 — inside the 0.0023 replicate span. On CW p06-aug they do not:
+    # 0.6088 against #204's 0.5873. #208 chased that 0.0215 down independently
+    # and got 0.6103 from exp82's own worker, on both accelerators and both
+    # seeds, so the discrepancy is #204's pipeline rather than the hardware or
+    # the recipe; see RPRECISION_PIPELINE_DISCREPANCY.md in exp208 and the
+    # caveat in README.md. #204's value is kept in FOOTNOTE_ROWS.
     dict(
         label="#199 TRC p03-aug",
         model="prot-exp199-cv1-s01-m1-p03-aug-us-east1 / step-72599",
         date="2026-08-09", params="1.5B", issue=199,
         val_loss=3.011530637741089, val_loss_scale=CURRENT,
         val_loss_key="eval/tokenized/contacts-v1-val/loss",
-        r_precision=0.5743326909766765, inference=ROLLOUT,
-        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
-               "(rerun02-20260809); issue #204",
+        r_precision=0.573595156558823, inference=ROLLOUT,
+        source="exp199 evals/rollout_v2 data/aggregate_metrics.csv "
+               "(v2-20260812-06); PR #234. #204 had 0.5743327.",
     ),
     dict(
         label="#199 TRC p03-base",
@@ -288,9 +302,9 @@ RPRECISION_ROWS = [
         date="2026-08-09", params="1.5B", issue=199,
         val_loss=3.00742244720459, val_loss_scale=CURRENT,
         val_loss_key="eval/tokenized/contacts-v1-val/loss",
-        r_precision=0.5779648259578161, inference=ROLLOUT,
-        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
-               "(finals03-20260810); issue #204",
+        r_precision=0.5792128656316871, inference=ROLLOUT,
+        source="exp199 evals/rollout_v2 data/aggregate_metrics.csv "
+               "(v2-20260812-06); PR #234. #204 had 0.5779648.",
     ),
     dict(
         # Not a continue-train: trained from scratch on CoreWeave H100s with a
@@ -301,9 +315,39 @@ RPRECISION_ROWS = [
         date="2026-08-10", params="1.5B", issue=199,
         val_loss=2.971200942993164, val_loss_scale=CURRENT,
         val_loss_key="eval/tokenized/contacts-v1-val/loss",
-        r_precision=0.5873483777949621, inference=ROLLOUT,
-        source="exp199 data/contact_eval_final_checkpoint_summary.csv "
-               "(finals03-20260810); issue #204",
+        r_precision=0.6088493524438242, inference=ROLLOUT,
+        source="exp199 evals/rollout_v2 data/aggregate_metrics.csv "
+               "(v2-20260812-06); PR #234. #204 had 0.5873484 — see "
+               "FOOTNOTE_ROWS and README caveat 6.",
+    ),
+    dict(
+        # A different lineage from the cooldown below: continues the TRC
+        # p03-BASE run at aug100 for another 72,600 steps. It ends 0.0056 below
+        # the from-scratch CW run it is compared against, which is why #199
+        # took the CoreWeave arm forward instead.
+        label="#199 TRC cont",
+        model="prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1 / step-145199",
+        date="2026-08-12", params="1.5B", issue=199,
+        val_loss=2.9638261795043945, val_loss_scale=CURRENT,
+        val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.6032819321394465, inference=ROLLOUT,
+        source="exp199 evals/rollout_v2 data/aggregate_metrics.csv "
+               "(contbase-v2-20260812-01); PR #234",
+    ),
+    dict(
+        # The current frontier and MarinFold's default model (#238). The CW
+        # p06-aug run above was continued to step 261,360 and then annealed to
+        # zero over 29,040 updates; this is the end of that anneal. 304.5B
+        # cumulative tokens against p06-aug's 152.3B, same data mixture, same
+        # 1.47B parameters — a longer run and a cooldown, not a new recipe.
+        label="#199 CW cooldown",
+        model="prot-exp199-cw-cv1-p06-cool-s01 / step-290400",
+        date="2026-08-15", params="1.5B", issue=199,
+        val_loss=2.9396727085113525, val_loss_scale=CURRENT,
+        val_loss_key="eval/tokenized/contacts-v1-val/loss",
+        r_precision=0.6306825167807124, inference=ROLLOUT,
+        source="exp199 evals/rollout_v2 data/cooldown_aggregate_metrics.csv "
+               "(cooldown-v2-20260815-01, legacy-554 slice); PR #234",
     ),
 ]
 
@@ -386,6 +430,16 @@ FOOTNOTE_ROWS = [
      "exp199 data/contact_eval_pr_comparison_summary.csv (control-r2, rerun02-20260809)"),
     ("#117 E16 final, fresh rollout replicate r3 (#204)", 0.5328883690891095,
      "exp199 data/contact_eval_pr_comparison_summary.csv (control-r3, finals03-20260810)"),
+    # The superseded reading of what is now the second-best checkpoint. Kept so
+    # that 0.5873 — quoted in #204, #205, the old MODELS.yaml and a pile of
+    # issue comments — can be recognised as this checkpoint under #204's
+    # pipeline rather than mistaken for a different one. #234's harness reads it
+    # 0.6088 and #208's exp82 worker 0.6103; both reproduce the anchors #204
+    # also reproduces, so the outlier is the reading, not the model.
+    ("#199 CW p06-aug step-145199, #204's pipeline (superseded)", 0.5873483777949621,
+     "exp199 data/contact_eval_final_checkpoint_summary.csv (finals03-20260810); issue #204"),
+    ("#199 CW p06-aug step-145199, exp82's own worker (#208)", 0.6103,
+     "exp208 RPRECISION_PIPELINE_DISCREPANCY.md; score_rollout_worker.py on H100 + v5p"),
 ]
 
 # W&B sources for the val-loss cloud, each with the loss scale its runs were

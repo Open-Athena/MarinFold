@@ -1,0 +1,17 @@
+{
+  "run_name": "prot-exp199-cw-cv1-p06-cool-s01",
+  "step": 290400,
+  "source_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_continue_contacts_v1_cw/checkpoints/protein/prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400",
+  "bucket_uri": "hf://buckets/open-athena/MarinFold/checkpoints/prot-exp199-cw-cv1-p06-cool-s01/hf/step-290400",
+  "sha256": {
+    "config.json": "03cd68867df12e95cb18cb689c0cbfc3adc96acd9b6eb8b344a28e7ab4e5fc0f",
+    "model-00001-of-00002.safetensors": "5de9ee7610d3f0ac79d19359b42a119169a7a6081ecbbe9abe0fa9b44a149a79",
+    "model-00002-of-00002.safetensors": "613e93c5e9c338abc0e4c66cfe96ff39f2374e3b9f04c5e45a7772545666b4ad",
+    "model.safetensors.index.json": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587",
+    "tokenizer.json": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+    "tokenizer_config.json": "c1af07688e82d814a63c74ec5cf8712364baa21fd10178ca92f6151ae70a2ae5"
+  },
+  "source_config_sha256": "496ed32596524e5c7b997449644fee418508b17c4decea0124bd262c1edff739",
+  "rope_theta": 500000,
+  "vocab_size": 2845
+}
