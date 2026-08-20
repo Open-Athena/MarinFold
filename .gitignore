@@ -224,3 +224,10 @@ __marimo__/
 
 # exp200 reaper log (operational, not a result)
 experiments/exp200_models_rl_post_training_best_of_n/data/reap_sweep.log
+
+# exp208 iris workspace venv (the directory is its own uv workspace)
+experiments/exp208_models_rl_post_training_on_contacts_v1/.venv/
+
+# exp208: the 10k SkyRL training pool is regenerable from exp200's GCS pool via
+# skyrl/build_dataset.py --n 10000 (deterministic); 20 MB of input data, not a result
+experiments/exp208_models_rl_post_training_on_contacts_v1/skyrl/data/skyrl_train_10k.parquet

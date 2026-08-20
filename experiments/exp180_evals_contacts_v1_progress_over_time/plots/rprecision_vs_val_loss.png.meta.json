@@ -122,7 +122,7 @@
       "val_loss": 2.629820637741089,
       "val_loss_scale": "current",
       "val_loss_raw": 3.011530637741089,
-      "r_precision": 0.5743326909766765
+      "r_precision": 0.573595156558823
     },
     {
       "label": "#199 TRC p03-base",
@@ -130,7 +130,7 @@
       "val_loss": 2.62571244720459,
       "val_loss_scale": "current",
       "val_loss_raw": 3.00742244720459,
-      "r_precision": 0.5779648259578161
+      "r_precision": 0.5792128656316871
     },
     {
       "label": "#199 CW p06-aug",
@@ -138,7 +138,23 @@
       "val_loss": 2.589490942993164,
       "val_loss_scale": "current",
       "val_loss_raw": 2.971200942993164,
-      "r_precision": 0.5873483777949621
+      "r_precision": 0.6088493524438242
+    },
+    {
+      "label": "#199 TRC cont",
+      "inference": "rollout",
+      "val_loss": 2.5821161795043945,
+      "val_loss_scale": "current",
+      "val_loss_raw": 2.9638261795043945,
+      "r_precision": 0.6032819321394465
+    },
+    {
+      "label": "#199 CW cooldown",
+      "inference": "rollout",
+      "val_loss": 2.5579627085113525,
+      "val_loss_scale": "current",
+      "val_loss_raw": 2.9396727085113525,
+      "r_precision": 0.6306825167807124
     }
   ]
 }

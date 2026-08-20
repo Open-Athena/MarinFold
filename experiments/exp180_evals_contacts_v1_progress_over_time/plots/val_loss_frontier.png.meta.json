@@ -1,11 +1,11 @@
 {
-  "caption": "Best held-out contacts-v1 val loss to date over 190 finished runs. The loss frontier has many more steps than the accuracy one; the last three are converted from the current loss scale.",
+  "caption": "Best held-out contacts-v1 val loss to date over 196 finished runs. The loss frontier has many more steps than the accuracy one; the last three are converted from the current loss scale.",
   "script": "plot_progress.py",
   "args": [],
   "figure": "val_loss_frontier",
-  "n_runs": 190,
+  "n_runs": 196,
   "n_above_axis": 13,
-  "n_converted": 10,
+  "n_converted": 16,
   "loss_axis": "historical (pre-marin#7209)",
   "frontier": [
     {
@@ -187,6 +187,20 @@
       "date": "2026-08-10",
       "val_loss": 2.589490942993164,
       "run": "prot-exp199-cw-cv1-s02-m1-p06-aug",
+      "scale": "current",
+      "converted": true
+    },
+    {
+      "date": "2026-08-12",
+      "val_loss": 2.5821161795043945,
+      "run": "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1",
+      "scale": "current",
+      "converted": true
+    },
+    {
+      "date": "2026-08-15",
+      "val_loss": 2.5579627085113525,
+      "run": "prot-exp199-cw-cv1-p06-cool-s01",
       "scale": "current",
       "converted": true
     }

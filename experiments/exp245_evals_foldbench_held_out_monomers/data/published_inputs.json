@@ -1,0 +1,77 @@
+{
+  "eval_targets_foldbench_monomers.parquet": {
+    "size": 97519,
+    "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+  },
+  "gt_universe_scored.jsonl": {
+    "size": 6938887,
+    "sha256": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5"
+  },
+  "eval_sets.csv": {
+    "size": 199548,
+    "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+  },
+  "eval_sets.fasta": {
+    "size": 94639,
+    "sha256": "cf1574d6e9882eb70def6689c52029b0440009c64ec4a0379e7482c742f670e1"
+  },
+  "decontamination_check.json": {
+    "size": 5659,
+    "sha256": "d843fe7f4fb5f656597a72a89996f166751ce1c7dba7dc2a184b16b4c9765aab"
+  },
+  "gt_report.json": {
+    "size": 4808,
+    "sha256": "2a05bbf7d8de75cb97ae6010640a346d5204d7072339431f14e30982960b5a2c"
+  },
+  "context_budget.csv": {
+    "size": 21388,
+    "sha256": "dbe1fdcaee3d0b57f126a7a428bc7b41f712ed536865b94395bb414681ccd10e"
+  },
+  "per_protein.csv.gz": {
+    "size": 112619,
+    "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+  },
+  "headline.csv": {
+    "size": 19512,
+    "sha256": "4f6f98822e450530f292c2f5cf8a0c9bd466746ed7600f32387729720e75b43a"
+  },
+  "paired_deltas.csv": {
+    "size": 26140,
+    "sha256": "4ddaf8e7340279899b9adb54b20d68d1efd48faa3aee9f765facb7d0749a47a8"
+  },
+  "val_vs_test.csv": {
+    "size": 4427,
+    "sha256": "dc731dd4f346bd307be83623905e496c24ff293b198649f8b386a6899064fa71"
+  },
+  "residual_identity.csv": {
+    "size": 97203,
+    "sha256": "fe39c019e509864f1dfaffffeb5905208a09a3ef48c2d7d37d18a5cb06f9462d"
+  },
+  "path_validation.json": {
+    "size": 967,
+    "sha256": "3a9f4b8897c1e271b22a12f4ef03fbea73b3bc44c9c8c0d8c10abe64a0431b25"
+  },
+  "analysis_summary.json": {
+    "size": 2611,
+    "sha256": "bf770eb1b6816829729a40e19e5667a0a0aa48f342c84f64deaf473ad96efc07"
+  },
+  "_units": 333,
+  "_sets": {
+    "eval-test": 218,
+    "eval-val": 97,
+    "eval-denovo": 19
+  },
+  "_scored_sets": {
+    "eval-test": 217,
+    "eval-val": 97,
+    "eval-denovo": 19
+  },
+  "_excluded": [
+    {
+      "stem": "8uxt_A",
+      "eval_set": "eval-test",
+      "exclusion_reason": "contacts-v1 document truncated at the 8192-token context: 1664 of 3809 contacts representable"
+    }
+  ],
+  "_bucket": "hf://buckets/open-athena/MarinFold/data/contacts-v1-foldbench-monomers-exp245"
+}
