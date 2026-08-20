@@ -79,8 +79,9 @@ def main() -> int:
     ap.add_argument("--logs", type=Path, default=Path("/tmp/claude-1000/logs_final"))
     ap.add_argument("--out", type=Path, default=Path("plots"))
     ap.add_argument("--bare", action="store_true",
-                    help="accuracy panel with no in-plot annotations, for slides where "
-                         "the commentary lives in the surrounding text")
+                    help="both panels with no in-plot annotations, and the reward panel "
+                         "as RAW per-batch values rather than a rolling median, for slides "
+                         "where the commentary lives in the surrounding text")
     a = ap.parse_args()
 
     runs = {}
@@ -112,25 +113,38 @@ def main() -> int:
         if d is None or col not in d:
             continue
         g = d.dropna(subset=[col]).sort_values("step")
-        ax.plot(g["step"], g[col].rolling(6, min_periods=3).median(), color=COLOR[arm],
-                lw=1.5 if arm == "M-0" else 2.4, ls="--" if arm == "M-0" else "-",
+        y = g[col] if a.bare else g[col].rolling(6, min_periods=3).median()
+        ax.plot(g["step"], y, color=COLOR[arm],
+                lw=1.1 if a.bare else (1.5 if arm == "M-0" else 2.4),
+                alpha=0.85 if a.bare else 1.0,
+                ls="--" if arm == "M-0" else "-",
                 label=f"{arm} · {REWARD_NAME[col]}")
         # Same reward, slower schedule -- drawn here so the reward panel carries
         # the same set of runs as the accuracy panel.
         if arm in slow:
             gs = slow[arm].dropna(subset=[col]).sort_values("step")
-            ax.plot(gs["step"], gs[col].rolling(6, min_periods=3).median(), color=COLOR[arm],
-                    lw=2.0, ls="-.", alpha=0.75, label=f"{arm} (lr 3e-6)")
-    ax.set_ylim(0.15, 0.63)
-    ax.annotate("M-F exits here → 0.006 by step 120", xy=(88, 0.20), fontsize=8, color=COLOR["M-F"])
-    ax.set_xlabel("training step"); ax.set_ylabel("the arm's own reward (rolling median of 6)")
-    ax.set_title("exp237 — reward during training", fontsize=11)
+            ys = gs[col] if a.bare else gs[col].rolling(6, min_periods=3).median()
+            ax.plot(gs["step"], ys, color=COLOR[arm], lw=1.1 if a.bare else 2.0,
+                    ls="-.", alpha=0.7 if a.bare else 0.75, label=f"{arm} (lr 3e-6)")
+    ax.set_ylim(0.0 if a.bare else 0.15, 0.75 if a.bare else 0.63)
+    if not a.bare:
+        ax.annotate("M-F exits here → 0.006 by step 120", xy=(88, 0.20), fontsize=8,
+                    color=COLOR["M-F"])
+    ax.set_xlabel("training step")
+    ax.set_ylabel("the arm's own reward" + ("" if a.bare else " (rolling median of 6)"))
+    ax.set_title("exp237 — reward during training"
+                 + (" (raw, one point per batch)" if a.bare else ""), fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=2, framealpha=0.95)
     fig.tight_layout()
-    save_plot_with_meta(fig, a.out / "curves_reward.png", dpi=150,
-        caption=("Each arm against its OWN reward — the arms do not share one. Rolling median of "
-                 "6 training batches; the raw per-batch series is dominated by the protein draw."))
-    print(f"wrote {a.out}/curves_reward.png")
+    rname = "curves_reward_bare.png" if a.bare else "curves_reward.png"
+    save_plot_with_meta(fig, a.out / rname, dpi=150,
+        caption=("Each arm against its OWN reward — the arms do not share one, so the y-axis is "
+                 + ("not a common scale. Raw values, one point per training batch (8 proteins x 8 "
+                    "rollouts); the batch-to-batch spread is dominated by the protein draw."
+                    if a.bare else
+                    "not a common scale. Rolling median of 6 training batches; the raw per-batch "
+                    "series is dominated by the protein draw.")))
+    print(f"wrote {a.out}/{rname}")
 
     # ---------------- accuracy ----------------
     fig, ax = plt.subplots(figsize=(9, 4.8))
