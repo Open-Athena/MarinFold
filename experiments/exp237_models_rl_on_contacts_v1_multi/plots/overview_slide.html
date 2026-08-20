@@ -169,7 +169,7 @@
     <p class="standfirst">
       #208 ran <strong>eleven scored runs across five reward designs</strong> and none improved
       consensus R-precision. #237 changes one thing — the <em>object</em> the reward acts on — and
-      gets the first checkpoints that do. <strong>Six rewards, seven runs, 37 scored checkpoints,
+      gets the first checkpoints that do. <strong>Seven rewards, nine runs, 47 scored checkpoints,
       complete.</strong>
     </p>
   </header>
@@ -244,6 +244,12 @@
               <td>GRPO(last) + λ·GRPO(consensus) — <em>synthesise the drafts</em></td>
               <td>two rollout scalars</td>
               <td><span class="chip c-hold">beats M-F, not M-C</span></td>
+            </tr>
+            <tr>
+              <td class="arm">M-BP</td>
+              <td>M-B + <em>&beta;&middot;min(0, K &minus; 18)</em> — a floor on the candidate count</td>
+              <td>rollout scalar</td>
+              <td><span class="chip c-hold">delays the decline</span></td>
             </tr>
             <tr class="lead">
               <td class="arm">M-K</td>
@@ -429,6 +435,16 @@
             ran out of scheduled steps.</p>
           </div>
           <div class="finding">
+            <div class="k">PEAK</div>
+            <p><strong>Long trajectories do not beat short ones.</strong> Three unrelated
+            interventions — a 3&times; smaller learning rate, a 50&times; KL penalty, and a
+            candidate-count floor — each slowed or reshaped the degradation past the peak.
+            <em>None produced a checkpoint better than the peak it started from.</em> At matched
+            distance, 3.3&times; the optimisation steps scored <strong>0.0094 worse</strong>.
+            Whatever bounds this is not the step size, not the distance per step, and not the
+            candidate count.</p>
+          </div>
+          <div class="finding">
             <div class="k">SELECT</div>
             <p><strong>Selection is dominated by aggregation.</strong> An ORACLE selector of one
             draft reads 0.5646 where voting the same drafts reads <strong>0.5750</strong>. A final
@@ -440,9 +456,9 @@
   </div>
 
   <footer>
-    <span><b>Status</b> complete — 6 rewards, 7 runs, 37 scored checkpoints</span>
+    <span><b>Status</b> complete — 7 rewards, 9 runs, 47 scored checkpoints</span>
     <span><b>Peak</b> KL ≈ 0.009 for five arms; M-K plateaus later, at 0.016</span>
     <span><b>Validity</b> lr-0 control is a coin flip against its own input (260/259) · scorer reproduces #230 exactly</span>
-    <span><b>Next</b> train M-K longer — it stopped for its schedule, not for a reason</span>
+    <span><b>Next</b> explain the peak — every arm hits it at KL 0.009&ndash;0.016 and nothing tried moves it</span>
   </footer>
 </div>

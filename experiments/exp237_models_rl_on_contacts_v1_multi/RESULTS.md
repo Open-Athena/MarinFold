@@ -4,7 +4,7 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: nine runs, 46 scored checkpoints.** The long-trajectory question is
+> **Status: complete. Seven reward designs, nine runs, 47 scored checkpoints.** The long-trajectory question is
 > settled in both directions — see *[Do long trajectories beat short
 > ones?](#do-long-trajectories-beat-short-ones)*. One arm (**M-BP**, a candidate-count
 > floor on M-B's reward) is still running and says so where it matters. Anything
@@ -53,6 +53,7 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | M-B lr3e-6 step-150 | 0.0229 | 0.5575 | 0.5467 | 0.4952 | 0.4727 |
 | M-BP step-120 *(count floor)* | 0.0122 | 0.5757 | 0.5588 | 0.5049 | 0.4972 |
 | M-BP step-150 *(count floor)* | 0.0158 | 0.5753 | 0.5478 | 0.4907 | 0.4759 |
+| M-BP step-180 *(count floor)* | 0.0256 | 0.5649 | 0.5339 | 0.4691 | 0.4725 |
 | M-K leashed step-120 | 0.0153 | 0.5712 | 0.5442 | 0.4873 | 0.4716 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — |
@@ -805,22 +806,31 @@ At step 120 the two are tied — the unpenalised run had barely started to slide
 By step 150 the gap is **+0.0178**, far outside the 0.0023 noise floor, and it
 holds on the low-homology cut. **The idea works.**
 
-#### And it still does not get past the peak
+#### And it still does not get past the peak — it delays the decline
 
 The comparison that matters is not against the run it rescued but against **where
-it started**. M-BP step-150 against its own resume point, M-B lr3e-6 step-90:
+it started**. Both runs from the same step-90 checkpoint, consensus on legacy 554:
 
-| | M-BP step-150 | step-90 | Δ | 95 % CI |
-|---|---:|---:|---:|---|
-| consensus | 0.5753 | 0.5775 | **−0.0022** | [−0.0051, +0.0006] |
-| best *ORACLE* | 0.5478 | 0.5646 | **−0.0168** | [−0.0201, −0.0136] \* |
-| last | 0.4907 | 0.5091 | −0.0184 | [−0.0230, −0.0139] \* |
+| step | 90 | 120 | 150 | 180 |
+|---|---:|---:|---:|---:|
+| **M-BP** (count floor) | 0.5775 | 0.5757 | 0.5753 | **0.5649** *(killed at 183)* |
+| MBLONG (no penalty) | 0.5775 | 0.5739 | 0.5575 | *killed at 180* |
 
-**Sixty further steps converted a decline into a plateau, and nothing more.**
-Consensus ties its own starting point; and **`max_k F1` — the quantity M-B's
-reward actually optimises — got significantly *worse*** (−0.0168, CI excluding
-zero). So the floor held the aggregate together while the objective underneath it
-continued to degrade.
+Against its own resume point, paired per protein:
+
+| | step-150 Δ | 95 % CI | step-180 Δ | 95 % CI |
+|---|---:|---|---:|---|
+| consensus | −0.0022 | [−0.0051, +0.0006] | **−0.0127** | [−0.0158, −0.0095] \* |
+| best *ORACLE* | **−0.0168** | [−0.0201, −0.0136] \* | **−0.0307** | [−0.0345, −0.0270] \* |
+| last | −0.0184 | [−0.0230, −0.0139] \* | −0.0400 | [−0.0461, −0.0338] \* |
+
+**The decline is delayed, not prevented.** Consensus holds within noise of the
+start for 60 steps and then falls; by step 180 it is 0.0127 below where it began,
+with the CI excluding zero. And throughout, **`max_k F1` — the quantity M-B's
+reward actually optimises — degrades monotonically** (−0.0168 by 150, −0.0307 by
+180). The floor held the aggregate together while the objective underneath it
+kept getting worse: the consensus plateau was being paid for out of candidate
+quality, not earned.
 
 #### The failure moved rather than went away
 
@@ -833,9 +843,15 @@ emit fewer, better sections, or emit many near-copies of your best one. The floo
 closed the first route, so the policy took the second.
 
 And the arithmetic is blunt: **MBLONG died at step 180, M-BP at 183.** The penalty
-bought **three steps**. It changed how the run ends, not when — which is the
-sharpest statement this experiment has of the same finding it keeps producing:
-*interventions can prevent degradation; none of them produce gain past the peak.*
+bought **three steps**, and 60 steps of a flatter approach to the same end. It
+changed how the run ends and how fast it gets there — not whether it does.
+
+That is the third independent confirmation of one finding, from three unrelated
+directions. A **smaller learning rate** (MBLONG), a **KL penalty** (MKLEASH) and a
+**count floor** (M-BP) each slowed or reshaped the degradation, and not one of
+them produced a checkpoint better than the peak it started from. Whatever bounds
+this, it is not the step size, not the distance travelled per step, and not the
+candidate count.
 
 
 ## Do long trajectories beat short ones?

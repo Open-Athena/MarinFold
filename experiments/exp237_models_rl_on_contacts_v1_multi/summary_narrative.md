@@ -8,11 +8,12 @@
 RL on #230's `<contacts-v1.multi>` checkpoint, with the reward computed over the
 **sections of a single rollout** rather than over the rollouts of a group.
 
-Six reward designs, seven runs, **37 scored checkpoints**, all on 8 × A100 via
+Seven reward designs, nine runs, **47 scored checkpoints**, all on 8 × A100 via
 SkyRL: **M-C** each section's contribution to its own rollout's consensus ·
 **M-F** the last section's F1 · **M-B** the best section's F1 (oracle) ·
 **M-BC** best + consensus · **M-FC** last + consensus · **M-K** the rollout's own
-consensus R-precision · **M-0** a zero-LR control.
+consensus R-precision · **M-BP** M-B plus a candidate-count floor · **M-0** a
+zero-LR control.
 
 ## Why
 
@@ -89,18 +90,39 @@ synthesise its predecessors, not pick among them.
 section F1 from 0.432 to 0.532 and *lowers* best-of-22 — the same trade that
 defeats every sharpening reward here, appearing in the corpus's own size law.
 
+## Long trajectories do not beat short ones
+
+Three unrelated interventions, all aimed at training past the peak:
+
+**A smaller learning rate.** M-B at lr 3e-6 resumed to step 180 — killed, section
+count collapsed to 11.0. Its flat evals at steps 60-120 were a plateau *in steps*
+while KL climbed 0.0087 to 0.0397. More steps is more distance.
+
+**A KL penalty.** `kl_loss_coef` 0.001 to 0.05. At *matched distance*, 3.3x the
+optimisation steps scored **0.0094 worse** — and the penalty turned out to buy
+about what a 3x learning-rate cut buys rather than holding distance at all.
+
+**A candidate-count floor** on M-B's reward. It worked: the collapse vanished and
+it beat the unpenalised run by **+0.0178** at step 150. Then it died three steps
+later of *diversity* collapse instead — the reward can be raised by emitting
+fewer good sections or many copies of one, and closing the first route opened the
+second.
+
+Each slowed or reshaped the degradation. **None produced a checkpoint better than
+the peak it started from.**
+
 ## What next
 
-**Train M-K further.** It is the only arm that stopped for its schedule rather
-than for a reason. Every other arm answers "how long can you train?" with "not
-long"; M-K has not been asked.
+**Nothing further on "train it longer."** Three interventions, three ways of
+failing to beat the peak. Whatever bounds this is not the step size, not the
+distance per step, and not the candidate count.
 
-**Then turn on the shaping and blend terms.** M-K is the `beta = lam = 0` corner
-of the derived arm. The base alone beat every shaped and blended arm, so shaping
-is now a hypothesis to test, not a fix to apply.
+**Explain the peak before designing another reward.** Every arm peaks at
+KL 0.009-0.016 and every intervention only changes the approach to it. That
+property is the finding worth chasing.
 
-**Nothing further on M-B at lr 1e-5.** Two rates, 10 checkpoints, a smooth peak,
-agreement to 0.002.
+**The shaping and blend terms remain untested.** M-K is the `beta = lam = 0`
+corner of the derived arm, and the base alone beat every shaped and blended arm.
 
 **The diversity gap is a corpus question.** One rollout's sections cover 658
 distinct pairs against 1,065 for 22 independent rollouts.
