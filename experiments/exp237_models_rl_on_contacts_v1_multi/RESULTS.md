@@ -975,7 +975,71 @@ the corrected novelty term has sd 0.0375 against M-KS2's 0.0167, so M-KS2's
 ([`calib3.py`](calib3.py)). The two signals correlate only **+0.283** with each
 other, so this is a different arm and not a re-run.
 
-> **Status: running.**
+**It was killed at step 15 — the fastest death in #237 — in the direction
+opposite to M-KS's**: `sections/rollout` **91.1 > 60**, the max-sections
+criterion, not the floor.
+
+| batch | 3 | 5 | 7 | 9 | 11 | 13 | 15 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| sections/rollout | 22.9 | 26.2 | 39.4 | 52.4 | 74.0 | 96.3 | **102.2** |
+| mean Jaccard | 0.14 | 0.13 | 0.05 | 0.03 | **0.01** | 0.01 | 0.01 |
+| pred/gt | — | — | — | — | 4.46 | 3.64 | 2.93 |
+| union/R | — | — | — | — | 2.38 | 1.74 | **1.15** |
+
+The policy **fragmented**: ~100 nearly-disjoint sections (Jaccard 0.01) carrying
+*less* total content than before (pred/gt falling to 2.9), with union coverage
+draining toward the floor where #208's mechanism binds.
+
+#### Why: the term is not invariant to how the same predictions are sliced
+
+The false-pair subtraction prices **padding with junk**. It does not price
+**splitting**, because dividing real content across more sections adds no false
+pairs. Measured directly — one simulated policy of fixed quality and fixed
+per-section precision, only the chopping varied:
+
+| sections | pairs/section | total pairs | **mean** novelty | **sum** novelty |
+|---:|---:|---:|---:|---:|
+| 20 | 120 | 2,400 | −0.949 | −18.99 |
+| 40 | 60 | 2,400 | −0.472 | −18.87 |
+| 80 | 30 | 2,400 | −0.242 | −19.32 |
+| 160 | 15 | 2,400 | **−0.128** | −20.43 |
+
+**The sum is invariant and the mean improves 7.4×.** That is the *same* trap that
+refuted the causal prefix marginal as a standalone reward — `loss_reduction` is
+`token_mean`, so the loss reads the mean — reappearing on a different axis. There
+it was *how many candidates*; here it is *how finely you slice them*.
+
+> **What is measured and what is not.** The fragmentation property of the reward
+> is measured, and the observed collapse (23 → 102 sections, Jaccard 0.14 →
+> 0.01) is exactly fine slicing. The precise route from one to the other is
+> **not** established: the shaping term is centred within the rollout, so the
+> rollout's *section*-mean advantage is zero by construction, and the remaining
+> path runs through `token_mean` weighting sections by their length. A first
+> hypothesis — that the positional baseline creates a "keep going" gradient
+> because a rollout past its siblings' length becomes its own baseline — was
+> **tested on 200 synthetic groups and refuted** (deep-minus-shared advantage
+> −0.0032, positive in 46 %). It is recorded here as refuted rather than
+> omitted.
+
+#### Where the shaping line stands
+
+Three variants, three outcomes, and the middle one is the result:
+
+| arm | `shaped_k` | outcome |
+|---|---|---|
+| M-KS | prefix marginal, centred | count **collapse** to 10.7 by step 21 — the term decays in `k` |
+| **M-KS2** | + positional baseline | **best ORACLE in #237, 0.5677**; 48 steps, no gate strike |
+| M-KS3 | direct novelty, + positional | count **runaway** to 102 by step 15 — the term rewards fine slicing |
+
+The two failures bracket the success from opposite sides, and both are the same
+kind of bug: **a per-section reward whose value depends on the partition rather
+than on the content.** M-KS2 avoids it not by construction but because the
+consensus marginal it shapes on happens to be a weak (r = +0.194) and
+partition-insensitive proxy for novelty. Making the proxy sharper made it worse.
+
+**The next form would have to be partition-invariant** — scored per *pair* rather
+than per *section*, or normalised by section size, which trades away the count
+sensitivity the aggregate needs. That tension is real and is not resolved here.
 
 
 ### M-KB — a 4× larger batch, and the refutation of the noise hypothesis

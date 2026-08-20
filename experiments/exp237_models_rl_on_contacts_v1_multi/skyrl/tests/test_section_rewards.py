@@ -466,3 +466,21 @@ def test_novelty_is_zero_for_an_exact_repeat_anywhere_in_the_rollout():
     gt = {(1, 10), (2, 20)}
     m = sr.novelty_marginals([{(1, 10)}, {(2, 20)}, {(1, 10), (2, 20)}], gt, 60)
     assert m[2] == pytest.approx(0.0)
+
+
+def test_novelty_is_not_invariant_to_how_the_content_is_SLICED():
+    """The bug arm M-KS3 died of, pinned so a future variant cannot reintroduce it.
+
+    Splitting the SAME pairs across more sections leaves the sum unchanged and
+    raises the mean — and `loss_reduction=token_mean` reads the mean. The
+    false-pair subtraction prices padding with junk; it does not price splitting,
+    because dividing real content adds no false pairs.
+    """
+    gt = {(i, i + 10) for i in range(0, 40, 2)}
+    content = sorted(gt) + [(i, i + 7) for i in range(0, 40, 2)]      # half true, half false
+    coarse = [set(content[:20]), set(content[20:])]
+    fine = [set(content[i:i + 5]) for i in range(0, 40, 5)]
+    mc = sr.novelty_marginals(coarse, gt, 60)
+    mf = sr.novelty_marginals(fine, gt, 60)
+    assert mc.sum() == pytest.approx(mf.sum(), abs=1e-12)             # sum: invariant
+    assert mf.mean() > mc.mean()                                      # mean: not
