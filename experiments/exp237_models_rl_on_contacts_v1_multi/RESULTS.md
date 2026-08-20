@@ -4,8 +4,8 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: nine reward designs, thirteen runs, 55 scored checkpoints.** Arm
-> M-KS3 is still training; everything else is final. The long-trajectory question is
+> **Status: complete. Nine reward designs, fourteen runs, 56 scored
+> checkpoints.** The long-trajectory question is
 > settled in both directions — see *[Do long trajectories beat short
 > ones?](#do-long-trajectories-beat-short-ones)*. One arm (**M-BP**, a candidate-count
 > floor on M-B's reward) is still running and says so where it matters. Anything
@@ -1026,6 +1026,11 @@ prices padding with junk and inadvertently rewards slicing it thinner.
 > −0.0032, positive in 46 %). It is recorded here as refuted rather than
 > omitted.
 
+Its one scored checkpoint prices the damage: **step-12 consensus 0.4627**,
+ORACLE-best **0.3203**, at **90.4** sections/rollout — against arm M-K's 0.5739 /
+0.5555 / 22.7 at the same step. Fragmentation is not a training statistic that
+the evaluation forgives; it destroys the object the metric scores.
+
 #### Where the shaping line stands
 
 Three variants, three outcomes, and the middle one is the result:
@@ -1034,7 +1039,7 @@ Three variants, three outcomes, and the middle one is the result:
 |---|---|---|
 | M-KS | prefix marginal, centred | count **collapse** to 10.7 by step 21 — the term decays in `k` |
 | **M-KS2** | + positional baseline | **best ORACLE in #237, 0.5677**; 48 steps, no gate strike |
-| M-KS3 | direct novelty, + positional | count **runaway** to 102 by step 15 — the term rewards fine slicing |
+| M-KS3 | direct novelty, + positional | count **runaway** to 102 by step 15; step-12 consensus 0.4627 — the term rewards fine slicing |
 
 The two failures bracket the success from opposite sides, and both are the same
 kind of bug: **a per-section reward whose value depends on the partition rather
