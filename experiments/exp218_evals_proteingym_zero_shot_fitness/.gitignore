@@ -1,0 +1,6 @@
+# Benchmark inputs are fetched by proteingym.py, not vendored.
+data/proteingym/
+# Cached (K, L, 20) conditional tensors — ~1 GB. These are the experiment's
+# reusable artifact and go to the public HF bucket, not into git.
+data/conditionals/
+.venv/
