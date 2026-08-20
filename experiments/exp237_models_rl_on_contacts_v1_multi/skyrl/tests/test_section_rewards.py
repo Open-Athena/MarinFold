@@ -471,16 +471,42 @@ def test_novelty_is_zero_for_an_exact_repeat_anywhere_in_the_rollout():
 def test_novelty_is_not_invariant_to_how_the_content_is_SLICED():
     """The bug arm M-KS3 died of, pinned so a future variant cannot reintroduce it.
 
-    Splitting the SAME pairs across more sections leaves the sum unchanged and
-    raises the mean — and `loss_reduction=token_mean` reads the mean. The
-    false-pair subtraction prices padding with junk; it does not price splitting,
-    because dividing real content adds no false pairs.
+    A policy of FIXED quality — same total pairs, same per-section precision —
+    scores a better per-section MEAN the more finely it slices, while the SUM
+    stays put. `loss_reduction=token_mean` reads the mean.
+
+    The driver is the false-pair term: as the prefix union fills, new *true*
+    pairs saturate while new *false* ones keep arriving, so each section's score
+    is dominated by the junk it adds — and a smaller section adds less of it.
+    Subtracting new-false prices padding with junk; it does not price splitting.
     """
-    gt = {(i, i + 10) for i in range(0, 40, 2)}
-    content = sorted(gt) + [(i, i + 7) for i in range(0, 40, 2)]      # half true, half false
-    coarse = [set(content[:20]), set(content[20:])]
-    fine = [set(content[i:i + 5]) for i in range(0, 40, 5)]
-    mc = sr.novelty_marginals(coarse, gt, 60)
-    mf = sr.novelty_marginals(fine, gt, 60)
-    assert mc.sum() == pytest.approx(mf.sum(), abs=1e-12)             # sum: invariant
-    assert mf.mean() > mc.mean()                                      # mean: not
+    rng = np.random.default_rng(237)
+    L = 120
+    gt = set()
+    while len(gt) < 60:
+        i, j = sorted(int(x) for x in rng.integers(0, L, 2))
+        if j - i >= 6:
+            gt.add((i, j))
+    truth = sorted(gt)
+    allpairs = [(i, j) for i in range(L) for j in range(i + 6, L)]
+
+    def rollout(n_sections, per_section, precision=0.45):
+        out = []
+        for _ in range(n_sections):
+            idx = rng.choice(len(truth), size=int(per_section * precision), replace=False)
+            sec = {truth[i] for i in idx}
+            while len(sec) < per_section:
+                sec.add(allpairs[int(rng.integers(len(allpairs)))])
+            out.append(sec)
+        return out
+
+    means, sums = [], []
+    for n, per in [(20, 120), (40, 60), (80, 30)]:          # 2,400 pairs in every case
+        m = np.mean([sr.novelty_marginals(rollout(n, per), gt, L) for _ in range(15)], axis=0)
+        means.append(float(np.mean(m)))
+        sums.append(float(np.sum([sr.novelty_marginals(rollout(n, per), gt, L).sum()
+                                  for _ in range(15)]) / 15))
+
+    assert means[0] < means[1] < means[2]                    # finer slicing scores better
+    assert means[2] > 3 * means[0]                           # and by a lot (it is negative)
+    assert max(sums) - min(sums) < 0.15 * abs(np.mean(sums))  # while the sum barely moves

@@ -1009,6 +1009,11 @@ refuted the causal prefix marginal as a standalone reward — `loss_reduction` i
 `token_mean`, so the loss reads the mean — reappearing on a different axis. There
 it was *how many candidates*; here it is *how finely you slice them*.
 
+The driver is the false-pair term itself. As the prefix union fills, new *true*
+pairs saturate while new *false* ones keep arriving, so a section's score is
+dominated by the junk it adds — and a smaller section adds less. The subtraction
+prices padding with junk and inadvertently rewards slicing it thinner.
+
 > **What is measured and what is not.** The fragmentation property of the reward
 > is measured, and the observed collapse (23 → 102 sections, Jaccard 0.14 →
 > 0.01) is exactly fine slicing. The precise route from one to the other is
