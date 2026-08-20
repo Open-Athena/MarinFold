@@ -70,7 +70,7 @@ def _forwarded_perf_env() -> dict[str, str]:
 
 def _resources() -> ResourceConfig:
     return ResourceConfig.with_gpu(
-        "H100",
+        os.environ.get("EXP177_CW_GPU_TYPE", "H100"),
         count=int(os.environ.get("EXP177_CW_GPUS", "1")),
         cpu=float(os.environ.get("EXP177_CW_CPU", "32")),
         ram=os.environ.get("EXP177_CW_RAM", "256g"),
@@ -216,6 +216,7 @@ def _pod_config(run_name: str):
         "EXP177_MP_START_METHOD": os.environ.get("EXP177_MP_START_METHOD", "fork"),
         "EXP177_PRECOMPUTED_MP": os.environ.get("EXP177_PRECOMPUTED_MP", "1"),
         "EXP177_SOFT_TARGET_BATCH": os.environ.get("EXP177_SOFT_TARGET_BATCH", "compact"),
+        "EXP177_CW_GPU_TYPE": os.environ.get("EXP177_CW_GPU_TYPE", "H100"),
         "EXP177_MAX_SPARSE_CONTACTS": os.environ.get("EXP177_MAX_SPARSE_CONTACTS", "2048"),
         "EXP177_MAX_SPARSE_DEGREE": os.environ.get("EXP177_MAX_SPARSE_DEGREE", "32"),
         "EXP177_PRECOMPUTED_WORKERS": os.environ.get("EXP177_PRECOMPUTED_WORKERS", "16"),
