@@ -54,6 +54,8 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | M-BP step-120 *(count floor)* | 0.0122 | 0.5757 | 0.5588 | 0.5049 | 0.4972 |
 | M-BP step-150 *(count floor)* | 0.0158 | 0.5753 | 0.5478 | 0.4907 | 0.4759 |
 | M-BP step-180 *(count floor)* | 0.0256 | 0.5649 | 0.5339 | 0.4691 | 0.4725 |
+| M-KB step-12 *(4x batch)* | 0.0022 | 0.5749 | 0.5573 | 0.5093 | 0.4712 |
+| M-KB step-24 *(4x batch)* | 0.0198 | 0.5475 | 0.5344 | 0.4878 | 0.4400 |
 | M-K leashed step-120 | 0.0153 | 0.5712 | 0.5442 | 0.4873 | 0.4716 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — |
@@ -852,6 +854,72 @@ directions. A **smaller learning rate** (MBLONG), a **KL penalty** (MKLEASH) and
 them produced a checkpoint better than the peak it started from. Whatever bounds
 this, it is not the step size, not the distance travelled per step, and not the
 candidate count.
+
+
+### M-KB — a 4× larger batch, and the refutation of the noise hypothesis
+
+**The hypothesis.** Every arm here peaks after seeing very little data — M-B at
+144 proteins, M-C at 144, M-K at 288 — with each gradient averaged over **8
+prompt groups**, and the lr-0 control measured the per-batch diagnostics swinging
+3.6× under a policy that was not moving at all. Three interventions had failed to
+beat the peak (a smaller learning rate, a KL penalty, a count floor) and all three
+changed the *step*. This one changes the *gradient*: arm M-K at
+`train_batch_size` **32** — 256 rollouts/step against 64 — one variable, same
+reward, lr, group size, pool and order.
+
+**The premise held.** Over the first 12 batches the noise fell on every
+instrument: consensus R-prec sd 0.0357 against 0.0577 (1.6×), sections/rollout
+1.75 against 4.20 (**2.4×**), Jaccard 0.046 against 0.082, union pairs 64 against
+144. The gradient really was noise-dominated and 4× the prompts really does clean
+it up.
+
+**The conclusion is the opposite of the premise.** At matched distance, paired per
+protein on the legacy 554:
+
+| KL ≈ 0.020 | M-KB step-24 | M-K step-42 | Δ | 95 % CI | win/loss |
+|---|---:|---:|---:|---|---|
+| consensus | **0.5475** | 0.5776 | **−0.0301** | [−0.0348, −0.0255] | 124/426 \* |
+| best *ORACLE* | 0.5344 | 0.5587 | −0.0243 | [−0.0285, −0.0202] | 138/412 \* |
+| last | 0.4878 | 0.5146 | −0.0268 | [−0.0325, −0.0213] | 166/381 \* |
+| sections/rollout | **14.8** | 19.6 | | | |
+
+A 4× cleaner gradient, at the same distance from the warm start, is **0.0301
+worse** — and the section count at that point has already fallen to 14.8 against
+19.6. (At the very start the two tie: M-KB step-12 at KL 0.0022 reads 0.5749
+against M-K step-12's 0.5739 at KL 0.0054, inside the noise floor.)
+
+**And the distance itself ran away.** The early batches travelled *slower* — KL
+0.0036 at step 11 against M-K's 0.0127 — and then accelerated past every run in
+the experiment:
+
+| step | 12 | 20 | 24 | 28 | 32 | 36 | 40 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| KL | 0.0022 | 0.0135 | 0.0198 | 0.0273 | 0.0439 | **0.180** | **1.507** |
+
+M-KB was killed at step 42 on the section-count criterion (10.28 < 12), the same
+failure as everything else, reached faster.
+
+#### What this says, and it reframes the experiment
+
+**Gradient noise was not the binding constraint — it was partly a protection.**
+The coherent reading of "slower at first, then a runaway, and worse at matched
+distance" is that noise was acting as implicit damping: step to step it partly
+cancels, so the policy dithers instead of committing. Average it away and the
+policy commits — to the direction its reward actually points, which is *fewer and
+more similar candidates*.
+
+That reframes the peak. It is **not** an artifact of a noisy estimate, and it is
+not about step size: four independent interventions now say so. The remaining
+explanation is that **the reward's own optimum is worse than the warm start**, and
+every improvement in optimisation quality reaches it sooner. A better optimiser
+for a flawed objective is not an improvement.
+
+The actionable corollary is narrow and worth stating: **the next arm has to change
+the reward, not the optimiser.** Arms M-B, M-K, M-C and M-F all pay, in different
+ways, for candidates being individually good; none pays for them being *different*
+from each other, and the metric is a vote that feeds on coverage — 658 distinct
+pairs per multi rollout against 1,065 for 22 independent ones. That is what arm
+M-KS tests.
 
 
 ## Do long trajectories beat short ones?
