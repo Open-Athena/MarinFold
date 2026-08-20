@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "Left: eval2 pooled is 75% de novo design, and every structure predictor beats MarinFold there. Restricted to the 78 natural proteins the ordering changes and MarinFold matches Protenix-v2 single-seq. Right: paired MarinFold-minus-baseline differences with 10,000-resample bootstrap CIs; intervals crossing the dashed line are ties."
+}

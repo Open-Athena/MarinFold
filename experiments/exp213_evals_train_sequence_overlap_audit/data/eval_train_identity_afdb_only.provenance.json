@@ -1,0 +1,9 @@
+{
+  "sensitivity": 7.5,
+  "max_seqs": 2000,
+  "reporting_evalue": 10.0,
+  "homology_evalue": 0.001,
+  "min_qcov": 0.5,
+  "mmseqs": "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+  "train_stats": null
+}

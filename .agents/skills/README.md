@@ -15,8 +15,11 @@ The convention is borrowed from `marin-community/marin`'s
 
 | Skill | Purpose | Origin |
 |---|---|---|
+| [eval-checkpoint](eval-checkpoint/SKILL.md) | Take a contacts-v1 checkpoint to R-precision/AUC on the fixed exp89 benchmark, scored with exp82's rollout+resample recipe | MarinFold-native |
 | [babysit-job](babysit-job/SKILL.md) | Monitor an Iris job, recover on failure | ported from marin |
 | [babysit-zephyr](babysit-zephyr/SKILL.md) | Same, for Zephyr pipeline jobs | ported from marin |
+| [run-training-sweep-trc](run-training-sweep-trc/SKILL.md) | Actively operate Google/TRC TPU training sweeps to completion | MarinFold-native |
+| [run-training-sweep-cw](run-training-sweep-cw/SKILL.md) | Actively operate CoreWeave GPU training sweeps to completion | MarinFold-native |
 | [zephyr-pipeline-performance](zephyr-pipeline-performance/SKILL.md) | Write a Zephyr/Iris pipeline that finishes in minutes, not hours: the five decisions that dominate wall-clock + the I/O traps that silently destroy it. Read before drafting any new `exp<N>_data_*/cli.py`. | MarinFold-native, distilled from exp5 + exp53 |
 
 ## Adapting marin skills

@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "Share of each eval-set slice with no training sequence above the identity threshold (MMseqs2 -s 7.5, hit counted at E<=1e-3 and qcov>=0.50). Bar labels are survivors/total. The two FoldBench slices are the dirtiest in the eval set; the 222 we never used are dirtier still than the 100 we do."
+}

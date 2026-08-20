@@ -1,5 +1,5 @@
 {
-  "caption": "Best contacts-v1 model to date on contact R-precision. Three jumps, all from the base model: #75 E8 (Jun 21), #117 E16 (Jul 22), #166 AA augmentation (Jul 31).",
+  "caption": "Best contacts-v1 model to date on contact R-precision. Every step is a base-model result: #75 E8 (Jun 21), #117 E16 (Jul 22), #166 AA aug (Jul 31), #199 AFDB+ESM (Aug 9-12), #199's cooldown (Aug 15) - the first to clear single-sequence Protenix-v2.",
   "script": "plot_progress.py",
   "args": [],
   "figure": "rprecision_frontier",
@@ -62,6 +62,30 @@
     {
       "date": "2026-08-01",
       "r_precision": 0.5617739
+    },
+    {
+      "date": "2026-08-08",
+      "r_precision": 0.5617739
+    },
+    {
+      "date": "2026-08-09",
+      "r_precision": 0.573595156558823
+    },
+    {
+      "date": "2026-08-09",
+      "r_precision": 0.5792128656316871
+    },
+    {
+      "date": "2026-08-10",
+      "r_precision": 0.6088493524438242
+    },
+    {
+      "date": "2026-08-12",
+      "r_precision": 0.6088493524438242
+    },
+    {
+      "date": "2026-08-15",
+      "r_precision": 0.6306825167807124
     }
   ]
 }

@@ -1,0 +1,22 @@
+{
+  "sensitivity": 7.5,
+  "max_seqs": 5000,
+  "reporting_evalue": 10.0,
+  "homology_evalue": 0.001,
+  "min_qcov": 0.5,
+  "mmseqs": "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+  "train_stats": {
+    "esm_atlas": {
+      "arm": "esm_atlas",
+      "label": "ESM Atlas / ESMFold2 labels (issue #139)",
+      "prefix": "data/document_structures/contacts_v1_esm_atlas/train",
+      "shards": 3338,
+      "written_this_run": 64679922,
+      "skipped_short": 0,
+      "sequences": 66759922,
+      "fasta": "/data/exp213_overlap/train_esm_atlas.fasta",
+      "fasta_bytes": 19839035092
+    },
+    "total_sequences": 66759922
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "script": "make_plots.py",
+  "args": [
+    "--shards",
+    "2"
+  ],
+  "caption": "Retractions per document (mean 33.3). 80% of documents contain at least one retraction."
+}

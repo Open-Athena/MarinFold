@@ -1,0 +1,50 @@
+{
+  "foldbench_commit": "4273f6877d82bd0b2fa476d1b2f34d121cbccc70",
+  "foldbench_csv_sha256": "43c2a5e9a73e84e00afb8d0108761547a8f9d6e52865e122792748c9c32bf595",
+  "n_foldbench_monomers": 334,
+  "n_already_used": 100,
+  "n_unused": 234,
+  "n_already_in_eval_as_other_dataset": 12,
+  "already_in_eval": {
+    "8eov_A": "denovo_pdb",
+    "8fjf_A": "denovo_pdb",
+    "8ju8_A": "denovo_pdb",
+    "8k7o_A": "denovo_pdb",
+    "8k7z_A": "denovo_pdb",
+    "8ka7_A": "denovo_pdb",
+    "8kac_A": "denovo_pdb",
+    "8kcj_A": "denovo_pdb",
+    "8oys_A": "denovo_pdb",
+    "8qkd_A": "denovo_pdb",
+    "8qup_A": "denovo_pdb",
+    "8vc8_A": "denovo_pdb"
+  },
+  "n_net_new": 222,
+  "aa_unused": 66692,
+  "aa_net_new": 64624,
+  "unused_len_min": 65,
+  "unused_len_max": 1596,
+  "label_chain_matches": [
+    "5sbj_A",
+    "8bgb_A",
+    "8bke_A",
+    "8c4y_A",
+    "8ci9_A",
+    "8gmy_A",
+    "8ork_A",
+    "8qq1_A",
+    "8rdd_A",
+    "8uds_A"
+  ],
+  "foldbench100_sequences_reproduced": "100/100",
+  "expanded_eval_set_size": 776,
+  "synthetic_taxid": "32630",
+  "known_designs_flagged_synthetic": "12/12",
+  "n_net_new_synthetic": 4,
+  "net_new_synthetic": [
+    "8gac_A",
+    "8k83_A",
+    "8k84_A",
+    "8oyy_A"
+  ]
+}

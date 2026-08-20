@@ -1,5 +1,5 @@
 {
-  "caption": "R-precision against val loss. ~2 R-precision per nat across generations; flat inside one run (#117 early vs final).",
+  "caption": "R-precision against val loss. Across generations the exchange rate is collapsing (2.06 -> 0.71 -> ~0.33 R per nat); inside one run it is flat (#117 early vs final).",
   "script": "plot_progress.py",
   "args": [],
   "figure": "rprecision_vs_val_loss",
@@ -8,79 +8,153 @@
       "label": "#67 quick 1.5B",
       "inference": "pairwise",
       "val_loss": 2.979953,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.979953,
       "r_precision": 0.0294637
     },
     {
       "label": "#75 E1",
       "inference": "pairwise",
       "val_loss": 3.0457733,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 3.0457733,
       "r_precision": 0.028027
     },
     {
       "label": "#75 E2",
       "inference": "pairwise",
       "val_loss": 2.9420996,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.9420996,
       "r_precision": 0.0289797
     },
     {
       "label": "#75 E4",
       "inference": "pairwise",
       "val_loss": 2.9238107,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.9238107,
       "r_precision": 0.0306772
     },
     {
       "label": "#61/#75 E8",
       "inference": "pairwise",
       "val_loss": 2.756602,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.756602,
       "r_precision": 0.3389373
     },
     {
       "label": "#61/#75 E8",
       "inference": "rollout",
       "val_loss": 2.756602,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.756602,
       "r_precision": 0.4245291
     },
     {
       "label": "#120 re-epoch",
       "inference": "pairwise",
       "val_loss": 2.7213,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.7213,
       "r_precision": 0.3495
     },
     {
       "label": "#120 re-epoch",
       "inference": "rollout",
       "val_loss": 2.7213,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.7213,
       "r_precision": 0.4357296
     },
     {
       "label": "#117 E8 bs64",
       "inference": "pairwise",
       "val_loss": 2.7130589,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.7130589,
       "r_precision": 0.4192084
     },
     {
       "label": "#117 E16 early stop",
       "inference": "rollout",
       "val_loss": 2.696074,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.696074,
       "r_precision": 0.5318058
     },
     {
       "label": "#117 E16 final",
       "inference": "rollout",
       "val_loss": 2.7037086,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.7037086,
       "r_precision": 0.5344182
     },
     {
       "label": "#146 3B E8",
       "inference": "rollout",
       "val_loss": 2.7024784,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.7024784,
       "r_precision": 0.5118632
     },
     {
       "label": "#166 AA aug",
       "inference": "rollout",
       "val_loss": 2.6641791,
+      "val_loss_scale": "historical",
+      "val_loss_raw": 2.6641791,
       "r_precision": 0.5617739
+    },
+    {
+      "label": "#199 TRC p06-aug",
+      "inference": "rollout",
+      "val_loss": 2.672794156112671,
+      "val_loss_scale": "current",
+      "val_loss_raw": 3.054504156112671,
+      "r_precision": 0.5244069975064393
+    },
+    {
+      "label": "#199 TRC p03-aug",
+      "inference": "rollout",
+      "val_loss": 2.629820637741089,
+      "val_loss_scale": "current",
+      "val_loss_raw": 3.011530637741089,
+      "r_precision": 0.573595156558823
+    },
+    {
+      "label": "#199 TRC p03-base",
+      "inference": "rollout",
+      "val_loss": 2.62571244720459,
+      "val_loss_scale": "current",
+      "val_loss_raw": 3.00742244720459,
+      "r_precision": 0.5792128656316871
+    },
+    {
+      "label": "#199 CW p06-aug",
+      "inference": "rollout",
+      "val_loss": 2.589490942993164,
+      "val_loss_scale": "current",
+      "val_loss_raw": 2.971200942993164,
+      "r_precision": 0.6088493524438242
+    },
+    {
+      "label": "#199 TRC cont",
+      "inference": "rollout",
+      "val_loss": 2.5821161795043945,
+      "val_loss_scale": "current",
+      "val_loss_raw": 2.9638261795043945,
+      "r_precision": 0.6032819321394465
+    },
+    {
+      "label": "#199 CW cooldown",
+      "inference": "rollout",
+      "val_loss": 2.5579627085113525,
+      "val_loss_scale": "current",
+      "val_loss_raw": 2.9396727085113525,
+      "r_precision": 0.6306825167807124
     }
   ]
 }
