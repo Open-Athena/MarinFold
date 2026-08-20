@@ -217,6 +217,11 @@ def _pod_config(run_name: str):
         "EXP177_PRECOMPUTED_MP": os.environ.get("EXP177_PRECOMPUTED_MP", "1"),
         "EXP177_SOFT_TARGET_BATCH": os.environ.get("EXP177_SOFT_TARGET_BATCH", "compact"),
         "EXP177_CW_GPU_TYPE": os.environ.get("EXP177_CW_GPU_TYPE", "H100"),
+        # Transformers imports optional vision/torch modules while resolving tokenizer
+        # auto-classes. We only need tokenizer code here, and ARM GB200 pods currently
+        # resolve a torchvision wheel that fails at import time.
+        "USE_TORCH": os.environ.get("USE_TORCH", "0"),
+        "USE_TF": os.environ.get("USE_TF", "0"),
         "EXP177_MAX_SPARSE_CONTACTS": os.environ.get("EXP177_MAX_SPARSE_CONTACTS", "2048"),
         "EXP177_MAX_SPARSE_DEGREE": os.environ.get("EXP177_MAX_SPARSE_DEGREE", "32"),
         "EXP177_PRECOMPUTED_WORKERS": os.environ.get("EXP177_PRECOMPUTED_WORKERS", "16"),
