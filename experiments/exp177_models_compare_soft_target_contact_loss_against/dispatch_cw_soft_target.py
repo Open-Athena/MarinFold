@@ -323,7 +323,7 @@ def dispatch(wait: bool = True):
     if os.environ.get("EXP177_CW_UNINSTALL_TORCHVISION", "0") == "1":
         setup_scripts = [
             default_setup_script(extras=extras),
-            "set -e\nuv pip uninstall -y torchvision || true\n",
+            "set -e\nuv pip uninstall --python \"$IRIS_VENV/bin/python\" -y torchvision || true\n",
         ]
         if "gpu" in extras:
             setup_scripts.append(cuda_toolchain_setup_script())
