@@ -78,6 +78,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--logs", type=Path, default=Path("/tmp/claude-1000/logs_final"))
     ap.add_argument("--out", type=Path, default=Path("plots"))
+    ap.add_argument("--bare", action="store_true",
+                    help="accuracy panel with no in-plot annotations, for slides where "
+                         "the commentary lives in the surrounding text")
     a = ap.parse_args()
 
     runs = {}
@@ -159,20 +162,22 @@ def main() -> int:
     ax.set_ylabel("consensus R-precision  (legacy 554, 8 rollouts/protein)")
     # No arrow: every path from a free area to (36, 0.5806) crosses three other
     # curves. The label sits in the gap between M-K's tail and the bar instead.
-    ax.annotate("M-K 0.5806 · M-KS2 0.5799\n(the two best)", xy=(30, 0.5802),
+    if not a.bare:
+      ax.annotate("M-K 0.5806 · M-KS2 0.5799\n(the two best)", xy=(30, 0.5802),
                 xytext=(62, 0.472), fontsize=8.5, fontweight="600", color=COLOR["M-K"], bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6,
                 arrowprops=dict(arrowstyle="->", color=COLOR["M-K"], lw=1.1))
-    ax.annotate("M-B lr3e-6 + count floor:\nthe decline is delayed, not prevented",
-                xy=(168, 0.5735), xytext=(103, 0.505), fontsize=8, color="#c2410c", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6,
-                arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.0))
+      ax.annotate("M-B lr3e-6 + count floor:\nthe decline is delayed, not prevented",
+                  xy=(168, 0.5735), xytext=(103, 0.505), fontsize=8, color="#c2410c", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6,
+                  arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.0))
     ax.set_title("exp237 — accuracy at every scored checkpoint  (57 in total)", fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=3, framealpha=0.95)
     fig.tight_layout()
-    save_plot_with_meta(fig, a.out / "curves_accuracy.png", dpi=150,
+    name = "curves_accuracy_bare.png" if a.bare else "curves_accuracy.png"
+    save_plot_with_meta(fig, a.out / name, dpi=150,
         caption=("Consensus R-precision on the 554-protein exp89 benchmark at all 37 scored "
                  "checkpoints. Five arms peak by step ~20 and fall away; M-K peaks later, at "
                  "step 30-36, and highest."))
-    print(f"wrote {a.out}/curves_accuracy.png")
+    print(f"wrote {a.out}/{name}")
     return 0
 
 

@@ -1,5 +1,7 @@
 {
   "script": "plot_reward_and_accuracy.py",
-  "args": [],
+  "args": [
+    "--bare"
+  ],
   "caption": "Each arm against its OWN reward \u2014 the arms do not share one. Rolling median of 6 training batches; the raw per-batch series is dominated by the protein draw."
 }
