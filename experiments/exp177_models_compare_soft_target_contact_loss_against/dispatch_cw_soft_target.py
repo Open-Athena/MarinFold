@@ -19,6 +19,7 @@ from pathlib import Path
 import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
+from iris.cluster.setup_scripts import cuda_toolchain_setup_script, default_setup_script
 from levanter.callbacks.profiler import ProfilerConfig, ProfileOptionsConfig
 from levanter.checkpoint import CheckpointerConfig
 from levanter.data.text.datasets import DatasetComponent, DirectDatasetComponent, LmDataConfig
@@ -317,9 +318,19 @@ def _run_name() -> str:
 def dispatch(wait: bool = True):
     run_name = _run_name()
     pod_config = _pod_config(run_name)
+    extras = extras_for_resources(pod_config.resources)
+    setup_scripts = None
+    if os.environ.get("EXP177_CW_UNINSTALL_TORCHVISION", "0") == "1":
+        setup_scripts = [
+            default_setup_script(extras=extras),
+            "set -e\nuv pip uninstall -y torchvision || true\n",
+        ]
+        if "gpu" in extras:
+            setup_scripts.append(cuda_toolchain_setup_script())
     environment = create_environment(
         env_vars=resolve_training_env(base_env=dict(pod_config.env_vars or {}), resources=pod_config.resources),
-        extras=extras_for_resources(pod_config.resources),
+        extras=extras,
+        setup_scripts=setup_scripts,
     )
     profile_upload_prefix = None
     if os.environ.get("EXP177_CW_PROFILER", "0") == "1":
