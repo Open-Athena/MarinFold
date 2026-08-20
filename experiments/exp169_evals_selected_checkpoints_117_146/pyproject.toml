@@ -1,0 +1,57 @@
+[project]
+name = "exp169-evals-selected-checkpoints-117-146"
+version = "0.1.0"
+description = "R-precision on the 554-protein contact eval set for the #117 / #146 checkpoints selected in issue #169."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Checkpoint preparation only (fp32 -> bf16 recast, config/tokenizer repair).
+    # All model inference for this experiment runs on CoreWeave H100s, so CPU
+    # torch is enough here and keeps the venv ~2 GB instead of ~9 GB.
+    "torch==2.5.1+cpu",
+    # `marinfold.inference._tokenizer` — the repo's canonical repair for the
+    # `tokenizer_class: TokenizersBackend` levanter exports ship.
+    "marinfold",
+    # 4.57.x on purpose: transformers 5.x re-emits the `rope_parameters` /
+    # `TokenizersBackend` shapes we are converting *away* from, and the vLLM
+    # 0.9.2 image the eval workers run pins the 4.x config schema.
+    "transformers==4.57.1",
+    "safetensors",
+    "huggingface-hub>=0.34",
+    "fsspec",
+    # Both object stores: the checkpoints and shard parquets live on CoreWeave S3
+    # for a GPU run and on GCS for the TPU run.
+    "s3fs",
+    "boto3",
+    "gcsfs",
+    "pyarrow",
+    "numpy",
+    # Metrics + plots (exp89 compute_metrics semantics, run over the fetched
+    # score matrices).
+    "pandas>=2.2",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+marinfold = { path = "../../marinfold" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

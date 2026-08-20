@@ -1,0 +1,208 @@
+{
+  "caption": "Best held-out contacts-v1 val loss to date over 196 finished runs. The loss frontier has many more steps than the accuracy one; the last three are converted from the current loss scale.",
+  "script": "plot_progress.py",
+  "args": [],
+  "figure": "val_loss_frontier",
+  "n_runs": 196,
+  "n_above_axis": 13,
+  "n_converted": 16,
+  "loss_axis": "historical (pre-marin#7209)",
+  "frontier": [
+    {
+      "date": "2026-06-13",
+      "val_loss": 3.15350341796875,
+      "run": "prot-exp75-cv1-1_5b-e1-lr8.75e-5-wd0p05-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-13",
+      "val_loss": 3.070493698120117,
+      "run": "prot-exp75-cv1-1_5b-e1-lr3.5e-4-wd0p05-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-13",
+      "val_loss": 3.066227912902832,
+      "run": "prot-exp75-cv1-1_5b-e1-lr3.5e-4-wd0p1-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-13",
+      "val_loss": 3.062325954437256,
+      "run": "prot-exp75-cv1-1_5b-e1-lr3.5e-4-wd0p02-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-14",
+      "val_loss": 3.021347522735596,
+      "run": "prot-exp75-cv1-1_5b-e2-lr2.5e-4-wd0p05-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-14",
+      "val_loss": 3.000753879547119,
+      "run": "prot-exp75-cv1-1_5b-e2-lr3.5e-4-wd0p02-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-14",
+      "val_loss": 2.986337900161743,
+      "run": "prot-exp75-cv1-1_5b-e2-lr5e-4-wd0p1-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-14",
+      "val_loss": 2.981691837310791,
+      "run": "prot-exp75-cv1-1_5b-e2-lr5e-4-wd0p05-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-14",
+      "val_loss": 2.9786593914031982,
+      "run": "prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p05-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-14",
+      "val_loss": 2.969902515411377,
+      "run": "prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p1-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-17",
+      "val_loss": 2.968273162841797,
+      "run": "prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p2-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-18",
+      "val_loss": 2.9470419883728027,
+      "run": "prot-exp75-cv1-1_5b-e2-lr7e-4-wd0p4-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-19",
+      "val_loss": 2.942453622817993,
+      "run": "prot-exp75-cv1-1_5b-e4-lr1e-3-wd0p1-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-19",
+      "val_loss": 2.822943687438965,
+      "run": "prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p1-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-06-21",
+      "val_loss": 2.756602048873902,
+      "run": "prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-11",
+      "val_loss": 2.741849660873413,
+      "run": "plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v3",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-16",
+      "val_loss": 2.7212696075439453,
+      "run": "exp120-cv1-1_5b-orig-lr3e-4-e1-cos",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-19",
+      "val_loss": 2.7130589485168457,
+      "run": "prot-exp117-cv1-s02-1_5b-e8-lr3p162e-3-wd0p2-bs64-europe-west4",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-20",
+      "val_loss": 2.71122145652771,
+      "run": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs128-us-east5",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-22",
+      "val_loss": 2.7037086486816406,
+      "run": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-27",
+      "val_loss": 2.702478408813477,
+      "run": "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-31",
+      "val_loss": 2.691589832305908,
+      "run": "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-4-wd1p6-bs128-exp117-init-us-east5",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-07-31",
+      "val_loss": 2.6641790866851807,
+      "run": "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1",
+      "scale": "historical",
+      "converted": false
+    },
+    {
+      "date": "2026-08-09",
+      "val_loss": 2.629820637741089,
+      "run": "prot-exp199-cv1-s01-m1-p03-aug-us-east1",
+      "scale": "current",
+      "converted": true
+    },
+    {
+      "date": "2026-08-09",
+      "val_loss": 2.62571244720459,
+      "run": "prot-exp199-cv1-s01-m1-p03-base-us-east5",
+      "scale": "current",
+      "converted": true
+    },
+    {
+      "date": "2026-08-10",
+      "val_loss": 2.589490942993164,
+      "run": "prot-exp199-cw-cv1-s02-m1-p06-aug",
+      "scale": "current",
+      "converted": true
+    },
+    {
+      "date": "2026-08-12",
+      "val_loss": 2.5821161795043945,
+      "run": "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1",
+      "scale": "current",
+      "converted": true
+    },
+    {
+      "date": "2026-08-15",
+      "val_loss": 2.5579627085113525,
+      "run": "prot-exp199-cw-cv1-p06-cool-s01",
+      "scale": "current",
+      "converted": true
+    }
+  ]
+}

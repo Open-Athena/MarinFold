@@ -308,6 +308,124 @@ artifacts go to durable storage" rule from the HF bucket section
 applies — GCS is for the big stuff that wouldn't fit in the
 experiment dir.
 
+### CoreWeave RNO2A GPU cluster (`cw-rno2a`)
+
+MarinFold can also train on **GPU** via CoreWeave RNO2A (`cw-rno2a`, 512× H100,
+an iris cluster; config in marin `lib/iris/config/cw-rno2a.yaml`, runbook
+`lib/iris/docs/coreweave.md`). exp108 was the first MarinFold GPU run — its
+`experiments/exp108_.../README.md` has the recipe/runbook; the durable,
+cluster-general lessons are here:
+
+- **Two easy-to-miss launcher prereqs.** Beyond the kubeconfig
+  (`~/.kube/coreweave-iris-rno2a`, context `marin-rn02a_RNO2A`) and the
+  object-storage key (`CW_KEY_ID`/`CW_KEY_SECRET`, console → Object Storage):
+  `kubectl` must be **on `PATH`** (the launcher shells out to it for the
+  controller tunnel — match the cluster k8s version, currently v1.36.x; missing
+  it → `Could not connect to controller: … 'kubectl'`), and the experiment venv
+  needs **`marin-iris[controller]`** (missing it → `Install iris[controller] to
+  use CloudK8sService`).
+- **Storage is S3, not GCS.** CoreWeave AI Object Storage, bucket
+  `marin-us-east-02a`. From a workstation use `https://cwobject.com` with
+  **virtual-hosted addressing** (path-style is rejected — `PathStyleRequestNotAllowed`);
+  in-cluster jobs get creds + the LOTA endpoint (`http://cwlota.com`) injected by
+  iris. Task pods carry **one** endpoint/credential set — GCS is unreachable from
+  jobs, so stage inputs into the CoreWeave bucket first, under a single removable
+  top-level prefix (exp108 used `s3://marin-us-east-02a/MarinFold/`).
+- **Batch priority does NOT propagate to executor-spawned children.** `iris job
+  run --priority batch` sets only the *driver* band; the marin executor /
+  `remote()` submit child jobs (tokenize, training gang) with no band →
+  interactive. To run training at batch, dispatch it yourself as a
+  `fray.JobRequest(priority=3)` (see exp108 `dispatch_train.py`;
+  `PRIORITY_BAND_BATCH == 3`, forwarded verbatim by `fray/iris_backend.py`) — the
+  sanctioned way, consistent with "Never monkey-patch" above.
+- **A driver that submits child gangs must WAIT on them.** Gangs are *children*
+  of the driver job; if the driver exits, iris finalizes (kills) them.
+- **Multi-node GPU: reliable ceiling ≈ 4 nodes (as of 2026-07).** 1/2/4-node
+  gangs bootstrap and train; **8-node fails** — the JAX multi-host coordination
+  bootstrap aborts (~5 min in, `CoordinationServiceAgent::SetError`), reproduced
+  on a single isolated 8-node gang. Launch multiple concurrent gangs as
+  **separate, staggered driver jobs** (~90 s apart) — several gangs from one
+  driver collide on coscheduling/coordination. The likely (untried) >4-node fix
+  is the `NCCL_*` env grug forwards; exp108's dispatch forwards
+  `XLA_FLAGS`/`NCCL_`/`JAX_` from the driver but sets none.
+- **GPU env quirks.** `CUDA_ERROR_NOT_PERMITTED` cuMemCreate **FABRIC** warnings
+  are **benign** (the container lacks NVIDIA IMEX; XLA falls back — though this
+  also drops the NVLS collective fast path, hurting FSDP MFU). Transformer Engine
+  is **not** in the `--extra gpu` env, so levanter's default GPU NVTE attention
+  silently falls back to the vanilla O(seq²) kernel — set `attn_backend=JAX_FLASH`
+  (pallas flash, no TE dependency) for long sequences.
+- **Always pin + `uv.lock` marin.** The marin dev line moves daily and
+  periodically refactors its API (0.2.38 removed the old `marin.execution`
+  executor surface — `ExecutorStep`/`this_output_path`/`executor_main`/
+  `default_train`; the modern assembler is `marin.experiment.train.train_lm`).
+  An unpinned range that worked last month silently breaks; a committed `uv.lock`
+  is what saved exp67/exp85.
+- **Monitoring** (no reliable `-f` for scripting): `uv run iris
+  --cluster=cw-rno2a job list | grep <name>` and `… job logs <job> --max-lines N`
+  (filter `zephyr`/`aiobotocore`/`cuda_vmm` noise; a gang's own state line is
+  `…<name> <state>` with a **space** — sub-job lines have a trailing `/`).
+  `iris job stop <job>` to kill.
+
+#### Single-GPU inference fan-out (N independent shards, no gang)
+
+exp108 above is the *training-gang* path. A fan-out of independent 1×H100 jobs —
+batch scoring, rollout generation, any embarrassingly parallel inference — has a
+different set of sharp edges. Recipe and gotchas from exp82's re-scoring of the
+554-protein contact eval (`dispatch_rollout_eval_cw.py` +
+`score_rollout_worker_cw.py`; the same shape as exp159/exp163's generators):
+
+- **You can submit straight from the workstation — but not with
+  `current_client()`.** Off-cluster it finds no iris context and silently falls
+  back to `LocalClient`, which will try to run every "H100 job" on your box.
+  Build the iris-backed client explicitly over the CLI's controller tunnel:
+  `open_iris_client(cluster_name="cw-rno2a", workspace=None)` (from
+  `iris.cli.connect`) → `FrayIrisClient.from_iris_client(...)`. Worth doing: the
+  shards become **root** jobs, so they survive the launcher exiting and the
+  "driver must wait on its children" rule above does not apply — and the launcher
+  directory then needs no marin/fray pyproject and no pod-side `uv sync`.
+- **With no workspace bundle you must disable iris's setup step.** It runs
+  `uv sync` in `$IRIS_WORKDIR` and dies with ``No `pyproject.toml` found`` before
+  your entrypoint ever runs. Pass `create_environment(..., setup_scripts=[])`.
+  (In-cluster drivers don't hit this — children inherit the parent's bundle,
+  which is also why exp163 tolerated a full marin sync inside its vLLM image.)
+- **In a foreign container, install extra libraries with `--no-deps`.** Plain
+  `pip install marinfold` repins `transformers` out from under the image's vLLM.
+  `--no-deps` plus `fsspec` + `numpy` is enough for the whole `contacts_v1`
+  document generator.
+- **Use fsspec for all S3 — not pyarrow's own filesystem and not the `aws`
+  CLI.** iris injects CoreWeave's endpoint and credentials as an `FSSPEC_S3`
+  blob that only fsspec/s3fs reads; pyarrow's native S3 goes to AWS, and the CLI
+  isn't on `PATH` in most vendor images. Write parquet through
+  `fsspec.open(uri, "wb")`.
+- **Staging the model from the workstation is the whole critical path.** The
+  uplink is ~2.5 MB/s (asymmetric); reading the same object back *in-cluster* is
+  ~500 MB/s (5.5 GiB staged to a pod in 11 s). So: convert fp32 exports to
+  **bf16 before uploading** (halves it; vLLM casts at load anyway, so the weights
+  are identical), and prefer a checkpoint already on S3. Pod start (image pull +
+  boot) is ~2.5 min on top.
+- **Co-located pods share the node's network namespace — give each one a
+  kernel-assigned port.** `with_gpu(count=1)` packs several pods per node, and a
+  server that binds a fixed default port (vLLM's engine-core `TCPStore`, port
+  29500-ish) will lose to its neighbours with
+  `DistNetworkError: … EADDRINUSE`. It is intermittent: we lost 2 of 12 shards on
+  one run. Ask the kernel for a free port in the bootstrap:
+  ```bash
+  export VLLM_PORT=$("$PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
+  ```
+  **Do not** derive it from `$$` or `$(hostname)`. Both look unique and are not:
+  bash is **pid 1** in the container and the hostname is the **node**, so every
+  co-located pod computes the *same* port and the collision goes from
+  intermittent to certain — that mistake took a run from 2/12 failures to 8/12.
+- **`job.wait()` raises on a failed job**, which abandons every remaining wait and
+  reports only the first failure. Catch per job, or a second dead shard stays
+  invisible until you diff the output prefix.
+- **Shard by interleaving a sorted work list** (`idx % n`), not by contiguous
+  blocks — one shard that collects all the long sequences sets the wall clock for
+  the whole fan-out.
+- **Throughput datapoint** (Qwen3 1.5B, contacts-v1 rollouts, vLLM bf16):
+  ~25,000 tok/s per H100 vs ~4,000 on a workstation RTX A5000. 12 shards turn an
+  80-minute single-GPU pass into ~4 minutes of compute.
+
 ### Run history
 
 **Every W&B-logged run gets a history file under `history/runs/`.**

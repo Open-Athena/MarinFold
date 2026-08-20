@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Per protein: change in first-candidate F1 vs candidate count. Better-and-fewer is the plurality quadrant at 41%, and the trade is weak per protein (r = -0.20) even though both means shift."
+}

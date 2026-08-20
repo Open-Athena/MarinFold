@@ -1,8 +1,29 @@
 {
   "script": "plot_where_we_stand.py",
   "args": [
-    "--precision-csv",
-    "_scratch/contact_precision_with_rollout.csv"
+    "--exp89-csv",
+    "../exp89_evals_contacts_v1_model_on_eval_set/data/contact_precision_all.csv",
+    "--rollout-csv",
+    "data/where_we_stand_rows.csv.gz",
+    "../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz"
   ],
-  "caption": "Contact R-precision (all sep>=6, n=554): MarinFold #61 n=100 rollouts (rollout+resample+tiebreak) vs Protenix-v2 / ESMFold / ESMFold2."
+  "means": {
+    "MarinFold #61\nn=100 rollouts": 0.4245291213628376,
+    "MarinFold #117\nn=100 rollouts": 0.5349679329383857,
+    "MarinFold #166 best\nn=100 rollouts": 0.5617738681420615,
+    "Protenix-v2 \u00b7 SS": 0.6031578401726864,
+    "Protenix-v2 \u00b7 MSA": 0.8118214040198143,
+    "ESMFold": 0.7553286610904633,
+    "ESMFold2": 0.7862849202602139
+  },
+  "n": {
+    "MarinFold #61\nn=100 rollouts": 554,
+    "MarinFold #117\nn=100 rollouts": 554,
+    "MarinFold #166 best\nn=100 rollouts": 554,
+    "Protenix-v2 \u00b7 SS": 554,
+    "Protenix-v2 \u00b7 MSA": 554,
+    "ESMFold": 554,
+    "ESMFold2": 554
+  },
+  "caption": "Contact R-precision (all sep>=6, n=554): MarinFold rollout+resample (n=100, temperature 1.0 / top-p 0.95 / no top-k) for the #61/#75 model, the #117 sweep best and the current best #166, vs Protenix-v2 / ESMFold / ESMFold2."
 }

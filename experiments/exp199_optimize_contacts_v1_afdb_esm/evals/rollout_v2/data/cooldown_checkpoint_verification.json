@@ -1,0 +1,96 @@
+{
+  "checkpoint": {
+    "label": "cw_p06_cool_step290400",
+    "run_name": "prot-exp199-cw-cv1-p06-cool-s01",
+    "step": 290400
+  },
+  "coreweave_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_continue_contacts_v1_cw/checkpoints/protein/prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400",
+  "files": [
+    {
+      "digest": "d8e904f8170ddf00d74c864f31d258a4",
+      "digest_kind": "s3-etag",
+      "name": "config.json",
+      "size": 1557
+    },
+    {
+      "digest": "c4685b3b45694c66418a6f1ff779af91-95",
+      "digest_kind": "s3-etag",
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "3788cd21299125acfe3e2d04e91e84e0-18",
+      "digest_kind": "s3-etag",
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "bc0a5fd2c9aae096abae4caf9040c79c",
+      "digest_kind": "s3-etag",
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "c4b3a16978e30eb150cca4fd8934b6ae",
+      "digest_kind": "s3-etag",
+      "name": "tokenizer.json",
+      "size": 64407
+    },
+    {
+      "digest": "336f4e2ca951fa13a20cb1c4b68b2040",
+      "digest_kind": "s3-etag",
+      "name": "tokenizer_config.json",
+      "size": 290
+    }
+  ],
+  "source": {
+    "kind": "coreweave-s3",
+    "uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_continue_contacts_v1_cw/checkpoints/protein/prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400"
+  },
+  "verification": "matched exact S3 object sizes and ETags; no checkpoint copy was created",
+  "verified_at": "2026-08-15T12:41:53.020016+00:00",
+  "verified_files": [
+    {
+      "digest": "d8e904f8170ddf00d74c864f31d258a4",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 4.500150680541992e-06,
+      "name": "config.json",
+      "size": 1557
+    },
+    {
+      "digest": "c4685b3b45694c66418a6f1ff779af91-95",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 2.020038664340973e-06,
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "3788cd21299125acfe3e2d04e91e84e0-18",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 8.628703653812408e-07,
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "bc0a5fd2c9aae096abae4caf9040c79c",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 5.252659320831299e-07,
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "c4b3a16978e30eb150cca4fd8934b6ae",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 6.370246410369873e-07,
+      "name": "tokenizer.json",
+      "size": 64407
+    },
+    {
+      "digest": "336f4e2ca951fa13a20cb1c4b68b2040",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 8.638016879558563e-07,
+      "name": "tokenizer_config.json",
+      "size": 290
+    }
+  ]
+}

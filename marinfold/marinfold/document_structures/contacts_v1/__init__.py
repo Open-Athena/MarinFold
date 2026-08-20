@@ -52,15 +52,24 @@ from .inference import (
     structure_from_sequence,
 )
 from .parse import (
+    ANALYZED_ROW_COLUMNS,
     DEFAULT_CIF_COLUMN,
     DEFAULT_ID_COLUMN,
     AnalyzedStructure,
     RawContact,
     ResidueInfo,
     analyze_structure,
+    analyzed_from_row,
+    analyzed_to_row,
     iter_analyzed_structures,
     iter_parquet_analyzed_structures,
     residues_from_sequence,
+)
+from .read import (
+    FoldResult,
+    fold_statements,
+    iter_structure_statements,
+    live_contacts,
 )
 from .plots import plot_evaluate_pdf, plot_infer_pdf
 from .vocab import (
@@ -72,6 +81,7 @@ from .vocab import (
 )
 
 __all__ = [
+    "ANALYZED_ROW_COLUMNS",
     "CONTEXT_LENGTH",
     "DEFAULT_CIF_COLUMN",
     "DEFAULT_ID_COLUMN",
@@ -81,6 +91,7 @@ __all__ = [
     "AnalyzedStructure",
     "ContactStructure",
     "EmittedContact",
+    "FoldResult",
     "GenerationConfig",
     "GenerationResult",
     "InferenceConfig",
@@ -88,13 +99,18 @@ __all__ = [
     "ResidueInfo",
     "all_domain_tokens",
     "analyze_structure",
+    "analyzed_from_row",
+    "analyzed_to_row",
     "build_document",
     "evaluate",
+    "fold_statements",
     "generate_document",
     "generate_documents",
     "generate_sequence_only_document",
     "iter_analyzed_structures",
     "iter_parquet_analyzed_structures",
+    "iter_structure_statements",
+    "live_contacts",
     "plot_evaluate_pdf",
     "plot_infer_pdf",
     "predict",

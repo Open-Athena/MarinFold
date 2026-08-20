@@ -334,6 +334,127 @@ contacts are lower-confidence and can be correlated noise that pollutes the top-
 not worth 2–4× the generation cost. The remaining lever for top-K precision is a
 stronger base model, not the decoder.
 
+### 2026-07-27 refresh: drop top-k, add Eric's #117 best, re-score on CoreWeave
+
+Two changes to the "where we stand" figure, both re-run from scratch so every
+MarinFold bar shares one recipe:
+
+**1. `top_k` is off.** The 50 was never a decision — it is the HuggingFace
+`generate` default, baked into the exp75 export's `config.json` (no
+`generation_config.json`), and it silently rode along into every rollout eval.
+Truncated sampling renormalizes over the kept tokens, which raises `<end>` and
+shortens documents. Paired over all 554 proteins (`contacts_per_rollout.py`,
+counting from the saved vote matrices):
+
+| sampling | contacts/rollout | vs GT (165.2) | R (all) | AUC (all) | R (long) |
+|---|---:|---:|---:|---:|---:|
+| T 1.0 / p 0.95 / **k 50** | 110.3 | 0.67× | 0.4131 | 0.8808 | 0.3511 |
+| T 1.0 / p 0.95 / **no k** | 158.2 | **0.96×** | 0.4245 | 0.9010 | 0.3656 |
+
+The count shortfall [#142](https://github.com/Open-Athena/MarinFold/issues/142)
+measured is therefore mostly decoder-induced, but the accuracy it costs is small
+(+0.011 R, +0.020 AUC) — consistent with #142's conclusion that the suppressed
+contacts were low-confidence ones. Budget is `6L+128` (exp142's), not the old
+`4L+64`: untruncated documents are long enough that the old cap would bind.
+`unfinished` was 0/55,400 in every pass.
+
+**Model vs sampling — the full 2×2** (both checkpoints × both recipes, 554
+proteins each, so the decomposition is measured rather than assumed):
+
+| R-precision (all) | top-k 50 | no top-k | top-k effect |
+|---|---:|---:|---:|
+| #61 (2.7566) | 0.4131 | 0.4245 | +0.0115 |
+| #117 best (2.7037) | 0.5279 | 0.5350 | +0.0070 |
+| **model effect** | **+0.1149** | **+0.1104** | |
+
+Of the +0.1219 total from the previously published condition to the new headline,
+**~91% is the model and ~7% the sampling change**, with a small negative
+interaction (−0.004). The interaction has a mechanism: the better model already
+under-generates less (123.1 contacts/rollout under top-k, 0.745× GT, vs 110.3 /
+0.667× for #61), so it has less to gain from untruncating — 0.978× vs 0.958× of GT
+once top-k is off. Long-range R behaves the same (89–94% model).
+
+**AUC is the exception**: sampling accounts for ~28–39% of its +0.051 gain
+(#61 0.8808→0.9010, #117 0.9177→0.9318). That fits — untruncating populates the
+low-vote tail, which is exactly the region AUC integrates over and which the
+pairwise tie-break used to have to repair.
+
+**2. The tie-break is dropped from the headline recipe.** It moves R-precision by
+0.0007 (0.41498 → 0.41431 in the run above this section) and exists only to
+rescue AUC from the 0-vote tie mass. With top-k off, far fewer pairs tie at zero
+and the vote score ranks the tail by itself — plain rollout+resample AUC is
+**0.9010**, already above the 0.898 the tie-break used to buy. So the second
+inference pass is no longer worth its cost.
+
+**Validation.** The top-k-50 row above reproduces this experiment's own published
+HF-transformers number (0.4150 R / 0.8814 AUC / 0.3550 long R) to within 0.004 on
+a different GPU, a different vLLM, and a different scoring harness. Separately,
+the exp75 no-top-k pass was run **twice end to end** — 12 CoreWeave H100s
+(vLLM 0.9.2) and one workstation A5000 (vLLM 0.11.0) — over all 554 proteins:
+
+| | R (all) | AUC (all) | R (long) |
+|---|---:|---:|---:|
+| CoreWeave H100 / vLLM 0.9.2 | 0.4245 | 0.9010 | 0.3656 |
+| local A5000 / vLLM 0.11.0 | 0.4260 | 0.9011 | 0.3667 |
+| Δ (per-protein r) | −0.0014 (0.992) | −0.0002 (0.982) | −0.0011 (0.985) |
+
+i.e. the two stacks agree well inside the Monte-Carlo noise of 100 sampled
+rollouts. Both report 0/55,400 rollouts hitting the token cap.
+
+**Result — all six predictors, exp89 metrics, n=554:**
+
+| predictor | R (all) | R (long) | AUC (all) | AUC (long) |
+|---|---:|---:|---:|---:|
+| MarinFold #61 (exp75 E8, 2.7566) | 0.425 | 0.366 | 0.901 | 0.874 |
+| **MarinFold #117 best (2.7037)** | **0.535** | **0.485** | **0.932** | **0.913** |
+| Protenix-v2 · single-seq | 0.603 | 0.572 | 0.830 | 0.815 |
+| Protenix-v2 · MSA | 0.812 | 0.795 | 0.941 | 0.935 |
+| ESMFold | 0.755 | 0.732 | 0.901 | 0.892 |
+| ESMFold2 | 0.786 | 0.769 | 0.923 | 0.916 |
+
+A 0.053-nat eval-loss improvement (2.7566 → 2.7037,
+[#117](https://github.com/Open-Athena/MarinFold/issues/117) run
+`prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4`, step 35679)
+buys **+0.11 R-precision** — the loss→accuracy slope has not flattened.
+
+Note the **AUC** column: at 0.932 (all) MarinFold is now second only to
+Protenix-v2 *with an MSA*, and above ESMFold2. The model ranks the whole contact
+map about as well as a structure predictor; what it lacks is the ability to
+concentrate confidence into the top L / top R pairs. That is a different failure
+than "doesn't know the fold", and points at calibration rather than capacity.
+
+> **The committed figure now has a third MarinFold bar.** The table above is
+> this session's record and is left as written. `plot_where_we_stand.py` has
+> since been re-run with a second rows CSV to add
+> [#166](https://github.com/Open-Athena/MarinFold/issues/166) (R 0.562, AUC
+> 0.939 — the current best, and the project README's headline), whose
+> per-protein rows live in
+> [`../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz`](../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz).
+> `--rollout-csv` takes several paths for exactly this; the script's docstring
+> says what to do when a new model takes the frontier. The longitudinal version
+> of this comparison is
+> [exp180](../exp180_evals_contacts_v1_progress_over_time/README.md).
+
+**Pipeline** — [`score_rollout_vllm.py`](score_rollout_vllm.py) (single local GPU)
+or [`dispatch_rollout_eval_cw.py`](dispatch_rollout_eval_cw.py) +
+[`score_rollout_worker.py`](score_rollout_worker.py) (12 single-H100
+CoreWeave shards at batch priority, ~4 min/checkpoint vs ~80 min) →
+[`fetch_cw_scores.py`](fetch_cw_scores.py) →
+[`build_rollout_rows.py`](build_rollout_rows.py) (exp89's metric code, verbatim) →
+[`plot_where_we_stand.py`](plot_where_we_stand.py). Per-protein rows in
+[`data/where_we_stand_rows.csv.gz`](data/where_we_stand_rows.csv.gz), aggregate in
+[`data/where_we_stand_summary.csv`](data/where_we_stand_summary.csv). The
+CoreWeave fan-out gotchas are recorded in the root
+[`AGENTS.md`](../../AGENTS.md#single-gpu-inference-fan-out-n-independent-shards-no-gang).
+
+`score_rollout_worker.py` is **accelerator-agnostic** — it does all of its I/O
+through fsspec, so the same file runs against `s3://` on a CoreWeave H100 and
+`gs://` on a marin TPU slice. exp169 uses it on `v5p-8` (see
+[`../exp169_evals_selected_checkpoints_117_146/dispatch_eval_tpu.py`](../exp169_evals_selected_checkpoints_117_146/dispatch_eval_tpu.py)),
+which is what lets a run scheduled on whichever accelerator has capacity be
+compared against the CoreWeave numbers above. (It was `score_rollout_worker_cw.py`
+until exp169; the rename came with dropping the one hard-coded `s3://`.)
+
 ## Conclusion
 
 **Headline (strong model).** Re-running the inference search on the tuned #61/#75

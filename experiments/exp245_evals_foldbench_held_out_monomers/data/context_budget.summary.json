@@ -1,0 +1,43 @@
+{
+  "context": 8192,
+  "recipe": "min(8192 - prompt, 6L + 128)",
+  "n": 334,
+  "n_gt_does_not_fit": 0,
+  "n_not_scorable": 1,
+  "not_scorable": [
+    {
+      "eval_set": "eval-test",
+      "stem": "8uxt_A",
+      "L": 1596,
+      "n_gt_contacts": 3809,
+      "n_contacts_emitted": 1664,
+      "gt_statement_tokens": 4993,
+      "max_tokens": 4993,
+      "document_truncated": 1
+    }
+  ],
+  "context_bound": 1,
+  "by_set": {
+    "eval-denovo": {
+      "n": 19,
+      "n_gt_does_not_fit": 0,
+      "n_not_scorable": 0,
+      "min_headroom_ratio": 2.136,
+      "median_headroom_ratio": 3.059
+    },
+    "eval-test": {
+      "n": 218,
+      "n_gt_does_not_fit": 0,
+      "n_not_scorable": 1,
+      "min_headroom_ratio": 1.0,
+      "median_headroom_ratio": 2.2714999999999996
+    },
+    "eval-val": {
+      "n": 97,
+      "n_gt_does_not_fit": 0,
+      "n_not_scorable": 0,
+      "min_headroom_ratio": 1.578,
+      "median_headroom_ratio": 2.458
+    }
+  }
+}

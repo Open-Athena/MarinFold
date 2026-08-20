@@ -20,3 +20,12 @@ def test_shared_backend_default_dtype_stays_safe_for_mps_models() -> None:
         "device": None,
         "tail_batch_size": 64,
     }
+
+
+def test_transformers_reexports_shared_tokenizer_loader() -> None:
+    """The backend still exposes ``_load_tokenizer`` for existing callers,
+    now aliased to the shared implementation."""
+    from marinfold.inference._tokenizer import load_tokenizer
+    from marinfold.inference._transformers import _load_tokenizer
+
+    assert _load_tokenizer is load_tokenizer

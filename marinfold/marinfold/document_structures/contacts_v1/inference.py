@@ -59,7 +59,6 @@ is backend-agnostic (vLLM / transformers / MLX).
 """
 
 import math
-import re
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
@@ -72,6 +71,7 @@ import numpy as np
 from marinfold import Backend, EvalResult, load_backend
 
 from .generate import GenerationConfig, build_document
+from .read import live_contacts
 from .parse import (
     RawContact,
     ResidueInfo,
@@ -115,9 +115,8 @@ _RANGES: dict[str, tuple[int, int | None]] = {
 # log finite (such pairs simply rank last).
 _PROB_FLOOR = 1e-30
 
-# Parses `<contact> <p_i> <p_j>` triples out of a sampled rollout completion
-# (one contacts-v1 contact statement). Mirrors exp82's CONTACT_RE.
-_CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
+# Parsing a rollout completion's structure section back into contacts (with
+# retraction honoured) lives in ``read.py`` (``live_contacts``).
 
 # Rollout generation budget: 4·L + 64 tokens. A contacts-v1 protein emits well
 # under L contacts (sep >= 6), each a 3-token statement, so this is generous
@@ -299,7 +298,10 @@ def _pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
 def _sym_from_fwd(fwd: np.ndarray) -> np.ndarray:
     """Symmetrized geo-mean log-score ``0.5·(fwd + fwd.T)``.
 
-    The pairwise *ranking* score, and the key that breaks rollout's vote ties.
+    Used only as the key that breaks rollout's large zero-vote mass. The
+    pairwise readout ranks by ``P(contact)`` (:func:`_pcontact_from_fwd`)
+    instead; the two orderings differ for orientation-asymmetric pairs but
+    agree with the exp82/exp89 sym-ranked numbers within backend noise.
     """
     return 0.5 * (fwd + fwd.T)
 
@@ -418,9 +420,14 @@ def _rollout_score_matrix(
     votes = np.zeros((seq_len, seq_len), dtype=np.float64)
     for token_ids, pos_to_seq in zip(completions, position_maps, strict=True):
         text = tokenizer.decode(token_ids, skip_special_tokens=False)
+        # Vote only the contacts still LIVE at the end of the rollout: a
+        # <retract> takes its pair back out (read.py folds the edit list).
+        # Today's models never emit <retract>, so this is exactly the set of
+        # emitted pairs — byte-identical to the old scan — and is ready for
+        # retraction-trained models (issue #158).
         seen: set[tuple[int, int]] = set()
-        for a, b in _CONTACT_RE.findall(text):
-            ia, ib = pos_to_seq.get(int(a)), pos_to_seq.get(int(b))
+        for a, b in live_contacts(text):
+            ia, ib = pos_to_seq.get(a), pos_to_seq.get(b)
             if ia is None or ib is None or ia == ib:
                 continue
             lo, hi = (ia, ib) if ia < ib else (ib, ia)

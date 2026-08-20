@@ -1,0 +1,31 @@
+[project]
+name = "exp180-evals-contacts-v1-progress-over-time"
+version = "0.1.0"
+description = "Best contacts-v1 model to date on R-precision and validation loss — issue #180. No accelerator; reads W&B and the exp82/89/120/160/169 result CSVs."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # The only network dependency: the val-loss cloud is pulled live from
+    # open-athena/MarinFold and eric-czech/marin. Everything else in this
+    # experiment reads CSVs already committed elsewhere in experiments/.
+    "wandb>=0.19",
+    "pandas>=2.2",
+    "numpy",
+    # pandas delegates Spearman to scipy (plot_vs_protenix.py).
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

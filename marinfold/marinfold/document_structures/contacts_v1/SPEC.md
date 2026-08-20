@@ -59,11 +59,13 @@ From the contacts that pass this threshold, we include the N with the highest co
 
 Note that the contact matrix is symmetric. We randomize the order that each contact pair is given in: if there is a contact between XXX and YYY, with 50% probability we output `<contact> <pXXX> <pYYY>` and the other half of the time we output `<contact> <pYYY> <pXXX>`. Each contact is only specified once, i.e. once we emit the contact between XXX and YYY we will never emit it again in either order.
 
+A statement may also be a **retraction**, `<retract> <pXXX> <pYYY>`, which takes back a previously emitted contact (see *Retraction* under Implementation notes). In documents that contain retractions the structure section is an **ordered edit list** rather than an order-free set — a retract refers to prior stream state — so the "random order" property above holds only for documents with no retractions (which is all documents the generator produces; retraction documents are synthesised separately).
+
 ### Document length
 Our max document length is 8192 tokens. N (the number of contacts included) is the number of the strongest *above-threshold* contacts whose `<contact>` statements fit in the budget remaining after the sequence section. If the protein has more above-threshold contacts than fit, the weakest of them are dropped (truncation); if it has fewer, all above-threshold contacts are included and the document is shorter than the budget.
 
 ### Additional tokens
-For the vocab, also include as additional tokens all the tokens in the contacts-and-distances-v1 [vocab](https://github.com/Open-Athena/MarinFold/blob/main/marinfold/marinfold/document_structures/contacts_and_distances_v1/vocab.py). We may fine tune on documents like that later. Also include this additional token: `<think>`
+For the vocab, also include as additional tokens all the tokens in the contacts-and-distances-v1 [vocab](https://github.com/Open-Athena/MarinFold/blob/main/marinfold/marinfold/document_structures/contacts_and_distances_v1/vocab.py). We may fine tune on documents like that later. Also include these additional tokens: `<think>` and `<retract>` (the latter appended last in the vocab; see *Retraction*).
 
 ---
 
@@ -100,14 +102,17 @@ overrides the spec's own token spellings:
   uppercase AAs shares amino-acid embeddings with contacts-and-distances-v1.
 - **`<end>` is the shared contacts-and-distances-v1 token** too.
 
-The only tokens contacts-v1 mints itself are `<contacts-v1>`, `<n-term>`,
-`<c-term>`, `<contact>`, and `<think>` — five tokens with no
-contacts-and-distances-v1 analog. `<think>` is a *pause* token that is
-emitted only under `GenerationConfig(think=True)` (see *Think (pause)
-tokens* below); the default generator does not emit it, but it has always
-been reserved in the vocab so no tokenizer change was needed to add the
-think path. (The original example's `<c-term> <pos 22>` space typo is
-emitted as `<c-term> <p22>`.)
+The tokens contacts-v1 mints itself are `<contacts-v1>`, `<n-term>`,
+`<c-term>`, `<contact>`, and `<think>` — five tokens (in `NATIVE_TOKENS`)
+with no contacts-and-distances-v1 analog — plus two trailing tokens
+appended after the shared block: `<contacts-v1.sequence_only>` (the
+sequence-only doc type) and `<retract>` (retraction; see *Retraction*).
+`<think>` is a *pause* token that is emitted only under
+`GenerationConfig(think=True)` (see *Think (pause) tokens* below); the
+default generator does not emit it, but it has always been reserved in the
+vocab so no tokenizer change was needed to add the think path. (The
+original example's `<c-term> <pos 22>` space typo is emitted as
+`<c-term> <p22>`.)
 
 ### Points the spec left open (implementation choices)
 
@@ -228,6 +233,79 @@ before this path existed (see *Determinism*). It is inert on the
   them. (Minting a `<contacts-v2>` doc type was considered and rejected.)
 - **Metadata.** `think_tokens` records how many `<think>` tokens the
   document actually contains (0 when `think=False`).
+
+### Retraction (`<retract>`, issue #158)
+
+A `<retract> <pXXX> <pYYY>` statement takes back a previously emitted
+`<contact> <pXXX> <pYYY>`. It lets a document (and a model trained on such
+documents) revise an earlier decision partway through the structure section
+— the basis for the backtracking corpus (#159) and training (#160).
+
+- **Semantics — an ordered fold.** The structure section is read as an edit
+  list applied in stream order: `<contact>` adds a pair, `<retract>` removes
+  a currently-live pair, and the document's contact set is whatever is
+  **live at `<end>`**. This is the one place contacts-v1's "no meaningful
+  ordering" property is relaxed: a retract references prior state, so order
+  matters *within a retraction-bearing document*. Documents with no
+  retractions keep the original order-free semantics and fold to exactly the
+  set of pairs they emitted. The canonical implementation is `read.py`
+  (`live_contacts` / `fold_statements`); `inference.py`'s rollout readout
+  uses it, so a retraction-trained model is scored on its live set.
+- **Orientation.** Pairs are matched by their sorted `(min, max)` position
+  pair, so a retract matches its contact regardless of either statement's
+  coin-flipped orientation.
+- **Malformed edit lists.** `read.py` tolerates (for robustness to model
+  noise at inference) but *counts*: a retract of a non-live pair (never
+  emitted, or already retracted) is a no-op; a contact re-asserting a
+  previously retracted pair brings it back (a re-emit); a contact for an
+  already-live pair is a redundant restatement. Authored corpora are
+  expected to have none of these (all counters zero).
+- **Vocab.** `<retract>` is minted by contacts-v1 but, like
+  `<contacts-v1.sequence_only>`, kept out of `NATIVE_TOKENS` and **appended
+  last** so every pre-existing token id is unchanged (append-only); an
+  existing checkpoint only grows its embedding by one row. The
+  contacts-and-coordinates-v1 format freezes its inherited contacts-v1 block
+  at the pre-retraction 2844 tokens and does **not** carry `<retract>`, so
+  no coordinate-format id moves.
+- **Generation.** The `contacts-v1` generator (`generate.py`) never emits
+  `<retract>` — output is byte-identical to before this token existed.
+  Retraction documents are synthesised by the model-in-the-loop corpus job
+  (#159), not by `build_document`.
+
+### Retraction mode (`<contacts-v1.backtracking>`, issue #175)
+
+A **variant doc type**, swapped in as token 0, declaring that a document *may*
+contain `<retract>` statements. It changes nothing else — the statements,
+sections and fold are identical.
+
+- **Why.** #160 trained on a 50:50 mixture of retraction-bearing and clean
+  documents that began with the *identical* prefix, and 20.1% of the
+  retraction half happened to contain no `<retract>` at all, so a fifth of it
+  was indistinguishable in the body too. A model in that position must
+  marginalise over "may I take this back later?" at every step. Measured
+  consequences: it retracted on only 43% of rollouts, reached only 52% of the
+  achievable enrichment headroom, and — isolated by a readout ablation — lost
+  **0.0251 R-precision in emission quality alone**, before any retraction was
+  honoured. In retraction mode the optimal emission policy is more
+  speculative; with no marker that speculativeness leaks into clean
+  generation.
+- **Semantics.** The marker is a *mode declaration*, not a guarantee: a
+  `<contacts-v1.backtracking>` document may contain zero retractions. Corpora
+  should mark by **which generator produced the document**, not by whether it
+  happens to contain a `<retract>` — marking by content would instead teach
+  "this token implies a retraction follows", which is a different target and
+  destroys the token's use as a mode switch.
+- **Vocab.** Minted by contacts-v1 and, like `<contacts-v1.sequence_only>` and
+  `<retract>`, kept out of `NATIVE_TOKENS` and **appended last** — every
+  pre-existing id unchanged, one new embedding row (contacts-v1 2847 → 2848).
+  Both coordinate supersets exclude it from their inherited block and
+  re-append it after their own native block, exactly as they do for
+  `<retract>`: inheriting it inline would shove the whole xyz/crop block up by
+  one id and desync the two formats (crops 3849 → 3850).
+- **Generation.** `GenerationConfig(backtracking=True)` swaps token 0 and
+  nothing else; with the default `False` output is byte-identical to before.
+  Mutually exclusive with `sequence_only` (no structure section to retract
+  from).
 
 ### Metadata tracked (beyond the spec)
 

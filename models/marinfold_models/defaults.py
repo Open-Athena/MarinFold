@@ -1,427 +1,223 @@
-# Copyright The Marin Authors
+# Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 #
-# Vendored (and trimmed) from marin/experiments/defaults.py on the
-# protein-training-1b branch. Only the protein-training surface area is
-# kept: default_tokenize, default_train, and the helpers they call.
-# Stripped: default_download, default_sft, default_dpo, the in-process
-# training entry point, the default Paloma + lm-eval-harness validation
-# wiring.
+# A StepContext-free training-config builder for MarinFold, modelled on
+# modern marin's ``marin.experiment.train.train_lm`` (`build_config` closure).
 #
-# Marin packages its `experiments/` tree as the `marin-root` distribution
-# but only `marin` is on the wheel mirror we consume; hence the vendor.
+# marin 0.2.38 refactored its execution framework: the old executor surface
+# (``ExecutorStep`` / ``this_output_path`` / ``executor_main`` /
+# ``versioned`` / ``ensure_versioned`` / ...) is gone, and ``marin.experiment
+# .train.train_lm`` is now the blessed training assembler. But that assembler
+# dispatches its Fray job WITHOUT a priority band (→ interactive), which
+# MarinFold's #108 batch-priority requirement forbids. So instead of returning
+# a lazy ``ArtifactStep`` whose ``build_config(ctx)`` needs a ``StepContext``,
+# this module exposes a plain function that assembles a concrete
+# ``TrainLmOnPodConfig`` from ordinary arguments — the caller then submits it
+# itself as a ``fray.types.JobRequest(priority=...)`` (see exp108's
+# ``dispatch_train.py``).
+#
+# The mesh / precision / checkpointer / trainer wiring reproduces
+# ``train_lm.build_config`` field-for-field; the only differences are:
+#   * ``output_path`` is a CONCRETE string (used for both ``replicate_path`` and
+#     ``TrainLmOnPodConfig.output_path``) instead of ``ctx.output_path``;
+#   * ``data`` is a levanter ``LmDataConfig`` passed in directly instead of
+#     being assembled via ``mixture(ctx, ...)``;
+#   * the optimizer is the caller's responsibility (passed in), not defaulted.
 
-import dataclasses
 import logging
-import os
 from collections.abc import Sequence
 from datetime import timedelta
 
 import jmp
-from fray import ResourceConfig
 from haliax.partitioning import ResourceAxis
-from haliax.quantization import QuantizationConfig
+# NB: import from the DEFINING submodule, not the package. levanter 1.2 /
+# marin 0.2.57 turned `levanter.data.text` and `levanter.optim` into lazy
+# plugin registries with empty __init__s, so `from levanter.data.text import
+# LmDataConfig` and `from levanter.optim import OptimizerConfig` now raise.
+from levanter.adaptor import NoAdaptorConfig
 from levanter.checkpoint import CheckpointerConfig
-from levanter.data.text import (
-    LmDatasetFormatBase,
-    LMMixtureDatasetConfig,
-    TextLmDatasetFormat,
-)
+from levanter.data.text.datasets import LmDataConfig
 from levanter.eval_harness import LmEvalHarnessConfig
 from levanter.main.train_lm import TrainLmConfig
 from levanter.models.lm_model import LmConfig
-from levanter.optim import AdamConfig
-from levanter.optim.model_averaging import EmaModelAveragingConfig
-from levanter.schedule import BatchSchedule
+from levanter.optim.config import OptimizerConfig
 from levanter.tracker.wandb import WandbConfig
 from levanter.trainer import TrainerConfig
-from levanter.utils import fsspec_utils
 from levanter.utils.mesh import MeshConfig
 from marin.evaluation.evaluation_config import EvalTaskConfig, convert_to_levanter_task_config
-# Import the version/path helpers from the ``marin.execution`` package root
-# rather than the ``.executor`` submodule. Current marin (0.99.dev2026xxxx)
-# only re-exports ``versioned`` / ``ensure_versioned`` / ``this_output_path`` /
-# ``output_path_of`` from ``marin.execution.types`` via the package ``__init__``;
-# importing them from ``.executor`` (as the original vendored copy did) now
-# raises ImportError. The package root is the stable public surface.
-from marin.execution import (
-    ExecutorStep,
-    InputName,
-    VersionedValue,
-    ensure_versioned,
-    this_output_path,
-    unwrap_versioned_value,
-    versioned,
-)
-from marin.execution.remote import remote
-from marin.processing.tokenize import (
-    HfDatasetSpec,
-    TokenizeConfig,
-    lm_data_config,
-    tokenize,
-)
-from marin.processing.tokenize.tokenize import HfTokenizeConfig
-from marin.training.training import TrainLmOnPodConfig, run_levanter_train_lm
-
-from marinfold_models.simple_train_config import SimpleTrainConfig
+from marin.training.training import TrainLmOnPodConfig
 
 logger = logging.getLogger(__name__)
 
+# Compute in bf16, keep master params + optimizer state in f32. The universal
+# marin precision policy (see marin.experiment.train.MARIN_PRECISION).
+MARIN_PRECISION = "p=f32,c=bfloat16"
 
-HF_BUCKET_URI_PREFIX = "hf://buckets/"
-HF_BUCKET_PATH_PREFIX = "buckets/"
+# The marin token axis maps onto the data-parallel mesh. Hardware plumbing, not
+# an experiment choice: how the sequence axis is laid out across the pod.
+_TOKEN_AXES = (ResourceAxis.REPLICA_DCN, ResourceAxis.REPLICA, ResourceAxis.DATA)
 
-
-def _is_hf_bucket_path(path: str) -> bool:
-    return path.startswith(HF_BUCKET_URI_PREFIX) or path.startswith(HF_BUCKET_PATH_PREFIX)
-
-
-def _truncate_wandb_name(name: str) -> str:
-    """Truncate a run name to fit W&B's 64-character limit, preserving the trailing suffix."""
-    if len(name) <= 64:
-        return name
-    old_name = name
-    if "-" not in name:
-        name = name[:64]
-    else:
-        prefix, suffix = name.rsplit("-", 1)
-        if len(suffix) >= 64:
-            suffix = suffix[:64]
-            name = suffix
-        else:
-            name = prefix[: 63 - len(suffix)] + "-" + suffix
-    logger.warning("Truncated name from %s to %s to fit within W&B limits.", old_name, name)
-    return name
+# Rolling resumption-checkpoint cadence (operational, not an experiment knob).
+_RESUMPTION_INTERVAL = timedelta(minutes=10)
 
 
-def _resolve_hf_export_steps(steps_per_hf_export: int | None, steps_per_export: int | None) -> int | None:
-    """Resolve the HF export step interval: None means same as checkpoint, -1 means disabled."""
-    if steps_per_hf_export is None:
-        return steps_per_export
-    if steps_per_hf_export == -1:
-        return None
-    return steps_per_hf_export
+def _marin_mesh(tensor_parallel_size: int) -> MeshConfig:
+    """The standard marin training mesh: data parallel, optional tensor sharding.
 
-
-def _checkpoint_keep(steps_per_export: int | None) -> list[dict]:
-    """Build the `keep` list for `CheckpointerConfig`.
-
-    None means keep no permanent intermediate checkpoints (only the final
-    checkpoint is saved at end-of-training, plus a rolling temporary
-    checkpoint for resumption).
+    ``model`` is the tensor-parallel width (1 = no sharding); ``data`` absorbs
+    the rest of the pod. The token axes ride the replica/data axes the marin
+    path expects. Reproduces ``marin.experiment.train._marin_mesh``.
     """
-    if steps_per_export is None:
-        return []
-    return [dict(every=steps_per_export)]
-
-
-def _validate_train_length(train_seq_len: int | None, model_config: LmConfig) -> int:
-    """Resolve and validate the training sequence length against the model's max."""
-    actual = unwrap_versioned_value(model_config)
-    train_length = train_seq_len or actual.max_seq_len
-    if train_length > actual.max_seq_len:
-        raise ValueError(f"train_length {train_length} exceeds model max_seq_len {actual.max_seq_len}.")
-    return train_length
-
-
-def default_tokenize(
-    name: str,
-    dataset: InputName | ExecutorStep | str | HfDatasetSpec,
-    tokenizer: str,
-    format: LmDatasetFormatBase = TextLmDatasetFormat(),  # noqa: B008
-    *,
-    sample_count: int | VersionedValue[int] | None = None,
-    is_validation: bool = False,
-    levanter_batch_size: int | None = None,
-    tags: Sequence[str] = (),
-    resources: ResourceConfig | None = None,
-    worker_resources: ResourceConfig | None = None,
-) -> ExecutorStep:
-    """Tokenize a dataset using Levanter's tokenization infrastructure.
-
-    See ``marin/experiments/defaults.py:default_tokenize`` for the
-    upstream version this vendors (with HF / fsspec / TokenizeConfig
-    branches preserved). Output paths land under ``tokenized/<name>``.
-    """
-    extra_kwargs: dict = {}
-    if worker_resources is not None:
-        extra_kwargs["worker_resources"] = worker_resources
-
-    if isinstance(dataset, HfDatasetSpec):
-        config = HfTokenizeConfig(
-            id=dataset.id,
-            name=dataset.name,
-            cache_path=this_output_path(),
-            tokenizer=ensure_versioned(tokenizer),
-            format=format,
-            sample_count=ensure_versioned(sample_count) if sample_count is not None else None,
-            levanter_batch_size=levanter_batch_size,
-            tags=[*tags],
-            **extra_kwargs,
-        )
-    elif (
-        isinstance(dataset, str)
-        and not _is_hf_bucket_path(dataset)
-        and dataset.count("/") == 1
-        and not fsspec_utils.exists(dataset)
-    ):
-        config = HfTokenizeConfig(
-            id=dataset,
-            cache_path=this_output_path(),
-            tokenizer=ensure_versioned(tokenizer),
-            format=format,
-            sample_count=ensure_versioned(sample_count) if sample_count is not None else None,
-            levanter_batch_size=levanter_batch_size,
-            tags=[*tags],
-            **extra_kwargs,
-        )
-    else:
-        config = TokenizeConfig(
-            train_paths=[dataset] if not is_validation else [],
-            validation_paths=[dataset] if is_validation else [],
-            cache_path=this_output_path(),
-            tokenizer=ensure_versioned(tokenizer),
-            format=format,
-            sample_count=ensure_versioned(sample_count) if sample_count is not None else None,
-            levanter_batch_size=levanter_batch_size,
-            tags=[*tags],
-            **extra_kwargs,
-        )
-
-    return ExecutorStep(
-        name=os.path.join("tokenized", name),
-        description=f"Tokenize raw text using the {tokenizer} tokenizer.",
-        fn=remote(
-            tokenize,
-            resources=resources or ResourceConfig.with_cpu(cpu=4, ram="16g", disk="10g"),
-            pip_dependency_groups=["cpu"],
-            env_vars={
-                "TRANSFORMERS_NO_TORCH": "1",
-                "TRANSFORMERS_NO_TORCHVISION": "1",
-                "USE_TORCH": "0",
-                "TORCH_DISABLE_GLOBAL_DEPS": "1",
-            },
-        ),
-        config=config,
+    return MeshConfig(
+        axes={"replica": 1, "data": -1, "model": tensor_parallel_size},
+        compute_mapping={"token": _TOKEN_AXES, "token_repeat": _TOKEN_AXES},
     )
 
 
-def _prepare_data_config(
-    tokenized: InputName | ExecutorStep | LMMixtureDatasetConfig,
-    use_default_validation: bool,
-) -> LMMixtureDatasetConfig:
-    """Prepare the tokenized data for training.
-
-    This vendor only supports ``use_default_validation=False`` — MarinFold
-    runs explicitly enumerate their validation components (Paloma is not
-    useful for a protein-structure vocabulary). Pass an
-    ``LMMixtureDatasetConfig`` for fine-grained control, otherwise an
-    ``ExecutorStep`` / ``InputName`` pointing at a single tokenized dataset.
-    """
-    if use_default_validation:
-        raise NotImplementedError(
-            "default validation sets (Paloma + uncheatable evals) are not "
-            "vendored into MarinFold. Pass an explicit LMMixtureDatasetConfig "
-            "with your validation components, and use_default_validation=False."
-        )
-
-    if isinstance(tokenized, (InputName, ExecutorStep)):
-        return lm_data_config(training_set=tokenized, validation_sets={})
-    return tokenized
-
-
-def _build_train_lm_config(
-    name: str,
-    tokenized: InputName | ExecutorStep | LMMixtureDatasetConfig,
-    model_config: LmConfig,
-    train_config: SimpleTrainConfig,
+def build_train_lm_on_pod_config(
     *,
-    tags: Sequence[str] = (),
-    use_default_validation: bool = False,
+    run_name: str,
+    model: LmConfig,
+    optimizer: OptimizerConfig,
+    data: LmDataConfig,
+    resources,
+    output_path: str,
+    num_train_steps: int,
+    train_batch_size: int,
+    seq_len: int,
+    auto_build_caches: bool = False,
+    steps_per_eval: int = 1000,
+    max_eval_batches: int | None = None,
+    steps_per_checkpoint: int | None = None,
+    z_loss_weight: float | None = None,
+    tensor_parallel_size: int = 1,
+    data_seed: int | None = None,
     eval_harness_tasks: Sequence[EvalTaskConfig] = (),
-    wandb_name: str | None = None,
+    eval_harness_steps: int | None = None,
+    initialize_from_checkpoint_path: str | None = None,
+    initialize_from_hf: str | bool = False,
+    pad_tokenizer_to_match_model: bool = False,
+    # Weights-only warm start. Despite the near-identical name this is a
+    # DIFFERENT levanter field from ``initialize_from_checkpoint_path``: that
+    # one performs a full-state restore and demands `step`, `opt_state/*` and
+    # `training_key` in the checkpoint, while ``initialize_model_from_...``
+    # reads only the `model` subtree and leaves a fresh optimizer at step 0.
+    # Use this one for a checkpoint that holds weights alone (e.g. one
+    # produced by a vocab resize) — the other fails with "Missing 34 arrays
+    # in OCDBT checkpoint".
+    initialize_model_from_checkpoint_path: str | None = None,
+    wandb_project: str = "MarinFold",
     wandb_group: str | None = None,
-) -> tuple[str, TrainLmConfig]:
-    """Build the ``TrainLmConfig`` used by ``default_train``."""
-    pretraining_data = _prepare_data_config(tokenized, use_default_validation)
+    wandb_name: str | None = None,
+    tags: Sequence[str] = (),
+    env_vars: dict[str, str] | None = None,
+    mp: str = MARIN_PRECISION,
+) -> TrainLmOnPodConfig:
+    """Assemble a concrete ``TrainLmOnPodConfig`` for a MarinFold training run.
 
-    if wandb_group is None:
-        wandb_group = os.environ.get("WANDB_GROUP")
+    This is the StepContext-free replacement for the old vendored
+    ``_build_train_lm_config`` / ``default_train`` pair. It reproduces the inner
+    ``TrainLmConfig`` assembly of ``marin.experiment.train.train_lm.build_config``
+    (same mesh, precision, checkpointer, trainer fields) but:
 
-    name = _truncate_wandb_name(name)
+    * takes a CONCRETE ``output_path`` string — used for both
+      ``WandbConfig.replicate_path`` and ``TrainLmOnPodConfig.output_path`` (the
+      checkpointer base path, HF save path, and run id are all derived from the
+      latter inside ``run_levanter_train_lm``), and
+    * takes ``data`` (a levanter ``LmDataConfig``) directly rather than via
+      ``mixture(ctx, ...)``, and
+    * takes ``optimizer`` from the caller (no baked-in default), and
+    * exposes ``auto_build_caches``, which marin reads off the OUTER pod config
+      and uses to override the inner data config (see the call site below).
 
-    if eval_harness_tasks:
-        harness_config = LmEvalHarnessConfig(task_spec=convert_to_levanter_task_config(eval_harness_tasks))
-    else:
-        harness_config = None
+    The returned config is a plain dataclass: the caller submits it as its own
+    ``fray.types.JobRequest`` (with a batch priority band for #108) rather than
+    letting marin dispatch it interactively.
 
-    steps_per_export = train_config.steps_per_export
-    steps_per_export_hf = _resolve_hf_export_steps(train_config.steps_per_hf_export, steps_per_export)
+    Warm-start knobs (a fine-tune continues from an existing model; #163):
+    ``initialize_from_checkpoint_path`` takes a **Levanter-native** checkpoint dir
+    while ``initialize_from_hf`` takes an **HF export** (repo id or a directory
+    URL); set at most one. ``pad_tokenizer_to_match_model`` pads the tokenizer up
+    to a wider checkpoint embedding matrix (Eric's contacts-v1 checkpoints padded
+    2846 -> 2848 for TPU efficiency), so the warm-started shapes match.
 
-    model_averaging = None
-    if train_config.ema_beta is not None:
-        model_averaging = EmaModelAveragingConfig(beta=train_config.ema_beta)
+    ``auto_build_caches`` must be set here, not just on ``data``:
+    ``run_levanter_train_lm`` OVERRIDES ``data.auto_build_caches`` with the outer
+    ``TrainLmOnPodConfig`` value, so leaving it False would silently disable
+    tokenize-on-the-fly even when the data config asked for it.
 
-    if train_config.per_device_eval_parallelism is None:
-        per_device_eval_parallelism = -1
-    else:
-        per_device_eval_parallelism = train_config.per_device_eval_parallelism
+    ``steps_per_checkpoint`` adds a PERMANENT checkpoint interval on top of the
+    rolling resumption checkpoints — needed when a later step (HF export, eval)
+    has to read a specific ``step-N``. ``None`` keeps marin's default of forced
+    checkpoints only (i.e. just the final one).
+    """
+    harness = (
+        LmEvalHarnessConfig(task_spec=convert_to_levanter_task_config(list(eval_harness_tasks)))
+        if eval_harness_tasks
+        else None
+    )
 
-    checkpoint_path_to_load_from = train_config.initialize_from_checkpoint_path
-    hf_checkpoint_path_to_load_from = train_config.initialize_from_hf
-    if hf_checkpoint_path_to_load_from is not None and checkpoint_path_to_load_from is not None:
-        raise ValueError("Cannot specify both initialize_from_checkpoint_path and initialize_from_hf")
-
-    train_length = _validate_train_length(train_config.train_seq_len, model_config)
-
-    inner_config = TrainLmConfig(
-        data=pretraining_data,
+    inner = TrainLmConfig(
+        data=data,
         trainer=TrainerConfig(
+            id=run_name,
             tracker=WandbConfig(
-                project="MarinFold",
-                name=wandb_name,
+                project=wandb_project,
+                name=wandb_name or run_name,
                 tags=[*tags],
                 group=wandb_group,
-                replicate_path=this_output_path(),
+                # Mirror metrics next to the run's output so they outlive the job.
+                replicate_path=output_path,
             ),
-            mp=jmp.get_policy("p=f32,c=bfloat16"),
-            train_batch_size=train_config.train_batch_size,
-            per_device_parallelism=train_config.per_device_parallelism,
-            num_train_steps=train_config.num_train_steps,
-            steps_per_eval=train_config.steps_per_eval if train_config.steps_per_eval is not None else 1000,
+            mp=jmp.get_policy(mp),
+            train_batch_size=train_batch_size,
+            per_device_parallelism=-1,
+            num_train_steps=num_train_steps,
+            steps_per_eval=steps_per_eval,
+            max_eval_batches=max_eval_batches,
             checkpointer=CheckpointerConfig(
-                save_interval=timedelta(minutes=10),
-                keep=_checkpoint_keep(steps_per_export),
+                save_interval=_RESUMPTION_INTERVAL,
+                # `keep` entries are plain dicts (draccus can't parse the
+                # CheckpointInterval dataclass); CheckpointerConfig.create turns
+                # them into CheckpointInterval(every=...).
+                keep=[dict(every=steps_per_checkpoint)] if steps_per_checkpoint else [],
             ),
-            model_averaging=model_averaging,
-            mesh=MeshConfig(
-                axes={"replica": 1, "data": -1, "model": train_config.tensor_parallel_size},
-                compute_mapping={
-                    "token": (ResourceAxis.REPLICA_DCN, ResourceAxis.REPLICA, ResourceAxis.DATA),
-                    "token_repeat": (ResourceAxis.REPLICA_DCN, ResourceAxis.REPLICA, ResourceAxis.DATA),
-                },
-            ),
-            allow_partial_checkpoint=train_config.allow_partial_checkpoint,
-            per_device_eval_parallelism=per_device_eval_parallelism,
-            max_eval_batches=train_config.max_eval_batches,
+            mesh=_marin_mesh(tensor_parallel_size),
+            per_device_eval_parallelism=-1,
             allow_nondivisible_batch_size=True,
-            quantization=QuantizationConfig(int8=train_config.int8) if train_config.int8 else None,
-            initialize_from=None if train_config.reset_data_loader_on_init else checkpoint_path_to_load_from,
-            watch=train_config.watch,
-            profiler=train_config.profiler,
-            use_explicit_mesh_axes=train_config.explicit_mesh_axes,
         ),
-        initialize_from_checkpoint_path=(
-            checkpoint_path_to_load_from if train_config.reset_data_loader_on_init else None
-        ),
-        initialize_from_hf=hf_checkpoint_path_to_load_from or False,
-        pad_tokenizer_to_match_model=train_config.pad_tokenizer_to_match_model,
-        z_loss_weight=train_config.z_loss_weight,
-        train_seq_len=train_length,
-        model=model_config,
-        optimizer=(
-            train_config.optimizer_config
-            if getattr(train_config, "optimizer_config", None) is not None
-            else AdamConfig(
-                learning_rate=train_config.learning_rate,
-                weight_decay=(
-                    train_config.weight_decay if train_config.weight_decay is not None else AdamConfig().weight_decay
-                ),
-                beta1=(train_config.beta1 if train_config.beta1 is not None else AdamConfig().beta1),
-                beta2=(train_config.beta2 if train_config.beta2 is not None else AdamConfig().beta2),
-                epsilon=(train_config.epsilon if train_config.epsilon is not None else AdamConfig().epsilon),
-                max_grad_norm=(
-                    train_config.max_grad_norm if train_config.max_grad_norm is not None else AdamConfig().max_grad_norm
-                ),
-                warmup=(train_config.warmup if train_config.warmup is not None else AdamConfig().warmup),
-                rewarmup=(train_config.rewarmup if train_config.rewarmup is not None else AdamConfig().rewarmup),
-                decay=(train_config.decay if train_config.decay is not None else AdamConfig().decay),
-                lr_schedule=(
-                    train_config.lr_schedule if train_config.lr_schedule is not None else AdamConfig().lr_schedule
-                ),
-                cycle_length=train_config.cycle_length,
-                min_lr_ratio=(
-                    train_config.min_lr_ratio if train_config.min_lr_ratio is not None else AdamConfig().min_lr_ratio
-                ),
-                skip_bad_steps=train_config.skip_bad_steps,
-            )
-        ),
-        hf_save_steps=steps_per_export_hf,
-        hf_generation_eos_token_ids=train_config.hf_generation_eos_token_ids,
-        data_seed=train_config.data_seed,
-        eval_harness_steps=train_config.steps_per_task_eval or 10000,
-        eval_harness=harness_config,
+        model=model,
+        optimizer=optimizer,
+        z_loss_weight=z_loss_weight,
+        train_seq_len=seq_len,
+        data_seed=data_seed,
+        initialize_from_checkpoint_path=initialize_from_checkpoint_path,
+        initialize_from_hf=initialize_from_hf,
+        pad_tokenizer_to_match_model=pad_tokenizer_to_match_model,
+        initialize_model_from_checkpoint_path=initialize_model_from_checkpoint_path,
+        eval_harness=harness,
+        eval_harness_steps=eval_harness_steps,
+        adapter=NoAdaptorConfig(),
     )
 
-    return name, inner_config
-
-
-def default_train(
-    name: str,
-    tokenized: InputName | ExecutorStep | LMMixtureDatasetConfig,
-    model_config: LmConfig,
-    train_config: SimpleTrainConfig,
-    tags: Sequence[str] = (),
-    use_default_validation: bool = False,
-    eval_harness_tasks: Sequence[EvalTaskConfig] = (),
-    wandb_name: str | None = None,
-    wandb_group: str | None = None,
-    override_output_path: str | None = None,
-) -> ExecutorStep:
-    """Train a language model using the MarinFold default recipe.
-
-    Output path lands under ``checkpoints/<name>`` on the executor; W&B
-    project is hardcoded to ``MarinFold``. See
-    ``marin/experiments/defaults.py:default_train`` for the upstream
-    reference. ``use_default_validation=True`` is not supported in this
-    vendor — supply an ``LMMixtureDatasetConfig`` with explicit
-    validation components instead.
-    """
-    name, inner_config = _build_train_lm_config(
-        name,
-        tokenized,
-        model_config,
-        train_config,
-        tags=tags,
-        use_default_validation=use_default_validation,
-        eval_harness_tasks=eval_harness_tasks,
-        wandb_name=wandb_name,
-        wandb_group=wandb_group,
-    )
-
-    pretraining_data = inner_config.data
-    tokenizer_name = unwrap_versioned_value(pretraining_data.tokenizer)
-    train_length = unwrap_versioned_value(inner_config.train_seq_len)
-    schedule = BatchSchedule(unwrap_versioned_value(train_config.train_batch_size))
-    total_examples = schedule.global_data_offset_by_step(unwrap_versioned_value(train_config.num_train_steps))
-
-    pod_config = train_config.resources
-
-    config = TrainLmOnPodConfig(
-        train_config=inner_config,
-        resources=pod_config,
-        output_path=this_output_path(),
-        env_vars=train_config.env_vars,
-    )
-
-    return ExecutorStep(
-        name=os.path.join("checkpoints", name),
-        description=(
-            f"Train a model (tokenizer={tokenizer_name}) for "
-            f"{unwrap_versioned_value(train_config.num_train_steps)} (steps) * "
-            f"{unwrap_versioned_value(train_config.train_batch_size)} (batch_size) * "
-            f"{train_length} (train_seq_len) "
-            f"= {total_examples * train_length} tokens."
-        ),
-        fn=run_levanter_train_lm,
-        resources=train_config.resources,
-        config=config,
-        override_output_path=override_output_path,
+    return TrainLmOnPodConfig(
+        train_config=inner,
+        resources=resources,
+        output_path=output_path,
+        env_vars=env_vars,
+        # This OUTER flag is the one that counts. ``_prepare_training_run``
+        # calls ``_maybe_override_auto_build_caches(train_config,
+        # config.auto_build_caches)``, so whatever the caller set on the inner
+        # ``LmDataConfig`` is overwritten by this field — and its default is
+        # False. Setting ``LmDataConfig(auto_build_caches=True)`` alone gets
+        # you "Cache not found at ... and auto_build_caches is disabled" once
+        # the pod is up. Pass it here instead when there is no separate
+        # tokenize step and the run must build its cache on the workers.
+        auto_build_caches=auto_build_caches,
     )
 
 
 __all__ = [
-    "SimpleTrainConfig",
-    "default_train",
-    "default_tokenize",
+    "MARIN_PRECISION",
+    "build_train_lm_on_pod_config",
 ]
