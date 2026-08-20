@@ -1,0 +1,8 @@
+{
+  "script": "plot_overlap.py",
+  "args": [
+    "--data-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/data",
+    "--out-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/plots"
+  ],
+  "caption": "R-precision (all ranges, \u00b1SEM) across training-identity strata, all six predictors on the same proteins. seq-KNN is the positive control \u2014 a pure copy-the-neighbour model must track identity. A flat MarinFold curve means its skill is not homology retrieval."
+}

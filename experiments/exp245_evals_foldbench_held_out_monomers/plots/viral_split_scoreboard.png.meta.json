@@ -1,0 +1,17 @@
+{
+  "script": "plot_viral_split.py",
+  "args": [],
+  "caption": "All-range R-precision per predictor, split viral vs non-viral, on each natural eval set and on the two pooled. Hatched bars are viral. Error bars are 95 % bootstrap intervals; the viral cells hold 6, 13 and 19 proteins, so their intervals are wide by construction. eval-denovo is omitted -- none of the 19 designs is viral.",
+  "plot": "viral_split_scoreboard.png",
+  "sha256": "a237d8f299a731a446aff8c86e736e75d99d360b1907b224daae22886a1ba2d1",
+  "sources": {
+    "per_protein": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz",
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    },
+    "eval_sets": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv",
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    }
+  }
+}
