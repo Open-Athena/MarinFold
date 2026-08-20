@@ -437,3 +437,32 @@ def test_positional_correction_still_credits_a_genuinely_better_section():
     adv = sr.shaped_section_advantages(1.0, group["a"], beta=3.0, positional=b)
     assert adv[2] > adv[0]                              # section 2 beat its own position
     assert adv.mean() == pytest.approx(1.0, abs=1e-12)  # still zero-sum
+
+
+# ------------------------------------------- arm M-KS3: novelty scored directly
+
+def test_novelty_credits_new_true_and_debits_new_false():
+    gt = {(1, 10), (2, 20), (3, 30)}
+    secs = [{(1, 10)}, {(2, 20), (5, 50)}, {(1, 10)}]     # 3rd repeats, adds nothing
+    m = sr.novelty_marginals(secs, gt, 60)
+    assert m[0] == pytest.approx(1 / 3)                   # one new true
+    assert m[1] == pytest.approx(0.0)                     # one new true, one new false
+    assert m[2] == pytest.approx(0.0)                     # nothing new at all
+
+
+def test_novelty_prices_padding_rather_than_rewarding_it():
+    """A section that dumps junk to catch one new true pair must score NEGATIVE.
+
+    Plain recall-gain (`new_true / R`) would score this positive, which is the
+    incentive that produced arm M-F's 259 sections carrying 1.4 contacts each.
+    """
+    gt = {(1, 10), (2, 20)}
+    junk = {(i, i + 30) for i in range(3, 13)}            # 10 new false
+    m = sr.novelty_marginals([{(1, 10)}, {(2, 20)} | junk], gt, 60)
+    assert m[1] < 0
+
+
+def test_novelty_is_zero_for_an_exact_repeat_anywhere_in_the_rollout():
+    gt = {(1, 10), (2, 20)}
+    m = sr.novelty_marginals([{(1, 10)}, {(2, 20)}, {(1, 10), (2, 20)}], gt, 60)
+    assert m[2] == pytest.approx(0.0)

@@ -151,7 +151,7 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                  min_precision: float = 0.15, gates_fatal: bool = True,
                  collapse_ratio: float = 0.2, count_penalty_beta: float = 0.0,
                  count_penalty_floor: float = 18.0, beta_shape: float = 0.0,
-                 positional_shape: bool = True, **kwargs):
+                 positional_shape: bool = True, shape_signal: str = "prefix", **kwargs):
         # BEFORE super().__init__: a bad mode should fail on the config, not after
         # a tokenizer, an engine client and a Ray actor have been constructed.
         if reward_mode not in sr.REWARD_MODES:
@@ -173,6 +173,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
         self.count_penalty_floor = float(count_penalty_floor)
         self.beta_shape = float(beta_shape)
         self.positional_shape = bool(positional_shape)
+        if shape_signal not in ("prefix", "novelty"):
+            raise ValueError(f"shape_signal must be 'prefix' or 'novelty', got {shape_signal!r}")
+        self.shape_signal = shape_signal
         # instance_id -> {repetition_id: (marginals, bounds, n_response_tokens)}
         self._group: Dict[str, Dict[str, Any]] = {}
         # instance_id -> {repetition_id: (best_f1, consensus, n_response_tokens)}
@@ -284,7 +287,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
             cons = 0.0 if consensus != consensus else float(consensus)
             self._rollout_scores.setdefault(state["instance_id"], {})[state["repetition_id"]] = (
                 cons,
-                sr.prefix_marginals(walk.sections, state["gt"], state["L"]),
+                (sr.novelty_marginals(walk.sections, state["gt"], state["L"])
+                 if self.shape_signal == "novelty"
+                 else sr.prefix_marginals(walk.sections, state["gt"], state["L"])),
                 walk.bounds,
                 walk.n_response_tokens,
             )
@@ -495,8 +500,9 @@ class MultiSectionGenerator(SkyRLGymGenerator):
                 "[exp237] the shaped-consensus pass wrote no rewards; check the "
                 "trajectory_id mapping and that MultiSectionGenerator is configured.")
         logger.info("[exp237] shaped consensus applied to %d/%d rollouts "
-                    "(beta_shape=%.3g positional=%s)",
-                    n_written, len(rewards), self.beta_shape, self.positional_shape)
+                    "(beta_shape=%.3g positional=%s signal=%s)",
+                    n_written, len(rewards), self.beta_shape, self.positional_shape,
+                    self.shape_signal)
         out["rewards"] = rewards
         return out
 

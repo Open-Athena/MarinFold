@@ -138,6 +138,11 @@ class Exp237Config(SkyRLTrainConfig):
     # plain form is a "stop early" signal. Arm M-KS collapsed to 10.66 sections
     # by step 21, the fastest count collapse in #237. False reproduces it.
     positional_shape: bool = True
+    # Which per-section signal the shaping uses. "prefix" is arm M-KS2's causal
+    # consensus marginal, measured to correlate only +0.194 with actual novelty.
+    # "novelty" (arm M-KS3) is the thing it was approximating, scored directly:
+    # (new true - new false) / R against the prefix union.
+    shape_signal: str = "prefix"
 
     # ---- #237's preregistered diversity kill criteria, checked every batch ----
     # #230's checkpoint reads 22.0 sections, Jaccard 0.304 and 658 union pairs
@@ -215,6 +220,7 @@ def build_exp(cfg):
                 count_penalty_floor=cfg.count_penalty_floor,
                 beta_shape=cfg.beta_shape,
                 positional_shape=cfg.positional_shape,
+                shape_signal=cfg.shape_signal,
             )
 
     return Exp237PPOExp(cfg)

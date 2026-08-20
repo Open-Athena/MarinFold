@@ -271,6 +271,61 @@ def prefix_marginals(
     return out
 
 
+def novelty_marginals(
+    sections: Sequence[set[Pair]], gt: set[Pair], length: int
+) -> np.ndarray:
+    """What section *k* added that its predecessors had not: ``(new_true - new_false) / R``.
+
+    Arm M-KS3. The direct form of the thing arm M-KS2 was reaching for through a
+    proxy. Measured on 11,516 real sections, M-KS2's causal prefix marginal
+    correlates only **+0.194** with actual novelty — it is tilted the right way
+    and mostly noise — yet it still produced the best ORACLE candidates in #237
+    (0.5677). This asks what the signal it was approximating is worth on its own.
+
+    For section ``k`` with pair set ``s_k`` and prefix union ``U = s_1 ∪ … ∪
+    s_{k-1}``, over pairs inside the ``sep >= 6`` band::
+
+        new    = s_k \ U
+        m_k    = ( |new ∩ gt| - |new \ gt| ) / |gt|
+
+    **Why the false term is there and not optional.** ``|new ∩ gt| / R`` alone —
+    plain recall gain — pays for *volume*: a section that dumps a hundred junk
+    pairs catches new true ones by chance and scores positive for it. #237 has
+    already watched that failure once, when arm M-F ran to 259 sections carrying
+    1.4 contacts each. Subtracting the new *false* pairs makes the term "did the
+    union get better or worse", so padding is priced rather than rewarded.
+
+    **Normalised by R, not by section size.** R-precision cuts a ranking at
+    ``R = |gt|``, so a pair is worth what it is worth relative to the budget the
+    metric actually spends — dividing by ``|s_k|`` instead would make a tiny
+    accurate section look identical to a large one, and the aggregate cares about
+    the count.
+
+    Returns:
+        ``[K]`` marginals, all zero when the protein has no scoreable ground
+        truth. The first section is scored against an empty prefix and so scores
+        its whole precision-adjusted content — the same positional artefact that
+        killed the un-corrected arm M-KS, and the reason this must be used with
+        :func:`positional_baseline`.
+    """
+    n = len(sections)
+    if n == 0 or not gt or length <= 0:
+        return np.zeros(n, dtype=np.float64)
+    band = {p for p in gt}
+    r = float(len(band))
+    if r <= 0:
+        return np.zeros(n, dtype=np.float64)
+    out = np.zeros(n, dtype=np.float64)
+    seen: set = set()
+    for k, sec in enumerate(sections):
+        new = sec - seen
+        if new:
+            hits = len(new & band)
+            out[k] = (hits - (len(new) - hits)) / r
+        seen |= sec
+    return out
+
+
 def positional_baseline(marginals_by_rep: Mapping) -> np.ndarray:
     """Mean prefix marginal at each section POSITION, across a prompt group.
 
@@ -518,6 +573,7 @@ __all__ = [
     "centred_section_advantages",
     "consensus_and_marginals",
     "count_penalty",
+    "novelty_marginals",
     "positional_baseline",
     "prefix_marginals",
     "shaped_section_advantages",

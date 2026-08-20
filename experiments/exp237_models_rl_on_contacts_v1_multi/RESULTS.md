@@ -4,7 +4,8 @@
 `plm-exp230-cv1-multi-1_5b-...-a100/hf/step-1988` · 8×A100-80GB · every number
 scored by #230's `eval_agg_worker.py` + `score_agg_modes.py`, unchanged**
 
-> **Status: complete. Seven reward designs, nine runs, 47 scored checkpoints.** The long-trajectory question is
+> **Status: nine reward designs, thirteen runs, 55 scored checkpoints.** Arm
+> M-KS3 is still training; everything else is final. The long-trajectory question is
 > settled in both directions — see *[Do long trajectories beat short
 > ones?](#do-long-trajectories-beat-short-ones)*. One arm (**M-BP**, a candidate-count
 > floor on M-B's reward) is still running and says so where it matters. Anything
@@ -56,6 +57,8 @@ R-precision (all), legacy 554, every checkpoint scored by #230's
 | M-BP step-180 *(count floor)* | 0.0256 | 0.5649 | 0.5339 | 0.4691 | 0.4725 |
 | M-KB step-12 *(4x batch)* | 0.0022 | 0.5749 | 0.5573 | 0.5093 | 0.4712 |
 | M-KB step-24 *(4x batch)* | 0.0198 | 0.5475 | 0.5344 | 0.4878 | 0.4400 |
+| **M-KS2 step-24** *(shaping)* | 0.0225 | 0.5799 | **0.5677** | 0.5046 | 0.5078 |
+| M-KS2 step-12 *(shaping)* | 0.0132 | 0.5769 | 0.5592 | 0.4620 | 0.4508 |
 | M-K leashed step-120 | 0.0153 | 0.5712 | 0.5442 | 0.4873 | 0.4716 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 | 0.2649 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 | — |
@@ -854,6 +857,125 @@ directions. A **smaller learning rate** (MBLONG), a **KL penalty** (MKLEASH) and
 them produced a checkpoint better than the peak it started from. Whatever bounds
 this, it is not the step size, not the distance travelled per step, and not the
 candidate count.
+
+
+### Arms M-KS / M-KS2 / M-KS3 — crediting a section for what it added
+
+The last untested piece of the arm derived in *[Designing the next
+arm](#designing-the-next-arm-which-reward-definitions-are-scale-free)*. Arm M-K
+is its `beta = lam = 0` corner and gave the best consensus in #237; `beta` is the
+shaping term:
+
+```
+A_i,k  =  GRPO_group( C_i(all) )_i  +  beta * ( shaped_k - mean_k shaped )
+```
+
+The motivation is a real gap. Arm M-K reinforces **every** section of a good
+rollout identically, duplicates included, while the metric is a vote that feeds
+on coverage — one multi rollout covers **658** distinct pairs against **1,065**
+for 22 independent ones, and that 62 % shortfall is most of the distance from
+0.5673 to the 0.5896 bar.
+
+#### M-KS — zero-sum, and it guarded the wrong quantity
+
+First form: `shaped_k = m_k`, the causal prefix marginal
+`C(s_1..s_k) - C(s_1..s_{k-1})`, centred within the rollout. The safety argument
+was that centring makes the term zero-sum, so it cannot introduce section-count
+pressure at any count.
+
+**It collapsed to 10.66 sections/rollout by step 21 — the fastest count collapse
+in #237 — entirely inside that guarantee.** The guarantee is true and it bounds
+the wrong thing. Zero-sum bounds the rollout's **level**; it leaves the **shape**
+untouched. And the prefix marginal decays in `k` *by construction*, because
+`C(s_1..s_k)` saturates and the first section, scored against an empty prefix,
+books nearly the whole telescoped total. Measured on 566 real rollouts
+([`diag_shape.py`](diag_shape.py)):
+
+| k | 0 | 1 | 2 | 4 | 8 | 12 | 20 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `m_k − mean_k m` | **+0.357** | +0.013 | −0.002 | −0.018 | −0.022 | −0.021 | −0.016 |
+
+negative slope in **100 %** of rollouts. At `beta = 3` that is **+1.07** on the
+first section's tokens against a base of ~1 unit. Because a section owns the
+`<begin_statements>` token that **opens** it, a term decreasing in `k` is a
+direct penalty on the decision to write another candidate. Its one scored
+checkpoint confirms the cost was real and not just a count statistic: step-12
+consensus **0.5492** against arm M-K's 0.5739 at the same step, with 16.8
+sections against 22.7.
+
+#### M-KS2 — subtract the group's marginal at the same position
+
+`shaped_k = m_k - b_k`, where `b_k` is the group's mean marginal at section
+position `k`. That removes the deterministic trend and leaves the intended
+question: *did this section beat a typical k-th section?* Residual slope in `k`
+goes from negative in 100 % of rollouts to a mean of **−0.000002**, negative in
+50 % — gone.
+
+`beta` was **recalibrated, not carried over**: removing the trend shrinks the
+term's spread 5.9× (sd 0.0987 → 0.0167), so `beta = 3` would have put the
+corrected term at 1/25th of the base's spread and produced a null that meant
+nothing. `beta = 15` restores the quarter-weight ([`calib2.py`](calib2.py)).
+
+**It ran all 48 steps with no gate strike — only the second arm to finish its
+budget** (arm M-K was the first). R-precision (all), legacy 554:
+
+| arm | step | KL | consensus | best *ORACLE* | eval2-nat | sections |
+|---|---:|---:|---:|---:|---:|---:|
+| M-K | 12 | 0.0098 | 0.5739 | 0.5555 | 0.2957 | 22.7 |
+| **M-KS2** | 12 | 0.0132 | 0.5769 | 0.5592 | 0.3057 | 20.6 |
+| M-K | 36 | 0.0158 | **0.5806** | 0.5602 | 0.3044 | 21.2 |
+| **M-KS2** | **24** | 0.0225 | 0.5799 | **0.5677** | **0.3071** | 20.9 |
+| M-K | 30 | 0.0245 | 0.5803 | 0.5530 | 0.3072 | 23.1 |
+| M-KS2 | 36 | 0.0244 | 0.5658 | 0.5582 | 0.3024 | 17.8 |
+| M-KS2 | 48 | 0.0818 | 0.5466 | 0.5221 | 0.2932 | 12.2 |
+
+**M-KS2 step-24 sets the best ORACLE-best in the experiment, 0.5677.** Against
+arm M-K's own best checkpoint, paired per protein:
+
+| M-KS2 step-24 vs M-K step-36 | Δ | 95 % CI | win/loss |
+|---|---:|---|---|
+| consensus | −0.0007 | [−0.0032, +0.0018] | 291/248 |
+| **best *ORACLE*** | **+0.0074** | [+0.0043, +0.0105] | 314/231 \* |
+| **second_last** | **+0.0121** | [+0.0084, +0.0159] | 338/208 \* |
+| last | −0.0131 | [−0.0187, −0.0080] | 256/293 \* |
+
+Consensus is a tie; **candidate quality is significantly better**; and the
+`second_last` / `last` pair moves in opposite directions, which is the signature
+the term was built to produce — quality shifted **earlier** in the rollout,
+toward the sections that had something to add. It also edges arm M-B step-18's
+0.5663, the standing oracle record, though that margin (+0.0014) is inside noise.
+
+> Read step-36 alone and this arm looks like a failure (0.5658). It is a dip:
+> the surrounding checkpoints read 0.5799 and 0.5769, and its eval-time section
+> count falls to 17.8 there against 20.9 either side. One checkpoint is not a
+> curve — the same lesson arm M-K's step-18 taught earlier.
+
+#### M-KS3 — the proxy replaced by the thing itself
+
+The prefix marginal is only a **proxy** for "what did this section add". Measured
+on 11,516 real sections ([`diag_novelty.py`](diag_novelty.py)):
+
+```
+corr(prefix marginal, NOVELTY)              +0.194
+corr(prefix marginal, REPEATED TRUE pairs)  -0.018
+```
+
+so it is tilted the right way and mostly noise — and it is **not** rewarding
+"piling on", which was the first explanation tried and refuted. A weak proxy
+already produced the experiment's best candidates, which makes the direct signal
+worth measuring.
+
+Arm M-KS3 shapes on
+`n_k = ( |new true| − |new false| ) / R` against the prefix union, with the same
+positional correction. The false term is not optional: plain recall gain pays for
+**volume**, and #237 has already watched that failure once when arm M-F ran to
+259 sections carrying 1.4 contacts each. `beta = 7.0`, recalibrated again —
+the corrected novelty term has sd 0.0375 against M-KS2's 0.0167, so M-KS2's
+`beta = 15` would have put it at half again the base's whole spread
+([`calib3.py`](calib3.py)). The two signals correlate only **+0.283** with each
+other, so this is a different arm and not a re-run.
+
+> **Status: running.**
 
 
 ### M-KB — a 4× larger batch, and the refutation of the noise hypothesis

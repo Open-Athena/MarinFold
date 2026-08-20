@@ -180,6 +180,7 @@ $PY main_exp237.py \
   lam_consensus="${LAM_CONSENSUS:-1.0}" \
   beta_shape="${BETA_SHAPE:-0.0}" \
   positional_shape="${POSITIONAL_SHAPE:-true}" \
+  shape_signal="${SHAPE_SIGNAL:-prefix}" \
   ${EXTRA_OVERRIDES:-} \
   > "$LOG" 2>&1
 rc=$?

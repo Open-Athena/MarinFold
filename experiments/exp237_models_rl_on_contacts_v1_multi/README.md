@@ -110,6 +110,7 @@ identical; only the population changes.
 | **M-FC** | `GRPO(F1(last)) + lam·GRPO(C_i(all))` — synthesis rather than selection: reward the last section, with the consensus as a restoring force | **whole-rollout scalar** | `contacts_rollout` |
 | **M-K** | `C_i(all)` — **the rollout's own consensus R-precision**, i.e. the deployed metric computed on the object the model emits | **whole-rollout scalar** | `grpo` |
 | **M-BP** | `max_k F1 + beta·min(0, K − floor)` — M-B with a one-sided floor on the candidate count, added **raw** so the deadband survives standardisation | **whole-rollout scalar** | `grpo` |
+| **M-KS / M-KS2 / M-KS3** | `GRPO(C_i(all)) + beta·(shaped_k − mean_k)` — M-K's base with a **zero-sum within-rollout** shaping term crediting a section for what it added; the three differ in `shaped_k` (raw prefix marginal / positionally corrected / direct novelty) | **per-section**, dense | `contacts_section` |
 | **M-0** | M-C's reward at **lr = 0** | — | `contacts_section` |
 
 The last three did not exist when the experiment started. M-BC and M-FC were
@@ -491,8 +492,8 @@ python -m pytest skyrl/tests -q
 
 ## Results
 
-**Full detail in [RESULTS.md](RESULTS.md).** Seven reward designs, nine runs,
-**47 scored checkpoints**, every number from #230's scorer unchanged.
+**Full detail in [RESULTS.md](RESULTS.md).** Nine reward designs, thirteen runs,
+**55 scored checkpoints**, every number from #230's scorer unchanged.
 R-precision (all), legacy 554, ordered by how far the policy moved:
 
 | checkpoint | KL | consensus | best *ORACLE* | last |
@@ -504,7 +505,8 @@ R-precision (all), legacy 554, ordered by how far the policy moved:
 | M-B lr3e-6 step-90 | 0.0087 | 0.5775 | 0.5646 | 0.5091 |
 | M-B lr1e-5 step-18 | 0.0088 | 0.5763 | **0.5663** | 0.5108 |
 | **M-K step-36** | 0.0162 | **0.5806** | 0.5602 | 0.5178 |
-| M-K step-30 | 0.0287 | 0.5803 | 0.5530 | 0.5112 |
+| **M-KS2 step-24** *(shaping)* | 0.0225 | 0.5799 | **0.5677** | 0.5046 |
+| M-K step-30 | 0.0245 | 0.5803 | 0.5530 | 0.5112 |
 | M-FC step-24 | 0.0368 | 0.5717 | 0.5464 | 0.5201 |
 | M-F step-36 | 0.0306 | 0.5529 | 0.5189 | 0.5075 |
 | M-B step-80 | 0.4863 | 0.3969 | 0.3440 | 0.1905 |
@@ -516,9 +518,9 @@ plain-100's ~50k — **M-K reads 0.6098** against plain's **0.6058** (paired
 
 - **Primary criterion: NOT met.** Nothing beats 0.5896. The best is **M-K's
   0.5806**, **0.0090** short.
-- **Secondary criteria: met** — oracle-best 0.5663 > 0.5342 (M-B), final section
-  0.5267 > 0.4566 (M-C) — but **no arm owns more than one**, and the three go to
-  three different arms.
+- **Secondary criteria: met** — oracle-best **0.5677** (M-KS2), final section
+  0.5267 (M-C) — but **no arm owns more than one**, and the three go to three
+  different arms.
 - **M-K is the only arm that improves all four aggregation modes with every CI
   excluding zero, on every cut**, including `second_last` (+0.0676) — it improved
   the whole rollout rather than moving quality toward its end.

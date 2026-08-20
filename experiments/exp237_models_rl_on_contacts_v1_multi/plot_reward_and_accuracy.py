@@ -34,7 +34,8 @@ from build_summary import save_plot_with_meta  # noqa: E402
 from plot_reward_curves import parse  # noqa: E402
 
 COLOR = {"M-C": "#1f77b4", "M-F": "#d62728", "M-B": "#1a7f4b",
-         "M-BC": "#9467bd", "M-FC": "#e08214", "M-K": "#111111", "M-0": "#9aa5b1"}
+         "M-BC": "#9467bd", "M-FC": "#e08214", "M-K": "#111111", "M-0": "#9aa5b1",
+         "M-KS2": "#be123c", "M-KB": "#7c3aed"}
 REWARD_COL = {"M-C": "consensus_rprec", "M-K": "consensus_rprec", "M-0": "consensus_rprec",
               "M-B": "best_f1", "M-BC": "best_f1", "M-F": "last_f1", "M-FC": "last_f1"}
 REWARD_NAME = {"consensus_rprec": "the rollout's own consensus",
@@ -50,6 +51,12 @@ ACC = {
     "M-K":  {12: 0.5739, 18: 0.5764, 24: 0.5787, 30: 0.5803, 36: 0.5806,
              42: 0.5776, 48: 0.5762},
     "M-0":  {8: 0.5678},
+    #: Arm M-KS2 — M-K's base plus the positionally-corrected shaping term. Its
+    #: step-36 is a dip (17.8 sections at eval against 20.9 either side), which
+    #: is why the whole curve is drawn rather than its best point quoted.
+    "M-KS2": {12: 0.5769, 24: 0.5799, 36: 0.5658, 48: 0.5466},
+    #: Arm M-KB — M-K at 4x the batch. Killed at step 42; step-36 sits at KL 0.18.
+    "M-KB": {12: 0.5749, 24: 0.5475},
 }
 #: M-B was also run at lr 3e-6 -- a different schedule over the same reward, so it
 #: is a separate trace rather than more points on the 1e-5 one. Extended to step
@@ -130,13 +137,14 @@ def main() -> int:
     ax.axhline(WARM, color="0.35", lw=1.0, ls=":")
     ax.text(0.005, WARM, "  #230 warm start", color="0.35", fontsize=8, va="bottom",
             transform=ax.get_yaxis_transform())
-    for arm in ["M-0", "M-C", "M-F", "M-B", "M-BC", "M-FC", "M-K"]:
+    for arm in ["M-0", "M-C", "M-F", "M-B", "M-BC", "M-FC", "M-KB", "M-KS2", "M-K"]:
         pts = sorted(ACC[arm].items())
         if not pts:
             continue
         xs, ys = zip(*pts)
-        ax.plot(xs, ys, "o-", color=COLOR[arm], lw=2.2 if arm != "M-0" else 0,
+        ax.plot(xs, ys, "o", color=COLOR[arm], lw=2.2 if arm != "M-0" else 0,
                 ms=7 if arm == "M-K" else 5.5, label=arm,
+                ls="--" if arm in ("M-KS2", "M-KB") else "-",
                 mec="white", mew=1.2, zorder=4 if arm == "M-K" else 3)
         if arm in ACC_PEN:
             xs3, ys3 = zip(*sorted(ACC_PEN[arm].items()))
@@ -152,16 +160,19 @@ def main() -> int:
     # curves. The label sits in the gap between M-K's tail and the bar instead.
     ax.text(50, 0.5845, "M-K peaks 0.5806 at step 36 — best consensus measured here",
             fontsize=8.5, color=COLOR["M-K"], fontweight="600", va="center")
+    ax.annotate("M-KS2 step-24 — consensus ties M-K,\nbut ORACLE-best 0.5677, the best measured here",
+                xy=(24, 0.5795), xytext=(46, 0.470), fontsize=8, color=COLOR["M-KS2"],
+                fontweight="600",
+                arrowprops=dict(arrowstyle="->", color=COLOR["M-KS2"], lw=1.1))
     ax.annotate("no penalty: killed at 180,\n11.0 sections/rollout", xy=(150, 0.5575),
                 xytext=(120, 0.526), fontsize=8, color=COLOR["M-B"],
                 arrowprops=dict(arrowstyle="->", color=COLOR["M-B"], lw=1.1))
-    ax.annotate("+ count floor: decline DELAYED, not prevented\n"
-                "(+0.0178 vs no penalty at 150; −0.0127 vs its own start by 180)",
-                xy=(165, 0.5700), xytext=(52, 0.542), fontsize=8, color="#c2410c",
+    ax.annotate("M-BP: + count floor — the decline is\ndelayed, not prevented",
+                xy=(168, 0.5735), xytext=(120, 0.505), fontsize=8, color="#c2410c",
                 fontweight="600",
                 arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.1))
-    ax.set_title("exp237 — accuracy at every scored checkpoint  (47 in total)", fontsize=11)
-    ax.grid(alpha=.25); ax.legend(fontsize=8.5, loc="lower left", ncol=2)
+    ax.set_title("exp237 — accuracy at every scored checkpoint  (55 in total)", fontsize=11)
+    ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=3, framealpha=0.95)
     fig.tight_layout()
     save_plot_with_meta(fig, a.out / "curves_accuracy.png", dpi=150,
         caption=("Consensus R-precision on the 554-protein exp89 benchmark at all 37 scored "

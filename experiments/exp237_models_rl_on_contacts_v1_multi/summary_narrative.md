@@ -8,12 +8,12 @@
 RL on #230's `<contacts-v1.multi>` checkpoint, with the reward computed over the
 **sections of a single rollout** rather than over the rollouts of a group.
 
-Seven reward designs, nine runs, **47 scored checkpoints**, all on 8 × A100 via
-SkyRL: **M-C** each section's contribution to its own rollout's consensus ·
+Nine reward designs, thirteen runs, **55 scored checkpoints**, all on 8 × A100
+via SkyRL: **M-C** each section's contribution to its own rollout's consensus ·
 **M-F** the last section's F1 · **M-B** the best section's F1 (oracle) ·
 **M-BC** best + consensus · **M-FC** last + consensus · **M-K** the rollout's own
-consensus R-precision · **M-BP** M-B plus a candidate-count floor · **M-0** a
-zero-LR control.
+consensus R-precision · **M-BP** M-B plus a candidate-count floor · **M-KS/2/3** M-K plus a
+within-rollout shaping term · **M-0** a zero-LR control.
 
 ## Why
 
@@ -79,6 +79,23 @@ neither killed by a gate nor diverged — it ran out of scheduled steps.
 **Within-sequence credit assignment was the hypothesis's mechanism, and it turned
 out not to be needed.** What was needed was for the reward to be computable on
 the object the metric scores — which is what the multi format makes possible.
+
+## The one lever that moved a number
+
+Every arm rewards candidates for being individually good. None pays for them
+being *different from each other* — and the metric is a vote that feeds on
+coverage: one multi rollout covers 658 distinct pairs against 1,065 for 22
+independent ones.
+
+**M-KS2** adds a zero-sum, positionally-corrected term crediting each section
+for what it added given its predecessors. Result: ORACLE-best **0.5602 to
+0.5677** (+0.0074, CI excluding zero), consensus unchanged (-0.0007, a tie), and
+quality shifted EARLIER in the rollout (second_last +0.0121, last -0.0131).
+
+The first version of it died fastest of any arm here — a "zero-sum" guarantee
+that bounded the rollout's LEVEL while leaving its SHAPE a decaying function of
+section index, which is a stop-early signal because a section owns the token
+that opens it. The measurement found it; the positional correction fixed it.
 
 ## Two results that outlive the experiment
 
