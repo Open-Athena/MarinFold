@@ -50,6 +50,13 @@ override-dependencies = [
     "python-multipart>=0.0.22",
     "transformers>=5.5.3,<6",
     "wheel>=0.46.2",
+    # The current marin dev line pins torch 2.11 / torchvision 0.26, but the
+    # ARM/GB200 torchvision 0.26 wheel fails during Transformers' eager
+    # AutoProcessor import (missing torchvision::nms registration). MarinFold's
+    # JAX training path only needs these for optional HF/processor imports, and
+    # older GB200 runs used the 2.10 / 0.25 CPU pair successfully.
+    "torch==2.10.0",
+    "torchvision==0.25.0+cpu; sys_platform == 'linux'",
 ]
 find-links = [
     "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
@@ -66,7 +73,7 @@ explicit = true
 
 [tool.uv.sources]
 resiliparse = { index = "marin-resiliparse" }
-torch = [{ index = "pytorch-cpu", extra = "cpu" }]
-torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
 marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "exp177/mp-queue-shard-dataset" }
 marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "exp177/mp-queue-shard-dataset" }
