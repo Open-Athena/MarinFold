@@ -1,0 +1,38 @@
+[project]
+name = "exp213-evals-train-sequence-overlap-audit"
+version = "0.1.0"
+description = "Sequence overlap of the 554-protein contact eval set with exp199's training corpora, and the homology-free re-eval — issue #213. CPU-only, no GPU, no model inference."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Sequence recovery calls contacts_v1.read.sequence_from_document (the
+    # generator's inverse); everything else is parquet + pandas + matplotlib.
+    # Two things are deliberately NOT Python deps here:
+    #   * mmseqs — a binary, installed by overlap_lib.ensure_mmseqs;
+    #   * huggingface_hub>=1.5 — bucket repos need it, but marinfold pins
+    #     transformers<5 which pins huggingface_hub<1, so the two can't share a
+    #     venv. Bucket I/O shells out to the `hf` CLI instead (see
+    #     fetch_train_sequences.py).
+    "marinfold",
+    "pyarrow",
+    "numpy",
+    "pandas>=2.0",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

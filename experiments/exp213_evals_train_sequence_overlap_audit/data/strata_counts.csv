@@ -1,0 +1,7 @@
+stratum,cameo_hard,casp_fm,denovo_pdb,foldbench100,total
+no_homolog,20,19,184,8,231
+remote,1,0,7,0,8
+id_20_30,1,0,21,3,25
+id_30_50,3,1,47,14,65
+id_50_70,3,3,93,26,125
+id_70_100,4,3,44,49,100

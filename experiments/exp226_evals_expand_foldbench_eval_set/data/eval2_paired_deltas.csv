@@ -1,0 +1,31 @@
+subset,range,cut,baseline,n,marinfold,baseline_mean,delta,ci_lo,ci_hi,significant
+eval2 (<40% id),all,R,Protenix-v2 single-seq,307,0.5453,0.6786,-0.1333,-0.1598,-0.1054,True
+eval2 (<40% id),all,R,ESMFold,307,0.5453,0.6942,-0.1488,-0.172,-0.1257,True
+eval2 (<40% id),all,R,ESMFold2,307,0.5453,0.7397,-0.1944,-0.2193,-0.1699,True
+eval2 (<40% id),all,R,Protenix-v2 + MSA,307,0.5453,0.7779,-0.2325,-0.2613,-0.2044,True
+eval2 (<40% id),all,R,seq-KNN k=10 (null),307,0.5453,0.0738,0.4716,0.4392,0.5046,True
+eval2 natural,all,R,Protenix-v2 single-seq,78,0.3372,0.3259,0.0113,-0.0442,0.0685,False
+eval2 natural,all,R,ESMFold,78,0.3372,0.4623,-0.1251,-0.173,-0.08,True
+eval2 natural,all,R,ESMFold2,78,0.3372,0.5293,-0.1922,-0.2393,-0.1463,True
+eval2 natural,all,R,Protenix-v2 + MSA,78,0.3372,0.6979,-0.3607,-0.4184,-0.3007,True
+eval2 natural,all,R,seq-KNN k=10 (null),78,0.3372,0.1478,0.1894,0.1405,0.2363,True
+eval2 (<30% id),all,R,Protenix-v2 single-seq,275,0.5432,0.7,-0.1569,-0.1839,-0.1291,True
+eval2 (<30% id),all,R,ESMFold,275,0.5432,0.6919,-0.1488,-0.1722,-0.1248,True
+eval2 (<30% id),all,R,ESMFold2,275,0.5432,0.739,-0.1959,-0.2219,-0.1697,True
+eval2 (<30% id),all,R,Protenix-v2 + MSA,275,0.5432,0.7704,-0.2272,-0.2563,-0.1973,True
+eval2 (<30% id),all,R,seq-KNN k=10 (null),275,0.5432,0.0439,0.4992,0.4675,0.5306,True
+eval2 natural (<30%),all,R,Protenix-v2 single-seq,61,0.3008,0.3416,-0.0408,-0.1008,0.0187,False
+eval2 natural (<30%),all,R,ESMFold,61,0.3008,0.4104,-0.1096,-0.1613,-0.0599,True
+eval2 natural (<30%),all,R,ESMFold2,61,0.3008,0.4771,-0.1763,-0.2254,-0.1256,True
+eval2 natural (<30%),all,R,Protenix-v2 + MSA,61,0.3008,0.6582,-0.3573,-0.4242,-0.2878,True
+eval2 natural (<30%),all,R,seq-KNN k=10 (null),61,0.3008,0.0649,0.2359,0.1893,0.2835,True
+the 23 net-new,all,R,Protenix-v2 single-seq,23,0.4071,0.2434,0.1637,0.0628,0.2633,True
+the 23 net-new,all,R,ESMFold,23,0.4071,0.5633,-0.1562,-0.2358,-0.0845,True
+the 23 net-new,all,R,ESMFold2,23,0.4071,0.5991,-0.192,-0.2737,-0.1144,True
+the 23 net-new,all,R,Protenix-v2 + MSA,23,0.4071,0.8054,-0.3983,-0.4956,-0.3021,True
+the 23 net-new,all,R,seq-KNN k=10 (null),23,0.4071,0.297,0.1101,0.0178,0.1961,True
+the 284 pre-existing,all,R,Protenix-v2 single-seq,284,0.5565,0.7138,-0.1573,-0.1839,-0.1304,True
+the 284 pre-existing,all,R,ESMFold,284,0.5565,0.7048,-0.1483,-0.172,-0.1248,True
+the 284 pre-existing,all,R,ESMFold2,284,0.5565,0.7511,-0.1946,-0.22,-0.1688,True
+the 284 pre-existing,all,R,Protenix-v2 + MSA,284,0.5565,0.7756,-0.2191,-0.247,-0.1905,True
+the 284 pre-existing,all,R,seq-KNN k=10 (null),284,0.5565,0.0557,0.5009,0.4684,0.5325,True
