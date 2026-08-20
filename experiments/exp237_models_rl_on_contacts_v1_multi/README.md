@@ -103,7 +103,7 @@ identical; only the population changes.
 
 | arm | reward | shape | estimator |
 |---|---|---|---|
-| **M-C** | `m_k = C(all) − C(all \ {k})`, section *k*'s marginal contribution to its **own rollout's** consensus | **per-section**, dense — each section's tokens carry their own advantage | `contacts_section` |
+| **M-C** | `(m_k − mean_g m) / std_g m`, with `m_k = C(all) − C(all \ {k})` — section *k*'s marginal contribution to its **own rollout's** consensus, standardised over `g` = **every section of every rollout** for this prompt | **per-section**, dense — each section's tokens carry their own advantage | `contacts_section` |
 | **M-F** | `F1(last section)` | **whole-rollout scalar** — one number for the entire generation, GRPO-centred against its 8 siblings and broadcast to every token | `grpo` |
 | **M-B** | `max_k F1(section k)` — **ORACLE** | **whole-rollout scalar**, same shape as M-F: score the whole generation by the best contact set anywhere in it, with no per-section credit assignment at all | `grpo` |
 | **M-BC** | `GRPO(max_k F1) + lam·GRPO(C_i(all))` — M-B's scalar blended with the rollout's own consensus, each standardised **separately** | **whole-rollout scalar** | `contacts_rollout` |
@@ -113,6 +113,19 @@ identical; only the population changes.
 | **M-KS / M-KS2 / M-KS3** | `GRPO(C_i(all)) + beta·(shaped_k − mean_k)` — M-K's base with a **zero-sum within-rollout** shaping term crediting a section for what it added; the three differ in `shaped_k` (raw prefix marginal / positionally corrected / direct novelty) | **per-section**, dense | `contacts_section` |
 | **M-KP** | `GRPO(C_i(all)) + beta·v_token` — the same base with the **section dropped as the credit unit**: each emitted pair is scored on its own three tokens, +1/R first-time true, −lam/R first-time false, **0 for a repeat whether true or false** | **per-token**, dense — and structural tokens (`<begin_statements>`, `<end>`) carry *no* shaping at all | `contacts_section` |
 | **M-0** | M-C's reward at **lr = 0** | — | `contacts_section` |
+
+> **`GRPO(·)` above means one specific thing, and M-C's centring is deliberately
+> not it.** `GRPO(·)` is SkyRL's `compute_grpo_outcome_advantage` — standardise
+> one scalar **per rollout** across the 8-rollout group — which is what M-BC,
+> M-FC and the M-KS family's base actually call. M-C's
+> `centred_section_advantages` shares the shape `(x − mean)/std` and differs in
+> three ways that each change a number: the population is **every section of
+> every rollout** (8 × ~25 ≈ 200 values, not 8); the deviation is `np.std`,
+> **population sd (ddof = 0)**, against GRPO's unbiased `torch.std` (ddof = 1);
+> and the epsilon is a **guard** (`std ≤ 1e-8` → return exactly zero, so a prompt
+> the reward has nothing to say about contributes nothing) rather than a term
+> added to the denominator. Standardising over rollouts is precisely the axis
+> M-C exists to avoid, so the distinction is the arm, not a detail.
 
 **The `estimator` column names SkyRL's `trainer.algorithm.advantage_estimator`,
 and it answers one question: who does the group arithmetic?** `grpo` is SkyRL's
