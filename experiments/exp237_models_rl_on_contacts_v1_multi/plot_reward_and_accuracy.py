@@ -183,7 +183,7 @@ def main() -> int:
       ax.annotate("M-B lr3e-6 + count floor:\nthe decline is delayed, not prevented",
                   xy=(168, 0.5735), xytext=(103, 0.505), fontsize=8, color="#c2410c", bbox=dict(facecolor="white", alpha=0.88, edgecolor="none", pad=1.6), zorder=6,
                   arrowprops=dict(arrowstyle="->", color="#c2410c", lw=1.0))
-    ax.set_title("exp237 — accuracy at every scored checkpoint  (57 in total)", fontsize=11)
+    ax.set_title("exp237 — scored checkpoints in range  (48 of 56; the collapsed arms are off-scale)", fontsize=11)
     ax.grid(alpha=.25); ax.legend(fontsize=8, loc="lower left", ncol=3, framealpha=0.95)
     fig.tight_layout()
     name = "curves_accuracy_bare.png" if a.bare else "curves_accuracy.png"
