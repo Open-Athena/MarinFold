@@ -1,0 +1,8 @@
+model,dataset,stem,L,rollout,sampling_seed,finish_reason,generated_tokens,max_tokens
+exp232_decontam_m1_p02_step145199,denovo_pdb,4oza_A,57,2,2,length,470,470
+exp232_decontam_m1_p02_step145199,denovo_pdb,4oza_A,57,44,44,length,470,470
+exp232_decontam_m1_p02_step145199,denovo_pdb,4ozc_A,57,5,5,length,470,470
+exp232_decontam_m1_p02_step145199,denovo_pdb,4ozc_A,57,38,38,length,470,470
+exp232_decontam_m1_p02_step145199,denovo_pdb,4ozc_A,57,40,40,length,470,470
+exp232_decontam_m1_p02_step145199,denovo_pdb,4ozc_A,57,80,80,length,470,470
+exp232_decontam_m1_p02_step145199,denovo_pdb,4ozc_A,57,81,81,length,470,470

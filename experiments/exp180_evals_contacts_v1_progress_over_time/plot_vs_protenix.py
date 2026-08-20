@@ -50,27 +50,31 @@ HERE = Path(__file__).parent
 #
 # #199 publishes per-protein rows only to the HF bucket — git keeps manifests
 # and summaries — so unlike #166's this one is a local copy rather than a read
-# across experiment directories. It is byte-verified: its SHA-256 equals the
-# `source_sha256` #199 records for `cw-p06-aug` in
-# exp199 data/contact_eval_pr_comparison_summary.csv, so the copy is provably
+# across experiment directories. It is byte-verified: its SHA-256 is the digest
+# #238's publisher printed when it uploaded the file, so the copy is provably
 # the published file. Re-fetch or re-check with:
-#   curl -sL -o data/exp199_cw_p06_aug_step145199_rows.csv.gz "$ROWS_URL" \
-#     && sha256sum data/exp199_cw_p06_aug_step145199_rows.csv.gz
-ROWS_CSV = HERE / "data" / "exp199_cw_p06_aug_step145199_rows.csv.gz"
-ROWS_SHA256 = "2ae1e57417e0cfd918937a4345e149628b149f9ac6dba063f853963b7075fa2b"
+#   curl -sL -o data/exp199_cw_p06_cool_step290400_rows.csv.gz "$ROWS_URL" \
+#     && sha256sum data/exp199_cw_p06_cool_step290400_rows.csv.gz
+#
+# #234 evaluated 577 (dataset, stem) units, not 554: the eval set grew in #226.
+# The extra 23 simply drop out of the join below, since exp89's baseline table
+# only covers the original 554 — which is what keeps this figure comparable to
+# every earlier version of itself. eval2's own cuts live in #226 and #234.
+ROWS_CSV = HERE / "data" / "exp199_cw_p06_cool_step290400_rows.csv.gz"
+ROWS_SHA256 = "20c6b707520955dc6a724d34f77fe9d45149605f0d4089c522f2b44d6afa5c39"
 ROWS_URL = ("https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/"
-            "contacts-v1-model-eval-exp199/replicates/finals03-20260810/derived/"
-            "prot-exp199-cw-cv1-s02-m1-p06-aug/step-145199/"
-            "contact_eval_cw_s02_m1_p06_aug_step145199_finals03_20260810_rows.csv.gz")
+            "contacts-v1-model-eval-exp199/replicates/cooldown-v2-20260815-01/derived/"
+            "prot-exp199-cw-cv1-p06-cool-s01/step-290400/"
+            "contact_eval_cw_p06_cool_step290400_rows.csv.gz")
 EXP89 = (HERE / ".." / "exp89_evals_contacts_v1_model_on_eval_set" / "data"
          / "contact_precision_all.csv")
 
 # The contacts-v1 checkpoint this pair is drawn for: the top of the accuracy
 # frontier. Re-point (with ROWS_CSV) when a new model takes it *and* has
 # published per-protein rows — see README step 5.
-MARINFOLD_MODEL = "prot-exp199-cw-cv1-s02-m1-p06-aug-step-145199"
-MARINFOLD_LABEL = "MarinFold #199 CoreWeave p06-aug"
-MARINFOLD_SHORT = "MarinFold #199 CW"
+MARINFOLD_MODEL = "marinfold-cw-p06-cool-step290400"
+MARINFOLD_LABEL = "MarinFold #199 CoreWeave cooldown"
+MARINFOLD_SHORT = "MarinFold #199 cool"
 
 # The exp89 rows to compare against. `predictor="structure"` is the readout the
 # project quotes; the same CSV also holds Protenix distogram rows.

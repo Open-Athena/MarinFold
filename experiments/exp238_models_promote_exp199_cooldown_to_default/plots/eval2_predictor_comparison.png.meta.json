@@ -1,0 +1,81 @@
+{
+  "figure": "eval2_predictor_comparison",
+  "metric": "R-precision, range=all",
+  "subsets": {
+    "natural": {
+      "n": 78,
+      "ours": 0.3579372153156386,
+      "MarinFold #199 (1.5B, seq only)": 0.3371833988835494,
+      "Protenix-v2 + MSA": 0.6978963733956661,
+      "ESMFold2": 0.5293445644527662,
+      "ESMFold": 0.46229174023345165,
+      "Protenix-v2 single-seq": 0.3258725017140178,
+      "seq-KNN k=10 (null)": 0.14775686694883444,
+      "vs_protenix_ss": {
+        "mean_ours": 0.3579372153156386,
+        "mean_other": 0.3258725017140178,
+        "delta": 0.03206471360162089,
+        "ci_low": -0.02647130361155487,
+        "ci_high": 0.09060073081479664,
+        "ours_higher": 0.5897435897435898,
+        "n": 78
+      },
+      "vs_esmfold2": {
+        "mean_ours": 0.3579372153156386,
+        "mean_other": 0.5293445644527662,
+        "delta": -0.1714073491371275,
+        "ci_low": -0.21883694097938747,
+        "ci_high": -0.12397775729486751,
+        "ours_higher": 0.2692307692307692,
+        "n": 78
+      },
+      "vs_previous": {
+        "mean_ours": 0.3579372153156386,
+        "mean_other": 0.3371833988835494,
+        "delta": 0.020753816432089296,
+        "ci_low": 0.009164257700349074,
+        "ci_high": 0.03234337516382952,
+        "ours_higher": 0.5897435897435898,
+        "n": 78
+      }
+    },
+    "denovo": {
+      "n": 229,
+      "ours": 0.6206729019438696,
+      "MarinFold #199 (1.5B, seq only)": 0.6162497133330607,
+      "Protenix-v2 + MSA": 0.8050875463009695,
+      "ESMFold2": 0.8113757241335839,
+      "ESMFold": 0.7731820645875404,
+      "Protenix-v2 single-seq": 0.7987399188465726,
+      "seq-KNN k=10 (null)": 0.0485574467861259,
+      "vs_protenix_ss": {
+        "mean_ours": 0.6206729019438696,
+        "mean_other": 0.7987399188465726,
+        "delta": -0.1780670169027029,
+        "ci_low": -0.2069973794513608,
+        "ci_high": -0.14913665435404502,
+        "ours_higher": 0.10043668122270742,
+        "n": 229
+      },
+      "vs_esmfold2": {
+        "mean_ours": 0.6206729019438696,
+        "mean_other": 0.8113757241335839,
+        "delta": -0.19070282218971432,
+        "ci_low": -0.21889093337764567,
+        "ci_high": -0.16251471100178297,
+        "ours_higher": 0.07423580786026202,
+        "n": 229
+      },
+      "vs_previous": {
+        "mean_ours": 0.6206729019438696,
+        "mean_other": 0.6162497133330607,
+        "delta": 0.004423188610808924,
+        "ci_low": -0.006729448784427067,
+        "ci_high": 0.015575826006044916,
+        "ours_higher": 0.5414847161572053,
+        "n": 229
+      }
+    }
+  },
+  "caption": "R-precision on eval2's natural (n=78) and de novo (n=229) cuts. The ranking is not stable across them."
+}

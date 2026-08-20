@@ -10,7 +10,7 @@ example.
 The active recipe is subversion `s03` (`2026.08.10.3`). It holds the source-final
 learning rate for 80% of continuation training and linearly decays it toward zero
 over the final 20%. Production is a regional race managed with the
-`run-training-sweep` skill; its durable state is
+`run-training-sweep-trc` skill; its durable state is
 `scratch/exp199_continuation_trc_s03/exp199_continuation.sqlite`.
 
 > This file is authoritative for both the experiment recipe and sweep operations.

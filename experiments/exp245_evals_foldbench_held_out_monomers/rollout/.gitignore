@@ -1,0 +1,9 @@
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+scratch/
+data/coreweave_results/contact_precision_all.csv
+data/coreweave_results/marinfold_precision.csv
+data/coreweave_results/eval_targets_legacy.parquet
+pr_draft.md
