@@ -143,6 +143,14 @@ the FASTA is the right file.
 eval-val the #232 checkpoints come out **0.520** (m2-p06) and **0.473** (m1-p02), matching the
 `eval-checkpoint` reference table to the digit.
 
+**The scoreboard reproduces #245's eval-test row exactly.** Reading the held-out cut through the
+notebook gives 0.538 / 0.493 / 0.613 for m2-p06 / m1-p02 / the cooldown, and 0.265 / 0.753 / 0.792 /
+0.845 / 0.582 / 0.426 for Protenix-v2 single-seq / ESMFold / ESMFold2 / Protenix-v2 + MSA /
+seq-KNN unfiltered / seq-KNN decontaminated — every figure identical to row 1 of
+[`eval_test_reads.md`](../exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md).
+No new ledger row was added for it: this re-displays published numbers rather than scoring
+anything, and the ledger asks specifically not to accumulate routine entries.
+
 **Per-protein, 100 rollouts, #199 cooldown, against the published per-protein score:**
 
 | unit | notebook | published | delta | wall-clock (A5000) |
