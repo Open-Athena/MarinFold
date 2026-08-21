@@ -1,7 +1,7 @@
 # Exp232 TRC LR-recovery operations
 
-Status: regional ingress complete and independently verified; stopped at the
-pre-smoke review gate. No training smoke or production run has been submitted.
+Status: regional ingress and full-state accelerator smoke independently
+verified. No production run has been submitted.
 
 ## Contract
 
@@ -87,14 +87,35 @@ Every copied checkpoint reports permanent `step-333960` metadata and contains
 `manifest.ocdbt`. No HF checkpoint was generated or copied because full-state
 Levanter restore does not use one.
 
-## Pre-smoke gate
+## Smoke validation
 
-Before the first accelerator smoke:
+The approved two-step `lr010` smoke completed on 2026-08-21:
 
-1. All four regional ingress markers and full inventories must validate.
-2. The lowered plan must use the region-local caches and exact Levanter
-   `step-333960` through `TrainerConfig.initialize_from`.
-3. Local tests must pass for every LR boundary and target.
-4. Stop for user review. Do not submit a smoke test until approved.
+- Iris: `/eczech/exp232-trc-smoke-s92-lr010-use1-v6e4-a01` (`succeeded`).
+- W&B: `eric-czech/marin`, run
+  `prot-exp232-trc-cv1-decontam-train-smoke-s92-m2-p06-srcpeak-augcont-lr010-us-east1-v6e-4`
+  (`finished`). Production remains pinned to `open-athena/MarinFold`.
+- The us-east1 worker read only the regional caches and strict-restored the
+  full Levanter `step-333960` state. TensorStore checking succeeded and training
+  resumed at absolute step `333961`.
+- W&B logged LR `0.0009999999310821295` at step `333961` and
+  `0.0009999172762036324` at step `333962`, exactly matching the recovery
+  schedule. Neither optimizer step was skipped.
+- The run retained augmentation seed `166` and the original 145,200-step
+  augmentation ramp; its resumed probability is clamped at `1.0`. Data seed
+  `232` was independently visible in the worker log.
+- The full-state output is under
+  `tmp/checkpoints/<run-id>/checkpoints/step-333962`; its metadata is permanent
+  and `manifest.ocdbt` is present.
 
-Items 1-3 are complete. Item 4 is the current state.
+The first v6e-4 compile used the original v6e memory correction and exceeded
+HBM by 420 MiB before its first optimizer step. Commit `8dec032` calibrates the
+v6e correction from `0.3` to `0.4`, selecting microbatch 8 with four-way
+accumulation on v6e-4. The v6e-32 production shape remains microbatch 4 without
+accumulation. Local Ruff and all six schedule, ingress, routing, augmentation,
+and batch-fit tests pass.
+
+Iris rejected the first post-review submission at its client build floor. The
+local `eac-plm` Iris `BUILD_DATE` was set to the required `2026-08-07`; canary
+`/eczech/exp232-trc-iris-floor-canary-20260821-a01` was accepted before the
+successful smoke was submitted.
