@@ -483,8 +483,10 @@ experiment imports it.
 5. **Record results** in the experiment's README. Commit small CSVs
   to its `data/`, plots to its `plots/`. Large artifacts go to GCS
    or HuggingFace (see below).
-6. **Regenerate the index**: `python scripts/itemize.py`.
-7. **Close the issue** once the conclusion lands.
+6. **Close the issue** once the conclusion lands.
+
+There is no index file to update. `python scripts/itemize.py` prints the
+experiment index on demand; it is not tracked, so nothing to commit.
 
 Most work happens on `main`. Use a branch (`exp/<N>-<name>`) only
 when an experiment needs speculative changes to a shared kind
@@ -589,7 +591,7 @@ with plain `python`:
 | Script                                          | Purpose                                                             |
 | ----------------------------------------------- | ------------------------------------------------------------------- |
 | `python scripts/scaffold.py --issue N --kind K` | Create an experiment dir from a GitHub issue                        |
-| `python scripts/itemize.py`                     | Regenerate `experiments/index.md`                                   |
+| `python scripts/itemize.py`                     | Print the experiment index (stdout; writes nothing)                 |
 | `python scripts/history.py new ...`             | Create a run history file for a W&B run                             |
 | `python scripts/history.py add-iris-job ...`    | Append an iris job ID (preemption / restart)                        |
 | `python scripts/history.py sync`                | Pull W&B runs; skeleton-file the missing ones (needs `wandb` extra) |

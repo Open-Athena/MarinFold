@@ -1,0 +1,79 @@
+dataset,stem,pdb_id,chain,entity_id,entry_source,audited_natural,escape_mechanism,kingdom,source_organisms,uniprot_accessions,length,deposit_date,title,parent_protein,parent_protein_units
+cameo_hard,8raj_A,8RAJ,A,8RAJ_1,stem,1,afdb_absent,bacteria,Methylorubrum extorquens AM1,C5B3B7,62,2023-12-01,NMR structure of PKS docking domains,C5B3B7,1
+cameo_hard,8s3m_A,8S3M,A,8S3M_1,stem,1,afdb_absent,virus,Thermus phage Tt72,A0MNG2,345,2024-02-20,"LysTt72, a lytic endopeptidase from Thermus thermophilus MAT72 phage vB_Tt72",A0MNG2,1
+cameo_hard,8v4w_A,8V4W,A,8V4W_1,stem,1,unsampled_corpus,bacteria,Campylobacter concisus,A0A2R4P333,207,2023-11-29,Crystal structure of Campylobacter concisus Csep1,A0A2R4P333,1
+cameo_hard,9b7d_D,9B7D,D,9B7D_2,stem,1,not_in_uniprot,unclassified,metagenome,,192,2024-03-27,Structure of ThsB-Tad3 complex,entry:9B7D,1
+cameo_hard,9bch_A,9BCH,A,9BCH_1,stem,1,unsampled_corpus,bacteria,Corynebacterium diphtheriae NCTC 13129,Q6NEE5,198,2024-04-09,Solution structure of the hemoglobin receptor HbpA from Corynebacterium diphtheriae,Q6NEE5,1
+cameo_hard,9dl1_D,9DL1,D,9DL1_1,stem,1,not_in_uniprot,eukaryote,Homo sapiens,,124,2024-09-10,Crystal Structure of HLA-A*02:01/NY-ESO-1 (SLLMWITQV) and a target specific TRACeR-I,entry:9DL1,1
+cameo_hard,9eqn_A,9EQN,A,9EQN_1,stem,1,afdb_absent,virus,Infectious bursal disease virus,P61825,72,2024-03-22,N-terminal domain of Infectious Bursal Disease Virus (IBDV) VP3,P61825,1
+cameo_hard,9j46_F,9J46,F,9J46_1,stem,1,unsampled_corpus,virus,African swine fever virus,A0A2X0S7E9,124,2024-08-09,Crystal structure of ASFV E146L,A0A2X0S7E9,1
+cameo_hard,9k3e_C,9K3E,C,9K3E_2,stem,1,unsampled_corpus,bacteria,Taylorella equigenitalis MCE9,A0A654KG21,116,2024-10-18,DddB(BadTF3) dsDNA deaminase,A0A654KG21,1
+casp_fm,T1027-D1,7D2O,,7D2O_1,rcsb_sequence_search,1,unsampled_corpus,eukaryote,Gaussia princeps (in: crustaceans),Q9BLZ2,168,2020-09-17,Solution structure of Gaussia Luciferase by NMR,Q9BLZ2,1
+casp_fm,T1033-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,100,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1035-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,102,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1037-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,404,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1038-D1,6YA2,,6YA2_1,rcsb_sequence_search,1,afdb_absent,virus,Orthotospovirus tomatomaculae,P36291,114,2020-03-11,Crystal structure of TSWV glycoprotein N ectodomain (Trypsin treated),P36291,2
+casp_fm,T1038-D2,6Y9L,,6Y9L_1,rcsb_sequence_search,1,afdb_absent,virus,Orthotospovirus tomatomaculae,P36291,76,2020-03-09,Crystal structure of TSWV glycoprotein N ectodomain (sGn),P36291,2
+casp_fm,T1039-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,161,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1040-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,130,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1041-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,242,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1042-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,276,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1043-D1,6VR4,,6VR4_1,rcsb_sequence_search,1,unsampled_corpus,virus,Cellulophaga phage phi14:2,S0A2C3,148,2020-02-06,Virion-packaged DNA-dependent RNA polymerase of crAss-like phage phi14:2,S0A2C3,8
+casp_fm,T1104-D1,7ROA,,7ROA_1,rcsb_sequence_search,1,unsampled_corpus,bacteria,Enterococcus faecalis OG1RF,Q836L4,117,2021-07-30,Crystal structure of EntV136 from Enterococcus faecalis,Q836L4,1
+casp_fm,T1113-D1,7UYX,,7UYX_1,exp65_fallback,1,afdb_absent,virus,Pseudomonas phage PA1C,A0A4D6BFJ2,167,2022-05-07,Structure of bacteriophage PA1c gp2,A0A4D6BFJ2,1
+casp_fm,T1122-D1,8BBT,,8BBT_1,exp65_fallback,1,unsampled_corpus,virus,Tipula oleracea nudivirus,A0A0B4VFQ3,230,2022-10-14,Native Tipula oleracea Nudivirus polyhedrin - 1960,A0A0B4VFQ3,1
+casp_fm,T1123-D1,7UZT,,7UZT_1,rcsb_sequence_search,1,unsampled_corpus,virus,Astrovirus MLB1,B6UYJ1,214,2022-05-09,Crystal structure of the human astrovirus MLB1 capsid protein spike domain at 1.86-A resolution,B6UYJ1,1
+casp_fm,T1125-D1,8H2N,,8H2N_1,exp65_fallback,1,afdb_absent,virus,Oshimavirus P2345,A7XXD0,134,2022-10-06,gp96 RNA polymerase from P23-45 phage (crystal 2),A7XXD0,4
+casp_fm,T1125-D2,8H2N,,8H2N_1,exp65_fallback,1,afdb_absent,virus,Oshimavirus P2345,A7XXD0,148,2022-10-06,gp96 RNA polymerase from P23-45 phage (crystal 2),A7XXD0,4
+casp_fm,T1125-D4,8H2N,,8H2N_1,exp65_fallback,1,afdb_absent,virus,Oshimavirus P2345,A7XXD0,141,2022-10-06,gp96 RNA polymerase from P23-45 phage (crystal 2),A7XXD0,4
+casp_fm,T1125-D5,8H2N,,8H2N_1,exp65_fallback,1,afdb_absent,virus,Oshimavirus P2345,A7XXD0,150,2022-10-06,gp96 RNA polymerase from P23-45 phage (crystal 2),A7XXD0,4
+foldbench100,7urp_A,7URP,A,7URP_1,stem,1,afdb_absent,bacteria,Ruminococcus bromii L2-63,A0A2N0UYJ0,160,2022-04-22,Second cohesin module from Sca5 of Ruminococcus bromii,A0A2N0UYJ0,1
+foldbench100,7xp9_A,7XP9,A,7XP9_1,stem,1,unsampled_corpus,eukaryote,Phytophthora infestans T30-4,D0NTY1,84,2022-05-04,Phytophthora infesfans RxLR effector AVRvnt1,D0NTY1,1
+foldbench100,7y8i_A,7Y8I,A,7Y8I_1,stem,1,unsampled_corpus,eukaryote,Chelicerata,A0A159W468,97,2022-06-24,"Crystal structure of sDscam FNIII3 domain, isoform alpha7",A0A159W468,1
+foldbench100,7zu3_A,7ZU3,A,7ZU3_1,stem,1,unsampled_corpus,virus,parechovirus A1,Q66578,132,2022-05-11,Crystal Structure of Human Parechovirus 1 2A protein lacking the C-terminal oligomerisation helix,Q66578,1
+foldbench100,7zv1_A,7ZV1,A,7ZV1_1,stem,1,unsampled_corpus,virus,Aichi virus A846/88,O91464,136,2022-05-13,"Crystal Structure of Aichivirus A 2A protein L64M, L109M mutant",O91464,1
+foldbench100,8adc_A,8ADC,A,8ADC_1,stem,1,unsampled_corpus,bacteria,Waddlia chondrophila,D6YWY5,215,2022-07-08,Viral tegument-like DUBs,D6YWY5,1
+foldbench100,8add_A,8ADD,A,8ADD_1,stem,1,afdb_absent,eukaryote,Danio rerio,A0A8M9QCC7,213,2022-07-08,Viral tegument-like DUBs,A0A8M9QCC7,1
+foldbench100,8b61_A,8B61,A,8B61_1,stem,1,unsampled_corpus,bacteria,Bacteroides fragilis NCTC 9343,Q5LDF1,238,2022-09-25,Crystal structure of BfrC protein from Bacteroides fragilis NCTC 9343,Q5LDF1,1
+foldbench100,8bux_A,8BUX,A,8BUX_1,stem,1,unsampled_corpus,eukaryote,Homo sapiens,O15063,334,2022-12-01,Rab-binding domain of human MiniBAR,O15063,1
+foldbench100,8cba_A,8CBA,A,8CBA_1,stem,1,unsampled_corpus,bacteria,Enterococcus faecalis,Q79A46,214,2023-01-25,"Crystal structure of N-terminal domain of TraF, protein of a type IV secretion system from E.faecalis (pIP501)",Q79A46,1
+foldbench100,8eb9_A,8EB9,A,8EB9_1,stem,1,unsampled_corpus,eukaryote,Fusarium oxysporum f. sp. lycopersici,C9WMH0,95,2022-08-30,Crystal structure of SIX8 from Fusarium oxysporum f. sp. lycopersici,C9WMH0,1
+foldbench100,8ec3_A,8EC3,A,8EC3_1,stem,1,unsampled_corpus,bacteria,Borrelia hermsii HS1,G9BXS5,168,2022-09-01,The crystal structure of the complement inhibitory domain of Borrelia hermsii FbpC.,G9BXS5,1
+foldbench_rest,8fib_A,8FIB,A,8FIB_1,stem,1,unsampled_corpus,bacteria,Erwinia tracheiphila PSU-1,A0A0M2KDV0,441,2022-12-16,Crystal Structure of Erwinia tracheiphila CYP114,A0A0M2KDV0,1
+foldbench_rest,8gbe_A,8GBE,A,8GBE_1,stem,1,unsampled_corpus,virus,Eptesipox virus,A0A220T6L2,207,2023-02-25,Structure of a viral gasdermin protein A47 from Eptesipox virus,A0A220T6L2,1
+foldbench_rest,8gm7_A,8GM7,A,8GM7_1,stem,1,unsampled_corpus,archaea,Thermococcus kodakarensis,Q5JCX2,170,2023-03-24,Structure of apurinic/apyrimidinic DNA Lyase TK0353 from Thermococcus kodakarensis (Native Crystal Form),Q5JCX2,1
+foldbench_rest,8gsy_A,8GSY,A,8GSY_1,stem,1,unsampled_corpus,bacteria,Clostridium perfringens,A0A2X3IRB0,144,2022-09-07,X-ray structure of Clostridium perfringens pili protein B N-terminal domain,A0A2X3IRB0,1
+foldbench_rest,8ini_A,8INI,A,8INI_1,stem,1,unsampled_corpus,virus,Orthopoxvirus vaccinia,P08583,99,2023-03-10,vaccinia H2 protein without the transmembrane region,P08583,1
+foldbench_rest,8iqc_A,8IQC,A,8IQC_1,stem,1,unsampled_corpus,virus,African swine fever virus BA71V,A0A0C5B022,254,2023-03-16,Crystal structure of AsfvPrimPol N-terminal Prim/Pol domain in complex with Mn2+,A0A0C5B022,1
+foldbench_rest,8ou1_A,8OU1,A,8OU1_1,stem,1,unsampled_corpus,eukaryote,Mus musculus,B1ASB6,148,2023-04-21,Crystal structure of the SPOC domain of mouse SPOCD1,B1ASB6,1
+foldbench_rest,8ovq_A,8OVQ,A,8OVQ_1,stem,1,unsampled_corpus,eukaryote,Geodia cydonium,Q9U965,232,2023-04-26,Crystal structure of Geodia cydonium sponge adhesion molecule long form (SAML).,Q9U965,1
+foldbench_rest,8ow8_A,8OW8,A,8OW8_1,stem,1,unsampled_corpus,bacteria,Enterococcus,A0A242DI27,446,2023-04-27,Crystal Structure of the Catalytic Domain of a Botulinum Neurotoxin Homologue from Enterococcus faecium,A0A242DI27,1
+foldbench_rest,8p0e_A,8P0E,A,8P0E_1,stem,1,afdb_absent,virus,Rubella virus,G3M8F4,190,2023-05-10,Rubella virus p150 macro domain in complex with ADP-ribose,G3M8F4,1
+foldbench_rest,8q79_A,8Q79,A,8Q79_1,stem,1,unsampled_corpus,eukaryote,Cytaeis uchidae,A0A8S0GSD4,236,2023-08-15,Structure of mBaoJin at pH 6.5,A0A8S0GSD4,1
+foldbench_rest,8qnf_A,8QNF,A,8QNF_1,stem,1,not_in_uniprot,bacteria,Streptomyces regensis,,537,2023-09-26,Crystal structure of the Condensation domain TomBC from the Tomaymycin non-ribosomal peptide synthetase,entry:8QNF,1
+foldbench_rest,8sx0_A,8SX0,A,8SX0_1,stem,1,afdb_absent,bacteria,Bordetella pertussis,P12255,111,2023-05-19,Bordetella filamentous hemagglutinin (FhaB) C-terminal domain,P12255,1
+foldbench_rest,8t5t_A,8T5T,A,8T5T_1,stem,1,unsampled_corpus,bacteria,Borreliella burgdorferi B31,O51321,208,2023-06-14,Crystal structure of outer membrane lipoprotein carrier protein (LolA) from Borrelia burgdorferi (steric acid bound),O51321,1
+foldbench_rest,8ux2_A,8UX2,A,8UX2_1,stem,1,unsampled_corpus,bacteria,Chromobacterium violaceum,Q7NY09,246,2023-11-08,Chromobacterium violaceum mono-ADP-ribosyltransferase CteC in complex with NAD+,Q7NY09,1
+foldbench_rest,8w7p_A,8W7P,A,8W7P_1,stem,1,unsampled_corpus,bacteria,Paenibacillus sp. FPU-7,A0AAN0NPC6,274,2023-08-31,Extracellular domain of a sensor histidine kinase,A0AAN0NPC6,1
+foldbench_rest,8wc1_A,8WC1,A,8WC1_1,stem,1,unsampled_corpus,bacteria,Monoglobus pectinilyticus,A0A2K9P019,178,2023-09-11,A carbohydrate binding domain of a putative pectate lyase,A0A2K9P019,1
+foldbench_rest,8wqn_A,8WQN,A,8WQN_1,stem,1,unsampled_corpus,archaea,Saccharolobus solfataricus P2,Q981B4,173,2023-10-12,Structure of Saccharolobus solfataricus SegC (SSO0033) protein,Q981B4,1
+foldbench_rest,8xif_A,8XIF,A,8XIF_1,stem,1,unsampled_corpus,virus,Orthopoxvirus vaccinia,P04305,224,2023-12-19,The crystal structure of the AEP domain of VACV D5,P04305,1
+foldbench_rest,9aue_A,9AUE,A,9AUE_1,stem,1,unsampled_corpus,bacteria,Micromonospora echinospora,Q70KE6,415,2024-02-29,Crystal structure of the holo form of GenB2 in complex with PMP,Q70KE6,1
+foldbench_rest,9b8e_A,9B8E,A,9B8E_1,stem,1,afdb_absent,bacteria,Legionella pneumophila,A0AA44XLE0,233,2024-03-29,Structure of S-nitrosylated Legionella pneumophila Ceg10.,A0AA44XLE0,1
+foldbench_rest,9gso_A,9GSO,A,9GSO_1,stem,1,unsampled_corpus,eukaryote,Leishmania tarentolae,A0A640KTL4,177,2024-09-16,DNA binding domain of J-DNA Binding Protein 3 (JBP3),A0A640KTL4,1
+foldbench_rest,9jq9_A,9JQ9,A,9JQ9_1,stem,1,unsampled_corpus,eukaryote,Plasmodium falciparum 3D7,Q8I224,179,2024-09-27,Crystal structure of Plasmoredoxin from Plasmodium falciparum a disulfide oxidoreductase protein unique to Plasmodium species,Q8I224,1
+cameo_hard,8jvx_B,8JVX,B,8JVX_1,stem,0,designed_not_natural,synthetic,synthetic construct,,39,2023-06-28,Crystal structure of the dimeric DZBB fold protein mkaL2_v1.2_Z,entry:8JVX,1
+cameo_hard,8s89_A,8S89,A,8S89_1,stem,0,designed_not_natural,synthetic,synthetic construct,,401,2024-03-06,Efficient and scalable protein design using a relaxed sequence space,entry:8S89,1
+cameo_hard,8u1a_A,8U1A,A,8U1A_1,stem,0,designed_not_natural,synthetic,synthetic construct,,324,2023-08-31,De novo Design of Near Infrared Fluorescent Proteins,entry:8U1A,1
+cameo_hard,8vd6_A,8VD6,A,8VD6_1,stem,0,designed_not_natural,synthetic,synthetic construct,,174,2023-12-14,Crystal structure of CAP Repeat,entry:8VD6,1
+cameo_hard,8vej_B,8VEJ,B,8VEJ_1,stem,0,designed_not_natural,synthetic,synthetic construct,,242,2023-12-19,De novo designed cholic acid binder: CHD_buttress,entry:8VEJ,1
+cameo_hard,8wwc_C,8WWC,C,8WWC_1,stem,0,designed_not_natural,synthetic,synthetic construct,,113,2023-10-25,De novo design binder of HRAS -120-4,entry:8WWC,1
+cameo_hard,8yl4_B,8YL4,B,8YL4_1,stem,0,designed_not_natural,bacteria,Escherichia coli,,207,2024-03-05,Crystal structure of the de novo designed protein 200 AA in the crystal form 1,entry:8YL4,1
+cameo_hard,9de9_B,9DE9,B,9DE9_1,stem,0,designed_not_natural,synthetic,synthetic construct,,81,2024-08-28,Crystal Structure of HE-B11,entry:9DE9,1
+cameo_hard,9deb_E,9DEB,E,9DEB_1,stem,0,designed_not_natural,synthetic,synthetic construct,,83,2024-08-28,Crystal Structure of D3-threaded,entry:9DEB,1
+cameo_hard,9def_A,9DEF,A,9DEF_1,stem,0,designed_not_natural,synthetic,synthetic construct,,151,2024-08-28,The designed serine hydrolase known as win,entry:9DEF,1
+cameo_hard,9deg_A,9DEG,A,9DEG_1,stem,0,designed_not_natural,synthetic,synthetic construct,,157,2024-08-28,The designed serine hydrolase known as win1,entry:9DEG,1
+cameo_hard,9fdg_A,9FDG,A,9FDG_1,stem,0,designed_not_natural,synthetic,synthetic construct,,179,2024-05-17,Solution structure of a de novo designed 12-stranded transmembrane beta-barrel in LDAO micelles.,entry:9FDG,1
+cameo_hard,9hac_B,9HAC,B,9HAC_2,stem,0,designed_not_natural,synthetic,synthetic construct,,127,2024-11-03,De novo designed BBF-14 beta barrel with computationally designed BBF-14_b4 binder,entry:9HAC,1
+cameo_hard,9had_C,9HAD,C,9HAD_2,stem,0,designed_not_natural,synthetic,synthetic construct,,108,2024-11-03,Der f 21 dust mite allergen with computationally designed DerF21_b10 binder,entry:9HAD,1
+cameo_hard,9j5h_A,9J5H,A,9J5H_1,stem,0,designed_not_natural,synthetic,synthetic construct,,35,2024-08-12,Solution structure of disulfide-directed multicyclic peptides with affinity to pdl1,entry:9J5H,1

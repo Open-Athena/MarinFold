@@ -1,0 +1,21 @@
+{
+  "tier": "A",
+  "rule": "identity >= 30% over >= 50% qcov, or E <= 0.001",
+  "sensitivity": "7.5",
+  "report_evalue_ceiling": 10.0,
+  "queries": {
+    "n": 776,
+    "sha256": "e290bf2d3183bf0e7ad26db3b4cdbedeaa889eac577c4500571899298a62a5ac"
+  },
+  "exp225_droplist": {
+    "path": "/data/exp225_decontam/droplist_sequence.parquet",
+    "rows": 1124983,
+    "sha256": "545d6c7fe91a9293b739250bce284d27b4111430561a231372070197d1c634ea"
+  },
+  "pdb_corpus_sequences": 41647,
+  "dropped_by_arm": {
+    "afdb": 109085,
+    "esm_atlas": 1311485,
+    "pdb": 2254
+  }
+}
