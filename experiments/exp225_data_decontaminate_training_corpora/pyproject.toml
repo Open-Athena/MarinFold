@@ -1,0 +1,30 @@
+[project]
+name = "exp225-data-decontaminate-training-corpora"
+version = "0.1.0"
+description = "Eval-decontamination pass over the contacts-v1 training corpora: one pinned 554-protein reference, sequence + structure drop lists, per-tier survival — issue #225. CPU-only, no model inference."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # mmseqs and foldseek are binaries, installed by decontam_lib.ensure_*;
+    # they are deliberately not Python deps.
+    # No `marinfold` here: the training sequences were already decoded to FASTA
+    # by exp213, so nothing in this experiment reads a contacts-v1 document.
+    # That keeps transformers (and its huggingface_hub<1 pin) out of the venv,
+    # so bucket I/O can use huggingface_hub>=1.5 directly.
+    "huggingface_hub>=1.5",
+    "pandas>=2.2",
+    "pyarrow>=15",
+    # Residue counts + chain handling for the 554 reference structures.
+    "gemmi>=0.6",
+    "matplotlib>=3.8",
+    "numpy",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+environments = [
+    "sys_platform == 'linux'",
+]

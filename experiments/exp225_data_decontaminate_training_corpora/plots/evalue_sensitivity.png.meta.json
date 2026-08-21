@@ -1,0 +1,5 @@
+{
+  "script": "plot_decontam.py",
+  "args": [],
+  "caption": "The E-value arm of Tier A contributes nothing above 1e-3; everything the curve gains after that is the identity arm, which has no significance floor of its own."
+}
