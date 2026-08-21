@@ -35,9 +35,10 @@ MARGIN = 4          # points around the whole figure
 #: (panel stem in output/, optional placeholder caption when the file is absent).
 LAYOUT = {
     "figure_1": {
-        "caption": "Document format (a) and example prediction for Top7 (b).",
-        "rows": [[("document_format", None)],
-                 [("top7_heatmap_side_by_side", None)]],
+        "caption": ("Document format (a), the Top7 structure (b), and its observed (c) and "
+                    "predicted (d) contact maps."),
+        "rows": [[("document_format", None), ("top7_structure_cartoon_front", None)],
+                 [("top7_map_ground_truth", None), ("top7_map_predicted", None)]],
     },
     "figure_2": {
         "caption": "Contact-prediction accuracy on natural monomers (a) and de novo designs (b).",
