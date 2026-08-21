@@ -4,9 +4,6 @@
 > `run-training-sweep-trc` skill. Read it in full at the start of every
 > heartbeat before inspecting code, SQLite, W&B, or Iris.
 
-Status: regional ingress and full-state accelerator smoke independently
-verified. No production run has been submitted.
-
 ## Invariants
 
 - Execute only on Google TRC TPUs at `interactive` priority. Never dispatch this
