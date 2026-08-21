@@ -271,7 +271,7 @@ leads Protenix-v2 single-seq by 0.268 on the same 314 proteins.
 
 ### 6. Manuscript figures — four make/plot notebook pairs
 
-The publication panels live in [`notebooks/figures/`](../../notebooks/figures/), not in the
+The publication panels live in [`figures/`](figures/), not in the
 exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes a dataset,
 `<n>_plot_<name>.ipynb` draws it, and nothing is recomputed at plot time.
 
