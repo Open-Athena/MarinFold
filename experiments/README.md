@@ -48,7 +48,7 @@ uv sync
 
 # create an experiment dir from a GitHub issue:
 python scaffold.py --issue 42 --kind models
-# regenerate ../experiments/index.md from gh + frontmatter:
+# print the experiment index, built from gh + frontmatter:
 python itemize.py
 ```
 
@@ -92,11 +92,11 @@ comes from its dir; a dir-less issue's kind comes from its
    the root `README.md` for the policy. Keep `plots/summary.pdf`
    (narrative + plot appendix) updated as you go — see
    [`AGENTS.md`](AGENTS.md).
-6. **Regenerate the index**:
-   ```bash
-   python scripts/itemize.py
-   ```
-7. **Close** the issue once the conclusion lands.
+6. **Close** the issue once the conclusion lands.
+
+There is no index file to update as part of this. `python
+scripts/itemize.py` renders the experiment index to stdout on demand —
+it is not tracked, so there is nothing to commit or keep in sync.
 
 ## Main vs. branch
 
@@ -122,7 +122,7 @@ experiments/exp<N>_<kind>_<name>/
 ## Frontmatter
 
 The `README.md` starts with a YAML frontmatter block read by
-`python scripts/itemize.py`:
+`python scripts/itemize.py` when it renders the index:
 
 ```yaml
 ---

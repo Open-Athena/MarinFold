@@ -88,8 +88,9 @@ whichever fits the work.
    underlying artifacts.
 
 4. **Keep the frontmatter accurate.** `issue`, `title`, `kind`, and
-   `branch` in `marinfold_experiment:` are read by
-   `python scripts/itemize.py` to regenerate the index.
+   `branch` in `marinfold_experiment:` are what
+   `python scripts/itemize.py` reads to render the experiment index.
+   Nothing to regenerate or commit — it prints to stdout.
 
 5. **Post new issue comments for progress updates.** Don't edit an
    existing issue comment unless the user explicitly asks for that.
