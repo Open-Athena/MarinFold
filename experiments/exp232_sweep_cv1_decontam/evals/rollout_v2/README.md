@@ -2,6 +2,13 @@
 
 This directory evaluates the final `m2-p06-aug` and `m1-p02-aug` checkpoints from exp232, plus the exp75 E8 checkpoint used to validate the evaluation path. All three checkpoints are verified and evaluated in place from existing CoreWeave S3 objects. No checkpoint is copied to Hugging Face or GCS.
 
+> **Since this run:** `m2-p06`'s export is no longer CoreWeave-only — [#250](https://github.com/Open-Athena/MarinFold/issues/250)
+> copied it to the public bucket as `contacts-v1-exp232-m2-p06-1.5B`
+> (`checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199`), weights byte-identical
+> and verified against the manifest `checkpoint_specs.py` pins here, with `config.json` rewritten so
+> transformers 4.x reads the trained rope. `m1-p02` is still CoreWeave-only. See
+> `experiments/exp250_evals_exploration_notebook/publish_exp232_m2_p06.py`.
+
 ## Fixed recipe
 
 - 577 `(dataset, stem)` units / 575 unique stems

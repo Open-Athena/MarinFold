@@ -50,6 +50,18 @@ The scoreboard reproduces the published aggregates to the digit: the #199 cooldo
 rollout noise of the published per-protein score — `1qys_A` 0.684–0.697 against 0.697,
 `8ah9_A` 0.909 against 0.894, `7y5r_A` 0.825 against 0.835.
 
+## The decontaminated checkpoint
+
+#232's `m2-p06` — the best model trained on corpora with every FoldBench homolog removed — was
+CoreWeave-only until now; `publish_exp232_m2_p06.py` put it on the public bucket as
+`contacts-v1-exp232-m2-p06-1.5B`, so the notebook can fold with it and not just read its scores.
+
+Paired over 314 natural monomers it trails the contaminated default by **0.074**
+[0.062, 0.086], and is ahead on 13 % of proteins. The gap looks smallest on the 14 proteins with
+no training homolog (−0.009) and the 19 viral ones (−0.029) — but those are far harder for both
+models, and identity does not rank-order the gap among the 300 proteins that have a homolog
+(Spearman +0.001). m2-p06 clears the seq-KNN null over its own corpus by +0.112.
+
 ## What it is not
 
 A producer of eval numbers of record. It runs under transformers rather than vLLM and uses

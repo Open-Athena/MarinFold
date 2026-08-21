@@ -152,6 +152,17 @@ eval-val the #232 checkpoints come out **0.520** (m2-p06) and **0.473** (m1-p02)
 | `7y5r_A` (eval-val) | 0.825 | 0.835 | −0.010 | 27 s |
 | `denovo_pdb__1qys_A` (legacy-554, Top7) | 0.684–0.697 | 0.697 | −0.013…0.000 | 23 s |
 
+**The same check for `#232 m2-p06`, folded from the copy published here** (below), which is what
+proves the publish is sound end to end — bucket copy, rope repair, tokenizer and all:
+
+| unit | notebook | published | delta |
+|---|---:|---:|---:|
+| `8ah9_A` | 0.902 | 0.894 | +0.008 |
+| `7y5r_A` | 0.784 | 0.763 | +0.021 |
+| `7t9r_A` | 0.250 | 0.167 | +0.083 |
+
+`7t9r_A` is L=38 with 12 true contacts, so its whole `+0.083` is one extra contact called right.
+
 That is rollout noise on a single protein, which is much wider than the 0.0023 aggregate noise
 floor #204 measured over 554 proteins — as expected, and the reason §3 is an instrument for looking
 at maps rather than a way to produce numbers of record.
@@ -214,7 +225,43 @@ homologous to #199's training data, and that objection does not apply here.
 The notebook's part 4 now defaults to the contamination contrast: the default checkpoint against
 this one, same protein, side by side.
 
-### 5. Cost
+### 5. What the decontaminated checkpoint says about leakage
+
+The notebook's paired-contrast cell exists for this question, and #232's two checkpoints are what
+make it answerable. Over the 314 natural FoldBench monomers, paired protein by protein:
+
+| cut | m2-p06 | #199 cooldown | paired delta |
+|---|---:|---:|---:|
+| eval-val (97) | 0.520 | 0.589 | −0.069 |
+| eval-test (217) | 0.538 | 0.613 | −0.076 |
+| all natural (314) | 0.532 | 0.606 | **−0.074** [−0.086, −0.062] |
+| eval-denovo (19) | 0.591 | 0.619 | −0.027 |
+
+m2-p06 is ahead on 13 % of proteins. Broken out by each protein's best identity to #199's
+(un-decontaminated) training set:
+
+| stratum | n | m2-p06 | cooldown | delta |
+|---|---:|---:|---:|---:|
+| no homolog | 14 | 0.257 | 0.266 | **−0.009** |
+| 20–30 % | 6 | 0.401 | 0.455 | −0.054 |
+| 30–50 % | 49 | 0.546 | 0.608 | −0.063 |
+| 50–70 % | 105 | 0.570 | 0.644 | −0.073 |
+| 70–100 % | 140 | 0.532 | 0.617 | −0.085 |
+
+**Read this carefully rather than as a leakage result.** The gap does look smallest exactly where
+the contaminated model has nothing to have memorised — 14 proteins with no training homolog, and
+the 19 viral ones (−0.029) — but two things argue against reading that as the mechanism: those
+proteins are far harder for *both* models (0.26 against 0.61), so a small absolute gap is partly a
+floor effect; and among the 300 proteins that do have a homolog, identity does not rank-order the
+gap at all (Spearman +0.001). That is the same answer #213 got from the other direction (score
+uncorrelated with training identity, against seq-KNN's +0.53) and the same one #245 got from the
+eval-val → eval-test drop.
+
+Against the null that matters for it — a sequence-KNN predictor built from the corpus it actually
+trained on — m2-p06 clears by **+0.112** (0.532 against 0.420). It trails ESMFold2 by 0.263 and
+leads Protenix-v2 single-seq by 0.268 on the same 314 proteins.
+
+### 6. Cost
 
 §1–2 are a few MB of downloads and run in seconds. §3 is ~25–45 s per protein per checkpoint at
 100 rollouts on an A5000 (L ≤ 300), plus a one-time ~5.5 GB checkpoint download; a free Colab T4 is
