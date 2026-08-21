@@ -1,7 +1,7 @@
 {
   "dataset": "1_top7_heatmap",
   "notebook": "1_make_top7_heatmap_data.ipynb",
-  "generated_utc": "2026-08-21T16:06:14+00:00",
+  "generated_utc": "2026-08-21T16:31:39+00:00",
   "parameters": {
     "protein": "denovo_pdb__1qys_A",
     "model": "contacts-v1-exp232-m2-p06-1.5B",
@@ -14,14 +14,12 @@
     "gpu_memory_utilization": 0.85
   },
   "git": {
-    "commit": "57622b0700ce59988adddb031578c927fe7c104c",
+    "commit": "2f30f1bb15de7d6bbde9218602ea72a4c518a9a0",
     "branch": "exp250/evals-exploration-notebook",
     "dirty": true,
     "dirty_files": [
-      "M notebooks/figures/data/1_top7_heatmap/metrics.csv",
-      " M notebooks/figures/data/1_top7_heatmap/score.npy",
-      " M notebooks/figures/data/1_top7_heatmap/votes.npy",
-      "?? notebooks/figures/data/1_top7_heatmap/ca_coords.npy"
+      "?? notebooks/figures/data/1_top7_heatmap/residue_numbers.npy",
+      "?? notebooks/figures/data/1_top7_heatmap/structure.cif"
     ]
   },
   "machine": {
@@ -83,6 +81,14 @@
     "ca_coords.npy": {
       "bytes": 1232,
       "sha256": "6eeabfd753940d350cdb61b323080ca3f0126987b5dd8cba6498f6eee3e7c966"
+    },
+    "structure.cif": {
+      "bytes": 83013,
+      "sha256": "2b335fc22d09b5ed09571cd29e2582c0bef3fd935a0310540e552ada855f8a25"
+    },
+    "residue_numbers.npy": {
+      "bytes": 864,
+      "sha256": "54a055d5f0c77cf20f2db911d39de823269b10ff662b65dd3787ff0f305d3966"
     },
     "document.txt": {
       "bytes": 2832,
