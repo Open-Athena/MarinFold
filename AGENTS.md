@@ -133,8 +133,9 @@ branch (the `marinfold_experiment.branch` frontmatter field), use
 What can still go direct to `main`:
 
 - Pure typo / one-line doc fixes.
-- Regenerating index files (`python scripts/itemize.py`,
-  `python scripts/history.py update-index`).
+- Regenerating `history/RUNS.md` (`python scripts/history.py
+  update-index`). There is no experiment index file to regenerate —
+  `python scripts/itemize.py` prints to stdout and writes nothing.
 - Hotfix reverts when something is actively broken.
 
 What goes through a PR by default:
