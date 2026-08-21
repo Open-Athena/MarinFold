@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Average Spearman on the 212 in-range ProteinGym substitution assays vs the two knobs an any-order model has and a masked LM does not: how many document orderings are ensembled (left) and how much of the rest of the protein each conditional saw (right). Dashed line is ESM-2 650M re-aggregated on the same 212 assays."
+}

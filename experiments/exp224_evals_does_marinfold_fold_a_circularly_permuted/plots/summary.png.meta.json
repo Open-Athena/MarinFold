@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "R-precision for the permutant, a length/composition control, and three wild-type crystals. The re-ordering costs ~0.09; the extra 8 residues cost nothing."
+}
