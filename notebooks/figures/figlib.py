@@ -324,8 +324,11 @@ def figure_style(dpi: int = 300) -> None:
     })
 
 
-def save_figure(figure, name: str, dpi: int = 300, formats=("png", "pdf")) -> Path:
-    """Write a panel to `output/` as a high-resolution PNG and, by default, a vector PDF.
+def save_figure(figure, name: str, dpi: int = 300, formats=("png", "pdf", "svg")) -> Path:
+    """Write a panel to `output/` as a high-resolution PNG and, by default, vector PDF and SVG.
+
+    The SVG is what `assemble_figures.py` composes into the multi-panel manuscript figures, so a
+    panel that is not written as SVG cannot be assembled.
 
     No title and no panel letter is ever baked in by these notebooks — captions and lettering
     belong to the document the panel lands in.

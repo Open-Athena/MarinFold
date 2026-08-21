@@ -14,6 +14,33 @@ Datasets land in `data/<n>_<name>/`, figures in `output/` as a 300 dpi PNG and a
 titles and no panel letters are baked into a figure — captions and lettering belong to the
 document the panel goes into.
 
+## The manuscript figures
+
+[`assemble_figures.py`](assemble_figures.py) composes the panels above into the multi-panel
+figures a manuscript needs, lettered A, B, C in reading order, and writes them to
+[`manuscript/`](manuscript/) as SVG:
+
+| figure | panels |
+|---|---|
+| [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format · **B** Top7 observed vs predicted contact map |
+| [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
+| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture *(placeholder)* · **B** GDT-TS, natural · **C** GDT-TS, designs |
+
+```bash
+uv run --with svgutils python assemble_figures.py           # all three
+uv run --with svgutils python assemble_figures.py --only figure_2
+```
+
+The plot notebooks own the panels; this owns only the arrangement and the letters. Nothing is
+recomputed, so an assembled figure cannot disagree with the panel it was built from — change a
+panel, rerun its plot notebook, rerun this.
+
+A panel that does not exist yet is drawn as a dashed placeholder carrying its letter, so the
+lettering is settled before the artwork arrives and the gap is visible rather than silent.
+`figure_3`'s panel A is one: a model architecture diagram is not something these notebooks can
+produce. Drop a `helico_architecture.svg` into `output/` and re-run, and it takes the slot with no
+other change.
+
 ## Why the split
 
 Because a figure should be able to tell you where its numbers came from. Every `make` notebook
