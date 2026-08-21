@@ -511,7 +511,7 @@ def _apply_training_overrides(
             data_seed=RECOVERY_DATA_SEED,
             initialize_from_checkpoint_path=None,
             initialize_model_from_checkpoint_path=None,
-            hf_save_steps=shape.end_step + 1,
+            hf_save_steps=None,
         )
         return replace(pod, train_config=train_config)
 

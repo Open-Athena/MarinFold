@@ -108,6 +108,11 @@ The approved two-step `lr010` smoke completed on 2026-08-21:
   `tmp/checkpoints/<run-id>/checkpoints/step-333962`; its metadata is permanent
   and `manifest.ocdbt` is present.
 
+The smoke also exposed that an HF interval beyond the run end still installs a
+hook which Levanter forces at shutdown. The smoke therefore wrote an incidental
+HF export. Production explicitly sets `hf_save_steps=None`; it writes only the
+required full-state Levanter checkpoints.
+
 The first v6e-4 compile used the original v6e memory correction and exceeded
 HBM by 420 MiB before its first optimizer step. Commit `8dec032` calibrates the
 v6e correction from `0.3` to `0.4`, selecting microbatch 8 with four-way
