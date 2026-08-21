@@ -1,0 +1,15 @@
+[project]
+name = "exp250-evals-exploration-notebook"
+version = "0.1.0"
+description = "Interactive evals-exploration notebook — per-protein contact maps and the predictor scoreboard — issue #250. This dir holds only the source check; the notebook itself is notebooks/evals_exploration.ipynb."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # verify_sources.py reads published bucket tables over stdlib urllib and
+    # asserts their shape. No marinfold, no torch: the model-running code lives
+    # in the notebook, which installs marinfold[transformers] in Colab.
+    "pandas>=2.0",
+    "pyarrow",
+]
+
+[dependency-groups]
+dev = []
