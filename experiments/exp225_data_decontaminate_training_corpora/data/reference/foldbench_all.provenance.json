@@ -1,0 +1,32 @@
+{
+  "source": "/home/bizon/git/FoldBench/targets",
+  "task_files": [
+    "monomer_protein.csv",
+    "interface_protein_protein.csv",
+    "interface_antibody_antigen.csv",
+    "interface_protein_peptide.csv",
+    "interface_protein_dna.csv",
+    "interface_protein_rna.csv",
+    "interface_protein_ligand.csv"
+  ],
+  "protein_chain_types": [
+    "peptide",
+    "protein"
+  ],
+  "n_entries": 1493,
+  "n_chains_requested": 1969,
+  "n_chains_written": 1940,
+  "n_unique_sequences": 1449,
+  "n_chains_missing": 6,
+  "chains_missing": [
+    "8C0H_A",
+    "8C0H_C",
+    "8PNI_A",
+    "8PNI_B",
+    "8XNH_A",
+    "8XNH_F"
+  ],
+  "n_skipped_short": 23,
+  "min_len": 10,
+  "sequence_source": "RCSB entry FASTA (entity/SEQRES sequences)"
+}

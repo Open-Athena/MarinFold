@@ -141,6 +141,10 @@ RP_LABEL_OFFSET = {
     "#199 TRC p06-aug": (12, -64),
     "#199 TRC p03-base": (-70, -56),
     "#199 CW p06-aug": (-46, 58),
+    "#199 TRC cont": (-52, -34),
+    # The frontier point, and the last date on the axis: everything has to go
+    # left, and high enough to clear the CW p06-aug label below it.
+    "#199 CW cooldown": (-64, 34),
 }
 # Where the second (pairwise) reading of a dual-measured checkpoint goes.
 RP_TWIN_OFFSET = {"#61/#75 E8": (-44, -8), "#120 re-epoch": (-42, -10)}
@@ -239,7 +243,8 @@ def plot_rprecision_frontier(rp: pd.DataFrame, baselines: pd.DataFrame, out: Pat
                   for d, v in zip(fx, fy)]),
         caption="Best contacts-v1 model to date on contact R-precision. Every step "
                 "is a base-model result: #75 E8 (Jun 21), #117 E16 (Jul 22), #166 "
-                "AA aug (Jul 31), #199 AFDB+ESM (Aug 9-10).")
+                "AA aug (Jul 31), #199 AFDB+ESM (Aug 9-12), #199's cooldown "
+                "(Aug 15) - the first to clear single-sequence Protenix-v2.")
     print(f"wrote {out}")
 
 
@@ -257,7 +262,12 @@ VL_LABEL_OFFSET = {
     "prot-exp146-cv1-s01-3b-e8-lr3p162e-3-wd0p4-bs256-us-east1": (14, 26),
     "exp137-3way-restart30k-lr2p5e-3": (30, -34),
     "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1": (-56, 16),
-    "prot-exp199-cw-cv1-s02-m1-p06-aug": (-124, 14),
+    "prot-exp199-cw-cv1-s02-m1-p06-aug": (-40, 70),
+    # The cooldown is the last step, so it is labelled whether or not it is
+    # named. Both August labels are pushed well up: the points sit in the
+    # bottom 0.03 nats of the axis, where a downward label runs into the date
+    # ticks.
+    "prot-exp199-cw-cv1-p06-cool-s01": (-20, 168),
 }
 # Where the "best run still training" callout goes. Hand-placed like the rest:
 # it anchors to whichever live run is currently lowest, which is always in the
@@ -282,7 +292,11 @@ VL_NAMES = {
     # a day later. Only a named step gets a label, so omitting them here is the
     # whole fix -- the steps themselves stay in the staircase.
     "prot-exp199-cw-cv1-s02-m1-p06-aug": "#199 CoreWeave p06-aug",
-    "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1": "#199 cont. aug100",
+    # The TRC continuation's step (~2.5821) is left unnamed for the same reason:
+    # it is superseded three days later by the cooldown, and its label cannot go
+    # anywhere at this end of the axis without landing on p06-aug's or the
+    # cooldown's.
+    "prot-exp199-cw-cv1-p06-cool-s01": "#199 CW cooldown",
 }
 YTOP = 3.26
 # Colour for runs whose loss was recorded on the current (post-marin#7209)
@@ -444,6 +458,11 @@ S3_OFFSET = {
     ("#199 TRC p03-aug", "rollout"): (26, -62),
     ("#199 TRC p03-base", "rollout"): (34, 26),
     ("#199 CW p06-aug", "rollout"): (10, 44),
+    ("#199 TRC cont", "rollout"): (44, -30),
+    # Lowest loss and highest accuracy, so it sits in the top-right corner with
+    # nothing outboard of it. The label goes back into the figure and has to
+    # clear CW p06-aug's, which is only 0.03 nats and 0.02 R-precision away.
+    ("#199 CW cooldown", "rollout"): (-16, 80),
 }
 
 

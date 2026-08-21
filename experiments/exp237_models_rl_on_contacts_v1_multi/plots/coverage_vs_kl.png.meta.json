@@ -1,0 +1,10 @@
+{
+  "script": "make_plots.py",
+  "args": [
+    "--steps",
+    "data/training_steps.csv.gz",
+    "--out",
+    "plots/"
+  ],
+  "caption": "Union coverage against distance moved. M-C crosses the 80% floor by KL 0.013, M-B by 0.016, M-F not until 0.036 -- same destination, different cost per unit of KL."
+}

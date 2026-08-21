@@ -1,0 +1,19 @@
+{
+  "n_rollouts": 4614,
+  "n_proteins": 577,
+  "mean_sections": 22.210446467273517,
+  "mean_consensus": 0.5589040481691399,
+  "mean_best_f1": 0.5541259031327495,
+  "mean_last_f1": 0.4780450916215093,
+  "mean_union_pairs": 680.8359341135674,
+  "mean_total_votes": 2264.6504117902036,
+  "votes_per_pair": 3.326279208130702,
+  "mean_jaccard": 0.3274157388644475,
+  "frac_dead_rollouts": 0.07607282184655396,
+  "mean_frac_zero_marginals": 0.4521463137034449,
+  "marg_std_within_rollout": 0.0069050523766108,
+  "marg_sd_pooled": 0.011903998002784511,
+  "rho_marginal_vs_f1": 0.3367016941180201,
+  "rho_marginal_vs_novelty": -0.08661137022840161,
+  "rho_marginal_vs_size": 0.04462616926295101
+}

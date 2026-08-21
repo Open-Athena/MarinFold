@@ -1,6 +1,6 @@
 # exp199 Sweep Operations
 
-> This document governs a training sweep managed with the `run-training-sweep`
+> This document governs a training sweep managed with the `run-training-sweep-trc`
 > skill. Read it in full at the start of every heartbeat before inspecting code,
 > SQLite, W&B, or Iris.
 

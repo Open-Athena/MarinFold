@@ -1,0 +1,17 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Each predictor's mean R-precision on eval-val (the 97 natural monomers we have always scored) joined to eval-test (the 217 we never had). Every slope is under 0.03 and the contaminated model's is not steeper than the decontaminated ones', which is the experiment's main result.",
+  "plot": "val_vs_test.png",
+  "sha256": "1393ecec6a46c7816cac1d20886747f45bfa0e99d1472eb61256881d57863782",
+  "sources": {
+    "per_protein": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz",
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    },
+    "eval_sets": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv",
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    }
+  }
+}

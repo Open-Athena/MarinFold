@@ -1,0 +1,146 @@
+{
+  "legacy554/consensus": {
+    "n_proteins": 554,
+    "r_prec": 0.5083495551940675,
+    "r_prec_long": 0.4499860806502342,
+    "n_pred": 426.35175992779784,
+    "n_gt": 165.20758122743683,
+    "n_sections": 7.1328971119133575,
+    "oracle": false
+  },
+  "legacy554/best": {
+    "n_proteins": 554,
+    "r_prec": 0.4841930955648074,
+    "r_prec_long": 0.4239359867866114,
+    "n_pred": 168.34250902527077,
+    "n_gt": 165.20758122743683,
+    "n_sections": 7.1328971119133575,
+    "oracle": true
+  },
+  "legacy554/last": {
+    "n_proteins": 554,
+    "r_prec": 0.27967308286331627,
+    "r_prec_long": 0.24899714655781113,
+    "n_pred": 309.105821299639,
+    "n_gt": 165.20758122743683,
+    "n_sections": 7.1328971119133575,
+    "oracle": false
+  },
+  "legacy554/second_last": {
+    "n_proteins": 512,
+    "r_prec": 0.4221770680893565,
+    "r_prec_long": 0.3682767258499014,
+    "n_pred": 153.0994907924107,
+    "n_gt": 147.1796875,
+    "n_sections": 7.775383649553571,
+    "oracle": false
+  },
+  "eval2/consensus": {
+    "n_proteins": 307,
+    "r_prec": 0.4663037434632057,
+    "r_prec_long": 0.39510870330712466,
+    "n_pred": 402.6742671009772,
+    "n_gt": 135.42345276872965,
+    "n_sections": 9.375814332247558,
+    "oracle": false
+  },
+  "eval2/best": {
+    "n_proteins": 307,
+    "r_prec": 0.44132648008495595,
+    "r_prec_long": 0.36873473091396064,
+    "n_pred": 111.36034201954398,
+    "n_gt": 135.42345276872965,
+    "n_sections": 9.375814332247558,
+    "oracle": true
+  },
+  "eval2/last": {
+    "n_proteins": 307,
+    "r_prec": 0.22926965821966752,
+    "r_prec_long": 0.19908652717488481,
+    "n_pred": 253.37011400651465,
+    "n_gt": 135.42345276872965,
+    "n_sections": 9.375814332247558,
+    "oracle": false
+  },
+  "eval2/second_last": {
+    "n_proteins": 304,
+    "r_prec": 0.375336210316018,
+    "r_prec_long": 0.3154068052649773,
+    "n_pred": 121.77112703634084,
+    "n_gt": 132.68421052631578,
+    "n_sections": 9.52935855263158,
+    "oracle": false
+  },
+  "eval2_natural/consensus": {
+    "n_proteins": 78,
+    "r_prec": 0.2727373517372205,
+    "r_prec_long": 0.21202321451272527,
+    "n_pred": 545.7467948717949,
+    "n_gt": 164.65384615384616,
+    "n_sections": 13.51602564102564,
+    "oracle": false
+  },
+  "eval2_natural/best": {
+    "n_proteins": 78,
+    "r_prec": 0.25703737319156106,
+    "r_prec_long": 0.19614971084585484,
+    "n_pred": 109.80929487179488,
+    "n_gt": 164.65384615384616,
+    "n_sections": 13.51602564102564,
+    "oracle": true
+  },
+  "eval2_natural/last": {
+    "n_proteins": 78,
+    "r_prec": 0.16036325005168725,
+    "r_prec_long": 0.11515280397717517,
+    "n_pred": 170.8125,
+    "n_gt": 164.65384615384616,
+    "n_sections": 13.51602564102564,
+    "oracle": false
+  },
+  "eval2_natural/second_last": {
+    "n_proteins": 75,
+    "r_prec": 0.19114269336293585,
+    "r_prec_long": 0.13597111687333252,
+    "n_pred": 99.52103174603175,
+    "n_gt": 154.72,
+    "n_sections": 14.05611111111111,
+    "oracle": false
+  },
+  "eval2_lt30/consensus": {
+    "n_proteins": 275,
+    "r_prec": 0.4669210128763736,
+    "r_prec_long": 0.3932342503263065,
+    "n_pred": 391.31954545454545,
+    "n_gt": 127.53454545454545,
+    "n_sections": 9.73090909090909,
+    "oracle": false
+  },
+  "eval2_lt30/best": {
+    "n_proteins": 275,
+    "r_prec": 0.44170553024819004,
+    "r_prec_long": 0.3665304636123101,
+    "n_pred": 103.29,
+    "n_gt": 127.53454545454545,
+    "n_sections": 9.73090909090909,
+    "oracle": true
+  },
+  "eval2_lt30/last": {
+    "n_proteins": 275,
+    "r_prec": 0.2260773449150079,
+    "r_prec_long": 0.19614379846935903,
+    "n_pred": 245.39454545454547,
+    "n_gt": 127.53454545454545,
+    "n_sections": 9.73090909090909,
+    "oracle": false
+  },
+  "eval2_lt30/second_last": {
+    "n_proteins": 275,
+    "r_prec": 0.3742354269750115,
+    "r_prec_long": 0.3129516333964357,
+    "n_pred": 117.53956709956711,
+    "n_gt": 127.53454545454545,
+    "n_sections": 9.797714285714285,
+    "oracle": false
+  }
+}
