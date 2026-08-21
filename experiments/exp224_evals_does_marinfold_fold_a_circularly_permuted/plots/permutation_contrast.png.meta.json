@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Same pairs and same model, split by whether the permutation moved them. Moved pairs lose 2.4x more R-precision."
+}
