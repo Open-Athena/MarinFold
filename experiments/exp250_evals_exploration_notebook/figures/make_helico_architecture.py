@@ -91,8 +91,8 @@ def contact_matrix_icon(axis, x, y, size, seed=0):
 def main() -> int:
     # A unit grid with equal aspect: 1 unit = 0.5 in both ways, so circles are round and a gap
     # means the same thing horizontally and vertically.
-    figure, axis = plt.subplots(figsize=(6.5, 2.2), layout="constrained")
-    axis.set(xlim=(0, 13), ylim=(0, 4.4))
+    figure, axis = plt.subplots(figsize=(6.5, 2.03), layout="constrained")
+    axis.set(xlim=(0, 13), ylim=(0.35, 4.4))
     axis.set_aspect("equal")
     axis.set_axis_off()
 
@@ -122,7 +122,7 @@ def main() -> int:
     # The contact row sits low enough that the arrow into the sum is a real arrow rather than a
     # nub, and the icon, the arrow and the projection box share one centre line so that arrow is
     # exactly horizontal. The projection is centred on the sum (and so on `pair z`) above it.
-    CONTACT_Y = 0.775
+    CONTACT_Y = 1.05
     contact_matrix_icon(axis, 4.3, CONTACT_Y - 0.475, 0.95)
     axis.text(4.15, CONTACT_Y, "contacts, three-state\npresent / absent / unknown", ha="right",
               va="center", fontsize=6.2, color=ADDED, linespacing=1.35)
