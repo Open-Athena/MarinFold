@@ -24,7 +24,7 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 |---|---|
 | [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format · **B** Top7 observed vs predicted contact map |
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
-| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture *(placeholder)* · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs |
+| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs |
 
 ```bash
 uv run --with svgutils python assemble_figures.py           # all three
@@ -41,6 +41,19 @@ Helico's contact arm used.
 The plot notebooks own the panels; this owns only the arrangement and the letters. Nothing is
 recomputed, so an assembled figure cannot disagree with the panel it was built from — change a
 panel, rerun its plot notebook, rerun this.
+
+`figure_3`'s panel A is drawn by [`make_helico_architecture.py`](make_helico_architecture.py),
+checked line by line against `Open-Athena/helico`'s `model/helico.py` and `model/features.py`. Two
+things it is careful about, because the intuitive version of each is wrong:
+
+- **The MSA is removed by two routes, not one.** `use_msa=False` skips the MSA module *and* zeroes
+  the MSA-derived profile / deletion-mean columns inside `s_inputs`. Gating the module alone would
+  leave alignment-derived conservation in the single representation — helico's own comment calls
+  that "exactly the bug this argument exists to prevent".
+- **Contacts enter the pair representation, not the Pairformer blocks.** The three-state matrix is
+  one-hot encoded and added to `z_init` through a zero-initialised 3 → 128 projection. The blocks
+  are untouched; what changed is the tensor they read. `z_init` is re-added at the top of every
+  recycle, which is why the figure draws that arrow rather than a single injection.
 
 A panel that does not exist yet is drawn as a dashed placeholder carrying its letter, so the
 lettering is settled before the artwork arrives and the gap is visible rather than silent.
