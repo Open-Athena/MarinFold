@@ -5,19 +5,21 @@ description = "TRC continuation variants and regional CW ingress for exp232."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "gcsfs",
-    "marin-core==0.2.73.dev30987879744",
+    "marin-core==0.2.76.dev31155643335",
     "marin-dupekit==0.1.5.dev30957455498",
     "marin-dupekit-native==0.1.5.dev30957455498",
     "marin-finelog==0.2.22.dev31066648311",
     "marin-finelog-server==0.2.22.dev31066648311",
-    "marin-iris==0.2.73.dev30987879744",
+    # The controller rejects pre-2026-08-07 clients. Keep the training stack at
+    # exp232's generation while using the last compatible Iris client release.
+    "marin-iris[controller]==0.2.76.dev31155643335",
     "marin-iris-native==0.1.5.dev30223685542",
     "s3fs",
 ]
 
 [project.optional-dependencies]
 tpu = [
-    "marin-core[tpu]==0.2.73.dev30987879744; sys_platform == 'linux'",
+    "marin-core[tpu]==0.2.76.dev31155643335; sys_platform == 'linux'",
     "torch==2.11.0",
     "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
