@@ -3,8 +3,6 @@
 
 import math
 
-from levanter.optim.config import LrScheduleContext
-
 from experiments.exp232_sweep_cv1_decontam.exp232_sweep import (
     NUM_TRAIN_STEPS,
     augmentation_probability,
@@ -26,6 +24,7 @@ from experiments.exp232_sweep_cv1_decontam.tpu.exp232_train_trc import (
     VARIANTS,
     Exp232RecoveryLrSchedule,
 )
+from levanter.optim.config import LrScheduleContext
 
 
 def _schedule(ratio: float):

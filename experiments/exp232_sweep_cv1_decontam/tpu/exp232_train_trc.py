@@ -24,22 +24,6 @@ from datetime import timedelta
 
 import click
 import optax
-from fray.types import (
-    ResourceConfig,
-    get_tpu_topology,
-    tpu_family,
-    tpu_hbm_capacity_bytes,
-)
-from levanter.optim.config import AdamConfig, LrSchedule, LrScheduleContext
-from marin.execution.build_context import current_build_context
-from marin.execution.lazy import ArtifactStep
-from marin.experiment.cli import build_options
-from marin.experiment.train import train_lm
-from marin.processing.tokenize.tokenize import TokenizedCache
-from marin.rl.placement import marin_prefix_for_region, singleton_region_list
-from marin.training.training import LevanterCheckpoint
-from rigging.filesystem import marin_prefix, prefix_join
-
 from experiments.exp232_sweep_cv1_decontam.exp232_sweep import (
     AFDB_DOCUMENTS,
     AFDB_TOKENS,
@@ -62,6 +46,21 @@ from experiments.exp232_sweep_cv1_decontam.exp232_sweep import (
     augment_amino_acids,
     augmentation_probability,
 )
+from fray.types import (
+    ResourceConfig,
+    get_tpu_topology,
+    tpu_family,
+    tpu_hbm_capacity_bytes,
+)
+from levanter.optim.config import AdamConfig, LrSchedule, LrScheduleContext
+from marin.execution.build_context import current_build_context
+from marin.execution.lazy import ArtifactStep
+from marin.experiment.cli import build_options
+from marin.experiment.train import train_lm
+from marin.processing.tokenize.tokenize import TokenizedCache
+from marin.rl.placement import marin_prefix_for_region, singleton_region_list
+from marin.training.training import LevanterCheckpoint
+from rigging.filesystem import marin_prefix, prefix_join
 
 CANONICAL_MODULE = "experiments.exp232_sweep_cv1_decontam.tpu.exp232_train_trc"
 if __name__ == "__main__":
