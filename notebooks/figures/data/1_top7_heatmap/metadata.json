@@ -1,7 +1,7 @@
 {
   "dataset": "1_top7_heatmap",
   "notebook": "1_make_top7_heatmap_data.ipynb",
-  "generated_utc": "2026-08-21T16:03:14+00:00",
+  "generated_utc": "2026-08-21T16:06:14+00:00",
   "parameters": {
     "protein": "denovo_pdb__1qys_A",
     "model": "contacts-v1-exp232-m2-p06-1.5B",
@@ -14,40 +14,41 @@
     "gpu_memory_utilization": 0.85
   },
   "git": {
-    "commit": "77c1af321cddaa68387df4d5206eaaeeb55a5c80",
+    "commit": "57622b0700ce59988adddb031578c927fe7c104c",
     "branch": "exp250/evals-exploration-notebook",
     "dirty": true,
     "dirty_files": [
       "M notebooks/figures/data/1_top7_heatmap/metrics.csv",
       " M notebooks/figures/data/1_top7_heatmap/score.npy",
-      "?? notebooks/figures/data/1_top7_heatmap/votes.npy"
+      " M notebooks/figures/data/1_top7_heatmap/votes.npy",
+      "?? notebooks/figures/data/1_top7_heatmap/ca_coords.npy"
     ]
   },
   "machine": {
-    "hostname": "ip1",
-    "hostname_overridden": false,
-    "user": "bizon",
-    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
-    "python": "3.11.14",
+    "hostname": "1xH100 node",
+    "hostname_overridden": true,
+    "user": "ubuntu",
+    "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+    "python": "3.12.14",
     "gpu": {
-      "name": "NVIDIA RTX A5000",
-      "compute_capability": "8.6",
-      "memory_gib": 23.7,
+      "name": "NVIDIA H100 80GB HBM3",
+      "compute_capability": "9.0",
+      "memory_gib": 79.2,
       "count": 1
     }
   },
   "packages": {
     "marinfold": "0.1.0",
-    "torch": "2.5.1+cu121",
+    "torch": "2.11.0+cu129",
     "transformers": "4.57.6",
-    "vllm": null,
-    "numpy": "2.4.6",
+    "vllm": "0.20.2+cu129",
+    "numpy": "2.3.5",
     "pandas": "3.0.5",
     "matplotlib": "3.11.1"
   },
   "inputs": [
     {
-      "path": "/home/bizon/git/MarinFold/.claude/worktrees/evals-exploration-notebook-cba1c7/experiments/exp94_evals_sequence_knn_baseline/data/eval_queries.fasta",
+      "path": "/home/ubuntu/MarinFold/experiments/exp94_evals_sequence_knn_baseline/data/eval_queries.fasta",
       "bytes": 114366,
       "sha256": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a"
     },
@@ -55,24 +56,33 @@
       "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp89/gt_universe.jsonl",
       "bytes": 7956102,
       "sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9"
+    },
+    {
+      "url": "https://files.rcsb.org/download/1QYS-assembly1.cif",
+      "bytes": 83013,
+      "sha256": "2b335fc22d09b5ed09571cd29e2582c0bef3fd935a0310540e552ada855f8a25"
     }
   ],
   "outputs": {
     "score.npy": {
       "bytes": 33984,
-      "sha256": "030459e0a84c0b89c92131d60a9a54f3c93a20fce56acffb91b9542f1d16cada"
+      "sha256": "cd44ac76f8beadacda590bee0bb0218be7b7b6fa44009f0b1a504a3b44b3e012"
     },
     "votes.npy": {
       "bytes": 17056,
-      "sha256": "c6761359f75cd096a5d65cffc41e1f20a7299b3f3b83ad2b59272d8d6f447d0e"
+      "sha256": "42917b94c93fa46db68fa8fa93e640a15bd0fa0242da0f90da2dcad975c84f13"
     },
     "ground_truth.json": {
       "bytes": 12744,
       "sha256": "b63c46f5754fc3eb29e24a5006d2c3e489f2ba192bb5fce8ea90e11449f1ad89"
     },
     "metrics.csv": {
-      "bytes": 737,
-      "sha256": "f452e4c6dae5a16631e4b7fb3c86bc9b7183feda07ce9a1b8302e1250d5064f1"
+      "bytes": 740,
+      "sha256": "3a0e1c632ab6acaba95f915dfc36cb0a0977724d50b518a62c795f97b8bcb28d"
+    },
+    "ca_coords.npy": {
+      "bytes": 1232,
+      "sha256": "6eeabfd753940d350cdb61b323080ca3f0126987b5dd8cba6498f6eee3e7c966"
     },
     "document.txt": {
       "bytes": 2832,
@@ -81,7 +91,7 @@
   },
   "model": {
     "nickname": "contacts-v1-exp232-m2-p06-1.5B",
-    "path": "/home/bizon/.cache/huggingface/hub/buckets/open-athena/MarinFold/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199",
+    "path": "/home/ubuntu/.cache/huggingface/hub/buckets/open-athena/MarinFold/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199",
     "files": [
       "config.json",
       "config.json.lock",
@@ -112,7 +122,7 @@
   },
   "recipe": {
     "method": "rollout+resample+tiebreak",
-    "backend": "transformers",
+    "backend": "vllm",
     "dtype": "bfloat16",
     "n_rollouts": 100,
     "temperature": 1.0,
@@ -128,14 +138,21 @@
     "n_true_contacts": 76,
     "n_candidate_pairs": 3741
   },
+  "structure": {
+    "pdb_id": "1QYS",
+    "chain": "A",
+    "source": "https://files.rcsb.org/download/1QYS-assembly1.cif",
+    "n_ca": 92,
+    "note": "CA coordinates in input-sequence index order; NaN where the residue is unresolved. Same indexing as the contact map."
+  },
   "votes": {
-    "max": 99,
+    "max": 97,
     "n_rollouts": 100,
-    "pairs_with_any_vote": 472,
+    "pairs_with_any_vote": 539,
     "note": "score.npy = votes.npy + a pairwise tie-break in [0, 0.5); the metric ranks score, the figure shows votes / n_rollouts"
   },
   "result": {
-    "r_precision_all": 0.7105263157894737,
-    "auc_all": 0.9919867882530337
+    "r_precision_all": 0.6973684210526315,
+    "auc_all": 0.9923781144539383
   }
 }
