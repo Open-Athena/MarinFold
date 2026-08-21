@@ -24,12 +24,19 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 |---|---|
 | [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format · **B** Top7 observed vs predicted contact map |
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
-| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture *(placeholder)* · **B** GDT-TS, natural · **C** GDT-TS, designs |
+| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture *(placeholder)* · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs |
 
 ```bash
 uv run --with svgutils python assemble_figures.py           # all three
 uv run --with svgutils python assemble_figures.py --only figure_2
 ```
+
+**The contaminated checkpoint is not drawn in any manuscript figure.** #199's cooldown scores
+higher than everything we train on decontaminated data, but its corpus was never filtered against
+FoldBench, so it is not a claim these figures make. It remains in the datasets — #245 published
+those numbers and part 4 of the exploration notebook is built on the contrast — and `MarinFold` in
+figures 2 and 3 is always #232's `m2-p06`, trained on filtered data, which is also the checkpoint
+Helico's contact arm used.
 
 The plot notebooks own the panels; this owns only the arrangement and the letters. Nothing is
 recomputed, so an assembled figure cannot disagree with the panel it was built from — change a

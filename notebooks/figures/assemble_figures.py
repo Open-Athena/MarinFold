@@ -44,9 +44,10 @@ LAYOUT = {
         "rows": [[("rprecision_natural", None), ("rprecision_designed", None)]],
     },
     "figure_3": {
-        "caption": "Helico architecture (a) and GDT-TS for natural monomers (b) and designs (c).",
+        "caption": "Helico architecture (a); GDT-TS for natural monomers (b) and designs (c); lDDT for the same (d, e).",
         "rows": [[("helico_architecture", "Helico model architecture\n(supply artwork)")],
-                 [("gdt_ts_natural", None), ("gdt_ts_designed", None)]],
+                 [("gdt_ts_natural", None), ("gdt_ts_designed", None)],
+                 [("lddt_natural", None), ("lddt_designed", None)]],
     },
 }
 

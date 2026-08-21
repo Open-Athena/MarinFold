@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="411.59952pt" height="215.03952pt" viewBox="0 0 411.59952 215.03952" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="411.59952pt" height="135.83952pt" viewBox="0 0 411.59952 135.83952" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-08-21T12:45:11.937393</dc:date>
+    <dc:date>2026-08-21T13:11:18.416397</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -21,8 +21,8 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 215.03952 
-L 411.59952 215.03952 
+   <path d="M 0 135.83952 
+L 411.59952 135.83952 
 L 411.59952 0 
 L 0 0 
 z
@@ -30,18 +30,18 @@ z
   </g>
   <g id="axes_1">
    <g id="line2d_1">
-    <path d="M 10.377596 49.557232 
-L 10.377596 31.722608 
-" clip-path="url(#pf6db6c1aba)" style="fill: none; stroke: #1f5c8b; stroke-width: 2.2"/>
+    <path d="M 10.377596 32.837232 
+L 10.377596 22.042608 
+" clip-path="url(#pa28c422d1b)" style="fill: none; stroke: #1f5c8b; stroke-width: 2.2"/>
    </g>
    <g id="line2d_2">
-    <path d="M 10.377596 183.316912 
-L 10.377596 76.309168 
-" clip-path="url(#pf6db6c1aba)" style="fill: none; stroke: #c44e52; stroke-width: 2.2"/>
+    <path d="M 10.377596 113.796912 
+L 10.377596 49.029168 
+" clip-path="url(#pa28c422d1b)" style="fill: none; stroke: #c44e52; stroke-width: 2.2"/>
    </g>
    <g id="text_1">
     <!-- &lt;contacts-v1&gt; &lt;begin_sequence&gt; -->
-    <g style="fill: #444444" transform="translate(19.115986 20.55498) scale(0.085 -0.085)">
+    <g style="fill: #444444" transform="translate(19.115986 16.15498) scale(0.085 -0.085)">
      <defs>
       <path id="DejaVuSansMono-1f" d="M 3578 3003 
 L 922 2003 
@@ -437,7 +437,7 @@ z
    </g>
    <g id="text_2">
     <!-- &lt;p28&gt; &lt;VAL&gt; &lt;p43&gt; &lt;ARG&gt; &lt;p48&gt; &lt;ILE&gt;  … -->
-    <g style="fill: #1f5c8b" transform="translate(19.115986 42.847928) scale(0.085 -0.085)">
+    <g style="fill: #1f5c8b" transform="translate(19.115986 29.647928) scale(0.085 -0.085)">
      <defs>
       <path id="DejaVuSansMono-53" d="M 1172 441 
 L 1172 -1331 
@@ -759,7 +759,7 @@ z
    </g>
    <g id="text_3">
     <!-- &lt;begin_statements&gt; -->
-    <g style="fill: #444444" transform="translate(19.115986 65.14154) scale(0.085 -0.085)">
+    <g style="fill: #444444" transform="translate(19.115986 43.14154) scale(0.085 -0.085)">
      <defs>
       <path id="DejaVuSansMono-50" d="M 2113 3144 
 Q 2219 3369 2383 3476 
@@ -814,7 +814,7 @@ z
    </g>
    <g id="text_4">
     <!-- &lt;contact&gt; &lt;p46&gt; &lt;p67&gt; -->
-    <g style="fill: #c44e52" transform="translate(19.115986 87.434488) scale(0.085 -0.085)">
+    <g style="fill: #c44e52" transform="translate(19.115986 56.634488) scale(0.085 -0.085)">
      <defs>
       <path id="DejaVuSansMono-19" d="M 3097 4563 
 L 3097 3981 
@@ -882,7 +882,7 @@ z
    </g>
    <g id="text_5">
     <!-- &lt;contact&gt; &lt;p6&gt; &lt;p41&gt; -->
-    <g style="fill: #c44e52" transform="translate(19.115986 109.727768) scale(0.085 -0.085)">
+    <g style="fill: #c44e52" transform="translate(19.115986 70.127768) scale(0.085 -0.085)">
      <use xlink:href="#DejaVuSansMono-1f"/>
      <use xlink:href="#DejaVuSansMono-46" transform="translate(60.203125 0)"/>
      <use xlink:href="#DejaVuSansMono-52" transform="translate(120.40625 0)"/>
@@ -907,7 +907,7 @@ z
    </g>
    <g id="text_6">
     <!-- &lt;contact&gt; &lt;p47&gt; &lt;p83&gt; -->
-    <g style="fill: #c44e52" transform="translate(19.115986 132.021048) scale(0.085 -0.085)">
+    <g style="fill: #c44e52" transform="translate(19.115986 83.621048) scale(0.085 -0.085)">
      <use xlink:href="#DejaVuSansMono-1f"/>
      <use xlink:href="#DejaVuSansMono-46" transform="translate(60.203125 0)"/>
      <use xlink:href="#DejaVuSansMono-52" transform="translate(120.40625 0)"/>
@@ -933,7 +933,7 @@ z
    </g>
    <g id="text_7">
     <!-- &lt;contact&gt; &lt;p87&gt; &lt;p45&gt; -->
-    <g style="fill: #c44e52" transform="translate(19.115986 154.314328) scale(0.085 -0.085)">
+    <g style="fill: #c44e52" transform="translate(19.115986 97.114328) scale(0.085 -0.085)">
      <defs>
       <path id="DejaVuSansMono-18" d="M 647 4666 
 L 3009 4666 
@@ -986,13 +986,13 @@ z
    </g>
    <g id="text_8">
     <!-- … -->
-    <g style="fill: #c44e52" transform="translate(19.115986 176.607608) scale(0.085 -0.085)">
+    <g style="fill: #c44e52" transform="translate(19.115986 110.607608) scale(0.085 -0.085)">
      <use xlink:href="#DejaVuSansMono-729"/>
     </g>
    </g>
    <g id="text_9">
     <!-- &lt;end&gt; -->
-    <g style="fill: #444444" transform="translate(19.115986 198.90122) scale(0.085 -0.085)">
+    <g style="fill: #444444" transform="translate(19.115986 124.10122) scale(0.085 -0.085)">
      <defs>
       <path id="DejaVuSansMono-47" d="M 2681 3053 
 L 2681 4863 
@@ -1030,7 +1030,7 @@ z
    </g>
    <g id="text_10">
     <!-- a &lt;position&gt; &lt;amino acid&gt; pair per residue, -->
-    <g style="fill: #1f5c8b" transform="translate(229.631731 38.08743) scale(0.075 -0.075)">
+    <g style="fill: #1f5c8b" transform="translate(229.631731 24.88743) scale(0.075 -0.075)">
      <defs>
       <path id="DejaVuSans-44" d="M 2194 1759 
 Q 1497 1759 1228 1600 
@@ -1413,7 +1413,7 @@ z
      <use xlink:href="#DejaVuSans-f" transform="translate(2230.296875 0)"/>
     </g>
     <!-- from a random start, in random order -->
-    <g style="fill: #1f5c8b" transform="translate(229.631731 47.089481) scale(0.075 -0.075)">
+    <g style="fill: #1f5c8b" transform="translate(229.631731 33.889481) scale(0.075 -0.075)">
      <defs>
       <path id="DejaVuSans-49" d="M 2375 4863 
 L 2375 4384 
@@ -1477,7 +1477,7 @@ z
    </g>
    <g id="text_11">
     <!-- a statement per contact, -->
-    <g style="fill: #c44e52" transform="translate(229.631731 127.260257) scale(0.075 -0.075)">
+    <g style="fill: #c44e52" transform="translate(229.631731 78.860257) scale(0.075 -0.075)">
      <use xlink:href="#DejaVuSans-44"/>
      <use xlink:href="#DejaVuSans-3" transform="translate(61.28125 0)"/>
      <use xlink:href="#DejaVuSans-56" transform="translate(93.0625 0)"/>
@@ -1504,7 +1504,7 @@ z
      <use xlink:href="#DejaVuSans-f" transform="translate(1211.796875 0)"/>
     </g>
     <!-- in random order -->
-    <g style="fill: #c44e52" transform="translate(229.631731 136.262308) scale(0.075 -0.075)">
+    <g style="fill: #c44e52" transform="translate(229.631731 87.862308) scale(0.075 -0.075)">
      <use xlink:href="#DejaVuSans-4c"/>
      <use xlink:href="#DejaVuSans-51" transform="translate(27.78125 0)"/>
      <use xlink:href="#DejaVuSans-3" transform="translate(91.15625 0)"/>
@@ -1525,8 +1525,8 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="pf6db6c1aba">
-   <rect x="7.2" y="7.2" width="397.19952" height="200.63952"/>
+  <clipPath id="pa28c422d1b">
+   <rect x="7.2" y="7.2" width="397.19952" height="121.43952"/>
   </clipPath>
  </defs>
 </svg>
