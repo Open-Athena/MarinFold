@@ -1,9 +1,12 @@
 {
-  "dataset": "3_gdt_ts",
-  "notebook": "3_make_gdt_ts_data.ipynb",
-  "generated_utc": "2026-08-21T15:37:55+00:00",
+  "dataset": "3_structure_accuracy",
+  "notebook": "3_make_structure_accuracy_data.ipynb",
+  "generated_utc": "2026-08-21T15:56:58+00:00",
   "parameters": {
-    "metric": "gdt_ts",
+    "metrics": [
+      "gdt_ts",
+      "lddt"
+    ],
     "classes": [
       "natural",
       "designed"
@@ -12,18 +15,22 @@
     "bootstrap_seed": 0
   },
   "git": {
-    "commit": "fef976aa21dee7ac94e82cc8b077d3d6d676619e",
+    "commit": "4a01ffa3a27bdc697820cc690839011e020541bc",
     "branch": "exp250/evals-exploration-notebook",
     "dirty": true,
     "dirty_files": [
-      "M notebooks/evals_exploration.ipynb",
-      " M notebooks/figures/1_make_top7_heatmap_data.ipynb",
-      " M notebooks/figures/1_plot_top7_heatmap.ipynb",
-      " M notebooks/figures/2_make_rprecision_data.ipynb",
-      " M notebooks/figures/4_make_contamination_contrast_data.ipynb",
+      "M notebooks/figures/1_plot_top7_heatmap.ipynb",
+      " M notebooks/figures/2_plot_rprecision.ipynb",
+      "D  notebooks/figures/3_make_gdt_ts_data.ipynb",
+      "D  notebooks/figures/3_plot_gdt_ts.ipynb",
       " M notebooks/figures/4_plot_contamination_contrast.ipynb",
-      "?? notebooks/figures/data/",
-      "?? notebooks/figures/output/"
+      " D notebooks/figures/data/3_gdt_ts/metadata.json",
+      " D notebooks/figures/data/3_gdt_ts/per_target.csv",
+      " D notebooks/figures/data/3_gdt_ts/summary.csv",
+      " M notebooks/figures/figlib.py",
+      "?? notebooks/figures/3_make_structure_accuracy_data.ipynb",
+      "?? notebooks/figures/3_plot_structure_accuracy.ipynb",
+      "?? notebooks/figures/data/3_structure_accuracy/"
     ]
   },
   "machine": {
@@ -56,16 +63,19 @@
   ],
   "outputs": {
     "summary.csv": {
-      "bytes": 1749,
-      "sha256": "8916259d7ac36cc60f0a418e5fdeedd494f2c601388dea65d95ded3d8739a60c"
+      "bytes": 3729,
+      "sha256": "fc74c4789972f070722580f095973ff1e2c4fc5e1fb9f017759a6ad5687980d4"
     },
     "per_target.csv": {
       "bytes": 484463,
       "sha256": "e3a4a00280bef28c0059a6d998ba096137786fbbee5723422d4aa179ccac561c"
     }
   },
-  "metric": {
-    "name": "gdt_ts",
+  "metrics": {
+    "names": [
+      "gdt_ts",
+      "lddt"
+    ],
     "source": "Open-Athena/helico exp14"
   },
   "arms_dropped_targets": [

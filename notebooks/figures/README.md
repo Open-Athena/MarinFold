@@ -7,7 +7,7 @@ Same number, same figure. Nothing is recomputed at plot time.
 |---|---|---|---|---|
 | 1 | [`1_make_top7_heatmap_data`](1_make_top7_heatmap_data.ipynb) | [`1_plot_top7_heatmap`](1_plot_top7_heatmap.ipynb) | **GPU** | `top7_heatmap_mirrored`, `top7_heatmap_side_by_side` |
 | 2 | [`2_make_rprecision_data`](2_make_rprecision_data.ipynb) | [`2_plot_rprecision`](2_plot_rprecision.ipynb) | CPU | `rprecision_natural`, `rprecision_designed` |
-| 3 | [`3_make_gdt_ts_data`](3_make_gdt_ts_data.ipynb) | [`3_plot_gdt_ts`](3_plot_gdt_ts.ipynb) | CPU | `gdt_ts_natural`, `gdt_ts_designed` |
+| 3 | [`3_make_structure_accuracy_data`](3_make_structure_accuracy_data.ipynb) | [`3_plot_structure_accuracy`](3_plot_structure_accuracy.ipynb) | CPU | `structure_accuracy_natural`, `structure_accuracy_designed` |
 | 4 | [`4_make_contamination_contrast_data`](4_make_contamination_contrast_data.ipynb) | [`4_plot_contamination_contrast`](4_plot_contamination_contrast.ipynb) | CPU | `contamination_contrast`, `contamination_contrast_scatter` |
 
 Datasets land in `data/<n>_<name>/`, figures in `output/` as a 300 dpi PNG and a vector PDF. No
@@ -37,6 +37,14 @@ Some of what that catches is not hypothetical:
   the digest moves and the two figures stop matching each other silently.
 - The dirty-checkout flag. A figure made from uncommitted code is not reproducible, and the
   metadata says so rather than leaving it to memory.
+
+Figure 3 draws **GDT-TS and lDDT side by side** for each protein class. They disagree
+usefully: GDT-TS superimposes the prediction and asks what fraction of residues land within a set
+of cutoffs, so a correct fold with one domain rotated scores badly; lDDT never superimposes
+anything, so it credits locally correct geometry when the global arrangement is wrong. Helico from
+MarinFold contacts scores 0.48 GDT-TS against 0.61 lDDT on natural monomers — better locally than
+globally, which neither metric shows on its own. Both panels share one bar order (`ORDER_BY`) so
+they can be read across.
 
 ## Running them
 

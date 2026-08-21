@@ -279,7 +279,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 |---|---|---|
 | 1 | Top7 contact map — mirrored, and observed/predicted side by side | GPU |
 | 2 | contact-prediction R-precision, natural and designed | CPU |
-| 3 | Helico GDT-TS, natural and designed | CPU |
+| 3 | Helico structure accuracy — GDT-TS and lDDT side by side, both classes | CPU |
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
 
 Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
@@ -304,7 +304,7 @@ Numbers behind the panels:
 | MarinFold (#232 m2-p06) | 0.532 | 0.591 |
 | Protenix-v2, single sequence | 0.264 | 0.835 |
 
-| Helico arm | natural (305) | designed (19) |
+| Helico arm | GDT-TS natural (305) | GDT-TS designed (19) |
 |---|---:|---:|
 | Helico + true contacts | 0.893 | 0.920 |
 | Protenix-v2 + MSA | 0.868 | 0.860 |

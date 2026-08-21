@@ -27,7 +27,7 @@ import socket
 import subprocess
 import sys
 import urllib.request
-from datetime import UTC, datetime
+from datetime import datetime, timezone  # timezone.utc, not datetime.UTC: 3.10 support
 from pathlib import Path
 
 FIGURES = Path(__file__).resolve().parent
@@ -200,7 +200,7 @@ def write_dataset(name: str, *, notebook: str, parameters: dict, inputs: Inputs,
     metadata = {
         "dataset": name,
         "notebook": notebook,
-        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "parameters": parameters,
         "git": git_state(),
         "machine": machine(),
@@ -223,6 +223,28 @@ def load_metadata(name: str) -> dict:
         raise FileNotFoundError(
             f"{path} does not exist — run the matching `make` notebook for '{name}' first")
     return json.loads(path.read_text())
+
+
+def require(name: str, *filenames: str) -> Path:
+    """Assert a dataset has the files this plot notebook needs, and say what to do when it does not.
+
+    A dataset written before a `make` notebook changed can be missing a file the plot now reads.
+    The bare `FileNotFoundError` from `np.load` does not tell you that; this does, and names the
+    notebook to re-run.
+    """
+    directory = dataset_dir(name)
+    missing = [filename for filename in filenames if not (directory / filename).exists()]
+    if not missing:
+        return directory
+    try:
+        producer = load_metadata(name)["notebook"]
+        when = load_metadata(name)["generated_utc"]
+        detail = f"was written by {producer} on {when} and predates them"
+    except FileNotFoundError:
+        detail = "has never been generated"
+    raise FileNotFoundError(
+        f"{name} is missing {missing}: the dataset {detail}. Run the matching `make` notebook "
+        f"again — the plot notebooks never regenerate data themselves, on purpose.")
 
 
 def describe(name: str) -> dict:
