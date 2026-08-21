@@ -78,66 +78,62 @@ def contact_matrix_icon(axis, x, y, size, seed=0):
 
 
 def main() -> int:
-    # A unit grid with equal aspect: 1 unit = 0.5 in in both directions, so circles are round and
-    # a gap means the same thing horizontally and vertically.
-    figure, axis = plt.subplots(figsize=(6.5, 2.6), layout="constrained")
-    axis.set(xlim=(0, 13), ylim=(0, 5.2))
+    # A unit grid with equal aspect: 1 unit = 0.5 in both ways, so circles are round and a gap
+    # means the same thing horizontally and vertically.
+    figure, axis = plt.subplots(figsize=(6.5, 2.8), layout="constrained")
+    axis.set(xlim=(0, 13), ylim=(0, 5.6))
     axis.set_aspect("equal")
     axis.set_axis_off()
 
-    # --- inputs ---------------------------------------------------------------------------------
-    box(axis, 0.1, 3.5, 2.5, 1.1, "sequence,\nreference conformers,\ntoken bonds", fontsize=6.8)
-    box(axis, 0.1, 1.85, 2.5, 0.85, "", color=REMOVED, face="#FBF1F1", dashed=True)
-    axis.plot([0.45, 2.25], [1.95, 2.6], color=REMOVED, lw=1.3, alpha=0.75,
-              solid_capstyle="round")
-    axis.plot([0.45, 2.25], [2.6, 1.95], color=REMOVED, lw=1.3, alpha=0.75,
-              solid_capstyle="round")
-    axis.text(1.35, 2.275, "MSA", ha="center", va="center", fontsize=8.5, color=REMOVED,
-              zorder=5, bbox=dict(boxstyle="round,pad=0.15", facecolor="#FBF1F1",
-                                  edgecolor="none"))
-    axis.text(1.35, 1.62, "removed — no alignment,\nand the MSA profile columns\nof s_inputs "
-              "are zeroed too", ha="center", va="top", fontsize=6.2, color=REMOVED,
-              linespacing=1.35)
+    # --- inputs -----------------------------------------------------------------------------------
+    box(axis, 0.1, 4.0, 2.6, 1.1, "sequence,\nreference conformers,\ntoken bonds", fontsize=6.8)
+    box(axis, 0.1, 2.35, 2.6, 0.85, "", color=REMOVED, face="#FBF1F1", dashed=True)
+    axis.plot([0.45, 2.35], [2.45, 3.1], color=REMOVED, lw=1.3, alpha=0.75, solid_capstyle="round")
+    axis.plot([0.45, 2.35], [3.1, 2.45], color=REMOVED, lw=1.3, alpha=0.75, solid_capstyle="round")
+    axis.text(1.4, 2.775, "MSA", ha="center", va="center", fontsize=8.5, color=REMOVED, zorder=5,
+              bbox=dict(boxstyle="round,pad=0.15", facecolor="#FBF1F1", edgecolor="none"))
+    axis.text(1.4, 2.1, "removed — no alignment,\nand the MSA profile columns\nof s_inputs are "
+              "zeroed too", ha="center", va="top", fontsize=6.2, color=REMOVED, linespacing=1.35)
 
-    # --- embedder and the two representations ------------------------------------------------------
-    box(axis, 3.3, 3.5, 1.9, 1.1, "input\nembedder", fontsize=7.5)
-    arrow(axis, (2.6, 4.05), (3.3, 4.05))
+    # --- embedder and the two representations --------------------------------------------------------
+    box(axis, 3.5, 4.0, 1.9, 1.1, "input\nembedder", fontsize=7.5)
+    arrow(axis, (2.7, 4.55), (3.5, 4.55))
 
-    box(axis, 5.9, 4.15, 1.7, 0.75, "single  s", fontsize=7.5, color=MUTED)
-    box(axis, 5.9, 3.05, 1.7, 0.75, "pair  z", fontsize=7.5)
-    arrow(axis, (5.2, 4.25), (5.9, 4.5), color=MUTED)
-    arrow(axis, (5.2, 3.85), (5.9, 3.5))
+    # s and z are the same kind of object — one colour, so the eye does not read a distinction
+    # the model does not make.
+    box(axis, 6.0, 4.55, 1.6, 0.7, "single  s", fontsize=7.5)
+    box(axis, 6.0, 3.5, 1.6, 0.7, "pair  z", fontsize=7.5)
+    arrow(axis, (5.4, 4.7), (6.0, 4.9))
+    arrow(axis, (5.4, 4.4), (6.0, 3.85))
 
-    # --- the contact pathway -------------------------------------------------------------------------
-    contact_matrix_icon(axis, 3.35, 0.35, 1.1)
-    axis.text(3.9, 0.15, "contacts, three-state\npresent / absent / unknown", ha="center",
-              va="top", fontsize=6.2, color=ADDED, linespacing=1.35)
-    box(axis, 5.05, 0.55, 2.0, 0.7, "linear 3 → 128\n(zero-initialised)", color=ADDED,
+    # --- the contact pathway, stacked directly under the pair representation --------------------------
+    contact_matrix_icon(axis, 6.25, 0.25, 1.1)
+    axis.text(5.95, 0.8, "contacts, three-state\npresent / absent / unknown", ha="right",
+              va="center", fontsize=6.2, color=ADDED, linespacing=1.35)
+    box(axis, 5.8, 1.65, 2.0, 0.65, "linear 3 → 128\n(zero-initialised)", color=ADDED,
         face="#FDF4F4", fontsize=6.4)
-    arrow(axis, (4.5, 0.9), (5.05, 0.9), color=ADDED)
+    arrow(axis, (6.8, 1.35), (6.8, 1.65), color=ADDED)
 
-    centre = (6.75, 2.15)
+    centre = (6.8, 2.75)
     axis.add_patch(plt.Circle(centre, 0.24, facecolor="white", edgecolor=ADDED, lw=1.3, zorder=3))
     axis.text(centre[0], centre[1], "+", ha="center", va="center", fontsize=9.5, color=ADDED,
               zorder=4)
-    arrow(axis, (7.05, 0.9), (6.85, 1.91), color=ADDED, connection="arc3,rad=-0.3")
-    arrow(axis, (6.75, 2.39), (6.75, 3.05), color=ADDED)
+    arrow(axis, (6.8, 2.3), (6.8, 2.51), color=ADDED)
+    arrow(axis, (6.8, 2.99), (6.8, 3.5), color=ADDED)
 
-    # --- trunk ----------------------------------------------------------------------------------------
-    box(axis, 8.3, 2.6, 2.3, 2.3,
-        "Pairformer\nstack\n\ntriangle updates on z,\nattention on s", fontsize=7)
-    arrow(axis, (7.6, 4.5), (8.3, 4.3), color=MUTED)
-    arrow(axis, (7.6, 3.4), (8.3, 3.4))
+    # --- trunk ------------------------------------------------------------------------------------------
+    box(axis, 8.5, 3.4, 2.2, 1.85, "Pairformer\nstack", fontsize=8)
+    arrow(axis, (7.6, 4.9), (8.5, 4.75))
+    arrow(axis, (7.6, 3.85), (8.5, 3.95))
 
-    # Recycling: z_init — contacts included — is re-added at the top of every cycle.
-    arrow(axis, (9.45, 2.6), (7.0, 2.05), color=ADDED, connection="arc3,rad=0.34", lw=1.0)
-    axis.text(9.25, 1.75, "z re-initialised with the\ncontact term every recycle",
-              ha="center", va="top", fontsize=6.2, color=ADDED, linespacing=1.35)
+    # Recycling: z_init — the contact term included — is re-added at the top of every cycle.
+    arrow(axis, (8.5, 3.55), (7.04, 2.75), color=ADDED, connection="arc3,rad=0.3", lw=1.0)
+    axis.text(8.75, 2.5, "z re-initialised with the\ncontact term every recycle", ha="left",
+              va="top", fontsize=6.2, color=ADDED, linespacing=1.35)
 
-    # --- output -----------------------------------------------------------------------------------------
-    box(axis, 11.0, 3.15, 1.85, 1.2, "diffusion\nmodule", fontsize=7.5)
-    arrow(axis, (10.6, 3.75), (11.0, 3.75))
-    axis.text(11.925, 2.95, "→  3D structure", ha="center", va="top", fontsize=7, color=KEPT)
+    # --- output -------------------------------------------------------------------------------------------
+    box(axis, 11.1, 3.9, 1.8, 1.1, "diffusion\nmodule", fontsize=7.5)
+    arrow(axis, (10.7, 4.45), (11.1, 4.45))
 
     figlib.save_figure(figure, "helico_architecture", 300)
     plt.close(figure)
