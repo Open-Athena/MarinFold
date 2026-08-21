@@ -29,8 +29,11 @@ top-p 0.95, top-k disabled, budget ``6L + 128`` tokens.
 
 import argparse
 import csv
+import platform
 import random
+import socket
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -130,6 +133,7 @@ def main() -> int:
     if not todo:
         return 0
 
+    t_load = time.time()
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     end_id = tokenizer.convert_tokens_to_ids("<end>")
     assert end_id is not None and end_id >= 0, "no <end> token in the tokenizer"
@@ -140,6 +144,8 @@ def main() -> int:
               generation_config="vllm", max_num_seqs=args.max_num_seqs, seed=args.seed)
 
     unfinished_rows: list[dict] = []
+    timing_rows: list[dict] = []
+    load_seconds = time.time() - t_load
     t0, n_unfinished, n_total = time.time(), 0, 0
     for start in range(0, len(todo), args.chunk):
         group = todo[start:start + args.chunk]
@@ -203,6 +209,22 @@ def main() -> int:
                     rows["j"].append(j)
                     rows["is_seed"].append(pair is not None and (i, j) == pair)
 
+        # Timing rows, per the root AGENTS.md predictor-timing rule. vLLM
+        # schedules the whole chunk together, so a protein has no separable
+        # inference time -- `elapsed_seconds` is its CHUNK's and is repeated
+        # across the chunk's members. `timing_unit` records that; do not sum it.
+        for target, *_ in per:
+            timing_rows.append(dict(
+                stem=target.stem, n_residues=target.L,
+                n_pairs=target.L * (target.L - 1) // 2, mode=args.arm,
+                elapsed_seconds=gen_seconds, timing_unit="chunk",
+                chunk_size=len(group), n_rollouts=args.n_rollouts,
+                model_load_seconds=round(load_seconds, 2),
+                model_nickname=Path(args.model).name, runner_tag="local",
+                hostname=socket.gethostname(), platform=platform.platform(),
+                source="eval_time",
+                timestamp_utc=datetime.now(timezone.utc).isoformat()))
+
         dest = arm_dir / f"detail-part-{part:04d}.parquet"
         pq.write_table(pa.table(rows, schema=DETAIL_SCHEMA), dest, compression="zstd")
         part += 1
@@ -213,11 +235,19 @@ def main() -> int:
               f"unfinished={n_unfinished}/{n_total} -> {dest.name} "
               f"(elapsed {(time.time() - t0) / 60:.1f}m)", flush=True)
 
+    pd.DataFrame(timing_rows).to_csv(arm_dir / "timings.csv", index=False)
+    # Merged, not overwritten: on a resume `todo` holds only the stems this
+    # attempt covered, and rewriting the file from those alone would erase the
+    # earlier attempt's record of which rollouts hit the token cap.
     report = arm_dir / "unfinished.csv"
+    fields = ["dataset", "stem", "L", "unfinished", "n_rollouts"]
+    previous = list(csv.DictReader(report.open())) if report.exists() else []
+    covered = {(r["dataset"], r["stem"]) for r in unfinished_rows}
     with report.open("w", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=["dataset", "stem", "L",
-                                                "unfinished", "n_rollouts"])
+        writer = csv.DictWriter(fh, fieldnames=fields)
         writer.writeheader()
+        writer.writerows(r for r in previous
+                         if (r["dataset"], r["stem"]) not in covered)
         writer.writerows(unfinished_rows)
     print(f"[{args.arm}] DONE {len(todo)} proteins in {(time.time() - t0) / 60:.1f} min "
           f"| unfinished {n_unfinished}/{n_total} "

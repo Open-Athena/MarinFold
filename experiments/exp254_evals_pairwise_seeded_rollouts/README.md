@@ -145,8 +145,137 @@ local disk under `$RUN`; only the derived CSVs and the figure are committed.
 
 ## Results
 
-_(Fill in after the run completes.)_
+Ran 2026-08-21 on one workstation A5000 (vLLM 0.19.1, bf16). 97 proteins x 100
+rollouts per arm, 33.7 min per arm; the pairwise pass took 4.2 min for all 97.
+**Zero of 9,700 rollouts hit the token cap in either arm, and zero emitted
+nothing** -- the `6L+128` budget never binds on this set.
+
+### The gate
+
+| | this run | #245 published | Δ |
+|---|---:|---:|---:|
+| m2-p06, eval-val, all-range R-precision, rollout consensus | **0.5217** | 0.520 | +0.0017 |
+
+Inside the 0.005 tie band, so the harness reproduces the published recipe and
+the arms below are comparable to everything else on this axis.
+
+### Headline
+
+All on eval-val (n=97). "Oracle best-of-100" needs the ground truth to pick a
+rollout and is a headroom diagnostic, not a recipe.
+
+| readout | R (all) | R (long) | AUC (all) |
+|---|---:|---:|---:|
+| pairwise `P(contact)` (the seed source) | 0.4585 | 0.4407 | 0.9433 |
+| **i.i.d. consensus** (control) | 0.5217 | 0.5042 | 0.9310 |
+| **seeded consensus** | 0.5234 | 0.5081 | 0.9307 |
+| seeded consensus, seed vote removed | 0.5237 | 0.5087 | 0.9306 |
+| *i.i.d. oracle best-of-100* | *0.5199* | *0.5415* | — |
+| *seeded oracle best-of-100* | *0.5341* | *0.5433* | — |
+
+Paired per-protein differences, all-range R-precision, 95 % bootstrap over
+proteins:
+
+| comparison | Δ | 95 % CI | proteins won |
+|---|---:|---|---:|
+| seeded − i.i.d., consensus | **+0.0017** | [−0.0011, +0.0046] | 40 % |
+| seeded − i.i.d., consensus (seed vote removed) | +0.0020 | [−0.0007, +0.0049] | 39 % |
+| seeded − i.i.d., oracle best-of-100 | **+0.0142** | [+0.0055, +0.0247] | 58 % |
+| i.i.d. consensus − pairwise | +0.0632 | [+0.0516, +0.0767] | 90 % |
+
+**Primary (consensus): a tie**, as preregistered — +0.0017 with an interval
+straddling zero and well inside #204's 0.005 noise floor. The seed's own vote
+is not what carries it: removing it moves the number by +0.0003.
+
+**Secondary (oracle best-of-100): a real but small win**, as preregistered —
++0.0142 [+0.0055, +0.0247] all-range. It is confined to the all-range cut; at
+long range the two oracles are indistinguishable (+0.0018 [−0.0156, +0.0158]).
+
+### Why: one contact is almost no conditioning
+
+The rollout index *is* the pairwise rank of the seed it was handed, so the
+experiment contains its own dose-response curve. Seed accuracy collapses down
+the ranking and rollout quality does not follow:
+
+| seed rank | seed is a true contact | R-precision of those rollouts |
+|---|---:|---:|
+| 1–10 | 79.2 % | 0.3931 |
+| 11–20 | 69.6 % | 0.3898 |
+| 21–40 | 64.6 % | 0.3921 |
+| 41–70 | 55.7 % | 0.3917 |
+| 71–100 | 46.0 % | 0.3890 |
+| *unseeded (i.i.d.)* | — | *0.3868* |
+
+A 33-point swing in whether the model was told the truth moves the rollout it
+then writes by 0.004. Contrasting within each protein — where both kinds of seed
+occur against the same ground truth — a true seed is worth **+0.0124**
+[+0.0082, +0.0168] over a false one (73 % of proteins), against 0.3861 for a
+false seed and 0.3868 for no seed at all. So a wrong seed costs nothing
+measurable and a right one buys about a hundredth, which is exactly the size of
+the consensus tie.
+
+**The pooled version of that split is a trap and is not the result.** Pooled
+across proteins it reads +0.182 (0.4668 true vs 0.2847 false), which looks like
+a spectacular conditioning effect and is almost entirely protein difficulty: a
+protein the model handles well supplies both more correct seeds and better
+rollouts. `exp254_seed_conditioning_summary.csv` carries both numbers so the
+confound is visible rather than inferred.
+
+### Two things worth noticing on the side
+
+- **Consensus over 100 rollouts is as good as the best single rollout**, at
+  all-range: 0.5217 versus an oracle 0.5199 (Δ −0.0018 [−0.0164, +0.0137]).
+  Best-of-N leaves essentially no all-range headroom on this set. At long range
+  it does — oracle beats consensus by +0.0374 [+0.0129, +0.0660] — so the
+  headroom that exists is in the long-separation contacts.
+- **The pairwise readout has the better AUC and the worse R-precision** (0.9433
+  vs 0.9310 AUC; 0.4585 vs 0.5217 R). It ranks the whole candidate universe
+  better and the top of the list worse, which is a coherent description of a
+  marginal readout that never commits to a joint structure.
+
+![seeded vs i.i.d. on eval-val](plots/seeded_vs_iid_eval_val.png)
+
+Artifacts: `data/exp254_per_protein.csv.gz` (5 readouts x 97 x 4 ranges x 5
+cuts), `data/exp254_headline.csv`, `data/exp254_paired_deltas.csv`,
+`data/exp254_seed_conditioning.csv.gz` (19,400 individual rollouts),
+`data/exp254_seed_conditioning_summary.csv`, `data/exp254_seed_rank.csv`,
+`data/timings.csv`. The rollout dumps and pairwise matrices stay on local disk
+under `/data/exp_contactseed/run` (~250 MB); nothing needed publishing.
+
+**Timing caveat.** `data/timings.csv` for this run was parsed from the run log
+by `collect_timings.py` (`source = run_log`) rather than emitted during it;
+`score_rollouts.py` now writes the same CSV at eval time. In both cases the
+timing unit is the **chunk** of 8 proteins, not the protein: vLLM schedules a
+chunk's 800 rollouts together, so there is no separable per-protein inference
+time to record. Do not sum `elapsed_seconds`.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+**Seeding rollouts with our own top-ranked pairwise contacts does not improve
+contact prediction.** Consensus R-precision is 0.5234 against a 0.5217 control —
+a tie by any reading, and both preregistered predictions held.
+
+The reason is more interesting than the headline. It is not that the seeds are
+bad: 58 % of the top-100 pairwise pairs are true contacts, and 79 % of the top
+ten are. It is that **one contact is almost no conditioning at all.** Handing a
+rollout a true contact instead of a false one changes what it writes by +0.012,
+and handing it a false one instead of nothing costs +0.001. Against #163's
+finding that conditioning on *true partial contact sets* lifts R-precision from
+0.145 to 0.556, the implication is that the signal lives in the joint structure
+of many contacts, not in any single anchor — a single pair is simply not enough
+constraint to move a 1.5B model that has already read the whole sequence.
+
+That reframes the seeding idea rather than killing it. The lever this experiment
+tested was per-rollout accuracy and it barely exists; the lever that did move was
+**diversity** — forcing 100 distinct starting pairs made the best-of-100 better
+by +0.014 without making the average better, which is what a broader search of
+the same posterior looks like. A follow-up worth running is therefore seeding
+with **k > 1 contacts at once** — a partial map rather than an anchor —
+where #163 says the conditioning signal actually is, accepting that at 58 % seed
+accuracy a k-contact seed is right only 0.58^k of the time and so needs either a
+sharper prior (the top-10 seeds are 79 % accurate) or a model trained to
+retract, as #158/#175 built.
+
+Two negative results are worth keeping on their own: consensus over 100 rollouts
+already matches the oracle best single rollout at all-range on this set, and the
+remaining best-of-N headroom is entirely long-range.

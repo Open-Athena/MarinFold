@@ -1,0 +1,34 @@
+{
+  "script": "plot.py",
+  "args": [
+    "--data",
+    "data",
+    "--out",
+    "plots"
+  ],
+  "caption": "All-range contact R-precision on eval-val for the #232 m2-p06 checkpoint under five MarinFold readouts and #245's published predictors, the paired seeded-minus-i.i.d. differences, and seed accuracy against rollout quality along the pairwise ranking.",
+  "plot": "seeded_vs_iid_eval_val.png",
+  "sha256": "4ba0c07ee96bf3995398ade8ca479e5d1da853d040953a707877447e6c3611a0",
+  "sources": {
+    "exp254_per_protein": {
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_per_protein.csv.gz",
+      "sha256": "146d5a2d2726afb99568e4381731bcf49ce681ebf0c6f65c1747ca806c7bdf9c"
+    },
+    "exp254_seed_rank": {
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_rank.csv",
+      "sha256": "dc820fb1b4bff63d9c4526c6188507d1295c9157134a7ab87323931d71223831"
+    },
+    "exp254_seed_conditioning_summary": {
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_conditioning_summary.csv",
+      "sha256": "5a0efd7e29eb8c3a63b5053811ab77085080dd4fa0de604426b119fb3772ebf9"
+    },
+    "exp245_per_protein": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz",
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    },
+    "eval_sets": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv",
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    }
+  }
+}

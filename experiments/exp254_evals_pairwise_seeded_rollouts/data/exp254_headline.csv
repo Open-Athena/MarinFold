@@ -1,0 +1,41 @@
+predictor,range,cut,value,n
+iid consensus,all,AUC,0.9309677647491209,97
+iid consensus,all,R,0.5216780679470896,97
+iid consensus,long,AUC,0.917978622530708,97
+iid consensus,long,R,0.5041755482653535,97
+iid consensus,medium,AUC,0.9488103350643297,97
+iid consensus,medium,R,0.5250081033369948,97
+iid consensus,short,AUC,0.9482152796872689,97
+iid consensus,short,R,0.570076166072716,97
+iid oracle best-of-N,all,R,0.5198839087406366,97
+iid oracle best-of-N,long,R,0.5415417664339557,97
+iid oracle best-of-N,medium,R,0.6115933722688777,97
+iid oracle best-of-N,short,R,0.6503345950092534,97
+pairwise,all,AUC,0.9433010521265979,97
+pairwise,all,R,0.4584863181824532,97
+pairwise,long,AUC,0.9353858093095804,97
+pairwise,long,R,0.44066278757731636,97
+pairwise,medium,AUC,0.9500914124299518,97
+pairwise,medium,R,0.46397506107986974,97
+pairwise,short,AUC,0.9475751853917947,97
+pairwise,short,R,0.5101814923237717,97
+seeded consensus,all,AUC,0.9306612946947544,97
+seeded consensus,all,R,0.5234106277378348,97
+seeded consensus,long,AUC,0.9184376730991108,97
+seeded consensus,long,R,0.5081140065063169,97
+seeded consensus,medium,AUC,0.9472265652933262,97
+seeded consensus,medium,R,0.5259554239820725,97
+seeded consensus,short,AUC,0.9481004775314517,97
+seeded consensus,short,R,0.5701405211414167,97
+seeded consensus (seed vote removed),all,AUC,0.93060219424848,97
+seeded consensus (seed vote removed),all,R,0.52370055206459,97
+seeded consensus (seed vote removed),long,AUC,0.9184133107532526,97
+seeded consensus (seed vote removed),long,R,0.5086568456755151,97
+seeded consensus (seed vote removed),medium,AUC,0.9470962967028762,97
+seeded consensus (seed vote removed),medium,R,0.5255933831694957,97
+seeded consensus (seed vote removed),short,AUC,0.9481001784473226,97
+seeded consensus (seed vote removed),short,R,0.5691312430757667,97
+seeded oracle best-of-N,all,R,0.5340965100626918,97
+seeded oracle best-of-N,long,R,0.5432973745573327,97
+seeded oracle best-of-N,medium,R,0.6150536732825024,97
+seeded oracle best-of-N,short,R,0.6556579147319423,97

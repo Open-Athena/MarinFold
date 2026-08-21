@@ -1,0 +1,12 @@
+quantity,value
+pooled true-seed rollout R-precision,0.46677831481893767
+pooled false-seed rollout R-precision,0.2847099874791517
+pooled difference (CONFOUNDED by protein difficulty),0.18206832733978595
+within-protein true-seed rollout R-precision,0.3984721626625687
+within-protein false-seed rollout R-precision,0.38611241705860616
+within-protein unseeded rollout R-precision,0.3868005991097526
+within-protein difference (true - false),0.012359745603962488
+"within-protein difference, 2.5th pct",0.0082435161778949
+"within-protein difference, 97.5th pct",0.01679167849094216
+proteins where a true seed beats a false one,0.7319587628865979
+share of the 100 seeds that are true contacts,0.5832989690721649
