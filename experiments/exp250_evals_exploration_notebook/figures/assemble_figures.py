@@ -28,7 +28,7 @@ FIGURES = HERE / "manuscript"
 LETTER_SIZE = 13
 LETTER_WEIGHT = "bold"
 LETTER_FONT = "DejaVu Sans"
-GUTTER = 8          # points between panels
+GUTTER = 5          # points between panels
 MARGIN = 4          # points around the whole figure
 
 #: figure name -> the panels it is built from, one list per row. A tuple is

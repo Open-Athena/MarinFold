@@ -46,6 +46,18 @@ EXP247 = f"{BUCKET}/data/contacts-v1-protein-properties-exp247"
 HELICO = ("https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/"
           "exp14_foldbench_held_out_monomers")
 
+#: The size every panel of the manuscript's figure 1 is drawn at, in inches. One constant so the
+#: document panel, the structure and the two maps cannot drift apart — the assembled 2x2 only
+#: reads as a grid when its cells are identical.
+#:
+#: The height is chosen so a square contact map fills the axes rectangle below: at 3.2 in wide the
+#: map is 1.87 in across, and an axes taller than that letterboxes the image and leaves a band of
+#: white in the middle of the figure.
+FIG1_PANEL = (3.2, 2.45)
+#: Map and colourbar rectangles in figure coordinates, shared by both map panels.
+FIG1_MAP_RECT = (0.155, 0.20, 0.585, 0.75)
+FIG1_BAR_RECT = (0.790, 0.20, 0.028, 0.75)
+
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
 
 
