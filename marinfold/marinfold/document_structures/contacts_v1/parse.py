@@ -70,11 +70,13 @@ def _canonical_resname(resname: str) -> str:
 # One-letter -> canonical 3-letter for the standard 20 amino acids. Used by
 # the sequence-only path: sequence databases (e.g. UniRef50) give one-letter
 # codes and carry no structure, so there is no 3-letter residue name to read
-# off. Codes outside the standard 20 -- the ambiguity/placeholder letters
+# off; and by `sequence_likelihood`, which scores amino-acid substitutions
+# named in one-letter form against the document's 3-letter `<AA>` tokens.
+# Codes outside the standard 20 -- the ambiguity/placeholder letters
 # B (Asx), Z (Glx), J (Xle), X (any), the rarer U (Sec) / O (Pyl), and any
 # stop/gap symbols -- fall through to "UNK" in `residues_from_sequence`,
 # matching `_canonical_resname`'s unknown fallback.
-_ONE_LETTER_TO_THREE = {
+ONE_LETTER_TO_THREE = {
     "A": "ALA", "R": "ARG", "N": "ASN", "D": "ASP", "C": "CYS",
     "Q": "GLN", "E": "GLU", "G": "GLY", "H": "HIS", "I": "ILE",
     "L": "LEU", "K": "LYS", "M": "MET", "F": "PHE", "P": "PRO",
@@ -164,7 +166,7 @@ def residues_from_sequence(
     return tuple(
         ResidueInfo(
             seq_index=i,
-            resname=_ONE_LETTER_TO_THREE.get(code, "UNK"),
+            resname=ONE_LETTER_TO_THREE.get(code, "UNK"),
             resnum=1 + i,
             chain=chain,
         )

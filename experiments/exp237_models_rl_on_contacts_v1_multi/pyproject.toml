@@ -1,0 +1,32 @@
+[project]
+name = "exp237-models-rl-on-contacts-v1-multi"
+version = "0.1.0"
+description = "exp237: RL on the <contacts-v1.multi> model from #230 — rewards computed over the SECTIONS of one rollout — issue #237."
+requires-python = ">=3.11"
+# Analysis only. Nothing in this directory is submitted to iris, and nothing
+# imports marin: the training runs inside SkyRL's own venv on a GPU host
+# (`skyrl/run_on_host.sh`), the evaluation inside #230's vLLM venv on the same
+# host, and neither is resolved from here. Contrast exp208's pyproject, which
+# IS an iris workspace and pins the whole marin stack for that reason.
+#
+# The two host-side interpreters and why they cannot be merged:
+#
+#   | what                | interpreter          | why                        |
+#   |---------------------|----------------------|----------------------------|
+#   | RL training         | SkyRL's .venv        | vLLM 0.23 / transformers 5.8 |
+#   | evaluation          | #230's exp230_vllm   | vLLM 0.27 + marinfold      |
+#
+# The warm start is prepared for BOTH by `skyrl/prepare_model.py`, which is why
+# it restores the transformers-4.x rope keys rather than trusting one reader.
+dependencies = [
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv]
+package = false

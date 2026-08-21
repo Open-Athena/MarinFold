@@ -1,0 +1,5 @@
+{
+  "script": "mkfig.py",
+  "args": [],
+  "caption": "Each reward's gradient in the section-count direction predicts what that arm did: M-C falls (collapsed to 1.1), M-B rises (grew to ~26), M-F is nearly flat (unconstrained, ran to 259)."
+}

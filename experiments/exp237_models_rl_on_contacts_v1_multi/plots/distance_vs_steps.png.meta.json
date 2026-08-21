@@ -1,0 +1,5 @@
+{
+  "script": "plot_distance_vs_steps.py",
+  "args": [],
+  "caption": "Distance moved against steps taken. A 3.3x smaller learning rate takes ~5x the steps through the same KL window and then fails the same way. Raising kl_loss_coef 50x does NOT hold distance fixed \u2014 from step 50 to 130 it tracks the lr-3e-6 run, then runs away to KL 0.5."
+}

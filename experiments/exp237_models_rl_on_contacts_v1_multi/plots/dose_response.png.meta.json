@@ -1,0 +1,10 @@
+{
+  "script": "plot_reward_shape.py",
+  "args": [
+    "--data",
+    "data",
+    "--out",
+    "plots"
+  ],
+  "caption": "R-precision against distance moved. Consensus peaks at KL 0.007-0.016; #208 ran every arm past it. Red = the budget-matched bar, which nothing reaches."
+}

@@ -1,0 +1,146 @@
+{
+  "legacy554/consensus": {
+    "n_proteins": 554,
+    "r_prec": 0.5803306663752164,
+    "r_prec_long": 0.5317334852893572,
+    "n_pred": 513.4882671480144,
+    "n_gt": 165.20758122743683,
+    "n_sections": 23.114395306859205,
+    "oracle": false
+  },
+  "legacy554/best": {
+    "n_proteins": 554,
+    "r_prec": 0.5529711251866357,
+    "r_prec_long": 0.4993369145424527,
+    "n_pred": 149.33438628158845,
+    "n_gt": 165.20758122743683,
+    "n_sections": 23.114395306859205,
+    "oracle": true
+  },
+  "legacy554/last": {
+    "n_proteins": 554,
+    "r_prec": 0.5112037995858947,
+    "r_prec_long": 0.46108418505450716,
+    "n_pred": 143.56814079422384,
+    "n_gt": 165.20758122743683,
+    "n_sections": 23.114395306859205,
+    "oracle": false
+  },
+  "legacy554/second_last": {
+    "n_proteins": 552,
+    "r_prec": 0.4774390036232266,
+    "r_prec_long": 0.4281926810965851,
+    "n_pred": 139.2021221532091,
+    "n_gt": 162.46195652173913,
+    "n_sections": 23.20998317805383,
+    "oracle": false
+  },
+  "eval2/consensus": {
+    "n_proteins": 307,
+    "r_prec": 0.5162190493405598,
+    "r_prec_long": 0.4581655584637739,
+    "n_pred": 549.5346091205212,
+    "n_gt": 135.42345276872965,
+    "n_sections": 26.55130293159609,
+    "oracle": false
+  },
+  "eval2/best": {
+    "n_proteins": 307,
+    "r_prec": 0.49190770777916454,
+    "r_prec_long": 0.4301115778477025,
+    "n_pred": 114.32166123778502,
+    "n_gt": 135.42345276872965,
+    "n_sections": 26.55130293159609,
+    "oracle": true
+  },
+  "eval2/last": {
+    "n_proteins": 307,
+    "r_prec": 0.4435530803823477,
+    "r_prec_long": 0.38683891930383346,
+    "n_pred": 108.63843648208469,
+    "n_gt": 135.42345276872965,
+    "n_sections": 26.55130293159609,
+    "oracle": false
+  },
+  "eval2/second_last": {
+    "n_proteins": 307,
+    "r_prec": 0.4024583578584103,
+    "r_prec_long": 0.3471650663689026,
+    "n_pred": 108.58393438808747,
+    "n_gt": 135.42345276872965,
+    "n_sections": 26.568171242438343,
+    "oracle": false
+  },
+  "eval2_natural/consensus": {
+    "n_proteins": 78,
+    "r_prec": 0.3072468732891285,
+    "r_prec_long": 0.24943842970694136,
+    "n_pred": 1039.7740384615386,
+    "n_gt": 164.65384615384616,
+    "n_sections": 23.879807692307693,
+    "oracle": false
+  },
+  "eval2_natural/best": {
+    "n_proteins": 78,
+    "r_prec": 0.28901865393049114,
+    "r_prec_long": 0.23778446175050988,
+    "n_pred": 136.75641025641025,
+    "n_gt": 164.65384615384616,
+    "n_sections": 23.879807692307693,
+    "oracle": true
+  },
+  "eval2_natural/last": {
+    "n_proteins": 78,
+    "r_prec": 0.2256714356425086,
+    "r_prec_long": 0.18455545030962225,
+    "n_pred": 115.70192307692308,
+    "n_gt": 164.65384615384616,
+    "n_sections": 23.879807692307693,
+    "oracle": false
+  },
+  "eval2_natural/second_last": {
+    "n_proteins": 78,
+    "r_prec": 0.21046478072202418,
+    "r_prec_long": 0.16889070525414568,
+    "n_pred": 133.1426282051282,
+    "n_gt": 164.65384615384616,
+    "n_sections": 23.879807692307693,
+    "oracle": false
+  },
+  "eval2_lt30/consensus": {
+    "n_proteins": 275,
+    "r_prec": 0.5153512145622184,
+    "r_prec_long": 0.4560104847953097,
+    "n_pred": 529.78,
+    "n_gt": 127.53454545454545,
+    "n_sections": 27.5,
+    "oracle": false
+  },
+  "eval2_lt30/best": {
+    "n_proteins": 275,
+    "r_prec": 0.49278307998131576,
+    "r_prec_long": 0.43000165769799253,
+    "n_pred": 107.0690909090909,
+    "n_gt": 127.53454545454545,
+    "n_sections": 27.5,
+    "oracle": true
+  },
+  "eval2_lt30/last": {
+    "n_proteins": 275,
+    "r_prec": 0.4423815041030959,
+    "r_prec_long": 0.3849870354866824,
+    "n_pred": 102.04,
+    "n_gt": 127.53454545454545,
+    "n_sections": 27.5,
+    "oracle": false
+  },
+  "eval2_lt30/second_last": {
+    "n_proteins": 275,
+    "r_prec": 0.39884857623796993,
+    "r_prec_long": 0.3425807964074732,
+    "n_pred": 101.41824675324675,
+    "n_gt": 127.53454545454545,
+    "n_sections": 27.51883116883117,
+    "oracle": false
+  }
+}

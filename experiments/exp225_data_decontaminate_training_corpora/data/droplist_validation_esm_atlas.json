@@ -1,0 +1,11 @@
+{
+  "arm": "esm_atlas",
+  "corpus_rows_checked": 1200000,
+  "droplist_rows_checked": 18082,
+  "entry_ids_missing_from_corpus": 0,
+  "missing_examples": [],
+  "coordinates_resolved": 18082,
+  "coordinates_agreeing_with_entry_id": 18082,
+  "entry_id_unique_in_corpus": true,
+  "limit_shards": 60
+}
