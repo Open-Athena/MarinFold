@@ -18,7 +18,7 @@ document the panel goes into.
 
 [`assemble_figures.py`](assemble_figures.py) composes the panels above into the multi-panel
 figures a manuscript needs, lettered A, B, C in reading order, and writes them to
-[`manuscript/`](manuscript/) as SVG:
+[`manuscript/`](manuscript/) as SVG **and PNG** (300 dpi by default, `--png-dpi` to change):
 
 | figure | panels |
 |---|---|

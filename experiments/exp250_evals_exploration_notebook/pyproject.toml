@@ -9,6 +9,9 @@ dependencies = [
     # in the notebook, which installs marinfold[transformers] in Colab.
     "pandas>=2.0",
     "pyarrow",
+    # assemble_figures.py: SVG composition, and rasterising the assembled figures to PNG.
+    "svgutils",
+    "cairosvg",
     # publish_exp232_m2_p06.py: CoreWeave S3 read on the pod, bucket write.
     # Versions pinned to the set exp238's publish job ran with. hf-hub >= 1.5 is
     # what makes bucket writes possible and is why marinfold (transformers, hence

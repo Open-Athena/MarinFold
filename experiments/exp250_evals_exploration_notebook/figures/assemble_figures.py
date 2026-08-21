@@ -91,7 +91,23 @@ def placeholder(width: float, height: float, text: str, name: str) -> Path:
     return destination
 
 
-def assemble(name: str, specification: dict, width: float) -> Path:
+def rasterise(svg: Path, dpi: int) -> Path | None:
+    """Write a PNG beside an assembled SVG, for anything that will not take vector input.
+
+    An SVG user unit is a pixel at 96 dpi, so the scale factor is dpi/96 — at the default that
+    makes a 6.5 in figure 1,950 px wide.
+    """
+    try:
+        import cairosvg
+    except ImportError:
+        print("    (no PNG: `pip install cairosvg` to rasterise the assembled figures)")
+        return None
+    png = svg.with_suffix(".png")
+    cairosvg.svg2png(url=str(svg), write_to=str(png), scale=dpi / 96)
+    return png
+
+
+def assemble(name: str, specification: dict, width: float, dpi: int = 300) -> Path:
     """Lay the panels out row by row, letter them, and write `manuscript/<name>.svg`."""
     FIGURES.mkdir(parents=True, exist_ok=True)
     elements, letters = [], iter("ABCDEFGHIJ")
@@ -135,11 +151,13 @@ def assemble(name: str, specification: dict, width: float) -> Path:
     figure = compose.Figure(width, y + MARGIN - GUTTER, *elements)
     destination = FIGURES / f"{name}.svg"
     figure.save(str(destination))
+    rasterise(destination, dpi)
     # svgutils embeds panel content at compose time, so the placeholder files were scaffolding.
     for scaffold in FIGURES.glob("_placeholder_*.svg"):
         scaffold.unlink()
     note = f"  (placeholders: {', '.join(missing)})" if missing else ""
-    print(f"wrote {destination.relative_to(HERE)}  {width:.0f}x{y + MARGIN - GUTTER:.0f} pt{note}")
+    print(f"wrote {destination.relative_to(HERE)} (+ .png at {dpi} dpi)  "
+          f"{width:.0f}x{y + MARGIN - GUTTER:.0f} pt{note}")
     return destination
 
 
@@ -148,12 +166,14 @@ def main() -> int:
     parser.add_argument("--width", type=float, default=468.0,
                         help="figure width in points (468 = 6.5 in, a US-letter text column)")
     parser.add_argument("--only", help="assemble just this figure")
+    parser.add_argument("--png-dpi", type=int, default=300,
+                        help="resolution of the PNG written beside each SVG")
     arguments = parser.parse_args()
 
     for name, specification in LAYOUT.items():
         if arguments.only and name != arguments.only:
             continue
-        assemble(name, specification, arguments.width)
+        assemble(name, specification, arguments.width, arguments.png_dpi)
         print(f"    {specification['caption']}")
     return 0
 
