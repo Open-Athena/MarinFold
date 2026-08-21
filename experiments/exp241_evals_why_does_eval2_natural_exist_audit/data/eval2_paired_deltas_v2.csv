@@ -1,0 +1,31 @@
+subset,range,cut,baseline,n,marinfold,baseline_mean,delta,ci_lo,ci_hi,significant
+eval2 (<40% id),all,R,Protenix-v2 single-seq,307,0.5453,0.6786,-0.1333,-0.1598,-0.1054,True
+eval2 (<40% id),all,R,ESMFold,307,0.5453,0.6942,-0.1488,-0.172,-0.1257,True
+eval2 (<40% id),all,R,ESMFold2,307,0.5453,0.7397,-0.1944,-0.2193,-0.1699,True
+eval2 (<40% id),all,R,Protenix-v2 + MSA,307,0.5453,0.7779,-0.2325,-0.2613,-0.2044,True
+eval2 (<40% id),all,R,seq-KNN k=10 (null),307,0.5453,0.0738,0.4716,0.4392,0.5046,True
+eval2 natural (audited),all,R,Protenix-v2 single-seq,63,0.3133,0.2303,0.083,0.0314,0.1357,True
+eval2 natural (audited),all,R,ESMFold,63,0.3133,0.398,-0.0847,-0.135,-0.0386,True
+eval2 natural (audited),all,R,ESMFold2,63,0.3133,0.4845,-0.1712,-0.2241,-0.1214,True
+eval2 natural (audited),all,R,Protenix-v2 + MSA,63,0.3133,0.6909,-0.3776,-0.4433,-0.3094,True
+eval2 natural (audited),all,R,seq-KNN k=10 (null),63,0.3133,0.1754,0.1379,0.0878,0.1837,True
+eval2 (<30% id),all,R,Protenix-v2 single-seq,275,0.5432,0.7,-0.1569,-0.1845,-0.1296,True
+eval2 (<30% id),all,R,ESMFold,275,0.5432,0.6919,-0.1488,-0.1724,-0.1242,True
+eval2 (<30% id),all,R,ESMFold2,275,0.5432,0.739,-0.1959,-0.2225,-0.1698,True
+eval2 (<30% id),all,R,Protenix-v2 + MSA,275,0.5432,0.7704,-0.2272,-0.256,-0.1977,True
+eval2 (<30% id),all,R,seq-KNN k=10 (null),275,0.5432,0.0439,0.4992,0.4677,0.5311,True
+"eval2 natural (audited, <30%)",all,R,Protenix-v2 single-seq,46,0.2562,0.2158,0.0404,-0.0136,0.0967,False
+"eval2 natural (audited, <30%)",all,R,ESMFold,46,0.2562,0.3054,-0.0492,-0.0996,-0.0011,True
+"eval2 natural (audited, <30%)",all,R,ESMFold2,46,0.2562,0.3987,-0.1425,-0.1967,-0.0885,True
+"eval2 natural (audited, <30%)",all,R,Protenix-v2 + MSA,46,0.2562,0.6356,-0.3794,-0.4596,-0.2939,True
+"eval2 natural (audited, <30%)",all,R,seq-KNN k=10 (null),46,0.2562,0.0758,0.1805,0.1319,0.2245,True
+"eval2 natural, viral",all,R,Protenix-v2 single-seq,27,0.2525,0.2098,0.0426,-0.0167,0.1024,False
+"eval2 natural, viral",all,R,ESMFold,27,0.2525,0.2565,-0.004,-0.0591,0.0449,False
+"eval2 natural, viral",all,R,ESMFold2,27,0.2525,0.3578,-0.1053,-0.1669,-0.0447,True
+"eval2 natural, viral",all,R,Protenix-v2 + MSA,27,0.2525,0.621,-0.3685,-0.466,-0.2687,True
+"eval2 natural, viral",all,R,seq-KNN k=10 (null),27,0.2525,0.0727,0.1798,0.1169,0.2361,True
+"eval2 natural, non-viral",all,R,Protenix-v2 single-seq,36,0.3589,0.2456,0.1133,0.0356,0.1924,True
+"eval2 natural, non-viral",all,R,ESMFold,36,0.3589,0.5041,-0.1452,-0.2156,-0.0797,True
+"eval2 natural, non-viral",all,R,ESMFold2,36,0.3589,0.5795,-0.2207,-0.2952,-0.1475,True
+"eval2 natural, non-viral",all,R,Protenix-v2 + MSA,36,0.3589,0.7433,-0.3844,-0.4741,-0.2902,True
+"eval2 natural, non-viral",all,R,seq-KNN k=10 (null),36,0.3589,0.2524,0.1065,0.0336,0.1745,True

@@ -1,0 +1,5 @@
+{
+  "script": "plot_eval2_natural_scoreboard.py",
+  "args": [],
+  "caption": "R-precision on eval2-natural after moving exp226's 15 mislabelled de novo designs to the designed side (n=63). Left: all six predictors, bootstrap CI of the mean, carets mark the pre-correction n=78 value. Right: the viral and non-viral halves scored separately."
+}

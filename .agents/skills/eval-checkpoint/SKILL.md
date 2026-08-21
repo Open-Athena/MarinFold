@@ -239,10 +239,13 @@ the fan-out, and exports its results to the public bucket from inside the cluste
   evaluation unit.
 - A concise aggregate table led by all/long R-precision, with AUC and precision
   cuts, completeness counts, output paths, and the checkpoint's W&B train/val
-  losses when requested. Record the source W&B metric keys. When the universe is
-  the 577, report **legacy 554, eval2 pooled (307) and eval2-natural (78)** as
-  separate rows — they can rank checkpoints differently, and the pooled eval2
-  row is the least informative of the three.
+  losses when requested. Record the source W&B metric keys. When the older 577
+  universe is being scored, report **legacy 554 and eval2 pooled (307)** as
+  separate rows — they can rank checkpoints differently. **Do not report the old
+  eval2-natural split.** 15 of its 78 units are de novo designs
+  ([#241](https://github.com/Open-Athena/MarinFold/issues/241)), so it never was
+  the natural-protein set it was published as; eval-val and eval-test supersede
+  it for every natural-protein claim.
 
 ## Validate against the E8 reference
 
