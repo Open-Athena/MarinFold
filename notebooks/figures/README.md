@@ -72,13 +72,20 @@ Some of what that catches is not hypothetical:
 - The dirty-checkout flag. A figure made from uncommitted code is not reproducible, and the
   metadata says so rather than leaving it to memory.
 
-Figure 3 draws **GDT-TS and lDDT side by side** for each protein class. They disagree
-usefully: GDT-TS superimposes the prediction and asks what fraction of residues land within a set
-of cutoffs, so a correct fold with one domain rotated scores badly; lDDT never superimposes
-anything, so it credits locally correct geometry when the global arrangement is wrong. Helico from
-MarinFold contacts scores 0.48 GDT-TS against 0.61 lDDT on natural monomers — better locally than
-globally, which neither metric shows on its own. Both panels share one bar order (`ORDER_BY`) so
-they can be read across.
+Figure 3 reports **GDT-TS and lDDT in separate panels**, and they are *not* on a common scale —
+do not subtract one from the other. GDT-TS superimposes the prediction and asks what fraction of
+residues land within a set of cutoffs; lDDT never superimposes anything, comparing local
+interatomic distances instead, so it credits locally correct geometry regardless of the global
+arrangement and sits higher for the same structure. The `Helico, no contacts` arm shows the size
+of that offset: **0.15 GDT-TS and 0.36 lDDT on identical predictions**.
+
+Read each within itself. Normalised between its own metric's no-contact floor and oracle ceiling,
+MarinFold contacts reach **45 %** on GDT-TS and **51 %** on lDDT — substantially the same story,
+which a raw 0.48-against-0.61 comparison would misread as a 0.13 gap.
+
+Every panel draws the arms in the same fixed order (the `ARMS` dict), not sorted by value, so a
+bar can be compared with its neighbour across panels rather than the reader re-learning the axis
+in each one.
 
 ## Running them
 

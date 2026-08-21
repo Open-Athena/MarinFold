@@ -279,7 +279,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 |---|---|---|
 | 1 | Top7 contact map — mirrored, and observed/predicted side by side | GPU |
 | 2 | contact-prediction R-precision, natural and designed | CPU |
-| 3 | Helico structure accuracy — GDT-TS and lDDT side by side, both classes | CPU |
+| 3 | Helico structure accuracy — GDT-TS and lDDT, separate panels, both classes | CPU |
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
 
 Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
@@ -312,6 +312,13 @@ Numbers behind the panels:
 | **Helico + MarinFold contacts** | **0.479** | **0.761** |
 | Protenix-v2, single sequence | 0.174 | 0.892 |
 | Helico, no contacts | 0.146 | 0.859 |
+
+**GDT-TS and lDDT are not on a common scale** and their values should not be differenced.
+lDDT is superposition-free and local, so it credits locally correct geometry regardless of the
+global arrangement and sits higher on the same structure — `Helico, no contacts` is 0.15 GDT-TS
+and 0.36 lDDT on identical predictions. Normalised between each metric's own no-contact floor and
+oracle ceiling, MarinFold contacts reach 45 % on GDT-TS and 51 % on lDDT: substantially the same
+story, not the 0.13 gap a raw comparison suggests.
 
 **The two protein classes tell opposite stories.** On natural monomers MarinFold's contacts take
 Helico from 0.146 to 0.479 GDT-TS against 0.174 for Protenix-v2 single-sequence — real structural
