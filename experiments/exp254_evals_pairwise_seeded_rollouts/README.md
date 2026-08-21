@@ -282,6 +282,63 @@ Votes, pairwise probability, emission rank and rollout-quality weighting are all
 measuring the same marginal confidence, and they agree. Closing 0.52 → 0.92 needs
 *joint* information, not another pointwise feature.
 
+### Clustering the rollouts: a small ceiling, and a selector that cannot reach it
+
+If the 100 rollouts held several distinct fold hypotheses, clustering them and
+taking a consensus per cluster would give K candidate maps whose best could beat
+the single pooled consensus. `cluster_rollouts.py` measures that ceiling, with a
+**random equal partition as the control** so a negative cannot be blamed on the
+clustering algorithm:
+
+| K (k-means) | oracle@K | random control | largest cluster (no oracle) |
+|---:|---:|---:|---:|
+| 2 | 0.5291 (+0.0074) | 0.5249 (+0.0032) | 0.5142 (−0.0075) |
+| 3 | 0.5358 (+0.0141) | 0.5251 (+0.0034) | 0.5118 (−0.0099) |
+| 5 | 0.5371 (+0.0154) | 0.5278 (+0.0061) | 0.5108 (−0.0108) |
+| **10** | **0.5375 (+0.0158)** | 0.5237 (+0.0020) | 0.5094 (−0.0123) |
+| 20 | 0.5352 (+0.0135) | 0.5096 (−0.0120) | 0.4983 (−0.0234) |
+
+Clustering finds something — k-means beats the random control by ~0.009 at K=5 —
+but **the ceiling is +0.0158 with a perfect selector**, and it plateaus by K=10.
+Average-linkage on Jaccard is degenerate here, putting 93 of 100 rollouts in one
+cluster: there is one diffuse mode, not several hypotheses, and k-means only
+helps because it forces splits.
+
+### #211's geometric self-consistency as the selector
+
+`cluster_consistency.py` scores each cluster consensus with
+[#211](https://github.com/Open-Athena/MarinFold/issues/211)'s reference-free 3D
+embeddability residual and picks the most consistent. All of a protein's
+candidates are cut at the same R and scored in one `embed_residual` call, so the
+comparison is paired and no candidate is favoured by being shorter.
+
+| K | single | blind pick | largest cluster | **most consistent** | oracle |
+|---:|---:|---:|---:|---:|---:|
+| 5 | 0.5217 | 0.4564 | 0.5108 | **0.4797** | 0.5371 |
+| 10 | 0.5217 | 0.4178 | 0.5094 | **0.4333** | 0.5375 |
+
+**The selector works, and it still loses.** Mean Spearman ρ(excess, precision)
+within a protein is **−0.210** at K=5 — negative is the predictive direction,
+since lower excess means more self-consistent — and predictive on 65 % of
+proteins. It beats blind picking by **+0.023**. That is a genuinely stronger
+signal than #211 itself found: on individual rollouts it measured ρ = −0.0175,
+useful on 51.8 % of proteins, a coin flip. **Aggregating rollouts into a cluster
+consensus makes #211's metric about twelve times more discriminative**, which is
+new and is the one positive result here.
+
+It does not matter, because **the candidates are worse than what we already
+have.** A cluster consensus averages 20 rollouts where the pooled consensus
+averages 100, so the blind cluster is 0.4564 against the pooled 0.5217. Even a
+perfect pick reaches only 0.5371 (+0.0154), and a good-but-imperfect one lands at
+0.4797 — **0.042 below simply not clustering**. Restricting to the 54 proteins at
+L ≥ 100 with no unresolved gap, where #211 says its metric has power, changes
+nothing: −0.0477 against the pooled consensus.
+
+So the cluster-and-fold idea is closed at the contact level, and for a reason
+that no downstream selector can fix: a folding model's confidence head would have
+to be better than an oracle to make K candidates beat the one map we get for
+free. `exp254_cluster_consistency.csv.gz` holds all 1,552 scored sets.
+
 ![seeded vs i.i.d. on eval-val](plots/seeded_vs_iid_eval_val.png)
 
 ![seed strategy on eval-val](plots/seed_strategy_eval_val.png)
@@ -337,13 +394,29 @@ rollouts are already diverse: 100 of them cover 92 % of the true contacts with
 pairwise probability, emission rank and self-consistency weighting all agree with
 each other, and the best re-ranking is +0.0015.
 
+**Clustering the rollouts into separate hypotheses is closed too.** They are one
+diffuse mode, not several: the ceiling from a perfect pick among K cluster
+consensuses is +0.0158, and #211's geometric self-consistency — which turns out
+to be *twelve times* more discriminative on cluster consensuses than on
+individual rollouts, ρ = −0.210 against #211's −0.0175 — still lands 0.042 below
+simply not clustering, because every candidate averages fewer rollouts than the
+pooled consensus does.
+
 So the 0.52 → 0.92 gap between what the sampler proposes and what the vote count
-ranks into the top R is this model's real contact-prediction headroom, and
-reaching it needs something that scores *sets* rather than pairs — geometric
-realizability (#211), a folding model in the loop, or joint conditioning on
-partial maps of size k > 1, which is where #163 says the signal is. The
-downstream half of that question — how many of these pairs a folding model
-actually wants — is [#256](https://github.com/Open-Athena/MarinFold/issues/256).
+ranks into the top R is this model's real contact-prediction headroom, and none
+of sampling, seeding, pointwise re-ranking, clustering or geometric selection
+reaches it. What is left is joint conditioning on partial maps of size k > 1,
+which is where #163 found the signal, or a folding model in the training loop
+rather than the selection loop. The downstream half of the question — how many of
+these pairs a folding model actually wants —
+is [#256](https://github.com/Open-Athena/MarinFold/issues/256), and its answer is
+that the extra recall is worth nothing until it becomes precision.
+
+**One structural note.** `cluster_consistency.py` puts #211's `consistency.py` on
+its second use case, which per `experiments/AGENTS.md` is the trigger to promote
+it into an `evals/` kind library. That means creating the library and rewriting a
+merged experiment's imports, so this experiment imports it by path and flags the
+debt here rather than restructuring the repo unilaterally.
 
 Two side findings worth keeping: consensus over 100 rollouts already matches the
 oracle best single rollout at all-range on this set (0.5217 vs 0.5199), and the
