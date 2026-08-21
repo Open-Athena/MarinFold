@@ -1,0 +1,91 @@
+{
+  "dataset": "2_rprecision",
+  "notebook": "2_make_rprecision_data.ipynb",
+  "generated_utc": "2026-08-21T15:37:50+00:00",
+  "parameters": {
+    "range": "all",
+    "metric": "R",
+    "classes": {
+      "natural": [
+        "eval-val",
+        "eval-test"
+      ],
+      "designed": [
+        "eval-denovo"
+      ]
+    },
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 0
+  },
+  "git": {
+    "commit": "fef976aa21dee7ac94e82cc8b077d3d6d676619e",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "M notebooks/evals_exploration.ipynb",
+      " M notebooks/figures/1_make_top7_heatmap_data.ipynb",
+      " M notebooks/figures/1_plot_top7_heatmap.ipynb",
+      " M notebooks/figures/4_make_contamination_contrast_data.ipynb",
+      " M notebooks/figures/4_plot_contamination_contrast.ipynb",
+      "?? notebooks/figures/data/",
+      "?? notebooks/figures/output/"
+    ]
+  },
+  "machine": {
+    "hostname": "ip1",
+    "user": "bizon",
+    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
+    "python": "3.11.14",
+    "gpu": {
+      "name": "NVIDIA RTX A5000",
+      "compute_capability": "8.6",
+      "memory_gib": 23.7,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.57.6",
+    "vllm": null,
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "bytes": 97519,
+      "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "bytes": 199548,
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/per_protein.csv.gz",
+      "bytes": 112619,
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    }
+  ],
+  "outputs": {
+    "summary.csv": {
+      "bytes": 1991,
+      "sha256": "26df69952cfe6fadfaa1ab3372bd5d1ba0c307470d78c003c3ba88db05ea9837"
+    },
+    "per_protein.csv": {
+      "bytes": 239414,
+      "sha256": "8fdfe04cf8585a56c041b5211821fb5ac0409c679474bc04e16dc7a43c26af82"
+    }
+  },
+  "metric": {
+    "range": "all",
+    "cut": "R",
+    "definition": "fraction of the N highest-confidence predicted contacts that are observed, where N is the protein's observed contact count"
+  },
+  "classes": {
+    "natural": 314,
+    "designed": 19
+  }
+}

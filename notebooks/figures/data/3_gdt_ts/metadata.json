@@ -1,0 +1,95 @@
+{
+  "dataset": "3_gdt_ts",
+  "notebook": "3_make_gdt_ts_data.ipynb",
+  "generated_utc": "2026-08-21T15:37:55+00:00",
+  "parameters": {
+    "metric": "gdt_ts",
+    "classes": [
+      "natural",
+      "designed"
+    ],
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 0
+  },
+  "git": {
+    "commit": "fef976aa21dee7ac94e82cc8b077d3d6d676619e",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "M notebooks/evals_exploration.ipynb",
+      " M notebooks/figures/1_make_top7_heatmap_data.ipynb",
+      " M notebooks/figures/1_plot_top7_heatmap.ipynb",
+      " M notebooks/figures/2_make_rprecision_data.ipynb",
+      " M notebooks/figures/4_make_contamination_contrast_data.ipynb",
+      " M notebooks/figures/4_plot_contamination_contrast.ipynb",
+      "?? notebooks/figures/data/",
+      "?? notebooks/figures/output/"
+    ]
+  },
+  "machine": {
+    "hostname": "ip1",
+    "user": "bizon",
+    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
+    "python": "3.11.14",
+    "gpu": {
+      "name": "NVIDIA RTX A5000",
+      "compute_capability": "8.6",
+      "memory_gib": 23.7,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.57.6",
+    "vllm": null,
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "url": "https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/exp14_foldbench_held_out_monomers/scores/per_target.csv",
+      "bytes": 494323,
+      "sha256": "f79ea0842e9a24378845ed968535e3fe1b2c08680aca8b3e4a6922b4d678ba16"
+    }
+  ],
+  "outputs": {
+    "summary.csv": {
+      "bytes": 1749,
+      "sha256": "8916259d7ac36cc60f0a418e5fdeedd494f2c601388dea65d95ded3d8739a60c"
+    },
+    "per_target.csv": {
+      "bytes": 484463,
+      "sha256": "e3a4a00280bef28c0059a6d998ba096137786fbbee5723422d4aa179ccac561c"
+    }
+  },
+  "metric": {
+    "name": "gdt_ts",
+    "source": "Open-Athena/helico exp14"
+  },
+  "arms_dropped_targets": [
+    "7pv5_A",
+    "7t9r_A",
+    "8es6_A",
+    "8por_A",
+    "8q79_A",
+    "8qle_A",
+    "8ra0_A",
+    "8u0i_A",
+    "9b8e_A"
+  ],
+  "arms": [
+    "esmfold",
+    "esmfold2",
+    "mf_L",
+    "mf_L2",
+    "mf_L5",
+    "off",
+    "oracle",
+    "protenix_v2_msa",
+    "protenix_v2_single_seq",
+    "v2msa",
+    "v2ss"
+  ]
+}

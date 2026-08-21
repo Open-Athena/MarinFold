@@ -269,19 +269,31 @@ Against the null that matters for it — a sequence-KNN predictor built from the
 trained on — m2-p06 clears by **+0.112** (0.532 against 0.420). It trails ESMFold2 by 0.263 and
 leads Protenix-v2 single-seq by 0.268 on the same 314 proteins.
 
-### 6. Manuscript figure panels (part 5)
+### 6. Manuscript figures — four make/plot notebook pairs
 
-Part 5 writes standalone panels to `figures/` — PNG at 300 dpi and PDF — with no titles and no
-panel letters, plus `contacts_v1_document_top7.txt`, the real contacts-v1 document for Top7 so a
-format panel can be drawn from the thing itself.
+The publication panels live in [`notebooks/figures/`](../../notebooks/figures/), not in the
+exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes a dataset,
+`<n>_plot_<name>.ipynb` draws it, and nothing is recomputed at plot time.
 
-Both protein classes are the same in the contact and structure figures, which is the point:
-**natural** = the 314 FoldBench natural monomers (eval-val + eval-test), **designed** = FoldBench's
-19 de novo monomers. eval-denovo is small, but exp65's 396 designs cannot be used against
-baselines — 50.5 % of them predate Protenix-v2's 2021-09-30 cutoff — and 19 is the set Helico's
-GDT-TS covers.
+| # | figure | needs |
+|---|---|---|
+| 1 | Top7 contact map — mirrored, and observed/predicted side by side | GPU |
+| 2 | contact-prediction R-precision, natural and designed | CPU |
+| 3 | Helico GDT-TS, natural and designed | CPU |
+| 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
 
-R-precision, from #245's published per-protein scores:
+Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
+GPU, package versions, the exact inference recipe as *resolved* (not as requested — `backend:
+"auto"` is recorded as the `vllm` or `transformers` it became), every input with its sha256, and
+every output with its sha256. Each plot notebook opens by printing that back. `rope_theta` is
+recorded per model and flagged when it is not 500000, because a transformers-5 export states rope
+in a way our pinned 4.x silently ignores and the resulting figure looks fine and is not (#180).
+
+**Both classes are the same proteins as the GDT-TS figure**: natural = the 314 natural FoldBench
+monomers, designed = the 19 de novo ones. See §5 for why exp65's 396 designs cannot carry a
+baseline comparison.
+
+Numbers behind the panels:
 
 | predictor | natural (314) | designed (19) |
 |---|---:|---:|
@@ -289,14 +301,10 @@ R-precision, from #245's published per-protein scores:
 | ESMFold2 | 0.795 | 0.864 |
 | ESMFold | 0.752 | 0.795 |
 | MarinFold (#199 cooldown) | 0.606 | 0.619 |
-| MarinFold (#232 m2-p06, decontaminated) | 0.532 | 0.591 |
+| MarinFold (#232 m2-p06) | 0.532 | 0.591 |
 | Protenix-v2, single sequence | 0.264 | 0.835 |
 
-GDT-TS, from [Open-Athena/helico](https://github.com/Open-Athena/helico) exp14's published
-per-target scores (`hf://buckets/timodonnell/helico-experiments/exp14_foldbench_held_out_monomers/`,
-anonymous read), restricted to the 324 targets every arm scored:
-
-| arm | natural (305) | designed (19) |
+| Helico arm | natural (305) | designed (19) |
 |---|---:|---:|
 | Helico + true contacts | 0.893 | 0.920 |
 | Protenix-v2 + MSA | 0.868 | 0.860 |
@@ -305,15 +313,18 @@ anonymous read), restricted to the 324 targets every arm scored:
 | Protenix-v2, single sequence | 0.174 | 0.892 |
 | Helico, no contacts | 0.146 | 0.859 |
 
-**The two classes tell opposite stories and the figures should not be captioned as though they
-agree.** On natural monomers MarinFold's contacts take Helico from 0.146 to 0.479 GDT-TS, against
-0.174 for Protenix-v2 single-sequence — the contacts are carrying real structural information no
-single-sequence predictor has. On the 19 designed monomers they take it from 0.859 **down** to
-0.761: designed backbones are idealised, single-sequence predictors already handle them
-(Protenix-v2 single-seq scores 0.892 GDT-TS and 0.835 contact R-precision there), and imperfect
-contacts subtract. The same asymmetry is in the contact panels — the designed gap between
-MarinFold and Protenix-v2 single-seq is +0.24 in our favour on natural proteins and −0.24 against
-us on designs.
+**The two protein classes tell opposite stories.** On natural monomers MarinFold's contacts take
+Helico from 0.146 to 0.479 GDT-TS against 0.174 for Protenix-v2 single-sequence — real structural
+information no single-sequence predictor has. On the 19 designed monomers they take it from 0.859
+*down* to 0.761: designed backbones are idealised, single-sequence predictors already handle them
+(0.892 GDT-TS, 0.835 contact R-precision), and imperfect contacts subtract. The contact panels
+carry the same asymmetry — MarinFold beats Protenix-v2 single-seq by +0.24 on natural proteins and
+loses by −0.24 on designs. A caption written over these panels has to survive that.
+
+**Validated on two machines.** All eight notebooks execute end to end on a 1xH100 box (torch
+2.11+cu129, vLLM 0.20.2, compute capability 9.0) and on this workstation's A5000 under
+transformers. Top7's R-precision comes out 0.6974 on both — same recipe, different backend,
+different card.
 
 ### 7. Hardware notes, measured rather than assumed
 

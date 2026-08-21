@@ -1,0 +1,131 @@
+{
+  "dataset": "1_top7_heatmap",
+  "notebook": "1_make_top7_heatmap_data.ipynb",
+  "generated_utc": "2026-08-21T15:36:28+00:00",
+  "parameters": {
+    "protein": "denovo_pdb__1qys_A",
+    "model": "contacts-v1-exp232-m2-p06-1.5B",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "backend": "auto",
+    "dtype": "auto",
+    "gpu_memory_utilization": 0.85
+  },
+  "git": {
+    "commit": "fef976aa21dee7ac94e82cc8b077d3d6d676619e",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "M notebooks/figures/4_make_contamination_contrast_data.ipynb",
+      " M notebooks/figures/4_plot_contamination_contrast.ipynb",
+      "?? notebooks/figures/data/",
+      "?? notebooks/figures/output/"
+    ]
+  },
+  "machine": {
+    "hostname": "ip1",
+    "user": "bizon",
+    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
+    "python": "3.11.14",
+    "gpu": {
+      "name": "NVIDIA RTX A5000",
+      "compute_capability": "8.6",
+      "memory_gib": 23.7,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.57.6",
+    "vllm": null,
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "path": "/home/bizon/git/MarinFold/.claude/worktrees/evals-exploration-notebook-cba1c7/experiments/exp94_evals_sequence_knn_baseline/data/eval_queries.fasta",
+      "bytes": 114366,
+      "sha256": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp89/gt_universe.jsonl",
+      "bytes": 7956102,
+      "sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9"
+    }
+  ],
+  "outputs": {
+    "score.npy": {
+      "bytes": 33984,
+      "sha256": "b578fe74da53309cbd0f05011f02cefe4ad94f8a0546410ef129cf5539618282"
+    },
+    "ground_truth.json": {
+      "bytes": 12744,
+      "sha256": "b63c46f5754fc3eb29e24a5006d2c3e489f2ba192bb5fce8ea90e11449f1ad89"
+    },
+    "metrics.csv": {
+      "bytes": 740,
+      "sha256": "27a549997cfceafd529639b0cc36d8c3896aa0dfa999f9525bb39b39abc3c068"
+    },
+    "document.txt": {
+      "bytes": 2832,
+      "sha256": "c2113d84477d4c49c494bc0d2fc5d1fd8545e1bcd9fdbdb1dfe0b1a2f9543b85"
+    }
+  },
+  "model": {
+    "nickname": "contacts-v1-exp232-m2-p06-1.5B",
+    "path": "/home/bizon/.cache/huggingface/hub/buckets/open-athena/MarinFold/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199",
+    "files": [
+      "config.json",
+      "config.json.lock",
+      "model-00001-of-00002.safetensors",
+      "model-00001-of-00002.safetensors.lock",
+      "model-00002-of-00002.safetensors",
+      "model-00002-of-00002.safetensors.lock",
+      "model.safetensors.index.json",
+      "model.safetensors.index.json.lock",
+      "tokenizer.json",
+      "tokenizer.json.lock",
+      "tokenizer_config.json",
+      "tokenizer_config.json.lock"
+    ],
+    "config_sha256": "03cd68867df12e95cb18cb689c0cbfc3adc96acd9b6eb8b344a28e7ab4e5fc0f",
+    "tokenizer_sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+    "rope_theta": 500000,
+    "rope_scaling": {
+      "factor": 8.0,
+      "low_freq_factor": 1.0,
+      "high_freq_factor": 4.0,
+      "original_max_position_embeddings": 8192,
+      "rope_type": "llama3"
+    },
+    "vocab_size": 2845,
+    "num_hidden_layers": 24,
+    "weight_bytes": 5885527576
+  },
+  "recipe": {
+    "method": "rollout+resample+tiebreak",
+    "backend": "transformers",
+    "dtype": "bfloat16",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "min_seq_separation": 6
+  },
+  "protein": {
+    "dataset": "denovo_pdb",
+    "stem": "1qys_A",
+    "L": 92,
+    "sequence_sha256": "66479a8c204936ae9efb3db388bcaf401a3a09aef482c6c942da888f2eefb2ad",
+    "n_true_contacts": 76,
+    "n_candidate_pairs": 3741
+  },
+  "result": {
+    "r_precision_all": 0.6973684210526315,
+    "auc_all": 0.9910461693114094
+  }
+}

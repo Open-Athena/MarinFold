@@ -1,0 +1,91 @@
+{
+  "dataset": "4_contamination_contrast",
+  "notebook": "4_make_contamination_contrast_data.ipynb",
+  "generated_utc": "2026-08-21T15:35:10+00:00",
+  "parameters": {
+    "focus": "#232 m2-p06 (decontaminated)",
+    "baseline": "#199 cooldown (contaminated)",
+    "eval_sets": [
+      "eval-val",
+      "eval-test"
+    ],
+    "range": "all",
+    "metric": "R",
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 0
+  },
+  "git": {
+    "commit": "fef976aa21dee7ac94e82cc8b077d3d6d676619e",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "M notebooks/figures/4_make_contamination_contrast_data.ipynb",
+      " M notebooks/figures/4_plot_contamination_contrast.ipynb",
+      "?? notebooks/figures/data/"
+    ]
+  },
+  "machine": {
+    "hostname": "ip1",
+    "user": "bizon",
+    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
+    "python": "3.11.14",
+    "gpu": {
+      "name": "NVIDIA RTX A5000",
+      "compute_capability": "8.6",
+      "memory_gib": 23.7,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.57.6",
+    "vllm": null,
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "bytes": 97519,
+      "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "bytes": 199548,
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/per_protein.csv.gz",
+      "bytes": 112619,
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    }
+  ],
+  "outputs": {
+    "summary.csv": {
+      "bytes": 1110,
+      "sha256": "74d4379f95a5517f30477011ccbf573ee1c6bb8a8522d8632551ec461a39eb66"
+    },
+    "per_protein.csv": {
+      "bytes": 35474,
+      "sha256": "a6c060de659fcaea3db269830d2132a44217f660be6ae60fe7b08ccd50d8a7ee"
+    }
+  },
+  "contrast": {
+    "focus": "#232 m2-p06 (decontaminated)",
+    "baseline": "#199 cooldown (contaminated)",
+    "range": "all",
+    "cut": "R"
+  },
+  "result": {
+    "paired_delta": -0.0735722165228242,
+    "ci": [
+      -0.08554604286606214,
+      -0.06110624629367249
+    ],
+    "focus_ahead_fraction": 0.1305732484076433,
+    "spearman_delta_vs_identity": 0.0008595998727402307,
+    "n_with_homolog": 300
+  }
+}
