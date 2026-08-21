@@ -324,18 +324,21 @@ def figure_style(dpi: int = 300) -> None:
     })
 
 
-def save_figure(figure, name: str, dpi: int = 300) -> Path:
-    """Write a panel to `output/` as a high-resolution PNG and a vector PDF.
+def save_figure(figure, name: str, dpi: int = 300, formats=("png", "pdf")) -> Path:
+    """Write a panel to `output/` as a high-resolution PNG and, by default, a vector PDF.
 
     No title and no panel letter is ever baked in by these notebooks — captions and lettering
     belong to the document the panel lands in.
+
+    Pass ``formats=("png",)`` for a panel whose content is already a raster — a ray-traced
+    structure, say. Wrapping a bitmap in a PDF buys no vector detail and roughly doubles what
+    the repository carries.
     """
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    png = OUTPUT / f"{name}.png"
-    figure.savefig(png, dpi=dpi)
-    figure.savefig(OUTPUT / f"{name}.pdf")
-    print(f"wrote {png} ({dpi} dpi) and {png.with_suffix('.pdf').name}")
-    return png
+    for suffix in formats:
+        figure.savefig(OUTPUT / f"{name}.{suffix}", dpi=dpi)
+    print(f"wrote {OUTPUT / name}.{{{','.join(formats)}}} ({dpi} dpi)")
+    return OUTPUT / f"{name}.{formats[0]}"
 
 
 def bootstrap_mean(values, draws: int = 2_000, seed: int = 0):
