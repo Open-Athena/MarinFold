@@ -1,0 +1,53 @@
+{
+  "seed": 230,
+  "n_total": 107110,
+  "by_arm": {
+    "afdb": 40000,
+    "esm_atlas": 40000,
+    "pdb": 27110
+  },
+  "stats": {
+    "afdb": {
+      "seen": 41502,
+      "dropped_contaminated": 930,
+      "shards_read": 27,
+      "kept": 40000
+    },
+    "esm_atlas": {
+      "seen": 43374,
+      "dropped_contaminated": 1254,
+      "shards_read": 7,
+      "kept": 40000
+    },
+    "pdb": {
+      "seen": 29120,
+      "dropped_contaminated": 2010,
+      "shards_read": 3,
+      "kept": 27110
+    }
+  },
+  "arms": {
+    "afdb": {
+      "prefix": "data/document_structures/contacts_v1/train",
+      "min_plddt": 80.0,
+      "max_resolution": null,
+      "first_shard": 1596,
+      "first_shard_note": "round-0 shards only (exp98 first_round0_shard, re-derived 2026-08-13)"
+    },
+    "esm_atlas": {
+      "prefix": "data/document_structures/contacts_v1_esm_atlas/train",
+      "min_plddt": 80.0,
+      "max_resolution": null,
+      "first_shard": 0,
+      "first_shard_note": ""
+    },
+    "pdb": {
+      "prefix": "data/document_structures/contacts_v1_pdb_deduped_monomers/documents",
+      "min_plddt": null,
+      "max_resolution": 9.0,
+      "first_shard": 0,
+      "first_shard_note": ""
+    }
+  },
+  "out": "/data/exp230_multi/targets.parquet"
+}

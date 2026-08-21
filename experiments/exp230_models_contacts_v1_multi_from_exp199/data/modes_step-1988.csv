@@ -1,0 +1,3 @@
+label,mode,n_rollouts,n_proteins,mean_sections,mean_sections_raw,max_sections,frac_single,finished,mean_jaccard,first_f1,best_f1,last_f1,tokens
+step-1988,multi,800,200,14.20375,22.02125,16,0.00875,0.65375,0.30427933,0.38833064,0.5178912,0.43337357,6761.23125
+step-1988,plain,800,200,1.0075,1.0075,6,0.9975,0.99875,0.058201518,0.43998855,0.44003788,0.43994248,502.65875
