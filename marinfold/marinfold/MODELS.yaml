@@ -73,6 +73,38 @@
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug
   document_structures:
     - contacts-v1
+# The decontaminated model: exp232 (issue #232) m2-p06, the better of the two
+# finals PR #244 selected. Qwen3 1.47B, the #199 recipe exactly — 50/50
+# AFDB+ESM-Atlas mixture, amino-acid augmentation, 145,199 steps — but trained
+# FROM SCRATCH on #225's corpora, from which every sequence matching any of the
+# 554 eval proteins or any of FoldBench's 1,940 chains at >=30% identity over
+# >=50% of the shorter sequence was removed (AFDB 4,129,682 -> 3,963,003;
+# ESM-Atlas 66,759,922 -> 65,553,178). Source-recorded losses: train 2.8540,
+# eval 2.9918.
+#
+# R-precision 0.5916 (all) / 0.5418 (long) on the 554-protein set, and 0.520 /
+# 0.538 / 0.591 on #245's eval-val / eval-test / eval-denovo. Its sibling
+# m1-p02 scores 0.5789 and is not published.
+#
+# It is NOT the default and should not be: the contaminated `-cooldown-` entry
+# above scores higher everywhere (0.631 legacy, 0.589 eval-val). Use this one
+# when the question is what the recipe achieves on proteins it provably cannot
+# have seen — #213 showed our eval set is 58% homologous to the #199 training
+# set, and this is the checkpoint that objection does not apply to. The gap
+# between the two is not all leakage: #245 measured the eval-val -> eval-test
+# drop and found no extra drop for the contaminated model.
+#
+# Same republication as the others: copied from the CoreWeave export by
+# experiments/exp250_evals_exploration_notebook/publish_exp232_m2_p06.py, every
+# object verified against the manifest #244/#245 pinned, and only config.json
+# rewritten — the transformers-5 exporter states rope as `rope_parameters`,
+# which our pinned transformers 4.x ignores in favour of theta 10000 where the
+# model was trained with 500000. Weights are float32 on disk; load as bfloat16.
+- nickname: contacts-v1-exp232-m2-p06-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug
+  document_structures:
+    - contacts-v1
 # Earlier default: exp166 (issue #166) — eric-czech's contacts-v1 amino-acid
 # augmentation run, continued from the #117 sweep winner. Qwen3 1.47B, 8
 # epochs, lr 3.1623e-3 / wd 0.1 / global batch 128, exp117 init;

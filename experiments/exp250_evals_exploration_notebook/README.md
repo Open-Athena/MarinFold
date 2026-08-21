@@ -182,7 +182,39 @@ Selecting `eval-test` prints the read-budget warning and the pointer to
 `#245` reporting rules (designed and natural never pooled, baseline comparisons only where the
 baselines' cutoffs allow it, ~0.005 is a tie) are in the §1 prose and in the split of the output.
 
-### 4. Cost
+### 4. Publishing #232's best decontaminated checkpoint
+
+Parts 1–2 could always read `#232 m2-p06`'s published *scores*, but nothing could fold with it: the
+weights existed only in CoreWeave S3, in the account that trained them
+(`hf_repo_id=None` in both #232's and #245's pinned specs), and this workstation has no credentials
+for `marin-us-east-02a`. [`publish_exp232_m2_p06.py`](publish_exp232_m2_p06.py) copies the 5.9 GiB
+export to `checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199/` on the public
+bucket, from a `cw-us-east-02a` pod beside the bytes rather than through the workstation's
+~2.5 MB/s uplink.
+
+It is exp238's `publish_cooldown.py` adapted — same mechanism, same three pre-upload checks, each
+of which is silent when it goes wrong:
+
+| check | result |
+|---|---|
+| every object matches the size + S3 ETag #244/#245 pinned | 6/6 |
+| `config.json` rope restated in transformers-4.x terms | `rope_theta=500000`, `rope_scaling=llama3` (4.x would otherwise silently use the Qwen3 default 10000) |
+| contacts-v1 vocabulary has not drifted | 2,845 tokens, `<contact>`/`<p0>`/`<p1999>` ids unmoved |
+
+[`test_publish_specs.py`](test_publish_specs.py) asserts the by-value manifest still equals #245's
+`M2_P06_CHECKPOINT` and is not `m1_p02`'s — the two finals differ only in their weight ETags, so a
+copy-paste slip would publish the wrong checkpoint under the right name.
+
+Registered as `contacts-v1-exp232-m2-p06-1.5B` in `MODELS.yaml`, and it is deliberately **not** the
+default: the contaminated cooldown scores higher everywhere (0.631 vs 0.5916 on the legacy 554,
+0.589 vs 0.520 on eval-val). This checkpoint is the one to reach for when the question is what the
+recipe achieves on proteins it provably cannot have seen — #213 measured the eval set as 58 %
+homologous to #199's training data, and that objection does not apply here.
+
+The notebook's part 4 now defaults to the contamination contrast: the default checkpoint against
+this one, same protein, side by side.
+
+### 5. Cost
 
 §1–2 are a few MB of downloads and run in seconds. §3 is ~25–45 s per protein per checkpoint at
 100 rollouts on an A5000 (L ≤ 300), plus a one-time ~5.5 GB checkpoint download; a free Colab T4 is
