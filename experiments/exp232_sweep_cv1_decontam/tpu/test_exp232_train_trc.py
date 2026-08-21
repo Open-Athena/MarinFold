@@ -23,6 +23,7 @@ from experiments.exp232_sweep_cv1_decontam.tpu.exp232_train_trc import (
     RESUME_STEP,
     VARIANTS,
     Exp232RecoveryLrSchedule,
+    _training_env,
 )
 from levanter.optim.config import LrScheduleContext
 
@@ -92,3 +93,21 @@ def test_ingress_is_direct_and_region_local() -> None:
             assert target.startswith(f"gs://{REGION_BUCKETS[region]}/")
             assert target not in destinations
             destinations.add(target)
+
+
+def test_wandb_routing_isolated_by_run_mode(monkeypatch) -> None:
+    monkeypatch.setenv("WANDB_ENTITY", "eric-czech")
+    monkeypatch.setenv("WANDB_PROJECT", "marin")
+    smoke = _training_env("us-east1", smoke=True)
+    assert (smoke["WANDB_ENTITY"], smoke["WANDB_PROJECT"]) == (
+        "eric-czech",
+        "marin",
+    )
+
+    monkeypatch.setenv("WANDB_ENTITY", "open-athena")
+    monkeypatch.setenv("WANDB_PROJECT", "MarinFold")
+    production = _training_env("us-east1", smoke=False)
+    assert (production["WANDB_ENTITY"], production["WANDB_PROJECT"]) == (
+        "open-athena",
+        "MarinFold",
+    )

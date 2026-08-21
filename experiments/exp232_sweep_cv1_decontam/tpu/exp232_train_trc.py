@@ -268,8 +268,12 @@ def _subversion() -> str:
     return f"s{suffix:02d}"
 
 
-def _training_env(region: str) -> dict[str, str]:
-    expected = {"WANDB_ENTITY": "open-athena", "WANDB_PROJECT": "MarinFold"}
+def _training_env(region: str, *, smoke: bool) -> dict[str, str]:
+    expected = (
+        {"WANDB_ENTITY": "eric-czech", "WANDB_PROJECT": "marin"}
+        if smoke
+        else {"WANDB_ENTITY": "open-athena", "WANDB_PROJECT": "MarinFold"}
+    )
     missing = [key for key in expected if not os.environ.get(key)]
     if missing:
         raise ValueError(f"missing required variables: {', '.join(missing)}")
@@ -280,7 +284,8 @@ def _training_env(region: str) -> dict[str, str]:
     }
     if unexpected:
         raise ValueError(
-            "training W&B routing must be open-athena/MarinFold, got "
+            f"{'smoke' if smoke else 'production'} W&B routing must be "
+            f"{expected['WANDB_ENTITY']}/{expected['WANDB_PROJECT']}, got "
             + ", ".join(f"{key}={value!r}" for key, value in unexpected.items())
         )
     env = {
@@ -529,7 +534,7 @@ def build_run(
         smoke=smoke,
     )
     batch = batch_fit(tpu)
-    env = _training_env(region)
+    env = _training_env(region, smoke=smoke)
     step = train_lm(
         name=shape.checkpoint_name,
         run_id=shape.run_id,
