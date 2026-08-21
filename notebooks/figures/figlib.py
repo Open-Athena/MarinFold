@@ -21,6 +21,7 @@ Datasets live in ``notebooks/figures/data/<n>_<name>/`` and figures in
 
 import getpass
 import hashlib
+import os
 import json
 import platform
 import socket
@@ -117,9 +118,18 @@ def package_versions() -> dict:
 
 
 def machine() -> dict:
-    """Where this ran, including the GPU when there is one."""
+    """Where this ran, including the GPU when there is one.
+
+    ``FIGLIB_MACHINE_LABEL`` replaces the recorded hostname. Datasets from this directory get
+    committed to a public repository, and some machines are named after their own address — a
+    rented GPU box whose hostname is its public IP should not be published by a figure's
+    provenance. The substitution is recorded rather than hidden: ``hostname_overridden`` says a
+    label was used, so nobody later reads the label as a real hostname.
+    """
+    label = os.environ.get("FIGLIB_MACHINE_LABEL")
     record = {
-        "hostname": socket.gethostname(),
+        "hostname": label or socket.gethostname(),
+        "hostname_overridden": bool(label),
         "user": getpass.getuser(),
         "platform": platform.platform(),
         "python": sys.version.split()[0],
@@ -136,8 +146,11 @@ def machine() -> dict:
                 "memory_gib": round(torch.cuda.get_device_properties(0).total_memory / 2**30, 1),
                 "count": torch.cuda.device_count(),
             }
-    except ImportError:
-        pass
+    except (ImportError, AttributeError) as exc:
+        # No torch, or a torch that cannot answer (a partial install on a system python, seen on
+        # this project's workstation). Recorded rather than swallowed: a dataset that does not
+        # know whether it had a GPU should say so, not imply it had none.
+        record["gpu_probe_error"] = repr(exc)
     return record
 
 
