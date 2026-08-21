@@ -315,7 +315,29 @@ contacts subtract. The same asymmetry is in the contact panels — the designed 
 MarinFold and Protenix-v2 single-seq is +0.24 in our favour on natural proteins and −0.24 against
 us on designs.
 
-### 7. Cost
+### 7. Hardware notes, measured rather than assumed
+
+**float16 does not work with these weights.** They were trained in bfloat16, and fp16 overflows the
+residual stream: folding Top7 under `dtype="float16"` dies with a CUDA device-side assert inside
+`sample_completions` — NaN logits reaching the sampler — in a fresh process, so it is not
+cross-run contamination. float32 folds the same protein fine (R-precision 0.671 at 20 rollouts).
+This matters because fp16 is the obvious choice on a T4, where bfloat16 has no tensor cores and
+runs emulated. The notebook therefore uses **bfloat16 on every GPU**, keeps float16 in the
+dropdown with a warning, and offers float32 as the safe fallback.
+
+**Rollout batch size comes from free VRAM**, not a constant: the KV cache is 48 KiB per token per
+rollout for this architecture (24 layers, 8 KV heads, head dim 64). Measured on the workstation's
+A5000, Top7 runs all 100 rollouts in one pass with 42 MiB of cache each. A 16 GB T4 does the same
+for Top7 and steps down to 14 rollouts per pass for the longest protein in the set (1,596
+residues) instead of running out of memory. The transformers backend then applies its own
+roughly-constant-cache heuristic on top, which is what actually binds past ~200 residues.
+
+**vLLM** is used automatically at compute capability >= 8.0, which is also what exp245's harness
+ran. It does not release an engine when one goes out of scope and every fold builds one, so
+`GPU_MEMORY_UTILIZATION` defaults to 0.28 — enough for the three a session running parts 3, 4 and
+5 accumulates.
+
+### 8. Cost
 
 §1–2 are a few MB of downloads and run in seconds. §3 is ~25–45 s per protein per checkpoint at
 100 rollouts on an A5000 (L ≤ 300), plus a one-time ~5.5 GB checkpoint download; a free Colab T4 is
