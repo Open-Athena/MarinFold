@@ -1,0 +1,7 @@
+arm,tier,tier_label,rule,n_documents,n_dropped,pct_dropped,n_surviving,n_clusters_before,n_clusters_after,measurable
+afdb,A,A — sequence,"sequence: identity >= 30% over >= 50% query coverage, or E <= 0.001",4129682,77887,1.886,4051795,941028,936076,True
+afdb,B,B — + structurally redundant,"Tier A, plus structural TM >= 0.90 to any eval structure",4129682,100207,2.4265,4029475,941028,929284,True
+afdb,C,C — + fold-level purge,"Tier B, plus every cluster with TM >= 0.50 to any eval structure",4129682,1540597,37.3055,2589085,941028,601840,True
+esm_atlas,A,A — sequence,"sequence: identity >= 30% over >= 50% query coverage, or E <= 0.001",66759922,1047096,1.5685,65712826,,,True
+esm_atlas,B,B — + structurally redundant,"Tier A, plus structural TM >= 0.90 to any eval structure",66759922,,,,,,False
+esm_atlas,C,C — + fold-level purge,"Tier B, plus every cluster with TM >= 0.50 to any eval structure",66759922,,,,,,False
