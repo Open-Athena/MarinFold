@@ -1,0 +1,20 @@
+{
+  "reference_version": "v1",
+  "rule": "identity >= 30% over >= 50% coverage or E <= 0.001 (alignments reported to E <= 10)",
+  "min_identity": 0.3,
+  "min_qcov": 0.5,
+  "evalue_arm": 0.001,
+  "report_evalue_ceiling": 10.0,
+  "alignments": {
+    "eval554": "/data/exp225_decontam/aln_all_hits.m8",
+    "foldbench_all": "/data/exp225_decontam/foldbench_all/aln_all_hits.m8"
+  },
+  "totals": {
+    "eval554/afdb": 77887,
+    "eval554/esm_atlas": 1047096,
+    "foldbench_all/afdb": 196708,
+    "foldbench_all/esm_atlas": 1312972,
+    "eval554 + foldbench_all/afdb": 234992,
+    "eval554 + foldbench_all/esm_atlas": 2023930
+  }
+}
