@@ -1,7 +1,7 @@
 {
   "dataset": "1_top7_heatmap",
   "notebook": "1_make_top7_heatmap_data.ipynb",
-  "generated_utc": "2026-08-21T15:36:28+00:00",
+  "generated_utc": "2026-08-21T16:03:14+00:00",
   "parameters": {
     "protein": "denovo_pdb__1qys_A",
     "model": "contacts-v1-exp232-m2-p06-1.5B",
@@ -14,18 +14,18 @@
     "gpu_memory_utilization": 0.85
   },
   "git": {
-    "commit": "fef976aa21dee7ac94e82cc8b077d3d6d676619e",
+    "commit": "77c1af321cddaa68387df4d5206eaaeeb55a5c80",
     "branch": "exp250/evals-exploration-notebook",
     "dirty": true,
     "dirty_files": [
-      "M notebooks/figures/4_make_contamination_contrast_data.ipynb",
-      " M notebooks/figures/4_plot_contamination_contrast.ipynb",
-      "?? notebooks/figures/data/",
-      "?? notebooks/figures/output/"
+      "M notebooks/figures/data/1_top7_heatmap/metrics.csv",
+      " M notebooks/figures/data/1_top7_heatmap/score.npy",
+      "?? notebooks/figures/data/1_top7_heatmap/votes.npy"
     ]
   },
   "machine": {
     "hostname": "ip1",
+    "hostname_overridden": false,
     "user": "bizon",
     "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
     "python": "3.11.14",
@@ -60,15 +60,19 @@
   "outputs": {
     "score.npy": {
       "bytes": 33984,
-      "sha256": "b578fe74da53309cbd0f05011f02cefe4ad94f8a0546410ef129cf5539618282"
+      "sha256": "030459e0a84c0b89c92131d60a9a54f3c93a20fce56acffb91b9542f1d16cada"
+    },
+    "votes.npy": {
+      "bytes": 17056,
+      "sha256": "c6761359f75cd096a5d65cffc41e1f20a7299b3f3b83ad2b59272d8d6f447d0e"
     },
     "ground_truth.json": {
       "bytes": 12744,
       "sha256": "b63c46f5754fc3eb29e24a5006d2c3e489f2ba192bb5fce8ea90e11449f1ad89"
     },
     "metrics.csv": {
-      "bytes": 740,
-      "sha256": "27a549997cfceafd529639b0cc36d8c3896aa0dfa999f9525bb39b39abc3c068"
+      "bytes": 737,
+      "sha256": "f452e4c6dae5a16631e4b7fb3c86bc9b7183feda07ce9a1b8302e1250d5064f1"
     },
     "document.txt": {
       "bytes": 2832,
@@ -124,8 +128,14 @@
     "n_true_contacts": 76,
     "n_candidate_pairs": 3741
   },
+  "votes": {
+    "max": 99,
+    "n_rollouts": 100,
+    "pairs_with_any_vote": 472,
+    "note": "score.npy = votes.npy + a pairwise tie-break in [0, 0.5); the metric ranks score, the figure shows votes / n_rollouts"
+  },
   "result": {
-    "r_precision_all": 0.6973684210526315,
-    "auc_all": 0.9910461693114094
+    "r_precision_all": 0.7105263157894737,
+    "auc_all": 0.9919867882530337
   }
 }
