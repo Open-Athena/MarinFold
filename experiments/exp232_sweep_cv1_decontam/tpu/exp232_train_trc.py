@@ -247,7 +247,7 @@ def _validate_placement(tpu: str, region: str, *, smoke: bool) -> None:
     if smoke:
         return
     chips = get_tpu_topology(tpu).chip_count
-    low, high = (16, 256) if family == "v5p" else (32, 512)
+    low, high = 32, 512
     if not low <= chips <= high:
         raise ValueError(
             f"production {tpu} has {chips} chips; expected {low}--{high} for {family}"

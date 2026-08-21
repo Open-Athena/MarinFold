@@ -1,25 +1,95 @@
 # Exp232 TRC LR-recovery operations
 
+> This document governs a training sweep managed with the
+> `run-training-sweep-trc` skill. Read it in full at the start of every
+> heartbeat before inspecting code, SQLite, W&B, or Iris.
+
 Status: regional ingress and full-state accelerator smoke independently
 verified. No production run has been submitted.
 
-## Contract
+## Invariants
 
-- Source: full Levanter `step-333960` from
-  `prot-exp232-cw-cv1-decontam-recover-a03-skipstep-m2-p06-srcpeak-augcont`.
-  Training never initializes from an HF export.
-- Variants: `lr050`, `lr010`, and `lr005`, targeting `5e-4`, `1e-4`, and
-  `5e-5` respectively.
-- Restore step `333961` starts at the source peak LR `1e-3`. The first 10,890
-  updates lower LR linearly, reaching the target at step `344850`. Hold through
-  step `464640`, then linearly cool to exactly zero at final checkpoint
-  `step-551760`.
-- Keep skip-step enabled with its existing state and defaults. Restore is strict,
-  not partial. Change the data seed to `232`; retain 100% augmentation, block
-  shuffle, full validation, W&B watch, permanent checkpoints every 14,520 steps,
-  and 30-minute temporary checkpoints.
-- W&B must be `open-athena/MarinFold`. Every regional replica has a distinct run
-  and checkpoint identity. Multiple regions may race the same LR variant.
+- Execute only on Google TRC TPUs at `interactive` priority. Never dispatch this
+  sweep to CoreWeave and never reuse this priority choice for CoreWeave work.
+- Every worker reads caches and the initialization checkpoint from its own region
+  and writes only to its own regional prefix. Never copy state between TRC regions.
+- Strictly restore the full Levanter `step-333960` state. Never initialize from or
+  create an HF export.
+- Allow one live writer per regional run and one winning regional run per trial.
+- Production W&B routing is `open-athena/MarinFold`. Pass secrets only through the
+  environment; never persist them in this document or SQLite.
+- Include `--user eczech` on every Iris submission command that supports it.
+
+## Sweep Definition
+
+The training entry point and trial catalog are `exp232_train_trc.py`; its
+`VARIANTS` mapping defines the three opaque logical trials `lr050`, `lr010`, and
+`lr005`. The entry point owns all training, schedule, data, validation,
+checkpoint, and hardware-parallelism semantics.
+
+Each regional run must use the already-verified regional caches and regional copy
+of the full Levanter source checkpoint. A same-region reslice resumes from that
+run's regional checkpoint. A different-region replica starts independently from
+the regional `step-333960` seed.
+
+## Operator Choices
+
+- Time limit: 14 days from the first production dispatch.
+- Regional replicas: two simultaneous regions per logical trial.
+- Compute: up to 512 actual TPU chips per regional replica and 3,072 submitted
+  chips across the six replicas.
+- Scope: every currently configured TPU family and slice with 32--512 actual
+  chips in `europe-west4`, `us-east1`, `us-east5`, and `us-west4`.
+- Exclusions: every other region, slices outside the actual-chip range, non-TPU
+  backends, and CoreWeave.
+- Priority: `interactive`, preemptible.
+- Operations document: this tracked file.
+
+## Operating Policy
+
+- `heartbeat_every=1h`, scheduled only after the prior heartbeat completes;
+  `reslice_after=1h`, `restart_after=3h`, `relocate_after=3d`, and
+  `pending_target_limit=1`.
+- Retry an isolated failure on the same regional target. Pause replacements and
+  investigate when failures recur or cluster across independent runs.
+- Maintain two distinct regional runs per unfinished trial. After one reaches
+  `run_progress >= 1` and its expected checkpoint is reachable, mark it the winner
+  and stop its nonterminal sibling.
+- A trial completes only after its winning checkpoint is independently reachable.
+  End the sweep when every trial completes or the 14-day limit is reached.
+
+## Target Grid
+
+Current Marin bucket mappings, Iris pool definitions, regional inputs, the entry
+point placement guard, and every batch/mesh fit below have been validated.
+
+| Region | Bucket | Slice | Chips | State | Reason |
+| --- | --- | --- | ---: | --- | --- |
+| `europe-west4` | `marin-eu-west4` | `v5litepod-32` | 32 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v5litepod-64` | 64 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v5litepod-128` | 128 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v5litepod-256` | 256 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v6e-32` | 32 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v6e-64` | 64 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v6e-128` | 128 | eligible | — |
+| `europe-west4` | `marin-eu-west4` | `v6e-256` | 256 | eligible | — |
+| `us-east1` | `marin-us-east1` | `v6e-32` | 32 | eligible | — |
+| `us-east1` | `marin-us-east1` | `v6e-64` | 64 | eligible | — |
+| `us-east1` | `marin-us-east1` | `v6e-128` | 128 | eligible | — |
+| `us-east1` | `marin-us-east1` | `v6e-256` | 256 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v6e-32` | 32 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v6e-64` | 64 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v6e-128` | 128 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v6e-256` | 256 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v5p-64` | 32 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v5p-128` | 64 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v5p-256` | 128 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v5p-512` | 256 | eligible | — |
+| `us-east5` | `marin-us-east5` | `v5p-1024` | 512 | eligible | — |
+| `us-west4` | `marin-us-west4` | `v5litepod-32` | 32 | eligible | — |
+| `us-west4` | `marin-us-west4` | `v5litepod-64` | 64 | eligible | — |
+| `us-west4` | `marin-us-west4` | `v5litepod-128` | 128 | eligible | — |
+| `us-west4` | `marin-us-west4` | `v5litepod-256` | 256 | eligible | — |
 
 ## Regional storage
 
@@ -124,3 +194,7 @@ Iris rejected the first post-review submission at its client build floor. The
 local `eac-plm` Iris `BUILD_DATE` was set to the required `2026-08-07`; canary
 `/eczech/exp232-trc-iris-floor-canary-20260821-a01` was accepted before the
 successful smoke was submitted.
+
+## Change Record
+
+None.

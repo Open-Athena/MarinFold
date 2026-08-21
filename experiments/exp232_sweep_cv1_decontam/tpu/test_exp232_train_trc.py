@@ -26,6 +26,7 @@ from experiments.exp232_sweep_cv1_decontam.tpu.exp232_train_trc import (
     VARIANTS,
     Exp232RecoveryLrSchedule,
     _training_env,
+    _validate_placement,
     batch_fit,
 )
 
@@ -123,3 +124,14 @@ def test_v6e_batch_fit_reflects_measured_small_slice_memory() -> None:
     production = batch_fit("v6e-32")
     assert production.per_device_parallelism == 4
     assert production.gradient_accumulation == 1
+
+
+def test_production_placement_uses_actual_chip_count() -> None:
+    _validate_placement("v5p-1024", "us-east5", smoke=False)
+
+    try:
+        _validate_placement("v5p-32", "us-east5", smoke=False)
+    except ValueError as exc:
+        assert "has 16 chips" in str(exc)
+    else:
+        raise AssertionError("16-chip v5p target must be rejected")
