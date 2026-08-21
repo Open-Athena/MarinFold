@@ -1,0 +1,5 @@
+{
+  "script": "qc.py",
+  "args": [],
+  "caption": "Release-year and resolution composition of the monomer corpus, the two entry-level Protenix filters."
+}

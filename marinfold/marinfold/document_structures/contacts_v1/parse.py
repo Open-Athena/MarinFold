@@ -24,7 +24,7 @@ ordered *position* list so they stay consistent with each other:
 
 import math
 import warnings
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -92,6 +92,61 @@ class ResidueInfo:
     resname: str     # canonical 3-letter name (uppercase), or "UNK"
     resnum: int      # author residue number from the structure
     chain: str       # author chain id
+
+
+@dataclass(frozen=True)
+class ChainSegment:
+    """One protein chain, as a contiguous run of the residue list.
+
+    ``start`` / ``stop`` are the half-open bounds of the chain's residues in
+    the flat, sequence-ordered residue list an
+    :class:`AnalyzedStructure` carries (``residues[start:stop]``). Multi-chain
+    documents are laid out chain by chain (see ``generate.build_document``),
+    and every per-chain quantity — the two termini, the intra-chain sequence
+    separation — is expressed against these bounds.
+    """
+
+    chain: str
+    start: int
+    stop: int
+
+    @property
+    def length(self) -> int:
+        return self.stop - self.start
+
+
+def chain_segments(residues: Sequence[ResidueInfo]) -> tuple[ChainSegment, ...]:
+    """Split a sequence-ordered residue list into its contiguous chain runs.
+
+    pyconfind emits positions grouped by chain, so each chain is one
+    contiguous run and its residues are in chain order. That contiguity is
+    load-bearing: the document layout gives each chain one unbroken run of
+    position indices, and a contact's intra- vs inter-chain status is read
+    off the run a residue falls in.
+
+    Raises:
+        ValueError: a chain id appears in more than one run (the residue list
+            is interleaved rather than grouped by chain). We fail loudly
+            rather than silently emitting a document whose ``<n-term>`` /
+            ``<c-term>`` markers describe chains that don't exist.
+    """
+    segments: list[ChainSegment] = []
+    seen: set[str] = set()
+    start = 0
+    for index in range(1, len(residues) + 1):
+        at_end = index == len(residues)
+        if not at_end and residues[index].chain == residues[start].chain:
+            continue
+        chain = residues[start].chain
+        if chain in seen:
+            raise ValueError(
+                f"chain {chain!r} appears in more than one run of the residue "
+                f"list; residues must be grouped by chain"
+            )
+        seen.add(chain)
+        segments.append(ChainSegment(chain=chain, start=start, stop=index))
+        start = index
+    return tuple(segments)
 
 
 def residues_from_sequence(
@@ -287,6 +342,7 @@ def analyze_structure(
     clash_distance: float = 2.0,
     assembly: int | str | None = None,
     rotamer_library=None,
+    max_chains: int = 1,
 ) -> AnalyzedStructure:
     """Run pyconfind on one structure and return an :class:`AnalyzedStructure`.
 
@@ -303,10 +359,15 @@ def analyze_structure(
             expanding assembly 1.
         rotamer_library: passed through to ``pyconfind.analyze``; ``None``
             auto-downloads + caches the Dunbrack 2010 library once.
+        max_chains: how many protein chains the caller is willing to accept.
+            The default of 1 is the historical single-chain behavior (the
+            AFDB / ESM-Atlas corpora are all monomers, and a multi-chain
+            input there means something has gone wrong upstream). Multimer
+            document generation raises it; see ``SPEC.md``.
 
     Raises:
-        ValueError: the structure has no protein residues, or has more than
-            one protein chain (multi-chain support is future work per SPEC).
+        ValueError: the structure has no protein residues, or has more
+            protein chains than ``max_chains``.
     """
     import gemmi
     from pyconfind import analyze
@@ -337,11 +398,11 @@ def analyze_structure(
     if not positions:
         raise ValueError(f"{source_path}: no protein residues")
     chains = {p.position.chain for p in positions}
-    if len(chains) != 1:
+    if len(chains) > max_chains:
         raise ValueError(
-            f"{source_path}: expected a single protein chain, found "
-            f"{len(chains)} ({sorted(chains)}). contacts-v1 is single-chain "
-            f"for now (see SPEC.md)."
+            f"{source_path}: found {len(chains)} protein chains "
+            f"({sorted(chains)}) but max_chains={max_chains}. Raise "
+            f"max_chains to build a multi-chain document (see SPEC.md)."
         )
 
     residues = tuple(
@@ -412,6 +473,7 @@ def iter_parquet_analyzed_structures(
     clash_distance: float = 2.0,
     assembly: int | str | None = None,
     rotamer_library=None,
+    max_chains: int = 1,
     batch_size: int = 64,
 ) -> Iterator[AnalyzedStructure]:
     """Analyze structures from a parquet shard's ``cif_column`` (afdb-24M layout).
@@ -468,6 +530,7 @@ def iter_parquet_analyzed_structures(
                     clash_distance=clash_distance,
                     assembly=assembly,
                     rotamer_library=rotamer_library,
+                    max_chains=max_chains,
                 )
             except (ValueError, RuntimeError) as exc:
                 warnings.warn(f"skipping {entry_id}: {exc}", stacklevel=2)
@@ -486,6 +549,7 @@ def iter_analyzed_structures(
     clash_distance: float = 2.0,
     assembly: int | str | None = None,
     rotamer_library=None,
+    max_chains: int = 1,
 ) -> Iterator[AnalyzedStructure]:
     """Analyze every structure under ``path``.
 
@@ -494,7 +558,8 @@ def iter_analyzed_structures(
     which case structures are read from the ``cif_column`` mmCIF text and
     ids from ``id_column``. (If a directory holds parquet shards they take
     precedence over loose structure files.) Inputs that fail to parse or
-    analyze — including multi-chain ones — are skipped with a warning.
+    analyze — including ones with more than ``max_chains`` protein chains —
+    are skipped with a warning.
     """
     path = Path(path)
     parquet_paths = _parquet_paths(path)
@@ -510,6 +575,7 @@ def iter_analyzed_structures(
                 clash_distance=clash_distance,
                 assembly=assembly,
                 rotamer_library=rotamer_library,
+                max_chains=max_chains,
             )
         return
     for p in iter_structure_paths(path):
@@ -522,6 +588,7 @@ def iter_analyzed_structures(
                 clash_distance=clash_distance,
                 assembly=assembly,
                 rotamer_library=rotamer_library,
+                max_chains=max_chains,
             )
         except (ValueError, RuntimeError) as exc:
             warnings.warn(f"skipping {p}: {exc}", stacklevel=2)
