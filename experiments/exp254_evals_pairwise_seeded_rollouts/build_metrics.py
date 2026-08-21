@@ -30,6 +30,7 @@ comparable to the published ones.
 """
 
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,32 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 
 from common import EXPECTED_UNITS, load_ground_truth, load_targets
+
+
+@dataclass(frozen=True)
+class Arm:
+    """One rollout arm: where its 100-per-protein rollouts live and what fed them.
+
+    ``seeds`` is the phase 1 file whose rank-*r* pair started rollout *r*, or
+    ``None`` for the unseeded control. ``label`` prefixes this arm's rows in
+    every output table, so renaming one renames it everywhere.
+    """
+
+    directory: str
+    label: str
+    seeds: str | None
+
+
+#: Every arm scored, control first. The three seeded arms differ only in which
+#: pairs `rank_pairwise.py` handed them -- same checkpoint, same realizations,
+#: same sampling knobs -- so the contrast between them is the seed strategy and
+#: nothing else.
+ARMS = (
+    Arm("iid", "i.i.d.", None),
+    Arm("seeded", "seeded top-100", "seeds_top.parquet"),
+    Arm("seeded-long", "seeded long-range", "seeds_long.parquet"),
+    Arm("seeded-strat", "seeded 1/3 per range", "seeds_stratified.parquet"),
+)
 
 # --- verbatim from exp89 compute_metrics.py (DO NOT EDIT -- must stay identical) ---
 RANGES: dict[str, tuple[int, int | None]] = {
@@ -113,6 +140,13 @@ def vote_matrix(group: pd.DataFrame, L: int) -> np.ndarray:
     m = np.zeros((L, L), dtype=np.float64)
     np.add.at(m, (group["i"].to_numpy(), group["j"].to_numpy()), 1.0)
     return m + m.T
+
+
+def range_of(separation: int) -> str:
+    """CASP bin label for one sequence separation, matching ``RANGES`` above."""
+    if separation >= 24:
+        return "long"
+    return "medium" if separation >= 12 else "short"
 
 
 def rollout_precisions(group: pd.DataFrame, resolved_mask: np.ndarray,
@@ -223,9 +257,13 @@ def seed_conditioning(detail: pd.DataFrame, seeds: pd.DataFrame | None, gt,
                 i, j = pair
                 seed_correct = bool(tmat[i, j]
                                     and resolved_mask[i] and resolved_mask[j])
+            separation = None if pair is None else int(pair[1] - pair[0])
             rows.append(dict(dataset=dataset, stem=stem, L=L, arm=arm,
                              rollout=rollout, precision=precision,
-                             n_true=n_true, seed_correct=seed_correct))
+                             n_true=n_true, seed_correct=seed_correct,
+                             seed_separation=separation,
+                             seed_range=None if separation is None
+                             else range_of(separation)))
     return rows
 
 
@@ -306,67 +344,106 @@ def summarise_conditioning(conditioning: pd.DataFrame, out: Path) -> None:
     conditioning. Contrasting *within* each protein -- where both seed kinds
     occur against the same ground truth -- is the comparison that isolates it.
 
-    The by-rank table is the same question asked a second way. The rollout index
-    IS the pairwise rank of the seed it was given, so seed accuracy falls
-    steeply down the list while nothing forces the rollouts to follow.
+    Three tables come out of this:
+
+    ``exp254_seed_conditioning_summary.csv``
+        the within-protein contrast, per seeded arm, against the pooled version
+        so the confound stays visible rather than inferred.
+    ``exp254_seed_rank.csv``
+        seed accuracy and rollout quality against the seed's rank. The rollout
+        index IS the rank of the seed it was given, so accuracy falls steeply
+        down the list while nothing forces the rollouts to follow.
+    ``exp254_seed_range.csv``
+        the same two quantities against the seed's *separation* range, which is
+        what the long-range and equal-thirds arms were built to move.
     """
-    seeded = conditioning[conditioning.arm == "seeded"]
-    iid_by_protein = conditioning[conditioning.arm == "iid"].groupby("stem")["precision"].mean()
+    unseeded = conditioning[conditioning.seed_range.isna()]
+    iid_by_protein = unseeded.groupby("stem")["precision"].mean()
+    seeded_arms = [a for a in conditioning.arm.unique()
+                   if a in set(conditioning[conditioning.seed_range.notna()].arm)]
 
-    split = seeded.groupby(["stem", "seed_correct"])["precision"].mean().unstack()
-    split.columns = ["false_seed", "true_seed"]
-    joined = split.join(iid_by_protein.rename("iid")).dropna()
-    delta = (joined["true_seed"] - joined["false_seed"]).to_numpy()
-    generator = np.random.default_rng(254)
-    index = generator.integers(0, len(delta), size=(10_000, len(delta)))
-    boot = delta[index].mean(axis=1)
+    summary_rows, rank_rows, range_rows = [], [], []
+    for arm in seeded_arms:
+        frame = conditioning[conditioning.arm == arm]
 
-    pooled = seeded.groupby("seed_correct")["precision"].mean()
-    summary = pd.DataFrame([
-        dict(quantity="pooled true-seed rollout R-precision", value=pooled[True]),
-        dict(quantity="pooled false-seed rollout R-precision", value=pooled[False]),
-        dict(quantity="pooled difference (CONFOUNDED by protein difficulty)",
-             value=pooled[True] - pooled[False]),
-        dict(quantity="within-protein true-seed rollout R-precision",
-             value=joined["true_seed"].mean()),
-        dict(quantity="within-protein false-seed rollout R-precision",
-             value=joined["false_seed"].mean()),
-        dict(quantity="within-protein unseeded rollout R-precision",
-             value=joined["iid"].mean()),
-        dict(quantity="within-protein difference (true - false)", value=delta.mean()),
-        dict(quantity="within-protein difference, 2.5th pct",
-             value=float(np.percentile(boot, 2.5))),
-        dict(quantity="within-protein difference, 97.5th pct",
-             value=float(np.percentile(boot, 97.5))),
-        dict(quantity="proteins where a true seed beats a false one",
-             value=float((delta > 0).mean())),
-        dict(quantity="share of the 100 seeds that are true contacts",
-             value=float(seeded.groupby("stem")["seed_correct"].mean().mean())),
-    ])
+        split = frame.groupby(["stem", "seed_correct"])["precision"].mean().unstack()
+        joined = split.rename(columns={False: "false_seed", True: "true_seed"})
+        joined = joined.join(iid_by_protein.rename("iid")).dropna()
+        delta = (joined["true_seed"] - joined["false_seed"]).to_numpy()
+        generator = np.random.default_rng(254)
+        index = generator.integers(0, len(delta), size=(10_000, len(delta)))
+        boot = delta[index].mean(axis=1)
+        pooled = frame.groupby("seed_correct")["precision"].mean()
+
+        summary_rows.append(dict(
+            arm=arm,
+            seed_accuracy=float(frame.groupby("stem")["seed_correct"].mean().mean()),
+            pooled_true=float(pooled.get(True, np.nan)),
+            pooled_false=float(pooled.get(False, np.nan)),
+            pooled_delta_CONFOUNDED=float(pooled.get(True, np.nan)
+                                          - pooled.get(False, np.nan)),
+            within_true=float(joined["true_seed"].mean()),
+            within_false=float(joined["false_seed"].mean()),
+            within_unseeded=float(joined["iid"].mean()),
+            within_delta=float(delta.mean()),
+            within_delta_lo=float(np.percentile(boot, 2.5)),
+            within_delta_hi=float(np.percentile(boot, 97.5)),
+            proteins_true_beats_false=float((delta > 0).mean()),
+            n_proteins=int(len(delta)),
+        ))
+
+        buckets = pd.cut(frame["rollout"], [-1, 9, 19, 39, 69, 99],
+                         labels=["1-10", "11-20", "21-40", "41-70", "71-100"])
+        by_rank = (frame.assign(seed_rank_bucket=buckets)
+                   .groupby("seed_rank_bucket", observed=True)
+                   .agg(seed_accuracy=("seed_correct", "mean"),
+                        rollout_precision=("precision", "mean"),
+                        n_rollouts=("precision", "size"))
+                   .reset_index())
+        by_rank.insert(0, "arm", arm)
+        by_rank["iid_rollout_precision"] = iid_by_protein.mean()
+        rank_rows.append(by_rank)
+
+        # By separation range, averaged within protein first: a protein that
+        # supplies more long seeds than another would otherwise weight the mean.
+        per_protein_range = (frame.groupby(["stem", "seed_range"])
+                             .agg(precision=("precision", "mean"),
+                                  seed_accuracy=("seed_correct", "mean"),
+                                  n_rollouts=("precision", "size")).reset_index())
+        by_range = (per_protein_range.groupby("seed_range")
+                    .agg(seed_accuracy=("seed_accuracy", "mean"),
+                         rollout_precision=("precision", "mean"),
+                         n_proteins=("precision", "size"),
+                         mean_rollouts_per_protein=("n_rollouts", "mean"))
+                    .reset_index())
+        by_range.insert(0, "arm", arm)
+        by_range["iid_rollout_precision"] = iid_by_protein.mean()
+        range_rows.append(by_range)
+
+    summary = pd.DataFrame(summary_rows)
     summary.to_csv(out / "exp254_seed_conditioning_summary.csv", index=False)
-    print("\n[metrics] what one seeded contact is worth, per rollout:")
-    print(summary.to_string(index=False))
+    print("\n[metrics] what one seeded contact is worth, per rollout "
+          "(within-protein; the pooled column is the difficulty confound):")
+    print(summary[["arm", "seed_accuracy", "pooled_delta_CONFOUNDED",
+                   "within_true", "within_false", "within_unseeded",
+                   "within_delta", "within_delta_lo", "within_delta_hi"]]
+          .round(4).to_string(index=False))
 
-    buckets = pd.cut(seeded["rollout"], [-1, 9, 19, 39, 69, 99],
-                     labels=["1-10", "11-20", "21-40", "41-70", "71-100"])
-    by_rank = (
-        seeded.assign(seed_rank_bucket=buckets)
-        .groupby("seed_rank_bucket", observed=True)
-        .agg(seed_accuracy=("seed_correct", "mean"),
-             rollout_precision=("precision", "mean"),
-             n_rollouts=("precision", "size"))
-        .reset_index()
-    )
-    by_rank["iid_rollout_precision"] = iid_by_protein.mean()
+    by_rank = pd.concat(rank_rows, ignore_index=True)
     by_rank.to_csv(out / "exp254_seed_rank.csv", index=False)
     print("\n[metrics] by pairwise rank of the seed (rollout index == seed rank):")
-    print(by_rank.to_string(index=False))
+    print(by_rank.round(4).to_string(index=False))
+
+    by_range = pd.concat(range_rows, ignore_index=True)
+    by_range.to_csv(out / "exp254_seed_range.csv", index=False)
+    print("\n[metrics] by separation range of the seed:")
+    print(by_range.round(4).to_string(index=False))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True,
-                    help="run directory holding pairwise/, iid/, seeded/")
+                    help="run directory holding pairwise/ and one dir per arm")
     ap.add_argument("--out", type=Path, required=True, help="data/ output directory")
     ap.add_argument("--n-rollouts", type=int, default=100)
     args = ap.parse_args()
@@ -379,35 +456,61 @@ def main() -> int:
     rows: list[dict] = []
     rows += score_matrices(args.run / "pairwise", gt, targets, "pairwise")
 
-    iid = load_detail(args.run / "iid")
-    seeded = load_detail(args.run / "seeded")
-    for name, detail in (("iid", iid), ("seeded", seeded)):
+    details, conditioning_rows = {}, []
+    for arm in ARMS:
+        detail = load_detail(args.run / arm.directory)
         present = detail.groupby(["dataset", "stem"])["rollout"].nunique()
-        assert len(present) == EXPECTED_UNITS, f"{name}: {len(present)} proteins scored"
+        assert len(present) == EXPECTED_UNITS, (
+            f"{arm.directory}: {len(present)} proteins scored"
+        )
         assert (present <= args.n_rollouts).all(), (
-            f"{name}: proteins with more than {args.n_rollouts} rollouts: "
-            f"{present[present > args.n_rollouts].to_dict()}"
+            f"{arm.directory}: proteins with more than {args.n_rollouts} "
+            f"rollouts: {present[present > args.n_rollouts].to_dict()}"
         )
         # A rollout that emitted no scorable contact leaves no rows, so it is
         # invisible in `present`. That is a real datum (the model declined to
         # predict anything), not a gap -- but it has to be counted, because the
         # same arithmetic would also hide a rollout that never ran.
         empty = int((args.n_rollouts - present).sum())
-        unfinished = pd.read_csv(args.run / name / "unfinished.csv")
+        unfinished = pd.read_csv(args.run / arm.directory / "unfinished.csv")
         n_unfinished = int(unfinished["unfinished"].sum()) if len(unfinished) else 0
         assert n_unfinished == 0, (
-            f"{name}: {n_unfinished} rollouts hit the token cap; the budget or "
-            f"the sampling knobs are wrong and these scores are truncated"
+            f"{arm.directory}: {n_unfinished} rollouts hit the token cap; the "
+            f"budget or the sampling knobs are wrong and these scores are "
+            f"truncated"
         )
-        print(f"[metrics] {name}: {len(present)} proteins x {args.n_rollouts} "
-              f"rollouts, {empty} emitted nothing, {n_unfinished} hit the token cap")
+        print(f"[metrics] {arm.directory}: {len(present)} proteins x "
+              f"{args.n_rollouts} rollouts, {empty} emitted nothing, "
+              f"{n_unfinished} hit the token cap")
 
-    rows += score_consensus(iid, gt, "iid consensus")
-    rows += score_consensus(seeded, gt, "seeded consensus")
-    rows += score_consensus(seeded[~seeded["is_seed"]], gt,
-                            "seeded consensus (seed vote removed)")
-    rows += score_oracle(iid, gt, "iid oracle best-of-N")
-    rows += score_oracle(seeded, gt, "seeded oracle best-of-N")
+        details[arm.label] = detail
+        rows += score_consensus(detail, gt, f"{arm.label} consensus")
+        rows += score_oracle(detail, gt, f"{arm.label} oracle best-of-N")
+        seeds = None
+        if arm.seeds is not None:
+            seeds = pd.read_parquet(args.run / arm.seeds)
+            rows += score_consensus(detail[~detail["is_seed"]], gt,
+                                    f"{arm.label} consensus (seed vote removed)")
+        conditioning_rows += seed_conditioning(detail, seeds, gt, arm.label)
+
+    # What each strategy actually handed the model, which is the framing the
+    # long-range question needs: "top 100 overall" is already 56.8 % long-range
+    # on this set, so equal thirds is a long-range REDUCTION, not a bias.
+    composition = []
+    for arm in ARMS:
+        if arm.seeds is None:
+            continue
+        seed_frame = pd.read_parquet(args.run / arm.seeds)
+        labels = (seed_frame["j"] - seed_frame["i"]).map(range_of)
+        share = labels.value_counts(normalize=True) * 100
+        for name in ("short", "medium", "long"):
+            composition.append(dict(arm=arm.label, seed_range=name,
+                                    percent=float(share.get(name, 0.0))))
+        composition.append(dict(arm=arm.label, seed_range="median_separation",
+                                percent=float((seed_frame["j"]
+                                               - seed_frame["i"]).median())))
+    pd.DataFrame(composition).to_csv(args.out / "exp254_seed_composition.csv",
+                                     index=False)
 
     per_protein = pd.DataFrame(rows)
     dest = args.out / "exp254_per_protein.csv.gz"
@@ -422,22 +525,24 @@ def main() -> int:
         .rename(columns={"mean": "value", "count": "n"})
     )
     headline.to_csv(args.out / "exp254_headline.csv", index=False)
-    print(headline[headline["range"].isin(["all", "long"])].to_string(index=False))
+    print("\n[metrics] R-precision by range:")
+    print(headline[(headline["cut"] == "R")]
+          .pivot(index="predictor", columns="range", values="value")
+          [["all", "short", "medium", "long"]].round(4).to_string())
 
-    seeds = pd.read_parquet(args.run / "seeds.parquet")
-    conditioning = pd.DataFrame(
-        seed_conditioning(iid, None, gt, "iid")
-        + seed_conditioning(seeded, seeds, gt, "seeded")
-    )
+    conditioning = pd.DataFrame(conditioning_rows)
     conditioning.to_csv(args.out / "exp254_seed_conditioning.csv.gz", index=False)
     summarise_conditioning(conditioning, args.out)
 
-    comparisons = [
-        ("seeded consensus", "iid consensus"),
-        ("seeded consensus (seed vote removed)", "iid consensus"),
-        ("seeded oracle best-of-N", "iid oracle best-of-N"),
-        ("iid oracle best-of-N", "iid consensus"),
-        ("iid consensus", "pairwise"),
+    control = "i.i.d."
+    comparisons = [(f"{a.label} consensus", f"{control} consensus")
+                   for a in ARMS if a.seeds is not None]
+    comparisons += [(f"{a.label} oracle best-of-N", f"{control} oracle best-of-N")
+                    for a in ARMS if a.seeds is not None]
+    comparisons += [
+        ("seeded top-100 consensus (seed vote removed)", f"{control} consensus"),
+        (f"{control} oracle best-of-N", f"{control} consensus"),
+        (f"{control} consensus", "pairwise"),
     ]
     deltas = [d for a, b in comparisons for d in paired_delta(per_protein, a, b)]
     deltas_df = pd.DataFrame(deltas)

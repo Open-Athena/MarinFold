@@ -10,12 +10,14 @@
     consensus number is the gate: it has to reproduce #245's published m2-p06
     eval-val R-precision.
 
-``--arm seeded``
-    the same N realizations -- realization *r* is byte-identical between the two
-    arms, so the arms are paired and the seeding is the only difference -- but
-    the structure section of rollout *r* is pre-filled with the *r*-th ranked
-    pairwise contact from phase 1, written in that realization's position tokens
-    with a coin-flipped orientation.
+``--arm seeded`` / ``seeded-long`` / ``seeded-strat``
+    the same N realizations -- realization *r* is byte-identical across every
+    arm, so the arms are paired and the seeding is the only difference -- but
+    the structure section of rollout *r* is pre-filled with the *r*-th seed from
+    the ``--seeds`` file, written in that realization's position tokens with a
+    coin-flipped orientation. Which pairs those are is `rank_pairwise.py`'s
+    ``--strategy``: ``top`` (best 100 overall), ``long`` (best 100 at
+    ``sep >= 24``), or ``stratified`` (best ~33 in each CASP separation bin).
 
 Output is the **per-rollout, order-preserving contact list**, not the aggregated
 vote matrix: the votes are a sum over it (``build_metrics.py`` rebuilds them),
@@ -82,9 +84,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--arm", choices=("iid", "seeded"), required=True)
+    ap.add_argument("--arm", required=True,
+                    help="output subdirectory; 'iid' takes no seeds, every "
+                         "other arm requires --seeds")
     ap.add_argument("--seeds", type=Path, default=None,
-                    help="phase 1 seeds.parquet (required for --arm seeded)")
+                    help="a phase 1 seeds_<strategy>.parquet; required "
+                         "for every arm except 'iid'")
     ap.add_argument("--n-rollouts", type=int, default=100)
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--top-p", type=float, default=0.95)
@@ -97,8 +102,8 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=None)
     args = ap.parse_args()
 
-    if args.arm == "seeded" and args.seeds is None:
-        ap.error("--arm seeded requires --seeds")
+    if (args.arm == "iid") != (args.seeds is None):
+        ap.error("the 'iid' arm takes no --seeds; every other arm requires them")
 
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
@@ -117,8 +122,8 @@ def main() -> int:
     skip, part = done_stems(arm_dir)
     todo = [t for t in targets if t.key not in skip]
 
-    seeds = load_seeds(args.seeds) if args.arm == "seeded" else {}
-    if args.arm == "seeded":
+    seeds = {} if args.seeds is None else load_seeds(args.seeds)
+    if seeds:
         for target in todo:
             available = len(seeds.get(target.key, ()))
             assert available >= args.n_rollouts, (
@@ -156,7 +161,7 @@ def main() -> int:
             for r in range(args.n_rollouts):
                 prefix, seq_positions = realization(target.stem, residues, f"r{r}")
                 pair = None
-                if args.arm == "seeded":
+                if seeds:
                     i, j = seeds[target.key][r]
                     # A per-(protein, rollout) RNG so the orientation coin flip
                     # is reproducible and independent of iteration order.

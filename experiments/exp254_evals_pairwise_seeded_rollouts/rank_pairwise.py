@@ -36,6 +36,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -44,8 +45,17 @@ from common import MIN_SEP, EXPECTED_UNITS, load_targets, realization
 SEED_SCHEMA = pa.schema([
     ("dataset", pa.string()), ("stem", pa.string()), ("L", pa.int32()),
     ("rank", pa.int16()), ("i", pa.int16()), ("j", pa.int16()),
-    ("p_contact", pa.float64()),
+    ("p_contact", pa.float64()), ("range", pa.string()),
 ])
+
+#: CASP sequence-separation bins, ``(lo, hi)`` inclusive, ``hi=None`` unbounded.
+#: These must stay identical to the ``short`` / ``medium`` / ``long`` entries of
+#: exp89's ``RANGES`` -- a seed labelled ``long`` here has to be the same thing
+#: the long-range metric scores, or the stratified arms answer a question about
+#: a different partition than the one being reported. ``test_exp254.py`` pins it.
+SEED_RANGES: dict[str, tuple[int, int | None]] = {
+    "short": (6, 11), "medium": (12, 23), "long": (24, None),
+}
 
 #: Probability floor before taking a log, matching contacts_v1.inference.
 PROB_FLOOR = 1e-30
@@ -109,18 +119,106 @@ def pcontact_matrix(llm, sampling, tokenizer, prefix: str, seq_positions: list[i
     return np.exp(fwd) + np.exp(fwd.T)             # unordered, symmetric
 
 
-def top_pairs(matrix: np.ndarray, n_seeds: int, min_sep: int):
+def range_of(separation: np.ndarray) -> np.ndarray:
+    """CASP bin label for each sequence separation."""
+    return np.where(separation >= 24, "long",
+                    np.where(separation >= 12, "medium", "short"))
+
+
+def top_pairs(matrix: np.ndarray, n_seeds: int, min_sep: int,
+              *, band: tuple[int, int | None] | None = None):
     """The ``n_seeds`` highest-scoring ``(i, j)`` pairs with ``j - i >= min_sep``.
 
-    Ties are broken by the pair order ``np.argsort`` produces, which is stable,
-    so the seed list is a deterministic function of the matrix.
+    ``band`` optionally restricts the candidates to one inclusive separation
+    window, which is what the stratified and long-range strategies select
+    within. Ties are broken by the pair order ``np.argsort`` produces, which is
+    stable, so the seed list is a deterministic function of the matrix.
     """
     L = matrix.shape[0]
     ii, jj = np.triu_indices(L, k=min_sep)
+    if band is not None:
+        lo, hi = band
+        separation = jj - ii
+        inside = separation >= max(lo, min_sep)
+        if hi is not None:
+            inside = inside & (separation <= hi)
+        ii, jj = ii[inside], jj[inside]
     scores = matrix[ii, jj]
     keep = min(n_seeds, scores.size)
     order = np.argsort(-scores, kind="mergesort")[:keep]
     return ii[order], jj[order], scores[order]
+
+
+def stratum_quotas(n_seeds: int) -> dict[str, int]:
+    """Split ``n_seeds`` across the three CASP bins as evenly as possible.
+
+    100 does not divide by three. The remainder goes to the longest bins first
+    (long, then medium), because long-range contacts are where exp254 found the
+    only remaining best-of-N headroom -- so 100 seeds are 34 long / 33 medium /
+    33 short.
+    """
+    base, remainder = divmod(n_seeds, len(SEED_RANGES))
+    quotas = {name: base for name in SEED_RANGES}
+    for name in ("long", "medium", "short")[:remainder]:
+        quotas[name] += 1
+    return quotas
+
+
+def select_seeds(matrix: np.ndarray, n_seeds: int, min_sep: int, strategy: str):
+    """Seed list for one protein under one selection strategy.
+
+    ``top``
+        the ``n_seeds`` best pairs overall. On this eval set that is already
+        **56.8 % long-range**, because long-separation pairs dominate the
+        candidate universe -- so "top-N" is not the short-range-heavy list it
+        sounds like, and equal thirds is a long-range *reduction*, not a bias.
+    ``stratified``
+        the best ``n_seeds / 3`` within each CASP bin, round-robin interleaved
+        so consecutive rollouts cover different bins. Every one of eval-val's 97
+        proteins has enough candidates in every bin (the smallest, L=38, has
+        177 / 246 / 105), so no bin is ever short and no top-up rule is needed.
+    ``long``
+        all ``n_seeds`` drawn from ``sep >= 24``. This is the strategy that
+        actually biases toward long range.
+
+    Returns ``(i, j, score, range_label)``.
+    """
+    if strategy == "top":
+        ii, jj, scores = top_pairs(matrix, n_seeds, min_sep)
+        return ii, jj, scores, range_of(jj - ii)
+    if strategy == "long":
+        ii, jj, scores = top_pairs(matrix, n_seeds, min_sep,
+                                   band=SEED_RANGES["long"])
+        assert len(ii) == n_seeds, (
+            f"only {len(ii)} long-range candidates for {n_seeds} seeds"
+        )
+        return ii, jj, scores, range_of(jj - ii)
+    if strategy != "stratified":
+        raise ValueError(f"unknown seed strategy {strategy!r}")
+
+    quotas = stratum_quotas(n_seeds)
+    per_bin = {}
+    for name, band in SEED_RANGES.items():
+        ii, jj, scores = top_pairs(matrix, quotas[name], min_sep, band=band)
+        assert len(ii) == quotas[name], (
+            f"only {len(ii)} candidates in the {name} bin for "
+            f"{quotas[name]} seeds"
+        )
+        per_bin[name] = (ii, jj, scores)
+
+    # Round-robin, longest bin first: rollout r's bin is r % 3, so a partial run
+    # is balanced across bins and the rank-versus-quality curve stays readable.
+    order, cursors = [], {name: 0 for name in per_bin}
+    while len(order) < n_seeds:
+        for name in ("long", "medium", "short"):
+            if cursors[name] < quotas[name] and len(order) < n_seeds:
+                order.append((name, cursors[name]))
+                cursors[name] += 1
+    ii = np.array([per_bin[n][0][k] for n, k in order])
+    jj = np.array([per_bin[n][1][k] for n, k in order])
+    scores = np.array([per_bin[n][2][k] for n, k in order])
+    labels = np.array([n for n, _ in order])
+    return ii, jj, scores, labels
 
 
 def main() -> int:
@@ -128,6 +226,10 @@ def main() -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--out", type=Path, required=True, help="output directory")
     ap.add_argument("--n-seeds", type=int, default=100)
+    ap.add_argument("--strategy", choices=("top", "stratified", "long"),
+                    default="top",
+                    help="how the n seeds are drawn from the pairwise matrix; "
+                         "the seed file is named seeds_<strategy>.parquet")
     ap.add_argument("--gpu-frac", type=float, default=0.85)
     ap.add_argument("--limit", type=int, default=None)
     args = ap.parse_args()
@@ -156,7 +258,8 @@ def main() -> int:
 
     from marinfold.document_structures.contacts_v1 import residues_from_sequence
 
-    rows = {c: [] for c in ("dataset", "stem", "L", "rank", "i", "j", "p_contact")}
+    rows = {c: [] for c in
+            ("dataset", "stem", "L", "rank", "i", "j", "p_contact", "range")}
     t0 = time.time()
     for n, target in enumerate(todo, start=1):
         residues = residues_from_sequence(target.input_seq)
@@ -167,7 +270,8 @@ def main() -> int:
         matrix = pcontact_matrix(llm, sampling, tokenizer, prefix, seq_positions)
         np.savez_compressed(matrix_dir / f"{target.key}.npz",
                             score=matrix.astype(np.float32))
-        ii, jj, scores = top_pairs(matrix, args.n_seeds, MIN_SEP)
+        ii, jj, scores, labels = select_seeds(matrix, args.n_seeds, MIN_SEP,
+                                              args.strategy)
         rows["dataset"] += [target.dataset] * len(ii)
         rows["stem"] += [target.stem] * len(ii)
         rows["L"] += [target.L] * len(ii)
@@ -175,14 +279,18 @@ def main() -> int:
         rows["i"] += ii.astype(np.int16).tolist()
         rows["j"] += jj.astype(np.int16).tolist()
         rows["p_contact"] += scores.tolist()
+        rows["range"] += labels.tolist()
         print(f"[pairwise] [{n}/{len(todo)}] {target.stem} L={target.L} "
               f"seeds={len(ii)} top_p={scores[0]:.4g} "
               f"(elapsed {(time.time() - t0) / 60:.1f}m)", flush=True)
 
-    dest = args.out / "seeds.parquet"
+    dest = args.out / f"seeds_{args.strategy}.parquet"
     pq.write_table(pa.table(rows, schema=SEED_SCHEMA), dest, compression="zstd")
+    composition = pd.Series(rows["range"]).value_counts(normalize=True) * 100
     print(f"[pairwise] wrote {len(rows['stem'])} seed rows for {len(todo)} "
-          f"proteins -> {dest}")
+          f"proteins (strategy={args.strategy}) -> {dest}")
+    print("[pairwise] seed composition by separation range (%):")
+    print(composition.round(1).to_string())
     return 0
 
 

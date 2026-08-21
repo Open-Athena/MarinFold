@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 from common import BEGIN, MIN_SEP, parse_rollout, realization, seed_statement
-from rank_pairwise import top_pairs
+from rank_pairwise import SEED_RANGES, select_seeds, stratum_quotas, top_pairs
 
 SEQUENCE = "MSEVKELLEEFLKRNKPVRIHHKNGEEIKVRITHIGEDTVEFELNGRSAAEIL"
 
@@ -94,3 +94,69 @@ def test_top_pairs_caps_at_the_candidate_count():
     matrix = np.ones((12, 12))
     ii, _, _ = top_pairs(matrix, 1000, MIN_SEP)
     assert len(ii) == sum(max(0, 12 - MIN_SEP - i) for i in range(12))
+
+
+def test_seed_ranges_match_the_metric_ranges():
+    """A seed labelled `long` must be what the long-range metric scores.
+
+    ``build_metrics.RANGES`` is copied verbatim from exp89 and must not be
+    edited, so this is the direction the check has to run: the seed bins are
+    asserted against it, not the other way round.
+    """
+    from build_metrics import RANGES
+
+    assert SEED_RANGES == {k: v for k, v in RANGES.items() if k != "all"}
+
+
+def test_stratum_quotas_spend_every_seed_longest_first():
+    assert stratum_quotas(100) == {"long": 34, "medium": 33, "short": 33}
+    assert stratum_quotas(99) == {"long": 33, "medium": 33, "short": 33}
+    assert sum(stratum_quotas(101).values()) == 101
+
+
+def _descending_matrix(L: int) -> np.ndarray:
+    """A symmetric matrix whose scores fall with separation.
+
+    Under this matrix `top` alone would take only short-range pairs, which is
+    what makes the stratified and long strategies visibly different from it.
+    """
+    i, j = np.meshgrid(np.arange(L), np.arange(L), indexing="ij")
+    matrix = 1.0 / (1.0 + np.abs(i - j))
+    return (matrix + matrix.T) / 2
+
+
+def test_strategies_select_the_bins_they_claim():
+    matrix = _descending_matrix(120)
+
+    ii, jj, _, labels = select_seeds(matrix, 100, MIN_SEP, "top")
+    assert set(labels) == {"short"}, "the fixture should make top short-heavy"
+
+    ii, jj, _, labels = select_seeds(matrix, 100, MIN_SEP, "stratified")
+    assert len(ii) == 100
+    counts = {name: int((labels == name).sum()) for name in SEED_RANGES}
+    assert counts == stratum_quotas(100)
+    separation = jj - ii
+    assert np.all(separation[labels == "long"] >= 24)
+    assert np.all((separation[labels == "medium"] >= 12)
+                  & (separation[labels == "medium"] <= 23))
+    assert np.all((separation[labels == "short"] >= MIN_SEP)
+                  & (separation[labels == "short"] <= 11))
+    # Round-robin: the first three seeds cover all three bins, so a partial run
+    # is balanced rather than 34 long rollouts followed by 33 medium ones.
+    assert set(labels[:3]) == set(SEED_RANGES)
+
+    ii, jj, _, labels = select_seeds(matrix, 100, MIN_SEP, "long")
+    assert len(ii) == 100 and set(labels) == {"long"}
+    assert np.all(jj - ii >= 24)
+
+
+def test_every_strategy_returns_distinct_pairs():
+    matrix = _descending_matrix(120)
+    for strategy in ("top", "stratified", "long"):
+        ii, jj, _, _ = select_seeds(matrix, 100, MIN_SEP, strategy)
+        assert len({(int(a), int(b)) for a, b in zip(ii, jj)}) == 100, strategy
+
+
+def test_unknown_strategy_is_rejected():
+    with pytest.raises(ValueError, match="unknown seed strategy"):
+        select_seeds(_descending_matrix(60), 10, MIN_SEP, "sideways")

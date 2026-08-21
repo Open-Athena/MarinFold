@@ -33,7 +33,7 @@ import pandas as pd
 from common import load_targets
 
 CHUNK_RE = re.compile(
-    r"^\[(?P<arm>iid|seeded)\] \[(?P<done>\d+)/(?P<total>\d+)\] "
+    r"^\[(?P<arm>[a-z0-9-]+)\] \[(?P<done>\d+)/(?P<total>\d+)\] "
     r"L=(?P<lo>\d+)-(?P<hi>\d+)\s+(?P<seconds>[\d.]+)s"
 )
 MODEL_NICKNAME = "contacts-v1-exp232-m2-p06-1.5B"
@@ -54,7 +54,8 @@ def gpu_metadata() -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
-    ap.add_argument("--log", type=Path, required=True)
+    ap.add_argument("--log", type=Path, nargs="+", required=True,
+                    help="one or more score_rollouts.py run logs")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--n-rollouts", type=int, default=100)
     ap.add_argument("--chunk", type=int, default=8)
@@ -64,11 +65,13 @@ def main() -> int:
     # replaying that order against the chunk log assigns each protein to the
     # chunk it actually ran in.
     targets = load_targets()
-    chunks: dict[str, list[float]] = {"iid": [], "seeded": []}
-    for line in args.log.read_text(errors="replace").splitlines():
-        match = CHUNK_RE.match(line)
-        if match:
-            chunks[match["arm"]].append(float(match["seconds"]))
+    chunks: dict[str, list[float]] = {}
+    for log in args.log:
+        for line in log.read_text(errors="replace").splitlines():
+            match = CHUNK_RE.match(line)
+            if match:
+                chunks.setdefault(match["arm"], []).append(float(match["seconds"]))
+    assert chunks, f"no chunk lines matched in {args.log}"
 
     meta = gpu_metadata()
     stamp = datetime.now(timezone.utc).isoformat()

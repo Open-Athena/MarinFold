@@ -41,15 +41,31 @@ REPO = Path(__file__).resolve().parents[2]
 BASELINE_PER_PROTEIN = EXP245_DATA / "per_protein.csv.gz"
 
 ARM_COLORS = {
-    "iid consensus": "#0072b2",
-    "seeded consensus": "#d55e00",
-    "seeded consensus (seed vote removed)": "#e69f00",
-    "iid oracle best-of-N": "#56b4e9",
-    "seeded oracle best-of-N": "#cc79a7",
+    "i.i.d. consensus": "#0072b2",
+    "seeded top-100 consensus": "#d55e00",
+    "seeded long-range consensus": "#cc79a7",
+    "seeded 1/3 per range consensus": "#e69f00",
+    "i.i.d. oracle best-of-N": "#0072b2",
+    "seeded top-100 oracle best-of-N": "#d55e00",
+    "seeded long-range oracle best-of-N": "#cc79a7",
+    "seeded 1/3 per range oracle best-of-N": "#e69f00",
     "pairwise": "#009e73",
 }
-ORACLE_ARMS = ("iid oracle best-of-N", "seeded oracle best-of-N")
+ORACLE_ARMS = tuple(k for k in ARM_COLORS if "oracle" in k)
+#: Scored and kept in the CSVs, but left off the figure: removing the seed's own
+#: vote moves the number by ~0.0003, which is a footnote, not a bar.
+HIDDEN_FROM_FIGURE = tuple(
+    f"{a} consensus (seed vote removed)"
+    for a in ("seeded top-100", "seeded long-range", "seeded 1/3 per range")
+)
 BASELINE_COLOR = "#8f8b86"
+#: (label suffix, human name) for the three seed strategies, longest-biased last
+#: so the delta panel reads top-100, long-range, thirds.
+SEED_STRATEGIES = (
+    ("top-100", "top-100"),
+    ("long-range", "long-range only"),
+    ("1/3 per range", "1/3 per range"),
+)
 #: #204's four evaluations of one unchanged checkpoint span this much.
 TIE_THRESHOLD = 0.005
 BOOTSTRAP_DRAWS = 10_000
@@ -88,6 +104,7 @@ def load(data_dir: Path) -> pd.DataFrame:
     """This experiment's arms plus #245's baselines, restricted to eval-val."""
     mine = pd.read_csv(data_dir / "exp254_per_protein.csv.gz")
     mine = mine[(mine["range"] == "all") & (mine["cut"] == "R")]
+    mine = mine[~mine.predictor.isin(HIDDEN_FROM_FIGURE)]
     mine = mine[["stem", "predictor", "precision"]]
 
     sets = pd.read_csv(EVAL_SETS_CSV, usecols=["stem", "eval_set", "scorable"])
@@ -101,8 +118,8 @@ def load(data_dir: Path) -> pd.DataFrame:
     # figure makes the sanity gate visible -- the `iid consensus` bar beside it
     # is this run's reproduction of that number.
     frame = pd.concat([mine, baselines], ignore_index=True)
-    assert set(frame[frame.predictor == "iid consensus"].stem) == val_stems, (
-        "the iid arm does not cover exactly eval-val"
+    assert set(frame[frame.predictor == "i.i.d. consensus"].stem) == val_stems, (
+        "the i.i.d. arm does not cover exactly eval-val"
     )
     return frame
 
@@ -136,11 +153,13 @@ def scoreboard(axis, frame: pd.DataFrame) -> None:
 
 def deltas(axis, frame: pd.DataFrame) -> None:
     pairs = [
-        ("seeded consensus", "iid consensus", "consensus\nseeded - i.i.d."),
-        ("seeded consensus (seed vote removed)", "iid consensus",
-         "consensus, seed vote removed\nseeded - i.i.d."),
-        ("seeded oracle best-of-N", "iid oracle best-of-N",
-         "oracle best-of-100\nseeded - i.i.d."),
+        (f"seeded {name} oracle best-of-N", "i.i.d. oracle best-of-N",
+         f"oracle best-of-100\n{label} - i.i.d.")
+        for name, label in SEED_STRATEGIES
+    ] + [
+        (f"seeded {name} consensus", "i.i.d. consensus",
+         f"consensus\n{label} - i.i.d.")
+        for name, label in SEED_STRATEGIES
     ]
     wide = frame.pivot_table(index="stem", columns="predictor", values="precision")
     axis.axvspan(-TIE_THRESHOLD, TIE_THRESHOLD, color="#dddad6", alpha=0.55, zorder=0)
@@ -183,7 +202,8 @@ def deltas(axis, frame: pd.DataFrame) -> None:
                    "shaded band = the 0.005 tie threshold (#204)", fontsize=10.5)
 
 
-def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame) -> None:
+def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame,
+                       arm: str = "seeded top-100") -> None:
     """Seed accuracy falls steeply down the pairwise ranking; the rollouts do not.
 
     The rollout index *is* the pairwise rank of the seed it was handed, so this
@@ -197,6 +217,7 @@ def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame) -> No
     model handles well supplies both more correct seeds and better rollouts. The
     within-protein contrast, quoted in the corner, is the honest number.
     """
+    by_rank = by_rank[by_rank.arm == arm]
     positions = np.arange(len(by_rank))
     axis.bar(positions, by_rank["seed_accuracy"], color="#009e73", width=0.62,
              label="seed is a true contact")
@@ -209,11 +230,10 @@ def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame) -> No
                  linewidth=1.6, linestyle="--", label="unseeded rollout")
     axis.set_xticks(positions)
     axis.set_xticklabels(by_rank["seed_rank_bucket"], fontsize=8.5)
-    quantities = summary.set_index("quantity")["value"]
+    delta = float(summary.loc[summary.arm == arm, "within_delta"].iloc[0])
     axis.set_xlabel(
         "pairwise rank of the seed handed to the rollout\n"
-        "within a protein, true seed - false seed = "
-        f"{quantities['within-protein difference (true - false)']:+.3f}")
+        f"within a protein, true seed - false seed = {delta:+.3f}")
     axis.set_ylim(0, 1.0)
     axis.legend(fontsize=8, loc="upper right", frameon=False)
     axis.grid(axis="y", color="#dddad6", linewidth=0.6)
