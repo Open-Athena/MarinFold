@@ -347,8 +347,11 @@ def save_figure(figure, name: str, dpi: int = 300, formats=("png", "pdf", "svg")
     """
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for suffix in formats:
+        # NOT bbox_inches=None for the untight case: None means "use rcParams", and this module
+        # sets savefig.bbox to "tight" there — so passing None cropped anyway. The full-figure
+        # Bbox is what actually preserves the declared size.
         figure.savefig(OUTPUT / f"{name}.{suffix}", dpi=dpi,
-                       bbox_inches="tight" if tight else None)
+                       bbox_inches="tight" if tight else figure.bbox_inches)
     print(f"wrote {OUTPUT / name}.{{{','.join(formats)}}} ({dpi} dpi)")
     return OUTPUT / f"{name}.{formats[0]}"
 

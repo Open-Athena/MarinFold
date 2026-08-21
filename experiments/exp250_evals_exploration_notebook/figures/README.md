@@ -55,6 +55,13 @@ things it is careful about, because the intuitive version of each is wrong:
   are untouched; what changed is the tensor they read. `z_init` is re-added at the top of every
   recycle, which is why the figure draws that arrow rather than a single injection.
 
+Verify the architecture panel against the source, pinned to `helico` main at `dd1b0d4de621`:
+[the 3 → 128 projection](https://github.com/Open-Athena/helico/blob/dd1b0d4de621267e4dee40cfbd014042555456d3/src/helico/model/helico.py#L70-L72),
+[its injection into `z_init`](https://github.com/Open-Athena/helico/blob/dd1b0d4de621267e4dee40cfbd014042555456d3/src/helico/model/helico.py#L130-L136),
+[the one-hot of the three states](https://github.com/Open-Athena/helico/blob/dd1b0d4de621267e4dee40cfbd014042555456d3/src/helico/model/features.py#L98-L110),
+and [the MSA gate](https://github.com/Open-Athena/helico/blob/dd1b0d4de621267e4dee40cfbd014042555456d3/src/helico/model/features.py#L119-L145)
+that zeroes the profile and deletion-mean columns.
+
 A panel that does not exist yet is drawn as a dashed placeholder carrying its letter, so the
 lettering is settled before the artwork arrives and the gap is visible rather than silent.
 `figure_3`'s panel A is one: a model architecture diagram is not something these notebooks can
