@@ -3,6 +3,8 @@
 
 import math
 
+from levanter.optim.config import LrScheduleContext
+
 from experiments.exp232_sweep_cv1_decontam.exp232_sweep import (
     NUM_TRAIN_STEPS,
     augmentation_probability,
@@ -24,8 +26,8 @@ from experiments.exp232_sweep_cv1_decontam.tpu.exp232_train_trc import (
     VARIANTS,
     Exp232RecoveryLrSchedule,
     _training_env,
+    batch_fit,
 )
-from levanter.optim.config import LrScheduleContext
 
 
 def _schedule(ratio: float):
@@ -111,3 +113,13 @@ def test_wandb_routing_isolated_by_run_mode(monkeypatch) -> None:
         "open-athena",
         "MarinFold",
     )
+
+
+def test_v6e_batch_fit_reflects_measured_small_slice_memory() -> None:
+    small = batch_fit("v6e-4")
+    assert small.per_device_parallelism == 8
+    assert small.gradient_accumulation == 4
+
+    production = batch_fit("v6e-32")
+    assert production.per_device_parallelism == 4
+    assert production.gradient_accumulation == 1
