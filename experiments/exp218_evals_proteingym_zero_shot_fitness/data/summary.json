@@ -1,0 +1,433 @@
+{
+  "n_assays_scored": 212,
+  "primary_rule": {
+    "label": "K=200, ctx>=0.9",
+    "orderings": 200,
+    "min_context_fraction": 0.9,
+    "variants_dropped": 0,
+    "average_spearman": 0.29639082482985396,
+    "n_assays": 212,
+    "n_uniprot": 181,
+    "by_function": {
+      "Activity": 0.2676281552799058,
+      "Binding": 0.2691188882971543,
+      "Expression": 0.33103018671964585,
+      "OrganismalFitness": 0.21105359979204522,
+      "Stability": 0.4031232940605185
+    },
+    "by_msa_depth": {
+      "High": 0.39546531310792593,
+      "Low": 0.23133175840211576,
+      "Medium": 0.2596393661924023
+    },
+    "by_taxon": {
+      "Eukaryote": 0.35249138435512795,
+      "Human": 0.34361666622555426,
+      "Prokaryote": 0.297842910108828,
+      "Virus": 0.11304526464929833
+    }
+  },
+  "best_rule_upper_bound": {
+    "label": "K=200, ctx>=0.9",
+    "orderings": 200,
+    "min_context_fraction": 0.9,
+    "variants_dropped": 0,
+    "average_spearman": 0.29639082482985396,
+    "n_assays": 212,
+    "n_uniprot": 181,
+    "by_function": {
+      "Activity": 0.2676281552799058,
+      "Binding": 0.2691188882971543,
+      "Expression": 0.33103018671964585,
+      "OrganismalFitness": 0.21105359979204522,
+      "Stability": 0.4031232940605185
+    },
+    "by_msa_depth": {
+      "High": 0.39546531310792593,
+      "Low": 0.23133175840211576,
+      "Medium": 0.2596393661924023
+    },
+    "by_taxon": {
+      "Eukaryote": 0.35249138435512795,
+      "Human": 0.34361666622555426,
+      "Prokaryote": 0.297842910108828,
+      "Virus": 0.11304526464929833
+    }
+  },
+  "cheapest_rule": {
+    "orderings": 1,
+    "min_context_fraction": 0.0,
+    "variants_dropped": 0,
+    "average_spearman": 0.14710098135273417,
+    "n_assays": 212,
+    "n_uniprot": 181,
+    "by_function": {
+      "Activity": 0.13967845345673455,
+      "Binding": 0.14259232986238488,
+      "Expression": 0.19002351379475643,
+      "OrganismalFitness": 0.09660104473372028,
+      "Stability": 0.1666095649160747
+    },
+    "by_msa_depth": {
+      "High": 0.17264029031226008,
+      "Low": 0.11329146491421054,
+      "Medium": 0.11972835742396819
+    },
+    "by_taxon": {
+      "Eukaryote": 0.1453214891316818,
+      "Human": 0.1762939359798762,
+      "Prokaryote": 0.11913301180536001,
+      "Virus": 0.041891765176121344
+    }
+  },
+  "per_rule": {
+    "K=1, ctx>=0": {
+      "orderings": 1,
+      "min_context_fraction": 0.0,
+      "variants_dropped": 0,
+      "average_spearman": 0.14710098135273417,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.13967845345673455,
+        "Binding": 0.14259232986238488,
+        "Expression": 0.19002351379475643,
+        "OrganismalFitness": 0.09660104473372028,
+        "Stability": 0.1666095649160747
+      },
+      "by_msa_depth": {
+        "High": 0.17264029031226008,
+        "Low": 0.11329146491421054,
+        "Medium": 0.11972835742396819
+      },
+      "by_taxon": {
+        "Eukaryote": 0.1453214891316818,
+        "Human": 0.1762939359798762,
+        "Prokaryote": 0.11913301180536001,
+        "Virus": 0.041891765176121344
+      }
+    },
+    "K=4, ctx>=0": {
+      "orderings": 4,
+      "min_context_fraction": 0.0,
+      "variants_dropped": 0,
+      "average_spearman": 0.21174119371149555,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.20715808209083225,
+        "Binding": 0.1877347628807692,
+        "Expression": 0.2564557984210277,
+        "OrganismalFitness": 0.1455744085893351,
+        "Stability": 0.2617829165755134
+      },
+      "by_msa_depth": {
+        "High": 0.26812418423809153,
+        "Low": 0.16864144257033686,
+        "Medium": 0.1784132690722261
+      },
+      "by_taxon": {
+        "Eukaryote": 0.24910769901094423,
+        "Human": 0.24395820737693602,
+        "Prokaryote": 0.19328638596696326,
+        "Virus": 0.07012568316321835
+      }
+    },
+    "K=16, ctx>=0": {
+      "orderings": 16,
+      "min_context_fraction": 0.0,
+      "variants_dropped": 0,
+      "average_spearman": 0.2249949951517542,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.2225387529272274,
+        "Binding": 0.19929120020552082,
+        "Expression": 0.26916733263040205,
+        "OrganismalFitness": 0.16370747447906775,
+        "Stability": 0.27027021551655306
+      },
+      "by_msa_depth": {
+        "High": 0.2880865654025771,
+        "Low": 0.17629743211316118,
+        "Medium": 0.18851227418149666
+      },
+      "by_taxon": {
+        "Eukaryote": 0.25497241788805663,
+        "Human": 0.2640234152862217,
+        "Prokaryote": 0.2085099096587693,
+        "Virus": 0.06793283667656207
+      }
+    },
+    "K=16, ctx>=0.5": {
+      "orderings": 16,
+      "min_context_fraction": 0.5,
+      "variants_dropped": 0,
+      "average_spearman": 0.2639802868977927,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.2520037264245246,
+        "Binding": 0.22964891158012082,
+        "Expression": 0.30810177108362585,
+        "OrganismalFitness": 0.19228026246710447,
+        "Stability": 0.3378667629335876
+      },
+      "by_msa_depth": {
+        "High": 0.3468697815212922,
+        "Low": 0.20740709574277166,
+        "Medium": 0.22645072542214265
+      },
+      "by_taxon": {
+        "Eukaryote": 0.31310418775645543,
+        "Human": 0.3062753840508204,
+        "Prokaryote": 0.25514667333032576,
+        "Virus": 0.09210636652707761
+      }
+    },
+    "K=16, ctx>=0.75": {
+      "orderings": 16,
+      "min_context_fraction": 0.75,
+      "variants_dropped": 19283,
+      "average_spearman": 0.28226856092498864,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.25913943518066185,
+        "Binding": 0.2515261963208613,
+        "Expression": 0.32506499801285244,
+        "OrganismalFitness": 0.205695692833412,
+        "Stability": 0.3699164822771557
+      },
+      "by_msa_depth": {
+        "High": 0.3755712163810329,
+        "Low": 0.22396768890966254,
+        "Medium": 0.2415806930134029
+      },
+      "by_taxon": {
+        "Eukaryote": 0.33226828753480453,
+        "Human": 0.327016522668767,
+        "Prokaryote": 0.27921895933437463,
+        "Virus": 0.1043368218317101
+      }
+    },
+    "K=64, ctx>=0": {
+      "orderings": 64,
+      "min_context_fraction": 0.0,
+      "variants_dropped": 0,
+      "average_spearman": 0.23063848211240723,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.2290257265000049,
+        "Binding": 0.20983958440751857,
+        "Expression": 0.27168206994962457,
+        "OrganismalFitness": 0.16741069028732578,
+        "Stability": 0.27523433941756237
+      },
+      "by_msa_depth": {
+        "High": 0.289503158867943,
+        "Low": 0.18047307030065188,
+        "Medium": 0.19593768515903487
+      },
+      "by_taxon": {
+        "Eukaryote": 0.2584064770471755,
+        "Human": 0.2701036948452278,
+        "Prokaryote": 0.21604986778320412,
+        "Virus": 0.06576495166396111
+      }
+    },
+    "K=64, ctx>=0.5": {
+      "orderings": 64,
+      "min_context_fraction": 0.5,
+      "variants_dropped": 0,
+      "average_spearman": 0.2684232255005017,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.2548696446549505,
+        "Binding": 0.23624523997586053,
+        "Expression": 0.3095208058401153,
+        "OrganismalFitness": 0.19414860201933776,
+        "Stability": 0.3473318350122443
+      },
+      "by_msa_depth": {
+        "High": 0.3518360806778467,
+        "Low": 0.20948191228330487,
+        "Medium": 0.2327378062585469
+      },
+      "by_taxon": {
+        "Eukaryote": 0.314123665893499,
+        "Human": 0.31417294398073914,
+        "Prokaryote": 0.26278325405273917,
+        "Virus": 0.0900944947542566
+      }
+    },
+    "K=64, ctx>=0.75": {
+      "orderings": 64,
+      "min_context_fraction": 0.75,
+      "variants_dropped": 0,
+      "average_spearman": 0.2866490868828244,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.26324817676298,
+        "Binding": 0.2575413875122437,
+        "Expression": 0.3239713334439343,
+        "OrganismalFitness": 0.20519548124753537,
+        "Stability": 0.38328905544742864
+      },
+      "by_msa_depth": {
+        "High": 0.38083269831755157,
+        "Low": 0.22254137100641896,
+        "Medium": 0.2498251186635976
+      },
+      "by_taxon": {
+        "Eukaryote": 0.33521140782263337,
+        "Human": 0.3342226975962606,
+        "Prokaryote": 0.2875449092506864,
+        "Virus": 0.10384626358658763
+      }
+    },
+    "K=64, ctx>=0.9": {
+      "orderings": 64,
+      "min_context_fraction": 0.9,
+      "variants_dropped": 2143,
+      "average_spearman": 0.29530241732091156,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.26832004601099047,
+        "Binding": 0.2655538273793197,
+        "Expression": 0.3296823520753802,
+        "OrganismalFitness": 0.20976366336955615,
+        "Stability": 0.40319219776931126
+      },
+      "by_msa_depth": {
+        "High": 0.39584019291991374,
+        "Low": 0.2291602064952015,
+        "Medium": 0.2588539878725674
+      },
+      "by_taxon": {
+        "Eukaryote": 0.3519187525767692,
+        "Human": 0.34218074640362367,
+        "Prokaryote": 0.2987076979218954,
+        "Virus": 0.1130148484591112
+      }
+    },
+    "K=200, ctx>=0": {
+      "orderings": 200,
+      "min_context_fraction": 0.0,
+      "variants_dropped": 0,
+      "average_spearman": 0.23145931412119275,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.22972839978030243,
+        "Binding": 0.20938436663446505,
+        "Expression": 0.27156388564086226,
+        "OrganismalFitness": 0.1693770044872224,
+        "Stability": 0.27724291406311147
+      },
+      "by_msa_depth": {
+        "High": 0.2910174898771688,
+        "Low": 0.17933951987780475,
+        "Medium": 0.19819809207055564
+      },
+      "by_taxon": {
+        "Eukaryote": 0.2600555443087742,
+        "Human": 0.2720053426810344,
+        "Prokaryote": 0.217460881977939,
+        "Virus": 0.06517496027494785
+      }
+    },
+    "K=200, ctx>=0.5": {
+      "orderings": 200,
+      "min_context_fraction": 0.5,
+      "variants_dropped": 0,
+      "average_spearman": 0.26879731669393514,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.2545869540787265,
+        "Binding": 0.23619769244540278,
+        "Expression": 0.3101504354149549,
+        "OrganismalFitness": 0.19429976004740654,
+        "Stability": 0.3487517414831849
+      },
+      "by_msa_depth": {
+        "High": 0.3522026532522473,
+        "Low": 0.20920379312587442,
+        "Medium": 0.2339282971389685
+      },
+      "by_taxon": {
+        "Eukaryote": 0.3131127254205083,
+        "Human": 0.3161186806777592,
+        "Prokaryote": 0.26346071211480654,
+        "Virus": 0.08855706103108346
+      }
+    },
+    "K=200, ctx>=0.75": {
+      "orderings": 200,
+      "min_context_fraction": 0.75,
+      "variants_dropped": 0,
+      "average_spearman": 0.2869583247628821,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.26332099599974856,
+        "Binding": 0.2574026415440516,
+        "Expression": 0.32424694336323245,
+        "OrganismalFitness": 0.2053129529092214,
+        "Stability": 0.38450808999815644
+      },
+      "by_msa_depth": {
+        "High": 0.38074345275210236,
+        "Low": 0.22255276030291002,
+        "Medium": 0.25115154351861246
+      },
+      "by_taxon": {
+        "Eukaryote": 0.3381004355601854,
+        "Human": 0.3352025148066009,
+        "Prokaryote": 0.28568339855936276,
+        "Virus": 0.10370869262347286
+      }
+    },
+    "K=200, ctx>=0.9": {
+      "orderings": 200,
+      "min_context_fraction": 0.9,
+      "variants_dropped": 0,
+      "average_spearman": 0.29639082482985396,
+      "n_assays": 212,
+      "n_uniprot": 181,
+      "by_function": {
+        "Activity": 0.2676281552799058,
+        "Binding": 0.2691188882971543,
+        "Expression": 0.33103018671964585,
+        "OrganismalFitness": 0.21105359979204522,
+        "Stability": 0.4031232940605185
+      },
+      "by_msa_depth": {
+        "High": 0.39546531310792593,
+        "Low": 0.23133175840211576,
+        "Medium": 0.2596393661924023
+      },
+      "by_taxon": {
+        "Eukaryote": 0.35249138435512795,
+        "Human": 0.34361666622555426,
+        "Prokaryote": 0.297842910108828,
+        "Virus": 0.11304526464929833
+      }
+    }
+  },
+  "esm2_650m_on_same_assays": 0.4152073981338812,
+  "gap_to_esm2_650m": -0.11881657330402723,
+  "per_assay_correlation_with_esm2": 0.6955153862936914,
+  "spearman_by_depth": {
+    "1": 0.279490614412475,
+    "2": 0.20886521881085426,
+    "3": 0.1241470251341263,
+    "4": 0.150243007773637,
+    "5+": 0.19248279097369037
+  }
+}

@@ -36,7 +36,7 @@ import numpy as np
 # --- document parsing -------------------------------------------------------
 
 # Standard-20 three-letter -> one-letter, inverted from contacts_v1/parse.py's
-# `_ONE_LETTER_TO_THREE`. Anything else in a document (only ever <UNK>) -> "X".
+# `ONE_LETTER_TO_THREE`. Anything else in a document (only ever <UNK>) -> "X".
 ONE_TO_THREE = {
     "A": "ALA", "R": "ARG", "N": "ASN", "D": "ASP", "C": "CYS",
     "Q": "GLN", "E": "GLU", "G": "GLY", "H": "HIS", "I": "ILE",

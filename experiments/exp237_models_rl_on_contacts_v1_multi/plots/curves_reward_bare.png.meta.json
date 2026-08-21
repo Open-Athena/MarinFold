@@ -1,0 +1,7 @@
+{
+  "script": "plot_reward_and_accuracy.py",
+  "args": [
+    "--bare"
+  ],
+  "caption": "Each arm against its OWN reward \u2014 the arms do not share one, so the y-axis is not a common scale. Raw values, one point per training batch (8 proteins x 8 rollouts); the batch-to-batch spread is dominated by the protein draw."
+}

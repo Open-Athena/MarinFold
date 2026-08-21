@@ -1,0 +1,7 @@
+stem,msa_depth,length,kingdom,train_n_hits_significant,#232 m2-p06 (decontaminated),#199 cooldown (contaminated),Protenix-v2 single-seq,ESMFold,ESMFold2,Protenix-v2 + MSA,seq-KNN (unfiltered corpus)
+8ii8_A,2,226,eukaryote,1.0,0.333,0.333,0.522,0.355,0.493,0.362,0.0
+8qoh_A,2,278,eukaryote,1.0,0.32,0.342,0.053,0.436,0.669,0.143,0.019
+8wrx_A,3,88,virus,2.0,0.385,0.449,0.705,0.718,0.769,0.577,0.013
+8oxk_A,5,99,eukaryote,1.0,0.326,0.316,0.158,0.505,0.905,0.095,0.084
+8ux2_A,5,246,bacteria,0.0,0.153,0.333,0.088,0.208,0.481,0.421,0.051
+8j8y_A,10,141,bacteria,2.0,0.385,0.354,0.833,0.604,0.844,0.865,0.667

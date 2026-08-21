@@ -1,0 +1,30 @@
+{
+  "reference_version": "v1",
+  "tier": "A",
+  "target_db": "/data/exp213_overlap/targetDB",
+  "sensitivity": 7.5,
+  "max_seqs": 1000000,
+  "search_evalue": 1000.0,
+  "report_evalue_ceiling": 10.0,
+  "thresholds": {
+    "min_identity": 0.3,
+    "min_qcov": 0.5,
+    "max_evalue": 0.001
+  },
+  "n_alignments": 7848767,
+  "n_dropped_rows": 1509680,
+  "dropped_by_arm": {
+    "esm_atlas": 1312972,
+    "afdb": 196708
+  },
+  "dropped_by_rule": {
+    "both": 257100,
+    "evalue": 1139125,
+    "identity_coverage": 113455
+  },
+  "identity_arm_hits_above_evalue_bar": 172587,
+  "max_alignments_for_one_query": 143671,
+  "censored_queries": [],
+  "droplist": "/data/exp225_decontam/foldbench_all/droplist_sequence.parquet",
+  "reduce_seconds": 27.2
+}

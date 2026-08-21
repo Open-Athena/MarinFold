@@ -1,0 +1,9 @@
+arm,category,gap,n_rows,pct_of_droplist,pct_of_corpus
+afdb,inside_91s_own_rule,none — #91's own rule covers this row,12744,16.36,0.3086
+afdb,band_30_40,gap 2 — the 30–40 % band kept by the 40 % threshold,28780,36.95,0.6969
+afdb,remote_only,gap 2/3 — remote homology below any identity bar,15979,20.52,0.3869
+afdb,foldbench_only,gap 1 — FoldBench-100 absent from the reference,20384,26.17,0.4936
+esm_atlas,inside_91s_own_rule,none — #91's own rule covers this row,123713,11.81,0.1853
+esm_atlas,band_30_40,gap 2 — the 30–40 % band kept by the 40 % threshold,491634,46.95,0.7364
+esm_atlas,remote_only,gap 2/3 — remote homology below any identity bar,249232,23.8,0.3733
+esm_atlas,foldbench_only,gap 1 — FoldBench-100 absent from the reference,182517,17.43,0.2734

@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Each model's per-category Spearman divided by its own overall average, so the bars compare *shape*. A structure-trained model is expected to lean on Stability (ESM-IF1 does); the question is whether MarinFold, trained on a structure objective but reading out sequence, leans the same way."
+}
