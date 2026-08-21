@@ -43,7 +43,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from marinfold.document_structures.contacts_v1 import residues_from_sequence
-from marinfold.document_structures.contacts_v1.parse import _ONE_LETTER_TO_THREE
+from marinfold.document_structures.contacts_v1.parse import ONE_LETTER_TO_THREE
 
 NUM_POS = 2000          # contacts-v1 position-token wrap
 MIN_SEP = 6             # contacts-v1 min_seq_separation
@@ -55,7 +55,7 @@ CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
 NTERM_RE = re.compile(r"<n-term>\s+<p(\d+)>")
 RES_RE = re.compile(r"<p(\d+)>\s+<([A-Z]{3})>")
 
-THREE_TO_ONE = {three: one for one, three in _ONE_LETTER_TO_THREE.items()}
+THREE_TO_ONE = {three: one for one, three in ONE_LETTER_TO_THREE.items()}
 
 
 def shard_path(i: int) -> str:

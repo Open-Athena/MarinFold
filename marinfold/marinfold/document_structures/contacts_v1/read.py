@@ -44,7 +44,7 @@ import re
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 
-from .parse import _ONE_LETTER_TO_THREE
+from .parse import ONE_LETTER_TO_THREE
 from .vocab import BEGIN_STRUCTURE_TOKEN, NUM_POSITION_INDICES
 
 # One structure-section statement: <contact>/<retract> then two <pN> tokens.
@@ -60,7 +60,7 @@ _RESIDUE_RE = re.compile(r"<p(\d+)>\s+<([A-Z]{3})>")
 # Canonical 3-letter -> one-letter, inverted from the generator's map so the
 # two can never drift. Anything else a document can carry (only ever `<UNK>`)
 # reads back as "X", the standard any-residue code.
-_THREE_TO_ONE = {three: one for one, three in _ONE_LETTER_TO_THREE.items()}
+_THREE_TO_ONE = {three: one for one, three in ONE_LETTER_TO_THREE.items()}
 UNKNOWN_ONE_LETTER = "X"
 
 CONTACT = "contact"

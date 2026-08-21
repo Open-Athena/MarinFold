@@ -1,0 +1,12 @@
+{
+  "script": "plot_properties.py",
+  "args": [],
+  "caption": "Mean all-range R-precision by quartile of MSA depth over the 314 natural FoldBench monomers. Quartile boundaries are 784, 3,015 and 7,413 sequences; the set spans 2 to 19,393. MSA depth stands in for how many relatives a protein has \u2014 it correlates 0.80 with the number of homologs in our training corpus and 0.87 with KNN neighbour count.",
+  "plot": "family_abundance.png",
+  "sha256": "df985f2522c6020d6765bdfcb1ab3d84d8366b383f311d60fc1e3dd18a2c374f",
+  "sources": {
+    "features": "experiments/exp247_evals_protein_property_analysis/data/protein_features.csv",
+    "associations": "experiments/exp247_evals_protein_property_analysis/data/associations.csv",
+    "scores": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz"
+  }
+}

@@ -1,0 +1,24 @@
+stage,count
+entries processed,177710
+entries with an error,0
+ASU protein chains kept,603198
+ASU protein chains dropped,32954
+monomer documents,602859
+ASU chain drop: not_protein,28775
+ASU chain drop: all_unknown_residues,2851
+ASU chain drop: too_long,733
+ASU chain drop: ca_break,354
+ASU chain drop: clashing,186
+ASU chain drop: too_short,55
+assembly chain drop: not_protein,18456
+assembly chain drop: all_unknown_residues,2441
+assembly chain drop: clashing,2254
+assembly chain drop: too_long,709
+assembly chain drop: ca_break,350
+assembly chain drop: too_short,48
+multimer outcome: ok,85660
+multimer outcome: not_a_complex,80304
+multimer outcome: does_not_fit_ring,10530
+multimer outcome: too_many_chains_by_header,841
+multimer outcome: too_many_chains,369
+multimer outcome: no_assembly_1_protein_chains,6

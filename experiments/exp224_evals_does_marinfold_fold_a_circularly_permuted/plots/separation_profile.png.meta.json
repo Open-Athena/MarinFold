@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Accuracy by sequence separation (left) and where the true contacts sit on that axis (right), in each molecule's own coordinates."
+}

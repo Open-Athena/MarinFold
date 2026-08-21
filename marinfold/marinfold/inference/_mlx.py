@@ -122,6 +122,22 @@ class MlxBackend:
             )
         return out
 
+    def teacher_forced_target_probs(
+        self,
+        token_ids_batch: list[list[int]],
+        target_token_ids: list[int],
+        *,
+        batch_size: int | None = None,
+    ) -> np.ndarray:
+        # Not wired for MLX yet. The workload it serves (contacts-v1
+        # sequence-likelihood readout) runs on CUDA today; adding it here is a
+        # small job — one batched forward keeping all positions' logits — but
+        # unexercised code that returns plausible numbers is worse than none.
+        raise NotImplementedError(
+            "teacher_forced_target_probs is not implemented for the MLX "
+            "backend; use --backend transformers."
+        )
+
     def sample_completions(
         self,
         prefix_token_ids_batch: list[list[int]],

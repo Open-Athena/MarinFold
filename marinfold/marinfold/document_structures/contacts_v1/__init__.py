@@ -9,16 +9,21 @@ order) followed by a *structure section* of ``<contact> <pX> <pY>``
 statements for the strongest pyconfind side-chain contacts (as many as
 fill the context-length budget), listed in random order. Residues are
 numbered from a random n-terminal index that wraps around 2000 position
-tokens. See ``SPEC.md`` in this directory.
+tokens. A complex is serialized the same way, with its chains laid out
+disjointly around that same index ring and one ``<n-term>`` / ``<c-term>``
+pair per chain. See ``SPEC.md`` in this directory.
 
 Public surface:
 
 - :data:`NAME`, :data:`CONTEXT_LENGTH`, :data:`NUM_POSITION_INDICES`,
   :func:`all_domain_tokens` — from :mod:`.vocab`.
 - :func:`analyze_structure`, :class:`AnalyzedStructure`,
-  :class:`ResidueInfo`, :class:`RawContact`, :func:`residues_from_sequence`
-  — from :mod:`.parse` (the pyconfind layer; ``residues_from_sequence`` is
-  the structure-free residue builder for the sequence-only path).
+  :class:`ResidueInfo`, :class:`RawContact`, :class:`ChainSegment`,
+  :func:`chain_segments`, :func:`residues_from_sequence` — from
+  :mod:`.parse` (the pyconfind layer; ``residues_from_sequence`` is the
+  structure-free residue builder for the sequence-only path, and
+  ``chain_segments`` splits a residue list into its per-chain runs for
+  multi-chain documents).
 - :func:`generate_document`, :func:`generate_documents`,
   :func:`generate_sequence_only_document`, :func:`build_document`,
   :class:`GenerationConfig`, :class:`GenerationResult`,
@@ -36,6 +41,7 @@ Public surface:
 """
 
 from .generate import (
+    ChainLayout,
     EmittedContact,
     GenerationConfig,
     GenerationResult,
@@ -56,11 +62,13 @@ from .parse import (
     DEFAULT_CIF_COLUMN,
     DEFAULT_ID_COLUMN,
     AnalyzedStructure,
+    ChainSegment,
     RawContact,
     ResidueInfo,
     analyze_structure,
     analyzed_from_row,
     analyzed_to_row,
+    chain_segments,
     iter_analyzed_structures,
     iter_parquet_analyzed_structures,
     residues_from_sequence,
@@ -89,6 +97,8 @@ __all__ = [
     "NUM_POSITION_INDICES",
     "SEQUENCE_ONLY_DOC_TYPE_TOKEN",
     "AnalyzedStructure",
+    "ChainLayout",
+    "ChainSegment",
     "ContactStructure",
     "EmittedContact",
     "FoldResult",
@@ -102,6 +112,7 @@ __all__ = [
     "analyzed_from_row",
     "analyzed_to_row",
     "build_document",
+    "chain_segments",
     "evaluate",
     "fold_statements",
     "generate_document",

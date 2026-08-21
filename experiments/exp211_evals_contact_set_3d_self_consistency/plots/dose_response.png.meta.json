@@ -1,0 +1,8 @@
+{
+  "script": "plot_results.py",
+  "args": [
+    "--scores",
+    "data/arm_scores.csv"
+  ],
+  "caption": "Score vs corruption, 95% CI. Grey band marks where #199 actually generates (R-precision \u2248 0.59)."
+}

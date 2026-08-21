@@ -1,0 +1,8 @@
+{
+  "script": "plot_results.py",
+  "args": [
+    "--scores",
+    "data/arm_scores.csv"
+  ],
+  "caption": "Per-protein paired difference. Positive means the jointly-generated set embeds better than its marginal-matched null."
+}
