@@ -119,18 +119,22 @@ def main() -> int:
     arrow(axis, (5.5, 3.2), (6.1, 2.775))
 
     # --- the contact pathway, tucked under the pair representation ---------------------------------------
-    contact_matrix_icon(axis, 3.75, 0.75, 0.95)
-    axis.text(3.6, 1.225, "contacts, three-state\npresent / absent / unknown", ha="right",
+    # The contact row sits low enough that the arrow into the sum is a real arrow rather than a
+    # nub, and the icon, the arrow and the projection box share one centre line so that arrow is
+    # exactly horizontal. The projection is centred on the sum (and so on `pair z`) above it.
+    CONTACT_Y = 0.775
+    contact_matrix_icon(axis, 4.3, CONTACT_Y - 0.475, 0.95)
+    axis.text(4.15, CONTACT_Y, "contacts, three-state\npresent / absent / unknown", ha="right",
               va="center", fontsize=6.2, color=ADDED, linespacing=1.35)
-    box(axis, 5.35, 0.95, 2.0, 0.6, "linear 3 → 128\n(zero-initialised)", color=ADDED,
+    box(axis, 5.85, CONTACT_Y - 0.3, 2.0, 0.6, "linear 3 → 128\n(zero-initialised)", color=ADDED,
         face="#FDF4F4", fontsize=6.4)
-    arrow(axis, (4.75, 1.225), (5.35, 1.25), color=ADDED)
+    arrow(axis, (5.25, CONTACT_Y), (5.85, CONTACT_Y), color=ADDED)
 
     centre = (6.85, 2.0)
     axis.add_patch(plt.Circle(centre, 0.22, facecolor="white", edgecolor=ADDED, lw=1.3, zorder=3))
     axis.text(centre[0], centre[1], "+", ha="center", va="center", fontsize=9, color=ADDED,
               zorder=4)
-    arrow(axis, (6.85, 1.55), (6.85, 1.78), color=ADDED)
+    arrow(axis, (6.85, CONTACT_Y + 0.3), (6.85, 1.78), color=ADDED)
     arrow(axis, (6.85, 2.22), (6.85, 2.45), color=ADDED)
 
     # --- trunk and output ----------------------------------------------------------------------------------
