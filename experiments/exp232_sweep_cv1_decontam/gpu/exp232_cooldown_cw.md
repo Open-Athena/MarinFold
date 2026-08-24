@@ -53,9 +53,9 @@
 - A trial completes only when W&B `run_progress >= 1` and its expected final
   permanent checkpoint is reachable. Stop any remaining root only after
   reconciling that completion.
-- Never restart or reslice an abandoned trial. The TRC-derived `m2-p06-lr005`
-  cooldown was abandoned by the operator for overfitting; leave its W&B run and
-  checkpoints as historical evidence only.
+- Never restart or reslice an abandoned trial. The `m2-p06-a03` and TRC-derived
+  `m2-p06-lr005` cooldowns were abandoned by the operator for overfitting; leave
+  their W&B runs and checkpoints as historical evidence only.
 - Start production only after all three source-specific smoke runs restore full
   state and their logged LR histories show the intended inclusive decay.
 
@@ -93,4 +93,7 @@
   2.53M tokens/s. Marked the DP128 x TP2 target eligible for production.
 - 2026-08-24 19:00 UTC: operator abandoned
   `prot-exp232-cw-cv1-decontam-cooldown-s01-m2-p06-lr005-trc-from363000` for
+  overfitting. Its exact active Iris root was killed and must not be restarted.
+- 2026-08-24 23:26 UTC: operator abandoned
+  `prot-exp232-cw-cv1-decontam-cooldown-s01-m2-p06-a03-from377520` for
   overfitting. Its exact active Iris root was killed and must not be restarted.
