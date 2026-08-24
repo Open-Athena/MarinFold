@@ -1,6 +1,6 @@
 # Exp232 2026-08-24 rollout-v2 evaluation
 
-This dated snapshot evaluates the exp232 decontaminated-data training checkpoint at step 363,000 and the #75 E8 validation checkpoint. The older `evals/rollout_v2` snapshot is unchanged; future training, cooldown, or cross-phase evaluations can use additional date-prefixed sibling directories.
+This dated snapshot evaluates the exp232 decontaminated-data training checkpoint at step 363,000 and the #75 E8 validation checkpoint. The older `evals/2026-08-18_rollout_v2` snapshot is unchanged; future training, cooldown, or cross-phase evaluations can use additional date-prefixed sibling directories.
 
 ## Checkpoints
 
