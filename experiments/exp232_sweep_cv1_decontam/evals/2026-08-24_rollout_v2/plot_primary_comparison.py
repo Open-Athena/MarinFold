@@ -23,6 +23,11 @@ HERE = Path(__file__).resolve().parent
 TABLE = HERE / "data" / "comparison.csv"
 ROWS = HERE / "data" / "all_r_rows.csv.gz"
 DEFAULT_OUTPUT = HERE / "plots" / "final_checkpoint_rprecision.png"
+DECONTAM_KEYS = {
+    "exp232-m1-p02-decontam",
+    "exp232-m2-p06-decontam",
+    "exp232-m2-p06-training",
+}
 BOX_LABELS = {
     "exp75-reproduced": "#75 E8\nvalidation",
     "exp146": "#146 3B",
@@ -37,19 +42,20 @@ BOX_LABELS = {
 COLORS = {
     "previous": "#8f8b86",
     "computed_here": "#d55e00",
+    "decontam_previous": "#e69f61",
     "validation": "#009e73",
     "protenix": "#2a78d6",
     "fit": "#52514e",
 }
 ANNOTATIONS = {
-    "exp75-reproduced": ((10, 30), "left", "#75 E8\nvalidation"),
-    "exp146": ((10, 20), "left", "#146 · 3B"),
-    "exp166": ((8, 18), "left", "#166 AA aug"),
+    "exp75-reproduced": ((-3, 56), "left", "#75 E8\nvalidation"),
+    "exp146": ((-8, 38), "right", "#146 · 3B"),
+    "exp166": ((8, 29), "left", "#166 AA aug"),
     "cw-p06-aug": ((-10, 20), "right", "#199 m1-p06\naug"),
     "cw-p06-cool": ((-6, 22), "right", "#199 m1-p06\ncooldown"),
-    "exp232-m2-p06-decontam": ((10, 10), "left", "#232 m2-p06\nsweep"),
-    "exp232-m1-p02-decontam": ((10, -22), "left", "#232 m1-p02\nsweep"),
-    "exp232-m2-p06-training": ((10, -25), "left", "#232 m2-p06\ntraining"),
+    "exp232-m2-p06-decontam": ((7, -36), "left", "#232 m2-p06\nsweep"),
+    "exp232-m1-p02-decontam": ((-8, -48), "left", "#232 m1-p02\nsweep"),
+    "exp232-m2-p06-training": ((10, -28), "left", "#232 m2-p06\ntraining"),
 }
 
 
@@ -93,29 +99,53 @@ def load_values() -> tuple[pd.DataFrame, dict[str, np.ndarray], tuple[str, ...]]
     return table, values, box_order
 
 
-def fit_sigmoid(table: pd.DataFrame) -> dict[str, object]:
-    """Fit the descriptive curve to every plotted MarinFold checkpoint."""
+def shifted_sigmoid(
+    data: tuple[np.ndarray, np.ndarray],
+    upper: float,
+    historical_midpoint: float,
+    width: float,
+    decontam_loss_shift: float,
+) -> np.ndarray:
+    """Evaluate two shared-shape sigmoids separated by a loss-axis shift."""
+
+    loss, is_decontam = data
+    midpoint = historical_midpoint + decontam_loss_shift * is_decontam
+    return sigmoid(loss, upper, midpoint, width)
+
+
+def fit_shared_shape_sigmoids(table: pd.DataFrame) -> dict[str, object]:
+    """Jointly fit shared shape with one decontaminated loss-axis shift."""
 
     selected = table[np.isfinite(table.loss)]
+    if set(selected.loc[selected.key.isin(DECONTAM_KEYS), "key"]) != DECONTAM_KEYS:
+        raise ValueError(
+            "the shared-shape fit requires all three decontaminated points"
+        )
     x = selected.loss.to_numpy(dtype=float)
     y = selected.r_all.to_numpy(dtype=float)
+    is_decontam = selected.key.isin(DECONTAM_KEYS).to_numpy(dtype=float)
     parameters, _ = curve_fit(
-        sigmoid,
-        x,
+        shifted_sigmoid,
+        (x, is_decontam),
         y,
-        p0=(min(0.95, float(y.max()) + 0.03), 3.1, 0.05),
-        bounds=([0.35, 2.5, 0.001], [1.0, 3.5, 2.0]),
+        p0=(min(0.95, float(y.max()) + 0.03), 3.1, 0.05, -0.01),
+        bounds=([0.35, 2.5, 0.001, -0.10], [1.0, 3.5, 2.0, 0.10]),
         maxfev=100_000,
     )
-    predicted = sigmoid(x, *parameters)
+    predicted = shifted_sigmoid((x, is_decontam), *parameters)
     residual_sum = float(np.square(y - predicted).sum())
     total_sum = float(np.square(y - y.mean()).sum())
+    historical_keys = selected.loc[~selected.key.isin(DECONTAM_KEYS), "key"].tolist()
+    decontam_keys = selected.loc[selected.key.isin(DECONTAM_KEYS), "key"].tolist()
     return {
         "upper": float(parameters[0]),
-        "midpoint": float(parameters[1]),
+        "historical_midpoint": float(parameters[1]),
+        "decontam_midpoint": float(parameters[1] + parameters[3]),
         "width": float(parameters[2]),
+        "decontam_loss_shift": float(parameters[3]),
         "r_squared": 1.0 - residual_sum / total_sum,
-        "input_keys": selected.key.tolist(),
+        "historical_keys": historical_keys,
+        "decontam_keys": decontam_keys,
         "minimum_observed_loss": float(x.min()),
         "maximum_observed_loss": float(x.max()),
     }
@@ -145,9 +175,12 @@ def draw_boxplot(
     )
     evaluations = table.set_index("key").evaluation.to_dict()
     for patch, key in zip(boxes["boxes"], box_order, strict=True):
-        color = (
-            COLORS["protenix"] if key == "protenix" else COLORS[str(evaluations[key])]
-        )
+        if key == "protenix":
+            color = COLORS["protenix"]
+        elif key in DECONTAM_KEYS and evaluations[key] == "previous":
+            color = COLORS["decontam_previous"]
+        else:
+            color = COLORS[str(evaluations[key])]
         patch.set_facecolor(color)
         patch.set_alpha(0.83)
     for position, key in enumerate(box_order, start=1):
@@ -177,8 +210,17 @@ def draw_scatter(
 ) -> dict[str, object]:
     """Draw mean all-range R-precision against current validation loss."""
 
-    fit = fit_sigmoid(table)
-    parameters = (float(fit["upper"]), float(fit["midpoint"]), float(fit["width"]))
+    fit = fit_shared_shape_sigmoids(table)
+    historical_parameters = (
+        float(fit["upper"]),
+        float(fit["historical_midpoint"]),
+        float(fit["width"]),
+    )
+    decontam_parameters = (
+        float(fit["upper"]),
+        float(fit["decontam_midpoint"]),
+        float(fit["width"]),
+    )
     observed = np.linspace(
         float(fit["maximum_observed_loss"]),
         float(fit["minimum_observed_loss"]),
@@ -189,12 +231,28 @@ def draw_scatter(
         float(fit["minimum_observed_loss"]), extrapolation_limit, 80
     )
     axis.plot(
-        observed, sigmoid(observed, *parameters), color=COLORS["fit"], linewidth=1.8
+        observed,
+        sigmoid(observed, *historical_parameters),
+        color=COLORS["fit"],
+        linewidth=1.8,
+    )
+    axis.plot(
+        observed,
+        sigmoid(observed, *decontam_parameters),
+        color=COLORS["computed_here"],
+        linewidth=1.8,
     )
     axis.plot(
         extrapolated,
-        sigmoid(extrapolated, *parameters),
+        sigmoid(extrapolated, *historical_parameters),
         color=COLORS["fit"],
+        linewidth=1.5,
+        linestyle=":",
+    )
+    axis.plot(
+        extrapolated,
+        sigmoid(extrapolated, *decontam_parameters),
+        color=COLORS["computed_here"],
         linewidth=1.5,
         linestyle=":",
     )
@@ -210,18 +268,20 @@ def draw_scatter(
         va="bottom",
     )
     for row in table.itertuples(index=False):
-        color = COLORS[row.evaluation]
-        marker = {
-            "computed_here": "o",
-            "validation": "D",
-            "previous": "s",
-        }[row.evaluation]
+        if row.key in DECONTAM_KEYS:
+            color = COLORS["computed_here"]
+            marker = "o"
+            facecolor = color if row.evaluation == "computed_here" else "white"
+        else:
+            color = COLORS[row.evaluation]
+            marker = {"validation": "D", "previous": "s"}[row.evaluation]
+            facecolor = color if row.evaluation == "validation" else "white"
         axis.scatter(
             float(row.loss),
             float(row.r_all),
             s=90,
             marker=marker,
-            facecolor=color if row.evaluation != "previous" else "white",
+            facecolor=facecolor,
             edgecolor=color,
             linewidth=1.8,
             zorder=4,
@@ -248,10 +308,10 @@ def draw_scatter(
         0.28,
         0.05,
         (
-            "MarinFold sigmoid (descriptive)\n"
-            f"R = {parameters[0]:.3f} / [1 + exp((loss − {parameters[1]:.3f}) / "
-            f"{parameters[2]:.3f})]\n"
-            f"R² = {float(fit['r_squared']):.3f}"
+            "Joint shared-shape sigmoid\n"
+            f"upper = {float(fit['upper']):.3f}; width = {float(fit['width']):.3f}\n"
+            f"decontam loss shift = {float(fit['decontam_loss_shift']):+.3f}; "
+            f"joint R² = {float(fit['r_squared']):.3f}"
         ),
         transform=axis.transAxes,
         fontsize=8,
@@ -285,6 +345,17 @@ def draw_scatter(
             Line2D(
                 [0],
                 [0],
+                marker="o",
+                color="none",
+                markerfacecolor="white",
+                markeredgecolor=COLORS["computed_here"],
+                markeredgewidth=1.7,
+                markersize=7,
+                label="prior #232 decontaminated sweeps",
+            ),
+            Line2D(
+                [0],
+                [0],
                 marker="D",
                 color="none",
                 markerfacecolor=COLORS["validation"],
@@ -301,7 +372,7 @@ def draw_scatter(
                 markeredgecolor=COLORS["previous"],
                 markeredgewidth=1.7,
                 markersize=7,
-                label="previous evaluation",
+                label="historical checkpoint",
             ),
             Line2D(
                 [0],
@@ -316,7 +387,14 @@ def draw_scatter(
                 [0],
                 color=COLORS["fit"],
                 linewidth=1.8,
-                label="all MarinFold points sigmoid fit",
+                label="historical shared-shape fit",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=COLORS["computed_here"],
+                linewidth=1.8,
+                label="decontaminated shifted fit",
             ),
         ],
         loc="lower right",
@@ -343,9 +421,9 @@ def run(output: Path) -> None:
         0.5,
         0.055,
         (
-            "Orange marks the new training checkpoint; green marks the validation "
-            "checkpoint recomputed here, gray shows prior MarinFold evaluations, "
-            "and blue shows Protenix-v2."
+            "Orange marks the #232 decontaminated family (filled circle = new "
+            "training checkpoint); green marks the recomputed validation, gray "
+            "shows historical MarinFold evaluations, and blue shows Protenix-v2."
         ),
         ha="center",
         fontsize=8.4,
@@ -364,7 +442,7 @@ def run(output: Path) -> None:
         "previous_evaluations": table.loc[
             table.evaluation == "previous", "key"
         ].tolist(),
-        "sigmoid_fit": fit,
+        "shared_shape_sigmoid_fit": fit,
         "comparison_table": str(TABLE.relative_to(HERE.parents[3])),
         "comparison_table_sha256": sha256(TABLE),
         "per_protein_rows": str(ROWS.relative_to(HERE.parents[3])),

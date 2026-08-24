@@ -24,19 +24,23 @@
     "cw-p06-aug",
     "cw-p06-cool"
   ],
-  "sigmoid_fit": {
-    "upper": 0.6541902839281726,
-    "midpoint": 3.191252535795136,
-    "width": 0.08514603614857338,
-    "r_squared": 0.9915281859310863,
-    "input_keys": [
+  "shared_shape_sigmoid_fit": {
+    "upper": 0.6555342190387141,
+    "historical_midpoint": 3.1864641528711424,
+    "decontam_midpoint": 3.168562265066142,
+    "width": 0.07995128976826177,
+    "decontam_loss_shift": -0.017901887805000415,
+    "r_squared": 0.9984157933440895,
+    "historical_keys": [
       "exp146",
       "exp166",
-      "exp232-m1-p02-decontam",
-      "exp232-m2-p06-decontam",
       "cw-p06-aug",
       "cw-p06-cool",
-      "exp75-reproduced",
+      "exp75-reproduced"
+    ],
+    "decontam_keys": [
+      "exp232-m1-p02-decontam",
+      "exp232-m2-p06-decontam",
       "exp232-m2-p06-training"
     ],
     "minimum_observed_loss": 2.9396727085113525,
@@ -46,5 +50,5 @@
   "comparison_table_sha256": "e4b13cdcda7d5e739569abe73703b80cf00b030ba3583c19e1c0a7fc0314b92d",
   "per_protein_rows": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/all_r_rows.csv.gz",
   "per_protein_rows_sha256": "45df53c7f16602a6e1b985dbb2423f7dd544c75e2e35b2ac3e165ce5091e3da9",
-  "plot_sha256": "97167061c8dd7d4fd2690c35a73c23653f4911d1cbe97bdf0714744e601d3274"
+  "plot_sha256": "4fcce8c0752ed09ca93ebb186f83ee8877149eb2dbdcbe441695fe8a1ce7081b"
 }
