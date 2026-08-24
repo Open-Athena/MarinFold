@@ -214,8 +214,9 @@ def _parse_placement() -> tuple[str, ClusterSpec, int]:
     allowed = {1, 2, 4, 8, 16}
     if spec.gpu_variant == "GB200":
         # 32 GB200 nodes provide 128 data-parallel devices: exactly one
-        # sequence per device at the experiment's fixed global batch of 128.
-        allowed.add(32)
+        # sequence per device at the experiment's fixed global batch of 128;
+        # 64 nodes keep DP=128 and use TP=2.
+        allowed.update({32, 64})
     if nodes not in allowed:
         choices = ", ".join(str(value) for value in sorted(allowed))
         raise SystemExit(f"NODES must be one of {choices}, got {nodes}")

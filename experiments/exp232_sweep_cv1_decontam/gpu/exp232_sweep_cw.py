@@ -8,6 +8,7 @@ control placement without changing the production W&B or checkpoint identity,
 so one writer can resume on another production CoreWeave cluster.
 """
 
+import math
 import os
 import re
 import sys
@@ -308,11 +309,9 @@ def gpu_batch_fit(
 ) -> GpuBatchConfig:
     """Select exp199's measured GPU microbatch and accumulation settings."""
     devices = spec.gpus_per_node * nodes
-    if GLOBAL_BATCH_SIZE % devices:
-        raise ValueError(
-            f"global batch {GLOBAL_BATCH_SIZE} is not divisible by {devices} GPUs"
-        )
-    sequences_per_device = GLOBAL_BATCH_SIZE // devices
+    data_parallelism = math.gcd(GLOBAL_BATCH_SIZE, devices)
+    tensor_parallelism = devices // data_parallelism
+    sequences_per_device = GLOBAL_BATCH_SIZE // data_parallelism
     per_device_parallelism = min(
         sequences_per_device,
         _per_device_capacity(spec, smoke=smoke),
@@ -320,8 +319,8 @@ def gpu_batch_fit(
     while sequences_per_device % per_device_parallelism:
         per_device_parallelism -= 1
     return GpuBatchConfig(
-        data_parallelism=devices,
-        tensor_parallelism=1,
+        data_parallelism=data_parallelism,
+        tensor_parallelism=tensor_parallelism,
         per_device_parallelism=per_device_parallelism,
         gradient_accumulation=sequences_per_device // per_device_parallelism,
     )

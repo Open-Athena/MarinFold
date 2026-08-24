@@ -26,9 +26,9 @@
 - All three sources have complete permanent checkpoints in canonical CWS3 and
   exact matching `optim/learning_rate` records in their source W&B histories.
 - Production starts on 8-node gangs. The entry point accepts 1, 2, 4, 8,
-  or 16 nodes on H100 and additionally 32 nodes on GB200. The 32-node GB200
-  profile uses 128 data-parallel devices, exactly matching the fixed global
-  batch, so placement can scale without changing training semantics.
+  or 16 nodes on H100 and additionally 32 or 64 nodes on GB200. The 32-node
+  GB200 profile is DP128; the 64-node profile is DP128 x TP2. Both exactly
+  preserve the fixed global batch and optimizer semantics.
 
 ## Operator Choices
 
@@ -74,6 +74,7 @@
 | `cw-us-east-08a` | GB200 | 8 | 32 | eligible | initial production profile |
 | `cw-us-east-08a` | GB200 | 16 | 64 | eligible | supported reslice profile |
 | `cw-us-east-08a` | GB200 | 32 | 128 | eligible | maximum data-parallel profile at global batch 128 |
+| `cw-us-east-08a` | GB200 | 64 | 256 | unvalidated | DP128 x TP2 profile; smoke required |
 | `cw-us-west-04a` | H100 | 1/2/4/8/16 | 8/16/32/64/128 | ineligible | CI cluster |
 
 ## Change Record
@@ -82,5 +83,6 @@
   to 1 hour after stable smaller-gang recovery; retain fleet-utilization checks
   and opportunistic gang enlargement at each heartbeat.
 - 2026-08-24 09:58 UTC: newly free GB200 capacity made larger gangs useful.
-  Added the 32-node/128-GPU GB200 profile, which preserves global batch 128
-  with one sequence per data-parallel device; H100 remains capped at 16 nodes.
+  Added 32-node DP128 and 64-node DP128 x TP2 GB200 profiles, both preserving
+  global batch 128; the 64-node target remains unvalidated until its smoke
+  succeeds. H100 remains capped at 16 nodes.
