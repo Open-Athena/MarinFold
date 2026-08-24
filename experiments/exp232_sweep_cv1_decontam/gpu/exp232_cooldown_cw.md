@@ -44,6 +44,8 @@
 
 ## Operating Policy
 
+- The operator stopped the sweep. All three trials are abandoned; leave every
+  dispatch terminal and schedule no further heartbeat, restart, or reslice.
 - Use `heartbeat_every=1h`, `reslice_after=1h`, `restart_after=3h`, and
   `pending_target_limit=1` per exact target.
 - Query W&B before Iris and fleet utilization at every heartbeat. Let Iris
@@ -53,9 +55,9 @@
 - A trial completes only when W&B `run_progress >= 1` and its expected final
   permanent checkpoint is reachable. Stop any remaining root only after
   reconciling that completion.
-- Never restart or reslice an abandoned trial. The `m2-p06-a03` and TRC-derived
-  `m2-p06-lr005` cooldowns were abandoned by the operator for overfitting; leave
-  their W&B runs and checkpoints as historical evidence only.
+- Never restart or reslice an abandoned trial. All three cooldowns were abandoned
+  by the operator; leave their W&B runs and checkpoints as historical evidence
+  only.
 - Start production only after all three source-specific smoke runs restore full
   state and their logged LR histories show the intended inclusive decay.
 
@@ -97,3 +99,7 @@
 - 2026-08-24 23:26 UTC: operator abandoned
   `prot-exp232-cw-cv1-decontam-cooldown-s01-m2-p06-a03-from377520` for
   overfitting. Its exact active Iris root was killed and must not be restarted.
+- 2026-08-24 23:38 UTC: operator abandoned
+  `prot-exp232-cw-cv1-decontam-cooldown-s01-m1-p02-s01-from348480` and stopped
+  the entire cooldown sweep. Its exact active Iris root was killed; no trial may
+  be restarted or resliced, and no further heartbeat should be scheduled.
