@@ -43,8 +43,8 @@
     "maximum_observed_loss": 3.138312048873902
   },
   "comparison_table": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/comparison.csv",
-  "comparison_table_sha256": "8e1c5b60b1a9797a93fbcdb3978f6197f892c604ba433961d893234a4cce73df",
+  "comparison_table_sha256": "e4b13cdcda7d5e739569abe73703b80cf00b030ba3583c19e1c0a7fc0314b92d",
   "per_protein_rows": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/all_r_rows.csv.gz",
   "per_protein_rows_sha256": "45df53c7f16602a6e1b985dbb2423f7dd544c75e2e35b2ac3e165ce5091e3da9",
-  "plot_sha256": "65ceb0180ccfcf8878209901006372d30b8f7dab6a05bb00f25f842efaba970f"
+  "plot_sha256": "97167061c8dd7d4fd2690c35a73c23653f4911d1cbe97bdf0714744e601d3274"
 }

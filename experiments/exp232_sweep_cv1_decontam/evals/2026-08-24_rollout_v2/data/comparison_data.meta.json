@@ -39,7 +39,7 @@
   "outputs": {
     "comparison": {
       "path": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/comparison.csv",
-      "sha256": "8e1c5b60b1a9797a93fbcdb3978f6197f892c604ba433961d893234a4cce73df"
+      "sha256": "e4b13cdcda7d5e739569abe73703b80cf00b030ba3583c19e1c0a7fc0314b92d"
     },
     "all_r_rows": {
       "path": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/all_r_rows.csv.gz",

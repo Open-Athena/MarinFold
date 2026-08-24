@@ -25,8 +25,8 @@ REFERENCE_KEYS = (
 REFERENCE_ROWS_KEYS = (*REFERENCE_KEYS, "protenix")
 DISPLAY_NAME_OVERRIDES = {
     "exp146": "#146 3B",
-    "cw-p06-aug": "CW m1-p06 aug",
-    "cw-p06-cool": "CW m1-p06 cooldown",
+    "cw-p06-aug": "#199 m1-p06 aug",
+    "cw-p06-cool": "#199 m1-p06 cooldown",
     "exp232-m1-p02-decontam": "#232 m1-p02 sweep",
     "exp232-m2-p06-decontam": "#232 m2-p06 sweep",
 }
@@ -88,18 +88,24 @@ def provenance_path(path: Path) -> str:
         return str(path)
 
 
-def metric_value(aggregate: pd.DataFrame, *, model: str, range_name: str) -> float:
-    """Return one legacy-554 R-precision aggregate."""
+def metric_value(
+    aggregate: pd.DataFrame,
+    *,
+    model: str,
+    range_name: str,
+    subset: str = "legacy_554",
+) -> float:
+    """Return one R-precision aggregate."""
 
     selected = aggregate[
         (aggregate.model == model)
-        & (aggregate.subset == "legacy_554")
+        & (aggregate.subset == subset)
         & (aggregate["range"] == range_name)
         & (aggregate.cut == "R")
     ]
     if len(selected) != 1:
         raise ValueError(
-            f"expected one {model}/{range_name}/R row, found {len(selected)}"
+            f"expected one {model}/{subset}/{range_name}/R row, found {len(selected)}"
         )
     return float(selected.iloc[0].precision)
 
@@ -127,6 +133,8 @@ def build(arguments: argparse.Namespace) -> None:
         ]
     ].rename(columns={loss_column: "loss"})
     reference.insert(3, "evaluation", "previous")
+    reference["r_eval_val"] = np.nan
+    reference["r_eval_denovo"] = np.nan
     reference["display_name"] = reference.apply(
         lambda row: DISPLAY_NAME_OVERRIDES.get(row["key"], row["display_name"]),
         axis=1,
@@ -146,6 +154,18 @@ def build(arguments: argparse.Namespace) -> None:
                 "loss": identity["loss"],
                 "r_all": metric_value(aggregate, model=model, range_name="all"),
                 "r_long": metric_value(aggregate, model=model, range_name="long"),
+                "r_eval_val": metric_value(
+                    aggregate,
+                    model=model,
+                    range_name="all",
+                    subset="eval-val",
+                ),
+                "r_eval_denovo": metric_value(
+                    aggregate,
+                    model=model,
+                    range_name="all",
+                    subset="eval-denovo",
+                ),
                 "fit_group": identity["fit_group"],
                 "coreweave_checkpoint": identity["coreweave_checkpoint"],
                 "metrics_source": str(arguments.subset_aggregate),
