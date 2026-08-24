@@ -74,7 +74,7 @@
 | `cw-us-east-08a` | GB200 | 8 | 32 | eligible | initial production profile |
 | `cw-us-east-08a` | GB200 | 16 | 64 | eligible | supported reslice profile |
 | `cw-us-east-08a` | GB200 | 32 | 128 | eligible | maximum data-parallel profile at global batch 128 |
-| `cw-us-east-08a` | GB200 | 64 | 256 | unvalidated | DP128 x TP2 profile; smoke required |
+| `cw-us-east-08a` | GB200 | 64 | 256 | eligible | full-state DP128 x TP2 smoke succeeded |
 | `cw-us-west-04a` | H100 | 1/2/4/8/16 | 8/16/32/64/128 | ineligible | CI cluster |
 
 ## Change Record
@@ -84,5 +84,7 @@
   and opportunistic gang enlargement at each heartbeat.
 - 2026-08-24 09:58 UTC: newly free GB200 capacity made larger gangs useful.
   Added 32-node DP128 and 64-node DP128 x TP2 GB200 profiles, both preserving
-  global batch 128; the 64-node target remains unvalidated until its smoke
-  succeeds. H100 remains capped at 16 nodes.
+  global batch 128. H100 remains capped at 16 nodes.
+- 2026-08-24 10:14 UTC: the 64-node GB200 smoke restored the exact full trainer
+  state, completed ten updates with the expected LR history, and measured about
+  2.53M tokens/s. Marked the DP128 x TP2 target eligible for production.
