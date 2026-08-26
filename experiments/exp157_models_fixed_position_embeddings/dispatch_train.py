@@ -20,6 +20,7 @@ from contacts_v1_train_common import (
     CONTACTS_V1_DATA_SEED,
     CONTACTS_V1_S3_CORPUS_BASE,
     CONTACTS_V1_S3_PREFIX,
+    CONTACTS_V1_TOKEN_CACHE_BASE,
     CONTACTS_V1_TOKENIZER,
     PROTEIN_RESOURCES_H100,
 )
@@ -47,7 +48,7 @@ def _forwarded_perf_env() -> dict[str, str]:
 
 def build_data_config() -> LmDataConfig:
     """Build concrete-path contacts-v1 data config using CoreWeave S3 caches."""
-    cache_base = f"{CONTACTS_V1_S3_PREFIX}/tokenized"
+    cache_base = CONTACTS_V1_TOKEN_CACHE_BASE
     train_source = UrlDatasetSourceConfig(
         train_urls=[f"{CONTACTS_V1_S3_CORPUS_BASE}/train/*.parquet"],
         validation_urls=[],
@@ -77,7 +78,7 @@ def build_data_config() -> LmDataConfig:
     return LmDataConfig(
         tokenizer=CONTACTS_V1_TOKENIZER,
         cache_dir=None,
-        auto_build_caches=True,
+        auto_build_caches=False,
         shuffle=True,
         block_cross_document_attention=True,
         components={"contacts-v1": train_component, "contacts-v1-val": val_component},
@@ -131,7 +132,7 @@ def build_on_pod_config(
         tags=tuple(tags),
         env_vars=env_vars,
     )
-    return dataclasses.replace(pod_config, auto_build_caches=True)
+    return pod_config
 
 
 def dispatch_training_run(

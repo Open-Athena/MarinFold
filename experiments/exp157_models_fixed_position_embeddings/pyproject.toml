@@ -61,6 +61,7 @@ find-links = [
 [[tool.uv.index]]
 name = "marin-resiliparse"
 url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+explicit = true
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
