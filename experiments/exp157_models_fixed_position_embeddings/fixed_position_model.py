@@ -25,7 +25,7 @@ from haliax.nn.normalization import LayerNormBase
 from haliax.state_dict import ModuleWithStateDictSerialization
 
 from levanter.layers.attention import AttentionMask
-from levanter.models.lm_model import LmHeadModel, resize_embeddings_and_lm_head
+from levanter.models.lm_model import LmConfig, LmHeadModel, resize_embeddings_and_lm_head
 from levanter.models.llama import LlamaConfig, LlamaTransformer
 
 
@@ -186,6 +186,7 @@ class FixedResiduePositionEmbedding(eqx.Module):
         )
 
 
+@LmConfig.register_subclass("fixed_residue_position_llama")
 @dataclass(frozen=True)
 class FixedResiduePositionLlamaConfig(LlamaConfig):
     """Llama config whose residue-position input vectors are fixed features."""
