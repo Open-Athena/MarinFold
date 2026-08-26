@@ -7,9 +7,8 @@ import dataclasses
 import logging
 import os
 
-from fray import ResourceConfig
 from fray.current_client import current_client
-from fray.types import Entrypoint, JobRequest, create_environment
+from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
 from levanter.data.text import DatasetComponent, LmDataConfig, TextLmDatasetFormat, UrlDatasetSourceConfig
 from levanter.models.lm_model import LmConfig
 from levanter.optim import AdamConfig

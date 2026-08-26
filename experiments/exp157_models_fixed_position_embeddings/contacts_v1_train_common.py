@@ -5,7 +5,7 @@
 
 import os
 
-from fray import ResourceConfig
+from fray.types import ResourceConfig
 
 CONTACTS_V1_S3_PREFIX = "s3://marin-us-east-02a/MarinFold/exp157_fixed_position_embeddings"
 os.environ.setdefault("MARIN_PREFIX", CONTACTS_V1_S3_PREFIX)
