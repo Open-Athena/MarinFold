@@ -9,7 +9,8 @@ import os
 
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
-from levanter.data.text import DatasetComponent, LmDataConfig, TextLmDatasetFormat, UrlDatasetSourceConfig
+from levanter.data.text.datasets import DatasetComponent, LmDataConfig, UrlDatasetSourceConfig
+from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.models.lm_model import LmConfig
 from levanter.optim import AdamConfig
 from marin.training.run_environment import extras_for_resources
