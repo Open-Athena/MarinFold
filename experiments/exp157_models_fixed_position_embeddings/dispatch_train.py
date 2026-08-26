@@ -12,7 +12,7 @@ from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environmen
 from levanter.data.text.datasets import DatasetComponent, LmDataConfig, UrlDatasetSourceConfig
 from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.models.lm_model import LmConfig
-from levanter.optim import AdamConfig
+from levanter.optim.config import AdamConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import TrainLmOnPodConfig, resolve_training_env, run_levanter_train_lm
 
