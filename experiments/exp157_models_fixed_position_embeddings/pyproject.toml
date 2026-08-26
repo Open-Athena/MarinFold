@@ -5,21 +5,70 @@ description = "Replace learned contacts-v1 residue position input-token embeddin
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "equinox>=0.11.10",
-    "marin-levanter>=0.2.65.dev30616178224,<0.3",
+    "marin-core>=0.2.5.dev202606020954,<0.3",
+    "marin-levanter>=0.2.5.dev202606020954,<0.3",
+    "marin-iris>=0.2.5.dev202606020954,<0.3",
+    "marin-zephyr>=0.2.5.dev202606020954,<0.3",
+    "marin-rigging>=0.2.5.dev202606020954,<0.3",
+    "marinfold-models",
+    "marin-dupekit<0.3",
     "optax>=0.2.4",
     "pytest>=8",
+    "fsspec",
+    "numpy",
+    "pyarrow",
+    "s3fs",
+    "boto3",
+    "transformers",
+    "tokenizers",
 ]
 
 [project.optional-dependencies]
-# Iris submission uses --extra cpu for lightweight smoke jobs.
-cpu = []
+# GPU (CUDA) install for the CoreWeave H100 training child job.
+gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
+# CPU extra for the Iris driver/smoke-test job.
+cpu = [
+    "marin-core[cpu]",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[dependency-groups]
+dev = []
 
 [tool.uv]
 package = false
+fork-strategy = "fewest"
 prerelease = "allow"
-# Current JAX wheels required by marin-levanter are available on Linux and
-# Apple Silicon macOS, but not this workspace's macOS x86_64 host. Resolve the
-# experiment for the Linux TPU/CPU workers where the smoke/training jobs run.
+# Linux only — current JAX wheels required by marin-levanter are unavailable on
+# this workspace's macOS x86_64 host, and the real jobs run on Linux workers.
 environments = [
     "sys_platform == 'linux'",
 ]
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4",
+    "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.22",
+    "wheel>=0.46.2",
+    "datasets>=3.1.0,<4.0.0",
+    "equinox>=0.11.10",
+]
+
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+torch = [{ index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "ac4a41b70e4b2b3900c4778f3f40b8418fab673f" }
