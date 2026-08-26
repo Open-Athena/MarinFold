@@ -69,6 +69,31 @@ Dashboard: https://iris.oa.dev/#/job/%2Fzack%2Fexp157-fixed-position-smoke-r3
 Result: 2 passed, 1 warning in 17.22s
 ```
 
+### Regular training smoke
+
+[`train_fixed_position_smoke.py`](train_fixed_position_smoke.py) is the regular
+next-token-loss training smoke, using the contacts-v1 tokenizer/corpus and the
+control-style recipe (`lr=3.162e-3`, `wd=0.2`, cosine, 10% warmup). It dispatches
+a batch-priority child job through Fray/Iris. By default it runs the 1.5B shape
+on one 8xH100 node; for queue-friendly integration tests it also supports
+`EXP157_MODEL_SIZE=tiny EXP157_GPU_COUNT=1`.
+
+Submission wrapper:
+
+```bash
+cd experiments/exp157_models_fixed_position_embeddings
+./submit_training_smoke_coreweave.sh
+```
+
+Status:
+
+- r4 created W&B but failed before training while trying to build a fresh Zephyr
+  token cache; the script now reuses the existing exp108 contacts-v1 cache.
+- r5 launched the 1.5B 8xH100 smoke, created W&B, then was preempted before a
+  train step; replacement task is waiting in the CoreWeave/Kueue scheduling gate.
+- r7 launched a tiny 1xH100 regular-training fallback smoke and is also waiting
+  in the CoreWeave/Kueue scheduling gate.
+
 ## Conclusion
 
 _(Fill in after results are in.)_
