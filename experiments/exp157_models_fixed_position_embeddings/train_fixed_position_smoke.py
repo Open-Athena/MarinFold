@@ -15,6 +15,8 @@ import os
 from levanter.layers.attention import AttentionBackend
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 
+from fray.types import ResourceConfig
+
 from contacts_v1_train_common import (
     CONTACTS_V1_NUM_POSITION_TOKENS,
     CONTACTS_V1_P0_TOKEN_ID,
@@ -33,6 +35,8 @@ WEIGHT_DECAY = float(os.environ.get("EXP157_WEIGHT_DECAY", "0.2"))
 WARMUP = float(os.environ.get("EXP157_WARMUP", "0.1"))
 TRAIN_BATCH = int(os.environ.get("EXP157_TRAIN_BATCH", "16"))
 NUM_TRAIN_STEPS = int(os.environ.get("EXP157_MAX_STEPS", "20"))
+MODEL_SIZE = os.environ.get("EXP157_MODEL_SIZE", "1_5b")
+GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
 MAX_EVAL_BATCHES = int(os.environ.get("EXP157_MAX_EVAL_BATCHES", "1"))
 
@@ -59,13 +63,16 @@ def _verify_position_token_span() -> None:
         raise ValueError(f"expected <p1999> id {expected_last}, got {last}")
 
 
-protein_llama_1_5b_fixed_positions = FixedResiduePositionLlamaConfig(
+MODEL_SHAPES = {
+    "tiny": dict(hidden_dim=512, intermediate_dim=2048, num_heads=8, num_kv_heads=2, num_layers=4),
+    "1_5b": dict(hidden_dim=2048, intermediate_dim=8192, num_heads=32, num_kv_heads=8, num_layers=24),
+}
+if MODEL_SIZE not in MODEL_SHAPES:
+    raise ValueError(f"EXP157_MODEL_SIZE must be one of {sorted(MODEL_SHAPES)}, got {MODEL_SIZE!r}")
+
+protein_llama_fixed_positions = FixedResiduePositionLlamaConfig(
     max_seq_len=SEQ_LEN,
-    hidden_dim=2048,
-    intermediate_dim=8192,
-    num_heads=32,
-    num_kv_heads=8,
-    num_layers=24,
+    **MODEL_SHAPES[MODEL_SIZE],
     rope=Llama3RotaryEmbeddingsConfig(),
     attn_backend=ATTN_BACKEND,
     gradient_checkpointing=_GRAD_CKPT,
@@ -75,9 +82,15 @@ protein_llama_1_5b_fixed_positions = FixedResiduePositionLlamaConfig(
     ),
 )
 
+RESOURCES = (
+    PROTEIN_RESOURCES_H100
+    if GPU_COUNT == 8
+    else ResourceConfig.with_gpu("H100", count=GPU_COUNT, cpu=8, ram="64g", disk="256g", replicas=1)
+)
+
 RUN_SUFFIX = os.environ.get("EXP157_RUN_SUFFIX", "smoke20-r1")
 RUN_NAME = (
-    f"exp157-cv1-1_5b-e{EPOCHS}-lr{_lr_tag(LEARNING_RATE).replace('-', 'm')}-"
+    f"exp157-cv1-{MODEL_SIZE}-e{EPOCHS}-lr{_lr_tag(LEARNING_RATE).replace('-', 'm')}-"
     f"wd0p2-bs{TRAIN_BATCH}-fixed-position-{RUN_SUFFIX}"
 )
 
@@ -98,7 +111,7 @@ def main() -> None:
     output_path = f"{CONTACTS_V1_S3_PREFIX}/checkpoints/{RUN_NAME}"
     job = dispatch_training_run(
         run_name=RUN_NAME,
-        model_config=protein_llama_1_5b_fixed_positions,
+        model_config=protein_llama_fixed_positions,
         learning_rate=LEARNING_RATE,
         num_train_steps=NUM_TRAIN_STEPS,
         train_batch_size=TRAIN_BATCH,
@@ -106,14 +119,14 @@ def main() -> None:
         weight_decay=WEIGHT_DECAY,
         warmup=WARMUP,
         output_path=output_path,
-        resources=PROTEIN_RESOURCES_H100,
+        resources=RESOURCES,
         env_vars=_env_vars,
         wandb_name=RUN_NAME,
         tags=(
             "protein",
             "contacts-v1",
             "llama",
-            "1_5b",
+            MODEL_SIZE,
             "unmasked",
             "fixed-position",
             "coreweave",
