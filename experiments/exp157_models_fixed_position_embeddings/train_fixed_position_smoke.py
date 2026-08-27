@@ -42,7 +42,9 @@ MODEL_SIZE = os.environ.get("EXP157_MODEL_SIZE", "1_5b")
 POSITION_MODE = os.environ.get("EXP157_POSITION_MODE", "fixed")
 GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
-MAX_EVAL_BATCHES = int(os.environ.get("EXP157_MAX_EVAL_BATCHES", "1"))
+_MAX_EVAL_BATCHES = os.environ.get("EXP157_MAX_EVAL_BATCHES", "1")
+MAX_EVAL_BATCHES = None if _MAX_EVAL_BATCHES.lower() in {"", "none", "full", "all"} else int(_MAX_EVAL_BATCHES)
+INITIALIZE_FROM_CHECKPOINT_PATH = os.environ.get("EXP157_INITIALIZE_FROM_CHECKPOINT_PATH")
 
 _ATTN = os.environ.get("EXP157_ATTN", "jax_flash").upper()
 ATTN_BACKEND = AttentionBackend[_ATTN] if _ATTN else None
@@ -148,6 +150,7 @@ def main() -> None:
         ),
         steps_per_eval=STEPS_PER_EVAL,
         max_eval_batches=MAX_EVAL_BATCHES,
+        initialize_from_checkpoint_path=INITIALIZE_FROM_CHECKPOINT_PATH,
         wait=True,
     )
     print(f"[exp157] child job completed: {job}")

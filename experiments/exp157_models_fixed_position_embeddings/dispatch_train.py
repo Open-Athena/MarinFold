@@ -105,6 +105,7 @@ def build_on_pod_config(
     data_seed: int = CONTACTS_V1_DATA_SEED,
     steps_per_eval: int = 20,
     max_eval_batches: int | None = 1,
+    initialize_from_checkpoint_path: str | None = None,
 ) -> TrainLmOnPodConfig:
     """Build one concrete Levanter training config for direct Fray dispatch."""
     optimizer = AdamConfig(
@@ -125,6 +126,7 @@ def build_on_pod_config(
         seq_len=seq_len,
         steps_per_eval=steps_per_eval,
         max_eval_batches=max_eval_batches,
+        initialize_from_checkpoint_path=initialize_from_checkpoint_path,
         data_seed=data_seed,
         wandb_project="MarinFold",
         wandb_group=wandb_group,
