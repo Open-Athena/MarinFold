@@ -16,8 +16,9 @@ marinfold_run:
   iris_job_ids:
   - /zack/exp157-fixed-position-full-r1-east02-driver
   - /zack/exp157-fixed-position-full-r1-east02-driver/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs16-fixed-position-full-e16-r1-east02
+  - /zack/exp157-fixed-position-full-r1-east02-fullval-resume-driver
+  - /zack/exp157-fixed-position-full-r1-east02-fullval-resume-driver/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs16-fixed-position-full-e16-r1-east02
 ---
-
 # 2026-08-27 · exp157_models_fixed_position_embeddings · exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs16-fixed-position-full-e16-r1-east02
 
 **Launched:** 2026-08-27T00:41:34Z by zack  
