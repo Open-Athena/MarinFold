@@ -16,8 +16,9 @@ marinfold_run:
   iris_job_ids:
   - /zack/exp157-fixed-qwen3-controlmatch-r3-east02-driver
   - /zack/exp157-fixed-qwen3-controlmatch-r3-east02-driver/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-fixed-position-controlmatch-e16-r3-east02-h100x8
+  - /zack/exp157-fixed-qwen3-controlmatch-r4-east02-driver
+  - /zack/exp157-fixed-qwen3-controlmatch-r4-east02-driver/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-fixed-position-controlmatch-e16-r3-east02-h100x8
 ---
-
 # 2026-08-27 · exp157_models_fixed_position_embeddings · exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-fixed-position-controlmatch-e16-r3-east02-h100x8
 
 **Launched:** 2026-08-27T16:11:28Z by zack  
