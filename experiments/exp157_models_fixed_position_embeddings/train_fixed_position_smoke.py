@@ -1,12 +1,14 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""CoreWeave next-token training smoke for fixed residue-position embeddings.
+"""CoreWeave next-token training runner for exp157.
 
-This is the regular CE/control-style arm for issue #157: contacts-v1, unmasked
-next-token loss, exp117-ish recipe (LR 3.162e-3, wd 0.2, cosine, 10% warmup),
-but with the learned input rows for ``<p0>`` ... ``<p1999>`` replaced by fixed
-RoPE/sinusoidal residue-location vectors.
+This is the regular CE/control-style path for issue #157: contacts-v1,
+unmasked next-token loss, exp117-ish recipe (LR 3.162e-3, wd 0.2, cosine,
+10% warmup). ``EXP157_POSITION_MODE=fixed`` replaces the learned input rows
+for ``<p0>`` ... ``<p1999>`` with fixed RoPE/sinusoidal residue-location
+vectors; ``EXP157_POSITION_MODE=learned`` is the matched learned-embedding
+control.
 """
 
 import math
@@ -14,6 +16,7 @@ import os
 
 from levanter.layers.attention import AttentionBackend
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
+from levanter.models.llama import LlamaConfig
 
 from fray.types import ResourceConfig
 
@@ -36,6 +39,7 @@ WARMUP = float(os.environ.get("EXP157_WARMUP", "0.1"))
 TRAIN_BATCH = int(os.environ.get("EXP157_TRAIN_BATCH", "16"))
 NUM_TRAIN_STEPS = int(os.environ.get("EXP157_MAX_STEPS", "20"))
 MODEL_SIZE = os.environ.get("EXP157_MODEL_SIZE", "1_5b")
+POSITION_MODE = os.environ.get("EXP157_POSITION_MODE", "fixed")
 GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
 MAX_EVAL_BATCHES = int(os.environ.get("EXP157_MAX_EVAL_BATCHES", "1"))
@@ -69,17 +73,26 @@ MODEL_SHAPES = {
 }
 if MODEL_SIZE not in MODEL_SHAPES:
     raise ValueError(f"EXP157_MODEL_SIZE must be one of {sorted(MODEL_SHAPES)}, got {MODEL_SIZE!r}")
+if POSITION_MODE not in {"fixed", "learned"}:
+    raise ValueError("EXP157_POSITION_MODE must be 'fixed' or 'learned'")
 
-protein_llama_fixed_positions = FixedResiduePositionLlamaConfig(
+_common_model_kwargs = dict(
     max_seq_len=SEQ_LEN,
     **MODEL_SHAPES[MODEL_SIZE],
     rope=Llama3RotaryEmbeddingsConfig(),
     attn_backend=ATTN_BACKEND,
     gradient_checkpointing=_GRAD_CKPT,
-    position_embedding=ResiduePositionEmbeddingSpec(
-        start_token_id=CONTACTS_V1_P0_TOKEN_ID,
-        num_tokens=CONTACTS_V1_NUM_POSITION_TOKENS,
-    ),
+)
+protein_llama_model = (
+    FixedResiduePositionLlamaConfig(
+        **_common_model_kwargs,
+        position_embedding=ResiduePositionEmbeddingSpec(
+            start_token_id=CONTACTS_V1_P0_TOKEN_ID,
+            num_tokens=CONTACTS_V1_NUM_POSITION_TOKENS,
+        ),
+    )
+    if POSITION_MODE == "fixed"
+    else LlamaConfig(**_common_model_kwargs)
 )
 
 RESOURCES = (
@@ -91,7 +104,7 @@ RESOURCES = (
 RUN_SUFFIX = os.environ.get("EXP157_RUN_SUFFIX", "smoke20-r1")
 RUN_NAME = (
     f"exp157-cv1-{MODEL_SIZE}-e{EPOCHS}-lr{_lr_tag(LEARNING_RATE).replace('-', 'm')}-"
-    f"wd0p2-bs{TRAIN_BATCH}-fixed-position-{RUN_SUFFIX}"
+    f"wd0p2-bs{TRAIN_BATCH}-{POSITION_MODE}-position-{RUN_SUFFIX}"
 )
 
 _env_vars = {"WANDB_ENTITY": "open-athena"}
@@ -103,7 +116,7 @@ def main() -> None:
     _verify_position_token_span()
     steps_per_epoch = math.ceil(TRAIN_TOKENS / (TRAIN_BATCH * SEQ_LEN))
     print(
-        f"[exp157] fixed-position next-token smoke: run={RUN_NAME} "
+        f"[exp157] {POSITION_MODE}-position next-token run: run={RUN_NAME} "
         f"batch={TRAIN_BATCH} seq={SEQ_LEN} steps={NUM_TRAIN_STEPS} "
         f"({steps_per_epoch} steps/epoch at this batch; full e{EPOCHS} would be "
         f"{steps_per_epoch * EPOCHS})"
@@ -111,7 +124,7 @@ def main() -> None:
     output_path = f"{CONTACTS_V1_S3_PREFIX}/checkpoints/{RUN_NAME}"
     job = dispatch_training_run(
         run_name=RUN_NAME,
-        model_config=protein_llama_fixed_positions,
+        model_config=protein_llama_model,
         learning_rate=LEARNING_RATE,
         num_train_steps=NUM_TRAIN_STEPS,
         train_batch_size=TRAIN_BATCH,
@@ -128,7 +141,7 @@ def main() -> None:
             "llama",
             MODEL_SIZE,
             "unmasked",
-            "fixed-position",
+            f"{POSITION_MODE}-position",
             "coreweave",
             f"bs{TRAIN_BATCH}",
             f"lr{_lr_tag(LEARNING_RATE)}",
