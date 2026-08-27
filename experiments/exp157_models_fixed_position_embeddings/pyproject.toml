@@ -52,6 +52,7 @@ override-dependencies = [
     "wheel>=0.46.2",
     "datasets>=3.1.0,<4.0.0",
     "equinox>=0.11.10",
+    "simplejson==4.1.1",
 ]
 
 find-links = [
