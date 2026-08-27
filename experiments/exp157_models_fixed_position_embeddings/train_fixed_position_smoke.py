@@ -51,7 +51,7 @@ GPU_REPLICAS = int(os.environ.get("EXP157_GPU_REPLICAS", "1"))
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
 _MAX_EVAL_BATCHES = os.environ.get("EXP157_MAX_EVAL_BATCHES", "1")
 MAX_EVAL_BATCHES = None if _MAX_EVAL_BATCHES.lower() in {"", "none", "full", "all"} else int(_MAX_EVAL_BATCHES)
-INITIALIZE_FROM_CHECKPOINT_PATH = os.environ.get("EXP157_INITIALIZE_FROM_CHECKPOINT_PATH")
+INITIALIZE_FROM_CHECKPOINT_PATH = os.environ.get("EXP157_INITIALIZE_FROM_CHECKPOINT_PATH") or None
 
 _ATTN = os.environ.get("EXP157_ATTN", "jax_flash").upper()
 ATTN_BACKEND = AttentionBackend[_ATTN] if _ATTN else None
