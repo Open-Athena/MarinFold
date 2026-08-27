@@ -17,6 +17,7 @@ import os
 from levanter.layers.attention import AttentionBackend
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.models.llama import LlamaConfig
+from levanter.models.qwen import Qwen3Config
 
 from fray.types import ResourceConfig
 
@@ -28,7 +29,11 @@ from contacts_v1_train_common import (
     PROTEIN_RESOURCES_H100,
 )
 from dispatch_train import dispatch_training_run
-from fixed_position_model import FixedResiduePositionLlamaConfig, ResiduePositionEmbeddingSpec
+from fixed_position_model import (
+    FixedResiduePositionLlamaConfig,
+    FixedResiduePositionQwen3Config,
+    ResiduePositionEmbeddingSpec,
+)
 
 SEQ_LEN = 8192
 EPOCHS = 16
@@ -39,8 +44,10 @@ WARMUP = float(os.environ.get("EXP157_WARMUP", "0.1"))
 TRAIN_BATCH = int(os.environ.get("EXP157_TRAIN_BATCH", "16"))
 NUM_TRAIN_STEPS = int(os.environ.get("EXP157_MAX_STEPS", "20"))
 MODEL_SIZE = os.environ.get("EXP157_MODEL_SIZE", "1_5b")
+MODEL_FAMILY = os.environ.get("EXP157_MODEL_FAMILY", "llama")
 POSITION_MODE = os.environ.get("EXP157_POSITION_MODE", "fixed")
 GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
+GPU_REPLICAS = int(os.environ.get("EXP157_GPU_REPLICAS", "1"))
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
 _MAX_EVAL_BATCHES = os.environ.get("EXP157_MAX_EVAL_BATCHES", "1")
 MAX_EVAL_BATCHES = None if _MAX_EVAL_BATCHES.lower() in {"", "none", "full", "all"} else int(_MAX_EVAL_BATCHES)
@@ -75,6 +82,8 @@ MODEL_SHAPES = {
 }
 if MODEL_SIZE not in MODEL_SHAPES:
     raise ValueError(f"EXP157_MODEL_SIZE must be one of {sorted(MODEL_SHAPES)}, got {MODEL_SIZE!r}")
+if MODEL_FAMILY not in {"llama", "qwen3"}:
+    raise ValueError("EXP157_MODEL_FAMILY must be 'llama' or 'qwen3'")
 if POSITION_MODE not in {"fixed", "learned"}:
     raise ValueError("EXP157_POSITION_MODE must be 'fixed' or 'learned'")
 
@@ -85,28 +94,32 @@ _common_model_kwargs = dict(
     attn_backend=ATTN_BACKEND,
     gradient_checkpointing=_GRAD_CKPT,
 )
-protein_llama_model = (
-    FixedResiduePositionLlamaConfig(
-        **_common_model_kwargs,
-        position_embedding=ResiduePositionEmbeddingSpec(
-            start_token_id=CONTACTS_V1_P0_TOKEN_ID,
-            num_tokens=CONTACTS_V1_NUM_POSITION_TOKENS,
-        ),
-    )
-    if POSITION_MODE == "fixed"
-    else LlamaConfig(**_common_model_kwargs)
+_position_embedding = ResiduePositionEmbeddingSpec(
+    start_token_id=CONTACTS_V1_P0_TOKEN_ID,
+    num_tokens=CONTACTS_V1_NUM_POSITION_TOKENS,
 )
+if POSITION_MODE == "fixed" and MODEL_FAMILY == "qwen3":
+    protein_llama_model = FixedResiduePositionQwen3Config(**_common_model_kwargs, position_embedding=_position_embedding)
+elif POSITION_MODE == "fixed":
+    protein_llama_model = FixedResiduePositionLlamaConfig(**_common_model_kwargs, position_embedding=_position_embedding)
+elif MODEL_FAMILY == "qwen3":
+    protein_llama_model = Qwen3Config(**_common_model_kwargs)
+else:
+    protein_llama_model = LlamaConfig(**_common_model_kwargs)
 
-RESOURCES = (
-    PROTEIN_RESOURCES_H100
-    if GPU_COUNT == 8
-    else ResourceConfig.with_gpu("H100", count=GPU_COUNT, cpu=8, ram="64g", disk="256g", replicas=1)
+RESOURCES = ResourceConfig.with_gpu(
+    "H100",
+    count=GPU_COUNT,
+    cpu=32 if GPU_COUNT == 8 else 8,
+    ram="256g" if GPU_COUNT == 8 else "64g",
+    disk="256g",
+    replicas=GPU_REPLICAS,
 )
 
 RUN_SUFFIX = os.environ.get("EXP157_RUN_SUFFIX", "smoke20-r1")
 RUN_NAME = (
     f"exp157-cv1-{MODEL_SIZE}-e{EPOCHS}-lr{_lr_tag(LEARNING_RATE).replace('-', 'm')}-"
-    f"wd0p2-bs{TRAIN_BATCH}-{POSITION_MODE}-position-{RUN_SUFFIX}"
+    f"wd0p2-bs{TRAIN_BATCH}-{MODEL_FAMILY}-{POSITION_MODE}-position-{RUN_SUFFIX}"
 )
 
 _env_vars = {"WANDB_ENTITY": "open-athena"}
@@ -118,7 +131,7 @@ def main() -> None:
     _verify_position_token_span()
     steps_per_epoch = math.ceil(TRAIN_TOKENS / (TRAIN_BATCH * SEQ_LEN))
     print(
-        f"[exp157] {POSITION_MODE}-position next-token run: run={RUN_NAME} "
+        f"[exp157] {MODEL_FAMILY} {POSITION_MODE}-position next-token run: run={RUN_NAME} "
         f"batch={TRAIN_BATCH} seq={SEQ_LEN} steps={NUM_TRAIN_STEPS} "
         f"({steps_per_epoch} steps/epoch at this batch; full e{EPOCHS} would be "
         f"{steps_per_epoch * EPOCHS})"
@@ -142,6 +155,7 @@ def main() -> None:
             "contacts-v1",
             "llama",
             MODEL_SIZE,
+            MODEL_FAMILY,
             "unmasked",
             f"{POSITION_MODE}-position",
             "coreweave",

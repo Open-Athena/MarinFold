@@ -9,7 +9,7 @@ import os
 
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
-from levanter.data.text.datasets import DatasetComponent, LmDataConfig, UrlDatasetSourceConfig
+from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, LmDataConfig, UrlDatasetSourceConfig
 from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.models.lm_model import LmConfig
 from levanter.optim.config import AdamConfig
@@ -79,7 +79,7 @@ def build_data_config() -> LmDataConfig:
         tokenizer=CONTACTS_V1_TOKENIZER,
         cache_dir=None,
         auto_build_caches=False,
-        shuffle=True,
+        shuffle=BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel"),
         block_cross_document_attention=True,
         components={"contacts-v1": train_component, "contacts-v1-val": val_component},
         train_weights={"contacts-v1": 1.0, "contacts-v1-val": 0.0},

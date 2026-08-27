@@ -27,6 +27,7 @@ from haliax.state_dict import ModuleWithStateDictSerialization
 from levanter.layers.attention import AttentionMask
 from levanter.models.lm_model import LmConfig, LmHeadModel, resize_embeddings_and_lm_head
 from levanter.models.llama import LlamaConfig, LlamaTransformer
+from levanter.models.qwen import Qwen3Config
 
 
 @dataclass(frozen=True)
@@ -206,8 +207,28 @@ class FixedResiduePositionLlamaConfig(LlamaConfig):
         return stock - removed
 
 
+@LmConfig.register_subclass("fixed_residue_position_qwen3")
+@dataclass(frozen=True)
+class FixedResiduePositionQwen3Config(Qwen3Config):
+    """Qwen3 config whose residue-position input vectors are fixed features."""
+
+    position_embedding: ResiduePositionEmbeddingSpec = dataclasses.field(
+        default_factory=lambda: ResiduePositionEmbeddingSpec(start_token_id=0, num_tokens=2000)
+    )
+
+    @property
+    def model_type(self) -> Type["FixedResiduePositionLlamaLMHeadModel"]:  # pyrefly: ignore[bad-override]
+        return FixedResiduePositionLlamaLMHeadModel
+
+    def total_trainable_params(self, vocab_size):
+        """Return the stock count minus removed trainable input-position rows."""
+        stock = super().total_trainable_params(vocab_size)
+        removed = self.position_embedding.num_tokens * self.hidden_dim
+        return stock - removed
+
+
 class FixedResiduePositionLlamaLMHeadModel(ModuleWithStateDictSerialization, LmHeadModel[FixedResiduePositionLlamaConfig]):
-    """Llama LM with deterministic input embeddings for residue-position tokens."""
+    """Llama/Qwen3 LM with deterministic input embeddings for residue-position tokens."""
 
     transformer: LlamaTransformer
     embeddings: FixedResiduePositionEmbedding
@@ -229,7 +250,7 @@ class FixedResiduePositionLlamaLMHeadModel(ModuleWithStateDictSerialization, LmH
     def init(
         cls,
         Vocab: Axis,
-        config: FixedResiduePositionLlamaConfig,
+        config: FixedResiduePositionLlamaConfig | FixedResiduePositionQwen3Config,
         *,
         key: PRNGKeyArray,
     ) -> "FixedResiduePositionLlamaLMHeadModel":
