@@ -134,7 +134,9 @@ def build_on_pod_config(
         tags=tuple(tags),
         env_vars=env_vars,
     )
-    return pod_config
+    trainer = dataclasses.replace(pod_config.train_config.trainer, log_jaxprs=False, log_xla_hlo=False)
+    train_config = dataclasses.replace(pod_config.train_config, trainer=trainer)
+    return dataclasses.replace(pod_config, train_config=train_config)
 
 
 def dispatch_training_run(
