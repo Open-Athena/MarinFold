@@ -44,7 +44,7 @@ from levanter.utils.jax_utils import use_cpu_device
 from levanter.utils.mesh import MeshConfig
 from levanter.utils.tree_utils import inference_mode
 
-from marinfold.document_structures.contacts_v1.vocab import BEGIN_STRUCTURE, CONTACT, DOC_TYPE, END, VOCABULARY
+from marinfold.document_structures.contacts_v1.vocab import BEGIN_STRUCTURE, CONTACT, DOC_TYPE, END
 
 LOGGER = logging.getLogger(__name__)
 
@@ -363,7 +363,7 @@ def _make_soft_fn(axis_mapping, max_contacts: int):
 
 def _load_model(checkpoint_path: str, trainer: TrainerConfig):
     key = jax.random.PRNGKey(0)
-    vocab_size = max(VOCAB_SIZE, len(VOCABULARY))
+    vocab_size = VOCAB_SIZE
     Vocab = Axis("vocab", vocab_size)
     with use_cpu_device():
         model = eqx.filter_eval_shape(MODEL_CONFIG.build, Vocab, key=key)
