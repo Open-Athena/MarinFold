@@ -30,7 +30,6 @@ import jax.numpy as jnp
 import jmp
 import numpy as np
 from haliax import Axis
-from haliax.partitioning import round_axis_for_partitioning
 from huggingface_hub import snapshot_download
 from levanter.checkpoint import latest_checkpoint_path, load_checkpoint
 from levanter.data.loader import DataLoader
@@ -365,7 +364,7 @@ def _make_soft_fn(axis_mapping, max_contacts: int):
 def _load_model(checkpoint_path: str, trainer: TrainerConfig):
     key = jax.random.PRNGKey(0)
     vocab_size = max(VOCAB_SIZE, len(VOCABULARY))
-    Vocab = round_axis_for_partitioning(Axis("vocab", vocab_size), trainer.parameter_axis_mapping)
+    Vocab = Axis("vocab", vocab_size)
     with use_cpu_device():
         model = eqx.filter_eval_shape(MODEL_CONFIG.build, Vocab, key=key)
         resolved = _latest_if_root(checkpoint_path)
