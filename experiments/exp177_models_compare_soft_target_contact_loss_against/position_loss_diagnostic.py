@@ -82,6 +82,7 @@ class CheckpointSpec:
     name: str
     objective: str
     path: str
+    vocab_size: int
 
 
 @dataclass
@@ -134,7 +135,14 @@ class BinAccumulators:
 def _parse_checkpoint_specs(raw: str) -> list[CheckpointSpec]:
     specs = []
     for item in json.loads(raw):
-        specs.append(CheckpointSpec(name=item["name"], objective=item["objective"], path=item["path"].rstrip("/")))
+        specs.append(
+            CheckpointSpec(
+                name=item["name"],
+                objective=item["objective"],
+                path=item["path"].rstrip("/"),
+                vocab_size=int(item.get("vocab_size", VOCAB_SIZE)),
+            )
+        )
     return specs
 
 
@@ -361,14 +369,13 @@ def _make_soft_fn(axis_mapping, max_contacts: int):
     return soft_per_doc
 
 
-def _load_model(checkpoint_path: str, trainer: TrainerConfig):
+def _load_model(checkpoint: CheckpointSpec, trainer: TrainerConfig):
     key = jax.random.PRNGKey(0)
-    vocab_size = VOCAB_SIZE
-    Vocab = Axis("vocab", vocab_size)
+    Vocab = Axis("vocab", checkpoint.vocab_size)
     with use_cpu_device():
         model = eqx.filter_eval_shape(MODEL_CONFIG.build, Vocab, key=key)
-        resolved = _latest_if_root(checkpoint_path)
-        LOGGER.info("Loading checkpoint %s", resolved)
+        resolved = _latest_if_root(checkpoint.path)
+        LOGGER.info("Loading checkpoint %s with vocab_size=%d", resolved, checkpoint.vocab_size)
         model = load_checkpoint(model, resolved, subpath="model")
     return hax.shard_with_axis_mapping(model, trainer.parameter_axis_mapping)
 
@@ -446,7 +453,7 @@ def run(args: argparse.Namespace) -> None:
         ce_fn = _make_ce_fn(trainer.compute_axis_mapping)
         soft_fn = _make_soft_fn(trainer.compute_axis_mapping, args.max_contacts)
         for spec in specs:
-            model = _load_model(spec.path, trainer)
+            model = _load_model(spec, trainer)
             for split in ("val", "train"):
                 target_docs = args.val_docs if split == "val" else args.train_docs
                 ds = _iter_split(tokenizer_path, split, Pos, jax.random.PRNGKey(args.train_seed))
