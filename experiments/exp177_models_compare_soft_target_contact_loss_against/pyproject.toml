@@ -1,0 +1,79 @@
+[project]
+name = "exp177-models-soft-target-contact-loss-h2h"
+version = "0.1.0"
+description = "Head-to-head TPU training comparison of contacts-v1 soft-target loss vs next-token CE."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fsspec",
+    "gcsfs",
+    "marin-core>=0.2.56.dev202607230804,<0.3",
+    "marin-dupekit<0.3",
+    "marin-finelog>=0.2.19.dev0,<0.3",
+    "marin-finelog-server>=0.2.19.dev0,<0.3",
+    "marin-iris>=0.2.56.dev202607230804,<0.3",
+    "marin-levanter>=0.2.56.dev202607230804,<0.3",
+    "marin-rigging>=0.2.56.dev202607230804,<0.3",
+    "marin-zephyr>=0.2.56.dev202607230804,<0.3",
+    "marinfold",
+    "marinfold-models",
+    "numpy",
+    "pyarrow",
+    "s3fs",
+    "boto3",
+    "transformers",
+]
+
+[project.optional-dependencies]
+tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
+gpu = ["marin-core[gpu]; sys_platform == 'linux'"]
+cpu = [
+    "marin-core[cpu]",
+    "torch==2.11.0",
+    "torchvision==0.26.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
+override-dependencies = [
+    "antlr4-python3-runtime==4.11",
+    "datasets>=3.1.0,<4.0.0",
+    "equinox>=0.11.10",
+    "omegaconf>=2.4.0.dev4",
+    "python-multipart>=0.0.22",
+    "transformers>=5.5.3,<6",
+    "wheel>=0.46.2",
+    # The current marin dev line pins torch 2.11 / torchvision 0.26, but the
+    # ARM/GB200 torchvision 0.26 wheel fails during Transformers' eager
+    # AutoProcessor import (missing torchvision::nms registration). MarinFold's
+    # JAX training path only needs these for optional HF/processor imports, and
+    # older GB200 runs used the 2.10 / 0.25 CPU pair successfully.
+    "torch==2.10.0",
+    "torchvision==0.25.0+cpu; sys_platform == 'linux'",
+]
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "exp177/mp-queue-shard-dataset" }
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "exp177/mp-queue-shard-dataset" }
