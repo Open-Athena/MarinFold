@@ -313,11 +313,12 @@ def _make_soft_fn(axis_mapping, max_contacts: int):
         lm_head = model.get_lm_head()
         target_y = hax.roll(batch.tokens, -1, Pos)
         hard_ce = model.compute_next_token_loss(batch, reduction=None, reduction_axis=())
-        target_rows = lm_head.take(model.Vocab, target_y)
+        lm_head_vocab = lm_head.axes[0]
+        target_rows = lm_head.take(lm_head_vocab, target_y)
         z_target = hax.dot(activations, target_rows, axis=model.Embed)
         log_z = (hard_ce + z_target).rearrange((..., Pos)).array
         act = activations.rearrange((..., Pos, model.Embed)).array
-        head = lm_head.rearrange((model.Vocab, model.Embed)).array
+        head = lm_head.rearrange((lm_head_vocab, model.Embed)).array
 
         rows = meta["rows"]
         prediction_start = meta["prediction_start"]
