@@ -458,7 +458,6 @@ def run(args: argparse.Namespace) -> None:
                     batch_axis_name=trainer.batch_axis_name,
                     allow_nondivisible_batch_size=True,
                     max_buffered_batches=4,
-                    prefetch_size=1,
                 )
                 acc = BinAccumulators.create(args.max_abs_bins, args.percentile_bins)
                 docs_seen = 0
