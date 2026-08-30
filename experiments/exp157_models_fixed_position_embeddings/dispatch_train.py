@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Direct CoreWeave batch-priority dispatcher for exp157 training smokes."""
+"""Direct CoreWeave dispatcher for exp157 training smokes."""
 
 import dataclasses
 import logging
@@ -28,7 +28,11 @@ from marinfold_models import build_train_lm_on_pod_config
 
 logger = logging.getLogger(__name__)
 
-IRIS_PRIORITY_BAND_BATCH = 3
+IRIS_PRIORITY_BANDS = {
+    "production": 1,
+    "interactive": 2,
+    "batch": 3,
+}
 assert "priority" in {f.name for f in dataclasses.fields(JobRequest)}, (
     "This fray build lacks JobRequest.priority; batch-band dispatch requires "
     "the 0.2.x.dev fray line, not the frozen 0.99.dev build."
@@ -146,10 +150,16 @@ def dispatch_training_run(
     env_vars: dict[str, str] | None = None,
     max_retries_failure: int = 0,
     wait: bool = True,
+    priority: str = "batch",
     **config_kwargs,
 ):
-    """Submit a training gang as an Iris batch-band child job."""
+    """Submit a training gang as an Iris child job."""
     env_vars = {**_forwarded_perf_env(), **(env_vars or {})}
+    try:
+        priority_band = IRIS_PRIORITY_BANDS[priority]
+    except KeyError as exc:
+        choices = ", ".join(sorted(IRIS_PRIORITY_BANDS))
+        raise ValueError(f"priority must be one of: {choices}; got {priority!r}") from exc
     on_pod_config = build_on_pod_config(
         run_name=run_name,
         resources=resources,
@@ -165,7 +175,7 @@ def dispatch_training_run(
         entrypoint=Entrypoint.from_callable(run_levanter_train_lm, args=[on_pod_config]),
         resources=resources,
         environment=environment,
-        priority=IRIS_PRIORITY_BAND_BATCH,
+        priority=priority_band,
         processes_per_task=1,
         max_retries_failure=max_retries_failure,
     )

@@ -47,12 +47,14 @@ NUM_TRAIN_STEPS = int(os.environ.get("EXP157_MAX_STEPS", "20"))
 MODEL_SIZE = os.environ.get("EXP157_MODEL_SIZE", "1_5b")
 MODEL_FAMILY = os.environ.get("EXP157_MODEL_FAMILY", "llama")
 POSITION_MODE = os.environ.get("EXP157_POSITION_MODE", "fixed")
+GPU_VARIANT = os.environ.get("EXP157_GPU_VARIANT", "H100")
 GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
 GPU_REPLICAS = int(os.environ.get("EXP157_GPU_REPLICAS", "1"))
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
 _MAX_EVAL_BATCHES = os.environ.get("EXP157_MAX_EVAL_BATCHES", "1")
 MAX_EVAL_BATCHES = None if _MAX_EVAL_BATCHES.lower() in {"", "none", "full", "all"} else int(_MAX_EVAL_BATCHES)
 INITIALIZE_FROM_CHECKPOINT_PATH = os.environ.get("EXP157_INITIALIZE_FROM_CHECKPOINT_PATH") or None
+IRIS_PRIORITY = os.environ.get("EXP157_IRIS_PRIORITY", "batch")
 
 _ATTN = os.environ.get("EXP157_ATTN", "jax_flash").upper()
 ATTN_BACKEND = AttentionBackend[_ATTN] if _ATTN else None
@@ -109,12 +111,14 @@ elif MODEL_FAMILY == "qwen3":
 else:
     protein_llama_model = LlamaConfig(**_common_model_kwargs)
 
+_DEFAULT_CPU = "32" if GPU_COUNT >= 4 else "8"
+_DEFAULT_RAM = "256g" if GPU_COUNT >= 4 else "64g"
 RESOURCES = ResourceConfig.with_gpu(
-    "H100",
+    GPU_VARIANT,
     count=GPU_COUNT,
-    cpu=32 if GPU_COUNT == 8 else 8,
-    ram="256g" if GPU_COUNT == 8 else "64g",
-    disk="256g",
+    cpu=int(os.environ.get("EXP157_CPU") or _DEFAULT_CPU),
+    ram=os.environ.get("EXP157_RAM") or _DEFAULT_RAM,
+    disk=os.environ.get("EXP157_DISK") or "256g",
     replicas=GPU_REPLICAS,
 )
 
@@ -134,6 +138,7 @@ def main() -> None:
     steps_per_epoch = math.ceil(TRAIN_TOKENS / (TRAIN_BATCH * SEQ_LEN))
     print(
         f"[exp157] {MODEL_FAMILY} {POSITION_MODE}-position next-token run: run={RUN_NAME} "
+        f"gpu={GPU_VARIANT}x{GPU_COUNT} replicas={GPU_REPLICAS} priority={IRIS_PRIORITY} "
         f"batch={TRAIN_BATCH} seq={SEQ_LEN} steps={NUM_TRAIN_STEPS} "
         f"({steps_per_epoch} steps/epoch at this batch; full e{EPOCHS} would be "
         f"{steps_per_epoch * EPOCHS})"
@@ -161,12 +166,14 @@ def main() -> None:
             "unmasked",
             f"{POSITION_MODE}-position",
             "coreweave",
+            f"{GPU_VARIANT.lower()}x{GPU_COUNT}n{GPU_REPLICAS}",
             f"bs{TRAIN_BATCH}",
             f"lr{_lr_tag(LEARNING_RATE)}",
         ),
         steps_per_eval=STEPS_PER_EVAL,
         max_eval_batches=MAX_EVAL_BATCHES,
         initialize_from_checkpoint_path=INITIALIZE_FROM_CHECKPOINT_PATH,
+        priority=IRIS_PRIORITY,
         wait=True,
     )
     print(f"[exp157] child job completed: {job}")

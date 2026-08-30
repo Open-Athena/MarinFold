@@ -110,6 +110,19 @@ Status:
   checkpoint/HF export at step 19, and logged `eval/contacts-v1-val/loss = 6.0809`.
 - `rope_delta` control-matched Qwen3 1.5B run r1 launched on `cw-us-east-02a`:
   W&B `exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r1-east02-h100x8`.
+  It was cancelled after the GB200 switch request, before the first validation point.
+- GB200 support now comes from the same runner via `EXP157_GPU_VARIANT=GB200`,
+  `EXP157_GPU_COUNT=4`, and `EXP157_GPU_REPLICAS=8`. A one-node GB200 smoke
+  completed successfully at global batch 128 with `throughput/tokens_per_second = 109,552`
+  and `throughput/examples_per_second = 13.37`.
+- The 8x4 GB200 throughput smoke completed on `cw-us-east-08a`:
+  W&B `exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-throughput-bs128-gb200x4n8-r2`.
+  It reached step 79 with `throughput/tokens_per_second = 748,219`,
+  `throughput/examples_per_second = 91.34`, and `throughput/duration = 1.401s/step`.
+- The full 8x4 GB200 control-matched `rope_delta` run is active on `cw-us-east-08a`:
+  W&B `exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8`.
+  It uses Qwen3 1.5B, global batch 128, 71,360 steps, full validation every 2,230
+  steps, LR `3.1623e-3`, WD `0.2`, warmup `0.1`, BlockShuffle, and 32 GB200 GPUs.
 
 ## Conclusion
 

@@ -40,4 +40,6 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+Cancelled on 2026-08-30 after the request to switch the matched rope-delta run
+to 8x4 GB200 placement. It reached W&B/global-step logging but was stopped before
+the first full-validation point.

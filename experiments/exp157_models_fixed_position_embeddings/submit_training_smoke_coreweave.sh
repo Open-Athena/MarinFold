@@ -16,7 +16,7 @@ fi
 "${IRIS}" --config "${MAIN_CONFIG}" job run \
     --target-cluster "${TARGET_CLUSTER}" \
     --no-wait \
-    --priority batch \
+    --priority "${IRIS_PRIORITY:-batch}" \
     --enable-extra-resources \
     --cpu=4 \
     --memory=16GB \
@@ -28,12 +28,17 @@ fi
     -e EXP157_MODEL_SIZE "${EXP157_MODEL_SIZE:-1_5b}" \
     -e EXP157_MODEL_FAMILY "${EXP157_MODEL_FAMILY:-llama}" \
     -e EXP157_POSITION_MODE "${EXP157_POSITION_MODE:-fixed}" \
+    -e EXP157_GPU_VARIANT "${EXP157_GPU_VARIANT:-H100}" \
     -e EXP157_GPU_COUNT "${EXP157_GPU_COUNT:-8}" \
     -e EXP157_GPU_REPLICAS "${EXP157_GPU_REPLICAS:-1}" \
+    -e EXP157_CPU "${EXP157_CPU:-}" \
+    -e EXP157_RAM "${EXP157_RAM:-}" \
+    -e EXP157_DISK "${EXP157_DISK:-}" \
     -e EXP157_MAX_STEPS "${EXP157_MAX_STEPS:-20}" \
     -e EXP157_STEPS_PER_EVAL "${EXP157_STEPS_PER_EVAL:-20}" \
     -e EXP157_MAX_EVAL_BATCHES "${EXP157_MAX_EVAL_BATCHES:-1}" \
     -e EXP157_INITIALIZE_FROM_CHECKPOINT_PATH "${EXP157_INITIALIZE_FROM_CHECKPOINT_PATH:-}" \
+    -e EXP157_IRIS_PRIORITY "${EXP157_IRIS_PRIORITY:-batch}" \
     -e EXP157_RUN_SUFFIX "${EXP157_RUN_SUFFIX:-smoke20-r1}" \
     -e EXP157_LR "${EXP157_LR:-3.162e-3}" \
     -e EXP157_WEIGHT_DECAY "${EXP157_WEIGHT_DECAY:-0.2}" \
