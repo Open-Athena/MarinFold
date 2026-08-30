@@ -57,12 +57,14 @@ from marinfold_models.document_loss import (
 from premade_contacts_dataset import (
     FixedQuotaPremadeContactsDataset,
     FixedQuotaSoftTargetContactsDataset,
+    MPAugmentedContactOrderPremadeContactsDataset,
     MPFixedQuotaPremadeContactsDataset,
     MPFixedQuotaSoftTargetContactsDataset,
     PrecomputedSoftTargetContactsDataset,
 )
 
 
+draccus.encode.register(MPAugmentedContactOrderPremadeContactsDataset, lambda obj, decl_type=None: repr(obj))
 draccus.encode.register(MPFixedQuotaPremadeContactsDataset, lambda obj, decl_type=None: repr(obj))
 draccus.encode.register(MPFixedQuotaSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
 draccus.encode.register(PrecomputedSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
@@ -83,6 +85,7 @@ class NextTokenDataKind(StrEnum):
     CACHE = "cache"
     PREMADE = "premade"
     PREMADE_MP = "premade_mp"
+    AUGMENTED_CONTACT_ORDER_MP = "augmented_contact_order_mp"
 
 
 class SoftTargetDataKind(StrEnum):
@@ -280,19 +283,21 @@ def _next_token_train_component(
     if data_kind == NextTokenDataKind.CACHE:
         return _train_cache_component(), SHUFFLE
 
-    dataset_cls = (
-        MPFixedQuotaPremadeContactsDataset
-        if data_kind == NextTokenDataKind.PREMADE_MP
-        else FixedQuotaPremadeContactsDataset
-    )
+    dataset_cls = {
+        NextTokenDataKind.PREMADE: FixedQuotaPremadeContactsDataset,
+        NextTokenDataKind.PREMADE_MP: MPFixedQuotaPremadeContactsDataset,
+        NextTokenDataKind.AUGMENTED_CONTACT_ORDER_MP: MPAugmentedContactOrderPremadeContactsDataset,
+    }[data_kind]
     kwargs = {}
-    if data_kind == NextTokenDataKind.PREMADE_MP:
+    if data_kind in {NextTokenDataKind.PREMADE_MP, NextTokenDataKind.AUGMENTED_CONTACT_ORDER_MP}:
         kwargs = {
             "transform_workers": int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
             "prefetch_shards": int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
             "shard_cache_size": int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
             "mp_start_method": os.environ.get("EXP177_MP_START_METHOD", "spawn"),
         }
+    if data_kind == NextTokenDataKind.AUGMENTED_CONTACT_ORDER_MP:
+        kwargs["augmentations_per_row"] = int(os.environ.get("EXP177_CONTACT_REORDERINGS_PER_ROW", "4"))
     train_dataset = dataset_cls(
         data_prefix=CONTACTS_PREFIX,
         num_shards=num_shards,
@@ -480,6 +485,7 @@ def _identity_config(
             "transform_workers": int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
             "prefetch_shards": int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
             "shard_cache_size": int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
+            "contact_reorderings_per_row": int(os.environ.get("EXP177_CONTACT_REORDERINGS_PER_ROW", "4")),
             "tokenizer": CONTACTS_TOKENIZER,
             "shuffle": "exp117-block-feistel",
             "mixture_block_size": 1,
@@ -657,6 +663,7 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "EXP177_GRADIENT_ACCUMULATION": str(gradient_accumulation),
             "EXP177_NEXT_TOKEN_DATA": next_token_data_kind.value,
             "EXP177_SOFT_TARGET_MP": os.environ.get("EXP177_SOFT_TARGET_MP", "0"),
+            "EXP177_CONTACT_REORDERINGS_PER_ROW": os.environ.get("EXP177_CONTACT_REORDERINGS_PER_ROW", "4"),
             "EXP177_SOFT_TARGET_DATA": os.environ.get("EXP177_SOFT_TARGET_DATA", SoftTargetDataKind.ON_THE_FLY.value),
             "EXP177_CONTACTS_SHARD_NAME_TEMPLATE": CONTACTS_SHARD_NAME_TEMPLATE,
             "EXP177_PRECOMPUTED_SOFT_TARGET_PREFIX": PRECOMPUTED_SOFT_TARGET_PREFIX,

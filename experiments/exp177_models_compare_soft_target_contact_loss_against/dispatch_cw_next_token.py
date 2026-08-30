@@ -17,11 +17,12 @@ from datetime import timedelta
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
 from levanter.checkpoint import CheckpointerConfig
-from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, LmDataConfig
+from levanter.data.text.datasets import BlockShuffleConfig, DatasetComponent, DirectDatasetComponent, LmDataConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import resolve_training_env, run_levanter_train_lm
 
 from marinfold_models import build_train_lm_on_pod_config
+from premade_contacts_dataset import MPAugmentedContactOrderPremadeContactsDataset
 from train import EXP117_STEPS, MODEL_CONFIG, SEQ_LEN, _optimizer
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,10 @@ CONTACTS_V1_TOKENIZER = "timodonnell/contacts-v1-tokenizer"
 CONTACTS_V1_S3_PREFIX = "s3://marin-us-east-02a/MarinFold/exp177_soft_target_loss_h2h_cw"
 CONTACTS_V1_S3_CORPUS_BASE = "s3://marin-us-east-02a/MarinFold/data/document_structures/contacts_v1"
 CONTACTS_V1_CACHE_BASE = "s3://marin-us-east-02a/MarinFold/exp108_qwen_3b_contacts_v1/tokenized"
+CW_ANALYZED_CONTACTS_PREFIX = os.environ.get(
+    "EXP177_CW_ANALYZED_CONTACTS_PREFIX",
+    "s3://marin-us-east-02a/protein-structure/MarinFold/exp139_esm_atlas_contacts_v1/analyzed",
+).rstrip("/")
 
 _FORWARD_ENV_PREFIXES = ("XLA_FLAGS", "NCCL_", "JAX_", "LIBTPU_INIT_ARGS")
 _FORWARD_ENV_EXCLUDE = ("JAX_PLATFORMS", "JAX_COMPILATION_CACHE_DIR")
@@ -45,12 +50,55 @@ def _forwarded_perf_env() -> dict[str, str]:
     }
 
 
-def _data_config() -> LmDataConfig:
-    train_component = DatasetComponent(
+def _start_direct_dataset_workers(config) -> None:
+    for component in config.data.components.values():
+        datasets = getattr(component, "datasets", None)
+        if not datasets:
+            continue
+        for split, dataset in datasets.items():
+            start_workers = getattr(dataset, "start_workers", None)
+            if start_workers is not None:
+                logger.info("Starting direct dataset workers for split=%s dataset=%r", split, dataset)
+                start_workers()
+
+
+def run_levanter_train_lm_with_direct_workers(pod_config) -> None:
+    """Start MP dataset workers before JAX setup, then run normal CE training."""
+    _start_direct_dataset_workers(pod_config.train_config)
+    run_levanter_train_lm(pod_config)
+
+
+def _train_component():
+    data_kind = os.environ.get("EXP177_NEXT_TOKEN_DATA", "cache")
+    if data_kind == "augmented_contact_order_mp":
+        dataset = MPAugmentedContactOrderPremadeContactsDataset(
+            data_prefix=CW_ANALYZED_CONTACTS_PREFIX,
+            num_shards=int(os.environ.get("EXP177_NUM_SHARDS", "3338")),
+            total_shards=int(os.environ.get("EXP177_TOTAL_SHARDS", "3338")),
+            examples_per_shard=int(os.environ.get("EXP177_EXAMPLES_PER_SHARD", "2650")),
+            seed=int(os.environ.get("EXP177_DATA_SEED", "0")),
+            augmentations_per_row=int(os.environ.get("EXP177_CONTACT_REORDERINGS_PER_ROW", "4")),
+            transform_workers=int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
+            prefetch_shards=int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
+            shard_cache_size=int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
+            mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "spawn"),
+            shard_name_template=os.environ.get(
+                "EXP177_CONTACTS_SHARD_NAME_TEMPLATE",
+                "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+            ),
+        )
+        return DirectDatasetComponent(datasets={"train": dataset}), False
+    if data_kind != "cache":
+        raise ValueError(f"Unsupported CoreWeave next-token data kind: {data_kind}")
+    return DatasetComponent(
         cache_dir=f"{CONTACTS_V1_CACHE_BASE}/contacts-v1/train",
         pack=True,
         flat_cache=True,
-    )
+    ), BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel")
+
+
+def _data_config() -> LmDataConfig:
+    train_component, training_shuffle = _train_component()
     val_component = DatasetComponent(
         cache_dir=f"{CONTACTS_V1_CACHE_BASE}/contacts-v1-val",
         pack=True,
@@ -62,7 +110,7 @@ def _data_config() -> LmDataConfig:
         auto_build_caches=False,
         components={"contacts-v1": train_component, "contacts-v1-val": val_component},
         train_weights={"contacts-v1": 1.0, "contacts-v1-val": 0.0},
-        shuffle=BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel"),
+        shuffle=training_shuffle,
         mixture_block_size=1,
         block_cross_document_attention=True,
     )
@@ -96,6 +144,9 @@ def _pod_config(run_name: str):
         "WANDB_ENTITY": "open-athena",
         "WANDB_PROJECT": "MarinFold",
         "EXP177_BACKEND": "coreweave",
+        "EXP177_NEXT_TOKEN_DATA": os.environ.get("EXP177_NEXT_TOKEN_DATA", "cache"),
+        "EXP177_CONTACT_REORDERINGS_PER_ROW": os.environ.get("EXP177_CONTACT_REORDERINGS_PER_ROW", "4"),
+        "EXP177_CW_ANALYZED_CONTACTS_PREFIX": CW_ANALYZED_CONTACTS_PREFIX,
         "EXP177_CW_NODES": str(resources.replicas),
         "EXP177_CW_BATCH_SIZE": str(batch_size),
         # CoreWeave pods do not have GCS credentials. Set an explicit local cache
@@ -140,9 +191,11 @@ def _pod_config(run_name: str):
 def dispatch(wait: bool = True):
     batch_size = int(os.environ.get("EXP177_CW_BATCH_SIZE", "128"))
     nodes = int(os.environ.get("EXP177_CW_NODES", "4"))
+    data_kind = os.environ.get("EXP177_NEXT_TOKEN_DATA", "cache")
+    aug_suffix = "" if data_kind == "cache" else f"-{data_kind}-r{os.environ.get('EXP177_CONTACT_REORDERINGS_PER_ROW', '4')}"
     default_name = (
         "exp177-cv1-1_5b-e16-lr3p162e-3-wd0p2-"
-        f"bs{batch_size}-next_token-cw-h100x{nodes}-full"
+        f"bs{batch_size}-next_token{aug_suffix}-cw-h100x{nodes}-full"
     )
     run_name = os.environ.get("EXP177_NAME", default_name)
     pod_config = _pod_config(run_name)
@@ -154,7 +207,7 @@ def dispatch(wait: bool = True):
     )
     request = JobRequest(
         name=run_name,
-        entrypoint=Entrypoint.from_callable(run_levanter_train_lm, args=[pod_config]),
+        entrypoint=Entrypoint.from_callable(run_levanter_train_lm_with_direct_workers, args=[pod_config]),
         resources=resources,
         environment=environment,
         priority=IRIS_PRIORITY_BAND_BATCH,

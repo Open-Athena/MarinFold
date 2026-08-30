@@ -6,7 +6,7 @@
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import asyncio
@@ -30,6 +30,7 @@ from marinfold.document_structures.contacts_v1.training_documents import (
     RELATIVE_POSITION,
     causal_document_from_generation,
 )
+from marinfold_models.mp_queue_shard_dataset import MPQueueShardDocumentDataset
 from marinfold.document_structures.contacts_v1.vocab import (
     BEGIN_SEQUENCE,
     BEGIN_STRUCTURE,
@@ -59,7 +60,9 @@ from marinfold_models.shard_documents import (
     FixedQuotaShardDocumentDataset,
     MPFixedQuotaShardDocumentDataset,
     PackedDocuments,
+    best_fit_pack_documents,
     causal_lm_example_from_documents,
+    fixed_quota_pack_slots,
 )
 
 
@@ -79,6 +82,56 @@ def causal_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Document | N
     if generated is None:
         return None
     return causal_document_from_generation(generated)
+
+
+def _causal_document_with_contacts(generated, contacts: Sequence[Any]) -> Document:
+    parts = generated.document.split()
+    try:
+        prefix_end = parts.index(BEGIN_STRUCTURE.text) + 1
+    except ValueError as exc:
+        raise ValueError("Generated contacts-v1 document has no <begin_structure> token") from exc
+
+    suffix: list[str] = []
+    for contact in contacts:
+        first, second = contact.pos_i, contact.pos_j
+        if contact.flipped:
+            first, second = second, first
+        suffix.extend((CONTACT.text, POSITIONS[first].text, POSITIONS[second].text))
+    suffix.append(END.text)
+
+    tokens = (*parts[:prefix_end], *suffix)
+    if len(tokens) + 1 > CONTEXT_LENGTH:
+        raise ValueError(
+            f"Augmented causal document needs {len(tokens) + 1} tokens including EOS, "
+            f"exceeding max_seq_len={CONTEXT_LENGTH}"
+        )
+    return causal_document_from_generation(
+        replace(generated, document=" ".join(tokens), num_tokens=len(tokens), contacts=tuple(contacts))
+    )
+
+
+def randomized_contact_order_document_from_row(
+    row: Mapping[str, Any], *, seed: int, epoch: int, shard_index: int, row_index: int, augmentation_index: int
+) -> Document | None:
+    """Rebuild one causal CE document with a new contact order/orientation.
+
+    The canonical contacts-v1 generator still selects the contact set and lays
+    out the sequence prefix. This augmentation changes only the serialized
+    structure suffix: contact statements are permuted and each endpoint order is
+    independently coin-flipped from a deterministic augmentation seed.
+    """
+    generated = _generation_from_row(row)
+    if generated is None:
+        return None
+    if not generated.contacts:
+        return causal_document_from_generation(generated)
+
+    rng = np.random.default_rng(np.random.SeedSequence([seed, epoch, shard_index, row_index, augmentation_index]))
+    order = rng.permutation(len(generated.contacts))
+    contacts = tuple(
+        replace(generated.contacts[int(contact_index)], flipped=bool(rng.integers(2))) for contact_index in order
+    )
+    return _causal_document_with_contacts(generated, contacts)
 
 
 def soft_target_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Document | None:
@@ -227,6 +280,147 @@ class MPFixedQuotaPremadeContactsDataset(MPFixedQuotaShardDocumentDataset):
             mp_start_method=mp_start_method,
             shard_name_template=shard_name_template,
         )
+
+
+@dataclass(frozen=True)
+class AugmentedContactOrderShardBuilder:
+    """Build fixed-quota causal CE slots with contact-order augmentation."""
+
+    data_prefix: str
+    total_shards: int
+    examples_per_shard: int
+    max_seq_len: int
+    seed: int = 0
+    augmentations_per_row: int = 4
+    shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet"
+    max_segments_per_example: int = 64
+
+    def __post_init__(self) -> None:
+        if self.augmentations_per_row <= 0:
+            raise ValueError("augmentations_per_row must be positive")
+
+    def __call__(self, epoch: int, shard_index: int) -> tuple[PackedDocuments | None, ...]:
+        shard_path = self._shard_path(shard_index)
+        with fsspec.open(shard_path, "rb") as source:
+            table = pq.read_table(source, columns=list(ANALYZED_ROW_COLUMNS))
+        if table.num_rows == 0:
+            raise ValueError(f"{shard_path} contains no rows")
+
+        row_rng = np.random.default_rng(np.random.SeedSequence([self.seed, epoch, shard_index, 0]))
+        documents: list[Document] = []
+        rows = table.to_pylist()
+        for row_index in row_rng.permutation(table.num_rows):
+            row = rows[int(row_index)]
+            for augmentation_index in range(self.augmentations_per_row):
+                document = randomized_contact_order_document_from_row(
+                    row,
+                    seed=self.seed,
+                    epoch=epoch,
+                    shard_index=shard_index,
+                    row_index=int(row_index),
+                    augmentation_index=augmentation_index,
+                )
+                if document is not None:
+                    documents.append(document)
+
+        packs, _ = best_fit_pack_documents(
+            documents,
+            max_seq_len=self.max_seq_len,
+            max_segments_per_example=self.max_segments_per_example,
+        )
+        slot_rng = np.random.default_rng(np.random.SeedSequence([self.seed, epoch, shard_index, 1]))
+        return fixed_quota_pack_slots(
+            packs,
+            examples_per_shard=self.examples_per_shard,
+            rng=slot_rng,
+        )
+
+    def _shard_path(self, shard_index: int) -> str:
+        shard_name = self.shard_name_template.format(
+            shard_index=shard_index,
+            total_shards=self.total_shards,
+        )
+        return f"{self.data_prefix.rstrip('/')}/{shard_name}"
+
+
+class MPAugmentedContactOrderPremadeContactsDataset(AsyncDataset):
+    """Multiprocess next-token CE dataset with contact-order augmentation."""
+
+    def __init__(
+        self,
+        *,
+        data_prefix: str,
+        num_shards: int,
+        total_shards: int = 3338,
+        examples_per_shard: int = 2650,
+        seed: int = 0,
+        augmentations_per_row: int = 4,
+        max_seq_len: int = CONTEXT_LENGTH,
+        max_segments_per_example: int = 64,
+        transform_workers: int = 4,
+        prefetch_shards: int | None = None,
+        shard_cache_size: int | None = None,
+        mp_start_method: str = "spawn",
+        shard_name_template: str = "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+    ):
+        builder = AugmentedContactOrderShardBuilder(
+            data_prefix=data_prefix.rstrip("/"),
+            total_shards=total_shards,
+            examples_per_shard=examples_per_shard,
+            max_seq_len=max_seq_len,
+            seed=seed,
+            augmentations_per_row=augmentations_per_row,
+            shard_name_template=shard_name_template,
+            max_segments_per_example=max_segments_per_example,
+        )
+        self.max_seq_len = max_seq_len
+        self.max_segments_per_example = max_segments_per_example
+        self._slot_dataset = MPQueueShardDocumentDataset[PackedDocuments | None](
+            build_shard=builder,
+            num_shards=num_shards,
+            examples_per_shard=examples_per_shard,
+            seed=seed,
+            transform_workers=transform_workers,
+            prefetch_shards=prefetch_shards,
+            shard_cache_size=shard_cache_size,
+            mp_start_method=mp_start_method,
+        )
+
+    def is_finite(self) -> bool:
+        return False
+
+    async def async_len(self) -> int:
+        raise ValueError("MPAugmentedContactOrderPremadeContactsDataset is an infinite stream")
+
+    async def getitem_async(self, index: int):
+        return (await self.get_batch([index]))[0]
+
+    async def get_batch(self, indices: Sequence[int]):
+        slots = await self._slot_dataset.get_batch(indices)
+        return await asyncio.to_thread(self._examples_from_slots, tuple(slots))
+
+    def location_for_index(self, index: int) -> tuple[int, int, int]:
+        return self._slot_dataset.location_for_index(index)
+
+    def start_workers(self) -> None:
+        self._slot_dataset.start_workers()
+
+    def close(self) -> None:
+        if hasattr(self, "_slot_dataset"):
+            self._slot_dataset.close()
+
+    def __del__(self):
+        self.close()
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> str:
+        return repr(self)
+
+    def _examples_from_slots(self, slots: tuple[PackedDocuments | None, ...]):
+        output = []
+        for current in slots:
+            documents = () if current is None else tuple(current.documents)
+            output.append(causal_lm_example_from_documents(documents, self.max_seq_len, self.max_segments_per_example))
+        return output
 
 
 class FixedQuotaSoftTargetContactsDataset(FixedQuotaShardDocumentDataset):
@@ -911,6 +1105,7 @@ class MPFixedQuotaSoftTargetContactsDataset(MPFixedQuotaShardDocumentDataset):
 __all__ = [
     "FixedQuotaPremadeContactsDataset",
     "FixedQuotaSoftTargetContactsDataset",
+    "MPAugmentedContactOrderPremadeContactsDataset",
     "MPFixedQuotaPremadeContactsDataset",
     "MPFixedQuotaSoftTargetContactsDataset",
     "MPPrecomputedSoftTargetContactsDataset",

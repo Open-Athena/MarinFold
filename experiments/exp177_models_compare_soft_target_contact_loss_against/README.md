@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 177
   title: 'exp: compare soft-target contact loss against next-token CE on TPUs'
   kind: models
-  branch: exp177/mp-queue-shard-dataset
+  branch: exp177/augmented-contact-order-ce
 ---
 
 # exp: compare soft-target contact loss against next-token CE on TPUs
 
-**Issue:** [#177](https://github.com/Open-Athena/MarinFold/issues/177) · **Kind:** `models` · **Branch:** `exp177/mp-queue-shard-dataset`
+**Issue:** [#177](https://github.com/Open-Athena/MarinFold/issues/177) · **Kind:** `models` · **Branch:** `exp177/augmented-contact-order-ce`
 
 ## Question
 
@@ -42,6 +42,28 @@ The soft-target objective removes arbitrary contact ordering/orientation from th
 - Both arms log matched train loss, validation loss, throughput, and checkpoint/export artifacts.
 - The comparison uses the same train corpus, validation corpus, step budget, batch size, optimizer schedule, and TPU shape.
 - A short smoke validates the soft-target batch/loss path before the full run.
+
+## Contact-order augmented CE arm
+
+Branch `exp177/augmented-contact-order-ce` adds a stock next-token CE data path
+that rebuilds contacts-v1 documents from analyzed-contact shards in
+multiprocessing workers. It preserves the canonical sequence prefix and selected
+contact set, then deterministically resamples only the structure suffix order
+and endpoint orientation for each `(epoch, shard, row, augmentation)`.
+
+CoreWeave launch knobs:
+
+```bash
+EXP177_NEXT_TOKEN_DATA=augmented_contact_order_mp
+EXP177_CONTACT_REORDERINGS_PER_ROW=4
+EXP177_TRANSFORM_WORKERS=8
+EXP177_PREFETCH_SHARDS=8
+EXP177_SHARD_CACHE_SIZE=16
+python dispatch_cw_next_token.py
+```
+
+The regular validation component remains the tokenized contacts-v1 validation
+cache, so validation loss is directly comparable with the ordinary CE baseline.
 
 ## Results
 
