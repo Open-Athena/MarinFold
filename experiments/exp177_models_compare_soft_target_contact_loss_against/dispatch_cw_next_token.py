@@ -1,7 +1,7 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Dispatch exp177 next-token training on CoreWeave H100s.
+"""Dispatch exp177 next-token training on CoreWeave GPUs.
 
 CoreWeave pods cannot read the GCS premade-contact shards used by the TPU
 ``premade_mp`` path, so this launcher uses the contacts-v1 corpus/cache already
@@ -119,8 +119,8 @@ def _data_config() -> LmDataConfig:
 def _resources() -> ResourceConfig:
     nodes = int(os.environ.get("EXP177_CW_NODES", "4"))
     return ResourceConfig.with_gpu(
-        "H100",
-        count=8,
+        os.environ.get("EXP177_CW_GPU_TYPE", "H100"),
+        count=int(os.environ.get("EXP177_CW_GPUS", "8")),
         cpu=float(os.environ.get("EXP177_CW_CPU", "32")),
         ram=os.environ.get("EXP177_CW_RAM", "256g"),
         disk=os.environ.get("EXP177_CW_DISK", "256g"),
@@ -148,6 +148,8 @@ def _pod_config(run_name: str):
         "EXP177_CONTACT_REORDERINGS_PER_ROW": os.environ.get("EXP177_CONTACT_REORDERINGS_PER_ROW", "4"),
         "EXP177_CW_ANALYZED_CONTACTS_PREFIX": CW_ANALYZED_CONTACTS_PREFIX,
         "EXP177_CW_NODES": str(resources.replicas),
+        "EXP177_CW_GPU_TYPE": os.environ.get("EXP177_CW_GPU_TYPE", "H100"),
+        "EXP177_CW_GPUS": os.environ.get("EXP177_CW_GPUS", "8"),
         "EXP177_CW_BATCH_SIZE": str(batch_size),
         # CoreWeave pods do not have GCS credentials. Set an explicit local cache
         # so resolve_training_env() does not default to marin's GCS temp bucket.
@@ -193,9 +195,11 @@ def dispatch(wait: bool = True):
     nodes = int(os.environ.get("EXP177_CW_NODES", "4"))
     data_kind = os.environ.get("EXP177_NEXT_TOKEN_DATA", "cache")
     aug_suffix = "" if data_kind == "cache" else f"-{data_kind}-r{os.environ.get('EXP177_CONTACT_REORDERINGS_PER_ROW', '4')}"
+    gpu_type = os.environ.get("EXP177_CW_GPU_TYPE", "H100").lower()
+    gpus = int(os.environ.get("EXP177_CW_GPUS", "8"))
     default_name = (
         "exp177-cv1-1_5b-e16-lr3p162e-3-wd0p2-"
-        f"bs{batch_size}-next_token{aug_suffix}-cw-h100x{nodes}-full"
+        f"bs{batch_size}-next_token{aug_suffix}-cw-{gpu_type}x{nodes}x{gpus}-full"
     )
     run_name = os.environ.get("EXP177_NAME", default_name)
     pod_config = _pod_config(run_name)
