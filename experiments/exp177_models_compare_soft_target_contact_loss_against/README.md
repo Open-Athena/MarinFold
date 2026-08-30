@@ -60,6 +60,7 @@ EXP177_TRANSFORM_WORKERS=8
 EXP177_PREFETCH_SHARDS=8
 EXP177_SHARD_CACHE_SIZE=16
 EXP177_MP_START_METHOD=fork
+EXP177_CONTACTS_SHARD_NAME_TEMPLATE='analyzed-{shard_index:05d}-of-{total_shards:05d}.parquet'
 python dispatch_cw_next_token.py
 ```
 

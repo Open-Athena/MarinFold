@@ -84,7 +84,7 @@ def _train_component():
             mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "fork"),
             shard_name_template=os.environ.get(
                 "EXP177_CONTACTS_SHARD_NAME_TEMPLATE",
-                "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
+                "analyzed-{shard_index:05d}-of-{total_shards:05d}.parquet",
             ),
         )
         return DirectDatasetComponent(datasets={"train": dataset}), False
