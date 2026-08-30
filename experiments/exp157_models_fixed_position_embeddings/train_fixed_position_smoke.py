@@ -7,8 +7,9 @@ This is the regular CE/control-style path for issue #157: contacts-v1,
 unmasked next-token loss, exp117-ish recipe (LR 3.162e-3, wd 0.2, cosine,
 10% warmup). ``EXP157_POSITION_MODE=fixed`` replaces the learned input rows
 for ``<p0>`` ... ``<p1999>`` with fixed RoPE/sinusoidal residue-location
-vectors; ``EXP157_POSITION_MODE=learned`` is the matched learned-embedding
-control.
+vectors; ``EXP157_POSITION_MODE=rope_delta`` adds a zero-initialized learned
+per-position residual to those vectors; ``EXP157_POSITION_MODE=learned`` is the
+matched learned-embedding control.
 """
 
 import math
@@ -84,8 +85,8 @@ if MODEL_SIZE not in MODEL_SHAPES:
     raise ValueError(f"EXP157_MODEL_SIZE must be one of {sorted(MODEL_SHAPES)}, got {MODEL_SIZE!r}")
 if MODEL_FAMILY not in {"llama", "qwen3"}:
     raise ValueError("EXP157_MODEL_FAMILY must be 'llama' or 'qwen3'")
-if POSITION_MODE not in {"fixed", "learned"}:
-    raise ValueError("EXP157_POSITION_MODE must be 'fixed' or 'learned'")
+if POSITION_MODE not in {"fixed", "rope_delta", "learned"}:
+    raise ValueError("EXP157_POSITION_MODE must be one of 'fixed', 'rope_delta', or 'learned'")
 
 _common_model_kwargs = dict(
     max_seq_len=SEQ_LEN,
@@ -97,10 +98,11 @@ _common_model_kwargs = dict(
 _position_embedding = ResiduePositionEmbeddingSpec(
     start_token_id=CONTACTS_V1_P0_TOKEN_ID,
     num_tokens=CONTACTS_V1_NUM_POSITION_TOKENS,
+    trainable_delta=POSITION_MODE == "rope_delta",
 )
-if POSITION_MODE == "fixed" and MODEL_FAMILY == "qwen3":
+if POSITION_MODE in {"fixed", "rope_delta"} and MODEL_FAMILY == "qwen3":
     protein_llama_model = FixedResiduePositionQwen3Config(**_common_model_kwargs, position_embedding=_position_embedding)
-elif POSITION_MODE == "fixed":
+elif POSITION_MODE in {"fixed", "rope_delta"}:
     protein_llama_model = FixedResiduePositionLlamaConfig(**_common_model_kwargs, position_embedding=_position_embedding)
 elif MODEL_FAMILY == "qwen3":
     protein_llama_model = Qwen3Config(**_common_model_kwargs)

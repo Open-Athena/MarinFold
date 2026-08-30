@@ -38,11 +38,16 @@ class ResiduePositionEmbeddingSpec:
         start_token_id: Token id for ``<p0>``.
         num_tokens: Number of residue-position tokens in the contiguous span.
         base: Frequency base used for the sinusoidal/RoPE-style features.
+        trainable_delta: If true, keep a full trainable input embedding table
+            and add its rows to the fixed vectors for residue-position tokens.
+            Position rows are initialized to zero, making RoPE a strong prior
+            while retaining the original learned-embedding parameter shape.
     """
 
     start_token_id: int
     num_tokens: int
     base: float = 10_000.0
+    trainable_delta: bool = False
 
     def validate(self, vocab_size: int) -> None:
         """Raise ``ValueError`` if the configured span is not inside the vocab."""
@@ -129,8 +134,19 @@ class FixedResiduePositionEmbedding(eqx.Module):
         key: PRNGKeyArray,
         norm: Optional[LayerNormBase] = None,
     ) -> "FixedResiduePositionEmbedding":
-        """Initialize trainable non-position embeddings and static position span."""
+        """Initialize trainable token embeddings and the fixed position span."""
         position_spec.validate(Vocab.size)
+        if position_spec.trainable_delta:
+            token_embeddings = hnn.Embedding.init(Vocab, Embed, key=key)
+            start = position_spec.start_token_id
+            stop = start + position_spec.num_tokens
+            zeroed_weight = token_embeddings.weight.array.at[start:stop].set(0.0)
+            token_embeddings = dataclasses.replace(
+                token_embeddings,
+                weight=NamedArray(zeroed_weight, token_embeddings.weight.axes),
+            )
+            return FixedResiduePositionEmbedding(token_embeddings, Vocab, Embed, position_spec, norm)
+
         NonPositionVocab = Axis("non_position_vocab", Vocab.size - position_spec.num_tokens)
         token_embeddings = hnn.Embedding.init(NonPositionVocab, Embed, key=key)
         return FixedResiduePositionEmbedding(token_embeddings, Vocab, Embed, position_spec, norm)
@@ -139,6 +155,9 @@ class FixedResiduePositionEmbedding(eqx.Module):
         """Map full-vocab token ids to the compact non-position embedding table."""
         start = self.position_spec.start_token_id
         stop = start + self.position_spec.num_tokens
+        if self.position_spec.trainable_delta:
+            return input_ids.astype(jnp.int32)
+
         ids_after_fixed_span = input_ids >= stop
         compact = hax.where(ids_after_fixed_span, input_ids - self.position_spec.num_tokens, input_ids)
         return hax.where(self.is_position_token(input_ids), 0, compact).astype(jnp.int32)
@@ -159,7 +178,8 @@ class FixedResiduePositionEmbedding(eqx.Module):
             cast(Axis, self.Embed),
             base=self.position_spec.base,
         ).astype(learned.dtype)
-        embedded = hax.where(self.is_position_token(input_ids), fixed, learned)
+        position_embeds = learned + fixed if self.position_spec.trainable_delta else fixed
+        embedded = hax.where(self.is_position_token(input_ids), position_embeds, learned)
         if self.norm is not None:
             embedded = self.norm(embedded)
         return embedded
@@ -178,8 +198,8 @@ class FixedResiduePositionEmbedding(eqx.Module):
     def resize_embeddings(self, new_size: int, key: Optional[PRNGKeyArray] = None):
         """Resize the full vocabulary while preserving the fixed position span."""
         self.position_spec.validate(new_size)
-        new_non_position_size = new_size - self.position_spec.num_tokens
-        new_token_embeddings = self.token_embeddings.resize_embeddings(new_non_position_size, key=key)
+        new_embedding_size = new_size if self.position_spec.trainable_delta else new_size - self.position_spec.num_tokens
+        new_token_embeddings = self.token_embeddings.resize_embeddings(new_embedding_size, key=key)
         return dataclasses.replace(
             self,
             Vocab=self.Vocab.resize(new_size),
@@ -190,7 +210,7 @@ class FixedResiduePositionEmbedding(eqx.Module):
 @LmConfig.register_subclass("fixed_residue_position_llama")
 @dataclass(frozen=True)
 class FixedResiduePositionLlamaConfig(LlamaConfig):
-    """Llama config whose residue-position input vectors are fixed features."""
+    """Llama config whose residue-position input vectors use RoPE priors."""
 
     position_embedding: ResiduePositionEmbeddingSpec = dataclasses.field(
         default_factory=lambda: ResiduePositionEmbeddingSpec(start_token_id=0, num_tokens=2000)
@@ -201,8 +221,10 @@ class FixedResiduePositionLlamaConfig(LlamaConfig):
         return FixedResiduePositionLlamaLMHeadModel
 
     def total_trainable_params(self, vocab_size):
-        """Return the stock count minus removed trainable input-position rows."""
+        """Return the trainable parameter count for this embedding variant."""
         stock = super().total_trainable_params(vocab_size)
+        if self.position_embedding.trainable_delta:
+            return stock
         removed = self.position_embedding.num_tokens * self.hidden_dim
         return stock - removed
 
@@ -210,7 +232,7 @@ class FixedResiduePositionLlamaConfig(LlamaConfig):
 @LmConfig.register_subclass("fixed_residue_position_qwen3")
 @dataclass(frozen=True)
 class FixedResiduePositionQwen3Config(Qwen3Config):
-    """Qwen3 config whose residue-position input vectors are fixed features."""
+    """Qwen3 config whose residue-position input vectors use RoPE priors."""
 
     position_embedding: ResiduePositionEmbeddingSpec = dataclasses.field(
         default_factory=lambda: ResiduePositionEmbeddingSpec(start_token_id=0, num_tokens=2000)
@@ -221,8 +243,10 @@ class FixedResiduePositionQwen3Config(Qwen3Config):
         return FixedResiduePositionLlamaLMHeadModel
 
     def total_trainable_params(self, vocab_size):
-        """Return the stock count minus removed trainable input-position rows."""
+        """Return the trainable parameter count for this embedding variant."""
         stock = super().total_trainable_params(vocab_size)
+        if self.position_embedding.trainable_delta:
+            return stock
         removed = self.position_embedding.num_tokens * self.hidden_dim
         return stock - removed
 

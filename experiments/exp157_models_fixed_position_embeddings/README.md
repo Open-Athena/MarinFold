@@ -29,6 +29,12 @@ First implementation pass:
 
 The first prototype lives in [`fixed_position_model.py`](fixed_position_model.py) as a `FixedResiduePositionLlamaConfig` / `FixedResiduePositionLlamaLMHeadModel` pair. The smoke test in [`test_fixed_position_model.py`](test_fixed_position_model.py) builds a tiny model, runs a few optimizer steps, and checks that learned parameters move while the fixed position feature map is unchanged and has no trainable rows.
 
+Follow-up variant after the fixed-only run lagged the learned control:
+
+- `EXP157_POSITION_MODE=rope_delta` keeps the full input embedding table shape from the learned baseline.
+- Position-token rows are initialized to zero and used as a learned residual: `embedding(<pN>) = fixed_rope(N) + learned_delta[<pN>]`.
+- This preserves a strong RoPE prior without increasing dimensionality or removing per-position trainable capacity.
+
 ## Success criteria
 
 Initial setup is successful when:
@@ -69,6 +75,13 @@ Dashboard: https://iris.oa.dev/#/job/%2Fzack%2Fexp157-fixed-position-smoke-r3
 Result: 2 passed, 1 warning in 17.22s
 ```
 
+After adding the learned residual variant, the CoreWeave unit smoke succeeded:
+
+```text
+Job: /zack/exp157-rope-delta-position-smoke-r1
+Result: 4 passed, 1 warning in 31.49s
+```
+
 ### Regular training smoke
 
 [`train_fixed_position_smoke.py`](train_fixed_position_smoke.py) is the regular
@@ -93,6 +106,10 @@ Status:
   train step; replacement task is waiting in the CoreWeave/Kueue scheduling gate.
 - r7 launched a tiny 1xH100 regular-training fallback smoke and is also waiting
   in the CoreWeave/Kueue scheduling gate.
+- `rope_delta` tiny Qwen3 training smoke r2 succeeded on `cw-us-east-02a`, wrote
+  checkpoint/HF export at step 19, and logged `eval/contacts-v1-val/loss = 6.0809`.
+- `rope_delta` control-matched Qwen3 1.5B run r1 launched on `cw-us-east-02a`:
+  W&B `exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r1-east02-h100x8`.
 
 ## Conclusion
 

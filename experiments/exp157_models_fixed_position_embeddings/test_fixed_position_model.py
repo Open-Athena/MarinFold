@@ -1,5 +1,7 @@
 """Smoke tests for fixed residue-position input embeddings."""
 
+import dataclasses
+
 import equinox as eqx
 import jax
 import jax.numpy as jnp
@@ -52,6 +54,30 @@ def test_fixed_position_embeddings_are_deterministic_and_no_trainable_rows_exist
     assert jnp.allclose(embedded_before.take(Pos, 3).array, expected_p2.array[0])
 
 
+def test_learned_delta_position_embeddings_start_at_rope_prior() -> None:
+    config = dataclasses.replace(
+        _tiny_config(),
+        position_embedding=ResiduePositionEmbeddingSpec(
+            start_token_id=10,
+            num_tokens=4,
+            base=10_000.0,
+            trainable_delta=True,
+        ),
+    )
+    Vocab = Axis("vocab", 20)
+    model = config.build(Vocab, key=jax.random.PRNGKey(0))
+
+    assert model.embeddings.token_embeddings.Vocab.size == 20
+    position_delta_rows = model.embeddings.token_embeddings.weight.array[10:14]
+    assert jnp.allclose(position_delta_rows, 0.0)
+
+    Pos = Axis("position", 4)
+    ids = hax.named(jnp.array([10, 11, 12, 13], dtype=jnp.int32), Pos)
+    embedded = model.embeddings.embed(ids)
+    expected = fixed_rope_position_vectors(hax.named(jnp.arange(4, dtype=jnp.float32), Pos), config.Embed)
+    assert jnp.allclose(embedded.array, expected.array)
+
+
 def test_update_steps_change_model_but_not_fixed_position_embeddings() -> None:
     config = _tiny_config()
     Vocab = Axis("vocab", 20)
@@ -87,3 +113,38 @@ def test_update_steps_change_model_but_not_fixed_position_embeddings() -> None:
     assert jnp.allclose(fixed_after, fixed_before)
     assert learned_delta > 0
     assert lm_head_delta > 0
+
+
+def test_update_steps_train_learned_position_delta_embeddings() -> None:
+    config = dataclasses.replace(
+        _tiny_config(),
+        position_embedding=ResiduePositionEmbeddingSpec(
+            start_token_id=10,
+            num_tokens=4,
+            base=10_000.0,
+            trainable_delta=True,
+        ),
+    )
+    Vocab = Axis("vocab", 20)
+    Pos = Axis("position", 8)
+    model = config.build(Vocab, key=jax.random.PRNGKey(0))
+
+    tokens = hax.named(jnp.array([0, 10, 4, 11, 5, 12, 6, 13], dtype=jnp.int32), Pos)
+    example = LmExample.causal(tokens)
+    position_delta_before = model.embeddings.token_embeddings.weight.array[10:14].copy()
+
+    optimizer = optax.adam(1e-3)
+    opt_state = optimizer.init(eqx.filter(model, eqx.is_array))
+
+    @eqx.filter_value_and_grad
+    def loss_fn(m):
+        return m.compute_next_token_loss(example).array
+
+    for _ in range(3):
+        loss, grads = loss_fn(model)
+        updates, opt_state = optimizer.update(grads, opt_state, eqx.filter(model, eqx.is_array))
+        model = eqx.apply_updates(model, updates)
+        assert jnp.isfinite(loss)
+
+    position_delta_after = model.embeddings.token_embeddings.weight.array[10:14]
+    assert jnp.linalg.norm(position_delta_after - position_delta_before) > 0
