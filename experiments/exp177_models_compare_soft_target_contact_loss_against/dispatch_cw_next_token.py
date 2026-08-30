@@ -81,7 +81,7 @@ def _train_component():
             transform_workers=int(os.environ.get("EXP177_TRANSFORM_WORKERS", "8")),
             prefetch_shards=int(os.environ.get("EXP177_PREFETCH_SHARDS", "8")),
             shard_cache_size=int(os.environ.get("EXP177_SHARD_CACHE_SIZE", "16")),
-            mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "spawn"),
+            mp_start_method=os.environ.get("EXP177_MP_START_METHOD", "fork"),
             shard_name_template=os.environ.get(
                 "EXP177_CONTACTS_SHARD_NAME_TEMPLATE",
                 "shard-{shard_index:05d}-of-{total_shards:05d}.parquet",
