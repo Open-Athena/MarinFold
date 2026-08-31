@@ -295,7 +295,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 | 2 | contact-prediction R-precision, natural and designed | CPU |
 | 3 | Helico structure accuracy — GDT-TS and lDDT, separate panels, both classes | CPU |
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
-| 5 | training corpus by source — tokens per corpus, structures on the axis | CPU |
+| 5 | training corpus by source — tokens per corpus, structures on the axis (no manuscript figure uses it) | CPU |
 
 Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
 GPU, package versions, the exact inference recipe as *resolved* (not as requested — `backend:
