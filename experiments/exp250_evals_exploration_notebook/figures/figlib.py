@@ -88,6 +88,30 @@ FIG1_MAP_RECTS = ((475 / 1296, 120 / 555, 340 / 1296, 340 / 555),
 FIG1_BAR_RECT = (1197 / 1296, 120 / 555, 18 / 1296, 340 / 555)
 
 
+#: Colour and line style per Helico arm, shared by every panel that draws them: figure 3's bars
+#: and its MSA-depth lines are the same six predictors, and the same predictor drawn grey in one
+#: panel and purple in the next is a reader's problem, not a style preference.
+#:
+#: The bracket on contact conditioning — true contacts above, none below — is dashed and dotted
+#: where a line style is available, so it reads as the frame rather than as two more predictors.
+ARM_STYLE = {
+    "oracle": ("#444444", "--"),
+    "mf_L_363k": ("#C44E52", "-"),
+    "mf_L": ("#C44E52", "-"),           # the same arm on the older checkpoint
+    "mf_L2": ("#D9908F", "-"),
+    "mf_L5": ("#E7BEBD", "-"),
+    "off": ("#B0B0B0", ":"),
+    "protenix_v2_single_seq": ("#7A8DA6", "-"),
+    "v2ss": ("#7A8DA6", "--"),
+    "esmfold2": ("#8172B2", "-"),
+    "esmfold": ("#55A868", "-"),
+    "protenix_v2_msa": ("#1F5C8B", "-"),
+    "v2msa": ("#1F5C8B", "--"),
+}
+#: The fallback for an arm with no entry above.
+NEUTRAL = "#7A8DA6"
+
+
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
 
 
