@@ -27,6 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pandas as pd
 from checkpoint_specs import CHECKPOINT_SUITES, MARIN_PREFIX
 
 CLUSTER = "cw-us-east-02a"
@@ -67,6 +68,64 @@ def _hf_token(explicit: str | None) -> str:
     return token
 
 
+def _submit_export(args, hf_token: str) -> None:
+    """Submit the low-MSA-depth vote-matrix export as a small CPU job."""
+
+    low_depth = (
+        Path(__file__).resolve().parents[1] / "data" / "low_msa_depth_set.csv"
+    )
+    frame = pd.read_csv(low_depth)[["dataset", "stem"]]
+    stems_b64 = base64.b64encode(frame.to_csv(index=False).encode()).decode()
+    job_name = f"exp260-low-depth-export-{args.run_id}"
+    command = [
+        args.iris_bin or _iris_binary(),
+        f"--cluster={CLUSTER}",
+        "job",
+        "run",
+        "--priority",
+        "batch",
+        "--enable-extra-resources",
+        "--user",
+        args.user,
+        "--job-name",
+        job_name,
+        "--cpu",
+        "2",
+        "--memory",
+        "8GB",
+        "--disk",
+        "16GB",
+        "--max-retries",
+        "2",
+        "--timeout",
+        "3600",
+        "--no-wait",
+        "-e",
+        "MARIN_PREFIX",
+        MARIN_PREFIX,
+        "-e",
+        "HF_TOKEN",
+        hf_token,
+        "--",
+        "python",
+        "export_low_depth_maps.py",
+        "--run-id",
+        args.run_id,
+        "--stems-b64",
+        stems_b64,
+    ]
+    print(
+        f"Submitting {job_name} to {CLUSTER}; {len(frame)} proteins",
+        file=sys.stderr,
+    )
+    if args.dry_run:
+        print("Dry run: export command validated.", file=sys.stderr)
+        return
+    completed = subprocess.run(command, cwd=Path(__file__).parent, check=False)
+    if completed.returncode != 0:
+        raise SystemExit(f"iris submission failed with exit status {completed.returncode}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", default="v1-01")
@@ -83,11 +142,19 @@ def main() -> None:
     parser.add_argument("--user", default=DEFAULT_USER)
     parser.add_argument("--hf-token")
     parser.add_argument("--iris-bin", default=None)
+    parser.add_argument(
+        "--export-low-depth",
+        action="store_true",
+        help="Export the low-MSA-depth vote matrices instead of scoring.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     metric_b64, metric_sha256 = _metric_script()
     hf_token = _hf_token(args.hf_token)
+    if args.export_low_depth:
+        _submit_export(args, hf_token)
+        return
     job_name = f"exp260-msa-depth-eval-{args.run_id}"
     if args.job_suffix:
         job_name = f"{job_name}-{args.job_suffix}"

@@ -6,3 +6,4 @@ scratch/
 # Published to the HF bucket and committed here only in compressed form.
 data/coreweave_results/results/contact_precision_all.csv
 data/coreweave_results/results/marinfold_precision.csv
+dashboard/scratch/

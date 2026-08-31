@@ -232,6 +232,39 @@ The one thing to hold loosely: median length is 148 residues in this cut against
 mechanically easier here. That flatters every predictor in the cut equally, but
 it makes the *cross-tier* decline for a single predictor conservative.
 
+### Case by case — the dashboard
+
+Every one of the 29 is browsable in
+**[`dashboard/index.html`](dashboard/index.html)** — one self-contained page,
+rebuilt by `dashboard/build_page.py`:
+
+- the ground-truth structure in an interactive viewer, with the selected
+  predictor's top-L contacts drawn on it as green (correct) or red (wrong)
+  cylinders;
+- the contact map — ground truth in the lower triangle, the selected
+  predictor's top-L in the upper, on a shared residue ruler;
+- the alignment itself, which for these proteins is between one and nine
+  sequences;
+- depth, Neff, length, true-contact count, eval set, whether it is in
+  FoldBench, and per-protein R-precision for every predictor;
+- a sortable index of all 29, and `#<stem>` deep links so a specific case can
+  be sent to someone.
+
+Coordinates are Cα traces pulled from RCSB (or predictioncenter's CASP domain
+tarball for the two targets with no released entry) and aligned onto the
+evaluation sequence, so a pair drawn on the structure is the pair the metric
+counted; per-protein alignment coverage is shown with each structure and is
+≥95 % for all 29. Baseline contact maps come from #74's and #78's published
+per-pair records, which cover 28 of the 29 — the exception is `8ux2_A`, a
+FoldBench member outside the historical 100 whose per-pair baseline predictions
+were never published.
+
+Browsing it surfaces the thing the tier table only implies: on `8s89_A`, a
+401-residue CAMEO target whose ColabFold search returned *only the query*,
+Protenix-v2 + MSA still scores 0.900 — and its own single-sequence arm scores
+0.897. With no alignment to read, the `+MSA` model is just a single-sequence
+model, and a good one.
+
 ### The two halves separately, and the Neff axis
 
 | | `<10` | `10–100` | `100–1000` | `≥1000` |
@@ -384,6 +417,11 @@ The `eval-test` read is recorded as row 3 in
 | `plot_depth.py` | Step 4 — the three figures. |
 | `build_low_depth_set.py` | Step 5 — freeze the 29-protein low-MSA-depth set. |
 | `publish_to_hf.py` | Push the analysis tables to the public bucket. |
+| `dashboard/build_inputs.py` | Sequences and FoldBench chain ids for the 29. |
+| `dashboard/build_structures.py` | Fetch ground-truth structures; map Cα to evaluation indices. |
+| `dashboard/build_dashboard_data.py` | Assemble scores, contacts, alignments, coordinates into `data.json`. |
+| `dashboard/build_page.py` | Inline that into `template.html` to produce `index.html`. |
+| `rollout/export_low_depth_maps.py` | Export the 29 vote matrices out of CoreWeave (runs in-cluster). |
 | `rollout/` | The CoreWeave scoring harness, derived from PR #257's. |
 | `build_summary.py` | Rebuild `plots/summary.pdf` from `summary_narrative.md` + `plots/`. |
 
@@ -399,6 +437,12 @@ uv run python build_depth_table.py
 uv run python plot_depth.py
 uv run python build_low_depth_set.py
 uv run python build_summary.py
+
+# the dashboard
+uv run python dashboard/build_inputs.py
+uv run python dashboard/build_structures.py
+uv run python dashboard/build_dashboard_data.py
+uv run python dashboard/build_page.py
 
 # the scoring half (needs CoreWeave access; ~10 minutes on 12 H100s at batch)
 cd rollout && uv sync

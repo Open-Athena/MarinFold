@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarinFold — low-MSA-depth eval cases</title>
+<script src="https://cdn.jsdelivr.net/npm/3dmol@2.4.2/build/3Dmol-min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f7f8fa; --line: #dfe3e8; --ink: #1b1f24;
+    --muted: #61697a; --accent: #1f77b4; --good: #1a9850; --bad: #d73027;
+    --gt: #b0b7c3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --panel: #1c2027; --line: #2c323c; --ink: #e8ecf1;
+      --muted: #98a2b3; --accent: #58a6ff; --good: #4ec27f; --bad: #f2695c;
+      --gt: #4b5462;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  header { padding: 20px 24px 12px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0 0 6px; font-size: 20px; }
+  header p { margin: 4px 0; color: var(--muted); max-width: 90ch; }
+  header a { color: var(--accent); }
+  main { display: grid; grid-template-columns: minmax(340px, 30%) 1fr; gap: 0; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  #list { border-right: 1px solid var(--line); max-height: calc(100vh - 120px); overflow: auto; }
+  #detail { padding: 18px 22px 60px; max-height: calc(100vh - 120px); overflow: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--panel); cursor: pointer; user-select: none; font-weight: 600; }
+  th.sorted::after { content: " ▾"; color: var(--muted); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--panel); }
+  tbody tr.active { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .badge {
+    display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px;
+    border: 1px solid var(--line); color: var(--muted); margin-right: 4px;
+  }
+  .badge.fb { border-color: var(--accent); color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .card h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  #viewer { width: 100%; height: 380px; position: relative; border-radius: 6px; overflow: hidden; }
+  #map { width: 100%; height: auto; image-rendering: pixelated; border-radius: 6px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; }
+  .kv div:nth-child(odd) { color: var(--muted); }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .controls button {
+    font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  }
+  .controls button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .controls button:disabled { opacity: .4; cursor: not-allowed; }
+  .bars { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+  .bar { height: 9px; border-radius: 5px; background: var(--accent); min-width: 1px; }
+  .bar.self { background: var(--good); }
+  pre.msa {
+    margin: 0; overflow: auto; max-height: 220px; font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre; color: var(--ink);
+  }
+  pre.msa .q { color: var(--accent); font-weight: 600; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  footer { padding: 14px 24px 30px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
+  code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Low-MSA-depth eval cases — 29 natural proteins under 10 ColabFold sequences</h1>
+  <p id="blurb"></p>
+  <p id="provenance"></p>
+</header>
+<main>
+  <div id="list"></div>
+  <div id="detail"></div>
+</main>
+<footer id="footer"></footer>
+
+<script id="dashboard-data" type="application/json">__DASHBOARD_DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById("dashboard-data").textContent);
+const PROTEINS = DATA.proteins;
+const GT = "Ground truth";
+const MF = "MarinFold #232 m2-p06";
+const ORDER = [MF, "Protenix-v2 + MSA", "Protenix-v2 single-seq", "ESMFold2", "ESMFold"];
+const SCORE_KEYS = {
+  [MF]: "MarinFold #232 m2-p06 (step 363k)",
+  "Protenix-v2 + MSA": "Protenix-v2 + MSA",
+  "Protenix-v2 single-seq": "Protenix-v2 single-seq",
+  "ESMFold2": "ESMFold2",
+  "ESMFold": "ESMFold",
+};
+
+// Deep-linkable: #<stem> selects a case, so a specific protein can be sent to
+// someone as a URL.
+const fromHash = () => PROTEINS.find((p) => p.stem === decodeURIComponent(location.hash.slice(1)));
+let current = fromHash() || PROTEINS[0];
+let layer = MF;
+let sortKey = "msa_depth";
+let sortDir = 1;
+let viewer = null;
+
+const fmt = (x, d = 3) => (x === undefined || x === null || Number.isNaN(x)) ? "—" : x.toFixed(d);
+const scoreOf = (p, name) => p.r_precision[SCORE_KEYS[name]];
+const predictors = (p) => ORDER.filter((name) => p.contacts[name]);
+
+document.getElementById("blurb").textContent =
+  `${PROTEINS.length} proteins: ` +
+  ["CAMEO hard", "CASP free-modeling", "FoldBench"]
+    .map((s) => `${PROTEINS.filter((p) => p.source === s).length} ${s}`).join(", ") +
+  `. Predicted contacts are each predictor's top-L pairs; a pair counts as a contact at ` +
+  `≥${DATA.contact_definition.min_degree} degree and ≥${DATA.contact_definition.min_separation} residues of separation.`;
+document.getElementById("provenance").innerHTML =
+  `Scores: <code>${DATA.generated_from.checkpoint}</code>. Built by <code>exp260/dashboard/build_dashboard_data.py</code> ` +
+  `from <a href="${DATA.generated_from.scores}">the published run</a>.`;
+document.getElementById("footer").textContent =
+  "Ground-truth coordinates are Cα traces from RCSB (or the CASP domain tarball), aligned onto the evaluation " +
+  "sequence; per-protein alignment coverage is shown with each structure. Contact maps and scores share one " +
+  "residue numbering, so a pair drawn on the map is the pair the metric counted.";
+
+// ---------- protein list ----------
+const COLUMNS = [
+  { key: "stem", label: "protein", get: (p) => p.stem, text: true },
+  { key: "source", label: "source", get: (p) => p.source, text: true },
+  { key: "L", label: "L", get: (p) => p.L },
+  { key: "msa_depth", label: "depth", get: (p) => p.msa_depth },
+  { key: "marinfold", label: "MarinFold", get: (p) => scoreOf(p, MF) },
+  { key: "msa_arm", label: "+MSA", get: (p) => scoreOf(p, "Protenix-v2 + MSA") },
+];
+
+function renderList() {
+  const rows = [...PROTEINS].sort((a, b) => {
+    const column = COLUMNS.find((c) => c.key === sortKey);
+    const x = column.get(a), y = column.get(b);
+    if (x === undefined || x === null) return 1;
+    if (y === undefined || y === null) return -1;
+    return (column.text ? String(x).localeCompare(String(y)) : x - y) * sortDir;
+  });
+  const head = COLUMNS.map((c) =>
+    `<th data-key="${c.key}" class="${c.key === sortKey ? "sorted" : ""}">${c.label}</th>`).join("");
+  const body = rows.map((p) => `
+    <tr data-key="${p.key}" class="${p.key === current.key ? "active" : ""}">
+      <td>${p.stem}${p.in_foldbench ? ' <span class="badge fb">FB</span>' : ""}</td>
+      <td>${p.source}</td>
+      <td>${p.L}</td>
+      <td>${p.msa_depth}</td>
+      <td>${fmt(scoreOf(p, MF))}</td>
+      <td>${fmt(scoreOf(p, "Protenix-v2 + MSA"))}</td>
+    </tr>`).join("");
+  document.getElementById("list").innerHTML =
+    `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  document.querySelectorAll("#list th").forEach((th) => th.onclick = () => {
+    const key = th.dataset.key;
+    sortDir = key === sortKey ? -sortDir : (key === "stem" || key === "source" ? 1 : 1);
+    sortKey = key;
+    renderList();
+  });
+  document.querySelectorAll("#list tbody tr").forEach((tr) => tr.onclick = () => {
+    current = PROTEINS.find((p) => p.key === tr.dataset.key);
+    history.replaceState(null, "", `#${current.stem}`);
+    if (!predictors(current).includes(layer)) layer = predictors(current)[0];
+    renderList();
+    renderDetail();
+  });
+}
+
+// ---------- contact map ----------
+function drawMap(protein, name) {
+  const canvas = document.getElementById("map");
+  const size = 620, L = protein.L;
+  canvas.width = size; canvas.height = size;
+  const context = canvas.getContext("2d");
+  const style = getComputedStyle(document.body);
+  const scale = size / L;
+  // A 35-residue protein would otherwise draw 22-pixel blocks.
+  const pixel = Math.min(7, Math.max(1.5, scale * 1.4));
+  context.fillStyle = style.getPropertyValue("--bg"); context.fillRect(0, 0, size, size);
+
+  const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
+  const dot = (i, j, color) => {
+    context.fillStyle = color;
+    context.fillRect(j * scale - pixel / 2, i * scale - pixel / 2, pixel, pixel);
+  };
+  // Lower triangle: the answer. Upper triangle: this predictor against it.
+  for (const [i, j] of protein.contacts[GT]) dot(j, i, style.getPropertyValue("--gt"));
+  const predicted = protein.contacts[name] || [];
+  for (const [i, j] of predicted) {
+    const hit = truth.has(i * L + j);
+    dot(i, j, style.getPropertyValue(hit ? "--good" : "--bad"));
+  }
+  context.strokeStyle = style.getPropertyValue("--line");
+  context.lineWidth = 1;
+  context.beginPath(); context.moveTo(0, 0); context.lineTo(size, size); context.stroke();
+  context.strokeRect(0.5, 0.5, size - 1, size - 1);
+  // Residue ruler, so a contact can be read off the map by number.
+  const step = L <= 60 ? 10 : L <= 150 ? 25 : L <= 300 ? 50 : 100;
+  context.fillStyle = style.getPropertyValue("--muted");
+  context.font = "11px ui-monospace, monospace";
+  for (let residue = step; residue < L; residue += step) {
+    const at = residue * scale;
+    context.globalAlpha = 0.25;
+    context.beginPath(); context.moveTo(at, 0); context.lineTo(at, size); context.stroke();
+    context.beginPath(); context.moveTo(0, at); context.lineTo(size, at); context.stroke();
+    context.globalAlpha = 1;
+    context.fillText(String(residue), at + 3, 12);
+  }
+
+  const hits = predicted.filter(([i, j]) => truth.has(i * L + j)).length;
+  document.getElementById("map-caption").innerHTML =
+    `<b>${name}</b>: ${hits} of ${predicted.length} top-L pairs are true contacts ` +
+    `(${predicted.length ? (100 * hits / predicted.length).toFixed(0) : 0}%). ` +
+    `Ground truth has ${protein.n_true_contacts} contacts.`;
+}
+
+// ---------- 3D ----------
+function pdbText(protein) {
+  const lines = [];
+  protein.structure.coordinates.forEach((xyz, index) => {
+    if (!xyz) return;
+    const [x, y, z] = xyz;
+    const residue = (index + 1).toString().padStart(4, " ");
+    lines.push(
+      "ATOM  " + (index + 1).toString().padStart(5, " ") + "  CA  ALA A" + residue +
+      "    " + x.toFixed(3).padStart(8, " ") + y.toFixed(3).padStart(8, " ") +
+      z.toFixed(3).padStart(8, " ") + "  1.00  0.00           C"
+    );
+  });
+  return lines.join("\n") + "\nEND\n";
+}
+
+function draw3D(protein, name) {
+  const host = document.getElementById("viewer");
+  if (typeof $3Dmol === "undefined") {
+    host.innerHTML = '<p style="padding:12px;color:var(--muted)">The 3D viewer library ' +
+      '(3Dmol.js, loaded from a CDN) is unavailable offline. Contact maps below are unaffected.</p>';
+    return;
+  }
+  if (!protein.structure.available) {
+    host.innerHTML = `<p style="padding:12px;color:var(--muted)">No coordinates: ${protein.structure.reason}</p>`;
+    return;
+  }
+  host.innerHTML = "";
+  viewer = $3Dmol.createViewer(host, { backgroundColor: getComputedStyle(document.body).getPropertyValue("--panel") });
+  viewer.addModel(pdbText(protein), "pdb");
+  viewer.setStyle({}, { cartoon: { style: "trace", color: "spectrum", thickness: 0.3 } });
+
+  const coordinates = protein.structure.coordinates;
+  const L = protein.L;
+  const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
+  for (const [i, j] of (protein.contacts[name] || [])) {
+    if (!coordinates[i] || !coordinates[j]) continue;
+    viewer.addCylinder({
+      start: { x: coordinates[i][0], y: coordinates[i][1], z: coordinates[i][2] },
+      end: { x: coordinates[j][0], y: coordinates[j][1], z: coordinates[j][2] },
+      radius: 0.12,
+      color: truth.has(i * L + j) ? "green" : "red",
+      fromCap: 1, toCap: 1,
+    });
+  }
+  viewer.zoomTo();
+  viewer.render();
+}
+
+// ---------- MSA ----------
+function msaHtml(a3m) {
+  const rows = [];
+  let header = null, sequence = [];
+  for (const line of a3m.split("\n")) {
+    if (line.startsWith(">")) {
+      if (header !== null) rows.push([header, sequence.join("")]);
+      header = line.slice(1).trim(); sequence = [];
+    } else if (line.trim()) sequence.push(line.trim());
+  }
+  if (header !== null) rows.push([header, sequence.join("")]);
+  return rows.map(([name, seq], index) =>
+    `<span class="${index === 0 ? "q" : ""}">${(index === 0 ? "query" : name).slice(0, 28).padEnd(30, " ")}` +
+    `${seq.replace(/[a-z]/g, "")}</span>`).join("\n");
+}
+
+// ---------- detail ----------
+function renderDetail() {
+  const p = current;
+  const available = predictors(p);
+  const best = Math.max(...available.map((name) => scoreOf(p, name) || 0), 0.001);
+  const structure = p.structure.available
+    ? `${p.structure.pdb_id} chain ${p.structure.chain} · ${(100 * p.structure.coverage).toFixed(0)}% of the sequence has coordinates`
+    : `unavailable (${p.structure.reason})`;
+  document.getElementById("detail").innerHTML = `
+    <h2 style="margin:0 0 4px">${p.stem}
+      <span class="badge ${p.in_foldbench ? "fb" : ""}">${p.source}</span>
+      ${p.eval_set ? `<span class="badge">${p.eval_set}</span>` : ""}
+      <span class="badge">${p.in_foldbench ? "in FoldBench" : "not in FoldBench"}</span>
+    </h2>
+    <div class="controls" id="layers">
+      ${available.map((name) =>
+        `<button data-layer="${name}" class="${name === layer ? "on" : ""}">${name}</button>`).join("")}
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Ground-truth structure</h3>
+        <div id="viewer"></div>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--good)"></span>predicted pair, correct</span>
+          <span><span class="swatch" style="background:var(--bad)"></span>predicted pair, wrong</span>
+        </div>
+        <p style="color:var(--muted);font-size:12px;margin:6px 0 0">${structure}</p>
+      </div>
+      <div class="card">
+        <h3>Contact map</h3>
+        <canvas id="map"></canvas>
+        <p id="map-caption" style="font-size:12px;margin:8px 0 0"></p>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--gt)"></span>ground truth (lower)</span>
+          <span><span class="swatch" style="background:var(--good)"></span>correct (upper)</span>
+          <span><span class="swatch" style="background:var(--bad)"></span>wrong (upper)</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>This protein</h3>
+        <div class="kv">
+          <div>length</div><div>${p.L} residues</div>
+          <div>ColabFold MSA depth</div><div><b>${p.msa_depth}</b> sequences</div>
+          <div>Neff (80% id)</div><div>${p.msa_neff}</div>
+          <div>true contacts</div><div>${p.n_true_contacts}</div>
+          <div>evaluation unit</div><div><code>${p.dataset}__${p.stem}</code></div>
+        </div>
+        <h3 style="margin-top:14px">R-precision (all ranges)</h3>
+        <div class="bars">
+          ${ORDER.filter((name) => scoreOf(p, name) !== undefined).map((name) => `
+            <div>${name === MF ? "<b>MarinFold</b>" : name}</div>
+            <div><div class="bar ${name === MF ? "self" : ""}" style="width:${100 * scoreOf(p, name) / best}%"></div></div>
+            <div>${fmt(scoreOf(p, name))}</div>`).join("")}
+        </div>
+      </div>
+      <div class="card">
+        <h3>The alignment (${p.msa_depth} sequence${p.msa_depth === 1 ? "" : "s"}, insertions stripped)</h3>
+        <pre class="msa">${msaHtml(p.a3m)}</pre>
+      </div>
+    </div>`;
+  document.querySelectorAll("#layers button").forEach((button) => button.onclick = () => {
+    layer = button.dataset.layer;
+    renderDetail();
+  });
+  drawMap(p, layer);
+  draw3D(p, layer);
+}
+
+window.addEventListener("hashchange", () => {
+  const selected = fromHash();
+  if (selected && selected.key !== current.key) {
+    current = selected;
+    if (!predictors(current).includes(layer)) layer = predictors(current)[0];
+    renderList();
+    renderDetail();
+  }
+});
+
+renderList();
+renderDetail();
+</script>
+</body>
+</html>

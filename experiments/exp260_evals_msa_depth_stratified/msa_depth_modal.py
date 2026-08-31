@@ -28,6 +28,7 @@ moved the numbers.
 
 import json
 import time
+from pathlib import Path
 
 import modal
 import pandas as pd
@@ -109,6 +110,42 @@ def measure(spec: dict) -> dict:
         }
     )
     return row
+
+
+@app.function(image=image, volumes=VOLUMES, cpu=1.0, timeout=600)
+def read_a3m(spec: dict) -> dict:
+    """Return the raw a3m text for one ``(volume, stem)`` pair.
+
+    Only used for the low-MSA-depth dashboard, where every alignment is under
+    10 sequences and so a few kilobytes — small enough to ship into a web page.
+    """
+
+    from pathlib import Path
+
+    path = Path(f"/msa/{spec['msa_volume']}") / U.MSA_PATH.format(stem=spec["stem"])
+    return {
+        "stem": spec["stem"],
+        "msa_volume": spec["msa_volume"],
+        "a3m": path.read_text() if path.exists() else None,
+    }
+
+
+@app.local_entrypoint()
+def fetch_msas(out: str = "") -> None:
+    """Pull the low-MSA-depth alignments themselves into ``data/``."""
+
+    low = pd.read_csv(U.DATA / "low_msa_depth_set.csv")
+    specs = low[["stem", "msa_volume"]].to_dict("records")
+    rows = list(read_a3m.map(specs))
+    missing = [row["stem"] for row in rows if row["a3m"] is None]
+    if missing:
+        raise RuntimeError(f"no a3m for {missing}")
+    destination = Path(out) if out else U.DATA / "low_msa_depth_a3m.json"
+    destination.write_text(
+        json.dumps({row["stem"]: row["a3m"] for row in rows}, sort_keys=True)
+    )
+    total = sum(len(row["a3m"]) for row in rows)
+    print(f"wrote {len(rows)} alignments ({total} bytes) -> {destination}")
 
 
 @app.local_entrypoint()

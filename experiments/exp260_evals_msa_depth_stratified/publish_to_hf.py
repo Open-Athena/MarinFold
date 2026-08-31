@@ -34,6 +34,9 @@ PUBLISHED = (
     "tier_counts.csv",
     "low_msa_depth_set.csv",
 )
+
+#: The dashboard payload lives beside the tables it was built from.
+EXTRA = ((Path("dashboard") / "data.json", "low_msa_depth_dashboard_data.json"),)
 DESTINATION = (
     f"hf://buckets/open-athena/MarinFold/{U.PUBLISH_PREFIX}/{U.RUN_ID}/analysis"
 )
@@ -58,6 +61,14 @@ def main() -> None:
     binary = hf_binary()
     for name in PUBLISHED:
         source = U.DATA / name
+        if not source.exists():
+            raise FileNotFoundError(f"{source} has not been built yet")
+        target = f"{DESTINATION}/{name}"
+        print(f"{source} -> {target}")
+        if not args.dry_run:
+            subprocess.run([binary, "buckets", "cp", str(source), target], check=True)
+    for relative, name in EXTRA:
+        source = U.EXPERIMENT / relative
         if not source.exists():
             raise FileNotFoundError(f"{source} has not been built yet")
         target = f"{DESTINATION}/{name}"

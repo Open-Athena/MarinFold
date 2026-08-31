@@ -38,10 +38,25 @@ LEGACY_TARGETS_SHA256 = (
 #: #245's manifest of all 334 FoldBench monomers: eval set, designed flag,
 #: viral flag, kingdom, and scorability.
 FOLDBENCH_PREFIX = "data/contacts-v1-foldbench-monomers-exp245"
+#: The scorable-unit target table: ``dataset``, ``stem``, ``L``, ``input_seq``.
+FOLDBENCH_TARGETS_URL = (
+    f"{BUCKET}/{FOLDBENCH_PREFIX}/eval_targets_foldbench_monomers.parquet"
+)
+FOLDBENCH_TARGETS_SHA256 = (
+    "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+)
+
 FOLDBENCH_SETS_URL = f"{BUCKET}/{FOLDBENCH_PREFIX}/eval_sets.csv"
 FOLDBENCH_SETS_SHA256 = (
     "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
 )
+
+#: The two published ground-truth universes, in #89's schema: per-unit ``L``,
+#: ``resolved`` indices, and ``contacts`` as ``[i, j, degree]``.
+LEGACY_GROUND_TRUTH_URL = (
+    f"{BUCKET}/data/contacts-v1-model-eval-exp89/gt_universe.jsonl"
+)
+FOLDBENCH_GROUND_TRUTH_URL = f"{BUCKET}/{FOLDBENCH_PREFIX}/gt_universe_scored.jsonl"
 
 #: #245's per-protein baseline scores over the 333 scorable FoldBench units:
 #: Protenix-v2 single-seq and +MSA, ESMFold, ESMFold2, and both KNN nulls.

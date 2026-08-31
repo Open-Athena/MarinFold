@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "MSA-depth stratification of contacts-v1 accuracy over the natural eval universe (exp260)."
 requires-python = ">=3.11,<3.13"
 dependencies = [
+    "gemmi>=0.7,<1",
     "matplotlib>=3.10,<4",
     "modal>=1.3,<2",
     "numpy>=2,<3",

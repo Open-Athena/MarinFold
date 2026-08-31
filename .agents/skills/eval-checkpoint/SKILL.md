@@ -177,6 +177,14 @@ for joining them to scores, cutting the `<10 / 10–100 / 100–1000 / ≥1000` 
 and reporting paired per-protein deltas with bootstrap intervals rather than
 differences of small means.
 
+**Case by case.** [#260](https://github.com/Open-Athena/MarinFold/issues/260)
+ships a browsable page over all 29 —
+[`experiments/exp260_evals_msa_depth_stratified/dashboard/index.html`](../../../experiments/exp260_evals_msa_depth_stratified/dashboard/index.html) —
+with the ground-truth structure, the contact map against each predictor's
+top-L, the alignment itself, and the per-protein scores. Rebuild it for a new
+checkpoint with `dashboard/build_*.py`: only the MarinFold contact layer and
+the score column change, and the rest of the page is fixed by the set.
+
 **Reference values** (#232 `m2-p06` training, step 363,000; all-range
 R-precision, from [#260](https://github.com/Open-Athena/MarinFold/issues/260)):
 
