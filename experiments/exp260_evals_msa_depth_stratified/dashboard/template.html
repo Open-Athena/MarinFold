@@ -119,6 +119,7 @@ let sortDir = 1;
 let viewer = null;
 let style = "cartoon";
 let showContacts = true;
+let structureArm = "ground_truth";
 
 const escape = (text) => String(text ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -272,6 +273,34 @@ function drawMap(protein, name) {
 }
 
 // ---------- 3D ----------
+//: Structure files are fetched once and kept for the session.
+const STRUCTURE_CACHE = new Map();
+
+async function loadStructure(file) {
+  if (STRUCTURE_CACHE.has(file)) return STRUCTURE_CACHE.get(file);
+  const response = await fetch(file);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  const text = await response.text();
+  STRUCTURE_CACHE.set(file, text);
+  return text;
+}
+
+/** Cα position per evaluation index, read out of the PDB we are displaying. */
+function alphaCarbons(pdb, length) {
+  const coordinates = new Array(length).fill(null);
+  for (const line of pdb.split("\n")) {
+    if (!line.startsWith("ATOM") || line.slice(12, 16).trim() !== "CA") continue;
+    const index = parseInt(line.slice(22, 26), 10) - 1;
+    if (index >= 0 && index < length) {
+      coordinates[index] = [
+        parseFloat(line.slice(30, 38)), parseFloat(line.slice(38, 46)),
+        parseFloat(line.slice(46, 54)),
+      ];
+    }
+  }
+  return coordinates;
+}
+
 const STYLES = {
   cartoon: { cartoon: { color: "spectrum" } },
   "cartoon + sticks": { cartoon: { color: "spectrum" }, stick: { radius: 0.08 } },
@@ -279,26 +308,42 @@ const STYLES = {
   backbone: { line: { colorscheme: "Jmol" } },
 };
 
-function draw3D(protein, name) {
+async function draw3D(protein, name) {
   const host = document.getElementById("viewer");
   if (typeof $3Dmol === "undefined") {
     host.innerHTML = '<p style="padding:12px;color:var(--muted)">The 3D viewer library ' +
       "(3Dmol.js) failed to load. Contact maps below are unaffected.</p>";
     return;
   }
-  if (!protein.structure.available) {
-    host.innerHTML = `<p style="padding:12px;color:var(--muted)">No coordinates: ${protein.structure.reason}</p>`;
+  const arms = protein.structure_arms || [];
+  const selected = arms.find((a) => a.arm === structureArm) || arms[0];
+  if (!selected) {
+    host.innerHTML = `<p style="padding:12px;color:var(--muted)">No coordinates: ${
+      protein.structure.reason || "none published"}</p>`;
+    return;
+  }
+  host.innerHTML = '<p style="padding:12px;color:var(--muted)">loading…</p>';
+  let pdb;
+  try {
+    pdb = await loadStructure(selected.file);
+  } catch (error) {
+    // Structures are separate files served next to the page; a file:// copy or
+    // an HTML-preview proxy cannot fetch them.
+    host.innerHTML = '<p style="padding:12px;color:var(--muted)">Could not load ' +
+      `<code>${selected.file}</code> (${error.message}). Structures are served as ` +
+      "separate files, so this panel needs the page to be opened from where they " +
+      "sit — the GitHub Pages copy. Everything else on the page works offline.</p>";
     return;
   }
   host.innerHTML = "";
   viewer = $3Dmol.createViewer(host, {
     backgroundColor: getComputedStyle(document.body).getPropertyValue("--panel"),
   });
-  viewer.addModel(protein.structure.pdb, "pdb");
+  viewer.addModel(pdb, "pdb");
   viewer.setStyle({}, STYLES[style] || STYLES.cartoon);
 
   if (showContacts) {
-    const coordinates = protein.structure.coordinates;
+    const coordinates = alphaCarbons(pdb, protein.L);
     const L = protein.L;
     const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
     for (const [i, j] of (protein.contacts[name] || [])) {
@@ -314,6 +359,15 @@ function draw3D(protein, name) {
   }
   viewer.zoomTo();
   viewer.render();
+  const accuracy = [
+    selected.lddt !== undefined ? `lDDT ${selected.lddt}` : null,
+    selected.tm_score !== undefined ? `TM ${selected.tm_score}` : null,
+    selected.gdt_ts !== undefined ? `GDT_TS ${selected.gdt_ts}` : null,
+  ].filter(Boolean).join(" · ");
+  document.getElementById("structure-caption").innerHTML =
+    `<b>${escape(selected.label)}</b>${accuracy ? " — " + accuracy : ""}` +
+    `<br><span class="muted">${escape(selected.source || selected.file.split("/").pop())} · ` +
+    `${(100 * selected.coverage).toFixed(0)}% of the sequence has coordinates</span>`;
 }
 
 // ---------- MSA ----------
@@ -337,9 +391,9 @@ function renderDetail() {
   const p = current;
   const available = predictors(p);
   const best = Math.max(...available.map((name) => scoreOf(p, name) || 0), 0.001);
-  const structure = p.structure.available
-    ? `${p.structure.pdb_id} chain ${p.structure.chain} · ${(100 * p.structure.coverage).toFixed(0)}% of the sequence has coordinates`
-    : `unavailable (${p.structure.reason})`;
+  if (!(p.structure_arms || []).some((a) => a.arm === structureArm)) {
+    structureArm = (p.structure_arms || [{ arm: "ground_truth" }])[0].arm;
+  }
   document.getElementById("detail").innerHTML = `
     <h2 style="margin:0 0 4px">${p.stem}
       <span class="badge ${p.in_foldbench ? "fb" : ""}">${p.source}</span>
@@ -376,7 +430,12 @@ function renderDetail() {
     </div>
     <div class="grid">
       <div class="card">
-        <h3>Ground-truth structure</h3>
+        <h3>Structure</h3>
+        <div class="controls" id="arm-controls">
+          ${(p.structure_arms || []).map((a) =>
+            `<button data-arm="${a.arm}" class="${a.arm === structureArm ? "on" : ""}" ` +
+            `title="${escape(a.label)}">${escape(a.label)}</button>`).join("")}
+        </div>
         <div class="controls" id="viewer-controls">
           ${Object.keys(STYLES).map((option) =>
             `<button data-style="${option}" class="${option === style ? "on" : ""}">${option}</button>`).join("")}
@@ -387,7 +446,7 @@ function renderDetail() {
           <span><span class="swatch" style="background:var(--good)"></span>predicted pair, correct</span>
           <span><span class="swatch" style="background:var(--bad)"></span>predicted pair, wrong</span>
         </div>
-        <p style="color:var(--muted);font-size:12px;margin:6px 0 0">${structure}</p>
+        <p id="structure-caption" style="font-size:12px;margin:6px 0 0"></p>
       </div>
       <div class="card">
         <h3>Contact map</h3>
@@ -438,6 +497,12 @@ function renderDetail() {
         other.classList.toggle("on", other.dataset.style === style);
       }
     });
+    draw3D(current, layer);
+  });
+  document.querySelectorAll("#arm-controls button").forEach((button) => button.onclick = () => {
+    structureArm = button.dataset.arm;
+    document.querySelectorAll("#arm-controls button").forEach((other) =>
+      other.classList.toggle("on", other.dataset.arm === structureArm));
     draw3D(current, layer);
   });
   drawMap(p, layer);

@@ -1,0 +1,920 @@
+{
+ "cameo_hard__8jvx_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8jvx"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8raj_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8raj"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8s89_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8s89"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8u1a_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8u1a"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8vd6_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8vd6"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8vej_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8vej"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8wwc_C": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8wwc"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8xtn_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8xtn"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8yl4_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8yl4"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9de9_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9de9"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9deb_E": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9deb"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9deg_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9deg"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9hac_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9hac"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9had_C": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9had"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9j46_F": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9j46"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9j5h_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9j5h"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1043-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "CASP domain tarball (T1043-D1.pdb)"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1113-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "7uyx"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1122-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8bbt"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1123-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "CASP domain tarball (T1123-D1.pdb)"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D2": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D2/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D2/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D2/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D4": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D4/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D4/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D4/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D5": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D5/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D5/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D5/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8ii8_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8ii8"
+  },
+  {
+   "arm": "helico_mf_L",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_mf_L.pdb",
+   "gdt_ts": 0.403,
+   "label": "Helico + MarinFold contacts",
+   "lddt": 0.534,
+   "tm_score": 0.677
+  },
+  {
+   "arm": "helico_off",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_off.pdb",
+   "gdt_ts": 0.351,
+   "label": "Helico, no contacts",
+   "lddt": 0.504,
+   "tm_score": 0.651
+  },
+  {
+   "arm": "helico_oracle",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_oracle.pdb",
+   "gdt_ts": 0.964,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.883,
+   "tm_score": 0.985
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8ii8_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8oxk_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8oxk"
+  },
+  {
+   "arm": "helico_mf_L",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_mf_L.pdb",
+   "gdt_ts": 0.306,
+   "label": "Helico + MarinFold contacts",
+   "lddt": 0.43,
+   "tm_score": 0.501
+  },
+  {
+   "arm": "helico_off",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_off.pdb",
+   "gdt_ts": 0.152,
+   "label": "Helico, no contacts",
+   "lddt": 0.316,
+   "tm_score": 0.377
+  },
+  {
+   "arm": "helico_oracle",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_oracle.pdb",
+   "gdt_ts": 0.957,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.879,
+   "tm_score": 0.952
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8oxk_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8qoh_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8qoh"
+  },
+  {
+   "arm": "helico_mf_L",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_mf_L.pdb",
+   "gdt_ts": 0.322,
+   "label": "Helico + MarinFold contacts",
+   "lddt": 0.443,
+   "tm_score": 0.689
+  },
+  {
+   "arm": "helico_off",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_off.pdb",
+   "gdt_ts": 0.015,
+   "label": "Helico, no contacts",
+   "lddt": 0.247,
+   "tm_score": 0.3
+  },
+  {
+   "arm": "helico_oracle",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_oracle.pdb",
+   "gdt_ts": 0.9,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.841,
+   "tm_score": 0.962
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8qoh_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8ux2_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9756,
+   "file": "structures/foldbench_monomer__8ux2_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8ux2"
+  },
+  {
+   "arm": "helico_mf_L",
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_mf_L.pdb",
+   "gdt_ts": 0.027,
+   "label": "Helico + MarinFold contacts",
+   "lddt": 0.292,
+   "tm_score": 0.308
+  },
+  {
+   "arm": "helico_off",
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_off.pdb",
+   "gdt_ts": 0.039,
+   "label": "Helico, no contacts",
+   "lddt": 0.291,
+   "tm_score": 0.276
+  },
+  {
+   "arm": "helico_oracle",
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_oracle.pdb",
+   "gdt_ts": 0.89,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.823,
+   "tm_score": 0.961
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8ux2_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8wrx_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8wrx"
+  },
+  {
+   "arm": "helico_mf_L",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_mf_L.pdb",
+   "gdt_ts": 0.477,
+   "label": "Helico + MarinFold contacts",
+   "lddt": 0.535,
+   "tm_score": 0.612
+  },
+  {
+   "arm": "helico_off",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_off.pdb",
+   "gdt_ts": 0.561,
+   "label": "Helico, no contacts",
+   "lddt": 0.674,
+   "tm_score": 0.694
+  },
+  {
+   "arm": "helico_oracle",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_oracle.pdb",
+   "gdt_ts": 0.951,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.866,
+   "tm_score": 0.944
+  },
+  {
+   "arm": "esmfold2",
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8wrx_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ]
+}

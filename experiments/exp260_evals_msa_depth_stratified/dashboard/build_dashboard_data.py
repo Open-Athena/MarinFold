@@ -14,7 +14,9 @@ once, offline, rather than having a browser fetch nine sources:
 * the baselines' predicted contacts where they exist as per-pair records —
   #245's `contacts_raw.parquet` covers the FoldBench members it scored;
 * per-protein R-precision for every predictor;
-* Cα coordinates in evaluation numbering, from ``build_structures.py``;
+* the list of structure arms available per protein, from
+  ``build_structure_files.py`` — the coordinates themselves are served as
+  separate files and fetched by the page on demand;
 * what the protein is and where to check it, from ``build_annotations.py``;
 * the alignment itself, which for these proteins is at most nine sequences.
 
@@ -167,6 +169,7 @@ def main() -> None:
     )["proteins"]
     alignments = json.loads((U.DATA / "low_msa_depth_a3m.json").read_text())
     structures = json.loads((U.DATA / "low_depth_structures.json").read_text())
+    arms = json.loads((HERE / "structure_index.json").read_text())
     annotations = json.loads((U.DATA / "nonfoldbench_annotations.json").read_text())
     baselines = baseline_contacts(units)
 
@@ -198,7 +201,12 @@ def main() -> None:
                 "msa_depth": int(record.msa_depth),
                 "msa_neff": round(float(record.msa_neff), 2),
                 "a3m": alignments[record.stem],
-                "structure": structures[key],
+                "structure": {
+                    key_name: structures[key][key_name]
+                    for key_name in ("available", "coverage", "pdb_id", "chain", "reason")
+                    if key_name in structures[key]
+                },
+                "structure_arms": arms.get(key, []),
                 "annotation": annotations[key],
                 "n_true_contacts": len(true_contacts(gt)),
                 "contacts": {
