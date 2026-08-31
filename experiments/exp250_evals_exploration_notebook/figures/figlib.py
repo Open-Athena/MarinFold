@@ -72,15 +72,20 @@ FIG1_PANEL = FIG1_DOC_PANEL
 #:
 #: The band stops short of the panel top: the assembler letters each panel over its top-left
 #: corner, and without that strip the letter lands on the structure.
-#: The map rectangles are stated as exact pixel fractions at the 300 dpi the PNGs are written at
-#: (4.32 x 1.85 in = 1296 x 555 px): a map is 345 px square, at x = 426 and x = 813, y = 120.
-#: Equal fractions are equal in the SVG whatever they are, but a rasteriser rounds each edge
-#: independently, and 0.266 x 1296 = 344.7 px came out as a 345 px map beside a 344 px one.
-FIG1_STRUCTURE_RECT = (0.008, 120 / 555, 0.220, 345 / 555)
-FIG1_MAP_RECTS = ((426 / 1296, 120 / 555, 345 / 1296, 345 / 555),
-                  (813 / 1296, 120 / 555, 345 / 1296, 345 / 555))
+#: The rectangles are stated as exact pixel fractions at the 300 dpi the PNGs are written at
+#: (4.32 x 1.85 in = 1296 x 555 px), so the two maps are the same size in the raster as well as
+#: in the vector: 340 px square, at x = 475 and x = 849, y = 120. Equal fractions are equal in
+#: the SVG whatever they are, but a rasteriser rounds each edge on its own, and 0.266 x 1296 =
+#: 344.7 px once came out as a 345 px map beside a 344 px one.
+#:
+#: The 190 px between the structure and the first map is deliberate: about half of it is the
+#: map's y-axis label and tick numbers, and the rest is the gap that keeps the fold from reading
+#: as part of the left map.
+FIG1_STRUCTURE_RECT = (10 / 1296, 120 / 555, 275 / 1296, 340 / 555)
+FIG1_MAP_RECTS = ((475 / 1296, 120 / 555, 340 / 1296, 340 / 555),
+                  (849 / 1296, 120 / 555, 340 / 1296, 340 / 555))
 #: The colourbar, which describes the predicted map only — the ground truth is binary.
-FIG1_BAR_RECT = (0.905, 120 / 555, 0.014, 345 / 555)
+FIG1_BAR_RECT = (1197 / 1296, 120 / 555, 18 / 1296, 340 / 555)
 
 
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
