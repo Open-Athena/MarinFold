@@ -67,10 +67,18 @@
   }
   pre.msa .q { color: var(--accent); font-weight: 600; }
   .badge.warn-badge { border-color: var(--bad); color: var(--bad); background: none; padding: 1px 7px; }
-  #summary { padding: 10px 24px 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  #summary { padding: 12px 24px 16px; border-bottom: 1px solid var(--line); overflow-x: auto; }
   #summary table { width: auto; min-width: 520px; }
   #summary td, #summary th { padding: 4px 14px 4px 0; border-bottom: none; }
   #summary .head { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); }
+  /* The two tables measure different things over different predictors; without
+     a real gap they read as one table with a stray header in the middle. */
+  .summary-block + .summary-block { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .summary-block h2 {
+    margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .summary-meta { margin-top: 16px; color: var(--muted); font-size: 12px; }
   details#models { margin: 6px 0 2px; font-size: 13px; }
   details#models summary { cursor: pointer; color: var(--accent); }
   #models-body { margin: 8px 0 4px; max-width: 110ch; }
@@ -207,7 +215,7 @@ const STRUCTURE_ORDER = [
  * table is therefore computed over the proteins every displayed arm has in
  * common, and says so; the per-arm coverage is printed underneath.
  */
-function structureSummaryRows(selected) {
+function structureSummaryTable(selected) {
   const gathered = new Map();
   for (const protein of selected) {
     for (const arm of protein.structure_arms || []) {
@@ -225,17 +233,22 @@ function structureSummaryRows(selected) {
     fmt(mean(shared.map((k) => gathered.get(arm).rows.get(k)[key])));
   const uneven = arms.some((a) => gathered.get(a).rows.size !== shared.length);
   return `
-    <tr class="head"><td>structure accuracy vs. ground truth${
-      uneven ? `<br><span style="font-weight:400">on the ${shared.length} protein${
-        shared.length === 1 ? "" : "s"} every arm covers</span>` : ""}</td>
-      ${arms.map((a) => `<td>${escape(gathered.get(a).label)}${
-        uneven ? `<br><span style="font-weight:400">has ${gathered.get(a).rows.size}</span>` : ""
-      }</td>`).join("")}</tr>
-    ${!shared.length ? '<tr><td colspan="9" class="head">no protein is covered by every arm — ' +
-      "narrow the filters (Helico only ran the FoldBench monomers)</td></tr>" :
-      [["lDDT", "computed_lddt"], ["GDT-TS", "computed_gdt_ts"], ["TM-score", "computed_tm_score"]]
-        .map(([label, key]) => `<tr><td class="head">mean ${label}</td>` +
-          arms.map((a) => `<td>${cell(a, key)}</td>`).join("") + "</tr>").join("")}`;
+    <div class="summary-block">
+      <h2>Structure accuracy vs. ground truth${
+        uneven ? ` — on the ${shared.length} protein${
+          shared.length === 1 ? "" : "s"} every arm covers` : ""}</h2>
+      <table>
+        <tr class="head"><td></td>
+          ${arms.map((a) => `<td>${escape(gathered.get(a).label)}${
+            uneven ? `<br><span style="font-weight:400">has ${gathered.get(a).rows.size}</span>` : ""
+          }</td>`).join("")}</tr>
+        ${!shared.length ? '<tr><td colspan="9" class="head">no protein is covered by every arm — ' +
+          "narrow the filters (Helico only ran the FoldBench monomers)</td></tr>" :
+          [["lDDT", "computed_lddt"], ["GDT-TS", "computed_gdt_ts"], ["TM-score", "computed_tm_score"]]
+            .map(([label, key]) => `<tr><td class="head">mean ${label}</td>` +
+              arms.map((a) => `<td>${cell(a, key)}</td>`).join("") + "</tr>").join("")}
+      </table>
+    </div>`;
 }
 
 function renderSummary() {
@@ -246,20 +259,24 @@ function renderSummary() {
   }).filter((row) => row.n);
   const depths = selected.map((p) => p.msa_depth).sort((a, b) => a - b);
   const median = depths.length ? depths[Math.floor(depths.length / 2)] : null;
+  const structure = structureSummaryTable(selected);
   document.getElementById("summary").innerHTML = `
-    <table>
-      <tr class="head"><td>${selected.length} protein${selected.length === 1 ? "" : "s"} selected</td>
-        ${rows.map((r) => `<td>${r.name === MF ? "<b>MarinFold</b>" : escape(r.name)}</td>`).join("")}</tr>
-      <tr><td class="head">mean R-precision (all ranges)</td>
-        ${rows.map((r) => `<td>${r.name === MF ? "<b>" + fmt(r.mean) + "</b>" : fmt(r.mean)}${
-          r.n < selected.length ? ` <span style="color:var(--muted)">(n=${r.n})</span>` : ""}</td>`).join("")}</tr>
-      ${structureSummaryRows(selected)}
-      <tr><td class="head">median MSA depth ${median} · median length ${
-        selected.map((p) => p.L).sort((a, b) => a - b)[Math.floor(selected.length / 2)]} ·
-        ${selected.filter((p) => p.annotation.designed).length} de novo ·
-        ${selected.filter((p) => p.in_foldbench).length} FoldBench</td>
-        <td colspan="${rows.length}"></td></tr>
-    </table>`;
+    <div class="summary-block">
+      <h2>Contact accuracy — ${selected.length} protein${
+        selected.length === 1 ? "" : "s"} selected</h2>
+      <table>
+        <tr class="head"><td></td>
+          ${rows.map((r) => `<td>${r.name === MF ? "<b>MarinFold</b>" : escape(r.name)}</td>`).join("")}</tr>
+        <tr><td class="head">mean R-precision (all ranges)</td>
+          ${rows.map((r) => `<td>${r.name === MF ? "<b>" + fmt(r.mean) + "</b>" : fmt(r.mean)}${
+            r.n < selected.length ? ` <span style="color:var(--muted)">(n=${r.n})</span>` : ""}</td>`).join("")}</tr>
+      </table>
+    </div>
+    ${structure}
+    <div class="summary-meta">median MSA depth ${median} · median length ${
+      selected.map((p) => p.L).sort((a, b) => a - b)[Math.floor(selected.length / 2)]} ·
+      ${selected.filter((p) => p.annotation.designed).length} de novo ·
+      ${selected.filter((p) => p.in_foldbench).length} FoldBench</div>`;
 }
 
 function renderProvenance() {

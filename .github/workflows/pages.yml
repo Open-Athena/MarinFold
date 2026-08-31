@@ -1,0 +1,51 @@
+# Publish the experiment dashboards to GitHub Pages.
+#
+# Pages was previously building from the repository root, which handed the
+# legacy builder the whole 256 MB tree on every push and never completed.
+# `scripts/build_pages_site.py` assembles just the dashboards, at the paths they
+# already have, so existing links keep working.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "experiments/*/dashboard/**"
+      - "scripts/build_pages_site.py"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and let a newer commit win rather than queueing behind
+# an in-flight build.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Assemble the site
+        run: python scripts/build_pages_site.py --out _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
