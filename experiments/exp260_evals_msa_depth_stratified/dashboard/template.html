@@ -133,6 +133,7 @@ const COLUMNS = [
   { key: "stem", label: "protein", get: (p) => p.stem, text: true },
   { key: "source", label: "source", get: (p) => p.source, text: true },
   { key: "L", label: "L", get: (p) => p.L },
+  { key: "contacts", label: "contacts", get: (p) => p.n_true_contacts },
   { key: "msa_depth", label: "depth", get: (p) => p.msa_depth },
   { key: "marinfold", label: "MarinFold", get: (p) => scoreOf(p, MF) },
   { key: "msa_arm", label: "+MSA", get: (p) => scoreOf(p, "Protenix-v2 + MSA") },
@@ -153,6 +154,7 @@ function renderList() {
       <td>${p.stem}${p.in_foldbench ? ' <span class="badge fb">FB</span>' : ""}</td>
       <td>${p.source}</td>
       <td>${p.L}</td>
+      <td>${p.n_true_contacts}</td>
       <td>${p.msa_depth}</td>
       <td>${fmt(scoreOf(p, MF))}</td>
       <td>${fmt(scoreOf(p, "Protenix-v2 + MSA"))}</td>
