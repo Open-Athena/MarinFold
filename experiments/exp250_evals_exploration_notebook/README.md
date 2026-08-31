@@ -363,8 +363,9 @@ loses by −0.24 on designs. A caption written over these panels has to survive 
 
 **Validated on three machines.** Every notebook executes end to end on a 1xH100 box and on an
 8xA100 box (torch 2.11+cu129, vLLM 0.20.2, compute capability 8.0/9.0), and on this workstation's
-A5000 under transformers. Top7's R-precision comes out 0.6974 on both — same recipe, different backend,
-different card.
+A5000 under transformers. Top7's R-precision came out 0.6974 on both when that check was run —
+same recipe, different backend, different card, one checkpoint (the #232 sweep final; figure 1
+now folds Top7 with step-363000, which scores 0.6447 on it).
 
 ### 7. Hardware notes, measured rather than assumed
 
