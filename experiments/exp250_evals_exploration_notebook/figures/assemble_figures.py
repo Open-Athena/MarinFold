@@ -35,9 +35,11 @@ MARGIN = 4          # points around the whole figure
 #: (panel stem in output/, optional placeholder caption when the file is absent).
 LAYOUT = {
     "figure_1": {
-        "caption": ("Document format (a), the Top7 structure (b), and its observed (c) and "
-                    "predicted (d) contact maps."),
-        "rows": [[("document_format", None), ("top7_structure_cartoon_front", None)],
+        "caption": ("Document format (a) and Top7's ground-truth (b) and predicted (c) contact "
+                    "maps; the deposited structure is inset in b."),
+        # Half width, so the format panel matches the panels below it instead of being stretched
+        # across the whole column.
+        "rows": [([("document_format", None)], 0.5),
                  [("top7_map_ground_truth", None), ("top7_map_predicted", None)]],
     },
     "figure_2": {
@@ -115,6 +117,9 @@ def assemble(name: str, specification: dict, width: float, dpi: int = 300) -> Pa
     missing = []
 
     for row in specification["rows"]:
+        # A row is a list of panels, or a (panels, width-fraction) pair. Without the fraction a
+        # single-panel row is scaled to the full width and dwarfs the rows beside it.
+        row, row_fraction = row if isinstance(row, tuple) else (row, 1.0)
         sizes, sources = [], []
         for stem, fallback in row:
             path = OUTPUT / f"{stem}.svg"
@@ -133,7 +138,7 @@ def assemble(name: str, specification: dict, width: float, dpi: int = 300) -> Pa
 
         # Scale the row to the figure width, keeping every panel's aspect ratio.
         natural = sum(w for w, _ in sizes) + GUTTER * (len(sizes) - 1)
-        scale = (width - 2 * MARGIN) / natural
+        scale = ((width - 2 * MARGIN) * row_fraction) / natural
         x = MARGIN
         row_height = 0.0
         for (path, fallback), (panel_width, panel_height) in zip(sources, sizes):
