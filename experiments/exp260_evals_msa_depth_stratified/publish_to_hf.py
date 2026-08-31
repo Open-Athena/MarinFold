@@ -32,6 +32,7 @@ PUBLISHED = (
     "depth_tiers.csv",
     "paired_deltas.csv",
     "tier_counts.csv",
+    "low_msa_depth_set.csv",
 )
 DESTINATION = (
     f"hf://buckets/open-athena/MarinFold/{U.PUBLISH_PREFIX}/{U.RUN_ID}/analysis"

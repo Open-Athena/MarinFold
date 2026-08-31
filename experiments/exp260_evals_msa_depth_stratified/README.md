@@ -192,36 +192,45 @@ Three things fall out of that table:
 3. **It clears the memorisation null everywhere**, and by the widest margin at
    `<10` (+0.315). The score is not retrieval.
 
-### The same cut on AUC
+### The low-MSA-depth cut — the 29, and the 5
 
-R-precision is prevalence-sensitive and prevalence moves with the tiers: median
-length is 148 residues in the `<10` bin against 290 at `≥1000`, and contact
-prevalence goes as ~1/L, so short proteins get an easier R-precision. That bias
-works *against* the decline reported above, which makes the decline conservative
-— but it also means the ranking-quality view is worth reading separately.
+The `<10` bin is the one worth naming, so it is frozen as a set:
+[`data/low_msa_depth_set.csv`](data/low_msa_depth_set.csv) — 16 `cameo_hard`,
+8 `casp_fm`, and 5 `foldbench_monomer` (all five in `eval-test`), depths 1 to 9,
+median length 148. It is now a standing reporting cut in the `eval-checkpoint`
+skill.
 
-Mean all-range AUC, all natural:
+| predictor | low-MSA-depth (29) | FoldBench-only (5) | all natural (372) |
+|---|---:|---:|---:|
+| **MarinFold #232 `m2-p06` training** | **0.379** | **0.342** | 0.527 |
+| Protenix-v2 + MSA | 0.510 | 0.320 | 0.813 |
+| Protenix-v2 single-seq | 0.457 | 0.305 | 0.276 |
+| ESMFold2 | 0.556 | 0.664 | 0.743 |
+| seq-KNN (decontaminated corpus) | 0.027† | 0.027 | 0.420 |
 
-| depth | n | **MarinFold** | Protenix-v2 + MSA | ESMFold2 | Protenix-v2 single-seq |
-|---|---:|---:|---:|---:|---:|
-| `<10` | 29 | **0.881** | 0.825 | 0.799 | 0.785 |
-| `10–100` | 33 | **0.858** | 0.886 | 0.757 | 0.645 |
-| `100–1000` | 77 | **0.894** | 0.931 | 0.815 | 0.633 |
-| `≥1000` | 233 | **0.957** | 0.952 | 0.933 | 0.644 |
+† published for the FoldBench proteins only, so that column is the 5.
 
-**On ranking quality, MarinFold is the best predictor in the shallow bin.**
-Paired, over the proteins where baseline AUC is published (see the caveat
-below): +0.054 [+0.002, +0.105] against Protenix-v2 + MSA and +0.080 [+0.037,
-+0.124] against ESMFold2 at `<10`, and a tie against `+MSA` at `≥1000` (+0.006
-[−0.006, +0.017]). So the R-precision gap in the shallow tier is not a failure
-to identify contacts — it is a failure to concentrate them in the top-L cut.
+**Report both rows, because they disagree.** Paired against Protenix-v2 + MSA,
+MarinFold is **−0.131 [−0.232, −0.030]** on the 29 and **+0.022 [−0.162,
++0.206]** on the 5. Quoting the FoldBench subset alone turns a clear loss into an
+apparent tie on five proteins — which is exactly what the preliminary table in
+this experiment's first draft did.
 
-**Caveat that limits this one:** #245 published baseline AUC only for the 97
-`eval-val` proteins, not for `eval-test`. The paired AUC comparison therefore
-covers 155 of the 372 natural proteins (97 `eval-val` + the 58 non-FoldBench),
-24 of them in the `<10` bin. MarinFold and the seq-KNN null have AUC for all
-314 FoldBench proteins, so the unpaired means in the table above are on
-different denominators per column — `n` in `depth_tiers.csv` is per row.
+Two properties of the cut that support reading it as a real MSA-poor regime
+rather than a measurement artifact:
+
+- **Protenix-v2 `+MSA` collapses toward its own single-sequence arm here** —
+  0.510 against 0.457, versus 0.813 against 0.276 over all natural proteins.
+  When the MSA is empty, the `+MSA` arm has nothing to add, which is what we
+  should see if the depths are real.
+- **The depths reproduce independently.** #247 counted the same a3m files with
+  different code and agrees on all 314 FoldBench naturals exactly; the 11 stems
+  held by both Modal volumes all land in the same tier.
+
+The one thing to hold loosely: median length is 148 residues in this cut against
+290 at `≥1000`, and contact prevalence goes as ~1/L, so R-precision is
+mechanically easier here. That flatters every predictor in the cut equally, but
+it makes the *cross-tier* decline for a single predictor conservative.
 
 ### The two halves separately, and the Neff axis
 
@@ -267,21 +276,38 @@ The `eval-test` read gives the #232 `m2-p06` training checkpoint **0.5693**
 all-range R-precision, +0.032 over the sweep checkpoint and 0.144 clear of the
 seq-KNN null over its own decontaminated corpus.
 
-On the MSA-depth question the honest answer is **no, accuracy does not hold up**:
-MarinFold degrades with MSA depth much as the MSA-based methods do, and in the
-shallow bins it has no edge over Protenix-v2 *single-sequence*, let alone over
-ESMFold2. Two results survive that:
+On the MSA-depth question the answer is **no, accuracy does not hold up**.
+MarinFold degrades with MSA depth much as the MSA-based methods do — 0.616 at
+depth `≥1000` down to 0.379 below 10 — and in the shallow bins it has no edge
+over Protenix-v2 *single-sequence* (−0.078 [−0.173, +0.019]), let alone over
+ESMFold2. Depth is a proxy for how well a protein's family is represented
+anywhere, including in the AFDB corpus MarinFold trained on, so a
+single-sequence model does not escape it.
 
-- The **gap to Protenix-v2 + MSA is at its narrowest where MSAs are thinnest**
-  (−0.131 at depth `<10` versus −0.242 at `≥1000`).
-- On **AUC** — ranking quality rather than top-L precision — MarinFold is the
-  best predictor measured in the `<10` bin (0.881, +0.054 over `+MSA` paired).
-  Whatever is wrong in the shallow regime is a concentration problem at the
-  cut, not an inability to find the contacts.
+One relative result survives: the **gap to Protenix-v2 + MSA is at its narrowest
+where MSAs are thinnest** — −0.131 [−0.232, −0.030] at depth `<10` against
+−0.242 at `≥1000`. It never closes, and the narrowing is mostly Protenix falling
+(0.858 → 0.510) rather than MarinFold rising. On these 29 proteins MarinFold is
+still behind every structure predictor measured, and ahead only of the
+memorisation null.
 
-The natural follow-up is whether that AUC advantage can be converted: a
-shallow-MSA-specific recalibration of the top-L cut, or a shallow-MSA-weighted
-training mix. Neither is tested here.
+That makes the low-MSA-depth cut the standing target rather than a finding: it
+is now a required reporting row in the `eval-checkpoint` skill, so future
+checkpoints are measured on the regime a single-sequence model is supposed to
+own.
+
+### A note on AUC
+
+An earlier draft of this README leaned on AUC — MarinFold ranks contacts better
+than every baseline in the shallow bin (0.881 vs 0.825 for `+MSA`). **That
+comparison is not fair and is withdrawn.** #89 scores a structure predictor from
+a degree matrix in which every pair it did not predict is exactly 0, so ~99 % of
+candidate pairs are tied at the bottom and `roc_auc_score` awards each tie half
+credit. The sparser the predictor, the worse the penalty — it measures output
+sparsity as much as ranking quality. AUC stays in
+[`data/depth_tiers.csv`](data/depth_tiers.csv) as a within-predictor diagnostic
+and for comparing MarinFold checkpoints to each other; no conclusion here rests
+on it, and the `eval-checkpoint` skill now says so.
 
 ## Artifacts
 
@@ -328,7 +354,8 @@ Modal volumes `protenix-foldbench-msa` and `protenix-exp74-msa`.
 `marinfold_precision.csv` committed gzipped), `data/universe.csv`, and — landing
 with the depth commit — `data/msa_depth.csv`, `data/per_protein_depth.csv`,
 `data/depth_tiers.csv`, `data/paired_deltas.csv`, `data/tier_counts.csv`,
-`data/depth_consistency.json`, `plots/*.png`, `plots/summary.pdf`.
+`data/depth_consistency.json`, `data/low_msa_depth_set.csv`, `plots/*.png`,
+`plots/summary.pdf`.
 
 The `eval-test` read is recorded as row 3 in
 [`experiments/exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md`](../exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md).
@@ -355,6 +382,7 @@ The `eval-test` read is recorded as row 3 in
 | `check_depth_consistency.py` | The two depth cross-checks. |
 | `build_depth_table.py` | Step 3 — join scores to depth; tier means, paired deltas, bootstrap intervals. |
 | `plot_depth.py` | Step 4 — the three figures. |
+| `build_low_depth_set.py` | Step 5 — freeze the 29-protein low-MSA-depth set. |
 | `publish_to_hf.py` | Push the analysis tables to the public bucket. |
 | `rollout/` | The CoreWeave scoring harness, derived from PR #257's. |
 | `build_summary.py` | Rebuild `plots/summary.pdf` from `summary_narrative.md` + `plots/`. |
@@ -369,6 +397,7 @@ uv run modal run msa_depth_modal.py
 uv run python check_depth_consistency.py
 uv run python build_depth_table.py
 uv run python plot_depth.py
+uv run python build_low_depth_set.py
 uv run python build_summary.py
 
 # the scoring half (needs CoreWeave access; ~10 minutes on 12 H100s at batch)

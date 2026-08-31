@@ -63,25 +63,46 @@ trained on. Paired against Protenix-v2 single-seq, MarinFold's whole advantage
 is a deep-MSA phenomenon: +0.367 at ≥1000, and indistinguishable from zero in
 both shallow bins.
 
+## The low-MSA-depth cut — now a standing report
+
+29 natural proteins with a ColabFold MSA under 10 sequences: 16 CAMEO-hard, 8
+CASP-FM, 5 FoldBench (all in eval-test). Frozen as
+`data/low_msa_depth_set.csv` and now a required reporting row in the
+`eval-checkpoint` skill.
+
+| predictor | the 29 | FoldBench-only (5) | all natural (372) |
+|---|---:|---:|---:|
+| **MarinFold #232 m2-p06 training** | **0.379** | **0.342** | 0.527 |
+| Protenix-v2 + MSA | 0.510 | 0.320 | 0.813 |
+| Protenix-v2 single-seq | 0.457 | 0.305 | 0.276 |
+| ESMFold2 | 0.556 | 0.664 | 0.743 |
+
+Report both rows: paired against Protenix-v2 + MSA, MarinFold is −0.131 [−0.232,
+−0.030] on the 29 and +0.022 [−0.162, +0.206] on the 5. The FoldBench subset
+alone turns a clear loss into an apparent tie.
+
+That these are genuinely MSA-poor and not mis-measured: Protenix-v2 + MSA
+collapses toward its own single-sequence arm here (0.510 vs 0.457, against 0.813
+vs 0.276 overall).
+
 ## What survives
 
-Two results, both paired per-protein with bootstrap intervals:
+The **gap to Protenix-v2 + MSA is narrowest where MSAs are thinnest** — −0.131
+[−0.232, −0.030] at depth <10 against −0.242 at ≥1000. It never closes, and the
+narrowing is mostly Protenix falling rather than MarinFold rising. On the 29,
+MarinFold is behind every structure predictor measured and ahead only of the
+memorisation null.
 
-- The **gap to Protenix-v2 + MSA is narrowest where MSAs are thinnest** —
-  −0.131 [−0.232, −0.030] at depth <10 against −0.242 at ≥1000. It never closes,
-  and the narrowing is mostly Protenix falling rather than MarinFold rising.
-- On **AUC**, MarinFold is the **best predictor measured in the <10 bin** —
-  0.881, +0.054 [+0.002, +0.105] over Protenix-v2 + MSA and +0.080 over
-  ESMFold2. The shallow-tier R-precision gap is a failure to concentrate
-  contacts in the top-L cut, not a failure to rank them.
+AUC is deliberately not used for any cross-predictor claim here: #89 scores
+structure predictors from a degree matrix where unpredicted pairs are exactly 0,
+so ~99 % of candidate pairs tie at the bottom and roc_auc_score gives each tie
+half credit — it measures output sparsity as much as ranking quality.
 
 ## Caveats
 
 - The FoldBench half has only 5 proteins under depth 10; the pooled row is the
   one to read, and it exists because the 58 CAMEO-hard / CASP-FM targets (24 of
   them under depth 10) were brought in.
-- Baseline AUC is published for `eval-val` only, so the paired AUC comparison
-  covers 155 of the 372 natural proteins.
 - Median length is 148 residues in the <10 bin against 290 at ≥1000, and contact
   prevalence goes as ~1/L. That bias favours the shallow bins, so the reported
   decline is conservative.
