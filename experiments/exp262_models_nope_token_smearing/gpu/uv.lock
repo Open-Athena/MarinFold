@@ -662,6 +662,7 @@ gpu = [
 ]
 test = [
     { name = "pytest", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
+    { name = "torch", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
 ]
 
 [package.metadata]
@@ -685,6 +686,7 @@ requires-dist = [
     { name = "s3fs" },
     { name = "torch", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "exp262-models-nope-token-smearing", extra = "gpu" } },
     { name = "torch", marker = "sys_platform != 'linux' and extra == 'gpu'", specifier = "==2.11.0" },
+    { name = "torch", marker = "extra == 'test'" },
     { name = "torchvision", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==0.26.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "exp262-models-nope-token-smearing", extra = "gpu" } },
     { name = "torchvision", marker = "sys_platform != 'linux' and extra == 'gpu'", specifier = "==0.26.0" },
 ]
