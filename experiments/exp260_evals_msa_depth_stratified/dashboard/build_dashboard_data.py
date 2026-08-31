@@ -167,7 +167,7 @@ def main() -> None:
     )["proteins"]
     alignments = json.loads((U.DATA / "low_msa_depth_a3m.json").read_text())
     structures = json.loads((U.DATA / "low_depth_structures.json").read_text())
-    annotations = json.loads((U.DATA / "low_depth_annotations.json").read_text())
+    annotations = json.loads((U.DATA / "nonfoldbench_annotations.json").read_text())
     baselines = baseline_contacts(units)
 
     scores = pd.read_csv(U.DATA / "per_protein_depth.csv")

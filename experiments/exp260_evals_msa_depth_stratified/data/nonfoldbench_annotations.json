@@ -701,5 +701,65 @@
   "source_name": "RCSB 8H2N",
   "source_url": "https://www.rcsb.org/structure/8h2n",
   "title": "gp96 RNA polymerase from P23-45 phage (crystal 2)"
+ },
+ "foldbench_monomer__8ii8_A": {
+  "designed": false,
+  "keywords": "LIPID BINDING PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "Chromoprotein",
+  "organism": "Pleurotus salmoneostramineus",
+  "released": "2024-08-14",
+  "resolution": 1.25,
+  "source_name": "RCSB 8II8",
+  "source_url": "https://www.rcsb.org/structure/8ii8",
+  "title": "X-ray crystal structure of pink-colored protein from Pleurotus salmoneostramineus in complex with natural chromophore"
+ },
+ "foldbench_monomer__8oxk_A": {
+  "designed": false,
+  "keywords": "UNKNOWN FUNCTION",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "CSEP0141 putative effector protein",
+  "organism": "Blumeria hordei",
+  "released": "2023-08-16",
+  "resolution": 1.37,
+  "source_name": "RCSB 8OXK",
+  "source_url": "https://www.rcsb.org/structure/8oxk",
+  "title": "crystal structure of powdery mildews Blumeria graminis f. sp. hordei AVRA10"
+ },
+ "foldbench_monomer__8qoh_A": {
+  "designed": false,
+  "keywords": "CELL CYCLE",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "kinetochore protein KKT14",
+  "organism": "Apiculatamorpha spiralis",
+  "released": "2024-01-17",
+  "resolution": 2.2,
+  "source_name": "RCSB 8QOH",
+  "source_url": "https://www.rcsb.org/structure/8qoh",
+  "title": "Crystal structure of the kinetoplastid kinetochore protein KKT14 C-terminal domain from Apiculatamorpha spiralis"
+ },
+ "foldbench_monomer__8ux2_A": {
+  "designed": false,
+  "keywords": "TRANSFERASE",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "NAD(+)--protein-threonine ADP-ribosyltransferase",
+  "organism": "Chromobacterium violaceum",
+  "released": "2024-01-17",
+  "resolution": 1.87,
+  "source_name": "RCSB 8UX2",
+  "source_url": "https://www.rcsb.org/structure/8ux2",
+  "title": "Chromobacterium violaceum mono-ADP-ribosyltransferase CteC in complex with NAD+"
+ },
+ "foldbench_monomer__8wrx_A": {
+  "designed": false,
+  "keywords": "IMMUNE SYSTEM",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "Anti-CRISPR protein AcrIIA28",
+  "organism": "Streptococcus phage Javan128",
+  "released": "2024-09-11",
+  "resolution": 1.45,
+  "source_name": "RCSB 8WRX",
+  "source_url": "https://www.rcsb.org/structure/8wrx",
+  "title": "Anti-CRISPR type II-A 28"
  }
 }

@@ -83,7 +83,7 @@
 </head>
 <body>
 <header>
-  <h1>Low-MSA-depth eval cases — 29 natural proteins under 10 ColabFold sequences</h1>
+  <h1>Low-MSA-depth eval cases — 29 proteins under 10 ColabFold sequences</h1>
   <p id="blurb"></p>
   <p class="warn" id="caveat"></p>
   <p id="provenance"></p>
@@ -127,13 +127,19 @@ const scoreOf = (p, name) => p.r_precision[SCORE_KEYS[name]];
 const predictors = (p) => ORDER.filter((name) => p.contacts[name]);
 
 document.getElementById("blurb").textContent =
-  `${PROTEINS.length} proteins: ` +
+  `${PROTEINS.filter((p) => !p.annotation.designed).length} natural and ` +
+  `${PROTEINS.filter((p) => p.annotation.designed).length} de novo designs, from ` +
   ["CAMEO hard", "CASP free-modeling", "FoldBench"]
     .map((s) => `${PROTEINS.filter((p) => p.source === s).length} ${s}`).join(", ") +
   `. Predicted contacts are each predictor's top-L pairs; a pair counts as a contact at ` +
   `≥${DATA.contact_definition.min_degree} degree and ≥${DATA.contact_definition.min_separation} residues of separation.`;
 document.getElementById("caveat").innerHTML =
-  "<b>The two halves are not equally fair to the baselines.</b> The 24 CAMEO-hard and " +
+  "<b>13 of these 29 are de novo designs, and they are not natural proteins.</b> RCSB " +
+  "annotates them as such; a designed protein has no homologs by construction, which is " +
+  "why they concentrate here. They are easy for structure predictors — Protenix-v2 " +
+  "single-sequence scores 0.722 on them against 0.241 on the 16 natural ones — so the " +
+  "experiment reports them apart, and so should you. They are marked below.<br><br>" +
+  "<b>The two halves are not equally fair to the baselines.</b> The CAMEO-hard and " +
   "CASP-FM targets are long-standing public benchmarks and are generally inside the " +
   "training sets of the structure predictors here (Protenix-v2, ESMFold, ESMFold2), so a " +
   "head-to-head on those proteins flatters them. MarinFold's corpus was decontaminated " +
@@ -175,7 +181,8 @@ function renderList() {
   const body = rows.map((p) => `
     <tr data-key="${p.key}" class="${p.key === current.key ? "active" : ""}" title="${
       escape((p.annotation.molecule || p.annotation.title || "").slice(0, 120))}">
-      <td>${p.stem}${p.in_foldbench ? ' <span class="badge fb">FB</span>' : ""}</td>
+      <td>${p.stem}${p.in_foldbench ? ' <span class="badge fb">FB</span>' : ""}${
+        p.annotation.designed ? ' <span class="badge warn-badge">design</span>' : ""}</td>
       <td>${COLUMNS[1].show(p)}</td>
       <td>${p.L}</td>
       <td>${p.n_true_contacts}</td>
@@ -342,6 +349,11 @@ function renderDetail() {
         '<span class="badge warn-badge" title="CAMEO-hard and CASP-FM targets are ' +
         'generally inside the baselines\' training sets, so the baseline columns here ' +
         'flatter them.">baselines likely trained on this</span>'}
+      ${p.annotation.designed ?
+        '<span class="badge warn-badge" title="RCSB annotates this entry as a de novo ' +
+        'design. Designed backbones have no homologs by construction and are easy for ' +
+        'structure predictors, so they are reported apart from the natural proteins.">' +
+        'de novo design — not counted as natural</span>' : ""}
     </h2>
     <p class="description">
       <b>${escape(p.annotation.molecule || p.annotation.title || "—")}</b>${

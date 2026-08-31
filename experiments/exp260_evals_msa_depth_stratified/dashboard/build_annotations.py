@@ -141,8 +141,19 @@ def all_sources() -> pd.DataFrame:
     casp = pd.read_csv(exp65 / "casp_fm_pdb_fallback.csv")
     casp = casp[casp.status == "pdb_fallback"].rename(columns={"domain": "stem"})
     casp = casp[["stem", "pdb_id", "chain", "casp_range"]]
-    merged = other.merge(
-        pd.concat([cameo, casp], ignore_index=True), on="stem", how="left"
+    # The FoldBench members of the low-MSA-depth set need annotating too — the
+    # dashboard shows all 29 — and running them through the same design check
+    # cross-checks #245's own designed flag.
+    foldbench = pd.read_csv(U.DATA / "foldbench_chains.csv")[["stem", "pdb_id", "chain"]]
+    foldbench.insert(0, "dataset", "foldbench_monomer")
+    merged = pd.concat(
+        [
+            other.merge(
+                pd.concat([cameo, casp], ignore_index=True), on="stem", how="left"
+            ),
+            foldbench,
+        ],
+        ignore_index=True,
     )
     if "casp_range" not in merged:
         merged["casp_range"] = None
