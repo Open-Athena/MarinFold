@@ -702,6 +702,78 @@
   "source_url": "https://www.rcsb.org/structure/8h2n",
   "title": "gp96 RNA polymerase from P23-45 phage (crystal 2)"
  },
+ "foldbench_monomer__5sbj_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "METP, miniaturized rubredoxin",
+  "organism": "synthetic construct",
+  "released": "2023-02-15",
+  "resolution": 1.28,
+  "source_name": "RCSB 5SBJ",
+  "source_url": "https://www.rcsb.org/structure/5sbj",
+  "title": "The crystal structure of METP in complex with Cd at a resolution of 1.29 A."
+ },
+ "foldbench_monomer__7ur7_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "17_bp_sh3",
+  "organism": "synthetic construct",
+  "released": "2023-03-22",
+  "resolution": 1.21,
+  "source_name": "RCSB 7UR7",
+  "source_url": "https://www.rcsb.org/structure/7ur7",
+  "title": "17_bp_sh3, a small beta-barrel de novo designed protein"
+ },
+ "foldbench_monomer__8ah9_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "RAbetaB-16.1",
+  "organism": "synthetic construct",
+  "released": "2023-08-16",
+  "resolution": 1.75,
+  "source_name": "RCSB 8AH9",
+  "source_url": "https://www.rcsb.org/structure/8ah9",
+  "title": "De novo retro-aldolase RAbetaB-16.1"
+ },
+ "foldbench_monomer__8eov_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "C2HR1_4r",
+  "organism": "synthetic construct",
+  "released": "2023-08-16",
+  "resolution": 1.59,
+  "source_name": "RCSB 8EOV",
+  "source_url": "https://www.rcsb.org/structure/8eov",
+  "title": "Precisely patterned nanofibers made from extendable protein multiplexes"
+ },
+ "foldbench_monomer__8fjf_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "H10",
+  "organism": "synthetic construct",
+  "released": "2023-09-27",
+  "resolution": 1.6,
+  "source_name": "RCSB 8FJF",
+  "source_url": "https://www.rcsb.org/structure/8fjf",
+  "title": "The three-repeat design H10"
+ },
+ "foldbench_monomer__8gac_A": {
+  "designed": true,
+  "keywords": "PROTEIN BINDING",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "CTLA-4 binder",
+  "organism": "synthetic construct",
+  "released": "2024-08-21",
+  "resolution": 1.85,
+  "source_name": "RCSB 8GAC",
+  "source_url": "https://www.rcsb.org/structure/8gac",
+  "title": "Crystal structure of a high affinity CTLA-4 binder"
+ },
  "foldbench_monomer__8ii8_A": {
   "designed": false,
   "keywords": "LIPID BINDING PROTEIN",
@@ -714,6 +786,54 @@
   "source_url": "https://www.rcsb.org/structure/8ii8",
   "title": "X-ray crystal structure of pink-colored protein from Pleurotus salmoneostramineus in complex with natural chromophore"
  },
+ "foldbench_monomer__8k7z_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "De novo design protein",
+  "organism": "synthetic construct",
+  "released": "2024-07-31",
+  "resolution": 1.3,
+  "source_name": "RCSB 8K7Z",
+  "source_url": "https://www.rcsb.org/structure/8k7z",
+  "title": "De novo design protein -N1"
+ },
+ "foldbench_monomer__8k83_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "De novo design protein",
+  "organism": "synthetic construct",
+  "released": "2024-07-31",
+  "resolution": 1.8,
+  "source_name": "RCSB 8K83",
+  "source_url": "https://www.rcsb.org/structure/8k83",
+  "title": "De novo design protein -N2"
+ },
+ "foldbench_monomer__8ka7_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "De novo design protein -NB7",
+  "organism": "synthetic construct",
+  "released": "2024-08-07",
+  "resolution": 1.85,
+  "source_name": "RCSB 8KA7",
+  "source_url": "https://www.rcsb.org/structure/8ka7",
+  "title": "De novo design protein -NB7"
+ },
+ "foldbench_monomer__8kcj_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "De novo design protein -N7",
+  "organism": "synthetic construct",
+  "released": "2024-08-14",
+  "resolution": 1.45,
+  "source_name": "RCSB 8KCJ",
+  "source_url": "https://www.rcsb.org/structure/8kcj",
+  "title": "De novo design protein -N7"
+ },
  "foldbench_monomer__8oxk_A": {
   "designed": false,
   "keywords": "UNKNOWN FUNCTION",
@@ -725,6 +845,30 @@
   "source_name": "RCSB 8OXK",
   "source_url": "https://www.rcsb.org/structure/8oxk",
   "title": "crystal structure of powdery mildews Blumeria graminis f. sp. hordei AVRA10"
+ },
+ "foldbench_monomer__8oyy_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "De novo designed soluble GPCR-like protein",
+  "organism": "synthetic construct",
+  "released": "2023-10-18",
+  "resolution": 1.85,
+  "source_name": "RCSB 8OYY",
+  "source_url": "https://www.rcsb.org/structure/8oyy",
+  "title": "De novo designed soluble GPCR-like fold GLF_32"
+ },
+ "foldbench_monomer__8qkd_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "sc-CC-5-24",
+  "organism": "synthetic construct",
+  "released": "2024-07-03",
+  "resolution": 1.9,
+  "source_name": "RCSB 8QKD",
+  "source_url": "https://www.rcsb.org/structure/8qkd",
+  "title": "X-ray crystal structure of a de novo designed single-chain parallel coiled-coil alpha-helical barrel with 5 inner helices, sc-CC-5-24"
  },
  "foldbench_monomer__8qoh_A": {
   "designed": false,
@@ -749,6 +893,18 @@
   "source_name": "RCSB 8UX2",
   "source_url": "https://www.rcsb.org/structure/8ux2",
   "title": "Chromobacterium violaceum mono-ADP-ribosyltransferase CteC in complex with NAD+"
+ },
+ "foldbench_monomer__8vc8_A": {
+  "designed": true,
+  "keywords": "DE NOVO PROTEIN",
+  "method": "X-RAY DIFFRACTION",
+  "molecule": "HEM_3.C9",
+  "organism": "synthetic construct",
+  "released": "2024-03-20",
+  "resolution": 1.8,
+  "source_name": "RCSB 8VC8",
+  "source_url": "https://www.rcsb.org/structure/8vc8",
+  "title": "Crystal structure of heme-loaded design: HEM_3.C9"
  },
  "foldbench_monomer__8wrx_A": {
   "designed": false,

@@ -158,11 +158,14 @@ and published at
 `hf://buckets/open-athena/MarinFold/data/contacts-v1-msa-depth-exp260/v1-01/analysis/low_msa_depth_set.csv`.
 Report it for every checkpoint evaluation, as two rows:
 
+The frozen file holds **all 42** eval proteins under depth 10 — natural and
+designed, both universes — with a `designed` column. Report it as three rows:
+
 | cut | n | what it is |
 |---|---:|---|
 | **low-MSA-depth, natural** | **16** | 3 `cameo_hard` + 8 `casp_fm` + 5 `foldbench_monomer` (all 5 in `eval-test`) |
 | **low-MSA-depth, FoldBench only** | **5** | the FoldBench half alone — the only like-for-like baseline comparison |
-| **low-MSA-depth designs** | **13** | CAMEO-hard entries RCSB calls de novo; report apart, never pooled |
+| **low-MSA-depth designs** | **26** | 13 CAMEO-hard entries RCSB calls de novo + 13 `eval-denovo`; report apart, never pooled |
 
 Report all three. The 16 is what has enough proteins to say anything; the 5 is
 the only subset where the baselines are not trained on the answer; the 13 exist

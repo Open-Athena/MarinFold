@@ -38,6 +38,85 @@ import upstream as U  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 
+#: Exactly which model produced each prediction layer on the page, and where
+#: the artifacts are. The Helico "+ MarinFold contacts" arm is the trap: it was
+#: conditioned on an *earlier* #232 m2-p06 checkpoint (step 145,199, the sweep)
+#: than the one whose contact maps this page shows (step 363,000, the training
+#: run), so the two must not be read as the same model.
+BUCKET_TREE = "https://huggingface.co/buckets/open-athena/MarinFold/tree/main"
+WANDB = "https://wandb.ai/open-athena/MarinFold/runs"
+PROVENANCE = [
+    {
+        "what": "MarinFold contacts (the contact layer, and the R-precision column)",
+        "model": "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1, step 363,000",
+        "detail": "1.5B contacts-v1, trained on #225's decontaminated corpus. Contacts are "
+        "the top-L pairs by occurrence frequency over 100 rollouts (temperature 1.0, "
+        "top-p 0.95, top-k off, token budget 6L+128) — #82's recipe, scored with #89's "
+        "metric implementation.",
+        "links": [
+            ["checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000"],
+            ["W&B run", f"{WANDB}/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1"],
+            ["eval run", f"{U.RESULTS_URL}/results/run_manifest.json"],
+            ["experiment", "https://github.com/Open-Athena/MarinFold/issues/260"],
+        ],
+    },
+    {
+        "what": "Helico + MarinFold contacts",
+        "model": "Helico contacts-msafree-01, step 6,000 — conditioned on a DIFFERENT MarinFold checkpoint",
+        "detail": "The contacts fed to Helico came from prot-exp232-cw-cv1-decontam-s02-m2-p06-aug "
+        "step 145,199 (the #232 sweep checkpoint, via #245's fbmono-20260818-01 run), not from "
+        "the step-363,000 checkpoint whose contact maps are shown on this page. 3 diffusion "
+        "samples, 6 trunk recycles, seed 42, single-sequence, no MSA.",
+        "links": [
+            ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
+            ["contact-source checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199"],
+            ["contact-source W&B", f"{WANDB}/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug"],
+            ["structures", "https://huggingface.co/buckets/timodonnell/helico-experiments/tree/main/exp14_foldbench_held_out_monomers/structures/helico"],
+        ],
+    },
+    {
+        "what": "Helico, no contacts · Helico + ground-truth contacts",
+        "model": "Helico contacts-msafree-01, step 6,000",
+        "detail": "Same Helico checkpoint and sampling as above. The `off` arm is given no "
+        "contacts at all; the `oracle` arm is given the ground-truth contacts. Together with "
+        "the MarinFold arm they bracket what the contacts are worth.",
+        "links": [
+            ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
+            ["scores", "https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/exp14_foldbench_held_out_monomers/scores/per_target.csv"],
+        ],
+    },
+    {
+        "what": "Protenix-v2 + MSA · Protenix-v2 single-seq",
+        "model": "protenix-v2, seed 42, 5 samples per seed, best by ranking score",
+        "detail": "The +MSA arm reads the ColabFold alignment shown on this page; the "
+        "single-seq arm reads nothing. Contacts and structures from #74 for the CAMEO/CASP "
+        "proteins and #245 / helico#14 for the FoldBench ones.",
+        "links": [
+            ["#74", "https://github.com/Open-Athena/MarinFold/issues/74"],
+            ["contacts", "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/protenix-contacts-eval-exp74/contacts_raw_all.parquet"],
+        ],
+    },
+    {
+        "what": "ESMFold2",
+        "model": "ESMFold2, single sequence",
+        "detail": "Contacts and structures from #78.",
+        "links": [
+            ["#78", "https://github.com/Open-Athena/MarinFold/issues/78"],
+            ["contacts", "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/esmfold-contacts-eval-exp78/contacts_raw_all.parquet"],
+        ],
+    },
+    {
+        "what": "Ground truth",
+        "model": "The deposited structure, and #89's contact definition",
+        "detail": "Coordinates from RCSB (or predictioncenter's CASP domain tarball), "
+        "renumbered onto the evaluation sequence. A pair counts as a contact at pyconfind "
+        "degree >= 0.001 and >= 6 residues of separation.",
+        "links": [
+            ["ground-truth universe", f"{U.BUCKET}/{U.FOLDBENCH_PREFIX}/gt_universe_scored.jsonl"],
+        ],
+    },
+]
+
 #: #89's contact definition: a pair counts as a contact at >= 0.001 degree and
 #: at least 6 residues of sequence separation. Same thresholds as
 #: ``compute_metrics.py``, so the map and the score agree.
@@ -225,6 +304,7 @@ def main() -> None:
         )
 
     payload = {
+        "provenance": PROVENANCE,
         "generated_from": {
             "scores": U.RESULTS_URL,
             "checkpoint": "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-"

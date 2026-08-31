@@ -3,16 +3,26 @@
 
 """Step 5 — freeze the low-MSA-depth evaluation set.
 
-The 29 natural eval proteins whose ColabFold MSA holds fewer than 10 sequences
-are the regime a single-sequence model exists for, and they are now a standing
-reporting cut (see the ``eval-checkpoint`` skill). Membership has to be a file
-rather than a filter applied fresh each time: the depths come off Modal volumes
-that only a few people can read, and a set that is recomputed per evaluation is
-a set that quietly changes underneath a comparison.
+Every eval protein whose ColabFold MSA holds fewer than 10 sequences, wherever
+it came from: the regime a single-sequence model exists for. Membership has to
+be a file rather than a filter applied fresh each time — the depths come off
+Modal volumes that only a few people can read, and a set recomputed per
+evaluation is a set that quietly changes underneath a comparison.
 
-The 29 span **both** eval universes — 5 FoldBench monomers (all in `eval-test`)
-and 24 CAMEO-hard / CASP-FM targets that only exist in the legacy 554 — so any
-run that wants to report this cut has to score both.
+The set spans **both** eval universes and both protein classes:
+
+* 16 natural — 11 CAMEO-hard / CASP-FM and 5 FoldBench monomers (all in
+  ``eval-test``);
+* 26 de novo designs — 13 CAMEO-hard entries RCSB annotates as designed, and 13
+  ``eval-denovo`` FoldBench monomers.
+
+Designs are kept in the set and flagged, not dropped: they are genuinely
+low-depth proteins and belong in a browsable record of the regime. They are
+simply never pooled with the natural ones for a headline, because a designed
+backbone is easy for structure predictors in a way a natural orphan is not.
+
+Any run reporting this cut has to score the legacy 554 as well as the FoldBench
+monomers.
 
     uv run python build_low_depth_set.py
 """
@@ -25,8 +35,8 @@ import upstream as U
 
 #: The depth cut this set is defined by, and the counts it must produce.
 DEPTH_THRESHOLD = 10
-EXPECTED_TOTAL = 29
-EXPECTED_BY_DATASET = {"cameo_hard": 16, "casp_fm": 8, "foldbench_monomer": 5}
+EXPECTED_TOTAL = 42
+EXPECTED_BY_DATASET = {"cameo_hard": 16, "casp_fm": 8, "foldbench_monomer": 18}
 #: ...of which only these are natural proteins. 13 of the 16 CAMEO-hard members
 #: are de novo designs by RCSB's annotation, which is what a shallow MSA looks
 #: like when the protein was never in an evolutionary lineage at all.
@@ -51,14 +61,10 @@ def build() -> pd.DataFrame:
 
     frame = pd.read_csv(U.DATA / "per_protein_depth.csv")
     proteins = frame.drop_duplicates(["dataset", "stem"])[COLUMNS]
-    low = proteins[
-        proteins.subset.isin(("foldbench_natural", "nonfoldbench_natural",
-                              "nonfoldbench_designed"))
-        & (proteins.msa_depth < DEPTH_THRESHOLD)
-    ].sort_values(["dataset", "stem"], ignore_index=True)
+    low = proteins[proteins.msa_depth < DEPTH_THRESHOLD].sort_values(["dataset", "stem"], ignore_index=True)
 
     low = low.copy()
-    low["designed"] = low.subset == "nonfoldbench_designed"
+    low["designed"] = low.subset.isin(("nonfoldbench_designed", "foldbench_designed"))
     if len(low) != EXPECTED_TOTAL:
         raise ValueError(f"expected {EXPECTED_TOTAL} proteins, got {len(low)}")
     if int((~low.designed).sum()) != EXPECTED_NATURAL:

@@ -67,6 +67,18 @@
   }
   pre.msa .q { color: var(--accent); font-weight: 600; }
   .badge.warn-badge { border-color: var(--bad); color: var(--bad); background: none; padding: 1px 7px; }
+  #summary { padding: 10px 24px 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  #summary table { width: auto; min-width: 520px; }
+  #summary td, #summary th { padding: 4px 14px 4px 0; border-bottom: none; }
+  #summary .head { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); }
+  details#models { margin: 6px 0 2px; font-size: 13px; }
+  details#models summary { cursor: pointer; color: var(--accent); }
+  #models-body { margin: 8px 0 4px; max-width: 110ch; }
+  #models-body .row { padding: 8px 0; border-top: 1px solid var(--line); }
+  #models-body .what { font-weight: 600; }
+  #models-body .model { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all; }
+  #models-body .detail { color: var(--muted); }
+  #models-body a { color: var(--accent); margin-right: 10px; }
   .description { margin: 0 0 12px; max-width: 95ch; font-size: 13px; }
   .description a { color: var(--accent); }
   .description .muted { color: var(--muted); font-size: 12px; }
@@ -78,10 +90,15 @@
 </head>
 <body>
 <header>
-  <h1>Low-MSA-depth eval cases — 29 proteins under 10 ColabFold sequences</h1>
+  <h1>Low-MSA-depth eval cases</h1>
   <p id="blurb"></p>
   <p id="provenance"></p>
+  <div class="controls" id="filters"></div>
+  <details id="models"><summary>Models and provenance — what produced each prediction</summary>
+    <div id="models-body"></div>
+  </details>
 </header>
+<div id="summary"></div>
 <main>
   <div id="list"></div>
   <div id="detail"></div>
@@ -114,6 +131,13 @@ let viewer = null;
 let style = "cartoon";
 let showContacts = true;
 let structureArm = "ground_truth";
+//: Which slices of the set the page is showing. Every count, the summary table
+//: and the index respect these.
+const FILTERS = { foldbench: true, nonfoldbench: true, natural: true, designed: true };
+
+const visible = () => PROTEINS.filter((p) =>
+  (p.in_foldbench ? FILTERS.foldbench : FILTERS.nonfoldbench) &&
+  (p.annotation.designed ? FILTERS.designed : FILTERS.natural));
 
 const escape = (text) => String(text ?? "").replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -122,6 +146,7 @@ const scoreOf = (p, name) => p.r_precision[SCORE_KEYS[name]];
 const predictors = (p) => ORDER.filter((name) => p.contacts[name]);
 
 document.getElementById("blurb").textContent =
+  `Every eval protein whose ColabFold MSA holds fewer than 10 sequences: ` +
   `${PROTEINS.filter((p) => !p.annotation.designed).length} natural and ` +
   `${PROTEINS.filter((p) => p.annotation.designed).length} de novo designs, from ` +
   ["CAMEO hard", "CASP free-modeling", "FoldBench"]
@@ -135,6 +160,73 @@ document.getElementById("footer").textContent =
   "Ground-truth coordinates are Cα traces from RCSB (or the CASP domain tarball), aligned onto the evaluation " +
   "sequence; per-protein alignment coverage is shown with each structure. Contact maps and scores share one " +
   "residue numbering, so a pair drawn on the map is the pair the metric counted.";
+
+function renderFilters() {
+  const options = [
+    ["foldbench", "FoldBench"],
+    ["nonfoldbench", "CAMEO / CASP"],
+    ["natural", "natural"],
+    ["designed", "de novo"],
+  ];
+  document.getElementById("filters").innerHTML = options.map(([key, label]) => {
+    const n = PROTEINS.filter((p) =>
+      key === "foldbench" ? p.in_foldbench :
+      key === "nonfoldbench" ? !p.in_foldbench :
+      key === "designed" ? p.annotation.designed : !p.annotation.designed).length;
+    return `<button data-filter="${key}" class="${FILTERS[key] ? "on" : ""}">${
+      FILTERS[key] ? "✓ " : ""}${label} (${n})</button>`;
+  }).join("");
+  document.querySelectorAll("#filters button").forEach((button) => button.onclick = () => {
+    FILTERS[button.dataset.filter] = !FILTERS[button.dataset.filter];
+    if (!visible().length) {  // never leave the page with nothing selected
+      FILTERS[button.dataset.filter] = true;
+      return;
+    }
+    if (!visible().some((p) => p.key === current.key)) current = visible()[0];
+    renderFilters();
+    renderSummary();
+    renderList();
+    renderDetail();
+  });
+}
+
+function mean(values) {
+  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+}
+
+function renderSummary() {
+  const selected = visible();
+  const rows = ORDER.map((name) => {
+    const scored = selected.map((p) => scoreOf(p, name)).filter((v) => v !== undefined);
+    return { name, n: scored.length, mean: mean(scored) };
+  }).filter((row) => row.n);
+  const depths = selected.map((p) => p.msa_depth).sort((a, b) => a - b);
+  const median = depths.length ? depths[Math.floor(depths.length / 2)] : null;
+  document.getElementById("summary").innerHTML = `
+    <table>
+      <tr class="head"><td>${selected.length} protein${selected.length === 1 ? "" : "s"} selected</td>
+        ${rows.map((r) => `<td>${r.name === MF ? "<b>MarinFold</b>" : escape(r.name)}</td>`).join("")}</tr>
+      <tr><td class="head">mean R-precision (all ranges)</td>
+        ${rows.map((r) => `<td>${r.name === MF ? "<b>" + fmt(r.mean) + "</b>" : fmt(r.mean)}${
+          r.n < selected.length ? ` <span style="color:var(--muted)">(n=${r.n})</span>` : ""}</td>`).join("")}</tr>
+      <tr><td class="head">median MSA depth ${median} · median length ${
+        selected.map((p) => p.L).sort((a, b) => a - b)[Math.floor(selected.length / 2)]} ·
+        ${selected.filter((p) => p.annotation.designed).length} de novo ·
+        ${selected.filter((p) => p.in_foldbench).length} FoldBench</td>
+        <td colspan="${rows.length}"></td></tr>
+    </table>`;
+}
+
+function renderProvenance() {
+  document.getElementById("models-body").innerHTML = (DATA.provenance || []).map((entry) => `
+    <div class="row">
+      <div class="what">${escape(entry.what)}</div>
+      <div class="model">${escape(entry.model)}</div>
+      <div class="detail">${escape(entry.detail)}</div>
+      <div>${entry.links.map(([label, url]) =>
+        `<a href="${url}" target="_blank" rel="noopener">${escape(label)} ↗</a>`).join("")}</div>
+    </div>`).join("");
+}
 
 // ---------- protein list ----------
 const COLUMNS = [
@@ -150,7 +242,7 @@ const COLUMNS = [
 ];
 
 function renderList() {
-  const rows = [...PROTEINS].sort((a, b) => {
+  const rows = [...visible()].sort((a, b) => {
     const column = COLUMNS.find((c) => c.key === sortKey);
     const x = column.get(a), y = column.get(b);
     if (x === undefined || x === null) return 1;
@@ -499,6 +591,9 @@ window.addEventListener("hashchange", () => {
   }
 });
 
+renderFilters();
+renderProvenance();
+renderSummary();
 renderList();
 renderDetail();
 </script>
