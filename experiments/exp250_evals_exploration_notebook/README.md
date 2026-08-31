@@ -283,7 +283,7 @@ Against the null that matters for it — a sequence-KNN predictor built from the
 trained on — m2-p06 clears by **+0.112** (0.532 against 0.420). It trails ESMFold2 by 0.263 and
 leads Protenix-v2 single-seq by 0.268 on the same 314 proteins.
 
-### 6. Manuscript figures — four make/plot notebook pairs
+### 6. Manuscript figures — five make/plot notebook pairs
 
 The publication panels live in [`figures/`](figures/), not in the
 exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes a dataset,
@@ -295,6 +295,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 | 2 | contact-prediction R-precision, natural and designed | CPU |
 | 3 | Helico structure accuracy — GDT-TS and lDDT, separate panels, both classes | CPU |
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
+| 5 | training corpus by source — tokens per corpus, structures on the axis | CPU |
 
 Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
 GPU, package versions, the exact inference recipe as *resolved* (not as requested — `backend:
@@ -360,9 +361,9 @@ information no single-sequence predictor has. On the 19 designed monomers they t
 carry the same asymmetry — MarinFold beats Protenix-v2 single-seq by +0.24 on natural proteins and
 loses by −0.24 on designs. A caption written over these panels has to survive that.
 
-**Validated on two machines.** All eight notebooks execute end to end on a 1xH100 box (torch
-2.11+cu129, vLLM 0.20.2, compute capability 9.0) and on this workstation's A5000 under
-transformers. Top7's R-precision comes out 0.6974 on both — same recipe, different backend,
+**Validated on three machines.** Every notebook executes end to end on a 1xH100 box and on an
+8xA100 box (torch 2.11+cu129, vLLM 0.20.2, compute capability 8.0/9.0), and on this workstation's
+A5000 under transformers. Top7's R-precision comes out 0.6974 on both — same recipe, different backend,
 different card.
 
 ### 7. Hardware notes, measured rather than assumed

@@ -53,14 +53,30 @@ rollout noise of the published per-protein score — `1qys_A` 0.684–0.697 agai
 ## The decontaminated checkpoint
 
 #232's `m2-p06` — the best model trained on corpora with every FoldBench homolog removed — was
-CoreWeave-only until now; `publish_exp232_m2_p06.py` put it on the public bucket as
-`contacts-v1-exp232-m2-p06-1.5B`, so the notebook can fold with it and not just read its scores.
+CoreWeave-only until now; `publish_exp232_m2_p06.py` put both its finals on the public bucket, so
+the notebook can fold with them and not just read their scores: the sweep final as
+`contacts-v1-exp232-m2-p06-1.5B`, and #232's later step-363000 continuation of the same point as
+`contacts-v1-exp232-m2-p06-train-1.5B`. The step-363000 checkpoint is the better model
+(0.6051 against 0.5916 R-precision on the legacy 554) and is what every figure here is drawn
+from.
 
 Paired over 314 natural monomers it trails the contaminated default by **0.074**
 [0.062, 0.086], and is ahead on 13 % of proteins. The gap looks smallest on the 14 proteins with
 no training homolog (−0.009) and the 19 viral ones (−0.029) — but those are far harder for both
 models, and identity does not rank-order the gap among the 300 proteins that have a homolog
 (Spearman +0.001). m2-p06 clears the seq-KNN null over its own corpus by +0.112.
+
+## Scoring the newer checkpoint
+
+#232 evaluated step-363000 on `eval-val` and `eval-denovo` and deliberately left `eval-test`
+unscored, so `score_foldbench_rollouts.py` scored all 333 FoldBench monomers with it on 8xA100 —
+exp82's recipe, #89's metrics, the dense matrices kept because Helico conditions on them.
+**0.5557 / 0.5681 / 0.6123** on eval-val / eval-test / eval-denovo, against the sweep final's
+0.520 / 0.538 / 0.591.
+
+The control that makes those numbers usable beside baselines nobody re-ran: the same pipeline on
+the checkpoint #245 *did* publish scores 0.5240 against their 0.5198 over the same 97 proteins
+(r = 0.995) — an 0.004 offset against a 0.032 change.
 
 ## What it is not
 
