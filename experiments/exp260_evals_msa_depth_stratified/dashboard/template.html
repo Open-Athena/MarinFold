@@ -107,6 +107,8 @@ let layer = MF;
 let sortKey = "msa_depth";
 let sortDir = 1;
 let viewer = null;
+let style = "cartoon";
+let showContacts = true;
 
 const fmt = (x, d = 3) => (x === undefined || x === null || Number.isNaN(x)) ? "—" : x.toFixed(d);
 const scoreOf = (p, name) => p.r_precision[SCORE_KEYS[name]];
@@ -157,20 +159,36 @@ function renderList() {
     </tr>`).join("");
   document.getElementById("list").innerHTML =
     `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-  document.querySelectorAll("#list th").forEach((th) => th.onclick = () => {
-    const key = th.dataset.key;
-    sortDir = key === sortKey ? -sortDir : (key === "stem" || key === "source" ? 1 : 1);
-    sortKey = key;
-    renderList();
-  });
-  document.querySelectorAll("#list tbody tr").forEach((tr) => tr.onclick = () => {
-    current = PROTEINS.find((p) => p.key === tr.dataset.key);
-    history.replaceState(null, "", `#${current.stem}`);
-    if (!predictors(current).includes(layer)) layer = predictors(current)[0];
-    renderList();
-    renderDetail();
-  });
 }
+
+// Delegated once, on the container: the table is re-rendered on every click and
+// every sort, so per-row handlers would have to be re-attached each time.
+// The hash update is guarded and comes last — replaceState throws a
+// SecurityError in a sandboxed or null-origin frame (which is how the HTML
+// preview proxies serve this page), and an unguarded call there aborted the
+// handler before the re-render, so clicking a row appeared to do nothing.
+document.getElementById("list").addEventListener("click", (event) => {
+  const header = event.target.closest("th");
+  if (header && header.dataset.key) {
+    sortDir = header.dataset.key === sortKey ? -sortDir : 1;
+    sortKey = header.dataset.key;
+    renderList();
+    return;
+  }
+  const row = event.target.closest("tr[data-key]");
+  if (!row) return;
+  const selected = PROTEINS.find((p) => p.key === row.dataset.key);
+  if (!selected) return;
+  current = selected;
+  if (!predictors(current).includes(layer)) layer = predictors(current)[0];
+  renderList();
+  renderDetail();
+  try {
+    history.replaceState(null, "", `#${current.stem}`);
+  } catch (error) {
+    /* sandboxed frame: the page still works, it just cannot deep-link */
+  }
+});
 
 // ---------- contact map ----------
 function drawMap(protein, name) {
@@ -221,26 +239,18 @@ function drawMap(protein, name) {
 }
 
 // ---------- 3D ----------
-function pdbText(protein) {
-  const lines = [];
-  protein.structure.coordinates.forEach((xyz, index) => {
-    if (!xyz) return;
-    const [x, y, z] = xyz;
-    const residue = (index + 1).toString().padStart(4, " ");
-    lines.push(
-      "ATOM  " + (index + 1).toString().padStart(5, " ") + "  CA  ALA A" + residue +
-      "    " + x.toFixed(3).padStart(8, " ") + y.toFixed(3).padStart(8, " ") +
-      z.toFixed(3).padStart(8, " ") + "  1.00  0.00           C"
-    );
-  });
-  return lines.join("\n") + "\nEND\n";
-}
+const STYLES = {
+  cartoon: { cartoon: { color: "spectrum" } },
+  "cartoon + sticks": { cartoon: { color: "spectrum" }, stick: { radius: 0.08 } },
+  sticks: { stick: { radius: 0.12, colorscheme: "Jmol" } },
+  backbone: { line: { colorscheme: "Jmol" } },
+};
 
 function draw3D(protein, name) {
   const host = document.getElementById("viewer");
   if (typeof $3Dmol === "undefined") {
     host.innerHTML = '<p style="padding:12px;color:var(--muted)">The 3D viewer library ' +
-      '(3Dmol.js, loaded from a CDN) is unavailable offline. Contact maps below are unaffected.</p>';
+      "(3Dmol.js) failed to load. Contact maps below are unaffected.</p>";
     return;
   }
   if (!protein.structure.available) {
@@ -248,22 +258,26 @@ function draw3D(protein, name) {
     return;
   }
   host.innerHTML = "";
-  viewer = $3Dmol.createViewer(host, { backgroundColor: getComputedStyle(document.body).getPropertyValue("--panel") });
-  viewer.addModel(pdbText(protein), "pdb");
-  viewer.setStyle({}, { cartoon: { style: "trace", color: "spectrum", thickness: 0.3 } });
+  viewer = $3Dmol.createViewer(host, {
+    backgroundColor: getComputedStyle(document.body).getPropertyValue("--panel"),
+  });
+  viewer.addModel(protein.structure.pdb, "pdb");
+  viewer.setStyle({}, STYLES[style] || STYLES.cartoon);
 
-  const coordinates = protein.structure.coordinates;
-  const L = protein.L;
-  const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
-  for (const [i, j] of (protein.contacts[name] || [])) {
-    if (!coordinates[i] || !coordinates[j]) continue;
-    viewer.addCylinder({
-      start: { x: coordinates[i][0], y: coordinates[i][1], z: coordinates[i][2] },
-      end: { x: coordinates[j][0], y: coordinates[j][1], z: coordinates[j][2] },
-      radius: 0.12,
-      color: truth.has(i * L + j) ? "green" : "red",
-      fromCap: 1, toCap: 1,
-    });
+  if (showContacts) {
+    const coordinates = protein.structure.coordinates;
+    const L = protein.L;
+    const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
+    for (const [i, j] of (protein.contacts[name] || [])) {
+      if (!coordinates[i] || !coordinates[j]) continue;
+      viewer.addCylinder({
+        start: { x: coordinates[i][0], y: coordinates[i][1], z: coordinates[i][2] },
+        end: { x: coordinates[j][0], y: coordinates[j][1], z: coordinates[j][2] },
+        radius: 0.12,
+        color: truth.has(i * L + j) ? "green" : "red",
+        fromCap: 1, toCap: 1,
+      });
+    }
   }
   viewer.zoomTo();
   viewer.render();
@@ -306,6 +320,11 @@ function renderDetail() {
     <div class="grid">
       <div class="card">
         <h3>Ground-truth structure</h3>
+        <div class="controls" id="viewer-controls">
+          ${Object.keys(STYLES).map((option) =>
+            `<button data-style="${option}" class="${option === style ? "on" : ""}">${option}</button>`).join("")}
+          <button data-contacts="1" class="${showContacts ? "on" : ""}">${showContacts ? "✓ " : ""}contacts</button>
+        </div>
         <div id="viewer"></div>
         <div class="legend">
           <span><span class="swatch" style="background:var(--good)"></span>predicted pair, correct</span>
@@ -348,6 +367,21 @@ function renderDetail() {
   document.querySelectorAll("#layers button").forEach((button) => button.onclick = () => {
     layer = button.dataset.layer;
     renderDetail();
+  });
+  // Only the viewer changes for these, so they redraw it in place rather than
+  // re-rendering the panel (which would reset the camera).
+  document.querySelectorAll("#viewer-controls button").forEach((button) => button.onclick = () => {
+    if (button.dataset.contacts) showContacts = !showContacts;
+    else style = button.dataset.style;
+    document.querySelectorAll("#viewer-controls button").forEach((other) => {
+      if (other.dataset.contacts) {
+        other.classList.toggle("on", showContacts);
+        other.textContent = `${showContacts ? "✓ " : ""}contacts`;
+      } else {
+        other.classList.toggle("on", other.dataset.style === style);
+      }
+    });
+    draw3D(current, layer);
   });
   drawMap(p, layer);
   draw3D(p, layer);

@@ -9,6 +9,13 @@ contact records and the vote matrices use. Getting there means fetching the
 deposited entry, finding the chain the evaluation unit came from, and mapping
 its modelled residues onto the evaluation sequence.
 
+Every atom of the mapped chain is kept, not just Cα: a Cα-only model renders as
+spaghetti, and the point of the viewer is to see the fold. The emitted PDB is
+renumbered into evaluation indices and carries HELIX/SHEET records derived from
+biotite's P-SEA annotation, so the viewer draws a real cartoon rather than a
+tube. A separate Cα array indexed the same way is what the contact lines
+attach to.
+
 Chain selection does not trust an identifier. #226 already ran into RCSB's
 auth-versus-label chain naming, and the CASP domains are a sub-range of a chain
 under a third numbering. So every polymer chain in the entry is aligned against
@@ -29,7 +36,9 @@ from difflib import SequenceMatcher
 from pathlib import Path
 
 import gemmi
+import numpy as np
 import pandas as pd
+from biotite.structure import annotate_sse, array as structure_array, Atom
 
 HERE = Path(__file__).resolve().parent
 EXPERIMENT = HERE.parent
@@ -124,37 +133,113 @@ def fetch_casp_domain(domain: str, *, refresh: bool = False) -> Path | None:
 
 
 def chain_traces(path: Path) -> list[dict]:
-    """Return one record per polymer chain: sequence, Cα coordinates, numbering.
+    """Return one record per polymer chain: sequence, Cα, and every atom.
 
-    Only the first model is read, and only residues that actually carry a Cα —
-    an unmodelled residue has no coordinate to draw.
+    Only the first model is read, and only residues that carry a Cα — an
+    unmodelled residue has no coordinate to draw. Hydrogens are dropped (they
+    are absent from most of these entries anyway and double the atom count),
+    and alternate locations collapse to the first.
     """
 
     structure = gemmi.read_structure(str(path))
     structure.setup_entities()
+    structure.remove_alternative_conformations()
+    structure.remove_hydrogens()
     traces = []
     for chain in structure[0]:
-        letters, coordinates, numbers = [], [], []
+        letters, coordinates, residues = [], [], []
         for residue in chain:
             atom = residue.find_atom("CA", "*")
-            if atom is None:
+            info = gemmi.find_tabulated_residue(residue.name)
+            if atom is None or info is None or not info.is_amino_acid():
                 continue
-            letter = gemmi.find_tabulated_residue(residue.name)
-            if letter is None or not letter.is_amino_acid():
-                continue
-            letters.append(gemmi.find_tabulated_residue(residue.name).one_letter_code.upper())
+            letters.append(info.one_letter_code.upper())
             coordinates.append([round(atom.pos.x, 2), round(atom.pos.y, 2), round(atom.pos.z, 2)])
-            numbers.append(residue.seqid.num)
+            residues.append(
+                {
+                    "name": residue.name,
+                    "atoms": [
+                        (a.name, a.element.name, round(a.pos.x, 3), round(a.pos.y, 3), round(a.pos.z, 3))
+                        for a in residue
+                    ],
+                }
+            )
         if len(letters) >= 10:
             traces.append(
                 {
                     "chain": chain.name,
                     "sequence": "".join(letters),
                     "coordinates": coordinates,
-                    "numbers": numbers,
+                    "residues": residues,
                 }
             )
     return traces
+
+
+def secondary_structure(residues: list[dict]) -> list[str]:
+    """P-SEA secondary structure per residue: ``a`` helix, ``b`` strand, ``c`` coil."""
+
+    atoms = []
+    for index, residue in enumerate(residues):
+        if residue is None:
+            continue
+        for name, element, x, y, z in residue["atoms"]:
+            atoms.append(
+                Atom(
+                    [x, y, z], chain_id="A", res_id=index + 1, res_name=residue["name"],
+                    atom_name=name, element=element or name[0], hetero=False,
+                )
+            )
+    if not atoms:
+        return []
+    annotation = annotate_sse(structure_array(atoms))
+    order = [index for index, residue in enumerate(residues) if residue is not None]
+    per_residue = ["c"] * len(residues)
+    for position, code in zip(order, annotation, strict=False):
+        per_residue[position] = str(code)
+    return per_residue
+
+
+def pdb_text(residues: list[dict], sse: list[str]) -> str:
+    """Render the mapped chain as PDB, renumbered into evaluation indices.
+
+    HELIX/SHEET records come from the P-SEA annotation so the viewer's cartoon
+    shows the actual fold; without them 3Dmol falls back to a featureless tube.
+    """
+
+    lines, serial = [], 1
+    runs: list[tuple[str, int, int]] = []
+    for index, code in enumerate(sse):
+        if code in ("a", "b") and runs and runs[-1][0] == code and runs[-1][2] == index - 1:
+            runs[-1] = (code, runs[-1][1], index)
+        elif code in ("a", "b"):
+            runs.append((code, index, index))
+    helix = sheet = 0
+    for code, start, end in runs:
+        if end - start < 2:
+            continue
+        if code == "a":
+            helix += 1
+            lines.append(
+                f"HELIX  {helix:3d} {helix:3d} ALA A {start + 1:4d}  ALA A {end + 1:4d}  1"
+            )
+        else:
+            sheet += 1
+            lines.append(
+                f"SHEET  {sheet:3d} S{sheet:2d} 1 ALA A {start + 1:4d}  ALA A {end + 1:4d}  0"
+            )
+    for index, residue in enumerate(residues):
+        if residue is None:
+            continue
+        for name, element, x, y, z in residue["atoms"]:
+            atom_name = f" {name:<3}" if len(name) < 4 else name
+            lines.append(
+                f"ATOM  {serial:5d} {atom_name} {residue['name']:>3} A{index + 1:4d}    "
+                f"{x:8.3f}{y:8.3f}{z:8.3f}  1.00  0.00          {(element or name[0]):>2}"
+            )
+            serial += 1
+    lines.append("END")
+    return "\n".join(lines)
 
 
 def map_to_eval(trace: dict, eval_sequence: str) -> tuple[list, float, int]:
@@ -167,12 +252,14 @@ def map_to_eval(trace: dict, eval_sequence: str) -> tuple[list, float, int]:
 
     matcher = SequenceMatcher(None, trace["sequence"], eval_sequence, autojunk=False)
     coordinates: list = [None] * len(eval_sequence)
+    residues: list = [None] * len(eval_sequence)
     covered = 0
     for block in matcher.get_matching_blocks():
         for offset in range(block.size):
             coordinates[block.b + offset] = trace["coordinates"][block.a + offset]
+            residues[block.b + offset] = trace["residues"][block.a + offset]
             covered += 1
-    return coordinates, covered / len(eval_sequence), len(eval_sequence) - covered
+    return (coordinates, residues), covered / len(eval_sequence), len(eval_sequence) - covered
 
 
 def build(*, refresh: bool) -> dict:
@@ -197,10 +284,10 @@ def build(*, refresh: bool) -> dict:
         traces = chain_traces(path)
         best, best_coverage, best_mismatch = None, -1.0, None
         for trace in traces:
-            coordinates, coverage, mismatch = map_to_eval(trace, eval_sequence)
+            (coordinates, residues), coverage, mismatch = map_to_eval(trace, eval_sequence)
             if coverage > best_coverage:
                 best, best_coverage, best_mismatch = (
-                    {"chain": trace["chain"], "coordinates": coordinates},
+                    {"chain": trace["chain"], "coordinates": coordinates, "residues": residues},
                     coverage,
                     mismatch,
                 )
@@ -212,6 +299,7 @@ def build(*, refresh: bool) -> dict:
             }
             print(f"[structure] {key}: coverage {best_coverage:.2f} — dropped", flush=True)
             continue
+        sse = secondary_structure(best["residues"])
         out[key] = {
             "available": True,
             "pdb_id": source,
@@ -219,7 +307,11 @@ def build(*, refresh: bool) -> dict:
             "expected_chain": record.chain if isinstance(record.chain, str) else None,
             "coverage": round(best_coverage, 4),
             "unmapped_residues": best_mismatch,
+            "n_atoms": sum(
+                len(residue["atoms"]) for residue in best["residues"] if residue
+            ),
             "coordinates": best["coordinates"],
+            "pdb": pdb_text(best["residues"], sse),
         }
         print(
             f"[structure] {key}: {source} chain {best['chain']} "

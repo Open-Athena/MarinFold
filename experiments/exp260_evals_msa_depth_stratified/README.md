@@ -238,9 +238,10 @@ Every one of the 29 is browsable in
 **[`dashboard/index.html`](dashboard/index.html)** — one self-contained page,
 rebuilt by `dashboard/build_page.py`:
 
-- the ground-truth structure in an interactive viewer, with the selected
-  predictor's top-L contacts drawn on it as green (correct) or red (wrong)
-  cylinders;
+- the ground-truth structure in an interactive viewer — full-atom, drawn as a
+  cartoon from P-SEA secondary structure, switchable to sticks or backbone —
+  with the selected predictor's top-L contacts drawn on it as green (correct)
+  or red (wrong) cylinders, and a toggle to take them off;
 - the contact map — ground truth in the lower triangle, the selected
   predictor's top-L in the upper, on a shared residue ruler;
 - the alignment itself, which for these proteins is between one and nine
@@ -250,7 +251,7 @@ rebuilt by `dashboard/build_page.py`:
 - a sortable index of all 29, and `#<stem>` deep links so a specific case can
   be sent to someone.
 
-Coordinates are Cα traces pulled from RCSB (or predictioncenter's CASP domain
+Structures are the full mapped chain pulled from RCSB (or predictioncenter's CASP domain
 tarball for the two targets with no released entry) and aligned onto the
 evaluation sequence, so a pair drawn on the structure is the pair the metric
 counted; per-protein alignment coverage is shown with each structure and is
@@ -418,7 +419,7 @@ The `eval-test` read is recorded as row 3 in
 | `build_low_depth_set.py` | Step 5 — freeze the 29-protein low-MSA-depth set. |
 | `publish_to_hf.py` | Push the analysis tables to the public bucket. |
 | `dashboard/build_inputs.py` | Sequences and FoldBench chain ids for the 29. |
-| `dashboard/build_structures.py` | Fetch ground-truth structures; map Cα to evaluation indices. |
+| `dashboard/build_structures.py` | Fetch ground-truth structures; renumber every atom into evaluation indices and annotate secondary structure. |
 | `dashboard/build_dashboard_data.py` | Assemble scores, contacts, alignments, coordinates into `data.json`. |
 | `dashboard/build_page.py` | Inline that into `template.html` to produce `index.html`. |
 | `rollout/export_low_depth_maps.py` | Export the 29 vote matrices out of CoreWeave (runs in-cluster). |
