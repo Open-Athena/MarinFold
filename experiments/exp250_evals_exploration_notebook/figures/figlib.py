@@ -47,16 +47,21 @@ HELICO = ("https://huggingface.co/buckets/timodonnell/helico-experiments/resolve
           "exp14_foldbench_held_out_monomers")
 
 #: The size every panel of the manuscript's figure 1 is drawn at, in inches. One constant so the
-#: document panel, the structure and the two maps cannot drift apart — the assembled 2x2 only
-#: reads as a grid when its cells are identical.
+#: document panel, the structure and the two maps cannot drift apart — the assembled row only
+#: reads as a series when its cells are identical.
 #:
-#: The height is chosen so a square contact map fills the axes rectangle below: at 3.2 in wide the
-#: map is 1.87 in across, and an axes taller than that letterboxes the image and leaves a band of
-#: white in the middle of the figure.
-FIG1_PANEL = (3.2, 2.45)
-#: Map and colourbar rectangles in figure coordinates, shared by both map panels.
-FIG1_MAP_RECT = (0.155, 0.20, 0.585, 0.75)
-FIG1_BAR_RECT = (0.790, 0.20, 0.028, 0.75)
+#: **Drawn at final size.** Figure 1 is three panels across a 468 pt (6.5 in) column, so a cell is
+#: (468 - 2*MARGIN - 2*GUTTER) / 3 = 150 pt = 2.08 in wide. Drawing wider and letting the
+#: assembler scale the row down shrinks the type with it: at the 3.2 in this used to be, a 9 pt
+#: axis label reaches the page at 5.9 pt. The width below is the width on the page.
+#:
+#: The height is chosen so a square contact map fills the axes rectangle: the margins have to hold
+#: type at its true size, which leaves 1.22 in for the map in both directions.
+FIG1_PANEL = (2.1, 1.63)
+#: Map and colourbar rectangles in figure coordinates, shared by both map panels. The margins are
+#: fractions of a smaller panel than before and so are larger numbers for the same 0.4 in of room.
+FIG1_MAP_RECT = (0.190, 0.22, 0.580, 0.748)
+FIG1_BAR_RECT = (0.800, 0.22, 0.030, 0.748)
 
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
 
