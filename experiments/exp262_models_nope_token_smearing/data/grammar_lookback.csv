@@ -1,0 +1,6 @@
+lookback,contexts,ambiguous_contexts,example_ambiguity,example_roles
+0,9,1,POS,contact:1|contact:2|cterm:1|nterm:1|res:0
+1,20,1,POS POS,contact:2|res:0
+2,31,0,,
+3,48,0,,
+4,66,0,,
