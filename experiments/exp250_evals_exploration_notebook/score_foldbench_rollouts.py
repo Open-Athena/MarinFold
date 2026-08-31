@@ -173,8 +173,10 @@ def fan_out(arguments) -> int:
         stdout = (OUT_ROOT / arguments.tag / f"shard{shard:02d}.log")
         stdout.parent.mkdir(parents=True, exist_ok=True)
         handle = stdout.open("w")
-        children.append((shard, subprocess.Popen(argv, stdout=handle, stderr=subprocess.STDOUT),
-                         handle))
+        # env= matters: without it every child inherits the parent's environment, lands on
+        # GPU 0 together, and the second one onward dies asking for memory the first took.
+        children.append((shard, subprocess.Popen(argv, env=environment, stdout=handle,
+                                                 stderr=subprocess.STDOUT), handle))
         log(f"started shard {shard} on GPU {shard} -> {stdout}")
     failures = []
     for shard, child, handle in children:
