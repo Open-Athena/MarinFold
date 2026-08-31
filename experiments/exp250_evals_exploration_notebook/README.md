@@ -314,9 +314,27 @@ Numbers behind the panels:
 | Protenix-v2 + MSA | 0.845 | 0.844 |
 | ESMFold2 | 0.795 | 0.864 |
 | ESMFold | 0.752 | 0.795 |
-| MarinFold (#199 cooldown) | 0.606 | 0.619 |
-| MarinFold (#232 m2-p06) | 0.532 | 0.591 |
+| *MarinFold (#199 cooldown, contaminated — not drawn)* | *0.606* | *0.619* |
+| **MarinFold (#232 m2-p06 step-363000)** | **0.564** | **0.612** |
+| MarinFold (#232 m2-p06 sweep) | 0.532 | 0.591 |
 | Protenix-v2, single sequence | 0.264 | 0.835 |
+
+The MarinFold row is #232's step-363000 checkpoint, and its `eval-test` half is not #245's:
+#232 deliberately left that split unscored to preserve its read budget, so
+[`score_foldbench_rollouts.py`](score_foldbench_rollouts.py) scored all 333 monomers with it on
+8xA100 — exp82's recipe, #89's metric implementation, the dense matrices kept because Helico's
+arm needs them. **The control that makes those rows usable** reran the *sweep* checkpoint, which
+#245 did publish, through the same pipeline on eval-val:
+
+| | mean R-precision |
+|---|---:|
+| this pipeline, 97 proteins | 0.5240 |
+| #245 published, same 97 | 0.5198 |
+| mean difference | +0.0042 (mean absolute 0.0137, r = 0.995) |
+
+An 0.004 offset against a 0.032 change is what licenses putting the new rows beside baselines
+nobody re-ran. It is recorded in the dataset's `metadata.json` as `pipeline_validation`, so the
+figure carries its own control.
 
 | Helico arm | GDT-TS natural (305) | GDT-TS designed (19) |
 |---|---:|---:|

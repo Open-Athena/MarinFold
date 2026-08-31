@@ -32,12 +32,23 @@ uv run --with svgutils python assemble_figures.py           # all three
 uv run --with svgutils python assemble_figures.py --only figure_2
 ```
 
+**`MarinFold` means one checkpoint everywhere: #232's `m2-p06` at step 363,000**
+(`contacts-v1-exp232-m2-p06-train-1.5B`), the best model trained on FoldBench-decontaminated data.
+Figure 1 folds Top7 with it, figure 2's bar is its R-precision, and figure 3's Helico arm
+conditions on its contacts.
+
 **The contaminated checkpoint is not drawn in any manuscript figure.** #199's cooldown scores
 higher than everything we train on decontaminated data, but its corpus was never filtered against
 FoldBench, so it is not a claim these figures make. It remains in the datasets — #245 published
-those numbers and part 4 of the exploration notebook is built on the contrast — and `MarinFold` in
-figures 2 and 3 is always #232's `m2-p06`, trained on filtered data, which is also the checkpoint
-Helico's contact arm used.
+those numbers and part 4 of the exploration notebook is built on the contrast — it simply is not
+drawn.
+
+**Where figure 2's MarinFold numbers come from.** #245 published every baseline and the *sweep*
+checkpoint; #232 scored step-363000 on `eval-val` and `eval-denovo` but deliberately not on
+`eval-test`. [`score_foldbench_rollouts.py`](../score_foldbench_rollouts.py) therefore scored all
+333 monomers with it here, and reran the sweep checkpoint through the same pipeline as a control:
+0.5240 against #245's published 0.5198 on the same 97 proteins (r = 0.995). The make notebook
+recomputes that control every time and stores it in the dataset's `metadata.json`.
 
 The plot notebooks own the panels; this owns only the arrangement and the letters. Nothing is
 recomputed, so an assembled figure cannot disagree with the panel it was built from — change a
