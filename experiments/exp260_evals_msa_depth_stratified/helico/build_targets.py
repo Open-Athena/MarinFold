@@ -127,8 +127,21 @@ def main() -> None:
         # silently collapses to one residue per residue *type* — 401 residues
         # became 19 tokens, every arm scored ~0.33, and the oracle arm derived
         # no contacts at all. Assign it, and check the round trip below.
+        # gemmi names the polymer subchain "Axp". Helico writes whatever chain
+        # id it parsed into its output PDB, where the field is one column wide,
+        # so a 3-character name overflows into the residue number and the
+        # prediction comes back unparseable. helico#14's own ground truths use
+        # a single-letter asym id; match that. The rename brackets
+        # `setup_entities`, which otherwise reassigns the subchain it just read.
+        for chain in structure[0]:
+            chain.name = "A"
+            for residue in chain:
+                residue.subchain = "A"
         structure.setup_entities()
         structure.assign_label_seq_id(True)
+        for chain in structure[0]:
+            for residue in chain:
+                residue.subchain = "A"
         document = structure.make_mmcif_document()
         (OUT / "gt" / f"{record.stem}.cif.gz").write_bytes(
             gzip.compress(document.as_string().encode())
@@ -143,6 +156,15 @@ def main() -> None:
             line.split() for line in document.as_string().splitlines()
             if line.startswith("ATOM")
         ]
+        asym_ids = {row[6] for row in rows_written}
+        entity_ids = {row[7] for row in rows_written}
+        if "." in entity_ids:
+            raise ValueError(f"{record.stem}: mmCIF has no label_entity_id")
+        if asym_ids != {"A"}:
+            raise ValueError(
+                f"{record.stem}: label_asym_id is {sorted(asym_ids)}, not a single "
+                "letter — Helico's PDB output would overflow the chain column"
+            )
         sequence_ids = {row[8] for row in rows_written}
         if "." in sequence_ids or len(sequence_ids) != len(indices):
             raise ValueError(

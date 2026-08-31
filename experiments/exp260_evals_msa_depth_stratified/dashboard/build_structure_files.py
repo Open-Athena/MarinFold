@@ -76,6 +76,17 @@ LOCAL_SOURCES = {
     ),
 }
 
+#: helico#14 only ran the FoldBench monomers, so the CAMEO-hard / CASP-FM half
+#: was folded here (``helico/build_targets.py`` builds the target set, and
+#: ``modal/bench_byclass.py`` in the helico checkout runs it). Same Helico
+#: checkpoint, same sampling, same three arms.
+CAMEO_RUNS = U.EXPERIMENT / "scratch" / "helico_cameo" / "results" / "predictions"
+CAMEO_SOURCES = {
+    "helico_mf_L_363k": CAMEO_RUNS / "cameo_mf_L_363k" / "{stem}.pdb.gz",
+    "helico_off": CAMEO_RUNS / "cameo_off" / "{stem}.pdb.gz",
+    "helico_oracle": CAMEO_RUNS / "cameo_oracle" / "{stem}.pdb.gz",
+}
+
 ARCHIVE_SOURCES = {
     "helico_mf_L": ("helico_mf_L.tar.gz", "mf_L/{stem}.pdb.gz"),
     "helico_off": ("helico_off.tar.gz", "off/{stem}.pdb.gz"),
@@ -236,6 +247,13 @@ def fetch(url: str) -> bytes | None:
         return None
 
 
+CAMEO_SCORES = {
+    "cameo_mf_L_363k": "helico_mf_L_363k",
+    "cameo_off": "helico_off",
+    "cameo_oracle": "helico_oracle",
+}
+
+
 def structure_accuracy() -> dict[tuple[str, str], dict]:
     """lDDT / TM-score / GDT_TS per (stem, arm), where helico#14 published it."""
 
@@ -293,7 +311,10 @@ def main() -> None:
             )
 
         candidates: list[tuple[str, bytes | None, str]] = []
-        for name, pattern in LOCAL_SOURCES.items():
+        local = dict(LOCAL_SOURCES)
+        if record.dataset != "foldbench_monomer":
+            local = dict(CAMEO_SOURCES)
+        for name, pattern in local.items():
             path = Path(str(pattern).format(stem=record.stem))
             candidates.append(
                 (name, path.read_bytes() if path.exists() else None, path.name)

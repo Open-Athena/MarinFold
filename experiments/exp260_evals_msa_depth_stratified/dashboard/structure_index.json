@@ -8,6 +8,36 @@
    "source": "8jvx"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.5,
+   "computed_lddt": 0.674,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.354,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.468,
+   "computed_lddt": 0.631,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.406,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.744,
+   "computed_lddt": 0.833,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.636,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.583,
    "computed_lddt": 0.709,
@@ -45,6 +75,36 @@
    "file": "structures/cameo_hard__8raj_A/ground_truth.pdb",
    "label": "Ground truth",
    "source": "8raj"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.048,
+   "computed_lddt": 0.674,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.067,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.04,
+   "computed_lddt": 0.712,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.05,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.04,
+   "computed_lddt": 0.724,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.051,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -86,6 +146,36 @@
    "source": "8s89"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.736,
+   "computed_lddt": 0.824,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.873,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.82,
+   "computed_lddt": 0.935,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.959,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.856,
+   "computed_lddt": 0.944,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.968,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.897,
    "computed_lddt": 0.959,
@@ -123,6 +213,36 @@
    "file": "structures/cameo_hard__8u1a_A/ground_truth.pdb",
    "label": "Ground truth",
    "source": "8u1a"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.011,
+   "computed_lddt": 0.389,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.074,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.003,
+   "computed_lddt": 0.373,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.09,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.85,
+   "computed_lddt": 0.852,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.953,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -164,6 +284,36 @@
    "source": "8vd6"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.267,
+   "computed_lddt": 0.706,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.45,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.273,
+   "computed_lddt": 0.721,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.459,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.833,
+   "computed_lddt": 0.844,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.921,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.401,
    "computed_lddt": 0.765,
@@ -201,6 +351,36 @@
    "file": "structures/cameo_hard__8vej_B/ground_truth.pdb",
    "label": "Ground truth",
    "source": "8vej"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.442,
+   "computed_lddt": 0.67,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.686,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.863,
+   "computed_lddt": 0.871,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.948,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.827,
+   "computed_lddt": 0.861,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.936,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -242,6 +422,36 @@
    "source": "8wwc"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.867,
+   "computed_lddt": 0.834,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.899,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.79,
+   "computed_lddt": 0.813,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.856,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.887,
+   "computed_lddt": 0.878,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.926,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.85,
    "computed_lddt": 0.855,
@@ -279,6 +489,36 @@
    "file": "structures/cameo_hard__8xtn_A/ground_truth.pdb",
    "label": "Ground truth",
    "source": "8xtn"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.205,
+   "computed_lddt": 0.382,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.078,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.152,
+   "computed_lddt": 0.378,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.047,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.265,
+   "computed_lddt": 0.425,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.1,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -320,6 +560,36 @@
    "source": "8yl4"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.227,
+   "computed_lddt": 0.45,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.405,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.668,
+   "computed_lddt": 0.758,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.818,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.899,
+   "computed_lddt": 0.892,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.944,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.925,
    "computed_lddt": 0.916,
@@ -357,6 +627,36 @@
    "file": "structures/cameo_hard__9de9_B/ground_truth.pdb",
    "label": "Ground truth",
    "source": "9de9"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.88,
+   "computed_lddt": 0.873,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.882,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.917,
+   "computed_lddt": 0.891,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.9,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.91,
+   "computed_lddt": 0.896,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.906,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -398,6 +698,36 @@
    "source": "9deb"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.958,
+   "computed_lddt": 0.926,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.952,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.958,
+   "computed_lddt": 0.934,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.961,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.961,
+   "computed_lddt": 0.939,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.963,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.946,
    "computed_lddt": 0.941,
@@ -435,6 +765,36 @@
    "file": "structures/cameo_hard__9deg_A/ground_truth.pdb",
    "label": "Ground truth",
    "source": "9deg"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.933,
+   "computed_lddt": 0.926,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.957,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.876,
+   "computed_lddt": 0.871,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.914,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.981,
+   "computed_lddt": 0.942,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.983,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -476,6 +836,36 @@
    "source": "9hac"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.018,
+   "computed_lddt": 0.42,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.089,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.124,
+   "computed_lddt": 0.404,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.206,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.876,
+   "computed_lddt": 0.856,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.914,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.852,
    "computed_lddt": 0.844,
@@ -513,6 +903,36 @@
    "file": "structures/cameo_hard__9had_C/ground_truth.pdb",
    "label": "Ground truth",
    "source": "9had"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.956,
+   "computed_lddt": 0.937,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.968,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.968,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.972,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.963,
+   "computed_lddt": 0.941,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.971,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -554,6 +974,36 @@
    "source": "9j46"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.183,
+   "computed_lddt": 0.356,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.29,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.169,
+   "computed_lddt": 0.374,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.269,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.849,
+   "computed_lddt": 0.895,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.89,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.476,
    "computed_lddt": 0.646,
@@ -591,6 +1041,36 @@
    "file": "structures/cameo_hard__9j5h_A/ground_truth.pdb",
    "label": "Ground truth",
    "source": "9j5h"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.436,
+   "computed_lddt": 0.582,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.233,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.407,
+   "computed_lddt": 0.561,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.206,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.593,
+   "computed_lddt": 0.671,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.406,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -632,6 +1112,36 @@
    "source": "CASP domain tarball (T1043-D1.pdb)"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.1,
+   "computed_lddt": 0.308,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.211,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.064,
+   "computed_lddt": 0.28,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.149,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.941,
+   "computed_lddt": 0.931,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.968,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.074,
    "computed_lddt": 0.307,
@@ -669,6 +1179,36 @@
    "file": "structures/casp_fm__T1113-D1/ground_truth.pdb",
    "label": "Ground truth",
    "source": "7uyx"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.085,
+   "computed_lddt": 0.408,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.205,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.066,
+   "computed_lddt": 0.403,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.177,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.757,
+   "computed_lddt": 0.901,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.8,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -710,6 +1250,36 @@
    "source": "8bbt"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.033,
+   "computed_lddt": 0.415,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.167,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.035,
+   "computed_lddt": 0.409,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.161,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.663,
+   "computed_lddt": 0.847,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.754,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.349,
    "computed_lddt": 0.572,
@@ -747,6 +1317,36 @@
    "file": "structures/casp_fm__T1123-D1/ground_truth.pdb",
    "label": "Ground truth",
    "source": "CASP domain tarball (T1123-D1.pdb)"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.023,
+   "computed_lddt": 0.205,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.139,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.126,
+   "computed_lddt": 0.303,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.285,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.908,
+   "computed_lddt": 0.904,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.96,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -788,6 +1388,36 @@
    "source": "8h2n"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.106,
+   "computed_lddt": 0.396,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.2,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.127,
+   "computed_lddt": 0.437,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.231,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.836,
+   "computed_lddt": 0.88,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.892,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.455,
    "computed_lddt": 0.547,
@@ -825,6 +1455,36 @@
    "file": "structures/casp_fm__T1125-D2/ground_truth.pdb",
    "label": "Ground truth",
    "source": "8h2n"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.066,
+   "computed_lddt": 0.362,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.164,
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.286,
+   "computed_lddt": 0.408,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.42,
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.859,
+   "computed_lddt": 0.866,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.91,
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",
@@ -866,6 +1526,36 @@
    "source": "8h2n"
   },
   {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.257,
+   "computed_lddt": 0.514,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.378,
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.585,
+   "computed_lddt": 0.685,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.654,
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.768,
+   "computed_lddt": 0.893,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.784,
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
    "arm": "esmfold2",
    "computed_gdt_ts": 0.585,
    "computed_lddt": 0.692,
@@ -903,6 +1593,36 @@
    "file": "structures/casp_fm__T1125-D5/ground_truth.pdb",
    "label": "Ground truth",
    "source": "8h2n"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.193,
+   "computed_lddt": 0.488,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.298,
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.054,
+   "computed_lddt": 0.45,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.158,
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.807,
+   "computed_lddt": 0.869,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.9,
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
   },
   {
    "arm": "esmfold2",

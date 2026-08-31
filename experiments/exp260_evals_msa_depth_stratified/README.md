@@ -293,35 +293,47 @@ own single-sequence arm scores 0.897.
 
 The dashboard carries every predicted structure for these proteins, so the
 contacts can be judged by what a folding model does with them. Helico
-`contacts-msafree-01` was run over the FoldBench monomers in three otherwise
-identical arms — no contacts, MarinFold's top-L, and the ground truth's — which
-brackets the value of the contact channel. Mean lDDT over the FoldBench members
-of the low-depth set, computed here so every arm is scored the same way
-(`dashboard/build_structure_metrics.py`):
+`contacts-msafree-01` step 6,000 was run in three otherwise identical arms — no
+contacts, MarinFold's top-L from the step-363,000 checkpoint, and the ground
+truth's — which brackets the value of the contact channel. helico#14 covered
+only the FoldBench monomers, so the CAMEO-hard / CASP-FM half was folded here
+(`helico/build_targets.py`); all 42 proteins now have all three arms.
 
-| arm | natural (5) | designs (13) |
-|---|---:|---:|
-| Helico, no contacts | 0.455 | 0.927 |
-| Helico + MarinFold contacts, step 145k | 0.498 | 0.841 |
-| **Helico + MarinFold contacts, step 363k** | **0.549** | 0.848 |
-| Helico + ground-truth contacts | 0.928 | 0.938 |
-| Protenix-v2 + MSA | 0.567 | 0.927 |
-| ESMFold2 | 0.802 | 0.954 |
+Mean lDDT, scored the same way for every arm by
+`dashboard/build_structure_metrics.py`:
 
-Three things fall out, all of them on the 5 natural proteins — the designs are
-saturated, where even the no-contact arm reaches 0.927 and the contact channel
-cannot show anything:
+| arm | natural (16) | FoldBench natural (5) | CAMEO/CASP natural (11) | designs (26) |
+|---|---:|---:|---:|---:|
+| Helico, no contacts | 0.445 | 0.455 | 0.440 | 0.837 |
+| **Helico + MarinFold contacts** | **0.453** | **0.549** | **0.410** | 0.778 |
+| Helico + ground-truth contacts | 0.861 | 0.928 | 0.830 | 0.905 |
+| Protenix-v2 + MSA | 0.586 | 0.567 | 0.594 | 0.884 |
+| Protenix-v2 single-seq | 0.501 | 0.515 | 0.494 | 0.882 |
+| ESMFold2 | 0.611 | 0.802 | 0.524 | 0.894 |
 
-1. **MarinFold's contacts are worth +0.094 lDDT** to a folding model that has
-   nothing else to go on (0.455 → 0.549).
-2. **Better contacts make better structures.** The step-363,000 checkpoint beats
-   the step-145,199 sweep checkpoint by +0.051 lDDT through Helico, on an
-   otherwise identical run — same targets, same Helico weights, same sampling,
-   one input changed. Contact R-precision improvements are not cosmetic.
-3. **Most of the headroom is still there.** Ground-truth contacts reach 0.928, so
-   MarinFold captures about a fifth of what perfect contacts would buy, and
-   Helico + MarinFold (0.549) only draws level with Protenix-v2 + MSA (0.567)
-   rather than passing it.
+**The contact channel is worth an enormous amount, and MarinFold is not
+currently claiming it.** Ground-truth contacts take Helico from 0.445 to
+**0.861** on the 16 natural proteins — nearly doubling lDDT. MarinFold's
+contacts move it to **0.453**, which is within noise of supplying nothing.
+
+The split explains why an earlier draft of this section reported +0.094 from
+MarinFold's contacts: that was the 5 FoldBench members alone, where they do
+help (0.455 → 0.549). On the 11 CAMEO-hard / CASP-FM natural proteins the same
+contacts make the structure slightly *worse* (0.440 → 0.410), and those are
+exactly the proteins where MarinFold's contact R-precision is weakest (0.280
+against 0.342 on the FoldBench five). Contacts that are mostly wrong are not a
+neutral input to a folding model; they actively mislead it.
+
+Two further readings:
+
+- **Designs are saturated and must not be pooled.** The no-contact arm already
+  reaches 0.837 on the 26 designs, so nothing the contact channel does is
+  visible there — and pooling them would report MarinFold's contacts as helping
+  when on natural proteins they do not.
+- **This is the strongest argument in the experiment for improving contacts.**
+  The gap between MarinFold's contacts and perfect ones is 0.41 lDDT on natural
+  low-depth proteins. Contact R-precision is not a proxy metric here; it is the
+  bottleneck on a structure a folding model can actually produce.
 
 Scored with biotite: superposition-free lDDT over Cα, GDT-TS as the mean
 fraction of Cα within 1/2/4/8 Å after outlier-trimmed superposition, and TM-score
@@ -331,6 +343,14 @@ definitional difference in which residues get scored, not disagreement about
 which structure is better. The dashboard's numbers are internally consistent
 across arms; they are not helico#14's numbers and should not be quoted as such
 ([`data/structure_metrics_validation.json`](data/structure_metrics_validation.json)).
+
+A fourth arm — Helico conditioned on the older step-145,199 sweep checkpoint —
+exists for the 18 FoldBench members and is selectable per protein in the
+dashboard. It is kept out of the summary table because covering 18 of 42 would
+drag every comparison back onto that subset. On the 5 FoldBench natural
+proteins it scores 0.498 against the step-363,000 arm's 0.549, which is the
+cleanest evidence available that better contacts do make better structures —
+same targets, same Helico weights, same sampling, one input changed.
 
 ### The two halves separately, and the Neff axis
 
