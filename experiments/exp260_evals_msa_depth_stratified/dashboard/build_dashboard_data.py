@@ -61,12 +61,28 @@ PROVENANCE = [
         ],
     },
     {
-        "what": "Helico + MarinFold contacts",
-        "model": "Helico contacts-msafree-01, step 6,000 — conditioned on a DIFFERENT MarinFold checkpoint",
-        "detail": "The contacts fed to Helico came from prot-exp232-cw-cv1-decontam-s02-m2-p06-aug "
-        "step 145,199 (the #232 sweep checkpoint, via #245's fbmono-20260818-01 run), not from "
-        "the step-363,000 checkpoint whose contact maps are shown on this page. 3 diffusion "
-        "samples, 6 trunk recycles, seed 42, single-sequence, no MSA.",
+        "what": "Helico + MarinFold contacts (step 363k)",
+        "model": "Helico contacts-msafree-01, step 6,000 — contacts from the checkpoint this page scores",
+        "detail": "Conditioned on the top-L contacts of "
+        "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1 step "
+        "363,000, the same contacts shown in the contact map. 3 diffusion samples, 6 trunk "
+        "recycles, seed 42, single-sequence, no MSA. Run in helico's mf-step363000 worktree; "
+        "its per-target metrics are published on MarinFold #252's branch.",
+        "links": [
+            ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
+            ["contact-source checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000"],
+            ["W&B run", f"{WANDB}/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1"],
+            ["MarinFold #252", "https://github.com/Open-Athena/MarinFold/pull/252"],
+        ],
+    },
+    {
+        "what": "Helico + MarinFold contacts (step 145k)",
+        "model": "Helico contacts-msafree-01, step 6,000 — the older, published arm",
+        "detail": "The same Helico model conditioned on the #232 sweep checkpoint "
+        "(prot-exp232-cw-cv1-decontam-s02-m2-p06-aug step 145,199, via #245's "
+        "fbmono-20260818-01 run). Kept beside the 363k arm because the pair is otherwise "
+        "identical — same targets, same Helico checkpoint, same sampling, one input changed — "
+        "so it measures what better contacts buy in structure accuracy.",
         "links": [
             ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
             ["contact-source checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199"],
@@ -103,6 +119,20 @@ PROVENANCE = [
         "links": [
             ["#78", "https://github.com/Open-Athena/MarinFold/issues/78"],
             ["contacts", "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/esmfold-contacts-eval-exp78/contacts_raw_all.parquet"],
+        ],
+    },
+    {
+        "what": "Structure accuracy (lDDT / GDT-TS / TM-score)",
+        "model": "computed here from the structures on this page, not taken from a publication",
+        "detail": "Every arm is scored the same way so the arms are comparable: biotite's "
+        "superposition-free lDDT over Cα, GDT-TS as the mean fraction of Cα within 1/2/4/8 Å "
+        "after outlier-trimmed superposition, and biotite's TM-score under that same "
+        "superposition. Against helico#14's published lDDT on the arms where both exist, this "
+        "runs +0.069 on average (r = 0.99) — a definitional difference in which residues are "
+        "scored, not disagreement about which structure is better. Do not quote these as "
+        "helico#14's numbers.",
+        "links": [
+            ["helico#14 scores", "https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/exp14_foldbench_held_out_monomers/scores/per_target.csv"],
         ],
     },
     {

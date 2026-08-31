@@ -194,6 +194,34 @@ function mean(values) {
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 }
 
+const STRUCTURE_ORDER = [
+  "helico_mf_L_363k", "helico_mf_L", "helico_oracle", "helico_off",
+  "protenix_v2_msa", "protenix_v2_single_seq", "esmfold2",
+];
+
+/** Mean lDDT / GDT-TS / TM-score per structure arm over the selection. */
+function structureSummaryRows(selected) {
+  const gathered = new Map();
+  for (const protein of selected) {
+    for (const arm of protein.structure_arms || []) {
+      if (arm.arm === "ground_truth" || arm.computed_lddt === undefined) continue;
+      if (!gathered.has(arm.arm)) gathered.set(arm.arm, { label: arm.label, rows: [] });
+      gathered.get(arm.arm).rows.push(arm);
+    }
+  }
+  const arms = STRUCTURE_ORDER.filter((a) => gathered.has(a));
+  if (!arms.length) return "";
+  const cell = (arm, key) =>
+    fmt(mean(gathered.get(arm).rows.map((r) => r[key])));
+  return `
+    <tr class="head"><td>structure accuracy vs. ground truth</td>
+      ${arms.map((a) => `<td>${escape(gathered.get(a).label)}<br>` +
+        `<span style="font-weight:400">n=${gathered.get(a).rows.length}</span></td>`).join("")}</tr>
+    ${[["lDDT", "computed_lddt"], ["GDT-TS", "computed_gdt_ts"], ["TM-score", "computed_tm_score"]]
+      .map(([label, key]) => `<tr><td class="head">mean ${label}</td>` +
+        arms.map((a) => `<td>${cell(a, key)}</td>`).join("") + "</tr>").join("")}`;
+}
+
 function renderSummary() {
   const selected = visible();
   const rows = ORDER.map((name) => {
@@ -209,6 +237,7 @@ function renderSummary() {
       <tr><td class="head">mean R-precision (all ranges)</td>
         ${rows.map((r) => `<td>${r.name === MF ? "<b>" + fmt(r.mean) + "</b>" : fmt(r.mean)}${
           r.n < selected.length ? ` <span style="color:var(--muted)">(n=${r.n})</span>` : ""}</td>`).join("")}</tr>
+      ${structureSummaryRows(selected)}
       <tr><td class="head">median MSA depth ${median} · median length ${
         selected.map((p) => p.L).sort((a, b) => a - b)[Math.floor(selected.length / 2)]} ·
         ${selected.filter((p) => p.annotation.designed).length} de novo ·
@@ -432,9 +461,9 @@ async function draw3D(protein, name) {
   viewer.zoomTo();
   viewer.render();
   const accuracy = [
-    selected.lddt !== undefined ? `lDDT ${selected.lddt}` : null,
-    selected.tm_score !== undefined ? `TM ${selected.tm_score}` : null,
-    selected.gdt_ts !== undefined ? `GDT_TS ${selected.gdt_ts}` : null,
+    selected.computed_lddt !== undefined ? `lDDT ${selected.computed_lddt}` : null,
+    selected.computed_gdt_ts !== undefined ? `GDT-TS ${selected.computed_gdt_ts}` : null,
+    selected.computed_tm_score !== undefined ? `TM ${selected.computed_tm_score}` : null,
   ].filter(Boolean).join(" · ");
   document.getElementById("structure-caption").innerHTML =
     `<b>${escape(selected.label)}</b>${accuracy ? " — " + accuracy : ""}` +

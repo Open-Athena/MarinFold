@@ -18,12 +18,14 @@ Arms, and where they come from:
     selection rule #74 used when it read contacts off these files.
 ``esmfold2``
     ESMFold2's prediction.
-``helico_mf_L`` / ``helico_off`` / ``helico_oracle``
+``helico_mf_L_363k`` / ``helico_mf_L`` / ``helico_off`` / ``helico_oracle``
     Helico ``contacts-msafree-01`` step 6000 conditioned on, respectively,
-    MarinFold's top-L contacts, nothing at all, and the ground-truth contacts —
-    the three arms that isolate what the contacts are worth. Published by
-    helico#14 over the FoldBench monomers only, so they exist for the 5
-    FoldBench members of this set and not for the CAMEO/CASP ones.
+    MarinFold's top-L contacts from the step-363,000 checkpoint this experiment
+    scores, the same from the older step-145,199 sweep checkpoint, nothing at
+    all, and the ground-truth contacts. Together they isolate what the contacts
+    are worth *and* what improving them buys. Helico ran the FoldBench monomers
+    only, so these exist for the 18 FoldBench members of this set and not for
+    the CAMEO/CASP ones.
 
 Every arm is renumbered onto the evaluation sequence, so a contact drawn at
 (i, j) means the same residues in every structure. Backbone plus Cβ only: the
@@ -65,6 +67,15 @@ LEGACY_SOURCES = {
 }
 
 #: Arms packaged as one tarball each on the helico bucket.
+#: The step-363,000 arm was run in helico's ``mf-step363000`` worktree and is
+#: not on a bucket yet, so it is read from disk when that checkout is present.
+LOCAL_SOURCES = {
+    "helico_mf_L_363k": Path(
+        "/home/bizon/git/helico/.claude/worktrees/mf-step363000/experiments/"
+        "exp14_foldbench_held_out_monomers/results/predictions/mf_L_363k/{stem}.pdb.gz"
+    ),
+}
+
 ARCHIVE_SOURCES = {
     "helico_mf_L": ("helico_mf_L.tar.gz", "mf_L/{stem}.pdb.gz"),
     "helico_off": ("helico_off.tar.gz", "off/{stem}.pdb.gz"),
@@ -88,7 +99,14 @@ HELICO_SCORES = (
     "https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/"
     "exp14_foldbench_held_out_monomers/scores/per_target.csv"
 )
+#: The step-363,000 arm's own metrics, published on MarinFold #252's branch.
+HELICO_SCORES_363K = (
+    "https://raw.githubusercontent.com/Open-Athena/MarinFold/"
+    "exp250%2Fevals-exploration-notebook/experiments/"
+    "exp250_evals_exploration_notebook/data/helico_step363000/per_target.csv"
+)
 SCORE_ARMS = {
+    "mf_L_363k": "helico_mf_L_363k",
     "mf_L": "helico_mf_L",
     "off": "helico_off",
     "oracle": "helico_oracle",
@@ -102,7 +120,8 @@ LABELS = {
     "protenix_v2_msa": "Protenix-v2 + MSA",
     "protenix_v2_single_seq": "Protenix-v2 single-seq",
     "esmfold2": "ESMFold2",
-    "helico_mf_L": "Helico + MarinFold contacts",
+    "helico_mf_L_363k": "Helico + MarinFold contacts (step 363k)",
+    "helico_mf_L": "Helico + MarinFold contacts (step 145k)",
     "helico_off": "Helico, no contacts",
     "helico_oracle": "Helico + ground-truth contacts",
 }
@@ -220,7 +239,9 @@ def fetch(url: str) -> bytes | None:
 def structure_accuracy() -> dict[tuple[str, str], dict]:
     """lDDT / TM-score / GDT_TS per (stem, arm), where helico#14 published it."""
 
-    frame = pd.read_csv(HELICO_SCORES)
+    frame = pd.concat(
+        [pd.read_csv(HELICO_SCORES), pd.read_csv(HELICO_SCORES_363K)], ignore_index=True
+    )
     frame = frame[frame.arm.isin(SCORE_ARMS) & (frame.status == "ok")]
     return {
         (row.stem, SCORE_ARMS[row.arm]): {
@@ -272,6 +293,11 @@ def main() -> None:
             )
 
         candidates: list[tuple[str, bytes | None, str]] = []
+        for name, pattern in LOCAL_SOURCES.items():
+            path = Path(str(pattern).format(stem=record.stem))
+            candidates.append(
+                (name, path.read_bytes() if path.exists() else None, path.name)
+            )
         for name, (_, pattern) in ARCHIVE_SOURCES.items():
             archive = archives.get(name)
             member_name = pattern.format(stem=record.stem)

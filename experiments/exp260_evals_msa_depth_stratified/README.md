@@ -289,6 +289,49 @@ more thing obvious: on `8s89_A`, a 401-residue CAMEO target whose ColabFold
 search returned *only the query*, Protenix-v2 + MSA still scores 0.900 — and its
 own single-sequence arm scores 0.897.
 
+### Structure accuracy — what the contacts are actually worth
+
+The dashboard carries every predicted structure for these proteins, so the
+contacts can be judged by what a folding model does with them. Helico
+`contacts-msafree-01` was run over the FoldBench monomers in three otherwise
+identical arms — no contacts, MarinFold's top-L, and the ground truth's — which
+brackets the value of the contact channel. Mean lDDT over the FoldBench members
+of the low-depth set, computed here so every arm is scored the same way
+(`dashboard/build_structure_metrics.py`):
+
+| arm | natural (5) | designs (13) |
+|---|---:|---:|
+| Helico, no contacts | 0.455 | 0.927 |
+| Helico + MarinFold contacts, step 145k | 0.498 | 0.841 |
+| **Helico + MarinFold contacts, step 363k** | **0.549** | 0.848 |
+| Helico + ground-truth contacts | 0.928 | 0.938 |
+| Protenix-v2 + MSA | 0.567 | 0.927 |
+| ESMFold2 | 0.802 | 0.954 |
+
+Three things fall out, all of them on the 5 natural proteins — the designs are
+saturated, where even the no-contact arm reaches 0.927 and the contact channel
+cannot show anything:
+
+1. **MarinFold's contacts are worth +0.094 lDDT** to a folding model that has
+   nothing else to go on (0.455 → 0.549).
+2. **Better contacts make better structures.** The step-363,000 checkpoint beats
+   the step-145,199 sweep checkpoint by +0.051 lDDT through Helico, on an
+   otherwise identical run — same targets, same Helico weights, same sampling,
+   one input changed. Contact R-precision improvements are not cosmetic.
+3. **Most of the headroom is still there.** Ground-truth contacts reach 0.928, so
+   MarinFold captures about a fifth of what perfect contacts would buy, and
+   Helico + MarinFold (0.549) only draws level with Protenix-v2 + MSA (0.567)
+   rather than passing it.
+
+Scored with biotite: superposition-free lDDT over Cα, GDT-TS as the mean
+fraction of Cα within 1/2/4/8 Å after outlier-trimmed superposition, and TM-score
+under that superposition. Against helico#14's published lDDT on the arms where
+both exist this implementation runs **+0.069 on average (r = 0.99)** — a
+definitional difference in which residues get scored, not disagreement about
+which structure is better. The dashboard's numbers are internally consistent
+across arms; they are not helico#14's numbers and should not be quoted as such
+([`data/structure_metrics_validation.json`](data/structure_metrics_validation.json)).
+
 ### The two halves separately, and the Neff axis
 
 | | `<10` | `10–100` | `100–1000` | `≥1000` |
