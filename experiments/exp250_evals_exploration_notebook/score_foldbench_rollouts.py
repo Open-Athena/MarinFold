@@ -41,6 +41,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "figures"))
 
+# vLLM V1 starts its engine core in a child process, and the default `fork` cannot
+# re-initialize CUDA in a parent that already has a context — which any `torch.cuda`
+# call creates. Nothing below touches CUDA outside the engine, and spawn makes the
+# job independent of that discipline holding.
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+
 import figlib  # noqa: E402  — the shared provenance/metric helpers live next door
 
 #: The checkpoint every #250 figure should be drawn from, and the one whose
@@ -82,7 +88,6 @@ def run_shard(arguments) -> int:
     """Score this shard's slice of the targets, one protein at a time."""
     import numpy as np
     import pandas as pd
-    import torch
 
     from marinfold.document_structures.contacts_v1 import (
         InferenceConfig, predict, structure_from_sequence)
@@ -105,10 +110,10 @@ def run_shard(arguments) -> int:
     if not pending:
         return 0
 
-    dtype = "bfloat16" if torch.cuda.is_available() else "float32"
     config = InferenceConfig(
         model=arguments.model, backend=arguments.backend, method="rollout", keep_matrix=True,
-        n_rollouts=arguments.n_rollouts, temperature=1.0, top_p=0.95, top_k=-1, dtype=dtype,
+        n_rollouts=arguments.n_rollouts, temperature=1.0, top_p=0.95, top_k=-1,
+        dtype=arguments.dtype,
         min_seq_separation=figlib.MIN_SEPARATION,
         gpu_memory_utilization=arguments.gpu_memory_utilization)
 
@@ -138,7 +143,7 @@ def run_shard(arguments) -> int:
         "model": arguments.model, "shard": arguments.shard, "num_shards": arguments.num_shards,
         "eval_sets": arguments.eval_sets, "n_targets": len(pending),
         "recipe": {"method": "rollout+resample+tiebreak", "n_rollouts": arguments.n_rollouts,
-                   "temperature": 1.0, "top_p": 0.95, "top_k": -1, "dtype": dtype,
+                   "temperature": 1.0, "top_p": 0.95, "top_k": -1, "dtype": arguments.dtype,
                    "backend": arguments.backend,
                    "min_seq_separation": figlib.MIN_SEPARATION},
         "seconds": time.time() - started,
@@ -160,7 +165,7 @@ def fan_out(arguments) -> int:
                 "--model", arguments.model, "--tag", arguments.tag,
                 "--shard", str(shard), "--num-shards", str(arguments.gpus),
                 "--n-rollouts", str(arguments.n_rollouts),
-                "--backend", arguments.backend,
+                "--backend", arguments.backend, "--dtype", arguments.dtype,
                 "--gpu-memory-utilization", str(arguments.gpu_memory_utilization),
                 *(["--force"] if arguments.force else []),
                 *(["--limit", str(arguments.limit)] if arguments.limit else []),
@@ -193,6 +198,9 @@ def main() -> int:
                         default=["eval-val", "eval-test", "eval-denovo"])
     parser.add_argument("--n-rollouts", type=int, default=100)
     parser.add_argument("--backend", default="vllm")
+    # float16 overflows this model's residual stream and dies inside sampling; bfloat16
+    # is what every published rollout used.
+    parser.add_argument("--dtype", default="bfloat16")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--gpus", type=int, default=0, help="fan out over this many GPUs")
     parser.add_argument("--shard", type=int, default=0)
