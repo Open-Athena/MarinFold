@@ -46,6 +46,37 @@ def load_tokens(path: Path) -> np.ndarray:
     return np.memmap(path / "tokens.u16", dtype=np.uint16, mode="r")
 
 
+def document_mask(inputs: torch.Tensor, eos_id: int) -> tuple[torch.Tensor, torch.Tensor]:
+    """Causal attention confined to one document, plus the matching loss mask.
+
+    exp232 trains with ``pack=True`` and ``block_cross_document_attention=True``:
+    documents are concatenated into fixed-length sequences, but a token may not
+    attend past the ``<eos>`` that ended the document before it. Reproduce that,
+    or the pilot measures a different and easier task — specifically an easier
+    version of the "where am I inside this document" question that is exactly
+    what the NoPE arm has to answer without rope.
+
+    Positions are deliberately NOT reset per document, because levanter does not
+    reset them either: ``LmExample`` carries no ``pos_ids``, so a packed sequence
+    numbers straight through while attention is segmented. Rope is relative, so
+    intra-document attention is unaffected by the offset.
+
+    Returns a ``[B, 1, T, T]`` boolean attention mask and a ``[B, T]`` loss mask
+    that drops the one target per boundary whose prediction is impossible: the
+    first token of a document, visible only from the document before it.
+    """
+    starts = torch.zeros_like(inputs, dtype=torch.int32)
+    starts[:, 1:] = (inputs[:, :-1] == eos_id).to(torch.int32)
+    segments = starts.cumsum(dim=1)
+    causal = torch.ones(
+        inputs.shape[1], inputs.shape[1], dtype=torch.bool, device=inputs.device
+    ).tril()
+    attention = (segments[:, None, :, None] == segments[:, None, None, :]) & causal
+    loss_mask = torch.ones_like(inputs, dtype=torch.bool)
+    loss_mask[:, :-1] = segments[:, 1:] == segments[:, :-1]
+    return attention, loss_mask
+
+
 def batches(stream: np.ndarray, *, seq_len: int, batch_size: int, seed: int, device: str):
     """Endless stream of random fixed-length windows.
 
@@ -74,7 +105,7 @@ def evaluation_windows(stream: np.ndarray, *, seq_len: int, batch_size: int, bat
 
 
 @torch.no_grad()
-def evaluate(model, stream, *, seq_len, batch_size, batches_wanted, device, token_ids) -> dict:
+def evaluate(model, stream, *, seq_len, batch_size, batches_wanted, device, token_ids, eos_id) -> dict:
     """Validation loss, split by section, plus the document-termination diagnostics."""
     model.eval()
     totals = {key: 0.0 for key in ("loss", "sequence", "structure", "end")}
@@ -83,14 +114,15 @@ def evaluate(model, stream, *, seq_len, batch_size, batches_wanted, device, toke
     for inputs, targets in evaluation_windows(
         stream, seq_len=seq_len, batch_size=batch_size, batches_wanted=batches_wanted, device=device
     ):
+        attention, loss_mask = document_mask(inputs, eos_id)
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            logits = model(inputs).logits
+            logits = model(inputs, attention_mask=attention).logits
         logits = logits.float()
         losses = functional.cross_entropy(
             logits.reshape(-1, logits.shape[-1]), targets.reshape(-1), reduction="none"
-        ).reshape(targets.shape)
+        ).reshape(targets.shape) * loss_mask
         totals["loss"] += losses.sum().item()
-        counts["loss"] += losses.numel()
+        counts["loss"] += int(loss_mask.sum())
 
         # Which section is each target in? A position is in the structure
         # section once <begin_statements> has appeared more recently than the
@@ -100,10 +132,13 @@ def evaluate(model, stream, *, seq_len, batch_size, batches_wanted, device, toke
         in_structure = began >= opened
         is_end = targets == token_ids["end"]
 
+        in_structure = in_structure & loss_mask
+        in_sequence = ~in_structure & loss_mask
+        is_end = is_end & loss_mask
         totals["structure"] += losses[in_structure].sum().item()
         counts["structure"] += int(in_structure.sum())
-        totals["sequence"] += losses[~in_structure].sum().item()
-        counts["sequence"] += int((~in_structure).sum())
+        totals["sequence"] += losses[in_sequence].sum().item()
+        counts["sequence"] += int(in_sequence.sum())
         if is_end.any():
             totals["end"] += losses[is_end].sum().item()
             counts["end"] += int(is_end.sum())
@@ -162,6 +197,7 @@ def main() -> None:
     arm = ARMS_BY_KEY[arguments.arm]
     manifest = json.loads((arguments.packed / "train" / "manifest.json").read_text())
     vocab_size = manifest["vocab_size"]
+    eos_id = manifest["eos_token_id"]
 
     tokenizer = load_tokenizer(Path(model_source_path(Path(resolve_model(None)))))
     token_ids = {
@@ -214,11 +250,13 @@ def main() -> None:
                 warmup=arguments.warmup, min_ratio=arguments.min_lr_ratio,
             )
         inputs, targets = next(stream)
+        attention, loss_mask = document_mask(inputs, eos_id)
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            logits = model(inputs).logits
-        loss = functional.cross_entropy(
-            logits.float().reshape(-1, logits.shape[-1]), targets.reshape(-1)
-        )
+            logits = model(inputs, attention_mask=attention).logits
+        losses = functional.cross_entropy(
+            logits.float().reshape(-1, logits.shape[-1]), targets.reshape(-1), reduction="none"
+        ).reshape(targets.shape)
+        loss = (losses * loss_mask).sum() / loss_mask.sum()
         loss.backward()
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
@@ -231,6 +269,7 @@ def main() -> None:
             metrics = evaluate(
                 model, val_stream, seq_len=arguments.seq_len, batch_size=arguments.batch_size,
                 batches_wanted=arguments.eval_batches, device=device, token_ids=token_ids,
+                eos_id=eos_id,
             )
             row = {
                 "run": run, "arm": arm.key, "learning_rate": arguments.learning_rate,
