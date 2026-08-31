@@ -146,8 +146,9 @@ non-FoldBench half — which is exactly why #65 collected it.
 ### R-precision by depth tier
 
 Mean all-range R-precision over all 372 natural proteins. Source:
-[`data/depth_tiers.csv`](data/depth_tiers.csv); figure:
-[`plots/rprecision_by_depth_tier.png`](plots/rprecision_by_depth_tier.png).
+[`data/depth_tiers.csv`](data/depth_tiers.csv).
+
+![Contact accuracy by ColabFold MSA depth](plots/rprecision_by_depth_tier.png)
 
 | depth | n | **MarinFold** | Protenix-v2 + MSA | ESMFold2 | Protenix-v2 single-seq | seq-KNN† |
 |---|---:|---:|---:|---:|---:|---:|
@@ -244,9 +245,12 @@ Neff 10 instead of 29 — and the picture is the same, with a slightly wider gap
 | `100–1000` | 96 | 0.436 | 0.830 | 0.720 | 0.259 |
 | `≥1000` | 185 | 0.659 | 0.864 | 0.845 | 0.251 |
 
-Figure: [`plots/rprecision_by_neff_tier.png`](plots/rprecision_by_neff_tier.png).
-Per-protein scatter with the tier boundaries drawn on it:
-[`plots/rprecision_vs_depth_scatter.png`](plots/rprecision_vs_depth_scatter.png).
+![Contact accuracy by effective MSA depth](plots/rprecision_by_neff_tier.png)
+
+Every natural protein individually, with the tier boundaries drawn on, and the
+depth distribution of the two halves underneath:
+
+![Per-protein accuracy against MSA depth](plots/rprecision_vs_depth_scatter.png)
 
 ### Designed proteins, as a control
 
