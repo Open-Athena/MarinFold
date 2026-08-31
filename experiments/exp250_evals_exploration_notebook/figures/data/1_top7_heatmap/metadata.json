@@ -1,7 +1,7 @@
 {
   "dataset": "1_top7_heatmap",
   "notebook": "1_make_top7_heatmap_data.ipynb",
-  "generated_utc": "2026-08-21T16:31:39+00:00",
+  "generated_utc": "2026-08-31T16:07:07+00:00",
   "parameters": {
     "protein": "denovo_pdb__1qys_A",
     "model": "contacts-v1-exp232-m2-p06-1.5B",
@@ -14,25 +14,26 @@
     "gpu_memory_utilization": 0.85
   },
   "git": {
-    "commit": "2f30f1bb15de7d6bbde9218602ea72a4c518a9a0",
+    "commit": "6189dea7bc5838c6e2367e74106f5c07fccc5333",
     "branch": "exp250/evals-exploration-notebook",
     "dirty": true,
     "dirty_files": [
-      "?? notebooks/figures/data/1_top7_heatmap/residue_numbers.npy",
-      "?? notebooks/figures/data/1_top7_heatmap/structure.cif"
+      "M experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/metrics.csv",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/score.npy",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/votes.npy"
     ]
   },
   "machine": {
-    "hostname": "1xH100 node",
+    "hostname": "8xA100 node",
     "hostname_overridden": true,
     "user": "ubuntu",
     "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
     "python": "3.12.14",
     "gpu": {
-      "name": "NVIDIA H100 80GB HBM3",
-      "compute_capability": "9.0",
-      "memory_gib": 79.2,
-      "count": 1
+      "name": "NVIDIA A100-SXM4-80GB",
+      "compute_capability": "8.0",
+      "memory_gib": 79.3,
+      "count": 8
     }
   },
   "packages": {
@@ -64,19 +65,19 @@
   "outputs": {
     "score.npy": {
       "bytes": 33984,
-      "sha256": "cd44ac76f8beadacda590bee0bb0218be7b7b6fa44009f0b1a504a3b44b3e012"
+      "sha256": "64080e3b3f83a061b20670ee1f60eec2d96cc5345658b73bcdf987bb4716afb5"
     },
     "votes.npy": {
       "bytes": 17056,
-      "sha256": "42917b94c93fa46db68fa8fa93e640a15bd0fa0242da0f90da2dcad975c84f13"
+      "sha256": "c72dbcdc4c88001c2d682a36c3bd8ee67747e1ff1dc75ce0dcc1e4773b58f24a"
     },
     "ground_truth.json": {
       "bytes": 12744,
       "sha256": "b63c46f5754fc3eb29e24a5006d2c3e489f2ba192bb5fce8ea90e11449f1ad89"
     },
     "metrics.csv": {
-      "bytes": 740,
-      "sha256": "3a0e1c632ab6acaba95f915dfc36cb0a0977724d50b518a62c795f97b8bcb28d"
+      "bytes": 737,
+      "sha256": "94ab2060d5716b7c61fa4b7959c766926675bdcff9211cddd5d9ff70e38f305f"
     },
     "ca_coords.npy": {
       "bytes": 1232,
@@ -154,11 +155,11 @@
   "votes": {
     "max": 97,
     "n_rollouts": 100,
-    "pairs_with_any_vote": 539,
+    "pairs_with_any_vote": 542,
     "note": "score.npy = votes.npy + a pairwise tie-break in [0, 0.5); the metric ranks score, the figure shows votes / n_rollouts"
   },
   "result": {
-    "r_precision_all": 0.6973684210526315,
-    "auc_all": 0.9923781144539383
+    "r_precision_all": 0.7105263157894737,
+    "auc_all": 0.9923134917785595
   }
 }

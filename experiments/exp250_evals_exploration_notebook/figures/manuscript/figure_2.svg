@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='ASCII' standalone='yes'?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="468.0px" viewBox="0 0 468.0 161.27704784470646" height="161.27704784470646px">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="468.0px" viewBox="0 0 468.0 162.2088996479387" height="162.2088996479387px">
   <g>
-    <g transform="translate(4, 4) scale(1 1) translate(0, 0) scale(0.9265609409605037 0.9265609409605037) "><metadata>
+    <g transform="translate(4, 4) scale(1 1) translate(0, 0) scale(0.9321939923258549 0.9321939923258549) "><metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
@@ -472,7 +472,7 @@
  </defs>
 </g>
     <text x="3" y="17" font-size="13" font-family="DejaVu Sans" font-weight="bold" letter-spacing="0" text-anchor="start" fill="black">A</text>
-    <g transform="translate(237.706243763842, 4) scale(1 1) translate(0, 0) scale(0.9265609409605037 0.9265609409605037) "><metadata>
+    <g transform="translate(236.33048498081465, 4) scale(1 1) translate(0, 0) scale(0.9321939923258549 0.9321939923258549) "><metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
@@ -935,6 +935,6 @@
   </clipPath>
  </defs>
 </g>
-    <text x="236.706243763842" y="17" font-size="13" font-family="DejaVu Sans" font-weight="bold" letter-spacing="0" text-anchor="start" fill="black">B</text>
+    <text x="235.33048498081465" y="17" font-size="13" font-family="DejaVu Sans" font-weight="bold" letter-spacing="0" text-anchor="start" fill="black">B</text>
   </g>
 </svg>
