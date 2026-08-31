@@ -366,6 +366,11 @@ natural-only). Binned, on the 305 proteins every arm folded:
 | Protenix-v2, single sequence | 0.302 | 0.217 | 0.153 | 0.158 | 0.119 |
 | Helico, no contacts | 0.248 | 0.161 | 0.136 | 0.145 | 0.095 |
 
+The seq-KNN null is not in this figure and cannot be: it is a *contact* baseline, and neither #94
+nor #245 published dense contact maps for it, so it has never been folded and has no GDT-TS or
+lDDT. Putting it on these axes would mean regenerating its contacts and running a seventh Helico
+arm.
+
 **The oracle is flat and MarinFold is not.** Given true contacts Helico folds a shallow-MSA
 protein as well as a deep one (0.886 against 0.852 GDT-TS), so nothing about these proteins makes
 them intrinsically harder to *build* — what degrades is our ability to *predict* their contacts.
