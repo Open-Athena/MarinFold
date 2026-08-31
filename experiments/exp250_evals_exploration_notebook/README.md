@@ -353,7 +353,7 @@ The MarinFold arm was re-run on Modal with contacts from step-363000 (helico exp
 same Helico checkpoint, same sampling, one input changed. Better contacts (precision@L 0.542
 against 0.510) buy +0.032 GDT-TS and +0.023 lDDT on natural monomers and nothing on the designs.
 
-**Figure 4 — accuracy against MSA depth, and what it says.** #247 publishes an MSA depth for
+**Figure 3d–e — accuracy against MSA depth, and what it says.** #247 publishes an MSA depth for
 each of the 314 natural monomers (and for none of the designs, which is why this figure is
 natural-only). Binned, on the 305 proteins every arm folded:
 
