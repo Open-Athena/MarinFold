@@ -98,9 +98,16 @@ def tier_figure(tiers: pd.DataFrame, *, axis: str, title: str):
         )
     axes[0].set_ylabel("R-precision (all ranges)")
     axes[0].set_ylim(0, 1)
-    axes[-1].legend(fontsize=8, loc="lower right")
     figure.suptitle(title)
-    figure.tight_layout()
+    # One legend under the panels: in-axes placement covered the sparse
+    # bottom-right of the non-FoldBench panel, which is where its
+    # single-sequence baseline sits.
+    handles, labels = axes[0].get_legend_handles_labels()
+    figure.legend(
+        handles, labels, loc="lower center", ncol=len(labels), fontsize=8,
+        frameon=False, bbox_to_anchor=(0.5, -0.02),
+    )
+    figure.tight_layout(rect=(0, 0.04, 1, 1))
     return figure
 
 
