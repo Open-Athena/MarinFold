@@ -3,16 +3,22 @@
 
 """Publish #232's best decontaminated checkpoint to the public MarinFold bucket — issue #250.
 
-`prot-exp232-cw-cv1-decontam-s02-m2-p06-aug` step 145,199 is the better of the
-two finals [#244] selected and [#245] scored: R-precision 0.5916 on the legacy
-554 and 0.520 on eval-val, trained from scratch on [#225]'s corpora with every
-FoldBench protein's homologs removed at the 30 % / 50 %-coverage rule. It is the
-only checkpoint we have whose accuracy on these proteins is not open to a
-leakage objection — and it existed in exactly one place, CoreWeave S3 in the
-account that trained it, so `notebooks/evals_exploration.ipynb` could show its
-published *scores* but never fold anything with it.
+Two exports qualify, and `--checkpoint` chooses:
 
-This copies it to the bucket so it can be a `MODELS.yaml` entry.
+* `training` (the default) — `prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1`
+  step 363,000, the `m2-p06` point trained on past the sweep. #232's
+  2026-08-24 evaluation scores it at 0.6051 R-precision on the legacy 554 and
+  0.5517 on eval-val, against the sweep final's 0.5916 / 0.5203.
+* `sweep` — `prot-exp232-cw-cv1-decontam-s02-m2-p06-aug` step 145,199, the
+  better of the two finals [#244] selected and [#245] scored. Published first,
+  and still what the figures used before the training checkpoint existed.
+
+Both are trained from scratch on [#225]'s corpora with every FoldBench
+protein's homologs removed at the 30 % / 50 %-coverage rule, so their accuracy
+on these proteins is not open to a leakage objection — and each existed in
+exactly one place, CoreWeave S3 in the account that trained it.
+
+This copies one to the bucket so it can be a `MODELS.yaml` entry.
 
 Adapted from `experiments/exp238_models_promote_exp199_cooldown_to_default/publish_cooldown.py`,
 which did the same for #199's cooldown; the mechanism and its three pre-upload
@@ -26,11 +32,10 @@ and sits beside the bytes.
 
 THREE THINGS ARE CHECKED BEFORE ANYTHING IS UPLOADED, each silent when wrong:
 
-* **The source is the checkpoint #244/#245 evaluated**, not whatever lives at
-  that path now. `SOURCE_FILES` is the manifest both of those pinned (their
-  `checkpoint_specs.py`, which agree object for object); every object must match
-  on size *and* S3 ETag. `test_publish_specs.py` asserts this copy still equals
-  #245's.
+* **The source is the checkpoint that was evaluated**, not whatever lives at
+  that path now. Each `Checkpoint.files` is the manifest the evaluation named in
+  its `pinned_by` recorded; every object must match on size *and* S3 ETag.
+  `test_publish_specs.py` asserts both copies against those specs.
 * **The rope block must be repaired.** levanter's transformers-5 export states
   rope only as `rope_parameters`; 4.x ignores that and silently loads the Qwen3
   architecture default theta 10000 where the model was trained with 500000
@@ -52,6 +57,7 @@ THREE THINGS ARE CHECKED BEFORE ANYTHING IS UPLOADED, each silent when wrong:
 
 import argparse
 import base64
+import dataclasses
 import hashlib
 import json
 import os
@@ -67,30 +73,88 @@ HERE = Path(__file__).resolve().parent
 # it, so the repo root is resolved lazily and only on the paths that need it.
 REPO_ROOT = HERE.parents[1] if len(HERE.parents) > 1 else None
 
-RUN_NAME = "prot-exp232-cw-cv1-decontam-s02-m2-p06-aug"
-STEP = 145_199
-SOURCE_URI = (
-    "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/"
-    f"checkpoints/protein/{RUN_NAME}/2026.08.14.2/hf/step-{STEP}"
-)
-BUCKET_ID = "open-athena/MarinFold"
-BUCKET_PATH = f"checkpoints/{RUN_NAME}/hf/step-{STEP}"
-BUCKET_RESOLVE = f"https://huggingface.co/buckets/{BUCKET_ID}/resolve/{BUCKET_PATH}"
+@dataclasses.dataclass(frozen=True)
+class Checkpoint:
+    """One publishable export: its identity, its source, and its pinned manifest."""
 
-# name -> (size, S3 ETag), copied from the manifest #244 and #245 both pinned
-# (experiments/exp232_sweep_cv1_decontam/evals/rollout_v2/checkpoint_specs.py and
-# experiments/exp245_evals_foldbench_held_out_monomers/rollout/checkpoint_specs.py,
-# which agree). test_publish_specs.py asserts the copy.
-SOURCE_FILES = {
-    "config.json": (1_557, "d8e904f8170ddf00d74c864f31d258a4"),
-    "model-00001-of-00002.safetensors": (
-        4_979_485_528, "2e38a75033f4df3a73a4be9bc2ceeefe-95"),
-    "model-00002-of-00002.safetensors": (
-        906_042_048, "f444bd62152329ef71c7c46e7ee1c3cd-18"),
-    "model.safetensors.index.json": (20_882, "bc0a5fd2c9aae096abae4caf9040c79c"),
-    "tokenizer.json": (64_407, "c4b3a16978e30eb150cca4fd8934b6ae"),
-    "tokenizer_config.json": (290, "336f4e2ca951fa13a20cb1c4b68b2040"),
+    key: str
+    run_name: str
+    step: int
+    source_uri: str
+    #: name -> (size, S3 ETag)
+    files: dict
+    #: where that manifest was pinned, named in every failure message
+    pinned_by: str
+    note: str
+
+
+#: The two #232 finals worth publishing. Both are the `m2-p06` point; they differ in
+#: how far training ran. `test_publish_specs.py` asserts each manifest still equals
+#: the pinned identity of the evaluation that produced the number we quote.
+CHECKPOINTS = {
+    "sweep": Checkpoint(
+        key="sweep",
+        run_name="prot-exp232-cw-cv1-decontam-s02-m2-p06-aug",
+        step=145_199,
+        source_uri=(
+            "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/checkpoints/"
+            "protein/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/2026.08.14.2/hf/step-145199"
+        ),
+        files={
+            "config.json": (1_557, "d8e904f8170ddf00d74c864f31d258a4"),
+            "model-00001-of-00002.safetensors": (
+                4_979_485_528, "2e38a75033f4df3a73a4be9bc2ceeefe-95"),
+            "model-00002-of-00002.safetensors": (
+                906_042_048, "f444bd62152329ef71c7c46e7ee1c3cd-18"),
+            "model.safetensors.index.json": (20_882, "bc0a5fd2c9aae096abae4caf9040c79c"),
+            "tokenizer.json": (64_407, "c4b3a16978e30eb150cca4fd8934b6ae"),
+            "tokenizer_config.json": (290, "336f4e2ca951fa13a20cb1c4b68b2040"),
+        },
+        pinned_by="#245's rollout/checkpoint_specs.py",
+        note="the sweep final: legacy-554 R-precision 0.5916",
+    ),
+    "training": Checkpoint(
+        key="training",
+        run_name=(
+            "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1"
+        ),
+        step=363_000,
+        source_uri=(
+            "s3://marin-us-east-02a/marin/protein-structure/MarinFold/"
+            "exp232_sweep_cv1_decontam/evals/rollout-v2/2026-08-24/v2-01/models/"
+            "exp232-decontam-train-m2-p06-step363000/hf/step-363000"
+        ),
+        files={
+            "config.json": (1_557, "d8e904f8170ddf00d74c864f31d258a4"),
+            "model-00001-of-00002.safetensors": (
+                4_979_485_528, "9a11736b507565aa2be00a5753f51b12-95"),
+            "model-00002-of-00002.safetensors": (
+                906_042_048, "1a042bf9b4acde490f0c0ffee76306dd-18"),
+            "model.safetensors.index.json": (20_882, "bc0a5fd2c9aae096abae4caf9040c79c"),
+            "tokenizer.json": (64_407, "c4b3a16978e30eb150cca4fd8934b6ae"),
+            "tokenizer_config.json": (290, "336f4e2ca951fa13a20cb1c4b68b2040"),
+        },
+        pinned_by="#232's evals/2026-08-24_rollout_v2/checkpoint_specs.py",
+        note="training continued to step 363,000: legacy-554 R-precision 0.6051",
+    ),
 }
+#: The better of the two, and the one every #250 figure is drawn from.
+DEFAULT_CHECKPOINT = "training"
+#: Set by `main`; every function below reads this rather than a bare constant.
+SPEC = CHECKPOINTS[DEFAULT_CHECKPOINT]
+
+BUCKET_ID = "open-athena/MarinFold"
+
+
+def bucket_path(spec: "Checkpoint" = None) -> str:
+    """Where a checkpoint lands on the bucket — the repo-wide `<run>/hf/step-<N>` layout."""
+    spec = spec or SPEC
+    return f"checkpoints/{spec.run_name}/hf/step-{spec.step}"
+
+
+def bucket_resolve(spec: "Checkpoint" = None) -> str:
+    return f"https://huggingface.co/buckets/{BUCKET_ID}/resolve/{bucket_path(spec)}"
+
 
 # The rope base this model line was trained with. 10000 is the Qwen3 architecture
 # default and the value a 4.x reader lands on when the repair is missing, so it is
@@ -142,26 +206,26 @@ def s3_filesystem():
 
 def verify_source(filesystem) -> None:
     """Fail unless the S3 prefix is exactly the export #244/#245 evaluated."""
-    root = SOURCE_URI.removeprefix("s3://")
+    root = SPEC.source_uri.removeprefix("s3://")
     listing = {
         Path(entry["Key"]).name: entry
         for entry in filesystem.ls(root, detail=True)
         if entry["type"] == "file"
     }
-    if set(listing) != set(SOURCE_FILES):
+    if set(listing) != set(SPEC.files):
         raise SystemExit(
-            f"FATAL: {SOURCE_URI} holds {sorted(listing)}, "
-            f"#245 recorded {sorted(SOURCE_FILES)}"
+            f"FATAL: {SPEC.source_uri} holds {sorted(listing)}, "
+            f"{SPEC.pinned_by} recorded {sorted(SPEC.files)}"
         )
-    for name, (size, etag) in SOURCE_FILES.items():
+    for name, (size, etag) in SPEC.files.items():
         entry = listing[name]
         found = entry["ETag"].strip('"')
         if entry["size"] != size or found != etag:
             raise SystemExit(
-                f"FATAL: {name} is {entry['size']} B / ETag {found}; #245 "
-                f"evaluated {size} B / ETag {etag}. This is not that checkpoint."
+                f"FATAL: {name} is {entry['size']} B / ETag {found}; {SPEC.pinned_by} "
+                f"pinned {size} B / ETag {etag}. This is not that checkpoint."
             )
-    log(f"verified {len(SOURCE_FILES)} objects against #245's manifest")
+    log(f"verified {len(SPEC.files)} objects against {SPEC.pinned_by}")
 
 
 def rope_repair_module():
@@ -232,9 +296,9 @@ def verify_tokenizer_bytes(payload: bytes) -> int:
 
 def stage(filesystem, local: Path) -> dict[str, str]:
     """Download the export and return each file's sha256."""
-    root = SOURCE_URI.removeprefix("s3://")
+    root = SPEC.source_uri.removeprefix("s3://")
     digests = {}
-    for name in sorted(SOURCE_FILES):
+    for name in sorted(SPEC.files):
         started = time.time()
         filesystem.get_file(f"{root}/{name}", str(local / name))
         digest = hashlib.sha256((local / name).read_bytes()).hexdigest()
@@ -250,8 +314,8 @@ def upload(local: Path, token: str) -> None:
     from huggingface_hub import HfFileSystem
 
     bucket = HfFileSystem(token=token)
-    for name in sorted(SOURCE_FILES):
-        destination = f"buckets/{BUCKET_ID}/{BUCKET_PATH}/{name}"
+    for name in sorted(SPEC.files):
+        destination = f"buckets/{BUCKET_ID}/{bucket_path()}/{name}"
         source = local / name
         for attempt in range(_MAX_RETRIES):
             try:
@@ -287,10 +351,11 @@ def run() -> int:
         digests["config.json"] = hashlib.sha256((local / "config.json").read_bytes()).hexdigest()
         upload(local, token)
     manifest = {
-        "run_name": RUN_NAME,
-        "step": STEP,
-        "source_uri": SOURCE_URI,
-        "bucket_uri": f"hf://buckets/{BUCKET_ID}/{BUCKET_PATH}",
+        "checkpoint": SPEC.key,
+        "run_name": SPEC.run_name,
+        "step": SPEC.step,
+        "source_uri": SPEC.source_uri,
+        "bucket_uri": f"hf://buckets/{BUCKET_ID}/{bucket_path()}",
         "sha256": digests,
         "source_config_sha256": source_config_sha256,
         "rope_theta": config.get("rope_theta"),
@@ -313,10 +378,10 @@ def verify_published(out: Path | None) -> int:
 
     entries = {
         Path(entry.path).name: entry
-        for entry in list_bucket_tree(BUCKET_ID, prefix=BUCKET_PATH, recursive=True, token=False)
+        for entry in list_bucket_tree(BUCKET_ID, prefix=bucket_path(), recursive=True, token=False)
     }
     problems = []
-    for name, (size, _) in SOURCE_FILES.items():
+    for name, (size, _) in SPEC.files.items():
         entry = entries.get(name)
         if entry is None:
             problems.append(f"{name}: missing from the bucket")
@@ -328,20 +393,20 @@ def verify_published(out: Path | None) -> int:
             log(f"FAIL {problem}")
         return 1
 
-    config = json.loads(urllib.request.urlopen(f"{BUCKET_RESOLVE}/config.json").read())
+    config = json.loads(urllib.request.urlopen(f"{bucket_resolve()}/config.json").read())
     if config.get("rope_theta") != EXPECTED_ROPE_THETA:
         log(f"FAIL config.json states rope_theta={config.get('rope_theta')!r}")
         return 1
     vocab_size = verify_tokenizer_bytes(
-        urllib.request.urlopen(f"{BUCKET_RESOLVE}/tokenizer.json").read())
-    log(f"published copy ok: {len(SOURCE_FILES)} files, rope_theta "
+        urllib.request.urlopen(f"{bucket_resolve()}/tokenizer.json").read())
+    log(f"published copy ok: {len(SPEC.files)} files, rope_theta "
         f"{config['rope_theta']}, rope_type "
         f"{(config.get('rope_scaling') or {}).get('rope_type')}, {vocab_size} tokens")
     if out is not None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps({
-            "bucket_uri": f"hf://buckets/{BUCKET_ID}/{BUCKET_PATH}",
-            "files": {name: entries[name].size for name in sorted(SOURCE_FILES)},
+            "bucket_uri": f"hf://buckets/{BUCKET_ID}/{bucket_path()}",
+            "files": {name: entries[name].size for name in sorted(SPEC.files)},
             "rope_theta": config.get("rope_theta"),
             "rope_scaling": config.get("rope_scaling"),
             "vocab_size": vocab_size,
@@ -393,14 +458,14 @@ def submit(iris_bin: str, dry_run: bool) -> int:
     argv = [
         iris_bin, "--cluster=marin", "job", "run",
         "--target-cluster", TARGET_CLUSTER,
-        "--job-name", f"exp250-publish-m2p06-step{STEP}",
+        "--job-name", f"exp250-publish-m2p06-{SPEC.key}-step{SPEC.step}",
         "--priority", "batch", "--enable-extra-resources", "--no-wait",
         "--cpu", "4", "--memory", "16GB", "--disk", "32GB",
         "--max-retries", "3", "--timeout", "7200",
         "-e", "HF_TOKEN", hf_token(),
         "-e", "EXP250_ROPE_REPAIR_B64", base64.b64encode(payload).decode(),
         "-e", "EXP250_ROPE_REPAIR_SHA256", hashlib.sha256(payload).hexdigest(),
-        "--", "python", "publish_exp232_m2_p06.py",
+        "--", "python", "publish_exp232_m2_p06.py", "--checkpoint", SPEC.key,
     ]
     if dry_run:
         # Redact rather than truncate: the token is short enough to survive a
@@ -415,23 +480,29 @@ def submit(iris_bin: str, dry_run: bool) -> int:
         raise SystemExit("iris job run failed; rerun with --dry-run to see the "
                          "(redacted) command line")
     log(f"submitted; logs: {iris_bin} --cluster=marin job logs "
-        f"/bizon/exp250-publish-m2p06-step{STEP}")
+        f"/bizon/exp250-publish-m2p06-{SPEC.key}-step{SPEC.step}")
     return 0
 
 
 def main() -> int:
+    global SPEC
     parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint", choices=sorted(CHECKPOINTS),
+                        default=DEFAULT_CHECKPOINT,
+                        help="which #232 final to publish (default: %(default)s)")
     parser.add_argument("--submit", action="store_true",
                         help="run on a CoreWeave pod instead of here")
     parser.add_argument("--verify", action="store_true",
                         help="check the already-published bucket copy")
-    parser.add_argument("--out", type=Path, default=Path("data/m2_p06_publish_check.json"),
+    parser.add_argument("--out", type=Path, default=None,
                         help="where --verify writes its record")
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    SPEC = CHECKPOINTS[args.checkpoint]
+    log(f"checkpoint {SPEC.key}: {SPEC.run_name} step {SPEC.step} — {SPEC.note}")
     if args.verify:
-        return verify_published(args.out)
+        return verify_published(args.out or Path(f"data/m2_p06_{SPEC.key}_publish_check.json"))
     if args.submit:
         return submit(args.iris_bin, args.dry_run)
     return run()
