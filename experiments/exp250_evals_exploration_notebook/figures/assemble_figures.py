@@ -35,8 +35,8 @@ MARGIN = 4          # points around the whole figure
 #: (panel stem in output/, optional placeholder caption when the file is absent).
 LAYOUT = {
     "figure_1": {
-        "caption": ("Document format (a), and Top7's ground-truth and predicted contact maps "
-                    "with the deposited structure inset (b)."),
+        "caption": ("Document format (a), and Top7's deposited structure beside its "
+                    "ground-truth and predicted contact maps (b)."),
         # `training_composition` is still written by pair 5 and is not in any manuscript figure;
         # add it to a row here to give it one.
         "rows": [[("document_format", None), ("top7_maps", None)]],
