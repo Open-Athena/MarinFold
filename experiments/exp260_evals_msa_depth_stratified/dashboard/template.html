@@ -199,27 +199,43 @@ const STRUCTURE_ORDER = [
   "protenix_v2_msa", "protenix_v2_single_seq", "esmfold2",
 ];
 
-/** Mean lDDT / GDT-TS / TM-score per structure arm over the selection. */
+/** Mean lDDT / GDT-TS / TM-score per structure arm over the selection.
+ *
+ * Arms do not cover the same proteins — Helico only ever ran the FoldBench
+ * monomers, while Protenix and ESMFold have predictions for all 42 — so means
+ * taken over each arm's own coverage are not comparable with each other. The
+ * table is therefore computed over the proteins every displayed arm has in
+ * common, and says so; the per-arm coverage is printed underneath.
+ */
 function structureSummaryRows(selected) {
   const gathered = new Map();
   for (const protein of selected) {
     for (const arm of protein.structure_arms || []) {
       if (arm.arm === "ground_truth" || arm.computed_lddt === undefined) continue;
-      if (!gathered.has(arm.arm)) gathered.set(arm.arm, { label: arm.label, rows: [] });
-      gathered.get(arm.arm).rows.push(arm);
+      if (!gathered.has(arm.arm)) gathered.set(arm.arm, { label: arm.label, rows: new Map() });
+      gathered.get(arm.arm).rows.set(protein.key, arm);
     }
   }
   const arms = STRUCTURE_ORDER.filter((a) => gathered.has(a));
   if (!arms.length) return "";
+  const shared = selected
+    .map((p) => p.key)
+    .filter((key) => arms.every((a) => gathered.get(a).rows.has(key)));
   const cell = (arm, key) =>
-    fmt(mean(gathered.get(arm).rows.map((r) => r[key])));
+    fmt(mean(shared.map((k) => gathered.get(arm).rows.get(k)[key])));
+  const uneven = arms.some((a) => gathered.get(a).rows.size !== shared.length);
   return `
-    <tr class="head"><td>structure accuracy vs. ground truth</td>
-      ${arms.map((a) => `<td>${escape(gathered.get(a).label)}<br>` +
-        `<span style="font-weight:400">n=${gathered.get(a).rows.length}</span></td>`).join("")}</tr>
-    ${[["lDDT", "computed_lddt"], ["GDT-TS", "computed_gdt_ts"], ["TM-score", "computed_tm_score"]]
-      .map(([label, key]) => `<tr><td class="head">mean ${label}</td>` +
-        arms.map((a) => `<td>${cell(a, key)}</td>`).join("") + "</tr>").join("")}`;
+    <tr class="head"><td>structure accuracy vs. ground truth${
+      uneven ? `<br><span style="font-weight:400">on the ${shared.length} protein${
+        shared.length === 1 ? "" : "s"} every arm covers</span>` : ""}</td>
+      ${arms.map((a) => `<td>${escape(gathered.get(a).label)}${
+        uneven ? `<br><span style="font-weight:400">has ${gathered.get(a).rows.size}</span>` : ""
+      }</td>`).join("")}</tr>
+    ${!shared.length ? '<tr><td colspan="9" class="head">no protein is covered by every arm — ' +
+      "narrow the filters (Helico only ran the FoldBench monomers)</td></tr>" :
+      [["lDDT", "computed_lddt"], ["GDT-TS", "computed_gdt_ts"], ["TM-score", "computed_tm_score"]]
+        .map(([label, key]) => `<tr><td class="head">mean ${label}</td>` +
+          arms.map((a) => `<td>${cell(a, key)}</td>`).join("") + "</tr>").join("")}`;
 }
 
 function renderSummary() {
