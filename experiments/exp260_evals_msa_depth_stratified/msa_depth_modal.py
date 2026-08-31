@@ -35,6 +35,13 @@ import upstream as U
 
 app = modal.App("exp260-msa-depth")
 
+#: Three eval-denovo designs have no a3m on ``protenix-foldbench-msa`` (it holds
+#: 330 of the 333 scorable monomers). They are designed proteins, so they are
+#: outside the natural stratification this experiment is built on, and their
+#: absence is recorded rather than fatal. Any *other* missing protein is a real
+#: problem and stops the run.
+KNOWN_MISSING = {"8ju8_A", "8k7o_A", "8oys_A"}
+
 #: The depth computation is pure numpy over the a3m; pandas rides along only
 #: because Modal imports this whole module inside the container.
 image = (
@@ -132,16 +139,23 @@ def main(limit: int = 0) -> None:
 
     rows = list(measure.map(specs))
     frame = pd.DataFrame(rows).sort_values(["msa_volume", "stem"], ignore_index=True)
-    missing = frame[~frame.found]
-    if len(missing) and not limit:
-        raise RuntimeError(f"no a3m for {len(missing)} proteins: {list(missing.stem)}")
 
+    # Write before validating: these measurements cost real compute and a
+    # validation failure should leave them on disk to look at.
     destination = U.DATA / ("msa_depth.csv" if not limit else "msa_depth.smoke.csv")
     frame.to_csv(destination, index=False)
+
+    missing = set(frame.loc[~frame.found, "stem"])
+    unexpected = missing - KNOWN_MISSING
+    if unexpected and not limit:
+        raise RuntimeError(f"no a3m for {sorted(unexpected)}")
+    if missing and not limit:
+        print(f"no a3m for the known-absent designs: {sorted(missing)}")
     print(
         json.dumps(
             {
                 "rows": len(frame),
+                "missing": sorted(set(frame.loc[~frame.found, "stem"])),
                 "cpu_seconds": float(frame.elapsed_seconds.sum()),
                 "slowest_seconds": float(frame.elapsed_seconds.max()),
                 "median_n_seqs": float(frame.n_seqs.median()),

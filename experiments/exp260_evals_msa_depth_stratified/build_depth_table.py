@@ -61,9 +61,17 @@ LEGACY_BASELINES = {
 METRICS = (("all", "R"), ("long", "R"), ("all", "AUC"))
 
 
+#: Three eval-denovo designs have no a3m on the Modal volume (see
+#: :mod:`msa_depth_modal`). They keep their scores and sit outside every bin,
+#: so "all" stays the sum of the tiers.
+UNMEASURED = "unmeasured"
+
+
 def depth_tier(depth: float) -> str:
     """Return the requested depth bin for a raw ColabFold sequence count."""
 
+    if pd.isna(depth):
+        return UNMEASURED
     for name, low, high in U.DEPTH_TIERS:
         if depth >= low and (high is None or depth < high):
             return name
@@ -125,11 +133,15 @@ def load_legacy_baselines() -> pd.DataFrame:
     return frame[["dataset", "stem", "range", "cut", "predictor", "precision"]]
 
 
-def assemble(results_root: str) -> pd.DataFrame:
+def assemble(results_root: str, depths_path: str) -> pd.DataFrame:
     """One row per (protein, predictor, metric), with depth and subset joined."""
 
     universe = pd.read_csv(U.DATA / "universe.csv")
-    depths = pd.read_csv(U.DATA / "msa_depth.csv")
+    depths = pd.read_csv(depths_path)
+    if depths.duplicated(["stem", "msa_volume"]).any():
+        raise ValueError("depth measurements are not unique per (stem, volume)")
+    # Cross-volume duplicates are measured for the consistency check and dropped
+    # here: each protein is scored under exactly one volume.
     depths = depths.merge(
         universe[["stem", "msa_volume"]], on=["stem", "msa_volume"], how="inner"
     )
@@ -163,6 +175,7 @@ def assemble(results_root: str) -> pd.DataFrame:
 def tier_table(frame: pd.DataFrame, *, tier_column: str) -> pd.DataFrame:
     """Mean and bootstrap interval per (subset, tier, predictor, metric)."""
 
+    frame = frame[frame[tier_column] != UNMEASURED]
     natural = frame[frame.subset != "foldbench_designed"].copy()
     populations = {
         "all_natural": natural,
@@ -201,6 +214,66 @@ def tier_table(frame: pd.DataFrame, *, tier_column: str) -> pd.DataFrame:
     )
 
 
+def paired_deltas(frame: pd.DataFrame, *, tier_column: str) -> pd.DataFrame:
+    """Per-protein MarinFold-minus-baseline differences, by tier.
+
+    Two independent means over five proteins say very little; the same five
+    proteins scored by both predictors say considerably more, because the
+    protein-to-protein variance that dominates a small bin cancels. Every
+    shallow-tier claim in the README rests on this table, not on the difference
+    of the two columns in the tier table.
+    """
+
+    frame = frame[frame[tier_column] != UNMEASURED]
+    natural = frame[frame.subset != "foldbench_designed"]
+    populations = {
+        "all_natural": natural,
+        "foldbench_natural": natural[natural.subset == "foldbench_natural"],
+        "nonfoldbench_natural": natural[natural.subset == "nonfoldbench_natural"],
+    }
+    tiers = [name for name, _, _ in U.DEPTH_TIERS]
+    rows = []
+    for population, subframe in populations.items():
+        for tier in [*tiers, "all"]:
+            selected = (
+                subframe if tier == "all" else subframe[subframe[tier_column] == tier]
+            )
+            for (range_name, cut), metric_frame in selected.groupby(["range", "cut"]):
+                wide = metric_frame.pivot_table(
+                    index=["dataset", "stem"], columns="predictor", values="precision"
+                )
+                if MARINFOLD_LABEL not in wide.columns:
+                    continue
+                for baseline in wide.columns:
+                    if baseline == MARINFOLD_LABEL:
+                        continue
+                    paired = wide[[MARINFOLD_LABEL, baseline]].dropna()
+                    if paired.empty:
+                        continue
+                    difference = (
+                        paired[MARINFOLD_LABEL] - paired[baseline]
+                    ).to_numpy()
+                    low, high = bootstrap_ci(difference)
+                    rows.append(
+                        {
+                            "population": population,
+                            "tier_axis": tier_column,
+                            "tier": tier,
+                            "baseline": baseline,
+                            "range": range_name,
+                            "cut": cut,
+                            "n": len(difference),
+                            "mean_delta": float(difference.mean()),
+                            "ci_low": low,
+                            "ci_high": high,
+                            "marinfold_wins": int((difference > 0).sum()),
+                        }
+                    )
+    return pd.DataFrame(rows).sort_values(
+        ["population", "tier", "cut", "range", "baseline"], ignore_index=True
+    )
+
+
 def tier_counts(frame: pd.DataFrame) -> pd.DataFrame:
     """How many proteins land in each bin, on both depth axes."""
 
@@ -223,9 +296,10 @@ def main() -> None:
         default=U.RESULTS_URL,
         help="Root of the published (or local) evaluation results.",
     )
+    parser.add_argument("--depths", default=str(U.DATA / "msa_depth.csv"))
     args = parser.parse_args()
 
-    frame = assemble(args.results)
+    frame = assemble(args.results, args.depths)
     frame.to_csv(U.DATA / "per_protein_depth.csv", index=False)
     depth_tiers = tier_table(frame, tier_column="depth_tier")
     neff_tiers = tier_table(frame, tier_column="neff_tier")
@@ -234,6 +308,13 @@ def main() -> None:
     )
     counts = tier_counts(frame)
     counts.to_csv(U.DATA / "tier_counts.csv", index=False)
+    pd.concat(
+        [
+            paired_deltas(frame, tier_column="depth_tier"),
+            paired_deltas(frame, tier_column="neff_tier"),
+        ],
+        ignore_index=True,
+    ).to_csv(U.DATA / "paired_deltas.csv", index=False)
 
     headline = depth_tiers[
         (depth_tiers.predictor == MARINFOLD_LABEL)
