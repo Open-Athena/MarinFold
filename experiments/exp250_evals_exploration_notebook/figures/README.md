@@ -9,6 +9,7 @@ Same number, same figure. Nothing is recomputed at plot time.
 | 2 | [`2_make_rprecision_data`](2_make_rprecision_data.ipynb) | [`2_plot_rprecision`](2_plot_rprecision.ipynb) | CPU | `rprecision_natural`, `rprecision_designed` |
 | 3 | [`3_make_structure_accuracy_data`](3_make_structure_accuracy_data.ipynb) | [`3_plot_structure_accuracy`](3_plot_structure_accuracy.ipynb) | CPU | `structure_accuracy_natural`, `structure_accuracy_designed` |
 | 4 | [`4_make_contamination_contrast_data`](4_make_contamination_contrast_data.ipynb) | [`4_plot_contamination_contrast`](4_plot_contamination_contrast.ipynb) | CPU | `contamination_contrast`, `contamination_contrast_scatter` |
+| 5 | [`5_make_training_composition_data`](5_make_training_composition_data.ipynb) | [`5_plot_training_composition`](5_plot_training_composition.ipynb) | CPU | `training_composition` |
 
 Datasets land in `data/<n>_<name>/`, figures in `output/` as a 300 dpi PNG and a vector PDF. No
 titles and no panel letters are baked into a figure — captions and lettering belong to the
@@ -22,7 +23,7 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 
 | figure | panels |
 |---|---|
-| [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format · **B** Top7 observed vs predicted contact map |
+| [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format, with the structure it describes · **B** training corpus by source · **C** Top7 ground truth · **D** Top7 predicted |
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
 | [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs |
 

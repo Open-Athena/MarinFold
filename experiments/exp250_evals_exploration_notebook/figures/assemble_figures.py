@@ -35,11 +35,10 @@ MARGIN = 4          # points around the whole figure
 #: (panel stem in output/, optional placeholder caption when the file is absent).
 LAYOUT = {
     "figure_1": {
-        "caption": ("Document format (a) and Top7's ground-truth (b) and predicted (c) contact "
-                    "maps; the deposited structure is inset in b."),
-        # Half width, so the format panel matches the panels below it instead of being stretched
-        # across the whole column.
-        "rows": [([("document_format", None)], 0.5),
+        "caption": ("Document format with the structure it describes (a), training-corpus "
+                    "composition (b), and Top7's ground-truth (c) and predicted (d) contact "
+                    "maps."),
+        "rows": [[("document_format", None), ("training_composition", None)],
                  [("top7_map_ground_truth", None), ("top7_map_predicted", None)]],
     },
     "figure_2": {
