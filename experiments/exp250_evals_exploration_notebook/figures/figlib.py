@@ -72,10 +72,15 @@ FIG1_PANEL = FIG1_DOC_PANEL
 #:
 #: The band stops short of the panel top: the assembler letters each panel over its top-left
 #: corner, and without that strip the letter lands on the structure.
-FIG1_STRUCTURE_RECT = (0.008, 0.216, 0.220, 0.622)
-FIG1_MAP_RECTS = ((0.329, 0.216, 0.266, 0.622), (0.627, 0.216, 0.266, 0.622))
+#: The map rectangles are stated as exact pixel fractions at the 300 dpi the PNGs are written at
+#: (4.32 x 1.85 in = 1296 x 555 px): a map is 345 px square, at x = 426 and x = 813, y = 120.
+#: Equal fractions are equal in the SVG whatever they are, but a rasteriser rounds each edge
+#: independently, and 0.266 x 1296 = 344.7 px came out as a 345 px map beside a 344 px one.
+FIG1_STRUCTURE_RECT = (0.008, 120 / 555, 0.220, 345 / 555)
+FIG1_MAP_RECTS = ((426 / 1296, 120 / 555, 345 / 1296, 345 / 555),
+                  (813 / 1296, 120 / 555, 345 / 1296, 345 / 555))
 #: The colourbar, which describes the predicted map only — the ground truth is binary.
-FIG1_BAR_RECT = (0.905, 0.216, 0.014, 0.622)
+FIG1_BAR_RECT = (0.905, 120 / 555, 0.014, 345 / 555)
 
 
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
