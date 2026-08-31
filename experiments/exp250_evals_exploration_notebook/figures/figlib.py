@@ -47,27 +47,35 @@ HELICO = ("https://huggingface.co/buckets/timodonnell/helico-experiments/resolve
           "exp14_foldbench_held_out_monomers")
 
 #: Figure 1's two panels, in inches. They share a height so the row reads as one band, and split
-#: the width unevenly: the map panel carries two contact maps and an inset structure, the document
-#: panel carries eight lines of text.
+#: the width unevenly: the map panel carries the deposited structure and two contact maps, the
+#: document panel carries eight lines of text.
 #:
 #: **Drawn at final size.** The assembler scales a row by one factor so the panels plus their
 #: gutter fill the column, so the widths below have to sum to (468 - 2*MARGIN - GUTTER) = 455 pt
 #: = 6.32 in for that factor to be 1. Any other split shrinks the type on the page along with the
 #: panels — at the 3.2 in this file used to specify, a 9 pt axis label reached the page at 5.9 pt.
-FIG1_DOC_PANEL = (2.45, 2.05)
-FIG1_MAP_PANEL = (3.87, 2.05)
+FIG1_DOC_PANEL = (2.00, 1.85)
+FIG1_MAP_PANEL = (4.32, 1.85)
 #: Kept as the name pair 5's panel is drawn at; figure 1 itself uses the two above.
 FIG1_PANEL = FIG1_DOC_PANEL
-#: The two map rectangles, in figure coordinates. Identical width and height by construction —
-#: `figure.colorbar` carving space out of one axes, and constrained layout sizing each around
-#: whatever decorations it carries, have each drawn these two at different widths before, and a
-#: size difference between a prediction and its ground truth reads as emphasis.
+#: The structure and the two maps, in figure coordinates, all on the same horizontal band.
 #:
-#: The height leaves a strip of clear space at the top: the assembler letters each panel over its
-#: top-left corner, and without it the letter lands on the left map's axis label.
-FIG1_MAP_RECTS = ((0.129, 0.200, 0.357, 0.673), (0.527, 0.200, 0.357, 0.673))
+#: The structure sits beside the maps rather than inside one of them. As an inset over the ground
+#: truth's upper triangle it covered contacts that are only "drawn twice" in the sense that the
+#: matrix is symmetric — the reader still has to find them in the mirror, and the same region of
+#: the predicted map beside it is not a mirror of anything.
+#:
+#: The two map rectangles are identical width and height by construction — `figure.colorbar`
+#: carving space out of one axes, and constrained layout sizing each around whatever decorations
+#: it carries, have each drawn these two at different widths before, and a size difference
+#: between a prediction and its ground truth reads as emphasis.
+#:
+#: The band stops short of the panel top: the assembler letters each panel over its top-left
+#: corner, and without that strip the letter lands on the structure.
+FIG1_STRUCTURE_RECT = (0.008, 0.216, 0.220, 0.622)
+FIG1_MAP_RECTS = ((0.329, 0.216, 0.266, 0.622), (0.627, 0.216, 0.266, 0.622))
 #: The colourbar, which describes the predicted map only — the ground truth is binary.
-FIG1_BAR_RECT = (0.897, 0.200, 0.016, 0.673)
+FIG1_BAR_RECT = (0.905, 0.216, 0.014, 0.622)
 
 
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
