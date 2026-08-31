@@ -85,7 +85,7 @@ def test_universe_adds_eval_test_to_the_pr257_union() -> None:
 
 
 def test_scored_subsets_carry_every_reported_partition() -> None:
-    manifest = pd.read_csv(RESULTS / "evaluation_subsets.csv")
+    manifest = pd.read_csv(RESULTS / "inputs" / "evaluation_subsets.csv")
     precision = manifest[["dataset", "stem"]].copy()
     precision["model"] = "synthetic"
     precision["range"] = "all"

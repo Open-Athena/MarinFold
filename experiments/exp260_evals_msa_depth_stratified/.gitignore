@@ -4,5 +4,5 @@
 __pycache__/
 scratch/
 # Published to the HF bucket and committed here only in compressed form.
-data/coreweave_results/contact_precision_all.csv
-data/coreweave_results/marinfold_precision.csv
+data/coreweave_results/results/contact_precision_all.csv
+data/coreweave_results/results/marinfold_precision.csv

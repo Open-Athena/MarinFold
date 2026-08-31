@@ -152,7 +152,15 @@ def main() -> None:
             file=sys.stderr,
         )
         return
-    subprocess.run(command, cwd=Path(__file__).parent, check=True)
+    # Never let the command line reach a log: it carries the HF token. A
+    # CalledProcessError stringifies its whole argv, so failures are reported
+    # by exit status alone and the iris CLI's own stderr stays the diagnostic.
+    completed = subprocess.run(command, cwd=Path(__file__).parent, check=False)
+    if completed.returncode != 0:
+        raise SystemExit(
+            f"iris submission failed with exit status {completed.returncode}; "
+            "see the iris output above"
+        )
 
 
 if __name__ == "__main__":
