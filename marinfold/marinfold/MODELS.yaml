@@ -73,6 +73,34 @@
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug
   document_structures:
     - contacts-v1
+# The best decontaminated model: exp232 (issue #232) m2-p06 trained on past the
+# sweep. #232's TRC continuation restored the sweep run's full Levanter state at
+# step 333,960 — model, optimizer, RNG, data position — lowered the peak LR to 5%
+# of the source peak, held it, then followed the original cooldown to zero, with
+# augmentation clamped at 100% throughout. Same architecture and same #225
+# corpora as the entry below; 363,000 steps against its 145,199. Source-recorded
+# eval loss 2.9681 (step 361,494) against the sweep final's 2.9918.
+#
+# R-precision 0.6051 (all) / 0.5550 (long) on the 554-protein set against the
+# sweep final's 0.5916 / 0.5418, and 0.5517 on #245's eval-val against 0.5203.
+# 0.6098 on eval-denovo. #232 deliberately did not score it on eval-test, which
+# has a read budget.
+#
+# This is the decontaminated checkpoint to use, and the one #250's figures are
+# drawn from. It is still not the default: the contaminated `-cooldown-` entry
+# above scores higher (0.631 legacy), and the reason to reach for a
+# decontaminated checkpoint is the leakage objection, not the headline number.
+#
+# Same republication as the others: copied from the evaluation-local CoreWeave
+# export by experiments/exp250_evals_exploration_notebook/publish_exp232_m2_p06.py
+# (--checkpoint training), every object verified against the manifest #232's
+# 2026-08-24 evaluation pinned, and only config.json rewritten for the rope
+# statement transformers 4.x reads. Weights are float32 on disk; load as bfloat16.
+- nickname: contacts-v1-exp232-m2-p06-train-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000
+  wandb_url: https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1
+  document_structures:
+    - contacts-v1
 # The decontaminated model: exp232 (issue #232) m2-p06, the better of the two
 # finals PR #244 selected. Qwen3 1.47B, the #199 recipe exactly — 50/50
 # AFDB+ESM-Atlas mixture, amino-acid augmentation, 145,199 steps — but trained
