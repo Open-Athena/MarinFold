@@ -5,7 +5,7 @@ Same number, same figure. Nothing is recomputed at plot time.
 
 | # | make | plot | needs | draws |
 |---|---|---|---|---|
-| 1 | [`1_make_top7_heatmap_data`](1_make_top7_heatmap_data.ipynb) | [`1_plot_top7_heatmap`](1_plot_top7_heatmap.ipynb) | **GPU** | `top7_heatmap_mirrored`, `top7_heatmap_side_by_side` |
+| 1 | [`1_make_top7_heatmap_data`](1_make_top7_heatmap_data.ipynb) | [`1_plot_top7_heatmap`](1_plot_top7_heatmap.ipynb) | **GPU** | `document_format` and `top7_maps` (the manuscript panels), plus `top7_heatmap_mirrored`, `top7_heatmap_side_by_side` and the cartoons, for looking at |
 | 2 | [`2_make_rprecision_data`](2_make_rprecision_data.ipynb) | [`2_plot_rprecision`](2_plot_rprecision.ipynb) | CPU | `rprecision_natural`, `rprecision_designed` |
 | 3 | [`3_make_structure_accuracy_data`](3_make_structure_accuracy_data.ipynb) | [`3_plot_structure_accuracy`](3_plot_structure_accuracy.ipynb) | CPU | `structure_accuracy_natural`, `structure_accuracy_designed` |
 | 4 | [`4_make_contamination_contrast_data`](4_make_contamination_contrast_data.ipynb) | [`4_plot_contamination_contrast`](4_plot_contamination_contrast.ipynb) | CPU | `contamination_contrast`, `contamination_contrast_scatter` |
@@ -23,7 +23,7 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 
 | figure | panels |
 |---|---|
-| [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format, with the structure it describes · **B** Top7 ground truth · **C** Top7 predicted |
+| [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format · **B** Top7's ground-truth and predicted contact maps, with the deposited structure inset over the ground truth's upper triangle |
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
 | [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs — the MarinFold arm is helico exp14's `mf_L_363k`, re-run on step-363000 contacts |
 

@@ -291,7 +291,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 
 | # | figure | needs |
 |---|---|---|
-| 1 | Top7 contact map — mirrored, and observed/predicted side by side | GPU |
+| 1 | document format, and Top7's ground-truth vs predicted contact maps with the structure inset | GPU |
 | 2 | contact-prediction R-precision, natural and designed | CPU |
 | 3 | Helico structure accuracy — GDT-TS and lDDT, separate panels, both classes | CPU |
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
