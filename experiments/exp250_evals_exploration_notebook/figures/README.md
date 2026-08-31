@@ -25,7 +25,7 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 |---|---|
 | [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format, with the structure it describes · **B** training corpus by source · **C** Top7 ground truth · **D** Top7 predicted |
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
-| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs |
+| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs — the MarinFold arm is helico exp14's `mf_L_363k`, re-run on step-363000 contacts |
 
 ```bash
 uv run --with svgutils python assemble_figures.py           # all three

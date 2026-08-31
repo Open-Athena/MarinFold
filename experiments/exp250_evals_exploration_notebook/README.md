@@ -337,29 +337,35 @@ An 0.004 offset against a 0.032 change is what licenses putting the new rows bes
 nobody re-ran. It is recorded in the dataset's `metadata.json` as `pipeline_validation`, so the
 figure carries its own control.
 
-| Helico arm | GDT-TS natural (305) | GDT-TS designed (19) |
-|---|---:|---:|
-| Helico + true contacts | 0.893 | 0.920 |
-| Protenix-v2 + MSA | 0.868 | 0.860 |
-| ESMFold2 | 0.814 | 0.934 |
-| **Helico + MarinFold contacts** | **0.479** | **0.761** |
-| Protenix-v2, single sequence | 0.174 | 0.892 |
-| Helico, no contacts | 0.146 | 0.859 |
+| Helico arm | GDT-TS natural (305) | GDT-TS designed (19) | lDDT natural | lDDT designed |
+|---|---:|---:|---:|---:|
+| Helico + true contacts | 0.893 | 0.920 | 0.861 | 0.856 |
+| Protenix-v2 + MSA | 0.868 | 0.860 | 0.861 | 0.814 |
+| ESMFold2 | 0.814 | 0.934 | 0.835 | 0.876 |
+| **Helico + MarinFold contacts (step 363k)** | **0.511** | **0.753** | **0.638** | **0.768** |
+| Helico + MarinFold contacts (sweep, published) | 0.479 | 0.761 | 0.615 | 0.768 |
+| Protenix-v2, single sequence | 0.174 | 0.892 | 0.399 | 0.828 |
+| Helico, no contacts | 0.146 | 0.859 | 0.359 | 0.825 |
+
+The MarinFold arm was re-run on Modal with contacts from step-363000 (helico exp14, arm
+`mf_L_363k`); every other arm is the published one, so the comparison is paired — same targets,
+same Helico checkpoint, same sampling, one input changed. Better contacts (precision@L 0.542
+against 0.510) buy +0.032 GDT-TS and +0.023 lDDT on natural monomers and nothing on the designs.
 
 **GDT-TS and lDDT are not on a common scale** and their values should not be differenced.
 lDDT is superposition-free and local, so it credits locally correct geometry regardless of the
 global arrangement and sits higher on the same structure — `Helico, no contacts` is 0.15 GDT-TS
 and 0.36 lDDT on identical predictions. Normalised between each metric's own no-contact floor and
-oracle ceiling, MarinFold contacts reach 45 % on GDT-TS and 51 % on lDDT: substantially the same
+oracle ceiling, MarinFold contacts reach 49 % on GDT-TS and 56 % on lDDT: substantially the same
 story, not the 0.13 gap a raw comparison suggests.
 
 **The two protein classes tell opposite stories.** On natural monomers MarinFold's contacts take
-Helico from 0.146 to 0.479 GDT-TS against 0.174 for Protenix-v2 single-sequence — real structural
+Helico from 0.146 to 0.511 GDT-TS against 0.174 for Protenix-v2 single-sequence — real structural
 information no single-sequence predictor has. On the 19 designed monomers they take it from 0.859
-*down* to 0.761: designed backbones are idealised, single-sequence predictors already handle them
+*down* to 0.753: designed backbones are idealised, single-sequence predictors already handle them
 (0.892 GDT-TS, 0.835 contact R-precision), and imperfect contacts subtract. The contact panels
-carry the same asymmetry — MarinFold beats Protenix-v2 single-seq by +0.24 on natural proteins and
-loses by −0.24 on designs. A caption written over these panels has to survive that.
+carry the same asymmetry — MarinFold beats Protenix-v2 single-seq by +0.30 on natural proteins and
+loses by −0.22 on designs. A caption written over these panels has to survive that.
 
 **Validated on three machines.** Every notebook executes end to end on a 1xH100 box and on an
 8xA100 box (torch 2.11+cu129, vLLM 0.20.2, compute capability 8.0/9.0), and on this workstation's
