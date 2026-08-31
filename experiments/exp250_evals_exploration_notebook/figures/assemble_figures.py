@@ -46,15 +46,15 @@ LAYOUT = {
         "rows": [[("rprecision_natural", None), ("rprecision_designed", None)]],
     },
     "figure_3": {
-        "caption": "Helico architecture (a); GDT-TS for natural monomers (b) and designs (c); lDDT for the same (d, e).",
+        "caption": ("Helico architecture (a); GDT-TS for natural monomers (b) and de novo "
+                    "designs (c); GDT-TS (d) and lDDT (e) against MSA depth on the natural "
+                    "monomers."),
+        # The lDDT-by-class row that used to sit third is still written by pair 3 as
+        # `lddt_natural` / `lddt_designed`; it is simply not in a figure. lDDT appears here in
+        # the depth panel instead.
         "rows": [[("helico_architecture", "Helico model architecture\n(supply artwork)")],
                  [("gdt_ts_natural", None), ("gdt_ts_designed", None)],
-                 [("lddt_natural", None), ("lddt_designed", None)]],
-    },
-    "figure_4": {
-        "caption": ("Structure accuracy against MSA depth on natural FoldBench monomers: "
-                    "GDT-TS (a) and lDDT (b)."),
-        "rows": [[("msa_depth_gdt_ts", None), ("msa_depth_lddt", None)]],
+                 [("msa_depth_gdt_ts", None), ("msa_depth_lddt", None)]],
     },
 }
 

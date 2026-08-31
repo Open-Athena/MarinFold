@@ -26,8 +26,7 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 |---|---|
 | [`figure_1.svg`](manuscript/figure_1.svg) | **A** document format · **B** Top7's deposited structure, its ground-truth contact map and the prediction, side by side |
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
-| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** lDDT, natural · **E** lDDT, designs — the MarinFold arm is helico exp14's `mf_L_363k`, re-run on step-363000 contacts |
-| [`figure_4.svg`](manuscript/figure_4.svg) | **A** GDT-TS against MSA depth · **B** lDDT against MSA depth — natural monomers only, first bin under 100 sequences |
+| [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** GDT-TS against MSA depth · **E** lDDT against MSA depth — the MarinFold arm throughout is helico exp14's `mf_L_363k`, re-run on step-363000 contacts |
 
 ```bash
 uv run --with svgutils python assemble_figures.py           # all three
