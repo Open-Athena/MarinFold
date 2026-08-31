@@ -283,7 +283,7 @@ Against the null that matters for it — a sequence-KNN predictor built from the
 trained on — m2-p06 clears by **+0.112** (0.532 against 0.420). It trails ESMFold2 by 0.263 and
 leads Protenix-v2 single-seq by 0.268 on the same 314 proteins.
 
-### 6. Manuscript figures — five make/plot notebook pairs
+### 6. Manuscript figures — six make/plot notebook pairs
 
 The publication panels live in [`figures/`](figures/), not in the
 exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes a dataset,
@@ -296,6 +296,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 | 3 | Helico structure accuracy — GDT-TS and lDDT, separate panels, both classes | CPU |
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
 | 5 | training corpus by source — tokens per corpus, structures on the axis (no manuscript figure uses it) | CPU |
+| 6 | structure accuracy against MSA depth, natural monomers, GDT-TS and lDDT | CPU |
 
 Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
 GPU, package versions, the exact inference recipe as *resolved* (not as requested — `backend:
@@ -351,6 +352,28 @@ The MarinFold arm was re-run on Modal with contacts from step-363000 (helico exp
 `mf_L_363k`); every other arm is the published one, so the comparison is paired — same targets,
 same Helico checkpoint, same sampling, one input changed. Better contacts (precision@L 0.542
 against 0.510) buy +0.032 GDT-TS and +0.023 lDDT on natural monomers and nothing on the designs.
+
+**Figure 4 — accuracy against MSA depth, and what it says.** #247 publishes an MSA depth for
+each of the 314 natural monomers (and for none of the designs, which is why this figure is
+natural-only). Binned, on the 305 proteins every arm folded:
+
+| GDT-TS | <100 (25) | 100–1k (61) | 1k–5k (104) | 5k–10k (66) | ≥10k (49) |
+|---|---:|---:|---:|---:|---:|
+| Helico + true contacts | 0.886 | 0.898 | 0.895 | 0.920 | 0.852 |
+| Protenix-v2 + MSA | 0.711 | 0.860 | 0.878 | 0.918 | 0.872 |
+| ESMFold2 | 0.525 | 0.756 | 0.839 | 0.921 | 0.839 |
+| **Helico + MarinFold contacts** | **0.333** | **0.396** | **0.525** | **0.629** | **0.559** |
+| Protenix-v2, single sequence | 0.302 | 0.217 | 0.153 | 0.158 | 0.119 |
+| Helico, no contacts | 0.248 | 0.161 | 0.136 | 0.145 | 0.095 |
+
+**The oracle is flat and MarinFold is not.** Given true contacts Helico folds a shallow-MSA
+protein as well as a deep one (0.886 against 0.852 GDT-TS), so nothing about these proteins makes
+them intrinsically harder to *build* — what degrades is our ability to *predict* their contacts.
+MarinFold's advantage over the single-sequence baselines therefore grows with alignment depth,
+from +0.03 GDT-TS in the shallowest bin to +0.44 in the deepest, which is the opposite of what an
+MSA-free method is usually argued for. Shallow alignments mark sequence families that are rare in
+the databases the model was trained on, and the language model is short of the same evidence the
+alignment is.
 
 **GDT-TS and lDDT are not on a common scale** and their values should not be differenced.
 lDDT is superposition-free and local, so it credits locally correct geometry regardless of the
