@@ -1,0 +1,87 @@
+{
+  "dataset": "5_training_composition",
+  "notebook": "5_make_training_composition_data.ipynb",
+  "generated_utc": "2026-08-31T16:31:55+00:00",
+  "parameters": {
+    "sources": [
+      "afdb",
+      "esm_atlas"
+    ],
+    "contract_candidates": [
+      "experiments/exp232_sweep_cv1_decontam/training_contract.py",
+      "experiments/exp232_sweep_cv1_decontam/exp232_sweep.py"
+    ],
+    "model": "contacts-v1-exp232-m2-p06-1.5B"
+  },
+  "git": {
+    "commit": "8191ba2f0724339f00ca0001efde7568fc0e5390",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "?? experiments/exp250_evals_exploration_notebook/figures/data/5_training_composition/"
+    ]
+  },
+  "machine": {
+    "hostname": "8xA100 node",
+    "hostname_overridden": true,
+    "user": "ubuntu",
+    "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+    "python": "3.12.14",
+    "gpu": {
+      "name": "NVIDIA A100-SXM4-80GB",
+      "compute_capability": "8.0",
+      "memory_gib": 79.3,
+      "count": 8
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.11.0+cu129",
+    "transformers": "4.57.6",
+    "vllm": "0.20.2+cu129",
+    "numpy": "2.3.5",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp232_sweep_cv1_decontam/exp232_sweep.py",
+      "bytes": 29594,
+      "sha256": "00121a562ab044e38a8e8dcf0e874b11fca1aa2bd9963c449cf776b654bb6661"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/build.provenance.json",
+      "bytes": 516,
+      "sha256": "8b8c6b263c50d7be7f7667ffc36df8ce20c51c7d8089da7867f83276aedc562b"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_esm_atlas_decontam/train/build.provenance.json",
+      "bytes": 542,
+      "sha256": "aabd8aa93b092b2be1ced39fd099213a2ea6bd655f05ec869657d97c55f00ae9"
+    }
+  ],
+  "outputs": {
+    "sources.csv": {
+      "bytes": 599,
+      "sha256": "d9f08198e033c031ccc985ed2f79a5b6a8245c2097913ba0f63f8c3fc8e8690f"
+    }
+  },
+  "model": "contacts-v1-exp232-m2-p06-1.5B",
+  "contract": "experiments/exp232_sweep_cv1_decontam/exp232_sweep.py",
+  "budget": {
+    "corpus_tokens": 74475864003,
+    "training_tokens": 152253235200,
+    "passes": 2.0443298944993376,
+    "num_train_steps": 145200,
+    "global_batch_size": 128,
+    "seq_len": 8192
+  },
+  "mixture": {
+    "key": "m2",
+    "definition": "each corpus sampled in proportion to its token count",
+    "weights": {
+      "afdb": 0.059521845061393776,
+      "esm_atlas": 0.9404781549386062
+    }
+  }
+}
