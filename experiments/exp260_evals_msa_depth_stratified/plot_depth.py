@@ -40,9 +40,10 @@ PREDICTOR_STYLE = {
     "seq-KNN (decontaminated corpus)": ("#7f7f7f", "x", ":"),
 }
 POPULATIONS = (
-    ("all_natural", "All natural (372)"),
+    ("all_natural", "All natural (357)"),
     ("foldbench_natural", "FoldBench natural (314)"),
-    ("nonfoldbench_natural", "CAMEO-hard + CASP-FM (58)"),
+    ("nonfoldbench_natural", "CAMEO-hard + CASP-FM, natural (43)"),
+    ("nonfoldbench_designed", "CAMEO de novo designs (15)"),
 )
 TIER_ORDER = [name for name, _, _ in U.DEPTH_TIERS]
 
@@ -56,7 +57,7 @@ def tier_figure(tiers: pd.DataFrame, *, axis: str, title: str):
         & (tiers["cut"] == "R")
         & (tiers.tier != "all")
     ]
-    figure, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
+    figure, axes = plt.subplots(1, len(POPULATIONS), figsize=(19, 5), sharey=True)
     for axis_handle, (population, label) in zip(axes, POPULATIONS, strict=True):
         panel = selected[selected.population == population]
         for predictor, (color, marker, line) in PREDICTOR_STYLE.items():
@@ -115,7 +116,7 @@ def scatter_figure(frame: pd.DataFrame):
     """Per-protein R-precision against depth, plus the depth distribution."""
 
     natural = frame[
-        (frame.subset != "foldbench_designed")
+        frame.subset.isin(("foldbench_natural", "nonfoldbench_natural"))
         & (frame["range"] == "all")
         & (frame["cut"] == "R")
     ]
@@ -154,7 +155,7 @@ def scatter_figure(frame: pd.DataFrame):
     bins = np.logspace(0, 5, 26)
     for subset, label, color in (
         ("foldbench_natural", "FoldBench natural", "#4c72b0"),
-        ("nonfoldbench_natural", "CAMEO-hard + CASP-FM", "#dd8452"),
+        ("nonfoldbench_natural", "CAMEO-hard + CASP-FM, natural", "#dd8452"),
     ):
         axes[1].hist(
             proteins[proteins.subset == subset].msa_depth.clip(lower=1),
@@ -188,8 +189,8 @@ def main() -> None:
         ),
         f"{args.out}/rprecision_by_depth_tier.png",
         caption=(
-            "Mean all-range R-precision per MSA-depth tier, with 95 % bootstrap "
-            "intervals over proteins and bin sizes on the x axis."
+            "Mean all-range R-precision per MSA-depth tier, 95 % bootstrap "
+            "intervals; de novo designs are held out of the natural panels."
         ),
         dpi=160,
     )

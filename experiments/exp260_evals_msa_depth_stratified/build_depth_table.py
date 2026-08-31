@@ -13,6 +13,17 @@ Three inputs, one row per (protein, predictor):
   re-run;
 * the ColabFold depths from :mod:`msa_depth_modal`.
 
+**Designed proteins are separated out, wherever they came from.** 15 of the 58
+CAMEO-hard / CASP-FM targets are de novo designs by RCSB's own annotation, and
+13 of those sit under MSA depth 10 — unsurprisingly, since a designed protein
+has no homologs by construction. Leaving them in the "natural" bins inflates
+every structure predictor there (designed backbones are easy: Protenix-v2
+single-seq scores 0.72 on these against 0.24 on the genuinely natural ones) and
+produced a materially wrong conclusion in the first cut of this experiment.
+The label comes from ``dashboard/build_annotations.py``, which reads it off the
+deposited entry rather than trusting the collection it arrived in — the same
+failure #241 found in eval2-natural.
+
 The comparison the tiers exist for is MarinFold, which never sees an MSA,
 against Protenix-v2 ``+MSA``, which does, over the same proteins binned by how
 much MSA there was to see. Protenix-v2 single-seq is the control that separates
@@ -55,6 +66,10 @@ LEGACY_BASELINES = {
     ("protenix-v2", "single_seq"): "Protenix-v2 single-seq",
     ("esmfold2", "single_seq"): "ESMFold2",
 }
+
+#: The subsets that are actually natural proteins. Everything else is a design
+#: and is reported on its own.
+NATURAL_SUBSETS = ("foldbench_natural", "nonfoldbench_natural")
 
 #: Reported metrics: R-precision is the headline, AUC is the ranking-quality
 #: check that does not depend on the top-L cut.
@@ -133,10 +148,31 @@ def load_legacy_baselines() -> pd.DataFrame:
     return frame[["dataset", "stem", "range", "cut", "predictor", "precision"]]
 
 
+def designed_entries() -> set[str]:
+    """``dataset__stem`` keys the deposited entry calls a designed protein."""
+
+    path = U.DATA / "nonfoldbench_annotations.json"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} is missing; run dashboard/build_annotations.py first"
+        )
+    annotations = json.loads(path.read_text())
+    return {key for key, record in annotations.items() if record.get("designed")}
+
+
 def assemble(results_root: str, depths_path: str) -> pd.DataFrame:
     """One row per (protein, predictor, metric), with depth and subset joined."""
 
     universe = pd.read_csv(U.DATA / "universe.csv")
+    designed = designed_entries()
+    universe["subset"] = [
+        "nonfoldbench_designed"
+        if f"{dataset}__{stem}" in designed and subset == "nonfoldbench_natural"
+        else subset
+        for dataset, stem, subset in zip(
+            universe.dataset, universe.stem, universe.subset, strict=True
+        )
+    ]
     depths = pd.read_csv(depths_path)
     if depths.duplicated(["stem", "msa_volume"]).any():
         raise ValueError("depth measurements are not unique per (stem, volume)")
@@ -176,11 +212,12 @@ def tier_table(frame: pd.DataFrame, *, tier_column: str) -> pd.DataFrame:
     """Mean and bootstrap interval per (subset, tier, predictor, metric)."""
 
     frame = frame[frame[tier_column] != UNMEASURED]
-    natural = frame[frame.subset != "foldbench_designed"].copy()
+    natural = frame[frame.subset.isin(NATURAL_SUBSETS)].copy()
     populations = {
         "all_natural": natural,
         "foldbench_natural": natural[natural.subset == "foldbench_natural"],
         "nonfoldbench_natural": natural[natural.subset == "nonfoldbench_natural"],
+        "nonfoldbench_designed": frame[frame.subset == "nonfoldbench_designed"],
         "foldbench_designed": frame[frame.subset == "foldbench_designed"],
     }
     tiers = [name for name, _, _ in U.DEPTH_TIERS]
@@ -225,11 +262,12 @@ def paired_deltas(frame: pd.DataFrame, *, tier_column: str) -> pd.DataFrame:
     """
 
     frame = frame[frame[tier_column] != UNMEASURED]
-    natural = frame[frame.subset != "foldbench_designed"]
+    natural = frame[frame.subset.isin(NATURAL_SUBSETS)]
     populations = {
         "all_natural": natural,
         "foldbench_natural": natural[natural.subset == "foldbench_natural"],
         "nonfoldbench_natural": natural[natural.subset == "nonfoldbench_natural"],
+        "nonfoldbench_designed": frame[frame.subset == "nonfoldbench_designed"],
     }
     tiers = [name for name, _, _ in U.DEPTH_TIERS]
     rows = []

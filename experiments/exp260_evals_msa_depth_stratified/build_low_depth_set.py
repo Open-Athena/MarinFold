@@ -27,6 +27,10 @@ import upstream as U
 DEPTH_THRESHOLD = 10
 EXPECTED_TOTAL = 29
 EXPECTED_BY_DATASET = {"cameo_hard": 16, "casp_fm": 8, "foldbench_monomer": 5}
+#: ...of which only these are natural proteins. 13 of the 16 CAMEO-hard members
+#: are de novo designs by RCSB's annotation, which is what a shallow MSA looks
+#: like when the protein was never in an evolutionary lineage at all.
+EXPECTED_NATURAL = 16
 
 COLUMNS = [
     "dataset",
@@ -48,12 +52,19 @@ def build() -> pd.DataFrame:
     frame = pd.read_csv(U.DATA / "per_protein_depth.csv")
     proteins = frame.drop_duplicates(["dataset", "stem"])[COLUMNS]
     low = proteins[
-        (proteins.subset != "foldbench_designed")
+        proteins.subset.isin(("foldbench_natural", "nonfoldbench_natural",
+                              "nonfoldbench_designed"))
         & (proteins.msa_depth < DEPTH_THRESHOLD)
     ].sort_values(["dataset", "stem"], ignore_index=True)
 
+    low = low.copy()
+    low["designed"] = low.subset == "nonfoldbench_designed"
     if len(low) != EXPECTED_TOTAL:
         raise ValueError(f"expected {EXPECTED_TOTAL} proteins, got {len(low)}")
+    if int((~low.designed).sum()) != EXPECTED_NATURAL:
+        raise ValueError(
+            f"expected {EXPECTED_NATURAL} natural proteins, got {int((~low.designed).sum())}"
+        )
     counts = low.dataset.value_counts().to_dict()
     if counts != EXPECTED_BY_DATASET:
         raise ValueError(f"membership changed: {counts} != {EXPECTED_BY_DATASET}")
@@ -72,6 +83,8 @@ def main() -> None:
                 "n": len(low),
                 "by_dataset": low.dataset.value_counts().to_dict(),
                 "by_subset": low.subset.value_counts().to_dict(),
+                "natural": int((~low.designed).sum()),
+                "designed": int(low.designed.sum()),
                 "depth_range": [int(low.msa_depth.min()), int(low.msa_depth.max())],
                 "median_length": float(low.L.median()),
                 "out": args.out,

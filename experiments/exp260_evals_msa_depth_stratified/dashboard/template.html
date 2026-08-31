@@ -66,6 +66,15 @@
     white-space: pre; color: var(--ink);
   }
   pre.msa .q { color: var(--accent); font-weight: 600; }
+  .warn {
+    border-left: 3px solid var(--bad); padding: 6px 0 6px 10px; margin: 8px 0;
+    color: var(--ink); background: color-mix(in srgb, var(--bad) 7%, transparent);
+    max-width: 95ch; font-size: 13px;
+  }
+  .badge.warn-badge { border-color: var(--bad); color: var(--bad); background: none; padding: 1px 7px; }
+  .description { margin: 0 0 12px; max-width: 95ch; font-size: 13px; }
+  .description a { color: var(--accent); }
+  .description .muted { color: var(--muted); font-size: 12px; }
   .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
   footer { padding: 14px 24px 30px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
@@ -76,6 +85,7 @@
 <header>
   <h1>Low-MSA-depth eval cases — 29 natural proteins under 10 ColabFold sequences</h1>
   <p id="blurb"></p>
+  <p class="warn" id="caveat"></p>
   <p id="provenance"></p>
 </header>
 <main>
@@ -110,6 +120,8 @@ let viewer = null;
 let style = "cartoon";
 let showContacts = true;
 
+const escape = (text) => String(text ?? "").replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const fmt = (x, d = 3) => (x === undefined || x === null || Number.isNaN(x)) ? "—" : x.toFixed(d);
 const scoreOf = (p, name) => p.r_precision[SCORE_KEYS[name]];
 const predictors = (p) => ORDER.filter((name) => p.contacts[name]);
@@ -120,6 +132,15 @@ document.getElementById("blurb").textContent =
     .map((s) => `${PROTEINS.filter((p) => p.source === s).length} ${s}`).join(", ") +
   `. Predicted contacts are each predictor's top-L pairs; a pair counts as a contact at ` +
   `≥${DATA.contact_definition.min_degree} degree and ≥${DATA.contact_definition.min_separation} residues of separation.`;
+document.getElementById("caveat").innerHTML =
+  "<b>The two halves are not equally fair to the baselines.</b> The 24 CAMEO-hard and " +
+  "CASP-FM targets are long-standing public benchmarks and are generally inside the " +
+  "training sets of the structure predictors here (Protenix-v2, ESMFold, ESMFold2), so a " +
+  "head-to-head on those proteins flatters them. MarinFold's corpus was decontaminated " +
+  "against FoldBench and the legacy eval set (#225), so it is clean on both halves. Only " +
+  "the 5 FoldBench members are a like-for-like comparison — and 5 proteins carry no " +
+  "conclusion on their own. Read the baseline columns on the other 24 as context, not as " +
+  "a scoreboard.";
 document.getElementById("provenance").innerHTML =
   `Scores: <code>${DATA.generated_from.checkpoint}</code>. Built by <code>exp260/dashboard/build_dashboard_data.py</code> ` +
   `from <a href="${DATA.generated_from.scores}">the published run</a>.`;
@@ -131,7 +152,9 @@ document.getElementById("footer").textContent =
 // ---------- protein list ----------
 const COLUMNS = [
   { key: "stem", label: "protein", get: (p) => p.stem, text: true },
-  { key: "source", label: "source", get: (p) => p.source, text: true },
+  { key: "source", label: "set", get: (p) => p.source, text: true,
+    show: (p) => ({ "CAMEO hard": "CAMEO", "CASP free-modeling": "CASP-FM",
+                    "FoldBench": "FoldBench" })[p.source] },
   { key: "L", label: "L", get: (p) => p.L },
   { key: "contacts", label: "contacts", get: (p) => p.n_true_contacts },
   { key: "msa_depth", label: "depth", get: (p) => p.msa_depth },
@@ -150,9 +173,10 @@ function renderList() {
   const head = COLUMNS.map((c) =>
     `<th data-key="${c.key}" class="${c.key === sortKey ? "sorted" : ""}">${c.label}</th>`).join("");
   const body = rows.map((p) => `
-    <tr data-key="${p.key}" class="${p.key === current.key ? "active" : ""}">
+    <tr data-key="${p.key}" class="${p.key === current.key ? "active" : ""}" title="${
+      escape((p.annotation.molecule || p.annotation.title || "").slice(0, 120))}">
       <td>${p.stem}${p.in_foldbench ? ' <span class="badge fb">FB</span>' : ""}</td>
-      <td>${p.source}</td>
+      <td>${COLUMNS[1].show(p)}</td>
       <td>${p.L}</td>
       <td>${p.n_true_contacts}</td>
       <td>${p.msa_depth}</td>
@@ -314,7 +338,26 @@ function renderDetail() {
       <span class="badge ${p.in_foldbench ? "fb" : ""}">${p.source}</span>
       ${p.eval_set ? `<span class="badge">${p.eval_set}</span>` : ""}
       <span class="badge">${p.in_foldbench ? "in FoldBench" : "not in FoldBench"}</span>
+      ${p.in_foldbench ? "" :
+        '<span class="badge warn-badge" title="CAMEO-hard and CASP-FM targets are ' +
+        'generally inside the baselines\' training sets, so the baseline columns here ' +
+        'flatter them.">baselines likely trained on this</span>'}
     </h2>
+    <p class="description">
+      <b>${escape(p.annotation.molecule || p.annotation.title || "—")}</b>${
+        p.annotation.organism ? ` · <i>${escape(p.annotation.organism)}</i>` : ""}
+      ${p.annotation.molecule && p.annotation.title
+        ? `<br><span class="muted">${escape(p.annotation.title)}</span>` : ""}
+      <br><a href="${p.annotation.source_url}" target="_blank" rel="noopener">${
+        escape(p.annotation.source_name)} ↗</a>
+      <span class="muted">${[
+        p.annotation.method,
+        p.annotation.resolution ? p.annotation.resolution + " Å" : null,
+        p.annotation.released ? "released " + p.annotation.released : null,
+        p.annotation.keywords,
+        p.annotation.casp_range ? "CASP residues " + p.annotation.casp_range : null,
+      ].filter(Boolean).map(escape).join(" · ")}</span>
+    </p>
     <div class="controls" id="layers">
       ${available.map((name) =>
         `<button data-layer="${name}" class="${name === layer ? "on" : ""}">${name}</button>`).join("")}

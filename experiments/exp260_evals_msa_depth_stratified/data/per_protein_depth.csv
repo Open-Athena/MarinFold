@@ -4379,18 +4379,18 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 8j4i_A,cameo_hard,nonfoldbench_natural,,190,,,exp74,6543.0,1912.4341769571188,626.0123989629058,190.0,all,AUC,0.7882163371027741,ESMFold2,1000+,1000+
 8j4i_A,cameo_hard,nonfoldbench_natural,,190,,,exp74,6543.0,1912.4341769571188,626.0123989629058,190.0,all,AUC,0.5881635267088684,Protenix-v2 single-seq,1000+,1000+
 8j4i_A,cameo_hard,nonfoldbench_natural,,190,,,exp74,6543.0,1912.4341769571188,626.0123989629058,190.0,all,AUC,0.7958864292203219,Protenix-v2 + MSA,1000+,1000+
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.7142857142857143,MarinFold #232 m2-p06 (step 363k),<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.9836119091146514,MarinFold #232 m2-p06 (step 363k),<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,MarinFold #232 m2-p06 (step 363k),<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.5714285714285714,ESMFold2,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,ESMFold2,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.5714285714285714,Protenix-v2 single-seq,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,Protenix-v2 single-seq,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.6428571428571429,Protenix-v2 + MSA,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,Protenix-v2 + MSA,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.956254896839906,ESMFold2,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.7831026377644292,Protenix-v2 single-seq,<10,<10
-8jvx_B,cameo_hard,nonfoldbench_natural,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.8186210498824759,Protenix-v2 + MSA,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.7142857142857143,MarinFold #232 m2-p06 (step 363k),<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.9836119091146514,MarinFold #232 m2-p06 (step 363k),<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,MarinFold #232 m2-p06 (step 363k),<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.5714285714285714,ESMFold2,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,ESMFold2,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.5714285714285714,Protenix-v2 single-seq,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,Protenix-v2 single-seq,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,R,0.6428571428571429,Protenix-v2 + MSA,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,long,R,0.875,Protenix-v2 + MSA,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.956254896839906,ESMFold2,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.7831026377644292,Protenix-v2 single-seq,<10,<10
+8jvx_B,cameo_hard,nonfoldbench_designed,,39,,,exp74,1.0,1.0,1.0,39.0,all,AUC,0.8186210498824759,Protenix-v2 + MSA,<10,<10
 8raj_A,cameo_hard,nonfoldbench_natural,,62,,,exp74,4.0,3.0,3.0,62.0,all,R,0.8461538461538461,MarinFold #232 m2-p06 (step 363k),<10,<10
 8raj_A,cameo_hard,nonfoldbench_natural,,62,,,exp74,4.0,3.0,3.0,62.0,all,AUC,0.9880217697652948,MarinFold #232 m2-p06 (step 363k),<10,<10
 8raj_A,cameo_hard,nonfoldbench_natural,,62,,,exp74,4.0,3.0,3.0,62.0,long,R,1.0,MarinFold #232 m2-p06 (step 363k),<10,<10
@@ -4415,30 +4415,30 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 8s3m_A,cameo_hard,nonfoldbench_natural,,345,,,exp74,2131.0,1466.9013602247492,348.1523208251434,345.0,all,AUC,0.7472791467056495,ESMFold2,1000+,1000+
 8s3m_A,cameo_hard,nonfoldbench_natural,,345,,,exp74,2131.0,1466.9013602247492,348.1523208251434,345.0,all,AUC,0.5510422039831023,Protenix-v2 single-seq,1000+,1000+
 8s3m_A,cameo_hard,nonfoldbench_natural,,345,,,exp74,2131.0,1466.9013602247492,348.1523208251434,345.0,all,AUC,0.9354315846296726,Protenix-v2 + MSA,1000+,1000+
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.3196480938416422,MarinFold #232 m2-p06 (step 363k),<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.8631170690499861,MarinFold #232 m2-p06 (step 363k),<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.1992337164750957,MarinFold #232 m2-p06 (step 363k),<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.873900293255132,ESMFold2,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.8697318007662835,ESMFold2,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.8973607038123167,Protenix-v2 single-seq,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.896551724137931,Protenix-v2 single-seq,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.9002932551319648,Protenix-v2 + MSA,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.896551724137931,Protenix-v2 + MSA,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.9719032404562156,ESMFold2,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.9792880207223736,Protenix-v2 single-seq,<10,<10
-8s89_A,cameo_hard,nonfoldbench_natural,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.9792894894647672,Protenix-v2 + MSA,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.1832229580573951,MarinFold #232 m2-p06 (step 363k),<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.8232146335816624,MarinFold #232 m2-p06 (step 363k),<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.1639344262295081,MarinFold #232 m2-p06 (step 363k),<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.0441501103752759,ESMFold2,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.0437158469945355,ESMFold2,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.6666666666666666,Protenix-v2 single-seq,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.6775956284153005,Protenix-v2 single-seq,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.6644591611479028,Protenix-v2 + MSA,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.680327868852459,Protenix-v2 + MSA,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.5181413056480839,ESMFold2,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.8724354457898159,Protenix-v2 single-seq,<10,<10
-8u1a_A,cameo_hard,nonfoldbench_natural,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.8701906566674589,Protenix-v2 + MSA,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.3196480938416422,MarinFold #232 m2-p06 (step 363k),<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.8631170690499861,MarinFold #232 m2-p06 (step 363k),<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.1992337164750957,MarinFold #232 m2-p06 (step 363k),<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.873900293255132,ESMFold2,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.8697318007662835,ESMFold2,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.8973607038123167,Protenix-v2 single-seq,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.896551724137931,Protenix-v2 single-seq,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,R,0.9002932551319648,Protenix-v2 + MSA,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,long,R,0.896551724137931,Protenix-v2 + MSA,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.9719032404562156,ESMFold2,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.9792880207223736,Protenix-v2 single-seq,<10,<10
+8s89_A,cameo_hard,nonfoldbench_designed,,401,,,exp74,1.0,1.0,1.0,401.0,all,AUC,0.9792894894647672,Protenix-v2 + MSA,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.1832229580573951,MarinFold #232 m2-p06 (step 363k),<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.8232146335816624,MarinFold #232 m2-p06 (step 363k),<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.1639344262295081,MarinFold #232 m2-p06 (step 363k),<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.0441501103752759,ESMFold2,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.0437158469945355,ESMFold2,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.6666666666666666,Protenix-v2 single-seq,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.6775956284153005,Protenix-v2 single-seq,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,R,0.6644591611479028,Protenix-v2 + MSA,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,long,R,0.680327868852459,Protenix-v2 + MSA,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.5181413056480839,ESMFold2,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.8724354457898159,Protenix-v2 single-seq,<10,<10
+8u1a_A,cameo_hard,nonfoldbench_designed,,324,,,exp74,1.0,1.0,1.0,324.0,all,AUC,0.8701906566674589,Protenix-v2 + MSA,<10,<10
 8v4w_A,cameo_hard,nonfoldbench_natural,,207,,,exp74,66.0,4.406585488360975,2.0930050923458863,207.0,all,R,0.2268518518518518,MarinFold #232 m2-p06 (step 363k),10-100,<10
 8v4w_A,cameo_hard,nonfoldbench_natural,,207,,,exp74,66.0,4.406585488360975,2.0930050923458863,207.0,all,AUC,0.8183527876893573,MarinFold #232 m2-p06 (step 363k),10-100,<10
 8v4w_A,cameo_hard,nonfoldbench_natural,,207,,,exp74,66.0,4.406585488360975,2.0930050923458863,207.0,long,R,0.1020408163265306,MarinFold #232 m2-p06 (step 363k),10-100,<10
@@ -4451,42 +4451,42 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 8v4w_A,cameo_hard,nonfoldbench_natural,,207,,,exp74,66.0,4.406585488360975,2.0930050923458863,207.0,all,AUC,0.7263434800247097,ESMFold2,10-100,<10
 8v4w_A,cameo_hard,nonfoldbench_natural,,207,,,exp74,66.0,4.406585488360975,2.0930050923458863,207.0,all,AUC,0.6215072054877882,Protenix-v2 single-seq,10-100,<10
 8v4w_A,cameo_hard,nonfoldbench_natural,,207,,,exp74,66.0,4.406585488360975,2.0930050923458863,207.0,all,AUC,0.9102683963525388,Protenix-v2 + MSA,10-100,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.5,MarinFold #232 m2-p06 (step 363k),<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.9356718917019862,MarinFold #232 m2-p06 (step 363k),<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.4027777777777778,MarinFold #232 m2-p06 (step 363k),<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.7017543859649122,ESMFold2,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.7222222222222222,ESMFold2,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.5964912280701754,Protenix-v2 single-seq,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.5416666666666666,Protenix-v2 single-seq,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.5964912280701754,Protenix-v2 + MSA,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.5555555555555556,Protenix-v2 + MSA,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.9194009647752388,ESMFold2,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.9010753431654692,Protenix-v2 single-seq,<10,<10
-8vd6_A,cameo_hard,nonfoldbench_natural,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.8967267533270045,Protenix-v2 + MSA,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.3920454545454545,MarinFold #232 m2-p06 (step 363k),<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9204951298701298,MarinFold #232 m2-p06 (step 363k),<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.3492063492063492,MarinFold #232 m2-p06 (step 363k),<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.7556818181818182,ESMFold2,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.746031746031746,ESMFold2,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.7613636363636364,Protenix-v2 single-seq,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.7380952380952381,Protenix-v2 single-seq,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.7670454545454546,Protenix-v2 + MSA,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.746031746031746,Protenix-v2 + MSA,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9450091391605876,ESMFold2,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9507764197389512,Protenix-v2 single-seq,<10,<10
-8vej_B,cameo_hard,nonfoldbench_natural,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9536266315548432,Protenix-v2 + MSA,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6494845360824743,MarinFold #232 m2-p06 (step 363k),<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.98119613760464,MarinFold #232 m2-p06 (step 363k),<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.5625,MarinFold #232 m2-p06 (step 363k),<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6597938144329897,ESMFold2,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.59375,ESMFold2,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6597938144329897,Protenix-v2 single-seq,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.625,Protenix-v2 single-seq,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6391752577319587,Protenix-v2 + MSA,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.59375,Protenix-v2 + MSA,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.8934720001742106,ESMFold2,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.903031809776484,Protenix-v2 single-seq,<10,<10
-8wwc_C,cameo_hard,nonfoldbench_natural,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.8979025763215058,Protenix-v2 + MSA,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.5,MarinFold #232 m2-p06 (step 363k),<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.9356718917019862,MarinFold #232 m2-p06 (step 363k),<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.4027777777777778,MarinFold #232 m2-p06 (step 363k),<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.7017543859649122,ESMFold2,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.7222222222222222,ESMFold2,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.5964912280701754,Protenix-v2 single-seq,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.5416666666666666,Protenix-v2 single-seq,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,R,0.5964912280701754,Protenix-v2 + MSA,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,long,R,0.5555555555555556,Protenix-v2 + MSA,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.9194009647752388,ESMFold2,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.9010753431654692,Protenix-v2 single-seq,<10,<10
+8vd6_A,cameo_hard,nonfoldbench_designed,,174,,,exp74,1.0,1.0,1.0,174.0,all,AUC,0.8967267533270045,Protenix-v2 + MSA,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.3920454545454545,MarinFold #232 m2-p06 (step 363k),<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9204951298701298,MarinFold #232 m2-p06 (step 363k),<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.3492063492063492,MarinFold #232 m2-p06 (step 363k),<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.7556818181818182,ESMFold2,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.746031746031746,ESMFold2,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.7613636363636364,Protenix-v2 single-seq,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.7380952380952381,Protenix-v2 single-seq,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,R,0.7670454545454546,Protenix-v2 + MSA,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,long,R,0.746031746031746,Protenix-v2 + MSA,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9450091391605876,ESMFold2,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9507764197389512,Protenix-v2 single-seq,<10,<10
+8vej_B,cameo_hard,nonfoldbench_designed,,242,,,exp74,1.0,1.0,1.0,242.0,all,AUC,0.9536266315548432,Protenix-v2 + MSA,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6494845360824743,MarinFold #232 m2-p06 (step 363k),<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.98119613760464,MarinFold #232 m2-p06 (step 363k),<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.5625,MarinFold #232 m2-p06 (step 363k),<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6597938144329897,ESMFold2,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.59375,ESMFold2,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6597938144329897,Protenix-v2 single-seq,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.625,Protenix-v2 single-seq,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,R,0.6391752577319587,Protenix-v2 + MSA,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,long,R,0.59375,Protenix-v2 + MSA,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.8934720001742106,ESMFold2,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.903031809776484,Protenix-v2 single-seq,<10,<10
+8wwc_C,cameo_hard,nonfoldbench_designed,,113,,,exp74,1.0,1.0,1.0,113.0,all,AUC,0.8979025763215058,Protenix-v2 + MSA,<10,<10
 8xtn_A,cameo_hard,nonfoldbench_natural,,33,,,exp74,3.0,1.0,1.0,33.0,all,R,0.2857142857142857,MarinFold #232 m2-p06 (step 363k),<10,<10
 8xtn_A,cameo_hard,nonfoldbench_natural,,33,,,exp74,3.0,1.0,1.0,33.0,all,AUC,0.8382749326145552,MarinFold #232 m2-p06 (step 363k),<10,<10
 8xtn_A,cameo_hard,nonfoldbench_natural,,33,,,exp74,3.0,1.0,1.0,33.0,long,R,0.0,MarinFold #232 m2-p06 (step 363k),<10,<10
@@ -4499,18 +4499,18 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 8xtn_A,cameo_hard,nonfoldbench_natural,,33,,,exp74,3.0,1.0,1.0,33.0,all,AUC,0.5637273777435503,ESMFold2,<10,<10
 8xtn_A,cameo_hard,nonfoldbench_natural,,33,,,exp74,3.0,1.0,1.0,33.0,all,AUC,0.5537158259530226,Protenix-v2 single-seq,<10,<10
 8xtn_A,cameo_hard,nonfoldbench_natural,,33,,,exp74,3.0,1.0,1.0,33.0,all,AUC,0.5537158259530226,Protenix-v2 + MSA,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.3314285714285714,MarinFold #232 m2-p06 (step 363k),<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.8345652389943357,MarinFold #232 m2-p06 (step 363k),<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.2283464566929134,MarinFold #232 m2-p06 (step 363k),<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.8285714285714286,ESMFold2,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.8267716535433071,ESMFold2,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.7428571428571429,Protenix-v2 single-seq,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.7716535433070866,Protenix-v2 single-seq,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.7428571428571429,Protenix-v2 + MSA,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.7401574803149606,Protenix-v2 + MSA,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.9306653795374852,ESMFold2,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.9099934697122416,Protenix-v2 single-seq,<10,<10
-8yl4_B,cameo_hard,nonfoldbench_natural,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.9243656393293678,Protenix-v2 + MSA,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.3314285714285714,MarinFold #232 m2-p06 (step 363k),<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.8345652389943357,MarinFold #232 m2-p06 (step 363k),<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.2283464566929134,MarinFold #232 m2-p06 (step 363k),<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.8285714285714286,ESMFold2,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.8267716535433071,ESMFold2,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.7428571428571429,Protenix-v2 single-seq,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.7716535433070866,Protenix-v2 single-seq,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,R,0.7428571428571429,Protenix-v2 + MSA,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,long,R,0.7401574803149606,Protenix-v2 + MSA,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.9306653795374852,ESMFold2,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.9099934697122416,Protenix-v2 single-seq,<10,<10
+8yl4_B,cameo_hard,nonfoldbench_designed,,207,,,exp74,1.0,1.0,1.0,207.0,all,AUC,0.9243656393293678,Protenix-v2 + MSA,<10,<10
 8yoz_A,cameo_hard,nonfoldbench_natural,,79,,,exp74,12505.0,8849.166636096837,3104.6835410886724,79.0,all,R,0.6949152542372882,MarinFold #232 m2-p06 (step 363k),1000+,1000+
 8yoz_A,cameo_hard,nonfoldbench_natural,,79,,,exp74,12505.0,8849.166636096837,3104.6835410886724,79.0,all,AUC,0.971359011534662,MarinFold #232 m2-p06 (step 363k),1000+,1000+
 8yoz_A,cameo_hard,nonfoldbench_natural,,79,,,exp74,12505.0,8849.166636096837,3104.6835410886724,79.0,long,R,0.5294117647058824,MarinFold #232 m2-p06 (step 363k),1000+,1000+
@@ -4559,54 +4559,54 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 9bch_A,cameo_hard,nonfoldbench_natural,,198,,,exp74,12.0,3.1,3.1,198.0,all,AUC,0.8329897037080192,ESMFold2,10-100,<10
 9bch_A,cameo_hard,nonfoldbench_natural,,198,,,exp74,12.0,3.1,3.1,198.0,all,AUC,0.7302528960781504,Protenix-v2 single-seq,10-100,<10
 9bch_A,cameo_hard,nonfoldbench_natural,,198,,,exp74,12.0,3.1,3.1,198.0,all,AUC,0.8245782047385932,Protenix-v2 + MSA,10-100,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.5645161290322581,MarinFold #232 m2-p06 (step 363k),<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.9687832646827416,MarinFold #232 m2-p06 (step 363k),<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.5625,MarinFold #232 m2-p06 (step 363k),<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.8387096774193549,ESMFold2,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.8541666666666666,ESMFold2,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.8387096774193549,Protenix-v2 single-seq,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.8125,Protenix-v2 single-seq,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.8548387096774194,Protenix-v2 + MSA,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.8541666666666666,Protenix-v2 + MSA,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.933696255843014,ESMFold2,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.9499352061831816,Protenix-v2 single-seq,<10,<10
-9de9_B,cameo_hard,nonfoldbench_natural,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.9501608275096036,Protenix-v2 + MSA,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.5087719298245614,MarinFold #232 m2-p06 (step 363k),<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.984611903145508,MarinFold #232 m2-p06 (step 363k),<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.5,MarinFold #232 m2-p06 (step 363k),<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.8771929824561403,ESMFold2,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.868421052631579,ESMFold2,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.8421052631578947,Protenix-v2 single-seq,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.8157894736842105,Protenix-v2 single-seq,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.8421052631578947,Protenix-v2 + MSA,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.8157894736842105,Protenix-v2 + MSA,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.9817415228498946,ESMFold2,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.963697430950084,Protenix-v2 single-seq,<10,<10
-9deb_E,cameo_hard,nonfoldbench_natural,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.963685520658401,Protenix-v2 + MSA,<10,<10
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.3652173913043478,MarinFold #232 m2-p06 (step 363k),10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.8658784934180475,MarinFold #232 m2-p06 (step 363k),10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.32,MarinFold #232 m2-p06 (step 363k),10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.8260869565217391,ESMFold2,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.7866666666666666,ESMFold2,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.8434782608695652,Protenix-v2 single-seq,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.8133333333333334,Protenix-v2 single-seq,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.8260869565217391,Protenix-v2 + MSA,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.7866666666666666,Protenix-v2 + MSA,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.9165715709480504,ESMFold2,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.9296125576180392,Protenix-v2 single-seq,10-100,10-100
-9def_A,cameo_hard,nonfoldbench_natural,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.9164905942444252,Protenix-v2 + MSA,10-100,10-100
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.4577464788732394,MarinFold #232 m2-p06 (step 363k),<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9260529206649816,MarinFold #232 m2-p06 (step 363k),<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.3763440860215054,MarinFold #232 m2-p06 (step 363k),<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.7676056338028169,ESMFold2,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.7526881720430108,ESMFold2,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.7746478873239436,Protenix-v2 single-seq,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.7634408602150538,Protenix-v2 single-seq,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.795774647887324,Protenix-v2 + MSA,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.7634408602150538,Protenix-v2 + MSA,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9105620133364152,ESMFold2,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9035346719455608,Protenix-v2 single-seq,<10,<10
-9deg_A,cameo_hard,nonfoldbench_natural,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9141210417614208,Protenix-v2 + MSA,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.5645161290322581,MarinFold #232 m2-p06 (step 363k),<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.9687832646827416,MarinFold #232 m2-p06 (step 363k),<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.5625,MarinFold #232 m2-p06 (step 363k),<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.8387096774193549,ESMFold2,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.8541666666666666,ESMFold2,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.8387096774193549,Protenix-v2 single-seq,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.8125,Protenix-v2 single-seq,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,R,0.8548387096774194,Protenix-v2 + MSA,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,long,R,0.8541666666666666,Protenix-v2 + MSA,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.933696255843014,ESMFold2,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.9499352061831816,Protenix-v2 single-seq,<10,<10
+9de9_B,cameo_hard,nonfoldbench_designed,,81,,,exp74,1.0,1.0,1.0,81.0,all,AUC,0.9501608275096036,Protenix-v2 + MSA,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.5087719298245614,MarinFold #232 m2-p06 (step 363k),<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.984611903145508,MarinFold #232 m2-p06 (step 363k),<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.5,MarinFold #232 m2-p06 (step 363k),<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.8771929824561403,ESMFold2,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.868421052631579,ESMFold2,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.8421052631578947,Protenix-v2 single-seq,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.8157894736842105,Protenix-v2 single-seq,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,R,0.8421052631578947,Protenix-v2 + MSA,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,long,R,0.8157894736842105,Protenix-v2 + MSA,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.9817415228498946,ESMFold2,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.963697430950084,Protenix-v2 single-seq,<10,<10
+9deb_E,cameo_hard,nonfoldbench_designed,,83,,,exp74,1.0,1.0,1.0,83.0,all,AUC,0.963685520658401,Protenix-v2 + MSA,<10,<10
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.3652173913043478,MarinFold #232 m2-p06 (step 363k),10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.8658784934180475,MarinFold #232 m2-p06 (step 363k),10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.32,MarinFold #232 m2-p06 (step 363k),10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.8260869565217391,ESMFold2,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.7866666666666666,ESMFold2,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.8434782608695652,Protenix-v2 single-seq,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.8133333333333334,Protenix-v2 single-seq,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,R,0.8260869565217391,Protenix-v2 + MSA,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,long,R,0.7866666666666666,Protenix-v2 + MSA,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.9165715709480504,ESMFold2,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.9296125576180392,Protenix-v2 single-seq,10-100,10-100
+9def_A,cameo_hard,nonfoldbench_designed,,151,,,exp74,41.0,38.0,29.27142857142857,151.0,all,AUC,0.9164905942444252,Protenix-v2 + MSA,10-100,10-100
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.4577464788732394,MarinFold #232 m2-p06 (step 363k),<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9260529206649816,MarinFold #232 m2-p06 (step 363k),<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.3763440860215054,MarinFold #232 m2-p06 (step 363k),<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.7676056338028169,ESMFold2,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.7526881720430108,ESMFold2,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.7746478873239436,Protenix-v2 single-seq,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.7634408602150538,Protenix-v2 single-seq,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,R,0.795774647887324,Protenix-v2 + MSA,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,long,R,0.7634408602150538,Protenix-v2 + MSA,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9105620133364152,ESMFold2,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9035346719455608,Protenix-v2 single-seq,<10,<10
+9deg_A,cameo_hard,nonfoldbench_designed,,157,,,exp74,1.0,1.0,1.0,157.0,all,AUC,0.9141210417614208,Protenix-v2 + MSA,<10,<10
 9dl1_D,cameo_hard,nonfoldbench_natural,,124,,,exp74,12.0,5.0,2.825,124.0,all,R,0.1470588235294117,MarinFold #232 m2-p06 (step 363k),10-100,<10
 9dl1_D,cameo_hard,nonfoldbench_natural,,124,,,exp74,12.0,5.0,2.825,124.0,all,AUC,0.7908174003822224,MarinFold #232 m2-p06 (step 363k),10-100,<10
 9dl1_D,cameo_hard,nonfoldbench_natural,,124,,,exp74,12.0,5.0,2.825,124.0,long,R,0.2666666666666666,MarinFold #232 m2-p06 (step 363k),10-100,<10
@@ -4667,42 +4667,42 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 9f4c_A,cameo_hard,nonfoldbench_natural,,141,,,exp74,1625.0,391.6915424653063,170.02000800899424,141.0,all,AUC,0.714208194438584,ESMFold2,1000+,100-1000
 9f4c_A,cameo_hard,nonfoldbench_natural,,141,,,exp74,1625.0,391.6915424653063,170.02000800899424,141.0,all,AUC,0.6624161357019284,Protenix-v2 single-seq,1000+,100-1000
 9f4c_A,cameo_hard,nonfoldbench_natural,,141,,,exp74,1625.0,391.6915424653063,170.02000800899424,141.0,all,AUC,0.729753154141525,Protenix-v2 + MSA,1000+,100-1000
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.668918918918919,MarinFold #232 m2-p06 (step 363k),100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.9360062185919396,MarinFold #232 m2-p06 (step 363k),100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.4489795918367347,MarinFold #232 m2-p06 (step 363k),100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.6418918918918919,ESMFold2,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.4489795918367347,ESMFold2,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.6824324324324325,Protenix-v2 single-seq,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.5714285714285714,Protenix-v2 single-seq,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.668918918918919,Protenix-v2 + MSA,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.4897959183673469,Protenix-v2 + MSA,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.9433992974387524,ESMFold2,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.9268352009662484,Protenix-v2 single-seq,100-1000,10-100
-9fdg_A,cameo_hard,nonfoldbench_natural,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.950379571680652,Protenix-v2 + MSA,100-1000,10-100
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.3783783783783784,MarinFold #232 m2-p06 (step 363k),<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9084141913577952,MarinFold #232 m2-p06 (step 363k),<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.2394366197183098,MarinFold #232 m2-p06 (step 363k),<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.7477477477477478,ESMFold2,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.7183098591549296,ESMFold2,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.7387387387387387,Protenix-v2 single-seq,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.7183098591549296,Protenix-v2 single-seq,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.7297297297297297,Protenix-v2 + MSA,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.6901408450704225,Protenix-v2 + MSA,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9212207393087724,ESMFold2,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9390200379196252,Protenix-v2 single-seq,<10,<10
-9hac_B,cameo_hard,nonfoldbench_natural,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9478016530973892,Protenix-v2 + MSA,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.8020833333333334,MarinFold #232 m2-p06 (step 363k),<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9979881714174909,MarinFold #232 m2-p06 (step 363k),<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.8615384615384616,MarinFold #232 m2-p06 (step 363k),<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.8958333333333334,ESMFold2,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.9230769230769232,ESMFold2,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.8958333333333334,Protenix-v2 single-seq,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.9230769230769232,Protenix-v2 single-seq,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.90625,Protenix-v2 + MSA,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.953846153846154,Protenix-v2 + MSA,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9733826594919526,ESMFold2,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9730806832137548,Protenix-v2 single-seq,<10,<10
-9had_C,cameo_hard,nonfoldbench_natural,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9785485747527632,Protenix-v2 + MSA,<10,<10
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.668918918918919,MarinFold #232 m2-p06 (step 363k),100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.9360062185919396,MarinFold #232 m2-p06 (step 363k),100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.4489795918367347,MarinFold #232 m2-p06 (step 363k),100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.6418918918918919,ESMFold2,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.4489795918367347,ESMFold2,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.6824324324324325,Protenix-v2 single-seq,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.5714285714285714,Protenix-v2 single-seq,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,R,0.668918918918919,Protenix-v2 + MSA,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,long,R,0.4897959183673469,Protenix-v2 + MSA,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.9433992974387524,ESMFold2,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.9268352009662484,Protenix-v2 single-seq,100-1000,10-100
+9fdg_A,cameo_hard,nonfoldbench_designed,,179,,,exp74,122.0,30.28134850606868,14.41405321573765,179.0,all,AUC,0.950379571680652,Protenix-v2 + MSA,100-1000,10-100
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.3783783783783784,MarinFold #232 m2-p06 (step 363k),<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9084141913577952,MarinFold #232 m2-p06 (step 363k),<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.2394366197183098,MarinFold #232 m2-p06 (step 363k),<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.7477477477477478,ESMFold2,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.7183098591549296,ESMFold2,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.7387387387387387,Protenix-v2 single-seq,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.7183098591549296,Protenix-v2 single-seq,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,R,0.7297297297297297,Protenix-v2 + MSA,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,long,R,0.6901408450704225,Protenix-v2 + MSA,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9212207393087724,ESMFold2,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9390200379196252,Protenix-v2 single-seq,<10,<10
+9hac_B,cameo_hard,nonfoldbench_designed,,127,,,exp74,1.0,1.0,1.0,127.0,all,AUC,0.9478016530973892,Protenix-v2 + MSA,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.8020833333333334,MarinFold #232 m2-p06 (step 363k),<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9979881714174909,MarinFold #232 m2-p06 (step 363k),<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.8615384615384616,MarinFold #232 m2-p06 (step 363k),<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.8958333333333334,ESMFold2,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.9230769230769232,ESMFold2,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.8958333333333334,Protenix-v2 single-seq,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.9230769230769232,Protenix-v2 single-seq,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,R,0.90625,Protenix-v2 + MSA,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,long,R,0.953846153846154,Protenix-v2 + MSA,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9733826594919526,ESMFold2,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9730806832137548,Protenix-v2 single-seq,<10,<10
+9had_C,cameo_hard,nonfoldbench_designed,,108,,,exp74,1.0,1.0,1.0,108.0,all,AUC,0.9785485747527632,Protenix-v2 + MSA,<10,<10
 9isp_A,cameo_hard,nonfoldbench_natural,,156,,,exp74,507.0,119.75649509776346,49.664113455112414,156.0,all,R,0.1325301204819277,MarinFold #232 m2-p06 (step 363k),100-1000,100-1000
 9isp_A,cameo_hard,nonfoldbench_natural,,156,,,exp74,507.0,119.75649509776346,49.664113455112414,156.0,all,AUC,0.7756524799799611,MarinFold #232 m2-p06 (step 363k),100-1000,100-1000
 9isp_A,cameo_hard,nonfoldbench_natural,,156,,,exp74,507.0,119.75649509776346,49.664113455112414,156.0,long,R,0.1615384615384615,MarinFold #232 m2-p06 (step 363k),100-1000,100-1000
@@ -4727,18 +4727,18 @@ stem,dataset,subset,eval_set,L,is_viral,kingdom,msa_volume,msa_depth,msa_neff,n_
 9j46_F,cameo_hard,nonfoldbench_natural,,124,,,exp74,9.0,5.0,5.0,124.0,all,AUC,0.7800044074957825,ESMFold2,<10,<10
 9j46_F,cameo_hard,nonfoldbench_natural,,124,,,exp74,9.0,5.0,5.0,124.0,all,AUC,0.6336231135158138,Protenix-v2 single-seq,<10,<10
 9j46_F,cameo_hard,nonfoldbench_natural,,124,,,exp74,9.0,5.0,5.0,124.0,all,AUC,0.9560040731340336,Protenix-v2 + MSA,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.4,MarinFold #232 m2-p06 (step 363k),<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.903968253968254,MarinFold #232 m2-p06 (step 363k),<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,MarinFold #232 m2-p06 (step 363k),<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.7333333333333333,ESMFold2,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,ESMFold2,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.4,Protenix-v2 single-seq,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,Protenix-v2 single-seq,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.3333333333333333,Protenix-v2 + MSA,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,Protenix-v2 + MSA,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.8653968253968255,ESMFold2,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.7566666666666666,Protenix-v2 single-seq,<10,<10
-9j5h_A,cameo_hard,nonfoldbench_natural,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.7877777777777778,Protenix-v2 + MSA,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.4,MarinFold #232 m2-p06 (step 363k),<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.903968253968254,MarinFold #232 m2-p06 (step 363k),<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,MarinFold #232 m2-p06 (step 363k),<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.7333333333333333,ESMFold2,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,ESMFold2,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.4,Protenix-v2 single-seq,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,Protenix-v2 single-seq,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,R,0.3333333333333333,Protenix-v2 + MSA,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,long,R,0.3333333333333333,Protenix-v2 + MSA,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.8653968253968255,ESMFold2,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.7566666666666666,Protenix-v2 single-seq,<10,<10
+9j5h_A,cameo_hard,nonfoldbench_designed,,35,,,exp74,1.0,1.0,1.0,35.0,all,AUC,0.7877777777777778,Protenix-v2 + MSA,<10,<10
 9k3e_C,cameo_hard,nonfoldbench_natural,,116,,,exp74,11.0,10.0,8.333333333333332,116.0,all,R,0.2068965517241379,MarinFold #232 m2-p06 (step 363k),10-100,10-100
 9k3e_C,cameo_hard,nonfoldbench_natural,,116,,,exp74,11.0,10.0,8.333333333333332,116.0,all,AUC,0.8540708252485879,MarinFold #232 m2-p06 (step 363k),10-100,10-100
 9k3e_C,cameo_hard,nonfoldbench_natural,,116,,,exp74,11.0,10.0,8.333333333333332,116.0,long,R,0.1111111111111111,MarinFold #232 m2-p06 (step 363k),10-100,10-100

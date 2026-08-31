@@ -46,63 +46,68 @@ ColabFold runs does not move the stratification.
 seq-KNN null over its own decontaminated corpus. Protenix-v2 + MSA scores 0.8446
 on the same 217 proteins.
 
-## MSA depth — accuracy does not hold up
+## First: 15 "natural" proteins are designs
 
-Mean all-range R-precision, 372 natural proteins:
+The CAMEO-hard / CASP-FM half was labelled natural by provenance, not by
+checking. RCSB says 15 of those 58 are de novo designs — and 13 of the 15 sit
+under MSA depth 10, because a designed protein has no homologs by construction.
+
+They had to come out. Designed backbones are easy for structure predictors:
+in the shallow bin Protenix-v2 *single-sequence* scores 0.722 on the 13 designs
+against 0.241 on the 16 natural proteins. Pooling them produced a materially
+wrong conclusion in the first cut of this experiment — the same failure #241
+found in eval2-natural. The natural universe is 357, not 372.
+
+## MSA depth — the corrected picture
+
+Mean all-range R-precision, 357 natural proteins:
 
 | depth | n | MarinFold | Protenix-v2 + MSA | ESMFold2 | Protenix-v2 single-seq |
 |---|---:|---:|---:|---:|---:|
-| <10 | 29 | 0.379 | 0.510 | 0.556 | 0.457 |
-| 10–100 | 33 | 0.281 | 0.758 | 0.480 | 0.291 |
-| 100–1000 | 77 | 0.416 | 0.817 | 0.671 | 0.283 |
+| <10 | 16 | 0.300 | 0.336 | 0.426 | 0.241 |
+| 10–100 | 32 | 0.279 | 0.755 | 0.469 | 0.273 |
+| 100–1000 | 76 | 0.413 | 0.819 | 0.671 | 0.278 |
 | ≥1000 | 233 | 0.616 | 0.858 | 0.827 | 0.249 |
 
-MarinFold degrades with MSA depth much as the MSA methods do — depth is a proxy
-for how well a family is represented anywhere, including in the AFDB corpus it
-trained on. Paired against Protenix-v2 single-seq, MarinFold's whole advantage
-is a deep-MSA phenomenon: +0.367 at ≥1000, and indistinguishable from zero in
-both shallow bins.
+MarinFold degrades with depth like everything else — depth proxies how well a
+family is represented anywhere, AFDB included.
+
+## What survives — the gap closes where the MSA goes
+
+Paired per-protein against Protenix-v2 + MSA, 95 % bootstrap:
+
+| depth | n | MarinFold − (+MSA) |
+|---|---:|---|
+| <10 | 16 | **−0.036 [−0.180, +0.104]** |
+| 10–100 | 32 | −0.477 [−0.545, −0.397] |
+| 100–1000 | 76 | −0.407 [−0.454, −0.360] |
+| ≥1000 | 233 | −0.242 [−0.263, −0.220] |
+
+At depth under 10 MarinFold is statistically level with the MSA-based model.
+The gap closes mostly because Protenix falls (0.858 → 0.336), which is what the
+single-sequence thesis predicts. It never leads: ESMFold2 is ahead in every
+tier, including this one (−0.126 paired).
+
+Supporting checks: Protenix-v2 + MSA collapses toward its own single-sequence
+arm in this bin (0.336 vs 0.241), which is what an empty alignment should do;
+and the depths reproduce #247's independent count exactly on all 314 FoldBench
+naturals.
 
 ## The low-MSA-depth cut — now a standing report
 
-29 natural proteins with a ColabFold MSA under 10 sequences: 16 CAMEO-hard, 8
-CASP-FM, 5 FoldBench (all in eval-test). Frozen as
-`data/low_msa_depth_set.csv` and now a required reporting row in the
-`eval-checkpoint` skill.
+29 proteins under depth 10, with a `designed` column: 16 natural (11
+CAMEO/CASP + 5 FoldBench) and 13 CAMEO designs. Frozen as
+`data/low_msa_depth_set.csv`, required by the `eval-checkpoint` skill, and
+browsable case by case in `dashboard/index.html`.
 
-| predictor | the 29 | FoldBench-only (5) | all natural (372) |
-|---|---:|---:|---:|
-| **MarinFold #232 m2-p06 training** | **0.379** | **0.342** | 0.527 |
-| Protenix-v2 + MSA | 0.510 | 0.320 | 0.813 |
-| Protenix-v2 single-seq | 0.457 | 0.305 | 0.276 |
-| ESMFold2 | 0.556 | 0.664 | 0.743 |
-
-Report both rows: paired against Protenix-v2 + MSA, MarinFold is −0.131 [−0.232,
-−0.030] on the 29 and +0.022 [−0.162, +0.206] on the 5. The FoldBench subset
-alone turns a clear loss into an apparent tie.
-
-That these are genuinely MSA-poor and not mis-measured: Protenix-v2 + MSA
-collapses toward its own single-sequence arm here (0.510 vs 0.457, against 0.813
-vs 0.276 overall).
-
-## What survives
-
-The **gap to Protenix-v2 + MSA is narrowest where MSAs are thinnest** — −0.131
-[−0.232, −0.030] at depth <10 against −0.242 at ≥1000. It never closes, and the
-narrowing is mostly Protenix falling rather than MarinFold rising. On the 29,
-MarinFold is behind every structure predictor measured and ahead only of the
-memorisation null.
-
-AUC is deliberately not used for any cross-predictor claim here: #89 scores
-structure predictors from a degree matrix where unpredicted pairs are exactly 0,
-so ~99 % of candidate pairs tie at the bottom and roc_auc_score gives each tie
-half credit — it measures output sparsity as much as ranking quality.
+The CAMEO and CASP targets are generally inside the baselines' training sets, so
+the only like-for-like comparison in this regime is the 5 FoldBench members.
+Growing that is the follow-up this experiment argues for.
 
 ## Caveats
 
-- The FoldBench half has only 5 proteins under depth 10; the pooled row is the
-  one to read, and it exists because the 58 CAMEO-hard / CASP-FM targets (24 of
-  them under depth 10) were brought in.
+- 16 natural proteins under depth 10, only 5 of them uncontaminated for the
+  baselines, is too thin to carry the headline on its own.
 - Median length is 148 residues in the <10 bin against 290 at ≥1000, and contact
   prevalence goes as ~1/L. That bias favours the shallow bins, so the reported
   decline is conservative.

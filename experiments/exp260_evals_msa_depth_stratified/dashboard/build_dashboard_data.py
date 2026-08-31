@@ -15,6 +15,7 @@ once, offline, rather than having a browser fetch nine sources:
   #245's `contacts_raw.parquet` covers the FoldBench members it scored;
 * per-protein R-precision for every predictor;
 * Cα coordinates in evaluation numbering, from ``build_structures.py``;
+* what the protein is and where to check it, from ``build_annotations.py``;
 * the alignment itself, which for these proteins is at most nine sequences.
 
 Contact sets are capped at ``top-L`` per predictor, which is the cut
@@ -166,6 +167,7 @@ def main() -> None:
     )["proteins"]
     alignments = json.loads((U.DATA / "low_msa_depth_a3m.json").read_text())
     structures = json.loads((U.DATA / "low_depth_structures.json").read_text())
+    annotations = json.loads((U.DATA / "low_depth_annotations.json").read_text())
     baselines = baseline_contacts(units)
 
     scores = pd.read_csv(U.DATA / "per_protein_depth.csv")
@@ -197,6 +199,7 @@ def main() -> None:
                 "msa_neff": round(float(record.msa_neff), 2),
                 "a3m": alignments[record.stem],
                 "structure": structures[key],
+                "annotation": annotations[key],
                 "n_true_contacts": len(true_contacts(gt)),
                 "contacts": {
                     "Ground truth": true_contacts(gt),
