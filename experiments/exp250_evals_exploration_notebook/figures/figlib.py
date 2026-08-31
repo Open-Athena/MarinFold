@@ -469,6 +469,46 @@ def load_foldbench_universe(inputs: Inputs):
         on="stem", how="left", validate="one_to_one")
 
 
+def load_helico_per_target(inputs: Inputs, extra_path=None):
+    """helico exp14's per-target structure scores, plus an arm re-run outside that publication.
+
+    The published table is every arm as exp14 ran them; `extra_path` points at a CSV of the same
+    shape holding an arm that was re-run since (currently the MarinFold arm on #232's step-363000
+    contacts). Both are recorded as inputs, so a figure cannot quietly be drawn from one of them.
+    """
+    import io
+
+    import pandas as pd
+
+    frame = pd.read_csv(io.BytesIO(inputs.fetch(f"{HELICO}/scores/per_target.csv")))
+    if extra_path is not None:
+        extra_path = Path(extra_path)
+        if not extra_path.exists():
+            raise SystemExit(f"{extra_path} is missing — it holds a re-run Helico arm's "
+                             "per-target scores; see the experiment README for how it was made")
+        inputs.add_file(extra_path)
+        extra = pd.read_csv(extra_path)
+        missing = [column for column in frame.columns if column not in extra.columns]
+        if missing:
+            raise SystemExit(f"the re-run arm is missing {missing}; it has to carry the same "
+                             "columns as the published table or the two cannot be pooled")
+        frame = pd.concat([frame, extra[frame.columns]], ignore_index=True)
+    return frame
+
+
+def load_protein_features(inputs: Inputs):
+    """#247's 75 per-protein features for the 314 natural FoldBench monomers, keyed by stem.
+
+    The de novo designs are deliberately absent from that table: an MSA depth for a sequence
+    nobody has ever seen in nature is not the same quantity.
+    """
+    import io
+
+    import pandas as pd
+
+    return pd.read_csv(io.BytesIO(inputs.fetch(f"{EXP247}/protein_features.csv")))
+
+
 def load_foldbench_scores(inputs: Inputs):
     """#245's per-protein scores for all nine predictors, keyed by (dataset, stem)."""
     import io

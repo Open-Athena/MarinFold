@@ -51,6 +51,11 @@ LAYOUT = {
                  [("gdt_ts_natural", None), ("gdt_ts_designed", None)],
                  [("lddt_natural", None), ("lddt_designed", None)]],
     },
+    "figure_4": {
+        "caption": ("Structure accuracy against MSA depth on natural FoldBench monomers: "
+                    "GDT-TS (a) and lDDT (b)."),
+        "rows": [[("msa_depth_gdt_ts", None), ("msa_depth_lddt", None)]],
+    },
 }
 
 
