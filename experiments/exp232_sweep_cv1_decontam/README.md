@@ -18,7 +18,7 @@ sequence identity?
 
 ## Approach
 
-`exp232_tokenize.py` first mirrors the two issue #232 training corpora from the
+[`gpu/exp232_tokenize.py`](gpu/exp232_tokenize.py) first mirrors the two issue #232 training corpora from the
 public Hugging Face bucket to CoreWeave S3. It verifies the complete mirror before
 tokenizing only the S3 copies with
 `eczech/contacts-v1-tokenizer-5d68a24a899f`. The dated caches are:
@@ -31,7 +31,7 @@ s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/
   tokenized/contacts_v1/esm/2026.08.14
 ```
 
-`exp232_sweep.py` retains exp199's scratch-trained Qwen3 1.5B architecture,
+[`gpu/exp232_sweep_cw.py`](gpu/exp232_sweep_cw.py) retains exp199's scratch-trained Qwen3 1.5B architecture,
 optimizer points, two data-mixture policies, WSD schedule, token budget, full
 validation cadence, and scheduled amino-acid augmentation. It removes the
 unaugmented arm, leaving ten trials:
@@ -54,9 +54,15 @@ temporary checkpoints save every 15 minutes. Production runs share one
 W&B/checkpoint identity across CoreWeave placement retries; never run two writers
 for one trial.
 
+The backend-neutral model, data, cache, schedule, and augmentation invariants
+live in [`training_contract.py`](training_contract.py). CoreWeave launch and
+recovery code lives under [`gpu/`](gpu/), TRC continuation code under
+[`tpu/`](tpu/), and evaluation artifacts under [`evals/`](evals/). Each backend
+has its own locked environment and operations document.
+
 ## Tokenization launch
 
-From this directory, source `~/marin.env` without printing it. The default `all`
+From the repository root, source `~/marin.env` without printing it. The default `all`
 phase mirrors both corpora, verifies the mirror, and tokenizes AFDB followed by
 ESM. Use `--phase mirror` or `--phase tokenize` only when reviewing or resuming
 the boundary explicitly.
@@ -68,7 +74,7 @@ the mirrored parquet footers, and requires each output cache to contain exactly
 that many documents. The fixed prefix makes this command safely resumable.
 
 ```bash
-uv run iris --cluster marin job run \
+uv run --project experiments/exp232_sweep_cv1_decontam/gpu iris --cluster marin job run \
   --target-cluster cw-rno2a \
   --priority batch \
   --user eczech \
@@ -77,7 +83,7 @@ uv run iris --cluster marin job run \
   --cpu 4 --memory 16GB --disk 32GB \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
   -e HF_TOKEN "$HF_TOKEN" \
-  -- python exp232_tokenize.py --smoke-test
+  -- python experiments/exp232_sweep_cv1_decontam/gpu/exp232_tokenize.py --smoke-test
 ```
 
 After that succeeds, launch the complete mirror and tokenization:
@@ -87,7 +93,7 @@ set -a
 source ~/marin.env
 set +a
 
-uv run iris --cluster marin job run \
+uv run --project experiments/exp232_sweep_cv1_decontam/gpu iris --cluster marin job run \
   --target-cluster cw-rno2a \
   --priority batch \
   --user eczech \
@@ -96,7 +102,7 @@ uv run iris --cluster marin job run \
   --cpu 4 --memory 16GB --disk 32GB \
   -e MARIN_PREFIX s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam \
   -e HF_TOKEN "$HF_TOKEN" \
-  -- python exp232_tokenize.py
+  -- python experiments/exp232_sweep_cv1_decontam/gpu/exp232_tokenize.py
 ```
 
 ## Sweep entry point
@@ -113,11 +119,11 @@ NVIDIA placeholder downloader returned mismatched payload hashes during
 multi-node cold starts.
 
 The living autonomous-operations policy is tracked in
-[`exp232_cw_operations.md`](exp232_cw_operations.md); dynamic attempts,
+[`gpu/exp232_sweep_cw.md`](gpu/exp232_sweep_cw.md); dynamic attempts,
 observations, and progress remain in its ignored SQLite ledger under `scratch/`.
 
 ```bash
-uv run iris --cluster marin job run \
+uv run --project experiments/exp232_sweep_cv1_decontam/gpu iris --cluster marin job run \
   --target-cluster cw-us-east-02a \
   --priority batch \
   --user eczech \
@@ -133,7 +139,8 @@ uv run iris --cluster marin job run \
   -e CLUSTER cw-us-east-02a \
   -e NODES 1 \
   -e SMOKE 1 \
-  -- python exp232_sweep.py --version 2026.08.14.2 --run
+  -- python experiments/exp232_sweep_cv1_decontam/gpu/exp232_sweep_cw.py \
+    --version 2026.08.14.2 --run
 ```
 
 ## Results
