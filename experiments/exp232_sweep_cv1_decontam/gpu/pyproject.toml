@@ -1,29 +1,30 @@
 [project]
 name = "exp232-models-sweep-cv1-decontam"
 version = "0.1.0"
-description = "CoreWeave tokenization and GPU sweep for MarinFold issue #232."
+description = "CoreWeave tokenization and GPU training for MarinFold issue #232."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "click>=8.1,<9",
     "fsspec",
     "hf-xet",
     "huggingface-hub>=1.5,<2",
-    "marin-core==0.2.73.dev30987879744",
+    "marin-core==0.2.76.dev31155643335",
     "marin-dupekit==0.1.5.dev30957455498",
     "marin-dupekit-native==0.1.5.dev30957455498",
     "marin-finelog==0.2.22.dev31066648311",
     "marin-finelog-server==0.2.22.dev31066648311",
-    "marin-iris==0.2.73.dev30987879744",
+    "marin-iris[controller]==0.2.76.dev31155643335",
     "marin-iris-native==0.1.5.dev30223685542",
     "s3fs",
 ]
 
 [project.optional-dependencies]
 gpu = [
-    "marin-core[gpu]==0.2.73.dev30987879744; sys_platform == 'linux'",
+    "marin-core[gpu]==0.2.76.dev31155643335; sys_platform == 'linux'",
     # Preserve exp199's exact CUDA 13 environment. Use the direct x86 wheel to
     # bypass NVIDIA's nondeterministic PyPI placeholder downloader.
     "nvidia-cudnn-cu13 @ https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_x86_64.whl ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "nvidia-cudnn-cu13 @ https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_aarch64.whl ; sys_platform == 'linux' and platform_machine == 'aarch64'",
     "nvidia-nccl-cu13==2.30.7; sys_platform == 'linux'",
     "torch==2.11.0",
     "torchvision==0.26.0",
@@ -36,7 +37,10 @@ dev = []
 package = false
 fork-strategy = "fewest"
 prerelease = "allow"
-environments = ["sys_platform == 'linux'"]
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
 
 [[tool.uv.index]]
 name = "pytorch-cu128"

@@ -1,4 +1,4 @@
-# Exp232 rollout-v2 checkpoint evaluation
+# Exp232 2026-08-18 rollout-v2 checkpoint evaluation
 
 This directory evaluates the final `m2-p06-aug` and `m1-p02-aug` checkpoints from exp232, plus the exp75 E8 checkpoint used to validate the evaluation path. All three checkpoints are verified and evaluated in place from existing CoreWeave S3 objects. No checkpoint is copied to Hugging Face or GCS.
 

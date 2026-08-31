@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "description": "Current eval-set aggregates retained independently of the legacy-554 comparison. Viral and nonviral partitions are included when present.",
+  "subset_units": {
+    "eval-val": 97,
+    "eval-denovo": 19,
+    "eval-val-nonviral": 91,
+    "eval-val-viral": 6,
+    "eval-denovo-nonviral": 19
+  },
+  "sources": {
+    "per_protein_metrics": {
+      "path": "data/coreweave_results/marinfold_precision.csv.gz",
+      "sha256": "1709007bb591bc61593d1638173a9a968df2be78490a5a884a0592f04e7516f4"
+    },
+    "subset_manifest": {
+      "path": "data/coreweave_results/evaluation_subsets.csv",
+      "sha256": "50e1e7e956c8e5ba2c41aca3c91a09cf7fab0c76f5da0ae93d900d1319941ecd"
+    }
+  },
+  "output_sha256": "acb1f2b9166eee738f3bf95645b6f655f9fe3df4696f1d40c81ca51ace89f36d"
+}

@@ -49,21 +49,17 @@ from zephyr.dataset import Dataset, FileEntry
 from zephyr.execution import ZephyrContext
 from zephyr.readers import load_file
 
+from experiments.exp232_sweep_cv1_decontam.training_contract import (
+    CACHE_VERSION,
+    CONTACTS_V1_TOKEN_IDS,
+    TEXT_KEY,
+    TOKENIZER,
+    VOCAB_SIZE,
+)
+
 logger = logging.getLogger(__name__)
 
-CACHE_VERSION = "2026.08.14"
-TOKENIZER = "eczech/contacts-v1-tokenizer-5d68a24a899f"
-TEXT_KEY = "document"
-VOCAB_SIZE = 2845
-EXPECTED_TOKEN_IDS = {
-    "<pad>": 0,
-    "<eos>": 1,
-    "<contacts-v1>": 2,
-    "<begin_sequence>": 8,
-    "<begin_statements>": 9,
-    "<end>": 10,
-    "<UNK>": 2844,
-}
+EXPECTED_TOKEN_IDS = CONTACTS_V1_TOKEN_IDS
 
 EXPERIMENT_PREFIX = "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam"
 DATA_PREFIX = f"{EXPERIMENT_PREFIX}/data"

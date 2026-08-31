@@ -55,9 +55,11 @@ RESIDUAL_COVERAGE_GATES = (0.50, 0.40, 0.30, 0.20, 0.0)
 #: #232's two pinned corpus prefixes and the document counts its tokenizer
 #: requires before it will write a cache.
 EXP232_TOKENIZE = (
-    U.EXPERIMENTS / "exp232_sweep_cv1_decontam" / "exp232_tokenize.py"
+    U.EXPERIMENTS / "exp232_sweep_cv1_decontam" / "gpu" / "exp232_tokenize.py"
 )
-EXP232_SWEEP = U.EXPERIMENTS / "exp232_sweep_cv1_decontam" / "exp232_sweep.py"
+EXP232_CONTRACT = (
+    U.EXPERIMENTS / "exp232_sweep_cv1_decontam" / "training_contract.py"
+)
 EXPECTED_PREFIXES = (
     "data/document_structures/contacts_v1_decontam/train",
     "contacts_v1_esm_atlas_decontam/train",
@@ -224,7 +226,7 @@ def residual_leakage(residual: pd.DataFrame) -> dict:
 def check_corpora() -> dict:
     """Links 3 and 4 -- published sizes, and the pins exp232 asserts on them."""
     tokenize_source = EXP232_TOKENIZE.read_text()
-    sweep_source = EXP232_SWEEP.read_text()
+    contract_source = EXP232_CONTRACT.read_text()
 
     def pinned(source: str, pattern: str) -> list[int]:
         return sorted({
@@ -233,7 +235,7 @@ def check_corpora() -> dict:
         } - {0})  # the smoke-test corpus derives its count at run time (0 here)
 
     expected_documents = pinned(tokenize_source, r"expected_documents=([\d_]+)")
-    sweep_documents = pinned(sweep_source, r"^(?:AFDB|ESM)_DOCUMENTS = ([\d_]+)")
+    sweep_documents = pinned(contract_source, r"^(?:AFDB|ESM)_DOCUMENTS = ([\d_]+)")
     published = sorted(U.PUBLISHED_CORPUS_ROWS.values())
     return {
         "published_rows": U.PUBLISHED_CORPUS_ROWS,
