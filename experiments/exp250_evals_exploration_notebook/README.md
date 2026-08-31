@@ -201,31 +201,45 @@ Selecting `eval-test` prints the read-budget warning and the pointer to
 `#245` reporting rules (designed and natural never pooled, baseline comparisons only where the
 baselines' cutoffs allow it, ~0.005 is a tie) are in the §1 prose and in the split of the output.
 
-### 4. Publishing #232's best decontaminated checkpoint
+### 4. Publishing #232's best decontaminated checkpoints
 
 Parts 1–2 could always read `#232 m2-p06`'s published *scores*, but nothing could fold with it: the
 weights existed only in CoreWeave S3, in the account that trained them
-(`hf_repo_id=None` in both #232's and #245's pinned specs), and this workstation has no credentials
-for `marin-us-east-02a`. [`publish_exp232_m2_p06.py`](publish_exp232_m2_p06.py) copies the 5.9 GiB
-export to `checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199/` on the public
-bucket, from a `cw-us-east-02a` pod beside the bytes rather than through the workstation's
-~2.5 MB/s uplink.
+(`hf_repo_id=None` in every pinned spec), and this workstation has no credentials
+for `marin-us-east-02a`. [`publish_exp232_m2_p06.py`](publish_exp232_m2_p06.py) copies a 5.9 GiB
+export to the public bucket from a `cw-us-east-02a` pod beside the bytes rather than through the
+workstation's ~2.5 MB/s uplink.
+
+Two checkpoints have gone through it, and `--checkpoint` selects between them:
+
+| key | run | step | legacy-554 R | bucket path |
+|---|---|---:|---:|---|
+| `sweep` | `prot-exp232-cw-cv1-decontam-s02-m2-p06-aug` | 145,199 | 0.5916 | `checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199/` |
+| `training` | `prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1` | 363,000 | **0.6051** | `checkpoints/prot-exp232-trc-…-lr005-us-east1/hf/step-363000/` |
+
+The `training` checkpoint is #232's TRC continuation of the same `m2-p06` point: the sweep run's
+full Levanter state restored at step 333,960, peak LR dropped to 5 %, augmentation clamped at
+100 %, then the original cooldown. #232's 2026-08-24 evaluation scores it 0.6051 / 0.5517 (legacy
+554 / eval-val) against the sweep final's 0.5916 / 0.5203, and it is what every figure here is
+now drawn from.
 
 It is exp238's `publish_cooldown.py` adapted — same mechanism, same three pre-upload checks, each
 of which is silent when it goes wrong:
 
 | check | result |
 |---|---|
-| every object matches the size + S3 ETag #244/#245 pinned | 6/6 |
+| every object matches the size + S3 ETag the evaluation pinned | 6/6, for each checkpoint |
 | `config.json` rope restated in transformers-4.x terms | `rope_theta=500000`, `rope_scaling=llama3` (4.x would otherwise silently use the Qwen3 default 10000) |
 | contacts-v1 vocabulary has not drifted | 2,845 tokens, `<contact>`/`<p0>`/`<p1999>` ids unmoved |
 
-[`test_publish_specs.py`](test_publish_specs.py) asserts the by-value manifest still equals #245's
-`M2_P06_CHECKPOINT` and is not `m1_p02`'s — the two finals differ only in their weight ETags, so a
-copy-paste slip would publish the wrong checkpoint under the right name.
+[`test_publish_specs.py`](test_publish_specs.py) asserts each by-value manifest still equals the
+spec its evaluation pinned — #245's `M2_P06_CHECKPOINT` for the sweep, #232's 2026-08-24
+`TRAIN_CHECKPOINT` for the training run — and that neither is `m1_p02`'s or the other's. The
+finals differ only in their weight ETags, so a copy-paste slip would publish the wrong checkpoint
+under the right name.
 
-Registered as `contacts-v1-exp232-m2-p06-1.5B` in `MODELS.yaml`, and it is deliberately **not** the
-default: the contaminated cooldown scores higher everywhere (0.631 vs 0.5916 on the legacy 554,
+Registered as `contacts-v1-exp232-m2-p06-1.5B` and `contacts-v1-exp232-m2-p06-train-1.5B` in
+`MODELS.yaml`, and neither is the default: the contaminated cooldown scores higher everywhere (0.631 vs 0.5916 on the legacy 554,
 0.589 vs 0.520 on eval-val). This checkpoint is the one to reach for when the question is what the
 recipe achieves on proteins it provably cannot have seen — #213 measured the eval set as 58 %
 homologous to #199's training data, and that objection does not apply here.

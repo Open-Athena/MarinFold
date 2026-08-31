@@ -128,6 +128,11 @@ def run_shard(arguments) -> int:
                              "below would be attached to the wrong protein")
         score = np.nan_to_num(np.asarray(record["score_matrix"], dtype=float), nan=-1e9)
         votes = np.where(score > -1e8, np.floor(score), 0).astype(np.int16)
+        # Store first, then score what was stored. The matrix is written as float32 and the
+        # metric ranks near-ties by a stable sort, so metrics taken at float64 can put a
+        # different pair at the cut boundary than anyone re-ranking the stored file will —
+        # two of 333 proteins moved that way before this line cast first.
+        score = score.astype(np.float32).astype(float)
         np.savez_compressed(out / "dense" / f"{row.dataset}__{row.stem}.npz",
                             score=score.astype(np.float32), votes=votes)
         metrics = figlib.score_metrics(score, truth[(row.dataset, row.stem)])
@@ -153,6 +158,41 @@ def run_shard(arguments) -> int:
     (out / f"manifest-shard{arguments.shard:02d}.json").write_text(
         json.dumps(manifest, indent=2) + "\n")
     log(f"shard {arguments.shard} done in {(time.time() - started) / 60:.1f} min")
+    return 0
+
+
+def recompute_metrics(arguments) -> int:
+    """Rewrite each shard's metrics from the matrices it already wrote. CPU only.
+
+    The matrices are the artefact other work reads — Helico conditions on them, and its exporter
+    refuses an arm whose precision does not reproduce the metrics published beside it. That check
+    is only meaningful if the metrics were taken from the stored bytes, so this exists to restate
+    them that way for a run that predates the cast above.
+    """
+    import numpy as np
+    import pandas as pd
+
+    out = OUT_ROOT / arguments.tag
+    inputs = figlib.Inputs()
+    truth = ground_truth(inputs)
+    shards = sorted(out.glob("metrics-shard*.csv"))
+    if not shards:
+        raise SystemExit(f"no metrics under {out}")
+    for shard in shards:
+        previous = pd.read_csv(shard)
+        rows, changed = [], 0
+        for (dataset, stem), group in previous.groupby(["dataset", "stem"], sort=False):
+            matrix = np.load(out / "dense" / f"{dataset}__{stem}.npz")["score"].astype(float)
+            metrics = figlib.score_metrics(matrix, truth[(dataset, stem)])
+            merged = metrics.assign(dataset=dataset, stem=stem,
+                                    eval_set=group.eval_set.iloc[0], L=group.L.iloc[0])
+            before = group.set_index(["range", "cut"]).value
+            after = merged.set_index(["range", "cut"]).value
+            changed += int((before.reindex(after.index) - after).abs().gt(1e-12).sum())
+            rows.append(merged)
+        frame = pd.concat(rows, ignore_index=True)[previous.columns]
+        frame.to_csv(shard, index=False)
+        log(f"{shard.name}: {frame.stem.nunique()} proteins, {changed} metric values moved")
     return 0
 
 
@@ -209,11 +249,15 @@ def main() -> int:
     parser.add_argument("--num-shards", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="smoke test: this many targets")
     parser.add_argument("--force", action="store_true", help="rescore proteins already written")
+    parser.add_argument("--recompute-metrics", action="store_true",
+                        help="rewrite the shard metrics from the stored matrices, no GPU")
     arguments = parser.parse_args()
 
     arguments.model = arguments.model or (VALIDATION_MODEL if arguments.validate
                                           else DEFAULT_MODEL)
     arguments.tag = arguments.tag or (arguments.model + ("-validate" if arguments.validate else ""))
+    if arguments.recompute_metrics:
+        return recompute_metrics(arguments)
     if arguments.gpus:
         return fan_out(arguments)
     return run_shard(arguments)
