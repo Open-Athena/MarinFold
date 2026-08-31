@@ -3,6 +3,9 @@ PRIVATE_INFRA_NOTES.md
 # for monitoring state files, and by debugging / TDD skills generally)
 scratch/
 
+# macOS Finder metadata
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
