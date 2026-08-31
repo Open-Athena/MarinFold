@@ -35,12 +35,11 @@ MARGIN = 4          # points around the whole figure
 #: (panel stem in output/, optional placeholder caption when the file is absent).
 LAYOUT = {
     "figure_1": {
-        "caption": ("Document format with the structure it describes (a), and Top7's "
-                    "ground-truth (b) and predicted (c) contact maps."),
-        # One row of three. `training_composition` is still written by pair 5 and is not in any
-        # manuscript figure; add it back here to give it one.
-        "rows": [[("document_format", None), ("top7_map_ground_truth", None),
-                  ("top7_map_predicted", None)]],
+        "caption": ("Document format (a), and Top7's ground-truth and predicted contact maps "
+                    "with the deposited structure inset (b)."),
+        # `training_composition` is still written by pair 5 and is not in any manuscript figure;
+        # add it to a row here to give it one.
+        "rows": [[("document_format", None), ("top7_maps", None)]],
     },
     "figure_2": {
         "caption": "Contact-prediction accuracy on natural monomers (a) and de novo designs (b).",
