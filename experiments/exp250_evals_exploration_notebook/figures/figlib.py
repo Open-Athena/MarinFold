@@ -53,13 +53,15 @@ HELICO = ("https://huggingface.co/buckets/timodonnell/helico-experiments/resolve
 #: **Drawn at final size.** Figure 1 is two panels across a 468 pt (6.5 in) column, so a cell is
 #: (468 - 2*MARGIN - GUTTER) / 2 = 227 pt = 3.16 in wide. Drawing wider and letting the assembler
 #: scale the row down shrinks the type with it, so the width below is the width on the page.
-FIG1_PANEL = (3.16, 1.55)
+#: The height carries a strip of clear space above the content: the assembler letters each panel
+#: over its top-left corner, and at 1.55 in the letter landed on the left map's axis label.
+FIG1_PANEL = (3.16, 1.70)
 #: The map panel holds both maps side by side. Two rectangles of identical size, placed
 #: explicitly: `figure.colorbar` carving space out of one axes, or a layout engine sizing each
 #: around whatever decorations it carries, is what made these two different widths before.
-FIG1_MAP_RECTS = ((0.126, 0.232, 0.348, 0.710), (0.524, 0.232, 0.348, 0.710))
+FIG1_MAP_RECTS = ((0.145, 0.235, 0.335, 0.623), (0.530, 0.235, 0.335, 0.623))
 #: The colourbar, which describes the predicted map only — the ground truth is binary.
-FIG1_BAR_RECT = (0.888, 0.232, 0.022, 0.710)
+FIG1_BAR_RECT = (0.878, 0.235, 0.020, 0.623)
 
 
 _TRACKED_PACKAGES = ("marinfold", "torch", "transformers", "vllm", "numpy", "pandas", "matplotlib")
