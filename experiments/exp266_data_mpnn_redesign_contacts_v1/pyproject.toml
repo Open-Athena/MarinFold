@@ -1,0 +1,60 @@
+[project]
+name = "exp266-data-mpnn-redesign-contacts-v1"
+version = "0.1.0"
+description = "ProteinMPNN-redesign the decontaminated contacts-v1 AFDB backbones (8 sequences each) and regenerate contacts-v1 documents for every design. Calls into marinfold's contacts_v1 generator (no re-implementation)."
+requires-python = ">=3.12,<3.13"   # marin-zephyr needs >=3.12; proteinmpnn caps at <3.13
+# Base install covers Stage A (keep-list), Stage C (document generation) and
+# the marin-zephyr runtime. The GPU redesign stage is the `mpnn` extra so the
+# Iris CPU workers that run Stage C never resolve torch.
+dependencies = [
+    "marinfold[contacts-v1]",  # contacts_v1.generate_document + pyconfind
+    "pyconfind[fast]",         # numba JIT contact backend for the at-scale run
+    "gemmi>=0.6",
+    "numpy",
+    "pyarrow",
+    "duckdb",                  # Stage A: keep-list join in SQL
+    "fsspec",
+    "gcsfs",
+    "marin-zephyr",
+    # See exp53: prerelease=allow otherwise floats httpx to 1.0.dev*, whose
+    # Client() dropped the `timeout` kwarg marin-iris's GCP provider passes.
+    "httpx>=0.28.1,<1",
+]
+
+[project.optional-dependencies]
+# Stage B only (CoreWeave H100). `proteinmpnn` is Markus Sommer's MIT-licensed
+# repackaging of dauparas/ProteinMPNN — same model code and same shipped
+# `v_48_020` weights, installable instead of vendored.
+mpnn = ["torch>=2.1.2", "proteinmpnn>=0.1.3"]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+# `proteinmpnn` 0.1.3 pins `numpy<2` while `marin-zephyr` requires `numpy>=2`,
+# so the two are unsatisfiable together. The pin is the packager's caution, not
+# a real constraint: ProteinMPNN's numpy use is basic and the module contains
+# none of the APIs numpy 2 removed (`np.float_`, `np.NaN`, `np.product`, ...).
+# `tests/test_redesign.py` runs the model under the overridden numpy, so a
+# regression here fails a test rather than corrupting a corpus.
+override-dependencies = ["numpy>=2.1"]
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+# Git deps (not local path) so the SAME pyproject resolves on remote Iris /
+# CoreWeave workers — matches exp53.
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold" }
+marin-zephyr = { git = "https://github.com/marin-community/marin.git", subdirectory = "lib/zephyr" }
+
+[tool.pytest.ini_options]
+markers = [
+    "network: tests that require internet (HF / GCS reads). Skip with `pytest -m 'not network'`.",
+    "gpu: tests that need a CUDA device + the `mpnn` extra.",
+]

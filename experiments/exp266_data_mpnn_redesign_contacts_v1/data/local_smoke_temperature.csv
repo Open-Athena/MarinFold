@@ -1,0 +1,5 @@
+temperature,n_designs,mean_identity_to_native,mean_mpnn_score
+0.1,96,0.467,0.845
+0.2,96,0.457,0.876
+0.3,96,0.451,0.919
+0.5,96,0.434,1.088
