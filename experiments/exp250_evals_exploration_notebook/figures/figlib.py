@@ -304,12 +304,17 @@ def describe(name: str) -> dict:
     if metadata.get("model"):
         model = metadata["model"]
         print("\nmodel")
+        if isinstance(model, str):
+            # A dataset can name the model it is about without having loaded one; only
+            # `model_identity` fills in the fields below.
+            model = {"nickname": model}
         print(f"   {'nickname':24s} {model['nickname']}")
-        print(f"   {'rope_theta':24s} {model['rope_theta']}"
-              + ("   ** expected 500000 — this dataset came from a mis-loaded model **"
-                 if model["rope_theta"] != 500_000 else ""))
-        print(f"   {'vocab_size':24s} {model['vocab_size']}")
-        print(f"   {'weights':24s} {model['weight_bytes'] / 2**30:.2f} GiB")
+        if "rope_theta" in model:
+            print(f"   {'rope_theta':24s} {model['rope_theta']}"
+                  + ("   ** expected 500000 — this dataset came from a mis-loaded model **"
+                     if model["rope_theta"] != 500_000 else ""))
+            print(f"   {'vocab_size':24s} {model['vocab_size']}")
+            print(f"   {'weights':24s} {model['weight_bytes'] / 2**30:.2f} GiB")
     print("\ninputs")
     for record in metadata["inputs"]:
         source = record.get("url") or record.get("path")
