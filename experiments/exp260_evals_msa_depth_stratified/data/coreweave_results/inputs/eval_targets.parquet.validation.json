@@ -1,0 +1,14 @@
+{
+  "ground_truth_unique_units": 887,
+  "ground_truth_units": 887,
+  "overlapping_stems_retained": 112,
+  "subset_sizes": {
+    "eval-denovo": 19,
+    "eval-test": 217,
+    "eval-val": 97,
+    "legacy_554": 554
+  },
+  "unique_stems": 773,
+  "unique_units": 887,
+  "units": 887
+}

@@ -1,0 +1,3296 @@
+{
+ "cameo_hard__8jvx_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8jvx"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.5,
+   "computed_lddt": 0.674,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.354,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.468,
+   "computed_lddt": 0.631,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.406,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.744,
+   "computed_lddt": 0.833,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.636,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.583,
+   "computed_lddt": 0.709,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.457,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.423,
+   "computed_lddt": 0.631,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.25,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.385,
+   "computed_lddt": 0.628,
+   "computed_n_scored_residues": 39,
+   "computed_tm_score": 0.235,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8jvx_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8raj_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8raj"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.048,
+   "computed_lddt": 0.674,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.067,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.04,
+   "computed_lddt": 0.712,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.05,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.04,
+   "computed_lddt": 0.724,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.051,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.089,
+   "computed_lddt": 0.703,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.097,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.012,
+   "computed_lddt": 0.727,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.039,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.0,
+   "computed_lddt": 0.708,
+   "computed_n_scored_residues": 62,
+   "computed_tm_score": 0.037,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8raj_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8s89_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8s89"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.736,
+   "computed_lddt": 0.824,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.873,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.82,
+   "computed_lddt": 0.935,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.959,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.856,
+   "computed_lddt": 0.944,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.968,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.897,
+   "computed_lddt": 0.959,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.976,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.926,
+   "computed_lddt": 0.966,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.983,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.925,
+   "computed_lddt": 0.966,
+   "computed_n_scored_residues": 401,
+   "computed_tm_score": 0.983,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8s89_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8u1a_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8u1a"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.011,
+   "computed_lddt": 0.389,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.074,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.003,
+   "computed_lddt": 0.373,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.09,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.85,
+   "computed_lddt": 0.852,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.953,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.065,
+   "computed_lddt": 0.406,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.214,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.525,
+   "computed_lddt": 0.745,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.798,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.535,
+   "computed_lddt": 0.753,
+   "computed_n_scored_residues": 324,
+   "computed_tm_score": 0.808,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8u1a_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8vd6_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8vd6"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.267,
+   "computed_lddt": 0.706,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.45,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.273,
+   "computed_lddt": 0.721,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.459,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.833,
+   "computed_lddt": 0.844,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.921,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.401,
+   "computed_lddt": 0.765,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.58,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.323,
+   "computed_lddt": 0.732,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.521,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.323,
+   "computed_lddt": 0.732,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.521,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vd6_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8vej_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8vej"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.442,
+   "computed_lddt": 0.67,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.686,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.863,
+   "computed_lddt": 0.871,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.948,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.827,
+   "computed_lddt": 0.861,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.936,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.869,
+   "computed_lddt": 0.89,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.952,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.919,
+   "computed_lddt": 0.895,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.967,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.92,
+   "computed_lddt": 0.895,
+   "computed_n_scored_residues": 242,
+   "computed_tm_score": 0.967,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8vej_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8wwc_C": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8wwc"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.867,
+   "computed_lddt": 0.834,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.899,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.79,
+   "computed_lddt": 0.813,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.856,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.887,
+   "computed_lddt": 0.878,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.926,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.85,
+   "computed_lddt": 0.855,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.895,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.841,
+   "computed_lddt": 0.844,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.882,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.852,
+   "computed_lddt": 0.842,
+   "computed_n_scored_residues": 113,
+   "computed_tm_score": 0.888,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8wwc_C/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8xtn_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8xtn"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.205,
+   "computed_lddt": 0.382,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.078,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.152,
+   "computed_lddt": 0.378,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.047,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.265,
+   "computed_lddt": 0.425,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.1,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.083,
+   "computed_lddt": 0.425,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.033,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.182,
+   "computed_lddt": 0.423,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.067,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.174,
+   "computed_lddt": 0.422,
+   "computed_n_scored_residues": 33,
+   "computed_tm_score": 0.066,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8xtn_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__8yl4_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8yl4"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.227,
+   "computed_lddt": 0.45,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.405,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.668,
+   "computed_lddt": 0.758,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.818,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.899,
+   "computed_lddt": 0.892,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.944,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.925,
+   "computed_lddt": 0.916,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.956,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.883,
+   "computed_lddt": 0.896,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.924,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.891,
+   "computed_lddt": 0.895,
+   "computed_n_scored_residues": 207,
+   "computed_tm_score": 0.927,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__8yl4_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9de9_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9de9"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.88,
+   "computed_lddt": 0.873,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.882,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.917,
+   "computed_lddt": 0.891,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.9,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.91,
+   "computed_lddt": 0.896,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.906,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.914,
+   "computed_lddt": 0.907,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.91,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.944,
+   "computed_lddt": 0.939,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.938,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.923,
+   "computed_lddt": 0.919,
+   "computed_n_scored_residues": 81,
+   "computed_tm_score": 0.92,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9de9_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9deb_E": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9deb"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.958,
+   "computed_lddt": 0.926,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.952,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.958,
+   "computed_lddt": 0.934,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.961,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.961,
+   "computed_lddt": 0.939,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.963,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.946,
+   "computed_lddt": 0.941,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.953,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.985,
+   "computed_lddt": 0.966,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.973,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.985,
+   "computed_lddt": 0.966,
+   "computed_n_scored_residues": 83,
+   "computed_tm_score": 0.973,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deb_E/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9deg_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9deg"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.933,
+   "computed_lddt": 0.926,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.957,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.876,
+   "computed_lddt": 0.871,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.914,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.981,
+   "computed_lddt": 0.942,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.983,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.914,
+   "computed_lddt": 0.911,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.946,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.887,
+   "computed_lddt": 0.898,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.936,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.89,
+   "computed_lddt": 0.897,
+   "computed_n_scored_residues": 157,
+   "computed_tm_score": 0.939,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9deg_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9hac_B": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9hac"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.018,
+   "computed_lddt": 0.42,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.089,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.124,
+   "computed_lddt": 0.404,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.206,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.876,
+   "computed_lddt": 0.856,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.914,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.852,
+   "computed_lddt": 0.844,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.896,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.87,
+   "computed_lddt": 0.858,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.911,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.858,
+   "computed_lddt": 0.855,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.901,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9hac_B/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9had_C": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9had"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.956,
+   "computed_lddt": 0.937,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.968,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.968,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.972,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.963,
+   "computed_lddt": 0.941,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.971,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.988,
+   "computed_lddt": 0.964,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.981,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.981,
+   "computed_lddt": 0.963,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.977,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.961,
+   "computed_lddt": 0.955,
+   "computed_n_scored_residues": 108,
+   "computed_tm_score": 0.964,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9had_C/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9j46_F": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9j46"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.183,
+   "computed_lddt": 0.356,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.29,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.169,
+   "computed_lddt": 0.374,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.269,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.849,
+   "computed_lddt": 0.895,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.89,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.476,
+   "computed_lddt": 0.646,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.575,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.889,
+   "computed_lddt": 0.937,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.917,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.375,
+   "computed_lddt": 0.463,
+   "computed_n_scored_residues": 124,
+   "computed_tm_score": 0.503,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j46_F/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "cameo_hard__9j5h_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "9j5h"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.436,
+   "computed_lddt": 0.582,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.233,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.407,
+   "computed_lddt": 0.561,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.206,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.593,
+   "computed_lddt": 0.671,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.406,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.75,
+   "computed_lddt": 0.791,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.583,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.436,
+   "computed_lddt": 0.595,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.205,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.443,
+   "computed_lddt": 0.6,
+   "computed_n_scored_residues": 35,
+   "computed_tm_score": 0.21,
+   "coverage": 1.0,
+   "file": "structures/cameo_hard__9j5h_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1043-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "CASP domain tarball (T1043-D1.pdb)"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.1,
+   "computed_lddt": 0.308,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.211,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.064,
+   "computed_lddt": 0.28,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.149,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.941,
+   "computed_lddt": 0.931,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.968,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.074,
+   "computed_lddt": 0.307,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.172,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.088,
+   "computed_lddt": 0.34,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.218,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.073,
+   "computed_lddt": 0.301,
+   "computed_n_scored_residues": 148,
+   "computed_tm_score": 0.165,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1043-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1113-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "7uyx"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.085,
+   "computed_lddt": 0.408,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.205,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.066,
+   "computed_lddt": 0.403,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.177,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.757,
+   "computed_lddt": 0.901,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.8,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.121,
+   "computed_lddt": 0.474,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.255,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.055,
+   "computed_lddt": 0.489,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.159,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.031,
+   "computed_lddt": 0.403,
+   "computed_n_scored_residues": 167,
+   "computed_tm_score": 0.123,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1113-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1122-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8bbt"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.033,
+   "computed_lddt": 0.415,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.167,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.035,
+   "computed_lddt": 0.409,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.161,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.663,
+   "computed_lddt": 0.847,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.754,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.349,
+   "computed_lddt": 0.572,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.493,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.353,
+   "computed_lddt": 0.568,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.47,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.392,
+   "computed_lddt": 0.576,
+   "computed_n_scored_residues": 230,
+   "computed_tm_score": 0.507,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1122-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1123-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "CASP domain tarball (T1123-D1.pdb)"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.023,
+   "computed_lddt": 0.205,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.139,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.126,
+   "computed_lddt": 0.303,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.285,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.908,
+   "computed_lddt": 0.904,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.96,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.044,
+   "computed_lddt": 0.257,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.16,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.758,
+   "computed_lddt": 0.771,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.862,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.095,
+   "computed_lddt": 0.323,
+   "computed_n_scored_residues": 214,
+   "computed_tm_score": 0.241,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1123-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D1": [
+  {
+   "arm": "ground_truth",
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.106,
+   "computed_lddt": 0.396,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.2,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.127,
+   "computed_lddt": 0.437,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.231,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.836,
+   "computed_lddt": 0.88,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.892,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.455,
+   "computed_lddt": 0.547,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.534,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.08,
+   "computed_lddt": 0.43,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.181,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.114,
+   "computed_lddt": 0.422,
+   "computed_n_scored_residues": 134,
+   "computed_tm_score": 0.22,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D1/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D2": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.066,
+   "computed_lddt": 0.362,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.164,
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.286,
+   "computed_lddt": 0.408,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.42,
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.859,
+   "computed_lddt": 0.866,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.91,
+   "coverage": 0.9932,
+   "file": "structures/casp_fm__T1125-D2/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.526,
+   "computed_lddt": 0.544,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.615,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D2/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.575,
+   "computed_lddt": 0.604,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.672,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D2/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.491,
+   "computed_lddt": 0.562,
+   "computed_n_scored_residues": 147,
+   "computed_tm_score": 0.596,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D2/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D4": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.257,
+   "computed_lddt": 0.514,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.378,
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.585,
+   "computed_lddt": 0.685,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.654,
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.768,
+   "computed_lddt": 0.893,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.784,
+   "coverage": 0.9858,
+   "file": "structures/casp_fm__T1125-D4/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.585,
+   "computed_lddt": 0.692,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.658,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D4/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.559,
+   "computed_lddt": 0.694,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.618,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D4/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.529,
+   "computed_lddt": 0.685,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.603,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D4/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "casp_fm__T1125-D5": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8h2n"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.193,
+   "computed_lddt": 0.488,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.298,
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/helico_mf_L_363k.pdb",
+   "label": "Helico + MarinFold contacts (step 363k)"
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.054,
+   "computed_lddt": 0.45,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.158,
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/helico_off.pdb",
+   "label": "Helico, no contacts"
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.807,
+   "computed_lddt": 0.869,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.9,
+   "coverage": 0.9933,
+   "file": "structures/casp_fm__T1125-D5/helico_oracle.pdb",
+   "label": "Helico + ground-truth contacts"
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.146,
+   "computed_lddt": 0.6,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.252,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D5/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.119,
+   "computed_lddt": 0.554,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.236,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D5/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.169,
+   "computed_lddt": 0.572,
+   "computed_n_scored_residues": 149,
+   "computed_tm_score": 0.272,
+   "coverage": 1.0,
+   "file": "structures/casp_fm__T1125-D5/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__5sbj_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "5sbj"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.962,
+   "computed_lddt": 0.912,
+   "computed_n_scored_residues": 26,
+   "computed_tm_score": 0.725,
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.982,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.801,
+   "tm_score": 0.759
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.933,
+   "computed_lddt": 0.9,
+   "computed_n_scored_residues": 26,
+   "computed_tm_score": 0.698,
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/helico_mf_L.pdb",
+   "gdt_ts": 0.973,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.791,
+   "tm_score": 0.73
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.885,
+   "computed_lddt": 0.889,
+   "computed_n_scored_residues": 26,
+   "computed_tm_score": 0.67,
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/helico_off.pdb",
+   "gdt_ts": 0.893,
+   "label": "Helico, no contacts",
+   "lddt": 0.772,
+   "tm_score": 0.685
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.962,
+   "computed_lddt": 0.915,
+   "computed_n_scored_residues": 26,
+   "computed_tm_score": 0.718,
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/helico_oracle.pdb",
+   "gdt_ts": 0.982,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.803,
+   "tm_score": 0.752
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 1.0,
+   "computed_lddt": 0.97,
+   "computed_n_scored_residues": 28,
+   "computed_tm_score": 0.913,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__5sbj_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.865,
+   "computed_lddt": 0.85,
+   "computed_n_scored_residues": 26,
+   "computed_tm_score": 0.607,
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.865,
+   "computed_lddt": 0.861,
+   "computed_n_scored_residues": 26,
+   "computed_tm_score": 0.618,
+   "coverage": 0.9333,
+   "file": "structures/foldbench_monomer__5sbj_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__7ur7_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "7ur7"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.913,
+   "computed_lddt": 0.925,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.89,
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.897,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.84,
+   "tm_score": 0.894
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.913,
+   "computed_lddt": 0.929,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.893,
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/helico_mf_L.pdb",
+   "gdt_ts": 0.897,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.842,
+   "tm_score": 0.897
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.917,
+   "computed_lddt": 0.932,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.895,
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/helico_off.pdb",
+   "gdt_ts": 0.909,
+   "label": "Helico, no contacts",
+   "lddt": 0.863,
+   "tm_score": 0.9
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.913,
+   "computed_lddt": 0.933,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.9,
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/helico_oracle.pdb",
+   "gdt_ts": 0.913,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.852,
+   "tm_score": 0.905
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.917,
+   "computed_lddt": 0.943,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.901,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__7ur7_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.913,
+   "computed_lddt": 0.925,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.89,
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.905,
+   "computed_lddt": 0.907,
+   "computed_n_scored_residues": 63,
+   "computed_tm_score": 0.877,
+   "coverage": 0.9,
+   "file": "structures/foldbench_monomer__7ur7_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8ah9_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8ah9"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.974,
+   "computed_lddt": 0.959,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.971,
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.976,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.788,
+   "tm_score": 0.972
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.952,
+   "computed_lddt": 0.949,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.962,
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/helico_mf_L.pdb",
+   "gdt_ts": 0.946,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.79,
+   "tm_score": 0.963
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.957,
+   "computed_lddt": 0.948,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.966,
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/helico_off.pdb",
+   "gdt_ts": 0.959,
+   "label": "Helico, no contacts",
+   "lddt": 0.797,
+   "tm_score": 0.966
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.972,
+   "computed_lddt": 0.96,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.972,
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/helico_oracle.pdb",
+   "gdt_ts": 0.978,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.804,
+   "tm_score": 0.972
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.967,
+   "computed_lddt": 0.953,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.97,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8ah9_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.974,
+   "computed_lddt": 0.96,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.977,
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.948,
+   "computed_lddt": 0.943,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.954,
+   "coverage": 0.9583,
+   "file": "structures/foldbench_monomer__8ah9_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8eov_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8eov"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.899,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.931,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.903,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.879,
+   "tm_score": 0.948
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.896,
+   "computed_lddt": 0.941,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.929,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/helico_mf_L.pdb",
+   "gdt_ts": 0.899,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.87,
+   "tm_score": 0.946
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.912,
+   "computed_lddt": 0.955,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.944,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/helico_off.pdb",
+   "gdt_ts": 0.921,
+   "label": "Helico, no contacts",
+   "lddt": 0.889,
+   "tm_score": 0.96
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.962,
+   "computed_lddt": 0.966,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.976,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/helico_oracle.pdb",
+   "gdt_ts": 0.971,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.899,
+   "tm_score": 0.978
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.951,
+   "computed_lddt": 0.963,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.971,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.885,
+   "computed_lddt": 0.951,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.929,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.885,
+   "computed_lddt": 0.951,
+   "computed_n_scored_residues": 139,
+   "computed_tm_score": 0.929,
+   "coverage": 0.9521,
+   "file": "structures/foldbench_monomer__8eov_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8fjf_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8fjf"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.134,
+   "computed_lddt": 0.625,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.221,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.134,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.575,
+   "tm_score": 0.446
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.959,
+   "computed_lddt": 0.933,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.964,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/helico_mf_L.pdb",
+   "gdt_ts": 0.957,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.865,
+   "tm_score": 0.964
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.963,
+   "computed_lddt": 0.939,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.97,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/helico_off.pdb",
+   "gdt_ts": 0.963,
+   "label": "Helico, no contacts",
+   "lddt": 0.877,
+   "tm_score": 0.971
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.969,
+   "computed_lddt": 0.946,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.971,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/helico_oracle.pdb",
+   "gdt_ts": 0.967,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.885,
+   "tm_score": 0.971
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.963,
+   "computed_lddt": 0.952,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.973,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.963,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.973,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.963,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 127,
+   "computed_tm_score": 0.973,
+   "coverage": 0.9478,
+   "file": "structures/foldbench_monomer__8fjf_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8gac_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8gac"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.799,
+   "computed_lddt": 0.849,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.838,
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.752,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.768,
+   "tm_score": 0.853
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.847,
+   "computed_lddt": 0.879,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.892,
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/helico_mf_L.pdb",
+   "gdt_ts": 0.842,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.797,
+   "tm_score": 0.896
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.9,
+   "computed_lddt": 0.911,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.925,
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/helico_off.pdb",
+   "gdt_ts": 0.898,
+   "label": "Helico, no contacts",
+   "lddt": 0.819,
+   "tm_score": 0.931
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.9,
+   "computed_lddt": 0.913,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.929,
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/helico_oracle.pdb",
+   "gdt_ts": 0.917,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.83,
+   "tm_score": 0.937
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.925,
+   "computed_lddt": 0.953,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.942,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8gac_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.92,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.936,
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.92,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 103,
+   "computed_tm_score": 0.936,
+   "coverage": 0.9717,
+   "file": "structures/foldbench_monomer__8gac_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8ii8_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8ii8"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.369,
+   "computed_lddt": 0.58,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.588,
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.37,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.525,
+   "tm_score": 0.666
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.453,
+   "computed_lddt": 0.594,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.642,
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_mf_L.pdb",
+   "gdt_ts": 0.403,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.534,
+   "tm_score": 0.677
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.397,
+   "computed_lddt": 0.578,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.596,
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_off.pdb",
+   "gdt_ts": 0.351,
+   "label": "Helico, no contacts",
+   "lddt": 0.504,
+   "tm_score": 0.651
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.96,
+   "computed_lddt": 0.947,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.983,
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/helico_oracle.pdb",
+   "gdt_ts": 0.964,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.883,
+   "tm_score": 0.985
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.671,
+   "computed_lddt": 0.745,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.794,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8ii8_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.514,
+   "computed_lddt": 0.652,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.64,
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.508,
+   "computed_lddt": 0.64,
+   "computed_n_scored_residues": 225,
+   "computed_tm_score": 0.63,
+   "coverage": 0.9956,
+   "file": "structures/foldbench_monomer__8ii8_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8k7z_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8k7z"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.355,
+   "computed_lddt": 0.442,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.513,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.192,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.418,
+   "tm_score": 0.534
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.247,
+   "computed_lddt": 0.516,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.39,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/helico_mf_L.pdb",
+   "gdt_ts": 0.118,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.476,
+   "tm_score": 0.498
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.839,
+   "computed_lddt": 0.861,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.923,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/helico_off.pdb",
+   "gdt_ts": 0.818,
+   "label": "Helico, no contacts",
+   "lddt": 0.819,
+   "tm_score": 0.922
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.959,
+   "computed_lddt": 0.949,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.97,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/helico_oracle.pdb",
+   "gdt_ts": 0.943,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.913,
+   "tm_score": 0.968
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.913,
+   "computed_lddt": 0.936,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.959,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.945,
+   "computed_lddt": 0.95,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.971,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.933,
+   "computed_lddt": 0.943,
+   "computed_n_scored_residues": 172,
+   "computed_tm_score": 0.966,
+   "coverage": 0.9556,
+   "file": "structures/foldbench_monomer__8k7z_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8k83_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9779,
+   "file": "structures/foldbench_monomer__8k83_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8k83"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.918,
+   "computed_lddt": 0.913,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.954,
+   "coverage": 0.9613,
+   "file": "structures/foldbench_monomer__8k83_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.871,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.856,
+   "tm_score": 0.944
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.905,
+   "computed_lddt": 0.914,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.952,
+   "coverage": 0.9613,
+   "file": "structures/foldbench_monomer__8k83_A/helico_mf_L.pdb",
+   "gdt_ts": 0.865,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.856,
+   "tm_score": 0.94
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.872,
+   "computed_lddt": 0.914,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.938,
+   "coverage": 0.9613,
+   "file": "structures/foldbench_monomer__8k83_A/helico_off.pdb",
+   "gdt_ts": 0.891,
+   "label": "Helico, no contacts",
+   "lddt": 0.882,
+   "tm_score": 0.955
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.849,
+   "computed_lddt": 0.898,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.936,
+   "coverage": 0.9613,
+   "file": "structures/foldbench_monomer__8k83_A/helico_oracle.pdb",
+   "gdt_ts": 0.878,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.851,
+   "tm_score": 0.944
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.883,
+   "computed_lddt": 0.939,
+   "computed_n_scored_residues": 177,
+   "computed_tm_score": 0.946,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8k83_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.954,
+   "computed_lddt": 0.971,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.976,
+   "coverage": 0.9613,
+   "file": "structures/foldbench_monomer__8k83_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.953,
+   "computed_lddt": 0.97,
+   "computed_n_scored_residues": 174,
+   "computed_tm_score": 0.976,
+   "coverage": 0.9613,
+   "file": "structures/foldbench_monomer__8k83_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8ka7_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8ka7"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.659,
+   "computed_lddt": 0.76,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.779,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.639,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.705,
+   "tm_score": 0.78
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.509,
+   "computed_lddt": 0.554,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.633,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/helico_mf_L.pdb",
+   "gdt_ts": 0.483,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.521,
+   "tm_score": 0.637
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.954,
+   "computed_lddt": 0.938,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.962,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/helico_off.pdb",
+   "gdt_ts": 0.957,
+   "label": "Helico, no contacts",
+   "lddt": 0.874,
+   "tm_score": 0.964
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.959,
+   "computed_lddt": 0.939,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.967,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/helico_oracle.pdb",
+   "gdt_ts": 0.97,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.88,
+   "tm_score": 0.969
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.922,
+   "computed_lddt": 0.95,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.949,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.652,
+   "computed_lddt": 0.779,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.762,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.654,
+   "computed_lddt": 0.78,
+   "computed_n_scored_residues": 115,
+   "computed_tm_score": 0.762,
+   "coverage": 0.9274,
+   "file": "structures/foldbench_monomer__8ka7_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8kcj_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8kcj"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.912,
+   "computed_lddt": 0.921,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.939,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.813,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.867,
+   "tm_score": 0.94
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.906,
+   "computed_lddt": 0.918,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.94,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/helico_mf_L.pdb",
+   "gdt_ts": 0.823,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.864,
+   "tm_score": 0.94
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.905,
+   "computed_lddt": 0.918,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.938,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/helico_off.pdb",
+   "gdt_ts": 0.834,
+   "label": "Helico, no contacts",
+   "lddt": 0.863,
+   "tm_score": 0.938
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.906,
+   "computed_lddt": 0.932,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.94,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/helico_oracle.pdb",
+   "gdt_ts": 0.823,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.88,
+   "tm_score": 0.943
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.916,
+   "computed_lddt": 0.937,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.948,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.936,
+   "computed_lddt": 0.948,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.955,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.936,
+   "computed_lddt": 0.948,
+   "computed_n_scored_residues": 179,
+   "computed_tm_score": 0.954,
+   "coverage": 0.989,
+   "file": "structures/foldbench_monomer__8kcj_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8oxk_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8oxk"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.33,
+   "computed_lddt": 0.461,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.411,
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.322,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.436,
+   "tm_score": 0.474
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.335,
+   "computed_lddt": 0.472,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.419,
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_mf_L.pdb",
+   "gdt_ts": 0.306,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.43,
+   "tm_score": 0.501
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.152,
+   "computed_lddt": 0.333,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.2,
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_off.pdb",
+   "gdt_ts": 0.152,
+   "label": "Helico, no contacts",
+   "lddt": 0.316,
+   "tm_score": 0.377
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.957,
+   "computed_lddt": 0.938,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.951,
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/helico_oracle.pdb",
+   "gdt_ts": 0.957,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.879,
+   "tm_score": 0.952
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.912,
+   "computed_lddt": 0.944,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.93,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8oxk_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.122,
+   "computed_lddt": 0.298,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.174,
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.17,
+   "computed_lddt": 0.386,
+   "computed_n_scored_residues": 94,
+   "computed_tm_score": 0.232,
+   "coverage": 0.9495,
+   "file": "structures/foldbench_monomer__8oxk_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8oyy_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8oyy"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.826,
+   "computed_lddt": 0.892,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.894,
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.745,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.812,
+   "tm_score": 0.891
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.9,
+   "computed_lddt": 0.924,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.954,
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/helico_mf_L.pdb",
+   "gdt_ts": 0.894,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.845,
+   "tm_score": 0.954
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.94,
+   "computed_lddt": 0.964,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.973,
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/helico_off.pdb",
+   "gdt_ts": 0.943,
+   "label": "Helico, no contacts",
+   "lddt": 0.886,
+   "tm_score": 0.975
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.92,
+   "computed_lddt": 0.968,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.964,
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/helico_oracle.pdb",
+   "gdt_ts": 0.91,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.891,
+   "tm_score": 0.966
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.975,
+   "computed_lddt": 0.976,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.987,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8oyy_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.969,
+   "computed_lddt": 0.984,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.981,
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.969,
+   "computed_lddt": 0.984,
+   "computed_n_scored_residues": 233,
+   "computed_tm_score": 0.981,
+   "coverage": 0.9628,
+   "file": "structures/foldbench_monomer__8oyy_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8qkd_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8qkd"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.944,
+   "computed_lddt": 0.949,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.982,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.948,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.903,
+   "tm_score": 0.983
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.95,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.983,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/helico_mf_L.pdb",
+   "gdt_ts": 0.951,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.899,
+   "tm_score": 0.983
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.954,
+   "computed_lddt": 0.95,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.985,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/helico_off.pdb",
+   "gdt_ts": 0.957,
+   "label": "Helico, no contacts",
+   "lddt": 0.906,
+   "tm_score": 0.986
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.962,
+   "computed_lddt": 0.954,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.986,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/helico_oracle.pdb",
+   "gdt_ts": 0.962,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.909,
+   "tm_score": 0.986
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.989,
+   "computed_lddt": 0.979,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.993,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.985,
+   "computed_lddt": 0.974,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.992,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.985,
+   "computed_lddt": 0.974,
+   "computed_n_scored_residues": 281,
+   "computed_tm_score": 0.992,
+   "coverage": 0.9894,
+   "file": "structures/foldbench_monomer__8qkd_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8qoh_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8qoh"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.342,
+   "computed_lddt": 0.481,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.574,
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.176,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.428,
+   "tm_score": 0.654
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.383,
+   "computed_lddt": 0.495,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.615,
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_mf_L.pdb",
+   "gdt_ts": 0.322,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.443,
+   "tm_score": 0.689
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.038,
+   "computed_lddt": 0.274,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.178,
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_off.pdb",
+   "gdt_ts": 0.015,
+   "label": "Helico, no contacts",
+   "lddt": 0.247,
+   "tm_score": 0.3
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.891,
+   "computed_lddt": 0.909,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.959,
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/helico_oracle.pdb",
+   "gdt_ts": 0.9,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.841,
+   "tm_score": 0.962
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.784,
+   "computed_lddt": 0.806,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.87,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8qoh_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.102,
+   "computed_lddt": 0.412,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.284,
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.031,
+   "computed_lddt": 0.304,
+   "computed_n_scored_residues": 274,
+   "computed_tm_score": 0.165,
+   "coverage": 0.9856,
+   "file": "structures/foldbench_monomer__8qoh_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8ux2_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9756,
+   "file": "structures/foldbench_monomer__8ux2_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8ux2"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.119,
+   "computed_lddt": 0.355,
+   "computed_n_scored_residues": 239,
+   "computed_tm_score": 0.286,
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.079,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.32,
+   "tm_score": 0.419
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.025,
+   "computed_lddt": 0.326,
+   "computed_n_scored_residues": 239,
+   "computed_tm_score": 0.147,
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_mf_L.pdb",
+   "gdt_ts": 0.027,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.292,
+   "tm_score": 0.308
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.033,
+   "computed_lddt": 0.324,
+   "computed_n_scored_residues": 239,
+   "computed_tm_score": 0.163,
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_off.pdb",
+   "gdt_ts": 0.039,
+   "label": "Helico, no contacts",
+   "lddt": 0.291,
+   "tm_score": 0.276
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.894,
+   "computed_lddt": 0.904,
+   "computed_n_scored_residues": 239,
+   "computed_tm_score": 0.958,
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/helico_oracle.pdb",
+   "gdt_ts": 0.89,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.823,
+   "tm_score": 0.961
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.519,
+   "computed_lddt": 0.612,
+   "computed_n_scored_residues": 240,
+   "computed_tm_score": 0.639,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8ux2_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.528,
+   "computed_lddt": 0.686,
+   "computed_n_scored_residues": 239,
+   "computed_tm_score": 0.681,
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.079,
+   "computed_lddt": 0.348,
+   "computed_n_scored_residues": 239,
+   "computed_tm_score": 0.244,
+   "coverage": 0.9715,
+   "file": "structures/foldbench_monomer__8ux2_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8vc8_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8vc8"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.931,
+   "computed_lddt": 0.93,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.966,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.935,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.823,
+   "tm_score": 0.967
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.373,
+   "computed_lddt": 0.627,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.511,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/helico_mf_L.pdb",
+   "gdt_ts": 0.169,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.555,
+   "tm_score": 0.541
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.938,
+   "computed_lddt": 0.933,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.969,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/helico_off.pdb",
+   "gdt_ts": 0.939,
+   "label": "Helico, no contacts",
+   "lddt": 0.825,
+   "tm_score": 0.969
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.924,
+   "computed_lddt": 0.919,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.964,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/helico_oracle.pdb",
+   "gdt_ts": 0.926,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.819,
+   "tm_score": 0.965
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.937,
+   "computed_lddt": 0.945,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.971,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.867,
+   "computed_lddt": 0.869,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.922,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.864,
+   "computed_lddt": 0.869,
+   "computed_n_scored_residues": 197,
+   "computed_tm_score": 0.922,
+   "coverage": 0.9657,
+   "file": "structures/foldbench_monomer__8vc8_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ],
+ "foldbench_monomer__8wrx_A": [
+  {
+   "arm": "ground_truth",
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/ground_truth.pdb",
+   "label": "Ground truth",
+   "source": "8wrx"
+  },
+  {
+   "arm": "helico_mf_L_363k",
+   "computed_gdt_ts": 0.808,
+   "computed_lddt": 0.87,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.824,
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_mf_L_363k.pdb",
+   "gdt_ts": 0.712,
+   "label": "Helico + MarinFold contacts (step 363k)",
+   "lddt": 0.785,
+   "tm_score": 0.832
+  },
+  {
+   "arm": "helico_mf_L",
+   "computed_gdt_ts": 0.509,
+   "computed_lddt": 0.601,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.564,
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_mf_L.pdb",
+   "gdt_ts": 0.477,
+   "label": "Helico + MarinFold contacts (step 145k)",
+   "lddt": 0.535,
+   "tm_score": 0.612
+  },
+  {
+   "arm": "helico_off",
+   "computed_gdt_ts": 0.651,
+   "computed_lddt": 0.767,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.686,
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_off.pdb",
+   "gdt_ts": 0.561,
+   "label": "Helico, no contacts",
+   "lddt": 0.674,
+   "tm_score": 0.694
+  },
+  {
+   "arm": "helico_oracle",
+   "computed_gdt_ts": 0.933,
+   "computed_lddt": 0.941,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.939,
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/helico_oracle.pdb",
+   "gdt_ts": 0.951,
+   "label": "Helico + ground-truth contacts",
+   "lddt": 0.866,
+   "tm_score": 0.944
+  },
+  {
+   "arm": "esmfold2",
+   "computed_gdt_ts": 0.89,
+   "computed_lddt": 0.904,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.891,
+   "coverage": 1.0,
+   "file": "structures/foldbench_monomer__8wrx_A/esmfold2.pdb",
+   "label": "ESMFold2"
+  },
+  {
+   "arm": "protenix_v2_msa",
+   "computed_gdt_ts": 0.715,
+   "computed_lddt": 0.785,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.758,
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/protenix_v2_msa.pdb",
+   "label": "Protenix-v2 + MSA"
+  },
+  {
+   "arm": "protenix_v2_single_seq",
+   "computed_gdt_ts": 0.872,
+   "computed_lddt": 0.898,
+   "computed_n_scored_residues": 86,
+   "computed_tm_score": 0.886,
+   "coverage": 0.9773,
+   "file": "structures/foldbench_monomer__8wrx_A/protenix_v2_single_seq.pdb",
+   "label": "Protenix-v2 single-seq"
+  }
+ ]
+}

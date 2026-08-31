@@ -1,0 +1,379 @@
+{
+  "checkpoint_source": {
+    "checkpoint_copied_outside_coreweave": false,
+    "evaluated_dtype": "bfloat16",
+    "gcs_used": false,
+    "identities": [
+      {
+        "coreweave_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp232_sweep_cv1_decontam/evals/rollout-v2/2026-08-24/v2-01/models/exp232-decontam-train-m2-p06-step363000/hf/step-363000",
+        "kind": "coreweave-s3",
+        "levanter_source_uri": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/checkpoints/protein/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/2026.08.21.1/checkpoints/step-363000"
+      }
+    ],
+    "mirror_run_id": "v1-01",
+    "source_dtypes": [
+      "float32"
+    ],
+    "transport": "pre-existing CoreWeave HF directories verified in place; the exp232 training checkpoint was exported from Levanter format entirely inside CoreWeave"
+  },
+  "checkpoints": [
+    {
+      "accepted_unfinished_rollouts": 0,
+      "coreweave_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp232_sweep_cv1_decontam/evals/rollout-v2/2026-08-24/v2-01/models/exp232-decontam-train-m2-p06-step363000/hf/step-363000",
+      "eval_loss": 2.9680745601654053,
+      "eval_loss_step": 361494,
+      "label": "exp232_decontam_train_m2_p06_step363000",
+      "levanter_source_uri": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/checkpoints/protein/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/2026.08.21.1/checkpoints/step-363000",
+      "run_name": "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1",
+      "source_dtype": "float32",
+      "step": 363000,
+      "train_loss": null,
+      "wandb_metric_keys": {
+        "eval_loss": "eval/loss",
+        "train_loss": "train/loss"
+      },
+      "wandb_url": "https://wandb.ai/eric-czech/marin/runs/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1",
+      "weight_shard_digests": [
+        "9a11736b507565aa2be00a5753f51b12-95",
+        "1a042bf9b4acde490f0c0ffee76306dd-18"
+      ]
+    }
+  ],
+  "completed_at": "2026-08-31T15:45:10.273115+00:00",
+  "exp89_compute_metrics_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "ground_truth_sha256": "a47c196e7bc1be907c0316b03ee938e8a12329cc7391d7c39e45715a647495b5",
+  "headline_metrics": [
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9454345627010208,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.6059431772839216,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9312361398632589,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.5566100466556941,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9380696252197237,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.556083206953399,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9257629479777982,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.5402069097826205,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9455239462557582,
+      "range": "all",
+      "subset": "eval-test",
+      "total_values": 217,
+      "valid_values": 217
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.5692748935203562,
+      "range": "all",
+      "subset": "eval-test",
+      "total_values": 217,
+      "valid_values": 217
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.937489430550833,
+      "range": "long",
+      "subset": "eval-test",
+      "total_values": 217,
+      "valid_values": 217
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.5464235795580814,
+      "range": "long",
+      "subset": "eval-test",
+      "total_values": 217,
+      "valid_values": 217
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9667990671648676,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.6109867679647683,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.9580281025188152,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+      "precision": 0.5744747506353366,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    }
+  ],
+  "job_ids": [
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-sm-m2p06tr-s00",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s00",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s01",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s02",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s03",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s04",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s05",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s06",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s07",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s08",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s09",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s10",
+    "/timodonnell/exp260-msa-depth-eval-v1-01/e232t-v1-01-fu-m2p06tr-s11"
+  ],
+  "outputs": {
+    "aggregate_metrics": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/results/aggregate_metrics.csv",
+    "contact_precision_all": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/results/contact_precision_all.csv",
+    "dense_scores": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/dense_scores",
+    "marinfold_precision": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/results/marinfold_precision.csv",
+    "published_reference_validation": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/results/published_reference_validation.json",
+    "subset_aggregate_metrics": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/results/subset_aggregate_metrics.csv",
+    "timings": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01/results/timings.csv"
+  },
+  "published_reference_validation": {
+    "applicable": true,
+    "comparisons": [
+      {
+        "absolute_difference": 0.0020640671648676223,
+        "actual": 0.9667990671648676,
+        "cut": "AUC",
+        "expected": 0.964735,
+        "range": "all",
+        "subset": "eval-denovo",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.0011547679647682108,
+        "actual": 0.6109867679647683,
+        "cut": "R",
+        "expected": 0.609832,
+        "range": "all",
+        "subset": "eval-denovo",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.0032191025188151867,
+        "actual": 0.9580281025188152,
+        "cut": "AUC",
+        "expected": 0.954809,
+        "range": "long",
+        "subset": "eval-denovo",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.0021927506353366377,
+        "actual": 0.5744747506353366,
+        "cut": "R",
+        "expected": 0.572282,
+        "range": "long",
+        "subset": "eval-denovo",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.0017026252197237524,
+        "actual": 0.9380696252197237,
+        "cut": "AUC",
+        "expected": 0.936367,
+        "range": "all",
+        "subset": "eval-val",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.00437620695339902,
+        "actual": 0.556083206953399,
+        "cut": "R",
+        "expected": 0.551707,
+        "range": "all",
+        "subset": "eval-val",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.002304947977798233,
+        "actual": 0.9257629479777982,
+        "cut": "AUC",
+        "expected": 0.923458,
+        "range": "long",
+        "subset": "eval-val",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.004297909782620568,
+        "actual": 0.5402069097826205,
+        "cut": "R",
+        "expected": 0.535909,
+        "range": "long",
+        "subset": "eval-val",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.00019043729897927353,
+        "actual": 0.9454345627010208,
+        "cut": "AUC",
+        "expected": 0.945625,
+        "range": "all",
+        "subset": "legacy_554",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.0008841772839215389,
+        "actual": 0.6059431772839216,
+        "cut": "R",
+        "expected": 0.605059,
+        "range": "all",
+        "subset": "legacy_554",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.00016486013674110733,
+        "actual": 0.9312361398632589,
+        "cut": "AUC",
+        "expected": 0.931401,
+        "range": "long",
+        "subset": "legacy_554",
+        "within_tolerance": true
+      },
+      {
+        "absolute_difference": 0.0015880466556941197,
+        "actual": 0.5566100466556941,
+        "cut": "R",
+        "expected": 0.555022,
+        "range": "long",
+        "subset": "legacy_554",
+        "within_tolerance": true
+      }
+    ],
+    "largest_absolute_difference": 0.00437620695339902,
+    "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+    "passed": true,
+    "source": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/coreweave_results/subset_aggregate_metrics.csv:marinfold-exp232-decontam-train-m2-p06-step363000 (PR #257)",
+    "tolerance": 0.005
+  },
+  "reference_validation": null,
+  "reporting_subset_units": {
+    "eval-denovo": 19,
+    "eval-denovo-nonviral": 19,
+    "eval-test": 217,
+    "eval-test-nonviral": 204,
+    "eval-test-viral": 13,
+    "eval-val": 97,
+    "eval-val-nonviral": 91,
+    "eval-val-viral": 6,
+    "legacy_554": 554,
+    "universe_887": 887
+  },
+  "run_root": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp260_evals_msa_depth_stratified/rollout-v2/2026-08-31/v1-01",
+  "sampling": {
+    "contact_multiplier": 6,
+    "n_rollouts": 100,
+    "recipe": "rollout_resample",
+    "seed": 0,
+    "temperature": 1.0,
+    "tie_break": null,
+    "token_budget": "min(8192-prompt_tokens, 6*L+128)",
+    "top_k": -1,
+    "top_p": 0.95,
+    "unfinished_policy": "Nonterminating samples are excluded from contact voting. Every requested and usable rollout is counted per evaluation unit."
+  },
+  "schema_version": 1,
+  "score_worker_provenance": {
+    "behavior": "Nonterminating samples are excluded from voting and accounted for explicitly; terminating-sample voting matches PR #244.",
+    "matches_pr244_accepted_worker": true,
+    "pr244_accepted_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
+  },
+  "started_at": "2026-08-31T15:35:43.188656+00:00",
+  "suite": "training",
+  "validation": {
+    "exp232_decontam_train_m2_p06_step363000": {
+      "affected_units": 0,
+      "dense_matrices": 887,
+      "requested_rollouts": 88700,
+      "unfinished_rollouts": 0,
+      "unique_stems": 773,
+      "units": 887,
+      "usable_rollouts": 88700
+    }
+  },
+  "worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
+}

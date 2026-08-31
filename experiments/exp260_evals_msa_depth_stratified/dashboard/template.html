@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarinFold — low-MSA-depth eval cases</title>
+<script src="https://cdn.jsdelivr.net/npm/3dmol@2.4.2/build/3Dmol-min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f7f8fa; --line: #dfe3e8; --ink: #1b1f24;
+    --muted: #61697a; --accent: #1f77b4; --good: #1a9850; --bad: #d73027;
+    --gt: #b0b7c3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --panel: #1c2027; --line: #2c323c; --ink: #e8ecf1;
+      --muted: #98a2b3; --accent: #58a6ff; --good: #4ec27f; --bad: #f2695c;
+      --gt: #4b5462;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  header { padding: 20px 24px 12px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0 0 6px; font-size: 20px; }
+  header p { margin: 4px 0; color: var(--muted); max-width: 90ch; }
+  header a { color: var(--accent); }
+  main { display: grid; grid-template-columns: minmax(340px, 30%) 1fr; gap: 0; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  #list { border-right: 1px solid var(--line); max-height: calc(100vh - 120px); overflow: auto; }
+  #detail { padding: 18px 22px 60px; max-height: calc(100vh - 120px); overflow: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--panel); cursor: pointer; user-select: none; font-weight: 600; }
+  th.sorted::after { content: " ▾"; color: var(--muted); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--panel); }
+  tbody tr.active { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .badge {
+    display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px;
+    border: 1px solid var(--line); color: var(--muted); margin-right: 4px;
+  }
+  .badge.fb { border-color: var(--accent); color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .card h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  #viewer { width: 100%; height: 380px; position: relative; border-radius: 6px; overflow: hidden; }
+  #map { width: 100%; height: auto; image-rendering: pixelated; border-radius: 6px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; }
+  .kv div:nth-child(odd) { color: var(--muted); }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .controls button {
+    font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  }
+  .controls button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .controls button:disabled { opacity: .4; cursor: not-allowed; }
+  .bars { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+  .bar { height: 9px; border-radius: 5px; background: var(--accent); min-width: 1px; }
+  .bar.self { background: var(--good); }
+  pre.msa {
+    margin: 0; overflow: auto; max-height: 220px; font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre; color: var(--ink);
+  }
+  pre.msa .q { color: var(--accent); font-weight: 600; }
+  .badge.warn-badge { border-color: var(--bad); color: var(--bad); background: none; padding: 1px 7px; }
+  #summary { padding: 10px 24px 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  #summary table { width: auto; min-width: 520px; }
+  #summary td, #summary th { padding: 4px 14px 4px 0; border-bottom: none; }
+  #summary .head { color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); }
+  details#models { margin: 6px 0 2px; font-size: 13px; }
+  details#models summary { cursor: pointer; color: var(--accent); }
+  #models-body { margin: 8px 0 4px; max-width: 110ch; }
+  #models-body .row { padding: 8px 0; border-top: 1px solid var(--line); }
+  #models-body .what { font-weight: 600; }
+  #models-body .model { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all; }
+  #models-body .detail { color: var(--muted); }
+  #models-body a { color: var(--accent); margin-right: 10px; }
+  .description { margin: 0 0 12px; max-width: 95ch; font-size: 13px; }
+  .description a { color: var(--accent); }
+  .description .muted { color: var(--muted); font-size: 12px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  footer { padding: 14px 24px 30px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
+  code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Low-MSA-depth eval cases</h1>
+  <p id="blurb"></p>
+  <p id="provenance"></p>
+  <div class="controls" id="filters"></div>
+  <details id="models"><summary>Models and provenance — what produced each prediction</summary>
+    <div id="models-body"></div>
+  </details>
+</header>
+<div id="summary"></div>
+<main>
+  <div id="list"></div>
+  <div id="detail"></div>
+</main>
+<footer id="footer"></footer>
+
+<script id="dashboard-data" type="application/json">__DASHBOARD_DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById("dashboard-data").textContent);
+const PROTEINS = DATA.proteins;
+const GT = "Ground truth";
+const MF = "MarinFold #232 m2-p06";
+const ORDER = [MF, "Protenix-v2 + MSA", "Protenix-v2 single-seq", "ESMFold2", "ESMFold"];
+const SCORE_KEYS = {
+  [MF]: "MarinFold #232 m2-p06 (step 363k)",
+  "Protenix-v2 + MSA": "Protenix-v2 + MSA",
+  "Protenix-v2 single-seq": "Protenix-v2 single-seq",
+  "ESMFold2": "ESMFold2",
+  "ESMFold": "ESMFold",
+};
+
+// Deep-linkable: #<stem> selects a case, so a specific protein can be sent to
+// someone as a URL.
+const fromHash = () => PROTEINS.find((p) => p.stem === decodeURIComponent(location.hash.slice(1)));
+let current = fromHash() || PROTEINS[0];
+let layer = MF;
+let sortKey = "msa_depth";
+let sortDir = 1;
+let viewer = null;
+let style = "cartoon";
+let showContacts = true;
+let structureArm = "ground_truth";
+//: Which slices of the set the page is showing. Every count, the summary table
+//: and the index respect these.
+const FILTERS = { foldbench: true, nonfoldbench: true, natural: true, designed: true };
+
+const visible = () => PROTEINS.filter((p) =>
+  (p.in_foldbench ? FILTERS.foldbench : FILTERS.nonfoldbench) &&
+  (p.annotation.designed ? FILTERS.designed : FILTERS.natural));
+
+const escape = (text) => String(text ?? "").replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmt = (x, d = 3) => (x === undefined || x === null || Number.isNaN(x)) ? "—" : x.toFixed(d);
+const scoreOf = (p, name) => p.r_precision[SCORE_KEYS[name]];
+const predictors = (p) => ORDER.filter((name) => p.contacts[name]);
+
+document.getElementById("blurb").textContent =
+  `Every eval protein whose ColabFold MSA holds fewer than 10 sequences: ` +
+  `${PROTEINS.filter((p) => !p.annotation.designed).length} natural and ` +
+  `${PROTEINS.filter((p) => p.annotation.designed).length} de novo designs, from ` +
+  ["CAMEO hard", "CASP free-modeling", "FoldBench"]
+    .map((s) => `${PROTEINS.filter((p) => p.source === s).length} ${s}`).join(", ") +
+  `. Predicted contacts are each predictor's top-L pairs; a pair counts as a contact at ` +
+  `≥${DATA.contact_definition.min_degree} degree and ≥${DATA.contact_definition.min_separation} residues of separation.`;
+document.getElementById("provenance").innerHTML =
+  `Scores: <code>${DATA.generated_from.checkpoint}</code>. Built by <code>exp260/dashboard/build_dashboard_data.py</code> ` +
+  `from <a href="${DATA.generated_from.scores}">the published run</a>.`;
+document.getElementById("footer").textContent =
+  "Ground-truth coordinates are Cα traces from RCSB (or the CASP domain tarball), aligned onto the evaluation " +
+  "sequence; per-protein alignment coverage is shown with each structure. Contact maps and scores share one " +
+  "residue numbering, so a pair drawn on the map is the pair the metric counted.";
+
+function renderFilters() {
+  const options = [
+    ["foldbench", "FoldBench"],
+    ["nonfoldbench", "CAMEO / CASP"],
+    ["natural", "natural"],
+    ["designed", "de novo"],
+  ];
+  document.getElementById("filters").innerHTML = options.map(([key, label]) => {
+    const n = PROTEINS.filter((p) =>
+      key === "foldbench" ? p.in_foldbench :
+      key === "nonfoldbench" ? !p.in_foldbench :
+      key === "designed" ? p.annotation.designed : !p.annotation.designed).length;
+    return `<button data-filter="${key}" class="${FILTERS[key] ? "on" : ""}">${
+      FILTERS[key] ? "✓ " : ""}${label} (${n})</button>`;
+  }).join("");
+  document.querySelectorAll("#filters button").forEach((button) => button.onclick = () => {
+    FILTERS[button.dataset.filter] = !FILTERS[button.dataset.filter];
+    if (!visible().length) {  // never leave the page with nothing selected
+      FILTERS[button.dataset.filter] = true;
+      return;
+    }
+    if (!visible().some((p) => p.key === current.key)) current = visible()[0];
+    renderFilters();
+    renderSummary();
+    renderList();
+    renderDetail();
+  });
+}
+
+function mean(values) {
+  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+}
+
+const STRUCTURE_ORDER = [
+  "helico_mf_L_363k", "helico_oracle", "helico_off",
+  "protenix_v2_msa", "protenix_v2_single_seq", "esmfold2",
+];
+
+/** Mean lDDT / GDT-TS / TM-score per structure arm over the selection.
+ *
+ * Arms do not cover the same proteins — Helico only ever ran the FoldBench
+ * monomers, while Protenix and ESMFold have predictions for all 42 — so means
+ * taken over each arm's own coverage are not comparable with each other. The
+ * table is therefore computed over the proteins every displayed arm has in
+ * common, and says so; the per-arm coverage is printed underneath.
+ */
+function structureSummaryRows(selected) {
+  const gathered = new Map();
+  for (const protein of selected) {
+    for (const arm of protein.structure_arms || []) {
+      if (arm.arm === "ground_truth" || arm.computed_lddt === undefined) continue;
+      if (!gathered.has(arm.arm)) gathered.set(arm.arm, { label: arm.label, rows: new Map() });
+      gathered.get(arm.arm).rows.set(protein.key, arm);
+    }
+  }
+  const arms = STRUCTURE_ORDER.filter((a) => gathered.has(a));
+  if (!arms.length) return "";
+  const shared = selected
+    .map((p) => p.key)
+    .filter((key) => arms.every((a) => gathered.get(a).rows.has(key)));
+  const cell = (arm, key) =>
+    fmt(mean(shared.map((k) => gathered.get(arm).rows.get(k)[key])));
+  const uneven = arms.some((a) => gathered.get(a).rows.size !== shared.length);
+  return `
+    <tr class="head"><td>structure accuracy vs. ground truth${
+      uneven ? `<br><span style="font-weight:400">on the ${shared.length} protein${
+        shared.length === 1 ? "" : "s"} every arm covers</span>` : ""}</td>
+      ${arms.map((a) => `<td>${escape(gathered.get(a).label)}${
+        uneven ? `<br><span style="font-weight:400">has ${gathered.get(a).rows.size}</span>` : ""
+      }</td>`).join("")}</tr>
+    ${!shared.length ? '<tr><td colspan="9" class="head">no protein is covered by every arm — ' +
+      "narrow the filters (Helico only ran the FoldBench monomers)</td></tr>" :
+      [["lDDT", "computed_lddt"], ["GDT-TS", "computed_gdt_ts"], ["TM-score", "computed_tm_score"]]
+        .map(([label, key]) => `<tr><td class="head">mean ${label}</td>` +
+          arms.map((a) => `<td>${cell(a, key)}</td>`).join("") + "</tr>").join("")}`;
+}
+
+function renderSummary() {
+  const selected = visible();
+  const rows = ORDER.map((name) => {
+    const scored = selected.map((p) => scoreOf(p, name)).filter((v) => v !== undefined);
+    return { name, n: scored.length, mean: mean(scored) };
+  }).filter((row) => row.n);
+  const depths = selected.map((p) => p.msa_depth).sort((a, b) => a - b);
+  const median = depths.length ? depths[Math.floor(depths.length / 2)] : null;
+  document.getElementById("summary").innerHTML = `
+    <table>
+      <tr class="head"><td>${selected.length} protein${selected.length === 1 ? "" : "s"} selected</td>
+        ${rows.map((r) => `<td>${r.name === MF ? "<b>MarinFold</b>" : escape(r.name)}</td>`).join("")}</tr>
+      <tr><td class="head">mean R-precision (all ranges)</td>
+        ${rows.map((r) => `<td>${r.name === MF ? "<b>" + fmt(r.mean) + "</b>" : fmt(r.mean)}${
+          r.n < selected.length ? ` <span style="color:var(--muted)">(n=${r.n})</span>` : ""}</td>`).join("")}</tr>
+      ${structureSummaryRows(selected)}
+      <tr><td class="head">median MSA depth ${median} · median length ${
+        selected.map((p) => p.L).sort((a, b) => a - b)[Math.floor(selected.length / 2)]} ·
+        ${selected.filter((p) => p.annotation.designed).length} de novo ·
+        ${selected.filter((p) => p.in_foldbench).length} FoldBench</td>
+        <td colspan="${rows.length}"></td></tr>
+    </table>`;
+}
+
+function renderProvenance() {
+  document.getElementById("models-body").innerHTML = (DATA.provenance || []).map((entry) => `
+    <div class="row">
+      <div class="what">${escape(entry.what)}</div>
+      <div class="model">${escape(entry.model)}</div>
+      <div class="detail">${escape(entry.detail)}</div>
+      <div>${entry.links.map(([label, url]) =>
+        `<a href="${url}" target="_blank" rel="noopener">${escape(label)} ↗</a>`).join("")}</div>
+    </div>`).join("");
+}
+
+// ---------- protein list ----------
+const COLUMNS = [
+  { key: "stem", label: "protein", get: (p) => p.stem, text: true },
+  { key: "source", label: "set", get: (p) => p.source, text: true,
+    show: (p) => ({ "CAMEO hard": "CAMEO", "CASP free-modeling": "CASP-FM",
+                    "FoldBench": "FoldBench" })[p.source] },
+  { key: "L", label: "L", get: (p) => p.L },
+  { key: "contacts", label: "contacts", get: (p) => p.n_true_contacts },
+  { key: "msa_depth", label: "depth", get: (p) => p.msa_depth },
+  { key: "marinfold", label: "MarinFold", get: (p) => scoreOf(p, MF) },
+  { key: "msa_arm", label: "+MSA", get: (p) => scoreOf(p, "Protenix-v2 + MSA") },
+];
+
+function renderList() {
+  const rows = [...visible()].sort((a, b) => {
+    const column = COLUMNS.find((c) => c.key === sortKey);
+    const x = column.get(a), y = column.get(b);
+    if (x === undefined || x === null) return 1;
+    if (y === undefined || y === null) return -1;
+    return (column.text ? String(x).localeCompare(String(y)) : x - y) * sortDir;
+  });
+  const head = COLUMNS.map((c) =>
+    `<th data-key="${c.key}" class="${c.key === sortKey ? "sorted" : ""}">${c.label}</th>`).join("");
+  const body = rows.map((p) => `
+    <tr data-key="${p.key}" class="${p.key === current.key ? "active" : ""}" title="${
+      escape((p.annotation.molecule || p.annotation.title || "").slice(0, 120))}">
+      <td>${p.stem}${p.in_foldbench ? ' <span class="badge fb">FB</span>' : ""}${
+        p.annotation.designed ? ' <span class="badge warn-badge">design</span>' : ""}</td>
+      <td>${COLUMNS[1].show(p)}</td>
+      <td>${p.L}</td>
+      <td>${p.n_true_contacts}</td>
+      <td>${p.msa_depth}</td>
+      <td>${fmt(scoreOf(p, MF))}</td>
+      <td>${fmt(scoreOf(p, "Protenix-v2 + MSA"))}</td>
+    </tr>`).join("");
+  document.getElementById("list").innerHTML =
+    `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+// Delegated once, on the container: the table is re-rendered on every click and
+// every sort, so per-row handlers would have to be re-attached each time.
+// The hash update is guarded and comes last — replaceState throws a
+// SecurityError in a sandboxed or null-origin frame (which is how the HTML
+// preview proxies serve this page), and an unguarded call there aborted the
+// handler before the re-render, so clicking a row appeared to do nothing.
+document.getElementById("list").addEventListener("click", (event) => {
+  const header = event.target.closest("th");
+  if (header && header.dataset.key) {
+    sortDir = header.dataset.key === sortKey ? -sortDir : 1;
+    sortKey = header.dataset.key;
+    renderList();
+    return;
+  }
+  const row = event.target.closest("tr[data-key]");
+  if (!row) return;
+  const selected = PROTEINS.find((p) => p.key === row.dataset.key);
+  if (!selected) return;
+  current = selected;
+  if (!predictors(current).includes(layer)) layer = predictors(current)[0];
+  renderList();
+  renderDetail();
+  try {
+    history.replaceState(null, "", `#${current.stem}`);
+  } catch (error) {
+    /* sandboxed frame: the page still works, it just cannot deep-link */
+  }
+});
+
+// ---------- contact map ----------
+function drawMap(protein, name) {
+  const canvas = document.getElementById("map");
+  const size = 620, L = protein.L;
+  canvas.width = size; canvas.height = size;
+  const context = canvas.getContext("2d");
+  const style = getComputedStyle(document.body);
+  const scale = size / L;
+  // A 35-residue protein would otherwise draw 22-pixel blocks.
+  const pixel = Math.min(7, Math.max(1.5, scale * 1.4));
+  context.fillStyle = style.getPropertyValue("--bg"); context.fillRect(0, 0, size, size);
+
+  const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
+  const dot = (i, j, color) => {
+    context.fillStyle = color;
+    context.fillRect(j * scale - pixel / 2, i * scale - pixel / 2, pixel, pixel);
+  };
+  // Lower triangle: the answer. Upper triangle: this predictor against it.
+  for (const [i, j] of protein.contacts[GT]) dot(j, i, style.getPropertyValue("--gt"));
+  const predicted = protein.contacts[name] || [];
+  for (const [i, j] of predicted) {
+    const hit = truth.has(i * L + j);
+    dot(i, j, style.getPropertyValue(hit ? "--good" : "--bad"));
+  }
+  context.strokeStyle = style.getPropertyValue("--line");
+  context.lineWidth = 1;
+  context.beginPath(); context.moveTo(0, 0); context.lineTo(size, size); context.stroke();
+  context.strokeRect(0.5, 0.5, size - 1, size - 1);
+  // Residue ruler, so a contact can be read off the map by number.
+  const step = L <= 60 ? 10 : L <= 150 ? 25 : L <= 300 ? 50 : 100;
+  context.fillStyle = style.getPropertyValue("--muted");
+  context.font = "11px ui-monospace, monospace";
+  for (let residue = step; residue < L; residue += step) {
+    const at = residue * scale;
+    context.globalAlpha = 0.25;
+    context.beginPath(); context.moveTo(at, 0); context.lineTo(at, size); context.stroke();
+    context.beginPath(); context.moveTo(0, at); context.lineTo(size, at); context.stroke();
+    context.globalAlpha = 1;
+    context.fillText(String(residue), at + 3, 12);
+  }
+
+  const hits = predicted.filter(([i, j]) => truth.has(i * L + j)).length;
+  document.getElementById("map-caption").innerHTML =
+    `<b>${name}</b>: ${hits} of ${predicted.length} top-L pairs are true contacts ` +
+    `(${predicted.length ? (100 * hits / predicted.length).toFixed(0) : 0}%). ` +
+    `Ground truth has ${protein.n_true_contacts} contacts.`;
+}
+
+// ---------- 3D ----------
+//: Structure files are fetched once and kept for the session.
+const STRUCTURE_CACHE = new Map();
+
+async function loadStructure(file) {
+  if (STRUCTURE_CACHE.has(file)) return STRUCTURE_CACHE.get(file);
+  const response = await fetch(file);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  const text = await response.text();
+  STRUCTURE_CACHE.set(file, text);
+  return text;
+}
+
+/** Cα position per evaluation index, read out of the PDB we are displaying. */
+function alphaCarbons(pdb, length) {
+  const coordinates = new Array(length).fill(null);
+  for (const line of pdb.split("\n")) {
+    if (!line.startsWith("ATOM") || line.slice(12, 16).trim() !== "CA") continue;
+    const index = parseInt(line.slice(22, 26), 10) - 1;
+    if (index >= 0 && index < length) {
+      coordinates[index] = [
+        parseFloat(line.slice(30, 38)), parseFloat(line.slice(38, 46)),
+        parseFloat(line.slice(46, 54)),
+      ];
+    }
+  }
+  return coordinates;
+}
+
+const STYLES = {
+  cartoon: { cartoon: { color: "spectrum" } },
+  "cartoon + sticks": { cartoon: { color: "spectrum" }, stick: { radius: 0.08 } },
+  sticks: { stick: { radius: 0.12, colorscheme: "Jmol" } },
+  backbone: { line: { colorscheme: "Jmol" } },
+};
+
+async function draw3D(protein, name) {
+  const host = document.getElementById("viewer");
+  if (typeof $3Dmol === "undefined") {
+    host.innerHTML = '<p style="padding:12px;color:var(--muted)">The 3D viewer library ' +
+      "(3Dmol.js) failed to load. Contact maps below are unaffected.</p>";
+    return;
+  }
+  const arms = protein.structure_arms || [];
+  const selected = arms.find((a) => a.arm === structureArm) || arms[0];
+  if (!selected) {
+    host.innerHTML = `<p style="padding:12px;color:var(--muted)">No coordinates: ${
+      protein.structure.reason || "none published"}</p>`;
+    return;
+  }
+  host.innerHTML = '<p style="padding:12px;color:var(--muted)">loading…</p>';
+  let pdb;
+  try {
+    pdb = await loadStructure(selected.file);
+  } catch (error) {
+    // Structures are separate files served next to the page; a file:// copy or
+    // an HTML-preview proxy cannot fetch them.
+    host.innerHTML = '<p style="padding:12px;color:var(--muted)">Could not load ' +
+      `<code>${selected.file}</code> (${error.message}). Structures are served as ` +
+      "separate files, so this panel needs the page to be opened from where they " +
+      "sit — the GitHub Pages copy. Everything else on the page works offline.</p>";
+    return;
+  }
+  host.innerHTML = "";
+  viewer = $3Dmol.createViewer(host, {
+    backgroundColor: getComputedStyle(document.body).getPropertyValue("--panel"),
+  });
+  viewer.addModel(pdb, "pdb");
+  viewer.setStyle({}, STYLES[style] || STYLES.cartoon);
+
+  if (showContacts) {
+    const coordinates = alphaCarbons(pdb, protein.L);
+    const L = protein.L;
+    const truth = new Set(protein.contacts[GT].map(([i, j]) => i * L + j));
+    for (const [i, j] of (protein.contacts[name] || [])) {
+      if (!coordinates[i] || !coordinates[j]) continue;
+      viewer.addCylinder({
+        start: { x: coordinates[i][0], y: coordinates[i][1], z: coordinates[i][2] },
+        end: { x: coordinates[j][0], y: coordinates[j][1], z: coordinates[j][2] },
+        radius: 0.12,
+        color: truth.has(i * L + j) ? "green" : "red",
+        fromCap: 1, toCap: 1,
+      });
+    }
+  }
+  viewer.zoomTo();
+  viewer.render();
+  const accuracy = [
+    selected.computed_lddt !== undefined ? `lDDT ${selected.computed_lddt}` : null,
+    selected.computed_gdt_ts !== undefined ? `GDT-TS ${selected.computed_gdt_ts}` : null,
+    selected.computed_tm_score !== undefined ? `TM ${selected.computed_tm_score}` : null,
+  ].filter(Boolean).join(" · ");
+  document.getElementById("structure-caption").innerHTML =
+    `<b>${escape(selected.label)}</b>${accuracy ? " — " + accuracy : ""}` +
+    `<br><span class="muted">${escape(selected.source || selected.file.split("/").pop())} · ` +
+    `${(100 * selected.coverage).toFixed(0)}% of the sequence has coordinates</span>`;
+}
+
+// ---------- MSA ----------
+function msaHtml(a3m) {
+  const rows = [];
+  let header = null, sequence = [];
+  for (const line of a3m.split("\n")) {
+    if (line.startsWith(">")) {
+      if (header !== null) rows.push([header, sequence.join("")]);
+      header = line.slice(1).trim(); sequence = [];
+    } else if (line.trim()) sequence.push(line.trim());
+  }
+  if (header !== null) rows.push([header, sequence.join("")]);
+  return rows.map(([name, seq], index) =>
+    `<span class="${index === 0 ? "q" : ""}">${(index === 0 ? "query" : name).slice(0, 28).padEnd(30, " ")}` +
+    `${seq.replace(/[a-z]/g, "")}</span>`).join("\n");
+}
+
+// ---------- detail ----------
+function renderDetail() {
+  const p = current;
+  const available = predictors(p);
+  const best = Math.max(...available.map((name) => scoreOf(p, name) || 0), 0.001);
+  if (!(p.structure_arms || []).some((a) => a.arm === structureArm)) {
+    structureArm = (p.structure_arms || [{ arm: "ground_truth" }])[0].arm;
+  }
+  document.getElementById("detail").innerHTML = `
+    <h2 style="margin:0 0 4px">${p.stem}
+      <span class="badge ${p.in_foldbench ? "fb" : ""}">${p.source}</span>
+      ${p.eval_set ? `<span class="badge">${p.eval_set}</span>` : ""}
+      <span class="badge">${p.in_foldbench ? "in FoldBench" : "not in FoldBench"}</span>
+      ${p.in_foldbench ? "" :
+        '<span class="badge warn-badge" title="CAMEO-hard and CASP-FM targets are ' +
+        'generally inside the baselines\' training sets, so the baseline columns here ' +
+        'flatter them.">baselines likely trained on this</span>'}
+      ${p.annotation.designed ?
+        '<span class="badge warn-badge" title="RCSB annotates this entry as a de novo ' +
+        'design. Designed backbones have no homologs by construction and are easy for ' +
+        'structure predictors, so they are reported apart from the natural proteins.">' +
+        'de novo design — not counted as natural</span>' : ""}
+    </h2>
+    <p class="description">
+      <b>${escape(p.annotation.molecule || p.annotation.title || "—")}</b>${
+        p.annotation.organism ? ` · <i>${escape(p.annotation.organism)}</i>` : ""}
+      ${p.annotation.molecule && p.annotation.title
+        ? `<br><span class="muted">${escape(p.annotation.title)}</span>` : ""}
+      <br><a href="${p.annotation.source_url}" target="_blank" rel="noopener">${
+        escape(p.annotation.source_name)} ↗</a>
+      <span class="muted">${[
+        p.annotation.method,
+        p.annotation.resolution ? p.annotation.resolution + " Å" : null,
+        p.annotation.released ? "released " + p.annotation.released : null,
+        p.annotation.keywords,
+        p.annotation.casp_range ? "CASP residues " + p.annotation.casp_range : null,
+      ].filter(Boolean).map(escape).join(" · ")}</span>
+    </p>
+    <div class="controls" id="layers">
+      ${available.map((name) =>
+        `<button data-layer="${name}" class="${name === layer ? "on" : ""}">${name}</button>`).join("")}
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Structure</h3>
+        <div class="controls" id="arm-controls">
+          ${(p.structure_arms || []).map((a) =>
+            `<button data-arm="${a.arm}" class="${a.arm === structureArm ? "on" : ""}" ` +
+            `title="${escape(a.label)}">${escape(a.label)}</button>`).join("")}
+        </div>
+        <div class="controls" id="viewer-controls">
+          ${Object.keys(STYLES).map((option) =>
+            `<button data-style="${option}" class="${option === style ? "on" : ""}">${option}</button>`).join("")}
+          <button data-contacts="1" class="${showContacts ? "on" : ""}">${showContacts ? "✓ " : ""}contacts</button>
+        </div>
+        <div id="viewer"></div>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--good)"></span>predicted pair, correct</span>
+          <span><span class="swatch" style="background:var(--bad)"></span>predicted pair, wrong</span>
+        </div>
+        <p id="structure-caption" style="font-size:12px;margin:6px 0 0"></p>
+      </div>
+      <div class="card">
+        <h3>Contact map</h3>
+        <canvas id="map"></canvas>
+        <p id="map-caption" style="font-size:12px;margin:8px 0 0"></p>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--gt)"></span>ground truth (lower)</span>
+          <span><span class="swatch" style="background:var(--good)"></span>correct (upper)</span>
+          <span><span class="swatch" style="background:var(--bad)"></span>wrong (upper)</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>This protein</h3>
+        <div class="kv">
+          <div>length</div><div>${p.L} residues</div>
+          <div>ColabFold MSA depth</div><div><b>${p.msa_depth}</b> sequences</div>
+          <div>Neff (80% id)</div><div>${p.msa_neff}</div>
+          <div>true contacts</div><div>${p.n_true_contacts}</div>
+          <div>evaluation unit</div><div><code>${p.dataset}__${p.stem}</code></div>
+        </div>
+        <h3 style="margin-top:14px">R-precision (all ranges)</h3>
+        <div class="bars">
+          ${ORDER.filter((name) => scoreOf(p, name) !== undefined).map((name) => `
+            <div>${name === MF ? "<b>MarinFold</b>" : name}</div>
+            <div><div class="bar ${name === MF ? "self" : ""}" style="width:${100 * scoreOf(p, name) / best}%"></div></div>
+            <div>${fmt(scoreOf(p, name))}</div>`).join("")}
+        </div>
+      </div>
+      <div class="card">
+        <h3>The alignment (${p.msa_depth} sequence${p.msa_depth === 1 ? "" : "s"}, insertions stripped)</h3>
+        <pre class="msa">${msaHtml(p.a3m)}</pre>
+      </div>
+    </div>`;
+  document.querySelectorAll("#layers button").forEach((button) => button.onclick = () => {
+    layer = button.dataset.layer;
+    renderDetail();
+  });
+  // Only the viewer changes for these, so they redraw it in place rather than
+  // re-rendering the panel (which would reset the camera).
+  document.querySelectorAll("#viewer-controls button").forEach((button) => button.onclick = () => {
+    if (button.dataset.contacts) showContacts = !showContacts;
+    else style = button.dataset.style;
+    document.querySelectorAll("#viewer-controls button").forEach((other) => {
+      if (other.dataset.contacts) {
+        other.classList.toggle("on", showContacts);
+        other.textContent = `${showContacts ? "✓ " : ""}contacts`;
+      } else {
+        other.classList.toggle("on", other.dataset.style === style);
+      }
+    });
+    draw3D(current, layer);
+  });
+  document.querySelectorAll("#arm-controls button").forEach((button) => button.onclick = () => {
+    structureArm = button.dataset.arm;
+    document.querySelectorAll("#arm-controls button").forEach((other) =>
+      other.classList.toggle("on", other.dataset.arm === structureArm));
+    draw3D(current, layer);
+  });
+  drawMap(p, layer);
+  draw3D(p, layer);
+}
+
+window.addEventListener("hashchange", () => {
+  const selected = fromHash();
+  if (selected && selected.key !== current.key) {
+    current = selected;
+    if (!predictors(current).includes(layer)) layer = predictors(current)[0];
+    renderList();
+    renderDetail();
+  }
+});
+
+renderFilters();
+renderProvenance();
+renderSummary();
+renderList();
+renderDetail();
+</script>
+</body>
+</html>
