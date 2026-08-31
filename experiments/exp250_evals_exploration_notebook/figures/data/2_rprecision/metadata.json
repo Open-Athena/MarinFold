@@ -1,7 +1,7 @@
 {
   "dataset": "2_rprecision",
   "notebook": "2_make_rprecision_data.ipynb",
-  "generated_utc": "2026-08-21T18:01:51+00:00",
+  "generated_utc": "2026-08-31T18:06:45+00:00",
   "parameters": {
     "range": "all",
     "metric": "R",
@@ -15,54 +15,44 @@
       ]
     },
     "bootstrap_draws": 2000,
-    "bootstrap_seed": 0
+    "bootstrap_seed": 0,
+    "rescore": {
+      "tag": "contacts-v1-exp232-m2-p06-train-1.5B",
+      "predictor": "#232 m2-p06 step-363000 (decontaminated)"
+    },
+    "validation": {
+      "tag": "contacts-v1-exp232-m2-p06-1.5B-validate",
+      "against": "#232 m2-p06 (decontaminated)"
+    }
   },
   "git": {
-    "commit": "1f27eddbc280dc35ac721fdb0f94204e0b7da83f",
+    "commit": "ab7a50770a85eb55991ec81b50f376e85a9379bc",
     "branch": "exp250/evals-exploration-notebook",
     "dirty": true,
     "dirty_files": [
-      "M experiments/exp250_evals_exploration_notebook/README.md",
-      "RM notebooks/figures/1_make_top7_heatmap_data.ipynb -> experiments/exp250_evals_exploration_notebook/figures/1_make_top7_heatmap_data.ipynb",
-      "RM notebooks/figures/1_plot_top7_heatmap.ipynb -> experiments/exp250_evals_exploration_notebook/figures/1_plot_top7_heatmap.ipynb",
-      "RM notebooks/figures/2_make_rprecision_data.ipynb -> experiments/exp250_evals_exploration_notebook/figures/2_make_rprecision_data.ipynb",
-      "RM notebooks/figures/2_plot_rprecision.ipynb -> experiments/exp250_evals_exploration_notebook/figures/2_plot_rprecision.ipynb",
-      "RM notebooks/figures/3_make_structure_accuracy_data.ipynb -> experiments/exp250_evals_exploration_notebook/figures/3_make_structure_accuracy_data.ipynb",
-      "RM notebooks/figures/3_plot_structure_accuracy.ipynb -> experiments/exp250_evals_exploration_notebook/figures/3_plot_structure_accuracy.ipynb",
-      "RM notebooks/figures/4_make_contamination_contrast_data.ipynb -> experiments/exp250_evals_exploration_notebook/figures/4_make_contamination_contrast_data.ipynb",
-      "RM notebooks/figures/4_plot_contamination_contrast.ipynb -> experiments/exp250_evals_exploration_notebook/figures/4_plot_contamination_contrast.ipynb",
-      "RM notebooks/figures/README.md -> experiments/exp250_evals_exploration_notebook/figures/README.md",
-      "R  notebooks/figures/assemble_figures.py -> experiments/exp250_evals_exploration_notebook/figures/assemble_figures.py",
-      "R  notebooks/figures/data/1_top7_heatmap/ca_coords.npy -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/ca_coords.npy",
-      "R  notebooks/figures/data/1_top7_heatmap/document.txt -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/document.txt",
-      "R  notebooks/figures/data/1_top7_heatmap/ground_truth.json -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/ground_truth.json",
-      "R  notebooks/figures/data/1_top7_heatmap/metadata.json -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/metadata.json",
-      "R  notebooks/figures/data/1_top7_heatmap/metrics.csv -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/metrics.csv",
-      "R  notebooks/figures/data/1_top7_heatmap/residue_numbers.npy -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/residue_numbers.npy",
-      "R  notebooks/figures/data/1_top7_heatmap/score.npy -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/score.npy",
-      "R  notebooks/figures/data/1_top7_heatmap/structure.cif -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/structure.cif",
-      "R  notebooks/figures/data/1_top7_heatmap/votes.npy -> experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/votes.npy"
+      "M experiments/exp250_evals_exploration_notebook/figures/data/2_rprecision/per_protein.csv",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/2_rprecision/summary.csv"
     ]
   },
   "machine": {
-    "hostname": "ip1",
-    "hostname_overridden": false,
-    "user": "bizon",
-    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
-    "python": "3.11.14",
+    "hostname": "8xA100 node",
+    "hostname_overridden": true,
+    "user": "ubuntu",
+    "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+    "python": "3.12.14",
     "gpu": {
-      "name": "NVIDIA RTX A5000",
-      "compute_capability": "8.6",
-      "memory_gib": 23.7,
-      "count": 1
+      "name": "NVIDIA A100-SXM4-80GB",
+      "compute_capability": "8.0",
+      "memory_gib": 79.3,
+      "count": 8
     }
   },
   "packages": {
     "marinfold": "0.1.0",
-    "torch": "2.5.1+cu121",
+    "torch": "2.11.0+cu129",
     "transformers": "4.57.6",
-    "vllm": null,
-    "numpy": "2.4.6",
+    "vllm": "0.20.2+cu129",
+    "numpy": "2.3.5",
     "pandas": "3.0.5",
     "matplotlib": "3.11.1"
   },
@@ -81,17 +71,191 @@
       "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/per_protein.csv.gz",
       "bytes": 112619,
       "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard00.csv",
+      "bytes": 19080,
+      "sha256": "76e32108fd8ef27c61195623954f0d301dd85a9d5ae9f52ca125df775a72e4ec"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard01.csv",
+      "bytes": 17708,
+      "sha256": "4579d3331a9af356877c75f1073ecd9f5b46c207c53f0ef9a7968def99b479ea"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard02.csv",
+      "bytes": 17753,
+      "sha256": "a6ee221f80caa0689552453d96ad130970d2b8fa0146d21d805abb280b37e3a4"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard03.csv",
+      "bytes": 17564,
+      "sha256": "36fd15383562e5318f8a8f04430382e5f9e1d29abebf303eca368673e0e81eff"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard04.csv",
+      "bytes": 17769,
+      "sha256": "38cd4e3f6d104899584f3b76a38b393e27fbd9cdfb9fc04d33e796fd06152736"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard05.csv",
+      "bytes": 17662,
+      "sha256": "500a84ea3904bb25d969a4b2cf5650bac5f8c763ef23b900748b52906b4e1b01"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard06.csv",
+      "bytes": 17462,
+      "sha256": "067b68d85eb7486ec40a4616b2b21c8b67be48b61e8948c97ee6a193b65ef8bb"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/metrics-shard07.csv",
+      "bytes": 17413,
+      "sha256": "9e572310497964b9bb0342977de137eebbed7c1c277f1750ec38880711a2def5"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard00.json",
+      "bytes": 1995,
+      "sha256": "e524c3d8210fded64f87916640b38b628518845df4197091b21a0d9efa4e3645"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard01.json",
+      "bytes": 1994,
+      "sha256": "817d93df76509022c14cb74a993a5a73076f8a4f97e1d9f8049c928a839f67bc"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard02.json",
+      "bytes": 1995,
+      "sha256": "b5b6d5e122614ce81825f0ec5c4744e014eb781067dac72294dbe4907ff4706e"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard03.json",
+      "bytes": 1994,
+      "sha256": "1e176cf5d70fba6313a1c421c0c0ef5364b6718a4d4ba332f08bceb69c655a0d"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard04.json",
+      "bytes": 1994,
+      "sha256": "4996ebd5e18bcda890c0007276006f8a20184042551622caa182bc07db9ffab4"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard05.json",
+      "bytes": 1995,
+      "sha256": "ed628c09fe07f53835c74919e0d71a328a9f0d720bc3c2dfb9c756e1c136c40a"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard06.json",
+      "bytes": 1995,
+      "sha256": "09777863f9385f7a63e3edf1c4b94284d4e665a5d1e7e48dac0cf97b5e755b5f"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-1.5B-validate/manifest-shard07.json",
+      "bytes": 1995,
+      "sha256": "4e2fab59884f6c8d66cf54130b209149a19bae48d974ff76fe4442f2cb56cf4e"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard00.csv",
+      "bytes": 61864,
+      "sha256": "a374bde712e2025a357e2048d5c56a396dc423e6f6f4b148a87d9889fb59c602"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard01.csv",
+      "bytes": 61976,
+      "sha256": "6de773ba77b9ebef6cf56d0af1452cf7935fad97b3a3b0437d060dab90a5c589"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard02.csv",
+      "bytes": 62130,
+      "sha256": "b23bdacc22a2866cae106531611e9e34989b89cc7328aade0c3e8c9697577865"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard03.csv",
+      "bytes": 61955,
+      "sha256": "7d52644062587887cfd5d455036e67c7d982454333fe129e74a6f35ae6894e53"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard04.csv",
+      "bytes": 61991,
+      "sha256": "6e0d6038973fc88442c24c43305d77fc5238a7bd19f04b4920f8c6732720d85c"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard05.csv",
+      "bytes": 60687,
+      "sha256": "b70adccd99f8758e1e8b523e8602425093d56fb38c22ce3530f3667d3f8cfe6d"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard06.csv",
+      "bytes": 60793,
+      "sha256": "95bc7b6463a515763d5ee51287ba9f7eedd65ce713a30a00bb548453706312bb"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/metrics-shard07.csv",
+      "bytes": 60671,
+      "sha256": "221e59c715a7e4b3918b8ab680e6db7e305e64768704bacb96ea0b5f94f06708"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard00.json",
+      "bytes": 2037,
+      "sha256": "70fe3d554ef99c6c2fb71abb3ee63f86e2c8a395e288a26bbde373f4d6c716cd"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard01.json",
+      "bytes": 2036,
+      "sha256": "8244c0e7feeca5b3e1f4e22f671b7acf05664a3bcce90bb3eeeac673ce47c0d1"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard02.json",
+      "bytes": 2037,
+      "sha256": "d79d80676033ba13a2c0194fec3f6937bf4345fdb355af7cf573cd6ffac0b96c"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard03.json",
+      "bytes": 2036,
+      "sha256": "9e949d80dd363f28102681f14e6fbab0a6b02b8903b722f6285ae0fd7e44c241"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard04.json",
+      "bytes": 2036,
+      "sha256": "55837439dae6541a7a4638adacc1fef9756779eacff4458ca7c4a6ab6ccc5757"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard05.json",
+      "bytes": 2036,
+      "sha256": "32f556fda6ab57f793a05b83aa51910a23ed5c664f58feb130204049b88551b8"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard06.json",
+      "bytes": 2037,
+      "sha256": "6a53c700fa7fae2325f147031a514e8668467c7433d1c1f0cc12d148a754fff9"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/contacts-v1-exp232-m2-p06-train-1.5B/manifest-shard07.json",
+      "bytes": 2036,
+      "sha256": "c78290689386eb0170b5112238a65bf350f552bac343b415ad097771dc3a39f3"
     }
   ],
   "outputs": {
     "summary.csv": {
-      "bytes": 1991,
-      "sha256": "26df69952cfe6fadfaa1ab3372bd5d1ba0c307470d78c003c3ba88db05ea9837"
+      "bytes": 2242,
+      "sha256": "0615ee368329d1485ab8733021fc1b7bedc13df9fe4f79c9301c33663289bc30"
     },
     "per_protein.csv": {
-      "bytes": 239414,
-      "sha256": "8fdfe04cf8585a56c041b5211821fb5ac0409c679474bc04e16dc7a43c26af82"
+      "bytes": 272209,
+      "sha256": "93dc1efdc52924e473b6a3dfaf860b95d960e1fc9a7453c7498be22485a8bbbf"
     }
+  },
+  "rescored": {
+    "predictor": "#232 m2-p06 step-363000 (decontaminated)",
+    "tag": "contacts-v1-exp232-m2-p06-train-1.5B"
+  },
+  "pipeline_validation": {
+    "model": "#232 m2-p06 (decontaminated)",
+    "n": 97,
+    "mean_mine": 0.5240343023070005,
+    "mean_published": 0.5197991295291134,
+    "mean_delta": 0.004235172777887146,
+    "mean_absolute_delta": 0.013674478150388393,
+    "max_absolute_delta": 0.0888888888888889,
+    "correlation": 0.9951823652412765
   },
   "metric": {
     "range": "all",
