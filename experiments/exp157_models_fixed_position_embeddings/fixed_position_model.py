@@ -25,7 +25,7 @@ from haliax.nn.normalization import LayerNormBase
 from haliax.state_dict import ModuleWithStateDictSerialization
 
 from levanter.layers.attention import AttentionMask
-from levanter.models.lm_model import LmConfig, LmHeadModel, resize_embeddings_and_lm_head
+from levanter.models.lm_model import LmConfig, LmExample, LmHeadModel, resize_embeddings_and_lm_head
 from levanter.models.llama import LlamaConfig, LlamaTransformer
 from levanter.models.qwen import Qwen3Config
 
@@ -42,12 +42,17 @@ class ResiduePositionEmbeddingSpec:
             and add its rows to the fixed vectors for residue-position tokens.
             Position rows are initialized to zero, making RoPE a strong prior
             while retaining the original learned-embedding parameter shape.
+        delta_l2_weight: Training-loss weight for an L2 prior that keeps the
+            learned residue-position deltas close to zero. The unreduced loss
+            path used by evaluation leaves this prior out, so eval/loss remains
+            plain next-token CE.
     """
 
     start_token_id: int
     num_tokens: int
     base: float = 10_000.0
     trainable_delta: bool = False
+    delta_l2_weight: float = 0.0
 
     def validate(self, vocab_size: int) -> None:
         """Raise ``ValueError`` if the configured span is not inside the vocab."""
@@ -55,6 +60,8 @@ class ResiduePositionEmbeddingSpec:
             raise ValueError("start_token_id must be non-negative")
         if self.num_tokens <= 0:
             raise ValueError("num_tokens must be positive")
+        if self.delta_l2_weight < 0:
+            raise ValueError("delta_l2_weight must be non-negative")
         end_token_id = self.start_token_id + self.num_tokens
         if end_token_id > vocab_size:
             raise ValueError(
@@ -169,6 +176,19 @@ class FixedResiduePositionEmbedding(eqx.Module):
         return (input_ids >= start) & (input_ids < stop)
 
     @named_call
+    def delta_l2(self) -> jnp.ndarray:
+        """Return mean squared magnitude of trainable residue-position deltas."""
+        if not self.position_spec.trainable_delta:
+            return jnp.asarray(0.0, dtype=self.token_embeddings.weight.array.dtype)
+        start = self.position_spec.start_token_id
+        stop = start + self.position_spec.num_tokens
+        delta_rows = self.token_embeddings.weight.array[start:stop]
+        return jnp.mean(jnp.square(delta_rows))
+
+    def delta_rms(self) -> jnp.ndarray:
+        """Return RMS magnitude of trainable residue-position deltas."""
+        return jnp.sqrt(self.delta_l2())
+
     def embed(self, input_ids: NamedArray) -> NamedArray:
         """Embed full-vocabulary token ids, synthesizing fixed position vectors."""
         learned = self.token_embeddings(self._compact_ids(input_ids))
@@ -329,6 +349,32 @@ class FixedResiduePositionLlamaLMHeadModel(ModuleWithStateDictSerialization, LmH
         """Return hidden states before the LM head."""
         x = self.embeddings.embed(input_ids)
         return self.transformer(x, attn_mask=attn_mask, key=key, pos_ids=pos_ids)
+
+    def compute_next_token_loss(
+        self,
+        example: LmExample,
+        *,
+        key=None,
+        reduction: Optional[hax.ReductionFunction] = cast(Optional[hax.ReductionFunction], hax.mean),
+        reduction_axis: Optional[hax.AxisSelection] = None,
+        logsumexp_weight: Optional[float] = None,
+        loss_dtype: Optional[jnp.dtype] = jnp.float32,
+        logit_soft_cap: Optional[float] = None,
+    ) -> jnp.ndarray | NamedArray:
+        """Compute next-token CE plus an optional training-only delta L2 prior."""
+        loss = super().compute_next_token_loss(
+            example,
+            key=key,
+            reduction=reduction,
+            reduction_axis=reduction_axis,
+            logsumexp_weight=logsumexp_weight,
+            loss_dtype=loss_dtype,
+            logit_soft_cap=logit_soft_cap,
+        )
+        l2_weight = self.embeddings.position_spec.delta_l2_weight
+        if reduction is None or l2_weight == 0.0:
+            return loss
+        return loss + l2_weight * self.embeddings.delta_l2()
 
     def get_lm_head(self) -> hax.NamedArray:
         """Return the untied output projection matrix."""

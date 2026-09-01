@@ -123,6 +123,11 @@ Status:
   W&B `exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8`.
   It uses Qwen3 1.5B, global batch 128, 71,360 steps, full validation every 2,230
   steps, LR `3.1623e-3`, WD `0.2`, warmup `0.1`, BlockShuffle, and 32 GB200 GPUs.
+- A follow-up `rope_delta` variant adds an explicit zero-centered L2 prior on
+  the learned residue-position deltas via `EXP157_POSITION_DELTA_L2_WEIGHT`.
+  The prior is added only to reduced training loss; Levanter's unreduced eval
+  path remains plain next-token CE, so validation curves stay comparable to the
+  unregularized run.
 
 ## Conclusion
 

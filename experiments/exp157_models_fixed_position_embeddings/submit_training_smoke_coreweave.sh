@@ -2,9 +2,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-MARIN_WORKTREE="${MARIN_WORKTREE:-${ROOT}/../repos/marin-gamma}"
-IRIS="${IRIS:-${MARIN_WORKTREE}/.venv/bin/iris}"
-MAIN_CONFIG="${MAIN_CONFIG:-${MARIN_WORKTREE}/lib/iris/config/marin.yaml}"
+MARIN_WORKTREE="${MARIN_WORKTREE:-${ROOT}/../repos/marin-alpha}"
+IRIS="${IRIS:-uv run --project /tmp/marin-iris-origin-main-fresh/lib/iris iris}"
+IRIS_CONTROLLER_URL="${IRIS_CONTROLLER_URL:-http://10.128.0.3:10000}"
 TARGET_CLUSTER="${TARGET_CLUSTER:-cw-rno2a}"
 JOB_NAME="${JOB_NAME:-exp157-fixed-position-training-smoke-r1-driver}"
 
@@ -13,7 +13,7 @@ if [[ -z "${WANDB_API_KEY:-}" ]]; then
   exit 2
 fi
 
-"${IRIS}" --config "${MAIN_CONFIG}" job run \
+${IRIS} --controller-url "${IRIS_CONTROLLER_URL}" job run \
     --target-cluster "${TARGET_CLUSTER}" \
     --no-wait \
     --priority "${IRIS_PRIORITY:-batch}" \
@@ -28,6 +28,7 @@ fi
     -e EXP157_MODEL_SIZE "${EXP157_MODEL_SIZE:-1_5b}" \
     -e EXP157_MODEL_FAMILY "${EXP157_MODEL_FAMILY:-llama}" \
     -e EXP157_POSITION_MODE "${EXP157_POSITION_MODE:-fixed}" \
+    -e EXP157_POSITION_DELTA_L2_WEIGHT "${EXP157_POSITION_DELTA_L2_WEIGHT:-0.0}" \
     -e EXP157_GPU_VARIANT "${EXP157_GPU_VARIANT:-H100}" \
     -e EXP157_GPU_COUNT "${EXP157_GPU_COUNT:-8}" \
     -e EXP157_GPU_REPLICAS "${EXP157_GPU_REPLICAS:-1}" \

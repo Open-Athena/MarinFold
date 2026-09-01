@@ -115,6 +115,51 @@ def test_update_steps_change_model_but_not_fixed_position_embeddings() -> None:
     assert lm_head_delta > 0
 
 
+def test_delta_l2_prior_only_applies_to_reduced_training_loss() -> None:
+    config = dataclasses.replace(
+        _tiny_config(),
+        position_embedding=ResiduePositionEmbeddingSpec(
+            start_token_id=10,
+            num_tokens=4,
+            base=10_000.0,
+            trainable_delta=True,
+            delta_l2_weight=0.5,
+        ),
+    )
+    Vocab = Axis("vocab", 20)
+    Pos = Axis("position", 8)
+    model = config.build(Vocab, key=jax.random.PRNGKey(0))
+    weight = model.embeddings.token_embeddings.weight.array.at[10:14].set(2.0)
+    model = dataclasses.replace(
+        model,
+        embeddings=dataclasses.replace(
+            model.embeddings,
+            token_embeddings=dataclasses.replace(
+                model.embeddings.token_embeddings,
+                weight=hax.named(weight, model.embeddings.token_embeddings.weight.axes),
+            ),
+        ),
+    )
+
+    tokens = hax.named(jnp.array([0, 10, 4, 11, 5, 12, 6, 13], dtype=jnp.int32), Pos)
+    example = LmExample.causal(tokens)
+    unregularized = dataclasses.replace(
+        model,
+        embeddings=dataclasses.replace(
+            model.embeddings,
+            position_spec=dataclasses.replace(model.embeddings.position_spec, delta_l2_weight=0.0),
+        ),
+    )
+
+    reduced_loss = model.compute_next_token_loss(example).array
+    reduced_base = unregularized.compute_next_token_loss(example).array
+    assert jnp.allclose(reduced_loss - reduced_base, 2.0)
+
+    unreduced_loss = model.compute_next_token_loss(example, reduction=None, reduction_axis=()).array
+    unreduced_base = unregularized.compute_next_token_loss(example, reduction=None, reduction_axis=()).array
+    assert jnp.allclose(unreduced_loss, unreduced_base)
+
+
 def test_update_steps_train_learned_position_delta_embeddings() -> None:
     config = dataclasses.replace(
         _tiny_config(),

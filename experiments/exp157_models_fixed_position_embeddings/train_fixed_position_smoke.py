@@ -47,6 +47,7 @@ NUM_TRAIN_STEPS = int(os.environ.get("EXP157_MAX_STEPS", "20"))
 MODEL_SIZE = os.environ.get("EXP157_MODEL_SIZE", "1_5b")
 MODEL_FAMILY = os.environ.get("EXP157_MODEL_FAMILY", "llama")
 POSITION_MODE = os.environ.get("EXP157_POSITION_MODE", "fixed")
+POSITION_DELTA_L2_WEIGHT = float(os.environ.get("EXP157_POSITION_DELTA_L2_WEIGHT", "0.0"))
 GPU_VARIANT = os.environ.get("EXP157_GPU_VARIANT", "H100")
 GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
 GPU_REPLICAS = int(os.environ.get("EXP157_GPU_REPLICAS", "1"))
@@ -101,6 +102,7 @@ _position_embedding = ResiduePositionEmbeddingSpec(
     start_token_id=CONTACTS_V1_P0_TOKEN_ID,
     num_tokens=CONTACTS_V1_NUM_POSITION_TOKENS,
     trainable_delta=POSITION_MODE == "rope_delta",
+    delta_l2_weight=POSITION_DELTA_L2_WEIGHT if POSITION_MODE == "rope_delta" else 0.0,
 )
 if POSITION_MODE in {"fixed", "rope_delta"} and MODEL_FAMILY == "qwen3":
     protein_llama_model = FixedResiduePositionQwen3Config(**_common_model_kwargs, position_embedding=_position_embedding)
@@ -122,10 +124,16 @@ RESOURCES = ResourceConfig.with_gpu(
     replicas=GPU_REPLICAS,
 )
 
+def _l2_tag(weight: float) -> str:
+    if weight == 0.0:
+        return ""
+    return f"-l2{weight:.0e}".replace("e-0", "em").replace("e+0", "e")
+
+
 RUN_SUFFIX = os.environ.get("EXP157_RUN_SUFFIX", "smoke20-r1")
 RUN_NAME = (
     f"exp157-cv1-{MODEL_SIZE}-e{EPOCHS}-lr{_lr_tag(LEARNING_RATE).replace('-', 'm')}-"
-    f"wd0p2-bs{TRAIN_BATCH}-{MODEL_FAMILY}-{POSITION_MODE}-position-{RUN_SUFFIX}"
+    f"wd0p2-bs{TRAIN_BATCH}-{MODEL_FAMILY}-{POSITION_MODE}-position{_l2_tag(POSITION_DELTA_L2_WEIGHT)}-{RUN_SUFFIX}"
 )
 
 _env_vars = {"WANDB_ENTITY": "open-athena"}
@@ -140,6 +148,7 @@ def main() -> None:
         f"[exp157] {MODEL_FAMILY} {POSITION_MODE}-position next-token run: run={RUN_NAME} "
         f"gpu={GPU_VARIANT}x{GPU_COUNT} replicas={GPU_REPLICAS} priority={IRIS_PRIORITY} "
         f"batch={TRAIN_BATCH} seq={SEQ_LEN} steps={NUM_TRAIN_STEPS} "
+        f"delta_l2={POSITION_DELTA_L2_WEIGHT:g} "
         f"({steps_per_epoch} steps/epoch at this batch; full e{EPOCHS} would be "
         f"{steps_per_epoch * EPOCHS})"
     )
@@ -165,6 +174,7 @@ def main() -> None:
             MODEL_FAMILY,
             "unmasked",
             f"{POSITION_MODE}-position",
+            f"position-delta-l2-{POSITION_DELTA_L2_WEIGHT:g}",
             "coreweave",
             f"{GPU_VARIANT.lower()}x{GPU_COUNT}n{GPU_REPLICAS}",
             f"bs{TRAIN_BATCH}",
