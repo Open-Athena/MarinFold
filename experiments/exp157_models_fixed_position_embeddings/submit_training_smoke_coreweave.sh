@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MARIN_WORKTREE="${MARIN_WORKTREE:-${ROOT}/../repos/marin-alpha}"
 IRIS="${IRIS:-uv run --project /tmp/marin-iris-origin-main-fresh/lib/iris iris}"
-IRIS_CONTROLLER_URL="${IRIS_CONTROLLER_URL:-http://10.128.0.3:10000}"
+IRIS_CONTROLLER_URL="${IRIS_CONTROLLER_URL:-}"
+IRIS_CLUSTER="${IRIS_CLUSTER:-marin}"
 TARGET_CLUSTER="${TARGET_CLUSTER:-cw-rno2a}"
 JOB_NAME="${JOB_NAME:-exp157-fixed-position-training-smoke-r1-driver}"
 
@@ -13,7 +14,14 @@ if [[ -z "${WANDB_API_KEY:-}" ]]; then
   exit 2
 fi
 
-${IRIS} --controller-url "${IRIS_CONTROLLER_URL}" job run \
+IRIS_CONNECT_ARGS=()
+if [[ -n "${IRIS_CONTROLLER_URL}" ]]; then
+  IRIS_CONNECT_ARGS=(--controller-url "${IRIS_CONTROLLER_URL}")
+elif [[ -n "${IRIS_CLUSTER}" ]]; then
+  IRIS_CONNECT_ARGS=(--cluster "${IRIS_CLUSTER}")
+fi
+
+${IRIS} "${IRIS_CONNECT_ARGS[@]}" job run \
     --target-cluster "${TARGET_CLUSTER}" \
     --no-wait \
     --priority "${IRIS_PRIORITY:-batch}" \
