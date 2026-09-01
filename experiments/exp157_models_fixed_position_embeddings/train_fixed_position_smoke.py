@@ -51,6 +51,7 @@ POSITION_DELTA_L2_WEIGHT = float(os.environ.get("EXP157_POSITION_DELTA_L2_WEIGHT
 GPU_VARIANT = os.environ.get("EXP157_GPU_VARIANT", "H100")
 GPU_COUNT = int(os.environ.get("EXP157_GPU_COUNT", "8"))
 GPU_REPLICAS = int(os.environ.get("EXP157_GPU_REPLICAS", "1"))
+TARGET_CLUSTER = os.environ.get("EXP157_TARGET_CLUSTER") or None
 STEPS_PER_EVAL = int(os.environ.get("EXP157_STEPS_PER_EVAL", str(NUM_TRAIN_STEPS)))
 _MAX_EVAL_BATCHES = os.environ.get("EXP157_MAX_EVAL_BATCHES", "1")
 MAX_EVAL_BATCHES = None if _MAX_EVAL_BATCHES.lower() in {"", "none", "full", "all"} else int(_MAX_EVAL_BATCHES)
@@ -122,6 +123,7 @@ RESOURCES = ResourceConfig.with_gpu(
     ram=os.environ.get("EXP157_RAM") or _DEFAULT_RAM,
     disk=os.environ.get("EXP157_DISK") or "256g",
     replicas=GPU_REPLICAS,
+    target_cluster=TARGET_CLUSTER,
 )
 
 def _l2_tag(weight: float) -> str:
@@ -146,7 +148,7 @@ def main() -> None:
     steps_per_epoch = math.ceil(TRAIN_TOKENS / (TRAIN_BATCH * SEQ_LEN))
     print(
         f"[exp157] {MODEL_FAMILY} {POSITION_MODE}-position next-token run: run={RUN_NAME} "
-        f"gpu={GPU_VARIANT}x{GPU_COUNT} replicas={GPU_REPLICAS} priority={IRIS_PRIORITY} "
+        f"gpu={GPU_VARIANT}x{GPU_COUNT} replicas={GPU_REPLICAS} target_cluster={TARGET_CLUSTER} priority={IRIS_PRIORITY} "
         f"batch={TRAIN_BATCH} seq={SEQ_LEN} steps={NUM_TRAIN_STEPS} "
         f"delta_l2={POSITION_DELTA_L2_WEIGHT:g} "
         f"({steps_per_epoch} steps/epoch at this batch; full e{EPOCHS} would be "
