@@ -53,9 +53,11 @@ padding waste.
 
 The worry was that ProteinMPNN's Ala/Glu/Lys/Leu bias would shorten the
 documents, since contact count collapses for small side chains (poly-ALA gives
-~0 contacts). Measured over 384 designs: the largest AA shift is 2.2 percentage
-points, and **contacts per residue moves from 0.930 native to 0.900 designed —
-a ratio of 0.968**.
+~0 contacts). Measured over two 48-protein samples: the largest AA shift is 2.2 percentage
+points, and **contacts per residue lands at a ratio of 0.968 and 0.942** (native
+0.930/0.902 vs designed 0.900/0.850). The two runs disagree by 0.026, which is
+the honest precision of n=48 — real and small, call it 3-6 %, and a number the
+pilot has to settle at scale on AFDB rather than PDB structures.
 
 ## Where it stands
 

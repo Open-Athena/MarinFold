@@ -220,8 +220,14 @@ on faith.
 
 ## Measurements so far (local, RTX A5000 + 1 CPU core)
 
-`data/local_smoke_throughput.csv`, from `smoke_local.py --limit 48` and the
-timing scripts.
+Two runs of `smoke_local.py --limit 48`: **direct** (before the staging hop
+existed) and **staged** (through `encode_backbone`/`decode_backbone`, the path
+that actually runs). They draw different 48-protein samples, because
+`encode_backbone` rejects the non-contiguous author numbering that experimental
+PDB entries routinely have — a filter that should never fire on AFDB's complete
+1..L models. `data/local_smoke_*.csv`.
+
+### Throughput
 
 | path | ms/sequence | note |
 |---|---|---|
@@ -229,46 +235,55 @@ timing scripts.
 | GPU, designs folded in, B=1 | 162 | 8× from the batch-dimension fold |
 | GPU, designs folded in, B=8 (L=154) | 33 | +another 5× from batching |
 | GPU, designs folded in, B=32 (L=46) | 6.3 | |
-| **CPU, 1 thread, designs folded in (L=154)** | **602** | 4.82 s per backbone for 8 designs |
-| pyconfind → document, 1 thread | 463 ms/**document** | at L≈250 |
+| CPU, 1 thread, designs folded in (L=154) | 602 | 4.82 s/backbone for 8 designs |
+| pyconfind → document, 1 thread | 378–463 ms/**document** | at L≈220–250 |
+| mmCIF → staged backbone row | 177 ms | I/O-bound in practice, not this |
 
 Device memory scales cleanly at **0.52 MB per padded residue** in the effective
-batch, independent of L and B — that is what `--max-batch-residues` bounds.
+batch, independent of L and B — what `--max-batch-residues` bounds.
+
+Staged size: **11.2 KB/protein** uncompressed (coords + pLDDT + sequence), so
+**~46 GB** for the full corpus before ZSTD.
 
 ### Composition drift — the risk flagged in the issue
 
-48 monomers, 384 designs (`data/local_smoke_composition.csv`). ProteinMPNN's
-known biases are present and in the expected direction, but modest — the
-largest single shift is 2.2 percentage points:
+ProteinMPNN's known biases are present and in the expected direction, and
+consistent across both runs. Largest shifts (staged run):
 
 | over-used | Δpp | under-used | Δpp |
 |---|---|---|---|
-| A | +2.06 | Q | −2.19 |
-| P | +1.70 | M | −1.51 |
-| E | +1.54 | S | −1.35 |
-| L | +1.29 | H | −1.21 |
-| K | +1.09 | C | −0.58 |
+| A | +2.23 | Q | −2.06 |
+| P | +1.98 | M | −1.33 |
+| L | +1.46 | S | −1.27 |
+| E | +0.92 | H | −1.12 |
+| K | +0.83 | F | −0.92 |
 
-And the number that actually matters, given that contact count collapses for
-small side chains:
+And the number that matters, given that contact count collapses for small side
+chains:
 
-**contacts per residue: native 0.930, designed 0.900 — ratio 0.968.**
+| run | native contacts/residue | designed | ratio |
+|---|---|---|---|
+| direct (48 proteins) | 0.930 | 0.900 | **0.968** |
+| staged (48 proteins) | 0.902 | 0.850 | **0.942** |
 
-So the feared artifact (Ala-rich designs producing systematically shorter
-documents) is real but small at ~3 %. To be re-measured on the pilot at
-corpus scale and on AFDB rather than PDB structures.
+So the feared artifact — Ala-rich designs producing systematically shorter
+documents — is real and small, somewhere around 3–6 %. **The two runs disagree
+by 0.026, which is the honest precision of a 48-protein sample**; this is a
+pilot-scale measurement, not a settled number, and it is on PDB rather than
+AFDB structures. The staging hop is not the cause of the difference — that is
+asserted byte-identical by
+`tests/test_backbone.py::test_staged_backbone_round_trip_is_byte_identical`.
 
-Temperature behaves as intended, though the ladder spreads gently
-(`data/local_smoke_temperature.csv`):
+Temperature behaves as intended in both runs, though the ladder spreads gently:
 
-| T | mean identity to native | mean MPNN score |
+| T | identity to native (direct / staged) | MPNN score |
 |---|---|---|
-| 0.1 | 0.467 | 0.845 |
-| 0.2 | 0.457 | 0.876 |
-| 0.3 | 0.451 | 0.919 |
-| 0.5 | 0.434 | 1.088 |
+| 0.1 | 0.467 / 0.443 | 0.845 / 0.883 |
+| 0.2 | 0.457 / 0.432 | 0.876 / 0.916 |
+| 0.3 | 0.451 / 0.430 | 0.919 / 0.965 |
+| 0.5 | 0.434 / 0.413 | 1.088 / 1.140 |
 
-0.467 recovery at T=0.1 matches ProteinMPNN's published ~50 %.
+0.44–0.47 recovery at T=0.1 is in line with ProteinMPNN's published ~50 %.
 
 ## Projected full-run cost — **the gate**
 
@@ -349,8 +364,9 @@ issue against the #232 decontaminated recipe. For *this* issue:
 3. **Completeness.** 3,963,003 × 8 = 31,704,024 documents, drops counted and
    reported by reason, fail-loud per the pipeline skill.
 4. **Composition check.** AA frequency and contacts-per-residue vs native, per
-   temperature, reported whatever it shows — ✅ locally (ratio 0.968), to be
-   repeated at pilot scale.
+   temperature, reported whatever it shows — measured locally at ratio
+   0.968 / 0.942 over two 48-protein samples, which is too noisy to settle it;
+   the pilot must repeat it at scale on AFDB structures.
 5. Published to the public HF bucket with a `DATASET_README.md` and a
    reproducible `publish_to_hf.py`.
 
