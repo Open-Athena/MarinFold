@@ -117,58 +117,106 @@ is measured below.
 
 ## Approach
 
-Two stages, following [#53](https://github.com/Open-Athena/MarinFold/issues/53)'s
-pipeline shape.
+Three stages. The split is forced by one fact: **CoreWeave task pods carry only
+CoreWeave S3 credentials** (`iris-task-env` holds `AWS_*` / `CW_*` / `FSSPEC_S3`
+and no GCP), so a CoreWeave worker cannot read AFDB's requester-pays GCS bucket.
+The structures have to cross clouds as data.
 
-**Stage A — keep-list** (`select_backbones.py`, local, minutes). Read
-`entry_id` + provenance from the published `contacts_v1_decontam/train` corpus
-(2,067 shards; schema verified) and emit a length-sorted Stage-B manifest.
-`gcs_uri` is rebuilt from `entry_id` rather than joined back to the
-12,005-shard afdb-24M manifest, since AFDB's layout makes it a pure function of
-the accession.
+**Stage A — keep-list** (`select_backbones.py`, local, minutes). Read `entry_id`
++ provenance from the published `contacts_v1_decontam/train` corpus (2,067
+shards; schema verified) and emit a length-sorted Stage-B manifest. `gcs_uri` is
+rebuilt from `entry_id` rather than joined back to the 12,005-shard afdb-24M
+manifest, since AFDB's layout makes it a pure function of the accession.
 
 Decontamination is **inherited, not re-derived**: the keep-list is read out of
 the published decontaminated corpus, so we only ever redesign a backbone that
 survived #225, and a redesigned sequence cannot reintroduce an eval *sequence*
 because it is a new sequence.
 
-**Stage B — redesign + documents** (`cli.py` → `generate_rows.py`, one Iris
-job). Per row: fetch the cif once (gzip-safe `read_object_bytes`), strip to
-backbone, run ProteinMPNN `v_48_020` for 8 designs, relabel and call
-`generate_document` 8 times. One fetch, one parse, 8 documents.
+**Stage A2 — stage backbones** (`cli.py stage` → `stage_rows.py`, GCP Iris).
+Fetch each cif once (gzip-safe `read_object_bytes`), strip to backbone, and
+write a compact row. This is the only stage that *must* run on GCP. It is also
+genuinely I/O-bound — a ~30–80 ms GCS GET against a few ms of parse-and-encode —
+so it is the textbook case for `thread_per_row_in_shard` at the default fetch
+concurrency of 32, unlike the document stage where seconds of CPU dominate.
+
+What crosses is small because we only need backbones: N/CA/C/O plus sequence and
+per-residue pLDDT is a measured **11.2 KB/protein** uncompressed against ~180 KB
+of all-atom mmCIF — **~46 GB staged once** (less after ZSTD) instead of ~700 GB
+fetched repeatedly. The artifact is reusable by
+any future backbone-based experiment, the same argument #139 makes for having
+saved its raw pyconfind contacts.
+
+**Stage B — redesign + documents** (`dispatch_redesign_cw.py` →
+`redesign_worker_cw.py`, CoreWeave rno-2a). N independent 1×H100 tasks, batch
+priority, no gang. Per chunk: design on the GPU in exact-length batches, then
+fan document generation out over a process pool while the next chunk designs.
 
 8 designs per backbone on a **temperature ladder**
 `{0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.5, 0.5}`, recorded per row alongside
 `mpnn_score` and `identity_to_native`, so a training experiment can subset the
 near-native ↔ diverse axis without regenerating anything.
 
-### Three engineering decisions the measurements forced
+`cli.py generate` is the all-CPU fallback for when the GPU fleet is busy — same
+worker code, `--device cpu`.
 
-**One job on CPU, not a GPU job plus a CPU job.** ProteinMPNN is a 1.7 M-param
-GNN whose decode is `L` sequential steps, so the GPU path is launch-bound, not
-compute-bound: a single CPU core is only ~18× slower per sequence than an RTX
-A5000. Splitting into "redesign on CoreWeave, documents on Iris" would stage
-4 M AFDB cifs cross-cloud from GCS to S3, fetch every structure twice, and run
-two jobs — to save CPU hours the Iris pool has (#139 scaled to 512 workers in
-~10 minutes). `--device cuda` remains available if the pilot disagrees.
+### Why CoreWeave, and why this shape
+
+Measured live (2026-08-31) across both CoreWeave clusters:
+
+| cluster | pool | nodes | vCPU | requested | idle | H100 idle |
+|---|---|---|---|---|---|---|
+| cw-us-east-02a | `cpu-genoa` | 4 | 768 | 33 | **735** | — |
+| cw-us-east-02a | `h100-8x` | 32 | 4,095 | 844 | 3,250 | 24 / 256 |
+| cw-rno2a | `cpu-turin` | 1 | 192 | 23 | 169 | — |
+| cw-rno2a | `h100-8x` | 64 | 8,189 | 1,456 | **6,734** | **224 / 512** |
+
+rno2a has no CPU fan-out pool at all (`cpu-turin` is `max_slices: 1`, it hosts
+the controller), but its H100 fleet is prepaid and `buffer_slices: 64` pins it
+fully warm — "the fleet is prepaid, so there is nothing to save by autoscaling
+it down". Idle GPUs there are free at the margin, and **224 were idle**.
+
+That is why Stage B is GPU-shaped even though ProteinMPNN barely needs a GPU.
+The two halves of the per-backbone work land on different hardware and roughly
+balance — ~0.1 s of H100 for 8 designs against ~4.2 s of CPU for 8 pyconfind
+runs, i.e. ~0.3 s of wall-clock across a task's 15 cores — so one task per GPU
+with a slice of the node's 128 vCPUs keeps neither device idle.
+
+### Four decisions the measurements forced
+
+**Stage the backbones as int32 milli-ångströms, not floats.** AFDB mmCIF writes
+`Cartn_x` with 3 decimals, so `round(x * 1000)` is exact and `v / 1000.0`
+reproduces the very same double gemmi parsed — lossless, 4 bytes per number, and
+integers with spatial locality compress far better than float32. float32 would
+perturb coordinates at the ~1e-3 Å level, which is exactly the scale at which a
+marginal pyconfind contact flips.
+`tests/test_backbone.py::test_staged_backbone_round_trip_is_byte_identical`
+asserts the whole hop is byte-identical at the **document, `sha1` and
+`global_plddt`** level, so the staged corpus is provably computed from the same
+coordinates as the parent.
 
 **Fold the 8 design slots into the batch dimension.** ProteinMPNN uses
-`temperature` only in broadcast-compatible divisions, so a `[B, 1]` tensor
-works where a scalar is expected — one `sample()` call produces all 8 designs
-at 8 different temperatures. Measured on an A5000 at L=154: 10.38 s → 1.30 s
-for 8 designs. `tests/test_redesign.py::test_per_item_temperature_matches_scalar`
-asserts bit-equality with the scalar path, because a silent failure here would
-draw every sequence at the wrong temperature.
+`temperature` only in broadcast-compatible divisions, so a `[B, 1]` tensor works
+where a scalar is expected — one `sample()` call produces all 8 designs at 8
+different temperatures. Measured on an A5000 at L=154: 10.38 s → 1.30 s.
+`tests/test_redesign.py::test_per_item_temperature_matches_scalar` asserts
+bit-equality with the scalar path, because a silent failure here would draw
+every sequence at the wrong temperature.
 
-**Exact-length batches** (`redesign.batch_by_exact_length`). Not an
-optimization but a correctness requirement: `tied_featurize` pads
-`omit_AA_mask` (an `[L, 21]` array) with the 1-D pad spec `[[0, L_max - l]]`,
-widening the *alphabet* axis, and raises on any batch of mixed lengths
-(`could not broadcast input array from shape (476,426) into shape (476,21)`).
-Upstream never hits it because the stock CLI batches N copies of one protein.
-Rather than monkey-patch a dependency we feed it only the shape it handles,
-which also means zero padding waste. Stage A's length sort is what keeps the
-equal-length groups full.
+**Exact-length batches** (`redesign.batch_by_exact_length`). Not an optimization
+but a correctness requirement: `tied_featurize` pads `omit_AA_mask` (an
+`[L, 21]` array) with the 1-D pad spec `[[0, L_max - l]]`, widening the
+*alphabet* axis, and raises on any batch of mixed lengths (`could not broadcast
+input array from shape (476,426) into shape (476,21)`). Upstream never hits it
+because the stock CLI batches N copies of one protein. Rather than monkey-patch
+a dependency we feed it only the shape it handles, which also means zero padding
+waste. Stage A's length sort keeps the equal-length groups full.
+
+**Override `proteinmpnn`'s `numpy<2` pin.** It is unsatisfiable against
+`marin-zephyr`'s `numpy>=2`. The pin is the packager's caution, not a real
+constraint — the module contains none of the APIs numpy 2 removed — and the
+CPU-parametrized tests run the model under numpy 2.5.2 rather than taking it
+on faith.
 
 ## Measurements so far (local, RTX A5000 + 1 CPU core)
 
@@ -225,53 +273,108 @@ Temperature behaves as intended, though the ladder spreads gently
 ## Projected full-run cost — **the gate**
 
 Corpus mean `seq_len` ≈ 280 (verified against the published corpus: 2,067
-shards, shard 0 mean 291.4 / median 221). Scaling the measured per-core rates:
+shards, shard 0 mean 291.4 / median 221).
 
-| stage | core-hours |
-|---|---|
-| ProteinMPNN, 8 designs × 3.96 M backbones | ~9,700 |
-| pyconfind → 31.7 M documents | ~4,600 |
-| **total** | **~14,300 CPU core-hours** |
+| stage | where | cost |
+|---|---|---|
+| A — keep-list | local | minutes |
+| A2 — stage backbones | GCP Iris, I/O-bound | ~1 h wall-clock (exp53 fetched+parsed 4.2 M in 31 min), ~46 GB out |
+| A2b — mirror to CoreWeave S3 | cloud-side | one ~46 GB copy |
+| B — redesign + documents | cw-rno2a, 28×1 H100 | **~1.5–3 h** |
 
-≈ **28 h on 512 workers**, ≈ **14 h on 1,000**. For scale, #139 was ~2,850
-core-hours, so this is ~5× the largest data job we have run.
+Stage B's arithmetic: ~4.2 s of pyconfind CPU per backbone over 14 processes is
+~0.3 s of wall-clock, so a task does ~3.3 backbones/s and 28 tasks do ~93/s →
+3.96 M / 93 ≈ **12 h**… on the *measured workstation* pyconfind rate of 463
+ms/document. That rate is the number the pilot has to replace: it was measured
+on one Threadripper core against PDB structures, and cluster Genoa cores plus
+AFDB's (shorter, gap-free) models should differ. Treat 1.5–12 h as the honest
+band until the smoke lands.
 
-The alternative (`--device cuda` for the redesign on CoreWeave) cuts the
-ProteinMPNN term to roughly 100 H100-hours but adds a cross-cloud staging of
-4 M cifs, a second fetch of every structure, and a second job, while still
-needing the ~4,600 core-hours of pyconfind on Iris.
+**The all-CPU fallback** (`cli.py generate --device cpu`) is ~14,300 core-hours
+= ~19.5 h on cw-us-east-02a's 735 idle `cpu-genoa` vCPUs, no GPU and no second
+cluster. Kept as the path for when the H100 fleet is busy.
 
 Expected output: **31,704,024 documents, ~39 B tokens, ~95–110 GB** ZSTD
 parquet.
 
 **Nothing has been launched.** Per the `zephyr-pipeline-performance` skill the
-next step is a 20 k-backbone Iris smoke to replace these workstation numbers
-with cluster ones, then a user go-ahead before the full run.
+next step is a 20 k-backbone smoke through both stages to replace these
+workstation numbers with cluster ones, then a user go-ahead.
+
+## Launch
+
+```bash
+# Stage A — keep-list (local; needs huggingface_hub>=1.5, which conflicts with
+# this experiment's pyproject, so run it out-of-project).
+uv run --no-project --with 'huggingface_hub>=1.5' --with pyarrow --with fsspec \
+    python select_backbones.py --out /data/exp266/manifest
+
+# Stage A2 — stage backbones on GCP (the only stage that can read AFDB).
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
+    python cli.py stage \
+        --input 'gs://marin-us-central1/protein-structure/MarinFold/exp266/manifest/manifest-*.parquet' \
+        --out 'gs://marin-us-central1/protein-structure/MarinFold/exp266/backbones/backbones-{shard:05d}-of-{total:05d}.parquet' \
+        --worker-cpu 1 --worker-memory 4g --max-workers 512 \
+        --region us-central1 --fetch-concurrency 32
+
+# Stage A2b — mirror to CoreWeave object storage (cloud-side, not the ~2.5 MB/s
+# workstation uplink).
+
+# Stage B — redesign on idle prepaid H100s. Smoke first: one task, one file.
+python dispatch_redesign_cw.py --shards 1 --max-files 1 --dry-run
+uv run --project /home/bizon/git/marin python dispatch_redesign_cw.py \
+    --shards 1 --max-files 1 --priority batch
+# then the full fan-out, sized to the live idle GPU count
+uv run --project /home/bizon/git/marin python dispatch_redesign_cw.py \
+    --shards 28 --priority batch
+```
+
+Check live idle capacity before choosing `--shards` — it is a point-in-time
+number and the 224 idle GPUs above are not a reservation:
+
+```bash
+KUBECONFIG=~/.kube/coreweave-iris-rno2a kubectl get nodes -o json
+```
 
 ## Success criteria
 
+This issue ships a corpus; the accuracy question is a follow-up `kind/models`
+issue against the #232 decontaminated recipe. For *this* issue:
+
 1. **Fidelity.** Native-sequence relabelling reproduces the parent document
    byte-for-byte (`tests/test_backbone.py`) — ✅ on 5 structures.
-2. **Completeness.** 3,963,003 × 8 = 31,704,024 documents, drops counted and
+2. **Staging is lossless.** The encode/decode hop reproduces the document,
+   `sha1` and `global_plddt` exactly — ✅ on 5 structures, and coordinates are
+   asserted exact at 0.001 Å.
+3. **Completeness.** 3,963,003 × 8 = 31,704,024 documents, drops counted and
    reported by reason, fail-loud per the pipeline skill.
-3. **Composition check.** AA frequency and contacts-per-residue vs native, per
+4. **Composition check.** AA frequency and contacts-per-residue vs native, per
    temperature, reported whatever it shows — ✅ locally (ratio 0.968), to be
    repeated at pilot scale.
-4. Published to the public HF bucket with a `DATASET_README.md` and a
+5. Published to the public HF bucket with a `DATASET_README.md` and a
    reproducible `publish_to_hf.py`.
 
 ## Risks
 
 - **The labels assume the design folds.** MPNN sequences are not refolded.
-  Unlike the generator version the backbone is a real AFDB fold and the
-  sequence is a high-likelihood design for it, so this is the mildest form of
-  that assumption — but a refold-and-check on a 20 k subsample (~5 GPU-h with
+  Unlike the generator version the backbone is a real AFDB fold and the sequence
+  is a high-likelihood design for it, so this is the mildest form of that
+  assumption — but a refold-and-check on a 20 k subsample (~5 GPU-h with
   ESMFold) would measure the per-sequence self-consistency rate and is worth
   folding into the pilot.
-- **`global_plddt` is inherited from the parent AFDB structure.** Stripping to
-  backbone keeps CA, so contacts-v1 recomputes the same value. It correctly
-  describes confidence in the *backbone* we reused, and says nothing about
-  whether the designed sequence folds there.
+- **`global_plddt` is inherited from the parent AFDB structure.** `decode_backbone`
+  restores the staged CA B-factors, so contacts-v1 recomputes the same value. It
+  correctly describes confidence in the *backbone* we reused, and says nothing
+  about whether the designed sequence folds there.
+- **The contiguity assert should be a no-op on AFDB.** `encode_backbone` raises
+  on non-contiguous author residue numbering. AFDB models are complete 1..L so
+  this should never fire; it fires readily on experimental PDB entries with
+  missing loops, which is why the local smoke's sample changes when it is
+  enabled. Any hit during Stage A2 is a real signal about the input, not noise
+  to suppress.
+- **Idle CoreWeave capacity is not a reservation.** The 224 idle H100s were a
+  point-in-time reading; re-check before sizing `--shards`, and fall back to
+  `cli.py generate --device cpu` if the fleet is busy.
 - **T=0.5 may be past the designability cliff.** That is what the recorded
   `mpnn_temperature` column is for.
 - **#120 says synthetic documents start at a deficit here.**
@@ -280,15 +383,18 @@ with cluster ones, then a user go-ahead before the full run.
 
 | file | role |
 |---|---|
-| `backbone.py` | strip-to-backbone / relabel / coordinate extraction — the verified core |
+| `backbone.py` | strip / relabel / **lossless staged encode-decode** — the verified core |
 | `redesign.py` | ProteinMPNN wrapper: exact-length batches, folded design dimension |
 | `select_backbones.py` | Stage A — keep-list from the decontaminated corpus |
-| `generate_rows.py` | Stage B per-row worker (no zephyr import) |
-| `cli.py` | Stage B driver — Zephyr `map_shard` on Iris |
-| `smoke_local.py` | local end-to-end: throughput, composition, contact density |
+| `stage_rows.py` | Stage A2 per-row worker — mmCIF → staged backbone row |
+| `cli.py` | Zephyr driver: `stage` (GCP) and `generate` (CPU fallback) |
+| `redesign_worker_cw.py` | Stage B worker — one CoreWeave 1×H100 shard |
+| `dispatch_redesign_cw.py` | Stage B fan-out, batch priority |
+| `generate_rows.py` | staged row + designs → contacts-v1 documents |
+| `smoke_local.py` | local end-to-end over the real staged path |
 | `probe_pyconfind.py` | does confind need side chains? (no) |
 | `probe_seq_sensitivity.py` | how much does the label move with sequence? (a lot) |
-| `tests/` | fidelity regression + Stage-B tests (17 passing) |
+| `tests/` | fidelity + round-trip + Stage-B + pipeline tests (32 passing) |
 
 ## Results
 

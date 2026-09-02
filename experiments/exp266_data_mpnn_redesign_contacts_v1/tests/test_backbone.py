@@ -94,3 +94,66 @@ def test_relabel_rejects_non_canonical_letter() -> None:
     seq = residue_sequence(st)
     with pytest.raises(ValueError, match="non-canonical"):
         relabel_sequence(st, "X" + seq[1:])
+
+
+# --- staged backbone round-trip ----------------------------------------------
+
+
+@pytest.mark.parametrize("stem", CASES)
+def test_staged_backbone_round_trip_is_byte_identical(stem: str) -> None:
+    """The staging encoding must be lossless *at the document level*.
+
+    exp266 stages backbones to CoreWeave object storage because CoreWeave task
+    pods have no GCP credentials. If the encode/decode round-trip perturbs
+    geometry at all, every document in the corpus is computed from slightly
+    different coordinates than the parent corpus was — the exact silent
+    train-distribution mismatch the whole design is trying to avoid.
+    """
+    from backbone import decode_backbone, encode_backbone
+
+    st = _load(stem)
+    try:
+        direct = generate_document(st, entry_id=stem)
+    except ValueError as exc:
+        pytest.skip(f"{stem}: {exc}")
+    assert direct is not None
+
+    stripped = strip_to_backbone(st)
+    row = encode_backbone(stripped) | {"entry_id": stem}
+    rebuilt = generate_document(decode_backbone(row), entry_id=stem)
+
+    assert rebuilt is not None
+    assert rebuilt.document == direct.document
+    assert rebuilt.global_plddt == direct.global_plddt
+    assert rebuilt.sha1 == direct.sha1
+
+
+@pytest.mark.parametrize("stem", CASES)
+def test_staged_coordinates_are_exact(stem: str) -> None:
+    """int32 milli-angstrom storage reproduces the parsed doubles exactly."""
+    from backbone import COORD_SCALE, encode_backbone
+
+    stripped = strip_to_backbone(_load(stem))
+    row = encode_backbone(stripped)
+    original = [
+        value
+        for chain in stripped[0]
+        for residue in chain
+        for name in ("N", "CA", "C", "O")
+        for value in _xyz(residue, name)
+    ]
+    assert [v / COORD_SCALE for v in row["coords_milli"]] == original
+
+
+def _xyz(residue, name):
+    atom = next(a for a in residue if a.name == name)
+    return (atom.pos.x, atom.pos.y, atom.pos.z)
+
+
+def test_encode_rejects_non_canonical_residues() -> None:
+    from backbone import encode_backbone
+
+    st = strip_to_backbone(_load("1crn"))
+    st[0][0][0].name = "MSE"
+    with pytest.raises(ValueError, match="non-canonical"):
+        encode_backbone(st)
