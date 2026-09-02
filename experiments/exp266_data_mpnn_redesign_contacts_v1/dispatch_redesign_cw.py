@@ -98,6 +98,12 @@ echo "[exp266-cw] AWS_ENDPOINT_URL=${{AWS_ENDPOINT_URL:-unset}} iris_FSSPEC_S3=$
 mkdir -p {WORK_DIR}
 {_encoded_sources()}
 
+# The pytorch *runtime* image ships no git, and pip needs it for the `git+`
+# marinfold install ("Error [Errno 2] No such file or directory: 'git'"). The
+# repo tarball is not an alternative: it carries an absolute symlink that pip
+# refuses ("is a link to an absolute path"), and it is 134 MB.
+apt-get update -qq && apt-get install -y -qq --no-install-recommends git
+
 PY=python
 $PY -m pip install --quiet --upgrade pip
 $PY -m pip install --quiet fsspec s3fs boto3 pyarrow gemmi "pyconfind[fast]"
