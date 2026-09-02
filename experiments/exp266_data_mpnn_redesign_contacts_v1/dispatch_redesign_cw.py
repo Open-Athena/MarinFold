@@ -70,9 +70,17 @@ WORK_DIR = "/tmp/exp266"
 WORKER_FILES = ("backbone.py", "redesign.py", "generate_rows.py", "redesign_worker_cw.py")
 
 # iris injects CoreWeave's endpoint + credentials as an FSSPEC_S3 blob that only
-# fsspec/s3fs reads; CoreWeave buckets use virtual-hosted addressing.
+# fsspec/s3fs reads; CoreWeave buckets need virtual-hosted addressing (path-style
+# is rejected with PathStyleRequestNotAllowed).
+#
+# It has to be FSSPEC_S3_CONFIG_KWARGS with this nested JSON, matching
+# exp82/exp174/exp211. A flat `FSSPEC_S3_ADDRESSING_STYLE` looks equivalent and
+# is not: fsspec turns every FSSPEC_S3_* var into a top-level S3FileSystem
+# kwarg, which lands in the boto session constructor and dies with
+#   TypeError: AioSession.__init__() got an unexpected keyword argument
+#              'addressing_style'
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
-    'export FSSPEC_S3_ADDRESSING_STYLE="${FSSPEC_S3_ADDRESSING_STYLE:-virtual}"'
+    """export FSSPEC_S3_CONFIG_KWARGS='{"s3": {"addressing_style": "virtual"}}'"""
 )
 
 
