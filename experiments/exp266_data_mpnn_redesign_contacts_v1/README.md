@@ -289,6 +289,48 @@ Temperature behaves as intended in both runs, though the ladder spreads gently:
 
 0.44–0.47 recovery at T=0.1 is in line with ProteinMPNN's published ~50 %.
 
+## Traps the cluster smoke found
+
+None of these are reachable from a local test — the experiment env resolves
+the same packages the workers do only at job time, and two of them depend on
+worker-side filesystem behaviour.
+
+**1. exp53's launch imports no longer exist.** On 2026-09 marin main:
+
+```
+from fray import ResourceConfig             -> fray.types.ResourceConfig
+from zephyr import Dataset, ZephyrContext   -> zephyr.dataset / zephyr.context
+```
+
+Same classes, same signatures, new homes. Two failed submissions, ~1 minute
+each. `fray.types.ResourceConfig` also has a `device` union rather than a flat
+`device_count`.
+
+**2. `gcsfs >= 2026.5` 416s on any read past EOF.** This one killed a shard,
+reading the pipeline's *own* Stage-A manifest:
+
+```
+gcsfs.retry.HttpError: Request range not satisfiable, 416
+While loading from InputFileSpec(path='gs://.../manifest-00001-of-00005.parquet')
+```
+
+2026.5.0 introduced an experimental concurrent `cat_file` that splits a ranged
+read into parallel sub-requests **without clamping `end` to the object size**.
+fsspec's block cache reads past EOF as a matter of course (the parquet footer,
+any tail block), so on a 299 KB object the split produces sub-requests that
+*start* beyond EOF and GCS answers 416.
+
+gcsfs has a guard for exactly this — `_fetch_range` catches `"not satisfiable"`
+and returns `b""` — but it catches `RuntimeError`, and `gcsfs.retry.HttpError`
+derives from `Exception`. The guard never fires.
+
+It does not reproduce from a workstation: locally the adaptive-prefetch reader
+is used, while the worker took the extended-gcsfs `cat` path. The fix is a
+declarative pin, `gcsfs<2026.5` — no monkey-patching a dependency — found by
+version archaeology (`_cat_file_concurrent` first appears in 2026.5.0).
+
+**Any marin data pipeline reading parquet from GCS is exposed to #2.**
+
 ## Projected full-run cost — **the gate**
 
 Corpus mean `seq_len` ≈ 280 (verified against the published corpus: 2,067
