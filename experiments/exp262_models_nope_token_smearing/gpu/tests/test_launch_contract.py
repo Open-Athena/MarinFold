@@ -77,3 +77,52 @@ def test_the_grid_reaches_above_the_control_rate():
     """The pilot said the NoPE arm wants a higher rate; the grid has to allow it."""
     rates = {point.learning_rate for point in POINTS.values()}
     assert max(rates) > POINTS[CONTROL_POINT].learning_rate * 5
+
+
+def test_the_nope_config_is_indistinguishable_from_rope_when_serialised():
+    """Why verify_and_train exists: the two configs serialise identically.
+
+    ``NoRotaryEmbeddingsConfig`` inherits ``theta`` and carries no other field,
+    so any path that round-trips it through a plain dict loses the distinction
+    silently. This test documents the hazard so nobody "simplifies" the worker
+    check away.
+    """
+    import dataclasses
+
+    from levanter.layers.rotary import DefaultRotaryEmbeddingsConfig
+
+    nope = dataclasses.asdict(NoRotaryEmbeddingsConfig())
+    default = dataclasses.asdict(DefaultRotaryEmbeddingsConfig())
+    assert nope == {"theta": 10000.0}
+    assert nope == {key: value for key, value in default.items() if key == "theta"}
+
+
+def test_architecture_survives_cloudpickle():
+    """The config reaches the worker by cloudpickle; it must arrive as itself."""
+    import cloudpickle
+
+    for key, arm in ARMS.items():
+        restored = cloudpickle.loads(cloudpickle.dumps(model_config(arm)))
+        assert isinstance(restored.rope, NoRotaryEmbeddingsConfig) is not arm.use_rope, key
+        assert restored.smear_width == arm.smear_width, key
+
+
+def test_worker_check_rejects_a_downgraded_architecture():
+    """If NoPE silently became rope, the worker must refuse to train."""
+    from unittest.mock import patch
+
+    from exp262_train_cw import verify_and_train
+
+    class FakePod:
+        def __init__(self, model):
+            self.train_config = type("C", (), {"model": model})()
+
+    with patch("exp262_train_cw.run_levanter_train_lm") as trainer:
+        verify_and_train(FakePod(model_config(ARMS["nope-smear"])), expect_rope=False, expect_smear=2)
+        assert trainer.called
+
+    with patch("exp262_train_cw.run_levanter_train_lm") as trainer:
+        downgraded = model_config(ARMS["control"])  # rope, no smear
+        with pytest.raises(ValueError, match="did not survive dispatch"):
+            verify_and_train(FakePod(downgraded), expect_rope=False, expect_smear=2)
+        assert not trainer.called

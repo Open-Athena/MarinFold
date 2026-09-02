@@ -33,6 +33,11 @@ Two phases, selected by ``PHASE``:
     comparison. For reference, exp232's ``s02-m2-p06-aug`` reached eval loss
     2.9918 in 75.8 hours.
 
+Set ``SMOKE=1`` (optionally ``SMOKE_STEPS``) for a short, separately named run on
+a temporary path. Run it before anything else on a new arm: the custom
+``SmearQwen3Config`` has to survive being pickled into the worker and rebuilt
+there, which nothing local can prove.
+
 **HF export is off for both arms.** A NoPE model has no HF Qwen3 representation
 and the smear weights have no home in one, so ``to_hf_config`` refuses rather
 than exporting something that would load as a different model. Levanter-native
@@ -67,6 +72,7 @@ from marin.training.training import (
     resolve_training_env,
     run_levanter_train_lm,
 )
+from rigging.filesystem.cluster_config import marin_temp_bucket
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
     AFDB_DOCUMENTS,
@@ -275,7 +281,45 @@ def _pinned_cuda_toolchain_setup_script() -> str:
     )
 
 
-def _run_train_job(pod_config: TrainLmOnPodConfig) -> None:
+def verify_and_train(pod_config: TrainLmOnPodConfig, *, expect_rope: bool, expect_smear: int) -> None:
+    """Check the architecture in the WORKER, then train.
+
+    This is the last line of defence against training the wrong model for three
+    days. ``NoRotaryEmbeddingsConfig`` inherits ``theta`` from its base and
+    serialises as ``{"theta": 10000.0}`` — byte-identical to a default rope
+    config. The object reaches the worker by cloudpickle, which should preserve
+    its class, but "should" is how the transformers-5 ``rope_parameters`` bug
+    cost us 0.76 nats/token silently. So the worker asserts what it actually
+    holds before it spends a single step on it.
+    """
+    model = pod_config.train_config.model
+    is_nope = isinstance(model.rope, NoRotaryEmbeddingsConfig)
+    smear = getattr(model, "smear_width", 0)
+    print(f"[exp262] worker sees rope={type(model.rope).__name__} smear_width={smear}")
+    if is_nope is expect_rope:
+        raise ValueError(
+            f"architecture did not survive dispatch: expected "
+            f"{'NoPE' if not expect_rope else 'rope'}, worker holds "
+            f"{type(model.rope).__name__}"
+        )
+    if smear != expect_smear:
+        raise ValueError(
+            f"architecture did not survive dispatch: expected smear_width="
+            f"{expect_smear}, worker holds {smear}"
+        )
+    run_levanter_train_lm(pod_config)
+
+
+def _make_run_train_job(arm: Arm):
+    """Bind the arm's expectations into the dispatcher."""
+
+    def _run_train_job(pod_config: TrainLmOnPodConfig) -> None:
+        return _dispatch(pod_config, arm)
+
+    return _run_train_job
+
+
+def _dispatch(pod_config: TrainLmOnPodConfig, arm: Arm) -> None:
     """Dispatch training at batch priority with exp232's GPU setup."""
     # marin's own ``_train_job`` dispatches through ``remote()``, which offers no
     # priority and would land at the interactive band. #108 requires batch, so
@@ -292,7 +336,11 @@ def _run_train_job(pod_config: TrainLmOnPodConfig) -> None:
     handle = current_client().submit(
         JobRequest(
             name=f"run_levanter_train_lm-{uuid.uuid4().hex[:8]}",
-            entrypoint=Entrypoint.from_callable(lambda: run_levanter_train_lm(pod_config)),
+            entrypoint=Entrypoint.from_callable(
+                lambda: verify_and_train(
+                    pod_config, expect_rope=arm.use_rope, expect_smear=arm.smear_width
+                )
+            ),
             resources=pod_config.resources,
             environment=create_environment(
                 extras=dependency_groups, env_vars=env_vars, setup_scripts=setup_scripts
@@ -329,27 +377,35 @@ def _parse_arm() -> Arm:
 def _parse_point(arm: Arm) -> Point:
     """The optimizer point. The control is pinned; the new arm selects one."""
     key = os.environ.get("POINT", "").strip().lower()
-    if arm.key == "control":
+    if arm.key == "control" and not _truthy("SMOKE"):
         if key and key != CONTROL_POINT:
             raise SystemExit(
                 f"the control is fixed at {CONTROL_POINT} (exp232's swept winner); "
                 f"re-tuning it would spend budget re-deriving a known answer"
             )
         return POINTS[CONTROL_POINT]
+    if arm.key == "control":
+        return POINTS[key or CONTROL_POINT]
     try:
         return POINTS[key]
     except KeyError as exc:
         raise SystemExit(f"POINT must be one of: {', '.join(POINTS)}") from exc
 
 
+def _truthy(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
+
+
 def _parse_phase() -> tuple[str, int]:
     """``screen`` for the optimizer-point search, ``full`` for the headline."""
+    if _truthy("SMOKE"):
+        return "smoke", int(os.environ.get("SMOKE_STEPS", "20"))
     phase = os.environ.get("PHASE", "").strip().lower()
     if phase == "screen":
         return phase, int(NUM_TRAIN_STEPS * SCREEN_FRACTION)
     if phase == "full":
         return phase, NUM_TRAIN_STEPS
-    raise SystemExit("PHASE must be 'screen' or 'full'")
+    raise SystemExit("PHASE must be 'screen' or 'full' (or set SMOKE=1)")
 
 
 def _parse_cluster() -> tuple[str, ClusterSpec]:
@@ -406,7 +462,7 @@ def build_run(
             disk=spec.disk,
         ),
         tensor_parallel_size=batch.tensor_parallelism,
-        steps_per_eval=max(1, steps // 20),
+        steps_per_eval=max(1, steps // 20 if phase != "smoke" else steps),
         wandb_project=env["WANDB_PROJECT"],
         wandb_group=f"exp262-{phase}",
         tags=[
@@ -451,7 +507,11 @@ def build_run(
         )
         return replace(pod, train_config=train_config)
 
-    return replace(step, build_config=build_config, run=_run_train_job)
+    step = replace(step, build_config=build_config, run=_make_run_train_job(arm))
+    if phase == "smoke":
+        # Never let a smoke run write where a real one would.
+        step = replace(step, override_path=marin_temp_bucket(1, f"checkpoints/{run_id}"))
+    return step
 
 
 @click.command(help=__doc__)
