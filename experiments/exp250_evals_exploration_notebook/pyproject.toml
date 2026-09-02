@@ -1,0 +1,31 @@
+[project]
+name = "exp250-evals-exploration-notebook"
+version = "0.1.0"
+description = "Interactive evals-exploration notebook — per-protein contact maps and the predictor scoreboard — issue #250, plus the publish job that puts #232's best decontaminated checkpoint on the public bucket."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # verify_sources.py reads published bucket tables over stdlib urllib and
+    # asserts their shape. No marinfold, no torch: the model-running code lives
+    # in the notebook, which installs marinfold[transformers] in Colab.
+    "pandas>=2.0",
+    "pyarrow",
+    # assemble_figures.py: SVG composition, and rasterising the assembled figures to PNG.
+    "svgutils",
+    "cairosvg",
+    # publish_exp232_m2_p06.py: CoreWeave S3 read on the pod, bucket write.
+    # Versions pinned to the set exp238's publish job ran with. hf-hub >= 1.5 is
+    # what makes bucket writes possible and is why marinfold (transformers, hence
+    # hf-hub < 1) is deliberately absent from this environment.
+    "aiobotocore==2.26.0",
+    "fsspec==2026.1.0",
+    "huggingface-hub[hf-xet]>=1.5",
+    "s3fs==2026.1.0",
+]
+
+# `uv sync` on the pod fails with "Group `dev` is not defined" without this.
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'linux'"]
