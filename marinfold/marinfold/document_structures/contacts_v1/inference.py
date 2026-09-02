@@ -76,6 +76,7 @@ from .parse import (
     RawContact,
     ResidueInfo,
     iter_analyzed_structures,
+    iter_structure_paths,
     residues_from_sequence,
 )
 from .vocab import (
@@ -548,6 +549,19 @@ def _structures_for_predict(
     return out
 
 
+def _check_evaluate_input(cfg: InferenceConfig) -> None:
+    """Reject a bad ``--input`` before the model loads, without pyconfind.
+
+    :func:`evaluate` builds the backend before it computes ground truth (see
+    the note there), so this keeps a typo'd path from costing a multi-GB
+    download and a model load first. Enumerating one path is cheap; the
+    pyconfind analysis is what is expensive.
+    """
+    if cfg.input_path is None:
+        raise ValueError("evaluate requires cfg.input_path or structures=")
+    next(iter_structure_paths(Path(cfg.input_path)), None)
+
+
 def _structures_for_evaluate(
     cfg: InferenceConfig,
     structures: Iterable[ContactStructure] | None,
@@ -740,14 +754,35 @@ def evaluate(
     may be passed directly (carrying ``gt_contacts``); otherwise they are
     analyzed from ``cfg.input_path`` (needs the ``contacts-v1`` extra).
     """
-    resolved = _structures_for_evaluate(cfg, structures)
-    if not resolved:
+    def _nothing_to_do() -> EvalResult:
         return EvalResult(
             metrics={},
             per_example=[],
             extras={"structure": NAME, "warning": "no input structures", "model": cfg.model},
         )
-    backend = _make_backend(cfg)
+
+    if structures is not None:
+        # Caller-supplied: reading the list is free, so keep the early exit
+        # ahead of the model load. (Such a caller has already run whatever
+        # produced `gt_contacts`; if that was pyconfind and the backend is
+        # vLLM, see the fork note in marinfold/inference/_vllm.py.)
+        resolved = list(structures)
+        if not resolved:
+            return _nothing_to_do()
+        backend = _make_backend(cfg)
+    else:
+        # Backend FIRST, ground truth second — load-bearing, not cosmetic.
+        # vLLM starts its EngineCore with fork, and forking a parent that has
+        # already run pyconfind deadlocks the child inside `_init_executor`:
+        # silently, engine at ~500 MiB, GPU at 0%, forever. Measured on
+        # 8xA100 / driver 580.105, same process otherwise: backend-then-GT
+        # completes in 17.3 s, GT-then-backend never returns. `predict`
+        # touches no pyconfind, which is why only this path was hit.
+        _check_evaluate_input(cfg)
+        backend = _make_backend(cfg)
+        resolved = _structures_for_evaluate(cfg, None)
+        if not resolved:
+            return _nothing_to_do()
 
     agg: dict[str, list[float]] = defaultdict(list)
     per_example: list[dict] = []

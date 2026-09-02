@@ -404,3 +404,51 @@ def test_make_backend_rejects_rollout_on_mlx():
     cfg = inf.InferenceConfig(model="/stub", backend="mlx", method="rollout")
     with pytest.raises(ValueError, match="not supported by the MLX backend"):
         inf._make_backend(cfg)
+
+
+def test_evaluate_builds_the_backend_before_ground_truth(monkeypatch, tmp_path):
+    """Order is load-bearing: vLLM forks its EngineCore, and forking a parent
+    that has already run pyconfind deadlocks the child in `_init_executor`."""
+    calls: list[str] = []
+
+    def _fake_backend(cfg):
+        calls.append("backend")
+        return object()
+
+    def _fake_structures(cfg, structures):
+        calls.append("ground_truth")
+        return []
+
+    monkeypatch.setattr(inf, "_make_backend", _fake_backend)
+    monkeypatch.setattr(inf, "_structures_for_evaluate", _fake_structures)
+
+    cif = tmp_path / "x.cif"
+    cif.write_text("")
+    inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm", input_path=cif))
+
+    assert calls == ["backend", "ground_truth"]
+
+
+def test_evaluate_rejects_a_bad_input_before_loading_the_model(monkeypatch, tmp_path):
+    """The reorder must not cost the fail-fast: a typo'd --input should not
+    buy a multi-GB download first."""
+    def _never(cfg):
+        raise AssertionError("the model must not load for a nonexistent input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="vllm", input_path=tmp_path / "nope.cif"
+    )
+    with pytest.raises(FileNotFoundError):
+        inf.evaluate(cfg)
+
+
+def test_evaluate_without_input_or_structures_is_an_error(monkeypatch):
+    def _never(cfg):
+        raise AssertionError("the model must not load without an input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    with pytest.raises(ValueError, match="input_path or structures"):
+        inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm"))
