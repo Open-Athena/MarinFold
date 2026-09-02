@@ -20,3 +20,8 @@ cw_smoke_gpu_seconds,3,ProteinMPNN
 cw_smoke_cpu_seconds,7,pyconfind over 14 processes
 cw_rotamer_warm_seconds,5.6,parent warm-up before the fork
 staged_kb_per_protein_representative,14.3,mean L 276.1 -- matches the 53 B/residue model
+cw_rep_job,/bizon/exp266-rep-s0of1,400 strided backbones mean L 276.1
+cw_rep_seconds,243,1.6 backbones/s -- GPU-bound (gpu 165s cpu 76s) because ~400 distinct lengths
+cw_band_job,/bizon/exp266-band-s0of1,400 backbones in a 265-290 length band (batch fill 15.4)
+cw_band_seconds,76,5.3 backbones/s -- CPU-bound (gpu 24s cpu 50s); the realistic shard shape
+cw_band_backbones_per_second,5.3,single 1xH100 task with 14 document processes

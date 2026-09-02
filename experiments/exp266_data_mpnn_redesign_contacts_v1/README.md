@@ -407,36 +407,50 @@ version archaeology (`_cat_file_concurrent` first appears in 2026.5.0).
 
 **Any marin data pipeline reading parquet from GCS is exposed to #2.**
 
-## Projected full-run cost — **the gate**
+## Projected full-run cost — **measured**
 
-Corpus mean `seq_len` ≈ 280 (verified against the published corpus: 2,067
-shards, shard 0 mean 291.4 / median 221).
+Throughput has to be measured on a **contiguous length band**, not the strided
+quality sample. Exact-length ProteinMPNN batching means a strided sample (~400
+distinct lengths) runs batches of 1 — the worst case, and nothing like a real
+shard, which is a contiguous slice of a 3.96 M-row length-sorted manifest.
+
+| sample | shape | rate | gpu | cpu |
+|---|---|---|---|---|
+| strided, mean L 276 | ~400 distinct lengths (batch fill 1.0) | 1.6 backbones/s | 165 s | 76 s |
+| **band, L 265–290** | 26 distinct lengths (batch fill 15.4) | **5.3 backbones/s** | 24 s | 50 s |
+| shortest, mean L 47 | contiguous | 17.6 backbones/s | 3 s | 7 s |
+
+The band run is the one to project from, and it is **CPU-bound** (50 s vs 24 s)
+— which is the balance the design aimed for. That also means per-node
+throughput is fixed by the node's 128 vCPUs, not by how the tasks are split:
+8 tasks × 15 cores and 4 tasks × 30 cores both land at **~42 backbones/s/node**.
+GPUs are the free resource here; cores are the constraint.
+
+`project_full_run.py --backbones-per-second 5.3`:
+
+| tasks | nodes | nominal | with 3× slack |
+|---|---|---|---|
+| 14 | 2 | 14.8 h | 44.5 h |
+| **28** | **4** | **7.4 h** | **22.3 h** |
+| 56 | 7 | 3.7 h | 11.1 h |
+| 112 | 14 | 1.9 h | 5.6 h |
+
+At 28 tasks that is **208–623 H100-hours** — on a prepaid, pinned-warm fleet
+that had 224 GPUs idle, so free at the margin. The pipeline skill's warning
+that a smoke rate is a lower bound is why the slack column is there; startup,
+preemption retries and straggler tails all land on top.
+
+Full pipeline, end to end:
 
 | stage | where | cost |
 |---|---|---|
-| A — keep-list | local | minutes |
-| A2 — stage backbones | GCP Iris, I/O-bound | ~1 h wall-clock (exp53 fetched+parsed 4.2 M in 31 min), ~58 GB out |
-| A2b — mirror to CoreWeave S3 | cloud-side | one ~58 GB copy |
-| B — redesign + documents | cw-rno2a, 28×1 H100 | **~1.5–3 h** |
+| A — keep-list | local | ~26 min |
+| A2 — stage backbones | GCP Iris, 512 workers | ~1 h, ~58 GB out |
+| B — redesign + documents | cw-rno2a, 28–56 × 1 H100 | **3.7–7.4 h** (to 22 h with slack) |
+| output | | **31,704,024 documents, ~40 B tokens** |
 
-Stage B's arithmetic: ~4.2 s of pyconfind CPU per backbone over 14 processes is
-~0.3 s of wall-clock, so a task does ~3.3 backbones/s and 28 tasks do ~93/s →
-3.96 M / 93 ≈ **12 h**… on the *measured workstation* pyconfind rate of 463
-ms/document. That rate is the number the pilot has to replace: it was measured
-on one Threadripper core against PDB structures, and cluster Genoa cores plus
-AFDB's (shorter, gap-free) models should differ. Treat 1.5–12 h as the honest
-band until the smoke lands.
-
-**The all-CPU fallback** (`cli.py generate --device cpu`) is ~14,300 core-hours
-= ~19.5 h on cw-us-east-02a's 735 idle `cpu-genoa` vCPUs, no GPU and no second
-cluster. Kept as the path for when the H100 fleet is busy.
-
-Expected output: **31,704,024 documents, ~39 B tokens, ~95–110 GB** ZSTD
-parquet.
-
-**Nothing has been launched.** Per the `zephyr-pipeline-performance` skill the
-next step is a 20 k-backbone smoke through both stages to replace these
-workstation numbers with cluster ones, then a user go-ahead.
+All-CPU fallback if the GPU fleet is busy: `cli.py generate --device cpu`,
+~19.5 h on cw-us-east-02a's 735 idle `cpu-genoa` vCPUs.
 
 ## Launch
 
