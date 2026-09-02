@@ -136,6 +136,12 @@ def main() -> None:
                          "one shard to fill the GPU.")
     ap.add_argument("--max-shards", type=int, default=None,
                     help="Smoke cap: read only the first N corpus shards.")
+    ap.add_argument("--sample", type=int, default=None,
+                    help="Emit a length-REPRESENTATIVE sample of N backbones by "
+                         "striding the sorted manifest. Use this for smokes "
+                         "instead of the driver's --num-backbones, which takes "
+                         "the first N of a length-sorted manifest and therefore "
+                         "hands you only the shortest proteins in the corpus.")
     ap.add_argument("--min-len", type=int, default=30)
     ap.add_argument("--max-len", type=int, default=2000)
     args = ap.parse_args()
@@ -147,6 +153,23 @@ def main() -> None:
     dropped = table.num_rows - manifest.num_rows
     print(f"[stage-a] kept {manifest.num_rows:,} "
           f"(dropped {dropped:,} outside [{args.min_len}, {args.max_len}] residues)")
+
+    if args.sample is not None and args.sample < manifest.num_rows:
+        # Stride, don't slice. The manifest is sorted by seq_len, so the first N
+        # rows are the N shortest proteins — a sample on which ProteinMPNN
+        # behaves measurably differently (on the 200 shortest, contacts/residue
+        # came out ABOVE native, the opposite of the corpus-wide direction).
+        # Striding keeps the length distribution and stays sorted, which is what
+        # the exact-length ProteinMPNN batching wants.
+        import pyarrow.compute as pc
+
+        step = manifest.num_rows / args.sample
+        idx = [min(int(i * step), manifest.num_rows - 1) for i in range(args.sample)]
+        manifest = manifest.take(pa.array(idx, type=pa.int64()))
+        lengths = manifest.column("seq_len").to_pylist()
+        print(f"[stage-a] strided sample: {manifest.num_rows:,} rows, "
+              f"seq_len {min(lengths)}–{max(lengths)}, "
+              f"mean {sum(lengths)/len(lengths):.1f}")
 
     args.out.mkdir(parents=True, exist_ok=True)
     total = (manifest.num_rows + args.rows_per_shard - 1) // args.rows_per_shard

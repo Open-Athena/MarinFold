@@ -116,7 +116,25 @@ def main() -> int:
     _log(f"shard {shard_i}/{num_shards}: {len(my_files)} of {len(all_files)} files")
 
     load_model(args.device)            # once per task, before any input is read
-    _log(f"model loaded on {args.device}; {args.cpu_workers} document processes")
+
+    # Warm pyconfind's rotamer library BEFORE forking the pool. Each child
+    # would otherwise call `cached_rotamer_library()` itself, and 14 processes
+    # downloading + extracting the same 6.2 MB tarball into one shared cache
+    # directory race: the loser parses a half-written library and dies with
+    #   ValueError: setting an array element with a sequence ...
+    #   (23755,) + inhomogeneous part
+    # Warming here means the fork children inherit the populated
+    # `functools.cache` and never touch the download path at all. (A warm local
+    # cache hides this completely, which is why it only appeared on-cluster.)
+    import generate_rows
+    t_warm = time.perf_counter()
+    if generate_rows._load_rotamer_library() is None:
+        raise RuntimeError(
+            "rotamer library failed to load in the parent; children would each "
+            "retry the download and race. Fix the library fetch before scaling."
+        )
+    _log(f"rotamer library warm in {time.perf_counter() - t_warm:.1f}s; "
+         f"model on {args.device}; {args.cpu_workers} document processes")
 
     started = time.perf_counter()
     with ProcessPoolExecutor(max_workers=args.cpu_workers) as pool:
