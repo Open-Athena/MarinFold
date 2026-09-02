@@ -289,34 +289,81 @@ Temperature behaves as intended in both runs, though the ladder spreads gently:
 
 0.44–0.47 recovery at T=0.1 is in line with ProteinMPNN's published ~50 %.
 
-## Cluster smoke — Stage A + A2 (2026-09-02)
+## Cluster results (2026-09-02)
 
-`data/cluster_smoke_stage_a2.csv`.
+`data/cluster_smoke_stage_a2.csv`, `data/density_representative.csv`,
+`data/composition_representative.csv`, `data/temperature_representative.csv`.
 
-**Stage A (keep-list, local).** 12 of the corpus's 2,067 shards → 22,918 rows
-in **9.1 s**; the full keep-list projects to ~26 min. Mean `seq_len` over the
-sample is **277.7**, which is what the staged-size estimate is built on.
+### Stage A + A2 — and the check that matters
 
-**Stage A2 (staging, marin Iris us-central1).** Job
-`/bizon/iris-run-cli-20260902-141215`, **SUCCEEDED**:
-`records_in: 22,918`, `records_out: 200`, one output parquet. The 200-row cap
-makes this a *correctness* smoke, not a rate measurement — the useful rate
-number is the local threaded one, **64.8 structures/s at fetch-concurrency 32**
-(676 ms/structure unthreaded, workstation uplink), over 300 real AFDB objects
-with 0 filtered and 0 raised.
+Stage A read 12 of the corpus's 2,067 shards → 22,918 rows in **9.1 s** (full
+keep-list projects to ~26 min; mean `seq_len` 277.7). Stage A2 on marin Iris
+(`/bizon/iris-run-cli-20260902-141215`) **SUCCEEDED**: `records_in 22,918`,
+`records_out 200`.
 
-**The result that matters.** The staged rows carry `native_sha1` — the sha1 of
-each entry's document in the *published* `contacts_v1_decontam` corpus. Rebuild
-the structure from the staged int32 coordinates, write the native sequence back
-on, generate:
+The staged rows carry `native_sha1` — each entry's document hash in the
+*published* `contacts_v1_decontam` corpus. Rebuilding from the staged int32
+coordinates, writing the native sequence back on, and generating:
 
 > **200 / 200 sha1 match. 0 mismatch.**
 
-So the whole path — AFDB mmCIF → strip → int32 milli-ångström encode → parquet
-→ GCS → decode → `generate_document` — reproduces real published corpus
-documents byte-for-byte, on cluster-produced data. That is stronger than the
-local round-trip test, which only compared against a locally re-derived
-document.
+So AFDB mmCIF → strip → int32 milli-ångström encode → parquet → object store →
+decode → `generate_document` reproduces real published corpus documents
+byte-for-byte, on cluster-produced data.
+
+Staging rate (workstation, threaded): **41–65 structures/s at
+fetch-concurrency 32**, 0 filtered and 0 raised over 700 real AFDB objects — so
+the contiguity and exact-coordinate asserts hold on real input. Staged size
+**14.3 KB/protein** at mean L 277, matching the 53 bytes/residue model behind
+the ~58 GB estimate.
+
+### Stage B on CoreWeave — it runs
+
+`/bizon/exp266-smoke4-s0of1` **SUCCEEDED**: 200 backbones → **1,600 distinct
+documents** written to CoreWeave object storage in 11 s (gpu 3 s, cpu 7 s over
+14 processes), exactly 8 per backbone, provenance and `global_plddt` intact.
+
+### The composition risk — resolved, on the right sample
+
+`/bizon/exp266-rep-s0of1`: 400 length-representative backbones (mean L 276.1,
+range 32–1209) → 3,200 documents, all distinct.
+
+| stratum | n | native contacts/res | designed | ratio |
+|---|---|---|---|---|
+| **all** | 400 | 0.675 | 0.686 | **1.016** |
+| 0–100 | 53 | 0.481 | 0.504 | 1.046 |
+| 100–200 | 131 | 0.608 | 0.620 | 1.019 |
+| 200–400 | 136 | 0.720 | 0.729 | 1.012 |
+| 400–800 | 67 | 0.839 | 0.846 | 1.008 |
+| 800+ | 13 | 0.821 | 0.809 | 0.985 |
+
+**The feared artifact does not happen.** Redesigned documents carry
+essentially the *same* contact density as native (ratio 1.016), monotonically
+approaching 1 as length grows. Success criterion 4 is met.
+
+This overturns the workstation estimates. Earlier samples gave 0.968 and 0.942
+— both on **PDB** structures, which are better-packed crystal structures with a
+different residue composition — and 1.040 on the 200 *shortest* AFDB entries.
+On the corpus's own distribution the answer is ~1.0.
+
+Composition drift is real and larger than the PDB estimate suggested
+(P +4.33, A +4.16, S −3.25, E +2.98, L +2.59, Q −2.17 pp, vs a 2.2 pp maximum
+on PDB) — but it does not translate into a density shift.
+
+| T | identity to native | MPNN score | contacts/res |
+|---|---|---|---|
+| 0.1 | 0.356 | 0.990 | 0.684 |
+| 0.2 | 0.352 | 1.032 | 0.684 |
+| 0.3 | 0.345 | 1.106 | 0.687 |
+| 0.5 | 0.326 | 1.325 | 0.688 |
+
+Two observations. Sequence recovery on AFDB (0.356 at T=0.1) is well below
+ProteinMPNN's published ~50 % on crystal structures — predicted models are
+harder to recover. And **the temperature ladder is narrower than intended**:
+0.1→0.5 moves identity only 0.356→0.326 and density not at all. The
+near-native ↔ diverse axis is mostly not being exercised; a future
+regeneration might want a wider ladder, and a training experiment should not
+expect much from subsetting on `mpnn_temperature`.
 
 ## Traps the cluster smoke found
 
