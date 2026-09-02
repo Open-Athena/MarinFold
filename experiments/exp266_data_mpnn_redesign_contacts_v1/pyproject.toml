@@ -14,7 +14,16 @@ dependencies = [
     "pyarrow",
     "duckdb",                  # Stage A: keep-list join in SQL
     "fsspec",
-    "gcsfs",
+    # gcsfs 2026.5.0 introduced an experimental *concurrent* `cat_file` that
+    # splits a ranged read into parallel sub-requests without clamping `end` to
+    # the object size. fsspec's block cache routinely reads past EOF (the
+    # parquet footer, any tail block), so sub-requests that *start* beyond EOF
+    # come back 416. gcsfs has a guard for exactly this
+    # (`_fetch_range`: `except RuntimeError ... "not satisfiable" -> b""`) but
+    # it catches the wrong type: `gcsfs.retry.HttpError` derives from
+    # `Exception`, not `RuntimeError`, so the 416 escapes and kills the shard.
+    # Killed the first exp266 Iris staging run reading its own manifest.
+    "gcsfs<2026.5",
     "marin-zephyr",
     # See exp53: prerelease=allow otherwise floats httpx to 1.0.dev*, whose
     # Client() dropped the `timeout` kwarg marin-iris's GCP provider passes.

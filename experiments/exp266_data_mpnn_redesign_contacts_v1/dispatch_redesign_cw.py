@@ -190,8 +190,10 @@ def main() -> None:
     if args.dry_run:
         print(f"[exp266-cw] DRY RUN — {len(reqs)} JobRequests built, not submitting.")
         for r in reqs[:3]:
+            # `device` is the CpuConfig|GpuConfig|TpuConfig union in current
+            # fray; there is no flat `device_count`.
             print(f"  {r.name}: priority={r.priority} image={r.resources.image} "
-                  f"cpu={r.resources.cpu} gpu={r.resources.device_count}")
+                  f"cpu={r.resources.cpu} device={r.resources.device}")
         print("\n--- bootstrap for shard 0 ---")
         print(reqs[0].entrypoint.binary_entrypoint.args[1])
         return
