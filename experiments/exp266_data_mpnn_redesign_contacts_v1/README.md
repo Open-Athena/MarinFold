@@ -141,9 +141,11 @@ so it is the textbook case for `thread_per_row_in_shard` at the default fetch
 concurrency of 32, unlike the document stage where seconds of CPU dominate.
 
 What crosses is small because we only need backbones: N/CA/C/O plus sequence and
-per-residue pLDDT is a measured **11.2 KB/protein** uncompressed against ~180 KB
-of all-atom mmCIF — **~46 GB staged once** (less after ZSTD) instead of ~700 GB
-fetched repeatedly. The artifact is reusable by
+per-residue pLDDT is **53 bytes/residue** (12 int32 coords + float32 pLDDT + 1
+sequence char) against ~180 KB of all-atom mmCIF. At the corpus's mean length of
+277.7 residues (measured over a 12-shard Stage-A sample) that is 14.4 KB/protein
+= **~58 GB staged once** (less after ZSTD) instead of ~700 GB fetched
+repeatedly. The artifact is reusable by
 any future backbone-based experiment, the same argument #139 makes for having
 saved its raw pyconfind contacts.
 
@@ -242,8 +244,10 @@ PDB entries routinely have — a filter that should never fire on AFDB's complet
 Device memory scales cleanly at **0.52 MB per padded residue** in the effective
 batch, independent of L and B — what `--max-batch-residues` bounds.
 
-Staged size: **11.2 KB/protein** uncompressed (coords + pLDDT + sequence), so
-**~46 GB** for the full corpus before ZSTD.
+Staged size: **53 bytes/residue** — 11.2 KB/protein on the L=217 PDB smoke
+sample, but the corpus mean is 277.7 residues (12-shard Stage-A sample), so
+**14.4 KB/protein and ~58 GB** for the full corpus before ZSTD. (An earlier
+draft said ~46 GB; that applied the PDB sample's mean length to the corpus.)
 
 ### Composition drift — the risk flagged in the issue
 
@@ -293,8 +297,8 @@ shards, shard 0 mean 291.4 / median 221).
 | stage | where | cost |
 |---|---|---|
 | A — keep-list | local | minutes |
-| A2 — stage backbones | GCP Iris, I/O-bound | ~1 h wall-clock (exp53 fetched+parsed 4.2 M in 31 min), ~46 GB out |
-| A2b — mirror to CoreWeave S3 | cloud-side | one ~46 GB copy |
+| A2 — stage backbones | GCP Iris, I/O-bound | ~1 h wall-clock (exp53 fetched+parsed 4.2 M in 31 min), ~58 GB out |
+| A2b — mirror to CoreWeave S3 | cloud-side | one ~58 GB copy |
 | B — redesign + documents | cw-rno2a, 28×1 H100 | **~1.5–3 h** |
 
 Stage B's arithmetic: ~4.2 s of pyconfind CPU per backbone over 14 processes is

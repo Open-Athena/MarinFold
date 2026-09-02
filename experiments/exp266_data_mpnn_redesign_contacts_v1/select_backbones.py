@@ -71,7 +71,8 @@ CARRY_COLUMNS = (
 RENAME = {"contacts_emitted": "native_contacts_emitted", "sha1": "native_sha1"}
 
 
-def read_keep_list(corpus: str, columns: tuple[str, ...]) -> pa.Table:
+def read_keep_list(corpus: str, columns: tuple[str, ...],
+                   max_shards: int | None = None) -> pa.Table:
     """Read the provenance columns of every row in the decontaminated corpus."""
     import fsspec
 
@@ -79,6 +80,8 @@ def read_keep_list(corpus: str, columns: tuple[str, ...]) -> pa.Table:
     files = sorted(fs.glob(f"{corpus.rstrip('/')}/*.parquet"))
     if not files:
         raise FileNotFoundError(f"no parquet under {corpus}")
+    if max_shards is not None:
+        files = files[:max_shards]
 
     with fs.open(files[0], "rb") as handle:
         present = set(pq.ParquetFile(handle).schema_arrow.names)
@@ -88,9 +91,12 @@ def read_keep_list(corpus: str, columns: tuple[str, ...]) -> pa.Table:
     wanted = [c for c in columns if c in present]
 
     tables = []
-    for path in files:
+    for i, path in enumerate(files, 1):
         with fs.open(path, "rb") as handle:
             tables.append(pq.read_table(handle, columns=wanted))
+        if i % 100 == 0 or i == len(files):
+            rows = sum(t.num_rows for t in tables)
+            print(f"[stage-a] {i}/{len(files)} shards, {rows:,} rows", flush=True)
     return pa.concat_tables(tables)
 
 
@@ -128,11 +134,13 @@ def main() -> None:
                     help="Larger than exp53's shards on purpose: exact-length "
                          "ProteinMPNN batches need enough same-length rows in "
                          "one shard to fill the GPU.")
+    ap.add_argument("--max-shards", type=int, default=None,
+                    help="Smoke cap: read only the first N corpus shards.")
     ap.add_argument("--min-len", type=int, default=30)
     ap.add_argument("--max-len", type=int, default=2000)
     args = ap.parse_args()
 
-    table = read_keep_list(args.corpus, CARRY_COLUMNS)
+    table = read_keep_list(args.corpus, CARRY_COLUMNS, args.max_shards)
     print(f"[stage-a] read {table.num_rows:,} rows from {args.corpus}")
 
     manifest = build_manifest(table, min_len=args.min_len, max_len=args.max_len)

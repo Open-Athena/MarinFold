@@ -29,8 +29,12 @@ import typing
 from functools import partial
 
 import fsspec
-from fray import ResourceConfig
-from zephyr import Dataset, ZephyrContext
+# These moved out of the top-level packages on 2026-09 marin main: exp53's
+# `from fray import ResourceConfig` / `from zephyr import Dataset, ZephyrContext`
+# both ImportError now. Same classes, same signatures, new homes.
+from fray.types import ResourceConfig
+from zephyr.context import ZephyrContext
+from zephyr.dataset import Dataset
 
 from marinfold.document_structures.contacts_v1 import GenerationConfig
 from marinfold.document_structures.contacts_v1.vocab import CONTEXT_LENGTH, NAME
