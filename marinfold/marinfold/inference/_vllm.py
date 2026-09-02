@@ -18,8 +18,12 @@ its scheduler. We just submit each ``(prefix + tail)`` as a separate
 prompt; vLLM detects the shared prefix at scheduling time and reuses
 the KV blocks for it across all rows in the batch. No explicit cache
 plumbing needed on our side.
+
+Constructing the backend also forces vLLM's engine subprocess to
+``spawn`` rather than ``fork`` — see the note in ``__init__``.
 """
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -46,6 +50,18 @@ class VllmBackend:
             )
         self._tail_batch_size = tail_batch_size
         self._top_k_logprobs = top_k_logprobs
+        # vLLM starts its EngineCore in a child process, and its default
+        # method is fork. Forking a parent that has already done native work
+        # deadlocks the child inside `_init_executor` — silently: the engine
+        # sits at ~500 MiB with the GPU at 0% and never returns. contacts-v1
+        # `evaluate` hits this every time, because it computes pyconfind
+        # ground truth before it builds the backend (`infer`, which touches
+        # no pyconfind, forks clean and is unaffected). Measured on 8xA100 /
+        # driver 580.105: GT-then-backend hangs indefinitely, backend-then-GT
+        # takes 17.3 s, and spawn takes the whole evaluate to 43 s. Spawn
+        # costs a re-import in the child and removes the class of failure, so
+        # take that trade — but leave an explicit setting alone.
+        os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
         # vLLM loads both the weights and, internally via AutoTokenizer, the
         # tokenizer from paths — so neither a repaired config object nor a
         # repaired tokenizer object can be handed to it. model_source_path
