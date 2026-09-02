@@ -40,7 +40,7 @@ More quantitatively, we can compare MarinFold contact prediction accuracy to exi
 
 MarinFold outperforms a weak baseline (Protenix v2 in single sequence mode) on natural proteins from FoldBench (but, curiously, not on de novo designs).
 
-A few notes: the overall paradigm is that we are training on AlphaFold2 or ESMFold2 predicted structures, and testing on experimentally-determined structures. We also remove proteins from our training set that have 30% or higher sequence similarity to anything in our eval set. The model we are using here is **#232's `m2-p06` at step 363,000** (`contacts-v1-exp232-m2-p06-train-1.5B`)
+A few notes: the overall paradigm is that we are training on AlphaFold2 or ESMFold2 predicted structures, and testing on experimentally-determined structures. We also remove proteins from our training set that have 30% or higher sequence similarity to anything in our eval set. The model we are using here is **#232's `m2-p06` at step 363,000** (`contacts-v1-exp232-m2-p06-train-1.5B`), which is also the default model.
 
 For a more apples-to-apples comparison, we can also look at the accuracy of the predicted structures when we run MarinFold-predicted contacts through [Helico](https://github.com/Open-Athena/helico). Here's what that looks like:
 
@@ -58,16 +58,13 @@ The main areas of ongoing work are:
 ## Try it out
 
 The default model in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is
-`contacts-v1-exp199-cooldown-1.5B` — a 1.47B Qwen3 trained from scratch on a
-50/50 AFDB + ESM-Atlas mixture on CoreWeave H100s and then annealed, from
-[#199](https://github.com/Open-Athena/MarinFold/issues/199) and scored in
-[#234](https://github.com/Open-Athena/MarinFold/pull/234). R-precision **0.631**
-on the 554-protein contact benchmark, against single-sequence Protenix-v2's
-0.603.
-
-Note the default model was trained *before*
-[decontamination](DOCS.md#training-data-decontamination): its corpora were never filtered
-against the eval proteins.
+`contacts-v1-exp232-m2-p06-train-1.5B` — a 1.47B Qwen3 trained from scratch on a
+50/50 AFDB + ESM-Atlas mixture and then trained on past the sweep with a
+lowered peak LR and a cooldown, from
+[#232](https://github.com/Open-Athena/MarinFold/issues/232). Its training
+corpora were [decontaminated](DOCS.md#training-data-decontamination) against the
+eval proteins. R-precision **0.605** on the 554-protein contact benchmark, and
+0.552 on [#245](https://github.com/Open-Athena/MarinFold/issues/245)'s eval-val.
 
 ### GPU example
 
