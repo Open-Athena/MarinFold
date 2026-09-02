@@ -289,6 +289,35 @@ Temperature behaves as intended in both runs, though the ladder spreads gently:
 
 0.44–0.47 recovery at T=0.1 is in line with ProteinMPNN's published ~50 %.
 
+## Cluster smoke — Stage A + A2 (2026-09-02)
+
+`data/cluster_smoke_stage_a2.csv`.
+
+**Stage A (keep-list, local).** 12 of the corpus's 2,067 shards → 22,918 rows
+in **9.1 s**; the full keep-list projects to ~26 min. Mean `seq_len` over the
+sample is **277.7**, which is what the staged-size estimate is built on.
+
+**Stage A2 (staging, marin Iris us-central1).** Job
+`/bizon/iris-run-cli-20260902-141215`, **SUCCEEDED**:
+`records_in: 22,918`, `records_out: 200`, one output parquet. The 200-row cap
+makes this a *correctness* smoke, not a rate measurement — the useful rate
+number is the local threaded one, **64.8 structures/s at fetch-concurrency 32**
+(676 ms/structure unthreaded, workstation uplink), over 300 real AFDB objects
+with 0 filtered and 0 raised.
+
+**The result that matters.** The staged rows carry `native_sha1` — the sha1 of
+each entry's document in the *published* `contacts_v1_decontam` corpus. Rebuild
+the structure from the staged int32 coordinates, write the native sequence back
+on, generate:
+
+> **200 / 200 sha1 match. 0 mismatch.**
+
+So the whole path — AFDB mmCIF → strip → int32 milli-ångström encode → parquet
+→ GCS → decode → `generate_document` — reproduces real published corpus
+documents byte-for-byte, on cluster-produced data. That is stronger than the
+local round-trip test, which only compared against a locally re-derived
+document.
+
 ## Traps the cluster smoke found
 
 None of these are reachable from a local test — the experiment env resolves

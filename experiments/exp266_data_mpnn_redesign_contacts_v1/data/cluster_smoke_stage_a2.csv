@@ -1,0 +1,14 @@
+metric,value,note
+stage_a_shards_read,12,of 2067 corpus shards
+stage_a_rows,22918,keep-list rows
+stage_a_seconds,9.1,workstation; full corpus projects to ~26 min
+stage_a_mean_seq_len,277.7,drives the staged-size estimate
+iris_job,/bizon/iris-run-cli-20260902-141215,marin cluster us-central1
+iris_records_in,22918,manifest rows scanned
+iris_records_out,200,--num-backbones cap
+iris_state,SUCCEEDED,
+staged_bytes,413843,200 backbones (mean L 47 -- the shortest in the sorted manifest)
+sha1_match_vs_published_corpus,200,out of 200
+sha1_mismatch_vs_published_corpus,0,
+local_stage_rate_structs_per_sec,64.8,workstation, fetch-concurrency 32, 300 structures
+local_stage_ms_per_struct_unthreaded,676,single-threaded, workstation uplink
