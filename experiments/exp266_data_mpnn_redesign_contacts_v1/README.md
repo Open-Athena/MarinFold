@@ -393,34 +393,59 @@ workstation numbers with cluster ones, then a user go-ahead.
 
 ## Launch
 
+### Getting the backbones to CoreWeave
+
+Neither cluster has both credentials: GCP Iris workers can read AFDB's
+requester-pays bucket but have no CoreWeave keys; CoreWeave pods have CoreWeave
+keys and no GCP. The workstation has both, but its ~2.5 MB/s uplink would take
+~6.5 h for 58 GB.
+
+The way out is that Stage A2's *output* path is just fsspec: give the **GCP**
+staging job the CoreWeave credentials and have it write straight to
+`s3://marin-us-east-02a/...`. One pass, no intermediate GCS copy, no 58 GB
+double-handling — the worker reads GCS with its service account and writes to
+CoreWeave over the internet (~$7 of GCP egress at 58 GB).
+
+The keys live in the cluster's own `iris-task-env` secret:
+
 ```bash
-# Stage A — keep-list (local; needs huggingface_hub>=1.5, which conflicts with
-# this experiment's pyproject, so run it out-of-project).
+export CW_KEY_ID=$(KUBECONFIG=~/.kube/coreweave-iris-rno2a kubectl -n iris \
+    get secret iris-task-env -o jsonpath='{.data.CW_KEY_ID}' | base64 -d)
+export CW_KEY_SECRET=$(KUBECONFIG=~/.kube/coreweave-iris-rno2a kubectl -n iris \
+    get secret iris-task-env -o jsonpath='{.data.CW_KEY_SECRET}' | base64 -d)
+```
+
+### The four steps
+
+```bash
+# 1. Stage A — keep-list (local; huggingface_hub>=1.5 conflicts with this
+#    experiment's pyproject, so run it out-of-project). ~26 min for all 2,067
+#    corpus shards; add --max-shards N for a smoke slice.
 uv run --no-project --with 'huggingface_hub>=1.5' --with pyarrow --with fsspec \
     python select_backbones.py --out /data/exp266/manifest
 
-# Stage A2 — stage backbones on GCP (the only stage that can read AFDB).
-uv run iris --cluster=marin job run --cpu 1 --memory 2GB -- \
+# 2. Stage A2 — stage backbones on GCP, writing straight to CoreWeave.
+uv run iris --cluster=marin job run --cpu 1 --memory 2GB \
+  -e AWS_ACCESS_KEY_ID "$CW_KEY_ID" -e AWS_SECRET_ACCESS_KEY "$CW_KEY_SECRET" \
+  -e AWS_ENDPOINT_URL https://cwobject.com \
+  -e FSSPEC_S3_ADDRESSING_STYLE virtual -- \
     python cli.py stage \
-        --input 'gs://marin-us-central1/protein-structure/MarinFold/exp266/manifest/manifest-*.parquet' \
-        --out 'gs://marin-us-central1/protein-structure/MarinFold/exp266/backbones/backbones-{shard:05d}-of-{total:05d}.parquet' \
+        --input 'gs://marin-us-central1/protein-structure/MarinFold/exp266_mpnn_redesign/manifest/manifest-*.parquet' \
+        --out 's3://marin-us-east-02a/MarinFold/exp266/backbones/backbones-{shard:05d}-of-{total:05d}.parquet' \
         --worker-cpu 1 --worker-memory 4g --max-workers 512 \
         --region us-central1 --fetch-concurrency 32
 
-# Stage A2b — mirror to CoreWeave object storage (cloud-side, not the ~2.5 MB/s
-# workstation uplink).
+# 3. Stage B — redesign on idle prepaid H100s. Smoke first (one task, one file).
+uv run python dispatch_redesign_cw.py --shards 1 --max-files 1 --dry-run
+uv run python dispatch_redesign_cw.py --shards 1 --max-files 1 --priority batch
+# then the full fan-out, sized to the LIVE idle GPU count (see below)
+uv run python dispatch_redesign_cw.py --shards 28 --priority batch
 
-# Stage B — redesign on idle prepaid H100s. Smoke first: one task, one file.
-python dispatch_redesign_cw.py --shards 1 --max-files 1 --dry-run
-uv run --project /home/bizon/git/marin python dispatch_redesign_cw.py \
-    --shards 1 --max-files 1 --priority batch
-# then the full fan-out, sized to the live idle GPU count
-uv run --project /home/bizon/git/marin python dispatch_redesign_cw.py \
-    --shards 28 --priority batch
+# 4. Publish to the public HF bucket.
 ```
 
-Check live idle capacity before choosing `--shards` — it is a point-in-time
-number and the 224 idle GPUs above are not a reservation:
+Check live idle capacity before choosing `--shards` — the 224 idle GPUs above
+were a point-in-time reading, not a reservation:
 
 ```bash
 KUBECONFIG=~/.kube/coreweave-iris-rno2a kubectl get nodes -o json
