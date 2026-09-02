@@ -74,7 +74,7 @@ from marin.training.training import (
 )
 from rigging.filesystem.cluster_config import marin_temp_bucket
 
-from experiments.exp232_sweep_cv1_decontam.training_contract import (
+from exp232_contract import (
     AFDB_DOCUMENTS,
     AFDB_TOKENS,
     CACHE_VERSION,

@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
-REPOSITORY = Path(__file__).resolve().parents[4]
+REPOSITORY = Path(__file__).resolve().parents[4]  # only needed by test_contract_copy
 
 for path in (str(PROJECT), str(REPOSITORY)):
     if path not in sys.path:
