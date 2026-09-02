@@ -278,6 +278,16 @@ def test_infer_method_rollout_flags():
     assert cfg.top_k == 0
 
 
+def test_infer_model_is_optional_and_defaults_to_the_registry():
+    """Omitting --model leaves it None, which resolve_model reads as the
+    MODELS.yaml entry marked default: true — what the README's example does."""
+    args = cli.build_parser().parse_args([
+        "infer", "--input-sequence", "ACDE", "--out", "p.json",
+    ])
+    assert args.model is None
+    assert cli._inference_config(args).model is None
+
+
 def test_infer_method_rejects_unknown():
     with pytest.raises(SystemExit):
         cli.build_parser().parse_args([

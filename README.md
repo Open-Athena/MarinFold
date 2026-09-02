@@ -79,13 +79,13 @@ cd MarinFold/marinfold
 uv sync --extra vllm  # "vllm" for Linux+GPU, "transformers" for CPU/CUDA, "mlx" for Apple Silicon
 ```
 
-Run inference:
+Run inference, with the 100-rollout consensus our published numbers use:
 
 ```bash
 # Predict the contact map for the Top7 de novo designed protein ([1QYS](https://www.rcsb.org/structure/1QYS)).
-# Replace "vllm" with "transformers" (CPU/CUDA) or "mlx" (Apple Silicon).
+# Replace "vllm" with "transformers" (CPU/CUDA); rollouts need one of those two.
 SEQUENCE=MGDIQVQVNIDDNGKNFDYTYTVTTESELQKVLNELMDYIKKQGAKRVRISITARTKKEAEKFAAILIKVFAELGYNDINVTFDGDTVTVEGQLEGGSLEHHHHHH
-uv run marinfold infer \
+uv run contacts-v1 infer \
     --backend vllm \
     --input-sequence $SEQUENCE \
     --method rollout \
@@ -100,12 +100,23 @@ read with [pyconfind](https://github.com/timodonnell/pyconfind), so add its
 extra to the sync (`uv sync --extra vllm --extra contacts-v1`):
 
 ```bash
-uv run marinfold evaluate \
+uv run contacts-v1 evaluate \
     --backend vllm \
     --input tests/data/1QYS.cif \
-    --metrics-out ~/metrics.json \
+    --method rollout \
+    --n-rollouts 100 \
+    --out ~/metrics.json \
     --out-plots ~/gt_vs_pred.pdf
 ```
+
+Both commands use the default model, because `--model` is omitted.
+
+`contacts-v1` is the readout-level CLI for this document structure — that is
+where `--method` and the sampling knobs live. There is also a narrower
+high-level CLI, `marinfold infer` / `marinfold evaluate`, which picks the impl
+for you from the model's registry entry and always uses the fast `pairwise`
+readout (seconds rather than minutes, and several points less accurate). Only
+`pairwise` runs on Apple Silicon; rollouts need `vllm` or `transformers`.
 
 ## Details
 

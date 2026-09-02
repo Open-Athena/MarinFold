@@ -471,7 +471,19 @@ def _candidate_pairs(seq_len: int, min_seq_separation: int) -> list[tuple[int, i
 
 
 def _make_backend(cfg: InferenceConfig) -> Backend:
-    """Construct the requested backend, passing through backend-specific kwargs."""
+    """Construct the requested backend, passing through backend-specific kwargs.
+
+    Rejects ``--method rollout --backend mlx`` here rather than letting
+    :meth:`Backend.sample_completions` raise it: the checkpoint is several
+    GB, and the download + load happen before the first rollout is drawn.
+    """
+    if cfg.method == "rollout" and cfg.backend == "mlx":
+        raise ValueError(
+            "method='rollout' is not supported by the MLX backend "
+            "(Backend.sample_completions is unimplemented there). Use "
+            "backend='vllm' or backend='transformers' for rollouts, or "
+            "method='pairwise' on MLX."
+        )
     if cfg.backend == "vllm":
         return load_backend(
             "vllm",

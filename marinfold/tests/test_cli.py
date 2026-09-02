@@ -6,8 +6,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-import pytest
-
 import marinfold.cli as cli
 
 
@@ -83,85 +81,3 @@ def test_cmd_infer_accepts_local_model_directory(
     assert captured["structures"] == [{"sequence": "ACD"}]
     assert captured["out"] == out_path
     assert captured["structure_name"] == "contacts-and-distances-v1"
-
-
-@dataclass(frozen=True)
-class _FakeRolloutConfig(_FakeInferenceConfig):
-    """An impl config that offers a readout choice, as contacts-v1 does."""
-
-    method: str = "pairwise"
-    n_rollouts: int = 100
-
-
-def _fake_impl(config_cls, captured: dict[str, Any]) -> SimpleNamespace:
-    def _predict(cfg, *, structures=None):
-        captured["cfg"] = cfg
-        yield {"entry_id": "sequence", "pairs": [], "expected_distances": []}
-
-    return SimpleNamespace(
-        NAME="fake-v1",
-        InferenceConfig=config_cls,
-        predict=_predict,
-        structure_from_sequence=lambda seq: {"sequence": seq},
-    )
-
-
-def _run_infer(
-    monkeypatch,
-    tmp_path: Path,
-    impl: SimpleNamespace,
-    extra_argv: list[str],
-) -> dict[str, Any]:
-    model_dir = tmp_path / "checkpoint"
-    model_dir.mkdir(exist_ok=True)
-    captured: dict[str, Any] = {}
-    monkeypatch.setattr(cli, "_load_impl", lambda name: impl)
-    monkeypatch.setattr(
-        cli,
-        "write_predictions",
-        lambda out, records, *, structure_name: None,
-    )
-    args = cli.build_parser().parse_args(
-        [
-            "infer",
-            "--model", str(model_dir),
-            "--document-structure", "fake-v1",
-            "--input-sequence", "ACD",
-            "--out", str(tmp_path / "preds.json"),
-            *extra_argv,
-        ]
-    )
-    cli.cmd_infer(args)
-    return captured
-
-
-def test_cmd_infer_passes_rollout_flags_to_impl(monkeypatch, tmp_path: Path) -> None:
-    """The README's `--method rollout --n-rollouts 100` reaches the impl."""
-    captured: dict[str, Any] = {}
-    impl = _fake_impl(_FakeRolloutConfig, captured)
-    _run_infer(
-        monkeypatch, tmp_path, impl,
-        ["--method", "rollout", "--n-rollouts", "7"],
-    )
-    assert captured["cfg"].method == "rollout"
-    assert captured["cfg"].n_rollouts == 7
-
-
-def test_cmd_infer_leaves_impl_defaults_when_flags_omitted(
-    monkeypatch, tmp_path: Path
-) -> None:
-    captured: dict[str, Any] = {}
-    impl = _fake_impl(_FakeRolloutConfig, captured)
-    _run_infer(monkeypatch, tmp_path, impl, [])
-    assert captured["cfg"].method == "pairwise"
-    assert captured["cfg"].n_rollouts == 100
-
-
-def test_cmd_infer_rejects_rollout_flags_for_impls_without_them(
-    monkeypatch, tmp_path: Path
-) -> None:
-    """Impls whose config has no `method` field get an error, not a TypeError."""
-    captured: dict[str, Any] = {}
-    impl = _fake_impl(_FakeInferenceConfig, captured)
-    with pytest.raises(SystemExit, match="--method is not supported"):
-        _run_infer(monkeypatch, tmp_path, impl, ["--method", "rollout"])

@@ -22,10 +22,8 @@ Dispatch is driven by packaged ``MODELS.yaml``:
 
 For impl-specific flags (seed-N sweeps, distance cap, …) use the
 per-impl ``cli.py`` instead. The top-level CLI keeps its surface
-narrow on purpose, but it does expose ``--batch-size`` (useful for
-tuning backend memory / throughput across impls) and ``--method`` /
-``--n-rollouts`` (the readout our published numbers use, and what
-the README's example runs).
+narrow on purpose, but it does expose ``--batch-size`` because that
+one is useful for tuning backend memory / throughput across impls.
 """
 
 import argparse
@@ -149,32 +147,14 @@ def _make_inference_config(
     *,
     input_path: Path | None = None,
 ) -> Any:
-    """Build the impl's InferenceConfig from the parsed CLI args.
-
-    ``--method`` / ``--n-rollouts`` are only meaningful for impls whose
-    config declares them (contacts-v1 does; the distance impls don't),
-    so they are passed through only when set and only when the field
-    exists. Left unset, each impl keeps its own default.
-    """
-    kwargs: dict[str, Any] = dict(
+    """Build the impl's InferenceConfig from the parsed CLI args."""
+    return impl.InferenceConfig(
         model=model_spec,
         input_path=input_path,
         backend=args.backend,
         batch_size=args.batch_size,
         dtype=args.dtype,
     )
-    supported = {f.name for f in dataclasses.fields(impl.InferenceConfig)}
-    for flag, value in (("method", args.method), ("n_rollouts", args.n_rollouts)):
-        if value is None:
-            continue
-        if flag not in supported:
-            raise SystemExit(
-                f"--{flag.replace('_', '-')} is not supported by document "
-                f"structure {impl.NAME!r}; its InferenceConfig has no "
-                f"{flag!r} field."
-            )
-        kwargs[flag] = value
-    return impl.InferenceConfig(**kwargs)
 
 
 def _structures_from_sequence(impl: ModuleType, seq: str) -> list:
@@ -320,18 +300,6 @@ def _add_common(p: argparse.ArgumentParser) -> None:
              "transformers this is tails per cached forward pass; for "
              "vLLM it caps how many shared-prefix prompts are submitted "
              "in one scheduler request.",
-    )
-    p.add_argument(
-        "--method", default=None,
-        help="Contact readout, for impls that offer more than one "
-             "(contacts-v1: 'pairwise' scores P(contact) per pair, "
-             "'rollout' votes over sampled completions — the recipe "
-             "our published numbers use). Omit for the impl's default.",
-    )
-    p.add_argument(
-        "--n-rollouts", type=int, default=None,
-        help="(--method rollout) sampled completions to vote over. "
-             "Omit for the impl's default (contacts-v1: 100).",
     )
 
 

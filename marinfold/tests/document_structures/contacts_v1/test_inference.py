@@ -396,3 +396,11 @@ def test_rollout_honors_retraction(monkeypatch):
     assert tuple(rec["pairs"][int(np.argmax(rec["score"]))]) == (3, 17)  # (2,16)
     assert score[(3, 17)] >= 4.0
     assert score[(1, 13)] < 1.0  # (0,12) retracted → no votes
+
+
+def test_make_backend_rejects_rollout_on_mlx():
+    """MLX has no sample_completions, and the checkpoint is several GB — say so
+    before the download rather than from inside the first rollout."""
+    cfg = inf.InferenceConfig(model="/stub", backend="mlx", method="rollout")
+    with pytest.raises(ValueError, match="not supported by the MLX backend"):
+        inf._make_backend(cfg)
