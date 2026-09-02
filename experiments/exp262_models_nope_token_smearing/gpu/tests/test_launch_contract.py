@@ -12,7 +12,7 @@ import dataclasses
 
 import pytest
 from architecture import NoRotaryEmbeddingsConfig
-from exp262_train_cw import ARMS, TOKEN_FRACTION, model_config
+from exp262_train_cw import ARMS, CONTROL_POINT, POINTS, SCREEN_FRACTION, model_config
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
     GLOBAL_BATCH_SIZE,
@@ -38,31 +38,42 @@ def test_arms_change_only_the_architecture_fields(arm_key: str):
 
 def test_control_arm_is_exp232_exactly():
     """The control must reduce to exp232's model: no smear, exp232's rope."""
-    config = model_config(ARMS["a-rope"])
+    config = model_config(ARMS["control"])
     assert config.smear_width == 0
     assert config.rope == MODEL_CONFIG.rope
     assert dataclasses.replace(config, smear_width=0).uses_rope
 
 
-def test_the_2x2_is_actually_a_2x2():
-    grid = {(arm.use_rope, arm.smear_width > 0) for arm in ARMS.values()}
-    assert grid == {(True, False), (True, True), (False, True), (False, False)}
-    for arm in ARMS.values():
-        config = model_config(arm)
-        assert isinstance(config.rope, NoRotaryEmbeddingsConfig) is not arm.use_rope
-        assert (config.smear_width > 0) is (arm.smear_width > 0)
+def test_the_two_arms_differ_only_in_the_thing_under_test():
+    control, proposal = model_config(ARMS["control"]), model_config(ARMS["nope-smear"])
+    assert not isinstance(control.rope, NoRotaryEmbeddingsConfig)
+    assert isinstance(proposal.rope, NoRotaryEmbeddingsConfig)
+    assert control.smear_width == 0 and proposal.smear_width == 2
 
 
 def test_the_smear_is_a_rounding_error_in_parameter_count():
     """If the smear cost real parameters the comparison would not be clean."""
-    control = model_config(ARMS["a-rope"]).total_trainable_params(2845)
-    smeared = model_config(ARMS["b-rope-smear"]).total_trainable_params(2845)
+    control = model_config(ARMS["control"]).total_trainable_params(2845)
+    smeared = model_config(ARMS["nope-smear"]).total_trainable_params(2845)
     assert 0 < smeared - control < 10_000
     assert (smeared - control) / control < 1e-5
 
 
-def test_budget_is_a_screen_not_a_production_run():
-    steps = int(NUM_TRAIN_STEPS * TOKEN_FRACTION)
-    assert steps < NUM_TRAIN_STEPS
-    tokens = steps * GLOBAL_BATCH_SIZE * SEQ_LEN
+def test_screen_is_a_fraction_and_full_is_exp232_exactly():
+    """The headline run must be exp232's schedule, not an approximation of it."""
+    screen_steps = int(NUM_TRAIN_STEPS * SCREEN_FRACTION)
+    assert 0 < screen_steps < NUM_TRAIN_STEPS
+    tokens = screen_steps * GLOBAL_BATCH_SIZE * SEQ_LEN
     assert 10e9 < tokens < 20e9, f"expected a ~15B-token screen, got {tokens / 1e9:.1f}B"
+
+
+def test_control_optimizer_point_is_exp232s_swept_winner():
+    """p06 is lr 1e-3 / wd 0.2 — the point exp232's own five-point sweep chose."""
+    point = POINTS[CONTROL_POINT]
+    assert (point.learning_rate, point.weight_decay) == (1e-3, 0.2)
+
+
+def test_the_grid_reaches_above_the_control_rate():
+    """The pilot said the NoPE arm wants a higher rate; the grid has to allow it."""
+    rates = {point.learning_rate for point in POINTS.values()}
+    assert max(rates) > POINTS[CONTROL_POINT].learning_rate * 5

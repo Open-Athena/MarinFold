@@ -1,33 +1,48 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Phase 1 of issue #262: the architecture ablation on CoreWeave GPUs.
+"""Issue #262 at production scale: does NoPE + token smearing train better?
 
-Everything except the architecture is pinned to the exp232 contract — the same
+One question, asked cleanly: take the exp232 1.5B recipe exactly as it is, change
+only the positional handling, and see whether validation loss improves. Every
+other architectural detail is imported from the exp232 contract — the same
 decontaminated tokenized caches, tokenizer, mixture, sequence length, global
-batch, optimizer shape, shuffle, amino-acid augmentation and seeds — so a
-difference between arms is a difference between architectures. The two things
-that move are the two under test:
+batch, optimizer shape, shuffle, amino-acid augmentation, and seeds — and a test
+fails if any of them moves. What changes is only:
 
 * ``smear_width`` — 0, or 2 for the width-3 causal smear.
 * ``rope`` — exp232's Llama3 rope, or ``NoRotaryEmbeddingsConfig`` (NoPE).
 
-``ARM`` selects one cell of that 2x2. ``CLUSTER`` and ``NODES`` select
-placement. ``LEARNING_RATE`` overrides the arm's default peak rate, which
-matters because removing rope changes the scale of the attention logits and a
-single shared rate would confound the architecture with the optimizer; the
-per-arm defaults below come from the local pilot's stage-1 sweep.
+Two arms. ``control`` is the usual setup, exp232's ``m2-p06-aug``. ``nope-smear``
+is the proposal. The only thing tuned is the optimizer point: removing rope
+changes the scale of the attention logits, so holding one learning rate across
+both arms would confound the architecture with the optimizer. The control needs
+no tuning — exp232 already swept five points at this exact scale, data and budget
+and ``p06`` won — so the whole tuning budget goes to the new arm.
 
-**HF export is off for every arm, including the control.** A NoPE model has no
-HF Qwen3 representation and the smear weights have no home in one, so
-``to_hf_config`` refuses rather than exporting something that would load as a
-different model. Levanter-native checkpoints are still written, and Phase 1 is
-decided on validation loss; promoting a winner to a rollout evaluation needs a
-real exporter first, which is Phase 2's problem. Disabling it for the control
-too keeps the arms symmetric.
+Two phases, selected by ``PHASE``:
 
-Budget is a fraction of exp232's, set by ``TOKEN_FRACTION``. This is an
-architecture screen, not a production run.
+``screen``
+    ``SCREEN_FRACTION`` of exp232's schedule. Picks the new arm's optimizer point
+    and gives an early kill signal against a matched-budget control. A reduced
+    run is NOT comparable to a prefix of a full one — the WSD schedule decays
+    relative to the total — which is why the control is re-run here rather than
+    read off exp232's curve at the same step.
+``full``
+    exp232's schedule exactly: 145,200 steps, 152B tokens. This is the headline
+    comparison. For reference, exp232's ``s02-m2-p06-aug`` reached eval loss
+    2.9918 in 75.8 hours.
+
+**HF export is off for both arms.** A NoPE model has no HF Qwen3 representation
+and the smear weights have no home in one, so ``to_hf_config`` refuses rather
+than exporting something that would load as a different model. Levanter-native
+checkpoints are still written and the comparison is decided on validation loss;
+promoting a winner to a rollout evaluation needs a real exporter first. Disabled
+for the control too, so the arms stay symmetric.
+
+The marin pin is newer than exp232's. That is why the control is re-run rather
+than compared against exp232's published number: a stack difference could move
+the loss scale on its own (see the #7209 note in experiments/exp180).
 """
 
 import math
@@ -45,10 +60,7 @@ from levanter.optim.config import AdamConfig
 from marin.execution.lazy import ArtifactStep
 from marin.experiment.cli import build_options
 from marin.experiment.train import train_lm
-from marin.training.run_environment import (
-    dependency_groups_for_resources,
-    env_vars_for_dependency_groups,
-)
+from marin.training.run_environment import dependency_groups_for_resources
 from marin.training.training import (
     LevanterCheckpoint,
     TrainLmOnPodConfig,
@@ -99,10 +111,6 @@ VALIDATION_CACHE = (
 # wd 0.2. Held fixed so the arms differ only in architecture.
 AFDB_WEIGHT = AFDB_TOKENS / (AFDB_TOKENS + ESM_TOKENS)
 ESM_WEIGHT = 1.0 - AFDB_WEIGHT
-WEIGHT_DECAY = 0.2
-
-# A screen, not a production run: a tenth of exp232's 152B-token budget.
-TOKEN_FRACTION = 0.1
 
 CUDNN_X86_WHEEL = (
     "https://pypi.nvidia.com/nvidia-cudnn-cu13/"
@@ -116,24 +124,54 @@ CUDNN_ARM_WHEEL = (
 
 @dataclass(frozen=True)
 class Arm:
-    """One cell of the 2x2, and the peak learning rate the pilot chose for it."""
+    """One architecture under comparison."""
 
     key: str
     use_rope: bool
     smear_width: int
-    learning_rate: float
     label: str
 
 
 ARMS = {
     arm.key: arm
     for arm in (
-        Arm("a-rope", True, 0, 1e-3, "RoPE, no smear (control = exp232 m2-p06-aug)"),
-        Arm("b-rope-smear", True, 2, 1e-3, "RoPE + smear(2)"),
-        Arm("c-nope-smear", False, 2, 1e-3, "NoPE + smear(2)"),
-        Arm("d-nope", False, 0, 1e-3, "NoPE, no smear"),
+        Arm("control", True, 0, "the usual setup — exp232 m2-p06-aug"),
+        Arm("nope-smear", False, 2, "NoPE + width-3 causal smear"),
     )
 }
+
+
+@dataclass(frozen=True)
+class Point:
+    """An optimizer point. exp232's naming, extended where this arm needs it."""
+
+    key: str
+    learning_rate: float
+    weight_decay: float
+
+
+# p01-p06 are exp232's own sweep points, kept at their exp232 values so a shared
+# name means a shared setting. p07 and p08 extend the grid upward because the
+# local pilot found the NoPE arm prefers a higher rate than the control — it
+# picked the top of a 1e-3..1e-2 grid while every rope arm picked the bottom.
+POINTS = {
+    point.key: point
+    for point in (
+        Point("p06", 1e-3, 0.2),      # exp232's winner; the control's setting
+        Point("p01", 3.1623e-3, 0.2),
+        Point("p03", 3.1623e-3, 0.1),
+        Point("p07", 1e-2, 0.2),
+        Point("p08", 1e-2, 0.1),
+    )
+}
+
+# The control is not tuned here: exp232 swept five points at this exact scale,
+# data and budget, and p06 won. Re-tuning it would spend the budget re-deriving
+# a known answer.
+CONTROL_POINT = "p06"
+
+# What `PHASE=screen` costs, as a fraction of exp232's 145,200-step schedule.
+SCREEN_FRACTION = 0.1
 
 
 def model_config(arm: Arm) -> SmearQwen3Config:
@@ -239,9 +277,11 @@ def _pinned_cuda_toolchain_setup_script() -> str:
 
 def _run_train_job(pod_config: TrainLmOnPodConfig) -> None:
     """Dispatch training at batch priority with exp232's GPU setup."""
+    # marin's own ``_train_job`` dispatches through ``remote()``, which offers no
+    # priority and would land at the interactive band. #108 requires batch, so
+    # the JobRequest is assembled here instead; everything else mirrors it.
     env_vars = resolve_training_env(pod_config.env_vars, pod_config.resources)
     dependency_groups = dependency_groups_for_resources(pod_config.resources, None)
-    child_env = env_vars_for_dependency_groups(pod_config.resources, dependency_groups, env_vars)
     setup_scripts = [
         default_setup_script(
             extras=dependency_groups,
@@ -255,7 +295,7 @@ def _run_train_job(pod_config: TrainLmOnPodConfig) -> None:
             entrypoint=Entrypoint.from_callable(lambda: run_levanter_train_lm(pod_config)),
             resources=pod_config.resources,
             environment=create_environment(
-                extras=dependency_groups, env_vars=child_env, setup_scripts=setup_scripts
+                extras=dependency_groups, env_vars=env_vars, setup_scripts=setup_scripts
             ),
             priority=IRIS_PRIORITY_BAND_BATCH,
         )
@@ -281,11 +321,35 @@ def _training_env() -> dict[str, str]:
 def _parse_arm() -> Arm:
     key = os.environ.get("ARM", "").strip().lower()
     try:
-        arm = ARMS[key]
+        return ARMS[key]
     except KeyError as exc:
         raise SystemExit(f"ARM must be one of: {', '.join(ARMS)}") from exc
-    override = os.environ.get("LEARNING_RATE")
-    return replace(arm, learning_rate=float(override)) if override else arm
+
+
+def _parse_point(arm: Arm) -> Point:
+    """The optimizer point. The control is pinned; the new arm selects one."""
+    key = os.environ.get("POINT", "").strip().lower()
+    if arm.key == "control":
+        if key and key != CONTROL_POINT:
+            raise SystemExit(
+                f"the control is fixed at {CONTROL_POINT} (exp232's swept winner); "
+                f"re-tuning it would spend budget re-deriving a known answer"
+            )
+        return POINTS[CONTROL_POINT]
+    try:
+        return POINTS[key]
+    except KeyError as exc:
+        raise SystemExit(f"POINT must be one of: {', '.join(POINTS)}") from exc
+
+
+def _parse_phase() -> tuple[str, int]:
+    """``screen`` for the optimizer-point search, ``full`` for the headline."""
+    phase = os.environ.get("PHASE", "").strip().lower()
+    if phase == "screen":
+        return phase, int(NUM_TRAIN_STEPS * SCREEN_FRACTION)
+    if phase == "full":
+        return phase, NUM_TRAIN_STEPS
+    raise SystemExit("PHASE must be 'screen' or 'full'")
 
 
 def _parse_cluster() -> tuple[str, ClusterSpec]:
@@ -306,18 +370,20 @@ def _parse_nodes() -> int:
     return nodes
 
 
-def build_run(arm: Arm, *, cluster: str, spec: ClusterSpec, nodes: int, steps: int) -> ArtifactStep[LevanterCheckpoint]:
+def build_run(
+    arm: Arm, point: Point, *, phase: str, cluster: str, spec: ClusterSpec, nodes: int, steps: int
+) -> ArtifactStep[LevanterCheckpoint]:
     batch = gpu_batch_fit(spec, nodes=nodes)
     env = _training_env()
-    run_id = f"{RUN_PREFIX}-{arm.key}-lr{arm.learning_rate:g}"
+    run_id = f"{RUN_PREFIX}-{phase}-{arm.key}-{point.key}"
 
     step = train_lm(
         name=run_id,
         run_id=run_id,
         model=model_config(arm),
         optimizer=AdamConfig(
-            learning_rate=arm.learning_rate,
-            weight_decay=WEIGHT_DECAY,
+            learning_rate=point.learning_rate,
+            weight_decay=point.weight_decay,
             warmup=WARMUP,
             decay=DECAY,
             min_lr_ratio=MIN_LR_RATIO,
@@ -342,8 +408,11 @@ def build_run(arm: Arm, *, cluster: str, spec: ClusterSpec, nodes: int, steps: i
         tensor_parallel_size=batch.tensor_parallelism,
         steps_per_eval=max(1, steps // 20),
         wandb_project=env["WANDB_PROJECT"],
-        wandb_group=f"exp262-{arm.key}",
-        tags=["exp262", f"arm={arm.key}", f"rope={arm.use_rope}", f"smear={arm.smear_width}"],
+        wandb_group=f"exp262-{phase}",
+        tags=[
+            "exp262", f"phase={phase}", f"arm={arm.key}", f"point={point.key}",
+            f"rope={arm.use_rope}", f"smear={arm.smear_width}",
+        ],
         env_vars=env,
     )
 
@@ -389,15 +458,19 @@ def build_run(arm: Arm, *, cluster: str, spec: ClusterSpec, nodes: int, steps: i
 @build_options
 def main() -> ArtifactStep[LevanterCheckpoint]:
     arm = _parse_arm()
+    point = _parse_point(arm)
+    phase, steps = _parse_phase()
     cluster, spec = _parse_cluster()
     nodes = _parse_nodes()
-    steps = int(NUM_TRAIN_STEPS * TOKEN_FRACTION)
     print(
-        f"[exp262] {arm.key} ({arm.label}) lr={arm.learning_rate:g} "
-        f"{steps} steps x {TOKENS_PER_STEP} tokens = "
-        f"{steps * TOKENS_PER_STEP / 1e9:.1f}B on {nodes} x {spec.gpu_variant} ({cluster})"
+        f"[exp262] {phase}: {arm.key} ({arm.label}) at {point.key} "
+        f"lr={point.learning_rate:g} wd={point.weight_decay:g} — "
+        f"{steps} steps x {TOKENS_PER_STEP} tokens = {steps * TOKENS_PER_STEP / 1e9:.1f}B "
+        f"on {nodes} x {spec.gpu_variant} ({cluster})"
     )
-    return build_run(arm, cluster=cluster, spec=spec, nodes=nodes, steps=steps)
+    return build_run(
+        arm, point, phase=phase, cluster=cluster, spec=spec, nodes=nodes, steps=steps
+    )
 
 
 if __name__ == "__main__":
