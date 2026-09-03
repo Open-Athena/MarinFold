@@ -157,9 +157,12 @@ class Point:
 
 
 # p01-p06 are exp232's own sweep points, kept at their exp232 values so a shared
-# name means a shared setting. p07 and p08 extend the grid upward because the
-# local pilot found the NoPE arm prefers a higher rate than the control — it
-# picked the top of a 1e-3..1e-2 grid while every rope arm picked the bottom.
+# name means a shared setting. p07/p08 extended the grid upward on the local
+# pilot's advice; the screen then showed that advice does not transfer — at 1.5B
+# the NoPE arm gets monotonically worse with rate (p06 3.1598, p01 3.2395, and
+# p07 diverged, eval rising from 3.597 to 3.802 before it was cancelled). So the
+# grid extends DOWNWARD instead: p09 brackets the optimum from below, and p10
+# varies weight decay at the best rate found.
 POINTS = {
     point.key: point
     for point in (
@@ -168,6 +171,8 @@ POINTS = {
         Point("p03", 3.1623e-3, 0.1),
         Point("p07", 1e-2, 0.2),
         Point("p08", 1e-2, 0.1),
+        Point("p09", 3.1623e-4, 0.2),
+        Point("p10", 1e-3, 0.1),
     )
 }
 
