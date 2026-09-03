@@ -1,0 +1,5 @@
+{
+  "script": "plot_full_runs.py",
+  "args": [],
+  "caption": "Left: both full-budget arms with exp232's run behind them in grey \u2014 the control is tracking it to ~0.01 nats, which is what licenses reading the gap at all. Right: the arm gap, against the 0.053 nats the whole #75 to #117 generation was worth. The early positive excursion is LR warmup; the crossover is near step 7,000."
+}

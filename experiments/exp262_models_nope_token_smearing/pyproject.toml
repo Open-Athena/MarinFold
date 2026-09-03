@@ -14,6 +14,7 @@ dependencies = [
     "pandas>=2.0",
     "numpy",
     "matplotlib",
+    "wandb>=0.29.0",
 ]
 
 [project.optional-dependencies]
