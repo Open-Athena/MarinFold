@@ -429,6 +429,45 @@ def test_evaluate_builds_the_backend_before_ground_truth(monkeypatch, tmp_path):
     assert calls == ["backend", "ground_truth"]
 
 
+def test_evaluate_skips_an_empty_input_dir_without_loading_the_model(
+    monkeypatch, tmp_path
+):
+    """An existing but empty directory is no work, and no work must not cost a
+    multi-GB download — the reorder put the model load ahead of the analysis
+    that used to discover this."""
+    def _never(cfg):
+        raise AssertionError("the model must not load when there is no input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    (tmp_path / "unsupported").mkdir()
+    (tmp_path / "unsupported" / "notes.txt").write_text("not a structure")
+
+    for path in (empty, tmp_path / "unsupported"):
+        result = inf.evaluate(
+            inf.InferenceConfig(model="/stub", backend="vllm", input_path=path)
+        )
+        assert result.metrics == {}
+        assert result.extras.get("warning") == "no input structures"
+
+
+def test_evaluate_accepts_a_parquet_dir(monkeypatch, tmp_path):
+    """`.parquet` is not in _STRUCTURE_EXTS, so a check built on
+    iter_structure_paths alone would reject a valid parquet input as empty."""
+    calls: list[str] = []
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: calls.append("backend"))
+    monkeypatch.setattr(inf, "_structures_for_evaluate", lambda cfg, s: [])
+
+    shards = tmp_path / "shards"
+    shards.mkdir()
+    (shards / "part-0.parquet").write_bytes(b"")
+
+    inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm", input_path=shards))
+    assert calls == ["backend"]
+
+
 def test_evaluate_rejects_a_bad_input_before_loading_the_model(monkeypatch, tmp_path):
     """The reorder must not cost the fail-fast: a typo'd --input should not
     buy a multi-GB download first."""

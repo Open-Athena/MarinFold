@@ -75,6 +75,7 @@ from .read import live_contacts
 from .parse import (
     RawContact,
     ResidueInfo,
+    _parquet_paths,
     iter_analyzed_structures,
     iter_structure_paths,
     residues_from_sequence,
@@ -549,17 +550,29 @@ def _structures_for_predict(
     return out
 
 
-def _check_evaluate_input(cfg: InferenceConfig) -> None:
-    """Reject a bad ``--input`` before the model loads, without pyconfind.
+def _has_evaluate_inputs(input_path: Path) -> bool:
+    """Whether ``input_path`` holds anything :func:`iter_analyzed_structures`
+    would read — decided cheaply, without parsing or running pyconfind.
 
     :func:`evaluate` builds the backend before it computes ground truth (see
-    the note there), so this keeps a typo'd path from costing a multi-GB
-    download and a model load first. Enumerating one path is cheap; the
-    pyconfind analysis is what is expensive.
+    the note there), so both no-work cases have to be settled here or they
+    cost a multi-GB download and a model load first: a path that does not
+    exist, and a path that exists but holds nothing readable (an empty
+    directory, or one with no supported files).
+
+    Mirrors :func:`iter_analyzed_structures`'s own precedence — parquet
+    shards win over loose structure files — so this accepts exactly what the
+    analysis accepts. Checking :func:`iter_structure_paths` alone would
+    reject a valid parquet directory, since ``.parquet`` is not in
+    ``_STRUCTURE_EXTS``.
+
+    Raises:
+        FileNotFoundError: ``input_path`` is neither a file nor a directory.
     """
-    if cfg.input_path is None:
-        raise ValueError("evaluate requires cfg.input_path or structures=")
-    next(iter_structure_paths(Path(cfg.input_path)), None)
+    path = Path(input_path)
+    if _parquet_paths(path):
+        return True
+    return next(iter_structure_paths(path), None) is not None
 
 
 def _structures_for_evaluate(
@@ -778,8 +791,12 @@ def evaluate(
         # 8xA100 / driver 580.105, same process otherwise: backend-then-GT
         # completes in 17.3 s, GT-then-backend never returns. `predict`
         # touches no pyconfind, which is why only this path was hit.
-        _check_evaluate_input(cfg)
+        if cfg.input_path is None:
+            raise ValueError("evaluate requires cfg.input_path or structures=")
+        if not _has_evaluate_inputs(cfg.input_path):
+            return _nothing_to_do()
         backend = _make_backend(cfg)
+        # Files can still all fail to parse, which only the analysis knows.
         resolved = _structures_for_evaluate(cfg, None)
         if not resolved:
             return _nothing_to_do()
