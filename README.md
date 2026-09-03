@@ -40,7 +40,7 @@ More quantitatively, we can compare MarinFold contact prediction accuracy to exi
 
 MarinFold outperforms a weak baseline (Protenix v2 in single sequence mode) on natural proteins from FoldBench (but, curiously, not on de novo designs).
 
-A few notes: the overall paradigm is that we are training on AlphaFold2 or ESMFold2 predicted structures, and testing on experimentally-determined structures. We also remove proteins from our training set that have 30% or higher sequence similarity to anything in our eval set. The model we are using here is **#232's `m2-p06` at step 363,000** (`contacts-v1-exp232-m2-p06-train-1.5B`)
+A few notes: the overall paradigm is that we are training on AlphaFold2 or ESMFold2 predicted structures, and testing on experimentally-determined structures. We also remove proteins from our training set that have 30% or higher sequence similarity to anything in our eval set. The model we are using here is **#232's `m2-p06` at step 363,000** (`contacts-v1-exp232-m2-p06-train-1.5B`), which is also the default model.
 
 For a more apples-to-apples comparison, we can also look at the accuracy of the predicted structures when we run MarinFold-predicted contacts through [Helico](https://github.com/Open-Athena/helico). Here's what that looks like:
 
@@ -58,16 +58,13 @@ The main areas of ongoing work are:
 ## Try it out
 
 The default model in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is
-`contacts-v1-exp199-cooldown-1.5B` — a 1.47B Qwen3 trained from scratch on a
-50/50 AFDB + ESM-Atlas mixture on CoreWeave H100s and then annealed, from
-[#199](https://github.com/Open-Athena/MarinFold/issues/199) and scored in
-[#234](https://github.com/Open-Athena/MarinFold/pull/234). R-precision **0.631**
-on the 554-protein contact benchmark, against single-sequence Protenix-v2's
-0.603.
-
-Note the default model was trained *before*
-[decontamination](DOCS.md#training-data-decontamination): its corpora were never filtered
-against the eval proteins.
+`contacts-v1-exp232-m2-p06-train-1.5B` — a 1.47B Qwen3 trained from scratch on a
+50/50 AFDB + ESM-Atlas mixture and then trained on past the sweep with a
+lowered peak LR and a cooldown, from
+[#232](https://github.com/Open-Athena/MarinFold/issues/232). Its training
+corpora were [decontaminated](DOCS.md#training-data-decontamination) against the
+eval proteins. R-precision **0.605** on the 554-protein contact benchmark, and
+0.552 on [#245](https://github.com/Open-Athena/MarinFold/issues/245)'s eval-val.
 
 ### GPU example
 
@@ -82,13 +79,13 @@ cd MarinFold/marinfold
 uv sync --extra vllm  # "vllm" for Linux+GPU, "transformers" for CPU/CUDA, "mlx" for Apple Silicon
 ```
 
-Run inference:
+Run inference, with the 100-rollout consensus our published numbers use:
 
 ```bash
 # Predict the contact map for the Top7 de novo designed protein ([1QYS](https://www.rcsb.org/structure/1QYS)).
-# Replace "vllm" with "transformers" (CPU/CUDA) or "mlx" (Apple Silicon).
+# Replace "vllm" with "transformers" (CPU/CUDA); rollouts need one of those two.
 SEQUENCE=MGDIQVQVNIDDNGKNFDYTYTVTTESELQKVLNELMDYIKKQGAKRVRISITARTKKEAEKFAAILIKVFAELGYNDINVTFDGDTVTVEGQLEGGSLEHHHHHH
-uv run marinfold infer \
+uv run contacts-v1 infer \
     --backend vllm \
     --input-sequence $SEQUENCE \
     --method rollout \
@@ -103,12 +100,23 @@ read with [pyconfind](https://github.com/timodonnell/pyconfind), so add its
 extra to the sync (`uv sync --extra vllm --extra contacts-v1`):
 
 ```bash
-uv run marinfold evaluate \
+uv run contacts-v1 evaluate \
     --backend vllm \
     --input tests/data/1QYS.cif \
-    --metrics-out ~/metrics.json \
+    --method rollout \
+    --n-rollouts 100 \
+    --out ~/metrics.json \
     --out-plots ~/gt_vs_pred.pdf
 ```
+
+Both commands use the default model, because `--model` is omitted.
+
+`contacts-v1` is the readout-level CLI for this document structure — that is
+where `--method` and the sampling knobs live. There is also a narrower
+high-level CLI, `marinfold infer` / `marinfold evaluate`, which picks the impl
+for you from the model's registry entry and always uses the fast `pairwise`
+readout (seconds rather than minutes, and several points less accurate). Only
+`pairwise` runs on Apple Silicon; rollouts need `vllm` or `transformers`.
 
 ## Details
 

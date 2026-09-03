@@ -396,3 +396,98 @@ def test_rollout_honors_retraction(monkeypatch):
     assert tuple(rec["pairs"][int(np.argmax(rec["score"]))]) == (3, 17)  # (2,16)
     assert score[(3, 17)] >= 4.0
     assert score[(1, 13)] < 1.0  # (0,12) retracted → no votes
+
+
+def test_make_backend_rejects_rollout_on_mlx():
+    """MLX has no sample_completions, and the checkpoint is several GB — say so
+    before the download rather than from inside the first rollout."""
+    cfg = inf.InferenceConfig(model="/stub", backend="mlx", method="rollout")
+    with pytest.raises(ValueError, match="not supported by the MLX backend"):
+        inf._make_backend(cfg)
+
+
+def test_evaluate_builds_the_backend_before_ground_truth(monkeypatch, tmp_path):
+    """Order is load-bearing: vLLM forks its EngineCore, and forking a parent
+    that has already run pyconfind deadlocks the child in `_init_executor`."""
+    calls: list[str] = []
+
+    def _fake_backend(cfg):
+        calls.append("backend")
+        return object()
+
+    def _fake_structures(cfg, structures):
+        calls.append("ground_truth")
+        return []
+
+    monkeypatch.setattr(inf, "_make_backend", _fake_backend)
+    monkeypatch.setattr(inf, "_structures_for_evaluate", _fake_structures)
+
+    cif = tmp_path / "x.cif"
+    cif.write_text("")
+    inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm", input_path=cif))
+
+    assert calls == ["backend", "ground_truth"]
+
+
+def test_evaluate_skips_an_empty_input_dir_without_loading_the_model(
+    monkeypatch, tmp_path
+):
+    """An existing but empty directory is no work, and no work must not cost a
+    multi-GB download — the reorder put the model load ahead of the analysis
+    that used to discover this."""
+    def _never(cfg):
+        raise AssertionError("the model must not load when there is no input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    (tmp_path / "unsupported").mkdir()
+    (tmp_path / "unsupported" / "notes.txt").write_text("not a structure")
+
+    for path in (empty, tmp_path / "unsupported"):
+        result = inf.evaluate(
+            inf.InferenceConfig(model="/stub", backend="vllm", input_path=path)
+        )
+        assert result.metrics == {}
+        assert result.extras.get("warning") == "no input structures"
+
+
+def test_evaluate_accepts_a_parquet_dir(monkeypatch, tmp_path):
+    """`.parquet` is not in _STRUCTURE_EXTS, so a check built on
+    iter_structure_paths alone would reject a valid parquet input as empty."""
+    calls: list[str] = []
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: calls.append("backend"))
+    monkeypatch.setattr(inf, "_structures_for_evaluate", lambda cfg, s: [])
+
+    shards = tmp_path / "shards"
+    shards.mkdir()
+    (shards / "part-0.parquet").write_bytes(b"")
+
+    inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm", input_path=shards))
+    assert calls == ["backend"]
+
+
+def test_evaluate_rejects_a_bad_input_before_loading_the_model(monkeypatch, tmp_path):
+    """The reorder must not cost the fail-fast: a typo'd --input should not
+    buy a multi-GB download first."""
+    def _never(cfg):
+        raise AssertionError("the model must not load for a nonexistent input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="vllm", input_path=tmp_path / "nope.cif"
+    )
+    with pytest.raises(FileNotFoundError):
+        inf.evaluate(cfg)
+
+
+def test_evaluate_without_input_or_structures_is_an_error(monkeypatch):
+    def _never(cfg):
+        raise AssertionError("the model must not load without an input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    with pytest.raises(ValueError, match="input_path or structures"):
+        inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm"))

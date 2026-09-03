@@ -75,7 +75,9 @@ from .read import live_contacts
 from .parse import (
     RawContact,
     ResidueInfo,
+    _parquet_paths,
     iter_analyzed_structures,
+    iter_structure_paths,
     residues_from_sequence,
 )
 from .vocab import (
@@ -471,7 +473,19 @@ def _candidate_pairs(seq_len: int, min_seq_separation: int) -> list[tuple[int, i
 
 
 def _make_backend(cfg: InferenceConfig) -> Backend:
-    """Construct the requested backend, passing through backend-specific kwargs."""
+    """Construct the requested backend, passing through backend-specific kwargs.
+
+    Rejects ``--method rollout --backend mlx`` here rather than letting
+    :meth:`Backend.sample_completions` raise it: the checkpoint is several
+    GB, and the download + load happen before the first rollout is drawn.
+    """
+    if cfg.method == "rollout" and cfg.backend == "mlx":
+        raise ValueError(
+            "method='rollout' is not supported by the MLX backend "
+            "(Backend.sample_completions is unimplemented there). Use "
+            "backend='vllm' or backend='transformers' for rollouts, or "
+            "method='pairwise' on MLX."
+        )
     if cfg.backend == "vllm":
         return load_backend(
             "vllm",
@@ -534,6 +548,31 @@ def _structures_for_predict(
             )
         )
     return out
+
+
+def _has_evaluate_inputs(input_path: Path) -> bool:
+    """Whether ``input_path`` holds anything :func:`iter_analyzed_structures`
+    would read — decided cheaply, without parsing or running pyconfind.
+
+    :func:`evaluate` builds the backend before it computes ground truth (see
+    the note there), so both no-work cases have to be settled here or they
+    cost a multi-GB download and a model load first: a path that does not
+    exist, and a path that exists but holds nothing readable (an empty
+    directory, or one with no supported files).
+
+    Mirrors :func:`iter_analyzed_structures`'s own precedence — parquet
+    shards win over loose structure files — so this accepts exactly what the
+    analysis accepts. Checking :func:`iter_structure_paths` alone would
+    reject a valid parquet directory, since ``.parquet`` is not in
+    ``_STRUCTURE_EXTS``.
+
+    Raises:
+        FileNotFoundError: ``input_path`` is neither a file nor a directory.
+    """
+    path = Path(input_path)
+    if _parquet_paths(path):
+        return True
+    return next(iter_structure_paths(path), None) is not None
 
 
 def _structures_for_evaluate(
@@ -728,14 +767,39 @@ def evaluate(
     may be passed directly (carrying ``gt_contacts``); otherwise they are
     analyzed from ``cfg.input_path`` (needs the ``contacts-v1`` extra).
     """
-    resolved = _structures_for_evaluate(cfg, structures)
-    if not resolved:
+    def _nothing_to_do() -> EvalResult:
         return EvalResult(
             metrics={},
             per_example=[],
             extras={"structure": NAME, "warning": "no input structures", "model": cfg.model},
         )
-    backend = _make_backend(cfg)
+
+    if structures is not None:
+        # Caller-supplied: reading the list is free, so keep the early exit
+        # ahead of the model load. (Such a caller has already run whatever
+        # produced `gt_contacts`; if that was pyconfind and the backend is
+        # vLLM, see the fork note in marinfold/inference/_vllm.py.)
+        resolved = list(structures)
+        if not resolved:
+            return _nothing_to_do()
+        backend = _make_backend(cfg)
+    else:
+        # Backend FIRST, ground truth second — load-bearing, not cosmetic.
+        # vLLM starts its EngineCore with fork, and forking a parent that has
+        # already run pyconfind deadlocks the child inside `_init_executor`:
+        # silently, engine at ~500 MiB, GPU at 0%, forever. Measured on
+        # 8xA100 / driver 580.105, same process otherwise: backend-then-GT
+        # completes in 17.3 s, GT-then-backend never returns. `predict`
+        # touches no pyconfind, which is why only this path was hit.
+        if cfg.input_path is None:
+            raise ValueError("evaluate requires cfg.input_path or structures=")
+        if not _has_evaluate_inputs(cfg.input_path):
+            return _nothing_to_do()
+        backend = _make_backend(cfg)
+        # Files can still all fail to parse, which only the analysis knows.
+        resolved = _structures_for_evaluate(cfg, None)
+        if not resolved:
+            return _nothing_to_do()
 
     agg: dict[str, list[float]] = defaultdict(list)
     per_example: list[dict] = []
