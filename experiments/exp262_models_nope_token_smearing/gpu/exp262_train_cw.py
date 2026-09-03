@@ -65,6 +65,7 @@ from levanter.optim.config import AdamConfig
 from marin.execution.lazy import ArtifactStep
 from marin.experiment.cli import build_options
 from marin.experiment.train import train_lm
+from marin.processing.tokenize.cache_stats import read_tokenized_cache_stats
 from marin.training.run_environment import dependency_groups_for_resources
 from marin.training.training import (
     LevanterCheckpoint,
@@ -237,6 +238,32 @@ def gpu_batch_fit(spec: ClusterSpec, *, nodes: int) -> GpuBatchConfig:
         per_device_parallelism=per_device_parallelism,
         gradient_accumulation=sequences_per_device // per_device_parallelism,
     )
+
+
+def verify_decontaminated_cache_counts() -> None:
+    """Assert the caches hold exactly exp225's post-decontamination corpora.
+
+    Carried over from exp232's ``_verify_decontaminated_cache_counts``. Declaring
+    the counts in the artifact config only records an intention; this reads the
+    live cache and compares. exp262's whole result is a comparison against the
+    usual setup, and "the usual setup" includes training on the decontaminated
+    data — so a silent cache swap would invalidate the experiment rather than
+    just annoy us.
+    """
+    expected = (
+        ("afdb", AFDB_CACHE, AFDB_DOCUMENTS, AFDB_TOKENS),
+        ("esm", ESM_CACHE, ESM_DOCUMENTS, ESM_TOKENS),
+    )
+    for name, cache_path, expected_documents, expected_tokens in expected:
+        stats = read_tokenized_cache_stats(cache_path, "train")
+        observed = (stats.total_elements, stats.total_tokens)
+        pinned = (expected_documents, expected_tokens)
+        if observed != pinned:
+            raise ValueError(
+                f"{name} cache stats do not match the pinned decontaminated data: "
+                f"{observed=}, {pinned=}, {cache_path=}"
+            )
+        print(f"[exp262] {name} cache verified: {observed[0]:,} documents, {observed[1]:,} tokens")
 
 
 def afdb_cache() -> ArtifactStep:
@@ -434,6 +461,7 @@ def _parse_nodes() -> int:
 def build_run(
     arm: Arm, point: Point, *, phase: str, cluster: str, spec: ClusterSpec, nodes: int, steps: int
 ) -> ArtifactStep[LevanterCheckpoint]:
+    verify_decontaminated_cache_counts()
     batch = gpu_batch_fit(spec, nodes=nodes)
     env = _training_env()
     run_id = f"{RUN_PREFIX}-{phase}-{arm.key}-{point.key}"
