@@ -1,0 +1,5 @@
+{
+  "script": "analyze_pilot.py",
+  "args": [],
+  "caption": "Local pilot: 15M-parameter twins of the exp232 Qwen3 on real decontaminated contacts-v1, one line per seed. Right panel is the guardrail Phase 0 asked for \u2014 the probability the model puts on <end> when the document is not finished, which is the counting job NoPE takes away."
+}

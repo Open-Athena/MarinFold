@@ -1,0 +1,5 @@
+{
+  "script": "plot_phase0.py",
+  "args": [],
+  "caption": "Left: for heads that retrieve earlier mentions of the query's own residue index, the share of their attention on those co-referents, by distance. Flat \u2014 L1H17 holds 0.90-0.93 out to 2048 tokens. Retrieval is already distance-uniform, so RoPE costs us no reach and the mechanistic case for dropping it fails. Right: where structure-section attention goes."
+}

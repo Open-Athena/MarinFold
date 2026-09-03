@@ -1,0 +1,5 @@
+{
+  "script": "plot_phase0.py",
+  "args": [],
+  "caption": "Attention mass at offset 1 per (layer, head), over structure-section position queries of 24 ground-truth documents. Layer 1 holds two near-pure previous-token heads (0.999, 0.996) and a third splitting 0.75/0.16 over offsets 1 and 2 \u2014 a width-3 smear built out of attention. Direct motivation for the smear half of #262."
+}
