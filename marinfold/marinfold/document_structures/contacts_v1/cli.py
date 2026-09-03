@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any
 
 from marinfold import build_tokenizer, write_docs, write_eval, write_predictions
+from marinfold.registry import resolve_model_entry
 
 from . import generate, inference, plots
 from .parse import DEFAULT_CIF_COLUMN, DEFAULT_ID_COLUMN
@@ -197,9 +198,28 @@ def cmd_view(args: argparse.Namespace) -> None:
         print(f"[{NAME}] no documents generated for {args.input}", file=sys.stderr)
 
 
+def _resolved_model(model: str | None) -> str | None:
+    """Turn an omitted ``--model`` into the nickname it resolves to.
+
+    ``load_backend`` is happy with ``None`` — it resolves the default itself —
+    but ``cfg.model`` is what ``evaluate`` writes into ``EvalResult.extras``
+    and thence into the metrics file. Leaving it ``None`` there produces
+    ``"model": null``, i.e. a result that does not say which checkpoint made
+    it, and the registry default moves over time. A local directory is passed
+    through unchanged; it already identifies itself.
+    """
+    if model is not None:
+        return model
+    try:
+        return resolve_model_entry(None).nickname
+    except LookupError:
+        # No default in MODELS.yaml — let the backend raise the real error.
+        return None
+
+
 def _inference_config(args: argparse.Namespace) -> inference.InferenceConfig:
     return inference.InferenceConfig(
-        model=args.model,
+        model=_resolved_model(args.model),
         input_path=getattr(args, "input", None),
         backend=args.backend,
         batch_size=args.batch_size,
@@ -370,10 +390,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ---- shared inference args (infer + evaluate) --------------------------
     def _add_inference_common(p: argparse.ArgumentParser) -> None:
-        p.add_argument("--model", required=True,
+        p.add_argument("--model", default=None,
                        help="Local directory holding the model + tokenizer, or "
                             "a nickname listed in MODELS.yaml "
-                            "(e.g. 'contacts-v1-exp75-1.5B').")
+                            "(e.g. 'contacts-v1-exp75-1.5B'). Omit for the "
+                            "MODELS.yaml entry marked default: true.")
         p.add_argument("--backend", choices=("vllm", "transformers", "mlx"),
                        default="vllm",
                        help="Inference runtime. 'vllm' (Linux+GPU, default), "

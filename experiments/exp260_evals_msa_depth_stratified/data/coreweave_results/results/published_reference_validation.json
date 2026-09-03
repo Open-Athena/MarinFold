@@ -1,0 +1,118 @@
+{
+  "applicable": true,
+  "comparisons": [
+    {
+      "absolute_difference": 0.0020640671648676223,
+      "actual": 0.9667990671648676,
+      "cut": "AUC",
+      "expected": 0.964735,
+      "range": "all",
+      "subset": "eval-denovo",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0011547679647682108,
+      "actual": 0.6109867679647683,
+      "cut": "R",
+      "expected": 0.609832,
+      "range": "all",
+      "subset": "eval-denovo",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0032191025188151867,
+      "actual": 0.9580281025188152,
+      "cut": "AUC",
+      "expected": 0.954809,
+      "range": "long",
+      "subset": "eval-denovo",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0021927506353366377,
+      "actual": 0.5744747506353366,
+      "cut": "R",
+      "expected": 0.572282,
+      "range": "long",
+      "subset": "eval-denovo",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0017026252197237524,
+      "actual": 0.9380696252197237,
+      "cut": "AUC",
+      "expected": 0.936367,
+      "range": "all",
+      "subset": "eval-val",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.00437620695339902,
+      "actual": 0.556083206953399,
+      "cut": "R",
+      "expected": 0.551707,
+      "range": "all",
+      "subset": "eval-val",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.002304947977798233,
+      "actual": 0.9257629479777982,
+      "cut": "AUC",
+      "expected": 0.923458,
+      "range": "long",
+      "subset": "eval-val",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.004297909782620568,
+      "actual": 0.5402069097826205,
+      "cut": "R",
+      "expected": 0.535909,
+      "range": "long",
+      "subset": "eval-val",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.00019043729897927353,
+      "actual": 0.9454345627010208,
+      "cut": "AUC",
+      "expected": 0.945625,
+      "range": "all",
+      "subset": "legacy_554",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0008841772839215389,
+      "actual": 0.6059431772839216,
+      "cut": "R",
+      "expected": 0.605059,
+      "range": "all",
+      "subset": "legacy_554",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.00016486013674110733,
+      "actual": 0.9312361398632589,
+      "cut": "AUC",
+      "expected": 0.931401,
+      "range": "long",
+      "subset": "legacy_554",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0015880466556941197,
+      "actual": 0.5566100466556941,
+      "cut": "R",
+      "expected": 0.555022,
+      "range": "long",
+      "subset": "legacy_554",
+      "within_tolerance": true
+    }
+  ],
+  "largest_absolute_difference": 0.00437620695339902,
+  "model": "marinfold-exp232-decontam-train-m2-p06-step363000",
+  "passed": true,
+  "source": "experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/coreweave_results/subset_aggregate_metrics.csv:marinfold-exp232-decontam-train-m2-p06-step363000 (PR #257)",
+  "tolerance": 0.005
+}

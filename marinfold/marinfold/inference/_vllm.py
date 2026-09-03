@@ -18,6 +18,21 @@ its scheduler. We just submit each ``(prefix + tail)`` as a separate
 prompt; vLLM detects the shared prefix at scheduling time and reuses
 the KV blocks for it across all rows in the batch. No explicit cache
 plumbing needed on our side.
+
+**Construct this backend before doing heavy native work in the same
+process.** vLLM starts its EngineCore in a child process and its
+default method is fork; forking a parent that has already run, say,
+pyconfind deadlocks the child inside ``_init_executor`` — silently,
+with the engine at ~500 MiB and the GPU at 0%, indefinitely. Measured
+on 8xA100 / driver 580.105: backend-then-pyconfind takes 17.3 s,
+pyconfind-then-backend never returns. :func:`contacts_v1.inference.
+evaluate` orders itself accordingly. A caller that cannot — one
+passing pre-computed ``structures=``, for instance — can set
+``VLLM_WORKER_MULTIPROC_METHOD=spawn`` in the environment. This module
+deliberately does not set it for you: spawn makes the child re-import
+the caller's ``__main__``, which breaks any script that builds a
+backend at module scope without an ``if __name__ == "__main__"``
+guard.
 """
 
 from pathlib import Path

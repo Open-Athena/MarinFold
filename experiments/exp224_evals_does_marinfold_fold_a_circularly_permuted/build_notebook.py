@@ -230,14 +230,19 @@ print(f'  the transform is exactly CP_sep = {K} - WT_sep: {bool(np.all(sc == K -
 md("""
 ## Load the model
 
-`contacts-v1-exp199-1.5B` — the current default: Qwen3 1.47B trained from scratch
-on a 50/50 AFDB + ESM-Atlas mixture (152.3B tokens). `load_backend` resolves it
-from `MODELS.yaml`, downloads it from the public bucket, and applies the config /
-tokenizer repairs the export needs.
+Whatever `MODELS.yaml` marks `default: true` — today
+`contacts-v1-exp232-m2-p06-train-1.5B`: Qwen3 1.47B trained from scratch on a
+50/50 AFDB + ESM-Atlas mixture, on corpora decontaminated against the eval
+proteins ([#225](https://github.com/Open-Athena/MarinFold/issues/225) /
+[#232](https://github.com/Open-Athena/MarinFold/issues/232)). `load_backend`
+resolves it from `MODELS.yaml`, downloads it from the public bucket, and applies
+the config / tokenizer repairs the export needs. Because the notebook follows
+the registry rather than pinning a checkpoint, re-running it after a new default
+lands will not reproduce the numbers below exactly.
 """)
 
 code("""
-#@title Load contacts-v1-exp199-1.5B (~2.8 GB download)
+#@title Load the default checkpoint (~5.9 GB download)
 import torch
 from marinfold.inference import load_backend
 

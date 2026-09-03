@@ -1,5 +1,22 @@
 # MarinFold Updates
 
+## Week of August 31, 2026
+
+### Last week
+
+* **Training: Eric's sweep on decontaminated data is stopped** ([#232](https://github.com/Open-Athena/MarinFold/issues/232), [#233](https://github.com/Open-Athena/MarinFold/pull/233); all three cooldowns were abandoned, [reasons here](https://github.com/Open-Athena/MarinFold/blob/main/experiments/exp232_sweep_cv1_decontam/gpu/exp232_cooldown_cw.md#change-record)). Best numbers ([eval snapshot](https://github.com/Open-Athena/MarinFold/blob/main/experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/README.md), [W&B](https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1)): **R-precision 0.605** on the legacy 554 (0.5517 eval-val), val **2.9737**, against the contaminated [#199](https://github.com/Open-Athena/MarinFold/issues/199) cooldown's **0.631 / 2.9397**.
+* **Training:  Soft-target training implementation still being worked out** ([#177](https://github.com/Open-Athena/MarinFold/issues/177)). No good models have been trained yet using this idea. Zack working on figuring out if there are bugs here.
+* **Training: Zack is experimenting with reshulffing full documents during training.** Rebuild each document every epoch with a fresh permutation of structure-statement order and endpoint orientation (4 per row) and train stock next-token CE ([branch README](https://github.com/Open-Athena/MarinFold/blob/2e778b060eeaed713826faa1768c21970b957095/experiments/exp177_models_compare_soft_target_contact_loss_against/README.md#contact-order-augmented-ce-arm), not yet on main). Complementary to Eric's `-aug`, which permutes the *sequence* statements. Full 1.5B run on GB200 at **727k tok/s**, val 3.443 at step 15,236 of 71,360 ([r95](https://wandb.ai/open-athena/MarinFold/runs/exp177-cv1-1_5b-e16-lr3p162e-3-wd0p2-bs128-next_token-contact-order-aug-r95-gb200-8x4-full)).
+* **Training: Zack also started [#157](https://github.com/Open-Athena/MarinFold/issues/157)** (positional embedding instead of learned residue-position tokens). At matched step 31,220: **3.185** ([fixed-position](https://wandb.ai/open-athena/MarinFold/runs/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-fixed-position-controlmatch-e16-r3-east02-h100x8)) vs **3.205** ([rope_delta](https://wandb.ai/open-athena/MarinFold/runs/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8)). Let's chat about this at the meeting - I'd like to understand it better.
+* **Evals: we have 16 proteins with MSA depth < 10** ([#260](https://github.com/Open-Athena/MarinFold/issues/260)). Only 5 of these are from FoldBench (and therefore not included in standard predictor training sets), but the MarinFold training set has been decontaminated against all of them. These should be a focus of our evals going forward. Tim is experimenting with a dashboard for understanding our performance on these, current draft [here](https://openathena.ai/MarinFold/experiments/exp260_evals_msa_depth_stratified/dashboard/index.html).  
+
+### Upcoming
+* Zack: soft-target training, full document reshuffling during training, positional encoding changes
+* Tim: working on a short report on our results so far
+* Jacob: AFDB complex curation ([#145](https://github.com/Open-Athena/MarinFold/issues/145)), decontaminated as in [#225](https://github.com/Open-Athena/MarinFold/issues/225).
+
+---
+
 ## Week of August 24, 2026
 
 ### Last week

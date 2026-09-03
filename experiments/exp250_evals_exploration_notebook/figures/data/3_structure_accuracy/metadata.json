@@ -1,0 +1,106 @@
+{
+  "dataset": "3_structure_accuracy",
+  "notebook": "3_make_structure_accuracy_data.ipynb",
+  "generated_utc": "2026-08-31T18:17:19+00:00",
+  "parameters": {
+    "metrics": [
+      "gdt_ts",
+      "lddt"
+    ],
+    "classes": [
+      "natural",
+      "designed"
+    ],
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 0,
+    "extra_arm": {
+      "path": "experiments/exp250_evals_exploration_notebook/data/helico_step363000/per_target.csv",
+      "arm": "mf_L_363k"
+    }
+  },
+  "git": {
+    "commit": "7def8728b189b29620c3de8f17c350847730e284",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "M experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/summary.csv"
+    ]
+  },
+  "machine": {
+    "hostname": "8xA100 node",
+    "hostname_overridden": true,
+    "user": "ubuntu",
+    "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+    "python": "3.12.14",
+    "gpu": {
+      "name": "NVIDIA A100-SXM4-80GB",
+      "compute_capability": "8.0",
+      "memory_gib": 79.3,
+      "count": 8
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.11.0+cu129",
+    "transformers": "4.57.6",
+    "vllm": "0.20.2+cu129",
+    "numpy": "2.3.5",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "url": "https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/exp14_foldbench_held_out_monomers/scores/per_target.csv",
+      "bytes": 494323,
+      "sha256": "f79ea0842e9a24378845ed968535e3fe1b2c08680aca8b3e4a6922b4d678ba16"
+    },
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp250_evals_exploration_notebook/data/helico_step363000/per_target.csv",
+      "bytes": 54629,
+      "sha256": "313741660a7c4e90bd848ec3383bb252fdef248e9a48eb89d26a4a95974f6274"
+    }
+  ],
+  "outputs": {
+    "summary.csv": {
+      "bytes": 4067,
+      "sha256": "2d8bb439bea403553ae65a13bad157c74f42b4d6dcdd2d3bea5f6fc5178ec901"
+    },
+    "per_target.csv": {
+      "bytes": 538118,
+      "sha256": "d1080049e66a6a4235206ab150638d9ddfb7460987eac3c23f152fbb23c00d50"
+    }
+  },
+  "metrics": {
+    "names": [
+      "gdt_ts",
+      "lddt"
+    ],
+    "source": "Open-Athena/helico exp14"
+  },
+  "arms_dropped_targets": [
+    "7pv5_A",
+    "7t9r_A",
+    "8es6_A",
+    "8por_A",
+    "8q79_A",
+    "8qle_A",
+    "8ra0_A",
+    "8u0i_A",
+    "9b8e_A"
+  ],
+  "arms": [
+    "esmfold",
+    "esmfold2",
+    "mf_L",
+    "mf_L2",
+    "mf_L5",
+    "mf_L_363k",
+    "off",
+    "oracle",
+    "protenix_v2_msa",
+    "protenix_v2_single_seq",
+    "v2msa",
+    "v2ss"
+  ]
+}

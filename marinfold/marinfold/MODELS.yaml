@@ -3,7 +3,57 @@
 # is omitted) to the HF URL below, downloads it, and dispatches to the first
 # `document_structures` impl the entry lists. See registry.py.
 
-# Current best: exp199's COOLDOWN (issues #199 / #234, promoted in #238) —
+# Current default: the best DECONTAMINATED model — exp232 (issue #232) m2-p06
+# trained on past the sweep. #232's TRC continuation restored the sweep run's
+# full Levanter state at step 333,960 — model, optimizer, RNG, data position —
+# lowered the peak LR to 5% of the source peak, held it, then followed the
+# original cooldown to zero, with augmentation clamped at 100% throughout.
+# Qwen3 1.47B on the #225 corpora, 363,000 steps. Source-recorded eval loss
+# 2.9681 (step 361,494) against the sweep final's 2.9918. contacts-v1
+# tokenizer co-located.
+#
+# R-precision 0.6051 (all) / 0.5550 (long) on the legacy 554-protein set
+# against the sweep final's 0.5916 / 0.5418, and 0.5517 on #245's eval-val
+# against 0.5203. 0.6098 on eval-denovo. #232 deliberately did not score it on
+# eval-test, which has a read budget.
+#
+# It is the default because it is the checkpoint whose training corpora were
+# filtered against the eval proteins: every sequence matching any of the 554
+# eval proteins or any of FoldBench's 1,940 chains at >=30%
+# identity over >=50% of the shorter sequence was removed from both arms
+# (#225). #213 showed our eval set is 58% homologous to the *undecontaminated*
+# #199 training set, so this is the checkpoint that objection does not apply
+# to — and it is the one #250's figures and the README are drawn from. The
+# contaminated `-cooldown-` entry below still scores higher on the legacy 554
+# (0.631 against 0.605); the gap is not all leakage, since #245 measured the
+# eval-val -> eval-test drop and found no extra drop for the contaminated
+# model.
+#
+# Its val loss is on the post-#7209 scale (marin #7209 masks padding targets,
+# worth ~+0.38 nats), so it is NOT comparable to exp166's 2.6642 below without
+# converting — see experiments/exp180_.../README.md, "The two loss scales".
+#
+# This is OUR copy, republished from the evaluation-local CoreWeave export by
+# experiments/exp250_evals_exploration_notebook/publish_exp232_m2_p06.py
+# (--checkpoint training), every object verified against the manifest #232's
+# 2026-08-24 evaluation pinned, and only config.json rewritten for the rope
+# statement transformers 4.x reads. Weights are float32 on disk; load as
+# bfloat16.
+- nickname: contacts-v1-exp232-m2-p06-train-1.5B
+  default: true
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000
+  wandb_url: https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1
+  document_structures:
+    - contacts-v1
+# CONTAMINATED — the previous default, and still the highest scorer on the
+# legacy 554: exp199's COOLDOWN (issues #199 / #234, promoted in #238, and
+# the default until this file's #232 entry displaced it). It was trained
+# BEFORE decontamination: its corpora were never filtered against the eval
+# proteins, and #213 measured the eval set as 58% homologous to them. Read its
+# numbers with that in mind, and prefer the decontaminated entry above when
+# the question is what the recipe achieves on proteins it provably cannot have
+# seen.
+#
 # eric-czech's AFDB + ESM-Atlas mixture sweep, CoreWeave arm, annealed. Qwen3
 # 1.47B, lr 1e-3 / wd 0.2 / global batch 128, a 50/50 AFDB+ESM-Atlas mixture
 # with amino-acid augmentation, 304.5B cumulative tokens. R-precision 0.631
@@ -26,7 +76,7 @@
 # On eval2 (#226), the homology-controlled set that is now the default: 0.358
 # all / 0.300 long on the 78 NATURAL proteins under 40% identity to training,
 # 0.621 on the 229 de novo designed ones, 0.554 / 0.496 pooled over all 307.
-# The checkpoint it displaces scored 0.337 natural, so the gain survives
+# The checkpoint it displaced scored 0.337 natural, so the gain survives
 # homology control — but it is a tie on the designed half (+0.004).
 #
 # Do NOT read the 554-protein win over Protenix-v2 as general. On eval2 we
@@ -51,12 +101,12 @@
 # marinfold code in the loop. See the PROVENANCE.md beside the weights,
 # scripts/repair_checkpoint_config.py, and issue #180.
 - nickname: contacts-v1-exp199-cooldown-1.5B
-  default: true
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp199-cw-cv1-p06-cool-s01/hf/step-290400
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-p06-cool-s01
   document_structures:
     - contacts-v1
-# Previous default: the pre-cooldown CoreWeave run this one continues (issues
+# CONTAMINATED (same as the entry above — trained before #225's
+# decontamination). The pre-cooldown CoreWeave run that one continues (issues
 # #199 / #204). Qwen3 1.47B trained FROM SCRATCH on 16 H100 nodes (cw-rno2a),
 # WSD schedule, 145,200 steps, 152.3B tokens, same mixture and same
 # augmentation. Val loss 2.9712 (current scale, ~2.5895 on exp166's).
@@ -73,14 +123,42 @@
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug
   document_structures:
     - contacts-v1
-# Earlier default: exp166 (issue #166) — eric-czech's contacts-v1 amino-acid
-# augmentation run, continued from the #117 sweep winner. Qwen3 1.47B, 8
-# epochs, lr 3.1623e-3 / wd 0.1 / global batch 128, exp117 init;
-# eval/tokenized/contacts-v1-val/loss 2.6642 (pre-#7209 scale). R-precision
-# 0.562 (all) / 0.513 (long), AUC 0.939 on the 554-protein eval set — vs
-# #117's 0.534 / 0.482, a paired +0.028 (95% CI 0.023–0.034), higher on 67% of
-# proteins (#190). Still the best TPU continue-train, and the only frontier
-# point with a within-run control. Same republication/repair as above.
+# The decontaminated sweep final the default continues from: exp232 (issue
+# #232) m2-p06, the better of the two finals PR #244 selected. Qwen3 1.47B,
+# the #199 recipe exactly — 50/50 AFDB+ESM-Atlas mixture, amino-acid
+# augmentation, 145,199 steps — but trained FROM SCRATCH on #225's corpora,
+# from which every sequence matching any of the 554 eval proteins or any of
+# FoldBench's 1,940 chains at >=30% identity over >=50% of the shorter
+# sequence was removed (AFDB 4,129,682 -> 3,963,003; ESM-Atlas 66,759,922 ->
+# 65,553,178). Source-recorded losses: train 2.8540, eval 2.9918.
+#
+# R-precision 0.5916 (all) / 0.5418 (long) on the 554-protein set, and 0.520 /
+# 0.538 / 0.591 on #245's eval-val / eval-test / eval-denovo. Its sibling
+# m1-p02 scores 0.5789 and is not published. The default entry at the top of
+# this file is this run trained further, and scores above it everywhere; reach
+# for this one only to reproduce the #244/#245 numbers.
+#
+# Same republication as the others: copied from the CoreWeave export by
+# experiments/exp250_evals_exploration_notebook/publish_exp232_m2_p06.py, every
+# object verified against the manifest #244/#245 pinned, and only config.json
+# rewritten — the transformers-5 exporter states rope as `rope_parameters`,
+# which our pinned transformers 4.x ignores in favour of theta 10000 where the
+# model was trained with 500000. Weights are float32 on disk; load as bfloat16.
+- nickname: contacts-v1-exp232-m2-p06-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199
+  wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug
+  document_structures:
+    - contacts-v1
+# Earlier default, and CONTAMINATED like everything below it — all of these
+# predate #225's decontamination. exp166 (issue #166) — eric-czech's
+# contacts-v1 amino-acid augmentation run, continued from the #117 sweep
+# winner. Qwen3 1.47B, 8 epochs, lr 3.1623e-3 / wd 0.1 / global batch 128,
+# exp117 init; eval/tokenized/contacts-v1-val/loss 2.6642 (pre-#7209 scale).
+# R-precision 0.562 (all) / 0.513 (long), AUC 0.939 on the 554-protein eval
+# set — vs #117's 0.534 / 0.482, a paired +0.028 (95% CI 0.023–0.034), higher
+# on 67% of proteins (#190). Still the best TPU continue-train, and the only
+# frontier point with a within-run control. Same republication/repair as
+# above.
 - nickname: contacts-v1-exp166-1.5B
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1/hf/step-35679
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1

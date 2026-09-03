@@ -113,6 +113,22 @@ In-repo: `experiments/exp245_evals_foldbench_held_out_monomers/data/`.
   homology dependence: seq-KNN −0.351, ESMFold2 −0.170, MarinFold −0.076 to
   −0.123, Protenix-v2 + MSA −0.045, Protenix-v2 single-seq −0.002. Only 19 of 334
   monomers are viral, so report it as indicative.
+- **Always report the low-MSA-depth cut** — the 16 natural eval proteins whose
+  ColabFold MSA holds fewer than 10 sequences, and the 5-protein FoldBench-only
+  subset beside it. That regime is the one a single-sequence model exists for,
+  and a pooled number hides it completely: the same checkpoint that scores 0.616
+  at MSA depth ≥1000 scores 0.300 here. Membership and mechanics are in
+  [The low-MSA-depth cut](#the-low-msa-depth-cut) below — it is a frozen list,
+  not a filter to re-derive.
+- **Check "natural" against the deposited entry, never against the collection.**
+  15 of #65's 58 CAMEO-hard / CASP-FM targets are de novo designs by RCSB's own
+  annotation, 13 of them under MSA depth 10 — a designed protein has no homologs
+  by construction, so they concentrate in exactly the bin that matters most.
+  Pooling them inflates every structure predictor (Protenix-v2 single-seq scores
+  0.72 on those designs against 0.24 on the natural ones) and produced a wrong
+  conclusion in the first cut of #260. This is
+  [#241](https://github.com/Open-Athena/MarinFold/issues/241) repeating: any set
+  inheriting a "natural" label from where it came from needs re-checking.
 - **Quote a sequence-KNN null beside the score, over the corpus the checkpoint
   actually trained on.** On eval-test it is **0.582** out of the un-decontaminated
   AFDB corpus and **0.426** out of #225's decontaminated one. A checkpoint that
@@ -122,9 +138,94 @@ In-repo: `experiments/exp245_evals_foldbench_held_out_monomers/data/`.
   single-seq and +MSA, ESMFold, ESMFold2, both KNN nulls). Do not re-run them.
 - **Differences under ~0.005 are ties** (#204: four evaluations of one unchanged
   checkpoint span 0.0023).
+- **Do not compare AUC across predictors.** #89 scores a structure predictor
+  from a degree matrix in which every pair it did not predict is exactly 0, so
+  ~99 % of candidate pairs are tied at the bottom and `roc_auc_score` gives each
+  tie half credit. That penalises a sparse structural predictor against
+  MarinFold's graded rollout vote counts, and the penalty grows as the predictor
+  gets sparser. AUC is fine for comparing MarinFold checkpoints to each other,
+  or as a ranking-quality diagnostic within one predictor; it is not a fair
+  MarinFold-versus-baseline number and must not carry a conclusion.
 - **`8uxt_A` is excluded** from the 333 and flagged in `eval_sets.csv`: its
   contacts-v1 document truncates at the 8,192-token context, so no rollout can
   produce it in full. Do not silently re-add it.
+
+## The low-MSA-depth cut
+
+**29 natural proteins, ColabFold MSA depth < 10** — frozen in
+[`experiments/exp260_evals_msa_depth_stratified/data/low_msa_depth_set.csv`](../../../experiments/exp260_evals_msa_depth_stratified/data/low_msa_depth_set.csv)
+and published at
+`hf://buckets/open-athena/MarinFold/data/contacts-v1-msa-depth-exp260/v1-01/analysis/low_msa_depth_set.csv`.
+Report it for every checkpoint evaluation, as two rows:
+
+The frozen file holds **all 42** eval proteins under depth 10 — natural and
+designed, both universes — with a `designed` column. Report it as three rows:
+
+| cut | n | what it is |
+|---|---:|---|
+| **low-MSA-depth, natural** | **16** | 3 `cameo_hard` + 8 `casp_fm` + 5 `foldbench_monomer` (all 5 in `eval-test`) |
+| **low-MSA-depth, FoldBench only** | **5** | the FoldBench half alone — the only like-for-like baseline comparison |
+| **low-MSA-depth designs** | **26** | 13 CAMEO-hard entries RCSB calls de novo + 13 `eval-denovo`; report apart, never pooled |
+
+Report all three. The 16 is what has enough proteins to say anything; the 5 is
+the only subset where the baselines are not trained on the answer; the 13 exist
+to be kept out. The `designed` column in `low_msa_depth_set.csv` carries the
+split.
+
+**The CAMEO-hard and CASP-FM targets are long-standing public benchmarks and are
+generally inside the training sets of Protenix-v2, ESMFold and ESMFold2.**
+MarinFold's corpus is decontaminated against FoldBench and the legacy eval set
+(#225), so it is clean on both halves. Baseline numbers on the non-FoldBench
+proteins are context, not a scoreboard.
+
+**This cut spans both eval universes, so a run that reports it must score the
+legacy 554 as well as the FoldBench monomers** — 24 of the 29 are CAMEO-hard or
+CASP-FM targets that exist only in the legacy set. The 887-unit union (legacy
+554 + all 333 scorable FoldBench monomers) is the smallest run that covers it;
+[#260](https://github.com/Open-Athena/MarinFold/issues/260) took 9m41s for it on
+twelve single-H100 CoreWeave shards, so the cost is not a reason to skip it.
+
+**Depth is the ColabFold MSA depth Protenix's `+MSA` arm actually ran with**, not
+anything MarinFold sees — measured from the a3m files on the Modal volumes
+`protenix-foldbench-msa` and `protenix-exp74-msa` through #74's `msa_depth.py`.
+Per-protein depth and Neff for all 372 natural eval proteins are in
+`.../analysis/msa_depth.csv`; #260's `build_depth_table.py` is the worked example
+for joining them to scores, cutting the `<10 / 10–100 / 100–1000 / ≥1000` tiers,
+and reporting paired per-protein deltas with bootstrap intervals rather than
+differences of small means.
+
+**Case by case.** [#260](https://github.com/Open-Athena/MarinFold/issues/260)
+ships a browsable page over all 29 —
+[`experiments/exp260_evals_msa_depth_stratified/dashboard/index.html`](../../../experiments/exp260_evals_msa_depth_stratified/dashboard/index.html) —
+with the ground-truth structure, the contact map against each predictor's
+top-L, the alignment itself, and the per-protein scores. Rebuild it for a new
+checkpoint with `dashboard/build_*.py`: only the MarinFold contact layer and
+the score column change, and the rest of the page is fixed by the set.
+
+**Reference values** (#232 `m2-p06` training, step 363,000; all-range
+R-precision, from [#260](https://github.com/Open-Athena/MarinFold/issues/260)):
+
+| predictor | natural (16) | FoldBench-only (5) | designs (13) | all natural (357) |
+|---|---:|---:|---:|---:|
+| MarinFold #232 `m2-p06` training | **0.300** | **0.342** | 0.477 | 0.528 |
+| Protenix-v2 + MSA | 0.336 | 0.320 | 0.724 | 0.817 |
+| Protenix-v2 single-seq | 0.241 | 0.305 | 0.722 | 0.257 |
+| ESMFold2 | 0.426 | 0.664 | 0.715 | 0.744 |
+| seq-KNN (decontaminated corpus) | 0.027† | 0.027 | — | 0.420 |
+
+† the seq-KNN null is published for the FoldBench proteins only.
+
+Paired against Protenix-v2 + MSA over the 16, the #232 `m2-p06` training
+checkpoint is **−0.036 [−0.180, +0.104]** — level — against −0.242 at depth
+≥1000. That closing gap is the result this cut exists to track.
+
+Two properties that change how it reads. Protenix-v2 `+MSA` collapses toward its
+own single-sequence arm here (0.336 vs 0.241, against 0.817 vs 0.257 overall),
+which is the check that these proteins really are MSA-poor rather than
+mis-measured. And median length is 148 residues against 290 in the deepest tier,
+so contact prevalence (~1/L) is higher and R-precision is mechanically easier —
+a bias that flatters every predictor in this cut equally but makes cross-tier
+comparisons of the same predictor conservative.
 
 **Reference values under the rollout recipe**, for sanity-checking a new path
 (all-range R-precision):
@@ -133,6 +234,7 @@ In-repo: `experiments/exp245_evals_foldbench_held_out_monomers/data/`.
 |---|---:|---:|---:|---:|
 | `contacts-v1-exp199-cooldown-1.5B` (default; contaminated data) | 0.589 | 0.613 | 0.619 | 0.631 |
 | #232 `m2-p06` (decontaminated data) | 0.520 | 0.538 | 0.591 | 0.592 |
+| #232 `m2-p06` **training** step 363k (decontaminated data) | 0.556 | 0.569 | 0.611 | 0.606 |
 | #232 `m1-p02` (decontaminated data) | 0.473 | 0.493 | 0.588 | 0.579 |
 
 ## Establish identity and locality
