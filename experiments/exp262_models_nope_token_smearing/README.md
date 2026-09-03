@@ -150,58 +150,113 @@ for W in (1, 2, 3):
   (shuffle noise). Out of scope here, worth revisiting after.
 
 
+
 ## Approach
 
 Data, tokenizer, schedule, optimizer, and augmentation are held at the
-[exp232 contract](../exp232_sweep_cv1_decontam/training_contract.py); only the
-architecture moves. The already-tokenized decontaminated caches are reused, so
-the data cost is zero.
+[exp232 contract](gpu/exp232_contract.py); only the architecture moves.
+
+### What the smear actually is
+
+For every position `t` and channel `c`, with `e` the token-embedding lookup:
+
+```
+x[t, c] = e[t, c]  +  Σ(k = 1..W)  g[k, t] · w[k, c] · e[t − k, c]
+```
+
+- `W = 2` (the width-3 window: offsets 0, −1, −2).
+- `w[k, c]` — a learned **per-offset, per-channel** vector, unbounded and signed.
+  Two separate vectors, one per offset. **Initialised to zero.**
+- `g[k, t] = sigmoid((G · e[t, :16] + b)[k])` — a learned per-offset scalar gate
+  in (0, 1), computed from the **first 16 channels of the current token's own
+  embedding**. `G` is 2×16, `b` is 2.
+- `e[t − k] = 0` for `t − k < 0`, masked rather than wrapped.
+
+**This is not an average.** The current token enters with coefficient exactly 1,
+unweighted and unnormalised; the neighbours are *added on top* with their own
+learned coefficients. The result is the identity plus a learned correction, not
+a convex combination — nothing is renormalised, and the effective coefficient
+`g[k, t] · w[k, c]` is free to exceed 1 or go negative.
+
+The neighbours are down-weighted, and by two independent learned mechanisms:
+`w` scales each channel of each offset separately (so offset 1 and offset 2 are
+independently addressable — the property that keeps `<contact> <pX> <pY>`'s two
+arguments distinguishable), while `g` decides *per token* whether to look back at
+all. Because the gate reads only the current token, it expresses "should I smear
+here?" and not "how relevant is that particular neighbour?".
+
+`w = 0` at initialisation, so a smear model is bit-identical to its control at
+step 0 and the arms start from the same function. Cost is
+`W × (D + 16 + 1) = 2 × 2065 = 4,130` parameters on 1.47B — 3 parts in a million.
+
+The smear sits between the embedding lookup and the transformer; nothing else in
+the model changes. `gpu/tests/test_cross_implementation.py` asserts the levanter
+and PyTorch implementations are the same function at widths 1, 2 and 3.
+
+**Known limitation.** The smear is not segment-aware. Training packs documents
+into 8192-token sequences with `block_cross_document_attention=True`, so
+attention stops at a document boundary but the smear does not: the first one or
+two tokens of a document mix in the last tokens of the document before it. That
+is ~0.18% of tokens and it is identical across arms, but it is a real
+inconsistency with the packing contract rather than a deliberate choice.
 
 ### Phase 0 — is there anything to win? (no training)
 
 Three probes on the default checkpoint (`contacts-v1-exp199-cooldown-1.5B`),
 teacher-forced over **ground-truth** documents built from the exp245 FoldBench
-monomers (real sequence, real contacts). Local RTX A5000, ~15 minutes total.
+monomers. Local RTX A5000, ~15 minutes total.
 
 - [`grammar_lookback.py`](grammar_lookback.py) — how wide a causal window the
-  contacts-v1 grammar needs, by enumeration. → `data/grammar_lookback.csv`
+  contacts-v1 grammar needs, by enumeration.
 - [`probe_attention.py`](probe_attention.py) — per-(layer, head) attention mass
   at offsets 1 and 2, and the distance profile of co-referent retrieval.
-  → `data/phase0_attention_{offsets,lift,docs}.csv`
 - [`probe_positions.py`](probe_positions.py) — rewrite `position_ids` at
-  inference and re-score. → `data/phase0_position_interventions.csv`
-- [`probe_common.py`](probe_common.py) — document building and checkpoint
-  loading shared by the two model probes.
+  inference and re-score.
 - [`plot_phase0.py`](plot_phase0.py) — the three figures.
 
-### Phase 1 — the ablation
+### The local pilot — is it worth cluster time?
 
-Arms, at the exp232 1.5B architecture and a reduced token budget:
+[`pilot/`](pilot) trains ~15M-parameter scaled-down twins of the exp232 Qwen3 on
+360M tokens of the real decontaminated corpus, on one local GPU. Four arms over
+the 2×2 of rope/NoPE against smear/no-smear, learning rate tuned **per arm**
+because removing rope changes the attention-logit scale.
 
-| arm | change |
-|---|---|
-| A | RoPE, no smear — control, the exp232 `m2-p06-aug` shape |
-| B | RoPE + smear(2) |
-| C | NoPE + smear(2) |
-| D | interleaved NoPE + smear(2) — **deferred**, see Conclusion |
+### Phase 1 — the comparison, at the usual scale
 
-Two implementation requirements, both real bug risks: the smear must be strictly
-causal (a test asserts that perturbing token `t+1` cannot move the logits at
-`t`), and offsets −1 and −2 need **separate per-channel** coefficients, since a
-single shared scalar collapses them and destroys the arg1/arg2 distinction that
-is the whole point.
+Two arms at the production 1.5B, both at exp232's swept-winner point `p06`
+(lr 1e-3, wd 0.2), so the runs differ in exactly one thing:
+
+| arm | rope | smear |
+|---|---|---|
+| `control` — exp232 `m2-p06-aug` | Llama3, θ=500k | — |
+| `nope-smear` | none | 2 |
+
+[`gpu/exp262_train_cw.py`](gpu/exp262_train_cw.py) launches both;
+`gpu/tests/test_launch_contract.py` fails if any arm moves a model-config field
+other than `smear_width` and `rope`. `PHASE=screen` runs a tenth of the
+schedule, `PHASE=full` runs exp232's 145,200 steps exactly, `SMOKE=1` runs a
+short job on a temporary path.
+
+Two implementation requirements, both real bug risks and both tested: the smear
+must be strictly causal, and offsets −1 and −2 need separate per-channel
+coefficients.
+
+**HF export is disabled for both arms.** A NoPE model has no HF Qwen3
+representation and the smear weights have no home in one, so `to_hf_config`
+refuses rather than exporting something that would silently load as a different
+model. Promoting a winner to a rollout evaluation needs a real exporter first.
 
 ## Success criteria
 
 - **Phase 0 gate:** proceed only if a previous-token head is identifiable in the
   early layers, or the loss moves measurably under a position rewrite.
-- **Phase 1 gate:** an arm advances on ≥0.01 nats val loss over control A with a
-  gap that is not shrinking. Read #180's "two loss scales" note first.
-- **Phase 2 (the real bar):** ≥+0.01 R-precision on eval2-natural against
-  #204's 0.0023 noise floor, with the enrichment-vs-`L` slope reported.
+- **Phase 1:** eval loss over exp232's full schedule, against a matched control
+  trained on the same stack. Read #180's "two loss scales" note first.
+- **The real bar:** ≥+0.01 R-precision on eval2-natural against #204's 0.0023
+  noise floor. Loss cannot substitute — #169 and #201 both show it does not
+  reliably re-rank checkpoints.
 - **Guardrail:** rollout `pred/gt` contact-count ratio and finish rate must not
   regress (#142).
-
 ## Results
 
 ### Phase 0 — the model tells us which half of the idea is right
@@ -286,20 +341,81 @@ bound the distribution-shift cost rather than measuring the architecture.
 | **width-3 causal smear** | **Supported.** Three layer-1 heads do exactly this job; the 2-token window is provably the tight bound for the grammar. |
 | **NoPE** | **Mixed.** Its premise survives (exact cross-statement distance is unused) but its mechanism does not (retrieval is already distance-uniform), and it now has a specific identified risk: the model uses position as a counter, which is what NoPE removes. |
 
-The gate is passed, so Phase 1 proceeds — with arm B (RoPE + smear) promoted from
-"the safe hedge" to the arm the evidence actually points at, and arm C's risk
-localized onto the pre-registered stopping-behaviour guardrail rather than being
-a general worry.
+The gate is passed. Phase 0 read the smear as the well-supported half and NoPE as
+the speculative one — a reading the pilot then overturned, since NoPE + smear
+beats smear alone by a factor of five and smear alone barely clears its own seed
+noise. Worth recording: the mechanistic argument and the measured outcome pointed
+at different arms.
+
+
+### The local pilot — both changes are needed, and only together
+
+15M-parameter twins, 150M tokens of real decontaminated contacts-v1, three seeds
+per arm, each arm at its own best learning rate:
+
+| arm | val NLL | Δ vs control | own seed sd |
+|---|---:|---:|---:|
+| RoPE, no smear (control) | 4.0681 | — | 0.0010 |
+| RoPE + smear | 4.0340 | −0.034 | 0.0241 |
+| **NoPE + smear** | **3.9116** | **−0.157** | 0.0020 |
+| NoPE, no smear | 4.1534 | +0.085 | 0.1376 |
+
+The two changes are strongly **super-additive**: smear alone buys −0.034, NoPE
+alone *costs* +0.085, together they buy −0.157, an interaction of −0.208. That is
+the joint hypothesis of the issue, and it is the only combination that works.
+The gain is entirely in the structure section (−0.200) with the sequence section
+a hair worse (+0.005) — the shuffled bag is exactly where the theory said it
+should land. The counting guardrail showed no NoPE penalty: `p_end_early` is flat
+at ~0.0011 across all four arms.
+
+Caveats: 100× smaller than production at seq 4096 rather than 8192, so per #169
+it cannot settle whether the gap survives to 1.5B. The first pass of this sweep
+was also thrown away — every arm picked a boundary of the learning-rate grid, so
+the grid was extended before the numbers above were taken.
+
+### Phase 1 — in flight
+
+Both full-budget runs are training. At step 14,520 of 145,200 (10%):
+
+| step | control | NoPE + smear | Δ | exp232 `s02-m2-p06-aug` |
+|---:|---:|---:|---:|---:|
+| 7,260 | 3.4745 | 3.4619 | **−0.0126** | — |
+| 14,520 | 3.3895 | 3.3739 | **−0.0156** | 3.3849 |
+
+![full-run progress](plots/full_run_progress.png)
+
+**The control is reproducing exp232 to ~0.005 nats.** That is load-bearing:
+exp262 pins a newer marin (0.2.99 against exp232's 0.2.76, needed to clear the
+14-day Iris submission gate), and a stack change can move the loss scale on its
+own — the #7209 lesson. It did not, so the arm gap is readable and the control
+doubles as a validated reproduction of the usual setup.
+
+**The early reversal was LR warmup, not a result.** For the first ~7,000 steps
+the NoPE arm was worse, peaking at +0.19 train loss around step 3,700. Warmup is
+10% of the schedule, so both arms spend that phase at a fraction of peak LR. The
+excursion collapses by step ~7,000 and goes negative after. Recorded because
+anyone reading the W&B curves in that window would reasonably have concluded the
+idea had failed.
+
+Two eval points is a direction, not a trend line. The load-bearing checkpoints
+are past 25% (step ~36,000) and the final cooldown.
 
 ## Conclusion
 
-Pending Phase 1. Phase 0 is complete and is summarized above: the smear half of
-the idea is directly motivated by the trained model's own attention, and the
-NoPE half loses its mechanistic argument while keeping its premise.
+Pending the two full-budget runs.
 
-Arm D (interleaved NoPE) is deferred rather than dropped. It is the most
-invasive arm to build — levanter's `Stacked` transformer shares one config
-across layers, so per-layer rope needs a stacked scale carried through the
-decoder layer — and it hedges a hypothesis Phase 0 has already weakened. If arm
-C lands close to arm A it becomes worth building; if arm C is far off, the hedge
-would not have saved it.
+What is settled: the smear half of the idea is directly motivated by the trained
+model's own attention (three layer-1 heads already do that job), the NoPE half
+loses its mechanistic argument but keeps its premise, and at 15M parameters the
+two changes only work *together* — either alone is neutral or harmful.
+
+What is not settled: whether the −0.157 nats seen at 15M survives to 1.5B, and
+whether any loss gain converts into contact-prediction accuracy at all. The
+second question needs an HF exporter and a rollout evaluation, and no amount of
+validation loss substitutes for it.
+
+Deferred rather than dropped: interleaved NoPE (the Llama-4-style hedge), and
+the question of whether `p06` is the new arm's own optimum. The screen's
+learning-rate trend for NoPE + smear was monotone downward with `p06` at the
+grid edge, so the matched-hyperparameter comparison now running is plausibly a
+**lower bound** on what the architecture can do.

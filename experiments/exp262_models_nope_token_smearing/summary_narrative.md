@@ -41,9 +41,22 @@ distance-randomizing intervention. The model uses position as an index, which is
 exactly what NoPE would take away — and exactly what the pre-registered
 stopping-behaviour guardrail was written to catch.
 
+## The pilot: the two changes only work together
+
+15M-parameter twins on 150M tokens of the real decontaminated corpus, three seeds
+per arm at each arm's own best learning rate: smear alone buys 0.034 nats, NoPE
+alone COSTS 0.085, and together they buy 0.157 — an interaction of 0.208. The
+gain is entirely in the structure section, the shuffled bag where the theory said
+it should land. Note this overturns the Phase 0 reading, which had the smear as
+the safe half and NoPE as the speculative one.
+
 ## Where it stands
 
-Phase 0 gate passed. Arm B (RoPE + smear) is promoted from safe hedge to the arm
-the evidence points at; arm C (NoPE + smear) proceeds with its risk localized;
-arm D (interleaved NoPE) is deferred as the most invasive build hedging the
-weakest hypothesis.
+Two full-budget 1.5B runs are training on 64 H100s: exp232's usual setup against
+NoPE + smear, both at p06, differing in exactly one thing. At 10% of the schedule
+the new arm leads by 0.0156 nats on eval and the control is reproducing exp232 to
+0.005 nats, which is what makes the gap readable.
+
+Loss is not the deliverable. An accuracy claim needs a rollout R-precision eval,
+and that needs an HF exporter first — neither the NoPE config nor the smear
+weights have an HF Qwen3 representation.
