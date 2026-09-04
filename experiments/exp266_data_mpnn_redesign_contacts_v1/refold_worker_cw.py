@@ -48,12 +48,42 @@ def _log(message: str) -> None:
 
 
 def load_model():
-    """Load ESMFold2 once per task."""
-    import torch
-    from transformers import AutoModel
+    """Load ESMFold2 once per task.
 
-    model = AutoModel.from_pretrained(HF_MODEL_ID, trust_remote_code=True)
+    Accessors and the fold call are exp78's — resolved there against the
+    installed `biohub/esm` package during a feasibility spike, rather than
+    guessed from the docs.
+    """
+    import torch
+    from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model
+
+    model = ESMFold2Model.from_pretrained(HF_MODEL_ID)
     return model.cuda().eval() if torch.cuda.is_available() else model.eval()
+
+
+def score_confidence(result) -> float:
+    """Best-effort scalar confidence (higher = better); NaN if unavailable.
+
+    Same accessor ladder as exp78's `_score_confidence`. Recorded for context
+    only — the pass/fail here is scRMSD against the parent backbone, not the
+    model's own opinion of its output.
+    """
+    import math
+
+    for attr in ("ptm", "mean_plddt", "plddt", "confidence"):
+        val = getattr(result, attr, None)
+        if val is None and hasattr(result, "complex"):
+            val = getattr(result.complex, attr, None)
+        if val is None:
+            continue
+        try:
+            return float(val)
+        except (TypeError, ValueError):
+            try:
+                return float(np.asarray(val, dtype=float).mean())
+            except Exception:  # noqa: BLE001
+                continue
+    return math.nan
 
 
 def main() -> int:
@@ -109,7 +139,7 @@ def main() -> int:
     for i, d in enumerate(designs, 1):
         seq = sequence_from_document(d["document"], d["seq_len"], d["n_term_index"])
         t0 = time.perf_counter()
-        structure = _predict(model, seq, args)
+        structure, confidence = _predict(model, seq, args, seed=args.seed)
         elapsed = time.perf_counter() - t0
 
         pred = ca_coords_from_structure(structure)
@@ -128,6 +158,7 @@ def main() -> int:
             "seq_len": d["seq_len"], "mpnn_temperature": d["mpnn_temperature"],
             "mpnn_score": d["mpnn_score"], "identity_to_native": d["identity_to_native"],
             "sc_rmsd": rmsd, "sc_tm": tm_score(pred, ref),
+            "esmfold2_confidence": confidence,
             "esmfold2_seconds": elapsed,
         })
         if i % 50 == 0 or i == len(designs):
@@ -142,20 +173,28 @@ def main() -> int:
     return 0
 
 
-def _predict(model, sequence: str, args):
-    """One ESMFold2 draw for one sequence, as a gemmi structure."""
+def _predict(model, sequence: str, args, seed: int):
+    """One ESMFold2 draw for one sequence -> (gemmi structure, confidence)."""
     import gemmi
-    import torch
+    from esm.models.esmfold2 import (
+        ESMFold2InputBuilder,
+        ProteinInput,
+        StructurePredictionInput,
+    )
 
-    with torch.no_grad():
-        out = model.infer(
-            [sequence],
-            num_sampling_steps=args.num_sampling_steps,
-            num_loops=args.num_loops,
-        )
-    cif = out[0] if isinstance(out, (list, tuple)) else out
-    text = cif if isinstance(cif, str) else cif.to_cif()
-    return gemmi.read_structure_string(text, format=gemmi.CoorFormat.Mmcif)
+    builder = ESMFold2InputBuilder()
+    spi = StructurePredictionInput(sequences=[ProteinInput(id="A", sequence=sequence)])
+    result = builder.fold(
+        model, spi,
+        num_loops=args.num_loops,
+        num_sampling_steps=args.num_sampling_steps,
+        num_diffusion_samples=1,
+        seed=seed,
+    )
+    structure = gemmi.read_structure_string(
+        result.complex.to_mmcif(), format=gemmi.CoorFormat.Mmcif
+    )
+    return structure, score_confidence(result)
 
 
 def _summarise(rows: list[dict]) -> None:

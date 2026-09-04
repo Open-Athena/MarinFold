@@ -365,6 +365,42 @@ near-native ↔ diverse axis is mostly not being exercised; a future
 regeneration might want a wider ladder, and a training experiment should not
 expect much from subsetting on `mpnn_temperature`.
 
+## The refold check (ESMFold2)
+
+The one assumption the design does not otherwise test: a ProteinMPNN sequence
+is written onto an AFDB backbone and the contacts are computed there, but
+nothing verifies the sequence would *fold* to that backbone.
+
+`refold_worker_cw.py` refolds a sample with **ESMFold2** (`biohub/ESMFold2`,
+diffusion over ESMC) and scores agreement against the parent backbone.
+
+**One sample per sequence, not exp78's top-1-of-5.** Best-of-5 answers "can
+this sequence fold here if we look hard"; the question here is the plainer
+"does it" — which is also 5× cheaper. exp78 measured ESMFold2 at **42.9
+s/protein** at L 250–300 with `n_samples=5` (against 2.1 s for ESMFold v1, a
+20× gap), so ~8.6 s at 1 sample.
+
+**Sampled by backbone, keeping all 8 of its designs**, so two different numbers
+are computable and are reported separately rather than conflated:
+
+* **per-sequence** self-consistency — fraction of individual designs with
+  scRMSD < 2 Å. This is what bears on corpus label quality, since every design
+  becomes its own document.
+* **per-backbone** designability — fraction of backbones with ≥1 passing design
+  out of 8. This is what papers report, and it is the more flattering number.
+
+Both metrics use a Kabsch superposition under the **identity residue
+correspondence** — a design has its parent's length and residue order, so no
+alignment search is needed and no TM-align binary
+(`selfconsistency.py`). `tests/test_selfconsistency.py` pins the properties,
+including a reflection guard: without the `det()` correction the SVD can return
+an improper rotation and score a *mirror image* as a perfect match, passing
+every left-handed decoy as designable.
+
+Sizing: 500 backbones × 8 designs = 4,000 refolds ≈ **9.5 GPU-hours**, which
+puts the 95 % CI on the per-sequence rate inside ±1.6 % — far tighter than the
+decision needs.
+
 ## Traps the cluster smoke found
 
 None of these are reachable from a local test — the experiment env resolves
