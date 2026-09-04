@@ -29,7 +29,7 @@ from typing import Any
 
 import gemmi
 
-from backbone import encode_backbone, prepare_structure, strip_to_backbone
+from backbone import encode_backbone, prepare_structure
 from marinfold.document_structures.io import read_object_bytes, thread_per_row_in_shard
 
 # Provenance carried from the Stage-A manifest onto every backbone row.
@@ -75,9 +75,13 @@ def stage_row(
         data = read_object_bytes(row[cif_uri_column])
 
     entry_id = row["entry_id"]
-    structure = strip_to_backbone(
-        prepare_structure(_structure_from_cif(data, entry_id=entry_id))
-    )
+    # NOT stripped to backbone first. `encode_backbone` selects N/CA/C/O by
+    # name, so stripping is a no-op on its output (pinned by
+    # tests/test_backbone.py::test_encode_does_not_need_a_stripped_structure)
+    # — and gemmi SIGSEGV'd inside that clone-then-delete path on a real AFDB
+    # entry partway through the first full staging run (shard 111, exit -11).
+    # Skipping it removes the crash and a full structure copy per row.
+    structure = prepare_structure(_structure_from_cif(data, entry_id=entry_id))
 
     try:
         staged = encode_backbone(structure)

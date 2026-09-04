@@ -157,3 +157,23 @@ def test_encode_rejects_non_canonical_residues() -> None:
     st[0][0][0].name = "MSE"
     with pytest.raises(ValueError, match="non-canonical"):
         encode_backbone(st)
+
+
+@pytest.mark.parametrize("stem", CASES)
+def test_encode_does_not_need_a_stripped_structure(stem: str) -> None:
+    """`encode_backbone` selects atoms by name, so stripping first is a no-op.
+
+    Load-bearing: Stage A2 used to `strip_to_backbone` before encoding, and
+    gemmi SIGSEGV'd inside that clone-then-delete path on a real AFDB entry
+    mid-run. Dropping the strip removes the crash — but only if it genuinely
+    changes nothing, which is what this asserts.
+    """
+    from backbone import encode_backbone
+
+    st = _load(stem)
+    try:
+        direct = encode_backbone(st)
+    except ValueError as exc:
+        pytest.skip(f"{stem}: {exc}")
+    stripped = encode_backbone(strip_to_backbone(st))
+    assert direct == stripped
