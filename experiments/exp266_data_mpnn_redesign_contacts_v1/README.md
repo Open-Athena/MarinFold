@@ -486,7 +486,9 @@ Only the ad-hoc verifier was wrong. The smoke missed it because shard 0 is the
 *shortest* proteins, which have too few contacts to have a borderline one; the
 disagreement needs mid-length proteins to show up.
 
-**Any verification of this corpus must use `pyconfind[fast]`.**
+**Any verification of this corpus must use `pyconfind[fast]`.** Re-run under
+`[fast]`, the production staged data verifies clean: **200 / 200 sha1 match, 0
+mismatch** on a mid-length production shard (L 196–198).
 
 **Any marin data pipeline reading parquet from GCS is exposed to #2.**
 

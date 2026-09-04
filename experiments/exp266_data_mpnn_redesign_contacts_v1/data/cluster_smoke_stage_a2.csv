@@ -37,3 +37,5 @@ stage_a2_full_minutes,~30,256 GCP workers writing straight to CoreWeave
 stage_a2_segfault_shards,1,shard 111 exit -11 in gemmi strip_to_backbone; recovered on retry
 pyconfind_backend_sha1_mismatch_pure,5,of 200 on a mid-length shard -- pure-python backend
 pyconfind_backend_sha1_mismatch_fast,0,same rows under pyconfind[fast], the corpus's backend
+prod_sha1_verify_fast_match,200,of 200 sampled from production shard 100 (L 196-198)
+prod_sha1_verify_fast_mismatch,0,
