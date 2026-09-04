@@ -72,8 +72,15 @@ RENAME = {"contacts_emitted": "native_contacts_emitted", "sha1": "native_sha1"}
 
 
 def read_keep_list(corpus: str, columns: tuple[str, ...],
-                   max_shards: int | None = None) -> pa.Table:
-    """Read the provenance columns of every row in the decontaminated corpus."""
+                   max_shards: int | None = None, workers: int = 32) -> pa.Table:
+    """Read the provenance columns of every row in the decontaminated corpus.
+
+    The 2,067 shard reads are threaded. Sequentially this is HTTP-latency-bound
+    and runs for hours — a 12-shard sample extrapolated to ~26 min but the real
+    thing was on track for several. The reads are independent and pyarrow
+    releases the GIL while decoding, so a pool is a straight win. Same lesson
+    as the pipeline skill's per-row fetch, one level up.
+    """
     import fsspec
 
     fs, _ = fsspec.core.url_to_fs(corpus)
@@ -90,13 +97,25 @@ def read_keep_list(corpus: str, columns: tuple[str, ...],
         raise ValueError(f"{files[0]}: corpus is missing required column(s) {missing}")
     wanted = [c for c in columns if c in present]
 
-    tables = []
-    for i, path in enumerate(files, 1):
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    lock = threading.Lock()
+    seen = {"n": 0}
+
+    def read_one(path: str) -> pa.Table:
         with fs.open(path, "rb") as handle:
-            tables.append(pq.read_table(handle, columns=wanted))
-        if i % 100 == 0 or i == len(files):
-            rows = sum(t.num_rows for t in tables)
-            print(f"[stage-a] {i}/{len(files)} shards, {rows:,} rows", flush=True)
+            table = pq.read_table(handle, columns=wanted)
+        with lock:
+            seen["n"] += 1
+            if seen["n"] % 200 == 0 or seen["n"] == len(files):
+                print(f"[stage-a] {seen['n']}/{len(files)} shards", flush=True)
+        return table
+
+    # pool.map preserves input order, so the concatenated table keeps the
+    # corpus's own shard order (exp53 wrote it round-descending).
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        tables = list(pool.map(read_one, files))
     return pa.concat_tables(tables)
 
 
@@ -134,6 +153,8 @@ def main() -> None:
                     help="Larger than exp53's shards on purpose: exact-length "
                          "ProteinMPNN batches need enough same-length rows in "
                          "one shard to fill the GPU.")
+    ap.add_argument("--workers", type=int, default=32,
+                    help="Threads reading corpus shards from the HF bucket.")
     ap.add_argument("--max-shards", type=int, default=None,
                     help="Smoke cap: read only the first N corpus shards.")
     ap.add_argument("--sample", type=int, default=None,
@@ -146,7 +167,7 @@ def main() -> None:
     ap.add_argument("--max-len", type=int, default=2000)
     args = ap.parse_args()
 
-    table = read_keep_list(args.corpus, CARRY_COLUMNS, args.max_shards)
+    table = read_keep_list(args.corpus, CARRY_COLUMNS, args.max_shards, args.workers)
     print(f"[stage-a] read {table.num_rows:,} rows from {args.corpus}")
 
     manifest = build_manifest(table, min_len=args.min_len, max_len=args.max_len)
