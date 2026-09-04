@@ -516,7 +516,21 @@ def load_helico_per_target(inputs: Inputs, extra_path=None):
         if missing:
             raise SystemExit(f"the re-run arm is missing {missing}; it has to carry the same "
                              "columns as the published table or the two cannot be pooled")
-        frame = pd.concat([frame, extra[frame.columns]], ignore_index=True)
+        # Anything the published table already carries wins, and the local copy of it is dropped.
+        # helico will eventually republish with the re-run arm included, and a plain concat then
+        # gives every one of its targets twice: the means do not move, but n doubles and the
+        # bootstrap intervals shrink — an error that shows up as unearned confidence rather than
+        # as a crash. This makes the two orderings of that publication equivalent.
+        already = frame[["arm", "target_id"]].drop_duplicates()
+        marked = extra.merge(already, on=["arm", "target_id"], how="left", indicator=True)
+        superseded = int((marked._merge == "both").sum())
+        extra = marked[marked._merge == "left_only"].drop(columns="_merge")
+        if superseded:
+            print(f"note: {superseded} of {superseded + len(extra)} rows in {extra_path.name} are "
+                  "already in the published table and were dropped in its favour"
+                  + ("; the local copy is now redundant and can be deleted" if extra.empty else ""))
+        if not extra.empty:
+            frame = pd.concat([frame, extra[frame.columns]], ignore_index=True)
     return frame
 
 
