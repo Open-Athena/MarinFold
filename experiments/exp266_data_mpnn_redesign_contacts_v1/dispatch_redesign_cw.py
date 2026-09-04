@@ -110,7 +110,21 @@ mkdir -p {WORK_DIR}
 # marinfold install ("Error [Errno 2] No such file or directory: 'git'"). The
 # repo tarball is not an alternative: it carries an absolute symlink that pip
 # refuses ("is a link to an absolute path"), and it is 134 MB.
-apt-get update -qq && apt-get install -y -qq --no-install-recommends git
+#
+# Retried and then VERIFIED: `apt-get update -qq` can return 0 having failed to
+# fetch a mirror, so the install silently no-ops and the failure only surfaces
+# later as pip's confusing "No such file or directory: 'git'". That took out
+# 1 of 56 tasks on the first full fan-out. Fail here instead, with a message
+# that says what actually happened.
+for attempt in 1 2 3; do
+  apt-get update -qq && apt-get install -y -qq --no-install-recommends git && break
+  echo "[exp266-cw] apt attempt $attempt failed; retrying" >&2
+  sleep $((attempt * 10))
+done
+if ! command -v git >/dev/null; then
+  echo "[exp266-cw] FATAL: git still missing after 3 apt attempts" >&2
+  exit 4
+fi
 
 PY=python
 $PY -m pip install --quiet --upgrade pip
