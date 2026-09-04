@@ -99,36 +99,66 @@ def main() -> int:
     ap.add_argument("--num-sampling-steps", type=int, default=100)
     ap.add_argument("--num-loops", type=int, default=20)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--files", type=int, default=2,
+                    help="Document/backbone shard PAIRS this task reads. Reading "
+                         "every shard to sample a few hundred backbones would "
+                         "pull the whole ~58 GB staged corpus per task; each "
+                         "task instead takes a seed-chosen slice of the shards "
+                         "and samples inside it.")
     args = ap.parse_args()
 
     from selfconsistency import ca_coords_from_staged, ca_coords_from_structure, \
         kabsch_rmsd, tm_score
 
-    bb_fs, _ = fsspec.core.url_to_fs(args.backbones_glob)
-    backbones: dict[str, dict] = {}
-    for path in sorted(bb_fs.glob(args.backbones_glob)):
-        with bb_fs.open(path, "rb") as h:
-            t = pq.read_table(h, columns=["entry_id", "sequence", "coords_milli"])
-        backbones.update({r["entry_id"]: r for r in t.to_pylist()})
-    _log(f"{len(backbones)} staged backbones available")
-
-    # Sample backbones, not designs: keeping all 8 designs of a chosen backbone
-    # is what makes per-backbone designability computable alongside the
-    # per-sequence rate.
     rng = np.random.default_rng(args.seed)
-    chosen = set(rng.choice(sorted(backbones), size=min(args.backbones, len(backbones)),
-                            replace=False).tolist())
 
+    # Pick a slice of the DOCUMENT shards first. Stage A sorted the corpus by
+    # length, so a random slice of shards is a random slice of length bands —
+    # shuffle rather than take a contiguous block, or a task gets one length
+    # regime and the self-consistency rate is confounded with length.
     doc_fs, _ = fsspec.core.url_to_fs(args.documents_glob)
+    doc_files = sorted(doc_fs.glob(args.documents_glob))
+    if not doc_files:
+        raise FileNotFoundError(f"no documents match {args.documents_glob}")
+    picked = rng.permutation(len(doc_files))[: max(1, args.files)]
+    _log(f"reading {len(picked)} of {len(doc_files)} document shards")
+
     designs = []
-    for path in sorted(doc_fs.glob(args.documents_glob)):
-        with doc_fs.open(path, "rb") as h:
+    for i in picked:
+        with doc_fs.open(doc_files[i], "rb") as h:
             t = pq.read_table(h, columns=["entry_id", "design_index", "seq_len",
                                           "n_term_index", "document",
                                           "mpnn_temperature", "mpnn_score",
                                           "identity_to_native"])
-        designs.extend(r for r in t.to_pylist() if r["entry_id"] in chosen)
-    _log(f"{len(designs)} designs over {len({d['entry_id'] for d in designs})} backbones")
+        designs.extend(t.to_pylist())
+
+    # Sample by BACKBONE, keeping all 8 of its designs: that is what makes
+    # per-backbone designability computable alongside the per-sequence rate.
+    entry_ids = sorted({d["entry_id"] for d in designs})
+    chosen = set(rng.choice(entry_ids, size=min(args.backbones, len(entry_ids)),
+                            replace=False).tolist())
+    designs = [d for d in designs if d["entry_id"] in chosen]
+
+    # Only now fetch the backbones we actually need, matching shard stems.
+    bb_fs, _ = fsspec.core.url_to_fs(args.backbones_glob)
+    bb_files = sorted(bb_fs.glob(args.backbones_glob))
+    backbones: dict[str, dict] = {}
+    for path in bb_files:
+        stem = path.rsplit("/", 1)[-1].removesuffix(".parquet")
+        if not any(stem in doc_files[i] for i in picked):
+            continue
+        with bb_fs.open(path, "rb") as h:
+            t = pq.read_table(h, columns=["entry_id", "sequence", "coords_milli"])
+        backbones.update({r["entry_id"]: r for r in t.to_pylist()
+                          if r["entry_id"] in chosen})
+    missing = chosen - set(backbones)
+    if missing:
+        raise ValueError(
+            f"{len(missing)} sampled backbones have no staged row "
+            f"(e.g. {sorted(missing)[:3]}); document and backbone shards "
+            "are not paired as expected"
+        )
+    _log(f"{len(designs)} designs over {len(chosen)} backbones")
 
     from marinfold.document_structures.contacts_v1.read import sequence_from_document
 

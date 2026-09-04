@@ -16,11 +16,11 @@ Does adding ProteinMPNN-redesigned sequences for backbones we already have
 improve contacts-v1 — and is inverse-folding augmentation a cheaper substitute
 for generating novel structures?
 
-Concretely: take all **3,963,003** documents of the decontaminated AFDB corpus
+Concretely: take all **3,962,835** backbones of the decontaminated AFDB corpus
 ([`contacts_v1_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_decontam),
 [#225](https://github.com/Open-Athena/MarinFold/issues/225)), redesign each
 backbone into **8 new sequences**, re-run pyconfind on each, and publish the
-resulting **~31.7 M-document** corpus.
+resulting **31,702,680-document** corpus.
 
 This issue ships the corpus. The accuracy question is a follow-up
 `kind/models` issue against the [#232](https://github.com/Open-Athena/MarinFold/issues/232)
@@ -480,8 +480,8 @@ Full pipeline, end to end:
 
 | stage | where | cost |
 |---|---|---|
-| A — keep-list | local | ~26 min |
-| A2 — stage backbones | GCP Iris, 512 workers | ~1 h, ~58 GB out |
+| A — keep-list | local | **4 min measured** (threaded) |
+| A2 — stage backbones | GCP Iris, 256 workers | ~54 GB out |
 | B — redesign + documents | cw-rno2a, 28–56 × 1 H100 | **3.7–7.4 h** (to 22 h with slack) |
 | output | | **31,704,024 documents, ~40 B tokens** |
 

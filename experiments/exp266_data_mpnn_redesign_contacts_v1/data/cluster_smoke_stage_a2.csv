@@ -25,3 +25,9 @@ cw_rep_seconds,243,1.6 backbones/s -- GPU-bound (gpu 165s cpu 76s) because ~400 
 cw_band_job,/bizon/exp266-band-s0of1,400 backbones in a 265-290 length band (batch fill 15.4)
 cw_band_seconds,76,5.3 backbones/s -- CPU-bound (gpu 24s cpu 50s); the realistic shard shape
 cw_band_backbones_per_second,5.3,single 1xH100 task with 14 document processes
+stage_a_full_rows,3962835,168 dropped outside [30,2000] residues
+stage_a_full_shards,199,20000 rows each
+stage_a_full_residues,1024776345,mean L 258.6
+stage_a_full_seconds,~250,threaded at 32 workers; sequential was on track for hours
+staged_size_gb_projected,54.3,3962835 x 258.6 residues x 53 bytes
+designs_to_generate,31702680,3962835 x 8
