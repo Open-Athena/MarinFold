@@ -441,6 +441,30 @@ is used, while the worker took the extended-gcsfs `cat` path. The fix is a
 declarative pin, `gcsfs<2026.5` — no monkey-patching a dependency — found by
 version archaeology (`_cat_file_concurrent` first appears in 2026.5.0).
 
+**3. gemmi SIGSEGVs in in-place atom deletion, rarely.** The first full
+staging run died on shard 111 with a subprocess exit of −11:
+
+```
+Fatal Python error: Segmentation fault
+  File "backbone.py", line 63 in strip_to_backbone
+  File "stage_rows.py", line 78 in stage_row
+```
+
+Data-dependent: 196 of 199 shards staged fine, and neither the 200-row smoke
+nor 700 local structures tripped it. Over 3.96 M AFDB entries a rare entry
+reaches gemmi's clone-then-mass-delete path and does not come back.
+
+The strip was never needed in staging — `encode_backbone` selects N/CA/C/O by
+name, so it is a proven no-op there
+(`test_encode_does_not_need_a_stripped_structure`). Dropping it removes the
+crash *and* a full structure copy per row. `strip_to_backbone` stays for the
+probes and byte-identity tests, which is where it earns its keep.
+
+**4. Stage A's corpus read must be threaded.** 2,067 sequential HTTP reads of
+the published corpus is latency-bound: a 12-shard sample extrapolated to
+~26 min, but the real thing was on track for *hours*. Threaded at 32: **4 min**.
+A small sample is a bad estimator of a many-round-trip job.
+
 **Any marin data pipeline reading parquet from GCS is exposed to #2.**
 
 ## Projected full-run cost — **measured**
