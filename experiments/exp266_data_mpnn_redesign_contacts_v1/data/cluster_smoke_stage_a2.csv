@@ -31,3 +31,9 @@ stage_a_full_residues,1024776345,mean L 258.6
 stage_a_full_seconds,~250,threaded at 32 workers; sequential was on track for hours
 staged_size_gb_projected,54.3,3962835 x 258.6 residues x 53 bytes
 designs_to_generate,31702680,3962835 x 8
+stage_a2_full_job,/bizon/iris-run-cli-20260904-172119,SUCCEEDED; 199/199 shards
+stage_a2_full_size_gb,46.0,staged backbones on CoreWeave (zstd; raw model said 54.3)
+stage_a2_full_minutes,~30,256 GCP workers writing straight to CoreWeave
+stage_a2_segfault_shards,1,shard 111 exit -11 in gemmi strip_to_backbone; recovered on retry
+pyconfind_backend_sha1_mismatch_pure,5,of 200 on a mid-length shard -- pure-python backend
+pyconfind_backend_sha1_mismatch_fast,0,same rows under pyconfind[fast], the corpus's backend

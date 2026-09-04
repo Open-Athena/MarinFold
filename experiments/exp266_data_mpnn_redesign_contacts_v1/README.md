@@ -465,6 +465,29 @@ the published corpus is latency-bound: a 12-shard sample extrapolated to
 ~26 min, but the real thing was on track for *hours*. Threaded at 32: **4 min**.
 A small sample is a bad estimator of a many-round-trip job.
 
+**5. pyconfind's two backends are not bit-identical.** Spot-checking the
+*production* staged shards against the published corpus sha1 came back
+**195/200**, not the smoke's 200/200. The five mismatches were not a pipeline
+fault — they are the `pyconfind[fast]` (numba) backend versus the pure-python
+one:
+
+| backend | sha1 vs published corpus |
+|---|---|
+| pure-python | 3/3 mismatch |
+| `[fast]` (numba) | 3/3 **match** |
+
+Contact *counts* and `lowest_included_contact_degree` agree exactly
+(143/143, 155/155, 133/133); the sets differ marginally right at the
+`min_contact_degree = 0.001` cut, which is enough to change the document.
+
+The corpus — exp53's and this one — is defined by the **`[fast]` backend**,
+which is what the experiment's pyproject pins and what the production job ran.
+Only the ad-hoc verifier was wrong. The smoke missed it because shard 0 is the
+*shortest* proteins, which have too few contacts to have a borderline one; the
+disagreement needs mid-length proteins to show up.
+
+**Any verification of this corpus must use `pyconfind[fast]`.**
+
 **Any marin data pipeline reading parquet from GCS is exposed to #2.**
 
 ## Projected full-run cost — **measured**
