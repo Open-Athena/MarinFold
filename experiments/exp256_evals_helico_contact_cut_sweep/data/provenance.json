@@ -1,0 +1,18 @@
+{
+  "eval_set": "eval-val",
+  "n_common": 95,
+  "arm_source": {
+    "mf_L5": "exp14",
+    "mf_L2": "exp14",
+    "mf_L": "exp14",
+    "mf_1p5L": "exp256",
+    "mf_2L": "exp256",
+    "mf_3L": "exp256",
+    "mf_5L": "exp256",
+    "mf_union": "exp256",
+    "off": "exp14",
+    "v2ss": "exp14",
+    "oracle": "exp14",
+    "v2msa": "exp14"
+  }
+}
