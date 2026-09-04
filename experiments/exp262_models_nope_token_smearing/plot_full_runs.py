@@ -106,6 +106,14 @@ def main() -> None:
             e_steps, e_delta = minus_reference(payload["eval"], reference_eval)
             versus.plot(e_steps, e_delta, "o", color=payload["colour"], markersize=7,
                         markeredgecolor="black", markeredgewidth=0.6, label=f"{label} — eval")
+    # Every run in this comparison has a step-change in its loss somewhere in
+    # 14k-24k, and they do not line up: exp232's is near 22k, the control's near
+    # 15k, the NoPE arm's near 21k. Differencing across that offset measures
+    # WHEN each run hit the feature, not how well it is training, so the
+    # exp232-relative view is not to be read inside this band.
+    versus.axvspan(14000, 24000, color="#c53030", alpha=0.10)
+    versus.annotate("step-change region:\nexp232-relative\ncomparison unreliable",
+                    (19000, -0.14), fontsize=6.5, ha="center", color="#c53030")
     versus.axhline(0, color="black", linewidth=1.0)
     versus.axhspan(-GENERATION_NATS, GENERATION_NATS, color="gray", alpha=0.18,
                    label=f"±{GENERATION_NATS} = one model generation")
@@ -146,7 +154,8 @@ def main() -> None:
             "not move the loss scale, and it is why the NoPE curve below zero can be read as "
             "architecture. Right: head to head where both have data; the control was preempted at "
             "step 21,535 and is catching up. Grey band is the 0.053 nats the #75 to #117 generation "
-            "was worth."
+            "was worth. The red band is where all three runs have a step-change in loss at "
+            "different steps, so differencing across it measures timing, not quality."
         ),
         dpi=150,
     )
