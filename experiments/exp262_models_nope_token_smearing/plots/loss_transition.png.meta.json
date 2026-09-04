@@ -1,0 +1,5 @@
+{
+  "script": "plot_transition.py",
+  "args": [],
+  "caption": "Each 1.5B run drops ~0.09 nats over ~1,500 steps somewhere mid-training. exp262's control transitions near 15.5k, its NoPE arm near 21k, exp232's reference near 21.5k \u2014 and the control and exp232 are the same architecture, data and seeds. The timing is not reproducible, and its ~6,000-step spread is worth far more loss at a fixed step than the architecture difference under test."
+}
