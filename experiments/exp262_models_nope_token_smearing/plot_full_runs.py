@@ -82,7 +82,9 @@ def main() -> None:
     reference_train = data[REFERENCE]["train"]
     reference_eval = data[REFERENCE]["eval"]
 
-    figure, (curves, versus, direct) = plt.subplots(1, 3, figsize=(17.5, 4.9))
+    figure, (curves, direct, versus) = plt.subplots(
+        1, 3, figsize=(17.5, 4.9), width_ratios=[1.0, 1.25, 1.0]
+    )
 
     for label, payload in data.items():
         smoothed = payload["train"].rolling(60, min_periods=15).mean()
@@ -125,24 +127,29 @@ def main() -> None:
     versus.grid(alpha=0.3)
 
     control, proposal = data["control (RoPE)"], data["NoPE + smear"]
-    left, right = binned(proposal["train"]), binned(control["train"])
-    shared = left.index.intersection(right.index)
-    if len(shared):
-        direct.plot(shared, (left.loc[shared] - right.loc[shared]).values, color="#2b6cb0",
-                    linewidth=1.3, label=f"train ({BIN}-step bins)")
-    shared_eval = control["eval"].index.intersection(proposal["eval"].index)
-    if len(shared_eval):
-        direct.plot(shared_eval, (proposal["eval"].loc[shared_eval] - control["eval"].loc[shared_eval]).values,
-                    "o-", color="#c53030", markersize=8, label="eval")
-        direct.axvline(float(shared_eval.max()), color="black", linestyle=":", linewidth=1.0)
-        direct.annotate("control stops here\n(preempted)", (float(shared_eval.max()), 0.12),
-                        fontsize=7, ha="right", va="top")
-    direct.axhline(0, color="black", linewidth=0.9)
-    direct.axhspan(-GENERATION_NATS, GENERATION_NATS, color="gray", alpha=0.18)
+    # Deliberately eval-only. The arms' train-loss difference is contaminated by
+    # the step-change timing offset (the control's is near 15k, the NoPE arm's
+    # near 21k), so plotting it beside the matched evals invites reading a
+    # scheduling artifact as an architecture effect.
+    matched = control["eval"].index.intersection(proposal["eval"].index)
+    deltas = (proposal["eval"].loc[matched] - control["eval"].loc[matched])
+    if len(matched):
+        direct.plot(matched, deltas.values, "o-", color="#c53030", markersize=10,
+                    linewidth=2.0, zorder=3, label="eval (the comparison of record)")
+        for step, value in zip(matched, deltas.values):
+            direct.annotate(f"{value:+.4f}", (step, value), textcoords="offset points",
+                            xytext=(0, 13 if value < 0 else -18), ha="center", fontsize=8)
+        mean = float(deltas.mean())
+        direct.axhline(mean, color="#c53030", linestyle="--", linewidth=1.2,
+                       label=f"mean of {len(deltas)} matched evals = {mean:+.4f}")
+    direct.axhline(0, color="black", linewidth=1.2)
+    direct.axhspan(-GENERATION_NATS, GENERATION_NATS, color="gray", alpha=0.18,
+                   label=f"±{GENERATION_NATS} = one model generation")
+    direct.set_ylim(-0.09, 0.09)
     direct.set_xlabel("step (of 145,200)")
     direct.set_ylabel("Δ loss, NoPE+smear − control")
-    direct.set_title("head to head, where both have data\nbelow zero = NoPE + smear winning")
-    direct.legend(fontsize=7)
+    direct.set_title("head to head at matched steps\nbelow zero = NoPE + smear winning")
+    direct.legend(fontsize=7, loc="lower right")
     direct.grid(alpha=0.3)
 
     figure.tight_layout()
@@ -154,8 +161,11 @@ def main() -> None:
             "not move the loss scale, and it is why the NoPE curve below zero can be read as "
             "architecture. Right: head to head where both have data; the control was preempted at "
             "step 21,535 and is catching up. Grey band is the 0.053 nats the #75 to #117 generation "
-            "was worth. The red band is where all three runs have a step-change in loss at "
-            "different steps, so differencing across it measures timing, not quality."
+            "was worth. Middle is the comparison of record — both arms scored at identical "
+            "steps on identical data; the small-scale pilot predicted about -0.16 and the mean "
+            "of the matched evals is nowhere near it. Right: the red band is where all three "
+            "runs have a step-change at different steps, so differencing across it measures "
+            "timing rather than quality."
         ),
         dpi=150,
     )
