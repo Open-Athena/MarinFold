@@ -1,5 +1,5 @@
 {
   "script": "plot_full_runs.py",
   "args": [],
-  "caption": "Left: both full-budget arms with exp232's run behind them in grey \u2014 the control is tracking it to ~0.01 nats, which is what licenses reading the gap at all. Right: the arm gap, against the 0.053 nats the whole #75 to #117 generation was worth. The early positive excursion is LR warmup; the crossover is near step 7,000."
+  "caption": "exp232's completed run is the common baseline. Middle panel: each arm minus exp232 at the same step \u2014 the control sits on zero, which is what shows the newer marin pin did not move the loss scale, and it is why the NoPE curve below zero can be read as architecture. Right: head to head where both have data; the control was preempted at step 21,535 and is catching up. Grey band is the 0.053 nats the #75 to #117 generation was worth."
 }
