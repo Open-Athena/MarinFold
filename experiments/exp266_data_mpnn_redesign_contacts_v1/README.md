@@ -451,6 +451,48 @@ The ladder remains narrow: 0.1 → 0.5 moves identity only 0.373 → 0.345 and
 density not at all. A training experiment should not expect much from
 subsetting on `mpnn_temperature`.
 
+## The refold check — designs vs a native control
+
+3,000 design refolds over 375 backbones, against **250 native sequences
+refolded onto their own AFDB backbones**, paired on the same backbones.
+`data/refold_*.csv`.
+
+| arm | n | scRMSD<2 Å | scTM>0.5 | median RMSD | median TM |
+|---|---|---|---|---|---|
+| **design** | 3,000 | 19.9 % | 54.4 % | 7.60 Å | 0.571 |
+| **native control** | 250 | 25.2 % | 60.0 % | 6.06 Å | 0.674 |
+| ratio | | **0.79** | **0.91** | | |
+
+**Read the ratio, not the absolute.** The design arm alone says "14–20 % of
+designs are self-consistent", which sounds alarming and would be a misleading
+thing to publish. The control shows the *native* sequence — the one AFDB
+itself assigns to that backbone — only reaches 25.2 %. The absolute rate is
+therefore a property of the measurement (ESMFold2 at 1 diffusion sample and
+100 sampling steps, scored by a strict whole-chain 2 Å gate), not evidence
+that ProteinMPNN designs are bad. exp78 used top-1-of-5 at the same step count
+and would score both arms higher.
+
+What the corpus can honestly claim: **designs are ~79 % as likely as native
+sequences to refold within 2 Å of their backbone, and ~91 % as likely to reach
+the same fold (scTM > 0.5).** Per-backbone designability, best of 8, is 32.3 %.
+
+Caveat on precision: the native arm is n=250 against the design arm's n=3,000,
+so its 25.2 % carries roughly ±5 pp. The scTM comparison (54.4 vs 60.0) is the
+tighter of the two.
+
+By temperature, the ladder is nearly flat until the top of it:
+
+| T | n | scRMSD<2 Å | scTM>0.5 |
+|---|---|---|---|
+| 0.1 | 750 | 20.5 % | 56.8 % |
+| 0.2 | 750 | 20.1 % | 56.4 % |
+| 0.3 | 750 | 21.1 % | 54.7 % |
+| 0.5 | 750 | 17.7 % | 49.7 % |
+
+T=0.5 is measurably worse (49.7 % vs 56.8 % same-fold) without buying much
+diversity — another argument that the ladder as designed was not a good use of
+the design budget.
+
 ## Traps the cluster smoke found
 
 None of these are reachable from a local test — the experiment env resolves
