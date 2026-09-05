@@ -65,21 +65,35 @@ designed sequence folds there.
 
 ## What to know before training on it
 
-- **Contact density is essentially unchanged.** Designed documents carry
-  contacts/residue at a ratio of **1.016** to native (measured on 400
-  length-representative backbones), approaching 1 as length grows. The feared
+- **Contact density is essentially unchanged.** Measured over 640,000
+  documents spanning seq_len 30–1998: contacts/residue **0.708 native vs 0.710
+  designed, ratio 1.002** (1.040 below L=100, 0.989 above L=800). The feared
   "MPNN's alanine bias shortens the documents" artifact does not occur.
-- **Composition does shift**: P +4.33, A +4.16, S −3.25, E +2.98, L +2.59,
-  Q −2.17 percentage points against the native sequences.
-- **The temperature ladder is narrow.** 0.1 → 0.5 moves identity-to-native only
-  0.356 → 0.326 and density not at all, so subsetting on `mpnn_temperature`
-  buys little.
-- **Sequence recovery on AFDB is 0.356** at T=0.1, well below ProteinMPNN's
+- **Composition does shift**: P +3.60, A +2.72, S −2.47, E +2.19, Q −2.14,
+  L +2.09 percentage points against the native sequences.
+- **The temperature ladder is narrow — do not plan around it.** 0.1 → 0.5 moves
+  identity-to-native only 0.373 → 0.345, density not at all, and T=0.5 refolds
+  *worse* (49.7 % vs 56.8 % same-fold). Subsetting on `mpnn_temperature` buys
+  little.
+- **Sequence recovery on AFDB is 0.373** at T=0.1, well below ProteinMPNN's
   published ~50 % on crystal structures — predicted models are harder to
   recover.
-- **The designs were not refolded before inclusion.** Whether a design folds to
-  its backbone is measured separately on a sample (see the issue); it is not a
-  filter applied to this corpus.
+- **The designs were not refolded before inclusion.** Self-consistency was
+  measured on a sample, not applied as a filter. ESMFold2 (1 diffusion sample,
+  100 steps) on 3,000 designs vs 250 **native** sequences refolded onto the
+  same backbones:
+
+  | arm | scRMSD<2 Å | scTM>0.5 | median TM |
+  |---|---|---|---|
+  | design | 19.9 % | 54.4 % | 0.571 |
+  | native control | 25.2 % | 60.0 % | 0.674 |
+
+  **Read the ratio, not the absolute.** The native sequence — the one AFDB
+  itself assigns to that backbone — only reaches 25.2 % under this measurement,
+  so the low absolute rate reflects the folder settings and a strict
+  whole-chain 2 Å gate, not design quality. Designs are **~79 % as likely as
+  native to refold within 2 Å, and ~91 % as likely to reach the same fold**.
+  Per-backbone best-of-8 designability is 32.3 %.
 
 ## Verification
 

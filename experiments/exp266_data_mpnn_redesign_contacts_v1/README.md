@@ -753,8 +753,56 @@ issue against the #232 decontaminated recipe. For *this* issue:
 
 ## Results
 
-Pending — nothing has run on the cluster yet.
+**Published:** [`contacts_v1_mpnn_redesign`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_mpnn_redesign)
+— 199 shards, 64.06 GB, verified file-for-file and byte-for-byte against the
+CoreWeave source (0 missing, 0 extra, 0 size mismatches).
+
+| | |
+|---|---|
+| documents | **31,702,680** (3,962,835 backbones × 8) |
+| tokens | **35,320,841,292** (35.32 B, mean 1,114/doc) |
+| contact density vs native | **1.002** |
+| self-consistency vs native control | **0.79** (scRMSD) / **0.91** (scTM) |
+
+All five success criteria are met: byte-identical contact operator (200/200
+sha1 against the published parent corpus), lossless staging, completeness
+(`delta +0`), the composition check reported whatever it showed, and the corpus
+published with a dataset README.
 
 ## Conclusion
 
-Pending.
+**The corpus is built and it is sound; whether it helps is the next
+experiment's question.**
+
+Three things it establishes that were genuinely uncertain going in:
+
+1. **The contact operator is identical to `contacts_v1`.** confind rebuilds
+   side chains from rotamers, so a backbone plus residue names is a complete
+   input — verified by regenerating published corpus documents byte-for-byte.
+   A redesigned document is the same kind of object as a native one.
+2. **The feared artifact does not exist.** MPNN's composition bias is real
+   (P +3.60, A +2.72 pp) but contact density is unchanged (ratio 1.002), so the
+   documents are not systematically shorter.
+3. **Designs are nearly as self-consistent as natives** — 79 % / 91 % of the
+   native control's rates. The absolute rate is low for both, which is a fact
+   about ESMFold2 at one sample and a strict 2 Å gate, not about the designs.
+
+Two things that did **not** work, worth saying plainly:
+
+- **The temperature ladder was a wasted design choice.** It was baked in so a
+  training experiment could subset near-native ↔ diverse without regenerating.
+  Three measurements say it does not span anything useful: identity moves
+  0.373 → 0.345, density not at all, and T=0.5 refolds *worse*. A future
+  regeneration should either widen it well past 0.5 or drop it and spend the
+  budget on more backbones.
+- **The cost model was wrong by ~3.5×** (13 h against a 3.7 h projection),
+  because throughput was measured on a band at the corpus *mean* length while
+  the corpus runs to 1,998 residues and both ProteinMPNN and pyconfind scale
+  steeply with length.
+
+The open question is unchanged and belongs to a `kind/models` follow-up:
+does mixing this corpus into the #232 decontaminated recipe move R-precision
+above the 0.0023 noise floor? [#120](https://github.com/Open-Athena/MarinFold/issues/120)
+says synthetic documents start at a deficit here, and nothing measured in this
+experiment overturns that — it only removes the corpus-quality objections that
+would have confounded the answer.
