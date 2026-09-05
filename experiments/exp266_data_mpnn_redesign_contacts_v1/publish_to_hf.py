@@ -9,6 +9,17 @@ CoreWeave object storage and the workstation uplink is ~2.5 MB/s, so pulling
 credentials injected and public internet to huggingface.co, so it can stream
 shard-by-shard.
 
+Uses `batch_bucket_files`, **not** `upload_file`. HF *buckets* are a distinct
+repo kind: `upload_file(..., repo_type="bucket")` raises
+`ValueError: Invalid repo type, must be one of [None, 'model', 'dataset',
+'space']`. The bucket API is its own surface (`batch_bucket_files`,
+`sync_bucket`, `list_bucket_tree`, `download_bucket_files`), which is the same
+reason `snapshot_download` cannot see a bucket.
+
+Each shard is streamed from object storage and handed over as raw bytes, so
+nothing is staged to the pod's disk — 64 GB would not fit in the task's
+allocation anyway.
+
 Needs an **open-athena-scoped** token (`hf auth whoami` must list the org; the
 bare workstation token is timodonnell-only). Pass it as `HF_TOKEN`.
 
@@ -47,7 +58,7 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    from huggingface_hub import HfApi
+    from huggingface_hub import batch_bucket_files
 
     token = os.environ.get("HF_TOKEN")
     if not token and not args.dry_run:
@@ -63,19 +74,18 @@ def main() -> int:
     if args.dry_run:
         return 0
 
-    api = HfApi(token=token)
     started = time.perf_counter()
     from concurrent.futures import ThreadPoolExecutor
 
     def upload(path: str) -> None:
         name = path.rsplit("/", 1)[-1]
         with fs.open(path, "rb") as handle:
-            api.upload_file(
-                path_or_fileobj=handle,
-                path_in_repo=f"{args.repo_path.rstrip('/')}/{name}",
-                repo_id=BUCKET_REPO,
-                repo_type="bucket",
-            )
+            blob = handle.read()
+        batch_bucket_files(
+            BUCKET_REPO,
+            add=[(blob, f"{args.repo_path.rstrip('/')}/{name}")],
+            token=token,
+        )
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         for i, _ in enumerate(pool.map(upload, files), 1):
