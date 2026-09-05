@@ -38,7 +38,7 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-HF_MODEL_ID = "biohub/ESMFold2"
+HF_MODEL_ID = "biohub/ESMFold2"   # == esm.models.esmfold2.ESMFOLD2_HF_REPO
 PASS_RMSD = 2.0        # the field's designability gate
 PASS_TM = 0.5          # "same fold"
 
@@ -47,25 +47,22 @@ def _log(message: str) -> None:
     print(f"[exp266-refold] {message}", file=sys.stderr, flush=True)
 
 
-def load_model():
+def load_model(device: str = "cuda"):
     """Load ESMFold2 once per task.
 
-    Accessors and the fold call are exp78's — resolved there against the
-    installed `biohub/esm` package during a feasibility spike, rather than
-    guessed from the docs.
+    The class lives in **`esm.models.esmfold2`**, spelled `EsmFold2Model`, and
+    `from_pretrained` takes the device directly. exp78's
+    `from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model`
+    is stale against current `biohub/esm` — importing `esm` does not register
+    anything into `transformers.models`, so that path raises ModuleNotFoundError
+    no matter what order things are imported in.
     """
     import torch
+    from esm.models.esmfold2 import ESMFOLD2_HF_REPO, EsmFold2Model
 
-    # Import Biohub's `esm` FIRST: it is what registers ESMFold2 with
-    # transformers. Importing the transformers path directly gives
-    # "ModuleNotFoundError: No module named 'transformers.models.esmfold2'".
-    import esm.models.esmfold2  # noqa: F401
-    import transformers
-    from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model
-
-    _log(f"transformers {transformers.__version__}, esm registered ESMFold2")
-    model = ESMFold2Model.from_pretrained(HF_MODEL_ID)
-    return model.cuda().eval() if torch.cuda.is_available() else model.eval()
+    dev = device if torch.cuda.is_available() else "cpu"
+    model = EsmFold2Model.from_pretrained(ESMFOLD2_HF_REPO, device=dev)
+    return model.eval()
 
 
 def score_confidence(result) -> float:
@@ -170,7 +167,8 @@ def main() -> int:
     from marinfold.document_structures.contacts_v1.read import sequence_from_document
 
     model = load_model()
-    _log(f"ESMFold2 loaded; {args.num_sampling_steps} steps, 1 sample per sequence")
+    _log(f"ESMFold2 loaded; {args.num_sampling_steps} sampling steps, "
+         f"{args.num_loops} loops, 1 sample per sequence")
 
     rows, started = [], time.perf_counter()
     for i, d in enumerate(designs, 1):
@@ -228,6 +226,8 @@ def _predict(model, sequence: str, args, seed: int):
         num_diffusion_samples=1,
         seed=seed,
     )
+    if isinstance(result, list):
+        result = result[0]
     structure = gemmi.read_structure_string(
         result.complex.to_mmcif(), format=gemmi.CoorFormat.Mmcif
     )

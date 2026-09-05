@@ -109,9 +109,10 @@ $PY -m pip install --quiet torch
 $PY -m pip install --quiet "esm @ git+https://github.com/Biohub/esm.git@main"
 $PY -m pip install --quiet accelerate "huggingface_hub[hf_transfer]" \\
     gemmi numpy fsspec s3fs boto3 pyarrow
-$PY -c "import esm.models.esmfold2, transformers; \\
-        from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model; \\
-        print('[exp266-refold] transformers', transformers.__version__, 'ESMFold2 OK')"
+$PY -c "from esm.models.esmfold2 import EsmFold2Model, ESMFold2InputBuilder, ESMFOLD2_HF_REPO; \\
+        import transformers; \\
+        print('[exp266-refold] transformers', transformers.__version__, \\
+              'EsmFold2Model OK, repo', ESMFOLD2_HF_REPO)"
 $PY -m pip install --quiet --no-deps "{MARINFOLD_GIT}"
 
 export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false

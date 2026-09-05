@@ -401,6 +401,56 @@ Sizing: 500 backbones × 8 designs = 4,000 refolds ≈ **9.5 GPU-hours**, which
 puts the 95 % CI on the per-sequence rate inside ±1.6 % — far tighter than the
 decision needs.
 
+## Production corpus results
+
+`verify_corpus.py` and `analyze_documents.py` over the finished corpus.
+
+### Completeness — criterion 3 met
+
+| check | result |
+|---|---|
+| shard coverage | **199/199 complete** |
+| documents | **31,702,680** — `delta +0` against 3,962,835 × 8 |
+| tokens | **35,320,841,292** (35.32 B, mean 1,114/doc) — summed exactly, not sampled |
+| size | 64.1 GB ZSTD parquet |
+| designs per backbone | exactly 8 on every deep-checked shard |
+| distinct documents per backbone | 8/8 — the ladder did not collapse |
+
+Stage B: all 56 tasks succeeded. The only casualty in the whole fan-out was one
+task hit by a flaky apt mirror, which recovered on resubmit.
+
+### Contact density — criterion 4 met
+
+640,000 documents over 80,000 backbones, from four shards spanning the full
+length range (indices 20/79/138/197, seq_len 30 → 1998):
+
+| stratum | n | native contacts/res | designed | ratio |
+|---|---|---|---|---|
+| **all** | 80,000 | 0.708 | 0.710 | **1.002** |
+| 0–100 | 20,000 | 0.501 | 0.522 | 1.040 |
+| 100–200 | 20,000 | 0.653 | 0.656 | 1.005 |
+| 200–400 | 20,000 | 0.764 | 0.757 | 0.990 |
+| 800+ | 20,000 | 0.914 | 0.904 | 0.989 |
+
+**Redesigned documents carry the same contact density as native — ratio
+1.002.** The artifact the poly-ALA probe predicted does not occur. Only the
+shortest stratum deviates (1.040), and it is the smallest contributor.
+
+Composition drift at production scale is real but smaller than the 400-protein
+sample suggested: **P +3.60, A +2.72, S −2.47, E +2.19, Q −2.14, L +2.09**
+percentage points (the sample said P +4.33, A +4.16).
+
+| T | identity to native | MPNN score | contacts/res |
+|---|---|---|---|
+| 0.1 | 0.373 | 0.963 | 0.706 |
+| 0.2 | 0.369 | 1.004 | 0.708 |
+| 0.3 | 0.364 | 1.075 | 0.709 |
+| 0.5 | 0.345 | 1.285 | 0.715 |
+
+The ladder remains narrow: 0.1 → 0.5 moves identity only 0.373 → 0.345 and
+density not at all. A training experiment should not expect much from
+subsetting on `mpnn_temperature`.
+
 ## Traps the cluster smoke found
 
 None of these are reachable from a local test — the experiment env resolves
