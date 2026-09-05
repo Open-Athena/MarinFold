@@ -59,27 +59,33 @@ points, and **contacts per residue lands at a ratio of 0.968 and 0.942** (native
 the honest precision of n=48 — real and small, call it 3-6 %, and a number the
 pilot has to settle at scale on AFDB rather than PDB structures.
 
-## The smoke ran, and the risk resolved
+## Built, verified, published
 
-Stage A2 on GCP and Stage B on CoreWeave both succeeded. The check that
-matters: staged rows carry `native_sha1` from the *published* corpus, and
-rebuilding from the staged coordinates reproduced **200 / 200** documents
-byte-for-byte.
+31,702,680 documents / 35.32 B tokens / 64.06 GB, published to the bucket at
+`data/document_structures/contacts_v1_mpnn_redesign/` and verified file-for-file
+against the CoreWeave source.
 
-On 400 length-representative backbones, **contacts per residue came out at
-1.016 of native** — the feared "Ala-rich designs shorten the documents"
-artifact does not happen on AFDB. That overturns the workstation estimates
-(0.968 and 0.942), which were measured on better-packed PDB crystal
-structures; and 1.040, which came from the 200 *shortest* AFDB entries.
-Sampling the right distribution changed the answer.
+Three uncertainties resolved. The contact operator is provably identical to
+contacts-v1 (200/200 sha1 regenerating published documents from staged
+backbones). The feared density artifact does not exist (ratio 1.002 over
+640k documents). And designs are ~79%/91% as self-consistent as native
+sequences refolded onto the same backbones -- a number that only means anything
+because of the control: the design arm alone reads "~20% self-consistent",
+while the native sequence AFDB itself assigns reaches only 25.2%.
 
-Measured throughput on a realistic length band is 5.3 backbones/s per 1xH100
-task, CPU-bound. The full run is **3.7-7.4 h on 28-56 tasks** (to ~22 h with
-slack), on a prepaid fleet that had 224 GPUs idle.
+## What did not work
 
-Six cluster-only failures were found and fixed along the way, none reachable
-from a local test — including a gcsfs 416 that exposes every marin pipeline
-reading parquet from GCS, and a rotamer-library race across the forked
-document pool.
+The temperature ladder was a wasted design choice: identity moves 0.373->0.345
+across it, density not at all, and T=0.5 refolds worse. And the cost model was
+wrong by ~3.5x, because throughput was measured at the corpus mean length while
+the corpus runs to 1998 residues.
 
-Awaiting the go/no-go on the full run.
+A length-sorted-prefix sample misled this experiment four separate times --
+the density ratio, the pyconfind backend check, the throughput projection, and
+the token count (23.7 B against a true 35.32 B). Sampling the first shard of a
+sorted manifest is not sampling.
+
+## Where it stands
+
+The corpus-quality objections are gone. Whether the data helps is the next
+experiment's question, and #120 says synthetic documents start at a deficit.
