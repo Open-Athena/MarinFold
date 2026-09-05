@@ -1,0 +1,48 @@
+metric,value,note
+stage_a_shards_read,12,of 2067 corpus shards
+stage_a_rows,22918,keep-list rows
+stage_a_seconds,9.1,workstation; full corpus projects to ~26 min
+stage_a_mean_seq_len,277.7,drives the staged-size estimate
+iris_job,/bizon/iris-run-cli-20260902-141215,marin cluster us-central1
+iris_records_in,22918,manifest rows scanned
+iris_records_out,200,--num-backbones cap
+iris_state,SUCCEEDED,
+staged_bytes,413843,200 backbones (mean L 47 -- the shortest in the sorted manifest)
+sha1_match_vs_published_corpus,200,out of 200
+sha1_mismatch_vs_published_corpus,0,
+local_stage_rate_structs_per_sec,64.8,workstation, fetch-concurrency 32, 300 structures
+local_stage_ms_per_struct_unthreaded,676,single-threaded, workstation uplink
+cw_smoke_job,/bizon/exp266-smoke4-s0of1,cw-rno2a 1xH100 batch band
+cw_smoke_backbones,200,shortest slice (mean L 47)
+cw_smoke_documents,1600,200 x 8, all distinct
+cw_smoke_seconds,11,17.6 backbones/s
+cw_smoke_gpu_seconds,3,ProteinMPNN
+cw_smoke_cpu_seconds,7,pyconfind over 14 processes
+cw_rotamer_warm_seconds,5.6,parent warm-up before the fork
+staged_kb_per_protein_representative,14.3,mean L 276.1 -- matches the 53 B/residue model
+cw_rep_job,/bizon/exp266-rep-s0of1,400 strided backbones mean L 276.1
+cw_rep_seconds,243,1.6 backbones/s -- GPU-bound (gpu 165s cpu 76s) because ~400 distinct lengths
+cw_band_job,/bizon/exp266-band-s0of1,400 backbones in a 265-290 length band (batch fill 15.4)
+cw_band_seconds,76,5.3 backbones/s -- CPU-bound (gpu 24s cpu 50s); the realistic shard shape
+cw_band_backbones_per_second,5.3,single 1xH100 task with 14 document processes
+stage_a_full_rows,3962835,168 dropped outside [30,2000] residues
+stage_a_full_shards,199,20000 rows each
+stage_a_full_residues,1024776345,mean L 258.6
+stage_a_full_seconds,~250,threaded at 32 workers; sequential was on track for hours
+staged_size_gb_projected,54.3,3962835 x 258.6 residues x 53 bytes
+designs_to_generate,31702680,3962835 x 8
+stage_a2_full_job,/bizon/iris-run-cli-20260904-172119,SUCCEEDED; 199/199 shards
+stage_a2_full_size_gb,46.0,staged backbones on CoreWeave (zstd; raw model said 54.3)
+stage_a2_full_minutes,~30,256 GCP workers writing straight to CoreWeave
+stage_a2_segfault_shards,1,shard 111 exit -11 in gemmi strip_to_backbone; recovered on retry
+pyconfind_backend_sha1_mismatch_pure,5,of 200 on a mid-length shard -- pure-python backend
+pyconfind_backend_sha1_mismatch_fast,0,same rows under pyconfind[fast], the corpus's backend
+prod_sha1_verify_fast_match,200,of 200 sampled from production shard 100 (L 196-198)
+prod_sha1_verify_fast_mismatch,0,
+stage_b_tasks_succeeded,56,of 56; 1 earlier failure (flaky apt) recovered on resubmit
+stage_b_shards,199,199/199 complete coverage
+stage_b_documents,31702680,expected 3962835 x 8; delta +0
+stage_b_size_gb,64.1,zstd parquet on CoreWeave
+stage_b_tokens,35320841292,35.32 B exact; mean 1114/doc
+stage_b_tokens_biased_estimate,23700000000,what a length-sorted-PREFIX sample gave (-33%)
+stage_b_wall_clock_hours,~13,56 tasks; projection from a mean-length band said 3.7

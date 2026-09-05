@@ -1,0 +1,5 @@
+temperature,n,mean_identity_to_native,mean_mpnn_score,contacts_per_residue
+0.1,800,0.3556,0.9897,0.6837
+0.2,800,0.3522,1.0319,0.6842
+0.3,800,0.3448,1.1055,0.6865
+0.5,800,0.3264,1.325,0.6878

@@ -1,0 +1,3 @@
+run,n_monomers,n_residues,n_documents,native_contacts_per_residue,designed_contacts_per_residue,ratio,ms_per_document
+direct,48,12011,384,0.930,0.900,0.968,463
+staged,48,10415,384,0.902,0.850,0.942,378
