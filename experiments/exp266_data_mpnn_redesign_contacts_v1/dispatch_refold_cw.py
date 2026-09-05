@@ -102,9 +102,16 @@ mkdir -p {WORK_DIR}
 $PY -m pip install --quiet torch
 # Biohub's `esm` (NOT the unrelated PyPI `esm`) registers ESMFold2 with
 # transformers; no PyPI release, so install from git. exp78's recipe.
-$PY -m pip install --quiet "esm @ git+https://github.com/Biohub/esm.git@main" \\
-    "transformers>=4.40" accelerate "huggingface_hub[hf_transfer]" \\
+# Install `esm` WITHOUT pinning transformers alongside it: esm registers
+# ESMFold2 into transformers and needs its own compatible version, and pinning
+# ">=4.40" in the same command let pip float transformers to a release without
+# the esmfold2 module at all.
+$PY -m pip install --quiet "esm @ git+https://github.com/Biohub/esm.git@main"
+$PY -m pip install --quiet accelerate "huggingface_hub[hf_transfer]" \\
     gemmi numpy fsspec s3fs boto3 pyarrow
+$PY -c "import esm.models.esmfold2, transformers; \\
+        from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model; \\
+        print('[exp266-refold] transformers', transformers.__version__, 'ESMFold2 OK')"
 $PY -m pip install --quiet --no-deps "{MARINFOLD_GIT}"
 
 export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false

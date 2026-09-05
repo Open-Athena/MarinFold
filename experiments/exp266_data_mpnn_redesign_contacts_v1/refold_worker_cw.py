@@ -55,8 +55,15 @@ def load_model():
     guessed from the docs.
     """
     import torch
+
+    # Import Biohub's `esm` FIRST: it is what registers ESMFold2 with
+    # transformers. Importing the transformers path directly gives
+    # "ModuleNotFoundError: No module named 'transformers.models.esmfold2'".
+    import esm.models.esmfold2  # noqa: F401
+    import transformers
     from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model
 
+    _log(f"transformers {transformers.__version__}, esm registered ESMFold2")
     model = ESMFold2Model.from_pretrained(HF_MODEL_ID)
     return model.cuda().eval() if torch.cuda.is_available() else model.eval()
 
