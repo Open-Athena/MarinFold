@@ -74,10 +74,26 @@ nvidia-smi -L || true
 
 {FSSPEC_VIRTUAL_ADDRESSING_EXPORT}
 
-apt-get update -qq
-apt-get install -y -qq --no-install-recommends git python3.12 python3.12-venv curl
+# Biohub's `esm` needs Python >=3.12,<3.13 and Ubuntu 22.04 has no python3.12
+# package ("E: Unable to locate package python3.12" killed all 4 tasks on the
+# first attempt). Rather than chase a deadsnakes PPA or a base-image bump, let
+# uv fetch a standalone 3.12 — base-image agnostic and one download.
+for attempt in 1 2 3; do
+  apt-get update -qq && apt-get install -y -qq --no-install-recommends git curl ca-certificates && break
+  echo "[exp266-refold] apt attempt $attempt failed; retrying" >&2
+  sleep $((attempt * 10))
+done
+if ! command -v git >/dev/null; then
+  echo "[exp266-refold] FATAL: git missing after 3 apt attempts" >&2
+  exit 4
+fi
+
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv venv --python 3.12 /opt/venv
 PY=/opt/venv/bin/python
-python3.12 -m venv /opt/venv
+$PY -c "import sys; assert sys.version_info[:2] == (3, 12), sys.version; print('[exp266-refold] python', sys.version.split()[0])"
+$PY -m ensurepip --upgrade >/dev/null 2>&1 || true
 $PY -m pip install --quiet --upgrade pip
 
 mkdir -p {WORK_DIR}
