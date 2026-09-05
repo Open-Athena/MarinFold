@@ -45,6 +45,9 @@ def main() -> int:
                     help="Staged backbones, to confirm shard-for-shard coverage.")
     ap.add_argument("--expected-backbones", type=int, default=3_962_835)
     ap.add_argument("--designs", type=int, default=8)
+    ap.add_argument("--exact-tokens", action="store_true",
+                    help="Sum num_tokens over every shard instead of "
+                         "extrapolating from the deep-check sample.")
     ap.add_argument("--deep-shards", type=int, default=4,
                     help="Shards to open fully for the per-backbone checks; the "
                          "rest are counted from parquet metadata only.")
@@ -76,11 +79,14 @@ def main() -> int:
           f"delta {total - expected:+,})")
     print(f"size: {sum(sizes) / 1e9:.1f} GB across {len(files)} shards")
 
-    # Deep checks on a few shards spread across the length range (the corpus is
-    # length-sorted, so the first shard alone is the shortest proteins and tells
-    # you almost nothing -- that sample has misled this experiment twice).
-    step = max(1, len(files) // max(args.deep_shards, 1))
-    picked = files[::step][: args.deep_shards]
+    # Deep checks on shards spread across the length range, INCLUDING THE LAST.
+    # `files[::step][:n]` looks evenly spread and is not: it starts at 0 and
+    # stops early, so on 199 shards it reached index 156 and missed the longest
+    # 20% -- which made the first token estimate 23.7 B against a true 31.2 B.
+    # This experiment has now been bitten by a length-sorted-prefix sample four
+    # times; index explicitly across the whole range instead.
+    n = max(1, min(args.deep_shards, len(files)))
+    picked = [files[round(i * (len(files) - 1) / max(n - 1, 1))] for i in range(n)]
     tokens = 0
     rows_seen = 0
     for path in picked:
@@ -104,7 +110,20 @@ def main() -> int:
               f"backbones_not_{args.designs}={len(short)}, "
               f"backbones_with_duplicate_designs={collapsed}")
 
-    if rows_seen:
+    # Exact token total: `num_tokens` is one small column, so summing it over
+    # every shard costs minutes and beats extrapolating from a sample that the
+    # length sort makes unrepresentative by construction.
+    if args.exact_tokens:
+        exact = 0
+        for i, path in enumerate(files, 1):
+            with fs.open(path, "rb") as h:
+                exact += sum(pq.read_table(h, columns=["num_tokens"])
+                             .column("num_tokens").to_pylist())
+            if i % 50 == 0 or i == len(files):
+                _log(f"token sum {i}/{len(files)} shards")
+        print(f"tokens: {exact:,} ({exact / 1e9:.2f} B), "
+              f"mean {exact / total:.0f}/doc")
+    elif rows_seen:
         est = tokens / rows_seen * total
         print(f"token estimate: {est / 1e9:.1f} B "
               f"(mean {tokens / rows_seen:.0f}/doc over {rows_seen:,} sampled rows)")

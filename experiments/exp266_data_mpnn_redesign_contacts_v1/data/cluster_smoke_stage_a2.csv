@@ -39,3 +39,10 @@ pyconfind_backend_sha1_mismatch_pure,5,of 200 on a mid-length shard -- pure-pyth
 pyconfind_backend_sha1_mismatch_fast,0,same rows under pyconfind[fast], the corpus's backend
 prod_sha1_verify_fast_match,200,of 200 sampled from production shard 100 (L 196-198)
 prod_sha1_verify_fast_mismatch,0,
+stage_b_tasks_succeeded,56,of 56; 1 earlier failure (flaky apt) recovered on resubmit
+stage_b_shards,199,199/199 complete coverage
+stage_b_documents,31702680,expected 3962835 x 8; delta +0
+stage_b_size_gb,64.1,zstd parquet on CoreWeave
+stage_b_tokens,35320841292,35.32 B exact; mean 1114/doc
+stage_b_tokens_biased_estimate,23700000000,what a length-sorted-PREFIX sample gave (-33%)
+stage_b_wall_clock_hours,~13,56 tasks; projection from a mean-length band said 3.7

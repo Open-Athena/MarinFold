@@ -532,7 +532,7 @@ Full pipeline, end to end:
 | A — keep-list | local | **4 min measured** (threaded) |
 | A2 — stage backbones | GCP Iris, 256 workers | ~54 GB out |
 | B — redesign + documents | cw-rno2a, 28–56 × 1 H100 | **3.7–7.4 h** (to 22 h with slack) |
-| output | | **31,704,024 documents, ~40 B tokens** |
+| output | | **31,702,680 documents, 35.32 B tokens, 64.1 GB** |
 
 All-CPU fallback if the GPU fleet is busy: `cli.py generate --device cpu`,
 ~19.5 h on cw-us-east-02a's 735 idle `cpu-genoa` vCPUs.
@@ -607,8 +607,9 @@ issue against the #232 decontaminated recipe. For *this* issue:
 2. **Staging is lossless.** The encode/decode hop reproduces the document,
    `sha1` and `global_plddt` exactly — ✅ on 5 structures, and coordinates are
    asserted exact at 0.001 Å.
-3. **Completeness.** 3,963,003 × 8 = 31,704,024 documents, drops counted and
-   reported by reason, fail-loud per the pipeline skill.
+3. **Completeness.** ✅ **31,702,680 documents, delta +0** against
+   3,962,835 × 8; 199/199 shard coverage; every deep-checked shard has exactly
+   8 designs per backbone and 8 *distinct* documents. `verify_corpus.py`.
 4. **Composition check.** AA frequency and contacts-per-residue vs native, per
    temperature, reported whatever it shows — measured locally at ratio
    0.968 / 0.942 over two 48-protein samples, which is too noisy to settle it;

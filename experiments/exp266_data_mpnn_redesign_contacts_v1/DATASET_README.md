@@ -3,7 +3,9 @@
 **8 ProteinMPNN sequences for every backbone in the decontaminated AFDB
 `contacts_v1` training set, with contacts recomputed for each.**
 
-- Documents: 31,702,680 (3,962,835 backbones × 8 designs)
+- Documents: **31,702,680** (3,962,835 backbones × 8 designs)
+- Tokens: **35,320,841,292** (35.32 B; mean 1,114/doc)
+- Size: 64.1 GB, 199 ZSTD parquet shards
 - Source backbones: [`contacts_v1_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_decontam) train split ([#225](https://github.com/Open-Athena/MarinFold/issues/225))
 - Document format: `contacts-v1`, unchanged — same vocabulary, same 8192-token budget
 - Built by [#266](https://github.com/Open-Athena/MarinFold/issues/266) / [PR #267](https://github.com/Open-Athena/MarinFold/pull/267)
