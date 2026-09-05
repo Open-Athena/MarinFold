@@ -66,7 +66,8 @@ def _encoded_sources() -> str:
 
 
 def build_bootstrap(*, shard_i: int, num_shards: int, backbones: int, seed: int,
-                    files: int) -> str:
+                    files: int, native_control: bool = False) -> str:
+    native_flag = " \\\n    --native-control" if native_control else ""
     return f"""
 set -euo pipefail
 echo "[exp266-refold] host=$(hostname) shard={shard_i}/{num_shards} image={IMAGE}"
@@ -123,19 +124,20 @@ exec $PY {WORK_DIR}/refold_worker_cw.py \\
     --out "{OUT_PREFIX}/refold-{shard_i:03d}-of-{num_shards:03d}.parquet" \\
     --backbones {backbones} \\
     --files {files} \\
-    --seed {seed + shard_i}
+    --seed {seed + shard_i}{native_flag}
 """.strip()
 
 
 def build_request(*, shard_i: int, num_shards: int, backbones: int, seed: int,
-                  files: int, cpu: int, ram: str, disk: str,
-                  priority: int) -> JobRequest:
+                  files: int, cpu: int, ram: str, disk: str, priority: int,
+                  native_control: bool = False) -> JobRequest:
     return JobRequest(
         name=f"{JOB_PREFIX}-s{shard_i}of{num_shards}",
         entrypoint=Entrypoint.from_binary(
             "bash", ["-lc", build_bootstrap(shard_i=shard_i, num_shards=num_shards,
                                             backbones=backbones, seed=seed,
-                                            files=files)]),
+                                            files=files,
+                                            native_control=native_control)]),
         resources=ResourceConfig.with_gpu("H100", count=1, image=IMAGE,
                                           cpu=cpu, ram=ram, disk=disk),
         environment=create_environment(docker_image=IMAGE, env_vars={}, setup_scripts=[]),
@@ -157,6 +159,8 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--files", type=int, default=2,
                     help="Document/backbone shard pairs each task reads.")
+    ap.add_argument("--native-control", action="store_true",
+                    help="Refold native sequences instead of designs.")
     ap.add_argument("--cpu", type=int, default=8)
     ap.add_argument("--ram", default="64g")
     ap.add_argument("--disk", default="128g")
@@ -168,7 +172,8 @@ def main() -> None:
     priority = IRIS_PRIORITY_BAND_BATCH if args.priority == "batch" else 0
     reqs = [build_request(shard_i=i, num_shards=args.shards, backbones=args.backbones,
                           seed=args.seed, files=args.files, cpu=args.cpu,
-                          ram=args.ram, disk=args.disk, priority=priority)
+                          ram=args.ram, disk=args.disk, priority=priority,
+                          native_control=args.native_control)
             for i in range(args.shards)]
 
     if args.dry_run:

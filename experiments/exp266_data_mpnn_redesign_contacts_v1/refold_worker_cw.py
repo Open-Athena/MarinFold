@@ -103,6 +103,12 @@ def main() -> int:
     ap.add_argument("--num-sampling-steps", type=int, default=100)
     ap.add_argument("--num-loops", type=int, default=20)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--native-control", action="store_true",
+                    help="Refold each sampled backbone's NATIVE sequence instead "
+                         "of its designs. The control that makes a design pass "
+                         "rate interpretable: if native sequences on these same "
+                         "AFDB backbones also fail, the number is about ESMFold2 "
+                         "and the metric, not about ProteinMPNN.")
     ap.add_argument("--files", type=int, default=2,
                     help="Document/backbone shard PAIRS this task reads. Reading "
                          "every shard to sample a few hundred backbones would "
@@ -143,6 +149,21 @@ def main() -> int:
                             replace=False).tolist())
     designs = [d for d in designs if d["entry_id"] in chosen]
 
+    if args.native_control:
+        # One row per backbone, carrying the native sequence. Paired on exactly
+        # the backbones the design arm uses, so the two rates are comparable.
+        seen: set[str] = set()
+        control = []
+        for d in designs:
+            if d["entry_id"] in seen:
+                continue
+            seen.add(d["entry_id"])
+            control.append({**d, "design_index": -1, "mpnn_temperature": 0.0,
+                            "mpnn_score": 0.0, "identity_to_native": 1.0,
+                            "document": None})
+        designs = control
+        _log(f"NATIVE CONTROL: {len(designs)} native sequences")
+
     # Only now fetch the backbones we actually need, matching shard stems.
     bb_fs, _ = fsspec.core.url_to_fs(args.backbones_glob)
     bb_files = sorted(bb_fs.glob(args.backbones_glob))
@@ -172,7 +193,9 @@ def main() -> int:
 
     rows, started = [], time.perf_counter()
     for i, d in enumerate(designs, 1):
-        seq = sequence_from_document(d["document"], d["seq_len"], d["n_term_index"])
+        seq = (backbones[d["entry_id"]]["sequence"] if args.native_control
+               else sequence_from_document(d["document"], d["seq_len"],
+                                           d["n_term_index"]))
         t0 = time.perf_counter()
         structure, confidence = _predict(model, seq, args, seed=args.seed)
         elapsed = time.perf_counter() - t0
