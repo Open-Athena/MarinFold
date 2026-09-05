@@ -46,3 +46,11 @@ stage_b_size_gb,64.1,zstd parquet on CoreWeave
 stage_b_tokens,35320841292,35.32 B exact; mean 1114/doc
 stage_b_tokens_biased_estimate,23700000000,what a length-sorted-PREFIX sample gave (-33%)
 stage_b_wall_clock_hours,~13,56 tasks; projection from a mean-length band said 3.7
+esm_smoke_job,/bizon/exp266-esm-smoke-s0of1,one shard of the ESM-Atlas arm
+esm_smoke_kept,19642,of 20000 in source part 0
+esm_smoke_backbones,19603,39 filtered (multi-chain or non-canonical)
+esm_smoke_documents,39206,exactly 2 per backbone
+esm_smoke_seconds,1305,gpu 742 / cpu 432 / hf read 50
+esm_projected_gpu_hours,1224,vs a 2750 estimate scaled from the AFDB arm
+esm_total_documents,130869628,3338 shards x ~39206
+esm_total_tokens_est,139000000000,~139 B
