@@ -131,6 +131,17 @@ def backbone_coords(structure: gemmi.Structure) -> tuple[list[str], list[list[li
                     f"residue {chain.name}/{residue.seqid.num} {residue.name} "
                     f"is missing mainchain atom {exc}"
                 ) from None
+            if any(v != v or v in (float("inf"), float("-inf"))
+                   for xyz in frame for v in xyz):
+                # A non-finite coordinate is exactly as invalid as a missing
+                # atom, and just as silent: ProteinMPNN would design against a
+                # NaN and pyconfind only notices later, inside a worker pool,
+                # as "'x' must be finite". Some ESM-Atlas predictions carry
+                # them. Raise here, where the caller can count it.
+                raise ValueError(
+                    f"residue {chain.name}/{residue.seqid.num} {residue.name} "
+                    f"has a non-finite coordinate"
+                )
             chain_ids.append(chain.name)
             coords.append(frame)
     return chain_ids, coords

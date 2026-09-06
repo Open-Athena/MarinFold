@@ -177,3 +177,20 @@ def test_encode_does_not_need_a_stripped_structure(stem: str) -> None:
         pytest.skip(f"{stem}: {exc}")
     stripped = encode_backbone(strip_to_backbone(st))
     assert direct == stripped
+
+
+def test_backbone_coords_rejects_non_finite() -> None:
+    """A NaN coordinate must raise here, not surface later inside a worker pool.
+
+    Some ESM-Atlas predictions carry non-finite coordinates. Left unchecked,
+    ProteinMPNN designs against the NaN and pyconfind only complains much later
+    with "'x' must be finite", which killed a task mid-fan-out.
+    """
+    import math
+
+    from backbone import backbone_coords
+
+    st = strip_to_backbone(_load("1crn"))
+    st[0][0][0][0].pos = gemmi.Position(math.nan, 0.0, 0.0)
+    with pytest.raises(ValueError, match="non-finite coordinate"):
+        backbone_coords(st)

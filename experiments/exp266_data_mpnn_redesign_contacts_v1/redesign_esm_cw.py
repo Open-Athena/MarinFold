@@ -127,7 +127,14 @@ def process_shard(index: int, args, pool) -> int:
                 filtered += 1
                 continue                    # ProteinMPNN has no token for these
             _chains, coords = backbone_coords(structure)
-        except ValueError:
+        except ValueError as exc:
+            # Designed-in filters only; anything else is a real surprise about
+            # the input and must surface rather than being counted away.
+            msg = str(exc)
+            if not any(k in msg for k in
+                       ("non-finite coordinate", "missing mainchain atom",
+                        "non-canonical residues", "expected 1 chain")):
+                raise
             filtered += 1
             continue
         entries.append(BackboneEntry(s["entry_id"], seq, coords))
