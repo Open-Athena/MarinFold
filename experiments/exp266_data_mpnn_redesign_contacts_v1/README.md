@@ -590,37 +590,51 @@ over the same 65 M entry ids, and `shard-00000` and `shard-01500` matched
 `part_00000` and `part_01500` on their exact id ranges — so the worker paired
 shard *i* with part *i* and the docstring recorded it as "verified".
 
-It is true for most files and false near the end, because #225 rewrote the
-corpus after filtering and the rewrite did not preserve index order:
+It holds for source parts 0–2983 and then stops. #225 rewrote the corpus after
+filtering, and the rewrite relocated 15 shards and shifted everything after
+them:
 
-| index | corpus range | source range | overlap |
-|---|---|---|---|
-| 0 | `0000004f…`–`0013b51f…` | identical | full |
-| 1500 | `730f9910…`–`7323e8fc…` | identical | full |
-| 3200 | `f68de349…`–`f6a236fc…` | `f56650fd…`–`f57a9ae4…` | **0** |
-| 3337 | `e5370ea2…`–`e54b6113…` | `ffec4325…`–`ffffffca…` | **0** |
+| source part | corpus shard holding its rows | |
+|---|---|---|
+| 0 – 2983 | *j* | aligned |
+| 2984 – 3337 | *j* − 15 | **354 parts** |
+| (15 shards, indices 3323–3337) | relocated into the 2975–2990 region | |
 
 Two spot checks, both drawn from the region where the assumption holds, and
 generalised from there. The right check was not "does it match here" but "does
-it match *everywhere*", which is a different and much cheaper question than it
-looks: parquet row-group statistics carry each column's min and max, so every
-file's id range comes out of its **footer**. Indexing all 6,676 files took
-6,676 range requests and **366 s**, and downloaded no column data at all —
-`build_shard_map.py`. That is affordable enough that there was never a reason
-to guess.
+it match *everywhere*" — a much cheaper question than it looks, because
+parquet row-group statistics carry each column's min and max, so every file's
+id range comes out of its **footer**. Indexing all 6,676 files took 6,676
+range requests and **280 s**, and downloaded no column data at all
+(`build_shard_map.py`). There was never a reason to guess.
 
-The blast radius was limited by luck rather than by design. Because the
-mis-paired ranges were *disjoint* rather than partially overlapping, the join
-matched nothing and the worker's `no documents from 0 backbones` guard stopped
-the task — so the corpus lost shards instead of silently under-filling them.
-Had the two shardings been offset by a few thousand keys instead of permuted,
-every affected file would have been written short and `verify_corpus.py`'s
+**The replacement assumption was also wrong.** The first version of the map
+builder asserted that both sides were sorted, non-overlapping partitions —
+true of the *index* order for the source, false for the ranges: **3,332 of
+3,337 adjacent file pairs overlap** on both sides, because each file is a
+row-count cut through a stream that is only nearly sorted. Adjacent files
+share a window of a few hundred ids. So `build_map` is now a plain
+3,338 × 3,338 interval intersection with no ordering assumption at all, which
+is provably complete (a kept row of part *j* has an id inside part *j*'s
+range, so it lives in a shard whose range meets that range) and costs seconds.
+The mean is 3.00 corpus shards per source part, all of them small
+metadata-only files.
+
+The blast radius was limited by luck rather than by design. The mis-paired
+ranges were *disjoint* rather than partially overlapping, so the join matched
+nothing and the worker's `no documents from 0 backbones` guard stopped the
+task — the corpus lost shards instead of silently under-filling them. Had the
+two shardings been offset by a few thousand keys instead of permuted, every
+affected file would have been written short and `verify_corpus.py`'s
 shard-coverage check would have passed.
 
 **The lesson is about the shape of the claim, not the join.** "Verified" on a
 sample generalises only if the sample was chosen to be adversarial; two
 convenient indices are not. Where the exhaustive check is cheap — and a footer
-scan of 6,676 files is cheap — take it.
+scan of 6,676 files is cheap — take it. That applies to the fix as much as to
+the bug: whether the 2,984 aligned parts' already-written outputs were
+complete was settled by checking all 3,338, not by the plausible story that
+corpus shard *j* is exactly the filtered source part *j*.
 
 **Any marin data pipeline reading parquet from GCS is exposed to #2.**
 
