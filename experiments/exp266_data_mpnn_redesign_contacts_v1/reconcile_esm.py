@@ -87,6 +87,29 @@ def _gather(paths: list[str], label: str, workers: int) -> list[np.ndarray]:
         return list(pool.map(one, paths))
 
 
+def parts_to_rerun(by_shard: dict[int, int], mapping: dict[int, list[int]],
+                   missing_shards: list[int], *, rate: float,
+                   floor: int = 20, factor: float = 5.0,
+                   shard_rows: int = 20_000) -> list[int]:
+    """Which source parts need re-running, from the per-shard miss counts.
+
+    Every corpus shard loses a few backbones legitimately -- contacts-v1
+    declines multimers, non-canonical residues and degenerate geometry, and
+    those losses are spread thinly across all 3,338 shards. A *hole* is
+    different in kind: it is one shard losing far more than that rate, which
+    is what a bad join looks like.
+
+    So the threshold is relative to the measured corpus-wide loss rate rather
+    than absolute, with a floor so that a corpus with no holes at all does not
+    flag every shard on statistical noise. A part is re-run if any corpus
+    shard it reads is holed, plus any part whose output is missing outright.
+    """
+    threshold = max(floor, factor * rate * shard_rows)
+    holed = {i for i, n in by_shard.items() if n > threshold}
+    return sorted({j for j, shards in mapping.items() if holed & set(shards)}
+                  | set(missing_shards))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--documents-glob", required=True)
@@ -139,12 +162,8 @@ def main() -> int:
 
     mapping = {int(k): v for k, v in json.load(gzip.open(
         pathlib.Path(__file__).with_name(args.shard_map), "rt")).items()}
-    # A shard is "holed" rather than merely lossy if it lost far more than the
-    # corpus-wide rate; those are the ones worth re-running.
-    rate = n_missing / corpus.size if corpus.size else 0
-    holed = {i for i, n in by_shard.items() if n > max(20, 5 * rate * 20_000)}
-    force = sorted({j for j, shards in mapping.items()
-                    if holed & set(shards)} | set(missing_shards))
+    force = parts_to_rerun(by_shard, mapping, missing_shards,
+                           rate=n_missing / corpus.size if corpus.size else 0.0)
     print(f"\nsource parts to re-run (--force-parts): {len(force)}")
     if args.force_out:
         pathlib.Path(args.force_out).write_text(",".join(str(x) for x in force))
