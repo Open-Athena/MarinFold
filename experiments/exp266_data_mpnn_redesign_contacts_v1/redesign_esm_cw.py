@@ -93,7 +93,8 @@ def _documents_for_one(payload):
 
 
 def process_shard(index: int, args, pool) -> int:
-    from backbone import backbone_coords, prepare_structure, residue_sequence
+    from backbone import (all_coords_finite, backbone_coords, prepare_structure,
+                          residue_sequence)
     from redesign import BackboneEntry, batch_by_exact_length, design_batch
     from stage_rows import _structure_from_cif
 
@@ -122,6 +123,12 @@ def process_shard(index: int, args, pool) -> int:
             if len(structure) == 0 or sum(1 for _ in structure[0]) != 1:
                 filtered += 1
                 continue                    # monomers only, as contacts-v1 requires
+            if not all_coords_finite(structure):
+                # Checked over ALL atoms, not just the backbone: pyconfind gets
+                # the whole structure, so a side-chain NaN would pass
+                # backbone_coords and then kill the document pool.
+                filtered += 1
+                continue
             seq = residue_sequence(structure)
             if "X" in seq:
                 filtered += 1

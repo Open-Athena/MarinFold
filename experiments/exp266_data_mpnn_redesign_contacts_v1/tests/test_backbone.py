@@ -194,3 +194,23 @@ def test_backbone_coords_rejects_non_finite() -> None:
     st[0][0][0][0].pos = gemmi.Position(math.nan, 0.0, 0.0)
     with pytest.raises(ValueError, match="non-finite coordinate"):
         backbone_coords(st)
+
+
+def test_all_coords_finite_sees_side_chains() -> None:
+    """The whole-structure check must catch what backbone_coords cannot.
+
+    backbone_coords only inspects N/CA/C/O. pyconfind is handed the whole
+    structure, so a NaN in a side chain passes that check and then kills the
+    document pool -- which is exactly how this failed mid-fan-out.
+    """
+    import math
+
+    from backbone import all_coords_finite, backbone_coords
+
+    st = _load("101m")
+    assert all_coords_finite(st)
+
+    side = next(a for r in st[0][0] for a in r if a.name not in ("N", "CA", "C", "O"))
+    side.pos = gemmi.Position(math.nan, 0.0, 0.0)
+    assert not all_coords_finite(st)
+    backbone_coords(st)          # backbone is still clean, so this must not raise

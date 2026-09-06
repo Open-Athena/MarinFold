@@ -287,3 +287,25 @@ def backbone_coords_from_row(row: dict):
     if coords.size != expected:
         raise ValueError(f"coords length {coords.size} != {expected}")
     return (coords.reshape(-1, 4, 3) / COORD_SCALE).astype(np.float32)
+
+
+def all_coords_finite(structure: gemmi.Structure) -> bool:
+    """Is every atom's position finite — side chains included?
+
+    `backbone_coords` only inspects N/CA/C/O, because that is all ProteinMPNN
+    consumes. pyconfind is handed the *whole* structure, so a NaN in a side
+    chain sails past that check and surfaces much later, inside the document
+    pool, as "'x' must be finite". Some ESM-Atlas predictions have exactly
+    that shape. Checking every atom is cheap next to designing the protein.
+    """
+    for model in structure:
+        for chain in model:
+            for residue in chain:
+                for atom in residue:
+                    p = atom.pos
+                    if not (p.x == p.x and p.y == p.y and p.z == p.z):
+                        return False
+                    if abs(p.x) == float("inf") or abs(p.y) == float("inf") \
+                            or abs(p.z) == float("inf"):
+                        return False
+    return True
