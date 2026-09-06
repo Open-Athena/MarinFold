@@ -29,14 +29,37 @@ the new names — and that does not matter, because confind ignores input side
 chains and rebuilds rotamers from the residue names (the very first thing this
 experiment verified). No stripping needed.
 
-The corpus and source are both 3,338 files and index-aligned (corpus shard *i*
-is a subset of source part *i*, verified), so each task joins shard-by-shard
-with a ~20 k-key set rather than a 65 M-key one.
+**The join is driven by the source part, and the mapping is measured, not
+assumed.** Both sides are 3,338 parquet files over the same 65 M entry ids,
+and it is tempting to read that as file *i* meeting file *i*. It nearly is:
+alignment holds for most indices and fails outright near the end, because
+#225 rewrote the corpus after filtering and the rewrite did not preserve
+index order. An earlier version of this worker paired shard *i* with part
+*i* on the strength of two spot checks, both taken from the region where that
+happens to be true.
+
+The mapping now comes from `esm_shard_map.json.gz`, built once from the
+parquet *footers* of all 6,676 files (`build_shard_map.py`): each file's
+min/max `entry_id` comes free out of the row-group statistics, so the whole
+index costs footer reads and no column data at all. It assumes nothing about
+either layout -- a plain interval intersection -- which matters, because the
+corpus shards turned out not to be the clean partition they look like either.
+
+Iterating source parts rather than corpus shards is what makes this cheap. The
+source is 2.08 TB of inline cif and the corpus is metadata-only, so the loop
+reads each source part exactly once and re-reads the odd small corpus shard.
+Keying the output by source part also leaves the files already written under
+the old assumption valid wherever that assumption happened to hold -- which
+`--force-parts` exists to override where it did not.
 """
 
 from __future__ import annotations
 
 import argparse
+import functools
+import gzip
+import json
+import pathlib
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -57,8 +80,30 @@ CARRY = {"seq_len": "parent_seq_len", "global_plddt": "global_plddt",
          "cluster_size": "cluster_size", "ptm": "ptm"}
 
 
+SHARD_MAP_FILE = "esm_shard_map.json.gz"
+
+
 def _log(msg: str) -> None:
     print(f"[exp266-esm] {msg}", file=sys.stderr, flush=True)
+
+
+@functools.cache
+def shard_map() -> dict[int, list[int]]:
+    """Source part index -> the corpus shards holding its kept rows.
+
+    Ships next to this file (the dispatcher base64s both), so a task needs no
+    extra object-store round trip and cannot race a half-written copy.
+    """
+    path = pathlib.Path(__file__).with_name(SHARD_MAP_FILE)
+    with gzip.open(path, "rt") as handle:
+        raw = json.load(handle)
+    mapping = {int(k): v for k, v in raw.items()}
+    if len(mapping) != NUM_SHARDS:
+        raise ValueError(
+            f"{SHARD_MAP_FILE} covers {len(mapping)} source parts, expected "
+            f"{NUM_SHARDS}; rebuild it with build_shard_map.py"
+        )
+    return mapping
 
 
 def _read_parquet(uri: str, columns: list[str], attempts: int = 6):
@@ -136,7 +181,41 @@ def _documents_for_one(payload):
     return out
 
 
-def process_shard(index: int, args, pool) -> int:
+@functools.lru_cache(maxsize=16)
+def _corpus_shard(shard: int) -> dict[str, dict]:
+    """One corpus shard's kept-row metadata, keyed by entry id.
+
+    Cached because a corpus shard's id range can span more than one source
+    part, so consecutive parts often want the same shard. These are the
+    metadata columns only -- no `cif_content` -- so a shard is a couple of MB
+    and sixteen of them cost far less than re-reading one.
+    """
+    return {row["entry_id"]: row for row in _read_parquet(
+        f"{CORPUS}/shard-{shard:05d}-of-{NUM_SHARDS:05d}.parquet",
+        ["entry_id", *CARRY],
+    ).to_pylist()}
+
+
+def _kept_for_part(part: int) -> dict[str, dict]:
+    """Kept-row metadata covering every entry in source part *part*.
+
+    The rows are a superset of this part's entries -- a corpus shard's range
+    can reach past the part on either side -- and the `kept.get(entry_id)`
+    lookup in `process_part` narrows them, so no key filtering is needed here.
+    """
+    shards = shard_map()[part]
+    if not shards:
+        raise ValueError(
+            f"part {part}: the shard map names no corpus shard. Every source "
+            f"part holds kept rows, so this means a stale map."
+        )
+    kept: dict[str, dict] = {}
+    for shard in shards:
+        kept.update(_corpus_shard(shard))
+    return kept
+
+
+def process_part(index: int, args, pool) -> int:
     from backbone import (all_coords_finite, backbone_coords, prepare_structure,
                           residue_sequence)
     from redesign import BackboneEntry, batch_by_exact_length, design_batch
@@ -144,17 +223,17 @@ def process_shard(index: int, args, pool) -> int:
 
     out_uri = f"{args.out_prefix.rstrip('/')}/documents-{index:05d}-of-{NUM_SHARDS:05d}.parquet"
     out_fs, out_path = fsspec.core.url_to_fs(out_uri)
-    if out_fs.exists(out_path):
+    if out_fs.exists(out_path) and index not in args.force_parts:
         _log(f"skip {index} (output exists)")
         return 0
 
     t0 = time.perf_counter()
-    kept = {r["entry_id"]: r for r in _read_parquet(
-        f"{CORPUS}/shard-{index:05d}-of-{NUM_SHARDS:05d}.parquet",
-        ["entry_id", *CARRY]).to_pylist()}
+    kept = _kept_for_part(index)
     src = _read_parquet(f"{SOURCE}/part_{index:05d}.parquet",
                         ["entry_id", "cif_content"]).to_pylist()
-    _log(f"{index}: {len(kept):,} kept of {len(src):,} ({time.perf_counter()-t0:.0f}s read)")
+    hits = sum(1 for r in src if r["entry_id"] in kept)
+    _log(f"{index}: corpus shards {shard_map()[index]} -> {hits:,} kept of "
+         f"{len(src):,} ({time.perf_counter()-t0:.0f}s read)")
 
     entries, payload_meta, filtered = [], {}, 0
     for s in src:
@@ -215,7 +294,14 @@ def process_shard(index: int, args, pool) -> int:
     cpu_s = time.perf_counter() - t_cpu
 
     if not rows:
-        raise ValueError(f"shard {index}: no documents from {len(entries)} backbones")
+        # Both arms are real bugs, and they are different bugs: an empty
+        # `entries` means the join found nothing (a stale shard map), while a
+        # non-empty one means every backbone failed downstream. Neither is a
+        # state this corpus can legitimately reach, so both stop the task.
+        raise ValueError(
+            f"part {index}: no documents from {len(entries)} usable backbones "
+            f"({hits} kept, {filtered} filtered, {degenerate} degenerate)"
+        )
     with fsspec.open(out_uri, "wb") as h:
         pq.write_table(pa.Table.from_pylist(rows), h, compression="zstd")
     _log(f"{index}: {len(rows):,} docs from {len(entries):,} backbones "
@@ -239,7 +325,12 @@ def main() -> int:
     ap.add_argument("--max-batch-residues", type=int, default=100_000)
     ap.add_argument("--max-shards", type=int, default=None, help="Smoke cap.")
     ap.add_argument("--cpu-workers", type=int, default=14)
+    ap.add_argument("--force-parts", default="",
+                    help="Comma-separated source parts to rewrite even though "
+                         "their output exists. Used to replace files the old "
+                         "index-aligned worker wrote from a partial join.")
     args = ap.parse_args()
+    args.force_parts = {int(x) for x in args.force_parts.split(",") if x.strip()}
 
     from redesign import load_model
     import generate_rows
@@ -248,8 +339,11 @@ def main() -> int:
     mine = list(range(i, NUM_SHARDS, n))
     if args.max_shards is not None:
         mine = mine[: args.max_shards]
-    _log(f"shard {i}/{n}: {len(mine)} of {NUM_SHARDS} corpus shards, "
-         f"{len(args.temperatures)} designs each")
+    widths = [len(shard_map()[j]) for j in mine]   # also validates the map early
+    _log(f"shard {i}/{n}: {len(mine)} of {NUM_SHARDS} source parts, "
+         f"{len(args.temperatures)} designs each, "
+         f"{sum(widths)/len(widths):.2f} corpus shards per part"
+         + (f", forcing {len(args.force_parts & set(mine))}" if args.force_parts else ""))
 
     load_model(args.device)
     # Warm the rotamer library before forking, or the pool children race on the
@@ -261,8 +355,8 @@ def main() -> int:
     total, started = 0, time.perf_counter()
     with ProcessPoolExecutor(max_workers=args.cpu_workers) as pool:
         for k, idx in enumerate(mine, 1):
-            total += process_shard(idx, args, pool)
-            _log(f"progress {k}/{len(mine)} shards, {total:,} documents")
+            total += process_part(idx, args, pool)
+            _log(f"progress {k}/{len(mine)} parts, {total:,} documents")
     _log(f"done: {total:,} documents in {(time.perf_counter()-started)/60:.0f} min")
     return 0
 

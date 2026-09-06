@@ -582,6 +582,46 @@ disagreement needs mid-length proteins to show up.
 `[fast]`, the production staged data verifies clean: **200 / 200 sha1 match, 0
 mismatch** on a mid-length production shard (L 196–198).
 
+**6. Two sharded datasets over the same keys were *nearly* index-aligned.**
+The ESM-Atlas arm joins the 3,338-part source against the 3,338-shard
+decontaminated corpus that says which entries survived
+[#225](https://github.com/Open-Athena/MarinFold/issues/225). Both are sharded
+over the same 65 M entry ids, and `shard-00000` and `shard-01500` matched
+`part_00000` and `part_01500` on their exact id ranges — so the worker paired
+shard *i* with part *i* and the docstring recorded it as "verified".
+
+It is true for most files and false near the end, because #225 rewrote the
+corpus after filtering and the rewrite did not preserve index order:
+
+| index | corpus range | source range | overlap |
+|---|---|---|---|
+| 0 | `0000004f…`–`0013b51f…` | identical | full |
+| 1500 | `730f9910…`–`7323e8fc…` | identical | full |
+| 3200 | `f68de349…`–`f6a236fc…` | `f56650fd…`–`f57a9ae4…` | **0** |
+| 3337 | `e5370ea2…`–`e54b6113…` | `ffec4325…`–`ffffffca…` | **0** |
+
+Two spot checks, both drawn from the region where the assumption holds, and
+generalised from there. The right check was not "does it match here" but "does
+it match *everywhere*", which is a different and much cheaper question than it
+looks: parquet row-group statistics carry each column's min and max, so every
+file's id range comes out of its **footer**. Indexing all 6,676 files took
+6,676 range requests and **366 s**, and downloaded no column data at all —
+`build_shard_map.py`. That is affordable enough that there was never a reason
+to guess.
+
+The blast radius was limited by luck rather than by design. Because the
+mis-paired ranges were *disjoint* rather than partially overlapping, the join
+matched nothing and the worker's `no documents from 0 backbones` guard stopped
+the task — so the corpus lost shards instead of silently under-filling them.
+Had the two shardings been offset by a few thousand keys instead of permuted,
+every affected file would have been written short and `verify_corpus.py`'s
+shard-coverage check would have passed.
+
+**The lesson is about the shape of the claim, not the join.** "Verified" on a
+sample generalises only if the sample was chosen to be adversarial; two
+convenient indices are not. Where the exhaustive check is cheap — and a footer
+scan of 6,676 files is cheap — take it.
+
 **Any marin data pipeline reading parquet from GCS is exposed to #2.**
 
 ## Projected full-run cost — **measured**
@@ -749,7 +789,10 @@ issue against the #232 decontaminated recipe. For *this* issue:
 | `smoke_local.py` | local end-to-end over the real staged path |
 | `probe_pyconfind.py` | does confind need side chains? (no) |
 | `probe_seq_sensitivity.py` | how much does the label move with sequence? (a lot) |
-| `tests/` | fidelity + round-trip + Stage-B + pipeline tests (32 passing) |
+| `redesign_esm_cw.py` | ESM-Atlas arm — source cif to documents in one pass |
+| `dispatch_redesign_esm_cw.py` | ESM-Atlas fan-out (2 designs per backbone) |
+| `build_shard_map.py` | measured source-part → corpus-shard join, from parquet footers |
+| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map tests (51 passing) |
 
 ## Results
 

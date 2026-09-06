@@ -42,8 +42,11 @@ OUT_PREFIX = os.environ.get("EXP266_ESM_OUT", f"{S3_PREFIX}/esm_documents")
 JOB_PREFIX = os.environ.get("EXP266_ESM_JOB_PREFIX", "exp266-esm")
 
 WORK_DIR = "/tmp/exp266"
+# `esm_shard_map.json.gz` rides along with the sources rather than being staged
+# in object storage: it is a few tens of KB, and shipping it inline means a task
+# cannot start against a stale or half-written copy of the join it depends on.
 WORKER_FILES = ("backbone.py", "redesign.py", "generate_rows.py", "stage_rows.py",
-                "redesign_esm_cw.py")
+                "esm_shard_map.json.gz", "redesign_esm_cw.py")
 
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
     """export FSSPEC_S3_CONFIG_KWARGS='{"s3": {"addressing_style": "virtual"}}'"""
@@ -60,8 +63,9 @@ def _encoded_sources() -> str:
 
 def build_bootstrap(*, shard_i: int, num_shards: int, cpu_workers: int,
                     temperatures: list[float], max_batch_residues: int,
-                    limit: str) -> str:
+                    limit: str, force_parts: str) -> str:
     temps = " ".join(str(t) for t in temperatures)
+    force = f" \\\n    --force-parts {force_parts}" if force_parts else ""
     return f"""
 set -euo pipefail
 echo "[exp266-esm] host=$(hostname) shard={shard_i}/{num_shards} image={IMAGE}"
@@ -100,7 +104,7 @@ exec $PY {WORK_DIR}/redesign_esm_cw.py \\
     --temperatures {temps} \\
     --device cuda \\
     --cpu-workers {cpu_workers} \\
-    --max-batch-residues {max_batch_residues}{limit}
+    --max-batch-residues {max_batch_residues}{limit}{force}
 """.strip()
 
 
@@ -115,6 +119,10 @@ def main() -> None:
     ap.add_argument("--max-batch-residues", type=int, default=100_000)
     ap.add_argument("--max-shards", type=int, default=None, help="Smoke cap per task.")
     ap.add_argument("--only", default=None)
+    ap.add_argument("--force-parts", default="",
+                    help="Comma-separated source parts to rewrite even though "
+                         "output exists — the files the old index-aligned "
+                         "worker wrote from a partial join.")
     ap.add_argument("--priority", choices=["batch", "interactive"], default="batch")
     ap.add_argument("--cluster", default="cw-rno2a")
     ap.add_argument("--dry-run", action="store_true")
@@ -132,7 +140,8 @@ def main() -> None:
                 "bash", ["-lc", build_bootstrap(
                     shard_i=i, num_shards=args.shards, cpu_workers=args.cpu_workers,
                     temperatures=args.temperatures,
-                    max_batch_residues=args.max_batch_residues, limit=limit)]),
+                    max_batch_residues=args.max_batch_residues, limit=limit,
+                    force_parts=args.force_parts)]),
             resources=ResourceConfig.with_gpu("H100", count=1, image=IMAGE,
                                               cpu=args.cpu, ram=args.ram,
                                               disk=args.disk),
