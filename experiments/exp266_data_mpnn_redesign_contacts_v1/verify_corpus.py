@@ -44,6 +44,11 @@ def main() -> int:
     ap.add_argument("--backbones-glob", default=None,
                     help="Staged backbones, to confirm shard-for-shard coverage.")
     ap.add_argument("--expected-backbones", type=int, default=3_962_835)
+    ap.add_argument("--expected-shards", type=int, default=None,
+                    help="Check that document shard indices 0..N-1 are all "
+                         "present, parsed from the `documents-I-of-N` name. "
+                         "Use this where there is no staged input to glob "
+                         "against; a missing shard is otherwise invisible.")
     ap.add_argument("--designs", type=int, default=8)
     ap.add_argument("--exact-tokens", action="store_true",
                     help="Sum num_tokens over every shard instead of "
@@ -56,6 +61,24 @@ def main() -> int:
     fs, _ = fsspec.core.url_to_fs(args.documents_glob)
     files = sorted(fs.glob(args.documents_glob))
     _log(f"{len(files)} document shards")
+
+    if args.expected_shards:
+        # Index coverage, for arms whose inputs are not staged files to glob
+        # against (the ESM-Atlas arm reads its source straight from HF). This
+        # is the check that catches the failure the shard-map bug produced --
+        # a task dying on a bad join leaves a hole, and every other number
+        # here stays plausible while it does.
+        import re
+
+        seen = set()
+        for path in files:
+            m = re.search(r"documents-(\d+)-of-(\d+)\.parquet$", path)
+            if m:
+                seen.add(int(m.group(1)))
+        missing = sorted(set(range(args.expected_shards)) - seen)
+        print(f"shard index coverage: {len(seen)}/{args.expected_shards}"
+              + (f"  MISSING {len(missing)}: {missing[:10]}"
+                 f"{' ...' if len(missing) > 10 else ''}" if missing else "  complete"))
 
     if args.backbones_glob:
         bfs, _ = fsspec.core.url_to_fs(args.backbones_glob)
