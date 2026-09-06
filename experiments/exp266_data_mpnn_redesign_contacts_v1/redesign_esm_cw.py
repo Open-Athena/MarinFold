@@ -74,11 +74,24 @@ def _documents_for_one(payload):
 
     out = []
     for d in designs:
-        result = generate_document(
-            relabel_sequence(structure, d.sequence),
-            entry_id=f"{entry_id}#{d.design_index}",
-            rotamer_library=rotamers,
-        )
+        try:
+            result = generate_document(
+                relabel_sequence(structure, d.sequence),
+                entry_id=f"{entry_id}#{d.design_index}",
+                rotamer_library=rotamers,
+            )
+        except ValueError as exc:
+            # pyconfind can produce NaN *rotamer* coordinates on degenerate
+            # backbone geometry, which surfaces from scipy's cKDTree as
+            #   ValueError: 'x' must be finite, check for nan or inf values
+            #   ... pyconfind/build.py, in _process_position
+            # The input coordinates are finite -- all_coords_finite passes --
+            # so no input check catches this; it is only knowable by trying.
+            # Geometry is shared across a backbone's designs, so abandon the
+            # whole structure and let the caller count it.
+            if "must be finite" not in str(exc):
+                raise
+            return []
         if result is None:
             continue
         row = result.metadata_row()
@@ -162,8 +175,11 @@ def process_shard(index: int, args, pool) -> int:
     t_cpu = time.perf_counter()
     payloads = [(payload_meta[e][0], e, payload_meta[e][1], ds)
                 for e, ds in designs_by.items()]
-    rows = []
+    rows, degenerate = [], 0
     for recs in pool.map(_documents_for_one, payloads, chunksize=4):
+        if not recs:
+            degenerate += 1
+            continue
         rows.extend(recs)
     cpu_s = time.perf_counter() - t_cpu
 
@@ -172,8 +188,8 @@ def process_shard(index: int, args, pool) -> int:
     with fsspec.open(out_uri, "wb") as h:
         pq.write_table(pa.Table.from_pylist(rows), h, compression="zstd")
     _log(f"{index}: {len(rows):,} docs from {len(entries):,} backbones "
-         f"({filtered} filtered) in {time.perf_counter()-t0:.0f}s "
-         f"(gpu {gpu_s:.0f}s cpu {cpu_s:.0f}s)")
+         f"({filtered} filtered, {degenerate} degenerate) in "
+         f"{time.perf_counter()-t0:.0f}s (gpu {gpu_s:.0f}s cpu {cpu_s:.0f}s)")
     return len(rows)
 
 
