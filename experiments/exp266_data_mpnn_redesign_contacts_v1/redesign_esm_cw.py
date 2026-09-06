@@ -61,6 +61,37 @@ def _log(msg: str) -> None:
     print(f"[exp266-esm] {msg}", file=sys.stderr, flush=True)
 
 
+def _read_parquet(uri: str, columns: list[str], attempts: int = 6):
+    """Read one parquet from HF, retrying transient CDN failures.
+
+    80 concurrent readers over 2.08 TB draw occasional 503s from HF's xet CDN,
+    and iris only allows a task 3 attempts overall -- so one blip on shard
+    1,200 of 3,338 throws away hours of completed work. Retrying here costs
+    seconds. Only transient statuses are retried; a 404 or an auth failure
+    still fails fast, because those will not fix themselves.
+    """
+    import random
+
+    last = None
+    for attempt in range(attempts):
+        try:
+            with fsspec.open(uri, "rb") as h:
+                return pq.read_table(h, columns=columns)
+        except Exception as exc:  # noqa: BLE001 - re-raised below if not transient
+            msg = str(exc)
+            transient = any(code in msg for code in
+                            ("503", "504", "502", "429", "Connection", "Timeout",
+                             "timed out", "Service Unavailable"))
+            if not transient:
+                raise
+            last = exc
+            delay = min(60, 2 ** attempt) * (1 + random.random())
+            _log(f"transient read failure ({msg[:80]}...); "
+                 f"retry {attempt + 1}/{attempts} in {delay:.0f}s")
+            time.sleep(delay)
+    raise RuntimeError(f"{uri}: {attempts} transient read failures") from last
+
+
 def _documents_for_one(payload):
     """Process-pool entry point: (cif text, entry_id, meta, designs) -> rows."""
     import generate_rows
@@ -118,11 +149,11 @@ def process_shard(index: int, args, pool) -> int:
         return 0
 
     t0 = time.perf_counter()
-    with fsspec.open(f"{CORPUS}/shard-{index:05d}-of-{NUM_SHARDS:05d}.parquet", "rb") as h:
-        kept = {r["entry_id"]: r for r in
-                pq.read_table(h, columns=["entry_id", *CARRY]).to_pylist()}
-    with fsspec.open(f"{SOURCE}/part_{index:05d}.parquet", "rb") as h:
-        src = pq.read_table(h, columns=["entry_id", "cif_content"]).to_pylist()
+    kept = {r["entry_id"]: r for r in _read_parquet(
+        f"{CORPUS}/shard-{index:05d}-of-{NUM_SHARDS:05d}.parquet",
+        ["entry_id", *CARRY]).to_pylist()}
+    src = _read_parquet(f"{SOURCE}/part_{index:05d}.parquet",
+                        ["entry_id", "cif_content"]).to_pylist()
     _log(f"{index}: {len(kept):,} kept of {len(src):,} ({time.perf_counter()-t0:.0f}s read)")
 
     entries, payload_meta, filtered = [], {}, 0
