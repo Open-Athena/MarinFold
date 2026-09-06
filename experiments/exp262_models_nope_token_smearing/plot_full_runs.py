@@ -136,9 +136,14 @@ def main() -> None:
     if len(matched):
         direct.plot(matched, deltas.values, "o-", color="#c53030", markersize=10,
                     linewidth=2.0, zorder=3, label="eval (the comparison of record)")
-        for step, value in zip(matched, deltas.values):
+        # Label sparsely: with a full run's worth of evals every point labelled
+        # is an unreadable pile.
+        marks = list(zip(matched, deltas.values))
+        for index, (step, value) in enumerate(marks):
+            if index % 4 and index != len(marks) - 1:
+                continue
             direct.annotate(f"{value:+.4f}", (step, value), textcoords="offset points",
-                            xytext=(0, 13 if value < 0 else -18), ha="center", fontsize=8)
+                            xytext=(0, 14 if value < 0 else -20), ha="center", fontsize=8.5)
         mean = float(deltas.mean())
         direct.axhline(mean, color="#c53030", linestyle="--", linewidth=1.2,
                        label=f"mean of {len(deltas)} matched evals = {mean:+.4f}")
