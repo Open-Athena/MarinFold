@@ -809,7 +809,7 @@ issue against the #232 decontaminated recipe. For *this* issue:
 | `reconcile_esm.py` | id-set completeness check for the ESM arm |
 | `analyze_esm_documents.py` | density / identity, from the documents alone |
 | `dispatch_verify_cw.py`, `dispatch_reconcile_cw.py`, `dispatch_analyze_esm_cw.py` | CoreWeave-side check jobs |
-| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map + reconcile tests (58 passing) |
+| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map + reconcile tests (57 passing) |
 
 ## Results
 
