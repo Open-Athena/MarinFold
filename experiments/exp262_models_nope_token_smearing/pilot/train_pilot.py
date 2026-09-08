@@ -95,8 +95,12 @@ def document_mask(inputs: torch.Tensor, eos_id: int) -> tuple[torch.Tensor, torc
         inputs.shape[1], inputs.shape[1], dtype=torch.bool, device=inputs.device
     ).tril()
     attention = (segments[:, None, :, None] == segments[:, None, None, :]) & causal
-    loss_mask = torch.ones_like(inputs, dtype=torch.bool)
-    loss_mask[:, :-1] = segments[:, 1:] == segments[:, :-1]
+    # A position's target is the token after it, so the impossible ones are
+    # exactly the positions holding an <eos>. Deriving it that way rather than
+    # comparing neighbouring segment ids also covers the LAST position of the
+    # window, whose target lives outside the input slice and would otherwise
+    # keep its initialised True and train a cross-document target.
+    loss_mask = inputs != eos_id
     return attention, loss_mask
 
 

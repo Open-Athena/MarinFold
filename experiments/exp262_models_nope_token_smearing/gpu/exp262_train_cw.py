@@ -212,6 +212,14 @@ CLUSTERS = {
     "cw-us-east-02a": ClusterSpec("H100", 8, 32, "256g", "256g"),
     "cw-rno2a": ClusterSpec("H100", 8, 32, "256g", "256g"),
 }
+
+# Gang sizes each cluster is known to bootstrap. The root AGENTS.md records a
+# reliable ceiling of ~4 nodes on cw-rno2a: 8-node gangs there abort in the JAX
+# multi-host coordination bootstrap about five minutes in. exp262's own runs used
+# 8 nodes on cw-us-east-02a without trouble, so the ceiling is rno2a-specific
+# rather than general — but nothing stopped this script handing someone a doomed
+# rno2a gang, so it is enforced here.
+MAX_NODES = {"cw-rno2a": 4, "cw-us-east-02a": 16, "cw-us-east-08a": 16}
 MAX_SEQS_PER_DEVICE = {"GB200": 32, "H100": 8}
 
 
@@ -448,13 +456,19 @@ def _parse_cluster() -> tuple[str, ClusterSpec]:
         raise SystemExit(f"CLUSTER must be one of: {', '.join(CLUSTERS)}") from exc
 
 
-def _parse_nodes() -> int:
+def _parse_nodes(cluster: str) -> int:
     raw = os.environ.get("NODES")
     if raw is None:
         raise SystemExit("missing required env var NODES")
     nodes = int(raw)
     if nodes not in {1, 2, 4, 8, 16}:
         raise SystemExit(f"NODES must be one of 1, 2, 4, 8, 16; got {nodes}")
+    ceiling = MAX_NODES[cluster]
+    if nodes > ceiling:
+        raise SystemExit(
+            f"{cluster} does not reliably bootstrap gangs above {ceiling} nodes "
+            f"(see the root AGENTS.md on multi-node GPU); got NODES={nodes}"
+        )
     return nodes
 
 
@@ -554,7 +568,7 @@ def main() -> ArtifactStep[LevanterCheckpoint]:
     point = _parse_point(arm)
     phase, steps = _parse_phase()
     cluster, spec = _parse_cluster()
-    nodes = _parse_nodes()
+    nodes = _parse_nodes(cluster)
     print(
         f"[exp262] {phase}: {arm.key} ({arm.label}) at {point.key} "
         f"lr={point.learning_rate:g} wd={point.weight_decay:g} — "

@@ -78,3 +78,18 @@ def test_section_mask_is_correct_on_a_clean_boundary():
     structure, known = section_mask(window, ids)
     assert known.all()
     assert structure[0].tolist() == [False, False, False, True, True, True, False, False, True, True]
+
+
+def test_loss_mask_covers_a_window_ending_on_eos():
+    """The last position's target lives outside the window and can still be impossible.
+
+    Comparing neighbouring segment ids leaves the final entry at its initialised
+    True, so a window ending on <eos> trained one cross-document target.
+    """
+    import torch
+
+    from train_pilot import document_mask
+
+    ids = torch.tensor([[5, 6, EOS, 7, EOS]])
+    _attention, loss_mask = document_mask(ids, EOS)
+    assert loss_mask[0].tolist() == [True, True, False, True, False]

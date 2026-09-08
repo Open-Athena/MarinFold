@@ -126,3 +126,22 @@ def test_worker_check_rejects_a_downgraded_architecture():
         with pytest.raises(ValueError, match="did not survive dispatch"):
             verify_and_train(FakePod(downgraded), expect_rope=False, expect_smear=2)
         assert not trainer.called
+
+
+def test_rno2a_rejects_gangs_above_its_documented_ceiling(monkeypatch):
+    """The root AGENTS.md records that cw-rno2a 8-node gangs abort in bootstrap.
+
+    exp262's own runs used 8 nodes on cw-us-east-02a without trouble, so the
+    ceiling is rno2a-specific — but the launcher should not hand anyone a gang
+    that is documented not to start.
+    """
+    from exp262_train_cw import _parse_nodes
+
+    monkeypatch.setenv("NODES", "8")
+    with pytest.raises(SystemExit, match="does not reliably bootstrap"):
+        _parse_nodes("cw-rno2a")
+
+    assert _parse_nodes("cw-us-east-02a") == 8
+
+    monkeypatch.setenv("NODES", "4")
+    assert _parse_nodes("cw-rno2a") == 4
