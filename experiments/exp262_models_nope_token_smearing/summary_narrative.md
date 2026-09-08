@@ -50,13 +50,29 @@ gain is entirely in the structure section, the shuffled bag where the theory sai
 it should land. Note this overturns the Phase 0 reading, which had the smear as
 the safe half and NoPE as the speculative one.
 
-## Where it stands
+## The answer: no, and by half a model generation
 
-Two full-budget 1.5B runs are training on 64 H100s: exp232's usual setup against
-NoPE + smear, both at p06, differing in exactly one thing. At 10% of the schedule
-the new arm leads by 0.0156 nats on eval and the control is reproducing exp232 to
-0.005 nats, which is what makes the gap readable.
+Both full-budget 1.5B runs completed the full 145,200-step schedule. Final
+validation loss: control 2.9745, NoPE + width-3 smear 3.0021. The proposal is
+0.0275 nats WORSE — about half the 0.053 nats the whole #75 to #117 generation
+was worth, in the wrong direction. Seventeen matched post-transition evals
+average +0.0166 and the final five agree to within 0.003, so this is not a
+marginal call.
 
-Loss is not the deliverable. An accuracy claim needs a rollout R-precision eval,
-and that needs an HF exporter first — neither the NoPE config nor the smear
-weights have an HF Qwen3 representation.
+The control finished 0.0173 better than exp232's run of the same recipe, which
+both confirms the newer marin pin is loss-neutral and bounds the run-to-run
+spread of the setup at about the size of the effect we were chasing.
+
+## Two things that outlast the negative result
+
+The cheap proxies inverted the sign. A 15M pilot said -0.157 and a 10%-budget
+screen at the correct model size and data said -0.174; the answer was +0.0275.
+The screen is the worse offender: it ran the production model on production data
+and still got the sign wrong, because 14,520 steps ends before the transition
+below.
+
+Every 1.5B run has one ~0.09-nat learning transition mid-training whose timing is
+NOT reproducible — the control's is near 15.5k and exp232's near 22k, and those
+are the same architecture, data and seeds. That 6,500-step jitter is three times
+the effect under test. Any future mid-run architecture comparison at this scale
+needs seed replicates, and nobody had characterised this before.

@@ -373,49 +373,91 @@ it cannot settle whether the gap survives to 1.5B. The first pass of this sweep
 was also thrown away — every arm picked a boundary of the learning-rate grid, so
 the grid was extended before the numbers above were taken.
 
-### Phase 1 — in flight
+### Phase 1 — the answer, and it is negative
 
-Both full-budget runs are training. At step 14,520 of 145,200 (10%):
+Both full-budget runs completed all 145,200 steps. Validation loss on the pinned
+exp199 cache, scored at identical steps on identical data:
 
-| step | control | NoPE + smear | Δ | exp232 `s02-m2-p06-aug` |
-|---:|---:|---:|---:|---:|
-| 7,260 | 3.4745 | 3.4619 | **−0.0126** | — |
-| 14,520 | 3.3895 | 3.3739 | **−0.0156** | 3.3849 |
+| run | final eval loss | vs control | wall clock |
+|---|---:|---:|---:|
+| control — the usual setup | **2.9745** | — | 62.25 h |
+| NoPE + width-3 smear | **3.0021** | **+0.0275** | 62.75 h |
+| exp232 `s02-m2-p06-aug` (reference) | 2.9918 | −0.0173 | 75.83 h |
 
 ![full-run progress](plots/full_run_progress.png)
 
-**The control is reproducing exp232 to ~0.005 nats.** That is load-bearing:
-exp262 pins a newer marin (0.2.99 against exp232's 0.2.76, needed to clear the
-14-day Iris submission gate), and a stack change can move the loss scale on its
-own — the #7209 lesson. It did not, so the arm gap is readable and the control
-doubles as a validated reproduction of the usual setup.
+**NoPE + smear is 0.0275 nats worse than the usual setup** — about half a model
+generation, in the wrong direction. This is not a marginal call: 17 matched
+post-transition evals average +0.0166, the gap rises monotonically to a plateau,
+and the final five agree to within 0.003 (+0.0242, +0.0254, +0.0258, +0.0267,
++0.0275).
 
-**The early reversal was LR warmup, not a result.** For the first ~7,000 steps
-the NoPE arm was worse, peaking at +0.19 train loss around step 3,700. Warmup is
-10% of the schedule, so both arms spend that phase at a fraction of peak LR. The
-excursion collapses by step ~7,000 and goes negative after. Recorded because
-anyone reading the W&B curves in that window would reasonably have concluded the
-idea had failed.
+The control finished 0.0173 *better* than exp232's run of the same recipe, which
+bounds the run-to-run spread of the setup at roughly the size of the effect we
+were chasing, and confirms the newer marin pin did not move the loss scale.
 
-Two eval points is a direction, not a trend line. The load-bearing checkpoints
-are past 25% (step ~36,000) and the final cooldown.
+### The small-scale evidence had the sign wrong
+
+| evidence | scale | Δ (NoPE+smear − control) |
+|---|---|---:|
+| local pilot | 15M params, 150M tokens | **−0.157** |
+| screen | 1.5B, 14,520 steps | −0.174 |
+| **full run** | **1.5B, 145,200 steps** | **+0.0275** |
+
+Both cheap experiments were not merely optimistic, they pointed the wrong way.
+The screen is the more troubling of the two: it ran the production model on the
+production data and still inverted the sign, because 14,520 steps ends before the
+learning transition below — the first tenth of training is not a small version of
+training.
+
+### The transition that made every early reading unreliable
+
+![loss transition](plots/loss_transition.png)
+
+Every 1.5B run drops ~0.09 nats over ~1,500 steps, once, somewhere mid-training.
+It is not the augmentation ramp (linear, and it makes the data *harder*), not the
+learning rate, and not the token budget — all identical across runs at every step
+checked. **Its timing is not reproducible:** the control transitions near 15.5k
+and exp232's reference near 22k, and those two are the same architecture on the
+same data with the same seeds.
+
+That ~6,500-step spread moves the loss at a fixed step by up to 0.09 nats, three
+times the effect under test. It is why the head-to-head flipped sign twice before
+step 30,000, and it means **any future mid-run architecture comparison at this
+scale needs seed replicates to mean anything** — the same lesson #204 learned by
+running four control replicates to establish its 0.0023 noise floor.
 
 ## Conclusion
 
-Pending the two full-budget runs.
+**No. contacts-v1 needs its RoPE.** Replacing it with a width-3 causal token
+smear costs 0.0275 nats of validation loss at the production 1.5B scale over the
+full 152B-token schedule — roughly half a model generation, in the wrong
+direction. The recommendation is to keep the usual setup and not pursue this.
 
-What is settled: the smear half of the idea is directly motivated by the trained
-model's own attention (three layer-1 heads already do that job), the NoPE half
-loses its mechanistic argument but keeps its premise, and at 15M parameters the
-two changes only work *together* — either alone is neutral or harmful.
+Not pursued as a result: the HF exporter and the rollout R-precision evaluation.
+Those were justified only by the prospect of a loss *gain* to convert into
+contact accuracy; a loss deficit removes the reason to spend the effort. The
+architecture code, its tests, and the launch path remain on the branch if anyone
+wants to revisit.
 
-What is not settled: whether the −0.157 nats seen at 15M survives to 1.5B, and
-whether any loss gain converts into contact-prediction accuracy at all. The
-second question needs an HF exporter and a rollout evaluation, and no amount of
-validation loss substitutes for it.
+Three things worth keeping:
 
-Deferred rather than dropped: interleaved NoPE (the Llama-4-style hedge), and
-the question of whether `p06` is the new arm's own optimum. The screen's
-learning-rate trend for NoPE + smear was monotone downward with `p06` at the
-grid edge, so the matched-hyperparameter comparison now running is plausibly a
-**lower bound** on what the architecture can do.
+1. **The reasoning was sound and the answer was still no.** Phase 0 established
+   that the grammar needs exactly a 2-token window, that the trained model spends
+   three layer-1 heads on previous-token attention, and that it does not read
+   exact cross-statement distance. All of that survived; it simply did not imply
+   that removing RoPE would help.
+2. **Cheap proxies inverted the sign twice.** A 15M pilot and a 10%-budget screen
+   at the correct scale both said −0.16; the answer was +0.03. On this task, an
+   architecture change is not screenable below full budget.
+3. **A ~0.09-nat learning transition with ~6,500 steps of timing jitter lives in
+   the middle of every run.** It is a larger lever on this loss than the
+   architecture was, nobody had characterised it, and it should be understood
+   before the next architecture experiment is designed.
+
+One thread left open. The head-to-head gap opens from about step 50,000 and grows
+as the amino-acid augmentation ramp rises — and that augmentation is *statement
+order re-permutation*, precisely the order-invariance the NoPE thesis claimed the
+architecture would handle better. If real, that is evidence against the mechanism
+and not merely the outcome. It cannot be separated from training time here, since
+both are monotone in step; it would need a run with augmentation held fixed.
