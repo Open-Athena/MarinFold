@@ -1,0 +1,5 @@
+{
+  "script": "plot_phase0.py",
+  "args": [],
+  "caption": "Paired change in structure-section NLL when position_ids are rewritten (n=24). fixedgapN and randgapN match on expected stretch and never repeat a position; only randgapN destroys exact cross-statement distances, and is never the worse of the pair \u2014 the model does not read them. jitterN instead repeats ids at fixed range and costs 10x more: position is an index."
+}

@@ -1,0 +1,59 @@
+[project]
+name = "exp262-models-nope-token-smearing"
+version = "0.1.0"
+description = "CoreWeave GPU training for MarinFold issue #262 (NoPE + token smearing ablation)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "click>=8.1,<9",
+    "fsspec",
+    "hf-xet",
+    "huggingface-hub>=1.5,<2",
+    "marin-core==0.2.99.dev33617068238",
+    "marin-dupekit==0.1.7.dev32497398902",
+    "marin-dupekit-native==0.1.7.dev32497398902",
+    "marin-finelog==0.2.46.dev33324331711",
+    "marin-finelog-server==0.2.46.dev33324331711",
+    "marin-iris[controller]==0.2.99.dev33617068238",
+    "marin-iris-native==0.1.7.dev32497398902",
+    "s3fs",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+    # CPU torch, only so tests/test_cross_implementation.py can run both the
+    # levanter and the PyTorch smear in one process. The gpu extra pins its own
+    # CUDA torch from the pytorch-cu128 index and is unaffected.
+    "torch",
+]
+gpu = [
+    "marin-core[gpu]==0.2.99.dev33617068238",
+    # Preserve exp199's exact CUDA 13 environment. Use the direct x86 wheel to
+    # bypass NVIDIA's nondeterministic PyPI placeholder downloader.
+    "nvidia-cudnn-cu13 @ https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_x86_64.whl ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "nvidia-cudnn-cu13 @ https://pypi.nvidia.com/nvidia-cudnn-cu13/nvidia_cudnn_cu13-9.26.0.17.dev59162438-py3-none-manylinux_2_27_aarch64.whl ; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "nvidia-nccl-cu13==2.30.7; sys_platform == 'linux'",
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" }]
