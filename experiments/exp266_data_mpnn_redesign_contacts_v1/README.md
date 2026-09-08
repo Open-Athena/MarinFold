@@ -806,7 +806,10 @@ issue against the #232 decontaminated recipe. For *this* issue:
 | `redesign_esm_cw.py` | ESM-Atlas arm — source cif to documents in one pass |
 | `dispatch_redesign_esm_cw.py` | ESM-Atlas fan-out (2 designs per backbone) |
 | `build_shard_map.py` | measured source-part → corpus-shard join, from parquet footers |
-| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map tests (51 passing) |
+| `reconcile_esm.py` | id-set completeness check for the ESM arm |
+| `analyze_esm_documents.py` | density / identity, from the documents alone |
+| `dispatch_verify_cw.py`, `dispatch_reconcile_cw.py`, `dispatch_analyze_esm_cw.py` | CoreWeave-side check jobs |
+| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map + reconcile tests (58 passing) |
 
 ## Results
 
@@ -825,6 +828,77 @@ All five success criteria are met: byte-identical contact operator (200/200
 sha1 against the published parent corpus), lossless staging, completeness
 (`delta +0`), the composition check reported whatever it showed, and the corpus
 published with a dataset README.
+
+## The ESM-Atlas arm
+
+The same redesign applied to
+[`contacts_v1_esm_atlas_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_esm_atlas_decontam)
+— 65.5 M backbones against AFDB's 4.0 M — at **2 designs per backbone** rather
+than 8, because this experiment had by then measured the temperature ladder to
+span almost nothing and ESM-Atlas's value is backbone diversity.
+
+| | ESM-Atlas arm | AFDB arm |
+|---|---|---|
+| backbones | 65,436,022 | 3,962,835 |
+| designs each | 2 | 8 |
+| documents | **130,872,044** | 31,702,680 |
+| tokens | **138,624,482,815** (138.62 B) | 35,320,841,292 |
+| size | 256.0 GB, 3,338 shards | 64.1 GB, 199 shards |
+| contact density vs native | **0.9864** | 1.002 |
+| identity to native | 0.390 (T=0.1) | 0.373 (T=0.1) |
+
+### Three structural differences from the AFDB arm
+
+1. **One pass, no staging.** ESM-Atlas cif is inline in a public bucket, so a
+   CoreWeave pod reads it directly; AFDB's is requester-pays and GCP-only.
+2. **No coordinate encoding.** AFDB mmCIF has 3 decimals, so int32
+   milli-ångströms are exact. ESM-Atlas carries up to **11**, and rounding to
+   1/1000 Å changed **114 of 200** documents — same contact counts, different
+   contact sets at the margin. The structure stays float64 throughout, which
+   also dropped ~1.2 TB of staged artifact.
+3. **The join had to be measured.** See trap 6: the source and corpus shardings
+   are *nearly* index-aligned, and the near-miss cost a rerun.
+
+### Completeness
+
+Two independent checks that agree exactly:
+
+```
+shard index coverage:                    3338/3338  complete
+kept backbones with no document:         117,156 of 65,553,178 (0.179%)
+documents' backbones not in the corpus:  0
+documents vs 2 x kept backbones:         delta -234,312  (= 2 x 117,156)
+designs per backbone (6 full shards):    2 for every backbone, none duplicated
+```
+
+The verifier's document delta is exactly twice the reconciliation's uncovered
+backbone count, from two separately-written checks over different quantities.
+The 0.179 % are `contacts-v1` declining a structure, spread evenly across all
+3,338 shards at a worst case of 59 of ~19,600 — a uniform filter, not a hole.
+
+### Contact density — the one result that differs
+
+| designed length | documents | designed | native | ratio |
+|---|---|---|---|---|
+| 0–100 | 148,520 | 0.6890 | 0.6739 | **1.0223** |
+| 100–200 | 501,768 | 0.7154 | 0.7144 | 1.0014 |
+| 200–400 | 450,518 | 0.8286 | 0.8422 | 0.9838 |
+| 400–800 | 141,808 | 0.8884 | 0.9107 | 0.9754 |
+| 800+ | 11,748 | 0.9545 | 0.9790 | 0.9750 |
+| **all** | **1,254,362** | **0.8130** | **0.8243** | **0.9864** |
+
+**The AFDB arm's 1.002 does not transfer.** 0.9864 is a real 1.4 % shortfall
+that grows with length to ~2.5 % above 400 residues, and it should not be
+described as "density unchanged" the way the AFDB result fairly could be. It
+remains far from what a bad design distribution would produce — a sequence
+shuffle on the same backbone keeps only 43–54 % of contacts, so the failure
+mode would be tens of percent — but it is systematic and length-dependent, and
+mixing this corpus with native documents means mixing slightly shorter
+documents at longer lengths.
+
+Self-consistency and composition drift were **not** re-measured on this arm.
+The AFDB numbers are about AFDB backbones; these are ESMFold2 predictions from
+a different predictor, and whether 79 %/91 % transfers is untested.
 
 ## Conclusion
 
