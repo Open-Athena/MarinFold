@@ -46,6 +46,29 @@ def load_tokens(path: Path) -> np.ndarray:
     return np.memmap(path / "tokens.u16", dtype=np.uint16, mode="r")
 
 
+def section_mask(inputs: torch.Tensor, token_ids: dict[str, int]) -> tuple[torch.Tensor, torch.Tensor]:
+    """Which positions are in a document's structure section, and which are known.
+
+    A position is in the structure section iff the most recent section marker at
+    or before it is ``<begin_statements>`` rather than the ``<contacts-v1>`` that
+    opens a document. Counting markers instead — ``began >= opened`` — is only
+    correct for a window that starts exactly on a document boundary, and the
+    evaluation windows start at arbitrary offsets in the packed stream. On a
+    window that opens mid-document the two counters stay equal through every
+    later sequence section, so every one of them is misread as structure.
+
+    Returns the structure mask and a validity mask that is False before the
+    window's first marker, where the section genuinely cannot be determined.
+    """
+    positions = torch.arange(inputs.shape[1], device=inputs.device).expand_as(inputs)
+    is_marker = (inputs == token_ids["begin_statements"]) | (inputs == token_ids["doc_type"])
+    # Index of the most recent marker at or before each position (-1 if none).
+    last_marker = torch.cummax(torch.where(is_marker, positions, torch.full_like(positions, -1)), dim=1).values
+    known = last_marker >= 0
+    marker_token = torch.gather(inputs, 1, last_marker.clamp(min=0))
+    return (marker_token == token_ids["begin_statements"]) & known, known
+
+
 def document_mask(inputs: torch.Tensor, eos_id: int) -> tuple[torch.Tensor, torch.Tensor]:
     """Causal attention confined to one document, plus the matching loss mask.
 
@@ -124,16 +147,13 @@ def evaluate(model, stream, *, seq_len, batch_size, batches_wanted, device, toke
         totals["loss"] += losses.sum().item()
         counts["loss"] += int(loss_mask.sum())
 
-        # Which section is each target in? A position is in the structure
-        # section once <begin_statements> has appeared more recently than the
-        # <contacts-v1> that opened the current document.
-        began = (inputs == token_ids["begin_statements"]).cumsum(dim=1)
-        opened = (inputs == token_ids["doc_type"]).cumsum(dim=1)
-        in_structure = began >= opened
+        in_structure, section_known = section_mask(inputs, token_ids)
         is_end = targets == token_ids["end"]
 
-        in_structure = in_structure & loss_mask
-        in_sequence = ~in_structure & loss_mask
+        # Positions before the window's first section marker have no known
+        # section and are excluded from both, rather than guessed at.
+        in_structure = in_structure & loss_mask & section_known
+        in_sequence = (~in_structure) & loss_mask & section_known
         is_end = is_end & loss_mask
         totals["structure"] += losses[in_structure].sum().item()
         counts["structure"] += int(in_structure.sum())

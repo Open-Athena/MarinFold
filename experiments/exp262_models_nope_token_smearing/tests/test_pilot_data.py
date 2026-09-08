@@ -43,3 +43,38 @@ def test_mask_is_causal_within_a_document():
     expected = torch.ones(4, 4, dtype=torch.bool).tril()
     assert torch.equal(attention[0, 0], expected)
     assert loss_mask.all(), "a single document loses no targets"
+
+
+def test_section_mask_handles_windows_that_open_mid_document():
+    """Evaluation windows start at arbitrary offsets, so section state cannot be counted.
+
+    The earlier implementation compared cumulative counts of <begin_statements>
+    and <contacts-v1>. On a window opening mid-document those counters stay
+    equal through every later sequence section, so all of them were scored as
+    structure — biasing the section split the pilot's mechanistic claim rested on.
+    """
+    import torch
+
+    from train_pilot import section_mask
+
+    ids = {"doc_type": 2, "begin_statements": 9, "end": 10}
+    # ...sequence | <begin_statements> structure | <contacts-v1> sequence | <begin_statements> structure
+    window = torch.tensor([[7, 7, 9, 5, 5, 2, 7, 7, 9, 5, 5]])
+    structure, known = section_mask(window, ids)
+
+    assert known[0].tolist() == [False, False, True, True, True, True, True, True, True, True, True]
+    assert structure[0].tolist() == [
+        False, False, True, True, True, False, False, False, True, True, True
+    ], "the second document's sequence section must not be scored as structure"
+
+
+def test_section_mask_is_correct_on_a_clean_boundary():
+    import torch
+
+    from train_pilot import section_mask
+
+    ids = {"doc_type": 2, "begin_statements": 9, "end": 10}
+    window = torch.tensor([[2, 7, 7, 9, 5, 5, 2, 7, 9, 5]])
+    structure, known = section_mask(window, ids)
+    assert known.all()
+    assert structure[0].tolist() == [False, False, False, True, True, True, False, False, True, True]

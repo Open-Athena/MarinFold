@@ -66,9 +66,16 @@ NUM_SLOTS = NUM_BUCKETS + 1
 
 
 def bucketize(distance: torch.Tensor) -> torch.Tensor:
-    """Map a non-negative token distance onto ``BUCKET_EDGES``."""
+    """Map a non-negative token distance onto ``BUCKET_EDGES``.
+
+    ``right=True`` is required, not cosmetic. With ``right=False`` a value equal
+    to a boundary falls into the *preceding* bin, so distance 1 would join
+    distance 0 in the self-attention bucket and every later label would be
+    shifted by one — silently dropping distance-1 retrieval and mislabelling the
+    rest of the axis.
+    """
     edges = torch.tensor(BUCKET_EDGES[1:], device=distance.device)
-    return torch.bucketize(distance, edges, right=False)
+    return torch.bucketize(distance, edges, right=True)
 
 
 class AttentionAccumulator:
@@ -173,7 +180,12 @@ def select_documents(targets: pd.DataFrame, tokenizer, max_tokens: int, count: i
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default=None, help="MODELS.yaml nickname; default entry if omitted")
+    # PINNED, not the MODELS.yaml default. The default entry moved from this
+    # checkpoint to exp232's m2-p06-train while this experiment was in flight,
+    # and a probe whose reported numbers depend on which checkpoint happens to be
+    # default that week is not reproducible — rerunning after the merge silently
+    # measured a different model.
+    parser.add_argument("--model", default="contacts-v1-exp199-cooldown-1.5B", help="MODELS.yaml nickname")
     parser.add_argument("--documents", type=int, default=24)
     parser.add_argument("--max-tokens", type=int, default=4096)
     parser.add_argument("--max-queries", type=int, default=384)

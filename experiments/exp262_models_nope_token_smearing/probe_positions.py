@@ -164,25 +164,37 @@ def build_position_ids(spans: list[tuple[int, int]], length: int, mode: str, rng
     return positions
 
 
+class NoRotaryEmbedding(torch.nn.Module):
+    """Rotary drop-in that applies no rotation: cos = 1, sin = 0."""
+
+    def __init__(self, inner: torch.nn.Module):
+        super().__init__()
+        self.inner = inner
+
+    def forward(self, x, position_ids):
+        cos, sin = self.inner(x, position_ids)
+        return torch.ones_like(cos), torch.zeros_like(sin)
+
+
 class RopeOff:
-    """Context manager replacing the rotary embedding with the identity."""
+    """Swap the model's rotary module for an identity wrapper, then restore it.
+
+    Swaps a submodule on an instance we own rather than replacing a method on a
+    Transformers class — AGENTS.md forbids monkey-patching imported modules and
+    prescribes wrapping the exposed API instead. This is the same wrapper the
+    pilot's ``arms.py`` uses for its NoPE arm.
+    """
 
     def __init__(self, model):
-        self.rotary = model.model.rotary_emb
-        self.original = self.rotary.forward
+        self.model = model
+        self.original = model.model.rotary_emb
 
     def __enter__(self):
-        original = self.original
-
-        def identity(x, position_ids):
-            cos, sin = original(x, position_ids)
-            return torch.ones_like(cos), torch.zeros_like(sin)
-
-        self.rotary.forward = identity
+        self.model.model.rotary_emb = NoRotaryEmbedding(self.original)
         return self
 
     def __exit__(self, *exc):
-        self.rotary.forward = self.original
+        self.model.model.rotary_emb = self.original
         return False
 
 
@@ -200,7 +212,12 @@ def section_nll(model, token_ids: torch.Tensor, position_ids: torch.Tensor, stat
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default=None)
+    # PINNED, not the MODELS.yaml default. The default entry moved from this
+    # checkpoint to exp232's m2-p06-train while this experiment was in flight,
+    # and a probe whose reported numbers depend on which checkpoint happens to be
+    # default that week is not reproducible — rerunning after the merge silently
+    # measured a different model.
+    parser.add_argument("--model", default="contacts-v1-exp199-cooldown-1.5B")
     parser.add_argument("--documents", type=int, default=24)
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--seed", type=int, default=262)

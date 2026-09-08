@@ -281,8 +281,8 @@ Width-3 smear is the tight bound, not a guess.
 ![previous-token heads](plots/phase0_previous_token_heads.png)
 
 Layer 1 holds two heads that are essentially pure previous-token heads — L1H26
-puts **0.999** of its mass at offset 1, L1H25 **0.996** — and a third, L1H2, that
-splits **0.75 / 0.16** across offsets 1 and 2, which is a width-3 smear
+puts **0.998** of its mass at offset 1, L1H25 **0.994** — and a third, L1H2, that
+splits **0.68 / 0.19** across offsets 1 and 2, which is a width-3 smear
 implemented in attention. Ten of 768 heads exceed 0.30 at offset 1. This is the
 same observation that motivated the smear module in the nanogpt speedrun, and it
 holds here: the model is paying for heads that do what a smear does for free.
@@ -367,6 +367,19 @@ The gain is entirely in the structure section (−0.200) with the sequence secti
 a hair worse (+0.005) — the shuffled bag is exactly where the theory said it
 should land. The counting guardrail showed no NoPE penalty: `p_end_early` is flat
 at ~0.0011 across all four arms.
+
+**Caveat on the section split.** The `sequence_nll` / `structure_nll` / `p_end_early`
+numbers above were computed with a section classifier that counted
+`<begin_statements>` against `<contacts-v1>`. That is only correct for an
+evaluation window opening exactly on a document boundary, and the windows start
+at arbitrary offsets in the packed stream — so on most windows every document
+after the first had its sequence section scored as structure. The classifier is
+fixed (`section_mask` in `pilot/train_pilot.py`, with tests), but these figures
+were not regenerated: they are a decomposition of a proxy experiment whose
+headline the 1.5B runs went on to contradict, and re-running the sweep to
+re-derive them is not worth the GPU time. **Treat the section split and the
+guardrail as unverified.** The pilot's `val_nll` numbers are unaffected — the
+bug only ever touched how the total was attributed.
 
 Caveats: 100× smaller than production at seq 4096 rather than 8192, so per #169
 it cannot settle whether the gap survives to 1.5B. The first pass of this sweep

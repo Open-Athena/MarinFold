@@ -25,8 +25,8 @@ Three probes on `contacts-v1-exp199-cooldown-1.5B`, teacher-forced over
 ground-truth documents from the exp245 monomers, on a local A5000.
 
 **The smear half is directly motivated.** Layer 1 holds two nearly pure
-previous-token heads (0.999 and 0.996 of their attention at offset 1) and a third
-splitting 0.75/0.16 across offsets 1 and 2 — a width-3 smear implemented in
+previous-token heads (0.998 and 0.994 of their attention at offset 1) and a third
+splitting 0.68/0.19 across offsets 1 and 2 — a width-3 smear implemented in
 attention, at the cost of three heads.
 
 **The NoPE half loses its mechanism but keeps its premise.** Co-referent
