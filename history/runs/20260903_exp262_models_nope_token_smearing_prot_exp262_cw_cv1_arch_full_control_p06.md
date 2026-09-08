@@ -16,8 +16,8 @@ marinfold_run:
   git_sha: d3f6fc01b15f40b04adad44f1d696e0ff7c6428f
   iris_job_ids:
   - /bizon/exp262-full-control-p06
+  - /bizon/exp262-full-control-p06-r1
 ---
-
 # 2026-09-03 · exp262_models_nope_token_smearing · prot-exp262-cw-cv1-arch-full-control-p06
 
 **Launched:** 2026-09-03T14:54:49Z by bizon  
