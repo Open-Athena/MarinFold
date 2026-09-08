@@ -432,13 +432,25 @@ It is not the augmentation ramp (linear, and it makes the data *harder*), not th
 learning rate, and not the token budget — all identical across runs at every step
 checked. **Its timing is not reproducible:** the control transitions near 15.5k
 and exp232's reference near 22k, and those two are the same architecture on the
-same data with the same seeds.
+same data at the same seed.
 
 That ~6,500-step spread moves the loss at a fixed step by up to 0.09 nats, three
 times the effect under test. It is why the head-to-head flipped sign twice before
 step 30,000, and it means **any future mid-run architecture comparison at this
 scale needs seed replicates to mean anything** — the same lesson #204 learned by
 running four control replicates to establish its 0.0023 noise floor.
+
+**One caveat on "identical", found in review.** The control's `SmearEmbedding`
+split the caller's PRNG key before building the token table, so its embedding
+matrix differed from a stock Qwen3 at the same seed (the transformer and LM head
+were identical). The control and exp232 therefore differed in *embedding
+initialisation* as well as marin version — they were not the bit-identical runs
+the text above originally claimed. The code is fixed and tested, but the
+completed runs carry the old initialisation. This does not touch the
+control-versus-NoPE result, since both arms took the same initialisation path;
+it means the 6,500-step transition spread is between two runs of the same recipe
+differing in embedding init, which is a smaller perturbation than architecture
+but not nothing.
 
 ## Conclusion
 

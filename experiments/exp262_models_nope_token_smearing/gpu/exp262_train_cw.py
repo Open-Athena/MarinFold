@@ -391,11 +391,22 @@ def _dispatch(pod_config: TrainLmOnPodConfig, arm: Arm) -> None:
     handle.wait(raise_on_failure=True)
 
 
+# AGENTS.md pins every training run to one project so the leaderboard view works.
+# Checking these are merely non-empty is not enough: a stray value routes an
+# expensive run somewhere nobody looks for it, and nothing downstream notices.
+CANONICAL_WANDB = {"WANDB_ENTITY": "open-athena", "WANDB_PROJECT": "MarinFold"}
+
+
 def _training_env() -> dict[str, str]:
-    required = ("WANDB_ENTITY", "WANDB_PROJECT")
-    missing = [key for key in required if not os.environ.get(key)]
-    if missing:
-        raise ValueError(f"missing required environment variables: {', '.join(missing)}")
+    for key, expected in CANONICAL_WANDB.items():
+        observed = os.environ.get(key)
+        if observed is None:
+            raise ValueError(f"missing required environment variable {key} (must be {expected!r})")
+        if observed != expected:
+            raise ValueError(
+                f"{key}={observed!r} would route this run outside "
+                f"open-athena/MarinFold; AGENTS.md pins it to {expected!r}"
+            )
     env = {
         "MARIN_PREFIX": EXPERIMENT_PREFIX,
         "WANDB_ENTITY": os.environ["WANDB_ENTITY"],

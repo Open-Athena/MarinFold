@@ -11,7 +11,7 @@ exp232's, so this pins it rather than trusting the code to have stayed honest.
 import dataclasses
 
 import pytest
-from architecture import NoRotaryEmbeddingsConfig
+from architecture import NoRotaryEmbeddingsConfig, SmearQwen3Config
 from exp262_train_cw import ARMS, CONTROL_POINT, POINTS, SCREEN_FRACTION, model_config
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
@@ -145,3 +145,45 @@ def test_rno2a_rejects_gangs_above_its_documented_ceiling(monkeypatch):
 
     monkeypatch.setenv("NODES", "4")
     assert _parse_nodes("cw-rno2a") == 4
+
+
+def test_control_embedding_matches_a_stock_qwen3(monkeypatch):
+    """The control must be exp232's model bit-for-bit, initialisation included.
+
+    Splitting the caller's key before building the token table gave the control
+    a different embedding matrix from a stock Qwen3 at the same seed, while the
+    lm_head and transformer stayed identical — a difference this experiment is
+    not entitled to introduce, and one that weakened the control's use as a
+    reference against exp232's run.
+    """
+    import jax
+    import numpy as np
+    from haliax import Axis
+    from levanter.models.qwen import Qwen3Config, Qwen3LMHeadModel
+
+    shape = dict(max_seq_len=32, hidden_dim=32, intermediate_dim=64,
+                 num_heads=4, num_kv_heads=2, num_layers=2)
+    vocab = Axis("vocab", 64)
+    key = jax.random.PRNGKey(0)
+    stock = Qwen3LMHeadModel.init(vocab, Qwen3Config(**shape), key=key)
+    for width in (0, 2):
+        config = SmearQwen3Config(**shape, smear_width=width)
+        ours = config.model_type.init(vocab, config, key=key)
+        np.testing.assert_array_equal(
+            np.asarray(stock.embeddings.token_embeddings.weight.array),
+            np.asarray(ours.embeddings.token_embeddings.weight.array),
+            err_msg=f"smear_width={width} perturbed the token embedding initialisation",
+        )
+
+
+def test_wandb_routing_must_be_canonical(monkeypatch):
+    """A stray entity or project silently hides a 65-hour run from the leaderboard."""
+    from exp262_train_cw import _training_env
+
+    monkeypatch.setenv("WANDB_ENTITY", "open-athena")
+    monkeypatch.setenv("WANDB_PROJECT", "MarinFold")
+    assert _training_env()["WANDB_PROJECT"] == "MarinFold"
+
+    monkeypatch.setenv("WANDB_ENTITY", "somebody-else")
+    with pytest.raises(ValueError, match="would route this run outside"):
+        _training_env()

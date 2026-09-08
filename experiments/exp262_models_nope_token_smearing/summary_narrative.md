@@ -72,7 +72,8 @@ and still got the sign wrong, because 14,520 steps ends before the transition
 below.
 
 Every 1.5B run has one ~0.09-nat learning transition mid-training whose timing is
-NOT reproducible — the control's is near 15.5k and exp232's near 22k, and those
-are the same architecture, data and seeds. That 6,500-step jitter is three times
+NOT reproducible — the control's is near 15.5k and exp232's near 22k, on the same
+architecture, data and seed (review later found they also differed in embedding
+initialisation — a far smaller perturbation than architecture, but not nothing). That 6,500-step jitter is three times
 the effect under test. Any future mid-run architecture comparison at this scale
 needs seed replicates, and nobody had characterised this before.

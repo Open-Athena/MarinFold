@@ -10,8 +10,9 @@ are identical across these runs at every step checked.
 
 It is a learning transition, and the point of this figure is that its timing is
 NOT reproducible: the two RoPE runs — exp262's control and exp232's reference,
-the same architecture on the same data with the same seeds — transition about
-6,000 steps apart. That run-to-run spread is worth up to ~0.09 nats at a fixed
+the same architecture on the same data at the same seed — transition about
+6,000 steps apart. (Review later found they also differed in embedding
+initialisation; a smaller perturbation than architecture, but not identical.) That run-to-run spread is worth up to ~0.09 nats at a fixed
 step, an order of magnitude more than the architecture difference exp262 is
 trying to measure, so mid-run comparisons between single runs cannot resolve it.
 """
@@ -85,7 +86,7 @@ def main() -> None:
         caption=(
             "Each 1.5B run drops ~0.09 nats over ~1,500 steps somewhere mid-training. exp262's "
             "control transitions near 15.5k, its NoPE arm near 21k, exp232's reference near 21.5k "
-            "— and the control and exp232 are the same architecture, data and seeds. The timing is "
+            "— control and exp232 share architecture, data and seed. The timing is "
             "not reproducible, and its ~6,000-step spread is worth far more loss at a fixed step "
             "than the architecture difference under test."
         ),

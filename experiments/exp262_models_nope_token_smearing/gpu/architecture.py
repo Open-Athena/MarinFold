@@ -108,8 +108,13 @@ class SmearEmbedding(ModuleWithStateDictSerialization, eqx.Module):
 
     @staticmethod
     def init(Vocab: Axis, config: "SmearQwen3Config", *, key) -> "SmearEmbedding":
-        k_emb, k_gate = jrandom.split(key, 2)
-        token_embeddings = hnn.Embedding.init(Vocab, config.Embed, key=k_emb)
+        # The token table takes the CALLER's key untouched, exactly as stock
+        # ``LlamaEmbedding.init`` does, and the gate's key is derived separately.
+        # Splitting first would give the control a different embedding table from
+        # a stock Qwen3 built with the same seed — which is not a difference this
+        # experiment is entitled to introduce, since the control's whole job is
+        # to be exp232's model.
+        token_embeddings = hnn.Embedding.init(Vocab, config.Embed, key=key)
         norm = config.mk_LayerNorm(config.Embed) if config.input_embedding_norm else None
 
         SmearOffset = Axis("smear_offset", config.smear_width)
@@ -117,6 +122,7 @@ class SmearEmbedding(ModuleWithStateDictSerialization, eqx.Module):
         if config.smear_width == 0:
             return SmearEmbedding(token_embeddings, norm, None, None, SmearOffset, GateSlice)
 
+        k_gate = jrandom.fold_in(key, 262)
         gate = hnn.Linear.init(In=GateSlice, Out=SmearOffset, key=k_gate, use_bias=True, out_first=True)
         # Zero init: the smear contributes nothing at step 0, so a smear arm and
         # its control start from an identical function.
