@@ -294,11 +294,18 @@ argument for dropping RoPE does not survive.**
 
 The hypothesis was that RoPE's locality prior costs us reach over the shuffled
 bag of contact statements, and that this is why enrichment scales as `L^0.79`
-against ESMFold2's `L^1.15`. It does not. Heads that specialise in retrieving
-earlier mentions of the query's own residue index hold a **flat** share of their
-attention on those co-referents at every distance: L1H17 sits at 0.90–0.93 from
-one token away out to 2048. Beyond the local window the profiles are level. RoPE
-is not imposing a locality prior that costs us long-range retrieval, so the
+against ESMFold2's `L^1.15`. It does not. For the heads that specialise in
+retrieving earlier mentions of the query's own residue index, retrieval **never
+decays with distance** — their attention on co-referents relative to chance is
+50–100× at short range and *rises* to 200–500× at 1–2k tokens.
+
+The lift is measured against each document's own co-referent density, which
+falls as ~1/L: long documents are sparser in co-referents and are the only ones
+contributing the distant buckets, so a raw share would not be comparable across
+distances. (The raw share is flat too — L1H17 holds 0.90–0.93 of its mass on
+co-referents at every distance — but flatness of an uncorrected share could
+itself be a density artifact, which is why the figure plots lift.) Either way
+RoPE is not imposing a locality prior that costs us long-range retrieval, so the
 long-protein story attached to the NoPE half of #262 is dead.
 
 **(c) The model reads position as an index, not as a metric.**

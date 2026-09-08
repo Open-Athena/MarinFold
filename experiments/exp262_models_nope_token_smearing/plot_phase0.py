@@ -65,8 +65,14 @@ def plot_lift(data_dir: Path, plots_dir: Path) -> None:
     per_head = structure.groupby(["layer", "head"], as_index=False)[
         ["mass_total", "mass_coref", "mass_expected"]
     ].sum()
-    per_head["coref_share"] = per_head.mass_coref / per_head.mass_total
-    top = per_head.nlargest(8, "coref_share")
+    # Rank and plot by LIFT, not by raw co-referent share. Co-referent density
+    # falls as ~1/L, so long documents — the only ones contributing the distant
+    # buckets — are sparser in co-referents, and a raw share is not comparable
+    # across distances. ``mass_expected`` exists precisely to divide that out:
+    # it is the mass a co-referent-blind reader would land on co-referents,
+    # using each document's own chance rate.
+    per_head["lift"] = per_head.mass_coref / per_head.mass_expected
+    top = per_head.nlargest(8, "lift")
 
     figure, (profile, pooled) = plt.subplots(1, 2, figsize=(13, 4.6))
     for _, row in top.iterrows():
@@ -74,7 +80,7 @@ def plot_lift(data_dir: Path, plots_dir: Path) -> None:
         series = structure[(structure["layer"] == layer) & (structure["head"] == head)].sort_values("bucket_index")
         profile.plot(
             series.bucket_index,
-            series.mass_coref / series.mass_total,
+            series.mass_coref / series.mass_expected.replace(0, np.nan),
             marker="o",
             markersize=3,
             label=f"L{layer}H{head}",
@@ -82,9 +88,10 @@ def plot_lift(data_dir: Path, plots_dir: Path) -> None:
     labels = structure.sort_values("bucket_index").bucket.unique()
     profile.set_xticks(sorted(structure.bucket_index.unique()), labels, rotation=45, fontsize=7)
     profile.set_xlabel("distance from query to key (tokens)")
-    profile.set_ylabel("share of the head's mass on co-referents")
+    profile.set_ylabel("co-referent retrieval lift (1 = chance)")
     profile.set_title("the 8 strongest co-referent-retrieval heads")
-    profile.set_ylim(0, 1)
+    profile.set_yscale("log")
+    profile.axhline(1.0, color="black", linewidth=0.9)
     profile.legend(fontsize=7, ncol=2)
     profile.grid(alpha=0.3)
 
@@ -102,10 +109,11 @@ def plot_lift(data_dir: Path, plots_dir: Path) -> None:
         figure,
         plots_dir / "phase0_coreferent_retrieval.png",
         caption=(
-            "Left: for heads that retrieve earlier mentions of the query's own residue index, the "
-            "share of their attention on those co-referents, by distance. Flat — L1H17 holds 0.90-0.93 "
-            "out to 2048 tokens. Retrieval is already distance-uniform, so RoPE costs us no reach and "
-            "the mechanistic case for dropping it fails. Right: where structure-section attention goes."
+            "Left: for heads that retrieve earlier mentions of the query's own residue index, their "
+            "attention on those co-referents relative to chance, by distance. Lift is computed against "
+            "each document's own co-referent density, which falls as ~1/L and would otherwise make a "
+            "raw share incomparable across distances. It never decays with distance, so RoPE costs us "
+            "no reach and the mechanistic case for dropping it fails. Right: where the attention goes."
         ),
         dpi=150,
     )
