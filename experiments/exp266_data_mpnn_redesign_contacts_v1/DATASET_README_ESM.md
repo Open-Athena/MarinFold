@@ -96,6 +96,52 @@ AFDB-only.
 speak to confidence in the backbone, which is what was reused, and say nothing
 about whether the designed sequence folds there.
 
+## Contact density — designed vs native
+
+The artifact this experiment was set up to look for: ProteinMPNN's bias toward
+small residues could collapse contact degree and systematically shorten
+documents. Measured over **1,254,362 documents** from 32 shards, against the
+parent corpus's own `native_contacts_emitted`:
+
+**contacts/residue: designed 0.8130, native 0.8243, ratio 0.9864**
+
+It is not length-uniform, and the trend runs the opposite way to intuition:
+
+| designed length | documents | designed | native | ratio |
+|---|---|---|---|---|
+| 0–100 | 148,520 | 0.6890 | 0.6739 | **1.0223** |
+| 100–200 | 501,768 | 0.7154 | 0.7144 | 1.0014 |
+| 200–400 | 450,518 | 0.8286 | 0.8422 | 0.9838 |
+| 400–800 | 141,808 | 0.8884 | 0.9107 | 0.9754 |
+| 800+ | 11,748 | 0.9545 | 0.9790 | 0.9750 |
+
+**Read this as a 1.4 % effect, not as "no effect".** The AFDB arm came out at
+1.002 and could fairly be called unchanged; this one is 0.9864, and the
+shortfall grows with length to ~2.5 % above 400 residues. That is far from the
+collapse the sequence-sensitivity probe made conceivable — a sequence shuffle
+on the same backbone keeps only 43–54 % of contacts, so a genuinely bad design
+distribution would show up as tens of percent, not 1.4 — but it is a real
+systematic difference and a length-dependent one, and a training run that
+mixes this corpus with native documents is mixing slightly shorter documents
+at longer lengths.
+
+## Temperature
+
+Measured on this corpus, and it confirms why the ladder was cut to two slots:
+
+| T | documents | identity to native | mpnn_score | density ratio |
+|---|---|---|---|---|
+| 0.10 | 627,181 | 0.3903 | 0.9264 | 0.9854 |
+| 0.20 | 627,181 | 0.3869 | 0.9638 | 0.9873 |
+
+Identity moves **0.0034** across the range and density **0.0019**. Subsetting
+on `mpnn_temperature` buys essentially nothing; treat the two designs as two
+samples rather than as two settings.
+
+Sequence recovery of **0.390** is above the AFDB arm's 0.373 and still well
+below ProteinMPNN's published ~50 % on crystal structures — predicted
+backbones are harder to recover than experimental ones.
+
 ## What to know before training on it
 
 - **Sequence lengths run 60–1000 residues**, inherited from the parent corpus —
@@ -105,9 +151,11 @@ about whether the designed sequence folds there.
   **79 % of a native control's sub-2 Å rate and 91 % of its same-fold rate**;
   whether that transfers to ESM-Atlas backbones — which are themselves
   predictions, from a different predictor — is untested.
+- **Contact density is 1.4 % below native** and the gap widens with length —
+  see above. Small, but not the "unchanged" the AFDB arm could claim.
 - **Composition shifts**, as ProteinMPNN always does. Measured on the AFDB
   arm: P +3.60, A +2.72, S −2.47, E +2.19, Q −2.14, L +2.09 percentage points
-  against native.
+  against native. Not re-measured here.
 - **This corpus shares its backbones with `contacts_v1_esm_atlas_decontam`.**
   Mixing both means seeing each geometry three times with three sequences, not
   three independent structures.
