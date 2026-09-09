@@ -216,6 +216,17 @@ so it will not be resumed as the production experiment. Checkpoints are under
 Earlier TPU requests were cancelled while pending, and two GPU startup attempts
 failed before training (venv selection, then pinned tokenizer resolution).
 
+The corrected run is
+[exp279-soft-s0-cw-h100x32-b02](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-s0-cw-h100x32-b02),
+source `b0dd33eca8836c1dddbe6588e4befc3b2dd5c67d`, pilot job
+`/bizon/exp279-soft-pilot-cw-h100x32-a04`. Its frozen manifest is
+`data/soft_pilot_cw_launch.json`; native checkpoints and HF exports live under
+`s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-s0-cw-h100x32-b02/`.
+It completed 32 updates with training loss 6.3659, ordinary validation CE 6.3678,
+and 3.464 seconds/update. Native step-31 state and HF model/tokenizer were
+verified; `data/soft_pilot_cw_result.json` records the result. The full production
+driver resumes this state. These early losses are operational checks only.
+
 The corrected run starts fresh with a new identity. `launch_gpu.py` submits a
 short pilot with `--pilot-updates 32`; after validation, omitting that argument
 launches the production driver. `--resume-record` preserves the pilot's frozen
