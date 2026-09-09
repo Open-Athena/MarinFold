@@ -196,22 +196,25 @@ reserve eval-test for final confirmation. A null or negative result is valid.
 
 ## Production launch (2026-09-09)
 
-The current default registry still selects exp232 m2/p06 step-363000. The first
-full-model pilot uses the existing us-east1 caches, 32 preemptible v6e chips
+The current default registry still selects exp232 m2/p06 step-363000. The active
+full-model pilot uses the existing us-east5 caches, 32 preemptible v6e chips
 (eight hosts), batch priority, global batch 128 and per-device batch 1. No bulk
 input transfer is needed. The cache ledgers match all three reference counts.
 
-The pilot job is `/bizon/exp279-soft-pilot-use1-v6e32-a01`, with W&B identity
-`exp279-soft-s0-use1-v6e32`. It was submitted from commit `1618918d` for 32
+The pilot job is `/bizon/exp279-soft-pilot-use5-v6e32-a01`, with W&B identity
+`exp279-soft-s0-use5-v6e32`. It was submitted from commit `8cb5d97b` for 32
 updates; allocation and actual training remain to be verified. Its frozen source,
-lock, package versions and input ledgers are in `data/soft_pilot_launch.json`.
+lock, package versions and input ledgers are in `data/soft_pilot_use5_launch.json`.
+The initial us-east1 pilot was cancelled while still pending because the pool
+was blocked by autoscaler tier backoff; it performed no training. The us-east5
+request uses the already-existing regional copies, without a bulk transfer.
 
 ```bash
-uv run --no-sync --project experiments/exp279_models_exact_soft_contact_targets python -m experiments.exp279_models_exact_soft_contact_targets.launch --arm soft --run-name exp279-soft-s0-use1-v6e32 --job-name exp279-soft-pilot-use1-v6e32-a01 --region us-east1 --tpu v6e-32 --pilot-updates 32 --record scratch/exp279/soft-pilot.json
+uv run --no-sync --project experiments/exp279_models_exact_soft_contact_targets python -m experiments.exp279_models_exact_soft_contact_targets.launch --arm soft --run-name exp279-soft-s0-use5-v6e32 --job-name exp279-soft-pilot-use5-v6e32-a01 --region us-east5 --tpu v6e-32 --pilot-updates 32 --record scratch/exp279/soft-pilot-use5.json
 ```
 
 After the pilot is verified, omit `--pilot-updates`, use a new driver job name,
-and pass `--resume-record scratch/exp279/soft-pilot.json`. This preserves the
+and pass `--resume-record scratch/exp279/soft-pilot-use5.json`. This preserves the
 pilot's frozen manifest even after history-only commits. Any actual runtime
 source, dependency, cache or placement change is rejected. The CPU driver waits
 for each prescribed phase job and advances only after a complete checkpoint.
