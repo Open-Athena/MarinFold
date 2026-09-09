@@ -16,6 +16,8 @@ Source-of-truth ported from
 and ``timodonnell/LlamaFold-experiments/.../exp6_contact_prediction/src/data.py``.
 """
 
+from marinfold.document_structures.core import Vocabulary
+
 
 NAME = "contacts-and-distances-v1"
 CONTEXT_LENGTH = 8192
@@ -98,3 +100,6 @@ def all_domain_tokens() -> list[str]:
     out += POSITION_TOKENS
     out += UNK_TOKEN
     return out
+
+
+VOCABULARY = Vocabulary(NAME, tuple(all_domain_tokens()))
