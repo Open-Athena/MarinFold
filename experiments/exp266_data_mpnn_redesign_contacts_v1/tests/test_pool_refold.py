@@ -12,7 +12,8 @@ untested, which is why nothing caught it.
 
 from __future__ import annotations
 
-from pool_refold import bootstrap_ratio, by_entry, rate
+from pool_refold import (bootstrap_ratio, by_entry, match_arms,
+                         matched_ratio, rate)
 
 
 def refold(entry_id: str, rmsd: float, tm: float, seq_len: int = 150) -> dict:
@@ -75,3 +76,52 @@ def test_no_shared_backbones_is_not_silently_zero():
                              by_entry([refold("z", 1.0, 0.9)]),
                              "sc_tm", 0.5, True, draws=100, seed=0)
     assert lo != lo and hi != hi          # NaN
+
+
+def test_native_only_backbone_is_excluded_from_the_denominator():
+    """The estimate and its interval must be computed on the same population.
+
+    Reported on PR #267: the design arm was filtered to shared ids but the
+    native denominator still ran over every native row, while `bootstrap_ratio`
+    matched internally. One native-only backbone that fails drags the native
+    rate down without touching the design rate, so the point estimate reads 2.0
+    against a CI of [1.0, 1.0] — an estimate outside its own interval.
+    """
+    design = [refold("a", 1.0, 0.9)]
+    native = [refold("a", 1.0, 0.9), refold("z", 5.0, 0.2)]   # "z" has no design
+
+    dm, nm, shared = match_arms(design, native)
+    assert shared == ["a"]
+    assert len(nm) == 1 and nm[0]["entry_id"] == "a"
+
+    ratio = matched_ratio(design, native, "sc_rmsd", 2.0, False)
+    lo, hi = bootstrap_ratio(by_entry(design), by_entry(native),
+                             "sc_rmsd", 2.0, False, draws=200, seed=0)
+    assert ratio == 1.0                       # not 2.0
+    assert lo <= ratio <= hi                  # estimate inside its own interval
+
+
+def test_match_arms_drops_both_directions():
+    design = [refold("a", 1.0, 0.9), refold("b", 1.0, 0.9)]
+    native = [refold("b", 1.0, 0.9), refold("z", 1.0, 0.9)]
+    dm, nm, shared = match_arms(design, native)
+    assert shared == ["b"]
+    assert {r["entry_id"] for r in dm} == {"b"}
+    assert {r["entry_id"] for r in nm} == {"b"}
+
+
+def test_matched_ratio_agrees_with_the_bootstrap_when_arms_are_unequal():
+    """Fuzz the disagreement the bug produced: estimate must sit in its CI."""
+    import random
+
+    rng = random.Random(7)
+    for trial in range(25):
+        shared_ids = [f"s{i}" for i in range(6)]
+        design = [refold(k, rng.choice([1.0, 5.0]), 0.9) for k in shared_ids for _ in range(4)]
+        native = [refold(k, rng.choice([1.0, 5.0]), 0.9) for k in shared_ids]
+        native += [refold(f"z{j}", 5.0, 0.2) for j in range(rng.randrange(0, 4))]
+        r = matched_ratio(design, native, "sc_rmsd", 2.0, False)
+        lo, hi = bootstrap_ratio(by_entry(design), by_entry(native),
+                                 "sc_rmsd", 2.0, False, draws=400, seed=trial)
+        if r == r and lo == lo:               # both defined
+            assert lo <= r <= hi, (trial, r, lo, hi)

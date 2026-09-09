@@ -61,6 +61,33 @@ def by_entry(rows: list[dict]) -> dict[str, list[dict]]:
     return dict(out)
 
 
+def match_arms(design: list[dict], native: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
+    """Restrict BOTH arms to the backbones they share.
+
+    Both, not one. An earlier version filtered the design arm and left the
+    native denominator over every native row, while `bootstrap_ratio` matched
+    internally — so the point estimate and its interval were computed on
+    different populations and could disagree outright. With one native-only
+    backbone that fails, the ratio reads 2.0 against a CI of [1.0, 1.0].
+
+    Returning both filtered arms from one function is the point: there is no
+    unmatched list left in scope for a later line to reach for by accident.
+    """
+    dby, nby = by_entry(design), by_entry(native)
+    shared = sorted(set(dby) & set(nby))
+    dm = [r for k in shared for r in dby[k]]
+    nm = [r for k in shared for r in nby[k]]
+    return dm, nm, shared
+
+
+def matched_ratio(design: list[dict], native: list[dict],
+                  key: str, thr: float, greater: bool) -> float:
+    """design/native pass-rate ratio, on the shared backbones only."""
+    dm, nm, _shared = match_arms(design, native)
+    denom = rate(nm, key, thr, greater)
+    return rate(dm, key, thr, greater) / denom if denom else float("nan")
+
+
 def bootstrap_ratio(design: dict[str, list[dict]], native: dict[str, list[dict]],
                     key: str, thr: float, greater: bool, *,
                     draws: int = 10_000, seed: int = 0) -> tuple[float, float]:
@@ -109,24 +136,31 @@ def main() -> int:
 
     d, n = load(args.design), load(args.native)
     dby, nby = by_entry(d), by_entry(n)
-    shared = sorted(set(dby) & set(nby))
-    dm = [r for k in shared for r in dby[k]]
+    dm, nm, shared = match_arms(d, n)
+    native_only = sorted(set(nby) - set(dby))
 
     print(f"design arm : {len(d):,} refolds over {len(dby)} backbones")
     print(f"native ctrl: {len(n):,} refolds over {len(nby)} backbones")
     print(f"shared     : {len(shared)} backbones "
-          f"({len(set(dby) - set(nby))} design-only, {len(set(nby) - set(dby))} native-only)")
+          f"({len(set(dby) - set(nby))} design-only, {len(native_only)} native-only)")
+    if native_only:
+        # A control with no design is not usable for a paired ratio, and it is
+        # also a sign the two arms were not generated from the same sample --
+        # worth saying out loud rather than dropping in silence.
+        print(f"WARNING: {len(native_only)} native backbones have no design and are "
+              f"excluded from every number below: {native_only[:5]}"
+              f"{' ...' if len(native_only) > 5 else ''}")
 
     print(f"\nMATCHED comparison — the {len(shared)} backbones present in both arms")
     print(f"{'arm':<16}{'n':>7}{'scRMSD<2A':>11}{'scTM>0.5':>10}{'med RMSD':>10}{'med TM':>8}")
-    for label, rows in (("design", dm), ("native control", n)):
+    for label, rows in (("design", dm), ("native control", nm)):
         s = summarise(rows)
         print(f"{label:<16}{s['n_refolds']:>7,}{s['sc_rmsd_pass_pct']:>10.1f}%"
               f"{s['sc_tm_pass_pct']:>9.1f}%{s['median_sc_rmsd']:>10.2f}{s['median_sc_tm']:>8.3f}")
 
     rows_out = []
     for key, thr, greater, label in PASSES:
-        r = rate(dm, key, thr, greater) / rate(n, key, thr, greater)
+        r = matched_ratio(d, n, key, thr, greater)
         lo, hi = bootstrap_ratio(dby, nby, key, thr, greater, draws=args.draws)
         print(f"  design/native {label:<10} ratio {r:.3f}  95% CI [{lo:.3f}, {hi:.3f}]")
         rows_out.append({"metric": label, "ratio": round(r, 4),
@@ -150,7 +184,7 @@ def main() -> int:
                                 "sc_tm_pass_pct", "median_sc_rmsd", "median_sc_tm"])
         w.writeheader()
         w.writerow({"arm": "design_matched", **summarise(dm)})
-        w.writerow({"arm": "native_control", **summarise(n)})
+        w.writerow({"arm": "native_control", **summarise(nm)})
         w.writerow({"arm": "design_all", **summarise(d)})
     with (args.out / "refold_ratio_ci.csv").open("w", newline="") as fh:
         w = csv.DictWriter(fh, ["metric", "ratio", "ci_lo", "ci_hi", "n_backbones"])
@@ -182,7 +216,7 @@ def main() -> int:
         bd, bn = collections.defaultdict(list), collections.defaultdict(list)
         for r in dm:
             bd[binof(r["seq_len"])].append(r)
-        for r in n:
+        for r in nm:
             bn[binof(r["seq_len"])].append(r)
         for k in sorted(set(bd) | set(bn), key=lambda x: int(x.split("-")[0])):
             w.writerow({"length_bin": k, "n_design": len(bd.get(k, [])),
