@@ -2,6 +2,7 @@
 
 import json
 import logging
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
@@ -21,7 +22,6 @@ from marin.processing.tokenize.store_builder import (
 )
 from zephyr.dataset import Dataset
 from zephyr.execution import ZephyrContext
-from zephyr.readers import load_file
 
 from experiments.exp277_models_single_mpnn_pilot.config import (
     CORPORA,
@@ -59,6 +59,15 @@ def _validate_tokenized_record(record: dict) -> dict:
     if ids[0] != 2 or 8 not in ids or 9 not in ids or list(ids[-2:]) != [10, 1]:
         raise ValueError("Malformed contacts-v1 record boundaries")
     return record
+
+
+def read_documents(path: str) -> Iterator[dict[str, str]]:
+    """Stream only document text; long AFDB row groups must not become a table."""
+    with fsspec.open(path, "rb") as handle:
+        for batch in pq.ParquetFile(handle).iter_batches(
+            batch_size=128, columns=["document"]
+        ):
+            yield from batch.to_pylist()
 
 
 def row_count(path: str) -> int:
@@ -150,7 +159,7 @@ def prepare(corpus: Corpus, smoke: bool) -> None:
         f"TOKENIZING {corpus.name}: {len(paths)} shards, {documents} documents -> {corpus.cache}",
         flush=True,
     )
-    dataset = Dataset.from_list(paths).flat_map(load_file)
+    dataset = Dataset.from_list(paths).flat_map(read_documents)
     tokenized, batch_size = tokenize_pipeline(
         dataset,
         data_format=TextLmDatasetFormat(text_key="document"),
@@ -160,7 +169,7 @@ def prepare(corpus: Corpus, smoke: bool) -> None:
     )
     tokenized = tokenized.map(_validate_tokenized_record)
     context = ZephyrContext(
-        resources=ResourceConfig(cpu=1, ram="8g", disk="16g"),
+        resources=ResourceConfig(cpu=1, ram="32g", disk="16g"),
         max_workers=min(128, len(paths)),
         coordinator_resources=ResourceConfig(cpu=1, ram="6g", disk="16g"),
         chunk_storage_prefix=f"{PREFIX}/tmp/zephyr/{'smoke' if smoke else 'production'}/{corpus.name}",

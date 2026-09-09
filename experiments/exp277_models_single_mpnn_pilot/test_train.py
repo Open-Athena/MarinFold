@@ -35,8 +35,8 @@ def test_production_contract_survives_marin_lowering() -> None:
     assert config.data.block_cross_document_attention
     assert all(component.pack for component in config.data.components.values())
     weights = config.data.train_weights
-    assert weights["input/native-afdb"] == weights["input/mpnn-afdb"]
-    assert weights["input/native-esm"] == weights["input/mpnn-esm"]
+    assert weights["input/full/native-afdb"] == weights["input/full/mpnn-afdb"]
+    assert weights["input/full/native-esm"] == weights["input/full/mpnn-esm"]
     assert weights["input/validation"] == 0
     assert sum(weights.values()) == 1
     assert (
@@ -45,3 +45,12 @@ def test_production_contract_survives_marin_lowering() -> None:
     assert config.trainer.checkpointer.keep == [{"every": 14520}]
     assert config.trainer.max_eval_batches is None
     assert not {"WANDB_API_KEY", "FSSPEC_S3", "HF_TOKEN"}.intersection(pod.env_vars)
+
+
+def test_smoke_and_production_caches_have_distinct_artifact_identities() -> None:
+    with build_context(BuildContext(VersionCodex(VERSION))):
+        smoke = build_run(smoke=True, nodes=16)
+        production = build_run(smoke=False, nodes=16)
+    shared = {dep.name for dep in smoke.deps} & {dep.name for dep in production.deps}
+    assert shared == {"input/validation"}
+    assert smoke.path(PREFIX) != production.path(PREFIX)

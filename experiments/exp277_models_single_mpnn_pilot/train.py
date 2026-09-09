@@ -53,7 +53,7 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
     )
     datasets = {
         existing_cache(
-            name=f"input/{corpus.name}",
+            name=f"input/{corpus.name}" if smoke else f"input/full/{corpus.name}",
             version=VERSION,
             source=corpus.cache,
             tags=["contacts-v1", "decontaminated", corpus.name],

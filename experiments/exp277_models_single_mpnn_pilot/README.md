@@ -36,7 +36,7 @@ A healthy launched production run and reproducible checkpoint trail. Subsequentl
 
 ## Results
 
-Tokenizer smoke `/bizon/exp277-prepare-smoke-a04` succeeded on US-EAST-02A: all 160,000 AFDB documents (21,584,525 tokens) and all 39,180 ESM documents (40,616,645 tokens) exactly matched independent fresh tokenization. See `data/tokenization_smoke.csv`. Full preparation is running as `/bizon/exp277-prepare-a01`. No model-quality result is available.
+Tokenizer smoke `/bizon/exp277-prepare-smoke-a04` succeeded on US-EAST-02A: all 160,000 AFDB documents (21,584,525 tokens) and all 39,180 ESM documents (40,616,645 tokens) exactly matched independent fresh tokenization. See `data/tokenization_smoke.csv`. Full preparation restarted as `/bizon/exp277-prepare-a02` after the generic full-parquet reader exceeded 8 GB on long AFDB shards. The reader now projects only document text and streams 128-row batches with 32 GB workers; completed shards are reused. No model-quality result is available.
 
 ## Conclusion
 
