@@ -1,0 +1,5 @@
+{
+  "script": "plot_screen.py",
+  "args": [],
+  "caption": "Reference-precision stage costs and final retained yield. Diversity uses equal-size length-matched samples after decontamination. The ceiling assumes every conditioned sample occupies a unique cluster; this exposes limited power of the proposed small-screen target."
+}

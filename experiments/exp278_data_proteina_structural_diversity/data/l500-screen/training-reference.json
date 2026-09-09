@@ -1,0 +1,8 @@
+{
+  "scope": "base AFDB train-split structural-cluster representatives, before exp225 decontamination; not the full current training corpus and not ESM Atlas",
+  "n_train_representatives": 1304911,
+  "manifest_sha256": "79f6a099168f5470b23df3e2413365c4902a1637cbf16550548762e3948e395a",
+  "reported_query_count": 256,
+  "search_cap_per_query": 1000,
+  "interpretation": "nearest detected representative; no global fold-novelty claim"
+}

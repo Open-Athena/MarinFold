@@ -1,0 +1,10 @@
+{
+  "backbones": 32,
+  "first_quality_pass": 18,
+  "second_quality_pass": 20,
+  "best_of_two_quality_pass": 23,
+  "incremental_quality_pass": 5,
+  "scope": "32 identical unconditional 500-aa backbones; quality only, before decontamination and diversity filtering",
+  "additional_design_and_refold_gpu_seconds": 231.24825766775757,
+  "gpu_seconds_per_incremental_quality_pass": 46.249651533551514
+}

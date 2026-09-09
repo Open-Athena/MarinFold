@@ -144,4 +144,4 @@ Store compressed, sharded structures/coordinates and documents, not one million 
 
 The [Proteina license](https://github.com/NVIDIA-BioNeMo/proteina/blob/main/LICENSE) restricts use of the work and derivatives to research/evaluation. Preserve provenance and license metadata; the applicability of those terms to released generated datasets and downstream models needs clarification before assigning unrestricted release terms. This proposal does not infer that output datasets automatically inherit a particular license.
 
-No launchable code exists yet. Once the experiment issue is filed, scaffold its real issue-numbered directory and implement on a feature branch through a PR.
+Historical proposal: no launchable code existed when this plan was approved. Execution and the initial-screen results are now recorded in README.md and draft PR #282.

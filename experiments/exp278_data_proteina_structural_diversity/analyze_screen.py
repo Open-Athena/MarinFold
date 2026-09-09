@@ -9,9 +9,11 @@ import argparse
 import csv
 import hashlib
 import json
+import multiprocessing
 import subprocess
 import time
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import biotite.structure as struc
@@ -221,7 +223,7 @@ def searches(work: Path, threads: int) -> None:
 
 
 def sequence_screen(work: Path, report: Path, threads: int) -> None:
-    """Screen both frozen eval references, retaining the exp225 E-value safeguard."""
+    """Search both frozen eval references and apply the recorded exclusion rule."""
     records = pq.read_table(work / "candidates.parquet").to_pylist()
     queries = work / "candidate-sequences.fasta"
     queries.write_text(
@@ -268,27 +270,44 @@ def sequence_screen(work: Path, report: Path, threads: int) -> None:
         ],
         work / "sequence-search.log",
     )
+    summarize_sequence_hits(work, report)
+
+
+def sequence_exclusion_reasons(row: dict) -> dict:
+    """Return independent identity and strong-homology exclusion decisions."""
+    shorter_coverage = float(
+        row["qcov"] if int(row["qlen"]) <= int(row["tlen"]) else row["tcov"]
+    )
+    return {
+        "shorter_coverage": shorter_coverage,
+        "identity_rule": float(row["fident"]) >= 0.3 and shorter_coverage >= 0.5,
+        "evalue_rule": float(row["evalue"]) <= 1e-3,
+    }
+
+
+def summarize_sequence_hits(work: Path, report: Path) -> None:
+    """Enforce the approved identity rule and an additional strong-homology screen.
+
+    The identity/coverage rule has no E-value escape hatch. Significant hits
+    below 30% identity are also excluded, following exp225's homology safeguard.
+    E-values here refer to a fixed small reference DB, not exp225's corpus DB.
+    """
+    records = pq.read_table(work / "candidates.parquet").to_pylist()
+    reference_root = (
+        HERE.parent / "exp225_data_decontaminate_training_corpora/data/reference"
+    )
+    references = [
+        reference_root / name
+        for name in ["eval_queries.fasta", "foldbench_all_queries.fasta"]
+    ]
+    hits = work / "sequence-hits.tsv"
+    fields = "query,target,fident,qcov,tcov,qlen,tlen,evalue"
     exclusions = []
     with hits.open() as handle:
         for row in csv.DictReader(handle, fieldnames=fields.split(","), delimiter="\t"):
-            shorter_coverage = float(
-                row["qcov"] if int(row["qlen"]) <= int(row["tlen"]) else row["tcov"]
-            )
-            identity_hit = (
-                float(row["fident"]) >= 0.3
-                and shorter_coverage >= 0.5
-                and float(row["evalue"]) <= 10
-            )
-            evalue_hit = float(row["evalue"]) <= 1e-3
-            if identity_hit or evalue_hit:
-                exclusions.append(
-                    {
-                        **row,
-                        "shorter_coverage": shorter_coverage,
-                        "identity_rule": identity_hit,
-                        "evalue_rule": evalue_hit,
-                    }
-                )
+            reasons = sequence_exclusion_reasons(row)
+            if reasons["identity_rule"] or reasons["evalue_rule"]:
+                exclusions.append({**row, **reasons})
     write_csv(report / "sequence-exclusions.csv", exclusions)
     (report / "sequence-screen.json").write_text(
         json.dumps(
@@ -301,7 +320,8 @@ def sequence_screen(work: Path, report: Path, threads: int) -> None:
                 },
                 "candidates": len(records),
                 "excluded_candidates": len({row["query"] for row in exclusions}),
-                "rule": "(identity >=0.30 and shorter coverage >=0.50 and E<=10) or E<=0.001",
+                "rule": "(identity >=0.30 and shorter coverage >=0.50) or E<=0.001",
+                "E_value_scope": "fixed legacy and full FoldBench reference database; not numerically comparable to exp225 corpus-database E-values",
                 "mmseqs_version": subprocess.check_output(
                     [MMSEQS, "version"], text=True
                 ).strip(),
@@ -341,6 +361,11 @@ def external_structure_screen(
             ],
             work / f"{label}-structure-search.log",
         )
+        if label == "training":
+            summarize_training_hits(
+                work, report, training_db.parent.parent / "reps_manifest.csv"
+            )
+            continue
         best = {}
         exclusions = []
         with hits.open() as handle:
@@ -372,10 +397,51 @@ def external_structure_screen(
             )
 
 
+def summarize_training_hits(work: Path, report: Path, manifest: Path) -> None:
+    """Restrict base-AFDB reference matches to the recorded train split."""
+    with manifest.open() as handle:
+        train = {
+            row["representative_id"]
+            for row in csv.DictReader(handle)
+            if row["split"] == "train"
+        }
+    best = {}
+    with (work / "training-structure-hits.tsv").open() as handle:
+        for row in csv.DictReader(handle, fieldnames=FIELDS.split(","), delimiter="\t"):
+            if row["target"] not in train:
+                continue
+            stem = row["query"].split(".pdb")[0]
+            score = min(float(row["qtmscore"]), float(row["ttmscore"]))
+            if stem not in best or score > best[stem]["min_tm"]:
+                best[stem] = {
+                    **row,
+                    "stem": stem,
+                    "min_tm": score,
+                    "reference_split": "train",
+                }
+    write_csv(report / "nearest-training-structure.csv", list(best.values()))
+    (report / "training-reference.json").write_text(
+        json.dumps(
+            {
+                "scope": "base AFDB train-split structural-cluster representatives, before exp225 decontamination; not the full current training corpus and not ESM Atlas",
+                "n_train_representatives": len(train),
+                "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
+                "reported_query_count": len(best),
+                "search_cap_per_query": 1000,
+                "interpretation": "nearest detected representative; no global fold-novelty claim",
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
+
 def retention_report(work: Path, report: Path) -> None:
     """Apply quality, sequence, structure and cluster-cap filters with an audit row."""
     with (report / "quality.csv").open() as handle:
         quality = list(csv.DictReader(handle))
+    sequence_status = json.loads((report / "sequence-screen.json").read_text())
+    structure_status = json.loads((report / "structure-screen.json").read_text())
     sequence_exclusions = set()
     if (report / "sequence-exclusions.csv").exists():
         with (report / "sequence-exclusions.csv").open() as handle:
@@ -384,6 +450,13 @@ def retention_report(work: Path, report: Path) -> None:
     if (report / "structure-exclusions.csv").exists():
         with (report / "structure-exclusions.csv").open() as handle:
             structural_exclusions = {row["stem"] for row in csv.DictReader(handle)}
+    if (
+        len(sequence_exclusions) != sequence_status["excluded_candidates"]
+        or len(structural_exclusions) != structure_status["excluded_candidates"]
+    ):
+        raise ValueError(
+            "Decontamination completion counts disagree with exclusion tables"
+        )
     eligible = [
         row
         for row in quality
@@ -489,6 +562,8 @@ def matched_comparison(quality: list[dict], edges: list[tuple[str, str]]) -> dic
         quotas[length] = min(per_class, len(groups[(length, "unconditional")]) // 3)
     rng = np.random.default_rng(278)
     ratios = []
+    control_effective = []
+    conditioned_effective = []
     n = sum(quotas.values()) * 3
     if n == 0:
         return {
@@ -499,6 +574,9 @@ def matched_comparison(quality: list[dict], edges: list[tuple[str, str]]) -> dic
             "ratio_median": None,
             "ratio_resampling_p025": None,
             "ratio_resampling_p975": None,
+            "control_effective_median": None,
+            "conditioned_effective_median": None,
+            "maximum_possible_ratio_median": None,
         }
     for _ in range(100):
         unconditional, conditioned = [], []
@@ -514,10 +592,11 @@ def matched_comparison(quality: list[dict], edges: list[tuple[str, str]]) -> dic
                         groups[(length, condition)], quota, replace=False
                     ).tolist()
                 )
-        ratios.append(
-            effective_clusters(conditioned, edges)
-            / effective_clusters(unconditional, edges)
-        )
+        control_count = effective_clusters(unconditional, edges)
+        conditioned_count = effective_clusters(conditioned, edges)
+        control_effective.append(control_count)
+        conditioned_effective.append(conditioned_count)
+        ratios.append(conditioned_count / control_count)
     return {
         "matched_n_per_arm": n,
         "matched_length_counts": json.dumps(
@@ -526,10 +605,39 @@ def matched_comparison(quality: list[dict], edges: list[tuple[str, str]]) -> dic
         "ratio_median": np.median(ratios),
         "ratio_resampling_p025": np.quantile(ratios, 0.025),
         "ratio_resampling_p975": np.quantile(ratios, 0.975),
+        "control_effective_median": float(np.median(control_effective)),
+        "conditioned_effective_median": float(np.median(conditioned_effective)),
+        "maximum_possible_ratio_median": float(
+            np.median(n / np.asarray(control_effective))
+        ),
     }
 
 
-def audit_prefilter(work: Path, report: Path, size: int = 64) -> None:
+def align_audit_pair(
+    pair: tuple[np.ndarray, np.ndarray, str, str, str, str, bool],
+) -> dict:
+    """Run an independent exact TM-align comparison for the recall audit."""
+    x, y, sequence_x, sequence_y, stem_x, stem_y, reported = pair
+    result = tm_align(x, y, sequence_x, sequence_y)
+    aligned = sum(
+        a != "-" and b != "-" for a, b in zip(result.seqxA, result.seqyA, strict=True)
+    )
+    return {
+        "query": stem_x,
+        "target": stem_y,
+        "min_tm": min(result.tm_norm_chain1, result.tm_norm_chain2),
+        "min_coverage": min(aligned / len(sequence_x), aligned / len(sequence_y)),
+        "prefilter_reported": reported,
+    }
+
+
+def audit_prefilter(
+    work: Path,
+    report: Path,
+    size: int = 64,
+    workers: int = 8,
+    thresholds: tuple[float, ...] = (0.5, 0.8),
+) -> None:
     """Estimate prefilter recall on a reproducible exhaustive candidate subset."""
     records = pq.read_table(work / "candidates.parquet").to_pylist()
     records = sorted(
@@ -563,35 +671,28 @@ def audit_prefilter(work: Path, report: Path, size: int = 64) -> None:
                     dtype=np.float64,
                 )
             )
-        audit = []
+        pairs = []
         began = time.perf_counter()
         for i, first in enumerate(records):
             for j in range(i + 1, len(records)):
                 second = records[j]
-                result = tm_align(
-                    traces[i], traces[j], first["sequence"], second["sequence"]
+                pairs.append(
+                    (
+                        traces[i],
+                        traces[j],
+                        first["sequence"],
+                        second["sequence"],
+                        first["stem"],
+                        second["stem"],
+                        tuple(sorted([first["stem"], second["stem"]])) in reported,
+                    )
                 )
-                aligned = sum(
-                    a != "-" and b != "-"
-                    for a, b in zip(result.seqxA, result.seqyA, strict=True)
-                )
-                coverage = min(
-                    aligned / len(first["sequence"]), aligned / len(second["sequence"])
-                )
-                audit.append(
-                    {
-                        "query": first["stem"],
-                        "target": second["stem"],
-                        "min_tm": min(result.tm_norm_chain1, result.tm_norm_chain2),
-                        "min_coverage": coverage,
-                        "prefilter_reported": tuple(
-                            sorted([first["stem"], second["stem"]])
-                        )
-                        in reported,
-                    }
-                )
+        with ProcessPoolExecutor(
+            max_workers=workers, mp_context=multiprocessing.get_context("spawn")
+        ) as executor:
+            audit = list(executor.map(align_audit_pair, pairs, chunksize=16))
         write_csv(report / f"{geometry}-prefilter-audit.csv", audit)
-        for threshold in [0.5, 0.8]:
+        for threshold in thresholds:
             positives = [
                 row
                 for row in audit
@@ -616,7 +717,11 @@ def audit_prefilter(work: Path, report: Path, size: int = 64) -> None:
     write_csv(report / "prefilter-recall.csv", metrics)
 
 
-def summarize_clusters(work: Path, report: Path) -> None:
+def summarize_clusters(
+    work: Path,
+    report: Path,
+    thresholds: tuple[tuple[str, float], ...] = (("fine", 0.8), ("broad", 0.5)),
+) -> None:
     """Report fine redundancy and broader fold components separately by geometry."""
     with (report / "quality.csv").open() as handle:
         quality = list(csv.DictReader(handle))
@@ -642,7 +747,7 @@ def summarize_clusters(work: Path, report: Path) -> None:
                             min(float(row["qcov"]), float(row["tcov"])),
                         )
                     )
-        for label, threshold in [("fine", 0.8), ("broad", 0.5)]:
+        for label, threshold in thresholds:
             edges = [
                 (a, b)
                 for a, b, tm, coverage in hits
@@ -717,7 +822,7 @@ def main() -> None:
     searches(args.work, args.threads)
     sequence_screen(args.work, args.report, args.threads)
     summarize_clusters(args.work, args.report)
-    audit_prefilter(args.work, args.report)
+    audit_prefilter(args.work, args.report, workers=min(args.threads, 16))
     if args.eval_structures:
         external_structure_screen(
             args.work, args.report, args.eval_structures, args.training_db, args.threads
@@ -730,7 +835,11 @@ def main() -> None:
         "foldseek_sha256": hashlib.sha256(FOLDSEEK.read_bytes()).hexdigest(),
         "geometry": "C-alpha",
         "prefilter_recall": "64-candidate exhaustive audit; see prefilter-recall.csv",
-        "decontamination": "sequence screened; structural screen pending",
+        "decontamination": (
+            "frozen sequence and evaluation structural-near-duplicate screens complete"
+            if args.eval_structures
+            else "sequence screened; structural screen pending"
+        ),
     }
     (args.report / "analysis-provenance.json").write_text(
         json.dumps(provenance, indent=2) + "\n"

@@ -103,8 +103,12 @@ def main() -> None:
                 "retained": retention["after_cluster_cap"],
                 "retained_fraction": observed_yield,
                 "sampling_warm_seconds": np.mean(warm),
+                "sampling_warm_p50_seconds": np.median(warm),
+                "sampling_warm_p95_seconds": np.quantile(warm, 0.95),
                 "mpnn_seconds": np.mean(design),
                 "esmfold_seconds": np.mean(refold),
+                "esmfold_p50_seconds": np.median(refold),
+                "esmfold_p95_seconds": np.quantile(refold, 0.95),
                 "gpu_seconds_per_raw_candidate": seconds,
                 "gpu_seconds_per_retained_document": seconds / observed_yield,
                 "gpu_seconds_per_retained_document_20pct_overhead": seconds
@@ -150,6 +154,14 @@ def main() -> None:
         )
     result = {
         "target_documents": 1000000,
+        "raw_candidates_at_interpolated_inverse_screen_yield": float(
+            np.interp(
+                lengths,
+                [row["length"] for row in rows],
+                [1 / row["retained_fraction"] for row in rows],
+            ).mean()
+            * 1e6
+        ),
         "target_length_distribution": "uniform integers 60..500; interpolation between six measured lengths",
         "primary_projection_class_mix": "observed surviving mixture from equal raw sampling across four requested arms; not balanced accepted classes",
         "checkpoint_assignment": "short checkpoint measured through 200; long checkpoint from 300; crossover remains unvalidated",
@@ -158,6 +170,8 @@ def main() -> None:
         ),
         "h100_hours_for_one_million_retained_at_screen_yield_with_20pct_overhead": hours,
         "days_on_32_h100": hours / (32 * 24),
+        "h100_hours_if_scale_retains_only_75pct_of_screen_survivors": hours / 0.75,
+        "h100_hours_if_scale_retains_only_50pct_of_screen_survivors": hours / 0.5,
         "h100_hours_if_accepted_contributions_balanced_across_four_requested_arms": balanced_hours,
         "zero_yield_length_condition_bins": zero_yield_cases,
         "balanced_projection_note": "equal retained contribution from unconditional/alpha/beta/mixed requested arms; requested classes are not independently assigned CATH labels",
@@ -165,6 +179,8 @@ def main() -> None:
         "illustrative_accounting_dollars_at_4_per_h100_hour": hours * 4,
         "pricing_note": "illustrative rates, not vendor quotes; available fleet is prepaid",
         "important_limit": "retention and duplicate growth measured only on the screening set; no million-scale or diversity-target success is implied",
+        "not_included": "large-scale CPU selection, storage/transfer charges, queueing, or downstream training; no contract GPU rate was available",
+        "timing_accounting": "sum amortized elapsed_seconds by inference stage; total_seconds overlaps between design/refold rows and must not be summed",
         "tf32": "separate 500-aa arm is excluded from this reference-precision projection",
         "extra_attempts": "one sequence design/refold per backbone; two-attempt pilot priced separately",
     }

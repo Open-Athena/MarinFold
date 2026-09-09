@@ -1,0 +1,11 @@
+{
+  "input": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-precision-v1",
+  "output": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-precision-cis-v2",
+  "geometry_version": "cis-proline-v2",
+  "candidates": 96,
+  "quality_pass": 57,
+  "previous_quality_pass": 50,
+  "changed": 7,
+  "elapsed_cpu_wall_seconds": 14.090712232049555,
+  "gpu_inference_repeated": false
+}

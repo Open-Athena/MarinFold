@@ -255,6 +255,7 @@ original,fine,all,proteina-1f2be0809d24d51331ba,proteina-1f2be0809d24d51331ba
 original,fine,all,proteina-68d753c8bbf25c2e20df,proteina-68d753c8bbf25c2e20df
 original,fine,all,proteina-5f8fc8017ef1ed07b5bb,proteina-5f8fc8017ef1ed07b5bb
 original,fine,all,proteina-b4dc97cb593209cfec69,proteina-b4dc97cb593209cfec69
+original,fine,quality_pass,proteina-e1ec54c0ec8203db717c,proteina-e1ec54c0ec8203db717c
 original,fine,quality_pass,proteina-576748298db4d04a7021,proteina-576748298db4d04a7021
 original,fine,quality_pass,proteina-041b006925c27cf22038,proteina-041b006925c27cf22038
 original,fine,quality_pass,proteina-9f3ed0539fade3458d5f,proteina-041b006925c27cf22038
@@ -269,6 +270,7 @@ original,fine,quality_pass,proteina-6381ff6fa4ffd984fe08,proteina-6381ff6fa4ffd9
 original,fine,quality_pass,proteina-314bebb7c074878bd09a,proteina-314bebb7c074878bd09a
 original,fine,quality_pass,proteina-fa64560802395add02cf,proteina-fa64560802395add02cf
 original,fine,quality_pass,proteina-172c753b1d36a2ebf56a,proteina-172c753b1d36a2ebf56a
+original,fine,quality_pass,proteina-6755f51843716c41bdef,proteina-6755f51843716c41bdef
 original,fine,quality_pass,proteina-aaaf59a6b16614b0c9fc,proteina-aaaf59a6b16614b0c9fc
 original,fine,quality_pass,proteina-763bcb8e5403dd2161d8,proteina-763bcb8e5403dd2161d8
 original,fine,quality_pass,proteina-c56ce7106006fe0731ff,proteina-c56ce7106006fe0731ff
@@ -295,6 +297,7 @@ original,fine,quality_pass,proteina-91555f96dea13d20cec8,proteina-91555f96dea13d
 original,fine,quality_pass,proteina-861b9fdbca57645cd44d,proteina-861b9fdbca57645cd44d
 original,fine,quality_pass,proteina-d3b5590f2a8203c84b0a,proteina-d3b5590f2a8203c84b0a
 original,fine,quality_pass,proteina-ed7768df2891f2b4b118,proteina-ed7768df2891f2b4b118
+original,fine,quality_pass,proteina-11a65a2f8f5c107d831f,proteina-11a65a2f8f5c107d831f
 original,fine,quality_pass,proteina-702bcdbb7503e8f4f6c5,proteina-702bcdbb7503e8f4f6c5
 original,fine,quality_pass,proteina-a91f2239512888c329d6,proteina-a91f2239512888c329d6
 original,fine,quality_pass,proteina-9056b41be8af642dbd9a,proteina-9056b41be8af642dbd9a
@@ -402,6 +405,7 @@ original,fine,quality_pass,proteina-9e68d7f3203a62f7f79a,proteina-9e68d7f3203a62
 original,fine,quality_pass,proteina-57dda391b392533601cf,proteina-57dda391b392533601cf
 original,fine,quality_pass,proteina-b8fc6ca2cc15d41da5b2,proteina-b8fc6ca2cc15d41da5b2
 original,fine,quality_pass,proteina-aed3613fc01024164d1d,proteina-aed3613fc01024164d1d
+original,fine,quality_pass,proteina-c59f07d0618f520ac3f5,proteina-c59f07d0618f520ac3f5
 original,fine,quality_pass,proteina-8ddc0a11057ecdaa1498,proteina-8ddc0a11057ecdaa1498
 original,fine,quality_pass,proteina-f25feb5a8c9bc90993f9,proteina-f25feb5a8c9bc90993f9
 original,fine,quality_pass,proteina-7f9c3fd1625e33eff069,proteina-7f9c3fd1625e33eff069
@@ -409,6 +413,8 @@ original,fine,quality_pass,proteina-0ef9ffa8398e67ad1e76,proteina-0ef9ffa8398e67
 original,fine,quality_pass,proteina-f4a2e7131f27bc6c9c51,proteina-f4a2e7131f27bc6c9c51
 original,fine,quality_pass,proteina-8e7d1cc8435810881fc4,proteina-8e7d1cc8435810881fc4
 original,fine,quality_pass,proteina-f50701956b4cf47264a6,proteina-f50701956b4cf47264a6
+original,fine,quality_pass,proteina-11cd6fe0c0f69bd97613,proteina-11cd6fe0c0f69bd97613
+original,fine,quality_pass,proteina-38d965da28f5f46062be,proteina-38d965da28f5f46062be
 original,fine,quality_pass,proteina-30697ada902d1bff1031,proteina-30697ada902d1bff1031
 original,fine,quality_pass,proteina-79140cceacdaca80fb7b,proteina-79140cceacdaca80fb7b
 original,fine,quality_pass,proteina-873f0fc7014e74a71c61,proteina-873f0fc7014e74a71c61
@@ -669,11 +675,11 @@ original,broad,all,proteina-3d9b18b3f86a8488ab1b,proteina-3d9b18b3f86a8488ab1b
 original,broad,all,proteina-68d753c8bbf25c2e20df,proteina-68d753c8bbf25c2e20df
 original,broad,all,proteina-5f8fc8017ef1ed07b5bb,proteina-5f8fc8017ef1ed07b5bb
 original,broad,all,proteina-b4dc97cb593209cfec69,proteina-b4dc97cb593209cfec69
-original,broad,quality_pass,proteina-576748298db4d04a7021,proteina-576748298db4d04a7021
-original,broad,quality_pass,proteina-873f0fc7014e74a71c61,proteina-576748298db4d04a7021
+original,broad,quality_pass,proteina-e1ec54c0ec8203db717c,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-041b006925c27cf22038,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-d3b5590f2a8203c84b0a,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-ed7768df2891f2b4b118,proteina-041b006925c27cf22038
+original,broad,quality_pass,proteina-11a65a2f8f5c107d831f,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-a91f2239512888c329d6,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-9056b41be8af642dbd9a,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-cc1566584e1d4cbb4610,proteina-041b006925c27cf22038
@@ -726,8 +732,11 @@ original,broad,quality_pass,proteina-3d2f7982b56581a5c858,proteina-041b006925c27
 original,broad,quality_pass,proteina-621c5bbd2560c5334c56,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-57dda391b392533601cf,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-b8fc6ca2cc15d41da5b2,proteina-041b006925c27cf22038
+original,broad,quality_pass,proteina-c59f07d0618f520ac3f5,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-30697ada902d1bff1031,proteina-041b006925c27cf22038
 original,broad,quality_pass,proteina-9f3ed0539fade3458d5f,proteina-041b006925c27cf22038
+original,broad,quality_pass,proteina-576748298db4d04a7021,proteina-576748298db4d04a7021
+original,broad,quality_pass,proteina-873f0fc7014e74a71c61,proteina-576748298db4d04a7021
 original,broad,quality_pass,proteina-571e38153dae972bc83a,proteina-571e38153dae972bc83a
 original,broad,quality_pass,proteina-cb167db30c787e153182,proteina-1f2be0809d24d51331ba
 original,broad,quality_pass,proteina-d324d64af6fe3ce0e3d7,proteina-1f2be0809d24d51331ba
@@ -735,6 +744,7 @@ original,broad,quality_pass,proteina-e2c83a9306a5297627d2,proteina-1f2be0809d24d
 original,broad,quality_pass,proteina-b8965cc8c74ddabdb6bc,proteina-1f2be0809d24d51331ba
 original,broad,quality_pass,proteina-fa64560802395add02cf,proteina-1f2be0809d24d51331ba
 original,broad,quality_pass,proteina-aaaf59a6b16614b0c9fc,proteina-1f2be0809d24d51331ba
+original,broad,quality_pass,proteina-38d965da28f5f46062be,proteina-1f2be0809d24d51331ba
 original,broad,quality_pass,proteina-1f2be0809d24d51331ba,proteina-1f2be0809d24d51331ba
 original,broad,quality_pass,proteina-e2fe4b79ca52de658e2b,proteina-1f2be0809d24d51331ba
 original,broad,quality_pass,proteina-26d1c94e4a580130c8d9,proteina-26d1c94e4a580130c8d9
@@ -742,6 +752,7 @@ original,broad,quality_pass,proteina-6381ff6fa4ffd984fe08,proteina-6381ff6fa4ffd
 original,broad,quality_pass,proteina-314bebb7c074878bd09a,proteina-314bebb7c074878bd09a
 original,broad,quality_pass,proteina-172c753b1d36a2ebf56a,proteina-172c753b1d36a2ebf56a
 original,broad,quality_pass,proteina-c56ce7106006fe0731ff,proteina-172c753b1d36a2ebf56a
+original,broad,quality_pass,proteina-6755f51843716c41bdef,proteina-6755f51843716c41bdef
 original,broad,quality_pass,proteina-763bcb8e5403dd2161d8,proteina-763bcb8e5403dd2161d8
 original,broad,quality_pass,proteina-2dfd88e03eb6c68fcd3f,proteina-2dfd88e03eb6c68fcd3f
 original,broad,quality_pass,proteina-0e49a7a55af103e5ea23,proteina-0e49a7a55af103e5ea23
@@ -826,6 +837,7 @@ original,broad,quality_pass,proteina-7f9c3fd1625e33eff069,proteina-7f9c3fd1625e3
 original,broad,quality_pass,proteina-0ef9ffa8398e67ad1e76,proteina-0ef9ffa8398e67ad1e76
 original,broad,quality_pass,proteina-8e7d1cc8435810881fc4,proteina-8e7d1cc8435810881fc4
 original,broad,quality_pass,proteina-f50701956b4cf47264a6,proteina-f50701956b4cf47264a6
+original,broad,quality_pass,proteina-11cd6fe0c0f69bd97613,proteina-11cd6fe0c0f69bd97613
 original,broad,quality_pass,proteina-79140cceacdaca80fb7b,proteina-79140cceacdaca80fb7b
 refolded,fine,all,proteina-e1ec54c0ec8203db717c,proteina-e1ec54c0ec8203db717c
 refolded,fine,all,proteina-17979e186f9368ace979,proteina-17979e186f9368ace979
@@ -1083,6 +1095,7 @@ refolded,fine,all,proteina-1f2be0809d24d51331ba,proteina-1f2be0809d24d51331ba
 refolded,fine,all,proteina-68d753c8bbf25c2e20df,proteina-68d753c8bbf25c2e20df
 refolded,fine,all,proteina-5f8fc8017ef1ed07b5bb,proteina-5f8fc8017ef1ed07b5bb
 refolded,fine,all,proteina-b4dc97cb593209cfec69,proteina-b4dc97cb593209cfec69
+refolded,fine,quality_pass,proteina-e1ec54c0ec8203db717c,proteina-e1ec54c0ec8203db717c
 refolded,fine,quality_pass,proteina-576748298db4d04a7021,proteina-576748298db4d04a7021
 refolded,fine,quality_pass,proteina-041b006925c27cf22038,proteina-041b006925c27cf22038
 refolded,fine,quality_pass,proteina-9f3ed0539fade3458d5f,proteina-041b006925c27cf22038
@@ -1097,6 +1110,7 @@ refolded,fine,quality_pass,proteina-6381ff6fa4ffd984fe08,proteina-6381ff6fa4ffd9
 refolded,fine,quality_pass,proteina-314bebb7c074878bd09a,proteina-314bebb7c074878bd09a
 refolded,fine,quality_pass,proteina-fa64560802395add02cf,proteina-fa64560802395add02cf
 refolded,fine,quality_pass,proteina-172c753b1d36a2ebf56a,proteina-172c753b1d36a2ebf56a
+refolded,fine,quality_pass,proteina-6755f51843716c41bdef,proteina-6755f51843716c41bdef
 refolded,fine,quality_pass,proteina-aaaf59a6b16614b0c9fc,proteina-aaaf59a6b16614b0c9fc
 refolded,fine,quality_pass,proteina-763bcb8e5403dd2161d8,proteina-763bcb8e5403dd2161d8
 refolded,fine,quality_pass,proteina-c56ce7106006fe0731ff,proteina-c56ce7106006fe0731ff
@@ -1123,6 +1137,7 @@ refolded,fine,quality_pass,proteina-91555f96dea13d20cec8,proteina-91555f96dea13d
 refolded,fine,quality_pass,proteina-861b9fdbca57645cd44d,proteina-861b9fdbca57645cd44d
 refolded,fine,quality_pass,proteina-d3b5590f2a8203c84b0a,proteina-d3b5590f2a8203c84b0a
 refolded,fine,quality_pass,proteina-ed7768df2891f2b4b118,proteina-ed7768df2891f2b4b118
+refolded,fine,quality_pass,proteina-11a65a2f8f5c107d831f,proteina-11a65a2f8f5c107d831f
 refolded,fine,quality_pass,proteina-702bcdbb7503e8f4f6c5,proteina-702bcdbb7503e8f4f6c5
 refolded,fine,quality_pass,proteina-a91f2239512888c329d6,proteina-a91f2239512888c329d6
 refolded,fine,quality_pass,proteina-9056b41be8af642dbd9a,proteina-9056b41be8af642dbd9a
@@ -1230,6 +1245,7 @@ refolded,fine,quality_pass,proteina-9e68d7f3203a62f7f79a,proteina-9e68d7f3203a62
 refolded,fine,quality_pass,proteina-57dda391b392533601cf,proteina-57dda391b392533601cf
 refolded,fine,quality_pass,proteina-b8fc6ca2cc15d41da5b2,proteina-b8fc6ca2cc15d41da5b2
 refolded,fine,quality_pass,proteina-aed3613fc01024164d1d,proteina-aed3613fc01024164d1d
+refolded,fine,quality_pass,proteina-c59f07d0618f520ac3f5,proteina-c59f07d0618f520ac3f5
 refolded,fine,quality_pass,proteina-8ddc0a11057ecdaa1498,proteina-8ddc0a11057ecdaa1498
 refolded,fine,quality_pass,proteina-f25feb5a8c9bc90993f9,proteina-f25feb5a8c9bc90993f9
 refolded,fine,quality_pass,proteina-7f9c3fd1625e33eff069,proteina-7f9c3fd1625e33eff069
@@ -1237,6 +1253,8 @@ refolded,fine,quality_pass,proteina-0ef9ffa8398e67ad1e76,proteina-0ef9ffa8398e67
 refolded,fine,quality_pass,proteina-f4a2e7131f27bc6c9c51,proteina-f4a2e7131f27bc6c9c51
 refolded,fine,quality_pass,proteina-8e7d1cc8435810881fc4,proteina-8e7d1cc8435810881fc4
 refolded,fine,quality_pass,proteina-f50701956b4cf47264a6,proteina-f50701956b4cf47264a6
+refolded,fine,quality_pass,proteina-11cd6fe0c0f69bd97613,proteina-11cd6fe0c0f69bd97613
+refolded,fine,quality_pass,proteina-38d965da28f5f46062be,proteina-38d965da28f5f46062be
 refolded,fine,quality_pass,proteina-30697ada902d1bff1031,proteina-30697ada902d1bff1031
 refolded,fine,quality_pass,proteina-79140cceacdaca80fb7b,proteina-79140cceacdaca80fb7b
 refolded,fine,quality_pass,proteina-873f0fc7014e74a71c61,proteina-873f0fc7014e74a71c61
@@ -1497,11 +1515,13 @@ refolded,broad,all,proteina-3d9b18b3f86a8488ab1b,proteina-3d9b18b3f86a8488ab1b
 refolded,broad,all,proteina-68d753c8bbf25c2e20df,proteina-68d753c8bbf25c2e20df
 refolded,broad,all,proteina-5f8fc8017ef1ed07b5bb,proteina-5f8fc8017ef1ed07b5bb
 refolded,broad,all,proteina-b4dc97cb593209cfec69,proteina-b4dc97cb593209cfec69
+refolded,broad,quality_pass,proteina-e1ec54c0ec8203db717c,proteina-e1ec54c0ec8203db717c
 refolded,broad,quality_pass,proteina-576748298db4d04a7021,proteina-576748298db4d04a7021
 refolded,broad,quality_pass,proteina-873f0fc7014e74a71c61,proteina-576748298db4d04a7021
 refolded,broad,quality_pass,proteina-041b006925c27cf22038,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-d3b5590f2a8203c84b0a,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-ed7768df2891f2b4b118,proteina-041b006925c27cf22038
+refolded,broad,quality_pass,proteina-11a65a2f8f5c107d831f,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-a91f2239512888c329d6,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-9056b41be8af642dbd9a,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-cc1566584e1d4cbb4610,proteina-041b006925c27cf22038
@@ -1553,6 +1573,7 @@ refolded,broad,quality_pass,proteina-3d2f7982b56581a5c858,proteina-041b006925c27
 refolded,broad,quality_pass,proteina-621c5bbd2560c5334c56,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-57dda391b392533601cf,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-b8fc6ca2cc15d41da5b2,proteina-041b006925c27cf22038
+refolded,broad,quality_pass,proteina-c59f07d0618f520ac3f5,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-30697ada902d1bff1031,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-9f3ed0539fade3458d5f,proteina-041b006925c27cf22038
 refolded,broad,quality_pass,proteina-571e38153dae972bc83a,proteina-172c753b1d36a2ebf56a
@@ -1564,11 +1585,13 @@ refolded,broad,quality_pass,proteina-e2c83a9306a5297627d2,proteina-1f2be0809d24d
 refolded,broad,quality_pass,proteina-b8965cc8c74ddabdb6bc,proteina-1f2be0809d24d51331ba
 refolded,broad,quality_pass,proteina-fa64560802395add02cf,proteina-1f2be0809d24d51331ba
 refolded,broad,quality_pass,proteina-aaaf59a6b16614b0c9fc,proteina-1f2be0809d24d51331ba
+refolded,broad,quality_pass,proteina-38d965da28f5f46062be,proteina-1f2be0809d24d51331ba
 refolded,broad,quality_pass,proteina-1f2be0809d24d51331ba,proteina-1f2be0809d24d51331ba
 refolded,broad,quality_pass,proteina-e2fe4b79ca52de658e2b,proteina-1f2be0809d24d51331ba
 refolded,broad,quality_pass,proteina-26d1c94e4a580130c8d9,proteina-26d1c94e4a580130c8d9
 refolded,broad,quality_pass,proteina-6381ff6fa4ffd984fe08,proteina-6381ff6fa4ffd984fe08
 refolded,broad,quality_pass,proteina-314bebb7c074878bd09a,proteina-314bebb7c074878bd09a
+refolded,broad,quality_pass,proteina-6755f51843716c41bdef,proteina-6755f51843716c41bdef
 refolded,broad,quality_pass,proteina-763bcb8e5403dd2161d8,proteina-763bcb8e5403dd2161d8
 refolded,broad,quality_pass,proteina-2dfd88e03eb6c68fcd3f,proteina-2dfd88e03eb6c68fcd3f
 refolded,broad,quality_pass,proteina-0e49a7a55af103e5ea23,proteina-0e49a7a55af103e5ea23
@@ -1654,4 +1677,5 @@ refolded,broad,quality_pass,proteina-7f9c3fd1625e33eff069,proteina-7f9c3fd1625e3
 refolded,broad,quality_pass,proteina-0ef9ffa8398e67ad1e76,proteina-0ef9ffa8398e67ad1e76
 refolded,broad,quality_pass,proteina-8e7d1cc8435810881fc4,proteina-8e7d1cc8435810881fc4
 refolded,broad,quality_pass,proteina-f50701956b4cf47264a6,proteina-f50701956b4cf47264a6
+refolded,broad,quality_pass,proteina-11cd6fe0c0f69bd97613,proteina-11cd6fe0c0f69bd97613
 refolded,broad,quality_pass,proteina-79140cceacdaca80fb7b,proteina-79140cceacdaca80fb7b

@@ -1,0 +1,5 @@
+geometry,tm_threshold,n_candidates,n_pairs,true_neighbors,reported_neighbors,recall,elapsed_cpu_wall_seconds
+original,0.5,64,2016,44,44,1.0,52.090717365033925
+original,0.8,64,2016,0,0,,52.09077963209711
+refolded,0.5,64,2016,46,46,1.0,52.66288583003916
+refolded,0.8,64,2016,2,2,1.0,52.66296151187271

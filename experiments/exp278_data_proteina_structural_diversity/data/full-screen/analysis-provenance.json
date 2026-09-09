@@ -1,0 +1,8 @@
+{
+  "scope": "all 1536 initial-screen candidates; cross-length clustering",
+  "cross_length_bound": "min TM <= shorter length / longer length; only 400 versus 500 can meet fine threshold 0.8; broad metrics are per-length only",
+  "reference_searches": "reused per-length searches with identical fixed targets",
+  "prefilter_audit": "64 hash-selected candidates, exhaustive TM-align",
+  "training_reference_comparison_complete": true,
+  "remaining_pilot_arms": "A/T labels, higher noise, 400M triangle control, checkpoint crossover, and larger saturation study were not run"
+}

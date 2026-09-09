@@ -73,9 +73,10 @@ def main() -> None:
     save_plot_with_meta(
         figure,
         HERE / "plots/quality-and-composition.png",
-        caption="One ProteinMPNN/ESMFold attempt per backbone; cis-aware geometry where corrected. Composition is an independent P-SEA measurement, not a CATH assignment. Labels on the right denote sequence length.",
+        caption="One ProteinMPNN/ESMFold attempt per backbone; final cis-aware quality checks. Composition averages all refolded candidates and is an independent P-SEA measurement, not a CATH assignment. Labels on the right denote sequence length.",
     )
     plt.close(figure)
+
     retained = [
         (
             int(report.name.split("-")[0][1:]),
@@ -111,6 +112,65 @@ def main() -> None:
         figure,
         HERE / "plots/retention.png",
         caption="Screening-set retention. Duplicate growth at 100k/1M remains unmeasured; these are not production-yield forecasts.",
+    )
+    plt.close(figure)
+
+    cost_path = HERE / "data/cost-by-length.csv"
+    if not cost_path.exists():
+        return
+    costs = read_csv(cost_path)
+    figure, axes = plt.subplots(1, 2, figsize=(11, 4.2), constrained_layout=True)
+    axes[0].plot(
+        [int(row["length"]) for row in costs],
+        [float(row["gpu_seconds_per_raw_candidate"]) * 1.2 for row in costs],
+        "o-",
+        label="Per raw candidate + 20%",
+    )
+    axes[0].plot(
+        [int(row["length"]) for row in costs],
+        [
+            float(row["gpu_seconds_per_retained_document_20pct_overhead"])
+            for row in costs
+        ],
+        "o-",
+        label="Per retained document + 20%",
+    )
+    axes[0].set(
+        xlabel="Residues",
+        ylabel="H100 seconds",
+        title="Low long-chain yield drives cost",
+    )
+    axes[0].legend(fontsize=8)
+    comparisons = [
+        (length, row["matched_diversity_after_decontamination"])
+        for length, row in retained
+    ]
+    axes[1].plot(
+        [length for length, _ in comparisons],
+        [row["ratio_median"] for _, row in comparisons],
+        "o-",
+        label="Observed ratio (median)",
+    )
+    axes[1].plot(
+        [length for length, _ in comparisons],
+        [row["maximum_possible_ratio_median"] for _, row in comparisons],
+        "o--",
+        label="Ceiling for median control",
+    )
+    axes[1].axhline(1.5, color="black", linestyle=":", label="Proposed target: 1.5")
+    axes[1].set(
+        xlabel="Residues",
+        ylabel="Conditioned / unconditional",
+        title="Fine-cluster target is ceiling-limited",
+        ylim=(0.65, 1.6),
+    )
+    axes[1].legend(fontsize=8)
+    for axis in axes:
+        axis.grid(alpha=0.2)
+    save_plot_with_meta(
+        figure,
+        HERE / "plots/cost-and-diversity.png",
+        caption="Reference-precision stage costs and final retained yield. Diversity uses equal-size length-matched samples after decontamination. The ceiling assumes every conditioned sample occupies a unique cluster; this exposes limited power of the proposed small-screen target.",
     )
     plt.close(figure)
 

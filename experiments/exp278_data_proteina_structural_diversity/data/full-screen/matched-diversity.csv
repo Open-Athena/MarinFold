@@ -1,0 +1,3 @@
+geometry,threshold,matched_n_per_arm,matched_length_counts,ratio_median,ratio_resampling_p025,ratio_resampling_p975,control_effective_median,conditioned_effective_median,maximum_possible_ratio_median
+original,fine,279,"{""100"": 51, ""200"": 45, ""300"": 45, ""400"": 45, ""500"": 39, ""60"": 54}",0.9721525048825148,0.9099862302963754,1.0154724578686383,254.87260856244225,247.42985086125572,1.094664513278392
+refolded,fine,279,"{""100"": 51, ""200"": 45, ""300"": 45, ""400"": 45, ""500"": 39, ""60"": 54}",0.9798967989961784,0.9271636477585747,1.0252773678228313,249.9009663943142,244.71957078894067,1.1164422958059168

@@ -1,0 +1,12 @@
+{
+  "documents": 494,
+  "sha256": "f63970c623b5a0adbd00e113b78887a13c96630eeaf771067490b5b8d1f917c6",
+  "compressed_bytes": 908992,
+  "uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/initial-screen-selected-provisional/f63970c623b5a0adbd00e113b78887a13c96630eeaf771067490b5b8d1f917c6.parquet",
+  "all_sequences_round_trip": true,
+  "all_contact_counts_and_endpoints_validated": true,
+  "total_tokens": 459336,
+  "truncated_documents": 0,
+  "release_status": "provisional research screen; not in a training mixture",
+  "selection": "global cross-length fine-cluster cap after quality and frozen evaluation screens"
+}

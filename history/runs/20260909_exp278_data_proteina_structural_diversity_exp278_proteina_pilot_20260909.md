@@ -39,6 +39,8 @@ marinfold_run:
   - /bizon/exp278-fold-l400-part3-v1
   - /bizon/exp278-fold-l500-part0-v1
   - /bizon/exp278-fold-l500-part1-v1
+  - /bizon/exp278-fold-l500-part2-v1
+  - /bizon/exp278-fold-l500-part3-v1
 ---
 # 2026-09-09 · exp278_data_proteina_structural_diversity · exp278-proteina-pilot-20260909
 

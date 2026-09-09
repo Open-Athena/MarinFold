@@ -5,7 +5,7 @@
     "fold_submitted": true,
     "fold_complete": true,
     "candidates": 256,
-    "quality_pass": 229,
+    "quality_pass": 230,
     "runner_tag": "iris",
     "gpu_name": "NVIDIA H100 80GB HBM3",
     "gpu_total_memory_gb": 85.019590656,
@@ -14,7 +14,10 @@
     "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
     "torch_version": "2.4.1+cu124",
     "timestamp_utc": "2026-09-09T19:11:54.661125+00:00",
-    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "original_quality_pass": 229,
+    "geometry_version": "cis-proline-v2",
+    "quality_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2"
   },
   {
     "length": 100,
@@ -22,7 +25,7 @@
     "fold_submitted": true,
     "fold_complete": true,
     "candidates": 256,
-    "quality_pass": 198,
+    "quality_pass": 205,
     "runner_tag": "iris",
     "gpu_name": "NVIDIA H100 80GB HBM3",
     "gpu_total_memory_gb": 85.019590656,
@@ -31,7 +34,10 @@
     "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
     "torch_version": "2.4.1+cu124",
     "timestamp_utc": "2026-09-09T19:16:23.631081+00:00",
-    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "original_quality_pass": 198,
+    "geometry_version": "cis-proline-v2",
+    "quality_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l100-cis-v2"
   },
   {
     "length": 200,
@@ -39,7 +45,7 @@
     "fold_submitted": true,
     "fold_complete": true,
     "candidates": 256,
-    "quality_pass": 158,
+    "quality_pass": 164,
     "runner_tag": "iris",
     "gpu_name": "NVIDIA H100 80GB HBM3",
     "gpu_total_memory_gb": 85.019590656,
@@ -48,7 +54,10 @@
     "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
     "torch_version": "2.4.1+cu124",
     "timestamp_utc": "2026-09-09T19:27:15.156254+00:00",
-    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "original_quality_pass": 158,
+    "geometry_version": "cis-proline-v2",
+    "quality_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l200-cis-v2"
   },
   {
     "length": 300,
@@ -56,7 +65,7 @@
     "fold_submitted": true,
     "fold_complete": true,
     "candidates": 256,
-    "quality_pass": 153,
+    "quality_pass": 167,
     "runner_tag": "iris",
     "gpu_name": "NVIDIA H100 80GB HBM3",
     "gpu_total_memory_gb": 85.019590656,
@@ -65,18 +74,37 @@
     "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
     "torch_version": "2.4.1+cu124",
     "timestamp_utc": "2026-09-09T19:33:02.580105+00:00",
-    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "original_quality_pass": 153,
+    "geometry_version": "cis-proline-v2",
+    "quality_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l300-cis-v2"
   },
   {
     "length": 400,
     "generated_cases": 4,
     "fold_parts_submitted": 4,
-    "fold_complete": false
+    "fold_complete": true,
+    "candidates": 256,
+    "quality_pass": 162,
+    "children": [
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l400-v1/part-0",
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l400-v1/part-1",
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l400-v1/part-2",
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l400-v1/part-3"
+    ]
   },
   {
     "length": 500,
-    "generated_cases": 3,
-    "fold_parts_submitted": 3,
-    "fold_complete": false
+    "generated_cases": 4,
+    "fold_parts_submitted": 4,
+    "fold_complete": true,
+    "candidates": 256,
+    "quality_pass": 116,
+    "children": [
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l500-v1/part-0",
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l500-v1/part-1",
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l500-v1/part-2",
+      "marin-us-east-02a/MarinFold/exp278-proteina/fold-l500-v1/part-3"
+    ]
   }
 ]

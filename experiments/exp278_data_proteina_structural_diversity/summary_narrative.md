@@ -1,30 +1,37 @@
-## Proteina structural-diversity pilot (exp278)
+## Proteina initial screen: production held
 
-Question: can synthetic monomer backbones provide diverse, usable contacts-v1 training documents at million-document scale?
+We filed experiment #278 and completed a 1,536-backbone screen on Iris H100s. The end-to-end pipeline produces valid contacts-v1 documents, and class conditioning changes secondary-structure composition.
 
-Issue #278 is approved through a capped pilot and conditional scale-up milestones. Draft PR #282 contains the implementation and small result artifacts. No generated documents have entered training.
+494 documents survive quality, evaluation decontamination and fine-cluster capping. The million-document run is held: yield is below plan and the proposed diversity target is unproven. This is an initial-screen result, not completion of all proposed pilot arms.
 
-## Pipeline and current measurements
+## What survived
 
-Proteina CA traces → CA ProteinMPNN sequences → ESMFold full backbone → geometry/self-consistency checks → native-only pyconfind → contacts-v1.
+Proteina CA traces → CA ProteinMPNN → ESMFold full backbone → quality checks → evaluation decontamination → structural selection → contacts-v1.
 
-At 60 aa: 230/256 pass quality; 152/256 remain after evaluation decontamination and a five-per-fine-cluster cap.
-At 100 aa: 205/256 pass quality; 151/256 remain after the same filters.
+1,536 raw; 1,044 quality-pass; 523 decontaminated; 494 selected in 453 fine clusters. Retention at 60/100/200/300/400/500 aa is 53% / 53% / 34% / 21% / 21% / 11%.
 
-At 200 aa: 164/256 pass the corrected quality gate. A trans-only CA-distance bug was fixed to recognize explicitly validated cis-proline bonds; original predictions remain immutable.
+All selected sequences, contact counts and endpoints validate. No documents are truncated. No generated data entered training.
 
-Longer lengths are still running. The pilot cap is 100 H100-hours.
+## Diversity: composition control, unresolved coverage benefit
 
-## Diversity is a separate result
+Conditioning changes alpha/beta composition, but this is not independent CATH topology assignment. Fine-cluster effective count is 0.965× a matched unconditional sample (108 per arm; subsampling range 0.881–1.057).
 
-Broad CATH conditioning produces the expected alpha/beta composition. Fine-cluster effective counts have not improved over matched unconditional controls in the short screens (~0.92× at 60 aa; 1.00× at 100 aa after decontamination).
+The 1.5× target is poorly calibrated here: the control already has about 95 effective clusters out of 108 samples, leaving a maximum median gain of only 1.14×. This screen cannot rule out a benefit from larger samples or A/T conditioning.
 
-These samples do not meet the 1.5× research target. The 100-aa control is almost all singletons at this small sample size. Broader connected-component metrics are exploratory and are not equivalent to CATH fold counts.
+Next design: diversity accumulation curves and architecture/topology coverage against a frozen natural-data baseline, plus long-chain rejection analysis.
 
-## Cost and numerical validation
+## Measured cost replaces the initial estimate
 
-500-aa sampling at batch 24: 10.16 seconds/backbone with reference float32 matmuls; 5.00 seconds with TF32 enabled. Both use 62.45 GB of an H100.
+The screen and auxiliary probes consumed 4.706 H100-hours including setup and failed starts. All GPU jobs finished.
 
-Matched-seed structures can change (median RMSD 0.125 Å, max 7.06 Å); the faster setting is undergoing a separate refolding check. ESMFold currently averages about 0.64 seconds at 60–100 aa.
+At screening yield, one million retained documents uniformly spanning 60–500 aa project to 13,382 H100-hours (17.4 days on 32 GPUs), including 20% overhead. Balancing accepted contributions across all four requested arms projects to 15,823 hours.
 
-Production cost and scale-up remain conditional on the completed length-stratified screen, acceptance yield and duplicate growth.
+Illustrative $2–4/H100-hour accounting gives $26,800–53,500 for the primary projection. Fleet is prepaid; these are not contract quotes. Million-scale duplicate growth, CPU selection and storage/transfer costs remain unmeasured.
+
+## Auxiliary probes and scope
+
+500-aa TF32 sampling: 5.00 vs 10.16 seconds/backbone; 30/48 vs 27/48 pass quality. Matched original seeds can diverge, and MPNN seeds differ between arms: promising speed, not established quality noninferiority.
+
+A second sequence attempt rescued 5 of 32 identical 500-aa backbones: first 18/32; best-of-two 23/32; 231 extra inference seconds before decontamination.
+
+A/T labels, higher noise, the 400M triangle model, checkpoint overlap and a larger pilot remain untested. Production is held for redesign; issue #278 and draft PR #282 retain the code, timing records and small result artifacts.

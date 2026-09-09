@@ -82,50 +82,79 @@ Store compressed, sharded structures/coordinates and documents, not one million 
 - Final deliverable, if milestones pass: one million distinct accepted backbones, one sequence/document each, versioned provenance, all decontamination checks, complete cost report and reproducible structural-diversity analysis. At a five-per-cluster cap this requires at least 200,000 fine clusters; assess feasibility at 100k before assuming it scales.
 - Downstream utility is a separate, fixed-token continuation experiment from the same decontaminated checkpoint: natural-only control versus 5% and 15% synthetic token mixtures, with identical optimizer/compute budgets. Use eval-val for iteration and eval-denovo as a separate diagnostic; reserve and log a rare eval-test read after selection. Target a ≥0.01 absolute long-range R-precision gain with no material natural-protein regression, accompanied by paired uncertainty estimates. Repeat promising comparisons across seeds before a strong claim.
 
-## Results
+## Results: initial screen completed on 2026-09-09
 
-Execution started on 2026-09-09. Issue #278 is approved through the pilot and conditional scale-up milestones. The full cost model and preregistration are in [PLAN.md](PLAN.md).
+The pipeline generated and refolded 1,536 backbones: 64 per requested class at each of six lengths. **1,044 passed quality; 523 passed evaluation decontamination; 494 remained in 453 fine structural clusters after a global five-per-cluster cap.** All 494 contacts-v1 documents passed sequence round-trip, contact-count, endpoint and monomer metadata checks. None was truncated; they contain 459,336 tokens in total. These are provisional research artifacts and have not entered training.
 
-Initial one-H100 smoke job: `/bizon/exp278-smoke-v4` on `cw-rno2a`. Outputs: `s3://marin-us-east-02a/MarinFold/exp278-proteina/smoke-v4/`. Four 100-residue backbones completed at 1.803 seconds/candidate with batch size 4 and no compilation. Two of four passed full-chain self-consistency RMSD ≤2 Å, pLDDT ≥70 and refolded Cα geometry checks. They yielded 451- and 502-token contacts-v1 documents (81 and 98 contacts). This is an integration smoke sample, not a production yield estimate.
-
-The ESMFold 4.48.3 API returns pLDDT in [0, 1]; the worker now converts confidence and PDB B-factors to [0, 100] before filtering. The first smoke outputs were corrected from their saved predictions without rerunning inference, under `fold-smoke-v1-corrected/`. Original raw outputs remain available for audit. Corrected quality results are in `data/fold-smoke-quality.csv`.
-
-The launcher uses an isolated, locked Iris environment and content-addressed S3 source bundles. Startup fixes addressed an expired Iris client, command-size limits and selecting the container Python consistently. Geometry and confidence-unit tests: 6 passed. All candidate documents remain provisional until decontamination and diversity selection complete.
-
-## Screening results so far
-
-| Length | Candidates | Quality pass | Quality yield | After decontamination and cap |
+| Length | Raw backbones | Quality pass | Retained | Retention |
 | --- | ---: | ---: | ---: | ---: |
-| 60 | 256 | 230 | 89.8% | 152 (59.4%) |
-| 100 | 256 | 205 | 80.1% | 151 (59.0%) |
-| 200 | 256 | 164 | 64.1% | Pending |
+| 60 | 256 | 230 | 135 | 52.7% |
+| 100 | 256 | 205 | 136 | 53.1% |
+| 200 | 256 | 164 | 86 | 33.6% |
+| 300 | 256 | 167 | 55 | 21.5% |
+| 400 | 256 | 162 | 54 | 21.1% |
+| 500 | 256 | 116 | 28 | 10.9% |
 
-The 60-aa sample contains 130 fine clusters after decontamination. Conditioning changes the measured P-SEA secondary structure: the alpha, beta and mixed arms have the expected compositions, while the unconditional arm is predominantly helical. Fine-cluster effective counts do not yet improve over equal-size, length-matched unconditional controls: approximately 0.92× after decontamination at 60 residues and 1.00× after decontamination at 100 residues. The 100-aa control is already almost entirely singleton clusters at this small sample size, limiting what this screen can resolve. These observations do not satisfy the preregistered 1.5× research target.
+The equal-raw-count screen retains 32.2% overall. This differs from a production target uniform over every integer length 60–500: the cost model accounts for length-dependent oversampling instead of dividing pooled runtime by pooled yield.
 
-The broader TM≥0.5 connected-component measure increases under conditioning, but these components can merge through transitive neighbors and are not CATH folds. P-SEA fractions and fine-cluster metrics are reported separately. A 64-candidate exhaustive TM-align audit at 60 residues recovered all 20 original-geometry and 28 refolded-geometry fine-neighbor pairs through the Foldseek search; broader-neighbor recall was imperfect. This small audit does not guarantee recall at production scale.
+### Diversity and what the screen can resolve
 
-Sequence filtering uses the frozen exp225 legacy and full FoldBench FASTAs. It retains the exp225 E-value safeguard in addition to the approved identity/shorter-coverage rule: `(identity ≥0.30 and shorter coverage ≥0.50 and E≤10) or E≤0.001`. The structural near-duplicate reference contains the legacy 554 plus all 334 FoldBench monomer targets, using exp245's recorded chain resolution. This is a near-duplicate screen, not a claim of complete fold-disjointness.
+Conditioning changes independent P-SEA secondary-structure measurements: short alpha, beta and mixed requests produce distinct compositions, while unconditional generation is predominantly helical. Control becomes weaker at 500 aa: the beta-requested arm averages 22% alpha and 26% beta, while the mixed-requested arm averages 58% alpha and 9% beta. Requested labels are not independently assigned CATH classes, architectures or topologies.
 
-A 500-aa throughput probe used 62.45 GB at batch size 24. Warm sampling measured 10.16 seconds/candidate with reference float32 matmuls and 5.00 seconds/candidate with TF32 enabled. Matched seeds produced median Cα RMSD 0.125 Å between numerical settings, with a maximum of 7.06 Å; the faster setting remains a separate quality-validation arm. Persistent ESMFold inference averaged 0.64 seconds/candidate at both 60 and 100 residues, with ProteinMPNN below 0.01 seconds/candidate at batch size 32.
+After quality and decontamination, the balanced conditioned pool has **0.965×** the effective fine-cluster count of a length-matched unconditional control (108 backbones each; 100 subsampling replicates; 2.5–97.5 percentile range 0.881–1.057). This range measures sensitivity to subsampling this screen, not a statistical confidence interval for population effects. The metric uses all eligible backbones before the cluster cap to avoid evaluating a diversity-selected pool against an unselected control.
 
-Small reports are under `data/l60-screen/` and `data/l100-screen/`; full candidate artifacts remain in the experiment's S3 prefix. Geometry, confidence-unit and diversity-matching tests: 13 passed.
+The proposed 1.5× target is poorly calibrated for this small screen: the unconditional control already has a median 94.8 effective clusters out of 108 samples, so even a completely unique conditioned sample can reach only about **1.14×** for the median control. The gate is unproven, not a valid general rejection of conditioned Proteina. A follow-up should measure diversity accumulation with sample size and architecture/topology coverage against a frozen natural-data baseline before freezing a revised success target.
 
-The initial trans-only Cα distance gate incorrectly flagged cis-proline as a chain break. The corrected `cis-proline-v2` check requires proline, omega within 20 degrees of cis, a C–N distance of 1.15–1.60 Å, and a Cα step of 2.7–3.4 Å; other compressed steps remain rejections. These are operational QC bounds. The biological distinction is described by [PDBe](https://www.ebi.ac.uk/pdbe/modval4) and the [distance-based cis-bond study](https://pmc.ncbi.nlm.nih.gov/articles/PMC10413078/). Saved predictions were rescored into separate `fold-l<L>-cis-v2/` prefixes; original artifacts remain immutable. Counts above use the corrected gate. The tests include a real detected cis-proline, a compressed non-proline, and a deliberately broken peptide link.
+Fine redundancy requires both normalized TM scores and both coverages ≥0.8. Original and refolded geometries are analyzed separately. The TM-score bound `min(TM) ≤ shorter_length / longer_length` excludes every cross-length pair on this grid except 400/500; those two lengths were explicitly searched in addition to all within-length searches. No cross-length fine neighbors were detected. Broader TM≥0.5 connected components are reported only within lengths; transitive components are not CATH fold counts.
+
+Each length has a 64-candidate exhaustive TM-align audit. Fine-neighbor recall must be read with the positive counts in `prefilter-recall.csv`; several longer-length audits have zero fine neighbors and cannot estimate recall. The additional mixed-length 64-candidate audit also has zero fine neighbors. These audits do not establish production-scale recall.
+
+### Filtering and corrections
+
+Quality requires one complete sequence-matched monomer, finite Cα coordinates, full-chain Cα self-consistency RMSD ≤2 Å, mean ESMFold pLDDT ≥70, and the recorded Cα clash/continuity checks. This is an operational computational screen, not experimental folding or verified monomeric state. Contacts come from the **ESMFold-refolded** backbone through the existing native-AA pyconfind/contacts-v1 generator.
+
+Sequence searches use exp225's frozen legacy and full FoldBench FASTAs. The final exclusion rule is `(identity ≥0.30 and coverage of the shorter sequence ≥0.50) OR E≤0.001`. The identity branch implements the approved rule without an E-value exception; the extra significance branch conservatively removes strong homology below 30% identity. The initial analysis accidentally retained exp225's E≤10 safeguard on the identity branch; final reports reapply the approved identity rule to saved hits. E-values here use a fixed small reference database and are not numerically interchangeable with exp225's corpus-database E-values. Search sensitivity and thresholds are recorded in each report.
+
+The structural near-duplicate reference contains the legacy 554 plus all 334 FoldBench monomer targets, using exp245's recorded chain resolution; these lists can overlap. The sequence reference additionally covers all FoldBench protein chains. This is not a complete fold-disjointness guarantee. Nearest-training comparisons use 1,304,911 base AFDB **train-split** representatives before exp225 decontamination, not the entire current training corpus or ESM Atlas; report nearest detected matches, not globally novel folds. All 494 selected candidates have a detected match in that reference: median smaller-normalized TM score 0.677, with 72/494 (14.6%) meeting the fine-neighbor threshold including coverage. This does not measure novelty against every current training document. No evaluation model scores or held-out model-selection results were read.
+
+Two integration corrections were validated before final selection. Transformers 4.48.3 ESMFold confidence is returned in [0,1], so filtering and PDB B-factors require multiplication by 100. The initial trans-only Cα distance gate also rejected legitimate cis-proline bonds. The corrected check requires proline, omega within 20 degrees of cis, C–N distance 1.15–1.60 Å and Cα step 2.7–3.4 Å; other compressed steps remain rejections. See [PDBe](https://www.ebi.ac.uk/pdbe/modval4) and the [cis-bond structural study](https://pmc.ncbi.nlm.nih.gov/articles/PMC10413078/). Predictions were corrected without GPU inference in immutable new prefixes. All reported selection counts use the corrected checks.
+
+### Measured cost and auxiliary probes
+
+Warm H100 sampling averages 0.47, 0.80, 2.21, 4.21, 6.96 and 10.26 seconds per backbone at 60/100/200/300/400/500 aa. Persistent ESMFold averages 0.64, 0.64, 1.06, 2.32, 4.30 and 7.14 seconds. ProteinMPNN averages 0.004–0.089 seconds per candidate. Per-input CSVs retain batch latency, amortized stage time, model load and worker metadata; cost sums stage `elapsed_seconds`, because `total_seconds` overlaps between design and refold rows.
+
+At this screen's retained yield, uniform accepted lengths 60–500 and one design/refold attempt, the projection is **13,382 H100-hours per million retained documents**, including 20% overhead: **17.4 days on 32 sustained H100s**. Equal retained contributions from all four requested arms instead project **15,823 H100-hours**. The original 2,500–6,000-hour envelope is not supported by this recipe's yield. These projections interpolate six measured lengths; the short/long checkpoint crossover remains untested.
+
+At illustrative accounting rates of $2–4/H100-hour, the primary estimate is **$26,800–53,500**. These are not vendor quotes; the Iris fleet is prepaid and its contract chargeback rate was unavailable. Million-scale duplicate growth, CPU selection, storage/transfer charges, queueing and downstream training remain outside this estimate. If only half of screening-set survivors remain useful at scale, GPU cost doubles to about 26,800 hours. This is a conditional projection, not a claim that a million sufficiently diverse documents can be delivered.
+
+Compressed-parquet proxies project roughly 53 GB for one selected candidate record per document and 4.3 GB of documents; keeping all raw candidate records at the measured oversampling rate is about 270 GB before caches, search databases and duplicate intermediate formats. See `data/storage-projection.json`. The pilot nearest-reference search examined up to 1,000 hits per candidate and is a diagnostic, not a benchmarked million-scale CPU recipe.
+
+The 500-aa batch-24 probe used 62.45 GB: reference float32 matmuls took 10.16 seconds/backbone versus 5.00 with TF32. Quality passed on 27/48 reference and 30/48 TF32 samples. Original backbones used matched seeds (median cross-setting RMSD 0.125 Å, maximum 7.06 Å), but ProteinMPNN seeds differ between arms, so refolding yields are not a paired comparison. The faster setting is promising; this small check does not establish noninferiority and is excluded from the reference cost projection.
+
+On 32 identical unconditional 500-aa backbones, first-attempt quality was 18/32, second-attempt quality 20/32, and best-of-two quality 23/32. The second attempt rescued five backbones for 231 additional design/refold GPU-seconds (46 seconds per quality rescue, before decontamination). Multiple sequence attempts are not counted as distinct backbones.
+
+### Execution and artifacts
+
+All GPU jobs are terminal. Iris task-attempt wall time totals **4.706 H100-hours**, including setup, compilation, failures and cancelled attempts, against the 100-hour pilot cap; this is resource time, not a provider invoice. There were 23 successful jobs, four startup failures and three cancelled jobs whose completed case outputs were reused. The launcher uses root one-H100 batch jobs, a digest-pinned container, pinned Proteina source and checkpoint checksums, persistent model workers and resumable batch markers. No shared-cluster services were restarted.
+
+- Issue: [#278](https://github.com/Open-Athena/MarinFold/issues/278); implementation: [draft PR #282](https://github.com/Open-Athena/MarinFold/pull/282).
+- W&B: [exp278-proteina-pilot-20260909](https://wandb.ai/open-athena/MarinFold/runs/exp278-proteina-pilot-20260909); corresponding run history is committed.
+- Working artifacts: `s3://marin-us-east-02a/MarinFold/exp278-proteina/`.
+- Final input prefixes: `fold-l60-cis-v2`, `fold-l100-cis-v2`, `fold-l200-cis-v2`, `fold-l300-cis-v2`, `fold-l400-v1`, `fold-l500-v1`. The last two used cis-aware checks at inference time.
+- Selected artifact URI, SHA256 and byte count: `data/full-screen/selected-artifact.json`; per-document provenance: `selected-documents.csv` in the same directory. It is a 0.91-MB compressed provisional parquet, not a released training dataset.
+- Per-length reports: `data/l<L>-screen/`; global selection and fine clustering: `data/full-screen/`; cost model: `data/cost-projection.json`, `cost-by-length.csv`, `cost-by-case.csv`.
+- Validation: 15 focused geometry, confidence, decontamination and diversity-matching tests; scoped Ruff checks; every selected document validated against its sequence and contact metadata.
+
+Reproduction uses the experiment's committed `uv.lock`. Run `uv run analyze_screen.py --input <completed-prefix> --work /data/exp278/l<L>-screen --report data/l<L>-screen --threads 24 --eval-structures /data/exp278/eval-structures` per length, then `uv run combine_screen.py`, `uv run finalize_screen.py`, `uv run collect_sampling.py`, `uv run estimate_cost.py`, `uv run plot_screen.py` and `uv run build_summary.py`. Reference construction is in `prepare_structure_reference.py`; the prebuilt exp225 AFDB database is an explicit external analysis dependency. Rescoring original trans-only outputs uses `rescore_geometry.py`. Exact job submissions and bundle hashes are saved under `data/`.
 
 ![Quality and secondary structure](plots/quality-and-composition.png)
 
 ![Retention after filtering](plots/retention.png)
 
+![Cost and diversity target](plots/cost-and-diversity.png)
+
 ## Conclusion
 
-_(Fill in after results are in.)_
+Proteina → ProteinMPNN → ESMFold → contacts-v1 works end to end, and conditioning changes broad structural composition. **The tested recipe does not justify million-document production:** retention is 32% in the screen and falls to 11% at 500 aa; the measured projection is about 13,400–15,800 H100-hours, and the proposed diversity gain is unproven with a ceiling-limited small-sample metric.
 
-## Current pilot jobs
-
-- `/bizon/exp278-screen-short-v2`: 768 candidates at lengths 60, 100 and 200; completed.
-- `/bizon/exp278-screen-l300-v3`, `screen-l400-v3`, `screen-l500-v3`: 768 candidates split by length.
-- Each length has unconditional, mostly-alpha, mostly-beta and mixed-class arms (64 candidates each).
-- The compiled 100-aa probe reached about 0.80 seconds/candidate at batch 32 after its cold compilation.
-- W&B: [exp278-proteina-pilot-20260909](https://wandb.ai/open-athena/MarinFold/runs/exp278-proteina-pilot-20260909).
-
-The source image is pinned by digest, upstream Proteina is pinned by commit, and downloaded assets are cached in S3 for reuse. The remaining length workers and each refolding worker have hard three-hour timeouts. The overall pilot cap remains 100 H100-hours. `advance_screen.py --launch-folds` submits refolding only once all four generation cases for a length are complete.
+Stopped at the initial screening gate, before the larger pilot or either production milestone. This is not completion of every arm in the roughly 10k-candidate proposal: A/T conditioning, higher noise, the 400M triangle control, checkpoint overlap, a larger diversity-accumulation study, and a matched natural-corpus baseline remain untested. The next design should calibrate the diversity objective and investigate long-chain rejection causes before spending the remaining budget. No 100k/million run or training mixture was launched; the issue stays open for that redesign.

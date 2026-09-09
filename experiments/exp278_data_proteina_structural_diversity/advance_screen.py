@@ -125,6 +125,16 @@ def main() -> None:
         }
         if row["fold_complete"]:
             row.update(json.loads(fs.cat(marker)))
+            corrected_prefix = f"{ROOT}/fold-l{length}-cis-v2"
+            corrected_marker = corrected_prefix.removeprefix("s3://") + "/complete.json"
+            if fs.exists(corrected_marker):
+                corrected = json.loads(fs.cat(corrected_marker))
+                row["original_quality_pass"] = row["quality_pass"]
+                row.update(
+                    quality_pass=corrected["quality_pass"],
+                    geometry_version=corrected["geometry_version"],
+                    quality_prefix=corrected_prefix,
+                )
         if args.launch_folds and ready == 4 and not row["fold_submitted"]:
             submit_fold(name, prefixes, f"{ROOT}/fold-l{length}-v1")
             row["fold_submitted"] = True

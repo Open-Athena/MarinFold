@@ -1,0 +1,5 @@
+{
+  "raw_coordinates": "paired backbone seeds, reference versus TF32",
+  "quality_comparison": "48 per arm; MPNN seeds differ between numerical arms, so refolding quality is not a paired test",
+  "decision": "promising throughput result; small quality comparison does not establish noninferiority"
+}
