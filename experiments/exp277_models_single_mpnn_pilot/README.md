@@ -44,6 +44,8 @@ Production was submitted on 2026-09-09 at 19:32 UTC as [`/bizon/exp277-train-a01
 
 Preparation required streaming document-only 128-row parquet batches and 32 GB workers for AFDB's long-document tail after an 8 GB memory failure. ESM used 512 workers with 8 GB after measured peak usage of 1.3 GB, reusing completed shards across the resize. No corpus was transferred across regions.
 
+Monitoring milestone (2026-09-09 23:36 UTC): step 15,239 / 145,200 (10.5%), train loss 3.03161, latest validation loss 3.24531 at step 14,798. The first permanent native checkpoint saved at step 14,520. Warmup is complete and LR is in the stable 0.001 phase. No production restart has been required.
+
 ## Conclusion
 
 Pending training and routine eval-val scoring.
