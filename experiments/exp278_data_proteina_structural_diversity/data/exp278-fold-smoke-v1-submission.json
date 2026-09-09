@@ -1,0 +1,20 @@
+{
+  "job_id": "/bizon/exp278-fold-smoke-v1",
+  "name": "exp278-fold-smoke-v1",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/57c19dd7790cf0cb8c4f1b82eef12662b13153beeb797ad4867ded1d6a62ab31.tar.gz",
+  "timeout_seconds": 3600,
+  "submitted_utc": "2026-09-09T18:46:40.778538+00:00",
+  "worker_args": [
+    "fold_worker.py",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/smoke-v4",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-smoke-v1",
+    "--esm-revision",
+    "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "--limit",
+    "4"
+  ]
+}

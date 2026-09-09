@@ -1,0 +1,17 @@
+{
+  "job_id": "/bizon/exp278-smoke-v2",
+  "name": "exp278-smoke-v2",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime",
+  "timeout_seconds": 3600,
+  "submitted_utc": "2026-09-09T18:38:15.178566+00:00",
+  "worker_args": [
+    "sample_worker.py",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/smoke-v2",
+    "--length",
+    "100",
+    "--batch-size",
+    "4"
+  ]
+}

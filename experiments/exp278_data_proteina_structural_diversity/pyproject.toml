@@ -1,0 +1,22 @@
+[project]
+name = "exp278-proteina-structural-diversity"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marin-iris[controller]==0.2.106.dev34338714012",
+    "marin-fray==0.2.106.dev34338714012",
+    "httpx==0.28.1",
+    "numpy>=1.26,<3",
+    "pytest>=8,<10",
+    "matplotlib>=3.8,<4",
+    "wandb>=0.19,<1",
+    "marinfold[contacts-v1]",
+    "pyconfind[fast]==0.5.0",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[tool.uv]
+package = false
+prerelease = "allow"

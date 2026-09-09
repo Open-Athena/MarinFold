@@ -1,0 +1,5 @@
+{
+  "quality/smoke_candidates": 4,
+  "quality/smoke_pass": 2,
+  "quality/smoke_yield": 0.5
+}
