@@ -15,6 +15,9 @@ from experiments.exp279_models_exact_soft_contact_targets.launch import (
     stage_bundle,
     worker_request,
 )
+from experiments.exp279_models_exact_soft_contact_targets.launch_gpu import (
+    gpu_worker_request,
+)
 from experiments.exp279_models_exact_soft_contact_targets.train import phase_for_update
 
 
@@ -85,3 +88,23 @@ def test_tpu_gang_requests_all_hosts_and_preserves_runtime_contract(region, tpu,
     assert "--locked" in command and "--extra tpu" in command
     assert "--stop-after 32" in command and "--resume-latest" in command
     assert request.environment.setup_scripts == []
+
+
+def test_gpu_gang_and_pinned_cuda_script():
+    request = gpu_worker_request(
+        name="test",
+        arm="soft",
+        run_name="exp279-soft-test",
+        nodes=4,
+        stop_after=32,
+        env={},
+    )
+    assert request.replicas == 4
+    assert request.resources.device.count == 8
+    assert request.priority == 3
+    script = request.entrypoint.binary_entrypoint.args[-1]
+    subprocess.run(["bash", "-n"], input=script, text=True, check=True)
+    assert "--extra gpu" in script and "--locked" in script
+    assert "--stop-after 32" in script
+    assert "nvidia_cudnn_cu13-9.26.0.17.dev59162438" in script
+    assert "--resume-latest" in script
