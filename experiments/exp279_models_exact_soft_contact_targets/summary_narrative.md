@@ -22,7 +22,9 @@ There is no accuracy result yet; the corpora were not independently re-audited.
 A full 1.47B, 32-H100 pilot completed 32 updates at about 3.5 seconds/update.
 It saved native state and HF weights/tokenizer, but exposed missing validation.
 The cache configuration is corrected and tested with actual validation reads.
-Both local GPU smokes now log finite validation CE. Production starts fresh.
+The corrected pilot passed: 32 updates, finite validation CE 6.3678, saved state.
+The production driver continues that exact checkpoint on 32 H100s.
+The soft arm is launched; matched CE and accuracy evaluation remain future work.
 
 ## Readout
 

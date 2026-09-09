@@ -227,6 +227,16 @@ and 3.464 seconds/update. Native step-31 state and HF model/tokenizer were
 verified; `data/soft_pilot_cw_result.json` records the result. The full production
 driver resumes this state. These early losses are operational checks only.
 
+Production driver: `/bizon/exp279-soft-production-cw-h100x32-a01`.
+Its base-phase child is
+`/bizon/exp279-soft-production-cw-h100x32-a01/exp279-soft-production-cw-h100x32-a01-base`.
+The workers restored the native checkpoint and completed update 32 with finite
+loss 6.3391 at 21:59:58 UTC. The submit/verification record is
+`data/soft_production_cw_launch.json`; both stages share the exact frozen runtime
+source and inputs. At the measured rate the full schedule is about 15 days,
+plus validation, startup and preemptions. Only the soft arm is launched here;
+a fresh matched CE run and accuracy evaluations remain future work.
+
 The corrected run starts fresh with a new identity. `launch_gpu.py` submits a
 short pilot with `--pilot-updates 32`; after validation, omitting that argument
 launches the production driver. `--resume-record` preserves the pilot's frozen

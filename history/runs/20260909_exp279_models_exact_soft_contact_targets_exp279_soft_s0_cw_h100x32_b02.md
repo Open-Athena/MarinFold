@@ -15,8 +15,9 @@ marinfold_run:
   git_sha: b0dd33eca8836c1dddbe6588e4befc3b2dd5c67d
   iris_job_ids:
   - /bizon/exp279-soft-pilot-cw-h100x32-a04
+  - /bizon/exp279-soft-production-cw-h100x32-a01
+  - /bizon/exp279-soft-production-cw-h100x32-a01/exp279-soft-production-cw-h100x32-a01-base
 ---
-
 # 2026-09-09 · exp279_models_exact_soft_contact_targets · exp279-soft-s0-cw-h100x32-b02
 
 **Launched:** 2026-09-09T21:48:34Z by bizon  
@@ -56,3 +57,11 @@ all three input cache ledgers. No bulk cross-region transfer was performed.
 Completed 32 updates with training loss 6.3659, ordinary validation CE 6.3678,
 and 3.464 seconds/update. Verified permanent native step-31 state and HF export
 with tokenizer. All four Iris tasks succeeded. Production resumes this state.
+
+## Production resume
+
+At 2026-09-09 21:59:58 UTC the base-phase workers completed update 32 after
+restoring the pilot native checkpoint, with finite loss 6.3391. W&B reports the
+same run as running. The driver stays alive and waits for this phase, then
+continues the two prescribed transitions. Full training and accuracy evaluation
+are not yet complete.
