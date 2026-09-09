@@ -43,7 +43,7 @@ HERE = Path(__file__).resolve().parent
 #: conditioned on an *earlier* #232 m2-p06 checkpoint (step 145,199, the sweep)
 #: than the one whose contact maps this page shows (step 363,000, the training
 #: run), so the two must not be read as the same model.
-BUCKET_TREE = "https://huggingface.co/buckets/open-athena/MarinFold/tree/main"
+BUCKET_TREE = "https://huggingface.co/buckets/open-athena/MarinFold/tree"
 WANDB = "https://wandb.ai/open-athena/MarinFold/runs"
 PROVENANCE = [
     {
@@ -87,7 +87,7 @@ PROVENANCE = [
             ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
             ["contact-source checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199"],
             ["contact-source W&B", f"{WANDB}/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug"],
-            ["structures", "https://huggingface.co/buckets/timodonnell/helico-experiments/tree/main/exp14_foldbench_held_out_monomers/structures/helico"],
+            ["structures", "https://huggingface.co/buckets/timodonnell/helico-experiments/tree/exp14_foldbench_held_out_monomers/structures/helico"],
         ],
     },
     {
