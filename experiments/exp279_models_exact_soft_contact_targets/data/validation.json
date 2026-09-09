@@ -2,7 +2,7 @@
   "date": "2026-09-09",
   "reference_recipe_sha": "7a18dd5158e71b0db8d782be77cc4b9a6d59c8df",
   "cpu_tests": {
-    "passed": 45,
+    "passed": 48,
     "accelerator_deselected": 1
   },
   "full_dimension_accelerator_test": {
@@ -39,5 +39,9 @@
     "multi-host GPU/TPU runtime",
     "production JAX_FLASH and throughput/memory",
     "scientific accuracy comparison"
-  ]
+  ],
+  "production_launch_tests": {
+    "passed": 8,
+    "scope": "bundle provenance, TPU gang request, phase boundaries, pilot schedule, input validation"
+  }
 }

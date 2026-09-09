@@ -193,3 +193,34 @@ Report accuracy versus both exposure and accelerator time, including metadata
 and loss overhead. Keep per-protein predictions, scores, timings and precise
 checkpoint identities. Repeat a promising result with another paired seed;
 reserve eval-test for final confirmation. A null or negative result is valid.
+
+## Production launch (2026-09-09)
+
+The current default registry still selects exp232 m2/p06 step-363000. The first
+full-model pilot uses the existing us-east1 caches, 32 preemptible v6e chips
+(eight hosts), batch priority, global batch 128 and per-device batch 1. No bulk
+input transfer is needed. The cache ledgers match all three reference counts.
+
+The pilot job is `/bizon/exp279-soft-pilot-use1-v6e32-a01`, with W&B identity
+`exp279-soft-s0-use1-v6e32`. It was submitted from commit `1618918d` for 32
+updates; allocation and actual training remain to be verified. Its frozen source,
+lock, package versions and input ledgers are in `data/soft_pilot_launch.json`.
+
+```bash
+uv run --no-sync --project experiments/exp279_models_exact_soft_contact_targets python -m experiments.exp279_models_exact_soft_contact_targets.launch --arm soft --run-name exp279-soft-s0-use1-v6e32 --job-name exp279-soft-pilot-use1-v6e32-a01 --region us-east1 --tpu v6e-32 --pilot-updates 32 --record scratch/exp279/soft-pilot.json
+```
+
+After the pilot is verified, omit `--pilot-updates`, use a new driver job name,
+and pass `--resume-record scratch/exp279/soft-pilot.json`. This preserves the
+pilot's frozen manifest even after history-only commits. Any actual runtime
+source, dependency, cache or placement change is rejected. The CPU driver waits
+for each prescribed phase job and advances only after a complete checkpoint.
+Preempted workers choose the latest committed native checkpoint on rank zero and
+broadcast that choice to all ranks. They restore full state and automatically
+select the correct phase. A restart before the first checkpoint may reinitialize
+only when the persisted experiment identity matches exactly.
+
+The launch additions passed eight focused tests and the full CPU suite now has
+48 passing tests. Bundle tests verify identical source identity without `.git`
+and detect a changed worker file. Phase-boundary tests include final completion;
+pilot configuration tests confirm the production LR schedule is unchanged.
