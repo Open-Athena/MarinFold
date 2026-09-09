@@ -44,3 +44,5 @@ Launched at batch priority on cw-us-east-02a, 16 nodes / 128 H100s. All four cac
 Checkpoint base: `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-native-mpnn-1.5B/checkpoints/step-<N>/`; HF exports use the sibling `hf/step-<N>/`. Temporary checkpoints every 15 minutes; permanent checkpoints every 14,520 steps and at completion.
 
 Monitoring began at the user’s request on 2026-09-09 at 19:47 UTC. Both driver and training gang are running at batch priority. The first temporary recovery checkpoint completed at step 461 at 19:48:38 UTC, under the standard Marin `tmp/ttl=14d/checkpoints-temp/` mirror of this run’s checkpoint path. No production restart has been required.
+
+First full LM validation completed on 2026-09-09 at 20:13:38 UTC: step 2,114, validation loss 3.76525235. Training resumed normally and reached step 2,180 by 20:14:42 UTC. Temporary recovery checkpoint rotation also passed at step 1,457.
