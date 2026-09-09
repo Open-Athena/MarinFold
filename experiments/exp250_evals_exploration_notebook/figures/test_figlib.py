@@ -71,3 +71,13 @@ def test_a_column_mismatch_is_refused_rather_than_filled(tmp_path, published):
     extra = pd.DataFrame([("7abc_A", "mf_L_363k", "ok")], columns=["target_id", "arm", "status"])
     with pytest.raises(SystemExit, match="lddt"):
         figlib.load_helico_per_target(figlib.Inputs(), local(tmp_path, extra))
+
+
+def test_only_the_named_arm_is_taken_from_the_local_file(tmp_path, published):
+    """Figure 3 pools one named arm from a file that may hold others."""
+    published(table([("7abc_A", "off", "ok", 0.35, 0.15, 0)]))
+    extra = table([("7abc_A", "mf_L_363k", "ok", 0.64, 0.51, 0),
+                   ("7abc_A", "mf_L2", "ok", 0.60, 0.44, 0)])
+    frame = figlib.load_helico_per_target(figlib.Inputs(), local(tmp_path, extra),
+                                          extra_arm="mf_L_363k")
+    assert sorted(frame.arm) == ["mf_L_363k", "off"]

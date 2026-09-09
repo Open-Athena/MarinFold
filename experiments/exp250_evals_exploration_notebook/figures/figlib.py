@@ -493,12 +493,17 @@ def load_foldbench_universe(inputs: Inputs):
         on="stem", how="left", validate="one_to_one")
 
 
-def load_helico_per_target(inputs: Inputs, extra_path=None):
+def load_helico_per_target(inputs: Inputs, extra_path=None, extra_arm=None):
     """helico exp14's per-target structure scores, plus an arm re-run outside that publication.
 
     The published table is every arm as exp14 ran them; `extra_path` points at a CSV of the same
     shape holding an arm that was re-run since (currently the MarinFold arm on #232's step-363000
-    contacts). Both are recorded as inputs, so a figure cannot quietly be drawn from one of them.
+    contacts), and `extra_arm` names the one arm to take from it. Both files are recorded as
+    inputs, so a figure cannot quietly be drawn from one of them.
+
+    **Every figure that pools the two sources must come through here.** The published table now
+    carries the re-run arm, and a caller that fetches it and concatenates the local copy itself
+    counts that arm's targets twice — which reads as a narrower interval, not as an error.
     """
     import io
 
@@ -512,6 +517,8 @@ def load_helico_per_target(inputs: Inputs, extra_path=None):
                              "per-target scores; see the experiment README for how it was made")
         inputs.add_file(extra_path)
         extra = pd.read_csv(extra_path)
+        if extra_arm is not None:
+            extra = extra[extra.arm == extra_arm]
         missing = [column for column in frame.columns if column not in extra.columns]
         if missing:
             raise SystemExit(f"the re-run arm is missing {missing}; it has to carry the same "
