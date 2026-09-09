@@ -196,7 +196,8 @@ uses the original base for bootstrap only.
 
 The format example proposes 2,000 steps, 16 independent bootstrap hypotheses,
 one history per target, and 50% plain rehearsal. These are starting settings,
-not completed experiments or a validated full-model memory/throughput profile.
+not a completed 2,000-step experiment. The bounded full-model profile and
+256-step trial below have completed.
 For synthesis/rejection, create another round config with a distinct `round` and
 `run_name`, point both `generator` and `initial_model` to the selected previous
 checkpoint, and point `tokenizer` to that same checkpoint. Synthesis defaults to
@@ -274,7 +275,115 @@ manifest is not a substitute. No eval-test predictions or metrics were read.
 
 ## Results
 
-Engineering validation only; there are no learned protein-accuracy results yet.
+### Completed 256-step format trial — gate failed
+
+The full 1.5B trial completed on one 8×H100 node in `cw-us-east-02a` on
+2026-09-09. **It learned repeated hypothesis sections but did not learn reliable
+finalization.** Do not advance this checkpoint to synthesis or rejection training.
+
+| Step-256 internal validation | Natural | Forced |
+| --- | ---: | ---: |
+| Proteins / completions | 25 / 200 | 25 / 200 |
+| Valid complete trajectories | **0/200 (0%)** | **14/200 (7%)** |
+| Required validity | 99% | 99% |
+| Valid trajectories with ≥2 nonempty hypotheses | 0/200 | 3/200 |
+| Raw final marker present | 8/200 | 200/200 (inserted) |
+| Macro final-answer F1, invalid = 0 | 0.0000 | 0.03193 |
+
+The separate 90% natural multiple-nonempty-hypothesis gate also failed. However,
+188/200 natural samples contain multiple raw section markers. This is evidence
+of repeated-section behavior, not successful complete documents: raw marker
+counts do not validate the intervening contacts or earn credit on the gate.
+Natural samples frequently run out of budget or emit `<end>` without first
+switching to `<final-prediction>`. In forced mode, 185/200 samples begin another
+hypothesis after the final marker; one other sample ends in an incomplete triple.
+Forced budget counts were 40/48/56/56 completions at 0/256/1024/2048 tokens, with
+10/0/4/0 valid respectively. These budgets use different target subsets, so this
+is a diagnostic breakdown, not a controlled estimate of a budget effect.
+
+![Training loss and failed format gate](plots/trial_s03.png)
+
+Training used 2,023 proteins and 25 sequence-hash-held-out proteins from a balanced
+2,048-protein pool (1,024 AFDB, 1,024 ESM). Bootstrap generated 16 independent
+drafts per target; 252 malformed/unterminated drafts were retried and audited,
+60 accepted drafts were empty contact sets, and all 2,048 constructed histories
+were valid. The training corpus contains 1,054 plain rehearsal documents and
+969 multi documents. Its 1,554 supervised transition-marker tokens include the
+1,054 plain-mode starts: only **500 are natural final markers per corpus pass**.
+Final labels are reference contacts; no reference contacts were supplied to the
+bootstrap generator. Main warm-up hypothesis loss weight was **1.0**; the proposed
+0.1 synthesis weight has not been tried yet.
+
+The trial processed 8,192 documents over 256 optimizer steps, global batch 32,
+LR 1e-4 with 25-step warm-up. Weighted internal validation loss fell from
+2.7812 at step 32 to 2.2445 at step 256; final training minibatch loss was 1.8686.
+Peak allocated memory was 35.45 GB per GPU (decimal GB, as logged by the trainer). Median optimizer-step time was 1.049 s, excluding checkpoint
+publication and validation. The separate eight-step full-model profile used batch
+8, reached 58,480 aggregate tokens/s after its first step, and used 35.44 GB/GPU.
+Its weights were not used to initialize the main trial.
+
+Runs: [exp281-trial-s03](https://wandb.ai/open-athena/MarinFold/runs/exp281-trial-s03),
+[exp281-profile-s01](https://wandb.ai/open-athena/MarinFold/runs/exp281-profile-s01).
+Training and evaluation used source commit `bab3f50a`. The final model, including
+its tokenizer, is at
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/checkpoints/exp281-trial-s03/step-256`.
+The prepared initial checkpoint and all large input/output I/O stayed in the
+same CoreWeave bucket. `data/iris_capacity_trial.json` records launch-time capacity.
+
+### Recovery and interpretation
+
+The original `/bizon/exp281-trial-s03` stalled publishing its step-128 optimizer
+checkpoint, then another rank aborted while waiting. At the last storage check,
+the incomplete multipart upload held 7.28 GB across 124 parts. The successful
+`/bizon/exp281-trial-s03-r1` resumed from complete step 64 with the same code,
+optimizer settings, data order and W&B run. Steps 128, 192 and 256 published
+successfully on this attempt. The abandoned multipart upload was removed.
+Before long runs, checkpoint I/O needs bounded retries that cannot outlast the
+distributed collective timeout; this trial recovered the stall but did not harden
+that path. Successful-worker duration was 806.77 s, including setup/save; the
+failed attempt consumed another 1,000.66 s.
+
+W&B rejects explicit step numbers already logged before rollback. Therefore
+`data/trial_s03_training.csv` combines steps 1–64 from W&B with 65–256 from the
+successful resumed console; `data/trial_s03_history.json` preserves the original
+W&B history separately. Eight-GPU replay was not numerically identical to the lost
+attempt, despite exact tiny-model resume tests. Do not substitute the lost
+attempt's replayed validation points when plotting this result.
+
+The raw-output audit independently agrees with the scoring CSVs. Lower aggregate
+teacher-forced loss was insufficient to teach the rare finalization transitions.
+The 256-step trial does not test the intended long SFT horizon. The next format
+trial should extend warm-up toward the proposed 2,000 steps and report natural-marker
+and termination losses separately before lowering hypothesis weight. A short-history
+curriculum or stronger transition supervision are additional candidate interventions. This is a proposed follow-up,
+not a completed comparison or evidence that any particular change will work.
+No fixed-vs-refreshed SFT, rejection control, or FoldBench accuracy comparison has
+been run; the core synthesis/diversity research questions remain open.
+
+### Reproduction artifacts
+
+`data/trial_s03_format_gate.json` records the fixed gate; per-protein scores and
+400 per-candidate diagnostics are adjacent. `data/trial_s03_timings.csv` contains
+2,098 captured per-input rows: 2,048 bootstrap and 25 per evaluation mode. Its
+latency is explicitly shared batch latency, not an independently measured
+per-protein runtime; do not sum duplicated batch latencies across input rows.
+Model load time and worker metadata are separate columns.
+
+The complete 2.31 MB bounded report is public under
+`hf://buckets/open-athena/MarinFold/data/exp281/trial-s03/report.zip`, also attached
+as W&B artifact `open-athena/MarinFold/exp281-trial-s03-report:v0`. It contains raw
+evaluation candidates, scores, bootstrap audit counts, timings, corpus manifests,
+and the original S3 URI index. `data/trial_s03_public_report.json` pins its checksum.
+Download with `hf buckets cp`, unzip, then run `uv run python analyze_trial.py
+/path/to/report` in the experiment environment. `plot_trial.py` reads only the
+committed CSV/JSON; `build_summary.py` assembles the saved plot and narrative.
+Use `uv run --no-project --with matplotlib python ...` for those plotting scripts.
+`publish_to_hf.py` rebuilds and uploads the bounded report with a modern `hf` CLI;
+run it with `uv run --no-project python` so the older training-environment CLI does
+not shadow the workstation's bucket-capable CLI. Later analysis scripts change
+the source fingerprint: resume training from the recorded `bab3f50a` source.
+
+### Engineering validation
 
 - Sixteen behavioral/integration tests pass, including causal marker-mask alignment,
   statement-boundary truncation, imperfect-answer rejection followed by reference
@@ -295,11 +404,13 @@ Engineering validation only; there are no learned protein-accuracy results yet.
 - A 16-wide-head vLLM toy hit a FlexAttention compiler failure; the smoke uses
   64-wide heads to exercise the production attention path. No library was patched.
 
-Still required before scaling: initialize the actual model/corpus, validate
-bootstrap format acquisition, measure full-model 8×H100 memory/throughput, and
-freeze the production corpus sizes and round schedule. The source, sampling,
-loss, selection, checkpointing, and dispatch paths are implemented for that work.
+Still required before scaling: pass free-running finalization, harden checkpoint
+publication, and freeze production corpus sizes and the round schedule.
 
 ## Conclusion
 
-Implementation and engineering checks are complete. The research hypotheses remain untested until the staged training and evaluation runs are performed.
+The first full-model trial is complete and fails the preregistered format gate.
+Repeated hypothesis generation appears, but natural and forced finalization remain
+unreliable. Improve format warm-up before starting synthesis-heavy SFT or rejection
+fine-tuning. This trial establishes full-model execution and checkpoint recovery,
+not improved contact accuracy or useful hypothesis diversity.

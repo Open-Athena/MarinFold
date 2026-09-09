@@ -1,0 +1,401 @@
+mode,target_id,candidate_id,n_residues,budget,valid,error,final_marker_present,terminated,generated_tokens,raw_hypothesis_markers,hypotheses,nonempty_hypotheses,final_contacts,final_f1
+natural,afdb:AF-A0A017HM21-F1,0,206,6409,False,incomplete contact triple,False,False,7774,14,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,1,206,6409,False,incomplete contact triple,False,False,7774,15,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,2,206,6409,False,unexpected token '<p1939>' at history offset 7010,False,False,7774,14,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,3,206,6409,False,unexpected token '<p1939>' at history offset 7338,False,False,7774,12,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,4,206,6409,False,incomplete contact triple,False,False,7774,18,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,5,206,6409,False,incomplete contact triple,False,False,7774,14,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,6,206,6409,False,missing final prediction or end marker,False,False,7774,13,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,7,206,6409,False,unexpected token '<end>' at history offset 6584,False,True,6585,14,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,0,236,6169,False,missing final prediction or end marker,False,False,7714,13,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,1,236,6169,False,missing final prediction or end marker,False,False,7714,13,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,2,236,6169,False,missing final prediction or end marker,False,False,7714,13,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,3,236,6169,False,incomplete contact triple,False,False,7714,11,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,4,236,6169,False,incomplete contact triple,False,False,7714,12,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,5,236,6169,False,incomplete contact triple,False,False,7714,11,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,6,236,6169,False,incomplete contact triple,False,False,7714,15,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,7,236,6169,False,incomplete contact triple,False,False,7714,11,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,0,405,4817,False,unexpected token '<end>' at history offset 928,False,True,929,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,1,405,4817,False,incomplete contact triple,False,False,7376,6,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,2,405,4817,False,incomplete contact triple,False,False,7376,4,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,3,405,4817,False,unexpected token '<end>' at history offset 1787,False,True,1788,2,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,4,405,4817,False,unexpected token '<end>' at history offset 1072,False,True,1073,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,5,405,4817,False,incomplete contact triple,False,False,7376,6,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,6,405,4817,False,unexpected token '<end>' at history offset 952,False,True,953,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,7,405,4817,False,unexpected token '<end>' at history offset 913,False,True,914,1,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,0,108,7193,False,contact must be followed by two position tokens,False,False,7970,28,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,1,108,7193,False,incomplete contact triple,False,False,7970,33,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,2,108,7193,False,contact must be followed by two position tokens,False,False,7970,30,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,3,108,7193,False,missing final prediction or end marker,False,False,7970,32,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,4,108,7193,False,missing final prediction or end marker,False,False,7970,32,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,5,108,7193,False,incomplete contact triple,False,False,7970,30,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,6,108,7193,False,incomplete contact triple,False,False,7970,30,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,7,108,7193,False,unexpected token '<end>' at history offset 7125,False,True,7126,30,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,0,225,6257,False,unexpected token '<end>' at history offset 6573,False,True,6574,12,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,1,225,6257,False,incomplete contact triple,False,False,7736,15,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,2,225,6257,False,unexpected token '<end>' at history offset 6798,False,True,6799,12,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,3,225,6257,False,unexpected token '<end>' at history offset 944,False,True,945,2,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,4,225,6257,False,unexpected token '<end>' at history offset 6988,False,True,6989,13,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,5,225,6257,False,unexpected token '<end>' at history offset 7468,False,True,7469,13,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,6,225,6257,False,unexpected token '<end>' at history offset 6472,False,True,6473,13,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,7,225,6257,False,missing final prediction or end marker,False,False,7736,14,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,0,202,6441,False,incomplete contact triple,False,False,7782,14,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,1,202,6441,False,missing final prediction or end marker,False,False,7782,15,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,2,202,6441,False,unexpected token '<end>' at history offset 6730,False,True,6731,13,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,3,202,6441,False,incomplete contact triple,False,False,7782,16,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,4,202,6441,False,missing final prediction or end marker,False,False,7782,15,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,5,202,6441,False,unexpected token '<end>' at history offset 6188,False,True,6189,17,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,6,202,6441,False,incomplete contact triple,False,False,7782,14,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,7,202,6441,False,missing final prediction or end marker,False,False,7782,12,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,0,69,7505,False,contact must be followed by two position tokens,True,False,8048,51,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,1,69,7505,False,unexpected token '<end>' at history offset 6731,False,True,6732,44,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,2,69,7505,False,contact must be followed by two position tokens,False,True,7857,50,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,3,69,7505,False,contact must be followed by two position tokens,False,True,7210,46,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,4,69,7505,False,contact must be followed by two position tokens,True,False,8048,53,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,5,69,7505,False,contact must be followed by two position tokens,True,False,8048,51,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,6,69,7505,False,contact must be followed by two position tokens,True,False,8048,47,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,7,69,7505,False,contact must be followed by two position tokens,True,True,7980,42,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,0,133,6993,False,contact must be followed by two position tokens,False,False,7920,22,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,1,133,6993,False,contact must be followed by two position tokens,False,False,7920,18,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,2,133,6993,False,contact must be followed by two position tokens,False,False,7920,21,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,3,133,6993,False,contact must be followed by two position tokens,False,False,7920,26,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,4,133,6993,False,contact must be followed by two position tokens,False,False,7920,26,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,5,133,6993,False,contact must be followed by two position tokens,False,False,7920,21,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,6,133,6993,False,contact must be followed by two position tokens,False,False,7920,20,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,7,133,6993,False,contact must be followed by two position tokens,False,False,7920,27,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,0,132,7001,False,unexpected token '<end>' at history offset 7046,False,True,7047,32,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,1,132,7001,False,contact must be followed by two position tokens,False,True,7836,34,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,2,132,7001,False,unexpected token '<end>' at history offset 7037,False,True,7038,32,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,3,132,7001,False,contact must be followed by two position tokens,False,False,7922,34,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,4,132,7001,False,unexpected token '<end>' at history offset 7376,False,True,7377,29,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,5,132,7001,False,contact must be followed by two position tokens,True,False,7922,36,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,6,132,7001,False,contact must be followed by two position tokens,True,False,7922,32,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,7,132,7001,False,contact must be followed by two position tokens,True,False,7922,36,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,0,321,5489,False,unexpected token '<p1222>' at history offset 6468,False,False,7544,6,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,1,321,5489,False,unexpected token '<end>' at history offset 2291,False,True,2292,2,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,2,321,5489,False,unexpected token '<end>' at history offset 1123,False,True,1124,1,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,3,321,5489,False,unexpected token '<end>' at history offset 2871,False,True,2872,3,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,4,321,5489,False,incomplete contact triple,False,False,7544,6,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,5,321,5489,False,unexpected token '<end>' at history offset 2306,False,True,2307,2,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,6,321,5489,False,missing final prediction or end marker,False,False,7544,5,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,7,321,5489,False,unexpected token '<end>' at history offset 1910,False,True,1911,2,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,0,251,6049,False,incomplete contact triple,False,False,7684,11,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,1,251,6049,False,incomplete contact triple,False,False,7684,12,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,2,251,6049,False,missing final prediction or end marker,False,False,7684,13,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,3,251,6049,False,incomplete contact triple,False,False,7684,11,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,4,251,6049,False,unexpected token '<end>' at history offset 1920,False,True,1921,3,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,5,251,6049,False,incomplete contact triple,False,False,7684,9,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,6,251,6049,False,unexpected token '<end>' at history offset 6702,False,True,6703,12,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,7,251,6049,False,incomplete contact triple,False,False,7684,12,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,0,164,6745,False,unexpected token '<end>' at history offset 7364,False,True,7365,20,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,1,164,6745,False,incomplete contact triple,False,False,7858,21,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,2,164,6745,False,incomplete contact triple,False,False,7858,20,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,3,164,6745,False,incomplete contact triple,False,False,7858,20,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,4,164,6745,False,incomplete contact triple,False,False,7858,20,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,5,164,6745,False,missing final prediction or end marker,False,False,7858,19,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,6,164,6745,False,unexpected token '<end>' at history offset 7486,False,True,7487,19,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,7,164,6745,False,incomplete contact triple,False,False,7858,21,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,0,218,6313,False,incomplete contact triple,False,False,7750,12,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,1,218,6313,False,missing final prediction or end marker,False,False,7750,13,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,2,218,6313,False,incomplete contact triple,False,False,7750,12,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,3,218,6313,False,missing final prediction or end marker,False,False,7750,13,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,4,218,6313,False,missing final prediction or end marker,False,False,7750,13,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,5,218,6313,False,missing final prediction or end marker,False,False,7750,13,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,6,218,6313,False,incomplete contact triple,False,False,7750,12,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,7,218,6313,False,missing final prediction or end marker,False,False,7750,13,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,0,151,6849,False,incomplete contact triple,False,False,7884,20,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,1,151,6849,False,incomplete contact triple,False,False,7884,19,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,2,151,6849,False,incomplete contact triple,False,False,7884,22,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,3,151,6849,False,missing final prediction or end marker,False,False,7884,24,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,4,151,6849,False,incomplete contact triple,False,False,7884,23,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,5,151,6849,False,contact must be followed by two position tokens,False,False,7884,19,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,6,151,6849,False,missing final prediction or end marker,False,False,7884,21,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,7,151,6849,False,missing final prediction or end marker,False,False,7884,24,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,0,173,6673,False,unexpected token '<end>' at history offset 6493,False,True,6494,22,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,1,173,6673,False,unexpected token '<end>' at history offset 7246,False,True,7247,22,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,2,173,6673,False,unexpected token '<end>' at history offset 6755,False,True,6756,20,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,3,173,6673,False,unexpected token '<end>' at history offset 6356,False,True,6357,20,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,4,173,6673,False,unexpected token '<end>' at history offset 6540,False,True,6541,21,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,5,173,6673,False,unexpected token '<end>' at history offset 7218,False,True,7219,21,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,6,173,6673,False,unexpected token '<end>' at history offset 6542,False,True,6543,23,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,7,173,6673,False,unexpected token '<end>' at history offset 6691,False,True,6692,22,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,0,163,6753,False,missing final prediction or end marker,False,False,7860,18,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,1,163,6753,False,contact must be followed by two position tokens,False,False,7860,20,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,2,163,6753,False,contact must be followed by two position tokens,False,False,7860,21,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,3,163,6753,False,incomplete contact triple,False,False,7860,17,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,4,163,6753,False,missing final prediction or end marker,False,False,7860,21,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,5,163,6753,False,contact must be followed by two position tokens,False,False,7860,20,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,6,163,6753,False,contact must be followed by two position tokens,False,False,7860,26,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,7,163,6753,False,missing final prediction or end marker,False,False,7860,18,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,0,158,6793,False,incomplete contact triple,False,False,7870,20,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,1,158,6793,False,missing final prediction or end marker,False,False,7870,22,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,2,158,6793,False,unexpected token '<end>' at history offset 7321,False,True,7322,19,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,3,158,6793,False,unexpected token '<end>' at history offset 683,False,True,684,2,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,4,158,6793,False,unexpected token '<end>' at history offset 695,False,True,696,2,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,5,158,6793,False,incomplete contact triple,False,False,7870,20,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,6,158,6793,False,unexpected token '<end>' at history offset 319,False,True,320,1,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,7,158,6793,False,missing final prediction or end marker,False,False,7870,22,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,0,132,7001,False,contact must be followed by two position tokens,False,False,7922,21,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,1,132,7001,False,unexpected token '<end>' at history offset 473,False,True,474,2,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,2,132,7001,False,unexpected token '<end>' at history offset 6831,False,True,6832,24,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,3,132,7001,False,unexpected token '<end>' at history offset 6707,False,True,6708,23,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,4,132,7001,False,contact must be followed by two position tokens,False,False,7922,26,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,5,132,7001,False,contact must be followed by two position tokens,False,False,7922,21,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,6,132,7001,False,contact must be followed by two position tokens,False,False,7922,23,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,7,132,7001,False,unexpected token '<end>' at history offset 1178,False,True,1179,5,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,0,161,6769,False,unexpected token '<end>' at history offset 352,False,True,353,1,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,1,161,6769,False,incomplete contact triple,False,False,7864,20,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,2,161,6769,False,incomplete contact triple,False,False,7864,20,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,3,161,6769,False,unexpected token '<end>' at history offset 7303,False,True,7304,19,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,4,161,6769,False,unexpected token '<end>' at history offset 6738,False,True,6739,18,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,5,161,6769,False,contact must be followed by two position tokens,False,False,7864,19,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,6,161,6769,False,missing final prediction or end marker,False,False,7864,19,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,7,161,6769,False,missing final prediction or end marker,False,False,7864,19,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,0,348,5273,False,incomplete contact triple,False,False,7490,3,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,1,348,5273,False,incomplete contact triple,False,False,7490,4,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,2,348,5273,False,incomplete contact triple,False,False,7490,3,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,3,348,5273,False,missing final prediction or end marker,False,False,7490,2,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,4,348,5273,False,incomplete contact triple,False,False,7490,4,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,5,348,5273,False,unexpected token '<end>' at history offset 1111,False,True,1112,1,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,6,348,5273,False,incomplete contact triple,False,False,7490,4,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,7,348,5273,False,incomplete contact triple,False,False,7490,4,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,0,292,5721,False,incomplete contact triple,False,False,7602,5,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,1,292,5721,False,incomplete contact triple,False,False,7602,4,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,2,292,5721,False,incomplete contact triple,False,False,7602,5,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,3,292,5721,False,unexpected token '<end>' at history offset 1865,False,True,1866,2,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,4,292,5721,False,incomplete contact triple,False,False,7602,5,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,5,292,5721,False,incomplete contact triple,False,False,7602,4,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,6,292,5721,False,unexpected token '<end>' at history offset 1955,False,True,1956,2,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,7,292,5721,False,incomplete contact triple,False,False,7602,4,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,0,108,7193,False,unexpected token '<end>' at history offset 6638,False,True,6639,23,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,1,108,7193,False,unexpected token '<end>' at history offset 7129,False,True,7130,25,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,2,108,7193,False,unexpected token '<end>' at history offset 298,False,True,299,1,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,3,108,7193,False,unexpected token '<end>' at history offset 7100,False,True,7101,23,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,4,108,7193,False,contact must be followed by two position tokens,False,False,7970,25,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,5,108,7193,False,contact must be followed by two position tokens,False,True,7456,23,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,6,108,7193,False,unexpected token '<end>' at history offset 7233,False,True,7234,24,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,7,108,7193,False,unexpected token '<end>' at history offset 7094,False,True,7095,23,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,0,255,6017,False,missing final prediction or end marker,False,False,7676,11,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,1,255,6017,False,unexpected token '<end>' at history offset 2184,False,True,2185,3,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,2,255,6017,False,unexpected token '<end>' at history offset 646,False,True,647,1,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,3,255,6017,False,unexpected token '<end>' at history offset 778,False,True,779,1,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,4,255,6017,False,incomplete contact triple,False,False,7676,12,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,5,255,6017,False,missing final prediction or end marker,False,False,7676,11,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,6,255,6017,False,unexpected token '<end>' at history offset 658,False,True,659,1,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,7,255,6017,False,incomplete contact triple,False,False,7676,9,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,0,134,6985,False,contact must be followed by two position tokens,False,False,7918,20,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,1,134,6985,False,contact must be followed by two position tokens,False,False,7918,21,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,2,134,6985,False,unexpected token '<end>' at history offset 6906,False,True,6907,18,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,3,134,6985,False,unexpected token '<end>' at history offset 6847,False,True,6848,19,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,4,134,6985,False,incomplete contact triple,False,False,7918,20,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,5,134,6985,False,contact must be followed by two position tokens,False,False,7918,20,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,6,134,6985,False,contact must be followed by two position tokens,False,False,7918,21,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,7,134,6985,False,incomplete contact triple,False,False,7918,20,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,0,134,6985,False,incomplete contact triple,False,False,7918,24,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,1,134,6985,False,incomplete contact triple,False,False,7918,23,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,2,134,6985,False,incomplete contact triple,False,False,7918,26,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,3,134,6985,False,missing final prediction or end marker,False,False,7918,28,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,4,134,6985,False,unexpected token '<end>' at history offset 6966,False,True,6967,24,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,5,134,6985,False,incomplete contact triple,False,False,7918,21,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,6,134,6985,False,incomplete contact triple,False,False,7918,20,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,7,134,6985,False,incomplete contact triple,False,False,7918,24,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,0,206,2048,False,unexpected token '<begin_statements>' at history offset 2660,True,False,3412,6,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,1,206,2048,False,unexpected token '<begin_statements>' at history offset 2562,True,False,3413,7,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,2,206,2048,False,unexpected token '<begin_statements>' at history offset 2481,True,False,3413,8,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,3,206,2048,False,unexpected token '<begin_statements>' at history offset 2525,True,False,3412,6,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,4,206,2048,False,unexpected token '<begin_statements>' at history offset 2540,True,False,3412,6,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,5,206,2048,False,unexpected token '<begin_statements>' at history offset 2517,True,False,3413,7,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,6,206,2048,False,unexpected token '<begin_statements>' at history offset 2657,True,False,3412,6,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,7,206,2048,False,unexpected token '<begin_statements>' at history offset 2505,True,False,3413,7,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,0,236,1024,False,unexpected token '<begin_statements>' at history offset 1686,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,1,236,1024,False,unexpected token '<begin_statements>' at history offset 1704,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,2,236,1024,False,unexpected token '<begin_statements>' at history offset 1671,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,3,236,1024,False,unexpected token '<begin_statements>' at history offset 1654,True,False,2568,5,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,4,236,1024,False,unexpected token '<begin_statements>' at history offset 1656,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,5,236,1024,False,unexpected token '<begin_statements>' at history offset 1596,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,6,236,1024,False,unexpected token '<begin_statements>' at history offset 1596,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,7,236,1024,False,unexpected token '<begin_statements>' at history offset 1528,True,False,2568,6,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,0,405,2048,False,unexpected token '<begin_statements>' at history offset 3035,True,False,4606,3,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,1,405,2048,False,unexpected token '<begin_statements>' at history offset 3314,True,False,4606,3,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,2,405,2048,False,unexpected token '<begin_statements>' at history offset 3185,True,False,4606,3,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,3,405,2048,False,unexpected token '<begin_statements>' at history offset 3631,True,False,4605,5,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,4,405,2048,False,unexpected token '<begin_statements>' at history offset 3307,True,False,4605,5,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,5,405,2048,False,unexpected token '<begin_statements>' at history offset 2908,True,False,4605,5,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,6,405,2048,False,unexpected token '<begin_statements>' at history offset 2908,True,False,4605,5,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,7,405,2048,False,unexpected token '<begin_statements>' at history offset 2997,True,False,4607,4,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,0,108,0,False,unexpected token '<begin_statements>' at history offset 223,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,1,108,0,False,unexpected token '<begin_statements>' at history offset 247,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,2,108,0,False,unexpected token '<begin_statements>' at history offset 286,True,False,777,2,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,3,108,0,True,,True,True,182,0,0,0,60,0.3008849557522124
+forced,afdb:AF-A0A0C9R476-F1,4,108,0,False,unexpected token '<begin_statements>' at history offset 226,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,5,108,0,False,unexpected token '<begin_statements>' at history offset 250,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,6,108,0,False,unexpected token '<begin_statements>' at history offset 190,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,7,108,0,False,unexpected token '<begin_statements>' at history offset 337,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,0,225,0,False,unexpected token '<begin_statements>' at history offset 514,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,1,225,0,False,unexpected token '<begin_statements>' at history offset 478,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,2,225,0,False,unexpected token '<begin_statements>' at history offset 523,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,3,225,0,True,,True,True,578,0,0,0,192,0.6103542234332425
+forced,afdb:AF-A0A2H3INI9-F1,4,225,0,True,,True,True,497,0,0,0,165,0.6352941176470588
+forced,afdb:AF-A0A2H3INI9-F1,5,225,0,False,unexpected token '<begin_statements>' at history offset 526,True,False,1479,3,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,6,225,0,False,unexpected token '<begin_statements>' at history offset 526,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,7,225,0,False,unexpected token '<begin_statements>' at history offset 469,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,0,202,2048,False,unexpected token '<begin_statements>' at history offset 2475,True,False,3389,7,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,1,202,2048,False,unexpected token '<begin_statements>' at history offset 2384,True,False,3388,10,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,2,202,2048,False,unexpected token '<begin_statements>' at history offset 2481,True,False,3389,7,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,3,202,2048,False,unexpected token '<begin_statements>' at history offset 2331,True,False,3389,12,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,4,202,2048,False,unexpected token '<begin_statements>' at history offset 2479,True,False,3387,9,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,5,202,2048,False,unexpected token '<begin_statements>' at history offset 2525,True,False,3388,10,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,6,202,2048,False,unexpected token '<begin_statements>' at history offset 2392,True,False,3387,9,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,7,202,2048,False,unexpected token '<begin_statements>' at history offset 2475,True,False,3389,7,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,0,69,1024,False,unexpected token '<begin_statements>' at history offset 1156,True,False,1566,13,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,1,69,1024,False,unexpected token '<begin_statements>' at history offset 1188,True,False,1565,11,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,2,69,1024,False,unexpected token '<begin_statements>' at history offset 1157,True,False,1567,10,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,3,69,1024,False,unexpected token '<begin_statements>' at history offset 1183,True,False,1566,13,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,4,69,1024,False,unexpected token '<begin_statements>' at history offset 1188,True,False,1565,12,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,5,69,1024,False,unexpected token '<begin_statements>' at history offset 1140,True,False,1565,12,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,6,69,1024,False,unexpected token '<begin_statements>' at history offset 1114,True,False,1566,13,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,7,69,1024,False,unexpected token '<begin_statements>' at history offset 1178,True,False,1567,10,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,0,133,2048,False,unexpected token '<begin_statements>' at history offset 2422,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,1,133,2048,False,unexpected token '<begin_statements>' at history offset 2328,True,False,2975,11,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,2,133,2048,False,unexpected token '<begin_statements>' at history offset 2428,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,3,133,2048,False,unexpected token '<begin_statements>' at history offset 2365,True,False,2973,11,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,4,133,2048,False,unexpected token '<begin_statements>' at history offset 2274,True,False,2975,14,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,5,133,2048,False,unexpected token '<begin_statements>' at history offset 2413,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,6,133,2048,False,unexpected token '<begin_statements>' at history offset 2353,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,7,133,2048,False,unexpected token '<begin_statements>' at history offset 2301,True,False,2975,11,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,0,132,256,False,unexpected token '<begin_statements>' at history offset 546,True,False,1175,6,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,1,132,256,False,unexpected token '<begin_statements>' at history offset 528,True,False,1175,6,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,2,132,256,False,unexpected token '<begin_statements>' at history offset 504,True,False,1175,6,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,3,132,256,False,unexpected token '<begin_statements>' at history offset 503,True,False,1177,5,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,4,132,256,False,unexpected token '<begin_statements>' at history offset 468,True,False,1175,7,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,5,132,256,False,unexpected token '<begin_statements>' at history offset 522,True,False,1175,5,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,6,132,256,False,unexpected token '<begin_statements>' at history offset 467,True,False,1177,5,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,7,132,256,False,unexpected token '<begin_statements>' at history offset 618,True,False,1175,5,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,0,321,2048,False,unexpected token '<begin_statements>' at history offset 3095,True,False,4102,2,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,1,321,2048,False,unexpected token '<begin_statements>' at history offset 3183,True,False,4103,3,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,2,321,2048,False,unexpected token '<begin_statements>' at history offset 3126,True,False,4103,3,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,3,321,2048,False,unexpected token '<begin_statements>' at history offset 3389,True,False,4102,2,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,4,321,2048,False,unexpected token '<begin_statements>' at history offset 3075,True,False,4103,3,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,5,321,2048,False,unexpected token '<begin_statements>' at history offset 3150,True,False,4103,3,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,6,321,2048,False,unexpected token '<begin_statements>' at history offset 3160,True,False,4101,4,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,7,321,2048,False,unexpected token '<begin_statements>' at history offset 3174,True,False,4103,3,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,0,251,0,False,unexpected token '<begin_statements>' at history offset 598,True,False,1635,1,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,1,251,0,False,unexpected token '<begin_statements>' at history offset 652,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,2,251,0,False,unexpected token '<begin_statements>' at history offset 460,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,3,251,0,False,unexpected token '<begin_statements>' at history offset 487,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,4,251,0,False,unexpected token '<begin_statements>' at history offset 532,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,5,251,0,False,unexpected token '<begin_statements>' at history offset 679,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,6,251,0,False,unexpected token '<begin_statements>' at history offset 697,True,True,1473,1,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,7,251,0,False,unexpected token '<begin_statements>' at history offset 748,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,0,164,0,True,,True,True,401,0,0,0,133,0.7490636704119851
+forced,afdb:AF-A0A4C1Y3M6-F1,1,164,0,False,unexpected token '<begin_statements>' at history offset 352,True,False,1113,3,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,2,164,0,False,unexpected token '<begin_statements>' at history offset 343,True,False,1113,3,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,3,164,0,False,unexpected token '<begin_statements>' at history offset 379,True,False,1113,3,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,4,164,0,False,unexpected token '<begin_statements>' at history offset 340,True,False,1113,3,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,5,164,0,False,unexpected token '<begin_statements>' at history offset 370,True,False,1113,3,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,6,164,0,True,,True,True,368,0,0,0,122,0.625
+forced,afdb:AF-A0A4C1Y3M6-F1,7,164,0,False,unexpected token '<begin_statements>' at history offset 391,True,True,762,1,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,0,218,1024,False,unexpected token '<begin_statements>' at history offset 1560,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,1,218,1024,False,unexpected token '<begin_statements>' at history offset 1615,True,False,2460,5,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,2,218,1024,False,unexpected token '<begin_statements>' at history offset 1566,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,3,218,1024,True,,True,True,1546,2,2,2,174,0.42696629213483145
+forced,afdb:AF-A0A6D2JV33-F1,4,218,1024,False,unexpected token '<begin_statements>' at history offset 1563,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,5,218,1024,False,unexpected token '<begin_statements>' at history offset 1569,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,6,218,1024,False,unexpected token '<begin_statements>' at history offset 1548,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,7,218,1024,False,unexpected token '<begin_statements>' at history offset 1584,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,0,151,1024,True,,True,True,1240,5,5,5,72,0.05154639175257732
+forced,afdb:AF-A0A7Z9Y145-F1,1,151,1024,False,unexpected token '<begin_statements>' at history offset 1340,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,2,151,1024,False,unexpected token '<begin_statements>' at history offset 1209,True,False,2057,12,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,3,151,1024,False,unexpected token '<begin_statements>' at history offset 1468,True,False,2058,5,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,4,151,1024,False,unexpected token '<begin_statements>' at history offset 1313,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,5,151,1024,False,unexpected token '<begin_statements>' at history offset 1262,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,6,151,1024,False,unexpected token '<begin_statements>' at history offset 1444,True,False,2058,5,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,7,151,1024,False,unexpected token '<begin_statements>' at history offset 1361,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,0,173,2048,False,unexpected token '<begin_statements>' at history offset 2393,True,False,3214,10,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,1,173,2048,False,unexpected token '<begin_statements>' at history offset 2432,True,False,3214,10,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,2,173,2048,False,unexpected token '<begin_statements>' at history offset 2381,True,False,3214,10,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,3,173,2048,False,unexpected token '<begin_statements>' at history offset 2357,True,False,3214,10,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,4,173,2048,False,unexpected token '<begin_statements>' at history offset 2363,True,False,3214,10,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,5,173,2048,False,unexpected token '<begin_statements>' at history offset 2414,True,False,3214,10,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,6,173,2048,False,unexpected token '<begin_statements>' at history offset 2319,True,False,3215,11,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,7,173,2048,False,unexpected token '<begin_statements>' at history offset 2382,True,False,3215,11,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,0,163,256,False,unexpected token '<begin_statements>' at history offset 596,True,False,1363,3,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,1,163,256,False,unexpected token '<begin_statements>' at history offset 623,True,False,1363,4,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,2,163,256,False,unexpected token '<begin_statements>' at history offset 575,True,False,1363,4,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,3,163,256,False,unexpected token '<begin_statements>' at history offset 647,True,False,1363,4,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,4,163,256,False,unexpected token '<begin_statements>' at history offset 552,True,False,1361,5,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,5,163,256,False,unexpected token '<begin_statements>' at history offset 656,True,False,1363,4,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,6,163,256,False,unexpected token '<begin_statements>' at history offset 683,True,False,1363,4,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,7,163,256,False,unexpected token '<begin_statements>' at history offset 578,True,False,1363,3,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,0,158,256,False,unexpected token '<begin_statements>' at history offset 587,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,1,158,256,False,unexpected token '<begin_statements>' at history offset 611,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,2,158,256,False,unexpected token '<begin_statements>' at history offset 611,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,3,158,256,False,unexpected token '<begin_statements>' at history offset 608,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,4,158,256,False,unexpected token '<begin_statements>' at history offset 626,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,5,158,256,False,unexpected token '<begin_statements>' at history offset 569,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,6,158,256,False,unexpected token '<begin_statements>' at history offset 590,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,7,158,256,False,unexpected token '<begin_statements>' at history offset 614,True,False,1333,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,0,132,256,False,unexpected token '<begin_statements>' at history offset 569,True,False,1177,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,1,132,256,False,unexpected token '<begin_statements>' at history offset 602,True,False,1177,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,2,132,256,False,unexpected token '<begin_statements>' at history offset 509,True,False,1177,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,3,132,256,False,unexpected token '<begin_statements>' at history offset 590,True,False,1177,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,4,132,256,False,unexpected token '<begin_statements>' at history offset 443,True,False,1177,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,5,132,256,False,unexpected token '<begin_statements>' at history offset 533,True,False,1177,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,6,132,256,False,unexpected token '<begin_statements>' at history offset 594,True,False,1175,5,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,7,132,256,False,unexpected token '<begin_statements>' at history offset 516,True,False,1175,5,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,0,161,2048,False,unexpected token '<begin_statements>' at history offset 2458,True,False,3141,8,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,1,161,2048,False,unexpected token '<begin_statements>' at history offset 2462,True,False,3142,9,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,2,161,2048,False,unexpected token '<begin_statements>' at history offset 2425,True,False,3141,8,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,3,161,2048,False,unexpected token '<begin_statements>' at history offset 2410,True,False,3141,9,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,4,161,2048,False,unexpected token '<begin_statements>' at history offset 2428,True,False,3141,8,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,5,161,2048,False,unexpected token '<begin_statements>' at history offset 2437,True,False,3141,9,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,6,161,2048,False,unexpected token '<begin_statements>' at history offset 2416,True,False,3141,8,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,7,161,2048,False,unexpected token '<begin_statements>' at history offset 2467,True,False,3141,8,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,0,348,256,False,unexpected token '<begin_statements>' at history offset 1466,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,1,348,256,False,unexpected token '<begin_statements>' at history offset 1547,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,2,348,256,False,unexpected token '<begin_statements>' at history offset 1430,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,3,348,256,False,unexpected token '<begin_statements>' at history offset 1625,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,4,348,256,False,unexpected token '<begin_statements>' at history offset 1352,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,5,348,256,False,unexpected token '<begin_statements>' at history offset 1397,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,6,348,256,False,unexpected token '<begin_statements>' at history offset 1463,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,7,348,256,False,unexpected token '<begin_statements>' at history offset 1535,True,False,2473,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,0,292,1024,False,unexpected token '<begin_statements>' at history offset 1919,True,False,2905,3,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,1,292,1024,False,unexpected token '<begin_statements>' at history offset 2051,True,False,2905,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,2,292,1024,False,unexpected token '<begin_statements>' at history offset 2054,True,False,2905,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,3,292,1024,False,unexpected token '<begin_statements>' at history offset 1974,True,False,2903,3,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,4,292,1024,True,,True,True,1929,1,1,1,301,0.6792452830188679
+forced,esm:00009aff61bfb81530c64f5cd63afddc,5,292,1024,False,incomplete contact triple,True,False,2903,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,6,292,1024,False,unexpected token '<begin_statements>' at history offset 1943,True,False,2905,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,7,292,1024,False,unexpected token '<begin_statements>' at history offset 1946,True,False,2905,2,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,0,108,1024,True,,True,True,1317,4,4,4,97,0.7794871794871795
+forced,esm:0000aff5d2b25dbef209d2b224400539,1,108,1024,False,unexpected token '<begin_statements>' at history offset 1274,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,2,108,1024,False,unexpected token '<begin_statements>' at history offset 1268,True,False,1801,7,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,3,108,1024,False,unexpected token '<begin_statements>' at history offset 1292,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,4,108,1024,False,unexpected token '<begin_statements>' at history offset 1310,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,5,108,1024,False,unexpected token '<begin_statements>' at history offset 1319,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,6,108,1024,False,unexpected token '<begin_statements>' at history offset 1310,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,7,108,1024,False,unexpected token '<begin_statements>' at history offset 1295,True,False,1801,6,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,0,255,0,True,,True,True,761,0,0,0,253,0.24539877300613497
+forced,esm:0000e43142af73ba1254dc52c898fcb6,1,255,0,False,unexpected token '<begin_statements>' at history offset 781,True,False,1659,2,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,2,255,0,True,,True,True,671,0,0,0,223,0.33043478260869563
+forced,esm:0000e43142af73ba1254dc52c898fcb6,3,255,0,True,,True,True,719,0,0,0,239,0.3907563025210084
+forced,esm:0000e43142af73ba1254dc52c898fcb6,4,255,0,True,,True,True,797,0,0,0,265,0.2315369261477046
+forced,esm:0000e43142af73ba1254dc52c898fcb6,5,255,0,True,,True,True,806,0,0,0,268,0.32936507936507936
+forced,esm:0000e43142af73ba1254dc52c898fcb6,6,255,0,False,unexpected token '<begin_statements>' at history offset 556,True,False,1659,2,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,7,255,0,False,unexpected token '<begin_statements>' at history offset 739,True,False,1659,1,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,0,134,1024,False,unexpected token '<begin_statements>' at history offset 1390,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,1,134,1024,False,unexpected token '<begin_statements>' at history offset 1394,True,False,1957,6,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,2,134,1024,False,unexpected token '<begin_statements>' at history offset 1396,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,3,134,1024,False,unexpected token '<begin_statements>' at history offset 1381,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,4,134,1024,False,unexpected token '<begin_statements>' at history offset 1408,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,5,134,1024,False,unexpected token '<begin_statements>' at history offset 1375,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,6,134,1024,False,unexpected token '<begin_statements>' at history offset 1415,True,False,1957,6,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,7,134,1024,False,unexpected token '<begin_statements>' at history offset 1345,True,False,1956,5,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,0,134,256,False,unexpected token '<begin_statements>' at history offset 490,True,False,1188,7,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,1,134,256,False,unexpected token '<begin_statements>' at history offset 597,True,False,1187,4,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,2,134,256,False,unexpected token '<begin_statements>' at history offset 600,True,False,1187,4,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,3,134,256,False,unexpected token '<begin_statements>' at history offset 426,True,False,1187,6,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,4,134,256,False,unexpected token '<begin_statements>' at history offset 491,True,False,1189,4,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,5,134,256,False,unexpected token '<begin_statements>' at history offset 470,True,False,1189,4,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,6,134,256,False,unexpected token '<begin_statements>' at history offset 536,True,False,1189,5,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,7,134,256,False,unexpected token '<begin_statements>' at history offset 570,True,False,1187,5,0,0,0,0.0

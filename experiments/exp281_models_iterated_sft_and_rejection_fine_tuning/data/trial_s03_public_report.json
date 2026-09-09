@@ -1,0 +1,7 @@
+{
+  "path": "buckets/open-athena/MarinFold/data/exp281/trial-s03/report.zip",
+  "bytes": 2310241,
+  "sha256": "91115983a30533a37277f1fb398232770b2e2909b0b280c2279c382c9c51081f",
+  "anonymous_read_verified": true,
+  "wandb_artifact": "open-athena/MarinFold/exp281-trial-s03-report:v0"
+}

@@ -1,0 +1,6 @@
+{
+  "groups": 25,
+  "macro_final_f1": 0.0,
+  "primary": "final_f1",
+  "protocol": "all unselected candidates; pair-frequency final ranking"
+}

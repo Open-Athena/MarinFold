@@ -1,0 +1,31 @@
+{
+  "config": {
+    "candidates": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/candidates/*.parquet",
+    "context": 8192,
+    "hypothesis_weight": 1.0,
+    "output": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/corpus",
+    "plain": false,
+    "rehearsal_fraction": 0.5,
+    "seed": 281,
+    "selection": "random",
+    "tokenizer": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s01/checkpoints/exp281-format-s01/step-0"
+  },
+  "config_hash": "312bdb283869d5ee63bc4ae374df6d09e94133b97050b98317548f838c543f12",
+  "shards": [
+    "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/corpus/part-00000.parquet",
+    "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/corpus/part-00001.parquet",
+    "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/corpus/part-00002.parquet",
+    "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/corpus/part-00003.parquet"
+  ],
+  "tokenizer_hash": "01e0d8a94e60afe11494c23e5b3534667620e8e182e1a1284ed24c7a01d0792e",
+  "totals": {
+    "candidates": 25.0,
+    "documents": 25.0,
+    "final_weight": 12232.0,
+    "hypothesis_weight": 40074.0,
+    "invalid_candidates": 0.0,
+    "marker_weight": 22.0,
+    "plain_documents": 16.0,
+    "processed_tokens": 62239.0
+  }
+}
