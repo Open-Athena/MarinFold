@@ -1,6 +1,6 @@
 """Fixed scientific configuration for the single MPNN mixture pilot."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot"
 VERSION = "2026.09.09.1"
@@ -59,3 +59,21 @@ CORPORA = (
     ),
 )
 VALIDATION_CACHE = "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25"
+
+
+def training_corpora(*, smoke: bool) -> tuple[Corpus, ...]:
+    """Use audited small redesign caches for the isolated GPU startup test."""
+    if not smoke:
+        return CORPORA
+    sizes = {"mpnn-afdb": (160000, 21584525), "mpnn-esm": (39180, 40616645)}
+    return tuple(
+        replace(
+            corpus,
+            cache=f"{PREFIX}/smoke-tokenized/{corpus.name}",
+            documents=sizes[corpus.name][0],
+            tokens=sizes[corpus.name][1],
+        )
+        if corpus.name in sizes
+        else corpus
+        for corpus in CORPORA
+    )

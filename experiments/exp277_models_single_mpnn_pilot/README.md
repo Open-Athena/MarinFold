@@ -36,7 +36,7 @@ A healthy launched production run and reproducible checkpoint trail. Subsequentl
 
 ## Results
 
-Preparation and runtime validation are in progress. No model-quality result is available.
+Tokenizer smoke `/bizon/exp277-prepare-smoke-a04` succeeded on US-EAST-02A: all 160,000 AFDB documents (21,584,525 tokens) and all 39,180 ESM documents (40,616,645 tokens) exactly matched independent fresh tokenization. See `data/tokenization_smoke.csv`. Full preparation is running as `/bizon/exp277-prepare-a01`. No model-quality result is available.
 
 ## Conclusion
 

@@ -32,7 +32,7 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
     existing_cache,
 )
 from experiments.exp277_models_single_mpnn_pilot.config import (
-    CORPORA,
+    training_corpora,
     PREFIX,
     RUN_ID,
     VALIDATION_CACHE,
@@ -58,7 +58,7 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
             source=corpus.cache,
             tags=["contacts-v1", "decontaminated", corpus.name],
         ): corpus.weight
-        for corpus in CORPORA
+        for corpus in training_corpora(smoke=smoke)
     }
     validation = existing_cache(
         name="input/validation",
@@ -159,12 +159,11 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
 @click.command()
 @build_options
 def main() -> ArtifactStep[LevanterCheckpoint]:
-    for corpus in CORPORA:
+    smoke = os.environ.get("SMOKE") == "1"
+    for corpus in training_corpora(smoke=smoke):
         if not verify_cache(corpus):
             raise ValueError(f"Incomplete cache: {corpus.cache}")
-    return build_run(
-        smoke=os.environ.get("SMOKE") == "1", nodes=int(os.environ["NODES"])
-    )
+    return build_run(smoke=smoke, nodes=int(os.environ["NODES"]))
 
 
 if __name__ == "__main__":
