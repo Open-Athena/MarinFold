@@ -143,18 +143,32 @@ def evaluate(model: torch.nn.Module, stream: ParquetStream, pad: int, context: i
 
 
 def record_history(run: wandb.sdk.wandb_run.Run, output: str) -> None:
-    """Create the repository history immediately after W&B init, then persist it."""
+    """Create or restore one run history, append this job, and persist it."""
     root = Path(__file__).resolve().parents[2]
     command = ["uv", "run", "--no-project", sys.executable, str(root / "scripts/history.py")]
-    args = ["new", "--wandb-url", run.url, "--wandb-name", run.name,
-            "--experiment", EXPERIMENT, "--kind", "models", "--short", "exp281 weighted contact synthesis SFT"]
-    if os.environ.get("IRIS_JOB_ID"):
-        args.extend(["--iris-jobs", os.environ["IRIS_JOB_ID"]])
-    subprocess.run(command + args, check=True, cwd=root)
-    subprocess.run(command + ["update-index"], check=True, cwd=root)
     matches = [p for p in (root / "history/runs").glob("*.md") if run.url in p.read_text()]
+    if not matches:
+        fs, prefix = fsspec.core.url_to_fs(f"{output}/history")
+        for remote in fs.glob(prefix + "/*.md"):
+            with fs.open(remote, "r") as handle:
+                content = handle.read()
+            if run.url in content:
+                local = root / "history/runs" / remote.rsplit("/", 1)[-1]
+                local.write_text(content)
+                matches.append(local)
+    if not matches:
+        args = ["new", "--wandb-url", run.url, "--wandb-name", run.name,
+                "--experiment", EXPERIMENT, "--kind", "models", "--short", "exp281 weighted contact synthesis SFT"]
+        source = root / "source_revision.json"
+        if source.exists():
+            args.extend(["--git-sha", read_json(str(source))["git_sha"]])
+        subprocess.run(command + args, check=True, cwd=root)
+        matches = [p for p in (root / "history/runs").glob("*.md") if run.url in p.read_text()]
     if len(matches) != 1:
         raise ValueError("expected exactly one W&B run history")
+    if os.environ.get("IRIS_JOB_ID"):
+        subprocess.run(command + ["add-iris-job", str(matches[0]), os.environ["IRIS_JOB_ID"]], check=True, cwd=root)
+    subprocess.run(command + ["update-index"], check=True, cwd=root)
     with matches[0].open("rb") as src, fsspec.open(f"{output}/history/{matches[0].name}", "wb", auto_mkdir=True) as dst:
         shutil.copyfileobj(src, dst)
 

@@ -25,6 +25,8 @@ STAGES = {"prepare": "prepare.py", "generate": "generate.py", "corpus": "build_c
 def bundle(destination: Path) -> None:
     """Copy source and lockfiles, excluding artifacts and all virtualenvs."""
     root = Path(__file__).resolve().parents[2]
+    revision = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+    (destination / "source_revision.json").write_text(json.dumps({"git_sha": revision}))
     ignore = shutil.ignore_patterns(".venv", "__pycache__", ".pytest_cache", ".ruff_cache", "*.egg-info",
                                    "data", "plots", "tests", ".git")
     shutil.copytree(root / "marinfold", destination / "marinfold", ignore=ignore)
