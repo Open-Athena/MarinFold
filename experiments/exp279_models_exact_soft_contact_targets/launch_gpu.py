@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 import wandb
+import fsspec.config
 from fray.iris_backend import FrayIrisClient
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
 from iris.cli.connect import open_iris_client
@@ -124,6 +125,7 @@ def configure_local_s3() -> None:
     config["endpoint_url"] = "https://cwobject.com"
     config.setdefault("config_kwargs", {})["s3"] = {"addressing_style": "virtual"}
     os.environ["FSSPEC_S3"] = json.dumps(config)
+    fsspec.config.set_conf_env(fsspec.config.conf)
 
 
 def main() -> None:
