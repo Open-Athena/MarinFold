@@ -15,8 +15,8 @@ marinfold_run:
   git_sha: 179ab337
   iris_job_ids:
   - /bizon/exp281-profile-s01
+  - /bizon/exp281-profile-report
 ---
-
 # 2026-09-09 · exp281_models_iterated_sft_and_rejection_fine_tuning · exp281-profile-s01
 
 **Launched:** 2026-09-09T20:14:19Z by bizon  

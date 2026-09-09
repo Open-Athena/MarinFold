@@ -52,7 +52,8 @@ def score_pool(pool: list[dict]) -> dict:
         sections += len(hypotheses)
         multi += sum(bool(h) for h in hypotheses) >= 2
         empty += sum(not h for h in hypotheses)
-        jaccard.extend(len(a & b) / max(1, len(a | b)) for a, b in itertools.combinations(hypotheses, 2))
+        jaccard.extend(len(a & b) / len(a | b) if a | b else 1.0
+                       for a, b in itertools.combinations(hypotheses, 2))
         f1s.append(candidate["score"]["f1"])
     result = {"target_id": first["target_id"], "forced": first["forced"], "budget": first["budget"],
               "candidates": len(pool), "valid_fraction": sum(c["valid"] for c in pool) / len(pool),

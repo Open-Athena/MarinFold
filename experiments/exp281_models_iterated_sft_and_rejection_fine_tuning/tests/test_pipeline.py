@@ -282,3 +282,4 @@ def test_empty_contact_sets_are_preserved_but_do_not_pass_multi_gate() -> None:
     assert result["valid_fraction"] == 1.0
     assert result["multi_fraction"] == 0.0
     assert result["empty_sections_per_trajectory"] == 2.0
+    assert result["hypothesis_jaccard"] == 1.0

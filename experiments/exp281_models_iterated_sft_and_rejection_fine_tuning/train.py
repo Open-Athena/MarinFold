@@ -145,6 +145,7 @@ def evaluate(model: torch.nn.Module, stream: ParquetStream, pad: int, context: i
 def record_history(run: wandb.sdk.wandb_run.Run, output: str) -> None:
     """Create or restore one run history, append this job, and persist it."""
     root = Path(__file__).resolve().parents[2]
+    (root / "history/runs").mkdir(parents=True, exist_ok=True)
     command = ["uv", "run", "--no-project", sys.executable, str(root / "scripts/history.py")]
     matches = [p for p in (root / "history/runs").glob("*.md") if run.url in p.read_text()]
     if not matches:
