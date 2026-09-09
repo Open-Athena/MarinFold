@@ -453,43 +453,74 @@ subsetting on `mpnn_temperature`.
 
 ## The refold check — designs vs a native control
 
-3,000 design refolds over 375 backbones, against **250 native sequences
-refolded onto their own AFDB backbones**, paired on the same backbones.
-`data/refold_*.csv`.
+**Matched on backbone id.** The design arm covers 375 backbones and the native
+control 250; the comparison below uses the **250 backbones present in both**,
+so both rates are measured over the same proteins. `data/refold_*.csv`.
 
 | arm | n | scRMSD<2 Å | scTM>0.5 | median RMSD | median TM |
 |---|---|---|---|---|---|
-| **design** | 3,000 | 19.9 % | 54.4 % | 7.60 Å | 0.571 |
+| **design** (matched) | 2,000 | 20.1 % | 52.3 % | 7.96 Å | 0.543 |
 | **native control** | 250 | 25.2 % | 60.0 % | 6.06 Å | 0.674 |
-| ratio | | **0.79** | **0.91** | | |
 
-**Read the ratio, not the absolute.** The design arm alone says "14–20 % of
+| ratio | value | 95 % CI |
+|---|---|---|
+| scRMSD < 2 Å | **0.798** | [0.664, 0.948] |
+| scTM > 0.5 | **0.872** | [0.795, 0.952] |
+
+The interval is a bootstrap over **backbones**, not refolds: a backbone's eight
+designs share its geometry and are nowhere near independent, so resampling
+refolds would treat 2,000 correlated observations as 2,000 independent ones and
+report an interval several times too narrow.
+
+**Read the ratio, not the absolute.** The design arm alone says "~20 % of
 designs are self-consistent", which sounds alarming and would be a misleading
-thing to publish. The control shows the *native* sequence — the one AFDB
-itself assigns to that backbone — only reaches 25.2 %. The absolute rate is
-therefore a property of the measurement (ESMFold2 at 1 diffusion sample and
-100 sampling steps, scored by a strict whole-chain 2 Å gate), not evidence
-that ProteinMPNN designs are bad. exp78 used top-1-of-5 at the same step count
-and would score both arms higher.
+thing to publish. The control shows the *native* sequence — the one AFDB itself
+assigns to that backbone — only reaches 25.2 %. The absolute rate is therefore a
+property of the measurement (ESMFold2 at 1 diffusion sample and 100 sampling
+steps, scored by a strict whole-chain 2 Å gate), not evidence that ProteinMPNN
+designs are bad. exp78 used top-1-of-5 at the same step count and would score
+both arms higher.
 
-What the corpus can honestly claim: **designs are ~79 % as likely as native
-sequences to refold within 2 Å of their backbone, and ~91 % as likely to reach
-the same fold (scTM > 0.5).** Per-backbone designability, best of 8, is 32.3 %.
+What the corpus can honestly claim: **designs are ~80 % as likely as native
+sequences to refold within 2 Å of their backbone, and ~87 % as likely to reach
+the same fold.** Both intervals exclude 1.0, so designs are measurably worse
+than native — but neither is close to zero. Per-backbone designability, best of
+8, is 32.4 % on the matched set (32.3 % over all 375).
 
-Caveat on precision: the native arm is n=250 against the design arm's n=3,000,
-so its 25.2 % carries roughly ±5 pp. The scTM comparison (54.4 vs 60.0) is the
-tighter of the two.
+**Precision is worse than the point estimates suggest.** The scRMSD ratio spans
+0.66–0.95 at 95 %, because it rests on 250 native refolds, one per backbone.
+Treat the two ratios as "roughly four-fifths" and "roughly seven-eighths", not
+as three-significant-figure quantities.
 
-By temperature, the ladder is nearly flat until the top of it:
+### Two corrections this table carries
+
+1. **It was not paired before.** The first version of `pool_refold.py` pooled
+   all 3,000 design refolds against all 250 native refolds without joining on
+   `entry_id`, while the README described the result as paired. 125 design
+   backbones had no control, so the arms were measured over different protein
+   sets. Matching moved scTM from 0.907 to 0.872 and scRMSD from 0.788 to 0.798.
+   Caught in review of PR #267.
+2. **The design arm is 3 of 4 shards.** `design_refold-002-of-004.parquet` was
+   never produced, so the design sample is 375 backbones rather than the
+   intended 500. It does not affect the matched comparison — every native
+   backbone is present in the design arm — but the design-only sample is
+   smaller than planned.
+
+The larger design-only sample (3,000 refolds over 375 backbones: 19.9 %
+scRMSD<2 Å, 54.4 % scTM>0.5) is reported separately in
+`data/refold_selfconsistency.csv` as `design_all`, and is **not** comparable to
+the native arm.
+
+By temperature, on the matched set, the ladder is nearly flat until the top:
 
 | T | n | scRMSD<2 Å | scTM>0.5 |
 |---|---|---|---|
-| 0.1 | 750 | 20.5 % | 56.8 % |
-| 0.2 | 750 | 20.1 % | 56.4 % |
-| 0.3 | 750 | 21.1 % | 54.7 % |
-| 0.5 | 750 | 17.7 % | 49.7 % |
+| 0.1 | 500 | 20.4 % | 55.2 % |
+| 0.2 | 500 | 20.8 % | 54.0 % |
+| 0.3 | 500 | 21.4 % | 52.2 % |
+| 0.5 | 500 | 17.8 % | 47.8 % |
 
-T=0.5 is measurably worse (49.7 % vs 56.8 % same-fold) without buying much
+T=0.5 is measurably worse (47.8 % vs 55.2 % same-fold) without buying much
 diversity — another argument that the ladder as designed was not a good use of
 the design budget.
 
@@ -809,7 +840,7 @@ issue against the #232 decontaminated recipe. For *this* issue:
 | `reconcile_esm.py` | id-set completeness check for the ESM arm |
 | `analyze_esm_documents.py` | density / identity, from the documents alone |
 | `dispatch_verify_cw.py`, `dispatch_reconcile_cw.py`, `dispatch_analyze_esm_cw.py` | CoreWeave-side check jobs |
-| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map + reconcile tests (57 passing) |
+| `tests/` | fidelity + round-trip + Stage-B + pipeline + shard-map + reconcile + refold-pooling tests (61 passing) |
 
 ## Results
 
@@ -822,7 +853,7 @@ CoreWeave source (0 missing, 0 extra, 0 size mismatches).
 | documents | **31,702,680** (3,962,835 backbones × 8) |
 | tokens | **35,320,841,292** (35.32 B, mean 1,114/doc) |
 | contact density vs native | **1.002** |
-| self-consistency vs native control | **0.79** (scRMSD) / **0.91** (scTM) |
+| self-consistency vs native control | **0.80** (scRMSD) / **0.87** (scTM), matched on 250 backbones |
 
 All five success criteria are met: byte-identical contact operator (200/200
 sha1 against the published parent corpus), lossless staging, completeness
@@ -898,7 +929,7 @@ documents at longer lengths.
 
 Self-consistency and composition drift were **not** re-measured on this arm.
 The AFDB numbers are about AFDB backbones; these are ESMFold2 predictions from
-a different predictor, and whether 79 %/91 % transfers is untested.
+a different predictor, and whether 80 %/87 % transfers is untested.
 
 ## Conclusion
 
@@ -914,9 +945,11 @@ Three things it establishes that were genuinely uncertain going in:
 2. **The feared artifact does not exist.** MPNN's composition bias is real
    (P +3.60, A +2.72 pp) but contact density is unchanged (ratio 1.002), so the
    documents are not systematically shorter.
-3. **Designs are nearly as self-consistent as natives** — 79 % / 91 % of the
-   native control's rates. The absolute rate is low for both, which is a fact
-   about ESMFold2 at one sample and a strict 2 Å gate, not about the designs.
+3. **Designs are somewhat less self-consistent than natives** — 80 % / 87 % of
+   the native control's rates, matched on the 250 backbones both arms cover.
+   Both 95 % intervals exclude 1.0, so the gap is real; both are far from zero.
+   The absolute rate is low for both, which is a fact about ESMFold2 at one
+   sample and a strict 2 Å gate, not about the designs.
 
 Two things that did **not** work, worth saying plainly:
 

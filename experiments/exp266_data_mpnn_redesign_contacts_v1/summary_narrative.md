@@ -68,7 +68,7 @@ against the CoreWeave source.
 Three uncertainties resolved. The contact operator is provably identical to
 contacts-v1 (200/200 sha1 regenerating published documents from staged
 backbones). The feared density artifact does not exist (ratio 1.002 over
-640k documents). And designs are ~79%/91% as self-consistent as native
+640k documents). And designs are ~80%/87% as self-consistent as native
 sequences refolded onto the same backbones -- a number that only means anything
 because of the control: the design arm alone reads "~20% self-consistent",
 while the native sequence AFDB itself assigns reaches only 25.2%.

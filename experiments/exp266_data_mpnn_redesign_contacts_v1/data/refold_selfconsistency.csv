@@ -1,3 +1,4 @@
 arm,n_refolds,n_backbones,sc_rmsd_pass_pct,sc_tm_pass_pct,median_sc_rmsd,median_sc_tm
-design,3000,375,19.9,54.4,7.60,0.571
+design_matched,2000,250,20.1,52.3,7.96,0.543
 native_control,250,250,25.2,60.0,6.06,0.674
+design_all,3000,375,19.9,54.4,7.6,0.571

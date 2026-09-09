@@ -80,20 +80,32 @@ designed sequence folds there.
   recover.
 - **The designs were not refolded before inclusion.** Self-consistency was
   measured on a sample, not applied as a filter. ESMFold2 (1 diffusion sample,
-  100 steps) on 3,000 designs vs 250 **native** sequences refolded onto the
-  same backbones:
+  100 steps), **matched on the 250 backbones both arms cover**:
 
-  | arm | scRMSD<2 Å | scTM>0.5 | median TM |
-  |---|---|---|---|
-  | design | 19.9 % | 54.4 % | 0.571 |
-  | native control | 25.2 % | 60.0 % | 0.674 |
+  | arm | n | scRMSD<2 Å | scTM>0.5 | median TM |
+  |---|---|---|---|---|
+  | design | 2,000 | 20.1 % | 52.3 % | 0.543 |
+  | native control | 250 | 25.2 % | 60.0 % | 0.674 |
+
+  | ratio | value | 95 % CI |
+  |---|---|---|
+  | scRMSD < 2 Å | **0.798** | [0.664, 0.948] |
+  | scTM > 0.5 | **0.872** | [0.795, 0.952] |
 
   **Read the ratio, not the absolute.** The native sequence — the one AFDB
   itself assigns to that backbone — only reaches 25.2 % under this measurement,
-  so the low absolute rate reflects the folder settings and a strict
-  whole-chain 2 Å gate, not design quality. Designs are **~79 % as likely as
-  native to refold within 2 Å, and ~91 % as likely to reach the same fold**.
-  Per-backbone best-of-8 designability is 32.3 %.
+  so the low absolute rate reflects the folder settings and a strict whole-chain
+  2 Å gate, not design quality. Designs are **~80 % as likely as native to
+  refold within 2 Å, and ~87 % as likely to reach the same fold**. Both
+  intervals exclude 1.0, so the gap is real, and the scRMSD interval is wide
+  (0.66–0.95) because it rests on 250 native refolds. The interval is a
+  bootstrap over backbones, since a backbone's eight designs are not
+  independent. Per-backbone best-of-8 designability is 32.4 %.
+
+  A design-only sample over all 375 design backbones (3,000 refolds, 19.9 % /
+  54.4 %) is reported in the experiment's `data/refold_selfconsistency.csv` as
+  `design_all`; it is **not** comparable to the native arm, which covers a
+  different protein set.
 
 ## Verification
 

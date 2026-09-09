@@ -148,7 +148,8 @@ backbones are harder to recover than experimental ones.
   a narrower band than the AFDB arm's 30–1998.
 - **The designs were not refolded**, and self-consistency was **not measured on
   this arm**. On the AFDB arm, ESMFold2 at one diffusion sample put designs at
-  **79 % of a native control's sub-2 Å rate and 91 % of its same-fold rate**;
+  **80 % of a native control's sub-2 Å rate and 87 % of its same-fold rate**
+  (matched on backbone id, 95 % CIs [0.66, 0.95] and [0.80, 0.95]);
   whether that transfers to ESM-Atlas backbones — which are themselves
   predictions, from a different predictor — is untested.
 - **Contact density is 1.4 % below native** and the gap widens with length —
