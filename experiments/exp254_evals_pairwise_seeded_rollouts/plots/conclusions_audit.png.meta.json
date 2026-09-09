@@ -1,0 +1,10 @@
+{
+  "script": "plot_audit.py",
+  "args": [
+    "--data",
+    "data",
+    "--out",
+    "plots"
+  ],
+  "caption": "Paired effects on 97 eval-val proteins. Consensus, fixed-R continuation oracle, cluster oracle, and geometric selection use explicitly labeled references. Error bars are protein-bootstrap 95% pointwise intervals; oracle results require ground truth and are not deployable improvements."
+}

@@ -3,11 +3,11 @@
 
 """Can a better score over the pooled candidate pairs beat a raw vote count?
 
-exp254's coverage diagnostic says the sample is not the problem: the 100
+exp254's coverage diagnostic identifies headroom in the existing pool: the 100
 rollouts collectively propose **92 % of the true contacts** using only ~16x R
 distinct pairs, while ranking them by vote count recovers 52 % at the R cut. The
-gap between 0.52 and 0.92 is ranking loss, and it is an order of magnitude
-larger than anything the seeding arms moved.
+gap between 0.52 and 0.92 is potential ranking headroom. These feature and
+logistic-loss choices do not exhaust ranking methods or bound further sampling.
 
 So this fits a score over three per-pair features that cost no extra inference:
 
@@ -188,11 +188,9 @@ def main() -> int:
                     help="which arm's rollouts to re-rank (default the control)")
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--fit-on", choices=("all", "voted"), default="all",
-                    help="'all' fits over every candidate pair, which is 99.9%% "
-                         "never-proposed negatives and therefore optimises AUC "
-                         "rather than the top of the ranking; 'voted' fits only "
-                         "over pairs at least one rollout proposed, which is the "
-                         "pool that actually competes for the top R")
+                    help="'all' fits over every resolved candidate pair; 'voted' "
+                         "fits only pairs at least one rollout proposed. Both "
+                         "fit logistic loss, which is distinct from top-R recovery")
     args = ap.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)

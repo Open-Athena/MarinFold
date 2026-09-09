@@ -1,43 +1,45 @@
-# Summary slides — exp: how many contacts should we hand Helico? sweep the cut past top-L, up to every pair any rollout proposed
+# Summary slides — Helico contact-cut sweep
 
-<!-- Feeds plots/summary.pdf via build_summary.py.
-     One `## ` heading per slide; body text becomes the slide.
-     Keep this current as the experiment progresses. -->
+## Question and experiment
 
-## What we're doing
+Does extending a MarinFold vote-ranked contact list improve Helico folding?
 
-Does handing Helico **more than top-L** MarinFold contacts improve folding
-accuracy, and where does the lDDT-versus-k curve actually turn?
+Same checkpoint and settings across cuts: Helico contacts-msafree-01 step 6000,
+six trunk recycles, seed 42, no MSA. Three diffusion samples are generated;
+the runner scores returned sample zero. This audit reruns only CPU analysis.
 
-## Why
+97 eval-val targets: 96 have contact-arm results. The original 95-target
+comparison additionally excludes one target missing Protenix-derived contact inputs.
+Both populations are now reported; no held-out eval-test targets are scored.
 
-Two measurements point at a gap nobody has looked in.
+## Reproduced result, with uncertainty
 
-**From [#254](https://github.com/Open-Athena/MarinFold/issues/254):** the 100
-rollouts behind a MarinFold contact prediction collectively propose **92 % of
-the true contacts** (union recall 0.923 all-range, 0.900 long-range) using only
-~15.7×R distinct pairs. Ranking them by vote count recovers 0.52 at the R cut,
-0.67 at 2R and 0.79 at 5R. There is a lot of true signal sitting between rank L
-and rank 5L that the top-L cut throws away, and #254 established that no
-pointwise re-ranking recovers it (best +0.0015, a tie).
+On the historical 95 targets, top-L lDDT is 0.6053; 1.5L is 0.6073.
+Paired difference +0.0020, 95% interval [-0.0048, +0.0086]. A small gain remains
+plausible; this does not establish equivalence or a distinct optimum.
 
-**From helico's side:** the existing cut sweep only ever went *down* — top-L/5,
-top-L/2, top-L — and is already flat at the top end (lDDT 0.480 / 0.508 / 0.513
-on FoldBench; on natural-pooled and designed targets it reverses). Nobody has
-run a cut above L.
+At 5L, difference -0.0135 [-0.0243, -0.0034]. At the union, -0.0245
+[-0.0346, -0.0146]. All 96 contact-available targets give the same conclusion.
+Independent coordinate rescoring of all 288 top-L/1.5L/union structures agrees
+within 0.0000333 per target. All 768 delivered lists match the vote rankings.
+Intervals are target-bootstrap, pointwise; inference-seed variation is unmeasured.
 
-Helico's `contact-list` conditioning marks unlisted pairs **UNKNOWN, not
-ABSENT** (`src/helico/contacts.py`), so a longer list does not overwrite true
-negatives — it only trades precision for recall. It was trained with precision
-sampled down to `MIN_SAMPLED_PRECISION = 0.4`.
+## Corrections to the earlier interpretation
 
-So the prediction is a **shallow interior optimum between L and 2L**: at 2R the
-list is ~0.33 precision, just under Helico's training floor but close to it,
-while recall rises 0.52 → 0.67. By 5L (precision ~0.16) and certainly at the
-full union (**~6 % precision**, ~10× outside anything Helico saw in training)
-lDDT should fall. If the curve is instead flat or still rising at 3L, the
-"emit fewer, better contacts" framing that top-L encodes is wrong.
+Top-L recall is 0.548, not 0.52: R (true-contact count) and L (length) are
+different cut budgets. Contact metrics now use the same targets as lDDT.
 
-## Results so far
+The union retains 90.40% of top-L's gain above no contacts, not 96%.
+The earlier denominator used total lDDT instead of the contact-related gain.
 
-_(Fill in as results come in.)_
+Changing the cut changes precision, recall, and list size together. These
+results cannot show recall is worthless or identify the conditioning bottleneck.
+
+## What this rules out, and what remains open
+
+Much longer unweighted lists from this vote ranking did not help this Helico
+checkpoint. Modest widening to 1.5L has no demonstrated gain but remains uncertain.
+
+The result does not rule out better ranking, confidence weighting, choosing
+complementary constraints, or training that uses the additional true contacts.
+Public input extraction and per-file provenance support CPU-only reproduction.

@@ -1,28 +1,12 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""The seed-strategy figure: does biasing the seeds toward long range help?
+"""Compare seed composition, paired consensus effects, and continuation quality.
 
-exp254's first result left one live lever. Consensus over 100 rollouts already
-matches the oracle best single rollout at all-range, but at **long** range the
-oracle is 0.037 ahead -- so whatever headroom the sampler has left is in the
-long-separation contacts. This figure asks whether pointing the seeds there
-reaches it.
-
-Left panel: what each strategy actually handed the model. This is the framing
-the question needs. "Top 100 overall" is **already 56.8 % long-range**, because
-long-separation pairs dominate the candidate universe, so an equal-thirds split
-*lowers* the long-range share to 34 % rather than raising it. Only the
-long-range-only strategy is a bias toward long range.
-
-Middle panel: the paired seeded-minus-i.i.d. gain in consensus R-precision, per
-separation range. If seeding buys anything where the headroom is, the long-range
-group is where it has to show.
-
-Right panel: the mechanism check, from `exp254_seed_range.csv` -- seed accuracy
-and the R-precision of the rollouts those seeds produced, split by the seed's
-own separation range. Long-range seeds are the least accurate; the question is
-whether they are nonetheless the most informative.
+The continuation panels exclude the forced seed and use P@min(R, emitted).
+Seed-range comparisons are observational. Paired protein bootstrap intervals
+condition on one saved sampling draw; the shaded practical band is not a
+universal noise floor.
 
     uv run python plot_strategies.py --data data --out plots
 """
@@ -114,12 +98,8 @@ def composition_panel(axis, composition: pd.DataFrame) -> None:
 def by_range_panel(axis, per_protein: pd.DataFrame) -> None:
     """Paired seeded-minus-i.i.d. consensus R-precision, per separation range.
 
-    Plotted as differences rather than levels on purpose. Per-arm intervals on
-    the levels are roughly twice as wide as the paired interval and overlap
-    completely, which reads as "no data" when what the data actually says is
-    "no difference, measured tightly". The four arms see identical proteins and
-    identical document realizations, so the paired difference is the interval
-    that belongs on this comparison.
+    Pairing accounts for shared protein difficulty. The intervals describe this
+    saved sampling draw and do not establish equivalence for every strategy.
     """
     frame = per_protein[per_protein.cut == "R"]
     wide = frame.pivot_table(index=["stem", "range"], columns="predictor",
@@ -152,7 +132,7 @@ def by_range_panel(axis, per_protein: pd.DataFrame) -> None:
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
     axis.set_title("Paired gain over unseeded, per separation range\n"
-                   "shaded band = the 0.005 tie threshold (#204)", fontsize=10.5)
+                   "shaded band = +/-0.005 practical margin", fontsize=10.5)
 
 
 def mechanism_panel(axis, by_range: pd.DataFrame) -> None:
@@ -166,7 +146,7 @@ def mechanism_panel(axis, by_range: pd.DataFrame) -> None:
         axis.text(position, value + 0.015, f"{value:.2f}", ha="center", fontsize=8.5,
                   color="#33312e")
     axis.plot(positions, frame["rollout_precision"], color="#d55e00", marker="o",
-              markersize=6, linewidth=2, label="R-precision of those rollouts")
+              markersize=6, linewidth=2, label="continuation precision (seed excluded)")
     axis.axhline(frame["iid_rollout_precision"].iloc[0], color="#0072b2",
                  linewidth=1.6, linestyle="--", label="unseeded rollout")
     axis.set_xticks(positions)
@@ -192,13 +172,13 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     composition = pd.read_csv(args.data / "exp254_seed_composition.csv")
     per_protein = pd.read_csv(args.data / "exp254_per_protein.csv.gz")
-    by_range = pd.read_csv(args.data / "exp254_seed_range.csv")
+    by_range = pd.read_csv(args.data / "exp254_seed_range_continuation.csv")
 
     figure, axes = plt.subplots(1, 3, figsize=(16.5, 5.8))
     composition_panel(axes[0], composition)
     by_range_panel(axes[1], per_protein)
     mechanism_panel(axes[2], by_range)
-    figure.suptitle("Biasing the seeds toward long-range contacts", fontsize=13)
+    figure.suptitle("Changing the seed separation-range distribution", fontsize=13)
     figure.tight_layout(rect=(0, 0.03, 1, 0.93))
 
     dest = args.out / "seed_strategy_eval_val.png"
@@ -206,10 +186,11 @@ def main() -> int:
     plt.close(figure)
     stamp(dest, {"exp254_seed_composition": args.data / "exp254_seed_composition.csv",
                  "exp254_per_protein": args.data / "exp254_per_protein.csv.gz",
-                 "exp254_seed_range": args.data / "exp254_seed_range.csv"},
+                 "exp254_seed_range": args.data / "exp254_seed_range_continuation.csv"},
           "Seed composition per strategy, consensus R-precision per separation "
-          "range per strategy, and seed accuracy against rollout quality by the "
-          "seed's own separation range, on eval-val for #232 m2-p06.")
+          "range per strategy, and seed accuracy against continuation-only quality by the "
+          "seed's own separation range, on eval-val for #232 m2-p06. Continuation "
+          "uses P@min(R, emitted), excluding the seed; comparisons are observational.")
     print(f"[plot] wrote {dest}")
     return 0
 

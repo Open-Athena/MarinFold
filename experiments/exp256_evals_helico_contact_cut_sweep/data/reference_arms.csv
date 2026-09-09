@@ -1,5 +1,5 @@
 arm,label,source,n,lddt
 off,"Helico, no contacts",exp14,95,0.3498837118315241
-v2ss,Protenix-v2 single sequence,exp14,95,0.38807087816549724
+v2ss,Helico + Protenix-v2 single-sequence contacts,exp14,95,0.38807087816549724
 oracle,Helico + oracle contacts,exp14,95,0.8641895893029563
-v2msa,Protenix-v2 + MSA,exp14,95,0.8341675023215986
+v2msa,Helico + Protenix-v2 MSA contacts,exp14,95,0.8341675023215986

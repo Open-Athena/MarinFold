@@ -5,12 +5,12 @@
 
 Left: folding accuracy against how many contacts Helico was handed, from top-L/5
 out to every pair any rollout proposed. The reference arms bracket it -- no
-contacts at the bottom, oracle contacts and Protenix-v2-with-MSA at the top --
+contacts at the bottom, Helico with oracle or Protenix-v2 MSA contacts at the top --
 so the whole curve can be read against the range it lives in, which is narrow.
 
 Right: the same points against the *precision* of the list rather than its
-length, with recall annotated. This is the panel that says why the curve turns:
-lDDT tracks precision and ignores the recall the extra contacts buy.
+length, with recall annotated. Both precision and recall change with the cut, so this panel does not
+isolate their causal effects.
 
     uv run python plot_results.py --data data --out plots
 """
@@ -51,8 +51,9 @@ def curve_panel(axis, curve: pd.DataFrame, references: pd.DataFrame) -> None:
     for _, row in references.iterrows():
         axis.axhline(row["lddt"], color=BASELINE_COLOR, linewidth=1.0,
                      linestyle="--", zorder=1)
-        axis.text(len(curve) - 0.4, row["lddt"], f"  {row['label']} {row['lddt']:.3f}",
-                  fontsize=8, color="#33312e", va="center")
+        axis.text(len(curve) + 1.7, row["lddt"], f"{row['label']} {row['lddt']:.3f}",
+                  fontsize=7.5, color="#33312e", va="center", ha="right",
+                  bbox=dict(facecolor="white", edgecolor="none", pad=1), zorder=5)
     axis.plot(positions, curve["lddt"], color=CURVE_COLOR, marker="o", markersize=7,
               linewidth=2.2, zorder=3)
     best = curve["lddt"].idxmax()
@@ -72,7 +73,7 @@ def curve_panel(axis, curve: pd.DataFrame, references: pd.DataFrame) -> None:
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
     axis.set_title("Folding accuracy against how many contacts we hand over\n"
-                   "circled = best; the whole usable range spans 0.01 lDDT",
+                   "circled = largest observed mean, with uncertain advantage",
                    fontsize=10.5)
 
 
@@ -95,8 +96,8 @@ def precision_panel(axis, curve: pd.DataFrame) -> None:
     axis.set_axisbelow(True)
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
-    axis.set_title("lDDT follows precision, not recall\n"
-                   "recall rises 0.52 -> 0.92 left to right and buys nothing",
+    axis.set_title("Precision and recall change together\n"
+                   "top-L recall 0.55; union recall 0.92; no isolated recall effect",
                    fontsize=10.5)
 
 

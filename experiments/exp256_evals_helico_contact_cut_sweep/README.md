@@ -8,171 +8,211 @@ marinfold_experiment:
 
 # exp: how many contacts should we hand Helico? sweep the cut past top-L, up to every pair any rollout proposed
 
-**Issue:** [#256](https://github.com/Open-Athena/MarinFold/issues/256) · **Kind:** `evals` · **Branch:** `claude/contact-probability-inference-eval-a2d2ea`
+**Issue:** [#256](https://github.com/Open-Athena/MarinFold/issues/256) · **Kind:** `evals`
 
 ## Question
 
-Does handing Helico **more than top-L** MarinFold contacts improve folding
-accuracy, and where does the lDDT-versus-k curve actually turn?
+Does giving Helico more than top-L MarinFold contacts improve folding accuracy?
+The existing rollout union contains many true contacts that a short vote-ranked
+list omits. This experiment tests whether simply extending that list makes the
+additional signal useful to the existing Helico checkpoint.
 
 ## Hypothesis
 
-Two measurements point at a gap nobody has looked in.
+The recorded prediction was a shallow maximum around 1.5L–2L and lower lDDT by
+5L and the full union. Increasing the cut changes precision, recall, and the
+number of constraints together. It therefore tests a practical contact-list
+policy, but cannot separately identify the effects of precision and recall.
 
-**From [#254](https://github.com/Open-Athena/MarinFold/issues/254):** the 100
-rollouts behind a MarinFold contact prediction collectively propose **92 % of
-the true contacts** (union recall 0.923 all-range, 0.900 long-range) using only
-~15.7×R distinct pairs. Ranking them by vote count recovers 0.52 at the R cut,
-0.67 at 2R and 0.79 at 5R. There is a lot of true signal sitting between rank L
-and rank 5L that the top-L cut throws away, and #254 established that no
-pointwise re-ranking recovers it (best +0.0015, a tie).
-
-**From helico's side:** the existing cut sweep only ever went *down* — top-L/5,
-top-L/2, top-L — and is already flat at the top end (lDDT 0.480 / 0.508 / 0.513
-on FoldBench; on natural-pooled and designed targets it reverses). Nobody has
-run a cut above L.
-
-Helico's `contact-list` conditioning marks unlisted pairs **UNKNOWN, not
-ABSENT** (`src/helico/contacts.py`), so a longer list does not overwrite true
-negatives — it only trades precision for recall. It was trained with precision
-sampled down to `MIN_SAMPLED_PRECISION = 0.4`.
-
-So the prediction is a **shallow interior optimum between L and 2L**: at 2R the
-list is ~0.33 precision, just under Helico's training floor but close to it,
-while recall rises 0.52 → 0.67. By 5L (precision ~0.16) and certainly at the
-full union (**~6 % precision**, ~10× outside anything Helico saw in training)
-lDDT should fall. If the curve is instead flat or still rising at 3L, the
-"emit fewer, better contacts" framing that top-L encodes is wrong.
-
-## Background
-
-- [#254](https://github.com/Open-Athena/MarinFold/issues/254) — the coverage
-  diagnostic above, and the reranking negative that motivates going wider
-  instead of trying to rank better.
-- [helico#14](https://github.com/Open-Athena/helico/issues/14) /
-  `experiments/exp14_foldbench_held_out_monomers` — the run this extends. Same
-  checkpoint, same targets, same index map; it produced the published
-  `top-L = 0.619` lDDT on eval-test.
-- `RESULTS_contact_conditioning.md` — the L/5 → L/2 → L sweep, and the finding
-  that Helico transmits contact quality faithfully (it wins where contacts are
-  better, at almost exactly the measured margin), which is what makes a contact
-  -side change readable in lDDT at all.
+The motivating exp254 coverage diagnostic uses **R**, the number of true
+contacts; Helico's cuts use **L**, sequence length. They are different budgets.
+The earlier version of this report incorrectly carried the approximately 0.52
+recall at an R cut into its description of the top-L arm. All contact metrics
+below now come from the actual lists passed to Helico.
 
 ## Approach
 
-**Reuse helico exp14's machinery rather than re-deriving it.** The index map
-from MarinFold prompt positions to Helico token indices is the failure mode
-here — exp14's own docstring records that a looser ranking rule scored 0.572
-against a published 0.510, "close enough to look right, and wrong enough to
-change the experiment". exp14's `export_marinfold_contacts.py` asserts it
-reproduces exp245's published precision at L, L/2 and L/5 to floating-point
-identity before writing an arm; the new cuts go through that same assertion.
+The original inference ran on 2026-08-21, using Helico exp14's target mapping
+and runner. This revision audits saved results; it runs no new inference and
+scores no held-out eval-test targets.
 
-- Contacts: `marinfold-exp232-decontam-m2-p06-step145199`, exp245's dense
-  vote matrices, ranked exactly as exp245 ranks them.
-- New arms: **1.5L, 2L, 3L, 5L, and the full union** (every pair at least one
-  rollout emitted, ~15.7×R). top-L, top-L/2 and top-L/5 already exist from
-  exp14 and are reused unchanged — no re-run.
-- Folding: Helico `contacts-msafree-01` step 6000, 6 trunk recycles, 3
-  diffusion samples, no MSA, seed 42, `modal/bench_byclass.py` — identical to
-  exp14 so the new points land on the same curve as its published ones.
-- **eval-val only (97 natural FoldBench monomers).** eval-test is not read.
-- Cost: ~18 GPU-min per arm on H100 (from exp14's timings), so ~1.5 H100-hours
-  for the five new arms.
+- MarinFold contacts: `marinfold-exp232-decontam-m2-p06-step145199`, from exp245's
+  `fbmono-20260818-01` vote matrices. Ranking uses resolved-residue pairs with
+  separation at least 6, descending vote score, and stable tie order.
+- Cuts: L/5, L/2 and L reuse exp14. The new cuts are 1.5L, 2L, 3L, 5L and the
+  union of positive-vote candidate pairs. New cuts stop at the positive-vote
+  support, so a nominal 5L list may contain fewer than 5L pairs.
+- Folding: Helico `contacts-msafree-01`, step 6000, six trunk recycles, three
+  diffusion samples, no MSA, seed 42. The runner scores returned sample index
+  zero, not an average over the three samples. Sampling and model settings in
+  the old and new run manifests match. This is one stochastic run per arm;
+  target bootstrap intervals do not measure variability across inference seeds.
+- The original export checks precision at L, L/2 and L/5 against exp245's
+  published values. The audit independently recomputes precision and recall
+  from each delivered arm JSON, its token map and ground truth, checks the
+  contact count against inference records, and uses the same target population
+  for contact and structure metrics. A separate check reconstructed the ranked
+  lists from the original dense matrices and found exact list equality for all
+  768 eval-val arm/target pairs (eight cuts × 96 targets); this check is now
+  included in `analyze.py` and the dense matrices are in the public inputs.
 
-## Success criteria
-
-- lDDT versus k on eval-val, with paired per-target bootstrap CIs against the
-  top-L arm. Differences under the paired-noise band are ties.
-- **Primary:** does any k > L beat top-L by more than noise? Preregistered
-  prediction: a shallow optimum at 1.5L–2L, worth little.
-- **Secondary:** where does it turn? Preregistered prediction: down by 5L,
-  clearly down at the union.
-- Report contact precision and recall of each arm alongside its lDDT, so the
-  curve can be read against the operating point rather than against k.
+**Population:** eval-val has 97 targets. All eight contact-cut arms succeed on
+96; `7pv5_A` has no verified MarinFold index map and is recorded as
+`no_contacts`. The historical 95-target comparison also excludes `7t9r_A`
+because the two Helico arms using Protenix-derived contacts have no contacts
+for it. This was an
+input omission in reference arms, not a failed Helico fold. We retain the
+95-target table for comparison with the original report and also publish the
+96-target contact-only comparison. Every missing arm/target and its recorded
+status appears in `data/excluded_targets.csv`. Required arms, duplicate IDs,
+missing result rows, invalid scores, and changed input hashes now fail loudly.
 
 ## Results
 
-Ran 2026-08-21. Five new arms on Modal H100 (8 workers), ~5 min wall clock each,
-~18 GPU-min per arm — about 1.5 H100-hours for the sweep. 96 of eval-val's 97
-targets have a verified index map (`7pv5_A` is dropped, as in exp14); 95 were
-folded successfully by every arm and all comparisons are on those 95.
+### Historical comparison, with contact metrics matched to the same 95 targets
 
-**Gate:** the L, L/2 and L/5 cuts were re-derived from exp245's dense score
-matrices and reproduce exp245's published per-protein precision to 1e-9 on all
-96 targets, so the ranking and the index map are still the ones the published
-numbers came from.
-
-### The curve
-
-| cut | pairs / L | precision | recall | lDDT | Δ vs top-L | 95 % CI | better on |
+| cut | pairs / L | precision | recall | lDDT | Δ vs top-L | pointwise 95% CI | better on |
 |---|---:|---:|---:|---:|---:|---|---:|
-| top-L/5 | 0.2 | 0.784 | — | 0.5638 | −0.0415 | [−0.0604, −0.0228] | 26 % |
-| top-L/2 | 0.5 | 0.659 | — | 0.5969 | −0.0084 | [−0.0184, +0.0009] | 44 % |
-| **top-L** | 1.0 | 0.490 | — | **0.6053** | — | — | — |
-| **1.5L** | 1.5 | 0.380 | 0.633 | **0.6073** | **+0.0020** | [−0.0048, +0.0086] | 53 % |
-| 2L | 2.0 | 0.308 | 0.684 | 0.6044 | −0.0009 | [−0.0080, +0.0060] | 51 % |
-| 3L | 3.0 | 0.229 | 0.745 | 0.5999 | −0.0054 | [−0.0133, +0.0022] | 48 % |
-| 5L | 4.7 | 0.162 | 0.803 | 0.5918 | −0.0135 | [−0.0243, −0.0034] | 40 % |
-| **union** | 14.0 | 0.106 | 0.922 | **0.5808** | **−0.0245** | [−0.0346, −0.0146] | 25 % |
+| top-L/5 | 0.198 | 0.787 | 0.176 | 0.5638 | −0.0415 | [−0.0604, −0.0228] | 26% |
+| top-L/2 | 0.499 | 0.664 | 0.371 | 0.5969 | −0.0084 | [−0.0184, +0.0009] | 44% |
+| **top-L** | 1.000 | 0.493 | 0.548 | **0.6053** | — | — | — |
+| **1.5L** | 1.499 | 0.382 | 0.636 | **0.6073** | **+0.0020** | [−0.0048, +0.0086] | 53% |
+| 2L | 2.000 | 0.310 | 0.686 | 0.6044 | −0.0009 | [−0.0080, +0.0060] | 51% |
+| 3L | 2.956 | 0.230 | 0.747 | 0.5999 | −0.0054 | [−0.0133, +0.0022] | 48% |
+| 5L | 4.707 | 0.163 | 0.805 | 0.5918 | −0.0135 | [−0.0243, −0.0034] | 40% |
+| **union** | 14.045 | 0.107 | 0.922 | **0.5808** | **−0.0245** | [−0.0346, −0.0146] | 25% |
 
-Reference arms on the same 95 targets: Helico with no contacts **0.3499**,
-Protenix-v2 single sequence **0.3881**, Protenix-v2 + MSA **0.8342**, Helico with
-oracle contacts **0.8642**.
+Reference arms on those same 95 targets: Helico without contacts **0.3499**,
+Helico with Protenix-v2 single-sequence contacts **0.3881**, Helico with
+Protenix-v2 MSA-derived contacts **0.8342**, and Helico with oracle contacts
+**0.8642**. These are all Helico folding outputs; the two Protenix names identify
+where their contact lists came from, not direct Protenix structure scores.
+The Helico model itself remains MSA-free in every arm. The original lDDT means and paired
+intervals reproduce exactly; contact metrics change slightly because the old
+report averaged them over 96 targets while averaging lDDT over 95.
 
-**Both preregistered predictions held.** There is a shallow interior optimum at
-1.5L, and it is a **tie** with top-L (+0.0020, interval straddling zero, better
-on 53 % of targets). The curve is clearly down by 5L and at the union.
+### Independent coordinate rescoring
+
+To check the measurements themselves, `score_coordinates.py` independently
+reads the exported predicted PDBs and reference mmCIFs and recomputes lDDT on
+CPU for **all 288 successful (target, arm) pairs** in top-L, 1.5L, and union.
+Every prediction matches the original recorded atom count. This uses the
+runner's pair-weighted all-atom definition: matched heavy-atom pairs with
+reference distance strictly between 0.01 and 15 Å, scored at distance-error
+thresholds 0.5, 1, 2, and 4 Å. Within-residue pairs and any matched cofactor
+atoms are included, matching the original scorer. This is not CA-only lDDT.
+The implementation uses a sparse neighbor search rather than Helico's dense
+pair matrices and imports no Helico code or model.
+
+The largest per-target absolute difference from saved lDDT is **0.0000333**,
+and the mean absolute difference is **0.00000617**, consistent with exporting
+coordinates rounded to 0.001 Å. On all 96 contact-available targets, coordinate
+rescoring gives **1.5L − top-L = +0.0018971** and **union − top-L = −0.0243880**,
+reproducing the saved-score results below. Per-target differences and paired
+intervals are saved in `data/coordinate_validation.csv` and `.json`.
+
+### Contact-only comparison, all 96 available targets
+
+| cut | lDDT | Δ vs top-L | pointwise 95% CI |
+|---|---:|---:|---|
+| top-L | 0.6023 | — | — |
+| 1.5L | 0.6042 | +0.0019 | [−0.0048, +0.0085] |
+| 2L | 0.6016 | −0.0007 | [−0.0078, +0.0062] |
+| 3L | 0.5972 | −0.0051 | [−0.0130, +0.0026] |
+| 5L | 0.5889 | −0.0134 | [−0.0238, −0.0032] |
+| union | 0.5779 | −0.0244 | [−0.0346, −0.0146] |
+
+The conclusion is unchanged when the unrelated reference-arm omission is
+removed. Full metrics, including L/5 and L/2, are in
+`data/cut_sweep_contact_targets.csv`.
+
+Intervals use 10,000 paired target-bootstrap draws, seed 256. They are
+pointwise intervals, without correction for comparing several cuts. An
+interval containing zero does not establish equivalence. In particular, the
+1.5L comparison remains compatible with a small improvement as large as
+approximately 0.0086 lDDT on the historical population. Its largest observed
+mean does not establish a distinct optimum.
 
 ![lDDT versus contact cut](plots/contact_cut_sweep.png)
 
-### Three things this says
+## Interpretation
 
-**Top-L was already the right answer, and the choice barely matters.** Anything
-between L/2 and 3L lands within 0.01 lDDT of the best. The cut is not a lever;
-it was tuned as far as it goes.
+**Simply increasing this vote-ranked cut has no demonstrated benefit.** The
+largest observed mean is at 1.5L, but its advantage is uncertain. The much
+wider 5L and union lists lower mean lDDT in these runs. Top-L is a reasonable
+operating point under the tested settings; this experiment does not prove it
+is optimal or that a modest improvement is impossible.
 
-**Recall is worth nothing here.** Going from the top-L list to the full union
-raises contact recall from 0.52 to **0.92** and lowers lDDT. Every point on this
-curve is explained by precision alone (right-hand panel) — which is the same
-conclusion #254 reached from the contact side, arriving from the other
-direction. Helico is precision-limited at this operating point, so the 0.52 →
-0.92 headroom #254 identified is not reachable by handing it over; it has to be
-converted into *precision* first.
+**The experiment does not show that recall is worthless or precision alone
+explains folding accuracy.** Precision decreases while recall increases along
+the entire sweep. In fact, lDDT rises from L/5 to L despite declining precision.
+The larger-cut results show that adding these lower-ranked predictions fails
+to exploit the union's extra true contacts under this conditioning scheme.
+They leave open improvements to ranking, confidence weighting, training, or
+selection of complementary constraints. The claim that the conditioning
+channel cannot be a bottleneck was unsupported and has been removed.
 
-**But Helico is remarkably robust to false positives.** The union arm hands it
-14×L pairs at **10.6 % precision** — 9 wrong restraints for every right one, an
-operating point an order of magnitude outside the `MIN_SAMPLED_PRECISION = 0.4`
-it trained against — and it still scores 0.581, against 0.350 with no contacts
-and 0.388 for Protenix-v2 single sequence. Drowning the model in false contacts
-costs only 4 % of what the contacts were worth. That is a much softer failure
-than the training range predicts, and it means the conditioning channel is not
-where a future gain is being lost.
+**The union still preserves much of the benefit over no contacts.** On the
+historical population, top-L gains 0.25540 lDDT over the no-contact reference;
+the union loses 0.02453 of that gain, or **9.60%**, retaining **90.40%**. The
+previous 4%/96% statements divided by total top-L lDDT instead of its gain over
+the no-contact baseline. Mean per-target union precision is 10.65%; that
+summarizes heterogeneous targets and is not a pooled false-to-true contact
+ratio. Its precision is about 3.75-fold below the cited training floor of 0.4,
+not an order of magnitude. The result demonstrates tolerance of these noisy
+lists, without identifying the mechanism or a universal training limit.
 
-Artifacts: `data/cut_sweep_curve.csv`, `data/reference_arms.csv`,
-`data/per_target_lddt.csv.gz`, `data/provenance.json` (which arm came from which
-run). Arm definitions, contact accuracy and the raw Helico outputs live in the
-helico worktree — `experiments/exp14_foldbench_held_out_monomers/` on branch
-`claude/helico-contact-cut-sweep`, alongside `export_cut_sweep.py`.
+## Reproduction and provenance
+
+The public bundle is pinned in `data/artifacts.json`. From this experiment
+folder, download it anonymously into a new directory and reproduce on CPU:
+
+```bash
+uv run --no-project ../exp254_evals_pairwise_seeded_rollouts/publish_to_hf.py fetch --manifest data/artifacts.json --out /tmp/exp256-inputs
+uv run --locked python analyze.py --inputs /tmp/exp256-inputs --out data
+uv run --locked python score_coordinates.py --inputs /tmp/exp256-inputs --out data
+uv run --locked python -m unittest test_analyze -v
+uv run --locked python plot_results.py --data data --out plots
+uv run --locked python build_summary.py
+```
+
+The downloader verifies the archive and every extracted file by SHA-256.
+To republish, use exp254's `publish_to_hf.py prepare --experiment 256` on the
+`prepare_inputs.py` output, review its manifest, then use the `publish` command.
+
+`prepare_inputs.py` extracts only eval-val records from the two original Helico
+worktrees. `analyze.py --inputs <directory> --out data` consumes that portable
+input directory and checks its recorded file hashes. The input directory
+contains `targets.csv`, `token_map.json`, `gt_universe_scored.jsonl`,
+`arms/mf_*.json`, all 12 result/error CSVs, timing CSVs, original run manifests,
+and `provenance.json`. It also contains `dense/*.npz` for all 97 eval-val
+targets, `gt/*.cif.gz`, and `predictions/<arm>/<target>.pdb.gz` for every
+successfully scored eval-val arm/target. These are the returned sample-zero
+structures originally scored, not three independent saved samples.
+`score_coordinates.py --inputs <directory> --out data` reproduces the
+independent coordinate audit on CPU; its default arms are top-L, 1.5L and union.
+Original manifests describe the full source run before
+extraction; their counts may include other eval sets. Only eval-val result
+and ground-truth records are present in the extracted inputs.
+
+Source Helico snapshots:
+
+- New cuts: [422c75a759c411ffed2687b2f2d27f0976a8ffb6](https://github.com/Open-Athena/helico/tree/422c75a759c411ffed2687b2f2d27f0976a8ffb6),
+  `experiments/exp14_foldbench_held_out_monomers/`, branch
+  `claude/helico-contact-cut-sweep`.
+- Original and reference arms: [4eb9b61b656569a17c61b9e424efc9c9216ffa8a](https://github.com/Open-Athena/helico/tree/4eb9b61b656569a17c61b9e424efc9c9216ffa8a),
+  the same experiment directory, branch `claude/helico-marinfold-evals-155267`.
+
+`data/provenance.json` records source paths and SHA-256 digests, populations,
+bootstrap settings, and the retention calculation. Small per-target contact
+metrics, structure metrics, exclusion records, and plot source CSVs are kept
+in git. Plot regeneration uses `plot_results.py --data data --out plots`;
+`build_summary.py` rebuilds `plots/summary.pdf` from saved plots and narrative.
 
 ## Conclusion
 
-**Handing Helico every contact any rollout proposed costs 0.0245 lDDT, and the
-best cut is the one we already use.** The optimum sits at 1.5L and is a tie with
-top-L; the whole span from L/2 to 3L is within 0.01 lDDT.
-
-The useful part is not the ranking of the cuts but what the curve is a function
-of. lDDT follows the **precision** of the list and is indifferent to its recall:
-0.52 → 0.92 recall, bought by a 14× longer list, moves lDDT *down*. #254 found
-that MarinFold's 100 rollouts already propose 92 % of the true contacts and that
-the gap to the 0.52 the vote count ranks into the top L is ranking loss, not
-sampling loss. This experiment closes the loop on what that headroom is worth
-downstream: **nothing, until it is converted into precision.** A wider list is
-not a way to spend it, and neither is a better-ordered list of the same length
-unless the ordering actually raises precision at the cut.
-
-The one genuinely encouraging result is the shape of the failure. At 10.6 %
-precision Helico keeps 96 % of the value of a top-L list. A conditioning channel
-that degrades that gently under a 9:1 flood of false restraints is not the
-bottleneck in this pipeline, and it leaves room for a future predictor to emit
-more contacts as soon as it can emit them at better precision.
+The existing runs support a narrow negative result: **giving this Helico
+checkpoint substantially longer unweighted lists from the existing MarinFold
+vote ranking does not improve mean folding accuracy, and 5L/the union reduce
+it.** A small gain near 1.5L remains plausible. Neither recall as a useful signal
+nor improved ways of selecting or conditioning on contacts has been ruled out.

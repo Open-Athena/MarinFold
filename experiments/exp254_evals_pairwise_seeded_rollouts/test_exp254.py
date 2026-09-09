@@ -15,8 +15,10 @@ number.
 import random
 
 import numpy as np
+import pandas as pd
 import pytest
 
+from build_metrics import seed_conditioning
 from common import BEGIN, MIN_SEP, parse_rollout, realization, seed_statement
 from rank_pairwise import SEED_RANGES, select_seeds, stratum_quotas, top_pairs
 
@@ -160,3 +162,36 @@ def test_every_strategy_returns_distinct_pairs():
 def test_unknown_strategy_is_rejected():
     with pytest.raises(ValueError, match="unknown seed strategy"):
         select_seeds(_descending_matrix(60), 10, MIN_SEP, "sideways")
+
+
+def test_forced_seed_does_not_create_a_continuation_advantage() -> None:
+    """Identical generated contacts must score alike regardless of seed truth."""
+    detail = pd.DataFrame([
+        dict(dataset="test", stem="protein", rollout=0, rank=0, i=0, j=6, is_seed=True),
+        dict(dataset="test", stem="protein", rollout=0, rank=1, i=1, j=7, is_seed=False),
+        dict(dataset="test", stem="protein", rollout=1, rank=0, i=0, j=8, is_seed=True),
+        dict(dataset="test", stem="protein", rollout=1, rank=1, i=1, j=7, is_seed=False),
+    ])
+    seeds = pd.DataFrame([
+        dict(dataset="test", stem="protein", rank=0, i=0, j=6),
+        dict(dataset="test", stem="protein", rank=1, i=0, j=8),
+    ])
+    gt = {("test", "protein"): dict(L=20, resolved=list(range(20)),
+                                     contacts=[(0, 6, 1.0), (1, 7, 1.0)])}
+    full = seed_conditioning(detail, seeds, gt, "seeded")
+    continuation = seed_conditioning(detail, seeds, gt, "seeded", exclude_seed=True)
+    assert [r["precision"] for r in full] == [1.0, 0.5]
+    assert [r["precision"] for r in continuation] == [1.0, 1.0]
+    assert [r["seed_correct"] for r in continuation] == [True, False]
+
+
+def test_seed_only_rollout_is_retained_as_empty_continuation() -> None:
+    """A seed-only completion must not disappear from the continuation mean."""
+    detail = pd.DataFrame([
+        dict(dataset="test", stem="protein", rollout=0, rank=0, i=0, j=6, is_seed=True),
+    ])
+    seeds = pd.DataFrame([dict(dataset="test", stem="protein", rank=0, i=0, j=6)])
+    gt = {("test", "protein"): dict(L=20, resolved=list(range(20)), contacts=[(0, 6, 1.0)])}
+    rows = seed_conditioning(detail, seeds, gt, "seeded", exclude_seed=True)
+    assert len(rows) == 1
+    assert rows[0]["precision"] == 0.0

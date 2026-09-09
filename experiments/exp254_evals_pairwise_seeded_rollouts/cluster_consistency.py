@@ -1,40 +1,19 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Can #211's geometric self-consistency pick the best cluster consensus?
+"""Compare exp211 geometric residuals across k-means cluster consensuses.
 
-`cluster_rollouts.py` established the prize: clustering the 100 rollouts and
-taking a consensus per cluster gives K candidate contact maps whose best is worth
-**+0.0158** R-precision over the single pooled consensus at K=10 — but every
-selector needing no ground truth (largest cluster, blind average) *loses* to just
-taking the single consensus. This asks whether #211's reference-free embeddability
-residual is the selector that works.
+The oracle contact score exceeds pooled consensus, but the tested geometric
+selector loses to pooled voting. This measures one selector on specific contact
+maps; it does not gate other selectors or downstream structural accuracy.
 
-**The prior is negative and it is quantified.** #211 measured exactly this on
-individual rollouts: Spearman rho(excess, precision) within a protein averaged
-**-0.0175**, useful on 51.8 % of proteins, and selecting the most-consistent of 30
-rollouts captured **8 %** of the available oracle headroom. Its diagnosis was that
-the score is **sequence-blind** -- a decoy protein's true contact map scores as
-well as the real one -- so it cannot tell a coherent wrong fold from a coherent
-right one.
+All candidate maps use the same ground-truth R cut and resolved-residue mask.
+The residual needs no reference contact labels, but this preprocessing makes the
+complete pipeline an evaluation diagnostic rather than a deployment recipe.
+Optimization uses a deterministic RNG stream, not identical random starts for
+each candidate. Long proteins are chunked to respect memory limits.
 
-Two reasons to run it anyway. A cluster consensus is a different object from a
-single rollout: it is an aggregate, and clusters whose members agree more should
-produce more coherent consensuses, which is the mechanism #211 never had a chance
-to test. And the answer is cheap and gates a much more expensive question -- if
-this cannot rank K candidate maps, neither a folding model's confidence head nor
-any other downstream selector is likely to, and the whole cluster-and-fold idea
-can be dropped for the price of an afternoon rather than K x the folding compute.
-
-Every set for one protein is scored in **one** `embed_residual` call. #211's
-batching is deliberate about this: a batch shares one RNG stream, so every
-candidate faces the same draw of optimization landscapes, which is what makes the
-within-protein comparison paired.
-
-All sets are cut at the same R, so `contact_excess` is comparable across them
-without normalisation and no candidate is favoured by being shorter.
-
-    uv run python cluster_consistency.py --run /data/exp_contactseed/run --out data
+    uv run python cluster_consistency.py --run /path/to/inputs --out data
 """
 
 import argparse

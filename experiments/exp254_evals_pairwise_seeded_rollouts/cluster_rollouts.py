@@ -1,50 +1,23 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Do the 100 rollouts hold more than one distinct contact map?
+"""Compare pooled consensus with consensuses of rollout clusters.
 
-The single consensus averages all 100 rollouts into one ranking. If the rollouts
-carry genuinely different hypotheses about the fold -- not just noise around one
--- then clustering them by contact-set similarity and taking a consensus *per
-cluster* yields K candidate maps, and the best of those K could be much better
-than the one map the pooled vote produces.
+For each protein, partition its 100 contact lists using k-means, average-linkage
+Jaccard clustering, or an equal-sized random partition. Score the pooled map,
+the best cluster (ground-truth oracle), the largest cluster, and the mean cluster.
+The random partition controls for splitting the sample without fitting clusters.
 
-This measures the ceiling of that idea at the contact level, which is the cheap
-half and the half that gates the rest: if oracle-best-of-K over cluster
-consensuses is not much better than the single consensus, then no downstream
-selector -- a folding model's confidence head, the LM's own likelihood -- can
-make it pay, because the candidates do not differ in quality.
+An oracle bounds selectors only for these candidate maps under this contact
+metric. It is not an upper bound on downstream folding accuracy or on other
+clustering methods. The saved k-means candidates have positive oracle headroom;
+imbalanced average-linkage clusters do not prove a single posterior fold mode.
 
-Three numbers per K, all all-range R-precision, all on the same 97 proteins:
+Consensus uses exp89's resolved-pair metric. Individual-rollout historical
+precision has a different denominator; see audit_conclusions.py for fixed-R
+comparisons.
 
-``single``      the pooled consensus over all 100 rollouts (exp82's recipe)
-``oracle@K``    the best of the K cluster consensuses, chosen with ground truth
-``largest``     the consensus of the biggest cluster -- a selector that needs no
-                ground truth, and the obvious thing to try first
-``mean@K``      the average cluster consensus, i.e. what picking blind gets you
-
-For reference, exp254 measured oracle best over the 100 *individual* rollouts at
-0.5341 against a 0.5217 single consensus. A cluster consensus averages within
-its cluster, so it should beat an individual rollout; the question is by how
-much, and whether the spread across clusters is real.
-
-Three partitioning methods, because a negative result here would otherwise be
-one clustering choice away from meaningless:
-
-``average``   average-linkage agglomerative on Jaccard distance -- the natural
-              choice, free to make clusters as lopsided as the data is
-``kmeans``    k-means on binary pair-membership vectors, which tends to split
-              more evenly and so cannot hide a real mode inside one giant blob
-``random``    **the control.** An equal-sized random partition of the 100
-              rollouts, which by construction finds no structure at all. If a
-              real clustering does not beat this, the K candidate maps are
-              subsamples of one distribution rather than distinct hypotheses,
-              and no selector downstream can turn them into an improvement.
-
-The metric implementation is exp89's, imported from ``build_metrics`` rather
-than re-derived.
-
-    uv run python cluster_rollouts.py --run /data/exp_contactseed/run --out data
+    uv run python cluster_rollouts.py --run /path/to/inputs --out data
 """
 
 import argparse
@@ -57,7 +30,6 @@ from scipy.spatial.distance import squareform
 from sklearn.cluster import KMeans
 
 from build_metrics import (
-    RANGES,
     load_detail,
     metric_rows,
     resolved_pairs,

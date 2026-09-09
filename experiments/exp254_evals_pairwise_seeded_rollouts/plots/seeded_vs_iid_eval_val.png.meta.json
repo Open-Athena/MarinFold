@@ -6,21 +6,25 @@
     "--out",
     "plots"
   ],
-  "caption": "All-range contact R-precision on eval-val for the #232 m2-p06 checkpoint under five MarinFold readouts and #245's published predictors, the paired seeded-minus-i.i.d. differences, and seed accuracy against rollout quality along the pairwise ranking.",
+  "caption": "All-range contact R-precision on eval-val for the #232 m2-p06 checkpoint and #245's published predictors, the paired seeded-minus-i.i.d. differences, and seed accuracy against continuation-only P@min(R, emitted) along the pairwise ranking. Oracle bars use fixed R; seed-correctness contrasts are observational.",
   "plot": "seeded_vs_iid_eval_val.png",
-  "sha256": "5c461ef8a808d59bad7618fe3b1a6f0f558fd74e1813be0588291596a4ba4217",
+  "sha256": "707b61c7e77ce7e0fa8c062e1fa0af27d592f03eb37419e6dcf1df0c4ee52520",
   "sources": {
     "exp254_per_protein": {
       "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_per_protein.csv.gz",
       "sha256": "1a1de4e79863fd55c336a3746b59f10fb5742b1288475214d829fd0766e42f2e"
     },
+    "exp254_audit_oracle": {
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_audit_oracle_per_protein.csv",
+      "sha256": "e8a077ce2902c0389460765da424bb878a27320d01d462ba5d1e6b3f917ffa6a"
+    },
     "exp254_seed_rank": {
-      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_rank.csv",
-      "sha256": "0975e04ff72437a5f34a82e7e3d800312932ba6416fd6aa50a60638fbca09f06"
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_rank_continuation.csv",
+      "sha256": "91c5dc81efcb21a9f5a04a8c5d0eb3102a451fa851704bbfef4d11782647a72b"
     },
     "exp254_seed_conditioning_summary": {
-      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_conditioning_summary.csv",
-      "sha256": "9700e0ddc132a527e914f8e323a6e517a04f04b26f931e349d983a865d67f449"
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_conditioning_summary_continuation.csv",
+      "sha256": "30c9a8e09c9c802669b1bc999a8c4d0f36e8ffe459dd4d95d57ea70f9e26ea7b"
     },
     "exp245_per_protein": {
       "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz",

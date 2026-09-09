@@ -6,9 +6,9 @@
     "--out",
     "plots"
   ],
-  "caption": "Seed composition per strategy, consensus R-precision per separation range per strategy, and seed accuracy against rollout quality by the seed's own separation range, on eval-val for #232 m2-p06.",
+  "caption": "Seed composition per strategy, consensus R-precision per separation range per strategy, and seed accuracy against continuation-only quality by the seed's own separation range, on eval-val for #232 m2-p06. Continuation uses P@min(R, emitted), excluding the seed; comparisons are observational.",
   "plot": "seed_strategy_eval_val.png",
-  "sha256": "b1f9319c24184cc797d9ea659e5ea066914a2b8a6e51acba0fe2200a27c85f70",
+  "sha256": "305ad66714787c3a2b449554eaed094df8a082f1efba707f2b793d3127767e83",
   "sources": {
     "exp254_seed_composition": {
       "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_composition.csv",
@@ -19,8 +19,8 @@
       "sha256": "1a1de4e79863fd55c336a3746b59f10fb5742b1288475214d829fd0766e42f2e"
     },
     "exp254_seed_range": {
-      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_range.csv",
-      "sha256": "95f4e6e9a8b00d95352dd23a69245b22be368fae6c8df7dec9b8890cff215292"
+      "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_range_continuation.csv",
+      "sha256": "654fe4a1e876ccd10352b5c1cfc5c2c2377df2e0c05a770d9334c9188e71c958"
     }
   }
 }

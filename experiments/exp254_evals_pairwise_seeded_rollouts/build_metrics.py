@@ -218,14 +218,14 @@ def oracle_best(group: pd.DataFrame, rec: dict, resolved_mask: np.ndarray,
 
 
 def seed_conditioning(detail: pd.DataFrame, seeds: pd.DataFrame | None, gt,
-                      arm: str) -> list[dict]:
-    """Every rollout's own R-precision, tagged with whether its seed was right.
+                      arm: str, *, exclude_seed: bool = False) -> list[dict]:
+    """Score rollout contacts, tagged with whether the supplied seed was right.
 
-    This is the decomposition that explains whichever way the headline goes. A
-    seeded rollout inherits one asserted contact; if seeding does anything, a
-    rollout given a TRUE contact should beat one given a false one, and the
-    i.i.d. arm should sit between them. ``seed_correct`` is ``None`` for the
-    i.i.d. arm, whose rollouts were given nothing.
+    With ``exclude_seed``, score only the generated continuation: a supplied
+    true contact must not count as evidence that conditioning improved the
+    generated contacts. The full-document view remains a useful, distinct
+    readout. Neither true/false split is a randomized causal contrast, since
+    seed correctness is associated with the particular pair being supplied.
     """
     seed_lookup: dict[tuple[str, str], dict[int, tuple[int, int]]] = {}
     groups = [] if seeds is None else seeds.groupby(["dataset", "stem"], sort=False)
@@ -245,12 +245,16 @@ def seed_conditioning(detail: pd.DataFrame, seeds: pd.DataFrame | None, gt,
         tmat = true_matrix(L, rec["contacts"])
         pi, pj, psep = resolved_pairs(resolved)
         lo, hi = RANGES["all"]
-        precisions, n_true = rollout_precisions(group, resolved_mask, tmat,
+        scored = group[~group["is_seed"]] if exclude_seed else group
+        precisions, n_true = rollout_precisions(scored, resolved_mask, tmat,
                                                 pi, pj, psep, lo, hi)
         if n_true <= 0:
             continue
         per_rollout_seed = seed_lookup.get((dataset, stem), {})
-        for rollout, precision in precisions.items():
+        # Retain a rollout whose only scorable contact was the forced seed.
+        # Dropping it would select on the continuation's success.
+        for rollout in group["rollout"].unique():
+            precision = precisions.get(int(rollout), 0.0)
             pair = per_rollout_seed.get(rollout)
             seed_correct = None
             if pair is not None:
@@ -334,15 +338,17 @@ def paired_delta(per_protein: pd.DataFrame, a: str, b: str, rng_seed: int = 0,
     return out
 
 
-def summarise_conditioning(conditioning: pd.DataFrame, out: Path) -> None:
+def summarise_conditioning(conditioning: pd.DataFrame, out: Path,
+                           *, suffix: str = "") -> None:
     """Does a rollout handed a TRUE contact beat one handed a false one?
 
     **Pooled, this question answers itself wrongly.** Proteins the model
     predicts well have both a higher share of correct seeds and higher rollout
     precision, so a pooled true-vs-false split reports mostly that confound: it
     comes out around +0.18, which would be a spectacular effect if it were the
-    conditioning. Contrasting *within* each protein -- where both seed kinds
-    occur against the same ground truth -- is the comparison that isolates it.
+    conditioning. Contrasting within each protein removes this between-protein
+    confound, but seed identity and rank still differ. It does not isolate a
+    causal conditioning effect.
 
     Three tables come out of this:
 
@@ -421,21 +427,21 @@ def summarise_conditioning(conditioning: pd.DataFrame, out: Path) -> None:
         range_rows.append(by_range)
 
     summary = pd.DataFrame(summary_rows)
-    summary.to_csv(out / "exp254_seed_conditioning_summary.csv", index=False)
-    print("\n[metrics] what one seeded contact is worth, per rollout "
-          "(within-protein; the pooled column is the difficulty confound):")
+    summary.to_csv(out / f"exp254_seed_conditioning_summary{suffix}.csv", index=False)
+    print("\n[metrics] association of seed correctness with rollout precision "
+          f"({suffix or 'full'}; within-protein; pooled values are confounded):")
     print(summary[["arm", "seed_accuracy", "pooled_delta_CONFOUNDED",
                    "within_true", "within_false", "within_unseeded",
                    "within_delta", "within_delta_lo", "within_delta_hi"]]
           .round(4).to_string(index=False))
 
     by_rank = pd.concat(rank_rows, ignore_index=True)
-    by_rank.to_csv(out / "exp254_seed_rank.csv", index=False)
+    by_rank.to_csv(out / f"exp254_seed_rank{suffix}.csv", index=False)
     print("\n[metrics] by pairwise rank of the seed (rollout index == seed rank):")
     print(by_rank.round(4).to_string(index=False))
 
     by_range = pd.concat(range_rows, ignore_index=True)
-    by_range.to_csv(out / "exp254_seed_range.csv", index=False)
+    by_range.to_csv(out / f"exp254_seed_range{suffix}.csv", index=False)
     print("\n[metrics] by separation range of the seed:")
     print(by_range.round(4).to_string(index=False))
 
@@ -456,7 +462,7 @@ def main() -> int:
     rows: list[dict] = []
     rows += score_matrices(args.run / "pairwise", gt, targets, "pairwise")
 
-    details, conditioning_rows = {}, []
+    details, conditioning_rows, continuation_rows = {}, [], []
     for arm in ARMS:
         detail = load_detail(args.run / arm.directory)
         present = detail.groupby(["dataset", "stem"])["rollout"].nunique()
@@ -492,6 +498,8 @@ def main() -> int:
             rows += score_consensus(detail[~detail["is_seed"]], gt,
                                     f"{arm.label} consensus (seed vote removed)")
         conditioning_rows += seed_conditioning(detail, seeds, gt, arm.label)
+        continuation_rows += seed_conditioning(detail, seeds, gt, arm.label,
+                                                exclude_seed=True)
 
     # What each strategy actually handed the model, which is the framing the
     # long-range question needs: "top 100 overall" is already 56.8 % long-range
@@ -533,6 +541,10 @@ def main() -> int:
     conditioning = pd.DataFrame(conditioning_rows)
     conditioning.to_csv(args.out / "exp254_seed_conditioning.csv.gz", index=False)
     summarise_conditioning(conditioning, args.out)
+    continuation = pd.DataFrame(continuation_rows)
+    continuation.to_csv(args.out / "exp254_seed_continuation.csv.gz", index=False,
+                        compression={"method": "gzip", "mtime": 0})
+    summarise_conditioning(continuation, args.out, suffix="_continuation")
 
     control = "i.i.d."
     comparisons = [(f"{a.label} consensus", f"{control} consensus")

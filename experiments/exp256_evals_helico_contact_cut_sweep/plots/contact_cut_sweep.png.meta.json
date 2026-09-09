@@ -8,15 +8,15 @@
   ],
   "caption": "Helico lDDT on eval-val against the MarinFold contact cut, from top-L/5 to every pair any rollout proposed, with the precision and recall of each list.",
   "plot": "contact_cut_sweep.png",
-  "sha256": "7b0120a9089c231b65f68a66e58bc2c61eb548ca8099a056dcd30aee24a29262",
+  "sha256": "b7c4ec698298ae4761705a7bca1276a84700f93526a8b2f4b880141a635e99bd",
   "sources": {
     "cut_sweep_curve": {
       "path": "experiments/exp256_evals_helico_contact_cut_sweep/data/cut_sweep_curve.csv",
-      "sha256": "76cdd7f3489f43e1520e8d593ac3b21657c19a2f41632fd572a017ffa9c0073c"
+      "sha256": "325b9af58daf43fd09e97fcd8cc3f037b3ea5220a3e0bd765619d647f2dfddc3"
     },
     "reference_arms": {
       "path": "experiments/exp256_evals_helico_contact_cut_sweep/data/reference_arms.csv",
-      "sha256": "f449c9661112015afd548aa777cf3779ff569cf309a11ed449348ba7b31d773b"
+      "sha256": "a5276a53e2f2685a04c482834b7103f9f451840a39bb0bbbd58fa235e0b96105"
     }
   }
 }

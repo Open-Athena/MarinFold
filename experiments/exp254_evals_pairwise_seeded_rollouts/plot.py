@@ -14,10 +14,9 @@ Middle panel: the paired per-protein differences the experiment preregistered --
 95 % bootstrap intervals over proteins; the shaded band is #204's 0.005 tie
 threshold, which is the only reason a small difference here is readable at all.
 
-Right panel: the decomposition that says *why*. The rollout index is the
-pairwise rank of the seed it was given, so seed accuracy can be read against
-rollout quality along the same axis -- accuracy falls 33 points from the top of
-the ranking to the bottom and rollout R-precision does not move.
+Oracle bars use the audited fixed-R denominator, including misses for short
+rollouts. Right panel excludes the forced seed before scoring the continuation;
+its relationship with seed correctness is observational, not a causal mechanism.
 
     uv run python plot.py --data data --out plots
 """
@@ -66,7 +65,7 @@ SEED_STRATEGIES = (
     ("long-range", "long-range only"),
     ("1/3 per range", "1/3 per range"),
 )
-#: #204's four evaluations of one unchanged checkpoint span this much.
+#: Preselected practical band, not an estimated run-to-run noise floor.
 TIE_THRESHOLD = 0.005
 BOOTSTRAP_DRAWS = 10_000
 SEED = 254
@@ -106,6 +105,16 @@ def load(data_dir: Path) -> pd.DataFrame:
     mine = mine[(mine["range"] == "all") & (mine["cut"] == "R")]
     mine = mine[~mine.predictor.isin(HIDDEN_FROM_FIGURE)]
     mine = mine[["stem", "predictor", "precision"]]
+    # Historical oracle rows divide by min(R, emitted), unlike consensus.
+    # Replace them with fixed-R full-rollout scores for a comparable axis.
+    oracle = pd.read_csv(data_dir / "exp254_audit_oracle_per_protein.csv")
+    oracle = oracle[(oracle["range"] == "all") & (oracle["mode"] == "full")].copy()
+    labels = {"iid": "i.i.d.", "seeded": "seeded top-100",
+              "seeded-long": "seeded long-range", "seeded-strat": "seeded 1/3 per range"}
+    oracle["predictor"] = oracle["arm"].map(labels) + " oracle best-of-N"
+    oracle = oracle.rename(columns={"oracle_fixed_R": "precision"})
+    mine = pd.concat([mine[~mine.predictor.isin(ORACLE_ARMS)],
+                      oracle[["stem", "predictor", "precision"]]], ignore_index=True)
 
     sets = pd.read_csv(EVAL_SETS_CSV, usecols=["stem", "eval_set", "scorable"])
     val_stems = set(sets[(sets.eval_set == "eval-val") & (sets.scorable == 1)].stem)
@@ -147,14 +156,14 @@ def scoreboard(axis, frame: pd.DataFrame) -> None:
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
     axis.set_title("eval-val (97 natural FoldBench monomers), #232 m2-p06\n"
-                   "hatched = oracle, needs the answer to pick a rollout",
+                   "hatched = fixed-R oracle; ground-truth selection",
                    fontsize=10.5)
 
 
 def deltas(axis, frame: pd.DataFrame) -> None:
     pairs = [
         (f"seeded {name} oracle best-of-N", "i.i.d. oracle best-of-N",
-         f"oracle best-of-100\n{label} - i.i.d.")
+         f"fixed-R oracle best-of-100\n{label} - i.i.d.")
         for name, label in SEED_STRATEGIES
     ] + [
         (f"seeded {name} consensus", "i.i.d. consensus",
@@ -199,23 +208,16 @@ def deltas(axis, frame: pd.DataFrame) -> None:
     for spine in ("top", "right", "left"):
         axis.spines[spine].set_visible(False)
     axis.set_title("Paired per-protein differences\n"
-                   "shaded band = the 0.005 tie threshold (#204)", fontsize=10.5)
+                   "shaded band = +/-0.005 practical margin", fontsize=10.5)
 
 
 def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame,
                        arm: str = "seeded top-100") -> None:
-    """Seed accuracy falls steeply down the pairwise ranking; the rollouts do not.
+    """Show seed correctness and continuation-only rollout precision.
 
-    The rollout index *is* the pairwise rank of the seed it was handed, so this
-    is a free dose-response curve. Seeds drawn from ranks 1-10 are true contacts
-    79 % of the time and seeds from ranks 71-100 only 46 %, a 33-point swing --
-    and the R-precision of the rollouts they produced is flat across the whole
-    range, within 0.004 of each other and of the unseeded arm.
-
-    A pooled true-seed-versus-false-seed split is deliberately NOT plotted here.
-    It reads +0.18, almost all of which is protein difficulty: a protein the
-    model handles well supplies both more correct seeds and better rollouts. The
-    within-protein contrast, quoted in the corner, is the honest number.
+    The seed is excluded from the scored list, so its own correctness cannot
+    mechanically create the plotted difference. The true/false split remains
+    observational, even after averaging within proteins.
     """
     by_rank = by_rank[by_rank.arm == arm]
     positions = np.arange(len(by_rank))
@@ -225,7 +227,7 @@ def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame,
         axis.text(position, value + 0.012, f"{value:.2f}", ha="center", fontsize=8,
                   color="#33312e")
     axis.plot(positions, by_rank["rollout_precision"], color="#d55e00", marker="o",
-              markersize=6, linewidth=2, label="R-precision of those rollouts")
+              markersize=6, linewidth=2, label="continuation precision (seed excluded)")
     axis.axhline(by_rank["iid_rollout_precision"].iloc[0], color="#0072b2",
                  linewidth=1.6, linestyle="--", label="unseeded rollout")
     axis.set_xticks(positions)
@@ -233,15 +235,15 @@ def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame,
     delta = float(summary.loc[summary.arm == arm, "within_delta"].iloc[0])
     axis.set_xlabel(
         "pairwise rank of the seed handed to the rollout\n"
-        f"within a protein, true seed - false seed = {delta:+.3f}")
+        f"continuation: true seed - false seed = {delta:+.3f}")
     axis.set_ylim(0, 1.0)
     axis.legend(fontsize=8, loc="upper right", frameon=False)
     axis.grid(axis="y", color="#dddad6", linewidth=0.6)
     axis.set_axisbelow(True)
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
-    axis.set_title("The seed barely moves the rollout\n"
-                   "accuracy swings 33 points; quality does not follow",
+    axis.set_title("Seed correctness and generated contacts\n"
+                   "forced seed excluded from scoring",
                    fontsize=10.5)
 
 
@@ -254,8 +256,8 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
     frame = load(args.data)
-    by_rank = pd.read_csv(args.data / "exp254_seed_rank.csv")
-    conditioning_summary = pd.read_csv(args.data / "exp254_seed_conditioning_summary.csv")
+    by_rank = pd.read_csv(args.data / "exp254_seed_rank_continuation.csv")
+    conditioning_summary = pd.read_csv(args.data / "exp254_seed_conditioning_summary_continuation.csv")
 
     figure, axes = plt.subplots(1, 3, figsize=(19.5, 6.4),
                                 gridspec_kw={"width_ratios": [1.45, 1.1, 0.95]})
@@ -271,15 +273,17 @@ def main() -> int:
     figure.savefig(dest, dpi=200)
     plt.close(figure)
     stamp(dest, {"exp254_per_protein": args.data / "exp254_per_protein.csv.gz",
-                 "exp254_seed_rank": args.data / "exp254_seed_rank.csv",
+                 "exp254_audit_oracle": args.data / "exp254_audit_oracle_per_protein.csv",
+                 "exp254_seed_rank": args.data / "exp254_seed_rank_continuation.csv",
                  "exp254_seed_conditioning_summary":
-                     args.data / "exp254_seed_conditioning_summary.csv",
+                     args.data / "exp254_seed_conditioning_summary_continuation.csv",
                  "exp245_per_protein": BASELINE_PER_PROTEIN,
                  "eval_sets": EVAL_SETS_CSV},
           "All-range contact R-precision on eval-val for the #232 m2-p06 "
-          "checkpoint under five MarinFold readouts and #245's published "
+          "checkpoint and #245's published "
           "predictors, the paired seeded-minus-i.i.d. differences, and seed "
-          "accuracy against rollout quality along the pairwise ranking.")
+          "accuracy against continuation-only P@min(R, emitted) along the pairwise ranking. "
+          "Oracle bars use fixed R; seed-correctness contrasts are observational.")
     print(f"[plot] wrote {dest}")
     return 0
 
