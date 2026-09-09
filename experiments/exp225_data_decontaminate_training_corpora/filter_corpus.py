@@ -118,7 +118,7 @@ def dataset_readme(corpus: Corpus, kept: int, dropped: int, rule: str) -> str:
     return f"""# `{corpus.decontam_prefix.split("/")[-2]}` — eval-decontaminated {corpus.label}
 
 A row-filtered rebuild of
-[`{corpus.prefix}`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/{corpus.prefix}),
+[`{corpus.prefix}`](https://huggingface.co/buckets/open-athena/MarinFold/tree/{corpus.prefix}),
 produced by [issue #225](https://github.com/Open-Athena/MarinFold/issues/225).
 The surviving rows are unchanged — same documents, same order, same shard
 numbering — with contaminated rows removed.
