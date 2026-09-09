@@ -65,6 +65,7 @@ def worker_request(
             [
                 "-c",
                 "set -e\n"
+                f'export UV_PROJECT_ENVIRONMENT="$PWD/{PROJECT}/.venv"\n'
                 f"uv sync --locked --project {PROJECT} --extra tpu --no-dev\n"
                 + "exec "
                 + shlex.join(command),
@@ -205,6 +206,7 @@ def main() -> None:
                     [
                         "-c",
                         "set -e\n"
+                        f'export UV_PROJECT_ENVIRONMENT="$PWD/{PROJECT}/.venv"\n'
                         f"uv sync --locked --project {PROJECT} --no-dev\n"
                         + "exec "
                         + shlex.join(command),

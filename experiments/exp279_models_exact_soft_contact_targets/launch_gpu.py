@@ -77,7 +77,8 @@ def gpu_worker_request(
     # Keep setup and execution in one shell. The upstream setup may exit early
     # when no CUDA binaries are found, so isolate it in a checked subshell.
     script = (
-        f"set -e\nuv sync --locked --project {PROJECT} --extra gpu --no-dev\n"
+        f'set -e\nexport UV_PROJECT_ENVIRONMENT="$PWD/{PROJECT}/.venv"\n'
+        f"uv sync --locked --project {PROJECT} --extra gpu --no-dev\n"
         f'export IRIS_VENV="$PWD/{PROJECT}/.venv"\n'
         'export PATH="$IRIS_VENV/bin:$PATH"\n'
         + "(\n"
@@ -222,6 +223,7 @@ def main() -> None:
                     [
                         "-c",
                         "set -e\n"
+                        f'export UV_PROJECT_ENVIRONMENT="$PWD/{PROJECT}/.venv"\n'
                         f"uv sync --locked --project {PROJECT} --no-dev\n"
                         + "exec "
                         + shlex.join(command),
