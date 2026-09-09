@@ -43,6 +43,7 @@ def main() -> None:
                 noise=0.45 if args.model == "short" else 0.35,
                 compile=args.compile,
                 output=f"{args.output}/{case_id}",
+                control="",
             )
             cases.append(case)
     put_bytes(args.output + "/cases.json", json.dumps(cases, indent=2).encode())

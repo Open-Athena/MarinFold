@@ -19,6 +19,7 @@ from omegaconf import DictConfig, OmegaConf
 from proteinfoundation.proteinflow.proteina import Proteina
 
 from prepare_assets import CHECKPOINTS, SOURCE_SHA
+from scale_common import paused, sampling_history, write_json
 
 
 def relocate_config(config: DictConfig, data_root: Path) -> DictConfig:
@@ -55,6 +56,7 @@ def main() -> None:
     parser.add_argument("--noise", type=float, default=0.45)
     parser.add_argument("--compile", action="store_true")
     parser.add_argument("--output", required=True)
+    parser.add_argument("--control", default="")
     args = parser.parse_args()
     if not 60 <= args.length <= 500 or args.batch_size < 1 or args.batches < 1:
         parser.error("Require 60–500 residues and positive batch/count")
@@ -114,19 +116,16 @@ def run_case(args: argparse.Namespace, model: Proteina | None = None) -> Protein
         ).encode(),
     )
     print(json.dumps({"event": "loaded", **meta}), flush=True)
-    rows = []
-    completed_batches = set()
-    if output_fs.exists(output_path + "/timings.csv"):
-        with output_fs.open(output_path + "/timings.csv", "rt") as handle:
-            rows = list(csv.DictReader(handle))
-        for batch_index in {int(row["batch_index"]) for row in rows}:
-            saved_rows = [row for row in rows if int(row["batch_index"]) == batch_index]
-            if len(saved_rows) != args.batch_size or not output_fs.exists(
-                f"{output_path}/batch-{batch_index:05d}.npz"
-            ):
-                raise ValueError("Saved sampling timings and coordinates disagree")
-            completed_batches.add(batch_index)
+    # A batch archive is the atomic durability unit: coordinates and their
+    # original inference timings survive even if the process dies before a
+    # progress marker or aggregate CSV is written. Scale runs use new prefixes.
+    rows, completed_batches = sampling_history(
+        output_fs, output_path, args.length, args.batch_size
+    )
     for batch_index in range(args.batches):
+        if paused(args.control):
+            print("Paused at durable sampling batch boundary", flush=True)
+            return model
         if batch_index in completed_batches:
             print(f"Already complete: batch {batch_index}", flush=True)
             continue
@@ -166,9 +165,7 @@ def run_case(args: argparse.Namespace, model: Proteina | None = None) -> Protein
             or not np.isfinite(coordinates).all()
         ):
             raise ValueError("Generator produced invalid coordinate array")
-        buffer = io.BytesIO()
-        np.savez_compressed(buffer, ca=coordinates)
-        put_bytes(f"{args.output}/batch-{batch_index:05d}.npz", buffer.getvalue())
+        first_row = len(rows)
         for index in range(args.batch_size):
             rows.append(
                 {
@@ -186,11 +183,20 @@ def run_case(args: argparse.Namespace, model: Proteina | None = None) -> Protein
                     "total_seconds": time.perf_counter() - began,
                 }
             )
-        text = io.StringIO()
-        writer = csv.DictWriter(text, fieldnames=list(rows[0]), lineterminator="\n")
-        writer.writeheader()
-        writer.writerows(rows)
-        put_bytes(args.output + "/timings.csv", text.getvalue().encode())
+        buffer = io.BytesIO()
+        np.savez_compressed(
+            buffer, ca=coordinates, timings_json=json.dumps(rows[first_row:])
+        )
+        put_bytes(f"{args.output}/batch-{batch_index:05d}.npz", buffer.getvalue())
+        write_json(
+            args.output + "/progress.json",
+            {
+                "count": len(rows),
+                "batch_index": batch_index,
+                "elapsed_seconds": sum(float(row["elapsed_seconds"]) for row in rows),
+                "updated_utc": datetime.now(timezone.utc).isoformat(),
+            },
+        )
         print(
             json.dumps(
                 {
@@ -202,6 +208,11 @@ def run_case(args: argparse.Namespace, model: Proteina | None = None) -> Protein
             ),
             flush=True,
         )
+    text = io.StringIO()
+    writer = csv.DictWriter(text, fieldnames=list(rows[0]), lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(rows)
+    put_bytes(args.output + "/timings.csv", text.getvalue().encode())
     put_bytes(
         args.output + "/complete.json",
         json.dumps({"count": len(rows), **meta}).encode(),

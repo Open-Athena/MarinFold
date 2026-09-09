@@ -1,8 +1,16 @@
-## Proteina initial screen: production held
+## Scale generation: independent batch workers
+
+First production submission: September 9, 21:32 UTC. Review due September 10, 15:32 UTC / 11:32 EDT. Continue generation during review.
+
+Frozen plan: 4.82 million raw backbones at lengths 60–500, four class arms, 768 independently admitted worker queues. East02 has 256 H100s. RNO2A transfer approval remains pending.
+
+Preserve all backbones and sequences, including rejects. Quality-pass documents require decontamination and global diversity selection before training use.
+
+## Proteina initial screen
 
 We filed experiment #278 and completed a 1,536-backbone screen on Iris H100s. The end-to-end pipeline produces valid contacts-v1 documents, and class conditioning changes secondary-structure composition.
 
-494 documents survive quality, evaluation decontamination and fine-cluster capping. The million-document run is held: yield is below plan and the proposed diversity target is unproven. This is an initial-screen result, not completion of all proposed pilot arms.
+494 documents survive quality, evaluation decontamination and fine-cluster capping. The user authorized a larger run to measure retention and diversity. This is an initial-screen result, not completion of all proposed pilot arms.
 
 ## What survived
 
@@ -34,4 +42,4 @@ Illustrative $2–4/H100-hour accounting gives $26,800–53,500 for the primary 
 
 A second sequence attempt rescued 5 of 32 identical 500-aa backbones: first 18/32; best-of-two 23/32; 231 extra inference seconds before decontamination.
 
-A/T labels, higher noise, the 400M triangle model, checkpoint overlap and a larger pilot remain untested. Production is held for redesign; issue #278 and draft PR #282 retain the code, timing records and small result artifacts.
+A/T labels, higher noise, the 400M triangle model, checkpoint overlap and a larger pilot remain untested. A scale run is now authorized; issue #278 and draft PR #282 retain the code, timing records and small result artifacts.

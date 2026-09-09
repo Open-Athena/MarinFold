@@ -1,3 +1,7 @@
+# Execution amendment — September 9, 2026
+
+The user authorized scale generation and continuing during the 18-hour review. [SCALE_OPS.md](SCALE_OPS.md) supersedes the original pilot cap, 32-worker assumption, production hold, and sampled-reject retention policy below. Preserve all backbones and sequences.
+
 # Proposed experiment: diversify contacts-v1 with Proteina-generated monomers
 
 Approved for execution on 2026-09-09: start with the capped pilot and proceed through the preregistered milestones if they pass.

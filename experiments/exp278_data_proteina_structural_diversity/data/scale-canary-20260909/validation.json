@@ -1,0 +1,14 @@
+[
+  {
+    "case": "canary-l250",
+    "backbones_saved": 32,
+    "sequences_saved": 32,
+    "quality_pass": 23
+  },
+  {
+    "case": "canary-l251",
+    "backbones_saved": 32,
+    "sequences_saved": 32,
+    "quality_pass": 24
+  }
+]

@@ -35,6 +35,7 @@ from transformers import AutoTokenizer, EsmForProteinFolding
 
 from prepare_assets import download
 from quality import aligned_rmsd, backbone_geometry, confidence_percent
+from scale_common import paused, write_json
 
 MPNN_REVISION = "8907e6671bfbfc92303b5f79c4b5e6ce47cdef57"
 ALPHABET = "ACDEFGHIKLMNPQRSTVWYX"
@@ -109,6 +110,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--control", default="")
     args = parser.parse_args()
     prefixes = list(args.input)
     for manifest in args.manifest:
@@ -220,6 +222,9 @@ def main() -> None:
         if not files:
             raise ValueError(f"No generated batches found under {prefix}")
         for batch_path in files:
+            if paused(args.control):
+                print("Paused at durable refolding batch boundary", flush=True)
+                return
             records = []
             documents = []
             part_id = hashlib.sha256(f"{prefix}/{batch_path}".encode()).hexdigest()[:20]
@@ -246,11 +251,52 @@ def main() -> None:
                 break
             batch_seed = (args.seed + int(part_id[:8], 16)) % (2**32)
             first_timing = len(timings)
-            torch.cuda.synchronize()
-            start = time.perf_counter()
-            sequences = design_sequences(mpnn, coordinates, batch_seed)
-            torch.cuda.synchronize()
-            design_seconds = time.perf_counter() - start
+            sequence_uri = f"{args.output}/sequences/{part_id}.parquet"
+            sequence_fs, sequence_path = fsspec.core.url_to_fs(sequence_uri)
+            if sequence_fs.exists(sequence_path):
+                with sequence_fs.open(sequence_path, "rb") as handle:
+                    designed = pq.read_table(handle).to_pylist()
+                if len(designed) != len(coordinates) or any(
+                    row["seed"] != batch_seed for row in designed
+                ):
+                    raise ValueError(
+                        "Saved sequence attempts disagree with the input batch"
+                    )
+                sequences = [row["sequence"] for row in designed]
+                design_seconds = sum(row["elapsed_seconds"] for row in designed)
+            else:
+                torch.cuda.synchronize()
+                start = time.perf_counter()
+                sequences = design_sequences(mpnn, coordinates, batch_seed)
+                torch.cuda.synchronize()
+                design_seconds = time.perf_counter() - start
+                designed = [
+                    {
+                        "stem": "proteina-"
+                        + hashlib.sha256(
+                            f"{prefix}/{Path(batch_path).name}/{index}".encode()
+                        ).hexdigest()[:20],
+                        "sequence": sequence,
+                        "source_prefix": prefix,
+                        "source_batch": Path(batch_path).name,
+                        "sample_in_batch": index,
+                        "seed": batch_seed,
+                        "attempt": 1,
+                        "mpnn_revision": MPNN_REVISION,
+                        "elapsed_seconds": design_seconds / len(sequences),
+                        "model_load_seconds": mpnn_load,
+                        "n_residues": len(sequence),
+                        **worker,
+                    }
+                    for index, sequence in enumerate(sequences)
+                ]
+                buffer = io.BytesIO()
+                pq.write_table(
+                    pa.Table.from_pylist(designed), buffer, compression="zstd"
+                )
+                # Save EVERY designed sequence before any folding or rejection.
+                # On preemption these attempts are reused, never regenerated.
+                put_bytes(sequence_uri, buffer.getvalue())
             for index, (original, sequence) in enumerate(
                 zip(coordinates, sequences, strict=True)
             ):
@@ -410,8 +456,21 @@ def main() -> None:
             put_bytes(
                 marker_uri,
                 json.dumps(
-                    {"candidates": len(records), "quality_pass": len(documents)}
+                    {
+                        "candidates": len(records),
+                        "quality_pass": len(documents),
+                        "sequences_saved": len(sequences),
+                    }
                 ).encode(),
+            )
+            write_json(
+                args.output + "/progress.json",
+                {
+                    "candidates": processed,
+                    "quality_pass": quality_pass_count,
+                    "updated_utc": datetime.now(timezone.utc).isoformat(),
+                    "last_part": part_id,
+                },
             )
             if args.limit and processed >= args.limit:
                 break

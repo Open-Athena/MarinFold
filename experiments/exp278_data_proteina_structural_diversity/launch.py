@@ -77,6 +77,52 @@ def stage_bundle(content: bytes, cluster: str) -> str:
     return "s3://" + path
 
 
+def create_worker_request(
+    name: str,
+    worker_args: list[str],
+    bundle_uri: str,
+    digest: str,
+    checkpoints: str,
+    timeout: int,
+    preemption_retries: int = 0,
+    failure_retries: int = 0,
+) -> JobRequest:
+    """Construct an independent batch-priority GPU job with explicit retries."""
+    unpack = (
+        "import fsspec,hashlib,io,tarfile; "
+        f"data=fsspec.open({bundle_uri!r},'rb').open().read(); "
+        f"assert hashlib.sha256(data).hexdigest()=={digest!r}; "
+        "tarfile.open(fileobj=io.BytesIO(data)).extractall('/tmp/exp278',filter='data')"
+    )
+    command = (
+        "set -euo pipefail\nmkdir -p /tmp/exp278\n"
+        "/opt/conda/bin/python -m pip install --quiet uv==0.8.22\n"
+        "uv pip install --python /opt/conda/bin/python fsspec==2025.3.0 s3fs==2025.3.0\n"
+        f"uv run --no-project /opt/conda/bin/python -c {shlex.quote(unpack)}\n"
+        f"exec timeout {timeout}s bash /tmp/exp278/bootstrap.sh "
+        + shlex.join(["/tmp/exp278/" + worker_args[0], *worker_args[1:]])
+    )
+    request = JobRequest(
+        name=name,
+        entrypoint=Entrypoint.from_binary("bash", ["-lc", command]),
+        resources=ResourceConfig.with_gpu(
+            "H100", count=1, image=IMAGE, cpu=8, ram="64g", disk="64g"
+        ),
+        environment=create_environment(
+            docker_image=IMAGE,
+            env_vars={"PROTEINA_CHECKPOINTS": checkpoints},
+            setup_scripts=[],
+        ),
+        replicas=1,
+        processes_per_task=1,
+        priority=3,
+        max_task_failures=failure_retries,
+        max_retries_failure=failure_retries,
+        max_retries_preemption=preemption_retries,
+    )
+    return request
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cluster", default="cw-rno2a")
@@ -88,41 +134,18 @@ def main() -> None:
     args = parser.parse_args()
     content = bundle()
     bundle_uri = stage_bundle(content, args.cluster)
-    unpack = (
-        "import fsspec,hashlib,io,tarfile; "
-        f"data=fsspec.open({bundle_uri!r},'rb').open().read(); "
-        f"assert hashlib.sha256(data).hexdigest()=={hashlib.sha256(content).hexdigest()!r}; "
-        "tarfile.open(fileobj=io.BytesIO(data)).extractall('/tmp/exp278',filter='data')"
-    )
     worker_args = args.worker_args
     if worker_args and worker_args[0] == "--":
         worker_args = worker_args[1:]
     if not worker_args:
         parser.error("Provide a worker script after --")
-    command = (
-        "set -euo pipefail\nmkdir -p /tmp/exp278\n"
-        "/opt/conda/bin/python -m pip install --quiet uv==0.8.22\n"
-        "uv pip install --python /opt/conda/bin/python fsspec==2025.3.0 s3fs==2025.3.0\n"
-        f"uv run --no-project /opt/conda/bin/python -c {shlex.quote(unpack)}\n"
-        f"exec timeout {args.timeout}s bash /tmp/exp278/bootstrap.sh "
-        + shlex.join(["/tmp/exp278/" + worker_args[0], *worker_args[1:]])
-    )
-    request = JobRequest(
-        name=args.name,
-        entrypoint=Entrypoint.from_binary("bash", ["-lc", command]),
-        resources=ResourceConfig.with_gpu(
-            "H100", count=1, image=IMAGE, cpu=8, ram="64g", disk="64g"
-        ),
-        environment=create_environment(
-            docker_image=IMAGE,
-            env_vars={"PROTEINA_CHECKPOINTS": args.checkpoints},
-            setup_scripts=[],
-        ),
-        replicas=1,
-        processes_per_task=1,
-        priority=3,
-        max_retries_failure=0,
-        max_retries_preemption=0,
+    request = create_worker_request(
+        args.name,
+        worker_args,
+        bundle_uri,
+        hashlib.sha256(content).hexdigest(),
+        args.checkpoints,
+        args.timeout,
     )
     with open_iris_client(cluster_name=args.cluster, workspace=None) as iris_client:
         job = FrayIrisClient.from_iris_client(iris_client).submit(request)

@@ -1,0 +1,17 @@
+stem,length,condition,quality_pass,sequence_excluded,structure_excluded,fine_cluster,selected
+proteina-ed68a587e75e745a1c8e,250,unconditional,True,False,False,proteina-ed68a587e75e745a1c8e,True
+proteina-f96064f7e58225f9487a,250,unconditional,True,True,False,,False
+proteina-b82fd83657ef2b0f8114,250,unconditional,False,False,False,,False
+proteina-913c153c13ead6ab3327,250,unconditional,True,True,False,,False
+proteina-066a366f8f30de2a2e62,250,unconditional,False,True,False,,False
+proteina-ac9a2671eea6f8135817,250,unconditional,True,True,False,,False
+proteina-8753bcd71e8fa64b8305,250,unconditional,True,False,False,proteina-8753bcd71e8fa64b8305,True
+proteina-88b689031a641994231e,250,unconditional,True,False,False,proteina-88b689031a641994231e,True
+proteina-50a271d20d5ffeb8e54b,251,2.x.x.x,True,True,False,,False
+proteina-c2a2ed10240c6f5eb045,251,2.x.x.x,True,True,False,,False
+proteina-aeae7a0caa78be19b380,251,2.x.x.x,True,True,False,,False
+proteina-7ec48bae314bc390807b,251,2.x.x.x,False,True,False,,False
+proteina-79396bd46f632d4dd4a9,251,2.x.x.x,True,True,False,,False
+proteina-76ae51481f28d7d16835,251,2.x.x.x,False,True,True,,False
+proteina-db5619e2bf521738d324,251,2.x.x.x,True,False,False,proteina-db5619e2bf521738d324,True
+proteina-cf981e8a2adbe60b8003,251,2.x.x.x,True,True,True,,False

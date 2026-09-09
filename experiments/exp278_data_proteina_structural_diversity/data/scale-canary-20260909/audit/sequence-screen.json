@@ -1,0 +1,11 @@
+{
+  "references": {
+    "exp225_data_decontaminate_training_corpora/data/reference/eval_queries.fasta": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a",
+    "exp225_data_decontaminate_training_corpora/data/reference/foldbench_all_queries.fasta": "0e6bd31f3f9d34eec73ed83ed5e7a8942529ff68a402ea632bd7f845a132551f"
+  },
+  "candidates": 16,
+  "excluded_candidates": 11,
+  "rule": "(identity >=0.30 and shorter coverage >=0.50) or E<=0.001",
+  "E_value_scope": "fixed legacy and full FoldBench reference database; not numerically comparable to exp225 corpus-database E-values",
+  "mmseqs_version": "4fe20e6bb0aa219a35f6190322a91ab19cb6898d"
+}

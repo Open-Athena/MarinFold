@@ -1,0 +1,10 @@
+{
+  "start_utc": "2026-09-09T21:32:01.409450+00:00",
+  "review_due_utc": "2026-09-10T15:32:01.409450+00:00",
+  "review_due_new_york": "2026-09-10 11:32 EDT",
+  "review_action": "continue while reviewing",
+  "monitor_owner_thread": "01a08763-e824-79b2-8ecd-a8a851f4d31a",
+  "run_id": "exp278-proteina-scale-20260909",
+  "output": "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909",
+  "rno2a_cross_region_approval": "pending; use East02 only until explicitly approved"
+}

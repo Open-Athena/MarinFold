@@ -10,6 +10,10 @@ marinfold_experiment:
 
 **Issue:** [#278](https://github.com/Open-Athena/MarinFold/issues/278) · **Kind:** `data` · **Branch:** `exp278/proteina-pilot`
 
+## Current status: scale run authorized
+
+The user authorized scale generation on September 9, superseding the pilot cap and production hold. First production submission: 21:32 UTC. First review: September 10 at 15:32 UTC (11:32 EDT). Generation continues during review. See [SCALE_OPS.md](SCALE_OPS.md) for the frozen plan, independent batch jobs, preservation of all backbones/sequences and recovery. GPU-stage documents remain provisional pending decontamination and global diversity selection.
+
 ## Question
 
 Can fold-conditioned Proteina generation supply one million useful, structurally diverse, sequence-paired monomer documents of length 60–500, at an acceptable cost per retained structure?
@@ -155,6 +159,8 @@ Reproduction uses the experiment's committed `uv.lock`. Run `uv run analyze_scre
 
 ## Conclusion
 
-Proteina → ProteinMPNN → ESMFold → contacts-v1 works end to end, and conditioning changes broad structural composition. **The tested recipe does not justify million-document production:** retention is 32% in the screen and falls to 11% at 500 aa; the measured projection is about 13,400–15,800 H100-hours, and the proposed diversity gain is unproven with a ceiling-limited small-sample metric.
+Proteina → ProteinMPNN → ESMFold → contacts-v1 works end to end, and conditioning changes broad structural composition. **The initial screen alone did not establish the value of million-document production:** retention is 32% in the screen and falls to 11% at 500 aa; the measured projection is about 13,400–15,800 H100-hours, and the proposed diversity gain is unproven with a ceiling-limited small-sample metric.
 
 Stopped at the initial screening gate, before the larger pilot or either production milestone. This is not completion of every arm in the roughly 10k-candidate proposal: A/T conditioning, higher noise, the 400M triangle control, checkpoint overlap, a larger diversity-accumulation study, and a matched natural-corpus baseline remain untested. The next design should calibrate the diversity objective and investigate long-chain rejection causes before spending the remaining budget. No 100k/million run or training mixture was launched; the issue stays open for that redesign.
+
+The user subsequently authorized a scale run to measure retention and diversity at larger sample sizes. The one-million goal is not an achieved yield; interim findings may motivate a smaller final corpus.
