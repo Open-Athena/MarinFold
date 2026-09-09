@@ -36,7 +36,7 @@ A healthy launched production run and reproducible checkpoint trail. Subsequentl
 
 ## Results
 
-Tokenizer smoke `/bizon/exp277-prepare-smoke-a04` succeeded on US-EAST-02A: all 160,000 AFDB documents (21,584,525 tokens) and all 39,180 ESM documents (40,616,645 tokens) exactly matched independent fresh tokenization. See `data/tokenization_smoke.csv`. Full preparation restarted as `/bizon/exp277-prepare-a02` after the generic full-parquet reader exceeded 8 GB on long AFDB shards. The reader now projects only document text and streams 128-row batches with 32 GB workers; completed shards are reused. No model-quality result is available.
+Tokenizer smoke `/bizon/exp277-prepare-smoke-a04` succeeded on US-EAST-02A: all 160,000 AFDB documents (21,584,525 tokens) and all 39,180 ESM documents (40,616,645 tokens) exactly matched independent fresh tokenization. See `data/tokenization_smoke.csv`. Full preparation restarted as `/bizon/exp277-prepare-a02` after the generic full-parquet reader exceeded 8 GB on long AFDB shards. The reader now projects only document text and streams 128-row batches with 32 GB workers; completed shards are reused. GPU smoke `/bizon/exp277-train-smoke-a01` also succeeded: ten updates, finite final train loss 6.43476, two-batch eval loss 6.31338, and approximately 0.866 seconds per step. The step-9 native and HF checkpoints are present, including tokenizer files. The smoke is logged as [`contacts-v1-exp277-m2-p06-native-mpnn-1.5B-smoke`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-native-mpnn-1.5B-smoke). No model-quality result is available.
 
 ## Conclusion
 
