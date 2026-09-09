@@ -6,5 +6,9 @@
   "monitor_owner_thread": "01a08763-e824-79b2-8ecd-a8a851f4d31a",
   "run_id": "exp278-proteina-scale-20260909",
   "output": "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909",
-  "rno2a_cross_region_approval": "pending; use East02 only until explicitly approved"
+  "rno2a_cross_region_approval": "pending; use East02 only until explicitly approved",
+  "review_timer": "exp278-scale-review.timer",
+  "review_delivery": "Saved reports, W&B metrics and a new comment on issue #278; workstation user session must remain running",
+  "review_timer_environment_verified": true,
+  "native_codex_automation_registered": false
 }

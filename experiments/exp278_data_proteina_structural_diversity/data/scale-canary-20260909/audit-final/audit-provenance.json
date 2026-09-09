@@ -1,0 +1,13 @@
+{
+  "seed": 2781818,
+  "candidates": 16,
+  "downloaded_bytes": 3229093,
+  "selection": "Uniform candidate sampling within 40-aa length bins and requested arms, among committed refolds at snapshot time",
+  "interpretation": "Stratified interim sample, not the full corpus. Retention and cluster cap below apply only to this sample; do not report them as final global retention.",
+  "sources": [
+    "marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909/cases/canary-l250/folded/candidates/20869f1e2b8126966508.parquet",
+    "marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909/cases/canary-l250/folded/candidates/678ade8e1848644f8bc9.parquet",
+    "marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909/cases/canary-l251/folded/candidates/90ae5970a2a0ee07eecb.parquet",
+    "marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909/cases/canary-l251/folded/candidates/a022ee3aca95d86b5d32.parquet"
+  ]
+}

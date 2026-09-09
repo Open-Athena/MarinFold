@@ -1,0 +1,5 @@
+geometry,threshold,matched_n_per_arm,matched_length_counts,ratio_median,ratio_resampling_p025,ratio_resampling_p975,control_effective_median,conditioned_effective_median,maximum_possible_ratio_median
+original,fine,0,"{""250"": 0, ""251"": 0}",,,,,,
+original,broad,0,"{""250"": 0, ""251"": 0}",,,,,,
+refolded,fine,0,"{""250"": 0, ""251"": 0}",,,,,,
+refolded,broad,0,"{""250"": 0, ""251"": 0}",,,,,,

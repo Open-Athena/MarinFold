@@ -66,6 +66,7 @@ def main() -> None:
     snapshot = json.loads((report / "latest.json").read_text())
     budget = json.loads((report / "iris-resource-time.json").read_text())
     retention = json.loads((report / "retention.json").read_text())
+    weighted = json.loads((report / "weighted-retention.json").read_text())
     metrics = {
         f"scale/{key}": snapshot[key]
         for key in ("generated", "refolded", "quality_pass", "quality_retention")
@@ -73,6 +74,9 @@ def main() -> None:
     metrics.update(
         {
             "scale/h100_hours": budget["h100_hours"],
+            "scale/estimated_quality_reference_fraction": weighted[
+                "estimated_quality_and_reference_fraction"
+            ],
             "scale/audit_candidates": retention["candidates"],
             "scale/audit_retained_fraction": retention["retained_fraction"],
             "scale/review_action": "continue while reviewing",
@@ -117,7 +121,7 @@ def main() -> None:
         f"{retention['after_decontamination']:,} after quality/reference exclusion, "
         f"{retention['after_cluster_cap']:,} after capping clusters within the sample. "
         "This is sampled retention, not the final corpus retention or a global "
-        "diversity cap. Compare per-length/arm tables and accumulation results "
+        f"diversity cap. Weighted quality/reference retention among committed refolds is estimated at {weighted['estimated_quality_and_reference_fraction']:.1%}, before global clustering. Compare per-length/arm tables and accumulation results "
         "before projecting a final yield.\n\n"
         "[W&B metrics](https://wandb.ai/open-athena/MarinFold/runs/exp278-proteina-scale-20260909). "
         "All detailed reports are saved under "

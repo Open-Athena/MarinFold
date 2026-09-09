@@ -1,0 +1,14 @@
+{
+  "scale/planned_raw": 4820608,
+  "scale/target_documents": 1000000,
+  "scale/generated": 22944,
+  "scale/sequences_saved": 3200,
+  "scale/refolded": 3024,
+  "scale/quality_pass": 2461,
+  "scale/complete": 2,
+  "scale/quality_retention": 0.8138227513227513,
+  "scale/sequence_batch_files": 106,
+  "scale/workers_submitted": 768,
+  "scale/running_gpu_pods": 80,
+  "scale/observed_worker_retries": 32
+}

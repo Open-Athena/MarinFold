@@ -157,11 +157,37 @@ def main() -> None:
     if transfer_bytes > 9_000_000_000:
         raise ValueError("Audit transfer exceeds the 9 GB bound; reduce sample size")
     records = []
+    timings = []
     for path, indices in sorted(chosen.items()):
         rows = pq.read_table(io.BytesIO(fs.cat(path))).to_pylist()
         case = cases[path.split("/cases/", 1)[1].split("/", 1)[0]]
         if len(rows) != case["batch_size"]:
             raise ValueError("Saved candidate batch differs from frozen manifest")
+        selected = [rows[index] for index in indices]
+        stems = {row["stem"] for row in selected}
+        timing_path = (
+            path.replace("/candidates/", "/timings/").removesuffix(".parquet") + ".csv"
+        )
+        sampling_path = (
+            rows[0]["source_prefix"].removeprefix("s3://")
+            + "/"
+            + rows[0]["source_batch"]
+        )
+        transfer_bytes += files[timing_path]["size"] + files[sampling_path]["size"]
+        if transfer_bytes > 9_000_000_000:
+            raise ValueError("Audit including sampled timing archives exceeds 9 GB")
+        timings.extend(
+            row
+            for row in csv.DictReader(io.StringIO(fs.cat(timing_path).decode()))
+            if row["stem"] in stems
+        )
+        with np.load(io.BytesIO(fs.cat(sampling_path)), allow_pickle=False) as archive:
+            sampled_timings = json.loads(str(archive["timings_json"]))
+        for row in selected:
+            timing = sampled_timings[row["sample_in_batch"]]
+            timings.append(
+                {**timing, "sampling_stem": timing["stem"], "stem": row["stem"]}
+            )
         records.extend(
             {
                 **rows[index],
@@ -174,6 +200,14 @@ def main() -> None:
         raise ValueError("No committed refolds available for audit")
     args.work.mkdir(parents=True, exist_ok=True)
     args.report.mkdir(parents=True, exist_ok=True)
+    with (args.report / "timings.csv").open("w") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=sorted({key for row in timings for key in row}),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerows(timings)
     pq.write_table(
         pa.Table.from_pylist(records),
         args.work / "candidates.parquet",

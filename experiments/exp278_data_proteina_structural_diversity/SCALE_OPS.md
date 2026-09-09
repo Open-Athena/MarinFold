@@ -98,3 +98,7 @@ all-integer-length corpus. Requested labels alone do not establish novel folds.
 The persistent workstation user timer `exp278-scale-review.timer` starts `scale_review.py` at September 10, 15:32:01 UTC. It captures exact batch counts and resource time, runs a bounded stratified retention/diversity audit, records W&B metrics, uploads reports and posts a new comment on issue #278. Its environment was tested with the canary snapshot. The workstation must be online with the user session running at the deadline; otherwise the persistent timer catches up at the next login. The workspace and local frozen reference databases must remain available. No native Codex automation was registered because its tool was unavailable.
 
 A 16-candidate canary audit completed all sequence/structure screens and clustering; 4 survived the sample filters. That tiny integration check is not a scale-yield estimate.
+
+## Launch verification
+
+All 768 root jobs were submitted on East02. Each job and observed pod requests one H100 at batch priority. The launch reached 112 concurrent GPU pods; capacity subsequently varied. Iris recorded 32 task retries during startup, including `PodDeleted` worker failures. Installed Iris `task_state.py` charges worker failures to the 100-preemption retry allowance; application failures have a separate two-retry allowance. A checked example returned independently to the Kueue admission queue. No production job was terminal-failed at the startup check. All submitted IDs and content-addressed code bundles are recorded alongside the manifest.

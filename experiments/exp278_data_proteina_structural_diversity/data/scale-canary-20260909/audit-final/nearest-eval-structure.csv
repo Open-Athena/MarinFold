@@ -1,0 +1,17 @@
+query,target,qtmscore,ttmscore,qcov,tcov,evalue,stem,min_tm
+proteina-066a366f8f30de2a2e62,legacy__denovo_pdb__7uek_A,4.955E-01,5.351E-01,0.896,0.969,4.880E-01,proteina-066a366f8f30de2a2e62,0.4955
+proteina-76ae51481f28d7d16835,legacy__denovo_pdb__7bid_A,9.276E-01,8.164E-01,0.980,0.843,8.657E-01,proteina-76ae51481f28d7d16835,0.8164
+proteina-8753bcd71e8fa64b8305,foldbench__7qp5-assembly1__A,3.890E-01,4.004E-01,0.928,0.888,3.678E-01,proteina-8753bcd71e8fa64b8305,0.389
+proteina-ac9a2671eea6f8135817,legacy__denovo_pdb__7rmx_A,3.925E-01,4.207E-01,0.824,0.987,3.807E-01,proteina-ac9a2671eea6f8135817,0.3925
+proteina-aeae7a0caa78be19b380,legacy__denovo_pdb__6rem_A,3.466E-01,3.466E-01,0.825,0.976,3.172E-01,proteina-aeae7a0caa78be19b380,0.3466
+proteina-cf981e8a2adbe60b8003,legacy__denovo_pdb__6i39_A,8.887E-01,8.887E-01,1.000,0.984,8.727E-01,proteina-cf981e8a2adbe60b8003,0.8887
+proteina-88b689031a641994231e,legacy__denovo_pdb__5cwi_A,4.217E-01,4.471E-01,0.908,0.858,4.107E-01,proteina-88b689031a641994231e,0.4217
+proteina-ed68a587e75e745a1c8e,legacy__denovo_pdb__5cwm_A,6.731E-01,7.359E-01,0.892,0.991,6.766E-01,proteina-ed68a587e75e745a1c8e,0.6731
+proteina-7ec48bae314bc390807b,legacy__denovo_pdb__8vc8_A,3.832E-01,4.635E-01,0.789,0.919,3.927E-01,proteina-7ec48bae314bc390807b,0.3832
+proteina-db5619e2bf521738d324,legacy__denovo_pdb__9fw5_A,3.921E-01,4.711E-01,0.944,0.904,3.968E-01,proteina-db5619e2bf521738d324,0.3921
+proteina-913c153c13ead6ab3327,legacy__denovo_pdb__8j1w_A,3.982E-01,5.269E-01,0.880,0.874,4.292E-01,proteina-913c153c13ead6ab3327,0.3982
+proteina-50a271d20d5ffeb8e54b,legacy__denovo_pdb__4pq8_A,5.788E-01,5.982E-01,0.964,0.979,5.523E-01,proteina-50a271d20d5ffeb8e54b,0.5788
+proteina-b82fd83657ef2b0f8114,legacy__denovo_pdb__9fwa_A,3.722E-01,4.424E-01,0.800,0.703,3.812E-01,proteina-b82fd83657ef2b0f8114,0.3722
+proteina-c2a2ed10240c6f5eb045,legacy__cameo_hard__8vej_B,3.973E-01,4.069E-01,0.956,0.942,3.676E-01,proteina-c2a2ed10240c6f5eb045,0.3973
+proteina-f96064f7e58225f9487a,foldbench__8whj-assembly1__A,4.944E-01,5.057E-01,0.996,0.848,4.676E-01,proteina-f96064f7e58225f9487a,0.4944
+proteina-79396bd46f632d4dd4a9,legacy__denovo_pdb__7bid_A,8.867E-01,7.809E-01,1.000,0.808,8.264E-01,proteina-79396bd46f632d4dd4a9,0.7809

@@ -1,0 +1,7 @@
+{
+  "scale/canary_workers": 2,
+  "scale/target_documents": 1000000,
+  "scale/raw_candidates_planned": 4820608,
+  "scale/continue_at_18h": true,
+  "scale/priority": "batch"
+}

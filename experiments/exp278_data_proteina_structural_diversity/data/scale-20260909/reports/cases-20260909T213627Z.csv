@@ -1,0 +1,10 @@
+case,worker,length,condition,generated,refolded,quality_pass,complete
+c003572-l349-1.x.x.x,0,349,1.x.x.x,16,0,0,0
+c003274-l339-3.x.x.x,1,339,3.x.x.x,16,0,0,0
+c007333-l433-unconditional,2,433,unconditional,16,0,0,0
+c001333-l253-unconditional,3,253,unconditional,32,0,0,0
+c008587-l450-unconditional,4,450,unconditional,16,0,0,0
+c002713-l320-unconditional,5,320,unconditional,16,0,0,0
+c004149-l365-3.x.x.x,7,365,3.x.x.x,16,0,0,0
+c001006-l228-1.x.x.x,11,228,1.x.x.x,16,0,0,0
+c000116-l89-unconditional,34,89,unconditional,32,0,0,0

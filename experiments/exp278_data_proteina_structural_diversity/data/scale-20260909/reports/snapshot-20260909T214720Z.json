@@ -1,0 +1,20 @@
+{
+  "timestamp_utc": "2026-09-09T21:47:20.913350+00:00",
+  "run_id": "scale-20260909",
+  "planned_raw": 4820608,
+  "target_documents": 1000000,
+  "generated": 12400,
+  "sequences_saved": 80,
+  "refolded": 64,
+  "quality_pass": 25,
+  "complete": 0,
+  "quality_retention": 0.390625,
+  "final_retained_documents": null,
+  "final_retention_note": "Sequence/reference exclusion and global structural diversity cap still required. Quality-pass documents are provisional.",
+  "worker_phases": {
+    "sampling": 110,
+    "refolding": 2
+  },
+  "sequence_batch_files": 5,
+  "snapshot_note": "Live nontransactional snapshot of committed batch boundaries; in-flight refolds are excluded."
+}

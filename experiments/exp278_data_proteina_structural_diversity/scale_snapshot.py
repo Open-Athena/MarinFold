@@ -114,7 +114,9 @@ def main() -> None:
     fs.pipe_file(f"{root}/reports/snapshot-{stamp}.json", payload.encode())
     if rows:
         with (args.output / f"cases-{stamp}.csv").open("w") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+            writer = csv.DictWriter(
+                handle, fieldnames=list(rows[0]), lineterminator="\n"
+            )
             writer.writeheader()
             writer.writerows(rows)
     print(payload)
