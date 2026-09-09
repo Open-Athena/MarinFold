@@ -12,7 +12,6 @@ from marin.experiment.cli import build_options
 from marin.experiment.train import train_lm
 from marin.training.training import LevanterCheckpoint
 
-from experiments.exp277_models_single_mpnn_pilot.runtime import run_train_job
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
     DATA_SEED,
     DECAY,
@@ -32,13 +31,14 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
     existing_cache,
 )
 from experiments.exp277_models_single_mpnn_pilot.config import (
-    training_corpora,
     PREFIX,
     RUN_ID,
     VALIDATION_CACHE,
     VERSION,
+    training_corpora,
 )
 from experiments.exp277_models_single_mpnn_pilot.prepare import verify_cache
+from experiments.exp277_models_single_mpnn_pilot.runtime import run_train_job
 
 
 def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
@@ -48,9 +48,11 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
     per_device = min(8, GLOBAL_BATCH_SIZE // (8 * nodes))
     run_id = f"{RUN_ID}-smoke" if smoke else RUN_ID
     steps = 10 if smoke else NUM_TRAIN_STEPS
-    env = dict(
-        MARIN_PREFIX=PREFIX, WANDB_ENTITY="open-athena", WANDB_PROJECT="MarinFold"
-    )
+    env = {
+        "MARIN_PREFIX": PREFIX,
+        "WANDB_ENTITY": "open-athena",
+        "WANDB_PROJECT": "MarinFold",
+    }
     datasets = {
         existing_cache(
             name=f"input/{corpus.name}" if smoke else f"input/full/{corpus.name}",

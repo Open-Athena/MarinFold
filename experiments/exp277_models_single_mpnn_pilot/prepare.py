@@ -30,7 +30,6 @@ from experiments.exp277_models_single_mpnn_pilot.config import (
     Corpus,
 )
 
-
 EXPECTED_TOKEN_IDS = {
     "<pad>": 0,
     "<eos>": 1,

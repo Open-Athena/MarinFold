@@ -5,9 +5,9 @@ import configparser
 import json
 import netrc
 import shutil
-import tempfile
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot"
@@ -105,7 +105,7 @@ def main() -> None:
         destination = bundle / source.relative_to(root)
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
-    result = subprocess.run(command, cwd=bundle)
+    result = subprocess.run(command, cwd=bundle, check=False)
     sys.exit(result.returncode)
 
 
