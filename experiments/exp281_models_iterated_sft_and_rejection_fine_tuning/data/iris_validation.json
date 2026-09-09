@@ -1,0 +1,15 @@
+{
+  "h100_smoke": {
+    "job": "/bizon/exp281-h100-smoke",
+    "state": "succeeded",
+    "worker_seconds": 56.41,
+    "gpus": 1,
+    "tiny_model": true
+  },
+  "input_preflight": {
+    "job": "/bizon/exp281-input-preflight",
+    "state": "succeeded",
+    "worker_seconds": 98.53
+  },
+  "full_model_training_started": false
+}

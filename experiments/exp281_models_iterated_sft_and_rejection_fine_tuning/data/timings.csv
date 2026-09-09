@@ -1,0 +1,2 @@
+model_load_seconds,model_nickname,runner_tag,gpu_name,gpu_total_memory_gb,gpu_compute_capability,hostname,platform,torch_version,n_samples_per_seed,stem,n_residues,n_pairs,mode,elapsed_seconds,total_seconds,batch_size,timing_scope,timestamp_utc
+8.838008775142953,/tmp/exp281-smoke-vllm64/durable/checkpoints/exp281-smoke/step-2,local,NVIDIA RTX A5000,25.42272512,8.6,ip1,Linux-5.15.0-33-generic-x86_64-with-glibc2.35,2.8.0+cu128,2,synthetic-smoke,8,1,synthesis,0.13624515873380005,8.977727513061836,2,shared_batch_latency,2026-09-09T19:17:49.295526+00:00

@@ -1,0 +1,85 @@
+{
+  "observed_at_utc": "2026-09-09T19:15:44.151223+00:00",
+  "client_revision": "9ccc1bd5e4",
+  "records": [
+    {
+      "cluster": "cw-rno2a",
+      "reachable": true,
+      "pending": 2,
+      "running": 10,
+      "availability": {
+        "version": 3,
+        "observation_epoch_ms": "1788981277797",
+        "amounts": {
+          "h100": "505"
+        },
+        "total_amounts": {
+          "h100": "512"
+        },
+        "held_by_band": [
+          {
+            "band": "PRIORITY_BAND_BATCH",
+            "amounts": {
+              "h100": "7"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cluster": "cw-us-east-02a",
+      "reachable": true,
+      "pending": 0,
+      "running": 104,
+      "availability": {
+        "version": 3,
+        "observation_epoch_ms": "1788981277225",
+        "amounts": {
+          "h100": "248"
+        },
+        "total_amounts": {
+          "h100": "256"
+        },
+        "held_by_band": [
+          {
+            "band": "PRIORITY_BAND_INTERACTIVE",
+            "amounts": {
+              "h100": "8"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cluster": "cw-us-east-08a",
+      "reachable": true,
+      "pending": 0,
+      "running": 182,
+      "availability": {
+        "version": 3,
+        "observation_epoch_ms": "1788981276962",
+        "amounts": {
+          "gb200": "120"
+        },
+        "total_amounts": {
+          "gb200": "832"
+        },
+        "held_by_band": [
+          {
+            "band": "PRIORITY_BAND_SYSTEM",
+            "amounts": {
+              "gb200": "704"
+            }
+          },
+          {
+            "band": "PRIORITY_BAND_BATCH",
+            "amounts": {
+              "gb200": "8"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "recommendation": "cw-us-east-02a, one 8xH100 node, batch priority; existing same-bucket inputs"
+}

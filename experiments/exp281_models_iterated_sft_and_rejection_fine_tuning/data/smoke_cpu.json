@@ -1,0 +1,6 @@
+{
+  "cpu": true,
+  "processes": 2,
+  "resume_bitwise_equal": true,
+  "tokenizer_equal": true
+}
