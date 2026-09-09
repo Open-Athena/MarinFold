@@ -8,7 +8,7 @@
   ],
   "caption": "All-range contact R-precision on eval-val for the #232 m2-p06 checkpoint and #245's published predictors, the paired seeded-minus-i.i.d. differences, and seed accuracy against continuation-only P@min(R, emitted) along the pairwise ranking. Oracle bars use fixed R; seed-correctness contrasts are observational.",
   "plot": "seeded_vs_iid_eval_val.png",
-  "sha256": "707b61c7e77ce7e0fa8c062e1fa0af27d592f03eb37419e6dcf1df0c4ee52520",
+  "sha256": "541e7e36d208788524e17cf42b59a28a3621648c55a186b933dba16d0f2370ab",
   "sources": {
     "exp254_per_protein": {
       "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_per_protein.csv.gz",

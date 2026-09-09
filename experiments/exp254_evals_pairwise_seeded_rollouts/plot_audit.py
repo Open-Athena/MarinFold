@@ -32,7 +32,7 @@ def panel(ax: plt.Axes, title: str, rows: list[tuple[str, float, float, float]],
     """Draw effects in percentage points on a common horizontal scale."""
     ax.set_title(title, loc="left", fontsize=12, fontweight="bold", pad=13)
     if practical_band:
-        ax.axvspan(-0.5, 0.5, color="#64748b", alpha=0.10, zorder=0)
+        ax.axvline(3.0, color="#b91c1c", linestyle="--", linewidth=1.5, zorder=1)
     ax.axvline(0, color="#64748b", linewidth=1, zorder=1)
     positions = np.arange(len(rows))[::-1]
     for y, (label, mean, lower, upper) in zip(positions, rows):
@@ -95,7 +95,7 @@ def main() -> int:
     axes[-1].set_xlabel("Paired precision difference (percentage points)", labelpad=9, fontsize=11)
     fig.text(0.04, 0.955, "Seeding and selection on eval-val: paired effects", fontsize=19,
              fontweight="bold", ha="left")
-    fig.text(0.04, 0.912, "97 proteins · all-range contacts · existing samples only", fontsize=12,
+    fig.text(0.04, 0.912, "97 proteins · current practical target: +3 pp over pooled consensus", fontsize=12,
              color="#475569")
     fig.text(0.786, 0.86, "Effect [95% CI], pp", fontsize=10, fontweight="bold")
     fig.text(0.04, 0.065,
@@ -103,7 +103,7 @@ def main() -> int:
              "Exploratory contrasts are not adjusted for multiple comparisons.",
              fontsize=9, color="#475569")
     fig.text(0.04, 0.037,
-             "Gray band in consensus panel: prespecified ±0.5 pp practical threshold. "
+             "Dashed line in consensus panel: current +3 pp target (added after the experiment). "
              "Positive values favor the first method; each row names its reference.",
              fontsize=9, color="#475569")
     args.out.mkdir(parents=True, exist_ok=True)

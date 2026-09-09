@@ -132,7 +132,7 @@ def by_range_panel(axis, per_protein: pd.DataFrame) -> None:
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
     axis.set_title("Paired gain over unseeded, per separation range\n"
-                   "shaded band = +/-0.005 practical margin", fontsize=10.5)
+                   "shaded = original +/-0.005 band (historical)", fontsize=10.5)
 
 
 def mechanism_panel(axis, by_range: pd.DataFrame) -> None:

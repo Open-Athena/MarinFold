@@ -12,14 +12,21 @@ marinfold_experiment:
 
 ## Conclusion
 
-**Keep pooled rollout consensus as the current decoder, but do not abandon
-seeding or cluster selection on this evidence.** None of the three single-contact
-seeding strategies establishes a consensus improvement on these 97 eval-val
-proteins. However, top-100 seeding improves the oracle best rollout even after
-removing the forced seed and correcting the score denominator. K-means cluster
-candidates also have measurable oracle headroom above pooled consensus. The
-tested geometric selector fails to capture that headroom; this does not establish
-that other selectors or downstream folding cannot do so.
+**The tested inference variants do not meet the project's practical target.**
+The decision criterion is now an improvement of approximately **0.03 absolute
+R-precision** over the 0.5217 pooled-consensus control: about **0.5517** or better.
+This interprets “3% improvement” as three percentage points; it is a new practical
+requirement, not the experiment's original preregistered threshold. The small
+positive effects below are diagnostics, not successes worth pursuing on their
+own. Even the K=10 cluster oracle with a pooled fallback gains only 0.0190.
+
+**This does not establish that MarinFold ignores contact statements in its
+prompt.** Accuracy improvement, prediction change, and sensitivity to supplied
+contacts are different quantities. This experiment supplies only one predicted
+contact per rollout and then averages 100 differently seeded rollouts. Similar
+aggregate accuracy cannot tell us whether the model ignores the seed, responds
+without improving accuracy, or makes seed-specific changes that cancel during
+pooling. The prompt-sensitivity question remains the main mechanistic uncertainty.
 
 The September 2026 audit reproduces the original consensus scores from all
 38,800 saved rollouts, corrects a forced-seed confound and a misleading oracle
@@ -77,7 +84,8 @@ fixed-R metric.
 | Equal thirds | 0.5247 | +0.0030 | [-0.0003, +0.0066] |
 
 Only the top-100 interval is entirely within the preselected +/-0.005 band.
-The other two do not rule out gains larger than 0.005. Removing the injected
+The other two do not rule out gains larger than 0.005, but all three upper
+bounds remain far below the current +0.03 target. Removing the injected
 seed's own consensus vote leaves the top-100 gain at +0.0020
 [-0.0007, +0.0049]. For that same top-100 arm, the exploratory long-range
 seed-removed gain is +0.0045 [+0.0001, +0.0094]; it should not be hidden by
@@ -87,6 +95,35 @@ Top-100 seeds are already 56.8% long-range; equal thirds reduces that share.
 The targeted long-only arm has long-range consensus 0.5068 versus 0.5042 for iid
 and 0.5081 for top-100. These small differences do not establish that targeting
 long range is harmful or identify a causal effect of seed separation or rank.
+
+### How much does the overall prediction change?
+
+`prompt_sensitivity.py` compares contact maps, independently of whether their
+accuracy improves. After removing injected seed rows, the 100-rollout seeded
+consensus retains about **89–90%** of iid's top-R pairs (macro mean over proteins).
+For a size-matched sampling comparison, split the saved samples into disjoint
+50-rollout groups, compare iid versus seeded maps, and compare iid versus iid
+maps of the same size. Average 40 random splits within each protein first.
+
+| Seed strategy | Top-R pairs retained, 100 vs 100 | Pairs replaced, iid vs seeded, 50 vs 50 |
+|---|---:|---:|
+| Top 100 | 89.80% | 18.08% |
+| Long-range only | 89.01% | 18.22% |
+| Equal thirds | 89.59% | 18.20% |
+
+The corresponding **iid-versus-iid 50-sample turnover is 18.30%**. Thus the
+aggregate single-contact-seeded maps are similar, and their turnover in this
+comparison is close to within-iid sampling variation. These resampled halves
+are not independent reruns or a formal test of equivalence. Shared seeds can
+couple samples across arms; aggregate overlap can also conceal a response near
+the supplied pair or different responses that cancel across the 100 seeds.
+
+Individual same-index continuation contact sets have mean Jaccard overlap
+0.472–0.480, so the saved samples are not literally identical. But prompt-length
+and sampling-path effects prevent interpreting this as a direct measure of
+attention to a seed. The existing data supports a limited observation about
+**aggregate predictions under one-contact seeding**, not general insensitivity
+to contact statements or to substantial partial maps.
 
 ### Oracle: the positive signal survives a stricter metric
 
@@ -208,16 +245,38 @@ Passing the noisy union of all pairs harms this tested solver; modest cut
 changes have uncertain effects. This does not test folding multiple coherent
 cluster candidates and selecting by structure confidence.
 
-## What to test before abandoning the direction
+## The next question: does the model use the supplied contact statements?
 
-The current evidence justifies retaining iid pooled consensus in production.
-A follow-up should keep that map as a candidate, freeze a selector on eval-val,
-and test whether it captures the measured cluster headroom before spending on a
-large folding sweep. Repeated sampling draws would separate run-to-run variation
-from target variation. A matched intervention on seed correctness or multiple
-predicted contacts would address the conditioning mechanism more directly.
-Any eventual eval-test evaluation should follow a frozen protocol, not be used
-to choose among these exploratory variants.
+The next useful test is a direct prompt intervention on **this checkpoint**,
+not further optimization of sub-percentage-point consensus gains. For each
+protein, hold the sequence and document realization fixed and vary the supplied
+contact set: no contacts; a small or substantial set of true contacts; equally
+sized false-contact controls; and predicted contact sets at comparable sizes.
+Use fixed-budget continuations and repeated sampling seeds.
+
+Measure changes in the conditional contact probabilities and predicted contact
+maps separately from changes in accuracy. For accuracy, exclude every supplied
+pair from **both** the conditioned and unconditioned scoring universe, using the
+same remaining positives and R in each matched comparison. For comparisons
+across prompt variants, exclude the union of their supplied pairs to keep that
+universe common. This prevents copying
+the prompt from looking like improved prediction. Independent repeated no-contact
+runs establish how much output variation sampling alone produces.
+
+A strong true-contact response would show that the model can use prompt contacts;
+failure of predicted contacts would then point toward their quality or selection.
+Little response even to a substantial true-contact set, after validating prompt
+serialization and a positive control, would support the insensitivity concern.
+An older exp163 probe reported a large true-partial-map effect, but used a
+**different checkpoint, protein set, and readout**, so it is motivation for this
+control rather than verification of m2-p06.
+
+Only a deployable predicted-contact method gaining approximately **0.03 over the
+current pooled-consensus baseline at comparable inference cost** meets the
+practical objective. Oracle conditioning and seed-excluded reduced-universe
+metrics diagnose the mechanism; they do not themselves satisfy that criterion.
+No such new intervention has been run here. A later eval-test check should use a
+frozen protocol, not choose among exploratory variants.
 
 ## Reproduce the audit without a GPU
 
@@ -231,6 +290,7 @@ uv run --no-project publish_to_hf.py fetch --manifest data/artifacts.json --out 
 export PYTHONPATH="$PWD/../../marinfold"
 uv run --no-project --python 3.12 --with numpy --with pandas --with pyarrow --with scikit-learn --with gemmi --with fsspec python build_metrics.py --run /tmp/exp254-inputs --out data
 uv run --no-project --python 3.12 --with numpy --with pandas --with pyarrow --with scikit-learn python audit_conclusions.py --run /tmp/exp254-inputs --data data --out data
+uv run --no-project --python 3.12 --with numpy --with pandas --with pyarrow --with scikit-learn python prompt_sensitivity.py --run /tmp/exp254-inputs --out data
 uv run --no-project --python 3.12 --with pytest --with numpy --with pandas --with pyarrow --with scikit-learn --with gemmi --with fsspec pytest test_exp254.py test_audit_conclusions.py -q
 uv run --no-project --python 3.12 --with numpy --with pandas --with matplotlib python plot.py --data data --out plots
 uv run --no-project --python 3.12 --with numpy --with pandas --with matplotlib python plot_strategies.py --data data --out plots

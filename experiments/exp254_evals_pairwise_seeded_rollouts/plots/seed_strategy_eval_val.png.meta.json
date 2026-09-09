@@ -8,7 +8,7 @@
   ],
   "caption": "Seed composition per strategy, consensus R-precision per separation range per strategy, and seed accuracy against continuation-only quality by the seed's own separation range, on eval-val for #232 m2-p06. Continuation uses P@min(R, emitted), excluding the seed; comparisons are observational.",
   "plot": "seed_strategy_eval_val.png",
-  "sha256": "305ad66714787c3a2b449554eaed094df8a082f1efba707f2b793d3127767e83",
+  "sha256": "0967f6c9d2c47e3aa66913c1b36bf981100fe4a460a29fa486f95b6d8984d5ea",
   "sources": {
     "exp254_seed_composition": {
       "path": "experiments/exp254_evals_pairwise_seeded_rollouts/data/exp254_seed_composition.csv",

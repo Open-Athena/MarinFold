@@ -208,7 +208,7 @@ def deltas(axis, frame: pd.DataFrame) -> None:
     for spine in ("top", "right", "left"):
         axis.spines[spine].set_visible(False)
     axis.set_title("Paired per-protein differences\n"
-                   "shaded band = +/-0.005 practical margin", fontsize=10.5)
+                   "shaded = original +/-0.005 band; current target = +0.03", fontsize=10.5)
 
 
 def conditioning_panel(axis, by_rank: pd.DataFrame, summary: pd.DataFrame,
