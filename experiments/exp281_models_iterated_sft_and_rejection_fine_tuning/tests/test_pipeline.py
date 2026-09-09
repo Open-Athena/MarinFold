@@ -26,14 +26,14 @@ from transformers import (
     Qwen3ForCausalLM,
 )
 
-from common import read_json, rows, write_json, write_rows
+from common import publish_with_deadline, read_json, rows, write_json, write_rows
 from compare import paired_difference
 from corpus import LossProfile, build_example, select_candidate
 from evaluate import score_pool
 from generate import scored_candidate, validate_bootstrap_draft
 from prepare import prepare_model, prepare_targets, target_from_document
 from round_plan import plan
-from train import ParquetStream, collate, weighted_loss_sum
+from train import ParquetStream, collate, diagnostic_totals, validate_continuation, weighted_loss_sum
 
 HEADER = [MULTI, "<begin_sequence>", "<p0>", "<ALA>"]
 HISTORY = [BEGIN, "<contact>", "<p0>", "<p6>", BEGIN, "<contact>", "<p1>", "<p7>"]
@@ -283,3 +283,44 @@ def test_empty_contact_sets_are_preserved_but_do_not_pass_multi_gate() -> None:
     assert result["multi_fraction"] == 0.0
     assert result["empty_sections_per_trajectory"] == 2.0
     assert result["hypothesis_jaccard"] == 1.0
+
+
+def test_finalization_diagnostics_exclude_forced_markers_and_padding() -> None:
+    # FINAL=3, END=4. Three documents: natural, forced, and plain rehearsal.
+    ids = torch.tensor([[0, 1, 3, 2, 4, 0], [0, 1, 3, 2, 4, 0], [0, 1, 2, 4, 0, 0]])
+    weights = torch.tensor([[0, .1, 1, 1, 1, 0], [0, .1, 0, 1, 1, 0], [0, 1, 1, 1, 0, 0]])
+    logits = torch.zeros((3, 6, 5))
+    # Only the natural marker and the forced answer end are predicted correctly.
+    logits[0, 1, 3] = 8
+    logits[1, 3, 4] = 8
+    totals = diagnostic_totals(logits, ids, weights, 3, 4)
+    torch.testing.assert_close(totals[:, 2], torch.tensor([8.2, 1, 2, 2, 1]))
+    torch.testing.assert_close(totals[:, 1], torch.tensor([2., 1, 0, 1, 0]))
+    assert totals[1, 0] < .01
+    assert totals[2, 0] == pytest.approx(2 * torch.log(torch.tensor(5.)).item())
+
+
+def test_continuation_rejects_data_changes_and_accidental_same_run() -> None:
+    parent = dict(model="initial", train_hash="train", validation_hash="val", world_size=8,
+                  global_batch=32, microbatch=1, context=8192, seed=281, weight_decay=.2,
+                  run_name="pilot", output="pilot-output")
+    extended = {**parent, "run_name": "continued", "output": "new-output", "schedule_start": 256, "steps": 2000}
+    validate_continuation(parent, extended, 256)
+    for changes in ({"train_hash": "other"}, {"world_size": 4}, {"run_name": "pilot"}, {"schedule_start": 0}):
+        with pytest.raises(ValueError):
+            validate_continuation(parent, {**extended, **changes}, 256)
+
+
+def test_checkpoint_publisher_has_a_real_process_deadline(tmp_path: Path) -> None:
+    local = tmp_path / "local"
+    local.mkdir()
+    (local / "weights.bin").write_bytes(b"known weights")
+    with pytest.raises(subprocess.TimeoutExpired):
+        publish_with_deadline(local, str(tmp_path / "timeout"), timeout=0.00001)
+    assert not (tmp_path / "timeout/_SUCCESS.json").exists()
+    publish_with_deadline(local, str(tmp_path / "complete"), timeout=30)
+    manifest = read_json(str(tmp_path / "complete/_SUCCESS.json"))
+    assert manifest["weights.bin"]["bytes"] == len(b"known weights")
+    assert (tmp_path / "complete/weights.bin").read_bytes() == b"known weights"
+    with pytest.raises(subprocess.CalledProcessError):
+        publish_with_deadline(local, str(tmp_path / "complete"), timeout=30)

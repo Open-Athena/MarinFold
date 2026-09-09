@@ -7,6 +7,7 @@ claim. Run on CPU, one GPU, or two CPU DDP processes.
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -69,13 +70,29 @@ def main() -> None:
     subprocess.run(command, check=True, env=env)
     prefix = args.work / "durable/checkpoints/exp281-smoke"
     before = Qwen3ForCausalLM.from_pretrained(prefix / "step-2").state_dict()
+    shutil.rmtree(prefix / "step-2")  # The baseline weights are already in memory.
     subprocess.run([*command, "--resume", str(prefix / "step-1")], check=True, env=env)
     after = Qwen3ForCausalLM.from_pretrained(prefix / "step-2").state_dict()
     for name in before:
         torch.testing.assert_close(before[name], after[name], rtol=0, atol=0)
     loaded = PreTrainedTokenizerFast.from_pretrained(prefix / "step-2")
     assert loaded.get_vocab() == tokenizer.get_vocab()
+    continuation = [*command, "--continue-from", str(prefix / "step-2"), "--schedule-start", "2",
+                    "--steps", "4", "--run-name", "exp281-smoke-continued",
+                    "--output", str(args.work / "continued"), "--warmup", "1", "--warmup-start-fraction", "0.1"]
+    subprocess.run(continuation, check=True, env=env)
+    continued_prefix = args.work / "continued/checkpoints/exp281-smoke-continued"
+    state = torch.load(continued_prefix / "step-4/trainer.pt", weights_only=False, map_location="cpu")
+    assert all(s["step"].item() == 4 for s in state["optimizer"]["state"].values())
+    assert all(r["consumed"] == 16 // args.processes for r in state["ranks"])
+    expected = Qwen3ForCausalLM.from_pretrained(continued_prefix / "step-4").state_dict()
+    shutil.rmtree(continued_prefix / "step-4")
+    subprocess.run([*continuation, "--resume", str(continued_prefix / "step-3")], check=True, env=env)
+    actual = Qwen3ForCausalLM.from_pretrained(continued_prefix / "step-4").state_dict()
+    for name in expected:
+        torch.testing.assert_close(expected[name], actual[name], rtol=0, atol=0)
     write_json(str(args.work / "smoke_result.json"), {"resume_bitwise_equal": True, "tokenizer_equal": True,
+               "continuation_optimizer_preserved": True, "continuation_resume_bitwise_equal": True,
                "processes": args.processes, "cpu": args.cpu})
     print("PASS: two training steps, checkpoint resume bitwise identical, tokenizer co-located", flush=True)
     if args.generation:

@@ -260,6 +260,41 @@ nonempty hypotheses.
 Use `--record-invalid-prefixes` for evaluation so malformed forced histories count
 as invalid answers instead of aborting or disappearing from the denominator.
 
+### Continuation to step 2,000
+
+`configs/continuation_plan.json` continues the step-256 trial as the distinct
+W&B run `exp281-format-s02`, preserving weights, Adam state, per-rank data offsets,
+and RNG. It reuses the exact pilot train/validation corpora and objective. The
+new schedule starts at global step 256, rewarms from 10% of peak over 100 steps,
+then cosine-decays to 10% by step 2,000 (peak LR 1e-4). This is an explicit schedule
+extension, not a claim to reproduce a 2,000-step schedule trained from scratch.
+The 1,744 additional steps use global batch 32. Save every 250 global steps;
+evaluate teacher-forced diagnostics every 125 and at the initial checkpoint.
+
+New validation metrics separate supervised natural final markers, reference
+answer tokens, final-answer end tokens, and plain-rehearsal end tokens. Each
+reports weighted target count, cross-entropy and top-1 accuracy; forced markers
+remain masked. There are only six supervised natural markers in this internal
+validation corpus, so these are small-sample diagnostics, not the format gate.
+The final free-running gate still uses the same 25 proteins, eight completions
+per mode, seeds 281/282, forced budgets, and 99%/90% thresholds as the pilot.
+
+Checkpoint publication now runs in a separate process with a 300-second wall-clock
+deadline. The process is killed on timeout and the job fails without marking the
+partial checkpoint complete; nested storage retries cannot keep uploading
+indefinitely. Interrupted multipart uploads may still require cleanup. Completed
+checkpoint prefixes cannot be overwritten. W&B now uses an automatically increasing
+log step with `train/step` as its x-axis, so a recovery retains replayed measurements.
+Strict same-run resume still requires identical code/configuration. The explicit
+`--continue-from` path validates parent configuration/optimizer identity and rejects
+changes to the corpus, world size, batch, seed, context or weight decay.
+
+Nineteen tests pass, including the real process deadline and diagnostic masking.
+Tiny-Qwen two-process CPU and single-GPU tests preserve optimizer/data state across
+a continuation and reproduce its resumed weights bit-for-bit. Iris reports 118
+free H100s on `cw-us-east-02a` at the recorded snapshot; the continuation stays with
+its co-located inputs and requests one eight-GPU node at batch priority.
+
 ### Evaluation protocol
 
 The primary comparison is macro final-answer F1, with paired per-protein

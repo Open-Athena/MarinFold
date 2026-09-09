@@ -1,8 +1,11 @@
 """Streaming storage and deterministic identities for exp281 artifacts."""
 
+import argparse
 import hashlib
 import json
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -134,6 +137,9 @@ def stage_tokenizer(uri: str, cache: Path) -> Path:
 
 def publish_directory(local: Path, uri: str) -> None:
     """Publish files then a checksum manifest marking a complete checkpoint."""
+    fs, success = fsspec.core.url_to_fs(f"{uri}/_SUCCESS.json")
+    if fs.exists(success):
+        raise FileExistsError(f"refusing to overwrite a complete checkpoint: {uri}")
     manifest = {}
     for path in sorted(local.rglob("*")):
         if not path.is_file():
@@ -146,3 +152,25 @@ def publish_directory(local: Path, uri: str) -> None:
                 dst.write(chunk)
         manifest[relative] = {"sha256": digest.hexdigest(), "bytes": path.stat().st_size}
     write_json(f"{uri}/_SUCCESS.json", manifest)
+
+
+def publish_with_deadline(local: Path, uri: str, timeout: float) -> None:
+    """Bound all upload retries in a killable process; propagate failed publication.
+
+    A socket timeout alone does not bound nested fsspec/botocore retries. Run the
+    publisher outside the CUDA process so a deadline can actually terminate it.
+    Failed uploads never earn a completion manifest. An interrupted multipart
+    upload may need cleanup before retrying from the last complete checkpoint.
+    """
+    if timeout <= 0:
+        raise ValueError("publication deadline must be positive")
+    subprocess.run([sys.executable, str(Path(__file__).resolve()), str(local), uri],
+                   check=True, timeout=timeout)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Publish a complete checkpoint directory")
+    parser.add_argument("local", type=Path)
+    parser.add_argument("uri")
+    arguments = parser.parse_args()
+    publish_directory(arguments.local, arguments.uri)

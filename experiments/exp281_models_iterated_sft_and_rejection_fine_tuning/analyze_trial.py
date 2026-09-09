@@ -26,7 +26,8 @@ def write_csv(path: Path, records: list[dict[str, Any]]) -> None:
         writer.writerows(records)
 
 
-def collect(report: Path, output: Path) -> dict[str, Any]:
+def collect(report: Path, output: Path, run_slug: str, checkpoint_step: int, source_commit: str,
+            bootstrap_targets: int) -> dict[str, Any]:
     """Validate report coverage and calculate format gates over all completions."""
     index = json.loads((report / "index.json").read_text())
     candidates: dict[str, list[dict]] = {"natural": [], "forced": []}
@@ -39,7 +40,7 @@ def collect(report: Path, output: Path) -> dict[str, Any]:
             if uri.endswith(".parquet"):
                 candidates[mode].extend(pq.read_table(path).to_pylist())
             if "/metrics." in uri:
-                (output / f"trial_s03_{mode}_metrics{path.suffix}").write_text(path.read_text())
+                (output / f"{run_slug}_{mode}_metrics{path.suffix}").write_text(path.read_text())
         if uri.endswith("-timings.csv"):
             with path.open() as handle:
                 timings.extend({**row, "source_uri": uri} for row in csv.DictReader(handle))
@@ -47,13 +48,13 @@ def collect(report: Path, output: Path) -> dict[str, Any]:
             meta = json.loads(path.read_text())
             for key in ("targets", "candidates", "bootstrap_rejected_samples", "bootstrap_empty_samples", "invalid"):
                 bootstrap[key] += meta[key]
-    if bootstrap["targets"] != 2048 or bootstrap["candidates"] != 2048:
+    if bootstrap["targets"] != bootstrap_targets or bootstrap["candidates"] != bootstrap_targets:
         raise ValueError(f"incomplete bootstrap report: {bootstrap}")
-    if len(timings) != 2048 + 25 + 25:
+    if len(timings) != bootstrap_targets + 25 + 25:
         raise ValueError(f"incomplete timing report: {len(timings)} rows")
-    write_csv(output / "trial_s03_timings.csv", timings)
+    write_csv(output / f"{run_slug}_timings.csv", timings)
     diagnostics = []
-    result: dict[str, Any] = {"checkpoint_step": 256, "source_commit": "bab3f50a",
+    result: dict[str, Any] = {"checkpoint_step": checkpoint_step, "source_commit": source_commit,
                               "bootstrap": dict(bootstrap), "modes": {}}
     for mode, records in candidates.items():
         counts = Counter(row["target_id"] for row in records)
@@ -97,7 +98,7 @@ def collect(report: Path, output: Path) -> dict[str, Any]:
                                            {(row["target_id"], row["budget"]) for row in records}).items())),
             "passes_validity_gate": valid >= 198,
         }
-        with (output / f"trial_s03_{mode}_metrics.csv").open() as handle:
+        with (output / f"{run_slug}_{mode}_metrics.csv").open() as handle:
             metrics = list(csv.DictReader(handle))
         metric_valid = sum(round(float(row["valid_fraction"]) * int(row["candidates"])) for row in metrics)
         metric_multi = sum(round(float(row["multi_fraction"]) * int(row["candidates"])) for row in metrics)
@@ -111,8 +112,8 @@ def collect(report: Path, output: Path) -> dict[str, Any]:
         all(mode["passes_validity_gate"] for mode in result["modes"].values())
         and result["modes"]["natural"]["multiple_nonempty_hypotheses"] >= 180
     )
-    write_csv(output / "trial_s03_diagnostics.csv", diagnostics)
-    (output / "trial_s03_format_gate.json").write_text(json.dumps(result, indent=2) + "\n")
+    write_csv(output / f"{run_slug}_diagnostics.csv", diagnostics)
+    (output / f"{run_slug}_format_gate.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
 
 
@@ -120,9 +121,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path)
     parser.add_argument("--output", type=Path, default=Path(__file__).parent / "data")
+    parser.add_argument("--run-slug", default="trial_s03")
+    parser.add_argument("--checkpoint-step", type=int, default=256)
+    parser.add_argument("--source-commit", default="bab3f50a")
+    parser.add_argument("--bootstrap-targets", type=int, default=2048)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    print(json.dumps(collect(args.report, args.output), indent=2))
+    print(json.dumps(collect(args.report, args.output, args.run_slug, args.checkpoint_step, args.source_commit,
+                             args.bootstrap_targets), indent=2))
 
 
 if __name__ == "__main__":

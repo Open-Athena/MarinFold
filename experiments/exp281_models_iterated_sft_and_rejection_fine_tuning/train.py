@@ -26,6 +26,7 @@ import pyarrow.parquet as pq
 import torch
 import torch.distributed as dist
 import wandb
+from marinfold.document_structures.contacts_v1_multi import END, FINAL
 from torch.nn.parallel import DistributedDataParallel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -33,7 +34,7 @@ from common import (
     EXPERIMENT,
     code_identity,
     identity,
-    publish_directory,
+    publish_with_deadline,
     read_json,
     seed_for,
     stage_model,
@@ -109,10 +110,10 @@ def weighted_loss_sum(logits: torch.Tensor, ids: torch.Tensor, weights: torch.Te
     return (loss * weights[:, 1:].reshape(-1)).sum()
 
 
-def learning_rate(step: int, steps: int, peak: float, warmup: int) -> float:
+def learning_rate(step: int, steps: int, peak: float, warmup: int, start_fraction: float = 0.0) -> float:
     """Linear warm-up followed by cosine decay to ten percent of peak."""
     if step < warmup:
-        return peak * (step + 1) / max(1, warmup)
+        return peak * (start_fraction + (1 - start_fraction) * (step + 1) / max(1, warmup))
     fraction = (step - warmup) / max(1, steps - warmup - 1)
     return peak * (0.1 + 0.9 * (1 + math.cos(math.pi * fraction)) / 2)
 
@@ -125,21 +126,66 @@ def all_sum(value: torch.Tensor, world: int) -> torch.Tensor:
     return result
 
 
+DIAGNOSTIC_NAMES = ("all", "final_marker", "final_answer", "final_end", "plain_end")
+
+
+def diagnostic_totals(logits: torch.Tensor, ids: torch.Tensor, weights: torch.Tensor,
+                      final_id: int, end_id: int) -> torch.Tensor:
+    """Sum loss, correct predictions and target weights for distinct transitions.
+
+    All masks align with the target side of the causal shift. Forced final
+    markers have zero weight and do not enter the natural-marker diagnostic.
+    End tokens after FINAL are kept separate from plain-mode rehearsal ends.
+    """
+    targets = ids[:, 1:]
+    target_weights = weights[:, 1:]
+    loss = torch.nn.functional.cross_entropy(logits[:, :-1].float().transpose(1, 2),
+                                             targets, reduction="none")
+    correct = logits[:, :-1].argmax(dim=-1) == targets
+    after_final = (ids == final_id).cumsum(dim=1)[:, 1:] > 0
+    masks = (torch.ones_like(targets, dtype=torch.bool), targets == final_id,
+             after_final & (targets != final_id) & (targets != end_id),
+             after_final & (targets == end_id), ~after_final & (targets == end_id))
+    return torch.stack([torch.stack(((loss * target_weights * mask).sum(),
+                                      (correct * target_weights * mask).sum(),
+                                      (target_weights * mask).sum())) for mask in masks])
+
+
 def evaluate(model: torch.nn.Module, stream: ParquetStream, pad: int, context: int,
-             device: torch.device, world: int, limit: int) -> float:
-    """Read held-out documents once, reporting globally weighted teacher-forced loss."""
+             device: torch.device, world: int, limit: int, final_id: int, end_id: int) -> dict[str, float]:
+    """Read held-out documents once and reduce weighted transition diagnostics."""
     model.eval()
-    totals = torch.zeros(2, device=device, dtype=torch.float64)
+    totals = torch.zeros((len(DIAGNOSTIC_NAMES), 3), device=device, dtype=torch.float64)
     with torch.no_grad():
         for row in itertools.islice(stream.iterate(repeat=False), limit):
             batch = {k: v.to(device) for k, v in collate([row], pad, context).items()}
             with torch.autocast(device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
                 output = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
-            totals[0] += weighted_loss_sum(output.logits, batch["input_ids"], batch["weights"])
-            totals[1] += batch["weights"][:, 1:].sum()
+            totals += diagnostic_totals(output.logits, batch["input_ids"], batch["weights"], final_id, end_id)
     totals = all_sum(totals, world)
     model.train()
-    return (totals[0] / totals[1]).item()
+    if totals[0, 2] <= 0:
+        raise ValueError("validation contains no supervised targets")
+    metrics = {"validation/loss": (totals[0, 0] / totals[0, 2]).item()}
+    for name, (loss, correct, count) in zip(DIAGNOSTIC_NAMES[1:], totals[1:], strict=True):
+        metrics[f"validation/{name}_weight"] = count.item()
+        if count > 0:
+            metrics[f"validation/{name}_loss"] = (loss / count).item()
+            metrics[f"validation/{name}_accuracy"] = (correct / count).item()
+    return metrics
+
+
+def validate_continuation(parent: dict, config: dict, parent_step: int) -> None:
+    """Permit an explicit new schedule/run while preserving the original objective."""
+    fixed = ("model", "train_hash", "validation_hash", "world_size", "global_batch",
+             "microbatch", "context", "seed", "weight_decay")
+    changed = [key for key in fixed if parent[key] != config[key]]
+    if changed:
+        raise ValueError(f"continuation changes objective/data/optimizer settings: {changed}")
+    if config["schedule_start"] != parent_step or config["steps"] <= parent_step:
+        raise ValueError("continuation schedule must begin at the parent step and extend it")
+    if parent["run_name"] == config["run_name"] or parent["output"] == config["output"]:
+        raise ValueError("continuation requires a distinct run and output prefix")
 
 
 def record_history(run: wandb.sdk.wandb_run.Run, output: str) -> None:
@@ -187,12 +233,16 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight-decay", type=float, default=0.2)
     parser.add_argument("--warmup", type=int, default=100)
+    parser.add_argument("--warmup-start-fraction", type=float, default=0.0)
+    parser.add_argument("--schedule-start", type=int, default=0, help="global step at the start of this LR schedule")
     parser.add_argument("--context", type=int, default=8192)
     parser.add_argument("--save-every", type=int, default=250)
     parser.add_argument("--eval-every", type=int, default=250)
     parser.add_argument("--eval-documents", type=int, default=128)
     parser.add_argument("--seed", type=int, default=281)
     parser.add_argument("--resume", help="explicit complete checkpoint URI, including step")
+    parser.add_argument("--continue-from", help="preserve optimizer/data state from a parent run with a new schedule")
+    parser.add_argument("--checkpoint-timeout", type=float, default=300.0, help="wall-clock deadline for publication")
     parser.add_argument("--work", type=Path, default=Path("/tmp/exp281-train"))
     parser.add_argument("--no-wandb", action="store_true", help="local smoke tests only")
     args = parser.parse_args()
@@ -202,8 +252,13 @@ def main() -> None:
         raise ValueError("step and batch sizes must be positive")
     if args.global_batch % (world * args.microbatch):
         raise ValueError("global batch must be divisible by world size * microbatch")
-    if not 0 <= args.warmup <= args.steps or args.lr <= 0:
+    if (not 0 <= args.warmup <= args.steps - args.schedule_start or args.lr <= 0
+            or not 0 <= args.warmup_start_fraction <= 1 or not 0 <= args.schedule_start < args.steps):
         raise ValueError("invalid learning-rate schedule")
+    if args.schedule_start and not args.continue_from:
+        raise ValueError("nonzero schedule start requires an explicit continuation parent")
+    if not 0 < args.checkpoint_timeout <= 300:
+        raise ValueError("checkpoint deadline must be positive and at most 300 seconds")
     device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         torch.cuda.set_device(device)
@@ -219,12 +274,13 @@ def main() -> None:
     signature = identity(config)
     # This trainer uses one node: stage once, then release every rank to the
     # shared files. Eight optimizer-bearing copies would exceed worker disk.
-    staged = [str(stage_model(args.resume or args.model, args.work / "model",
-                              training_state=bool(args.resume))) if rank == 0 else None]
+    restore = args.resume or args.continue_from
+    staged = [str(stage_model(restore or args.model, args.work / "model",
+                              training_state=bool(restore))) if rank == 0 else None]
     if world > 1:
         dist.broadcast_object_list(staged, src=0)
     local = Path(staged[0])
-    if args.resume and not (local / "_SUCCESS.json").exists():
+    if restore and not (local / "_SUCCESS.json").exists():
         raise ValueError("resume requires a completed checkpoint manifest")
     tokenizer = AutoTokenizer.from_pretrained(local)
     if identity(tokenizer.get_vocab()) != train_manifest["tokenizer_hash"] or train_manifest["tokenizer_hash"] != val_manifest["tokenizer_hash"]:
@@ -235,18 +291,25 @@ def main() -> None:
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     start, consumed = 0, 0
-    if args.resume:
+    if restore:
         state = torch.load(local / "trainer.pt", map_location="cpu", weights_only=False, mmap=True)
-        if state["signature"] != signature:
+        if args.resume and state["signature"] != signature:
             raise ValueError("resume configuration/data/world size differ from checkpoint")
+        if not args.resume:
+            parent = read_json(str(local / "training.json"))["config"]
+            if identity(parent) != state["signature"]:
+                raise ValueError("parent configuration does not match its optimizer state")
+            validate_continuation(parent, config, state["step"])
         optimizer.load_state_dict(state["optimizer"])
         start = state["step"]
         consumed = state["ranks"][rank]["consumed"]
+        if start >= args.steps:
+            raise ValueError("checkpoint already reached the requested final step")
     module = model
     if world > 1:
         model = DistributedDataParallel(module, device_ids=[local_rank] if device.type == "cuda" else None)
     torch.manual_seed(args.seed + rank)
-    if args.resume:
+    if restore:
         torch.set_rng_state(state["ranks"][rank]["rng"])
         if device.type == "cuda":
             torch.cuda.set_rng_state(state["ranks"][rank]["cuda_rng"], device)
@@ -258,10 +321,15 @@ def main() -> None:
     pad = tokenizer.pad_token_id
     if pad is None:
         raise ValueError("tokenizer needs an explicit pad token")
+    final_id, end_id = tokenizer.convert_tokens_to_ids([FINAL, END])
+    if tokenizer.convert_ids_to_tokens([final_id, end_id]) != [FINAL, END]:
+        raise ValueError("tokenizer is missing finalization markers")
     run = None
     if rank == 0 and not args.no_wandb:
         run = wandb.init(entity="open-athena", project="MarinFold", name=args.run_name,
                          id=args.run_name, resume="allow", config=config)
+        run.define_metric("train/step")
+        run.define_metric("*", step_metric="train/step")
         record_history(run, args.output)
         with tempfile.TemporaryDirectory(prefix="exp281-inputs-") as directory:
             artifact = wandb.Artifact(f"{args.run_name}-inputs", type="dataset-manifest")
@@ -272,6 +340,12 @@ def main() -> None:
                 run.summary[f"data/{split}"] = manifest.get("totals", {})
             run.log_artifact(artifact).wait()
     module.train()
+    baseline = {"train/step": start, **evaluate(module, validation, pad, args.context, device, world,
+                                               args.eval_documents, final_id, end_id)}
+    if rank == 0:
+        print(baseline, flush=True)
+        if run:
+            run.log(baseline)
     for step in range(start, args.steps):
         if device.type == "cuda":
             torch.cuda.synchronize(device)
@@ -282,7 +356,8 @@ def main() -> None:
         denominator = all_sum(sum(b["weights"][:, 1:].sum() for b in batches).to(device), world)
         numerator = torch.zeros((), device=device)
         optimizer.zero_grad(set_to_none=True)
-        lr = learning_rate(step, args.steps, args.lr, args.warmup)
+        lr = learning_rate(step - args.schedule_start, args.steps - args.schedule_start, args.lr,
+                           args.warmup, args.warmup_start_fraction)
         for group in optimizer.param_groups:
             group["lr"] = lr
         for index, cpu_batch in enumerate(batches):
@@ -314,11 +389,12 @@ def main() -> None:
                 dist.all_reduce(peak, op=dist.ReduceOp.MAX)
             metrics["train/peak_memory_gb"] = peak.item()
         if (step + 1) % args.eval_every == 0 or step + 1 == args.steps:
-            metrics["validation/loss"] = evaluate(module, validation, pad, args.context, device, world, args.eval_documents)
+            metrics.update(evaluate(module, validation, pad, args.context, device, world,
+                                    args.eval_documents, final_id, end_id))
         if rank == 0:
             print(metrics, flush=True)
             if run:
-                run.log(metrics, step=step + 1)
+                run.log(metrics)
         if (step + 1) % args.save_every == 0 or step + 1 == args.steps:
             rank_state = {"consumed": consumed, "rng": torch.get_rng_state(),
                           "cuda_rng": torch.cuda.get_rng_state(device) if device.type == "cuda" else None}
@@ -336,7 +412,11 @@ def main() -> None:
                     torch.save({"optimizer": optimizer.state_dict(), "step": step + 1, "ranks": states,
                                 "signature": signature}, checkpoint / "trainer.pt")
                     write_json(str(checkpoint / "training.json"), {"config": config, "metrics": metrics})
-                    publish_directory(checkpoint, f"{args.output}/checkpoints/{args.run_name}/step-{step + 1}")
+                    publish_started = time.monotonic()
+                    publish_with_deadline(checkpoint, f"{args.output}/checkpoints/{args.run_name}/step-{step + 1}",
+                                          args.checkpoint_timeout)
+                    print({"checkpoint/step": step + 1, "checkpoint/publication_seconds": time.monotonic() - publish_started},
+                          flush=True)
             if world > 1:
                 dist.barrier()
     if run:

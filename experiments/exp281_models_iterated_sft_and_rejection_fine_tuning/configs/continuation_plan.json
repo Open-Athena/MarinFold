@@ -1,0 +1,134 @@
+[
+  {
+    "group": 0,
+    "stage": "train",
+    "name": "exp281-format-s02",
+    "gpus": 8,
+    "arguments": [
+      "--model",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s01/checkpoints/exp281-format-s01/step-0",
+      "--continue-from",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/checkpoints/exp281-trial-s03/step-256",
+      "--train-manifest",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/train/corpus/manifest.json",
+      "--validation-manifest",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s03/validation/corpus/manifest.json",
+      "--output",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02",
+      "--run-name",
+      "exp281-format-s02",
+      "--steps",
+      "2000",
+      "--schedule-start",
+      "256",
+      "--global-batch",
+      "32",
+      "--microbatch",
+      "1",
+      "--lr",
+      "0.0001",
+      "--warmup",
+      "100",
+      "--warmup-start-fraction",
+      "0.1",
+      "--save-every",
+      "250",
+      "--eval-every",
+      "125",
+      "--eval-documents",
+      "16",
+      "--checkpoint-timeout",
+      "300"
+    ]
+  },
+  {
+    "group": 1,
+    "stage": "generate",
+    "name": "exp281-format-s02-eval-natural",
+    "gpus": 1,
+    "arguments": [
+      "--model",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-2000",
+      "--targets",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s01/targets/manifest.json",
+      "--split",
+      "validation",
+      "--output",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/natural/candidates",
+      "--phase",
+      "synthesis",
+      "--candidates",
+      "8",
+      "--forced-fraction",
+      "0",
+      "--seed",
+      "281",
+      "--record-invalid-prefixes"
+    ]
+  },
+  {
+    "group": 1,
+    "stage": "generate",
+    "name": "exp281-format-s02-eval-forced",
+    "gpus": 1,
+    "arguments": [
+      "--model",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-2000",
+      "--targets",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s01/targets/manifest.json",
+      "--split",
+      "validation",
+      "--output",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/forced/candidates",
+      "--phase",
+      "synthesis",
+      "--candidates",
+      "8",
+      "--forced-fraction",
+      "1",
+      "--seed",
+      "282",
+      "--record-invalid-prefixes"
+    ]
+  },
+  {
+    "group": 2,
+    "stage": "evaluate",
+    "name": "exp281-format-s02-score-natural",
+    "gpus": 0,
+    "arguments": [
+      "--candidates",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/natural/candidates/*.parquet",
+      "--output",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/natural/metrics"
+    ]
+  },
+  {
+    "group": 2,
+    "stage": "evaluate",
+    "name": "exp281-format-s02-score-forced",
+    "gpus": 0,
+    "arguments": [
+      "--candidates",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/forced/candidates/*.parquet",
+      "--output",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/forced/metrics"
+    ]
+  },
+  {
+    "group": 3,
+    "stage": "report",
+    "name": "exp281-format-s02-report",
+    "gpus": 0,
+    "arguments": [
+      "--run-name",
+      "exp281-format-s02",
+      "--output",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02",
+      "--patterns",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/*/metrics.*",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/*/candidates/*",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/history/*.md"
+    ]
+  }
+]

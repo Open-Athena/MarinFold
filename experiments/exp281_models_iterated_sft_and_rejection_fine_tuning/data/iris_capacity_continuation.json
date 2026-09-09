@@ -1,0 +1,89 @@
+{
+  "observed_at_utc": "2026-09-09T21:26:52.118138+00:00",
+  "records": [
+    {
+      "cluster": "cw-rno2a",
+      "reachable": true,
+      "availability": [
+        {
+          "version": 3,
+          "observation_epoch_ms": "1788989127946",
+          "amounts": {
+            "h100": "464"
+          },
+          "total_amounts": {
+            "h100": "512"
+          },
+          "held_by_band": [
+            {
+              "band": "PRIORITY_BAND_INTERACTIVE",
+              "amounts": {
+                "h100": "48"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cluster": "cw-us-east-02a",
+      "reachable": true,
+      "availability": [
+        {
+          "version": 3,
+          "observation_epoch_ms": "1788989128587",
+          "amounts": {
+            "h100": "118"
+          },
+          "total_amounts": {
+            "h100": "256"
+          },
+          "held_by_band": [
+            {
+              "band": "PRIORITY_BAND_INTERACTIVE",
+              "amounts": {
+                "h100": "8"
+              }
+            },
+            {
+              "band": "PRIORITY_BAND_BATCH",
+              "amounts": {
+                "h100": "130"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cluster": "cw-us-east-08a",
+      "reachable": true,
+      "availability": [
+        {
+          "version": 3,
+          "observation_epoch_ms": "1788989127705",
+          "amounts": {
+            "gb200": "104"
+          },
+          "total_amounts": {
+            "gb200": "832"
+          },
+          "held_by_band": [
+            {
+              "band": "PRIORITY_BAND_SYSTEM",
+              "amounts": {
+                "gb200": "704"
+              }
+            },
+            {
+              "band": "PRIORITY_BAND_BATCH",
+              "amounts": {
+                "gb200": "24"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
