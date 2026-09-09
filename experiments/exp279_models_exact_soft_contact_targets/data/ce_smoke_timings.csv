@@ -1,0 +1,2 @@
+stem,n_residues,n_pairs,mode,elapsed_seconds,model_load_seconds,total_seconds,model_nickname,runner_tag,gpu_name,gpu_total_memory_gb,gpu_compute_capability,hostname,platform,torch_version,timestamp_utc
+exp279-ce-synthetic,3,2,next_token_probs,0.017504720948636532,0.1024459209293127,0.11995064187794924,exp279-ce-smoke-step-2,local,CPU,0,,ip1,Linux-5.15.0-33-generic-x86_64-with-glibc2.35,2.11.0+cu130,2026-09-09T19:43:49.102431+00:00
