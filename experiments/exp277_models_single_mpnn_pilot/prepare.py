@@ -168,9 +168,12 @@ def prepare(corpus: Corpus, smoke: bool) -> None:
         levanter_batch_size=1024,
     )
     tokenized = tokenized.map(_validate_tokenized_record)
+    # ESM shards have bounded sizes and measured peak memory below 2 GB.
+    # Reserve the larger memory envelope for AFDB's long-document tail.
+    esm = corpus.name == "mpnn-esm"
     context = ZephyrContext(
-        resources=ResourceConfig(cpu=1, ram="32g", disk="16g"),
-        max_workers=min(128, len(paths)),
+        resources=ResourceConfig(cpu=1, ram="8g" if esm else "32g", disk="16g"),
+        max_workers=min(512 if esm else 128, len(paths)),
         coordinator_resources=ResourceConfig(cpu=1, ram="6g", disk="16g"),
         chunk_storage_prefix=f"{PREFIX}/tmp/zephyr/{'smoke' if smoke else 'production'}/{corpus.name}",
         name=f"exp277-tokenize-{corpus.name}",
