@@ -33,7 +33,7 @@ from scripts.history import _existing_run_files
 
 from .checkpoints import validate_training_restore
 from .data import ContactDataConfig
-from .inputs import ROOT, verify_manifest
+from .inputs import ROOT, source_identity, verify_manifest
 from .model import reference_model_config
 from .recipe import AFDB_TOKENS, ESM_TOKENS, PHASES, TOKENIZER, optimizer_for_phase
 
@@ -56,6 +56,8 @@ class HistoryWandbConfig(WandbConfig):
     def init(self, run_id):
         tracker = super().init(run_id)
         if jax.process_index() == 0 and self.mode != "disabled":
+            source = source_identity()
+            tracker.log_hyperparameters({"exp279_source": source})
             run = wandb.run
             if run is None or run.url is None or run.name is None:
                 raise RuntimeError("W&B did not expose the initialized run")
@@ -81,6 +83,8 @@ class HistoryWandbConfig(WandbConfig):
                         "exp279_models_exact_soft_contact_targets",
                         "--kind",
                         "models",
+                        "--git-sha",
+                        source["git_sha"],
                         "--short",
                         "Exact soft contact targets / matched CE control",
                     ],

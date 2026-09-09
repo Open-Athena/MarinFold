@@ -23,6 +23,7 @@ MODULE = "experiments.exp279_models_exact_soft_contact_targets"
 REGIONS = {
     "us-east1": ("marin-us-east1", "us-east1-d"),
     "us-east5": ("marin-us-east5", "us-east5-b"),
+    "us-west4": ("marin-us-west4", "us-west4-a"),
 }
 
 
@@ -38,6 +39,8 @@ def worker_request(
     env: dict[str, str],
 ) -> JobRequest:
     """Build one full-model gang, including all hosts and batch priority."""
+    if (region == "us-west4") != tpu.startswith("v5litepod-"):
+        raise ValueError("Selected TPU family is not available in this region")
     command = [
         f"{PROJECT}/.venv/bin/python",
         "-m",
@@ -101,7 +104,9 @@ def main() -> None:
     parser.add_argument("--job-name", required=True)
     parser.add_argument("--region", choices=REGIONS, default="us-east1")
     parser.add_argument(
-        "--tpu", choices=("v6e-8", "v6e-16", "v6e-32", "v6e-64"), default="v6e-32"
+        "--tpu",
+        choices=("v6e-8", "v6e-16", "v6e-32", "v6e-64", "v5litepod-32", "v5litepod-64"),
+        default="v6e-32",
     )
     parser.add_argument("--pilot-updates", type=int)
     parser.add_argument("--record", type=Path, required=True)

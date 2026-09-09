@@ -57,21 +57,28 @@ def test_worker_bundle_reproduces_source_identity_without_git(tmp_path):
     assert corrupted["code_sha256"] != identity["code_sha256"]
 
 
-def test_tpu_gang_requests_all_hosts_and_preserves_runtime_contract():
+@pytest.mark.parametrize(
+    "region,tpu,zone",
+    [
+        ("us-east1", "v6e-32", "us-east1-d"),
+        ("us-west4", "v5litepod-32", "us-west4-a"),
+    ],
+)
+def test_tpu_gang_requests_all_hosts_and_preserves_runtime_contract(region, tpu, zone):
     request = worker_request(
         name="test",
         arm="soft",
         run_name="exp279-soft-test",
         output="gs://marin-us-east1/protein-structure/MarinFold/exp279",
-        region="us-east1",
-        tpu="v6e-32",
+        region=region,
+        tpu=tpu,
         stop_after=32,
         env={},
     )
     assert request.replicas == 8
     assert request.resources.device.chip_count() == 4
-    assert request.resources.zone == "us-east1-d"
-    assert request.resources.regions == ["us-east1"]
+    assert request.resources.zone == zone
+    assert request.resources.regions == [region]
     assert request.resources.preemptible
     assert request.priority == 3
     command = request.entrypoint.binary_entrypoint.args[-1]
