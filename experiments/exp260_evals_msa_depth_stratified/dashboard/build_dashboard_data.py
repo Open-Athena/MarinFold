@@ -43,7 +43,6 @@ HERE = Path(__file__).resolve().parent
 #: conditioned on an *earlier* #232 m2-p06 checkpoint (step 145,199, the sweep)
 #: than the one whose contact maps this page shows (step 363,000, the training
 #: run), so the two must not be read as the same model.
-BUCKET_TREE = "https://huggingface.co/buckets/open-athena/MarinFold/tree"
 WANDB = "https://wandb.ai/open-athena/MarinFold/runs"
 PROVENANCE = [
     {
@@ -54,7 +53,7 @@ PROVENANCE = [
         "top-p 0.95, top-k off, token budget 6L+128) — #82's recipe, scored with #89's "
         "metric implementation.",
         "links": [
-            ["checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000"],
+            ["checkpoint", f"{U.BUCKET_TREE}/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000"],
             ["W&B run", f"{WANDB}/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1"],
             ["eval run", f"{U.RESULTS_URL}/results/run_manifest.json"],
             ["experiment", "https://github.com/Open-Athena/MarinFold/issues/260"],
@@ -70,7 +69,7 @@ PROVENANCE = [
         "its per-target metrics are published on MarinFold #252's branch.",
         "links": [
             ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
-            ["contact-source checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000"],
+            ["contact-source checkpoint", f"{U.BUCKET_TREE}/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000"],
             ["W&B run", f"{WANDB}/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1"],
             ["MarinFold #252", "https://github.com/Open-Athena/MarinFold/pull/252"],
         ],
@@ -85,7 +84,7 @@ PROVENANCE = [
         "so it measures what better contacts buy in structure accuracy.",
         "links": [
             ["helico#14", "https://github.com/Open-Athena/helico/issues/14"],
-            ["contact-source checkpoint", f"{BUCKET_TREE}/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199"],
+            ["contact-source checkpoint", f"{U.BUCKET_TREE}/checkpoints/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug/hf/step-145199"],
             ["contact-source W&B", f"{WANDB}/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug"],
             ["structures", "https://huggingface.co/buckets/timodonnell/helico-experiments/tree/exp14_foldbench_held_out_monomers/structures/helico"],
         ],
@@ -336,7 +335,7 @@ def main() -> None:
     payload = {
         "provenance": PROVENANCE,
         "generated_from": {
-            "scores": U.RESULTS_URL,
+            "scores": U.RESULTS_TREE_URL,
             "checkpoint": "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-"
             "srcpeak-augcont-lr005-us-east1 step 363000",
             "experiment": "exp260",
