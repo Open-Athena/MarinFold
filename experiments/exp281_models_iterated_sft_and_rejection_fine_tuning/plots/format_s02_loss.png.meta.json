@@ -1,0 +1,5 @@
+{
+  "script": "uv run --no-project --with matplotlib python -m experiments.exp281_models_iterated_sft_and_rejection_fine_tuning._scripts.plot_continuation",
+  "args": [],
+  "caption": "Same frozen 2,023-document training and 25-document held-out corpora. Training loss approaches zero while held-out loss rises. These token losses do not measure free-running contact accuracy."
+}

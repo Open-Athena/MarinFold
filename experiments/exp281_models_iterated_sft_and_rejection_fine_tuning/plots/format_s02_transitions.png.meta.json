@@ -1,0 +1,5 @@
+{
+  "script": "uv run --no-project --with matplotlib python -m experiments.exp281_models_iterated_sft_and_rejection_fine_tuning._scripts.plot_continuation",
+  "args": [],
+  "caption": "The same held-out corpus supplies six supervised natural final markers and nine multi-document end tokens at every check. Forced markers and padding are excluded. These sparse teacher-forced diagnostics do not replace the separate free-running format gate."
+}

@@ -1,0 +1,24 @@
+{
+  "failed_job": "/bizon/exp281-format-s02",
+  "resumed_job": "/bizon/exp281-format-s02-r1",
+  "failure_step": 1750,
+  "resume_step": 1500,
+  "failure": "checkpoint publication process exceeded 300-second deadline",
+  "successful_publication_seconds_before_failure": [
+    100.5878676569555,
+    97.18475310294889,
+    99.83744292496704,
+    99.24012418091297,
+    99.98962991288863
+  ],
+  "source_commit": "4721c76c",
+  "source_identity_verified": true,
+  "training_configuration_changed": false,
+  "recovery_state": "pending",
+  "last_checked_at_utc": "2026-09-09T23:43:45Z",
+  "cleanup_job": "/bizon/exp281-format-s02-cleanup",
+  "cleanup_state": "succeeded",
+  "cleanup_audit": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json",
+  "rno_recovery_submitted": false,
+  "cross_region_approval": "pending"
+}

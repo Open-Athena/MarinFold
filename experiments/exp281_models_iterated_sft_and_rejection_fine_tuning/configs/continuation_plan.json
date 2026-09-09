@@ -128,7 +128,8 @@
       "--patterns",
       "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/*/metrics.*",
       "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/*/candidates/*",
-      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/history/*.md"
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/history/*.md",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json"
     ]
   }
 ]

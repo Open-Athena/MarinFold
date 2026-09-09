@@ -43,3 +43,19 @@ Extend format warm-up toward the proposed 2,000 steps and track final-marker/ter
 The first trial establishes full-model execution and checkpoint recovery. It does not establish useful diversity, improved contact accuracy, or the benefit of refreshed SFT or rejection selection. FoldBench eval-test remains untouched.
 
 The public HF report and committed per-input metrics, diagnostics, timing CSVs, and plotting inputs preserve this negative result for reproduction.
+
+## Continuation: overfitting through step 1,750
+
+Continue step 256 to 2,000 on the same corpus and eight-H100 placement. Preserve Adam state, data positions and RNG; rewarm LR over 100 steps, then decay. This isolates additional format training from changes to hypothesis count, sampling or loss weights.
+
+New diagnostics separate natural final-marker, final-answer and termination losses. Publication runs in a killable process with a five-minute deadline; complete checkpoints cannot be overwritten. Nineteen tests and real CPU/GPU continuation-resume checks pass.
+
+Training loss reaches 0.0024 while held-out loss rises from 2.2445 to 5.9468. Natural final-marker and final-answer termination accuracy remain zero in the sparse teacher-forced checks (six markers and nine end tokens). This is pronounced overfitting of the frozen pilot corpus, not a test of larger refreshed SFT or rejection training.
+
+## Continuation recovery is queued
+
+Step-1,750 checkpoint publication exceeded its 300-second deadline and failed the first attempt promptly. Five earlier checkpoints saved in 97-101 seconds; step 1,500 is complete. Cleanup of the failed attempt's abandoned uploads succeeded.
+
+Exact resume /bizon/exp281-format-s02-r1 is queued in US-EAST-02A as of September 9, 23:43 UTC. RNO2A has capacity, but moving the recovery requires approval for approximately 53 GB of cross-region checkpoint I/O.
+
+Step 2,000 and its evaluation remain pending. Final evaluation will use the same 25 proteins and 400 total completions as the pilot. Source: 4721c76c. No synthesis or rejection training has started.

@@ -439,8 +439,54 @@ the source fingerprint: resume training from the recorded `bab3f50a` source.
 - A 16-wide-head vLLM toy hit a FlexAttention compiler failure; the smoke uses
   64-wide heads to exercise the production attention path. No library was patched.
 
-Still required before scaling: pass free-running finalization, harden checkpoint
-publication, and freeze production corpus sizes and the round schedule.
+### Extended format warm-up: partial result and recovery
+
+[exp281-format-s02](https://wandb.ai/open-athena/MarinFold/runs/exp281-format-s02)
+continues the step-256 model toward global step 2,000, preserving Adam state,
+per-rank data offsets and RNG. The frozen corpus, batch 32, hypothesis weight 1
+and plain rehearsal stay fixed. LR rewarms over 100 steps to 1e-4, then decays
+to 1e-5 at step 2,000. Training source is `4721c76c`;
+`configs/continuation_plan.json` records training and the subsequent format gate.
+Nineteen tests and real CPU/GPU continuation/resume checks passed before launch.
+
+The first attempt reached step 1,750. Training minibatch loss fell to 0.002406,
+while held-out token loss rose from 2.244495 at step 256 to 5.946770. Natural
+final-marker loss rose from 6.584968 to 16.095710 and final-answer termination
+loss from 4.272908 to 13.313005. Their top-1 accuracies remained zero at every
+observed check. Those transition diagnostics contain only six natural markers
+and nine multi-document end tokens; they do not replace free-running evaluation.
+The diverging losses indicate pronounced overfitting of this small fixed corpus.
+This is not a test of larger refreshed SFT corpora or rejection fine-tuning.
+
+![Continuation training and held-out loss](plots/format_s02_loss.png)
+
+![Continuation transition diagnostics](plots/format_s02_transitions.png)
+
+The new 300-second publication deadline terminated the first attempt while
+saving step 1,750. Saves at 500, 750, 1,000, 1,250 and 1,500 each completed in
+97–101 seconds; step 1,500 is the latest complete checkpoint. The failed worker
+ran for 2,626.48 seconds. `/bizon/exp281-format-s02-cleanup` subsequently succeeded,
+cleaning only abandoned uploads from that failed attempt. Its audit is at
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json`.
+
+Recovery `/bizon/exp281-format-s02-r1` resumes the same run and exact source/config
+from `s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-1500`.
+As of 2026-09-09 23:43 UTC, it is queued for eight H100s in US-EAST-02A.
+The capacity snapshot in `data/iris_capacity_format_s02_recovery.json` showed zero
+free H100s there and 511 in RNO2A. An RNO2A recovery is prepared but not submitted:
+its approximately 53 GB of cross-region checkpoint I/O requires explicit approval.
+
+`data/format_s02_training.csv` preserves the latest observed metrics by global
+optimizer step; the raw W&B history is saved separately. On rollback, replayed
+steps replace their earlier metrics in the CSV. Reporting helpers live under
+`_scripts/`, leaving the active training source fingerprint unchanged. Run
+`uv run --no-project --with matplotlib python -m experiments.exp281_models_iterated_sft_and_rejection_fine_tuning._scripts.plot_continuation`
+from the repository root to regenerate these plots from committed data.
+
+Step 2,000 and its 400-completion natural/forced format evaluation are pending.
+Still required before scaling: pass free-running finalization and freeze
+production corpus sizes and the round schedule. Publication now fails within a
+bounded time, but the underlying intermittent upload stall remains unresolved.
 
 ## Conclusion
 
@@ -448,4 +494,6 @@ The first full-model trial is complete and fails the preregistered format gate.
 Repeated hypothesis generation appears, but natural and forced finalization remain
 unreliable. Improve format warm-up before starting synthesis-heavy SFT or rejection
 fine-tuning. This trial establishes full-model execution and checkpoint recovery,
-not improved contact accuracy or useful hypothesis diversity.
+not improved contact accuracy or useful hypothesis diversity. Extended training
+through step 1,750 overfits the frozen pilot corpus; its final checkpoint and
+free-running evaluation remain pending recovery.
