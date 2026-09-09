@@ -10,7 +10,7 @@ Keep sequence statements, inputs, positions, attention and packing unchanged.
 
 ## Implementation checks
 
-48 CPU tests pass; the full-size accelerator loss/gradient test passes.
+53 CPU tests pass; the full-size accelerator loss/gradient test passes.
 An independent oracle checks 8192 positions, 2048 hidden, 2845 vocabulary.
 Two virtual CPU devices pass accumulation, resume and SkipStep migration tests.
 Both arms train for three GPU steps, save native state, validate and export.
@@ -18,11 +18,11 @@ Ordinary MarinFold inference checks the exported model and tokenizer.
 
 ## What these checks do not show
 
-There is no accuracy result yet. No full 24-layer production model was trained.
-The live corpora were not independently re-audited in this implementation task.
-Multi-host GPU/TPU behavior and production memory/throughput still need a pilot.
-A 32-update full-model pilot is queued on v6e-32 in us-east5.
-It uses pinned regional decontaminated caches and a verified source bundle.
+There is no accuracy result yet; the corpora were not independently re-audited.
+A full 1.47B, 32-H100 pilot completed 32 updates at about 3.5 seconds/update.
+It saved native state and HF weights/tokenizer, but exposed missing validation.
+The cache configuration is corrected and tested with actual validation reads.
+Both local GPU smokes now log finite validation CE. Production starts fresh.
 
 ## Readout
 

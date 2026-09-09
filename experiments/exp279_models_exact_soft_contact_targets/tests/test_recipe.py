@@ -78,7 +78,11 @@ def test_skipped_update_still_advances_outer_lr_schedule():
 def test_arms_change_only_loss_switch_and_run_identity(tmp_path):
     manifest = {
         "inputs": {
-            name: {"cache_dir": f"/frozen/{name}"} for name in ("afdb", "esm", "val")
+            name: {
+                "cache_dir": f"/frozen/{name}/"
+                + ("validation" if name == "val" else "train")
+            }
+            for name in ("afdb", "esm", "val")
         }
     }
     ce = build_config(

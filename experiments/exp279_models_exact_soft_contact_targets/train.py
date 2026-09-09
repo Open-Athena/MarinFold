@@ -134,10 +134,17 @@ def build_config(
         raise ValueError(
             "Stop must follow the restored update and remain in this phase"
         )
+    validation_path = manifest["inputs"]["val"]["cache_dir"].rstrip("/")
+    if not validation_path.endswith("/validation"):
+        raise ValueError("The frozen validation cache path must end in /validation")
     components: dict[str, DatasetComponentBase] = {
         name: DatasetComponent(
-            cache_dir=entry["cache_dir"],
-            flat_cache=True,
+            # Flat caches only supply training in the pinned Levanter API;
+            # `split` selects source tokenization, not the cached split path.
+            cache_dir=validation_path.rsplit("/", 1)[0]
+            if name == "val"
+            else entry["cache_dir"],
+            flat_cache=name != "val",
             split="validation" if name == "val" else "train",
             pack=True,
             tags=[name],
@@ -155,6 +162,7 @@ def build_config(
         },
         shuffle=SHUFFLE,
         block_cross_document_attention=True,
+        required_validation_names=("val",),
     )
     trainer = TrainerConfig(
         seed=model_seed,

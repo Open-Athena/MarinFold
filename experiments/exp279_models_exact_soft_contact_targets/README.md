@@ -165,20 +165,26 @@ validation and exports on the RTX A5000. Their exported BF16 weights also pass
 the normal MarinFold prefix-cache inference check against a causal FP32 Levanter
 reference. Small inference timing records are in `data/`.
 
-**No scientific training result yet.** These checks do not establish an accuracy
-improvement or reproduce the full 1.47B reference run. The full 24-layer model,
-production corpora and multi-host accelerator execution have not been run here.
-Two virtual CPU devices test sharding/accumulation/resume; that is not a
-multi-host GPU/TPU validation. The local smoke uses vanilla attention and CUDA 12,
-not the production JAX_FLASH/CUDA 13 or TPU stack. CUDA/cuDNN driver warnings on
-the workstation did not prevent the tested CUDA matmul/training paths.
+**No scientific accuracy result yet.** A full 24-layer, 1.47B, 32-H100 pilot
+completed 32 updates with JAX_FLASH/CUDA 13 and the production decontaminated
+mixture. It measured roughly 3.5 seconds/update, 300k nominal tokens/second and
+13% reported MFU. Native step-31 state and HF weights/tokenizer were saved.
+These are startup/throughput checks, not evidence of an accuracy improvement.
 
-Production launch still needs region-local manifests and a short full-model
-throughput/memory pilot. Ledger hashes pin metadata, not every payload byte;
-this implementation did not independently re-audit decontamination or read all
-live cache payloads. The launcher logs nominal exposure and standard trainer
-throughput; audit actual scored-token/document/padding telemetry in that pilot.
-Diagnostic CSVs already retain scored-token denominators and real token counts.
+The first pilot exposed a validation configuration bug: Levanter ignores
+`split="validation"` for flat caches. That run therefore has no validation metrics.
+Earlier synthetic smoke claims of validation coverage were also incorrect.
+The corrected configuration uses the validation cache's parent and requires a
+nonempty validation set. A regression test reads actual held-out cache examples
+through `tagged_eval_sets`, excludes both training sources, and reproduces the
+previous silent omission as a hard failure. Both local GPU smokes were rerun
+with actual stock validation, native/HF export and ordinary inference checks.
+
+Ledger hashes pin metadata, not every payload byte; this implementation did not
+independently re-audit decontamination or read all live cache payloads. Reported
+training throughput counts nominal tokens, including padding. Diagnostic CSVs
+retain scored-token denominators and real token counts. Multi-host TPU execution
+and scientific accuracy comparisons remain unverified.
 
 ## Scientific readout
 
@@ -196,34 +202,30 @@ reserve eval-test for final confirmation. A null or negative result is valid.
 
 ## Production launch (2026-09-09)
 
-The current default registry still selects exp232 m2/p06 step-363000. The active
-full-model pilot uses the existing us-east5 caches, 32 preemptible v6e chips
-(eight hosts), batch priority, global batch 128 and per-device batch 1. No bulk
-input transfer is needed. The cache ledgers match all three reference counts.
+The current default registry still selects exp232 m2/p06 step-363000. GPU training
+uses `cw-us-east-02a`, four complete H100 nodes (32 GPUs), batch priority, global
+batch 128 and per-device batch 1. Existing S3 copies of the same decontaminated
+AFDB/ESM caches and AFDB validation cache avoid any bulk input transfer. Frozen
+ledgers match the reference counts for all three sources.
 
-The pilot job is `/bizon/exp279-soft-pilot-use5-v6e32-a01`, with W&B identity
-`exp279-soft-s0-use5-v6e32`. It was submitted from commit `8cb5d97b` for 32
-updates; allocation and actual training remain to be verified. Its frozen source,
-lock, package versions and input ledgers are in `data/soft_pilot_use5_launch.json`.
-The initial us-east1 pilot was cancelled while still pending because the pool
-was blocked by autoscaler tier backoff; it performed no training. The us-east5
-request uses the already-existing regional copies, without a bulk transfer.
+The first completed pilot was `/bizon/exp279-soft-pilot-cw-h100x32-a03`, W&B
+[exp279-soft-s0-cw-h100x32-b01](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-s0-cw-h100x32-b01),
+source `b80b42d4`. It completed 32 updates, but validation was absent (see above),
+so it will not be resumed as the production experiment. Checkpoints are under
+`s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-s0-cw-h100x32-b01/`.
+Earlier TPU requests were cancelled while pending, and two GPU startup attempts
+failed before training (venv selection, then pinned tokenizer resolution).
 
-```bash
-uv run --no-sync --project experiments/exp279_models_exact_soft_contact_targets python -m experiments.exp279_models_exact_soft_contact_targets.launch --arm soft --run-name exp279-soft-s0-use5-v6e32 --job-name exp279-soft-pilot-use5-v6e32-a01 --region us-east5 --tpu v6e-32 --pilot-updates 32 --record scratch/exp279/soft-pilot-use5.json
-```
+The corrected run starts fresh with a new identity. `launch_gpu.py` submits a
+short pilot with `--pilot-updates 32`; after validation, omitting that argument
+launches the production driver. `--resume-record` preserves the pilot's frozen
+manifest even after history-only commits. Runtime source, dependency, cache or
+placement changes are rejected. The CPU driver waits for each prescribed phase
+job and advances only after a complete checkpoint. Preempted workers choose the
+latest committed native checkpoint on rank zero and broadcast that choice to all
+ranks, restoring full state and automatically selecting the correct phase.
 
-After the pilot is verified, omit `--pilot-updates`, use a new driver job name,
-and pass `--resume-record scratch/exp279/soft-pilot-use5.json`. This preserves the
-pilot's frozen manifest even after history-only commits. Any actual runtime
-source, dependency, cache or placement change is rejected. The CPU driver waits
-for each prescribed phase job and advances only after a complete checkpoint.
-Preempted workers choose the latest committed native checkpoint on rank zero and
-broadcast that choice to all ranks. They restore full state and automatically
-select the correct phase. A restart before the first checkpoint may reinitialize
-only when the persisted experiment identity matches exactly.
-
-The launch additions passed eight focused tests and the full CPU suite now has
-48 passing tests. Bundle tests verify identical source identity without `.git`
-and detect a changed worker file. Phase-boundary tests include final completion;
-pilot configuration tests confirm the production LR schedule is unchanged.
+The CPU suite has 53 passing tests. Bundle tests verify identical source identity
+without `.git` and detect changed worker files. Tests cover actual pinned
+tokenizer loading, inherited Iris venv selection, GPU/TPU resource requests,
+phase boundaries and unchanged production LR during the pilot.

@@ -4,7 +4,9 @@
 """Attach full-document targets to the reference pack/shuffle/mixture path."""
 
 import asyncio
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import cast
 
 import jax
 import numpy as np
@@ -99,6 +101,16 @@ class ContactDataConfig(LmDataConfig):
     edge_capacity: int = 2731
     augmentation_seed: int = 166
     augmentation_num_train_steps: int = 145200
+    required_validation_names: tuple[str, ...] = ()
+
+    def validation_sets(self, Pos):
+        datasets = super().validation_sets(Pos)
+        for name in self.required_validation_names:
+            if name not in datasets or asyncio.run(datasets[name].async_len()) == 0:
+                raise ValueError(
+                    f"Required validation dataset is missing or empty: {name}"
+                )
+        return datasets
 
     def build_token_datasets(self, caches, Pos, *, split):
         # Levanter's annotation fixes this to Grug examples, but its shuffle /
@@ -136,7 +148,7 @@ class ContactDataConfig(LmDataConfig):
             initial_batch_size=batch_schedule.batch_size_at_step(0),
         )
         mixed = MixtureDataset(
-            datasets=datasets,
+            datasets=cast(Mapping[str, AsyncDataset[LmExample]], datasets),
             weights=self.train_weights,
             stop_strategy=self.stop_strategy,
             key=mix_key,

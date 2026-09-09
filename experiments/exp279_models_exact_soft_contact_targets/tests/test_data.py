@@ -5,7 +5,7 @@
 
 import asyncio
 import json
-from dataclasses import fields
+from dataclasses import fields, replace
 
 import haliax as hax
 import jax
@@ -33,6 +33,11 @@ from experiments.exp279_models_exact_soft_contact_targets.data import (
     ContactDataConfig,
     ContactPackedDataset,
 )
+from experiments.exp279_models_exact_soft_contact_targets.inputs import (
+    resolve_tokenizer,
+)
+from experiments.exp279_models_exact_soft_contact_targets.targets import ContactExample
+from experiments.exp279_models_exact_soft_contact_targets.train import build_config
 
 
 def make_cache(path, docs):
@@ -48,6 +53,47 @@ def make_cache(path, docs):
     )
     (path / "shard_ledger.json").write_text(ledger.to_json())
     return TreeCache.load(str(path), exemplar)
+
+
+def test_production_validation_reads_only_frozen_validation_cache(tmp_path):
+    train_doc = make_document([(143, 144)])
+    val_doc = make_document([(145, 146)])
+    paths = {
+        name: tmp_path / name / split
+        for name, split in (("afdb", "train"), ("esm", "train"), ("val", "validation"))
+    }
+    for name, path in paths.items():
+        make_cache(path, [val_doc if name == "val" else train_doc] * 8)
+    config = build_config(
+        {"inputs": {name: {"cache_dir": str(path)} for name, path in paths.items()}},
+        arm="soft",
+        phase_name="base",
+        run_name="exp279-soft-validation-test",
+        output=str(tmp_path),
+        resume=None,
+    )
+    data = replace(config.data, tokenizer=resolve_tokenizer())
+    Pos = hax.Axis("position", len(val_doc))
+    tagged = data.tagged_eval_sets(Pos)
+    assert len(tagged) == 1
+    dataset, tags = tagged[0]
+    assert "val" in tags
+    examples = asyncio.run(dataset.get_batch([0, 1]))
+    for example in examples:
+        assert not isinstance(example, ContactExample)
+        np.testing.assert_array_equal(example.tokens.array, val_doc)
+    assert set(data.build_caches("train")) == {"afdb", "esm"}
+    broken = replace(
+        data,
+        components={
+            **data.components,
+            "val": replace(
+                data.components["val"], cache_dir=str(paths["val"]), flat_cache=True
+            ),
+        },
+    )
+    with pytest.raises(ValueError, match="Required validation dataset"):
+        broken.tagged_eval_sets(Pos)
 
 
 @pytest.mark.parametrize("strategy", ["left", "right"])

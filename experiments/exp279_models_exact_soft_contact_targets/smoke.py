@@ -69,7 +69,7 @@ def main():
         ],
         np.int32,
     )
-    cache_path = args.output / "cache"
+    cache_path = args.output / "cache" / "validation"
     store = TreeStore.open(
         {"input_ids": np.zeros(0, np.int32)}, str(cache_path), mode="w"
     )
@@ -103,8 +103,8 @@ def main():
         edge_capacity=8,
         components={
             name: DatasetComponent(
-                cache_dir=str(cache_path),
-                flat_cache=True,
+                cache_dir=str(cache_path if split == "train" else cache_path.parent),
+                flat_cache=split == "train",
                 split=split,
                 pack=True,
                 format=TextLmDatasetFormat(text_key="document"),
@@ -112,6 +112,7 @@ def main():
             for name, split in (("synthetic", "train"), ("validation", "validation"))
         },
         train_weights={"synthetic": 1.0},
+        required_validation_names=("validation",),
     )
     run_name = f"exp279-{args.arm}-smoke"
     trainer = TrainerConfig(
