@@ -37,6 +37,8 @@ def score_pool(pool: list[dict]) -> dict:
     final_votes, draft_votes = Counter(), Counter()
     jaccard = []
     sections = 0
+    multi = 0
+    empty = 0
     f1s = []
     for candidate in pool:
         if not candidate["valid"]:
@@ -48,11 +50,15 @@ def score_pool(pool: list[dict]) -> dict:
         for hypothesis in hypotheses:
             draft_votes.update(hypothesis)
         sections += len(hypotheses)
+        multi += sum(bool(h) for h in hypotheses) >= 2
+        empty += sum(not h for h in hypotheses)
         jaccard.extend(len(a & b) / max(1, len(a | b)) for a, b in itertools.combinations(hypotheses, 2))
         f1s.append(candidate["score"]["f1"])
     result = {"target_id": first["target_id"], "forced": first["forced"], "budget": first["budget"],
               "candidates": len(pool), "valid_fraction": sum(c["valid"] for c in pool) / len(pool),
               "final_f1": float(np.mean(f1s)), "sections_per_trajectory": sections / len(pool),
+              "multi_fraction": multi / len(pool),
+              "empty_sections_per_trajectory": empty / len(pool),
               "hypothesis_jaccard": float(np.mean(jaccard)) if jaccard else None,
               "hypothesis_union_recall": len(set(draft_votes) & set(truth_pairs)) / max(1, len(truth_pairs)),
               "generated_tokens": sum(len(c["generated"]) for c in pool)}

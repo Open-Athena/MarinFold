@@ -5,6 +5,10 @@
 composite answer; `<end>` terminates that answer. The final answer is not limited
 to contacts present in the hypotheses.
 
+Empty sections represent empty predicted contact sets. They are syntactically
+valid; evaluation must distinguish them from hypotheses containing contacts
+when measuring whether the model produces multiple structural hypotheses.
+
 The model may emit the final marker naturally. A caller may instead insert it
 after any complete contact statement, even within a hypothesis. Use
 `truncate_history(tokens, budget)` to obtain a valid prefix; it rounds down to a

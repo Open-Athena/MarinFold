@@ -213,9 +213,11 @@ the examples are forced by default. Natural and forced examples never share a
 selection pool. Invalid complete outputs are recorded and excluded equally from
 best/random training selection; all-invalid pools fail loudly. Evaluation keeps
 invalid outputs in its denominator. Bootstrap drafts have up to four deterministic
-retries for syntax, termination, nonempty contacts, and physical position validity.
+retries for syntax, termination, and physical position validity.
 Every rejected draft is retained in candidate audit records; this acceptance rule
-never consults reference contacts. Exhausted retries and malformed forced-history
+never consults reference contacts. Empty contact sets are valid hypotheses, are
+counted explicitly, and do not count toward the multiple-hypothesis format gate.
+Exhausted retries and malformed forced-history
 prefixes stop corpus generation for diagnosis. Re-run against the same immutable
 output prefix only with the same generator/config/source fingerprint; completed
 parts are skipped. Changing placement/shard count currently requires a new
@@ -239,11 +241,23 @@ ranks without duplicating targets; some validation ranks may have no rows.
 
 The initial `trial-s01` generation attempt exposed occasional empty/malformed
 plain drafts and one vLLM initialization failure. Its partial corpus is not used.
-`trial-s02` uses the explicit format-retry policy above, preserving the target
-pool, sampling temperature, and seed. Training records step duration and peak
+`trial-s02` added bounded format retries, but a repeatedly empty ESM prediction
+exposed the unnecessary nonempty-set requirement. `trial-s03` preserves empty
+contact sets and separately audits them, keeping the same target pool,
+sampling temperature, and seed. Training records step duration and peak
 GPU memory, and attaches corpus manifests to W&B. Evaluate natural and forced
 finalization on the internal validation set after the trial; no FoldBench
 accuracy claim follows from this engineering/format trial.
+
+Before training, the trial format check is fixed as eight completions per held-out
+protein for natural finalization (seed 281), and eight for forced finalization
+(seed 282, budgets 0/256/1024/2048). Use the final step-256 checkpoint. Report
+valid completion separately for each mode and the fraction of natural trajectories
+with at least two nonempty hypotheses. The format gate requires at least 99% valid
+outputs in each mode and at least 90% of natural trajectories with multiple
+nonempty hypotheses.
+Use `--record-invalid-prefixes` for evaluation so malformed forced histories count
+as invalid answers instead of aborting or disappearing from the denominator.
 
 ### Evaluation protocol
 
@@ -262,7 +276,7 @@ manifest is not a substitute. No eval-test predictions or metrics were read.
 
 Engineering validation only; there are no learned protein-accuracy results yet.
 
-- Fifteen behavioral/integration tests pass, including causal marker-mask alignment,
+- Sixteen behavioral/integration tests pass, including causal marker-mask alignment,
   statement-boundary truncation, imperfect-answer rejection followed by reference
   replacement, invalid-output evaluation, and rank-disjoint streaming resume.
 - Sixteen existing configuration/tokenizer tests pass; one network test is skipped.

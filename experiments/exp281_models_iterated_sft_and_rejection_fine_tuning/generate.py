@@ -83,12 +83,10 @@ def output_tokens(output: Any, tokenizer: Any, stop_id: int) -> list[str]:
 
 
 def validate_bootstrap_draft(tokens: list[str], positions: list[int]) -> None:
-    """Require a terminated, nonempty contact hypothesis without consulting labels."""
+    """Require a terminated contact set, including empty sets, without consulting labels."""
     if not tokens or tokens[-1] != END:
         raise ValueError("bootstrap hypothesis failed to terminate")
     parsed = parse_history([FINAL, *tokens[:-1], END])
-    if not parsed.final:
-        raise ValueError("empty bootstrap hypothesis")
     decode_pairs(parsed.final, positions)
 
 
@@ -113,6 +111,8 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=281)
     parser.add_argument("--cache", type=Path, default=Path("/tmp/exp281-models"))
     parser.add_argument("--enforce-eager", action="store_true", help="skip compilation for tiny-model smoke tests")
+    parser.add_argument("--record-invalid-prefixes", action="store_true",
+                        help="evaluation: retain malformed forced histories as invalid answers")
     args = parser.parse_args()
     if not 0 <= args.forced_fraction <= 1 or args.candidates < 1:
         raise ValueError("invalid generation mixture or candidate count")
@@ -225,6 +225,7 @@ def main() -> None:
                         outputs[index] = replacement
                     pending = invalid
             histories, second_prompts, second_parameters = [], [], []
+            invalid_prefixes = {}
             for index, (target, forced, budget, candidate_id, reserve) in enumerate(specs):
                 if args.phase == "bootstrap":
                     tokens = []
@@ -234,7 +235,14 @@ def main() -> None:
                     histories.append(truncate_history(tokens, budget))
                 elif forced and budget > 0:
                     tokens = [BEGIN, *output_tokens(outputs[index], tokenizer, end_id)]
-                    history = truncate_history(tokens, budget)
+                    try:
+                        history = truncate_history(tokens, budget)
+                    except ValueError as exc:
+                        if not args.record_invalid_prefixes:
+                            raise
+                        invalid_prefixes[index] = (tokens, str(exc))
+                        histories.append(None)
+                        continue
                     histories.append(history)
                     second_prompts.append({"prompt_token_ids": tokenize_exact(tokenizer, [MULTI, *target["header"][1:], *history, FINAL])})
                     second_parameters.append(vllm.SamplingParams(
@@ -247,7 +255,9 @@ def main() -> None:
             elapsed += time.monotonic() - second_started
             records = []
             for index, (target, forced, budget, candidate_id, reserve) in enumerate(specs):
-                if args.phase == "bootstrap":
+                if index in invalid_prefixes:
+                    tokens = invalid_prefixes[index][0]
+                elif args.phase == "bootstrap":
                     tokens = [*histories[index], FINAL, *target["reference"], END]
                 elif histories[index] is not None:
                     tokens = [*histories[index], FINAL, *output_tokens(next(finals), tokenizer, end_id)]
@@ -255,9 +265,15 @@ def main() -> None:
                     tokens = [FINAL if forced else BEGIN, *output_tokens(outputs[index], tokenizer, end_id)]
                 record = scored_candidate(target, tokens, forced=forced, budget=budget,
                                           candidate_id=candidate_id, generator=args.model)
+                if index in invalid_prefixes:
+                    record["valid"] = False
+                    record["error"] = "invalid forced history: " + invalid_prefixes[index][1]
                 record["bootstrap"] = args.phase == "bootstrap"
                 record["bootstrap_rejections"] = rejections[index]
                 if record["bootstrap"]:
+                    record["bootstrap_empty_samples"] = sum(
+                        output_tokens(outputs[index * args.bootstrap_hypotheses + h], tokenizer, end_id) == [END]
+                        for h in range(args.bootstrap_hypotheses))
                     # The reference closure taught in warm-up is not a sampled
                     # answer and must never masquerade as perfect model accuracy.
                     record["generated"] = list(histories[index])
@@ -278,6 +294,7 @@ def main() -> None:
             write_json(prefix + ".json", {"signature": signature, "config": config,
                        "targets": len(chunk), "candidates": len(records),
                        "bootstrap_rejected_samples": sum(len(r) for r in rejections),
+                       "bootstrap_empty_samples": sum(r.get("bootstrap_empty_samples", 0) for r in records),
                        "invalid": sum(not r["valid"] for r in records)})
             print(f"published {prefix}: {len(records)} candidates", flush=True)
 

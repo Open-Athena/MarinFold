@@ -290,8 +290,14 @@ def main() -> None:
                    "train/supervised_weight": denominator.item(), "train/lr": lr,
                    "train/grad_norm": grad_norm.item(), "train/step": step + 1}
         metrics["train/step_seconds"] = step_seconds
+        tokens = all_sum(sum(b["attention_mask"].sum() for b in batches).to(device), world).item()
+        metrics["train/tokens_per_second"] = tokens / step_seconds
+        metrics["train/documents"] = (step + 1) * args.global_batch
         if device.type == "cuda":
-            metrics["train/peak_memory_gb"] = torch.cuda.max_memory_allocated(device) / 1e9
+            peak = torch.tensor(torch.cuda.max_memory_allocated(device) / 1e9, device=device)
+            if world > 1:
+                dist.all_reduce(peak, op=dist.ReduceOp.MAX)
+            metrics["train/peak_memory_gb"] = peak.item()
         if (step + 1) % args.eval_every == 0 or step + 1 == args.steps:
             metrics["validation/loss"] = evaluate(module, validation, pad, args.context, device, world, args.eval_documents)
         if rank == 0:

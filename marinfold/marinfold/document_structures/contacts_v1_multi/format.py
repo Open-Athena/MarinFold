@@ -45,13 +45,10 @@ def parse_history(tokens: Sequence[str], *, allow_prefix: bool = False) -> Parse
     while i < len(tokens):
         token = tokens[i]
         if token == BEGIN and final is None:
-            if sections and not sections[-1]:
-                raise ValueError("empty hypothesis section")
             sections.append([])
             i += 1
+            boundaries.append(i)
         elif token == FINAL and final is None:
-            if sections and not sections[-1]:
-                raise ValueError("final marker after empty hypothesis section")
             final_index = i
             final = []
             i += 1
@@ -76,8 +73,6 @@ def parse_history(tokens: Sequence[str], *, allow_prefix: bool = False) -> Parse
             raise ValueError(f"unexpected token {token!r} at history offset {i}")
     if not allow_prefix and not finished:
         raise ValueError("missing final prediction or end marker")
-    if sections and not sections[-1]:
-        raise ValueError("empty trailing hypothesis")
     return ParsedHistory(tuple(tuple(s) for s in sections),
                          None if final is None else tuple(final),
                          final_index, finished, tuple(boundaries))
@@ -86,9 +81,9 @@ def parse_history(tokens: Sequence[str], *, allow_prefix: bool = False) -> Parse
 def truncate_history(tokens: Sequence[str], budget: int) -> list[str]:
     """Keep the longest valid hypothesis prefix within a token budget.
 
-    A trailing partial triple or section marker is discarded only because it
-    crosses the requested budget. Malformed tokens inside the retained budget
-    raise. A naturally emitted FINAL ends the hypothesis prefix early.
+    A trailing partial triple is discarded only because it crosses the requested
+    budget. Empty sections represent empty contact sets and are retained.
+    Malformed retained tokens raise. A natural FINAL ends the prefix early.
     """
     if budget < 0:
         raise ValueError("budget must be nonnegative")
@@ -101,6 +96,7 @@ def truncate_history(tokens: Sequence[str], budget: int) -> list[str]:
         if tokens[i] == BEGIN:
             prefix.append(BEGIN)
             i += 1
+            last_boundary = len(prefix)
         elif tokens[i] == CONTACT:
             if i + 3 > min(budget, len(tokens)):
                 break

@@ -49,7 +49,7 @@ def tokenizer() -> PreTrainedTokenizerFast:
 
 
 def test_arbitrary_budgets_only_retain_complete_statements() -> None:
-    expected_lengths = [0, 0, 0, 0, 4, 4, 4, 4, 8]
+    expected_lengths = [0, 1, 1, 1, 4, 5, 5, 5, 8]
     for budget, length in enumerate(expected_lengths):
         result = truncate_history(HISTORY, budget)
         assert result == HISTORY[:length]
@@ -64,7 +64,7 @@ def test_explicit_final_boundary_does_not_merge_hypotheses() -> None:
     assert parsed.hypotheses == (((0, 6),), ((1, 7),))
     assert parsed.final == ((0, 7),)
     assert truncate_history([*HISTORY, FINAL, *REFERENCE, END], 100) == HISTORY
-    for invalid in ([*HISTORY, END], [BEGIN, FINAL, END], [FINAL, *REFERENCE, FINAL, END]):
+    for invalid in ([*HISTORY, END], [BEGIN, "oops", FINAL, END], [FINAL, *REFERENCE, FINAL, END]):
         with pytest.raises(ValueError):
             parse_history(invalid)
 
@@ -263,7 +263,22 @@ def test_bounded_target_pool_balances_sources_and_preserves_labels(tmp_path: Pat
 
 def test_bootstrap_validation_uses_format_and_positions_without_reference() -> None:
     validate_bootstrap_draft(["<contact>", "<p0>", "<p7>", END], list(range(8)))
-    for tokens in ([END], ["<contact>", "<p0>", END], ["<contact>", "<p0>", "<p100>", END],
+    validate_bootstrap_draft([END], list(range(8)))
+    for tokens in (["<contact>", "<p0>", END], ["<contact>", "<p0>", "<p100>", END],
                    ["<contact>", "<p0>", "<p1>", END], [BEGIN, "<contact>", "<p0>", "<p7>", END]):
         with pytest.raises(ValueError):
             validate_bootstrap_draft(tokens, list(range(8)))
+
+
+def test_empty_contact_sets_are_preserved_but_do_not_pass_multi_gate() -> None:
+    tokens = [BEGIN, BEGIN, FINAL, *REFERENCE, END]
+    assert parse_history(tokens).hypotheses == ((), ())
+    assert truncate_history(tokens, 100) == [BEGIN, BEGIN]
+    target = {"target_id": "empty", "header": HEADER, "reference": REFERENCE,
+              "positions": list(range(8)), "n_residues": 8}
+    candidate = scored_candidate(target, tokens, forced=False, budget=100, candidate_id=0, generator="test")
+    candidate["bootstrap"] = False
+    result = score_pool([candidate])
+    assert result["valid_fraction"] == 1.0
+    assert result["multi_fraction"] == 0.0
+    assert result["empty_sections_per_trajectory"] == 2.0
