@@ -42,7 +42,7 @@ def target_from_document(document: str, target_id: str) -> dict:
 
 
 def prepare_targets(manifest: dict, output: str, shard_size: int, limit: int | None,
-                    max_residues: int = 512, context: int = 8192) -> None:
+                    max_residues: int = 512, context: int = 8192, per_source_limit: int | None = None) -> None:
     """Validate provenance, stream targets, and publish a manifest last."""
     if not manifest.get("decontamination_reference") or not manifest.get("source_revision"):
         raise ValueError("source manifest must pin revision and decontamination reference")
@@ -51,7 +51,10 @@ def prepare_targets(manifest: dict, output: str, shard_size: int, limit: int | N
     paths = {"train": [], "validation": []}
     counts = {"train": 0, "validation": 0}
     excluded = {"length": 0, "answer_budget": 0}
+    source_counts = {}
     for source in manifest["sources"]:
+        if per_source_limit and source_counts.get(source["name"], 0) >= per_source_limit:
+            continue
         if "size_bytes" in source:
             fs, path = fsspec.core.url_to_fs(source["uri"])
             info = fs.info(path)
@@ -76,12 +79,15 @@ def prepare_targets(manifest: dict, output: str, shard_size: int, limit: int | N
             split = "validation" if seed_for(target["sequence_key"], 281) % 100 == 0 else "train"
             buffers[split].append(target)
             counts[split] += 1
+            source_counts[source["name"]] = source_counts.get(source["name"], 0) + 1
             if len(buffers[split]) == shard_size:
                 path = f"{output}/{split}-{len(paths[split]):05d}.parquet"
                 write_rows(path, buffers[split])
                 paths[split].append(path)
                 buffers[split] = []
             if limit and sum(counts.values()) >= limit:
+                break
+            if per_source_limit and source_counts[source["name"]] >= per_source_limit:
                 break
         if limit and sum(counts.values()) >= limit:
             break
@@ -92,7 +98,9 @@ def prepare_targets(manifest: dict, output: str, shard_size: int, limit: int | N
             paths[split].append(path)
     write_json(f"{output}/manifest.json", {"source": manifest, "source_hash": identity(manifest),
                                          "counts": counts, "excluded": excluded, "shards": paths,
-                                         "max_residues": max_residues, "context": context})
+                                         "max_residues": max_residues, "context": context,
+                                         "source_counts": source_counts, "per_source_limit": per_source_limit})
+    print({"counts": counts, "source_counts": source_counts, "excluded": excluded}, flush=True)
 
 
 def prepare_model(source: str, output: Path) -> None:
@@ -124,6 +132,7 @@ def main() -> None:
     target.add_argument("--output", required=True)
     target.add_argument("--shard-size", type=int, default=1024)
     target.add_argument("--limit", type=int)
+    target.add_argument("--per-source-limit", type=int)
     target.add_argument("--max-residues", type=int, default=512)
     target.add_argument("--context", type=int, default=8192)
     model = sub.add_parser("model")
@@ -137,7 +146,7 @@ def main() -> None:
             publish_directory(args.output, args.publish)
     else:
         prepare_targets(read_json(args.manifest), args.output, args.shard_size, args.limit,
-                        args.max_residues, args.context)
+                        args.max_residues, args.context, args.per_source_limit)
 
 
 if __name__ == "__main__":

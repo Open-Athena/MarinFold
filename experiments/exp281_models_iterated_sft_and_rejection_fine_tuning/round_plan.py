@@ -26,7 +26,10 @@ def plan(config: dict) -> list[dict]:
         raise ValueError("generation worker count must be positive")
     stages = []
     for split in ("train", "validation"):
-        for shard in range(workers):
+        split_workers = config.get(f"{split}_generation_workers", workers)
+        if split_workers < 1:
+            raise ValueError("generation worker count must be positive")
+        for shard in range(split_workers):
             stages.append({"group": 0, "stage": "generate", "gpus": 1,
                            "name": f"exp281-{config['round']}-{split}-gen-{shard}",
                            "arguments": ["--model", config["generator"], "--targets", config["targets"],
@@ -34,7 +37,7 @@ def plan(config: dict) -> list[dict]:
                                          "--phase", "bootstrap" if config["phase"] == "bootstrap" else "synthesis",
                                          "--candidates", str(config.get("candidates", 1 if config["phase"] == "bootstrap" else 4)),
                                          "--bootstrap-hypotheses", str(config.get("bootstrap_hypotheses", 16)),
-                                         "--shard-count", str(workers), "--shard-index", str(shard),
+                                         "--shard-count", str(split_workers), "--shard-index", str(shard),
                                          "--seed", str(config.get("seed", 281))]})
         stages.append({"group": 1, "stage": "corpus", "gpus": 0,
                        "name": f"exp281-{config['round']}-{split}-corpus",
@@ -48,6 +51,9 @@ def plan(config: dict) -> list[dict]:
                                  "--validation-manifest", f"{root}/validation/corpus/manifest.json",
                                  "--output", root, "--run-name", config["run_name"], "--steps", str(config["steps"]),
                                  "--warmup", str(min(100, config["steps"] // 10))]})
+    for key in ("global_batch", "microbatch", "lr", "save_every", "eval_every", "eval_documents"):
+        if key in config:
+            stages[-1]["arguments"].extend(["--" + key.replace("_", "-"), str(config[key])])
     return sorted(stages, key=lambda stage: stage["group"])
 
 

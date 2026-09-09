@@ -30,8 +30,8 @@ from common import read_json, rows, write_json, write_rows
 from compare import paired_difference
 from corpus import LossProfile, build_example, select_candidate
 from evaluate import score_pool
-from generate import scored_candidate
-from prepare import prepare_model, target_from_document
+from generate import scored_candidate, validate_bootstrap_draft
+from prepare import prepare_model, prepare_targets, target_from_document
 from round_plan import plan
 from train import ParquetStream, collate, weighted_loss_sum
 
@@ -227,3 +227,43 @@ def test_bootstrap_comparison_weights_proteins_not_budget_rows() -> None:
     assert result["delta"] == pytest.approx(0.1)
     with pytest.raises(ValueError, match="identical"):
         paired_difference(baseline, {("a", "True", "0"): 0.3})
+
+
+def test_small_validation_set_can_leave_ddp_ranks_empty(tmp_path: Path) -> None:
+    path = str(tmp_path / "validation.parquet")
+    write_rows(path, [{"input_ids": [1, 2], "loss_weights": [0.0, 1.0]}])
+    empty = ParquetStream([path], 7, 8, 281, allow_empty=True)
+    assert list(empty.iterate(repeat=False)) == []
+    with pytest.raises(ValueError, match="empty"):
+        list(empty.iterate())
+    with pytest.raises(ValueError, match="nonempty"):
+        ParquetStream([path], 7, 8, 281)
+
+
+def test_bounded_target_pool_balances_sources_and_preserves_labels(tmp_path: Path) -> None:
+    header = ["<contacts-v1>", "<begin_sequence>"]
+    for position in range(8):
+        header.extend([f"<p{position}>", "<ALA>"])
+    header.extend(["<n-term>", "<p0>", "<c-term>", "<p7>"])
+    document = " ".join([*header, BEGIN, *REFERENCE, END])
+    sources = []
+    for name in ("afdb", "esm"):
+        path = str(tmp_path / f"{name}.parquet")
+        write_rows(path, [{"entry_id": str(i), "document": document} for i in range(10)])
+        sources.append({"name": name, "uri": path, "id_column": "entry_id", "document_column": "document"})
+    output = str(tmp_path / "targets")
+    prepare_targets({"sources": sources, "source_revision": "pinned", "decontamination_reference": "test"},
+                    output, 8, 4, per_source_limit=2)
+    manifest = read_json(output + "/manifest.json")
+    assert manifest["source_counts"] == {"afdb": 2, "esm": 2}
+    retained = [row for paths in manifest["shards"].values() for path in paths for row in rows(path)]
+    assert len(retained) == 4 and all(row["reference"] == REFERENCE for row in retained)
+    assert sum(bool(paths) for paths in manifest["shards"].values()) == 1  # identical sequences stay together
+
+
+def test_bootstrap_validation_uses_format_and_positions_without_reference() -> None:
+    validate_bootstrap_draft(["<contact>", "<p0>", "<p7>", END], list(range(8)))
+    for tokens in ([END], ["<contact>", "<p0>", END], ["<contact>", "<p0>", "<p100>", END],
+                   ["<contact>", "<p0>", "<p1>", END], [BEGIN, "<contact>", "<p0>", "<p7>", END]):
+        with pytest.raises(ValueError):
+            validate_bootstrap_draft(tokens, list(range(8)))

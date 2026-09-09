@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from contextlib import nullcontext
 from pathlib import Path
 from typing import Iterator
@@ -43,20 +44,24 @@ from common import (
 class ParquetStream:
     """Deterministic rank-disjoint row groups with resumable row offsets."""
 
-    def __init__(self, paths: list[str], rank: int, world: int, seed: int):
+    def __init__(self, paths: list[str], rank: int, world: int, seed: int, *, allow_empty: bool = False):
         groups = []
         for path in paths:
             with fsspec.open(path, "rb") as handle:
                 meta = pq.ParquetFile(handle).metadata
                 groups.extend((path, i, meta.row_group(i).num_rows) for i in range(meta.num_row_groups))
         self.groups = groups[rank::world]
-        if not self.groups or sum(g[2] for g in self.groups) == 0:
+        if not allow_empty and (not self.groups or sum(g[2] for g in self.groups) == 0):
             raise ValueError("each rank needs at least one nonempty parquet row group")
         self.seed = seed
 
     def iterate(self, skip: int = 0, repeat: bool = True) -> Iterator[dict]:
         """Skip complete groups by metadata; re-read at most one group on resume."""
         per_epoch = sum(g[2] for g in self.groups)
+        if per_epoch == 0:
+            if repeat:
+                raise ValueError("cannot repeat an empty stream")
+            return
         epoch, skip = divmod(skip, per_epoch)
         while True:
             ordered = list(self.groups)
@@ -232,7 +237,7 @@ def main() -> None:
             torch.cuda.set_rng_state(state["ranks"][rank]["cuda_rng"], device)
         del state
     stream = ParquetStream(train_manifest["shards"], rank, world, args.seed)
-    validation = ParquetStream(val_manifest["shards"], rank, world, args.seed)
+    validation = ParquetStream(val_manifest["shards"], rank, world, args.seed, allow_empty=True)
     iterator = stream.iterate(skip=consumed)
     accumulation = args.global_batch // (world * args.microbatch)
     pad = tokenizer.pad_token_id
@@ -243,8 +248,20 @@ def main() -> None:
         run = wandb.init(entity="open-athena", project="MarinFold", name=args.run_name,
                          id=args.run_name, resume="allow", config=config)
         record_history(run, args.output)
+        with tempfile.TemporaryDirectory(prefix="exp281-inputs-") as directory:
+            artifact = wandb.Artifact(f"{args.run_name}-inputs", type="dataset-manifest")
+            for split, manifest in (("train", train_manifest), ("validation", val_manifest)):
+                path = Path(directory) / f"{split}.json"
+                write_json(str(path), manifest)
+                artifact.add_file(str(path))
+                run.summary[f"data/{split}"] = manifest.get("totals", {})
+            run.log_artifact(artifact).wait()
     module.train()
     for step in range(start, args.steps):
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+            torch.cuda.reset_peak_memory_stats(device)
+        step_started = time.monotonic()
         batches = [collate(list(itertools.islice(iterator, args.microbatch)), pad, args.context)
                    for _ in range(accumulation)]
         denominator = all_sum(sum(b["weights"][:, 1:].sum() for b in batches).to(device), world)
@@ -266,9 +283,15 @@ def main() -> None:
             consumed += args.microbatch
         grad_norm = torch.nn.utils.clip_grad_norm_(module.parameters(), 1.0, error_if_nonfinite=True)
         optimizer.step()
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        step_seconds = time.monotonic() - step_started
         metrics = {"train/loss": (all_sum(numerator, world) / denominator).item(),
                    "train/supervised_weight": denominator.item(), "train/lr": lr,
                    "train/grad_norm": grad_norm.item(), "train/step": step + 1}
+        metrics["train/step_seconds"] = step_seconds
+        if device.type == "cuda":
+            metrics["train/peak_memory_gb"] = torch.cuda.max_memory_allocated(device) / 1e9
         if (step + 1) % args.eval_every == 0 or step + 1 == args.steps:
             metrics["validation/loss"] = evaluate(module, validation, pad, args.context, device, world, args.eval_documents)
         if rank == 0:

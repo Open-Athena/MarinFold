@@ -131,6 +131,7 @@ Experiment drivers are separate files:
 | `train.py` | Single-node PyTorch DDP, weighted gradient accumulation, validation, complete checkpoint/resume and W&B history |
 | `evaluate.py`, `compare.py` | Unselected final/draft vote metrics and paired per-protein bootstrap comparisons |
 | `round_plan.py`, `dispatch.py` | Reviewable stage DAG and minimal-workspace Iris submissions |
+| `report.py` | Collect bounded result files into the existing W&B run for review |
 | `smoke.py` | Real tiny-Qwen training/resume checks, optionally vLLM generation |
 
 PyTorch DDP is used here to make the global weighted objective explicit. There is
@@ -211,7 +212,10 @@ from {0, 256, 1024, 2048} and capped by the length-based available context; half
 the examples are forced by default. Natural and forced examples never share a
 selection pool. Invalid complete outputs are recorded and excluded equally from
 best/random training selection; all-invalid pools fail loudly. Evaluation keeps
-invalid outputs in its denominator. Malformed bootstrap drafts or forced-history
+invalid outputs in its denominator. Bootstrap drafts have up to four deterministic
+retries for syntax, termination, nonempty contacts, and physical position validity.
+Every rejected draft is retained in candidate audit records; this acceptance rule
+never consults reference contacts. Exhausted retries and malformed forced-history
 prefixes stop corpus generation for diagnosis. Re-run against the same immutable
 output prefix only with the same generator/config/source fingerprint; completed
 parts are skipped. Changing placement/shard count currently requires a new
@@ -222,8 +226,24 @@ batch latency explicitly identified and model load time separate. Collect these
 CSV files into the experiment's tracked data before reporting predictor timings.
 Training creates a history file immediately after W&B init and also saves it
 under the durable output's `history/` prefix; bring that file into this repo and
-regenerate `history/RUNS.md` when recording a remote run. No production run has
-been launched by this implementation task.
+regenerate `history/RUNS.md` when recording a remote run.
+
+### First full-model trial
+
+`configs/trial.json` fixes a bounded format trial: 2,048 eligible proteins, at most
+1,024 each from AFDB and ESM, split by sequence hash; 16 bootstrap drafts; 50%
+plain rehearsal; 256 optimizer steps with global batch 32; checkpoints every 64
+steps and validation every 32. The trial shares the prepared initial checkpoint
+with the longer format plan. Its smaller validation set is partitioned across
+ranks without duplicating targets; some validation ranks may have no rows.
+
+The initial `trial-s01` generation attempt exposed occasional empty/malformed
+plain drafts and one vLLM initialization failure. Its partial corpus is not used.
+`trial-s02` uses the explicit format-retry policy above, preserving the target
+pool, sampling temperature, and seed. Training records step duration and peak
+GPU memory, and attaches corpus manifests to W&B. Evaluate natural and forced
+finalization on the internal validation set after the trial; no FoldBench
+accuracy claim follows from this engineering/format trial.
 
 ### Evaluation protocol
 
@@ -242,7 +262,7 @@ manifest is not a substitute. No eval-test predictions or metrics were read.
 
 Engineering validation only; there are no learned protein-accuracy results yet.
 
-- Twelve behavioral/integration tests pass, including causal marker-mask alignment,
+- Fifteen behavioral/integration tests pass, including causal marker-mask alignment,
   statement-boundary truncation, imperfect-answer rejection followed by reference
   replacement, invalid-output evaluation, and rank-disjoint streaming resume.
 - Sixteen existing configuration/tokenizer tests pass; one network test is skipped.

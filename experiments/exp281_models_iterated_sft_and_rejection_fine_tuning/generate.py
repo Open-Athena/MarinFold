@@ -82,6 +82,16 @@ def output_tokens(output: Any, tokenizer: Any, stop_id: int) -> list[str]:
     return tokenizer.convert_ids_to_tokens(ids)
 
 
+def validate_bootstrap_draft(tokens: list[str], positions: list[int]) -> None:
+    """Require a terminated, nonempty contact hypothesis without consulting labels."""
+    if not tokens or tokens[-1] != END:
+        raise ValueError("bootstrap hypothesis failed to terminate")
+    parsed = parse_history([FINAL, *tokens[:-1], END])
+    if not parsed.final:
+        raise ValueError("empty bootstrap hypothesis")
+    decode_pairs(parsed.final, positions)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True)
@@ -91,6 +101,7 @@ def main() -> None:
     parser.add_argument("--phase", choices=["bootstrap", "synthesis"], default="synthesis")
     parser.add_argument("--candidates", type=int, default=4)
     parser.add_argument("--bootstrap-hypotheses", type=int, default=4)
+    parser.add_argument("--bootstrap-retries", type=int, default=4)
     parser.add_argument("--budgets", type=int, nargs="+", default=[0, 256, 1024, 2048])
     parser.add_argument("--forced-fraction", type=float, default=0.5)
     parser.add_argument("--context", type=int, default=8192)
@@ -105,6 +116,8 @@ def main() -> None:
     args = parser.parse_args()
     if not 0 <= args.forced_fraction <= 1 or args.candidates < 1:
         raise ValueError("invalid generation mixture or candidate count")
+    if args.bootstrap_retries < 0 or args.bootstrap_hypotheses < 1:
+        raise ValueError("invalid bootstrap retry or hypothesis count")
     if not 0 <= args.shard_index < args.shard_count or min(args.budgets) < 0:
         raise ValueError("invalid shard or token budget")
     config = {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()}
@@ -179,15 +192,44 @@ def main() -> None:
             started = time.monotonic()
             outputs = engine.generate(prompts, parameters, use_tqdm=False)
             elapsed = time.monotonic() - started
+            rejections = [[] for _ in specs]
+            if args.phase == "bootstrap":
+                pending = list(range(len(outputs)))
+                for attempt in range(args.bootstrap_retries + 1):
+                    invalid = []
+                    for index in pending:
+                        candidate_index, hypothesis = divmod(index, args.bootstrap_hypotheses)
+                        target = specs[candidate_index][0]
+                        draft = output_tokens(outputs[index], tokenizer, end_id)
+                        try:
+                            validate_bootstrap_draft(draft, target["positions"])
+                        except ValueError as exc:
+                            rejections[candidate_index].append({"hypothesis": hypothesis, "attempt": attempt,
+                                                                "error": str(exc), "tokens": draft})
+                            invalid.append(index)
+                    if not invalid:
+                        break
+                    if attempt == args.bootstrap_retries:
+                        failed = invalid[0] // args.bootstrap_hypotheses
+                        raise ValueError(f"bootstrap retries exhausted for {specs[failed][0]['target_id']}: "
+                                         f"{rejections[failed][-1]}")
+                    retries = []
+                    for index in invalid:
+                        retry = parameters[index].clone()
+                        retry.seed = seed_for(parameters[index].seed, "format-retry", attempt)
+                        retries.append(retry)
+                    retry_started = time.monotonic()
+                    replacements = engine.generate([prompts[i] for i in invalid], retries, use_tqdm=False)
+                    elapsed += time.monotonic() - retry_started
+                    for index, replacement in zip(invalid, replacements, strict=True):
+                        outputs[index] = replacement
+                    pending = invalid
             histories, second_prompts, second_parameters = [], [], []
             for index, (target, forced, budget, candidate_id, reserve) in enumerate(specs):
                 if args.phase == "bootstrap":
                     tokens = []
                     for h in range(args.bootstrap_hypotheses):
                         draft = output_tokens(outputs[index * args.bootstrap_hypotheses + h], tokenizer, end_id)
-                        if not draft or draft[-1] != END:
-                            raise ValueError("bootstrap hypothesis failed to terminate")
-                        parse_history([FINAL, *draft[:-1], END])
                         tokens.extend([BEGIN, *draft[:-1]])
                     histories.append(truncate_history(tokens, budget))
                 elif forced and budget > 0:
@@ -214,6 +256,7 @@ def main() -> None:
                 record = scored_candidate(target, tokens, forced=forced, budget=budget,
                                           candidate_id=candidate_id, generator=args.model)
                 record["bootstrap"] = args.phase == "bootstrap"
+                record["bootstrap_rejections"] = rejections[index]
                 if record["bootstrap"]:
                     # The reference closure taught in warm-up is not a sampled
                     # answer and must never masquerade as perfect model accuracy.
@@ -234,6 +277,7 @@ def main() -> None:
                 writer.writerows(timings)
             write_json(prefix + ".json", {"signature": signature, "config": config,
                        "targets": len(chunk), "candidates": len(records),
+                       "bootstrap_rejected_samples": sum(len(r) for r in rejections),
                        "invalid": sum(not r["valid"] for r in records)})
             print(f"published {prefix}: {len(records)} candidates", flush=True)
 

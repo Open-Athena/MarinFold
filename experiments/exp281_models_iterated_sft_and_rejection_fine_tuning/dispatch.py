@@ -18,7 +18,8 @@ from pathlib import Path
 from common import EXPERIMENT
 
 STAGES = {"prepare": "prepare.py", "generate": "generate.py", "corpus": "build_corpus.py",
-          "train": "train.py", "smoke": "smoke.py", "preflight": "preflight.py", "evaluate": "evaluate.py"}
+          "train": "train.py", "smoke": "smoke.py", "preflight": "preflight.py", "evaluate": "evaluate.py",
+          "report": "report.py"}
 
 
 def bundle(destination: Path) -> None:
@@ -78,7 +79,7 @@ def main() -> None:
                       "command": shlex.join(command + ["--", *worker]), "submit": args.submit}, indent=2))
     if not args.submit:
         return
-    if args.stage == "train" and "--no-wandb" not in arguments:
+    if args.stage in ("train", "report") and "--no-wandb" not in arguments:
         key = os.environ.get("WANDB_API_KEY")
         if not key:
             auth = netrc.netrc().authenticators("api.wandb.ai")
