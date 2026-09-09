@@ -16,7 +16,6 @@ import jax
 import jax.numpy as jnp
 import jmp
 import numpy as np
-from huggingface_hub import snapshot_download
 from levanter.checkpoint import CheckpointerConfig, load_checkpoint
 from levanter.data.text.datasets import DatasetComponent
 from levanter.data.text.formats import TextLmDatasetFormat
@@ -31,8 +30,8 @@ from levanter.tracker.tracker import NoopConfig
 from levanter.trainer import TrainerConfig
 
 from .data import ContactDataConfig
+from .inputs import resolve_tokenizer
 from .model import ContactQwen3Config
-from .recipe import TOKENIZER
 
 
 def main():
@@ -43,10 +42,7 @@ def main():
     if jax.default_backend() == "cpu":
         raise RuntimeError("This smoke explicitly requires an accelerator")
     args.output.mkdir(parents=True, exist_ok=True)
-    repo, revision = TOKENIZER.split("@")
-    tokenizer_path = snapshot_download(
-        repo, revision=revision, allow_patterns=["*token*", "special_tokens_map.json"]
-    )
+    tokenizer_path = resolve_tokenizer()
     doc = np.asarray(
         [
             2,

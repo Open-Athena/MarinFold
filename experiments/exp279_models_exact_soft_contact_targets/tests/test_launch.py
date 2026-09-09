@@ -108,3 +108,31 @@ def test_gpu_gang_and_pinned_cuda_script():
     assert "--stop-after 32" in script
     assert "nvidia_cudnn_cu13-9.26.0.17.dev59162438" in script
     assert "--resume-latest" in script
+
+
+def test_gpu_setup_overrides_inherited_iris_venv(tmp_path):
+    project = tmp_path / "experiments/exp279_models_exact_soft_contact_targets"
+    project.mkdir(parents=True)
+    (project / "pyproject.toml").write_text(
+        '[project]\nname="exp279-env-test"\nversion="0.0.0"\n'
+        'requires-python=">=3.12,<3.13"\n[project.optional-dependencies]\ngpu=[]\n'
+        "[tool.uv]\npackage=false\n"
+    )
+    inherited = tmp_path / "iris-default-venv"
+    env = {**os.environ, "UV_PROJECT_ENVIRONMENT": str(inherited)}
+    subprocess.run(["uv", "lock", "--project", str(project)], env=env, check=True)
+    request = gpu_worker_request(
+        name="test",
+        arm="soft",
+        run_name="exp279-soft-test",
+        nodes=4,
+        stop_after=32,
+        env={},
+    )
+    script = request.entrypoint.binary_entrypoint.args[-1]
+    # Run the actual production setup prefix against a tiny project. This tests
+    # uv's precedence rules without downloading the GPU dependency stack.
+    setup = script.split("export IRIS_VENV", 1)[0]
+    subprocess.run(["bash", "-c", setup], cwd=tmp_path, env=env, check=True)
+    assert (project / ".venv/bin/python").is_file()
+    assert not inherited.exists()

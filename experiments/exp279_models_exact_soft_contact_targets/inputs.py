@@ -12,12 +12,30 @@ import subprocess
 from importlib.metadata import version
 from pathlib import Path
 
+from huggingface_hub import snapshot_download
 from rigging.filesystem.storage_path import StoragePath
 
 from .recipe import CORPORA, REFERENCE_SHA, TOKENIZER
 
 EXPERIMENT = Path(__file__).resolve().parent
 ROOT = EXPERIMENT.parents[1]
+
+
+def resolve_tokenizer() -> str:
+    """Stage the exact tokenizer revision for Levanter's path-based loader."""
+    repository, revision = TOKENIZER.rsplit("@", 1)
+    return snapshot_download(
+        repository,
+        revision=revision,
+        allow_patterns=[
+            "tokenizer*",
+            "special_tokens_map.json",
+            "added_tokens.json",
+            "config.json",
+            "vocab.json",
+            "merges.txt",
+        ],
+    )
 
 
 def sha256(data: bytes) -> str:

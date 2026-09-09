@@ -6,13 +6,24 @@
 import json
 
 import pytest
+from levanter.tokenizers import load_tokenizer
 
 from experiments.exp279_models_exact_soft_contact_targets.inputs import (
     inspect_cache,
+    resolve_tokenizer,
     source_identity,
     verify_manifest,
 )
 from experiments.exp279_models_exact_soft_contact_targets.recipe import CORPORA
+from experiments.exp279_models_exact_soft_contact_targets.targets import Vocabulary
+
+
+def test_exact_tokenizer_revision_loads_through_levanter():
+    """Exercise the real loader; the pinned tiny HF artifact is cached by the Hub."""
+    path = resolve_tokenizer()
+    assert path.endswith("80f4e411b957641e8c350b07bbe1e2c832697518")
+    vocab = Vocabulary.from_tokenizer(load_tokenizer(path))
+    assert vocab.size == 2845
 
 
 def test_frozen_inputs_reject_changes(tmp_path):

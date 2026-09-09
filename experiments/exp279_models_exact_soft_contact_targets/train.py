@@ -9,6 +9,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import cast
 
 import draccus
 import jax
@@ -33,8 +34,8 @@ from scripts.history import _existing_run_files
 
 from .checkpoints import validate_training_restore
 from .data import ContactDataConfig
-from .inputs import ROOT, source_identity, verify_manifest
-from .model import reference_model_config
+from .inputs import ROOT, resolve_tokenizer, source_identity, verify_manifest
+from .model import ContactQwen3Config, reference_model_config
 from .recipe import AFDB_TOKENS, ESM_TOKENS, PHASES, TOKENIZER, optimizer_for_phase
 
 
@@ -303,11 +304,20 @@ def main():
         )
     config = replace(
         config,
+        # Levanter stages bare HF repo IDs but does not parse repo@revision.
+        # Resolve our immutable pin explicitly; no change to tokenizer content.
+        data=replace(config.data, tokenizer=resolve_tokenizer()),
         trainer=replace(
             config.trainer,
             distributed=replace(
                 config.trainer.distributed, initialize_jax_distributed=False
             ),
+        ),
+    )
+    config = replace(
+        config,
+        model=replace(
+            cast(ContactQwen3Config, config.model), tokenizer=config.data.tokenizer
         ),
     )
     # Persist enough to distinguish either arm and prevent an accidental

@@ -30,9 +30,8 @@ from levanter.store.cache import TreeCache
 from levanter.tokenizers import load_tokenizer
 
 from .data import ContactPackedDataset
-from .inputs import verify_manifest
+from .inputs import resolve_tokenizer, verify_manifest
 from .model import contact_loss_terms, reference_model_config
-from .recipe import TOKENIZER
 from .targets import Vocabulary
 
 
@@ -78,7 +77,7 @@ def main():
     cache = TreeCache.load(
         manifest["inputs"]["val"]["cache_dir"], {"input_ids": np.zeros(0, np.int32)}
     )
-    vocab = Vocabulary.from_tokenizer(load_tokenizer(TOKENIZER))
+    vocab = Vocabulary.from_tokenizer(load_tokenizer(resolve_tokenizer()))
     dataset = ContactPackedDataset(
         PackedTokenDataset(cache, hax.Axis("position", 8192)), cache, vocab, 2731
     )
