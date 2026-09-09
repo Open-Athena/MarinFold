@@ -146,4 +146,36 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        failure = {
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "error_type": type(error).__name__,
+            "generation_paused": False,
+        }
+        (HERE / "data/scale-20260909/review-error.json").write_text(
+            json.dumps(failure, indent=2) + "\n"
+        )
+        subprocess.run(
+            [
+                "gh",
+                "api",
+                "--method",
+                "POST",
+                "repos/Open-Athena/MarinFold/issues/278/comments",
+                "--input",
+                "-",
+            ],
+            input=json.dumps(
+                {
+                    "body": "🤖 The scheduled 18-hour review encountered "
+                    + failure["error_type"]
+                    + ". Generation has not been paused. Partial reports and the service log are preserved under the experiment's data/scale-20260909 directory. The review needs recovery; no completed retention estimate is claimed."
+                }
+            ),
+            text=True,
+            check=True,
+            capture_output=True,
+        )
+        raise
