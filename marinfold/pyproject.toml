@@ -17,6 +17,7 @@ dependencies = [
     "numpy",
     "pyarrow",
     "pyyaml>=6",
+    "safetensors>=0.6",
     "tokenizers>=0.15",
     "transformers>=4.40,<5",
 ]

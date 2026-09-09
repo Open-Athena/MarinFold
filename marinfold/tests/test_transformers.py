@@ -19,6 +19,7 @@ def test_shared_backend_default_dtype_stays_safe_for_mps_models() -> None:
         "dtype": "bfloat16",
         "device": None,
         "tail_batch_size": 64,
+        "fixed_residue_position_embeddings": None,
     }
 
 
