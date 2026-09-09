@@ -6,6 +6,8 @@
 import argparse
 import hashlib
 import json
+import os
+import re
 import subprocess
 from importlib.metadata import version
 from pathlib import Path
@@ -55,10 +57,18 @@ def source_identity() -> dict:
         str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes() + b"\0"
         for path in sources
     )
-    return {
-        "git_sha": subprocess.check_output(
+    # Iris bundles contain source files, but not the checkout's .git directory.
+    # The submitter supplies the committed revision; the independent source hash
+    # below verifies the actual bundled files on every worker and every resume.
+    revision = os.environ.get("EXP279_GIT_SHA")
+    if revision is None:
+        revision = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-        ).strip(),
+        ).strip()
+    if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+        raise ValueError("Expected a full committed EXP279_GIT_SHA")
+    return {
+        "git_sha": revision,
         "code_sha256": sha256(code),
         "runtime_packages": {
             name: version(name)

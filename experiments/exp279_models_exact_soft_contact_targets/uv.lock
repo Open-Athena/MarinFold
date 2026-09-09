@@ -751,14 +751,20 @@ local-gpu = [
 test = [
     { name = "pytest", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
 ]
+tpu = [
+    { name = "gcsfs", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
+    { name = "jax", extra = ["tpu"], marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1,<9" },
     { name = "fsspec" },
+    { name = "gcsfs", marker = "extra == 'tpu'" },
     { name = "hf-xet" },
     { name = "huggingface-hub", specifier = ">=1.5,<2" },
     { name = "jax", extras = ["cuda12"], marker = "extra == 'local-gpu'", specifier = "==0.11.1" },
+    { name = "jax", extras = ["tpu"], marker = "extra == 'tpu'", specifier = "==0.11.1" },
     { name = "marin-core", specifier = "==0.2.99.dev33617068238" },
     { name = "marin-core", extras = ["gpu"], marker = "extra == 'gpu'", specifier = "==0.2.99.dev33617068238" },
     { name = "marin-dupekit", specifier = "==0.1.7.dev32497398902" },
@@ -778,7 +784,7 @@ requires-dist = [
     { name = "torchvision", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==0.26.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "exp279-models-exact-soft-contact-targets", extra = "gpu" } },
     { name = "torchvision", marker = "sys_platform != 'linux' and extra == 'gpu'", specifier = "==0.26.0" },
 ]
-provides-extras = ["local-gpu", "test", "gpu"]
+provides-extras = ["tpu", "local-gpu", "test", "gpu"]
 
 [package.metadata.requires-dev]
 dev = []
@@ -1440,6 +1446,11 @@ cuda13 = [
     { name = "jax-cuda13-plugin", extra = ["with-cuda"], marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
     { name = "jaxlib", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
 ]
+tpu = [
+    { name = "jaxlib", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
+    { name = "libtpu", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
+    { name = "requests", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-gpu' and extra == 'extra-40-exp279-models-exact-soft-contact-targets-local-gpu')" },
+]
 
 [[package]]
 name = "jax-cuda12-pjrt"
@@ -1712,6 +1723,14 @@ version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fb/06/6a7c30c3519181263e1bbf0cbea67ef4a43a64443ee16717c7d760214943/lenses-1.2.0-py3-none-any.whl", hash = "sha256:e03c81e35500e12e1d35504f76c26489c0a4e08b0881e96fc4e8a1b707c53f16", size = 51113, upload-time = "2023-10-24T17:43:13.95Z" },
+]
+
+[[package]]
+name = "libtpu"
+version = "0.0.46.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/70/cc5d524145cbe00b774313b6af0b2e6fb6ae0b813a4973f3043d97e337c8/libtpu-0.0.46.1-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:5020f2c99881af151fd3fa57ac30036008f559f3bac50bf6d7b6c287b7246a98", size = 216541613, upload-time = "2026-09-03T22:25:45.345Z" },
 ]
 
 [[package]]

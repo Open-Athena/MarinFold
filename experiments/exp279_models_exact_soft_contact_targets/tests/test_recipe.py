@@ -108,6 +108,34 @@ def test_arms_change_only_loss_switch_and_run_identity(tmp_path):
     assert ce.model.use_qk_norm and ce.model.hidden_dim == 2048
     assert ce.data.augmentation_num_train_steps == 145200
     assert ce.hf_generation_eos_token_ids == [1, 10]
+    pilot = build_config(
+        manifest,
+        arm="soft",
+        phase_name="base",
+        run_name="exp279-soft-s0",
+        output=str(tmp_path),
+        resume=None,
+        stop_after=32,
+    )
+    assert pilot.trainer.num_train_steps == 32
+    assert pilot.optimizer == soft.optimizer
+    assert pilot.data == soft.data
+    assert pilot.model == soft.model
+    np.testing.assert_array_equal(
+        pilot.optimizer.lr_scheduler(32)(jnp.arange(32)),
+        soft.optimizer.lr_scheduler(217801)(jnp.arange(32)),
+    )
+    for stop in (0, 217802):
+        with pytest.raises(ValueError, match="Stop"):
+            build_config(
+                manifest,
+                arm="soft",
+                phase_name="base",
+                run_name="exp279-soft-s0",
+                output=str(tmp_path),
+                resume=None,
+                stop_after=stop,
+            )
     with pytest.raises(ValueError, match="full-state"):
         build_config(
             manifest,

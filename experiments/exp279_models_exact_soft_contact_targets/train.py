@@ -17,7 +17,7 @@ import numpy as np
 import wandb
 from jax.experimental import multihost_utils
 from levanter.callbacks.watch import WatchConfig
-from levanter.checkpoint import CheckpointerConfig
+from levanter.checkpoint import CheckpointerConfig, discover_latest_checkpoint
 from levanter.data.text.datasets import DatasetComponent, DatasetComponentBase
 from levanter.data.text.formats import TextLmDatasetFormat
 from levanter.main.train_lm import TrainLmConfig
@@ -25,6 +25,7 @@ from levanter.main.train_lm import main as train_main
 from levanter.tracker import TrackerConfig
 from levanter.tracker.wandb import WandbConfig
 from levanter.trainer import TrainerConfig
+from levanter.utils.jax_utils import multihost_broadcast_sync
 from rigging.filesystem.storage_path import StoragePath
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import SHUFFLE
@@ -35,6 +36,16 @@ from .data import ContactDataConfig
 from .inputs import ROOT, verify_manifest
 from .model import reference_model_config
 from .recipe import AFDB_TOKENS, ESM_TOKENS, PHASES, TOKENIZER, optimizer_for_phase
+
+
+def phase_for_update(update: int) -> str | None:
+    """Resolve the prescribed phase from the full-state next update number."""
+    for name, phase in PHASES.items():
+        if phase.start <= update < phase.stop:
+            return name
+    if update == PHASES["final"].stop:
+        return None
+    raise ValueError(f"Checkpoint update {update} is outside the experiment")
 
 
 @TrackerConfig.register_subclass("exp279_wandb")
@@ -90,6 +101,7 @@ def build_config(
     resume: str | None,
     per_device_batch: int = 1,
     model_seed: int = 0,
+    stop_after: int | None = None,
 ) -> TrainLmConfig:
     """Resolve every arm through the same model/data/trainer configuration."""
     phase = PHASES[phase_name]
@@ -112,6 +124,11 @@ def build_config(
         if not phase.start <= start < phase.stop:
             raise ValueError("Resume checkpoint is outside the selected recipe phase")
     model = reference_model_config(soft_targets=arm == "soft")
+    stop = phase.stop if stop_after is None else stop_after
+    if not start < stop <= phase.stop:
+        raise ValueError(
+            "Stop must follow the restored update and remain in this phase"
+        )
     components: dict[str, DatasetComponentBase] = {
         name: DatasetComponent(
             cache_dir=entry["cache_dir"],
@@ -141,7 +158,7 @@ def build_config(
         train_batch_size=128,
         per_device_parallelism=per_device_batch,
         per_device_eval_parallelism=per_device_batch,
-        num_train_steps=phase.stop,
+        num_train_steps=stop,
         steps_per_eval=2114,
         watch=WatchConfig(watch_targets=[], interval=0),
         tracker=HistoryWandbConfig(
@@ -190,7 +207,17 @@ def main():
         "--resume",
         help="Exact native step-N checkpoint, including optimizer/RNG/data position",
     )
+    parser.add_argument(
+        "--resume-latest",
+        action="store_true",
+        help="Resume this run's latest committed checkpoint and select its recipe phase",
+    )
     parser.add_argument("--per-device-batch", type=int, default=1)
+    parser.add_argument(
+        "--stop-after",
+        type=int,
+        help="Absolute update count for a resumable production pilot; preserves the LR schedule",
+    )
     parser.add_argument(
         "--seed",
         type=int,
@@ -203,6 +230,8 @@ def main():
         help="Run training; default prints the resolved configuration",
     )
     args = parser.parse_args()
+    if args.resume_latest and (args.resume is not None or args.phase != "base"):
+        parser.error("--resume-latest selects both checkpoint and phase")
     manifest = json.loads(args.manifest.read_text())
     config = build_config(
         manifest,
@@ -213,6 +242,7 @@ def main():
         resume=args.resume,
         per_device_batch=args.per_device_batch,
         model_seed=args.seed,
+        stop_after=args.stop_after,
     )
     if not args.run:
         print(draccus.dump(config))
@@ -229,6 +259,44 @@ def main():
             "jax_compilation_cache_dir", config.trainer.jax_compilation_cache_dir
         )
     config.trainer.distributed.initialize()
+    if args.resume_latest:
+        # A single leader chooses the committed checkpoint so ranks cannot race
+        # checkpoint publication/listing and restore different training states.
+        checkpoint = None
+        if jax.process_index() == 0:
+            checkpoint = discover_latest_checkpoint(
+                args.output.rstrip("/") + f"/checkpoints/{args.run_name}"
+            )
+        args.resume = multihost_broadcast_sync(checkpoint)
+        update = 0
+        if args.resume is not None:
+            update = (
+                json.loads(StoragePath(args.resume + "/metadata.json").read_text())[
+                    "step"
+                ]
+                + 1
+            )
+        selected_phase = phase_for_update(update)
+        if selected_phase is None or (
+            args.stop_after is not None and update >= args.stop_after
+        ):
+            print(
+                f"Requested training complete at update {update}; checkpoint={args.resume}",
+                flush=True,
+            )
+            return
+        args.phase = selected_phase
+        config = build_config(
+            manifest,
+            arm=args.arm,
+            phase_name=args.phase,
+            run_name=args.run_name,
+            output=args.output,
+            resume=args.resume,
+            per_device_batch=args.per_device_batch,
+            model_seed=args.seed,
+            stop_after=args.stop_after,
+        )
     config = replace(
         config,
         trainer=replace(
@@ -258,8 +326,13 @@ def main():
         exists = record.exists() if jax.process_index() == 0 else False
         exists = bool(multihost_utils.broadcast_one_to_all(np.asarray(exists)))
         if exists:
-            raise ValueError(
-                "Run identity already exists; use an explicit resume checkpoint or a new run name"
+            if not args.resume_latest or json.loads(record.read_text()) != identity:
+                raise ValueError(
+                    "Run identity already exists; use a matching explicit resume or a new run name"
+                )
+            print(
+                "Restarting the same pinned run before its first completed checkpoint",
+                flush=True,
             )
     if args.resume:
         source_record = StoragePath(
@@ -271,6 +344,13 @@ def main():
     if jax.process_index() == 0:
         record.parent.mkdirs(exist_ok=True)
         record.write_text(json.dumps(identity, indent=2) + "\n")
+        print(
+            json.dumps(
+                {"experiment": identity, "phase": args.phase, "resume": args.resume},
+                indent=2,
+            ),
+            flush=True,
+        )
     train_main(config)
 
 

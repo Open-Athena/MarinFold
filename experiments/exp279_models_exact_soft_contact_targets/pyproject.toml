@@ -20,6 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+tpu = ["jax[tpu]==0.11.1", "gcsfs"]
 local-gpu = ["jax[cuda12]==0.11.1"]
 test = [
     "pytest>=8",
