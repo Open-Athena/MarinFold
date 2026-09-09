@@ -34,7 +34,7 @@ from pyconfind.data import cached_rotamer_library
 from transformers import AutoTokenizer, EsmForProteinFolding
 
 from prepare_assets import download
-from quality import aligned_rmsd, ca_geometry, confidence_percent
+from quality import aligned_rmsd, backbone_geometry, confidence_percent
 
 MPNN_REVISION = "8907e6671bfbfc92303b5f79c4b5e6ce47cdef57"
 ALPHABET = "ACDEFGHIKLMNPQRSTVWYX"
@@ -107,6 +107,8 @@ def main() -> None:
     parser.add_argument("--esm-revision", required=True)
     parser.add_argument("--seed", type=int, default=278)
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--shard-count", type=int, default=1)
     args = parser.parse_args()
     prefixes = list(args.input)
     for manifest in args.manifest:
@@ -114,6 +116,33 @@ def main() -> None:
             prefixes.extend(case["output"] for case in json.load(handle))
     if not prefixes:
         parser.error("Provide at least one input prefix or case manifest")
+    if not 0 <= args.shard_index < args.shard_count:
+        parser.error("Shard index must be between zero and shard count minus one")
+    prefixes = prefixes[args.shard_index :: args.shard_count]
+    for prefix in prefixes:
+        source_fs, source_marker = fsspec.core.url_to_fs(prefix + "/complete.json")
+        if not source_fs.exists(source_marker):
+            raise ValueError(f"Generation is incomplete under {prefix}")
+    configuration = {**vars(args), "resolved_inputs": prefixes}
+    output_fs, configuration_path = fsspec.core.url_to_fs(
+        args.output + "/configuration.json"
+    )
+    if output_fs.exists(configuration_path):
+        with output_fs.open(configuration_path, "rt") as handle:
+            if json.load(handle) != configuration:
+                raise ValueError(
+                    "Output prefix already belongs to a different configuration"
+                )
+    else:
+        put_bytes(
+            args.output + "/configuration.json", json.dumps(configuration).encode()
+        )
+    completion_fs, completion_path = fsspec.core.url_to_fs(
+        args.output + "/complete.json"
+    )
+    if completion_fs.exists(completion_path):
+        print(f"Already complete: {args.output}", flush=True)
+        return
     began = time.perf_counter()
     data_root = Path(os.environ["DATA_PATH"])
     weight = data_root / "mpnn-ca-v_48_020.pt"
@@ -194,13 +223,29 @@ def main() -> None:
             records = []
             documents = []
             part_id = hashlib.sha256(f"{prefix}/{batch_path}".encode()).hexdigest()[:20]
+            marker_uri = f"{args.output}/completed-parts/{part_id}.json"
+            output_fs, marker_path = fsspec.core.url_to_fs(marker_uri)
+            if output_fs.exists(marker_path):
+                with output_fs.open(marker_path, "rt") as handle:
+                    previous = json.load(handle)
+                processed += previous["candidates"]
+                quality_pass_count += previous["quality_pass"]
+                with fsspec.open(
+                    f"{args.output}/timings/{part_id}.csv", "rt"
+                ) as handle:
+                    timings.extend(csv.DictReader(handle))
+                print(f"Already complete: {part_id}", flush=True)
+                if args.limit and processed >= args.limit:
+                    break
+                continue
             with fs.open(batch_path, "rb") as handle:
                 coordinates = np.load(io.BytesIO(handle.read()))["ca"]
             if args.limit:
                 coordinates = coordinates[: args.limit - processed]
             if not len(coordinates):
                 break
-            batch_seed = args.seed + processed
+            batch_seed = (args.seed + int(part_id[:8], 16)) % (2**32)
+            first_timing = len(timings)
             torch.cuda.synchronize()
             start = time.perf_counter()
             sequences = design_sequences(mpnn, coordinates, batch_seed)
@@ -236,7 +281,7 @@ def main() -> None:
                 structure = gemmi.read_pdb_string(pdb)
                 refolded = structure_coordinates(structure, sequence)
                 rmsd = aligned_rmsd(original, refolded)
-                geometry = ca_geometry(refolded)
+                geometry = backbone_geometry(structure)
                 passed = bool(
                     rmsd <= 2.0 and plddt >= 70 and geometry["ca_geometry_pass"]
                 )
@@ -284,6 +329,7 @@ def main() -> None:
                         "plddt": plddt,
                         "quality_pass": passed,
                         "decontamination_status": "pending",
+                        "geometry_version": "cis-proline-v2",
                         **geometry,
                     }
                 )
@@ -345,10 +391,28 @@ def main() -> None:
                     buffer.getvalue(),
                 )
             text = io.StringIO()
-            writer = csv.DictWriter(text, fieldnames=list(timings[0]), lineterminator="\n")
+            writer = csv.DictWriter(
+                text, fieldnames=list(timings[0]), lineterminator="\n"
+            )
             writer.writeheader()
             writer.writerows(timings)
             put_bytes(args.output + "/timings.csv", text.getvalue().encode())
+            part_text = io.StringIO()
+            part_writer = csv.DictWriter(
+                part_text, fieldnames=list(timings[0]), lineterminator="\n"
+            )
+            part_writer.writeheader()
+            part_writer.writerows(timings[first_timing:])
+            put_bytes(
+                f"{args.output}/timings/{part_id}.csv", part_text.getvalue().encode()
+            )
+            # Publish the marker last, so interrupted partial writes are retried.
+            put_bytes(
+                marker_uri,
+                json.dumps(
+                    {"candidates": len(records), "quality_pass": len(documents)}
+                ).encode(),
+            )
             if args.limit and processed >= args.limit:
                 break
         if args.limit and processed >= args.limit:

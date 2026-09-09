@@ -17,6 +17,28 @@ marinfold_run:
   - /bizon/exp278-smoke-v4
   - /bizon/exp278-fold-smoke-v1
   - /bizon/exp278-compile-probe-v1
+  - /bizon/exp278-compile-probe-v2
+  - /bizon/exp278-screen-short-v1
+  - /bizon/exp278-screen-long-v1
+  - /bizon/exp278-screen-short-v2
+  - /bizon/exp278-screen-long-v2
+  - /bizon/exp278-fold-l60-v1
+  - /bizon/exp278-fold-l100-v1
+  - /bizon/exp278-screen-l300-v3
+  - /bizon/exp278-screen-l400-v3
+  - /bizon/exp278-screen-l500-v3
+  - /bizon/exp278-long500-batch24-v1
+  - /bizon/exp278-long500-tf32-v1
+  - /bizon/exp278-fold-l200-v1
+  - /bizon/exp278-fold-l300-v1
+  - /bizon/exp278-fold-precision-v1
+  - /bizon/exp278-fold-second-attempt-v1
+  - /bizon/exp278-fold-l400-part0-v1
+  - /bizon/exp278-fold-l400-part1-v1
+  - /bizon/exp278-fold-l400-part2-v1
+  - /bizon/exp278-fold-l400-part3-v1
+  - /bizon/exp278-fold-l500-part0-v1
+  - /bizon/exp278-fold-l500-part1-v1
 ---
 # 2026-09-09 · exp278_data_proteina_structural_diversity · exp278-proteina-pilot-20260909
 

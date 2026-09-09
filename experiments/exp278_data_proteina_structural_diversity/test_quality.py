@@ -1,15 +1,47 @@
 """Guard against false acceptance caused by alignment and geometry mistakes."""
 
+from pathlib import Path
+
+import gemmi
 import numpy as np
 import pytest
 
-from quality import aligned_rmsd, ca_geometry, confidence_percent
+from quality import aligned_rmsd, backbone_geometry, ca_geometry, confidence_percent
 
 
 def test_alignment_removes_translation_and_rotation() -> None:
     points = np.random.default_rng(278).normal(size=(30, 3))
     rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     assert aligned_rmsd(points, points @ rotation + [2, 6, -3]) < 1e-12
+
+
+def test_cis_proline_is_not_a_chain_break() -> None:
+    structure = gemmi.read_structure(
+        str(Path(__file__).parent / "data/cis-proline-fixture.pdb")
+    )
+    coordinates = np.asarray(
+        [list(residue["CA"][0].pos) for residue in structure[0][0]]
+    )
+    assert ca_geometry(coordinates)["ca_chain_breaks"] == 1
+    result = backbone_geometry(structure)
+    assert result["ca_geometry_pass"]
+    assert result["cis_proline_bonds"] == 1
+
+
+def test_compressed_nonproline_remains_rejected() -> None:
+    structure = gemmi.read_structure(
+        str(Path(__file__).parent / "data/cis-proline-fixture.pdb")
+    )
+    structure[0][0][2].name = "ALA"
+    assert not backbone_geometry(structure)["ca_geometry_pass"]
+
+
+def test_broken_peptide_link_is_not_rescued_by_proline() -> None:
+    structure = gemmi.read_structure(
+        str(Path(__file__).parent / "data/cis-proline-fixture.pdb")
+    )
+    structure[0][0][1]["C"][0].pos.x += 4
+    assert not backbone_geometry(structure)["ca_geometry_pass"]
 
 
 def test_alignment_does_not_accept_mirror_image() -> None:

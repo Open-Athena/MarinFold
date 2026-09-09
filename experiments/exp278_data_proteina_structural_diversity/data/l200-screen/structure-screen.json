@@ -1,0 +1,7 @@
+{
+  "scope": "legacy 554 plus full FoldBench monomer reference; sequence screen also covers all FoldBench protein chains",
+  "reference": "/data/exp278/eval-structures",
+  "excluded_candidates": 2,
+  "rule": "both-normalized TM >=0.8 and both coverages >=0.8",
+  "search_method": "Foldseek prefilter + TM-align; not a guarantee of fold-disjointness"
+}

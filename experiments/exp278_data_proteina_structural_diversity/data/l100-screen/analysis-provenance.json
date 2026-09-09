@@ -1,0 +1,7 @@
+{
+  "foldseek_version": "21952ed84e0f4a06ec6af08d58add77cef8dec14",
+  "foldseek_sha256": "1ca9a07898b4f231ca8a8162b175449afe5324cd3e0db4ce87e1b60aeb3ac04e",
+  "geometry": "C-alpha",
+  "prefilter_recall": "64-candidate exhaustive audit; see prefilter-recall.csv",
+  "decontamination": "sequence screened; structural screen pending"
+}

@@ -1,0 +1,7 @@
+{
+  "legacy": 554,
+  "foldbench_monomers": 334,
+  "reference_structures": 888,
+  "scope": "legacy 554 plus full FoldBench monomer list, including all eval245 partitions; resolved CA traces",
+  "foldbench_targets_sha256": "43c2a5e9a73e84e00afb8d0108761547a8f9d6e52865e122792748c9c32bf595"
+}

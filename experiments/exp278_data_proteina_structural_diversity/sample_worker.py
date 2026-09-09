@@ -65,7 +65,13 @@ def run_case(args: argparse.Namespace, model: Proteina | None = None) -> Protein
     """Sample a fixed-length case, reusing owned model instances across cases."""
     began = time.perf_counter()
     print(json.dumps({"event": "starting", "args": vars(args)}), flush=True)
-    put_bytes(args.output + "/started.json", json.dumps(vars(args)).encode())
+    output_fs, output_path = fsspec.core.url_to_fs(args.output)
+    if output_fs.exists(output_path + "/started.json"):
+        with output_fs.open(output_path + "/started.json", "rt") as handle:
+            if json.load(handle) != vars(args):
+                raise ValueError("Sampling output prefix has a different configuration")
+    else:
+        put_bytes(args.output + "/started.json", json.dumps(vars(args)).encode())
     data_root = Path(os.environ["DATA_PATH"])
     load_seconds = 0.0
     if model is None:
@@ -101,9 +107,29 @@ def run_case(args: argparse.Namespace, model: Proteina | None = None) -> Protein
         "compiled": args.compile,
     }
     put_bytes(args.output + "/assets.json", (data_root / "assets.json").read_bytes())
+    put_bytes(
+        args.output + "/numerics.json",
+        json.dumps(
+            {"float32_matmul_precision": torch.get_float32_matmul_precision()}
+        ).encode(),
+    )
     print(json.dumps({"event": "loaded", **meta}), flush=True)
     rows = []
+    completed_batches = set()
+    if output_fs.exists(output_path + "/timings.csv"):
+        with output_fs.open(output_path + "/timings.csv", "rt") as handle:
+            rows = list(csv.DictReader(handle))
+        for batch_index in {int(row["batch_index"]) for row in rows}:
+            saved_rows = [row for row in rows if int(row["batch_index"]) == batch_index]
+            if len(saved_rows) != args.batch_size or not output_fs.exists(
+                f"{output_path}/batch-{batch_index:05d}.npz"
+            ):
+                raise ValueError("Saved sampling timings and coordinates disagree")
+            completed_batches.add(batch_index)
     for batch_index in range(args.batches):
+        if batch_index in completed_batches:
+            print(f"Already complete: batch {batch_index}", flush=True)
+            continue
         batch_seed = args.seed + batch_index
         torch.manual_seed(batch_seed)
         np.random.seed(batch_seed)

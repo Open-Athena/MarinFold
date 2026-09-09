@@ -1,0 +1,10 @@
+{
+  "source": "marin-us-east-02a/MarinFold/exp278-proteina/fold-precision-v1/candidates/9ec84066ff99d09eb430.parquet",
+  "stem": "proteina-69f9b2897bef71638ca4",
+  "residue_indices_zero_based": [
+    357,
+    358,
+    359,
+    360
+  ]
+}

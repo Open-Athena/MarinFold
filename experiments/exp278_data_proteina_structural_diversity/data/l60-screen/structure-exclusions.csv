@@ -1,0 +1,7 @@
+query,target,qtmscore,ttmscore,qcov,tcov,evalue,stem,min_tm
+proteina-d8bc4468003a8b3ae1d0,legacy__denovo_pdb__8qaf_A,8.046E-01,8.160E-01,1.000,0.966,7.396E-01,proteina-d8bc4468003a8b3ae1d0,0.8046
+proteina-179ce84d58496fedec24,legacy__denovo_pdb__8qaf_A,8.215E-01,8.341E-01,0.900,1.000,7.857E-01,proteina-179ce84d58496fedec24,0.8215
+proteina-522dadabf93fddb7b94b,legacy__denovo_pdb__8qaf_A,8.083E-01,8.197E-01,0.983,1.000,7.405E-01,proteina-522dadabf93fddb7b94b,0.8083
+proteina-e3417958656e3e318797,legacy__denovo_pdb__8qaf_A,8.205E-01,8.323E-01,0.983,0.966,7.601E-01,proteina-e3417958656e3e318797,0.8205
+proteina-d367f5e8e9f695fd73b5,legacy__denovo_pdb__8qaf_A,8.211E-01,8.328E-01,1.000,1.000,7.569E-01,proteina-d367f5e8e9f695fd73b5,0.8211
+proteina-61da3b49e07a66daed11,legacy__denovo_pdb__8qaf_A,8.360E-01,8.483E-01,1.000,0.966,7.813E-01,proteina-61da3b49e07a66daed11,0.836

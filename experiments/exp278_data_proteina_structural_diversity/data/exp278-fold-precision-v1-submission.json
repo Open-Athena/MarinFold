@@ -1,0 +1,20 @@
+{
+  "job_id": "/bizon/exp278-fold-precision-v1",
+  "name": "exp278-fold-precision-v1",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/cef5567ee18e0c64c257a24f31321cfa2a4c08cc00aea280ce9b6774b3adb0e4.tar.gz",
+  "timeout_seconds": 3600,
+  "submitted_utc": "2026-09-09T19:28:07.144840+00:00",
+  "worker_args": [
+    "fold_worker.py",
+    "--esm-revision",
+    "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/long500-batch24-v1",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/long500-tf32-v1",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-precision-v1"
+  ]
+}

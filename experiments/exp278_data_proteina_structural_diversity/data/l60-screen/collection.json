@@ -1,0 +1,38 @@
+{
+  "candidates": 256,
+  "quality_pass": 230,
+  "sources": [
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/1f51c6e45e0ad889d606.parquet",
+      "bytes": 366720
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/6732899e8165c8b123c0.parquet",
+      "bytes": 368608
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/67fd8b160bb02d6adc11.parquet",
+      "bytes": 378324
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/6cdbaba65516fcb40052.parquet",
+      "bytes": 378130
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/7674651d62cf1d031f65.parquet",
+      "bytes": 383257
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/7acfe5ae4bc143bf3f0d.parquet",
+      "bytes": 359944
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/98f91b68a0eb17e9ebf0.parquet",
+      "bytes": 374342
+    },
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l60-cis-v2/candidates/a919b4c557ee7a7ccd74.parquet",
+      "bytes": 361605
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "job_id": "/bizon/exp278-screen-short-v2",
+  "name": "exp278-screen-short-v2",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/17c61c2b83662ad647b00ead0248079cd2509974ef3e850b2d78f4605a3e8407.tar.gz",
+  "timeout_seconds": 64800,
+  "submitted_utc": "2026-09-09T19:06:58.135057+00:00",
+  "worker_args": [
+    "pilot_worker.py",
+    "--model",
+    "short",
+    "--samples-per-case",
+    "64",
+    "--compile",
+    "--gpu-hours",
+    "17",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1"
+  ]
+}

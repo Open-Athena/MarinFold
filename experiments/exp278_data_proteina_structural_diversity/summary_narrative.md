@@ -1,23 +1,30 @@
-# Summary slides — exp: diversify contacts-v1 with Proteina-generated monomers
+## Proteina structural-diversity pilot (exp278)
 
-<!-- Feeds plots/summary.pdf via build_summary.py.
-     One `## ` heading per slide; body text becomes the slide.
-     Keep this current as the experiment progresses. -->
+Question: can synthetic monomer backbones provide diverse, usable contacts-v1 training documents at million-document scale?
 
-## What we're doing
+Issue #278 is approved through a capped pilot and conditional scale-up milestones. Draft PR #282 contains the implementation and small result artifacts. No generated documents have entered training.
 
-Can fold-conditioned Proteina generation supply one million useful, structurally diverse, sequence-paired monomer documents of length 60–500, at an acceptable cost per retained structure?
+## Pipeline and current measurements
 
-## Why
+Proteina CA traces → CA ProteinMPNN sequences → ESMFold full backbone → geometry/self-consistency checks → native-only pyconfind → contacts-v1.
 
-Length-stratified, fold-balanced generation followed by sequence design, refolding and structural selection will increase structural coverage relative to unconditional generation. Whether that coverage improves MarinFold must be tested with a fixed-token training comparison; generating more documents alone does not establish value.
+At 60 aa: 230/256 pass quality; 152/256 remain after evaluation decontamination and a five-per-fine-cluster cap.
+At 100 aa: 205/256 pass quality; 151/256 remain after the same filters.
 
-## Results so far
+At 200 aa: 164/256 pass the corrected quality gate. A trans-only CA-distance bug was fixed to recognize explicitly validated cis-proline bonds; original predictions remain immutable.
 
-Issue #278 filed and execution authorized.
-One-H100 smoke test on cw-rno2a is validating the environment.
-Five geometry checks pass locally.
-Four 100-aa backbones generated at 1.803 seconds each (batch 4, uncompiled).
-Two passed self-consistency and confidence checks and serialized to contacts-v1.
-ESMFold normalized-confidence units were corrected before filtering.
-Next: end-to-end smoke, then a pilot capped at 100 H100-hours.
+Longer lengths are still running. The pilot cap is 100 H100-hours.
+
+## Diversity is a separate result
+
+Broad CATH conditioning produces the expected alpha/beta composition. Fine-cluster effective counts have not improved over matched unconditional controls in the short screens (~0.92× at 60 aa; 1.00× at 100 aa after decontamination).
+
+These samples do not meet the 1.5× research target. The 100-aa control is almost all singletons at this small sample size. Broader connected-component metrics are exploratory and are not equivalent to CATH fold counts.
+
+## Cost and numerical validation
+
+500-aa sampling at batch 24: 10.16 seconds/backbone with reference float32 matmuls; 5.00 seconds with TF32 enabled. Both use 62.45 GB of an H100.
+
+Matched-seed structures can change (median RMSD 0.125 Å, max 7.06 Å); the faster setting is undergoing a separate refolding check. ESMFold currently averages about 0.64 seconds at 60–100 aa.
+
+Production cost and scale-up remain conditional on the completed length-stratified screen, acceptance yield and duplicate growth.

@@ -1,0 +1,82 @@
+[
+  {
+    "length": 60,
+    "generated_cases": 4,
+    "fold_submitted": true,
+    "fold_complete": true,
+    "candidates": 256,
+    "quality_pass": 229,
+    "runner_tag": "iris",
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "gpu_total_memory_gb": 85.019590656,
+    "gpu_compute_capability": "9.0",
+    "hostname": "gb95a00",
+    "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+    "torch_version": "2.4.1+cu124",
+    "timestamp_utc": "2026-09-09T19:11:54.661125+00:00",
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+  },
+  {
+    "length": 100,
+    "generated_cases": 4,
+    "fold_submitted": true,
+    "fold_complete": true,
+    "candidates": 256,
+    "quality_pass": 198,
+    "runner_tag": "iris",
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "gpu_total_memory_gb": 85.019590656,
+    "gpu_compute_capability": "9.0",
+    "hostname": "gb95a00",
+    "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+    "torch_version": "2.4.1+cu124",
+    "timestamp_utc": "2026-09-09T19:16:23.631081+00:00",
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+  },
+  {
+    "length": 200,
+    "generated_cases": 4,
+    "fold_submitted": true,
+    "fold_complete": true,
+    "candidates": 256,
+    "quality_pass": 158,
+    "runner_tag": "iris",
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "gpu_total_memory_gb": 85.019590656,
+    "gpu_compute_capability": "9.0",
+    "hostname": "gb95a00",
+    "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+    "torch_version": "2.4.1+cu124",
+    "timestamp_utc": "2026-09-09T19:27:15.156254+00:00",
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+  },
+  {
+    "length": 300,
+    "generated_cases": 4,
+    "fold_submitted": true,
+    "fold_complete": true,
+    "candidates": 256,
+    "quality_pass": 153,
+    "runner_tag": "iris",
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "gpu_total_memory_gb": 85.019590656,
+    "gpu_compute_capability": "9.0",
+    "hostname": "gb95a00",
+    "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+    "torch_version": "2.4.1+cu124",
+    "timestamp_utc": "2026-09-09T19:33:02.580105+00:00",
+    "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a"
+  },
+  {
+    "length": 400,
+    "generated_cases": 4,
+    "fold_parts_submitted": 4,
+    "fold_complete": false
+  },
+  {
+    "length": 500,
+    "generated_cases": 3,
+    "fold_parts_submitted": 3,
+    "fold_complete": false
+  }
+]

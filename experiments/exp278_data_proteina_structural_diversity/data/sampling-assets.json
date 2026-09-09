@@ -1,0 +1,233 @@
+[
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l60-unconditional",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l60-1.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l60-2.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l60-3.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-unconditional",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-1.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-2.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-3.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l200-unconditional",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l200-1.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l200-2.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l200-3.x.x.x",
+    "assets": [
+      {
+        "model": "short",
+        "filename": "proteina_v1.2_DFS_200M_notri.ckpt",
+        "bytes": 2293906151,
+        "sha256": "b5f4c1457fac0e7f54b909245b36b95ddd6bfd314ddd51973a202a3a5a2b6ce9"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l300-unconditional",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l300-1.x.x.x",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l300-2.x.x.x",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l300-3.x.x.x",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l400-unconditional",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l400-1.x.x.x",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l400-2.x.x.x",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l500-unconditional",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  },
+  {
+    "source_prefix": "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l500-1.x.x.x",
+    "assets": [
+      {
+        "model": "long",
+        "filename": "proteina_v1.6_DFS_200M_notri_long_chain_generation.ckpt",
+        "bytes": 2293906599,
+        "sha256": "6170e3d9d17c8785af0fd4e0be7c57c0b72827e274afb9994ee08b7de37f9396"
+      }
+    ]
+  }
+]

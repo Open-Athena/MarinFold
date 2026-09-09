@@ -1,0 +1,15 @@
+{
+  "candidates": 256,
+  "quality_pass": 230,
+  "after_decontamination": 182,
+  "after_cluster_cap": 152,
+  "retained_fraction": 0.59375,
+  "fine_clusters": 130,
+  "matched_diversity_after_decontamination": {
+    "matched_n_per_arm": 42,
+    "ratio_median": 0.9156903342351019,
+    "ratio_resampling_p025": 0.7028885083203911,
+    "ratio_resampling_p975": 1.1367726517555554
+  },
+  "release_status": "provisional: pilot diversity and scale-up gates pending"
+}

@@ -1,0 +1,21 @@
+{
+  "job_id": "/bizon/exp278-screen-long-v2",
+  "name": "exp278-screen-long-v2",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/b3e5bb731b80cfa252d08bb56ad2eeee28fdd12872cfd6ea39510f12c7738556.tar.gz",
+  "timeout_seconds": 64800,
+  "submitted_utc": "2026-09-09T19:06:59.432800+00:00",
+  "worker_args": [
+    "pilot_worker.py",
+    "--model",
+    "long",
+    "--samples-per-case",
+    "64",
+    "--compile",
+    "--gpu-hours",
+    "17",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1"
+  ]
+}

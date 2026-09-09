@@ -1,0 +1,24 @@
+{
+  "job_id": "/bizon/exp278-fold-l100-v1",
+  "name": "exp278-fold-l100-v1",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/3f19f6eb16efc4ba55994df0532a2429b1fe4e9f3c068164c950138cde87e55a.tar.gz",
+  "timeout_seconds": 10800,
+  "submitted_utc": "2026-09-09T19:13:56.591951+00:00",
+  "worker_args": [
+    "fold_worker.py",
+    "--esm-revision",
+    "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-unconditional",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-1.x.x.x",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-2.x.x.x",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-short-v1/short-l100-3.x.x.x",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l100-v1"
+  ]
+}
