@@ -493,12 +493,17 @@ def load_foldbench_universe(inputs: Inputs):
         on="stem", how="left", validate="one_to_one")
 
 
-def load_helico_per_target(inputs: Inputs, extra_path=None):
+def load_helico_per_target(inputs: Inputs, extra_path=None, extra_arm=None):
     """helico exp14's per-target structure scores, plus an arm re-run outside that publication.
 
     The published table is every arm as exp14 ran them; `extra_path` points at a CSV of the same
     shape holding an arm that was re-run since (currently the MarinFold arm on #232's step-363000
-    contacts). Both are recorded as inputs, so a figure cannot quietly be drawn from one of them.
+    contacts), and `extra_arm` names the one arm to take from it. Both files are recorded as
+    inputs, so a figure cannot quietly be drawn from one of them.
+
+    **Every figure that pools the two sources must come through here.** The published table now
+    carries the re-run arm, and a caller that fetches it and concatenates the local copy itself
+    counts that arm's targets twice — which reads as a narrower interval, not as an error.
     """
     import io
 
@@ -512,11 +517,27 @@ def load_helico_per_target(inputs: Inputs, extra_path=None):
                              "per-target scores; see the experiment README for how it was made")
         inputs.add_file(extra_path)
         extra = pd.read_csv(extra_path)
+        if extra_arm is not None:
+            extra = extra[extra.arm == extra_arm]
         missing = [column for column in frame.columns if column not in extra.columns]
         if missing:
             raise SystemExit(f"the re-run arm is missing {missing}; it has to carry the same "
                              "columns as the published table or the two cannot be pooled")
-        frame = pd.concat([frame, extra[frame.columns]], ignore_index=True)
+        # Anything the published table already carries wins, and the local copy of it is dropped.
+        # helico will eventually republish with the re-run arm included, and a plain concat then
+        # gives every one of its targets twice: the means do not move, but n doubles and the
+        # bootstrap intervals shrink — an error that shows up as unearned confidence rather than
+        # as a crash. This makes the two orderings of that publication equivalent.
+        already = frame[["arm", "target_id"]].drop_duplicates()
+        marked = extra.merge(already, on=["arm", "target_id"], how="left", indicator=True)
+        superseded = int((marked._merge == "both").sum())
+        extra = marked[marked._merge == "left_only"].drop(columns="_merge")
+        if superseded:
+            print(f"note: {superseded} of {superseded + len(extra)} rows in {extra_path.name} are "
+                  "already in the published table and were dropped in its favour"
+                  + ("; the local copy is now redundant and can be deleted" if extra.empty else ""))
+        if not extra.empty:
+            frame = pd.concat([frame, extra[frame.columns]], ignore_index=True)
     return frame
 
 

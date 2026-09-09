@@ -28,6 +28,13 @@ figures a manuscript needs, lettered A, B, C in reading order, and writes them t
 | [`figure_2.svg`](manuscript/figure_2.svg) | **A** R-precision, natural monomers · **B** R-precision, de novo designs |
 | [`figure_3.svg`](manuscript/figure_3.svg) | **A** Helico architecture · **B** GDT-TS, natural · **C** GDT-TS, designs · **D** GDT-TS against MSA depth · **E** lDDT against MSA depth — the MarinFold arm throughout is helico exp14's `mf_L_363k`, re-run on step-363000 contacts |
 
+**Render every panel of a figure in one environment.** matplotlib writes text as glyph outlines
+with ids like `DejaVuSans-47`, and different matplotlib versions number those ids differently — a
+font glyph index in some, a Unicode codepoint in others. Each panel still renders correctly alone,
+but composing panels from two versions makes one panel's letters replace the other's, and "GDT-TS"
+comes out as "d a q-qp". `assemble_figures.py` refuses to compose such a set; if it does, re-run
+every plot notebook for that figure in one place and assemble again.
+
 ```bash
 uv run --with svgutils python assemble_figures.py           # all three
 uv run --with svgutils python assemble_figures.py --only figure_2
