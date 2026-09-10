@@ -206,7 +206,11 @@ def replay_failures(
             )
         if canonical.n_true.iloc[0] != n_true:
             raise ValueError(f"{stem}/{key}: canonical withheld denominator differs")
-        selected.loc[where, "precision"] = old_precision
+        # Preserve the canonical CSV's float representation when the two raw
+        # integer-count scores are exactly equal; otherwise its round trip can
+        # invent a sub-ulp replay effect and turn a true tie into an improvement.
+        if old_precision != new_precision:
+            selected.loc[where, "precision"] = old_precision
         for index, (before, after) in enumerate(zip(original, current, strict=True)):
             rollout_reports.append(
                 {
