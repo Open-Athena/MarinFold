@@ -1,4 +1,4 @@
-"""Train exactly one scratch-initialized native/MPNN mixture configuration."""
+"""Train one scratch-initialized model for one complete native/MPNN epoch."""
 
 import os
 from dataclasses import replace
@@ -6,6 +6,7 @@ from datetime import timedelta
 
 import click
 from fray.types import ResourceConfig
+from levanter.data.text.datasets import ConcatDatasetComponent
 from levanter.optim.config import AdamConfig
 from marin.execution.lazy import ArtifactStep
 from marin.experiment.cli import build_options
@@ -20,34 +21,37 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
     MIN_LR_RATIO,
     MODEL_CONFIG,
     MODEL_SEED,
-    NUM_TRAIN_STEPS,
-    PERMANENT_CHECKPOINT_EVERY,
     SEQ_LEN,
     SHUFFLE,
     STEPS_PER_EVAL,
     WANDB_WATCH,
     WARMUP,
-    augment_amino_acids,
     existing_cache,
 )
 from experiments.exp277_models_single_mpnn_pilot.config import (
+    CORPORA,
+    EPOCH_PACKED_EXAMPLES,
+    EPOCH_TRAIN_STEPS,
     PREFIX,
     RUN_ID,
     VALIDATION_CACHE,
     VERSION,
-    training_corpora,
+)
+from experiments.exp277_models_single_mpnn_pilot.epoch_data import (
+    FULL_CORPUS,
+    one_epoch_data,
 )
 from experiments.exp277_models_single_mpnn_pilot.prepare import verify_cache
 from experiments.exp277_models_single_mpnn_pilot.runtime import run_train_job
 
 
 def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
-    """Retain exp232 m2-p06 training semantics while replacing its mixture."""
+    """Retain exp232 m2-p06 optimizer settings with finite full-corpus coverage."""
     if nodes not in (1, 2, 4, 8, 16):
         raise ValueError(f"Unsupported H100 gang size: {nodes}")
     per_device = min(8, GLOBAL_BATCH_SIZE // (8 * nodes))
     run_id = f"{RUN_ID}-smoke" if smoke else RUN_ID
-    steps = 10 if smoke else NUM_TRAIN_STEPS
+    steps = 10 if smoke else EPOCH_TRAIN_STEPS
     env = {
         "MARIN_PREFIX": PREFIX,
         "WANDB_ENTITY": "open-athena",
@@ -55,12 +59,16 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
     }
     datasets = {
         existing_cache(
-            name=f"input/{corpus.name}" if smoke else f"input/full/{corpus.name}",
+            name=(
+                f"input/full-epoch-smoke/{corpus.name}"
+                if smoke
+                else f"input/full-epoch/{corpus.name}"
+            ),
             version=VERSION,
             source=corpus.cache,
             tags=["contacts-v1", "decontaminated", corpus.name],
-        ): corpus.weight
-        for corpus in training_corpora(smoke=smoke)
+        ): 1.0
+        for corpus in CORPORA
     }
     validation = existing_cache(
         name="input/validation",
@@ -103,6 +111,7 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
             "m2",
             "p06",
             "scratch",
+            "full-corpus-one-epoch",
             "smoke" if smoke else "production",
             f"nodes={nodes}",
         ],
@@ -120,7 +129,7 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
             checkpointer=replace(
                 pod.train_config.trainer.checkpointer,
                 save_interval=timedelta(minutes=15),
-                keep=[] if smoke else [{"every": PERMANENT_CHECKPOINT_EVERY}],
+                keep=[] if smoke else [{"every": EPOCH_TRAIN_STEPS // 10}],
             ),
         )
         if not ctx.is_fingerprint:
@@ -129,20 +138,30 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
                 per_device_parallelism=per_device,
                 per_device_eval_parallelism=per_device,
             )
+        components = pod.train_config.data.components
+        children = {
+            dataset.name: replace(components[dataset.name], pack=True)
+            for dataset in datasets
+        }
         data = replace(
             pod.train_config.data,
             auto_build_caches=False,
             shuffle=SHUFFLE,
             components={
-                key: replace(value, pack=True)
-                for key, value in pod.train_config.data.components.items()
+                FULL_CORPUS: ConcatDatasetComponent(children=children),
+                validation.name: replace(components[validation.name], pack=True),
             },
+            train_weights={FULL_CORPUS: 1.0, validation.name: 0.0},
             block_cross_document_attention=True,
         )
         config = replace(
             pod.train_config,
             trainer=trainer,
-            data=augment_amino_acids(data, steps),
+            data=one_epoch_data(
+                data,
+                num_train_steps=steps,
+                expected_packed_examples=EPOCH_PACKED_EXAMPLES,
+            ),
             data_seed=DATA_SEED,
             initialize_from_checkpoint_path=None,
             initialize_model_from_checkpoint_path=None,
@@ -162,7 +181,7 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
 @build_options
 def main() -> ArtifactStep[LevanterCheckpoint]:
     smoke = os.environ.get("SMOKE") == "1"
-    for corpus in training_corpora(smoke=smoke):
+    for corpus in CORPORA:
         if not verify_cache(corpus):
             raise ValueError(f"Incomplete cache: {corpus.cache}")
     return build_run(smoke=smoke, nodes=int(os.environ["NODES"]))

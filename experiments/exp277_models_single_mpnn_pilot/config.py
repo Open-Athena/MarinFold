@@ -1,12 +1,13 @@
-"""Fixed scientific configuration for the single MPNN mixture pilot."""
+"""Audited complete corpora for the single-epoch native/MPNN pilot."""
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot"
 VERSION = "2026.09.09.1"
-RUN_ID = "contacts-v1-exp277-m2-p06-native-mpnn-1.5B"
+RUN_ID = "contacts-v1-exp277-m2-p06-full-epoch-1.5B"
 TOKENIZER = "eczech/contacts-v1-tokenizer-5d68a24a899f"
-AFDB_FRACTION = 4_432_940_838 / 74_475_864_003
+EPOCH_PACKED_EXAMPLES = 34_092_146
+EPOCH_TRAIN_STEPS = (EPOCH_PACKED_EXAMPLES + 127) // 128
 
 
 @dataclass(frozen=True)
@@ -18,7 +19,6 @@ class Corpus:
     cache: str
     documents: int
     shards: int
-    weight: float
     tokens: int | None = None
 
 
@@ -29,7 +29,6 @@ CORPORA = (
         "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
         3_963_003,
         2067,
-        AFDB_FRACTION / 2,
         4_432_940_838,
     ),
     Corpus(
@@ -38,7 +37,6 @@ CORPORA = (
         "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14",
         65_553_178,
         3338,
-        (1 - AFDB_FRACTION) / 2,
         70_042_923_165,
     ),
     Corpus(
@@ -47,7 +45,7 @@ CORPORA = (
         f"{PREFIX}/tokenized/mpnn-afdb/{VERSION}",
         31_702_680,
         199,
-        AFDB_FRACTION / 2,
+        35_352_543_972,
     ),
     Corpus(
         "mpnn-esm",
@@ -55,25 +53,7 @@ CORPORA = (
         f"{PREFIX}/tokenized/mpnn-esm/{VERSION}",
         130_872_044,
         3338,
-        (1 - AFDB_FRACTION) / 2,
+        138_755_354_859,
     ),
 )
 VALIDATION_CACHE = "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25"
-
-
-def training_corpora(*, smoke: bool) -> tuple[Corpus, ...]:
-    """Use audited small redesign caches for the isolated GPU startup test."""
-    if not smoke:
-        return CORPORA
-    sizes = {"mpnn-afdb": (160000, 21584525), "mpnn-esm": (39180, 40616645)}
-    return tuple(
-        replace(
-            corpus,
-            cache=f"{PREFIX}/smoke-tokenized/{corpus.name}",
-            documents=sizes[corpus.name][0],
-            tokens=sizes[corpus.name][1],
-        )
-        if corpus.name in sizes
-        else corpus
-        for corpus in CORPORA
-    )

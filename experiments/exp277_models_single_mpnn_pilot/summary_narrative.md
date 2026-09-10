@@ -1,18 +1,17 @@
-## One model to test sequence redesign
-Train contacts-v1 Qwen3 1.5B from scratch on native and ProteinMPNN-redesigned AFDB and ESM-Atlas documents. Companion to Zack's broader issue #274 sweep; tracked in issue #277.
+## One model, one complete corpus epoch
+Train contacts-v1 Qwen3 1.5B from scratch on all native and ProteinMPNN-redesigned AFDB and ESM-Atlas documents. Companion to Zack's broader issue #274 sweep; tracked in issue #277.
 
-## Fixed first-pass recipe
-Use exp232's winning m2-p06 optimizer: LR 0.001, weight decay 0.2. Preserve 5.9522% AFDB / 94.0478% ESM sampling and split each source equally between native and redesigned documents. Train for 145,200 steps (152.253B tokens), retaining amino-acid order augmentation and the original WSD schedule.
+## Full-corpus coverage
+232,090,905 documents and 248.584B raw tokens produce 34,092,146 packed examples. Concatenate the four complete caches, shuffle, and visit each example exactly once. No native/redesigned mixture weighting. One epoch is 266,345 updates at batch 128; the final batch has 114 real and 14 padding examples.
 
-## Placement and current status
-Iris inventory identified US-EAST-02A as the regional home of all four inputs. At placement time, 208 H100s were unallocated across 26 nodes. The isolated 16-node / 128-H100 smoke succeeded: ten updates, finite losses, and verified native/HF step-9 checkpoints with tokenizer files. Full redesigned tokenization is complete: 162.6 million documents / 174.1 billion tokens. The production run was submitted at 19:32 UTC on 2026-09-09 and passed startup verification: step 23, finite loss 6.70270, 0.864 seconds/step on all 128 H100s. Training is in progress. The first full LM validation passed at step 2,114 (loss 3.76525). Contact-prediction quality is not yet evaluated.
+## Optimizer and runtime
+Retain exp232 m2-p06: LR 0.001, weight decay 0.2, sequence length 8192, blocked attention, and scheduled amino-acid order augmentation. WSD warmup 10%, decay 20%, minimum LR ratio 0.1 spans the full epoch. Estimated duration: 66–68 hours on 128 H100s at batch priority in cw-us-east-02a.
+
+## Earlier run retained
+The original 50:50 weighted-mixture run was stopped intentionally at about step 69,556 on 2026-09-10 at 13:38 UTC when the requested objective changed. Latest validation loss: 3.10302. Permanent checkpoints through step 58,080 remain available. No production failures. Its metrics and history remain a separate record.
+
+## Validation and current status
+All four full caches are verified. The in-region packing audit used the trainer's exact implementation. Four tests passed, including finite coverage across unequal source sizes and a partial shuffle block. The existing document-length policy trims one trailing token in 862 documents; every document remains represented. Replacement GPU startup validation and submission are pending.
 
 ## Interpretation
-Compare first with exp232's matched-budget native-only checkpoint. The longer-trained best model is a separate reference. One seed and one mixture can provide an early answer but cannot settle the broader mixture sweep.
-
-
-## Validation completed
-Both tokenizer smoke caches exactly match fresh tokenization: 160,000 AFDB documents / 21.58M tokens and 39,180 ESM documents / 40.62M tokens. Two tests check the resolved production configuration and separation of smoke/production cache identities. Full AFDB preparation used streaming document-only reads and 32 GB workers after an 8 GB memory failure. ESM finished with 512 workers at 8 GB each. Both final cache totals were verified before production submission.
-
-## Forty-percent milestone
-At 10:46 UTC on 2026-09-10 the run reached step 58,402 / 145,200. Validation loss declined across twenty-seven passes from 3.76525 to 3.10894. Permanent checkpoints at steps 14,520, 29,040, 43,560, and 58,080 are saved. The stable LR is 0.001. No production restarts.
+One seed provides an initial answer to the redesign question. Compare with the native-only winner while reporting the different training exposure. Contact-prediction quality has not yet been evaluated.
