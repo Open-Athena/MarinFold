@@ -1,0 +1,45 @@
+---
+marinfold_run:
+  user: bizon
+  launched_at: '2026-09-10T13:56:19Z'
+  experiment: exp277_models_single_mpnn_pilot
+  kind: models
+  short_description: One finite epoch over all 232M native and MPNN documents, 1.5B
+    model
+  wandb:
+    url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B
+    entity: open-athena
+    project: MarinFold
+    run_id: contacts-v1-exp277-m2-p06-full-epoch-1.5B
+    run_name: contacts-v1-exp277-m2-p06-full-epoch-1.5B
+  git_sha: 9783b3848045c54a725daf31e59a14522b6e78d5
+  iris_job_ids:
+  - /bizon/exp277-train-a02
+  - /bizon/exp277-train-a02/exp277-train-8c393c8d
+---
+
+# 2026-09-10 · exp277_models_single_mpnn_pilot · contacts-v1-exp277-m2-p06-full-epoch-1.5B
+
+**Launched:** 2026-09-10T13:56:19Z by bizon  
+**Kind:** models  
+**Experiment:** exp277_models_single_mpnn_pilot  
+**W&B:** [contacts-v1-exp277-m2-p06-full-epoch-1.5B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B)  
+**Git:** `9783b384`  
+
+## Description
+
+One finite epoch over all 232M native and MPNN documents, 1.5B model
+
+## Detailed plan
+
+Train a scratch Qwen3 1.5B for one epoch over the complete native and ProteinMPNN-redesigned AFDB/ESM corpus: 232,090,905 documents, 248,583,762,834 raw tokens, 34,092,146 packed examples. Exactly 266,345 updates at batch 128 / sequence 8192; final batch has 114 real examples and 14 zero-padding examples. Finite concatenation followed by block shuffling ensures every packed example is visited once. Retain m2-p06 LR 0.001, weight decay 0.2, WSD warmup 10% / decay 20% / minimum LR ratio 0.1, blocked attention, and scheduled amino-acid order augmentation.
+
+## Changes from previous runs
+
+Replaces the original 50:50 weighted-mixture pilot at the user’s request. The original run was intentionally stopped near step 69,556; this run starts from scratch with a separate W&B/checkpoint identity. Sampling proportions now follow the complete corpus rather than preset source weights. The exact packing audit retains every document; the existing 8192-token limit trims one trailing token from each of 862 documents.
+
+## Notes
+
+Submitted 2026-09-10 at 13:54:56 UTC on cw-us-east-02a, 16 nodes / 128 H100s at batch priority. Source commit 9783b384. Four local configuration/coverage tests passed and the full-corpus ten-step GPU smoke succeeded, including native/HF checkpoint export with tokenizer files. All production workers are running and W&B initialized. Startup verified at 14:06:54 UTC: step 65 / 266,345, finite train loss 5.90443, step duration 0.85815 seconds, throughput 1.222M tokens/s. The full packed-example cardinality check passed; the log confirms scratch initialization. Packing and distributed startup took about nine minutes. Continuous monitoring remains active.
+
+Checkpoint base: `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/checkpoints/step-<N>/`. Temporary recovery saves every 15 minutes use the standard same-region 14-day checkpoint mirror. Permanent saves every 26,634 steps and at completion; final expected native/HF checkpoint step is 266,344. HF exports use the sibling `hf/step-<N>/` directory. No restart so far.

@@ -1,4 +1,4 @@
-corpus,documents,tokens,mixture_weight,cache
+corpus,documents,tokens,initial_run_mixture_weight,cache
 native-afdb,3963003,4432940838,0.029760922530696888,s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14
 native-esm,65553178,70042923165,0.4702390774693031,s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14
 mpnn-afdb,31702680,35352543972,0.029760922530696888,s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-afdb/2026.09.09.1
