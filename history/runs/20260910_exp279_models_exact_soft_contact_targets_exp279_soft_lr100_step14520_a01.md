@@ -15,8 +15,8 @@ marinfold_run:
   git_sha: 5e11b8a6847f79b00a572f5c9777a9394fd69ee9
   iris_job_ids:
   - /bizon/exp279-lr100-rno-pilot-a01
+  - /bizon/exp279-lr100-rno-full-a02
 ---
-
 # 2026-09-10 · exp279_models_exact_soft_contact_targets · exp279-soft-lr100-step14520-a01
 
 **Launched:** 2026-09-10T14:45:13Z by bizon  
