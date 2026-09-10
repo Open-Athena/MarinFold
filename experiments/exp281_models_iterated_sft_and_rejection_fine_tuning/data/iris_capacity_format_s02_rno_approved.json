@@ -1,0 +1,89 @@
+{
+  "approval": "User approved RNO2A recovery on 2026-09-10, approximately 53 GB cross-region checkpoint I/O",
+  "records": [
+    {
+      "cluster": "cw-rno2a",
+      "reachable": true,
+      "availability": [
+        {
+          "version": 3,
+          "observation_epoch_ms": "1789049766673",
+          "amounts": {
+            "h100": "488"
+          },
+          "total_amounts": {
+            "h100": "512"
+          },
+          "held_by_band": [
+            {
+              "band": "PRIORITY_BAND_INTERACTIVE",
+              "amounts": {
+                "h100": "24"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cluster": "cw-us-east-02a",
+      "reachable": true,
+      "availability": [
+        {
+          "version": 3,
+          "observation_epoch_ms": "1789049765907",
+          "amounts": {
+            "h100": "0"
+          },
+          "total_amounts": {
+            "h100": "256"
+          },
+          "held_by_band": [
+            {
+              "band": "PRIORITY_BAND_INTERACTIVE",
+              "amounts": {
+                "h100": "8"
+              }
+            },
+            {
+              "band": "PRIORITY_BAND_BATCH",
+              "amounts": {
+                "h100": "248"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cluster": "cw-us-east-08a",
+      "reachable": true,
+      "availability": [
+        {
+          "version": 3,
+          "observation_epoch_ms": "1789049767918",
+          "amounts": {
+            "gb200": "112"
+          },
+          "total_amounts": {
+            "gb200": "832"
+          },
+          "held_by_band": [
+            {
+              "band": "PRIORITY_BAND_SYSTEM",
+              "amounts": {
+                "gb200": "704"
+              }
+            },
+            {
+              "band": "PRIORITY_BAND_BATCH",
+              "amounts": {
+                "gb200": "16"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

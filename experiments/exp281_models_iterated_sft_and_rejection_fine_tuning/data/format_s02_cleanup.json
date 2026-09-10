@@ -1,0 +1,11 @@
+{
+  "failed_job": "/bizon/exp281-format-s02",
+  "aborted_uploads": [
+    {
+      "key": "protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-1750/trainer.pt",
+      "initiated": "2026-09-09T22:07:39+00:00",
+      "parts": 116,
+      "bytes": 6811549696
+    }
+  ]
+}

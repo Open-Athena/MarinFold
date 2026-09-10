@@ -16,6 +16,7 @@ marinfold_run:
   iris_job_ids:
   - /bizon/exp281-format-s02
   - /bizon/exp281-format-s02-r1
+  - /bizon/exp281-format-s02-rno-r1
 ---
 # 2026-09-09 · exp281_models_iterated_sft_and_rejection_fine_tuning · exp281-format-s02
 
@@ -81,3 +82,11 @@ explicit approval for approximately 53 GB of cross-region checkpoint I/O.
 
 Step 2,000 and final free-running evaluation are not complete. Partial metrics,
 raw history, publication timings and plots are committed in the experiment.
+
+On 2026-09-10 the user explicitly approved the RNO2A recovery and its estimated
+53 GB of cross-region checkpoint I/O. The east-region recovery had never begun
+training (Kueue scheduling gate); it was cancelled and confirmed killed before
+submitting `/bizon/exp281-format-s02-rno-r1` at 14:17:25 UTC. The new attempt uses
+eight H100s, batch priority, the unchanged training source fingerprint, and the
+same step-1,500 checkpoint/run/config. The submission bundle revision is
+`81448651`; its training source matches `4721c76c` byte-for-byte.

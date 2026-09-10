@@ -476,6 +476,15 @@ The capacity snapshot in `data/iris_capacity_format_s02_recovery.json` showed ze
 free H100s there and 511 in RNO2A. An RNO2A recovery is prepared but not submitted:
 its approximately 53 GB of cross-region checkpoint I/O requires explicit approval.
 
+On September 10 the user approved that transfer. The east-region recovery was
+still blocked by the scheduler and had not trained; it was cancelled before
+launching `/bizon/exp281-format-s02-rno-r1` on eight RNO2A H100s at 14:17:25 UTC.
+The unchanged trainer restored step 1,500 and resumed updates. The cleanup audit
+in `data/format_s02_cleanup.json` confirms one abandoned 6.81 GB multipart upload
+was removed. `_scripts/run_continuation_eval.py` prepares the same two evaluation
+modes sequentially on one GPU, sharing a single approximately 5.9 GB model mirror
+and refusing models above its explicit 9 GB transfer bound.
+
 `data/format_s02_training.csv` preserves the latest observed metrics by global
 optimizer step; the raw W&B history is saved separately. On rollback, replayed
 steps replace their earlier metrics in the CSV. Reporting helpers live under
