@@ -30,6 +30,11 @@ def main() -> None:
     if not 1 <= args.workers <= 8:
         raise ValueError("Expected one to eight local GPU workers")
     started = time.monotonic()
+    cache = Path("/tmp/exp254-m2-p06-step145199")
+    cached = all(
+        (cache / name).exists() and (cache / name).stat().st_size == size
+        for name, (size, _) in MODEL_FILES.items()
+    )
     model = stage_model(MODEL_URI)
     write_json(
         f"{args.out}/staging-{args.workers}.json",
@@ -38,6 +43,7 @@ def main() -> None:
             "files": MODEL_FILES,
             "bytes": sum(size for size, _ in MODEL_FILES.values()),
             "stage_seconds": time.monotonic() - started,
+            "cache_reused": cached,
             "destination_cluster": "cw-rno2a",
             "workers": args.workers,
         },

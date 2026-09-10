@@ -19,11 +19,10 @@ import numpy as np
 import pandas as pd
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
-
+import matplotlib.pyplot as plt
 from analyze_conditioning import paired_interval
 from build_summary import save_plot_with_meta
+from matplotlib.lines import Line2D
 
 FAMILIES = (
     ("true", "True (oracle)", "#15803d"),
@@ -233,7 +232,7 @@ def draw(
         va="bottom",
         fontsize=9,
         color="#be123c",
-        bbox=dict(facecolor="white", edgecolor="none", pad=2),
+        bbox={"facecolor": "white", "edgecolor": "none", "pad": 2},
     )
     axes[0].set_title(
         "A  Practical decoding\nFull map vs source + fresh iid (200)",

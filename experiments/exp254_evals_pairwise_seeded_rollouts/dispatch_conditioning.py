@@ -20,7 +20,10 @@ uv pip install --python "$VLLM_PY" --no-deps \
   multidict==6.6.3 yarl==1.20.1 aiosignal==1.4.0 attrs==23.2.0 \
   propcache==0.3.2 jmespath==1.0.1 python-dateutil==2.9.0.post0 six==1.17.0 \
   pandas==2.3.0 pyarrow==19.0.1 gemmi==0.6.5 aiohappyeyeballs==2.6.1 pytz==2025.2 tzdata==2025.2 \
-  transformers==5.15.0
+  transformers==5.15.0 safetensors==0.8.0 tokenizers==0.22.2 huggingface-hub==1.28.0 regex==2026.7.19
+# LOTA requires the standard S3 checksum policy for required checksums only.
+# The newer SDK's optional streaming-checksum default stalls even tiny PUTs.
+export FSSPEC_S3=$(uv run --no-project "$VLLM_PY" -c 'import json,os; c=json.loads(os.environ["FSSPEC_S3"]); c["config_kwargs"].update(request_checksum_calculation="when_required",response_checksum_validation="when_required"); print(json.dumps(c))')
 export PYTHONPATH="$PWD/library${PYTHONPATH:+:$PYTHONPATH}"
 uv run --no-project "$VLLM_PY" -c 'import pandas, gemmi; from vllm import LLM, SamplingParams; from transformers import AutoTokenizer; print("Inference imports passed", flush=True)'
 export VLLM_PORT=$(uv run --no-project --no-sync "$VLLM_PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
