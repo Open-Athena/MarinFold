@@ -44,4 +44,6 @@ Same model, Adam moments, RNG, data position, frozen decontaminated caches, batc
 
 ## Notes
 
-Runtime source is the frozen manifest revision above; later launcher-checkout commits only update records. All three continuations share the same source/input identity, recorded in the experiment data/lr_sweep_launch.json. Runs are ongoing; no validation winner is established.
+Runtime source is the frozen manifest revision above; later launcher-checkout commits only update records. All three continuations share the same source/input identity, recorded in the experiment data/lr_sweep_launch.json. Completed all 5,000 additional updates at step 19520 on 2026-09-10; exact Iris dispatch succeeded without failures or preemptions. Final ordinary document CE 3.360617; contact-endpoint CE 4.367665. The 0.001 control leads both metrics in this continuation test.
+
+Final native checkpoint: `s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr150-step14520-a01/step-19520`. Full model/Adam/RNG array-manifest shapes and dtypes verified. HF model/config/tokenizer file presence verified at `s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr150-step14520-a01/hf/step-19520`; final weights were not fully reloaded or evaluated for contact accuracy. Final results and curves are recorded in the experiment data/lr_completion.json and data/lr_validation.csv.

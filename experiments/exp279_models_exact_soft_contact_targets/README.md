@@ -305,7 +305,7 @@ scaling across all three branches, independently derived endpoint masks and CE,
 resume identity guards, shell/resource checks, and a local GPU run through the
 stock training entry point. The production parent's full model/optimizer/RNG
 array manifest passed the strict restore preflight. The distributed full-model
-pilot remains required before the sweep is treated as operationally validated.
+pilot subsequently passed, as recorded below.
 
 The user approved Reno cross-region storage access. The two-update distributed
 pilot `/bizon/exp279-lr100-rno-pilot-a01` completed successfully on 2026-09-10,
@@ -315,10 +315,10 @@ parent at update 14521, applied LR 0.001 immediately, and logged ordinary CE
 manifest, own-run resume position (14523), and HF weights/tokenizer were verified.
 `data/lr_pilot_result.json` preserves the evidence. These two updates belong to
 [the control trial](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr100-step14520-a01)
-and are included in its fixed 5,000-update budget. This is operational validation;
-no LR comparison result is available yet.
+and are included in its fixed 5,000-update budget. This pilot establishes
+operational validation; the final LR results are below.
 
-All three full continuations are running on Reno, each on 32 H100s at batch
+All three full continuations completed on Reno, each on 32 H100s at batch
 priority, with identical source/input manifests. Their immutable dispatch record
 is `data/lr_sweep_launch.json`:
 
@@ -338,7 +338,48 @@ of compute per branch plus evaluation/checkpoint overhead.
 Both higher rates show early loss spikes. Over the same first 23 updates,
 the peak training losses are 3.3050 (1x), 5.1286 (1.5x), and 9.1566 (2x);
 clipping fires on 0, 5, and 15 updates respectively. `data/lr_first_23_updates.csv` records
-all three branches at the same first 23 updates. These training diagnostics do
-not establish a validation improvement or a winner. Both higher-rate branches
-remain within the approved fixed budget; their first scheduled validation is
-still pending at this launch check. The original production run is unchanged.
+all three branches at the same first 23 updates. These early training diagnostics
+alone do not establish a validation winner. The final matched validation results
+follow. The original production run is unchanged.
+
+### Final learning-rate results (2026-09-10)
+
+All three branches completed exactly 5,000 additional updates, at final logged
+step **19520**, with successful four-worker Iris exits and no failures or
+preemptions. Both columns below are ordinary one-hot CE (nats; lower is better).
+Document CE averages the full validation set; endpoint CE uses contact-endpoint
+positions in the same fixed 128 validation packs across branches.
+
+| Learning rate | Document CE | Contact endpoint CE |
+| --- | ---: | ---: |
+| **0.001** | **3.350010** | **4.351321** |
+| 0.0015 | 3.360617 | 4.367665 |
+| 0.002 | 3.360499 | 4.358667 |
+
+The 0.001 control leads both metrics at every shared evaluation point. Keep
+**0.001** for now: neither higher rate improved validation within this budget.
+The higher-rate branches recovered from their early spikes and narrowed the gap;
+this is one seed and an abrupt mid-training LR change, not a test of higher LR
+from initialization or with a transition ramp. It does not measure gradient
+variance or establish whether soft targets outperform a tuned one-hot control.
+Contact-map accuracy has not been evaluated for these checkpoints.
+
+All 15,000 logged training losses are finite. Over the complete 5,000 updates,
+clipping occurred 54 / 77 / 78 times at LR 0.001 / 0.0015 / 0.002. Median update
+times were 3.512 / 3.501 / 3.508 seconds. Final native checkpoint metadata and
+full model/Adam/RNG array-manifest shapes and dtypes passed verification for each
+run. HF model, config and tokenizer files exist at each final step. This check
+reads manifests and checks file existence; it does not reload all weight bytes
+or run inference on the final exports. All three trial gangs have exited,
+releasing their 96 H100s. The original production run continues independently.
+
+The final metric/checkpoint record is `data/lr_completion.json`; full validation
+curves and aggregate training diagnostics are `data/lr_validation.csv` and
+`data/lr_training_summary.csv`. Reproduce collection with
+`python -m experiments.exp279_models_exact_soft_contact_targets.analysis.collect_lr_results`
+and the plot with
+`python -m experiments.exp279_models_exact_soft_contact_targets.analysis.plot_lr_results`
+in this experiment's environment. The analysis scripts are outside the frozen
+training runtime source set and do not change the worker code hash.
+
+![Matched learning-rate validation curves](plots/lr_validation.png)
