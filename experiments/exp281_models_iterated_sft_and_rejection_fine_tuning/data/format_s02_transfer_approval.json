@@ -1,0 +1,11 @@
+{
+  "status": "submitted",
+  "target_cluster": "cw-rno2a",
+  "source_commit": "4721c76c",
+  "input_artifact_gb": 17.66,
+  "remaining_checkpoint_output_gb": 35.32,
+  "estimated_total_artifact_io_gb": 53,
+  "notes": "One recovery attempt from step 1500; preserve same run/config. Model and optimizer read plus steps 1750/2000 written to the existing east02a bucket. Credentials injected privately at dispatch, never in this proposal.",
+  "approved_at_utc": "2026-09-10T14:16:54.464219+00:00",
+  "approval": "User: Approve; one recovery attempt with approximately 53 GB cross-region checkpoint I/O."
+}

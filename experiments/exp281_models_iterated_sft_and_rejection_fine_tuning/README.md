@@ -387,11 +387,10 @@ attempt's replayed validation points when plotting this result.
 
 The raw-output audit independently agrees with the scoring CSVs. Lower aggregate
 teacher-forced loss was insufficient to teach the rare finalization transitions.
-The 256-step trial does not test the intended long SFT horizon. The next format
-trial should extend warm-up toward the proposed 2,000 steps and report natural-marker
-and termination losses separately before lowering hypothesis weight. A short-history
-curriculum or stronger transition supervision are additional candidate interventions. This is a proposed follow-up,
-not a completed comparison or evidence that any particular change will work.
+The 256-step trial does not test the intended long SFT horizon. The follow-up
+below extends warm-up to 2,000 steps and reports natural-marker and termination
+losses separately before lowering hypothesis weight. A short-history curriculum
+and stronger transition supervision remain untested candidate interventions.
 No fixed-vs-refreshed SFT, rejection control, or FoldBench accuracy comparison has
 been run; the core synthesis/diversity research questions remain open.
 
@@ -439,70 +438,109 @@ the source fingerprint: resume training from the recorded `bab3f50a` source.
 - A 16-wide-head vLLM toy hit a FlexAttention compiler failure; the smoke uses
   64-wide heads to exercise the production attention path. No library was patched.
 
-### Extended format warm-up: partial result and recovery
+### Extended format warm-up: 2,000 steps completed
 
 [exp281-format-s02](https://wandb.ai/open-athena/MarinFold/runs/exp281-format-s02)
-continues the step-256 model toward global step 2,000, preserving Adam state,
+continues the step-256 model to global step 2,000, preserving Adam state,
 per-rank data offsets and RNG. The frozen corpus, batch 32, hypothesis weight 1
 and plain rehearsal stay fixed. LR rewarms over 100 steps to 1e-4, then decays
-to 1e-5 at step 2,000. Training source is `4721c76c`;
-`configs/continuation_plan.json` records training and the subsequent format gate.
-Nineteen tests and real CPU/GPU continuation/resume checks passed before launch.
+to 1e-5 at step 2,000. This adds 1,744 optimizer steps on the same 2,023 training
+documents. Training source is `4721c76c`; `configs/continuation_plan.json` records
+the training and evaluation settings. Nineteen tests and real CPU/GPU
+continuation/resume checks passed before launch.
 
-The first attempt reached step 1,750. Training minibatch loss fell to 0.002406,
-while held-out token loss rose from 2.244495 at step 256 to 5.946770. Natural
-final-marker loss rose from 6.584968 to 16.095710 and final-answer termination
-loss from 4.272908 to 13.313005. Their top-1 accuracies remained zero at every
-observed check. Those transition diagnostics contain only six natural markers
-and nine multi-document end tokens; they do not replace free-running evaluation.
-The diverging losses indicate pronounced overfitting of this small fixed corpus.
+The completed 400-sample evaluation still fails the fixed format gate:
+
+| Diagnostic | Step 256 | Step 2,000 |
+| --- | ---: | ---: |
+| Natural valid completions | 0/200 | 0/200 |
+| Forced valid completions | 14/200 (7%) | 4/200 (2%) |
+| Natural outputs containing the final marker | 8/200 | 98/200 |
+| Natural valid outputs with at least two nonempty hypotheses | 0/200 | 0/200 |
+| Natural final F1, invalid outputs scored zero | 0.0000 | 0.0000 |
+| Forced final F1, invalid outputs scored zero | 0.03193 | 0.01220 |
+| Held-out weighted token loss | 2.2445 | 6.0468 |
+
+![Format validity comparison](plots/format_comparison.png)
+
+Both evaluations use the same 25 internal-validation proteins, eight unselected
+completions per mode, seeds 281/282, and forced budgets 0/256/1,024/2,048.
+The final marker appears more often, but complete documents remain malformed.
+Natural failures include 61 incomplete contact triples and 45 cases where a
+contact token is not followed by two positions. In forced mode, 136/200 outputs
+fail with an unexpected hypothesis-start token. The raw-candidate audit independently
+agrees with the scoring CSVs; invalid outputs remain in every denominator.
+
+Final training minibatch loss is 0.001169. Natural final-marker loss rises from
+6.584968 at step 256 to 16.192715, and final-answer termination loss from 4.272908
+to 13.607997. Their top-1 accuracies remain zero at every observed check. These
+sparse diagnostics contain six natural markers and nine multi-document end tokens;
+the separate generation evaluation above establishes the format result.
+The diverging losses indicate pronounced overfitting of this small frozen corpus.
 This is not a test of larger refreshed SFT corpora or rejection fine-tuning.
 
 ![Continuation training and held-out loss](plots/format_s02_loss.png)
 
 ![Continuation transition diagnostics](plots/format_s02_transitions.png)
 
-The new 300-second publication deadline terminated the first attempt while
-saving step 1,750. Saves at 500, 750, 1,000, 1,250 and 1,500 each completed in
-97–101 seconds; step 1,500 is the latest complete checkpoint. The failed worker
-ran for 2,626.48 seconds. `/bizon/exp281-format-s02-cleanup` subsequently succeeded,
-cleaning only abandoned uploads from that failed attempt. Its audit is at
-`s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json`.
+### Continuation recovery, placement and artifacts
 
-Recovery `/bizon/exp281-format-s02-r1` resumes the same run and exact source/config
-from `s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-1500`.
-As of 2026-09-09 23:43 UTC, it is queued for eight H100s in US-EAST-02A.
-The capacity snapshot in `data/iris_capacity_format_s02_recovery.json` showed zero
-free H100s there and 511 in RNO2A. An RNO2A recovery is prepared but not submitted:
-its approximately 53 GB of cross-region checkpoint I/O requires explicit approval.
+The original continuation reached step 1,750, then its 300-second publication
+deadline terminated a stalled checkpoint upload. Saves at 500 through 1,500 had
+each completed in 97–101 seconds. The failed worker ran for 2,626.48 seconds.
+`/bizon/exp281-format-s02-cleanup` removed one abandoned 6.81 GB multipart upload;
+`data/format_s02_cleanup.json` preserves that audit.
 
-On September 10 the user approved that transfer. The east-region recovery was
-still blocked by the scheduler and had not trained; it was cancelled before
-launching `/bizon/exp281-format-s02-rno-r1` on eight RNO2A H100s at 14:17:25 UTC.
-The unchanged trainer restored step 1,500 and resumed updates. The cleanup audit
-in `data/format_s02_cleanup.json` confirms one abandoned 6.81 GB multipart upload
-was removed. `_scripts/run_continuation_eval.py` prepares the same two evaluation
-modes sequentially on one GPU, sharing a single approximately 5.9 GB model mirror
-and refusing models above its explicit 9 GB transfer bound.
+The east-region recovery remained blocked by the scheduler without beginning
+training. On September 10, the user approved approximately 53 GB of cross-region
+checkpoint I/O. That queued job was cancelled before launching
+`/bizon/exp281-format-s02-rno-r1` on eight RNO2A H100s at 14:17:25 UTC. The exact
+trainer/config restored complete step 1,500. Steps 1,750 and 2,000 both published
+successfully in 218.6 seconds, and the recovery worker finished in 1,349.15 seconds.
+The submission bundle revision was `81448651`; its training source matches
+`4721c76c`. Capacity, approval and execution records are under `data/`.
+
+The final model and tokenizer are at
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-2000`.
+`/bizon/exp281-format-s02-eval-rno` ran both generation modes and scoring on one
+RNO2A H100 in 472.22 seconds, using bundle `6ff2ca96` and the same generation source
+fingerprint. `_scripts/run_continuation_eval.py` shares one 5.886 GB model download
+between the two processes and refuses models above its explicit 9 GB transfer
+bound. Checkpoint optimizer state is excluded from inference staging.
 
 `data/format_s02_training.csv` preserves the latest observed metrics by global
-optimizer step; the raw W&B history is saved separately. On rollback, replayed
-steps replace their earlier metrics in the CSV. Reporting helpers live under
-`_scripts/`, leaving the active training source fingerprint unchanged. Run
-`uv run --no-project --with matplotlib python -m experiments.exp281_models_iterated_sft_and_rejection_fine_tuning._scripts.plot_continuation`
-from the repository root to regenerate these plots from committed data.
+optimizer step; raw W&B history is separate. Replayed steps replace their earlier
+metrics in the CSV. Median optimizer-step time is 1.064 seconds, excluding save
+and validation, and peak allocated GPU memory is 35.46 GB. Reporting helpers live
+under `_scripts/`, leaving the active training source fingerprint unchanged.
 
-Step 2,000 and its 400-completion natural/forced format evaluation are pending.
-Still required before scaling: pass free-running finalization and freeze
-production corpus sizes and the round schedule. Publication now fails within a
-bounded time, but the underlying intermittent upload stall remains unresolved.
+The public 2.19 MB report is at
+`hf://buckets/open-athena/MarinFold/data/exp281/format-s02/report.zip`, with matching
+W&B artifact `open-athena/MarinFold/exp281-format-s02-report:v0`. It contains raw
+candidates, scores, 50 captured timing rows, checkpoint checksums/config and the
+S3 URI index. `data/format_s02_public_report.json` pins its anonymously verified
+checksum. Timing rows retain shared batch latency, separate model load time and
+worker metadata; their source URI distinguishes natural and forced mode.
+
+Download/unzip the report, then run `analyze_trial.py /path/to/report --run-slug
+format_s02 --checkpoint-step 2000 --source-commit 4721c76c --bootstrap-targets 0`
+with `uv run --project` pointing to this experiment. From the repository root,
+run the `_scripts.plot_continuation` and `_scripts.plot_format_comparison` modules
+with `uv run --no-project --with matplotlib python -m` to regenerate the figures.
+`build_summary.py` assembles the saved figures and narrative without rerunning
+analysis.
+
+No synthesis or rejection round was launched because the format gate failed.
+The next design should address generalization and complete-document syntax before
+scaling: a larger, more varied format corpus, shorter initial histories, or stronger
+transition supervision are candidates, not tested remedies. The deadline now bounds
+upload failures, but the underlying intermittent storage stall is unresolved.
 
 ## Conclusion
 
-The first full-model trial is complete and fails the preregistered format gate.
-Repeated hypothesis generation appears, but natural and forced finalization remain
-unreliable. Improve format warm-up before starting synthesis-heavy SFT or rejection
-fine-tuning. This trial establishes full-model execution and checkpoint recovery,
-not improved contact accuracy or useful hypothesis diversity. Extended training
-through step 1,750 overfits the frozen pilot corpus; its final checkpoint and
-free-running evaluation remain pending recovery.
+Both format trials fail the preregistered gate. Extending the same small frozen
+corpus to 2,000 steps increases natural final-marker emission, but leaves natural
+validity at zero and reduces forced validity from 7% to 2%, while held-out loss
+rises sharply. More repetition of this corpus is insufficient for reliable
+finalization. The larger refreshed-SFT and rejection-training hypotheses remain
+untested; no improved contact accuracy or useful hypothesis diversity is established.

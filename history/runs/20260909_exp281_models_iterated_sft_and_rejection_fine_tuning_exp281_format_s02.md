@@ -17,6 +17,8 @@ marinfold_run:
   - /bizon/exp281-format-s02
   - /bizon/exp281-format-s02-r1
   - /bizon/exp281-format-s02-rno-r1
+  - /bizon/exp281-format-s02-eval-rno
+  - /bizon/exp281-format-s02-report
 ---
 # 2026-09-09 · exp281_models_iterated_sft_and_rejection_fine_tuning · exp281-format-s02
 
@@ -90,3 +92,29 @@ submitting `/bizon/exp281-format-s02-rno-r1` at 14:17:25 UTC. The new attempt us
 eight H100s, batch priority, the unchanged training source fingerprint, and the
 same step-1,500 checkpoint/run/config. The submission bundle revision is
 `81448651`; its training source matches `4721c76c` byte-for-byte.
+
+## Completed result: 2026-09-10
+
+RNO2A recovery succeeded through global step 2,000 in 1,349.15 worker seconds.
+Steps 1,750 and 2,000 each published in 218.6 seconds. Final checkpoint and
+tokenizer: `s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-2000`.
+
+Final training minibatch loss: 0.001169; held-out loss: 6.046831. Natural-marker
+loss: 16.192715; final-end loss: 13.607997. Both sparse transition accuracies
+remain zero. Extended repetition overfits the frozen pilot corpus.
+
+The final natural/forced evaluation and scoring succeeded on one RNO2A H100 in
+472.22 seconds, with one shared 5.886 GB inference-model download. Bundle
+revision: `6ff2ca96`; generation source fingerprint matches the planned version.
+Natural validity is 0/200; forced validity is 4/200 (2%), versus 0/200 and 14/200
+in the pilot. Natural final-marker emission increases to 98/200, but valid
+multiple-hypothesis trajectories remain absent. Invalid-zero final F1 is 0.0000
+natural and 0.01220 forced. The fixed format gate fails; no synthesis or RFT
+round was launched.
+
+All 400 candidates and 50 timing rows pass the independent report audit.
+The report job succeeded in 26.88 seconds and attached
+`open-athena/MarinFold/exp281-format-s02-report:v0`. The 2,193,427-byte report is
+public under `hf://buckets/open-athena/MarinFold/data/exp281/format-s02/report.zip`;
+anonymous download SHA256 verification passed. The experiment's `data/` records
+the exact checksum, raw history, canonical replay-aware CSV and per-input metrics.

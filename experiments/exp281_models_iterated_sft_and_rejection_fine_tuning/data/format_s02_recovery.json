@@ -14,12 +14,18 @@
   "source_commit": "4721c76c",
   "source_identity_verified": true,
   "training_configuration_changed": false,
-  "recovery_state": "submitted",
-  "last_checked_at_utc": "2026-09-10T14:17:52.388062+00:00",
+  "recovery_state": "succeeded",
+  "last_checked_at_utc": "2026-09-10T14:40:20Z",
   "cleanup_job": "/bizon/exp281-format-s02-cleanup",
   "cleanup_state": "succeeded",
   "cleanup_audit": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json",
   "rno_recovery_submitted": true,
   "cross_region_approval": "User approved 2026-09-10; approximately 53 GB checkpoint I/O",
-  "cancelled_queued_job": "/bizon/exp281-format-s02-r1"
+  "cancelled_queued_job": "/bizon/exp281-format-s02-r1",
+  "final_complete_step": 2000,
+  "recovery_worker_seconds": 1349.15,
+  "successful_recovery_publication_seconds": [
+    218.62009751796722,
+    218.62343879975379
+  ]
 }

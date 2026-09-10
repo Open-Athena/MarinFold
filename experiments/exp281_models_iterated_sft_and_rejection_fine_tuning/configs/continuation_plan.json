@@ -129,7 +129,9 @@
       "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/*/metrics.*",
       "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/eval/*/candidates/*",
       "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/history/*.md",
-      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json"
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/recovery-cleanup.json",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-2000/_SUCCESS.json",
+      "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s02/checkpoints/exp281-format-s02/step-2000/training.json"
     ]
   }
 ]

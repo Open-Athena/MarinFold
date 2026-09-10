@@ -4,58 +4,44 @@
 
 Can prolonged SFT teach a model to combine multiple structural hypotheses, then improve its histories through rejection selection?
 
-Warm up the multi format and explicit final-prediction token. Later use hypothesis weight 0.1 with full reference-answer supervision and refreshed corpora. Rejection ranks generated final answers but trains against reference contacts.
+Warm up the multi format and explicit final-prediction token. Later use hypothesis weight 0.1 with full reference-answer supervision and refreshed corpora. Rejection ranks generated final answers but trains against reference contacts. Forced switches occur between complete statements.
 
-## First full-model trial completed
+## Two format trials completed
 
-Current exp232-derived 1.5B model; one 8-H100 node on cw-us-east-02a, with all large I/O in its existing S3 bucket. Iris selected placement from live fleet capacity.
+Exp232-derived 1.5B model. The pilot trained 256 steps on eight H100s in US-EAST-02A. A continuation reached global step 2,000, preserving Adam state, data positions and RNG, with a 100-step LR rewarmup and decay.
 
-2,048 source-balanced proteins: 2,023 training, 25 sequence-hash-held-out. Sixteen bootstrap drafts, 50% plain rehearsal, hypothesis weight 1.0. Global batch 32, 256 optimizer steps, 8,192 training documents processed.
+Both use the same 2,023 training and 25 sequence-hash-held-out documents, sixteen bootstrap drafts, 50% plain rehearsal, hypothesis weight 1 and global batch 32. This is extended repetition of a small frozen corpus, not the proposed larger refreshed SFT experiment.
 
-W&B: open-athena/MarinFold/exp281-trial-s03. Source: bab3f50a. Final model: trial-s03/checkpoints/exp281-trial-s03/step-256 under the exp281 S3 prefix.
+W&B: exp281-trial-s03 and exp281-format-s02 in open-athena/MarinFold. Training sources: bab3f50a and 4721c76c.
 
-## Result: format gate failed
+## Result: extended training still fails the gate
 
-At step 256, sample eight completions per held-out protein in each mode. Natural seed 281; forced seed 282 and budgets 0/256/1024/2048.
+Same 25 proteins, eight completions per mode: 400 total at each checkpoint. Natural seed 281; forced seed 282, budgets 0/256/1024/2048. Invalid outputs remain in the denominator.
 
-Natural: 0/200 valid. Forced: 14/200 valid (7%). Both fall below the fixed 99% validity gate. The natural multiple-nonempty-hypothesis gate also fails.
+Natural validity: 0/200 at both step 256 and step 2,000. Forced validity: 14/200 (7%) falls to 4/200 (2%). Both fail the fixed 99% validity gate. No valid natural trajectory has two nonempty hypotheses.
 
-188/200 natural samples contain multiple raw section markers, but only 8/200 contain the final marker. In forced mode, 185/200 restart a hypothesis after the final marker. Repeated sections have appeared; reliable finalization has not.
+Natural final-marker emission rises from 8/200 to 98/200, but complete documents remain malformed. In forced mode, 136/200 outputs fail with an unexpected hypothesis-start token. More marker emission is insufficient for reliable finalization.
 
-## Lower loss did not imply finalization
+## The frozen corpus overfits
 
-Internal teacher-forced validation loss decreases from 2.781 at step 32 to 2.244 at step 256. Final training minibatch loss: 1.869.
+Held-out weighted token loss rises from 2.2445 at step 256 to 6.0468 at step 2,000. Final training minibatch loss is 0.00117.
 
-The corpus has only 500 supervised natural final markers per pass; the other 1,054 supervised markers are plain-mode starts. Aggregate contact-token loss can improve while the rare switching behavior remains unreliable.
+Natural final-marker loss rises from 6.585 to 16.193; final-answer termination loss rises from 4.273 to 13.608. Top-1 accuracy remains zero at all checks. These sparse diagnostics contain six natural markers and nine multi-document end tokens; the independent generation evaluation establishes the format failure.
 
-Invalid trajectories retain zero final F1: natural 0.0000, forced 0.03193. These are engineering/format diagnostics, not evidence of improved protein accuracy.
+Final F1 with invalid outputs scored zero: natural 0.0000; forced 0.01220, down from 0.03193 in the pilot. These are internal format/engineering diagnostics, not FoldBench accuracy claims.
 
-## Throughput and recovery
+## Recovery completed on RNO2A
 
-Peak allocated memory: 35.45 GB per H100. Median optimizer step: 1.049 seconds, excluding checkpoint publication and validation. A separate eight-step batch-8 profile reached 58,480 aggregate tokens/s after step 1.
+The first continuation attempt timed out publishing step 1,750 after five earlier saves completed in 97-101 seconds. The 300-second process deadline bounded the failure. Cleanup removed one abandoned 6.81 GB multipart upload.
 
-The original trial stalled publishing its step-128 optimizer, then a waiting rank aborted. Resume from complete step 64 succeeded through step 256. Long runs need bounded checkpoint retries. The canonical training CSV uses the successful resumed trajectory; W&B explicit-step logging suppressed replayed metrics after rollback.
+US-EAST-02A recovery remained scheduler-blocked. The user approved approximately 53 GB of cross-region checkpoint I/O; the queued job was cancelled before resuming step 1,500 on eight RNO2A H100s. Both remaining checkpoints published in 218.6 seconds. Recovery worker duration: 1,349 seconds. The intermittent storage stall remains unresolved.
 
-## Next gate and open research questions
+Median optimizer step: 1.064 seconds, excluding save/validation; peak allocation: 35.46 GB/GPU. Final model and tokenizer: format-s02/checkpoints/exp281-format-s02/step-2000 under the exp281 S3 prefix.
 
-Extend format warm-up toward the proposed 2,000 steps and track final-marker/termination losses separately before synthesis or rejection training. A short-history curriculum and stronger transition supervision are additional candidate interventions. This 256-step pilot does not test the intended long SFT horizon.
+## Evaluation, reproducibility and next decision
 
-The first trial establishes full-model execution and checkpoint recovery. It does not establish useful diversity, improved contact accuracy, or the benefit of refreshed SFT or rejection selection. FoldBench eval-test remains untouched.
+The final evaluation and scoring succeeded on one RNO2A H100 in 472 seconds, sharing one 5.886 GB model download across both modes. All 400 candidates and 50 captured timing rows are accounted for; raw-output and scoring audits agree.
 
-The public HF report and committed per-input metrics, diagnostics, timing CSVs, and plotting inputs preserve this negative result for reproduction.
+The 2.19 MB final report is public in the open-athena/MarinFold HF bucket at data/exp281/format-s02/report.zip. Anonymous download checksum verification passed. Raw histories, metrics, timings, checkpoint checksums, plots and run history preserve the result.
 
-## Continuation: overfitting through step 1,750
-
-Continue step 256 to 2,000 on the same corpus and eight-H100 placement. Preserve Adam state, data positions and RNG; rewarm LR over 100 steps, then decay. This isolates additional format training from changes to hypothesis count, sampling or loss weights.
-
-New diagnostics separate natural final-marker, final-answer and termination losses. Publication runs in a killable process with a five-minute deadline; complete checkpoints cannot be overwritten. Nineteen tests and real CPU/GPU continuation-resume checks pass.
-
-Training loss reaches 0.0024 while held-out loss rises from 2.2445 to 5.9468. Natural final-marker and final-answer termination accuracy remain zero in the sparse teacher-forced checks (six markers and nine end tokens). This is pronounced overfitting of the frozen pilot corpus, not a test of larger refreshed SFT or rejection training.
-
-## Continuation recovery is queued
-
-Step-1,750 checkpoint publication exceeded its 300-second deadline and failed the first attempt promptly. Five earlier checkpoints saved in 97-101 seconds; step 1,500 is complete. Cleanup of the failed attempt's abandoned uploads succeeded.
-
-Exact resume /bizon/exp281-format-s02-r1 is queued in US-EAST-02A as of September 9, 23:43 UTC. RNO2A has capacity, but moving the recovery requires approval for approximately 53 GB of cross-region checkpoint I/O.
-
-Step 2,000 and its evaluation remain pending. Final evaluation will use the same 25 proteins and 400 total completions as the pilot. Source: 4721c76c. No synthesis or rejection training has started.
+No synthesis or rejection round was launched. More repetitions of this small corpus are insufficient. A larger and more varied format corpus, shorter histories or stronger transition supervision are candidates for the next design, not tested remedies. The refreshed-SFT and rejection hypotheses remain open; FoldBench eval-test is untouched.
