@@ -48,6 +48,8 @@ Preparation required streaming document-only 128-row parquet batches and 32 GB w
 
 Replacement status (2026-09-10 14:06 UTC): the full-corpus packing audit, four configuration/coverage tests, and full-corpus GPU smoke passed. The smoke completed ten updates with finite losses and native/HF step-9 checkpoints including tokenizer files (`data/epoch_training_smoke.csv`). The new [production W&B run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B) was submitted at 13:54:56 UTC as `/bizon/exp277-train-a02`, using commit `9783b384`. Its GPU child is `/bizon/exp277-train-a02/exp277-train-8c393c8d`. All 16 workers are running at batch priority, with the 266,345-step target and finite full-corpus configuration verified in W&B. Startup verification passed at step 65 / 266,345: finite train loss 5.90443, 0.85815 seconds/step, and 1.222M tokens/s (`data/epoch_training_startup.csv`). The exact packed-example count check passed and logs confirm scratch initialization. Continuous monitoring is active. The earlier run had no production failures; its permanent checkpoints at steps 14,520, 29,040, 43,560, and 58,080 remain available.
 
+Full-epoch monitoring (2026-09-10 14:41 UTC): step 2,300 / 266,345, train loss 3.72747. The first full LM validation completed at step 2,114 with loss 3.90598 (`data/epoch_validation_progress.csv`). Recovery checkpoints at steps 366 and 1,355 completed successfully. No restart.
+
 ## Conclusion
 
 Pending training and routine eval-val scoring.

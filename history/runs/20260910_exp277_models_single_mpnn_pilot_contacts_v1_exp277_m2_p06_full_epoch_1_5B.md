@@ -45,3 +45,5 @@ Submitted 2026-09-10 at 13:54:56 UTC on cw-us-east-02a, 16 nodes / 128 H100s at 
 Checkpoint base: `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/checkpoints/step-<N>/`. Temporary recovery saves every 15 minutes use the standard same-region 14-day checkpoint mirror. Permanent saves every 26,634 steps and at completion; final expected native/HF checkpoint step is 266,344. HF exports use the sibling `hf/step-<N>/` directory. No restart so far.
 
 2026-09-10 14:19 UTC: step 863 / 266,345, train loss 3.95884, step duration 0.87900 seconds. First recovery checkpoint completed at step 366 at 14:11:39 UTC under the same-region temporary checkpoint mirror. No restart.
+
+First full LM validation completed on 2026-09-10 at 14:38:19 UTC: step 2,114, loss 3.90597725. Training resumed and reached step 2,300 by 14:41 UTC, with train loss 3.72747 and 0.86330 seconds/step. Recovery checkpoint rotation passed at step 1,355. No restart.
