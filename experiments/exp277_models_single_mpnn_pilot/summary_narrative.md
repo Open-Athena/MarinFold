@@ -14,5 +14,5 @@ Compare first with exp232's matched-budget native-only checkpoint. The longer-tr
 ## Validation completed
 Both tokenizer smoke caches exactly match fresh tokenization: 160,000 AFDB documents / 21.58M tokens and 39,180 ESM documents / 40.62M tokens. Two tests check the resolved production configuration and separation of smoke/production cache identities. Full AFDB preparation used streaming document-only reads and 32 GB workers after an 8 GB memory failure. ESM finished with 512 workers at 8 GB each. Both final cache totals were verified before production submission.
 
-## Ten-percent milestone
-At 23:36 UTC on 2026-09-09 the run reached step 15,239 / 145,200. Validation loss declined across seven passes from 3.76525 to 3.24531. The permanent step-14,520 checkpoint is saved. WSD warmup has ended; the stable LR is 0.001. No production restarts.
+## Twenty-percent milestone
+At 03:12 UTC on 2026-09-10 the run reached step 29,186 / 145,200. Validation loss declined across thirteen passes from 3.76525 to 3.16498. Permanent checkpoints at steps 14,520 and 29,040 are saved. The stable LR is 0.001. No production restarts.
