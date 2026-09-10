@@ -6,6 +6,22 @@ Frozen plan: 4.82 million raw backbones at lengths 60–500, four class arms, 76
 
 Preserve all backbones and sequences, including rejects. Quality-pass documents require decontamination and global diversity selection before training use.
 
+## Exact scale recipe
+
+Compiled Proteina 200M no-triangle checkpoints: short through 250 aa, long from 251 aa. Every integer length 60–500; unconditional, alpha, beta and mixed class requests; 400 steps; one CA ProteinMPNN sequence per backbone, temperature 0.1.
+
+ESMFold refolds each sequence (four recycles). Require CA self-consistency RMSD ≤2 Å, pLDDT ≥70 and cis-proline-aware CA geometry checks. Contacts-v1 labels use refolded geometry. Each independent single-GPU worker alternates sampling and refolding by case.
+
+## Initial scale results — September 10, 13:20 UTC
+
+15 h 49 m after launch: 476,976 saved backbones; 428,992 saved sequences; 427,152 committed refolds; 263,735 quality-pass provisional documents (61.7% of refolds).
+
+Quality retention by length: 60–100 aa 82.7%; 101–200 aa 72.2%; 201–300 aa 66.2%; 301–400 aa 62.7%; 401–500 aa 53.1%. These percentages precede decontamination and global structural selection.
+
+88 H100 pods active and 680 waiting, all batch priority; no terminal job failures at the check. The 18-hour review starts at 15:32 UTC / 11:32 EDT; keep generation running during review.
+
+Sources: RUN_SUMMARY.md and data/scale-20260909/reports/snapshot-20260910T132043Z.json, plus its per-case CSV.
+
 ## Proteina initial screen
 
 We filed experiment #278 and completed a 1,536-backbone screen on Iris H100s. The end-to-end pipeline produces valid contacts-v1 documents, and class conditioning changes secondary-structure composition.
@@ -42,4 +58,4 @@ Illustrative $2–4/H100-hour accounting gives $26,800–53,500 for the primary 
 
 A second sequence attempt rescued 5 of 32 identical 500-aa backbones: first 18/32; best-of-two 23/32; 231 extra inference seconds before decontamination.
 
-A/T labels, higher noise, the 400M triangle model, checkpoint overlap and a larger pilot remain untested. A scale run is now authorized; issue #278 and draft PR #282 retain the code, timing records and small result artifacts.
+A/T labels, higher noise, the 400M triangle model and a larger pilot remain untested; 250/251-aa crossover canaries subsequently passed integration checks. A scale run is now authorized; issue #278 and draft PR #282 retain the code, timing records and small result artifacts.
