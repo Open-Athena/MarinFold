@@ -5,7 +5,7 @@
 
 Uses the exp139 partially-digested contacts-v1 ESM-Atlas rows that already live
 in CoreWeave S3. The training gang is submitted directly through Fray with Iris
-batch priority, so child H100 jobs do not inherit the driver's interactive band.
+an explicit Iris priority band, so child GPU jobs do not depend on the driver's band.
 """
 
 import dataclasses
@@ -16,6 +16,7 @@ import socket
 from datetime import timedelta
 from pathlib import Path
 
+import draccus
 import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
@@ -42,9 +43,17 @@ from train import (
     _run_soft_target_with_pinned_tokenizer,
 )
 
+
+draccus.encode.register(SparsePrecomputedSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
+
 logger = logging.getLogger(__name__)
 
-IRIS_PRIORITY_BAND_BATCH = 3
+IRIS_PRIORITY_BANDS = {
+    "urgent": 0,
+    "interactive": 1,
+    "standard": 2,
+    "batch": 3,
+}
 PROFILE_LOG_DIR = Path("/tmp/exp177-levanter-logs")
 
 CW_ANALYZED_PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp139_esm_atlas_contacts_v1/analyzed"
@@ -67,6 +76,15 @@ def _forwarded_perf_env() -> dict[str, str]:
         for key, value in os.environ.items()
         if key.startswith(_FORWARD_ENV_PREFIXES) and key not in _FORWARD_ENV_EXCLUDE
     }
+
+
+def _iris_priority_band() -> int:
+    priority = os.environ.get("EXP177_CW_PRIORITY", "batch").lower()
+    if priority.isdigit():
+        return int(priority)
+    if priority not in IRIS_PRIORITY_BANDS:
+        raise ValueError(f"Unknown EXP177_CW_PRIORITY={priority!r}; expected one of {sorted(IRIS_PRIORITY_BANDS)}")
+    return IRIS_PRIORITY_BANDS[priority]
 
 
 def _resources() -> ResourceConfig:
@@ -235,6 +253,8 @@ def _pod_config(run_name: str):
         ),
         "EXP177_DATALOADER_PREFETCH_SIZE": os.environ.get("EXP177_DATALOADER_PREFETCH_SIZE", "8"),
         "EXP177_DATALOADER_MAX_BUFFERED_BATCHES": os.environ.get("EXP177_DATALOADER_MAX_BUFFERED_BATCHES", "64"),
+        "EXP177_SOFT_DIAGNOSTIC_BATCHES": os.environ.get("EXP177_SOFT_DIAGNOSTIC_BATCHES", "0"),
+        "EXP177_SOFT_DIAGNOSTIC_EVERY": os.environ.get("EXP177_SOFT_DIAGNOSTIC_EVERY", str(steps_per_eval)),
         # CoreWeave pods do not have GCS credentials. Set an explicit local cache
         # so resolve_training_env() does not default to marin's GCS temp bucket.
         "JAX_COMPILATION_CACHE_DIR": os.environ.get("EXP177_CW_JAX_CACHE_DIR", "/tmp/jax-compilation-cache"),
@@ -269,6 +289,7 @@ def _pod_config(run_name: str):
         tags=("protein", "contacts-v1", "exp177", "qwen3", "from-scratch", "loss=soft_target", "coreweave"),
         env_vars=env_vars,
     )
+    resume_checkpoint = os.environ.get("EXP177_RESUME_CHECKPOINT")
     trainer = dataclasses.replace(
         pod_config.train_config.trainer,
         max_eval_batches=max_eval_batches,
@@ -279,6 +300,8 @@ def _pod_config(run_name: str):
             save_interval=timedelta(minutes=checkpoint_interval_minutes),
             keep=[{"every": keep_every_steps}],
         ),
+        load_checkpoint=True if resume_checkpoint else pod_config.train_config.trainer.load_checkpoint,
+        load_checkpoint_path=resume_checkpoint or pod_config.train_config.trainer.load_checkpoint_path,
         profiler=ProfilerConfig(
             enabled=profiler_enabled,
             start_step=profiler_start_step,
@@ -343,7 +366,7 @@ def dispatch(wait: bool = True):
         ),
         resources=pod_config.resources,
         environment=environment,
-        priority=IRIS_PRIORITY_BAND_BATCH,
+        priority=_iris_priority_band(),
         processes_per_task=1,
         max_retries_failure=int(os.environ.get("EXP177_CW_MAX_RETRIES", "3")),
     )

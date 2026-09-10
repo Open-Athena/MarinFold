@@ -12,6 +12,7 @@ from datetime import timedelta
 from enum import StrEnum
 
 import draccus
+import haliax as hax
 import jmp
 from fray.types import ResourceConfig, get_tpu_topology, tpu_family, tpu_hbm_capacity_bytes
 from haliax import Axis
@@ -32,6 +33,8 @@ from levanter.data.loader import DataLoader
 from levanter.trainer import Trainer, TrainerConfig, initialize as initialize_trainer
 from levanter.utils.jax_utils import parameter_count
 from levanter.utils.mesh import MeshConfig
+import jax
+import jax.numpy as jnp
 import jax.random as jrandom
 import levanter.eval
 import levanter.tracker
@@ -53,6 +56,7 @@ from marinfold_models.document_loss import (
     SparseContactDocumentBatch,
     compact_contact_document_loss,
     sparse_contact_document_loss,
+    sparse_contact_document_metrics,
 )
 from premade_contacts_dataset import (
     FixedQuotaPremadeContactsDataset,
@@ -61,6 +65,7 @@ from premade_contacts_dataset import (
     MPFixedQuotaPremadeContactsDataset,
     MPFixedQuotaSoftTargetContactsDataset,
     PrecomputedSoftTargetContactsDataset,
+    SparsePrecomputedSoftTargetContactsDataset,
 )
 
 
@@ -68,6 +73,7 @@ draccus.encode.register(MPAugmentedContactOrderPremadeContactsDataset, lambda ob
 draccus.encode.register(MPFixedQuotaPremadeContactsDataset, lambda obj, decl_type=None: repr(obj))
 draccus.encode.register(MPFixedQuotaSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
 draccus.encode.register(PrecomputedSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
+draccus.encode.register(SparsePrecomputedSoftTargetContactsDataset, lambda obj, decl_type=None: repr(obj))
 
 logger = logging.getLogger(__name__)
 
@@ -417,6 +423,58 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
                 every=config.trainer.steps_per_eval,
             )
 
+            diagnostic_batches = int(os.environ.get("EXP177_SOFT_DIAGNOSTIC_BATCHES", "0"))
+            if diagnostic_batches > 0:
+                diagnostic_every = int(os.environ.get("EXP177_SOFT_DIAGNOSTIC_EVERY", str(config.trainer.steps_per_eval)))
+                diagnostic_tag = "contacts-v1/soft_target-train"
+
+                def _diagnostic_metrics(model: LmHeadModel, batch: SparseContactDocumentBatch) -> dict[str, jnp.ndarray]:
+                    return sparse_contact_document_metrics(
+                        model,
+                        batch,
+                        prefix=f"soft_train_diagnostics/{diagnostic_tag}",
+                    )
+
+                diagnostic_metrics = hax.named_jit(
+                    _diagnostic_metrics,
+                    axis_resources=trainer.compute_axis_mapping,
+                )
+                diagnostic_loader = None
+                diagnostic_iter = None
+
+                def log_soft_diagnostics(info, force: bool = False) -> None:
+                    del force
+                    nonlocal diagnostic_loader, diagnostic_iter
+                    if diagnostic_loader is None:
+                        diagnostic_loader = DataLoader(
+                            train_dataset,
+                            batch_size=config.trainer.eval_batch_size,
+                            max_buffered_batches=diagnostic_batches,
+                            mesh=trainer.device_mesh,
+                            axis_resources=trainer.compute_axis_mapping,
+                            prefetch_size=1,
+                            batch_axis_name=config.trainer.batch_axis_name,
+                            allow_nondivisible_batch_size=config.trainer.allow_nondivisible_batch_size,
+                        )
+                        diagnostic_iter = iter(diagnostic_loader)
+                    totals: dict[str, float] = {}
+                    count = 0
+                    for _ in range(diagnostic_batches):
+                        try:
+                            batch = next(diagnostic_iter)
+                        except StopIteration:
+                            diagnostic_iter = iter(diagnostic_loader)
+                            batch = next(diagnostic_iter)
+                        if not isinstance(batch, SparseContactDocumentBatch):
+                            raise TypeError(f"Soft diagnostics require SparseContactDocumentBatch, got {type(batch)}")
+                        metrics = diagnostic_metrics(info.model, batch)
+                        for key, value in metrics.items():
+                            totals[key] = totals.get(key, 0.0) + float(jnp.asarray(jax.device_get(value)).mean())
+                        count += 1
+                    levanter.tracker.log({key: value / count for key, value in totals.items()}, step=info.step)
+
+                trainer.add_hook(log_soft_diagnostics, every=diagnostic_every)
+
         prefetch_size = int(os.environ.get("EXP177_DATALOADER_PREFETCH_SIZE", "8"))
         max_buffered_batches = int(os.environ.get("EXP177_DATALOADER_MAX_BUFFERED_BATCHES", "64"))
         train_loader = DataLoader(
@@ -433,8 +491,9 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
 
 
 def _optimizer() -> AdamConfig:
+    learning_rate = float(os.environ.get("EXP177_LEARNING_RATE", "3.1623e-3"))
     return AdamConfig(
-        learning_rate=3.1623e-3,
+        learning_rate=learning_rate,
         weight_decay=0.2,
         beta1=0.9,
         beta2=0.95,

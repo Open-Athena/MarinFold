@@ -419,6 +419,210 @@ def compact_contact_document_loss(
     return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
 
 
+def _sparse_contact_example_losses_from_arrays(
+    activations_array: jax.Array,
+    log_normalizers_array: jax.Array,
+    lm_head_by_vocab: jax.Array,
+    contact_first_ids: jax.Array,
+    contact_second_ids: jax.Array,
+    second_neighbor_ids: jax.Array,
+    second_neighbor_counts: jax.Array,
+    second_neighbor_count: jax.Array,
+    contact_count: jax.Array,
+    prediction_start: jax.Array,
+    *,
+    contact_token_id: int,
+    end_token_id: int,
+) -> jax.Array:
+    """Compute per-example sparse contact soft-target losses from plain arrays."""
+
+    contact_token_id_array = jnp.asarray(contact_token_id, dtype=jnp.int32)
+    end_token_id_array = jnp.asarray(end_token_id, dtype=jnp.int32)
+
+    def one_example_loss(
+        activations_one,
+        log_z_one,
+        first_ids,
+        second_ids,
+        neighbor_ids,
+        neighbor_counts,
+        neighbor_count,
+        example_contact_count,
+        example_prediction_start,
+    ):
+        contact_axis = jnp.arange(first_ids.shape[0], dtype=jnp.int32)
+        valid_contacts = contact_axis < example_contact_count
+        contact_positions = jnp.clip(example_prediction_start + 1 + 3 * contact_axis, 0, activations_one.shape[0] - 1)
+        first_positions = jnp.clip(contact_positions + 1, 0, activations_one.shape[0] - 1)
+        contact_predict_positions = jnp.clip(
+            jnp.where(contact_axis == 0, example_prediction_start, contact_positions - 1),
+            0,
+            activations_one.shape[0] - 1,
+        )
+
+        contact_activations = activations_one[contact_positions]
+        first_activations = activations_one[first_positions]
+        contact_predict_activations = activations_one[contact_predict_positions]
+        contact_logit = jnp.sum(contact_predict_activations * lm_head_by_vocab[contact_token_id_array], axis=-1)
+        contact_loss = log_z_one[contact_predict_positions] - contact_logit
+
+        endpoint_rows = lm_head_by_vocab[first_ids] + lm_head_by_vocab[second_ids]
+        masked_endpoint_rows = jnp.where(valid_contacts[:, None], endpoint_rows, 0.0)
+        remaining_endpoint_rows = jnp.flip(jnp.cumsum(jnp.flip(masked_endpoint_rows, axis=0), axis=0), axis=0)
+        first_expected_logit = jnp.sum(contact_activations * remaining_endpoint_rows, axis=-1) / jnp.maximum(
+            2 * (example_contact_count - contact_axis), 1
+        )
+        first_loss = log_z_one[contact_positions] - first_expected_logit
+
+        neighbor_rows = lm_head_by_vocab[neighbor_ids]
+        neighbor_logits = jnp.sum(first_activations[:, None, :] * neighbor_rows, axis=-1)
+        second_expected_logit = jnp.sum(neighbor_counts * neighbor_logits, axis=-1) / jnp.maximum(neighbor_count, 1)
+        second_loss = log_z_one[first_positions] - second_expected_logit
+
+        body_loss = jnp.sum(jnp.where(valid_contacts, contact_loss + first_loss + second_loss, 0.0))
+        end_position = jnp.clip(example_prediction_start + 3 * example_contact_count, 0, log_z_one.shape[0] - 1)
+        end_logit = jnp.sum(activations_one[end_position] * lm_head_by_vocab[end_token_id_array], axis=-1)
+        end_loss = log_z_one[end_position] - end_logit
+        return body_loss + end_loss
+
+    return jax.vmap(one_example_loss)(
+        activations_array,
+        log_normalizers_array,
+        contact_first_ids,
+        contact_second_ids,
+        second_neighbor_ids,
+        second_neighbor_counts,
+        second_neighbor_count,
+        contact_count,
+        prediction_start,
+    )
+
+
+def sparse_contact_document_metrics(
+    model: LmHeadModel,
+    batch: SparseContactDocumentBatch,
+    *,
+    key=None,
+    prefix: str = "soft_eval",
+) -> dict[str, jnp.ndarray]:
+    """Compute sparse-contact teacher and hard-target diagnostics.
+
+    Metrics are derived from the same compact forward path as
+    :func:`sparse_contact_document_loss`, but split by token role. Endpoint
+    ``valid_mass`` metrics sum the model probability assigned to the sparse
+    teacher support at that position.
+    """
+    activations, log_normalizers, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
+
+    activations_array = activations.rearrange((..., Pos, model.Embed)).array
+    log_z = log_normalizers.rearrange((..., Pos)).array
+    lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
+
+    max_contacts = batch.contact_first_ids.shape[-1]
+    contact_axis = jnp.arange(max_contacts, dtype=jnp.int32)
+    batch_axis = jnp.arange(batch.contact_first_ids.shape[0], dtype=jnp.int32)[:, None]
+    valid_contacts = contact_axis[None, :] < batch.contact_count[:, None]
+    valid_count = jnp.maximum(jnp.sum(valid_contacts), 1)
+
+    contact_positions = jnp.clip(batch.prediction_start[:, None] + 1 + 3 * contact_axis[None, :], 0, Pos.size - 1)
+    first_positions = jnp.clip(contact_positions + 1, 0, Pos.size - 1)
+    contact_predict_positions = jnp.clip(
+        jnp.where(contact_axis[None, :] == 0, batch.prediction_start[:, None], contact_positions - 1),
+        0,
+        Pos.size - 1,
+    )
+    end_positions = jnp.clip(batch.prediction_start + 3 * batch.contact_count, 0, Pos.size - 1)
+
+    def logits_at(positions, token_ids):
+        gather_batch_axis = jnp.reshape(
+            jnp.arange(activations_array.shape[0], dtype=jnp.int32),
+            (activations_array.shape[0],) + (1,) * (positions.ndim - 1),
+        )
+        position_activations = activations_array[gather_batch_axis, positions]
+        token_rows = lm_head_by_vocab[token_ids]
+        return jnp.sum(position_activations * token_rows, axis=-1)
+
+    contact_logits = logits_at(contact_predict_positions, jnp.full_like(batch.contact_first_ids, int(CONTACT)))
+    contact_ce = log_z[batch_axis, contact_predict_positions] - contact_logits
+
+    remaining = contact_axis[None, None, :] >= contact_axis[None, :, None]
+    remaining = remaining & (contact_axis[None, None, :] < batch.contact_count[:, None, None])
+    endpoint_rows = lm_head_by_vocab[batch.contact_first_ids] + lm_head_by_vocab[batch.contact_second_ids]
+    remaining_endpoint_rows = jnp.sum(jnp.where(remaining[..., None], endpoint_rows[:, None, :, :], 0.0), axis=2)
+    first_activations = activations_array[batch_axis, contact_positions]
+    first_expected_logits = jnp.sum(first_activations * remaining_endpoint_rows, axis=-1) / jnp.maximum(
+        2 * (batch.contact_count[:, None] - contact_axis[None, :]), 1
+    )
+    first_teacher_ce = log_z[batch_axis, contact_positions] - first_expected_logits
+    first_hard_logits = logits_at(contact_positions, batch.contact_first_ids)
+    first_hard_ce = log_z[batch_axis, contact_positions] - first_hard_logits
+    first_valid_mass = jnp.sum(
+        jnp.where(
+            remaining,
+            jnp.exp(logits_at(contact_positions[:, :, None], batch.contact_first_ids[:, None, :]) - log_z[batch_axis, contact_positions][:, :, None])
+            + jnp.exp(logits_at(contact_positions[:, :, None], batch.contact_second_ids[:, None, :]) - log_z[batch_axis, contact_positions][:, :, None]),
+            0.0,
+        ),
+        axis=-1,
+    )
+
+    neighbor_rows = lm_head_by_vocab[batch.second_neighbor_ids]
+    second_activations = activations_array[batch_axis, first_positions]
+    second_neighbor_logits = jnp.sum(second_activations[:, :, None, :] * neighbor_rows, axis=-1)
+    second_expected_logits = jnp.sum(batch.second_neighbor_counts * second_neighbor_logits, axis=-1) / jnp.maximum(
+        batch.second_neighbor_count, 1
+    )
+    second_teacher_ce = log_z[batch_axis, first_positions] - second_expected_logits
+    second_hard_logits = logits_at(first_positions, batch.contact_second_ids)
+    second_hard_ce = log_z[batch_axis, first_positions] - second_hard_logits
+    second_valid_mass = jnp.sum(
+        batch.second_neighbor_counts
+        * jnp.exp(second_neighbor_logits - log_z[batch_axis, first_positions][:, :, None]),
+        axis=-1,
+    )
+    argmax_logits_second = jnp.einsum("bce,ve->bcv", second_activations, lm_head_by_vocab)
+    second_argmax = jnp.argmax(argmax_logits_second, axis=-1)
+    second_argmax_valid = jnp.sum(
+        batch.second_neighbor_counts * (batch.second_neighbor_ids == second_argmax[:, :, None]), axis=-1
+    ) > 0
+    actual_second_in_teacher = jnp.sum(
+        batch.second_neighbor_counts * (batch.second_neighbor_ids == batch.contact_second_ids[:, :, None]), axis=-1
+    ) > 0
+
+    end_logits = jnp.sum(activations_array[jnp.arange(activations_array.shape[0]), end_positions] * lm_head_by_vocab[int(END)], axis=-1)
+    end_ce = log_z[jnp.arange(log_z.shape[0]), end_positions] - end_logits
+
+    def masked_mean(values):
+        return jnp.sum(jnp.where(valid_contacts, values, 0.0)) / valid_count
+
+    zero_neighbor_rows = valid_contacts & (batch.second_neighbor_count == 0)
+    position_ids_array = batch.position_ids.rearrange((..., Pos)).array
+    position_ids_monotonic = jnp.mean((jnp.diff(position_ids_array, axis=-1) >= 0).astype(jnp.float32))
+    total_loss = (
+        jnp.sum(jnp.where(valid_contacts, contact_ce + first_teacher_ce + second_teacher_ce, 0.0)) + jnp.sum(end_ce)
+    ) / jnp.sum(batch.target_position_count) + aux_loss
+    metric_prefix = prefix.rstrip("/")
+    return {
+        f"{metric_prefix}/total_loss": total_loss,
+        f"{metric_prefix}/aux_loss": aux_loss,
+        f"{metric_prefix}/contact_token_ce": masked_mean(contact_ce),
+        f"{metric_prefix}/first_endpoint_teacher_ce": masked_mean(first_teacher_ce),
+        f"{metric_prefix}/first_endpoint_hard_ce": masked_mean(first_hard_ce),
+        f"{metric_prefix}/first_endpoint_valid_mass": masked_mean(first_valid_mass),
+        f"{metric_prefix}/second_endpoint_teacher_ce": masked_mean(second_teacher_ce),
+        f"{metric_prefix}/second_endpoint_hard_ce": masked_mean(second_hard_ce),
+        f"{metric_prefix}/second_endpoint_valid_mass": masked_mean(second_valid_mass),
+        f"{metric_prefix}/second_endpoint_argmax_valid": masked_mean(second_argmax_valid.astype(jnp.float32)),
+        f"{metric_prefix}/end_token_ce": jnp.mean(end_ce),
+        f"{metric_prefix}/avg_contact_count": jnp.mean(batch.contact_count.astype(jnp.float32)),
+        f"{metric_prefix}/avg_second_neighbor_count": masked_mean(batch.second_neighbor_count.astype(jnp.float32)),
+        f"{metric_prefix}/target_position_count": jnp.sum(batch.target_position_count.astype(jnp.float32)),
+        f"{metric_prefix}/zero_neighbor_rows": jnp.sum(zero_neighbor_rows.astype(jnp.float32)),
+        f"{metric_prefix}/actual_second_in_teacher_set_fraction": masked_mean(actual_second_in_teacher.astype(jnp.float32)),
+        f"{metric_prefix}/position_ids_monotonic_fraction": position_ids_monotonic,
+    }
+
+
 def sparse_contact_document_loss(
     model: LmHeadModel,
     batch: SparseContactDocumentBatch,
@@ -438,62 +642,10 @@ def sparse_contact_document_loss(
     log_normalizers_array = log_normalizers.rearrange((..., Pos)).array
     lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
 
-    contact_token_id = jnp.asarray(int(CONTACT), dtype=jnp.int32)
-    end_token_id = jnp.asarray(int(END), dtype=jnp.int32)
-
-    def one_example_loss(
-        activations_one,
-        log_z_one,
-        first_ids,
-        second_ids,
-        second_neighbor_ids,
-        second_neighbor_counts,
-        second_neighbor_count,
-        contact_count,
-        prediction_start,
-    ):
-        contact_axis = jnp.arange(first_ids.shape[0], dtype=jnp.int32)
-        valid_contacts = contact_axis < contact_count
-        contact_positions = jnp.clip(prediction_start + 1 + 3 * contact_axis, 0, activations_one.shape[0] - 1)
-        first_positions = jnp.clip(contact_positions + 1, 0, activations_one.shape[0] - 1)
-        contact_predict_positions = jnp.clip(
-            jnp.where(contact_axis == 0, prediction_start, contact_positions - 1),
-            0,
-            activations_one.shape[0] - 1,
-        )
-
-        contact_activations = activations_one[contact_positions]
-        first_activations = activations_one[first_positions]
-        contact_predict_activations = activations_one[contact_predict_positions]
-        contact_logit = jnp.sum(contact_predict_activations * lm_head_by_vocab[contact_token_id], axis=-1)
-        contact_loss = log_z_one[contact_predict_positions] - contact_logit
-
-        endpoint_rows = lm_head_by_vocab[first_ids] + lm_head_by_vocab[second_ids]
-        masked_endpoint_rows = jnp.where(valid_contacts[:, None], endpoint_rows, 0.0)
-        remaining_endpoint_rows = jnp.flip(jnp.cumsum(jnp.flip(masked_endpoint_rows, axis=0), axis=0), axis=0)
-        first_expected_logit = jnp.sum(contact_activations * remaining_endpoint_rows, axis=-1) / jnp.maximum(
-            2 * (contact_count - contact_axis), 1
-        )
-        first_loss = log_z_one[contact_positions] - first_expected_logit
-
-        neighbor_rows = lm_head_by_vocab[second_neighbor_ids]
-        neighbor_logits = jnp.sum(first_activations[:, None, :] * neighbor_rows, axis=-1)
-        second_expected_logit = jnp.sum(second_neighbor_counts * neighbor_logits, axis=-1) / jnp.maximum(
-            second_neighbor_count, 1
-        )
-        second_loss = log_z_one[first_positions] - second_expected_logit
-
-        per_contact_loss = jnp.where(valid_contacts, contact_loss + first_loss + second_loss, 0.0)
-        body_loss = jnp.sum(per_contact_loss)
-
-        end_position = jnp.clip(prediction_start + 3 * contact_count, 0, log_z_one.shape[0] - 1)
-        end_logit = jnp.sum(activations_one[end_position] * lm_head_by_vocab[end_token_id], axis=-1)
-        end_loss = log_z_one[end_position] - end_logit
-        return body_loss + end_loss
-
-    losses = jax.vmap(one_example_loss)(
+    losses = _sparse_contact_example_losses_from_arrays(
         activations_array,
         log_normalizers_array,
+        lm_head_by_vocab,
         batch.contact_first_ids,
         batch.contact_second_ids,
         batch.second_neighbor_ids,
@@ -501,6 +653,8 @@ def sparse_contact_document_loss(
         batch.second_neighbor_count,
         batch.contact_count,
         batch.prediction_start,
+        contact_token_id=int(CONTACT),
+        end_token_id=int(END),
     )
     return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
 
@@ -514,4 +668,5 @@ __all__ = [
     "document_loss",
     "levanter_document_batch",
     "sparse_contact_document_loss",
+    "sparse_contact_document_metrics",
 ]

@@ -705,8 +705,8 @@ requires-dist = [
     { name = "marin-levanter", specifier = ">=0.2.56.dev202607230804,<0.3" },
     { name = "marin-rigging", specifier = ">=0.2.56.dev202607230804,<0.3" },
     { name = "marin-zephyr", specifier = ">=0.2.56.dev202607230804,<0.3" },
-    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp177%2Fmp-queue-shard-dataset" },
-    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp177%2Fmp-queue-shard-dataset" },
+    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp177%2Fsoft-target-diagnostics" },
+    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp177%2Fsoft-target-diagnostics" },
     { name = "numpy" },
     { name = "pyarrow" },
     { name = "s3fs" },
@@ -1829,7 +1829,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp177%2Fmp-queue-shard-dataset#b862e208b3e6fbf989c0e22872ecf5daf62a0110" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=exp177%2Fsoft-target-diagnostics#b3968d45192c950622935538504446d544a40b72" }
 dependencies = [
     { name = "gemmi" },
     { name = "huggingface-hub" },
@@ -1844,7 +1844,7 @@ dependencies = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp177%2Fmp-queue-shard-dataset#b862e208b3e6fbf989c0e22872ecf5daf62a0110" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=exp177%2Fsoft-target-diagnostics#b3968d45192c950622935538504446d544a40b72" }
 dependencies = [
     { name = "marin-core" },
     { name = "marin-iris" },

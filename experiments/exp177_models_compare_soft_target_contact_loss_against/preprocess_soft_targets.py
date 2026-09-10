@@ -80,9 +80,10 @@ def _row_from_document(document, *, source_shard: int, slot_index: int, max_seq_
         "source_shard": source_shard,
         "slot_index": slot_index,
         "token_ids": _padded(token_ids, length=max_seq_len),
-        # Current soft-target docs do not set POSITION_IDS, so store zeros in
-        # the final padded representation expected by training.
-        "position_ids": [0] * max_seq_len,
+        # Use ordinary absolute token positions for Qwen/RoPE. These examples are
+        # fixed-size padded rows, so padded positions can also use their absolute
+        # slot index; padding is excluded from the soft-target loss.
+        "position_ids": np.arange(max_seq_len, dtype=np.int32).tolist(),
         "segment_ids": _padded(segment_ids, length=max_seq_len, fill=-1),
         "attention_blocks": _padded(attention_blocks, length=max_seq_len),
         "prediction_start": prediction_start,

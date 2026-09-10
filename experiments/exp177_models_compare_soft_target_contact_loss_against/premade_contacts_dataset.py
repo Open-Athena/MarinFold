@@ -777,7 +777,10 @@ class PrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBa
         segment_ids = np.full(self.max_seq_len, -1, dtype=np.int32)
         attention_blocks = np.zeros(self.max_seq_len, dtype=np.int32)
         token_ids[: raw_token_ids.shape[0]] = raw_token_ids[: self.max_seq_len]
-        position_ids[: raw_position_ids.shape[0]] = np.maximum(raw_position_ids[: self.max_seq_len], 0)
+        # The first precomputed exp177 corpus accidentally stored all-zero
+        # position_ids. Regenerate ordinary absolute token positions at read time
+        # so old and newly-preprocessed rows feed Qwen/RoPE consistently.
+        position_ids[:] = np.arange(self.max_seq_len, dtype=np.int32)
         if "segment_ids" in row:
             raw_segment_ids = np.asarray(row["segment_ids"], dtype=np.int32)
             segment_ids[: raw_segment_ids.shape[0]] = raw_segment_ids[: self.max_seq_len]
