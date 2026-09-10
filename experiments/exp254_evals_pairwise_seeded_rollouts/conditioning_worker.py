@@ -293,7 +293,17 @@ def run(args: argparse.Namespace) -> None:
                     f"rollout_s={elapsed:.1f} probe_s={probability_seconds:.1f} unfinished={unfinished}",
                     flush=True,
                 )
-                if unfinished:
+                invalid_finish = any(
+                    result["finish_reason"] not in {"stop", "length"}
+                    or (
+                        result["finish_reason"] == "length"
+                        and result["tokens"] != budget
+                    )
+                    for result in saved
+                )
+                if invalid_finish or (
+                    unfinished and not args.accept_budget_termination
+                ):
                     write_bytes(
                         f"{args.out}/failures/{stem}-{key}.json.gz",
                         gzip.compress(json.dumps(saved).encode(), mtime=0),
@@ -336,6 +346,11 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     parser.add_argument("--shard", default="0/1")
     parser.add_argument("--stem")
+    parser.add_argument(
+        "--accept-budget-termination",
+        action="store_true",
+        help="Retain exact-budget length stops and report them in timings",
+    )
     parser.add_argument("--gpu-fraction", type=float, default=0.85)
     run(parser.parse_args())
 

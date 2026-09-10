@@ -26,6 +26,7 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--stem")
+    parser.add_argument("--accept-budget-termination", action="store_true")
     args = parser.parse_args()
     if not 1 <= args.workers <= 8:
         raise ValueError("Expected one to eight local GPU workers")
@@ -70,6 +71,8 @@ def main() -> None:
             "--shard",
             f"{shard}/{args.workers}",
         ]
+        if args.accept_budget_termination:
+            command.append("--accept-budget-termination")
         if args.stem:
             if args.workers != 1:
                 raise ValueError("An operational smoke uses one worker")

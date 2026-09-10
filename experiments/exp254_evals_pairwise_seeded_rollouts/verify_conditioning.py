@@ -127,21 +127,34 @@ def reparse_group(
     given: list,
     budget: int,
     label: str,
+    *,
+    accept_budget_termination: bool = False,
 ) -> tuple[np.ndarray, dict]:
     """Rebuild votes and counters from raw text, checking stored parsed contacts."""
     if len(completions) != len(frames):
         raise ValueError(f"{label}: wrong number of raw completions")
     votes = np.zeros((length, length), dtype=np.int64)
     given_set = {tuple(pair) for pair in given}
-    token_total, copied, novel, empty = 0, 0, 0, 0
+    token_total, copied, novel, empty, capped = 0, 0, 0, 0, 0
     for index, (completion, positions) in enumerate(
         zip(completions, frames, strict=True)
     ):
-        if completion["finish_reason"] != "stop":
-            raise ValueError(f"{label}/{index}: rollout did not stop normally")
         tokens = completion["tokens"]
         if not isinstance(tokens, int) or not 0 < tokens <= budget:
             raise ValueError(f"{label}/{index}: invalid completion token count")
+        reason = completion["finish_reason"]
+        if reason == "length":
+            if not accept_budget_termination:
+                raise ValueError(
+                    f"{label}/{index}: budget termination requires explicit acceptance"
+                )
+            if tokens != budget:
+                raise ValueError(
+                    f"{label}/{index}: length termination did not use the exact token budget"
+                )
+            capped += 1
+        elif reason != "stop":
+            raise ValueError(f"{label}/{index}: unknown finish reason {reason!r}")
         pairs = parse_rollout(
             completion["text"], {position: i for i, position in enumerate(positions)}
         )
@@ -161,7 +174,7 @@ def reparse_group(
         "generated_tokens": token_total,
         "copied_context_pairs": copied,
         "novel_generated_pairs": novel,
-        "unfinished_rollouts": 0,
+        "unfinished_rollouts": capped,
         "empty_rollouts": int(empty),
     }
 
@@ -174,7 +187,15 @@ def timing_number(row: pd.Series, name: str, nonnegative: bool = True) -> float:
     return value
 
 
-def verify_unit(plan: dict, target: dict, run: Path, plan_sha: str) -> dict:
+def verify_unit(
+    plan: dict,
+    target: dict,
+    run: Path,
+    plan_sha: str,
+    *,
+    accept_budget_termination: bool = False,
+    allowed_worker_sha256: set[str] | None = None,
+) -> dict:
     """Verify every raw group, score matrix, and timing row for one target."""
     stem = target["stem"]
     n_rollouts, n_repeats = plan["n_rollouts"], plan["n_repeats"]
@@ -211,6 +232,11 @@ def verify_unit(plan: dict, target: dict, run: Path, plan_sha: str) -> dict:
         raise ValueError(f"{stem}: timing metadata differs from frozen plan")
     if not re.fullmatch(r"[0-9a-f]{64}", meta.worker_sha256):
         raise ValueError(f"{stem}: invalid worker source digest")
+    if (
+        allowed_worker_sha256 is not None
+        and meta.worker_sha256 not in allowed_worker_sha256
+    ):
+        raise ValueError(f"{stem}: worker digest is outside the explicit allowlist")
     if meta.runner_tag not in ("local", "iris"):
         raise ValueError(f"{stem}: unknown execution runner")
     frames = position_frames(target, n_repeats, n_rollouts)
@@ -221,6 +247,8 @@ def verify_unit(plan: dict, target: dict, run: Path, plan_sha: str) -> dict:
         if not group.endswith("__iid_repeat")
     }
     units_empty, tokens_total = 0, 0
+    capped_by_arm = {arm: 0 for arm in ARMS}
+    capped_by_group = {}
     with np.load(io.BytesIO(payloads["npz"]), allow_pickle=False) as archive:
         if set(archive.files) != expected_arrays:
             raise ValueError(f"{stem}: NPZ has missing or extra matrices")
@@ -236,6 +264,7 @@ def verify_unit(plan: dict, target: dict, run: Path, plan_sha: str) -> dict:
                     given,
                     budget,
                     f"{stem}/{key}",
+                    accept_budget_termination=accept_budget_termination,
                 )
                 votes = archive[f"{key}__votes"]
                 check_numeric_matrix(votes, target["L"], key, n_rollouts)
@@ -292,6 +321,8 @@ def verify_unit(plan: dict, target: dict, run: Path, plan_sha: str) -> dict:
                     raise ValueError(f"{stem}/{key}: timestamp is not UTC")
                 units_empty += counters["empty_rollouts"]
                 tokens_total += counters["generated_tokens"]
+                capped_by_arm[arm] += counters["unfinished_rollouts"]
+                capped_by_group[key] = counters["unfinished_rollouts"]
     if marker["elapsed_seconds"] + 1e-6 < timings.total_seconds.sum():
         raise ValueError(
             f"{stem}: completed-unit time is shorter than its recorded arm times"
@@ -302,19 +333,37 @@ def verify_unit(plan: dict, target: dict, run: Path, plan_sha: str) -> dict:
         "n_completions": n_rollouts * len(expected_groups),
         "empty_rollouts": units_empty,
         "generated_tokens": tokens_total,
+        "budget_terminated_rollouts": sum(capped_by_arm.values()),
+        "budget_terminated_by_arm": capped_by_arm,
+        "budget_terminated_by_group": capped_by_group,
         "worker_sha256": meta.worker_sha256,
         "vllm_version": meta.vllm_version,
         "transformers_version": meta.transformers_version,
         "torch_version": meta.torch_version,
         "gpu_name": meta.gpu_name,
+        "gpu_compute_capability": meta.gpu_compute_capability,
+        "gpu_total_memory_gb": float(meta.gpu_total_memory_gb),
         "model_source": meta.model_source,
     }
 
 
-def verify(plan_path: Path, run: Path, stem: str | None = None) -> dict:
+def verify(
+    plan_path: Path,
+    run: Path,
+    stem: str | None = None,
+    *,
+    accept_budget_termination: bool = False,
+    worker_sha256: list[str] | None = None,
+) -> dict:
     """Validate one operational smoke or the entire frozen target population."""
     plan_bytes = plan_path.read_bytes()
     plan, plan_sha = json.loads(plan_bytes), sha256(plan_bytes)
+    allowed_workers = None if worker_sha256 is None else set(worker_sha256)
+    if allowed_workers is not None and (
+        not allowed_workers
+        or any(not re.fullmatch(r"[0-9a-f]{64}", value) for value in allowed_workers)
+    ):
+        raise ValueError("worker allowlist requires one or more full SHA-256 digests")
     if tuple(plan["arms"]) != ARMS or min(plan["n_rollouts"], plan["n_repeats"]) <= 0:
         raise ValueError("unexpected protocol arms or sample counts")
     targets = {target["stem"]: target for target in plan["targets"]}
@@ -348,13 +397,28 @@ def verify(plan_path: Path, run: Path, stem: str | None = None) -> dict:
                 f"full run has missing/extra unit files: missing={sorted(expected_files - actual_files)}, "
                 f"extra={sorted(actual_files - expected_files)}"
             )
-    units = [verify_unit(plan, target, run, plan_sha) for target in selected]
+    units = [
+        verify_unit(
+            plan,
+            target,
+            run,
+            plan_sha,
+            accept_budget_termination=accept_budget_termination,
+            allowed_worker_sha256=allowed_workers,
+        )
+        for target in selected
+    ]
+    observed_workers = {unit["worker_sha256"] for unit in units}
+    if allowed_workers is None and len(observed_workers) != 1:
+        raise ValueError("full run mixes worker digests without an explicit allowlist")
     for name in (
-        "worker_sha256",
         "vllm_version",
         "transformers_version",
         "torch_version",
         "model_source",
+        "gpu_name",
+        "gpu_compute_capability",
+        "gpu_total_memory_gb",
     ):
         if len({unit[name] for unit in units}) != 1:
             raise ValueError(f"full run mixes incompatible worker metadata: {name}")
@@ -364,12 +428,29 @@ def verify(plan_path: Path, run: Path, stem: str | None = None) -> dict:
         "n_verified_targets": len(units),
         "n_planned_targets": len(targets),
         "n_verified_completions": sum(unit["n_completions"] for unit in units),
+        "accept_budget_termination": accept_budget_termination,
+        "worker_sha256_allowlist": None
+        if allowed_workers is None
+        else sorted(allowed_workers),
+        "observed_worker_sha256": sorted(observed_workers),
+        "budget_terminated_rollouts": sum(
+            unit["budget_terminated_rollouts"] for unit in units
+        ),
+        "budget_terminated_by_arm": {
+            arm: sum(unit["budget_terminated_by_arm"][arm] for unit in units)
+            for arm in ARMS
+        },
         "source_sha256": sha256(source_bytes),
         "units": units,
         "limitations": "Raw text, stored contacts, counts, completion statuses, and telemetry "
         "are cross-checked. Stored token counts are reconciled with telemetry, not "
         "retokenized; raw token IDs were not recorded. Probability values are "
         "numerically validated but not independently recomputed. No accuracy is scored.",
+        "timing_scope": "elapsed_seconds is per-arm generation time. total_seconds includes "
+        "generation, probability probing, and parsing after prompt construction, before "
+        "per-protein serialization. The completion marker's elapsed_seconds covers the whole "
+        "protein operation. model_load_seconds is reported separately and repeated across rows; "
+        "do not sum those repeated fields.",
     }
 
 
@@ -380,8 +461,24 @@ def main() -> int:
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--stem")
     parser.add_argument("--out", type=Path)
+    parser.add_argument(
+        "--accept-budget-termination",
+        action="store_true",
+        help="Retain length-stopped predictions only at the exact fixed token budget",
+    )
+    parser.add_argument(
+        "--worker-sha256",
+        action="append",
+        help="Explicit allowed worker digest; repeat for each audited worker version",
+    )
     args = parser.parse_args()
-    report = verify(args.plan, args.run, args.stem)
+    report = verify(
+        args.plan,
+        args.run,
+        args.stem,
+        accept_budget_termination=args.accept_budget_termination,
+        worker_sha256=args.worker_sha256,
+    )
     rendered = json.dumps(report, indent=2) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

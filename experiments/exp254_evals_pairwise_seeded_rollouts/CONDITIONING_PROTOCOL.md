@@ -95,3 +95,26 @@ eight independent workers. Run the complete single-protein smoke on that engine
 before the eight-worker fan-out. Disable automatic pod retries; an unplanned
 second transfer could exceed the 10 GB budget. Inputs, arms, RNG, and decision
 rules are unchanged. Output matrices/completions are much smaller than weights.
+
+### Fixed-budget completion amendment (before new accuracy was examined)
+
+The initial run found many length stops under large false contexts: for example,
+73/100 on 8arl_A draw 0, versus one on 8dhj_A draw 1 and one on 8c4y_A draw 0.
+The original reject-on-length-stop rule aborted those workers. Dropping those
+proteins would select the cohort according to the intervention's behavior.
+
+Retain every rollout at the original, identical 6L+128 completion budget instead.
+An exact-budget `length` stop is a censored continuation, not a missing sample.
+Report its incidence for every arm, score all emitted contacts with the same
+fixed R, and retain empty continuations too. Unknown termination reasons and
+length stops before the stated token budget remain errors. No prompts, contact
+sets, sampling parameters, target membership, or practical decision rule change.
+No new accuracy effects were examined before this amendment; it is nevertheless
+a post-launch change to acceptance criteria, rather than fully preregistered
+handling. Mechanistic claims are about behavior under this fixed inference budget,
+not unlimited, voluntarily terminated continuations.
+
+Reuse already completed units without rewriting them. Resume the remaining units
+with an explicitly opted-in worker that differs only in termination acceptance.
+Publish both worker sources and require an explicit hash allowlist during
+verification. The model, engine versions, and input-plan hash remain identical.
