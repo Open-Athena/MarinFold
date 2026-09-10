@@ -317,3 +317,28 @@ manifest, own-run resume position (14523), and HF weights/tokenizer were verifie
 [the control trial](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr100-step14520-a01)
 and are included in its fixed 5,000-update budget. This is operational validation;
 no LR comparison result is available yet.
+
+All three full continuations are running on Reno, each on 32 H100s at batch
+priority, with identical source/input manifests. Their immutable dispatch record
+is `data/lr_sweep_launch.json`:
+
+| LR | W&B run | Iris root |
+| --- | --- | --- |
+| 0.001 | [exp279-soft-lr100-step14520-a01](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr100-step14520-a01) | `/bizon/exp279-lr100-rno-full-a02` |
+| 0.0015 | [exp279-soft-lr150-step14520-a01](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr150-step14520-a01) | `/bizon/exp279-lr150-rno-full-a01` |
+| 0.002 | [exp279-soft-lr200-step14520-a01](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr200-step14520-a01) | `/bizon/exp279-lr200-rno-full-a01` |
+
+The first production update independently checks the matched starting state:
+all three log loss 3.2835784 and gradient norm approximately 0.1049417; their
+update norms are 6.772814, 10.159221 and 13.545628 (1x, 1.5x and 2x).
+The applied LRs also match. `data/lr_first_update.csv` contains the W&B evidence.
+Steady training is approximately 3.5 seconds/update, implying roughly five hours
+of compute per branch plus evaluation/checkpoint overhead.
+
+Both higher rates show early loss spikes. Over the same first 23 updates,
+the peak training losses are 3.3050 (1x), 5.1286 (1.5x), and 9.1566 (2x);
+clipping fires on 0, 5, and 15 updates respectively. `data/lr_first_23_updates.csv` records
+all three branches at the same first 23 updates. These training diagnostics do
+not establish a validation improvement or a winner. Both higher-rate branches
+remain within the approved fixed budget; their first scheduled validation is
+still pending at this launch check. The original production run is unchanged.

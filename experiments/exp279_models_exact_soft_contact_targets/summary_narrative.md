@@ -41,5 +41,8 @@ Run 5,000 further updates per branch; leave the original production run running.
 Track ordinary and contact-endpoint CE, gradient norms and clipping decisions.
 Native optimizer fork tests and a stock GPU diagnostic smoke pass.
 The parent full-state checkpoint manifest passes restore preflight.
-Distributed trial pilot and the actual LR comparison remain pending placement.
+The distributed pilot passed both CE metrics, native state and HF/tokenizer saves.
+All three continuations are running on 96 Reno H100s at about 3.5 seconds/update.
+First-update loss/gradients match; update norms scale by 1x, 1.5x and 2x.
+Both higher rates show early loss spikes and clipping; validation remains pending.
 A winning LR would still need comparison against an appropriately tuned CE arm.
