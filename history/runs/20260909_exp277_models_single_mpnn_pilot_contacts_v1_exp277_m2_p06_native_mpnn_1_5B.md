@@ -52,3 +52,5 @@ First full LM validation completed on 2026-09-09 at 20:13:38 UTC: step 2,114, va
 2026-09-10 03:12 UTC: step 29,186 / 145,200 (20.1%), train loss 2.93443, latest full validation loss 3.16498. Thirteen validation passes completed. The permanent step-29,040 checkpoint saved at 03:10:26 UTC under the run’s native checkpoint base. No production restart.
 
 2026-09-10 07:01 UTC: step 43,870 / 145,200 (30.2%), train loss 2.89204, latest full validation loss 3.12627. Twenty validation passes completed. The permanent step-43,560 checkpoint saved at 06:56:46 UTC under the run’s native checkpoint base. No production restart.
+
+2026-09-10 10:46 UTC: step 58,402 / 145,200 (40.2%), train loss 2.90834, latest full validation loss 3.10894. Twenty-seven validation passes completed. The permanent step-58,080 checkpoint saved at 10:41:28 UTC under the run’s native checkpoint base. No production restart.
