@@ -12,31 +12,41 @@ marinfold_experiment:
 
 ## Conclusion
 
-**The tested inference variants do not meet the project's practical target.**
-The decision criterion is now an improvement of approximately **0.03 absolute
-R-precision** over the 0.5217 pooled-consensus control: about **0.5517** or better.
-This interprets “3% improvement” as three percentage points; it is a new practical
-requirement, not the experiment's original preregistered threshold. The small
-positive effects below are diagnostics, not successes worth pursuing on their
-own. Even the K=10 cluster oracle with a pooled fallback gains only 0.0190.
+**MarinFold responds strongly to contact statements in its prompt.** The controlled
+follow-up generated 155,200 completions on all 97 eval-val proteins using the same
+m2-p06 checkpoint. After excluding the union of all supplied pairs from every arm's
+scoring universe, supplying floor(L/3) true contacts raises remaining-contact
+R-precision by **0.2724 [0.2359, 0.3098]**. Equally sized false-contact prompts lower
+it by **0.3189 [0.2816, 0.3559]**. These effects concern prediction of contacts that
+were never supplied; copying the prompt cannot earn this credit.
 
-**This does not establish that MarinFold ignores contact statements in its
-prompt.** Accuracy improvement, prediction change, and sensitivity to supplied
-contacts are different quantities. This experiment supplies only one predicted
-contact per rollout and then averages 100 differently seeded rollouts. Similar
-aggregate accuracy cannot tell us whether the model ignores the seed, responds
-without improving accuracy, or makes seed-specific changes that cancel during
-pooling. The prompt-sensitivity question remains the main mechanistic uncertainty.
+**The tested predicted-contact recipe fails the three-percentage-point target.**
+Its complete final map scores **0.5077**, versus **0.5247** when the same 100 source
+rollouts are pooled with 100 fresh iid rollouts: **−0.0170 [−0.0246, −0.0099]**.
+The predeclared +0.03 gain is outside the interval in the wrong direction.
+Post-hoc equal-weight blends retaining the source scores recover most of this
+loss, but their upper bounds remain below +0.002; none approaches +0.03. Even
+predicted prompts change the withheld top-R map: 35.53% turnover versus 21.86%
+between independent iid samples. Changed predictions do not imply better ones.
 
-The September 2026 audit reproduces the original consensus scores from all
-38,800 saved rollouts, corrects a forced-seed confound and a misleading oracle
-metric label, adds paired uncertainty for cluster results, and makes the inputs
-public. It replaces the earlier claims that one contact is uninformative,
-pointwise ranking is exhausted, and cluster-and-fold is closed. Those conclusions
-were stronger than the experiment supports. No new predictor inference or
-held-out evaluation was performed in the audit.
+This supports the ability to use contact context and rejects this fixed
+high-vote-contact reinjection recipe as a practical improvement on this benchmark.
+It does not establish a ceiling for other context-selection or conditioning
+methods. True/false oracle controls diagnose behavior; they are not deployable
+performance claims. Intervals average two replicates within each protein before
+bootstrapping and condition on the archived source and saved inference draws.
 
-![Audited paired effects](plots/conclusions_audit.png)
+The [protocol and recovery amendment](CONDITIONING_PROTOCOL.md), raw-output
+verification, independent score reconstruction, and public archive document the
+run. Fixed-budget terminations were retained after a post-launch acceptance
+amendment; recovery sensitivity is reported below. No eval-test or eval-denovo
+accuracy was examined.
+
+The earlier saved-output audit remains below: it corrects forced-seed credit,
+short-rollout oracle scoring, and overbroad claims about ranking, clustering,
+and prompt insensitivity. Its small gains also fail the current +0.03 target.
+
+![Controlled contact-prompt intervention](plots/conditioning_intervention.png)
 
 ## Question and original expectations
 
@@ -245,38 +255,161 @@ Passing the noisy union of all pairs harms this tested solver; modest cut
 changes have uncertain effects. This does not test folding multiple coherent
 cluster candidates and selecting by structure confidence.
 
-## The next question: does the model use the supplied contact statements?
+## Controlled multi-contact follow-up
 
-The next useful test is a direct prompt intervention on **this checkpoint**,
-not further optimization of sub-percentage-point consensus gains. For each
-protein, hold the sequence and document realization fixed and vary the supplied
-contact set: no contacts; a small or substantial set of true contacts; equally
-sized false-contact controls; and predicted contact sets at comparable sizes.
-Use fixed-budget continuations and repeated sampling seeds.
+The [frozen protocol](CONDITIONING_PROTOCOL.md) tests the same m2-p06 checkpoint on
+all 97 eval-val proteins, with two context/sampling replicates and 100 rollouts
+per arm: **155,200 new completions** across eight arms. The controls are iid and
+an independent iid repeat; interventions supply true, false, or predicted
+contacts at doses 10 and floor(L/3). True and false sets have matched sequence
+separation bins. Predicted contacts come from the archived 100-rollout iid vote
+ranking, selected without ground truth or the resolved-residue mask. Contexts
+remain fixed within a replicate and are remapped into each document realization.
 
-Measure changes in the conditional contact probabilities and predicted contact
-maps separately from changes in accuracy. For accuracy, exclude every supplied
-pair from **both** the conditioned and unconditioned scoring universe, using the
-same remaining positives and R in each matched comparison. For comparisons
-across prompt variants, exclude the union of their supplied pairs to keep that
-universe common. This prevents copying
-the prompt from looking like improved prediction. Independent repeated no-contact
-runs establish how much output variation sampling alone produces.
+For the **practical primary**, 100 source rollouts produce the predicted context,
+then 100 conditioned rollouts produce the final map. Its comparator pools that
+same source with 100 fresh iid rollouts, also 200 total. Supplied pairs receive
+100 votes once each; copied mentions never add extra credit. The target is
+**+0.03 absolute R-precision** over this comparator, fixed before new accuracy
+was examined. Equal rollout counts do not imply equal compute or latency.
 
-A strong true-contact response would show that the model can use prompt contacts;
-failure of predicted contacts would then point toward their quality or selection.
-Little response even to a substantial true-contact set, after validating prompt
-serialization and a positive control, would support the insensitivity concern.
-An older exp163 probe reported a large true-partial-map effect, but used a
-**different checkpoint, protein set, and readout**, so it is motivation for this
-control rather than verification of m2-p06.
+For **mechanistic accuracy**, remove the union of every supplied contact set
+from every arm's candidate universe and from its true-contact denominator.
+Copied prompt contacts are therefore excluded too. Independent iid repeats
+measure sampling-driven map turnover. The forced-next-contact probability probe
+measures pair probabilities after forcing `<contact>`; it does not include the
+probability of emitting that marker instead of stopping. Average the two
+replicates within each protein before a 20,000-draw paired protein bootstrap.
+Secondary intervals are pointwise and exploratory.
 
-Only a deployable predicted-contact method gaining approximately **0.03 over the
-current pooled-consensus baseline at comparable inference cost** meets the
-practical objective. Oracle conditioning and seed-excluded reduced-universe
-metrics diagnose the mechanism; they do not themselves satisfy that criterion.
-No such new intervention has been run here. A later eval-test check should use a
-frozen protocol, not choose among exploratory variants.
+### Results of the controlled intervention
+
+The practical comparison uses the full standard resolved-pair universe. The
+matched 200-rollout baseline is **0.524673**, so the +0.03 objective would require
+approximately **0.554673**. Fresh iid-100 is 0.522268; fresh iid-200 is 0.526060.
+
+| Predicted context | Final R-precision | Delta vs shared-source iid-200 | Paired 95% CI |
+|---|---:|---:|---:|
+| 10 contacts | 0.519378 | −0.005295 | [−0.009930, −0.001242] |
+| floor(L/3), primary | 0.507670 | **−0.017003** | **[−0.024636, −0.009889]** |
+
+For the mechanistic comparison, all arms share the same withheld universe and
+remaining R. Its iid baseline is **0.336854**, which is a different metric from
+full-map R-precision because the supplied-contact union has been removed.
+
+| Context | Remaining-contact R-precision | Delta vs iid | Paired 95% CI |
+|---|---:|---:|---:|
+| True, 10 | 0.435085 | +0.098231 | [+0.075255, +0.123582] |
+| False, 10 | 0.169964 | −0.166891 | [−0.192253, −0.142633] |
+| Predicted, 10 | 0.332935 | −0.003919 | [−0.010149, +0.001657] |
+| True, floor(L/3) | 0.609295 | **+0.272440** | [+0.235850, +0.309819] |
+| False, floor(L/3) | 0.017954 | **−0.318900** | [−0.355889, −0.281558] |
+| Predicted, floor(L/3) | 0.320907 | −0.015947 | [−0.027017, −0.005092] |
+
+Large true-versus-false prompts differ by **0.591341 [0.578101, 0.605088]** on
+unsupplied contacts. The corresponding withheld top-R turnover relative to iid
+is 52.87% for true prompts, 97.47% for false prompts, and 35.53% for predicted
+prompts, versus 21.86% for iid resampling. On the same withheld universe, mean
+forced-next-contact probability L1 changes are 0.8724, 1.2515, and 0.8450,
+respectively. That probe forces the contact marker and is not a measurement of
+voluntary contact-emission probability.
+
+These controls contradict general prompt insensitivity on this checkpoint.
+Predicted contexts can instead reinforce existing errors, force a fixed set into
+the final vote ranking, and alter continuation behavior. This experiment does
+not isolate which of those mechanisms causes the practical loss; improved
+context quality or selection would require a new practical test against +0.03.
+The single-contact result alone could not resolve this distinction.
+
+### Post-hoc check: retaining the first-pass scores
+
+The primary final-map readout discards most first-pass score information. A
+subsequent **exploratory, fixed equal-weight blend** keeps those archived scores
+and adds either the conditioned continuation votes or complete-document votes.
+No new inference, weight search, or model selection is involved. This is an added
+analysis after seeing the primary result, not a replacement preregistered test.
+
+| Context | Added votes | Delta vs shared-source iid-200 | Paired 95% CI |
+|---|---|---:|---:|
+| 10 | Complete document | −0.000911 | [−0.004334, +0.001911] |
+| 10 | Continuation | −0.001228 | [−0.004647, +0.001589] |
+| floor(L/3) | Complete document | −0.002511 | [−0.007403, +0.001763] |
+| floor(L/3) | Continuation | −0.004346 | [−0.009648, −0.000032] |
+
+Retaining source scores removes most of the primary loss. It still provides no
+useful gain: every upper bound is below +0.002, far below +0.03. The negative
+practical conclusion therefore survives these simple readout alternatives.
+See [data/conditioning_blend_summary.csv](data/conditioning_blend_summary.csv).
+
+### Execution and recovery boundaries
+
+All population outputs use H100s with vLLM 0.19.1, transformers 5.15.0, and
+PyTorch 2.10.0+cu129. The checkpoint's two weight shards match the local audited
+checkpoint byte-for-byte by SHA-256. Its 5.885 GB export was staged once into a
+shared eight-GPU RNO2A allocation. Each worker used independent single-GPU
+inference; no eval-test or eval-denovo results were read.
+
+The original termination check aborted workers when large false-contact prompts
+hit the unchanged `6L+128` completion-token budget. Before examining new accuracy,
+acceptance was amended to retain exact-budget terminations and all empty
+continuations, preserving the entire cohort. This is a **post-launch amendment**,
+not fully preregistered handling. The protocol, public raw archive, and execution
+record preserve both worker versions and the original failed groups. Recovered
+inference can differ despite identical seeds. Accepted-run truncation rates do
+not reconstruct first-attempt rates; the recovery sensitivity substitutes saved
+original false-contact outputs and separately examines the retained-initial-unit
+cohort. Neither diagnostic replaces the full-cohort primary.
+
+All **155 budget terminations occur in the large-false arm** (155/19,400, 0.799%).
+No other arm is capped. Large predicted contexts yield only 78.19 novel parsed
+contacts per rollout versus 265.63 for iid, and 856/19,400 contain no parsed contact
+at separation >=6. Their aggregate generation time is 307.10 s versus 920.66 s for
+iid across the same protein/replicate batches, excluding the common first pass,
+probing, prompt construction, setup, and output I/O. Therefore this result does
+not rule out alternative allocation of an equal wall-clock budget.
+
+The five preserved initial failure groups contain 81 capped outputs versus 80 in
+their accepted reruns; these are observed trigger groups, not a first-attempt
+population rate. Despite text differences, replacing their accepted false-contact
+votes with the original votes changes no remaining-contact R-precision score.
+Excluding all 21 proteins generated by the resumed worker leaves 76 and yields a
+primary delta of **−0.017037 [−0.026506, −0.008150]**. This is a selected-cohort
+sensitivity, not a replacement primary. See
+[data/conditioning_recovery_summary.json](data/conditioning_recovery_summary.json).
+
+Full raw verification covers 155,200 completions and exactly reconstructs all
+continuation vote matrices. An independent implementation using explicit residue
+pairs and Python sorting reproduces all **3,880 scores** within 1e−12. Probability
+matrices were checked numerically but not rerun independently. All **51 tests**
+pass across exp254 and exp256.
+
+Per-arm `elapsed_seconds` records generation time. Probability probing is separate.
+Per-arm `total_seconds` excludes prompt construction and final serialization;
+per-protein completion markers record the entire protein operation. Repeated
+model-load fields must not be summed. The initial checkpoint-copy duration was
+not persisted after an upload stall; recovered staging records explicitly mark
+cache reuse. All prediction timings and worker metadata are saved in
+[data/conditioning_timings.csv](data/conditioning_timings.csv).
+
+### Reproduce the controlled run analysis without a GPU
+
+The public archive manifest is [data/conditioning_artifacts.json](data/conditioning_artifacts.json).
+It includes raw completions, matrices, timing and completion records, preserved
+failure groups, the frozen plan/source votes, and the executed worker sources.
+The earlier [input manifest](data/conditioning_inputs.json) preserves the
+pre-launch input/code freeze separately. From this experiment directory:
+
+```bash
+uv run --python 3.12 publish_to_hf.py fetch --manifest data/conditioning_artifacts.json --out /tmp/exp254-conditioning
+export PYTHONPATH="$PWD/../../marinfold"
+uv run --no-project --python 3.12 --with numpy --with pandas --with gemmi --with fsspec python verify_conditioning.py --plan /tmp/exp254-conditioning/inputs/plan.json --run /tmp/exp254-conditioning/run --accept-budget-termination --worker-sha256 843a79f0ab7c81c90b2965ab46b90bd46fb99f64ca0c17de3a3c84ca6283831b --worker-sha256 01b2ffb79e307d451e7ea29fb91e02955ac2ae7e14a59b14691b0818da8a893a --out data/conditioning_verification.json
+uv run --no-project --python 3.12 --with numpy --with pandas python analyze_conditioning.py --plan /tmp/exp254-conditioning/inputs/plan.json --run /tmp/exp254-conditioning/run --out data
+uv run --no-project --python 3.12 --with numpy --with pandas python audit_conditioning_results.py --plan /tmp/exp254-conditioning/inputs/plan.json --run /tmp/exp254-conditioning/run --data data
+uv run --no-project --python 3.12 --with numpy --with pandas --with gemmi --with fsspec python conditioning_recovery_sensitivity.py --plan /tmp/exp254-conditioning/inputs/plan.json --run /tmp/exp254-conditioning/run --analysis data --failures /tmp/exp254-conditioning/run/initial_failures --out data --original-worker-sha256 843a79f0ab7c81c90b2965ab46b90bd46fb99f64ca0c17de3a3c84ca6283831b --resumed-worker-sha256 01b2ffb79e307d451e7ea29fb91e02955ac2ae7e14a59b14691b0818da8a893a
+uv run --no-project --python 3.12 --with numpy --with pandas python conditioning_blend_check.py --plan /tmp/exp254-conditioning/inputs/plan.json --run /tmp/exp254-conditioning/run --out data
+uv run --no-project --python 3.12 --with numpy --with pandas --with matplotlib python plot_conditioning.py --data data --out plots
+uv run --no-project --python 3.12 --with matplotlib python build_summary.py
+```
 
 ## Reproduce the audit without a GPU
 

@@ -1,12 +1,36 @@
-# exp254: audited seeding and candidate-selection results
+# exp254: controlled contact conditioning and audited inference results
 
-## Decision target: three percentage points
+## Controlled result: the model uses contact prompts
 
-The practical requirement is approximately +0.03 absolute R-precision over pooled consensus: 0.5217 to about 0.5517. None of the tested usable methods meets it. Small positive effects are diagnostic findings, not practical successes.
+Same m2-p06 checkpoint, 97 eval-val proteins, two replicates, eight arms, 100 rollouts per arm: 155,200 completions. No eval-test or eval-denovo scoring.
 
-This does not establish that MarinFold ignores prompt contacts. Accuracy can stay unchanged even when predictions respond substantially, and pooling differently conditioned rollouts can hide seed-specific changes.
+Remove the union of all supplied contact sets from every scoring universe and remaining R. Large true contexts improve remaining-contact R-precision by +0.2724, 95% interval [+0.2359, +0.3098]. Matched false contexts reduce it by 0.3189 [0.2816, 0.3559]. Copying supplied contacts cannot earn this credit.
 
-The current experiment supplies only one predicted contact per rollout. The central mechanistic question is how this checkpoint responds to a substantial supplied contact set.
+Predicted large contexts also change predictions: 35.53% withheld top-R turnover versus 21.86% between iid repeats. The earlier broad prompt-insensitivity interpretation is contradicted by this intervention.
+
+## Practical decision: predicted contexts fail the +3pp target
+
+The predeclared recipe uses 100 archived iid rollouts to choose floor(L/3) contacts, then 100 conditioned rollouts. Its complete final map scores 0.5077 versus 0.5247 for the same archived source plus 100 fresh iid rollouts.
+
+Difference: −0.0170, 95% paired protein interval [−0.0246, −0.0099]. The +0.03 absolute R-precision target is ruled out for this recipe and saved run. A 10-contact predicted context also loses 0.0053 [0.0012, 0.0099].
+
+Oracle controls establish context use; they are not deployable accuracy. The primary uses the conditioned final map and equal rollout counts, not equal measured compute. Other context selection or score aggregation requires its own labeled test.
+
+## Exploratory blends do not rescue the practical gain
+
+The primary final-map readout discards most first-pass score information. Four post-hoc, equal-weight blends retain archived scores and add either conditioned continuation votes or complete-document votes, at both context sizes. No new inference or weight tuning.
+
+Large-context complete-document blending improves the primary −0.0170 delta to −0.0025, 95% interval [−0.0074, +0.0018]. Small-context blending gives −0.0009 [−0.0043, +0.0019]. The continuation-only blends are also nonpositive.
+
+Retaining source information removes most of the original loss, but every interval upper bound remains below +0.002. None approaches the +0.03 practical target. These are exploratory checks, separate from the predeclared primary.
+
+## Recovery checks and validation
+
+Full raw-text verification rebuilds all 155,200 completions' contact votes. A separate implementation reproduces all 3,880 R-precision scores. 51 tests pass across exp254 and exp256.
+
+A post-launch amendment retains exact 6L+128 budget terminations instead of dropping affected proteins. 155/19,400 large-false outputs are capped; every other arm has zero. Initial failure groups and both worker sources are preserved publicly.
+
+Replaying the five original failed groups leaves mechanistic scores unchanged. Excluding all 21 resumed-worker proteins still gives −0.0170 [−0.0265, −0.0081]. These sensitivities do not replace the full 97-protein primary. Identical seeds did not guarantee identical recovered text.
 
 ## Consensus differences and uncertainty
 
@@ -62,10 +86,10 @@ The residual needs no reference labels, but this diagnostic constructs candidate
 
 A weak selector does not establish that folding confidence or another selector cannot capture the positive oracle headroom. Comparing correlations across experiments does not establish a twelvefold predictive improvement.
 
-## Reproducibility and next decision
+## Reproducibility and scope
 
-The public archive is pinned by data/artifacts.json, with SHA-256 for every file. CPU commands in the README reproduce the metrics and audit from an anonymous download. Regression tests cover seed removal, short predictions, and invalid comparisons.
+The controlled archive is pinned by data/conditioning_artifacts.json; the original audit inputs by data/artifacts.json. Anonymous downloads verify every file by SHA-256. Raw completions, source votes, plans, matrices, timing records, and recovery groups are public. CPU commands reproduce scores and plots.
 
-Protein bootstrap intervals condition on one saved sampling draw. Exploratory contrasts are unadjusted for multiple comparisons. The next informative control is a matched intervention with substantial true versus false contact sets on this checkpoint, measuring both prediction changes and remaining-contact accuracy.
+Protein-bootstrap intervals average the two new replicates within protein and condition on saved draws and the archived source. Secondary comparisons are exploratory. The fixed-budget true/false effects establish strong context sensitivity, while the tested predicted-contact recipe fails the practical target.
 
-Exclude supplied pairs from both scoring universes and compare against repeated no-contact runs. A deployable method must gain about +0.03 at comparable inference cost. The Helico cut sweep tests noisy pair density, not folding multiple coherent cluster maps; its negative union result does not close that question.
+The historical ranking, clustering, and Helico results above constrain their tested variants. They do not establish family-wide impossibility or close the separate cluster-and-fold question.
