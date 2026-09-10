@@ -1,0 +1,5 @@
+{
+  "script": "uv run --no-project --with matplotlib python experiments/exp281_models_iterated_sft_and_rejection_fine_tuning/_scripts/build_idea_slide.py",
+  "args": [],
+  "caption": "Exp281 method: format warm-up, iterated synthesis SFT, then whole-trajectory rejection selection."
+}
