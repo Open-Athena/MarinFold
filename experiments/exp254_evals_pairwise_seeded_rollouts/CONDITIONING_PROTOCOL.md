@@ -118,3 +118,14 @@ Reuse already completed units without rewriting them. Resume the remaining units
 with an explicitly opted-in worker that differs only in termination acceptance.
 Publish both worker sources and require an explicit hash allowlist during
 verification. The model, engine versions, and input-plan hash remain identical.
+
+Recovery does not guarantee bitwise-identical generated text, even with identical
+request seeds. Before scoring accuracy, comparison with saved failed groups
+found different texts and two originally capped groups that no longer capped on
+rerun. Final-unit cap rates therefore describe accepted executions, not all first
+attempts. Preserve the original failed groups and report their observed counts
+separately; the complete first-attempt population is unavailable. As a sensitivity
+check, replace each rerun false-context group's votes with its original failed
+group and recompute the mechanistic contrasts. Also report the primary contrast
+on proteins whose initial units were retained. This selected-subset diagnostic
+does not replace the full 97-protein primary analysis.
