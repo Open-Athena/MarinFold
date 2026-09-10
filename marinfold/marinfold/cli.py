@@ -148,12 +148,24 @@ def _make_inference_config(
     input_path: Path | None = None,
 ) -> Any:
     """Build the impl's InferenceConfig from the parsed CLI args."""
+    options = {
+        name: value
+        for name in ("method", "n_rollouts", "min_new_contacts")
+        if (value := getattr(args, name)) is not None
+    }
+    supported = {field.name for field in dataclasses.fields(impl.InferenceConfig)}
+    for name in options:
+        if name not in supported:
+            raise SystemExit(
+                f"--{name.replace('_', '-')} is not supported by this document structure."
+            )
     return impl.InferenceConfig(
         model=model_spec,
         input_path=input_path,
         backend=args.backend,
         batch_size=args.batch_size,
         dtype=args.dtype,
+        **options,
     )
 
 
@@ -270,6 +282,19 @@ def _emit_evaluate_plots(
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--method", choices=("pairwise", "rollout"), default=None,
+        help="contacts-v1 readout (default pairwise). Rollout samples completions.",
+    )
+    p.add_argument(
+        "--n-rollouts", type=int, default=None,
+        help="Number of contacts-v1 rollout completions (default 100).",
+    )
+    p.add_argument(
+        "--min-new-contacts", type=int, default=None,
+        help="With --method rollout, block <end> until each completion emits "
+             "this many complete new contact statements. Omit for normal stopping.",
+    )
     p.add_argument(
         "--model", default=None,
         help="MODELS.yaml nickname (e.g. '1B') or a local directory "

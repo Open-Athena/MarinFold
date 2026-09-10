@@ -72,6 +72,7 @@ from marinfold import Backend, EvalResult, load_backend
 
 from .generate import GenerationConfig, build_document
 from .read import live_contacts
+from .sampling import _token_id, sample_contacts
 from .parse import (
     RawContact,
     ResidueInfo,
@@ -84,7 +85,6 @@ from .vocab import (
     BEGIN_STRUCTURE_TOKEN,
     CONTACT_TOKEN,
     CONTEXT_LENGTH,
-    END_TOKEN,
     NAME,
     NUM_POSITION_INDICES,
     position_token,
@@ -159,6 +159,12 @@ class InferenceConfig:
     fan-out backends batch internally (pairwise tails / rollout completions).
     ``keep_matrix`` adds the dense per-structure score matrix to each
     ``predict`` record.
+
+    ``min_new_contacts`` (rollout only) blocks end until each completion
+    emits this many complete contact statements. None keeps normal stopping.
+    Duplicates count and retractions do not undo the emitted count. A token
+    budget that cannot reach the minimum raises instead of returning a short
+    completion. See :func:`sample_contacts` for sampling prompted contacts.
     """
 
     model: str | None
@@ -177,6 +183,15 @@ class InferenceConfig:
     temperature: float = 1.0
     top_p: float = 0.95
     top_k: int = 50
+    min_new_contacts: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.min_new_contacts is None:
+            return
+        if not isinstance(self.min_new_contacts, int) or self.min_new_contacts < 0:
+            raise ValueError("min_new_contacts must be a non-negative integer or None.")
+        if self.method != "rollout":
+            raise ValueError("min_new_contacts requires method='rollout'.")
 
 
 @dataclass(frozen=True)
@@ -245,25 +260,6 @@ def _prefix_and_positions(
     nterm = result.n_term_index
     seq_positions = [(nterm + k) % NUM_POSITION_INDICES for k in range(result.seq_len)]
     return prefix, seq_positions, result.seq_len
-
-
-def _token_id(tokenizer, token: str) -> int:
-    """Resolve one domain token to its id; fail loudly on an UNK collapse.
-
-    A wrong / missing contacts-v1 tokenizer maps every ``<pX>`` / ``<contact>``
-    to the UNK id, which would otherwise silently produce a garbage contact
-    map. Catch it here, the way the contacts-and-distances-v1 distance-bin
-    resolver does.
-    """
-    tid = tokenizer.convert_tokens_to_ids(token)
-    unk_id = getattr(tokenizer, "unk_token_id", None)
-    if tid is None or (unk_id is not None and tid == unk_id):
-        raise ValueError(
-            f"Tokenizer has no dedicated id for {token!r} (got {tid}). The "
-            f"tokenizer is missing the contacts-v1 vocabulary — make sure it "
-            f"is co-located with the model."
-        )
-    return int(tid)
 
 
 def _fwd_matrix(
@@ -392,7 +388,6 @@ def _rollout_score_matrix(
     ``NotImplementedError`` from :meth:`Backend.sample_completions`.
     """
     tokenizer = backend.tokenizer
-    stop_id = _token_id(tokenizer, END_TOKEN)
 
     prefixes: list[list[int]] = []
     position_maps: list[dict[int, int]] = []
@@ -407,15 +402,19 @@ def _rollout_score_matrix(
 
     max_new = min(
         CONTEXT_LENGTH - len(prefixes[0]),
-        _ROLLOUT_TOKENS_PER_RESIDUE * seq_len + _ROLLOUT_TOKENS_CONSTANT,
+        max(
+            _ROLLOUT_TOKENS_PER_RESIDUE * seq_len + _ROLLOUT_TOKENS_CONSTANT,
+            3 * (cfg.min_new_contacts or 0) + 1,
+        ),
     )
-    completions = backend.sample_completions(
+    completions = sample_contacts(
+        backend,
         prefixes,
         max_new_tokens=max_new,
+        min_new_contacts=cfg.min_new_contacts,
         temperature=cfg.temperature,
         top_p=cfg.top_p,
         top_k=cfg.top_k,
-        stop_token_id=stop_id,
         batch_size=_adaptive_sample_batch(seq_len, cfg.batch_size),
     )
 
@@ -650,6 +649,8 @@ def predict(
         record["n_rollouts" if cfg.method == "rollout" else "ensemble_k"] = (
             cfg.n_rollouts if cfg.method == "rollout" else cfg.ensemble_k
         )
+        if cfg.min_new_contacts is not None:
+            record["min_new_contacts"] = cfg.min_new_contacts
         if cfg.keep_matrix:
             record["score_matrix"] = _band_masked(
                 score, seq_len, cfg.min_seq_separation
@@ -855,6 +856,8 @@ def evaluate(
             "n_rollouts": cfg.n_rollouts,
             "n_structures": n_scored,
             "per_structure_n_residues": per_structure_n_residues,
+            **({"min_new_contacts": cfg.min_new_contacts}
+               if cfg.min_new_contacts is not None else {}),
         },
     )
 

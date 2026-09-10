@@ -57,6 +57,7 @@ from .inference import (
     predict,
     structure_from_sequence,
 )
+from .sampling import sample_contacts
 from .parse import (
     ANALYZED_ROW_COLUMNS,
     DEFAULT_CIF_COLUMN,
@@ -126,5 +127,6 @@ __all__ = [
     "plot_infer_pdf",
     "predict",
     "residues_from_sequence",
+    "sample_contacts",
     "structure_from_sequence",
 ]

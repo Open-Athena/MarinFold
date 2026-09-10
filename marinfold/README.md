@@ -56,6 +56,50 @@ from marinfold.document_structures.contacts_v1 import (
 )
 ```
 
+## Require a minimum number of new contacts
+
+For contacts-v1 rollouts, `min_new_contacts` blocks `<end>` until each
+completion emits that many complete `<contact> <p_i> <p_j>` statements.
+Contacts already in the prompt do not count. Once the minimum is reached,
+the model samples normally and may emit more contacts before `<end>`.
+Omitting the option (or passing zero to `sample_contacts`) preserves normal
+stopping. Repeated contact statements count; this does not enforce unique
+pairs or subtract retractions.
+
+```bash
+marinfold infer --model 1.5B --backend transformers \
+  --input-sequence MGDIQVQVNIDDNGKAAAAQ \
+  --method rollout --n-rollouts 10 --min-new-contacts 30 --out preds.json
+```
+
+The same option is available on `contacts-v1 infer` / `evaluate`, and on
+`InferenceConfig(model="1.5B", method="rollout", min_new_contacts=30)` for
+`predict` / `evaluate`. Their output remains an aggregated contact-score map.
+
+For notebook code sampling a prompt that already contains, for example,
+10 contacts:
+
+```python
+from marinfold import load_backend
+from marinfold.document_structures.contacts_v1 import sample_contacts
+
+backend = load_backend("transformers", model="1.5B")
+# prompt is a contacts-v1 document through your 10th contact, without <end>.
+prefix = backend.tokenizer.encode(prompt, add_special_tokens=False)
+[new_tokens] = sample_contacts(
+    backend, [prefix], min_new_contacts=30, max_new_tokens=512,
+)
+completion = backend.tokenizer.decode(new_tokens, skip_special_tokens=False)
+```
+
+`max_new_tokens` is a hard cap across the entire completion; leave headroom
+for think tokens and other statements, and stay within the model's context
+window including the prompt. An impossible budget raises `ValueError`;
+failure to reach the contact minimum within the token cap raises
+`RuntimeError`. Sampling supports transformers and vLLM; MLX has no rollout
+sampler. Budgeted sampling may make multiple generation calls, resuming
+from the generated prefix while counting completed statements.
+
 ## Backends
 
 | Backend | When to use | Extra |

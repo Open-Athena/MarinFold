@@ -234,6 +234,7 @@ def _inference_config(args: argparse.Namespace) -> inference.InferenceConfig:
         temperature=args.temperature,
         top_p=args.top_p,
         top_k=args.top_k,
+        min_new_contacts=args.min_new_contacts,
     )
 
 
@@ -417,6 +418,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--n-rollouts", type=int, default=100,
                        help="(--method rollout) sampled completions to vote over "
                             "(default 100).")
+        p.add_argument("--min-new-contacts", type=int, default=None,
+                       help="(--method rollout) block <end> until each completion "
+                            "emits this many complete new contact statements. "
+                            "Omit for normal stopping; token limits still apply.")
         p.add_argument("--temperature", type=float, default=1.0,
                        help="(--method rollout) sampling temperature (default 1.0).")
         p.add_argument("--top-p", type=float, default=0.95,

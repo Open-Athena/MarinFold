@@ -158,6 +158,7 @@ class VllmBackend:
         prefix_token_ids_batch: list[list[int]],
         *,
         max_new_tokens: int,
+        min_new_tokens: int = 0,
         temperature: float = 1.0,
         top_p: float = 0.95,
         top_k: int = 50,
@@ -165,6 +166,8 @@ class VllmBackend:
         seed: int | None = None,
         batch_size: int | None = None,
     ) -> list[list[int]]:
+        if not 0 <= min_new_tokens <= max_new_tokens:
+            raise ValueError("min_new_tokens must be between 0 and max_new_tokens.")
         if not prefix_token_ids_batch:
             return []
         # vLLM samples natively: one SamplingParams, all prompts in one
@@ -178,6 +181,7 @@ class VllmBackend:
             top_p=top_p,
             top_k=top_k if (top_k and top_k > 0) else -1,
             max_tokens=max_new_tokens,
+            min_tokens=min_new_tokens,
             stop_token_ids=[stop_token_id] if stop_token_id is not None else None,
             seed=seed,
             n=1,
