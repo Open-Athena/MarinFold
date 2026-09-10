@@ -50,3 +50,5 @@ First full LM validation completed on 2026-09-09 at 20:13:38 UTC: step 2,114, va
 2026-09-09 23:36 UTC: step 15,239 / 145,200, train loss 3.03161, latest full validation loss 3.24531 at step 14,798. All seven validation passes improved. The first permanent checkpoint completed at 23:24:45 UTC: `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-native-mpnn-1.5B/checkpoints/step-14520`. Warmup has ended; LR remains 0.001 through step 116,160, then decays linearly to 0.0001. No production restart.
 
 2026-09-10 03:12 UTC: step 29,186 / 145,200 (20.1%), train loss 2.93443, latest full validation loss 3.16498. Thirteen validation passes completed. The permanent step-29,040 checkpoint saved at 03:10:26 UTC under the run’s native checkpoint base. No production restart.
+
+2026-09-10 07:01 UTC: step 43,870 / 145,200 (30.2%), train loss 2.89204, latest full validation loss 3.12627. Twenty validation passes completed. The permanent step-43,560 checkpoint saved at 06:56:46 UTC under the run’s native checkpoint base. No production restart.
