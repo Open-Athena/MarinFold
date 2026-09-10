@@ -10,7 +10,7 @@ Keep sequence statements, inputs, positions, attention and packing unchanged.
 
 ## Implementation checks
 
-53 CPU tests pass; the full-size accelerator loss/gradient test passes.
+60 CPU tests pass; the full-size accelerator loss/gradient test passes.
 An independent oracle checks 8192 positions, 2048 hidden, 2845 vocabulary.
 Two virtual CPU devices pass accumulation, resume and SkipStep migration tests.
 Both arms train for three GPU steps, save native state, validate and export.
@@ -32,3 +32,14 @@ Compare natural-protein eval-val R-precision at matched exposure and compute.
 Use identical rollout budgets and paired protein-level uncertainty.
 Keep ordinary validation CE comparable; report soft CE with entropy and KL.
 Confirm the fresh CE baseline and repeat promising results with another seed.
+
+## Approved learning-rate follow-up
+
+Fork permanent soft checkpoint step 14520 at LR 0.001, 0.0015 and 0.002.
+Keep Adam moments, RNG, data position, batch 128 and 32-H100 geometry fixed.
+Run 5,000 further updates per branch; leave the original production run running.
+Track ordinary and contact-endpoint CE, gradient norms and clipping decisions.
+Native optimizer fork tests and a stock GPU diagnostic smoke pass.
+The parent full-state checkpoint manifest passes restore preflight.
+Distributed trial pilot and the actual LR comparison remain pending placement.
+A winning LR would still need comparison against an appropriately tuned CE arm.

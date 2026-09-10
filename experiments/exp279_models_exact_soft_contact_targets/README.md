@@ -250,3 +250,59 @@ The CPU suite has 53 passing tests. Bundle tests verify identical source identit
 without `.git` and detect changed worker files. Tests cover actual pinned
 tokenizer loading, inherited Iris venv selection, GPU/TPU resource requests,
 phase boundaries and unchanged production LR during the pilot.
+
+## Learning-rate continuations (2026-09-10)
+
+The approved follow-up tests whether the soft objective benefits from a higher
+learning rate. Three full-state continuations use constant LR **0.001, 0.0015,
+and 0.002**, starting from the same permanent production checkpoint
+`exp279-soft-s0-cw-h100x32-b02/step-14520`. Each performs exactly **5,000 additional
+updates** (5.243B nominal tokens), ending at native checkpoint `step-19520`.
+The original production run continues independently.
+
+`lr_trial.py` contains the catalog and continuation entry point. Model weights,
+Adam moments and counters, RNG, next data batch, cache manifests, dependency
+versions, augmentation, batch 128, context 8192, and microbatch 32 are preserved.
+The continuation scheduler replaces only the LR and retains the optimizer's
+native state structure. Every original runtime source file must still match the
+parent's frozen code hash; new continuation code is additive. Lineage records
+pin the parent checkpoint metadata and reject changed inputs or trial identity.
+
+All branches use four eight-H100 nodes at batch priority, submitted through the
+`marin` federation as user `bizon`. `launch_lr.py` defaults to `cw-us-east-02a`;
+`--cluster cw-rno2a` is an alternative only after authorization for the cross-region
+storage access. Neither placement copies or modifies the original caches.
+A two-update pilot (`--stop-after 14523`) exercises the actual full-model restore,
+validation, diagnostics and export. Its trial resumes with the same run name and
+`--resume-record`, without changing its 5,000-update LR schedule.
+
+Ordinary full validation CE runs every 1,000 absolute steps and at the end.
+Separately, `lr_metrics.py` evaluates ordinary one-hot CE only at contact endpoint
+predictions, on the same fixed 128 packed validation examples, every 1,000
+continuation updates and at the end. This preserves the existing `eval/loss`;
+endpoint CE is `contact_eval/loss`. The diagnostic logs pre-clipping global
+gradient norm, whether the existing clip-at-one rule applies, its scaling factor,
+and actual optimizer update norm every step. These norms do not themselves
+estimate gradient variance.
+
+Compare the branches at matched additional updates, primarily by final ordinary
+validation CE and endpoint CE, checking the preceding evaluation points for a
+consistent effect and monitoring instability/clipping. A positive result selects
+a soft-loss LR candidate; it does not establish that soft targets outperform
+one-hot training. That claim still needs a matched one-hot control (including
+appropriate LR tuning) and the contact-accuracy evaluation described above.
+These short forks test optimization from an already-trained state, not which LR
+is best from initialization.
+
+The stock `run_progress` includes the pre-fork updates. Use
+`lr_trial/completed_updates` and `lr_trial/progress` for the bounded continuation's
+progress and ETA. The sweep ledger normalizes its progress field from the latter.
+
+The full CPU suite passes 60 tests; the new GPU integration smoke also passes.
+Validation includes native checkpoint round-trips through actual Levanter/Adam,
+identical restored states and next batches, correct first-update LR and parameter
+scaling across all three branches, independently derived endpoint masks and CE,
+resume identity guards, shell/resource checks, and a local GPU run through the
+stock training entry point. The production parent's full model/optimizer/RNG
+array manifest passed the strict restore preflight. The distributed full-model
+pilot remains required before the sweep is treated as operationally validated.
