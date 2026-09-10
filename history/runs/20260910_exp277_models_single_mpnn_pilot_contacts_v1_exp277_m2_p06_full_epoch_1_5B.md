@@ -47,3 +47,5 @@ Checkpoint base: `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pil
 2026-09-10 14:19 UTC: step 863 / 266,345, train loss 3.95884, step duration 0.87900 seconds. First recovery checkpoint completed at step 366 at 14:11:39 UTC under the same-region temporary checkpoint mirror. No restart.
 
 First full LM validation completed on 2026-09-10 at 14:38:19 UTC: step 2,114, loss 3.90597725. Training resumed and reached step 2,300 by 14:41 UTC, with train loss 3.72747 and 0.86330 seconds/step. Recovery checkpoint rotation passed at step 1,355. No restart.
+
+2026-09-10 21:03 UTC: step 27,003 / 266,345 (10.14%), train loss 2.98891, step duration 0.86685 seconds. All twelve full LM validation passes improved, reaching 3.18098283 at step 25,368. Warmup is complete. First permanent checkpoint `step-26634` committed at 20:58:21 UTC under the checkpoint base above; temporary recovery checkpoint `step-26591` also saved. No failures or restarts. Validation history is recorded in `data/epoch_validation_progress.csv`.
