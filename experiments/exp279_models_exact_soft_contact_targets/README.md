@@ -306,3 +306,14 @@ resume identity guards, shell/resource checks, and a local GPU run through the
 stock training entry point. The production parent's full model/optimizer/RNG
 array manifest passed the strict restore preflight. The distributed full-model
 pilot remains required before the sweep is treated as operationally validated.
+
+The user approved Reno cross-region storage access. The two-update distributed
+pilot `/bizon/exp279-lr100-rno-pilot-a01` completed successfully on 2026-09-10,
+using frozen runtime `5e11b8a6847f79b00a572f5c9777a9394fd69ee9`. It restored the
+parent at update 14521, applied LR 0.001 immediately, and logged ordinary CE
+**3.385615** and endpoint CE **4.433615** at step 14522. Its native full-state
+manifest, own-run resume position (14523), and HF weights/tokenizer were verified.
+`data/lr_pilot_result.json` preserves the evidence. These two updates belong to
+[the control trial](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr100-step14520-a01)
+and are included in its fixed 5,000-update budget. This is operational validation;
+no LR comparison result is available yet.
