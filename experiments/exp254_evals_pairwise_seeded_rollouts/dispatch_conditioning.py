@@ -19,10 +19,16 @@ uv pip install --python "$VLLM_PY" --no-deps \
   aioitertools==0.13.0 wrapt==1.17.0 aiohttp==3.14.3 frozenlist==1.7.0 \
   multidict==6.6.3 yarl==1.20.1 aiosignal==1.4.0 attrs==23.2.0 \
   propcache==0.3.2 jmespath==1.0.1 python-dateutil==2.9.0.post0 six==1.17.0 \
-  pandas==2.3.0 pyarrow==19.0.1 gemmi==0.6.5 aiohappyeyeballs==2.6.1 \
+  pandas==2.3.0 pyarrow==19.0.1 gemmi==0.6.5 aiohappyeyeballs==2.6.1 pytz==2025.2 tzdata==2025.2 \
   transformers==5.15.0
 export PYTHONPATH="$PWD/library${PYTHONPATH:+:$PYTHONPATH}"
+uv run --no-project "$VLLM_PY" -c 'import pandas, gemmi; from vllm import LLM, SamplingParams; from transformers import AutoTokenizer; print("Inference imports passed", flush=True)'
 export VLLM_PORT=$(uv run --no-project --no-sync "$VLLM_PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
+if [[ "${1:-}" == "--shared-rno" ]]; then
+  shift
+  uv run --no-project --no-sync "$VLLM_PY" conditioning_fanout.py --plan plan.json --workers 1 --stem 7qp5_A "$@"
+  exec uv run --no-project --no-sync "$VLLM_PY" conditioning_fanout.py --plan plan.json --workers 8 "$@"
+fi
 exec uv run --no-project --no-sync "$VLLM_PY" conditioning_worker.py --plan plan.json "$@"
 """
 
@@ -33,6 +39,7 @@ def prepare(inputs: Path, workspace: Path) -> None:
     here = Path(__file__).resolve().parent
     for name in (
         "conditioning_worker.py",
+        "conditioning_fanout.py",
         "common.py",
         "rank_pairwise.py",
         "analyze_conditioning.py",
@@ -67,6 +74,7 @@ def main() -> None:
     parser.add_argument("--run-name", required=True)
     parser.add_argument("--shards", type=int, default=12)
     parser.add_argument("--stem")
+    parser.add_argument("--rno-shared", action="store_true")
     parser.add_argument("--prepare-only", action="store_true")
     args = parser.parse_args()
     if args.shards < 1:
@@ -83,6 +91,26 @@ def main() -> None:
                 raise ValueError(f"Workspace changed after preparation: {name}")
     if args.prepare_only:
         return
+    if args.rno_shared:
+        if args.stem:
+            raise ValueError("Shared RNO job includes its own operational smoke")
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "--no-project",
+                str(Path(args.iris).parent / "python"),
+                str(Path(__file__).with_name("submit_conditioning_shared.py")),
+                "--workspace",
+                str(args.workspace),
+                "--out",
+                args.out,
+                "--name",
+                args.run_name + "-shared",
+            ],
+            check=True,
+        )
+        return
     for shard in range(1 if args.stem else args.shards):
         command = [
             args.iris,
@@ -94,7 +122,7 @@ def main() -> None:
             "--priority",
             "batch",
             "--gpu",
-            "H100x1",
+            "h100x1",
             "--enable-extra-resources",
             "--cpu",
             "8",

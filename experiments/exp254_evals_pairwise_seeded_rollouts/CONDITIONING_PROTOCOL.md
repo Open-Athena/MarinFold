@@ -85,3 +85,13 @@ The public run archive will include `plan.json`, `source_votes.npz`, raw model
 completions, vote and probability matrices, timings, completion manifests, and
 source-code/provenance records. New results will update the README and summary
 PDF when every expected protein and condition has completed.
+
+### Execution amendment (before population inference)
+
+The checkpoint region reported zero free H100s. The successful local operational
+smoke completed all 1,600 rollouts without truncation. Use a single RNO2A eight-GPU
+pod instead: stage the 5.885 GB checkpoint once, then share the local files across
+eight independent workers. Run the complete single-protein smoke on that engine
+before the eight-worker fan-out. Disable automatic pod retries; an unplanned
+second transfer could exceed the 10 GB budget. Inputs, arms, RNG, and decision
+rules are unchanged. Output matrices/completions are much smaller than weights.
