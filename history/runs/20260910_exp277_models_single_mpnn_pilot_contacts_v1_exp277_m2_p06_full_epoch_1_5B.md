@@ -16,8 +16,9 @@ marinfold_run:
   iris_job_ids:
   - /bizon/exp277-train-a02
   - /bizon/exp277-train-a02/exp277-train-8c393c8d
+  - /bizon/exp277-train-a03
+  - /bizon/exp277-train-a03/exp277-train-78333950
 ---
-
 # 2026-09-10 · exp277_models_single_mpnn_pilot · contacts-v1-exp277-m2-p06-full-epoch-1.5B
 
 **Launched:** 2026-09-10T13:56:19Z by bizon  
@@ -51,3 +52,7 @@ First full LM validation completed on 2026-09-10 at 14:38:19 UTC: step 2,114, lo
 2026-09-10 21:03 UTC: step 27,003 / 266,345 (10.14%), train loss 2.98891, step duration 0.86685 seconds. All twelve full LM validation passes improved, reaching 3.18098283 at step 25,368. Warmup is complete. First permanent checkpoint `step-26634` committed at 20:58:21 UTC under the checkpoint base above; temporary recovery checkpoint `step-26591` also saved. No failures or restarts. Validation history is recorded in `data/epoch_validation_progress.csv`.
 
 2026-09-11 03:54 UTC: step 53,571 / 266,345 (20.11%), train loss 2.86532, step duration 0.86567 seconds. All 25 full LM validation passes improved, reaching 3.10472560 at step 52,850. Permanent checkpoint `step-53268` committed at 03:49:34 UTC; temporary recovery checkpoint `step-52927` also saved. No failures or restarts. Brief data-loading delays cleared without intervention. Validation history is recorded in `data/epoch_validation_progress.csv`.
+
+2026-09-11 09:10 UTC: first production failure after step 73,702 (27.67%). JAX distributed shutdown barrier timed out with worker 6 first at the barrier; the underlying initiating error was not recovered before pod cleanup. All workers exited 139. Checkpoint step-73703 has a manifest but no completion metadata; step-72744 has both and committed at 08:50:11 UTC. The driver reached FAILED. Recovery attempt /bizon/exp277-train-a03 was submitted at 09:17:36 UTC with the unchanged training recipe, same W&B/checkpoint identity, and 128 H100s at batch priority. Source commit 5ae12a8f (documentation changes only since original launch). All 16 replacement workers started; restore verification pending. Validation loss improved across all 34 evaluations to 3.08621430 at step 71,876.
+
+Recovery verified at 09:28 UTC: latest-checkpoint discovery skipped incomplete step-73703 and restored step-72744. The trainer resumed from step 72,745 at 09:27:21 UTC, completed its first update at 09:27:35 UTC, and advanced to about 72,800 with finite loss 2.88 and 1.1 updates/second. W&B suppresses replayed metrics until its existing step-73703 high-water mark; logs are the progress source during catch-up. One recovery so far.
