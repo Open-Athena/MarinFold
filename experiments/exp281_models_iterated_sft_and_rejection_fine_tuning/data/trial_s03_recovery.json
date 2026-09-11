@@ -1,0 +1,12 @@
+{
+  "failed_job": "/bizon/exp281-trial-s03",
+  "resumed_job": "/bizon/exp281-trial-s03-r1",
+  "resume_step": 64,
+  "incomplete_step": 128,
+  "observed_optimizer_multipart_bytes": 7281311744,
+  "observed_optimizer_multipart_parts": 124,
+  "observation_utc": "2026-09-09T20:38:21Z",
+  "failure": "checkpoint-publication stall followed by distributed rank SIGABRT",
+  "source_commit": "bab3f50a",
+  "training_config_changed": false
+}

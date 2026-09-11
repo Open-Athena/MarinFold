@@ -1,0 +1,5 @@
+{
+  "script": "uv run --no-project --with matplotlib python -m experiments.exp281_models_iterated_sft_and_rejection_fine_tuning._scripts.plot_format_comparison",
+  "args": [],
+  "caption": "Eight unselected completions per mode on the same 25 held-out proteins, with the same seeds and forced budgets. Invalid outputs remain in the denominator. This is a format gate, not a FoldBench accuracy evaluation."
+}

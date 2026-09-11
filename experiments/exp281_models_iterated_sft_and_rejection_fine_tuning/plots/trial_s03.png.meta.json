@@ -1,0 +1,5 @@
+{
+  "script": "plot_trial.py",
+  "args": [],
+  "caption": "Loss improves but the fixed format gate fails on 25 held-out proteins, eight samples each. Invalid outputs remain in the denominator. Training CSV uses the successful resumed trajectory; the lost attempt's replayed steps are excluded. No protein-accuracy improvement is established."
+}

@@ -1,0 +1,14 @@
+{
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp281-profile-s01",
+  "iris_job": "/bizon/exp281-profile-s01",
+  "steps": 8,
+  "global_batch": 8,
+  "gpu_count": 8,
+  "gpu": "H100",
+  "worker_seconds": 182.9,
+  "median_steady_step_seconds": 0.44973563589155674,
+  "peak_allocated_memory_gb_per_gpu": 35.441471099853516,
+  "steady_tokens_per_second": 58480.10124949171,
+  "checkpoint": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/profile-s01/checkpoints/exp281-profile-s01/step-8",
+  "used_for_trial_initialization": false
+}

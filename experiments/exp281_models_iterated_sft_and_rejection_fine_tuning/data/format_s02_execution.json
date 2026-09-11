@@ -1,0 +1,17 @@
+{
+  "training_source_commit": "4721c76c",
+  "recovery_bundle_commit": "81448651",
+  "evaluation_bundle_commit": "6ff2ca96",
+  "training_job": "/bizon/exp281-format-s02-rno-r1",
+  "training_state": "succeeded",
+  "training_worker_seconds": 1349.15,
+  "evaluation_job": "/bizon/exp281-format-s02-eval-rno",
+  "evaluation_cluster": "cw-rno2a",
+  "evaluation_gpus": 1,
+  "evaluation_model_transfer_bytes": 5885652760,
+  "evaluation_model_downloads": 1,
+  "evaluation_shared_cache": "/tmp/exp281-models",
+  "evaluation_wrapper": "_scripts/run_continuation_eval.py",
+  "evaluation_state": "succeeded",
+  "evaluation_worker_seconds": 472.22
+}

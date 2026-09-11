@@ -1,0 +1,8 @@
+{
+  "continuation_optimizer_preserved": true,
+  "continuation_resume_bitwise_equal": true,
+  "cpu": false,
+  "processes": 1,
+  "resume_bitwise_equal": true,
+  "tokenizer_equal": true
+}

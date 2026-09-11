@@ -1,0 +1,11 @@
+{
+  "tiny_random_model": true,
+  "candidate_count": 2,
+  "valid_candidate_count": 0,
+  "expected_invalid_random_outputs": true,
+  "worker_completed": true,
+  "attention_head_dim": 64,
+  "context": 512,
+  "enforce_eager": true,
+  "timings": "timings.csv"
+}

@@ -1,0 +1,84 @@
+{
+  "checkpoint_step": 256,
+  "source_commit": "bab3f50a",
+  "bootstrap": {
+    "targets": 2048,
+    "candidates": 2048,
+    "bootstrap_rejected_samples": 252,
+    "bootstrap_empty_samples": 60,
+    "invalid": 0
+  },
+  "modes": {
+    "natural": {
+      "targets": 25,
+      "completions": 200,
+      "valid": 0,
+      "valid_fraction": 0.0,
+      "multiple_nonempty_hypotheses": 0,
+      "multi_fraction": 0.0,
+      "marker_present": 8,
+      "terminated": 68,
+      "macro_final_f1": 0.0,
+      "mean_hypotheses": 0,
+      "raw_multiple_hypothesis_markers": 188,
+      "errors": {
+        "incomplete contact triple": 64,
+        "unexpected token '<p1939>'": 2,
+        "missing final prediction or end marker": 32,
+        "unexpected token '<end>'": 63,
+        "contact must be followed by two position tokens": 38,
+        "unexpected token '<p1222>'": 1
+      },
+      "budget_target_counts": {
+        "4817": 1,
+        "5273": 1,
+        "5489": 1,
+        "5721": 1,
+        "6017": 1,
+        "6049": 1,
+        "6169": 1,
+        "6257": 1,
+        "6313": 1,
+        "6409": 1,
+        "6441": 1,
+        "6673": 1,
+        "6745": 1,
+        "6753": 1,
+        "6769": 1,
+        "6793": 1,
+        "6849": 1,
+        "6985": 2,
+        "6993": 1,
+        "7001": 2,
+        "7193": 2,
+        "7505": 1
+      },
+      "passes_validity_gate": false
+    },
+    "forced": {
+      "targets": 25,
+      "completions": 200,
+      "valid": 14,
+      "valid_fraction": 0.07,
+      "multiple_nonempty_hypotheses": 3,
+      "multi_fraction": 0.015,
+      "marker_present": 200,
+      "terminated": 16,
+      "macro_final_f1": 0.03192666988643289,
+      "mean_hypotheses": 0.06,
+      "raw_multiple_hypothesis_markers": 185,
+      "errors": {
+        "unexpected token '<begin_statements>'": 185,
+        "incomplete contact triple": 1
+      },
+      "budget_target_counts": {
+        "0": 5,
+        "256": 6,
+        "1024": 7,
+        "2048": 7
+      },
+      "passes_validity_gate": false
+    }
+  },
+  "passes_format_gate": false
+}

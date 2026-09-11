@@ -1,0 +1,18 @@
+{
+  "context": 8192,
+  "counts": {
+    "train": 2023,
+    "validation": 25
+  },
+  "excluded": {
+    "answer_budget": 0,
+    "length": 191
+  },
+  "max_residues": 512,
+  "per_source_limit": 1024,
+  "source_counts": {
+    "afdb": 1024,
+    "esm": 1024
+  },
+  "source_hash": "fd4bf45560ea2e6dcd884a358b9c2661a1377d6c2c653b9aac7ff229f849d2c5"
+}

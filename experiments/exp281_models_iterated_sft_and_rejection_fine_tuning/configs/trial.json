@@ -1,0 +1,20 @@
+{
+  "round": "trial-s03",
+  "phase": "bootstrap",
+  "generator": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp232_sweep_cv1_decontam/evals/rollout-v2/2026-08-24/v2-01/models/exp232-decontam-train-m2-p06-step363000/hf/step-363000",
+  "initial_model": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s01/checkpoints/exp281-format-s01/step-0",
+  "tokenizer": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/format-s01/checkpoints/exp281-format-s01/step-0",
+  "targets": "s3://marin-us-east-02a/protein-structure/MarinFold/exp281/trial-s01/targets/manifest.json",
+  "steps": 256,
+  "run_name": "exp281-trial-s03",
+  "generation_workers": 4,
+  "validation_generation_workers": 1,
+  "candidates": 1,
+  "bootstrap_hypotheses": 16,
+  "rehearsal_fraction": 0.5,
+  "global_batch": 32,
+  "save_every": 64,
+  "eval_every": 32,
+  "eval_documents": 16,
+  "seed": 281
+}

@@ -1,0 +1,401 @@
+mode,target_id,candidate_id,n_residues,budget,valid,error,final_marker_present,terminated,generated_tokens,raw_hypothesis_markers,hypotheses,nonempty_hypotheses,final_contacts,final_f1
+natural,afdb:AF-A0A017HM21-F1,0,206,6409,False,incomplete contact triple,True,False,7774,7,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,1,206,6409,False,unexpected token '<p1855>' at history offset 6195,True,False,7774,2,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,2,206,6409,False,incomplete contact triple,False,False,7774,2,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,3,206,6409,False,missing final prediction or end marker,False,False,7774,7,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,4,206,6409,False,unexpected token '<end>' at history offset 6623,False,True,6624,8,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,5,206,6409,False,unexpected token '<p1847>' at history offset 7545,False,False,7774,9,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,6,206,6409,False,incomplete contact triple,False,False,7774,3,0,0,0,0.0
+natural,afdb:AF-A0A017HM21-F1,7,206,6409,False,missing final prediction or end marker,False,False,7774,4,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,0,236,6169,False,unexpected token '<final-prediction>' at history offset 7273,True,False,7714,3,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,1,236,6169,False,contact must be followed by two position tokens,True,False,7714,9,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,2,236,6169,False,missing final prediction or end marker,False,False,7714,10,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,3,236,6169,False,unexpected token '<end>' at history offset 6327,False,True,6328,3,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,4,236,6169,False,incomplete contact triple,True,False,7714,8,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,5,236,6169,False,unexpected token '<final-prediction>' at history offset 6232,True,False,7714,6,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,6,236,6169,False,missing final prediction or end marker,False,False,7714,10,0,0,0,0.0
+natural,afdb:AF-A0A023B953-F1,7,236,6169,False,incomplete contact triple,False,False,7714,2,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,0,405,4817,False,contact must be followed by two position tokens,True,False,7376,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,1,405,4817,False,contact must be followed by two position tokens,False,False,7376,3,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,2,405,4817,False,incomplete contact triple,False,False,7376,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,3,405,4817,False,contact must be followed by two position tokens,False,False,7376,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,4,405,4817,False,incomplete contact triple,False,False,7376,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,5,405,4817,False,incomplete contact triple,False,False,7376,1,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,6,405,4817,False,contact must be followed by two position tokens,False,False,7376,2,0,0,0,0.0
+natural,afdb:AF-A0A0A0LEI7-F1,7,405,4817,False,incomplete contact triple,False,False,7376,1,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,0,108,7193,False,unexpected token '<final-prediction>' at history offset 6314,True,False,7970,16,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,1,108,7193,False,unexpected token '<begin_statements>' at history offset 5116,True,False,7970,14,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,2,108,7193,False,unexpected token '<begin_statements>' at history offset 6365,True,False,7970,17,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,3,108,7193,False,unexpected token '<final-prediction>' at history offset 6957,True,False,7970,17,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,4,108,7193,False,out-of-sequence or short-range generated contact,True,True,6634,17,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,5,108,7193,False,contact must be followed by two position tokens,True,False,7970,12,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,6,108,7193,False,unexpected token '<begin_statements>' at history offset 5580,True,False,7970,15,0,0,0,0.0
+natural,afdb:AF-A0A0C9R476-F1,7,108,7193,False,contact must be followed by two position tokens,False,False,7970,10,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,0,225,6257,False,incomplete contact triple,True,False,7736,2,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,1,225,6257,False,incomplete contact triple,False,False,7736,6,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,2,225,6257,False,contact must be followed by two position tokens,True,False,7736,7,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,3,225,6257,False,missing final prediction or end marker,False,False,7736,5,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,4,225,6257,False,missing final prediction or end marker,False,False,7736,2,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,5,225,6257,False,unexpected token '<final-prediction>' at history offset 7439,True,False,7736,4,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,6,225,6257,False,out-of-sequence or short-range generated contact,True,True,6853,8,0,0,0,0.0
+natural,afdb:AF-A0A2H3INI9-F1,7,225,6257,False,incomplete contact triple,False,False,7736,4,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,0,202,6441,False,unexpected token '<p1085>' at history offset 7698,True,False,7782,5,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,1,202,6441,False,unexpected token '<final-prediction>' at history offset 6267,True,False,7782,8,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,2,202,6441,False,missing final prediction or end marker,False,False,7782,3,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,3,202,6441,False,incomplete contact triple,False,False,7782,2,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,4,202,6441,False,missing final prediction or end marker,False,False,7782,6,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,5,202,6441,False,incomplete contact triple,False,False,7782,4,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,6,202,6441,False,incomplete contact triple,False,False,7782,7,0,0,0,0.0
+natural,afdb:AF-A0A2I1FP32-F1,7,202,6441,False,unexpected token '<p959>' at history offset 6706,False,False,7782,4,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,0,69,7505,False,contact must be followed by two position tokens,True,False,8048,16,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,1,69,7505,False,contact must be followed by two position tokens,True,False,8048,15,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,2,69,7505,False,contact must be followed by two position tokens,True,True,3850,21,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,3,69,7505,False,contact must be followed by two position tokens,True,False,8048,13,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,4,69,7505,False,out-of-sequence or short-range generated contact,True,True,3251,15,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,5,69,7505,False,unexpected token '<begin_statements>' at history offset 2717,True,False,8048,17,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,6,69,7505,False,contact must be followed by two position tokens,True,False,8048,15,0,0,0,0.0
+natural,afdb:AF-A0A397JLG7-F1,7,69,7505,False,unexpected token '<final-prediction>' at history offset 2771,True,True,3149,16,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,0,133,6993,False,unexpected token '<begin_statements>' at history offset 4685,True,True,6272,11,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,1,133,6993,False,unexpected token '<final-prediction>' at history offset 6579,True,True,7076,11,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,2,133,6993,False,unexpected token '<final-prediction>' at history offset 6445,True,False,7920,12,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,3,133,6993,False,incomplete contact triple,True,False,7920,13,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,4,133,6993,False,incomplete contact triple,True,False,7920,13,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,5,133,6993,False,unexpected token '<begin_statements>' at history offset 6051,True,True,6488,12,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,6,133,6993,False,out-of-sequence or short-range generated contact,True,True,7048,14,0,0,0,0.0
+natural,afdb:AF-A0A3B7PY05-F1,7,133,6993,False,missing final prediction or end marker,True,False,7920,14,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,0,132,7001,False,contact must be followed by two position tokens,True,False,7922,18,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,1,132,7001,False,unexpected token '<begin_statements>' at history offset 3816,True,True,6490,21,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,2,132,7001,False,contact must be followed by two position tokens,True,False,7922,15,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,3,132,7001,False,unexpected token '<end>' at history offset 211,False,True,212,1,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,4,132,7001,False,unexpected token '<final-prediction>' at history offset 6841,True,True,7920,15,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,5,132,7001,False,unexpected token '<begin_statements>' at history offset 3834,True,True,7177,16,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,6,132,7001,False,unexpected token '<begin_statements>' at history offset 4203,True,True,6354,16,0,0,0,0.0
+natural,afdb:AF-A0A3M0CI41-F1,7,132,7001,False,unexpected token '<begin_statements>' at history offset 2868,True,True,4400,17,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,0,321,5489,False,incomplete contact triple,False,False,7544,1,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,1,321,5489,False,incomplete contact triple,False,False,7544,1,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,2,321,5489,False,incomplete contact triple,True,False,7544,3,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,3,321,5489,False,position outside contacts-v1 ring,False,False,7544,2,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,4,321,5489,False,incomplete contact triple,False,False,7544,1,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,5,321,5489,False,incomplete contact triple,False,False,7544,1,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,6,321,5489,False,unexpected token '<p760>' at history offset 5842,False,False,7544,1,0,0,0,0.0
+natural,afdb:AF-A0A3N7ZB61-F1,7,321,5489,False,incomplete contact triple,False,False,7544,1,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,0,251,6049,False,incomplete contact triple,False,False,7684,6,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,1,251,6049,False,contact must be followed by two position tokens,False,False,7684,5,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,2,251,6049,False,contact must be followed by two position tokens,False,False,7684,2,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,3,251,6049,False,contact must be followed by two position tokens,False,False,7684,4,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,4,251,6049,False,incomplete contact triple,False,False,7684,3,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,5,251,6049,False,incomplete contact triple,False,False,7684,2,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,6,251,6049,False,contact must be followed by two position tokens,True,False,7684,3,0,0,0,0.0
+natural,afdb:AF-A0A497H822-F1,7,251,6049,False,contact must be followed by two position tokens,False,False,7684,1,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,0,164,6745,False,incomplete contact triple,False,False,7858,5,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,1,164,6745,False,out-of-sequence or short-range generated contact,True,True,6999,7,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,2,164,6745,False,unexpected token '<final-prediction>' at history offset 7442,True,False,7858,10,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,3,164,6745,False,unexpected token '<final-prediction>' at history offset 7225,True,False,7858,6,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,4,164,6745,False,unexpected token '<final-prediction>' at history offset 6894,True,False,7858,5,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,5,164,6745,False,unexpected token '<p301>' at history offset 6470,True,False,7858,5,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,6,164,6745,False,contact must be followed by two position tokens,True,False,7858,3,0,0,0,0.0
+natural,afdb:AF-A0A4C1Y3M6-F1,7,164,6745,False,unexpected token '<final-prediction>' at history offset 6805,True,False,7858,6,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,0,218,6313,False,incomplete contact triple,True,False,7750,5,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,1,218,6313,False,contact must be followed by two position tokens,False,False,7750,1,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,2,218,6313,False,missing final prediction or end marker,False,False,7750,7,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,3,218,6313,False,missing final prediction or end marker,False,False,7750,7,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,4,218,6313,False,missing final prediction or end marker,False,False,7750,1,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,5,218,6313,False,unexpected token '<p1430>' at history offset 6273,True,False,7750,6,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,6,218,6313,False,incomplete contact triple,False,False,7750,3,0,0,0,0.0
+natural,afdb:AF-A0A6D2JV33-F1,7,218,6313,False,contact must be followed by two position tokens,False,False,7750,4,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,0,151,6849,False,out-of-sequence or short-range generated contact,True,True,7135,17,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,1,151,6849,False,missing final prediction or end marker,False,False,7884,15,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,2,151,6849,False,unexpected token '<p253>' at history offset 4670,False,True,6617,18,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,3,151,6849,False,unexpected token '<begin_statements>' at history offset 5260,True,False,7884,14,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,4,151,6849,False,unexpected token '<final-prediction>' at history offset 6664,True,False,7884,15,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,5,151,6849,False,unexpected token '<end>' at history offset 2355,False,True,2356,6,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,6,151,6849,False,unexpected token '<begin_statements>' at history offset 5746,True,False,7884,15,0,0,0,0.0
+natural,afdb:AF-A0A7Z9Y145-F1,7,151,6849,False,unexpected token '<begin_statements>' at history offset 5871,True,False,7884,16,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,0,173,6673,False,unexpected token '<begin_statements>' at history offset 5575,True,True,6529,7,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,1,173,6673,False,incomplete contact triple,True,False,7840,7,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,2,173,6673,False,missing final prediction or end marker,False,False,7840,7,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,3,173,6673,False,contact must be followed by two position tokens,False,False,7840,3,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,4,173,6673,False,incomplete contact triple,True,False,7840,4,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,5,173,6673,False,contact must be followed by two position tokens,True,False,7840,11,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,6,173,6673,False,missing final prediction or end marker,False,False,7840,7,0,0,0,0.0
+natural,afdb:AF-A0A815WMA6-F1,7,173,6673,False,unexpected token '<final-prediction>' at history offset 7288,True,False,7840,12,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,0,163,6753,False,incomplete contact triple,True,False,7860,9,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,1,163,6753,False,contact must be followed by two position tokens,False,False,7860,1,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,2,163,6753,False,missing final prediction or end marker,True,False,7860,14,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,3,163,6753,False,unexpected token '<p1174>' at history offset 7572,False,False,7860,6,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,4,163,6753,False,contact must be followed by two position tokens,False,False,7860,1,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,5,163,6753,False,incomplete contact triple,False,False,7860,11,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,6,163,6753,False,incomplete contact triple,False,False,7860,4,0,0,0,0.0
+natural,afdb:AF-T1AV83-F1,7,163,6753,False,incomplete contact triple,True,False,7860,9,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,0,158,6793,False,contact must be followed by two position tokens,True,False,7870,12,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,1,158,6793,False,unexpected token '<p173>' at history offset 6321,False,False,7870,9,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,2,158,6793,False,contact must be followed by two position tokens,True,False,7870,14,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,3,158,6793,False,missing final prediction or end marker,False,False,7870,7,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,4,158,6793,False,incomplete contact triple,False,False,7870,5,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,5,158,6793,False,unexpected token '<begin_statements>' at history offset 3816,True,True,7111,11,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,6,158,6793,False,unexpected token '<final-prediction>' at history offset 7485,True,False,7870,11,0,0,0,0.0
+natural,esm:0000436d9b0fd313f22cb7e9d8eecd1b,7,158,6793,False,incomplete contact triple,False,False,7870,8,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,0,132,7001,False,incomplete contact triple,False,False,7922,12,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,1,132,7001,False,contact must be followed by two position tokens,True,False,7922,10,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,2,132,7001,False,unexpected token '<p1148>' at history offset 6278,True,False,7922,9,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,3,132,7001,False,incomplete contact triple,True,False,7922,11,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,4,132,7001,False,unexpected token '<p1154>' at history offset 4237,True,False,7922,9,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,5,132,7001,False,contact must be followed by two position tokens,True,False,7922,6,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,6,132,7001,False,missing final prediction or end marker,False,False,7922,8,0,0,0,0.0
+natural,esm:00006e0cc08f6811d06e26109f635a8e,7,132,7001,False,incomplete contact triple,True,False,7922,17,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,0,161,6769,False,incomplete contact triple,False,False,7864,6,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,1,161,6769,False,missing final prediction or end marker,False,False,7864,7,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,2,161,6769,False,unexpected token '<p183>' at history offset 6553,False,False,7864,7,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,3,161,6769,False,contact must be followed by two position tokens,False,False,7864,1,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,4,161,6769,False,incomplete contact triple,False,False,7864,8,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,5,161,6769,False,contact must be followed by two position tokens,False,False,7864,2,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,6,161,6769,False,unexpected token '<final-prediction>' at history offset 7648,True,False,7864,3,0,0,0,0.0
+natural,esm:0000719068762cf99fef9ac191d9d000,7,161,6769,False,contact must be followed by two position tokens,True,False,7864,5,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,0,348,5273,False,missing final prediction or end marker,False,False,7490,2,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,1,348,5273,False,missing final prediction or end marker,False,False,7490,2,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,2,348,5273,False,missing final prediction or end marker,False,False,7490,2,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,3,348,5273,False,unexpected token '<p1413>' at history offset 7178,True,False,7490,1,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,4,348,5273,False,unexpected token '<p1697>' at history offset 7127,False,False,7490,2,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,5,348,5273,False,incomplete contact triple,False,False,7490,1,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,6,348,5273,False,missing final prediction or end marker,False,False,7490,2,0,0,0,0.0
+natural,esm:0000791f2e0eab7c82eec856a673ce28,7,348,5273,False,incomplete contact triple,True,False,7490,2,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,0,292,5721,False,contact must be followed by two position tokens,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,1,292,5721,False,incomplete contact triple,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,2,292,5721,False,incomplete contact triple,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,3,292,5721,False,incomplete contact triple,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,4,292,5721,False,contact must be followed by two position tokens,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,5,292,5721,False,incomplete contact triple,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,6,292,5721,False,incomplete contact triple,False,False,7602,1,0,0,0,0.0
+natural,esm:00009aff61bfb81530c64f5cd63afddc,7,292,5721,False,incomplete contact triple,False,False,7602,1,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,0,108,7193,False,unexpected token '<p1474>' at history offset 3724,False,False,7970,5,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,1,108,7193,False,contact must be followed by two position tokens,True,False,7970,13,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,2,108,7193,False,contact must be followed by two position tokens,True,False,7970,6,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,3,108,7193,False,contact must be followed by two position tokens,False,False,7970,10,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,4,108,7193,False,unexpected token '<final-prediction>' at history offset 7395,True,False,7970,8,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,5,108,7193,False,contact must be followed by two position tokens,True,False,7970,11,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,6,108,7193,False,contact must be followed by two position tokens,True,False,7970,7,0,0,0,0.0
+natural,esm:0000aff5d2b25dbef209d2b224400539,7,108,7193,False,unexpected token '<end>' at history offset 319,False,True,320,1,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,0,255,6017,False,out-of-sequence or short-range generated contact,True,True,6605,3,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,1,255,6017,False,incomplete contact triple,False,False,7676,1,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,2,255,6017,False,incomplete contact triple,True,False,7676,8,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,3,255,6017,False,incomplete contact triple,False,False,7676,4,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,4,255,6017,False,missing final prediction or end marker,False,False,7676,5,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,5,255,6017,False,unexpected token '<final-prediction>' at history offset 4554,True,True,6366,5,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,6,255,6017,False,unexpected token '<begin_statements>' at history offset 6352,True,True,7413,7,0,0,0,0.0
+natural,esm:0000e43142af73ba1254dc52c898fcb6,7,255,6017,False,incomplete contact triple,True,False,7676,9,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,0,134,6985,False,incomplete contact triple,False,False,7918,5,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,1,134,6985,False,contact must be followed by two position tokens,True,True,6047,8,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,2,134,6985,False,incomplete contact triple,False,False,7918,12,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,3,134,6985,False,incomplete contact triple,False,False,7918,3,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,4,134,6985,False,missing final prediction or end marker,True,False,7918,9,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,5,134,6985,False,incomplete contact triple,False,False,7918,5,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,6,134,6985,False,contact must be followed by two position tokens,True,False,7918,8,0,0,0,0.0
+natural,esm:00011d4810d4918d4092138bbc6b0f22,7,134,6985,False,unexpected token '<final-prediction>' at history offset 6810,True,False,7918,8,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,0,134,6985,False,unexpected token '<p1775>' at history offset 7591,False,False,7918,13,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,1,134,6985,False,contact must be followed by two position tokens,True,False,7918,10,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,2,134,6985,False,incomplete contact triple,True,False,7918,11,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,3,134,6985,False,missing final prediction or end marker,False,False,7918,13,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,4,134,6985,False,incomplete contact triple,False,False,7918,14,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,5,134,6985,False,incomplete contact triple,False,False,7918,11,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,6,134,6985,False,contact must be followed by two position tokens,True,False,7918,15,0,0,0,0.0
+natural,esm:00012ca6bbd6262c16bf70b58b0bc173,7,134,6985,False,unexpected token '<end>' at history offset 6420,False,True,6421,15,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,0,206,2048,False,unexpected token '<begin_statements>' at history offset 2863,True,False,3411,5,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,1,206,2048,False,unexpected token '<begin_statements>' at history offset 2845,True,False,3411,4,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,2,206,2048,False,unexpected token '<begin_statements>' at history offset 2678,True,False,3412,6,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,3,206,2048,False,unexpected token '<begin_statements>' at history offset 3065,True,False,3412,2,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,4,206,2048,False,incomplete contact triple,True,False,3411,3,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,5,206,2048,False,unexpected token '<begin_statements>' at history offset 2799,True,False,3413,3,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,6,206,2048,False,unexpected token '<begin_statements>' at history offset 2621,True,False,3412,6,0,0,0,0.0
+forced,afdb:AF-A0A017HM21-F1,7,206,2048,False,unexpected token '<begin_statements>' at history offset 2703,True,False,3413,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,0,236,1024,False,unexpected token '<begin_statements>' at history offset 1818,True,False,2567,3,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,1,236,1024,False,unexpected token '<begin_statements>' at history offset 1839,True,False,2567,3,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,2,236,1024,False,unexpected token '<begin_statements>' at history offset 1751,True,False,2569,2,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,3,236,1024,False,unexpected token '<begin_statements>' at history offset 1923,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,4,236,1024,False,unexpected token '<begin_statements>' at history offset 2117,True,False,2569,2,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,5,236,1024,False,unexpected token '<begin_statements>' at history offset 1836,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,6,236,1024,False,unexpected token '<begin_statements>' at history offset 1863,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A023B953-F1,7,236,1024,False,unexpected token '<begin_statements>' at history offset 1665,True,False,2567,4,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,0,405,2048,False,incomplete contact triple,True,False,4607,2,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,1,405,2048,False,incomplete contact triple,True,False,4606,1,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,2,405,2048,False,incomplete contact triple,True,False,4606,1,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,3,405,2048,False,incomplete contact triple,True,False,4606,1,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,4,405,2048,False,unexpected token '<begin_statements>' at history offset 3057,True,False,4607,3,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,5,405,2048,False,unexpected token '<final-prediction>' at history offset 2048,True,False,4606,1,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,6,405,2048,False,incomplete contact triple,True,False,4606,1,0,0,0,0.0
+forced,afdb:AF-A0A0A0LEI7-F1,7,405,2048,False,incomplete contact triple,True,False,4606,1,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,0,108,0,False,unexpected token '<begin_statements>' at history offset 493,True,False,777,1,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,1,108,0,False,unexpected token '<begin_statements>' at history offset 400,True,False,777,1,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,2,108,0,False,unexpected token '<begin_statements>' at history offset 595,True,False,777,1,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,3,108,0,False,unexpected token '<begin_statements>' at history offset 340,True,False,777,1,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,4,108,0,False,unexpected token '<begin_statements>' at history offset 151,True,False,777,3,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,5,108,0,False,unexpected token '<begin_statements>' at history offset 337,True,False,777,2,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,6,108,0,False,out-of-sequence or short-range generated contact,True,True,332,0,0,0,0,0.0
+forced,afdb:AF-A0A0C9R476-F1,7,108,0,False,out-of-sequence or short-range generated contact,True,True,371,0,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,0,225,0,False,unexpected token '<begin_statements>' at history offset 499,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,1,225,0,False,out-of-sequence or short-range generated contact,True,True,695,0,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,2,225,0,False,incomplete contact triple,True,False,1479,0,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,3,225,0,False,incomplete contact triple,True,False,1479,0,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,4,225,0,False,unexpected token '<begin_statements>' at history offset 559,True,False,1479,2,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,5,225,0,False,unexpected token '<begin_statements>' at history offset 469,True,False,1479,1,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,6,225,0,False,unexpected token '<begin_statements>' at history offset 592,True,False,1479,1,0,0,0,0.0
+forced,afdb:AF-A0A2H3INI9-F1,7,225,0,False,out-of-sequence or short-range generated contact,True,True,620,0,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,0,202,2048,False,unexpected token '<begin_statements>' at history offset 2553,True,False,3389,7,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,1,202,2048,False,unexpected token '<begin_statements>' at history offset 2669,True,False,3388,2,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,2,202,2048,False,unexpected token '<begin_statements>' at history offset 2503,True,False,3387,5,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,3,202,2048,False,unexpected token '<begin_statements>' at history offset 2881,True,False,3387,4,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,4,202,2048,False,unexpected token '<begin_statements>' at history offset 2879,True,False,3388,5,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,5,202,2048,False,unexpected token '<begin_statements>' at history offset 2598,True,False,3389,3,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,6,202,2048,False,unexpected token '<begin_statements>' at history offset 2720,True,False,3388,6,0,0,0,0.0
+forced,afdb:AF-A0A2I1FP32-F1,7,202,2048,False,unexpected token '<begin_statements>' at history offset 3063,True,False,3389,6,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,0,69,1024,False,unexpected token '<begin_statements>' at history offset 1358,True,False,1567,8,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,1,69,1024,False,unexpected token '<begin_statements>' at history offset 1407,True,False,1565,6,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,2,69,1024,False,unexpected token '<begin_statements>' at history offset 1240,True,False,1566,8,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,3,69,1024,False,unexpected token '<begin_statements>' at history offset 1306,True,False,1566,8,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,4,69,1024,False,unexpected token '<begin_statements>' at history offset 1166,True,False,1567,10,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,5,69,1024,False,unexpected token '<begin_statements>' at history offset 1235,True,False,1567,9,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,6,69,1024,False,unexpected token '<begin_statements>' at history offset 1253,True,False,1567,6,0,0,0,0.0
+forced,afdb:AF-A0A397JLG7-F1,7,69,1024,False,unexpected token '<begin_statements>' at history offset 1180,True,False,1566,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,0,133,2048,False,unexpected token '<begin_statements>' at history offset 2609,True,False,2974,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,1,133,2048,False,unexpected token '<begin_statements>' at history offset 2455,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,2,133,2048,False,unexpected token '<begin_statements>' at history offset 2369,True,False,2974,9,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,3,133,2048,False,unexpected token '<begin_statements>' at history offset 2422,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,4,133,2048,False,unexpected token '<begin_statements>' at history offset 2517,True,False,2975,7,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,5,133,2048,False,unexpected token '<begin_statements>' at history offset 2354,True,False,2974,9,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,6,133,2048,False,unexpected token '<begin_statements>' at history offset 2542,True,False,2973,8,0,0,0,0.0
+forced,afdb:AF-A0A3B7PY05-F1,7,133,2048,False,unexpected token '<begin_statements>' at history offset 2483,True,False,2974,6,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,0,132,256,False,unexpected token '<begin_statements>' at history offset 414,True,False,1175,6,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,1,132,256,False,unexpected token '<begin_statements>' at history offset 486,True,False,1175,5,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,2,132,256,False,unexpected token '<begin_statements>' at history offset 378,True,False,1175,6,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,3,132,256,False,unexpected token '<begin_statements>' at history offset 707,True,False,1177,3,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,4,132,256,False,unexpected token '<begin_statements>' at history offset 498,True,False,1175,4,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,5,132,256,False,unexpected token '<begin_statements>' at history offset 455,True,False,1177,5,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,6,132,256,False,out-of-sequence or short-range generated contact,True,True,436,2,0,0,0,0.0
+forced,afdb:AF-A0A3M0CI41-F1,7,132,256,False,unexpected token '<begin_statements>' at history offset 518,True,False,1177,4,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,0,321,2048,False,incomplete contact triple,True,False,4102,1,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,1,321,2048,False,unexpected token '<begin_statements>' at history offset 3434,True,False,4102,2,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,2,321,2048,False,incomplete contact triple,True,False,4102,1,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,3,321,2048,False,incomplete contact triple,True,False,4103,2,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,4,321,2048,False,incomplete contact triple,True,False,4102,1,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,5,321,2048,False,unexpected token '<begin_statements>' at history offset 3192,True,False,4103,3,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,6,321,2048,False,out-of-sequence or short-range generated contact,True,True,3024,1,0,0,0,0.0
+forced,afdb:AF-A0A3N7ZB61-F1,7,321,2048,False,unexpected token '<begin_statements>' at history offset 3051,True,False,4103,4,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,0,251,0,False,incomplete contact triple,True,False,1635,0,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,1,251,0,False,contact must be followed by two position tokens,True,True,1407,0,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,2,251,0,False,unexpected token '<begin_statements>' at history offset 739,True,False,1635,2,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,3,251,0,False,unexpected token '<begin_statements>' at history offset 604,True,False,1635,1,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,4,251,0,False,incomplete contact triple,True,False,1635,0,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,5,251,0,False,incomplete contact triple,True,False,1635,0,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,6,251,0,False,incomplete contact triple,True,False,1635,0,0,0,0,0.0
+forced,afdb:AF-A0A497H822-F1,7,251,0,False,incomplete contact triple,True,False,1635,0,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,0,164,0,True,,True,True,431,0,0,0,143,0.7127272727272728
+forced,afdb:AF-A0A4C1Y3M6-F1,1,164,0,True,,True,True,377,0,0,0,125,0.7704280155642024
+forced,afdb:AF-A0A4C1Y3M6-F1,2,164,0,False,out-of-sequence or short-range generated contact,True,True,335,0,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,3,164,0,False,unexpected token '<begin_statements>' at history offset 334,True,False,1113,1,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,4,164,0,False,out-of-sequence or short-range generated contact,True,True,986,0,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,5,164,0,False,unexpected token '<begin_statements>' at history offset 358,True,False,1113,2,0,0,0,0.0
+forced,afdb:AF-A0A4C1Y3M6-F1,6,164,0,True,,True,True,410,0,0,0,136,0.7777777777777778
+forced,afdb:AF-A0A4C1Y3M6-F1,7,164,0,False,out-of-sequence or short-range generated contact,True,True,428,0,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,0,218,1024,False,incomplete contact triple,True,False,2459,2,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,1,218,1024,False,incomplete contact triple,True,False,2459,2,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,2,218,1024,False,unexpected token '<begin_statements>' at history offset 1578,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,3,218,1024,False,incomplete contact triple,True,False,2461,1,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,4,218,1024,False,unexpected token '<begin_statements>' at history offset 1845,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,5,218,1024,False,unexpected token '<begin_statements>' at history offset 1629,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,6,218,1024,False,unexpected token '<begin_statements>' at history offset 1578,True,False,2459,4,0,0,0,0.0
+forced,afdb:AF-A0A6D2JV33-F1,7,218,1024,False,incomplete contact triple,True,False,2461,1,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,0,151,1024,False,unexpected token '<begin_statements>' at history offset 1334,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,1,151,1024,False,unexpected token '<begin_statements>' at history offset 1439,True,False,2059,6,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,2,151,1024,False,unexpected token '<begin_statements>' at history offset 1702,True,False,2058,5,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,3,151,1024,False,unexpected token '<begin_statements>' at history offset 1349,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,4,151,1024,False,unexpected token '<begin_statements>' at history offset 1301,True,False,2059,7,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,5,151,1024,False,unexpected token '<begin_statements>' at history offset 1606,True,False,2058,4,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,6,151,1024,False,unexpected token '<begin_statements>' at history offset 1397,True,False,2059,6,0,0,0,0.0
+forced,afdb:AF-A0A7Z9Y145-F1,7,151,1024,False,invalid forced history: invalid hypothesis token '<p264>',False,False,1024,4,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,0,173,2048,False,unexpected token '<begin_statements>' at history offset 2538,True,False,3215,3,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,1,173,2048,False,unexpected token '<begin_statements>' at history offset 2667,True,False,3215,7,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,2,173,2048,False,unexpected token '<begin_statements>' at history offset 2428,True,False,3213,5,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,3,173,2048,False,unexpected token '<begin_statements>' at history offset 3005,True,False,3214,2,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,4,173,2048,False,incomplete contact triple,True,False,3213,3,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,5,173,2048,False,unexpected token '<begin_statements>' at history offset 2721,True,False,3215,6,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,6,173,2048,False,unexpected token '<begin_statements>' at history offset 2474,True,False,3214,6,0,0,0,0.0
+forced,afdb:AF-A0A815WMA6-F1,7,173,2048,False,unexpected token '<begin_statements>' at history offset 2391,True,False,3215,8,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,0,163,256,False,unexpected token '<begin_statements>' at history offset 983,True,False,1363,2,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,1,163,256,False,unexpected token '<begin_statements>' at history offset 761,True,False,1363,2,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,2,163,256,False,unexpected token '<begin_statements>' at history offset 818,True,False,1363,2,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,3,163,256,False,unexpected token '<begin_statements>' at history offset 737,True,False,1363,3,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,4,163,256,False,unexpected token '<begin_statements>' at history offset 1160,True,False,1363,2,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,5,163,256,False,unexpected token '<begin_statements>' at history offset 683,True,False,1363,3,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,6,163,256,False,unexpected token '<begin_statements>' at history offset 650,True,False,1363,3,0,0,0,0.0
+forced,afdb:AF-T1AV83-F1,7,163,256,False,unexpected token '<begin_statements>' at history offset 824,True,False,1363,2,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,0,158,256,False,unexpected token '<begin_statements>' at history offset 635,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,1,158,256,False,incomplete contact triple,True,False,1333,1,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,2,158,256,False,position outside contacts-v1 ring,True,False,1333,3,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,3,158,256,False,unexpected token '<begin_statements>' at history offset 644,True,False,1333,3,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,4,158,256,False,unexpected token '<begin_statements>' at history offset 587,True,False,1333,3,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,5,158,256,False,unexpected token '<begin_statements>' at history offset 614,True,False,1333,4,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,6,158,256,False,unexpected token '<begin_statements>' at history offset 611,True,False,1333,3,0,0,0,0.0
+forced,esm:0000436d9b0fd313f22cb7e9d8eecd1b,7,158,256,False,unexpected token '<begin_statements>' at history offset 611,True,False,1333,3,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,0,132,256,False,unexpected token '<begin_statements>' at history offset 614,True,False,1177,3,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,1,132,256,False,unexpected token '<begin_statements>' at history offset 444,True,False,1175,5,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,2,132,256,False,unexpected token '<begin_statements>' at history offset 567,True,False,1175,4,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,3,132,256,False,unexpected token '<begin_statements>' at history offset 635,True,False,1177,3,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,4,132,256,False,unexpected token '<begin_statements>' at history offset 1046,True,False,1177,2,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,5,132,256,False,unexpected token '<begin_statements>' at history offset 533,True,False,1177,3,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,6,132,256,False,unexpected token '<begin_statements>' at history offset 590,True,False,1177,3,0,0,0,0.0
+forced,esm:00006e0cc08f6811d06e26109f635a8e,7,132,256,False,unexpected token '<begin_statements>' at history offset 609,True,False,1175,4,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,0,161,2048,False,unexpected token '<begin_statements>' at history offset 2529,True,False,3143,6,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,1,161,2048,False,unexpected token '<begin_statements>' at history offset 2893,True,False,3141,7,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,2,161,2048,False,unexpected token '<begin_statements>' at history offset 2446,True,False,3141,8,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,3,161,2048,False,unexpected token '<begin_statements>' at history offset 2397,True,False,3143,7,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,4,161,2048,False,unexpected token '<begin_statements>' at history offset 2494,True,False,3141,8,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,5,161,2048,False,incomplete contact triple,True,False,3142,1,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,6,161,2048,False,incomplete contact triple,True,False,3143,2,0,0,0,0.0
+forced,esm:0000719068762cf99fef9ac191d9d000,7,161,2048,False,out-of-sequence or short-range generated contact,True,True,2461,5,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,0,348,256,False,incomplete contact triple,True,False,2473,1,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,1,348,256,False,incomplete contact triple,True,False,2473,1,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,2,348,256,False,unexpected token '<begin_statements>' at history offset 1352,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,3,348,256,False,incomplete contact triple,True,False,2473,1,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,4,348,256,False,incomplete contact triple,True,False,2473,1,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,5,348,256,False,unexpected token '<begin_statements>' at history offset 1403,True,False,2473,2,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,6,348,256,False,incomplete contact triple,True,False,2473,1,0,0,0,0.0
+forced,esm:0000791f2e0eab7c82eec856a673ce28,7,348,256,False,incomplete contact triple,True,False,2473,1,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,0,292,1024,False,out-of-sequence or short-range generated contact,True,True,2013,1,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,1,292,1024,False,incomplete contact triple,True,False,2905,1,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,2,292,1024,False,incomplete contact triple,True,False,2905,1,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,3,292,1024,False,incomplete contact triple,True,False,2905,1,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,4,292,1024,False,unexpected token '<begin_statements>' at history offset 1916,True,False,2905,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,5,292,1024,False,incomplete contact triple,True,False,2903,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,6,292,1024,False,unexpected token '<begin_statements>' at history offset 2051,True,False,2905,2,0,0,0,0.0
+forced,esm:00009aff61bfb81530c64f5cd63afddc,7,292,1024,False,incomplete contact triple,True,False,2905,1,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,0,108,1024,False,unexpected token '<begin_statements>' at history offset 1346,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,1,108,1024,False,unexpected token '<begin_statements>' at history offset 1328,True,False,1801,5,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,2,108,1024,False,unexpected token '<begin_statements>' at history offset 1310,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,3,108,1024,False,unexpected token '<begin_statements>' at history offset 1394,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,4,108,1024,False,out-of-sequence or short-range generated contact,True,True,1305,4,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,5,108,1024,False,unexpected token '<begin_statements>' at history offset 1514,True,False,1801,5,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,6,108,1024,False,unexpected token '<begin_statements>' at history offset 1361,True,False,1801,6,0,0,0,0.0
+forced,esm:0000aff5d2b25dbef209d2b224400539,7,108,1024,False,unexpected token '<begin_statements>' at history offset 1291,True,False,1800,5,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,0,255,0,False,incomplete contact triple,True,False,1659,0,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,1,255,0,False,unexpected token '<begin_statements>' at history offset 964,True,False,1659,1,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,2,255,0,False,unexpected token '<begin_statements>' at history offset 799,True,False,1659,2,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,3,255,0,False,unexpected token '<begin_statements>' at history offset 862,True,False,1659,1,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,4,255,0,False,incomplete contact triple,True,False,1659,0,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,5,255,0,False,incomplete contact triple,True,False,1659,0,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,6,255,0,False,incomplete contact triple,True,False,1659,0,0,0,0,0.0
+forced,esm:0000e43142af73ba1254dc52c898fcb6,7,255,0,False,unexpected token '<begin_statements>' at history offset 850,True,False,1659,1,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,0,134,1024,False,incomplete contact triple,True,False,1956,3,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,1,134,1024,False,unexpected token '<begin_statements>' at history offset 1375,True,False,1956,4,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,2,134,1024,False,unexpected token '<begin_statements>' at history offset 1441,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,3,134,1024,False,unexpected token '<begin_statements>' at history offset 1396,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,4,134,1024,False,out-of-sequence or short-range generated contact,True,True,1358,3,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,5,134,1024,False,unexpected token '<begin_statements>' at history offset 1375,True,False,1956,5,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,6,134,1024,False,incomplete contact triple,True,False,1956,3,0,0,0,0.0
+forced,esm:00011d4810d4918d4092138bbc6b0f22,7,134,1024,False,unexpected token '<begin_statements>' at history offset 1366,True,False,1956,5,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,0,134,256,False,unexpected token '<begin_statements>' at history offset 533,True,False,1189,3,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,1,134,256,True,,True,True,549,1,1,1,97,0.17964071856287425
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,2,134,256,False,unexpected token '<begin_statements>' at history offset 578,True,False,1189,4,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,3,134,256,False,unexpected token '<begin_statements>' at history offset 536,True,False,1189,3,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,4,134,256,False,unexpected token '<begin_statements>' at history offset 582,True,False,1187,4,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,5,134,256,False,unexpected token '<begin_statements>' at history offset 599,True,False,1189,3,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,6,134,256,False,unexpected token '<begin_statements>' at history offset 572,True,False,1189,3,0,0,0,0.0
+forced,esm:00012ca6bbd6262c16bf70b58b0bc173,7,134,256,False,unexpected token '<begin_statements>' at history offset 500,True,False,1189,4,0,0,0,0.0
