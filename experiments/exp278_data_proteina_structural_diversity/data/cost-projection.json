@@ -1,0 +1,23 @@
+{
+  "target_documents": 1000000,
+  "raw_candidates_at_interpolated_inverse_screen_yield": 4239356.244453477,
+  "target_length_distribution": "uniform integers 60..500; interpolation between six measured lengths",
+  "primary_projection_class_mix": "observed surviving mixture from equal raw sampling across four requested arms; not balanced accepted classes",
+  "checkpoint_assignment": "short checkpoint measured through 200; long checkpoint from 300; crossover remains unvalidated",
+  "h100_hours_for_one_million_raw_pipeline_candidates_without_overhead": 1967.493687715066,
+  "h100_hours_for_one_million_retained_at_screen_yield_with_20pct_overhead": 13381.659955187404,
+  "days_on_32_h100": 17.4240363999836,
+  "h100_hours_if_scale_retains_only_75pct_of_screen_survivors": 17842.213273583206,
+  "h100_hours_if_scale_retains_only_50pct_of_screen_survivors": 26763.31991037481,
+  "h100_hours_if_accepted_contributions_balanced_across_four_requested_arms": 15822.899751395193,
+  "zero_yield_length_condition_bins": [],
+  "balanced_projection_note": "equal retained contribution from unconditional/alpha/beta/mixed requested arms; requested classes are not independently assigned CATH labels",
+  "illustrative_accounting_dollars_at_2_per_h100_hour": 26763.31991037481,
+  "illustrative_accounting_dollars_at_4_per_h100_hour": 53526.63982074962,
+  "pricing_note": "illustrative rates, not vendor quotes; available fleet is prepaid",
+  "important_limit": "retention and duplicate growth measured only on the screening set; no million-scale or diversity-target success is implied",
+  "not_included": "large-scale CPU selection, storage/transfer charges, queueing, or downstream training; no contract GPU rate was available",
+  "timing_accounting": "sum amortized elapsed_seconds by inference stage; total_seconds overlaps between design/refold rows and must not be summed",
+  "tf32": "separate 500-aa arm is excluded from this reference-precision projection",
+  "extra_attempts": "one sequence design/refold per backbone; two-attempt pilot priced separately"
+}

@@ -1,0 +1,16 @@
+{
+  "pod_snapshot_utc": "2026-09-10T13:19:23.046004+00:00",
+  "cluster": "cw-us-east-02a",
+  "pod_phases": {
+    "Pending": 680,
+    "Running": 88
+  },
+  "priority_classes": {
+    "iris-batch": 768
+  },
+  "all_one_gpu": true,
+  "iris_root_job_states": {
+    "running": 768
+  },
+  "note": "Iris root running state includes jobs waiting for task admission; use pod phases for active GPU count."
+}

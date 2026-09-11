@@ -1,0 +1,19 @@
+{
+  "candidates": 1536,
+  "quality_pass": 1044,
+  "after_decontamination": 523,
+  "after_cluster_cap": 494,
+  "retained_fraction": 0.3216145833333333,
+  "fine_clusters": 453,
+  "matched_diversity_after_decontamination": {
+    "matched_n_per_arm": 108,
+    "matched_length_counts": "{\"100\": 27, \"200\": 18, \"300\": 9, \"400\": 6, \"500\": 9, \"60\": 39}",
+    "ratio_median": 0.9648668364582832,
+    "ratio_resampling_p025": 0.881177507184932,
+    "ratio_resampling_p975": 1.0574757822841219,
+    "control_effective_median": 94.76793245962787,
+    "conditioned_effective_median": 91.68957986190772,
+    "maximum_possible_ratio_median": 1.1396260021395859
+  },
+  "release_status": "provisional: pilot diversity and scale-up gates pending"
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Proteina exp278 eighteen-hour retention review
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/bizon/.codex/worktrees/e3ff/MarinFold/experiments/exp278_data_proteina_structural_diversity
+Environment=PATH=/home/bizon/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/bizon/.local/bin/uv run python scale_review.py
+TimeoutStartSec=6h
+StandardOutput=append:/home/bizon/.codex/worktrees/e3ff/MarinFold/experiments/exp278_data_proteina_structural_diversity/data/scale-20260909/review-18h-service.log
+StandardError=inherit

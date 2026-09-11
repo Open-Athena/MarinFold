@@ -1,0 +1,6 @@
+{
+  "committed_refold_population": 64,
+  "estimated_quality_and_reference_pass": 16.0,
+  "estimated_quality_and_reference_fraction": 0.25,
+  "scope": "Stratified point estimate among committed refolds at audit snapshot time; global fine-cluster capping is excluded. This is not final corpus retention."
+}

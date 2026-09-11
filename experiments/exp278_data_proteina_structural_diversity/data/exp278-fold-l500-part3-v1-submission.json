@@ -1,0 +1,18 @@
+{
+  "job_id": "/bizon/exp278-fold-l500-part3-v1",
+  "name": "exp278-fold-l500-part3-v1",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/ba42c4c4f9143b064e4fb7fd389296fa58672c8b03103d1d0c06a6d8c539a952.tar.gz",
+  "timeout_seconds": 10800,
+  "submitted_utc": "2026-09-09T20:02:39.592668+00:00",
+  "worker_args": [
+    "fold_worker.py",
+    "--esm-revision",
+    "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+    "--input",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/screen-long-v1/long-l500-3.x.x.x",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/fold-l500-v1/part-3"
+  ]
+}

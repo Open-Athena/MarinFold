@@ -1,0 +1,7 @@
+{
+  "sampling/smoke_candidates": 4,
+  "sampling/seconds_per_candidate": 1.8026746686082333,
+  "sampling/length": 100,
+  "sampling/batch_size": 4,
+  "sampling/compiled": false
+}

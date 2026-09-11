@@ -1,0 +1,5 @@
+{
+  "script": "plot_screen.py",
+  "args": [],
+  "caption": "Screening-set retention. Duplicate growth at 100k/1M remains unmeasured; these are not production-yield forecasts."
+}

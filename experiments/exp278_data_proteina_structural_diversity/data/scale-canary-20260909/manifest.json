@@ -1,0 +1,44 @@
+{
+  "schema_version": 2,
+  "run_id": "scale-canary-20260909",
+  "workers": 2,
+  "output": "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909",
+  "target_documents": 0,
+  "expected_retained_at_pilot_yield": 1005827.4886390312,
+  "raw_candidates": 64,
+  "estimated_pure_gpu_hours": 12727.61569521252,
+  "length_target": "uniform accepted lengths 60..500",
+  "class_target": "equal expected accepted contributions from four requested arms",
+  "precision": "reference float32 matmuls",
+  "attempts_per_backbone": 1,
+  "esm_revision": "75a3841ee059df2bf4d56688166c8fb459ddd97a",
+  "checkpoint_boundary": "short through 250 aa, long from 251; validate crossover canaries before bulk",
+  "cases": [
+    {
+      "id": "canary-l250",
+      "length": 250,
+      "condition": "unconditional",
+      "model": "short",
+      "noise": 0.45,
+      "batch_size": 16,
+      "batches": 2,
+      "samples": 32,
+      "seed": 279100000,
+      "worker": 0,
+      "estimated_gpu_seconds": 200
+    },
+    {
+      "id": "canary-l251",
+      "length": 251,
+      "condition": "2.x.x.x",
+      "model": "long",
+      "noise": 0.35,
+      "batch_size": 16,
+      "batches": 2,
+      "samples": 32,
+      "seed": 279110000,
+      "worker": 1,
+      "estimated_gpu_seconds": 200
+    }
+  ]
+}

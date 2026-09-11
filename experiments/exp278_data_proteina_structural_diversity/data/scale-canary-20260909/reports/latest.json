@@ -1,0 +1,18 @@
+{
+  "timestamp_utc": "2026-09-09T21:32:50.178132+00:00",
+  "run_id": "scale-canary-20260909",
+  "planned_raw": 64,
+  "target_documents": 0,
+  "generated": 64,
+  "refolded": 64,
+  "quality_pass": 47,
+  "complete": 2,
+  "quality_retention": 0.734375,
+  "final_retained_documents": null,
+  "final_retention_note": "Sequence/reference exclusion and global structural diversity cap still required. Quality-pass documents are provisional.",
+  "worker_phases": {
+    "complete": 2
+  },
+  "sequence_batch_files": 4,
+  "snapshot_note": "Live nontransactional snapshot of committed batch boundaries; in-flight refolds are excluded."
+}

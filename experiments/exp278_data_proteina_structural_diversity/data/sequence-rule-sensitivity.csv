@@ -1,0 +1,7 @@
+length,quality_pass,identity_only_exclusions_among_quality,final_rule_exclusions_among_quality,added_by_strong_homology_rule,previous_E10_escape_hatch_corrections
+60,230,60,60,0,18
+100,205,68,68,0,15
+200,164,73,76,3,19
+300,167,102,112,10,23
+400,162,96,108,12,14
+500,116,86,88,2,14

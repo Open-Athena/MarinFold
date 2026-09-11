@@ -1,0 +1,3 @@
+case,worker,length,condition,generated,refolded,quality_pass,complete
+canary-l250,0,250,unconditional,32,32,23,1
+canary-l251,1,251,2.x.x.x,32,32,24,1

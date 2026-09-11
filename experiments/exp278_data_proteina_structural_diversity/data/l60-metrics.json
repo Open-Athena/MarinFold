@@ -1,0 +1,8 @@
+{
+  "screen/l60/candidates": 256,
+  "screen/l60/quality_pass": 229,
+  "screen/l60/quality_yield": 0.89453125,
+  "screen/l60/sequence_exclusions_all": 46,
+  "screen/l60/fine_cluster_diversity_ratio": 0.9450255268805624,
+  "screen/l60/broad_cluster_diversity_ratio": 1.732448406491259
+}

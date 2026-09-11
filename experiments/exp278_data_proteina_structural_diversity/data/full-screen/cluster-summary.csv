@@ -1,0 +1,5 @@
+geometry,threshold,subset,n,clusters,effective_clusters,unique_cluster_fraction,largest_cluster,retained_at_cap5
+original,fine,all,1536,1353,1155.2273973528627,0.880859375,36,1465
+original,fine,quality_pass,1044,892,743.5546017405371,0.8544061302681992,35,993
+refolded,fine,all,1536,1343,1145.6954307932897,0.8743489583333334,36,1470
+refolded,fine,quality_pass,1044,890,737.5620719422511,0.8524904214559387,35,991

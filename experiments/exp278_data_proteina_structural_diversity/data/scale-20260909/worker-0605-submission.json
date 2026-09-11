@@ -1,0 +1,22 @@
+{
+  "worker": 605,
+  "job_id": "/bizon/exp278-scale-v1-w0605",
+  "cluster": "cw-us-east-02a",
+  "submitted_utc": "2026-09-09T21:53:52.023901+00:00",
+  "priority_band": "batch",
+  "priority": 3,
+  "gpu_count": 1,
+  "replicas": 1,
+  "preemption_retries": 100,
+  "manifest_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909/manifests/a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80.json",
+  "manifest_sha256": "a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/86e1263c5973b0093aac7991627b76f8f0e637171b41e22eedae6aeebbea15c6.tar.gz",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "worker_args": [
+    "scale_worker.py",
+    "--manifest",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909/manifests/a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80.json",
+    "--worker",
+    "605"
+  ]
+}

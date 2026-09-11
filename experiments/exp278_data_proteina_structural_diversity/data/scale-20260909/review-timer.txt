@@ -1,0 +1,10 @@
+[Unit]
+Description=Proteina exp278 review at eighteen hours
+
+[Timer]
+OnCalendar=2026-09-10 15:32:01 UTC
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

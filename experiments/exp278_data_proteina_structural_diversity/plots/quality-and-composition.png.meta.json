@@ -1,0 +1,5 @@
+{
+  "script": "plot_screen.py",
+  "args": [],
+  "caption": "One ProteinMPNN/ESMFold attempt per backbone; final cis-aware quality checks. Composition averages all refolded candidates and is an independent P-SEA measurement, not a CATH assignment. Labels on the right denote sequence length."
+}

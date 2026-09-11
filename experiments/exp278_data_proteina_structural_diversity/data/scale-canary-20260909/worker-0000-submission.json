@@ -1,0 +1,22 @@
+{
+  "worker": 0,
+  "job_id": "/bizon/exp278-scale-canary-v1-w0000",
+  "cluster": "cw-us-east-02a",
+  "submitted_utc": "2026-09-09T21:24:40.146293+00:00",
+  "priority_band": "batch",
+  "priority": 3,
+  "gpu_count": 1,
+  "replicas": 1,
+  "preemption_retries": 100,
+  "manifest_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909/manifests/7f4a75d7afa54e6c12c8e052930e0d3f5476e88ffabe069ebe7d31cd30598c1a.json",
+  "manifest_sha256": "7f4a75d7afa54e6c12c8e052930e0d3f5476e88ffabe069ebe7d31cd30598c1a",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/ae54b9abfd22a686f95f1a2389ab3cf9c525d2731962c2ce1df393a4977902f5.tar.gz",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "worker_args": [
+    "scale_worker.py",
+    "--manifest",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-canary-20260909/manifests/7f4a75d7afa54e6c12c8e052930e0d3f5476e88ffabe069ebe7d31cd30598c1a.json",
+    "--worker",
+    "0"
+  ]
+}

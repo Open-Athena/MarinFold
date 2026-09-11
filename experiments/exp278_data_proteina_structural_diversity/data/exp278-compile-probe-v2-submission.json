@@ -1,0 +1,21 @@
+{
+  "job_id": "/bizon/exp278-compile-probe-v2",
+  "name": "exp278-compile-probe-v2",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/ac1b91dc5e9643cd19c2c0538820c1f8ca2eb648c6feff11a365c69e723dbbf8.tar.gz",
+  "timeout_seconds": 3600,
+  "submitted_utc": "2026-09-09T18:52:44.282547+00:00",
+  "worker_args": [
+    "sample_worker.py",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/compile-probe-v2",
+    "--length",
+    "100",
+    "--batch-size",
+    "32",
+    "--batches",
+    "3",
+    "--compile"
+  ]
+}

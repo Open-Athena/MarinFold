@@ -1,0 +1,27 @@
+{
+  "job_id": "/bizon/exp278-long500-batch24-v1",
+  "name": "exp278-long500-batch24-v1",
+  "cluster": "cw-rno2a",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/afd937b4dd54f2bf52cf459332f96165dabea910e8f8acfeec06d2a08b7e1d75.tar.gz",
+  "timeout_seconds": 3600,
+  "submitted_utc": "2026-09-09T19:11:34.000231+00:00",
+  "worker_args": [
+    "sample_worker.py",
+    "--model",
+    "long",
+    "--length",
+    "500",
+    "--batch-size",
+    "24",
+    "--batches",
+    "2",
+    "--seed",
+    "27850024",
+    "--noise",
+    "0.35",
+    "--compile",
+    "--output",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/long500-batch24-v1"
+  ]
+}

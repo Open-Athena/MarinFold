@@ -1,0 +1,7 @@
+{
+  "target": "one million retained, uniform accepted lengths 60..500",
+  "GB_all_raw_candidate_records_at_screen_yield": 269.98983031657815,
+  "GB_one_selected_candidate_record_per_document": 52.60681765961593,
+  "GB_documents_using_quality_pass_parquet_size_proxy": 4.3124777039244995,
+  "scope": "compressed pilot parquet proxies; excludes search databases, caches, duplicated intermediate formats and transfers; not byte-accurate production prediction"
+}
