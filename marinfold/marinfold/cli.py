@@ -20,10 +20,10 @@ Dispatch is driven by packaged ``MODELS.yaml``:
    ``marinfold.document_structures.contacts_and_distances_v1``) and
    the appropriate function (``predict`` / ``evaluate``) is called.
 
-For impl-specific flags (seed-N sweeps, distance cap, …) use the
-per-impl ``cli.py`` instead. The top-level CLI keeps its surface
-narrow on purpose, but it does expose ``--batch-size`` because that
-one is useful for tuning backend memory / throughput across impls.
+The dispatcher owns common options such as ``--batch-size``. A selected
+implementation may expose ``add_inference_arguments(parser)`` to register
+its own inference options; matching InferenceConfig fields receive their
+parsed values. Lower-level tools stay on the per-impl ``cli.py``.
 """
 
 import argparse
@@ -148,25 +148,18 @@ def _make_inference_config(
     input_path: Path | None = None,
 ) -> Any:
     """Build the impl's InferenceConfig from the parsed CLI args."""
-    options = {
-        name: value
-        for name in ("method", "n_rollouts", "min_new_contacts")
-        if (value := getattr(args, name)) is not None
-    }
-    supported = {field.name for field in dataclasses.fields(impl.InferenceConfig)}
-    for name in options:
-        if name not in supported:
-            raise SystemExit(
-                f"--{name.replace('_', '-')} is not supported by this document structure."
-            )
-    return impl.InferenceConfig(
+    options = dict(
         model=model_spec,
         input_path=input_path,
         backend=args.backend,
         batch_size=args.batch_size,
         dtype=args.dtype,
-        **options,
     )
+    parsed = vars(args)
+    for field in dataclasses.fields(impl.InferenceConfig):
+        if field.name not in options and field.name in parsed:
+            options[field.name] = parsed[field.name]
+    return impl.InferenceConfig(**options)
 
 
 def _structures_from_sequence(impl: ModuleType, seq: str) -> list:
@@ -283,19 +276,6 @@ def _emit_evaluate_plots(
 
 def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument(
-        "--method", choices=("pairwise", "rollout"), default=None,
-        help="contacts-v1 readout (default pairwise). Rollout samples completions.",
-    )
-    p.add_argument(
-        "--n-rollouts", type=int, default=None,
-        help="Number of contacts-v1 rollout completions (default 100).",
-    )
-    p.add_argument(
-        "--min-new-contacts", type=int, default=None,
-        help="With --method rollout, block <end> until each completion emits "
-             "this many complete new contact statements. Omit for normal stopping.",
-    )
-    p.add_argument(
         "--model", default=None,
         help="MODELS.yaml nickname (e.g. '1B') or a local directory "
              "with a model + tokenizer. Defaults to the MODELS.yaml "
@@ -328,7 +308,8 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     )
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(impl: ModuleType | None = None) -> argparse.ArgumentParser:
+    """Build common arguments and any selected implementation's extensions."""
     parser = argparse.ArgumentParser(
         prog="marinfold",
         description="MarinFold CLI: run a trained protein-document LLM "
@@ -393,12 +374,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_eval.set_defaults(func=cmd_evaluate)
 
+    register = getattr(impl, "add_inference_arguments", None)
+    if register is not None:
+        register(p_inf)
+        register(p_eval)
     return parser
 
 
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Select a document format before parsing its inference arguments.
+
+    The selection pass reads common flags, without loading
+    weights. Root help and invalid subcommands use the common parser alone.
+    """
+    argv = list(sys.argv[1:] if argv is None else argv)
+    impl = None
+    if argv and argv[0] in ("infer", "evaluate"):
+        selector = argparse.ArgumentParser(add_help=False)
+        _add_common(selector)
+        selected, _ = selector.parse_known_args(argv[1:])
+        _, structure = _resolve_model_and_structure(
+            selected.model, selected.document_structure,
+        )
+        impl = _load_impl(structure)
+    return build_parser(impl).parse_args(argv)
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parse_args(argv)
     args.func(args)
     return 0
 

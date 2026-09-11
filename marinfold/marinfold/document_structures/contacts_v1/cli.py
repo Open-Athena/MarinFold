@@ -401,13 +401,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Inference runtime. 'vllm' (Linux+GPU, default), "
                             "'transformers' (anywhere torch installs), or 'mlx' "
                             "(Apple Silicon native).")
-        p.add_argument("--method", choices=("pairwise", "rollout"),
-                       default="pairwise",
-                       help="Contact readout. 'pairwise' (default, fast) scores "
-                            "P(contact) per pair; 'rollout' (exp82's best, "
-                            "~150x slower) votes over sampled completions with a "
-                            "pairwise tie-break, and needs --backend vllm or "
-                            "transformers (not mlx).")
+        inference.add_inference_arguments(p)
         p.add_argument("--min-seq-separation", type=int, default=6,
                        help="Smallest |i-j| that can be a contact (default 6, "
                             "matching the contacts-v1 data).")
@@ -415,13 +409,6 @@ def build_parser() -> argparse.ArgumentParser:
                        help="(--method pairwise) resample the sequence definition "
                             "this many times and average P(contact) (test-time "
                             "augmentation; default 1).")
-        p.add_argument("--n-rollouts", type=int, default=100,
-                       help="(--method rollout) sampled completions to vote over "
-                            "(default 100).")
-        p.add_argument("--min-new-contacts", type=int, default=None,
-                       help="(--method rollout) block <end> until each completion "
-                            "emits this many complete new contact statements. "
-                            "Omit for normal stopping; token limits still apply.")
         p.add_argument("--temperature", type=float, default=1.0,
                        help="(--method rollout) sampling temperature (default 1.0).")
         p.add_argument("--top-p", type=float, default=0.95,

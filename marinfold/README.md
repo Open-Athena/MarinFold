@@ -67,13 +67,13 @@ stopping. Repeated contact statements count; this does not enforce unique
 pairs or subtract retractions.
 
 ```bash
-marinfold infer --model 1.5B --backend transformers \
+marinfold infer --backend transformers \
   --input-sequence MGDIQVQVNIDDNGKAAAAQ \
   --method rollout --n-rollouts 10 --min-new-contacts 30 --out preds.json
 ```
 
 The same option is available on `contacts-v1 infer` / `evaluate`, and on
-`InferenceConfig(model="1.5B", method="rollout", min_new_contacts=30)` for
+`InferenceConfig(model=None, method="rollout", min_new_contacts=30)` for
 `predict` / `evaluate`. Their output remains an aggregated contact-score map.
 
 For notebook code sampling a prompt that already contains, for example,
@@ -83,7 +83,7 @@ For notebook code sampling a prompt that already contains, for example,
 from marinfold import load_backend
 from marinfold.document_structures.contacts_v1 import sample_contacts
 
-backend = load_backend("transformers", model="1.5B")
+backend = load_backend("transformers", model=None)
 # prompt is a contacts-v1 document through your 10th contact, without <end>.
 prefix = backend.tokenizer.encode(prompt, add_special_tokens=False)
 [new_tokens] = sample_contacts(

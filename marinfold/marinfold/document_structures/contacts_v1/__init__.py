@@ -51,6 +51,7 @@ from .generate import (
     generate_sequence_only_document,
 )
 from .inference import (
+    add_inference_arguments,
     ContactStructure,
     InferenceConfig,
     evaluate,
@@ -109,6 +110,7 @@ __all__ = [
     "RawContact",
     "ResidueInfo",
     "all_domain_tokens",
+    "add_inference_arguments",
     "analyze_structure",
     "analyzed_from_row",
     "analyzed_to_row",

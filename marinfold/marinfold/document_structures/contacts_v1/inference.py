@@ -58,6 +58,7 @@ The model forward pass goes through :mod:`marinfold.inference`; this module
 is backend-agnostic (vLLM / transformers / MLX).
 """
 
+import argparse
 import math
 import warnings
 from collections import defaultdict
@@ -192,6 +193,24 @@ class InferenceConfig:
             raise ValueError("min_new_contacts must be a non-negative integer or None.")
         if self.method != "rollout":
             raise ValueError("min_new_contacts requires method='rollout'.")
+
+
+def add_inference_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register contacts-v1 sampling options for either CLI entry point."""
+    parser.add_argument(
+        "--method", choices=("pairwise", "rollout"), default="pairwise",
+        help="Contact readout (default pairwise). Rollout samples completions.",
+    )
+    parser.add_argument(
+        "--n-rollouts", type=int, default=100,
+        help="Number of rollout completions (default 100).",
+    )
+    parser.add_argument(
+        "--min-new-contacts", type=int, default=None,
+        help="With --method rollout, block <end> until each completion emits "
+             "this many complete new contact statements. Omit for normal "
+             "stopping; token limits still apply.",
+    )
 
 
 @dataclass(frozen=True)
