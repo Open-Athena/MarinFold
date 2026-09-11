@@ -143,6 +143,7 @@ class MlxBackend:
         prefix_token_ids_batch: list[list[int]],
         *,
         max_new_tokens: int,
+        min_new_tokens: int = 0,
         temperature: float = 1.0,
         top_p: float = 0.95,
         top_k: int = 50,
