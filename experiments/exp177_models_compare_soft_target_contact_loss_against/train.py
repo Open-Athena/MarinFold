@@ -30,6 +30,7 @@ from levanter.models.qwen import Qwen3Config
 from levanter.optim.config import AdamConfig
 from levanter.tracker.wandb import WandbConfig
 from levanter.data.loader import DataLoader
+from levanter.callbacks import JitCallback
 from levanter.trainer import Trainer, TrainerConfig, initialize as initialize_trainer
 from levanter.utils.jax_utils import parameter_count
 from levanter.utils.mesh import MeshConfig
@@ -38,6 +39,7 @@ import jax.numpy as jnp
 import jax.random as jrandom
 import levanter.eval
 import levanter.tracker
+import optax
 from marin.execution.lazy import ArtifactStep, StepContext, lower
 from marin.execution.remote import remote
 from marin.execution.step_runner import StepRunner
@@ -373,6 +375,25 @@ def _soft_loss(model: LmHeadModel, batch: CompactContactDocumentBatch | SparseCo
     return compact_contact_document_loss(model, batch, key=key), {}
 
 
+class StabilityMetricsCallback(JitCallback):
+    """Log cheap global optimizer-dynamics metrics from inside the train step."""
+
+    def inside_step(self, state, inside_info) -> dict[str, jax.Array]:
+        grad_norm = optax.global_norm(inside_info.grads)
+        update_norm = optax.global_norm(inside_info.updates)
+        param_norm = optax.global_norm(state.trainable_model)
+        return {
+            "optim/stability/grad_norm": grad_norm,
+            "optim/stability/update_norm": update_norm,
+            "optim/stability/param_norm": param_norm,
+            "optim/stability/update_to_param_norm": update_norm
+            / jnp.maximum(param_norm, jnp.asarray(1e-12, param_norm.dtype)),
+        }
+
+    def on_step(self, step_info, cb_info: dict[str, jax.Array]) -> None:
+        levanter.tracker.log(cb_info, step=int(step_info.step))
+
+
 def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
     """Minimal Levanter train loop with PR #144 document loss.
 
@@ -403,6 +424,10 @@ def _run_soft_target_train_lm(config: TrainLmConfig) -> None:
         tagged_eval_datasets = config.data.tagged_eval_sets(Pos)
         state = trainer.initial_state(training_key, model_init=lambda: config.model.build(Vocab, key=model_key))
         levanter.tracker.log_summary({"parameter_count": parameter_count(state.model)})
+
+        stability_every = int(os.environ.get("EXP177_STABILITY_METRICS_EVERY", "0"))
+        if stability_every > 0:
+            trainer.add_hook(StabilityMetricsCallback(), every=stability_every)
 
         max_eval_examples = config.trainer.max_eval_batches
         if max_eval_examples is not None:

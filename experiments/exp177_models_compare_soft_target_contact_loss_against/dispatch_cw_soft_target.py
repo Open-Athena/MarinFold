@@ -255,6 +255,7 @@ def _pod_config(run_name: str):
         "EXP177_DATALOADER_MAX_BUFFERED_BATCHES": os.environ.get("EXP177_DATALOADER_MAX_BUFFERED_BATCHES", "64"),
         "EXP177_SOFT_DIAGNOSTIC_BATCHES": os.environ.get("EXP177_SOFT_DIAGNOSTIC_BATCHES", "0"),
         "EXP177_SOFT_DIAGNOSTIC_EVERY": os.environ.get("EXP177_SOFT_DIAGNOSTIC_EVERY", str(steps_per_eval)),
+        "EXP177_STABILITY_METRICS_EVERY": os.environ.get("EXP177_STABILITY_METRICS_EVERY", "0"),
         # CoreWeave pods do not have GCS credentials. Set an explicit local cache
         # so resolve_training_env() does not default to marin's GCS temp bucket.
         "JAX_COMPILATION_CACHE_DIR": os.environ.get("EXP177_CW_JAX_CACHE_DIR", "/tmp/jax-compilation-cache"),
