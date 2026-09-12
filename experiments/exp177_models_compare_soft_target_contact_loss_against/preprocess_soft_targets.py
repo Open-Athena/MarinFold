@@ -105,7 +105,11 @@ def preprocess_shard(
     """Build fixed-quota compact examples for one analyzed shard."""
     rows = list(items)
     if not rows:
-        raise ValueError(f"input shard {shard_info.shard_idx} contains no rows")
+        # Zephyr can invoke map_shard on empty partitions after an upstream
+        # file-list filter (for example --num-shards smoke runs). The input
+        # file manifest remains fail-loud for missing/corrupt files; this case
+        # is just an empty logical partition with no records to transform.
+        return
 
     row_rng = np.random.default_rng(np.random.SeedSequence([seed, 0, shard_info.shard_idx, 0]))
     documents = []
