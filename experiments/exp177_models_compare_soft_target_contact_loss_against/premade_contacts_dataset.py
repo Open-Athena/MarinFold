@@ -135,18 +135,28 @@ def randomized_contact_order_document_from_row(
 
 
 def soft_target_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Document | None:
-    """Build a compact block-causal contacts-v1 training document."""
+    """Build a block-causal soft-target contacts-v1 training document.
+
+    The prefix and endpoint token space intentionally match ordinary
+    contacts-v1 documents: residues are addressed by the generated document's
+    circular position tokens (``contact.pos_i`` / ``contact.pos_j``), not by
+    canonical sequence indices. The soft loss changes only the supervision over
+    the contact suffix, not the document format the model must speak at eval.
+    """
     generated = _generation_from_row(row)
     if generated is None:
         return None
 
-    sequence_tokens = [
-        VOCABULARY.token(f"<{residue.resname}>") for residue in generated.residues
-    ]
-    prefix_tokens = [DOC_TYPE, BEGIN_SEQUENCE, *sequence_tokens, BEGIN_STRUCTURE]
+    parts = generated.document.split()
+    try:
+        prefix_end = parts.index(BEGIN_STRUCTURE.text) + 1
+    except ValueError as exc:
+        raise ValueError("Generated contacts-v1 document has no <begin_structure> token") from exc
+
+    prefix_tokens = [VOCABULARY.token(token) for token in parts[:prefix_end]]
     suffix_tokens = []
     for contact in generated.contacts:
-        first, second = POSITIONS[contact.seq_i], POSITIONS[contact.seq_j]
+        first, second = POSITIONS[contact.pos_i], POSITIONS[contact.pos_j]
         if contact.flipped:
             first, second = second, first
         suffix_tokens.extend((CONTACT, first, second))
@@ -162,15 +172,8 @@ def soft_target_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Documen
     prediction_start = len(prefix_tokens) - 1
     query = np.zeros(len(token_ids), dtype=np.bool_)
     query[prediction_start : prediction_start + len(suffix_tokens)] = True
-    attention_blocks = (0,) * len(prefix_tokens) + tuple(
-        range(1, len(suffix_tokens) + 1)
-    )
-    relative_positions = (
-        (RELATIVE_POSITION.missing,) * 2
-        + tuple(range(len(sequence_tokens)))
-        + (RELATIVE_POSITION.missing,)
-        + tuple(range(len(suffix_tokens)))
-    )
+    attention_blocks = (0,) * len(prefix_tokens) + tuple(range(1, len(suffix_tokens) + 1))
+    relative_positions = (RELATIVE_POSITION.missing,) * len(prefix_tokens) + tuple(range(len(suffix_tokens)))
     return Document(
         token_ids,
         {
