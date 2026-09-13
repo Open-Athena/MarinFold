@@ -60,3 +60,5 @@ Recovery verified at 09:28 UTC: latest-checkpoint discovery skipped incomplete s
 2026-09-11 09:34:44 UTC: first post-restart checkpoint step-73199 completed its distributed commit and rotated out step-72744. Training reached step 73,246 by 09:35:27 UTC. Both training and checkpointing have recovered.
 
 2026-09-11 09:46 UTC: W&B caught up and reports fresh step 73,958 / 266,345 (27.77%), train loss 2.87417 and 0.87684 seconds/update. Iris reports RUNNING without errors. The resumed run has passed its pre-failure high-water mark.
+
+2026-09-13 01:16 UTC: step 213,223 / 266,345 (80.06%), train loss 2.76639, step duration 0.86676 seconds, and throughput 1.210M tokens/second. WSD linear decay started after step 213,076; learning rate is now 0.00099752. One hundred full LM validations are recorded, with best loss 3.05770445 at step 207,172 and latest loss 3.05887032 at step 211,400. Permanent checkpoint `step-213072` committed at 01:14:01 UTC. Iris reports all 16 workers running at batch priority, zero task failures, and two automatically recovered worker preemptions. One job-level recovery so far.
