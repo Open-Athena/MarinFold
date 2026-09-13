@@ -1,0 +1,69 @@
+{
+  "observed_at_utc": "2026-09-10T20:07:26.630281+00:00",
+  "source": {
+    "git_sha": "5e11b8a6847f79b00a572f5c9777a9394fd69ee9",
+    "code_sha256": "92652e92fb2a3b942bc99fa103e8965084635b0b2a79bd2536c629e06560bdf7",
+    "runtime_packages": {
+      "marin-levanter": "0.2.99.dev33617068238",
+      "marin-haliax": "0.2.99.dev33617068238",
+      "jax": "0.11.1",
+      "transformers": "5.12.1"
+    },
+    "uv_lock_sha256": "455900ccf5e87e9300bb9cf86c1168c16c95d32cd0c926069a51c3e0e850d503",
+    "reference_sha": "7a18dd5158e71b0db8d782be77cc4b9a6d59c8df",
+    "tokenizer": "eczech/contacts-v1-tokenizer-5d68a24a899f@80f4e411b957641e8c350b07bbe1e2c832697518"
+  },
+  "trials": [
+    {
+      "trial": "lr100",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr100-step14520-a01",
+      "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr100-step14520-a01/step-19520",
+      "native_metadata": {
+        "step": 19520,
+        "timestamp": "2026-09-10T19:58:36.059144",
+        "is_temporary": false
+      },
+      "full_state_array_manifest_verified": true,
+      "hf_model_and_tokenizer_verified": true,
+      "hf_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr100-step14520-a01/hf/step-19520",
+      "final_metrics": {
+        "eval/loss": 3.3500099182128906,
+        "contact_eval/loss": 4.351321220397949
+      }
+    },
+    {
+      "trial": "lr150",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr150-step14520-a01",
+      "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr150-step14520-a01/step-19520",
+      "native_metadata": {
+        "step": 19520,
+        "timestamp": "2026-09-10T19:58:20.310061",
+        "is_temporary": false
+      },
+      "full_state_array_manifest_verified": true,
+      "hf_model_and_tokenizer_verified": true,
+      "hf_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr150-step14520-a01/hf/step-19520",
+      "final_metrics": {
+        "eval/loss": 3.36061692237854,
+        "contact_eval/loss": 4.3676652908325195
+      }
+    },
+    {
+      "trial": "lr200",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr200-step14520-a01",
+      "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr200-step14520-a01/step-19520",
+      "native_metadata": {
+        "step": 19520,
+        "timestamp": "2026-09-10T20:01:56.022483",
+        "is_temporary": false
+      },
+      "full_state_array_manifest_verified": true,
+      "hf_model_and_tokenizer_verified": true,
+      "hf_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr200-step14520-a01/hf/step-19520",
+      "final_metrics": {
+        "eval/loss": 3.360499382019043,
+        "contact_eval/loss": 4.358667373657227
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "recorded_at_utc": "2026-09-10T15:00:43.211217+00:00",
+  "source": {
+    "git_sha": "5e11b8a6847f79b00a572f5c9777a9394fd69ee9",
+    "code_sha256": "92652e92fb2a3b942bc99fa103e8965084635b0b2a79bd2536c629e06560bdf7",
+    "runtime_packages": {
+      "marin-levanter": "0.2.99.dev33617068238",
+      "marin-haliax": "0.2.99.dev33617068238",
+      "jax": "0.11.1",
+      "transformers": "5.12.1"
+    },
+    "uv_lock_sha256": "455900ccf5e87e9300bb9cf86c1168c16c95d32cd0c926069a51c3e0e850d503",
+    "reference_sha": "7a18dd5158e71b0db8d782be77cc4b9a6d59c8df",
+    "tokenizer": "eczech/contacts-v1-tokenizer-5d68a24a899f@80f4e411b957641e8c350b07bbe1e2c832697518"
+  },
+  "parent_contract": "lr_fork_contract.json",
+  "parent_contract_sha256": "14abd5039d0eb17d9f428a0e75f0897c4fd1ca46fb0bbac0029071417e4bf52e",
+  "input_identity": "parent_contract.parent_identity.manifest.inputs",
+  "cluster": "cw-rno2a",
+  "gpus_per_trial": 32,
+  "nodes_per_trial": 4,
+  "global_batch": 128,
+  "sequence_length": 8192,
+  "microbatch_size": 32,
+  "priority": "batch",
+  "user": "bizon",
+  "start_update": 14521,
+  "stop_update": 19521,
+  "additional_updates": 5000,
+  "trials": [
+    {
+      "trial": "lr100",
+      "learning_rate": 0.001,
+      "run_name": "exp279-soft-lr100-step14520-a01",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr100-step14520-a01",
+      "iris_job_id": "/bizon/exp279-lr100-rno-full-a02",
+      "checkpoint_root": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr100-step14520-a01",
+      "resume_record": "lr_pilot_result.json"
+    },
+    {
+      "trial": "lr150",
+      "learning_rate": 0.0015,
+      "run_name": "exp279-soft-lr150-step14520-a01",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr150-step14520-a01",
+      "iris_job_id": "/bizon/exp279-lr150-rno-full-a01",
+      "checkpoint_root": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr150-step14520-a01",
+      "resume_record": "parent_contract.parent_checkpoint"
+    },
+    {
+      "trial": "lr200",
+      "learning_rate": 0.002,
+      "run_name": "exp279-soft-lr200-step14520-a01",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-lr200-step14520-a01",
+      "iris_job_id": "/bizon/exp279-lr200-rno-full-a01",
+      "checkpoint_root": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr200-step14520-a01",
+      "resume_record": "parent_contract.parent_checkpoint"
+    }
+  ]
+}
