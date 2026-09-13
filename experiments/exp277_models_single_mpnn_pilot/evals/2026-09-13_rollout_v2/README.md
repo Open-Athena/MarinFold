@@ -24,6 +24,12 @@ s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/
   evals/rollout-v2/2026-09-13/v2-01/
 ```
 
+The batch-priority evaluation was submitted at 2026-09-13 18:08 UTC as
+[`/bizon/exp277-eval-v2-01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01).
+The driver validated all 670 expected units and submitted its one-H100 smoke
+gate. At launch the smoke task was queued by Kueue because the target cluster
+reported no free H100 capacity.
+
 Launch from this directory with:
 
 ```bash
