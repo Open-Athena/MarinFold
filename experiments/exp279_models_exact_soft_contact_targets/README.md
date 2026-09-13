@@ -237,6 +237,14 @@ source and inputs. At the measured rate the full schedule is about 15 days,
 plus validation, startup and preemptions. Only the soft arm is launched here;
 a fresh matched CE run and accuracy evaluations remain future work.
 
+The original base-phase gang failed at logged step 55520 on 2026-09-12 when one
+worker exited 139; Iris reported no preemption or OOM evidence, and the retained
+logs did not identify the native segfault more precisely. Relaunch driver
+`/bizon/exp279-soft-production-cw-h100x32-a02` preserves the exact frozen recipe
+and resumes the complete temporary step-55265 checkpoint. Its child is
+`/bizon/exp279-soft-production-cw-h100x32-a02/exp279-soft-production-cw-h100x32-a02-base`.
+`data/soft_production_cw_relaunch_a02.json` records the failure and resubmission.
+
 The corrected run starts fresh with a new identity. `launch_gpu.py` submits a
 short pilot with `--pilot-updates 32`; after validation, omitting that argument
 launches the production driver. `--resume-record` preserves the pilot's frozen

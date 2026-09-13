@@ -17,6 +17,8 @@ marinfold_run:
   - /bizon/exp279-soft-pilot-cw-h100x32-a04
   - /bizon/exp279-soft-production-cw-h100x32-a01
   - /bizon/exp279-soft-production-cw-h100x32-a01/exp279-soft-production-cw-h100x32-a01-base
+  - /bizon/exp279-soft-production-cw-h100x32-a02
+  - /bizon/exp279-soft-production-cw-h100x32-a02/exp279-soft-production-cw-h100x32-a02-base
 ---
 # 2026-09-09 · exp279_models_exact_soft_contact_targets · exp279-soft-s0-cw-h100x32-b02
 
@@ -65,3 +67,13 @@ restoring the pilot native checkpoint, with finite loss 6.3391. W&B reports the
 same run as running. The driver stays alive and waits for this phase, then
 continues the two prescribed transitions. Full training and accuracy evaluation
 are not yet complete.
+
+## Restart 1
+
+Worker 3 exited 139 at logged step 55520 on 2026-09-12 04:51:15 UTC; the other
+three workers ended as coscheduled siblings and the production driver propagated
+the failure. Iris newest complete recovery checkpoint is step 55265. Relaunch
+driver `/bizon/exp279-soft-production-cw-h100x32-a02` and its base-phase child
+were submitted on 2026-09-13 with the original frozen source, input manifests,
+W&B identity, 32-H100 geometry, and batch priority. The child initially entered
+the normal Kueue capacity gate awaiting 32 GPU/RDMA quota units.

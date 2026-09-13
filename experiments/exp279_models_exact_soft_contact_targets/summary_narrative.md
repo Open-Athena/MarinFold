@@ -25,6 +25,8 @@ The cache configuration is corrected and tested with actual validation reads.
 The corrected pilot passed: 32 updates, finite validation CE 6.3678, saved state.
 The production driver continues that exact checkpoint on 32 H100s.
 The soft arm is launched; matched CE and accuracy evaluation remain future work.
+It reached step 55520 before one worker exited 139; a frozen-source relaunch from
+the complete step-55265 recovery checkpoint is queued for the same 32-H100 setup.
 
 ## Readout
 
