@@ -48,4 +48,9 @@ Corrected pos-token soft-target contacts-v1 run on v3 precomputed data, LR 3e-5,
 ## Notes
 
 - False-start driver jobs r137/r138/r139 did not receive intended env vars from the launcher and defaulted to old H100/v1 settings; they failed quickly and should not be compared. r140/r141/r142 were relaunched with Iris `-e` env forwarding.
-- First evaluation is expected around step 8920 for this full batch-32 run.
+- First evaluation was expected around step 8920 for this full batch-32 run.
+
+- 2026-09-13 first eval reached at step 8920. Snapshot:
+  - `eval/loss=8.2124414`, `eval/bpb=1.0238907`, `train/loss=3.6234848`
+  - soft diagnostics: `total_loss=51.3030291`, `first_endpoint_teacher_ce=5.7044293`, `second_endpoint_teacher_ce=5.3478817`, `second_endpoint_argmax_valid=0.0262837`, `actual_second_in_teacher_set_fraction≈1.0`
+  - latest stability near step 10300: `grad_norm=2.4766979`, `update_norm=0.0906018`, `param_norm=803.5206`, `update_to_param_norm=1.12756e-4`
