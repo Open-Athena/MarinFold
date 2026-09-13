@@ -1,0 +1,2 @@
+run_id,steps,gpus,train_loss,eval_loss,seconds_per_step,tokens_per_second,iris_state,checkpoint_step
+contacts-v1-exp277-m2-p06-native-mpnn-1.5B-smoke,10,128,6.434756278991699,6.313381195068359,0.8656505267135799,1211315.614836962,SUCCEEDED,9
