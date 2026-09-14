@@ -250,11 +250,17 @@ def _validate_smokes(smoke_root: str, checkpoints: tuple[Checkpoint, ...]) -> No
         with filesystem.open(markers[0], "rt") as handle:
             record = json.load(handle)
         units = record.get("units", [])
+        unfinished = record.get("unfinished_rollouts", -1)
+        usable = record.get("usable_rollouts", -1)
         if (
             len(units) != 1
             or record.get("total_rollouts") != NUM_ROLLOUTS
             or units[0].get("n_rollouts") != NUM_ROLLOUTS
-            or record.get("unfinished_rollouts") != 0
+            or usable + unfinished != NUM_ROLLOUTS
+            or units[0].get("usable_rollouts", -1)
+            + units[0].get("unfinished_rollouts", -1)
+            != NUM_ROLLOUTS
+            or (unfinished != 0 and not record.get("accepted_unfinished", False))
         ):
             raise RuntimeError(f"Invalid smoke result for {checkpoint.label}: {record}")
 

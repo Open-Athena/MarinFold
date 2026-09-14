@@ -8,6 +8,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import fsspec
+
 import checkpoint_specs
 import run_coreweave_eval
 from hf_to_s3 import expected_manifest
@@ -86,3 +88,29 @@ def test_output_root_is_experiment_scoped() -> None:
         "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/"
         "evals/rollout-v2/2026-09-13/v2-01"
     )
+
+
+def test_smoke_accepts_fully_accounted_capped_rollout() -> None:
+    checkpoint = checkpoint_specs.EXP277_CHECKPOINT
+    root = "memory://exp277-smoke"
+    marker = {
+        "units": [
+            {
+                "dataset": "foldbench100",
+                "stem": "5sbj_A",
+                "L": 30,
+                "n_rollouts": 100,
+                "usable_rollouts": 99,
+                "unfinished_rollouts": 1,
+            }
+        ],
+        "total_rollouts": 100,
+        "usable_rollouts": 99,
+        "unfinished_rollouts": 1,
+        "accepted_unfinished": True,
+    }
+    uri = f"{root}/{checkpoint.label}/complete/part.json"
+    with fsspec.open(uri, "wt") as handle:
+        json.dump(marker, handle)
+
+    run_coreweave_eval._validate_smokes(root, (checkpoint,))
