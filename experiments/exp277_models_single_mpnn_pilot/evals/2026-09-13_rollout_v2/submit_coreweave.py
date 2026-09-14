@@ -72,7 +72,7 @@ def main() -> None:
         "--max-retries",
         "3",
         "--timeout",
-        "21600",
+        "172800",
         "--no-wait",
         "-e",
         "MARIN_PREFIX",

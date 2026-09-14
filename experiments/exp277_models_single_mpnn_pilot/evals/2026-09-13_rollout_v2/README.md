@@ -30,6 +30,10 @@ The driver validated all 670 expected units and submitted its one-H100 smoke
 gate. At launch the smoke task was queued by Kueue because the target cluster
 reported no free H100 capacity.
 
+That first driver timed out after six hours without the smoke H100 ever being
+allocated; no inference ran. The recovery launcher allows 48 hours for batch
+queueing while preserving the same evaluation settings and durable run ID.
+
 Launch from this directory with:
 
 ```bash
