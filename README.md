@@ -10,13 +10,15 @@ This is a research codebase for an ongoing project. It is an experiment in open 
 
 We welcome collaborators! If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
 
+See [Latest results](LATEST_RESULTS.md) for major result updates and the current default model. The figures below use the exp232 checkpoint.
+
 ## Background
 
 Protein structure predictors like [AlphaFold3](https://doi.org/10.1038/s41586-024-07487-w) and [ESMFold2](https://doi.org/10.64898/2026.06.03.729735) rely on evolutionary information in the form of multiple sequence alignments (MSAs) or protein language model (PLM) embeddings. While that works great in many cases, this dependency limits accuracy in key settings such as rapidly evolving viral proteins, rare proteins, highly-conserved proteins, and mutated proteins. It also limits the accessible space of de novo computationally-designed proteins to the highly-stable structures current models can fold without evolutionary information.
 
 The success of AlphaFold and the like has enabled the creation of enormous databases comprising hundreds of millions of predicted protein monomer structures. In this project we are asking whether single sequence structure prediction might be tractable simply by using these predicted structures as training data. Perhaps the evolutionary information provides models a "shortcut," and if we train a model without this shortcut on a large enough dataset, it might learn single-sequence structure prediction.
 
-For the current experiments, we trained a 1.5 billion parameter large language model from the Qwen3 family on AlphaFold2- or ESMFold2-predicted contact maps from about 70 million natural proteins, with ProteinMPNN redesigns expanding the current training corpus to 232 million documents.
+For the current experiments, we trained a 1.5 billion parameter large language model from the Qwen3 family on AlphaFold2- or ESMFold2-predicted contact maps from about 70 million natural proteins.
 
 Why use an LLM architecture? We've built a lot of infrastructure for training LLMs on large datasets for the [Marin](https://github.com/marin-community/marin) project, which we are making use of here. We also think formulating MarinFold as an autoregressive LLM may eventually prove useful for inference-time search and post-training.
 
@@ -30,21 +32,19 @@ At inference-time, we autoregressively generate 100 rollouts and rank contacts b
 
 ## Does this work?
 
-Sort of! Here's the MarinFold prediction for a simple de novo designed protein called [Top7](https://www.rcsb.org/structure/1QYS). The panel uses the 92-residue Top7 sequence from our legacy benchmark and the new exp277 checkpoint's saved rollouts.
+Sort of! Here's the MarinFold prediction for a simple de novo designed protein called [Top7](https://www.rcsb.org/structure/1QYS). This is easy to fold (any modern predictor can fold it) but a nice test since it's very dissimilar to anything in our training set, which consists only of natural proteins.
 
-<img src="experiments/exp277_models_single_mpnn_pilot/plots/top7_maps.png" alt="Top7 (1QYS): experimental contacts and exp277 predictions from 100 rollouts on the 92-residue benchmark sequence" width="66%">
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/top7_maps.png" alt="Top7 (1QYS) as a ribbon cartoon, its ground-truth contact map, and the map MarinFold predicts, coloured by the fraction of 100 rollouts that emitted each pair" width="66%">
 
 More quantitatively, we can compare MarinFold contact prediction accuracy to existing predictors on protein monomers from the [FoldBench](https://www.biorxiv.org/content/10.1101/2025.05.22.655600v1) benchmark. We define the R-precision for a protein with N ground truth contacts as the fraction of the model’s N highest-confidence predicted contacts that are present in the ground truth structure. For MarinFold, we rank contacts by how often they occur across 100 rollouts. For the baseline models, we score the single highest-confidence structure and rank contacts by ConFind contact degree. This is what that looks like:
 
-<img src="experiments/exp277_models_single_mpnn_pilot/plots/rprecision_natural.png" alt="Contact R-precision on 97 natural eval-val monomers: exp277 0.554, previous exp232 0.552" width="49%"> <img src="experiments/exp277_models_single_mpnn_pilot/plots/rprecision_designed.png" alt="Contact R-precision on 19 de novo designs: exp277 0.696, previous exp232 0.610" width="49%">
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/rprecision_natural.png" alt="Contact R-precision on 314 natural FoldBench monomers: MarinFold 0.56, Protenix-v2 single-sequence 0.26, ESMFold 0.75, ESMFold2 0.80, Protenix-v2 + MSA 0.85" width="49%"> <img src="experiments/exp250_evals_exploration_notebook/figures/output/rprecision_designed.png" alt="Contact R-precision on 19 de novo designs: MarinFold 0.61, Protenix-v2 single-sequence 0.84, ESMFold 0.80, ESMFold2 0.86, Protenix-v2 + MSA 0.84" width="49%">
 
-The new default is **exp277 at step 266,344** (`contacts-v1-exp277-m2-p06-full-epoch-1.5B`), trained for one complete epoch over native and ProteinMPNN-redesigned documents. It improves over the previous native-only exp232 default on legacy 554 and on de novo designs, while natural eval-val is effectively tied. These contact plots use the **97 eval-val proteins and 19 eval-denovo designs**, with identical proteins for every predictor and 95% protein-bootstrap intervals. Exp277 has not been scored on eval-test. The sequence-KNN reference indexes the native decontaminated corpus; it does not include redesigns.
+MarinFold outperforms a weak baseline (Protenix v2 in single sequence mode) on natural proteins from FoldBench (but, curiously, not on de novo designs).
 
-MarinFold outperforms Protenix-v2 single-sequence on natural eval-val, but still trails the structure predictors on these de novo designs. The design gain over exp232 is +0.086 (paired 95% interval +0.040 to +0.139); the natural eval-val delta is +0.002 (−0.008 to +0.013). This is one seed with different training exposure. [Results, source tables, and plot reproduction](experiments/exp277_models_single_mpnn_pilot/README.md).
+A few notes: the overall paradigm is that we are training on AlphaFold2 or ESMFold2 predicted structures, and testing on experimentally-determined structures. We also remove proteins from our training set that have 30% or higher sequence similarity to anything in our eval set. The model we are using here is **#232's `m2-p06` at step 363,000** (`contacts-v1-exp232-m2-p06-train-1.5B`).
 
-We train on predicted structures and evaluate on experimentally determined structures. The native corpus was filtered to remove sequence matches to evaluation proteins at ≥30% identity over ≥50% of the shorter sequence; redesigns derive from those filtered source structures.
-
-For a more apples-to-apples comparison, we can also look at the accuracy of the predicted structures when we run MarinFold-predicted contacts through [Helico](https://github.com/Open-Athena/helico). The following structure results use the **previous exp232 step-363000 model**, not exp277; a Helico evaluation of the new checkpoint is still pending.
+For a more apples-to-apples comparison, we can also look at the accuracy of the predicted structures when we run MarinFold-predicted contacts through [Helico](https://github.com/Open-Athena/helico). Here's what that looks like:
 
 <img src="experiments/exp250_evals_exploration_notebook/figures/output/gdt_ts_natural.png" alt="GDT-TS on natural monomers: Helico with true contacts 0.89, with MarinFold contacts 0.51, with no contacts 0.15; Protenix-v2 single-sequence 0.17, ESMFold2 0.81, Protenix-v2 + MSA 0.87" width="49%"> <img src="experiments/exp250_evals_exploration_notebook/figures/output/gdt_ts_designed.png" alt="GDT-TS on de novo designs: Helico with true contacts 0.92, with MarinFold contacts 0.75, with no contacts 0.86; Protenix-v2 single-sequence 0.89, ESMFold2 0.93, Protenix-v2 + MSA 0.86" width="49%">
 
@@ -59,8 +59,16 @@ The main areas of ongoing work are:
 
 ## Try it out
 
-The default model in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is
-`contacts-v1-exp277-m2-p06-full-epoch-1.5B` — a 1.47B Qwen3 trained from scratch for one complete epoch over the native and ProteinMPNN-redesigned corpus, from [#277](https://github.com/Open-Athena/MarinFold/issues/277). R-precision is **0.620** on legacy 554, **0.554** on eval-val, and **0.696** on eval-denovo. The [public checkpoint](https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344) includes its tokenizer and publication manifest. The previous native-only model remains available as `contacts-v1-exp232-m2-p06-train-1.5B`.
+The model illustrated above, registered in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml), is
+`contacts-v1-exp232-m2-p06-train-1.5B` — a 1.47B Qwen3 trained from scratch on a
+50/50 AFDB + ESM-Atlas mixture and then trained on past the sweep with a
+lowered peak LR and a cooldown, from
+[#232](https://github.com/Open-Athena/MarinFold/issues/232). Its training
+corpora were [decontaminated](DOCS.md#training-data-decontamination) against the
+eval proteins. R-precision **0.605** on the 554-protein contact benchmark, and
+0.552 on [#245](https://github.com/Open-Athena/MarinFold/issues/245)'s eval-val.
+
+Omitting `--model` uses the current default described in [Latest results](LATEST_RESULTS.md).
 
 ### GPU example
 
@@ -118,7 +126,7 @@ readout (seconds rather than minutes, and several points less accurate). Only
 
 ### Training set
 
-Our training set consists of about four million structures predicted by [AlphaFold2](https://doi.org/10.1038/s41586-021-03819-2) and deposited in the [AlphaFold Database](https://doi.org/10.1093/nar/gkad1011) (AFDB) plus about 66 million structures predicted by [ESMFold2](https://doi.org/10.64898/2026.06.03.729735) and deposited in the ESM-Atlas (https://biohub.ai/esm/protein/atlas). We selected these proteins from their databases through a series of filtering and clustering steps. For AFDB, the inclusion criteria were: mean pLDDT >= 70, length 2-2000, and membership in both an AFDB50 sequence cluster and a Foldseek [structural cluster](https://doi.org/10.1038/s41586-023-06510-w) with at least 3 members. Of these we took up to five proteins per structural cluster by mean pLDDT.  For ESM-Atlas, the inclusion criteria were: mean pLDDT >= 70, pTM >= 0.50, length 60-1000, and non-redundant with the AFDB data at 40% sequence identity. This resulted in 163M structures, which we clustered using [MMseqs2](https://doi.org/10.1038/nbt.3988) linclust at 40% identity into 67M clusters. We selected one representative per cluster by taking the longest sequence per cluster. Before assembling the final training dataset from the two sources, we removed proteins that had 30% or greater sequence identity to any protein in our eval set across a span covering at least 50% of the smaller of the two proteins. Our eval set for this purpose consisted of all protein chains in [FoldBench](https://www.biorxiv.org/content/10.1101/2025.05.22.655600v1), plus several hundred additional proteins. This removed 1,373,423 (1.9%) of training points, resulting in a native training dataset of 69.5 million proteins. The current exp277 model adds ProteinMPNN-redesigned documents from these source structures, producing 232,090,905 documents and 248.584 billion raw tokens. It visits all 34,092,146 packed examples once, with a fresh global shuffle and no fixed 50:50 source weighting.
+Our training set consists of about four million structures predicted by [AlphaFold2](https://doi.org/10.1038/s41586-021-03819-2) and deposited in the [AlphaFold Database](https://doi.org/10.1093/nar/gkad1011) (AFDB) plus about 66 million structures predicted by [ESMFold2](https://doi.org/10.64898/2026.06.03.729735) and deposited in the ESM-Atlas (https://biohub.ai/esm/protein/atlas). We selected these proteins from their databases through a series of filtering and clustering steps. For AFDB, the inclusion criteria were: mean pLDDT >= 70, length 2-2000, and membership in both an AFDB50 sequence cluster and a Foldseek [structural cluster](https://doi.org/10.1038/s41586-023-06510-w) with at least 3 members. Of these we took up to five proteins per structural cluster by mean pLDDT.  For ESM-Atlas, the inclusion criteria were: mean pLDDT >= 70, pTM >= 0.50, length 60-1000, and non-redundant with the AFDB data at 40% sequence identity. This resulted in 163M structures, which we clustered using [MMseqs2](https://doi.org/10.1038/nbt.3988) linclust at 40% identity into 67M clusters. We selected one representative per cluster by taking the longest sequence per cluster. Before assembling the final training dataset from the two sources, we removed proteins that had 30% or greater sequence identity to any protein in our eval set across a span covering at least 50% of the smaller of the two proteins. Our eval set for this purpose consisted of all protein chains in [FoldBench](https://www.biorxiv.org/content/10.1101/2025.05.22.655600v1), plus several hundred additional proteins. This removed 1,373,423 (1.9%) of training points, resulting in a final combined training dataset of 69.5 million proteins.
 
 ### Contact prediction model
 
