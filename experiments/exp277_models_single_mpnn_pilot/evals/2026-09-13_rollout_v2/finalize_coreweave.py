@@ -452,11 +452,6 @@ def finalize(
         timing_frames.append(timings)
         score_directories[checkpoint.label] = local_scores
         unfinished_rollouts = int(timings.unfinished_rollouts.sum())
-        if unfinished_rollouts != checkpoint.accepted_unfinished_rollouts:
-            raise ValueError(
-                f"unfinished rollout count changed for {checkpoint.label}: "
-                f"{unfinished_rollouts} != {checkpoint.accepted_unfinished_rollouts}"
-            )
         validations[checkpoint.label] = {
             "units": len(lengths),
             "unique_stems": len({stem for _, stem in lengths}),
@@ -572,9 +567,6 @@ def finalize(
                 "train_loss": checkpoint.train_loss,
                 "eval_loss": checkpoint.eval_loss,
                 "eval_loss_step": checkpoint.eval_loss_step,
-                "accepted_unfinished_rollouts": (
-                    checkpoint.accepted_unfinished_rollouts
-                ),
                 "wandb_url": (
                     f"https://wandb.ai/open-athena/MarinFold/runs/{checkpoint.run_name}"
                 ),

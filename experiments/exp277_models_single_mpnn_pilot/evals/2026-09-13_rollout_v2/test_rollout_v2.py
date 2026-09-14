@@ -65,7 +65,7 @@ def test_worker_and_rollout_recipe_match_validated_path() -> None:
         num_shards=12,
         seed=0,
         contact_mult=6,
-        accept_unfinished=False,
+        accept_unfinished=True,
     )
     shell = command[-1]
     for expected in (
@@ -75,6 +75,7 @@ def test_worker_and_rollout_recipe_match_validated_path() -> None:
         "--top-k -1",
         "--contact-mult 6",
         "--shard 0/12",
+        "--accept-unfinished",
     ):
         assert expected in shell
     assert "s.bind((\"\",0))" in shell

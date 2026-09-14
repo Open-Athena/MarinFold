@@ -90,7 +90,6 @@ class Checkpoint:
     train_loss: float | None = None
     eval_loss: float | None = None
     eval_loss_step: int | None = None
-    accepted_unfinished_rollouts: int = 0
 
     @property
     def files(self) -> tuple[HfFile, ...]:

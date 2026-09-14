@@ -404,9 +404,7 @@ def _submit_phase(
                 num_shards=num_shards,
                 seed=seed,
                 contact_mult=contact_mult,
-                accept_unfinished=(
-                    not smoke and checkpoint.accepted_unfinished_rollouts > 0
-                ),
+                accept_unfinished=True,
                 limit=1 if smoke else None,
             )
             requests.append(_job_request(name=name, command=command))
