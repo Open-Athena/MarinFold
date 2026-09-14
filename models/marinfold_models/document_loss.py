@@ -334,7 +334,7 @@ def _compact_contact_forward(model: LmHeadModel, batch: CompactContactDocumentBa
     target_rows = lm_head.take(model.Vocab, target_y)
     z_target = hax.dot(activations, target_rows, axis=model.Embed)
     log_normalizers = hard_ce + z_target
-    return activations, log_normalizers, lm_head, aux_loss, Pos
+    return activations, log_normalizers, hard_ce, lm_head, aux_loss, Pos
 
 
 def compact_contact_document_loss(
@@ -351,10 +351,11 @@ def compact_contact_document_loss(
     by dotting the position activation with weighted LM-head rows. That keeps the
     custom loss off the memory-heavy ``[batch, position, vocab]`` logits path.
     """
-    activations, log_normalizers, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
+    activations, log_normalizers, hard_ce, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
 
     activations_array = activations.rearrange((..., Pos, model.Embed)).array
     log_normalizers_array = log_normalizers.rearrange((..., Pos)).array
+    hard_ce_array = hard_ce.rearrange((..., Pos)).array
     lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
 
     max_contacts = batch.contact_first_ids.shape[-1]
@@ -416,7 +417,9 @@ def compact_contact_document_loss(
         batch.contact_count,
         batch.prediction_start,
     )
-    return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
+    prefix_positions = jnp.arange(Pos.size, dtype=jnp.int32)[None, :]
+    prefix_loss = jnp.sum(jnp.where(prefix_positions < batch.prediction_start[:, None], hard_ce_array, 0.0))
+    return (jnp.sum(losses) + prefix_loss) / jnp.sum(batch.target_position_count) + aux_loss
 
 
 def _sparse_contact_example_losses_from_arrays(
@@ -512,10 +515,11 @@ def sparse_contact_document_metrics(
     ``valid_mass`` metrics sum the model probability assigned to the sparse
     teacher support at that position.
     """
-    activations, log_normalizers, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
+    activations, log_normalizers, hard_ce, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
 
     activations_array = activations.rearrange((..., Pos, model.Embed)).array
     log_z = log_normalizers.rearrange((..., Pos)).array
+    hard_ce_array = hard_ce.rearrange((..., Pos)).array
     lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
 
     max_contacts = batch.contact_first_ids.shape[-1]
@@ -598,13 +602,18 @@ def sparse_contact_document_metrics(
     zero_neighbor_rows = valid_contacts & (batch.second_neighbor_count == 0)
     position_ids_array = batch.position_ids.rearrange((..., Pos)).array
     position_ids_monotonic = jnp.mean((jnp.diff(position_ids_array, axis=-1) >= 0).astype(jnp.float32))
+    prefix_positions = jnp.arange(Pos.size, dtype=jnp.int32)[None, :]
+    prefix_mask = prefix_positions < batch.prediction_start[:, None]
+    prefix_ce_sum = jnp.sum(jnp.where(prefix_mask, hard_ce_array, 0.0))
+    prefix_count = jnp.maximum(jnp.sum(prefix_mask), 1)
     total_loss = (
-        jnp.sum(jnp.where(valid_contacts, contact_ce + first_teacher_ce + second_teacher_ce, 0.0)) + jnp.sum(end_ce)
+        prefix_ce_sum + jnp.sum(jnp.where(valid_contacts, contact_ce + first_teacher_ce + second_teacher_ce, 0.0)) + jnp.sum(end_ce)
     ) / jnp.sum(batch.target_position_count) + aux_loss
     metric_prefix = prefix.rstrip("/")
     return {
         f"{metric_prefix}/total_loss": total_loss,
         f"{metric_prefix}/aux_loss": aux_loss,
+        f"{metric_prefix}/prefix_hard_ce": prefix_ce_sum / prefix_count,
         f"{metric_prefix}/contact_token_ce": masked_mean(contact_ce),
         f"{metric_prefix}/first_endpoint_teacher_ce": masked_mean(first_teacher_ce),
         f"{metric_prefix}/first_endpoint_hard_ce": masked_mean(first_hard_ce),
@@ -636,10 +645,11 @@ def sparse_contact_document_loss(
     padded sparse row for each teacher contact step, avoiding the old
     per-contact scan over all remaining contacts.
     """
-    activations, log_normalizers, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
+    activations, log_normalizers, hard_ce, lm_head, aux_loss, Pos = _compact_contact_forward(model, batch, key=key)
 
     activations_array = activations.rearrange((..., Pos, model.Embed)).array
     log_normalizers_array = log_normalizers.rearrange((..., Pos)).array
+    hard_ce_array = hard_ce.rearrange((..., Pos)).array
     lm_head_by_vocab = lm_head.rearrange((model.Vocab, model.Embed)).array
 
     losses = _sparse_contact_example_losses_from_arrays(
@@ -656,7 +666,9 @@ def sparse_contact_document_loss(
         contact_token_id=int(CONTACT),
         end_token_id=int(END),
     )
-    return jnp.sum(losses) / jnp.sum(batch.target_position_count) + aux_loss
+    prefix_positions = jnp.arange(Pos.size, dtype=jnp.int32)[None, :]
+    prefix_loss = jnp.sum(jnp.where(prefix_positions < batch.prediction_start[:, None], hard_ce_array, 0.0))
+    return (jnp.sum(losses) + prefix_loss) / jnp.sum(batch.target_position_count) + aux_loss
 
 
 __all__ = [

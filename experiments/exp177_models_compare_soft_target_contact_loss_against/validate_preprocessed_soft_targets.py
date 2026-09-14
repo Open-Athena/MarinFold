@@ -68,16 +68,15 @@ def validate(prefix: str, *, total_shards: int, shard_count: int, rows_per_shard
         assert token_ids[0] == int(DOC_TYPE), (shard, "bad doc type")
         assert token_ids[1] == int(BEGIN_SEQUENCE), (shard, "bad begin_sequence")
         assert token_ids[prediction_start] == int(BEGIN_STRUCTURE), (shard, "bad prediction_start")
-        assert target_position_count == 3 * contact_count + 1, (shard, "bad target count")
+        assert target_position_count == prediction_start + 3 * contact_count + 1, (shard, "bad target count")
         assert position_ids == list(range(len(position_ids))), (shard, "position_ids not absolute sequential")
 
         end_position = prediction_start + 3 * contact_count + 1
         assert token_ids[end_position] == int(END), (shard, "missing END after contacts")
         assert all(segment_id == 0 for segment_id in segment_ids[: end_position + 1]), (shard, "bad segment_ids")
-        assert all(block == 0 for block in attention_blocks[: prediction_start + 1]), (shard, "bad prefix blocks")
-        assert attention_blocks[prediction_start + 1 : end_position + 1] == list(range(1, 3 * contact_count + 2)), (
+        assert attention_blocks[: end_position + 1] == list(range(end_position + 1)), (
             shard,
-            "bad suffix attention blocks",
+            "attention blocks are not causal position ids",
         )
 
         declared_positions = {

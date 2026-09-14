@@ -172,8 +172,11 @@ def soft_target_contacts_v1_document_from_row(row: Mapping[str, Any]) -> Documen
     prediction_start = len(prefix_tokens) - 1
     query = np.zeros(len(token_ids), dtype=np.bool_)
     query[prediction_start : prediction_start + len(suffix_tokens)] = True
-    attention_blocks = (0,) * len(prefix_tokens) + tuple(range(1, len(suffix_tokens) + 1))
-    relative_positions = (RELATIVE_POSITION.missing,) * len(prefix_tokens) + tuple(range(len(suffix_tokens)))
+    # Use block ids that are exactly equivalent to ordinary causal attention.
+    # The soft objective should not give prefix tokens bidirectional access to
+    # future sequence tokens; eval/generation use stock causal contacts-v1 docs.
+    attention_blocks = tuple(range(len(token_ids)))
+    relative_positions = tuple(range(len(prefix_tokens))) + tuple(range(len(suffix_tokens)))
     return Document(
         token_ids,
         {
@@ -792,12 +795,8 @@ class PrecomputedSoftTargetContactsDataset(AsyncDataset[CompactContactDocumentBa
         if "attention_blocks" in row:
             raw_attention_blocks = np.asarray(row["attention_blocks"], dtype=np.int32)
             attention_blocks[: raw_attention_blocks.shape[0]] = raw_attention_blocks[: self.max_seq_len]
-        elif prediction_start + 1 < raw_token_ids.shape[0]:
-            attention_blocks[prediction_start + 1 : raw_token_ids.shape[0]] = np.arange(
-                1,
-                raw_token_ids.shape[0] - prediction_start,
-                dtype=np.int32,
-            )
+        elif raw_token_ids.shape[0]:
+            attention_blocks[: raw_token_ids.shape[0]] = np.arange(raw_token_ids.shape[0], dtype=np.int32)
 
         first_ids = np.zeros(max_contacts, dtype=np.int32)
         second_ids = np.zeros(max_contacts, dtype=np.int32)

@@ -69,9 +69,9 @@ def _row_from_document(document, *, source_shard: int, slot_index: int, max_seq_
         raise ValueError(f"source_shard={source_shard} slot={slot_index} malformed contact triples")
 
     segment_ids = np.full(token_ids.shape[0], 0, dtype=np.int32)
-    attention_blocks = np.zeros(token_ids.shape[0], dtype=np.int32)
-    if prediction_start + 1 < token_ids.shape[0]:
-        attention_blocks[prediction_start + 1 :] = np.arange(1, token_ids.shape[0] - prediction_start, dtype=np.int32)
+    # Causal block ids: equivalent to stock autoregressive attention while still
+    # flowing through exp177's block-causal batch representation.
+    attention_blocks = np.arange(token_ids.shape[0], dtype=np.int32)
 
     contact_first_ids = suffix[1::3].astype(np.int32)
     contact_second_ids = suffix[2::3].astype(np.int32)
@@ -90,7 +90,9 @@ def _row_from_document(document, *, source_shard: int, slot_index: int, max_seq_
         "contact_first_ids": _padded(contact_first_ids, length=max_contacts),
         "contact_second_ids": _padded(contact_second_ids, length=max_contacts),
         "contact_count": int(suffix.size // 3),
-        "target_position_count": int(suffix.size + 1),
+        # Ordinary CE on prefix positions [0, prediction_start), plus soft /
+        # deterministic contact-suffix targets from prediction_start through END.
+        "target_position_count": int(prediction_start + suffix.size + 1),
     }
 
 

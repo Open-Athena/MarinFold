@@ -110,7 +110,7 @@ def make_raw_example(serialized_edges: tuple[tuple[int, int], ...], *, pos_size:
         second_ids=second_ids,
         contact_count=len(serialized_edges),
         prediction_start=prediction_start,
-        target_position_count=3 * len(serialized_edges) + 1,
+        target_position_count=prediction_start + 3 * len(serialized_edges) + 1,
     )
 
 
@@ -145,8 +145,9 @@ def dense_suffix_oracle_loss(
     serialized_edges: tuple[tuple[int, int], ...],
     *,
     prediction_start: int,
+    token_ids: list[int] | np.ndarray | None = None,
 ) -> float:
-    """Dense CE for exp177's suffix-only target distribution."""
+    """Dense CE for exp177's prefix-CE plus soft suffix target distribution."""
     logits = activations @ lm_head
     log_probs = jax.nn.log_softmax(jnp.asarray(logits), axis=-1)
     total = 0.0
@@ -156,6 +157,10 @@ def dense_suffix_oracle_loss(
         return float(
             -sum(count * float(log_probs[position, token]) for token, count in distribution.items()) / denom
         )
+
+    if token_ids is not None:
+        for position in range(prediction_start):
+            total += ce(position, Counter({int(token_ids[position + 1]): 1}))
 
     for contact_index, (observed_first, _observed_second) in enumerate(serialized_edges):
         contact_predict_position = prediction_start if contact_index == 0 else prediction_start + 3 * contact_index
@@ -178,7 +183,7 @@ def dense_suffix_oracle_loss(
         total += ce(prediction_start + 2 + 3 * contact_index, neighbor_distribution)
 
     total += ce(prediction_start + 3 * len(serialized_edges), Counter({int(END): 1}))
-    return total / (3 * len(serialized_edges) + 1)
+    return total / (prediction_start + 3 * len(serialized_edges) + 1)
 
 
 def test_sparse_contact_loss_matches_dense_serialization_oracle_for_all_orders_and_orientations():
@@ -210,6 +215,7 @@ def test_sparse_contact_loss_matches_dense_serialization_oracle_for_all_orders_a
             lm_head,
             serialized_edges,
             prediction_start=raw.prediction_start,
+            token_ids=raw.token_ids,
         )
         np.testing.assert_allclose(actual, expected, rtol=2e-5, atol=2e-5)
 

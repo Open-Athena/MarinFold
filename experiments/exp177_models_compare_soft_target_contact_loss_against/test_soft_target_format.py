@@ -74,7 +74,7 @@ def test_precomputed_row_keeps_correct_contact_suffix_and_counts():
     )
 
     assert out["contact_count"] == len(generated.contacts)
-    assert out["target_position_count"] == 3 * len(generated.contacts) + 1
+    assert out["target_position_count"] == out["prediction_start"] + 3 * len(generated.contacts) + 1
     assert out["contact_first_ids"][0] == int(POSITIONS[expected_first])
     assert out["contact_second_ids"][0] == int(POSITIONS[expected_second])
     assert out["token_ids"][first_contact + 3 * len(generated.contacts)] == int(END)

@@ -133,9 +133,8 @@ def test_preprocessed_row_round_trips_generated_contacts_v1_suffix():
     assert out["position_ids"] == list(range(len(out["position_ids"])))
     assert out["segment_ids"][: end_position + 1] == [0] * (end_position + 1)
     assert out["segment_ids"][end_position + 1 :] == [-1] * (len(out["segment_ids"]) - end_position - 1)
-    assert out["attention_blocks"][: prediction_start + 1] == [0] * (prediction_start + 1)
-    assert out["attention_blocks"][prediction_start + 1 : end_position + 1] == list(range(1, 3 * contact_count + 2))
-    assert out["target_position_count"] == 3 * len(expected_edges) + 1
+    assert out["attention_blocks"][: end_position + 1] == list(range(end_position + 1))
+    assert out["target_position_count"] == prediction_start + 3 * len(expected_edges) + 1
 
     actual_edges = tuple(
         (int(out["contact_first_ids"][i]), int(out["contact_second_ids"][i]))
@@ -168,7 +167,7 @@ def test_preprocessed_row_reader_preserves_tokens_positions_and_sparse_neighbors
     np.testing.assert_array_equal(np.asarray(batch.segment_ids.array), np.asarray(out["segment_ids"], dtype=np.int32))
     np.testing.assert_array_equal(np.asarray(batch.attention_blocks.array), np.asarray(out["attention_blocks"], dtype=np.int32))
     assert int(batch.contact_count) == len(expected_edges)
-    assert int(batch.target_position_count) == 3 * len(expected_edges) + 1
+    assert int(batch.target_position_count) == int(out["prediction_start"]) + 3 * len(expected_edges) + 1
 
     neighbor_ids = np.asarray(batch.second_neighbor_ids)
     neighbor_counts = np.asarray(batch.second_neighbor_counts)
@@ -226,6 +225,7 @@ def test_preprocessed_row_sparse_loss_matches_dense_oracle():
         lm_head,
         expected_edges,
         prediction_start=int(out["prediction_start"]),
+        token_ids=out["token_ids"],
     )
     np.testing.assert_allclose(actual, expected, rtol=2e-5, atol=2e-5)
 
@@ -298,10 +298,10 @@ def test_batched_preprocessed_sparse_loss_uses_target_position_denominator():
 
     actual = float(sparse_contact_document_loss(model, batch))
     expected_sum_a = dense_suffix_oracle_loss(
-        activations[0], lm_head, edges_a, prediction_start=int(out_a["prediction_start"])
+        activations[0], lm_head, edges_a, prediction_start=int(out_a["prediction_start"]), token_ids=out_a["token_ids"]
     ) * int(out_a["target_position_count"])
     expected_sum_b = dense_suffix_oracle_loss(
-        activations[1], lm_head, edges_b, prediction_start=int(out_b["prediction_start"])
+        activations[1], lm_head, edges_b, prediction_start=int(out_b["prediction_start"]), token_ids=out_b["token_ids"]
     ) * int(out_b["target_position_count"])
     expected = (expected_sum_a + expected_sum_b) / (int(out_a["target_position_count"]) + int(out_b["target_position_count"]))
     np.testing.assert_allclose(actual, expected, rtol=2e-5, atol=2e-5)
