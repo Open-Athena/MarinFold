@@ -1,0 +1,10 @@
+{
+  "script": "uv run --with pymol-open-source==3.2.0a0 python plot_structure_montage.py",
+  "args": [
+    "--count",
+    "64",
+    "--seed",
+    "2786401"
+  ],
+  "caption": "Fixed-seed simple random sample of 64 quality-passing ESMFold refolds from the production audit pool. PyMOL cartoons are independently oriented and scaled and colored from N terminus (blue) to C terminus (red). Panel labels report length, requested conditioning arm, mean pLDDT, and full-chain C-alpha self-consistency RMSD to the generated backbone."
+}

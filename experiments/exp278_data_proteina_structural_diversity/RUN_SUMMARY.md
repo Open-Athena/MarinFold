@@ -1,17 +1,49 @@
 # Proteina monomers for contacts-v1: running experiment and initial results
 
-**Results through September 10, 2026, 13:20 UTC / 9:20 a.m. EDT.**
+**Results through September 14, 2026, 19:19 UTC / 3:19 p.m. EDT.**
 [Experiment #278](https://github.com/Open-Athena/MarinFold/issues/278) ·
 [Implementation PR #282](https://github.com/Open-Athena/MarinFold/pull/282) ·
 [Scale W&B run](https://wandb.ai/open-athena/MarinFold/runs/exp278-proteina-scale-20260909)
 
 We are generating synthetic, sequence-paired protein monomers to test whether they
-can add structural diversity to MarinFold's contacts-v1 training data. About
-15 hours 49 minutes after launch, we have saved **476,976 generated backbones**
-and produced **263,735 quality-passing provisional documents**. The run is active.
-These documents still require evaluation-reference decontamination and global
-structural diversity selection before training use. The experiment has not yet
-established a final retained yield or a training benefit.
+can add structural diversity to MarinFold's contacts-v1 training data. We have
+saved **2,887,824 generated backbones**, **2,817,968 designed sequences**, and
+**1,717,433 quality-passing provisional documents**. The run is active. These
+documents still require full-corpus reference decontamination and global structural
+diversity selection before training use. The experiment has not yet established a
+final retained yield or a training benefit.
+
+## Current scale status and 18-hour retention audit
+
+The run has generated **59.9%** of its frozen 4,820,608-backbone manifest. Of
+2,816,848 committed refolds, 60.97% pass the preregistered quality gate. Iris had
+136 H100s actively allocated and 377 independently queued batch jobs at the latest
+scheduler check; 255 of 768 root jobs had succeeded and none had terminally failed.
+Measured task-attempt time was 6,724.9 H100-hours, including setup and recovered
+attempts rather than representing a provider invoice.
+
+The completed stratified audit sampled 3,008 committed refolds: 1,838 passed
+quality, 858 survived the frozen sequence and evaluation-structure screens, and
+838 remained after applying the fine-cluster cap within the sample. Weighting the
+quality/reference result to the committed population estimates 23.86% retention
+before global clustering. Applying the sample's 838/858 fine-cluster retention
+would correspond to about **656,000 retained documents in the material generated
+so far** and **1.12 million at completion of the manifest**. The latter is an
+extrapolation: only the final all-corpus clustering can measure duplicate growth.
+
+Sequence similarity to the frozen references is the dominant audit exclusion.
+Fine structural redundancy was modest after screening: the 858 eligible structures
+occupied 802 connected fine clusters under the TM-score/coverage rule. This does
+not mean 802 distinct folds; the broader TM-score analysis contains much larger
+transitive components and is reported separately.
+
+The following figure is a fixed-seed simple random sample of 64 quality-passing
+refolds from the audit pool. Each structure is independently oriented and scaled,
+so labels carry the absolute length. The sample ranges from 65 to 500 residues;
+median mean pLDDT is 89.6 and median full-chain self-consistency RMSD is 1.08 Å.
+It includes quality passes regardless of later sequence/reference exclusion.
+
+![Random sample of 64 quality-passing refolds](plots/quality-refolded-structures-8x8.png)
 
 ## What is running
 
@@ -114,8 +146,8 @@ priority (`Fray priority=3`, Kubernetes `iris-batch`). There is no multi-GPU gan
 or parent driver whose exit kills the fleet. Each job can be admitted, evicted
 and retried independently. **768 queued jobs does not mean 768 allocated GPUs.**
 East02 has 256 schedulable H100s shared with other work. Our observed running
-allocation reached 112 during startup and was **88 at the latest check**, with
-680 pods waiting. No production job was terminal-failed at that check.
+allocation reached 144 and was **136 at the latest check**, with 377 pods waiting.
+At that check 255 root jobs had succeeded and none was terminal-failed.
 See the [fleet snapshot](data/scale-20260909/fleet-20260910T1319Z.json).
 
 Each worker owns a deterministic list of cases, balanced by estimated compute
@@ -139,41 +171,41 @@ Production began **September 9 at 21:32:01 UTC / 5:32 p.m. EDT**. Counts below c
 from committed artifacts and batch markers. These are live, nontransactional
 snapshots; in-flight work can lag the displayed totals.
 
-| Stage | Sept 9, 23:30 UTC (~2 h) | Sept 10, 13:20 UTC (~15 h 49 m) |
-|---|---:|---:|
-| Backbones saved | 68,624 | **476,976** |
-| Designed sequences saved | 53,904 | **428,992** |
-| Refolds committed | 52,960 | **427,152** |
-| Quality-pass provisional documents | 34,355 | **263,735** |
-| Quality-pass / completed refolds | 64.9% | **61.7%** |
+| Stage | Sept 9, 23:30 UTC (~2 h) | Sept 10, 13:20 UTC (~15 h 49 m) | Sept 14, 19:19 UTC |
+|---|---:|---:|---:|
+| Backbones saved | 68,624 | 476,976 | **2,887,824** |
+| Designed sequences saved | 53,904 | 428,992 | **2,817,968** |
+| Refolds committed | 52,960 | 427,152 | **2,816,848** |
+| Quality-pass provisional documents | 34,355 | 263,735 | **1,717,433** |
+| Quality-pass / completed refolds | 64.9% | 61.7% | **61.0%** |
 
-At the latest snapshot, 1,155 cases had completed the full GPU pipeline. The
-49,824-backbone gap between generation and committed refolding is unfinished
+At the latest snapshot, 8,086 cases had completed the full GPU pipeline. The
+70,976-backbone gap between generation and committed refolding is unfinished
 downstream work, not a count of quality rejections.
 
 Quality retention by length at the latest snapshot:
 
 | Length | Refolds committed | Quality-pass documents | Quality retention |
 |---|---:|---:|---:|
-| 60–100 | 20,832 | 17,219 | 82.7% |
-| 101–200 | 51,328 | 37,043 | 72.2% |
-| 201–300 | 84,464 | 55,928 | 66.2% |
-| 301–400 | 102,608 | 64,381 | 62.7% |
-| 401–500 | 167,920 | 89,164 | 53.1% |
-| **All** | **427,152** | **263,735** | **61.7%** |
+| 60–100 | 101,120 | 82,075 | 81.2% |
+| 101–200 | 332,256 | 238,199 | 71.7% |
+| 201–300 | 532,480 | 345,112 | 64.8% |
+| 301–400 | 705,424 | 444,495 | 63.0% |
+| 401–500 | 1,145,568 | 607,552 | 53.0% |
+| **All** | **2,816,848** | **1,717,433** | **61.0%** |
 
 Longer proteins show lower quality retention. The pooled percentage also depends
 on which lengths and arms have finished; its change from 64.9% to 61.7% alone is
 not evidence that the generator's behavior deteriorated over time.
 
 Sources: [two-hour snapshot](data/scale-20260909/reports/snapshot-20260909T233035Z.json),
-[latest reported snapshot](data/scale-20260909/reports/snapshot-20260910T132043Z.json),
-and [per-case counts](data/scale-20260909/reports/cases-20260910T132043Z.csv).
+[latest reported snapshot](data/scale-20260909/reports/snapshot-20260914T191922Z.json),
+and [per-case counts](data/scale-20260909/reports/cases-20260914T191922Z.csv).
 
 ### What these counts establish—and what remains to be measured
 
 The pipeline is producing sequence-paired, serializable monomer documents at
-scale, and retaining raw artifacts through worker turnover. **263,735 is a
+scale, and retaining raw artifacts through worker turnover. **1,717,433 is a
 quality-pass count, not a final training-corpus count.** Full-corpus sequence and
 evaluation-structure exclusion, structural clustering and diversity capping have
 not yet been applied. Final retained counts can be substantially smaller.
@@ -217,28 +249,23 @@ summaries and manifests are also committed here; the bulk artifacts require
 access to the CoreWeave bucket. [SCALE_OPS.md](SCALE_OPS.md) contains operational
 commands and recovery details.
 
-## Next review
+## Review status
 
-The first detailed review is scheduled to start **September 10 at 15:32 UTC /
-11:32 a.m. EDT**, 18 hours after production submission. **Generation continues
-while we review.** The workstation timer remains enabled; it requires the
-workstation and user session to be available, and catches a missed run at the
-next login.
+The first detailed review began at the planned 18-hour milestone and completed on
+September 11 at 02:26 UTC while generation continued. [scale_review.py](scale_review.py)
+captured progress and resource time and ran [scale_audit.py](scale_audit.py) on up
+to 64 candidates per 40-aa length bin and requested arm. The audit applies the
+frozen sequence/evaluation-structure screens and measures pre/post-refolding
+structural redundancy, diversity accumulation and nearest detected
+training-reference matches. The sequence exclusion rule is `(identity ≥30% and
+shorter-sequence coverage ≥50%) OR E≤0.001`; the fine structural-neighbor rule
+requires TM-score ≥0.8 in both normalizations and ≥80% coverage of both chains,
+with a cap of five per connected fine cluster. Reference scope and search
+limitations are documented in [README.md](README.md#filtering-and-corrections).
 
-[scale_review.py](scale_review.py) will capture progress and resource time and
-run [scale_audit.py](scale_audit.py): up to 64 candidates per 40-aa length bin and
-requested arm, sampled from committed refolds. The audit applies the frozen
-sequence/evaluation-structure screens and measures pre/post-refolding structural
-redundancy, diversity accumulation and nearest detected training-reference
-matches. The sequence exclusion rule is `(identity ≥30% and shorter-sequence
-coverage ≥50%) OR E≤0.001`; the fine structural-neighbor rule requires TM-score
-≥0.8 in both normalizations and ≥80% coverage of both chains, with a cap of five
-per connected fine cluster. Reference scope and search limitations are documented
-in [README.md](README.md#filtering-and-corrections).
-
-The audit weights quality/reference-pass estimates to the sampled committed-refold
-population. Its cluster cap applies only within the sample; it cannot establish
-the final global diversity retention. Reports and metrics will be saved, logged
-to W&B and linked from a new comment on the experiment issue. The subsequent
-decision is whether to keep the recipe and target, adjust the experiment, or
-finish with fewer than one million documents.
+Detailed audit tables are committed under
+[`data/scale-20260909/review-18h/`](data/scale-20260909/review-18h/), logged to
+[W&B](https://wandb.ai/open-athena/MarinFold/runs/exp278-proteina-scale-20260909),
+and summarized in the [issue update](https://github.com/Open-Athena/MarinFold/issues/278#issuecomment-5628532464).
+The sample manifest for the visual montage is
+[`data/scale-20260909/structure-montage-sample.csv`](data/scale-20260909/structure-montage-sample.csv).

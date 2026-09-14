@@ -1,0 +1,11 @@
+{
+  "scale/generated": 541264,
+  "scale/refolded": 490784,
+  "scale/quality_pass": 300442,
+  "scale/quality_retention": 0.6121674708221947,
+  "scale/h100_hours": 1526.215286388889,
+  "scale/estimated_quality_reference_fraction": 0.23860325151780787,
+  "scale/audit_candidates": 3008,
+  "scale/audit_retained_fraction": 0.2785904255319149,
+  "scale/review_action": "continue while reviewing"
+}

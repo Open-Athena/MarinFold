@@ -1,0 +1,8 @@
+{
+  "snapshot_epoch_ms": 1789413228651,
+  "jobs": 768,
+  "attempts": 1461,
+  "h100_hours": 6724.933101388889,
+  "pilot_cap_h100_hours": null,
+  "interpretation": "one H100 per task; Iris attempt wall time including setup, compilation, inference and failures; not a provider invoice"
+}

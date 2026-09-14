@@ -10,9 +10,14 @@ marinfold_experiment:
 
 **Issue:** [#278](https://github.com/Open-Athena/MarinFold/issues/278) · **Kind:** `data` · **Branch:** `exp278/proteina-pilot`
 
-## Current status: scale run authorized
+## Current status: scale run active
 
-**[Summary of the running experiment and initial results](RUN_SUMMARY.md)** — exact recipe, worker setup, preservation policy and results through September 10 at 13:20 UTC: 476,976 backbones, 427,152 refolds and 263,735 quality-pass provisional documents. Final decontamination/diversity retention is still pending.
+**[Summary of the running experiment and results](RUN_SUMMARY.md)** — exact recipe,
+worker setup, preservation policy, completed 18-hour audit, and results through
+September 14 at 19:19 UTC: 2,887,824 backbones, 2,816,848 refolds and 1,717,433
+quality-pass provisional documents. The audit projects 23.86% quality/reference
+retention before global clustering; final all-corpus diversity selection remains
+pending.
 
 The user authorized scale generation on September 9, superseding the pilot cap and production hold. First production submission: 21:32 UTC. First review: September 10 at 15:32 UTC (11:32 EDT). Generation continues during review. See [SCALE_OPS.md](SCALE_OPS.md) for the frozen plan, independent batch jobs, preservation of all backbones/sequences and recovery. GPU-stage documents remain provisional pending decontamination and global diversity selection.
 

@@ -1,6 +1,6 @@
 ## Scale generation: independent batch workers
 
-First production submission: September 9, 21:32 UTC. Review due September 10, 15:32 UTC / 11:32 EDT. Continue generation during review.
+First production submission: September 9, 21:32 UTC. The 18-hour audit completed while generation continued.
 
 Frozen plan: 4.82 million raw backbones at lengths 60–500, four class arms, 768 independently admitted worker queues. East02 has 256 H100s. RNO2A transfer approval remains pending.
 
@@ -12,15 +12,17 @@ Compiled Proteina 200M no-triangle checkpoints: short through 250 aa, long from 
 
 ESMFold refolds each sequence (four recycles). Require CA self-consistency RMSD ≤2 Å, pLDDT ≥70 and cis-proline-aware CA geometry checks. Contacts-v1 labels use refolded geometry. Each independent single-GPU worker alternates sampling and refolding by case.
 
-## Initial scale results — September 10, 13:20 UTC
+## Scale results — September 14, 19:19 UTC
 
-15 h 49 m after launch: 476,976 saved backbones; 428,992 saved sequences; 427,152 committed refolds; 263,735 quality-pass provisional documents (61.7% of refolds).
+2,887,824 saved backbones (59.9% of the frozen manifest); 2,817,968 saved sequences; 2,816,848 committed refolds; 1,717,433 quality-pass provisional documents (61.0% of refolds).
 
-Quality retention by length: 60–100 aa 82.7%; 101–200 aa 72.2%; 201–300 aa 66.2%; 301–400 aa 62.7%; 401–500 aa 53.1%. These percentages precede decontamination and global structural selection.
+136 H100 pods active and 377 waiting, all batch priority; 255 of 768 root jobs succeeded and none terminally failed. Measured Iris task-attempt time is 6,724.9 H100-hours including setup and retries.
 
-88 H100 pods active and 680 waiting, all batch priority; no terminal job failures at the check. The 18-hour review starts at 15:32 UTC / 11:32 EDT; keep generation running during review.
+The 3,008-candidate audit estimates 23.86% quality/reference retention before global clustering. Its fine-cluster cap retained 838/858 eligible structures, projecting 656k retained documents so far and 1.12M at manifest completion if sample behavior holds. Full-corpus clustering remains required.
 
-Sources: RUN_SUMMARY.md and data/scale-20260909/reports/snapshot-20260910T132043Z.json, plus its per-case CSV.
+The random 64-structure montage spans 65–500 aa; median pLDDT 89.6 and self-consistency RMSD 1.08 Å. Visual variety includes compact alpha, beta-rich and mixed structures, alongside open or elongated quality passes that merit compactness analysis.
+
+Sources: RUN_SUMMARY.md; data/scale-20260909/reports/snapshot-20260914T191922Z.json; data/scale-20260909/review-18h/; and data/scale-20260909/structure-montage-sample.csv.
 
 ## Proteina initial screen
 
