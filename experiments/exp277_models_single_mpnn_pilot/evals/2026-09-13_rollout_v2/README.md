@@ -32,7 +32,10 @@ reported no free H100 capacity.
 
 That first driver timed out after six hours without the smoke H100 ever being
 allocated; no inference ran. The recovery launcher allows 48 hours for batch
-queueing while preserving the same evaluation settings and durable run ID.
+queueing while preserving the same evaluation settings and durable run ID. The
+replacement [`/bizon/exp277-eval-v2-01-r01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r01)
+was submitted at 2026-09-14 13:19 UTC, revalidated all 670 inputs, and is waiting
+at the one-H100 smoke gate with zero failures.
 
 Launch from this directory with:
 

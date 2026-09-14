@@ -54,7 +54,7 @@ The permanent native checkpoint and HF export both completed at `step-266344`. T
 
 ## Conclusion
 
-The requested single-model, full-corpus training run completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. The batch-priority contact evaluation is running as [`/bizon/exp277-eval-v2-01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01), scoring legacy 554, eval-val, and eval-denovo while leaving eval-test unread. Its one-H100 smoke gate was capacity-queued after the driver validated all 670 inputs. These results are still required before this experiment can answer whether ProteinMPNN redesign improves contacts-v1 prediction relative to the native-only exp232 winner.
+The requested single-model, full-corpus training run completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. The batch-priority contact evaluation is running as [`/bizon/exp277-eval-v2-01-r01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r01), scoring legacy 554, eval-val, and eval-denovo while leaving eval-test unread. Its predecessor timed out after six hours in the capacity queue without running inference; the replacement allows 48 hours and is waiting at the one-H100 smoke gate after validating all 670 inputs. These results are still required before this experiment can answer whether ProteinMPNN redesign improves contacts-v1 prediction relative to the native-only exp232 winner.
 
 ## Runtime and placement
 
