@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from structure_audit import (
     Protein,
     aligned_indices,

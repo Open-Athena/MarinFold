@@ -10,8 +10,9 @@ import json
 from pathlib import Path
 
 import requests
-from structure_audit import aligned_indices, load_protein, read_csv
 from tmtools import tm_align
+
+from structure_audit import aligned_indices, load_protein, read_csv
 
 
 def make_payload(sample_dir: Path, cache_dir: Path) -> dict:

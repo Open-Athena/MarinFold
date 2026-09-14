@@ -64,7 +64,8 @@ def main() -> None:
             "The measurements include original source IDs, hashes, provenance and pair metrics. "
             "These are original AFDB v4 or ESMFold2 Atlas predictions, not MarinFold predictions. "
             "Source attributions and scientific caveats are in the experiment README.\n\n"
-            + attribution + "\nCoordinates were reduced to C-alpha traces for inspection; source sequence and confidence were retained. The included 3Dmol runtime has its separate BSD license.\n"
+            + attribution
+            + "\nCoordinates were reduced to C-alpha traces for inspection; source sequence and confidence were retained. The included 3Dmol runtime has its separate BSD license.\n"
         )
         subprocess.run(["hf", "buckets", "sync", str(stage), destination], check=True)
     print(

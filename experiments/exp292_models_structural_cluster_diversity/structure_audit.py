@@ -25,6 +25,13 @@ import gemmi
 import numpy as np
 from tmtools import tm_align
 
+STANDARD_AMINO_ACIDS = frozenset("ACDEFGHIKLMNPQRSTVWY")
+
+
+def noncanonical_sequence(sequence: str) -> bool:
+    """Flag source residues whose mapping to the training document needs an audit."""
+    return bool(set(sequence) - STANDARD_AMINO_ACIDS)
+
 
 @dataclass(frozen=True)
 class Protein:
@@ -83,7 +90,7 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def fetch(row: dict, cache_dir: Path) -> dict:
+def fetch(row: dict, cache_dir: Path, keep_raw: bool = True) -> dict:
     """Fetch one original object with a full GET and validate before caching."""
     started = perf_counter()
     entry_id = row["entry_id"]
@@ -93,7 +100,7 @@ def fetch(row: dict, cache_dir: Path) -> dict:
     # compressed Content-Length / decompressed seekable-read truncation trap.
     content = path.read_bytes() if cached else filesystem().cat_file(row["gcs_uri"])
     protein = parse_structure(content, int(row["seq_len"]))
-    if not cached:
+    if not cached and keep_raw:
         temporary = path.with_suffix(".cif.part")
         temporary.write_bytes(content)
         temporary.replace(path)
@@ -111,6 +118,9 @@ def fetch(row: dict, cache_dir: Path) -> dict:
         "metadata_plddt": float(row["global_plddt"]),
         "mean_plddt": float(protein.plddt.mean()),
         "confident_fraction": float(np.mean(protein.plddt >= 70)),
+        "noncanonical_residues": sum(
+            aa not in STANDARD_AMINO_ACIDS for aa in protein.sequence
+        ),
         "sha256": hashlib.sha256(content).hexdigest(),
         "bytes": len(content),
         "cached": cached,
@@ -326,6 +336,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument(
+        "--skip-raw-cache",
+        action="store_true",
+        help="Keep validated C-alpha arrays without duplicating source mmCIFs locally",
+    )
+    parser.add_argument(
         "--reuse-audit",
         type=Path,
         help="Reuse measured pairs only when both source SHA256 hashes match",
@@ -334,11 +349,44 @@ def main() -> None:
     args.cache.mkdir(parents=True, exist_ok=True)
     args.output.mkdir(parents=True, exist_ok=True)
     rows = read_csv(args.sample)
+    source_sample_bytes = args.sample.read_bytes()
     started = perf_counter()
     filesystem()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        fetched = list(pool.map(partial(fetch, cache_dir=args.cache), rows))
+        fetched = list(
+            pool.map(
+                partial(fetch, cache_dir=args.cache, keep_raw=not args.skip_raw_cache),
+                rows,
+            )
+        )
     write_csv(args.output / "fetch_timings.csv", fetched)
+    noncanonical = {r["entry_id"] for r in fetched if r["noncanonical_residues"]}
+    excluded_clusters = {
+        r["struct_cluster_id"]
+        for r in rows
+        if r["entry_id"] in noncanonical and r["is_anchor"].lower() == "true"
+    }
+    rejected = [
+        {
+            "entry_id": r["entry_id"],
+            "struct_cluster_id": r["struct_cluster_id"],
+            "reason": "noncanonical_anchor_cluster"
+            if r["struct_cluster_id"] in excluded_clusters
+            else "noncanonical_sequence",
+        }
+        for r in rows
+        if r["entry_id"] in noncanonical or r["struct_cluster_id"] in excluded_clusters
+    ]
+    if rejected:
+        write_csv(args.output / "quality_rejections.csv", rejected)
+        rows = [
+            r
+            for r in rows
+            if r["entry_id"] not in noncanonical
+            and r["struct_cluster_id"] not in excluded_clusters
+        ]
+    (args.output / "source_sample.csv").write_bytes(source_sample_bytes)
+    write_csv(args.output / "sample.csv", rows)
     print(
         f"Fetched and validated {len(fetched)} structures in {perf_counter() - started:.1f}s",
         flush=True,
@@ -358,7 +406,12 @@ def main() -> None:
             for r in read_csv(args.reuse_audit / "fetch_timings.csv")
         }
         hashes = {r["entry_id"]: r["sha256"] for r in fetched}
-        valid = {entry for entry, sha in hashes.items() if old_hashes.get(entry) == sha}
+        kept_ids = {r["entry_id"] for r in rows}
+        valid = {
+            entry
+            for entry, sha in hashes.items()
+            if old_hashes.get(entry) == sha and entry in kept_ids
+        }
         identity_columns = {
             "struct_cluster_id",
             "entry_a",
@@ -397,6 +450,12 @@ def main() -> None:
     summary = {
         "source": "afdb",
         "structures": len(rows),
+        "fetched_structures": len(fetched),
+        "clusters_excluded_noncanonical_anchor": len(excluded_clusters),
+        "input_sample_sha256": hashlib.sha256(source_sample_bytes).hexdigest(),
+        "audited_sample_sha256": hashlib.sha256(
+            (args.output / "sample.csv").read_bytes()
+        ).hexdigest(),
         "pairs": len(pairs),
         "candidates": len(selected),
         "provisional_diverse": sum(r["selected_order"] > 0 for r in selected),

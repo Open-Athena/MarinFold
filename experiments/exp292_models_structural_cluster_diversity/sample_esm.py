@@ -31,12 +31,26 @@ import pyarrow.compute as pc
 import pyarrow.csv as pacsv
 import pyarrow.parquet as pq
 import requests
-from structure_audit import audit_cluster, select_candidates, write_csv
+
+from structure_audit import (
+    audit_cluster,
+    noncanonical_sequence,
+    select_candidates,
+    write_csv,
+)
 
 BUCKET = "marinfold-exp91-usw2"
 MEMBERSHIP = "exp91/out/clu_cluster.tsv"
 ATLAS = "s3://esm-protein-atlas/v1/folds/folds_1B.lance"
 ATLAS_VERSION = 3
+STRUCTURE_COLUMNS = (
+    "protein_hash",
+    "sequence",
+    "mean_plddt",
+    "ptm",
+    "structure_blob",
+    "pae",
+)
 
 
 def require_source_region() -> None:
@@ -192,21 +206,18 @@ def decode_protein(row: dict) -> tuple[str, np.ndarray, np.ndarray]:
     return sequence, positions[ca_offsets], confidence * 100
 
 
-def retrieve(ds: lance.LanceDataset, hashes: list[str]) -> pa.Table:
+def retrieve(
+    ds: lance.LanceDataset,
+    hashes: list[str],
+    columns: tuple[str, ...] = STRUCTURE_COLUMNS,
+) -> pa.Table:
     """Use the scalar index and fail if any hash is absent or duplicated."""
     if any(len(h) != 32 or any(c not in "0123456789abcdef" for c in h) for h in hashes):
         raise ValueError("Invalid protein hash")
     predicate = "protein_hash IN (" + ",".join(f"'{h}'" for h in hashes) + ")"
     scanner = ds.scanner(
         filter=predicate,
-        columns=[
-            "protein_hash",
-            "sequence",
-            "mean_plddt",
-            "ptm",
-            "structure_blob",
-            "pae",
-        ],
+        columns=list(columns),
         with_row_id=True,
     )
     if "ScalarIndexQuery" not in scanner.explain_plan():
@@ -305,12 +316,29 @@ def main() -> None:
             by_hash[member] = cluster
     hashes = sorted(by_hash)
     rows, fetched, rejected = [], [], []
+    rejected_clusters = set()
     for offset, batch, elapsed in retrieve_batches(ds, hashes):
         for record in batch.to_pylist():
             h = record["protein_hash"]
             cluster = by_hash[h]
             is_anchor = h == cluster["protein_hash"]
             seq, coords, plddt = decode_protein(record)
+            if noncanonical_sequence(seq):
+                if is_anchor:
+                    rejected_clusters.add(cluster["cluster_id"])
+                rejected.append(
+                    {
+                        "entry_id": h,
+                        "struct_cluster_id": cluster["cluster_id"],
+                        "seq_len": len(seq),
+                        "mean_plddt": record["mean_plddt"],
+                        "ptm": record["ptm"],
+                        "reason": "noncanonical_anchor; exclude_cluster"
+                        if is_anchor
+                        else "noncanonical_sequence",
+                    }
+                )
+                continue
             if not is_anchor and (
                 record["mean_plddt"] < 0.8
                 or record["ptm"] < 0.5
@@ -372,6 +400,22 @@ def main() -> None:
             f"Atlas retrieval: {min(offset + 32, len(hashes))}/{len(hashes)}, {len(rows)} quality-passing structures",
             flush=True,
         )
+    if rejected_clusters:
+        write_csv(
+            args.output / "cluster_rejections.csv",
+            [
+                {
+                    **r,
+                    "reason": "noncanonical_anchor; source/training residue mapping requires separate audit",
+                }
+                for r in clusters
+                if r["cluster_id"] in rejected_clusters
+            ],
+        )
+        rows = [r for r in rows if r["struct_cluster_id"] not in rejected_clusters]
+        fetched = [
+            r for r in fetched if r["struct_cluster_id"] not in rejected_clusters
+        ]
     rows.sort(
         key=lambda r: (
             r["struct_cluster_id"],
@@ -406,6 +450,7 @@ def main() -> None:
     write_csv(args.output / "candidates.csv", candidates)
     summary = {
         "source": "esmfold2",
+        "clusters_excluded_noncanonical_anchor": len(rejected_clusters),
         "structures": len(rows),
         "pairs": len(pairs),
         "candidates": len(candidates),

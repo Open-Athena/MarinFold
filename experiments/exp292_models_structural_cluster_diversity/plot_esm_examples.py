@@ -13,9 +13,10 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from tmtools import tm_align
+
 from build_summary import save_plot_with_meta
 from structure_audit import load_protein, read_csv, write_csv
-from tmtools import tm_align
 
 
 def prepare(rows: list[dict], cache: Path, data_dir: Path) -> None:

@@ -9,7 +9,13 @@ import msgpack_numpy
 import numpy as np
 import pyarrow as pa
 import pytest
-from sample_esm import choose_clusters, decode_protein, sample_members
+
+from sample_esm import (
+    choose_clusters,
+    decode_protein,
+    sample_members,
+)
+from structure_audit import noncanonical_sequence
 
 
 def test_membership_keeps_original_representative_when_training_anchor_differs():
@@ -43,6 +49,13 @@ def test_choose_clusters_requires_actual_retained_anchor():
     ]
     selected = choose_clusters(pa.Table.from_pylist(rows), {"retained"}, 4, 292)
     assert [r["protein_hash"] for r in selected] == ["retained"]
+
+
+def test_unknown_residue_cannot_be_a_full_chain_training_anchor():
+    sequence = "MDERLEKALDFSNYMVTLNNQRRLIHEQFLENCVHYLNGGKFSVTRELINFCHMLVSTGQEDVVLIDDNNSPVKVDNIEDFLSEILDIYFTNSNEYLEKFSSLKKKRIKDLVNLXPRVYYFLHSTILT"
+    assert len(sequence) == 128
+    assert noncanonical_sequence(sequence)
+    assert not noncanonical_sequence("ACDEFGHIKLMNPQRSTVWY")
 
 
 def test_atom37_coordinates_and_sequence_validation():

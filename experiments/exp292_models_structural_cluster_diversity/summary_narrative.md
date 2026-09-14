@@ -33,8 +33,22 @@ PAE codes are plotted without assuming physical units. No angstrom cutoff is app
 919 fresh ESM clusters, up to 14,284 omitted members; seed 293.
 Sampled from 100 current training shards containing 1,963,845 current anchors, excluding the development shard.
 One region-pinned 32-vCPU EC2 worker, with 24 alignment processes and four bounded fetch threads.
-The original 163M-row membership remains in us-west-2. Outputs are durable and the instance terminates automatically.
+A source/training length assertion stopped the first attempt; a full anchor metadata check found three sequences with unknown residues. The corrected run excludes those clusters explicitly. The original 163M-row membership remains in us-west-2. Outputs are durable and the instance terminates automatically.
 This is a curation and yield audit, not a short model-training test.
+
+## Broader AFDB audit
+
+1,008 fresh clusters, 4,845 retained anchors and up to 19,201 omitted members.
+No cluster overlap with the initial 36-cluster development gallery.
+A 32-CPU preemptible Iris worker is pinned to us-central1-a, with matching regional GCS outputs.
+The audit measures within-cluster pairs and records core, coverage and sequence-quality diagnostics. Training filters remain unfrozen.
+
+## Preliminary sequence exclusion
+
+571 initial omitted candidates screened against 1,823 unique reference sequences from exp225.
+The identity/shorter-coverage rule flags 60 candidates: 29 AFDB and 31 ESM.
+None of the seven whole-chain provisional hits is flagged. An exact-reference positive control passes.
+This is a small-pool screen; repeat on the final pool and frozen reference before training. E-value reporting depends on target database size.
 
 ## Next curation decisions
 
