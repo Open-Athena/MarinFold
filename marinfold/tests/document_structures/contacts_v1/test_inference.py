@@ -78,6 +78,7 @@ class _PlantedBackend:
         return out
 
     def sample_completions(self, prefix_token_ids_batch, *, max_new_tokens,
+                           min_new_tokens=0,
                            temperature=1.0, top_p=0.95, top_k=50,
                            stop_token_id=None, seed=None, batch_size=None):
         """Emit each prefix's planted contacts, in *that* realization's tokens.
@@ -299,6 +300,18 @@ def test_score_matrix_rejects_unknown_method():
     cfg = inf.InferenceConfig(model="/x", method="bogus")
     with pytest.raises(ValueError, match="pairwise|rollout"):
         inf._score_matrix(object(), s, cfg)
+
+
+def test_rollout_contact_minimum_reaches_sampler():
+    structure = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    positions = inf._prefix_and_positions(structure, entry_id="demo")[1]
+    backend = _PlantedBackend(_tokenizer(), positions, planted=[(0, 12)])
+    cfg = inf.InferenceConfig(
+        model="/stub", method="rollout", n_rollouts=2, min_new_contacts=1,
+    )
+    scores, length = inf._rollout_score_matrix(backend, structure, cfg)
+    assert length == len(_SEQ)
+    assert scores[0, 12] >= 2
 
 
 def test_predict_rollout_votes_and_ranks(monkeypatch):

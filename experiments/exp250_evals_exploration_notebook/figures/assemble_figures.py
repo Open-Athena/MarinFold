@@ -59,6 +59,37 @@ LAYOUT = {
 }
 
 
+def check_glyph_definitions(paths: list[Path]) -> None:
+    """Refuse to compose panels that disagree about what a glyph id means.
+
+    matplotlib writes text as glyph outlines: `<path id="DejaVuSans-47" d="…"/>` defined once and
+    referenced by `<use>`. svgutils merges the panels into one document, where a repeated id keeps
+    its *first* definition — so if two panels number their glyphs differently, one panel's letters
+    silently replace the other's and the figure reads as nonsense ("GDT-TS" came out "d a q-qp").
+
+    Panels numbered differently because they were rendered by different matplotlib versions: the
+    id is a font glyph index in some, a Unicode codepoint in others. Nothing about that is visible
+    in either panel alone — each renders correctly on its own — so it has to be caught here.
+    """
+    import re
+
+    definitions: dict[str, tuple[Path, str]] = {}
+    conflicts: dict[Path, set[Path]] = {}
+    for path in paths:
+        for match in re.finditer(r'<path[^>]*id="([^"]+)"[^>]*d="([^"]*)"', path.read_text()):
+            glyph, outline = match.group(1), match.group(2)
+            first = definitions.setdefault(glyph, (path, outline))
+            if first[1] != outline:
+                conflicts.setdefault(path, set()).add(first[0])
+    if conflicts:
+        pairs = "; ".join(f"{late.name} vs {', '.join(sorted(e.name for e in early))}"
+                          for late, early in conflicts.items())
+        raise SystemExit(
+            f"panels disagree about glyph ids ({pairs}). They were rendered by different "
+            "matplotlib versions, and composing them would swap letters between panels. "
+            "Re-run every plot notebook for this figure in one environment, then assemble.")
+
+
 def panel_size(path: Path) -> tuple[float, float]:
     """Width and height of an SVG in points, resolving the unit suffix matplotlib writes."""
     svg = transform.fromfile(str(path))
@@ -117,6 +148,7 @@ def assemble(name: str, specification: dict, width: float, dpi: int = 300) -> Pa
     """Lay the panels out row by row, letter them, and write `manuscript/<name>.svg`."""
     FIGURES.mkdir(parents=True, exist_ok=True)
     elements, letters = [], iter("ABCDEFGHIJ")
+    panel_paths: list[Path] = []
     y = MARGIN
     missing = []
 
@@ -130,6 +162,7 @@ def assemble(name: str, specification: dict, width: float, dpi: int = 300) -> Pa
             if path.exists():
                 sizes.append(panel_size(path))
                 sources.append((path, None))
+                panel_paths.append(path)
             else:
                 if fallback is None:
                     raise FileNotFoundError(
@@ -157,6 +190,7 @@ def assemble(name: str, specification: dict, width: float, dpi: int = 300) -> Pa
             row_height = max(row_height, panel_height * scale)
         y += row_height + GUTTER
 
+    check_glyph_definitions(panel_paths)
     figure = compose.Figure(width, y + MARGIN - GUTTER, *elements)
     destination = FIGURES / f"{name}.svg"
     figure.save(str(destination))

@@ -1,0 +1,9 @@
+run,temperature,n_designs,mean_identity_to_native,mean_mpnn_score
+direct,0.1,96,0.467,0.845
+direct,0.2,96,0.457,0.876
+direct,0.3,96,0.451,0.919
+direct,0.5,96,0.434,1.088
+staged,0.1,96,0.443,0.883
+staged,0.2,96,0.432,0.916
+staged,0.3,96,0.430,0.965
+staged,0.5,96,0.413,1.140

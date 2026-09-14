@@ -1,0 +1,365 @@
+# Copyright The MarinFold Authors
+# SPDX-License-Identifier: Apache-2.0
+
+"""ESM-Atlas arm of #266 — source cif to redesigned documents in ONE pass.
+
+No staging stage, unlike the AFDB arm, and no coordinate encoding at all.
+
+The AFDB arm stages backbones because AFDB's bucket is requester-pays and only
+GCP Iris workers can read it; the staged rows carry coordinates as int32
+milli-angstroms, which is exact because AFDB mmCIF is written with 3 decimals.
+
+Neither holds here:
+
+* ESM-Atlas structures are inline `cif_content` in a **public** HF bucket, so a
+  CoreWeave pod reads them directly — there is nothing to stage around.
+* ESM-Atlas cifs carry up to **11 decimals** (~77 % of values are float16-exact,
+  the rest need float64), so milli-angstrom rounding is lossy, and measurably
+  so: on 200 structures it changed **114 of 200 documents** — same contact
+  counts, different contact sets at the margin. Exactly the sensitivity the
+  pyconfind backend difference showed.
+
+So the structure never leaves float64: parsed once, used for ProteinMPNN
+coordinates and for pyconfind, and discarded. That also drops ~1.2 TB of
+staged artifact that would have been needed to store float64 coordinates.
+
+**Relabelling an all-atom structure is fine.** `relabel_sequence` renames
+residues and leaves the original side chains in place, which now disagree with
+the new names — and that does not matter, because confind ignores input side
+chains and rebuilds rotamers from the residue names (the very first thing this
+experiment verified). No stripping needed.
+
+**The join is driven by the source part, and the mapping is measured, not
+assumed.** Both sides are 3,338 parquet files over the same 65 M entry ids,
+and it is tempting to read that as file *i* meeting file *i*. It nearly is:
+alignment holds for most indices and fails outright near the end, because
+#225 rewrote the corpus after filtering and the rewrite did not preserve
+index order. An earlier version of this worker paired shard *i* with part
+*i* on the strength of two spot checks, both taken from the region where that
+happens to be true.
+
+The mapping now comes from `esm_shard_map.json.gz`, built once from the
+parquet *footers* of all 6,676 files (`build_shard_map.py`): each file's
+min/max `entry_id` comes free out of the row-group statistics, so the whole
+index costs footer reads and no column data at all. It assumes nothing about
+either layout -- a plain interval intersection -- which matters, because the
+corpus shards turned out not to be the clean partition they look like either.
+
+Iterating source parts rather than corpus shards is what makes this cheap. The
+source is 2.08 TB of inline cif and the corpus is metadata-only, so the loop
+reads each source part exactly once and re-reads the odd small corpus shard.
+Keying the output by source part also leaves the files already written under
+the old assumption valid wherever that assumption happened to hold -- which
+`--force-parts` exists to override where it did not.
+"""
+
+from __future__ import annotations
+
+import argparse
+import functools
+import gzip
+import json
+import pathlib
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor
+
+import fsspec
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+CORPUS = ("hf://buckets/open-athena/MarinFold/data/document_structures/"
+          "contacts_v1_esm_atlas_decontam/train")
+SOURCE = "hf://buckets/open-athena/esm-atlas-esmfold2-distill/structures/parts"
+NUM_SHARDS = 3338
+
+# ESM-Atlas provenance. It has no struct_cluster_id or round -- both AFDB-only.
+CARRY = {"seq_len": "parent_seq_len", "global_plddt": "global_plddt",
+         "seq_cluster_id": "seq_cluster_id", "split": "split",
+         "contacts_emitted": "native_contacts_emitted", "sha1": "native_sha1",
+         "cluster_size": "cluster_size", "ptm": "ptm"}
+
+
+SHARD_MAP_FILE = "esm_shard_map.json.gz"
+
+
+def _log(msg: str) -> None:
+    print(f"[exp266-esm] {msg}", file=sys.stderr, flush=True)
+
+
+@functools.cache
+def shard_map() -> dict[int, list[int]]:
+    """Source part index -> the corpus shards holding its kept rows.
+
+    Ships next to this file (the dispatcher base64s both), so a task needs no
+    extra object-store round trip and cannot race a half-written copy.
+    """
+    path = pathlib.Path(__file__).with_name(SHARD_MAP_FILE)
+    with gzip.open(path, "rt") as handle:
+        raw = json.load(handle)
+    mapping = {int(k): v for k, v in raw.items()}
+    if len(mapping) != NUM_SHARDS:
+        raise ValueError(
+            f"{SHARD_MAP_FILE} covers {len(mapping)} source parts, expected "
+            f"{NUM_SHARDS}; rebuild it with build_shard_map.py"
+        )
+    return mapping
+
+
+def _read_parquet(uri: str, columns: list[str], attempts: int = 6):
+    """Read one parquet from HF, retrying transient CDN failures.
+
+    80 concurrent readers over 2.08 TB draw occasional 503s from HF's xet CDN,
+    and iris only allows a task 3 attempts overall -- so one blip on shard
+    1,200 of 3,338 throws away hours of completed work. Retrying here costs
+    seconds. Only transient statuses are retried; a 404 or an auth failure
+    still fails fast, because those will not fix themselves.
+    """
+    import random
+
+    last = None
+    for attempt in range(attempts):
+        try:
+            with fsspec.open(uri, "rb") as h:
+                return pq.read_table(h, columns=columns)
+        except Exception as exc:  # noqa: BLE001 - re-raised below if not transient
+            msg = str(exc)
+            transient = any(code in msg for code in
+                            ("503", "504", "502", "429", "Connection", "Timeout",
+                             "timed out", "Service Unavailable"))
+            if not transient:
+                raise
+            last = exc
+            delay = min(60, 2 ** attempt) * (1 + random.random())
+            _log(f"transient read failure ({msg[:80]}...); "
+                 f"retry {attempt + 1}/{attempts} in {delay:.0f}s")
+            time.sleep(delay)
+    raise RuntimeError(f"{uri}: {attempts} transient read failures") from last
+
+
+def _documents_for_one(payload):
+    """Process-pool entry point: (cif text, entry_id, meta, designs) -> rows."""
+    import generate_rows
+    from backbone import prepare_structure, relabel_sequence
+    from stage_rows import _structure_from_cif
+    from marinfold.document_structures.contacts_v1 import generate_document
+
+    cif, entry_id, meta, designs = payload
+    structure = prepare_structure(_structure_from_cif(cif, entry_id=entry_id))
+    rotamers = generate_rows._load_rotamer_library()
+
+    out = []
+    for d in designs:
+        try:
+            result = generate_document(
+                relabel_sequence(structure, d.sequence),
+                entry_id=f"{entry_id}#{d.design_index}",
+                rotamer_library=rotamers,
+            )
+        except ValueError as exc:
+            # pyconfind can produce NaN *rotamer* coordinates on degenerate
+            # backbone geometry, which surfaces from scipy's cKDTree as
+            #   ValueError: 'x' must be finite, check for nan or inf values
+            #   ... pyconfind/build.py, in _process_position
+            # The input coordinates are finite -- all_coords_finite passes --
+            # so no input check catches this; it is only knowable by trying.
+            # Geometry is shared across a backbone's designs, so abandon the
+            # whole structure and let the caller count it.
+            if "must be finite" not in str(exc):
+                raise
+            return []
+        if result is None:
+            continue
+        row = result.metadata_row()
+        row["entry_id"] = entry_id
+        row["design_index"] = d.design_index
+        row["mpnn_temperature"] = d.mpnn_temperature
+        row["mpnn_score"] = d.mpnn_score
+        row["identity_to_native"] = d.identity_to_native
+        row.update(meta)
+        out.append(row)
+    return out
+
+
+@functools.lru_cache(maxsize=16)
+def _corpus_shard(shard: int) -> dict[str, dict]:
+    """One corpus shard's kept-row metadata, keyed by entry id.
+
+    Cached because a corpus shard's id range can span more than one source
+    part, so consecutive parts often want the same shard. These are the
+    metadata columns only -- no `cif_content` -- so a shard is a couple of MB
+    and sixteen of them cost far less than re-reading one.
+    """
+    return {row["entry_id"]: row for row in _read_parquet(
+        f"{CORPUS}/shard-{shard:05d}-of-{NUM_SHARDS:05d}.parquet",
+        ["entry_id", *CARRY],
+    ).to_pylist()}
+
+
+def _kept_for_part(part: int) -> dict[str, dict]:
+    """Kept-row metadata covering every entry in source part *part*.
+
+    The rows are a superset of this part's entries -- a corpus shard's range
+    can reach past the part on either side -- and the `kept.get(entry_id)`
+    lookup in `process_part` narrows them, so no key filtering is needed here.
+    """
+    shards = shard_map()[part]
+    if not shards:
+        raise ValueError(
+            f"part {part}: the shard map names no corpus shard. Every source "
+            f"part holds kept rows, so this means a stale map."
+        )
+    kept: dict[str, dict] = {}
+    for shard in shards:
+        kept.update(_corpus_shard(shard))
+    return kept
+
+
+def process_part(index: int, args, pool) -> int:
+    from backbone import (all_coords_finite, backbone_coords, prepare_structure,
+                          residue_sequence)
+    from redesign import BackboneEntry, batch_by_exact_length, design_batch
+    from stage_rows import _structure_from_cif
+
+    out_uri = f"{args.out_prefix.rstrip('/')}/documents-{index:05d}-of-{NUM_SHARDS:05d}.parquet"
+    out_fs, out_path = fsspec.core.url_to_fs(out_uri)
+    if out_fs.exists(out_path) and index not in args.force_parts:
+        _log(f"skip {index} (output exists)")
+        return 0
+
+    t0 = time.perf_counter()
+    kept = _kept_for_part(index)
+    src = _read_parquet(f"{SOURCE}/part_{index:05d}.parquet",
+                        ["entry_id", "cif_content"]).to_pylist()
+    hits = sum(1 for r in src if r["entry_id"] in kept)
+    _log(f"{index}: corpus shards {shard_map()[index]} -> {hits:,} kept of "
+         f"{len(src):,} ({time.perf_counter()-t0:.0f}s read)")
+
+    entries, payload_meta, filtered = [], {}, 0
+    for s in src:
+        meta = kept.get(s["entry_id"])
+        if meta is None:
+            continue                        # dropped by #225's decontamination
+        try:
+            structure = prepare_structure(
+                _structure_from_cif(s["cif_content"], entry_id=s["entry_id"]))
+            if len(structure) == 0 or sum(1 for _ in structure[0]) != 1:
+                filtered += 1
+                continue                    # monomers only, as contacts-v1 requires
+            if not all_coords_finite(structure):
+                # Checked over ALL atoms, not just the backbone: pyconfind gets
+                # the whole structure, so a side-chain NaN would pass
+                # backbone_coords and then kill the document pool.
+                filtered += 1
+                continue
+            seq = residue_sequence(structure)
+            if "X" in seq:
+                filtered += 1
+                continue                    # ProteinMPNN has no token for these
+            _chains, coords = backbone_coords(structure)
+        except ValueError as exc:
+            # Designed-in filters only; anything else is a real surprise about
+            # the input and must surface rather than being counted away.
+            msg = str(exc)
+            if not any(k in msg for k in
+                       ("non-finite coordinate", "missing mainchain atom",
+                        "non-canonical residues", "expected 1 chain")):
+                raise
+            filtered += 1
+            continue
+        entries.append(BackboneEntry(s["entry_id"], seq, coords))
+        payload_meta[s["entry_id"]] = (
+            s["cif_content"], {n: meta[c] for c, n in CARRY.items() if c in meta})
+
+    t_gpu = time.perf_counter()
+    designs_by: dict[str, list] = {}
+    for batch in batch_by_exact_length(
+        entries, max_batch=args.max_batch, max_batch_residues=args.max_batch_residues,
+        designs_per_backbone=len(args.temperatures),
+    ):
+        for d in design_batch(batch, device=args.device,
+                              temperatures=tuple(args.temperatures)):
+            designs_by.setdefault(d.entry_id, []).append(d)
+    gpu_s = time.perf_counter() - t_gpu
+
+    t_cpu = time.perf_counter()
+    payloads = [(payload_meta[e][0], e, payload_meta[e][1], ds)
+                for e, ds in designs_by.items()]
+    rows, degenerate = [], 0
+    for recs in pool.map(_documents_for_one, payloads, chunksize=4):
+        if not recs:
+            degenerate += 1
+            continue
+        rows.extend(recs)
+    cpu_s = time.perf_counter() - t_cpu
+
+    if not rows:
+        # Both arms are real bugs, and they are different bugs: an empty
+        # `entries` means the join found nothing (a stale shard map), while a
+        # non-empty one means every backbone failed downstream. Neither is a
+        # state this corpus can legitimately reach, so both stop the task.
+        raise ValueError(
+            f"part {index}: no documents from {len(entries)} usable backbones "
+            f"({hits} kept, {filtered} filtered, {degenerate} degenerate)"
+        )
+    with fsspec.open(out_uri, "wb") as h:
+        pq.write_table(pa.Table.from_pylist(rows), h, compression="zstd")
+    _log(f"{index}: {len(rows):,} docs from {len(entries):,} backbones "
+         f"({filtered} filtered, {degenerate} degenerate) in "
+         f"{time.perf_counter()-t0:.0f}s (gpu {gpu_s:.0f}s cpu {cpu_s:.0f}s)")
+    return len(rows)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out-prefix", required=True)
+    ap.add_argument("--shard", required=True, metavar="I/N")
+    ap.add_argument("--temperatures", type=float, nargs="+", default=[0.1, 0.2],
+                    help="Two by default for this arm: exp266's AFDB run showed "
+                         "the 8-slot ladder spans almost nothing (identity "
+                         "0.373->0.345, density flat, T=0.5 refolds worse), and "
+                         "ESM-Atlas's value is backbone diversity, not more "
+                         "sequences per backbone.")
+    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--max-batch", type=int, default=256)
+    ap.add_argument("--max-batch-residues", type=int, default=100_000)
+    ap.add_argument("--max-shards", type=int, default=None, help="Smoke cap.")
+    ap.add_argument("--cpu-workers", type=int, default=14)
+    ap.add_argument("--force-parts", default="",
+                    help="Comma-separated source parts to rewrite even though "
+                         "their output exists. Used to replace files the old "
+                         "index-aligned worker wrote from a partial join.")
+    args = ap.parse_args()
+    args.force_parts = {int(x) for x in args.force_parts.split(",") if x.strip()}
+
+    from redesign import load_model
+    import generate_rows
+
+    i, n = (int(x) for x in args.shard.split("/"))
+    mine = list(range(i, NUM_SHARDS, n))
+    if args.max_shards is not None:
+        mine = mine[: args.max_shards]
+    widths = [len(shard_map()[j]) for j in mine]   # also validates the map early
+    _log(f"shard {i}/{n}: {len(mine)} of {NUM_SHARDS} source parts, "
+         f"{len(args.temperatures)} designs each, "
+         f"{sum(widths)/len(widths):.2f} corpus shards per part"
+         + (f", forcing {len(args.force_parts & set(mine))}" if args.force_parts else ""))
+
+    load_model(args.device)
+    # Warm the rotamer library before forking, or the pool children race on the
+    # download and one parses a half-written library (the AFDB arm's bug).
+    if generate_rows._load_rotamer_library() is None:
+        raise RuntimeError("rotamer library failed to load in the parent")
+    _log(f"model + rotamers ready; {args.cpu_workers} document processes")
+
+    total, started = 0, time.perf_counter()
+    with ProcessPoolExecutor(max_workers=args.cpu_workers) as pool:
+        for k, idx in enumerate(mine, 1):
+            total += process_part(idx, args, pool)
+            _log(f"progress {k}/{len(mine)} parts, {total:,} documents")
+    _log(f"done: {total:,} documents in {(time.perf_counter()-started)/60:.0f} min")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

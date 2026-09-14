@@ -418,8 +418,8 @@ coupling this build to a second axis).
 
 | corpus | before | removed | **after** | size |
 | --- | ---: | ---: | ---: | ---: |
-| [`contacts_v1_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_decontam) | 4,129,682 | 166,679 (4.04 %) | **3,963,003** | 12.1 GB |
-| [`contacts_v1_esm_atlas_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_esm_atlas_decontam) | 66,759,922 | 1,206,744 (1.81 %) | **65,553,178** | 130.7 GB |
+| [`contacts_v1_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_decontam) | 4,129,682 | 166,679 (4.04 %) | **3,963,003** | 12.1 GB |
+| [`contacts_v1_esm_atlas_decontam`](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_esm_atlas_decontam) | 66,759,922 | 1,206,744 (1.81 %) | **65,553,178** | 130.7 GB |
 
 Published as **new prefixes**; the originals are untouched, so every existing
 checkpoint stays reproducible against the corpus it actually saw. The pinned

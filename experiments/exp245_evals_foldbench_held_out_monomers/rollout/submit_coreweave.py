@@ -86,6 +86,17 @@ def main() -> None:
         "-e",
         "MARIN_PREFIX",
         MARIN_PREFIX,
+    ]
+    for key in (
+        "MARINFOLD_FIXED_RESIDUE_POSITION_EMBEDDINGS",
+        "MARINFOLD_FIXED_RESIDUE_POSITION_START_TOKEN_ID",
+        "MARINFOLD_FIXED_RESIDUE_POSITION_NUM_TOKENS",
+        "MARINFOLD_FIXED_RESIDUE_POSITION_BASE",
+    ):
+        value = os.environ.get(key)
+        if value is not None:
+            command.extend(["-e", key, value])
+    command.extend([
         "-e",
         "EXP89_COMPUTE_METRICS_B64",
         metric_b64,
@@ -103,7 +114,7 @@ def main() -> None:
         args.suite,
         "--contact-mult",
         str(args.contact_mult),
-    ]
+    ])
     if args.model_mirror_run_id:
         command.extend(["--model-mirror-run-id", args.model_mirror_run_id])
     print(

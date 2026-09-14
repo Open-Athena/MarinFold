@@ -51,12 +51,14 @@ from .generate import (
     generate_sequence_only_document,
 )
 from .inference import (
+    add_inference_arguments,
     ContactStructure,
     InferenceConfig,
     evaluate,
     predict,
     structure_from_sequence,
 )
+from .sampling import sample_contacts
 from .parse import (
     ANALYZED_ROW_COLUMNS,
     DEFAULT_CIF_COLUMN,
@@ -108,6 +110,7 @@ __all__ = [
     "RawContact",
     "ResidueInfo",
     "all_domain_tokens",
+    "add_inference_arguments",
     "analyze_structure",
     "analyzed_from_row",
     "analyzed_to_row",
@@ -126,5 +129,6 @@ __all__ = [
     "plot_infer_pdf",
     "predict",
     "residues_from_sequence",
+    "sample_contacts",
     "structure_from_sequence",
 ]

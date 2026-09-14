@@ -152,6 +152,7 @@ class Backend(Protocol):
         prefix_token_ids_batch: list[list[int]],
         *,
         max_new_tokens: int,
+        min_new_tokens: int = 0,
         temperature: float = 1.0,
         top_p: float = 0.95,
         top_k: int = 50,
@@ -171,6 +172,9 @@ class Backend(Protocol):
                 length — callers rolling out one protein pass document
                 realizations whose prefixes are the same length. May be empty.
             max_new_tokens: Hard cap on generated tokens per row.
+            min_new_tokens: Block the stop/EOS token until this many new
+                tokens have been emitted, ignoring the prompt. Must be in
+                [0, max_new_tokens]. Zero preserves normal stopping.
             temperature / top_p / top_k: sampling controls; ``top_k <= 0``
                 disables top-k filtering.
             stop_token_id: stop a row's generation at this token (excluded

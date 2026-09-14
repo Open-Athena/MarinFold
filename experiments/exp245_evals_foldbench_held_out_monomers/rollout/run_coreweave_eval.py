@@ -48,7 +48,6 @@ from checkpoint_specs import (
     GROUND_TRUTH_SIZE,
     GROUND_TRUTH_URL,
     MARIN_PREFIX,
-    MARINFOLD_REVISION,
     SETS_MANIFEST_SHA256,
     SETS_MANIFEST_SIZE,
     SETS_MANIFEST_URL,
@@ -62,6 +61,7 @@ from checkpoint_specs import (
 from finalize_coreweave import finalize
 from hf_to_s3 import (
     expected_manifest,
+    mirror_checkpoint,
     mirror_public_input,
     verify_checkpoint_at_uri,
 )
@@ -101,6 +101,7 @@ def _child_command(
     seed: int,
     contact_mult: int,
     accept_unfinished: bool,
+    marinfold_revision: str,
     limit: int | None = None,
 ) -> list[str]:
     if any(value.startswith("gs://") for value in (model_uri, targets_uri, output_uri)):
@@ -149,9 +150,10 @@ def _child_command(
         "|| \"$VLLM_PY\" -m pip install --quiet 'fsspec==2026.1.0' "
         "'s3fs==2026.1.0' 'aiobotocore==2.26.0' 'pyarrow>=23,<24'"
     )
+    install_revision = os.environ.get("EXP245_MARINFOLD_REVISION", marinfold_revision)
     marinfold_package = (
         "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@"
-        f"{MARINFOLD_REVISION}#subdirectory=marinfold"
+        f"{install_revision}#subdirectory=marinfold"
     )
     install_marinfold = (
         'uv pip install --python "$VLLM_PY" --quiet --no-deps '
@@ -181,11 +183,21 @@ def _child_command(
 
 
 def _job_request(*, name: str, command: list[str]) -> JobRequest:
+    env_vars = {
+        "MARIN_PREFIX": MARIN_PREFIX,
+    }
+    for key in (
+        "MARINFOLD_FIXED_RESIDUE_POSITION_EMBEDDINGS",
+        "MARINFOLD_FIXED_RESIDUE_POSITION_START_TOKEN_ID",
+        "MARINFOLD_FIXED_RESIDUE_POSITION_NUM_TOKENS",
+        "MARINFOLD_FIXED_RESIDUE_POSITION_BASE",
+    ):
+        value = os.environ.get(key)
+        if value is not None:
+            env_vars[key] = value
     environment = create_environment(
         docker_image=GPU_IMAGE,
-        env_vars={
-            "MARIN_PREFIX": MARIN_PREFIX,
-        },
+        env_vars=env_vars,
         setup_scripts=[],
     )
     resources = ResourceConfig.with_gpu(
@@ -345,6 +357,7 @@ def _submit_phase(
                 accept_unfinished=(
                     not smoke and checkpoint.accepted_unfinished_rollouts > 0
                 ),
+                marinfold_revision=checkpoint.marinfold_revision,
                 limit=1 if smoke else None,
             )
             requests.append(_job_request(name=name, command=command))
@@ -400,17 +413,16 @@ def main() -> None:
     )
 
     for checkpoint in checkpoints:
-        if not checkpoint.coreweave_uri:
-            raise ValueError(
-                f"checkpoint copying is disabled; no CoreWeave path for {checkpoint.label}"
+        if checkpoint.coreweave_uri:
+            verify_checkpoint_at_uri(
+                checkpoint=checkpoint,
+                source_uri=checkpoint.coreweave_uri,
+                verification_uri=(
+                    f"{root}/inputs/checkpoint_verification/{checkpoint.label}.json"
+                ),
             )
-        verify_checkpoint_at_uri(
-            checkpoint=checkpoint,
-            source_uri=checkpoint.coreweave_uri,
-            verification_uri=(
-                f"{root}/inputs/checkpoint_verification/{checkpoint.label}.json"
-            ),
-        )
+        else:
+            mirror_checkpoint(model_mirror_run_id, checkpoint)
 
     targets_uri = f"{root}/inputs/eval_targets_foldbench_monomers.parquet"
     sets_uri = f"{root}/inputs/eval_sets.csv"

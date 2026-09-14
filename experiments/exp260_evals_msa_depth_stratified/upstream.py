@@ -26,6 +26,11 @@ EXPERIMENTS = EXPERIMENT.parent
 EXP74 = EXPERIMENTS / "exp74_evals_protenix_pyconfind_contacts"
 
 BUCKET = "https://huggingface.co/buckets/open-athena/MarinFold/resolve"
+#: The browsable form of the same bucket. ``resolve`` serves one file, so a
+#: directory 404s there — anything a human clicks has to be a ``tree`` URL.
+#: Neither takes a revision: the segment after ``tree``/``resolve`` is a path
+#: prefix, so no ``main`` belongs in either.
+BUCKET_TREE = "https://huggingface.co/buckets/open-athena/MarinFold/tree"
 
 #: The legacy 554-unit target table (#169's copy of the #89 universe). Carries
 #: the ``cameo_hard`` / ``casp_fm`` / ``denovo_pdb`` / ``foldbench100`` dataset
@@ -66,6 +71,8 @@ FOLDBENCH_PER_PROTEIN_URL = f"{BUCKET}/{FOLDBENCH_PREFIX}/per_protein.csv.gz"
 PUBLISH_PREFIX = "data/contacts-v1-msa-depth-exp260"
 RUN_ID = "v1-01"
 RESULTS_URL = f"{BUCKET}/{PUBLISH_PREFIX}/{RUN_ID}"
+#: The same run as a listing, for the dashboard's "the published run" link.
+RESULTS_TREE_URL = f"{BUCKET_TREE}/{PUBLISH_PREFIX}/{RUN_ID}"
 
 #: Modal volumes of ColabFold MSAs, and the a3m path inside each.
 MSA_VOLUMES = {
