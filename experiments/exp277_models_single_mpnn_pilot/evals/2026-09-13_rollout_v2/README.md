@@ -26,18 +26,35 @@ s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/
   evals/rollout-v2/2026-09-13/v2-01/
 ```
 
-The batch-priority evaluation was submitted at 2026-09-13 18:08 UTC as
-[`/bizon/exp277-eval-v2-01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01).
-The driver validated all 670 expected units and submitted its one-H100 smoke
-gate. At launch the smoke task was queued by Kueue because the target cluster
-reported no free H100 capacity.
+The completed batch-priority run is
+[`/bizon/exp277-eval-v2-01-r04-rno`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r04-rno).
+It ran on twelve independent RNO2A H100 workers after US-EAST-02A became fully
+saturated, reading the existing 5.89 GB export from the same CoreWeave object
+store through RNO2A's local LOTA endpoint. The smoke and all twelve production
+workers succeeded; the complete run took 14 minutes 30 seconds. Of 67,000
+requested rollouts, 66,999 terminated and contributed to voting. One capped
+rollout affected one unit and was explicitly excluded and accounted for.
 
-That first driver timed out after six hours without the smoke H100 ever being
-allocated; no inference ran. The recovery launcher allows 48 hours for batch
-queueing while preserving the same evaluation settings and durable run ID. The
-replacement [`/bizon/exp277-eval-v2-01-r01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r01)
-was submitted at 2026-09-14 13:19 UTC, revalidated all 670 inputs, and is waiting
-at the one-H100 smoke gate with zero failures.
+The resulting exp277 R-precision is 0.62009 / 0.57704 for all / long-range
+contacts on legacy 554, 0.55375 / 0.53802 on eval-val, and 0.69582 / 0.67603 on
+eval-denovo. Against the native-only decontaminated exp232 winner at step
+363,000, the corresponding deltas are +0.01503 / +0.02202, +0.00204 / +0.00211,
+and +0.08599 / +0.10375. The eval-val result is a tie under the predeclared
+absolute-delta threshold of 0.005; legacy and de novo improve.
+
+The consolidated output is under the run root above at `results/` and is also
+published anonymously at
+`hf://buckets/open-athena/MarinFold/data/exp277-models-single-mpnn-pilot/evals/rollout-v2/2026-09-13/v2-01/results/`.
+The committed copies are under `data/eval_rollout_v2/`, including per-input
+timings, the run manifest, aggregate tables, per-protein contact precision, and
+the exact exp232 comparison.
+
+Recovery history: the original US-EAST-02A driver timed out after six hours at
+the one-H100 capacity gate. `r01` was cancelled when placement moved to RNO2A.
+`r02` exposed the one capped rollout; `r03` verified the worker-side accounting
+change but retained an overly strict driver smoke check. `r04` accepted a smoke
+whose 99 usable plus one capped rollout covered all 100 requests, reused its
+durable marker, and completed without a failed child.
 
 Launch from this directory with:
 

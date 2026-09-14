@@ -52,6 +52,16 @@ Full-epoch training completed on 2026-09-13 at 14:53 UTC. [W&B](https://wandb.ai
 
 The permanent native checkpoint and HF export both completed at `step-266344`. The 5.89 GB HF bundle contains two safetensor shards, their index, model config, `tokenizer.json`, and `tokenizer_config.json`. Recovery job `/bizon/exp277-train-a03` and child `/bizon/exp277-train-a03/exp277-train-78333950` both succeeded at batch priority with all 16 workers terminal-successful. The first production job had failed near step 73,702 during a distributed checkpoint barrier; a03 restored step 72,744 and completed the epoch unchanged. Iris also recovered two worker preemptions automatically. End-to-end wall time for the full-corpus run was just under 73 hours, including the recovery, full validations, checkpointing, and final export.
 
+The first-epoch contact evaluation completed as [`/bizon/exp277-eval-v2-01-r04-rno`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r04-rno). It evaluated 670 units with the fixed exp82 rollout-and-resample recipe: legacy 554, eval-val 97, and eval-denovo 19, while leaving eval-test unread. All twelve RNO2A H100 production workers succeeded. The scorer used 66,999 of 67,000 requested rollouts; one capped rollout was excluded from voting and accounted for in the manifest.
+
+| Evaluation set | exp277 R, all / long | exp232 R, all / long | exp277 - exp232, all / long |
+| --- | ---: | ---: | ---: |
+| legacy 554 | 0.62009 / 0.57704 | 0.60506 / 0.55502 | +0.01503 / +0.02202 |
+| eval-val | 0.55375 / 0.53802 | 0.55171 / 0.53591 | +0.00204 / +0.00211 |
+| eval-denovo | 0.69582 / 0.67603 | 0.60983 / 0.57228 | +0.08599 / +0.10375 |
+
+The eval-val delta is below the predeclared 0.005 tie threshold. Legacy and de novo improve, with a particularly large designed-protein gain. Exact tables, per-input timings, the run manifest, and per-protein precision are committed under `data/eval_rollout_v2/` and published to the public MarinFold HF bucket under `data/exp277-models-single-mpnn-pilot/evals/rollout-v2/2026-09-13/v2-01/results/`. The full private working output, including 670 dense score matrices, remains at `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-01/`.
+
 ## Full-state continuation
 
 The second training stage restores the complete trainer state from permanent
@@ -79,7 +89,7 @@ with outputs under
 
 ## Conclusion
 
-The requested single-model, full-corpus training run completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. The batch-priority contact evaluation is running as [`/bizon/exp277-eval-v2-01-r01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r01), scoring legacy 554, eval-val, and eval-denovo while leaving eval-test unread. Its predecessor timed out after six hours in the capacity queue without running inference; the replacement allows 48 hours and is waiting at the one-H100 smoke gate after validating all 670 inputs. These results are still required before this experiment can answer whether ProteinMPNN redesign improves contacts-v1 prediction relative to the native-only exp232 winner.
+The requested single-model, full-corpus first epoch completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. Its contact evaluation shows an eval-val tie with the native-only decontaminated exp232 winner (+0.00204 all, +0.00211 long), an improvement on legacy 554 (+0.01503 all, +0.02202 long), and a large improvement on eval-denovo (+0.08599 all, +0.10375 long). This single run therefore gives no evidence of a material natural eval-val gain at the predeclared 0.005 threshold, but it gives a strong signal that the native-plus-redesign corpus helps designed-protein contacts. Different training exposure and the single seed limit causal attribution. The separately requested reshuffled second epoch is in progress from the last pre-cooldown checkpoint.
 
 ## Runtime and placement
 
