@@ -6,10 +6,12 @@ import random
 import tempfile
 from pathlib import Path
 
+import biotite.structure as struc
 import matplotlib.pyplot as plt
 import numpy as np
 import pyarrow.parquet as pq
 import pymol
+from matplotlib.patches import Patch
 from pymol import cmd
 
 from build_summary import save_plot_with_meta
@@ -20,6 +22,11 @@ CONDITION_LABELS = {
     "1.x.x.x": "alpha",
     "2.x.x.x": "beta",
     "3.x.x.x": "alpha/beta",
+}
+SECONDARY_COLORS = {
+    "helix": (0.86, 0.22, 0.38),
+    "sheet": (0.95, 0.67, 0.16),
+    "loop": (0.20, 0.62, 0.78),
 }
 
 
@@ -48,14 +55,45 @@ def retention_metadata(path: Path) -> dict[str, dict]:
         return {row["stem"]: row for row in csv.DictReader(handle)}
 
 
+def assign_secondary_structure(selection: str) -> None:
+    """Assign PyMOL cartoon states using P-SEA on the available C-alpha trace."""
+    model = cmd.get_model(f"{selection} and name CA")
+    atoms = struc.AtomArray(len(model.atom))
+    atoms.coord = np.asarray([atom.coord for atom in model.atom])
+    atoms.res_id = np.asarray([int(atom.resi) for atom in model.atom])
+    atoms.res_name = [atom.resn for atom in model.atom]
+    atoms.atom_name[:] = "CA"
+    atoms.chain_id[:] = "A"
+    atoms.element[:] = "C"
+    annotation = struc.annotate_sse(atoms)
+    cmd.alter(selection, "ss='L'")
+    for psea_code, pymol_code in (("a", "H"), ("b", "S")):
+        residue_ids = [
+            atom.resi
+            for atom, assigned in zip(model.atom, annotation, strict=True)
+            if assigned == psea_code
+        ]
+        if residue_ids:
+            cmd.alter(
+                f"{selection} and resi {'+'.join(residue_ids)}",
+                f"ss='{pymol_code}'",
+            )
+    cmd.rebuild(selection)
+
+
 def render_structure(pdb_path: Path, output: Path) -> None:
-    """Render one refold as an orthographic N-to-C rainbow cartoon with PyMOL."""
+    """Render one refold as an orthographic secondary-structure cartoon."""
     cmd.reinitialize()
-    cmd.load(str(pdb_path), "protein")
+    cmd.load(str(pdb_path), "refold")
     cmd.remove("solvent")
     cmd.hide("everything", "all")
-    cmd.show("cartoon", "protein")
-    cmd.spectrum("count", "blue_cyan_green_yellow_red", "protein", byres=1)
+    assign_secondary_structure("refold")
+    cmd.show("cartoon", "refold")
+    for name, rgb in SECONDARY_COLORS.items():
+        cmd.set_color(f"secondary_{name}", rgb)
+    cmd.color("secondary_loop", "refold")
+    cmd.color("secondary_helix", "refold and ss H")
+    cmd.color("secondary_sheet", "refold and ss S")
     cmd.set("orthoscopic", 1)
     cmd.set("ray_opaque_background", 1)
     cmd.set("antialias", 2)
@@ -64,8 +102,8 @@ def render_structure(pdb_path: Path, output: Path) -> None:
     cmd.set("cartoon_flat_sheets", 1)
     cmd.set("specular", 0.25)
     cmd.bg_color("white")
-    cmd.orient("protein")
-    cmd.zoom("protein", buffer=4)
+    cmd.orient("refold")
+    cmd.zoom("refold", buffer=4)
     cmd.png(str(output), width=420, height=340, dpi=180, ray=1, quiet=1)
 
 
@@ -173,7 +211,7 @@ def main() -> None:
         left=0.01, right=0.99, bottom=0.035, top=0.94, wspace=0.01, hspace=0.10
     )
     figure.suptitle(
-        "64 random quality-passing Proteina refolds",
+        "64 random quality-passing Proteina refolds — cartoons",
         fontsize=18,
         y=0.987,
     )
@@ -184,22 +222,27 @@ def main() -> None:
         ha="center",
         fontsize=9,
     )
-    legend = figure.add_axes((0.36, 0.012, 0.28, 0.008))
-    gradient = np.linspace(0, 1, 512).reshape(1, -1)
-    legend.imshow(gradient, aspect="auto", cmap="turbo", origin="lower")
-    legend.set_xticks([0, 511], labels=["N terminus", "C terminus"], fontsize=7)
-    legend.set_yticks([])
-    legend.tick_params(length=0, pad=1)
-    for spine in legend.spines.values():
-        spine.set_visible(False)
+    figure.legend(
+        handles=[
+            Patch(color=SECONDARY_COLORS["helix"], label="alpha helix"),
+            Patch(color=SECONDARY_COLORS["sheet"], label="beta strand"),
+            Patch(color=SECONDARY_COLORS["loop"], label="loop / unassigned"),
+        ],
+        loc="lower center",
+        ncol=3,
+        frameon=False,
+        fontsize=8,
+        bbox_to_anchor=(0.5, 0.006),
+    )
 
     save_plot_with_meta(
         figure,
         args.output,
         caption=(
             "Fixed-seed simple random sample of 64 quality-passing ESMFold refolds "
-            "from the production audit pool. PyMOL cartoons are independently oriented "
-            "and scaled and colored from N terminus (blue) to C terminus (red). Panel "
+            "from the production audit pool. PyMOL assigns secondary structure with DSS; "
+            "cartoons are independently oriented and scaled, with helices in magenta, "
+            "beta strands in gold, and loops/unassigned residues in blue. Panel "
             "labels report length, requested conditioning arm, mean pLDDT, and full-chain "
             "C-alpha self-consistency RMSD to the generated backbone."
         ),

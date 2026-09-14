@@ -6,5 +6,5 @@
     "--seed",
     "2786401"
   ],
-  "caption": "Fixed-seed simple random sample of 64 quality-passing ESMFold refolds from the production audit pool. PyMOL cartoons are independently oriented and scaled and colored from N terminus (blue) to C terminus (red). Panel labels report length, requested conditioning arm, mean pLDDT, and full-chain C-alpha self-consistency RMSD to the generated backbone."
+  "caption": "Fixed-seed simple random sample of 64 quality-passing ESMFold refolds from the production audit pool. PyMOL assigns secondary structure with DSS; cartoons are independently oriented and scaled, with helices in magenta, beta strands in gold, and loops/unassigned residues in blue. Panel labels report length, requested conditioning arm, mean pLDDT, and full-chain C-alpha self-consistency RMSD to the generated backbone."
 }
