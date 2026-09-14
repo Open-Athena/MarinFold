@@ -1,0 +1,813 @@
+dataset,stem,subset,predictor,value
+foldbench_monomer,7pv5_A,eval-val,ESMFold,0.78125
+foldbench_monomer,7qp5_A,eval-val,ESMFold,0.8132780082987552
+foldbench_monomer,7qsj_A,eval-val,ESMFold,0.8876080691642652
+foldbench_monomer,7t9r_A,eval-val,ESMFold,0.7916666666666666
+foldbench_monomer,7tjb_A,eval-val,ESMFold,0.8557213930348259
+foldbench_monomer,7tlh_A,eval-val,ESMFold,0.7982456140350878
+foldbench_monomer,7uba_A,eval-val,ESMFold,0.3076923076923077
+foldbench_monomer,7uk8_A,eval-val,ESMFold,0.7775665399239544
+foldbench_monomer,7ur2_A,eval-val,ESMFold,0.7445255474452555
+foldbench_monomer,7urp_A,eval-val,ESMFold,0.5970149253731343
+foldbench_monomer,7uvg_A,eval-val,ESMFold,0.5449438202247191
+foldbench_monomer,7uww_A,eval-val,ESMFold,0.5598845598845599
+foldbench_monomer,7v3o_A,eval-val,ESMFold,0.6580882352941176
+foldbench_monomer,7w15_A,eval-val,ESMFold,0.8679867986798679
+foldbench_monomer,7wz5_A,eval-val,ESMFold,0.8230088495575221
+foldbench_monomer,7wzm_A,eval-val,ESMFold,0.7916666666666666
+foldbench_monomer,7x3h_A,eval-val,ESMFold,0.6993243243243243
+foldbench_monomer,7x4p_A,eval-val,ESMFold,0.8198198198198198
+foldbench_monomer,7x8l_A,eval-val,ESMFold,0.8172413793103448
+foldbench_monomer,7xcd_A,eval-val,ESMFold,0.3783783783783784
+foldbench_monomer,7xg9_A,eval-val,ESMFold,0.8132780082987552
+foldbench_monomer,7xi5_A,eval-val,ESMFold,0.9047619047619048
+foldbench_monomer,7xjr_A,eval-val,ESMFold,0.8361581920903954
+foldbench_monomer,7xlz_A,eval-val,ESMFold,0.8528301886792453
+foldbench_monomer,7xp9_A,eval-val,ESMFold,0.2222222222222222
+foldbench_monomer,7xq4_A,eval-val,ESMFold,0.8516949152542372
+foldbench_monomer,7xrx_A,eval-val,ESMFold,0.7853535353535354
+foldbench_monomer,7xyr_A,eval-val,ESMFold,0.8104667609618105
+foldbench_monomer,7xz3_A,eval-val,ESMFold,0.8544303797468354
+foldbench_monomer,7y3h_A,eval-val,ESMFold,0.8269230769230769
+foldbench_monomer,7y4h_A,eval-val,ESMFold,0.8875
+foldbench_monomer,7y54_A,eval-val,ESMFold,0.8952380952380953
+foldbench_monomer,7y5j_A,eval-val,ESMFold,0.8021978021978022
+foldbench_monomer,7y5m_A,eval-val,ESMFold,0.6486486486486487
+foldbench_monomer,7y5r_A,eval-val,ESMFold,0.845360824742268
+foldbench_monomer,7y8h_A,eval-val,ESMFold,0.7590361445783133
+foldbench_monomer,7y8i_A,eval-val,ESMFold,0.8433734939759037
+foldbench_monomer,7yd4_A,eval-val,ESMFold,0.1478873239436619
+foldbench_monomer,7yhr_A,eval-val,ESMFold,0.4878048780487805
+foldbench_monomer,7ykm_A,eval-val,ESMFold,0.8
+foldbench_monomer,7ylr_A,eval-val,ESMFold,0.8461538461538461
+foldbench_monomer,7yug_A,eval-val,ESMFold,0.8617021276595744
+foldbench_monomer,7yyg_A,eval-val,ESMFold,0.8506787330316742
+foldbench_monomer,7z65_A,eval-val,ESMFold,0.68125
+foldbench_monomer,7znz_A,eval-val,ESMFold,0.8444206008583691
+foldbench_monomer,7zoi_A,eval-val,ESMFold,0.9
+foldbench_monomer,7zs2_A,eval-val,ESMFold,0.7937219730941704
+foldbench_monomer,7zu3_A,eval-val,ESMFold,0.4456521739130434
+foldbench_monomer,7zv1_A,eval-val,ESMFold,0.7927927927927928
+foldbench_monomer,8adc_A,eval-val,ESMFold,0.4647058823529412
+foldbench_monomer,8add_A,eval-val,ESMFold,0.8380952380952381
+foldbench_monomer,8ak2_A,eval-val,ESMFold,0.8821656050955414
+foldbench_monomer,8akh_A,eval-val,ESMFold,0.8535825545171339
+foldbench_monomer,8amo_A,eval-val,ESMFold,0.8121546961325967
+foldbench_monomer,8arl_A,eval-val,ESMFold,0.8384615384615385
+foldbench_monomer,8au6_A,eval-val,ESMFold,0.7857142857142857
+foldbench_monomer,8axj_A,eval-val,ESMFold,0.8461538461538461
+foldbench_monomer,8azb_A,eval-val,ESMFold,0.8245315161839863
+foldbench_monomer,8b2e_A,eval-val,ESMFold,0.9153846153846154
+foldbench_monomer,8b2g_A,eval-val,ESMFold,0.864406779661017
+foldbench_monomer,8b2s_A,eval-val,ESMFold,0.8333333333333334
+foldbench_monomer,8b4u_A,eval-val,ESMFold,0.8644688644688645
+foldbench_monomer,8b5w_A,eval-val,ESMFold,0.4783783783783784
+foldbench_monomer,8b61_A,eval-val,ESMFold,0.660377358490566
+foldbench_monomer,8b6a_A,eval-val,ESMFold,0.8358974358974359
+foldbench_monomer,8b6e_A,eval-val,ESMFold,0.7727272727272727
+foldbench_monomer,8baq_A,eval-val,ESMFold,0.7578947368421053
+foldbench_monomer,8bau_A,eval-val,ESMFold,0.8708133971291866
+foldbench_monomer,8bfy_A,eval-val,ESMFold,0.8133704735376045
+foldbench_monomer,8bgb_A,eval-val,ESMFold,0.9108910891089108
+foldbench_monomer,8bke_A,eval-val,ESMFold,0.7510121457489879
+foldbench_monomer,8bsb_A,eval-val,ESMFold,0.8608695652173913
+foldbench_monomer,8bux_A,eval-val,ESMFold,0.0666666666666666
+foldbench_monomer,8c4d_A,eval-val,ESMFold,0.8908296943231441
+foldbench_monomer,8c4y_A,eval-val,ESMFold,0.8471849865951743
+foldbench_monomer,8cba_A,eval-val,ESMFold,0.7020408163265306
+foldbench_monomer,8ci9_A,eval-val,ESMFold,0.8100890207715133
+foldbench_monomer,8cih_A,eval-val,ESMFold,0.810126582278481
+foldbench_monomer,8cpk_A,eval-val,ESMFold,0.8583569405099151
+foldbench_monomer,8cpn_A,eval-val,ESMFold,0.7797619047619048
+foldbench_monomer,8d2z_A,eval-val,ESMFold,0.7596153846153846
+foldbench_monomer,8daj_A,eval-val,ESMFold,0.8929765886287625
+foldbench_monomer,8dez_A,eval-val,ESMFold,0.6428571428571429
+foldbench_monomer,8dge_A,eval-val,ESMFold,0.8194748358862144
+foldbench_monomer,8dhj_A,eval-val,ESMFold,0.8726591760299626
+foldbench_monomer,8dmu_A,eval-val,ESMFold,0.7320490367775832
+foldbench_monomer,8dp9_A,eval-val,ESMFold,0.8287671232876712
+foldbench_monomer,8dqd_A,eval-val,ESMFold,0.8607594936708861
+foldbench_monomer,8dx0_A,eval-val,ESMFold,0.8296296296296296
+foldbench_monomer,8e0r_A,eval-val,ESMFold,0.7721774193548387
+foldbench_monomer,8e5h_A,eval-val,ESMFold,0.7790697674418605
+foldbench_monomer,8eb9_A,eval-val,ESMFold,0.0
+foldbench_monomer,8ec3_A,eval-val,ESMFold,0.8015873015873016
+foldbench_monomer,8eo5_A,eval-val,ESMFold,0.857707509881423
+foldbench_monomer,8gmy_A,eval-val,ESMFold,0.6259842519685039
+foldbench_monomer,8q8i_A,eval-val,ESMFold,0.6542553191489362
+foldbench_monomer,8ycm_A,eval-val,ESMFold,0.75
+foldbench_monomer,7pv5_A,eval-val,ESMFold2,0.78125
+foldbench_monomer,7qp5_A,eval-val,ESMFold2,0.8755186721991701
+foldbench_monomer,7qsj_A,eval-val,ESMFold2,0.9221902017291066
+foldbench_monomer,7t9r_A,eval-val,ESMFold2,0.75
+foldbench_monomer,7tjb_A,eval-val,ESMFold2,0.8905472636815921
+foldbench_monomer,7tlh_A,eval-val,ESMFold2,0.7719298245614035
+foldbench_monomer,7uba_A,eval-val,ESMFold2,0.2884615384615384
+foldbench_monomer,7uk8_A,eval-val,ESMFold2,0.8060836501901141
+foldbench_monomer,7ur2_A,eval-val,ESMFold2,0.7518248175182481
+foldbench_monomer,7urp_A,eval-val,ESMFold2,0.8134328358208955
+foldbench_monomer,7uvg_A,eval-val,ESMFold2,0.8876404494382022
+foldbench_monomer,7uww_A,eval-val,ESMFold2,0.5613275613275613
+foldbench_monomer,7v3o_A,eval-val,ESMFold2,0.8676470588235294
+foldbench_monomer,7w15_A,eval-val,ESMFold2,0.8646864686468647
+foldbench_monomer,7wz5_A,eval-val,ESMFold2,0.8938053097345132
+foldbench_monomer,7wzm_A,eval-val,ESMFold2,0.8333333333333334
+foldbench_monomer,7x3h_A,eval-val,ESMFold2,0.6959459459459459
+foldbench_monomer,7x4p_A,eval-val,ESMFold2,0.8018018018018018
+foldbench_monomer,7x8l_A,eval-val,ESMFold2,0.8551724137931035
+foldbench_monomer,7xcd_A,eval-val,ESMFold2,0.722972972972973
+foldbench_monomer,7xg9_A,eval-val,ESMFold2,0.8215767634854771
+foldbench_monomer,7xi5_A,eval-val,ESMFold2,0.9523809523809524
+foldbench_monomer,7xjr_A,eval-val,ESMFold2,0.884180790960452
+foldbench_monomer,7xlz_A,eval-val,ESMFold2,0.9018867924528302
+foldbench_monomer,7xp9_A,eval-val,ESMFold2,0.7555555555555555
+foldbench_monomer,7xq4_A,eval-val,ESMFold2,0.847457627118644
+foldbench_monomer,7xrx_A,eval-val,ESMFold2,0.8560606060606061
+foldbench_monomer,7xyr_A,eval-val,ESMFold2,0.867043847241867
+foldbench_monomer,7xz3_A,eval-val,ESMFold2,0.8575949367088608
+foldbench_monomer,7y3h_A,eval-val,ESMFold2,0.842948717948718
+foldbench_monomer,7y4h_A,eval-val,ESMFold2,0.86875
+foldbench_monomer,7y54_A,eval-val,ESMFold2,0.8952380952380953
+foldbench_monomer,7y5j_A,eval-val,ESMFold2,0.8461538461538461
+foldbench_monomer,7y5m_A,eval-val,ESMFold2,0.581081081081081
+foldbench_monomer,7y5r_A,eval-val,ESMFold2,0.865979381443299
+foldbench_monomer,7y8h_A,eval-val,ESMFold2,0.8192771084337349
+foldbench_monomer,7y8i_A,eval-val,ESMFold2,0.8433734939759037
+foldbench_monomer,7yd4_A,eval-val,ESMFold2,0.4859154929577465
+foldbench_monomer,7yhr_A,eval-val,ESMFold2,0.8780487804878049
+foldbench_monomer,7ykm_A,eval-val,ESMFold2,0.8363636363636363
+foldbench_monomer,7ylr_A,eval-val,ESMFold2,0.8846153846153846
+foldbench_monomer,7yug_A,eval-val,ESMFold2,0.9148936170212766
+foldbench_monomer,7yyg_A,eval-val,ESMFold2,0.7420814479638009
+foldbench_monomer,7z65_A,eval-val,ESMFold2,0.875
+foldbench_monomer,7znz_A,eval-val,ESMFold2,0.8680257510729614
+foldbench_monomer,7zoi_A,eval-val,ESMFold2,0.9272727272727272
+foldbench_monomer,7zs2_A,eval-val,ESMFold2,0.8251121076233184
+foldbench_monomer,7zu3_A,eval-val,ESMFold2,0.4347826086956521
+foldbench_monomer,7zv1_A,eval-val,ESMFold2,0.7837837837837838
+foldbench_monomer,8adc_A,eval-val,ESMFold2,0.5705882352941176
+foldbench_monomer,8add_A,eval-val,ESMFold2,0.8
+foldbench_monomer,8ak2_A,eval-val,ESMFold2,0.8821656050955414
+foldbench_monomer,8akh_A,eval-val,ESMFold2,0.8753894080996885
+foldbench_monomer,8amo_A,eval-val,ESMFold2,0.8425414364640884
+foldbench_monomer,8arl_A,eval-val,ESMFold2,0.8423076923076923
+foldbench_monomer,8au6_A,eval-val,ESMFold2,0.7976190476190477
+foldbench_monomer,8axj_A,eval-val,ESMFold2,0.8601398601398601
+foldbench_monomer,8azb_A,eval-val,ESMFold2,0.8568994889267462
+foldbench_monomer,8b2e_A,eval-val,ESMFold2,0.9307692307692308
+foldbench_monomer,8b2g_A,eval-val,ESMFold2,0.8813559322033898
+foldbench_monomer,8b2s_A,eval-val,ESMFold2,0.8548387096774194
+foldbench_monomer,8b4u_A,eval-val,ESMFold2,0.8681318681318682
+foldbench_monomer,8b5w_A,eval-val,ESMFold2,0.4216216216216216
+foldbench_monomer,8b61_A,eval-val,ESMFold2,0.7735849056603774
+foldbench_monomer,8b6a_A,eval-val,ESMFold2,0.9282051282051282
+foldbench_monomer,8b6e_A,eval-val,ESMFold2,0.7727272727272727
+foldbench_monomer,8baq_A,eval-val,ESMFold2,0.9
+foldbench_monomer,8bau_A,eval-val,ESMFold2,0.861244019138756
+foldbench_monomer,8bfy_A,eval-val,ESMFold2,0.8690807799442897
+foldbench_monomer,8bgb_A,eval-val,ESMFold2,0.8910891089108911
+foldbench_monomer,8bke_A,eval-val,ESMFold2,0.8299595141700404
+foldbench_monomer,8bsb_A,eval-val,ESMFold2,0.8521739130434782
+foldbench_monomer,8bux_A,eval-val,ESMFold2,0.05
+foldbench_monomer,8c4d_A,eval-val,ESMFold2,0.9301310043668122
+foldbench_monomer,8c4y_A,eval-val,ESMFold2,0.8820375335120644
+foldbench_monomer,8cba_A,eval-val,ESMFold2,0.7510204081632653
+foldbench_monomer,8ci9_A,eval-val,ESMFold2,0.8427299703264095
+foldbench_monomer,8cih_A,eval-val,ESMFold2,0.7974683544303798
+foldbench_monomer,8cpk_A,eval-val,ESMFold2,0.8753541076487252
+foldbench_monomer,8cpn_A,eval-val,ESMFold2,0.8035714285714286
+foldbench_monomer,8d2z_A,eval-val,ESMFold2,0.8557692307692307
+foldbench_monomer,8daj_A,eval-val,ESMFold2,0.9130434782608696
+foldbench_monomer,8dez_A,eval-val,ESMFold2,0.7582417582417582
+foldbench_monomer,8dge_A,eval-val,ESMFold2,0.8588621444201313
+foldbench_monomer,8dhj_A,eval-val,ESMFold2,0.8876404494382022
+foldbench_monomer,8dmu_A,eval-val,ESMFold2,0.8458844133099825
+foldbench_monomer,8dp9_A,eval-val,ESMFold2,0.8287671232876712
+foldbench_monomer,8dqd_A,eval-val,ESMFold2,0.8759493670886076
+foldbench_monomer,8dx0_A,eval-val,ESMFold2,0.8444444444444444
+foldbench_monomer,8e0r_A,eval-val,ESMFold2,0.8729838709677419
+foldbench_monomer,8e5h_A,eval-val,ESMFold2,0.8517441860465116
+foldbench_monomer,8eb9_A,eval-val,ESMFold2,0.1408450704225352
+foldbench_monomer,8ec3_A,eval-val,ESMFold2,0.6984126984126984
+foldbench_monomer,8eo5_A,eval-val,ESMFold2,0.8458498023715415
+foldbench_monomer,8gmy_A,eval-val,ESMFold2,0.7322834645669292
+foldbench_monomer,8q8i_A,eval-val,ESMFold2,0.800531914893617
+foldbench_monomer,8ycm_A,eval-val,ESMFold2,0.8418367346938775
+foldbench_monomer,7pv5_A,eval-val,Protenix-v2 single-seq,0.796875
+foldbench_monomer,7qp5_A,eval-val,Protenix-v2 single-seq,0.1410788381742738
+foldbench_monomer,7qsj_A,eval-val,Protenix-v2 single-seq,0.4438040345821326
+foldbench_monomer,7t9r_A,eval-val,Protenix-v2 single-seq,0.0
+foldbench_monomer,7tjb_A,eval-val,Protenix-v2 single-seq,0.5522388059701493
+foldbench_monomer,7tlh_A,eval-val,Protenix-v2 single-seq,0.131578947368421
+foldbench_monomer,7uba_A,eval-val,Protenix-v2 single-seq,0.0865384615384615
+foldbench_monomer,7uk8_A,eval-val,Protenix-v2 single-seq,0.0969581749049429
+foldbench_monomer,7ur2_A,eval-val,Protenix-v2 single-seq,0.2043795620437956
+foldbench_monomer,7urp_A,eval-val,Protenix-v2 single-seq,0.0746268656716417
+foldbench_monomer,7uvg_A,eval-val,Protenix-v2 single-seq,0.3202247191011236
+foldbench_monomer,7uww_A,eval-val,Protenix-v2 single-seq,0.1861471861471861
+foldbench_monomer,7v3o_A,eval-val,Protenix-v2 single-seq,0.0735294117647058
+foldbench_monomer,7w15_A,eval-val,Protenix-v2 single-seq,0.1749174917491749
+foldbench_monomer,7wz5_A,eval-val,Protenix-v2 single-seq,0.0973451327433628
+foldbench_monomer,7wzm_A,eval-val,Protenix-v2 single-seq,0.2631578947368421
+foldbench_monomer,7x3h_A,eval-val,Protenix-v2 single-seq,0.1013513513513513
+foldbench_monomer,7x4p_A,eval-val,Protenix-v2 single-seq,0.051051051051051
+foldbench_monomer,7x8l_A,eval-val,Protenix-v2 single-seq,0.0551724137931034
+foldbench_monomer,7xcd_A,eval-val,Protenix-v2 single-seq,0.1216216216216216
+foldbench_monomer,7xg9_A,eval-val,Protenix-v2 single-seq,0.4190871369294606
+foldbench_monomer,7xi5_A,eval-val,Protenix-v2 single-seq,0.2619047619047619
+foldbench_monomer,7xjr_A,eval-val,Protenix-v2 single-seq,0.2542372881355932
+foldbench_monomer,7xlz_A,eval-val,Protenix-v2 single-seq,0.1245283018867924
+foldbench_monomer,7xp9_A,eval-val,Protenix-v2 single-seq,0.3555555555555555
+foldbench_monomer,7xq4_A,eval-val,Protenix-v2 single-seq,0.7033898305084746
+foldbench_monomer,7xrx_A,eval-val,Protenix-v2 single-seq,0.2348484848484848
+foldbench_monomer,7xyr_A,eval-val,Protenix-v2 single-seq,0.1923620933521923
+foldbench_monomer,7xz3_A,eval-val,Protenix-v2 single-seq,0.110759493670886
+foldbench_monomer,7y3h_A,eval-val,Protenix-v2 single-seq,0.1506410256410256
+foldbench_monomer,7y4h_A,eval-val,Protenix-v2 single-seq,0.33125
+foldbench_monomer,7y54_A,eval-val,Protenix-v2 single-seq,0.6
+foldbench_monomer,7y5j_A,eval-val,Protenix-v2 single-seq,0.1098901098901098
+foldbench_monomer,7y5m_A,eval-val,Protenix-v2 single-seq,0.0878378378378378
+foldbench_monomer,7y5r_A,eval-val,Protenix-v2 single-seq,0.7938144329896907
+foldbench_monomer,7y8h_A,eval-val,Protenix-v2 single-seq,0.8072289156626506
+foldbench_monomer,7y8i_A,eval-val,Protenix-v2 single-seq,0.8192771084337349
+foldbench_monomer,7yd4_A,eval-val,Protenix-v2 single-seq,0.0774647887323943
+foldbench_monomer,7yhr_A,eval-val,Protenix-v2 single-seq,0.3414634146341463
+foldbench_monomer,7ykm_A,eval-val,Protenix-v2 single-seq,0.8181818181818182
+foldbench_monomer,7ylr_A,eval-val,Protenix-v2 single-seq,0.4010989010989011
+foldbench_monomer,7yug_A,eval-val,Protenix-v2 single-seq,0.3936170212765957
+foldbench_monomer,7yyg_A,eval-val,Protenix-v2 single-seq,0.2850678733031674
+foldbench_monomer,7z65_A,eval-val,Protenix-v2 single-seq,0.340625
+foldbench_monomer,7znz_A,eval-val,Protenix-v2 single-seq,0.259656652360515
+foldbench_monomer,7zoi_A,eval-val,Protenix-v2 single-seq,0.3
+foldbench_monomer,7zs2_A,eval-val,Protenix-v2 single-seq,0.2152466367713004
+foldbench_monomer,7zu3_A,eval-val,Protenix-v2 single-seq,0.4673913043478261
+foldbench_monomer,7zv1_A,eval-val,Protenix-v2 single-seq,0.2972972972972973
+foldbench_monomer,8adc_A,eval-val,Protenix-v2 single-seq,0.2058823529411764
+foldbench_monomer,8add_A,eval-val,Protenix-v2 single-seq,0.0666666666666666
+foldbench_monomer,8ak2_A,eval-val,Protenix-v2 single-seq,0.0573248407643312
+foldbench_monomer,8akh_A,eval-val,Protenix-v2 single-seq,0.190031152647975
+foldbench_monomer,8amo_A,eval-val,Protenix-v2 single-seq,0.2154696132596685
+foldbench_monomer,8arl_A,eval-val,Protenix-v2 single-seq,0.2538461538461538
+foldbench_monomer,8au6_A,eval-val,Protenix-v2 single-seq,0.1904761904761904
+foldbench_monomer,8axj_A,eval-val,Protenix-v2 single-seq,0.0909090909090909
+foldbench_monomer,8azb_A,eval-val,Protenix-v2 single-seq,0.2470187393526405
+foldbench_monomer,8b2e_A,eval-val,Protenix-v2 single-seq,0.1538461538461538
+foldbench_monomer,8b2g_A,eval-val,Protenix-v2 single-seq,0.0338983050847457
+foldbench_monomer,8b2s_A,eval-val,Protenix-v2 single-seq,0.1559139784946236
+foldbench_monomer,8b4u_A,eval-val,Protenix-v2 single-seq,0.0769230769230769
+foldbench_monomer,8b5w_A,eval-val,Protenix-v2 single-seq,0.1486486486486486
+foldbench_monomer,8b61_A,eval-val,Protenix-v2 single-seq,0.1886792452830188
+foldbench_monomer,8b6a_A,eval-val,Protenix-v2 single-seq,0.1333333333333333
+foldbench_monomer,8b6e_A,eval-val,Protenix-v2 single-seq,0.7727272727272727
+foldbench_monomer,8baq_A,eval-val,Protenix-v2 single-seq,0.0368421052631578
+foldbench_monomer,8bau_A,eval-val,Protenix-v2 single-seq,0.0526315789473684
+foldbench_monomer,8bfy_A,eval-val,Protenix-v2 single-seq,0.1504178272980501
+foldbench_monomer,8bgb_A,eval-val,Protenix-v2 single-seq,0.4554455445544554
+foldbench_monomer,8bke_A,eval-val,Protenix-v2 single-seq,0.6012145748987854
+foldbench_monomer,8bsb_A,eval-val,Protenix-v2 single-seq,0.7652173913043478
+foldbench_monomer,8bux_A,eval-val,Protenix-v2 single-seq,0.0666666666666666
+foldbench_monomer,8c4d_A,eval-val,Protenix-v2 single-seq,0.0305676855895196
+foldbench_monomer,8c4y_A,eval-val,Protenix-v2 single-seq,0.1796246648793565
+foldbench_monomer,8cba_A,eval-val,Protenix-v2 single-seq,0.236734693877551
+foldbench_monomer,8ci9_A,eval-val,Protenix-v2 single-seq,0.0830860534124629
+foldbench_monomer,8cih_A,eval-val,Protenix-v2 single-seq,0.6012658227848101
+foldbench_monomer,8cpk_A,eval-val,Protenix-v2 single-seq,0.6770538243626062
+foldbench_monomer,8cpn_A,eval-val,Protenix-v2 single-seq,0.5416666666666666
+foldbench_monomer,8d2z_A,eval-val,Protenix-v2 single-seq,0.4230769230769231
+foldbench_monomer,8daj_A,eval-val,Protenix-v2 single-seq,0.2809364548494983
+foldbench_monomer,8dez_A,eval-val,Protenix-v2 single-seq,0.3846153846153846
+foldbench_monomer,8dge_A,eval-val,Protenix-v2 single-seq,0.0798687089715536
+foldbench_monomer,8dhj_A,eval-val,Protenix-v2 single-seq,0.0561797752808988
+foldbench_monomer,8dmu_A,eval-val,Protenix-v2 single-seq,0.0840630472854641
+foldbench_monomer,8dp9_A,eval-val,Protenix-v2 single-seq,0.0547945205479452
+foldbench_monomer,8dqd_A,eval-val,Protenix-v2 single-seq,0.1569620253164557
+foldbench_monomer,8dx0_A,eval-val,Protenix-v2 single-seq,0.5777777777777777
+foldbench_monomer,8e0r_A,eval-val,Protenix-v2 single-seq,0.0564516129032258
+foldbench_monomer,8e5h_A,eval-val,Protenix-v2 single-seq,0.3633720930232558
+foldbench_monomer,8eb9_A,eval-val,Protenix-v2 single-seq,0.0704225352112676
+foldbench_monomer,8ec3_A,eval-val,Protenix-v2 single-seq,0.2936507936507936
+foldbench_monomer,8eo5_A,eval-val,Protenix-v2 single-seq,0.150197628458498
+foldbench_monomer,8gmy_A,eval-val,Protenix-v2 single-seq,0.1732283464566929
+foldbench_monomer,8q8i_A,eval-val,Protenix-v2 single-seq,0.0159574468085106
+foldbench_monomer,8ycm_A,eval-val,Protenix-v2 single-seq,0.1224489795918367
+foldbench_monomer,7pv5_A,eval-val,Protenix-v2 + MSA,0.859375
+foldbench_monomer,7qp5_A,eval-val,Protenix-v2 + MSA,0.8630705394190872
+foldbench_monomer,7qsj_A,eval-val,Protenix-v2 + MSA,0.9279538904899136
+foldbench_monomer,7t9r_A,eval-val,Protenix-v2 + MSA,0.75
+foldbench_monomer,7tjb_A,eval-val,Protenix-v2 + MSA,0.8955223880597015
+foldbench_monomer,7tlh_A,eval-val,Protenix-v2 + MSA,0.8333333333333334
+foldbench_monomer,7uba_A,eval-val,Protenix-v2 + MSA,0.8894230769230769
+foldbench_monomer,7uk8_A,eval-val,Protenix-v2 + MSA,0.8307984790874525
+foldbench_monomer,7ur2_A,eval-val,Protenix-v2 + MSA,0.7591240875912408
+foldbench_monomer,7urp_A,eval-val,Protenix-v2 + MSA,0.917910447761194
+foldbench_monomer,7uvg_A,eval-val,Protenix-v2 + MSA,0.8876404494382022
+foldbench_monomer,7uww_A,eval-val,Protenix-v2 + MSA,0.84992784992785
+foldbench_monomer,7v3o_A,eval-val,Protenix-v2 + MSA,0.8529411764705882
+foldbench_monomer,7w15_A,eval-val,Protenix-v2 + MSA,0.8712871287128713
+foldbench_monomer,7wz5_A,eval-val,Protenix-v2 + MSA,0.8672566371681416
+foldbench_monomer,7wzm_A,eval-val,Protenix-v2 + MSA,0.8618421052631579
+foldbench_monomer,7x3h_A,eval-val,Protenix-v2 + MSA,0.7297297297297297
+foldbench_monomer,7x4p_A,eval-val,Protenix-v2 + MSA,0.8258258258258259
+foldbench_monomer,7x8l_A,eval-val,Protenix-v2 + MSA,0.9051724137931034
+foldbench_monomer,7xcd_A,eval-val,Protenix-v2 + MSA,0.7905405405405406
+foldbench_monomer,7xg9_A,eval-val,Protenix-v2 + MSA,0.8257261410788381
+foldbench_monomer,7xi5_A,eval-val,Protenix-v2 + MSA,0.9047619047619048
+foldbench_monomer,7xjr_A,eval-val,Protenix-v2 + MSA,0.9067796610169492
+foldbench_monomer,7xlz_A,eval-val,Protenix-v2 + MSA,0.9132075471698112
+foldbench_monomer,7xp9_A,eval-val,Protenix-v2 + MSA,0.7555555555555555
+foldbench_monomer,7xq4_A,eval-val,Protenix-v2 + MSA,0.8665254237288136
+foldbench_monomer,7xrx_A,eval-val,Protenix-v2 + MSA,0.8813131313131313
+foldbench_monomer,7xyr_A,eval-val,Protenix-v2 + MSA,0.8826025459688827
+foldbench_monomer,7xz3_A,eval-val,Protenix-v2 + MSA,0.8512658227848101
+foldbench_monomer,7y3h_A,eval-val,Protenix-v2 + MSA,0.8365384615384616
+foldbench_monomer,7y4h_A,eval-val,Protenix-v2 + MSA,0.896875
+foldbench_monomer,7y54_A,eval-val,Protenix-v2 + MSA,0.8857142857142857
+foldbench_monomer,7y5j_A,eval-val,Protenix-v2 + MSA,0.8131868131868132
+foldbench_monomer,7y5m_A,eval-val,Protenix-v2 + MSA,0.831081081081081
+foldbench_monomer,7y5r_A,eval-val,Protenix-v2 + MSA,0.8762886597938144
+foldbench_monomer,7y8h_A,eval-val,Protenix-v2 + MSA,0.8072289156626506
+foldbench_monomer,7y8i_A,eval-val,Protenix-v2 + MSA,0.8192771084337349
+foldbench_monomer,7yd4_A,eval-val,Protenix-v2 + MSA,0.8732394366197183
+foldbench_monomer,7yhr_A,eval-val,Protenix-v2 + MSA,0.8048780487804879
+foldbench_monomer,7ykm_A,eval-val,Protenix-v2 + MSA,0.8181818181818182
+foldbench_monomer,7ylr_A,eval-val,Protenix-v2 + MSA,0.8983516483516484
+foldbench_monomer,7yug_A,eval-val,Protenix-v2 + MSA,0.8829787234042553
+foldbench_monomer,7yyg_A,eval-val,Protenix-v2 + MSA,0.8642533936651584
+foldbench_monomer,7z65_A,eval-val,Protenix-v2 + MSA,0.89375
+foldbench_monomer,7znz_A,eval-val,Protenix-v2 + MSA,0.9012875536480688
+foldbench_monomer,7zoi_A,eval-val,Protenix-v2 + MSA,0.9090909090909092
+foldbench_monomer,7zs2_A,eval-val,Protenix-v2 + MSA,0.8340807174887892
+foldbench_monomer,7zu3_A,eval-val,Protenix-v2 + MSA,0.4891304347826087
+foldbench_monomer,7zv1_A,eval-val,Protenix-v2 + MSA,0.8018018018018018
+foldbench_monomer,8adc_A,eval-val,Protenix-v2 + MSA,0.6705882352941176
+foldbench_monomer,8add_A,eval-val,Protenix-v2 + MSA,0.8047619047619048
+foldbench_monomer,8ak2_A,eval-val,Protenix-v2 + MSA,0.8885350318471338
+foldbench_monomer,8akh_A,eval-val,Protenix-v2 + MSA,0.912772585669782
+foldbench_monomer,8amo_A,eval-val,Protenix-v2 + MSA,0.8674033149171271
+foldbench_monomer,8arl_A,eval-val,Protenix-v2 + MSA,0.8461538461538461
+foldbench_monomer,8au6_A,eval-val,Protenix-v2 + MSA,0.8095238095238095
+foldbench_monomer,8axj_A,eval-val,Protenix-v2 + MSA,0.8881118881118881
+foldbench_monomer,8azb_A,eval-val,Protenix-v2 + MSA,0.8722316865417377
+foldbench_monomer,8b2e_A,eval-val,Protenix-v2 + MSA,0.9
+foldbench_monomer,8b2g_A,eval-val,Protenix-v2 + MSA,0.8983050847457628
+foldbench_monomer,8b2s_A,eval-val,Protenix-v2 + MSA,0.8387096774193549
+foldbench_monomer,8b4u_A,eval-val,Protenix-v2 + MSA,0.8974358974358975
+foldbench_monomer,8b5w_A,eval-val,Protenix-v2 + MSA,0.8675675675675676
+foldbench_monomer,8b61_A,eval-val,Protenix-v2 + MSA,0.8679245283018868
+foldbench_monomer,8b6a_A,eval-val,Protenix-v2 + MSA,0.917948717948718
+foldbench_monomer,8b6e_A,eval-val,Protenix-v2 + MSA,0.75
+foldbench_monomer,8baq_A,eval-val,Protenix-v2 + MSA,0.8368421052631579
+foldbench_monomer,8bau_A,eval-val,Protenix-v2 + MSA,0.8899521531100478
+foldbench_monomer,8bfy_A,eval-val,Protenix-v2 + MSA,0.8272980501392758
+foldbench_monomer,8bgb_A,eval-val,Protenix-v2 + MSA,0.8514851485148515
+foldbench_monomer,8bke_A,eval-val,Protenix-v2 + MSA,0.8866396761133604
+foldbench_monomer,8bsb_A,eval-val,Protenix-v2 + MSA,0.8521739130434782
+foldbench_monomer,8bux_A,eval-val,Protenix-v2 + MSA,0.8166666666666667
+foldbench_monomer,8c4d_A,eval-val,Protenix-v2 + MSA,0.9213973799126638
+foldbench_monomer,8c4y_A,eval-val,Protenix-v2 + MSA,0.9222520107238604
+foldbench_monomer,8cba_A,eval-val,Protenix-v2 + MSA,0.8653061224489796
+foldbench_monomer,8ci9_A,eval-val,Protenix-v2 + MSA,0.8664688427299704
+foldbench_monomer,8cih_A,eval-val,Protenix-v2 + MSA,0.810126582278481
+foldbench_monomer,8cpk_A,eval-val,Protenix-v2 + MSA,0.9008498583569404
+foldbench_monomer,8cpn_A,eval-val,Protenix-v2 + MSA,0.7857142857142857
+foldbench_monomer,8d2z_A,eval-val,Protenix-v2 + MSA,0.8653846153846154
+foldbench_monomer,8daj_A,eval-val,Protenix-v2 + MSA,0.9264214046822744
+foldbench_monomer,8dez_A,eval-val,Protenix-v2 + MSA,0.8956043956043956
+foldbench_monomer,8dge_A,eval-val,Protenix-v2 + MSA,0.887308533916849
+foldbench_monomer,8dhj_A,eval-val,Protenix-v2 + MSA,0.9101123595505618
+foldbench_monomer,8dmu_A,eval-val,Protenix-v2 + MSA,0.8949211908931699
+foldbench_monomer,8dp9_A,eval-val,Protenix-v2 + MSA,0.815068493150685
+foldbench_monomer,8dqd_A,eval-val,Protenix-v2 + MSA,0.8886075949367088
+foldbench_monomer,8dx0_A,eval-val,Protenix-v2 + MSA,0.8222222222222222
+foldbench_monomer,8e0r_A,eval-val,Protenix-v2 + MSA,0.8629032258064516
+foldbench_monomer,8e5h_A,eval-val,Protenix-v2 + MSA,0.9069767441860463
+foldbench_monomer,8eb9_A,eval-val,Protenix-v2 + MSA,0.1408450704225352
+foldbench_monomer,8ec3_A,eval-val,Protenix-v2 + MSA,0.8492063492063492
+foldbench_monomer,8eo5_A,eval-val,Protenix-v2 + MSA,0.8814229249011858
+foldbench_monomer,8gmy_A,eval-val,Protenix-v2 + MSA,0.7598425196850394
+foldbench_monomer,8q8i_A,eval-val,Protenix-v2 + MSA,0.901595744680851
+foldbench_monomer,8ycm_A,eval-val,Protenix-v2 + MSA,0.8316326530612245
+foldbench_monomer,7pv5_A,eval-val,seq-KNN (decontaminated corpus),0.09375
+foldbench_monomer,7qp5_A,eval-val,seq-KNN (decontaminated corpus),0.4564315352697095
+foldbench_monomer,7qsj_A,eval-val,seq-KNN (decontaminated corpus),0.4812680115273775
+foldbench_monomer,7t9r_A,eval-val,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,7tlh_A,eval-val,seq-KNN (decontaminated corpus),0.5877192982456141
+foldbench_monomer,7tjb_A,eval-val,seq-KNN (decontaminated corpus),0.5621890547263682
+foldbench_monomer,7uba_A,eval-val,seq-KNN (decontaminated corpus),0.1682692307692307
+foldbench_monomer,7uk8_A,eval-val,seq-KNN (decontaminated corpus),0.5570342205323194
+foldbench_monomer,7ur2_A,eval-val,seq-KNN (decontaminated corpus),0.583941605839416
+foldbench_monomer,7urp_A,eval-val,seq-KNN (decontaminated corpus),0.2388059701492537
+foldbench_monomer,7uvg_A,eval-val,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,7uww_A,eval-val,seq-KNN (decontaminated corpus),0.4054834054834055
+foldbench_monomer,7v3o_A,eval-val,seq-KNN (decontaminated corpus),0.3014705882352941
+foldbench_monomer,7w15_A,eval-val,seq-KNN (decontaminated corpus),0.5478547854785478
+foldbench_monomer,7y3h_A,eval-val,seq-KNN (decontaminated corpus),0.5544871794871795
+foldbench_monomer,7wz5_A,eval-val,seq-KNN (decontaminated corpus),0.4513274336283185
+foldbench_monomer,7wzm_A,eval-val,seq-KNN (decontaminated corpus),0.4890350877192982
+foldbench_monomer,7x4p_A,eval-val,seq-KNN (decontaminated corpus),0.4114114114114114
+foldbench_monomer,7x3h_A,eval-val,seq-KNN (decontaminated corpus),0.4560810810810811
+foldbench_monomer,7x8l_A,eval-val,seq-KNN (decontaminated corpus),0.5258620689655172
+foldbench_monomer,7xcd_A,eval-val,seq-KNN (decontaminated corpus),0.0067567567567567
+foldbench_monomer,7xg9_A,eval-val,seq-KNN (decontaminated corpus),0.4730290456431535
+foldbench_monomer,7xi5_A,eval-val,seq-KNN (decontaminated corpus),0.3809523809523809
+foldbench_monomer,7xp9_A,eval-val,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8ycm_A,eval-val,seq-KNN (decontaminated corpus),0.5969387755102041
+foldbench_monomer,7xq4_A,eval-val,seq-KNN (decontaminated corpus),0.3008474576271186
+foldbench_monomer,7xrx_A,eval-val,seq-KNN (decontaminated corpus),0.4924242424242424
+foldbench_monomer,7xjr_A,eval-val,seq-KNN (decontaminated corpus),0.556497175141243
+foldbench_monomer,7xyr_A,eval-val,seq-KNN (decontaminated corpus),0.5756718528995757
+foldbench_monomer,7xz3_A,eval-val,seq-KNN (decontaminated corpus),0.360759493670886
+foldbench_monomer,7y4h_A,eval-val,seq-KNN (decontaminated corpus),0.153125
+foldbench_monomer,7y54_A,eval-val,seq-KNN (decontaminated corpus),0.638095238095238
+foldbench_monomer,7y5m_A,eval-val,seq-KNN (decontaminated corpus),0.2837837837837837
+foldbench_monomer,7y5r_A,eval-val,seq-KNN (decontaminated corpus),0.5463917525773195
+foldbench_monomer,7y8h_A,eval-val,seq-KNN (decontaminated corpus),0.6144578313253012
+foldbench_monomer,7y8i_A,eval-val,seq-KNN (decontaminated corpus),0.5783132530120482
+foldbench_monomer,7y5j_A,eval-val,seq-KNN (decontaminated corpus),0.4835164835164835
+foldbench_monomer,7yd4_A,eval-val,seq-KNN (decontaminated corpus),0.0070422535211267
+foldbench_monomer,7yhr_A,eval-val,seq-KNN (decontaminated corpus),0.048780487804878
+foldbench_monomer,7ykm_A,eval-val,seq-KNN (decontaminated corpus),0.5818181818181818
+foldbench_monomer,7ylr_A,eval-val,seq-KNN (decontaminated corpus),0.6181318681318682
+foldbench_monomer,8gmy_A,eval-val,seq-KNN (decontaminated corpus),0.0866141732283464
+foldbench_monomer,7yug_A,eval-val,seq-KNN (decontaminated corpus),0.2340425531914893
+foldbench_monomer,7yyg_A,eval-val,seq-KNN (decontaminated corpus),0.5882352941176471
+foldbench_monomer,7z65_A,eval-val,seq-KNN (decontaminated corpus),0.296875
+foldbench_monomer,7znz_A,eval-val,seq-KNN (decontaminated corpus),0.5954935622317596
+foldbench_monomer,7zoi_A,eval-val,seq-KNN (decontaminated corpus),0.6363636363636364
+foldbench_monomer,7zs2_A,eval-val,seq-KNN (decontaminated corpus),0.4618834080717489
+foldbench_monomer,7zu3_A,eval-val,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,7zv1_A,eval-val,seq-KNN (decontaminated corpus),0.018018018018018
+foldbench_monomer,8adc_A,eval-val,seq-KNN (decontaminated corpus),0.3058823529411765
+foldbench_monomer,8add_A,eval-val,seq-KNN (decontaminated corpus),0.2571428571428571
+foldbench_monomer,8akh_A,eval-val,seq-KNN (decontaminated corpus),0.5887850467289719
+foldbench_monomer,8ak2_A,eval-val,seq-KNN (decontaminated corpus),0.5414012738853503
+foldbench_monomer,8arl_A,eval-val,seq-KNN (decontaminated corpus),0.4615384615384615
+foldbench_monomer,8q8i_A,eval-val,seq-KNN (decontaminated corpus),0.4946808510638298
+foldbench_monomer,8au6_A,eval-val,seq-KNN (decontaminated corpus),0.5595238095238095
+foldbench_monomer,8axj_A,eval-val,seq-KNN (decontaminated corpus),0.6503496503496503
+foldbench_monomer,8azb_A,eval-val,seq-KNN (decontaminated corpus),0.5741056218057922
+foldbench_monomer,8b2e_A,eval-val,seq-KNN (decontaminated corpus),0.6538461538461539
+foldbench_monomer,8b2g_A,eval-val,seq-KNN (decontaminated corpus),0.6440677966101694
+foldbench_monomer,8b2s_A,eval-val,seq-KNN (decontaminated corpus),0.4247311827956989
+foldbench_monomer,8b4u_A,eval-val,seq-KNN (decontaminated corpus),0.5567765567765568
+foldbench_monomer,8b5w_A,eval-val,seq-KNN (decontaminated corpus),0.4945945945945946
+foldbench_monomer,8b61_A,eval-val,seq-KNN (decontaminated corpus),0.3726415094339622
+foldbench_monomer,8b6a_A,eval-val,seq-KNN (decontaminated corpus),0.6051282051282051
+foldbench_monomer,8b6e_A,eval-val,seq-KNN (decontaminated corpus),0.2272727272727272
+foldbench_monomer,8baq_A,eval-val,seq-KNN (decontaminated corpus),0.5947368421052631
+foldbench_monomer,8bau_A,eval-val,seq-KNN (decontaminated corpus),0.6220095693779905
+foldbench_monomer,8bfy_A,eval-val,seq-KNN (decontaminated corpus),0.3927576601671309
+foldbench_monomer,8bgb_A,eval-val,seq-KNN (decontaminated corpus),0.3861386138613861
+foldbench_monomer,8bke_A,eval-val,seq-KNN (decontaminated corpus),0.1032388663967611
+foldbench_monomer,8bsb_A,eval-val,seq-KNN (decontaminated corpus),0.0260869565217391
+foldbench_monomer,8bux_A,eval-val,seq-KNN (decontaminated corpus),0.0083333333333333
+foldbench_monomer,8c4d_A,eval-val,seq-KNN (decontaminated corpus),0.2925764192139738
+foldbench_monomer,7xlz_A,eval-val,seq-KNN (decontaminated corpus),0.6566037735849056
+foldbench_monomer,8c4y_A,eval-val,seq-KNN (decontaminated corpus),0.4664879356568364
+foldbench_monomer,8cba_A,eval-val,seq-KNN (decontaminated corpus),0.5959183673469388
+foldbench_monomer,8ci9_A,eval-val,seq-KNN (decontaminated corpus),0.5637982195845698
+foldbench_monomer,8cih_A,eval-val,seq-KNN (decontaminated corpus),0.4620253164556962
+foldbench_monomer,8amo_A,eval-val,seq-KNN (decontaminated corpus),0.5359116022099447
+foldbench_monomer,8cpk_A,eval-val,seq-KNN (decontaminated corpus),0.6118980169971672
+foldbench_monomer,8cpn_A,eval-val,seq-KNN (decontaminated corpus),0.0476190476190476
+foldbench_monomer,8d2z_A,eval-val,seq-KNN (decontaminated corpus),0.4935897435897436
+foldbench_monomer,8daj_A,eval-val,seq-KNN (decontaminated corpus),0.4983277591973244
+foldbench_monomer,8dez_A,eval-val,seq-KNN (decontaminated corpus),0.3296703296703296
+foldbench_monomer,8dge_A,eval-val,seq-KNN (decontaminated corpus),0.3862144420131291
+foldbench_monomer,8dhj_A,eval-val,seq-KNN (decontaminated corpus),0.6404494382022472
+foldbench_monomer,8dmu_A,eval-val,seq-KNN (decontaminated corpus),0.4658493870402802
+foldbench_monomer,8dp9_A,eval-val,seq-KNN (decontaminated corpus),0.2808219178082192
+foldbench_monomer,8dqd_A,eval-val,seq-KNN (decontaminated corpus),0.5240506329113924
+foldbench_monomer,8dx0_A,eval-val,seq-KNN (decontaminated corpus),0.6148148148148148
+foldbench_monomer,8e0r_A,eval-val,seq-KNN (decontaminated corpus),0.2177419354838709
+foldbench_monomer,8e5h_A,eval-val,seq-KNN (decontaminated corpus),0.5436046511627907
+foldbench_monomer,8eb9_A,eval-val,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8ec3_A,eval-val,seq-KNN (decontaminated corpus),0.0079365079365079
+foldbench_monomer,8eo5_A,eval-val,seq-KNN (decontaminated corpus),0.6245059288537549
+foldbench_monomer,7ur7_A,eval-denovo,ESMFold,0.85
+foldbench_monomer,7ur7_A,eval-denovo,ESMFold2,0.8166666666666667
+foldbench_monomer,8ah9_A,eval-denovo,ESMFold,0.9318181818181818
+foldbench_monomer,8ah9_A,eval-denovo,ESMFold2,0.9166666666666666
+foldbench_monomer,8eov_A,eval-denovo,ESMFold,0.8896551724137931
+foldbench_monomer,8eov_A,eval-denovo,ESMFold2,0.8827586206896552
+foldbench_monomer,8fjf_A,eval-denovo,ESMFold,0.6210526315789474
+foldbench_monomer,8fjf_A,eval-denovo,ESMFold2,0.8736842105263158
+foldbench_monomer,8gac_A,eval-denovo,ESMFold,0.8481012658227848
+foldbench_monomer,8gac_A,eval-denovo,ESMFold2,0.8607594936708861
+foldbench_monomer,8k7z_A,eval-denovo,ESMFold,0.2527472527472527
+foldbench_monomer,8k7z_A,eval-denovo,ESMFold2,0.8131868131868132
+foldbench_monomer,8k83_A,eval-denovo,ESMFold,0.9016393442622952
+foldbench_monomer,8k83_A,eval-denovo,ESMFold2,0.9016393442622952
+foldbench_monomer,8k84_A,eval-denovo,ESMFold,0.8382352941176471
+foldbench_monomer,8k84_A,eval-denovo,ESMFold2,0.8602941176470589
+foldbench_monomer,8kcj_A,eval-denovo,ESMFold,0.8442622950819673
+foldbench_monomer,8kcj_A,eval-denovo,ESMFold2,0.8770491803278688
+foldbench_monomer,8ka7_A,eval-denovo,ESMFold,0.896551724137931
+foldbench_monomer,8ka7_A,eval-denovo,ESMFold2,0.8735632183908046
+foldbench_monomer,8kac_A,eval-denovo,ESMFold,0.8461538461538461
+foldbench_monomer,8kac_A,eval-denovo,ESMFold2,0.8653846153846154
+foldbench_monomer,8oyy_A,eval-denovo,ESMFold,0.9372384937238494
+foldbench_monomer,8oyy_A,eval-denovo,ESMFold2,0.9414225941422594
+foldbench_monomer,8qkd_A,eval-denovo,ESMFold,0.8744769874476988
+foldbench_monomer,8qkd_A,eval-denovo,ESMFold2,0.9037656903765692
+foldbench_monomer,8qup_A,eval-denovo,ESMFold,0.4516129032258064
+foldbench_monomer,8qup_A,eval-denovo,ESMFold2,0.8064516129032258
+foldbench_monomer,8vc8_A,eval-denovo,ESMFold,0.7619047619047619
+foldbench_monomer,8vc8_A,eval-denovo,ESMFold2,0.8503401360544217
+foldbench_monomer,7ur7_A,eval-denovo,Protenix-v2 single-seq,0.8333333333333334
+foldbench_monomer,7ur7_A,eval-denovo,Protenix-v2 + MSA,0.8333333333333334
+foldbench_monomer,8ah9_A,eval-denovo,Protenix-v2 single-seq,0.9166666666666666
+foldbench_monomer,8ah9_A,eval-denovo,Protenix-v2 + MSA,0.9318181818181818
+foldbench_monomer,8eov_A,eval-denovo,Protenix-v2 single-seq,0.8827586206896552
+foldbench_monomer,8eov_A,eval-denovo,Protenix-v2 + MSA,0.8758620689655172
+foldbench_monomer,8fjf_A,eval-denovo,Protenix-v2 single-seq,0.8315789473684211
+foldbench_monomer,8fjf_A,eval-denovo,Protenix-v2 + MSA,0.8210526315789474
+foldbench_monomer,8gac_A,eval-denovo,Protenix-v2 single-seq,0.8354430379746836
+foldbench_monomer,8gac_A,eval-denovo,Protenix-v2 + MSA,0.8354430379746836
+foldbench_monomer,8k7z_A,eval-denovo,Protenix-v2 single-seq,0.8021978021978022
+foldbench_monomer,8k7z_A,eval-denovo,Protenix-v2 + MSA,0.8241758241758241
+foldbench_monomer,8k83_A,eval-denovo,Protenix-v2 single-seq,0.9098360655737704
+foldbench_monomer,8k83_A,eval-denovo,Protenix-v2 + MSA,0.918032786885246
+foldbench_monomer,8k84_A,eval-denovo,Protenix-v2 single-seq,0.8529411764705882
+foldbench_monomer,8k84_A,eval-denovo,Protenix-v2 + MSA,0.8602941176470589
+foldbench_monomer,8kcj_A,eval-denovo,Protenix-v2 single-seq,0.8770491803278688
+foldbench_monomer,8kcj_A,eval-denovo,Protenix-v2 + MSA,0.8934426229508197
+foldbench_monomer,8ka7_A,eval-denovo,Protenix-v2 single-seq,0.7011494252873564
+foldbench_monomer,8ka7_A,eval-denovo,Protenix-v2 + MSA,0.6551724137931034
+foldbench_monomer,8kac_A,eval-denovo,Protenix-v2 single-seq,0.875
+foldbench_monomer,8kac_A,eval-denovo,Protenix-v2 + MSA,0.8269230769230769
+foldbench_monomer,8oyy_A,eval-denovo,Protenix-v2 single-seq,0.9372384937238494
+foldbench_monomer,8oyy_A,eval-denovo,Protenix-v2 + MSA,0.9456066945606696
+foldbench_monomer,8qkd_A,eval-denovo,Protenix-v2 single-seq,0.8870292887029289
+foldbench_monomer,8qkd_A,eval-denovo,Protenix-v2 + MSA,0.899581589958159
+foldbench_monomer,8qup_A,eval-denovo,Protenix-v2 single-seq,0.7419354838709677
+foldbench_monomer,8qup_A,eval-denovo,Protenix-v2 + MSA,0.7849462365591398
+foldbench_monomer,8vc8_A,eval-denovo,Protenix-v2 single-seq,0.7210884353741497
+foldbench_monomer,8vc8_A,eval-denovo,Protenix-v2 + MSA,0.8707482993197279
+foldbench_monomer,8ju8_A,eval-denovo,ESMFold,0.8064516129032258
+foldbench_monomer,8k7o_A,eval-denovo,ESMFold,0.8431372549019608
+foldbench_monomer,8oys_A,eval-denovo,ESMFold,0.7702702702702703
+foldbench_monomer,5sbj_A,eval-denovo,ESMFold,0.9411764705882352
+foldbench_monomer,8ju8_A,eval-denovo,ESMFold2,0.7526881720430108
+foldbench_monomer,8k7o_A,eval-denovo,ESMFold2,0.8333333333333334
+foldbench_monomer,8oys_A,eval-denovo,ESMFold2,0.777027027027027
+foldbench_monomer,5sbj_A,eval-denovo,ESMFold2,1.0
+foldbench_monomer,8ju8_A,eval-denovo,Protenix-v2 single-seq,0.7849462365591398
+foldbench_monomer,8k7o_A,eval-denovo,Protenix-v2 single-seq,0.8235294117647058
+foldbench_monomer,8oys_A,eval-denovo,Protenix-v2 single-seq,0.7702702702702703
+foldbench_monomer,5sbj_A,eval-denovo,Protenix-v2 single-seq,0.8823529411764706
+foldbench_monomer,8ju8_A,eval-denovo,Protenix-v2 + MSA,0.7849462365591398
+foldbench_monomer,8k7o_A,eval-denovo,Protenix-v2 + MSA,0.8431372549019608
+foldbench_monomer,8oys_A,eval-denovo,Protenix-v2 + MSA,0.7567567567567568
+foldbench_monomer,5sbj_A,eval-denovo,Protenix-v2 + MSA,0.8823529411764706
+foldbench_monomer,5sbj_A,eval-denovo,seq-KNN (decontaminated corpus),0.4705882352941176
+foldbench_monomer,7ur7_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8ah9_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8eov_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8fjf_A,eval-denovo,seq-KNN (decontaminated corpus),0.0105263157894736
+foldbench_monomer,8gac_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8ju8_A,eval-denovo,seq-KNN (decontaminated corpus),0.010752688172043
+foldbench_monomer,8k7o_A,eval-denovo,seq-KNN (decontaminated corpus),0.1813725490196078
+foldbench_monomer,8k7z_A,eval-denovo,seq-KNN (decontaminated corpus),0.0109890109890109
+foldbench_monomer,8k83_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8k84_A,eval-denovo,seq-KNN (decontaminated corpus),0.0073529411764705
+foldbench_monomer,8kcj_A,eval-denovo,seq-KNN (decontaminated corpus),0.040983606557377
+foldbench_monomer,8ka7_A,eval-denovo,seq-KNN (decontaminated corpus),0.0114942528735632
+foldbench_monomer,8kac_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8oys_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8oyy_A,eval-denovo,seq-KNN (decontaminated corpus),0.00418410041841
+foldbench_monomer,8qkd_A,eval-denovo,seq-KNN (decontaminated corpus),0.0
+foldbench_monomer,8qup_A,eval-denovo,seq-KNN (decontaminated corpus),0.1935483870967742
+foldbench_monomer,8vc8_A,eval-denovo,seq-KNN (decontaminated corpus),0.0136054421768707
+foldbench_monomer,5sbj_A,eval-denovo,MarinFold exp277,0.8823529411764706
+foldbench_monomer,7ur7_A,eval-denovo,MarinFold exp277,0.8333333333333334
+foldbench_monomer,8ah9_A,eval-denovo,MarinFold exp277,0.9015151515151516
+foldbench_monomer,8eov_A,eval-denovo,MarinFold exp277,0.7517241379310344
+foldbench_monomer,8fjf_A,eval-denovo,MarinFold exp277,0.6526315789473685
+foldbench_monomer,8gac_A,eval-denovo,MarinFold exp277,0.7341772151898734
+foldbench_monomer,8ju8_A,eval-denovo,MarinFold exp277,0.7311827956989247
+foldbench_monomer,8k7o_A,eval-denovo,MarinFold exp277,0.696078431372549
+foldbench_monomer,8k7z_A,eval-denovo,MarinFold exp277,0.4505494505494505
+foldbench_monomer,8k83_A,eval-denovo,MarinFold exp277,0.8278688524590164
+foldbench_monomer,8k84_A,eval-denovo,MarinFold exp277,0.5294117647058824
+foldbench_monomer,8kcj_A,eval-denovo,MarinFold exp277,0.7540983606557377
+foldbench_monomer,8ka7_A,eval-denovo,MarinFold exp277,0.4597701149425287
+foldbench_monomer,8kac_A,eval-denovo,MarinFold exp277,0.75
+foldbench_monomer,8oys_A,eval-denovo,MarinFold exp277,0.7567567567567568
+foldbench_monomer,8oyy_A,eval-denovo,MarinFold exp277,0.8577405857740585
+foldbench_monomer,8qkd_A,eval-denovo,MarinFold exp277,0.5313807531380753
+foldbench_monomer,8qup_A,eval-denovo,MarinFold exp277,0.7526881720430108
+foldbench_monomer,8vc8_A,eval-denovo,MarinFold exp277,0.3673469387755102
+foldbench_monomer,7pv5_A,eval-val,MarinFold exp277,0.765625
+foldbench_monomer,7qp5_A,eval-val,MarinFold exp277,0.5560165975103735
+foldbench_monomer,7qsj_A,eval-val,MarinFold exp277,0.7204610951008645
+foldbench_monomer,7t9r_A,eval-val,MarinFold exp277,0.2083333333333333
+foldbench_monomer,7tlh_A,eval-val,MarinFold exp277,0.4473684210526316
+foldbench_monomer,7tjb_A,eval-val,MarinFold exp277,0.7412935323383084
+foldbench_monomer,7uba_A,eval-val,MarinFold exp277,0.2740384615384615
+foldbench_monomer,7uk8_A,eval-val,MarinFold exp277,0.5399239543726235
+foldbench_monomer,7ur2_A,eval-val,MarinFold exp277,0.5401459854014599
+foldbench_monomer,7urp_A,eval-val,MarinFold exp277,0.4253731343283582
+foldbench_monomer,7uvg_A,eval-val,MarinFold exp277,0.3764044943820224
+foldbench_monomer,7uww_A,eval-val,MarinFold exp277,0.4227994227994228
+foldbench_monomer,7v3o_A,eval-val,MarinFold exp277,0.4117647058823529
+foldbench_monomer,7w15_A,eval-val,MarinFold exp277,0.6798679867986799
+foldbench_monomer,7y3h_A,eval-val,MarinFold exp277,0.6378205128205128
+foldbench_monomer,7wz5_A,eval-val,MarinFold exp277,0.0619469026548672
+foldbench_monomer,7wzm_A,eval-val,MarinFold exp277,0.7192982456140351
+foldbench_monomer,7x4p_A,eval-val,MarinFold exp277,0.5435435435435435
+foldbench_monomer,7x3h_A,eval-val,MarinFold exp277,0.6655405405405406
+foldbench_monomer,7x8l_A,eval-val,MarinFold exp277,0.653448275862069
+foldbench_monomer,7xcd_A,eval-val,MarinFold exp277,0.1756756756756756
+foldbench_monomer,7xg9_A,eval-val,MarinFold exp277,0.4439834024896265
+foldbench_monomer,7xi5_A,eval-val,MarinFold exp277,0.8095238095238095
+foldbench_monomer,7xp9_A,eval-val,MarinFold exp277,0.3777777777777777
+foldbench_monomer,8ycm_A,eval-val,MarinFold exp277,0.4795918367346938
+foldbench_monomer,7xq4_A,eval-val,MarinFold exp277,0.5614406779661016
+foldbench_monomer,7xrx_A,eval-val,MarinFold exp277,0.5151515151515151
+foldbench_monomer,7xjr_A,eval-val,MarinFold exp277,0.6073446327683616
+foldbench_monomer,7xyr_A,eval-val,MarinFold exp277,0.6874115983026874
+foldbench_monomer,7xz3_A,eval-val,MarinFold exp277,0.4240506329113924
+foldbench_monomer,7y4h_A,eval-val,MarinFold exp277,0.596875
+foldbench_monomer,7y54_A,eval-val,MarinFold exp277,0.8095238095238095
+foldbench_monomer,7y5m_A,eval-val,MarinFold exp277,0.581081081081081
+foldbench_monomer,7y5r_A,eval-val,MarinFold exp277,0.8041237113402062
+foldbench_monomer,7y8h_A,eval-val,MarinFold exp277,0.7951807228915663
+foldbench_monomer,7y8i_A,eval-val,MarinFold exp277,0.8192771084337349
+foldbench_monomer,7y5j_A,eval-val,MarinFold exp277,0.7802197802197802
+foldbench_monomer,7yd4_A,eval-val,MarinFold exp277,0.2535211267605634
+foldbench_monomer,7yhr_A,eval-val,MarinFold exp277,0.4878048780487805
+foldbench_monomer,7ykm_A,eval-val,MarinFold exp277,0.7454545454545455
+foldbench_monomer,7ylr_A,eval-val,MarinFold exp277,0.7417582417582418
+foldbench_monomer,8gmy_A,eval-val,MarinFold exp277,0.3188976377952756
+foldbench_monomer,7yug_A,eval-val,MarinFold exp277,0.3191489361702128
+foldbench_monomer,7yyg_A,eval-val,MarinFold exp277,0.2217194570135746
+foldbench_monomer,7z65_A,eval-val,MarinFold exp277,0.590625
+foldbench_monomer,7znz_A,eval-val,MarinFold exp277,0.5246781115879828
+foldbench_monomer,7zoi_A,eval-val,MarinFold exp277,0.6909090909090909
+foldbench_monomer,7zs2_A,eval-val,MarinFold exp277,0.726457399103139
+foldbench_monomer,7zu3_A,eval-val,MarinFold exp277,0.4891304347826087
+foldbench_monomer,7zv1_A,eval-val,MarinFold exp277,0.5495495495495496
+foldbench_monomer,8adc_A,eval-val,MarinFold exp277,0.3294117647058823
+foldbench_monomer,8add_A,eval-val,MarinFold exp277,0.1666666666666666
+foldbench_monomer,8akh_A,eval-val,MarinFold exp277,0.6448598130841121
+foldbench_monomer,8ak2_A,eval-val,MarinFold exp277,0.7197452229299363
+foldbench_monomer,8arl_A,eval-val,MarinFold exp277,0.0423076923076923
+foldbench_monomer,8q8i_A,eval-val,MarinFold exp277,0.5425531914893617
+foldbench_monomer,8au6_A,eval-val,MarinFold exp277,0.6071428571428571
+foldbench_monomer,8axj_A,eval-val,MarinFold exp277,0.7832167832167832
+foldbench_monomer,8azb_A,eval-val,MarinFold exp277,0.7614991482112436
+foldbench_monomer,8b2e_A,eval-val,MarinFold exp277,0.4615384615384615
+foldbench_monomer,8b2g_A,eval-val,MarinFold exp277,0.6779661016949152
+foldbench_monomer,8b2s_A,eval-val,MarinFold exp277,0.6989247311827957
+foldbench_monomer,8b4u_A,eval-val,MarinFold exp277,0.8205128205128205
+foldbench_monomer,8b5w_A,eval-val,MarinFold exp277,0.1837837837837838
+foldbench_monomer,8b61_A,eval-val,MarinFold exp277,0.4952830188679245
+foldbench_monomer,8b6a_A,eval-val,MarinFold exp277,0.6307692307692307
+foldbench_monomer,8b6e_A,eval-val,MarinFold exp277,0.8181818181818182
+foldbench_monomer,8baq_A,eval-val,MarinFold exp277,0.4894736842105263
+foldbench_monomer,8bau_A,eval-val,MarinFold exp277,0.6842105263157895
+foldbench_monomer,8bfy_A,eval-val,MarinFold exp277,0.6434540389972145
+foldbench_monomer,8bgb_A,eval-val,MarinFold exp277,0.8316831683168316
+foldbench_monomer,8bke_A,eval-val,MarinFold exp277,0.5951417004048583
+foldbench_monomer,8bsb_A,eval-val,MarinFold exp277,0.6347826086956522
+foldbench_monomer,8bux_A,eval-val,MarinFold exp277,0.0791666666666666
+foldbench_monomer,8c4d_A,eval-val,MarinFold exp277,0.6550218340611353
+foldbench_monomer,7xlz_A,eval-val,MarinFold exp277,0.6679245283018868
+foldbench_monomer,8c4y_A,eval-val,MarinFold exp277,0.7345844504021448
+foldbench_monomer,8cba_A,eval-val,MarinFold exp277,0.2244897959183673
+foldbench_monomer,8ci9_A,eval-val,MarinFold exp277,0.6261127596439169
+foldbench_monomer,8cih_A,eval-val,MarinFold exp277,0.3417721518987341
+foldbench_monomer,8amo_A,eval-val,MarinFold exp277,0.6988950276243094
+foldbench_monomer,8cpk_A,eval-val,MarinFold exp277,0.7110481586402266
+foldbench_monomer,8cpn_A,eval-val,MarinFold exp277,0.6369047619047619
+foldbench_monomer,8d2z_A,eval-val,MarinFold exp277,0.7115384615384616
+foldbench_monomer,8daj_A,eval-val,MarinFold exp277,0.6755852842809364
+foldbench_monomer,8dez_A,eval-val,MarinFold exp277,0.4725274725274725
+foldbench_monomer,8dge_A,eval-val,MarinFold exp277,0.5733041575492341
+foldbench_monomer,8dhj_A,eval-val,MarinFold exp277,0.7827715355805244
+foldbench_monomer,8dmu_A,eval-val,MarinFold exp277,0.1471103327495621
+foldbench_monomer,8dp9_A,eval-val,MarinFold exp277,0.7465753424657534
+foldbench_monomer,8dqd_A,eval-val,MarinFold exp277,0.7468354430379747
+foldbench_monomer,8dx0_A,eval-val,MarinFold exp277,0.762962962962963
+foldbench_monomer,8e0r_A,eval-val,MarinFold exp277,0.1875
+foldbench_monomer,8e5h_A,eval-val,MarinFold exp277,0.622093023255814
+foldbench_monomer,8eb9_A,eval-val,MarinFold exp277,0.1830985915492957
+foldbench_monomer,8ec3_A,eval-val,MarinFold exp277,0.3333333333333333
+foldbench_monomer,8eo5_A,eval-val,MarinFold exp277,0.8102766798418972
+foldbench_monomer,5sbj_A,eval-denovo,MarinFold exp232,0.8823529411764706
+foldbench_monomer,7ur7_A,eval-denovo,MarinFold exp232,0.8666666666666667
+foldbench_monomer,8ah9_A,eval-denovo,MarinFold exp232,0.9015151515151516
+foldbench_monomer,8eov_A,eval-denovo,MarinFold exp232,0.7655172413793103
+foldbench_monomer,8fjf_A,eval-denovo,MarinFold exp232,0.631578947368421
+foldbench_monomer,8gac_A,eval-denovo,MarinFold exp232,0.7468354430379747
+foldbench_monomer,8ju8_A,eval-denovo,MarinFold exp232,0.6989247311827957
+foldbench_monomer,8k7o_A,eval-denovo,MarinFold exp232,0.6911764705882353
+foldbench_monomer,8k7z_A,eval-denovo,MarinFold exp232,0.1868131868131868
+foldbench_monomer,8k83_A,eval-denovo,MarinFold exp232,0.7786885245901639
+foldbench_monomer,8k84_A,eval-denovo,MarinFold exp232,0.3088235294117647
+foldbench_monomer,8kcj_A,eval-denovo,MarinFold exp232,0.5983606557377049
+foldbench_monomer,8ka7_A,eval-denovo,MarinFold exp232,0.4712643678160919
+foldbench_monomer,8kac_A,eval-denovo,MarinFold exp232,0.5865384615384616
+foldbench_monomer,8oys_A,eval-denovo,MarinFold exp232,0.7162162162162162
+foldbench_monomer,8oyy_A,eval-denovo,MarinFold exp232,0.4602510460251046
+foldbench_monomer,8qkd_A,eval-denovo,MarinFold exp232,0.4142259414225941
+foldbench_monomer,8qup_A,eval-denovo,MarinFold exp232,0.6021505376344086
+foldbench_monomer,8vc8_A,eval-denovo,MarinFold exp232,0.2789115646258503
+foldbench_monomer,7pv5_A,eval-val,MarinFold exp232,0.765625
+foldbench_monomer,7qp5_A,eval-val,MarinFold exp232,0.6556016597510373
+foldbench_monomer,7qsj_A,eval-val,MarinFold exp232,0.6945244956772334
+foldbench_monomer,7t9r_A,eval-val,MarinFold exp232,0.25
+foldbench_monomer,7tlh_A,eval-val,MarinFold exp232,0.4385964912280701
+foldbench_monomer,7tjb_A,eval-val,MarinFold exp232,0.736318407960199
+foldbench_monomer,7uba_A,eval-val,MarinFold exp232,0.2451923076923076
+foldbench_monomer,7uk8_A,eval-val,MarinFold exp232,0.5874524714828897
+foldbench_monomer,7ur2_A,eval-val,MarinFold exp232,0.4306569343065693
+foldbench_monomer,7urp_A,eval-val,MarinFold exp232,0.4253731343283582
+foldbench_monomer,7uvg_A,eval-val,MarinFold exp232,0.4157303370786517
+foldbench_monomer,7uww_A,eval-val,MarinFold exp232,0.3997113997113997
+foldbench_monomer,7v3o_A,eval-val,MarinFold exp232,0.4154411764705882
+foldbench_monomer,7w15_A,eval-val,MarinFold exp232,0.7029702970297029
+foldbench_monomer,7y3h_A,eval-val,MarinFold exp232,0.6858974358974359
+foldbench_monomer,7wz5_A,eval-val,MarinFold exp232,0.0619469026548672
+foldbench_monomer,7wzm_A,eval-val,MarinFold exp232,0.7324561403508771
+foldbench_monomer,7x4p_A,eval-val,MarinFold exp232,0.5345345345345346
+foldbench_monomer,7x3h_A,eval-val,MarinFold exp232,0.6621621621621622
+foldbench_monomer,7x8l_A,eval-val,MarinFold exp232,0.6172413793103448
+foldbench_monomer,7xcd_A,eval-val,MarinFold exp232,0.1621621621621621
+foldbench_monomer,7xg9_A,eval-val,MarinFold exp232,0.4107883817427386
+foldbench_monomer,7xi5_A,eval-val,MarinFold exp232,0.8095238095238095
+foldbench_monomer,7xp9_A,eval-val,MarinFold exp232,0.2666666666666666
+foldbench_monomer,8ycm_A,eval-val,MarinFold exp232,0.4642857142857143
+foldbench_monomer,7xq4_A,eval-val,MarinFold exp232,0.5317796610169492
+foldbench_monomer,7xrx_A,eval-val,MarinFold exp232,0.547979797979798
+foldbench_monomer,7xjr_A,eval-val,MarinFold exp232,0.596045197740113
+foldbench_monomer,7xyr_A,eval-val,MarinFold exp232,0.7029702970297029
+foldbench_monomer,7xz3_A,eval-val,MarinFold exp232,0.2246835443037974
+foldbench_monomer,7y4h_A,eval-val,MarinFold exp232,0.590625
+foldbench_monomer,7y54_A,eval-val,MarinFold exp232,0.8
+foldbench_monomer,7y5m_A,eval-val,MarinFold exp232,0.581081081081081
+foldbench_monomer,7y5r_A,eval-val,MarinFold exp232,0.7938144329896907
+foldbench_monomer,7y8h_A,eval-val,MarinFold exp232,0.7469879518072289
+foldbench_monomer,7y8i_A,eval-val,MarinFold exp232,0.8313253012048193
+foldbench_monomer,7y5j_A,eval-val,MarinFold exp232,0.8021978021978022
+foldbench_monomer,7yd4_A,eval-val,MarinFold exp232,0.176056338028169
+foldbench_monomer,7yhr_A,eval-val,MarinFold exp232,0.3658536585365853
+foldbench_monomer,7ykm_A,eval-val,MarinFold exp232,0.7636363636363637
+foldbench_monomer,7ylr_A,eval-val,MarinFold exp232,0.7335164835164835
+foldbench_monomer,8gmy_A,eval-val,MarinFold exp232,0.3464566929133858
+foldbench_monomer,7yug_A,eval-val,MarinFold exp232,0.3297872340425531
+foldbench_monomer,7yyg_A,eval-val,MarinFold exp232,0.2217194570135746
+foldbench_monomer,7z65_A,eval-val,MarinFold exp232,0.584375
+foldbench_monomer,7znz_A,eval-val,MarinFold exp232,0.5547210300429185
+foldbench_monomer,7zoi_A,eval-val,MarinFold exp232,0.7181818181818181
+foldbench_monomer,7zs2_A,eval-val,MarinFold exp232,0.7309417040358744
+foldbench_monomer,7zu3_A,eval-val,MarinFold exp232,0.4456521739130434
+foldbench_monomer,7zv1_A,eval-val,MarinFold exp232,0.4864864864864865
+foldbench_monomer,8adc_A,eval-val,MarinFold exp232,0.3117647058823529
+foldbench_monomer,8add_A,eval-val,MarinFold exp232,0.2523809523809524
+foldbench_monomer,8akh_A,eval-val,MarinFold exp232,0.6292834890965732
+foldbench_monomer,8ak2_A,eval-val,MarinFold exp232,0.6942675159235668
+foldbench_monomer,8arl_A,eval-val,MarinFold exp232,0.0461538461538461
+foldbench_monomer,8q8i_A,eval-val,MarinFold exp232,0.5585106382978723
+foldbench_monomer,8au6_A,eval-val,MarinFold exp232,0.5833333333333334
+foldbench_monomer,8axj_A,eval-val,MarinFold exp232,0.6853146853146853
+foldbench_monomer,8azb_A,eval-val,MarinFold exp232,0.7649063032367973
+foldbench_monomer,8b2e_A,eval-val,MarinFold exp232,0.6
+foldbench_monomer,8b2g_A,eval-val,MarinFold exp232,0.7966101694915254
+foldbench_monomer,8b2s_A,eval-val,MarinFold exp232,0.6720430107526881
+foldbench_monomer,8b4u_A,eval-val,MarinFold exp232,0.8461538461538461
+foldbench_monomer,8b5w_A,eval-val,MarinFold exp232,0.1648648648648648
+foldbench_monomer,8b61_A,eval-val,MarinFold exp232,0.4858490566037736
+foldbench_monomer,8b6a_A,eval-val,MarinFold exp232,0.6564102564102564
+foldbench_monomer,8b6e_A,eval-val,MarinFold exp232,0.7727272727272727
+foldbench_monomer,8baq_A,eval-val,MarinFold exp232,0.5105263157894737
+foldbench_monomer,8bau_A,eval-val,MarinFold exp232,0.69377990430622
+foldbench_monomer,8bfy_A,eval-val,MarinFold exp232,0.6323119777158774
+foldbench_monomer,8bgb_A,eval-val,MarinFold exp232,0.8316831683168316
+foldbench_monomer,8bke_A,eval-val,MarinFold exp232,0.6740890688259109
+foldbench_monomer,8bsb_A,eval-val,MarinFold exp232,0.7565217391304347
+foldbench_monomer,8bux_A,eval-val,MarinFold exp232,0.075
+foldbench_monomer,8c4d_A,eval-val,MarinFold exp232,0.6593886462882096
+foldbench_monomer,7xlz_A,eval-val,MarinFold exp232,0.720754716981132
+foldbench_monomer,8c4y_A,eval-val,MarinFold exp232,0.7479892761394102
+foldbench_monomer,8cba_A,eval-val,MarinFold exp232,0.273469387755102
+foldbench_monomer,8ci9_A,eval-val,MarinFold exp232,0.6320474777448071
+foldbench_monomer,8cih_A,eval-val,MarinFold exp232,0.379746835443038
+foldbench_monomer,8amo_A,eval-val,MarinFold exp232,0.7375690607734806
+foldbench_monomer,8cpk_A,eval-val,MarinFold exp232,0.7535410764872521
+foldbench_monomer,8cpn_A,eval-val,MarinFold exp232,0.4464285714285714
+foldbench_monomer,8d2z_A,eval-val,MarinFold exp232,0.7307692307692307
+foldbench_monomer,8daj_A,eval-val,MarinFold exp232,0.6923076923076923
+foldbench_monomer,8dez_A,eval-val,MarinFold exp232,0.3296703296703296
+foldbench_monomer,8dge_A,eval-val,MarinFold exp232,0.5579868708971554
+foldbench_monomer,8dhj_A,eval-val,MarinFold exp232,0.7677902621722846
+foldbench_monomer,8dmu_A,eval-val,MarinFold exp232,0.1576182136602451
+foldbench_monomer,8dp9_A,eval-val,MarinFold exp232,0.7054794520547946
+foldbench_monomer,8dqd_A,eval-val,MarinFold exp232,0.7518987341772152
+foldbench_monomer,8dx0_A,eval-val,MarinFold exp232,0.8074074074074075
+foldbench_monomer,8e0r_A,eval-val,MarinFold exp232,0.2358870967741935
+foldbench_monomer,8e5h_A,eval-val,MarinFold exp232,0.6104651162790697
+foldbench_monomer,8eb9_A,eval-val,MarinFold exp232,0.2253521126760563
+foldbench_monomer,8ec3_A,eval-val,MarinFold exp232,0.3095238095238095
+foldbench_monomer,8eo5_A,eval-val,MarinFold exp232,0.8102766798418972

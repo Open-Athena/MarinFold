@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Natural FoldBench \u00b7 eval-val (97). Identical proteins for all predictors; 10,000 bootstrap resamples. The KNN uses the native decontaminated corpus and does not index redesigns."
+}

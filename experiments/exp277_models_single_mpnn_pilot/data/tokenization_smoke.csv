@@ -1,0 +1,3 @@
+corpus,documents,tokens,cache_build_seconds,fresh_tokenization_exact_match,iris_job
+mpnn-afdb,160000,21584525,105.3,true,/bizon/exp277-prepare-smoke-a04
+mpnn-esm,39180,40616645,119.4,true,/bizon/exp277-prepare-smoke-a04

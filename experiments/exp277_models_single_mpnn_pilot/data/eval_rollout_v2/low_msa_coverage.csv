@@ -1,0 +1,4 @@
+cut,n_available,n_frozen,mean,ci_low,ci_high,note
+natural,11,16,0.30379066545532296,0.2049974512270756,0.4227398115830365,Partial coverage: eval-test was not scored
+natural_foldbench,0,5,,,,Partial coverage: eval-test was not scored
+designs,26,26,0.6010147628502601,0.520490130643705,0.6798470059790214,Complete frozen membership

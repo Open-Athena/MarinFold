@@ -1,0 +1,2 @@
+checked_at,wandb_run,global_step,train_loss,step_seconds,tokens_per_second,iris_job
+2026-09-10T14:06:54Z,contacts-v1-exp277-m2-p06-full-epoch-1.5B,65,5.9044294357299805,0.858146287035197,1221908.2175636012,/bizon/exp277-train-a02
