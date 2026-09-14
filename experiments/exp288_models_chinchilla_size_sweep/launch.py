@@ -32,15 +32,22 @@ def main() -> None:
     project = Path(__file__).resolve().parent
     credentials = configparser.ConfigParser()
     credentials.read(Path.home() / ".aws/credentials")
-    wandb = netrc.netrc().authenticators("api.wandb.ai")
-    if wandb is None:
-        raise ValueError("Missing W&B credentials")
+    wandb_api_key = os.environ.get("WANDB_API_KEY")
+    if wandb_api_key is None:
+        try:
+            wandb = netrc.netrc().authenticators("api.wandb.ai")
+        except FileNotFoundError:
+            wandb = None
+        if wandb is not None:
+            wandb_api_key = wandb[2]
+    if wandb_api_key is None:
+        raise ValueError("Missing W&B credentials; source ~/.config/marinfold/wandb.env")
     nodes = args.nodes or (TRIALS[args.trial].nodes if args.trial else 1)
     env = {
         "MARIN_PREFIX": PREFIX,
         "WANDB_ENTITY": "open-athena",
         "WANDB_PROJECT": "MarinFold",
-        "WANDB_API_KEY": wandb[2],
+        "WANDB_API_KEY": wandb_api_key,
         "NODES": str(nodes),
         "PYTHONPATH": ".",
         "GIT_COMMIT": subprocess.check_output(
