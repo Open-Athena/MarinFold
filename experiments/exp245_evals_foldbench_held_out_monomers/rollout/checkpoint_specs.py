@@ -19,13 +19,15 @@ pair and ``exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2`` for the
 cooldown -- so all three are verified in place against the same manifests those
 runs verified them against. ``test_rollout.py`` asserts the copies still match.
 
-No checkpoint is copied anywhere: every one is read from its existing CoreWeave
-S3 location by jobs running in the same region.
+The original exp245/decontam suites read every checkpoint from its existing
+CoreWeave S3 location. Later suites may stage an immutable HF export into the
+run's CoreWeave input prefix when no pre-existing S3 path is pinned.
 """
 
 from dataclasses import dataclass
 
 MARINFOLD_REVISION = "d1bea417a64cc042ad931422200c3edeb873f2e0"
+EXP157_MARINFOLD_REVISION = "main"
 MARIN_PREFIX = "s3://marin-us-east-02a/marin"
 S3_ROOT = (
     f"{MARIN_PREFIX}/protein-structure/MarinFold/"
@@ -88,6 +90,8 @@ class Checkpoint:
     train_loss: float | None = None
     eval_loss: float | None = None
     accepted_unfinished_rollouts: int = 0
+    wandb_url: str | None = None
+    marinfold_revision: str = MARINFOLD_REVISION
 
     @property
     def hf_subfolder(self) -> str:
@@ -207,12 +211,169 @@ COOLDOWN_CHECKPOINT = Checkpoint(
     eval_loss=2.9396727085113525,
 )
 
+def exp157_files(weight_etags: tuple[str, str], index_etag: str) -> tuple[HfFile, ...]:
+    """Return the six-file exp157 final HF-export manifest."""
+
+    return (
+        HfFile("config.json", 1_726, "09ffdb6012707caf6b8d9c07583ef014", "s3-etag"),
+        HfFile(
+            "model-00001-of-00002.safetensors",
+            4_956_179_184,
+            weight_etags[0],
+            "s3-etag",
+        ),
+        HfFile(
+            "model-00002-of-00002.safetensors",
+            929_348_384 if weight_etags[1] != "802bcacbd568b6776cf5c294345f049e-18" else 912_964_384,
+            weight_etags[1],
+            "s3-etag",
+        ),
+        HfFile("model.safetensors.index.json", 20_880, index_etag, "s3-etag"),
+        HfFile("tokenizer.json", 64_407, "c4b3a16978e30eb150cca4fd8934b6ae", "s3-etag"),
+        HfFile("tokenizer_config.json", 296, "5acd13b50d727187034880bd78bcb928", "s3-etag"),
+    )
+
+
+EXP157_S3_ROOT = "s3://marin-us-east-02a/MarinFold/exp157_fixed_position_embeddings/checkpoints"
+
+EXP157_FIXED_CONTROL = Checkpoint(
+    label="exp157_fixed_control_step71359",
+    job_label="e157fix",
+    run_name="exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-fixed-position-controlmatch-e16-r3-east02-h100x8",
+    step=71_359,
+    hf_repo_id=None,
+    hf_revision=None,
+    checkpoint_files=exp157_files(
+        ("1b2fe782e6fc6a67f80aa1a965a75e77-95", "802bcacbd568b6776cf5c294345f049e-18"),
+        "f0a76b8a78b6aed1876ca50357813055",
+    ),
+    weight_shard_digests=(
+        "1b2fe782e6fc6a67f80aa1a965a75e77-95",
+        "802bcacbd568b6776cf5c294345f049e-18",
+    ),
+    source_dtype="float32",
+    coreweave_uri=f"{EXP157_S3_ROOT}/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-fixed-position-controlmatch-e16-r3-east02-h100x8/hf/step-71359",
+    train_loss=3.031308174133301,
+    eval_loss=3.072827100753784,
+    marinfold_revision=EXP157_MARINFOLD_REVISION,
+)
+
+EXP157_ROPE_DELTA = Checkpoint(
+    label="exp157_rope_delta_step71359",
+    job_label="e157rd",
+    run_name="exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8",
+    step=71_359,
+    hf_repo_id=None,
+    hf_revision=None,
+    checkpoint_files=exp157_files(
+        ("79cc21bf321742e16efb9365c53b199b-95", "f61a2059b4a69726b7adaa240a67e21f-18"),
+        "8f0e0f0db8ad2bcf017530b9535adf76",
+    ),
+    weight_shard_digests=(
+        "79cc21bf321742e16efb9365c53b199b-95",
+        "f61a2059b4a69726b7adaa240a67e21f-18",
+    ),
+    source_dtype="float32",
+    coreweave_uri=f"{EXP157_S3_ROOT}/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8/hf/step-71359",
+    train_loss=3.017045497894287,
+    eval_loss=3.065421342849731,
+    marinfold_revision=EXP157_MARINFOLD_REVISION,
+)
+
+EXP117_VANILLA = Checkpoint(
+    label="exp117_vanilla_step35679",
+    job_label="e117van",
+    run_name="prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4",
+    step=35_679,
+    hf_repo_id="open-athena/marinfold-exp117",
+    hf_revision="main",
+    checkpoint_files=(
+        HfFile(
+            "config.json",
+            1_557,
+            "e17a7f2ae8b396a707784940570a4908c359e6fa",
+            "git-sha1",
+        ),
+        HfFile(
+            "model-00001-of-00002.safetensors",
+            4_979_485_528,
+            "fbd7f3521855c14ffe3d2e94aaba8d600dc5092f",
+            "git-sha1",
+        ),
+        HfFile(
+            "model-00002-of-00002.safetensors",
+            906_042_048,
+            "42a3c1740ee869992c513d855bc5ba37de6a3d7e",
+            "git-sha1",
+        ),
+        HfFile(
+            "model.safetensors.index.json",
+            20_882,
+            "9880be895e6d9c514b62ed263640d46f67d01a29",
+            "git-sha1",
+        ),
+        HfFile(
+            "tokenizer.json",
+            64_407,
+            "8b40b35c6dca9a4d0090b975a007599eabf72eff",
+            "git-sha1",
+        ),
+        HfFile(
+            "tokenizer_config.json",
+            290,
+            "e242116d9a12a666749ec722845b6d012250ea94",
+            "git-sha1",
+        ),
+    ),
+    weight_shard_digests=(
+        "fbd7f3521855c14ffe3d2e94aaba8d600dc5092f",
+        "42a3c1740ee869992c513d855bc5ba37de6a3d7e",
+    ),
+    source_dtype="float32",
+    coreweave_uri="",
+    train_loss=2.640476942062378,
+    eval_loss=2.7037086486816406,
+    wandb_url=(
+        "https://wandb.ai/eric-czech/marin/runs/"
+        "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4"
+    ),
+)
+
+EXP157_ROPE_DELTA_L2 = Checkpoint(
+    label="exp157_rope_delta_l2_1e3_step71359",
+    job_label="e157l2",
+    run_name="exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-l21em3-controlmatch-r4-east08-gb200x4n8",
+    step=71_359,
+    hf_repo_id=None,
+    hf_revision=None,
+    checkpoint_files=exp157_files(
+        ("570ff4f845e841d47eaef1fc09c71cd7-95", "124c3e67c7a44a01c772ab220746dcff-18"),
+        "8f0e0f0db8ad2bcf017530b9535adf76",
+    ),
+    weight_shard_digests=(
+        "570ff4f845e841d47eaef1fc09c71cd7-95",
+        "124c3e67c7a44a01c772ab220746dcff-18",
+    ),
+    source_dtype="float32",
+    coreweave_uri=f"{EXP157_S3_ROOT}/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-l21em3-controlmatch-r4-east08-gb200x4n8/hf/step-71359",
+    train_loss=3.1493935585021973,
+    eval_loss=3.177117109298706,
+    marinfold_revision=EXP157_MARINFOLD_REVISION,
+)
+
 CHECKPOINTS = (M2_P06_CHECKPOINT, M1_P02_CHECKPOINT, COOLDOWN_CHECKPOINT)
+EXP157_ROPE_CHECKPOINTS = (EXP157_FIXED_CONTROL, EXP157_ROPE_DELTA, EXP157_ROPE_DELTA_L2)
+EXP117_VANILLA_CHECKPOINTS = (EXP117_VANILLA,)
 CHECKPOINT_SUITES = {
     "exp245": CHECKPOINTS,
     # The two decontaminated checkpoints alone, for a rerun that does not need
     # the contaminated reference scored again.
     "decontam": (M2_P06_CHECKPOINT, M1_P02_CHECKPOINT),
+    # exp157's position-embedding comparison: fixed/RoPE-only control,
+    # learned RoPE delta, and learned RoPE delta with lambda=1e-3 L2 prior.
+    "exp157-rope": EXP157_ROPE_CHECKPOINTS,
+    # The true vanilla no-RoPE learned-position-token baseline for exp157.
+    "exp117-vanilla": EXP117_VANILLA_CHECKPOINTS,
 }
 
 
@@ -240,5 +401,6 @@ def model_s3_uri(run_id: str, checkpoint: Checkpoint) -> str:
 def checkpoint_model_uri(run_id: str, checkpoint: Checkpoint) -> str:
     """Return the pre-existing CoreWeave checkpoint used by this evaluation."""
 
-    del run_id
-    return checkpoint.coreweave_uri
+    if checkpoint.coreweave_uri:
+        return checkpoint.coreweave_uri
+    return model_s3_uri(run_id, checkpoint)

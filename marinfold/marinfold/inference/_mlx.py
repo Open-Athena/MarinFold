@@ -37,7 +37,8 @@ import numpy as np
 from mlx_lm import load as mlx_load
 from mlx_lm.models.cache import KVCache, make_prompt_cache
 
-from marinfold.inference._tokenizer import load_tokenizer, model_source_path
+from marinfold.inference._model_source import model_source_path
+from marinfold.inference._tokenizer import load_tokenizer
 
 
 class MlxBackend:
@@ -54,13 +55,22 @@ class MlxBackend:
             Apple Silicon machine for a 1B model.
     """
 
-    def __init__(self, model_path: Path, *, tail_batch_size: int = 64):
+    def __init__(
+        self,
+        model_path: Path,
+        *,
+        tail_batch_size: int = 64,
+        fixed_residue_position_embeddings: str | None = None,
+    ):
         if tail_batch_size < 1:
             raise ValueError(
                 f"tail_batch_size must be >= 1; got {tail_batch_size}."
             )
         self._tail_batch_size = tail_batch_size
-        source_path = model_source_path(model_path)
+        source_path = model_source_path(
+            model_path,
+            fixed_residue_position_embeddings=fixed_residue_position_embeddings,
+        )
         self._tokenizer = load_tokenizer(Path(source_path))
         # mlx_lm.load always loads both the model and its tokenizer from one
         # directory. The source-path helper supplies a symlink overlay when
