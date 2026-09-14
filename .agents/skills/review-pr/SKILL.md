@@ -18,9 +18,9 @@ Follow these steps precisely:
    - The PR is closed
    - The PR is a draft
    - The PR does not need code review (e.g. a dependabot bump, a trivial obviously-correct change)
-   - Claude has already commented on this PR (check `gh pr view <PR> --comments`) AND a re-review was not explicitly requested. When a maintainer explicitly requests a re-review, always proceed even if a prior review exists.
+   - Claude has already reviewed the PR's current head commit AND a re-review was not explicitly requested. Get the head SHA with `gh pr view <PR> --json headRefOid` and look in `gh pr view <PR> --comments` for a `🤖 Code review` comment by `claude` whose `Reviewed commit:` line names that exact SHA. Nothing else counts as a prior review — not a review of an earlier commit, not the workflow's progress comment, not other Claude comments — so a PR pushed to since its last review gets a fresh one. When a maintainer explicitly requests a re-review, always proceed even if this commit has been reviewed.
 
-   If any condition is true, stop. Note: still review agent-authored PRs (`claude/*` and `codex/*` branches, the `agent-generated` label).
+   The agent also returns the head SHA; use that one SHA for the rest of the review. If any condition is true, stop. Note: still review agent-authored PRs (`claude/*` and `codex/*` branches, the `agent-generated` label).
 
 2. Launch a haiku agent to return file paths (not contents) for all relevant guidance files:
    - The root `AGENTS.md` (MarinFold has no `CLAUDE.md`)
@@ -90,7 +90,7 @@ Follow these steps precisely:
 
    If `--comment` IS provided and step 3 found PR-description problems, post **one** top-level comment with `gh pr comment` (prefixed `🤖`, not inline) naming the specific problems and the concrete fix. This is independent of the code review — post it whether or not code issues were found, but skip it when the description is fine.
 
-   If `--comment` IS provided and NO code issues were found, post the no-issues summary comment (format below) using `gh pr comment` and stop.
+   If `--comment` IS provided and NO code issues were found, post the code-review comment (format below) using `gh pr comment` and stop.
 
    If `--comment` IS provided and code issues were found, continue to step 8.
 
@@ -104,6 +104,8 @@ Follow these steps precisely:
    - Never post a committable suggestion UNLESS committing the suggestion fixes the issue entirely. If follow-up steps are required, do not leave a committable suggestion.
 
    **IMPORTANT: Only post ONE comment per unique issue. Do not post duplicate comments.**
+
+10. Post the code-review comment (format below) using `gh pr comment`, with the issues-found line. Post it after the inline comments: it is the record step 1 matches, so a run that dies partway leaves none and the commit is reviewed again next time.
 
 Use this list when evaluating issues in steps 4 and 5 (these are false positives, do NOT flag):
 
@@ -119,7 +121,7 @@ Notes:
 - Use the gh CLI to interact with GitHub (fetch pull requests, create comments). Do not use web fetch.
 - Create a todo list before starting.
 - You must cite and link each issue in inline comments (e.g. when referring to AGENTS.md, include a permalink to it, ideally with line numbers).
-- If no issues are found and `--comment` is provided, post a comment with exactly this format:
+- With `--comment`, every review ends with one code-review comment in exactly this format. Step 1 matches the `Reviewed commit:` line, so it must carry the full 40-character head SHA from step 1:
 
 ---
 
@@ -127,7 +129,11 @@ Notes:
 
 No issues found. Checked for bugs and AGENTS.md compliance.
 
+Reviewed commit: `<full-40-char-sha>`
+
 ---
+
+  When issues were found, replace the middle line with `Found <N> issues; see the inline comments.`
 
 - When linking to code in inline comments, follow this format precisely, otherwise the Markdown preview won't render: https://github.com/Open-Athena/MarinFold/blob/<full-40-char-sha>/AGENTS.md#L10-L15
   - Requires the full git sha. Commands like `https://github.com/owner/repo/blob/$(git rev-parse HEAD)/foo/bar` will not work, since your comment is rendered directly as Markdown.
