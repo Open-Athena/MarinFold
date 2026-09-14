@@ -4,6 +4,7 @@ import argparse
 import configparser
 import json
 import netrc
+import os
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,7 @@ import tempfile
 from pathlib import Path
 
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot"
+DEFAULT_IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
 
 
 def main() -> None:
@@ -28,6 +30,7 @@ def main() -> None:
     )
     parser.add_argument("--nodes", type=int, default=16)
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     project = Path(__file__).resolve().parent
@@ -83,12 +86,7 @@ def main() -> None:
     # only to the child process,
     # never written into source files, command transcripts, or state artifacts.
     command = [
-        "uv",
-        "run",
-        "--project",
-        str(project),
-        "--frozen",
-        "iris",
+        args.iris_bin,
         "--cluster",
         "cw-us-east-02a",
         "job",
