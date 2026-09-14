@@ -27,7 +27,7 @@ run's CoreWeave input prefix when no pre-existing S3 path is pinned.
 from dataclasses import dataclass
 
 MARINFOLD_REVISION = "d1bea417a64cc042ad931422200c3edeb873f2e0"
-EXP157_MARINFOLD_REVISION = "main"
+EXP157_MARINFOLD_REVISION = "5b1d2f7c0dce5e85d57ecaaa74dd3bbcf5c3ac8d"
 MARIN_PREFIX = "s3://marin-us-east-02a/marin"
 S3_ROOT = (
     f"{MARIN_PREFIX}/protein-structure/MarinFold/"
