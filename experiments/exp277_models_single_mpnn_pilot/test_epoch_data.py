@@ -1,6 +1,7 @@
 """Exercise finite coverage across unequal sources and an incomplete block."""
 
 import asyncio
+from dataclasses import fields
 
 import jax
 import jax.numpy as jnp
@@ -16,6 +17,7 @@ from levanter.schedule import BatchSchedule
 from experiments.exp277_models_single_mpnn_pilot.config import TOKENIZER
 from experiments.exp277_models_single_mpnn_pilot.epoch_data import (
     FULL_CORPUS,
+    ContinuationEpochDataConfig,
     OneEpochDataConfig,
 )
 
@@ -68,3 +70,37 @@ def test_one_epoch_rejects_unexpected_corpus_size() -> None:
         synthetic_config(expected_examples=51).train_set(
             Axis("position", 10), BatchSchedule(128), key=jax.random.PRNGKey(1729)
         )
+
+
+def test_continuation_epoch_remaps_absolute_offset_and_reshuffles() -> None:
+    base = synthetic_config(expected_examples=50)
+    values = {
+        field.name: getattr(base, field.name)
+        for field in fields(base)
+        if field.name
+        not in {"augmentation_num_train_steps", "expected_packed_examples"}
+    }
+    config = ContinuationEpochDataConfig(
+        **values,
+        augmentation_num_train_steps=1_000_000_000,
+        expected_packed_examples=50,
+        start_step=3,
+        source_augmentation_step=40,
+    )
+    schedule = BatchSchedule(4)
+    first = config.train_set(
+        Axis("position", 10), schedule, key=jax.random.PRNGKey(1729)
+    )
+    second = config.train_set(
+        Axis("position", 10), schedule, key=jax.random.PRNGKey(1730)
+    )
+    assert asyncio.run(first.async_len()) == 62
+    with pytest.raises(IndexError, match="starts at offset 12"):
+        asyncio.run(first.get_batch([11]))
+    first_examples = asyncio.run(first.get_batch(list(range(12, 62))))
+    second_examples = asyncio.run(second.get_batch(list(range(12, 62))))
+    first_ids = [int(np.asarray(example.tokens.array)[7]) for example in first_examples]
+    second_ids = [int(np.asarray(example.tokens.array)[7]) for example in second_examples]
+    assert sorted(first_ids) == list(range(500, 550))
+    assert sorted(second_ids) == list(range(500, 550))
+    assert first_ids != second_ids

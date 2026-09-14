@@ -16,7 +16,15 @@ PREFIX = "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot"
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "phase", choices=("prepare-smoke", "prepare", "train-smoke", "train")
+        "phase",
+        choices=(
+            "prepare-smoke",
+            "prepare",
+            "train-smoke",
+            "train",
+            "continue-smoke",
+            "continue",
+        ),
     )
     parser.add_argument("--nodes", type=int, default=16)
     parser.add_argument("--attempt", type=int, default=1)
@@ -58,9 +66,19 @@ def main() -> None:
         entry = ["python", "-m", module + "prepare"]
         if args.phase == "prepare-smoke":
             entry.append("--smoke")
-    else:
+    elif args.phase.startswith("train"):
         env["SMOKE"] = "1" if args.phase == "train-smoke" else "0"
         entry = ["python", "-m", module + "train", "--version", "2026.09.09.1", "--run"]
+    else:
+        env["SMOKE"] = "1" if args.phase == "continue-smoke" else "0"
+        entry = [
+            "python",
+            "-m",
+            module + "continue_train",
+            "--version",
+            "2026.09.09.1",
+            "--run",
+        ]
     # The CLI and workers use the same committed lock. Credentials are passed
     # only to the child process,
     # never written into source files, command transcripts, or state artifacts.

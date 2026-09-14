@@ -52,6 +52,21 @@ Full-epoch training completed on 2026-09-13 at 14:53 UTC. [W&B](https://wandb.ai
 
 The permanent native checkpoint and HF export both completed at `step-266344`. The 5.89 GB HF bundle contains two safetensor shards, their index, model config, `tokenizer.json`, and `tokenizer_config.json`. Recovery job `/bizon/exp277-train-a03` and child `/bizon/exp277-train-a03/exp277-train-78333950` both succeeded at batch priority with all 16 workers terminal-successful. The first production job had failed near step 73,702 during a distributed checkpoint barrier; a03 restored step 72,744 and completed the epoch unchanged. Iris also recovered two worker preemptions automatically. End-to-end wall time for the full-corpus run was just under 73 hours, including the recovery, full validations, checkpointing, and final export.
 
+## Full-state continuation
+
+The second training stage restores the complete trainer state from permanent
+checkpoint `step-213072`, the last save before the first epoch's cooldown began
+at step 213076. That 99-object, 17,657,133,747-byte source is at
+`s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/checkpoints/step-213072/`.
+The new run uses data seed 1 instead of 0 and maps the restored absolute trainer
+step onto the start of a fresh finite permutation, so it visits all 34,092,146
+packed examples exactly once in a different order. It adds 266,345 updates,
+ending at absolute step 479,418 with final checkpoint `step-479417`. The added
+epoch starts at the restored peak learning rate, remains stable for 80%, and
+linearly cools to 0.1x over its final 20%. The amino-acid augmentation schedule
+continues from the source step and remains at full rate after completing its
+original ramp.
+
 ## Conclusion
 
 The requested single-model, full-corpus training run completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. The batch-priority contact evaluation is running as [`/bizon/exp277-eval-v2-01-r01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r01), scoring legacy 554, eval-val, and eval-denovo while leaving eval-test unread. Its predecessor timed out after six hours in the capacity queue without running inference; the replacement allows 48 hours and is waiting at the one-H100 smoke gate after validating all 670 inputs. These results are still required before this experiment can answer whether ProteinMPNN redesign improves contacts-v1 prediction relative to the native-only exp232 winner.
