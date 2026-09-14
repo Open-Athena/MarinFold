@@ -3,7 +3,28 @@
 # is omitted) to the HF URL below, downloads it, and dispatches to the first
 # `document_structures` impl the entry lists. See registry.py.
 
-# Current default: the best DECONTAMINATED model — exp232 (issue #232) m2-p06
+# Current default: exp277, one complete epoch over native #225 documents and
+# ProteinMPNN-redesigned documents from #266. Qwen3 1.47B, m2-p06 settings,
+# 232,090,905 documents / 248.584B raw tokens; 266,345 optimizer updates.
+# R-precision all / long: legacy 554 0.62009 / 0.57704; eval-val (97)
+# 0.55375 / 0.53802; eval-denovo (19) 0.69582 / 0.67603. Compared with the
+# previous exp232 default, legacy and designs improve; eval-val is a tie
+# under the 0.005 threshold. Eval-test has not been scored for this model.
+# Native data and redesign source structures derive from the decontaminated
+# corpus; this is one seed with different training exposure, not an isolated
+# estimate of the redesign effect. The contaminated exp199 cooldown still
+# scores higher on legacy 554. Full results: experiments/exp277_.../README.md.
+# Published with identical weight bytes, co-located tokenizer, and the trained
+# RoPE restated for Transformers 4.x. publication_manifest.json records source
+# ETags and source/published SHA256 for every file.
+- nickname: contacts-v1-exp277-m2-p06-full-epoch-1.5B
+  default: true
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344
+  wandb_url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B
+  document_structures:
+    - contacts-v1
+
+# Previous default: the native-only DECONTAMINATED model — exp232 (issue #232) m2-p06
 # trained on past the sweep. #232's TRC continuation restored the sweep run's
 # full Levanter state at step 333,960 — model, optimizer, RNG, data position —
 # lowered the peak LR to 5% of the source peak, held it, then followed the
@@ -17,13 +38,13 @@
 # against 0.5203. 0.6098 on eval-denovo. #232 deliberately did not score it on
 # eval-test, which has a read budget.
 #
-# It is the default because it is the checkpoint whose training corpora were
+# It was the default because its training corpora were
 # filtered against the eval proteins: every sequence matching any of the 554
 # eval proteins or any of FoldBench's 1,940 chains at >=30%
 # identity over >=50% of the shorter sequence was removed from both arms
 # (#225). #213 showed our eval set is 58% homologous to the *undecontaminated*
 # #199 training set, so this is the checkpoint that objection does not apply
-# to — and it is the one #250's figures and the README are drawn from. The
+# to. It is the checkpoint used by the historical #250 and Helico figures. The
 # contaminated `-cooldown-` entry below still scores higher on the legacy 554
 # (0.631 against 0.605); the gap is not all leakage, since #245 measured the
 # eval-val -> eval-test drop and found no extra drop for the contaminated
@@ -40,7 +61,6 @@
 # statement transformers 4.x reads. Weights are float32 on disk; load as
 # bfloat16.
 - nickname: contacts-v1-exp232-m2-p06-train-1.5B
-  default: true
   url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000
   wandb_url: https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1
   document_structures:
@@ -123,7 +143,7 @@
   wandb_url: https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-s02-m1-p06-aug
   document_structures:
     - contacts-v1
-# The decontaminated sweep final the default continues from: exp232 (issue
+# The decontaminated sweep final the previous exp232 default continues from: exp232 (issue
 # #232) m2-p06, the better of the two finals PR #244 selected. Qwen3 1.47B,
 # the #199 recipe exactly — 50/50 AFDB+ESM-Atlas mixture, amino-acid
 # augmentation, 145,199 steps — but trained FROM SCRATCH on #225's corpora,
@@ -134,8 +154,8 @@
 #
 # R-precision 0.5916 (all) / 0.5418 (long) on the 554-protein set, and 0.520 /
 # 0.538 / 0.591 on #245's eval-val / eval-test / eval-denovo. Its sibling
-# m1-p02 scores 0.5789 and is not published. The default entry at the top of
-# this file is this run trained further, and scores above it everywhere; reach
+# m1-p02 scores 0.5789 and is not published. The exp232 training entry
+# is this run trained further, and scores above it everywhere; reach
 # for this one only to reproduce the #244/#245 numbers.
 #
 # Same republication as the others: copied from the CoreWeave export by

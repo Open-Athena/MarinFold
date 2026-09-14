@@ -22,13 +22,8 @@ DESTINATION = (
     "hf://buckets/open-athena/MarinFold/data/exp277-models-single-mpnn-pilot/"
     "evals/rollout-v2/2026-09-13/v2-01/results"
 )
-PUBLISHED = (
-    "aggregate_metrics.csv",
-    "contact_precision_all.csv",
-    "exp232_comparison.csv",
-    "run_manifest.json",
-    "subset_aggregate_metrics.csv",
-    "timings.csv",
+PUBLISHED = tuple(
+    sorted(path.name for path in SOURCE.iterdir() if path.suffix in {".csv", ".json"})
 )
 
 
@@ -63,6 +58,14 @@ def main() -> None:
         if not source.exists():
             raise FileNotFoundError(source)
         target = f"{DESTINATION}/{name}"
+        print(f"{source} -> {target}")
+        if not args.dry_run:
+            subprocess.run([binary, "buckets", "cp", str(source), target], check=True)
+
+    for source in sorted((HERE / "plots").iterdir()):
+        if source.suffix not in {".png", ".svg", ".pdf", ".json"}:
+            continue
+        target = f"{DESTINATION.rsplit('/', 1)[0]}/plots/{source.name}"
         print(f"{source} -> {target}")
         if not args.dry_run:
             subprocess.run([binary, "buckets", "cp", str(source), target], check=True)

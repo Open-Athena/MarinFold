@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Top7 (1qys_A, 92-residue benchmark sequence). Existing exp277 step-266344 rollouts; sequence and contact ground truth from exp89. No additional predictor run."
+}

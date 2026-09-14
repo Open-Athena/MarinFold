@@ -18,3 +18,6 @@ Restore the complete trainer state from permanent checkpoint step 213,072, immed
 
 ## Interpretation
 The first-epoch contact evaluation is complete: 670 units, 67,000 requested rollouts, 66,999 usable, and one explicitly accounted capped rollout. Compared with the native-only decontaminated exp232 winner, exp277 R-precision improves by +0.01503 / +0.02202 on legacy all / long contacts, is tied on eval-val at +0.00204 / +0.00211 under the 0.005 rule, and improves by +0.08599 / +0.10375 on eval-denovo. This gives no material natural eval-val gain but a strong designed-protein signal. The single seed and different training exposure limit causal attribution. A reshuffled second epoch is queued from the last pre-cooldown checkpoint.
+
+## New default and published artifacts
+The first-epoch step-266344 checkpoint is the new default, contacts-v1-exp277-m2-p06-full-epoch-1.5B. Its public HF copy includes the original float32 weight bytes, tokenizer, corrected Transformers 4.x metadata, and a publication manifest. The previous exp232 model remains registered. New plots compare identical eval-val and eval-denovo proteins and show paired gains over exp232, the saved Top7 contact map, and training validation loss. Helico structure metrics still belong to exp232.

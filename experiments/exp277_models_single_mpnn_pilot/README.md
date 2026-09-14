@@ -62,6 +62,47 @@ The first-epoch contact evaluation completed as [`/bizon/exp277-eval-v2-01-r04-r
 
 The eval-val delta is below the predeclared 0.005 tie threshold. Legacy and de novo improve, with a particularly large designed-protein gain. Exact tables, per-input timings, the run manifest, and per-protein precision are committed under `data/eval_rollout_v2/` and published to the public MarinFold HF bucket under `data/exp277-models-single-mpnn-pilot/evals/rollout-v2/2026-09-13/v2-01/results/`. The full private working output, including 670 dense score matrices, remains at `s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-01/`.
 
+## Published default and figures
+
+The first-epoch checkpoint is registered as `contacts-v1-exp277-m2-p06-full-epoch-1.5B`
+and selected by default when `--model` is omitted. Its public HF export is at
+[step 266344](https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344).
+The previous exp232 nickname remains available. The export retains the weight
+bytes and tokenizer vocabulary, restates the trained RoPE for Transformers 4.x,
+and uses its supported fast-tokenizer class name. `publication_manifest.json`
+records source ETags and source/published SHA256 digests; `publish_checkpoint.py`
+reproduces the in-region CPU publication.
+
+![Natural eval-val contact accuracy](plots/rprecision_natural.png)
+![De novo contact accuracy](plots/rprecision_designed.png)
+![Paired comparison against exp232](plots/paired_comparison.png)
+![Top7 contacts](plots/top7_maps.png)
+![First-epoch validation loss](plots/validation_loss.png)
+
+`plot_results.py` reproduces these PNG/SVG figures from saved results; each PNG
+has a sidecar with its generating command. The charts compare the same 97
+natural eval-val proteins or 19 de novo proteins for every predictor. Error
+bars are percentile 95% intervals from 10,000 protein-bootstrap resamples
+(seed 277), and the paired charts resample per-protein differences. The legacy
+554 is used only for comparing MarinFold checkpoints. The KNN reference uses
+the native decontaminated corpus, not the redesigned sequences.
+
+The paired all-range gain over exp232 is +0.01503 [0.00779, 0.02243] on legacy
+554, +0.00204 [-0.00844, 0.01303] on eval-val, and +0.08599 [0.03976, 0.13916]
+on designs. These intervals describe variation across evaluation proteins;
+they do not include training-seed or repeated-rollout variation.
+
+The frozen low-MSA-depth cut has partial coverage because eval-test remains
+unread: 11/16 natural proteins score 0.30379, 0/5 FoldBench-only natural
+proteins are available, and all 26 low-depth designs score 0.60101. The 11-protein
+natural mean must not be compared directly with the old 16-protein mean.
+`data/eval_rollout_v2/low_msa_coverage.csv` records these denominators.
+
+The Top7 panel uses existing predictions for the 92-residue `denovo_pdb/1qys_A`
+benchmark unit, not the longer demonstration sequence in the CLI example.
+No new predictor was run for the figures. The README's historical Helico
+structure scores still refer to exp232; exp277 has no Helico/GDT-TS result yet.
+
 ## Full-state continuation
 
 The second training stage restores the complete trainer state from permanent

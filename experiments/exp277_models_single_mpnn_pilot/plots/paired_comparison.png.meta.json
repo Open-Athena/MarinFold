@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "All-range R-precision on identical (dataset, stem) units; paired mean differences with 95% protein-bootstrap intervals. Legacy is only for comparing MarinFold checkpoints."
+}
