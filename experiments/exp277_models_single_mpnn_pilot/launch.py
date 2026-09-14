@@ -88,9 +88,11 @@ def main() -> None:
     command = [
         args.iris_bin,
         "--cluster",
-        "cw-us-east-02a",
+        "marin",
         "job",
         "run",
+        "--target-cluster",
+        "cw-us-east-02a",
         "--priority",
         "batch",
         "--job-name",
