@@ -90,7 +90,10 @@ def publish() -> None:
         manifest["config_repair_sha256"] = digest_file(HERE / "model_config.py")
         with hub.open(f"{DEST}/publication_manifest.json", "w") as writer:
             json.dump(manifest, writer, indent=2)
-    print(f"COMPLETE https://huggingface.co/{DEST}/tree", flush=True)
+    print(
+        f"COMPLETE https://huggingface.co/buckets/open-athena/MarinFold/tree/{PREFIX}",
+        flush=True,
+    )
 
 
 def submit(attempt: int) -> None:

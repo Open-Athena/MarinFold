@@ -73,6 +73,15 @@ and uses its supported fast-tokenizer class name. `publication_manifest.json`
 records source ETags and source/published SHA256 digests; `publish_checkpoint.py`
 reproduces the in-region CPU publication.
 
+Publication completed on September 14 via Iris CPU job
+`/bizon/exp277-publish-step266344-a02`. Anonymous HTTP checks verified both
+weight-shard sizes and downloaded the config, tokenizer, index, and manifest.
+The small files match their recorded SHA256 digests; both weight-shard digests
+match the evaluated source in the publication manifest. Transformers 4.57.6
+loads the public config and tokenizer with vocabulary 2,845 and RoPE theta
+500,000. All 24 registry/config tests pass. The manifest is also committed as
+`data/publication_manifest.json`.
+
 ![Natural eval-val contact accuracy](plots/rprecision_natural.png)
 ![De novo contact accuracy](plots/rprecision_designed.png)
 ![Paired comparison against exp232](plots/paired_comparison.png)

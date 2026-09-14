@@ -61,7 +61,11 @@ def save(fig: plt.Figure, name: str, caption: str) -> None:
         args=[],
         dpi=180,
     )
-    fig.savefig(PLOTS / f"{name}.svg", bbox_inches="tight")
+    svg = PLOTS / f"{name}.svg"
+    fig.savefig(svg, bbox_inches="tight")
+    svg.write_text(
+        "".join(line.rstrip() + "\n" for line in svg.read_text().splitlines())
+    )
     plt.close(fig)
 
 
