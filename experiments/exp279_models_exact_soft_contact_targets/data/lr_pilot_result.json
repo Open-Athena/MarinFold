@@ -1,0 +1,38 @@
+{
+  "run_name": "exp279-soft-lr100-step14520-a01",
+  "source": {
+    "git_sha": "5e11b8a6847f79b00a572f5c9777a9394fd69ee9",
+    "code_sha256": "92652e92fb2a3b942bc99fa103e8965084635b0b2a79bd2536c629e06560bdf7",
+    "runtime_packages": {
+      "marin-levanter": "0.2.99.dev33617068238",
+      "marin-haliax": "0.2.99.dev33617068238",
+      "jax": "0.11.1",
+      "transformers": "5.12.1"
+    },
+    "uv_lock_sha256": "455900ccf5e87e9300bb9cf86c1168c16c95d32cd0c926069a51c3e0e850d503",
+    "reference_sha": "7a18dd5158e71b0db8d782be77cc4b9a6d59c8df",
+    "tokenizer": "eczech/contacts-v1-tokenizer-5d68a24a899f@80f4e411b957641e8c350b07bbe1e2c832697518"
+  },
+  "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-lr100-step14520-a01/step-14522",
+  "native_manifest_verified": true,
+  "resume_update": 14523,
+  "exports": {
+    "config.json": true,
+    "model.safetensors": true,
+    "tokenizer.json": true,
+    "tokenizer_config.json": true
+  },
+  "wandb_state": "finished",
+  "metrics": {
+    "contact_eval/loss": 4.433615207672119,
+    "eval/loss": 3.385615110397339,
+    "global_step": 14522,
+    "grad/clipped": 0,
+    "grad/norm/total": 0.13870936632156372,
+    "lr_trial/completed_updates": 2,
+    "lr_trial/progress": 0.00039999998989515007,
+    "optim/learning_rate": 0.0010000000474974513,
+    "throughput/total_tokens": 15228469248,
+    "train/loss": 3.26949143409729
+  }
+}

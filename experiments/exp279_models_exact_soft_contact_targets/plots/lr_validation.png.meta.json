@@ -1,0 +1,5 @@
+{
+  "script": "experiments/exp279_models_exact_soft_contact_targets/analysis/plot_lr_results.py",
+  "args": [],
+  "caption": "Ordinary one-hot validation CE, lower is better. Each panel uses a fixed evaluation set across the three branches. All start from the same full-state checkpoint; the control also includes its two-update pilot."
+}

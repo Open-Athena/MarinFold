@@ -1,0 +1,30 @@
+{
+  "run": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-s0-cw-h100x32-b02",
+  "state": "finished",
+  "checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-s0-cw-h100x32-b02/step-31",
+  "metadata": {
+    "step": 31,
+    "timestamp": "2026-09-09T21:52:30.498367",
+    "is_temporary": false
+  },
+  "hf_files": [
+    "config.json",
+    "generation_config.json",
+    "model.safetensors",
+    "tokenizer.json",
+    "tokenizer_config.json"
+  ],
+  "metrics": {
+    "eval/bpb": 0.7934017777442932,
+    "eval/loading_time": 0.2174511626362801,
+    "eval/loss": 6.367804050445557,
+    "eval/total_time": 56.20210037287325,
+    "eval/val/bpb": 0.7934017777442932,
+    "eval/val/loss": 6.367804050445557,
+    "global_step": 31,
+    "throughput/duration": 3.4644767558202147,
+    "throughput/mean_mfu": 13.013810951179575,
+    "throughput/tokens_per_second": 302665.04118938727,
+    "train/loss": 6.3658647537231445
+  }
+}

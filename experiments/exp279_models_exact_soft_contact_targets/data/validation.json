@@ -1,0 +1,85 @@
+{
+  "date": "2026-09-09",
+  "reference_recipe_sha": "7a18dd5158e71b0db8d782be77cc4b9a6d59c8df",
+  "cpu_tests": {
+    "passed": 53,
+    "accelerator_deselected": 1
+  },
+  "full_dimension_accelerator_test": {
+    "passed": 1,
+    "positions": 8192,
+    "hidden_dim": 2048,
+    "vocab_size": 2845,
+    "contacts": 1500,
+    "dtype": "bfloat16 inputs / float32 loss"
+  },
+  "two_virtual_cpu_device_trainer_tests": {
+    "passed": 3
+  },
+  "gpu_smokes": {
+    "device": "NVIDIA RTX A5000",
+    "training_steps_per_arm": 3,
+    "arms": [
+      "ce",
+      "soft"
+    ],
+    "native_checkpoint_step": 2,
+    "ordinary_hf_inference": "passed both arms",
+    "attention_backend": "VANILLA",
+    "runtime": "local-gpu / CUDA 12",
+    "stock_validation": "Both arms rerun after correcting flat-cache validation omission; finite validation CE logged"
+  },
+  "static_checks": [
+    "ruff",
+    "pyrefly (eleven production modules)",
+    "uv lock --check"
+  ],
+  "not_validated": [
+    "Independent decontamination audit or every production cache payload",
+    "Multi-host TPU runtime",
+    "Scientific accuracy comparison"
+  ],
+  "production_launch_tests": {
+    "scope": "Included in the 53 CPU tests: bundle provenance, TPU/GPU gang requests, actual inherited venv setup, phase boundaries, pilot schedule, pinned tokenizer loading and real validation cache reads"
+  },
+  "production_gpu_pilot": {
+    "run": "exp279-soft-s0-cw-h100x32-b01",
+    "updates": 32,
+    "gpus": 32,
+    "device": "H100 80GB",
+    "seconds_per_update": 3.49,
+    "nominal_tokens_per_second": 300487,
+    "validation": "Absent due to flat-cache configuration bug; not resumed for production",
+    "native_and_hf_checkpoint_step": 31
+  },
+  "validated_production_gpu_pilot": {
+    "run": "https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-s0-cw-h100x32-b02",
+    "state": "finished",
+    "checkpoint": "s3://marin-us-east-02a/MarinFold/exp279/checkpoints/exp279-soft-s0-cw-h100x32-b02/step-31",
+    "metadata": {
+      "step": 31,
+      "timestamp": "2026-09-09T21:52:30.498367",
+      "is_temporary": false
+    },
+    "hf_files": [
+      "config.json",
+      "generation_config.json",
+      "model.safetensors",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "metrics": {
+      "eval/bpb": 0.7934017777442932,
+      "eval/loading_time": 0.2174511626362801,
+      "eval/loss": 6.367804050445557,
+      "eval/total_time": 56.20210037287325,
+      "eval/val/bpb": 0.7934017777442932,
+      "eval/val/loss": 6.367804050445557,
+      "global_step": 31,
+      "throughput/duration": 3.4644767558202147,
+      "throughput/mean_mfu": 13.013810951179575,
+      "throughput/tokens_per_second": 302665.04118938727,
+      "train/loss": 6.3658647537231445
+    }
+  }
+}

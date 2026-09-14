@@ -1,0 +1,16 @@
+{
+  "job_id": "/bizon/exp279-soft-production-cw-h100x32-a01",
+  "run_name": "exp279-soft-s0-cw-h100x32-b02",
+  "cluster": "cw-us-east-02a",
+  "nodes": 4,
+  "output": "s3://marin-us-east-02a/MarinFold/exp279",
+  "pilot_updates": null,
+  "manifest_file": "soft_pilot_cw_launch.json",
+  "verified_resume": {
+    "checkpoint_step": 31,
+    "first_resumed_update": 32,
+    "first_resumed_loss": 6.339089393615723,
+    "observed_at_utc": "2026-09-09T22:00:00Z",
+    "worker_job_id": "/bizon/exp279-soft-production-cw-h100x32-a01/exp279-soft-production-cw-h100x32-a01-base"
+  }
+}
