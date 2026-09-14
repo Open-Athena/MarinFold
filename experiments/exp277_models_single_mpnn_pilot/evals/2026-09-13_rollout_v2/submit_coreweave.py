@@ -41,6 +41,7 @@ def main() -> None:
         help="Optional suffix for a distinct Iris job that resumes the same run ID.",
     )
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
+    parser.add_argument("--target-cluster", default=TARGET_CLUSTER)
     parser.add_argument("--user", default="bizon")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -55,7 +56,7 @@ def main() -> None:
         "job",
         "run",
         "--target-cluster",
-        TARGET_CLUSTER,
+        args.target_cluster,
         "--priority",
         "batch",
         "--enable-extra-resources",
@@ -98,7 +99,7 @@ def main() -> None:
     if args.model_mirror_run_id:
         command.extend(["--model-mirror-run-id", args.model_mirror_run_id])
     print(
-        f"Submitting {job_name} to {TARGET_CLUSTER}; storage prefix {MARIN_PREFIX}; "
+        f"Submitting {job_name} to {args.target_cluster}; storage prefix {MARIN_PREFIX}; "
         f"suite {args.suite}; metric script sha256 {metric_sha256}"
     )
     if args.dry_run:
