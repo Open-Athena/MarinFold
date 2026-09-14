@@ -391,3 +391,48 @@ in this experiment's environment. The analysis scripts are outside the frozen
 training runtime source set and do not change the worker code hash.
 
 ![Matched learning-rate validation curves](plots/lr_validation.png)
+
+## Matched exp232 m2/p06 comparison (2026-09-14)
+
+The closest historical one-hot control is
+[`prot-exp232-cw-cv1-decontam-s02-m2-p06-aug`](https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug).
+It uses the same decontaminated AFDB/ESM caches and token-proportional mixture,
+validation cache, tokenizer revision, 1.47B Qwen3 architecture, model/data seed,
+context 8192, global batch 128, augmentation schedule, peak LR `0.001`, and weight
+decay `0.2` as the current soft-target
+[`exp279-soft-s0-cw-h100x32-b02`](https://wandb.ai/open-athena/MarinFold/runs/exp279-soft-s0-cw-h100x32-b02)
+run. The comparison uses ordinary one-hot `eval/loss` from both runs, joined on
+41 exact global steps through step **86,674** (90.884B nominal tokens).
+
+At the latest matched point, soft targets reach **3.076119** validation CE versus
+**3.083293** for exp232, a difference of **-0.007174 nats**. This is a 0.23%
+reduction in CE and about 0.72% lower perplexity. Soft targets are slightly worse
+at the first few evaluations, cross below the one-hot curve during training, and
+hold a roughly 0.007--0.008 CE advantage over the last four matched evaluations.
+The large advantage around step 21,140 narrows substantially, so the current
+evidence is positive but modest.
+
+The effective LR is matched throughout this observed window: both runs warm up
+through step 14,520 and then remain at `0.001` through step 116,160. After that,
+the original exp232 sweep run cools down while exp279 follows the winning model's
+long continuation schedule. Comparisons beyond step 116,160 must therefore use
+the exp232 continuation lineage, rather than treating the original sweep's final
+step 145,199 as schedule matched.
+
+This is not a fully paired causal control. Exp279 uses 32 H100s with per-device
+parallelism 1; exp232 was resliced across jobs and finished on 64 H100s with
+per-device parallelism 2. The implementations also come from different code
+revisions and represent the same caches differently in their data configs. Cache
+identities and declared seeds were checked, but initialization tensors and exact
+batch-by-batch order were not independently compared. The result is one seed and
+does not yet include contact R-precision, the experiment's primary success
+metric. Soft and one-hot training losses are intentionally not compared because
+their target entropy differs.
+
+The committed source table is `data/exp232_m2_p06_matched_validation.csv`.
+Refresh it with
+`python -m experiments.exp279_models_exact_soft_contact_targets.analysis.collect_exp232_comparison`
+and regenerate the plot with
+`python -m experiments.exp279_models_exact_soft_contact_targets.analysis.plot_exp232_comparison`.
+
+![Matched exp232 m2/p06 validation losses](plots/exp232_m2_p06_matched_validation.png)

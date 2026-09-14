@@ -52,3 +52,13 @@ Keep 0.001: it leads both metrics at every shared evaluation point.
 This is one seed and an abrupt mid-training LR change; no contact accuracy yet.
 Final native manifests and HF/tokenizer file presence verified, not full reloads.
 Soft-vs-one-hot success still needs an appropriately tuned CE control.
+
+## Historical one-hot comparison
+
+Compare ordinary validation CE against exp232 m2/p06 at 41 exact shared steps.
+The runs share the decontaminated mixture, validation data, tokenizer, model scale,
+seed, context, global batch, augmentation, weight decay, and effective LR so far.
+At step 86,674, soft CE is 3.076119 versus 3.083293: delta -0.007174 nats,
+or about 0.72% lower perplexity. The last four deltas are consistently negative.
+This is modest positive evidence, with different code revisions and GPU geometry.
+Contact R-precision and a fresh fully paired one-hot arm remain unmeasured.

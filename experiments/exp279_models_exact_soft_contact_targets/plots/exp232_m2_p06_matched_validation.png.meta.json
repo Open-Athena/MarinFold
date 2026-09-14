@@ -1,0 +1,5 @@
+{
+  "script": "experiments/exp279_models_exact_soft_contact_targets/analysis/plot_exp232_comparison.py",
+  "args": [],
+  "caption": "Ordinary one-hot validation CE on the same validation cache at 41 exactly matched global steps. Both runs use the same decontaminated native-data mixture and effective LR through this window. The lower panel is soft minus one-hot, so negative values favor soft targets."
+}
