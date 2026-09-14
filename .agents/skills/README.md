@@ -20,6 +20,7 @@ The convention is borrowed from `marin-community/marin`'s
 | [babysit-zephyr](babysit-zephyr/SKILL.md) | Same, for Zephyr pipeline jobs | ported from marin |
 | [run-training-sweep-trc](run-training-sweep-trc/SKILL.md) | Actively operate Google/TRC TPU training sweeps to completion | MarinFold-native |
 | [run-training-sweep-cw](run-training-sweep-cw/SKILL.md) | Actively operate CoreWeave GPU training sweeps to completion | MarinFold-native |
+| [review-pr](review-pr/SKILL.md) | Multi-agent correctness + AGENTS.md-compliance review of a PR; run by `.github/workflows/claude-code-review.yml` on every non-draft member PR | ported from marin (via marin-dna) |
 | [zephyr-pipeline-performance](zephyr-pipeline-performance/SKILL.md) | Write a Zephyr/Iris pipeline that finishes in minutes, not hours: the five decisions that dominate wall-clock + the I/O traps that silently destroy it. Read before drafting any new `exp<N>_data_*/cli.py`. | MarinFold-native, distilled from exp5 + exp53 |
 
 ## Adapting marin skills
