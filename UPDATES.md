@@ -1,20 +1,28 @@
 # MarinFold Updates
 
-## Week of September 14, 2026 (draft)
+## Week of September 14, 2026
 
 ### Last week
 
-* **Training: the first full pass over native + ProteinMPNN data is complete.** R-precision is essentially tied with the current decontaminated model on eval-val (**0.552 → 0.554**), but improves on de novo designs (**0.610 → 0.696**) and legacy-554 (**0.605 → 0.620**). One seed and different training exposure; this does not isolate the benefit of redesigned data. ([#277](https://github.com/Open-Athena/MarinFold/issues/277))
-* **Training: Tim's exact soft-target run has a modest early advantage.** Ordinary validation CE is **0.007 nats lower** than the one-hot baseline at matched step 86,674. Contact accuracy is still unmeasured; increasing the learning rate did not help. ([#279](https://github.com/Open-Athena/MarinFold/issues/279))
-* **Data: Proteina generation has scaled beyond the pilot.** The 18-hour review counted **541k backbones / 300k quality-passing documents**. These are provisional: final decontamination and global diversity filtering are still pending. ([#278](https://github.com/Open-Athena/MarinFold/issues/278))
-* **Post-training: the multi-hypothesis SFT pilot failed its format check.** After 2,000 steps on a small frozen corpus, valid completions were **0/200 natural / 4/200 forced**. The model overfit; synthesis and rejection training have not started. ([#281](https://github.com/Open-Athena/MarinFold/issues/281))
-* **Zack is still debugging suspected document-format bugs.** His runs train normally but fail during evaluation; the cause is not yet confirmed.
+* **Training: Our first attempt to train on our synthetically expanded training set has delivered a new best model.** R-precision is similar to that of the current decontaminated model on the eval-val natural protein set (**0.552 → 0.554**), but improves on de novo designs (**0.610 → 0.696**) and (therefore) legacy-554 (**0.605 → 0.620**).
+
+  * This is just one seed, and the model trained for substantially fewer steps than the previous best model (266,345 steps vs. 363,000), so a sweep here would probably deliver further improvements.
+  * The model was trained on a single epoch of the expanded training set (232.1M documents, ~30% of which come from our original training set, while the remaining 70% are ProteinMPNN redesigns of those same structures).
+  * It makes sense in retrospect that performance improved on de novo proteins here, as our synthetic sequence generation using ProteinMPNN is similar to how many de novo proteins are designed.
+  * I've queued up a continuation run that will do another epoch from a checkpoint before the cooldown started, but it is currently blocked on compute availability. ([#277](https://github.com/Open-Athena/MarinFold/issues/277))
+* **Training: Tim's soft-target run has a modest early advantage.** Ordinary validation CE is **0.007 nats lower** than the one-hot baseline at matched step 86,674. We have not tried tuning LR or anything else. ([#279](https://github.com/Open-Athena/MarinFold/issues/279))
+* **Data: Proteina generation is running.** We are on track to generate ~1M diverse de novo designed monomers to include in the training set. Final decontamination and global diversity filtering are still pending, but we have generated about 2.5M raw structures, of which 1.5M have passed initial refolding and quality filters. The overall goal here is to further expand our training set to include de novo designed protein backbones (rather than just redesigned sequences for existing backbones, as in the much cheaper ProteinMPNN-based experiment). ([#278](https://github.com/Open-Athena/MarinFold/issues/278))
+* **Post-training: the multi-hypothesis SFT pilot needs more work.** First attempt went off the rails (probably trusted the agent too much). Need to figure out a reasonable way to run these. ([#281](https://github.com/Open-Athena/MarinFold/issues/281))
 
 ### Upcoming
 
-* Tim: continue the MPNN and soft-target experiments, finish Proteina corpus filtering, and revisit the SFT format warm-up with a larger, more varied corpus. ([#277](https://github.com/Open-Athena/MarinFold/issues/277), [#279](https://github.com/Open-Athena/MarinFold/issues/279), [#278](https://github.com/Open-Athena/MarinFold/issues/278), [#281](https://github.com/Open-Athena/MarinFold/issues/281))
-* Eric: try autoresearch on MarinFold largely as-is, with Asta/Sol choosing experiments from error analysis. Mostly current datasets, with additional AA-sequence sources among the ideas; agree on guardrails beyond contamination. ([#287](https://github.com/Open-Athena/MarinFold/issues/287))
-* Zack: resolve the eval failures and launch the **0.7B / 1.5B / 3B** size sweep on the native + MPNN corpus. Token caches are verified; training is awaiting GPU capacity. ([#288](https://github.com/Open-Athena/MarinFold/issues/288))
+* Tim is going to continue training the single model on the ProteinMPNN-expanded training set. ([#277](https://github.com/Open-Athena/MarinFold/issues/277))
+* Tim is going to continue the soft-target experiment to get a final answer on whether it helps and how much. ([#279](https://github.com/Open-Athena/MarinFold/issues/279))
+* Tim will finish Proteina corpus generation. ([#278](https://github.com/Open-Athena/MarinFold/issues/278))
+* Tim will revisit the SFT format warm-up. ([#281](https://github.com/Open-Athena/MarinFold/issues/281))
+* Eric is going to try autoresearch-like approaches on MarinFold largely as-is, with Asta/Sol choosing experiments from error analysis. Mostly current datasets, with additional AA-sequence sources among the ideas. ([#287](https://github.com/Open-Athena/MarinFold/issues/287))
+* Zack is working on launching a sweep on the expanded native + ProteinMPNN training corpus. ([#288](https://github.com/Open-Athena/MarinFold/issues/288))
+* Jacob: AFDB complex curation ([#145](https://github.com/Open-Athena/MarinFold/issues/145)), decontaminated as in [#225](https://github.com/Open-Athena/MarinFold/issues/225).
 
 ---
 
