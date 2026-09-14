@@ -11,7 +11,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from experiments.exp288_models_chinchilla_size_sweep.config import PREFIX, TRIALS
+from experiments.exp288_models_chinchilla_size_sweep.config import CLUSTERS, PREFIX, TRIALS
 
 DEFAULT_IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
 
@@ -109,8 +109,10 @@ def main() -> None:
     command.extend(["--", *entry])
 
     if args.phase.startswith("train"):
+        spec = CLUSTERS[args.target_cluster]
         print(
-            f"Submitting {args.phase} for {args.trial}: {args.target_cluster}, batch, {nodes * 8} H100",
+            f"Submitting {args.phase} for {args.trial}: {args.target_cluster}, batch, "
+            f"{nodes * spec.gpus_per_node} {spec.gpu_variant}",
             flush=True,
         )
     else:
