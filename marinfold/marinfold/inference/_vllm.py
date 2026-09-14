@@ -40,7 +40,7 @@ from pathlib import Path
 import numpy as np
 from vllm import LLM, SamplingParams, TokensPrompt
 
-from marinfold.inference._tokenizer import model_source_path
+from marinfold.inference._model_source import model_source_path
 
 
 class VllmBackend:
@@ -54,6 +54,7 @@ class VllmBackend:
         gpu_memory_utilization: float = 0.85,
         top_k_logprobs: int = 128,
         tail_batch_size: int = 64,
+        fixed_residue_position_embeddings: str | None = None,
     ):
         if tail_batch_size < 1:
             raise ValueError(
@@ -68,7 +69,10 @@ class VllmBackend:
         # transformers-5 export broke (unresolvable tokenizer_class; rope
         # stated as `rope_parameters`), and returns model_path unchanged when
         # nothing needs repair.
-        source_path = model_source_path(model_path)
+        source_path = model_source_path(
+            model_path,
+            fixed_residue_position_embeddings=fixed_residue_position_embeddings,
+        )
         self._llm = LLM(
             model=source_path,
             tokenizer=source_path,

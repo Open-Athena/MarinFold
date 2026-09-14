@@ -51,6 +51,21 @@ def test_checkpoint_suite_is_three_distinct_checkpoints() -> None:
     assert all(c.coreweave_uri and c.hf_repo_id is None for c in suite)
 
 
+def test_existing_suites_keep_original_worker_revision() -> None:
+    """Adding exp157 suites must not move old exp245 jobs to new code."""
+
+    assert specs.MARINFOLD_REVISION == "d1bea417a64cc042ad931422200c3edeb873f2e0"
+    for suite_name in ("exp245", "decontam"):
+        assert all(
+            checkpoint.marinfold_revision == specs.MARINFOLD_REVISION
+            for checkpoint in specs.CHECKPOINT_SUITES[suite_name]
+        )
+    assert all(
+        checkpoint.marinfold_revision == specs.EXP157_MARINFOLD_REVISION
+        for checkpoint in specs.CHECKPOINT_SUITES["exp157-rope"]
+    )
+
+
 def test_expected_sizes_sum_to_the_universe() -> None:
     assert sum(specs.EXPECTED_SET_SIZES.values()) == specs.EXPECTED_UNITS
     assert set(specs.EXPECTED_SET_SIZES) == set(specs.EVAL_SETS)

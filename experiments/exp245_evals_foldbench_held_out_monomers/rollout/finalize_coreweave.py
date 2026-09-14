@@ -486,7 +486,7 @@ def finalize(
         & subset_aggregate["cut"].isin(["R", "AUC"])
     ].to_dict(orient="records")
     reused_existing_coreweave = all(
-        checkpoint.coreweave_uri is not None for checkpoint in checkpoints
+        bool(checkpoint.coreweave_uri) for checkpoint in checkpoints
     )
     manifest = {
         "schema_version": 1,
@@ -534,11 +534,8 @@ def finalize(
                 "accepted_unfinished_rollouts": (
                     checkpoint.accepted_unfinished_rollouts
                 ),
-                "wandb_url": (
-                    f"https://wandb.ai/open-athena/MarinFold/runs/{checkpoint.run_name}"
-                    if checkpoint.run_name.startswith(("prot-exp232", "prot-exp199-cw"))
-                    else f"https://wandb.ai/eric-czech/marin/runs/{checkpoint.run_name}"
-                ),
+                "wandb_url": checkpoint.wandb_url
+                or f"https://wandb.ai/open-athena/MarinFold/runs/{checkpoint.run_name}",
                 "wandb_metric_keys": {
                     "train_loss": "train/loss",
                     "eval_loss": "eval/loss",
