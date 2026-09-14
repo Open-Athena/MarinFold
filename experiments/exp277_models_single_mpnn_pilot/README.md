@@ -67,6 +67,16 @@ linearly cools to 0.1x over its final 20%. The amino-acid augmentation schedule
 continues from the source step and remains at full rate after completing its
 original ramp.
 
+The one-node / eight-H100 restore smoke was submitted at 2026-09-14 13:45 UTC
+as [`/bizon/exp277-continue-smoke-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-continue-smoke-a01)
+from source commit `07a8bccc`; its batch-priority GPU child is
+`/bizon/exp277-continue-smoke-a01/exp277-train-2ff47238`. The driver validated
+all cache and checkpoint dependencies, and the child is waiting for H100
+capacity. Production remains gated on this smoke. Its reserved identity is
+[`contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B),
+with outputs under
+`s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/`.
+
 ## Conclusion
 
 The requested single-model, full-corpus training run completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. The batch-priority contact evaluation is running as [`/bizon/exp277-eval-v2-01-r01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-01-r01), scoring legacy 554, eval-val, and eval-denovo while leaving eval-test unread. Its predecessor timed out after six hours in the capacity queue without running inference; the replacement allows 48 hours and is waiting at the one-H100 smoke gate after validating all 670 inputs. These results are still required before this experiment can answer whether ProteinMPNN redesign improves contacts-v1 prediction relative to the native-only exp232 winner.
