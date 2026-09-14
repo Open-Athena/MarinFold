@@ -22,4 +22,4 @@ The goal is to collect scaling evidence for the next MarinFold recipe. A smaller
 
 ## Results so far
 
-Training harness added. The four CoreWeave token caches already exist from exp232/exp277, so the sweep does not require a new raw-data transfer. Initial fleet snapshot showed no free H100s, so production dispatch is capacity-gated unless we choose to queue batch roots.
+Training harness added. The four CoreWeave token caches were verified by `/zack/exp288-prepare-a01`, so the sweep does not require a new raw-data transfer. H100s were full, so the active target is the recent successful GB200/B200 profile on `cw-us-east-08a`: 8 nodes × 4 GB200 GPUs per trial.

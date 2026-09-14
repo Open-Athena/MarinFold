@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from fray.types import ResourceConfig
 from levanter.layers.attention import AttentionBackend
 from levanter.layers.rotary import Llama3RotaryEmbeddingsConfig
 from levanter.models.qwen import Qwen3Config
@@ -27,6 +28,27 @@ class Corpus:
     documents: int
     shards: int
     tokens: int | None = None
+
+
+@dataclass(frozen=True)
+class ClusterSpec:
+    """One CoreWeave GPU target profile."""
+
+    gpu_variant: str
+    gpus_per_node: int
+    cpu: int
+    ram: str
+    disk: str
+
+    def resources(self, *, nodes: int) -> ResourceConfig:
+        return ResourceConfig.with_gpu(
+            self.gpu_variant,
+            count=self.gpus_per_node,
+            replicas=nodes,
+            cpu=self.cpu,
+            ram=self.ram,
+            disk=self.disk,
+        )
 
 
 @dataclass(frozen=True)
@@ -62,6 +84,15 @@ def trainable_params(model: Qwen3Config) -> int:
     """Return Levanter trainable params plus Qwen3 QK norm params."""
     qk_norm_params = 2 * model.num_layers * model.actual_head_size
     return int(model.total_trainable_params(VOCAB_SIZE)) + qk_norm_params
+
+
+CLUSTERS = {
+    "cw-us-east-08a": ClusterSpec("GB200", 4, 32, "256g", "256g"),
+    "cw-us-east-02a": ClusterSpec("H100", 8, 32, "256g", "256g"),
+    "cw-rno2a": ClusterSpec("H100", 8, 32, "256g", "256g"),
+}
+
+MAX_SEQS_PER_DEVICE = {"GB200": 32, "H100": 8}
 
 
 CORPORA = (
@@ -106,19 +137,19 @@ TRIALS = {
             trial_id="0_7b",
             label="0.7B",
             model=qwen3_contacts_config(hidden_dim=1536, num_layers=20, num_heads=24),
-            nodes=4,
+            nodes=8,
         ),
         SizeTrial(
             trial_id="1_5b",
             label="1.5B",
             model=qwen3_contacts_config(hidden_dim=2048, num_layers=24, num_heads=32),
-            nodes=16,
+            nodes=8,
         ),
         SizeTrial(
             trial_id="3b",
             label="3B",
             model=qwen3_contacts_config(hidden_dim=2560, num_layers=32, num_heads=40),
-            nodes=16,
+            nodes=8,
         ),
     )
 }

@@ -6,6 +6,7 @@ from marin.training.training import apply_output_path
 from levanter.data.text.datasets import ConcatDatasetComponent
 
 from experiments.exp288_models_chinchilla_size_sweep.config import (
+    CLUSTERS,
     CORPORA,
     EPOCH_PACKED_EXAMPLES,
     EPOCH_TRAIN_STEPS,
@@ -35,7 +36,13 @@ def test_trial_catalog_pins_chinchilla_size_points() -> None:
 def test_production_contract_survives_marin_lowering() -> None:
     with build_context(BuildContext(VersionCodex(VERSION))):
         trial = TRIALS["1_5b"]
-        step = build_run(smoke=False, trial=trial, nodes=16)
+        step = build_run(
+            smoke=False,
+            trial=trial,
+            cluster="cw-us-east-08a",
+            spec=CLUSTERS["cw-us-east-08a"],
+            nodes=8,
+        )
         step.fingerprint()
         context = StepContext.for_run(
             output_path=step.path(PREFIX),
@@ -47,7 +54,10 @@ def test_production_contract_survives_marin_lowering() -> None:
     config = apply_output_path(pod.train_config, pod.output_path)
     assert config.trainer.num_train_steps == (EPOCH_PACKED_EXAMPLES + 127) // 128
     assert config.trainer.train_batch_size * config.train_seq_len == 1_048_576
-    assert config.trainer.per_device_parallelism == 1
+    assert config.trainer.per_device_parallelism == 4
+    assert pod.resources.device.variant == "GB200"
+    assert pod.resources.device.count == 4
+    assert pod.resources.replicas == 8
     assert config.optimizer.learning_rate == 1e-3
     assert config.optimizer.weight_decay == 0.2
     assert config.initialize_from_checkpoint_path is None
@@ -75,8 +85,20 @@ def test_production_contract_survives_marin_lowering() -> None:
 def test_smoke_and_production_caches_have_distinct_artifact_identities() -> None:
     with build_context(BuildContext(VersionCodex(VERSION))):
         trial = TRIALS["1_5b"]
-        smoke = build_run(smoke=True, trial=trial, nodes=16)
-        production = build_run(smoke=False, trial=trial, nodes=16)
+        smoke = build_run(
+            smoke=True,
+            trial=trial,
+            cluster="cw-us-east-08a",
+            spec=CLUSTERS["cw-us-east-08a"],
+            nodes=8,
+        )
+        production = build_run(
+            smoke=False,
+            trial=trial,
+            cluster="cw-us-east-08a",
+            spec=CLUSTERS["cw-us-east-08a"],
+            nodes=8,
+        )
     shared = {dep.name for dep in smoke.deps} & {dep.name for dep in production.deps}
     assert shared == {"input/validation"}
     assert smoke.path(PREFIX) != production.path(PREFIX)

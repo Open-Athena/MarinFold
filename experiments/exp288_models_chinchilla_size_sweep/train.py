@@ -1,11 +1,11 @@
 """Train one scratch-initialized size-sweep arm for one complete corpus epoch."""
 
+import math
 import os
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import timedelta
 
 import click
-from fray.types import ResourceConfig
 from levanter.data.text.datasets import ConcatDatasetComponent
 from levanter.optim.config import AdamConfig
 from marin.execution.lazy import ArtifactStep
@@ -16,7 +16,6 @@ from marin.training.training import LevanterCheckpoint
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
     DATA_SEED,
     DECAY,
-    GLOBAL_BATCH_SIZE,
     LR_SCHEDULE,
     MIN_LR_RATIO,
     MODEL_SEED,
@@ -28,14 +27,18 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
     existing_cache,
 )
 from experiments.exp288_models_chinchilla_size_sweep.config import (
+    CLUSTERS,
     CORPORA,
     EPOCH_PACKED_EXAMPLES,
     EPOCH_TRAIN_STEPS,
+    GLOBAL_BATCH_SIZE,
+    MAX_SEQS_PER_DEVICE,
     PREFIX,
     TRIALS,
     VALIDATION_CACHE,
     VERSION,
     WANDB_GROUP,
+    ClusterSpec,
     SizeTrial,
     trainable_params,
 )
@@ -47,6 +50,14 @@ from experiments.exp288_models_chinchilla_size_sweep.prepare import verify_cache
 from experiments.exp288_models_chinchilla_size_sweep.runtime import run_train_job
 
 
+@dataclass(frozen=True)
+class BatchFit:
+    """Concrete mesh/microbatch settings for one placement."""
+
+    tensor_parallelism: int
+    per_device_parallelism: int
+
+
 def _trial_from_env() -> SizeTrial:
     trial_id = os.environ.get("TRIAL")
     if trial_id not in TRIALS:
@@ -54,11 +65,37 @@ def _trial_from_env() -> SizeTrial:
     return TRIALS[trial_id]
 
 
-def build_run(*, trial: SizeTrial, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
+def _placement_from_env(trial: SizeTrial) -> tuple[str, ClusterSpec, int]:
+    cluster = os.environ.get("TARGET_CLUSTER", "cw-us-east-08a")
+    if cluster not in CLUSTERS:
+        raise ValueError(f"TARGET_CLUSTER must be one of {sorted(CLUSTERS)}, got {cluster!r}")
+    nodes = int(os.environ.get("NODES", trial.nodes))
+    allowed = {1, 2, 4, 8, 16}
+    if CLUSTERS[cluster].gpu_variant == "GB200":
+        allowed.update({32, 64})
+    if nodes not in allowed:
+        raise ValueError(f"NODES must be one of {sorted(allowed)}, got {nodes}")
+    if cluster == "cw-rno2a" and nodes > 4:
+        raise ValueError("cw-rno2a gangs above 4 nodes are not reliable")
+    return cluster, CLUSTERS[cluster], nodes
+
+
+def _batch_fit(spec: ClusterSpec, *, nodes: int) -> BatchFit:
+    devices = spec.gpus_per_node * nodes
+    data_parallelism = math.gcd(GLOBAL_BATCH_SIZE, devices)
+    tensor_parallelism = devices // data_parallelism
+    sequences_per_device = GLOBAL_BATCH_SIZE // data_parallelism
+    per_device = min(sequences_per_device, MAX_SEQS_PER_DEVICE[spec.gpu_variant])
+    while sequences_per_device % per_device:
+        per_device -= 1
+    return BatchFit(tensor_parallelism=tensor_parallelism, per_device_parallelism=per_device)
+
+
+def build_run(
+    *, trial: SizeTrial, smoke: bool, cluster: str, spec: ClusterSpec, nodes: int
+) -> ArtifactStep[LevanterCheckpoint]:
     """Retain exp232 m2-p06 optimizer settings while varying only model size."""
-    if nodes not in (1, 2, 4, 8, 16):
-        raise ValueError(f"Unsupported H100 gang size: {nodes}")
-    per_device = min(8, GLOBAL_BATCH_SIZE // (8 * nodes))
+    batch = _batch_fit(spec, nodes=nodes)
     run_id = f"{trial.run_id}-smoke" if smoke else trial.run_id
     steps = 10 if smoke else EPOCH_TRAIN_STEPS
     env = {
@@ -67,6 +104,8 @@ def build_run(*, trial: SizeTrial, smoke: bool, nodes: int) -> ArtifactStep[Leva
         "WANDB_PROJECT": "MarinFold",
         "EXP288_TRIAL": trial.trial_id,
         "EXP288_MODEL_PARAMS": str(trainable_params(trial.model)),
+        "EXP288_TARGET_CLUSTER": cluster,
+        "EXP288_GPU_VARIANT": spec.gpu_variant,
     }
     datasets = {
         existing_cache(
@@ -107,10 +146,8 @@ def build_run(*, trial: SizeTrial, smoke: bool, nodes: int) -> ArtifactStep[Leva
         num_train_steps=steps,
         z_loss_weight=None,
         evals=None,
-        resources=ResourceConfig.with_gpu(
-            "H100", count=8, replicas=nodes, cpu=32, ram="256g", disk="256g"
-        ),
-        tensor_parallel_size=1,
+        resources=spec.resources(nodes=nodes),
+        tensor_parallel_size=batch.tensor_parallelism,
         steps_per_eval=steps if smoke else STEPS_PER_EVAL,
         wandb_project="MarinFold",
         wandb_group=WANDB_GROUP,
@@ -128,6 +165,8 @@ def build_run(*, trial: SizeTrial, smoke: bool, nodes: int) -> ArtifactStep[Leva
             f"trial={trial.trial_id}",
             f"params={trainable_params(trial.model)}",
             "smoke" if smoke else "production",
+            f"cluster={cluster}",
+            f"gpu={spec.gpu_variant}",
             f"nodes={nodes}",
         ],
         env_vars=env,
@@ -150,8 +189,8 @@ def build_run(*, trial: SizeTrial, smoke: bool, nodes: int) -> ArtifactStep[Leva
         if not ctx.is_fingerprint:
             trainer = replace(
                 trainer,
-                per_device_parallelism=per_device,
-                per_device_eval_parallelism=per_device,
+                per_device_parallelism=batch.per_device_parallelism,
+                per_device_eval_parallelism=batch.per_device_parallelism,
             )
         components = pod.train_config.data.components
         children = {
@@ -197,11 +236,11 @@ def build_run(*, trial: SizeTrial, smoke: bool, nodes: int) -> ArtifactStep[Leva
 def main() -> ArtifactStep[LevanterCheckpoint]:
     smoke = os.environ.get("SMOKE") == "1"
     trial = _trial_from_env()
-    nodes = int(os.environ.get("NODES", trial.nodes))
+    cluster, spec, nodes = _placement_from_env(trial)
     for corpus in CORPORA:
         if not verify_cache(corpus):
             raise ValueError(f"Incomplete cache: {corpus.cache}")
-    return build_run(smoke=smoke, trial=trial, nodes=nodes)
+    return build_run(smoke=smoke, trial=trial, cluster=cluster, spec=spec, nodes=nodes)
 
 
 if __name__ == "__main__":

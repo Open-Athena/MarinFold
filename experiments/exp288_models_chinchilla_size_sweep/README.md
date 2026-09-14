@@ -65,12 +65,15 @@ The launchable sweep code is checked in with this experiment:
 - `config.py` defines the three size arms and reuses the completed exp232/exp277
   CoreWeave token caches.
 - `train.py` launches one selected arm via `TRIAL={0_7b,1_5b,3b}` while keeping
-  the exp232 m2-p06 optimizer/data recipe fixed.
+  the exp232 m2-p06 optimizer/data recipe fixed. The default placement is the
+  recent successful CoreWeave GB200/B200 profile: `cw-us-east-08a`, 8 nodes × 4
+  GB200 GPUs, global batch 128.
 - `launch.py` submits a cache-verification driver or a selected training arm to
-  Iris/CoreWeave at batch priority.
+  Iris/CoreWeave at batch priority; override with `--target-cluster`, `--nodes`,
+  or the matching environment variables only for explicit placement tests.
 - `epoch_data.py` preserves exp277's finite shuffled one-epoch data contract.
 
-Data availability on CoreWeave is confirmed from exp277's completed run record:
+Data availability on CoreWeave is confirmed by `/zack/exp288-prepare-a01`:
 all four corpora have tokenized caches under `s3://marin-us-east-02a/MarinFold/`.
 The native caches are from exp232; the MPNN caches are from exp277. No new raw
 corpus transfer is required for this size sweep.

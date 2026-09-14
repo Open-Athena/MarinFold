@@ -22,7 +22,7 @@ def main() -> None:
     parser.add_argument("--trial", choices=sorted(TRIALS), required=False)
     parser.add_argument("--nodes", type=int, default=None)
     parser.add_argument("--attempt", type=int, default=1)
-    parser.add_argument("--target-cluster", default="cw-us-east-02a")
+    parser.add_argument("--target-cluster", default="cw-us-east-08a")
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     args = parser.parse_args()
     if args.phase.startswith("train") and args.trial is None:
@@ -49,6 +49,7 @@ def main() -> None:
         "WANDB_PROJECT": "MarinFold",
         "WANDB_API_KEY": wandb_api_key,
         "NODES": str(nodes),
+        "TARGET_CLUSTER": args.target_cluster,
         "PYTHONPATH": ".",
         "GIT_COMMIT": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=root, text=True
