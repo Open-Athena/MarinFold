@@ -50,6 +50,13 @@ The identity/shorter-coverage rule flags 60 candidates: 29 AFDB and 31 ESM.
 None of the seven whole-chain provisional hits is flagged. An exact-reference positive control passes.
 This is a small-pool screen; repeat on the final pool and frozen reference before training. E-value reporting depends on target database size.
 
+## Larger ESM audit: scale estimate
+
+919 sampled clusters; 12,063 quality-passing omitted members; 146,433 measured pairs.
+At TM <=0.8, 49 whole-chain hits become 32 with the core diagnostic.
+Population-weighted ESM projections: approximately 167K whole-chain / 90K core-checked additions at TM 0.8, or 2.20M / 760K at TM 0.9.
+These are uncertain point estimates before domain review and final exclusions. The original 10-30M goal is not supported by the current strict policy. Adjust the corpus design and mixture fraction; retain the full training horizon.
+
 ## Next curation decisions
 
 Evaluate confident-core novelty against every retained anchor and selected addition.
