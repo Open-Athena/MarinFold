@@ -23,6 +23,7 @@ def main() -> None:
     parser.add_argument("--nodes", type=int, default=None)
     parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument("--target-cluster", default="cw-us-east-08a")
+    parser.add_argument("--priority", default="batch", choices=("batch", "interactive"))
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     args = parser.parse_args()
     if args.phase.startswith("train") and args.trial is None:
@@ -92,7 +93,7 @@ def main() -> None:
         "--target-cluster",
         args.target_cluster,
         "--priority",
-        "batch",
+        args.priority,
         "--job-name",
         job_name,
         "--no-wait",
@@ -111,12 +112,12 @@ def main() -> None:
     if args.phase.startswith("train"):
         spec = CLUSTERS[args.target_cluster]
         print(
-            f"Submitting {args.phase} for {args.trial}: {args.target_cluster}, batch, "
+            f"Submitting {args.phase} for {args.trial}: {args.target_cluster}, {args.priority}, "
             f"{nodes * spec.gpus_per_node} {spec.gpu_variant}",
             flush=True,
         )
     else:
-        print(f"Submitting {args.phase}: {args.target_cluster}, batch", flush=True)
+        print(f"Submitting {args.phase}: {args.target_cluster}, {args.priority}", flush=True)
 
     bundle = Path(tempfile.mkdtemp(prefix="exp288-bundle-"))
     for name in ("pyproject.toml", "uv.lock"):
