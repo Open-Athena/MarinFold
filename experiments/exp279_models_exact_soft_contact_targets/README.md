@@ -245,6 +245,17 @@ and resumes the complete temporary step-55265 checkpoint. Its child is
 `/bizon/exp279-soft-production-cw-h100x32-a02/exp279-soft-production-cw-h100x32-a02-base`.
 `data/soft_production_cw_relaunch_a02.json` records the failure and resubmission.
 
+The a02 base-phase gang failed again on 2026-09-15 after replica 2 was
+OOM-killed during a temporary checkpoint save; the other three replicas stopped
+as coscheduled siblings. The partially written `step-109962` lacks
+`metadata.json` and is not discoverable as a committed checkpoint. Relaunch
+driver `/bizon/exp279-soft-production-cw-h100x32-a03` therefore restored the
+latest complete temporary checkpoint, `step-109720`, and selected update 109721
+under the unchanged base-phase recipe and W&B identity. Its four-node child is
+`/bizon/exp279-soft-production-cw-h100x32-a03/exp279-soft-production-cw-h100x32-a03-base`.
+`data/soft_production_cw_relaunch_a03.json` records the frozen manifest and
+recovery evidence.
+
 The corrected run starts fresh with a new identity. `launch_gpu.py` submits a
 short pilot with `--pilot-updates 32`; after validation, omitting that argument
 launches the production driver. `--resume-record` preserves the pilot's frozen

@@ -19,6 +19,8 @@ marinfold_run:
   - /bizon/exp279-soft-production-cw-h100x32-a01/exp279-soft-production-cw-h100x32-a01-base
   - /bizon/exp279-soft-production-cw-h100x32-a02
   - /bizon/exp279-soft-production-cw-h100x32-a02/exp279-soft-production-cw-h100x32-a02-base
+  - /bizon/exp279-soft-production-cw-h100x32-a03
+  - /bizon/exp279-soft-production-cw-h100x32-a03/exp279-soft-production-cw-h100x32-a03-base
 ---
 # 2026-09-09 · exp279_models_exact_soft_contact_targets · exp279-soft-s0-cw-h100x32-b02
 
@@ -77,3 +79,16 @@ driver `/bizon/exp279-soft-production-cw-h100x32-a02` and its base-phase child
 were submitted on 2026-09-13 with the original frozen source, input manifests,
 W&B identity, 32-H100 geometry, and batch priority. The child initially entered
 the normal Kueue capacity gate awaiting 32 GPU/RDMA quota units.
+
+## Restart 2
+
+The a02 base-phase gang failed on 2026-09-15 when replica 2 was OOM-killed
+during the temporary step-109962 checkpoint save; the other three replicas were
+stopped as coscheduled siblings. That directory lacks `metadata.json` and is not
+a committed resume source. Driver
+`/bizon/exp279-soft-production-cw-h100x32-a03` was submitted from the original
+frozen source and restored the latest complete checkpoint, step 109720, at
+update 109721. Its child is
+`/bizon/exp279-soft-production-cw-h100x32-a03/exp279-soft-production-cw-h100x32-a03-base`.
+The data manifest, 32-H100 geometry, base-phase recipe, checkpoint root, and W&B
+run identity are unchanged.
