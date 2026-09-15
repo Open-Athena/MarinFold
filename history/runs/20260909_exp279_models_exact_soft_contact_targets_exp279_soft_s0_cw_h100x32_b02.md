@@ -92,3 +92,6 @@ update 109721. Its child is
 `/bizon/exp279-soft-production-cw-h100x32-a03/exp279-soft-production-cw-h100x32-a03-base`.
 The data manifest, 32-H100 geometry, base-phase recipe, checkpoint root, and W&B
 run identity are unchanged.
+At 2026-09-15 12:47:18 UTC both a03 jobs were running and W&B had advanced past
+the failed attempt to observed step 109985, with finite loss 2.9193 and 3.497
+seconds/update.

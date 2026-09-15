@@ -255,6 +255,9 @@ under the unchanged base-phase recipe and W&B identity. Its four-node child is
 `/bizon/exp279-soft-production-cw-h100x32-a03/exp279-soft-production-cw-h100x32-a03-base`.
 `data/soft_production_cw_relaunch_a03.json` records the frozen manifest and
 recovery evidence.
+W&B passed the failed attempt's high-water mark at observed step 109985 with
+finite loss 2.9193 and normal 3.497-second update time, confirming that a03 is
+advancing the original run.
 
 The corrected run starts fresh with a new identity. `launch_gpu.py` submits a
 short pilot with `--pilot-updates 32`; after validation, omitting that argument
