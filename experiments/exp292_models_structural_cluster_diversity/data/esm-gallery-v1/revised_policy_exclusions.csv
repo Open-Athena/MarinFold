@@ -1,0 +1,2 @@
+cluster_id,reason
+0003c4a164ededc860abcf1b34a2a38e,Noncanonical source anchor; exclude entire cluster under the revised full-chain policy. Neither of the two provisional ESM hits belongs to this cluster.
