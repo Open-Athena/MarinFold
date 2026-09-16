@@ -27,6 +27,7 @@ here is the accession, and ``selection.py`` applies it to both subunits.
 
 import argparse
 import csv
+import glob
 import json
 import shutil
 import subprocess
@@ -183,9 +184,7 @@ def build(
     mmseqs = ensure_mmseqs()
     target_db = work / "targetDB"
     if not skip_search:
-        shards = sorted(Path().glob(sequences_glob)) or sorted(
-            Path(sequences_glob).parent.glob(Path(sequences_glob).name)
-        )
+        shards = sorted(Path(match) for match in glob.glob(sequences_glob))
         if not shards:
             raise FileNotFoundError(f"no sequence shards matched {sequences_glob}")
         for stale in work.glob("targetDB*"):
