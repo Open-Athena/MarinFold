@@ -318,11 +318,33 @@ reconnaissance already rules one design in and one out:
   fused into a single pass, so the transfer is roughly the selected payload
   (~1.5–2.5 TB) rather than 48.8 TB.
 
-The open Stage-D question is request volume rather than bytes: a fused walk
-issues on the order of one small request per member across ~29M members, and
-this experiment has already shown EBI refusing connections at 16 concurrent
-pods. Concurrency, backoff and politeness have to be sized from the pilot, not
-assumed.
+The counter-intuitive part is that the header walk is *not* the expensive
+half. Walking is latency-bound (512-byte reads), streaming is bandwidth-bound,
+and EBI's binding constraint is aggregate bandwidth:
+
+| | cost model | at EBI's measured ~50 MB/s aggregate |
+| --- | --- | --- |
+| stream whole tars | 48.8 TB / bandwidth | **~11 days** |
+| walk + fetch selected | members x RTT, then ~1.5-2.5 TB / bandwidth | ~75 min of walking + **8-14 h** of payload |
+
+Latency parallelises across tars without touching the bandwidth cap, so the
+walk's ~45M small reads (about 23 GB in total) cost roughly an hour spread over
+a couple of hundred workers, while the unselected payloads that streaming would
+pull are what actually costs days. Per tar the walk looks slower than streaming
+— 48k members x 20 ms RTT beats 7.5 GB at a *per-connection* rate — which is
+exactly the trap: the per-connection comparison is the wrong one once the source
+throttles in aggregate.
+
+Two things the pilot has to measure rather than assume:
+
+- **Whether EBI's ~50 MB/s is really an aggregate cap.** It was inferred from
+  per-pod throughput falling from 14.5 MB/s to ~5 MB/s as 7-9 pods ran, with the
+  total roughly flat. If it is per-IP rather than global, wider fan-out helps and
+  the payload transfer shrinks proportionally.
+- **Whether ~45M small requests is acceptable to a public FTP.** This experiment
+  has already had EBI refuse connections at 16 concurrent pods. Request rate,
+  backoff and total volume need a measured, polite setting, and it may be worth
+  asking EBI rather than discovering the limit by hitting it.
 
 Stage A commands:
 
