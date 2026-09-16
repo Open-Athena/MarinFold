@@ -290,6 +290,41 @@ AFDB folded them. That is strong evidence the accession mapping is right, and
 it prices the exact-match default in `selection.py` at roughly 0.2% of
 candidates.
 
+### The sequence and decontamination inputs are built (2026-09-16)
+
+The 16-pod fetch scanned all 118.0 GB (259,232,207 AFDB records) at **70.6 MB/s
+aggregate** and `--verify` confirmed the windows tile the file. It also caught a
+real shortfall: **407,191 of 21,437,370 AFCDB accessions (1.90%) have no
+sequence in AFDB's bulk file at all.** That is upstream staleness — the sequence
+snapshot is dated 2026-02 while the AFCDB metadata is 2026-06/07, and AFDB
+publishes no newer bulk sequence file (`v6/` and `latest/` hold per-proteome
+structure tars only). Those accessions are listed in a sidecar and omitted from
+the annotation table, so each affected model fails `selection.py`'s
+`missing_sequence_annotation` check and appears in the ledger with that reason.
+
+The cost is uniform across the frontier, so it does not distort the quality
+mixture:
+
+| quality floor | hard-eligible | with sequences | lost |
+| --- | --- | --- | --- |
+| 1.00 | 1,923,625 | 1,887,272 | 1.89% |
+| 0.40 | 3,174,635 | 3,114,624 | 1.89% |
+| 0.30 | 3,455,113 | 3,389,991 | 1.89% |
+| 0.25 | 3,629,179 | 3,560,866 | 1.88% |
+
+**Length agreement holds at scale.** Across all 15,132,087 hard-eligible models
+with both sequences, **99.655%** have joined UniProt subunit lengths exactly
+equal to the modelled `n0chn`. So the exact-match guard costs ~0.35%, and the
+accession mapping is confirmed correct at scale rather than on a sample.
+
+**Decontamination.** The eval2-v1 reference (577 queries) searched against the
+21,030,179-subunit MMseqs2 database produced 5,662,204 alignments and dropped
+**1,071,475 accessions (5.1%)**. 575 of 577 queries had alignments, and the
+largest per-query alignment count was 313,640 against a `--max-seqs` of
+1,000,000 — so the prefilter was **not** censored and the drop list is complete.
+That rate is higher than #225's 1.8% on the AFDB contacts-v1 corpus, which is
+expected: AFCDB spans 8,198 taxa against that corpus's narrower slice.
+
 ### Stage B: the pilot draw
 
 `pilot.py` deliberately does **not** sample proportionally to the selected
