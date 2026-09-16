@@ -27,6 +27,7 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
 )
 
 FULL_CORPUS = "input/full-corpus"
+STRUCTURE_PROBE_INDEX = 0
 
 
 @dataclass(frozen=True)
@@ -68,7 +69,23 @@ class OneEpochDataConfig(AminoAcidAugmentedDataConfig):
 
 
 class ContinuationEpochDataset(AsyncDataset[LmExample]):
-    """Place one local epoch after a restored trainer's absolute data offset."""
+    """Address one local epoch at a restored trainer's absolute data offset.
+
+    Levanter derives the data offset from the absolute optimizer step: the
+    loader iterator asks `BatchSchedule.global_data_offset_by_step(step)` for
+    every batch it produces, and `train_lm` starts that iterator at the step
+    restored from the checkpoint. A continuation that trains a fresh finite
+    permutation must therefore answer at those absolute indices; exposing the
+    new epoch at local indices 0..N-1 instead would skip everything before the
+    restored offset and exhaust the loader long before the step target.
+
+    One read does not follow the absolute step. `DataLoader.__init__` fetches
+    global index `STRUCTURE_PROBE_INDEX` once, before iteration begins, purely
+    to learn the example structure and build its zeroed padding example. That
+    single probe is served from the first example of the new epoch. Any other
+    index below the offset means the trainer did not resume where the
+    checkpoint says it did, so it is an error rather than a silent reread.
+    """
 
     def __init__(self, dataset: AsyncDataset[LmExample], *, start_offset: int):
         self.dataset = dataset
@@ -81,12 +98,18 @@ class ContinuationEpochDataset(AsyncDataset[LmExample]):
         return self.dataset.is_finite()
 
     async def get_batch(self, indices: Sequence[int]) -> Sequence[LmExample]:
-        local_indices = [int(index) - self.start_offset for index in indices]
-        if any(index < 0 for index in local_indices):
-            raise IndexError(
-                f"continuation data starts at offset {self.start_offset}, got {min(indices)}"
-            )
-        return await self.dataset.get_batch(local_indices)
+        return await self.dataset.get_batch(
+            [self._local_index(int(index)) for index in indices]
+        )
+
+    def _local_index(self, index: int) -> int:
+        if index >= self.start_offset:
+            return index - self.start_offset
+        if index == STRUCTURE_PROBE_INDEX:
+            return 0
+        raise IndexError(
+            f"continuation data starts at offset {self.start_offset}, got {index}"
+        )
 
 
 class ContinuedAminoAcidDataset(AsyncDataset[LmExample]):

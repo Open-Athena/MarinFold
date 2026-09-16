@@ -127,15 +127,57 @@ linearly cools to 0.1x over its final 20%. The amino-acid augmentation schedule
 continues from the source step and remains at full rate after completing its
 original ramp.
 
-The one-node / eight-H100 restore smoke was submitted at 2026-09-14 13:45 UTC
-as [`/bizon/exp277-continue-smoke-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-continue-smoke-a01)
-from source commit `07a8bccc`; its batch-priority GPU child is
-`/bizon/exp277-continue-smoke-a01/exp277-train-2ff47238`. The driver validated
-all cache and checkpoint dependencies, and the child is waiting for H100
-capacity. Production remains gated on this smoke. Its reserved identity is
+Production's reserved identity is
 [`contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B),
 with outputs under
-`s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/`.
+`s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/`,
+and it remains gated on a passing restore smoke.
+
+### The first restore smoke failed without running an update
+
+`/bizon/exp277-continue-smoke-a01` (submitted 2026-09-14 13:45 UTC from commit
+`07a8bccc`, GPU child `exp277-train-2ff47238`) queued about a day for H100
+capacity, restored the checkpoint, and then raised before its first optimizer
+update:
+
+```
+levanter/data/loader.py:140 initial_example = blocking_wait(self.data_store.getitem_async(0))
+IndexError: continuation data starts at offset 27273344, got 0
+```
+
+Both the driver and the GPU child nevertheless reported `succeeded exit=0`, so
+job state is not evidence here; the worker traceback is.
+
+`DataLoader.__init__` reads global data index 0 exactly once, before any
+iteration, to learn the example structure and build its zeroed padding example.
+That read does not depend on the restored step, so it lands below the
+continuation's absolute offset. The original wrapper rejected it.
+
+The absolute offset itself is required and is kept. Levanter's loader turns an
+absolute optimizer step into an absolute data offset
+(`BatchSchedule.global_data_offset_by_step`), and `train_lm` starts the
+iterator at the restored step, so the restored trainer asks for global indices
+from 213,073 x 128 = 27,273,344. Exposing the new epoch at local indices
+0..N-1 instead would have been worse than the crash: the loader would have
+skipped the first 27,273,344 packed examples, served only the last ~20% of the
+epoch, and stopped after about 53,272 of the 266,345 intended updates — and the
+ten-step smoke would have passed. `test_epoch_data.py` drives a real
+`DataLoader` to pin both behaviours.
+
+The repaired dataset serves the lone index-0 structure probe from the first
+example of the new epoch and still rejects every other index below the offset,
+so a trainer that failed to restore its step fails loudly instead of silently
+retraining a prefix.
+
+The failed step also wrote `SUCCESS` to `.executor_status` under
+`runs/...-full-epoch2-from213072-1.5B-smoke/`. A step whose output path holds a
+`SUCCESS` status is skipped outright, and recipe drift only warns, so a repeat
+at the same path would have been served from cache no matter what the code
+said — `--attempt` previously changed only the Iris job name. Smoke runs now
+carry their attempt in their run id and output path
+(`...-full-epoch2-from213072-1.5B-smoke-a02`); production's identity is
+deliberately left stable so a restarted production job resumes from its own
+checkpoints.
 
 ## Conclusion
 

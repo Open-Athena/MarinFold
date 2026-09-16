@@ -48,6 +48,7 @@ def main() -> None:
         "WANDB_PROJECT": "MarinFold",
         "WANDB_API_KEY": wandb[2],
         "NODES": str(args.nodes),
+        "ATTEMPT": str(args.attempt),
         "FSSPEC_S3": json.dumps(
             {
                 "key": cw["aws_access_key_id"],
