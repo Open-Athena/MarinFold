@@ -39,6 +39,24 @@ MIN_PLDDT = 80.0
 MIN_LENGTH = 60
 MAX_LENGTH = 1000
 COORDINATE_COLUMNS = ("ca_coords", "per_residue_plddt")
+# Selection columns in a fixed order. Every emitted row carries all of them, so
+# the manifest schema is identical across shards and a reader can concatenate
+# them without merging or promoting. Without this the two selection paths build
+# their dicts in different orders, pyarrow infers a different field order per
+# shard, and a plain concat_tables fails.
+SELECTION_FIELDS = (
+    "max_selected_tm",
+    "max_selected_core_tm",
+    "min_selected_coverage",
+    "min_selected_length_ratio",
+    "max_selected_sequence_identity",
+    "structural_novelty",
+    "structurally_comparable",
+    "strict_structural_diversity",
+    "max_anchor_sequence_identity",
+    "selection_rank",
+    "selection_tier",
+)
 
 
 def protein_from_arrays(sequence: str, coords, plddt) -> Protein:
@@ -223,8 +241,9 @@ def curate_table(
                 f"{perf_counter() - alignment_started:,.0f}s",
                 flush=True,
             )
+    order = [*metadata_columns, *SELECTION_FIELDS]
     return {
-        "selected": selected,
+        "selected": [{key: row.get(key) for key in order} for row in selected],
         "pair_metrics": pairs,
         "quality_rejections": quality_rejections,
         "sequence_rejections": sequence_rejections,

@@ -198,9 +198,25 @@ That structural smoke is also the clearest demonstration of what the strict rule
 
 **AFDB curation is implemented.** `curate_afdb.py` and `curate_afdb_cli.py` apply the same frozen policy to the validated shards: cluster-wise quality filtering, the frozen held-out sequence exclusion, then structural-first three-slot selection over the stored C-alpha arrays, measuring only candidate-to-anchor and candidate-to-addition pairs. Because the exclusion rule has no E-value arm, a per-shard search returns the same verdict as one global search, so the screen runs inside each task rather than as a separate global stage. The frozen MMseqs2 archive and both reference FASTAs were mirrored byte-identically (verified by SHA-256) into `.../production-v1/tools/` and `.../production-v1/reference/` in us-central1, and are staged and hash-checked once per worker. `sequence_exclusion.py` now holds the one implementation of that rule, shared by both sources.
 
-**Measured production yield, AFDB.** One complete validated shard (`validated-00000-of-00256`, 13,571 rows) was curated end to end under the frozen policy. Every row passed candidate quality — the plan had already applied the pLDDT and length rules at metadata time — and the frozen screen excluded 761 candidates. Of 1,290 clusters, 1,261 still held a choice and 854 needed alignment. The shard produced **3,323 additions: 145 `structural_diversity` (4.4%) and 3,178 `quality_fill`**, from 29,327 measured pairs. Scaled across 256 shards that projects to roughly **851,000 AFDB additions, about 37,000 of them strict structural hits** — close to the 891,442 arithmetic ceiling, because AFDB's ceiling is set by cluster count rather than by quality attrition.
+**The AFDB arm is complete.** [/bizon/exp292-afdb-curate-v2](https://iris.oa.dev/#/job/%2Fbizon%2Fexp292-afdb-curate-v2) curated all 256 validated shards under the frozen policy, 256/256 tasks succeeding with none failed:
 
-Unlike source validation, this stage is **CPU-bound on pairwise alignment** — about 0.85 CPU-seconds per compared pair, 5.2 CPU-hours for the shard. Workers therefore take several cores and spread clusters across them, rather than following the one-core-per-worker rule that suits an I/O-bound fetch. The shard took 19.3 minutes at 16 processes.
+| | total |
+| --- | ---: |
+| rows consumed | 3,526,695 |
+| quality rejections | 0 |
+| held-out sequence rejections | 209,849 |
+| clusters with a genuine choice | 328,969 |
+| clusters needing alignment | 221,468 |
+| measured pairs | 7,536,214 |
+| **additions** | **861,425** |
+| — `structural_diversity` | 34,903 (4.05%) |
+| — `quality_fill` | 826,522 |
+
+It consumed **3,526,695 rows, matching the validated corpus exactly**, and the manifest row count matches the summaries exactly as well. Every shard's exact-sequence positive control passed, every shard reported the same frozen MMseqs2 version, and every shard recorded the same two reference SHA-256s. The 861,425 additions are 96.6% of the 891,442 arithmetic ceiling, so quality attrition costs AFDB little: its ceiling is set by cluster count, not by filtering. Alignment cost 1,337 CPU-hours.
+
+Manifests are at `.../production-v1/afdb/selected/` with per-shard provenance — measured pairs, rejections and accounting — at `.../production-v1/afdb/selection-provenance/`.
+
+**A schema defect worth recording.** The first manifests let pyarrow infer each shard's schema from the rows it happened to contain. Names and types agreed everywhere, but the two selection paths build their row dicts in different orders, so field *order* varied across shards: `pyarrow.dataset` read the set fine while a plain `pa.concat_tables` refused it. A defect that only the less-common reader hits is exactly the kind that ships. `curate_afdb` now emits a fixed field order, and `normalize_manifests.py` rewrote the published corpus under one explicit schema — 256 files, one schema, 861,425 rows, concatenable without promotion options. Values were not touched and the row count was verified per shard.
 
 **The ESM metadata stage is complete.** All 256 shards finished, every instance exiting zero with its exact-sequence positive control passing, for **21.0 m7i.4xlarge instance-hours** (median 301 s per shard):
 
@@ -220,6 +236,10 @@ Note what the two arms do *not* share. ESM contributes volume: 8.06M of its addi
 **Account limit worth recording:** this AWS account allows 445 on-demand vCPUs in the `m7i` bucket, so only 27 16-vCPU workers can run at once. This bit twice. A 64-shard request failed mid-loop on the 28th instance and left the 27 already running with no launch record. The wave-draining replacement then failed too, because an instance keeps its vCPU reservation until it is *fully terminated*: counting only `pending` and `running` workers undercounts the ones still shutting down, so a wave sized against that count overshoots. The launcher now counts every quota-holding state, treats `VcpuLimitExceeded` as backpressure to retry rather than a fatal error, and persists each instance before requesting the next. Neither failure lost work — every shard that started finished, and the run resumes from the set of shards that already have a `summary.json`.
 
 **Cluster limit worth recording:** the first 256-worker curation launch (`exp292-afdb-curate-v1`) failed in about ninety seconds, before doing any work, with `PermissionError: [Errno 13] Permission denied: .../bin/mmseqs`. The task pod mounts `/tmp` `noexec`, so the staged frozen binary unpacked and hash-verified correctly and then could not be executed. The identical extraction works in the ESM arm because that bootstrap unpacks to `/opt` on a plain EC2 host, so the failure only appears once the stage moves onto the cluster. Staging now resolves under the worker's own working directory and runs `mmseqs version` immediately after extraction, so a bad mount fails at staging time with an explicit message instead of several frames deep inside the screen. The trap is written up in the `zephyr-pipeline-performance` skill.
+
+**ESM structural ranking is running** and is the last production stage. [`exp292-esm-structures-v1`](https://s3.console.aws.amazon.com/s3/buckets/marinfold-exp91-usw2) ranks the 1,604,845 queued clusters across 256 shards, drained 13 at a time because its 32-vCPU workers hit the same 445-vCPU account limit. The measured shape of a shard is **about 33 minutes fetching ~42,000 coordinate blobs from Atlas and about 4 minutes ranking**, so the stage is dominated by per-row fetch latency, not by alignment, and projects to roughly 13 hours. It is left running rather than restarted.
+
+Two levers would cut that materially next time, and neither needs more quota. The fetch is sequential `dataset.take` batches, so **making the Atlas fetch concurrent** attacks the actual bottleneck directly. Failing that, because the limit is on vCPUs rather than instances, **27 16-vCPU workers instead of 13 32-vCPU ones** buys roughly twice the aggregate fetch parallelism for the same quota, at the cost of halving the per-shard ranking width — a good trade when ranking is a tenth of the wall time. Neither was applied mid-flight.
 
 The completed audit supports an eight-candidate production reservoir: depending on the TM criterion, it recovers approximately 92–95% of the population-weighted hits found with 32 candidates. Production selection still fills to three with quality-passing members when strict structural alternatives are unavailable. The supplement will be included in the next full 1.5B run; there is no control-corpus build or short model-efficacy screen.
 
