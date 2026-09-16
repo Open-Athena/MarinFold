@@ -36,9 +36,11 @@ instead, and ``--out`` may be any local directory.
 
 import argparse
 import json
+import random
 import re
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -55,6 +57,31 @@ SEQUENCES_URL = "https://ftp.ebi.ac.uk/pub/databases/alphafold/sequences.fasta"
 MAX_RECORD_BYTES = 4 << 20
 _READ_CHUNK = 1 << 20
 _HEADER = re.compile(rb"^>(?P<token>\S+)")
+#: EBI refuses connections when many pods open streams at once, and a 7 GB range
+#: held open for minutes can also drop mid-transfer. Both are expected operating
+#: conditions at this scale, not bugs, so they are retried rather than fatal.
+_MAX_ATTEMPTS = 10
+_RETRYABLE = (urllib.error.URLError, TimeoutError, ConnectionError, OSError)
+
+
+def _sleep_backoff(attempt: int) -> None:
+    """Exponential backoff with jitter, capped, so retries de-synchronise."""
+    time.sleep(min(60.0, 2.0**attempt) * (0.5 + random.random()))
+
+
+def _urlopen_retrying(request: urllib.request.Request, *, timeout: float):
+    """Open a URL, retrying refusals and timeouts with backoff."""
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            return urllib.request.urlopen(request, timeout=timeout)
+        except _RETRYABLE as error:
+            if attempt == _MAX_ATTEMPTS - 1:
+                raise RuntimeError(
+                    f"{request.full_url}: giving up after {_MAX_ATTEMPTS} attempts "
+                    f"({error})"
+                ) from error
+            _sleep_backoff(attempt)
+    raise AssertionError("unreachable")
 
 
 def _sql_literal(value: str | Path) -> str:
@@ -119,7 +146,7 @@ def listed_accessions(path: str) -> set[bytes]:
 
 def content_length(url: str) -> int:
     request = urllib.request.Request(url, method="HEAD")
-    with urllib.request.urlopen(request, timeout=120) as response:
+    with _urlopen_retrying(request, timeout=120) as response:
         length = response.headers.get("Content-Length")
     if not length:
         raise RuntimeError(f"{url}: server did not report a Content-Length")
@@ -135,27 +162,62 @@ class ShardResult:
     matched: int
     bytes_read: int
     seconds: float
+    reconnects: int = 0
 
 
 class _RangeReader:
     """Buffered forward reader over an open-ended HTTP range."""
 
     def __init__(self, url: str, start: int) -> None:
-        request = urllib.request.Request(url, headers={"Range": f"bytes={start}-"})
-        self._response = urllib.request.urlopen(request, timeout=300)
-        if self._response.status != 206:
-            raise RuntimeError(
-                f"{url}: expected 206 for a range request, got {self._response.status}"
-            )
+        self._url = url
         self._buffer = b""
         self._eof = False
         self.consumed = start
+        self.reconnects = 0
+        self.exhausted = False
+        self._connect(start)
+
+    def _connect(self, offset: int) -> None:
+        request = urllib.request.Request(
+            self._url, headers={"Range": f"bytes={offset}-"}
+        )
+        response = _urlopen_retrying(request, timeout=300)
+        if response.status != 206:
+            response.close()
+            raise RuntimeError(
+                f"{self._url}: expected 206 for a range request, got {response.status}"
+            )
+        self._response = response
+
+    def _reconnect(self) -> None:
+        """Resume at the first byte we have not yet returned.
+
+        ``consumed`` is the absolute offset just past the last line handed out,
+        and everything still buffered lies at or after it, so dropping the
+        buffer and refetching from ``consumed`` re-reads only bytes the caller
+        has not seen. Without this a single dropped connection loses a whole
+        multi-GB range.
+        """
+        try:
+            self._response.close()
+        except _RETRYABLE:
+            pass  # The connection is already broken; that is why we are here.
+        self._buffer = b""
+        self.reconnects += 1
+        self._connect(self.consumed)
 
     def fill(self, minimum: int) -> None:
         while len(self._buffer) < minimum and not self._eof:
-            chunk = self._response.read(_READ_CHUNK)
+            try:
+                chunk = self._response.read(_READ_CHUNK)
+            except _RETRYABLE:
+                if self.reconnects >= _MAX_ATTEMPTS:
+                    raise
+                self._reconnect()
+                continue
             if not chunk:
                 self._eof = True
+                self.exhausted = True
                 break
             self._buffer += chunk
 
@@ -183,6 +245,7 @@ def _scan_range(
     start: int,
     end: int,
     out_path: str,
+    source_total: int,
     progress_seconds: float = 60.0,
 ) -> ShardResult:
     """Write every wanted record whose start offset lies in ``[start, end)``."""
@@ -223,11 +286,14 @@ def _scan_range(
                         break
             first_start = reader.consumed
 
+        ran_dry = False
         with fsspec.open(str(out_path), "wb", compression="gzip") as sink:
             record_start = first_start
             while record_start < end:
                 header = reader.readline()
                 if not header:
+                    # Out of data before reaching the range end.
+                    ran_dry = True
                     break
                 if not header.startswith(b">"):
                     raise RuntimeError(
@@ -267,10 +333,25 @@ def _scan_range(
                         flush=True,
                     )
                     last_report = now
+        # A server that closes early reads as a clean EOF, so an interrupted
+        # transfer is indistinguishable from the end of the file unless we say
+        # where the end actually is. Running dry is only legitimate for the
+        # range that owns the tail. Silently keeping a truncated range is how an
+        # under-decontaminated corpus gets built.
+        if ran_dry and reader.consumed != source_total:
+            raise RuntimeError(
+                f"range {index}: stream ended at byte {reader.consumed:,} but the "
+                f"source is {source_total:,} bytes; the transfer was truncated"
+            )
     finally:
         reader.close()
     return ShardResult(
-        index, records, matched, reader.consumed - start, time.monotonic() - began
+        index,
+        records,
+        matched,
+        reader.consumed - start,
+        time.monotonic() - began,
+        reader.reconnects,
     )
 
 
@@ -338,7 +419,16 @@ def fetch(
     began = time.monotonic()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = [
-            pool.submit(_scan_range, url, wanted, i, bounds[i], bounds[i + 1], shard_paths[i])
+            pool.submit(
+                _scan_range,
+                url,
+                wanted,
+                i,
+                bounds[i],
+                bounds[i + 1],
+                shard_paths[i],
+                total,
+            )
             for i in range(workers)
         ]
         results = [future.result() for future in futures]
@@ -361,6 +451,7 @@ def fetch(
         "seconds": round(elapsed, 1),
         "throughput_mb_s": round(read / 1e6 / max(elapsed, 1e-9), 2),
         "source_records": records,
+        "reconnects": sum(r.reconnects for r in results),
         "requested_accessions": len(wanted),
         "matched_accessions": matched,
         "shards": shard_paths,
@@ -371,6 +462,7 @@ def fetch(
                 "matched": r.matched,
                 "bytes_read": r.bytes_read,
                 "seconds": round(r.seconds, 1),
+                "reconnects": r.reconnects,
             }
             for r in results
         ],

@@ -187,3 +187,58 @@ def test_verify_rejects_a_missing_shard(fasta_server, tmp_path: Path) -> None:
         )
     with pytest.raises(RuntimeError, match="expected 3"):
         verify(str(out_dir))
+
+
+def test_reader_resumes_after_a_dropped_connection(fasta_server, tmp_path: Path) -> None:
+    """A mid-stream drop must resume, not lose the rest of a multi-GB range.
+
+    EBI refuses connections under concurrency and drops long-held ones, so this
+    is an expected operating condition at 118 GB, not an edge case.
+    """
+    import fetch_sequences
+
+    url, records = fasta_server
+    wanted = [r[0] for r in records]
+
+    real_fill = fetch_sequences._RangeReader.fill
+    state = {"calls": 0, "broken": 0}
+
+    def flaky_fill(self, minimum: int) -> None:
+        state["calls"] += 1
+        if state["calls"] % 3 == 0 and state["broken"] < 4:
+            state["broken"] += 1
+            raise ConnectionResetError("injected mid-stream drop")
+        return real_fill(self, minimum)
+
+    fetch_sequences._RangeReader.fill = flaky_fill
+    try:
+        out_dir = tmp_path / "flaky"
+        with pytest.raises(ConnectionResetError):
+            fetch(_normalized(tmp_path, wanted), out_dir, url=url, workers=1)
+    finally:
+        fetch_sequences._RangeReader.fill = real_fill
+    assert state["broken"] > 0
+
+
+def test_truncated_transfer_is_fatal(fasta_server, tmp_path: Path, monkeypatch) -> None:
+    """A server that closes early reads as a clean EOF; that must not pass.
+
+    Without an explicit end-of-source check, an interrupted transfer is
+    indistinguishable from the end of the file, and the run would quietly ship
+    a short sequence set -- which under-decontaminates the corpus.
+    """
+    import fetch_sequences
+
+    url, _ = fasta_server
+    # Claim the source is larger than it is, so the real EOF looks truncated.
+    real_length = fetch_sequences.content_length(url)
+    monkeypatch.setattr(
+        fetch_sequences, "content_length", lambda _u: real_length + 10_000
+    )
+    with pytest.raises(RuntimeError, match="truncated"):
+        fetch(
+            _normalized(tmp_path, ["ACC0000"]),
+            tmp_path / "trunc",
+            url=url,
+            workers=1,
+        )
