@@ -54,10 +54,52 @@ fetched. That moves roughly the selected payload (~1.5-2.5 TB) rather than
 48.8 TB. Homodimer `chunk_*` tars also carry a redundant `.pdb.zst` per model
 that selective extraction skips entirely.
 
-## Blocking dependency
+## The sequence dependency, resolved
 
-AFCDB ships no FASTA and `modelEntityId` is opaque, so sequences must come from
-AlphaFold DB's 110 GB bulk `sequences.fasta` via a cloud-side streaming filter
-over the 21,437,370 referenced accessions. `annotations.py` would have
-mis-parsed that file's `>AFDB:AF-<acc>-F1` headers; fixed with a regression test
-on the real header. The eval-decontamination drop list is still to be produced.
+AFCDB ships no FASTA and `modelEntityId` is opaque, so subunit sequences come
+from AlphaFold DB's bulk `sequences.fasta` — measured at **118.0 GB**, not the
+110 GB the listing rounds to. A smoke run in `europe-west4-a` measured
+**14.5 MB/s** on one 2-vCPU pod, and the same rate with 4 ranges as with 16,
+so the scan is Python-bound rather than network-bound. It is therefore sharded
+across 16 pods, each owning a byte window and subdividing it into ranges.
+
+A sharded run cannot judge its own completeness, so `--verify` checks the union:
+that the windows tile the file contiguously and that every requested accession
+was matched exactly once.
+
+## Three bugs the scale found
+
+**The header parser.** AFDB writes `>AFDB:AF-<acc>-F1 ... UA=<acc>`, and the
+leading `AFDB:` defeated the `AF-...-F<n>` pattern, so every header would have
+produced the whole token as the "accession" and failed the missing-accession
+check for every row.
+
+**EBI refuses concurrent connections.** Seven of the first sixteen pods died on
+`Connection refused` from the opening HEAD. The reader now retries with backoff
+and jitter and resumes a dropped stream from the first unreturned byte.
+
+**A truncated transfer reads as a clean EOF.** Writing the reconnect test found
+something worse than the bug it was written for: when a server closes early,
+`read()` returns `b""`, so an interrupted transfer was indistinguishable from
+the end of the file. The range would stop short, report success, and ship a
+short sequence set — under-decontaminating the corpus, silently, weeks
+downstream. Ranges now carry the source length and treat running dry before the
+range end as fatal.
+
+## Guarding the join
+
+The selector now rejects any model whose joined UniProt subunit lengths
+disagree with the modelled residue count `n0chn`. Every AFCDB chain is at most
+1,500 residues, well under AFDB's 2,700-residue fragmenting threshold, so an
+`-F1` model covers residues 1..L and the two should agree exactly. When they do
+not, the sequence we hashed, deduplicated and decontaminated on is not the
+sequence the document will be generated from, and the eval-leakage decision for
+that row is unsound.
+
+## Still to come
+
+The eval2-v1 reference (577 = #225's 554 + #226's 23) is assembled and the
+drop-list builder is tested end to end against mmseqs. Remaining: run the
+decontamination search over the fetched subunits, run the selector, draw the
+50k pilot, and only then design Stage D — where the reconnaissance already says
+range-addressed extraction moves ~1.5–2.5 TB instead of the full 48.8 TB.
