@@ -64,13 +64,22 @@ def source_checkpoint() -> ArtifactStep[LevanterCheckpoint]:
 
 
 def build_continuation_run(
-    *, smoke: bool, nodes: int
+    *, smoke: bool, nodes: int, attempt: int
 ) -> ArtifactStep[LevanterCheckpoint]:
-    """Restore full state, reshuffle the corpus, and add one WSD epoch."""
+    """Restore full state, reshuffle the corpus, and add one WSD epoch.
+
+    The smoke's identity includes its attempt number. A step whose output path
+    already holds a `SUCCESS` status is skipped outright, and recipe drift only
+    warns, so a repeated smoke at a stable path would be served from cache
+    rather than rerun. Production keeps its reserved identity so that a
+    restarted production job resumes from its own checkpoints.
+    """
     if nodes not in (1, 2, 4, 8, 16):
         raise ValueError(f"Unsupported H100 gang size: {nodes}")
     per_device = min(8, GLOBAL_BATCH_SIZE // (8 * nodes))
-    run_id = f"{CONTINUATION_RUN_ID}-smoke" if smoke else CONTINUATION_RUN_ID
+    run_id = (
+        f"{CONTINUATION_RUN_ID}-smoke-a{attempt:02d}" if smoke else CONTINUATION_RUN_ID
+    )
     additional_steps = 10 if smoke else EPOCH_TRAIN_STEPS
     end_step = SOURCE_RESUME_STEP + additional_steps
     env = {
@@ -221,7 +230,11 @@ def main() -> ArtifactStep[LevanterCheckpoint]:
     for corpus in CORPORA:
         if not verify_cache(corpus):
             raise ValueError(f"Incomplete cache: {corpus.cache}")
-    return build_continuation_run(smoke=smoke, nodes=int(os.environ["NODES"]))
+    return build_continuation_run(
+        smoke=smoke,
+        nodes=int(os.environ["NODES"]),
+        attempt=int(os.environ["ATTEMPT"]),
+    )
 
 
 if __name__ == "__main__":
