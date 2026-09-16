@@ -17,7 +17,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from fetch_sequences import accession_from_token, fetch
+from fetch_sequences import accession_from_token, fetch, verify
 
 
 class _RangeHandler(http.server.SimpleHTTPRequestHandler):
@@ -143,3 +143,47 @@ def test_missing_accession_is_fatal(fasta_server, tmp_path: Path) -> None:
     wanted = [r[0] for r in records[:3]] + ["NOT_IN_SOURCE"]
     with pytest.raises(RuntimeError, match="are missing"):
         fetch(_normalized(tmp_path, wanted), tmp_path / "out", url=url, workers=4)
+
+
+@pytest.mark.parametrize(("shards", "workers"), [(2, 1), (3, 2), (5, 3), (11, 4)])
+def test_sharded_fetch_tiles_the_file(
+    fasta_server, tmp_path: Path, shards: int, workers: int
+) -> None:
+    """Splitting across pods must lose nothing at the pod seams either."""
+    url, records = fasta_server
+    wanted = [r[0] for r in records]
+    out_dir = tmp_path / f"out{shards}x{workers}"
+    normalized = _normalized(tmp_path, wanted)
+    for index in range(shards):
+        fetch(
+            normalized,
+            out_dir,
+            url=url,
+            workers=workers,
+            shard_index=index,
+            shard_count=shards,
+        )
+    result = verify(str(out_dir))
+    assert result["complete"]
+    assert result["source_records"] == len(records)
+    seen = _collect(out_dir)
+    assert len(seen) == len(set(seen)), "a record was emitted by two shards"
+    assert sorted(seen) == sorted(f"AFDB:AF-{a}-F1" for a in wanted)
+
+
+def test_verify_rejects_a_missing_shard(fasta_server, tmp_path: Path) -> None:
+    """A shard that never ran must fail the union check, not be ignored."""
+    url, records = fasta_server
+    wanted = [r[0] for r in records]
+    out_dir = tmp_path / "gappy"
+    for index in (0, 2):
+        fetch(
+            _normalized(tmp_path, wanted),
+            out_dir,
+            url=url,
+            workers=2,
+            shard_index=index,
+            shard_count=3,
+        )
+    with pytest.raises(RuntimeError, match="expected 3"):
+        verify(str(out_dir))

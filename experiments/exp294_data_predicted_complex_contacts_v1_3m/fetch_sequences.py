@@ -282,13 +282,26 @@ def fetch(
     workers: int = 16,
     accession_list: str | None = None,
     byte_limit: int | None = None,
+    shard_index: int = 0,
+    shard_count: int = 1,
 ) -> dict[str, Any]:
     """Filter the bulk FASTA down to AFCDB's accessions, in parallel ranges.
+
+    One pod runs at ~14.5 MB/s because the scan is Python-bound, not
+    network-bound, so the whole file takes hours on a single worker.
+    ``--shard-count`` splits the file across pods: shard *i* owns the global
+    window ``[total*i/N, total*(i+1)/N)`` and subdivides it into ``workers``
+    ranges. The same start-offset ownership rule applies at both levels, so
+    pod seams are exact for the same reason range seams are.
 
     ``byte_limit`` restricts the scan to the first N bytes of the source. It is
     for smoke tests only and makes the completeness check meaningless, so it
     disables it explicitly rather than letting a partial run look complete.
+    A sharded run cannot check completeness either — only the union can — so it
+    defers to ``verify``.
     """
+    if not 0 <= shard_index < shard_count:
+        raise ValueError(f"shard_index {shard_index} out of range for {shard_count}")
     out_dir = str(out_dir).rstrip("/")
     fs, _ = fsspec.core.url_to_fs(out_dir)
     fs.makedirs(out_dir, exist_ok=True)
@@ -307,12 +320,19 @@ def fetch(
     )
     total = content_length(url)
     scan = min(total, byte_limit) if byte_limit else total
-    bounds = [round(scan * i / workers) for i in range(workers + 1)]
-    shard_paths = [f"{out_dir}/afcdb_sequences-{i:04d}.fasta.gz" for i in range(workers)]
+    window_start = round(scan * shard_index / shard_count)
+    window_end = round(scan * (shard_index + 1) / shard_count)
+    span = window_end - window_start
+    bounds = [window_start + round(span * i / workers) for i in range(workers + 1)]
+    shard_paths = [
+        f"{out_dir}/afcdb_sequences-{shard_index:04d}-{i:04d}.fasta.gz"
+        for i in range(workers)
+    ]
 
     print(
-        f"scanning {scan / 1e9:.1f} GB of {url} across {workers} ranges "
-        f"for {len(wanted):,} accessions",
+        f"shard {shard_index + 1}/{shard_count}: scanning bytes "
+        f"[{window_start:,}, {window_end:,}) = {span / 1e9:.1f} GB of {url} "
+        f"across {workers} ranges for {len(wanted):,} accessions",
         flush=True,
     )
     began = time.monotonic()
@@ -332,6 +352,10 @@ def fetch(
         "source_bytes": total,
         "scanned_bytes": scan,
         "complete_scan": scan == total,
+        "shard_index": shard_index,
+        "shard_count": shard_count,
+        "window_start": window_start,
+        "window_end": window_end,
         "bytes_read": read,
         "workers": workers,
         "seconds": round(elapsed, 1),
@@ -351,10 +375,15 @@ def fetch(
             for r in results
         ],
     }
-    with fsspec.open(f"{out_dir}/fetch_sequences.json", "w") as handle:
+    with fsspec.open(
+        f"{out_dir}/fetch_sequences-{shard_index:04d}.json", "w"
+    ) as handle:
         handle.write(json.dumps(summary, indent=2) + "\n")
     if byte_limit:
         print("byte_limit set: skipping the completeness check (smoke run)")
+        return summary
+    if shard_count > 1:
+        print(f"shard {shard_index}/{shard_count} done; run `verify` on the union")
         return summary
     if matched != len(wanted):
         raise RuntimeError(
@@ -363,6 +392,79 @@ def fetch(
             "an incomplete sequence set would silently under-decontaminate the corpus"
         )
     return summary
+
+
+def verify(out_dir: str, *, expected_accessions: int | None = None) -> dict[str, Any]:
+    """Check that the shard summaries tile the whole file and miss nothing.
+
+    A sharded fetch can only be judged as a union: each pod sees a fraction of
+    the accessions and none can tell on its own whether the set is complete.
+    This asserts the windows are contiguous from 0 to the source length and
+    that every requested accession was matched exactly once across shards.
+    """
+    out_dir = out_dir.rstrip("/")
+    fs, _ = fsspec.core.url_to_fs(out_dir)
+    paths = sorted(fs.glob(f"{out_dir}/fetch_sequences-*.json"))
+    if not paths:
+        raise FileNotFoundError(f"no shard summaries under {out_dir}")
+
+    summaries = []
+    for path in paths:
+        with fs.open(path, "r") as handle:
+            summaries.append(json.load(handle))
+    summaries.sort(key=lambda s: s["shard_index"])
+
+    count = summaries[0]["shard_count"]
+    if len(summaries) != count:
+        raise RuntimeError(
+            f"{out_dir}: found {len(summaries)} shard summaries, expected {count}"
+        )
+    if any(s["shard_count"] != count for s in summaries):
+        raise RuntimeError(f"{out_dir}: shards disagree on shard_count")
+    if any(not s["complete_scan"] for s in summaries):
+        raise RuntimeError(f"{out_dir}: a shard was byte-limited; this is a smoke run")
+
+    source_bytes = summaries[0]["source_bytes"]
+    cursor = 0
+    for summary in summaries:
+        if summary["window_start"] != cursor:
+            raise RuntimeError(
+                f"shard {summary['shard_index']} starts at "
+                f"{summary['window_start']:,}, expected {cursor:,}: the windows "
+                "do not tile the file and records fell through a gap"
+            )
+        cursor = summary["window_end"]
+    if cursor != source_bytes:
+        raise RuntimeError(f"windows end at {cursor:,}, source is {source_bytes:,}")
+
+    requested = summaries[0]["requested_accessions"]
+    matched = sum(s["matched_accessions"] for s in summaries)
+    result = {
+        "out_dir": out_dir,
+        "shards": count,
+        "source_bytes": source_bytes,
+        "source_records": sum(s["source_records"] for s in summaries),
+        "requested_accessions": requested,
+        "matched_accessions": matched,
+        "seconds_max_shard": max(s["seconds"] for s in summaries),
+        "throughput_mb_s_total": round(
+            source_bytes / 1e6 / max(max(s["seconds"] for s in summaries), 1e-9), 1
+        ),
+        "complete": matched == requested,
+    }
+    print(json.dumps(result, indent=2))
+    if expected_accessions is not None and requested != expected_accessions:
+        raise RuntimeError(
+            f"shards were built for {requested:,} accessions, expected "
+            f"{expected_accessions:,}"
+        )
+    if matched != requested:
+        raise RuntimeError(
+            f"union matched {matched:,} of {requested:,} accessions; "
+            f"{requested - matched:,} are missing. An incomplete sequence set "
+            "would silently under-decontaminate the corpus"
+        )
+    return result
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -377,11 +479,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--byte-limit", type=int, default=None, help="Smoke only: scan the first N bytes."
     )
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Check an existing sharded fetch under --out instead of fetching.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.verify:
+        verify(args.out)
+        return 0
     summary = fetch(
         args.normalized,
         args.out,
@@ -389,6 +501,8 @@ def main(argv: list[str] | None = None) -> int:
         workers=args.workers,
         accession_list=args.accessions,
         byte_limit=args.byte_limit,
+        shard_index=args.shard_index,
+        shard_count=args.shard_count,
     )
     print(json.dumps(summary, indent=2))
     return 0
