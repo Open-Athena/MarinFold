@@ -1,0 +1,39 @@
+[project]
+name = "exp301-evals-fold-switching-proteins"
+version = "0.1.0"
+description = "Does MarinFold represent both folds of fold-switching proteins? — issue #301."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Ground truth runs exactly like contacts_v1 (native_only=True).
+    "marinfold[contacts-v1]",
+    # pyconfind's numba backend, pinned explicitly. marinfold[contacts-v1]
+    # pulls bare pyconfind, whose pure-python path disagrees with the numba
+    # one at the 0.001 degree cut — and the corpora (and therefore every
+    # other MarinFold contact number) are defined by the numba backend. An
+    # implicit pure-python ground truth here would look like a real result.
+    "pyconfind[fast]>=0.6",
+    "gemmi>=0.6",          # mmCIF parsing / chain extraction
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",        # roc_auc_score, as exp89's compute_metrics uses
+    "requests",            # RCSB fetch fallback when the local mirror misses
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]
