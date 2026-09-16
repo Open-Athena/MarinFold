@@ -28,8 +28,8 @@ from levanter.utils.mesh import MeshConfig
 from marin.training.run_environment import extras_for_resources
 from marin.training.training import TrainLmOnPodConfig, resolve_training_env, run_levanter_train_lm
 
-PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v1"
-CACHE_ROOT = os.environ.get("EXP299_CACHE_ROOT", f"{PREFIX}/packed_cache/2026.09.15.1")
+PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix"
+CACHE_ROOT = os.environ.get("EXP299_CACHE_ROOT", f"{PREFIX}/packed_cache/2026.09.16.1")
 VOCAB_SIZE = 2080
 SEQ_LEN = 8192
 GLOBAL_BATCH_SIZE = 128
@@ -108,7 +108,7 @@ def _pod_config(run_name: str, steps: int, resources: ResourceConfig) -> TrainLm
         "WANDB_ENTITY": "open-athena",
         "WANDB_PROJECT": "MarinFold",
         "EXP299_CACHE_ROOT": CACHE_ROOT,
-        "EXP299_DOCUMENT_STRUCTURE": "delta-stream-v1",
+        "EXP299_DOCUMENT_STRUCTURE": "delta-stream-v2-sequence-prefix",
         "JAX_COMPILATION_CACHE_DIR": os.environ.get("EXP299_CW_JAX_CACHE_DIR", "/tmp/jax-compilation-cache"),
     }
     for key in ("WANDB_API_KEY", "FSSPEC_S3", "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"):

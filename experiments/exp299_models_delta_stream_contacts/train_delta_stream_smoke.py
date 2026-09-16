@@ -19,7 +19,7 @@ import wandb
 
 DEFAULT_DATA = (
     "s3://marin-us-east-02a/protein-structure/MarinFold/"
-    "exp299_contacts_delta_stream_v1/documents/2026.09.15.1/shard-00000-of-03338.parquet"
+    "exp299_contacts_delta_stream_v2_sequence_prefix/documents/2026.09.16.1/shard-00000-of-03338.parquet"
 )
 
 

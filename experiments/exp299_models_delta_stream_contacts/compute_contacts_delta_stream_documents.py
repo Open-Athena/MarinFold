@@ -1,16 +1,16 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Compute compact delta-stream contacts documents from exp139 analyzed shards.
+"""Compute sequence-prefix delta-stream contact documents from analyzed shards.
 
-Each residue is serialized as::
+Each document places the complete amino-acid sequence before its contacts::
 
-    AA_TOKEN DELTA_TOKEN... STOP_TOKEN
+    DOC_START AA_TOKEN... CONTACTS_BEGIN DELTA_TOKEN... STOP_TOKEN ... DOC_END
 
-where contact deltas are sorted left-to-right by signed sequence offset. A
-residue with no contacts is simply ``AA_TOKEN STOP_TOKEN``.  This keeps the
-vocabulary small while making token count scale with observed contacts rather
-than a fixed 16-slot expansion.
+The contact section has one ``DELTA_TOKEN... STOP_TOKEN`` segment per residue,
+in sequence order. Signed deltas inside each segment are sorted left-to-right.
+A residue with no contacts emits only ``STOP_TOKEN``. This lets a causal LM see
+the entire sequence before predicting any contacts, as contacts-v1 does.
 """
 
 import argparse
@@ -31,7 +31,7 @@ DEFAULT_INPUT = (
 )
 DEFAULT_OUTPUT = (
     "s3://marin-us-east-02a/protein-structure/MarinFold/"
-    "exp299_contacts_delta_stream_v1/documents/2026.09.15.1/"
+    "exp299_contacts_delta_stream_v2_sequence_prefix/documents/2026.09.16.1/"
     "shard-{shard:05d}-of-{total:05d}.parquet"
 )
 TOTAL_INPUT_SHARDS = 3338
@@ -39,6 +39,9 @@ SHARD_RE = re.compile(r"analyzed-(\d+)-of-\d+\.parquet$")
 
 STOP_TOKEN_ID = 0
 AA_BASE_TOKEN_ID = 1
+DOC_START_TOKEN_ID = 21
+CONTACTS_BEGIN_TOKEN_ID = 22
+DOC_END_TOKEN_ID = 23
 DELTA_BASE_TOKEN_ID = 32
 DEFAULT_MAX_ABS_DELTA = 1024
 AA_ORDER = (
@@ -150,7 +153,8 @@ def document_row_from_analyzed(
         contacts_by_residue[j].append(ContactDelta(delta=i - j, degree=degree))
         contacts_used_undirected += 1
 
-    token_ids: list[int] = []
+    sequence_token_ids: list[int] = []
+    contact_token_ids: list[int] = []
     contact_deltas: list[list[int]] = []
     contact_degrees: list[list[float]] = []
     contacts_per_residue: list[int] = []
@@ -164,12 +168,19 @@ def document_row_from_analyzed(
         contacts_per_residue.append(len(deltas))
         max_contacts_per_residue = max(max_contacts_per_residue, len(deltas))
         try:
-            token_ids.append(AA_TO_TOKEN[aa])
+            sequence_token_ids.append(AA_TO_TOKEN[aa])
         except KeyError as exc:
             raise ValueError(f"{entry_id}: unknown residue name {aa!r}") from exc
-        token_ids.extend(delta_to_token(delta, max_abs_delta=max_abs_delta) for delta in deltas)
-        token_ids.append(STOP_TOKEN_ID)
+        contact_token_ids.extend(delta_to_token(delta, max_abs_delta=max_abs_delta) for delta in deltas)
+        contact_token_ids.append(STOP_TOKEN_ID)
 
+    token_ids = [
+        DOC_START_TOKEN_ID,
+        *sequence_token_ids,
+        CONTACTS_BEGIN_TOKEN_ID,
+        *contact_token_ids,
+        DOC_END_TOKEN_ID,
+    ]
     return {
         "entry_id": entry_id,
         "source_shard": int(source_shard),
@@ -180,6 +191,9 @@ def document_row_from_analyzed(
         "min_contact_degree": float(min_contact_degree),
         "max_abs_delta": int(max_abs_delta),
         "stop_token_id": int(STOP_TOKEN_ID),
+        "doc_start_token_id": int(DOC_START_TOKEN_ID),
+        "contacts_begin_token_id": int(CONTACTS_BEGIN_TOKEN_ID),
+        "doc_end_token_id": int(DOC_END_TOKEN_ID),
         "aa_base_token_id": int(AA_BASE_TOKEN_ID),
         "delta_base_token_id": int(DELTA_BASE_TOKEN_ID),
         "vocab_size": int(DELTA_BASE_TOKEN_ID + 2 * max_abs_delta),
@@ -189,6 +203,8 @@ def document_row_from_analyzed(
         "contacts_used_directed": int(2 * contacts_used_undirected),
         "contacts_per_residue": contacts_per_residue,
         "max_contacts_per_residue": int(max_contacts_per_residue),
+        "sequence_token_count": int(len(sequence_token_ids)),
+        "contact_token_count": int(len(contact_token_ids)),
         "token_count": int(len(token_ids)),
         "token_ids": token_ids,
         "contact_deltas": contact_deltas,
