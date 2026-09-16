@@ -1,0 +1,21 @@
+[project]
+name = "exp294-predicted-complex-contacts-v1"
+version = "0.1.0"
+description = "Metadata census and selection for a 3M predicted-complex contacts-v1 corpus."
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "duckdb>=1.4,<2",
+    "matplotlib>=3.9",
+    "pyarrow>=18",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]
