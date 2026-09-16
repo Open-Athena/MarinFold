@@ -2,6 +2,7 @@
 
 import io
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import fsspec
@@ -11,7 +12,7 @@ import pytest
 from launch import create_worker_request
 from scale_common import paused, sampling_history
 from scale_plan import make_plan
-from scale_snapshot import case_counts
+from scale_snapshot import case_counts, staleness_report
 
 
 def test_backbones_recover_without_aggregate_timing_or_progress_files(
@@ -105,3 +106,48 @@ def test_snapshot_counts_saved_sequences_before_refold_commit(tmp_path: Path) ->
     result = case_counts(case, root, paths, fsspec.filesystem("file"), {"case1": 1})
     assert result["generated"] == result["sequences_saved"] == 2
     assert result["refolded"] == result["quality_pass"] == result["complete"] == 0
+
+
+def staleness_fixture(idle_hours: dict[int, float | None], complete: set[int]) -> tuple:
+    """Build one case per worker, with the newest write aged by idle_hours."""
+    now = datetime.now(timezone.utc)
+    plan = {
+        "cases": [
+            {"id": f"c{worker:03d}", "worker": worker} for worker in sorted(idle_hours)
+        ]
+    }
+    rows = [
+        {"worker": worker, "complete": int(worker in complete)}
+        for worker in sorted(idle_hours)
+    ]
+    detail = {}
+    for worker, hours in idle_hours.items():
+        if hours is None:
+            continue
+        detail[f"root/cases/c{worker:03d}/generated/progress.json"] = {
+            "LastModified": now - timedelta(hours=hours)
+        }
+    return detail, plan, rows
+
+
+def test_stalled_worker_is_flagged_even_though_its_case_is_unfinished() -> None:
+    detail, plan, rows = staleness_fixture({1: 0.2, 2: 9.4, 3: 99.5}, complete=set())
+    summary, table = staleness_report(detail, plan, rows, 3.0)
+    assert summary["unfinished_workers"] == 3
+    assert summary["stalled_workers"] == 2
+    assert summary["max_idle_hours"] == pytest.approx(99.5, abs=0.01)
+    assert {row["worker"] for row in table} == {1, 2, 3}
+
+
+def test_finished_worker_is_not_counted_as_stalled() -> None:
+    detail, plan, rows = staleness_fixture({1: 50.0, 2: 0.1}, complete={1})
+    summary, _ = staleness_report(detail, plan, rows, 3.0)
+    assert summary["unfinished_workers"] == 1
+    assert summary["stalled_workers"] == 0
+
+
+def test_worker_with_no_output_yet_is_reported_separately_not_as_stalled() -> None:
+    detail, plan, rows = staleness_fixture({1: None, 2: 0.1}, complete=set())
+    summary, _ = staleness_report(detail, plan, rows, 3.0)
+    assert summary["never_written"] == 1
+    assert summary["stalled_workers"] == 0

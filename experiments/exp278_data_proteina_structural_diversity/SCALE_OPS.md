@@ -93,6 +93,52 @@ all-integer-length corpus. Requested labels alone do not establish novel folds.
 [issue](https://github.com/Open-Athena/MarinFold/issues/278),
 [draft PR](https://github.com/Open-Athena/MarinFold/pull/282).
 
+## Preemption zombies and the September 16 recovery
+
+Batch-priority preemption on East02 can leave a task with its attempt still
+marked active: `job describe` shows `state: running` with `PodDeleted: pod was
+deleted while the attempt was active` or `WorkloadEvictedDueToPreempted`, and it
+never reschedules. `job list` keeps reporting `running`, so the run looks healthy
+while producing nothing.
+
+On September 16 **all 215 still-running workers were in this state**, median 9.4 h
+since their last write and max 99.5 h; generation had been frozen at 87.9% of the
+manifest for hours. 691 of 1,464 attempts across the run are `worker_failed`, so
+the churn has been heavy throughout.
+
+The same defect inflates the cost report. `budget_snapshot.py` charges
+`(finished_at or now) - started_at`, so a zombie accrues forever: 13,185 H100-hours
+reported against roughly **9,483 real** (28% phantom, growing one H100-hour per
+zombie per wall-clock hour). Bound the real figure by treating each worker's last
+object write as its pod death, and report closed attempts separately from open ones.
+
+Recovery, as run on September 16:
+
+```bash
+# 1. capture the stuck set and confirm it is only ours
+uv run iris --cluster cw-us-east-02a job list --prefix /bizon/exp278-scale-v1 \
+  --limit 800 | awk '$2=="running"{print $1}' > zombies.txt
+uv run iris --cluster cw-us-east-02a job cancel --exact --stdin --dry-run < zombies.txt
+
+# 2. cancel, then wait until every one is terminal before resubmitting
+uv run iris --cluster cw-us-east-02a job cancel --exact --stdin < zombies.txt
+
+# 3. archive the superseded records; the launcher skips any worker that has one
+mkdir -p data/scale-20260909/superseded-v1
+mv data/scale-20260909/worker-<index>-submission.json data/scale-20260909/superseded-v1/
+
+# 4. resubmit under a new prefix so replacements stay distinguishable
+uv run python scale_launch.py --manifest data/scale-20260909/manifest.json \
+  --cluster cw-us-east-02a --start 0 --end 768 \
+  --name-prefix exp278-scale-v2 --spacing-seconds 2 --no-wait
+```
+
+Never resubmit before the old job is terminal: one worker index must never run
+twice. The full range is safe in step 4 because the launcher skips the 553 workers
+whose records remain. Nothing generated is lost — workers resume from durable
+per-batch checkpoints and skip completed work. The replacement bundle digest
+differs because the analysis module changed; no worker-side module was touched.
+
 ## Recurring snapshot timer
 
 The one-shot `exp278-scale-review.timer` fired once on September 10 and never
@@ -119,6 +165,16 @@ systemctl --user list-timers exp278-scale-snapshot.timer
 systemctl --user start exp278-scale-snapshot.service   # snapshot right now
 systemctl --user disable --now exp278-scale-snapshot.timer  # when the run ends
 ```
+
+Each run also computes **staleness**: for every unfinished worker, the hours since
+its newest object-store write. Iris job state cannot detect the failure above, so
+recent writes are the liveness signal, and the listing is already paid for. The
+snapshot gains a `staleness` block, a `staleness-*.csv` naming the idle workers,
+and a `STALL DETECTED` banner past `--stale-hours` (default 3). A freshly
+resubmitted or just-preempted worker on a long-length queue can exceed the
+threshold legitimately until its first batch commits, so confirm with `job
+describe` before replacing one: a recent attempt that is progressing is normal
+churn; an old attempt stuck on `PodDeleted` is not.
 
 Progress and service logs land in `data/scale-20260909/snapshot-service.log`. The
 units hard-code this worktree as `WorkingDirectory`; moving or deleting it breaks
