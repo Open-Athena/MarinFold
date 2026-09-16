@@ -24,6 +24,7 @@ def _selected(tmp_path: Path, rows: list[dict]) -> Path:
 
 def _row(i: int, *, quality: float, ctype: str, residues: int, tax: int) -> dict:
     return {
+        "source_model_key": f"{ctype}|AF-{i:010d}",
         "model_id": f"AF-{i:010d}",
         "complex_type": ctype,
         "quality_ratio": quality,
@@ -97,3 +98,41 @@ def test_pilot_reports_a_shortfall_instead_of_silently_shrinking(tmp_path: Path)
     # The manifest is still written, so the frontier can be inspected.
     assert (tmp_path / "out" / "pilot_manifest.parquet").is_file()
     assert (tmp_path / "out" / "pilot.json").is_file()
+
+
+def test_throughput_probe_matches_run_density(tmp_path: Path) -> None:
+    """The probe must take whole tars, not a thin spread across many.
+
+    Walking a tar's headers costs the same whether you take 4 members or 400,
+    so timing the stratified draw -- which lands ~4 models per tar against the
+    real run's ~170 -- would overestimate the per-document cost by that ratio.
+    """
+    rows = []
+    for tar in range(10):
+        for i in range(30):
+            row = _row(
+                tar * 100 + i,
+                quality=(1.2, 0.7, 0.4)[i % 3],
+                ctype="homodimer" if i % 2 else "heterodimer",
+                residues=(300, 600, 1000)[i % 3],
+                tax=9606 + (i % 4),
+            )
+            row["source_tar_uri"] = f"https://example/tar_{tar}.tar"
+            rows.append(row)
+    stats = build(_selected(tmp_path, rows), tmp_path / "out", size=60, throughput_tars=3)
+
+    assert stats["probe_tars"] == 3
+    assert stats["probe_models"] == 90, "every selected model in those tars"
+    assert stats["probe_models_per_tar"] == 30.0
+    assert stats["corpus_models_per_tar"] == 30.0, "the probe matches run density"
+    # The stratified draw is much thinner per tar, which is the whole point.
+    assert stats["pilot_models_per_tar"] < stats["probe_models_per_tar"]
+
+    probe = pq.read_table(tmp_path / "out" / "throughput_probe.parquet").to_pylist()
+    uris = {row["source_tar_uri"] for row in probe}
+    assert len(uris) == 3
+    assert len(probe) == 90
+    # Deterministic: the same three tars every time.
+    again = build(_selected(tmp_path, rows), tmp_path / "out2", size=60, throughput_tars=3)
+    probe2 = pq.read_table(tmp_path / "out2" / "throughput_probe.parquet").to_pylist()
+    assert [r["source_model_key"] for r in probe] == [r["source_model_key"] for r in probe2]
