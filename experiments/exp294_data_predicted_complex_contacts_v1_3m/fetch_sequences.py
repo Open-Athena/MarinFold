@@ -182,7 +182,8 @@ def _scan_range(
     index: int,
     start: int,
     end: int,
-    out_path: Path,
+    out_path: str,
+    progress_seconds: float = 60.0,
 ) -> ShardResult:
     """Write every wanted record whose start offset lies in ``[start, end)``."""
     began = time.monotonic()
@@ -193,6 +194,7 @@ def _scan_range(
     reader = _RangeReader(url, start - 1 if start > 0 else 0)
     records = matched = 0
     first_start = start
+    last_report = began
 
     try:
         if start > 0:
@@ -253,6 +255,18 @@ def _scan_range(
                     sink.write(header)
                     sink.writelines(body)
                 record_start = reader.consumed
+                now = time.monotonic()
+                if now - last_report >= progress_seconds:
+                    done = record_start - first_start
+                    span = max(end - first_start, 1)
+                    print(
+                        f"range {index:>3}: {100 * done / span:5.1f}% "
+                        f"({done / 1e9:.2f}/{span / 1e9:.2f} GB) "
+                        f"{records:,} records, {matched:,} matched, "
+                        f"{done / 1e6 / max(now - began, 1e-9):.1f} MB/s",
+                        flush=True,
+                    )
+                    last_report = now
     finally:
         reader.close()
     return ShardResult(
@@ -278,6 +292,7 @@ def fetch(
     out_dir = str(out_dir).rstrip("/")
     fs, _ = fsspec.core.url_to_fs(out_dir)
     fs.makedirs(out_dir, exist_ok=True)
+    loading = time.monotonic()
     if accession_list:
         wanted = listed_accessions(accession_list)
     elif normalized_glob:
@@ -286,11 +301,20 @@ def fetch(
         raise ValueError("one of --accessions or --normalized is required")
     if not wanted:
         raise ValueError("no accessions to fetch")
+    print(
+        f"loaded {len(wanted):,} accessions in {time.monotonic() - loading:.1f}s",
+        flush=True,
+    )
     total = content_length(url)
     scan = min(total, byte_limit) if byte_limit else total
     bounds = [round(scan * i / workers) for i in range(workers + 1)]
     shard_paths = [f"{out_dir}/afcdb_sequences-{i:04d}.fasta.gz" for i in range(workers)]
 
+    print(
+        f"scanning {scan / 1e9:.1f} GB of {url} across {workers} ranges "
+        f"for {len(wanted):,} accessions",
+        flush=True,
+    )
     began = time.monotonic()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = [

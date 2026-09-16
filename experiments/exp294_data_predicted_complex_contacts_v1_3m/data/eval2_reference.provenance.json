@@ -1,0 +1,12 @@
+{
+  "reference_version": "eval2-v1",
+  "records": 577,
+  "legacy_source": "exp225_data_decontaminate_training_corpora/data/reference/eval_queries.fasta",
+  "legacy_records": 554,
+  "expansion_source": "exp226_evals_expand_foldbench_eval_set/data/eval2_manifest.csv",
+  "expansion_dataset": "foldbench_rest",
+  "expansion_records": 23,
+  "residues": 108076,
+  "sha256": "f4238c00434a1d96d5e5f36efaf509fce667da268843651ffe82c250da1fa12f",
+  "output": "/home/bizon/git/MarinFold/.claude/worktrees/exp294-predicted-complexes-33539c/experiments/exp294_data_predicted_complex_contacts_v1_3m/data/eval2_reference.fasta"
+}
