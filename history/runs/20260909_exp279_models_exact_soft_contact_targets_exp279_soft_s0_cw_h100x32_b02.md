@@ -95,3 +95,27 @@ run identity are unchanged.
 At 2026-09-15 12:47:18 UTC both a03 jobs were running and W&B had advanced past
 the failed attempt to observed step 109985, with finite loss 2.9193 and 3.497
 seconds/update.
+
+## Restart 3
+
+The a03 base-phase gang failed on 2026-09-16: task 0 exited 139 (SIGSEGV) after
+17 hours 43 minutes, and the other three replicas were stopped as coscheduled
+siblings. Iris reports `preemptions=0`, so this was not a preemption, and the
+retained diagnostic holds only the faulthandler extension-module tail with no
+native frame, so the fault site remains unidentified. This is the second exit
+139 of this run, after logged step 55520 on a01.
+
+The last logged W&B step was 125935, but that is not a committed checkpoint.
+`step-125936` and `step-125680` both stop short of `metadata.json`, exactly as
+a02's OOM-killed `step-109962` did, so all three terminal failures of this run
+landed on or near a checkpoint save. Levanter's `discover_latest_checkpoint`
+admits only directories with a readable `metadata.json`, so `--resume-latest`
+cannot select either incomplete directory.
+
+Driver `/bizon/exp279-soft-production-cw-h100x32-a04` was submitted at
+2026-09-16 13:36:51 UTC from the original frozen source
+(`b0dd33eca8836c1dddbe6588e4befc3b2dd5c67d`, code SHA-256 `d42c8bab...1ac1`),
+restoring the latest complete checkpoint, temporary step 125489, at update
+125490. That discards 446 updates relative to the last logged step. The data
+manifest, 32-H100 geometry, batch priority, base-phase recipe, checkpoint root
+and W&B run identity are unchanged.
