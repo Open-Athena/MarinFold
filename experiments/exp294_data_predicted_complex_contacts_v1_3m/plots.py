@@ -12,6 +12,7 @@ Every figure is metadata-only; no coordinates are read.
 """
 
 import argparse
+import json
 from pathlib import Path
 
 import duckdb
@@ -195,16 +196,119 @@ def plot_filter_attrition(con: duckdb.DuckDBPyConnection, src: str) -> None:
     plt.close(fig)
 
 
+def plot_selection_funnel(selection_json: Path) -> None:
+    """Where the 29,025,020 source models went."""
+    stats = json.loads(selection_json.read_text())
+    ledger = sorted(stats["ledger"], key=lambda r: -r["rows"])
+    labels, values, colors = [], [], []
+    for row in ledger:
+        label = row["reason"].replace("_", " ")
+        labels.append(label)
+        values.append(row["rows"] / 1e6)
+        colors.append(
+            "#2e7d4f" if row["status"] == "selected"
+            else ("#c4622d" if row["status"] == "rejected" else "#9aa0a6")
+        )
+    fig, ax = plt.subplots(figsize=(9, 5.0))
+    ypos = range(len(labels))
+    ax.barh(list(ypos), values, color=colors)
+    for y, v in zip(ypos, values):
+        ax.text(v + 0.15, y, f"{v:.2f}M", va="center", fontsize=9)
+    ax.set_yticks(list(ypos))
+    ax.set_yticklabels(labels, fontsize=9)
+    ax.invert_yaxis()
+    ax.set_xlim(0, max(values) * 1.18)
+    ax.set_xlabel("source models (millions)")
+    ax.set_title(
+        f"Every one of {sum(r['rows'] for r in ledger):,} source models has a "
+        "terminal reason", fontsize=11,
+    )
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=c)
+        for c in ("#2e7d4f", "#c4622d", "#9aa0a6")
+    ]
+    ax.legend(handles, ["selected", "rejected", "not selected"], frameon=False, loc="lower right")
+    _style(ax)
+    ax.grid(axis="y", alpha=0)
+    ax.grid(axis="x", alpha=0.25, linewidth=0.6)
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, PLOTS / "selection_funnel.png", dpi=150,
+        caption=(
+            "Terminal status of every AFCDB source model. The two dominant "
+            "rejections are the relaxed quality floor and backbone clashes; "
+            "3.0M are selected."
+        ),
+    )
+    plt.close(fig)
+
+
+def plot_pilot_composition(pilot_json: Path) -> None:
+    """The stratified draw against the corpus it is drawn from."""
+    stats = json.loads(pilot_json.read_text())
+    bins = ["A_ge_1.0", "B_0.5_1.0", "B_0.3_0.5"]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
+
+    width = 0.38
+    peak = 0
+    for i, (ctype, color) in enumerate((("homodimer", HOMO), ("heterodimer", HET))):
+        drawn = [
+            sum(b["drawn"] for b in stats["breakdown"]
+                if b["complex_type"] == ctype and b["quality_bin"] == q)
+            for q in bins
+        ]
+        peak = max(peak, *drawn)
+        xs = [x + (i - 0.5) * width for x in range(len(bins))]
+        ax.bar(xs, drawn, width, color=color, label=ctype)
+    ax.set_ylim(0, peak * 1.28)
+    ax.set_xticks(range(len(bins)))
+    ax.set_xticklabels(["Tier A\n(>=1.0)", "Tier B\n(0.5-1.0)", "Tier B\n(0.3-0.5)"])
+    ax.set_ylabel("pilot models drawn")
+    ax.set_title("Equalised, not proportional", fontsize=11)
+    ax.legend(frameon=False, loc="upper center", ncol=2)
+    _style(ax)
+
+    names = ["corpus\n(the real run)", "throughput\nprobe", "stratified\npilot"]
+    density = [
+        stats["corpus_models_per_tar"],
+        stats["probe_models_per_tar"],
+        stats["pilot_models_per_tar"],
+    ]
+    ax2.bar(names, density, color=["#9aa0a6", "#2e7d4f", "#c4622d"], width=0.55)
+    for x, v in enumerate(density):
+        ax2.text(x, v + 4, f"{v:g}", ha="center", fontsize=10)
+    ax2.set_ylabel("selected models per source tar")
+    ax2.set_ylim(0, max(density) * 1.2)
+    ax2.set_title("Why throughput needs its own sample", fontsize=11)
+    _style(ax2)
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, PLOTS / "pilot_composition.png", dpi=150,
+        caption=(
+            "Left: the pilot equalises across strata to over-sample the "
+            "low-confidence tail. Right: extraction cost is per tar, so the "
+            "stratified draw's 3.9 models/tar cannot time the run's 180."
+        ),
+    )
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, help="Normalized Parquet file or glob.")
+    parser.add_argument("--selection-json", type=Path, default=None)
+    parser.add_argument("--pilot-json", type=Path, default=None)
     args = parser.parse_args(argv)
     src = f"read_parquet({_sql_literal(args.input)}, union_by_name=true)"
     con = duckdb.connect()
     plot_yield_frontier(con, src)
     plot_score_distribution(con, src)
     plot_filter_attrition(con, src)
-    print(f"wrote census figures to {PLOTS}")
+    if args.selection_json:
+        plot_selection_funnel(args.selection_json)
+    if args.pilot_json:
+        plot_pilot_composition(args.pilot_json)
+    print(f"wrote figures to {PLOTS}")
     return 0
 
 

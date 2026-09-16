@@ -339,6 +339,68 @@ from the manifest alone with no stored seed and no dependence on row order, and
 a stratum thinner than its share redistributes its shortfall rather than quietly
 shrinking the pilot.
 
+### Stage A result: the 3M target is met (2026-09-16)
+
+**3,000,000 documents selected**, every one a distinct sequence pair
+(`max_documents_per_sequence_pair` = 1). 1,753,570 are Tier A and 1,246,430
+Tier B. Every one of the 29,025,020 source models carries exactly one terminal
+status — the ledger sums to 29,025,020 and its selected rows sum to 3,000,000.
+
+| terminal reason | models |
+| --- | --- |
+| below relaxed quality floor | 10,735,511 |
+| too many backbone clashes | 10,436,337 |
+| eval sequence homolog | 2,019,682 |
+| **selected, Tier A** | **1,753,570** |
+| **selected, Tier B** | **1,246,430** |
+| no reported interaction | 949,709 |
+| does not fit contacts ring | 829,608 |
+| duplicate sequence pair | 441,456 |
+| missing sequence annotation | 431,536 |
+| quota filled by higher-ranked models | 133,155 |
+| sequence/model length mismatch | 47,118 |
+| missing accession | 895 |
+
+**The heterodimer floor is still not met, even at 200,000.** The run selected
+**183,809** heterodimers: 65,366 from Tier A plus every one of the 118,443
+Tier-B heterodimers above the floor. The pool is exhausted, not rationed. This
+is the same finding as the census, one stage deeper and now after
+decontamination and dedup — AFCDB does not contain 200k usable heterodimers,
+let alone 500k. `selection.py` reports `heterodimer_floor_met: false` and does
+not treat it as fatal, because the shortfall is a property of the source rather
+than of the policy. Growing this arm is a Stage-E question.
+
+**A bug the accounting caught.** The first run's ledger summed to 3,000,017
+against a 3,000,000 manifest. **AFCDB's `modelEntityId` is not unique across
+its two source tables**: 130 ids appear as both a homodimer and a heterodimer,
+and they are genuinely different complexes — different accessions, different
+tar trees — that happen to share an identifier. Joining on the id alone
+duplicated ledger rows and, worse, let one source's row mask the other's in the
+Tier-B anti-join, silently excluding a homodimer whose id collided with an
+already-selected heterodimer. Every join now keys on
+`complex_type || '|' || model_id`, whose uniqueness is asserted rather than
+assumed. Stage D needs that key too: a colliding id resolves to different
+members in the homodimer and heterodimer tar trees.
+
+### Stage B: the pilot, and why throughput needs a second sample
+
+The stratified draw is 50,000 models over 24 strata — 25,001 homodimers /
+24,999 heterodimers, quality bins at 16,672 / 16,668 / 16,660, spanning 1,658
+taxa and 43.9M residues. Only one stratum could not fill its share
+(heterodimer, 0.3–0.5, >=1400 residues: 2,075 available, all taken) and its
+shortfall redistributed as designed.
+
+Drawing it exposed a measurement-design problem. The stratified sample spreads
+across 12,818 of the 16,640 source tars at **3.9 models per tar**, while the
+real run sees **180.3**. Extraction cost is not per model — walking a tar's
+headers costs the same whether you take 4 members from it or 400 — so timing
+the stratified draw would have overestimated the production cost per document
+by roughly that 46x density ratio. `pilot.py` therefore emits a second sample:
+a **throughput probe** of every selected model from 20 whole tars, 4,273 models
+at **213.7 per tar**. The stratified draw answers "are these documents any
+good"; the probe answers "what does extraction cost". Neither can answer the
+other's question.
+
 ### Stage D: what the archive reconnaissance implies
 
 Not yet implemented, and not to be launched before the pilot reports. The

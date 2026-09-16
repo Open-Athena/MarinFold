@@ -8,5 +8,5 @@
     "--pilot-json",
     "/data/exp294_predicted_complexes/pilot/pilot.json"
   ],
-  "caption": "ipSAE over hard-eligible models (min over directions for homodimers, max for heterodimers; the two differ by 0.0014 on average). 76% of heterodimers score exactly 0, which is why relaxing the floor buys so little."
+  "caption": "Terminal status of every AFCDB source model. The two dominant rejections are the relaxed quality floor and backbone clashes; 3.0M are selected."
 }

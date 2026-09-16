@@ -96,10 +96,45 @@ not, the sequence we hashed, deduplicated and decontaminated on is not the
 sequence the document will be generated from, and the eval-leakage decision for
 that row is unsound.
 
+## Stage A result: 3,000,000 documents
+
+The selector produced **3,000,000 documents**, every one a distinct sequence
+pair — 1,753,570 Tier A and 1,246,430 Tier B. Every one of the 29,025,020
+source models carries exactly one terminal status: the ledger sums to
+29,025,020 and its selected rows sum to 3,000,000.
+
+The two dominant rejections are the relaxed quality floor (10.74M) and backbone
+clashes (10.44M), then eval homology (2.02M).
+
+## The heterodimer arm is exhausted, not rationed
+
+The run selected **183,809** heterodimers against the reduced 200,000 floor:
+every Tier-A heterodimer plus every Tier-B heterodimer above the floor. The
+pool ran out. This is the census finding one stage deeper, now after
+decontamination and dedup — AFCDB does not contain 200k usable heterodimers,
+let alone 500k. Growing this arm needs Stage-E sources.
+
+## A bug the accounting caught
+
+The first run's ledger summed to 3,000,017 against a 3,000,000 manifest.
+**AFCDB's `modelEntityId` is not unique across its two source tables**: 130 ids
+appear as both a homodimer and a heterodimer, genuinely different complexes
+that share an identifier. Joining on the id alone duplicated ledger rows and
+let one source's row mask the other's in the Tier-B anti-join. Every join now
+keys on `(complex_type, model_id)`, asserted unique rather than assumed.
+
+## Why throughput needs its own sample
+
+The stratified 50k draw spreads across 12,818 tars at **3.9 models per tar**;
+the real run sees **180.3**. Extraction cost is per tar, not per model —
+walking a tar's headers costs the same for 4 members or 400 — so timing the
+stratified draw would overestimate per-document cost by ~46x. A separate
+throughput probe takes every selected model from 20 whole tars: 4,273 models at
+**213.7 per tar**, the density the run actually sees.
+
 ## Still to come
 
-The eval2-v1 reference (577 = #225's 554 + #226's 23) is assembled and the
-drop-list builder is tested end to end against mmseqs. Remaining: run the
-decontamination search over the fetched subunits, run the selector, draw the
-50k pilot, and only then design Stage D — where the reconnaissance already says
-range-addressed extraction moves ~1.5–2.5 TB instead of the full 48.8 TB.
+Stage D extraction, sized from the probe rather than assumed, then
+interface-aware cluster assignment and the balanced manifests. The
+reconnaissance already says range-addressed extraction moves ~1.5-2.5 TB
+against streaming's full 48.8 TB.

@@ -8,5 +8,5 @@
     "--pilot-json",
     "/data/exp294_predicted_complexes/pilot/pilot.json"
   ],
-  "caption": "ipSAE over hard-eligible models (min over directions for homodimers, max for heterodimers; the two differ by 0.0014 on average). 76% of heterodimers score exactly 0, which is why relaxing the floor buys so little."
+  "caption": "Left: the pilot equalises across strata to over-sample the low-confidence tail. Right: extraction cost is per tar, so the stratified draw's 3.9 models/tar cannot time the run's 180."
 }

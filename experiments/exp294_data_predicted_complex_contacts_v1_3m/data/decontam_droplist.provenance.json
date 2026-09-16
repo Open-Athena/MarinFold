@@ -1,0 +1,19 @@
+{
+  "reference": "/home/bizon/git/MarinFold/.claude/worktrees/exp294-predicted-complexes-33539c/experiments/exp294_data_predicted_complex_contacts_v1_3m/data/eval2_reference.fasta",
+  "reference_version": "eval2-v1",
+  "sequences_glob": "/data/exp294_predicted_complexes/sequences/*.fasta.gz",
+  "rule": "identity >= 30% over >= 50% query coverage, or E <= 0.001",
+  "search": {
+    "sensitivity": 7.5,
+    "max_seqs": 1000000,
+    "search_evalue": 1000.0,
+    "report_evalue_ceiling": 10.0,
+    "mmseqs": "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs"
+  },
+  "output": "/data/exp294_decontam/eval_accession_droplist.parquet",
+  "alignments_reported": 5662204,
+  "queries_with_alignments": 575,
+  "max_alignments_per_query": 313640,
+  "queries_at_max_seqs": 0,
+  "dropped_accessions": 1071475
+}
