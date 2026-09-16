@@ -24,7 +24,12 @@ dev = [
 testpaths = ["tests"]
 
 [tool.uv.sources]
-marinfold = { path = "../../marinfold" }
+# A git revision rather than the usual `path = "../../marinfold"`: Iris builds
+# the container from this bundled project, and a path dep pointing outside the
+# bundle fails the build ("cannot normalize a relative path beyond the base
+# directory"). The revision is this branch's base, which is byte-identical to
+# origin/main's marinfold, so the generator is pinned rather than floating.
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "7ccac0f8fccdea8cac1da59bafadfd18adedd08c" }
 
 [tool.uv]
 environments = ["sys_platform == 'linux'"]

@@ -373,7 +373,7 @@ requires-dist = [
     { name = "fsspec", specifier = ">=2026.7.0" },
     { name = "gcsfs", specifier = ">=2025.1,<2026.5" },
     { name = "gemmi", specifier = ">=0.6" },
-    { name = "marinfold", extras = ["contacts-v1"], directory = "../../marinfold" },
+    { name = "marinfold", extras = ["contacts-v1"], git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=7ccac0f8fccdea8cac1da59bafadfd18adedd08c" },
     { name = "matplotlib", specifier = ">=3.9" },
     { name = "pyarrow", specifier = ">=18" },
     { name = "pyconfind", extras = ["fast"] },
@@ -821,7 +821,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { directory = "../../marinfold" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=7ccac0f8fccdea8cac1da59bafadfd18adedd08c#7ccac0f8fccdea8cac1da59bafadfd18adedd08c" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
@@ -839,29 +839,6 @@ dependencies = [
 contacts-v1 = [
     { name = "pyconfind", marker = "sys_platform == 'linux'" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", marker = "extra == 'transformers'", specifier = ">=0.30" },
-    { name = "gemmi", specifier = ">=0.6" },
-    { name = "huggingface-hub", specifier = ">=0.24" },
-    { name = "matplotlib" },
-    { name = "mlx", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.18" },
-    { name = "mlx-lm", marker = "sys_platform == 'darwin' and extra == 'mlx'", specifier = ">=0.20" },
-    { name = "numpy" },
-    { name = "pyarrow" },
-    { name = "pyconfind", marker = "extra == 'contacts-v1'", specifier = ">=0.5" },
-    { name = "pyyaml", specifier = ">=6" },
-    { name = "safetensors", specifier = ">=0.6" },
-    { name = "tokenizers", specifier = ">=0.15" },
-    { name = "torch", marker = "extra == 'transformers'", specifier = ">=2.4" },
-    { name = "transformers", specifier = ">=4.40,<5" },
-    { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.6" },
-]
-provides-extras = ["vllm", "transformers", "mlx", "contacts-v1"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.3" }]
 
 [[package]]
 name = "matplotlib"
