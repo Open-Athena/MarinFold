@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 import boto3
+from botocore.exceptions import ClientError
 
 BUCKET = "marinfold-exp91-usw2"
 IMAGE = "ami-04678417fc39d7171"
@@ -47,15 +48,22 @@ mkdir -p /opt/exp292
 """
 
 
+# An instance keeps its vCPU reservation until it is fully terminated, so a
+# worker that is merely shutting down still counts against the account limit.
+HOLDING_STATES = ("pending", "running", "shutting-down", "stopping", "rebooting")
+
+
 def live_instances(ec2) -> int:
-    """Count exp292 workers currently holding vCPU capacity."""
-    response = ec2.describe_instances(
+    """Count exp292 workers still holding vCPU capacity."""
+    total = 0
+    for page in ec2.get_paginator("describe_instances").paginate(
         Filters=[
-            {"Name": "instance-state-name", "Values": ["pending", "running"]},
+            {"Name": "instance-state-name", "Values": list(HOLDING_STATES)},
             {"Name": "tag:Experiment", "Values": ["exp292"]},
         ]
-    )
-    return sum(len(item["Instances"]) for item in response["Reservations"])
+    ):
+        total += sum(len(item["Instances"]) for item in page["Reservations"])
+    return total
 
 
 def main() -> None:
@@ -146,6 +154,7 @@ def main() -> None:
         if free <= 0:
             time.sleep(args.poll_seconds)
             continue
+        launched = 0
         for shard in pending[:free]:
             name = f"{args.run_name}-{shard}"
             config = {
@@ -163,20 +172,30 @@ def main() -> None:
                 ],
                 "ClientToken": hashlib.sha256((name + digest).encode()).hexdigest(),
             }
-            response = ec2.run_instances(
-                **config,
-                UserData=user_data(
-                    source_key, args.output_prefix, shard, args.max_clusters
-                ),
-            )
+            try:
+                response = ec2.run_instances(
+                    **config,
+                    UserData=user_data(
+                        source_key, args.output_prefix, shard, args.max_clusters
+                    ),
+                )
+            except ClientError as error:
+                if error.response["Error"]["Code"] != "VcpuLimitExceeded":
+                    raise
+                # Capacity the describe call did not see yet — usually workers
+                # still shutting down. Treat it as backpressure and retry this
+                # shard on the next wave rather than losing the run.
+                print(f"vcpu limit reached with {len(pending) - launched} shards left", flush=True)
+                break
             # Record before the next call so an account-limit refusal cannot
             # strand an already-running instance with no provenance.
             record["instances"].append(
                 {"shard": shard, "instance_id": response["Instances"][0]["InstanceId"]}
             )
+            launched += 1
             persist()
             print(f"launched shard={shard} {record['instances'][-1]['instance_id']}", flush=True)
-        pending = pending[free:]
+        pending = pending[launched:]
         if pending:
             time.sleep(args.poll_seconds)
     record["status"] = "launched"

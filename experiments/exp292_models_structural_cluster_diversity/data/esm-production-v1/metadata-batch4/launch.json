@@ -1,39 +1,13 @@
 {
   "status": "launching",
   "region": "us-west-2",
-  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata/launches/exp292-esm-metadata-batch3/source.tar.gz",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata/launches/exp292-esm-metadata-batch4/source.tar.gz",
   "located": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator/located",
   "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata",
-  "bundle_sha256": "5d05f3605b5cddac625c3c9e05868d38ceef16a58b6bc6025a2f3a51b9ddaf13",
+  "bundle_sha256": "a53d04aa219933270f7ec852fe5fa78bbf3ebed4a705ad9781a07f92b0967e49",
   "bundle_bytes": 98679,
   "shards": [
-    "24",
-    "25",
-    "26",
-    "27",
-    "28",
-    "29",
-    "2a",
-    "2b",
-    "2c",
-    "2d",
-    "2e",
-    "2f",
-    "30",
-    "31",
-    "32",
-    "33",
-    "34",
-    "35",
-    "36",
-    "37",
-    "38",
-    "39",
-    "3a",
-    "3b",
-    "3c",
-    "3d",
-    "3e",
+    "00",
     "3f",
     "40",
     "41",
@@ -232,112 +206,112 @@
   "max_clusters": null,
   "instances": [
     {
-      "shard": "24",
-      "instance_id": "i-062cba0225e16ed05"
+      "shard": "00",
+      "instance_id": "i-00fabd367a2ccdda9"
     },
     {
-      "shard": "25",
-      "instance_id": "i-01a7aad9f8aff5386"
+      "shard": "3f",
+      "instance_id": "i-0be69642d4f22dc72"
     },
     {
-      "shard": "26",
-      "instance_id": "i-0fc0554efac032c26"
+      "shard": "40",
+      "instance_id": "i-02100983092889e01"
     },
     {
-      "shard": "27",
-      "instance_id": "i-0e6728a9bc028b4ec"
+      "shard": "41",
+      "instance_id": "i-057e525b9ddee97d3"
     },
     {
-      "shard": "28",
-      "instance_id": "i-0899629dacb7a81cf"
+      "shard": "42",
+      "instance_id": "i-0adad0086af9938ba"
     },
     {
-      "shard": "29",
-      "instance_id": "i-0fd038cb97f2e7c01"
+      "shard": "43",
+      "instance_id": "i-0aa4faa119027b86c"
     },
     {
-      "shard": "2a",
-      "instance_id": "i-09639b9f895df2260"
+      "shard": "44",
+      "instance_id": "i-01b2eb3145aa7d5bf"
     },
     {
-      "shard": "2b",
-      "instance_id": "i-0fb20e9d0cd1ac00f"
+      "shard": "45",
+      "instance_id": "i-0dfc3256dac2de53f"
     },
     {
-      "shard": "2c",
-      "instance_id": "i-05141158fc533196f"
+      "shard": "46",
+      "instance_id": "i-04fe6a05edf6969aa"
     },
     {
-      "shard": "2d",
-      "instance_id": "i-07fb3c004c8f1a02f"
+      "shard": "47",
+      "instance_id": "i-09840e20aff675463"
     },
     {
-      "shard": "2e",
-      "instance_id": "i-07051a443c3c1b728"
+      "shard": "48",
+      "instance_id": "i-0ecc2926a8ba244ad"
     },
     {
-      "shard": "2f",
-      "instance_id": "i-07738eea18a5c062a"
+      "shard": "49",
+      "instance_id": "i-0556d173915dd0ef1"
     },
     {
-      "shard": "30",
-      "instance_id": "i-036716a203d6db1c5"
+      "shard": "4a",
+      "instance_id": "i-03e9fbaec0df4e769"
     },
     {
-      "shard": "31",
-      "instance_id": "i-0e9ca15c9501c18c5"
+      "shard": "4b",
+      "instance_id": "i-004eeecae39e53076"
     },
     {
-      "shard": "32",
-      "instance_id": "i-0c5d6049227ae67d0"
+      "shard": "4c",
+      "instance_id": "i-0e3abf77e3649428b"
     },
     {
-      "shard": "33",
-      "instance_id": "i-0f283665fe001f9dd"
+      "shard": "4d",
+      "instance_id": "i-0588f9f06f82f889d"
     },
     {
-      "shard": "34",
-      "instance_id": "i-03d3bb7ca248f40c3"
+      "shard": "4e",
+      "instance_id": "i-0f33c3662d01f7a63"
     },
     {
-      "shard": "35",
-      "instance_id": "i-01116fe80b0905bce"
+      "shard": "4f",
+      "instance_id": "i-09d400a569fc3d4db"
     },
     {
-      "shard": "36",
-      "instance_id": "i-02dcc0dcc55b0cb9f"
+      "shard": "50",
+      "instance_id": "i-013064228582db524"
     },
     {
-      "shard": "37",
-      "instance_id": "i-0ea11c7c96f05c236"
+      "shard": "51",
+      "instance_id": "i-047a1aaacd3b91e2a"
     },
     {
-      "shard": "38",
-      "instance_id": "i-028791fb9bd46653c"
+      "shard": "52",
+      "instance_id": "i-0596a7eab12f1f6d6"
     },
     {
-      "shard": "39",
-      "instance_id": "i-03005c7b38803b816"
+      "shard": "53",
+      "instance_id": "i-0d5d12e0cb3942553"
     },
     {
-      "shard": "3a",
-      "instance_id": "i-03a29be58b5e135ea"
+      "shard": "54",
+      "instance_id": "i-01a9653bfc62b5150"
     },
     {
-      "shard": "3b",
-      "instance_id": "i-015caeacc6577443d"
+      "shard": "55",
+      "instance_id": "i-0a216d5bf7ac40f4f"
     },
     {
-      "shard": "3c",
-      "instance_id": "i-036448686e1f9e190"
+      "shard": "56",
+      "instance_id": "i-0f2d1a18d64156086"
     },
     {
-      "shard": "3d",
-      "instance_id": "i-0bd31e75f8be52020"
+      "shard": "57",
+      "instance_id": "i-09a6d6cf36c13c704"
     },
     {
-      "shard": "3e",
-      "instance_id": "i-0804c4ea77202b36f"
+      "shard": "58",
+      "instance_id": "i-05aaab9fad25bad6a"
     }
   ]
 }

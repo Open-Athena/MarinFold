@@ -202,22 +202,22 @@ That structural smoke is also the clearest demonstration of what the strict rule
 
 Unlike source validation, this stage is **CPU-bound on pairwise alignment** — about 0.85 CPU-seconds per compared pair, 5.2 CPU-hours for the shard. Workers therefore take several cores and spread clusters across them, rather than following the one-core-per-worker rule that suits an I/O-bound fetch. The shard took 19.3 minutes at 16 processes.
 
-**Measured production yield, ESM.** The first bounded metadata batch (shards 01–08) completed uniformly in about six minutes per shard, every instance exiting zero with its exact-sequence positive control passing:
+**Measured production yield, ESM.** The metadata stage has now completed **62 of 256 shards**, every instance exiting zero with its exact-sequence positive control passing, at roughly six minutes per shard when eight run concurrently:
 
-| | per shard (mean) | batch of 8 | projected 256 |
+| | per shard (mean) | 62 shards observed | projected 256 |
 | --- | ---: | ---: | ---: |
-| located rows | 119,617 | 956,932 | ~30.6M |
-| quality-passing | 102,835 | 822,683 | ~26.3M |
-| quality rejections | 16,781 | 134,249 | ~4.3M |
-| held-out sequence rejections | 3,683 | 29,464 | ~0.94M |
-| selected without alignment | 31,393 | 251,146 | **~8.04M** |
-| clusters queued for structure | 6,225 | 49,803 | ~1.59M |
+| located rows | 119,988 | 7,439,284 | 30,717,044 |
+| quality-passing | 103,183 | 6,397,374 | 26,414,964 |
+| quality rejections | 16,805 | 1,041,910 | 4,302,080 |
+| held-out sequence rejections | 3,709 | 229,978 | 949,587 |
+| selected without alignment | 31,397 | 1,946,634 | **8,037,715** |
+| clusters queued for structure | 6,266 | 388,520 | 1,604,212 |
 
-The queued clusters contribute three additions each, so the ESM arm projects to roughly **12.8M additions** — consistent with the earlier preliminary estimate, and now measured rather than extrapolated from an audit. Together with AFDB's ~851,000 the supplement projects to **about 13.7M sequence–structure pairs before cross-source deduplication**, inside the original 10–30M planning range.
+The located-row projection is an independent check on the whole chain: 30,717,044 projected against the locator's measured 30,749,644 is 0.1% agreement, which means the plan, the locator and the curator all agree on which rows exist. The queued clusters contribute three additions each, so the ESM arm projects to **8,037,715 + 4,812,635 = about 12.85M additions**. With AFDB's ~851,000 the supplement projects to **roughly 13.7M sequence–structure pairs before cross-source deduplication**, inside the original 10–30M planning range.
+
+**Account limit worth recording:** this AWS account allows 445 on-demand vCPUs in the `m7i` bucket, so only 27 16-vCPU workers can run at once. This bit twice. A 64-shard request failed mid-loop on the 28th instance and left the 27 already running with no launch record. The wave-draining replacement then failed too, because an instance keeps its vCPU reservation until it is *fully terminated*: counting only `pending` and `running` workers undercounts the ones still shutting down, so a wave sized against that count overshoots. The launcher now counts every quota-holding state, treats `VcpuLimitExceeded` as backpressure to retry rather than a fatal error, and persists each instance before requesting the next. Neither failure lost work — every shard that started finished, and the run resumes from the set of shards that already have a `summary.json`.
 
 **Cluster limit worth recording:** the first 256-worker curation launch (`exp292-afdb-curate-v1`) failed in about ninety seconds, before doing any work, with `PermissionError: [Errno 13] Permission denied: .../bin/mmseqs`. The task pod mounts `/tmp` `noexec`, so the staged frozen binary unpacked and hash-verified correctly and then could not be executed. The identical extraction works in the ESM arm because that bootstrap unpacks to `/opt` on a plain EC2 host, so the failure only appears once the stage moves onto the cluster. Staging now resolves under the worker's own working directory and runs `mmseqs version` immediately after extraction, so a bad mount fails at staging time with an explicit message instead of several frames deep inside the screen. The trap is written up in the `zephyr-pipeline-performance` skill.
-
-**Account limit worth recording:** this AWS account allows 445 on-demand vCPUs in the `m7i` bucket, so only 27 16-vCPU workers can run at once. A 64-shard request failed mid-loop on the 28th instance and left the 27 that had already started with no launch record. The launcher now drains a long shard list in waves under that cap and persists each instance before requesting the next, so a limit refusal can no longer strand an unrecorded worker.
 
 The completed audit supports an eight-candidate production reservoir: depending on the TM criterion, it recovers approximately 92–95% of the population-weighted hits found with 32 candidates. Production selection still fills to three with quality-passing members when strict structural alternatives are unavailable. The supplement will be included in the next full 1.5B run; there is no control-corpus build or short model-efficacy screen.
 
