@@ -317,6 +317,58 @@
     {
       "shard": "0c",
       "instance_id": "i-0006c92af39a476f9"
+    },
+    {
+      "shard": "0d",
+      "instance_id": "i-05a3e1f4a968927aa"
+    },
+    {
+      "shard": "0e",
+      "instance_id": "i-0049f242d0bc90180"
+    },
+    {
+      "shard": "0f",
+      "instance_id": "i-05f1f8a5e4b3aebfa"
+    },
+    {
+      "shard": "10",
+      "instance_id": "i-0aacf2f81c8ed0342"
+    },
+    {
+      "shard": "11",
+      "instance_id": "i-0a939d4a34bcf5c80"
+    },
+    {
+      "shard": "12",
+      "instance_id": "i-0a41200ad678992b9"
+    },
+    {
+      "shard": "13",
+      "instance_id": "i-036a21ac6a445cae2"
+    },
+    {
+      "shard": "14",
+      "instance_id": "i-0d0311b9c6260da6e"
+    },
+    {
+      "shard": "15",
+      "instance_id": "i-0c3826e2e43b2c381"
+    },
+    {
+      "shard": "16",
+      "instance_id": "i-045320e97fa90b447"
+    },
+    {
+      "shard": "17",
+      "instance_id": "i-0e43acdda0a83a0ac"
+    },
+    {
+      "shard": "18",
+      "instance_id": "i-073278b3e5a776376"
+    },
+    {
+      "shard": "19",
+      "instance_id": "i-02e610ea1b59360bb"
     }
   ]
 }
