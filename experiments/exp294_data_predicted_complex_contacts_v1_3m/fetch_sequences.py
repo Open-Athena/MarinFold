@@ -19,16 +19,25 @@ Fail-loud: an HTTP error, a malformed record, an unterminated final record, or
 any requested accession that the source does not contain aborts the run. A
 silently short sequence file would silently under-decontaminate the corpus.
 
-    uv run python fetch_sequences.py \\
-        --normalized '/data/exp294_predicted_complexes/metadata/normalized_*.parquet' \\
-        --out /data/exp294_predicted_complexes/sequences \\
-        --workers 16
+Run it on an Iris CPU pod pinned near EBI, not on the workstation, and write
+the result to the co-located bucket (see ``AGENTS.md``: co-locate a job's I/O
+with its compute zone)::
+
+    iris --cluster marin job run --no-wait --enable-extra-resources \\
+        --cpu=8 --memory=16GB --disk=100GB --zone=europe-west4-a \\
+        -- uv run --with duckdb --with fsspec --with gcsfs \\
+           python fetch_sequences.py \\
+             --accessions gs://marin-eu-west4/.../inputs/accessions.parquet \\
+             --out gs://marin-eu-west4/.../sequences --workers 32
+
+Locally, ``--normalized`` derives the accession set from the census Parquet
+instead, and ``--out`` may be any local directory.
 """
 
 import argparse
-import gzip
 import json
 import re
+import tempfile
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -37,6 +46,7 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
+import fsspec
 
 SEQUENCES_URL = "https://ftp.ebi.ac.uk/pub/databases/alphafold/sequences.fasta"
 #: Longest AFDB record we will tolerate without seeing a record boundary. AFDB
@@ -63,17 +73,46 @@ def accession_from_token(token: bytes) -> bytes:
     return token
 
 
+def _duckdb() -> duckdb.DuckDBPyConnection:
+    con = duckdb.connect()
+    try:  # Needed for gs:// inputs; harmless and offline-safe when already present.
+        con.execute("INSTALL httpfs; LOAD httpfs;")
+    except duckdb.Error:
+        pass
+    return con
+
+
 def required_accessions(normalized_glob: str) -> set[bytes]:
     """Every UniProt accession either subunit of any AFCDB model refers to."""
-    con = duckdb.connect()
     src = f"read_parquet({_sql_literal(normalized_glob)}, union_by_name=true)"
-    rows = con.execute(
+    rows = _duckdb().execute(
         f"""
         SELECT DISTINCT accession FROM (
             SELECT accession_a AS accession FROM {src}
             UNION ALL SELECT accession_b FROM {src}
         ) WHERE accession IS NOT NULL
         """
+    ).fetchall()
+    return {row[0].encode() for row in rows}
+
+
+def listed_accessions(path: str) -> set[bytes]:
+    """The pre-extracted accession list, so a pod need not read 2 GB of census.
+
+    A remote list is copied down whole before being opened. Reading Parquet
+    straight off ``gs://`` would mean ranged reads through gcsfs, which is the
+    416 failure mode that bit earlier experiments on cluster, and would also
+    need DuckDB credentials the pod's service account does not hand it.
+    """
+    if "://" in path:
+        with fsspec.open(path, "rb") as remote:
+            payload = remote.read()
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as local:
+            local.write(payload)
+            path = local.name
+    rows = _duckdb().execute(
+        f"SELECT DISTINCT accession FROM read_parquet({_sql_literal(path)}) "
+        "WHERE accession IS NOT NULL"
     ).fetchall()
     return {row[0].encode() for row in rows}
 
@@ -182,7 +221,7 @@ def _scan_range(
                         break
             first_start = reader.consumed
 
-        with gzip.open(out_path, "wb", compresslevel=6) as sink:
+        with fsspec.open(str(out_path), "wb", compression="gzip") as sink:
             record_start = first_start
             while record_start < end:
                 header = reader.readline()
@@ -222,20 +261,35 @@ def _scan_range(
 
 
 def fetch(
-    normalized_glob: str,
-    out_dir: Path,
+    normalized_glob: str | None,
+    out_dir: str | Path,
     *,
     url: str = SEQUENCES_URL,
     workers: int = 16,
+    accession_list: str | None = None,
+    byte_limit: int | None = None,
 ) -> dict[str, Any]:
-    """Filter the bulk FASTA down to AFCDB's accessions, in parallel ranges."""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    wanted = required_accessions(normalized_glob)
+    """Filter the bulk FASTA down to AFCDB's accessions, in parallel ranges.
+
+    ``byte_limit`` restricts the scan to the first N bytes of the source. It is
+    for smoke tests only and makes the completeness check meaningless, so it
+    disables it explicitly rather than letting a partial run look complete.
+    """
+    out_dir = str(out_dir).rstrip("/")
+    fs, _ = fsspec.core.url_to_fs(out_dir)
+    fs.makedirs(out_dir, exist_ok=True)
+    if accession_list:
+        wanted = listed_accessions(accession_list)
+    elif normalized_glob:
+        wanted = required_accessions(normalized_glob)
+    else:
+        raise ValueError("one of --accessions or --normalized is required")
     if not wanted:
-        raise ValueError(f"{normalized_glob}: no accessions to fetch")
+        raise ValueError("no accessions to fetch")
     total = content_length(url)
-    bounds = [round(total * i / workers) for i in range(workers + 1)]
-    shard_paths = [out_dir / f"afcdb_sequences-{i:04d}.fasta.gz" for i in range(workers)]
+    scan = min(total, byte_limit) if byte_limit else total
+    bounds = [round(scan * i / workers) for i in range(workers + 1)]
+    shard_paths = [f"{out_dir}/afcdb_sequences-{i:04d}.fasta.gz" for i in range(workers)]
 
     began = time.monotonic()
     with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -252,6 +306,8 @@ def fetch(
     summary = {
         "source_url": url,
         "source_bytes": total,
+        "scanned_bytes": scan,
+        "complete_scan": scan == total,
         "bytes_read": read,
         "workers": workers,
         "seconds": round(elapsed, 1),
@@ -259,7 +315,7 @@ def fetch(
         "source_records": records,
         "requested_accessions": len(wanted),
         "matched_accessions": matched,
-        "shards": [str(path.resolve()) for path in shard_paths],
+        "shards": shard_paths,
         "per_shard": [
             {
                 "index": r.index,
@@ -271,7 +327,11 @@ def fetch(
             for r in results
         ],
     }
-    (out_dir / "fetch_sequences.json").write_text(json.dumps(summary, indent=2) + "\n")
+    with fsspec.open(f"{out_dir}/fetch_sequences.json", "w") as handle:
+        handle.write(json.dumps(summary, indent=2) + "\n")
+    if byte_limit:
+        print("byte_limit set: skipping the completeness check (smoke run)")
+        return summary
     if matched != len(wanted):
         raise RuntimeError(
             f"source provided {matched:,} of {len(wanted):,} requested accessions; "
@@ -283,16 +343,29 @@ def fetch(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--normalized", required=True, help="Normalized Parquet or glob.")
-    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--normalized", help="Normalized Parquet or glob.")
+    parser.add_argument(
+        "--accessions", help="Parquet with an 'accession' column (pod-friendly)."
+    )
+    parser.add_argument("--out", required=True, help="Directory or fsspec URL.")
     parser.add_argument("--url", default=SEQUENCES_URL)
     parser.add_argument("--workers", type=int, default=16)
+    parser.add_argument(
+        "--byte-limit", type=int, default=None, help="Smoke only: scan the first N bytes."
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    summary = fetch(args.normalized, args.out, url=args.url, workers=args.workers)
+    summary = fetch(
+        args.normalized,
+        args.out,
+        url=args.url,
+        workers=args.workers,
+        accession_list=args.accessions,
+        byte_limit=args.byte_limit,
+    )
     print(json.dumps(summary, indent=2))
     return 0
 

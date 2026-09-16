@@ -5,6 +5,8 @@ description = "Metadata census and selection for a 3M predicted-complex contacts
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "duckdb>=1.4,<2",
+    "fsspec>=2026.7.0",
+    "gcsfs>=2025.1,<2026.5",
     "matplotlib>=3.9",
     "pyarrow>=18",
 ]
