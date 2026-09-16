@@ -1,0 +1,60 @@
+{
+  "status": "launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator/launches/exp292-esm-locator-v1/source.tar.gz",
+  "plan": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/plan-v5/plan",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator",
+  "bundle_sha256": "e7fdee142c4a434c2d190d61cacf21f82c26802f884d171d1915a544199b9b0e",
+  "bundle_bytes": 86715,
+  "config": {
+    "ImageId": "ami-04678417fc39d7171",
+    "InstanceType": "m7i.8xlarge",
+    "MinCount": 1,
+    "MaxCount": 1,
+    "SubnetId": "subnet-00caee8a9828c5c0c",
+    "Placement": {
+      "AvailabilityZone": "us-west-2a"
+    },
+    "IamInstanceProfile": {
+      "Name": "marinfold-exp91-instance-profile"
+    },
+    "InstanceInitiatedShutdownBehavior": "terminate",
+    "MetadataOptions": {
+      "HttpTokens": "required",
+      "HttpEndpoint": "enabled"
+    },
+    "BlockDeviceMappings": [
+      {
+        "DeviceName": "/dev/sda1",
+        "Ebs": {
+          "VolumeSize": 300,
+          "VolumeType": "gp3",
+          "Iops": 6000,
+          "Throughput": 500,
+          "DeleteOnTermination": true
+        }
+      }
+    ],
+    "TagSpecifications": [
+      {
+        "ResourceType": "instance",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "exp292-esm-locator-v1"
+          },
+          {
+            "Key": "Experiment",
+            "Value": "exp292"
+          },
+          {
+            "Key": "Stage",
+            "Value": "esm-locator"
+          }
+        ]
+      }
+    ],
+    "ClientToken": "b12d204939b9f30e86fcd03e1c57cac88f8effe1547b12b5d672775a89ae8106"
+  },
+  "instance_id": "i-0c1809fb1702ed51b"
+}

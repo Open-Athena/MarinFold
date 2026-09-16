@@ -1,9 +1,9 @@
 [project]
 name = "exp292-structural-cluster-diversity"
 version = "0.1.0"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-    "duckdb>=1.4,<2",
+    "duckdb==1.5.5",
     "gemmi>=0.7,<1",
     "numpy>=2,<3",
     "pyarrow>=20",
@@ -24,12 +24,19 @@ esm = [
     "pylance>=0.18",
     "s3fs>=2025.3",
 ]
+pipeline = [
+    "httpx>=0.28.1",
+    "marin-iris>=0.2.40.dev202607080801",
+    "marin-zephyr>=0.2.40.dev202607080801",
+]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.12"]
 
 [tool.uv]
 package = false
+fork-strategy = "fewest"
+prerelease = "allow"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

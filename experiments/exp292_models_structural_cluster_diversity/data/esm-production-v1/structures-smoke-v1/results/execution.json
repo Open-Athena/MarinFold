@@ -1,0 +1,23 @@
+{
+  "status": "complete",
+  "returncode": 0,
+  "error": null,
+  "elapsed_seconds": 30.026968415,
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata-smoke-v1/shard=00/structural_queue.parquet",
+  "shard": "00",
+  "command": [
+    "/opt/exp292-bootstrap/bin/uv",
+    "run",
+    "--frozen",
+    "--extra",
+    "esm",
+    "python",
+    "curate_esm_structures.py",
+    "--queue",
+    "/opt/exp292/inputs/structural_queue.parquet",
+    "--output",
+    "/opt/exp292/output",
+    "--workers",
+    "24"
+  ]
+}
