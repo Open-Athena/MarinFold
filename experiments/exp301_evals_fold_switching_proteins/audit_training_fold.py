@@ -59,10 +59,24 @@ SENSITIVITY = os.environ.get("EXP301_MMSEQS_SENSITIVITY", "7.5")
 MAX_SEQS = os.environ.get("EXP301_MMSEQS_MAX_SEQS", "20")
 
 BUCKET = "hf://buckets/open-athena/MarinFold/data/document_structures"
-#: Which corpus each training arm lives in, after #225's decontamination.
+#: Which corpus each training arm lives in.
+#:
+#: These are the **undecontaminated** corpora on purpose. exp213's DB was built
+#: from them, so its ``{shard}_{row}`` coordinates address them exactly; #225's
+#: decontamination permuted the corpus index, so the same coordinates land on a
+#: different document in the ``*_decontam`` shards -- all 68 lookups came back as
+#: row mismatches when pointed there. The document itself is unaffected:
+#: decontamination removed rows, it did not rewrite them, so the conformer
+#: AF2/ESMFold predicted for a surviving sequence is identical in both.
+#:
+#: What this costs is exposure precision, and only slightly: #225 filtered
+#: against the FoldBench eval chains, not against fold switchers, so a row here
+#: is missing from exp277's mix only if it happened to be homologous to a
+#: FoldBench protein. Read the labels as "what the training data for this
+#: sequence encodes", not "this exact row was in exp277's batch".
 ARM_PREFIX = {
-    "afdb": f"{BUCKET}/contacts_v1_decontam/train",
-    "esm_atlas": f"{BUCKET}/contacts_v1_esm_atlas_decontam/train",
+    "afdb": f"{BUCKET}/contacts_v1/train",
+    "esm_atlas": f"{BUCKET}/contacts_v1_esm_atlas/train",
 }
 #: exp213 built its DB from the *undecontaminated* corpora, and labels the arms
 #: with its own names. Map them onto the decontaminated shards Stage B reads.
@@ -147,22 +161,45 @@ def best_hits(path: Path) -> dict[str, dict]:
 # --------------------------------------------------------------------------
 # Stage B — label
 # --------------------------------------------------------------------------
+_SHARD_LISTING: dict[str, list[str]] = {}
+
+
+def _shards(arm: str) -> list[str]:
+    """Shard paths for one arm, listed once per process (2067 entries each)."""
+    import fsspec
+
+    if arm not in _SHARD_LISTING:
+        fs, root = fsspec.core.url_to_fs(ARM_PREFIX[arm])
+        _SHARD_LISTING[arm] = sorted(
+            f["name"] for f in fs.ls(root, detail=True) if f["name"].endswith(".parquet"))
+    return _SHARD_LISTING[arm]
+
+
 def corpus_row(arm: str, shard: int, row: int):
-    """Read one row of one corpus shard off the public bucket."""
+    """Read one row of one corpus shard off the public bucket.
+
+    Only the row group containing ``row`` is fetched, not the whole shard --
+    parquet footers make that a range request rather than a multi-hundred-MB
+    download, which is what keeps 66 lookups over a slow link tolerable.
+    """
     import fsspec
     import pyarrow.parquet as pq
 
-    prefix = ARM_PREFIX[arm]
-    fs, root = fsspec.core.url_to_fs(prefix)
-    shards = sorted(f["name"] for f in fs.ls(root, detail=True) if f["name"].endswith(".parquet"))
-    match = [s for s in shards if f"-{shard:05d}-of-" in s]
+    match = [s for s in _shards(arm) if f"-{shard:05d}-of-" in s]
     if not match:
         return None
     with fsspec.open(f"hf://{match[0]}", "rb") as fh:
-        table = pq.ParquetFile(fh).read()
-    if row >= table.num_rows:
-        return None
-    return table.slice(row, 1).to_pylist()[0]
+        parquet = pq.ParquetFile(fh)
+        if row >= parquet.metadata.num_rows:
+            return None
+        # Walk row groups to find the one holding this row, then read just it.
+        offset = 0
+        for group in range(parquet.num_row_groups):
+            n = parquet.metadata.row_group(group).num_rows
+            if offset + n > row:
+                return parquet.read_row_group(group).slice(row - offset, 1).to_pylist()[0]
+            offset += n
+    return None
 
 
 def training_contacts(record: dict, reference: str) -> tuple[set[tuple[int, int]], str, float] | None:
@@ -236,15 +273,13 @@ def label_one(record: dict, hit: dict | None) -> dict:
 
     row = corpus_row(arm, int(parsed["shard"]), int(parsed["row"]))
     if row is None:
-        # #225 removed rows; the shard/row coordinates come from the
-        # undecontaminated DB, so a miss here is informative, not an error.
-        out["corpus_status"] = "dropped_by_decontamination"
+        out["corpus_status"] = "row_out_of_range"
         out["training_fold"] = "unknown"
         return out
     if row["entry_id"] != parsed["entry"]:
-        # Decontamination permuted the corpus index (see the exp225 memory), so
-        # shard/row need not still point at the same document. Say so loudly
-        # rather than scoring the wrong protein.
+        # The coordinates must land on the entry the hit named. Anything else
+        # means the corpus being read is not the one exp213 indexed, and scoring
+        # it would silently attribute a different protein's fold.
         out["corpus_status"] = f"row_mismatch:{row['entry_id']}"
         out["training_fold"] = "unknown"
         return out
