@@ -1,5 +1,0 @@
-{
-  "script": "plot_rprecision_preliminary.py",
-  "args": [],
-  "caption": "Mean R-precision for delta-stream step-4000 readouts vs the closest early contacts-v1 r60 step-3567 baseline on the common 533 proteins."
-}

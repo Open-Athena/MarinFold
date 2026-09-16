@@ -1,23 +1,23 @@
-## Delta-stream contact documents
+## V2: sequence before contacts
 
-This experiment tests a compact residue-level contact format trained with ordinary next-token cross entropy: each residue emits `AA DELTA* STOP`, where each signed delta points to a contacting residue.
+The active delta-stream format now places the whole amino-acid sequence in a causal prefix before any contact target:
 
-The goal is to keep contact supervision deterministic and compact without adding a structured contact head or exploding sequence length.
+`DOC_START AA_0 ... AA_(L-1) CONTACTS_BEGIN DELTA* STOP ... DOC_END`.
 
-## Current training run
+The contact suffix contains one signed-delta segment per residue, in sequence order. The model can therefore see every amino acid before predicting any contact, matching the conditioning structure used by contacts-v1.
 
-The first full run is a 1.5B Qwen-style model on fixed 8192-token packed delta-stream documents, global batch 128, planned for 12,000 steps.
+## Why V1 is not a production format
 
-The pilot artifacts were launched before this work split from #177, so existing object-store prefixes still use `exp177_contacts_delta_stream_v1`; future reruns default to exp299 prefixes.
+The earlier V1 stream interleaved each residue's amino-acid token and contact deltas. A causal model predicted early-residue contacts before it had seen the future amino acids.
 
-## Preliminary R-precision
+Its conversion and training run remain infrastructure history only. They do not justify a production sweep or a contact-accuracy claim.
 
-At step 4000, delta-stream already beats the closest early contacts-v1 baseline on the common 533-protein subset for all/medium/long contacts.
+## Evaluation reset
 
-Mean/geomean readout gives all R=0.0473 and long R=0.0300, versus contacts-v1 r60 step-3567 all R=0.0297 and long R=0.0222.
+The earlier delta R-precision values used an ad-hoc next-token log-probability probe and are withdrawn.
 
-Max/either-side helps short contacts most, suggesting the early long-range signal benefits from bidirectional agreement rather than one-sided evidence alone.
+The reference metric is exp82's rollout-vote evaluation: sample 100 sequence-conditioned contact suffixes, vote emitted pairs, and run the unchanged exp82/exp89 candidate-universe and R-precision code.
 
 ## Next steps
 
-Let the current 12k-step run finish, score later checkpoints with both readouts, and use the cleaned exp299 scripts for larger follow-up sweeps rather than continuing to accumulate new runs under the old #177-style setup.
+Build the V2 corpus/cache, implement the V2 contact-suffix rollout worker, validate its score matrices through the canonical reference metric, then launch production-scale V2 sweeps using the exp288 pattern.
