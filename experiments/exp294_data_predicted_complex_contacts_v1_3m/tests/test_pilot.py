@@ -133,6 +133,6 @@ def test_throughput_probe_matches_run_density(tmp_path: Path) -> None:
     assert len(uris) == 3
     assert len(probe) == 90
     # Deterministic: the same three tars every time.
-    again = build(_selected(tmp_path, rows), tmp_path / "out2", size=60, throughput_tars=3)
+    build(_selected(tmp_path, rows), tmp_path / "out2", size=60, throughput_tars=3)
     probe2 = pq.read_table(tmp_path / "out2" / "throughput_probe.parquet").to_pylist()
     assert [r["source_model_key"] for r in probe] == [r["source_model_key"] for r in probe2]
