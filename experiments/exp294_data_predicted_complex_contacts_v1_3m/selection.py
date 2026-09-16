@@ -17,6 +17,10 @@ fills the requested heterodimer floor and then the total-document quota, ranked
 by distance above a configurable relaxed quality floor. Threshold selection is
 explicitly pre-calibration; the 50k structure pilot must set the production
 floor before the full run.
+
+The defaults below are the 2026-09-16 metadata census's measured frontier, not
+aspirations. Where the issue's stated target and the source's actual yield
+disagree, the default follows the yield and says so.
 """
 
 import argparse
@@ -27,8 +31,22 @@ from typing import Any
 import duckdb
 
 DEFAULT_TARGET_DOCS = 3_000_000
-DEFAULT_MIN_HETERODIMERS = 500_000
-DEFAULT_MIN_RELAXED_QUALITY_RATIO = 0.5
+
+#: The issue asked for 500,000 heterodimers "if the calibrated source yield
+#: supports it". The 2026-09-16 census says it does not: only 922,359
+#: hard-eligible heterodimers have a nonzero ipSAE at all and 353,774 reach
+#: ipSAE >= 0.1, so a 500k floor would be filled with models that have
+#: essentially no predicted interface. This is the measured yield at the 0.30
+#: quality floor instead. Raising it back is a Stage-E question (PINDER,
+#: Predictomes, PPIRef), not an AFCDB threshold question.
+DEFAULT_MIN_HETERODIMERS = 200_000
+
+#: Also set by the census: a 0.5 floor yields 2,946,613 candidates *before*
+#: sequence-pair dedup and eval decontamination, so it cannot reach 3M. 0.30
+#: yields 3,455,113, which leaves margin for the decontamination loss (#225
+#: removed 1.8-4.0% on comparable corpora). Still pre-calibration: the 50k
+#: structure pilot sets the production value.
+DEFAULT_MIN_RELAXED_QUALITY_RATIO = 0.3
 DEFAULT_MAX_TOTAL_RESIDUES = 1998
 DEFAULT_MAX_BACKBONE_CLASHES = 10
 
@@ -333,7 +351,7 @@ def run_selection(
         min_relaxed_quality_ratio=min_relaxed_quality_ratio,
     )
     policy: dict[str, Any] = {
-        "version": "pilot-v0",
+        "version": "pilot-v1-census",
         "target_docs": target_docs,
         "min_heterodimers": min_heterodimers,
         "min_relaxed_quality_ratio": min_relaxed_quality_ratio,
