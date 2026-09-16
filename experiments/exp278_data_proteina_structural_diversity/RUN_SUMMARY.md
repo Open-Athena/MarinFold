@@ -37,6 +37,42 @@ occupied 802 connected fine clusters under the TM-score/coverage rule. This does
 not mean 802 distinct folds; the broader TM-score analysis contains much larger
 transitive components and is reported separately.
 
+### Matched diversity: corrected on 2026-09-16
+
+The review's matched conditioned-versus-unconditional comparison originally
+matched **exact integer lengths**. That works for the six-length pilot, but this
+corpus covers every length from 60 to 500, so only **2 of 233 lengths** held
+candidates in all four arms; the comparison collapsed to 9 structures per arm and
+returned a ratio of exactly 1.0 by construction. The matching now uses the
+**40-residue bins the audit already samples in**, and reports the ratio ceiling
+alongside the ratio. Inputs, clustering edges and every other reported figure are
+unchanged.
+
+| Matched set | Per arm | Effective clusters, control / conditioned | Ratio (2.5–97.5 resampling) | Ceiling |
+|---|---:|---:|---:|---:|
+| Eligible, after decontamination | 183 | 183.0 / 176.2 | **0.963** (0.914–0.992) | 1.000 |
+| Quality-pass, before decontamination | 462 | 455.1 / 428.3 | **0.941** (0.892–0.971) | 1.015 |
+
+Both intervals lie entirely below 1.0, so at matched length and count, class
+conditioning **slightly reduces** effective structural diversity rather than
+increasing it. Residual length imbalance between arms is under 0.8 residues, so
+the comparison is not a length artifact. This reproduces the pilot's direction
+(0.965) on a 20-fold larger sample, and it is the first scale measurement of the
+question the conditioning arms were meant to answer.
+
+The preregistered **1.5× target remains untestable**, for a reason the ceiling
+now makes explicit: effective cluster counts cannot exceed the arm size, and these
+arms are almost entirely singletons, so the largest ratio this sample could ever
+produce is about 1.0. The metric can detect the decrease it found; it cannot
+detect an increase. Testing the target needs a matched sample large enough for
+redundancy to appear, which the completed corpus can supply and this bounded
+audit cannot.
+
+Re-running the six-length pilot under binned matching leaves its quotas and
+sample size identical and shifts only the pseudo-random draw order, moving its
+published ratio from 0.965 to 0.976 — well inside its own 0.881–1.057 resampling
+band. The pilot report is therefore left as the reproducible record of that run.
+
 The following figure is a fixed-seed simple random sample of 64 quality-passing
 refolds from the audit pool. Each structure is independently oriented and scaled,
 so labels carry the absolute length. The sample ranges from 65 to 500 residues;

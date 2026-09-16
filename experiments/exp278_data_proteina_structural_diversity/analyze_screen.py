@@ -29,6 +29,10 @@ HERE = Path(__file__).resolve().parent
 FOLDSEEK = Path.home() / ".cache/marinfold/foldseek/foldseek/bin/foldseek"
 MMSEQS = Path.home() / ".cache/marinfold/mmseqs/mmseqs/bin/mmseqs"
 FIELDS = "query,target,qtmscore,ttmscore,qcov,tcov,evalue"
+CONDITIONED_CLASSES = ("1.x.x.x", "2.x.x.x", "3.x.x.x")
+DIVERSITY_RATIO_TARGET = 1.5
+MATCH_BIN_ORIGIN = 60
+MATCH_BIN_WIDTH = 40
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
@@ -517,6 +521,7 @@ def retention_report(work: Path, report: Path) -> None:
         "matched_diversity_after_decontamination": matched_comparison(
             filtered_quality, edges
         ),
+        "matched_diversity_quality_pass": matched_comparison(quality, edges),
         "release_status": "provisional: pilot diversity and scale-up gates pending",
     }
     (report / "retention.json").write_text(json.dumps(metrics, indent=2) + "\n")
@@ -540,75 +545,158 @@ def components(stems: list[str], edges: list[tuple[str, str]]) -> list[list[str]
     return list(groups.values())
 
 
-def effective_clusters(stems: list[str], edges: list[tuple[str, str]]) -> float:
-    """Calculate the exponential entropy of structural component sizes."""
+def arm_diversity(stems: list[str], edges: list[tuple[str, str]]) -> tuple[int, float]:
+    """Return the distinct component count and the exponential entropy of sizes."""
     sizes = np.asarray([len(group) for group in components(stems, edges)])
     probabilities = sizes / sizes.sum()
-    return float(np.exp(-np.sum(probabilities * np.log(probabilities))))
+    return len(sizes), float(np.exp(-np.sum(probabilities * np.log(probabilities))))
 
 
-def matched_comparison(quality: list[dict], edges: list[tuple[str, str]]) -> dict:
-    """Repeatedly compare equal-size, length-matched, balanced accepted arms."""
+def effective_clusters(stems: list[str], edges: list[tuple[str, str]]) -> float:
+    """Calculate the exponential entropy of structural component sizes."""
+    return arm_diversity(stems, edges)[1]
+
+
+def matched_comparison(
+    quality: list[dict],
+    edges: list[tuple[str, str]],
+    bin_width: int = MATCH_BIN_WIDTH,
+    bin_origin: int = MATCH_BIN_ORIGIN,
+) -> dict:
+    """Repeatedly compare equal-size, length-bin-matched, balanced accepted arms.
+
+    Lengths match within bins rather than exactly. The scale corpus covers every
+    integer length 60-500, so exact-length matching leaves all but a handful of
+    lengths empty in at least one arm and starves the comparison; the bins mirror
+    the audit's own sampling strata, so each cell is populated by construction.
+    An arm's effective cluster count cannot exceed its size, so the ratio ceiling
+    is reported with the ratio: a value near 1.0 under a ceiling below the target
+    means the sample cannot resolve the gate, not that the arms match in
+    diversity. Residual within-bin length imbalance is reported, not assumed away.
+    """
     groups = defaultdict(list)
+    lengths = {}
     for row in quality:
-        if row["quality_pass"] == "True":
-            groups[(row["length"], row["condition"])].append(row["stem"])
-    quotas = {}
-    for length in sorted({row["length"] for row in quality}):
-        per_class = min(
-            len(groups[(length, condition)])
-            for condition in ["1.x.x.x", "2.x.x.x", "3.x.x.x"]
+        if row["quality_pass"] != "True":
+            continue
+        length = int(row["length"])
+        lengths[row["stem"]] = length
+        groups[((length - bin_origin) // bin_width, row["condition"])].append(
+            row["stem"]
         )
-        quotas[length] = min(per_class, len(groups[(length, "unconditional")]) // 3)
-    rng = np.random.default_rng(278)
-    ratios = []
-    control_effective = []
-    conditioned_effective = []
+    quotas = {}
+    for index in sorted({index for index, _ in groups}):
+        per_class = min(
+            len(groups[(index, condition)]) for condition in CONDITIONED_CLASSES
+        )
+        quotas[index] = min(per_class, len(groups[(index, "unconditional")]) // 3)
     n = sum(quotas.values()) * 3
+    summary = {
+        "match_bin_width": bin_width,
+        "match_bin_origin": bin_origin,
+        "matched_n_per_arm": n,
+        "matched_bin_counts": json.dumps(
+            {
+                str(bin_origin + bin_width * index): quota * 3
+                for index, quota in sorted(quotas.items())
+            },
+            sort_keys=True,
+        ),
+        "bins_contributing": sum(quota > 0 for quota in quotas.values()),
+        "bins_available": len(quotas),
+        "diversity_ratio_target": DIVERSITY_RATIO_TARGET,
+    }
     if n == 0:
         return {
-            "matched_n_per_arm": 0,
-            "matched_length_counts": json.dumps(
-                {length: quota * 3 for length, quota in quotas.items()}, sort_keys=True
-            ),
+            **summary,
             "ratio_median": None,
             "ratio_resampling_p025": None,
             "ratio_resampling_p975": None,
             "control_effective_median": None,
             "conditioned_effective_median": None,
+            "control_clusters_median": None,
+            "conditioned_clusters_median": None,
+            "control_mean_length": None,
+            "conditioned_mean_length": None,
+            "mean_length_difference": None,
             "maximum_possible_ratio_median": None,
+            "ceiling_limited": None,
+            "interpretation": (
+                "No length bin held all four arms, so the comparison is "
+                "unavailable. This is not a null result."
+            ),
         }
+    rng = np.random.default_rng(278)
+    ratios, ceilings = [], []
+    control_effective, conditioned_effective = [], []
+    control_clusters, conditioned_clusters = [], []
+    control_lengths, conditioned_lengths = [], []
     for _ in range(100):
         unconditional, conditioned = [], []
-        for length, quota in quotas.items():
+        for index, quota in quotas.items():
             unconditional.extend(
                 rng.choice(
-                    groups[(length, "unconditional")], quota * 3, replace=False
+                    groups[(index, "unconditional")], quota * 3, replace=False
                 ).tolist()
             )
-            for condition in ["1.x.x.x", "2.x.x.x", "3.x.x.x"]:
+            for condition in CONDITIONED_CLASSES:
                 conditioned.extend(
                     rng.choice(
-                        groups[(length, condition)], quota, replace=False
+                        groups[(index, condition)], quota, replace=False
                     ).tolist()
                 )
-        control_count = effective_clusters(unconditional, edges)
-        conditioned_count = effective_clusters(conditioned, edges)
-        control_effective.append(control_count)
-        conditioned_effective.append(conditioned_count)
-        ratios.append(conditioned_count / control_count)
+        control_count, control_value = arm_diversity(unconditional, edges)
+        conditioned_count, conditioned_value = arm_diversity(conditioned, edges)
+        control_effective.append(control_value)
+        conditioned_effective.append(conditioned_value)
+        control_clusters.append(control_count)
+        conditioned_clusters.append(conditioned_count)
+        control_lengths.append(np.mean([lengths[stem] for stem in unconditional]))
+        conditioned_lengths.append(np.mean([lengths[stem] for stem in conditioned]))
+        ratios.append(conditioned_value / control_value)
+        ceilings.append(n / control_value)
+    ceiling = float(np.median(ceilings))
+    control_length = float(np.median(control_lengths))
+    conditioned_length = float(np.median(conditioned_lengths))
+    low = float(np.quantile(ratios, 0.025))
+    high = float(np.quantile(ratios, 0.975))
+    if high < 1:
+        separation = (
+            " The resampling interval lies entirely below 1.0, so conditioning "
+            "measurably reduces matched diversity in this sample."
+        )
+    elif low > 1:
+        separation = (
+            " The resampling interval lies entirely above 1.0, so conditioning "
+            "measurably increases matched diversity, short of the target."
+        )
+    else:
+        separation = (
+            " The resampling interval spans 1.0, so this sample does not separate "
+            "the arms."
+        )
     return {
-        "matched_n_per_arm": n,
-        "matched_length_counts": json.dumps(
-            {length: quota * 3 for length, quota in quotas.items()}, sort_keys=True
-        ),
-        "ratio_median": np.median(ratios),
-        "ratio_resampling_p025": np.quantile(ratios, 0.025),
-        "ratio_resampling_p975": np.quantile(ratios, 0.975),
+        **summary,
+        "ratio_median": float(np.median(ratios)),
+        "ratio_resampling_p025": float(np.quantile(ratios, 0.025)),
+        "ratio_resampling_p975": float(np.quantile(ratios, 0.975)),
         "control_effective_median": float(np.median(control_effective)),
         "conditioned_effective_median": float(np.median(conditioned_effective)),
-        "maximum_possible_ratio_median": float(
-            np.median(n / np.asarray(control_effective))
+        "control_clusters_median": float(np.median(control_clusters)),
+        "conditioned_clusters_median": float(np.median(conditioned_clusters)),
+        "control_mean_length": control_length,
+        "conditioned_mean_length": conditioned_length,
+        "mean_length_difference": conditioned_length - control_length,
+        "maximum_possible_ratio_median": ceiling,
+        "ceiling_limited": bool(ceiling < DIVERSITY_RATIO_TARGET),
+        "interpretation": (
+            "Effective cluster counts cannot exceed the matched arm size, so this "
+            f"sample bounds the ratio at {ceiling:.3f}, below the "
+            f"{DIVERSITY_RATIO_TARGET} target, which is therefore untestable at "
+            "this sample size." + separation
+            if ceiling < DIVERSITY_RATIO_TARGET
+            else "The matched sample is large enough to resolve the target ratio."
+            + separation
         ),
     }
 

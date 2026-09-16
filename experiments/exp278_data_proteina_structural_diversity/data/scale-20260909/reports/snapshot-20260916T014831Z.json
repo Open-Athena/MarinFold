@@ -1,21 +1,21 @@
 {
-  "timestamp_utc": "2026-09-16T13:38:43.868188+00:00",
+  "timestamp_utc": "2026-09-16T01:48:30.755045+00:00",
   "run_id": "scale-20260909",
   "planned_raw": 4820608,
   "target_documents": 1000000,
-  "generated": 4237728,
-  "sequences_saved": 4200784,
-  "refolded": 4199120,
-  "quality_pass": 2568110,
-  "complete": 12079,
-  "quality_retention": 0.6115829030844558,
+  "generated": 4129616,
+  "sequences_saved": 4093584,
+  "refolded": 4093696,
+  "quality_pass": 2504260,
+  "complete": 11743,
+  "quality_retention": 0.6117357028953786,
   "final_retained_documents": null,
   "final_retention_note": "Sequence/reference exclusion and global structural diversity cap still required. Quality-pass documents are provisional.",
   "worker_phases": {
-    "complete": 553,
-    "sampling": 101,
-    "refolding": 114
+    "complete": 538,
+    "refolding": 133,
+    "sampling": 97
   },
-  "sequence_batch_files": 241947,
+  "sequence_batch_files": 235658,
   "snapshot_note": "Live nontransactional snapshot of committed batch boundaries; in-flight refolds are excluded."
 }

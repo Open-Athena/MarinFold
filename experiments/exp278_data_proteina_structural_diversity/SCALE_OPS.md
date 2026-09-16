@@ -93,6 +93,37 @@ all-integer-length corpus. Requested labels alone do not establish novel folds.
 [issue](https://github.com/Open-Athena/MarinFold/issues/278),
 [draft PR](https://github.com/Open-Athena/MarinFold/pull/282).
 
+## Recurring snapshot timer
+
+The one-shot `exp278-scale-review.timer` fired once on September 10 and never
+rearmed, so progress went uncollected between then and September 16. A recurring
+pair now covers the rest of the run:
+
+```text
+~/.config/systemd/user/exp278-scale-snapshot.service
+~/.config/systemd/user/exp278-scale-snapshot.timer
+```
+
+`OnCalendar=*-*-* 0/2:05:00` with `Persistent=true`, so it runs every two hours
+and catches up once after the workstation is offline. Each run writes a
+timestamped `snapshot-*.json` / `cases-*.csv` pair plus `latest.json` into
+`data/scale-20260909/reports`, then refreshes `iris-resource-time.{csv,json}`.
+The resource step is prefixed `-`, so a controller-tunnel failure cannot lose the
+progress snapshot that already succeeded. One full run takes about ten minutes,
+almost all of it listing the case tree; the interval keeps that under a tenth of
+the duty cycle. It reads only metadata and small markers, writes nothing to S3,
+and posts nothing to GitHub.
+
+```bash
+systemctl --user list-timers exp278-scale-snapshot.timer
+systemctl --user start exp278-scale-snapshot.service   # snapshot right now
+systemctl --user disable --now exp278-scale-snapshot.timer  # when the run ends
+```
+
+Progress and service logs land in `data/scale-20260909/snapshot-service.log`. The
+units hard-code this worktree as `WorkingDirectory`; moving or deleting it breaks
+the timer.
+
 ## Review scheduling
 
 The persistent workstation user timer `exp278-scale-review.timer` starts `scale_review.py` at September 10, 15:32:01 UTC. It captures exact batch counts and resource time, runs a bounded stratified retention/diversity audit, records W&B metrics, uploads reports and posts a new comment on issue #278. Its environment was tested with the canary snapshot. The workstation must be online with the user session running at the deadline; otherwise the persistent timer catches up at the next login. The workspace and local frozen reference databases must remain available. No native Codex automation was registered because its tool was unavailable.

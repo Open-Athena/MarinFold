@@ -19,6 +19,15 @@ quality-pass provisional documents. The audit projects 23.86% quality/reference
 retention before global clustering; final all-corpus diversity selection remains
 pending.
 
+**Matched diversity was corrected on September 16.** The scale review had matched
+exact integer lengths, which starved the comparison to 9 structures per arm and
+pinned its ratio at 1.0; matching now uses the audit's own 40-residue bins and
+reports the ratio ceiling. At matched length and count, class conditioning
+slightly *reduces* effective structural diversity (0.963, 2.5–97.5 resampling band
+0.914–0.992 after decontamination), and the preregistered 1.5x target remains
+untestable at audit sample size. See
+[RUN_SUMMARY.md](RUN_SUMMARY.md#matched-diversity-corrected-on-2026-09-16).
+
 The user authorized scale generation on September 9, superseding the pilot cap and production hold. First production submission: 21:32 UTC. First review: September 10 at 15:32 UTC (11:32 EDT). Generation continues during review. See [SCALE_OPS.md](SCALE_OPS.md) for the frozen plan, independent batch jobs, preservation of all backbones/sequences and recovery. GPU-stage documents remain provisional pending decontamination and global diversity selection.
 
 ## Question
