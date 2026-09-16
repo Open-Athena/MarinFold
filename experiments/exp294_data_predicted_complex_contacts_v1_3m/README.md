@@ -275,6 +275,21 @@ Two failure modes showed up that are worth recording, because both are silent:
 The tests cover eight worker counts, four shard/worker combinations, a missing
 shard, an injected mid-stream drop, and a truncated source.
 
+**EBI throttles aggregate bandwidth, not per connection.** One pod reached
+14.5 MB/s with 4 concurrent ranges and the same with 16, so at low concurrency
+the limit is the client's Python parsing. But with 7–9 pods running at once,
+per-pod throughput fell to ~5 MB/s while the total stayed roughly flat. More
+pods does not buy proportional throughput from this source, which is a direct
+constraint on how Stage D should be sized.
+
+**The accession → sequence join checks out.** On the first completed shard,
+341,636 of 342,375 joined models (**99.78%**) have joined UniProt subunit
+lengths exactly equal to the modelled `n0chn`, and the disagreements are small
+(±2, ±4, ±10, ±18 residues) — consistent with UniProt entries revised since
+AFDB folded them. That is strong evidence the accession mapping is right, and
+it prices the exact-match default in `selection.py` at roughly 0.2% of
+candidates.
+
 ### Stage B: the pilot draw
 
 `pilot.py` deliberately does **not** sample proportionally to the selected
