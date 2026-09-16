@@ -1,0 +1,4 @@
+pair_id,fold1,fold2,tier,seq_class,L,n_a,n_b,n_a_fs,n_b_fs,jaccard,recall_a,recall_b,phi,phi_seed_sd,phi_fs,prefers,contacts_per_rollout,frac_finished,budget_capped,fold1_R_all,fold1_R_long,fold1_AUC_all,fold2_R_all,fold2_R_long,fold2_AUC_all,R_all_margin,training_fold,hit_identity,hit_arm,train_recall_a,train_recall_b
+2lela_2k0qa,2lelA,2k0qA,C,identical,74,30,29,22,14,0.3444,0.1233,0.3204,-0.1971,0.0091,-0.1961,fold2,68.7,1.0,False,0.4852,0.3143,0.8365,0.64,0.419,0.9546,-0.1548,fold1,0.706,afdb,0.3667,0.069
+2hdma_2n54b,2hdmA,2n54B,C,homolog,75,29,28,10,7,0.0806,0.1268,0.2072,-0.0804,0.0197,0.0189,fold2,44.1,1.0,False,0.1824,0.1867,0.8846,0.3636,0.0167,0.8733,-0.1812,neither,0.445,afdb,0.1034,0.0
+2k42a_1ceeb,2k42A,1ceeB,C,homolog,81,16,10,10,8,0.1333,0.2974,0.1228,0.1746,0.0098,0.1361,fold1,20.0,1.0,False,0.56,0.2,0.97,0.3286,,0.9322,0.2314,fold1,0.803,afdb,0.6875,0.0

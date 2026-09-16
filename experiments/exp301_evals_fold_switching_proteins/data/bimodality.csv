@@ -1,0 +1,4 @@
+pair_id,n_rollouts,phi_mean,phi_sd,null_sd,dispersion,bic_1,bic_2,bic_favours_2,frac_phi_negative
+2hdma_2n54b,500,-0.0804,0.1821,0.0984,3.424,-272.8,-335.1,True,0.71
+2k42a_1ceeb,500,0.1746,0.1819,0.1544,1.389,-273.8,-254.0,False,0.162
+2lela_2k0qa,500,-0.1971,0.1157,0.1054,1.204,-726.5,-720.0,False,0.954

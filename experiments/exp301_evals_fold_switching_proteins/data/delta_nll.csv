@@ -1,0 +1,7 @@
+pair_id,variant,n_realizations,nll_tok_fold1,nll_tok_fold2,delta_nll_tok,nll_stmt_fold1,nll_stmt_fold2,delta_nll_stmt,prefers
+2hdma_2n54b,full,4,1.8522,1.8073,0.0449,5.611,5.4767,0.1343,fold2
+2hdma_2n54b,matched,4,1.9047,1.7997,0.105,5.7718,5.4536,0.3182,fold2
+2k42a_1ceeb,full,4,1.772,2.0342,-0.2622,5.4047,6.248,-0.8433,fold1
+2k42a_1ceeb,matched,4,2.0572,2.051,0.0062,6.3186,6.2995,0.0191,fold2
+2lela_2k0qa,full,4,1.8926,1.793,0.0996,5.7088,5.4087,0.3,fold2
+2lela_2k0qa,matched,4,1.9184,1.7879,0.1305,5.7871,5.3936,0.3935,fold2
