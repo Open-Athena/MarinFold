@@ -153,3 +153,77 @@ def test_selection_fails_loud_after_writing_frontier_when_quota_is_unmet(
         raise AssertionError("an unmet production quota must fail loud")
     assert (tmp_path / "out" / "selection.json").exists()
     assert (tmp_path / "out" / "selection_ledger.parquet").exists()
+
+
+def test_sequence_and_model_lengths_must_agree(tmp_path: Path) -> None:
+    """The hashed sequence must be the sequence in the structure.
+
+    AFDB splits proteins over 2,700 residues into fragments, but every AFCDB
+    chain is at most 1,500, so an ``-F1`` model covers residues 1..L and the
+    joined UniProt length should equal ``n0chn`` exactly. A disagreement means
+    the entry was revised since AFDB folded it, or the accession mapping is
+    wrong -- either way the decontamination decision was made against a
+    different sequence than the one the document will be generated from.
+    """
+    models = [
+        _model("AGREES", "heterodimer", "G1", "G2", source_quality_pass=True),
+        _model("DISAGREES", "heterodimer", "D1", "D2", source_quality_pass=True),
+    ]
+    # n0chn says 200 residues; D1/D2 join to 100 + 120 = 220.
+    input_path = tmp_path / "normalized.parquet"
+    pq.write_table(pa.Table.from_pylist(models), input_path)
+    accessions = {m[key] for m in models for key in ("accession_a", "accession_b")}
+    rows = _annotations(accessions)
+    for row in rows:
+        if row["accession"] == "D2":
+            row["sequence_length"] = 120
+    annotations_path = tmp_path / "annotations.parquet"
+    pq.write_table(pa.Table.from_pylist(rows), annotations_path)
+
+    out = tmp_path / "selection"
+    try:
+        run_selection(
+            str(input_path),
+            annotations_path,
+            out,
+            target_docs=1,
+            min_heterodimers=0,
+            min_relaxed_quality_ratio=0.5,
+            database=tmp_path / "selection.duckdb",
+        )
+    except RuntimeError:  # quota is deliberately unmet-tolerant here
+        pass
+
+    ledger = {
+        row["model_id"]: row
+        for row in pq.read_table(out / "selection_ledger.parquet").to_pylist()
+    }
+    assert ledger["DISAGREES"]["reason"] == "sequence_model_length_mismatch"
+    assert ledger["DISAGREES"]["status"] == "rejected"
+    assert ledger["AGREES"]["status"] == "selected"
+
+
+def test_length_mismatch_tolerance_is_configurable(tmp_path: Path) -> None:
+    """A tolerance must be an explicit choice, not a silent default."""
+    models = [_model("OFF-BY-20", "heterodimer", "D1", "D2", source_quality_pass=True)]
+    input_path = tmp_path / "normalized.parquet"
+    pq.write_table(pa.Table.from_pylist(models), input_path)
+    rows = _annotations({"D1", "D2"})
+    for row in rows:
+        if row["accession"] == "D2":
+            row["sequence_length"] = 120
+    annotations_path = tmp_path / "annotations.parquet"
+    pq.write_table(pa.Table.from_pylist(rows), annotations_path)
+
+    out = tmp_path / "selection"
+    stats = run_selection(
+        str(input_path),
+        annotations_path,
+        out,
+        target_docs=1,
+        min_heterodimers=0,
+        min_relaxed_quality_ratio=0.5,
+        max_length_mismatch=20,
+        database=tmp_path / "selection.duckdb",
+    )
+    assert stats["selected_docs"] == 1

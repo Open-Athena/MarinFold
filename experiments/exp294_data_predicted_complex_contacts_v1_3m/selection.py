@@ -50,6 +50,15 @@ DEFAULT_MIN_RELAXED_QUALITY_RATIO = 0.3
 DEFAULT_MAX_TOTAL_RESIDUES = 1998
 DEFAULT_MAX_BACKBONE_CLASHES = 10
 
+#: The joined UniProt sequence lengths must agree with the modelled residue
+#: count ``n0chn``. AFDB splits proteins over 2,700 residues into fragments, but
+#: every AFCDB chain is at most 1,500, so an ``-F1`` model covers residues 1..L
+#: and the two should be identical. A mismatch means either the UniProt entry
+#: was revised since AFDB folded it or the accession mapping is wrong -- and in
+#: both cases the sequence we hashed and decontaminated on is not the sequence
+#: in the structure. Default 0 is exact agreement.
+DEFAULT_MAX_LENGTH_MISMATCH = 0
+
 
 def _sql_literal(value: str | Path) -> str:
     return "'" + str(value).replace("'", "''") + "'"
@@ -62,6 +71,7 @@ def _prepare_tables(
     *,
     max_total_residues: int,
     max_backbone_clashes: int,
+    max_length_mismatch: int,
 ) -> None:
     """Join sequence annotations and assign hard-filter/dedup status."""
     con.execute(
@@ -124,6 +134,10 @@ def _prepare_tables(
                         THEN 'too_many_backbone_clashes'
                     WHEN quality_ratio IS NULL
                         THEN 'missing_quality_score'
+                    WHEN source_total_residues IS NULL
+                        OR abs(total_residues - source_total_residues)
+                           > {int(max_length_mismatch)}
+                        THEN 'sequence_model_length_mismatch'
                     ELSE NULL
                 END AS hard_rejection
             FROM annotated
@@ -331,6 +345,7 @@ def run_selection(
     min_relaxed_quality_ratio: float = DEFAULT_MIN_RELAXED_QUALITY_RATIO,
     max_total_residues: int = DEFAULT_MAX_TOTAL_RESIDUES,
     max_backbone_clashes: int = DEFAULT_MAX_BACKBONE_CLASHES,
+    max_length_mismatch: int = DEFAULT_MAX_LENGTH_MISMATCH,
     database: Path | None = None,
 ) -> dict[str, Any]:
     """Create selection manifest, complete ledger, policy, and statistics."""
@@ -343,6 +358,7 @@ def run_selection(
         annotations_path,
         max_total_residues=max_total_residues,
         max_backbone_clashes=max_backbone_clashes,
+        max_length_mismatch=max_length_mismatch,
     )
     selection_counts = _choose_selection(
         con,
@@ -358,6 +374,7 @@ def run_selection(
         "max_total_residues": max_total_residues,
         "min_reported_interactions": 1,
         "max_backbone_clashes": max_backbone_clashes,
+        "max_length_mismatch": max_length_mismatch,
         "sequence_annotation_path": str(annotations_path.resolve()),
         "ranking": _selection_order(),
         **selection_counts,
@@ -393,6 +410,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--max-backbone-clashes", type=int, default=DEFAULT_MAX_BACKBONE_CLASHES
     )
+    parser.add_argument(
+        "--max-length-mismatch", type=int, default=DEFAULT_MAX_LENGTH_MISMATCH
+    )
     parser.add_argument("--database", type=Path, default=None)
     return parser
 
@@ -408,6 +428,7 @@ def main(argv: list[str] | None = None) -> int:
         min_relaxed_quality_ratio=args.min_relaxed_quality_ratio,
         max_total_residues=args.max_total_residues,
         max_backbone_clashes=args.max_backbone_clashes,
+        max_length_mismatch=args.max_length_mismatch,
         database=args.database,
     )
     print(json.dumps(stats, indent=2))
