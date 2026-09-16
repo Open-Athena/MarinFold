@@ -69,7 +69,7 @@ def test_the_rollout_and_the_structure_are_on_opposite_sides_of_the_diagonal(dat
     # else, and every one of them is at i < j: the visually lower-right triangle.
     assert not painted[~band & np.tril(np.ones_like(painted), k=-1).astype(bool)].any()
 
-    frame = animation.Frame(data, "test", right="stream")
+    frame = animation.Frame(data, "test", "test", right="stream")
     rollout = int(data["statements"].rollout.iloc[0])
     # The opening frame carries no statement, so n + 1 frames cover n statements.
     frames = animation.emission_frames(frame, data, rollout, slow_statements=0)

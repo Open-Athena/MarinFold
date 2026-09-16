@@ -110,6 +110,7 @@ def load_dataset():
                                                    statements.scorable)]
     return dict(metadata=metadata, statements=statements, record=record,
                 length=length, truth=truth, votes=votes, tiebreak=tiebreak,
+                pdb_id=record["stem"].split("_")[0].upper(),
                 n_rollouts=int(metadata["parameters"]["n_rollouts"]),
                 n_true=int(np.triu(truth, figlib.MIN_SEPARATION).sum()))
 
@@ -207,7 +208,7 @@ class Frame:
     CURVE_RECT = (0.615, 0.265, 0.345, 0.44)
     HIGHLIGHT = 3.2      # cells across, for the box marking the newest statement
 
-    def __init__(self, data, header: str, right: str):
+    def __init__(self, data, header: str, subheader: str, right: str):
         """``right`` selects the right-hand panel: ``"stream"`` or ``"curve"``."""
         figlib.figure_style(DPI)
         self.data = data
@@ -215,7 +216,11 @@ class Frame:
         self.figure = plt.figure(figsize=self.SIZE, dpi=DPI)
         self.figure.patch.set_facecolor("white")
 
-        self.figure.text(0.045, 0.945, header, fontsize=11.5, va="center")
+        # Title and subtitle as two artists rather than one two-line string: the second line says
+        # what this particular GIF does and reads as the smaller of the two, which one text
+        # object at one size cannot express.
+        self.figure.text(0.045, 0.988, header, fontsize=12.5, va="top")
+        self.figure.text(0.045, 0.938, subheader, fontsize=9.5, va="top", color="#555555")
 
         # Explicit rectangles rather than a layout engine: the map has to be the same square of
         # pixels in every frame, and a layout engine resizes an axes around whatever text it
@@ -231,8 +236,9 @@ class Frame:
             self.axis.spines[spine].set_visible(True)
         self.corner = self.axis.text(0.035, 0.96, "", transform=self.axis.transAxes, ha="left",
                                      va="top", fontsize=9, color=HIT, linespacing=1.4)
-        self.axis.text(0.965, 0.045, "experimental\nstructure", transform=self.axis.transAxes,
-                       ha="right", va="bottom", fontsize=9, color=GROUND_TRUTH, linespacing=1.4)
+        self.axis.text(0.965, 0.045, f"Experimentally-determined\nstructure ({data['pdb_id']})",
+                       transform=self.axis.transAxes, ha="right", va="bottom", fontsize=9,
+                       color=GROUND_TRUTH, linespacing=1.4)
         # The newest statement's cell, outlined. Off-screen until the first statement lands.
         # Wider than the cell it marks: a 1-cell outline on a ~4 px cell is a smudge.
         self.highlight = Rectangle((-10, -10), self.HIGHLIGHT, self.HIGHLIGHT, fill=False,
@@ -282,7 +288,7 @@ class Frame:
     def _legend(self) -> None:
         """Two swatches under the token stream, in the map's own colours."""
         for row, (color, label) in enumerate(
-                ((HIT, "in the experimental structure"), (MISS, "not in it"))):
+                ((HIT, "Present in the experimental structure"), (MISS, "Not present"))):
             y = 0.10 - row * 0.075
             self.stream.add_patch(Rectangle((0.02, y - 0.018), 0.026, 0.036, facecolor=color,
                                             edgecolor="none", transform=self.stream.transAxes))
@@ -420,10 +426,10 @@ def main() -> None:
     """Build both GIFs from the stored dataset."""
     data = load_dataset()
     featured = choose_rollout(data)
-    protein = data["record"]["stem"].split("_")[0].upper()
-    header = f"{protein} · MarinFold writes its contact map one statement at a time"
+    header = "Top7 de novo designed protein"
 
-    frame = Frame(data, header, right="stream")
+    frame = Frame(data, header, "Showing the contacts as one rollout emits them",
+                  right="stream")
     frames, durations = zip(*emission_frames(frame, data, featured))
     frames, durations = list(frames), list(durations)
     durations[-1] = HOLD_MS
@@ -436,7 +442,8 @@ def main() -> None:
     curve = running_precision(data, order)
     print(f"consensus     {curve[0]:.3f} after 1 rollout -> {curve[-1]:.3f} after {len(order)}")
 
-    frame = Frame(data, f"{protein} · one rollout, then the vote across {len(order)}",
+    frame = Frame(data, header,
+                  f"Showing one rollout, then consensus across {len(order)} rollouts",
                   right="stream")
     frames, durations = zip(*emission_frames(frame, data, featured, slow_statements=0,
                                              slow_ms=SLOW_MS, fast_ms=REPLAY_MS))
