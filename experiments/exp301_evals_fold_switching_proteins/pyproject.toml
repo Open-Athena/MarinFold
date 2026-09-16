@@ -18,6 +18,13 @@ dependencies = [
     "matplotlib",
     "scikit-learn",        # roc_auc_score, as exp89's compute_metrics uses
     "requests",            # RCSB fetch fallback when the local mirror misses
+    "pyarrow",             # the worker's targets / results parquet
+    # NOTE: huggingface_hub>=1.5 (what HF *buckets* need) is deliberately NOT a
+    # dependency here. marinfold pins transformers<5, and every transformers 4.x
+    # pins huggingface-hub<1.0, so the two cannot share a venv. Nothing needs
+    # them in one process: the bucket reads live in stage_inputs.py, which runs
+    # under `uv run --with "huggingface_hub>=1.5"`, and the CoreWeave worker gets
+    # marinfold installed --no-deps inside the vLLM image.
 ]
 
 [project.optional-dependencies]
