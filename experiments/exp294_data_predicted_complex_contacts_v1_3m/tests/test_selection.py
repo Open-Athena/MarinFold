@@ -227,3 +227,44 @@ def test_length_mismatch_tolerance_is_configurable(tmp_path: Path) -> None:
         database=tmp_path / "selection.duckdb",
     )
     assert stats["selected_docs"] == 1
+
+
+def test_model_id_colliding_across_sources_is_counted_once(tmp_path: Path) -> None:
+    """AFCDB reuses modelEntityId across its two tables; 130 ids appear in both.
+
+    Joining on the id alone duplicates ledger rows and lets one source's row
+    mask the other's in the Tier-B anti-join, so the accounting must key on
+    (complex_type, model_id).
+    """
+    models = [
+        _model("SHARED", "homodimer", "S1", "S1", source_quality_pass=True),
+        _model("SHARED", "heterodimer", "S2", "S3", source_quality_pass=True),
+        _model("UNIQUE", "homodimer", "U1", "U1", source_quality_pass=True),
+    ]
+    input_path = tmp_path / "normalized.parquet"
+    pq.write_table(pa.Table.from_pylist(models), input_path)
+    accessions = {m[key] for m in models for key in ("accession_a", "accession_b")}
+    annotations_path = tmp_path / "annotations.parquet"
+    pq.write_table(pa.Table.from_pylist(_annotations(accessions)), annotations_path)
+
+    out = tmp_path / "selection"
+    stats = run_selection(
+        str(input_path),
+        annotations_path,
+        out,
+        target_docs=3,
+        min_heterodimers=0,
+        min_relaxed_quality_ratio=0.5,
+        database=tmp_path / "selection.duckdb",
+    )
+    assert stats["selected_docs"] == 3
+
+    ledger = pq.read_table(out / "selection_ledger.parquet").to_pylist()
+    assert len(ledger) == 3, "the ledger must have exactly one row per source model"
+    keys = {row["source_model_key"] for row in ledger}
+    assert keys == {"homodimer|SHARED", "heterodimer|SHARED", "homodimer|UNIQUE"}
+    assert all(row["status"] == "selected" for row in ledger)
+
+    selected = pq.read_table(out / "selected.parquet").to_pylist()
+    assert len(selected) == 3
+    assert len({row["source_model_key"] for row in selected}) == 3

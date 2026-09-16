@@ -77,7 +77,8 @@ def _prepare_tables(
     con.execute(
         f"""
         CREATE OR REPLACE TABLE normalized AS
-        SELECT * FROM read_parquet({_sql_literal(input_glob)}, union_by_name=true)
+        SELECT *, complex_type || '|' || model_id AS source_model_key
+        FROM read_parquet({_sql_literal(input_glob)}, union_by_name=true)
         """
     )
     con.execute(
@@ -91,6 +92,20 @@ def _prepare_tables(
         FROM read_parquet({_sql_literal(annotations_path)})
         """
     )
+    # AFCDB's modelEntityId is NOT unique across the two source tables: 130 ids
+    # appear as both a homodimer and a heterodimer. Joining on it alone
+    # duplicates ledger rows and lets one source's row mask the other's in the
+    # Tier-B anti-join, so every join below keys on (complex_type, model_id).
+    duplicate_keys = con.execute(
+        "SELECT count(*) FROM (SELECT source_model_key FROM normalized "
+        "GROUP BY source_model_key HAVING count(*) != 1)"
+    ).fetchone()[0]
+    if duplicate_keys:
+        raise ValueError(
+            f"{duplicate_keys} (complex_type, model_id) pairs are not unique; "
+            "the per-model accounting below would double-count them"
+        )
+
     duplicate_annotations = con.execute(
         "SELECT count(*) FROM (SELECT accession FROM annotations GROUP BY accession HAVING count(*) != 1)"
     ).fetchone()[0]
@@ -148,7 +163,8 @@ def _prepare_tables(
                 ORDER BY (hard_rejection IS NULL) DESC,
                          source_quality_pass DESC, quality_ratio DESC,
                          ipsae_score DESC, pdockq2_score DESC, iptm DESC,
-                         num_interactions DESC, clashes_backbone ASC, model_id ASC
+                         num_interactions DESC, clashes_backbone ASC,
+                         source_model_key ASC
             ) END AS sequence_pair_rank
         FROM classified
         """
@@ -165,7 +181,8 @@ def _prepare_tables(
 def _selection_order() -> str:
     return (
         "quality_ratio DESC, ipsae_score DESC, pdockq2_score DESC, "
-        "iptm DESC, num_interactions DESC, clashes_backbone ASC, model_id ASC"
+        "iptm DESC, num_interactions DESC, clashes_backbone ASC, "
+        "source_model_key ASC"
     )
 
 
@@ -214,10 +231,10 @@ def _choose_selection(
         SELECT u.*, 'B'::VARCHAR AS confidence_tier,
                'total_document_quota'::VARCHAR AS selection_reason
         FROM unique_candidates u
-        LEFT JOIN tier_b_heterodimer h USING (model_id)
+        LEFT JOIN tier_b_heterodimer h USING (source_model_key)
         WHERE NOT u.source_quality_pass
           AND u.quality_ratio >= {float(min_relaxed_quality_ratio)}
-          AND h.model_id IS NULL
+          AND h.source_model_key IS NULL
         ORDER BY {_selection_order()}
         LIMIT {int(remaining_needed)}
         """
@@ -257,7 +274,7 @@ def _write_outputs(
         f"""
         COPY (
             SELECT
-                model_id, complex_type, accession_a, accession_b,
+                source_model_key, model_id, complex_type, accession_a, accession_b,
                 sequence_sha256_a, sequence_sha256_b,
                 sequence_length_a, sequence_length_b, total_residues,
                 sequence_pair_id, source_quality_pass, confidence_tier,
@@ -266,7 +283,7 @@ def _write_outputs(
                 clashes_backbone, clashes_heavy_atom, tax_id_a, tax_id_b,
                 gene_a, gene_b, local_tar_name, source_tar_uri
             FROM selected
-            ORDER BY source_tar_uri, model_id
+            ORDER BY source_tar_uri, source_model_key
         ) TO {_sql_literal(manifest_path)}
         (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 100000)
         """
@@ -275,24 +292,27 @@ def _write_outputs(
         f"""
         COPY (
             SELECT
+                j.source_model_key,
                 j.model_id,
+                j.complex_type,
                 CASE
                     WHEN j.hard_rejection IS NOT NULL THEN 'rejected'
                     WHEN j.sequence_pair_rank > 1 THEN 'rejected'
-                    WHEN s.model_id IS NOT NULL THEN 'selected'
+                    WHEN s.source_model_key IS NOT NULL THEN 'selected'
                     ELSE 'not_selected'
                 END AS status,
                 CASE
                     WHEN j.hard_rejection IS NOT NULL THEN j.hard_rejection
                     WHEN j.sequence_pair_rank > 1 THEN 'duplicate_sequence_pair'
-                    WHEN s.model_id IS NOT NULL THEN 'tier_' || lower(s.confidence_tier)
+                    WHEN s.source_model_key IS NOT NULL
+                        THEN 'tier_' || lower(s.confidence_tier)
                     WHEN j.quality_ratio < {float(policy["min_relaxed_quality_ratio"])}
                         THEN 'below_relaxed_quality_floor'
                     ELSE 'quota_filled_by_higher_ranked_models'
                 END AS reason
             FROM joined j
-            LEFT JOIN selected s USING (model_id)
-            ORDER BY j.model_id
+            LEFT JOIN selected s USING (source_model_key)
+            ORDER BY j.source_model_key
         ) TO {_sql_literal(ledger_path)}
         (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 100000)
         """
