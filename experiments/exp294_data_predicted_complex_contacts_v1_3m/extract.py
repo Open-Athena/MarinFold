@@ -37,6 +37,7 @@ import argparse
 import hashlib
 import json
 import random
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -99,6 +100,24 @@ LEDGER_SCHEMA = pa.schema(
 
 def _sql_literal(value: str | Path) -> str:
     return "'" + str(value).replace("'", "''") + "'"
+
+
+def _localise(path: str) -> str:
+    """Copy a remote manifest down before DuckDB opens it.
+
+    DuckDB has no GCS credentials on an Iris pod -- it fails with
+    "Authentication Failure - GCS authentication failed" -- while fsspec/gcsfs
+    picks up the worker's application-default credentials. Reading the whole
+    small manifest through fsspec also avoids the ranged-read path that is the
+    gcsfs 416 failure mode.
+    """
+    if "://" not in path:
+        return path
+    with fsspec.open(path, "rb") as remote:
+        payload = remote.read()
+    with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as local:
+        local.write(payload)
+        return local.name
 
 
 def _sleep_backoff(attempt: int) -> None:
@@ -293,7 +312,7 @@ def run(
         SELECT source_model_key, model_id, complex_type, accession_a, accession_b,
                total_residues, quality_ratio, ipsae_score, pdockq2_score,
                confidence_tier, source_tar_uri
-        FROM read_parquet({_sql_literal(manifest)})
+        FROM read_parquet({_sql_literal(_localise(manifest))})
         ORDER BY source_tar_uri, source_model_key
         """
     ).arrow().read_all().to_pylist()
