@@ -241,6 +241,74 @@ compressed.
 
 The eval-decontamination drop list is still to be produced.
 
+### Sequence fetch: measured, sharded, and hardened (2026-09-16)
+
+An Iris smoke run in `europe-west4-a` (4.29 GB, 16 ranges, one 2-vCPU pod)
+measured **14.52 MB/s** and confirmed the source is **118.0 GB**, not the 110 GB
+the directory listing rounds to. A single pod would therefore take ~2.3 hours,
+because the scan is Python-bound rather than network-bound. `fetch_sequences.py`
+takes `--shard-index`/`--shard-count`: shard *i* owns the global byte window
+`[total*i/N, total*(i+1)/N)` and subdivides it into ranges, applying the same
+start-offset ownership rule at both levels so pod seams are exact for the same
+reason range seams are. A sharded run cannot judge its own completeness — each
+pod sees only a fraction of the accessions — so `--verify` checks the union:
+that the windows tile the file contiguously from 0 to its length, and that every
+requested accession was matched exactly once.
+
+Two failure modes showed up that are worth recording, because both are silent:
+
+- **EBI refuses concurrent connections.** Seven of the first sixteen pods died
+  immediately on `URLError: [Errno 111] Connection refused` from the opening
+  HEAD request. Sixteen pods opening streams inside thirty seconds is past what
+  the public FTP accepts. The reader now retries with exponential backoff and
+  jitter and resumes a dropped stream from the first byte it has not yet
+  returned, rather than losing a multi-GB range.
+- **A truncated transfer reads as a clean EOF.** Writing the reconnect test
+  surfaced a worse bug than the one it was written for: when a server closes
+  early, `read()` returns `b""`, so an interrupted transfer was
+  indistinguishable from the end of the file. The range would stop short, report
+  success, and the run would ship a short sequence set — which
+  under-decontaminates the corpus, silently, weeks downstream. Ranges now carry
+  the source length and treat running dry before the range end as fatal unless
+  they own the file's tail.
+
+The tests cover eight worker counts, four shard/worker combinations, a missing
+shard, an injected mid-stream drop, and a truncated source.
+
+### Stage B: the pilot draw
+
+`pilot.py` deliberately does **not** sample proportionally to the selected
+mixture. The pilot exists to set the production Tier-B floor, and the census
+cannot decide that on its own: it can say how many candidates sit above a floor,
+but only generated documents say whether they are usable. A proportional draw
+would spend most of its 50,000 on Tier A, which nobody is arguing about, so the
+draw is equalised across strata — complex type x confidence bin x length band —
+which over-samples the low-confidence tail the decision actually turns on. Rows
+are ordered within a stratum by `hash(model_id)`, so the draw is reproducible
+from the manifest alone with no stored seed and no dependence on row order, and
+a stratum thinner than its share redistributes its shortfall rather than quietly
+shrinking the pilot.
+
+### Stage D: what the archive reconnaissance implies
+
+Not yet implemented, and not to be launched before the pilot reports. The
+reconnaissance already rules one design in and one out:
+
+- **Streaming whole tars is out.** That is the full 48.8 TB for ~10% of the
+  members, and the homodimer `chunk_*` tars carry a redundant `.pdb.zst` per
+  model on top.
+- **Range-addressed extraction is in.** Walking a tar's headers costs one
+  512-byte read per member (next header = `off + 512 + roundup(size, 512)`), and
+  selected members are then fetched by byte range. Walking and extracting can be
+  fused into a single pass, so the transfer is roughly the selected payload
+  (~1.5–2.5 TB) rather than 48.8 TB.
+
+The open Stage-D question is request volume rather than bytes: a fused walk
+issues on the order of one small request per member across ~29M members, and
+this experiment has already shown EBI refusing connections at 16 concurrent
+pods. Concurrency, backoff and politeness have to be sized from the pilot, not
+assumed.
+
 Stage A commands:
 
 ```bash
