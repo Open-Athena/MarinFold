@@ -15,6 +15,8 @@ marinfold_run:
   iris_job_ids:
   - /zack/exp288-train-3b-a01
   - /zack/exp288-train-3b-a01/exp288-train-5652d2bb
+  - /zack/exp288-train-3b-a02
+  - /zack/exp288-train-3b-a02/exp288-train-18f57cd1
 ---
 # 2026-09-15 · exp288_models_chinchilla_size_sweep · contacts-v1-exp288-chinchilla-3b
 
