@@ -18,6 +18,7 @@ import multiprocessing
 import os
 import shutil
 import socket
+import subprocess
 import tarfile
 from collections.abc import Iterable, Iterator
 from concurrent.futures import ProcessPoolExecutor
@@ -261,8 +262,13 @@ def stage_tools(
     checked a single time per process. A mismatch raises rather than screening
     with an unknown binary. The unpack directory is process-private so two
     processes sharing a pod cannot read each other's half-written binary.
+
+    ``root`` must be on a filesystem mounted with execute permission. A task
+    pod's ``/tmp`` typically is not, which surfaces only when the extracted
+    binary is first run, so the staged binary is executed here to fail at
+    staging time with an explicit message rather than deep inside a screen.
     """
-    base = Path(root) / f"tooling-{os.getpid()}"
+    base = Path(root).resolve() / f"tooling-{os.getpid()}"
     tools = base / "tools"
     reference_dir = base / "reference"
     tools.mkdir(parents=True, exist_ok=True)
@@ -275,6 +281,15 @@ def stage_tools(
     archive.write_bytes(payload)
     with tarfile.open(archive) as bundle:
         bundle.extractall(tools, filter="data")
+    binary = tools / "mmseqs" / "bin" / "mmseqs"
+    binary.chmod(0o755)
+    try:
+        subprocess.run([str(binary), "version"], check=True, capture_output=True)
+    except OSError as error:
+        raise RuntimeError(
+            f"Staged MMseqs2 at {binary} is not runnable ({error}). Point --work at a "
+            "writable path that is not mounted noexec."
+        ) from error
     references = []
     digests = []
     for uri in reference_uris:
@@ -284,7 +299,7 @@ def stage_tools(
         target.write_bytes(content)
         references.append(target)
         digests.append(hashlib.sha256(content).hexdigest())
-    return tools / "mmseqs" / "bin" / "mmseqs", tuple(references), tuple(digests)
+    return binary, tuple(references), tuple(digests)
 
 
 def write_rows(uri: str, rows: list[dict]) -> None:

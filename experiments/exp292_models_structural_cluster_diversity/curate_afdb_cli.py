@@ -25,7 +25,10 @@ def main() -> None:
     parser.add_argument("--aux-prefix", required=True)
     parser.add_argument("--mmseqs-archive", required=True)
     parser.add_argument("--reference", action="append", required=True)
-    parser.add_argument("--work", default="/tmp/exp292-curate")
+    # Relative, so it resolves under the worker's working directory. A task
+    # pod's /tmp is commonly mounted noexec, which the staged MMseqs2 binary
+    # cannot run from.
+    parser.add_argument("--work", default="exp292-curate-work")
     parser.add_argument("--max-workers", type=int, default=256)
     parser.add_argument("--screen-threads", type=int, default=1)
     parser.add_argument("--select-workers", type=int, default=1)

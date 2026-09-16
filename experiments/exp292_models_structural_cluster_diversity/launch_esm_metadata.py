@@ -5,6 +5,7 @@ import hashlib
 import json
 import shlex
 import tarfile
+import time
 from pathlib import Path
 
 import boto3
@@ -13,6 +14,12 @@ BUCKET = "marinfold-exp91-usw2"
 IMAGE = "ami-04678417fc39d7171"
 SUBNET = "subnet-00caee8a9828c5c0c"
 PROFILE = "marinfold-exp91-instance-profile"
+# The account allows 445 on-demand vCPUs in this instance bucket, so at 16 vCPUs
+# each only 27 workers can run at once. Asking for more fails mid-loop, which is
+# why long shard lists are drained in waves instead of submitted at once.
+INSTANCE_VCPUS = 16
+ACCOUNT_VCPU_LIMIT = 445
+MAX_CONCURRENT = ACCOUNT_VCPU_LIMIT // INSTANCE_VCPUS
 LOCATED_PREFIX = "exp292/production-v1/esm/locator/located"
 
 
@@ -40,6 +47,17 @@ mkdir -p /opt/exp292
 """
 
 
+def live_instances(ec2) -> int:
+    """Count exp292 workers currently holding vCPU capacity."""
+    response = ec2.describe_instances(
+        Filters=[
+            {"Name": "instance-state-name", "Values": ["pending", "running"]},
+            {"Name": "tag:Experiment", "Values": ["exp292"]},
+        ]
+    )
+    return sum(len(item["Instances"]) for item in response["Reservations"])
+
+
 def main() -> None:
     """Stage frozen code once and optionally launch requested shards."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -48,6 +66,8 @@ def main() -> None:
     parser.add_argument("--output-prefix", required=True)
     parser.add_argument("--shard", action="append", required=True)
     parser.add_argument("--max-clusters", type=int)
+    parser.add_argument("--max-concurrent", type=int, default=MAX_CONCURRENT)
+    parser.add_argument("--poll-seconds", type=int, default=30)
     parser.add_argument("--launch", action="store_true")
     args = parser.parse_args()
     if not args.run_name.replace("-", "").isalnum():
@@ -102,6 +122,7 @@ def main() -> None:
         "bundle_sha256": digest,
         "bundle_bytes": bundle.stat().st_size,
         "shards": args.shard,
+        "max_concurrent": args.max_concurrent,
         "max_clusters": args.max_clusters,
         "instances": [],
     }
@@ -113,33 +134,54 @@ def main() -> None:
     s3 = boto3.client("s3", region_name="us-west-2")
     s3.upload_file(str(bundle), BUCKET, source_key)
     ec2 = boto3.client("ec2", region_name="us-west-2")
-    for shard in args.shard:
-        name = f"{args.run_name}-{shard}"
-        config = {
-            **base_config,
-            "TagSpecifications": [
-                {
-                    "ResourceType": "instance",
-                    "Tags": [
-                        {"Key": "Name", "Value": name},
-                        {"Key": "Experiment", "Value": "exp292"},
-                        {"Key": "Stage", "Value": "esm-metadata"},
-                        {"Key": "Shard", "Value": shard},
-                    ],
-                }
-            ],
-            "ClientToken": hashlib.sha256((name + digest).encode()).hexdigest(),
-        }
-        response = ec2.run_instances(
-            **config,
-            UserData=user_data(source_key, args.output_prefix, shard, args.max_clusters),
-        )
-        record["instances"].append(
-            {"shard": shard, "instance_id": response["Instances"][0]["InstanceId"]}
-        )
+
+    def persist() -> None:
+        launch_path.write_text(json.dumps(record, indent=2) + "\n")
+
+    pending = list(args.shard)
+    record["status"] = "launching"
+    persist()
+    while pending:
+        free = args.max_concurrent - live_instances(ec2)
+        if free <= 0:
+            time.sleep(args.poll_seconds)
+            continue
+        for shard in pending[:free]:
+            name = f"{args.run_name}-{shard}"
+            config = {
+                **base_config,
+                "TagSpecifications": [
+                    {
+                        "ResourceType": "instance",
+                        "Tags": [
+                            {"Key": "Name", "Value": name},
+                            {"Key": "Experiment", "Value": "exp292"},
+                            {"Key": "Stage", "Value": "esm-metadata"},
+                            {"Key": "Shard", "Value": shard},
+                        ],
+                    }
+                ],
+                "ClientToken": hashlib.sha256((name + digest).encode()).hexdigest(),
+            }
+            response = ec2.run_instances(
+                **config,
+                UserData=user_data(
+                    source_key, args.output_prefix, shard, args.max_clusters
+                ),
+            )
+            # Record before the next call so an account-limit refusal cannot
+            # strand an already-running instance with no provenance.
+            record["instances"].append(
+                {"shard": shard, "instance_id": response["Instances"][0]["InstanceId"]}
+            )
+            persist()
+            print(f"launched shard={shard} {record['instances'][-1]['instance_id']}", flush=True)
+        pending = pending[free:]
+        if pending:
+            time.sleep(args.poll_seconds)
     record["status"] = "launched"
-    launch_path.write_text(json.dumps(record, indent=2) + "\n")
-    print(json.dumps(record["instances"], indent=2), flush=True)
+    persist()
+    print(json.dumps({"launched": len(record["instances"])}, indent=2), flush=True)
 
 
 if __name__ == "__main__":

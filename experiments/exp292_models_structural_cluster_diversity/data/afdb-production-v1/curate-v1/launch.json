@@ -1,0 +1,30 @@
+{
+  "status": "launched",
+  "run_name": "exp292-afdb-curate-v1",
+  "cluster": "marin",
+  "iris_job": "/bizon/exp292-afdb-curate-v1",
+  "dashboard": "https://iris.oa.dev/#/job/%2Fbizon%2Fexp292-afdb-curate-v1",
+  "input": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/validated/*.parquet",
+  "output": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/selected/selected-{shard:05d}-of-{total:05d}.parquet",
+  "aux_prefix": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/selection-provenance",
+  "mmseqs_archive": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/tools/mmseqs-linux-avx2.tar.gz",
+  "reference": [
+    "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/reference/eval_queries.fasta",
+    "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/reference/foldbench_all_queries.fasta"
+  ],
+  "region": "us-central1",
+  "priority": "batch",
+  "preemptible": true,
+  "max_workers": 256,
+  "screen_threads": 8,
+  "select_workers": 8,
+  "worker_cpu": 8.0,
+  "worker_memory": "16g",
+  "worker_disk": "8g",
+  "command": "uv run iris --cluster marin job run --job-name exp292-afdb-curate-v1 --cpu 1 --memory 2GB --extra pipeline --region us-central1 --priority batch --no-wait --exclude '^data/' --exclude '^gallery/' --exclude '^plots/' --exclude '^\\.venv/' -- python curate_afdb_cli.py --input 'gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/validated/*.parquet' --output 'gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/selected/selected-{shard:05d}-of-{total:05d}.parquet' --aux-prefix gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/selection-provenance --mmseqs-archive gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/tools/mmseqs-linux-avx2.tar.gz --max-workers 256 --screen-threads 8 --select-workers 8 --worker-cpu 8.0 --worker-memory 16g --worker-disk 8g --region us-central1 --reference gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/reference/eval_queries.fasta --reference gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/reference/foldbench_all_queries.fasta",
+  "input_files": 256,
+  "input_bytes": 10985016132,
+  "returncode": 0,
+  "stdout": "/bizon/exp292-afdb-curate-v1\n",
+  "stderr": "I20260916 10:02:14 139712511035200 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/0d18/MarinFold/experiments/exp292_models_structural_cluster_diversity/.venv/lib/python3.12/site-packages/iris/config/marin.yaml\nI20260916 10:02:14 139712511035200 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/0d18/MarinFold/experiments/exp292_models_structural_cluster_diversity/.venv/lib/python3.12/site-packages/iris/config/marin.yaml\nI20260916 10:02:14 139712511035200 iris.cli.job Executor heuristic: auto-tagging job as non-preemptible\nI20260916 10:02:14 139712511035200 iris.cli.job Submitting job: exp292-afdb-curate-v1\nI20260916 10:02:14 139712511035200 iris.cli.job Command: python curate_afdb_cli.py --input gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/validated/*.parquet --output gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/selected/selected-{shard:05d}-of-{total:05d}.parquet --aux-prefix gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/selection-provenance --mmseqs-archive gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/tools/mmseqs-linux-avx2.tar.gz --max-workers 256 --screen-threads 8 --select-workers 8 --worker-cpu 8.0 --worker-memory 16g --worker-disk 8g --region us-central1 --reference gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/reference/eval_queries.fasta --reference gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/reference/foldbench_all_queries.fasta\nI20260916 10:02:14 139712511035200 iris.cli.job Resources: cpu=1, memory=2GB, disk=5GB\nI20260916 10:02:14 139712511035200 iris.cli.job Region constraint: us-central1\nI20260916 10:02:14 139712511035200 iris.cli.job Using controller: https://iris.oa.dev\nI20260916 10:02:14 139712511035200 iris.cli.job Priority band: batch\nI20260916 10:02:14 139712511035200 iris.cluster.client.remote_client Workspace bundle size: 0.2 MB\nNot all requested scopes were granted by the authorization server, missing scopes email.\nI20260916 10:02:15 139712511035200 iris.cli.job Job submitted: /bizon/exp292-afdb-curate-v1\nI20260916 10:02:15 139712511035200 iris.cli.job Dashboard: https://iris.oa.dev/#/job/%2Fbizon%2Fexp292-afdb-curate-v1\n"
+}

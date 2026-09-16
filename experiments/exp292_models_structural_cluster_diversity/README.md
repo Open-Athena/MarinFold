@@ -198,6 +198,27 @@ That structural smoke is also the clearest demonstration of what the strict rule
 
 **AFDB curation is implemented.** `curate_afdb.py` and `curate_afdb_cli.py` apply the same frozen policy to the validated shards: cluster-wise quality filtering, the frozen held-out sequence exclusion, then structural-first three-slot selection over the stored C-alpha arrays, measuring only candidate-to-anchor and candidate-to-addition pairs. Because the exclusion rule has no E-value arm, a per-shard search returns the same verdict as one global search, so the screen runs inside each task rather than as a separate global stage. The frozen MMseqs2 archive and both reference FASTAs were mirrored byte-identically (verified by SHA-256) into `.../production-v1/tools/` and `.../production-v1/reference/` in us-central1, and are staged and hash-checked once per worker. `sequence_exclusion.py` now holds the one implementation of that rule, shared by both sources.
 
+**Measured production yield, AFDB.** One complete validated shard (`validated-00000-of-00256`, 13,571 rows) was curated end to end under the frozen policy. Every row passed candidate quality — the plan had already applied the pLDDT and length rules at metadata time — and the frozen screen excluded 761 candidates. Of 1,290 clusters, 1,261 still held a choice and 854 needed alignment. The shard produced **3,323 additions: 145 `structural_diversity` (4.4%) and 3,178 `quality_fill`**, from 29,327 measured pairs. Scaled across 256 shards that projects to roughly **851,000 AFDB additions, about 37,000 of them strict structural hits** — close to the 891,442 arithmetic ceiling, because AFDB's ceiling is set by cluster count rather than by quality attrition.
+
+Unlike source validation, this stage is **CPU-bound on pairwise alignment** — about 0.85 CPU-seconds per compared pair, 5.2 CPU-hours for the shard. Workers therefore take several cores and spread clusters across them, rather than following the one-core-per-worker rule that suits an I/O-bound fetch. The shard took 19.3 minutes at 16 processes.
+
+**Measured production yield, ESM.** The first bounded metadata batch (shards 01–08) completed uniformly in about six minutes per shard, every instance exiting zero with its exact-sequence positive control passing:
+
+| | per shard (mean) | batch of 8 | projected 256 |
+| --- | ---: | ---: | ---: |
+| located rows | 119,617 | 956,932 | ~30.6M |
+| quality-passing | 102,835 | 822,683 | ~26.3M |
+| quality rejections | 16,781 | 134,249 | ~4.3M |
+| held-out sequence rejections | 3,683 | 29,464 | ~0.94M |
+| selected without alignment | 31,393 | 251,146 | **~8.04M** |
+| clusters queued for structure | 6,225 | 49,803 | ~1.59M |
+
+The queued clusters contribute three additions each, so the ESM arm projects to roughly **12.8M additions** — consistent with the earlier preliminary estimate, and now measured rather than extrapolated from an audit. Together with AFDB's ~851,000 the supplement projects to **about 13.7M sequence–structure pairs before cross-source deduplication**, inside the original 10–30M planning range.
+
+**Cluster limit worth recording:** the first 256-worker curation launch (`exp292-afdb-curate-v1`) failed in about ninety seconds, before doing any work, with `PermissionError: [Errno 13] Permission denied: .../bin/mmseqs`. The task pod mounts `/tmp` `noexec`, so the staged frozen binary unpacked and hash-verified correctly and then could not be executed. The identical extraction works in the ESM arm because that bootstrap unpacks to `/opt` on a plain EC2 host, so the failure only appears once the stage moves onto the cluster. Staging now resolves under the worker's own working directory and runs `mmseqs version` immediately after extraction, so a bad mount fails at staging time with an explicit message instead of several frames deep inside the screen. The trap is written up in the `zephyr-pipeline-performance` skill.
+
+**Account limit worth recording:** this AWS account allows 445 on-demand vCPUs in the `m7i` bucket, so only 27 16-vCPU workers can run at once. A 64-shard request failed mid-loop on the 28th instance and left the 27 that had already started with no launch record. The launcher now drains a long shard list in waves under that cap and persists each instance before requesting the next, so a limit refusal can no longer strand an unrecorded worker.
+
 The completed audit supports an eight-candidate production reservoir: depending on the TM criterion, it recovers approximately 92–95% of the population-weighted hits found with 32 candidates. Production selection still fills to three with quality-passing members when strict structural alternatives are unavailable. The supplement will be included in the next full 1.5B run; there is no control-corpus build or short model-efficacy screen.
 
 ![AFDB curation diagnostics](plots/afdb_curation.png)

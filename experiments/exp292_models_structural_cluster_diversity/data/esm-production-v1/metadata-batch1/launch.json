@@ -1,0 +1,54 @@
+{
+  "status": "launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata/launches/exp292-esm-metadata-batch1/source.tar.gz",
+  "located": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator/located",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata",
+  "bundle_sha256": "d579d37b32f50291f0ee8411cbc371d07802401fab0c8623ae46dd4db029c21e",
+  "bundle_bytes": 98679,
+  "shards": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08"
+  ],
+  "max_clusters": null,
+  "instances": [
+    {
+      "shard": "01",
+      "instance_id": "i-033100610a2f18ed8"
+    },
+    {
+      "shard": "02",
+      "instance_id": "i-0cc3228232cc338e1"
+    },
+    {
+      "shard": "03",
+      "instance_id": "i-0b5f3e71a446c93ad"
+    },
+    {
+      "shard": "04",
+      "instance_id": "i-0658a0a5d379e55ac"
+    },
+    {
+      "shard": "05",
+      "instance_id": "i-05f8db8aa8049a566"
+    },
+    {
+      "shard": "06",
+      "instance_id": "i-0a6847798273e584e"
+    },
+    {
+      "shard": "07",
+      "instance_id": "i-0bd89f074b999346c"
+    },
+    {
+      "shard": "08",
+      "instance_id": "i-06caf4c4d5eb3a88d"
+    }
+  ]
+}
