@@ -202,18 +202,20 @@ That structural smoke is also the clearest demonstration of what the strict rule
 
 Unlike source validation, this stage is **CPU-bound on pairwise alignment** — about 0.85 CPU-seconds per compared pair, 5.2 CPU-hours for the shard. Workers therefore take several cores and spread clusters across them, rather than following the one-core-per-worker rule that suits an I/O-bound fetch. The shard took 19.3 minutes at 16 processes.
 
-**Measured production yield, ESM.** The metadata stage has now completed **62 of 256 shards**, every instance exiting zero with its exact-sequence positive control passing, at roughly six minutes per shard when eight run concurrently:
+**The ESM metadata stage is complete.** All 256 shards finished, every instance exiting zero with its exact-sequence positive control passing, for **21.0 m7i.4xlarge instance-hours** (median 301 s per shard):
 
-| | per shard (mean) | 62 shards observed | projected 256 |
-| --- | ---: | ---: | ---: |
-| located rows | 119,988 | 7,439,284 | 30,717,044 |
-| quality-passing | 103,183 | 6,397,374 | 26,414,964 |
-| quality rejections | 16,805 | 1,041,910 | 4,302,080 |
-| held-out sequence rejections | 3,709 | 229,978 | 949,587 |
-| selected without alignment | 31,397 | 1,946,634 | **8,037,715** |
-| clusters queued for structure | 6,266 | 388,520 | 1,604,212 |
+| | total |
+| --- | ---: |
+| located rows | 30,749,644 |
+| quality-passing | 26,444,640 |
+| quality rejections | 4,305,004 |
+| held-out sequence rejections | 951,318 |
+| **selected without alignment** | **8,056,414** |
+| clusters queued for structural ranking | 1,604,845 |
 
-The located-row projection is an independent check on the whole chain: 30,717,044 projected against the locator's measured 30,749,644 is 0.1% agreement, which means the plan, the locator and the curator all agree on which rows exist. The queued clusters contribute three additions each, so the ESM arm projects to **8,037,715 + 4,812,635 = about 12.85M additions**. With AFDB's ~851,000 the supplement projects to **roughly 13.7M sequence–structure pairs before cross-source deduplication**, inside the original 10–30M planning range.
+The reconciliation is exact rather than approximate: the stage consumed **30,749,644 located rows, matching the locator's own count with zero difference**, so the plan, the locator and the curator all agree on which rows exist. The queued clusters contribute three additions each, so the ESM arm yields **8,056,414 + 4,814,535 = 12,870,949 additions**. With AFDB's ~851,000 the supplement lands at **roughly 13.7M sequence–structure pairs before cross-source deduplication**, inside the original 10–30M planning range.
+
+Note what the two arms do *not* share. ESM contributes volume: 8.06M of its additions are decided on metadata alone, because most of its clusters hold at most three surviving candidates and so offer no choice to make. AFDB contributes a higher strict-diversity rate — 3.8–4.4% of its additions clear the whole-chain *and* confident-core bound, against roughly 2% of clusters in the ESM audits. A source-specific reading of the final corpus is therefore warranted; the arms are not interchangeable.
 
 **Account limit worth recording:** this AWS account allows 445 on-demand vCPUs in the `m7i` bucket, so only 27 16-vCPU workers can run at once. This bit twice. A 64-shard request failed mid-loop on the 28th instance and left the 27 already running with no launch record. The wave-draining replacement then failed too, because an instance keeps its vCPU reservation until it is *fully terminated*: counting only `pending` and `running` workers undercounts the ones still shutting down, so a wave sized against that count overshoots. The launcher now counts every quota-holding state, treats `VcpuLimitExceeded` as backpressure to retry rather than a fatal error, and persists each instance before requesting the next. Neither failure lost work — every shard that started finished, and the run resumes from the set of shards that already have a `summary.json`.
 

@@ -297,6 +297,26 @@
     {
       "shard": "07",
       "instance_id": "i-09b80476206a227b1"
+    },
+    {
+      "shard": "08",
+      "instance_id": "i-005bc32024f436abf"
+    },
+    {
+      "shard": "09",
+      "instance_id": "i-073748b7a30ada7c8"
+    },
+    {
+      "shard": "0a",
+      "instance_id": "i-03dc779d0fa60130c"
+    },
+    {
+      "shard": "0b",
+      "instance_id": "i-0e0610f79e8fa80e4"
+    },
+    {
+      "shard": "0c",
+      "instance_id": "i-0006c92af39a476f9"
     }
   ]
 }
