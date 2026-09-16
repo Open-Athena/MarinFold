@@ -119,3 +119,16 @@ restoring the latest complete checkpoint, temporary step 125489, at update
 125490. That discards 446 updates relative to the last logged step. The data
 manifest, 32-H100 geometry, batch priority, base-phase recipe, checkpoint root
 and W&B run identity are unchanged.
+
+At 2026-09-16 14:14:32 UTC both a04 jobs were running, W&B had returned to
+running, and the run had passed the failed attempt's high-water step 125935 to
+observed step 126023, with finite loss 2.8922 and 3.518 seconds/update.
+
+Iris retains no logs for this job, so the resume point could not be read from
+the driver log, and W&B cannot show it directly either: a resumed run drops
+steps at or below its previous maximum, so the first visible a04 row is 125936
+rather than 125490. Timing confirms the re-run of the dropped range. The
+worker's train-step compile artifact landed at 13:42:37 UTC and the first
+visible step at 14:09:06 UTC, a 26.5 minute gap that is about 454 updates at
+3.5 seconds each, against the 446 predicted by resuming at update 125490. The
+same arithmetic reproduces a03's first visible step from its own resume point.

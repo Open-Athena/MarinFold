@@ -9092,5 +9092,19 @@
     "updates_discarded_vs_last_logged_step": 446,
     "submitted_at_utc": "2026-09-16T13:36:51Z"
   },
-  "child_job_id": "/bizon/exp279-soft-production-cw-h100x32-a04/exp279-soft-production-cw-h100x32-a04-base"
+  "child_job_id": "/bizon/exp279-soft-production-cw-h100x32-a04/exp279-soft-production-cw-h100x32-a04-base",
+  "verification": {
+    "checked_at_utc": "2026-09-16T14:14:32+00:00",
+    "driver_state": "running",
+    "worker_state": "running",
+    "wandb_state": "running",
+    "observed_global_step": 126023,
+    "train_loss": 2.89215087890625,
+    "eval_loss": 3.0621650218963623,
+    "seconds_per_update": 3.5176634658128023,
+    "run_progress": 0.5786199328745047,
+    "passed_previous_high_water_step": 125935,
+    "resume_point_validation": "Iris retains no logs for this job, so the driver log could not be read. W&B also cannot show the resume point directly: a resumed run drops steps at or below its previous maximum, so the first visible a04 row is 125936. The re-run of the dropped range was confirmed by timing instead. The worker's train-step compile artifact (train_step_hooks.jaxpr.txt.gz:v1333) landed 2026-09-16T13:42:37Z and the first visible step 125936 at 14:09:06Z, a 26.5 minute gap. At the observed 3.5 s/update that is about 454 updates, against the 446 predicted by resuming at update 125490 (125936 - 125490). The same arithmetic reproduces a03's first visible step from its own resume point.",
+    "resume_point_validated_update": 125490
+  }
 }
