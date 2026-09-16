@@ -1,0 +1,58 @@
+[project]
+name = "exp299-models-delta-stream-contacts"
+version = "0.1.0"
+description = "Utilities for exp299 delta-stream contact experiments."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "pyarrow",
+    "fsspec",
+    "s3fs",
+    "marinfold-models",
+    "marin-core",
+    "marin-levanter",
+    "marin-iris",
+    "marin-zephyr",
+    "marin-rigging",
+    "dupekit",
+    "gitpython",
+    "httpx>=0.28.1,<1",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "jax[cuda13]==0.10.0; sys_platform == 'linux'",
+    "optax",
+    "wandb",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
+find-links = [
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-haliax-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-levanter-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-iris-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-zephyr-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-rigging-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-fray-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/marin-finelog-latest",
+    "https://github.com/marin-community/marin/releases/expanded_assets/dupekit-0.1.0-40ac799",
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+[tool.uv.sources]
+marinfold-models = { path = "../../models" }
+resiliparse = { index = "marin-resiliparse" }
