@@ -79,7 +79,41 @@ def test_build_annotations_hashes_sequences_and_joins_drop_list(tmp_path: Path) 
     assert rows["P3"]["eval_decontam_reason"] is None
 
 
-def test_build_annotations_fails_when_an_afcdb_accession_is_missing(
+def test_a_small_missing_tail_is_recorded_not_fatal(tmp_path: Path) -> None:
+    """AFDB's sequence snapshot predates the AFCDB metadata, so a tail is real.
+
+    Those accessions are written to a sidecar and left out of the table, which
+    makes every model using one fail selection's missing_sequence_annotation
+    check and appear in the ledger with that reason.
+    """
+    normalized = tmp_path / "normalized.parquet"
+    pq.write_table(
+        pa.Table.from_pylist(
+            [{"accession_a": f"P{i}", "accession_b": "P0"} for i in range(50)]
+        ),
+        normalized,
+    )
+    fasta = tmp_path / "sequences.fasta"
+    fasta.write_text("".join(f">P{i}\nACDE\n" for i in range(49)))
+    drop_list = tmp_path / "drop.parquet"
+    pq.write_table(
+        pa.table(
+            {
+                "accession": pa.array([], type=pa.string()),
+                "eval_decontam_reason": pa.array([], type=pa.string()),
+            }
+        ),
+        drop_list,
+    )
+    output = tmp_path / "annotations.parquet"
+    result = build_annotations(str(normalized), [fasta], drop_list, output)
+    assert result["missing_accessions"] == 1
+    assert result["accessions"] == 49
+    missing = pq.read_table(output.with_suffix(".missing_accessions.parquet"))
+    assert missing.column("accession").to_pylist() == ["P49"]
+
+
+def test_build_annotations_fails_when_too_many_accessions_are_missing(
     tmp_path: Path,
 ) -> None:
     normalized = tmp_path / "normalized.parquet"
@@ -100,5 +134,5 @@ def test_build_annotations_fails_when_an_afcdb_accession_is_missing(
         drop_list,
     )
 
-    with pytest.raises(ValueError, match="missing 1 AFCDB accessions"):
+    with pytest.raises(ValueError, match="above the 5% bound"):
         build_annotations(str(normalized), [fasta], drop_list, tmp_path / "out.parquet")

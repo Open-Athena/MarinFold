@@ -6,7 +6,16 @@
 The normalized AFCDB metadata has UniProt accessions but not sequences. This
 stage joins those accessions to one or more local FASTA files, computes exact
 sequence hashes and lengths, and attaches a completed eval-homology drop list.
-It fails if an AFCDB accession is missing or resolves to conflicting sequences.
+It fails if an AFCDB accession resolves to conflicting sequences, and if more
+than ``max_missing_fraction`` of accessions have no sequence at all.
+
+Some shortfall is real and upstream: AFDB's ``sequences.fasta`` is a snapshot
+(2026-02) older than the AFCDB metadata (2026-06/07), so a small tail of AFCDB
+accessions genuinely is not in it. Those are written to a sidecar list and left
+out of the annotation table, which makes every model that uses one fail
+``selection.py``'s ``missing_sequence_annotation`` check and appear in the
+ledger with that reason. A *large* shortfall means the wrong file or a broken
+fetch, and is still fatal.
 
 The intended sequence source is the AlphaFold DB bulk ``sequences.fasta``, whose
 headers look like ``>AFDB:AF-A0A919MGV6-F1 <description> UA=A0A919MGV6 ...``.
@@ -141,6 +150,12 @@ def fasta_to_parquet(
     return rows
 
 
+#: How much of the accession universe may legitimately have no sequence. The
+#: measured gap against the 2026-02 AFDB snapshot is 1.9%; anything far above
+#: that is a broken fetch or the wrong file, not upstream staleness.
+DEFAULT_MAX_MISSING_FRACTION = 0.05
+
+
 def build_annotations(
     normalized_glob: str,
     fasta_paths: list[Path],
@@ -148,11 +163,21 @@ def build_annotations(
     output: Path,
     *,
     batch_size: int = 100_000,
+    max_missing_fraction: float = DEFAULT_MAX_MISSING_FRACTION,
+    sequences_parquet: Path | None = None,
 ) -> dict[str, Any]:
     """Join complete sequences and a versioned exclusion list to AFCDB accessions."""
     output.parent.mkdir(parents=True, exist_ok=True)
-    sequences_path = output.with_suffix(".sequences.parquet")
-    fasta_rows = fasta_to_parquet(fasta_paths, sequences_path, batch_size=batch_size)
+    if sequences_parquet is not None:
+        # Reuse an index built earlier; parsing 21M records is minutes of work
+        # and is not worth repeating when only the drop list has changed.
+        sequences_path = sequences_parquet
+        if not sequences_path.is_file():
+            raise FileNotFoundError(sequences_path)
+        fasta_rows = -1
+    else:
+        sequences_path = output.with_suffix(".sequences.parquet")
+        fasta_rows = fasta_to_parquet(fasta_paths, sequences_path, batch_size=batch_size)
     if not decontam_drop_list.is_file():
         raise FileNotFoundError(decontam_drop_list)
 
@@ -197,14 +222,32 @@ def build_annotations(
         GROUP BY accession
         """
     )
+    requested = int(con.execute("SELECT count(*) FROM needed").fetchone()[0])
     missing = int(
         con.execute(
             "SELECT count(*) FROM needed n LEFT JOIN sequence_index s USING (accession) "
             "WHERE s.accession IS NULL"
         ).fetchone()[0]
     )
+    missing_path = output.with_suffix(".missing_accessions.parquet")
     if missing:
-        raise ValueError(f"FASTA inputs are missing {missing} AFCDB accessions")
+        con.execute(
+            f"""
+            COPY (
+                SELECT n.accession FROM needed n
+                LEFT JOIN sequence_index s USING (accession)
+                WHERE s.accession IS NULL ORDER BY n.accession
+            ) TO {_sql_literal(missing_path)} (FORMAT PARQUET, COMPRESSION ZSTD)
+            """
+        )
+    fraction = missing / requested if requested else 0.0
+    if fraction > max_missing_fraction:
+        raise ValueError(
+            f"FASTA inputs are missing {missing:,} of {requested:,} AFCDB "
+            f"accessions ({fraction:.2%}), above the {max_missing_fraction:.0%} "
+            "bound. That is a broken fetch or the wrong source, not upstream "
+            "staleness"
+        )
 
     con.execute(
         f"""
@@ -230,6 +273,10 @@ def build_annotations(
         "normalized_glob": normalized_glob,
         "fasta_paths": [str(path.resolve()) for path in fasta_paths],
         "fasta_rows": fasta_rows,
+        "requested_accessions": requested,
+        "missing_accessions": missing,
+        "missing_fraction": round(fraction, 6),
+        "missing_accessions_path": str(missing_path) if missing else None,
         "decontam_drop_list": str(decontam_drop_list.resolve()),
         "annotations": str(output.resolve()),
         "accessions": int(total),
@@ -246,7 +293,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--normalized", required=True, help="Normalized Parquet file or glob."
     )
-    parser.add_argument("--fasta", type=Path, action="append", required=True)
+    parser.add_argument("--fasta", type=Path, action="append", default=[])
+    parser.add_argument(
+        "--sequences-parquet",
+        type=Path,
+        default=None,
+        help="Reuse a sequence index built earlier instead of re-parsing FASTA.",
+    )
+    parser.add_argument(
+        "--max-missing-fraction", type=float, default=DEFAULT_MAX_MISSING_FRACTION
+    )
     parser.add_argument("--decontam-drop-list", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=100_000)
@@ -255,12 +311,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if not args.fasta and args.sequences_parquet is None:
+        parser_error = "one of --fasta or --sequences-parquet is required"
+        raise SystemExit(parser_error)
     result = build_annotations(
         args.normalized,
         args.fasta,
         args.decontam_drop_list,
         args.out,
         batch_size=args.batch_size,
+        max_missing_fraction=args.max_missing_fraction,
+        sequences_parquet=args.sequences_parquet,
     )
     print(json.dumps(result, indent=2))
     return 0
