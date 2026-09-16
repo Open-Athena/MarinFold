@@ -9,10 +9,13 @@ from pathlib import Path
 
 import boto3
 
+from aws_fleet import drain, max_concurrent
+
 BUCKET = "marinfold-exp91-usw2"
 IMAGE = "ami-04678417fc39d7171"
 SUBNET = "subnet-00caee8a9828c5c0c"
 PROFILE = "marinfold-exp91-instance-profile"
+INSTANCE_TYPE = "m7i.8xlarge"
 
 
 def render_user_data(source_key: str, metadata_prefix: str, output_prefix: str, shard: str) -> str:
@@ -46,6 +49,10 @@ def main() -> None:
     parser.add_argument("--metadata-prefix", required=True)
     parser.add_argument("--output-prefix", required=True)
     parser.add_argument("--shard", action="append", required=True)
+    parser.add_argument(
+        "--max-concurrent", type=int, default=max_concurrent(INSTANCE_TYPE)
+    )
+    parser.add_argument("--poll-seconds", type=int, default=30)
     parser.add_argument("--launch", action="store_true")
     args = parser.parse_args()
     if not args.run_name.replace("-", "").isalnum():
@@ -72,7 +79,7 @@ def main() -> None:
     source_key = args.output_prefix + "/launches/" + args.run_name + "/source.tar.gz"
     base_config = {
         "ImageId": IMAGE,
-        "InstanceType": "m7i.8xlarge",
+        "InstanceType": INSTANCE_TYPE,
         "MinCount": 1,
         "MaxCount": 1,
         "SubnetId": SUBNET,
@@ -100,6 +107,7 @@ def main() -> None:
         "bundle_sha256": digest,
         "bundle_bytes": bundle.stat().st_size,
         "shards": args.shard,
+        "max_concurrent": args.max_concurrent,
         "instances": [],
     }
     launch_path = args.record_dir / "launch.json"
@@ -110,7 +118,7 @@ def main() -> None:
     s3 = boto3.client("s3", region_name="us-west-2")
     s3.upload_file(str(bundle), BUCKET, source_key)
     ec2 = boto3.client("ec2", region_name="us-west-2")
-    for shard in args.shard:
+    def launch_one(shard: str) -> str:
         name = f"{args.run_name}-{shard}"
         config = {
             **base_config,
@@ -133,12 +141,28 @@ def main() -> None:
                 source_key, args.metadata_prefix, args.output_prefix, shard
             ),
         )
-        record["instances"].append(
-            {"shard": shard, "instance_id": response["Instances"][0]["InstanceId"]}
-        )
+        return response["Instances"][0]["InstanceId"]
+
+    def note(shard: str, instance_id: str) -> None:
+        # Persist before the next request so a limit refusal cannot strand an
+        # already-running worker with no provenance.
+        record["instances"].append({"shard": shard, "instance_id": instance_id})
+        launch_path.write_text(json.dumps(record, indent=2) + "\n")
+        print(f"launched shard={shard} {instance_id}", flush=True)
+
+    record["status"] = "launching"
+    launch_path.write_text(json.dumps(record, indent=2) + "\n")
+    drain(
+        ec2,
+        args.shard,
+        launch_one,
+        concurrency=args.max_concurrent,
+        poll_seconds=args.poll_seconds,
+        on_launch=note,
+    )
     record["status"] = "launched"
     launch_path.write_text(json.dumps(record, indent=2) + "\n")
-    print(json.dumps(record["instances"], indent=2), flush=True)
+    print(json.dumps({"launched": len(record["instances"])}, indent=2), flush=True)
 
 
 if __name__ == "__main__":

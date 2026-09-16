@@ -5,22 +5,17 @@ import hashlib
 import json
 import shlex
 import tarfile
-import time
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import ClientError
+
+from aws_fleet import drain, max_concurrent
 
 BUCKET = "marinfold-exp91-usw2"
 IMAGE = "ami-04678417fc39d7171"
 SUBNET = "subnet-00caee8a9828c5c0c"
 PROFILE = "marinfold-exp91-instance-profile"
-# The account allows 445 on-demand vCPUs in this instance bucket, so at 16 vCPUs
-# each only 27 workers can run at once. Asking for more fails mid-loop, which is
-# why long shard lists are drained in waves instead of submitted at once.
-INSTANCE_VCPUS = 16
-ACCOUNT_VCPU_LIMIT = 445
-MAX_CONCURRENT = ACCOUNT_VCPU_LIMIT // INSTANCE_VCPUS
+INSTANCE_TYPE = "m7i.4xlarge"
 LOCATED_PREFIX = "exp292/production-v1/esm/locator/located"
 
 
@@ -48,24 +43,6 @@ mkdir -p /opt/exp292
 """
 
 
-# An instance keeps its vCPU reservation until it is fully terminated, so a
-# worker that is merely shutting down still counts against the account limit.
-HOLDING_STATES = ("pending", "running", "shutting-down", "stopping", "rebooting")
-
-
-def live_instances(ec2) -> int:
-    """Count exp292 workers still holding vCPU capacity."""
-    total = 0
-    for page in ec2.get_paginator("describe_instances").paginate(
-        Filters=[
-            {"Name": "instance-state-name", "Values": list(HOLDING_STATES)},
-            {"Name": "tag:Experiment", "Values": ["exp292"]},
-        ]
-    ):
-        total += sum(len(item["Instances"]) for item in page["Reservations"])
-    return total
-
-
 def main() -> None:
     """Stage frozen code once and optionally launch requested shards."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -74,7 +51,9 @@ def main() -> None:
     parser.add_argument("--output-prefix", required=True)
     parser.add_argument("--shard", action="append", required=True)
     parser.add_argument("--max-clusters", type=int)
-    parser.add_argument("--max-concurrent", type=int, default=MAX_CONCURRENT)
+    parser.add_argument(
+        "--max-concurrent", type=int, default=max_concurrent(INSTANCE_TYPE)
+    )
     parser.add_argument("--poll-seconds", type=int, default=30)
     parser.add_argument("--launch", action="store_true")
     args = parser.parse_args()
@@ -102,7 +81,7 @@ def main() -> None:
     source_key = args.output_prefix + "/launches/" + args.run_name + "/source.tar.gz"
     base_config = {
         "ImageId": IMAGE,
-        "InstanceType": "m7i.4xlarge",
+        "InstanceType": INSTANCE_TYPE,
         "MinCount": 1,
         "MaxCount": 1,
         "SubnetId": SUBNET,
@@ -146,58 +125,48 @@ def main() -> None:
     def persist() -> None:
         launch_path.write_text(json.dumps(record, indent=2) + "\n")
 
-    pending = list(args.shard)
+    def launch_one(shard: str) -> str:
+        name = f"{args.run_name}-{shard}"
+        config = {
+            **base_config,
+            "TagSpecifications": [
+                {
+                    "ResourceType": "instance",
+                    "Tags": [
+                        {"Key": "Name", "Value": name},
+                        {"Key": "Experiment", "Value": "exp292"},
+                        {"Key": "Stage", "Value": "esm-metadata"},
+                        {"Key": "Shard", "Value": shard},
+                    ],
+                }
+            ],
+            "ClientToken": hashlib.sha256((name + digest).encode()).hexdigest(),
+        }
+        response = ec2.run_instances(
+            **config,
+            UserData=user_data(
+                source_key, args.output_prefix, shard, args.max_clusters
+            ),
+        )
+        return response["Instances"][0]["InstanceId"]
+
+    def note(shard: str, instance_id: str) -> None:
+        # Persist before the next request so a limit refusal cannot strand an
+        # already-running worker with no provenance.
+        record["instances"].append({"shard": shard, "instance_id": instance_id})
+        persist()
+        print(f"launched shard={shard} {instance_id}", flush=True)
+
     record["status"] = "launching"
     persist()
-    while pending:
-        free = args.max_concurrent - live_instances(ec2)
-        if free <= 0:
-            time.sleep(args.poll_seconds)
-            continue
-        launched = 0
-        for shard in pending[:free]:
-            name = f"{args.run_name}-{shard}"
-            config = {
-                **base_config,
-                "TagSpecifications": [
-                    {
-                        "ResourceType": "instance",
-                        "Tags": [
-                            {"Key": "Name", "Value": name},
-                            {"Key": "Experiment", "Value": "exp292"},
-                            {"Key": "Stage", "Value": "esm-metadata"},
-                            {"Key": "Shard", "Value": shard},
-                        ],
-                    }
-                ],
-                "ClientToken": hashlib.sha256((name + digest).encode()).hexdigest(),
-            }
-            try:
-                response = ec2.run_instances(
-                    **config,
-                    UserData=user_data(
-                        source_key, args.output_prefix, shard, args.max_clusters
-                    ),
-                )
-            except ClientError as error:
-                if error.response["Error"]["Code"] != "VcpuLimitExceeded":
-                    raise
-                # Capacity the describe call did not see yet — usually workers
-                # still shutting down. Treat it as backpressure and retry this
-                # shard on the next wave rather than losing the run.
-                print(f"vcpu limit reached with {len(pending) - launched} shards left", flush=True)
-                break
-            # Record before the next call so an account-limit refusal cannot
-            # strand an already-running instance with no provenance.
-            record["instances"].append(
-                {"shard": shard, "instance_id": response["Instances"][0]["InstanceId"]}
-            )
-            launched += 1
-            persist()
-            print(f"launched shard={shard} {record['instances'][-1]['instance_id']}", flush=True)
-        pending = pending[launched:]
-        if pending:
-            time.sleep(args.poll_seconds)
+    drain(
+        ec2,
+        args.shard,
+        launch_one,
+        concurrency=args.max_concurrent,
+        poll_seconds=args.poll_seconds,
+        on_launch=note,
+    )
     record["status"] = "launched"
     persist()
     print(json.dumps({"launched": len(record["instances"])}, indent=2), flush=True)
