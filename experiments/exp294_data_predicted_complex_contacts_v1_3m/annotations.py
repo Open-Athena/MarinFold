@@ -8,6 +8,11 @@ stage joins those accessions to one or more local FASTA files, computes exact
 sequence hashes and lengths, and attaches a completed eval-homology drop list.
 It fails if an AFCDB accession is missing or resolves to conflicting sequences.
 
+The intended sequence source is the AlphaFold DB bulk ``sequences.fasta``, whose
+headers look like ``>AFDB:AF-A0A919MGV6-F1 <description> UA=A0A919MGV6 ...``.
+UniProt ``sp|``/``tr|`` headers and bare accessions are also accepted. Inputs may
+be gzipped.
+
 The drop-list input is Parquet with columns ``accession`` and
 ``eval_decontam_reason``. It contains only excluded accessions; absence from the
 table means the accession passed the versioned search that produced the list.
@@ -16,6 +21,7 @@ provenance JSON by path.
 """
 
 import argparse
+import gzip
 import hashlib
 import json
 import re
@@ -44,7 +50,7 @@ _SEQUENCE_SCHEMA = pa.schema(
         ("source_header", pa.string()),
     ]
 )
-_AFDB_MODEL = re.compile(r"^AF-(?P<accession>.+)-F\d+$")
+_AFDB_MODEL = re.compile(r"^(?:AFDB:)?AF-(?P<accession>.+)-F\d+$")
 _AMINO_ACIDS = frozenset("ACDEFGHIKLMNPQRSTVWYBXZJUO")
 
 
@@ -67,10 +73,11 @@ def accession_from_header(header: str) -> str:
 
 
 def iter_fasta(path: Path) -> Iterator[tuple[str, str, str]]:
-    """Yield ``(accession, sequence, header)`` from one uncompressed FASTA."""
+    """Yield ``(accession, sequence, header)`` from one plain or gzipped FASTA."""
     header: str | None = None
     parts: list[str] = []
-    with path.open() as stream:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt") as stream:
         for line_number, line in enumerate(stream, start=1):
             stripped = line.strip()
             if not stripped:

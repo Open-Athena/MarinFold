@@ -124,9 +124,122 @@ The metadata-first path is implemented:
   exact pair deduplication, tier/quota behavior, hard rejection reasons, and the
   fail-loud unmet-quota gate. `uv run pytest -q` and `pyrefly check` pass.
 
-The live metadata census and structure pilot have not run yet. The current EBI
-metadata mirror is being staged once under `/data`; no structure archive or
-full production job has been launched.
+### Live metadata census (2026-09-16)
+
+The full 8.45 GB metadata mirror is normalized and censused. No structure
+archive has been downloaded and no Iris job has been launched.
+
+**Source scale.** 29,025,020 models: 21,430,663 homodimers and 7,594,357
+heterodimers. This reproduces #145's 29,025,020 dimer count exactly, so the
+release has not changed size since that attempt.
+
+**Tier A.** 1,923,625 models pass both the hard validity filter and the
+upstream/proxy quality gate: 1,848,043 homodimers and **75,582 heterodimers**.
+
+**Yield frontier** (hard filter + `quality_ratio` floor, before sequence-pair
+dedup and eval decontamination; `quality_ratio = min(ipSAE/0.6, pDockQ2/0.23)`,
+so 1.0 is the nominal Tier-A gate):
+
+| floor | heterodimer | homodimer | total |
+| --- | --- | --- | --- |
+| 1.00 | 75,582 | 1,848,043 | 1,923,625 |
+| 0.70 | 121,744 | 2,431,095 | 2,552,839 |
+| 0.50 | 158,384 | 2,788,229 | 2,946,613 |
+| 0.40 | 181,648 | 2,992,987 | 3,174,635 |
+| 0.30 | 210,967 | 3,244,146 | 3,455,113 |
+| 0.25 | 230,230 | 3,398,949 | 3,629,179 |
+
+Two conclusions follow directly.
+
+1. **The `pilot-v0` floor of 0.5 cannot reach 3M.** It yields 2,946,613
+   candidates *before* dedup and decontamination, so it fails the target on
+   arithmetic alone. The 3M target needs a floor at or below ~0.4, and only
+   ~0.3 leaves margin for the decontamination loss (#225 removed 1.8–4.0% on
+   comparable corpora). Whether a floor that low is defensible is exactly what
+   the Stage-B pilot must decide; it is not being set here.
+2. **The 500,000-heterodimer floor is not reachable from AFCDB at any
+   defensible confidence.** Only 922,359 hard-eligible heterodimers have a
+   *nonzero* ipSAE at all, and just 353,774 reach ipSAE >= 0.1. Clearing 500k
+   would mean accepting models whose predicted interface is essentially absent.
+   The issue's success criteria already condition this floor on "if the
+   calibrated source yield supports it"; the measured answer is that it does
+   not. The realistic heterodimer ceiling is ~210k at floor 0.30 and ~354k if
+   gated on ipSAE alone at 0.1.
+
+**Heterodimer diversity is also narrow.** At floor 0.30 the heterodimers span
+only 79–81 distinct taxa, against 8,198 for homodimers. AFCDB heterodimers come
+from a small set of model organisms, so they add interface variety but little
+taxonomic breadth.
+
+**Schema verification.** Three upstream semantics were checked rather than
+assumed:
+
+- `n0chn` is the complex residue count, not just a scaling term: every value is
+  a whole number, every homodimer value is even, range 60–3,000. Using it as
+  `source_total_residues` is sound.
+- `max_ipSAE` and `max_pDockQ2_AB` are already maxima over both directions
+  (7,594,357 / 7,594,357 rows equal `greatest(_AB, _BA)`), despite the `_AB`
+  suffix. The normalized projection is therefore consistent across sources.
+- The homodimer Tier-A proxy's use of `min` rather than `max` directional ipSAE
+  is immaterial: mean |ipSAE_AB - ipSAE_BA| is 0.00137 and the two gates differ
+  by 0.9% of models (2,593,499 vs 2,616,575).
+
+**The clash filter is quality-correlated, not mis-calibrated.** It looks
+brutal in aggregate (it rejects ~47% of heterodimers), but 94.7% of Tier-A
+heterodimers and 97.4% of Tier-A homodimers pass it, against 41.8% / 54.4% in
+the `quality_ratio < 0.25` band. It is removing the low-confidence tail, which
+is the intended behaviour.
+
+**Exact-pair dedup will not come from accessions.** Within the hard-eligible
+set there are 12,379,757 distinct homodimer accession pairs for 12,380,049
+models (mean 1.000). AFCDB stores essentially one model per accession pair, so
+*all* of the deduplication value rests on distinct accessions that share an
+identical sequence — which is unreachable without the sequence join. This
+confirms the decision to require `annotations.py` rather than dedup on
+accession pairs.
+
+### Archive reconnaissance (2026-09-16)
+
+Stage D was sized before being designed, because the numbers change the design:
+
+- **The coordinate archive is 48.8 TB**: 35.20 TB of homodimers (4,000
+  `chunk_*.tar` averaging 7.48 GB, plus 5,892 `shard_*_batch_*.tar` averaging
+  0.90 GB) and 13.58 TB of heterodimers (8,209 tars averaging 1.65 GB). The
+  metadata references 17,820 of these tars.
+- **Members are individually addressable.** Each model is one member named
+  `AF-<modelEntityId>-model_v1.cif.zst`, so the member name is a pure function
+  of `modelEntityId` with no index required. Homodimer `chunk_*` tars
+  additionally carry a redundant `.pdb.zst` per model plus PaxHeader entries,
+  roughly doubling their bytes for data we do not need.
+- **EBI serves HTTP range requests** (`Accept-Ranges: bytes`, verified with 206
+  responses on both a 12 GB and an 8 GB tar). Tar headers can therefore be
+  walked with 512-byte reads and selected members fetched by byte range, so a
+  selective extraction moves roughly the selected payload (~1.5–2.5 TB) instead
+  of the full 48.8 TB.
+- **This cannot run on the workstation.** Measured single-stream EBI throughput
+  here is ~113 KB/s (10.1 MB in 90 s); 48.8 TB would take years and even a
+  selective ~2 TB pass would take months. Stage D has to be a cloud fan-out, and
+  the same applies to the sequence dependency below.
+
+### Blocking dependency: the sequence source
+
+The AFCDB release ships no FASTA, and `modelEntityId` is an opaque numeric id
+(`AF-0000000065760001`) that does not encode the accession. The sequences must
+come from AlphaFold DB's bulk `sequences.fasta`, which is **110 GB** — far above
+the 10 GB local-mirror threshold, and 11+ days at the measured local rate. It
+needs a cloud-side streaming filter that keeps only the 21,437,370 accessions
+AFCDB references (3,326,577 of them at the 0.30 floor) and stores only the
+filtered result.
+
+`annotations.py` was written against UniProt-style headers and would have
+mis-parsed this file: AFDB writes `>AFDB:AF-A0A919MGV6-F1 ... UA=A0A919MGV6`,
+whose leading `AFDB:` defeated the `AF-...-F<n>` pattern and would have silently
+produced `AFDB:AF-A0A919MGV6-F1` as the "accession" — which would then have
+failed the missing-accession check for every row. Fixed, with a regression test
+on the real header, plus gzip-safe reads so the filtered mirror can stay
+compressed.
+
+The eval-decontamination drop list is still to be produced.
 
 Stage A commands:
 
