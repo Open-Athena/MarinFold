@@ -448,25 +448,46 @@ metadata → sequence → selection → extraction chain agrees with the coordin
 2.6% hit the ring budget and are marked `truncated`. Median document is ~3,100
 tokens against an 8,192 context.
 
-**But Tier-B interfaces are systematically larger than Tier A's, which is
-backwards.** Mean interface fraction is 0.149 for Tier A and 0.243 for Tier B,
-and it is not a size or asymmetry confound — it holds within every size band,
-at matched chain symmetry (mean min/max chain ratio 0.994 vs 0.980):
+**Tier B has a higher interface *fraction* than Tier A (0.243 vs 0.149), but
+the cause is the denominator, not the interface.** Decomposing contacts per
+residue settles it, consistently across every size band:
 
-| residues | Tier A interface fraction | Tier B |
+| residues | inter/residue, B÷A | intra/residue, B÷A |
 | --- | --- | --- |
-| < 500 | 0.229 | 0.323 |
-| 500–900 | 0.128 | 0.212 |
-| >= 900 | 0.105 | 0.174 |
+| < 500 | 1.099 | 0.782 |
+| 500–900 | 1.057 | 0.758 |
+| >= 900 | 1.114 | 0.794 |
 
-Tier A's 14.9% sits almost exactly on #222's 15.1% for experimental PDB
-multimers. Tier B's 24.3% is well above the experimental norm while carrying
-*lower* predicted confidence, which is what interpenetrating or spuriously
-packed chains would look like — and the backbone-clash filter at <=10 does not
-catch it, because these models passed it. This is the calibration signal the
-pilot exists to produce, and it argues for either a higher Tier-B floor than
-0.30 or an explicit interface-size sanity filter. It should be settled before
-the full run, not after.
+Tier-B **inter**-chain contacts per residue are essentially Tier A's (1.06–1.11x),
+while **intra**-chain contacts per residue are 21–24% *lower*. The interfaces
+are not larger in absolute terms; the monomers are less compact. Truncation is
+not responsible — the truncated rate is 2.7% vs 2.5% and emitted/pre-filter is
+0.777 vs 0.767 — and the pre-filter contact density is itself lower for Tier B
+(0.997 vs 1.212 per residue), so this is a property of the predicted structures
+rather than of serialization.
+
+That is the expected signature of low-confidence AlphaFold monomers: ipSAE is
+derived from PAE, and a complex with an uncertain interface usually has
+uncertain chains too, which show up as extended, low-contact-density regions.
+It is the same disorder trade-off the existing AFDB contacts-v1 corpora already
+make, not a complex-specific pathology.
+
+**An earlier reading of this experiment called it "interpenetrating or
+spuriously packed chains" and proposed filtering on it. That was wrong.** Two
+tests refuted it. Heavy-atom clash density does separate the tiers (0.0406 vs
+0.0186 per residue) but filtering on it barely moves the fraction — at
+`hcd <= 0.01`, keeping only 36% of documents, Tier B still sits at 0.213
+against Tier A's 0.138 — so clashes are correlated with the tier without being
+the mechanism. And raising the Tier-B floor does not help either, because the
+worst band is 0.7–1.0, immediately below the Tier-A gate, and the effect is not
+monotonic in confidence (0.125, 0.153, 0.270, 0.225, 0.224, 0.209 from
+`quality_ratio >= 1.5` down to 0.3–0.4).
+
+The conclusion is that **no interface filter is warranted**, and the real
+question is the ordinary one for any AFDB-derived corpus: whether to keep 1.25M
+documents whose monomers are ~22% less compact. That is a mixture decision for
+the training experiment, and Tier A/B are separately addressable in the
+manifest precisely so it can be made there.
 
 Separately, **28 of 4,273 requested members (0.66%) are absent from their tar**,
 all in homodimer `chunk_*` archives. An upstream metadata/archive inconsistency;
