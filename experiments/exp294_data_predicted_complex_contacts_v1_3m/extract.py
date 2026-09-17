@@ -20,6 +20,9 @@ follows from that:
 * **Overlap the walk with the work.** The walk is latency-bound and generation
   is CPU-bound, so located members are handed to a thread pool while the walk
   continues.
+* **Share nothing mutable across the pool.** A ``ZstdDecompressor`` is not
+  thread-safe; one shared instance segfaults under concurrency while leaving no
+  Python traceback at all.
 * **Load the heavy per-process state once, single-threaded.** pyconfind's numba
   backend costs ~7.5 s on its first call and ~0.9 s after, and its Dunbrack
   rotamer library is downloaded and parsed lazily on first use. Letting the
@@ -37,7 +40,13 @@ dropped model is a corpus that quietly disagrees with its own manifest.
         --out /data/exp294/probe_docs --fetch-concurrency 8
 """
 
+import faulthandler
 import os
+
+# A SIGSEGV in a C extension leaves nothing in the log but whatever was last on
+# stderr, which sent an earlier diagnosis chasing the rotamer library. This
+# prints the Python and C stacks of every thread at the moment of the fault.
+faulthandler.enable()
 
 # Must precede any numba import, and `_generator()` imports lazily, so module
 # scope is early enough. pyconfind's `[fast]` backend auto-parallelises to ~26
@@ -291,13 +300,19 @@ def _generator() -> tuple[Any, Any, Any]:
             )
 
             _GENERATOR["gemmi"] = gemmi
-            _GENERATOR["zstd"] = zstandard.ZstdDecompressor()
+            # The *module*, not a decompressor. A ZstdDecompressor is not
+            # thread-safe, and sharing one across the fetch pool corrupts its
+            # C-level state -- that is the SIGSEGV that killed three probe runs
+            # while looking, from the logs, like a rotamer-library problem.
+            # Constructing one per call costs nothing next to ~0.9 s of
+            # generation.
+            _GENERATOR["zstandard"] = zstandard
             _GENERATOR["generate"] = generate_document
             # max_chains mirrors exp222's multimer config so an AFCDB document
             # is directly comparable to a PDB one.
             _GENERATOR["config"] = GenerationConfig(max_chains=60)
             _GENERATOR["rotamers"] = _load_rotamer_library()
-    return _GENERATOR["gemmi"], _GENERATOR["zstd"], _GENERATOR["generate"]
+    return _GENERATOR["gemmi"], _GENERATOR["zstandard"], _GENERATOR["generate"]
 
 
 def _document_row(result: Any, row: dict[str, Any], member_bytes: int, cif_bytes: int) -> dict[str, Any]:
@@ -332,9 +347,9 @@ def _document_row(result: Any, row: dict[str, Any], member_bytes: int, cif_bytes
 
 def _one_model(url: str, row: dict[str, Any], offset: int, size: int) -> tuple[dict | None, dict]:
     """Fetch, decompress, parse and generate one member."""
-    gemmi, zstd, generate = _generator()
+    gemmi, zstandard, generate = _generator()
     payload = http_range(url, offset, size)
-    raw = zstd.decompress(payload, max_output_size=_MAX_CIF_BYTES)
+    raw = zstandard.ZstdDecompressor().decompress(payload, max_output_size=_MAX_CIF_BYTES)
     structure = gemmi.read_structure_string(raw.decode())
     structure.setup_entities()
     result = generate(

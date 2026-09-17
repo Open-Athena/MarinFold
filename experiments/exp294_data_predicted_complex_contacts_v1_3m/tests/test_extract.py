@@ -111,3 +111,48 @@ def test_a_name_that_is_not_in_the_tar_is_reported_not_invented(tar_server) -> N
     found = walk_members(url, {f"AF-{names[0]}"}, header_reads=reads)
     assert found == {}
     assert reads[0] > len(names), "a miss walks the whole tar"
+
+
+def test_a_shared_zstd_decompressor_corrupts_under_threads() -> None:
+    """Pins the root cause of three failed probe runs.
+
+    Sharing one ZstdDecompressor across the fetch pool corrupts its C-level
+    state. Locally that surfaces as "Unknown frame descriptor"; on a pod it
+    surfaced as SIGSEGV with no Python traceback, which is why it took three
+    runs to find. extract.py therefore caches the *module* and builds a
+    decompressor per call.
+    """
+    import os
+    import threading
+
+    import zstandard
+
+    payload = zstandard.ZstdCompressor().compress(os.urandom(200_000))
+    shared = zstandard.ZstdDecompressor()
+
+    def hammer(sink: list[str], use_shared: bool) -> None:
+        for _ in range(40):
+            try:
+                decompressor = shared if use_shared else zstandard.ZstdDecompressor()
+                decompressor.decompress(payload, max_output_size=1 << 22)
+            except Exception as error:  # noqa: BLE001 - that is the point
+                sink.append(f"{type(error).__name__}: {error}")
+                return
+
+    per_call: list[str] = []
+    threads = [threading.Thread(target=hammer, args=(per_call, False)) for _ in range(12)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert per_call == [], "a per-call decompressor must be safe under threads"
+
+
+def test_extract_does_not_cache_a_decompressor_instance() -> None:
+    """The safe shape is structural, so guard it rather than trusting review."""
+    import extract
+
+    source = Path(extract.__file__).read_text()
+    assert "ZstdDecompressor()" in source, "the module should build them per call"
+    assert '_GENERATOR["zstd"] = zstandard.ZstdDecompressor()' not in source
+    assert '_GENERATOR["zstandard"] = zstandard' in source
