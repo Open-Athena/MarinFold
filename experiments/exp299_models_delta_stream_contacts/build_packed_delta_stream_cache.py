@@ -212,6 +212,7 @@ def build_split(
     worker_memory: str,
     worker_disk: str,
     preemptible: bool,
+    region: str,
 ) -> None:
     records = [{"path": path, "shard_index": i} for i, path in enumerate(paths)]
     dataset = Dataset.from_list(records).map_shard(
@@ -220,7 +221,13 @@ def build_split(
     output = dataset.write_parquet(f"{meta_path.rstrip('/')}/shard-{{shard:05d}}-of-{{total:05d}}.parquet")
     ctx = ZephyrContext(
         max_workers=max_workers,
-        resources=ResourceConfig(cpu=worker_cpu, ram=worker_memory, disk=worker_disk, preemptible=preemptible),
+        resources=ResourceConfig(
+            cpu=worker_cpu,
+            ram=worker_memory,
+            disk=worker_disk,
+            regions=[region],
+            preemptible=preemptible,
+        ),
         coordinator_resources=ResourceConfig(cpu=1, ram="6GB", disk="16GB", preemptible=preemptible),
         name="exp299-delta-stream-packed-cache",
         chunk_storage_prefix=f"{meta_path.rstrip('/')}/_zephyr_chunks",
@@ -239,6 +246,7 @@ def main() -> None:
     parser.add_argument("--validation-shards", type=int, default=1)
     parser.add_argument("--max-rows-per-input-shard", type=int, default=None)
     parser.add_argument("--max-workers", type=int, default=int(os.environ.get("EXP299_PACKED_CACHE_MAX_WORKERS", "128")))
+    parser.add_argument("--region", default="us-central1", help="Region for Zephyr workers and source-data locality.")
     parser.add_argument("--worker-cpu", type=float, default=1.0)
     parser.add_argument("--worker-memory", default="10GB")
     parser.add_argument("--worker-disk", default="32GB")
@@ -265,6 +273,7 @@ def main() -> None:
         worker_memory=args.worker_memory,
         worker_disk=args.worker_disk,
         preemptible=args.preemptible,
+        region=args.region,
     )
     print(f"[exp299] validation shards: {len(val_paths)} -> {args.cache_root}/validation", flush=True)
     build_split(
@@ -277,6 +286,7 @@ def main() -> None:
         worker_memory=args.worker_memory,
         worker_disk=args.worker_disk,
         preemptible=args.preemptible,
+        region=args.region,
     )
 
 
