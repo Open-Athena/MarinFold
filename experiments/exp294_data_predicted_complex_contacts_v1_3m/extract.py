@@ -35,11 +35,14 @@ dropped model is a corpus that quietly disagrees with its own manifest.
 
 import argparse
 import hashlib
+import http.client
 import json
 import random
 import tempfile
+import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -52,7 +55,9 @@ import fsspec
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-MEMBER_TEMPLATE = "AF-{model_id}-model_v1.cif.zst"
+#: ``model_id`` already carries the ``AF-`` prefix (``AF-0000000207677021``),
+#: so the member name is the id plus a suffix, not the id wrapped again.
+MEMBER_TEMPLATE = "{model_id}-model_v1.cif.zst"
 _MAX_ATTEMPTS = 8
 _RETRYABLE = (urllib.error.URLError, TimeoutError, ConnectionError, OSError)
 #: A decompressed AFCDB mmCIF is ~1 MB; this is generous headroom that still
@@ -124,22 +129,70 @@ def _sleep_backoff(attempt: int) -> None:
     time.sleep(min(30.0, 2.0**attempt) * (0.5 + random.random()))
 
 
+_LOCAL = threading.local()
+
+
+def _connection(
+    scheme: str, host: str, timeout: float
+) -> http.client.HTTPConnection:
+    """One keep-alive connection per thread per host.
+
+    Walking a tar is thousands of 512-byte reads, so the cost is per *request*,
+    not per byte. Opening a fresh TCP+TLS connection for each one put the first
+    probe run at ~0.17 s per header read from a pod in the same continent as
+    EBI; reusing the connection removes the handshake from that inner loop.
+    ``http.client`` connections are not thread-safe, hence thread-local.
+    """
+    cache: dict[str, http.client.HTTPConnection] = getattr(_LOCAL, "conns", None) or {}
+    _LOCAL.conns = cache
+    key = f"{scheme}://{host}"
+    conn = cache.get(key)
+    if conn is None:
+        factory = (
+            http.client.HTTPSConnection
+            if scheme == "https"
+            else http.client.HTTPConnection
+        )
+        conn = factory(host, timeout=timeout)
+        cache[key] = conn
+    return conn
+
+
+def _drop_connection(scheme: str, host: str) -> None:
+    cache = getattr(_LOCAL, "conns", None) or {}
+    conn = cache.pop(f"{scheme}://{host}", None)
+    if conn is not None:
+        try:
+            conn.close()
+        except (OSError, http.client.HTTPException):
+            pass  # Already broken; that is why we are dropping it.
+
+
 def http_range(url: str, start: int, length: int, *, timeout: float = 180.0) -> bytes:
-    """Fetch ``[start, start+length)``, retrying refusals and drops."""
+    """Fetch ``[start, start+length)`` over a reused connection, with retries."""
+    parts = urllib.parse.urlsplit(url)
+    scheme = parts.scheme or "https"
+    host = parts.netloc
+    target = parts.path + (f"?{parts.query}" if parts.query else "")
     end = start + length - 1
     for attempt in range(_MAX_ATTEMPTS):
         try:
-            request = urllib.request.Request(url, headers={"Range": f"bytes={start}-{end}"})
-            with urllib.request.urlopen(request, timeout=timeout) as response:
-                if response.status != 206:
-                    raise RuntimeError(f"{url}: expected 206, got {response.status}")
-                payload = response.read()
+            conn = _connection(scheme, host, timeout)
+            conn.request("GET", target, headers={"Range": f"bytes={start}-{end}",
+                                                 "Accept-Encoding": "identity"})
+            response = conn.getresponse()
+            payload = response.read()
+            if response.status != 206:
+                _drop_connection(scheme, host)
+                raise RuntimeError(f"{url}: expected 206, got {response.status}")
             if len(payload) != length:
+                _drop_connection(scheme, host)
                 raise RuntimeError(
                     f"{url}: asked for {length} bytes at {start}, got {len(payload)}"
                 )
             return payload
-        except _RETRYABLE as error:
+        except (*_RETRYABLE, http.client.HTTPException) as error:
+            _drop_connection(scheme, host)
             if attempt == _MAX_ATTEMPTS - 1:
                 raise RuntimeError(f"{url}: range {start}+{length} failed ({error})") from error
             _sleep_backoff(attempt)
