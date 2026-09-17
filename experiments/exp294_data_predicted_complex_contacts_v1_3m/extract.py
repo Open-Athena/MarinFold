@@ -415,8 +415,24 @@ def run(
     fetch_concurrency: int = 8,
     tar_concurrency: int = 1,
     limit_tars: int | None = None,
+    shard_index: int = 0,
+    shard_count: int = 1,
 ) -> dict[str, Any]:
-    """Extract every model in ``manifest``, grouped by source tar."""
+    """Extract every model in this shard's tars, writing as each tar finishes.
+
+    ``shard_count`` splits the tar list across pods. The split **strides**
+    (``tars[i::n]``) rather than slicing contiguously, because the sorted tar
+    list groups heterodimer shards, homodimer ``chunk_*`` and homodimer
+    ``shard_*`` together, and those differ by an order of magnitude in members
+    per tar. A contiguous slice would hand one pod every 7.5 GB chunk archive
+    and another only small shards.
+
+    Results are written per tar rather than accumulated: a full shard is ~140k
+    documents whose text alone would be several GB of live objects on a 16 GB
+    worker.
+    """
+    if not 0 <= shard_index < shard_count:
+        raise ValueError(f"shard_index {shard_index} out of range for {shard_count}")
     con = duckdb.connect()
     rows = con.execute(
         f"""
@@ -433,70 +449,110 @@ def run(
     by_tar: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         by_tar.setdefault(row["source_tar_uri"], []).append(row)
-    tars = sorted(by_tar)
+    tars = sorted(by_tar)[shard_index::shard_count]
     if limit_tars:
         tars = tars[:limit_tars]
+    if not tars:
+        raise ValueError(
+            f"shard {shard_index}/{shard_count} covers no tars; reduce --shard-count"
+        )
 
-    fs, _ = fsspec.core.url_to_fs(str(out_dir).rstrip("/"))
-    fs.makedirs(str(out_dir).rstrip("/"), exist_ok=True)
+    prefix = str(out_dir).rstrip("/")
+    fs, _ = fsspec.core.url_to_fs(prefix)
+    fs.makedirs(prefix, exist_ok=True)
+    stem = f"{shard_index:05d}-of-{shard_count:05d}"
+    doc_path = f"{prefix}/documents-{stem}.parquet"
+    ledger_path = f"{prefix}/extract_ledger-{stem}.parquet"
+
+    documents = ledger_rows = header_reads = member_bytes = 0
+    walk_seconds = work_seconds = 0.0
+    reasons: Counter[str] = Counter()
+
+    def absorb(result: TarResult) -> None:
+        nonlocal documents, ledger_rows, header_reads, member_bytes
+        nonlocal walk_seconds, work_seconds
+        if result.documents:
+            doc_writer.write_table(
+                pa.Table.from_pylist(result.documents, schema=DOC_SCHEMA)
+            )
+        ledger_writer.write_table(
+            pa.Table.from_pylist(result.ledger, schema=LEDGER_SCHEMA)
+        )
+        documents += len(result.documents)
+        ledger_rows += len(result.ledger)
+        header_reads += result.header_reads
+        member_bytes += result.member_bytes
+        walk_seconds += result.walk_seconds
+        work_seconds += result.work_seconds
+        reasons.update(entry["reason"] for entry in result.ledger)
 
     began = time.monotonic()
-    results: list[TarResult] = []
-    if tar_concurrency > 1:
-        with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
-            futures = [
-                pool.submit(extract_tar, tar, by_tar[tar], fetch_concurrency=fetch_concurrency)
-                for tar in tars
-            ]
-            for index, future in enumerate(futures, start=1):
-                results.append(future.result())
-                print(f"[{index}/{len(tars)}] {results[-1].tar_uri.split('/')[-1]} "
-                      f"docs={len(results[-1].documents)}", flush=True)
-    else:
-        for index, tar in enumerate(tars, start=1):
-            result = extract_tar(tar, by_tar[tar], fetch_concurrency=fetch_concurrency)
-            results.append(result)
-            print(f"[{index}/{len(tars)}] {tar.split('/')[-1]} "
-                  f"docs={len(result.documents)} reads={result.header_reads} "
-                  f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s", flush=True)
+    with (
+        fs.open(doc_path, "wb") as doc_sink,
+        fs.open(ledger_path, "wb") as ledger_sink,
+        pq.ParquetWriter(doc_sink, DOC_SCHEMA, compression="zstd") as doc_writer,
+        pq.ParquetWriter(ledger_sink, LEDGER_SCHEMA, compression="zstd") as ledger_writer,
+    ):
+        if tar_concurrency > 1:
+            with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
+                futures = [
+                    pool.submit(
+                        extract_tar, tar, by_tar[tar], fetch_concurrency=fetch_concurrency
+                    )
+                    for tar in tars
+                ]
+                for index, future in enumerate(futures, start=1):
+                    result = future.result()
+                    absorb(result)
+                    print(
+                        f"[{index}/{len(tars)}] {result.tar_uri.split('/')[-1]} "
+                        f"docs={len(result.documents)} reads={result.header_reads} "
+                        f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
+                        flush=True,
+                    )
+        else:
+            for index, tar in enumerate(tars, start=1):
+                result = extract_tar(
+                    tar, by_tar[tar], fetch_concurrency=fetch_concurrency
+                )
+                absorb(result)
+                print(
+                    f"[{index}/{len(tars)}] {tar.split('/')[-1]} "
+                    f"docs={len(result.documents)} reads={result.header_reads} "
+                    f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
+                    flush=True,
+                )
     elapsed = time.monotonic() - began
 
-    documents = [d for r in results for d in r.documents]
-    ledger = [entry for r in results for entry in r.ledger]
-    prefix = str(out_dir).rstrip("/")
-    with fs.open(f"{prefix}/documents.parquet", "wb") as sink:
-        pq.write_table(pa.Table.from_pylist(documents, schema=DOC_SCHEMA), sink, compression="zstd")
-    with fs.open(f"{prefix}/extract_ledger.parquet", "wb") as sink:
-        pq.write_table(pa.Table.from_pylist(ledger, schema=LEDGER_SCHEMA), sink, compression="zstd")
-
     expected = sum(len(by_tar[t]) for t in tars)
-    reasons = Counter(entry["reason"] for entry in ledger)
-    header_reads = sum(r.header_reads for r in results)
-    member_bytes = sum(r.member_bytes for r in results)
     summary = {
         "manifest": manifest,
         "out_dir": prefix,
+        "shard_index": shard_index,
+        "shard_count": shard_count,
+        "documents_parquet": doc_path,
+        "ledger_parquet": ledger_path,
         "tars": len(tars),
         "models_requested": expected,
-        "documents": len(documents),
-        "ledger_rows": len(ledger),
+        "documents": documents,
+        "ledger_rows": ledger_rows,
         "reasons": dict(sorted(reasons.items())),
         "header_reads": header_reads,
         "header_reads_per_tar": round(header_reads / max(len(tars), 1), 1),
         "member_bytes": member_bytes,
         "seconds": round(elapsed, 1),
-        "walk_seconds": round(sum(r.walk_seconds for r in results), 1),
-        "work_seconds": round(sum(r.work_seconds for r in results), 1),
+        "walk_seconds": round(walk_seconds, 1),
+        "work_seconds": round(work_seconds, 1),
         "seconds_per_tar": round(elapsed / max(len(tars), 1), 2),
-        "seconds_per_document": round(elapsed / max(len(documents), 1), 4),
-        "documents_per_tar": round(len(documents) / max(len(tars), 1), 1),
-        "payload_mb_per_document": round(member_bytes / 1e6 / max(len(documents), 1), 3),
+        "seconds_per_document": round(elapsed / max(documents, 1), 4),
+        "documents_per_tar": round(documents / max(len(tars), 1), 1),
+        "payload_mb_per_document": round(member_bytes / 1e6 / max(documents, 1), 3),
     }
-    with fs.open(f"{prefix}/extract.json", "w") as handle:
+    with fs.open(f"{prefix}/extract-{stem}.json", "w") as handle:
         handle.write(json.dumps(summary, indent=2) + "\n")
-    if len(ledger) != expected:
+    if ledger_rows != expected:
         raise RuntimeError(
-            f"ledger has {len(ledger)} rows for {expected} requested models; "
+            f"ledger has {ledger_rows} rows for {expected} requested models; "
             "every model must have a terminal status"
         )
     return summary
@@ -509,6 +565,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fetch-concurrency", type=int, default=8)
     parser.add_argument("--tar-concurrency", type=int, default=1)
     parser.add_argument("--limit-tars", type=int, default=None)
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--shard-count", type=int, default=1)
     return parser
 
 
@@ -520,6 +578,8 @@ def main(argv: list[str] | None = None) -> int:
         fetch_concurrency=args.fetch_concurrency,
         tar_concurrency=args.tar_concurrency,
         limit_tars=args.limit_tars,
+        shard_index=args.shard_index,
+        shard_count=args.shard_count,
     )
     print(json.dumps(summary, indent=2))
     return 0

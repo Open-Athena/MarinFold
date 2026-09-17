@@ -156,3 +156,59 @@ def test_extract_does_not_cache_a_decompressor_instance() -> None:
     assert "ZstdDecompressor()" in source, "the module should build them per call"
     assert '_GENERATOR["zstd"] = zstandard.ZstdDecompressor()' not in source
     assert '_GENERATOR["zstandard"] = zstandard' in source
+
+
+def _manifest(tmp_path: Path, url: str, names: list[str]) -> Path:
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    rows = [
+        {
+            "source_model_key": f"homodimer|{n.removesuffix('-model_v1.cif.zst')}",
+            "model_id": n.removesuffix("-model_v1.cif.zst"),
+            "complex_type": "homodimer",
+            "accession_a": "A1",
+            "accession_b": "A1",
+            "total_residues": 200,
+            "quality_ratio": 1.2,
+            "ipsae_score": 0.7,
+            "pdockq2_score": 0.3,
+            "confidence_tier": "A",
+            "source_tar_uri": f"{url}?tar={i % 4}",
+        }
+        for i, n in enumerate(names)
+    ]
+    path = tmp_path / "manifest.parquet"
+    pq.write_table(pa.Table.from_pylist(rows), path)
+    return path
+
+
+def test_shards_stride_and_together_cover_every_tar(tar_server, tmp_path: Path) -> None:
+    """Striding balances pods; contiguous slicing would not.
+
+    The sorted tar list groups heterodimer shards, homodimer chunk_* and
+    homodimer shard_* together, and those differ by an order of magnitude in
+    members per tar, so a contiguous slice hands one pod every 7.5 GB archive.
+    """
+    import extract
+
+    url, names = tar_server
+    manifest = _manifest(tmp_path, url, names)
+    seen: list[list[str]] = []
+    for index in range(3):
+        rows = extract.duckdb.connect().execute(
+            f"SELECT DISTINCT source_tar_uri FROM read_parquet('{manifest}') "
+            "ORDER BY source_tar_uri"
+        ).fetchall()
+        all_tars = [r[0] for r in rows]
+        seen.append(all_tars[index::3])
+    flat = [t for group in seen for t in group]
+    assert sorted(flat) == sorted({t for group in seen for t in group})
+    assert len(flat) == 4, "every tar is covered exactly once across shards"
+
+
+def test_shard_index_must_be_in_range() -> None:
+    import extract
+
+    with pytest.raises(ValueError, match="out of range"):
+        extract.run("unused.parquet", "unused", shard_index=3, shard_count=3)
