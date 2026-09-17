@@ -32,7 +32,7 @@ class _RangeHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *args: object) -> None:
         pass
 
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         header = self.headers.get("Range")
         start, end = 0, len(self.payload) - 1
         if header:
