@@ -237,13 +237,37 @@ Note what the two arms do *not* share. ESM contributes volume: 8.06M of its addi
 
 **Cluster limit worth recording:** the first 256-worker curation launch (`exp292-afdb-curate-v1`) failed in about ninety seconds, before doing any work, with `PermissionError: [Errno 13] Permission denied: .../bin/mmseqs`. The task pod mounts `/tmp` `noexec`, so the staged frozen binary unpacked and hash-verified correctly and then could not be executed. The identical extraction works in the ESM arm because that bootstrap unpacks to `/opt` on a plain EC2 host, so the failure only appears once the stage moves onto the cluster. Staging now resolves under the worker's own working directory and runs `mmseqs version` immediately after extraction, so a bad mount fails at staging time with an explicit message instead of several frames deep inside the screen. The trap is written up in the `zephyr-pipeline-performance` skill.
 
-**ESM structural ranking is running** and is the last production stage. [`exp292-esm-structures-v1`](https://s3.console.aws.amazon.com/s3/buckets/marinfold-exp91-usw2) ranks the 1,604,845 queued clusters across 256 shards, drained 13 at a time because its 32-vCPU workers hit the same 445-vCPU account limit. The measured shape of a shard is **about 33 minutes fetching ~42,000 coordinate blobs from Atlas and about 4 minutes ranking**, so the stage is dominated by per-row fetch latency, not by alignment, and projects to roughly 13 hours. It is left running rather than restarted.
+**ESM structural ranking is complete, and with it all production selection.** All 256 shards finished with `returncode 0`, for 139.8 m7i.8xlarge instance-hours (median 1,956 s per shard):
 
-Its first completed shard confirms the stage works and sharpens the source comparison. It ranked 6,224 clusters into **18,672 additions — exactly three per cluster — measuring 36,605 pairs where an all-pairs matrix would have needed 127,511**, so the lazy candidate-to-selected policy avoids 71% of the alignment work. Of those 18,672 additions only **180 (0.96%) are `structural_diversity`**, against AFDB's 4.05%.
+| | total |
+| --- | ---: |
+| queued clusters ranked | 1,604,845 |
+| queued rows (structures fetched) | 10,873,647 |
+| Atlas coordinate bytes read | 191.4 GB |
+| measured pairs | 9,530,876 |
+| all-pairs comparisons avoided | 23,574,802 (71.2%) |
+| **additions** | **4,814,535** |
+| — `structural_diversity` | 57,608 (1.20%) |
+| — `quality_fill` | 4,756,927 |
 
-That gap matters for how the supplement is described. Extrapolated, strict structural additions are on the order of **80,000 out of ~13.7M** — well under 1%. The supplement is therefore overwhelmingly `quality_fill`: it adds cluster members that pass every integrity, confidence and decontamination rule, and only a small minority of them are demonstrably distinct folds. That is the expected consequence of the agreed policy, which prefers strict diversity but does not require it, and it is why the `selection_tier` label is carried on every row — a later analysis can weight, subset or ablate on it without regenerating anything.
+Two internal checks hold exactly: the stage ranked **1,604,845 clusters, matching the metadata stage's queue with zero difference**, and returned **4,814,535 = exactly three additions per cluster**. The lazy candidate-to-selected policy measured 9.53M pairs where a full all-pairs matrix over the same clusters would have needed 33.1M, so **71.2% of the alignment work was avoided** with no change to the selection.
 
-Two levers would cut that materially next time, and neither needs more quota. The fetch is sequential `dataset.take` batches, so **making the Atlas fetch concurrent** attacks the actual bottleneck directly. Failing that, because the limit is on vCPUs rather than instances, **27 16-vCPU workers instead of 13 32-vCPU ones** buys roughly twice the aggregate fetch parallelism for the same quota, at the cost of halving the per-shard ranking width — a good trade when ranking is a tenth of the wall time. Neither was applied mid-flight.
+The stage was fetch-bound, as its first shard predicted — 191.4 GB of coordinate blobs read one indexed row at a time. It finished in about 4.5 hours rather than the 13 projected from the first wave, because contention fell as the fleet drained. Making the Atlas fetch concurrent remains the obvious improvement for any future run.
+
+### The completed supplement
+
+| source | additions | `structural_diversity` | `quality_fill` |
+| --- | ---: | ---: | ---: |
+| AFDB | 861,425 | 34,903 (4.05%) | 826,522 |
+| ESM, decided on metadata | 8,056,414 | — | 8,056,414 |
+| ESM, structurally ranked | 4,814,535 | 57,608 (1.20%) | 4,756,927 |
+| **total** | **13,732,374** | **92,511 (0.67%)** | 13,639,863 |
+
+**13,732,374 sequence–structure pairs** before cross-source deduplication, inside the original 10–30M planning range, and every row carries its own sequence, its own structure, its cluster lineage, its quality metrics, its structural comparison scores and its selection reason.
+
+**The headline number is the 0.67%.** Strict structural additions — those clearing the symmetric 0.8 TM bound on both whole chain and confident core, with adequate coverage on both chains — are 92,511 of 13.7M. The supplement is overwhelmingly `quality_fill`. That is the expected consequence of the agreed policy, which prefers strict diversity but fills the remaining slots rather than demanding it, and it is consistent with every audit along the way: whole-chain TM alone kept overstating novelty, and the confident-core and coverage gates kept removing it.
+
+It also shapes what the next model can be said to show. If the supplement helps, the most likely mechanism is **more valid training data per cluster**, not more conformational diversity, because there is not much demonstrable fold diversity in here to be the cause. Every row is labelled `structural_diversity` or `quality_fill` and keeps its continuous scores, so that hypothesis can be tested by weighting, subsetting or ablating on the tier without regenerating anything. The two sources also differ by 3.4× in strict rate (4.05% AFDB against 1.20% ESM), so they should be reported separately rather than pooled.
 
 The completed audit supports an eight-candidate production reservoir: depending on the TM criterion, it recovers approximately 92–95% of the population-weighted hits found with 32 candidates. Production selection still fills to three with quality-passing members when strict structural alternatives are unavailable. The supplement will be included in the next full 1.5B run; there is no control-corpus build or short model-efficacy screen.
 
@@ -257,11 +281,11 @@ Implementation entry points are `sample_afdb.py` (metadata selection), `structur
 
 ## Conclusion
 
-The original data can be recovered, the curation policy is frozen, and the production pipeline now runs at scale on both sources. Every planned AFDB structure has been re-fetched and re-validated — 3,526,695 rows, exactly the plan, no drops — and both ESM production stages reconcile every input row to a recorded outcome on real data.
+The original membership can be recovered, the curation policy is frozen, and **all production selection is complete**: a supplement of **13,732,374 sequence–structure pairs** across both sources, every row carrying its own structure, cluster lineage, quality metrics, structural scores and selection reason. Each stage reconciles exactly against the one before it — the AFDB curator consumed exactly the 3,526,695 validated rows, the ESM curator consumed exactly the 30,749,644 located rows, and the structural ranker consumed exactly the 1,604,845 queued clusters and returned exactly three additions for each.
 
-The central curation finding has survived every enlargement of the sample: **whole-chain TM alone overstates structural novelty**. Confident-core coverage by a different retained member, or simply low alignment coverage, explains most apparent hits — ten of 125 measured pairs in the latest structural smoke cleared whole-chain TM ≤ 0.8 and none survived the core and coverage requirements. Strict structural additions are therefore rare (roughly 2% of clusters in the 919-cluster audit), which is why the agreed policy prefers them but fills the remaining slots with quality-passing members instead of demanding them.
+The central curation finding survived every enlargement of the sample and is now quantified at production scale: **whole-chain TM alone overstates structural novelty**, and once the confident-core and coverage gates are applied, strict structural additions are **92,511 of 13.73M — 0.67%**. The supplement is therefore overwhelmingly quality-passing cluster members rather than distinct folds. This is what the agreed policy asked for, but it bounds the interpretation of the next model: if the supplement helps, the likely mechanism is more valid data per cluster, not recovered conformational diversity. AFDB's strict rate is 3.4× ESM's, so the arms should be read separately.
 
-Outstanding: the AFDB and ESM curation fleet runs, contact-document generation from each selected member's own structure, cross-source deduplication of the compact manifests, and inclusion in the next full 1.5B run. No candidate is training-cleared. Because there is no matched control corpus, the next model's results will be associated with the whole training change and cannot isolate the causal effect of structural prioritization.
+Outstanding: contact-document generation from each selected member's own structure, cross-source deduplication of the compact manifests, and inclusion in the next full 1.5B run. **No candidate is training-cleared.** Because there is no matched control corpus, changes observed in the next model are associated with the whole training change and cannot isolate the causal effect of structural prioritization.
 
 
 Source attribution: AFDB v4 structure data are from Google DeepMind and EMBL-EBI under CC BY 4.0. ESMFold2 structures and adapted arrays are from Biohub ESM Atlas v1 under [CC BY-SA 4.0](https://registry.opendata.aws/biohub-esm-atlas/), accessed 2026-09-14. The bundled 3Dmol viewer has its separate BSD license.
