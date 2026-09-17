@@ -148,6 +148,10 @@ def _pod_config(run_name: str, steps: int, resources: ResourceConfig) -> TrainLm
         ),
         model=MODEL_CONFIG,
         optimizer=_optimizer(),
+        # Prebuilt integer IDs use Levanter's PassthroughTokenizer, which cannot
+        # be exported as a HuggingFace tokenizer. Native checkpoints remain
+        # usable; a later explicit export must include the delta tokenizer.
+        hf_save_steps=None,
         train_seq_len=SEQ_LEN,
         data_seed=0,
         adapter=NoAdaptorConfig(),
