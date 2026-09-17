@@ -439,6 +439,39 @@ constraint is request volume, not bandwidth.** 147.8M small requests is a lot to
 aim at a public FTP that has already refused connections at 16 concurrent pods,
 so the fan-out is a politeness decision rather than a capacity one.
 
+### Production run launched (2026-09-17)
+
+Smoke test first: 3 pods against the real 523 MiB `selected.parquet` at
+`--shard-count 5548 --limit-tars 3`, exercising the exact production path.
+Clean — correct `{shard:05d}-of-{total:05d}` naming, **exact ledger accounting
+on every shard** (727/727, 659/659, 672/672), 2,044 documents from 2,058, and a
+0.68% `member_not_in_tar` rate matching the probe's 0.66%.
+
+The smoke run also corrected the projection, because cost is wildly uneven
+across tar types:
+
+| tar kind | tars | documents | docs/tar | header reads/tar | share of cost |
+| --- | --- | --- | --- | --- | --- |
+| homodimer `chunk_*` | 4,000 | 2,523,645 | 630.9 | 28,261 | **87.6%** |
+| homodimer `shard_*` | 4,714 | 292,546 | 62.1 | 935 | 5.2% |
+| heterodimer `shard_*` | 7,926 | 183,809 | 23.2 | 943 | 7.2% |
+
+The 4,000 `chunk_*` archives hold 84% of the corpus and dominate the bill. The
+type-aware projection is **1,401 tar-hours, 124.9M header requests** — better
+than the flat-average estimate of 932 pod-hours / 147.8M requests, and at 25
+pods it is **~28 h wall at ~1,240 req/s**.
+
+Launched as 25 pods, `--shard-count 25 --tar-concurrency 2
+--fetch-concurrency 4`, compute in `europe-west4-a`, output co-located at
+`gs://marin-eu-west4/protein-structure/MarinFold/exp294_predicted_complex_contacts_v1/corpus/`.
+
+Worth noting for anyone tempted to "optimise" the walk: reading the tar in
+large blocks instead of 512-byte headers is *not* a win at fan-out. It trades
+124.9M small requests for streaming 30 TB of `chunk_*` archives, and with 50
+concurrent streams sharing EBI's aggregate bandwidth each would get ~1 MB/s.
+The walk is slow per tar precisely because it is cheap in bytes, which is the
+right trade when bandwidth is the shared constraint.
+
 ### Probe QC: the documents are sound, and one result is a red flag
 
 Every integrity check passes. All 4,245 documents are two-chain, all have
