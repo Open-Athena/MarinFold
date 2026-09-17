@@ -401,6 +401,77 @@ at **213.7 per tar**. The stratified draw answers "are these documents any
 good"; the probe answers "what does extraction cost". Neither can answer the
 other's question.
 
+### Stage D probe: measured, and the projection (2026-09-17)
+
+The throughput probe ran on one `europe-west4-a` pod at `--tar-concurrency 2
+--fetch-concurrency 4` and produced **4,245 documents from 4,273 requested**
+across 20 whole tars.
+
+| measurement | value |
+| --- | --- |
+| wall clock | 4,033 s for 20 tars = **201.7 s/tar** |
+| header reads | 177,631 = **8,881 per tar**, at **17.9 ms each** |
+| payload | 500 MB = **0.118 MB per document** |
+| generation | **0.95 s per document** end to end |
+| documents per tar | 212.2 |
+
+**Full-run projection for 3,000,000 documents over 16,640 tars:**
+
+| | |
+| --- | --- |
+| compute | **932 pod-hours** |
+| payload from EBI | **354 GB** |
+| header reads | **147.8M requests** (~76 GB) |
+| total EBI read | **~430 GB** |
+| output parquet | ~18.9 GB |
+| corpus size | **10.24 billion tokens** |
+
+| fan-out | wall clock | request rate at EBI |
+| --- | --- | --- |
+| 25 pods | 37.3 h | ~2,800 req/s |
+| 50 pods | 18.6 h | ~5,500 req/s |
+| 100 pods | 9.3 h | ~11,100 req/s |
+| 200 pods | 4.7 h | ~22,200 req/s |
+
+The bytes are a non-issue — 430 GB, not the 1.5–2.5 TB estimated from tar sizes,
+because a selected member's `cif.zst` averages only 118 KB. **The binding
+constraint is request volume, not bandwidth.** 147.8M small requests is a lot to
+aim at a public FTP that has already refused connections at 16 concurrent pods,
+so the fan-out is a politeness decision rather than a capacity one.
+
+### Probe QC: the documents are sound, and one result is a red flag
+
+Every integrity check passes. All 4,245 documents are two-chain, all have
+distinct `sha1`, none has an empty interface, and **100% have a generated
+`seq_len` exactly equal to the manifest's `total_residues`** — the whole
+metadata → sequence → selection → extraction chain agrees with the coordinates.
+2.6% hit the ring budget and are marked `truncated`. Median document is ~3,100
+tokens against an 8,192 context.
+
+**But Tier-B interfaces are systematically larger than Tier A's, which is
+backwards.** Mean interface fraction is 0.149 for Tier A and 0.243 for Tier B,
+and it is not a size or asymmetry confound — it holds within every size band,
+at matched chain symmetry (mean min/max chain ratio 0.994 vs 0.980):
+
+| residues | Tier A interface fraction | Tier B |
+| --- | --- | --- |
+| < 500 | 0.229 | 0.323 |
+| 500–900 | 0.128 | 0.212 |
+| >= 900 | 0.105 | 0.174 |
+
+Tier A's 14.9% sits almost exactly on #222's 15.1% for experimental PDB
+multimers. Tier B's 24.3% is well above the experimental norm while carrying
+*lower* predicted confidence, which is what interpenetrating or spuriously
+packed chains would look like — and the backbone-clash filter at <=10 does not
+catch it, because these models passed it. This is the calibration signal the
+pilot exists to produce, and it argues for either a higher Tier-B floor than
+0.30 or an explicit interface-size sanity filter. It should be settled before
+the full run, not after.
+
+Separately, **28 of 4,273 requested members (0.66%) are absent from their tar**,
+all in homodimer `chunk_*` archives. An upstream metadata/archive inconsistency;
+each one is named in the ledger rather than silently dropped.
+
 ### Stage D: what the archive reconnaissance implies
 
 Not yet implemented, and not to be launched before the pilot reports. The
