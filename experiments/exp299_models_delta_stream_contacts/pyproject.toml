@@ -54,5 +54,8 @@ name = "marin-resiliparse"
 url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 
 [tool.uv.sources]
-marinfold-models = { path = "../../models" }
+# Iris bundles this experiment directory, not the repository root. Fetch the
+# training helpers remotely so remote workers never resolve a nonexistent
+# ../../models path.
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", rev = "8186ec08", subdirectory = "models" }
 resiliparse = { index = "marin-resiliparse" }
