@@ -254,6 +254,27 @@ Two internal checks hold exactly: the stage ranked **1,604,845 clusters, matchin
 
 The stage was fetch-bound, as its first shard predicted — 191.4 GB of coordinate blobs read one indexed row at a time. It finished in about 4.5 hours rather than the 13 projected from the first wave, because contention fell as the fleet drained. Making the Atlas fetch concurrent remains the obvious improvement for any future run.
 
+### Recovering the clusters exp53 never trained on
+
+The supplement above inherits an exclusion from the current corpus. Exp53 built contacts-v1 with `min_cluster_size = 3`: a structural cluster with fewer than three *usable* members (`seq_len` in `[2, 2000]`) was **discarded entirely**, not merely thinned. Because the exp292 plan anchors on the current training index, every dropped cluster was invisible to it — verified directly, **0 of the 1,627,731 planned anchors and 0 of the 335,963 eligible clusters come from one**.
+
+That rule removed **704,560 of the 1,645,588 training-split structural clusters — 42.8% of them**, holding 1,156,137 members:
+
+| | clusters | members |
+| --- | ---: | ---: |
+| all AFDB train structural clusters | 1,645,588 | 23,558,728 |
+| kept by exp53 (≥3 usable) | 941,028 | 22,402,563 |
+| **dropped by exp53 (<3 usable)** | **704,560** | **1,156,137** |
+| — passing the frozen exp292 quality bar | 346,076 | **516,410** |
+
+These clusters are a different population and are handled by a separate arm. Each holds **at most two usable members**, so the three-slot policy degenerates to "admit every member that passes quality": there is no retained anchor to measure novelty against, nothing to choose between, and therefore **no alignment work at all**. `build_afdb_small_plan.py` plans them and asserts both invariants — that no planned cluster appears in the anchored plan, and that no cluster yields more than two quality members. `curate_afdb_small.py` applies the same integrity rules and the same frozen held-out screen.
+
+They are labelled `untrained_cluster` rather than `quality_fill`. The existing tiers describe a choice made against retained anchors, and applying either to an unanchored member would overstate what was measured; a distinct label also keeps the population separable, which matters because it differs systematically — mean pLDDT 86.6 against 89.0, mean length 192 against 302.
+
+Two properties make this arm interesting out of proportion to its size. Its 516,410 members span **516,410 distinct sequence clusters — one each**, so there is no sequence redundancy to collapse. And each is structurally isolated within the corpus we train on, which is closer to the diversity this experiment is looking for than most of the `quality_fill` bulk. That said, **afdb-24M is a curated subset of AFDB**, so a cluster that is a singleton here may have members that did not survive the 24M curation; the defensible claim is isolation within our training corpus, not global fold novelty.
+
+The exp225 droplist is deliberately not applied to this arm. It lists entries removed *from the training corpus* for matching a held-out sequence, and these clusters were never in that corpus; the binding protection is the frozen screen, which every candidate receives.
+
 ### The completed supplement
 
 | source | additions | `structural_diversity` | `quality_fill` |
