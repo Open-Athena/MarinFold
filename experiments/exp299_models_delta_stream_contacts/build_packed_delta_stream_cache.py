@@ -225,7 +225,7 @@ def build_split(
             cpu=worker_cpu,
             ram=worker_memory,
             disk=worker_disk,
-            regions=[region],
+            regions=[region] if region else None,
             preemptible=preemptible,
         ),
         coordinator_resources=ResourceConfig(cpu=1, ram="6GB", disk="16GB", preemptible=preemptible),
@@ -246,7 +246,11 @@ def main() -> None:
     parser.add_argument("--validation-shards", type=int, default=1)
     parser.add_argument("--max-rows-per-input-shard", type=int, default=None)
     parser.add_argument("--max-workers", type=int, default=int(os.environ.get("EXP299_PACKED_CACHE_MAX_WORKERS", "128")))
-    parser.add_argument("--region", default="us-central1", help="Region for Zephyr workers and source-data locality.")
+    parser.add_argument(
+        "--region",
+        default="us-central1",
+        help="Region for Zephyr workers and source-data locality; pass an empty string for a federated CoreWeave root job.",
+    )
     parser.add_argument("--worker-cpu", type=float, default=1.0)
     parser.add_argument("--worker-memory", default="10GB")
     parser.add_argument("--worker-disk", default="32GB")
