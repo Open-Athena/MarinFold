@@ -17,7 +17,7 @@ DEFAULT_SOURCE = (
     "exp299_contacts_delta_stream_v2_sequence_prefix/packed_cache/2026.09.16.1"
 )
 DEFAULT_DESTINATION = (
-    "s3://marin-us-east-08a/protein-structure/MarinFold/"
+    "s3://rhoarnet-us-east-08a/protein-structure/MarinFold/"
     "exp299_contacts_delta_stream_v2_sequence_prefix/packed_cache/2026.09.16.1"
 )
 
@@ -61,8 +61,8 @@ def _stream_copy_one(fs: object, source: str, destination: str) -> None:
 
 
 def _stream_copy(fs: object, source_files: list[str], destination_paths: list[str], workers: int) -> None:
-    # The regional S3 service rejects CopyObject across regions. Streaming through
-    # this Iris worker is the intentional, one-time cross-region transfer.
+    # Regional S3 has no cross-region CopyObject path. Streaming through this
+    # Iris worker is the intentional, one-time cross-region transfer.
     with ThreadPoolExecutor(max_workers=workers) as executor:
         for completed, _ in enumerate(executor.map(lambda pair: _stream_copy_one(fs, *pair), zip(source_files, destination_paths)), 1):
             if completed % 1000 == 0:
@@ -73,13 +73,7 @@ def mirror(source: str, destination: str, batch_size: int) -> None:
     source_fs, source_path, source_files = _paths(source)
     destination_paths = _destination_paths(source_path, source, destination, source_files)
     print(f"copying {len(source_files)} objects from {source} to {destination}", flush=True)
-    try:
-        source_fs.copy(source_files, destination_paths, batch_size=batch_size, on_error="raise")
-    except OSError as error:
-        if "InvalidRegion" not in str(error):
-            raise
-        print("regional S3 rejected CopyObject; streaming through the east-08 worker", flush=True)
-        _stream_copy(source_fs, source_files, destination_paths, workers=min(batch_size, 8))
+    _stream_copy(source_fs, source_files, destination_paths, workers=min(batch_size, 8))
     count, total_bytes = verify(source, destination)
     print(f"verified {count} objects / {total_bytes} bytes", flush=True)
 
