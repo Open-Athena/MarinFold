@@ -20,9 +20,13 @@ follows from that:
 * **Overlap the walk with the work.** The walk is latency-bound and generation
   is CPU-bound, so located members are handed to a thread pool while the walk
   continues.
-* **Warm the JIT once per process.** pyconfind's numba backend costs ~7.5 s on
-  its first call and ~0.9 s after, so a per-shard warm-up would dominate a
-  small shard.
+* **Load the heavy per-process state once, single-threaded.** pyconfind's numba
+  backend costs ~7.5 s on its first call and ~0.9 s after, and its Dunbrack
+  rotamer library is downloaded and parsed lazily on first use. Letting the
+  worker threads race on that lazy load segfaulted a probe run (SIGSEGV during
+  "downloading rotamer library"), so the library is parsed once before the pool
+  starts and passed explicitly to every call -- exp53's pattern, whose docstring
+  names this exact race.
 
 Fail-loud: a fetch, decompress, parse or generate failure raises and kills the
 worker. Only designed-in outcomes -- a structure the generator cannot serialize,
@@ -241,24 +245,48 @@ class TarResult:
 
 
 _GENERATOR: dict[str, Any] = {}
+_GENERATOR_LOCK = threading.Lock()
+
+
+def _load_rotamer_library() -> Any | None:
+    """Parse pyconfind's Dunbrack rotamer library once, before any thread runs.
+
+    Returns ``None`` on failure, in which case ``generate_document`` falls back
+    to pyconfind's own lazy load -- correct, but slower and the thing that
+    raced.
+    """
+    try:
+        from pyconfind import load_library
+
+        try:
+            from pyconfind import cached_rotamer_library
+        except ImportError:
+            from pyconfind.data import cached_rotamer_library
+
+        return load_library(cached_rotamer_library())
+    except Exception as error:  # noqa: BLE001 - an optional speedup, never fatal
+        print(f"rotamer-library preload failed ({error}); falling back", flush=True)
+        return None
 
 
 def _generator() -> tuple[Any, Any, Any]:
-    """Import and JIT-warm the generator once per process, not per shard."""
-    if not _GENERATOR:
-        import gemmi
-        import zstandard
-        from marinfold.document_structures.contacts_v1 import (
-            GenerationConfig,
-            generate_document,
-        )
+    """Import, JIT-warm and preload once per process, not per shard or thread."""
+    with _GENERATOR_LOCK:
+        if not _GENERATOR:
+            import gemmi
+            import zstandard
+            from marinfold.document_structures.contacts_v1 import (
+                GenerationConfig,
+                generate_document,
+            )
 
-        _GENERATOR["gemmi"] = gemmi
-        _GENERATOR["zstd"] = zstandard.ZstdDecompressor()
-        _GENERATOR["generate"] = generate_document
-        # max_chains mirrors exp222's multimer config so an AFCDB document is
-        # directly comparable to a PDB one.
-        _GENERATOR["config"] = GenerationConfig(max_chains=60)
+            _GENERATOR["gemmi"] = gemmi
+            _GENERATOR["zstd"] = zstandard.ZstdDecompressor()
+            _GENERATOR["generate"] = generate_document
+            # max_chains mirrors exp222's multimer config so an AFCDB document
+            # is directly comparable to a PDB one.
+            _GENERATOR["config"] = GenerationConfig(max_chains=60)
+            _GENERATOR["rotamers"] = _load_rotamer_library()
     return _GENERATOR["gemmi"], _GENERATOR["zstd"], _GENERATOR["generate"]
 
 
@@ -299,7 +327,12 @@ def _one_model(url: str, row: dict[str, Any], offset: int, size: int) -> tuple[d
     raw = zstd.decompress(payload, max_output_size=_MAX_CIF_BYTES)
     structure = gemmi.read_structure_string(raw.decode())
     structure.setup_entities()
-    result = generate(structure, entry_id=row["model_id"], config=_GENERATOR["config"])
+    result = generate(
+        structure,
+        entry_id=row["model_id"],
+        config=_GENERATOR["config"],
+        rotamer_library=_GENERATOR["rotamers"],
+    )
     key = row["source_model_key"]
     if result is None:
         return None, {"source_model_key": key, "source_tar_uri": url,
