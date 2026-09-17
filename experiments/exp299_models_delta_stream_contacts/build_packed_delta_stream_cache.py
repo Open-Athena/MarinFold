@@ -18,15 +18,15 @@ from zephyr.context import ZephyrContext
 from zephyr.dataset import Dataset
 
 DEFAULT_INPUT = (
-    "gs://marin-us-central1/protein-structure/MarinFold/"
+    "s3://marin-us-east-02a/protein-structure/MarinFold/"
     "exp299_contacts_delta_stream_v2_sequence_prefix/documents/2026.09.16.1/shard-*-of-03338.parquet"
 )
 DEFAULT_CACHE_ROOT = (
-    "gs://marin-us-central1/protein-structure/MarinFold/"
+    "s3://marin-us-east-02a/protein-structure/MarinFold/"
     "exp299_contacts_delta_stream_v2_sequence_prefix/packed_cache/2026.09.16.1"
 )
 DEFAULT_META_ROOT = (
-    "gs://marin-us-central1/protein-structure/MarinFold/"
+    "s3://marin-us-east-02a/protein-structure/MarinFold/"
     "exp299_contacts_delta_stream_v2_sequence_prefix/packed_cache_meta/2026.09.16.1"
 )
 VOCAB_SIZE = 2080

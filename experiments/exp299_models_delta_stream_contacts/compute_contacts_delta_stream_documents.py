@@ -30,7 +30,7 @@ DEFAULT_INPUT = (
     "exp139_esm_atlas_contacts_v1/analyzed/analyzed-*-of-03338.parquet"
 )
 DEFAULT_OUTPUT = (
-    "gs://marin-us-central1/protein-structure/MarinFold/"
+    "s3://marin-us-east-02a/protein-structure/MarinFold/"
     "exp299_contacts_delta_stream_v2_sequence_prefix/documents/2026.09.16.1/"
     "shard-{shard:05d}-of-{total:05d}.parquet"
 )

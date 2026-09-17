@@ -9,7 +9,6 @@ dependencies = [
     "matplotlib",
     "pyarrow",
     "fsspec",
-    "gcsfs",
     "s3fs",
     "marinfold-models",
     "marin-core",
