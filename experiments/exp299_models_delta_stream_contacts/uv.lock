@@ -602,7 +602,7 @@ requires-dist = [
     { name = "marin-levanter" },
     { name = "marin-rigging" },
     { name = "marin-zephyr" },
-    { name = "marinfold-models", directory = "../../models" },
+    { name = "marinfold-models", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=8186ec08" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "optax", marker = "extra == 'gpu'" },
@@ -1652,7 +1652,7 @@ wheels = [
 [[package]]
 name = "marinfold-models"
 version = "0.1.0"
-source = { directory = "../../models" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=models&rev=8186ec08#8186ec083c38b0c41d3cb24328dfcf1414abc764" }
 dependencies = [
     { name = "marin-core" },
     { name = "marin-iris" },
@@ -1660,21 +1660,6 @@ dependencies = [
     { name = "marin-rigging" },
     { name = "marin-zephyr" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "marin-core" },
-    { name = "marin-core", extras = ["gpu"], marker = "sys_platform == 'linux' and extra == 'gpu'" },
-    { name = "marin-core", extras = ["tpu"], marker = "sys_platform == 'linux' and extra == 'tpu'" },
-    { name = "marin-iris" },
-    { name = "marin-levanter" },
-    { name = "marin-rigging" },
-    { name = "marin-zephyr" },
-]
-provides-extras = ["tpu", "gpu"]
-
-[package.metadata.requires-dev]
-dev = []
 
 [[package]]
 name = "markdown-it-py"
