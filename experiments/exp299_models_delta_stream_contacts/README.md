@@ -60,6 +60,13 @@ the exp89 candidate universe/metric code. Future V2 evaluation must:
 
 No claim about V1 relative R-precision should be used to select a larger run.
 
+## Storage
+
+V2 conversion and cache defaults use `gs://marin-us-central1/`, matching the
+pinned `us-central1` Zephyr workers. A CoreWeave training cache must not stream
+from that bucket: if it proves larger than 10 GB, a one-time GCS-to-S3 mirror
+requires explicit human approval before it is made.
+
 ## Next steps
 
 1. Build the V2 sequence-prefix corpus and its fixed-8192 packed cache.
