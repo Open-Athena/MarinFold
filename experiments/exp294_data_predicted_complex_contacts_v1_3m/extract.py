@@ -37,6 +37,16 @@ dropped model is a corpus that quietly disagrees with its own manifest.
         --out /data/exp294/probe_docs --fetch-concurrency 8
 """
 
+import os
+
+# Must precede any numba import, and `_generator()` imports lazily, so module
+# scope is early enough. pyconfind's `[fast]` backend auto-parallelises to ~26
+# cores per worker (#139's operational note). With a thread pool on top, a
+# 2-vCPU pod ends up with hundreds of native threads and segfaults -- which is
+# what killed two probe runs. Parallelism belongs across workers, not inside one.
+for _var in ("NUMBA_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+
 import argparse
 import hashlib
 import http.client
