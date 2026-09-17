@@ -60,6 +60,34 @@ the exp89 candidate universe/metric code. Future V2 evaluation must:
 
 No claim about V1 relative R-precision should be used to select a larger run.
 
+## Canonical rollout comparison
+
+We evaluated V2 checkpoints at steps 2,000, 4,000, and 6,000 against the final
+exp177 contacts-v1 contact-order-augmentation checkpoint (step 71,359). Every
+row uses the same 554-protein exp89 resolved-residue universe and the published
+exp82 recipe: 100 sequence-conditioned rollouts at temperature 1.0 / top-p 0.95,
+one undirected vote per pair per rollout, followed by the unchanged
+`build_rollout_rows.py` metrics.
+
+| checkpoint | coverage | R (all) | R (long) | AUC (all) | AUC (long) |
+|---|---:|---:|---:|---:|---:|
+| V2 step 2,000 | 554/554 | 0.0238 | 0.0192 | 0.5660 | 0.5455 |
+| V2 step 4,000 | 554/554 | 0.0540 | 0.0345 | 0.6146 | 0.5835 |
+| V2 step 6,000 | 554/554 | 0.0785 | 0.0477 | 0.6520 | 0.6085 |
+| exp177 contacts-v1 step 71,359 | 554/554 | **0.5113** | **0.4595** | **0.9246** | **0.9033** |
+
+V2 improves monotonically over these checkpoints, but step 6,000 remains far
+behind the matched contacts-v1 control: −0.4328 all-range R-precision and
+−0.4118 long-range R-precision. The result does not support replacing
+contacts-v1 with this delta serialization at the evaluated training stages.
+
+As in the canonical contacts-v1 worker, decoding is permissive: valid in-range
+pairs vote while malformed or out-of-universe statements are ignored rather
+than causing the whole rollout to be discarded. All four checkpoints produced
+nonzero votes for all 554 targets. Full per-protein rows and aggregate metrics
+are in `data/rprecision_comparison_rows.csv.gz` and
+`data/rprecision_comparison_summary.csv`.
+
 ## Storage
 
 V2 conversion and cache creation run as a federated root job on
@@ -70,12 +98,11 @@ pipeline.
 
 ## Next steps
 
-1. Build the V2 sequence-prefix corpus and its fixed-8192 packed cache.
-2. Add a V2 constrained-contact rollout worker that supplies the full sequence
-   prefix and samples only the contact suffix.
-3. Validate its vote matrices through the canonical exp82/exp89 metric path.
-4. Use the exp288 configuration/prepare/launch/runtime pattern for the first
-   production-scale V2 training sweep.
+1. Evaluate later durable checkpoints from the continuing 12,000-step run.
+2. Measure whether strict grammar-constrained decoding improves V2 enough to
+   alter the conclusion from the canonical permissive rollout comparison.
+3. Prefer contacts-v1 for subsequent training unless later V2 checkpoints close
+   the large observed gap.
 
 ## Files
 
