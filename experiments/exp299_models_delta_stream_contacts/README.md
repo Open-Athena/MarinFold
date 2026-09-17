@@ -62,10 +62,11 @@ No claim about V1 relative R-precision should be used to select a larger run.
 
 ## Storage
 
-V2 conversion and cache defaults use `gs://marin-us-central1/`, matching the
-pinned `us-central1` Zephyr workers. A CoreWeave training cache must not stream
-from that bucket: if it proves larger than 10 GB, a one-time GCS-to-S3 mirror
-requires explicit human approval before it is made.
+V2 conversion and cache creation run as a federated root job on
+`cw-us-east-02a`, co-located with their existing
+`s3://marin-us-east-02a/` source and training artifacts. A Marin-local Zephyr
+job has no credentials for this private S3 store and must not be used for this
+pipeline.
 
 ## Next steps
 
