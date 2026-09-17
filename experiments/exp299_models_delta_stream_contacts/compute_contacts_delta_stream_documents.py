@@ -276,7 +276,7 @@ def run(args: argparse.Namespace) -> None:
             cpu=args.worker_cpu,
             ram=args.worker_memory,
             disk=args.worker_disk,
-            regions=[args.region],
+            regions=[args.region] if args.region else None,
             preemptible=args.preemptible,
         ),
     )
@@ -295,7 +295,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-contact-degree", type=float, default=0.001)
     parser.add_argument("--max-abs-delta", type=int, default=DEFAULT_MAX_ABS_DELTA)
     parser.add_argument("--max-workers", type=int, default=int(os.environ.get("EXP299_DOCUMENTS_MAX_WORKERS", "4")))
-    parser.add_argument("--region", default="us-central1", help="Region for Zephyr workers and source-data locality.")
+    parser.add_argument(
+        "--region",
+        default="us-central1",
+        help="Region for Zephyr workers and source-data locality; pass an empty string for a federated CoreWeave root job.",
+    )
     parser.add_argument("--worker-cpu", type=float, default=1.0)
     parser.add_argument("--worker-memory", default="4GB")
     parser.add_argument("--worker-disk", default="16GB")
