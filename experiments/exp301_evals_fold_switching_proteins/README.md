@@ -209,22 +209,172 @@ switchers.
 Artifacts: [`data/training_hits.tsv`](data/training_hits.tsv),
 [`data/training_fold_labels.csv`](data/training_fold_labels.csv).
 
-### M1 / M2 / M4 — in progress
+### The gate — this worker reproduces published numbers
 
-M1 and M2 are running on the local A5000 (88 units = 68 pairs + 20 calibration,
-100 rollouts × 5 seeds). **Not CoreWeave**: the object-storage key in
-`~/.config/marin/cw-rno2a.env` currently returns `InvalidAccessKeyId`, so the
-fan-out is unavailable until it is rotated. M4's dose grid is sized once M1's
-effect size is known.
+20 eval-val proteins rode along in the same targets file and were scored by the
+same worker on the same recipe, then compared **per protein** against exp277's
+published values.
 
-Two environment facts, recorded because they are not obvious:
-this workstation's driver is CUDA 12.2, and vLLM 0.29's torch refuses it — the
-run pins exp254's proven `vllm==0.19.1` / `transformers==5.15.0`; and 500 prompts
-in flight per pair OOMs a 24 GB A5000 at `max_num_seqs=512`, so the run uses 64.
+Mean paired Δ = **+0.0056 ± 0.0029** (n = 20, positive in 13). Per protein the
+mean |Δ| is **0.0101**, against a within-protein seed spread of **0.0094** — the
+disagreement is the size of one seed's own sampling noise, and it has no
+structure (Spearman with L: −0.20; with the published score: −0.17). The one
+documented protocol difference is that exp277's worker excludes non-terminating
+rollouts from voting while this one votes with all of them; that is inert here,
+since the unfinished rate is 0/500 on every unit but one.
+
+Not a clean zero, and stated as such: the mean sits 1.9 SE from zero (p ≈ 0.06)
+and just above the 0.005 tie line. It is small relative to every effect below.
+
+### M1 — MarinFold reaches one fold, and it is Fold1
+
+Excluding the single unit whose rollouts truncate (below), **n = 67**:
+
+| | value |
+|---|---|
+| prefers fold1 | **52 / 68** (binomial p = 2.2 × 10⁻⁵) |
+| mean φ | **+0.112**, 95% CI [+0.071, +0.155] (t = 5.04, p = 3.9 × 10⁻⁶) |
+| recall on A vs B | 0.263 vs 0.153 |
+| R-precision fold1 vs fold2 | 0.509 vs 0.431, paired margin **+0.078** (p = 8 × 10⁻⁵) |
+
+![fold preference](plots/fold_preference.png)
+
+**The asymmetry is the shape of the result.** Fold1 preferences run out to
+φ = +0.6; the strongest fold2 preference is −0.2. The model does not merely pick
+a fold per protein — when it picks fold1 it does so far more decisively than it
+ever picks fold2.
+
+**Two controls say the effect is real and correctly located.**
+
+| cut | n | mean φ | prefers fold1 |
+|---|---:|---:|---:|
+| **tier A** — both folds from one crystal | 6 | **+0.176** | 5/6 |
+| tier B — X-ray/X-ray, two entries | 46 | +0.094 | 34/46 |
+| tier C — NMR or cryo-EM | 15 | +0.142 | 12/15 |
+| **restricted to the fold-switching region** | 65 | **+0.153** | 47/65 |
+
+Tier A carries no crystal confound at all — same entry, same conditions, same
+refinement — and shows the *largest* preference, so this is not an artifact of
+comparing two crystallisations. And restricting to the contacts the fold switch
+actually moved makes the effect **stronger** (+0.153 vs +0.112), which is the
+check that matters: had the signal been ligand binding or domain motion, the
+FS-restricted number would have collapsed.
+
+### M1b — it does not sample the alternative fold
+
+The per-rollout φ spread is compared against a binomial null built from each
+pair's own recalls, because a model with one fold still spreads φ — every rollout
+draws a different subset of contacts.
+
+**Median dispersion 1.067**, IQR [0.89, 1.36]. There is a detectable excess
+(one-sided Wilcoxon p = 0.006) but it is ~7% of variance, and BIC prefers two
+components in 18/68 at n = 500 points per pair, where it is easy to prefer. The
+honest reading: the rollout ensemble is **one mode**. Sampling harder does not
+produce the second fold.
+
+![bimodality](plots/bimodality.png)
+
+That is the finding that distinguishes this from AlphaFold's. AF2 needs MSA
+tricks to manufacture a second conformation; MarinFold has a native sampling
+mechanism, and it still does not find one.
+
+### M2 — but the alternative fold is *improbable, not impossible*
+
+Teacher-forced NLL of both folds' documents under identical realizations, with
+both cut to the same number of contacts:
+
+**mean ΔNLL/token = −0.019 (t = −1.11, p = 0.27); fold1 favoured in 37 / 68
+pairs (p = 0.54).** A coin flip.
+
+This is the most interesting number in the experiment. The same model that
+samples fold1 at φ = +0.112 assigns the two folds **nearly equal likelihood**
+when asked to score them. The two readouts agree per protein
+(Spearman ρ = −0.54, the sign of agreement), so they are measuring the same
+thing — the gap is between *scoring* and *reaching*. Fold2 is in the
+distribution; sampling just never goes there.
+
+![nll vs phi](plots/nll_vs_phi.png)
+
+That is prediction 3 confirmed, and it is what makes M4 worth running: the
+target is reachable, so the question is only what it costs to steer to it.
+
+### M3 join — the memorization test is null, and underpowered by construction
+
+The training data encodes Fold1 30 : 4 (above), and the model prefers Fold1 in
+82% of those same pairs. It is tempting to read the 76% agreement as
+memorization. **It is not evidence of anything**, and the check is the reason:
+
+| | |
+|---|---|
+| agreement expected from the two marginals alone | **75%** |
+| observed agreement | **76%** |
+| Fisher exact on the 2×2 | **p = 0.56** |
+| φ given training = fold1 vs fold2 | +0.181 (n=30) vs +0.019 (n=4), Mann-Whitney p = 0.087 |
+| Spearman(φ, identity to nearest training sequence) | **−0.001** |
+
+Both the model and its training data prefer Fold1 at similar rates, so they agree
+most of the time whether or not one causes the other. Distinguishing the two
+needs pairs where training says **Fold2**, and there are **4** — because
+AF2 and ESMFold themselves almost never predict the alternative fold. The
+bottleneck is in the training corpus, not the analysis.
+
+The flat correlation with training identity (−0.001) is a real datum on its own:
+the strength of the preference does not scale with how close the nearest training
+sequence is, so a simple retrieval-strength account does not fit either.
+
+![memorization](plots/memorization.png)
+
+### Truncation
+
+One unit of 68 — `4zt0c_4cmqb`, L = 1338 — is budget-capped by the 8192-token
+context (`max_new` = 5508 against the recipe's 6L+128 = 8156) and terminates in
+only 6% of rollouts. It is excluded from the headline, following #245's `8uxt_A`
+precedent. Excluding it changes nothing (76% either way; mean φ +0.112 vs
++0.110). Every other unit finished 500/500.
 
 ## Conclusion
 
-Pending. Phase 0 establishes that the question is well-posed: 68 fold-switching
-pairs whose two contact maps differ far beyond the crystallographic noise floor,
-with a median of 71 and 58 contacts unique to each fold, in one coordinate frame,
-ready to score.
+**MarinFold reaches one fold — Fold1 — and sampling harder does not find the
+other. But the other fold is not far away in likelihood, which is a different
+failure from AlphaFold's.**
+
+Over 68 fold-switching pairs whose two contact maps differ far beyond the
+crystallographic noise floor, the model prefers Fold1 in 52 (mean φ = +0.112,
+p = 3.9 × 10⁻⁶; paired R-precision margin +0.078). The preference is *larger* on
+the pairs with no crystal confound at all (tier A, +0.176) and *larger* again
+when restricted to the contacts the fold switch actually moved (+0.153), so it is
+the fold switch being measured, not crystallisation or domain motion. It is also
+markedly asymmetric: fold1 preferences reach +0.6, fold2 preferences stop at −0.2.
+
+This reproduces AlphaFold's failure mode on an architecture that shares nothing
+with it and uses no MSA — including on KaiB (`5jyt`/`2qke`), the protein
+AF-Cluster was built for, where φ = +0.47.
+
+**Where it differs from AlphaFold is the mechanism, and that is the useful part.**
+A generative contact model has a native way to produce alternative conformations —
+just sample — and it does not work: the per-rollout spread is a binomial null
+(median dispersion 1.07). But teacher forcing shows the alternative fold is
+assigned **nearly equal likelihood** (ΔNLL/token −0.019, p = 0.27; fold1 favoured
+in 37/68). Fold2 is inside the distribution and sampling simply never goes there.
+So this is not "the model cannot represent the other fold" — it is "the model's
+sampling mode is single-basin". That is a steering problem, and #301's M4 measures
+what steering costs.
+
+**The memorization question is open, and the reason is worth recording.** The
+training corpora — AFDB and ESM-Atlas, i.e. AF2 and ESMFold predictions — encode
+Fold1 over Fold2 at 30 : 4, itself a clean reproduction of Porter's ~81% AF2
+Fold1 rate. The model agrees with the training fold 76% of the time, but the two
+marginals alone predict 75% (Fisher p = 0.56), and the correlation between
+preference strength and training identity is −0.001. **We cannot tell whether the
+model follows its training data or independently shares its bias**, because only
+4 pairs have a training document encoding Fold2. The bottleneck is the corpus:
+the predictors that generated it almost never produce the alternative fold.
+Powering that test needs a model trained on experimental PDB, where both folds
+exist — #222's corpora and #230's checkpoint are the obvious next probe.
+
+**Caveats.** n = 68, of which 6 are tier A. The calibration gate lands at
++0.0056 ± 0.0029 rather than a clean zero — inside one seed's own spread, but not
+nothing. Several pairs switch by domain swap or subunit exchange, where the
+monomer map moves least; those are in the set and dilute toward zero. And the
+whole experiment scores contact maps, not structures, so "prefers Fold1" means
+the contact set, which #174 showed is necessary but not sufficient for the fold.
