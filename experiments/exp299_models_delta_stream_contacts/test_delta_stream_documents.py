@@ -10,6 +10,7 @@ from compute_contacts_delta_stream_documents import (
     delta_to_token,
     document_row_from_analyzed,
 )
+from validate_delta_stream_documents import validate_row
 
 
 def test_document_places_full_sequence_before_contacts() -> None:
@@ -47,3 +48,4 @@ def test_document_places_full_sequence_before_contacts() -> None:
     ]
     assert result["sequence_token_count"] == 3
     assert result["contact_token_count"] == 5
+    validate_row(result)
