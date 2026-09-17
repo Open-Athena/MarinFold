@@ -40,4 +40,10 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+- Completed successfully on 2026-09-17 at checkpoint step 11,999 (the
+  12,000-step trainer endpoint).
+- Final validation loss: 1.121.
+- Canonical 100-rollout evaluation covered 554/554 exp89 targets.
+- Rollout metrics: R/all 0.1579, R/long 0.1054, AUC/all 0.7365, and AUC/long
+  0.6866.
+- Approximate contacts-v1-equivalent protein exposure: step 10,908.

@@ -54,30 +54,31 @@ approximately `V2 step / 1.1`.
 | V2 step 2,000 | 1,818 | 554/554 | 0.0238 | 0.0192 | 0.5660 | 0.5455 |
 | V2 step 4,000 | 3,636 | 554/554 | 0.0540 | 0.0345 | 0.6146 | 0.5835 |
 | V2 step 6,000 | 5,455 | 554/554 | 0.0785 | 0.0477 | 0.6520 | 0.6085 |
-| V2 step 8,000 | 7,273 | 554/554 | **0.1306** | **0.0877** | **0.7083** | **0.6567** |
+| V2 step 8,000 | 7,273 | 554/554 | 0.1306 | 0.0877 | 0.7083 | 0.6567 |
+| V2 step 11,999 (pilot final) | 10,908 | 554/554 | **0.1579** | **0.1054** | **0.7365** | **0.6866** |
 | exp177 contacts-v1 step 10,000 | 10,000 | 554/554 | 0.0239 | 0.0199 | 0.5863 | 0.5622 |
 | exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | 0.4595 | 0.9246 | 0.9033 |
 
 ### Preliminary conclusion: strong early-training win
 
-There is no exact protein-count-matched exp177 export for the available V2
-checkpoints: the earliest retained exp177 HF export is step 10,000, equivalent
-to roughly V2 step 11,000. The available comparison is nevertheless
-conservative for V2. V2 step 8,000 has seen only about 73% as many proteins as
-exp177 step 10,000, yet leads it by +0.1066 all-range and +0.0677 long-range
-R-precision. In relative terms, V2 is 5.5× higher on all-range R-precision and
-4.4× higher on long-range R-precision despite the smaller protein exposure.
+The pilot final checkpoint provides a close early-training control match. V2
+step 11,999 corresponds to approximately 10,908 contacts-v1-equivalent steps,
+about 9% more protein exposure than exp177 step 10,000. At this near-matched
+exposure, V2 leads by +0.1340 all-range and +0.0854 long-range R-precision. In
+relative terms, V2 is 6.6× higher on all-range R-precision and 5.3× higher on
+long-range R-precision. The AUC gains are +0.1502 all-range and +0.1244
+long-range.
 
-This is strong preliminary evidence that the V2 delta document is substantially
-more protein-sample-efficient during early training. It does not yet establish
-that V2 will match or exceed a fully trained contacts-v1 model: the exp177 final
-checkpoint reaches 0.5113 all-range R-precision, but it has seen roughly 9.8×
-as many proteins as V2 step 8,000. That final checkpoint is retained only as a
-mature-model reference, not as a training-progress-matched control.
+This is strong evidence that the V2 delta document is substantially more
+protein-sample-efficient during early training. It does not yet establish that
+V2 will match or exceed a fully trained contacts-v1 model: the exp177 final
+checkpoint reaches 0.5113 all-range R-precision at substantially greater
+exposure. That final checkpoint is retained only as a mature-model reference,
+not as a training-progress-matched control.
 
 As in the canonical contacts-v1 worker, decoding is permissive: valid in-range
 pairs vote while malformed or out-of-universe statements are ignored rather
-than causing the whole rollout to be discarded. All four checkpoints produced
+than causing the whole rollout to be discarded. All five V2 checkpoints produced
 nonzero votes for all 554 targets. Full per-protein rows and aggregate metrics
 are in `data/rprecision_comparison_rows.csv.gz` and
 `data/rprecision_comparison_summary.csv`.
