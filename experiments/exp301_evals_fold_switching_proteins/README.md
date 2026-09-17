@@ -163,9 +163,64 @@ Artifacts: [`data/foldswitch_universe.jsonl`](data/foldswitch_universe.jsonl)
 [`data/premise_gate.csv`](data/premise_gate.csv),
 [`data/noise_floor.csv`](data/noise_floor.csv).
 
-### Phases 1–4 — pending
+### M3 — the training data encodes Fold1 over Fold2, 30 : 4
 
-M1/M2 on CoreWeave, M3 locally in parallel, then M4 sized by what M1 shows.
+The corpora are AFDB and ESM-Atlas — **AF2 and ESMFold predictions** — so whatever
+conformer those chose is the only one MarinFold was ever shown for a given
+sequence. `audit_training_fold.py` measures that directly: MMseqs2 the 68
+reference sequences against exp213's 70.9M-sequence training DB at `-s 7.5`, then
+read the corpus row each hit names, fold its document back into a contact set,
+and score it against both folds.
+
+**66 of 68 pairs have a training hit**, median identity **0.901**, 33 of them at
+≥ 0.90. The fold those training documents encode:
+
+| training fold | n | median identity of the hit |
+|---|---:|---:|
+| **fold1** | **30** | 0.919 |
+| **fold2** | **4** | 0.966 |
+| neither | 26 | 0.792 |
+| ambiguous | 6 | 0.897 |
+| no training hit | 2 | — |
+
+**Among decided pairs that is 88% Fold1** — which independently reproduces the
+~81% Fold1 rate [Chakravarty & Porter](https://doi.org/10.1002/pro.4353) measured
+for AF2 itself on this set, from a completely different direction. It holds on
+the high-identity subset (17 fold1 vs 4 fold2 among the 33 hits at ≥ 90%).
+
+`neither` is largely a homology artifact rather than a third conformer: it sits
+at median identity 0.792 against 0.919 for `fold1`, and falls to 9 of 33 on
+high-identity hits. Across recoverable training documents, fold1's contacts are
+recovered at median 0.233 and fold2's at 0.099.
+
+This is the baseline the model's own preference gets correlated against, and it
+is the measurement Porter's group had to *infer* for AlphaFold.
+
+**One correction the data forced.** The audit must read the corpus exp213
+**indexed**, not the decontaminated one. #225 permuted the corpus index, so
+exp213's `{shard}_{row}` coordinates land on a different document in the
+`*_decontam` shards — all 68 lookups came back as row mismatches, and the
+`entry_id` guard is what turned that into an error rather than 68 silently
+mislabelled folds. Documents are identical between the two corpora
+(decontamination removed rows, it did not rewrite them), so only exposure
+precision is lost — and #225 filtered against FoldBench chains, not fold
+switchers.
+
+Artifacts: [`data/training_hits.tsv`](data/training_hits.tsv),
+[`data/training_fold_labels.csv`](data/training_fold_labels.csv).
+
+### M1 / M2 / M4 — in progress
+
+M1 and M2 are running on the local A5000 (88 units = 68 pairs + 20 calibration,
+100 rollouts × 5 seeds). **Not CoreWeave**: the object-storage key in
+`~/.config/marin/cw-rno2a.env` currently returns `InvalidAccessKeyId`, so the
+fan-out is unavailable until it is rotated. M4's dose grid is sized once M1's
+effect size is known.
+
+Two environment facts, recorded because they are not obvious:
+this workstation's driver is CUDA 12.2, and vLLM 0.29's torch refuses it — the
+run pins exp254's proven `vllm==0.19.1` / `transformers==5.15.0`; and 500 prompts
+in flight per pair OOMs a 24 GB A5000 at `max_num_seqs=512`, so the run uses 64.
 
 ## Conclusion
 
