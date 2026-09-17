@@ -1,0 +1,26 @@
+{
+  "checked": 919,
+  "exceptions": [
+    {
+      "protein_hash": "0794aac3a7abb3cb289236be816fd406",
+      "training_length": 127,
+      "atlas_length": 128,
+      "noncanonical": true,
+      "noncanonical_residues": 1
+    },
+    {
+      "protein_hash": "389340302695c73917c899c2d29c14b6",
+      "training_length": 202,
+      "atlas_length": 205,
+      "noncanonical": true,
+      "noncanonical_residues": 3
+    },
+    {
+      "protein_hash": "c679e202d55f2e1760c772d4f7932708",
+      "training_length": 519,
+      "atlas_length": 525,
+      "noncanonical": true,
+      "noncanonical_residues": 6
+    }
+  ]
+}

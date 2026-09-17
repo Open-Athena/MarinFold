@@ -1,0 +1,712 @@
+{
+  "seed": 293,
+  "per_bin": 112,
+  "corpus_shards": 100,
+  "shard_sampling": "simple random sample without replacement from current corpus shards 1..3337; development shard 0 excluded",
+  "cluster_sampling": "hash-ranked within length/cluster-size strata among eligible current anchors in sampled shards; original membership validated by worker",
+  "selected_clusters": 919,
+  "sampled_current_anchors": 1963845,
+  "projected_metadata_bytes": 178120725,
+  "provenance": [
+    {
+      "corpus_shard": 12,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00012-of-03338.parquet",
+      "projected_bytes": 1781322,
+      "projected_sha256": "615c8b6c89836d3b03f8a214d3eedbb2c679fea6706cfbed51d211f3ae48d74b",
+      "training_ids": 19642
+    },
+    {
+      "corpus_shard": 23,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00023-of-03338.parquet",
+      "projected_bytes": 1782000,
+      "projected_sha256": "328b0573ef08c9d00ce404ffb97222d8cd07feb3e45ecce07e5228851de8643f",
+      "training_ids": 19671
+    },
+    {
+      "corpus_shard": 32,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00032-of-03338.parquet",
+      "projected_bytes": 1778888,
+      "projected_sha256": "34a5edef7803b1a6bf978eb896c70b61c876573da5eb955f6e463a347eb27114",
+      "training_ids": 19641
+    },
+    {
+      "corpus_shard": 35,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00035-of-03338.parquet",
+      "projected_bytes": 1781936,
+      "projected_sha256": "f47fb09e61aed5290a1f9778755e6875d364b456e16dfc2cd95d24c9027fbe18",
+      "training_ids": 19649
+    },
+    {
+      "corpus_shard": 72,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00072-of-03338.parquet",
+      "projected_bytes": 1778502,
+      "projected_sha256": "4ab90ea77d1bfcb257846432b05cd4883e1e98ba70f892fec2702ad4e375c41c",
+      "training_ids": 19642
+    },
+    {
+      "corpus_shard": 80,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00080-of-03338.parquet",
+      "projected_bytes": 1779594,
+      "projected_sha256": "e7064885982fa1406e77180384d4a57b9efd094d52d68c36a88018c14c57de05",
+      "training_ids": 19647
+    },
+    {
+      "corpus_shard": 83,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00083-of-03338.parquet",
+      "projected_bytes": 1780357,
+      "projected_sha256": "ca208d61c282029f588491d13e2404c60c28c774d3981e99171c1aedb0765f3b",
+      "training_ids": 19655
+    },
+    {
+      "corpus_shard": 94,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00094-of-03338.parquet",
+      "projected_bytes": 1779678,
+      "projected_sha256": "7a2073dbceec476273067c61fd7d9c7cce5b6b53b90537562522b96f25116b01",
+      "training_ids": 19627
+    },
+    {
+      "corpus_shard": 98,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00098-of-03338.parquet",
+      "projected_bytes": 1780972,
+      "projected_sha256": "f1d2da729f2ed1d19f944343516683d7f7e9d1895ba24d49fb6209a93452aade",
+      "training_ids": 19654
+    },
+    {
+      "corpus_shard": 99,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00099-of-03338.parquet",
+      "projected_bytes": 1778117,
+      "projected_sha256": "d0b7cfa6b7be90c9237d7d1b64f606ba88a4074bebad1fedb780e11f289026f7",
+      "training_ids": 19614
+    },
+    {
+      "corpus_shard": 116,
+      "source": "/data/exp225_decontam/contacts_v1_esm_atlas_decontam/shard-00116-of-03338.parquet",
+      "projected_bytes": 1780918,
+      "projected_sha256": "091878cfe342e96a757c1834aecdbf63ffaf4288183f05297f5bf4ee2f3bb730",
+      "training_ids": 19664
+    },
+    {
+      "corpus_shard": 303,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00303-of-03338.parquet",
+      "projected_bytes": 1777179,
+      "projected_sha256": "97fbedf60a217193884d5df54fa40597b0a4d6b8add0452ac27003f5ab3a91ed",
+      "training_ids": 19602
+    },
+    {
+      "corpus_shard": 325,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00325-of-03338.parquet",
+      "projected_bytes": 1784454,
+      "projected_sha256": "4416aaa4b68eb12c8bd16d60e3b3807ae102c28d7274aa6dd6b9badba841b65a",
+      "training_ids": 19653
+    },
+    {
+      "corpus_shard": 448,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00448-of-03338.parquet",
+      "projected_bytes": 1780376,
+      "projected_sha256": "199b944cb696d5ab38e53c00c11aed18367eef98e6d27e598c2d11b4a5ad218f",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 468,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00468-of-03338.parquet",
+      "projected_bytes": 1780525,
+      "projected_sha256": "82fde9302ef063622bbb35176d5c23521be2530eb01930619db4866c91fa3c9b",
+      "training_ids": 19624
+    },
+    {
+      "corpus_shard": 522,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00522-of-03338.parquet",
+      "projected_bytes": 1782446,
+      "projected_sha256": "8eda4206c84e65cbbb0ef429719f916415fd10e479c904610c677f05a1da9f60",
+      "training_ids": 19658
+    },
+    {
+      "corpus_shard": 554,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00554-of-03338.parquet",
+      "projected_bytes": 1780745,
+      "projected_sha256": "d3d28b86fa1deedd510f27184619a00abbafce23e0c88a3f52346d826987b85c",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 579,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00579-of-03338.parquet",
+      "projected_bytes": 1782546,
+      "projected_sha256": "7aa44d0c0ef59e058c3ac468f6b927c22a53deace6ad93d5fccd8d25a3e88afa",
+      "training_ids": 19645
+    },
+    {
+      "corpus_shard": 620,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00620-of-03338.parquet",
+      "projected_bytes": 1779737,
+      "projected_sha256": "7924beba38603aec0a43ad60bdb2c0507de17a10fafc3a8783a77673c44e9504",
+      "training_ids": 19615
+    },
+    {
+      "corpus_shard": 629,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00629-of-03338.parquet",
+      "projected_bytes": 1779943,
+      "projected_sha256": "33310ecd48fd14ca612b81da28180eaa1968cef36c8aa2306ac2d1cfd17b1da3",
+      "training_ids": 19616
+    },
+    {
+      "corpus_shard": 669,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00669-of-03338.parquet",
+      "projected_bytes": 1780269,
+      "projected_sha256": "2e0f349228ff1b0a0bd595f7891899097a740206cd84fb8cde26ff1b43abe8a9",
+      "training_ids": 19637
+    },
+    {
+      "corpus_shard": 736,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00736-of-03338.parquet",
+      "projected_bytes": 1786347,
+      "projected_sha256": "af6fdad7a47a03b4f4778f0d67137b5f328ffb0f1c98e82a5cb6101534e915a8",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 737,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00737-of-03338.parquet",
+      "projected_bytes": 1780733,
+      "projected_sha256": "46f2e78e82626ebf4e5e2e0f42262fd07a288adcf5cdd2efee92d138e6084e35",
+      "training_ids": 19619
+    },
+    {
+      "corpus_shard": 739,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00739-of-03338.parquet",
+      "projected_bytes": 1780307,
+      "projected_sha256": "3588907b55b9e86b096e6ea695f81db9911f6311283832ae16f7de2ee3107ec2",
+      "training_ids": 19624
+    },
+    {
+      "corpus_shard": 767,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00767-of-03338.parquet",
+      "projected_bytes": 1780266,
+      "projected_sha256": "0e107ee3fd589ca7cf36495046b4e92bb5a8b862e95e63299b212de88bafcae5",
+      "training_ids": 19621
+    },
+    {
+      "corpus_shard": 807,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00807-of-03338.parquet",
+      "projected_bytes": 1779837,
+      "projected_sha256": "0a146fe7579776a3ee6032afef681afcbf88d2ef08272cf332cffdeca7505c31",
+      "training_ids": 19635
+    },
+    {
+      "corpus_shard": 816,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00816-of-03338.parquet",
+      "projected_bytes": 1785476,
+      "projected_sha256": "0c251b57a4dde017e389022591a6e492b4fb8262bc280f1adb2b5935a7bb2d43",
+      "training_ids": 19666
+    },
+    {
+      "corpus_shard": 823,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00823-of-03338.parquet",
+      "projected_bytes": 1786410,
+      "projected_sha256": "875f1eb6b8f357fa2748bdd727c03d896f8ddade4691d68f0364963344d9d837",
+      "training_ids": 19647
+    },
+    {
+      "corpus_shard": 834,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00834-of-03338.parquet",
+      "projected_bytes": 1780447,
+      "projected_sha256": "9d759e5fe3b25341d12f0d8ff276abddda8e5f07e3aacdf6b49e23d91450221f",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 943,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00943-of-03338.parquet",
+      "projected_bytes": 1783084,
+      "projected_sha256": "c245fc04254e033033881cfe482600b5ed5ff166a0e02aaef64ece8211db8d18",
+      "training_ids": 19635
+    },
+    {
+      "corpus_shard": 967,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00967-of-03338.parquet",
+      "projected_bytes": 1781630,
+      "projected_sha256": "7e600e5f84b7df5d8fc51edb02de90cc9d0243e05933c90447ffdc864b9c0c96",
+      "training_ids": 19596
+    },
+    {
+      "corpus_shard": 990,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-00990-of-03338.parquet",
+      "projected_bytes": 1784622,
+      "projected_sha256": "70950f542fa09270ef887b5a61a582d01e771037cd6a359951afb9257a73a724",
+      "training_ids": 19619
+    },
+    {
+      "corpus_shard": 1044,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01044-of-03338.parquet",
+      "projected_bytes": 1779016,
+      "projected_sha256": "e3cae3f842ab55bf1debf6650275bb80ce9214d941dde7abb16e4100e2f77c80",
+      "training_ids": 19639
+    },
+    {
+      "corpus_shard": 1055,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01055-of-03338.parquet",
+      "projected_bytes": 1779928,
+      "projected_sha256": "f983898048af93d0737eb0c665d8982a79c8600ec5196817eca23f7ad743b25e",
+      "training_ids": 19647
+    },
+    {
+      "corpus_shard": 1149,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01149-of-03338.parquet",
+      "projected_bytes": 1785086,
+      "projected_sha256": "21af0f115dda9f4a420f40b0f819e1350324dbf79a3db8c27fe06efda12fb010",
+      "training_ids": 19682
+    },
+    {
+      "corpus_shard": 1180,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01180-of-03338.parquet",
+      "projected_bytes": 1782622,
+      "projected_sha256": "4b7e8a36c4e1e01edaba9085bc6206bee12af43052473504462f4cf2206c3c01",
+      "training_ids": 19629
+    },
+    {
+      "corpus_shard": 1200,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01200-of-03338.parquet",
+      "projected_bytes": 1779829,
+      "projected_sha256": "8935017217e5a228deae2de474b06e2f9db1ac8eaf7d2de5dcd00c1fb40f1d49",
+      "training_ids": 19644
+    },
+    {
+      "corpus_shard": 1215,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01215-of-03338.parquet",
+      "projected_bytes": 1779289,
+      "projected_sha256": "a11f1c8dee8129192211b206f8e94cfddde4331eb3a406f0242354badd0789be",
+      "training_ids": 19637
+    },
+    {
+      "corpus_shard": 1224,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01224-of-03338.parquet",
+      "projected_bytes": 1779449,
+      "projected_sha256": "8cfa50c3ad7056ef6213ec13e1d4abd4a69c911fdeb38670208f2e6f029df3a7",
+      "training_ids": 19633
+    },
+    {
+      "corpus_shard": 1291,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01291-of-03338.parquet",
+      "projected_bytes": 1777077,
+      "projected_sha256": "c040ca37fce9678530d91fb0861bc5ffd29ed6c660e96ffa01be310e93fc1012",
+      "training_ids": 19617
+    },
+    {
+      "corpus_shard": 1310,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01310-of-03338.parquet",
+      "projected_bytes": 1782457,
+      "projected_sha256": "e558a9436681ea7674b6d6379b602c66bf690fd82cd936d93723e74f53132399",
+      "training_ids": 19648
+    },
+    {
+      "corpus_shard": 1361,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01361-of-03338.parquet",
+      "projected_bytes": 1782703,
+      "projected_sha256": "e74a103ae3967cb7dd6fbc6316d9f2c56de6e0acc4044400a5426b18a90f3dc3",
+      "training_ids": 19667
+    },
+    {
+      "corpus_shard": 1380,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01380-of-03338.parquet",
+      "projected_bytes": 1780423,
+      "projected_sha256": "42647d41b420c4a6ff89fa346a141f4ddc1b1a0b753f69f700ad72f3a49dab9b",
+      "training_ids": 19647
+    },
+    {
+      "corpus_shard": 1385,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01385-of-03338.parquet",
+      "projected_bytes": 1777038,
+      "projected_sha256": "7f2d364dc34186d85de98a5464ae51fcce66ee18e21bd925d940736cc2730263",
+      "training_ids": 19624
+    },
+    {
+      "corpus_shard": 1423,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01423-of-03338.parquet",
+      "projected_bytes": 1777555,
+      "projected_sha256": "5d02084a0a5b180a5bf0b9d79ea1f087200f2b7d66e75b039ab413f7cd53dbac",
+      "training_ids": 19618
+    },
+    {
+      "corpus_shard": 1445,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01445-of-03338.parquet",
+      "projected_bytes": 1779185,
+      "projected_sha256": "342c4d0e637ff444acaa9da3717dae55bd46d2ceb5b3bbea248f58a8ceab58a1",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 1455,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01455-of-03338.parquet",
+      "projected_bytes": 1782361,
+      "projected_sha256": "6027bd58bc01af2064d48208d65120472350632f6dd84f70dd99643f5b0704fe",
+      "training_ids": 19659
+    },
+    {
+      "corpus_shard": 1462,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01462-of-03338.parquet",
+      "projected_bytes": 1777748,
+      "projected_sha256": "619c28e61d157b2a779c5709a29555d88fb8e08ded5831ac865e9c476989a2df",
+      "training_ids": 19620
+    },
+    {
+      "corpus_shard": 1480,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01480-of-03338.parquet",
+      "projected_bytes": 1778576,
+      "projected_sha256": "766c0e4d477c242620c3992491dff8cfaa8b0d5959bc292ac44168f365305977",
+      "training_ids": 19626
+    },
+    {
+      "corpus_shard": 1489,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01489-of-03338.parquet",
+      "projected_bytes": 1780470,
+      "projected_sha256": "fb44b60d0a341460152d4d81eb2d1daca94a9ed10744be12b0a10c2717e69086",
+      "training_ids": 19642
+    },
+    {
+      "corpus_shard": 1512,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01512-of-03338.parquet",
+      "projected_bytes": 1778992,
+      "projected_sha256": "1ea90d0af9bd94a1caa0f4682f2d5bfc9006a61e11cce4dd7fcb94e6276593d1",
+      "training_ids": 19636
+    },
+    {
+      "corpus_shard": 1533,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01533-of-03338.parquet",
+      "projected_bytes": 1777497,
+      "projected_sha256": "0fd4ad0bb3d09c3f18552f6eaea8fa2446273fceb85229fce123de5c643a33b7",
+      "training_ids": 19622
+    },
+    {
+      "corpus_shard": 1587,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01587-of-03338.parquet",
+      "projected_bytes": 1781434,
+      "projected_sha256": "b4bf0fa4a375817008635382f6fa20078fc3d2bfc5f0cc9af0307050982d8c1c",
+      "training_ids": 19660
+    },
+    {
+      "corpus_shard": 1661,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01661-of-03338.parquet",
+      "projected_bytes": 1779315,
+      "projected_sha256": "af98277e69f0d63fe4ebd06f79f0519fab0e26e6769ccb4fc0c6998099a4260b",
+      "training_ids": 19633
+    },
+    {
+      "corpus_shard": 1698,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01698-of-03338.parquet",
+      "projected_bytes": 1777922,
+      "projected_sha256": "f9cfd625f3f405dda40c65ace13660a37ac4d53f89a1b5ab59911342a406f69e",
+      "training_ids": 19629
+    },
+    {
+      "corpus_shard": 1725,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01725-of-03338.parquet",
+      "projected_bytes": 1782157,
+      "projected_sha256": "f82980b5f9364715e76cd7221aa576a2878c22ab54b79e2ccd675635bedb2533",
+      "training_ids": 19663
+    },
+    {
+      "corpus_shard": 1811,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01811-of-03338.parquet",
+      "projected_bytes": 1781063,
+      "projected_sha256": "6690c2c2cb25c798179e0ed2f00bc868cc871b9ca02226b9cc37b4af39dd4700",
+      "training_ids": 19645
+    },
+    {
+      "corpus_shard": 1857,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01857-of-03338.parquet",
+      "projected_bytes": 1778973,
+      "projected_sha256": "5aa384e4e369309d2ffb0427f109e7adb182d8dd690fee5faf17092dd2262fa8",
+      "training_ids": 19626
+    },
+    {
+      "corpus_shard": 1935,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01935-of-03338.parquet",
+      "projected_bytes": 1781846,
+      "projected_sha256": "b6e427dc5cbf4e70e8b4be6d11a50b5592d53c7f8a79d3a8b0e465735e1118be",
+      "training_ids": 19642
+    },
+    {
+      "corpus_shard": 1987,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-01987-of-03338.parquet",
+      "projected_bytes": 1780528,
+      "projected_sha256": "c623c35793b05e69492579e05c69c791d118e2b09c726d36a3b272ee6938f624",
+      "training_ids": 19603
+    },
+    {
+      "corpus_shard": 2119,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02119-of-03338.parquet",
+      "projected_bytes": 1779036,
+      "projected_sha256": "072feeb519054bbc82de78d91e5732477f47870edc00d701943d841a5660fdbd",
+      "training_ids": 19621
+    },
+    {
+      "corpus_shard": 2124,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02124-of-03338.parquet",
+      "projected_bytes": 1784694,
+      "projected_sha256": "492a548c464bcdcca631db7762799a434c69855a98396fa70608d3d8abbcc6ef",
+      "training_ids": 19639
+    },
+    {
+      "corpus_shard": 2166,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02166-of-03338.parquet",
+      "projected_bytes": 1785113,
+      "projected_sha256": "a75ac6e8e1a5a7bcacc4f684969bf8e993e644b56dd6474cf19d718d748197a7",
+      "training_ids": 19659
+    },
+    {
+      "corpus_shard": 2180,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02180-of-03338.parquet",
+      "projected_bytes": 1782876,
+      "projected_sha256": "e8af5d672cec296919ee34b8f5cfa9321a85314b39e4bdded4b8cf88b5e2ae1c",
+      "training_ids": 19661
+    },
+    {
+      "corpus_shard": 2217,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02217-of-03338.parquet",
+      "projected_bytes": 1782715,
+      "projected_sha256": "e140bdbf1591253360fbeceb20a2aebca361a21bb383b49cd6cadd238943c306",
+      "training_ids": 19644
+    },
+    {
+      "corpus_shard": 2220,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02220-of-03338.parquet",
+      "projected_bytes": 1782217,
+      "projected_sha256": "a145920cc1d49cfbebb451cb8509b420b21638fbaa5f670598e62cab7e2c8414",
+      "training_ids": 19658
+    },
+    {
+      "corpus_shard": 2228,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02228-of-03338.parquet",
+      "projected_bytes": 1780420,
+      "projected_sha256": "3b86fd98c7368185f127393c493bb1ad71526c8a2cd862f999993b09843ab5ab",
+      "training_ids": 19634
+    },
+    {
+      "corpus_shard": 2243,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02243-of-03338.parquet",
+      "projected_bytes": 1780650,
+      "projected_sha256": "6f336b6f567a5ead7c498d13d365e481d4eec76bfb17a7194a4f11fc50b9e759",
+      "training_ids": 19645
+    },
+    {
+      "corpus_shard": 2277,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02277-of-03338.parquet",
+      "projected_bytes": 1780240,
+      "projected_sha256": "84efbe657386cb923a4eef643830610c30f33eb4c469d71a34744055bcaab510",
+      "training_ids": 19620
+    },
+    {
+      "corpus_shard": 2342,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02342-of-03338.parquet",
+      "projected_bytes": 1782659,
+      "projected_sha256": "e8d5e70ee3862d2159998906eca8192baf54ea6e90893795a8276437d551861e",
+      "training_ids": 19656
+    },
+    {
+      "corpus_shard": 2381,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02381-of-03338.parquet",
+      "projected_bytes": 1781753,
+      "projected_sha256": "cadcd695681c74adfcc4abbeec0b54c3f0acc271e4e7b2e135d2dd31d8fdd756",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 2383,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02383-of-03338.parquet",
+      "projected_bytes": 1778026,
+      "projected_sha256": "79f6623cf193d1e688d0c803271c4d5b5bf9098fba26ac930be45fae5d6cbd05",
+      "training_ids": 19618
+    },
+    {
+      "corpus_shard": 2419,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02419-of-03338.parquet",
+      "projected_bytes": 1779629,
+      "projected_sha256": "2ceb9ed617d90c7c55c6dc56a6d6ade54d35a49f25b0c4cefb216cf86f0dd232",
+      "training_ids": 19632
+    },
+    {
+      "corpus_shard": 2425,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02425-of-03338.parquet",
+      "projected_bytes": 1787107,
+      "projected_sha256": "12318cd3b5acb6eeffbb1ec3a17ffeb2915cc13c69a2d637e84124d4577f6d92",
+      "training_ids": 19652
+    },
+    {
+      "corpus_shard": 2549,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02549-of-03338.parquet",
+      "projected_bytes": 1787151,
+      "projected_sha256": "dfc0733c81a02de824d68b1b71b59fbb9b8f859707f937b04f68f3b4e4901bbf",
+      "training_ids": 19657
+    },
+    {
+      "corpus_shard": 2587,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02587-of-03338.parquet",
+      "projected_bytes": 1780765,
+      "projected_sha256": "8cc26d30ba2d29ffdb8bbe9b69f4f7df544373bd616e3578344aea6dfefc7e47",
+      "training_ids": 19638
+    },
+    {
+      "corpus_shard": 2611,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02611-of-03338.parquet",
+      "projected_bytes": 1780591,
+      "projected_sha256": "82f5c2e8ad231967f36c66cf85eab0eaefce7552a760c0c979225a0d6945c11e",
+      "training_ids": 19639
+    },
+    {
+      "corpus_shard": 2619,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02619-of-03338.parquet",
+      "projected_bytes": 1783154,
+      "projected_sha256": "aa95bcc7ffe4f765ab0e1778df18d895a45afa0db68a6683450ea49c622f0421",
+      "training_ids": 19664
+    },
+    {
+      "corpus_shard": 2621,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02621-of-03338.parquet",
+      "projected_bytes": 1781169,
+      "projected_sha256": "8aebbd41329f95c531e0b7ef80c9c2c6e3b7c869dd0ba2a07169a79db185e753",
+      "training_ids": 19645
+    },
+    {
+      "corpus_shard": 2648,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02648-of-03338.parquet",
+      "projected_bytes": 1783402,
+      "projected_sha256": "cbd1106e9e1b6a37f5af4eddc426ab6d66e52972f50924438231e0ae6badf9d1",
+      "training_ids": 19664
+    },
+    {
+      "corpus_shard": 2688,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02688-of-03338.parquet",
+      "projected_bytes": 1780436,
+      "projected_sha256": "00749ae5c55aa06352c5785288d17d8c7dd2f1cca40d14e20d4a7b76d37d8227",
+      "training_ids": 19636
+    },
+    {
+      "corpus_shard": 2731,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02731-of-03338.parquet",
+      "projected_bytes": 1777934,
+      "projected_sha256": "d4175db517eb959f30d070100f1e7daf98f0dc418c38929a6d43afc0bc1a92e3",
+      "training_ids": 19609
+    },
+    {
+      "corpus_shard": 2733,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02733-of-03338.parquet",
+      "projected_bytes": 1781295,
+      "projected_sha256": "66937ba5573b913a234b80c793d3ce74644913fb4dd5f89b9344f36a89b2f17e",
+      "training_ids": 19649
+    },
+    {
+      "corpus_shard": 2745,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02745-of-03338.parquet",
+      "projected_bytes": 1779071,
+      "projected_sha256": "c585eaa74930a1d7a7d32346c98cec3b71f395c3ade7291cf9654a9bcff0261d",
+      "training_ids": 19622
+    },
+    {
+      "corpus_shard": 2759,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02759-of-03338.parquet",
+      "projected_bytes": 1781200,
+      "projected_sha256": "17547ee7ddcd6d4e5b35127e7f146b4877a3f8457e9be6971ea20ee2c3400b5f",
+      "training_ids": 19627
+    },
+    {
+      "corpus_shard": 2845,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02845-of-03338.parquet",
+      "projected_bytes": 1785001,
+      "projected_sha256": "2d23dcb36c140804947b63073554bf2a34312dde222a47ef43e4ffac31949916",
+      "training_ids": 19635
+    },
+    {
+      "corpus_shard": 2852,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02852-of-03338.parquet",
+      "projected_bytes": 1784970,
+      "projected_sha256": "7a779ad0ab81cfe920b5e9ed83b78c18fe943c15f92a987a9997bbfd69db55e7",
+      "training_ids": 19637
+    },
+    {
+      "corpus_shard": 2873,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02873-of-03338.parquet",
+      "projected_bytes": 1779165,
+      "projected_sha256": "739965b1f611896a34c318f758902809755348c815a759f46a73e2ac2b4043ef",
+      "training_ids": 19622
+    },
+    {
+      "corpus_shard": 2925,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02925-of-03338.parquet",
+      "projected_bytes": 1788273,
+      "projected_sha256": "a7bc1d5e667f70fc90cd4df0bd27dbd107bf343562a58ce479f06e79dff8d246",
+      "training_ids": 19664
+    },
+    {
+      "corpus_shard": 2943,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02943-of-03338.parquet",
+      "projected_bytes": 1787896,
+      "projected_sha256": "44463013a6780978ab3439ca95e91660afdc13d9a08885a1860aa95f3a674c7b",
+      "training_ids": 19665
+    },
+    {
+      "corpus_shard": 2957,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02957-of-03338.parquet",
+      "projected_bytes": 1778430,
+      "projected_sha256": "0ecc2596e0e7d4c4242d5e9bbc3e1edc761fd6551ca87783e5994f5a2db70430",
+      "training_ids": 19624
+    },
+    {
+      "corpus_shard": 2978,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02978-of-03338.parquet",
+      "projected_bytes": 1782971,
+      "projected_sha256": "e4f8d3b8a1f012732bbf51eb1ea4e30a2df9c4c1d00a691913a9425842338f64",
+      "training_ids": 19641
+    },
+    {
+      "corpus_shard": 2995,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-02995-of-03338.parquet",
+      "projected_bytes": 1784361,
+      "projected_sha256": "8276426c363fdbe9eb1e3318c253a18d55cb33b26e3b081376e437e3b364e75c",
+      "training_ids": 19652
+    },
+    {
+      "corpus_shard": 3009,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03009-of-03338.parquet",
+      "projected_bytes": 1781439,
+      "projected_sha256": "552a9e85eebe20f40825d3337ca7988f6c061d98dbee0400cb402853d70430dc",
+      "training_ids": 19649
+    },
+    {
+      "corpus_shard": 3022,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03022-of-03338.parquet",
+      "projected_bytes": 1781519,
+      "projected_sha256": "0c118467de131700d53064a01d4f131e0c6a4fda7ffbdf29b113ced8fc4f1d0c",
+      "training_ids": 19640
+    },
+    {
+      "corpus_shard": 3042,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03042-of-03338.parquet",
+      "projected_bytes": 1780884,
+      "projected_sha256": "88efc2a2cd72e35c3fb6fc0bdc8b443d1f4ac6962e6a385a8a83e85efe4428a1",
+      "training_ids": 19634
+    },
+    {
+      "corpus_shard": 3064,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03064-of-03338.parquet",
+      "projected_bytes": 1777548,
+      "projected_sha256": "405a81941181210c07d2a5a2deb1bd6c517e585cab7351e03d7c82bcd106416c",
+      "training_ids": 19601
+    },
+    {
+      "corpus_shard": 3085,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03085-of-03338.parquet",
+      "projected_bytes": 1782526,
+      "projected_sha256": "9051fdad993cd10d6b9788fdeabac1c6a6531e366bfb6a4a62b27000be064b4c",
+      "training_ids": 19622
+    },
+    {
+      "corpus_shard": 3202,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03202-of-03338.parquet",
+      "projected_bytes": 1780901,
+      "projected_sha256": "60160d4538d77aabbd6f014242c7d40477cd62efef1d63d7dae40979d499f5cc",
+      "training_ids": 19642
+    },
+    {
+      "corpus_shard": 3289,
+      "source": "buckets/open-athena/MarinFold/data/document_structures/contacts_v1_esm_atlas_decontam/train/shard-03289-of-03338.parquet",
+      "projected_bytes": 1781336,
+      "projected_sha256": "a2df6a8e3c32865a6fd6d4ecade2fa60eec7aabd0a6a50010e349b821384926c",
+      "training_ids": 19644
+    }
+  ]
+}

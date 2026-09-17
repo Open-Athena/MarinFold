@@ -1,0 +1,11 @@
+{
+  "inputs": {
+    "sample.csv": "2218d5275f6b36c7838da09c42b508b391a526e958abc5baf0cea562f6a10584",
+    "pairs.csv": "3884b16929376cc37ce58aaa0d33e6461360a8fadc4f08a63ac22d291a0c3a64",
+    "clusters.csv": "4e4c4981a1fded863c8367fe15e993fa63f645cca513620916640e6643200131"
+  },
+  "population": "data/esm-audit-919-v2/population_estimate.csv",
+  "population_sha256": "4d60ddb2f951cb0bdc75650d76f39d150e8e346a99d1f874051a3d87732811fe",
+  "status": "descriptive sensitivity; pre-domain-review and pre-final-decontamination",
+  "limits": "No uncertainty interval or production-size claim. Candidate reservoirs are capped at 32; selected additions at three. Core masks are independent and do not establish domain novelty."
+}

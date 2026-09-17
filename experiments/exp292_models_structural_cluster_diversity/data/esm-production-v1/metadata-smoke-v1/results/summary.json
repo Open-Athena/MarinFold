@@ -1,0 +1,55 @@
+{
+  "status": "complete",
+  "located_rows": 392,
+  "quality_rows": 330,
+  "quality_rejections": 62,
+  "sequence_rejections": 19,
+  "selected_without_alignment": 86,
+  "structural_queue_rows": 147,
+  "structural_queue_clusters": 22,
+  "atlas_uri": "s3://esm-protein-atlas/v1/folds/folds_1B.lance",
+  "atlas_version": 3,
+  "mmseqs_archive_sha256": "1fb6d8dfe3c83379d2d59ccda19ffc151b69b80d0a62be4691abcd8b4c19e4f2",
+  "expected_mmseqs_version": "d401e78c2d18a822cdb1527d7464a043f6035a15",
+  "sequence_screen": {
+    "command": [
+      "/opt/exp292/tools/mmseqs/bin/mmseqs",
+      "easy-search",
+      "/opt/exp292/work/sequence-screen/references.fasta",
+      "/opt/exp292/work/sequence-screen/candidates.fasta",
+      "/opt/exp292/work/sequence-screen/hits.tsv",
+      "/opt/exp292/work/sequence-screen/mmseqs-tmp",
+      "-s",
+      "7.5",
+      "-e",
+      "1000",
+      "--min-seq-id",
+      "0.3",
+      "--max-seqs",
+      "1000000",
+      "--threads",
+      "16",
+      "--format-output",
+      "query,target,fident,alnlen,qcov,tcov,evalue,bits"
+    ],
+    "elapsed_seconds": 2.1863905460000055,
+    "candidates": 230,
+    "references": 1823,
+    "excluded": 19,
+    "positive_control_passed": true,
+    "rule": "identity >=0.30 and coverage of shorter sequence >=0.50; no E-value arm",
+    "reporting_evalue_ceiling": 1000,
+    "mmseqs_version": "d401e78c2d18a822cdb1527d7464a043f6035a15"
+  },
+  "references": [
+    {
+      "path": "/opt/exp292/inputs/eval_queries.fasta",
+      "sha256": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a"
+    },
+    {
+      "path": "/opt/exp292/inputs/foldbench_all_queries.fasta",
+      "sha256": "0e6bd31f3f9d34eec73ed83ed5e7a8942529ff68a402ea632bd7f845a132551f"
+    }
+  ],
+  "elapsed_seconds": 5.046902826
+}

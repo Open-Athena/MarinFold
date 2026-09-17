@@ -1,0 +1,11 @@
+{
+  "inputs": {
+    "sample.csv": "f4dc7127efda16758adfc31303c14db0a0b92905ab43dcfad1d1731fc899df63",
+    "pairs.csv": "82c568d24f59ab41cbf4b14734e3778db4e7cd4a44b93ca2319ac6205de5fceb",
+    "clusters.csv": "154242b0fe09180714a7e78d8e6e13c4ada2b94dcc180a375ea434f623212d24"
+  },
+  "population": null,
+  "population_sha256": null,
+  "status": "descriptive sensitivity; pre-domain-review and pre-final-decontamination",
+  "limits": "No uncertainty interval or production-size claim. Candidate reservoirs are capped at 32; selected additions at three. Core masks are independent and do not establish domain novelty."
+}

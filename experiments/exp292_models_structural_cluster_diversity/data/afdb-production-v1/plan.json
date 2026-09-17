@@ -1,0 +1,21 @@
+{
+  "status": "complete",
+  "source": "afdb_v4_afdb24m",
+  "metadata_train_rows": 23558728,
+  "current_training_anchors": 3963003,
+  "planned_anchor_rows": 1627731,
+  "eligible_clusters": 335963,
+  "eligible_omitted_members": 14085940,
+  "reservoir_candidate_rows": 1898964,
+  "theoretical_additions_before_sequence_filter": 891442,
+  "shards": 256,
+  "parquet_files": 2980,
+  "parquet_bytes": 161273858,
+  "reservoir_cap": 8,
+  "seed": 292,
+  "elapsed_seconds": 43.56265938701108,
+  "metadata_glob": "/home/bizon/exp53_scratch/afdb24m_small/*.parquet",
+  "training_index_sha256": "2592df27f15be253afcc1a8327935b57c14e78528adfca18642260fef6429ca6",
+  "droplist_sha256": "7a06e9a5f5cec8790300c8c9c3cd07af31b3f66b7f552e49153c726ef00ae3a6",
+  "durable_uri": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/plan/"
+}
