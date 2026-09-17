@@ -62,24 +62,33 @@ No claim about V1 relative R-precision should be used to select a larger run.
 
 ## Canonical rollout comparison
 
-We evaluated V2 checkpoints at steps 2,000, 4,000, and 6,000 against the final
-exp177 contacts-v1 contact-order-augmentation checkpoint (step 71,359). Every
-row uses the same 554-protein exp89 resolved-residue universe and the published
-exp82 recipe: 100 sequence-conditioned rollouts at temperature 1.0 / top-p 0.95,
-one undirected vote per pair per rollout, followed by the unchanged
-`build_rollout_rows.py` metrics.
+We evaluated the available V2 checkpoints and the available exp177 contacts-v1
+contact-order-augmentation controls. Every row uses the same 554-protein exp89
+resolved-residue universe and the published exp82 recipe: 100
+sequence-conditioned rollouts at temperature 1.0 / top-p 0.95, one undirected
+vote per pair per rollout, followed by the unchanged `build_rollout_rows.py`
+metrics.
 
-| checkpoint | coverage | R (all) | R (long) | AUC (all) | AUC (long) |
-|---|---:|---:|---:|---:|---:|
-| V2 step 2,000 | 554/554 | 0.0238 | 0.0192 | 0.5660 | 0.5455 |
-| V2 step 4,000 | 554/554 | 0.0540 | 0.0345 | 0.6146 | 0.5835 |
-| V2 step 6,000 | 554/554 | 0.0785 | 0.0477 | 0.6520 | 0.6085 |
-| exp177 contacts-v1 step 71,359 | 554/554 | **0.5113** | **0.4595** | **0.9246** | **0.9033** |
+V2 uses approximately 10% more tokens per protein. With the same batch size and
+sequence length, its protein-count-equivalent contacts-v1 step is therefore
+approximately `V2 step / 1.1`.
 
-V2 improves monotonically over these checkpoints, but step 6,000 remains far
-behind the matched contacts-v1 control: −0.4328 all-range R-precision and
-−0.4118 long-range R-precision. The result does not support replacing
-contacts-v1 with this delta serialization at the evaluated training stages.
+| checkpoint | approximate contacts-v1-equivalent step | coverage | R (all) | R (long) | AUC (all) | AUC (long) |
+|---|---:|---:|---:|---:|---:|---:|
+| V2 step 2,000 | 1,818 | 554/554 | 0.0238 | 0.0192 | 0.5660 | 0.5455 |
+| V2 step 4,000 | 3,636 | 554/554 | 0.0540 | 0.0345 | 0.6146 | 0.5835 |
+| V2 step 6,000 | 5,455 | 554/554 | 0.0785 | 0.0477 | 0.6520 | 0.6085 |
+| V2 step 8,000 | 7,273 | 554/554 | **0.1306** | **0.0877** | **0.7083** | **0.6567** |
+| exp177 contacts-v1 step 10,000 | 10,000 | 554/554 | 0.0239 | 0.0199 | 0.5863 | 0.5622 |
+| exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | 0.4595 | 0.9246 | 0.9033 |
+
+There is no exact protein-count-matched exp177 export for the available V2
+checkpoints: the earliest retained exp177 HF export is step 10,000, equivalent
+to roughly V2 step 11,000. The comparison above is nevertheless conservative
+for V2: V2 step 8,000 has seen only about 73% as many proteins as exp177 step
+10,000, yet leads it by +0.1066 all-range and +0.0677 long-range R-precision.
+The exp177 final checkpoint is retained only as a mature-model reference and is
+not a training-progress-matched control.
 
 As in the canonical contacts-v1 worker, decoding is permissive: valid in-range
 pairs vote while malformed or out-of-universe statements are ignored rather
@@ -98,11 +107,9 @@ pipeline.
 
 ## Next steps
 
-1. Evaluate later durable checkpoints from the continuing 12,000-step run.
-2. Measure whether strict grammar-constrained decoding improves V2 enough to
-   alter the conclusion from the canonical permissive rollout comparison.
-3. Prefer contacts-v1 for subsequent training unless later V2 checkpoints close
-   the large observed gap.
+1. Measure whether strict grammar-constrained decoding improves V2 further.
+2. For future head-to-heads, retain contacts-v1 exports at the exact
+   protein-count-equivalent steps rather than comparing against final weights.
 
 ## Files
 
