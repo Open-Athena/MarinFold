@@ -260,6 +260,26 @@ actually moved makes the effect **stronger** (+0.153 vs +0.112), which is the
 check that matters: had the signal been ligand binding or domain motion, the
 FS-restricted number would have collapsed.
 
+### M1 controls — three alternative explanations, all dead
+
+**Resolution.** Fold1 structures in this benchmark really are sharper than fold2
+structures — 2.52 Å against 2.80 Å, paired p = 0.031 — which is a property of
+the set worth knowing, and the obvious way the result could be an artifact: a
+better-resolved structure yields a more complete contact map. It is not the
+cause. φ is uncorrelated with fold1's resolution advantage (Spearman +0.011,
+p = 0.93), and it is the same size whether fold1 is the sharper structure
+(+0.091, n = 30) or the blunter one (**+0.103**, n = 21); the difference is
+−0.012 (Welch p = 0.80). The preference survives with the confound pointing the
+wrong way.
+
+**Set size.** |A| is larger than |B| on average (92.7 vs 78.2, p = 0.001). φ
+already normalises by each set, and restricting to size-balanced pairs
+(0.8 < |A|/|B| < 1.25, n = 27) gives **+0.105**, fold1 in 21/27 — the same
+answer.
+
+**Ground-truth method.** Restricting to X-ray/X-ray pairs, dropping every NMR and
+cryo-EM structure: **+0.102**, fold1 in 38/51, p = 1.1 × 10⁻⁴.
+
 ### M1b — it does not sample the alternative fold
 
 The per-rollout φ spread is compared against a binomial null built from each
