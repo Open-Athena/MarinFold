@@ -337,12 +337,18 @@ def k_star_per_pair(per_pair: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for pair_id, grp in per_pair[per_pair["arm"] == "seed_b"].groupby("pair_id"):
         grp = grp.sort_values("k")
-        flipped = grp[grp["phi"] < 0]
         baseline = grp[grp["k"] == 0]["phi"]
+        phi_0 = float(baseline.iloc[0]) if len(baseline) else float("nan")
+        # A pair already preferring fold2 unconditioned (phi_0 < 0) has nothing
+        # to flip. Counting it as "flipped at k*=0" would drag the median k*
+        # toward zero with pairs conditioning never had to move.
+        needs_flip = phi_0 > 0
+        flipped = grp[(grp["k"] > 0) & (grp["phi"] < 0)] if needs_flip else grp.iloc[0:0]
         rows.append({
             "pair_id": pair_id,
-            "phi_k0": round(float(baseline.iloc[0]), 4) if len(baseline) else None,
+            "phi_k0": round(phi_0, 4),
             "n_b": int(grp["n_b"].iloc[0]),
+            "needs_flip": needs_flip,
             "k_star": int(flipped["k"].iloc[0]) if not flipped.empty else None,
             "k_star_frac": round(float(flipped["k_frac"].iloc[0]), 4) if not flipped.empty else None,
             "max_k_tested": int(grp["k"].max()),
@@ -433,8 +439,11 @@ def main() -> int:
         print(f"     k* (smallest fold2-seeded dose with mean phi < 0): {ks if ks is not None else 'not reached'}")
         ks_pair = k_star_per_pair(per_pair)
         ks_pair.to_csv(DATA / "conditioning_k_star.csv", index=False)
-        flipped = ks_pair[ks_pair["flipped"]]
-        print(f"     pairs that flip at any tested dose: {len(flipped)}/{len(ks_pair)}")
+        need = ks_pair[ks_pair["needs_flip"]]
+        flipped = need[need["flipped"]]
+        already = ks_pair[~ks_pair["needs_flip"]]
+        print(f"     pairs already preferring fold2 at k=0 (nothing to flip): {len(already)}")
+        print(f"     of the {len(need)} that need flipping, {len(flipped)} do at some tested dose")
         if not flipped.empty:
             print(f"     per-pair k*: median {flipped['k_star'].median():.0f} contacts "
                   f"= {flipped['k_star_frac'].median():.1%} of that pair's |B|")
