@@ -264,9 +264,99 @@ def memorization(preference: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
+# --------------------------------------------------------------------------
+# 6. M4 — the conditioning dose-response
+# --------------------------------------------------------------------------
+def conditioning(root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Per-pair and population dose-response, plus k*.
+
+    ``phi`` here is computed on the REMAINING sets (``A\G``, ``B\G``) exactly as
+    the worker recorded them, so the given contacts cannot inflate it. The
+    population curve is a mean over pairs of per-pair means, not a mean over
+    rollouts, so a pair with many discriminative contacts does not dominate.
+    """
+    files = sorted(root.glob("*.parquet"))
+    if not files:
+        raise FileNotFoundError(f"no conditioning parquet under {root}")
+    raw = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+    raw["phi"] = (raw["n_hit_a_rem"] / raw["n_a_rem"].clip(lower=1)
+                  - raw["n_hit_b_rem"] / raw["n_b_rem"].clip(lower=1))
+    raw["echo_rate"] = raw["n_given_echoed"] / raw["k"].clip(lower=1)
+
+    # k as a FRACTION of the fold's own discriminative set, not just an absolute
+    # count. A dose of 10 is 62% of a pair with |B|=16 and 3% of one with
+    # |B|=374, so an absolute-k curve silently mixes two very different asks and
+    # will read as a lower k* than any large protein actually achieves.
+    size_b = raw[raw["k"] == 0].groupby("pair_id")["n_b_rem"].first()
+    raw["k_frac"] = raw["k"] / raw["pair_id"].map(size_b).clip(lower=1)
+
+    per_pair = (raw.groupby(["pair_id", "arm", "k"])
+                .agg(phi=("phi", "mean"), n_pred=("n_pred", "mean"),
+                     echo_rate=("echo_rate", "mean"), finished=("finished", "mean"),
+                     k_frac=("k_frac", "first"), n_b=("n_b_rem", "first"),
+                     n_rollouts=("phi", "size"))
+                .reset_index())
+
+    rows = []
+    for (arm, k), grp in per_pair.groupby(["arm", "k"]):
+        # Paired against each pair's own k=0, so the curve is a within-pair
+        # change rather than a mix of pairs that entered at different baselines.
+        base = per_pair[(per_pair["arm"] == arm) & (per_pair["k"] == 0)][["pair_id", "phi"]]
+        merged = grp.merge(base.rename(columns={"phi": "phi_0"}), on="pair_id", how="inner")
+        boot = np.random.default_rng(0).choice(
+            merged["phi"].to_numpy(), (4000, len(merged))).mean(1)
+        rows.append({
+            "arm": arm, "k": int(k), "n_pairs": len(merged),
+            "phi": round(float(merged["phi"].mean()), 4),
+            "phi_lo": round(float(np.percentile(boot, 2.5)), 4),
+            "phi_hi": round(float(np.percentile(boot, 97.5)), 4),
+            "delta_vs_k0": round(float((merged["phi"] - merged["phi_0"]).mean()), 4),
+            "frac_negative": round(float((merged["phi"] < 0).mean()), 4),
+            "echo_rate": round(float(merged["echo_rate"].mean()), 4),
+            "contacts_per_rollout": round(float(merged["n_pred"].mean()), 1),
+            "k_frac_median": round(float(merged["k_frac"].median()), 4),
+        })
+    curve = pd.DataFrame(rows).sort_values(["arm", "k"]).reset_index(drop=True)
+    return per_pair, curve
+
+
+def k_star(curve: pd.DataFrame) -> int | None:
+    """Smallest fold2-seeded dose whose mean fold score is negative."""
+    seeded = curve[(curve["arm"] == "seed_b") & (curve["phi"] < 0)].sort_values("k")
+    return int(seeded["k"].iloc[0]) if not seeded.empty else None
+
+
+def k_star_per_pair(per_pair: pd.DataFrame) -> pd.DataFrame:
+    """Each pair's own flip point, in contacts and as a fraction of its |B|.
+
+    The population curve answers "what dose moves the average pair"; this
+    answers "what did each pair need", which is the quantity that generalises
+    across protein size. Pairs that never flip are kept with a null k*, because
+    dropping them would bias the summary toward the easy ones.
+    """
+    rows = []
+    for pair_id, grp in per_pair[per_pair["arm"] == "seed_b"].groupby("pair_id"):
+        grp = grp.sort_values("k")
+        flipped = grp[grp["phi"] < 0]
+        baseline = grp[grp["k"] == 0]["phi"]
+        rows.append({
+            "pair_id": pair_id,
+            "phi_k0": round(float(baseline.iloc[0]), 4) if len(baseline) else None,
+            "n_b": int(grp["n_b"].iloc[0]),
+            "k_star": int(flipped["k"].iloc[0]) if not flipped.empty else None,
+            "k_star_frac": round(float(flipped["k_frac"].iloc[0]), 4) if not flipped.empty else None,
+            "max_k_tested": int(grp["k"].max()),
+            "flipped": not flipped.empty,
+        })
+    return pd.DataFrame(rows)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--scores", type=Path, default=DEFAULT_SCORES)
+    ap.add_argument("--conditioning", type=Path,
+                    default=Path("/data/exp301/conditioning/exp277"),
+                    help="M4 output root; skipped when absent")
     args = ap.parse_args()
 
     rollouts = load_parquets(args.scores, "rollouts")
@@ -329,6 +419,32 @@ def main() -> int:
             agree = (decided["prefers"] == decided["training_fold"]).mean()
             print(f"     model preference matches the training fold in {agree:.0%} of them")
             print(decided.groupby("training_fold")["phi"].agg(["count", "mean"]).to_string())
+    cond_root = args.conditioning
+    if cond_root and cond_root.exists():
+        per_pair, curve = conditioning(cond_root)
+        per_pair.to_csv(DATA / "conditioning_per_pair.csv", index=False)
+        curve.to_csv(DATA / "conditioning_curve.csv", index=False)
+        print("[M4] conditioning dose-response (phi on the REMAINING sets)")
+        for arm in ("seed_b", "seed_a"):
+            sub = curve[curve["arm"] == arm]
+            trail = "  ".join(f"k{int(r.k)}:{r.phi:+.3f}" for r in sub.itertuples())
+            print(f"     {arm}: {trail}")
+        ks = k_star(curve)
+        print(f"     k* (smallest fold2-seeded dose with mean phi < 0): {ks if ks is not None else 'not reached'}")
+        ks_pair = k_star_per_pair(per_pair)
+        ks_pair.to_csv(DATA / "conditioning_k_star.csv", index=False)
+        flipped = ks_pair[ks_pair["flipped"]]
+        print(f"     pairs that flip at any tested dose: {len(flipped)}/{len(ks_pair)}")
+        if not flipped.empty:
+            print(f"     per-pair k*: median {flipped['k_star'].median():.0f} contacts "
+                  f"= {flipped['k_star_frac'].median():.1%} of that pair's |B|")
+        for k in sorted(set(curve["k"])):
+            b = curve[(curve.arm == "seed_b") & (curve.k == k)]
+            a = curve[(curve.arm == "seed_a") & (curve.k == k)]
+            if len(a) and len(b):
+                print(f"     k={k:2d}  asymmetry (seed_a - seed_b) = "
+                      f"{float(a['phi'].iloc[0]) - float(b['phi'].iloc[0]):+.4f}"
+                      f"   echo {float(b['echo_rate'].iloc[0]):.2f}")
     print(f"\nwrote tables to {DATA}")
     return 0
 
