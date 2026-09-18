@@ -50,7 +50,6 @@ from score_foldswitch_worker_cw import (
     CONTEXT,
     NUM_POS,
     canonical,
-    in_region,
     parse_rollout,
     read_parquet,
     stage_model,
@@ -68,6 +67,23 @@ SCHEMA = pa.schema([
 ])
 
 DEFAULT_DOSES = (0, 1, 2, 5, 10, 20, 40)
+
+
+def done_pairs(out_dir: str) -> set[str]:
+    """Pairs already written under ``out_dir`` (resume support)."""
+    import fsspec
+
+    try:
+        fs, _ = fsspec.core.url_to_fs(out_dir)
+        paths = fs.glob(f"{out_dir}/*.parquet")
+    except FileNotFoundError:
+        return set()
+    seen: set[str] = set()
+    for path in paths:
+        protocol = out_dir.split("://", 1)[0] if "://" in out_dir else ""
+        uri = f"{protocol}://{path}" if protocol and "://" not in path else path
+        seen |= set(read_parquet(uri).column("pair_id").to_pylist())
+    return seen
 
 
 def main() -> int:  # noqa: C901
@@ -107,10 +123,19 @@ def main() -> int:  # noqa: C901
     recs = [r for r in read_parquet(a.targets).to_pylist() if r["role"] == "foldswitch"]
     recs.sort(key=lambda r: r["L"])
     mine = [r for k, r in enumerate(recs) if k % num_shards == shard_i]
+    # Resume: the full dose grid is a multi-hour run, so a pair already written
+    # is skipped rather than recomputed. Keyed on pair_id, since each pair's
+    # whole grid lands in one file.
+    done = done_pairs(out_dir)
+    mine = [r for r in mine if r["pair_id"] not in done]
     if a.limit:
         mine = mine[: a.limit]
-    print(f"[cond] shard {shard_i}/{num_shards}: {len(mine)} pairs | doses={doses} "
+    print(f"[cond] shard {shard_i}/{num_shards}: {len(mine)} pairs to do "
+          f"({len(done)} already written) | doses={doses} "
           f"rollouts={a.n_rollouts} replicates={a.n_replicates}", flush=True)
+    if not mine:
+        print("[cond] nothing to do")
+        return 0
 
     model_dir = stage_model(a.model, Path("/tmp/marinfold_model"))
     tok = AutoTokenizer.from_pretrained(str(model_dir))
@@ -184,7 +209,7 @@ def main() -> int:  # noqa: C901
             rows["finished"].append(out.outputs[0].finish_reason == "stop")
             rows["n_tokens"].append(len(out.outputs[0].token_ids))
 
-        stem = f"shard-{shard_i:03d}-of-{num_shards:03d}-part-{n:04d}.parquet"
+        stem = f"shard-{shard_i:03d}-of-{num_shards:03d}-{pair_id}.parquet"
         write_parquet(pa.table(rows, schema=SCHEMA), f"{out_dir}/{stem}")
 
         def arm_phi(arm: str, k: int) -> float:
