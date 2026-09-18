@@ -472,6 +472,37 @@ concurrent streams sharing EBI's aggregate bandwidth each would get ~1 MB/s.
 The walk is slow per tar precisely because it is cheap in bytes, which is the
 right trade when bandwidth is the shared constraint.
 
+### The first production attempt produced nothing, and why (2026-09-18)
+
+25 shards ran for 24 hours and wrote zero documents. Cancelled. Two causes,
+compounding:
+
+- **Placement.** `--cpu=8 --memory=16GB --disk=100GB` with
+  `--enable-extra-resources` is not a "small CPU-only job", so iris's default
+  heuristic put every shard on `marin-tpu-v6e-preemptible-8` workers. They were
+  preempted **6-9 times each**.
+- **No resume.** Every restart began again at the first tar. Writing
+  incrementally through a `ParquetWriter` bounded *memory*, but the output was
+  still one file per shard and was truncated on each restart, so a 28-hour task
+  under repeated preemption never reached a durable write.
+
+`--no-preemptible` is not the answer either, and finding out why is the useful
+part. `lib/iris/config/marin.yaml` caps the on-demand CPU pool at
+**`max_slices: 6`** — six workers cluster-wide. A 25-pod non-preemptible CPU
+job simply sits `pending`. Six pods would take ~5 days.
+
+So the correct configuration is **preemptible workers plus a resumable job**,
+which is what the archive demanded all along. Output is now one parquet per
+source tar under `documents/` and `ledger/`, and a tar whose ledger file exists
+is skipped on restart. The ledger is written after the documents and every
+requested model yields a row, so it is a safe completion marker; an interruption
+between the two just redoes that tar idempotently. A preemption now costs one
+tar instead of the whole shard.
+
+The lesson worth keeping: **preemptible-versus-not is the wrong question when
+the real property is whether the job can resume.** With resume, preemptible
+capacity is both plentiful and correct; without it, no amount of capacity helps.
+
 ### Probe QC: the documents are sound, and one result is a red flag
 
 Every integrity check passes. All 4,245 documents are two-chain, all have
