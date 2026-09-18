@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Dose-response of prompting with fold2 contacts, against the symmetric fold1 control."
+}

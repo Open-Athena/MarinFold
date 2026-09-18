@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Model preference against the fold its own training document encoded, and against exposure."
+}

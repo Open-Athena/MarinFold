@@ -19,6 +19,8 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from build_summary import save_plot_with_meta  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 PLOTS = HERE / "plots"
@@ -30,11 +32,33 @@ LABEL_COLOR = {"fold1": FOLD1, "fold2": FOLD2, "neither": NEUTRAL,
                "ambiguous": "#bcbd22", "none": "#cccccc"}
 
 
+#: One-line caption per figure, carried into plots/summary.pdf by
+#: build_summary.py's sidecar convention so a slide says what it shows.
+#: Kept to a single line each — #224's summary.pdf overlaps the plot when a
+#: caption runs past two.
+CAPTIONS = {
+    "fold_preference.png":
+        "Per-pair fold score and per-fold R-precision: MarinFold prefers Fold1 in 52/68 pairs.",
+    "bimodality.png":
+        "Per-rollout phi spread against a binomial null: the ensemble is one mode, not two.",
+    "calibration.png":
+        "The gate: this worker against exp277's published per-protein R-precision on eval-val.",
+    "memorization.png":
+        "Model preference against the fold its own training document encoded, and against exposure.",
+    "nll_vs_phi.png":
+        "Teacher-forced likelihood against sampled preference: the two readouts agree per protein.",
+    "conditioning.png":
+        "Dose-response of prompting with fold2 contacts, against the symmetric fold1 control.",
+}
+
+
 def _finish(fig, name: str) -> None:
     PLOTS.mkdir(exist_ok=True)
     fig.tight_layout()
-    out = PLOTS / name
-    fig.savefig(out, dpi=150, bbox_inches="tight")
+    out = save_plot_with_meta(
+        fig, PLOTS / name,
+        caption=CAPTIONS.get(name, name),
+        script="plot.py", args=[], dpi=150)
     plt.close(fig)
     print(f"wrote {out.relative_to(HERE)}")
 

@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Per-pair fold score and per-fold R-precision: MarinFold prefers Fold1 in 52/68 pairs."
+}
