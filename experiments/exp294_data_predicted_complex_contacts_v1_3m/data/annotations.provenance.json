@@ -1,0 +1,13 @@
+{
+  "normalized_glob": "/data/exp294_predicted_complexes/metadata/normalized_*.parquet",
+  "fasta_paths": [],
+  "fasta_rows": -1,
+  "requested_accessions": 21437370,
+  "missing_accessions": 407191,
+  "missing_fraction": 0.018994,
+  "missing_accessions_path": "/data/exp294_predicted_complexes/accession_annotations.missing_accessions.parquet",
+  "decontam_drop_list": "/data/exp294_decontam/eval_accession_droplist.parquet",
+  "annotations": "/data/exp294_predicted_complexes/accession_annotations.parquet",
+  "accessions": 21030179,
+  "eval_excluded_accessions": 1071475
+}

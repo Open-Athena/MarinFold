@@ -1,0 +1,22 @@
+{
+  "manifest": "gs://marin-eu-west4/protein-structure/MarinFold/exp294_predicted_complex_contacts_v1/pilot/throughput_probe.parquet",
+  "out_dir": "gs://marin-eu-west4/protein-structure/MarinFold/exp294_predicted_complex_contacts_v1/probe/documents",
+  "tars": 20,
+  "models_requested": 4273,
+  "documents": 4245,
+  "ledger_rows": 4273,
+  "reasons": {
+    "member_not_in_tar": 28,
+    "ok": 4245
+  },
+  "header_reads": 177631,
+  "header_reads_per_tar": 8881.5,
+  "member_bytes": 500100056,
+  "seconds": 4033.2,
+  "walk_seconds": 3205.3,
+  "work_seconds": 4827.5,
+  "seconds_per_tar": 201.66,
+  "seconds_per_document": 0.9501,
+  "documents_per_tar": 212.2,
+  "payload_mb_per_document": 0.118
+}

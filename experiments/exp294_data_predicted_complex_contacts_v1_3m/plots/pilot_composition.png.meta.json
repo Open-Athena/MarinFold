@@ -1,0 +1,12 @@
+{
+  "script": "plots.py",
+  "args": [
+    "--input",
+    "/data/exp294_predicted_complexes/metadata/normalized_*.parquet",
+    "--selection-json",
+    "/data/exp294_predicted_complexes/selection/selection.json",
+    "--pilot-json",
+    "/data/exp294_predicted_complexes/pilot/pilot.json"
+  ],
+  "caption": "Left: the pilot equalises across strata to over-sample the low-confidence tail. Right: extraction cost is per tar, so the stratified draw's 3.9 models/tar cannot time the run's 180."
+}
