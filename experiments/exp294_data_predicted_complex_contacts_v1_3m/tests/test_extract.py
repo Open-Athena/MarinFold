@@ -212,3 +212,121 @@ def test_shard_index_must_be_in_range() -> None:
 
     with pytest.raises(ValueError, match="out of range"):
         extract.run("unused.parquet", "unused", shard_index=3, shard_count=3)
+
+
+def test_tar_stem_disambiguates_the_two_archive_trees() -> None:
+    """shard_0_batch_0.tar exists under BOTH homodimers/ and heterodimers/."""
+    from extract import tar_stem
+
+    base = "https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda"
+    assert tar_stem(f"{base}/homodimers/chunk_0286.tar") == "homodimers__chunk_0286"
+    assert tar_stem(f"{base}/homodimers/shard_0_batch_0.tar") != tar_stem(
+        f"{base}/heterodimers/shard_0_batch_0.tar"
+    )
+
+
+def _stub_one_model(monkeypatch) -> None:
+    """Replace the structure pipeline; these tests are about resume, not gemmi."""
+    import extract
+
+    def fake(url: str, row: dict, offset: int, size: int):
+        doc = {name: None for name in extract.DOC_SCHEMA.names}
+        doc.update(
+            {
+                "source_model_key": row["source_model_key"],
+                "model_id": row["model_id"],
+                "complex_type": row["complex_type"],
+                "document": "<contacts-v1> stub",
+                "sha1": "0" * 40,
+                "seq_len": 200,
+                "num_tokens": 10,
+                "num_chains": 2,
+                "chain_ids": ["A", "B"],
+                "chain_lengths": [100, 100],
+                "contacts_pre_filter": 10,
+                "contacts_emitted": 8,
+                "contacts_emitted_inter_chain": 2,
+                "contacts_pre_filter_inter_chain": 3,
+                "truncated": False,
+                "accession_a": row["accession_a"],
+                "accession_b": row["accession_b"],
+                "total_residues_manifest": row["total_residues"],
+                "quality_ratio": row["quality_ratio"],
+                "ipsae_score": row["ipsae_score"],
+                "pdockq2_score": row["pdockq2_score"],
+                "confidence_tier": row["confidence_tier"],
+                "source_tar_uri": row["source_tar_uri"],
+                "member_bytes": size,
+                "cif_bytes": size,
+            }
+        )
+        ledger = {
+            "source_model_key": row["source_model_key"],
+            "source_tar_uri": url,
+            "status": "generated",
+            "reason": "ok",
+        }
+        return doc, ledger
+
+    monkeypatch.setattr(extract, "_one_model", fake)
+
+
+def test_a_completed_tar_is_not_redone(tar_server, tmp_path: Path, monkeypatch) -> None:
+    """Resume is the difference between finishing and never finishing.
+
+    The first production attempt was preempted 6-9 times per shard and produced
+    nothing in 24 hours, because every restart began again at the first tar.
+    """
+    import extract
+
+    _stub_one_model(monkeypatch)
+    url, names = tar_server
+    manifest = _manifest(tmp_path, url, names)
+    out = tmp_path / "out"
+
+    first = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    assert first["tars"] == 4 and first["tars_resumed"] == 0
+    assert first["documents"] == len(names)
+    assert (out / "ledger").is_dir() and (out / "documents").is_dir()
+
+    calls: list[str] = []
+    real = extract.extract_tar
+    monkeypatch.setattr(
+        extract,
+        "extract_tar",
+        lambda tar, rows, **kw: (calls.append(tar), real(tar, rows, **kw))[1],
+    )
+    second = extract.run(str(manifest), str(out), fetch_concurrency=2)
+
+    assert calls == [], "a completed tar must not be walked again"
+    assert second["tars_resumed"] == 4
+    assert second["tars"] == 0
+
+
+def test_a_partial_shard_resumes_from_where_it_stopped(
+    tar_server, tmp_path: Path, monkeypatch
+) -> None:
+    import extract
+
+    _stub_one_model(monkeypatch)
+    url, names = tar_server
+    manifest = _manifest(tmp_path, url, names)
+    out = tmp_path / "out"
+
+    real = extract.extract_tar
+    seen = {"n": 0}
+
+    def die_after_two(tar: str, rows, **kw):
+        if seen["n"] >= 2:
+            raise ConnectionResetError("simulated preemption")
+        seen["n"] += 1
+        return real(tar, rows, **kw)
+
+    monkeypatch.setattr(extract, "extract_tar", die_after_two)
+    with pytest.raises(ConnectionResetError):
+        extract.run(str(manifest), str(out), fetch_concurrency=2)
+    monkeypatch.setattr(extract, "extract_tar", real)
+
+    resumed = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    assert resumed["tars_resumed"] == 2, "the two finished tars are kept"
+    assert resumed["tars"] == 2, "only the unfinished two are redone"

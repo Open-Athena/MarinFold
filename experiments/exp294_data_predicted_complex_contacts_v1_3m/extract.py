@@ -20,6 +20,11 @@ follows from that:
 * **Overlap the walk with the work.** The walk is latency-bound and generation
   is CPU-bound, so located members are handed to a thread pool while the walk
   continues.
+* **Make progress durable per tar.** Output is one parquet per source tar, and
+  a tar whose ledger file already exists is skipped. A 28-hour shard that
+  restarts from zero never finishes: the first production attempt was preempted
+  6-9 times per shard and produced nothing in 24 hours. Resume turns a
+  preemption into the loss of one tar.
 * **Share nothing mutable across the pool.** A ``ZstdDecompressor`` is not
   thread-safe; one shared instance segfaults under concurrency while leaving no
   Python traceback at all.
@@ -124,6 +129,17 @@ LEDGER_SCHEMA = pa.schema(
         ("reason", pa.string()),
     ]
 )
+
+
+def tar_stem(tar_uri: str) -> str:
+    """A flat, collision-free filename for one source tar.
+
+    ``.../homodimers/chunk_0286.tar`` -> ``homodimers__chunk_0286``. The parent
+    directory is kept because ``shard_0_batch_0.tar`` exists under both
+    ``homodimers/`` and ``heterodimers/``.
+    """
+    parts = tar_uri.rstrip("/").split("/")
+    return f"{parts[-2]}__{parts[-1].removesuffix('.tar')}"
 
 
 def _sql_literal(value: str | Path) -> str:
@@ -459,10 +475,24 @@ def run(
 
     prefix = str(out_dir).rstrip("/")
     fs, _ = fsspec.core.url_to_fs(prefix)
-    fs.makedirs(prefix, exist_ok=True)
-    stem = f"{shard_index:05d}-of-{shard_count:05d}"
-    doc_path = f"{prefix}/documents-{stem}.parquet"
-    ledger_path = f"{prefix}/extract_ledger-{stem}.parquet"
+    fs.makedirs(f"{prefix}/documents", exist_ok=True)
+    fs.makedirs(f"{prefix}/ledger", exist_ok=True)
+
+    # The ledger file is the completion marker, and it is written *after* the
+    # documents file, so a tar interrupted between the two is simply redone and
+    # its documents overwritten. Every requested model yields a ledger row, so
+    # the marker is never empty.
+    try:
+        done = {
+            path.split("/")[-1].removesuffix(".parquet")
+            for path in fs.ls(f"{prefix}/ledger", detail=False)
+        }
+    except FileNotFoundError:
+        done = set()
+    pending = [t for t in tars if tar_stem(t) not in done]
+    resumed = len(tars) - len(pending)
+    if resumed:
+        print(f"resuming: {resumed} of {len(tars)} tars already complete", flush=True)
 
     documents = ledger_rows = header_reads = member_bytes = 0
     walk_seconds = work_seconds = 0.0
@@ -471,13 +501,20 @@ def run(
     def absorb(result: TarResult) -> None:
         nonlocal documents, ledger_rows, header_reads, member_bytes
         nonlocal walk_seconds, work_seconds
+        stem_name = tar_stem(result.tar_uri)
         if result.documents:
-            doc_writer.write_table(
-                pa.Table.from_pylist(result.documents, schema=DOC_SCHEMA)
+            with fs.open(f"{prefix}/documents/{stem_name}.parquet", "wb") as sink:
+                pq.write_table(
+                    pa.Table.from_pylist(result.documents, schema=DOC_SCHEMA),
+                    sink,
+                    compression="zstd",
+                )
+        with fs.open(f"{prefix}/ledger/{stem_name}.parquet", "wb") as sink:
+            pq.write_table(
+                pa.Table.from_pylist(result.ledger, schema=LEDGER_SCHEMA),
+                sink,
+                compression="zstd",
             )
-        ledger_writer.write_table(
-            pa.Table.from_pylist(result.ledger, schema=LEDGER_SCHEMA)
-        )
         documents += len(result.documents)
         ledger_rows += len(result.ledger)
         header_reads += result.header_reads
@@ -487,67 +524,60 @@ def run(
         reasons.update(entry["reason"] for entry in result.ledger)
 
     began = time.monotonic()
-    with (
-        fs.open(doc_path, "wb") as doc_sink,
-        fs.open(ledger_path, "wb") as ledger_sink,
-        pq.ParquetWriter(doc_sink, DOC_SCHEMA, compression="zstd") as doc_writer,
-        pq.ParquetWriter(ledger_sink, LEDGER_SCHEMA, compression="zstd") as ledger_writer,
-    ):
-        if tar_concurrency > 1:
-            with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
-                futures = [
-                    pool.submit(
-                        extract_tar, tar, by_tar[tar], fetch_concurrency=fetch_concurrency
-                    )
-                    for tar in tars
-                ]
-                for index, future in enumerate(futures, start=1):
-                    result = future.result()
-                    absorb(result)
-                    print(
-                        f"[{index}/{len(tars)}] {result.tar_uri.split('/')[-1]} "
-                        f"docs={len(result.documents)} reads={result.header_reads} "
-                        f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
-                        flush=True,
-                    )
-        else:
-            for index, tar in enumerate(tars, start=1):
-                result = extract_tar(
-                    tar, by_tar[tar], fetch_concurrency=fetch_concurrency
+    if tar_concurrency > 1:
+        with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
+            futures = [
+                pool.submit(
+                    extract_tar, tar, by_tar[tar], fetch_concurrency=fetch_concurrency
                 )
+                for tar in pending
+            ]
+            for index, future in enumerate(futures, start=1):
+                result = future.result()
                 absorb(result)
                 print(
-                    f"[{index}/{len(tars)}] {tar.split('/')[-1]} "
+                    f"[{index}/{len(pending)}] {result.tar_uri.split('/')[-1]} "
                     f"docs={len(result.documents)} reads={result.header_reads} "
                     f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
                     flush=True,
                 )
+    else:
+        for index, tar in enumerate(pending, start=1):
+            result = extract_tar(tar, by_tar[tar], fetch_concurrency=fetch_concurrency)
+            absorb(result)
+            print(
+                f"[{index}/{len(pending)}] {tar.split('/')[-1]} "
+                f"docs={len(result.documents)} reads={result.header_reads} "
+                f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
+                flush=True,
+            )
     elapsed = time.monotonic() - began
 
-    expected = sum(len(by_tar[t]) for t in tars)
+    expected = sum(len(by_tar[t]) for t in pending)
     summary = {
         "manifest": manifest,
         "out_dir": prefix,
         "shard_index": shard_index,
         "shard_count": shard_count,
-        "documents_parquet": doc_path,
-        "ledger_parquet": ledger_path,
-        "tars": len(tars),
+        "tars_in_shard": len(tars),
+        "tars_resumed": resumed,
+        "tars": len(pending),
         "models_requested": expected,
         "documents": documents,
         "ledger_rows": ledger_rows,
         "reasons": dict(sorted(reasons.items())),
         "header_reads": header_reads,
-        "header_reads_per_tar": round(header_reads / max(len(tars), 1), 1),
+        "header_reads_per_tar": round(header_reads / max(len(pending), 1), 1),
         "member_bytes": member_bytes,
         "seconds": round(elapsed, 1),
         "walk_seconds": round(walk_seconds, 1),
         "work_seconds": round(work_seconds, 1),
-        "seconds_per_tar": round(elapsed / max(len(tars), 1), 2),
+        "seconds_per_tar": round(elapsed / max(len(pending), 1), 2),
         "seconds_per_document": round(elapsed / max(documents, 1), 4),
-        "documents_per_tar": round(documents / max(len(tars), 1), 1),
+        "documents_per_tar": round(documents / max(len(pending), 1), 1),
         "payload_mb_per_document": round(member_bytes / 1e6 / max(documents, 1), 3),
     }
+    stem = f"{shard_index:05d}-of-{shard_count:05d}"
     with fs.open(f"{prefix}/extract-{stem}.json", "w") as handle:
         handle.write(json.dumps(summary, indent=2) + "\n")
     if ledger_rows != expected:
