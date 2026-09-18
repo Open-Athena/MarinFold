@@ -1,29 +1,30 @@
 {
-  "timestamp_utc": "2026-09-18T18:15:50.604186+00:00",
+  "timestamp_utc": "2026-09-16T20:14:11.669125+00:00",
   "run_id": "scale-20260909",
   "planned_raw": 4820608,
   "target_documents": 1000000,
-  "generated": 4820544,
-  "sequences_saved": 4820320,
-  "refolded": 4820320,
-  "quality_pass": 2949171,
-  "complete": 13922,
-  "quality_retention": 0.6118205845255087,
+  "generated": 4359104,
+  "sequences_saved": 4329840,
+  "refolded": 4329584,
+  "quality_pass": 2648010,
+  "complete": 12463,
+  "quality_retention": 0.6116084131870406,
   "final_retained_documents": null,
   "final_retention_note": "Sequence/reference exclusion and global structural diversity cap still required. Quality-pass documents are provisional.",
   "worker_phases": {
-    "complete": 767,
-    "sampling": 1
+    "complete": 576,
+    "refolding": 69,
+    "sampling": 123
   },
-  "sequence_batch_files": 277740,
+  "sequence_batch_files": 249353,
   "snapshot_note": "Live nontransactional snapshot of committed batch boundaries; in-flight refolds are excluded.",
   "staleness": {
     "threshold_hours": 3.0,
-    "unfinished_workers": 1,
+    "unfinished_workers": 192,
     "never_written": 0,
     "stalled_workers": 0,
-    "median_idle_hours": 0.17,
-    "max_idle_hours": 0.17,
+    "median_idle_hours": 0.24,
+    "max_idle_hours": 2.27,
     "note": "Idle hours count time since the worker last wrote to the object store. Iris job state cannot detect a preempted attempt that stayed 'running' with no pod, so this is the liveness signal. A freshly resubmitted or just-preempted worker on a long-length queue can sit above the threshold legitimately until its first batch commits; confirm with job describe before replacing one."
   }
 }

@@ -150,6 +150,10 @@ pair now covers the rest of the run:
 ~/.config/systemd/user/exp278-scale-snapshot.timer
 ```
 
+The resource step uses `--prefix /bizon/exp278-scale-`, not a single generation's
+prefix: after the September 16 resubmission the run spans `exp278-scale-v1` and
+`exp278-scale-v2`, and a narrower prefix silently undercounts every replacement.
+
 `OnCalendar=*-*-* 0/2:05:00` with `Persistent=true`, so it runs every two hours
 and catches up once after the workstation is offline. Each run writes a
 timestamped `snapshot-*.json` / `cases-*.csv` pair plus `latest.json` into
