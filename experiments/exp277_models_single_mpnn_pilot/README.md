@@ -179,6 +179,61 @@ carry their attempt in their run id and output path
 deliberately left stable so a restarted production job resumes from its own
 checkpoints.
 
+### Second-epoch contact evaluation
+
+Both epochs were scored in one driver job,
+[`/bizon/exp277-eval-v2-02`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-02)
+(run id `v2-02`, suite `exp277-epochs`), on twelve US-EAST-02A H100 shards per
+checkpoint at batch priority. Scoring both together makes every delta paired per
+protein under one worker, one recipe and one cluster, which matters because the
+effect is small next to rollout sampling noise. The first epoch reproduced its
+separately-run `v2-01` numbers to within 0.00135 everywhere — inside #204's
+0.0023 noise floor, and across a cluster change from RNO2A — so the execution
+path is unchanged. Each checkpoint scored all 670 units with 670 dense matrices
+and 67,000 requested rollouts. `eval-test` stayed unread.
+
+| Evaluation set | epoch 1 R, all / long | epoch 2 R, all / long | paired delta, all | paired delta, long |
+| --- | ---: | ---: | ---: | ---: |
+| legacy 554 | 0.62051 / 0.57718 | 0.62203 / 0.57794 | +0.00153 [-0.00399, +0.00674] | +0.00076 [-0.00577, +0.00724] |
+| eval-val (97) | 0.55510 / 0.53706 | 0.55750 / 0.53935 | +0.00240 [-0.00644, +0.01102] | +0.00229 [-0.00682, +0.01190] |
+| eval-denovo (19) | 0.69640 / 0.67497 | 0.68600 / 0.64095 | -0.01040 [-0.04015, +0.01182] | -0.03402 [-0.07287, -0.00203] |
+
+**A second full epoch bought nothing measurable.** On natural proteins both
+deltas are ties: +0.00240 on eval-val and +0.00153 on legacy 554, below the
+predeclared 0.005 threshold, barely above the 0.0023 noise floor, and with
+intervals covering zero. Both checkpoints clear the sequence-KNN null over the
+decontaminated corpus (eval-val 0.40715 [0.36491, 0.44738]) by a wide margin.
+
+The one interval excluding zero is eval-denovo long-range, **-0.03402
+[-0.07287, -0.00203]**, and it should not be read as a result. It rests on 19
+proteins, it is one of six reported tests, and dropping the single capped unit
+moves it to -0.02203. Treat it as a weak hint that the second epoch did not help
+designs, not as a measured regression.
+
+Required cuts, all-range R-precision, paired:
+
+| cut | n | epoch 1 | epoch 2 | delta |
+| --- | ---: | ---: | ---: | ---: |
+| low-MSA-depth natural | 11 of 16 | 0.29962 | 0.29450 | -0.00512 [-0.02741, +0.01606] |
+| low-MSA-depth FoldBench-only | 0 of 5 | - | - | - |
+| low-MSA-depth designs | 26 of 26 | 0.60258 | 0.60686 | +0.00428 [-0.02702, +0.03872] |
+| viral | 6 | 0.48542 | 0.47959 | -0.00583 [-0.04947, +0.02655] |
+| non-viral | 110 | 0.58331 | 0.58395 | +0.00064 [-0.00847, +0.00918] |
+
+The low-MSA-depth denominators are partial for the same reason as the
+first-epoch run: the five FoldBench-only natural proteins in that frozen set all
+live in `eval-test`, which this run does not read. The 11-protein natural mean
+must not be compared with the full 16-protein mean.
+
+**One behavioural difference did show up.** The second-epoch checkpoint ran 44
+rollouts into the token cap across 8 units, against 1 across 1 unit for the
+first epoch. Seven of its eight affected units are designed proteins, and capped
+rollouts are excluded from voting, so those units are scored on fewer votes.
+This is the only systematic difference the evaluation found between the two
+checkpoints, and it points the same way as the de novo delta.
+`data/eval_rollout_v2_epochs/capped_rollouts.csv` lists every affected unit;
+`compare_epochs.py` regenerates all three tables from the published results.
+
 ## Conclusion
 
 The requested single-model, full-corpus first epoch completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. Its contact evaluation shows an eval-val tie with the native-only decontaminated exp232 winner (+0.00204 all, +0.00211 long), an improvement on legacy 554 (+0.01503 all, +0.02202 long), and a large improvement on eval-denovo (+0.08599 all, +0.10375 long). This single run therefore gives no evidence of a material natural eval-val gain at the predeclared 0.005 threshold, but it gives a strong signal that the native-plus-redesign corpus helps designed-protein contacts. Different training exposure and the single seed limit causal attribution. The separately requested reshuffled second epoch is in progress from the last pre-cooldown checkpoint.
