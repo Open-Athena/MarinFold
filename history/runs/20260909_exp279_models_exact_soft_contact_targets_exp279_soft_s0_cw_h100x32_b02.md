@@ -132,3 +132,32 @@ worker's train-step compile artifact landed at 13:42:37 UTC and the first
 visible step at 14:09:06 UTC, a 26.5 minute gap that is about 454 updates at
 3.5 seconds each, against the 446 predicted by resuming at update 125490. The
 same arithmetic reproduces a03's first visible step from its own resume point.
+
+## Restart 4
+
+The a04 base-phase gang ran 2 days 10 hours 36 minutes, from update 125490 to
+logged step 183541, and then task 0 was OOM-killed (exit 137) with
+`preemptions=0`. The diagnostic carries a finelog client send failure
+(DEADLINE_EXCEEDED, 19 rows, retryable) immediately before the kill. This is the
+second OOM kill after a02, against exit 139 on a01 and a03; the two modes
+alternate, but all four terminal failures have left a checkpoint directory that
+stops short of `metadata.json`, so all four landed on or near a checkpoint save.
+a04's 58 hours against a03's 18 shows the hazard is not a fixed per-step
+probability.
+
+`step-183543` is the incomplete directory; the latest complete checkpoint is
+temporary `step-183289`. Driver
+`/bizon/exp279-soft-production-cw-h100x32-a05` was submitted at 2026-09-19
+00:33 UTC to restore it at update 183290, discarding 252 updates.
+
+Iris rejected the first submission attempt: the experiment venv's `marin-iris`
+build is 2026-09-01, the controller runs 2026-09-17, and the freshness window is
+14 days. The job was submitted instead with the marin checkout's iris client
+(`/home/bizon/git/marin/lib/iris/src`, last iris commit 2026-09-15) shadowing
+the venv package on `PYTHONPATH`. That client resolves its date from git in a
+checkout, so this is a genuinely fresh client rather than an override of the
+gate. The four guarded `runtime_packages` versions are read from the venv's
+dist-info and are unchanged, and the emitted manifest is identical to the
+pilot's, so the frozen guard passed on its own terms. Workers are exempt from
+the gate and install from the staged frozen `uv.lock`, so the worker
+environment, training code and configuration are unaffected.
