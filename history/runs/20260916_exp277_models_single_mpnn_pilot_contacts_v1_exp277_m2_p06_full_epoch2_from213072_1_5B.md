@@ -73,6 +73,26 @@ Final native checkpoint `checkpoints/step-479417` is 119 objects /
 every 26,634 steps: 239706, 266340, 292974, 319608, 346242, 372876, 399510,
 426144, 452778, 479412.
 
+### Contact evaluation
+
+Scored against the first epoch in one driver job,
+`/bizon/exp277-eval-v2-02` (run id `v2-02`, suite `exp277-epochs`), 670 units
+per checkpoint under the fixed exp82 rollout recipe. **A second full epoch did
+not improve contact accuracy.** Paired per-protein deltas, second epoch minus
+first, all-range R-precision: legacy 554 **+0.00153** [-0.00399, +0.00674],
+eval-val **+0.00240** [-0.00644, +0.01102], eval-denovo **-0.01040**
+[-0.04015, +0.01182]. Both natural-protein deltas are below the predeclared
+0.005 threshold with intervals covering zero. The long-range eval-denovo delta
+(-0.03402 [-0.07287, -0.00203]) is the only interval excluding zero; it rests
+on 19 proteins, is one of six tests, and moves to -0.02203 when the single
+capped unit is dropped.
+
+The first epoch reproduced its separately-run `v2-01` numbers to within 0.00135
+everywhere, inside #204's 0.0023 noise floor and across a cluster change from
+RNO2A to US-EAST-02A. `eval-test` stayed unread. The second-epoch checkpoint hit
+the token cap on 44 rollouts across 8 units against the first epoch's 1 across
+1, seven of the eight being designed proteins. **Not promoted to default.**
+
 ### Recovery history
 
 - `/bizon/exp277-continue-a01` (15:01Z 09-16) was admitted with all sixteen
