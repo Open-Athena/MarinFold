@@ -36,6 +36,16 @@ marinfold_run:
   - /zack/exp299-v2-full-rprec-step30000-u670-s5of8-a01
   - /zack/exp299-v2-full-rprec-step30000-u670-s6of8-a01
   - /zack/exp299-v2-full-rprec-step30000-u670-s7of8-a01
+  - /zack/exp299-v2-full-export-step32000-a01
+  - /zack/exp299-v2-full-mirror-hf-step32000-a01
+  - /zack/exp299-paired-ce-exp177-u670-s0of4-a02
+  - /zack/exp299-paired-ce-exp177-u670-s1of4-a02
+  - /zack/exp299-paired-ce-exp177-u670-s2of4-a02
+  - /zack/exp299-paired-ce-exp177-u670-s3of4-a02
+  - /zack/exp299-paired-ce-delta-u670-s0of4-a01
+  - /zack/exp299-paired-ce-delta-u670-s1of4-a01
+  - /zack/exp299-paired-ce-delta-u670-s2of4-a01
+  - /zack/exp299-paired-ce-delta-u670-s3of4-a01
 ---
 
 # 2026-09-17 · exp299_models_delta_stream_contacts · protein-delta-stream-v2-1_5b-1e-3-2x4gb200-full78500-a17
@@ -71,3 +81,10 @@ At step 30,000 (38.2% schedule; approximately 27,273 contacts-v1-equivalent
 steps), V2 reached 0.5091 R/all and 0.4390 R/long on the legacy set—99.6% and
 95.5% of exp177-final. The de-novo split reached 0.4881 R/all and 0.4224 R/long.
 All 670 targets were covered with zero malformed rollouts.
+
+A paired teacher-forced phase breakdown on the same 670 R-precision proteins
+found 2.2575 AA CE and 0.4086 contact CE for V2 step 32,000. Exp177 final scored
+2.6024 AA CE and 2.2301 contact CE on those exact proteins. Full token-loss
+arrays are keyed by `(dataset, stem)`, confirming that V2's aggregate CE is
+strongly reduced by easier contact serialization while rollout R-precision
+independently confirms contact quality.

@@ -45,6 +45,19 @@ On `eval-denovo`, V2 improves from 0.4383 to **0.4881 R/all** and from 0.3935 to
 **0.4224 R/long** between steps 22,000 and 30,000. All 670 targets were covered,
 with no malformed generations among 67,000 rollouts.
 
+## Why V2 CE is low
+
+Paired teacher-forced scoring on the same 670 R-precision proteins confirms
+that the contact suffix is much easier to predict token-by-token than the
+amino-acid prefix. At step 32,000, V2 has **2.2575 CE on amino acids** and
+**0.4086 CE on contact tokens**. The exp177-final reference has 2.6024 AA CE
+and 2.2301 contact CE on exactly the same proteins.
+
+This means V2's low aggregate CE partly reflects an easier serialization. The
+rollout R-precision result remains independent evidence that it also learns the
+contact task better and faster. Full token losses are paired by `(dataset,
+stem)` for protein-level analysis.
+
 ## Next steps
 
 Continue evaluating later matched checkpoints and measure strict

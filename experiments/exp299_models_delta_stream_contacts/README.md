@@ -106,6 +106,38 @@ in `data/rprecision_step22000_u670_rows.csv.gz` and
 files use `step30000` in their names; per-protein runtime and worker metadata
 are in the `data/timings_*_u670.csv` files.
 
+## Paired teacher-forced CE by document phase
+
+To separate serialization difficulty from contact quality, we serialized the
+same 670 proteins used by the canonical R-precision evaluation in each model's
+native format, then scored every next-token target. Rows are paired exactly by
+`(dataset, stem)`:
+
+| checkpoint | proteins | AA tokens | contact tokens | AA CE | contact CE |
+|---|---:|---:|---:|---:|---:|
+| exp177 contacts-v1 final (step 71,359) | 670 | 131,874 | 356,820 | 2.6024 | 2.2301 |
+| V2 step 32,000 | 670 | 131,874 | 369,754 | **2.2575** | **0.4086** |
+
+The paired result confirms that contact prediction has lower token CE than
+amino-acid prediction in both formats, with a much larger gap for V2. The V2
+contact suffix is 1.849 nats/token below its AA prefix, versus 0.372 for
+contacts-v1. This establishes that easier serialization contributes
+substantially to V2's low aggregate CE. It does not explain away contact
+learning: the canonical rollout result independently shows high R-precision.
+
+Contact token counts differ because the formats encode the same contact graph
+differently: contacts-v1 uses one three-token statement per undirected contact,
+while V2 emits directed deltas plus one `STOP` per residue. Protein-level raw
+log-probability sums therefore need to be compared with the appropriate token
+normalization rather than as interchangeable sequence likelihoods.
+
+The notebook-ready per-protein table is
+`data/teacher_forced_ce_paired_u670.csv.gz`; it includes phase token counts,
+mean CEs, and summed log probabilities for both models. Aggregate subset results
+are in `data/teacher_forced_ce_paired_u670_summary.csv`. Full ragged per-token
+arrays (`target_token_ids`, `role_ids`, and `token_ce`) are under
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/eval/teacher_forced_ce/paired-u670-v1/`.
+
 ## Storage
 
 V2 conversion and cache creation run as a federated root job on
