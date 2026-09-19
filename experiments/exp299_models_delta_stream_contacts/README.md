@@ -55,33 +55,45 @@ approximately `V2 step / 1.1`.
 | V2 step 4,000 | 3,636 | 554/554 | 0.0540 | 0.0345 | 0.6146 | 0.5835 |
 | V2 step 6,000 | 5,455 | 554/554 | 0.0785 | 0.0477 | 0.6520 | 0.6085 |
 | V2 step 8,000 | 7,273 | 554/554 | 0.1306 | 0.0877 | 0.7083 | 0.6567 |
-| V2 step 11,999 (pilot final) | 10,908 | 554/554 | **0.1579** | **0.1054** | **0.7365** | **0.6866** |
+| V2 step 11,999 (pilot final) | 10,908 | 554/554 | 0.1579 | 0.1054 | 0.7365 | 0.6866 |
 | exp177 contacts-v1 step 10,000 | 10,000 | 554/554 | 0.0239 | 0.0199 | 0.5863 | 0.5622 |
+| V2 step 22,000 (28% schedule) | 20,000 | 554/554 | **0.4691** | **0.4028** | **0.8886** | **0.8549** |
+| exp177 contacts-v1 step 20,000 (28% schedule) | 20,000 | 554/554 | 0.0250 | 0.0223 | 0.5995 | 0.5751 |
 | exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | 0.4595 | 0.9246 | 0.9033 |
 
-### Preliminary conclusion: strong early-training win
+### Conclusion at 28%: large matched-training win
 
-The pilot final checkpoint provides a close early-training control match. V2
-step 11,999 corresponds to approximately 10,908 contacts-v1-equivalent steps,
-about 9% more protein exposure than exp177 step 10,000. At this near-matched
-exposure, V2 leads by +0.1340 all-range and +0.0854 long-range R-precision. In
-relative terms, V2 is 6.6× higher on all-range R-precision and 5.3× higher on
-long-range R-precision. The AUC gains are +0.1502 all-range and +0.1244
-long-range.
+V2 step 22,000 and exp177 step 20,000 are matched in both estimated protein
+exposure and schedule progress: each is approximately 28% through its full
+cosine schedule. On the legacy 554-protein universe, V2 leads by +0.4441
+all-range and +0.3806 long-range R-precision (18.8× and 18.1× respectively).
+The AUC gains are +0.2890 all-range and +0.2798 long-range. V2 step 22,000 has
+already reached 92% of exp177-final all-range R-precision and 88% of its
+long-range R-precision, despite only 28% of the matched protein exposure.
 
-This is strong evidence that the V2 delta document is substantially more
-protein-sample-efficient during early training. It does not yet establish that
-V2 will match or exceed a fully trained contacts-v1 model: the exp177 final
-checkpoint reaches 0.5113 all-range R-precision at substantially greater
-exposure. That final checkpoint is retained only as a mature-model reference,
-not as a training-progress-matched control.
+The same conclusion holds on the exp277 split added for this checkpoint:
+
+| subset | proteins | model | R (all) | R (long) | AUC (all) | AUC (long) |
+|---|---:|---|---:|---:|---:|---:|
+| eval-val | 97 | V2 step 22,000 | **0.3321** | **0.2942** | **0.8467** | **0.8176** |
+| eval-val | 97 | exp177 step 20,000 | 0.0219 | 0.0197 | 0.5880 | 0.5604 |
+| eval-denovo | 19 | V2 step 22,000 | **0.4383** | **0.3935** | **0.8830** | **0.8427** |
+| eval-denovo | 19 | exp177 step 20,000 | 0.0284 | 0.0340 | 0.5866 | 0.5620 |
+
+All 670 proteins were scored. V2 emitted no malformed rollouts among 67,000
+samples; one de-novo protein (`8qaf_A`) received an all-zero vote matrix. The
+contacts-v1 control had five length-truncated samples, whose valid prefixes
+were retained under the same permissive rollout semantics.
 
 As in the canonical contacts-v1 worker, decoding is permissive: valid in-range
 pairs vote while malformed or out-of-universe statements are ignored rather
-than causing the whole rollout to be discarded. All five V2 checkpoints produced
+than causing the whole rollout to be discarded. The first five V2 checkpoints produced
 nonzero votes for all 554 targets. Full per-protein rows and aggregate metrics
-are in `data/rprecision_comparison_rows.csv.gz` and
-`data/rprecision_comparison_summary.csv`.
+for that curve are in `data/rprecision_comparison_rows.csv.gz` and
+`data/rprecision_comparison_summary.csv`. The 670-protein matched comparison is
+in `data/rprecision_step22000_u670_rows.csv.gz` and
+`data/rprecision_step22000_u670_subset_summary.csv`; per-protein runtime and
+worker metadata are in the two `data/timings_*_u670.csv` files.
 
 ## Storage
 
@@ -93,9 +105,8 @@ pipeline.
 
 ## Next steps
 
-1. Measure whether strict grammar-constrained decoding improves V2 further.
-2. For future head-to-heads, retain contacts-v1 exports at the exact
-   protein-count-equivalent steps rather than comparing against final weights.
+1. Continue the 78,500-step V2 run and evaluate later matched checkpoints.
+2. Measure whether strict grammar-constrained decoding improves V2 further.
 
 ## Files
 
