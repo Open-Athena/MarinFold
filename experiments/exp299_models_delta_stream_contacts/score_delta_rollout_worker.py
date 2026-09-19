@@ -119,6 +119,7 @@ def main() -> None:
         inference_started = time.monotonic()
         outputs = llm.generate(prompts, sampling, use_tqdm=False)
         inference_seconds = time.monotonic() - inference_started
+        per_protein_inference_seconds = inference_seconds / len(group)
         rows = {name: [] for name in ("dataset", "stem", "L", "i", "j", "votes")}
         timing_rows = []
         cursor = 0
@@ -154,9 +155,9 @@ def main() -> None:
                 "n_residues": length,
                 "n_pairs": max(length - 6, 0) * max(length - 5, 0) // 2,
                 "mode": "rollout_resample",
-                "elapsed_seconds": inference_seconds,
+                "elapsed_seconds": per_protein_inference_seconds,
                 "model_load_seconds": model_load_seconds,
-                "total_seconds": model_stage_seconds + model_load_seconds + inference_seconds,
+                "total_seconds": model_stage_seconds + model_load_seconds + per_protein_inference_seconds,
                 "model_nickname": args.label,
                 "runner_tag": "iris-coreweave",
                 **worker_metadata,
