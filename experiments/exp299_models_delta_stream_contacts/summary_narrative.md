@@ -10,35 +10,33 @@ The contact suffix contains one signed-delta segment per residue, in sequence or
 
 The reference metric is exp82's rollout-vote evaluation: sample 100 sequence-conditioned contact suffixes, vote emitted pairs, and run the unchanged exp82/exp89 candidate-universe and R-precision code.
 
-## Preliminary canonical results
+## Canonical result at 28% schedule progress
 
-The V2 corpus, packed cache, production run, HF exports, and rollout evaluator
-are now operational. We evaluated steps 2,000, 4,000, 6,000, 8,000, and the
-pilot-final step 11,999 over all 554 exp89 targets with the canonical exp82 recipe: 100 sequence-conditioned
-rollouts, one undirected vote per pair per rollout, and unchanged exp89 metric
-semantics.
+We evaluated V2 step 22,000 and exp177 contacts-v1 step 20,000 with 100
+sequence-conditioned rollouts and unchanged exp82/exp89 metrics. V2 uses about
+10% more tokens per protein, so these checkpoints match both estimated protein
+exposure and schedule progress: each is approximately 28% through its full
+cosine schedule.
 
-| checkpoint | contacts-v1-equivalent protein exposure | R/all | R/long | AUC/all |
-|---|---:|---:|---:|---:|
-| V2 step 2,000 | step 1,818 | 0.0238 | 0.0192 | 0.5660 |
-| V2 step 4,000 | step 3,636 | 0.0540 | 0.0345 | 0.6146 |
-| V2 step 6,000 | step 5,455 | 0.0785 | 0.0477 | 0.6520 |
-| V2 step 8,000 | step 7,273 | 0.1306 | 0.0877 | 0.7083 |
-| V2 step 11,999 (pilot final) | step 10,908 | **0.1579** | **0.1054** | **0.7365** |
-| exp177 contacts-v1 step 10,000 | step 10,000 | 0.0239 | 0.0199 | 0.5863 |
+| subset | proteins | model | R/all | R/long | AUC/all |
+|---|---:|---|---:|---:|---:|
+| legacy | 554 | V2 step 22,000 | **0.4691** | **0.4028** | **0.8886** |
+| legacy | 554 | exp177 step 20,000 | 0.0250 | 0.0223 | 0.5995 |
+| eval-val | 97 | V2 step 22,000 | **0.3321** | **0.2942** | **0.8467** |
+| eval-val | 97 | exp177 step 20,000 | 0.0219 | 0.0197 | 0.5880 |
+| eval-denovo | 19 | V2 step 22,000 | **0.4383** | **0.3935** | **0.8830** |
+| eval-denovo | 19 | exp177 step 20,000 | 0.0284 | 0.0340 | 0.5866 |
 
-V2 uses about 10% more tokens per protein, hence the exposure adjustment above.
-The pilot final is a close early-training control match: it has about 9% more
-protein exposure than exp177 step 10,000. V2 is 6.6× higher on all-range
-R-precision and 5.3× higher on long-range R-precision, with absolute gains of
-+0.1340 and +0.0854 respectively. This is strong evidence for an early-training
-sample-efficiency win.
+On the legacy universe, the matched V2 checkpoint is 18.8× higher on all-range
+R-precision and 18.1× higher on long-range R-precision. It has already reached
+92% of exp177-final all-range R-precision at only 28% of matched exposure. The
+large advantage also transfers to the 19 held-out de-novo proteins, so the
+result is not confined to the older evaluation universe.
 
-The fully trained exp177 step-71,359 reference reaches 0.5113 R/all and is not a
-matched comparison. The current result therefore supports continuing the V2
-format; it does not yet establish the mature-training crossover.
+All 670 proteins were scored. The V2 run produced no malformed rollouts among
+67,000 samples.
 
 ## Next steps
 
-Measure strict grammar-constrained decoding and retain exact
-protein-count-matched contacts-v1 exports in future head-to-head runs.
+Continue evaluating later matched checkpoints and measure strict
+grammar-constrained decoding separately.
