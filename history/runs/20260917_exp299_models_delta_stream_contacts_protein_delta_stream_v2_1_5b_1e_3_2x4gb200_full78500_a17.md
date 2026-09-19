@@ -26,6 +26,16 @@ marinfold_run:
   - /zack/exp299-v2-full-rprec-step22000-u670-s5of8-a01
   - /zack/exp299-v2-full-rprec-step22000-u670-s6of8-a01
   - /zack/exp299-v2-full-rprec-step22000-u670-s7of8-a01
+  - /zack/exp299-v2-full-export-step30000-a01
+  - /zack/exp299-v2-full-mirror-hf-step30000-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s0of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s1of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s2of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s3of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s4of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s5of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s6of8-a01
+  - /zack/exp299-v2-full-rprec-step30000-u670-s7of8-a01
 ---
 
 # 2026-09-17 · exp299_models_delta_stream_contacts · protein-delta-stream-v2-1_5b-1e-3-2x4gb200-full78500-a17
@@ -56,3 +66,8 @@ V2 samples. On the legacy 554 proteins, R-precision was 0.4691 all-range and
 0.4028 long-range, versus 0.0250 and 0.0223 for the exposure- and
 schedule-matched exp177 contacts-v1 step-20,000 control. On the 19-protein
 exp277 de-novo split, V2 scored 0.4383 all-range and 0.3935 long-range.
+
+At step 30,000 (38.2% schedule; approximately 27,273 contacts-v1-equivalent
+steps), V2 reached 0.5091 R/all and 0.4390 R/long on the legacy set—99.6% and
+95.5% of exp177-final. The de-novo split reached 0.4881 R/all and 0.4224 R/long.
+All 670 targets were covered with zero malformed rollouts.

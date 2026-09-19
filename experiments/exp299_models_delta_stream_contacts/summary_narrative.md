@@ -36,6 +36,15 @@ result is not confined to the older evaluation universe.
 All 670 proteins were scored. The V2 run produced no malformed rollouts among
 67,000 samples.
 
+## Step-30,000 progress check
+
+At 38.2% of the full schedule (approximately 27,273 contacts-v1-equivalent
+steps), V2 reaches **0.5091 R/all** and **0.4390 R/long** on the legacy universe.
+That is 99.6% and 95.5% of the confirmed exp177-final values, 0.5113 and 0.4595.
+On `eval-denovo`, V2 improves from 0.4383 to **0.4881 R/all** and from 0.3935 to
+**0.4224 R/long** between steps 22,000 and 30,000. All 670 targets were covered,
+with no malformed generations among 67,000 rollouts.
+
 ## Next steps
 
 Continue evaluating later matched checkpoints and measure strict
