@@ -161,3 +161,11 @@ dist-info and are unchanged, and the emitted manifest is identical to the
 pilot's, so the frozen guard passed on its own terms. Workers are exempt from
 the gate and install from the staged frozen `uv.lock`, so the worker
 environment, training code and configuration are unaffected.
+
+At 2026-09-19 00:52 UTC both a05 jobs were running, W&B had returned to running,
+and the run had passed a04's high-water step 183541 to observed step 183607,
+with finite loss 2.9063 and 3.502 seconds/update. The resume point was again
+established by timing: the worker's compile artifact landed at 00:31:30 UTC and
+the first visible step 183542 at 00:46:47 UTC, a 15m17s gap that is about 262
+updates at 3.5 seconds each, against the 252 predicted by resuming at update
+183290.

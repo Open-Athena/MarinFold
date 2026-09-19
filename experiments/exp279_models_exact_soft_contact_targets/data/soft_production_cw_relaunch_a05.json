@@ -9091,5 +9091,19 @@
     "updates_discarded_vs_last_logged_step": 252,
     "submitted_at_utc": "2026-09-19T00:33Z",
     "submitter_change": "Iris rejected the submission: the venv's marin-iris build is 2026-09-01, the controller runs 2026-09-17 and the freshness window is 14 days. Submitted instead with the marin checkout's iris client (/home/bizon/git/marin/lib/iris/src, last iris commit 2026-09-15) shadowing the venv package via PYTHONPATH. The client resolves its date from git in a checkout, so this is a genuinely fresh client, not an override of the gate. The four guarded runtime_packages versions are read from the venv's dist-info and are unchanged, and the emitted manifest is identical to the pilot's, so the frozen guard passed on its own terms. Workers are exempt from the gate and install from the staged frozen uv.lock, so the worker environment is unaffected. The checkout's cluster config differs from the venv's only in loom_session_rbac and one user in an interactive-band budget group, neither of which affects this job's pool, resources or priority."
+  },
+  "verification": {
+    "checked_at_utc": "2026-09-19T00:50:58+00:00",
+    "driver_state": "running",
+    "worker_state": "running",
+    "wandb_state": "running",
+    "observed_global_step": 183607,
+    "train_loss": 2.9063305854797363,
+    "eval_loss": 3.0519704818725586,
+    "seconds_per_update": 3.502408831845969,
+    "run_progress": 0.8430080669969375,
+    "passed_previous_high_water_step": 183541,
+    "resume_point_validation": "Same timing method as a04, since Iris retains no logs and W&B drops steps at or below a resumed run's previous maximum. The worker's train-step compile artifact (train_step_hooks.jaxpr.txt.gz:v1351) landed 2026-09-19T00:31:30Z and the first visible step 183542 at 00:46:47Z, a 15m17s gap. At 3.5 s/update that is about 262 updates, against the 252 predicted by resuming at update 183290 (183542 - 183290).",
+    "resume_point_validated_update": 183290
   }
 }
