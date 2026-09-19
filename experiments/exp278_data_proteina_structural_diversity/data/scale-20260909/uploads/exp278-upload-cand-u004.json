@@ -1,0 +1,28 @@
+{
+  "worker": 4,
+  "workers": 8,
+  "job_id": "/bizon/exp278-upload-cand-u004",
+  "cluster": "cw-us-east-02a",
+  "repo": "timodonnell/exp278-proteina-monomers",
+  "kinds": [
+    "candidates"
+  ],
+  "submitted_utc": "2026-09-19T18:22:48.008344+00:00",
+  "manifest_sha256": "a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/ee2a248f5635cfea4f4b262f3deeb99904ca66eed9aa68062e1bbd760f0f83de.tar.gz",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "worker_args": [
+    "hf_upload.py",
+    "--manifest",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909/manifests/a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80.json",
+    "--repo",
+    "timodonnell/exp278-proteina-monomers",
+    "--worker",
+    "4",
+    "--workers",
+    "8",
+    "--kind",
+    "candidates"
+  ],
+  "token_name": "write2"
+}

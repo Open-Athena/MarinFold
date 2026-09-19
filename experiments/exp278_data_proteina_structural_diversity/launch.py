@@ -24,7 +24,7 @@ def bundle() -> bytes:
     """Bundle the experiment and current document library as a small archive."""
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
-        for path in sorted(HERE.glob("*.py")) + [HERE / "bootstrap.sh"]:
+        for path in sorted(HERE.glob("*.py")) + sorted(HERE.glob("bootstrap*.sh")):
             archive.add(path, arcname=path.name)
         library = HERE.parents[1] / "marinfold" / "marinfold"
         for path in sorted(library.rglob("*.py")):
@@ -75,6 +75,54 @@ def stage_bundle(content: bytes, cluster: str) -> str:
     path = f"marin-us-east-02a/MarinFold/exp278-proteina/code/{digest}.tar.gz"
     fs.pipe_file(path, content)
     return "s3://" + path
+
+
+def create_cpu_request(
+    name: str,
+    worker_args: list[str],
+    bundle_uri: str,
+    digest: str,
+    timeout: int,
+    cpu: int = 24,
+    ram: str = "180g",
+    disk: str = "512g",
+    env_vars: dict[str, str] | None = None,
+    preemption_retries: int = 100,
+    failure_retries: int = 2,
+) -> JobRequest:
+    """Construct a batch-priority CPU job for repack, upload and selection work.
+
+    `env_vars` carries secrets such as a Hub token, so callers must keep it out
+    of any submission record they persist.
+    """
+    unpack = (
+        "import fsspec,hashlib,io,tarfile; "
+        f"data=fsspec.open({bundle_uri!r},'rb').open().read(); "
+        f"assert hashlib.sha256(data).hexdigest()=={digest!r}; "
+        "tarfile.open(fileobj=io.BytesIO(data)).extractall('/tmp/exp278',filter='data')"
+    )
+    command = (
+        "set -euo pipefail\nmkdir -p /tmp/exp278\n"
+        "/opt/conda/bin/python -m pip install --quiet uv==0.8.22\n"
+        "uv pip install --python /opt/conda/bin/python fsspec==2025.3.0 s3fs==2025.3.0\n"
+        f"uv run --no-project /opt/conda/bin/python -c {shlex.quote(unpack)}\n"
+        f"exec timeout {timeout}s bash /tmp/exp278/bootstrap_cpu.sh "
+        + shlex.join(["/tmp/exp278/" + worker_args[0], *worker_args[1:]])
+    )
+    return JobRequest(
+        name=name,
+        entrypoint=Entrypoint.from_binary("bash", ["-lc", command]),
+        resources=ResourceConfig.with_cpu(image=IMAGE, cpu=cpu, ram=ram, disk=disk),
+        environment=create_environment(
+            docker_image=IMAGE, env_vars=dict(env_vars or {}), setup_scripts=[]
+        ),
+        replicas=1,
+        processes_per_task=1,
+        priority=3,
+        max_task_failures=failure_retries,
+        max_retries_failure=failure_retries,
+        max_retries_preemption=preemption_retries,
+    )
 
 
 def create_worker_request(

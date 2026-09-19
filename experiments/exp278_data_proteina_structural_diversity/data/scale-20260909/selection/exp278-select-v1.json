@@ -1,0 +1,21 @@
+{
+  "job_id": "/bizon/exp278-select-v1",
+  "cluster": "cw-us-east-02a",
+  "name": "exp278-select-v1",
+  "stages": "all",
+  "cpu": 160,
+  "ram": "1000g",
+  "disk": "4000g",
+  "threads": 150,
+  "submitted_utc": "2026-09-19T18:27:37.204368+00:00",
+  "manifest_sha256": "a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/c9fa0fb9d8da180e7e44e22ece2e6da2ba6aa1581a863eec56beb813101b369a.tar.gz",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "worker_args": [
+    "select_corpus.py",
+    "--manifest",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909/manifests/a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80.json",
+    "--threads",
+    "150"
+  ]
+}

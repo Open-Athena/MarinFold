@@ -30,6 +30,53 @@ untestable at audit sample size. See
 
 The user authorized scale generation on September 9, superseding the pilot cap and production hold. First production submission: 21:32 UTC. First review: September 10 at 15:32 UTC (11:32 EDT). Generation continues during review. See [SCALE_OPS.md](SCALE_OPS.md) for the frozen plan, independent batch jobs, preservation of all backbones/sequences and recovery. GPU-stage documents remain provisional pending decontamination and global diversity selection.
 
+## Whole-corpus selection and publication
+
+Generation finished on September 18. Two pipelines follow it, both running on
+East02 `cpu-genoa` nodes because the workstation uplink is about 2.5 MB/s and the
+run holds 353 GB.
+
+**Selection** ([select_corpus.py](select_corpus.py), launched by
+[select_launch.py](select_launch.py)) turns the 2,949,171 quality-pass candidates
+into a training corpus in five resumable stages — `extract`, `seqscreen`,
+`structscreen`, `cluster`, `assemble` — each marked in the object store so a
+preempted node restarts at the last finished stage rather than repeating hours of
+extraction. It runs on one node because Foldseek and MMseqs2 want every structure
+on local disk. The screening rules are the audit's, unchanged: a sequence is
+excluded when identity ≥ 0.30 with ≥ 0.50 coverage of the shorter sequence, or
+E ≤ 1e-3, against the frozen legacy plus FoldBench reference; a structure is
+excluded when it matches an evaluation structure at TM ≥ 0.8 in both
+normalizations with ≥ 0.8 coverage of both chains. `test_selection.py` pins those
+rules by replaying the 18-hour audit's own MMseqs2 hits and requiring the exact
+971-stem exclusion set back.
+
+Clustering deviates deliberately. The audit built connected components from an
+all-versus-all TM-align table; that is quadratic and, as its own report noted,
+chains into very large transitive components. At three million structures this
+uses Foldseek's cascaded clustering at the same TM and coverage thresholds, which
+is set-cover rather than connected components, so cluster membership is not
+identical to the audit's. The five-per-cluster cap is applied to those clusters
+and the command is recorded with the output. Both binaries are the exact builds
+the audit used, staged to the object store with their versions and checksums
+rather than re-downloaded.
+
+**Publication** ([hf_upload.py](hf_upload.py), launched by
+[upload_launch.py](upload_launch.py)) repacks the run into 663 Hub-sized shards —
+618 candidates, 7 sequences, 38 generated — because the Hub handles a few hundred
+large files far better than 1.8M small ones. The shard plan is computed once and
+stored beside the run, so independent workers partition identically and a restart
+resumes by asking the Hub which shards exist. Repacking is lossless; each
+generated `.npz` becomes one row carrying flattened Ca coordinates and their shape.
+
+The destination is the **private** dataset repo
+[`timodonnell/exp278-proteina-monomers`](https://huggingface.co/datasets/timodonnell/exp278-proteina-monomers).
+It is private on purpose: Proteina's license restricts the work and its
+derivatives to research and evaluation, and whether those terms flow to this
+generated data is unsettled. No available token can create a repository under the
+`open-athena` namespace — `oa-marinfold` is scoped to the existing bucket and
+`write2` to the personal namespace — so the repo can be transferred to the org
+once someone mints a token with org repository-creation rights.
+
 ## Question
 
 Can fold-conditioned Proteina generation supply one million useful, structurally diverse, sequence-paired monomer documents of length 60–500, at an acceptable cost per retained structure?
