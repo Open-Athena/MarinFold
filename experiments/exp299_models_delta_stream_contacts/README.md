@@ -56,6 +56,10 @@ approximately `V2 step / 1.1`.
 | V2 step 6,000 | 5,455 | 554/554 | 0.0785 | 0.0477 | 0.6520 | 0.6085 |
 | V2 step 8,000 | 7,273 | 554/554 | 0.1306 | 0.0877 | 0.7083 | 0.6567 |
 | V2 step 11,999 (pilot final) | 10,908 | 554/554 | 0.1579 | 0.1054 | 0.7365 | 0.6866 |
+| V2 full-run step 4,000 | 3,636 | 554/554 | 0.0823 | 0.0520 | 0.6639 | 0.6181 |
+| V2 full-run step 10,000 | 9,091 | 554/554 | 0.3251 | 0.2486 | 0.8313 | 0.7848 |
+| V2 full-run step 16,000 | 14,545 | 554/554 | 0.4525 | 0.3812 | 0.8806 | 0.8436 |
+| V2 full-run step 20,000 | 18,182 | 554/554 | 0.4685 | 0.3920 | 0.8934 | 0.8591 |
 | exp177 contacts-v1 step 10,000 | 10,000 | 554/554 | 0.0239 | 0.0199 | 0.5863 | 0.5622 |
 | V2 step 22,000 (28% schedule) | 20,000 | 554/554 | **0.4691** | **0.4028** | **0.8886** | **0.8549** |
 | exp177 contacts-v1 step 20,000 (28% schedule) | 20,000 | 554/554 | 0.0250 | 0.0223 | 0.5995 | 0.5751 |
@@ -93,7 +97,8 @@ Notebook-ready local files are:
   error bars and paired analyses.
 
 The delta V2 pilot and full 78,500-step run have separate `run` labels so a
-notebook cannot accidentally draw them as one continuous schedule.
+notebook cannot accidentally draw them as one continuous schedule. The full-run
+curve now contains steps 4k, 10k, 16k, 20k, 22k, 30k, 36k, 42k, and 48k.
 
 ### Conclusion at 28%: large matched-training win
 
