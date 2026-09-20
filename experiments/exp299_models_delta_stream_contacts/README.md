@@ -65,6 +65,36 @@ approximately `V2 step / 1.1`.
 | V2 step 48,000 (61% schedule) | 43,636 | 554/554 | **0.5418** | **0.4748** | 0.9131 | 0.8878 |
 | exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | 0.4595 | **0.9246** | **0.9033** |
 
+### Notebook-ready training curves
+
+All retained exp177 HF checkpoints have now been evaluated on `legacy_554`:
+
+| exp177 step | R (all) | R (long) | AUC (all) | AUC (long) |
+|---:|---:|---:|---:|---:|
+| 10,000 | 0.0239 | 0.0199 | 0.5863 | 0.5622 |
+| 20,000 | 0.0250 | 0.0223 | 0.5995 | 0.5751 |
+| 30,000 | 0.4112 | 0.3467 | 0.8936 | 0.8640 |
+| 40,000 | 0.4538 | 0.3955 | 0.9066 | 0.8808 |
+| 50,000 | 0.0193 | 0.0175 | 0.5670 | 0.5519 |
+| 60,000 | 0.4903 | 0.4359 | 0.9163 | 0.8927 |
+| 70,000 | 0.5113 | 0.4609 | 0.9229 | 0.9014 |
+| 71,359 | 0.5113 | 0.4595 | 0.9246 | 0.9033 |
+
+The step-50,000 collapse is present in the exported checkpoint and was reproduced
+by a complete independent second 100-rollout evaluation; it is not a plotting
+or aggregation error. The canonical run had 113 length-capped rollouts, whose
+valid prefixes were retained.
+
+Notebook-ready local files are:
+
+- `data/legacy554_rprecision_training_curve_wide.csv`: one row per checkpoint.
+- `data/legacy554_rprecision_training_curve.csv`: tidy aggregate metrics.
+- `data/legacy554_rprecision_training_curve_rows.csv.gz`: per-protein values for
+  error bars and paired analyses.
+
+The delta V2 pilot and full 78,500-step run have separate `run` labels so a
+notebook cannot accidentally draw them as one continuous schedule.
+
 ### Conclusion at 28%: large matched-training win
 
 V2 step 22,000 and exp177 step 20,000 are matched in both estimated protein
