@@ -45,6 +45,15 @@ On `eval-denovo`, V2 improves from 0.4383 to **0.4881 R/all** and from 0.3935 to
 **0.4224 R/long** between steps 22,000 and 30,000. All 670 targets were covered,
 with no malformed generations among 67,000 rollouts.
 
+## Step-36,000 crossover
+
+At step 36,000 (45.9% schedule; approximately 32,727 contacts-v1-equivalent
+steps), V2 reaches **0.5130 R/all** on the legacy universe, narrowly exceeding
+exp177 final at 0.5113. The paired protein-bootstrap interval for this narrow
+R/all difference is [-0.0067, 0.0103], so it is not yet a resolved lead. V2 has
+not crossed the contacts-v1 reference on long-range R-precision (0.4432 versus
+0.4595) or AUC. On `eval-denovo`, V2 reaches 0.5261 R/all and 0.4626 R/long.
+
 ## Why V2 CE is low
 
 Paired teacher-forced scoring on the same 670 R-precision proteins confirms

@@ -59,8 +59,9 @@ approximately `V2 step / 1.1`.
 | exp177 contacts-v1 step 10,000 | 10,000 | 554/554 | 0.0239 | 0.0199 | 0.5863 | 0.5622 |
 | V2 step 22,000 (28% schedule) | 20,000 | 554/554 | **0.4691** | **0.4028** | **0.8886** | **0.8549** |
 | exp177 contacts-v1 step 20,000 (28% schedule) | 20,000 | 554/554 | 0.0250 | 0.0223 | 0.5995 | 0.5751 |
-| V2 step 30,000 (38% schedule) | 27,273 | 554/554 | **0.5091** | **0.4390** | 0.9054 | 0.8775 |
-| exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | **0.5113** | **0.4595** | **0.9246** | **0.9033** |
+| V2 step 30,000 (38% schedule) | 27,273 | 554/554 | 0.5091 | 0.4390 | 0.9054 | 0.8775 |
+| V2 step 36,000 (46% schedule) | 32,727 | 554/554 | **0.5130** | 0.4432 | 0.9046 | 0.8750 |
+| exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | **0.4595** | **0.9246** | **0.9033** |
 
 ### Conclusion at 28%: large matched-training win
 
@@ -76,7 +77,13 @@ A later progress check at V2 step 30,000 strengthens the result. At only 38.2%
 of the full matched schedule and approximately 27,273 contacts-v1-equivalent
 steps, it reaches 0.5091 R/all and 0.4390 R/long: 99.6% and 95.5% of the
 exp177-final values. Its AUCs remain lower than exp177 final, at 0.9054 all-range
-and 0.8775 long-range versus 0.9246 and 0.9033.
+and 0.8775 long-range versus 0.9246 and 0.9033. At step 36,000, V2 narrowly
+passes exp177 final on all-range R-precision, 0.5130 versus 0.5113, despite only
+approximately 32,727 contacts-v1-equivalent steps. This all-range crossover is
+a narrow point-estimate lead: the paired protein-bootstrap 95% interval for
+the difference is [-0.0067, 0.0103]. It has not passed the contacts-v1 reference
+on long-range R-precision or either AUC: R/long is 0.4432 versus 0.4595, with a
+paired-bootstrap difference interval of [-0.0260, -0.0066].
 
 The same conclusion holds on the exp277 split added for these checkpoints:
 
@@ -88,11 +95,13 @@ The same conclusion holds on the exp277 split added for these checkpoints:
 | eval-denovo | 19 | exp177 step 20,000 | 0.0284 | 0.0340 | 0.5866 | 0.5620 |
 | eval-val | 97 | V2 step 30,000 | **0.3870** | **0.3435** | **0.8747** | **0.8521** |
 | eval-denovo | 19 | V2 step 30,000 | **0.4881** | **0.4224** | **0.9000** | **0.8634** |
+| eval-val | 97 | V2 step 36,000 | **0.4080** | **0.3773** | **0.8827** | **0.8607** |
+| eval-denovo | 19 | V2 step 36,000 | **0.5261** | **0.4626** | **0.9092** | **0.8631** |
 
-All 670 proteins were scored at both V2 checkpoints. Step 30,000 emitted no
-malformed rollouts among 67,000 samples. Step 22,000 likewise emitted no
-malformed rollouts; one de-novo protein (`8qaf_A`) received an all-zero vote
-matrix. The contacts-v1 control had five length-truncated samples, whose valid
+All 670 proteins were scored at all three V2 checkpoints. Step 36,000 emitted
+no malformed rollouts among 67,000 samples. Steps 22,000 and 30,000 likewise
+emitted no malformed rollouts; one de-novo protein (`8qaf_A`) received an
+all-zero vote matrix at steps 22,000 and 36,000. The contacts-v1 control had five length-truncated samples, whose valid
 prefixes were retained under the same permissive rollout semantics.
 
 As in the canonical contacts-v1 worker, decoding is permissive: valid in-range
@@ -103,8 +112,9 @@ for that curve are in `data/rprecision_comparison_rows.csv.gz` and
 `data/rprecision_comparison_summary.csv`. The 670-protein matched comparison is
 in `data/rprecision_step22000_u670_rows.csv.gz` and
 `data/rprecision_step22000_u670_subset_summary.csv`. The corresponding step-30,000
-files use `step30000` in their names; per-protein runtime and worker metadata
-are in the `data/timings_*_u670.csv` files.
+and step-36,000 files use `step30000` and `step36000` in their names;
+per-protein runtime and worker metadata are in the `data/timings_*_u670.csv`
+files.
 
 ## Paired teacher-forced CE by document phase
 
