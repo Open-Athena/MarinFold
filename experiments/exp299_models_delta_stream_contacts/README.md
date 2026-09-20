@@ -95,10 +95,20 @@ Notebook-ready local files are:
 - `data/legacy554_rprecision_training_curve.csv`: tidy aggregate metrics.
 - `data/legacy554_rprecision_training_curve_rows.csv.gz`: per-protein values for
   error bars and paired analyses.
+- `data/eval_denovo_rprecision_training_curve_wide.csv`: matching one-row-per-
+  checkpoint curve on the 19-protein exp277 `eval-denovo` set.
+- `data/eval_denovo_rprecision_training_curve.csv`: tidy `eval-denovo`
+  aggregates with SEM and protein counts.
+- `data/eval_denovo_rprecision_training_curve_rows.csv.gz`: per-protein
+  `eval-denovo` values.
+- `data/timings_eval_denovo_training_curve.csv`: per-protein timing and worker
+  provenance for every checkpoint in the `eval-denovo` curve.
 
 The delta V2 pilot and full 78,500-step run have separate `run` labels so a
 notebook cannot accidentally draw them as one continuous schedule. The full-run
-curve now contains steps 4k, 10k, 16k, 20k, 22k, 30k, 36k, 42k, and 48k.
+curve now contains steps 4k, 10k, 16k, 20k, 22k, 30k, 36k, 42k, and 48k. The
+`eval-denovo` curve contains those same full-run checkpoints and all exp177
+checkpoints in the legacy curve (10k, 20k, 30k, 40k, 50k, 60k, 70k, and 71,359).
 
 ### Conclusion at 28%: large matched-training win
 
