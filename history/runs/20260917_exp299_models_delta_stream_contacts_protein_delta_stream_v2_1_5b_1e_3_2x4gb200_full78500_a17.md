@@ -56,6 +56,24 @@ marinfold_run:
   - /zack/exp299-v2-full-rprec-step36000-u670-s5of8-a01
   - /zack/exp299-v2-full-rprec-step36000-u670-s6of8-a01
   - /zack/exp299-v2-full-rprec-step36000-u670-s7of8-a02
+  - /zack/exp299-v2-full-export-step42000-a01
+  - /zack/exp299-v2-full-mirror-hf-step42000-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s0of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s1of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s2of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s3of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s4of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s5of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s6of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-u670-s7of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s0of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s1of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s2of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s3of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s4of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s5of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s6of8-a01
+  - /zack/exp299-v2-full-rprec-step42000-rerun-u670-s7of8-a01
 ---
 
 # 2026-09-17 · exp299_models_delta_stream_contacts · protein-delta-stream-v2-1_5b-1e-3-2x4gb200-full78500-a17
@@ -97,6 +115,12 @@ steps), V2 reached 0.5130 R/all and 0.4432 R/long on the legacy set. This
 narrowly exceeds exp177-final R/all (0.5113), while exp177 remains ahead on
 R/long (0.4595) and AUC. The de-novo split reached 0.5261 R/all and 0.4626
 R/long. All 670 targets were covered with zero malformed rollouts.
+
+At step 42,000, legacy performance regressed to 0.4761 R/all and 0.4055 R/long
+despite lower validation CE. A full independent rerun reproduced the drop at
+0.4756 and 0.4058. Paired protein-bootstrap intervals versus step 36,000 exclude
+zero for both metrics. All 670 targets were covered with zero malformed
+rollouts in both evaluations.
 
 A paired teacher-forced phase breakdown on the same 670 R-precision proteins
 found 2.2575 AA CE and 0.4086 contact CE for V2 step 32,000. Exp177 final scored

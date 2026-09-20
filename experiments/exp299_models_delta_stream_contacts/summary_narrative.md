@@ -54,6 +54,15 @@ R/all difference is [-0.0067, 0.0103], so it is not yet a resolved lead. V2 has
 not crossed the contacts-v1 reference on long-range R-precision (0.4432 versus
 0.4595) or AUC. On `eval-denovo`, V2 reaches 0.5261 R/all and 0.4626 R/long.
 
+## Step-42,000 regression
+
+Despite lower validation CE, step 42,000 falls to 0.4761 R/all and 0.4055
+R/long on the legacy universe. An independent second 100-rollout run reproduces
+the result at 0.4756 and 0.4058. Paired protein-bootstrap intervals for the
+step-42,000 minus step-36,000 difference exclude zero: [-0.0475, -0.0269] for
+R/all and [-0.0490, -0.0268] for R/long. The rollout curve is therefore
+non-monotonic even while teacher-forced validation CE improves.
+
 ## Why V2 CE is low
 
 Paired teacher-forced scoring on the same 670 R-precision proteins confirms
