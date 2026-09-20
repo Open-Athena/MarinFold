@@ -63,6 +63,14 @@ step-42,000 minus step-36,000 difference exclude zero: [-0.0475, -0.0269] for
 R/all and [-0.0490, -0.0268] for R/long. The rollout curve is therefore
 non-monotonic even while teacher-forced validation CE improves.
 
+## Step-48,000 recovery and new high
+
+Step 48,000 recovers to **0.5418 R/all** and **0.4748 R/long** on the legacy
+universe, exceeding exp177 final on both R-precision metrics. Paired-bootstrap
+V2-minus-exp177 intervals are [0.0207, 0.0407] and [0.0044, 0.0265],
+respectively. AUC remains below exp177 final at 0.9131 all-range and 0.8878
+long-range. On `eval-denovo`, V2 reaches 0.5272 R/all and 0.4595 R/long.
+
 ## Why V2 CE is low
 
 Paired teacher-forced scoring on the same 670 R-precision proteins confirms

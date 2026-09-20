@@ -62,7 +62,8 @@ approximately `V2 step / 1.1`.
 | V2 step 30,000 (38% schedule) | 27,273 | 554/554 | 0.5091 | 0.4390 | 0.9054 | 0.8775 |
 | V2 step 36,000 (46% schedule) | 32,727 | 554/554 | **0.5130** | 0.4432 | 0.9046 | 0.8750 |
 | V2 step 42,000 (54% schedule) | 38,182 | 554/554 | 0.4761 | 0.4055 | 0.8855 | 0.8526 |
-| exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | **0.4595** | **0.9246** | **0.9033** |
+| V2 step 48,000 (61% schedule) | 43,636 | 554/554 | **0.5418** | **0.4748** | 0.9131 | 0.8878 |
+| exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | 0.4595 | **0.9246** | **0.9033** |
 
 ### Conclusion at 28%: large matched-training win
 
@@ -89,7 +90,10 @@ regresses to 0.4761 R/all and 0.4055 R/long despite lower validation CE. A full
 independent 100-rollout rerun reproduced the drop (0.4756 and 0.4058), ruling
 out a single rollout sample as its cause. Relative to step 36,000, paired
 protein-bootstrap difference intervals are [-0.0475, -0.0269] for R/all and
-[-0.0490, -0.0268] for R/long.
+[-0.0490, -0.0268] for R/long. Step 48,000 then recovers to a new high of
+0.5418 R/all and 0.4748 R/long, exceeding exp177 final on both metrics. The
+paired-bootstrap V2-minus-exp177 intervals are [0.0207, 0.0407] for R/all and
+[0.0044, 0.0265] for R/long. Its AUCs remain lower, at 0.9131 and 0.8878.
 
 The same conclusion holds on the exp277 split added for these checkpoints:
 
@@ -105,10 +109,13 @@ The same conclusion holds on the exp277 split added for these checkpoints:
 | eval-denovo | 19 | V2 step 36,000 | **0.5261** | **0.4626** | **0.9092** | **0.8631** |
 | eval-val | 97 | V2 step 42,000 | 0.4122 | 0.3744 | 0.8800 | 0.8587 |
 | eval-denovo | 19 | V2 step 42,000 | 0.5087 | 0.4307 | 0.9055 | 0.8521 |
+| eval-val | 97 | V2 step 48,000 | **0.4537** | **0.4197** | **0.8969** | **0.8778** |
+| eval-denovo | 19 | V2 step 48,000 | **0.5272** | **0.4595** | **0.9282** | **0.8936** |
 
-All 670 proteins were scored at all four V2 checkpoints. Step 42,000 emitted no
-malformed rollouts among 67,000 samples, as did its independent rerun. Earlier
-checkpoints likewise emitted no malformed rollouts; one de-novo protein
+All 670 proteins were scored at all five V2 checkpoints. Steps 42,000 and
+48,000 emitted no malformed rollouts among 67,000 samples, as did the
+step-42,000 independent rerun. Earlier checkpoints likewise emitted no
+malformed rollouts; one de-novo protein
 (`8qaf_A`) received an all-zero vote matrix at steps 22,000 and 36,000. The
 contacts-v1 control had five length-truncated samples, whose valid prefixes
 were retained under the same permissive rollout semantics.
@@ -121,9 +128,9 @@ for that curve are in `data/rprecision_comparison_rows.csv.gz` and
 `data/rprecision_comparison_summary.csv`. The 670-protein matched comparison is
 in `data/rprecision_step22000_u670_rows.csv.gz` and
 `data/rprecision_step22000_u670_subset_summary.csv`. The corresponding
-step-30,000, step-36,000, and step-42,000 files use `step30000`, `step36000`, and
-`step42000` in their names; per-protein runtime and worker metadata are in the
-`data/timings_*_u670.csv` files.
+step-30,000, step-36,000, step-42,000, and step-48,000 files use `step30000`,
+`step36000`, `step42000`, and `step48000` in their names; per-protein runtime
+and worker metadata are in the `data/timings_*_u670.csv` files.
 
 ## Paired teacher-forced CE by document phase
 
