@@ -169,3 +169,24 @@ established by timing: the worker's compile artifact landed at 00:31:30 UTC and
 the first visible step 183542 at 00:46:47 UTC, a 15m17s gap that is about 262
 updates at 3.5 seconds each, against the 252 predicted by resuming at update
 183290.
+
+## Base phase complete
+
+a05 ran the base phase to its end without a restart: 34,510 updates from
+183290 to 217800 in about 34 hours, against a03's 18 hours and a04's 58 before
+they failed. The base-phase child
+`/bizon/exp279-soft-production-cw-h100x32-a05-base` reached state `succeeded`
+at 2026-09-20 10:49 UTC with W&B run progress 1.0, training loss 2.8969 and
+ordinary validation CE 3.0463.
+
+Its final checkpoint `step-217800` is complete and permanent
+(`is_temporary: false`), the first clean phase boundary of the run. Every prior
+terminal failure left a checkpoint directory stopping short of `metadata.json`;
+this one did not.
+
+The production driver stayed alive across the transition and spawned the
+recovery-phase child
+`/bizon/exp279-soft-production-cw-h100x32-a05-recovery` at 10:48:14 UTC, which
+covers updates 217801 through 333960 at constant learning rate 1e-3. The final
+phase, updates 333961 through 363000 with the learning rate decaying to 5e-5,
+follows after it. No relaunch or intervention was needed for this transition.
