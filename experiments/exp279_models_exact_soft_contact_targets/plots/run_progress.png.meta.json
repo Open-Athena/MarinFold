@@ -1,0 +1,5 @@
+{
+  "script": "experiments/exp279_models_exact_soft_contact_targets/analysis/plot_run_progress.py",
+  "args": [],
+  "caption": "Schedule position against wall clock. Triangles mark each terminal failure at the update it resumed from; flat stretches are downtime, not slow training (throughput held near 3.5 s/update)."
+}

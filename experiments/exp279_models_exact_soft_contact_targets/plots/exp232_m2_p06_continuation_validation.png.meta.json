@@ -1,0 +1,5 @@
+{
+  "script": "experiments/exp279_models_exact_soft_contact_targets/analysis/plot_exp232_continuation.py",
+  "args": [],
+  "caption": "Ordinary validation CE at 112 matched steps through 236,768, against the spliced exp232 continuation lineage at matched peak LR. Negative favors soft targets."
+}
