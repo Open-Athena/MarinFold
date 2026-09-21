@@ -6,7 +6,9 @@
 import equinox as eqx
 import haliax as hax
 import jax
+import jax.numpy as jnp
 import numpy as np
+import levanter.tensorstore_serialization as tensorstore_serialization
 from levanter.checkpoint_manifest import read_manifest
 from levanter.tensorstore_serialization import _flatten_serializable_leaves
 from levanter.tracker import current_tracker
@@ -81,3 +83,47 @@ def validate_training_restore(config, checkpoint: str) -> None:
     validate_restore(
         shapes, checkpoint, adding_skip_state=config.trainer.allow_partial_checkpoint
     )
+
+
+_BOOL_RESTORE_PATCHED = False
+
+
+def apply_bool_restore_fix() -> None:
+    """Make boolean checkpoint leaves restorable under the pinned serializer.
+
+    `levanter.tensorstore_serialization._restore_replica_axis` reduces a leaf's
+    replica axis by bitcasting it to uint8 and summing the bytes.
+    `lax.bitcast_convert_type` rejects bool operands, so restoring any
+    checkpoint that holds a boolean array raises TypeError. SkipStep's
+    `SkipStepState.valid_mask` is `jnp.bool_`, and the recovery and final
+    phases enable SkipStep, so every checkpoint those phases write is
+    unreadable -- including the one the recovery -> final transition must
+    restore. The base phase carries no boolean leaf, which is why base-phase
+    resumes always worked.
+
+    The original reduction is exact because exactly one replica contributes
+    each value and the rest hold zero bytes. For bool that makes a logical OR
+    over the replica axis produce the identical result: the contributing
+    replica's value, since False is the identity of OR. Non-boolean leaves keep
+    the upstream path untouched.
+
+    This repairs a restore-path defect only. It reads no training
+    hyperparameter and changes no update, so the recipe under test is
+    unaffected. The same defect is present in current upstream levanter, so
+    upgrading the pin is not an alternative.
+    """
+    global _BOOL_RESTORE_PATCHED
+    if _BOOL_RESTORE_PATCHED:
+        return
+    upstream = tensorstore_serialization._restore_replica_axis
+
+    def _restore_replica_axis(value: jax.Array) -> jax.Array:
+        if value.dtype == jnp.bool_:
+            return jnp.any(value, axis=0)
+        return upstream(value)
+
+    tensorstore_serialization._restore_replica_axis = _restore_replica_axis
+    # The jitted reducer resolves the module global when it is first built, so
+    # drop any entry cached before this patch was applied.
+    tensorstore_serialization._replica_reducer.cache_clear()
+    _BOOL_RESTORE_PATCHED = True

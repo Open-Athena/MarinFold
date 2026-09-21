@@ -32,7 +32,7 @@ from rigging.filesystem.storage_path import StoragePath
 from experiments.exp232_sweep_cv1_decontam.training_contract import SHUFFLE
 from scripts.history import _existing_run_files
 
-from .checkpoints import validate_training_restore
+from .checkpoints import apply_bool_restore_fix, validate_training_restore
 from .data import ContactDataConfig
 from .inputs import ROOT, resolve_tokenizer, source_identity, verify_manifest
 from .model import ContactQwen3Config, reference_model_config
@@ -357,6 +357,9 @@ def main():
                 flush=True,
             )
     if args.resume:
+        # Boolean leaves (SkipStep's valid_mask) are unreadable under the
+        # pinned serializer; repair the restore path before any load.
+        apply_bool_restore_fix()
         source_record = StoragePath(
             args.resume.rstrip("/").rsplit("/", 1)[0] + "/experiment.json"
         )
