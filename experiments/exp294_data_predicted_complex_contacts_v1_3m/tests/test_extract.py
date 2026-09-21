@@ -399,3 +399,33 @@ def test_a_404_is_not_retried_as_an_io_error() -> None:
         server.shutdown()
         server.server_close()
     assert _NotFound.hits == 1, "a 404 is an answer, not a failure to retry"
+
+
+def test_reverse_works_the_same_shard_from_the_other_end(
+    tar_server, tmp_path: Path, monkeypatch
+) -> None:
+    """A pod that finished its own shard can help one that has not.
+
+    Both pods skip tars that already have a ledger file, so they converge in
+    the middle; the worst case when they meet is one tar done twice, and that
+    write is idempotent.
+    """
+    import extract
+
+    _stub_one_model(monkeypatch)
+    url, names = tar_server
+    manifest = _manifest(tmp_path, url, names)
+
+    order: list[str] = []
+    real = extract.extract_tar
+    monkeypatch.setattr(
+        extract,
+        "extract_tar",
+        lambda tar, rows, **kw: (order.append(tar), real(tar, rows, **kw))[1],
+    )
+
+    extract.run(str(manifest), str(tmp_path / "fwd"), fetch_concurrency=2)
+    forward = list(order)
+    order.clear()
+    extract.run(str(manifest), str(tmp_path / "rev"), fetch_concurrency=2, reverse=True)
+    assert order == forward[::-1], "a helper must start at the far end"

@@ -463,6 +463,7 @@ def run(
     limit_tars: int | None = None,
     shard_index: int = 0,
     shard_count: int = 1,
+    reverse: bool = False,
 ) -> dict[str, Any]:
     """Extract every model in this shard's tars, writing as each tar finishes.
 
@@ -521,6 +522,13 @@ def run(
         done = set()
     pending = [t for t in tars if tar_stem(t) not in done]
     resumed = len(tars) - len(pending)
+    if reverse:
+        # A second pod on the same shard, working from the far end. Because a
+        # finished tar is skipped globally, the two converge in the middle and
+        # the only cost of meeting is one tar done twice -- the write is
+        # idempotent. This lets pods that finished their own shard help with
+        # one that has not.
+        pending.reverse()
     if resumed:
         print(f"resuming: {resumed} of {len(tars)} tars already complete", flush=True)
 
@@ -627,6 +635,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit-tars", type=int, default=None)
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument(
+        "--reverse",
+        action="store_true",
+        help="Work this shard's pending tars back to front (a helper pod).",
+    )
     return parser
 
 
@@ -640,6 +653,7 @@ def main(argv: list[str] | None = None) -> int:
         limit_tars=args.limit_tars,
         shard_index=args.shard_index,
         shard_count=args.shard_count,
+        reverse=args.reverse,
     )
     print(json.dumps(summary, indent=2))
     return 0
