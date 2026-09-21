@@ -94,12 +94,17 @@ fold. Powering the test needs a PDB-trained model, where both folds exist.
 
 ## Result 6 — forcing the fold
 
-Putting k of Fold2's contacts in the prompt moves the model, monotonically, with
-the symmetric Fold1 control moving the other way from an identical baseline.
-Recovery is scored on the remaining sets, so the prompt cannot inflate it, and
-the echo rate is zero — the model never repeats what it was handed.
+Putting k of Fold2's contacts in the prompt moves the model monotonically, with
+the symmetric Fold1 control moving the other way from an identical baseline
+(+0.110 vs +0.111 at k=0). Recovery is scored on the remaining sets, so the
+prompt cannot inflate it, and the echo rate is 0.000 — the model never repeats
+what it was handed.
 
-_(k\* and the final curve land when the full grid finishes.)_
+k* = 10 contacts, and 39 of the 51 pairs needing a flip get one. The cost is a
+fixed COUNT, not a fixed fraction: k* is uncorrelated with |B| (rho +0.145,
+p = 0.38) while the fraction is strongly anticorrelated (-0.413, p = 0.009). A
+pair with 20 fold2-unique contacts and one with 200 both need about ten. What
+scales instead is prior commitment (rho +0.364 with unconditioned phi).
 
 ## Caveats
 

@@ -344,6 +344,57 @@ sequence is, so a simple retrieval-strength account does not fit either.
 
 ![memorization](plots/memorization.png)
 
+### M4 — it takes about ten contacts to move the model, whatever its size
+
+Putting *k* of fold2's contacts in the prompt and scoring recovery of the
+**remaining** fold2 contacts (the given set is removed from the universe, so the
+prompt cannot inflate the score):
+
+| k | seeded with fold2 | seeded with fold1 (control) | gap |
+|---:|---:|---:|---:|
+| 0 | +0.110 | +0.111 | 0.001 |
+| 1 | +0.091 | +0.120 | 0.029 |
+| 2 | +0.072 | +0.134 | 0.062 |
+| 5 | +0.020 | +0.161 | 0.141 |
+| 10 | **−0.013** | +0.187 | 0.200 |
+| 20 | −0.092 | +0.241 | 0.333 |
+| 40 | −0.170 | +0.274 | 0.444 |
+
+![conditioning](plots/conditioning.png)
+
+Both arms move monotonically in opposite directions from an identical baseline
+(+0.110 vs +0.111 at k=0, as they must be — the same pairs, no conditioning).
+**k\* = 10**: ten fold2 contacts is where the average pair stops preferring
+fold1. Per pair the median is also 10 (quartiles 5–20), and **39 of the 51 pairs
+that need flipping do flip** at some tested dose. 17 already preferred fold2
+unconditioned.
+
+**The cost is a fixed count, not a fixed fraction.** This is the opposite of what
+it looks like on the short proteins alone. Across the 39 pairs that flip,
+k\* is **uncorrelated with |B|** (Spearman +0.145, p = 0.38), while k\* *as a
+fraction of |B|* correlates strongly and negatively with it (−0.413, p = 0.009).
+So a pair with 20 fold2-unique contacts and one with 200 both need roughly ten:
+the model is not being convinced proportionally, it is being tipped by a small
+absolute amount of evidence. Ten contacts is ~16% of the median pair's |B| and
+under 3% of the largest — the fraction is the number that varies.
+
+**What does scale is how committed the model was.** k\* rises with the pair's
+unconditioned φ (Spearman +0.364, p = 0.023; +0.515 on the fraction,
+p = 0.0008). The 12 pairs that never flip are not significantly more committed
+than those that do (Mann-Whitney p = 0.28), so commitment is part of the story
+and not all of it.
+
+**The model does not resist being pushed to the alternative fold.** Per contact,
+the move toward fold2 is 1.6–1.9× *larger* than the move toward fold1 at every
+dose. Read that cautiously — fold1 recall starts high, so the control arm has
+less headroom — but it rules out the natural worry that the Fold1 prior acts as a
+barrier to steering. It does not.
+
+**The echo rate is 0.000 at every dose.** The model never re-emits a contact it
+was handed, which is correct for a format that states each contact once, and
+means every point of recovery measured here is inference on contacts the model
+was *not* told.
+
 ### Truncation
 
 One unit of 68 — `4zt0c_4cmqb`, L = 1338 — is budget-capped by the 8192-token
@@ -354,47 +405,60 @@ precedent. Excluding it changes nothing (76% either way; mean φ +0.112 vs
 
 ## Conclusion
 
-**MarinFold reaches one fold — Fold1 — and sampling harder does not find the
-other. But the other fold is not far away in likelihood, which is a different
-failure from AlphaFold's.**
+**MarinFold reaches one fold and sampling never finds the other — but the other
+fold is a few contacts away, not a different distribution.**
 
-Over 68 fold-switching pairs whose two contact maps differ far beyond the
+Over 68 fold-switching pairs whose contact maps differ far beyond the
 crystallographic noise floor, the model prefers Fold1 in 52 (mean φ = +0.112,
-p = 3.9 × 10⁻⁶; paired R-precision margin +0.078). The preference is *larger* on
-the pairs with no crystal confound at all (tier A, +0.176) and *larger* again
-when restricted to the contacts the fold switch actually moved (+0.153), so it is
-the fold switch being measured, not crystallisation or domain motion. It is also
-markedly asymmetric: fold1 preferences reach +0.6, fold2 preferences stop at −0.2.
+p = 3.9 × 10⁻⁶; paired R-precision margin +0.078). The preference is *larger*
+where no crystal confound exists (tier A, +0.176) and *larger* again on the
+contacts the switch actually moved (+0.153), and it survives every alternative
+explanation tested — including a real resolution asymmetry in the benchmark
+(Fold1 structures are sharper, p = 0.031) that turns out not to drive it. On
+KaiB, the protein AF-Cluster was built for, φ = +0.47.
 
-This reproduces AlphaFold's failure mode on an architecture that shares nothing
-with it and uses no MSA — including on KaiB (`5jyt`/`2qke`), the protein
-AF-Cluster was built for, where φ = +0.47.
+That much reproduces AlphaFold's failure on an architecture sharing nothing with
+it and using no MSA. **The interesting part is where it stops being the same
+failure.**
 
-**Where it differs from AlphaFold is the mechanism, and that is the useful part.**
-A generative contact model has a native way to produce alternative conformations —
-just sample — and it does not work: the per-rollout spread is a binomial null
-(median dispersion 1.07). But teacher forcing shows the alternative fold is
-assigned **nearly equal likelihood** (ΔNLL/token −0.019, p = 0.27; fold1 favoured
-in 37/68). Fold2 is inside the distribution and sampling simply never goes there.
-So this is not "the model cannot represent the other fold" — it is "the model's
-sampling mode is single-basin". That is a steering problem, and #301's M4 measures
-what steering costs.
+A generative contact model's native route to a second conformation is to sample
+more, and it does not work: the per-rollout spread is a binomial null (median
+dispersion 1.07). But teacher forcing puts the two folds at **near-equal
+likelihood** (matched ΔNLL/token −0.019, p = 0.27), and the two readouts agree
+per protein (ρ = −0.54). Fold2 is inside the distribution; sampling never goes
+there. So the deficit is not representational, it is a single-basin sampling
+mode — and that is a steering problem.
 
-**The memorization question is open, and the reason is worth recording.** The
-training corpora — AFDB and ESM-Atlas, i.e. AF2 and ESMFold predictions — encode
-Fold1 over Fold2 at 30 : 4, itself a clean reproduction of Porter's ~81% AF2
-Fold1 rate. The model agrees with the training fold 76% of the time, but the two
-marginals alone predict 75% (Fisher p = 0.56), and the correlation between
-preference strength and training identity is −0.001. **We cannot tell whether the
-model follows its training data or independently shares its bias**, because only
-4 pairs have a training document encoding Fold2. The bottleneck is the corpus:
-the predictors that generated it almost never produce the alternative fold.
-Powering that test needs a model trained on experimental PDB, where both folds
-exist — #222's corpora and #230's checkpoint are the obvious next probe.
+**Steering costs about ten contacts, and the number does not grow with the
+protein.** k\* = 10 for the average pair and 10 for the median pair, with 39 of
+the 51 pairs that need flipping flipping at some tested dose. Crucially k\* is
+uncorrelated with |B| (ρ = +0.145, p = 0.38) while the *fraction* is strongly
+anticorrelated (−0.413, p = 0.009): a pair with 20 fold2-unique contacts and one
+with 200 both need roughly ten. What does scale is prior commitment (ρ = +0.364
+with unconditioned φ). And the model does not resist the push — per contact it
+moves 1.6–1.9× further toward fold2 than toward fold1.
 
-**Caveats.** n = 68, of which 6 are tier A. The calibration gate lands at
-+0.0056 ± 0.0029 rather than a clean zero — inside one seed's own spread, but not
-nothing. Several pairs switch by domain swap or subunit exchange, where the
-monomer map moves least; those are in the set and dilute toward zero. And the
-whole experiment scores contact maps, not structures, so "prefers Fold1" means
-the contact set, which #174 showed is necessary but not sufficient for the fold.
+**The memorization question stays open, and the reason is the useful part.** The
+training corpora — AF2 and ESMFold predictions — encode Fold1 over Fold2 at
+30 : 4, itself a clean reproduction of Porter's ~81% AF2 Fold1 rate. The model
+agrees with the training fold 76% of the time, but the marginals alone predict
+75% (Fisher p = 0.56) and preference strength is uncorrelated with training
+identity (−0.001). **We cannot tell whether the model follows its training data
+or independently shares its bias**, because only 4 pairs have a training
+document encoding Fold2 — the predictors that built the corpus almost never
+produce the alternative fold. The bottleneck is the corpus, not the analysis, and
+the fix is a PDB-trained model where both folds exist (#222's corpora, #230's
+checkpoint).
+
+**Caveats.** n = 68, of which 6 are tier A and 3 are homolog rather than
+identical-sequence pairs. The calibration gate lands at +0.0056 ± 0.0029 rather
+than a clean zero — inside one seed's own spread, but not nothing. Several pairs
+switch by domain swap or subunit exchange, where the monomer contact map moves
+least, and those dilute toward zero. One unit (L = 1338) is budget-capped and
+excluded. And this scores contact maps, not structures: #174 showed the contact
+set is necessary but not sufficient to pin the fold.
+
+**The obvious next experiment** is #230's PDB-trained multi-draft checkpoint on
+this same 68-pair universe — it has seen both folds in training, and it emits
+many candidate maps per prompt by construction, which is exactly the mechanism
+M1b showed the single-draft model lacks.
