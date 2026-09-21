@@ -238,3 +238,25 @@ ranks logged the load at 14:08:2x with no traceback, against three attempts that
 had died on that same checkpoint, and by 14:13:58 the run had passed the failed
 attempts' high-water step 235104. Roughly 14 hours of cluster time were lost to
 the blocker.
+
+## Restart 6: a silent stall
+
+a08 ran the repaired restore for about six hours and then stalled at logged step
+240891 on 2026-09-21. This is the first stall of the run rather than a crash:
+no exit code, no traceback, and Iris reported both jobs `running` throughout.
+Three independent signals agreed that nothing was progressing — the worker
+produced zero log lines for 25 minutes, W&B went to `crashed` with the
+heartbeat stuck for 15 minutes, and no checkpoint was written after
+`step-240841` at 20:23:29 UTC despite the cadence being due. Iris state alone
+would never have surfaced it; the absence of object-store writes is the
+reliable signal when a task zombies.
+
+The a08 root was cancelled, which killed it and its descendant. That is a
+job-level action on this experiment's own job, not a change to the shared
+cluster. Driver `/bizon/exp279-soft-production-cw-h100x32-a09` was submitted at
+2026-09-21 20:46 UTC from the re-frozen source `90f0d577` and restored the
+complete `step-240841` at update 240842, discarding 50 updates. By 21:26 the run
+had passed a08's high-water step 240891 with a live heartbeat.
+
+The run has now shown four distinct failure modes: exit 139 (SIGSEGV), exit 137
+(OOM kill), the boolean-restore blocker, and this stall.
