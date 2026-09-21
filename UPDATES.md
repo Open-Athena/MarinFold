@@ -1,5 +1,26 @@
 # MarinFold Updates
 
+## Week of September 21, 2026
+
+### Last week
+
+* **Training: a second epoch on the native + ProteinMPNN corpus did not improve contact accuracy.** Eval-val R-precision moved only **0.5551 → 0.5575** (95% CI for the gain −0.0064 to +0.0110). Validation loss improved by just 0.0018 nats best-to-best. The one-epoch checkpoint remains the default. ([#277](https://github.com/Open-Athena/MarinFold/issues/277), [#297](https://github.com/Open-Athena/MarinFold/pull/297))
+* **Training: Zack's new “delta stream” document format looks promising.** At step 60,000 of 78,500, it scores **0.5464 R-precision** on legacy-554, above the older exp177 checkpoint (**0.5113**) with less training exposure. It remains below our current default (**0.621**). Let's discuss how it works on the call. ([#299](https://github.com/Open-Athena/MarinFold/issues/299))
+* **Training: exact soft contact targets retain a small val-loss lead.** The run reached step 238,727 of 363,000; at the latest matched evaluation (step 236,768), ordinary validation CE was **0.0147 nats lower** than the one-hot lineage ([#279 status](https://github.com/Open-Athena/MarinFold/issues/279#issuecomment-5765019911))
+* **Data: Proteina generation finished; selection remains.** About **2.95M** of 4.82M generated candidates passed initial quality filters. Full-corpus decontamination and diversity capping are still needed before training. ([#278](https://github.com/Open-Athena/MarinFold/issues/278))
+* **Data: the AFDB/ESM supplement was selected.** It contains **13.73M** sequence–structure pairs, but only **92,511 (0.67%)** meet the strict structural novelty criterion; most are additional quality-passing members of existing clusters. Contact-document generation and deduplication remain to do. ([#292](https://github.com/Open-Athena/MarinFold/issues/292), [#293](https://github.com/Open-Athena/MarinFold/pull/293))
+* **Training: Zack launched the 0.7B/1.5B/3B size sweep.** Results are pending. ([#288](https://github.com/Open-Athena/MarinFold/issues/288))
+* **Data: Tim selected 3M predicted-complex candidates, including 183,809 heterodimers.** Still figuring out what the right quality filters to use are here ([#294](https://github.com/Open-Athena/MarinFold/issues/294))
+
+### Upcoming
+
+* Tim: Finish complex curation, then train and evaluate a model on the new complex corpus. ([#294](https://github.com/Open-Athena/MarinFold/issues/294))
+* Tim: Consider adding Proteina designs and the AFDB/ESM supplement to the complex training run; can also consider soft-target training. ([#278](https://github.com/Open-Athena/MarinFold/issues/278), [#292](https://github.com/Open-Athena/MarinFold/issues/292), [#279](https://github.com/Open-Athena/MarinFold/issues/279))
+* Zack: Finish the delta-stream run and compare it with the current default on eval-val and eval-denovo. ([#299](https://github.com/Open-Athena/MarinFold/issues/299))
+* Zack: Finish the model size sweep. ([#288](https://github.com/Open-Athena/MarinFold/issues/288))
+
+---
+
 ## Week of September 14, 2026
 
 ### Last week
