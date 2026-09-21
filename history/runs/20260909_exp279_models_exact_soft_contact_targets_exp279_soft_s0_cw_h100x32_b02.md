@@ -190,3 +190,51 @@ recovery-phase child
 covers updates 217801 through 333960 at constant learning rate 1e-3. The final
 phase, updates 333961 through 363000 with the learning rate decaying to 5e-5,
 follows after it. No relaunch or intervention was needed for this transition.
+
+## Restart 5: the recovery-phase restore blocker, and the re-freeze
+
+a05's recovery child ran about 17.5 hours from update 217801, then a replica was
+preempted and the retry died in under four minutes. a06 and a07 died the same
+way. All three resumed `step-235057`; the one attempt that worked, a05's first,
+had resumed the base-phase `step-217800`.
+
+Streaming `iris job logs -f` during a07 captured the traceback that Iris's
+fixed-size stderr tail had been discarding behind per-second JAX coordination
+warnings:
+
+```
+File ".../levanter/tensorstore_serialization.py", line 1058, in _restore_replica_axis
+TypeError: lax.bitcast_convert_type does not support bool or complex values ...
+Got operand dtype=bool, new_dtype=dtype('uint8').
+```
+
+The recovery and final phases set `skip_bad_steps=True`, and SkipStep's
+`valid_mask` is `jnp.bool_`, so every checkpoint those phases write carried a
+boolean leaf the serializer could not read back. Base-phase checkpoints carry
+no such leaf, which is why every earlier resume worked. This also blocked the
+recovery -> final transition outright, so the run could not have finished even
+uninterrupted. The defect is byte-identical in current upstream levanter.
+Details in `data/recovery_phase_restore_blocker.md`.
+
+With the user's authorization the deserialization path was repaired in commit
+`90f0d577`: boolean leaves reduce by logical OR over the replica axis, which
+reproduces the upstream byte-sum exactly given that one replica contributes and
+the rest hold zero. Eleven tests cover it, and the full suite shows the same
+eight pre-existing failures before and after. No hyperparameter, data,
+optimizer, schedule or model change.
+
+The experiment was re-frozen on that commit. The manifest differs from the
+pilot's in exactly `source.git_sha` and `source.code_sha256`; runtime packages,
+`uv_lock_sha256`, `reference_sha`, tokenizer and all three input ledgers are
+unchanged, and `data/soft_refrozen_v2_reference.json` re-arms the launcher guard
+against the new source. The checkpoint root's `experiment.json` was updated in
+the same two fields, with the original preserved as
+`experiment.json.pre-refreeze-b0dd33e`, because the worker's resume check
+compares an identity that embeds the whole manifest.
+
+Driver `/bizon/exp279-soft-production-cw-h100x32-a08` was submitted at
+2026-09-21 14:04:33 UTC and restored `step-235057` at update 235058. All four
+ranks logged the load at 14:08:2x with no traceback, against three attempts that
+had died on that same checkpoint, and by 14:13:58 the run had passed the failed
+attempts' high-water step 235104. Roughly 14 hours of cluster time were lost to
+the blocker.
