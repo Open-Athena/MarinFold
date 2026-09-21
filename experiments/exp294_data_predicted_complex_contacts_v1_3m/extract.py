@@ -87,6 +87,18 @@ import pyarrow.parquet as pq
 #: so the member name is the id plus a suffix, not the id wrapped again.
 MEMBER_TEMPLATE = "{model_id}-model_v1.cif.zst"
 _MAX_ATTEMPTS = 8
+
+
+class TarNotInArchive(Exception):
+    """A tar the metadata references but EBI does not serve.
+
+    28 of the 16,640 tars the manifest names return 404 -- all heterodimer
+    shards, stranding 373 of 3,000,000 documents (0.012%). Treating that as an
+    I/O error made it fatal, and because the shard resumed to the same missing
+    tar every time it burned all 51 retries and stalled 17 shards for two days.
+    A tar that is not there is a property of the source, so it becomes a named
+    terminal reason like any other designed-in rejection.
+    """
 _RETRYABLE = (urllib.error.URLError, TimeoutError, ConnectionError, OSError)
 #: A decompressed AFCDB mmCIF is ~1 MB; this is generous headroom that still
 #: refuses a zip bomb.
@@ -221,6 +233,9 @@ def http_range(url: str, start: int, length: int, *, timeout: float = 180.0) -> 
                                                  "Accept-Encoding": "identity"})
             response = conn.getresponse()
             payload = response.read()
+            if response.status == 404:
+                _drop_connection(scheme, host)
+                raise TarNotInArchive(url)
             if response.status != 206:
                 _drop_connection(scheme, host)
                 raise RuntimeError(f"{url}: expected 206, got {response.status}")
@@ -396,7 +411,22 @@ def extract_tar(url: str, rows: list[dict[str, Any]], *, fetch_concurrency: int 
     reads: list[int] = []
 
     began = time.monotonic()
-    located = walk_members(url, set(by_member), header_reads=reads)
+    try:
+        located = walk_members(url, set(by_member), header_reads=reads)
+    except TarNotInArchive:
+        out.walk_seconds = time.monotonic() - began
+        out.header_reads = reads[0] if reads else 0
+        out.ledger.extend(
+            {
+                "source_model_key": row["source_model_key"],
+                "source_tar_uri": url,
+                "status": "rejected",
+                "reason": "tar_not_in_archive",
+            }
+            for row in rows
+        )
+        print(f"  {url.split('/')[-1]}: 404, not in the archive", flush=True)
+        return out
     out.walk_seconds = time.monotonic() - began
     out.header_reads = reads[0] if reads else 0
 

@@ -330,3 +330,72 @@ def test_a_partial_shard_resumes_from_where_it_stopped(
     resumed = extract.run(str(manifest), str(out), fetch_concurrency=2)
     assert resumed["tars_resumed"] == 2, "the two finished tars are kept"
     assert resumed["tars"] == 2, "only the unfinished two are redone"
+
+
+def test_a_tar_missing_from_the_archive_is_a_named_rejection(tmp_path: Path) -> None:
+    """28 of 16,640 referenced tars 404. That must not be fatal.
+
+    Treating it as an I/O error made the shard die, resume to the same missing
+    tar, and burn all 51 retries -- stalling 17 shards for two days over 373
+    documents, 0.012% of the corpus.
+    """
+    import extract
+
+    class _NotFound(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a: object) -> None:
+            pass
+
+        def do_GET(self) -> None:
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+    server = socketserver.TCPServer(("127.0.0.1", 0), _NotFound)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{server.server_address[1]}/gone.tar"
+        rows = [
+            {
+                "source_model_key": f"heterodimer|AF-{i}",
+                "model_id": f"AF-{i}",
+                "source_tar_uri": url,
+            }
+            for i in range(4)
+        ]
+        result = extract.extract_tar(url, rows, fetch_concurrency=2)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert result.documents == []
+    assert len(result.ledger) == len(rows), "every model still gets a terminal row"
+    assert {e["reason"] for e in result.ledger} == {"tar_not_in_archive"}
+    assert {e["status"] for e in result.ledger} == {"rejected"}
+
+
+def test_a_404_is_not_retried_as_an_io_error() -> None:
+    """Retrying a 404 eight times per call is what made it expensive."""
+    import extract
+
+    class _NotFound(http.server.BaseHTTPRequestHandler):
+        hits = 0
+
+        def log_message(self, *a: object) -> None:
+            pass
+
+        def do_GET(self) -> None:
+            type(self).hits += 1
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+    server = socketserver.TCPServer(("127.0.0.1", 0), _NotFound)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{server.server_address[1]}/gone.tar"
+        with pytest.raises(extract.TarNotInArchive):
+            extract.http_range(url, 0, 512)
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert _NotFound.hits == 1, "a 404 is an answer, not a failure to retry"
