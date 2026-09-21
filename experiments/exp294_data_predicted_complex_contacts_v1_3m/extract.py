@@ -86,7 +86,13 @@ import pyarrow.parquet as pq
 #: ``model_id`` already carries the ``AF-`` prefix (``AF-0000000207677021``),
 #: so the member name is the id plus a suffix, not the id wrapped again.
 MEMBER_TEMPLATE = "{model_id}-model_v1.cif.zst"
-_MAX_ATTEMPTS = 8
+#: Retries per range request. EBI's FTP host goes down for stretches -- it
+#: refused every connection from two unrelated networks for hours on 2026-09-21
+#: while www.ebi.ac.uk stayed up -- so a request has to be patient enough to
+#: ride out a service blip rather than convert it into a dead shard.
+_MAX_ATTEMPTS = 20
+#: Cap on the backoff sleep. 8 attempts at 30 s gave up after ~4 minutes.
+_MAX_BACKOFF = 300.0
 
 
 class TarNotInArchive(Exception):
@@ -177,7 +183,7 @@ def _localise(path: str) -> str:
 
 
 def _sleep_backoff(attempt: int) -> None:
-    time.sleep(min(30.0, 2.0**attempt) * (0.5 + random.random()))
+    time.sleep(min(_MAX_BACKOFF, 2.0**attempt) * (0.5 + random.random()))
 
 
 _LOCAL = threading.local()
@@ -464,6 +470,7 @@ def run(
     shard_index: int = 0,
     shard_count: int = 1,
     reverse: bool = False,
+    max_deferred: int = 25,
 ) -> dict[str, Any]:
     """Extract every model in this shard's tars, writing as each tar finishes.
 
@@ -532,6 +539,7 @@ def run(
     if resumed:
         print(f"resuming: {resumed} of {len(tars)} tars already complete", flush=True)
 
+    deferred: list[str] = []
     documents = ledger_rows = header_reads = member_bytes = 0
     walk_seconds = work_seconds = 0.0
     reasons: Counter[str] = Counter()
@@ -561,34 +569,58 @@ def run(
         work_seconds += result.work_seconds
         reasons.update(entry["reason"] for entry in result.ledger)
 
+    def defer(tar: str, error: BaseException) -> None:
+        """Leave a tar for a later run instead of killing this one.
+
+        No ledger file is written, so the tar stays pending and is retried --
+        nothing is silently marked done. EBI's FTP host refused every
+        connection for hours on 2026-09-21, and a single exhausted retry budget
+        was killing whole shards 31-39 times over.
+        """
+        deferred.append(tar)
+        print(f"  DEFERRED {tar.split('/')[-1]}: {error}", flush=True)
+        if len(deferred) >= max_deferred:
+            raise RuntimeError(
+                f"{len(deferred)} tars deferred in this run (limit "
+                f"{max_deferred}); the source looks unavailable"
+            ) from error
+
+    def report(index: int, result: TarResult) -> None:
+        print(
+            f"[{index}/{len(pending)}] {result.tar_uri.split('/')[-1]} "
+            f"docs={len(result.documents)} reads={result.header_reads} "
+            f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
+            flush=True,
+        )
+
     began = time.monotonic()
     if tar_concurrency > 1:
         with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
-            futures = [
+            futures = {
                 pool.submit(
                     extract_tar, tar, by_tar[tar], fetch_concurrency=fetch_concurrency
-                )
+                ): tar
                 for tar in pending
-            ]
-            for index, future in enumerate(futures, start=1):
-                result = future.result()
+            }
+            for index, (future, tar) in enumerate(futures.items(), start=1):
+                try:
+                    result = future.result()
+                except (RuntimeError, *_RETRYABLE) as error:
+                    defer(tar, error)
+                    continue
                 absorb(result)
-                print(
-                    f"[{index}/{len(pending)}] {result.tar_uri.split('/')[-1]} "
-                    f"docs={len(result.documents)} reads={result.header_reads} "
-                    f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
-                    flush=True,
-                )
+                report(index, result)
     else:
         for index, tar in enumerate(pending, start=1):
-            result = extract_tar(tar, by_tar[tar], fetch_concurrency=fetch_concurrency)
+            try:
+                result = extract_tar(
+                    tar, by_tar[tar], fetch_concurrency=fetch_concurrency
+                )
+            except (RuntimeError, *_RETRYABLE) as error:
+                defer(tar, error)
+                continue
             absorb(result)
-            print(
-                f"[{index}/{len(pending)}] {tar.split('/')[-1]} "
-                f"docs={len(result.documents)} reads={result.header_reads} "
-                f"walk={result.walk_seconds:.1f}s work={result.work_seconds:.1f}s",
-                flush=True,
-            )
+            report(index, result)
     elapsed = time.monotonic() - began
 
     expected = sum(len(by_tar[t]) for t in pending)
@@ -599,6 +631,7 @@ def run(
         "shard_count": shard_count,
         "tars_in_shard": len(tars),
         "tars_resumed": resumed,
+        "tars_deferred": len(deferred),
         "tars": len(pending),
         "models_requested": expected,
         "documents": documents,
@@ -618,6 +651,7 @@ def run(
     stem = f"{shard_index:05d}-of-{shard_count:05d}"
     with fs.open(f"{prefix}/extract-{stem}.json", "w") as handle:
         handle.write(json.dumps(summary, indent=2) + "\n")
+    expected -= sum(len(by_tar[t]) for t in deferred)
     if ledger_rows != expected:
         raise RuntimeError(
             f"ledger has {ledger_rows} rows for {expected} requested models; "
@@ -635,6 +669,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit-tars", type=int, default=None)
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--max-deferred", type=int, default=25)
     parser.add_argument(
         "--reverse",
         action="store_true",
@@ -654,6 +689,7 @@ def main(argv: list[str] | None = None) -> int:
         shard_index=args.shard_index,
         shard_count=args.shard_count,
         reverse=args.reverse,
+        max_deferred=args.max_deferred,
     )
     print(json.dumps(summary, indent=2))
     return 0

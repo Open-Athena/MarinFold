@@ -306,6 +306,7 @@ def test_a_completed_tar_is_not_redone(tar_server, tmp_path: Path, monkeypatch) 
 def test_a_partial_shard_resumes_from_where_it_stopped(
     tar_server, tmp_path: Path, monkeypatch
 ) -> None:
+    """Tars that failed stay pending; tars that finished are kept."""
     import extract
 
     _stub_one_model(monkeypatch)
@@ -323,13 +324,14 @@ def test_a_partial_shard_resumes_from_where_it_stopped(
         return real(tar, rows, **kw)
 
     monkeypatch.setattr(extract, "extract_tar", die_after_two)
-    with pytest.raises(ConnectionResetError):
-        extract.run(str(manifest), str(out), fetch_concurrency=2)
+    first = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    assert first["tars_deferred"] == 2, "failures are deferred, not fatal"
     monkeypatch.setattr(extract, "extract_tar", real)
 
     resumed = extract.run(str(manifest), str(out), fetch_concurrency=2)
     assert resumed["tars_resumed"] == 2, "the two finished tars are kept"
     assert resumed["tars"] == 2, "only the unfinished two are redone"
+    assert resumed["tars_deferred"] == 0
 
 
 def test_a_tar_missing_from_the_archive_is_a_named_rejection(tmp_path: Path) -> None:
@@ -429,3 +431,56 @@ def test_reverse_works_the_same_shard_from_the_other_end(
     order.clear()
     extract.run(str(manifest), str(tmp_path / "rev"), fetch_concurrency=2, reverse=True)
     assert order == forward[::-1], "a helper must start at the far end"
+
+
+def test_an_unreachable_tar_is_deferred_not_fatal(tar_server, tmp_path: Path, monkeypatch) -> None:
+    """One unreachable tar must not kill a shard mid-run.
+
+    EBI's FTP host refused every connection for hours on 2026-09-21. A single
+    exhausted retry budget killed the whole shard and lost its in-progress
+    work, 31-39 times per shard.
+    """
+    import extract
+
+    _stub_one_model(monkeypatch)
+    url, names = tar_server
+    manifest = _manifest(tmp_path, url, names)
+    out = tmp_path / "out"
+
+    real = extract.extract_tar
+    calls = {"n": 0}
+
+    def flaky(tar: str, rows, **kw):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise RuntimeError("simulated EBI refusal")
+        return real(tar, rows, **kw)
+
+    monkeypatch.setattr(extract, "extract_tar", flaky)
+    summary = extract.run(str(manifest), str(out), fetch_concurrency=2)
+
+    assert summary["tars_deferred"] == 1, "the unreachable tar is deferred"
+    assert summary["documents"] > 0, "the reachable tars still produced output"
+
+    # The deferred tar has no ledger file, so a later run retries it.
+    monkeypatch.setattr(extract, "extract_tar", real)
+    second = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    assert second["tars"] == 1, "exactly the deferred tar is retried"
+    assert second["tars_deferred"] == 0
+
+
+def test_a_wholly_unavailable_source_still_aborts(tar_server, tmp_path: Path, monkeypatch) -> None:
+    """Deferring must not become a way to silently produce an empty corpus."""
+    import extract
+
+    _stub_one_model(monkeypatch)
+    url, names = tar_server
+    manifest = _manifest(tmp_path, url, names)
+
+    monkeypatch.setattr(
+        extract,
+        "extract_tar",
+        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("everything is down")),
+    )
+    with pytest.raises(RuntimeError, match="source looks unavailable"):
+        extract.run(str(manifest), str(tmp_path / "out"), fetch_concurrency=2, max_deferred=2)
