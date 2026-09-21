@@ -23,7 +23,7 @@ import fsspec
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
-from huggingface_hub import HfApi
+from huggingface_hub import CommitOperationAdd, HfApi
 from huggingface_hub.utils import HfHubHTTPError
 
 KINDS = {
@@ -146,26 +146,48 @@ def write_generated_shard(
     return rows
 
 
-def upload_with_retries(api: HfApi, repo: str, local: Path, remote: str) -> None:
-    """Upload one shard, retrying the Hub's transient failures."""
-    for attempt in range(6):
+def commit_batch(
+    api: HfApi, repo: str, pending: list[tuple[CommitOperationAdd, Path]]
+) -> None:
+    """Upload a group of shards under a single commit, then drop the local copies.
+
+    The Hub caps repository commits at 320 per hour, so one commit per shard
+    fails as soon as several workers run at once: the bytes are not the limit,
+    the commits are. Large files pre-upload to LFS outside the commit, so
+    batching costs no bandwidth and divides the commit count by the batch size.
+    A 429 is a rate limit rather than a transient error and the Hub asks for
+    roughly an hour, so back off on that scale instead of in seconds.
+    """
+    if not pending:
+        return
+    operations = [operation for operation, _ in pending]
+    names = f"{operations[0].path_in_repo} .. {operations[-1].path_in_repo}"
+    for attempt in range(8):
         try:
-            api.upload_file(
-                path_or_fileobj=str(local),
-                path_in_repo=remote,
-                repo_id=repo,
-                repo_type="dataset",
-                commit_message=f"exp278 {remote}",
+            api.preupload_lfs_files(
+                repo_id=repo, additions=operations, repo_type="dataset"
             )
-            return
+            api.create_commit(
+                repo_id=repo,
+                operations=operations,
+                repo_type="dataset",
+                commit_message=f"exp278 upload: {len(operations)} shards",
+            )
+            break
         except (HfHubHTTPError, OSError) as error:
-            if attempt == 5:
+            if attempt == 7:
                 raise
-            delay = 2**attempt * 15
+            limited = "429" in str(error) or "rate limit" in str(error).lower()
+            delay = min(3600, 900 * (attempt + 1)) if limited else 2**attempt * 15
             print(
-                f"  retry {attempt + 1} in {delay}s: {type(error).__name__}", flush=True
+                f"  {'rate limited' if limited else type(error).__name__}, "
+                f"retry {attempt + 1} in {delay}s ({names})",
+                flush=True,
             )
             time.sleep(delay)
+    for _, local in pending:
+        local.unlink(missing_ok=True)
+    print(f"committed {len(operations)} shards: {names}", flush=True)
 
 
 def main() -> None:
@@ -179,6 +201,7 @@ def main() -> None:
     parser.add_argument("--target-bytes", type=int, default=500_000_000)
     parser.add_argument("--scratch", type=Path, default=Path("/tmp/exp278-upload"))
     parser.add_argument("--cluster", default=None)
+    parser.add_argument("--batch", type=int, default=16)
     args = parser.parse_args()
 
     if args.cluster:
@@ -209,6 +232,7 @@ def main() -> None:
     present = set(api.list_repo_files(repo_id=args.repo, repo_type="dataset"))
     args.scratch.mkdir(parents=True, exist_ok=True)
     done = skipped = 0
+    pending: list[tuple[CommitOperationAdd, Path]] = []
     for kind in args.kind or sorted(KINDS):
         shards = plan["kinds"][kind]
         for index, shard in enumerate(shards):
@@ -225,15 +249,23 @@ def main() -> None:
             else:
                 rows = write_parquet_shard(fs, shard["sources"], local)
             packed = local.stat().st_size
-            upload_with_retries(api, args.repo, local, remote)
-            local.unlink()
+            pending.append(
+                (
+                    CommitOperationAdd(path_in_repo=remote, path_or_fileobj=str(local)),
+                    local,
+                )
+            )
             done += 1
             print(
-                f"{remote} rows={rows:,} src={shard['bytes'] / 1e6:.0f}MB "
+                f"built {remote} rows={rows:,} src={shard['bytes'] / 1e6:.0f}MB "
                 f"packed={packed / 1e6:.0f}MB {time.time() - started:.0f}s "
-                f"({done} done, {skipped} already present)",
+                f"({done} built, {skipped} already present)",
                 flush=True,
             )
+            if len(pending) >= args.batch:
+                commit_batch(api, args.repo, pending)
+                pending = []
+    commit_batch(api, args.repo, pending)
     print(f"worker {args.worker}: uploaded {done}, skipped {skipped}", flush=True)
 
 

@@ -60,6 +60,17 @@ and the command is recorded with the output. Both binaries are the exact builds
 the audit used, staged to the object store with their versions and checksums
 rather than re-downloaded.
 
+Two costs are worth knowing before a rerun. The evaluation-structure screen
+defaults to `--max-seqs 1000` against an 888-structure reference, so every
+candidate is TM-aligned to every evaluation chain: about 2.95M x 888 alignments,
+which runs in days rather than hours. It is the most conservative screen
+available and the first production run uses it, but `--eval-max-seqs` and
+`--eval-evalue` trade recall for time. Separately, stage markers live in the
+object store while stage outputs live on the node's ephemeral disk, so a
+replacement pod checks that a completed stage's artifacts are still present and
+re-runs it when they are not, rather than skipping extraction and then operating
+on files that do not exist.
+
 **Publication** ([hf_upload.py](hf_upload.py), launched by
 [upload_launch.py](upload_launch.py)) repacks the run into 663 Hub-sized shards —
 618 candidates, 7 sequences, 38 generated — because the Hub handles a few hundred
@@ -67,6 +78,12 @@ large files far better than 1.8M small ones. The shard plan is computed once and
 stored beside the run, so independent workers partition identically and a restart
 resumes by asking the Hub which shards exist. Repacking is lossless; each
 generated `.npz` becomes one row carrying flattened Ca coordinates and their shape.
+
+Shards are committed in batches. The Hub caps repository commits at 320 per hour,
+and one commit per shard exceeded that within minutes of eight workers starting:
+every worker died on a 429 at 30% uploaded. Large files pre-upload to LFS outside
+the commit, so batching costs no bandwidth and divides the commit count by the
+batch size, taking 663 shards from 663 commits to about 42.
 
 The destination is the **private** dataset repo
 [`timodonnell/exp278-proteina-monomers`](https://huggingface.co/datasets/timodonnell/exp278-proteina-monomers).

@@ -44,6 +44,8 @@ def main() -> None:
     parser.add_argument("--ram", default="180g")
     parser.add_argument("--disk", default="512g")
     parser.add_argument("--timeout", type=int, default=3 * 86400)
+    parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument("--failure-retries", type=int, default=10)
     args = parser.parse_args()
 
     plan = json.loads(args.manifest.read_text())
@@ -74,6 +76,8 @@ def main() -> None:
                 str(worker),
                 "--workers",
                 str(args.workers),
+                "--batch",
+                str(args.batch),
             ]
             for kind in args.kind or []:
                 worker_args += ["--kind", kind]
@@ -87,6 +91,7 @@ def main() -> None:
                 ram=args.ram,
                 disk=args.disk,
                 env_vars={"HF_TOKEN": token, "HF_HUB_ENABLE_HF_TRANSFER": "0"},
+                failure_retries=args.failure_retries,
             )
             job = fray.submit(request)
             record = {
@@ -101,6 +106,8 @@ def main() -> None:
                 "bundle_uri": bundle_uri,
                 "image": IMAGE,
                 "worker_args": worker_args,
+                "commit_batch": args.batch,
+                "failure_retries": args.failure_retries,
                 "token_name": args.token_name,
             }
             (report / f"{name}.json").write_text(json.dumps(record, indent=2) + "\n")

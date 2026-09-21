@@ -99,8 +99,34 @@ def run(command: list, log: Path) -> None:
         )
 
 
-def stage_done(fs, prefix: str, stage: str) -> bool:
-    return fs.exists(f"{prefix}/stages/{stage}.json")
+STAGE_ARTIFACTS = {
+    "extract": ("index.parquet", "candidates.fasta", "pdb"),
+    "seqscreen": ("sequence-exclusions.txt",),
+    "structscreen": ("structure-exclusions.txt",),
+    "cluster": ("selected.txt",),
+    "assemble": (),
+}
+
+
+def stage_done(fs, prefix: str, stage: str, work: Path) -> bool:
+    """A stage is finished only if its marker and its local outputs both survive.
+
+    Markers live in the object store but stage outputs live on the node's
+    ephemeral disk. A replacement pod trusting the marker alone would skip
+    extraction and then run the next stage against files that do not exist, so
+    a marker without its artifacts means the stage has to run again.
+    """
+    if not fs.exists(f"{prefix}/stages/{stage}.json"):
+        return False
+    missing = [name for name in STAGE_ARTIFACTS[stage] if not (work / name).exists()]
+    if missing:
+        print(
+            f"[stage] {stage} is marked complete but {missing} are missing from "
+            f"{work}; re-running rather than trusting the marker",
+            flush=True,
+        )
+        return False
+    return True
 
 
 def mark_stage(fs, prefix: str, stage: str, payload: dict) -> None:
@@ -263,8 +289,22 @@ def seqscreen(mmseqs: Path, work: Path, reference: Path, threads: int) -> dict:
     }
 
 
-def structscreen(foldseek: Path, work: Path, reference: Path, threads: int) -> dict:
-    """Exclude candidates that duplicate an evaluation structure."""
+def structscreen(
+    foldseek: Path,
+    work: Path,
+    reference: Path,
+    threads: int,
+    max_seqs: int = 1000,
+    evalue: float = 10,
+) -> dict:
+    """Exclude candidates that duplicate an evaluation structure.
+
+    The defaults are deliberately exhaustive: `--max-seqs 1000` against an
+    888-structure reference TM-aligns every candidate to every evaluation chain.
+    That is the most conservative screen and also by far the most expensive one,
+    about 2.95M x 888 alignments, which runs in days rather than hours. Tighten
+    max_seqs or evalue to trade recall for time on a rerun.
+    """
     hits = work / "eval-structure-hits.tsv"
     if not hits.exists():
         run(
@@ -280,9 +320,9 @@ def structscreen(foldseek: Path, work: Path, reference: Path, threads: int) -> d
                 "--format-output",
                 SEARCH_FIELDS,
                 "--max-seqs",
-                "1000",
+                str(max_seqs),
                 "-e",
-                "10",
+                str(evalue),
                 "--threads",
                 str(threads),
             ],
@@ -423,6 +463,8 @@ def main() -> None:
         "--threads", type=int, default=int(os.environ.get("SELECT_THREADS", "96"))
     )
     parser.add_argument("--only", choices=STAGES, action="append")
+    parser.add_argument("--eval-max-seqs", type=int, default=1000)
+    parser.add_argument("--eval-evalue", type=float, default=10)
     args = parser.parse_args()
 
     with fsspec.open(args.manifest, "rt") as handle:
@@ -434,7 +476,7 @@ def main() -> None:
     reference = fetch_reference(fs, args.work)
 
     for stage in args.only or STAGES:
-        if stage_done(fs, prefix, stage):
+        if stage_done(fs, prefix, stage, args.work):
             print(f"[stage] {stage} already complete", flush=True)
             continue
         started = time.time()
@@ -443,7 +485,14 @@ def main() -> None:
         elif stage == "seqscreen":
             payload = seqscreen(mmseqs, args.work, reference, args.threads)
         elif stage == "structscreen":
-            payload = structscreen(foldseek, args.work, reference, args.threads)
+            payload = structscreen(
+                foldseek,
+                args.work,
+                reference,
+                args.threads,
+                args.eval_max_seqs,
+                args.eval_evalue,
+            )
         elif stage == "cluster":
             payload = cluster(foldseek, args.work, args.threads)
         else:
