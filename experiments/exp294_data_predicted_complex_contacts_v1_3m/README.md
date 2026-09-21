@@ -503,6 +503,45 @@ The lesson worth keeping: **preemptible-versus-not is the wrong question when
 the real property is whether the job can resume.** With resume, preemptible
 capacity is both plentiful and correct; without it, no amount of capacity helps.
 
+### 28 missing tars stalled two thirds of the run (2026-09-21)
+
+After ~2 days the run had done 5,474 of 16,640 tars and 8 of 25 shards had
+finished. The other 17 were dead, each having burned all 51 retries on the same
+error: `heterodimers/shard_1088_batch_0.tar` returns **404**. It is referenced
+by the AFCDB metadata but EBI does not serve it, `http_range` treated the 404 as
+an unexpected status and raised, and because each restart resumed to the same
+missing tar every attempt failed identically.
+
+Diffing the manifest against the archive's directory listings — offline, no
+network — gives the exact scope in seconds:
+
+| | |
+| --- | --- |
+| tars present in the archive | 18,101 |
+| tars referenced by the manifest | 16,640 |
+| **referenced but absent** | **28** (all heterodimer shards) |
+| documents stranded | **373 of 3,000,000 = 0.012%** |
+
+A 404 is now `TarNotInArchive`: raised once instead of retried eight times,
+caught in `extract_tar`, and recorded as a `tar_not_in_archive` terminal reason
+for every model in that tar. The accounting invariant holds — each model still
+gets exactly one ledger row. Confirmed in production:
+
+```
+resuming: 6 of 665 tars already complete
+  shard_1048_batch_1.tar: 404, not in the archive
+[1/659] shard_1048_batch_1.tar docs=0 reads=0 walk=1.6s work=0.0s
+```
+
+The lesson is narrow and worth stating: **`member_not_in_tar` was already
+handled; the container-missing case is the same failure one level up, and it
+was not.** When a source is known to be internally inconsistent, every level of
+its addressing needs the same treatment.
+
+Resume vindicated itself in the same run. Three of the shards that *completed*
+did so despite **8–9 preemptions each** — preemption is now a non-event, and
+the unhandled 404 was the only remaining way for a shard to die.
+
 ### Probe QC: the documents are sound, and one result is a red flag
 
 Every integrity check passes. All 4,245 documents are two-chain, all have
