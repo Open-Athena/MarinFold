@@ -260,3 +260,27 @@ had passed a08's high-water step 240891 with a live heartbeat.
 
 The run has now shown four distinct failure modes: exit 139 (SIGSEGV), exit 137
 (OOM kill), the boolean-restore blocker, and this stall.
+
+## Restart 7: a second stall, cause not established
+
+a09 stalled the same way a08 did, 40 minutes after resuming. It wrote a
+complete `step-241039` at 21:33:40 UTC, ran 34 further minutes to step 241191,
+then stopped with Iris still reporting `running`. The root was cancelled and
+`/bizon/exp279-soft-production-cw-h100x32-a10` restored `step-241039` at update
+241040, discarding 152 updates; it was training again by 22:54 UTC.
+
+Two stalls in six hours is a change in this run's behaviour and the cause is
+not established. The exp279 restore repair is excluded on mechanism: it runs
+once during resume and is never called again during training, so it cannot
+stall a run hours later. A concurrent third-party fan-out on the same cluster
+(`/muchanem/bulk1b-regrade-*`, about 300 jobs) began at 21:11 UTC, which
+postdates a08's 20:26 UTC stall by 45 minutes, so contention can at most
+explain a09. Neither stall happened at a checkpoint save, unlike all four
+earlier crashes.
+
+One caveat on the evidence: while a large fan-out may be starving the Iris log
+server, an absence of log output is weaker than it appears. The independent
+signal in both cases was the absence of object-store checkpoint writes, and
+that is what the diagnosis rests on.
+
+If a10 stalls as well, the next step is not another relaunch.
