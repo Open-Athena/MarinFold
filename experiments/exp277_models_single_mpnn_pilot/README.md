@@ -234,6 +234,25 @@ checkpoints, and it points the same way as the de novo delta.
 `data/eval_rollout_v2_epochs/capped_rollouts.csv` lists every affected unit;
 `compare_epochs.py` regenerates all three tables from the published results.
 
+![Validation loss across both epochs](plots/epoch2_validation_loss.png)
+![Effect of the second epoch on contact accuracy](plots/epoch2_contact_delta.png)
+![Contact accuracy by evaluation set](plots/epoch2_contact_by_set.png)
+
+`plot_epochs.py` reproduces these three figures; each PNG has a sidecar with its
+generating command, and `data/eval_rollout_v2_epochs/figure_provenance.json`
+records the source digests and the bootstrap seed.
+
+The validation panels put both runs on absolute steps, which is what makes the
+continuation legible: the second epoch inherits the first's trajectory at the
+restore point, holds a plateau about 0.005 nats below it for 213,000 updates,
+and then cools down to almost exactly where the first epoch finished. Two
+features of that curve are worth naming. The spike to 3.0886 just before the
+second cooldown is real, not a plotting artifact. And step 424,914 is logged
+twice in `eval_metrics.jsonl` — once before the 00:48Z preemption and once after
+the resume replayed it from `step-424901` — so
+`data/epoch2_validation_progress.csv` keeps the later value, which is the
+trajectory that produced the final checkpoint.
+
 ## Conclusion
 
 The requested single-model, full-corpus first epoch completed successfully with a reproducible native checkpoint and loadable HF export. Language-model validation improved from 3.90598 at step 2,114 to a best of 2.98274 near the end of the epoch. Its contact evaluation shows an eval-val tie with the native-only decontaminated exp232 winner (+0.00204 all, +0.00211 long), an improvement on legacy 554 (+0.01503 all, +0.02202 long), and a large improvement on eval-denovo (+0.08599 all, +0.10375 long). This single run therefore gives no evidence of a material natural eval-val gain at the predeclared 0.005 threshold, but it gives a strong signal that the native-plus-redesign corpus helps designed-protein contacts. Different training exposure and the single seed limit causal attribution. The separately requested reshuffled second epoch is in progress from the last pre-cooldown checkpoint.
