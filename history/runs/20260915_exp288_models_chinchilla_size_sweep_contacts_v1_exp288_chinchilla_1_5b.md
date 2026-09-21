@@ -18,6 +18,8 @@ marinfold_run:
   - /zack/exp288-train-1_5b-a02
   - /zack/exp288-train-1_5b-a02/exp288-train-cd68866a
   - /zack/exp288-train-1_5b-a02/exp288-train-c26f4d61
+  - /zack/exp288-train-1_5b-a03
+  - /zack/exp288-train-1_5b-a03/exp288-train-4c8feaf7
 ---
 # 2026-09-15 · exp288_models_chinchilla_size_sweep · contacts-v1-exp288-chinchilla-1_5b
 
