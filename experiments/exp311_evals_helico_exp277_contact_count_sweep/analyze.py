@@ -7,12 +7,14 @@ Helico's ranking score across every cut and diffusion sample.
 """
 
 import csv
+import json
 import math
 import statistics
 from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from build_summary import save_plot_with_meta
 
@@ -73,14 +75,36 @@ def confidence_pick(rows: list[dict]) -> dict:
     return max(rows, key=lambda row: (row["ranking_score"], -row["n_pairs"], -row["sample_idx"]))
 
 
-def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict], list[dict], list[dict]]:
+def paired_bootstrap_ci(differences: list[float]) -> tuple[float, float]:
+    """Return a 95% protein-bootstrap interval for a paired mean difference."""
+    values = np.asarray(differences, dtype=np.float64)
+    rng = np.random.default_rng(311)
+    indices = rng.integers(0, len(values), size=(10_000, len(values)))
+    means = values[indices].mean(axis=1)
+    low, high = np.quantile(means, (0.025, 0.975))
+    return float(low), float(high)
+
+
+def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict], list[dict], list[dict], list[dict], list[dict]]:
     """Produce per-target selection, set summaries, and per-cut curves."""
+    rankings = json.loads((HERE / "scratch" / "targets" / "ranked_pairs.json").read_text())
     per_target = []
     per_cut_target = []
+    effective_counts = []
     for (eval_set, stem), rows in sorted(by_target.items()):
         length = rows[0]["L"]
         ranked = confidence_pick(rows)
         top_l = confidence_pick([row for row in rows if row["n_pairs"] == length])
+        effective_by_cut = {
+            k: sum(abs(a - b) >= 6 for a, b in rankings[stem][:k])
+            for k in sorted({row["n_pairs"] for row in rows})
+        }
+        for k, effective in effective_by_cut.items():
+            effective_counts.append({
+                "eval_set": eval_set, "stem": stem, "L": length,
+                "requested_pairs": k, "effective_pairs": effective,
+                "dropped_short_pairs": k - effective,
+            })
         for metric in METRICS:
             values = [row[metric] for row in rows]
             oracle = best_for_metric(rows, metric)
@@ -91,6 +115,7 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
                 "mean_prediction": statistics.mean(values),
                 "median_prediction": statistics.median(values),
                 "confidence_top": ranked[metric], "confidence_cut": ranked["n_pairs"],
+                "confidence_effective_cut": effective_by_cut[ranked["n_pairs"]],
                 "confidence_score": ranked["ranking_score"],
                 "top_l_confidence": top_l[metric],
             })
@@ -103,6 +128,7 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
                 per_cut_target.append({
                     "eval_set": eval_set, "stem": stem, "L": length,
                     "n_pairs": k, "fraction_L": k / length, "metric": metric,
+                    "n_effective_pairs": effective_by_cut[k],
                     "mean_prediction": statistics.mean(row[metric] for row in cut_rows),
                     "oracle_best": best_for_metric(cut_rows, metric)[metric],
                     "confidence_top": picked[metric],
@@ -113,15 +139,26 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
         grouped_summary[(row["eval_set"], row["metric"])].append(row)
     summary = []
     for (eval_set, metric), rows in sorted(grouped_summary.items()):
+        conf_vs_top_l = [row["confidence_top"] - row["top_l_confidence"] for row in rows]
+        oracle_vs_conf = [row["oracle_best"] - row["confidence_top"] for row in rows]
+        conf_ci = paired_bootstrap_ci(conf_vs_top_l)
+        oracle_ci = paired_bootstrap_ci(oracle_vs_conf)
         summary.append({
             "eval_set": eval_set, "metric": metric, "n_targets": len(rows),
             **{key: statistics.mean(row[key] for row in rows) for key in (
                 "oracle_best", "mean_prediction", "median_prediction",
                 "confidence_top", "top_l_confidence"
             )},
-            "confidence_minus_top_l": statistics.mean(
-                row["confidence_top"] - row["top_l_confidence"] for row in rows
-            ),
+            "confidence_minus_top_l": statistics.mean(conf_vs_top_l),
+            "confidence_cut_mean": statistics.mean(row["confidence_cut"] for row in rows),
+            "confidence_cut_median": statistics.median(row["confidence_cut"] for row in rows),
+            "confidence_picked_zero_fraction": statistics.mean(row["confidence_cut"] == 0 for row in rows),
+            "confidence_picked_top_l_fraction": statistics.mean(row["confidence_cut"] == row["L"] for row in rows),
+            "confidence_minus_top_l_ci_low": conf_ci[0],
+            "confidence_minus_top_l_ci_high": conf_ci[1],
+            "oracle_minus_confidence": statistics.mean(oracle_vs_conf),
+            "oracle_minus_confidence_ci_low": oracle_ci[0],
+            "oracle_minus_confidence_ci_high": oracle_ci[1],
         })
 
     grouped_cut: dict[tuple[str, int, str], list[dict]] = defaultdict(list)
@@ -132,14 +169,40 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
         cut_curve.append({
             "eval_set": eval_set, "n_pairs": k, "metric": metric,
             "n_targets": len(rows),
+            "mean_effective_pairs": statistics.mean(row["n_effective_pairs"] for row in rows),
             **{key: statistics.mean(row[key] for row in rows) for key in (
                 "mean_prediction", "oracle_best", "confidence_top"
             )},
         })
-    return per_target, summary, cut_curve
+
+    # A common fraction-of-L axis preserves the full target cohort. At each
+    # grid point use the nearest actual 10-contact cut (smaller cut on a tie),
+    # so no synthetic prediction is interpolated into the measurement.
+    by_cut_target: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    for row in per_cut_target:
+        by_cut_target[(row["eval_set"], row["stem"], row["metric"])].append(row)
+    relative_target: dict[tuple[str, int, str], list[dict]] = defaultdict(list)
+    for (eval_set, _stem, metric), rows in by_cut_target.items():
+        length = rows[0]["L"]
+        for decile in range(11):
+            desired = length * decile / 10
+            selected = min(rows, key=lambda row: (abs(row["n_pairs"] - desired), row["n_pairs"]))
+            relative_target[(eval_set, decile, metric)].append(selected)
+    relative_curve = []
+    for (eval_set, decile, metric), rows in sorted(relative_target.items()):
+        relative_curve.append({
+            "eval_set": eval_set, "fraction_L": decile / 10,
+            "metric": metric, "n_targets": len(rows),
+            "mean_requested_pairs": statistics.mean(row["n_pairs"] for row in rows),
+            "mean_effective_pairs": statistics.mean(row["n_effective_pairs"] for row in rows),
+            **{key: statistics.mean(row[key] for row in rows) for key in (
+                "mean_prediction", "oracle_best", "confidence_top"
+            )},
+        })
+    return per_target, summary, cut_curve, effective_counts, relative_curve
 
 
-def plot_curve(summary: list[dict], cut_curve: list[dict]) -> None:
+def plot_curve(summary: list[dict], cut_curve: list[dict], relative_curve: list[dict]) -> None:
     """Show GDT-TS and lDDT against absolute contact count with cohort size."""
     for metric in ("gdt_ts", "lddt"):
         fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
@@ -167,15 +230,38 @@ def plot_curve(summary: list[dict], cut_curve: list[dict]) -> None:
         )
         plt.close(fig)
 
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
+        for ax, eval_set in zip(axes, ("eval-val", "eval-denovo"), strict=True):
+            rows = [row for row in relative_curve if row["eval_set"] == eval_set and row["metric"] == metric]
+            rows.sort(key=lambda row: row["fraction_L"])
+            for key, label in (("confidence_top", "Helico rank at each cut"),
+                               ("mean_prediction", "sample mean"),
+                               ("oracle_best", "oracle within cut")):
+                ax.plot([r["fraction_L"] for r in rows], [r[key] for r in rows], label=label)
+            ax.set_title(f"{eval_set} (n={rows[0]['n_targets']})")
+            ax.set_xlabel("Fraction of top-L MarinFold contacts")
+            ax.set_xlim(0, 1)
+            ax.grid(alpha=0.2)
+        axes[0].set_ylabel(metric.upper() if metric == "gdt_ts" else "lDDT")
+        axes[1].legend(loc="best", fontsize=8)
+        fig.tight_layout()
+        save_plot_with_meta(
+            fig, PLOTS / f"{metric}_by_fraction_L.png",
+            caption="Paired target cohort at every fraction of L; each point uses the nearest actual 10-contact cut.",
+        )
+        plt.close(fig)
+
 
 def main() -> None:
     DATA.mkdir(exist_ok=True)
     PLOTS.mkdir(exist_ok=True)
-    per_target, summary, cut_curve = summarize(load_samples())
+    per_target, summary, cut_curve, effective_counts, relative_curve = summarize(load_samples())
     write_csv(DATA / "per_target_selection.csv", per_target)
     write_csv(DATA / "metric_summary.csv", summary)
     write_csv(DATA / "contact_count_curve.csv", cut_curve)
-    plot_curve(summary, cut_curve)
+    write_csv(DATA / "effective_contacts.csv", effective_counts)
+    write_csv(DATA / "contact_fraction_curve.csv", relative_curve)
+    plot_curve(summary, cut_curve, relative_curve)
     for row in summary:
         print(
             f"{row['eval_set']:11s} {row['metric']:8s} n={row['n_targets']:3d} "
