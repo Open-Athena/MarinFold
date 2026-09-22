@@ -81,14 +81,14 @@ CORPORA = {
             "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/"
             "tokenized/contacts_v1/afdb/2026.08.14/train",
             3_963_003,
-            2_067,
+            125,
         ),
         Corpus(
             "native-esm",
             "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/"
             "tokenized/contacts_v1/esm/2026.08.14/train",
             65_553_178,
-            3_338,
+            1_669,
         ),
         Corpus(
             "mpnn-afdb",
