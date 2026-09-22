@@ -31,7 +31,9 @@ The contact section has one signed-delta segment per residue in sequence order;
 a zero-contact residue emits only `STOP`. Deltas within a segment are sorted by
 signed offset. `DOC_START`, `CONTACTS_BEGIN`, and `DOC_END` are reserved tokens
 in the previously unused IDs 21–23; AA IDs remain 1–20, `STOP=0`, signed delta
-tokens start at 32, and the vocabulary remains 2080 tokens.
+tokens start at 32. The original experiments used 2,080 tokens (offsets through
+±1,024); the exp277-scale corpus extends the vocabulary append-only to 4,030
+tokens for offsets through ±1,999.
 
 This is deliberately analogous to contacts-v1: an evaluator can provide the
 complete sequence prefix, then sample only contact structure.
@@ -142,11 +144,38 @@ strictly parse every emitted V2 document back to the same sequence/contact set.
 The original 2,080-token V2 vocabulary represents offsets through ±1,024. The
 exp277 source format permits chains through 2,000 residues, so the follow-up
 extends V2 by appending tokens for offsets ±1,025 through ±1,999. All original
-IDs remain unchanged; no source contact is dropped. A full census and fresh
-packed-example count will determine the one-epoch optimizer-step count. The
-training target is one finite pass over all source documents with exp277's
-batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe, rather than blindly
-copying exp277's contacts-v1 step count.
+IDs remain unchanged; no source contact is dropped.
+
+Full conversion completed for all four corpora with exact input/output document
+accounting:
+
+| corpus | documents | source shards |
+|---|---:|---:|
+| native AFDB | 3,963,003 | 125 |
+| native ESM | 65,553,178 | 1,669 |
+| ProteinMPNN AFDB | 31,702,680 | 199 |
+| ProteinMPNN ESM | 130,872,044 | 3,338 |
+| **total** | **232,090,905** | **5,331** |
+
+The converted documents are at
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/exp277_full_epoch_documents/2026.09.22.1/`.
+A tail-shard smoke included 1,000 ProteinMPNN-AFDB documents, of which 187 used
+new extended-delta tokens; the longest sequence was 1,263 residues, the longest
+document 5,627 tokens, and the maximum absolute delta 1,255.
+
+A cache-and-training smoke then read 1,000 converted documents (4,812,542 raw
+tokens), packed them online into 8,192-token examples with blocked
+cross-document attention, and completed 10 optimizer updates on 8 H100s. The
+successful run was
+[`delta-v2-exp277-full-epoch-1_5b-smoke-a03`](https://wandb.ai/open-athena/MarinFold/runs/delta-v2-exp277-full-epoch-1_5b-smoke-a03):
+101,603 tokens/s, 10.32 seconds/update after compilation, and final train loss
+4.8388. This verifies the converted token IDs, 4,030-token model vocabulary,
+packing path, attention boundaries, forward/backward pass, and checkpoint path.
+
+A full census and fresh packed-example count will determine the one-epoch
+optimizer-step count. The training target is one finite pass over all source
+documents with exp277's batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe,
+rather than blindly copying exp277's contacts-v1 step count.
 
 ### Conclusion at 28%: large matched-training win
 
@@ -275,8 +304,11 @@ pipeline.
 
 ## Next steps
 
-1. Continue the 78,500-step V2 run and evaluate later matched checkpoints.
-2. Measure whether strict grammar-constrained decoding improves V2 further.
+1. Convert the independent validation cache and finish the full token/length
+   census, including every document longer than 8,192 V2 tokens.
+2. Build and audit the finite four-corpus packed dataset, then derive the exact
+   one-epoch update count from that dataset.
+3. Report projected full-run wall time and cost before launching training.
 
 ## Files
 
