@@ -1,0 +1,13 @@
+{
+  "frozen_at_utc": "2026-09-22T15:43:08Z",
+  "mode": "b16_e0p2_d20_w10",
+  "beam_width": 16,
+  "epsilon": 0.2,
+  "decay_contacts": 20,
+  "wave_size": 10,
+  "rollouts_per_target": 100,
+  "pilot_comparison_sha256": "f0dae0d1f0b90f1c52d79c401ed0f445e4ffc11a6c2150a9bf8d3348f94fa563",
+  "selected_pilot_shortlist_sha256": "0626ec80c5d0265328ef99fc8313e6d7e6a08ea946077bd6d21a973725795e44",
+  "decision": "All five settings had zero blind dual-mode hits on the five primary development pairs. The selected setting and width-32 early epsilon 0.05 tied at two oracle dual-mode hits among all seven development pairs. The selected setting retained one blind seven-pair hit versus zero for width 32, and used 4.02 versus 12.59 times the unpenalized width-4 H100 inference time. Width 32 had only a 0.008 higher mean minority enrichment on the blind development shortlist; this small difference did not justify its worse blind coverage and threefold cost.",
+  "held_out_primary_reference_status": "unopened at freeze"
+}
