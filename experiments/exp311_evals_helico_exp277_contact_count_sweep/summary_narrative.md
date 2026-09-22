@@ -34,6 +34,15 @@ confidence model recovers some of the opportunity but remains the bottleneck.
 On designs the oracle gap is smaller (+0.0352), and confidence usually prefers
 far fewer contacts (median 0.056L) than it does on natural proteins (0.631L).
 
+## Comparison with structure predictors
+
+On the identical eval-val cohort, GDT-TS is 0.8583 for Protenix-v2 + MSA,
+0.8000 for ESMFold2, 0.7376 for ESMFold, 0.6242 for the Helico sweep oracle,
+0.5277 for confidence-selected Helico, and 0.5015 for top-L Helico. On
+eval-denovo, ESMFold2 and the Helico oracle both reach about 0.934;
+confidence-selected Helico reaches 0.8990 versus 0.8503 for top-L. The oracle
+uses ground truth and measures headroom rather than a deployable policy.
+
 ## Conclusion
 
 Search the contact count and use Helico confidence instead of always folding

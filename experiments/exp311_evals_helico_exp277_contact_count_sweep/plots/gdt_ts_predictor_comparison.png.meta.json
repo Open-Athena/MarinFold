@@ -1,0 +1,5 @@
+{
+  "script": "plot_predictor_comparison.py",
+  "args": [],
+  "caption": "Target-mean GDT-TS for four external structure predictors and three exp311 Helico policies. All methods use the same 96 eval-val and 19 eval-denovo targets; intervals resample proteins."
+}
