@@ -5,10 +5,15 @@
 
 from dataclasses import dataclass
 
-from levanter.data.text.formats import PrebuiltCacheProcessor, TextLmDatasetFormat
+from levanter.data.text.formats import (
+    LmDatasetFormatBase,
+    PrebuiltCacheProcessor,
+    TextLmDatasetFormat,
+)
 from levanter.tokenizers import MarinTokenizer
 
 
+@LmDatasetFormatBase.register_subclass("packable-token-ids")
 @dataclass(frozen=True)
 class PackableTokenIdsFormat(TextLmDatasetFormat):
     """Load ``input_ids`` caches while selecting Levanter's document packer.
