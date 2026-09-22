@@ -69,10 +69,10 @@ class Predictor:
         sys.path.insert(0, "/root/helico/src")
         table = pq.read_table(
             "/root/exp304-helico-iid/inputs.parquet",
-            columns=["target_id", "pair_id", "contacts"],
+            columns=["target_id", "pair_id", "sequence", "contacts"],
         )
         self.inputs = {
-            row["target_id"]: (row["pair_id"], row["contacts"])
+            row["target_id"]: (row["pair_id"], row["sequence"], row["contacts"])
             for row in table.to_pylist()
         }
 
@@ -122,7 +122,7 @@ class Predictor:
         import time
 
         import torch
-        from helico.bench import match_atoms, predict_target, score_monomer, structure_to_chains
+        from helico.bench import match_atoms, predict_target, score_monomer
         from helico.data import parse_mmcif
         from helico.train import coords_to_pdb
 
@@ -130,18 +130,18 @@ class Predictor:
                "n_cycles": n_cycles, "seed": 42, **self.run_meta}
         started = time.monotonic()
         try:
-            pair_id, contact_pairs = self.inputs[target_id]
+            pair_id, sequence, contact_pairs = self.inputs[target_id]
             ground_truth = parse_mmcif(
                 Path("/root/exp304-helico-iid/gt") / f"{pair_id}.cif.gz",
                 max_resolution=float("inf"),
             )
             if ground_truth is None:
                 raise ValueError(f"failed to parse input chain for {pair_id}")
-            chains = structure_to_chains(ground_truth)
-            proteins = [chain for chain in chains if chain["type"] == "protein"]
-            if len(proteins) != 1:
-                raise ValueError(f"{pair_id}: expected one protein chain")
-            chain_id = proteins[0]["id"]
+            # Build the inference target from the explicitly extracted protein sequence.
+            # Two source PDB entries label their amino-acid chain as DNA in entity metadata;
+            # inferring chain type from that CIF would reject valid protein targets.
+            chains = [{"type": "protein", "id": "A", "sequence": sequence}]
+            chain_id = "A"
             pairs = [(chain_id, int(i), chain_id, int(j)) for i, j in contact_pairs]
             torch.manual_seed(42)
             torch.cuda.manual_seed_all(42)

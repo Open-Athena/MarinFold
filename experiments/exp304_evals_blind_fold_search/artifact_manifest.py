@@ -14,8 +14,9 @@ ROOTS = {
     "helico-inputs": HERE / "_cache" / "helico" / "data",
     "helico-results": HERE / "_cache" / "helico" / "results",
     "helico-iid-inputs": HERE / "_cache" / "helico_iid" / "data",
-    "helico-iid-results": HERE / "_cache" / "helico_iid" / "results",
+    "helico-iid-results": HERE / "_cache" / "helico_iid" / "publish",
     "helico-iid-deck": HERE / "_cache" / "helico_iid" / "deck",
+    "plots": HERE / "plots",
     "joblogs": HERE / "_cache" / "joblogs",
 }
 

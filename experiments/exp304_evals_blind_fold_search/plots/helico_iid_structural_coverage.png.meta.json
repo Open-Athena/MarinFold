@@ -1,0 +1,5 @@
+{
+  "script": "plot_helico_iid_coverage.py",
+  "args": [],
+  "caption": "Cumulative oracle coverage of two fold modes under the contact-map screen and under cross-reference structural scoring of every individual Helico output. The structural thresholds are shown on the figure; raw cross-reference Kabsch GDT-TS and CA RMSD values are retained for threshold sensitivity analyses."
+}

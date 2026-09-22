@@ -3,12 +3,12 @@
 
 import argparse
 import concurrent.futures
+import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
-import tmtools
 
 from build_helico_targets import SOURCE, prepare_structure
 from score_helico_cross import prediction_coords
@@ -34,19 +34,8 @@ def superpose(predicted: np.ndarray, reference: np.ndarray) -> tuple[np.ndarray,
 
 
 def gdt(distances: np.ndarray) -> float:
-    """GDT-TS after the supplied superposition."""
+    """Helico-style GDT-TS after the supplied Kabsch superposition."""
     return float(np.mean([(distances < cutoff).mean() for cutoff in (1, 2, 4, 8)]))
-
-
-def tm_score(predicted: np.ndarray, reference: np.ndarray) -> float:
-    """TM-score normalized by the common matched reference positions."""
-    if len(predicted) < 3:
-        return float("nan")
-    result = tmtools.tm_align(
-        predicted.astype(np.float64), reference.astype(np.float64),
-        "A" * len(predicted), "A" * len(reference),
-    )
-    return float(result.tm_norm_chain2)
 
 
 def comparison_metrics(predicted: np.ndarray, reference: np.ndarray,
@@ -55,7 +44,6 @@ def comparison_metrics(predicted: np.ndarray, reference: np.ndarray,
     globally_aligned, global_rmsd = superpose(predicted, reference)
     global_distances = np.linalg.norm(globally_aligned - reference, axis=1)
     result = {
-        "tm_common": tm_score(predicted, reference),
         "gdt_common": gdt(global_distances),
         "rmsd_common": global_rmsd,
         "gdt_region_global_fit": gdt(global_distances[region]),
@@ -64,7 +52,6 @@ def comparison_metrics(predicted: np.ndarray, reference: np.ndarray,
     local_aligned, local_rmsd = superpose(predicted[region], reference[region])
     local_distances = np.linalg.norm(local_aligned - reference[region], axis=1)
     result.update({
-        "tm_region": tm_score(predicted[region], reference[region]),
         "gdt_region_local_fit": gdt(local_distances),
         "rmsd_region_local_fit": local_rmsd,
     })
@@ -83,6 +70,9 @@ def score_protein(pair_id: str) -> tuple[list[dict], dict]:
                     & references[1].keys() & references[2].keys())
     lo, hi = int(target.fs_lo), int(target.fs_hi)
     region = np.array([lo <= position < hi for position in common])
+    if len(common) < 20 or region.sum() < 3:
+        raise ValueError(f"{pair_id}: insufficient common ({len(common)}) or region "
+                         f"({int(region.sum())}) C-alpha positions")
     reference_arrays = {
         fold: np.array([references[fold][position] for position in common])
         for fold in (1, 2)
@@ -141,12 +131,27 @@ def main() -> None:
     complete[complete.kind != "iid"].sort_values(["pair_id", "rollout"]).to_csv(
         HERE / "data" / "helico_iid_control_scores.csv", index=False
     )
-    timing_columns = [
-        "target_id", "pair_id", "kind", "rollout", "L", "elapsed_seconds",
-        "predict_seconds", "model_load_seconds", "gpu_name", "gpu_total_memory_gb",
-        "gpu_compute_capability", "hostname", "platform", "torch_version",
-    ]
-    complete[timing_columns].to_csv(HERE / "data" / "helico_iid_timings.csv", index=False)
+    timings = complete[[
+        "target_id", "pair_id", "kind", "rollout", "L", "n_contacts_helico",
+        "n_contacts",
+        "predict_seconds", "elapsed_seconds", "model_load_seconds", "gpu_name",
+        "gpu_total_memory_gb", "gpu_compute_capability", "hostname", "platform",
+        "torch_version",
+    ]].rename(columns={
+        "pair_id": "stem", "kind": "mode", "L": "n_residues",
+        "n_contacts_helico": "n_pairs", "n_contacts": "n_pairs_requested",
+        "predict_seconds": "elapsed_seconds",
+        "elapsed_seconds": "target_seconds_after_model_load",
+    })
+    timings["total_seconds"] = (timings.target_seconds_after_model_load
+                                + timings.model_load_seconds)
+    timings["model_nickname"] = "helico-contacts-msafree-01-step-6000"
+    timings["runner_tag"] = "modal"
+    timings["n_samples"] = 1
+    timings["n_cycles"] = 6
+    protocol = json.loads((ROOT / "data" / "protocol.json").read_text())
+    timings["timestamp_utc"] = protocol["run_started_utc"]
+    timings.to_csv(HERE / "data" / "helico_iid_timings.csv", index=False)
     print(f"wrote {len(complete):,} cross-reference rows")
 
 

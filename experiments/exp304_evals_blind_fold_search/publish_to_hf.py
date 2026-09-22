@@ -22,7 +22,7 @@ def main() -> None:
         (HERE / "_cache" / "helico" / "data", f"{DEST}/helico/inputs"),
         (HERE / "_cache" / "helico" / "results", f"{DEST}/helico/results"),
         (HERE / "_cache" / "helico_iid" / "data", f"{DEST}/helico-iid/inputs"),
-        (HERE / "_cache" / "helico_iid" / "results", f"{DEST}/helico-iid/results"),
+        (HERE / "_cache" / "helico_iid" / "publish", f"{DEST}/helico-iid/results"),
         (HERE / "_cache" / "helico_iid" / "deck", f"{DEST}/helico-iid/deck"),
         (HERE / "_cache" / "joblogs", f"{DEST}/joblogs"),
     ):
