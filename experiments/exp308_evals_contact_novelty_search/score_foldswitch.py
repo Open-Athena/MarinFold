@@ -122,8 +122,9 @@ def score(files: list[Path], mode: str, selection: str, n_rollouts: int) -> None
         iid_seconds = float(iid_timing.loc[pid, "elapsed_seconds"])
         beam4_seconds = float(beam4.loc[pid, "beam_seconds"])
         iid_enrichment = float(iid_blind.loc[pid, "minority_enrichment"])
-        early_choices = [choice for entry in frame.beam_choices_json
-                         for choice in json.loads(entry)[:20]]
+        parsed_choices = [json.loads(entry) for entry in frame.beam_choices_json]
+        early_choices = [choice for choices in parsed_choices for choice in choices[:20]]
+        late_choices = [choice for choices in parsed_choices for choice in choices[20:]]
         if not early_choices:
             raise ValueError(f"{pid}: no early contact choices")
         rows.append({
@@ -140,6 +141,12 @@ def score(files: list[Path], mode: str, selection: str, n_rollouts: int) -> None
                 [choice["prior_count"] for choice in early_choices]).mean()),
             "share_unseen_first20": float(pd.Series(
                 [choice["prior_count"] == 0 for choice in early_choices]).mean()),
+            "mean_prior_count_after20": float(pd.Series(
+                [choice["prior_count"] for choice in late_choices], dtype=float).mean()),
+            "share_unseen_after20": float(pd.Series(
+                [choice["prior_count"] == 0 for choice in late_choices], dtype=float).mean()),
+            "mean_shared_recall_finished": float(scored.loc[scored.finished,
+                                                               "recall_shared"].mean()),
             "fold1_pool": fold1, "fold2_pool": fold2, "dual_pool": fold1 and fold2,
             "dual_pool_strict": strict1 and strict2,
             "fold1_blind": blind1, "fold2_blind": blind2,
@@ -204,6 +211,8 @@ def score(files: list[Path], mode: str, selection: str, n_rollouts: int) -> None
                                                / group.beam4_seconds.sum()),
             "mean_prior_count_first20": float(group.mean_prior_count_first20.mean()),
             "share_unseen_first20": float(group.share_unseen_first20.mean()),
+            "share_unseen_after20": float(group.share_unseen_after20.mean()),
+            "mean_shared_recall_finished": float(group.mean_shared_recall_finished.mean()),
             "mean_finished": float(group.n_finished.mean()),
         })
     report = pd.DataFrame(summary)

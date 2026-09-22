@@ -16,6 +16,12 @@
     {"beam_width": 16, "epsilon": 0.05, "decay_contacts": 20},
     {"beam_width": 32, "epsilon": 0.05, "decay_contacts": 20}
   ],
+  "adaptive_development_addition": {
+    "configuration": {"beam_width": 16, "epsilon": 0.2, "decay_contacts": 20},
+    "reason": "The initial short-protein pilot showed changed early sampling but no new primary dual-mode hits at epsilon 0.05; test whether a stronger early penalty can reach an alternate mode.",
+    "timing": "Added after inspecting partial development results and before inspecting or scoring any held-out test reference.",
+    "interpretation": "Exploratory development tuning; compare on the held-out primary test, not as a confirmatory pilot result."
+  },
   "wave_size": 10,
   "rollouts_per_target": 100,
   "candidate_score": "two-token joint log probability - effective_epsilon * prior completed-rollout count",

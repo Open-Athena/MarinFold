@@ -43,6 +43,13 @@ discovery. Each configuration gets 100 rollouts per pair. Select one method
 using development-only contact scores, then run it on the 29 primary held-out
 fold-switching pairs.
 
+After inspecting partial development results for the first four settings, add
+one exploratory stronger early-only setting (width 16, epsilon 0.2, decay over
+20 contacts) on the same seven pairs. The earlier penalty changed early contact
+reuse but had not produced a new primary dual-mode hit on the short pairs.
+This fifth setting is adaptive development tuning and must be judged on the
+untouched primary held-out set.
+
 Seal a reference-blind 16-map shortlist for each set before opening the two
 reference contact sets. Score with exp304's 25%-recall and 0.10-enrichment
 criterion, and report the 50%-recall sensitivity separately. Compare oracle
