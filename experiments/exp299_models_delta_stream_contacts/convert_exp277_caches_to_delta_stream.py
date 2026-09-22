@@ -340,7 +340,9 @@ def convert_work_shard(
                 )
 
 
-def source_work_items(corpus: Corpus, *, max_source_shards: int | None) -> list[dict[str, object]]:
+def source_work_items(
+    corpus: Corpus, *, start_source_shard: int, max_source_shards: int | None
+) -> list[dict[str, object]]:
     """Read and validate the source ledger, then return one item per cache shard."""
     ledger = CacheLedger.load(corpus.cache)
     if ledger.layout != "sharded" or not ledger.is_finished:
@@ -366,9 +368,8 @@ def source_work_items(corpus: Corpus, *, max_source_shards: int | None) -> list[
         start += rows
     if start != corpus.documents:
         raise ValueError(f"{corpus.name}: shard rows sum to {start}, expected {corpus.documents}")
-    if max_source_shards is not None:
-        items = items[:max_source_shards]
-    return items
+    stop = None if max_source_shards is None else start_source_shard + max_source_shards
+    return items[start_source_shard:stop]
 
 
 def write_manifest(
@@ -397,7 +398,13 @@ def write_manifest(
 
 def run(args: argparse.Namespace) -> None:
     corpus = CORPORA[args.corpus]
-    work_items = source_work_items(corpus, max_source_shards=args.max_source_shards)
+    work_items = source_work_items(
+        corpus,
+        start_source_shard=args.start_source_shard,
+        max_source_shards=args.max_source_shards,
+    )
+    if not work_items:
+        raise ValueError("source-shard selection is empty")
     output_root = f"{args.output_root.rstrip('/')}/{corpus.name}"
     rows = Dataset.from_list(work_items).reshard(len(work_items)).map_shard(
         functools.partial(
@@ -430,6 +437,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--corpus", choices=sorted(CORPORA), required=True)
     parser.add_argument("--output-root", default=OUTPUT_ROOT)
+    parser.add_argument("--start-source-shard", type=int, default=0)
     parser.add_argument("--max-source-shards", type=int)
     parser.add_argument("--max-documents-per-source-shard", type=int)
     parser.add_argument("--batch-size", type=int, default=512)
@@ -439,6 +447,8 @@ def main() -> None:
     parser.add_argument("--worker-disk", default="16GB")
     parser.add_argument("--verify-round-trip", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
+    if args.start_source_shard < 0:
+        parser.error("--start-source-shard must be nonnegative")
     if args.max_source_shards is not None and args.max_source_shards <= 0:
         parser.error("--max-source-shards must be positive")
     if args.max_documents_per_source_shard is not None and args.max_documents_per_source_shard <= 0:
