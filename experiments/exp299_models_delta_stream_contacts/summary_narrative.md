@@ -71,6 +71,23 @@ V2-minus-exp177 intervals are [0.0207, 0.0407] and [0.0044, 0.0265],
 respectively. AUC remains below exp177 final at 0.9131 all-range and 0.8878
 long-range. On `eval-denovo`, V2 reaches 0.5272 R/all and 0.4595 R/long.
 
+## Final mature-run result
+
+The fresh run completed successfully at step 78,499 after 112.9 hours on 2 × 4
+GB200 GPUs. It processed 82.31B packed tokens, approximately 94.73M protein
+exposures, at mean throughput 205,396 tokens/s. Final train CE was 0.9190 and
+final/best native validation CE was 0.91425. Its approximately 71,363
+contacts-v1-equivalent steps nearly exactly match exp177 final at 71,359.
+
+On `legacy_554`, final V2 reaches **0.5763 R/all** and **0.5160 R/long**, versus
+0.5113 and 0.4595 for exp177 final. Paired-bootstrap V2-minus-exp177 intervals
+are [0.0547, 0.0757] and [0.0450, 0.0684], establishing a resolved advantage.
+AUC is effectively tied: 0.9245 / 0.9028 for V2 versus 0.9246 / 0.9033 for
+exp177, with paired intervals spanning zero. On `eval-val`, final V2 scores
+0.5147 / 0.4842 R/all / R/long; on the 19-protein `eval-denovo` set it scores
+0.5494 / 0.4779. The best late `eval-denovo` point estimate is step 72,000 at
+0.5534 / 0.4871, illustrating residual sampling/checkpoint noise at n=19.
+
 ## Why V2 CE is low
 
 Paired teacher-forced scoring on the same 670 R-precision proteins confirms
@@ -86,5 +103,7 @@ stem)` for protein-level analysis.
 
 ## Next steps
 
-Continue evaluating later matched checkpoints and measure strict
-grammar-constrained decoding separately.
+Review the approved format/objective ablations before launching more training:
+one-sided contact-loss masking, preferred-triangle serialization, absolute
+partner positions, and removing forced per-residue `STOP` tokens. Measure
+strict grammar-constrained decoding separately.

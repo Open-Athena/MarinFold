@@ -143,4 +143,19 @@ found 2.2575 AA CE and 0.4086 contact CE for V2 step 32,000. Exp177 final scored
 2.6024 AA CE and 2.2301 contact CE on those exact proteins. Full token-loss
 arrays are keyed by `(dataset, stem)`, confirming that V2's aggregate CE is
 strongly reduced by easier contact serialization while rollout R-precision
-independently confirms contact quality.
+independently confirms contact quality. Repeating the same paired analysis at
+step 60,000 gives 2.2106 AA CE, 0.4522 delta CE, 0.1998 `STOP` CE, and 0.3622
+combined contact-phase CE.
+
+The run completed successfully at final step 78,499 on 2026-09-22. W&B reports
+82.31B packed tokens over 112.9 wall-clock hours, mean throughput 205,396
+tokens/s, final train loss 0.9190, and final/best validation loss 0.91425. The
+run saw approximately 94.73M protein documents (1.42 packed-cache passes), or
+71,363 contacts-v1-equivalent steps.
+
+Canonical final 100-rollout evaluation covered all 670 targets. On legacy 554,
+final V2 scored 0.5763 R/all, 0.5160 R/long, 0.9245 AUC/all, and 0.9028 AUC/long.
+Against exp177 final, R-precision differences were +0.0651 [0.0547, 0.0757] and
++0.0565 [0.0450, 0.0684], while both AUC differences were indistinguishable
+from zero. Final `eval-val` R/all and R/long were 0.5147 and 0.4842; final
+`eval-denovo` values were 0.5494 and 0.4779.

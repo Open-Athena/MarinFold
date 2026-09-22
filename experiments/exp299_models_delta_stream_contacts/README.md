@@ -69,6 +69,10 @@ approximately `V2 step / 1.1`.
 | V2 step 48,000 (61% schedule) | 43,636 | 554/554 | **0.5418** | **0.4748** | 0.9131 | 0.8878 |
 | V2 step 54,000 (69% schedule) | 49,091 | 554/554 | **0.5449** | **0.4799** | 0.9149 | 0.8888 |
 | V2 step 60,000 (76% schedule) | 54,545 | 554/554 | **0.5464** | **0.4804** | 0.9142 | 0.8894 |
+| V2 step 66,000 (84% schedule) | 60,000 | 554/554 | **0.5611** | **0.4963** | 0.9212 | 0.8986 |
+| V2 step 72,000 (92% schedule) | 65,455 | 554/554 | **0.5679** | **0.5053** | 0.9217 | 0.8987 |
+| V2 step 78,000 (99% schedule) | 70,909 | 554/554 | **0.5755** | **0.5130** | 0.9227 | 0.9010 |
+| V2 step 78,499 (final) | 71,363 | 554/554 | **0.5763** | **0.5160** | 0.9245 | 0.9028 |
 | exp177 contacts-v1 step 71,359 | 71,359 | 554/554 | 0.5113 | 0.4595 | **0.9246** | **0.9033** |
 
 ### Notebook-ready training curves
@@ -109,8 +113,21 @@ Notebook-ready local files are:
 The delta V2 pilot and full 78,500-step run have separate `run` labels so a
 notebook cannot accidentally draw them as one continuous schedule. The full-run
 curve now contains steps 4k, 10k, 16k, 20k, 22k, 30k, 36k, 42k, 48k, 54k,
-and 60k. The `eval-denovo` curve contains those same full-run checkpoints and all exp177
+60k, 66k, 72k, 78k, and final step 78,499. The `eval-denovo` curve contains
+those same full-run checkpoints and all exp177
 checkpoints in the legacy curve (10k, 20k, 30k, 40k, 50k, 60k, 70k, and 71,359).
+
+### Final training-run statistics
+
+The fresh mature run completed successfully at step 78,499 on 2026-09-22. It
+trained for 112.9 wall-clock hours on 2 nodes × 4 GB200 GPUs with global batch
+128 and sequence length 8,192. W&B reports 82.31 billion packed tokens and mean
+throughput 205,396 tokens/s (5.105 seconds/step). This corresponds to about
+94.73 million protein-document exposures, 1.42 passes over the packed cache,
+and approximately 71,363 contacts-v1-equivalent steps—effectively identical to
+exp177 final at step 71,359. Final train loss was 0.9190 and final/best native
+validation loss was 0.91425. The learning rate ended at 1.0e-4 after peaking at
+1.0e-3.
 
 ### Conclusion at 28%: large matched-training win
 
@@ -141,8 +158,12 @@ protein-bootstrap difference intervals are [-0.0475, -0.0269] for R/all and
 0.5418 R/all and 0.4748 R/long, exceeding exp177 final on both metrics. The
 paired-bootstrap V2-minus-exp177 intervals are [0.0207, 0.0407] for R/all and
 [0.0044, 0.0265] for R/long. Steps 54,000 and 60,000 hold and slightly extend
-that recovery: step 60,000 reaches 0.5464 R/all and 0.4804 R/long. Its AUCs
-remain lower than exp177 final, at 0.9142 and 0.8894.
+that recovery: step 60,000 reaches 0.5464 R/all and 0.4804 R/long. Performance
+then improves through the end of training. Final step 78,499 reaches 0.5763
+R/all and 0.5160 R/long, exceeding exp177 final by 0.0651 and 0.0565. Paired
+protein-bootstrap 95% intervals are [0.0547, 0.0757] and [0.0450, 0.0684]. Its
+AUCs close the remaining gap: 0.9245 all-range and 0.9028 long-range versus
+0.9246 and 0.9033 for exp177 final; paired intervals include zero for both.
 
 The same conclusion holds on the exp277 split added for these checkpoints:
 
@@ -164,8 +185,16 @@ The same conclusion holds on the exp277 split added for these checkpoints:
 | eval-denovo | 19 | V2 step 54,000 | 0.5116 | 0.4303 | **0.9299** | 0.8714 |
 | eval-val | 97 | V2 step 60,000 | **0.4665** | **0.4345** | **0.8969** | **0.8772** |
 | eval-denovo | 19 | V2 step 60,000 | 0.5186 | **0.4758** | 0.9211 | **0.8924** |
+| eval-val | 97 | V2 step 66,000 | 0.4940 | 0.4621 | 0.9042 | 0.8868 |
+| eval-denovo | 19 | V2 step 66,000 | 0.5519 | 0.4594 | 0.9400 | 0.8852 |
+| eval-val | 97 | V2 step 72,000 | 0.5008 | 0.4699 | 0.9110 | 0.8953 |
+| eval-denovo | 19 | V2 step 72,000 | **0.5534** | **0.4871** | 0.9391 | 0.8901 |
+| eval-val | 97 | V2 step 78,000 | **0.5150** | **0.4887** | **0.9134** | **0.8982** |
+| eval-denovo | 19 | V2 step 78,000 | 0.5422 | 0.4756 | **0.9427** | **0.9055** |
+| eval-val | 97 | V2 step 78,499 (final) | 0.5147 | 0.4842 | 0.9107 | 0.8928 |
+| eval-denovo | 19 | V2 step 78,499 (final) | 0.5494 | 0.4779 | 0.9376 | 0.8933 |
 
-All 670 proteins were scored at all five V2 checkpoints. Steps 42,000 and
+All 670 proteins were scored at every listed V2 checkpoint. Steps 42,000 and
 48,000 emitted no malformed rollouts among 67,000 samples, as did the
 step-42,000 independent rerun. Earlier checkpoints likewise emitted no
 malformed rollouts; one de-novo protein
@@ -181,9 +210,9 @@ for that curve are in `data/rprecision_comparison_rows.csv.gz` and
 `data/rprecision_comparison_summary.csv`. The 670-protein matched comparison is
 in `data/rprecision_step22000_u670_rows.csv.gz` and
 `data/rprecision_step22000_u670_subset_summary.csv`. The corresponding
-step-30,000, step-36,000, step-42,000, and step-48,000 files use `step30000`,
-`step36000`, `step42000`, and `step48000` in their names; per-protein runtime
-and worker metadata are in the `data/timings_*_u670.csv` files.
+later checkpoint files follow the same `rprecision_step<N>_u670_*` naming;
+per-protein runtime and worker metadata are in the `data/timings_*_u670.csv`
+files.
 
 ## Paired teacher-forced CE by document phase
 
