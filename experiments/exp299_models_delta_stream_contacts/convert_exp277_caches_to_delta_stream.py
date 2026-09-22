@@ -104,6 +104,13 @@ CORPORA = {
             130_872_044,
             3_338,
         ),
+        Corpus(
+            "validation",
+            "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/"
+            "tokenized/contacts-v1-val/2026.07.25/validation",
+            41_954,
+            2,
+        ),
     )
 }
 
