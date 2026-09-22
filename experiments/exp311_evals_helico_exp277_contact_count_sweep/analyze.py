@@ -229,7 +229,7 @@ def plot_curve(summary: list[dict], cut_curve: list[dict], relative_curve: list[
             ax.set_xlabel("Top k MarinFold contacts")
             ax.set_xlim(left=0)
             ax.grid(alpha=0.2)
-        axes[0].set_ylabel(metric.upper() if metric == "gdt_ts" else "lDDT")
+        axes[0].set_ylabel("GDT-TS" if metric == "gdt_ts" else "lDDT")
         axes[1].legend(loc="best", fontsize=8)
         fig.tight_layout()
         save_plot_with_meta(
@@ -250,7 +250,7 @@ def plot_curve(summary: list[dict], cut_curve: list[dict], relative_curve: list[
             ax.set_xlabel("Fraction of top-L MarinFold contacts")
             ax.set_xlim(0, 1)
             ax.grid(alpha=0.2)
-        axes[0].set_ylabel(metric.upper() if metric == "gdt_ts" else "lDDT")
+        axes[0].set_ylabel("GDT-TS" if metric == "gdt_ts" else "lDDT")
         axes[1].legend(loc="best", fontsize=8)
         fig.tight_layout()
         save_plot_with_meta(
@@ -262,7 +262,7 @@ def plot_curve(summary: list[dict], cut_curve: list[dict], relative_curve: list[
 
 def plot_selection_gap(per_target: list[dict]) -> None:
     """Compare Helico's confidence pick with the per-target GDT-TS oracle."""
-    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharex=True, sharey=True, constrained_layout=True)
     scatter = None
     for ax, eval_set in zip(axes, ("eval-val", "eval-denovo"), strict=True):
         rows = [row for row in per_target if row["eval_set"] == eval_set and row["metric"] == "gdt_ts"]
@@ -279,7 +279,6 @@ def plot_selection_gap(per_target: list[dict]) -> None:
     axes[0].set_ylabel("Helico-ranked GDT-TS")
     if scatter is not None:
         fig.colorbar(scatter, ax=axes, label="Selected contact count / L", shrink=0.82)
-    fig.tight_layout()
     save_plot_with_meta(
         fig, PLOTS / "gdt_ts_selection_gap.png",
         caption="Each protein's best GDT-TS in the full sweep versus the structure Helico confidence ranks first.",

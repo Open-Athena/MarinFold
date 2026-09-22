@@ -12,7 +12,10 @@ def sync(source: Path, suffix: str) -> None:
     """Upload a directory without deleting any prior public artifact."""
     if not source.exists():
         raise FileNotFoundError(source)
-    subprocess.run(["hf", "buckets", "sync", str(source), f"{DEST}/{suffix}/", "--no-delete"], check=True)
+    subprocess.run([
+        "hf", "buckets", "sync", str(source), f"{DEST}/{suffix}/",
+        "--no-delete", "--exclude", "smoke/**",
+    ], check=True)
 
 
 def main() -> None:

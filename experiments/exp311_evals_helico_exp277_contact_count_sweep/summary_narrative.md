@@ -20,7 +20,23 @@ TM-score and RMSD, separately for natural and designed proteins.
 
 ## Results so far
 
-All 345 reference contact-precision checks matched exp277's recorded values.
-One natural target (7pv5_A) is excluded because its prompt-to-token index map
-is ambiguous. A one-target smoke run produced all expected samples and metrics.
-The complete structural sweep is running on Modal.
+All 9,267 structures completed for 96 eval-val and 19 eval-denovo targets.
+On eval-val, GDT-TS is 0.6242 oracle / 0.5277 Helico-ranked / 0.5015 top-L;
+the ranked sweep beats top-L by +0.0262 [0.0039, 0.0508]. On eval-denovo the
+same values are 0.9341 / 0.8990 / 0.8503. Confidence chooses zero contacts for
+8/19 designs, showing that top-L is the wrong universal policy.
+
+## What the gap means
+
+The sweep already generates substantially better natural-protein structures:
+the oracle is +0.0965 GDT-TS above the confidence choice on eval-val. Helico's
+confidence model recovers some of the opportunity but remains the bottleneck.
+On designs the oracle gap is smaller (+0.0352), and confidence usually prefers
+far fewer contacts (median 0.056L) than it does on natural proteins (0.631L).
+
+## Conclusion
+
+Search the contact count and use Helico confidence instead of always folding
+top-L. This improves both natural and designed accuracy. The next useful gain
+is better confidence ranking: the structures needed for a much higher
+eval-val score are already present in the sweep.

@@ -55,8 +55,39 @@ The exp14 directory must first have run its `build_eval_sets.py` and `build_inde
 
 ## Results
 
-The [full Modal run](https://modal.com/apps/open-athena/main/ap-7FlRkgVXbuH8CHEtIFMRXm) is in progress. The input preparation and 345 contact-precision checks completed. `7pv5_A` is the single documented exclusion. The `5sbj_A` smoke target returned 4 cuts × 3 samples. Its confidence-selected zero-contact structure scored 0.892857 GDT-TS, exactly matching Helico exp14's published zero-contact value for the same target; lDDT was 0.7711 versus 0.7718 in that earlier run.
+The [full Modal run](https://modal.com/apps/open-athena/main/ap-7FlRkgVXbuH8CHEtIFMRXm) completed all **115 targets × 3,089 cuts × 3 samples = 9,267 structures** with no failed or nonfinite rows. `7pv5_A` is the single preregistered exclusion. The run used 13.89 captured H100-hours including eight model loads, approximately **$54.86** of GPU time at $3.9492/hour, below the $66.54 conservative estimate. Wall time was about 2 h 22 min.
+
+The table below is target-weighted. “Mean” averages each target's samples and then the targets; “median” takes each target's median and then averages targets. “Helico-ranked” is one deployable choice per target: the highest Helico `ranking_score` among every cut and diffusion sample. “Oracle” chooses the best prediction independently for each structural metric, using ground truth. RMSD is Cα RMSD in Å and lower is better; the other metrics are higher-is-better.
+
+| set | metric | oracle best | mean | median | Helico-ranked | top-0 ranked | top-L ranked |
+|---|---|---:|---:|---:|---:|---:|---:|
+| eval-val (n=96) | GDT-TS | **0.6242** | 0.4369 | 0.4703 | **0.5277** | 0.1323 | 0.5015 |
+|  | lDDT | **0.6862** | 0.5876 | 0.6117 | **0.6462** | 0.3476 | 0.6306 |
+|  | TM-score | **0.8082** | 0.6903 | 0.7197 | **0.7558** | 0.4158 | 0.7340 |
+|  | Cα RMSD ↓ | **2.9395** | 5.0948 | 4.5872 | **4.3117** | 9.0688 | 4.4894 |
+| eval-denovo (n=19) | GDT-TS | **0.9341** | 0.8439 | 0.8670 | **0.8990** | 0.8574 | 0.8503 |
+|  | lDDT | **0.8620** | 0.8080 | 0.8152 | **0.8414** | 0.8254 | 0.8037 |
+|  | TM-score | **0.9491** | 0.9029 | 0.9186 | **0.9336** | 0.9135 | 0.9061 |
+|  | Cα RMSD ↓ | **0.6086** | 1.0706 | 0.8779 | **0.7715** | 1.0019 | 0.9717 |
+
+### Confidence selection helps, but leaves measurable oracle headroom
+
+On eval-val, sweeping and selecting by Helico confidence improves exact top-L by **+0.0262 GDT-TS** (95% paired bootstrap **[+0.0039, +0.0508]**) and **+0.0156 lDDT** (**[+0.0023, +0.0308]**). The metric oracle remains another **+0.0965 GDT-TS** (**[+0.0773, +0.1181]**) and **+0.0400 lDDT** (**[+0.0326, +0.0481]**) above the confidence choice. Confidence selects a median cut of 0.631L; it selects no contacts for only 2/96 targets and exact L for 5/96.
+
+On eval-denovo, confidence selection scores **+0.0486 GDT-TS** against exact top-L (95% CI **[-0.0062, +0.1186]**) and **+0.0415** against no contacts (**[+0.0020, +0.1024]**). The top-L interval crosses zero because n=19 and designs vary strongly, but top-L is not a good universal default: confidence selects no contacts for 8/19 designs, exact L for only 1/19, and a median cut of 0.056L. The oracle headroom over confidence is smaller than on natural proteins: **+0.0352 GDT-TS** (**[+0.0211, +0.0518]**).
+
+### The best fixed cut differs between natural proteins and designs
+
+On the paired fraction-of-L grid, eval-val GDT-TS rises from 0.1323 with no contacts to 0.5060 at 0.9L, then ends at 0.5015 at exact L. eval-denovo starts at 0.8574, peaks at 0.8788 around 0.1L, and ends at 0.8503 at L. Per-target confidence selection beats every fixed fraction because different proteins prefer different cuts.
+
+![Paired GDT-TS curve](plots/gdt_ts_by_fraction_L.png)
+
+![Oracle versus confidence-selected GDT-TS](plots/gdt_ts_selection_gap.png)
+
+The frozen low-MSA designed subset (13/19 eval-denovo targets) scores 0.9202 confidence-selected GDT-TS, 0.9457 oracle GDT-TS, and 0.8472 at top-L. There is no natural eval-val member of exp260's frozen low-MSA set; its FoldBench natural members are in eval-test, which this experiment did not read.
+
+Raw per-sample metrics, timings and the run manifest are committed under `data/` and published with the input bundle in the [public MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp311-helico-exp277-contact-count-sweep/).
 
 ## Conclusion
 
-Pending the complete Helico run.
+Always handing Helico top-L contacts leaves accuracy on the table. For natural eval-val proteins, a top-0-to-L sweep plus Helico confidence selection improves GDT-TS from 0.5015 to 0.5277 and lDDT from 0.6306 to 0.6462. The oracle envelope of 0.6242 GDT-TS shows that substantially better structures already exist in the generated grid, but the confidence model does not identify all of them. For eval-denovo, the best policy is qualitatively different: Helico confidence often rejects contacts entirely and scores 0.8990 GDT-TS, while exact top-L scores 0.8503. Future deployment should search the contact count and rank candidates by Helico confidence; improving that confidence ranking is the clearest path to capture the remaining oracle headroom.
