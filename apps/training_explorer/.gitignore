@@ -1,0 +1,4 @@
+structures/
+data/native_hits.json
+data/latest_eval_queries.fasta
+data/low_complexity_query.fasta

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MarinFold · Training data explorer</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/molstar@5.11.0/build/viewer/molstar.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/molstar@5.11.0/build/viewer/molstar.js"
+    ></script>
+    <script defer src="backbone_fallback.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark">M<span>·</span>F</span
+        ><span>MarinFold <small>DATA EXPLORER</small></span>
+      </div>
+      <div class="masthead-note">
+        Sequences · structures · nearest training neighbors
+      </div>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <div class="eyebrow">EXPLORE THE TRAINING UNIVERSE</div>
+          <h1>Proteins in context<span class="period">.</span></h1>
+          <p>
+            Inspect a uniformly sampled training protein or an evaluation
+            target, then look at its closest sequence matches in the training
+            corpus.
+          </p>
+        </div>
+        <div class="intro-rule">
+          <span>01 / 03</span
+          ><span>Rotatable structures<br />and sequence neighbors</span>
+        </div>
+      </section>
+      <section class="workspace" aria-label="Protein explorer">
+        <div class="toolbar">
+          <div class="tabs" role="tablist" aria-label="Protein set">
+            <button
+              class="tab active"
+              data-view="latest"
+              role="tab"
+              aria-selected="true"
+            >
+              Training samples <span>100</span>
+            </button>
+            <button
+              class="tab"
+              data-view="eval"
+              role="tab"
+              aria-selected="false"
+            >
+              Evaluation <span>116</span>
+            </button>
+          </div>
+          <div class="toolbar-right">
+            <div class="corpus-toggle" id="corpus-toggle-wrap">
+              <span>Latest <b>232.1M</b></span
+              ><label class="switch"
+                ><input
+                  id="corpus-toggle"
+                  type="checkbox"
+                  role="switch"
+                  aria-label="Show original 70.9M training set" /><span
+                  class="switch-track"
+                ></span></label
+              ><span>Original <b>70.9M</b></span>
+            </div>
+            <span class="live-dot"></span>
+          </div>
+        </div>
+        <div class="context-line">
+          <span id="view-description">Loading records…</span
+          ><span id="provenance"></span>
+        </div>
+        <div class="insights" id="insights" hidden></div>
+        <div class="eval-analysis" id="eval-analysis" hidden></div>
+        <div class="explorer-grid">
+          <aside class="catalog">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">BROWSE</span>
+                <h2 id="catalog-title">Proteins</h2>
+              </div>
+              <span class="count" id="list-count">—</span>
+            </div>
+            <label class="search-wrap"
+              ><span aria-hidden="true">⌕</span
+              ><input
+                id="search"
+                type="search"
+                placeholder="Search ID, sequence, source…"
+                autocomplete="off"
+                aria-label="Search proteins"
+            /></label>
+            <div class="filters" id="filters"></div>
+            <div
+              class="catalog-list"
+              id="catalog-list"
+              role="listbox"
+              aria-label="Proteins"
+            ></div>
+          </aside>
+          <section class="detail">
+            <div class="detail-head">
+              <div>
+                <span class="eyebrow" id="protein-source"
+                  >SELECT A PROTEIN</span
+                >
+                <h2 id="protein-name">—</h2>
+                <p id="protein-title"></p>
+              </div>
+              <div class="length-badge">
+                <strong id="protein-length">—</strong><span>RESIDUES</span>
+              </div>
+            </div>
+            <div class="viewer-frame">
+              <div id="molstar"></div>
+              <div class="viewer-label">
+                <span class="cube">◇</span
+                ><span id="viewer-status">Interactive 3D structure</span>
+              </div>
+              <div class="viewer-controls">DRAG TO ROTATE · SCROLL TO ZOOM</div>
+            </div>
+            <div class="protein-data">
+              <div class="data-label">
+                SEQUENCE
+                <button id="copy-sequence" title="Copy sequence">Copy</button>
+              </div>
+              <div id="sequence" class="sequence"></div>
+            </div>
+            <div class="meta-grid">
+              <div><span>SET</span><strong id="meta-set">—</strong></div>
+              <div><span>ORIGIN</span><strong id="meta-origin">—</strong></div>
+              <div>
+                <span>STRUCTURE</span><strong id="meta-structure">—</strong>
+              </div>
+            </div>
+          </section>
+          <aside class="neighbors">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">SEQUENCE SPACE</span>
+                <h2>Nearest neighbors</h2>
+              </div>
+              <span class="count" id="neighbor-count">—</span>
+            </div>
+            <p class="neighbor-intro" id="neighbor-caption">
+              Highest scoring local alignments in the selected training corpus.
+            </p>
+            <div id="neighbor-list" class="neighbor-list"></div>
+            <div class="neighbor-key">
+              <div><span class="key-swatch"></span> Percent identity</div>
+              <p>
+                Identity is over the aligned region. Query coverage and E-value
+                appear on each result.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+      <footer>
+        <span>MARINFOLD / RESEARCH TOOLS</span
+        ><span
+          >Corpus membership and search provenance are recorded with each data
+          snapshot.</span
+        >
+      </footer>
+    </main>
+  </body>
+</html>
