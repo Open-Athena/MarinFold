@@ -1,0 +1,9 @@
+{
+  "backend": "tokenizers",
+  "bos_token": "<doc_start>",
+  "eos_token": "<doc_end>",
+  "model_max_length": 1000000000000000019884624838656,
+  "pad_token": "<stop>",
+  "tokenizer_class": "TokenizersBackend",
+  "unk_token": "<aa:UNK>"
+}
