@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Paired 100-rollout eval-val R-precision, exp277 iid versus contact-block beam width 4."
+}

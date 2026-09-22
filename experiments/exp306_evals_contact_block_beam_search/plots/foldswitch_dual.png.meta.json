@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Oracle pool and reference-blind 16-map shortlist; contact-level fold evidence only."
+}

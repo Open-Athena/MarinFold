@@ -15,6 +15,8 @@ def main() -> None:
     parser.add_argument("--source", default=DEFAULT_SOURCE)
     parser.add_argument("--mode", required=True)
     parser.add_argument("--cohort", choices=["eval-val", "foldswitch"], required=True)
+    parser.add_argument("--destination", type=Path,
+                        help="local directory; default _cache/<mode>/<cohort>")
     parser.add_argument("--endpoint-url", default="https://cwobject.com")
     args = parser.parse_args()
     uri = f"{args.source.rstrip('/')}/{args.mode}/{args.cohort}"
@@ -25,7 +27,7 @@ def main() -> None:
     paths = sorted(filesystem.glob(f"{root}/*.parquet"))
     if not paths:
         raise FileNotFoundError(uri)
-    destination = HERE / "_cache" / args.mode / args.cohort
+    destination = args.destination or HERE / "_cache" / args.mode / args.cohort
     destination.mkdir(parents=True, exist_ok=True)
     for path in paths:
         target = destination / Path(path).name

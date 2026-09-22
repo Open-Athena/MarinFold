@@ -85,10 +85,65 @@ was 0.52932 versus 0.53802, a paired difference of -0.00870
 and excluded from voting. The beam decoder used 5,269 seconds of pure H100
 generation versus 3,539 for the baseline, a 1.49x aggregate cost; the mean
 per-protein time ratio was 1.37x. Thus this width does not preserve ordinary
-contact accuracy. Eval-test was not read.
+contact accuracy. At the individual-protein level, 26 improved, 63 declined,
+and 8 tied on all-range R-precision. Eval-test was not read.
 
-Held-out fold-switching results are pending.
+On the 29 primary held-out fold-switching proteins, the width-4 100-rollout
+pool contained **both** fold-specific contact modes for 2/29 proteins,
+versus 6/29 with iid100. One protein was beam-only and five were iid-only.
+The reference-blind 16-map shortlist recovered both modes in 0/29 versus
+2/29 with iid. The stricter 50%-recall contact criterion yielded no beam
+dual-mode hits. All 2,900 beam rollouts in this primary group finished.
+Nearly every protein still had 100 distinct contact maps, so the lost coverage
+is not explained by exact duplicate rollouts. The aggregate pure H100
+generation cost was 1,697 versus 270 seconds, a 6.28x ratio. On the 17 exact
+sequence pairs within this primary group, the beam pool gave 0 dual-mode hits
+versus 3 for iid100.
+
+The broader 67-pair non-capped cohort gives the same direction: 6/67 versus
+23/67 dual-mode oracle pools, and 2/67 versus 9/67 blind shortlists, at 5.76x
+total generation time. These 67 pairs include development and secondary
+pairs, so the 29 primary held-out pairs are the main test. The 15 development
+pairs were **sampled again** as part of the 67-pair run; their full-run blind
+count was 1/15, while the original development run used to freeze the width
+was 0/15. Their saved prompts match exactly across the two runs, but sampled
+contacts differ, so the full-run development subset is a separate
+stochastic run, not the frozen width-selection result.
+
+The one beam-only primary oracle hit (`5jzha_5jztg`) was absent from its blind
+shortlist and is not an exact-sequence pair. It is contact-level evidence only;
+no beam candidate was validated as an alternate 3D fold.
+
+Working raw outputs are at
+`s3://marin-us-east-02a/MarinFold/exp306/{val-b4,foldswitch-b4,dev-b4,dev-b8}/`.
+The source and width-4 choice were committed as `4e108216` before held-out
+scoring; the sealed 1,072-map shortlist has SHA256
+`e5c89eff477b2c9919d8448ee22ea095377328d006fe89b49d57758762a1c1fb`.
+The [per-protein timings](data/timings.csv), [eval-val pairs](data/eval_val_beam4.csv),
+and [fold-switching pairs](data/foldswitch_beam4.csv) are committed here;
+raw per-rollout maps and timing parquets are published in the
+[public HF bucket](https://huggingface.co/buckets/open-athena/MarinFold)
+under `data/contact-block-beam-exp306/`. From this directory,
+`AWS_PROFILE=cw uv run python publish_to_hf.py --refresh` refetches the
+working outputs, reseals and scores the full width-4 run, rebuilds the plots,
+and syncs the artifacts. The hash above can be checked against the regenerated
+sealed CSV.
+
+![Paired eval-val R-precision](plots/eval_val_paired.png)
+
+![Held-out dual-mode contact coverage](plots/foldswitch_dual.png)
+
+![Per-protein H100 generation cost](plots/foldswitch_time.png)
+
+[Summary slides](plots/summary.pdf) combine the results and plots.
 
 ## Conclusion
 
-Pending the complete development, eval-val, and fold-switching comparisons.
+This contact-aligned beam decoder is **not an improvement** over ordinary
+100-rollout sampling. It modestly reduces mean natural eval-val
+R-precision, finds both held-out fold-specific contact modes less often even
+in the oracle pool, finds none in the blind shortlist, and costs more H100
+time. Jointly searching the two position tokens is technically viable, but
+these results do not support it as the next inference-time search strategy for
+alternate folds. The fold-switching endpoint is a contact-map proxy, not a
+measured rate of recovered 3D folds.

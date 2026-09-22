@@ -19,9 +19,9 @@ from evaluate import score_candidate  # noqa: E402
 from search_policy import canonical, diverse_indices  # noqa: E402
 
 
-def raw_files(mode: str, allow_partial: bool) -> list[Path]:
+def raw_files(mode: str, allow_partial: bool, root: Path | None = None) -> list[Path]:
     """Return one raw rollout table per non-capped fold-switch target."""
-    root = HERE / "_cache" / mode / "foldswitch"
+    root = root or HERE / "_cache" / mode / "foldswitch"
     files = sorted(path for path in root.glob("*.parquet")
                    if not path.name.endswith(".timing.parquet"))
     if len(files) != 67 and not allow_partial:
@@ -31,7 +31,7 @@ def raw_files(mode: str, allow_partial: bool) -> list[Path]:
     return files
 
 
-def seal(files: list[Path], mode: str, n_rollouts: int) -> None:
+def seal(files: list[Path], mode: str, n_rollouts: int, output_prefix: str = "") -> None:
     """Select 16 diverse finished maps per protein without opening references."""
     rows = []
     for path in files:
@@ -43,7 +43,7 @@ def seal(files: list[Path], mode: str, n_rollouts: int) -> None:
         for rank, index in enumerate(diverse_indices(maps, 16), 1):
             rows.append({"pair_id": path.stem, "mode": mode,
                          "rollout": int(eligible.iloc[index].rollout), "rank": rank})
-    output = HERE / "data" / f"sealed_{mode}.csv"
+    output = HERE / "data" / f"{output_prefix}sealed_{mode}.csv"
     pd.DataFrame(rows).sort_values(["pair_id", "rank"]).to_csv(output, index=False)
     digest = hashlib.sha256(output.read_bytes()).hexdigest()
     output.with_suffix(".sha256").write_text(f"{digest}  {output.name}\n")
@@ -60,9 +60,10 @@ def fold_hits(group: pd.DataFrame, recall_cutoff: float) -> tuple[bool, bool]:
     return bool(fold1), bool(fold2)
 
 
-def score(files: list[Path], mode: str, n_rollouts: int) -> None:
+def score(files: list[Path], mode: str, n_rollouts: int,
+          output_prefix: str = "") -> None:
     """Reveal references only after verifying the frozen shortlist hash."""
-    shortlist_path = HERE / "data" / f"sealed_{mode}.csv"
+    shortlist_path = HERE / "data" / f"{output_prefix}sealed_{mode}.csv"
     expected = shortlist_path.with_suffix(".sha256").read_text().split()[0]
     if hashlib.sha256(shortlist_path.read_bytes()).hexdigest() != expected:
         raise ValueError("sealed shortlist hash mismatch")
@@ -135,7 +136,7 @@ def score(files: list[Path], mode: str, n_rollouts: int) -> None:
         })
     per = pd.DataFrame(rows).sort_values("pair_id")
     out = HERE / "data"
-    per.to_csv(out / f"foldswitch_{mode}.csv", index=False)
+    per.to_csv(out / f"{output_prefix}foldswitch_{mode}.csv", index=False)
     cohorts = {
         "primary_test": per.primary & (per.split == "test"),
         "primary_test_exact": per.primary & (per.split == "test") & per.strict_exact,
@@ -147,7 +148,8 @@ def score(files: list[Path], mode: str, n_rollouts: int) -> None:
         group = per[selected]
         if group.empty:
             continue
-        lo, hi = paired_interval(group.paired_enrichment_delta.to_numpy())
+        enrichment = group.paired_enrichment_delta.dropna().to_numpy()
+        lo, hi = paired_interval(enrichment)
         pool_lo, pool_hi = paired_interval(
             group.dual_pool.astype(int).to_numpy() - group.iid_dual_pool.astype(int).to_numpy()
         )
@@ -170,7 +172,8 @@ def score(files: list[Path], mode: str, n_rollouts: int) -> None:
                                              - group.iid_dual_blind.astype(int)).mean()),
             "paired_dual_blind_lo": blind_lo, "paired_dual_blind_hi": blind_hi,
             "mean_enrichment_blind": float(group.minority_enrichment_blind.mean()),
-            "paired_enrichment_delta": float(group.paired_enrichment_delta.mean()),
+            "n_enrichment": len(enrichment),
+            "paired_enrichment_delta": float(enrichment.mean()),
             "delta_lo": lo, "delta_hi": hi,
             "mean_time_ratio": float(group.time_ratio.mean()),
             "total_beam_seconds": float(group.beam_seconds.sum()),
@@ -179,7 +182,7 @@ def score(files: list[Path], mode: str, n_rollouts: int) -> None:
             "mean_finished": float(group.n_finished.mean()),
         })
     report = pd.DataFrame(summary)
-    report.to_csv(out / f"foldswitch_summary_{mode}.csv", index=False)
+    report.to_csv(out / f"{output_prefix}foldswitch_summary_{mode}.csv", index=False)
     print(report.to_string(index=False))
 
 
@@ -189,12 +192,16 @@ def main() -> None:
     parser.add_argument("--mode", required=True)
     parser.add_argument("--n-rollouts", type=int, default=100)
     parser.add_argument("--allow-partial", action="store_true")
+    parser.add_argument("--raw-root", type=Path,
+                        help="directory containing raw per-protein parquets")
+    parser.add_argument("--output-prefix", default="",
+                        help="prefix for saved tables, e.g. dev_")
     args = parser.parse_args()
-    files = raw_files(args.mode, args.allow_partial)
+    files = raw_files(args.mode, args.allow_partial, args.raw_root)
     if args.phase == "seal":
-        seal(files, args.mode, args.n_rollouts)
+        seal(files, args.mode, args.n_rollouts, args.output_prefix)
     else:
-        score(files, args.mode, args.n_rollouts)
+        score(files, args.mode, args.n_rollouts, args.output_prefix)
 
 
 if __name__ == "__main__":

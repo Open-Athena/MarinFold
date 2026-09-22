@@ -1,0 +1,30 @@
+{
+  "experiment_issue": 306,
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "checkpoint_working_copy": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+  "worker_source_commit": "4e108216",
+  "backend": "cw-rno2a H100, vllm/vllm-openai:v0.9.2",
+  "sampling": {
+    "statement_start": "temperature=1.0, top_p=0.95, top_k=-1",
+    "contact_positions": "two-token beam, sample valid complete pair by joint model probability",
+    "beam_width_selected": 4,
+    "beam_width_development_comparison": [4, 8],
+    "n_rollouts_per_target": 100,
+    "fresh_document_per_rollout": true,
+    "token_budget": "6L+128",
+    "scoring": "finished rollouts only"
+  },
+  "inputs": {
+    "natural_eval_val": 97,
+    "foldswitch_non_capped": 67,
+    "foldswitch_primary_held_out": 29,
+    "foldswitch_primary_development": 15
+  },
+  "working_results": {
+    "beam4_eval_val": "s3://marin-us-east-02a/MarinFold/exp306/val-b4/beam4/eval-val/",
+    "beam4_foldswitch": "s3://marin-us-east-02a/MarinFold/exp306/foldswitch-b4/beam4/foldswitch/",
+    "beam4_foldswitch_development": "s3://marin-us-east-02a/MarinFold/exp306/dev-b4/beam4/foldswitch/",
+    "beam8_foldswitch_development": "s3://marin-us-east-02a/MarinFold/exp306/dev-b8/beam8/foldswitch/"
+  },
+  "reference_policy": "development fold-switching references used to choose width; primary held-out references opened only after width-4 choice frozen and blind 16-map shortlists sealed; eval-test unread"
+}

@@ -1,3 +1,3 @@
-cohort,mode,n,fold1_pool,fold2_pool,dual_pool,dual_pool_strict,dual_blind,iid_dual_pool,iid_dual_blind,mean_enrichment_blind,paired_enrichment_delta,delta_lo,delta_hi,mean_time_ratio,mean_finished
-primary_dev,beam4,15,9,2,1,0,0,1,1,-0.11890610977226491,-0.04369966780811547,-0.10147710725773813,0.014536806678882791,6.653291496231222,100.0
-all_non_capped,beam4,20,11,3,2,0,1,5,2,-0.05977482042443679,-0.04729856037989612,-0.10387761872549238,0.006698305527681029,6.169245237477287,100.0
+cohort,mode,n,fold1_pool,fold2_pool,dual_pool,dual_pool_strict,dual_blind,iid_dual_pool,iid_dual_blind,paired_dual_pool_delta,paired_dual_pool_lo,paired_dual_pool_hi,paired_dual_blind_delta,paired_dual_blind_lo,paired_dual_blind_hi,mean_enrichment_blind,n_enrichment,paired_enrichment_delta,delta_lo,delta_hi,mean_time_ratio,total_beam_seconds,total_iid_seconds,total_time_ratio,mean_finished
+primary_dev,beam4,15,9,2,1,0,0,1,1,0.0,0.0,0.0,-0.06666666666666667,-0.2,0.0,-0.11890610977226491,15,-0.04369966780811547,-0.10147710725773813,0.014536806678882791,6.653291496231222,877.242481325753,148.12668573617702,5.9222447121255195,100.0
+all_non_capped,beam4,20,11,3,2,0,1,5,2,-0.15,-0.3,0.0,-0.05,-0.15,0.0,-0.05977482042443679,20,-0.04729856037989612,-0.10387761872549238,0.006698305527681029,6.169245237477287,990.084771185182,179.63886338594602,5.511528811324248,100.0

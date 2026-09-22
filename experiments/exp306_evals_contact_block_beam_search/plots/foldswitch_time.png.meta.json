@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Matched 100-rollout pure generation time from saved per-protein timing tables."
+}
