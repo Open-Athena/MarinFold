@@ -94,6 +94,7 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
     for (eval_set, stem), rows in sorted(by_target.items()):
         length = rows[0]["L"]
         ranked = confidence_pick(rows)
+        top_zero = confidence_pick([row for row in rows if row["n_pairs"] == 0])
         top_l = confidence_pick([row for row in rows if row["n_pairs"] == length])
         effective_by_cut = {
             k: sum(abs(a - b) >= 6 for a, b in rankings[stem][:k])
@@ -117,6 +118,7 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
                 "confidence_top": ranked[metric], "confidence_cut": ranked["n_pairs"],
                 "confidence_effective_cut": effective_by_cut[ranked["n_pairs"]],
                 "confidence_score": ranked["ranking_score"],
+                "top_zero_confidence": top_zero[metric],
                 "top_l_confidence": top_l[metric],
             })
         grouped: dict[int, list[dict]] = defaultdict(list)
@@ -140,16 +142,21 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
     summary = []
     for (eval_set, metric), rows in sorted(grouped_summary.items()):
         conf_vs_top_l = [row["confidence_top"] - row["top_l_confidence"] for row in rows]
+        conf_vs_zero = [row["confidence_top"] - row["top_zero_confidence"] for row in rows]
         oracle_vs_conf = [row["oracle_best"] - row["confidence_top"] for row in rows]
         conf_ci = paired_bootstrap_ci(conf_vs_top_l)
+        zero_ci = paired_bootstrap_ci(conf_vs_zero)
         oracle_ci = paired_bootstrap_ci(oracle_vs_conf)
         summary.append({
             "eval_set": eval_set, "metric": metric, "n_targets": len(rows),
             **{key: statistics.mean(row[key] for row in rows) for key in (
                 "oracle_best", "mean_prediction", "median_prediction",
-                "confidence_top", "top_l_confidence"
+                "confidence_top", "top_zero_confidence", "top_l_confidence"
             )},
             "confidence_minus_top_l": statistics.mean(conf_vs_top_l),
+            "confidence_minus_zero": statistics.mean(conf_vs_zero),
+            "confidence_minus_zero_ci_low": zero_ci[0],
+            "confidence_minus_zero_ci_high": zero_ci[1],
             "confidence_cut_mean": statistics.mean(row["confidence_cut"] for row in rows),
             "confidence_cut_median": statistics.median(row["confidence_cut"] for row in rows),
             "confidence_picked_zero_fraction": statistics.mean(row["confidence_cut"] == 0 for row in rows),
@@ -252,6 +259,33 @@ def plot_curve(summary: list[dict], cut_curve: list[dict], relative_curve: list[
         plt.close(fig)
 
 
+def plot_selection_gap(per_target: list[dict]) -> None:
+    """Compare Helico's confidence pick with the per-target GDT-TS oracle."""
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharex=True, sharey=True)
+    scatter = None
+    for ax, eval_set in zip(axes, ("eval-val", "eval-denovo"), strict=True):
+        rows = [row for row in per_target if row["eval_set"] == eval_set and row["metric"] == "gdt_ts"]
+        fractions = [row["confidence_cut"] / row["L"] for row in rows]
+        scatter = ax.scatter(
+            [row["oracle_best"] for row in rows],
+            [row["confidence_top"] for row in rows],
+            c=fractions, cmap="viridis", vmin=0, vmax=1, s=28, alpha=0.8,
+        )
+        ax.plot([0, 1], [0, 1], color="0.5", ls="--", lw=1)
+        ax.set_title(f"{eval_set} (n={len(rows)})")
+        ax.set_xlabel("Oracle best GDT-TS")
+        ax.grid(alpha=0.2)
+    axes[0].set_ylabel("Helico-ranked GDT-TS")
+    if scatter is not None:
+        fig.colorbar(scatter, ax=axes, label="Selected contact count / L", shrink=0.82)
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, PLOTS / "gdt_ts_selection_gap.png",
+        caption="Each protein's best GDT-TS in the full sweep versus the structure Helico confidence ranks first.",
+    )
+    plt.close(fig)
+
+
 def main() -> None:
     DATA.mkdir(exist_ok=True)
     PLOTS.mkdir(exist_ok=True)
@@ -262,12 +296,13 @@ def main() -> None:
     write_csv(DATA / "effective_contacts.csv", effective_counts)
     write_csv(DATA / "contact_fraction_curve.csv", relative_curve)
     plot_curve(summary, cut_curve, relative_curve)
+    plot_selection_gap(per_target)
     for row in summary:
         print(
             f"{row['eval_set']:11s} {row['metric']:8s} n={row['n_targets']:3d} "
             f"oracle={row['oracle_best']:.4f} mean={row['mean_prediction']:.4f} "
             f"median={row['median_prediction']:.4f} rank={row['confidence_top']:.4f} "
-            f"topL={row['top_l_confidence']:.4f}"
+            f"top0={row['top_zero_confidence']:.4f} topL={row['top_l_confidence']:.4f}"
         )
 
 
