@@ -1,0 +1,253 @@
+msa_depth_threshold,eval_set,stem,method_id,method_label,method_group,gdt_ts,msa_depth
+10,eval-denovo,5sbj_A,esmfold,ESMFold,external,1.0,2
+10,eval-denovo,5sbj_A,esmfold2,ESMFold2,external,1.0,2
+10,eval-denovo,5sbj_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8928571428571429,2
+10,eval-denovo,5sbj_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9732142857142857,2
+10,eval-denovo,5sbj_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9732142857142857,2
+10,eval-denovo,5sbj_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.821429,2
+10,eval-denovo,5sbj_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.821429,2
+10,eval-denovo,7ur7_A,esmfold,ESMFold,external,0.920635,2
+10,eval-denovo,7ur7_A,esmfold2,ESMFold2,external,0.912698,2
+10,eval-denovo,7ur7_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9166666666666666,2
+10,eval-denovo,7ur7_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9166666666666666,2
+10,eval-denovo,7ur7_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9047619047619048,2
+10,eval-denovo,7ur7_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.896825,2
+10,eval-denovo,7ur7_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.845238,2
+10,eval-denovo,8ah9_A,esmfold,ESMFold,external,0.976087,8
+10,eval-denovo,8ah9_A,esmfold2,ESMFold2,external,0.967391,8
+10,eval-denovo,8ah9_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9630434782608696,8
+10,eval-denovo,8ah9_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9782608695652174,8
+10,eval-denovo,8ah9_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9695652173913043,8
+10,eval-denovo,8ah9_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.980435,8
+10,eval-denovo,8ah9_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.943478,8
+10,eval-denovo,8eov_A,esmfold,ESMFold,external,0.942446,2
+10,eval-denovo,8eov_A,esmfold2,ESMFold2,external,0.951439,2
+10,eval-denovo,8eov_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9010791366906474,2
+10,eval-denovo,8eov_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9280575539568345,2
+10,eval-denovo,8eov_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8938848920863309,2
+10,eval-denovo,8eov_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.92446,2
+10,eval-denovo,8eov_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.92446,2
+10,eval-denovo,8fjf_A,esmfold,ESMFold,external,0.003937,2
+10,eval-denovo,8fjf_A,esmfold2,ESMFold2,external,0.976378,2
+10,eval-denovo,8fjf_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9645669291338583,2
+10,eval-denovo,8fjf_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9862204724409449,2
+10,eval-denovo,8fjf_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9625984251968505,2
+10,eval-denovo,8fjf_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.968504,2
+10,eval-denovo,8fjf_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.966535,2
+10,eval-denovo,8gac_A,esmfold,ESMFold,external,0.941748,2
+10,eval-denovo,8gac_A,esmfold2,ESMFold2,external,0.941748,2
+10,eval-denovo,8gac_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8883495145631068,2
+10,eval-denovo,8gac_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.941747572815534,2
+10,eval-denovo,8gac_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.7936893203883495,2
+10,eval-denovo,8gac_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.927184,2
+10,eval-denovo,8gac_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.927184,2
+10,eval-denovo,8ju8_A,esmfold,ESMFold,external,0.793165,2
+10,eval-denovo,8ju8_A,esmfold2,ESMFold2,external,0.751799,2
+10,eval-denovo,8ju8_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.6330935251798562,2
+10,eval-denovo,8ju8_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.7697841726618704,2
+10,eval-denovo,8ju8_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.7517985611510791,2
+10,eval-denovo,8ju8_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.771583,2
+10,eval-denovo,8ju8_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.771583,2
+10,eval-denovo,8k7z_A,esmfold,ESMFold,external,0.203488,2
+10,eval-denovo,8k7z_A,esmfold2,ESMFold2,external,0.927326,2
+10,eval-denovo,8k7z_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9491279069767442,2
+10,eval-denovo,8k7z_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9491279069767442,2
+10,eval-denovo,8k7z_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.5363372093023255,2
+10,eval-denovo,8k7z_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.953488,2
+10,eval-denovo,8k7z_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.943314,2
+10,eval-denovo,8k83_A,esmfold,ESMFold,external,0.91523,2
+10,eval-denovo,8k83_A,esmfold2,ESMFold2,external,0.928161,2
+10,eval-denovo,8k83_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8735632183908046,2
+10,eval-denovo,8k83_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9080459770114943,2
+10,eval-denovo,8k83_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8778735632183908,2
+10,eval-denovo,8k83_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.948276,2
+10,eval-denovo,8k83_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.948276,2
+10,eval-denovo,8ka7_A,esmfold,ESMFold,external,0.969565,2
+10,eval-denovo,8ka7_A,esmfold2,ESMFold2,external,0.93913,2
+10,eval-denovo,8ka7_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9565217391304348,2
+10,eval-denovo,8ka7_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9608695652173913,2
+10,eval-denovo,8ka7_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.48695652173913045,2
+10,eval-denovo,8ka7_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.652174,2
+10,eval-denovo,8ka7_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.654348,2
+10,eval-denovo,8kcj_A,esmfold,ESMFold,external,0.853352,2
+10,eval-denovo,8kcj_A,esmfold2,ESMFold2,external,0.868715,2
+10,eval-denovo,8kcj_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8240223463687151,2
+10,eval-denovo,8kcj_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.8617318435754191,2
+10,eval-denovo,8kcj_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8128491620111732,2
+10,eval-denovo,8kcj_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.871508,2
+10,eval-denovo,8kcj_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.871508,2
+10,eval-denovo,8oys_A,esmfold,ESMFold,external,0.913564,2
+10,eval-denovo,8oys_A,esmfold2,ESMFold2,external,0.925532,2
+10,eval-denovo,8oys_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8710106382978724,2
+10,eval-denovo,8oys_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9321808510638298,2
+10,eval-denovo,8oys_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8191489361702129,2
+10,eval-denovo,8oys_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.901596,2
+10,eval-denovo,8oys_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.893617,2
+10,eval-denovo,8oyy_A,esmfold,ESMFold,external,0.9603,2
+10,eval-denovo,8oyy_A,esmfold2,ESMFold2,external,0.977468,2
+10,eval-denovo,8oyy_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9248927038626609,2
+10,eval-denovo,8oyy_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9474248927038627,2
+10,eval-denovo,8oyy_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9045064377682404,2
+10,eval-denovo,8oyy_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.963519,2
+10,eval-denovo,8oyy_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.963519,2
+10,eval-denovo,8qkd_A,esmfold,ESMFold,external,0.987544,2
+10,eval-denovo,8qkd_A,esmfold2,ESMFold2,external,0.990214,2
+10,eval-denovo,8qkd_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9555160142348754,2
+10,eval-denovo,8qkd_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9715302491103203,2
+10,eval-denovo,8qkd_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9501779359430605,2
+10,eval-denovo,8qkd_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.986655,2
+10,eval-denovo,8qkd_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.986655,2
+10,eval-denovo,8vc8_A,esmfold,ESMFold,external,0.862944,2
+10,eval-denovo,8vc8_A,esmfold2,ESMFold2,external,0.936548,2
+10,eval-denovo,8vc8_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9517766497461929,2
+10,eval-denovo,8vc8_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9708121827411167,2
+10,eval-denovo,8vc8_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9467005076142132,2
+10,eval-denovo,8vc8_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.85533,2
+10,eval-denovo,8vc8_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.85533,2
+100,eval-denovo,5sbj_A,esmfold,ESMFold,external,1.0,2
+100,eval-denovo,5sbj_A,esmfold2,ESMFold2,external,1.0,2
+100,eval-denovo,5sbj_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8928571428571429,2
+100,eval-denovo,5sbj_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9732142857142857,2
+100,eval-denovo,5sbj_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9732142857142857,2
+100,eval-denovo,5sbj_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.821429,2
+100,eval-denovo,5sbj_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.821429,2
+100,eval-denovo,7ur7_A,esmfold,ESMFold,external,0.920635,2
+100,eval-denovo,7ur7_A,esmfold2,ESMFold2,external,0.912698,2
+100,eval-denovo,7ur7_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9166666666666666,2
+100,eval-denovo,7ur7_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9166666666666666,2
+100,eval-denovo,7ur7_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9047619047619048,2
+100,eval-denovo,7ur7_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.896825,2
+100,eval-denovo,7ur7_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.845238,2
+100,eval-denovo,8ah9_A,esmfold,ESMFold,external,0.976087,8
+100,eval-denovo,8ah9_A,esmfold2,ESMFold2,external,0.967391,8
+100,eval-denovo,8ah9_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9630434782608696,8
+100,eval-denovo,8ah9_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9782608695652174,8
+100,eval-denovo,8ah9_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9695652173913043,8
+100,eval-denovo,8ah9_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.980435,8
+100,eval-denovo,8ah9_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.943478,8
+100,eval-denovo,8eov_A,esmfold,ESMFold,external,0.942446,2
+100,eval-denovo,8eov_A,esmfold2,ESMFold2,external,0.951439,2
+100,eval-denovo,8eov_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9010791366906474,2
+100,eval-denovo,8eov_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9280575539568345,2
+100,eval-denovo,8eov_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8938848920863309,2
+100,eval-denovo,8eov_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.92446,2
+100,eval-denovo,8eov_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.92446,2
+100,eval-denovo,8fjf_A,esmfold,ESMFold,external,0.003937,2
+100,eval-denovo,8fjf_A,esmfold2,ESMFold2,external,0.976378,2
+100,eval-denovo,8fjf_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9645669291338583,2
+100,eval-denovo,8fjf_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9862204724409449,2
+100,eval-denovo,8fjf_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9625984251968505,2
+100,eval-denovo,8fjf_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.968504,2
+100,eval-denovo,8fjf_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.966535,2
+100,eval-denovo,8gac_A,esmfold,ESMFold,external,0.941748,2
+100,eval-denovo,8gac_A,esmfold2,ESMFold2,external,0.941748,2
+100,eval-denovo,8gac_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8883495145631068,2
+100,eval-denovo,8gac_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.941747572815534,2
+100,eval-denovo,8gac_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.7936893203883495,2
+100,eval-denovo,8gac_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.927184,2
+100,eval-denovo,8gac_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.927184,2
+100,eval-denovo,8ju8_A,esmfold,ESMFold,external,0.793165,2
+100,eval-denovo,8ju8_A,esmfold2,ESMFold2,external,0.751799,2
+100,eval-denovo,8ju8_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.6330935251798562,2
+100,eval-denovo,8ju8_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.7697841726618704,2
+100,eval-denovo,8ju8_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.7517985611510791,2
+100,eval-denovo,8ju8_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.771583,2
+100,eval-denovo,8ju8_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.771583,2
+100,eval-denovo,8k7o_A,esmfold,ESMFold,external,0.94206,64
+100,eval-denovo,8k7o_A,esmfold2,ESMFold2,external,0.945279,64
+100,eval-denovo,8k7o_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9163090128755365,64
+100,eval-denovo,8k7o_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9345493562231759,64
+100,eval-denovo,8k7o_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8744635193133047,64
+100,eval-denovo,8k7o_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.943133,64
+100,eval-denovo,8k7o_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.940987,64
+100,eval-denovo,8k7z_A,esmfold,ESMFold,external,0.203488,2
+100,eval-denovo,8k7z_A,esmfold2,ESMFold2,external,0.927326,2
+100,eval-denovo,8k7z_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9491279069767442,2
+100,eval-denovo,8k7z_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9491279069767442,2
+100,eval-denovo,8k7z_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.5363372093023255,2
+100,eval-denovo,8k7z_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.953488,2
+100,eval-denovo,8k7z_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.943314,2
+100,eval-denovo,8k83_A,esmfold,ESMFold,external,0.91523,2
+100,eval-denovo,8k83_A,esmfold2,ESMFold2,external,0.928161,2
+100,eval-denovo,8k83_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8735632183908046,2
+100,eval-denovo,8k83_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9080459770114943,2
+100,eval-denovo,8k83_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8778735632183908,2
+100,eval-denovo,8k83_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.948276,2
+100,eval-denovo,8k83_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.948276,2
+100,eval-denovo,8ka7_A,esmfold,ESMFold,external,0.969565,2
+100,eval-denovo,8ka7_A,esmfold2,ESMFold2,external,0.93913,2
+100,eval-denovo,8ka7_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9565217391304348,2
+100,eval-denovo,8ka7_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9608695652173913,2
+100,eval-denovo,8ka7_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.48695652173913045,2
+100,eval-denovo,8ka7_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.652174,2
+100,eval-denovo,8ka7_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.654348,2
+100,eval-denovo,8kcj_A,esmfold,ESMFold,external,0.853352,2
+100,eval-denovo,8kcj_A,esmfold2,ESMFold2,external,0.868715,2
+100,eval-denovo,8kcj_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8240223463687151,2
+100,eval-denovo,8kcj_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.8617318435754191,2
+100,eval-denovo,8kcj_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8128491620111732,2
+100,eval-denovo,8kcj_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.871508,2
+100,eval-denovo,8kcj_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.871508,2
+100,eval-denovo,8oys_A,esmfold,ESMFold,external,0.913564,2
+100,eval-denovo,8oys_A,esmfold2,ESMFold2,external,0.925532,2
+100,eval-denovo,8oys_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.8710106382978724,2
+100,eval-denovo,8oys_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9321808510638298,2
+100,eval-denovo,8oys_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.8191489361702129,2
+100,eval-denovo,8oys_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.901596,2
+100,eval-denovo,8oys_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.893617,2
+100,eval-denovo,8oyy_A,esmfold,ESMFold,external,0.9603,2
+100,eval-denovo,8oyy_A,esmfold2,ESMFold2,external,0.977468,2
+100,eval-denovo,8oyy_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9248927038626609,2
+100,eval-denovo,8oyy_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9474248927038627,2
+100,eval-denovo,8oyy_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9045064377682404,2
+100,eval-denovo,8oyy_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.963519,2
+100,eval-denovo,8oyy_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.963519,2
+100,eval-denovo,8qkd_A,esmfold,ESMFold,external,0.987544,2
+100,eval-denovo,8qkd_A,esmfold2,ESMFold2,external,0.990214,2
+100,eval-denovo,8qkd_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9555160142348754,2
+100,eval-denovo,8qkd_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9715302491103203,2
+100,eval-denovo,8qkd_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9501779359430605,2
+100,eval-denovo,8qkd_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.986655,2
+100,eval-denovo,8qkd_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.986655,2
+100,eval-denovo,8vc8_A,esmfold,ESMFold,external,0.862944,2
+100,eval-denovo,8vc8_A,esmfold2,ESMFold2,external,0.936548,2
+100,eval-denovo,8vc8_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.9517766497461929,2
+100,eval-denovo,8vc8_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.9708121827411167,2
+100,eval-denovo,8vc8_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.9467005076142132,2
+100,eval-denovo,8vc8_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.85533,2
+100,eval-denovo,8vc8_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.85533,2
+100,eval-val,7xcd_A,esmfold,ESMFold,external,0.134831,22
+100,eval-val,7xcd_A,esmfold2,ESMFold2,external,0.369382,22
+100,eval-val,7xcd_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.0351123595505618,22
+100,eval-val,7xcd_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.12921348314606743,22
+100,eval-val,7xcd_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.04073033707865169,22
+100,eval-val,7xcd_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.851124,22
+100,eval-val,7xcd_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.105337,22
+100,eval-val,7xp9_A,esmfold,ESMFold,external,0.236842,14
+100,eval-val,7xp9_A,esmfold2,ESMFold2,external,0.858553,14
+100,eval-val,7xp9_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.5789473684210527,14
+100,eval-val,7xp9_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.6513157894736843,14
+100,eval-val,7xp9_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.21710526315789475,14
+100,eval-val,7xp9_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.664474,14
+100,eval-val,7xp9_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.361842,14
+100,eval-val,8adc_A,esmfold,ESMFold,external,0.577295,37
+100,eval-val,8adc_A,esmfold2,ESMFold2,external,0.634058,37
+100,eval-val,8adc_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.4830917874396135,37
+100,eval-val,8adc_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.5893719806763285,37
+100,eval-val,8adc_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.29830917874396135,37
+100,eval-val,8adc_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.630435,37
+100,eval-val,8adc_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.353865,37
+100,eval-val,8eb9_A,esmfold,ESMFold,external,0.044944,25
+100,eval-val,8eb9_A,esmfold2,ESMFold2,external,0.087079,25
+100,eval-val,8eb9_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.4606741573033708,25
+100,eval-val,8eb9_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.4803370786516854,25
+100,eval-val,8eb9_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.4606741573033708,25
+100,eval-val,8eb9_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.331461,25
+100,eval-val,8eb9_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.058989,25
+100,eval-val,8ec3_A,esmfold,ESMFold,external,0.604839,26
+100,eval-val,8ec3_A,esmfold2,ESMFold2,external,0.558065,26
+100,eval-val,8ec3_A,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0.31451612903225806,26
+100,eval-val,8ec3_A,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0.3467741935483871,26
+100,eval-val,8ec3_A,helico_top_l,Helico + top-L MarinFold contacts,helico,0.3209677419354839,26
+100,eval-val,8ec3_A,protenix_v2_msa,Protenix-v2 + MSA,external,0.633871,26
+100,eval-val,8ec3_A,protenix_v2_single_seq,Protenix-v2 single sequence,external,0.301613,26

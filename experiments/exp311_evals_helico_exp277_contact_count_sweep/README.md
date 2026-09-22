@@ -33,7 +33,7 @@ For a target with MarinFold prompt length L, the cuts are 0, 10, 20, …, `10×f
 
 `analyze.py` first reduces predictions **within each target**, then averages target summaries so longer proteins with more cuts do not dominate. For each metric the oracle is the best of all cuts and samples (minimum for RMSD); mean and median are over all predictions for that target. The confidence-selected result is one structure per target, selected by Helico's highest `ranking_score` across every cut and sample. The top-zero and top-L references select the best-ranked diffusion sample at their respective cuts. Oracle best is selected separately for each metric, so its different metric entries can describe different structures. Paired differences use a 10,000-resample protein bootstrap for 95% intervals. The primary curves use each target's nearest actual cut to 0, 0.1, ..., 1.0 of L, retaining the same proteins at every point. Absolute-k curves and their changing cohort counts are reported separately.
 
-The frozen low-MSA-depth set from exp260 contains no natural eval-val proteins (its five FoldBench natural proteins are all in eval-test, which this experiment does not read). Thirteen of the 19 eval-denovo designs have MSA depth <10; their structural scores are reported separately in `low_msa_designed_summary.csv` without pooling them with natural proteins.
+The frozen low-MSA-depth set from exp260 contains no natural eval-val proteins (its five FoldBench natural proteins are all in eval-test, which this experiment does not read). Thirteen of the 19 eval-denovo designs have MSA depth <10; their structural scores are reported separately in `low_msa_designed_summary.csv` without pooling them with natural proteins. The predictor comparison below uses a different, directly matched depth definition: the number of sequences in the exact A3M that Helico exp14 supplied to Protenix-v2 + MSA, with the query included. It applies the user's inclusive, cumulative cuts of depth ≤10 and ≤100. Exp14 fetched alignments for `8ju8_A` and `8oys_A`, which were unmeasured in exp260's frozen FoldBench volume, so the inclusive ≤10 design subset has 15 targets here rather than 13.
 
 Run from this directory:
 
@@ -44,6 +44,8 @@ uv run python run_sweep.py
 uv run python analyze.py
 uv run python prepare_predictor_baselines.py --source /path/to/helico/exp14/data/per_target.csv
 uv run python plot_predictor_comparison.py
+uv run python prepare_msa_depth.py --source /path/to/helico/exp14/data/msa_depth.csv
+uv run python plot_low_msa_comparison.py
 uv run python build_summary.py
 ```
 
@@ -112,8 +114,30 @@ The paired-difference view uses the usual top-L Helico scheme as zero. On eval-v
 
 ![Paired GDT-TS difference from top-L Helico](plots/gdt_ts_delta_vs_top_l.png)
 
+### Low-MSA-depth comparison
+
+MSA depth is the number of sequences in the exact A3M supplied to Protenix-v2 + MSA, including the query. The source is [Helico exp14 at commit `b10385d`](https://github.com/Open-Athena/helico/blob/b10385d736673c81b10e70d1099962af6f2573c0/experiments/exp14_foldbench_held_out_monomers/data/msa_depth.csv), pinned at SHA-256 `94f4586a169f84b5129566bc239943fdd69b819660b212da497def62c39b4289`. The two thresholds are inclusive and cumulative. No exp311 eval-val protein has depth ≤10; five have depth ≤100. For eval-denovo, 15/19 have depth ≤10 and 16/19 have depth ≤100.
+
+| predictor / policy | eval-val ≤10 (n=0) | eval-val ≤100 (n=5) | eval-denovo ≤10 (n=15) | eval-denovo ≤100 (n=16) |
+|---|---:|---:|---:|---:|
+| Protenix-v2 + MSA | — | **0.6223** | 0.8949 | 0.8979 |
+| ESMFold2 | — | 0.5014 | **0.9330** | **0.9337** |
+| ESMFold | — | 0.3198 | 0.8163 | 0.8241 |
+| Protenix-v2 single sequence | — | 0.2363 | 0.8878 | 0.8911 |
+| Helico + top-L MarinFold contacts | — | 0.2676 | 0.8389 | 0.8412 |
+| Helico + top-N contacts, confidence selected | — | 0.3745 | 0.8977 | 0.8989 |
+| Helico + top-N contacts, oracle | — | 0.4394 | 0.9330 | 0.9331 |
+
+![Low-MSA GDT-TS predictor comparison](plots/gdt_ts_low_msa_predictor_comparison.png)
+
+On the five eval-val proteins at depth ≤100, confidence selection improves top-L by **+0.1069 GDT-TS**, but its paired 95% bootstrap interval is wide and crosses zero (**[-0.0048, +0.2528]**). The Helico oracle adds **+0.1718** (**[+0.0359, +0.3227]**) over top-L. Protenix-v2 + MSA leads this small natural subset at 0.6223.
+
+On the 15 eval-denovo designs at depth ≤10, confidence-selected Helico reaches **0.8977**, essentially level with Protenix-v2 + MSA at 0.8949 and above Protenix-v2 single sequence at 0.8878. It improves top-L by **+0.0588**, though the paired interval crosses zero (**[-0.0104, +0.1489]**). ESMFold2 and the non-deployable Helico oracle both score 0.9330. Expanding to depth ≤100 adds only `8k7o_A`, so the n=16 means change little.
+
+![Low-MSA paired GDT-TS difference from top-L Helico](plots/gdt_ts_low_msa_delta_vs_top_l.png)
+
 Raw per-sample metrics, timings and the run manifest are committed under `data/` and published with the input bundle in the [public MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp311-helico-exp277-contact-count-sweep/).
 
 ## Conclusion
 
-Always handing Helico top-L contacts leaves accuracy on the table. For natural eval-val proteins, a top-0-to-L sweep plus Helico confidence selection improves GDT-TS from 0.5015 to 0.5277 and lDDT from 0.6306 to 0.6462. The oracle envelope reaches 0.6242 GDT-TS, but still trails ESMFold (0.7376), ESMFold2 (0.8000), and Protenix-v2 + MSA (0.8583). For eval-denovo, Helico confidence often rejects contacts entirely and improves GDT-TS from 0.8503 at exact top-L to 0.8990, ahead of the Protenix-v2 single-sequence mean of 0.8916 but below ESMFold2 at 0.9345. Future deployment should search the contact count and rank candidates by Helico confidence; improving that confidence ranking is the clearest path to capture the remaining oracle headroom.
+Always handing Helico top-L contacts leaves accuracy on the table. For natural eval-val proteins, a top-0-to-L sweep plus Helico confidence selection improves GDT-TS from 0.5015 to 0.5277 and lDDT from 0.6306 to 0.6462. The oracle envelope reaches 0.6242 GDT-TS, but still trails ESMFold (0.7376), ESMFold2 (0.8000), and Protenix-v2 + MSA (0.8583). The five eval-val proteins with MSA depth ≤100 are especially difficult: confidence-selected Helico scores 0.3745 and Protenix-v2 + MSA scores 0.6223. For eval-denovo, Helico confidence often rejects contacts entirely and improves GDT-TS from 0.8503 at exact top-L to 0.8990, ahead of the Protenix-v2 single-sequence mean of 0.8916 but below ESMFold2 at 0.9345. The same ordering holds in the 15-design depth-≤10 subset. Future deployment should search the contact count and rank candidates by Helico confidence; improving that confidence ranking is the clearest path to capture the remaining oracle headroom.

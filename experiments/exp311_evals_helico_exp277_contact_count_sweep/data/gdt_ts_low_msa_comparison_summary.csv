@@ -1,0 +1,29 @@
+msa_depth_threshold,eval_set,method_id,method_label,method_group,n_targets,mean_gdt_ts,ci_low,ci_high,bootstrap_draws,bootstrap_seed
+10,eval-val,protenix_v2_msa,Protenix-v2 + MSA,external,0,,,,10000,311
+10,eval-val,esmfold2,ESMFold2,external,0,,,,10000,311
+10,eval-val,esmfold,ESMFold,external,0,,,,10000,311
+10,eval-val,protenix_v2_single_seq,Protenix-v2 single sequence,external,0,,,,10000,311
+10,eval-val,helico_top_l,Helico + top-L MarinFold contacts,helico,0,,,,10000,311
+10,eval-val,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,0,,,,10000,311
+10,eval-val,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,0,,,,10000,311
+10,eval-denovo,protenix_v2_msa,Protenix-v2 + MSA,external,15,0.8948644,0.8460774166666666,0.9346777316666666,10000,311
+10,eval-denovo,esmfold2,ESMFold2,external,15,0.9329698000000001,0.9006356150000001,0.9581421266666666,10000,311
+10,eval-denovo,esmfold,ESMFold,external,15,0.816267,0.6508924283333334,0.9380081366666665,10000,311
+10,eval-denovo,protenix_v2_single_seq,Protenix-v2 single sequence,external,15,0.8877649333333335,0.8407861316666668,0.9268773183333334,10000,311
+10,eval-denovo,helico_top_l,Helico + top-L MarinFold contacts,helico,15,0.8389375253637902,0.7578371884145804,0.9056349445514861,10000,311
+10,eval-denovo,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,15,0.8977391740240299,0.8520623835615,0.9321474773159671,10000,311
+10,eval-denovo,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,15,0.9330450041481021,0.9037330803518849,0.9566834946827534,10000,311
+100,eval-val,protenix_v2_msa,Protenix-v2 + MSA,external,5,0.6222730000000001,0.4578584,0.7635356,10000,311
+100,eval-val,esmfold2,ESMFold2,external,5,0.5014274000000001,0.2564608,0.7158198,10000,311
+100,eval-val,esmfold,ESMFold,external,5,0.3197502,0.1192784,0.520222,10000,311
+100,eval-val,protenix_v2_single_seq,Protenix-v2 single sequence,external,5,0.2363292,0.126053,0.34660539999999995,10000,311
+100,eval-val,helico_top_l,Helico + top-L MarinFold contacts,helico,5,0.2675573356438725,0.14376187374477556,0.3794873827623937,10000,311
+100,eval-val,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,5,0.37446836034937137,0.1997601152209992,0.5169504938049406,10000,311
+100,eval-val,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,5,0.43940250509923057,0.26475732473258357,0.5923425237903421,10000,311
+100,eval-denovo,protenix_v2_msa,Protenix-v2 + MSA,external,16,0.8978811874999999,0.8516295421874999,0.9354270671874998,10000,311
+100,eval-denovo,esmfold2,ESMFold2,external,16,0.933739125,0.9024600921875002,0.9573174531250002,10000,311
+100,eval-denovo,esmfold,ESMFold,external,16,0.8241290625000001,0.6733592187499998,0.9384296125000001,10000,311
+100,eval-denovo,protenix_v2_single_seq,Protenix-v2 single sequence,external,16,0.8910913125,0.8460955484375,0.9278576546875001,10000,311
+100,eval-denovo,helico_top_l,Helico + top-L MarinFold contacts,helico,16,0.8411578999856348,0.7669131153385917,0.9032624829100309,10000,311
+100,eval-denovo,helico_confidence,Helico + top-N MarinFold contacts (confidence selected),helico,16,0.8988997889522491,0.8539815199163218,0.93037229857881,10000,311
+100,eval-denovo,helico_oracle,Helico + top-N MarinFold contacts (oracle),oracle,16,0.9331390261527942,0.9045055883429065,0.9551929437706544,10000,311

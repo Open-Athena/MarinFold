@@ -1,0 +1,5 @@
+{
+  "script": "plot_low_msa_comparison.py",
+  "args": [],
+  "caption": "Paired GDT-TS difference from exact top-L Helico within inclusive MSA-depth cuts of 10 and 100. Thresholds are cumulative; intervals resample matched proteins."
+}
