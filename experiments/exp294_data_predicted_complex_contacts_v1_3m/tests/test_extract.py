@@ -4,6 +4,7 @@
 """Tar walking must find the members the manifest names, over real HTTP."""
 
 import http.server
+import json
 import io
 import socketserver
 import sys
@@ -484,3 +485,82 @@ def test_a_wholly_unavailable_source_still_aborts(tar_server, tmp_path: Path, mo
     )
     with pytest.raises(RuntimeError, match="source looks unavailable"):
         extract.run(str(manifest), str(tmp_path / "out"), fetch_concurrency=2, max_deferred=2)
+
+
+def test_an_interrupted_walk_resumes_instead_of_restarting(tar_server, tmp_path: Path) -> None:
+    """A chunk_* walk is ~443 s and preemptions arrive every 10-14 minutes.
+
+    Without this, the walk restarts at offset 0 every time and such a tar can
+    never finish -- which stalled the production run at 79% with pods making
+    zero durable progress across three consecutive attempts.
+    """
+    import fsspec
+
+    import extract
+
+    url, names = tar_server
+    fs, _ = fsspec.core.url_to_fs(str(tmp_path))
+    path = f"{tmp_path}/walk.json"
+    wanted = {names[-1]}
+
+    # First pass: stop the walk partway by capping the reads it may do.
+    cp = extract._WalkCheckpoint(fs, path, every=1)
+    real = extract.http_range
+    budget = {"n": 6}
+
+    def limited(u: str, start: int, length: int, **kw):
+        if budget["n"] <= 0:
+            raise ConnectionResetError("simulated preemption")
+        budget["n"] -= 1
+        return real(u, start, length, **kw)
+
+    extract.http_range = limited
+    try:
+        with pytest.raises(ConnectionResetError):
+            extract.walk_members(url, wanted, header_reads=[], checkpoint=cp)
+    finally:
+        extract.http_range = real
+
+    saved = json.loads(Path(path).read_text())
+    assert saved["offset"] > 0, "the cursor must be persisted mid-walk"
+
+    # Second pass: a fresh checkpoint object reads that cursor back and the
+    # walk finishes, having repeated only the reads since the last save.
+    reads: list[int] = []
+    resumed = extract.walk_members(
+        url, wanted, header_reads=reads, checkpoint=extract._WalkCheckpoint(fs, path, every=1)
+    )
+    assert set(resumed) == wanted
+    full: list[int] = []
+    extract.walk_members(url, wanted, header_reads=full)
+    assert reads[0] < full[0], "resuming must cost fewer reads than starting over"
+
+
+def test_a_finished_tar_clears_its_walk_checkpoint(tar_server, tmp_path: Path, monkeypatch) -> None:
+    """Stale cursors must not accumulate, nor be reused for a done tar."""
+    import fsspec
+
+    import extract
+
+    _stub_one_model(monkeypatch)
+    url, names = tar_server
+    fs, _ = fsspec.core.url_to_fs(str(tmp_path))
+    path = f"{tmp_path}/walk.json"
+    cp = extract._WalkCheckpoint(fs, path, every=1)
+    rows = [
+        {
+            "source_model_key": f"homodimer|{names[0].removesuffix('-model_v1.cif.zst')}",
+            "model_id": names[0].removesuffix("-model_v1.cif.zst"),
+            "complex_type": "homodimer",
+            "accession_a": "A",
+            "accession_b": "A",
+            "total_residues": 200,
+            "quality_ratio": 1.0,
+            "ipsae_score": 0.7,
+            "pdockq2_score": 0.3,
+            "confidence_tier": "A",
+            "source_tar_uri": url,
+        }
+    ]
+    extract.extract_tar(url, rows, fetch_concurrency=1, checkpoint=cp)
+    assert not Path(path).exists(), "a completed tar clears its cursor"

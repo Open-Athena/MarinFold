@@ -259,16 +259,31 @@ def http_range(url: str, start: int, length: int, *, timeout: float = 180.0) -> 
     raise AssertionError("unreachable")
 
 
-def walk_members(url: str, wanted: set[str], *, header_reads: list[int]) -> dict[str, tuple[int, int]]:
+def walk_members(
+    url: str,
+    wanted: set[str],
+    *,
+    header_reads: list[int],
+    checkpoint: "_WalkCheckpoint | None" = None,
+) -> dict[str, tuple[int, int]]:
     """Locate ``wanted`` member names, stopping as soon as all are found.
 
     Returns ``{name: (offset, size)}``. A tar carries no index, so this is the
     only way to find a member; ``header_reads`` records the cost, which is
     per tar rather than per member and is what the throughput probe measures.
+
+    A ``chunk_*`` walk is ~443 s of the ~940 s a whole tar costs, and
+    preemptions on this pool arrive every 10-14 minutes. Without a checkpoint
+    the walk restarts from offset 0 on every preemption and such a tar can
+    never finish -- which is exactly what stalled the run at 79%. The
+    checkpoint persists the cursor and what has been found so far, so a
+    restart resumes mid-tar instead of repeating the walk.
     """
     found: dict[str, tuple[int, int]] = {}
     offset = 0
     reads = 0
+    if checkpoint is not None:
+        offset, found = checkpoint.load()
     while found.keys() != wanted:
         header = http_range(url, offset, 512)
         reads += 1
@@ -283,8 +298,61 @@ def walk_members(url: str, wanted: set[str], *, header_reads: list[int]) -> dict
         if name in wanted:
             found[name] = (offset + 512, size)
         offset += 512 + ((size + 511) // 512) * 512
+        if checkpoint is not None:
+            checkpoint.maybe_save(offset, found, reads)
     header_reads.append(reads)
     return found
+
+
+class _WalkCheckpoint:
+    """Persisted walk cursor for one tar, so a preemption costs seconds.
+
+    Saved every ``every`` header reads -- often enough that a restart repeats
+    well under a minute of walking, rare enough that the writes are noise
+    against the reads they protect.
+    """
+
+    def __init__(self, fs: Any, path: str, *, every: int = 2000) -> None:
+        self._fs = fs
+        self._path = path
+        self._every = every
+        self._last = 0
+
+    def load(self) -> tuple[int, dict[str, tuple[int, int]]]:
+        try:
+            with self._fs.open(self._path, "r") as handle:
+                state = json.load(handle)
+        except (FileNotFoundError, OSError, ValueError):
+            return 0, {}
+        found = {k: (v[0], v[1]) for k, v in state.get("found", {}).items()}
+        offset = int(state.get("offset", 0))
+        if offset:
+            print(
+                f"  resuming walk at byte {offset:,} with {len(found)} members found",
+                flush=True,
+            )
+        return offset, found
+
+    def maybe_save(
+        self, offset: int, found: dict[str, tuple[int, int]], reads: int
+    ) -> None:
+        if reads - self._last < self._every:
+            return
+        self._last = reads
+        self.save(offset, found)
+
+    def save(self, offset: int, found: dict[str, tuple[int, int]]) -> None:
+        payload = json.dumps(
+            {"offset": offset, "found": {k: list(v) for k, v in found.items()}}
+        )
+        with self._fs.open(self._path, "w") as handle:
+            handle.write(payload)
+
+    def clear(self) -> None:
+        try:
+            self._fs.rm(self._path)
+        except (FileNotFoundError, OSError):
+            pass
 
 
 @dataclass
@@ -410,7 +478,13 @@ def _one_model(url: str, row: dict[str, Any], offset: int, size: int) -> tuple[d
     )
 
 
-def extract_tar(url: str, rows: list[dict[str, Any]], *, fetch_concurrency: int = 8) -> TarResult:
+def extract_tar(
+    url: str,
+    rows: list[dict[str, Any]],
+    *,
+    fetch_concurrency: int = 8,
+    checkpoint: "_WalkCheckpoint | None" = None,
+) -> TarResult:
     """Walk one tar and generate every selected model it holds."""
     out = TarResult(tar_uri=url)
     by_member = {MEMBER_TEMPLATE.format(model_id=r["model_id"]): r for r in rows}
@@ -418,7 +492,9 @@ def extract_tar(url: str, rows: list[dict[str, Any]], *, fetch_concurrency: int 
 
     began = time.monotonic()
     try:
-        located = walk_members(url, set(by_member), header_reads=reads)
+        located = walk_members(
+            url, set(by_member), header_reads=reads, checkpoint=checkpoint
+        )
     except TarNotInArchive:
         out.walk_seconds = time.monotonic() - began
         out.header_reads = reads[0] if reads else 0
@@ -457,6 +533,8 @@ def extract_tar(url: str, rows: list[dict[str, Any]], *, fetch_concurrency: int 
                 out.member_bytes += document["member_bytes"]
             out.ledger.append(ledger)
     out.work_seconds = time.monotonic() - began
+    if checkpoint is not None:
+        checkpoint.clear()
     return out
 
 
@@ -515,6 +593,7 @@ def run(
     fs, _ = fsspec.core.url_to_fs(prefix)
     fs.makedirs(f"{prefix}/documents", exist_ok=True)
     fs.makedirs(f"{prefix}/ledger", exist_ok=True)
+    fs.makedirs(f"{prefix}/walk", exist_ok=True)
 
     # The ledger file is the completion marker, and it is written *after* the
     # documents file, so a tar interrupted between the two is simply redone and
@@ -598,7 +677,13 @@ def run(
         with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
             futures = {
                 pool.submit(
-                    extract_tar, tar, by_tar[tar], fetch_concurrency=fetch_concurrency
+                    extract_tar,
+                    tar,
+                    by_tar[tar],
+                    fetch_concurrency=fetch_concurrency,
+                    checkpoint=_WalkCheckpoint(
+                        fs, f"{prefix}/walk/{tar_stem(tar)}.json"
+                    ),
                 ): tar
                 for tar in pending
             }
@@ -614,7 +699,12 @@ def run(
         for index, tar in enumerate(pending, start=1):
             try:
                 result = extract_tar(
-                    tar, by_tar[tar], fetch_concurrency=fetch_concurrency
+                    tar,
+                    by_tar[tar],
+                    fetch_concurrency=fetch_concurrency,
+                    checkpoint=_WalkCheckpoint(
+                        fs, f"{prefix}/walk/{tar_stem(tar)}.json"
+                    ),
                 )
             except (RuntimeError, *_RETRYABLE) as error:
                 defer(tar, error)
