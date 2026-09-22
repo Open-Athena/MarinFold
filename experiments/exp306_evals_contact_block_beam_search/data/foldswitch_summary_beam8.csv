@@ -1,0 +1,3 @@
+cohort,mode,n,fold1_pool,fold2_pool,dual_pool,dual_pool_strict,dual_blind,iid_dual_pool,iid_dual_blind,mean_enrichment_blind,paired_enrichment_delta,delta_lo,delta_hi,mean_time_ratio,mean_finished
+primary_dev,beam8,15,9,2,1,0,0,1,1,-0.1509682840105508,-0.07576184204640132,-0.12476264672703208,-0.027319302526147008,12.26640373246813,100.0
+all_non_capped,beam8,20,10,3,2,1,1,5,2,-0.09715478443648454,-0.08467852439194387,-0.1578711929973959,-0.023604739894452584,11.300179076124072,100.0
