@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Paired target cohort at every fraction of L; each point uses the nearest actual 10-contact cut."
+}
