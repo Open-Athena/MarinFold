@@ -58,13 +58,13 @@ def read_token_ids(path: str, *, max_rows: int | None) -> Iterator[dict[str, np.
                     return
 
 
-def verify_cache(cache_root: str, *, expected_documents: int | None) -> tuple[int, int] | None:
+def verify_cache(cache_root: str, *, split_name: str, expected_documents: int | None) -> tuple[int, int] | None:
     """Return completed cache counts, or ``None`` when no ledger exists."""
-    split = f"{cache_root.rstrip('/')}/train"
+    split = f"{cache_root.rstrip('/')}/{split_name}"
     fs, ledger = fsspec.core.url_to_fs(ShardedCacheLayout.parse(split).ledger)
     if not fs.exists(ledger):
         return None
-    stats = read_tokenized_cache_stats(cache_root, "train")
+    stats = read_tokenized_cache_stats(cache_root, split_name)
     if expected_documents is not None and stats.total_elements != expected_documents:
         raise ValueError(f"cache has {stats.total_elements} documents, expected {expected_documents}")
     if stats.total_tokens <= 0:
@@ -95,7 +95,7 @@ def build(args: argparse.Namespace) -> None:
         raise ValueError(f"{corpus.name}: found {source_documents} documents, expected {corpus.documents}")
 
     cache_root = f"{args.cache_root.rstrip('/')}/{corpus.name}"
-    completed = verify_cache(cache_root, expected_documents=expected_documents)
+    completed = verify_cache(cache_root, split_name=args.split, expected_documents=expected_documents)
     if completed is not None:
         return
 
@@ -113,15 +113,17 @@ def build(args: argparse.Namespace) -> None:
     ledger = build_from_datasets(
         ctx=context,
         dataset=dataset,
-        output_path=f"{cache_root}/train",
+        output_path=f"{cache_root}/{args.split}",
         batch_size=args.write_batch_size,
         task_resources=None,
     )
     if ledger.total_num_rows != expected_documents:
         raise ValueError(f"cache wrote {ledger.total_num_rows} documents, expected {expected_documents}")
-    write_stats_json(f"{cache_root}/train", ledger)
-    documents, tokens = verify_cache(cache_root, expected_documents=expected_documents) or (0, 0)
-    with fsspec.open(f"{cache_root}/source-manifest.json", "w") as handle:
+    write_stats_json(f"{cache_root}/{args.split}", ledger)
+    documents, tokens = verify_cache(
+        cache_root, split_name=args.split, expected_documents=expected_documents
+    ) or (0, 0)
+    with fsspec.open(f"{cache_root}/source-manifest-{args.split}.json", "w") as handle:
         json.dump(
             {
                 "corpus": corpus.name,
@@ -130,6 +132,7 @@ def build(args: argparse.Namespace) -> None:
                 "tokens": tokens,
                 "vocab_size": VOCAB_SIZE,
                 "max_rows_per_input_shard": args.max_rows_per_input_shard,
+                "split": args.split,
             },
             handle,
             indent=2,
@@ -145,6 +148,7 @@ def main() -> None:
     parser.add_argument("--max-input-shards", type=int)
     parser.add_argument("--max-rows-per-input-shard", type=int)
     parser.add_argument("--write-batch-size", type=int, default=512)
+    parser.add_argument("--split", choices=("train", "validation"), default="train")
     parser.add_argument("--max-workers", type=int, default=int(os.environ.get("EXP299_CACHE_MAX_WORKERS", "256")))
     parser.add_argument("--worker-cpu", type=float, default=1.0)
     parser.add_argument("--worker-memory", default="8GB")
