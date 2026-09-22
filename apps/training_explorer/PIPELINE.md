@@ -81,14 +81,16 @@ profile for CoreWeave S3.
    MPNN AFDB samples. For native AFDB samples, it fetches the *current* public
    AlphaFold DB model for the accession, which may be a newer model version
    than the training source. The viewer labels this distinction.
-12. `uv run python extract_structures.py` locates each sampled ESM source CIF
-   in the public `esm-atlas-esmfold2-distill` bucket using Parquet footer and
-   row-group entry-ID statistics. It reads only selected row groups, verifies
-   the actual entry ID, and emits compact backbone PDBs relabeled to the
-   document's sequence. The measured row-group plan is **2.81 GB compressed**;
-   the script refuses a plan above 8 GB. For MPNN designs, the coordinates
-   are the reused parent backbone and the displayed residue identities are
-   the designed sequence.
+12. `uv run python extract_structures.py` restores the 179 ESM backbones for
+    this pinned sample from the published compact artifact bucket. It checks
+    each PDB's committed SHA-256 digest, residue count, and sequence labels.
+    The original source-CIF extraction located entries by Parquet footer and
+    row-group entry-ID statistics and required 2.81 GB of compressed source
+    row groups. Rebuilds now transfer only the selected compact PDBs, rather
+    than repeating that multi-GB public-source read. A different sample needs
+    a new, compute-local mirror of selected source row groups before raw CIF
+    extraction. For MPNN designs, the coordinates are the reused parent
+    backbone and the displayed residue identities are the designed sequence.
 13. `uv run python publish_structures.py` uploads the 316 compact PDB previews
     to the public `open-athena/MarinFold` bucket under
     `data/training-explorer/2026-09-22/structures/`, verifies every filename

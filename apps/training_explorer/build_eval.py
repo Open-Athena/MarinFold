@@ -30,7 +30,7 @@ def main() -> None:
             "structureUrl": f"https://files.rcsb.org/download/{row['pdb_id'].upper()}.cif",
             "structureFormat": "mmcif",
             "pdbFallbackUrl": f"https://files.rcsb.org/download/{row['pdb_id'].upper()}.pdb",
-            "viewerChain": row["auth_asym_ids"].split(",")[0],
+            "viewerChain": row["auth_asym_ids"].split(";")[0],
             "neighbors": [],
         }
         for row in rows

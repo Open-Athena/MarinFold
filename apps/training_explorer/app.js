@@ -73,7 +73,7 @@ async function loadView(view) {
     $("catalog-list").innerHTML =
       `<div class="empty-state">${esc(error.message)}<br>Run the data preparation pipeline in PIPELINE.md.</div>`;
     $("neighbor-list").innerHTML = "";
-    $("sample-caption").textContent = "No snapshot";
+    $("neighbor-caption").textContent = "No snapshot";
   }
 }
 
