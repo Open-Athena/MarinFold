@@ -1,7 +1,6 @@
 """Plot the seven-method GDT-TS comparison at low MSA depth."""
 
 import csv
-import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -9,7 +8,6 @@ import numpy as np
 
 from build_summary import save_plot_with_meta
 from plot_predictor_comparison import (
-    COLORS,
     EVAL_SETS,
     METHOD_GROUP,
     METHOD_IDS,
@@ -227,89 +225,8 @@ def plot_means(summary: list[dict]) -> None:
         PLOTS / "gdt_ts_low_msa_predictor_comparison.png",
         caption=(
             "GDT-TS at inclusive MSA-depth thresholds of 10 and 100 sequences. Depth is measured on the exact "
-            "A3M supplied to Protenix-v2 + MSA; thresholds are cumulative and all methods use paired targets."
-        ),
-    )
-    plt.close(fig)
-
-
-def plot_deltas(deltas: list[dict]) -> None:
-    """Plot paired low-depth differences from exact top-L Helico."""
-    compared_ids = tuple(method_id for method_id in METHOD_IDS if method_id != "helico_top_l")
-    positions = np.asarray((6.0, 5.0, 4.0, 3.0, 1.3, 0.3))
-    numeric = [row for row in deltas if row["n_targets"] and row["method_id"] != "helico_top_l"]
-    x_low = min(0.0, min(float(row["ci_low"]) for row in numeric)) - 0.14
-    x_high = max(0.0, max(float(row["ci_high"]) for row in numeric)) + 0.14
-    x_low = math.floor(x_low * 10) / 10
-    x_high = math.ceil(x_high * 10) / 10
-
-    fig, axes = plt.subplots(2, 2, figsize=(15.8, 10.6), sharex=True, sharey=True)
-    for row_index, eval_set in enumerate(EVAL_SETS):
-        for col_index, threshold in enumerate(THRESHOLDS):
-            ax = axes[row_index, col_index]
-            by_method = panel_rows(deltas, eval_set, threshold)
-            n_targets = by_method[METHOD_IDS[0]]["n_targets"]
-            if not n_targets:
-                ax.set_axis_off()
-                ax.set_title(f"{eval_set}  ·  MSA depth ≤{threshold}  ·  n=0", fontsize=13)
-                continue
-            ax.axhspan(-0.15, 1.8, color="#FFF3E8", zorder=-3)
-            ax.axhline(2.2, color="0.82", lw=1)
-            ax.axvline(0, color="0.3", lw=1.2, zorder=1)
-            ax.text(0.01, 0.975, "External predictors", transform=ax.transAxes, va="top", color="0.35", fontsize=9)
-            ax.text(0.01, 0.34, "Helico sweep policies", transform=ax.transAxes, va="top", color="#9A4D1C", fontsize=9)
-            for y, method_id in zip(positions, compared_ids, strict=True):
-                record = by_method[method_id]
-                mean = float(record["mean_gdt_ts_delta"])
-                low = float(record["ci_low"])
-                high = float(record["ci_high"])
-                color, marker, size = style_for(method_id)
-                ax.errorbar(
-                    mean,
-                    y,
-                    xerr=[[mean - low], [high - mean]],
-                    fmt=marker,
-                    ms=size,
-                    color=color,
-                    ecolor=color,
-                    elinewidth=2,
-                    capsize=3,
-                    zorder=3,
-                )
-                if mean >= 0:
-                    label_x, horizontal = high + 0.012, "left"
-                else:
-                    label_x, horizontal = low - 0.012, "right"
-                ax.text(label_x, y, f"{mean:+.3f}", va="center", ha=horizontal, fontsize=9, color=color)
-            ax.set_title(f"{eval_set}  ·  MSA depth ≤{threshold}  ·  n={n_targets}", fontsize=13)
-            ax.set_xlabel("Paired Δ GDT-TS vs Helico + top-L contacts")
-            ax.set_xlim(x_low, x_high)
-            ax.set_ylim(-0.15, 6.55)
-            ax.grid(axis="x", alpha=0.2)
-    method_labels = [METHOD_LABEL[method_id] for method_id in compared_ids]
-    axes[1, 0].set_yticks(positions, method_labels)
-    for row_index in range(2):
-        left_drawn = axes[row_index, 0].axison
-        axes[row_index, 0].tick_params(labelleft=left_drawn)
-        axes[row_index, 1].tick_params(labelleft=not left_drawn)
-    axes[0, 1].tick_params(labelbottom=True)
-    fig.suptitle("Low-MSA difference from the usual top-L Helico scheme", fontsize=18, fontweight="bold", y=0.995)
-    fig.text(
-        0.5,
-        0.012,
-        "Positive values beat exact top-L on the same low-depth proteins; "
-        "bars are paired 95% protein-bootstrap intervals.",
-        ha="center",
-        fontsize=9,
-        color="0.35",
-    )
-    fig.tight_layout(rect=(0, 0.04, 1, 0.97))
-    save_plot_with_meta(
-        fig,
-        PLOTS / "gdt_ts_low_msa_delta_vs_top_l.png",
-        caption=(
-            "Paired GDT-TS difference from exact top-L Helico within inclusive MSA-depth cuts of 10 and 100. "
-            "Thresholds are cumulative; intervals resample matched proteins."
+            "A3M supplied to Protenix-v2 + MSA; thresholds are cumulative and all methods use paired targets. "
+            "Points are mean GDT-TS on the absolute scale."
         ),
     )
     plt.close(fig)
@@ -324,7 +241,6 @@ def main() -> None:
     write_csv(DATA / "msa_depth_subset_members.csv", members)
     write_csv(DATA / "msa_depth_subset_counts.csv", counts)
     plot_means(summary)
-    plot_deltas(deltas)
     for threshold in THRESHOLDS:
         for eval_set in EVAL_SETS:
             panel = panel_rows(summary, eval_set, threshold)
