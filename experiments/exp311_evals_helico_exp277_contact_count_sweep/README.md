@@ -42,8 +42,6 @@ uv run python prepare.py --helico-exp14 /path/to/helico/experiments/exp14_foldbe
 HELICO_DRY_RUN=1 uv run python run_sweep.py
 uv run python run_sweep.py
 uv run python analyze.py
-uv run python prepare_predictor_baselines.py --source /path/to/helico/exp14/data/per_target.csv
-uv run python plot_predictor_comparison.py
 uv run python build_summary.py
 ```
 
@@ -90,30 +88,8 @@ On the paired fraction-of-L grid, eval-val GDT-TS rises from 0.1323 with no cont
 
 The frozen low-MSA designed subset (13/19 eval-denovo targets) scores 0.9202 confidence-selected GDT-TS, 0.9457 oracle GDT-TS, and 0.8472 at top-L. There is no natural eval-val member of exp260's frozen low-MSA set; its FoldBench natural members are in eval-test, which this experiment did not read.
 
-### Comparison with ESMFold and Protenix
-
-The external scores come from Helico exp14's [published per-target table](https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/exp14_foldbench_held_out_monomers/scores/per_target.csv), pinned at SHA-256 `1cba4eb14fbd92c842bc908f9114e20b0cba0176c79dd3b1f9735c899a3b62cb`. They use the same Helico atom-matching GDT-TS implementation as exp311. All four external predictors have scores for every exp311 target, so both panels are fully paired: 96 eval-val and 19 eval-denovo proteins. The committed extraction and provenance are in `predictor_baseline_gdt_ts.csv` and `predictor_baseline_manifest.json`.
-
-| predictor / policy | eval-val GDT-TS | eval-denovo GDT-TS |
-|---|---:|---:|
-| Protenix-v2 + MSA | **0.8583** | 0.8600 |
-| ESMFold2 | 0.8000 | **0.9345** |
-| ESMFold | 0.7376 | 0.7966 |
-| Protenix-v2 single sequence | 0.1729 | 0.8916 |
-| Helico + top-L MarinFold contacts | 0.5015 | 0.8503 |
-| Helico + top-N MarinFold contacts, confidence selected | 0.5277 | 0.8990 |
-| Helico + top-N MarinFold contacts, oracle | 0.6242 | 0.9341 |
-
-Points below are target means and bars are 95% protein-bootstrap intervals. The oracle selects the best GDT-TS across every contact count and diffusion sample using the ground-truth structure, so it measures available headroom rather than a deployable policy.
-
-![GDT-TS predictor comparison](plots/gdt_ts_predictor_comparison.png)
-
-The paired-difference view uses the usual top-L Helico scheme as zero. On eval-val, confidence selection adds **+0.0262** GDT-TS and the Helico oracle adds **+0.1228**, while the three strong external folding baselines remain substantially higher. On eval-denovo, confidence selection adds **+0.0486** and reaches 0.8990, above ESMFold, Protenix-v2 + MSA, and slightly above Protenix-v2 single sequence; ESMFold2 reaches 0.9345, essentially the same mean as the non-deployable Helico oracle at 0.9341.
-
-![Paired GDT-TS difference from top-L Helico](plots/gdt_ts_delta_vs_top_l.png)
-
 Raw per-sample metrics, timings and the run manifest are committed under `data/` and published with the input bundle in the [public MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp311-helico-exp277-contact-count-sweep/).
 
 ## Conclusion
 
-Always handing Helico top-L contacts leaves accuracy on the table. For natural eval-val proteins, a top-0-to-L sweep plus Helico confidence selection improves GDT-TS from 0.5015 to 0.5277 and lDDT from 0.6306 to 0.6462. The oracle envelope reaches 0.6242 GDT-TS, but still trails ESMFold (0.7376), ESMFold2 (0.8000), and Protenix-v2 + MSA (0.8583). For eval-denovo, Helico confidence often rejects contacts entirely and improves GDT-TS from 0.8503 at exact top-L to 0.8990, ahead of the Protenix-v2 single-sequence mean of 0.8916 but below ESMFold2 at 0.9345. Future deployment should search the contact count and rank candidates by Helico confidence; improving that confidence ranking is the clearest path to capture the remaining oracle headroom.
+Always handing Helico top-L contacts leaves accuracy on the table. For natural eval-val proteins, a top-0-to-L sweep plus Helico confidence selection improves GDT-TS from 0.5015 to 0.5277 and lDDT from 0.6306 to 0.6462. The oracle envelope of 0.6242 GDT-TS shows that substantially better structures already exist in the generated grid, but the confidence model does not identify all of them. For eval-denovo, the best policy is qualitatively different: Helico confidence often rejects contacts entirely and scores 0.8990 GDT-TS, while exact top-L scores 0.8503. Future deployment should search the contact count and rank candidates by Helico confidence; improving that confidence ranking is the clearest path to capture the remaining oracle headroom.

@@ -1,5 +1,0 @@
-{
-  "script": "plot_predictor_comparison.py",
-  "args": [],
-  "caption": "Paired mean GDT-TS difference from Helico with exact top-L MarinFold contacts. Positive values are better; intervals resample matched proteins."
-}
