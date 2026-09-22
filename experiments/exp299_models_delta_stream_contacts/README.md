@@ -172,10 +172,28 @@ successful run was
 4.8388. This verifies the converted token IDs, 4,030-token model vocabulary,
 packing path, attention boundaries, forward/backward pass, and checkpoint path.
 
-A full census and fresh packed-example count will determine the one-epoch
-optimizer-step count. The training target is one finite pass over all source
-documents with exp277's batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe,
-rather than blindly copying exp277's contacts-v1 step count.
+The full context census is complete. The 232,090,905 training documents contain
+202,179,778,565 V2 tokens, versus 248,583,762,834 source contacts-v1 tokens.
+No training or validation document exceeds—or exactly fills—the 8,192-token
+context. The longest training document is 6,791 tokens, leaving 1,401 tokens of
+headroom; 3,352 training documents exceed 6,144 tokens, and none exceeds 7,168.
+The longest validation document is 5,859 tokens. Detailed source-level counts
+are in `data/exp277_v2_document_census.csv` and durable shard-level census
+output is under
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/exp277_full_epoch_census/2026.09.22.1/`.
+
+Validation was converted independently: 41,954 documents and 39,106,868 V2
+tokens, again with strict round-trip checks. Complete finite variable-length
+Levanter caches for all four training sources and validation are ready under
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/exp277_full_epoch_tokenized_cache/2026.09.22.1/`.
+Each cache's element and token totals exactly match the converted parquet
+census. Packing will use whole documents with segment IDs and blocked
+cross-document attention; no truncation or over-context filtering is needed.
+
+A fresh packed-example count will determine the one-epoch optimizer-step count.
+The training target is one finite pass over all source documents with exp277's
+batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe, rather than blindly
+copying exp277's contacts-v1 step count.
 
 ### Conclusion at 28%: large matched-training win
 
@@ -304,10 +322,9 @@ pipeline.
 
 ## Next steps
 
-1. Convert the independent validation cache and finish the full token/length
-   census, including every document longer than 8,192 V2 tokens.
-2. Build and audit the finite four-corpus packed dataset, then derive the exact
-   one-epoch update count from that dataset.
+1. Instantiate and audit the finite four-corpus packed dataset, then derive the
+   exact one-epoch update count from that dataset.
+2. Adapt exp277's finite WSD training configuration to the measured count.
 3. Report projected full-run wall time and cost before launching training.
 
 ## Files
