@@ -207,6 +207,60 @@ counts, first-hit draw numbers, and best recalls are in
 `data/iid_mode_coverage_per_protein.csv`; cohort curves are in
 `data/iid_mode_coverage_summary.csv` and the plot below.
 
+### Extending plain iid sampling to 1,000 draws
+
+To test whether the apparent plateau at 500 draws persists, we generated
+another 500 independent root rollouts for **each of the same 29 primary test
+proteins**, using the same checkpoint, temperature 1, top-p 0.95, and prompt
+realization recipe. The first 500 draws are the existing exp304 run; the new
+draws are indexed 501–1,000. All 14,500 new rollouts completed, making
+28,997/29,000 completed across the combined streams. The worker recorded
+per-protein timing metadata; pure generation for the new draws totaled
+19.3 H100 minutes, excluding model setup and artifact transfer. The new
+working output is
+`s3://marin-us-east-02a/MarinFold/exp304/iid1000-tail-primary/`.
+
+At each draw count, each protein is in exactly one category: **neither**
+reference fold has a qualifying map, **one** has a qualifying map, or **both**
+have qualifying maps, possibly in different rollouts. We used exactly the
+same reference-aware contact screening rule as above: a finished map, at
+least 10 predicted switching-region contacts, at least 25% recall of one
+fold's region-specific unique contacts, and at least 0.10 greater recall
+than for the other fold. This is an *oracle pool coverage* measure, not
+blind selection or confirmed recovery of two 3D structures. The scoring
+script checked every 500-draw prefix result against the previously
+published per-protein and cohort counts.
+
+| Draws per protein | Neither | One fold | Both folds |
+| ---: | ---: | ---: | ---: |
+| 100 | 8 | 15 | 6 |
+| 200 | 8 | 12 | 9 |
+| 500 | 6 | 14 | 9 |
+| 750 | 6 | 12 | 11 |
+| 1,000 | 5 | 13 | 11 |
+
+**There are gains after 500, but they are small:** two proteins first enter
+the dual-hit category in the extra draws, at draw 509 (`4aana_4aala`) and
+draw 587 (`2lela_2k0qa`). A third protein first gets any hit at draw 756,
+moving from neither to one. Thus 1,000 draws yield 11/29 dual hits versus
+9/29 at 500. Both new dual-hit proteins have literally identical observed
+sequences in their two references, lifting the exact-sequence subset from
+5/17 to 7/17. The qualifying rarer fold appears only four times among
+1,000 maps for `4aana_4aala` and once for `2lela_2k0qa`. The stricter
+50%-recall dual criterion stays at **2/29**, so the extra coverage is at
+the permissive screening threshold.
+
+The left panel below follows the actual draw order; the right panel
+averages all random reorderings of the *same observed 1,000 maps* for each
+protein. Its smooth curve shows how much of the flat section is due to
+where rare hits happened to land in this run; it is not a prediction of
+additional gains beyond 1,000. At every x-value, the three counts sum to
+29. The draw-by-draw curve is in `data/iid1000_primary_test_curve.csv`, and
+the per-protein first-hit draws and hit frequencies are in
+`data/iid1000_primary_test_per_protein.csv`.
+
+![IID rollout contact-mode coverage through 1,000 draws](plots/iid1000_mode_coverage.png)
+
 ### Structural check
 
 Helico contacts-msafree-01 step 6000 folded 36 target/contact combinations
@@ -258,14 +312,115 @@ run the optional 2,000-rollout arm, a second branching round, or adaptive
 allocation; the 500-rollout plateau and the held-out null result make any
 new selector tuning on these test proteins exploratory.
 
+### Folding all 1,000 iid maps individually
+
+We then folded **every individual iid map** for the 29 primary test proteins,
+rather than folding a consensus across rollouts. The run contains 29,000 iid
+targets plus true-Fold1, true-Fold2, and no-contact controls for every protein,
+for 29,087 Helico predictions total. Each target used one diffusion sample,
+six trunk cycles, seed 42, no MSA, and the contacts-msafree-01 step-6000
+checkpoint. Helico received the Fold1 observed-chain **sequence** and the
+candidate contact list; reference coordinates entered only the scorer. All
+29,087 predictions and compressed PDBs completed. Two source CIFs incorrectly
+declared an amino-acid chain as DNA; the failed attempts are preserved in the
+append-only progress log, and a resume pass supplied the explicitly extracted
+protein sequence. The final table contains one successful result per target.
+
+Every prediction was scored against both references on their common C-alpha
+positions. We saved standard C-alpha RMSD and Helico's Kabsch-aligned GDT-TS
+(fractions within 1/2/4/8 Angstrom after one global Kabsch fit), both globally
+and on the annotated switching region. The region score used the global fit,
+so a locally superposable fragment cannot by itself create a fold-specific
+hit. This GDT-TS convention matches Helico's evaluator but is simpler than the
+iterative subset-superposition procedure sometimes also called GDT-TS.
+
+The plotted binary screen is explicitly **post-hoc and exploratory**. It was
+chosen after inspecting the initial controls and the known `3j7wb_3j7vg`
+positive, but before the full score table was available. A candidate must:
+
+1. come from a finished MarinFold completion;
+2. reach global GDT-TS at least `max(0.35, 90% of the corresponding
+   true-contact control)`; and
+3. favor that reference in switching-region GDT-TS by at least 0.10.
+
+The corresponding true-contact control must itself reach global GDT-TS 0.35
+and the 0.10 region advantage. Both fold controls pass for **17/29** proteins;
+an absent mode on the other 12 is not evidence that sampling failed.
+
+| Iid maps per protein | Neither structural mode | One mode | Both modes |
+| ---: | ---: | ---: | ---: |
+| 100 | 18 | 11 | 0 |
+| 200 | 18 | 10 | 1 |
+| 500 | 17 | 10 | 2 |
+| 750 | 17 | 10 | 2 |
+| 1,000 | 17 | 10 | 2 |
+
+Under that strict control-relative screen, the two dual proteins are
+`3j7wb_3j7vg` and `2lela_2k0qa`, both in the 17-protein exact-sequence subset.
+`3j7wb_3j7vg` first has both modes by draw 144. Its selected Fold1/Fold2 maps
+produce global GDT-TS 0.420/0.517 against their targets and region advantages
+0.202/0.762; the corresponding true-contact controls score 0.429/0.483. Its
+no-contact prediction matches neither fold. This agrees with the independent
+TM-score/lDDT analysis above and remains the cleanest contact-driven example.
+
+`2lela_2k0qa` first has both modes by draw 249. Its selected candidates score
+0.449 against Fold1 and 0.659 against Fold2, versus true-contact controls of
+0.355 and 0.463. The interpretation is less clean: the no-contact prediction
+already passes as Fold2-like, so iid search contributes the Fold1-like mode.
+That Fold1 structure appears at draw 249 even though its map does not pass the
+contact proxy; the only Fold1 contact-screen hit appears at draw 587.
+
+The strongest near-threshold case is `1qs8b_1miqb`. Its candidates score 0.855
+against Fold1 and 0.758 against Fold2, with region advantages 0.567 and 0.283;
+the true-contact controls score 0.871 and 0.895. The Fold2 candidate reaches
+84.7% of its unusually strong control and therefore misses the plotted 90%
+rule. Using 80% instead of 90% gives **3/29** dual proteins by adding this case;
+requiring 100% gives **1/29**. Fixed absolute GDT-TS cutoffs of 0.35, 0.50, and
+0.60, all with a 0.10 region margin, give 8, 3, and 1 dual proteins. The exact
+binary count is therefore definition-sensitive. The raw metrics and both
+sensitivity grids are the reliable result; 2/29 is a deliberately strict
+summary, not a natural boundary between correct and incorrect structures.
+
+The structural analysis materially changes the contact-only picture. At
+1,000 draws the contact screen reports 11/29 dual proteins, while the strict
+structural screen reports 2/29. Map-level contact preference and structural
+preference are related (Spearman rho 0.705), but only 573/970 Fold1 structural
+hits and 291/368 Fold2 structural hits also pass the contact proxy. Conversely,
+many contact hits do not reconstruct near their nominal fold. For example,
+`4aana_4aala` has excellent true-contact controls and dual contact hits, but
+its best iid candidates reach only 0.684 and 0.523 versus control-calibrated
+thresholds 0.777 and 0.811.
+
+No new strict structural dual appears after draw 249 in this particular
+stream. This does not prove that 500 draws saturate iid sampling: every map
+was folded once with one fixed Helico seed, only 17 proteins pass both control
+gates, and the hit rule is post-hoc. It does show that the two contact-level
+gains after draw 500 do not translate into additional strict structural duals
+under this reconstruction protocol. Pure Helico prediction time sums to 85.4
+H100 hours across the 29,087 targets. Per-target timing and worker metadata are
+in `data/helico_iid_timings.csv`.
+
+The detailed [60-page per-protein deck](plots/helico_iid_per_protein_deck.pdf)
+shows both experimental contact maps and structures, the selected individual
+MarinFold maps, all 1,000 Helico scores, selected and control structure
+overlays, and the raw metrics for every protein. The complete score table,
+individual PDBs, rendered assets, and member-level checksums are published so
+the thresholds and display can be changed without rerunning either model.
+
 All per-candidate contacts, prompts' supplied seed sets, lineage, completion
 flags, and timings are published with the small tables and Helico structures
 in the [public exp304 artifact bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-blind-fold-search-exp304).
 The co-located CoreWeave working outputs were
 `s3://marin-us-east-02a/MarinFold/exp304/blind-search-v1/` and
-`s3://marin-us-east-02a/MarinFold/exp304/iid500/`; the final 36-case
+`s3://marin-us-east-02a/MarinFold/exp304/iid500/`; the 1,000-draw extension
+is at `s3://marin-us-east-02a/MarinFold/exp304/iid1000-tail-primary/`. The final 36-case
 [Helico Modal run](https://modal.com/apps/open-athena/main/ap-TAZO9vFpGbeUxC1EA8tKb3)
 used checkpoint `/ckpts/contacts-msafree-01/final.pt` (step 6000).
+The all-rollout structural run used
+[the main fanout](https://modal.com/apps/open-athena/main/ap-X8qQ3OhGqEMB51CGItDied)
+and [the input-fix resume](https://modal.com/apps/open-athena/main/ap-1DKrtJR4Ips7WQLrX8iZv4);
+its public inputs, scores, per-protein PDB archives, checksum index, and deck
+assets are under `helico-iid/` in the same bucket.
 `data/artifact_manifest.csv` records their SHA-256 hashes. The two shortlist
 hashes are in `data/sealed_shortlists.sha256` and
 `data/sealed_budget_shortlists.sha256`.
@@ -274,22 +429,33 @@ hashes are in `data/sealed_shortlists.sha256` and
 ![Blind versus oracle dual hits](plots/dual_contact_hits.png)
 ![Plain-sampling budget curve](plots/budget_curve.png)
 ![Independent-rollout contact-mode coverage](plots/iid_mode_coverage.png)
+![Contact versus structural iid coverage](plots/helico_iid_structural_coverage.png)
 ![3j7 structural control](plots/helico_3j7_structural_check.png)
 
 ## Conclusion
 
-**Yes, alternate-fold candidates can be found by blind inference on this
-testbed:** for `3j7wb_3j7vg`, independently selected contact maps from both
-the plain and branching shortlists yielded distinct, reference-consistent
-switching-region structures under a validator that passed true-contact
-controls. **No, this first branching strategy has not shown a reliable gain
-over plain sampling.** Its mean held-out improvement is small and uncertain,
-and its one additional contact-level hit did not survive 3D validation. The
-largest immediately actionable gap is reference-free selection of coherent
-minority maps: four of seven branch-10 oracle dual hits existed in the pool
-but were missed by its 16-map shortlist. This result is about the tested
-checkpoint, cohort, budget, and contact-map/Helico pipeline; these proteins
-were not screened for absence from model training.
+**Yes, individual iid MarinFold rollouts can lead to both experimental
+structures, but this is uncommon and the count depends on how “match” is
+defined.** The strict control-relative screen finds both modes for 2/29
+proteins; a nearby 80%-of-control rule finds 3/29. `3j7wb_3j7vg` remains the
+cleanest example because both contact-driven modes separate, both controls
+pass, and the no-contact baseline matches neither. `1qs8b_1miqb` is a strong
+absolute structural case that narrowly misses the strict relative cutoff.
+`2lela_2k0qa` passes strictly, but one mode is already produced without
+contacts.
 
-Plain independent sampling remains the best-supported baseline here; the
-results do not identify exactly 100 rollouts as an optimal budget.
+The 11/29 contact-screen dual count should not be read as 11 recovered pairs
+of folds. Contact preference correlates with structural preference, yet the
+proxy has many false positives and misses some structures. Structural controls
+also fail for at least one fold on 12/29 proteins, limiting what this Helico
+protocol can rule out.
+
+Plain independent sampling remains the best-supported inference baseline;
+the tested branching method still has no demonstrated held-out gain. The
+structural curve also rules out “100 draws are enough” for this realization:
+the first strict dual appears at draw 144 and the second at draw 249. It finds
+no further strict duals from 500 to 1,000, but one stream and one Helico sample
+per map are insufficient to claim saturation. The next search experiments
+should optimize for coherent, structurally productive contact sets and a
+reference-free way to recognize them, while retaining individual-structure
+validation rather than relying on the contact screen alone.

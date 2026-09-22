@@ -120,8 +120,8 @@ def generate_arm(llm: LLM, tokenizer: AutoTokenizer, pair_id: str, sequence: str
         result = output.outputs[0]
         contacts = parse_rollout(result.text, seq_index)
         rows.append({
-            "pair_id": pair_id, "arm": arm, "candidate_id": f"{arm}:{idx}",
-            "branch": branch, "rollout": idx, "L": L,
+            "pair_id": pair_id, "arm": arm, "candidate_id": f"{arm}:{prefix_offset + idx}",
+            "branch": branch, "rollout": prefix_offset + idx, "L": L,
             "given": [list(pair) for pair in sorted(given)],
             "contacts": [list(pair) for pair in sorted(contacts)],
             "n_pred": len(contacts), "finished": result.finish_reason == "stop",
@@ -131,6 +131,7 @@ def generate_arm(llm: LLM, tokenizer: AutoTokenizer, pair_id: str, sequence: str
         "pair_id": pair_id, "stem": pair_id, "n_residues": L,
         "n_pairs": L * (L - 1) // 2, "mode": arm, "elapsed_seconds": elapsed,
         "n_rollouts": n_rollouts, "generated_tokens": sum(row["n_tokens"] for row in rows),
+        "rollout_start": prefix_offset, "rollout_end": prefix_offset + n_rollouts,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(), **gpu_meta,
     }
     return rows, timing
@@ -150,15 +151,27 @@ def main() -> None:
     parser.add_argument("--shard", required=True, help="i/n")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--n-root", type=int, default=100)
+    parser.add_argument("--root-offset", type=int, default=0,
+                        help="index of the first root rollout; used to extend an existing iid pool")
     parser.add_argument("--n-arm", type=int, default=100)
     parser.add_argument("--branches", type=int, default=10)
     parser.add_argument("--arms", default="iid,temp,random,branch5,branch10,branch20")
+    parser.add_argument("--pair-ids-file", type=Path,
+                        help="newline-delimited sequence-only target IDs for a subset run")
     args = parser.parse_args()
+    if args.root_offset < 0 or args.n_root < 1:
+        raise ValueError("root offset must be nonnegative and root count positive")
     shard, n_shards = (int(part) for part in args.shard.split("/"))
     with fsspec.open(args.targets, "rb") as handle:
         targets = pq.read_table(handle).to_pylist()
     if {"pair_id", "sequence", "L"} != set(targets[0]):
         raise ValueError("worker target file must have exactly pair_id, sequence, L")
+    if args.pair_ids_file is not None:
+        selected = set(args.pair_ids_file.read_text().splitlines())
+        observed = {row["pair_id"] for row in targets}
+        if not selected or not selected <= observed:
+            raise ValueError("target ID list is empty or contains an unknown protein")
+        targets = [row for row in targets if row["pair_id"] in selected]
     targets.sort(key=lambda row: row["L"])
     mine = [row for idx, row in enumerate(targets) if idx % n_shards == shard]
     if args.limit is not None:
@@ -192,7 +205,8 @@ def main() -> None:
             continue
         started = time.perf_counter()
         rows, root_timing = generate_arm(llm, tokenizer, pair_id, sequence, "root",
-                                         [frozenset()], args.n_root, 1.0, 0.95, 0, gpu_meta)
+                                         [frozenset()], args.n_root, 1.0, 0.95,
+                                         args.root_offset, gpu_meta)
         timings = [root_timing]
         root_maps = [frozenset(tuple(pair) for pair in row["contacts"]) for row in rows]
         if "iid" in arms:

@@ -1,0 +1,28 @@
+{
+  "name": "post_hoc_control_calibrated_structural_screen",
+  "status": "exploratory; chosen after inspecting initial controls and the known 3j7w/3j7v positive",
+  "global_metric": "Kabsch-aligned GDT-TS on common C-alpha positions",
+  "global_gdt_floor": 0.35,
+  "minimum_fraction_of_corresponding_true_contact_control": 0.9,
+  "region_metric": "Kabsch-aligned GDT-TS on switching-region C-alpha positions after global fit",
+  "minimum_signed_region_advantage": 0.1,
+  "candidate_requires_finished_marinfold_completion": true,
+  "control_gate": "the corresponding true-contact control must itself pass the global floor and region advantage",
+  "fixed_threshold_sensitivity_global_gdt": [
+    0.35,
+    0.4,
+    0.5,
+    0.6
+  ],
+  "fixed_threshold_sensitivity_region_margin": [
+    0.05,
+    0.1,
+    0.15
+  ],
+  "control_fraction_sensitivity": [
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ]
+}

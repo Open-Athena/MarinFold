@@ -18,8 +18,12 @@ def main() -> None:
         (HERE / "plots", f"{DEST}/plots"),
         (HERE / "_cache" / "raw", f"{DEST}/raw/blind-search-v1"),
         (HERE / "_cache" / "iid500", f"{DEST}/raw/iid500"),
+        (HERE / "_cache" / "iid1000_tail_primary", f"{DEST}/raw/iid1000-tail-primary"),
         (HERE / "_cache" / "helico" / "data", f"{DEST}/helico/inputs"),
         (HERE / "_cache" / "helico" / "results", f"{DEST}/helico/results"),
+        (HERE / "_cache" / "helico_iid" / "data", f"{DEST}/helico-iid/inputs"),
+        (HERE / "_cache" / "helico_iid" / "publish", f"{DEST}/helico-iid/results"),
+        (HERE / "_cache" / "helico_iid" / "deck", f"{DEST}/helico-iid/deck"),
         (HERE / "_cache" / "joblogs", f"{DEST}/joblogs"),
     ):
         if not source.exists():
