@@ -260,6 +260,42 @@ actually moved makes the effect **stronger** (+0.153 vs +0.112), which is the
 check that matters: had the signal been ligand binding or domain motion, the
 FS-restricted number would have collapsed.
 
+### Is φ = 0.11 just noise? No — it is a difference between two large numbers
+
+φ is a *difference* of recalls, so a small value could mean either "both folds
+predicted poorly" or "both predicted well, one better". It is the second.
+
+A rollout emits ~282 contacts into a candidate universe of ~52,600 pairs, so
+chance recall is **0.0103**:
+
+| set | recall | vs chance |
+|---|---:|---:|
+| shared core (S) | 0.439 | **54.7×** |
+| fold1-unique (A) | 0.267 | **31.5×** |
+| fold2-unique (B) | 0.155 | **19.2×** |
+
+Even the fold2-private contacts the model is biased *against* sit 19× above
+chance. The ordering — shared > fold1-private > fold2-private — is what you would
+expect from a model that has learned the protein and is resolving its ambiguous
+region toward one answer.
+
+The model is also performing **normally** on these proteins, not degenerately:
+R-precision against fold1's full map is 0.504 against exp277's published eval-val
+figure of 0.554.
+
+Stated as a ratio rather than a difference, recalls of 0.267 and 0.155 mean the
+model recovers **fold1's private contacts 1.72× as often as fold2's**.
+
+Per pair, φ is resolved far above sampling noise: **|φ| exceeds 2 seed-SDs in 56
+of 67 pairs**, median |φ|/SD = 11.9. The population mean is not assembled from
+coin flips.
+
+**The caveat in the other direction.** Recall 0.267 on fold1's private contacts
+means the model misses about three-quarters of them. It is not *reconstructing*
+either fold. The claim this experiment supports is that it ranks fold1's private
+contacts well above fold2's — weaker than "predicts the fold", and the right way
+to read every number here.
+
 ### M1 controls — three alternative explanations, all dead
 
 **Resolution.** Fold1 structures in this benchmark really are sharper than fold2
