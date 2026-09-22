@@ -190,10 +190,18 @@ Each cache's element and token totals exactly match the converted parquet
 census. Packing will use whole documents with segment IDs and blocked
 cross-document attention; no truncation or over-context filtering is needed.
 
-A fresh packed-example count will determine the one-epoch optimizer-step count.
-The training target is one finite pass over all source documents with exp277's
-batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe, rather than blindly
-copying exp277's contacts-v1 step count.
+The exact finite packing audit matches Levanter's contiguous greedy packer with
+at most 64 documents per 8,192-token example. It yields 26,942,937 training
+examples containing 220,716,539,904 stored tokens, with 8.40% padding. At global
+batch 128, one complete pass is **210,492 optimizer updates** (the final update
+is partial). Validation yields 5,302 packed examples. A direct construction of
+Levanter's `GreedyPrepackedDataset` independently reproduced the validation
+count. Per-source counts are in `data/exp277_v2_packing_audit.csv`; durable JSON
+is under the census root's `packing/` prefix.
+
+The training target is therefore one finite 210,492-update pass over all source
+documents with exp277's batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe,
+rather than exp277's 266,345-update contacts-v1 count.
 
 ### Conclusion at 28%: large matched-training win
 
@@ -322,10 +330,9 @@ pipeline.
 
 ## Next steps
 
-1. Instantiate and audit the finite four-corpus packed dataset, then derive the
-   exact one-epoch update count from that dataset.
-2. Adapt exp277's finite WSD training configuration to the measured count.
-3. Report projected full-run wall time and cost before launching training.
+1. Adapt exp277's finite WSD training configuration to the measured 210,492
+   updates.
+2. Report projected full-run wall time and cost before launching training.
 
 ## Files
 
