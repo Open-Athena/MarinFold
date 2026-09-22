@@ -1,0 +1,27 @@
+{
+  "issue": 308,
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "pilot_pair_ids": [
+    "2hdma_2n54b",
+    "3jv6a_1zk9a",
+    "4qhfa_4qhha",
+    "2frha_1fzpd",
+    "4gqcc_4gqcb",
+    "3hdea_3hdfa",
+    "3t5oa_4a5wb"
+  ],
+  "pilot_configurations": [
+    {"beam_width": 16, "epsilon": 0.0, "decay_contacts": 0},
+    {"beam_width": 16, "epsilon": 0.05, "decay_contacts": 0},
+    {"beam_width": 16, "epsilon": 0.05, "decay_contacts": 20},
+    {"beam_width": 32, "epsilon": 0.05, "decay_contacts": 20}
+  ],
+  "wave_size": 10,
+  "rollouts_per_target": 100,
+  "candidate_score": "two-token joint log probability - effective_epsilon * prior completed-rollout count",
+  "annealing": "effective_epsilon = initial_epsilon * max(0, 1 - emitted_contacts / decay_contacts); decay_contacts=0 means constant",
+  "selection_rule": "Prefer primary-development blind dual-mode coverage, then seven-pair oracle dual-mode coverage and minority enrichment, then lower H100 cost; freeze before primary held-out scoring",
+  "held_out_primary_test_count": 29,
+  "scoring": "exp304 contact-level 25% recall and 0.10 enrichment; blind 16-map shortlist sealed before reference reveal",
+  "reference_policy": "No references in decoder; only development references may choose a configuration; eval-test unread"
+}
