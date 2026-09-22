@@ -178,13 +178,14 @@ def main() -> None:
         "score_uri": f"s3://{BUCKET}/{PREFIX}/",
         "exp245_ground_truth_uri": GT_URI,
         "exp245_ground_truth_sha256": sha256(HERE / "scratch" / "gt_universe_scored.jsonl"),
-        "helico_exp14_source": str(exp14),
         "helico_exp14_git_sha": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=exp14, text=True
         ).strip(),
         "helico_targets_sha256": sha256(source / "targets.csv"),
         "helico_token_map_sha256": sha256(source / "token_map.json"),
         "exp277_precision_sha256": sha256(REFERENCE),
+        "prepared_targets_sha256": sha256(SCRATCH / "targets.csv"),
+        "ranked_pairs_sha256": sha256(SCRATCH / "ranked_pairs.json"),
         "n_eval_val": sum(t["eval_set"] == "eval-val" for t in selected),
         "n_eval_denovo": sum(t["eval_set"] == "eval-denovo" for t in selected),
         "n_reference_precision_checked": len(checked) * 3,

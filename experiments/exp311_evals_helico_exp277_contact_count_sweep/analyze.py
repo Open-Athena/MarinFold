@@ -23,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 SAMPLES = HERE / "scratch" / "results" / "samples.csv"
 DATA = HERE / "data"
 PLOTS = HERE / "plots"
+LOW_MSA_SET = HERE.parent / "exp260_evals_msa_depth_stratified" / "data" / "low_msa_depth_set.csv"
 METRICS = ("gdt_ts", "lddt", "tm_score", "rmsd")
 
 
@@ -286,6 +287,30 @@ def plot_selection_gap(per_target: list[dict]) -> None:
     plt.close(fig)
 
 
+def low_msa_designed_summary(per_target: list[dict]) -> list[dict]:
+    """Score the frozen low-MSA-depth designed subset without touching eval-test."""
+    with LOW_MSA_SET.open() as stream:
+        stems = {
+            row["stem"] for row in csv.DictReader(stream)
+            if row["eval_set"] == "eval-denovo" and row["subset"] == "foldbench_designed"
+        }
+    if len(stems) != 13:
+        raise ValueError(f"expected 13 frozen low-MSA designs, found {len(stems)}")
+    rows_out = []
+    for metric in METRICS:
+        rows = [row for row in per_target if row["metric"] == metric and row["stem"] in stems]
+        if len(rows) != 13:
+            raise ValueError(f"missing low-MSA design for {metric}: {len(rows)}/13")
+        rows_out.append({
+            "subset": "eval-denovo-low-msa", "metric": metric, "n_targets": len(rows),
+            **{key: statistics.mean(row[key] for row in rows) for key in (
+                "oracle_best", "mean_prediction", "median_prediction", "confidence_top",
+                "top_zero_confidence", "top_l_confidence"
+            )},
+        })
+    return rows_out
+
+
 def main() -> None:
     DATA.mkdir(exist_ok=True)
     PLOTS.mkdir(exist_ok=True)
@@ -295,6 +320,7 @@ def main() -> None:
     write_csv(DATA / "contact_count_curve.csv", cut_curve)
     write_csv(DATA / "effective_contacts.csv", effective_counts)
     write_csv(DATA / "contact_fraction_curve.csv", relative_curve)
+    write_csv(DATA / "low_msa_designed_summary.csv", low_msa_designed_summary(per_target))
     plot_curve(summary, cut_curve, relative_curve)
     plot_selection_gap(per_target)
     for row in summary:
