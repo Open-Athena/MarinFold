@@ -1,0 +1,10 @@
+[project]
+name = "exp311-helico-exp277-contact-count-sweep"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "boto3>=1.35",
+  "matplotlib>=3.9",
+  "modal>=1.0",
+  "numpy>=2.0",
+]
