@@ -1,0 +1,461 @@
+eval_set,stem,method_id,method_label,gdt_ts
+eval-denovo,5sbj_A,esmfold,ESMFold,1.0
+eval-denovo,5sbj_A,esmfold2,ESMFold2,1.0
+eval-denovo,5sbj_A,protenix_v2_msa,Protenix-v2 + MSA,0.821429
+eval-denovo,5sbj_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.821429
+eval-denovo,7ur7_A,esmfold,ESMFold,0.920635
+eval-denovo,7ur7_A,esmfold2,ESMFold2,0.912698
+eval-denovo,7ur7_A,protenix_v2_msa,Protenix-v2 + MSA,0.896825
+eval-denovo,7ur7_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.845238
+eval-denovo,8ah9_A,esmfold,ESMFold,0.976087
+eval-denovo,8ah9_A,esmfold2,ESMFold2,0.967391
+eval-denovo,8ah9_A,protenix_v2_msa,Protenix-v2 + MSA,0.980435
+eval-denovo,8ah9_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.943478
+eval-denovo,8eov_A,esmfold,ESMFold,0.942446
+eval-denovo,8eov_A,esmfold2,ESMFold2,0.951439
+eval-denovo,8eov_A,protenix_v2_msa,Protenix-v2 + MSA,0.92446
+eval-denovo,8eov_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.92446
+eval-denovo,8fjf_A,esmfold,ESMFold,0.003937
+eval-denovo,8fjf_A,esmfold2,ESMFold2,0.976378
+eval-denovo,8fjf_A,protenix_v2_msa,Protenix-v2 + MSA,0.968504
+eval-denovo,8fjf_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.966535
+eval-denovo,8gac_A,esmfold,ESMFold,0.941748
+eval-denovo,8gac_A,esmfold2,ESMFold2,0.941748
+eval-denovo,8gac_A,protenix_v2_msa,Protenix-v2 + MSA,0.927184
+eval-denovo,8gac_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.927184
+eval-denovo,8ju8_A,esmfold,ESMFold,0.793165
+eval-denovo,8ju8_A,esmfold2,ESMFold2,0.751799
+eval-denovo,8ju8_A,protenix_v2_msa,Protenix-v2 + MSA,0.771583
+eval-denovo,8ju8_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.771583
+eval-denovo,8k7o_A,esmfold,ESMFold,0.94206
+eval-denovo,8k7o_A,esmfold2,ESMFold2,0.945279
+eval-denovo,8k7o_A,protenix_v2_msa,Protenix-v2 + MSA,0.943133
+eval-denovo,8k7o_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.940987
+eval-denovo,8k7z_A,esmfold,ESMFold,0.203488
+eval-denovo,8k7z_A,esmfold2,ESMFold2,0.927326
+eval-denovo,8k7z_A,protenix_v2_msa,Protenix-v2 + MSA,0.953488
+eval-denovo,8k7z_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.943314
+eval-denovo,8k83_A,esmfold,ESMFold,0.91523
+eval-denovo,8k83_A,esmfold2,ESMFold2,0.928161
+eval-denovo,8k83_A,protenix_v2_msa,Protenix-v2 + MSA,0.948276
+eval-denovo,8k83_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.948276
+eval-denovo,8k84_A,esmfold,ESMFold,0.969653
+eval-denovo,8k84_A,esmfold2,ESMFold2,0.976879
+eval-denovo,8k84_A,protenix_v2_msa,Protenix-v2 + MSA,0.929191
+eval-denovo,8k84_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.981214
+eval-denovo,8ka7_A,esmfold,ESMFold,0.969565
+eval-denovo,8ka7_A,esmfold2,ESMFold2,0.93913
+eval-denovo,8ka7_A,protenix_v2_msa,Protenix-v2 + MSA,0.652174
+eval-denovo,8ka7_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.654348
+eval-denovo,8kac_A,esmfold,ESMFold,0.944215
+eval-denovo,8kac_A,esmfold2,ESMFold2,0.958678
+eval-denovo,8kac_A,protenix_v2_msa,Protenix-v2 + MSA,0.206612
+eval-denovo,8kac_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.938017
+eval-denovo,8kcj_A,esmfold,ESMFold,0.853352
+eval-denovo,8kcj_A,esmfold2,ESMFold2,0.868715
+eval-denovo,8kcj_A,protenix_v2_msa,Protenix-v2 + MSA,0.871508
+eval-denovo,8kcj_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.871508
+eval-denovo,8oys_A,esmfold,ESMFold,0.913564
+eval-denovo,8oys_A,esmfold2,ESMFold2,0.925532
+eval-denovo,8oys_A,protenix_v2_msa,Protenix-v2 + MSA,0.901596
+eval-denovo,8oys_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.893617
+eval-denovo,8oyy_A,esmfold,ESMFold,0.9603
+eval-denovo,8oyy_A,esmfold2,ESMFold2,0.977468
+eval-denovo,8oyy_A,protenix_v2_msa,Protenix-v2 + MSA,0.963519
+eval-denovo,8oyy_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.963519
+eval-denovo,8qkd_A,esmfold,ESMFold,0.987544
+eval-denovo,8qkd_A,esmfold2,ESMFold2,0.990214
+eval-denovo,8qkd_A,protenix_v2_msa,Protenix-v2 + MSA,0.986655
+eval-denovo,8qkd_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.986655
+eval-denovo,8qup_A,esmfold,ESMFold,0.035088
+eval-denovo,8qup_A,esmfold2,ESMFold2,0.879386
+eval-denovo,8qup_A,protenix_v2_msa,Protenix-v2 + MSA,0.837719
+eval-denovo,8qup_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.763158
+eval-denovo,8vc8_A,esmfold,ESMFold,0.862944
+eval-denovo,8vc8_A,esmfold2,ESMFold2,0.936548
+eval-denovo,8vc8_A,protenix_v2_msa,Protenix-v2 + MSA,0.85533
+eval-denovo,8vc8_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.85533
+eval-val,7qp5_A,esmfold,ESMFold,0.848548
+eval-val,7qp5_A,esmfold2,ESMFold2,0.967842
+eval-val,7qp5_A,protenix_v2_msa,Protenix-v2 + MSA,0.958506
+eval-val,7qp5_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.03527
+eval-val,7qsj_A,esmfold,ESMFold,0.973988
+eval-val,7qsj_A,esmfold2,ESMFold2,0.984827
+eval-val,7qsj_A,protenix_v2_msa,Protenix-v2 + MSA,0.986272
+eval-val,7qsj_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.194364
+eval-val,7t9r_A,esmfold,ESMFold,0.736842
+eval-val,7t9r_A,esmfold2,ESMFold2,0.723684
+eval-val,7t9r_A,protenix_v2_msa,Protenix-v2 + MSA,0.75
+eval-val,7t9r_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.157895
+eval-val,7tjb_A,esmfold,ESMFold,0.875
+eval-val,7tjb_A,esmfold2,ESMFold2,0.921171
+eval-val,7tjb_A,protenix_v2_msa,Protenix-v2 + MSA,0.948198
+eval-val,7tjb_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.480856
+eval-val,7tlh_A,esmfold,ESMFold,0.933468
+eval-val,7tlh_A,esmfold2,ESMFold2,0.905242
+eval-val,7tlh_A,protenix_v2_msa,Protenix-v2 + MSA,0.907258
+eval-val,7tlh_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.034274
+eval-val,7uba_A,esmfold,ESMFold,0.113636
+eval-val,7uba_A,esmfold2,ESMFold2,0.23262
+eval-val,7uba_A,protenix_v2_msa,Protenix-v2 + MSA,0.973262
+eval-val,7uba_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.046791
+eval-val,7uk8_A,esmfold,ESMFold,0.860313
+eval-val,7uk8_A,esmfold2,ESMFold2,0.888381
+eval-val,7uk8_A,protenix_v2_msa,Protenix-v2 + MSA,0.903394
+eval-val,7uk8_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.048956
+eval-val,7ur2_A,esmfold,ESMFold,0.576562
+eval-val,7ur2_A,esmfold2,ESMFold2,0.559375
+eval-val,7ur2_A,protenix_v2_msa,Protenix-v2 + MSA,0.771875
+eval-val,7ur2_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.173437
+eval-val,7urp_A,esmfold,ESMFold,0.633648
+eval-val,7urp_A,esmfold2,ESMFold2,0.913522
+eval-val,7urp_A,protenix_v2_msa,Protenix-v2 + MSA,0.984277
+eval-val,7urp_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.075472
+eval-val,7uvg_A,esmfold,ESMFold,0.47741
+eval-val,7uvg_A,esmfold2,ESMFold2,0.947289
+eval-val,7uvg_A,protenix_v2_msa,Protenix-v2 + MSA,0.893072
+eval-val,7uvg_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.058735
+eval-val,7uww_A,esmfold,ESMFold,0.013449
+eval-val,7uww_A,esmfold2,ESMFold2,0.020965
+eval-val,7uww_A,protenix_v2_msa,Protenix-v2 + MSA,0.584652
+eval-val,7uww_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.007911
+eval-val,7v3o_A,esmfold,ESMFold,0.704874
+eval-val,7v3o_A,esmfold2,ESMFold2,0.955776
+eval-val,7v3o_A,protenix_v2_msa,Protenix-v2 + MSA,0.954874
+eval-val,7v3o_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.011733
+eval-val,7w15_A,esmfold,ESMFold,0.87628
+eval-val,7w15_A,esmfold2,ESMFold2,0.854096
+eval-val,7w15_A,protenix_v2_msa,Protenix-v2 + MSA,0.936007
+eval-val,7w15_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.0657
+eval-val,7wz5_A,esmfold,ESMFold,0.925466
+eval-val,7wz5_A,esmfold2,ESMFold2,0.940994
+eval-val,7wz5_A,protenix_v2_msa,Protenix-v2 + MSA,0.936335
+eval-val,7wz5_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.114907
+eval-val,7wzm_A,esmfold,ESMFold,0.760371
+eval-val,7wzm_A,esmfold2,ESMFold2,0.883734
+eval-val,7wzm_A,protenix_v2_msa,Protenix-v2 + MSA,0.740175
+eval-val,7wzm_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.096616
+eval-val,7x3h_A,esmfold,ESMFold,0.225543
+eval-val,7x3h_A,esmfold2,ESMFold2,0.236413
+eval-val,7x3h_A,protenix_v2_msa,Protenix-v2 + MSA,0.398551
+eval-val,7x3h_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.015399
+eval-val,7x4p_A,esmfold,ESMFold,0.81781
+eval-val,7x4p_A,esmfold2,ESMFold2,0.818627
+eval-val,7x4p_A,protenix_v2_msa,Protenix-v2 + MSA,0.830882
+eval-val,7x4p_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.091503
+eval-val,7x8l_A,esmfold,ESMFold,0.899706
+eval-val,7x8l_A,esmfold2,ESMFold2,0.944716
+eval-val,7x8l_A,protenix_v2_msa,Protenix-v2 + MSA,0.97456
+eval-val,7x8l_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.02544
+eval-val,7xcd_A,esmfold,ESMFold,0.134831
+eval-val,7xcd_A,esmfold2,ESMFold2,0.369382
+eval-val,7xcd_A,protenix_v2_msa,Protenix-v2 + MSA,0.851124
+eval-val,7xcd_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.105337
+eval-val,7xg9_A,esmfold,ESMFold,0.867133
+eval-val,7xg9_A,esmfold2,ESMFold2,0.923951
+eval-val,7xg9_A,protenix_v2_msa,Protenix-v2 + MSA,0.929196
+eval-val,7xg9_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.343531
+eval-val,7xi5_A,esmfold,ESMFold,0.986842
+eval-val,7xi5_A,esmfold2,ESMFold2,0.986842
+eval-val,7xi5_A,protenix_v2_msa,Protenix-v2 + MSA,0.97807
+eval-val,7xi5_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.153509
+eval-val,7xjr_A,esmfold,ESMFold,0.928922
+eval-val,7xjr_A,esmfold2,ESMFold2,0.956699
+eval-val,7xjr_A,protenix_v2_msa,Protenix-v2 + MSA,0.99183
+eval-val,7xjr_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.220588
+eval-val,7xlz_A,esmfold,ESMFold,0.957469
+eval-val,7xlz_A,esmfold2,ESMFold2,0.983402
+eval-val,7xlz_A,protenix_v2_msa,Protenix-v2 + MSA,0.970954
+eval-val,7xlz_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.073651
+eval-val,7xp9_A,esmfold,ESMFold,0.236842
+eval-val,7xp9_A,esmfold2,ESMFold2,0.858553
+eval-val,7xp9_A,protenix_v2_msa,Protenix-v2 + MSA,0.664474
+eval-val,7xp9_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.361842
+eval-val,7xq4_A,esmfold,ESMFold,0.917178
+eval-val,7xq4_A,esmfold2,ESMFold2,0.943252
+eval-val,7xq4_A,protenix_v2_msa,Protenix-v2 + MSA,0.944785
+eval-val,7xq4_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.240798
+eval-val,7xrx_A,esmfold,ESMFold,0.913945
+eval-val,7xrx_A,esmfold2,ESMFold2,0.983668
+eval-val,7xrx_A,protenix_v2_msa,Protenix-v2 + MSA,0.991206
+eval-val,7xrx_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.08794
+eval-val,7xyr_A,esmfold,ESMFold,0.912088
+eval-val,7xyr_A,esmfold2,ESMFold2,0.975275
+eval-val,7xyr_A,protenix_v2_msa,Protenix-v2 + MSA,0.970696
+eval-val,7xyr_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.039835
+eval-val,7xz3_A,esmfold,ESMFold,0.913919
+eval-val,7xz3_A,esmfold2,ESMFold2,0.921245
+eval-val,7xz3_A,protenix_v2_msa,Protenix-v2 + MSA,0.887363
+eval-val,7xz3_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.033883
+eval-val,7y3h_A,esmfold,ESMFold,0.646465
+eval-val,7y3h_A,esmfold2,ESMFold2,0.810606
+eval-val,7y3h_A,protenix_v2_msa,Protenix-v2 + MSA,0.88952
+eval-val,7y3h_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.017045
+eval-val,7y4h_A,esmfold,ESMFold,0.968845
+eval-val,7y4h_A,esmfold2,ESMFold2,0.965046
+eval-val,7y4h_A,protenix_v2_msa,Protenix-v2 + MSA,0.977964
+eval-val,7y4h_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.151216
+eval-val,7y54_A,esmfold,ESMFold,0.8375
+eval-val,7y54_A,esmfold2,ESMFold2,0.8325
+eval-val,7y54_A,protenix_v2_msa,Protenix-v2 + MSA,0.8
+eval-val,7y54_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.055
+eval-val,7y5j_A,esmfold,ESMFold,0.965789
+eval-val,7y5j_A,esmfold2,ESMFold2,0.973684
+eval-val,7y5j_A,protenix_v2_msa,Protenix-v2 + MSA,0.984211
+eval-val,7y5j_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.323684
+eval-val,7y5m_A,esmfold,ESMFold,0.787097
+eval-val,7y5m_A,esmfold2,ESMFold2,0.733871
+eval-val,7y5m_A,protenix_v2_msa,Protenix-v2 + MSA,0.906452
+eval-val,7y5m_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.041935
+eval-val,7y5r_A,esmfold,ESMFold,0.959524
+eval-val,7y5r_A,esmfold2,ESMFold2,0.957143
+eval-val,7y5r_A,protenix_v2_msa,Protenix-v2 + MSA,0.902381
+eval-val,7y5r_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.704762
+eval-val,7y8h_A,esmfold,ESMFold,0.913043
+eval-val,7y8h_A,esmfold2,ESMFold2,0.956522
+eval-val,7y8h_A,protenix_v2_msa,Protenix-v2 + MSA,0.9375
+eval-val,7y8h_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.304348
+eval-val,7y8i_A,esmfold,ESMFold,0.948171
+eval-val,7y8i_A,esmfold2,ESMFold2,0.957317
+eval-val,7y8i_A,protenix_v2_msa,Protenix-v2 + MSA,0.902439
+eval-val,7y8i_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.39939
+eval-val,7yd4_A,esmfold,ESMFold,0.321229
+eval-val,7yd4_A,esmfold2,ESMFold2,0.578212
+eval-val,7yd4_A,protenix_v2_msa,Protenix-v2 + MSA,0.945531
+eval-val,7yd4_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.198324
+eval-val,7yhr_A,esmfold,ESMFold,0.588983
+eval-val,7yhr_A,esmfold2,ESMFold2,0.983051
+eval-val,7yhr_A,protenix_v2_msa,Protenix-v2 + MSA,1.0
+eval-val,7yhr_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.419492
+eval-val,7ykm_A,esmfold,ESMFold,0.91358
+eval-val,7ykm_A,esmfold2,ESMFold2,0.932099
+eval-val,7ykm_A,protenix_v2_msa,Protenix-v2 + MSA,0.91358
+eval-val,7ykm_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.901235
+eval-val,7ylr_A,esmfold,ESMFold,0.657209
+eval-val,7ylr_A,esmfold2,ESMFold2,0.761503
+eval-val,7ylr_A,protenix_v2_msa,Protenix-v2 + MSA,0.716258
+eval-val,7ylr_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.097393
+eval-val,7yug_A,esmfold,ESMFold,0.952991
+eval-val,7yug_A,esmfold2,ESMFold2,0.952991
+eval-val,7yug_A,protenix_v2_msa,Protenix-v2 + MSA,0.965812
+eval-val,7yug_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.547009
+eval-val,7yyg_A,esmfold,ESMFold,0.603636
+eval-val,7yyg_A,esmfold2,ESMFold2,0.38
+eval-val,7yyg_A,protenix_v2_msa,Protenix-v2 + MSA,0.641818
+eval-val,7yyg_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.03
+eval-val,7z65_A,esmfold,ESMFold,0.75265
+eval-val,7z65_A,esmfold2,ESMFold2,0.941696
+eval-val,7z65_A,protenix_v2_msa,Protenix-v2 + MSA,0.977915
+eval-val,7z65_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.204064
+eval-val,7znz_A,esmfold,ESMFold,0.896189
+eval-val,7znz_A,esmfold2,ESMFold2,0.915243
+eval-val,7znz_A,protenix_v2_msa,Protenix-v2 + MSA,0.953022
+eval-val,7znz_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.03088
+eval-val,7zoi_A,esmfold,ESMFold,0.985887
+eval-val,7zoi_A,esmfold2,ESMFold2,0.987903
+eval-val,7zoi_A,protenix_v2_msa,Protenix-v2 + MSA,0.991935
+eval-val,7zoi_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.247984
+eval-val,7zs2_A,esmfold,ESMFold,0.469424
+eval-val,7zs2_A,esmfold2,ESMFold2,0.411871
+eval-val,7zs2_A,protenix_v2_msa,Protenix-v2 + MSA,0.475719
+eval-val,7zs2_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.010791
+eval-val,7zu3_A,esmfold,ESMFold,0.204365
+eval-val,7zu3_A,esmfold2,ESMFold2,0.162698
+eval-val,7zu3_A,protenix_v2_msa,Protenix-v2 + MSA,0.271825
+eval-val,7zu3_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.321429
+eval-val,7zv1_A,esmfold,ESMFold,0.651376
+eval-val,7zv1_A,esmfold2,ESMFold2,0.41055
+eval-val,7zv1_A,protenix_v2_msa,Protenix-v2 + MSA,0.837156
+eval-val,7zv1_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.137615
+eval-val,8adc_A,esmfold,ESMFold,0.577295
+eval-val,8adc_A,esmfold2,ESMFold2,0.634058
+eval-val,8adc_A,protenix_v2_msa,Protenix-v2 + MSA,0.630435
+eval-val,8adc_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.353865
+eval-val,8add_A,esmfold,ESMFold,0.946682
+eval-val,8add_A,esmfold2,ESMFold2,0.945498
+eval-val,8add_A,protenix_v2_msa,Protenix-v2 + MSA,0.964623
+eval-val,8add_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.051887
+eval-val,8ak2_A,esmfold,ESMFold,0.965398
+eval-val,8ak2_A,esmfold2,ESMFold2,0.948962
+eval-val,8ak2_A,protenix_v2_msa,Protenix-v2 + MSA,0.978374
+eval-val,8ak2_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.054498
+eval-val,8akh_A,esmfold,ESMFold,0.945483
+eval-val,8akh_A,esmfold2,ESMFold2,0.970405
+eval-val,8akh_A,protenix_v2_msa,Protenix-v2 + MSA,0.98053
+eval-val,8akh_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.066978
+eval-val,8amo_A,esmfold,ESMFold,0.867532
+eval-val,8amo_A,esmfold2,ESMFold2,0.914935
+eval-val,8amo_A,protenix_v2_msa,Protenix-v2 + MSA,0.933117
+eval-val,8amo_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.069481
+eval-val,8arl_A,esmfold,ESMFold,0.783405
+eval-val,8arl_A,esmfold2,ESMFold2,0.735991
+eval-val,8arl_A,protenix_v2_msa,Protenix-v2 + MSA,0.617457
+eval-val,8arl_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.019397
+eval-val,8au6_A,esmfold,ESMFold,0.46371
+eval-val,8au6_A,esmfold2,ESMFold2,0.476815
+eval-val,8au6_A,protenix_v2_msa,Protenix-v2 + MSA,0.430444
+eval-val,8au6_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.141129
+eval-val,8axj_A,esmfold,ESMFold,0.513975
+eval-val,8axj_A,esmfold2,ESMFold2,0.944099
+eval-val,8axj_A,protenix_v2_msa,Protenix-v2 + MSA,0.96118
+eval-val,8axj_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.071429
+eval-val,8azb_A,esmfold,ESMFold,0.623752
+eval-val,8azb_A,esmfold2,ESMFold2,0.482036
+eval-val,8azb_A,protenix_v2_msa,Protenix-v2 + MSA,0.46507
+eval-val,8azb_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.033433
+eval-val,8b2e_A,esmfold,ESMFold,0.991135
+eval-val,8b2e_A,esmfold2,ESMFold2,0.994681
+eval-val,8b2e_A,protenix_v2_msa,Protenix-v2 + MSA,0.996454
+eval-val,8b2e_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.051418
+eval-val,8b2g_A,esmfold,ESMFold,0.986486
+eval-val,8b2g_A,esmfold2,ESMFold2,0.986486
+eval-val,8b2g_A,protenix_v2_msa,Protenix-v2 + MSA,0.989865
+eval-val,8b2g_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.067568
+eval-val,8b2s_A,esmfold,ESMFold,0.238542
+eval-val,8b2s_A,esmfold2,ESMFold2,0.130208
+eval-val,8b2s_A,protenix_v2_msa,Protenix-v2 + MSA,0.146875
+eval-val,8b2s_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.039583
+eval-val,8b4u_A,esmfold,ESMFold,0.982342
+eval-val,8b4u_A,esmfold2,ESMFold2,0.977695
+eval-val,8b4u_A,protenix_v2_msa,Protenix-v2 + MSA,0.981413
+eval-val,8b4u_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.119888
+eval-val,8b5w_A,esmfold,ESMFold,0.212428
+eval-val,8b5w_A,esmfold2,ESMFold2,0.221098
+eval-val,8b5w_A,protenix_v2_msa,Protenix-v2 + MSA,0.972543
+eval-val,8b5w_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.058526
+eval-val,8b61_A,esmfold,ESMFold,0.513959
+eval-val,8b61_A,esmfold2,ESMFold2,0.635787
+eval-val,8b61_A,protenix_v2_msa,Protenix-v2 + MSA,0.899746
+eval-val,8b61_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.060914
+eval-val,8b6a_A,esmfold,ESMFold,0.874286
+eval-val,8b6a_A,esmfold2,ESMFold2,0.975714
+eval-val,8b6a_A,protenix_v2_msa,Protenix-v2 + MSA,0.98
+eval-val,8b6a_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.05
+eval-val,8b6e_A,esmfold,ESMFold,0.855769
+eval-val,8b6e_A,esmfold2,ESMFold2,0.903846
+eval-val,8b6e_A,protenix_v2_msa,Protenix-v2 + MSA,0.913462
+eval-val,8b6e_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.865385
+eval-val,8baq_A,esmfold,ESMFold,0.877404
+eval-val,8baq_A,esmfold2,ESMFold2,0.980769
+eval-val,8baq_A,protenix_v2_msa,Protenix-v2 + MSA,0.882212
+eval-val,8baq_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.045673
+eval-val,8bau_A,esmfold,ESMFold,0.921958
+eval-val,8bau_A,esmfold2,ESMFold2,0.941799
+eval-val,8bau_A,protenix_v2_msa,Protenix-v2 + MSA,0.965608
+eval-val,8bau_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.025132
+eval-val,8bfy_A,esmfold,ESMFold,0.622774
+eval-val,8bfy_A,esmfold2,ESMFold2,0.726463
+eval-val,8bfy_A,protenix_v2_msa,Protenix-v2 + MSA,0.507634
+eval-val,8bfy_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.022265
+eval-val,8bgb_A,esmfold,ESMFold,0.980769
+eval-val,8bgb_A,esmfold2,ESMFold2,0.980769
+eval-val,8bgb_A,protenix_v2_msa,Protenix-v2 + MSA,0.971154
+eval-val,8bgb_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.473077
+eval-val,8bke_A,esmfold,ESMFold,0.796729
+eval-val,8bke_A,esmfold2,ESMFold2,0.909463
+eval-val,8bke_A,protenix_v2_msa,Protenix-v2 + MSA,0.956776
+eval-val,8bke_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.573014
+eval-val,8bsb_A,esmfold,ESMFold,0.963836
+eval-val,8bsb_A,esmfold2,ESMFold2,0.915094
+eval-val,8bsb_A,protenix_v2_msa,Protenix-v2 + MSA,0.894654
+eval-val,8bsb_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.798742
+eval-val,8bux_A,esmfold,ESMFold,0.009516
+eval-val,8bux_A,esmfold2,ESMFold2,0.00692
+eval-val,8bux_A,protenix_v2_msa,Protenix-v2 + MSA,0.83564
+eval-val,8bux_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.022491
+eval-val,8c4d_A,esmfold,ESMFold,0.998641
+eval-val,8c4d_A,esmfold2,ESMFold2,1.0
+eval-val,8c4d_A,protenix_v2_msa,Protenix-v2 + MSA,1.0
+eval-val,8c4d_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.36413
+eval-val,8c4y_A,esmfold,ESMFold,0.851763
+eval-val,8c4y_A,esmfold2,ESMFold2,0.915064
+eval-val,8c4y_A,protenix_v2_msa,Protenix-v2 + MSA,0.988782
+eval-val,8c4y_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.055288
+eval-val,8cba_A,esmfold,ESMFold,0.689744
+eval-val,8cba_A,esmfold2,ESMFold2,0.7
+eval-val,8cba_A,protenix_v2_msa,Protenix-v2 + MSA,0.958974
+eval-val,8cba_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.057692
+eval-val,8ci9_A,esmfold,ESMFold,0.892974
+eval-val,8ci9_A,esmfold2,ESMFold2,0.89134
+eval-val,8ci9_A,protenix_v2_msa,Protenix-v2 + MSA,0.910948
+eval-val,8ci9_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.050654
+eval-val,8cih_A,esmfold,ESMFold,0.74867
+eval-val,8cih_A,esmfold2,ESMFold2,0.761968
+eval-val,8cih_A,protenix_v2_msa,Protenix-v2 + MSA,0.582447
+eval-val,8cih_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.664894
+eval-val,8cpk_A,esmfold,ESMFold,0.957682
+eval-val,8cpk_A,esmfold2,ESMFold2,0.975911
+eval-val,8cpk_A,protenix_v2_msa,Protenix-v2 + MSA,0.984375
+eval-val,8cpk_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.780599
+eval-val,8cpn_A,esmfold,ESMFold,0.822327
+eval-val,8cpn_A,esmfold2,ESMFold2,0.921384
+eval-val,8cpn_A,protenix_v2_msa,Protenix-v2 + MSA,0.933962
+eval-val,8cpn_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.015723
+eval-val,8d2z_A,esmfold,ESMFold,0.830065
+eval-val,8d2z_A,esmfold2,ESMFold2,0.945261
+eval-val,8d2z_A,protenix_v2_msa,Protenix-v2 + MSA,0.949346
+eval-val,8d2z_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.273693
+eval-val,8daj_A,esmfold,ESMFold,0.96606
+eval-val,8daj_A,esmfold2,ESMFold2,0.969371
+eval-val,8daj_A,protenix_v2_msa,Protenix-v2 + MSA,0.96606
+eval-val,8daj_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.19702
+eval-val,8dez_A,esmfold,ESMFold,0.67052
+eval-val,8dez_A,esmfold2,ESMFold2,0.751445
+eval-val,8dez_A,protenix_v2_msa,Protenix-v2 + MSA,0.859827
+eval-val,8dez_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.147399
+eval-val,8dge_A,esmfold,ESMFold,0.847949
+eval-val,8dge_A,esmfold2,ESMFold2,0.864569
+eval-val,8dge_A,protenix_v2_msa,Protenix-v2 + MSA,0.941655
+eval-val,8dge_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.006011
+eval-val,8dhj_A,esmfold,ESMFold,0.871822
+eval-val,8dhj_A,esmfold2,ESMFold2,0.971398
+eval-val,8dhj_A,protenix_v2_msa,Protenix-v2 + MSA,0.745763
+eval-val,8dhj_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.023305
+eval-val,8dmu_A,esmfold,ESMFold,0.851891
+eval-val,8dmu_A,esmfold2,ESMFold2,0.966387
+eval-val,8dmu_A,protenix_v2_msa,Protenix-v2 + MSA,0.98792
+eval-val,8dmu_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.028361
+eval-val,8dp9_A,esmfold,ESMFold,0.860902
+eval-val,8dp9_A,esmfold2,ESMFold2,0.864662
+eval-val,8dp9_A,protenix_v2_msa,Protenix-v2 + MSA,0.81203
+eval-val,8dp9_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.103383
+eval-val,8dqd_A,esmfold,ESMFold,0.757432
+eval-val,8dqd_A,esmfold2,ESMFold2,0.783108
+eval-val,8dqd_A,protenix_v2_msa,Protenix-v2 + MSA,0.80473
+eval-val,8dqd_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.087162
+eval-val,8dx0_A,esmfold,ESMFold,0.935252
+eval-val,8dx0_A,esmfold2,ESMFold2,0.922662
+eval-val,8dx0_A,protenix_v2_msa,Protenix-v2 + MSA,0.911871
+eval-val,8dx0_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.22482
+eval-val,8e0r_A,esmfold,ESMFold,0.633373
+eval-val,8e0r_A,esmfold2,ESMFold2,0.902512
+eval-val,8e0r_A,protenix_v2_msa,Protenix-v2 + MSA,0.922249
+eval-val,8e0r_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.009569
+eval-val,8e5h_A,esmfold,ESMFold,0.678668
+eval-val,8e5h_A,esmfold2,ESMFold2,0.986413
+eval-val,8e5h_A,protenix_v2_msa,Protenix-v2 + MSA,0.990489
+eval-val,8e5h_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.353261
+eval-val,8eb9_A,esmfold,ESMFold,0.044944
+eval-val,8eb9_A,esmfold2,ESMFold2,0.087079
+eval-val,8eb9_A,protenix_v2_msa,Protenix-v2 + MSA,0.331461
+eval-val,8eb9_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.058989
+eval-val,8ec3_A,esmfold,ESMFold,0.604839
+eval-val,8ec3_A,esmfold2,ESMFold2,0.558065
+eval-val,8ec3_A,protenix_v2_msa,Protenix-v2 + MSA,0.633871
+eval-val,8ec3_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.301613
+eval-val,8eo5_A,esmfold,ESMFold,0.928704
+eval-val,8eo5_A,esmfold2,ESMFold2,0.967593
+eval-val,8eo5_A,protenix_v2_msa,Protenix-v2 + MSA,0.97037
+eval-val,8eo5_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.012963
+eval-val,8gmy_A,esmfold,ESMFold,0.414384
+eval-val,8gmy_A,esmfold2,ESMFold2,0.783105
+eval-val,8gmy_A,protenix_v2_msa,Protenix-v2 + MSA,0.819635
+eval-val,8gmy_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.022831
+eval-val,8q8i_A,esmfold,ESMFold,0.551971
+eval-val,8q8i_A,esmfold2,ESMFold2,0.819892
+eval-val,8q8i_A,protenix_v2_msa,Protenix-v2 + MSA,0.981183
+eval-val,8q8i_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.026882
+eval-val,8ycm_A,esmfold,ESMFold,0.842342
+eval-val,8ycm_A,esmfold2,ESMFold2,0.942568
+eval-val,8ycm_A,protenix_v2_msa,Protenix-v2 + MSA,0.947072
+eval-val,8ycm_A,protenix_v2_single_seq,Protenix-v2 single sequence,0.054054
