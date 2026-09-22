@@ -67,7 +67,36 @@ per protein, including when the aggregate result is negative.
 
 ## Results
 
-Pilot and held-out runs in progress.
+The seven-pair development pilot is complete. The columns below count proteins
+for which at least one of the 100 generated contact maps matches each reference
+fold (oracle pool), or for which the reference-blind 16-map shortlist does so
+(blind). These are **contact-level** matches, not folded 3D structures.
+
+| Decoder | Oracle dual / 7 | Blind dual / 7 | Early contacts unseen in previous rollouts | H100 time / width 4 |
+| --- | ---: | ---: | ---: | ---: |
+| iid100 | 3 | 2 | — | 0.14 |
+| Unpenalized width 4 | 2 | 2 | — | 1.00 |
+| Width 16, no penalty | 1 | 1 | 11.9% | 3.94 |
+| Width 16, constant epsilon 0.05 | 1 | 1 | 13.7% | 4.14 |
+| Width 16, early epsilon 0.05 | 1 | 1 | 13.1% | 4.05 |
+| Width 32, early epsilon 0.05 | 2 | 0 | 13.5% | 12.59 |
+| Width 16, early epsilon 0.2 | 2 | 1 | 15.7% | 4.02 |
+
+All five new settings produced 100 finished rollouts on every pilot protein.
+None recovered both modes on any of the five primary development pairs; iid100
+and width 4 each recovered one. The stronger early penalty did increase early
+novelty, but its extra oracle hit was a secondary pair that iid100 had already
+covered, and it did not survive the blind shortlist. The width-32 variant did
+not recover the missing long primary fold despite its much higher cost.
+
+Before opening any primary test references, we froze `b16_e0p2_d20_w10` in
+`data/frozen_choice.json`. It tied width 32 for development oracle coverage,
+retained one blind hit rather than zero, and used one-third as much H100 time.
+The small difference in blind minority enrichment (0.008 in width 32's favor)
+was not persuasive against those differences. This choice is exploratory
+because epsilon 0.2 was added after inspecting partial development scores.
+
+The 29-pair primary held-out run is in progress.
 
 ## Conclusion
 

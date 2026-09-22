@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+DATA = HERE / "data"
 DEST = "hf://buckets/open-athena/MarinFold/data/contact-novelty-search-exp308"
 PILOT_SOURCE = "s3://marin-us-east-02a/MarinFold/exp308/pilot-v1"
 TEST_SOURCE = "s3://marin-us-east-02a/MarinFold/exp308/test-v1"
@@ -25,12 +26,11 @@ def run(*parts: str) -> None:
     subprocess.run(parts, cwd=HERE, check=True)
 
 
-def verify_seal(selection: str, mode: str) -> None:
+def verify_seal(selection: str, mode: str, frozen_digest: str) -> None:
     """Ensure refresh does not silently change a reference-blind shortlist."""
     path = HERE / "data" / f"sealed_{selection}_{mode}.csv"
-    expected = path.with_suffix(".sha256").read_text().split()[0]
     actual = hashlib.sha256(path.read_bytes()).hexdigest()
-    if actual != expected:
+    if actual != frozen_digest:
         raise ValueError(f"sealed shortlist hash mismatch: {path.name}")
 
 
@@ -44,18 +44,24 @@ def main() -> None:
     if choice not in MODES:
         raise ValueError(f"unexpected frozen choice: {choice}")
     if args.refresh:
+        frozen = {
+            (selection, mode): (DATA / f"sealed_{selection}_{mode}.sha256")
+            .read_text().split()[0]
+            for selection, mode in ([('pilot', mode) for mode in MODES]
+                                    + [('test', choice)])
+        }
         for mode in MODES:
             run(sys.executable, "fetch_results.py", "--source", PILOT_SOURCE, "--mode", mode)
             run(sys.executable, "score_foldswitch.py", "seal", "--mode", mode,
                 "--selection", "pilot")
-            verify_seal("pilot", mode)
+            verify_seal("pilot", mode, frozen[("pilot", mode)])
             run(sys.executable, "score_foldswitch.py", "score", "--mode", mode,
                 "--selection", "pilot")
         run(sys.executable, "summarize_pilot.py")
         run(sys.executable, "fetch_results.py", "--source", TEST_SOURCE, "--mode", choice)
         run(sys.executable, "score_foldswitch.py", "seal", "--mode", choice,
             "--selection", "test")
-        verify_seal("test", choice)
+        verify_seal("test", choice, frozen[("test", choice)])
         run(sys.executable, "score_foldswitch.py", "score", "--mode", choice,
             "--selection", "test")
         run(sys.executable, "collect_timings.py")
