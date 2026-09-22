@@ -128,13 +128,11 @@ MSA depth is the number of sequences in the exact A3M supplied to Protenix-v2 + 
 | Helico + top-N contacts, confidence selected | — | 0.3745 | 0.8977 | 0.8989 |
 | Helico + top-N contacts, oracle | — | 0.4394 | 0.9330 | 0.9331 |
 
-![Low-MSA GDT-TS predictor comparison](plots/gdt_ts_low_msa_predictor_comparison.png)
+![Low-MSA actual GDT-TS values](plots/gdt_ts_low_msa_predictor_comparison.png)
 
 On the five eval-val proteins at depth ≤100, confidence selection improves top-L by **+0.1069 GDT-TS**, but its paired 95% bootstrap interval is wide and crosses zero (**[-0.0048, +0.2528]**). The Helico oracle adds **+0.1718** (**[+0.0359, +0.3227]**) over top-L. Protenix-v2 + MSA leads this small natural subset at 0.6223.
 
 On the 15 eval-denovo designs at depth ≤10, confidence-selected Helico reaches **0.8977**, essentially level with Protenix-v2 + MSA at 0.8949 and above Protenix-v2 single sequence at 0.8878. It improves top-L by **+0.0588**, though the paired interval crosses zero (**[-0.0104, +0.1489]**). ESMFold2 and the non-deployable Helico oracle both score 0.9330. Expanding to depth ≤100 adds only `8k7o_A`, so the n=16 means change little.
-
-![Low-MSA paired GDT-TS difference from top-L Helico](plots/gdt_ts_low_msa_delta_vs_top_l.png)
 
 Raw per-sample metrics, timings and the run manifest are committed under `data/` and published with the input bundle in the [public MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp311-helico-exp277-contact-count-sweep/).
 
