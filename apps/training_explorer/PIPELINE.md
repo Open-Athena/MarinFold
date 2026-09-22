@@ -97,6 +97,20 @@ profile for CoreWeave S3.
     and byte size, writes a SHA-256 manifest, and puts public structure URLs
     into the three snapshots. The local `structures/` directory is a generated
     staging area and is ignored by git.
+14. On a GCP-authenticated workstation, run `uv run python
+    prepare_neighbor_afdb.py --billing-project <project>` and include the
+    generated, gitignored `legacy_afdb/` directory in the CoreWeave workspace
+    bundle. This reads the requester-pays AFDB v4 archive used to build the
+    corpus, including entries retired from the current API.
+15. `uv run python extract_neighbor_structures.py` runs next to the mirrored
+    ESMFold2 source on CoreWeave, range-reads only selected row groups, and
+    publishes the 2,690 distinct source backbones shared by the 3,155 unique
+    displayed sequence hits. MPNN hits use the parent backbone on which the
+    sequence was redesigned. The script checkpoints each output to a durable,
+    co-located working copy and verifies the public Hugging Face listing.
+16. `uv run python attach_neighbor_structures.py` validates complete hit
+    coverage and adds the public structure URL, format, and provenance note to
+    every neighbor row.
 
 The source document decoder was checked against
 `marinfold.document_structures.contacts_v1.read.sequence_from_document` on

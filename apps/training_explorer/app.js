@@ -2,11 +2,15 @@ const state = {
   view: "latest",
   data: null,
   selected: null,
+  neighbor: null,
   filter: "All",
   query: "",
   viewer: null,
+  neighborViewer: null,
   fallbackCleanup: null,
+  neighborFallbackCleanup: null,
   serial: 0,
+  neighborSerial: 0,
   viewSerial: 0,
 };
 const $ = (id) => document.getElementById(id);
@@ -26,8 +30,20 @@ const formatE = (value) =>
       ? Number(value).toExponential(1)
       : Number(value).toPrecision(2);
 
+function supportsWebGL() {
+  const probe = document.createElement("canvas");
+  const context =
+    probe.getContext("webgl2") ||
+    probe.getContext("webgl") ||
+    probe.getContext("experimental-webgl");
+  if (!context) return false;
+  context.getExtension("WEBGL_lose_context")?.loseContext();
+  return true;
+}
+
 async function loadView(view) {
   const viewTicket = ++state.viewSerial;
+  clearNeighborComparison();
   state.view = view;
   state.query = "";
   state.filter = "All";
@@ -268,6 +284,7 @@ function renderList() {
 function renderDetail() {
   const p = state.selected;
   if (!p) return;
+  clearNeighborComparison();
   $("protein-source").textContent = p.subset || p.source;
   $("protein-name").textContent = p.label || p.id;
   $("protein-title").textContent =
@@ -294,10 +311,120 @@ function renderNeighbors(p) {
         .slice(0, 10)
         .map((hit, i) => {
           const identity = Number(hit.identity || 0);
-          return `<div class="neighbor-row"><div class="neighbor-top"><strong title="${esc(hit.id)}">${String(i + 1).padStart(2, "0")} · ${esc(hit.label || hit.id)}</strong><span>${(100 * identity).toFixed(1)}%</span></div><div class="neighbor-bar"><i style="width:${Math.min(100, Math.max(0, 100 * identity))}%"></i></div><div class="neighbor-sub"><span>${esc(hit.source)} · ${format(hit.length)} aa${hit.weakFallback ? ' · <em title="Supplemental permissive search; weak similarity does not establish homology">WEAK</em>' : ""}</span><span>B ${hit.bitscore} · Q ${(100 * Number(hit.queryCoverage || 0)).toFixed(0)}% · E≈${formatE(hit.evalue)}</span></div></div>`;
+          const action = hit.structureUrl
+            ? '<span class="neighbor-action">VIEW 3D <b>→</b></span>'
+            : '<span class="neighbor-action unavailable">NO STRUCTURE</span>';
+          return `<button class="neighbor-row ${hit.id === state.neighbor?.id ? "active" : ""}" data-neighbor-index="${i}" ${hit.structureUrl ? "" : "disabled"}><div class="neighbor-top"><strong title="${esc(hit.id)}">${String(i + 1).padStart(2, "0")} · ${esc(hit.label || hit.id)}</strong><span>${(100 * identity).toFixed(1)}%</span></div><div class="neighbor-bar"><i style="width:${Math.min(100, Math.max(0, 100 * identity))}%"></i></div><div class="neighbor-sub"><span>${esc(hit.source)} · ${format(hit.length)} aa${hit.weakFallback ? ' · <em title="Supplemental permissive search; weak similarity does not establish homology">WEAK</em>' : ""}</span><span>B ${hit.bitscore} · Q ${(100 * Number(hit.queryCoverage || 0)).toFixed(0)}% · E≈${formatE(hit.evalue)}</span></div>${action}</button>`;
         })
         .join("")
     : `<div class="empty-state">${state.data.neighborsComplete ? "No sequence matches were reported at the search threshold." : "Neighbor search pending. The full corpus has not been searched yet."}</div>`;
+  $("neighbor-list")
+    .querySelectorAll(".neighbor-row:not(:disabled)")
+    .forEach((row) =>
+      row.addEventListener("click", () => {
+        const hit = hits[Number(row.dataset.neighborIndex)];
+        state.neighbor = hit;
+        renderNeighbors(p);
+        showNeighborComparison(hit);
+      }),
+    );
+}
+
+function clearNeighborComparison() {
+  state.neighbor = null;
+  ++state.neighborSerial;
+  if (state.neighborViewer) {
+    state.neighborViewer.dispose();
+    state.neighborViewer = null;
+  }
+  if (state.neighborFallbackCleanup) {
+    state.neighborFallbackCleanup();
+    state.neighborFallbackCleanup = null;
+  }
+  $("molstar-neighbor").replaceChildren();
+  $("neighbor-pane").hidden = true;
+  $("comparison-toolbar").hidden = true;
+  $("viewer-frame").classList.remove("comparing");
+}
+
+function showNeighborComparison(hit) {
+  $("compare-name").textContent = hit.label || hit.id;
+  $("compare-meta").textContent = `${hit.source} · ${(100 * Number(hit.identity || 0)).toFixed(1)}% identity · ${format(hit.length)} aa`;
+  $("comparison-toolbar").hidden = false;
+  $("neighbor-pane").hidden = false;
+  $("viewer-frame").classList.add("comparing");
+  loadNeighborStructure(hit);
+  if (window.innerWidth <= 1100) {
+    $("comparison-toolbar").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+async function loadNeighborStructure(hit) {
+  const ticket = ++state.neighborSerial;
+  $("neighbor-viewer-status").textContent = "Loading neighbor structure…";
+  if (state.neighborViewer) {
+    state.neighborViewer.dispose();
+    state.neighborViewer = null;
+  }
+  if (state.neighborFallbackCleanup) {
+    state.neighborFallbackCleanup();
+    state.neighborFallbackCleanup = null;
+  }
+  $("molstar-neighbor").replaceChildren();
+  if (!hit.structureUrl) return;
+  try {
+    if (!supportsWebGL()) {
+      state.neighborFallbackCleanup = await window.createBackboneFallback(
+        $("molstar-neighbor"),
+        hit,
+        () => ticket === state.neighborSerial,
+      );
+      if (ticket === state.neighborSerial)
+        $("neighbor-viewer-status").textContent = "Interactive 3D backbone preview";
+      return;
+    }
+    if (!window.molstar?.Viewer) throw new Error("Mol* library unavailable");
+    const viewer = await window.molstar.Viewer.create("molstar-neighbor", {
+      layoutIsExpanded: false,
+      layoutShowControls: false,
+      layoutShowSequence: false,
+      layoutShowLog: false,
+      layoutShowLeftPanel: false,
+      viewportShowExpand: false,
+      viewportShowSelectionMode: false,
+      viewportShowAnimation: false,
+    });
+    if (ticket !== state.neighborSerial) {
+      viewer.dispose();
+      return;
+    }
+    if (!viewer.plugin.canvas3d) {
+      viewer.dispose();
+      throw new Error("Mol* WebGL canvas unavailable");
+    }
+    state.neighborViewer = viewer;
+    await viewer.loadStructureFromUrl(
+      hit.structureUrl,
+      hit.structureFormat || "pdb",
+      false,
+    );
+    if (ticket === state.neighborSerial)
+      $("neighbor-viewer-status").textContent =
+        hit.structureNote || "Training-neighbor source backbone";
+  } catch (error) {
+    if (ticket !== state.neighborSerial) return;
+    try {
+      state.neighborFallbackCleanup = await window.createBackboneFallback(
+        $("molstar-neighbor"),
+        hit,
+        () => ticket === state.neighborSerial,
+      );
+      $("neighbor-viewer-status").textContent = "Interactive 3D backbone preview";
+    } catch (fallbackError) {
+      $("neighbor-viewer-status").textContent =
+        `Neighbor load failed: ${fallbackError.message}`;
+    }
+  }
 }
 
 async function loadStructure(p) {
@@ -316,8 +443,7 @@ async function loadStructure(p) {
   $("molstar").replaceChildren();
   if (!p.structureUrl) return;
   try {
-    const probe = document.createElement("canvas");
-    if (!probe.getContext("webgl") && !probe.getContext("experimental-webgl")) {
+    if (!supportsWebGL()) {
       state.fallbackCleanup = await window.createBackboneFallback(
         $("molstar"),
         p,
@@ -390,5 +516,9 @@ $("copy-sequence").addEventListener("click", async () => {
   setTimeout(() => {
     $("copy-sequence").textContent = "Copy";
   }, 1500);
+});
+$("clear-comparison").addEventListener("click", () => {
+  clearNeighborComparison();
+  if (state.selected) renderNeighbors(state.selected);
 });
 loadView("latest");

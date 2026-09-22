@@ -10,7 +10,9 @@ From the repository root, run
 `python -m http.server 8766 --bind 127.0.0.1 --directory apps/training_explorer`
 and open <http://127.0.0.1:8766/>. The page reads
 `data/{latest,original,eval}.json` and backbone previews for all 316 displayed
-proteins from the public `open-athena/MarinFold` artifact bucket.
+proteins and every displayed nearest-neighbor source backbone from the public
+`open-athena/MarinFold` artifact bucket. Select a nearest-neighbor row to open a
+side-by-side interactive comparison with the current query protein.
 The viewer also loads Mol* from jsDelivr; network access is needed for 3D
 previews. A rotatable canvas backbone is used when Mol* cannot initialize.
 Do not call a query "uniform" or show neighbors until its materialization

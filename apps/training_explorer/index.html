@@ -124,11 +124,30 @@
                 <strong id="protein-length">—</strong><span>RESIDUES</span>
               </div>
             </div>
-            <div class="viewer-frame">
-              <div id="molstar"></div>
-              <div class="viewer-label">
-                <span class="cube">◇</span
-                ><span id="viewer-status">Interactive 3D structure</span>
+            <div class="comparison-toolbar" id="comparison-toolbar" hidden>
+              <div>
+                <span class="eyebrow">SIDE-BY-SIDE COMPARISON</span>
+                <strong id="compare-name">—</strong>
+                <small id="compare-meta"></small>
+              </div>
+              <button id="clear-comparison" type="button">Clear comparison</button>
+            </div>
+            <div class="viewer-frame" id="viewer-frame">
+              <div class="viewer-stage">
+                <div class="viewer-pane">
+                  <div id="molstar"></div>
+                  <div class="viewer-label">
+                    <span class="viewer-chip query">QUERY</span
+                    ><span id="viewer-status">Interactive 3D structure</span>
+                  </div>
+                </div>
+                <div class="viewer-pane neighbor-pane" id="neighbor-pane" hidden>
+                  <div id="molstar-neighbor"></div>
+                  <div class="viewer-label">
+                    <span class="viewer-chip neighbor">NEIGHBOR</span
+                    ><span id="neighbor-viewer-status">Training-neighbor structure</span>
+                  </div>
+                </div>
               </div>
               <div class="viewer-controls">DRAG TO ROTATE · SCROLL TO ZOOM</div>
             </div>
@@ -158,6 +177,7 @@
             <p class="neighbor-intro" id="neighbor-caption">
               Highest scoring local alignments in the selected training corpus.
             </p>
+            <p class="neighbor-hint">Select a row to compare its source backbone in 3D.</p>
             <div id="neighbor-list" class="neighbor-list"></div>
             <div class="neighbor-key">
               <div><span class="key-swatch"></span> Percent identity</div>
