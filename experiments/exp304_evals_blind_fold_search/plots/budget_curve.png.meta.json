@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "A separate 500-rollout run, evaluated at its first 100, 200, and 500 candidates. The blind selector returns 16 maps at each budget; the oracle line is diagnostic and cannot be used at inference time."
+}

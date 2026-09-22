@@ -1,0 +1,20 @@
+[project]
+name = "exp304-evals-blind-fold-search"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "scipy",
+    "matplotlib",
+    "scikit-learn",
+    "gemmi>=0.7.5",
+    "tmtools>=0.3.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv]
+package = false

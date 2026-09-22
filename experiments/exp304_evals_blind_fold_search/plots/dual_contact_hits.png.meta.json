@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Bars count pairs meeting the prespecified contact-level dual-hit criterion among 16 blindly selected maps. Diamonds show the oracle ceiling in the same candidate pool, which cannot serve as an inference method."
+}

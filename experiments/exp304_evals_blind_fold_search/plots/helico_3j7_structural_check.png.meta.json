@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Helico structures from two reference input chains; black points are the two inputs. Both 200-rollout shortlist methods yield fold-specific switching-region structures on this protein. True-contact controls show the attainable separation for this reconstruction model."
+}
