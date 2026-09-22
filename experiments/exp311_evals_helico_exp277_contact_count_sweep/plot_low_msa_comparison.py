@@ -226,7 +226,7 @@ def plot_means(summary: list[dict]) -> None:
         caption=(
             "GDT-TS at inclusive MSA-depth thresholds of 10 and 100 sequences. Depth is measured on the exact "
             "A3M supplied to Protenix-v2 + MSA; thresholds are cumulative and all methods use paired targets. "
-            "Points show actual mean GDT-TS values rather than differences from top-L Helico."
+            "Points are mean GDT-TS on the absolute scale."
         ),
     )
     plt.close(fig)
