@@ -4,8 +4,8 @@
 """Tar walking must find the members the manifest names, over real HTTP."""
 
 import http.server
-import json
 import io
+import json
 import socketserver
 import sys
 import tarfile
