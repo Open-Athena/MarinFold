@@ -14,4 +14,8 @@ Jointly scoring both positions may reject a plausible first position whose best 
 
 ## Development choice
 
-On the 15 primary development fold-switching proteins, width 4 and width 8 each gave 1/15 dual-mode oracle pools and 0/15 dual-mode blind shortlists; iid100 gave 1/15 for both. Width 4 took 6.7 times iid H100 generation time, versus 12.3 times for width 8, and had less loss of minority-mode enrichment. Width 4 is frozen for the held-out run. Full eval-val accuracy and held-out fold-switching results are pending.
+On the 15 primary development fold-switching proteins, width 4 and width 8 each gave 1/15 dual-mode oracle pools and 0/15 dual-mode blind shortlists; iid100 gave 1/15 for both. Width 4 took 6.7 times iid H100 generation time, versus 12.3 times for width 8, and had less loss of minority-mode enrichment. Width 4 was frozen before the held-out run.
+
+## Eval-val result
+
+On all 97 natural eval-val proteins, width 4 scored 0.54182 all-range and 0.52932 long-range R-precision, against 0.55375 and 0.53802 for the 100-rollout baseline. Paired differences were -0.01193 [-0.01741, -0.00641] and -0.00870 [-0.01629, -0.00021] by protein bootstrap. Pure H100 generation took 1.49 times as many total seconds. The held-out fold-switching comparison is still running.

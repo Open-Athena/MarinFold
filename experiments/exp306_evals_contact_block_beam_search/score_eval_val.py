@@ -122,6 +122,9 @@ def main() -> None:
             "paired_delta": differences.mean(), "delta_lo": lo, "delta_hi": hi,
             "mean_finished": group.n_finished.mean(),
             "mean_time_ratio": group.time_ratio.mean(),
+            "total_beam_seconds": group.beam_seconds.sum(),
+            "total_iid_seconds": group.iid_seconds.sum(),
+            "total_time_ratio": group.beam_seconds.sum() / group.iid_seconds.sum(),
         })
     report = pd.DataFrame(summary)
     report.to_csv(out / f"eval_val_summary_{args.mode}.csv", index=False)

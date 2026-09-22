@@ -76,9 +76,18 @@ for width 8. Width 4 is the frozen choice: it tied width 8 on dual-mode
 coverage, preserved more minority-mode evidence, and cost roughly half as much.
 These are contact-level development results, not 3D fold recoveries.
 
-The three-protein eval-val pilot is too small to select a decoder on
-R-precision. Full 97-protein eval-val and held-out fold-switching results are
-pending.
+On the complete 97-protein natural eval-val set, width 4 gave mean all-range
+R-precision 0.54182 versus 0.55375 for the standard exp277 iid100
+rollout-and-resample baseline, a paired difference of -0.01193 with a
+protein-bootstrap 95% interval [-0.01741, -0.00641]. Long-range R-precision
+was 0.52932 versus 0.53802, a paired difference of -0.00870
+[-0.01629, -0.00021]. All 97 targets had 100 rollouts; one rollout was capped
+and excluded from voting. The beam decoder used 5,269 seconds of pure H100
+generation versus 3,539 for the baseline, a 1.49x aggregate cost; the mean
+per-protein time ratio was 1.37x. Thus this width does not preserve ordinary
+contact accuracy. Eval-test was not read.
+
+Held-out fold-switching results are pending.
 
 ## Conclusion
 

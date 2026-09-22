@@ -148,6 +148,12 @@ def score(files: list[Path], mode: str, n_rollouts: int) -> None:
         if group.empty:
             continue
         lo, hi = paired_interval(group.paired_enrichment_delta.to_numpy())
+        pool_lo, pool_hi = paired_interval(
+            group.dual_pool.astype(int).to_numpy() - group.iid_dual_pool.astype(int).to_numpy()
+        )
+        blind_lo, blind_hi = paired_interval(
+            group.dual_blind.astype(int).to_numpy() - group.iid_dual_blind.astype(int).to_numpy()
+        )
         summary.append({
             "cohort": name, "mode": mode, "n": len(group),
             "fold1_pool": int(group.fold1_pool.sum()),
@@ -157,10 +163,19 @@ def score(files: list[Path], mode: str, n_rollouts: int) -> None:
             "dual_blind": int(group.dual_blind.sum()),
             "iid_dual_pool": int(group.iid_dual_pool.sum()),
             "iid_dual_blind": int(group.iid_dual_blind.sum()),
+            "paired_dual_pool_delta": float((group.dual_pool.astype(int)
+                                            - group.iid_dual_pool.astype(int)).mean()),
+            "paired_dual_pool_lo": pool_lo, "paired_dual_pool_hi": pool_hi,
+            "paired_dual_blind_delta": float((group.dual_blind.astype(int)
+                                             - group.iid_dual_blind.astype(int)).mean()),
+            "paired_dual_blind_lo": blind_lo, "paired_dual_blind_hi": blind_hi,
             "mean_enrichment_blind": float(group.minority_enrichment_blind.mean()),
             "paired_enrichment_delta": float(group.paired_enrichment_delta.mean()),
             "delta_lo": lo, "delta_hi": hi,
             "mean_time_ratio": float(group.time_ratio.mean()),
+            "total_beam_seconds": float(group.beam_seconds.sum()),
+            "total_iid_seconds": float(group.iid_seconds.sum()),
+            "total_time_ratio": float(group.beam_seconds.sum() / group.iid_seconds.sum()),
             "mean_finished": float(group.n_finished.mean()),
         })
     report = pd.DataFrame(summary)
