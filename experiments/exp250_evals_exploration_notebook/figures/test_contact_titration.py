@@ -136,3 +136,24 @@ def test_ligand_atoms_are_not_written():
         "entity_type": ["protein", "protein", "ligand"]})
     lines = titration.pdb_lines(np.zeros((3, 3)), atom_index, "GA").splitlines()
     assert len([line for line in lines if line.startswith("ATOM")]) == 2
+
+
+@pytest.mark.parametrize("k_max", [3, 40, 41, 150, 153])
+def test_the_light_cut_still_ends_where_the_full_one_does(k_max):
+    """A stride that does not divide the range must not drop the last frame.
+
+    The last frame is the whole point — it is the one the still is taken from and the one a
+    reader pauses on. `range(start, k_max + 1, stride)` silently stops short whenever the stride
+    does not land on `k_max`, which for a 153-contact rollout and a stride of 3 it does not.
+    """
+    dense, stride = titration.LIGHT_DENSE_UNTIL, titration.LIGHT_STRIDE
+    counts = titration.frame_counts(k_max, stride, dense)
+    assert counts[0] == 0
+    assert counts[-1] == k_max
+    assert counts == sorted(set(counts)), "frame counts must be strictly increasing"
+    # Every contact up to the transition gets its own frame; nothing is skipped in there.
+    assert counts[:min(dense, k_max) + 1] == list(range(min(dense, k_max) + 1))
+
+
+def test_the_full_cut_is_every_contact():
+    assert titration.frame_counts(150) == list(range(151))

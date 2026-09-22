@@ -12,7 +12,7 @@ Same number, same figure. Nothing is recomputed at plot time.
 | 5 | [`5_make_training_composition_data`](5_make_training_composition_data.ipynb) | [`5_plot_training_composition`](5_plot_training_composition.ipynb) | CPU | `training_composition` |
 | 6 | [`6_make_msa_depth_data`](6_make_msa_depth_data.ipynb) | [`6_plot_msa_depth`](6_plot_msa_depth.ipynb) | CPU | `msa_depth_gdt_ts`, `msa_depth_lddt` |
 | 7 | [`7_make_rollout_animation_data.py`](7_make_rollout_animation_data.py) | [`7_plot_rollout_animation.py`](7_plot_rollout_animation.py) | **GPU** | `top7_rollout_emission.gif`, `top7_rollout_consensus.gif` — figure 1's Top7 map, animated |
-| 8 | [`8_make_contact_ranking_data.py`](8_make_contact_ranking_data.py) + [`8_make_titration_data.py`](8_make_titration_data.py) | [`8_plot_contact_titration.py`](8_plot_contact_titration.py) | **GPU** ×2 | `contact_titration_8ubs.gif`, `contact_titration_lddt` — one contact at a time into Helico |
+| 8 | [`8_make_contact_ranking_data.py`](8_make_contact_ranking_data.py) + [`8_make_titration_data.py`](8_make_titration_data.py) | [`8_plot_contact_titration.py`](8_plot_contact_titration.py) | **GPU** ×2 | `contact_titration_8ubs{,_light,_rollout_order{,_light}}.gif` and `_lddt` — one contact at a time into Helico |
 
 Datasets land in `data/<n>_<name>/`, figures in `output/` as a 300 dpi PNG and a vector PDF. No
 titles and no panel letters are baked into a figure — captions and lettering belong to the
@@ -56,10 +56,23 @@ with its own torch pin and the MarinFold inference stack has no business in it, 
 are three commands in two environments, all writing into `data/`:
 
 ```bash
-.venv/bin/python 8_make_contact_ranking_data.py                      # MarinFold, ~1 min
-cd ~/git/helico && .venv/bin/python <this dir>/8_make_titration_data.py   # Helico, ~30 min
-.venv/bin/python 8_plot_contact_titration.py                         # no model, ~5 min
+.venv/bin/python 8_make_contact_ranking_data.py                          # MarinFold, ~1 min
+cd ~/git/helico && .venv/bin/python <dir>/8_make_titration_data.py                   # ~30 min
+cd ~/git/helico && .venv/bin/python <dir>/8_make_titration_data.py --order rollout   # ~30 min
+.venv/bin/python 8_plot_contact_titration.py                             # no model, ~8 min
 ```
+
+**Two orders, two datasets, two claims.** `--order confidence` (the default) adds contacts by vote
+count across the 100 rollouts — #82's ranking, and the order a deployment actually cuts its list
+in. `--order rollout` adds them in the order **one rollout wrote them**, which is not a ranking at
+all: the model is never asked to emit its best guess first, and whether it does anyway is what the
+second animation puts on screen. The rollout is the median one by F1 against the experimental
+contacts (`figlib.median_rollout`), so it is typical by rule rather than hand-picked.
+
+Each dataset is animated twice. The full cut has a frame per contact; the `_light` cut keeps every
+frame through the transition and then steps by `LIGHT_STRIDE`, which roughly halves the file for a
+README. What it drops is the plateau, whose whole content is that nothing more happens — and its
+lDDT curve is still drawn at every *k*, because the measurement was made at every *k*.
 
 **Why `8ubs_A`.** It is the case where contact conditioning is the whole story: Helico folds it to
 0.22 lDDT with no contacts and 0.87 with MarinFold's top-L, against an oracle ceiling of 0.87 —
@@ -81,11 +94,13 @@ cached under `.cache/` on the coordinates' digest, so changing the matplotlib ha
 
 Three things pair 8 is careful about, each because the intuitive version is wrong:
 
-- **Superposition is trimmed, not least-squares.** Plain Kabsch over all 150 Cα splits the
-  difference when most of the chain is misplaced, so a correctly folded core never visibly
-  settles. Iterative rejection at 2 Å lets it land and leaves the rest loose. The count under the
-  panel is how many Cα end up within 2 Å — not the set the last cycle fitted over, which is all
-  150 whenever trimming is abandoned.
+- **Superposition is a search, not least-squares, and not one round of trimming either.** Plain
+  Kabsch over all 150 Cα splits the difference when most of the chain is misplaced, so a correctly
+  folded core never visibly settles. Outlier rejection *seeded from that same fit* is no better —
+  nothing is within the cutoff, so the search stops before it starts, and the early frames report
+  no core for predictions that have one. The refinement therefore runs from several seeds (the
+  whole chain, and contiguous windows along it) and keeps the fit with the most Cα within 2 Å.
+  The count under the panel is how many end up within 2 Å, not the set the last cycle fitted over.
 - **The prediction is a tube, the deposited structure a cartoon.** Cartoon geometry re-derives
   secondary structure per frame; a marginal helix flickering between helix and loop reads as the
   model changing its mind when it is the renderer changing its mind. The deposited structure never

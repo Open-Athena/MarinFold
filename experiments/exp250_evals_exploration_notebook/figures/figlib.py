@@ -762,3 +762,43 @@ def draw_rollout_votes(sequence: str, *, entry_id: str, model: str, n_rollouts: 
 
     return RolloutDraw(statements=statements, per_rollout=per_rollout, completions=texts,
                        votes=votes, score=score, seq_len=seq_len, max_new_tokens=max_new_tokens)
+
+
+def rollout_accuracy(statements, true_contacts, *, min_separation: int = MIN_SEPARATION):
+    """Per-rollout precision / recall / F1 over the distinct in-band pairs each rollout emitted.
+
+    ``statements`` is :attr:`RolloutDraw.statements` (or the CSV of it) and must be indexed the
+    same way as ``true_contacts``, a boolean ``[L, L]`` matrix. A rollout is scored on the set it
+    votes with: distinct pairs, band-filtered, repeats and off-protein statements dropped.
+
+    Returns a frame indexed by rollout with ``n``, ``hits``, ``precision``, ``recall`` and ``f1``.
+    """
+    import numpy as np
+
+    counted = statements[(statements.seq_i >= 0)
+                         & (statements.seq_j - statements.seq_i >= min_separation)]
+    counted = counted.drop_duplicates(subset=["rollout", "seq_i", "seq_j"])
+    hits = [bool(true_contacts[i, j]) for i, j in zip(counted.seq_i, counted.seq_j)]
+    counted = counted.assign(hit=hits)
+    accuracy = counted.groupby("rollout").agg(n=("hit", "size"), hits=("hit", "sum"))
+    n_true = int(np.triu(true_contacts, min_separation).sum())
+    accuracy["precision"] = accuracy.hits / accuracy.n
+    accuracy["recall"] = accuracy.hits / n_true
+    accuracy["f1"] = (2 * accuracy.precision * accuracy.recall
+                      / (accuracy.precision + accuracy.recall))
+    return accuracy
+
+
+def median_rollout(accuracy) -> int:
+    """The typical rollout: F1 closest to the median, ties by statement count closest to median.
+
+    A rule rather than an index, so it moves with the data instead of quietly ceasing to be
+    typical when the dataset is regenerated. The tie-break matters: F1 is a ratio and several
+    rollouts land on the same one, and among those the one that emitted a median number of
+    contacts is the one that is typical in both respects.
+    """
+    ranked = accuracy.assign(
+        f1_distance=(accuracy.f1 - accuracy.f1.median()).abs().round(6),
+        size_distance=(accuracy.n - accuracy.n.median()).abs(),
+    ).sort_values(["f1_distance", "size_distance"])
+    return int(ranked.index[0])

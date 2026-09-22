@@ -2,14 +2,26 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
 
-"""8b · make — fold 8ubs_A once per contact, from none to top-L.
+"""8b · make — fold 8ubs_A once per contact, from none to the whole list.
 
-Step two of three. Reads the vote matrix
-:mod:`8_make_contact_ranking_data` wrote, ranks the candidate pairs by it, and
-folds the protein ``K_MAX + 1`` times with Helico: no contacts, then the top 1,
-the top 2, and so on. Every prediction's coordinates and scores are stored, so
-:mod:`8_plot_contact_titration` can be rewritten as many times as it needs to be
-without folding anything again.
+Step two of three. Reads what :mod:`8_make_contact_ranking_data` wrote, puts the
+contacts in an order, and folds the protein once per prefix of that order with
+Helico: no contacts, then the first, the first two, and so on. Every prediction's
+coordinates and scores are stored, so :mod:`8_plot_contact_titration` can be
+rewritten as many times as it needs to be without folding anything again.
+
+``--order`` picks the order, and each writes its own dataset:
+
+``confidence`` (default)
+    Vote count across the 100 rollouts, tie-broken by the pairwise log-prob —
+    #82's ranking, and the order a deployment would actually cut its list in.
+
+``rollout``
+    The order **one** rollout wrote its contacts in. This is not a ranking: the
+    model is never asked to emit its best guess first. Whether it does anyway is
+    the question the second animation puts on screen. The rollout is the median
+    one by F1 against the experimental contacts — a rule, not a hand-picked
+    index, so it stays typical rather than flattering.
 
 **This runs in Helico's environment, not MarinFold's.** Helico is a separate
 repository with its own torch pin, and the MarinFold inference stack has no
@@ -59,7 +71,12 @@ from helico.inference import _token_positions, load_model
 import figlib
 
 # --- parameters ---------------------------------------------------------------------------------
-DATASET = "8_contact_titration"
+#: Two orders, two datasets. `confidence` is the deployment order — vote count across 100
+#: rollouts, which is how the published `mf_L` arm cuts its list. `rollout` is the order one
+#: rollout actually wrote its contacts in, which is not a ranking at all: the model is not asked
+#: to emit its best guess first, and whether it does anyway is the question the second animation
+#: puts on screen.
+DATASETS = {"confidence": "8_contact_titration", "rollout": "8_contact_titration_rollout"}
 RANKING = "8_contact_ranking"    # the dataset 8_make_contact_ranking_data.py wrote
 PDB_ID = "8ubs-assembly1"        # FoldBench's ground-truth entry for 8ubs_A
 CHAIN = "A"
@@ -68,6 +85,31 @@ N_SAMPLES = 3                    # helico exp14's published sampling
 N_CYCLES = 6                     # helico exp14's published recycling
 SEED = 0                         # the same diffusion noise at every k
 K_MAX = None                     # None -> the deposited chain's length (exp14's top-L cut)
+
+
+def rollout_order_pairs(statements: pd.DataFrame, rollout: int, offset: int, n_helico: int,
+                        min_separation: int):
+    """One rollout's distinct in-band contacts, in the order it wrote them, re-seated.
+
+    Repeats are dropped as they arrive — a restatement adds no contact — and so is anything the
+    chain does not cover. The ``score`` carried along is the pair's vote count across all 100
+    rollouts, which is not what orders this list but is worth keeping beside it: the second
+    animation's whole question is whether emission order tracks confidence.
+    """
+    emitted = statements[statements.rollout == rollout].sort_values("order")
+    pairs, dropped, seen = [], 0, set()
+    for row in emitted.itertuples(index=False):
+        if row.seq_i < 0 or row.seq_j - row.seq_i < min_separation:
+            continue
+        i, j = int(row.seq_i) - offset, int(row.seq_j) - offset
+        if not (0 <= i < n_helico and 0 <= j < n_helico):
+            dropped += 1
+            continue
+        if (i, j) in seen:
+            continue
+        seen.add((i, j))
+        pairs.append((i, j, float(row.seq_i)))
+    return pairs, dropped
 
 
 def ranked_pairs(score: np.ndarray, offset: int, n_helico: int, min_separation: int):
@@ -99,10 +141,15 @@ def main() -> None:
     parser.add_argument("--n-samples", type=int, default=N_SAMPLES)
     parser.add_argument("--n-cycles", type=int, default=N_CYCLES)
     parser.add_argument("--pdb-id", default=PDB_ID)
+    parser.add_argument("--order", default="confidence", choices=sorted(DATASETS),
+                        help="confidence: vote count across the 100 rollouts (the deployment "
+                             "order). rollout: the order one median-accuracy rollout wrote them.")
     arguments = parser.parse_args()
+    dataset = DATASETS[arguments.order]
 
     inputs = figlib.Inputs()
-    ranking_dir = figlib.require(RANKING, "score.npy", "votes.npy", "target.json")
+    ranking_dir = figlib.require(RANKING, "score.npy", "votes.npy", "target.json",
+                                 "statements.csv")
     score = np.load(inputs.add_file(ranking_dir / "score.npy")).astype(np.float64)
     votes = np.load(inputs.add_file(ranking_dir / "votes.npy")).astype(np.int64)
     target = json.loads(inputs.add_file(ranking_dir / "target.json").read_text())
@@ -131,20 +178,13 @@ def main() -> None:
     print(f"{target['stem']}: prompt {len(prompt)} residues, deposited chain {len(folded)}, "
           f"offset {offset}")
 
-    candidates, dropped = ranked_pairs(score, offset, len(folded), figlib.MIN_SEPARATION)
-    k_max = arguments.k_max if arguments.k_max is not None else len(folded)
-    if k_max > len(candidates):
-        raise SystemExit(f"asked for {k_max} contacts but only {len(candidates)} candidates map")
-    print(f"{len(candidates)} candidate pairs map onto the chain, {dropped} dropped; "
-          f"folding k = 0 .. {k_max}")
-
     ccd = parse_ccd()
     model = load_model()
-    tokenized = None
 
     # The experimental contact map, by the same pyconfind rule MarinFold's documents use, so the
     # animation can colour each predicted contact by whether it is real. Token space -> the
-    # chain's residue space, which is what everything else here is in.
+    # chain's residue space, which is what everything else here is in. It comes first because
+    # choosing the median rollout needs it.
     reference = predict_target(model, chains, ccd, target_name=target["stem"],
                                n_samples=1, n_cycles=1)
     if reference is None:
@@ -157,6 +197,39 @@ def main() -> None:
     true_contacts = (oracle[np.ix_(positions, positions)] == CONTACT_PRESENT).numpy()
     print(f"{len(positions)} protein tokens of {tokenized.n_tokens} · "
           f"{int(np.triu(true_contacts, figlib.MIN_SEPARATION).sum())} experimental contacts")
+
+    featured = None
+    if arguments.order == "rollout":
+        statements = pd.read_csv(ranking_dir / "statements.csv")
+        # `rollout_accuracy` scores against a matrix, so the statements have to be in that
+        # matrix's indexing first. Anything the chain does not cover becomes -1, which is the
+        # value it already drops.
+        seated = statements.seq_i - offset, statements.seq_j - offset
+        within = (seated[0] >= 0) & (seated[1] < len(folded)) & (statements.seq_i >= 0)
+        mapped = statements.assign(seq_i=seated[0].where(within, -1),
+                                   seq_j=seated[1].where(within, -1))
+        accuracy = figlib.rollout_accuracy(mapped, true_contacts)
+        featured = figlib.median_rollout(accuracy)
+        row = accuracy.loc[featured]
+        print(f"rollouts      precision {accuracy.precision.mean():.3f} mean, "
+              f"{accuracy.precision.min():.3f}-{accuracy.precision.max():.3f} over "
+              f"{len(accuracy)} · {accuracy.n.median():.0f} contacts median")
+        print(f"featured      rollout {featured}: {int(row.n)} distinct contacts, "
+              f"{int(row.hits)} in the structure (precision {row.precision:.3f}, "
+              f"recall {row.recall:.3f}, F1 {row.f1:.3f} against a median F1 of "
+              f"{accuracy.f1.median():.3f})")
+        candidates, dropped = rollout_order_pairs(statements, featured, offset, len(folded),
+                                                  figlib.MIN_SEPARATION)
+        default_k = len(candidates)
+    else:
+        candidates, dropped = ranked_pairs(score, offset, len(folded), figlib.MIN_SEPARATION)
+        default_k = len(folded)
+
+    k_max = arguments.k_max if arguments.k_max is not None else default_k
+    if k_max > len(candidates):
+        raise SystemExit(f"asked for {k_max} contacts but only {len(candidates)} candidates map")
+    print(f"{arguments.order} order: {len(candidates)} pairs map onto the chain, {dropped} "
+          f"dropped; folding k = 0 .. {k_max}")
 
     pairs_frame = pd.DataFrame([
         dict(rank=rank, seq_i=i, seq_j=j, score=value, votes=int(votes[i + offset, j + offset]),
@@ -208,10 +281,11 @@ def main() -> None:
           f"k={k_max}; best {metrics.lddt.max():.4f} at k={int(metrics.lddt.idxmax())}")
 
     figlib.write_dataset(
-        DATASET,
+        dataset,
         notebook="8_make_titration_data.py",
         parameters=dict(protein=target["stem"], pdb_id=arguments.pdb_id, chain=CHAIN,
-                        k_max=k_max, n_samples=arguments.n_samples, n_cycles=arguments.n_cycles,
+                        order=arguments.order, featured_rollout=featured, k_max=k_max,
+                        n_samples=arguments.n_samples, n_cycles=arguments.n_cycles,
                         seed=SEED, ranking_dataset=RANKING),
         inputs=inputs,
         files={
@@ -228,6 +302,11 @@ def main() -> None:
             "sequence.txt": folded.encode(),
         },
         extra={
+            "order": {"kind": arguments.order, "featured_rollout": featured,
+                      "note": "confidence = vote count over the 100 rollouts (the deployment "
+                              "order). rollout = the order the median-accuracy rollout wrote "
+                              "its contacts in; the model is never asked to emit its best guess "
+                              "first."},
             "model": {"nickname": "helico contacts-msafree-01",
                       "marinfold": ranking_metadata["model"],
                       "note": "Helico folds; the contacts it conditions on come from the "

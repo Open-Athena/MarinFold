@@ -20,6 +20,13 @@ The protein is ``8ubs_A``, where the whole distance is visible: Helico alone
 manages 0.22 lDDT, and the same model given MarinFold's contacts reaches the
 oracle ceiling.
 
+Every dataset :mod:`8_make_titration_data` has written is animated, each twice:
+the full cut with a frame per contact, and a ``_light`` cut that keeps every
+frame through the transition and then steps by ``LIGHT_STRIDE``. The light cut is
+for a README — it halves the file, and what it drops is the plateau, whose whole
+content is that nothing more happens. Its lDDT curve is still drawn at every *k*,
+because the measurement was made at every *k*.
+
 **Superposition.** Kabsch on CA atoms with outlier rejection, refined from
 several starting sets — the whole chain, and contiguous windows along it — and
 the fit that ends with the most CA within ``TRIM_CUTOFF`` wins. Plain least
@@ -66,7 +73,9 @@ from matplotlib.patches import Rectangle                               # noqa: E
 
 import figlib                                                          # noqa: E402
 
-DATASET = "8_contact_titration"
+#: Dataset -> the GIF it is written as. `8_make_titration_data.py --order` writes one of each.
+DATASETS = {"8_contact_titration": "contact_titration_8ubs",
+            "8_contact_titration_rollout": "contact_titration_8ubs_rollout_order"}
 DPI = 100
 #: 64 rather than 128: the flat-shaded render uses few distinct colours, and the palette is the
 #: one lever on file size that costs nothing visible here.
@@ -91,6 +100,12 @@ TRIM_CYCLES, TRIM_CUTOFF, TRIM_MIN_FRACTION = 8, 2.0, 0.15
 #: a plateau, so the first SLOW_FRAMES are held and the plateau is run through.
 SLOW_FRAMES, SLOW_MS, FAST_MS, HOLD_MS = 24, 230, 60, 2600
 
+#: The light cut: every contact through the transition, then every LIGHT_STRIDE-th. Halves the
+#: file for a README without losing anything, because the frames it drops are the plateau — the
+#: part whose whole content is that nothing more happens. The lDDT curve still draws every k, so
+#: the plateau is still *shown*, just not one frame at a time.
+LIGHT_DENSE_UNTIL, LIGHT_STRIDE, LIGHT_FAST_MS = 40, 3, 110
+
 RAY_SIZE = 900                # PyMOL render, square, cropped to its ink afterwards
 PYMOL = os.environ.get("PYMOL") or shutil.which("pymol") or str(Path.home() / "pymolenv/bin/pymol")
 
@@ -106,10 +121,10 @@ THREE_LETTER = {
 # --------------------------------------------------------------------------------------------
 
 
-def load_dataset() -> dict:
+def load_dataset(name: str) -> dict:
     """Everything the two halves of this script read, plus what `describe` printed."""
-    metadata = figlib.describe(DATASET)
-    directory = figlib.require(DATASET, "pred_coords.npy", "gt_coords.npy", "atom_index.csv",
+    metadata = figlib.describe(name)
+    directory = figlib.require(name, "pred_coords.npy", "gt_coords.npy", "atom_index.csv",
                                "metrics.csv", "ranked_contacts.csv", "true_contacts.npy",
                                "sequence.txt")
     sequence = (directory / "sequence.txt").read_text().strip()
@@ -123,6 +138,8 @@ def load_dataset() -> dict:
         true_contacts=np.load(directory / "true_contacts.npy"),
         stem=metadata["parameters"]["protein"],
         pdb_id=metadata["parameters"]["pdb_id"].split("-")[0].upper(),
+        order=metadata["parameters"].get("order", "confidence"),
+        featured_rollout=metadata["parameters"].get("featured_rollout"),
     )
 
 
@@ -266,7 +283,7 @@ def render_structures(data: dict, aligned: np.ndarray, cache: Path) -> list[Path
     The deposited structure is loaded once and the camera fixed on it, so the view is identical in
     every frame and the prediction is the only thing that moves.
     """
-    digest = hashlib.sha256(aligned.tobytes()).hexdigest()[:16]
+    digest = hashlib.sha256(aligned.tobytes()).hexdigest()[:16]   # per dataset, by construction
     frames_dir = cache / digest
     reference = frames_dir / "deposited.png"
     expected = [frames_dir / f"{k:04d}.png" for k in range(len(aligned))]
@@ -369,7 +386,9 @@ class Frame:
     """One reusable figure: contact map, structure, curve. Artists are updated, not rebuilt."""
 
     SIZE = (12.6, 4.8)
-    MAP_RECT = (0.038, 0.155, 3.5 / SIZE[0], 3.5 / SIZE[1])
+    # The map is 3.4 in, not 3.5: at 3.5 its top spine lands at 0.884 and the subtitle's
+    # descenders reach 0.8775, so the two touch. The title block moved up as well.
+    MAP_RECT = (0.038, 0.155, 3.4 / SIZE[0], 3.4 / SIZE[1])
     STRUCTURE_RECT = (0.335, 0.135, 3.9 / SIZE[0], 3.9 / SIZE[1])
     CURVE_RECT = (0.705, 0.235, 0.265, 0.545)
 
@@ -379,8 +398,8 @@ class Frame:
         length = data["length"]
         self.figure = plt.figure(figsize=self.SIZE, dpi=DPI)
         self.figure.patch.set_facecolor("white")
-        self.figure.text(0.038, 0.955, header, fontsize=12.5, va="top")
-        self.figure.text(0.038, 0.905, subheader, fontsize=9.5, va="top", color="#555555")
+        self.figure.text(0.038, 0.975, header, fontsize=12.5, va="top")
+        self.figure.text(0.038, 0.925, subheader, fontsize=9.5, va="top", color="#555555")
 
         # --- the contact map ----------------------------------------------------------------
         self.axis = self.figure.add_axes(self.MAP_RECT)
@@ -459,8 +478,25 @@ class Frame:
         return np.asarray(self.figure.canvas.buffer_rgba())[..., :3].copy()
 
 
-def frames(frame: Frame, data: dict, renders: list[np.ndarray], core: np.ndarray):
-    """Yield ``(rgb, milliseconds)``, one frame per contact count."""
+def frame_counts(k_max: int, stride: int = 1, dense_until: int = 0) -> list[int]:
+    """The contact counts to draw a frame at: every one up to ``dense_until``, then every stride.
+
+    ``k_max`` is always included, whatever the stride divides into.
+    """
+    counts = list(range(0, min(dense_until, k_max) + 1))
+    counts += [k for k in range(counts[-1] + stride, k_max + 1, stride)]
+    if counts[-1] != k_max:
+        counts.append(k_max)
+    return counts
+
+
+def frames(frame: Frame, data: dict, renders: list[np.ndarray], core: np.ndarray,
+           counts: list[int], fast_ms: int = FAST_MS):
+    """Yield ``(rgb, milliseconds)``, one frame per entry in ``counts``.
+
+    A frame at *k* shows every contact up to *k*, so a skipped step is not a skipped contact — the
+    map still gains all of them, several at once, and the highlight marks the last.
+    """
     from matplotlib.colors import to_rgb
 
     metrics = data["metrics"]
@@ -468,13 +504,15 @@ def frames(frame: Frame, data: dict, renders: list[np.ndarray], core: np.ndarray
     canvas = frame.base_canvas()
     length = data["length"]
     hits = 0
+    drawn = 0
 
-    for k in range(len(metrics)):
-        if k:
-            row = contacts.iloc[k - 1]
+    for k in counts:
+        for step in range(drawn, k):
+            row = contacts.iloc[step]
             hits += int(row.true_contact)
             canvas[int(row.seq_j), int(row.seq_i)] = to_rgb(HIT if row.true_contact else MISS)
             frame.highlight.set_xy((int(row.seq_i) - 1.6, int(row.seq_j) - 1.6))
+        drawn = k
         frame.image.set_data(canvas)
 
         if frame.structure_image is None:
@@ -492,10 +530,12 @@ def frames(frame: Frame, data: dict, renders: list[np.ndarray], core: np.ndarray
         frame.structure_detail.set_text(
             f"backbone RMSD {measured.rmsd:.1f} Å · {core[k]} of {length} "
             f"Cα within {TRIM_CUTOFF:.0f} Å")
+        # Every k up to here, not just the ones with a frame: the curve is the measurement and it
+        # was made at all of them.
         frame.curve.set_data(np.arange(k + 1), metrics.lddt.to_numpy()[:k + 1])
         frame.curve_point.set_data([k], [measured.lddt])
         frame.curve_label.set_text(f"{measured.lddt:.3f}")
-        yield frame.draw(), (SLOW_MS if k <= SLOW_FRAMES else FAST_MS)
+        yield frame.draw(), (SLOW_MS if k <= SLOW_FRAMES else fast_ms)
 
 
 def write_gif(name: str, images, durations) -> None:
@@ -514,47 +554,80 @@ def write_gif(name: str, images, durations) -> None:
           f"{path.stat().st_size / 2**20:.2f} MiB")
 
 
-def main() -> None:
-    """Superpose, render, animate."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cache", default=str(figlib.FIGURES / ".cache/8_titration_frames"),
-                        help="where PyMOL renders are kept between runs")
-    arguments = parser.parse_args()
+#: The subtitle says which order the animation is in, because the two are otherwise identical
+#: pictures making different claims.
+SUBTITLE = {
+    "confidence": "MarinFold's contacts, most confident first, folded by Helico at every step",
+    "rollout": "MarinFold's contacts in the order one rollout wrote them, folded at every step",
+}
 
-    data = load_dataset()
+
+def build(name: str, cache: Path) -> dict:
+    """Animate one dataset, at full length and as a light cut. Returns its summary."""
+    data = load_dataset(name)
     metrics = data["metrics"]
+    k_max = len(metrics) - 1
     aligned, core = superpose_all(data)
     print(f"\nsuperposition core {core.min()}-{core.max()} of {data['length']} CA "
           f"(median {int(np.median(core))})")
     print(f"lDDT          {metrics.lddt.iloc[0]:.3f} with no contacts -> "
-          f"{metrics.lddt.iloc[-1]:.3f} with {len(metrics) - 1} · "
+          f"{metrics.lddt.iloc[-1]:.3f} with {k_max} · "
           f"best {metrics.lddt.max():.3f} at k={int(metrics.lddt.idxmax())}")
     reached = metrics.index[metrics.lddt >= 0.9 * metrics.lddt.max()]
     print(f"contacts      {int(reached[0])} reach 90% of the best lDDT · "
-          f"top-{len(metrics) - 1} precision {data['contacts'].true_contact.mean():.3f}")
+          f"{data['order']} order · precision {data['contacts'].true_contact.mean():.3f}")
 
-    renders = crop_to_ink(*render_structures(data, aligned, Path(arguments.cache)))
-    frame = Frame(data, f"{data['pdb_id']} · one contact at a time",
-                  "MarinFold's contacts, best first, folded by Helico at every step")
-    images, durations = zip(*frames(frame, data, renders, core))
-    images, durations = list(images), list(durations)
-    durations[-1] = HOLD_MS
-    write_gif("contact_titration_8ubs", images, durations)
-    plt.close(frame.figure)
+    renders = crop_to_ink(*render_structures(data, aligned, cache))
+    stem = DATASETS[name]
+    header = f"{data['pdb_id']} · one contact at a time"
+    for suffix, counts, fast in (
+            ("", frame_counts(k_max), FAST_MS),
+            ("_light", frame_counts(k_max, LIGHT_STRIDE, LIGHT_DENSE_UNTIL), LIGHT_FAST_MS)):
+        frame = Frame(data, header, SUBTITLE[data["order"]])
+        images, durations = zip(*frames(frame, data, renders, core, counts, fast))
+        images, durations = list(images), list(durations)
+        durations[-1] = HOLD_MS
+        write_gif(f"{stem}{suffix}", images, durations)
+        plt.close(frame.figure)
 
-    # The curve on its own, as a still: it is the quantitative claim the animation makes and a
+    # The curve on its own, as a still: it is the quantitative claim the animation makes, and a
     # document that cannot show a GIF still needs it.
     figure, axis = plt.subplots(figsize=(3.6, 2.8), layout="constrained")
     axis.plot(metrics.k, metrics.lddt, color=HIT, lw=1.8)
     axis.set(xlabel="MarinFold contacts supplied", ylabel="lDDT", ylim=(0, 1.0),
              xlim=(0, metrics.k.max()))
-    figlib.save_figure(figure, "contact_titration_lddt", DPI)
+    figlib.save_figure(figure, f"{stem}_lddt", DPI)
     plt.close(figure)
 
-    summary = {"lddt_k0": float(metrics.lddt.iloc[0]), "lddt_max": float(metrics.lddt.max()),
-               "k_best": int(metrics.lddt.idxmax()),
-               "k_90pct": int(reached[0]), "core_median": int(np.median(core))}
-    print(json.dumps(summary, indent=2))
+    return {"dataset": name, "order": data["order"],
+            "featured_rollout": data["featured_rollout"],
+            "lddt_k0": float(metrics.lddt.iloc[0]), "lddt_max": float(metrics.lddt.max()),
+            "lddt_final": float(metrics.lddt.iloc[-1]), "k_max": k_max,
+            "k_best": int(metrics.lddt.idxmax()), "k_90pct": int(reached[0]),
+            "precision": float(data["contacts"].true_contact.mean()),
+            "core_median": int(np.median(core))}
+
+
+def main() -> None:
+    """Superpose, render, animate — every dataset that has been generated."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cache", default=str(figlib.FIGURES / ".cache/8_titration_frames"),
+                        help="where PyMOL renders are kept between runs")
+    parser.add_argument("--dataset", action="append", choices=sorted(DATASETS),
+                        help="repeatable; default is every dataset that has been generated")
+    arguments = parser.parse_args()
+
+    wanted = arguments.dataset or sorted(DATASETS)
+    available = [name for name in wanted
+                 if (figlib.dataset_dir(name) / "metadata.json").exists()]
+    missing = [name for name in wanted if name not in available]
+    if missing:
+        print(f"note: {', '.join(missing)} has not been generated — run "
+              f"8_make_titration_data.py --order for it")
+    if not available:
+        raise SystemExit("no titration dataset has been generated")
+
+    print(json.dumps([build(name, Path(arguments.cache)) for name in available], indent=2))
 
 
 if __name__ == "__main__":

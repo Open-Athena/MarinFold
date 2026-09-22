@@ -121,17 +121,8 @@ def choose_rollout(data) -> int:
     A rollout is scored on the distinct, scorable pairs it emitted — the same set that casts its
     votes — against the experimental contacts.
     """
-    counted = data["statements"][data["statements"].scorable & ~data["statements"].duplicate]
-    per_rollout = counted.groupby("rollout").agg(n=("hit", "size"), hits=("hit", "sum"))
-    per_rollout["precision"] = per_rollout.hits / per_rollout.n
-    per_rollout["recall"] = per_rollout.hits / data["n_true"]
-    per_rollout["f1"] = (2 * per_rollout.precision * per_rollout.recall
-                         / (per_rollout.precision + per_rollout.recall))
-    ranked = per_rollout.assign(
-        f1_distance=(per_rollout.f1 - per_rollout.f1.median()).abs().round(6),
-        size_distance=(per_rollout.n - per_rollout.n.median()).abs(),
-    ).sort_values(["f1_distance", "size_distance"])
-    chosen = int(ranked.index[0])
+    per_rollout = figlib.rollout_accuracy(data["statements"], data["truth"])
+    chosen = figlib.median_rollout(per_rollout)
     row = per_rollout.loc[chosen]
     print(f"\nrollouts      precision {per_rollout.precision.mean():.3f} mean, "
           f"{per_rollout.precision.min():.3f}-{per_rollout.precision.max():.3f} over "
