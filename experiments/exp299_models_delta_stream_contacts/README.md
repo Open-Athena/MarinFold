@@ -129,6 +129,25 @@ exp177 final at step 71,359. Final train loss was 0.9190 and final/best native
 validation loss was 0.91425. The learning rate ended at 1.0e-4 after peaking at
 1.0e-3.
 
+### Exp277-scale follow-up
+
+The next run applies the successful V2 serialization to the complete exp277
+first-epoch corpus: 232,090,905 decontaminated native and ProteinMPNN-redesigned
+protein documents. `convert_exp277_caches_to_delta_stream.py` reads the four
+existing token caches in `marin-us-east-02a`, recovers each document's canonical
+N-to-C sequence and undirected contact set, and writes V2 token IDs without
+re-fetching structures or recomputing contacts. Conversion is fail-loud and can
+strictly parse every emitted V2 document back to the same sequence/contact set.
+
+The original 2,080-token V2 vocabulary represents offsets through ±1,024. The
+exp277 source format permits chains through 2,000 residues, so the follow-up
+extends V2 by appending tokens for offsets ±1,025 through ±1,999. All original
+IDs remain unchanged; no source contact is dropped. A full census and fresh
+packed-example count will determine the one-epoch optimizer-step count. The
+training target is one finite pass over all source documents with exp277's
+batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe, rather than blindly
+copying exp277's contacts-v1 step count.
+
 ### Conclusion at 28%: large matched-training win
 
 V2 step 22,000 and exp177 step 20,000 are matched in both estimated protein
