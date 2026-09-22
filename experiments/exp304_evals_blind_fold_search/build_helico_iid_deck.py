@@ -256,7 +256,7 @@ def main() -> None:
             contact_panel(fig.add_subplot(grid[0, 2]), input2.contacts, true2,
                           f"Fold2 {status2} · rollout {int(chosen2.rollout) + 1}", ORANGE,
                           bounds)
-            axis = fig.add_subplot(grid[1, :2])
+            axis = fig.add_subplot(grid[1, 0])
             iid = pair_scores[pair_scores.kind == "iid"]
             points = axis.scatter(
                 iid.gdt_region_global_fit_fold1, iid.gdt_region_global_fit_fold2,
@@ -274,14 +274,16 @@ def main() -> None:
                       linestyle=":", linewidth=0.8)
             axis.plot(diagonal, diagonal + PRIMARY_REGION_MARGIN, color=ORANGE,
                       linestyle=":", linewidth=0.8)
-            axis.set(xlim=(0, 1), ylim=(0, 1), xlabel="Region Kabsch GDT-TS vs Fold1",
-                     ylabel="Region Kabsch GDT-TS vs Fold2")
-            axis.set_title("All 1,000 Helico predictions", loc="left", fontsize=10,
-                           fontweight="bold")
+            axis.set(xlim=(0, 1), ylim=(0, 1),
+                     xlabel="Fold1 switching-region GDT",
+                     ylabel="Fold2 switching-region GDT")
+            axis.set_box_aspect(1)
+            axis.set_title("All 1,000 predictions · whole-protein Kabsch fit", loc="left",
+                           fontsize=9, fontweight="bold")
             axis.legend(frameon=False, fontsize=8)
-            fig.colorbar(points, ax=axis, fraction=0.03, pad=0.02, label="Rollout")
+            fig.colorbar(points, ax=axis, fraction=0.046, pad=0.04, label="Rollout")
             axis.spines[["top", "right"]].set_visible(False)
-            text_axis = fig.add_subplot(grid[1, 2])
+            text_axis = fig.add_subplot(grid[1, 1:])
             text_axis.set_axis_off()
             text_axis.text(0, 1,
                 "Post-hoc structural screen\n"
@@ -314,6 +316,18 @@ def main() -> None:
                 f"  Fold2 CA RMSD: {chosen2.rmsd_common_target:.2f} Å\n"
                 f"  Fold2 mean pLDDT: {chosen2.mean_plddt:.1f}",
                 va="top", fontsize=8.0, linespacing=1.15)
+            text_axis.text(
+                0.58, 1,
+                "Scatter definition\n"
+                "For each reference separately:\n"
+                "  1. Kabsch-fit all common Cα atoms.\n"
+                "  2. Keep distances in the switching region.\n"
+                "  3. Average the fractions below\n"
+                "     1, 2, 4, and 8 Å.\n\n"
+                "Higher is closer. This is a single-fit\n"
+                "threshold score, not iterative GDT-TS.",
+                va="top", fontsize=8.0, linespacing=1.2, color="#444444",
+            )
             save_page(pdf, fig, page_dir / f"{protein_index:03d}_{pair_id}_contacts.png")
 
             fig = plt.figure(figsize=(13.33, 7.5))
