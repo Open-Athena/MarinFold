@@ -9,6 +9,7 @@ GPU worker across all of its cuts so model setup is paid only once.
 import csv
 import dataclasses
 import datetime as dt
+import hashlib
 import json
 import os
 import platform
@@ -28,7 +29,8 @@ TARGETS = Path("/root/sweep/data") if Path("/root/sweep/data/targets.csv").exist
 RESULTS = HERE / "scratch" / "results"
 HELICO_REPO = Path("/root/helico") if Path("/root/helico/src").exists() else Path(os.environ.get("HELICO_REPO", "/home/bizon/git/helico"))
 HELICO_SHA = "b10385d736673c81b10e70d1099962af6f2573c0"
-CHECKPOINT = "/ckpts/contacts-msafree-01/final.pt"
+CHECKPOINT = "/ckpts/contacts-msafree-01/contacts-msafree-01-step-6000.pt"
+CHECKPOINT_SHA256 = "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644"
 N_SAMPLES = 3
 N_CYCLES = 6
 SEED = 42
@@ -45,6 +47,15 @@ def source_sha() -> str:
     if subprocess.check_output(["git", "status", "--porcelain", "--", "src", "pyproject.toml"], cwd=HELICO_REPO):
         raise RuntimeError("Helico src or pyproject.toml has uncommitted changes")
     return sha
+
+
+def sha256(path: str | Path) -> str:
+    """Hash a checkpoint before loading so its path cannot silently drift."""
+    value = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1 << 20), b""):
+            value.update(chunk)
+    return value.hexdigest()
 
 
 def estimate() -> tuple[int, float]:
@@ -123,6 +134,9 @@ class Predictor:
         ccd_volume.commit()
 
         started = time.monotonic()
+        actual_digest = sha256(CHECKPOINT)
+        if actual_digest != CHECKPOINT_SHA256:
+            raise ValueError(f"Helico checkpoint digest {actual_digest} != {CHECKPOINT_SHA256}")
         checkpoint = torch.load(CHECKPOINT, map_location="cpu", weights_only=False)
         if "model_state_dict" not in checkpoint or checkpoint.get("step") != 6000:
             raise ValueError(f"unexpected Helico checkpoint at {CHECKPOINT}")
@@ -293,6 +307,7 @@ def run() -> None:
     manifest = {
         "tag": TAG, "helico_source_sha": HELICO_SHA,
         "helico_checkpoint": CHECKPOINT, "helico_checkpoint_step": 6000,
+        "helico_checkpoint_sha256": CHECKPOINT_SHA256,
         "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
         "n_targets": len(targets), "n_cuts": expected_cuts, "n_samples": len(samples),
         "n_diffusion_samples_per_cut": N_SAMPLES, "n_trunk_recycles": N_CYCLES,

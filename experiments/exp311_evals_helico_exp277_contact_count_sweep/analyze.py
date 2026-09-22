@@ -172,6 +172,8 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
 
     grouped_cut: dict[tuple[str, int, str], list[dict]] = defaultdict(list)
     for row in per_cut_target:
+        if row["n_pairs"] % 10:
+            continue
         grouped_cut[(row["eval_set"], row["n_pairs"], row["metric"])].append(row)
     cut_curve = []
     for (eval_set, k, metric), rows in sorted(grouped_cut.items()):
