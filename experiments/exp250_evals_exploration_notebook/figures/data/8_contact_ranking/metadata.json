@@ -1,9 +1,9 @@
 {
-  "dataset": "7_rollout_animation",
-  "notebook": "7_make_rollout_animation_data.py",
-  "generated_utc": "2026-09-22T18:52:52+00:00",
+  "dataset": "8_contact_ranking",
+  "notebook": "8_make_contact_ranking_data.py",
+  "generated_utc": "2026-09-22T18:54:07+00:00",
   "parameters": {
-    "protein": "denovo_pdb__1qys_A",
+    "protein": "8ubs_A",
     "model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
     "n_rollouts": 100,
     "temperature": 1.0,
@@ -20,7 +20,10 @@
     "dirty": true,
     "dirty_files": [
       "M experiments/exp250_evals_exploration_notebook/figures/7_make_rollout_animation_data.py",
-      " M experiments/exp250_evals_exploration_notebook/figures/figlib.py"
+      " M experiments/exp250_evals_exploration_notebook/figures/data/7_rollout_animation/metadata.json",
+      " M experiments/exp250_evals_exploration_notebook/figures/figlib.py",
+      "?? experiments/exp250_evals_exploration_notebook/figures/8_make_contact_ranking_data.py",
+      "?? experiments/exp250_evals_exploration_notebook/figures/data/8_contact_ranking/"
     ]
   },
   "machine": {
@@ -47,44 +50,40 @@
   },
   "inputs": [
     {
-      "path": "/home/bizon/git/MarinFold/.claude/worktrees/top7-heatmap-animated-gif-3ecdeb/experiments/exp94_evals_sequence_knn_baseline/data/eval_queries.fasta",
-      "bytes": 114366,
-      "sha256": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a"
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "bytes": 97519,
+      "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
     },
     {
-      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp89/gt_universe.jsonl",
-      "bytes": 7956102,
-      "sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9"
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "bytes": 199548,
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
     }
   ],
   "outputs": {
     "completions.txt": {
-      "bytes": 193780,
-      "sha256": "eb751b64eee7fd9bfcf36975b4db2ae8a18eaf1758eb76edfabbdc9b4f8277d9"
+      "bytes": 382718,
+      "sha256": "cddd330c846f02d6ebe3a25f8dc5c24073c886b0b0bceb4491fd80f017b772f9"
     },
     "statements.csv": {
-      "bytes": 220889,
-      "sha256": "9182aa21fe049d77639d354debccadc421949d3ab37c953f46ed953bfa4bc897"
+      "bytes": 458645,
+      "sha256": "624f6a69867da660655af6b6717d2432263f6ea7dffddfa0695e1d3d480a8b75"
     },
     "rollouts.csv": {
-      "bytes": 2092,
-      "sha256": "88446d3bd0e55f92d110ed78b9c28444f73d761441e28829bccc40127d162e52"
+      "bytes": 2180,
+      "sha256": "224261943438087bc86313b467d8676f86cc75549894c5f79a87f12c3c887b8b"
     },
     "votes.npy": {
-      "bytes": 17056,
-      "sha256": "bbed5997792e768d2abbba3a87a2cab1781ed482a770dabe6bf7a9f2dd957931"
+      "bytes": 45730,
+      "sha256": "ff6ac27ffe925c27726c411fa0e2d647356b6ac786a2e10a87ee533f80bf823b"
     },
     "score.npy": {
-      "bytes": 33984,
-      "sha256": "56dca3ffd2a73f7a9e292398cd2998a0a4584c3cc902ae762eca4845227cf09f"
+      "bytes": 91332,
+      "sha256": "2059b5ac137653b5ddd3acc186dfa1a07bc86ad347c6e5bfd4b454d81381a364"
     },
-    "ground_truth.json": {
-      "bytes": 12744,
-      "sha256": "b63c46f5754fc3eb29e24a5006d2c3e489f2ba192bb5fce8ea90e11449f1ad89"
-    },
-    "metrics.csv": {
-      "bytes": 726,
-      "sha256": "cf43fc163804438b38a010cf44fb818210f363840757127d4bd4c0d6f1fc2dab"
+    "target.json": {
+      "bytes": 298,
+      "sha256": "0a379efb21b82640cef90e049b50b011a49b7e90856a59ae2609b97fe01d429d"
     }
   },
   "model": {
@@ -129,27 +128,20 @@
     "top_p": 0.95,
     "top_k": -1,
     "seed": 0,
-    "max_new_tokens": 432,
+    "max_new_tokens": 668,
     "min_seq_separation": 6
   },
   "protein": {
-    "dataset": "denovo_pdb",
-    "stem": "1qys_A",
-    "L": 92,
-    "sequence_sha256": "66479a8c204936ae9efb3db388bcaf401a3a09aef482c6c942da888f2eefb2ad",
-    "n_true_contacts": 76,
-    "n_candidate_pairs": 3741
+    "stem": "8ubs_A",
+    "L": 151,
+    "sequence_sha256": "4eed18ee088a081aa9eccd7aafa3f449928db4323e69264a54c1cad9d701de72"
   },
   "rollouts": {
-    "n_statements": 7752,
+    "n_statements": 15435,
     "n_off_protein": 0,
     "n_truncated": 0,
-    "statements_per_rollout_median": 77.0,
+    "statements_per_rollout_median": 155.0,
     "max_votes": 100,
-    "note": "statements.csv is in emission order \u2014 the whole point of this dataset. seq_i/seq_j are -1 for a position token outside the protein."
-  },
-  "result": {
-    "r_precision_all": 0.6710526315789473,
-    "auc_all": 0.9921519350901128
+    "note": "votes.npy / score.npy are in the #245 PROMPT's 0-based indexing (L=151 for 8ubs_A), not the deposited chain's. 8_make_titration_data.py re-seats them."
   }
 }

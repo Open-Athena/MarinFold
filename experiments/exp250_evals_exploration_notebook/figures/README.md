@@ -12,6 +12,7 @@ Same number, same figure. Nothing is recomputed at plot time.
 | 5 | [`5_make_training_composition_data`](5_make_training_composition_data.ipynb) | [`5_plot_training_composition`](5_plot_training_composition.ipynb) | CPU | `training_composition` |
 | 6 | [`6_make_msa_depth_data`](6_make_msa_depth_data.ipynb) | [`6_plot_msa_depth`](6_plot_msa_depth.ipynb) | CPU | `msa_depth_gdt_ts`, `msa_depth_lddt` |
 | 7 | [`7_make_rollout_animation_data.py`](7_make_rollout_animation_data.py) | [`7_plot_rollout_animation.py`](7_plot_rollout_animation.py) | **GPU** | `top7_rollout_emission.gif`, `top7_rollout_consensus.gif` — figure 1's Top7 map, animated |
+| 8 | [`8_make_contact_ranking_data.py`](8_make_contact_ranking_data.py) + [`8_make_titration_data.py`](8_make_titration_data.py) | [`8_plot_contact_titration.py`](8_plot_contact_titration.py) | **GPU** ×2 | `contact_titration_8ubs.gif`, `contact_titration_lddt` — one contact at a time into Helico |
 
 Datasets land in `data/<n>_<name>/`, figures in `output/` as a 300 dpi PNG and a vector PDF. No
 titles and no panel letters are baked into a figure — captions and lettering belong to the
@@ -43,6 +44,57 @@ be recovered from a vote matrix, which is why
 [#98](https://github.com/Open-Athena/MarinFold/issues/98)'s published rollouts could not answer
 [#102](https://github.com/Open-Athena/MarinFold/issues/102) and #102 had to regenerate them. The
 vote matrix is still written, and is the matrix `predict` would have returned for these rollouts.
+
+## 8 spans two repositories
+
+Pair 8 picks up where 7 ends. 7 finishes on a contact map; 8 asks what the map is *for*, by
+handing Helico one more contact at a time and folding the protein again at every step — 151 folds
+of `8ubs_A`, from none to top-L, with the map, the structure and lDDT side by side.
+
+Its middle step runs in **Helico's** environment, not this one. Helico is a separate repository
+with its own torch pin and the MarinFold inference stack has no business in it, so the three steps
+are three commands in two environments, all writing into `data/`:
+
+```bash
+.venv/bin/python 8_make_contact_ranking_data.py                      # MarinFold, ~1 min
+cd ~/git/helico && .venv/bin/python <this dir>/8_make_titration_data.py   # Helico, ~30 min
+.venv/bin/python 8_plot_contact_titration.py                         # no model, ~5 min
+```
+
+**Why `8ubs_A`.** It is the case where contact conditioning is the whole story: Helico folds it to
+0.22 lDDT with no contacts and 0.87 with MarinFold's top-L, against an oracle ceiling of 0.87 —
+the contacts are worth the entire distance, and MarinFold's R-precision on it (0.821) is five
+times Protenix-v2 single-sequence's (0.160). It is in `eval-test`, the rarely-read held-out set,
+but every number above is already published (#245's per-protein table, helico exp14's per-target
+scores), so animating it reads nothing new.
+
+**Two indexings.** MarinFold is prompted with #245's 151-residue sequence; Helico folds the 150
+residues the deposited structure resolves, which is that sequence without its unresolved
+N-terminal serine. `8_make_titration_data.py` finds the offset by locating one sequence inside the
+other and fails if it is not an exact substring, rather than assuming the 1 that happens to be
+right here.
+
+**The fold is stored, not re-derived.** `pred_coords.npy` is every predicted structure, unaligned,
+in the atom order `atom_index.csv` lists; superposing and rendering are the plot step's job and
+both are things to iterate on. Re-running the plot never folds anything, and PyMOL renders are
+cached under `.cache/` on the coordinates' digest, so changing the matplotlib half is free.
+
+Three things pair 8 is careful about, each because the intuitive version is wrong:
+
+- **Superposition is trimmed, not least-squares.** Plain Kabsch over all 150 Cα splits the
+  difference when most of the chain is misplaced, so a correctly folded core never visibly
+  settles. Iterative rejection at 2 Å lets it land and leaves the rest loose. The count under the
+  panel is how many Cα end up within 2 Å — not the set the last cycle fitted over, which is all
+  150 whenever trimming is abandoned.
+- **The prediction is a tube, the deposited structure a cartoon.** Cartoon geometry re-derives
+  secondary structure per frame; a marginal helix flickering between helix and loop reads as the
+  model changing its mind when it is the renderer changing its mind. The deposited structure never
+  moves, so it can have real cartoon geometry.
+- **The crop box comes from the deposited structure alone.** With no contacts the prediction
+  sprawls over several times the fold's extent; a box drawn around the union of all frames would
+  shrink the fold to a speck in the 150 frames where it is right.
+
+## The two GIFs of pair 7
 
 The two GIFs are a pair of claims. `top7_rollout_emission` is one rollout, one statement per
 frame: **about half of what a single rollout writes is in the experimental structure** (0.51

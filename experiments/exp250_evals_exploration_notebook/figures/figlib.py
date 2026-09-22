@@ -615,3 +615,150 @@ def score_metrics(score, record: dict):
                if n_candidate and 0 < n_true < n_candidate else float("nan"))
         rows.append(dict(range=name, cut="AUC", n_candidate=n_candidate, n_true=n_true, value=auc))
     return pd.DataFrame(rows)
+
+
+# --------------------------------------------------------------------------------------------
+# Drawing rollouts — #82's rollout + resample readout, with emission order kept.
+# --------------------------------------------------------------------------------------------
+
+#: Probability floor for the pairwise log-score. `inference.py`'s `_PROB_FLOOR`, which is private.
+_PROB_FLOOR = 1e-12
+
+
+class RolloutDraw:
+    """What ``draw_rollout_votes`` produced for one protein.
+
+    ``statements`` is the whole point: one row per emitted ``<contact> <pX> <pY>``, **in the order
+    the model wrote it**, with the sequence indices its two position tokens map to (-1 for a token
+    outside the protein's slice of the position ring). ``votes`` and ``score`` are the summary
+    ``predict`` would have returned for these same rollouts — ``score`` being ``votes`` plus #82's
+    pairwise tie-break, bounded to [0, 0.5) so it only orders pairs already tied on votes.
+    """
+
+    def __init__(self, statements, per_rollout, completions, votes, score, seq_len,
+                 max_new_tokens):
+        self.statements = statements
+        self.per_rollout = per_rollout
+        self.completions = completions
+        self.votes = votes
+        self.score = score
+        self.seq_len = seq_len
+        self.max_new_tokens = max_new_tokens
+
+
+def draw_rollout_votes(sequence: str, *, entry_id: str, model: str, n_rollouts: int = 100,
+                       temperature: float = 1.0, top_p: float = 0.95, top_k: int = -1,
+                       seed: int = 0, backend: str = "transformers", dtype: str = "bfloat16",
+                       batch_size: int = 64, min_separation: int = MIN_SEPARATION) -> RolloutDraw:
+    """Draw ``n_rollouts`` contacts-v1 rollouts for one sequence and count the votes.
+
+    #82's settled rollout + resample: each rollout gets a *fresh document realization* (contacts-v1
+    randomizes the N-terminal position index and the statement order), one sampled contact-section
+    completion is drawn from each, and every distinct in-band pair a rollout asserts casts one
+    vote. The large zero-vote tie mass is then broken by the pairwise log-probability from one
+    canonical realization.
+
+    Reproduced from the public pieces of ``marinfold.document_structures.contacts_v1`` rather than
+    run through ``predict``, which returns the summed matrix and discards emission order. Every
+    step is the one ``_rollout_score_matrix`` takes; the three tie-break lines are ``_fwd_matrix``,
+    ``_sym_from_fwd`` and ``_tiebreak``, which are private, so they are stated in full here rather
+    than reached into. ``backend.next_token_probs`` — the only model call they make — is public.
+
+    ``backend`` defaults to transformers rather than vLLM because a seeded draw has to come back
+    the same on a re-run and vLLM's sampler is not seedable per request.
+
+    Raises:
+        SystemExit: the chain cannot be serialized as a contacts-v1 document, a ``<retract>``
+            statement was emitted (the vote accumulation assumes the emitted set is the live set),
+            or a pair collected more votes than there were rollouts.
+    """
+    import numpy as np
+    import pandas as pd
+    from marinfold import load_backend
+    from marinfold.document_structures.contacts_v1 import (
+        CONTEXT_LENGTH, NUM_POSITION_INDICES, GenerationConfig, build_document,
+        iter_structure_statements, residues_from_sequence, sample_contacts)
+    from marinfold.document_structures.contacts_v1.vocab import (
+        BEGIN_STRUCTURE_TOKEN, CONTACT_TOKEN, position_token)
+
+    engine = load_backend(backend, model=model, dtype=dtype, tail_batch_size=batch_size)
+    tokenizer = engine.tokenizer
+
+    residues = residues_from_sequence(sequence)
+    prefixes: list[list[int]] = []
+    n_term_indices: list[int] = []
+    seq_len = 0
+    for rollout in range(n_rollouts):
+        built = build_document(f"{entry_id}:r{rollout}", residues, [], config=GenerationConfig())
+        if built is None:
+            raise SystemExit(f"{entry_id} cannot be serialized as a contacts-v1 document")
+        document = built.document
+        cut = document.index(BEGIN_STRUCTURE_TOKEN) + len(BEGIN_STRUCTURE_TOKEN)
+        prefixes.append(list(tokenizer.encode(document[:cut], add_special_tokens=False)))
+        n_term_indices.append(built.n_term_index)
+        seq_len = built.seq_len
+    if seq_len != len(sequence):
+        raise SystemExit(f"document length {seq_len} != input sequence length {len(sequence)}")
+
+    # #82's budget: 4L + 64 tokens, sized from L only — never from the ground-truth contact count,
+    # which would make the rollout oracle-dependent.
+    max_new_tokens = min(CONTEXT_LENGTH - len(prefixes[0]), 4 * seq_len + 64)
+    completions = sample_contacts(engine, prefixes, max_new_tokens=max_new_tokens,
+                                  temperature=temperature, top_p=top_p, top_k=top_k, seed=seed,
+                                  batch_size=batch_size)
+
+    # Nothing is filtered in the parse: the near-diagonal band, the repeats and the off-protein
+    # statements are all part of what a rollout actually emits, and the caller decides.
+    rows, texts = [], []
+    for rollout, (token_ids, n_term_index) in enumerate(
+            zip(completions, n_term_indices, strict=True)):
+        text = tokenizer.decode(token_ids, skip_special_tokens=False)
+        texts.append(text)
+        for order, (kind, pos_a, pos_b) in enumerate(iter_structure_statements(text)):
+            mapped = []
+            for position in (pos_a, pos_b):
+                index = (position - n_term_index) % NUM_POSITION_INDICES
+                mapped.append(int(index) if index < seq_len else -1)
+            low, high = (min(mapped), max(mapped)) if -1 not in mapped else (-1, -1)
+            rows.append(dict(rollout=rollout, order=order, kind=kind, pos_a=pos_a, pos_b=pos_b,
+                             seq_i=low, seq_j=high))
+    statements = pd.DataFrame(rows)
+    per_rollout = pd.DataFrame([
+        dict(rollout=rollout, n_term_index=n_term_index, n_tokens=len(token_ids),
+             truncated=len(token_ids) >= max_new_tokens,
+             n_statements=int((statements.rollout == rollout).sum()))
+        for rollout, (token_ids, n_term_index) in enumerate(
+            zip(completions, n_term_indices, strict=True))])
+
+    # One vote per *distinct* in-band pair per rollout. Today's models never emit `<retract>`, so
+    # the live set is the emitted set; a retracting model would need read.py's edit-list fold here
+    # instead, and the check below is what would notice.
+    if (statements.kind != "contact").any():
+        raise SystemExit("a <retract> statement was emitted: the vote accumulation assumes the "
+                         "emitted set is the live set — fold read.py's edit list instead")
+    votes = np.zeros((seq_len, seq_len), dtype=np.int64)
+    in_band = statements[(statements.seq_i >= 0)
+                         & (statements.seq_j - statements.seq_i >= min_separation)]
+    for _, pairs in in_band.groupby("rollout"):
+        for i, j in pairs[["seq_i", "seq_j"]].drop_duplicates().itertuples(index=False):
+            votes[i, j] += 1
+            votes[j, i] += 1
+    if votes.max() > n_rollouts:
+        raise SystemExit(f"{votes.max()} votes from {n_rollouts} rollouts")
+
+    prefix_ids = prefixes[0]
+    seq_positions = [(n_term_indices[0] + k) % NUM_POSITION_INDICES for k in range(seq_len)]
+    contact_id = tokenizer.convert_tokens_to_ids(CONTACT_TOKEN)
+    position_ids = [tokenizer.convert_tokens_to_ids(position_token(p)) for p in seq_positions]
+    first = engine.next_token_probs(prefix_ids, [[contact_id]], position_ids)       # (1, L)
+    second = engine.next_token_probs(prefix_ids, [[contact_id, pid] for pid in position_ids],
+                                     position_ids)                                 # (L, L)
+    forward = (np.log(np.clip(np.asarray(first[0], dtype=np.float64), _PROB_FLOOR, None))[:, None]
+               + np.log(np.clip(np.asarray(second, dtype=np.float64), _PROB_FLOOR, None)))
+    pairwise = 0.5 * (forward + forward.T)
+    upper = np.triu_indices(seq_len, k=1)
+    low, high = float(pairwise[upper].min()), float(pairwise[upper].max())
+    score = votes + (pairwise - low) / (high - low + 1e-9) * 0.5
+
+    return RolloutDraw(statements=statements, per_rollout=per_rollout, completions=texts,
+                       votes=votes, score=score, seq_len=seq_len, max_new_tokens=max_new_tokens)
