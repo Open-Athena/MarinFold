@@ -68,7 +68,9 @@ training DB), [#142](https://github.com/Open-Athena/MarinFold/issues/142)
 **Eval set.** `supporting tables/TableS1.xlsx` from
 [`ncbi/AF2_benchmark`](https://github.com/ncbi/AF2_benchmark) — 93 fold-switching
 pairs, each as Fold1/Fold2 PDB+chain plus the fold-switching region sequence.
-178 unique entries, 177 of them already in the local RCSB mirror.
+178 unique entries, 177 of them already in the local RCSB mirror. The full
+selection funnel, source citations and gate rationale are in
+[`EVAL_SET.md`](EVAL_SET.md).
 
 Ground truth is pyconfind side-chain contact degree under exactly `contacts_v1`'s
 geometry — marinfold's `analyze_structure` with exp74's `PYCONFIND_KWARGS`,
