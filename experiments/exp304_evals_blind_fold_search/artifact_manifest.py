@@ -13,6 +13,9 @@ ROOTS = {
     "iid1000-tail-primary": HERE / "_cache" / "iid1000_tail_primary",
     "helico-inputs": HERE / "_cache" / "helico" / "data",
     "helico-results": HERE / "_cache" / "helico" / "results",
+    "helico-iid-inputs": HERE / "_cache" / "helico_iid" / "data",
+    "helico-iid-results": HERE / "_cache" / "helico_iid" / "results",
+    "helico-iid-deck": HERE / "_cache" / "helico_iid" / "deck",
     "joblogs": HERE / "_cache" / "joblogs",
 }
 
