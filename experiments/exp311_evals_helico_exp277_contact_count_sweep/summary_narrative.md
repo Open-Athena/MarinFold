@@ -43,6 +43,16 @@ eval-denovo, ESMFold2 and the Helico oracle both reach about 0.934;
 confidence-selected Helico reaches 0.8990 versus 0.8503 for top-L. The oracle
 uses ground truth and measures headroom rather than a deployable policy.
 
+## Low-MSA-depth proteins
+
+No exp311 eval-val protein has MSA depth ≤10; five have depth ≤100. On those
+five, GDT-TS is 0.6223 for Protenix-v2 + MSA, 0.5014 for ESMFold2, 0.4394 for
+the Helico oracle, 0.3745 for confidence-selected Helico, and 0.2676 for top-L.
+Among 15 eval-denovo designs at depth ≤10, confidence-selected Helico reaches
+0.8977 versus 0.8389 for top-L, 0.8949 for Protenix-v2 + MSA, and 0.9330 for
+both ESMFold2 and the Helico oracle. These inclusive cuts use the exact A3M
+given to Protenix, query included.
+
 ## Conclusion
 
 Search the contact count and use Helico confidence instead of always folding
