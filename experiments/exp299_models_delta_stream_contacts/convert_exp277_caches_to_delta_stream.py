@@ -309,11 +309,6 @@ def convert_record(
     }
 
 
-@functools.cache
-def _load_cache(cache: str) -> TreeCache:
-    return TreeCache.load(cache, {"input_ids": np.zeros((1,), dtype=np.int32)})
-
-
 def convert_work_shard(
     items: Iterator[Mapping[str, object]],
     _shard_info: object,
@@ -329,7 +324,7 @@ def convert_work_shard(
         rows = int(item["rows"])
         if max_documents_per_source_shard is not None:
             rows = min(rows, max_documents_per_source_shard)
-        cache = _load_cache(cache_path)
+        cache = TreeCache.load(cache_path, {"input_ids": np.zeros((1,), dtype=np.int32)})
         for batch_start in range(start, start + rows, batch_size):
             batch_stop = min(start + rows, batch_start + batch_size)
             batch = cache.get_batch_sync(slice(batch_start, batch_stop))
