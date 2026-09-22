@@ -205,10 +205,12 @@ def plot_means(summary: list[dict]) -> None:
             ax.set_ylim(-0.15, 7.55)
             ax.grid(axis="x", alpha=0.2)
     method_labels = [METHOD_LABEL[method_id] for method_id in METHOD_IDS]
-    axes[0, 1].set_yticks(Y_POSITIONS, method_labels)
-    axes[0, 1].tick_params(labelleft=True)
     axes[1, 0].set_yticks(Y_POSITIONS, method_labels)
-    axes[1, 1].tick_params(labelleft=False)
+    for row_index in range(2):
+        left_drawn = axes[row_index, 0].axison
+        axes[row_index, 0].tick_params(labelleft=left_drawn)
+        axes[row_index, 1].tick_params(labelleft=not left_drawn)
+    axes[0, 1].tick_params(labelbottom=True)
     fig.suptitle("Structure accuracy at low MSA depth", fontsize=18, fontweight="bold", y=0.995)
     fig.text(
         0.5,
@@ -285,10 +287,12 @@ def plot_deltas(deltas: list[dict]) -> None:
             ax.set_ylim(-0.15, 6.55)
             ax.grid(axis="x", alpha=0.2)
     method_labels = [METHOD_LABEL[method_id] for method_id in compared_ids]
-    axes[0, 1].set_yticks(positions, method_labels)
-    axes[0, 1].tick_params(labelleft=True)
     axes[1, 0].set_yticks(positions, method_labels)
-    axes[1, 1].tick_params(labelleft=False)
+    for row_index in range(2):
+        left_drawn = axes[row_index, 0].axison
+        axes[row_index, 0].tick_params(labelleft=left_drawn)
+        axes[row_index, 1].tick_params(labelleft=not left_drawn)
+    axes[0, 1].tick_params(labelbottom=True)
     fig.suptitle("Low-MSA difference from the usual top-L Helico scheme", fontsize=18, fontweight="bold", y=0.995)
     fig.text(
         0.5,
