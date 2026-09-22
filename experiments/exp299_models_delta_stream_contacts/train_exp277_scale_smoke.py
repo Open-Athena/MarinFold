@@ -19,7 +19,6 @@ from levanter.data.text.datasets import (
     DatasetComponent,
     LmDataConfig,
 )
-from levanter.data.text.formats import PrebuiltLmDatasetFormat
 from levanter.main.train_lm import TrainLmConfig
 from levanter.optim.config import AdamConfig
 from levanter.tracker.wandb import WandbConfig
@@ -32,6 +31,7 @@ from marin.training.training import (
 )
 
 from convert_exp277_caches_to_delta_stream import VOCAB_SIZE
+from delta_stream_data import PackableTokenIdsFormat
 from dispatch_delta_stream_full import MODEL_CONFIG, _mesh
 
 PREFIX = "s3://marin-us-east-02a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix"
@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 def data_config() -> LmDataConfig:
     """Use ordinary Levanter packing with EOS-aware attention boundaries."""
-    fmt = PrebuiltLmDatasetFormat(input_ids_key="input_ids")
+    fmt = PackableTokenIdsFormat()
     component = dataclasses.replace(
         DatasetComponent(cache_dir=f"{CACHE_ROOT}/train", format=fmt, pack=True),
         split="train",
