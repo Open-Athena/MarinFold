@@ -31,7 +31,7 @@ Can an inference-only search over `contacts-v1` outputs return **both** experime
 
 Use exactly the exp277 checkpoint from #301 (`contacts-v1-exp277-m2-p06-full-epoch-1.5B`, HF step 266344); no weight updates, reference contacts, PDB structures, Fold1/Fold2 labels, or annotated switching-region positions may enter search or shortlist selection. References are revealed only to the evaluator after each method has written a fixed shortlist.
 
-Primary cohort: #301's **44** identical-sequence pairs with at least 10 fold-specific contacts touching the annotated switching region on *each* side and without the context-capped `4zt0c_4cmqb`. Secondary: all **64** identical-sequence, non-capped pairs; report the 3 homolog pairs and the capped pair separately. Cluster related sequences before a roughly one-third development / two-thirds test split; freeze the split and shortlist rule before reading test outcomes. This is an algorithm-development holdout, not a claim that these proteins were absent from model training.
+Primary cohort: #301's **44** `seq_class=identical` pairs with at least 10 fold-specific contacts touching the annotated switching region on *each* side and without the context-capped `4zt0c_4cmqb`. Secondary: all **64** `seq_class=identical`, non-capped pairs; report the 3 homolog pairs and the capped pair separately. This source label means **at least 98% pair identity**, not literal sequence identity; the exact-match sensitivity analysis below was added when that discrepancy was found. Cluster related sequences before a roughly one-third development / two-thirds test split; freeze the split and shortlist rule before reading test outcomes. This is an algorithm-development holdout, not a claim that these proteins were absent from model training.
 
 Each method emits at most **16 distinct, ranked contact maps per sequence**. Preserve per-rollout contact sets, emission order, prompt/seed lineage, completion status, generated tokens, and per-input wall time: #301's hit counts and vote matrix cannot support co-occurrence search. Reuse its geometry, reference alignment, and contact parser. Fix the zero-denominator case in #301 conditioning: a dose that exhausts a fold-specific set has no remaining-contact recall and must be excluded from that comparison.
 
@@ -95,7 +95,11 @@ self-seeds of 5, 10, or 20 contacts. That is 46,900 attempted maps across the
 map; temperature finished 4,903/6,700 (73.2%) and used substantially more
 compute. A separate plain-sampling run generated 500 maps per target (33,500
 attempts). The 44-pair primary cohort contains 15 development and 29 test
-pairs. Related sequences were kept in the same split.
+pairs. Related sequences were kept in the same split. An audit of #301's
+underlying sequence alignment shows **25/44** primary pairs are literally
+identical between the two structures; **17/29** test pairs are. The other
+primary pairs have 1–6 substitutions. The source `seq_class=identical` label
+was therefore too broad to justify an exact-sequence claim.
 
 The new run reproduces #301's unconditioned fold preference: across all 67
 pairs, its 100-root-rollout mean `phi` correlates **0.999** with #301's
@@ -138,6 +142,14 @@ operational recall cutoff; 19 had enough contacts in the union but no single
 sufficiently coherent and selective pair of maps. Those categories are
 specific to the stated cutoffs.
 
+On the **17 strictly identical-sequence primary test pairs**, a post-hoc
+sensitivity analysis gives branch 10 minus independent enrichment **+0.017**
+(paired 95% interval **[-0.007, +0.044]**), essentially unchanged minority
+recall (0.128 versus 0.128), and **one dual-contact hit in each method**.
+This strengthens the conclusion that branching has no demonstrated gain on
+the exact-sequence subset; the interval is wider because the subset is
+smaller. The per-protein results are in `data/exact_sequence_primary_test.csv`.
+
 The separate plain-sampling budget run shows 2, 3, and 3 blind dual hits at
 100, 200, and 500 rollouts, versus 6, 9, and 9 oracle-pool hits. Mean blind
 enrichment rose from -0.035 to -0.026 to -0.011. The paired 500-versus-200
@@ -166,7 +178,8 @@ resolved positions. The contact-to-Helico index mapping passed a Cα-distance
 check for the native contacts. All 36 predictions completed.
 
 `3j7wb_3j7vg` is the clearest positive case. The two true-contact controls
-separate its folds. With Fold1 as the sequence input, switching-region
+separate its folds; its two reference chains have exactly the same observed
+sequence on their 317 common positions. With Fold1 as the sequence input, switching-region
 contact-neighborhood lDDT against (Fold1, Fold2) was **(0.606, 0.292)**
 for true Fold1 contacts and **(0.388, 0.723)** for true Fold2 contacts.
 Two maps in the branch-10 sealed shortlist scored **(0.477, 0.206)** and
