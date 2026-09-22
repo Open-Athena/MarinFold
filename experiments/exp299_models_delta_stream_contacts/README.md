@@ -203,6 +203,15 @@ The training target is therefore one finite 210,492-update pass over all source
 documents with exp277's batch-128, 8,192-context, LR-1e-3, WD-0.2 WSD recipe,
 rather than exp277's 266,345-update contacts-v1 count.
 
+`train_exp277_scale_full.py` implements this contract with scratch
+initialization, model/data seed 0, 10% warmup, 70% stable LR, 20% linear decay
+to 1e-4, independent validation, and native checkpoints at approximately 10%
+intervals. The loader concatenates the four finite packed sources and verifies
+all 26,942,937 examples before training rather than cycling a weighted mixture.
+A requested 4×4 GB200 job remained scheduling-gated and was cancelled; the 2×4
+GB200 fallback is queued as
+`/zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-a02`.
+
 ### Conclusion at 28%: large matched-training win
 
 V2 step 22,000 and exp177 step 20,000 are matched in both estimated protein
@@ -330,9 +339,9 @@ pipeline.
 
 ## Next steps
 
-1. Adapt exp277's finite WSD training configuration to the measured 210,492
-   updates.
-2. Report projected full-run wall time and cost before launching training.
+1. Monitor the queued 2×4 GB200 full run and create its run-history entry once
+   workers start and W&B initializes.
+2. Evaluate retained checkpoints with the canonical rollout protocol.
 
 ## Files
 
