@@ -202,17 +202,12 @@ def plot_means(summary: list[dict]) -> None:
                 capsize=3,
                 zorder=3,
             )
-            if row["ci_high"] < 0.965:
-                label_x = row["ci_high"] + 0.012
-                horizontal = "left"
-            else:
-                label_x = row["ci_low"] - 0.012
-                horizontal = "right"
-            ax.text(label_x, y, f"{mean:.3f}", va="center", ha=horizontal, fontsize=9, color=color)
+            label_x = row["ci_high"] + 0.012
+            ax.text(label_x, y, f"{mean:.3f}", va="center", ha="left", fontsize=9, color=color)
         n_targets = next(iter(by_method.values()))["n_targets"]
         ax.set_title(f"{eval_set}  ·  n={n_targets}", fontsize=13)
         ax.set_xlabel("Mean GDT-TS")
-        ax.set_xlim(0.08, 1.01)
+        ax.set_xlim(0.08, 1.06)
         ax.set_ylim(-0.15, 7.55)
         ax.grid(axis="x", alpha=0.2)
     axes[0].set_yticks(Y_POSITIONS, [METHOD_LABEL[method_id] for method_id in METHOD_IDS])
@@ -276,7 +271,7 @@ def plot_deltas(deltas: list[dict]) -> None:
         n_targets = next(iter(by_method.values()))["n_targets"]
         ax.set_title(f"{eval_set}  ·  n={n_targets}", fontsize=13)
         ax.set_xlabel("Paired Δ GDT-TS vs Helico + top-L contacts")
-        ax.set_xlim(-0.45, 0.47)
+        ax.set_xlim(-0.55, 0.57)
         ax.set_ylim(-0.15, 6.55)
         ax.grid(axis="x", alpha=0.2)
     axes[0].set_yticks(compared_positions, [METHOD_LABEL[method_id] for method_id in compared_ids])
