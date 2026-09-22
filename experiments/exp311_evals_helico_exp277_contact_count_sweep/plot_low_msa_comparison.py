@@ -178,15 +178,6 @@ def plot_means(summary: list[dict]) -> None:
             if not n_targets:
                 ax.set_axis_off()
                 ax.set_title(f"{eval_set}  ·  MSA depth ≤{threshold}  ·  n=0", fontsize=13)
-                ax.text(
-                    0.5, 0.5,
-                    "No exp311 eval-val target\nhas MSA depth ≤10",
-                    transform=ax.transAxes,
-                    ha="center",
-                    va="center",
-                    fontsize=14,
-                    color="0.35",
-                )
                 continue
             add_group_guides(ax)
             for y, method_id in zip(Y_POSITIONS, METHOD_IDS, strict=True):
@@ -213,9 +204,13 @@ def plot_means(summary: list[dict]) -> None:
             ax.set_xlim(0.02, 1.08)
             ax.set_ylim(-0.15, 7.55)
             ax.grid(axis="x", alpha=0.2)
-    axes[1, 0].set_yticks(Y_POSITIONS, [METHOD_LABEL[method_id] for method_id in METHOD_IDS])
-    axes[0, 1].tick_params(labelleft=False)
-    axes[1, 1].tick_params(labelleft=False)
+    method_labels = [METHOD_LABEL[method_id] for method_id in METHOD_IDS]
+    axes[1, 0].set_yticks(Y_POSITIONS, method_labels)
+    for row_index in range(2):
+        left_drawn = axes[row_index, 0].axison
+        axes[row_index, 0].tick_params(labelleft=left_drawn)
+        axes[row_index, 1].tick_params(labelleft=not left_drawn)
+    axes[0, 1].tick_params(labelbottom=True)
     fig.suptitle("Structure accuracy at low MSA depth", fontsize=18, fontweight="bold", y=0.995)
     fig.text(
         0.5,
@@ -257,15 +252,6 @@ def plot_deltas(deltas: list[dict]) -> None:
             if not n_targets:
                 ax.set_axis_off()
                 ax.set_title(f"{eval_set}  ·  MSA depth ≤{threshold}  ·  n=0", fontsize=13)
-                ax.text(
-                    0.5, 0.5,
-                    "No exp311 eval-val target\nhas MSA depth ≤10",
-                    transform=ax.transAxes,
-                    ha="center",
-                    va="center",
-                    fontsize=14,
-                    color="0.35",
-                )
                 continue
             ax.axhspan(-0.15, 1.8, color="#FFF3E8", zorder=-3)
             ax.axhline(2.2, color="0.82", lw=1)
@@ -300,9 +286,13 @@ def plot_deltas(deltas: list[dict]) -> None:
             ax.set_xlim(x_low, x_high)
             ax.set_ylim(-0.15, 6.55)
             ax.grid(axis="x", alpha=0.2)
-    axes[1, 0].set_yticks(positions, [METHOD_LABEL[method_id] for method_id in compared_ids])
-    axes[0, 1].tick_params(labelleft=False)
-    axes[1, 1].tick_params(labelleft=False)
+    method_labels = [METHOD_LABEL[method_id] for method_id in compared_ids]
+    axes[1, 0].set_yticks(positions, method_labels)
+    for row_index in range(2):
+        left_drawn = axes[row_index, 0].axison
+        axes[row_index, 0].tick_params(labelleft=left_drawn)
+        axes[row_index, 1].tick_params(labelleft=not left_drawn)
+    axes[0, 1].tick_params(labelbottom=True)
     fig.suptitle("Low-MSA difference from the usual top-L Helico scheme", fontsize=18, fontweight="bold", y=0.995)
     fig.text(
         0.5,
