@@ -51,14 +51,18 @@ logger = logging.getLogger(__name__)
 def data_config() -> LmDataConfig:
     """Use ordinary Levanter packing with EOS-aware attention boundaries."""
     fmt = PrebuiltLmDatasetFormat(input_ids_key="input_ids")
-    component = dataclasses.replace(DatasetComponent(cache_dir=CACHE_ROOT, format=fmt, pack=True), split="train")
+    component = dataclasses.replace(
+        DatasetComponent(cache_dir=f"{CACHE_ROOT}/train", format=fmt, pack=True),
+        split="train",
+        flat_cache=True,
+    )
     return LmDataConfig(
         tokenizer=TOKENIZER_PATH,
         vocab_size=VOCAB_SIZE,
         cache_dir=None,
         auto_build_caches=False,
-        components={"delta-v2-train": component, "delta-v2-validation": component},
-        train_weights={"delta-v2-train": 1.0, "delta-v2-validation": 0.0},
+        components={"delta-v2-train": component},
+        train_weights={"delta-v2-train": 1.0},
         shuffle=BlockShuffleConfig(io_block_size=256, window_blocks=512, perm_type="feistel"),
         mixture_block_size=1,
         block_cross_document_attention=True,
