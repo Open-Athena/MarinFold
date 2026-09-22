@@ -16,4 +16,12 @@ Four configurations were predeclared on seven development pairs. An exploratory 
 
 ## Frozen test choice
 
-Width 16 with epsilon 0.2 decaying linearly to zero over the first 20 contacts was frozen at 15:43 UTC, before reading any primary held-out references. It tied width 32 on development oracle coverage, retained one blind hit rather than zero, and cost one-third as much. It will now be tested on 29 primary held-out pairs. Contact-level hits do not prove 3D fold recovery.
+Width 16 with epsilon 0.2 decaying linearly to zero over the first 20 contacts was frozen at 15:43 UTC, before reading any primary held-out references. It tied width 32 on development oracle coverage, retained one blind hit rather than zero, and cost one-third as much.
+
+## Primary held-out result
+
+On 29 primary held-out proteins, iid100 found both reference contact modes on 6/29 in the full 100-map pool and 2/29 in the blind 16-map shortlist. Width-4 beam found 2/29 and 0/29. The frozen novelty method found 1/29 and 0/29, with no 50%-recall dual hit. It cost 27.3 times as much H100 inference as iid100 and 4.35 times as much as width 4.
+
+## Interpretation
+
+The penalty increased the fraction of previously unseen early contacts in development from 11.9% to 15.7%, but this did not improve held-out fold coverage. Relative to iid100, the novelty method gained one oracle hit and lost six; the one gain was already found by width 4 and missed by the blind shortlist. These are contact-level hits, not validated 3D alternate folds. The 29-pair sample leaves uncertainty about the exact effect size, but gives no evidence that this strategy is useful at a 100-rollout budget.

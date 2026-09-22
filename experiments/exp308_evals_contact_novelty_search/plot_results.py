@@ -16,30 +16,45 @@ PLOTS = HERE / "plots"
 
 def pilot_tradeoff(pilot: pd.DataFrame) -> None:
     """Show the cost and fold coverage of each development variant."""
-    group = pilot[pilot.cohort == "selection"].copy()
-    labels = {
-        "b16_e0p0_d0_w10": "width 16, no penalty",
-        "b16_e0p05_d0_w10": "width 16, constant 0.05",
-        "b16_e0p05_d20_w10": "width 16, early 0.05",
-        "b32_e0p05_d20_w10": "width 32, early 0.05",
-        "b16_e0p2_d20_w10": "width 16, early 0.2",
-    }
+    group = pilot[pilot.cohort == "selection"].set_index("mode")
+    first = group.iloc[0]
+    beam4_seconds = first.total_beam_seconds / first.total_time_ratio_vs_beam4
+    iid_cost = float(first.total_iid_seconds / beam4_seconds)
+    rows = [
+        ("iid100", iid_cost, int(group.iid_dual_pool.iloc[0]),
+         int(group.iid_dual_blind.iloc[0])),
+        ("width 4", 1.0, int(group.beam4_dual_pool.iloc[0]),
+         int(group.beam4_dual_blind.iloc[0])),
+        ("width 16, no penalty", float(group.loc["b16_e0p0_d0_w10", "total_time_ratio_vs_beam4"]),
+         int(group.loc["b16_e0p0_d0_w10", "dual_pool"]),
+         int(group.loc["b16_e0p0_d0_w10", "dual_blind"])),
+        ("width 16, constant 0.05", float(group.loc["b16_e0p05_d0_w10", "total_time_ratio_vs_beam4"]),
+         int(group.loc["b16_e0p05_d0_w10", "dual_pool"]),
+         int(group.loc["b16_e0p05_d0_w10", "dual_blind"])),
+        ("width 16, early 0.05", float(group.loc["b16_e0p05_d20_w10", "total_time_ratio_vs_beam4"]),
+         int(group.loc["b16_e0p05_d20_w10", "dual_pool"]),
+         int(group.loc["b16_e0p05_d20_w10", "dual_blind"])),
+        ("width 16, early 0.2", float(group.loc["b16_e0p2_d20_w10", "total_time_ratio_vs_beam4"]),
+         int(group.loc["b16_e0p2_d20_w10", "dual_pool"]),
+         int(group.loc["b16_e0p2_d20_w10", "dual_blind"])),
+        ("width 32, early 0.05", float(group.loc["b32_e0p05_d20_w10", "total_time_ratio_vs_beam4"]),
+         int(group.loc["b32_e0p05_d20_w10", "dual_pool"]),
+         int(group.loc["b32_e0p05_d20_w10", "dual_blind"])),
+    ]
+    labels, seconds, oracle, blind = zip(*rows)
+    y = np.arange(len(rows))
+    colors = ["#777777", "#777777", "#477da4", "#477da4", "#477da4",
+              "#6c61a5", "#477da4"]
     fig, ax = plt.subplots(figsize=(9, 5))
-    for row in group.itertuples():
-        x = float(row.total_time_ratio_vs_beam4)
-        y = int(row.dual_pool)
-        ax.scatter(x, y, s=130, zorder=3)
-        ax.annotate(f"{labels[row.mode]}\nblind {int(row.dual_blind)}/7",
-                    (x, y), xytext=(6, 6), textcoords="offset points", fontsize=8)
-    ax.axhline(int(group.iid_dual_pool.iloc[0]), color="0.45", linestyle="--",
-               label=f"iid100 oracle: {int(group.iid_dual_pool.iloc[0])}/7")
-    ax.axhline(int(group.beam4_dual_pool.iloc[0]), color="0.7", linestyle=":",
-               label=f"width-4 oracle: {int(group.beam4_dual_pool.iloc[0])}/7")
+    ax.barh(y, seconds, color=colors, height=0.62)
+    for index, (cost, pool_hits, blind_hits) in enumerate(zip(seconds, oracle, blind)):
+        ax.text(cost + 0.15, index,
+                f"{pool_hits}/7 oracle  ·  {blind_hits}/7 blind", va="center", fontsize=9)
+    ax.set_yticks(y, labels)
+    ax.invert_yaxis()
+    ax.set_xlim(0, max(seconds) + 4)
     ax.set(xlabel="H100 inference time / unpenalized width-4 beam",
-           ylabel="Development pairs with both contact modes (of 7)",
-           title="Contact novelty pilot: discovery versus compute")
-    ax.set_ylim(-0.2, 7.2)
-    ax.legend(loc="upper right", fontsize=8)
+           title="Seven-pair development pilot: cost and fold-mode coverage")
     fig.tight_layout()
     save_plot_with_meta(fig, PLOTS / "pilot_tradeoff.png",
                         caption="Seven development pairs, 100 rollouts per method. "
@@ -64,11 +79,11 @@ def heldout_coverage(test: pd.DataFrame, mode: str) -> None:
     ax.set_xticks(x, labels)
     ax.set_ylim(0, max(pool + blind + [1]) + 2)
     ax.set(ylabel="Primary held-out proteins with both contact modes",
-           title=f"Held-out fold-mode coverage (n={int(row.n)}, {mode})")
+           title=f"Held-out fold-mode coverage (n={int(row.n)})")
     ax.legend()
     fig.tight_layout()
     save_plot_with_meta(fig, PLOTS / "heldout_coverage.png",
-                        caption="The selected method was frozen after development scoring. "
+                        caption=f"Selected method {mode} was frozen after development scoring. "
                         "All methods use 100 rollouts per protein. Hits are contact-level "
                         "and do not establish 3D fold recovery.")
     plt.close(fig)

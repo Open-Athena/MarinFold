@@ -43,7 +43,7 @@ discovery. Each configuration gets 100 rollouts per pair. Select one method
 using development-only contact scores, then run it on the 29 primary held-out
 fold-switching pairs.
 
-After inspecting partial development results for the first four settings, add
+After inspecting partial development results for the first four settings, we added
 one exploratory stronger early-only setting (width 16, epsilon 0.2, decay over
 20 contacts) on the same seven pairs. The earlier penalty changed early contact
 reuse but had not produced a new primary dual-mode hit on the short pairs.
@@ -96,8 +96,62 @@ The small difference in blind minority enrichment (0.008 in width 32's favor)
 was not persuasive against those differences. This choice is exploratory
 because epsilon 0.2 was added after inspecting partial development scores.
 
-The 29-pair primary held-out run is in progress.
+### Primary held-out test
+
+The frozen setting was run on all 29 primary test pairs, with exactly 100
+attempted rollouts per pair. The reference-blind 16-map shortlists were
+[committed at `fa355a46`](https://github.com/Open-Athena/MarinFold/commit/fa355a46)
+before opening the held-out reference contacts. Two of 2,900 rollouts were
+malformed; both are ineligible for hits. The other 2,898 finished normally.
+
+| Decoder | Oracle dual / 29 | Blind dual / 29 | Oracle dual at 50% recall / 29 | H100 inference seconds | Time / iid100 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| iid100 | 6 | 2 | 2 | 270 | 1.00 |
+| Unpenalized width 4 | 2 | 0 | 0 | 1,697 | 6.28 |
+| Frozen width 16, early epsilon 0.2 | **1** | **0** | **0** | **7,376** | **27.28** |
+
+The selected method found the fold-2 contact mode on 4/29 proteins, compared
+with 10/29 for iid100. It found both modes on one protein,
+`5jzha_5jztg`, that iid100 missed, but width 4 already found it; its fold
+recalls were only about 0.28–0.29, below the stricter 0.50 threshold. The
+reference-blind shortlist missed it. This pair has one sequence mismatch
+between its two structures. On the 17 strictly sequence-exact test pairs, the
+selected method found no dual-mode protein, while iid100 found three in the
+100-map pool and one in the blind shortlist.
+
+Relative to iid100, the selected method gained `5jzha_5jztg` in the oracle
+pool and lost six: `1kcta_3t1pa`, `1qs8b_1miqb`, `2c1vb_2c1uc`,
+`3g0ha_3ewsb`, `3j7wb_3j7vg`, and `4y0mj_4xwsd`. Its blind shortlist lost
+`3j7wb_3j7vg` and `4y0mj_4xwsd` and gained none. The paired oracle difference
+is −5/29 proteins (−17.2 percentage points; protein-bootstrap 95% interval
+−34.5 to 0 points); the paired blind difference is −2/29 (−6.9 points;
+interval −17.2 to 0). These intervals include zero, so the small cohort does
+not establish the size of a general performance loss. It provides no evidence
+of an improvement.
+
+The penalty did alter sampling: on the pilot pairs, the fraction of the first
+20 contacts that had not appeared in an earlier rollout rose from 11.9% with
+zero penalty to 15.7% with the selected penalty. Mean recall of contacts
+shared by both structures was 0.465 without a penalty and 0.451 with the
+selected early-only penalty, so these results do not show that annealing
+preserved shared-contact quality. Distinct full contact maps were generated
+in all 100 pilot rollouts even without a penalty, making map uniqueness an
+uninformative diversity measure here.
+
+The raw rollout outputs and timing files are under
+`s3://marin-us-east-02a/MarinFold/exp308/{pilot-v1,test-v1}/` and published
+to the public Hugging Face bucket at
+[`data/contact-novelty-search-exp308`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/contact-novelty-search-exp308).
+The small per-protein tables, sealed shortlists, plot, and per-input timings
+are in this experiment directory. No eval-val R-precision or 3D fold
+validation was run for this negative candidate.
 
 ## Conclusion
 
-Pending complete fold-switching results.
+This contact-frequency penalty modestly increased early novelty but did not
+make alternate folds easier to discover at a fixed 100-rollout budget. The
+frozen early-only strategy had fewer held-out dual-mode hits than iid sampling
+and cost 27 times as much H100 inference. It should not replace iid100 for
+fold-switching search on the evidence here. A reference-aware oracle hit is
+only a contact-map match; none of these results establish recovery of a 3D
+alternate fold.

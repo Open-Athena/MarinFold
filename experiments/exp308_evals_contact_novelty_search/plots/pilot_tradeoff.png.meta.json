@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Seven development pairs, 100 rollouts per method. Oracle coverage uses reference contacts after generation; blind counts are from a presealed 16-map shortlist."
+}
