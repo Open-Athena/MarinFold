@@ -15,6 +15,7 @@ def main() -> None:
     args = parser.parse_args()
     for source, destination in (
         (HERE / "data", f"{DEST}/tables"),
+        (HERE / "plots", f"{DEST}/plots"),
         (HERE / "_cache" / "raw", f"{DEST}/raw/blind-search-v1"),
         (HERE / "_cache" / "iid500", f"{DEST}/raw/iid500"),
         (HERE / "_cache" / "helico" / "data", f"{DEST}/helico/inputs"),

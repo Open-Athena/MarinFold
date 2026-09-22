@@ -166,6 +166,47 @@ wall time. `data/pair_wall_times.csv` preserves the separately logged,
 rounded per-protein wall time, including prompt preparation and output dumps;
 its source job logs are in the public artifacts.
 
+### What the plain-rollout oracle actually contains
+
+The oracle sees reference Fold1 and Fold2 contacts **after** generation and
+scores every map in the separate 500-rollout independent-sampling run. Its
+continuous value is the single map with the best minority-fold contact-recall
+enrichment. Its **dual hit** is a different question: does the pool contain
+*one* Fold1-like map **and another** Fold2-like map? The two maps need not be
+among the 16 maps selected without references. The sampling is independent
+model sampling at temperature 1 and top-p 0.95, not uniform sampling of
+tokens, contact maps, or folds. The 100 and 200 rows below are prefixes of
+the same 500 draws.
+
+| Cohort and draw count | Any Fold1-like | Any Fold2-like | Both in pool | Both with 50% recall |
+| --- | ---: | ---: | ---: | ---: |
+| Primary test, 100 (29 pairs) | 17 | 10 | 6 | 2 |
+| Primary test, 200 (29 pairs) | 18 | 12 | 9 | 2 |
+| **Primary test, 500 (29 pairs)** | **19** | **13** | **9** | **2** |
+| Exact-sequence primary test, 500 (17 pairs) | 12 | 7 | 5 | 1 |
+| All non-capped, 500 (67 pairs) | 52 | 38 | 31 | 13 |
+
+“Fold-like” here means a **contact-map screening hit**: a finished map with
+at least 10 predicted contacts touching the annotated switching region, at
+least 25% recall of the corresponding fold's unique contacts there, and
+at least 0.10 more recall than for the opposing fold. The final column raises
+only the recall cutoff to 50%; it is a post-hoc sensitivity analysis, not a
+second validated definition of a fold. At 500 draws, the 29 primary test
+pairs divide into nine with both contact modes, ten with Fold1 only, four with
+Fold2 only, and six with neither. All nine dual hits occurred by draw 170 in
+this run. Four of those nine had just one or two qualifying maps for their
+rarer mode even after 500 draws. Extra draws may still help on a new random
+run, but this particular held-out pool gained no new dual hits after 200.
+
+These are **oracle pool coverage** numbers, not inference success rates or
+estimates of proteins adopting both 3D folds. The 16-map reference-free
+selector retained only three of the nine primary test dual contact hits at
+500 draws; Helico confirmed two structures for only `3j7wb_3j7vg` in the
+separately generated 200-rollout run described below. The per-protein hit
+counts, first-hit draw numbers, and best recalls are in
+`data/iid_mode_coverage_per_protein.csv`; cohort curves are in
+`data/iid_mode_coverage_summary.csv` and the plot below.
+
 ### Structural check
 
 Helico contacts-msafree-01 step 6000 folded 36 target/contact combinations
@@ -232,6 +273,7 @@ hashes are in `data/sealed_shortlists.sha256` and
 ![Paired enrichment](plots/paired_enrichment.png)
 ![Blind versus oracle dual hits](plots/dual_contact_hits.png)
 ![Plain-sampling budget curve](plots/budget_curve.png)
+![Independent-rollout contact-mode coverage](plots/iid_mode_coverage.png)
 ![3j7 structural control](plots/helico_3j7_structural_check.png)
 
 ## Conclusion
@@ -248,3 +290,6 @@ minority maps: four of seven branch-10 oracle dual hits existed in the pool
 but were missed by its 16-map shortlist. This result is about the tested
 checkpoint, cohort, budget, and contact-map/Helico pipeline; these proteins
 were not screened for absence from model training.
+
+Plain independent sampling remains the best-supported baseline here; the
+results do not identify exactly 100 rollouts as an optimal budget.

@@ -19,3 +19,7 @@ For 3j7w/3j7v, both independent and branching top-16 shortlists included maps th
 ## Where the search is limited
 
 Four of seven branch-10 oracle dual-contact hits were present among 200 candidates but missed by the blind 16-map selector. In a separate plain-sampling run, blind dual hits were 2, 3, and 3 at 100, 200, and 500 rollouts; the oracle pool reached 9 by 200. The first priority is better reference-free ranking of coherent minority maps. Contact-level cutoffs are operational and not calibrated as structural thresholds; only four proteins received 3D checks.
+
+## What the 500-rollout oracle means
+
+The oracle inspects all 500 independent maps against both reference contact maps. A dual hit needs one Fold1-like and another Fold2-like map; it does not mean the blind selector found either. Among 29 held-out primary pairs, 19 had any Fold1-like map, 13 any Fold2-like map, and 9 had both. The same counts for the 17 exact-sequence test pairs were 12, 7, and 5. Across all 67 non-capped pairs, 31 had both. The prespecified 25% contact-recall screen is permissive: raising recall to 50% reduces held-out dual coverage to 2/29. Only 3j7w/3j7v has a positive 3D validation in this experiment.
