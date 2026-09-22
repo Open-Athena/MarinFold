@@ -1,0 +1,5 @@
+{
+  "script": "plot_iid1000_mode_coverage.py",
+  "args": [],
+  "caption": "Cumulative oracle contact-mode coverage among 29 primary test proteins. Left: exact sampled order; right: mean over permutations of the observed 1,000 maps for each protein. Fold-like means a reference-aware contact screening hit, not a verified alternate 3D structure."
+}

@@ -207,6 +207,60 @@ counts, first-hit draw numbers, and best recalls are in
 `data/iid_mode_coverage_per_protein.csv`; cohort curves are in
 `data/iid_mode_coverage_summary.csv` and the plot below.
 
+### Extending plain iid sampling to 1,000 draws
+
+To test whether the apparent plateau at 500 draws persists, we generated
+another 500 independent root rollouts for **each of the same 29 primary test
+proteins**, using the same checkpoint, temperature 1, top-p 0.95, and prompt
+realization recipe. The first 500 draws are the existing exp304 run; the new
+draws are indexed 501–1,000. All 14,500 new rollouts completed, making
+28,997/29,000 completed across the combined streams. The worker recorded
+per-protein timing metadata; pure generation for the new draws totaled
+19.3 H100 minutes, excluding model setup and artifact transfer. The new
+working output is
+`s3://marin-us-east-02a/MarinFold/exp304/iid1000-tail-primary/`.
+
+At each draw count, each protein is in exactly one category: **neither**
+reference fold has a qualifying map, **one** has a qualifying map, or **both**
+have qualifying maps, possibly in different rollouts. We used exactly the
+same reference-aware contact screening rule as above: a finished map, at
+least 10 predicted switching-region contacts, at least 25% recall of one
+fold's region-specific unique contacts, and at least 0.10 greater recall
+than for the other fold. This is an *oracle pool coverage* measure, not
+blind selection or confirmed recovery of two 3D structures. The scoring
+script checked every 500-draw prefix result against the previously
+published per-protein and cohort counts.
+
+| Draws per protein | Neither | One fold | Both folds |
+| ---: | ---: | ---: | ---: |
+| 100 | 8 | 15 | 6 |
+| 200 | 8 | 12 | 9 |
+| 500 | 6 | 14 | 9 |
+| 750 | 6 | 12 | 11 |
+| 1,000 | 5 | 13 | 11 |
+
+**There are gains after 500, but they are small:** two proteins first enter
+the dual-hit category in the extra draws, at draw 509 (`4aana_4aala`) and
+draw 587 (`2lela_2k0qa`). A third protein first gets any hit at draw 756,
+moving from neither to one. Thus 1,000 draws yield 11/29 dual hits versus
+9/29 at 500. Both new dual-hit proteins have literally identical observed
+sequences in their two references, lifting the exact-sequence subset from
+5/17 to 7/17. The qualifying rarer fold appears only four times among
+1,000 maps for `4aana_4aala` and once for `2lela_2k0qa`. The stricter
+50%-recall dual criterion stays at **2/29**, so the extra coverage is at
+the permissive screening threshold.
+
+The left panel below follows the actual draw order; the right panel
+averages all random reorderings of the *same observed 1,000 maps* for each
+protein. Its smooth curve shows how much of the flat section is due to
+where rare hits happened to land in this run; it is not a prediction of
+additional gains beyond 1,000. At every x-value, the three counts sum to
+29. The draw-by-draw curve is in `data/iid1000_primary_test_curve.csv`, and
+the per-protein first-hit draws and hit frequencies are in
+`data/iid1000_primary_test_per_protein.csv`.
+
+![IID rollout contact-mode coverage through 1,000 draws](plots/iid1000_mode_coverage.png)
+
 ### Structural check
 
 Helico contacts-msafree-01 step 6000 folded 36 target/contact combinations
@@ -263,7 +317,8 @@ flags, and timings are published with the small tables and Helico structures
 in the [public exp304 artifact bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-blind-fold-search-exp304).
 The co-located CoreWeave working outputs were
 `s3://marin-us-east-02a/MarinFold/exp304/blind-search-v1/` and
-`s3://marin-us-east-02a/MarinFold/exp304/iid500/`; the final 36-case
+`s3://marin-us-east-02a/MarinFold/exp304/iid500/`; the 1,000-draw extension
+is at `s3://marin-us-east-02a/MarinFold/exp304/iid1000-tail-primary/`. The final 36-case
 [Helico Modal run](https://modal.com/apps/open-athena/main/ap-TAZO9vFpGbeUxC1EA8tKb3)
 used checkpoint `/ckpts/contacts-msafree-01/final.pt` (step 6000).
 `data/artifact_manifest.csv` records their SHA-256 hashes. The two shortlist
@@ -292,4 +347,8 @@ checkpoint, cohort, budget, and contact-map/Helico pipeline; these proteins
 were not screened for absence from model training.
 
 Plain independent sampling remains the best-supported baseline here; the
-results do not identify exactly 100 rollouts as an optimal budget.
+results do not identify exactly 100 rollouts as an optimal budget. Extending
+the oracle pool from 500 to 1,000 draws found two more contact-level dual
+hits (9/29 to 11/29), but no new dual hits at the stricter 50%-recall
+cutoff. Whether blind selection can recover those rare maps, and whether
+they support distinct 3D folds, remains untested for the two new cases.

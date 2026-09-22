@@ -5,6 +5,7 @@ import argparse
 import base64
 import dataclasses
 import os
+import shlex
 from pathlib import Path
 
 from fray.iris_backend import FrayIrisClient
@@ -31,7 +32,8 @@ def encoded(path: Path) -> str:
 
 def bootstrap(shard: int, n_shards: int, model: str, cache_model: bool,
               out: str, limit: int | None,
-              n_root: int, n_arm: int, arms: str) -> str:
+              n_root: int, n_arm: int, arms: str, root_offset: int,
+              pair_ids_file: Path | None) -> str:
     """Build the pod entrypoint without a repo checkout or default uv sync."""
     files = {
         "search_worker_cw.py": encoded(HERE / "search_worker_cw.py"),
@@ -39,11 +41,14 @@ def bootstrap(shard: int, n_shards: int, model: str, cache_model: bool,
         "stage_model.py": encoded(HERE / "stage_model.py"),
         "search_targets.parquet": encoded(HERE / "data/search_targets.parquet"),
     }
+    if pair_ids_file is not None:
+        files["pair_ids.txt"] = encoded(pair_ids_file)
     transfers = "\n".join(
         f"echo {payload} | base64 -d > /tmp/exp304/{name}" for name, payload in files.items()
     )
     extra = f" --limit {limit}" if limit is not None else ""
     cache_extra = f" --cache-out {MODEL_CACHE}" if cache_model else ""
+    pair_ids_extra = " --pair-ids-file /tmp/exp304/pair_ids.txt" if pair_ids_file else ""
     return f"""
 set -euo pipefail
 echo "[exp304] shard {shard}/{n_shards} host=$(hostname)"
@@ -63,9 +68,9 @@ uv pip install --python /tmp/exp304-hf-venv/bin/python --quiet fsspec s3fs "hugg
 /tmp/exp304-hf-venv/bin/python /tmp/exp304/stage_model.py \\
   --model {model} --out /tmp/exp304-model{cache_extra}
 uv pip install --python "$VLLM_PY" --quiet --no-deps \\
-  "marinfold @ git+https://github.com/Open-Athena/MarinFold.git#subdirectory=marinfold" \\
+  "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@b00a6ec0#subdirectory=marinfold" \\
   || "$VLLM_PY" -m pip install --quiet --no-deps \\
-  "marinfold @ git+https://github.com/Open-Athena/MarinFold.git#subdirectory=marinfold"
+  "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@b00a6ec0#subdirectory=marinfold"
 export VLLM_PORT=$("$VLLM_PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
 export PYTHONPATH=/tmp/exp304:${{PYTHONPATH:-}}
 exec "$VLLM_PY" /tmp/exp304/search_worker_cw.py \\
@@ -73,18 +78,21 @@ exec "$VLLM_PY" /tmp/exp304/search_worker_cw.py \\
     --targets /tmp/exp304/search_targets.parquet \\
     --out {out} \\
     --shard {shard}/{n_shards} \\
-    --n-root {n_root} --n-arm {n_arm} --arms {arms}{extra}
+    --n-root {n_root} --root-offset {root_offset} --n-arm {n_arm} \\
+    --arms {shlex.quote(arms)}{pair_ids_extra}{extra}
 """.strip()
 
 
 def request(shard: int, n_shards: int, label: str, model: str, cache_model: bool, out: str,
-            limit: int | None, n_root: int, n_arm: int, arms: str) -> JobRequest:
+            limit: int | None, n_root: int, n_arm: int, arms: str, root_offset: int,
+            pair_ids_file: Path | None) -> JobRequest:
     """One root GPU job, which survives the workstation dispatcher exiting."""
     return JobRequest(
         name=f"exp304-{label}-s{shard}of{n_shards}",
         entrypoint=Entrypoint.from_binary(
             "bash", ["-lc", bootstrap(shard, n_shards, model, cache_model,
-                                      out, limit, n_root, n_arm, arms)]
+                                      out, limit, n_root, n_arm, arms, root_offset,
+                                      pair_ids_file)]
         ),
         resources=ResourceConfig.with_gpu(
             "H100", count=1, image=IMAGE, cpu=8, ram="64g", disk="128g"
@@ -108,14 +116,17 @@ def main() -> None:
     parser.add_argument("--cache-model", action="store_true")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--n-root", type=int, default=100)
+    parser.add_argument("--root-offset", type=int, default=0)
     parser.add_argument("--n-arm", type=int, default=100)
     parser.add_argument("--arms", default="iid,temp,random,branch5,branch10,branch20")
+    parser.add_argument("--pair-ids-file", type=Path)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     chosen = ([int(part) for part in args.shards.split(",")]
               if args.shards else list(range(args.num_shards)))
     requests = [request(shard, args.num_shards, args.label, args.model, args.cache_model, args.out,
-                        args.limit, args.n_root, args.n_arm, args.arms) for shard in chosen]
+                        args.limit, args.n_root, args.n_arm, args.arms, args.root_offset,
+                        args.pair_ids_file) for shard in chosen]
     print(f"[exp304] {len(requests)} root H100 batch jobs; output={args.out}")
     if args.dry_run:
         for item in requests:

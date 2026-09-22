@@ -23,3 +23,7 @@ Four of seven branch-10 oracle dual-contact hits were present among 200 candidat
 ## What the 500-rollout oracle means
 
 The oracle inspects all 500 independent maps against both reference contact maps. A dual hit needs one Fold1-like and another Fold2-like map; it does not mean the blind selector found either. Among 29 held-out primary pairs, 19 had any Fold1-like map, 13 any Fold2-like map, and 9 had both. The same counts for the 17 exact-sequence test pairs were 12, 7, and 5. Across all 67 non-capped pairs, 31 had both. The prespecified 25% contact-recall screen is permissive: raising recall to 50% reduces held-out dual coverage to 2/29. Only 3j7w/3j7v has a positive 3D validation in this experiment.
+
+## Do another 500 iid draws help?
+
+Yes, modestly for oracle contact-pool coverage. On the same 29 primary test proteins, the count with both fold-like contact modes rises from 9 at 500 draws to 11 at 750 and stays 11 at 1,000. Neither-mode proteins fall from 6 to 5. The two new dual hits first appear at draws 509 and 587, and both are exact-sequence pairs. At the stricter 50% recall cutoff, the dual count stays 2/29. These are reference-aware screening hits in the full pool, not blindly selected or newly validated structures. The figure compares the observed stream with averages over random reorderings of these same 1,000 maps; the latter is not an extrapolation.

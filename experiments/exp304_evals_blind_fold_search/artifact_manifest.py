@@ -10,6 +10,7 @@ HERE = Path(__file__).resolve().parent
 ROOTS = {
     "blind-search-v1": HERE / "_cache" / "raw",
     "iid500": HERE / "_cache" / "iid500",
+    "iid1000-tail-primary": HERE / "_cache" / "iid1000_tail_primary",
     "helico-inputs": HERE / "_cache" / "helico" / "data",
     "helico-results": HERE / "_cache" / "helico" / "results",
     "joblogs": HERE / "_cache" / "joblogs",
