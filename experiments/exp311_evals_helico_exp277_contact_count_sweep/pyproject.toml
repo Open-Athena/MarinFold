@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
   "boto3>=1.35",
+  "huggingface_hub>=1.5",
   "matplotlib>=3.9",
   "modal>=1.0",
   "numpy>=2.0",

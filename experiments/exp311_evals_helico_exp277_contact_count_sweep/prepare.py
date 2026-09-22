@@ -17,8 +17,8 @@ import subprocess
 from pathlib import Path
 
 import boto3
-import botocore
 import numpy as np
+from botocore.config import Config
 
 
 HERE = Path(__file__).resolve().parent
@@ -59,7 +59,7 @@ def score_client():
         "s3", endpoint_url="https://cwobject.com",
         aws_access_key_id=cw["aws_access_key_id"],
         aws_secret_access_key=cw["aws_secret_access_key"],
-        config=botocore.config.Config(s3={"addressing_style": "virtual"}),
+        config=Config(s3={"addressing_style": "virtual"}),
     )
 
 

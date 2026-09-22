@@ -45,7 +45,7 @@ uv run python analyze.py
 uv run python build_summary.py
 ```
 
-The exp14 directory must first have run its `build_eval_sets.py` and `build_index_map.py`; exp277's CoreWeave score files are read through the `cw` profile in `~/.aws/credentials`. `run_sweep.py` packages the pinned Helico source and uses the existing Helico Modal checkpoint volume. The dry run estimates 16.8 H100-hours, **$66.54** at [$3.95/hour](https://modal.com/pricing), below Helico's $100 cost gate. Actual usage will be recorded after completion.
+The exp14 directory must first have run its `build_eval_sets.py` and `build_index_map.py`; exp277's CoreWeave score files are read through the `cw` profile in `~/.aws/credentials`. `run_sweep.py` packages the pinned Helico source and uses the existing Helico Modal checkpoint volume. The dry run estimates 16.8 H100-hours, **$66.54** at [$3.95/hour](https://modal.com/pricing), below Helico's $100 cost gate. The runner writes each completed cut to a Modal results volume and streams target results to resumable local files before assembling the canonical tables.
 
 ## Success criteria
 
@@ -55,7 +55,9 @@ The exp14 directory must first have run its `build_eval_sets.py` and `build_inde
 
 ## Results
 
-The [full Modal run](https://modal.com/apps/open-athena/main/ap-7FlRkgVXbuH8CHEtIFMRXm) completed all **115 targets × 3,089 cuts × 3 samples = 9,267 structures** with no failed or nonfinite rows. `7pv5_A` is the single preregistered exclusion. The run used 13.89 captured H100-hours including eight model loads, approximately **$54.86** of GPU time at $3.9492/hour, below the $66.54 conservative estimate. Wall time was about 2 h 22 min.
+The [full Modal run](https://modal.com/apps/open-athena/main/ap-7FlRkgVXbuH8CHEtIFMRXm) completed all **115 targets × 3,089 cuts × 3 samples = 9,267 structures** with no failed or nonfinite rows. `7pv5_A` is the single preregistered exclusion. The recorded per-cut intervals sum to 13.89 H100-hours, equivalent to **$54.86 of measured GPU compute** at the run's $3.9492/hour rate. This is not an invoice total because it excludes container startup and idle time. Wall time was about 2 h 22 min; keeping all eight H100 containers resident for that entire interval would be an upper-bound estimate of about 18.9 H100-hours or $74.9.
+
+In `timings.csv`, `n_pairs` is the canonical problem size, `n_residues × (n_residues - 1) / 2`; `n_contacts` and `n_effective_contacts` describe the sweep condition. `elapsed_seconds` is Helico inference. `total_seconds` adds the worker's model-load time to the recorded per-cut inference, scoring, and serialization path. The original run did not time the final consolidated driver CSV write, so that small component cannot be reconstructed.
 
 The table below is target-weighted. “Mean” averages each target's samples and then the targets; “median” takes each target's median and then averages targets. “Helico-ranked” is one deployable choice per target: the highest Helico `ranking_score` among every cut and diffusion sample. “Oracle” chooses the best prediction independently for each structural metric, using ground truth. RMSD is Cα RMSD in Å and lower is better; the other metrics are higher-is-better.
 

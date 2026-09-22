@@ -7,7 +7,6 @@ Helico's ranking score across every cut and diffusion sample.
 """
 
 import csv
-import json
 import math
 import statistics
 from collections import defaultdict
@@ -17,11 +16,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from build_summary import save_plot_with_meta
+from sweep_common import cuts
 
 
 HERE = Path(__file__).resolve().parent
-SAMPLES = HERE / "scratch" / "results" / "samples.csv"
 DATA = HERE / "data"
+SAMPLES = DATA / "per_sample_metrics.csv"
 PLOTS = HERE / "plots"
 LOW_MSA_SET = HERE.parent / "exp260_evals_msa_depth_stratified" / "data" / "low_msa_depth_set.csv"
 METRICS = ("gdt_ts", "lddt", "tm_score", "rmsd")
@@ -42,7 +42,7 @@ def load_samples() -> dict[tuple[str, str], list[dict]]:
     by_target: dict[tuple[str, str], list[dict]] = defaultdict(list)
     with SAMPLES.open() as stream:
         for row in csv.DictReader(stream):
-            for key in ("n_residues", "L", "n_pairs", "sample_idx", "n_matched_atoms"):
+            for key in ("n_residues", "L", "n_contacts", "effective_contacts", "sample_idx", "n_matched_atoms"):
                 row[key] = int(row[key])
             for key in ("ranking_score", "ptm", "iptm", *METRICS):
                 row[key] = float(row[key])
@@ -51,13 +51,13 @@ def load_samples() -> dict[tuple[str, str], list[dict]]:
             by_target[(row["eval_set"], row["stem"])].append(row)
     for (eval_set, stem), rows in by_target.items():
         length = rows[0]["L"]
-        expected = sorted({*range(0, length + 1, 10), length})
-        cuts: dict[int, set[int]] = defaultdict(set)
+        expected = cuts(length)
+        samples_by_cut: dict[int, set[int]] = defaultdict(set)
         for row in rows:
-            if row["sample_idx"] in cuts[row["n_pairs"]]:
-                raise ValueError(f"duplicate sample {eval_set}/{stem} k={row['n_pairs']}")
-            cuts[row["n_pairs"]].add(row["sample_idx"])
-        if sorted(cuts) != expected or any(indices != {0, 1, 2} for indices in cuts.values()):
+            if row["sample_idx"] in samples_by_cut[row["n_contacts"]]:
+                raise ValueError(f"duplicate sample {eval_set}/{stem} k={row['n_contacts']}")
+            samples_by_cut[row["n_contacts"]].add(row["sample_idx"])
+        if sorted(samples_by_cut) != expected or any(indices != {0, 1, 2} for indices in samples_by_cut.values()):
             raise ValueError(f"incomplete cut/sample grid for {eval_set}/{stem}")
     counts = {eval_set: sum(dataset == eval_set for dataset, _ in by_target) for eval_set in ("eval-val", "eval-denovo")}
     if counts != {"eval-val": 96, "eval-denovo": 19}:
@@ -68,12 +68,12 @@ def load_samples() -> dict[tuple[str, str], list[dict]]:
 def best_for_metric(rows: list[dict], metric: str) -> dict:
     """Select a metric oracle with stable cut/sample tie-breaking."""
     sign = -1 if metric == "rmsd" else 1
-    return max(rows, key=lambda row: (sign * row[metric], -row["n_pairs"], -row["sample_idx"]))
+    return max(rows, key=lambda row: (sign * row[metric], -row["n_contacts"], -row["sample_idx"]))
 
 
 def confidence_pick(rows: list[dict]) -> dict:
     """Select the one Helico-ranked structure, breaking ties by smaller cut."""
-    return max(rows, key=lambda row: (row["ranking_score"], -row["n_pairs"], -row["sample_idx"]))
+    return max(rows, key=lambda row: (row["ranking_score"], -row["n_contacts"], -row["sample_idx"]))
 
 
 def paired_bootstrap_ci(differences: list[float]) -> tuple[float, float]:
@@ -88,19 +88,20 @@ def paired_bootstrap_ci(differences: list[float]) -> tuple[float, float]:
 
 def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict], list[dict], list[dict], list[dict], list[dict]]:
     """Produce per-target selection, set summaries, and per-cut curves."""
-    rankings = json.loads((HERE / "scratch" / "targets" / "ranked_pairs.json").read_text())
     per_target = []
     per_cut_target = []
     effective_counts = []
     for (eval_set, stem), rows in sorted(by_target.items()):
         length = rows[0]["L"]
         ranked = confidence_pick(rows)
-        top_zero = confidence_pick([row for row in rows if row["n_pairs"] == 0])
-        top_l = confidence_pick([row for row in rows if row["n_pairs"] == length])
-        effective_by_cut = {
-            k: sum(abs(a - b) >= 6 for a, b in rankings[stem][:k])
-            for k in sorted({row["n_pairs"] for row in rows})
-        }
+        top_zero = confidence_pick([row for row in rows if row["n_contacts"] == 0])
+        top_l = confidence_pick([row for row in rows if row["n_contacts"] == length])
+        effective_by_cut = {}
+        for k in sorted({row["n_contacts"] for row in rows}):
+            recorded = {row["effective_contacts"] for row in rows if row["n_contacts"] == k}
+            if len(recorded) != 1:
+                raise ValueError(f"inconsistent effective-contact counts for {stem} k={k}: {recorded}")
+            effective_by_cut[k] = recorded.pop()
         for k, effective in effective_by_cut.items():
             effective_counts.append({
                 "eval_set": eval_set, "stem": stem, "L": length,
@@ -113,18 +114,18 @@ def summarize(by_target: dict[tuple[str, str], list[dict]]) -> tuple[list[dict],
             per_target.append({
                 "eval_set": eval_set, "stem": stem, "L": length, "metric": metric,
                 "n_predictions": len(rows),
-                "oracle_best": oracle[metric], "oracle_cut": oracle["n_pairs"],
+                "oracle_best": oracle[metric], "oracle_cut": oracle["n_contacts"],
                 "mean_prediction": statistics.mean(values),
                 "median_prediction": statistics.median(values),
-                "confidence_top": ranked[metric], "confidence_cut": ranked["n_pairs"],
-                "confidence_effective_cut": effective_by_cut[ranked["n_pairs"]],
+                "confidence_top": ranked[metric], "confidence_cut": ranked["n_contacts"],
+                "confidence_effective_cut": effective_by_cut[ranked["n_contacts"]],
                 "confidence_score": ranked["ranking_score"],
                 "top_zero_confidence": top_zero[metric],
                 "top_l_confidence": top_l[metric],
             })
         grouped: dict[int, list[dict]] = defaultdict(list)
         for row in rows:
-            grouped[row["n_pairs"]].append(row)
+            grouped[row["n_contacts"]].append(row)
         for k, cut_rows in grouped.items():
             picked = confidence_pick(cut_rows)
             for metric in METRICS:

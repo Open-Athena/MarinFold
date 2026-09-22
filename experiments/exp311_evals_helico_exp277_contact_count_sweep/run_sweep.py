@@ -7,6 +7,7 @@ GPU worker across all of its cuts so model setup is paid only once.
 """
 
 import csv
+import dataclasses
 import datetime as dt
 import json
 import os
@@ -18,6 +19,8 @@ import time
 from pathlib import Path
 
 import modal
+
+from sweep_common import cuts
 
 
 HERE = Path(__file__).resolve().parent
@@ -32,11 +35,6 @@ SEED = 42
 MAX_TOKENS = 2048
 N_WORKERS = 8
 TAG = "exp311-exp277-step266344-top0-to-L-10s-v1"
-
-
-def cuts(length: int) -> list[int]:
-    """Include zero, each multiple of ten, and exact L once."""
-    return sorted({*range(0, length + 1, 10), length})
 
 
 def source_sha() -> str:
@@ -85,19 +83,24 @@ IMAGE = (
         " print(cached_rotamer_library())'"
     )
     .add_local_dir(str(TARGETS), remote_path="/root/sweep/data")
+    .add_local_file(str(HERE / "sweep_common.py"), remote_path="/root/sweep_common.py")
     .add_local_dir(str(HELICO_REPO / "src"), remote_path="/root/helico/src")
     .add_local_file(str(HELICO_REPO / "pyproject.toml"), remote_path="/root/helico/pyproject.toml")
-    .add_local_file(str(HELICO_REPO / "README.md"), remote_path="/root/helico/README.md")
 )
 
 app = modal.App("marinfold-exp311-helico-contact-count-sweep", image=IMAGE)
 ckpt_volume = modal.Volume.from_name("helico-checkpoints", create_if_missing=False)
 ccd_volume = modal.Volume.from_name("helico-bench-data", create_if_missing=False)
+results_volume = modal.Volume.from_name("marinfold-exp311-results", create_if_missing=True)
 
 
 @app.cls(
     image=IMAGE, gpu="H100", timeout=7200, max_containers=N_WORKERS,
-    volumes={"/ckpts": ckpt_volume, "/cache/helico-data": ccd_volume},
+    volumes={
+        "/ckpts": ckpt_volume,
+        "/cache/helico-data": ccd_volume,
+        "/results": results_volume,
+    },
     secrets=[modal.Secret.from_name("helico-hf-modal")],
 )
 class Predictor:
@@ -105,10 +108,7 @@ class Predictor:
 
     @modal.enter()
     def setup(self) -> None:
-        import sys
-
         os.environ["HELICO_DATA_DIR"] = "/cache/helico-data"
-        subprocess.run("cd /root/helico && uv venv --python 3.11 && uv pip install -e .", shell=True, check=True)
         sys.path.insert(0, "/root/helico/src")
 
         import torch
@@ -126,9 +126,14 @@ class Predictor:
         checkpoint = torch.load(CHECKPOINT, map_location="cpu", weights_only=False)
         if "model_state_dict" not in checkpoint or checkpoint.get("step") != 6000:
             raise ValueError(f"unexpected Helico checkpoint at {CHECKPOINT}")
-        saved = checkpoint.get("config") or {}
-        overrides = {k: v for k, v in saved.items() if hasattr(HelicoConfig, k)}
-        config = HelicoConfig(**overrides)
+        saved = checkpoint.get("config")
+        if not isinstance(saved, dict):
+            raise ValueError("Helico checkpoint is missing its configuration dictionary")
+        fields = {field.name for field in dataclasses.fields(HelicoConfig)}
+        unknown = set(saved) - fields
+        if unknown:
+            raise ValueError(f"checkpoint has unknown HelicoConfig keys: {sorted(unknown)}")
+        config = HelicoConfig(**saved)
         if not config.use_contacts or config.use_msa:
             raise ValueError("expected contact-conditioned, MSA-free Helico checkpoint")
         self.model = Helico(config).cuda().to(torch.bfloat16).eval()
@@ -150,7 +155,8 @@ class Predictor:
     def predict(self, target: dict) -> dict:
         import torch
         from helico.bench import match_atoms, predict_target, score_monomer, structure_to_chains
-        from helico.data import parse_mmcif
+        from helico.data import CONTACT_PRESENT, parse_mmcif
+        from helico.inference import contacts_from_pairs
 
         stem = target["target_id"]
         gt_path = Path("/root/sweep/data/gt") / f"{stem}.cif.gz"
@@ -186,6 +192,11 @@ class Predictor:
             tokenized, prediction = result
             if int(tokenized.n_tokens) > MAX_TOKENS:
                 raise ValueError(f"{stem}: {tokenized.n_tokens} tokens exceed {MAX_TOKENS}")
+            contact_state = contacts_from_pairs(pairs, tokenized=tokenized) if k else None
+            effective_contacts = (
+                int(torch.triu(contact_state == CONTACT_PRESENT, diagonal=1).sum().item())
+                if contact_state is not None else 0
+            )
             ranks = prediction["all_ranking_score"][0].cpu().float().tolist()
             ptms = prediction["all_ptm"][0].cpu().float().tolist()
             iptms = prediction["all_iptm"][0].cpu().float().tolist()
@@ -199,22 +210,38 @@ class Predictor:
                 sample_rows.append({
                     "stem": stem, "eval_set": target["eval_set"],
                     "n_residues": int(target["L_helico"]), "L": length,
-                    "n_pairs": k, "sample_idx": si,
+                    "n_contacts": k, "effective_contacts": effective_contacts,
+                    "sample_idx": si,
                     "ranking_score": float(ranks[si]), "ptm": float(ptms[si]),
                     "iptm": float(iptms[si]), "n_matched_atoms": len(matched.pred_coords),
                     **score_monomer(matched),
                 })
+            n_residues = int(target["L_helico"])
             timing_rows.append({
                 "stem": stem, "eval_set": target["eval_set"],
-                "n_residues": int(target["L_helico"]), "n_pairs": k,
+                "n_residues": n_residues,
+                "n_pairs": n_residues * (n_residues - 1) // 2,
+                "n_contacts": k, "n_effective_contacts": effective_contacts,
                 "mode": f"top-{k}", "elapsed_seconds": round(predict_seconds, 3),
                 "model_load_seconds": self.worker_meta["model_load_seconds"],
-                "total_seconds": round(time.monotonic() - started, 3),
+                "total_seconds": round(
+                    self.worker_meta["model_load_seconds"] + time.monotonic() - started, 3
+                ),
                 "model_nickname": "helico-contacts-msafree-01-step-6000",
                 "contact_model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
                 "runner_tag": "modal", "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
                 **{key: value for key, value in self.worker_meta.items() if key != "model_load_seconds"},
             })
+            durable = Path("/results") / TAG / stem
+            durable.mkdir(parents=True, exist_ok=True)
+            payload = {"samples": sample_rows[-N_SAMPLES:], "timing": timing_rows[-1]}
+            result_path = durable / f"top-{k}.json"
+            result_path.write_text(json.dumps(payload, separators=(",", ":")))
+            timing_rows[-1]["total_seconds"] = round(
+                self.worker_meta["model_load_seconds"] + time.monotonic() - started, 3
+            )
+            result_path.write_text(json.dumps(payload, separators=(",", ":")))
+            results_volume.commit()
         return {"stem": stem, "samples": sample_rows, "timings": timing_rows}
 
 
@@ -228,14 +255,35 @@ def run() -> None:
         targets = targets[:limit]
     expected_cuts, _ = estimate()
     source_sha()
-    results = list(Predictor().predict.map(targets))
+    output_dir = RESULTS / "smoke" if limit else RESULTS
+    partial_dir = output_dir / f"partial-{TAG}"
+    partial_dir.mkdir(parents=True, exist_ok=True)
+    expected_stems = {target["target_id"] for target in targets}
+    completed_stems = {path.stem for path in partial_dir.glob("*.json")}
+    unexpected = completed_stems - expected_stems
+    if unexpected:
+        raise ValueError(f"partial result directory contains unexpected targets: {sorted(unexpected)}")
+    pending = [target for target in targets if target["target_id"] not in completed_stems]
+    failures = []
+    for result in Predictor().predict.map(pending, order_outputs=False, return_exceptions=True):
+        if isinstance(result, Exception):
+            failures.append(repr(result))
+            continue
+        stem = result["stem"]
+        if stem not in expected_stems or (partial_dir / f"{stem}.json").exists():
+            raise ValueError(f"unexpected or duplicate target result: {stem}")
+        temp = partial_dir / f".{stem}.json.tmp"
+        temp.write_text(json.dumps(result, separators=(",", ":")))
+        temp.replace(partial_dir / f"{stem}.json")
+    if failures:
+        raise RuntimeError(f"{len(failures)} Modal targets failed; partial results retained: {failures}")
+    results = [json.loads((partial_dir / f"{stem}.json").read_text()) for stem in sorted(expected_stems)]
     if {result["stem"] for result in results} != {target["target_id"] for target in targets}:
         raise ValueError("incomplete or duplicate target results")
     samples = [row for result in results for row in result["samples"]]
     timings = [row for result in results for row in result["timings"]]
     if len(samples) != expected_cuts * N_SAMPLES or len(timings) != expected_cuts:
         raise ValueError(f"incomplete sweep: {len(samples)} samples, {len(timings)} cuts")
-    output_dir = RESULTS / "smoke" if limit else RESULTS
     output_dir.mkdir(parents=True, exist_ok=True)
     for filename, rows in (("samples.csv", samples), ("timings.csv", timings)):
         with (output_dir / filename).open("w", newline="") as stream:
@@ -253,6 +301,15 @@ def run() -> None:
         "completed_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
     (output_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    if not limit:
+        committed = HERE / "data"
+        committed.mkdir(exist_ok=True)
+        for source, destination in (
+            (output_dir / "samples.csv", committed / "per_sample_metrics.csv"),
+            (output_dir / "timings.csv", committed / "timings.csv"),
+            (output_dir / "run_manifest.json", committed / "run_manifest.json"),
+        ):
+            destination.write_bytes(source.read_bytes())
     print(f"wrote complete results to {output_dir}")
 
 
