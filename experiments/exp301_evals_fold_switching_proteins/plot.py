@@ -205,23 +205,36 @@ def plot_conditioning(curve: pd.DataFrame, ks: pd.DataFrame | None) -> None:
     """The dose-response, and what it costs to move the model off its fold."""
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
 
+    has_panel = "panel" in curve.columns
+    allp = curve[curve["panel"] == "all"] if has_panel else curve
+    balp = curve[curve["panel"] == "balanced"] if has_panel else curve.iloc[0:0]
+
     ax = axes[0]
     style = {"seed_b": (FOLD2, "o-", "seeded with fold2 contacts"),
              "seed_a": (FOLD1, "s--", "seeded with fold1 contacts (control)")}
     for arm, (color, marker, label) in style.items():
-        sub = curve[curve["arm"] == arm].sort_values("k")
+        sub = allp[allp["arm"] == arm].sort_values("k")
         if sub.empty:
             continue
-        ax.plot(sub["k"], sub["phi"], marker, color=color, lw=1.8, ms=5, label=label)
+        n_lo, n_hi = int(sub["n_pairs"].min()), int(sub["n_pairs"].max())
+        span = f"n={n_hi}" if n_lo == n_hi else f"n={n_hi}\u2192{n_lo}"
+        ax.plot(sub["k"], sub["phi"], marker, color=color, lw=1.8, ms=5,
+                label=f"{label}  ({span})")
         ax.fill_between(sub["k"], sub["phi_lo"], sub["phi_hi"], color=color, alpha=0.15, lw=0)
+        # The balanced panel -- pairs present at every dose -- shown faintly, so
+        # the reader can see how much of the high-k slope is composition change.
+        bsub = balp[balp["arm"] == arm].sort_values("k")
+        if not bsub.empty:
+            ax.plot(bsub["k"], bsub["phi"], ":", color=color, lw=1.4, alpha=0.75,
+                    label=f"   same, balanced panel (n={int(bsub['n_pairs'].iloc[0])})")
     ax.axhline(0, color="k", lw=1)
-    ax.set_xscale("symlog", linthresh=1)
-    ax.set_xlim(left=0)
+    ax.set_xlim(-1, allp["k"].max() * 1.03)
+    ax.set_xticks(sorted(allp["k"].unique()))
     ax.set_xlabel("k = contacts placed in the prompt")
     ax.set_ylabel(r"fold score $\varphi$ on the REMAINING sets")
     ax.set_title("Conditioning moves the model, and the arms diverge")
-    ax.legend(frameon=False, fontsize=9, loc="upper left")
-    below = curve[(curve["arm"] == "seed_b") & (curve["phi"] < 0)].sort_values("k")
+    ax.legend(frameon=False, fontsize=8, loc="upper left")
+    below = allp[(allp["arm"] == "seed_b") & (allp["phi"] < 0)].sort_values("k")
     if not below.empty:
         k = int(below["k"].iloc[0])
         ax.axvline(k, color="0.4", lw=1, ls=":")
@@ -241,12 +254,16 @@ def plot_conditioning(curve: pd.DataFrame, ks: pd.DataFrame | None) -> None:
             ax.scatter(never["n_b"], never["max_k_tested"], s=30, c="0.7", marker="^",
                        alpha=0.8, edgecolor="white", lw=0.5, zorder=3,
                        label="never flipped (dose tested)")
-        lim = ks["n_b"].max() * 1.1
+        # y = frac * x is a straight line on log-log, but it must be drawn over
+        # the real x range: a segment starting at x=0 is invalid on a log axis
+        # and matplotlib clips it into a near-horizontal stub.
+        xs = np.logspace(np.log10(ks["n_b"].min() * 0.9),
+                         np.log10(ks["n_b"].max() * 1.1), 50)
         for frac, ls in ((0.05, ":"), (0.25, "--")):
-            ax.plot([0, lim], [0, frac * lim], color="0.6", lw=1, ls=ls,
-                    label=f"{frac:.0%} of |B|")
+            ax.plot(xs, frac * xs, color="0.6", lw=1, ls=ls, label=f"{frac:.0%} of |B|")
         ax.set_xscale("log")
-        ax.set_yscale("symlog", linthresh=1)
+        ax.set_yscale("log")
+        ax.set_ylim(0.8, max(ks["k_star"].max(), ks["max_k_tested"].max()) * 1.6)
         ax.set_xlabel("|B| — contacts unique to fold2")
         ax.set_ylabel("k* for that pair")
         ax.set_title("What each pair needed, against its own size")

@@ -362,6 +362,15 @@ prompt cannot inflate the score):
 
 ![conditioning](plots/conditioning.png)
 
+**n is not constant along the curve.** A pair with |B| = 18 cannot supply a dose
+of 40, so it drops out above its own size: all 68 pairs contribute at k ≤ 10, but
+only 60 at k = 20 and 47 at k = 40 (and the fold1 arm drops different pairs, 64
+and 55, since |A| ≠ |B|). The high-k points are therefore computed on a subset
+enriched for large |B|. The dotted lines are the **balanced panel** — the 44
+pairs present at every dose in both arms — and they track the all-pairs curve
+closely (fold2-seeded: +0.118 → −0.169 against +0.110 → −0.170). So the slope is
+dose, not composition.
+
 Both arms move monotonically in opposite directions from an identical baseline
 (+0.110 vs +0.111 at k=0, as they must be — the same pairs, no conditioning).
 **k\* = 10**: ten fold2 contacts is where the average pair stops preferring

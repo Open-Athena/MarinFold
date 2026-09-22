@@ -317,6 +317,30 @@ def conditioning(root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
             "k_frac_median": round(float(merged["k_frac"].median()), 4),
         })
     curve = pd.DataFrame(rows).sort_values(["arm", "k"]).reset_index(drop=True)
+    curve["panel"] = "all"
+
+    # A pair with |B| = 18 cannot supply a dose of 40, so the high-k points are
+    # computed on a smaller subset enriched for large |B| -- and the two arms
+    # drop different pairs, since |A| != |B|. A balanced panel restricted to the
+    # pairs present at EVERY dose in BOTH arms is what makes the curve a dose
+    # response rather than partly a composition change.
+    counts = per_pair.groupby("pair_id").size()
+    full = set(counts[counts == counts.max()].index)
+    if full:
+        bal_rows = []
+        sub = per_pair[per_pair["pair_id"].isin(full)]
+        for (arm, k), grp in sub.groupby(["arm", "k"]):
+            boot = np.random.default_rng(0).choice(
+                grp["phi"].to_numpy(), (4000, len(grp))).mean(1)
+            bal_rows.append({
+                "arm": arm, "k": int(k), "n_pairs": len(grp), "panel": "balanced",
+                "phi": round(float(grp["phi"].mean()), 4),
+                "phi_lo": round(float(np.percentile(boot, 2.5)), 4),
+                "phi_hi": round(float(np.percentile(boot, 97.5)), 4),
+                "frac_negative": round(float((grp["phi"] < 0).mean()), 4),
+                "echo_rate": round(float(grp["echo_rate"].mean()), 4),
+            })
+        curve = pd.concat([curve, pd.DataFrame(bal_rows)], ignore_index=True)
     return per_pair, curve
 
 
@@ -432,10 +456,21 @@ def main() -> int:
         curve.to_csv(DATA / "conditioning_curve.csv", index=False)
         print("[M4] conditioning dose-response (phi on the REMAINING sets)")
         for arm in ("seed_b", "seed_a"):
-            sub = curve[curve["arm"] == arm]
+            sub = curve[(curve["arm"] == arm) & (curve["panel"] == "all")]
             trail = "  ".join(f"k{int(r.k)}:{r.phi:+.3f}" for r in sub.itertuples())
             print(f"     {arm}: {trail}")
-        ks = k_star(curve)
+        bal = curve[curve["panel"] == "balanced"]
+        if not bal.empty:
+            n_bal = int(bal["n_pairs"].iloc[0])
+            print(f"     balanced panel -- the {n_bal} pairs present at EVERY dose in BOTH arms:")
+            for arm in ("seed_b", "seed_a"):
+                sub = bal[bal["arm"] == arm].sort_values("k")
+                print(f"       {arm}: " + "  ".join(f"k{int(r.k)}:{r.phi:+.3f}" for r in sub.itertuples()))
+        print("     n per dose (all-pairs panel): "
+              + "  ".join(f"k{int(r.k)}:{int(r.n_pairs)}"
+                          for r in curve[(curve.arm == 'seed_b') & (curve.panel == 'all')]
+                          .sort_values('k').itertuples()))
+        ks = k_star(curve[curve["panel"] == "all"])
         print(f"     k* (smallest fold2-seeded dose with mean phi < 0): {ks if ks is not None else 'not reached'}")
         ks_pair = k_star_per_pair(per_pair)
         ks_pair.to_csv(DATA / "conditioning_k_star.csv", index=False)
