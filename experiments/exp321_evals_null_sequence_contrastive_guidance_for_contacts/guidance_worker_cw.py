@@ -8,6 +8,7 @@ import socket
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from guidance_policy import (
@@ -270,6 +271,7 @@ def main() -> None:
         build_document,
         residues_from_sequence,
     )
+    from marinfold.inference._config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
@@ -313,7 +315,8 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
-        dtype=torch.bfloat16,
+        config=load_config(Path(args.model)),
+        torch_dtype=torch.bfloat16,
         attn_implementation="sdpa",
         trust_remote_code=True,
     ).to("cuda").eval()
