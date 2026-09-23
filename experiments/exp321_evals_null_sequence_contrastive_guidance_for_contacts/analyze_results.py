@@ -78,6 +78,22 @@ def vote_matrix(maps: list[list[tuple[int, int]]], length: int) -> np.ndarray:
     return votes
 
 
+def rollout_r_precision(
+    contacts: list[tuple[int, int]], true: set[tuple[int, int]]
+) -> float:
+    """Score one ordered rollout at exp89's R cutoff.
+
+    Contact statements are ranked by emission order. Repeated statements only
+    occupy their first rank, and a rollout with fewer than R distinct contacts
+    receives zero credit for the unfilled ranks, matching the fixed-size top-R
+    denominator in exp89.
+    """
+    if not true:
+        return float("nan")
+    ranked = list(dict.fromkeys(contacts))[:len(true)]
+    return len(set(ranked) & true) / len(true)
+
+
 def mean_pairwise_jaccard(maps: list[list[tuple[int, int]]]) -> float:
     """Mean set Jaccard, with two empty maps defined as identical."""
     sets = [set(contacts) for contacts in maps]
@@ -121,15 +137,19 @@ def score_natural_mode(mode: str, budgets: list[int], split: str) -> pd.DataFram
             union_recalls, consensus = [], []
             for budget in budgets:
                 prefix = maps[:budget]
+                prefix_frame = frame.iloc[:budget]
                 union = set().union(*(set(contacts) for contacts in prefix))
                 union_recalls.append(len(union & true) / len(true) if true else float("nan"))
                 consensus.append(r_precision(vote_matrix(prefix, int(target.L)), record, region))
-                emitted_precision = []
-                r_cut = len(true)
-                for contacts in prefix:
-                    selected = contacts[:r_cut]
-                    if selected:
-                        emitted_precision.append(len(set(selected) & true) / len(selected))
+                rollout_precision = [rollout_r_precision(contacts, true) for contacts in prefix]
+                valid = (
+                    prefix_frame.finished.to_numpy(dtype=bool)
+                    & (prefix_frame.malformed_contacts.to_numpy(dtype=int) == 0)
+                )
+                gated_precision = [
+                    score if is_valid else 0.0
+                    for score, is_valid in zip(rollout_precision, valid, strict=True)
+                ]
                 rows.append({
                     "mode": mode,
                     "split": split,
@@ -139,14 +159,16 @@ def score_natural_mode(mode: str, budgets: list[int], split: str) -> pd.DataFram
                     "N": budget,
                     "consensus_r_precision": consensus[-1],
                     "true_union_recall": union_recalls[-1],
-                    "mean_rollout_precision": (
-                        float(np.mean(emitted_precision)) if emitted_precision else float("nan")
-                    ),
+                    "mean_rollout_precision": float(np.mean(rollout_precision)),
+                    "mean_validity_gated_rollout_r_precision": float(np.mean(gated_precision)),
+                    "oracle_r_precision": float(np.max(rollout_precision)),
+                    "validity_gated_oracle_r_precision": float(np.max(gated_precision)),
                     "mean_pairwise_jaccard": mean_pairwise_jaccard(prefix),
                     "unique_maps": len({frozenset(contacts) for contacts in prefix}),
                     "mean_contacts": float(np.mean([len(contacts) for contacts in prefix])),
                     "finished": int(frame.iloc[:budget].finished.sum()),
                     "malformed": int(frame.iloc[:budget].malformed_contacts.sum()),
+                    "invalid_rollouts": int((~valid).sum()),
                 })
             auc = log_n_auc(union_recalls, budgets)
             for row in rows[-len(budgets):]:
@@ -243,6 +265,14 @@ def score_foldswitch_mode(mode: str, split: str, n_rollouts: int) -> pd.DataFram
             raise ValueError(f"{mode}/{target.stem}: incomplete fold-switch pool")
         maps = [canonical(contacts) for contacts in frame.contacts]
         scored = [fold_scores(contacts, truth[target.stem]) for contacts in maps]
+        valid = (
+            frame.finished.to_numpy(dtype=bool)
+            & (frame.malformed_contacts.to_numpy(dtype=int) == 0)
+        )
+        for score, is_valid in zip(scored, valid, strict=True):
+            if not is_valid:
+                score["fold1_hit"] = False
+                score["fold2_hit"] = False
         selected = diverse_indices(maps, min(16, len(maps)))
         oracle_fold1 = any(item["fold1_hit"] for item in scored)
         oracle_fold2 = any(item["fold2_hit"] for item in scored)
@@ -264,6 +294,7 @@ def score_foldswitch_mode(mode: str, split: str, n_rollouts: int) -> pd.DataFram
             "mean_contacts": float(np.mean([len(value) for value in maps])),
             "finished": int(frame.finished.sum()),
             "malformed": int(frame.malformed_contacts.sum()),
+            "invalid_rollouts": int((~valid).sum()),
         })
     return pd.DataFrame(rows)
 
@@ -296,10 +327,16 @@ def main() -> None:
         true_union_recall=("true_union_recall", "mean"),
         union_recall_log_n_auc=("union_recall_log_n_auc", "mean"),
         mean_rollout_precision=("mean_rollout_precision", "mean"),
+        mean_validity_gated_rollout_r_precision=(
+            "mean_validity_gated_rollout_r_precision", "mean"
+        ),
+        oracle_r_precision=("oracle_r_precision", "mean"),
+        validity_gated_oracle_r_precision=("validity_gated_oracle_r_precision", "mean"),
         mean_pairwise_jaccard=("mean_pairwise_jaccard", "mean"),
         mean_contacts=("mean_contacts", "mean"),
         malformed=("malformed", "sum"),
         finished=("finished", "sum"),
+        invalid_rollouts=("invalid_rollouts", "sum"),
     )
     summary.to_csv(destination / f"{args.output_prefix}_natural_summary.csv", index=False)
     print(summary.to_string(index=False))
@@ -322,6 +359,7 @@ def main() -> None:
             mean_contacts=("mean_contacts", "mean"),
             finished=("finished", "sum"),
             malformed=("malformed", "sum"),
+            invalid_rollouts=("invalid_rollouts", "sum"),
         )
         fold_summary.to_csv(
             destination / f"{args.output_prefix}_foldswitch_summary.csv", index=False

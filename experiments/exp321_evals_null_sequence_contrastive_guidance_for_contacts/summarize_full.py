@@ -13,6 +13,7 @@ from analyze_results import (
     ordered_true_pairs,
     predicted_maps,
     r_precision,
+    rollout_r_precision,
     vote_matrix,
 )
 from build_summary import save_plot_with_meta
@@ -25,20 +26,28 @@ GUIDED = "full_g05_pa_all"
 PAIRED = "full_g0_pa_pos"
 IID = "full_iid_single"
 TEMPERATURE = "full_t08_single"
-MODES = [PAIRED, GUIDED, TEMPERATURE, IID]
+RATIO = "full_ratio_pa_pos"
+HIGH_TEMPERATURE = "full_t11_single"
+MODES = [PAIRED, GUIDED, TEMPERATURE, IID, HIGH_TEMPERATURE, RATIO]
 LABELS = {
     PAIRED: "paired gamma=0",
     GUIDED: "frozen guidance",
     TEMPERATURE: "ordinary T=0.8",
     IID: "ordinary iid T=1.0",
+    HIGH_TEMPERATURE: "ordinary T=1.1",
+    RATIO: "pure native/null ratio",
 }
 COLORS = {
     PAIRED: "#222222",
     GUIDED: "#e66101",
     TEMPERATURE: "#5e3c99",
     IID: "#1b9e77",
+    HIGH_TEMPERATURE: "#2166ac",
+    RATIO: "#b2182b",
 }
 METRICS = [
+    "validity_gated_oracle_r_precision",
+    "oracle_r_precision",
     "consensus_r_precision",
     "true_union_recall",
     "union_recall_log_n_auc",
@@ -55,7 +64,7 @@ def paired_comparisons(natural: pd.DataFrame) -> pd.DataFrame:
     first = natural[natural.N == natural.N.min()]
     rows = []
     seed = 323_000
-    for reference in (PAIRED, TEMPERATURE, IID):
+    for reference in (PAIRED, TEMPERATURE, IID, HIGH_TEMPERATURE, RATIO):
         for region in ("all", "long"):
             ref = final[
                 (final["mode"] == reference) & (final["range"] == region)
@@ -129,7 +138,7 @@ def truth_records() -> dict[str, dict]:
 
 
 def equal_time_rows(natural: pd.DataFrame, timings: pd.DataFrame) -> pd.DataFrame:
-    """Compare 100 guided rollouts with the iid count fitting measured guided time."""
+    """Compare 100 guided rollouts with single-stream counts fitting its measured time."""
     targets = pd.read_csv(DATA / "targets.csv")
     targets = targets[(targets.cohort == "eval-val") & (targets.split == "test")]
     records = truth_records()
@@ -140,35 +149,59 @@ def equal_time_rows(natural: pd.DataFrame, timings: pd.DataFrame) -> pd.DataFram
     rows = []
     for target in targets.itertuples():
         guided_seconds = float(timing_index.loc[(GUIDED, target.stem), "elapsed_seconds"])
-        iid_seconds_200 = float(timing_index.loc[(IID, target.stem), "elapsed_seconds"])
-        iid_n = int(np.clip(np.floor(200 * guided_seconds / iid_seconds_200), 1, 200))
-        frame = pd.read_parquet(
-            HERE / "_cache" / IID / "eval-val" / f"{target.stem}.parquet"
-        ).sort_values("rollout").iloc[:iid_n]
         record = records[target.stem]
-        for region in ("all", "long"):
-            maps = predicted_maps(frame, record, region)
-            true = ordered_true_pairs(record, region)
-            union = set().union(*(set(contacts) for contacts in maps))
-            guided = final_guided.loc[(target.stem, region)]
-            rows.append({
-                "stem": target.stem,
-                "L": int(target.L),
-                "range": region,
-                "guided_N": 100,
-                "iid_equal_time_N": iid_n,
-                "guided_seconds": guided_seconds,
-                "iid_seconds_200": iid_seconds_200,
-                "estimated_iid_seconds": iid_seconds_200 * iid_n / 200,
-                "guided_consensus_r_precision": guided.consensus_r_precision,
-                "iid_consensus_r_precision": r_precision(
-                    vote_matrix(maps, int(target.L)), record, region
-                ),
-                "guided_true_union_recall": guided.true_union_recall,
-                "iid_true_union_recall": len(union & true) / len(true) if true else np.nan,
-                "guided_mean_pairwise_jaccard": guided.mean_pairwise_jaccard,
-                "iid_mean_pairwise_jaccard": mean_pairwise_jaccard(maps),
-            })
+        for control in (IID, HIGH_TEMPERATURE):
+            control_seconds_200 = float(
+                timing_index.loc[(control, target.stem), "elapsed_seconds"]
+            )
+            control_n = int(
+                np.clip(np.floor(200 * guided_seconds / control_seconds_200), 1, 200)
+            )
+            frame = pd.read_parquet(
+                HERE / "_cache" / control / "eval-val" / f"{target.stem}.parquet"
+            ).sort_values("rollout").iloc[:control_n]
+            valid = (
+                frame.finished.to_numpy(dtype=bool)
+                & (frame.malformed_contacts.to_numpy(dtype=int) == 0)
+            )
+            for region in ("all", "long"):
+                maps = predicted_maps(frame, record, region)
+                true = ordered_true_pairs(record, region)
+                union = set().union(*(set(contacts) for contacts in maps))
+                rollout_scores = [rollout_r_precision(contacts, true) for contacts in maps]
+                gated_scores = [
+                    score if is_valid else 0.0
+                    for score, is_valid in zip(rollout_scores, valid, strict=True)
+                ]
+                guided = final_guided.loc[(target.stem, region)]
+                rows.append({
+                    "stem": target.stem,
+                    "L": int(target.L),
+                    "range": region,
+                    "control": control,
+                    "control_label": LABELS[control],
+                    "guided_N": 100,
+                    "control_equal_time_N": control_n,
+                    "guided_seconds": guided_seconds,
+                    "control_seconds_200": control_seconds_200,
+                    "estimated_control_seconds": control_seconds_200 * control_n / 200,
+                    "guided_validity_gated_oracle_r_precision": (
+                        guided.validity_gated_oracle_r_precision
+                    ),
+                    "control_validity_gated_oracle_r_precision": float(
+                        np.max(gated_scores)
+                    ),
+                    "guided_consensus_r_precision": guided.consensus_r_precision,
+                    "control_consensus_r_precision": r_precision(
+                        vote_matrix(maps, int(target.L)), record, region
+                    ),
+                    "guided_true_union_recall": guided.true_union_recall,
+                    "control_true_union_recall": (
+                        len(union & true) / len(true) if true else np.nan
+                    ),
+                    "guided_mean_pairwise_jaccard": guided.mean_pairwise_jaccard,
+                    "control_mean_pairwise_jaccard": mean_pairwise_jaccard(maps),
+                })
     return pd.DataFrame(rows)
 
 
@@ -176,28 +209,38 @@ def equal_time_summary(equal_time: pd.DataFrame) -> pd.DataFrame:
     """Bootstrap guided-minus-iid equal-time metric differences."""
     rows = []
     seed = 324_000
-    for region in ("all", "long"):
-        frame = equal_time[equal_time["range"] == region]
-        for metric in (
-            "consensus_r_precision", "true_union_recall", "mean_pairwise_jaccard"
-        ):
-            values = (
-                frame[f"guided_{metric}"] - frame[f"iid_{metric}"]
-            ).to_numpy(dtype=float)
-            low, high = bootstrap_mean_ci(values, seed)
-            rows.append({
-                "range": region,
-                "metric": metric,
-                "n": len(values),
-                "mean_delta": float(values.mean()),
-                "ci95_low": low,
-                "ci95_high": high,
-                "guided_mean": float(frame[f"guided_{metric}"].mean()),
-                "iid_equal_time_mean": float(frame[f"iid_{metric}"].mean()),
-                "median_iid_equal_time_N": float(frame.iid_equal_time_N.median()),
-                "mean_iid_equal_time_N": float(frame.iid_equal_time_N.mean()),
-            })
-            seed += 1
+    for control in (IID, HIGH_TEMPERATURE):
+        for region in ("all", "long"):
+            frame = equal_time[
+                (equal_time["control"] == control) & (equal_time["range"] == region)
+            ]
+            for metric in (
+                "validity_gated_oracle_r_precision",
+                "consensus_r_precision",
+                "true_union_recall",
+                "mean_pairwise_jaccard",
+            ):
+                values = (
+                    frame[f"guided_{metric}"] - frame[f"control_{metric}"]
+                ).to_numpy(dtype=float)
+                low, high = bootstrap_mean_ci(values, seed)
+                rows.append({
+                    "control": control,
+                    "control_label": LABELS[control],
+                    "range": region,
+                    "metric": metric,
+                    "n": len(values),
+                    "mean_delta": float(values.mean()),
+                    "ci95_low": low,
+                    "ci95_high": high,
+                    "guided_mean": float(frame[f"guided_{metric}"].mean()),
+                    "control_equal_time_mean": float(frame[f"control_{metric}"].mean()),
+                    "median_control_equal_time_N": float(
+                        frame.control_equal_time_N.median()
+                    ),
+                    "mean_control_equal_time_N": float(frame.control_equal_time_N.mean()),
+                })
+                seed += 1
     return pd.DataFrame(rows)
 
 
@@ -227,7 +270,10 @@ def curve_summary(natural: pd.DataFrame) -> pd.DataFrame:
     for keys, frame in natural.groupby(["mode", "range", "N"], sort=False):
         mode, region, budget = keys
         for metric in (
-            "consensus_r_precision", "true_union_recall", "mean_pairwise_jaccard"
+            "validity_gated_oracle_r_precision",
+            "consensus_r_precision",
+            "true_union_recall",
+            "mean_pairwise_jaccard",
         ):
             values = frame[metric].to_numpy(dtype=float)
             rows.append({
@@ -244,11 +290,15 @@ def curve_summary(natural: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_curves(curves: pd.DataFrame) -> None:
-    """Plot held-out coverage and accuracy curves."""
+    """Plot held-out oracle and consensus accuracy curves."""
     fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
     specs = [
-        ("all", "true_union_recall", "True-contact union recall"),
-        ("long", "true_union_recall", "Long-range true-contact union recall"),
+        ("all", "validity_gated_oracle_r_precision", "Oracle best-of-N R-precision"),
+        (
+            "long",
+            "validity_gated_oracle_r_precision",
+            "Long-range oracle best-of-N R-precision",
+        ),
         ("all", "consensus_r_precision", "Consensus R-precision"),
         ("long", "consensus_r_precision", "Long-range consensus R-precision"),
     ]
@@ -265,14 +315,15 @@ def plot_curves(curves: pd.DataFrame) -> None:
         ax.set_xlabel("rollouts N")
         ax.grid(alpha=0.25)
     axes[0, 0].legend(fontsize=8)
-    fig.suptitle("Frozen guidance on 81 untouched eval-val proteins", fontsize=14)
+    fig.suptitle("Oracle-first evaluation on 81 untouched eval-val proteins", fontsize=14)
     fig.tight_layout()
     save_plot_with_meta(
         fig,
         PLOTS / "04_heldout_curves.png",
         caption=(
-            "Mean curves on the 81 non-development eval-val proteins. All settings were frozen "
-            "before these targets were accessed; ordinary iid uses its first 100 of 200 rollouts."
+            "Mean curves on the 81 non-development eval-val proteins. The top row is the primary "
+            "endpoint: the best valid rollout in each prefix, with unfinished or malformed "
+            "rollouts assigned zero. Ordinary iid and T=1.1 use their first 100 of 200 rollouts."
         ),
         dpi=180,
     )
@@ -281,9 +332,9 @@ def plot_curves(curves: pd.DataFrame) -> None:
 
 def plot_primary(comparisons: pd.DataFrame) -> None:
     """Plot primary paired deltas and bootstrap intervals."""
-    metrics = ["union_recall_log_n_auc", "consensus_r_precision"]
+    metrics = ["validity_gated_oracle_r_precision", "consensus_r_precision"]
     fig, axes = plt.subplots(1, 2, figsize=(12, 5.5))
-    references = [PAIRED, TEMPERATURE, IID]
+    references = [PAIRED, TEMPERATURE, IID, HIGH_TEMPERATURE, RATIO]
     positions = np.arange(len(references))
     offsets = {"all": -0.12, "long": 0.12}
     for ax, metric in zip(axes, metrics):
@@ -299,10 +350,11 @@ def plot_primary(comparisons: pd.DataFrame) -> None:
                 fmt=marker, capsize=4, label=region,
             )
         ax.axhline(0, color="#555555", linewidth=0.8)
-        if metric == "consensus_r_precision":
-            ax.axhline(-0.005, color="#b2182b", linestyle="--", linewidth=1)
         ax.set_xticks(positions, [LABELS[value] for value in references], rotation=18, ha="right")
-        ax.set_title("True-union log-N AUC" if metric.startswith("union") else "Consensus R-precision")
+        ax.set_title(
+            "Validity-gated oracle R-precision"
+            if metric.startswith("validity") else "Consensus R-precision (secondary)"
+        )
         ax.set_ylabel("frozen guidance minus control")
         ax.grid(axis="y", alpha=0.25)
     axes[0].legend()
@@ -312,9 +364,9 @@ def plot_primary(comparisons: pd.DataFrame) -> None:
         fig,
         PLOTS / "05_heldout_primary_deltas.png",
         caption=(
-            "Frozen-guidance deltas on 81 proteins. The primary success criterion requires the "
-            "union-recall AUC interval to exclude zero against both iid and the overlap-matched "
-            "temperature control, while R-precision stays above the dashed -0.005 floor."
+            "Frozen-guidance deltas on 81 proteins. Oracle best-of-100 is primary; consensus "
+            "accuracy is retained only as context. Error bars are paired protein-bootstrap 95% "
+            "intervals."
         ),
         dpi=180,
     )
@@ -322,25 +374,24 @@ def plot_primary(comparisons: pd.DataFrame) -> None:
 
 
 def plot_equal_time(summary: pd.DataFrame) -> None:
-    """Plot paired equal-time differences against ordinary iid."""
+    """Plot paired equal-time oracle differences against single-stream controls."""
     fig, ax = plt.subplots(figsize=(9, 5.5))
+    frame = summary[summary.metric == "validity_gated_oracle_r_precision"]
     order = [
-        ("all", "true_union_recall"),
-        ("long", "true_union_recall"),
-        ("all", "consensus_r_precision"),
-        ("long", "consensus_r_precision"),
-        ("all", "mean_pairwise_jaccard"),
-        ("long", "mean_pairwise_jaccard"),
+        (IID, "all"),
+        (IID, "long"),
+        (HIGH_TEMPERATURE, "all"),
+        (HIGH_TEMPERATURE, "long"),
     ]
-    frame = summary.set_index(["range", "metric"]).loc[order]
+    frame = frame.set_index(["control", "range"]).loc[order]
     y = frame.mean_delta.to_numpy()
     low = y - frame.ci95_low.to_numpy()
     high = frame.ci95_high.to_numpy() - y
-    labels = [f"{region} {metric.replace('_', ' ')}" for region, metric in order]
+    labels = [f"{LABELS[control]}\n{region}" for control, region in order]
     ax.errorbar(np.arange(len(order)), y, yerr=np.vstack([low, high]), fmt="o", capsize=4)
     ax.axhline(0, color="#555555", linewidth=0.8)
     ax.set_xticks(np.arange(len(order)), labels, rotation=25, ha="right")
-    ax.set_ylabel("frozen guidance (N=100) minus equal-time iid")
+    ax.set_ylabel("frozen guidance (N=100) minus equal-time control")
     ax.grid(axis="y", alpha=0.25)
     fig.suptitle("Equal-H100-time comparison using measured per-protein throughput", fontsize=14)
     fig.tight_layout()
@@ -348,16 +399,16 @@ def plot_equal_time(summary: pd.DataFrame) -> None:
         fig,
         PLOTS / "06_equal_time.png",
         caption=(
-            "Each protein compares 100 paired guided rollouts with the number of ordinary iid "
-            "rollouts that fit the measured guided inference time, interpolated from its 200-rollout "
-            "single-stream timing. Error bars are paired protein-bootstrap 95% intervals."
+            "Each protein compares 100 paired guided rollouts with the number of ordinary T=1.0 "
+            "or T=1.1 rollouts fitting the measured guided inference time, interpolated from each "
+            "200-rollout timing. The endpoint is validity-gated oracle R-precision."
         ),
         dpi=180,
     )
     plt.close(fig)
 
 
-def plot_foldswitch(common: pd.DataFrame, iid200: pd.DataFrame) -> None:
+def plot_foldswitch(common: pd.DataFrame, extended: pd.DataFrame) -> None:
     """Plot fixed fold-switch dual-mode coverage."""
     rows = []
     for mode in MODES:
@@ -367,11 +418,13 @@ def plot_foldswitch(common: pd.DataFrame, iid200: pd.DataFrame) -> None:
             "oracle": int(frame.oracle_dual.sum()),
             "blind": int(frame.blind_dual.sum()),
         })
-    rows.append({
-        "label": "ordinary iid T=1.0 (N=200)",
-        "oracle": int(iid200.oracle_dual.sum()),
-        "blind": int(iid200.blind_dual.sum()),
-    })
+    for mode in (IID, HIGH_TEMPERATURE):
+        frame = extended[extended["mode"] == mode]
+        rows.append({
+            "label": f"{LABELS[mode]} (N=200)",
+            "oracle": int(frame.oracle_dual.sum()),
+            "blind": int(frame.blind_dual.sum()),
+        })
     frame = pd.DataFrame(rows)
     x = np.arange(len(frame))
     fig, ax = plt.subplots(figsize=(10, 5.5))
@@ -402,7 +455,7 @@ def main() -> None:
     heldout = pd.read_csv(DATA / "heldout_natural.csv")
     dev = pd.read_csv(DATA / "full_dev_natural.csv")
     folds = pd.read_csv(DATA / "heldout_foldswitch.csv")
-    iid200_folds = pd.read_csv(DATA / "heldout_iid200_foldswitch.csv")
+    extended_folds = pd.read_csv(DATA / "heldout_200_foldswitch.csv")
     comparisons = paired_comparisons(heldout)
     curves = curve_summary(heldout)
     timings = collect_timings()
@@ -418,7 +471,7 @@ def main() -> None:
     plot_curves(curves)
     plot_primary(comparisons)
     plot_equal_time(equal_summary)
-    plot_foldswitch(folds, iid200_folds)
+    plot_foldswitch(folds, extended_folds)
     print(
         f"wrote {len(comparisons)} held-out comparisons, {len(equal_time)} equal-time rows, "
         f"and {len(timings)} timing rows"

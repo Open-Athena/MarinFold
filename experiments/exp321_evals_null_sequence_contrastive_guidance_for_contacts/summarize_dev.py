@@ -44,6 +44,8 @@ COLORS = {
     "dev_t11_pa_pos": "#1a9850",
 }
 METRICS = [
+    "validity_gated_oracle_r_precision",
+    "oracle_r_precision",
     "consensus_r_precision",
     "true_union_recall",
     "union_recall_log_n_auc",
@@ -142,7 +144,12 @@ def diagnostic_summary(diagnostics: pd.DataFrame) -> pd.DataFrame:
 
 def curve_summary(natural: pd.DataFrame) -> pd.DataFrame:
     """Aggregate rollout-budget curves with across-protein standard errors."""
-    metrics = ["consensus_r_precision", "true_union_recall", "mean_pairwise_jaccard"]
+    metrics = [
+        "validity_gated_oracle_r_precision",
+        "consensus_r_precision",
+        "true_union_recall",
+        "mean_pairwise_jaccard",
+    ]
     rows = []
     for keys, frame in natural.groupby(["mode", "range", "N"], sort=False):
         mode, region, budget = keys
@@ -174,15 +181,19 @@ def collect_timings() -> pd.DataFrame:
 
 
 def plot_curves(curves: pd.DataFrame) -> None:
-    """Plot useful coverage and consensus accuracy across rollout budgets."""
+    """Plot oracle and consensus accuracy across rollout budgets."""
     shown = [
         "dev_g0_pa_pos", "dev_g05_pa_pos", "dev_g1_pa_pos", "dev_g2_pa_pos",
         "dev_ratio_pa_pos", "dev_t11_pa_pos",
     ]
     fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
     specs = [
-        ("all", "true_union_recall", "True-contact union recall"),
-        ("long", "true_union_recall", "Long-range true-contact union recall"),
+        ("all", "validity_gated_oracle_r_precision", "Oracle best-of-N R-precision"),
+        (
+            "long",
+            "validity_gated_oracle_r_precision",
+            "Long-range oracle best-of-N R-precision",
+        ),
         ("all", "consensus_r_precision", "Consensus R-precision"),
         ("long", "consensus_r_precision", "Long-range consensus R-precision"),
     ]
@@ -200,15 +211,15 @@ def plot_curves(curves: pd.DataFrame) -> None:
         ax.grid(alpha=0.25)
         ax.set_xlabel("rollouts N")
     axes[0, 0].legend(fontsize=8, ncol=2)
-    fig.suptitle("Development screen: diversity gains trade against consensus accuracy", fontsize=14)
+    fig.suptitle("Development screen: moderate guidance improves oracle accuracy", fontsize=14)
     fig.tight_layout()
     save_plot_with_meta(
         fig,
         PLOTS / "01_dev_curves.png",
         caption=(
-            "Mean over 16 length-stratified eval-val development proteins. Pure-ratio and "
-            "temperature sampling cover more true contacts, but both reduce consensus accuracy; "
-            "moderate CFG-style guidance does not broaden the rollout pool."
+            "Mean over 16 length-stratified eval-val development proteins. The top row is "
+            "validity-gated oracle accuracy; moderate guidance improves it, while pure ratio and "
+            "higher temperature do not. Consensus accuracy is shown as secondary context."
         ),
         dpi=180,
     )
@@ -216,7 +227,7 @@ def plot_curves(curves: pd.DataFrame) -> None:
 
 
 def plot_tradeoff(deltas: pd.DataFrame) -> None:
-    """Plot paired accuracy/diversity deltas against the preregistered floor."""
+    """Plot paired oracle-accuracy and diversity deltas."""
     fig, axes = plt.subplots(1, 2, figsize=(12, 5.5), sharey=True)
     specs = [
         (
@@ -228,8 +239,7 @@ def plot_tradeoff(deltas: pd.DataFrame) -> None:
     ]
     region_markers = {"all": "o", "long": "s"}
     for ax, (metric, xlabel, subtitle) in zip(axes, specs):
-        ax.axhspan(-0.005, 0.03, color="#d9f0d3", alpha=0.55)
-        ax.axhline(-0.005, color="#238b45", linestyle="--", linewidth=1)
+        ax.axhline(0, color="#777777", linewidth=0.8)
         ax.axvline(0, color="#777777", linewidth=0.8)
         for mode in MODE_ORDER[1:]:
             for region in ("all", "long"):
@@ -239,7 +249,7 @@ def plot_tradeoff(deltas: pd.DataFrame) -> None:
                 ].iloc[0]
                 yrow = deltas[
                     (deltas["mode"] == mode) & (deltas["range"] == region)
-                    & (deltas.metric == "consensus_r_precision")
+                    & (deltas.metric == "validity_gated_oracle_r_precision")
                 ].iloc[0]
                 ax.scatter(
                     xrow.mean_delta, yrow.mean_delta, color=COLORS[mode],
@@ -248,19 +258,18 @@ def plot_tradeoff(deltas: pd.DataFrame) -> None:
                 )
         ax.set_xlabel(f"{xlabel}\n({subtitle})")
         ax.grid(alpha=0.2)
-    axes[0].set_ylabel("Delta consensus R-precision")
+    axes[0].set_ylabel("Delta oracle best-of-20 R-precision")
     axes[0].legend(fontsize=7, ncol=2, loc="best")
-    fig.suptitle("No nonzero guidance arm satisfies the accuracy-diversity gate at N=20", fontsize=14)
+    fig.suptitle("Oracle gains come from stronger samples, not a broader contact union", fontsize=14)
     fig.tight_layout()
     save_plot_with_meta(
         fig,
         PLOTS / "02_accuracy_diversity_tradeoff.png",
         caption=(
             "Paired mean deltas versus gamma=0 on the same 16 proteins. Incremental coverage "
-            "subtracts each arm's N=1 coverage from its N=20 coverage, separating rollout-pool "
-            "breadth from first-map quality. The green band is the "
-            "preregistered <=0.005 consensus-regression allowance. Circles are all-range and "
-            "squares long-range. No guided arm combines lower overlap with preserved accuracy."
+            "subtracts each arm's N=1 coverage from its N=20 coverage. Circles are all-range and "
+            "squares long-range. Moderate guidance raises oracle accuracy despite higher overlap "
+            "and no gain in incremental union coverage."
         ),
         dpi=180,
     )
