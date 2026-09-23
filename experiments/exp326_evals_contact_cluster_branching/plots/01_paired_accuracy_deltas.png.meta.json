@@ -1,5 +1,0 @@
-{
-  "script": "plot_results.py",
-  "args": [],
-  "caption": "Protein-paired bootstrap mean differences for the primary continuation-only map. The held-out split was opened only after k=5 cleared the development gate."
-}

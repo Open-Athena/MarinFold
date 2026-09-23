@@ -1,5 +1,0 @@
-{
-  "script": "plot_results.py",
-  "args": [],
-  "caption": "Oracle contact-mode coverage on 15 frozen fold-switch development pairs, using the same total 100-map budget and excluding supplied contacts from branch continuations."
-}

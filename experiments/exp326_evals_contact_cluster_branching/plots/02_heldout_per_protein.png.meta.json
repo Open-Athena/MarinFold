@@ -1,5 +1,0 @@
-{
-  "script": "plot_results.py",
-  "args": [],
-  "caption": "Each point is one of 81 held-out eval-val proteins. Blue points had at least one split-half-stable five-contact cluster; gray crosses used the preregistered coherent-random fallback."
-}
