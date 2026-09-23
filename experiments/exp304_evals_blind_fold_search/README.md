@@ -327,12 +327,15 @@ append-only progress log, and a resume pass supplied the explicitly extracted
 protein sequence. The final table contains one successful result per target.
 
 Every prediction was scored against both references on their common C-alpha
-positions. We saved standard C-alpha RMSD and Helico's Kabsch-aligned GDT-TS
-(fractions within 1/2/4/8 Angstrom after one global Kabsch fit), both globally
-and on the annotated switching region. The region score used the global fit,
-so a locally superposable fragment cannot by itself create a fold-specific
-hit. This GDT-TS convention matches Helico's evaluator but is simpler than the
-iterative subset-superposition procedure sometimes also called GDT-TS.
+positions. We saved standard whole-structure TM-score normalized to the
+reference length, standard C-alpha RMSD, and Helico's Kabsch-aligned GDT-TS
+(fractions within 1/2/4/8 Angstrom after one global Kabsch fit). RMSD and GDT
+were saved both globally and on the annotated switching region. The region
+score used the global fit, so a locally superposable fragment cannot by itself
+create a fold-specific hit. The per-protein deck plots whole-structure TM-score
+against Fold1 versus Fold2 for all 1,000 predictions. The GDT-TS convention used
+for the separate binary screen matches Helico's evaluator but is simpler than
+the iterative subset-superposition procedure sometimes also called GDT-TS.
 
 The plotted binary screen is explicitly **post-hoc and exploratory**. It was
 chosen after inspecting the initial controls and the known `3j7wb_3j7vg`

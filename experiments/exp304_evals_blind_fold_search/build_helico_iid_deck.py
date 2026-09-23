@@ -246,8 +246,7 @@ def main() -> None:
                      f"L={int(summary.L)} · Fold1={target.fold1} · Fold2={target.fold2} · "
                      f"1,000 rollouts · {'exact' if summary.strict_exact else 'near-match'} sequence · "
                      f"state={int(summary.state_1000)} modes · "
-                     f"reference GDT={reference_scores.gdt_common:.3f}, "
-                     f"region={reference_scores.gdt_region_global_fit:.3f}",
+                     f"reference TM-score={reference_scores.tm_common:.3f}",
                      fontsize=10, color="#444444")
             reference_contact_panel(fig.add_subplot(grid[0, 0]), true1, true2, bounds)
             contact_panel(fig.add_subplot(grid[0, 1]), input1.contacts, true1,
@@ -259,26 +258,21 @@ def main() -> None:
             axis = fig.add_subplot(grid[1, 0])
             iid = pair_scores[pair_scores.kind == "iid"]
             points = axis.scatter(
-                iid.gdt_region_global_fit_fold1, iid.gdt_region_global_fit_fold2,
+                iid.tm_common_fold1, iid.tm_common_fold2,
                 c=iid.rollout + 1, cmap="viridis", s=9, alpha=0.5, rasterized=True,
             )
-            axis.scatter([pair_scores.loc[chosen1.target_id].gdt_region_global_fit_fold1],
-                         [pair_scores.loc[chosen1.target_id].gdt_region_global_fit_fold2],
-                         color=BLUE, s=70, marker="*", label="selected Fold1")
-            axis.scatter([pair_scores.loc[chosen2.target_id].gdt_region_global_fit_fold1],
-                         [pair_scores.loc[chosen2.target_id].gdt_region_global_fit_fold2],
-                         color=ORANGE, s=70, marker="*", label="selected Fold2")
+            axis.scatter([pair_scores.loc[chosen1.target_id].tm_common_fold1],
+                         [pair_scores.loc[chosen1.target_id].tm_common_fold2],
+                         color=BLUE, s=70, marker="*", label="GDT-screen Fold1 candidate")
+            axis.scatter([pair_scores.loc[chosen2.target_id].tm_common_fold1],
+                         [pair_scores.loc[chosen2.target_id].tm_common_fold2],
+                         color=ORANGE, s=70, marker="*", label="GDT-screen Fold2 candidate")
             axis.plot([0, 1], [0, 1], color="#999999", linewidth=1)
-            diagonal = np.linspace(0, 1, 100)
-            axis.plot(diagonal, diagonal - PRIMARY_REGION_MARGIN, color=BLUE,
-                      linestyle=":", linewidth=0.8)
-            axis.plot(diagonal, diagonal + PRIMARY_REGION_MARGIN, color=ORANGE,
-                      linestyle=":", linewidth=0.8)
             axis.set(xlim=(0, 1), ylim=(0, 1),
-                     xlabel="Fold1 switching-region GDT",
-                     ylabel="Fold2 switching-region GDT")
+                     xlabel="Whole-structure TM-score vs Fold1",
+                     ylabel="Whole-structure TM-score vs Fold2")
             axis.set_box_aspect(1)
-            axis.set_title("All 1,000 predictions · whole-protein Kabsch fit", loc="left",
+            axis.set_title("All 1,000 predictions · whole-structure TM-score", loc="left",
                            fontsize=9, fontweight="bold")
             axis.legend(frameon=False, fontsize=8)
             fig.colorbar(points, ax=axis, fraction=0.046, pad=0.04, label="Rollout")
@@ -300,9 +294,11 @@ def main() -> None:
                 f"{'Fold1' if summary.no_contact_fold1_hit else ''}"
                 f"{'Fold2' if summary.no_contact_fold2_hit else ''}"
                 f"{'none' if not summary.no_contact_fold1_hit and not summary.no_contact_fold2_hit else ''}\n\n"
-                "Selected structures\n"
+                "GDT-screen-selected structures\n"
                 f"  Fold1 contact recall F1/F2: {chosen1.contact_recall_fold1_fs:.3f} / "
                 f"{chosen1.contact_recall_fold2_fs:.3f}\n"
+                f"  Fold1 TM-score F1/F2: {chosen1.tm_common_fold1:.3f} / "
+                f"{chosen1.tm_common_fold2:.3f}\n"
                 f"  Fold1 GDT: {chosen1.gdt_common_target:.3f} vs {chosen1.gdt_common_other:.3f} "
                 f"(need {chosen1.gdt_threshold:.3f})\n"
                 f"  Fold1 region: {chosen1.gdt_region_target:.3f} vs {chosen1.gdt_region_other:.3f}\n"
@@ -310,6 +306,8 @@ def main() -> None:
                 f"  Fold1 mean pLDDT: {chosen1.mean_plddt:.1f}\n"
                 f"  Fold2 contact recall F1/F2: {chosen2.contact_recall_fold1_fs:.3f} / "
                 f"{chosen2.contact_recall_fold2_fs:.3f}\n"
+                f"  Fold2 TM-score F1/F2: {chosen2.tm_common_fold1:.3f} / "
+                f"{chosen2.tm_common_fold2:.3f}\n"
                 f"  Fold2 GDT: {chosen2.gdt_common_target:.3f} vs {chosen2.gdt_common_other:.3f} "
                 f"(need {chosen2.gdt_threshold:.3f})\n"
                 f"  Fold2 region: {chosen2.gdt_region_target:.3f} vs {chosen2.gdt_region_other:.3f}\n"
@@ -319,13 +317,13 @@ def main() -> None:
             text_axis.text(
                 0.58, 1,
                 "Scatter definition\n"
-                "For each reference separately:\n"
-                "  1. Kabsch-fit all common Cα atoms.\n"
-                "  2. Keep distances in the switching region.\n"
-                "  3. Average the fractions below\n"
-                "     1, 2, 4, and 8 Å.\n\n"
-                "Higher is closer. This is a single-fit\n"
-                "threshold score, not iterative GDT-TS.",
+                "TM-align each prediction to each reference\n"
+                "using the full set of common Cα positions.\n"
+                "The score is normalized by the reference\n"
+                "length (tm_norm_chain2). No switching-region\n"
+                "restriction is used. Higher is closer; 1 is\n"
+                "a perfect match. The stars remain candidates\n"
+                "chosen by the separately labeled GDT screen.",
                 va="top", fontsize=8.0, linespacing=1.2, color="#444444",
             )
             save_page(pdf, fig, page_dir / f"{protein_index:03d}_{pair_id}_contacts.png")
