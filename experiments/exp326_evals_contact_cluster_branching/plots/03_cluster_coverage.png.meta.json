@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Three-contact clusters are broadly available; the stricter five-contact arm falls back on about half the proteins, an important limitation of the frozen policy."
+}
