@@ -43,6 +43,9 @@ def main() -> None:
         }
         for group, keep in groups.items():
             for comparator in ("iid100", "random_k5"):
+                if group == "fallback" and comparator == "random_k5":
+                    seed += len(METRICS)
+                    continue
                 for metric in METRICS:
                     values = (
                         pivot[metric]["cluster_k5"] - pivot[metric][comparator]

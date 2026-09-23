@@ -90,6 +90,9 @@ was only +0.0009; the aggregate increase came from fallback targets. Long-range
 held-out consensus fell by -0.0038 versus iid and -0.0053 versus random k=5.
 Thus the small all-range consensus increase is a generic coherent-seeding or
 sampling effect, not evidence that the learned clusters identify useful modes.
+The cluster and random arms are identically distributed on fallback targets,
+so their realized fallback-to-fallback difference is randomization noise and is
+not reported as a policy contrast in the stratified summary.
 
 The strict k=5 policy had limited coverage: an eligible split-half-stable
 cluster existed for 8/16 development and 39/81 held-out proteins. k=3 covered

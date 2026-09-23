@@ -288,7 +288,9 @@ def make_bundle_plans(
 
     while len(cluster_plans) < n_branches:
         viable = [
-            index for index, contacts in enumerate(maps) if len(contacts) >= bundle_size
+            index
+            for index, contacts in enumerate(maps)
+            if len({assignment[contact] for contact in contacts}) >= bundle_size
         ]
         if not viable:
             raise ValueError("no warm-up rollout can supply a coherent bundle")

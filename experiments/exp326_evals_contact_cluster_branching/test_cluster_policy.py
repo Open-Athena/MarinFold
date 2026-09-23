@@ -73,3 +73,11 @@ def test_fallback_still_uses_one_observed_rollout() -> None:
     for plan in cluster:
         assert set(plan.bundle) <= set(maps[plan.source_rollout])
         assert plan.used_fallback
+
+
+def test_fallback_viability_counts_collapsed_neighborhoods() -> None:
+    maps = [[(10, 50), (11, 51), (20, 70)] for _ in range(49)]
+    maps.append([(100, 150), (120, 180), (140, 210)])
+    cluster, random_control, _ = make_bundle_plans(maps, bundle_size=3, seed=11)
+    assert {plan.source_rollout for plan in cluster} == {49}
+    assert {plan.source_rollout for plan in random_control} == {49}

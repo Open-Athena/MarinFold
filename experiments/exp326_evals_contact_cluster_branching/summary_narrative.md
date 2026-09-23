@@ -40,6 +40,10 @@ was -0.0008 versus random k=5. Long-range consensus fell -0.0038 versus iid and
 -0.0053 versus random. The all-range increase came from fallback targets, not
 targets on which stable clusters existed.
 
+On fallback targets, the cluster and random arms are identically distributed
+coherent-random policies; their realized difference is not a meaningful policy
+contrast and is omitted from the stratified table.
+
 ## Coverage is the bottleneck
 
 The strict k=5 split-half criterion found an eligible cluster on only 8/16

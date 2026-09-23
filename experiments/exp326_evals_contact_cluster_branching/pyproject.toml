@@ -8,6 +8,7 @@ dependencies = [
     "numpy>=2,<3",
     "pandas>=3,<4",
     "pyarrow>=23,<26",
+    "scikit-learn>=1.9,<2",
     "scipy>=1.17,<2",
     "transformers==5.15.0",
     "vllm==0.19.1",
