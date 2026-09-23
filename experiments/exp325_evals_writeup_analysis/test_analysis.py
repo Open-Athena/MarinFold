@@ -1,5 +1,6 @@
 """Check scientific invariants across the real, archived input tables."""
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -140,3 +141,31 @@ def test_test_folding_is_complete_and_selected_only_by_confidence() -> None:
         candidates = raw[(raw.stem == row.stem) & (raw.arm == "top_L")]
         assert original.ranking_score == candidates.ranking_score.max()
         assert row.value == pytest.approx(original.gdt_ts)
+
+
+def test_alphafold_budgets_and_complete_coverage() -> None:
+    protocol = json.loads((DATA / "alphafold_inputs.json").read_text())
+    assert protocol["n_targets"] == 333
+    targets = set(pd.read_csv(DATA / "targets.csv").stem)
+    for method, budget in [("af2", 5), ("af3", 25)]:
+        timings = pd.read_csv(DATA / f"{method}_timings.csv")
+        assert set(timings.stem) == targets
+        assert not timings.stem.duplicated().any()
+        assert (timings.n_samples == budget).all()
+        run = json.loads((DATA / f"{method}_run.json").read_text())
+        assert run["n_candidates"] == budget * 333
+        assert set(run["selected_sha256"]) == targets
+        metrics = pd.read_csv(DATA / f"{method}_contact_metrics.csv")
+        for region in ("all", "long"):
+            rows = metrics[(metrics.cut == "R") & (metrics["range"] == region)]
+            assert len(rows) == 333
+            assert set(rows.stem) == targets
+
+
+def test_alphafold_addition_preserves_original_populations() -> None:
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    for figure, expected in [("01_predictors", 305), ("02_oracle", 305),
+                             ("04_contacts", 314), ("05_folding", 305)]:
+        x = rows[(rows.figure == figure) & (rows.designed == 0)]
+        assert {"af2", "af3"}.issubset(set(x.method))
+        assert (x.groupby(["method", "metric"]).stem.nunique() == expected).all()

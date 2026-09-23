@@ -1,5 +1,5 @@
 {
   "script": "render.py",
   "args": [],
-  "caption": "The 248B-token model through Helico: request the top-L predicted contacts, generate three diffusion samples, select by highest Helico confidence at that fixed cut; no MSA. Helico drops pairs closer than six residues after coordinate mapping; requested and effective counts are saved. Same 305 natural proteins in every arm (95 validation + 210 test). GDT-TS and lDDT are separate metrics. See coverage.csv for exclusions."
+  "caption": "The 248B-token model through Helico: request the top-L predicted contacts, generate three diffusion samples, select by highest Helico confidence at that fixed cut; no MSA. Helico drops pairs closer than six residues after coordinate mapping; requested and effective counts are saved. Same 305 natural proteins in every arm (95 validation + 210 test). GDT-TS and lDDT are separate metrics. See coverage.csv for exclusions. AlphaFold2/3 use the same archived MSA queries and alignments underlying these depth bins, with templates disabled and protein-chain-only inputs. Confidence selects among five AF2 pTM models (three recycles) or 25 AF3 samples (five seeds, ten recycles). These are controlled shared-MSA runs, not the models\u2019 full default search pipelines."
 }

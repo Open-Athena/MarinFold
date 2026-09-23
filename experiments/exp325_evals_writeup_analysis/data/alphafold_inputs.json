@@ -1,0 +1,68 @@
+{
+  "status": "fixed_before_inference",
+  "n_targets": 333,
+  "inputs_sha256": "20f1dc53bf0ed6aad2c58706bcf75f9b7957919f0a3152de550d52917e883d38",
+  "weights": {
+    "af2/params/params_model_1_ptm.npz": {
+      "sha256": "5e564f79af5bcd54ccef6e2a6bb0ff01015d01650ebc41d4575e35f0de9ecc84",
+      "bytes": 373103340
+    },
+    "af2/params/params_model_2_ptm.npz": {
+      "sha256": "23645d9a82c4af2ed54cd48a7b3c1c2575dc6aa9fe931adb4d7203ca5f0dc398",
+      "bytes": 373103340
+    },
+    "af2/params/params_model_3_ptm.npz": {
+      "sha256": "b53a724294cdd46a45d530b306bced8e429ffee74a4f9a2a897551b30966c415",
+      "bytes": 371746284
+    },
+    "af2/params/params_model_4_ptm.npz": {
+      "sha256": "07d0e285ad1406ce3d91a2f6633a8ce9ee99155a53d24ee7783f8fd1e89f5d3a",
+      "bytes": 371746284
+    },
+    "af2/params/params_model_5_ptm.npz": {
+      "sha256": "2f8d0bd193e7d6e837958ba92acdc3f02b23b61bf841fa043fc076ee0e1996a5",
+      "bytes": 371746284
+    },
+    "af3/af3.bin.zst": {
+      "sha256": "0dd0290af76eec0119f4c0c41f441fbce4ec18aa21a0a02cac4a3af01d841369",
+      "bytes": 1020559043
+    }
+  },
+  "shared_protocol": "Protein chain only; exact archived MSA query/alignment; no templates; no relaxation; confidence-only selection; no test tuning",
+  "af2": {
+    "colabfold": "1.6.2",
+    "alphafold_colabfold": "2.3.18",
+    "jax": "0.10.2",
+    "model_type": "alphafold2_ptm",
+    "models": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "seeds": [
+      42
+    ],
+    "recycles": 3,
+    "early_stop_tolerance": 0,
+    "selection": "mean pLDDT",
+    "max_seq": 512,
+    "max_extra_seq": 1024
+  },
+  "af3": {
+    "source_sha": "3c89cc7b89aa7042b72885af9016a45b262da008",
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "diffusion_samples_per_seed": 5,
+    "recycles": 10,
+    "selection": "ranking_score"
+  },
+  "msa_interpretation": "Depth is now the supplied alignment count for both new baselines, not the depth from the original AF3 search pipeline.",
+  "parameters_private": "Do not include weights in the public artifact package."
+}

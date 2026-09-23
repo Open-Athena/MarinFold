@@ -13,6 +13,8 @@ PALETTE = ["#385C8F", "#8F6B38", "#388F8D", "#8F386D", "#7E8F38",
 FONT = "Lato, DejaVu Sans, Arial, sans-serif"
 TIERS = ["<10", "10–99", "100–999", "≥1000"]
 METHODS = {
+    "af2": ("AlphaFold2 + MSA", PALETTE[7], "^"),
+    "af3": ("AlphaFold3 + MSA", PALETTE[6], "D"),
     "protenix_msa": ("Protenix-v2 + MSA", PALETTE[0], "o"),
     "protenix_ss": ("Protenix-v2 · single sequence", PALETTE[1], "s"),
     "esmfold2": ("ESMFold2", PALETTE[2], "D"),
@@ -27,10 +29,10 @@ METHODS = {
     "best100": ("Oracle best of 100*", INK, "D"),
 }
 ORDER = {
-    "01_predictors": ["protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
-    "02_oracle": ["oracle", "protenix_msa", "no_contacts"],
-    "04_contacts": ["protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
-    "05_folding": ["protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
+    "01_predictors": ["af3", "af2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
+    "02_oracle": ["oracle", "af3", "af2", "protenix_msa", "no_contacts"],
+    "04_contacts": ["af3", "af2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
+    "05_folding": ["af3", "af2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
     "06_sampling": ["single", "consensus", "best100"],
 }
 TITLES = {
@@ -56,3 +58,7 @@ METRICS = {"gdt_ts": "GDT-TS", "lddt": "lDDT", "r_precision": "R-precision",
 COHORTS = {"natural": "Natural · all splits", "eval-val": "Natural · eval-val",
            "eval-test": "Natural · eval-test", "designed": "Designed",
            "viral": "Natural · viral", "nonviral": "Natural · nonviral"}
+
+ALPHAFOLD_CAPTION = " AlphaFold2/3 use the same archived MSA queries and alignments underlying these depth bins, with templates disabled and protein-chain-only inputs. Confidence selects among five AF2 pTM models (three recycles) or 25 AF3 samples (five seeds, ten recycles). These are controlled shared-MSA runs, not the models’ full default search pipelines."
+for _figure in ("01_predictors", "02_oracle", "04_contacts", "05_folding"):
+    CAPTIONS[_figure] += ALPHAFOLD_CAPTION

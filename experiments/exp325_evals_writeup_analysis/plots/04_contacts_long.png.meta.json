@@ -1,5 +1,5 @@
 {
   "script": "render.py",
   "args": [],
-  "caption": "Exp277 step 266,344, the 248.584B-raw-token model. All-range R-precision on 314 natural monomers (97 validation + 217 test); 100 resampled rollouts and vote ranking. R is the true-contact count in the resolved candidate universe. KNN indexes the native decontaminated corpus, not the additional redesign sequences. Only five natural proteins have depth <10. The menu also exposes long-range R-precision and separate split/design views."
+  "caption": "Exp277 step 266,344, the 248.584B-raw-token model. All-range R-precision on 314 natural monomers (97 validation + 217 test); 100 resampled rollouts and vote ranking. R is the true-contact count in the resolved candidate universe. KNN indexes the native decontaminated corpus, not the additional redesign sequences. Only five natural proteins have depth <10. The menu also exposes long-range R-precision and separate split/design views. AlphaFold2/3 use the same archived MSA queries and alignments underlying these depth bins, with templates disabled and protein-chain-only inputs. Confidence selects among five AF2 pTM models (three recycles) or 25 AF3 samples (five seeds, ten recycles). These are controlled shared-MSA runs, not the models\u2019 full default search pipelines."
 }

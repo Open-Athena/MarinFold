@@ -203,14 +203,22 @@ def render_text_slide(plt, slide: Slide):
 def render_plot_slide(plt, mpimg, entry: PlotEntry):
     fig = _new_slide(plt)
     fig.text(0.05, 0.94, entry.path.name, fontsize=18, fontweight="bold", va="top")
+    plot_top = 0.84
     if entry.caption:
-        fig.text(
+        caption = fig.text(
             0.05, 0.88,
-            textwrap.fill(entry.caption, width=130),
-            fontsize=11, va="top",
+            textwrap.fill(entry.caption, width=155),
+            fontsize=10, va="top",
         )
+        # Reserve the caption's actual height so longer protocol descriptions
+        # cannot overlap the figure title or plotted marks.
+        fig.canvas.draw()
+        bounds = caption.get_window_extent(fig.canvas.get_renderer()).transformed(fig.transFigure.inverted())
+        plot_top = min(plot_top, bounds.y0 - 0.025)
+        if plot_top <= 0.35:
+            raise ValueError(f"Caption leaves too little room for {entry.path.name}")
 
-    ax = fig.add_axes([0.06, 0.10, 0.88, 0.74])
+    ax = fig.add_axes([0.06, 0.10, 0.88, plot_top - 0.10])
     ax.set_axis_off()
     img = mpimg.imread(entry.path)
     ax.imshow(img)

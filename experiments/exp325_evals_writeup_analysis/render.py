@@ -63,8 +63,9 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     """Draw the default matched-population view from summary rows."""
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
-    fig, ax = plt.subplots(figsize=(10.4, 6.0), facecolor=PAPER)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.33, top=0.79)
+    crowded = len(ORDER[figure]) > 6
+    fig, ax = plt.subplots(figsize=(10.4, 6.4 if crowded else 6.0), facecolor=PAPER)
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.36 if crowded else 0.33, top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if figure in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
@@ -142,7 +143,7 @@ def export_depth(summary: pd.DataFrame, figure: str) -> go.Figure:
                                    "xaxis.ticktext": [f"{t}<br>n={counts.get(t, 0)}" for t in TIERS]}]))
     initial_counts = states[0][4]
     fig.update_xaxes(ticktext=[f"{t}<br>n={initial_counts.get(t, 0)}" for t in TIERS])
-    fig.update_layout(updatemenus=[dict(buttons=buttons, direction="down", x=0, y=1.16,
+    fig.update_layout(updatemenus=[dict(buttons=buttons, direction="down", x=0, xanchor="left", y=1.16,
                                        bgcolor=PAPER, bordercolor=GRID, font=dict(size=12))])
     return fig
 
@@ -301,6 +302,9 @@ def export_plotly(fig: go.Figure, name: str) -> None:
     mobile["layout"]["height"] = 600
     mobile["layout"]["font"]["size"] = 11
     mobile["layout"]["margin"] = dict(l=47, r=12, t=75, b=230)
+    if name in ORDER and len(ORDER[name]) > 6:
+        mobile["layout"]["height"] = 650
+        mobile["layout"]["margin"]["b"] = 280
     if "legend" in mobile["layout"]:
         mobile["layout"]["legend"].update(y=-0.28, font=dict(size=10))
     if "updatemenus" in mobile["layout"]:
@@ -354,6 +358,7 @@ main{max-width:1080px;margin:auto;padding:54px 28px}h1,h2{font-family:Georgia,se
 <p>A figure-first draft. Natural proteins lead; designed proteins are a separate selectable view. Each plot menu switches between cached populations and metrics.</p>
 <nav><a href="../DRAFT.md">Terse post outline</a><a href="../README.md">Analysis notes</a><a href="../plots/summary.pdf">Slide deck</a><a href="../data/paired_deltas.csv">Paired comparisons</a></nav>
 <p class="note">All MarinFold panels use the 248B-token model, exp277 step 266,344. Natural eval-val and eval-test are included; designed proteins remain separate. All plots read precomputed tables. Oracle comparisons use ground truth and are explicitly labeled.</p>
+<p class="caption">AlphaFold3-derived results carry the <a href="../data/af3_notice.txt">required notice</a> and <a href="../data/af3_output_terms.md">output terms</a>.</p>
 ''' + "\n".join(sections) + '''<section><h2>Next: useful diversity and search</h2><p>Improve candidate contact sets, then select them. Inference-time search and post-training remain directions to test.</p></section></main>
 <script src="plotly.min.js"></script><script>
 const specs=innerWidth<600?MOBILE_DATA:SPEC_DATA;

@@ -12,6 +12,8 @@ summary: A figure-first look at contact prediction, structural accuracy, and use
 
 Accurate folding remains harder when a protein has few sequence relatives. Improving here could also help protein design.
 
+AlphaFold2 and AlphaFold3 use the shared benchmark MSAs here, with templates disabled.
+
 {{plotly: 01_predictors.json | title="Existing predictors across MSA depths" | mobile="01_predictors-mobile.json"}}
 
 Helico does much better when we give it the answer: the ground-truth contact map, including non-contacts. This is an information upper bound.

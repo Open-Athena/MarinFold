@@ -89,7 +89,7 @@ serialization. These figures make no speed comparisons.
 # Public artifacts
 
 Raw contact completions/votes and every new Helico diffusion sample are archived
-under `data/exp325-writeup-analysis/exp277-step266344/v1` in the public
+under `data/exp325-writeup-analysis/exp277-step266344/v2-alphafold` in the public
 `open-athena/MarinFold` HF bucket. `data/publication_manifest.json` records file
 sizes and SHA256 digests. The package includes the offline preview, local font
 and Plotly bundle, figures, prepared tables and experiment scripts. Existing
@@ -104,3 +104,41 @@ uv run python publish_to_hf.py --upload
 
 The first command recovers already-computed coordinates from the durable volume;
 it does not run a predictor. The second publishes only this experiment's prefix.
+
+# AlphaFold baseline extension
+
+`generation/prepare_alphafold.py` pins the 333 sequences, exact existing MSA files,
+private parameter digests and all sampling choices. It verifies that every MSA
+depth equals the count already used in the plots. AF2 uses ColabFold's model API;
+AF3 uses the official unmodified source revision in `data/alphafold_inputs.json`.
+Both use protein-chain-only inputs and no templates. No ground-truth structures
+are sent to the predictor workers. Current workstation paths are explicit in the
+preparer and staging script; parameters are copied only to the private Modal volume.
+
+```bash
+uv run --project generation python generation/prepare_alphafold.py
+uv run --project generation python generation/stage_alphafold.py
+AF_VARIANT=af2 uv run --project generation modal run generation/run_af_baselines.py --limit 2
+AF_VARIANT=af3 uv run --project generation modal run generation/run_af_baselines.py --limit 2
+# After both real-protein smoke runs pass scoring:
+AF_VARIANT=af2 uv run --project generation modal run generation/run_af_baselines.py
+AF_VARIANT=af3 uv run --project generation modal run generation/run_af_baselines.py
+uv run --project /home/bizon/git/helico --no-sync --with scikit-learn python generation/score_alphafold.py --variant af2
+uv run --project /home/bizon/git/helico --no-sync --with scikit-learn python generation/score_alphafold.py --variant af3
+uv run python prepare.py
+uv run python render.py
+uv run python build_summary.py
+```
+
+Add `--smoke` to the scorer for the initial two-protein validation. Predictor
+`--collect-only` recovers results without GPU work; completed proteins are skipped
+when a run resumes. Each timing row separates model load and inference calls;
+inference includes cold-shape JIT compilation, explicitly labeled.
+Total time includes model initialization and per-protein work through candidate
+writes; it excludes parameter-integrity checks, the completion marker and volume
+commit. These runs are not used for a speed comparison. All candidates,
+confidence summaries and selected structures are kept; AF3's quadratic PAE files
+are omitted because these analyses use coordinates and summary confidence only.
+`publish_to_hf.py` includes the new input/output archives without any parameter files.
+Exports read completed target directories in bounded concurrent batches to avoid
+serial object-storage latency. This changes packaging only, not prediction bytes.

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "input_checkout": "dc3a1969aa752f6f0ffe5d3ee50db21438644c37",
-  "prepare_sha256": "1d9de72c84e0833064973ec0ba6d9e330e5b1f8b315d07caca600a717aabead8",
+  "input_checkout": "c04a767a59d033db1525b4346dee93bb42954e7a",
+  "prepare_sha256": "dd4f075917f0e096099363daa03fc546b5e7362c1d3c019c23b8018ddf1a483d",
   "lock_sha256": "336b85737590a471918dc33d92c816ef0a1178128d51fdf91a1f9840cc2c2d50",
   "inputs": {
     "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": {
@@ -15,6 +15,14 @@
     "experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv": {
       "sha256": "d1080049e66a6a4235206ab150638d9ddfb7460987eac3c23f152fbb23c00d50",
       "bytes": 538118
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv": {
+      "sha256": "0adb0b68518c094b48ce447d397c7dd241227f553fb9135212d5458b33e21b7f",
+      "bytes": 99049
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv": {
+      "sha256": "5098b5b83f83eff224074b669babdd5aad7e4ef297eb1913d04e43b6314bbe5b",
+      "bytes": 102987
     },
     "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_per_protein.csv": {
       "sha256": "904f17969c36204ddb8d9d45ce8e5d9bd328b25abb8c13692d4dd581e6f59438",
@@ -31,6 +39,14 @@
     "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv": {
       "sha256": "f8dba35fc697e37e5a383567946efee613948e736607ce7d01486243d0c079c5",
       "bytes": 2004396
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af2_contact_metrics.csv": {
+      "sha256": "cd07668bcf0cb6746e2efcfed444b5e89cbc5aae3664b4c16a8fc70aabff5460",
+      "bytes": 398323
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_contact_metrics.csv": {
+      "sha256": "942c982215cc62187fd0b7929e2a1423673486da15eacf01c18ede9c874cdceb",
+      "bytes": 398097
     },
     "experiments/exp311_evals_helico_exp277_contact_count_sweep/data/per_target_selection.csv": {
       "sha256": "3c2304af93055b69fbb15d0a36cbd3c116ee2622e9f70c1d9d14078f0d669c07",
@@ -89,6 +105,15 @@
     "generation/checkpoint_manifest.json": {
       "sha256": "18935bcec81aeb7430c491fcbdb0696d6275b987ea2ed6d02f53719f61358b17"
     },
+    "data/alphafold_inputs.json": {
+      "sha256": "f9b41eaac2f51b4bc625734164df50d1aa0c62f054b7078716be1da107bd6d4f"
+    },
+    "data/af2_run.json": {
+      "sha256": "17c99395c240c259af37021a56b1b652c67a36ea1ab7a0d7362c06de0e3fab96"
+    },
+    "data/af3_run.json": {
+      "sha256": "dd736657c62579812dc7faf9a1fe8aa54fcef1ea18a51a59c942625045445143"
+    },
     "data/helico_confidence_run.json": {
       "sha256": "7074100d0309347cf7863ecf276b874ec6f0bdd5ec0e891f38e4cf63bee1577b"
     },
@@ -115,12 +140,12 @@
       "rows": 9
     },
     "figure_rows.csv": {
-      "sha256": "f6ac9676890dea55387307f5431b76ba285f52f1fdff52a486300d0cfcea2f86",
-      "rows": 14304
+      "sha256": "f5c356a07e849fd59dd6a8129384e368f10742666b0130ebb7f04ee2e4bfa178",
+      "rows": 19524
     },
     "summary.csv": {
-      "sha256": "5da055cd47b78fcee0aeac90217ae3c3dc30e0268251642c777b13b5e1ce2bb9",
-      "rows": 1208
+      "sha256": "c845deefb32b38eb2dabee2b4a43bdd089f3865bb002ff131fa7951a9c6c7fdc",
+      "rows": 1656
     },
     "paired_deltas.csv": {
       "sha256": "726e0cac3e27f70f4d2907897890186eab58ff3a94f1e44cf838b46a0648c6e0",
@@ -169,5 +194,73 @@
   "confidence_control": {
     "status": "complete",
     "selection": "20 preselected natural proteins, five per MSA tier; 11 maps and 3 diffusion samples per map"
+  },
+  "alphafold_protocol": {
+    "status": "fixed_before_inference",
+    "n_targets": 333,
+    "inputs_sha256": "20f1dc53bf0ed6aad2c58706bcf75f9b7957919f0a3152de550d52917e883d38",
+    "weights": {
+      "af2/params/params_model_1_ptm.npz": {
+        "sha256": "5e564f79af5bcd54ccef6e2a6bb0ff01015d01650ebc41d4575e35f0de9ecc84",
+        "bytes": 373103340
+      },
+      "af2/params/params_model_2_ptm.npz": {
+        "sha256": "23645d9a82c4af2ed54cd48a7b3c1c2575dc6aa9fe931adb4d7203ca5f0dc398",
+        "bytes": 373103340
+      },
+      "af2/params/params_model_3_ptm.npz": {
+        "sha256": "b53a724294cdd46a45d530b306bced8e429ffee74a4f9a2a897551b30966c415",
+        "bytes": 371746284
+      },
+      "af2/params/params_model_4_ptm.npz": {
+        "sha256": "07d0e285ad1406ce3d91a2f6633a8ce9ee99155a53d24ee7783f8fd1e89f5d3a",
+        "bytes": 371746284
+      },
+      "af2/params/params_model_5_ptm.npz": {
+        "sha256": "2f8d0bd193e7d6e837958ba92acdc3f02b23b61bf841fa043fc076ee0e1996a5",
+        "bytes": 371746284
+      },
+      "af3/af3.bin.zst": {
+        "sha256": "0dd0290af76eec0119f4c0c41f441fbce4ec18aa21a0a02cac4a3af01d841369",
+        "bytes": 1020559043
+      }
+    },
+    "shared_protocol": "Protein chain only; exact archived MSA query/alignment; no templates; no relaxation; confidence-only selection; no test tuning",
+    "af2": {
+      "colabfold": "1.6.2",
+      "alphafold_colabfold": "2.3.18",
+      "jax": "0.10.2",
+      "model_type": "alphafold2_ptm",
+      "models": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "seeds": [
+        42
+      ],
+      "recycles": 3,
+      "early_stop_tolerance": 0,
+      "selection": "mean pLDDT",
+      "max_seq": 512,
+      "max_extra_seq": 1024
+    },
+    "af3": {
+      "source_sha": "3c89cc7b89aa7042b72885af9016a45b262da008",
+      "seeds": [
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "diffusion_samples_per_seed": 5,
+      "recycles": 10,
+      "selection": "ranking_score"
+    },
+    "msa_interpretation": "Depth is now the supplied alignment count for both new baselines, not the depth from the original AF3 search pipeline.",
+    "parameters_private": "Do not include weights in the public artifact package."
   }
 }

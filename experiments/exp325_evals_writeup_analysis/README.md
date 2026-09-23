@@ -72,8 +72,27 @@ non-contacts. It is an information upper bound, not a deployable predictor or
 a matched-count comparison with MarinFold. The random-map control separately
 matches its known mask, positive/negative counts and diffusion budget.
 
+The added AlphaFold2 and AlphaFold3 arms use exactly the archived protein queries
+and MSAs behind the depth table, with **no templates**, protein-chain-only inputs,
+and internal confidence selection. AF2 uses five pTM weight sets through ColabFold
+1.6.2, one seed and three recycles; AF3 uses five seeds × five samples and ten
+recycles. These controlled shared-MSA arms differ from the predictors' complete
+default search pipelines and from FoldBench's published AF3 run. Modified residues
+without a standard amino-acid identity are encoded as X. Sampling budgets differ
+across predictors and are recorded rather than presented as compute-matched.
+AF2/3 GDT-TS uses matched protein CA atoms; lDDT uses matched protein atoms.
+Per-target atom counts and missing AF2 unknown residues are saved. Atom coverage
+can differ from arms that retain modified residues or non-protein entities.
+
 ## Results
 
+- **AlphaFold baselines:** on the unchanged 305 matched natural proteins,
+  AF2 / AF3 mean GDT-TS is **0.8537 / 0.8601** and lDDT is
+  **0.8523 / 0.8667**. On all 314 natural proteins, contact R-precision is
+  **0.8244 / 0.8350**. At depth <10, GDT-TS is **0.1965 / 0.3321**;
+  this stratum contains only five proteins. Both baselines have full CA
+  coverage on the 305 matched natural proteins and perfect sequence identity
+  in the contact-coordinate mapping on all 333 targets.
 - **Contacts:** natural R-precision **0.5609** (validation 0.5537; test 0.5641).
   MSA-tier means are **0.3453, 0.3428, 0.4486, 0.6167**, with n=5/21/62/226.
 - **Confidence:** all **20/20 proteins** rank their oracle map above every
@@ -116,6 +135,24 @@ uses Helico source `b10385d736673c81b10e70d1099962af6f2573c0`,
 [Test folding](https://modal.com/apps/open-athena/main/ap-jdNvAAh1Pkw58kB09fTmt2)
 completed 1,266 structures: 211 proteins × two conditioning arms × three samples.
 
+[AF2 inference](https://modal.com/apps/open-athena/main/ap-HYVGA8fxZMhaebBD8DHsMG)
+and [AF3 inference](https://modal.com/apps/open-athena/main/ap-jlKTXydPq6T7R2SlLB1x2V)
+use up to eight resident H100 workers each in `us-east`. Every candidate structure
+is retained. The scorer verifies complete sample budgets and that selected atom
+coordinates belong to the confidence argmax. `data/af{2,3}_run.json` pins the
+scoring environment, protocol and selected structures; timing rows record JAX
+versions and explicitly include cold-shape compilation in inference time.
+AF3's completed outputs were [exported separately](https://modal.com/apps/open-athena/main/ap-0AwrSwKBVREBLsCOwhsWI3)
+with concurrent reads after all 333 inference calls returned successfully.
+
+The AF2 implementation is [ColabFold](https://github.com/sokrypton/ColabFold/tree/v1.6.2),
+using the [AlphaFold2](https://www.nature.com/articles/s41586-021-03819-2) pTM weights.
+AF3 uses the official [source revision 3c89cc7](https://github.com/google-deepmind/alphafold3/tree/3c89cc7b89aa7042b72885af9016a45b262da008)
+and November 2024 parameters. Cite [Abramson et al. (2024)](https://www.nature.com/articles/s41586-024-07487-w)
+for AF3. AF3 predictions and derived results carry its
+[output terms](data/af3_output_terms.md) and [required notice](data/af3_notice.txt).
+Parameter files remain private; the public package contains predictions and scores.
+
 Main contact votes exclude unfinished rollouts as exp277 does. The sampling
 diagnostic follows exp321: all parsed maps vote, while invalid individual maps
 score zero. Both diagnostic selectors use the same pool within each protein.
@@ -124,8 +161,8 @@ This distinction is explicit in the manifest and figure captions.
 
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
-for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v1).
-Twelve analysis checks pass, including source-row round trips and fixed
+for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v2-alphafold).
+Fourteen analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
 including the test-split menus; the PDF has three narrative and eleven plot pages.
 

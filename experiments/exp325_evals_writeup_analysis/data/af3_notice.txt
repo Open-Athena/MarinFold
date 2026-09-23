@@ -1,0 +1,7 @@
+Legally Binding Terms of Use
+
+By using this information, you agree to AlphaFold 3 Output Terms of Use found at https://github.com/google-deepmind/alphafold3/blob/main/OUTPUT_TERMS_OF_USE.md.
+
+To request access to the AlphaFold 3 model parameters, follow the process set out at https://github.com/google-deepmind/alphafold3. You may only use these if received directly from Google. Use is subject to terms of use available at https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md.
+
+The AF3 metrics here are derived from confidence-selected predictions using shared archived alignments without templates. See alphafold_inputs.json for settings and provenance.
