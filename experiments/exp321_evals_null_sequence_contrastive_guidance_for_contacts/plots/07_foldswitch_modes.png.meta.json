@@ -1,0 +1,5 @@
+{
+  "script": "summarize_full.py",
+  "args": [],
+  "caption": "Dual-mode coverage on the fixed 29-pair fold-switching stress set. This cohort is not a pristine benchmark; oracle and reference-blind top-16 definitions match exp304."
+}
