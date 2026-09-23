@@ -106,6 +106,35 @@ STAGE_ARTIFACTS = {
     "cluster": ("selected.txt",),
     "assemble": (),
 }
+# Everything here is copied to the object store when its stage finishes and
+# pulled back when a replacement node finds it missing. `pdb/` is deliberately
+# absent: 586 GB is not worth storing when extraction rebuilds it in 24 minutes,
+# whereas losing the screens costs days.
+PERSISTED = {
+    "extract": ("index.parquet", "candidates.fasta"),
+    "seqscreen": ("sequence-exclusions.txt",),
+    "structscreen": ("structure-exclusions.txt",),
+    "cluster": ("selected.txt", "selection.csv"),
+    "assemble": (),
+}
+
+
+def persist_stage(fs, prefix: str, stage: str, work: Path) -> None:
+    """Copy a finished stage's outputs off the node's ephemeral disk."""
+    for name in PERSISTED[stage]:
+        local = work / name
+        if local.exists():
+            fs.put_file(str(local), f"{prefix}/artifacts/{name}")
+
+
+def restore_stage(fs, prefix: str, stage: str, work: Path) -> None:
+    """Pull a finished stage's outputs back after the node was replaced."""
+    for name in PERSISTED[stage]:
+        local, remote = work / name, f"{prefix}/artifacts/{name}"
+        if not local.exists() and fs.exists(remote):
+            print(f"[stage] restoring {stage}/{name} from the object store", flush=True)
+            local.parent.mkdir(parents=True, exist_ok=True)
+            fs.get_file(remote, str(local))
 
 
 def stage_done(fs, prefix: str, stage: str, work: Path) -> bool:
@@ -118,6 +147,7 @@ def stage_done(fs, prefix: str, stage: str, work: Path) -> bool:
     """
     if not fs.exists(f"{prefix}/stages/{stage}.json"):
         return False
+    restore_stage(fs, prefix, stage, work)
     missing = [name for name in STAGE_ARTIFACTS[stage] if not (work / name).exists()]
     if missing:
         print(
@@ -294,16 +324,19 @@ def structscreen(
     work: Path,
     reference: Path,
     threads: int,
-    max_seqs: int = 1000,
-    evalue: float = 10,
+    max_seqs: int = 50,
+    evalue: float = 0.001,
 ) -> dict:
     """Exclude candidates that duplicate an evaluation structure.
 
-    The defaults are deliberately exhaustive: `--max-seqs 1000` against an
-    888-structure reference TM-aligns every candidate to every evaluation chain.
-    That is the most conservative screen and also by far the most expensive one,
-    about 2.95M x 888 alignments, which runs in days rather than hours. Tighten
-    max_seqs or evalue to trade recall for time on a rerun.
+    The first production run used `--max-seqs 1000 -e 10`, which against an
+    888-structure reference TM-aligns every candidate to every evaluation chain:
+    about 2.95M x 888 alignments, measured at 53 hours, and it excluded 41,370
+    candidates. These tighter defaults cap the alignments per query instead. A
+    structure matching at TM >= 0.8 leaves a strong 3Di signal, so the prefilter
+    should keep it, but that is an expectation rather than a proof: compare the
+    exclusion count against the exhaustive run's 41,370 before trusting a rerun,
+    and raise max_seqs if it comes back materially lower.
     """
     hits = work / "eval-structure-hits.tsv"
     if not hits.exists():
@@ -463,8 +496,8 @@ def main() -> None:
         "--threads", type=int, default=int(os.environ.get("SELECT_THREADS", "96"))
     )
     parser.add_argument("--only", choices=STAGES, action="append")
-    parser.add_argument("--eval-max-seqs", type=int, default=1000)
-    parser.add_argument("--eval-evalue", type=float, default=10)
+    parser.add_argument("--eval-max-seqs", type=int, default=50)
+    parser.add_argument("--eval-evalue", type=float, default=0.001)
     args = parser.parse_args()
 
     with fsspec.open(args.manifest, "rt") as handle:
@@ -498,6 +531,7 @@ def main() -> None:
         else:
             payload = assemble(fs, base, args.work, prefix, args.threads)
         payload["elapsed_seconds"] = round(time.time() - started, 1)
+        persist_stage(fs, prefix, stage, args.work)
         mark_stage(fs, prefix, stage, payload)
 
 

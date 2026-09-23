@@ -1,0 +1,32 @@
+{
+  "worker": 3,
+  "workers": 6,
+  "job_id": "/bizon/exp278-up3-cand-u003",
+  "cluster": "cw-us-east-02a",
+  "repo": "timodonnell/exp278-proteina-monomers",
+  "kinds": [
+    "candidates"
+  ],
+  "submitted_utc": "2026-09-21T13:55:52.641364+00:00",
+  "manifest_sha256": "a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80",
+  "bundle_uri": "s3://marin-us-east-02a/MarinFold/exp278-proteina/code/a92df0b30b3e699a88c609e5fc7db9befef3d226f1ce1cba402d01515d9e8893.tar.gz",
+  "image": "pytorch/pytorch@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726",
+  "worker_args": [
+    "hf_upload.py",
+    "--manifest",
+    "s3://marin-us-east-02a/MarinFold/exp278-proteina/scale-20260909/manifests/a7812d1e4173454eba2185f688cde8b60d4d8b55c97481b32acce56bdb364f80.json",
+    "--repo",
+    "timodonnell/exp278-proteina-monomers",
+    "--worker",
+    "3",
+    "--workers",
+    "6",
+    "--batch",
+    "16",
+    "--kind",
+    "candidates"
+  ],
+  "commit_batch": 16,
+  "failure_retries": 10,
+  "token_name": "write2"
+}
