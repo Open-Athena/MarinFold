@@ -117,8 +117,9 @@ def decode_batch(
     top_p: float,
     temperature: float,
     pure_ratio: bool,
+    single_stream: bool,
 ) -> list[dict]:
-    """Decode native streams while forcing every sampled token into null streams."""
+    """Decode native streams, optionally pairing each with an exact shared-suffix null."""
     import torch
 
     if not pairs:
@@ -135,7 +136,9 @@ def decode_batch(
     max_new = max_new_values.pop()
     batch = len(pairs)
     device = next(model.parameters()).device
-    prompt_rows = [pair.native_ids for pair in pairs] + [pair.null_ids for pair in pairs]
+    prompt_rows = [pair.native_ids for pair in pairs]
+    if not single_stream:
+        prompt_rows += [pair.null_ids for pair in pairs]
     input_ids = torch.tensor(prompt_rows, dtype=torch.long, device=device)
     generated: list[list[int]] = [[] for _ in pairs]
     token_log_ratios: list[list[float]] = [[] for _ in pairs]
@@ -151,7 +154,7 @@ def decode_batch(
         logits = output.logits[:, -1, :]
         for step in range(max_new):
             native_logits = logits[:batch]
-            null_logits = logits[batch:]
+            null_logits = native_logits if single_stream else logits[batch:]
             guide_rows = torch.tensor(
                 [
                     _row_is_guided(
@@ -198,7 +201,9 @@ def decode_batch(
                     finished_flags[row] = True
             if all(finished_flags):
                 break
-            paired_next = torch.cat([sampled, sampled])[:, None]
+            paired_next = sampled[:, None]
+            if not single_stream:
+                paired_next = torch.cat([sampled, sampled])[:, None]
             output = model(
                 input_ids=paired_next,
                 past_key_values=cache,
@@ -288,12 +293,15 @@ def main() -> None:
     parser.add_argument("--scope", choices=["positions", "all"], default="positions")
     parser.add_argument("--gamma", type=float, default=0.0)
     parser.add_argument("--pure-ratio", action="store_true")
+    parser.add_argument("--single-stream", action="store_true")
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--n-rollouts", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--limit", type=int)
     args = parser.parse_args()
+    if args.single_stream and (args.gamma != 0 or args.pure_ratio):
+        raise ValueError("single-stream decoding requires gamma=0 and no pure ratio")
     shard, n_shards = (int(value) for value in args.shard.split("/"))
     with fsspec.open(args.targets, "rt") as handle:
         targets = pd.read_csv(handle).to_dict("records")
@@ -377,6 +385,7 @@ def main() -> None:
                     top_p=args.top_p,
                     temperature=args.temperature,
                     pure_ratio=args.pure_ratio,
+                    single_stream=args.single_stream,
                 )
             )
         elapsed = time.perf_counter() - started
@@ -392,6 +401,7 @@ def main() -> None:
                 "pure_ratio": args.pure_ratio,
                 "temperature": args.temperature,
                 "top_p": args.top_p,
+                "single_stream": args.single_stream,
             })
         write_parquet(raw_uri, rows)
         written = time.perf_counter()
@@ -415,6 +425,7 @@ def main() -> None:
             "pure_ratio": args.pure_ratio,
             "temperature": args.temperature,
             "top_p": args.top_p,
+            "single_stream": args.single_stream,
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             **metadata,
         }]

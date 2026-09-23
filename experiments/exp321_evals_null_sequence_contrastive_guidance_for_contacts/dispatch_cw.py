@@ -39,6 +39,8 @@ def bootstrap(shard: int, n_shards: int, args: argparse.Namespace) -> str:
         for name, path in files.items()
     )
     flags = " --pure-ratio" if args.pure_ratio else ""
+    if args.single_stream:
+        flags += " --single-stream"
     if args.limit is not None:
         flags += f" --limit {args.limit}"
     return f"""
@@ -102,6 +104,7 @@ def main() -> None:
     parser.add_argument("--scope", choices=["positions", "all"], default="positions")
     parser.add_argument("--gamma", type=float, default=0.0)
     parser.add_argument("--pure-ratio", action="store_true")
+    parser.add_argument("--single-stream", action="store_true")
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--n-rollouts", type=int, default=100)
