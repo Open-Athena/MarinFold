@@ -35,6 +35,7 @@ def main() -> None:
     command = [
         *bucket_cli(), "buckets", "sync", str(args.source), args.destination,
         "--include", "dev_*/*/*.parquet",
+        "--include", "full_*/*/*.parquet",
     ]
     if args.dry_run:
         command.append("--dry-run")
