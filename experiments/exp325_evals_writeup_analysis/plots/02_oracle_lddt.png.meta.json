@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "*Oracle = ground-truth contacts AND non-contacts supplied to Helico without an MSA. This is an information upper bound, not a competing predictor or a matched-count true-contact experiment. Same 305 natural proteins as Figure 1."
+}

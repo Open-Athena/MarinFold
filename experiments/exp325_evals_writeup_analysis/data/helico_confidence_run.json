@@ -1,0 +1,22 @@
+{
+  "tag": "exp325-exp277-step266344-confidence-v1",
+  "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "helico_checkpoint": "/ckpts/contacts-msafree-01/contacts-msafree-01-step-6000.pt",
+  "helico_checkpoint_step": 6000,
+  "helico_checkpoint_sha256": "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644",
+  "contact_checkpoint": null,
+  "n_targets": 20,
+  "n_cuts": 220,
+  "n_samples": 660,
+  "n_diffusion_samples_per_cut": 3,
+  "n_trunk_recycles": 6,
+  "seed_per_map": 42,
+  "phase": "confidence",
+  "selection": "highest ranking_score among three diffusion samples per map",
+  "max_tokens": 2048,
+  "single_sequence": true,
+  "msa": false,
+  "completed_at_utc": "2026-09-23T19:58:16.678484+00:00",
+  "conditioning_source": "ground-truth oracle and randomized three-state maps",
+  "modal_app_url": "https://modal.com/apps/open-athena/main/ap-Oqepg5fH2fUlnGdLMatCyK"
+}

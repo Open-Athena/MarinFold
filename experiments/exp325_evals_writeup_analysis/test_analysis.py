@@ -1,0 +1,142 @@
+"""Check scientific invariants across the real, archived input tables."""
+
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from plan_missing import randomized_map
+from prepare import depth_tier
+
+DATA = Path(__file__).resolve().parent / "data"
+
+
+def test_exact_msa_boundaries() -> None:
+    assert depth_tier(pd.Series([1, 9, 10, 99, 100, 999, 1000])).tolist() == [
+        "<10", "<10", "10–99", "10–99", "100–999", "100–999", "≥1000"]
+
+
+def test_latest_checkpoint_and_authorized_test_split() -> None:
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    contacts = rows[(rows.figure == "04_contacts") & (rows.method == "marinfold") & (rows.metric == "r_precision")]
+    val = contacts[contacts.eval_set == "eval-val"]
+    assert len(val) == 97
+    # Independently published exp277 headline, not derived from our summary.
+    assert val.value.mean() == pytest.approx(0.5537468341913647, abs=1e-8)
+    assert (contacts.eval_set == "eval-test").sum() == 217
+    assert ((contacts.designed == 0) & (contacts.msa_depth < 10)).sum() == 5
+    assert not rows.source.str.contains("exp254").any()
+    assert not rows[(rows.method == "marinfold") | (rows.method == "marinfold_helico")].source.str.contains("exp250").any()
+
+
+def test_matched_methods_and_explicit_missing_bins() -> None:
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    for _, group in rows.groupby(["figure", "metric"]):
+        populations = [set(g.stem) for _, g in group.groupby("method")]
+        assert all(p == populations[0] for p in populations)
+        assert not group.duplicated(["stem", "method"]).any()
+    summary = pd.read_csv(DATA / "summary.csv")
+    latest = summary[(summary.figure == "04_contacts") & (summary.cohort == "natural")]
+    assert "<10" in set(latest.tier)
+    assert (latest[latest.tier == "<10"].n == 5).all()
+    assert (summary.ci_low <= summary["mean"]).all()
+    assert (summary["mean"] <= summary.ci_high).all()
+
+
+def test_same_pool_sampling_and_fixed_denominator() -> None:
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    x = rows[(rows.figure == "06_sampling") & (rows.metric == "r_precision")]
+    per_target = x.pivot(index="stem", columns="method", values="value")
+    assert len(per_target) == 314
+    val_stems = x.loc[x.eval_set == "eval-val", "stem"].unique()
+    val = per_target.loc[val_stems]
+    assert (per_target.best100 >= per_target.single).all()
+    assert val.consensus.mean() == pytest.approx(0.5526335674, abs=1e-8)
+    assert val.best100.mean() == pytest.approx(0.5243089658, abs=1e-8)
+    assert set(x.eval_set) == {"eval-val", "eval-test"}
+
+
+def test_source_row_roundtrip() -> None:
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    root = DATA.parents[2]
+    for source, group in rows.groupby("source"):
+        raw = pd.read_csv(root / source)
+        selected = raw.iloc[group.source_row.astype(int)]
+        identifier = "target_id" if "target_id" in raw else "stem"
+        assert selected[identifier].tolist() == group.stem.tolist()
+
+
+@pytest.mark.parametrize("match_separation", [False, True])
+def test_random_control_preserves_information_budget(match_separation: bool) -> None:
+    original = np.zeros((40, 40), dtype=np.uint8)
+    i, j = np.triu_indices(40, k=6)
+    # Leave a disconnected unresolved residue unknown in both arms.
+    keep = (i != 12) & (j != 12)
+    i, j = i[keep], j[keep]
+    original[i, j] = original[j, i] = 1
+    original[i[::7], j[::7]] = original[j[::7], i[::7]] = 2
+    before = original.copy()
+    result = randomized_map(original, seed=325, match_separation=match_separation)
+    assert np.array_equal(original, before)  # no mutation of the oracle
+    assert np.array_equal(result, result.T)
+    assert np.array_equal(result == 0, original == 0)
+    assert (result == 2).sum() == (original == 2).sum()
+    assert not np.array_equal(result, original)
+    if match_separation:
+        bins = np.digitize(j - i, [12, 24])
+        for group in range(3):
+            assert (result[i[bins == group], j[bins == group]] == 2).sum() == (original[i[bins == group], j[bins == group]] == 2).sum()
+
+
+def test_random_control_rejects_wrong_encoding() -> None:
+    with pytest.raises(ValueError, match="0=unknown"):
+        randomized_map(np.full((4, 4), -1), seed=0, match_separation=False)
+
+
+def test_random_control_uses_residue_coordinates_with_extra_atom_tokens() -> None:
+    # Unknown ligand tokens can sit between protein residues. Token distance
+    # would put the first pair in the wrong separation bin.
+    positions = np.array([0, 7, *([0] * 20), 23, 30])
+    state = np.zeros((24, 24), dtype=np.uint8)
+    for i, j, value in [(0, 1, 2), (0, 22, 1), (1, 22, 2), (0, 23, 2), (1, 23, 1), (22, 23, 1)]:
+        state[i, j] = state[j, i] = value
+    result = randomized_map(state, 325, True, positions)
+    i, j = np.where(np.triu(state != 0, 1))
+    bins = np.digitize(abs(positions[j] - positions[i]), [12, 24])
+    for group in range(3):
+        mask = bins == group
+        assert (result[i[mask], j[mask]] == 2).sum() == (state[i[mask], j[mask]] == 2).sum()
+
+
+def test_confidence_comparison_has_equal_information_and_sample_budgets() -> None:
+    raw = pd.read_csv(DATA / "helico_confidence_samples.csv")
+    assert len(raw) == 660
+    assert (raw.groupby(["stem", "arm", "map_seed"]).size() == 3).all()
+    assert (raw.groupby("stem")[["n_present", "n_absent", "n_unknown"]].nunique() == 1).all().all()
+    prepared = pd.read_csv(DATA / "confidence_per_map.csv")
+    assert len(prepared) == 220
+    assert prepared.mean_plddt.notna().all()
+    assert (prepared.groupby("tier").stem.nunique() == 5).all()
+
+
+def test_prompt_length_is_distinct_from_resolved_msa_query_length() -> None:
+    target = pd.read_csv(DATA / "targets.csv").set_index("stem").loc["8q79_A"]
+    assert target.L == 236
+    assert target.msa_query_length == 215
+
+
+def test_test_folding_is_complete_and_selected_only_by_confidence() -> None:
+    raw = pd.read_csv(DATA / "helico_folding_samples.csv")
+    assert raw.stem.nunique() == 211
+    assert len(raw) == 211 * 2 * 3
+    assert (raw.groupby(["stem", "arm"]).size() == 3).all()
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    selected = rows[(rows.figure == "05_folding") & (rows.metric == "gdt_ts") &
+                    (rows.method == "marinfold_helico") & (rows.eval_set == "eval-test")]
+    assert len(selected) == 210
+    for row in selected.itertuples():
+        original = raw.iloc[row.source_row]
+        candidates = raw[(raw.stem == row.stem) & (raw.arm == "top_L")]
+        assert original.ranking_score == candidates.ranking_score.max()
+        assert row.value == pytest.approx(original.gdt_ts)

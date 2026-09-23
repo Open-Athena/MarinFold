@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "The 248B-token model through Helico: request the top-L predicted contacts, generate three diffusion samples, select by highest Helico confidence at that fixed cut; no MSA. Helico drops pairs closer than six residues after coordinate mapping; requested and effective counts are saved. Same 305 natural proteins in every arm (95 validation + 210 test). GDT-TS and lDDT are separate metrics. See coverage.csv for exclusions."
+}

@@ -1,0 +1,24 @@
+{
+  "helico_msa_depth.csv": {
+    "url": "https://raw.githubusercontent.com/Open-Athena/helico/b10385d736673c81b10e70d1099962af6f2573c0/experiments/exp14_foldbench_held_out_monomers/data/msa_depth.csv",
+    "sha256": "94f4586a169f84b5129566bc239943fdd69b819660b212da497def62c39b4289",
+    "bytes": 10165
+  },
+  "Lato-Regular.ttf": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lato/Lato-Regular.ttf",
+    "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251",
+    "bytes": 656568,
+    "description": "Lato font, SIL Open Font License; downloaded only during preprocessing"
+  },
+  "Lato-Bold.ttf": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lato/Lato-Bold.ttf",
+    "sha256": "8a0aace75d33794eece4b28187bfc1df0bbd2888b5d8a56e01788c8d65d16be1",
+    "bytes": 656544,
+    "description": "Lato font, SIL Open Font License; downloaded only during preprocessing"
+  },
+  "Lato-OFL.txt": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lato/OFL.txt",
+    "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+    "description": "Lato redistribution license"
+  }
+}

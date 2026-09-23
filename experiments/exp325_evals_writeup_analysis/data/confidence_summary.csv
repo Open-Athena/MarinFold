@@ -1,0 +1,21 @@
+tier,arm,confidence,metric,mean,ci_low,ci_high,n
+<10,separation_matched,mean_plddt,win_rate,1.0,1.0,1.0,5
+<10,separation_matched,ranking_score,win_rate,1.0,1.0,1.0,5
+<10,uniform,mean_plddt,win_rate,1.0,1.0,1.0,5
+<10,uniform,ranking_score,win_rate,1.0,1.0,1.0,5
+10–99,separation_matched,mean_plddt,win_rate,1.0,1.0,1.0,5
+10–99,separation_matched,ranking_score,win_rate,1.0,1.0,1.0,5
+10–99,uniform,mean_plddt,win_rate,1.0,1.0,1.0,5
+10–99,uniform,ranking_score,win_rate,1.0,1.0,1.0,5
+100–999,separation_matched,mean_plddt,win_rate,1.0,1.0,1.0,5
+100–999,separation_matched,ranking_score,win_rate,1.0,1.0,1.0,5
+100–999,uniform,mean_plddt,win_rate,1.0,1.0,1.0,5
+100–999,uniform,ranking_score,win_rate,1.0,1.0,1.0,5
+≥1000,separation_matched,mean_plddt,win_rate,1.0,1.0,1.0,5
+≥1000,separation_matched,ranking_score,win_rate,1.0,1.0,1.0,5
+≥1000,uniform,mean_plddt,win_rate,1.0,1.0,1.0,5
+≥1000,uniform,ranking_score,win_rate,1.0,1.0,1.0,5
+All depths,separation_matched,mean_plddt,win_rate,1.0,1.0,1.0,20
+All depths,separation_matched,ranking_score,win_rate,1.0,1.0,1.0,20
+All depths,uniform,mean_plddt,win_rate,1.0,1.0,1.0,20
+All depths,uniform,ranking_score,win_rate,1.0,1.0,1.0,20

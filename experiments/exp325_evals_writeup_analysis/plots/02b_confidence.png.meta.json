@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "Twenty natural proteins, selected before inference (five per MSA tier). Each oracle is compared with five uniform and five separation-matched random maps; unknown mask, positive/negative counts, and three-sample diffusion budgets are identical. Select each map\u2019s structure by Helico ranking_score. Confidence wins are paired within protein; ties count half. Intervals bootstrap proteins, not samples. Random maps are weak negatives; this does not establish ranking of plausible alternative folds."
+}

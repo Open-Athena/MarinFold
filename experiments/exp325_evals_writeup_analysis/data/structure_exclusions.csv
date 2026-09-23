@@ -1,0 +1,10 @@
+stem,eval_set,designed,is_viral,L,msa_query_length,msa_depth,tier,reason
+8es6_A,eval-test,0,0,488,430,12485,≥1000,Absent or unsuccessful in archived exp250 structure complete-case table
+8q79_A,eval-test,0,0,236,215,663,100–999,Absent or unsuccessful in archived exp250 structure complete-case table
+8por_A,eval-test,0,0,179,164,14537,≥1000,Absent or unsuccessful in archived exp250 structure complete-case table
+8qle_A,eval-test,0,0,283,272,2493,≥1000,Absent or unsuccessful in archived exp250 structure complete-case table
+8ra0_A,eval-test,0,0,499,485,3854,≥1000,Absent or unsuccessful in archived exp250 structure complete-case table
+8u0i_A,eval-test,0,0,90,86,1527,≥1000,Absent or unsuccessful in archived exp250 structure complete-case table
+9b8e_A,eval-test,0,0,233,222,24,10–99,Absent or unsuccessful in archived exp250 structure complete-case table
+7pv5_A,eval-val,0,0,81,76,7024,≥1000,Absent or unsuccessful in archived exp250 structure complete-case table
+7t9r_A,eval-val,0,0,38,38,605,100–999,Absent or unsuccessful in archived exp250 structure complete-case table

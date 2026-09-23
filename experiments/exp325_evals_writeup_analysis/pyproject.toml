@@ -1,0 +1,8 @@
+[project]
+name = "marinfold-writeup-analysis"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2.2", "pandas>=2.2", "matplotlib>=3.9", "plotly>=6.0", "pytest>=8.0"]
+
+[tool.uv]
+package = false

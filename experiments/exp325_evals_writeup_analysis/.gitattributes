@@ -1,0 +1,6 @@
+# Preserve upstream bytes for checksum-pinned CSV/font inputs and native outputs.
+data/*.csv whitespace=cr-at-eol
+data/inputs/*.csv whitespace=cr-at-eol
+data/inputs/Lato-OFL.txt whitespace=-blank-at-eol
+# Matplotlib emits insignificant whitespace inside SVG path data.
+plots/*.svg whitespace=-blank-at-eol

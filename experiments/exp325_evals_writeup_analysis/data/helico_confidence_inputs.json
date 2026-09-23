@@ -1,0 +1,29 @@
+{
+  "source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "phase": "confidence",
+  "n_targets": 20,
+  "mapping_control": "exp14 frozen index_map_report.csv; identical rule and mapped residue count",
+  "files_sha256": {
+    "7wzm_A": "df0e36d9b8ffb3183c7b511d60b31baa6f7f1eb2679593dabac22b9c594a8257",
+    "7xcd_A": "e372ca83d783e5cb163c6a8e780a4697e5bfed9d6b6a24f1a0a9295981b3e42f",
+    "8adc_A": "020b4878a4482dd552448dc67c848ab25d9d9006c8ffe5a28437013ed71817bf",
+    "8bux_A": "7f178f07f5defe4a975bad1f6b5ed6cf2520f6d69dbbb576fe4251b7e2951a19",
+    "8gsy_A": "aaca0fb0768f16ad8b73e84b05f75126e7759015a01e9380c7670a0cb36742d1",
+    "8hbt_A": "09f984b9393bca176ffab3f6a0bd26ba947efca5bcac252331d72e5459f412cd",
+    "8hel_A": "5f93868624d4eacd2cf5292c880791c6191d6f38f13d7355aca8756ac537e1f4",
+    "8ii8_A": "9209e1e9fbfe14b01e7d4f8bf6482d2812d377d7d76bae21d349a393431ba93b",
+    "8kih_A": "308b38d2bc691092bb048823a5098735548b1047d761fa4f2ef36674bce51f2b",
+    "8oqh_A": "5f32d51096a41ac75836abc297e0840deba1afb8f6075e5a1cfb32fb9ab118e6",
+    "8oxk_A": "9fcdcea6ca750fac29139227ba6b94bc2919e98bda76d3f0d5d20c1491be8a6b",
+    "8pw2_A": "80a2422680efbce2111bee5547a61ce7e713820e72c4d7028c2031d1be6c2f12",
+    "8q79_A": "3585c6755d1e68ee80cadd26685d4ddf1e229230ed75b72d18ac65d958432250",
+    "8qoh_A": "e660966e2fcde7cb0451ffbaf9f29d105cc09ec419d1c145be789c9803874697",
+    "8spc_A": "939f6bedbe88f3e9b3efdeaf57f73af6d3bb3142f8ab6796f5fedd61f5855a02",
+    "8uk7_A": "d97168eb70dfc11a0ad313419c701e760c16741618a1e1d4352c8f20c9d6a546",
+    "8ux2_A": "0fb548b86b03513f11e3d27da6c6f3030a0d5472f083cd258e5dc05f076d3f0d",
+    "8wc1_A": "e982c101d07084e750654c01d399c7d13d831c0d16bd05fc4b8ba1002441540a",
+    "8wrx_A": "47f16df440a10209e8cff433f8cbb0826390abf6d1b84edaa10d9a0d27dd71f0",
+    "9b1u_A": "b8c367911b9a4c8cabc4848316426460eaa4f7421ffb5355df3daa0d61a26c3d"
+  },
+  "excluded_unverified_mapping": []
+}

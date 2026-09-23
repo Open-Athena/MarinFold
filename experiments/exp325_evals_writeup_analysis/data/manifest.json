@@ -1,0 +1,173 @@
+{
+  "schema_version": 2,
+  "input_checkout": "dc3a1969aa752f6f0ffe5d3ee50db21438644c37",
+  "prepare_sha256": "1d9de72c84e0833064973ec0ba6d9e330e5b1f8b315d07caca600a717aabead8",
+  "lock_sha256": "336b85737590a471918dc33d92c816ef0a1178128d51fdf91a1f9840cc2c2d50",
+  "inputs": {
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": {
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861",
+      "bytes": 199548
+    },
+    "experiments/exp325_evals_writeup_analysis/data/inputs/helico_msa_depth.csv": {
+      "sha256": "94f4586a169f84b5129566bc239943fdd69b819660b212da497def62c39b4289",
+      "bytes": 10165
+    },
+    "experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv": {
+      "sha256": "d1080049e66a6a4235206ab150638d9ddfb7460987eac3c23f152fbb23c00d50",
+      "bytes": 538118
+    },
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_per_protein.csv": {
+      "sha256": "904f17969c36204ddb8d9d45ce8e5d9bd328b25abb8c13692d4dd581e6f59438",
+      "bytes": 57046
+    },
+    "experiments/exp325_evals_writeup_analysis/data/test_contact_metrics.csv": {
+      "sha256": "12ac728c772b662f448bb0d614adcdfa43ccc5c95bab79e6abda5de31d451507",
+      "bytes": 321317
+    },
+    "experiments/exp325_evals_writeup_analysis/data/inputs/baseline_contact_metrics.csv": {
+      "sha256": "bedb608719e4c8012d7c40d98f1d699e017024385c11dbea863cdcb2de64dc55",
+      "bytes": 163470
+    },
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv": {
+      "sha256": "f8dba35fc697e37e5a383567946efee613948e736607ce7d01486243d0c079c5",
+      "bytes": 2004396
+    },
+    "experiments/exp311_evals_helico_exp277_contact_count_sweep/data/per_target_selection.csv": {
+      "sha256": "3c2304af93055b69fbb15d0a36cbd3c116ee2622e9f70c1d9d14078f0d669c07",
+      "bytes": 80124
+    },
+    "experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv": {
+      "sha256": "39f3524d5859e1c27fad737ac96e2e8e54b91f3bdbc452f99825fee2210205e7",
+      "bytes": 242085
+    },
+    "experiments/exp321_evals_null_sequence_contrastive_guidance_for_contacts/data/full_dev_natural.csv": {
+      "sha256": "1abff837c30a2c618868e44733d05762ae6998920d9a208d9300833a29cffd02",
+      "bytes": 270182
+    },
+    "experiments/exp321_evals_null_sequence_contrastive_guidance_for_contacts/data/heldout_natural.csv": {
+      "sha256": "a4c23123ba3722f1767009a462b15c7a7fca010a37a346b8de8140f216f07099",
+      "bytes": 1364735
+    },
+    "experiments/exp325_evals_writeup_analysis/data/test_sampling_metrics.csv": {
+      "sha256": "079521a9fc4925799bdfa573cacd4e2bec3fd81617ceeba9d689d0b676802f1e",
+      "bytes": 62274
+    },
+    "experiments/exp325_evals_writeup_analysis/data/helico_confidence_samples.csv": {
+      "sha256": "b592e77d817b389b28fb6fe95abb3cb609c451be110d94e0db6586025c519301",
+      "bytes": 129479
+    },
+    "experiments/exp277_models_single_mpnn_pilot/data/epoch_corpus_counts.csv": {
+      "sha256": "08e317bc545543ebaa51d5b3f48e1eaaf18e856dad0e3c59e9b5e95e2643955a",
+      "bytes": 295
+    }
+  },
+  "remote_inputs": {
+    "helico_msa_depth.csv": {
+      "url": "https://raw.githubusercontent.com/Open-Athena/helico/b10385d736673c81b10e70d1099962af6f2573c0/experiments/exp14_foldbench_held_out_monomers/data/msa_depth.csv",
+      "sha256": "94f4586a169f84b5129566bc239943fdd69b819660b212da497def62c39b4289",
+      "bytes": 10165
+    },
+    "Lato-Regular.ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lato/Lato-Regular.ttf",
+      "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251",
+      "bytes": 656568,
+      "description": "Lato font, SIL Open Font License; downloaded only during preprocessing"
+    },
+    "Lato-Bold.ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lato/Lato-Bold.ttf",
+      "sha256": "8a0aace75d33794eece4b28187bfc1df0bbd2888b5d8a56e01788c8d65d16be1",
+      "bytes": 656544,
+      "description": "Lato font, SIL Open Font License; downloaded only during preprocessing"
+    },
+    "Lato-OFL.txt": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lato/OFL.txt",
+      "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+      "description": "Lato redistribution license"
+    }
+  },
+  "generation_provenance": {
+    "generation/checkpoint_manifest.json": {
+      "sha256": "18935bcec81aeb7430c491fcbdb0696d6275b987ea2ed6d02f53719f61358b17"
+    },
+    "data/helico_confidence_run.json": {
+      "sha256": "7074100d0309347cf7863ecf276b874ec6f0bdd5ec0e891f38e4cf63bee1577b"
+    },
+    "data/helico_folding_run.json": {
+      "sha256": "532daa6b752dbc6be46e050efed499183f54f4bf0eb6f502a05c00db7edcdcfe"
+    },
+    "data/test_contact_run.json": {
+      "sha256": "bff2ffb1519ce8e0d82fbf5059f58c33f6db1b5788d15bc0514480c9ba7ae5ec"
+    },
+    "data/helico_confidence_inputs.json": {
+      "sha256": "b10733fc92d543ac7e1d0a43fb22315a4d6fcf30896dc5729794faf1da8fe9bc"
+    },
+    "data/helico_folding_inputs.json": {
+      "sha256": "035485c2560ff875f868970c39c46a91bccd1fd5d811b5b9d485ce2a481355d6"
+    }
+  },
+  "outputs": {
+    "targets.csv": {
+      "sha256": "16079908b54d9a913c14b9fa18a24e24d7bb44379d736077f3f653283ac4a23c",
+      "rows": 333
+    },
+    "structure_exclusions.csv": {
+      "sha256": "49c1317086362baca7a20dd48171133089bcd24087c002dc7696fcd200fbd37e",
+      "rows": 9
+    },
+    "figure_rows.csv": {
+      "sha256": "f6ac9676890dea55387307f5431b76ba285f52f1fdff52a486300d0cfcea2f86",
+      "rows": 14304
+    },
+    "summary.csv": {
+      "sha256": "5da055cd47b78fcee0aeac90217ae3c3dc30e0268251642c777b13b5e1ce2bb9",
+      "rows": 1208
+    },
+    "paired_deltas.csv": {
+      "sha256": "726e0cac3e27f70f4d2907897890186eab58ff3a94f1e44cf838b46a0648c6e0",
+      "rows": 272
+    },
+    "sampling_diagnostics.csv": {
+      "sha256": "e52eea61959f0d83bbc5f089cc1939307267f8b334d532a169811cdfbcff23d6",
+      "rows": 314
+    },
+    "confidence_per_map.csv": {
+      "sha256": "09b8d1882954d6417a6c473a06a769cf4edf8a6ef8264a067d075d4d4f13a0c3",
+      "rows": 220
+    },
+    "confidence_per_protein.csv": {
+      "sha256": "ce6bb4f1536017a0f387b911416f3ebafca8f3a93370c7d497243d7f6df09f45",
+      "rows": 80
+    },
+    "confidence_summary.csv": {
+      "sha256": "53f36113c289ed0d69ff02084a38616b1d52cd76842823cb9c67bd2cb3286741",
+      "rows": 20
+    },
+    "training_sources.csv": {
+      "sha256": "2639994d76a392e8ef4e37502bfeea2da11a1d3773a5bdaa8b6b3dee9927da74",
+      "rows": 4
+    },
+    "coverage.csv": {
+      "sha256": "fb6b87b9313f06e272f8dc8b341af013facae6c8bb11f08d2002dd115a88a690",
+      "rows": 1665
+    }
+  },
+  "bootstrap": {
+    "unit": "protein",
+    "draws": 5000,
+    "seed": 325,
+    "interval": "percentile 95%"
+  },
+  "msa": "Exact Protenix-v2 + MSA A3M sequence count, including query; not Neff. Fixed [1,10), [10,100), [100,1000), [1000,infinity) bins.",
+  "main_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "training_raw_tokens": 248583762834,
+  "main_recipe": "exp277 fixed exp82 rollout+resample; 100 rollouts, T=1, top_p=0.95, top_k=-1; votes only",
+  "sampling_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "sampling_recipe": "exp321 ordinary iid control, N=100, on 97 eval-val proteins plus new 217 publication test proteins. Same pool within protein. Consensus uses all parsed maps; unfinished/malformed individual rollouts score zero. Main contact panel follows exp277 and omits unfinished maps from votes.",
+  "oracle_contacts": "Full ground-truth three-state map, including non-contacts; information upper bound, not a predictor",
+  "sampling_oracle": "Max correct contacts among first R emitted pairs / R; short sets retain denominator R. Ground-truth selection.",
+  "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
+  "confidence_control": {
+    "status": "complete",
+    "selection": "20 preselected natural proteins, five per MSA tier; 11 maps and 3 diffusion samples per map"
+  }
+}
