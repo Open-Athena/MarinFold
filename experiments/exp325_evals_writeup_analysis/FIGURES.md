@@ -5,11 +5,11 @@ inference, joins, confidence selection, or resampling.
 
 | Figure | Question | Prepared tables | Analysis / source |
 |---|---|---|---|
-| 01_predictors | How do existing predictors fare across MSA depth? | `figure_rows.csv`, `summary.csv` (`figure=01_predictors`) | `prepare_structure`; exp250 archived per-target GDT-TS and lDDT plus new AF2/3 scores; natural proteins matched across methods |
-| 02_oracle | How well can Helico realize the true map? | Same, `figure=02_oracle` | `prepare_structure`; full three-state oracle and no-contact Helico, plus AF2/3 and Protenix + MSA context |
+| 01_predictors | How do existing predictors fare across MSA depth? | `figure_rows.csv`, `summary.csv` (`figure=01_predictors`) | `prepare_structure`; exp250 archived per-target GDT-TS and lDDT plus new AF2/3 and Boltz-2 scores; natural proteins matched across methods |
+| 02_oracle | How well can Helico realize the true map? | Same, `figure=02_oracle` | `prepare_structure`; full three-state oracle and no-contact Helico, plus AF2/3, Boltz-2 and Protenix + MSA context |
 | 02b_confidence | Does confidence prefer the oracle to random maps? | `confidence_per_map.csv`, `confidence_per_protein.csv`, `confidence_summary.csv` | `prepare_confidence`; new Helico samples, equal known mask/contact counts and diffusion budgets |
 | 03_method | What was trained, and how does inference work? | `training_sources.csv`, `manifest.json` | Exp277 corpus inventory and fixed model identity; diagram arrows have no quantitative width |
-| 04_contacts | How accurate are the predicted contacts? | `figure_rows.csv`, `summary.csv` (`figure=04_contacts`) | `prepare_contacts`; exp277 validation/design results plus new exp325 test results; exp245 baseline scores and new AF2/3 pyconfind contacts |
+| 04_contacts | How accurate are the predicted contacts? | `figure_rows.csv`, `summary.csv` (`figure=04_contacts`) | `prepare_contacts`; exp277 validation/design results plus new exp325 test results; exp245 baseline scores and new AF2/3 and Boltz-2 pyconfind contacts |
 | 05_folding | Do predicted contacts improve structure accuracy? | Same, `figure=05_folding` | `prepare_folding`; exact top-L, select the highest-confidence of three diffusion samples; exp311 validation/design and new exp325 test results |
 | 06_sampling | Do better individual maps occur among 100 samples? | Same, `figure=06_sampling`; `sampling_diagnostics.csv` | `prepare_sampling`; exp321 ordinary iid validation control plus new exp325 test rollouts; same sample pool for each protein's three comparisons |
 
@@ -55,3 +55,12 @@ and computes pyconfind contacts with exp89's frozen candidate universe.
 The input and sampling contract is `alphafold_inputs.json`; per-protein timings
 also retain the selected candidate identity. Structural populations stay at the
 original 305 matched natural proteins, and contact populations stay at 314.
+
+Boltz-2 occupies the same four panels, without changing any original population.
+`generation/score_boltz2.py` verifies all 25 candidates, their saved confidence
+JSON and coordinate digests, and the selected confidence argmax before scoring.
+It imports the same `structure_scores` and contact metric functions used for
+AF2/3; `boltz2_{structure_metrics,contact_metrics}.csv` are its source tables.
+`boltz2_inputs.json` pins code, weight hashes, sampling and MSA processing;
+`boltz2_run.json` records scorer and input hashes; `boltz2_timings.csv` records
+GPU time, setup time, runtime packages and the selected candidate per protein.

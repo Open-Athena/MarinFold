@@ -42,10 +42,10 @@ STRUCTURE_NAMES = {
     "esmfold": "esmfold",
 }
 FIGURES = {
-    "01_predictors": ["af3", "af2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
-    "02_oracle": ["oracle", "af3", "af2", "protenix_msa", "no_contacts"],
-    "04_contacts": ["af3", "af2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
-    "05_folding": ["af3", "af2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
+    "01_predictors": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
+    "02_oracle": ["oracle", "af3", "af2", "boltz2", "protenix_msa", "no_contacts"],
+    "04_contacts": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
+    "05_folding": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
     "06_sampling": ["single", "consensus", "best100"],
 }
 
@@ -153,7 +153,7 @@ def prepare_structure(sources: Sources, targets: pd.DataFrame) -> tuple[pd.DataF
     base = raw[["stem", "method", "gdt_ts", "lddt", "mean_plddt", "source", "source_row"]]
     base = base.melt(id_vars=["stem", "method", "mean_plddt", "source", "source_row"],
                      value_vars=["gdt_ts", "lddt"], var_name="metric", value_name="value")
-    for method in ("af2", "af3"):
+    for method in ("af2", "af3", "boltz2"):
         additional = sources.csv(DATA / f"{method}_structure_metrics.csv")
         if additional.stem.duplicated().any() or set(additional.stem) != set(targets.stem):
             raise ValueError(f"Incomplete {method} structural baseline")
@@ -191,7 +191,7 @@ def prepare_contacts(sources: Sources, targets: pd.DataFrame) -> pd.DataFrame:
         latest = latest[(latest.dataset == "foldbench_monomer") & (latest.cut == "R") & (latest["range"] == "long")].copy()
         latest["method"], latest["metric"] = "marinfold", "r_precision_long"
         parts.append(latest.rename(columns={"precision": "value"})[columns])
-    for method in ("af2", "af3"):
+    for method in ("af2", "af3", "boltz2"):
         additional = sources.csv(DATA / f"{method}_contact_metrics.csv")
         additional = additional[(additional.cut == "R") & additional["range"].isin(["all", "long"])].copy()
         additional["metric"] = additional["range"].map({"all": "r_precision", "long": "r_precision_long"})
@@ -221,7 +221,7 @@ def prepare_folding(sources: Sources, targets: pd.DataFrame, structure: pd.DataF
         selected = selected.assign(method=selected.arm.map({"top_L": "marinfold_helico", "top_0": "no_contacts"}))
         selected = selected.melt(id_vars=["stem", "method", "source", "source_row"], value_vars=["gdt_ts", "lddt"], var_name="metric", value_name="value")
         parts.append(annotate(selected, targets))
-    baselines = structure[structure.method.isin(["af2", "af3", "protenix_msa", "protenix_ss", "esmfold", "esmfold2"])]
+    baselines = structure[structure.method.isin(["af2", "af3", "boltz2", "protenix_msa", "protenix_ss", "esmfold", "esmfold2"])]
     combined = pd.concat([baselines, *parts], ignore_index=True)
     counts = combined.groupby(["stem", "metric"]).method.nunique()
     complete = counts[counts == len(FIGURES["05_folding"])].reset_index()[["stem", "metric"]]
@@ -409,7 +409,7 @@ def main() -> None:
         "generation_provenance": {
             str(path.relative_to(HERE)): {"sha256": sha256(path)}
             for path in [HERE / "generation/checkpoint_manifest.json",
-                         DATA / "alphafold_inputs.json",
+                         DATA / "alphafold_inputs.json", DATA / "boltz2_inputs.json",
                          *sorted(DATA.glob("*_run.json")),
                          *sorted(DATA.glob("helico_*_inputs.json"))]
         },
@@ -426,6 +426,7 @@ def main() -> None:
         "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
         "confidence_control": {"status": "complete" if "confidence_summary.csv" in tables else "pending", "selection": "20 preselected natural proteins, five per MSA tier; 11 maps and 3 diffusion samples per map"},
         "alphafold_protocol": json.loads((DATA / "alphafold_inputs.json").read_text()),
+        "boltz2_protocol": json.loads((DATA / "boltz2_inputs.json").read_text()),
     }
     (DATA / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"Prepared {len(rows)} contributing rows for exp277 step 266344. No predictor inference.")

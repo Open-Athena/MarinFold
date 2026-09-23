@@ -64,7 +64,7 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
     crowded = len(ORDER[figure]) > 6
-    fig, ax = plt.subplots(figsize=(10.4, 6.4 if crowded else 6.0), facecolor=PAPER)
+    fig, ax = plt.subplots(figsize=(10.4, 6.8 if crowded else 6.0), facecolor=PAPER)
     fig.subplots_adjust(left=0.09, right=0.98, bottom=0.36 if crowded else 0.33, top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if figure in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
@@ -303,8 +303,8 @@ def export_plotly(fig: go.Figure, name: str) -> None:
     mobile["layout"]["font"]["size"] = 11
     mobile["layout"]["margin"] = dict(l=47, r=12, t=75, b=230)
     if name in ORDER and len(ORDER[name]) > 6:
-        mobile["layout"]["height"] = 650
-        mobile["layout"]["margin"]["b"] = 280
+        mobile["layout"]["height"] = 685
+        mobile["layout"]["margin"]["b"] = 315
     if "legend" in mobile["layout"]:
         mobile["layout"]["legend"].update(y=-0.28, font=dict(size=10))
     if "updatemenus" in mobile["layout"]:

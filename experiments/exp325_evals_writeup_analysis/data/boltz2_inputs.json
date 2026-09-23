@@ -1,0 +1,25 @@
+{
+  "model": "Boltz-2",
+  "source_sha": "b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc",
+  "weights_revision": "6fdef46d763fee7fbb83ca5501ccceff43b85607",
+  "weights": {
+    "boltz2_conf.ckpt": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+    "mols.tar": "39e076d96dbec6b4e86982bbda16f3a53a2a60c9bdc17828d88f6f9a0c7d1fd7"
+  },
+  "seed": 42,
+  "diffusion_samples": 25,
+  "recycling_steps": 10,
+  "sampling_steps": 200,
+  "max_parallel_samples": 5,
+  "step_scale": 1.5,
+  "max_msa_seqs": 8192,
+  "subsample_msa": false,
+  "templates": false,
+  "constraints": false,
+  "affinity": false,
+  "use_potentials": false,
+  "selection": "maximum upstream confidence_score",
+  "precision": "bf16-mixed",
+  "msa_source": "data/alphafold_inputs.json; identical archived query/alignment",
+  "recipe_source": "https://github.com/jwohlwend/boltz/blob/b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc/docs/prediction.md"
+}

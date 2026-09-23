@@ -143,11 +143,11 @@ def test_test_folding_is_complete_and_selected_only_by_confidence() -> None:
         assert row.value == pytest.approx(original.gdt_ts)
 
 
-def test_alphafold_budgets_and_complete_coverage() -> None:
+def test_added_baseline_budgets_and_complete_coverage() -> None:
     protocol = json.loads((DATA / "alphafold_inputs.json").read_text())
     assert protocol["n_targets"] == 333
     targets = set(pd.read_csv(DATA / "targets.csv").stem)
-    for method, budget in [("af2", 5), ("af3", 25)]:
+    for method, budget in [("af2", 5), ("af3", 25), ("boltz2", 25)]:
         timings = pd.read_csv(DATA / f"{method}_timings.csv")
         assert set(timings.stem) == targets
         assert not timings.stem.duplicated().any()
@@ -162,10 +162,22 @@ def test_alphafold_budgets_and_complete_coverage() -> None:
             assert set(rows.stem) == targets
 
 
-def test_alphafold_addition_preserves_original_populations() -> None:
+def test_added_baseline_preserves_original_populations() -> None:
     rows = pd.read_csv(DATA / "figure_rows.csv")
     for figure, expected in [("01_predictors", 305), ("02_oracle", 305),
                              ("04_contacts", 314), ("05_folding", 305)]:
         x = rows[(rows.figure == figure) & (rows.designed == 0)]
-        assert {"af2", "af3"}.issubset(set(x.method))
+        assert {"af2", "af3", "boltz2"}.issubset(set(x.method))
         assert (x.groupby(["method", "metric"]).stem.nunique() == expected).all()
+
+
+def test_boltz2_fixed_recipe_and_recorded_msa_processing() -> None:
+    protocol = json.loads((DATA / "boltz2_inputs.json").read_text())
+    assert (protocol["seed"], protocol["diffusion_samples"], protocol["recycling_steps"]) == (42, 25, 10)
+    assert not any(protocol[k] for k in ("templates", "constraints", "affinity", "use_potentials", "subsample_msa"))
+    timings = pd.read_csv(DATA / "boltz2_timings.csv")
+    assert (timings.n_msa_sequences_processed >= 1).all()
+    assert (timings.n_msa_sequences_processed <= np.minimum(8192, timings.msa_depth)).all()
+    assert (timings.elapsed_seconds > 0).all()
+    assert (timings.total_seconds >= timings.elapsed_seconds + timings.model_load_seconds).all()
+    assert (timings.runner_tag == "modal-us-east").all()

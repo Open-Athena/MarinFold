@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "input_checkout": "c04a767a59d033db1525b4346dee93bb42954e7a",
-  "prepare_sha256": "dd4f075917f0e096099363daa03fc546b5e7362c1d3c019c23b8018ddf1a483d",
+  "input_checkout": "cde50057d74b8f4cc84469efeb45ef8c345fdd1c",
+  "prepare_sha256": "71b31c0c6b6f969e487a648e18f8bed7c51efd2eb8916deaa8d26d7171ddc6cf",
   "lock_sha256": "336b85737590a471918dc33d92c816ef0a1178128d51fdf91a1f9840cc2c2d50",
   "inputs": {
     "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": {
@@ -23,6 +23,10 @@
     "experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv": {
       "sha256": "5098b5b83f83eff224074b669babdd5aad7e4ef297eb1913d04e43b6314bbe5b",
       "bytes": 102987
+    },
+    "experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv": {
+      "sha256": "511fb0e4b0d6f27833071037cc0e392d6533ecf124422a383d205f1dacd825fd",
+      "bytes": 103917
     },
     "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_per_protein.csv": {
       "sha256": "904f17969c36204ddb8d9d45ce8e5d9bd328b25abb8c13692d4dd581e6f59438",
@@ -47,6 +51,10 @@
     "experiments/exp325_evals_writeup_analysis/data/af3_contact_metrics.csv": {
       "sha256": "942c982215cc62187fd0b7929e2a1423673486da15eacf01c18ede9c874cdceb",
       "bytes": 398097
+    },
+    "experiments/exp325_evals_writeup_analysis/data/boltz2_contact_metrics.csv": {
+      "sha256": "c9a5ed98fe8cd845062810a5ce57d20b0bf1e6f505bfc2c5e2779fd5e2331b58",
+      "bytes": 417979
     },
     "experiments/exp311_evals_helico_exp277_contact_count_sweep/data/per_target_selection.csv": {
       "sha256": "3c2304af93055b69fbb15d0a36cbd3c116ee2622e9f70c1d9d14078f0d669c07",
@@ -108,11 +116,17 @@
     "data/alphafold_inputs.json": {
       "sha256": "f9b41eaac2f51b4bc625734164df50d1aa0c62f054b7078716be1da107bd6d4f"
     },
+    "data/boltz2_inputs.json": {
+      "sha256": "d51bb580b0e025d8ec91f881da5ab34e8597b1b5ce1354371cdaa166806cde80"
+    },
     "data/af2_run.json": {
       "sha256": "17c99395c240c259af37021a56b1b652c67a36ea1ab7a0d7362c06de0e3fab96"
     },
     "data/af3_run.json": {
       "sha256": "dd736657c62579812dc7faf9a1fe8aa54fcef1ea18a51a59c942625045445143"
+    },
+    "data/boltz2_run.json": {
+      "sha256": "ae9c6b8df9cbaf6210b5254c628e6d662c1cff869efb20d00c88677b9a193e12"
     },
     "data/helico_confidence_run.json": {
       "sha256": "7074100d0309347cf7863ecf276b874ec6f0bdd5ec0e891f38e4cf63bee1577b"
@@ -140,12 +154,12 @@
       "rows": 9
     },
     "figure_rows.csv": {
-      "sha256": "f5c356a07e849fd59dd6a8129384e368f10742666b0130ebb7f04ee2e4bfa178",
-      "rows": 19524
+      "sha256": "35a551c403cab4f12c5701ec880ccecb0f2ff8b8795ad01aad4a146a5fd90901",
+      "rows": 22134
     },
     "summary.csv": {
-      "sha256": "c845deefb32b38eb2dabee2b4a43bdd089f3865bb002ff131fa7951a9c6c7fdc",
-      "rows": 1656
+      "sha256": "b307ebf9ad91fa3a2d544332129a03bcba458b7d976216e46af3389a85d634f8",
+      "rows": 1880
     },
     "paired_deltas.csv": {
       "sha256": "726e0cac3e27f70f4d2907897890186eab58ff3a94f1e44cf838b46a0648c6e0",
@@ -262,5 +276,30 @@
     },
     "msa_interpretation": "Depth is now the supplied alignment count for both new baselines, not the depth from the original AF3 search pipeline.",
     "parameters_private": "Do not include weights in the public artifact package."
+  },
+  "boltz2_protocol": {
+    "model": "Boltz-2",
+    "source_sha": "b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc",
+    "weights_revision": "6fdef46d763fee7fbb83ca5501ccceff43b85607",
+    "weights": {
+      "boltz2_conf.ckpt": "090e82ac8c92f5e943fa1b39e7410a44027bea7243c0bbb3caa67a77fc1428e1",
+      "mols.tar": "39e076d96dbec6b4e86982bbda16f3a53a2a60c9bdc17828d88f6f9a0c7d1fd7"
+    },
+    "seed": 42,
+    "diffusion_samples": 25,
+    "recycling_steps": 10,
+    "sampling_steps": 200,
+    "max_parallel_samples": 5,
+    "step_scale": 1.5,
+    "max_msa_seqs": 8192,
+    "subsample_msa": false,
+    "templates": false,
+    "constraints": false,
+    "affinity": false,
+    "use_potentials": false,
+    "selection": "maximum upstream confidence_score",
+    "precision": "bf16-mixed",
+    "msa_source": "data/alphafold_inputs.json; identical archived query/alignment",
+    "recipe_source": "https://github.com/jwohlwend/boltz/blob/b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc/docs/prediction.md"
   }
 }

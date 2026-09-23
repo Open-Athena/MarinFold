@@ -72,15 +72,18 @@ non-contacts. It is an information upper bound, not a deployable predictor or
 a matched-count comparison with MarinFold. The random-map control separately
 matches its known mask, positive/negative counts and diffusion budget.
 
-The added AlphaFold2 and AlphaFold3 arms use exactly the archived protein queries
+The added AlphaFold2, AlphaFold3 and Boltz-2 arms use exactly the archived protein queries
 and MSAs behind the depth table, with **no templates**, protein-chain-only inputs,
 and internal confidence selection. AF2 uses five pTM weight sets through ColabFold
 1.6.2, one seed and three recycles; AF3 uses five seeds × five samples and ten
-recycles. These controlled shared-MSA arms differ from the predictors' complete
+recycles. Boltz-2 uses seed 42, 25 samples, ten recycles and 200 diffusion
+steps, with its default step scale 1.5 and no physical potentials. Its upstream
+MSA parser deduplicates and caps at 8,192 sequences; optional subsampling is off.
+These controlled shared-MSA arms differ from the predictors' complete
 default search pipelines and from FoldBench's published AF3 run. Modified residues
 without a standard amino-acid identity are encoded as X. Sampling budgets differ
 across predictors and are recorded rather than presented as compute-matched.
-AF2/3 GDT-TS uses matched protein CA atoms; lDDT uses matched protein atoms.
+AF2/3 and Boltz-2 GDT-TS use matched protein CA atoms; lDDT uses matched protein atoms.
 Per-target atom counts and missing AF2 unknown residues are saved. Atom coverage
 can differ from arms that retain modified residues or non-protein entities.
 
@@ -93,6 +96,14 @@ can differ from arms that retain modified residues or non-protein entities.
   this stratum contains only five proteins. Both baselines have full CA
   coverage on the 305 matched natural proteins and perfect sequence identity
   in the contact-coordinate mapping on all 333 targets.
+- **Boltz-2:** all 333 monomers completed, with 8,325 confidence-ranked candidates.
+  On the same 305 natural proteins, GDT-TS is **0.8606** and lDDT **0.8749**;
+  all-range contact R-precision is **0.8317** on 314 natural proteins.
+  At MSA depth <10, GDT-TS is **0.2394** (five proteins). CA coverage is complete
+  on the matched natural population, and contact mapping identity is 1.0 on all
+  333 targets. Adding this baseline leaves all 1,656 previous summary rows and
+  19,524 previous contributing rows exactly unchanged; it adds 224 summaries
+  and 2,610 contributing rows.
 - **Contacts:** natural R-precision **0.5609** (validation 0.5537; test 0.5641).
   MSA-tier means are **0.3453, 0.3428, 0.4486, 0.6167**, with n=5/21/62/226.
 - **Confidence:** all **20/20 proteins** rank their oracle map above every
@@ -153,6 +164,18 @@ for AF3. AF3 predictions and derived results carry its
 [output terms](data/af3_output_terms.md) and [required notice](data/af3_notice.txt).
 Parameter files remain private; the public package contains predictions and scores.
 
+Boltz-2 uses the official [source revision b1ebfc4](https://github.com/jwohlwend/boltz/tree/b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc)
+and the public `boltz2_conf.ckpt` checksum in `data/boltz2_inputs.json`.
+Cite [Passaro et al. (2025)](https://doi.org/10.1101/2025.06.14.659707).
+The [full inference run](https://modal.com/apps/open-athena/main/ap-STH0IsMT0oNr24kym5SW9p)
+uses up to sixteen resident workers in `us-east` (H100 requests; actual hardware
+recorded per protein). The [two-protein smoke run](https://modal.com/apps/open-athena/main/ap-UaJZuut2PoYVF6zOy5FsT4)
+checks unknown residues and the longest target before the full run. All 25
+candidate structures and their confidence summaries are retained. The scorer
+verifies candidate digests, the confidence argmax and selected coordinate bytes.
+`data/boltz2_run.json` records exact scoring provenance; timings distinguish
+synchronized inference from setup, preprocessing and output writing.
+
 Main contact votes exclude unfinished rollouts as exp277 does. The sampling
 diagnostic follows exp321: all parsed maps vote, while invalid individual maps
 score zero. Both diagnostic selectors use the same pool within each protein.
@@ -161,8 +184,8 @@ This distinction is explicit in the manifest and figure captions.
 
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
-for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v2-alphafold).
-Fourteen analysis checks pass, including source-row round trips and fixed
+for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v3-boltz2).
+Fifteen analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
 including the test-split menus; the PDF has three narrative and eleven plot pages.
 

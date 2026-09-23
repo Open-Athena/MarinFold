@@ -1,5 +1,5 @@
 {
   "script": "render.py",
   "args": [],
-  "caption": "*Oracle = ground-truth contacts AND non-contacts supplied to Helico without an MSA. This is an information upper bound, not a competing predictor or a matched-count true-contact experiment. Same 305 natural proteins as Figure 1. AlphaFold2/3 use the same archived MSA queries and alignments underlying these depth bins, with templates disabled and protein-chain-only inputs. Confidence selects among five AF2 pTM models (three recycles) or 25 AF3 samples (five seeds, ten recycles). These are controlled shared-MSA runs, not the models\u2019 full default search pipelines."
+  "caption": "*Oracle = ground-truth contacts AND non-contacts supplied to Helico without an MSA. This is an information upper bound, not a competing predictor or a matched-count true-contact experiment. Same 305 natural proteins as Figure 1. AlphaFold2/3 and Boltz-2 use the same archived MSA queries and alignments underlying these depth bins, with templates disabled and protein-chain-only inputs. Confidence selects among five AF2 pTM models (three recycles), 25 AF3 samples (five seeds, ten recycles), or 25 Boltz-2 samples (one seed, ten recycles). These are controlled shared-MSA runs, not the models\u2019 full default search pipelines."
 }

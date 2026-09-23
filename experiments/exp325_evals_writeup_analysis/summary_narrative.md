@@ -4,15 +4,15 @@ A figure-first writeup on existing predictors, oracle contacts, MarinFold and us
 
 Fixed model: exp277 step 266344, 1.47B parameters, 248.584B raw training tokens.
 Natural proteins lead: 97 validation + 217 publication test. Designs remain separate.
-AF2/AF3 comparators use shared archived MSAs and no templates, with confidence selection.
+AF2/AF3/Boltz-2 comparators use shared archived MSAs and no templates, with confidence selection.
 
 Predictor generation → cached analysis tables → fast static and interactive rendering.
 Every numerical figure element maps back to a source CSV row.
 
 ## What the contact and confidence analyses show
 
-AF2 / AF3 GDT-TS: 0.854 / 0.860 on the same 305 natural proteins.
-At MSA depth <10: 0.196 / 0.332, with only five proteins in this tier.
+AF2 / AF3 / Boltz-2 GDT-TS: 0.854 / 0.860 / 0.861 on 305 natural proteins.
+At MSA depth <10: 0.196 / 0.332 / 0.239, with only five proteins.
 
 MarinFold contact R-precision: 0.561 overall; 0.345 at MSA depth <10 versus 0.617 at ≥1000.
 Only five natural proteins occupy the shallowest tier.

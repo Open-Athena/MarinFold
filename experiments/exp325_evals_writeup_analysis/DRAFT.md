@@ -12,7 +12,7 @@ summary: A figure-first look at contact prediction, structural accuracy, and use
 
 Accurate folding remains harder when a protein has few sequence relatives. Improving here could also help protein design.
 
-AlphaFold2 and AlphaFold3 use the shared benchmark MSAs here, with templates disabled.
+AlphaFold2, AlphaFold3 and Boltz-2 use the shared benchmark MSAs here, with templates disabled.
 
 {{plotly: 01_predictors.json | title="Existing predictors across MSA depths" | mobile="01_predictors-mobile.json"}}
 

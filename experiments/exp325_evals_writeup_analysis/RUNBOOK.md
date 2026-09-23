@@ -89,7 +89,7 @@ serialization. These figures make no speed comparisons.
 # Public artifacts
 
 Raw contact completions/votes and every new Helico diffusion sample are archived
-under `data/exp325-writeup-analysis/exp277-step266344/v2-alphafold` in the public
+under `data/exp325-writeup-analysis/exp277-step266344/v3-boltz2` in the public
 `open-athena/MarinFold` HF bucket. `data/publication_manifest.json` records file
 sizes and SHA256 digests. The package includes the offline preview, local font
 and Plotly bundle, figures, prepared tables and experiment scripts. Existing
@@ -142,3 +142,51 @@ are omitted because these analyses use coordinates and summary confidence only.
 `publish_to_hf.py` includes the new input/output archives without any parameter files.
 Exports read completed target directories in bounded concurrent batches to avoid
 serial object-storage latency. This changes packaging only, not prediction bytes.
+
+## Boltz-2 baseline
+
+Uses official source `b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc` (2.2.1) and
+public structure checkpoint revision `6fdef46d763fee7fbb83ca5501ccceff43b85607`.
+The fixed recipe is one seed (42), 25 diffusion samples, ten recycles, 200
+sampling steps, up to five parallel samples, step scale 1.5, bf16 mixed precision.
+The archived MSA is parsed with upstream deduplication and an 8,192-sequence cap, without optional
+MSA subsampling. No templates, constraints, physical potentials or affinity run.
+The upstream confidence score selects one structure (for these monomers,
+0.8 × complex pLDDT + 0.2 × pTM). This follows the
+[documented 25-sample/ten-recycle option](https://github.com/jwohlwend/boltz/blob/b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc/docs/prediction.md);
+matching AF3's sample count is not a claim of equal compute or identical seeds.
+
+```bash
+uv run --project generation modal run generation/run_boltz2.py --stage-only
+uv run --project generation modal run generation/run_boltz2.py --smoke
+uv run --project /home/bizon/git/helico --no-sync --with scikit-learn python generation/score_boltz2.py --smoke
+uv run --project generation modal run generation/run_boltz2.py
+uv run --project /home/bizon/git/helico --no-sync --with scikit-learn python generation/score_boltz2.py
+uv run python prepare.py
+uv run python render.py
+uv run python build_summary.py
+uv run pytest -q
+```
+
+The smoke proteins are fixed by input properties: `5sbj_A` (unknown residues)
+and `8wnj_A` (longest, 917 residues). No accuracy-based recipe selection.
+`--collect-only` recovers completed outputs. The separate Modal volume
+`marinfold-exp325-boltz2` stores weights and outputs; staging extracts the 21
+canonical protein/unknown CCD entries from the checksum-verified public archive; the existing AlphaFold
+volume supplies unchanged input MSAs. Every completion validates the protocol
+and MSA hashes; scorer validation checks all candidates and selected bytes.
+The public archive excludes weights, processed feature arrays and unused full
+PAE/PDE matrices (the upstream writer emits these even with its write flags off),
+retaining all
+sample CIFs, confidence JSON, pLDDT arrays, input identity, selection and timings.
+
+Timing uses synchronized Lightning prediction-batch callbacks before file
+writing. Input featurization, model loading and output writing are excluded from
+`elapsed_seconds`; `model_load_seconds` is recorded separately. `total_seconds`
+adds model setup to per-target preparation, prediction and writing, excluding the
+final completion-marker write and volume commit. Timing is retained for audit;
+the figures make no speed comparison.
+
+The full Boltz-2 run uses up to sixteen resident GPU workers in `us-east`.
+Modal requests H100 GPUs; actual allocations (including H200 upgrades) are
+recorded per protein, along with hardware and model-load time.
