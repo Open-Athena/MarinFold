@@ -1,6 +1,7 @@
 """Measure whether coherent branching visits both fold-switch contact modes."""
 
 import argparse
+import json
 from itertools import combinations
 from pathlib import Path
 
@@ -118,12 +119,10 @@ def main() -> None:
         & (targets.split == "dev")
         & targets.primary.astype(bool)
     ]
-    truth = {
-        record["pair_id"]: record
-        for record in pd.read_parquet(
-            HERE / "data" / "foldswitch_truth.parquet"
-        ).to_dict("records")
-    }
+    truth_frame = pd.read_csv(HERE / "data" / "foldswitch_truth.csv")
+    for column in ("contacts_fold1", "contacts_fold2", "common_positions"):
+        truth_frame[column] = truth_frame[column].map(json.loads)
+    truth = {record["pair_id"]: record for record in truth_frame.to_dict("records")}
     rows = []
     for target in targets.sort_values(["L", "stem"]).itertuples():
         iid = pd.read_parquet(

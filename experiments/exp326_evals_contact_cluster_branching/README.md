@@ -62,8 +62,8 @@ protein bootstrap.
 
 Raw rollout and per-target timing parquets are public at
 `hf://buckets/open-athena/MarinFold/data/exp326/contact-cluster-branching-v1/`
-(542 files, 19,177,484 bytes). The compact timing table and analysis results are
-committed under `data/`.
+(542 files, 19,177,484 bytes). The compact timing table, frozen branch plans,
+fold-switch truth, and analysis results are committed as CSV under `data/`.
 
 ## Results
 

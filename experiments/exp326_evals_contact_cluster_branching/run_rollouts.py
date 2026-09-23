@@ -152,9 +152,24 @@ def main() -> None:
     branch_arms = [arm for arm in arms if arm != "iid100"]
     if branch_arms and args.plans is None:
         raise ValueError("--plans is required for conditioned branch arms")
-    plans = pd.read_parquet(args.plans) if args.plans is not None else pd.DataFrame()
+    plans = pd.read_csv(args.plans) if args.plans is not None else pd.DataFrame()
     if not plans.empty:
         plans = plans[plans.selection == args.selection]
+
+    jobs = []
+    for target in targets.itertuples():
+        for arm in arms:
+            raw_path = args.out / arm / target.cohort / f"{target.stem}.parquet"
+            timing_path = (
+                args.out / arm / target.cohort / f"{target.stem}.timing.parquet"
+            )
+            if raw_path.exists() and timing_path.exists():
+                print(f"[exp326] skip {arm} {target.stem}", flush=True)
+                continue
+            jobs.append((target, arm, raw_path, timing_path))
+    if not jobs:
+        print("[exp326] all selected jobs already complete", flush=True)
+        return
 
     load_started = time.perf_counter()
     tokenizer = AutoTokenizer.from_pretrained(args.model)
@@ -185,18 +200,17 @@ def main() -> None:
         "torch_version": torch_version,
     }
 
-    total_jobs = len(targets) * len(arms)
+    total_jobs = len(jobs)
     job_number = 0
     for target in targets.itertuples():
         for arm in arms:
-            job_number += 1
             raw_path = args.out / arm / target.cohort / f"{target.stem}.parquet"
             timing_path = (
                 args.out / arm / target.cohort / f"{target.stem}.timing.parquet"
             )
             if raw_path.exists() and timing_path.exists():
-                print(f"[exp326] skip {arm} {target.stem}", flush=True)
                 continue
+            job_number += 1
             if arm == "iid100":
                 selected_plans = pd.DataFrame(
                     {

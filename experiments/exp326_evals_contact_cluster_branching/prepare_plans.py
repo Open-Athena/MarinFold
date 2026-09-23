@@ -91,9 +91,7 @@ def main() -> None:
                         }
                     )
     args.out.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_parquet(
-        args.out / f"{args.selection}_plans.parquet", index=False
-    )
+    pd.DataFrame(rows).to_csv(args.out / f"{args.selection}_plans.csv", index=False)
     diagnostic_frame = pd.DataFrame(diagnostics)
     diagnostic_frame.to_csv(
         args.out / f"{args.selection}_plan_diagnostics.csv", index=False
