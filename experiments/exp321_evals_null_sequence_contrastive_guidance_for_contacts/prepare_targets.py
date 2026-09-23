@@ -56,13 +56,24 @@ def foldswitch_targets() -> pd.DataFrame:
     return frame
 
 
+def foldswitch_truth(pair_ids: set[str]) -> pd.DataFrame:
+    """Read the reference-only exp301 table for post-generation scoring."""
+    path = "experiments/exp301_evals_fold_switching_proteins/data/eval_targets.parquet"
+    frame = pd.read_parquet(io.BytesIO(git_bytes(path)))
+    frame = frame[(frame.role == "foldswitch") & frame.pair_id.isin(pair_ids)].copy()
+    if len(frame) != len(pair_ids) or frame.pair_id.nunique() != len(pair_ids):
+        raise ValueError("fold-switch truth does not match sequence-only targets")
+    return frame
+
+
 def main() -> None:
     """Write the immutable target table consumed by every worker arm."""
     columns = [
         "cohort", "dataset", "stem", "target_id", "sequence", "L", "split", "primary"
     ]
+    foldswitch = foldswitch_targets()
     targets = pd.concat(
-        [eval_val_targets()[columns], foldswitch_targets()[columns]], ignore_index=True
+        [eval_val_targets()[columns], foldswitch[columns]], ignore_index=True
     )
     if targets.target_id.duplicated().any():
         raise ValueError("duplicate target IDs")
@@ -72,6 +83,9 @@ def main() -> None:
     destination.mkdir(exist_ok=True)
     targets.sort_values(["cohort", "L", "target_id"]).to_csv(
         destination / "targets.csv", index=False
+    )
+    foldswitch_truth(set(foldswitch.pair_id)).to_parquet(
+        destination / "foldswitch_truth.parquet", index=False
     )
     print(targets.groupby(["cohort", "split", "primary"]).size().to_string())
 
