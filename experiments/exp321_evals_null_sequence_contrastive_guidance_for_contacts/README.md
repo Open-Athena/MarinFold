@@ -120,10 +120,94 @@ Use paired protein bootstrap intervals. Preserve per-input timing and worker met
 4. **Secondary:** report whether guidance improves reference-blind or oracle dual-mode coverage on the fixed 29-pair fold-switching stress test. A fold-switching gain is not required for the general contact result, but a loss must be explicit.
 5. Raw Jaccard reduction, unique-map count, or entropy alone does **not** count as success. If true-contact coverage or accuracy does not improve, the conclusion is that subtracting this null prior creates novelty rather than useful sequence-conditioned hypotheses.
 
+### Objective amendment: oracle best-of-100
+
+After the development screen and after the original full arms had been launched, the experiment owner clarified that consensus accuracy was not important: the intended product objective is **oracle best-of-100 contact accuracy**, and an improvement confined to that endpoint is useful. The full generations were therefore retained, but the primary analysis was changed before reading their accuracy labels:
+
+- score every individual rollout in emission order at exp89's `R` cutoff (the number of true contacts in that range), with repeated contact statements occupying only their first rank;
+- assign zero accuracy to an unfinished rollout or any rollout containing a malformed contact statement, rather than silently dropping it;
+- report the best valid rollout in each `N in {1, 2, 5, 10, 25, 50, 100}` prefix, all-range and long-range;
+- compare 100 guided rollouts with both 100 ordinary rollouts and however many single-stream rollouts fit the measured paired-guidance H100 time;
+- run the literal pure native/null ratio at full scale despite its weak development result, plus 200 ordinary `T=1.1` rollouts as a high-diversity and equal-time control.
+
+This amendment, its validity rule, the development values visible at the time, and the two added arms were frozen in [`data/oracle_followup.json`](data/oracle_followup.json) before those arms were launched. Consensus, union recall, and fold-mode coverage remain secondary diagnostics.
+
+
 ## Results
 
-_(Fill in after the run completes.)_
+### Run and validity gates
+
+The experiment generated 108,860 rollouts (98.8 million generated tokens) across 1,159 target/mode predictor runs. Development used 16 length-stratified natural eval-val proteins and 15 primary fold-switch pairs. The final natural comparison used all 97 eval-val proteins, reporting the 16 development proteins separately from the other **81 proteins that were untouched during method selection**. No eval-test proteins were read.
+
+The paired gamma=0 decoder passes the implementation gate. Across all 97 eval-val proteins its consensus R-precision is 0.5531 all-range and 0.5387 long-range, respectively -0.0007 and +0.0007 from #306's established 0.5538/0.5380 reference. All 120 full-run Iris jobs succeeded without retry.
+
+The initial development screen selected all-token poly-Ala guidance with gamma=0.5. At best-of-20 it improved validity-gated oracle R-precision from 0.4490 to 0.4733 all-range (paired delta +0.0243, 95% bootstrap CI +0.0101 to +0.0389) and from 0.4287 to 0.4660 long-range (+0.0372, CI +0.0143 to +0.0608). The literal pure-ratio arm was already worse at 0.3923/0.3924, which is why it remained a confirmatory rather than selected arm.
+
+![Development oracle curves](plots/01_dev_curves.png)
+
+### Primary result: bounded guidance improves oracle best-of-100
+
+On the 81 untouched eval-val proteins, the frozen guided decoder improves validity-gated oracle best-of-100 R-precision over every ordinary-sampling control:
+
+| Decoder, N=100 | All-range | Long-range |
+|---|---:|---:|
+| **poly-Ala guidance, gamma=0.5, all tokens** | **0.5554** | **0.5474** |
+| ordinary iid, T=1.0 | 0.5331 | 0.5279 |
+| paired implementation, gamma=0 | 0.5335 | 0.5284 |
+| ordinary T=0.8 | 0.5384 | 0.5343 |
+| ordinary T=1.1 | 0.5169 | 0.5112 |
+| pure native/null ratio | 0.4774 | 0.4713 |
+
+Against ordinary iid sampling, the paired protein-level improvement is **+0.02235 all-range** (95% bootstrap CI +0.01588 to +0.02899) and **+0.01952 long-range** (+0.01119 to +0.02800). It also beats the overlap-matched T=0.8 control by +0.01699/+0.01310 and the high-diversity T=1.1 control by +0.03853/+0.03616; all four intervals exclude zero.
+
+The gain is not an artifact of discarding failures. The primary metric assigns zero to unfinished rollouts and to any rollout with a malformed contact statement. Guidance had 37 invalid rollouts among 8,100; ordinary iid had 28. In both cases the best rollout for every protein was valid, so the raw and validity-gated oracle means coincide for guidance and differ by only 0.00004 for iid.
+
+![Held-out oracle curves](plots/04_heldout_curves.png)
+
+![Held-out paired effects](plots/05_heldout_primary_deltas.png)
+
+### What changed: stronger samples, not more diverse samples
+
+This is a positive result for the amended oracle objective, but not for the original useful-diversity hypothesis. Guidance raises mean validity-gated single-rollout R-precision from 0.4073 to 0.4340 all-range, while making maps **more** similar (pairwise Jaccard 0.3334 versus 0.2846) and reducing true-contact union recall at N=100 (0.9175 versus 0.9364). Consensus R-precision is slightly higher, 0.5695 versus 0.5625, but is secondary here.
+
+The native/null contrast therefore acts as a per-sample quality or concentration control in this regime. It improves the upper tail that an oracle can choose from even though the pool spans fewer distinct true contacts. This distinction matters operationally: the result is useful only when a downstream selector can identify unusually good rollouts; it is not itself such a selector.
+
+The literal ratio behaves in the opposite way. It increases union recall to 0.9612 and lowers Jaccard to 0.2552, but its best-of-100 score collapses to 0.4774. It also produces 249 invalid rollouts, 558 malformed statements, and 353 contacts per rollout, versus 28, 34, and 262 for iid. The ratio signal is real as a diagnostic—on ordinary development rollouts it separates true from false emitted contacts with within-protein AUC 0.564 (95% CI 0.550 to 0.579)—but removing the native-logit base distribution turns that weak signal into indiscriminate over-generation.
+
+### The gain survives compute matching
+
+One hundred paired guided rollouts cost the same measured H100 inference time as a median 132 ordinary T=1.0 rollouts (mean 131.1) or 115 T=1.1 rollouts (mean 118.3), calculated separately for each protein from its captured timing.
+
+Against that equal-time T=1.0 pool, guidance remains better by **+0.01714 all-range** (95% CI +0.01149 to +0.02293) and **+0.01415 long-range** (+0.00657 to +0.02191). It also beats equal-time T=1.1 by +0.03705/+0.03302. Even granting iid a full 200 rollouts, guided N=100 remains +0.00969 all-range (CI +0.00318 to +0.01560) and +0.00561 long-range (CI -0.00186 to +0.01282).
+
+![Equal-H100-time oracle comparison](plots/06_equal_time.png)
+
+### Fold-switch stress test is suggestive but reliability-limited
+
+On the fixed 29-pair fold-switch stress set, frozen guidance recovers both modes for 6/29 pairs in the oracle pool and 3/29 with the reference-blind top-16 selector, versus 6/29 and 2/29 for iid. Pure ratio reaches 7/29 and 4/29 even after invalid rollouts are forced to fail, but it is not a usable decoder: only 2,774/2,900 rollouts finish, 261 are invalid, and they contain 5,329 malformed contact statements. That one-pair oracle difference is therefore reported as a stress-test observation, not evidence of a robust fold-switching improvement. At N=200, iid reaches 7/29 oracle and 2/29 blind.
+
+![Fold-switch mode coverage](plots/07_foldswitch_modes.png)
+
+### Compute and artifacts
+
+The captured timing table totals 45.14 H100 inference-hours (45.57 hours including apportioned model load and output writes). The paired guided N=100 arm accounts for 5.26 hours; pure-ratio N=100 costs 9.58 hours because it emits much longer documents. Timings include worker/GPU metadata and one row per input/mode.
+
+- Primary per-protein curves and summaries: [data/heldout_natural.csv](data/heldout_natural.csv), [data/heldout_natural_summary.csv](data/heldout_natural_summary.csv), and [data/heldout_paired_deltas.csv](data/heldout_paired_deltas.csv).
+- Equal-time analysis: [data/equal_time_natural.csv](data/equal_time_natural.csv) and [data/equal_time_summary.csv](data/equal_time_summary.csv).
+- Fold-switch results and sealed raw-map hashes: [data/heldout_foldswitch.csv](data/heldout_foldswitch.csv) and [data/sealed_foldswitch_artifacts.csv](data/sealed_foldswitch_artifacts.csv).
+- Predictor timing table: [data/timings.csv](data/timings.csv).
+- Run and objective-freeze records: [data/run_manifest.json](data/run_manifest.json) and [data/oracle_followup.json](data/oracle_followup.json).
+- Public raw rollout/timing parquets: [HF bucket, data/exp321/null-sequence-guidance-v1](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/exp321/null-sequence-guidance-v1) (2,318 files, 174 MB uploaded; anonymously listed and sample-read).
+- Working copy: s3://marin-us-east-02a/MarinFold/exp321/null-sequence-guidance-v1.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+There is merit, with one important correction to the original proposal. **Do not sample from the pure native/null probability ratio.** It produces broader but substantially worse and less reliable rollouts. Retaining the native logits and adding a bounded contrast,
+
+~~~text
+logits_guided = logits_native + 0.5 * (logits_native - logits_polyAla),
+~~~
+
+does improve the objective the experiment owner cares about: oracle best-of-100 R-precision rises by about two points all-range and long-range, with confidence intervals excluding zero and with a positive equal-H100-time comparison. The effect comes from better individual samples, not greater rollout diversity.
+
+The next experiment should focus on a deployable selector for this improved upper tail—ideally one that does not use structure truth—rather than further flattening or ratio-only sampling. Without such a selector, the oracle gain remains an upper bound; with one, bounded null-sequence guidance is a credible inference-time improvement.

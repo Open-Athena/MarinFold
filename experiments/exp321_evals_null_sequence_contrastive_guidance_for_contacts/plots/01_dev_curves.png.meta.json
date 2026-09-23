@@ -1,5 +1,5 @@
 {
   "script": "summarize_dev.py",
   "args": [],
-  "caption": "Mean over 16 length-stratified eval-val development proteins. Pure-ratio and temperature sampling cover more true contacts, but both reduce consensus accuracy; moderate CFG-style guidance does not broaden the rollout pool."
+  "caption": "Mean over 16 length-stratified eval-val development proteins. The top row is validity-gated oracle accuracy; moderate guidance improves it, while pure ratio and higher temperature do not. Consensus accuracy is shown as secondary context."
 }

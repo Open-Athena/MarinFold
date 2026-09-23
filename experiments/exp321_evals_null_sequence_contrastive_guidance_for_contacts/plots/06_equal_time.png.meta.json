@@ -1,0 +1,5 @@
+{
+  "script": "summarize_full.py",
+  "args": [],
+  "caption": "Each protein compares 100 paired guided rollouts with the number of ordinary T=1.0 or T=1.1 rollouts fitting the measured guided inference time, interpolated from each 200-rollout timing. The endpoint is validity-gated oracle R-precision."
+}

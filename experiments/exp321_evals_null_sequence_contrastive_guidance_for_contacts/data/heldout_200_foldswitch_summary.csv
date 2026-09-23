@@ -1,0 +1,3 @@
+mode,n,oracle_dual,blind_dual,mean_pairwise_jaccard,mean_contacts,finished,malformed,invalid_rollouts
+full_iid_single,29,7,2,0.25088274783755105,343.33482758620687,5799,116,65
+full_t11_single,29,6,3,0.22625468610392355,390.1148275862069,5782,359,144

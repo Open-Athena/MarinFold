@@ -170,7 +170,11 @@ def curve_summary(natural: pd.DataFrame) -> pd.DataFrame:
 
 def collect_timings() -> pd.DataFrame:
     """Collect the captured per-input predictor timings from local mirrors."""
-    paths = sorted((HERE / "_cache").glob("dev_*/*/*.timing.parquet"))
+    paths = [
+        path
+        for mode in MODE_ORDER
+        for path in sorted((HERE / "_cache" / mode).glob("*/*.timing.parquet"))
+    ]
     if not paths:
         raise FileNotFoundError("no mirrored timing parquets")
     timings = pd.concat([pd.read_parquet(path) for path in paths], ignore_index=True)
@@ -183,7 +187,7 @@ def collect_timings() -> pd.DataFrame:
 def plot_curves(curves: pd.DataFrame) -> None:
     """Plot oracle and consensus accuracy across rollout budgets."""
     shown = [
-        "dev_g0_pa_pos", "dev_g05_pa_pos", "dev_g1_pa_pos", "dev_g2_pa_pos",
+        "dev_g0_pa_pos", "dev_g05_pa_all", "dev_g1_pa_pos", "dev_g2_pa_pos",
         "dev_ratio_pa_pos", "dev_t11_pa_pos",
     ]
     fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)

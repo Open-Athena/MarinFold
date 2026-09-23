@@ -1,0 +1,5 @@
+{
+  "script": "summarize_full.py",
+  "args": [],
+  "caption": "Frozen-guidance deltas on 81 proteins. Oracle best-of-100 is primary; consensus accuracy is retained only as context. Error bars are paired protein-bootstrap 95% intervals."
+}
