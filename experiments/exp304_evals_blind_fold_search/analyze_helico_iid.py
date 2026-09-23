@@ -218,6 +218,8 @@ def main() -> None:
                 "gdt_threshold": threshold,
                 "gdt_fraction_of_threshold": float(chosen["_relative"]),
                 "region_gdt_advantage": float(chosen["_margin"]),
+                "tm_common_fold1": float(chosen.tm_common_fold1),
+                "tm_common_fold2": float(chosen.tm_common_fold2),
                 "gdt_common_target": float(chosen[f"gdt_common_fold{fold}"]),
                 "gdt_common_other": float(chosen[f"gdt_common_fold{3 - fold}"]),
                 "mean_plddt": float(chosen.mean_plddt),

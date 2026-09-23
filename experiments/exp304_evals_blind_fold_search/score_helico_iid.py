@@ -11,7 +11,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 from build_helico_targets import SOURCE, prepare_structure
-from score_helico_cross import prediction_coords
+from score_helico_cross import prediction_coords, tm_score
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE / "_cache" / "helico_iid"
@@ -44,6 +44,7 @@ def comparison_metrics(predicted: np.ndarray, reference: np.ndarray,
     globally_aligned, global_rmsd = superpose(predicted, reference)
     global_distances = np.linalg.norm(globally_aligned - reference, axis=1)
     result = {
+        "tm_common": tm_score(predicted, reference),
         "gdt_common": gdt(global_distances),
         "rmsd_common": global_rmsd,
         "gdt_region_global_fit": gdt(global_distances[region]),
@@ -58,8 +59,9 @@ def comparison_metrics(predicted: np.ndarray, reference: np.ndarray,
     return result
 
 
-def score_protein(pair_id: str) -> tuple[list[dict], dict]:
-    """Score one protein's 1,003 structures while references stay in memory."""
+def score_protein(pair_id: str, shard_index: int = 0,
+                  shard_count: int = 1) -> tuple[list[dict], dict | None]:
+    """Score one shard of a protein's structures while references stay in memory."""
     truth = pd.read_parquet(SOURCE / "eval_targets.parquet").set_index("pair_id")
     target = truth.loc[pair_id]
     sequence = str(target.sequence)
@@ -82,7 +84,8 @@ def score_protein(pair_id: str) -> tuple[list[dict], dict]:
                   "n_region_ca": int(region.sum()), **ref_metrics}
     rows = []
     structures = ROOT / "results" / "predictions" / "iid1000"
-    for path in sorted(structures.glob(f"{pair_id}__*.pdb.gz")):
+    paths = sorted(structures.glob(f"{pair_id}__*.pdb.gz"))[shard_index::shard_count]
+    for path in paths:
         target_id = path.name.removesuffix(".pdb.gz")
         predicted_map = prediction_coords(path, sequence)
         positions = [position for position in common if position in predicted_map]
@@ -95,12 +98,13 @@ def score_protein(pair_id: str) -> tuple[list[dict], dict]:
             metrics = comparison_metrics(predicted, reference_arrays[fold], region)
             row.update({f"{name}_fold{fold}": value for name, value in metrics.items()})
         rows.append(row)
-    return rows, separation
+    return rows, separation if shard_index == 0 else None
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workers", type=int, default=12)
+    parser.add_argument("--shards-per-protein", type=int, default=12)
     args = parser.parse_args()
     input_meta = pq.read_table(ROOT / "data" / "inputs.parquet").to_pandas()
     run = pd.read_csv(ROOT / "results" / "iid1000.csv")
@@ -108,24 +112,34 @@ def main() -> None:
     if set(run.target_id) != expected or len(run) != len(input_meta) or not run.status.eq("ok").all():
         raise ValueError("Helico iid run is incomplete")
     pair_ids = sorted(input_meta.pair_id.unique())
-    all_rows, separation_rows = [], []
+    all_rows, separation_by_pair = [], {}
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(score_protein, pair_id): pair_id for pair_id in pair_ids}
+        futures = {
+            pool.submit(score_protein, pair_id, shard_index, args.shards_per_protein):
+                (pair_id, shard_index)
+            for pair_id in pair_ids
+            for shard_index in range(args.shards_per_protein)
+        }
         for future in concurrent.futures.as_completed(futures):
-            pair_id = futures[future]
+            pair_id, shard_index = futures[future]
             rows, separation = future.result()
-            if len(rows) != 1003:
-                raise ValueError(f"{pair_id}: expected 1,003 structures, found {len(rows)}")
             all_rows.extend(rows)
-            separation_rows.append(separation)
-            print(f"scored {pair_id}", flush=True)
+            if separation is not None:
+                separation_by_pair[pair_id] = separation
+            print(f"scored {pair_id} shard {shard_index + 1}/{args.shards_per_protein}",
+                  flush=True)
     scores = pd.DataFrame(all_rows)
+    counts = scores.groupby("pair_id").size()
+    if len(scores) != len(input_meta) or not counts.reindex(pair_ids).eq(1003).all():
+        raise ValueError("expected 1,003 scored structures for each protein")
+    if set(separation_by_pair) != set(pair_ids):
+        raise ValueError("missing reference-separation scores")
     complete = input_meta.merge(run, on="target_id", validate="one_to_one", suffixes=("", "_helico"))
     complete = complete.merge(scores, on=["target_id", "pair_id"], validate="one_to_one")
     complete.sort_values(["pair_id", "rollout"]).to_parquet(
         ROOT / "scores.parquet", index=False, compression="zstd"
     )
-    pd.DataFrame(separation_rows).sort_values("pair_id").to_csv(
+    pd.DataFrame(separation_by_pair.values()).sort_values("pair_id").to_csv(
         HERE / "data" / "helico_iid_reference_separation.csv", index=False
     )
     complete[complete.kind != "iid"].sort_values(["pair_id", "rollout"]).to_csv(
