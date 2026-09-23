@@ -43,6 +43,7 @@ def main() -> None:
             scope=scope,
             gamma=gamma,
             pure_ratio=pure_ratio,
+            single_stream=False,
             temperature=temperature,
             top_p=0.95,
             n_rollouts=args.n_rollouts,
