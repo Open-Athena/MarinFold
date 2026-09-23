@@ -211,6 +211,7 @@ def main() -> None:
             if raw_path.exists() and timing_path.exists():
                 continue
             job_number += 1
+            job_started = time.perf_counter()
             if arm == "iid100":
                 selected_plans = pd.DataFrame(
                     {
@@ -322,8 +323,9 @@ def main() -> None:
                         "elapsed_seconds": elapsed,
                         "model_load_seconds": model_load_seconds / total_jobs,
                         "total_seconds": written
-                        - started
+                        - job_started
                         + model_load_seconds / total_jobs,
+                        "total_seconds_reconstructed": False,
                         "n_rollouts": len(rows),
                         "n_finished": sum(bool(row["finished"]) for row in rows),
                         "n_malformed": sum(

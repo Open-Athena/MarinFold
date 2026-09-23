@@ -62,8 +62,14 @@ protein bootstrap.
 
 Raw rollout and per-target timing parquets are public at
 `hf://buckets/open-athena/MarinFold/data/exp326/contact-cluster-branching-v1/`
-(542 files, 19,177,484 bytes). The compact timing table, frozen branch plans,
+(542 files, 19,341,439 bytes). The compact timing table, frozen branch plans,
 fold-switch truth, and analysis results are committed as CSV under `data/`.
+Pure inference time was recorded directly. A review caught that the original
+end-to-end timer began after prompt construction; historical `total_seconds`
+was therefore recovered from adjacent per-target UTC end timestamps within
+each sequential launch (with the five launch-leading rows using that launch's
+median observed setup overhead) and is explicitly flagged by
+`total_seconds_reconstructed`. Future runs time prompt construction directly.
 
 ## Results
 
