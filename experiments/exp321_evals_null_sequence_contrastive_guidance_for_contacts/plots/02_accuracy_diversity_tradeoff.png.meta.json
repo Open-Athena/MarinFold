@@ -1,0 +1,5 @@
+{
+  "script": "summarize_dev.py",
+  "args": [],
+  "caption": "Paired mean deltas versus gamma=0 on the same 16 proteins. Incremental coverage subtracts each arm's N=1 coverage from its N=20 coverage, separating rollout-pool breadth from first-map quality. The green band is the preregistered <=0.005 consensus-regression allowance. Circles are all-range and squares long-range. No guided arm combines lower overlap with preserved accuracy."
+}

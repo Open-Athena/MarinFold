@@ -1,0 +1,26 @@
+{
+  "issue": 321,
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "checkpoint_source": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+  "source_revision": "359c3b72",
+  "working_artifacts": "s3://marin-us-east-02a/MarinFold/exp321/null-sequence-guidance-v1",
+  "public_artifacts": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1",
+  "natural_dev_proteins": 16,
+  "foldswitch_dev_pairs": 15,
+  "rollouts_per_target_mode": 20,
+  "modes": [
+    "dev_g0_pa_pos",
+    "dev_g025_pa_pos",
+    "dev_g05_pa_pos",
+    "dev_g1_pa_pos",
+    "dev_g2_pa_pos",
+    "dev_ratio_pa_pos",
+    "dev_g05_pa_all",
+    "dev_t11_pa_pos"
+  ],
+  "total_rollouts": 4960,
+  "iris_cluster": "cw-rno2a",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "job_prefix": "/bizon/exp321-dev-",
+  "wandb": null
+}

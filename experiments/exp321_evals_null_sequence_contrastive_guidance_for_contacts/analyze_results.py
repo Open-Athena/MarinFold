@@ -114,8 +114,6 @@ def score_natural_mode(mode: str, budgets: list[int], split: str) -> pd.DataFram
         frame = pd.read_parquet(path).sort_values("rollout")
         if len(frame) < max(budgets):
             raise ValueError(f"{mode}/{target.stem}: only {len(frame)} rollouts")
-        if not frame.iloc[:max(budgets)].finished.all():
-            raise ValueError(f"{mode}/{target.stem}: unfinished rollout")
         record = truth[target.stem]
         for region in ("all", "long"):
             maps = predicted_maps(frame.iloc[:max(budgets)], record, region)
@@ -241,7 +239,7 @@ def score_foldswitch_mode(mode: str, split: str, n_rollouts: int) -> pd.DataFram
         frame = pd.read_parquet(
             HERE / "_cache" / mode / "foldswitch" / f"{target.stem}.parquet"
         ).sort_values("rollout").iloc[:n_rollouts]
-        if len(frame) != n_rollouts or not frame.finished.all():
+        if len(frame) != n_rollouts:
             raise ValueError(f"{mode}/{target.stem}: incomplete fold-switch pool")
         maps = [canonical(contacts) for contacts in frame.contacts]
         scored = [fold_scores(contacts, truth[target.stem]) for contacts in maps]
@@ -264,6 +262,8 @@ def score_foldswitch_mode(mode: str, split: str, n_rollouts: int) -> pd.DataFram
             "mean_pairwise_jaccard": mean_pairwise_jaccard([list(value) for value in maps]),
             "unique_maps": len(set(maps)),
             "mean_contacts": float(np.mean([len(value) for value in maps])),
+            "finished": int(frame.finished.sum()),
+            "malformed": int(frame.malformed_contacts.sum()),
         })
     return pd.DataFrame(rows)
 
@@ -299,6 +299,7 @@ def main() -> None:
         mean_pairwise_jaccard=("mean_pairwise_jaccard", "mean"),
         mean_contacts=("mean_contacts", "mean"),
         malformed=("malformed", "sum"),
+        finished=("finished", "sum"),
     )
     summary.to_csv(destination / f"{args.output_prefix}_natural_summary.csv", index=False)
     print(summary.to_string(index=False))
@@ -319,6 +320,8 @@ def main() -> None:
             blind_dual=("blind_dual", "sum"),
             mean_pairwise_jaccard=("mean_pairwise_jaccard", "mean"),
             mean_contacts=("mean_contacts", "mean"),
+            finished=("finished", "sum"),
+            malformed=("malformed", "sum"),
         )
         fold_summary.to_csv(
             destination / f"{args.output_prefix}_foldswitch_summary.csv", index=False
