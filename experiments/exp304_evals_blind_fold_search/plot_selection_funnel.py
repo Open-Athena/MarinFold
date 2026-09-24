@@ -176,7 +176,7 @@ def main() -> None:
               fontsize=22, fontweight="bold", color=NAVY, va="top")
     axis.text(
         0.55, 6.76,
-        "A reference-defined cohort funnel, frozen before held-out search outcomes were inspected",
+        "Cohort eligibility and split, frozen before exp304 held-out accuracy was inspected",
         fontsize=11.5, color=GRAY, va="top",
     )
 
@@ -265,7 +265,7 @@ def main() -> None:
     )
     axis.text(
         8.50, 0.18,
-        "No MarinFold rollout, Helico structure, GDT, RMSD, or TM-score outcome entered selection.",
+        "No fold-match, Helico, GDT, RMSD, or TM-score outcome entered selection.",
         fontsize=8.6, color=GRAY, va="top",
     )
 

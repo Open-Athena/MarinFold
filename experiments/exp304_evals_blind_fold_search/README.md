@@ -114,8 +114,9 @@ and the stage definitions and counts are in
 The 25 premise-gate exclusions have overlapping failure reasons: 17 lacked
 enough global fold-specific contacts on at least one side, 14 had less than
 50% common resolved-chain coverage, and 3 lacked a locatable switching-region
-annotation. No rollout, structure prediction, GDT, RMSD, or TM-score result
-entered the selection.
+annotation. One pair was removed because its rollouts rarely completed within
+the fixed context budget; no contact agreement, GDT, RMSD, TM-score, or other
+fold-recovery quality result entered the selection.
 
 ### What ran
 
