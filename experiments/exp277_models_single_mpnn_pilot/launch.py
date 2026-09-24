@@ -48,6 +48,7 @@ def main() -> None:
         "WANDB_PROJECT": "MarinFold",
         "WANDB_API_KEY": wandb[2],
         "NODES": str(args.nodes),
+        "ATTEMPT": str(args.attempt),
         "FSSPEC_S3": json.dumps(
             {
                 "key": cw["aws_access_key_id"],
@@ -82,6 +83,14 @@ def main() -> None:
             "2026.09.09.1",
             "--run",
         ]
+    # A production epoch is a multi-day gang on a contested cluster, and one
+    # worker failing its dependency sync fails all sixteen: `/bizon/exp277-
+    # continue-a01` died because a single worker's 480 MB nvidia-cudnn-cu13
+    # download hit a stream error. Retry those phases so a transient does not
+    # cost the whole gang; a retry re-runs the step, which resumes from the
+    # run's own latest checkpoint once one exists. Smokes and preparation stay
+    # at zero retries because they are gates and should fail loudly.
+    max_retries = 3 if args.phase in ("train", "continue") else 0
     # The CLI and workers use the same committed lock. Credentials are passed
     # only to the child process,
     # never written into source files, command transcripts, or state artifacts.
@@ -98,6 +107,8 @@ def main() -> None:
         "--job-name",
         f"exp277-{args.phase}-a{args.attempt:02d}",
         "--no-wait",
+        "--max-retries",
+        str(max_retries),
         "--enable-extra-resources",
         "--cpu",
         "4",
@@ -110,7 +121,8 @@ def main() -> None:
         command.extend(["-e", key, value])
     command.extend(["--", *entry])
     print(
-        f"Submitting {args.phase}: cw-us-east-02a, batch, {args.nodes * 8} H100 for training",
+        f"Submitting {args.phase}: cw-us-east-02a, batch, {args.nodes * 8} H100 "
+        f"for training, max_retries={max_retries}",
         flush=True,
     )
     bundle = Path(tempfile.mkdtemp(prefix="exp277-bundle-"))

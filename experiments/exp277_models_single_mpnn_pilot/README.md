@@ -127,15 +127,131 @@ linearly cools to 0.1x over its final 20%. The amino-acid augmentation schedule
 continues from the source step and remains at full rate after completing its
 original ramp.
 
-The one-node / eight-H100 restore smoke was submitted at 2026-09-14 13:45 UTC
-as [`/bizon/exp277-continue-smoke-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-continue-smoke-a01)
-from source commit `07a8bccc`; its batch-priority GPU child is
-`/bizon/exp277-continue-smoke-a01/exp277-train-2ff47238`. The driver validated
-all cache and checkpoint dependencies, and the child is waiting for H100
-capacity. Production remains gated on this smoke. Its reserved identity is
+Production's reserved identity is
 [`contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B),
 with outputs under
-`s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/`.
+`s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/`,
+and it remains gated on a passing restore smoke.
+
+### The first restore smoke failed without running an update
+
+`/bizon/exp277-continue-smoke-a01` (submitted 2026-09-14 13:45 UTC from commit
+`07a8bccc`, GPU child `exp277-train-2ff47238`) queued about a day for H100
+capacity, restored the checkpoint, and then raised before its first optimizer
+update:
+
+```
+levanter/data/loader.py:140 initial_example = blocking_wait(self.data_store.getitem_async(0))
+IndexError: continuation data starts at offset 27273344, got 0
+```
+
+Both the driver and the GPU child nevertheless reported `succeeded exit=0`, so
+job state is not evidence here; the worker traceback is.
+
+`DataLoader.__init__` reads global data index 0 exactly once, before any
+iteration, to learn the example structure and build its zeroed padding example.
+That read does not depend on the restored step, so it lands below the
+continuation's absolute offset. The original wrapper rejected it.
+
+The absolute offset itself is required and is kept. Levanter's loader turns an
+absolute optimizer step into an absolute data offset
+(`BatchSchedule.global_data_offset_by_step`), and `train_lm` starts the
+iterator at the restored step, so the restored trainer asks for global indices
+from 213,073 x 128 = 27,273,344. Exposing the new epoch at local indices
+0..N-1 instead would have been worse than the crash: the loader would have
+skipped the first 27,273,344 packed examples, served only the last ~20% of the
+epoch, and stopped after about 53,272 of the 266,345 intended updates — and the
+ten-step smoke would have passed. `test_epoch_data.py` drives a real
+`DataLoader` to pin both behaviours.
+
+The repaired dataset serves the lone index-0 structure probe from the first
+example of the new epoch and still rejects every other index below the offset,
+so a trainer that failed to restore its step fails loudly instead of silently
+retraining a prefix.
+
+The failed step also wrote `SUCCESS` to `.executor_status` under
+`runs/...-full-epoch2-from213072-1.5B-smoke/`. A step whose output path holds a
+`SUCCESS` status is skipped outright, and recipe drift only warns, so a repeat
+at the same path would have been served from cache no matter what the code
+said — `--attempt` previously changed only the Iris job name. Smoke runs now
+carry their attempt in their run id and output path
+(`...-full-epoch2-from213072-1.5B-smoke-a02`); production's identity is
+deliberately left stable so a restarted production job resumes from its own
+checkpoints.
+
+### Second-epoch contact evaluation
+
+Both epochs were scored in one driver job,
+[`/bizon/exp277-eval-v2-02`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp277-eval-v2-02)
+(run id `v2-02`, suite `exp277-epochs`), on twelve US-EAST-02A H100 shards per
+checkpoint at batch priority. Scoring both together makes every delta paired per
+protein under one worker, one recipe and one cluster, which matters because the
+effect is small next to rollout sampling noise. The first epoch reproduced its
+separately-run `v2-01` numbers to within 0.00135 everywhere — inside #204's
+0.0023 noise floor, and across a cluster change from RNO2A — so the execution
+path is unchanged. Each checkpoint scored all 670 units with 670 dense matrices
+and 67,000 requested rollouts. `eval-test` stayed unread.
+
+| Evaluation set | epoch 1 R, all / long | epoch 2 R, all / long | paired delta, all | paired delta, long |
+| --- | ---: | ---: | ---: | ---: |
+| legacy 554 | 0.62051 / 0.57718 | 0.62203 / 0.57794 | +0.00153 [-0.00399, +0.00674] | +0.00076 [-0.00577, +0.00724] |
+| eval-val (97) | 0.55510 / 0.53706 | 0.55750 / 0.53935 | +0.00240 [-0.00644, +0.01102] | +0.00229 [-0.00682, +0.01190] |
+| eval-denovo (19) | 0.69640 / 0.67497 | 0.68600 / 0.64095 | -0.01040 [-0.04015, +0.01182] | -0.03402 [-0.07287, -0.00203] |
+
+**A second full epoch bought nothing measurable.** On natural proteins both
+deltas are ties: +0.00240 on eval-val and +0.00153 on legacy 554, below the
+predeclared 0.005 threshold, barely above the 0.0023 noise floor, and with
+intervals covering zero. Both checkpoints clear the sequence-KNN null over the
+decontaminated corpus (eval-val 0.40715 [0.36491, 0.44738]) by a wide margin.
+
+The one interval excluding zero is eval-denovo long-range, **-0.03402
+[-0.07287, -0.00203]**, and it should not be read as a result. It rests on 19
+proteins, it is one of six reported tests, and dropping the single capped unit
+moves it to -0.02203. Treat it as a weak hint that the second epoch did not help
+designs, not as a measured regression.
+
+Required cuts, all-range R-precision, paired:
+
+| cut | n | epoch 1 | epoch 2 | delta |
+| --- | ---: | ---: | ---: | ---: |
+| low-MSA-depth natural | 11 of 16 | 0.29962 | 0.29450 | -0.00512 [-0.02741, +0.01606] |
+| low-MSA-depth FoldBench-only | 0 of 5 | - | - | - |
+| low-MSA-depth designs | 26 of 26 | 0.60258 | 0.60686 | +0.00428 [-0.02702, +0.03872] |
+| viral | 6 | 0.48542 | 0.47959 | -0.00583 [-0.04947, +0.02655] |
+| non-viral | 110 | 0.58331 | 0.58395 | +0.00064 [-0.00847, +0.00918] |
+
+The low-MSA-depth denominators are partial for the same reason as the
+first-epoch run: the five FoldBench-only natural proteins in that frozen set all
+live in `eval-test`, which this run does not read. The 11-protein natural mean
+must not be compared with the full 16-protein mean.
+
+**One behavioural difference did show up.** The second-epoch checkpoint ran 44
+rollouts into the token cap across 8 units, against 1 across 1 unit for the
+first epoch. Seven of its eight affected units are designed proteins, and capped
+rollouts are excluded from voting, so those units are scored on fewer votes.
+This is the only systematic difference the evaluation found between the two
+checkpoints, and it points the same way as the de novo delta.
+`data/eval_rollout_v2_epochs/capped_rollouts.csv` lists every affected unit;
+`compare_epochs.py` regenerates all three tables from the published results.
+
+![Validation loss across both epochs](plots/epoch2_validation_loss.png)
+![Effect of the second epoch on contact accuracy](plots/epoch2_contact_delta.png)
+![Contact accuracy by evaluation set](plots/epoch2_contact_by_set.png)
+
+`plot_epochs.py` reproduces these three figures; each PNG has a sidecar with its
+generating command, and `data/eval_rollout_v2_epochs/figure_provenance.json`
+records the source digests and the bootstrap seed.
+
+The validation panels put both runs on absolute steps, which is what makes the
+continuation legible: the second epoch inherits the first's trajectory at the
+restore point, holds a plateau about 0.005 nats below it for 213,000 updates,
+and then cools down to almost exactly where the first epoch finished. Two
+features of that curve are worth naming. The spike to 3.0886 just before the
+second cooldown is real, not a plotting artifact. And step 424,914 is logged
+twice in `eval_metrics.jsonl` — once before the 00:48Z preemption and once after
+the resume replayed it from `step-424901` — so
+`data/epoch2_validation_progress.csv` keeps the later value, which is the
+trajectory that produced the final checkpoint.
 
 ## Conclusion
 
