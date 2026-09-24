@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Protein-paired development deltas with 95% bootstrap intervals. Green/red dashed lines mark the preregistered all/long gate thresholds."
+}
