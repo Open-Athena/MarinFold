@@ -1,0 +1,5 @@
+{
+  "script": "plot_iid_mode_coverage.py",
+  "args": [],
+  "caption": "All curves inspect every map with reference contacts; none is a blind selection rate. Main hit cutoff: at least 10 switching-region predictions, 25% unique-contact recall, and 0.10 enrichment versus the opposing fold. Dashed curve uses 50% recall with the other conditions unchanged. The 500-rollout run is a single sampling experiment; smaller budgets are prefixes."
+}

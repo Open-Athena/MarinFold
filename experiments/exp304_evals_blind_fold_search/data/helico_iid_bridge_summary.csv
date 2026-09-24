@@ -1,0 +1,13 @@
+metric,value
+contact_fold1,10331.0
+contact_fold2,1648.0
+structural_fold1,970.0
+structural_fold2,368.0
+both_fold1,573.0
+both_fold2,291.0
+structural_only_fold1,397.0
+structural_only_fold2,77.0
+no_contact_fold1,0.0
+no_contact_fold2,1.0
+spearman_contact_vs_structural_preference,0.7048480329782321
+spearman_p_value,0.0

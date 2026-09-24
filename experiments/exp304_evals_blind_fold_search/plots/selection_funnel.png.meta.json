@@ -1,0 +1,5 @@
+{
+  "script": "plot_selection_funnel.py",
+  "args": [],
+  "caption": "Selection of the 29-pair held-out fold-switching testbed from the 93 literature-curated AF2 benchmark reference pairs. Counts are reconstructed from the exp301 premise gate and the frozen exp304 cohort."
+}

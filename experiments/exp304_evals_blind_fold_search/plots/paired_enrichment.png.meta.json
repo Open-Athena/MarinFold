@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Each point is one held-out primary fold-switching pair. Both methods use the same 100 root rollouts plus 100 arm rollouts; the diagonal is parity."
+}
