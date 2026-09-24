@@ -542,6 +542,37 @@ Resume vindicated itself in the same run. Three of the shards that *completed*
 did so despite **8–9 preemptions each** — preemption is now a non-event, and
 the unhandled 404 was the only remaining way for a shard to die.
 
+### EBI degraded for days, and streaming is not the escape hatch (2026-09-24)
+
+After the 3-hour outage on 2026-09-21, EBI never returned to its probe-era
+performance. Measured from the workstation on 2026-09-24:
+
+| access pattern | measured | healthy baseline |
+| --- | --- | --- |
+| 512-byte range request | **23,144 ms** | 15.8 ms (on a pod) |
+| bulk transfer | **0.03 MB/s** | tens of MB/s |
+
+Progress fell to ~2 tars/hour across 17 pods; a single `chunk_*` walk was logged
+at **43,492 s — 12.1 hours** for its 28,000 reads, and a second at 42,872 s.
+
+**The obvious hypothesis was wrong.** Since small requests were slow, it looked
+like latency was the constraint and bulk streaming would sidestep it — the
+inverse of the original walk-versus-stream analysis, which had assumed
+bandwidth was binding. Measuring both settles it: bulk is *also* dead, so
+streaming a 7.5 GB `chunk_*` tar would take 81 hours against the walk's 180.
+Neither strategy helps, because the source is degraded for every access
+pattern. The design was never the problem.
+
+Worth stating because it cuts against the earlier entry in this README: the
+walk-vs-stream trade is real when the source is healthy, and irrelevant when it
+is not. There is no clever access pattern that extracts data from a server
+which is not serving.
+
+The fleet is reduced to 5 pods. They still make progress — the walk checkpoint
+means even a 12-hour walk accumulates rather than restarting — but 17 pods
+against a service delivering 0.03 MB/s buys nothing and is not a reasonable way
+to treat a free public resource that has been unwell for three days.
+
 ### Probe QC: the documents are sound, and one result is a red flag
 
 Every integrity check passes. All 4,245 documents are two-chain, all have
