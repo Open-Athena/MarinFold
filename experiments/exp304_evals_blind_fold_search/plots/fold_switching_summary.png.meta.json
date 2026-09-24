@@ -1,0 +1,5 @@
+{
+  "script": "plot_fold_switching_summary.py",
+  "args": [],
+  "caption": "One-figure summary of the exp304 fold-switching analysis: cohort and evaluation scale, paired inference-search comparisons, iid contact and structure coverage through 1,000 draws, and the cleanest dual-fold example in whole-structure TM-score space."
+}
