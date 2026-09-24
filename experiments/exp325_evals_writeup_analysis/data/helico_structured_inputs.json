@@ -1,0 +1,22 @@
+{
+  "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "n_targets": 5,
+  "n_maps": 505,
+  "contact_definition": "Helico oracle_contact_state, pyconfind 0.6.0 native_only; contact_distance=3A, min_degree=.001, minimum sequence separation=6",
+  "mask": "oracle eligible-pair mask shared by all maps; absent and present counts may vary",
+  "files_sha256": {
+    "gt/8ii8_A.cif.gz": "9209e1e9fbfe14b01e7d4f8bf6482d2812d377d7d76bae21d349a393431ba93b",
+    "gt/8oxk_A.cif.gz": "9fcdcea6ca750fac29139227ba6b94bc2919e98bda76d3f0d5d20c1491be8a6b",
+    "gt/8qoh_A.cif.gz": "e660966e2fcde7cb0451ffbaf9f29d105cc09ec419d1c145be789c9803874697",
+    "gt/8ux2_A.cif.gz": "0fb548b86b03513f11e3d27da6c6f3030a0d5472f083cd258e5dc05f076d3f0d",
+    "gt/8wrx_A.cif.gz": "47f16df440a10209e8cff433f8cbb0826390abf6d1b84edaa10d9a0d27dd71f0",
+    "map_metadata.csv": "1aed3ab9b573460226e4b86c40cf1eb97047fc090dd2efb8ab80157db6815d50",
+    "maps/8ii8_A.npz": "553ed47704fb72b3fcc6b97c4ac59c4cd7214df60b8b545e10d0976938f5db94",
+    "maps/8oxk_A.npz": "1557ad037e3c4cdc852783e780106d6a9963afa5e5edd51a27599f135d6041a4",
+    "maps/8qoh_A.npz": "d601147262aaf2271d3cfebc2b15159eb8f6fd23c36aa23eb7582cbd07b90c50",
+    "maps/8ux2_A.npz": "44b3a1dfc08a80fbdd83b22117a2c394ce1eef46893f13653f58c3c5d07e77e0",
+    "maps/8wrx_A.npz": "dedc4665f9893ab00c1bb4305b9aacc4dc53c54f68f4dd45c3d50d879d5f6a79",
+    "ranked_pairs.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "targets.csv": "9ec1cc80cd471f53ef2d5afda5292529f534a8c54762687e5233809f399e1ca3"
+  }
+}

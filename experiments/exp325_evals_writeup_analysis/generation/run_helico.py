@@ -1,12 +1,13 @@
-"""Fold fixed top-L contacts and matched oracle/random controls on Modal.
+"""Fold fixed top-L contacts and oracle/random/predictor-map controls on Modal.
 
 Adapted from exp311 run_sweep.py at MarinFold dc3a1969. The model, source,
 diffusion budget and selection rule are unchanged. No cut-count tuning.
 
-The input directory is built by prepare.py. Set HELICO_REPO to a checkout of
+The input directory is built by prepare_helico.py or prepare_structured_decoys.py.
+Set HELICO_REPO to a checkout of
 Open-Athena/helico at HELICO_SHA, then run ``HELICO_DRY_RUN=1 uv run python
-run_sweep.py`` before ``uv run python run_sweep.py``. Each target stays in one
-GPU worker across all of its cuts so model setup is paid only once.
+run_helico.py`` before ``uv run python run_helico.py``. Workers retain the
+checkpoint across tasks; structured decoys use disjoint blocks of ten maps.
 """
 
 import csv
@@ -31,7 +32,7 @@ from plan_missing import randomized_map
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 PHASE = os.environ.get("WRITEUP_PHASE", "confidence")
-if PHASE not in ("confidence", "folding"):
+if PHASE not in ("confidence", "folding", "structured"):
     raise ValueError(PHASE)
 TARGETS = Path("/root/sweep/data") if Path("/root/sweep/data/targets.csv").exists() else ROOT / "scratch" / "helico" / PHASE
 RESULTS = ROOT / "scratch" / "helico_results" / PHASE
@@ -70,12 +71,12 @@ def estimate() -> tuple[int, float]:
     """Apply Helico's dry-run cost gate to the complete sweep."""
     with (TARGETS / "targets.csv").open() as stream:
         targets = list(csv.DictReader(stream))
-    if len(targets) != (20 if PHASE == "confidence" else 211):
+    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5}[PHASE]:
         raise ValueError(f"unexpected target count: {len(targets)}")
     limit = int(os.environ.get("SWEEP_TARGET_LIMIT", "0"))
     if limit:
         targets = targets[:limit]
-    expected_cuts = len(targets) * (11 if PHASE == "confidence" else 2)
+    expected_cuts = len(targets) * {"confidence": 11, "folding": 2, "structured": 101}[PHASE]
     estimated_gpu_hours = expected_cuts * 11.0 * 1.7 / 3600 + N_WORKERS * 0.1
     estimated_usd = estimated_gpu_hours * 3.95
     print(f"{len(targets)} targets, {expected_cuts} cuts, {expected_cuts * N_SAMPLES} samples")
@@ -115,7 +116,8 @@ results_volume = modal.Volume.from_name("marinfold-exp325-helico-results", creat
 
 
 @app.cls(
-    image=IMAGE, gpu="H100", timeout=7200, max_containers=N_WORKERS, region="us-east",
+    image=IMAGE, gpu="H100", timeout=7200, max_containers=N_WORKERS,
+    min_containers=N_WORKERS if PHASE == "structured" else 0, region="us-east",
     volumes={
         "/ckpts": ckpt_volume,
         "/cache/helico-data": ccd_volume,
@@ -201,7 +203,20 @@ class Predictor:
             raise ValueError(f"{stem}: too many tokens")
         length = int(target["L_exp245"])
         maps = []
-        if PHASE == "confidence":
+        if PHASE == "structured":
+            with np.load(Path("/root/sweep/data/maps") / f"{stem}.npz") as saved:
+                if set(saved.files) != {"oracle-0", *(f"esmfold2-{seed}" for seed in range(100))}:
+                    raise ValueError(f"{stem}: expected oracle plus exactly 100 ESMFold2 maps")
+                maps = [("oracle", 0, saved["oracle-0"])]
+                maps.extend(("esmfold2", seed, saved[f"esmfold2-{seed}"]) for seed in range(100))
+            if any(state.shape != (tokenized.n_tokens, tokenized.n_tokens) for _, _, state in maps):
+                raise ValueError(f"{stem}: map/token shape mismatch")
+            oracle = oracle_contact_state(gt, tokenized, load_rotamer_library())
+            if oracle is None or not np.array_equal(maps[0][2], oracle.cpu().numpy()):
+                raise ValueError(f"{stem}: prepared oracle differs from inference-time extraction")
+            if any(not np.array_equal(state == 0, maps[0][2] == 0) for _, _, state in maps):
+                raise ValueError(f"{stem}: different eligible-pair masks")
+        elif PHASE == "confidence":
             oracle = oracle_contact_state(gt, tokenized, load_rotamer_library())
             if oracle is None:
                 raise ValueError(f"{stem}: missing oracle contact state")
@@ -223,6 +238,8 @@ class Predictor:
                 raise ValueError(f"{stem}: unexpected loss of mapped contacts")
             maps = [("top_0", 0, np.zeros_like(top_l)), ("top_L", 0, top_l)]
         sample_rows, timing_rows = [], []
+        if PHASE == "structured":
+            maps = maps[int(target["map_start"]):int(target["map_stop"])]
         durable = Path("/results") / TAG / stem
         durable.mkdir(parents=True, exist_ok=True)
         for arm, map_seed, state in maps:
@@ -290,12 +307,12 @@ class Predictor:
             result_path.write_text(json.dumps({"samples": sample_rows[-N_SAMPLES:], "timing": timing}))
             results_volume.commit()
             print(f"[{PHASE}] {stem} {key}: {elapsed:.1f}s", flush=True)
-        return {"stem": stem, "samples": sample_rows, "timings": timing_rows}
+        return {"stem": stem, "task_id": target.get("task_id", stem), "samples": sample_rows, "timings": timing_rows}
 
 
 @app.local_entrypoint()
 def run() -> None:
-    """Dispatch one GPU task per target and save complete per-sample tables."""
+    """Dispatch targets or disjoint map blocks and save complete per-sample tables."""
     with (TARGETS / "targets.csv").open() as stream:
         targets = list(csv.DictReader(stream))
     limit = int(os.environ.get("SWEEP_TARGET_LIMIT", "0"))
@@ -306,26 +323,31 @@ def run() -> None:
     output_dir = RESULTS / "smoke" if limit else RESULTS
     partial_dir = output_dir / f"partial-{TAG}"
     partial_dir.mkdir(parents=True, exist_ok=True)
-    expected_stems = {target["target_id"] for target in targets}
-    completed_stems = {path.stem for path in partial_dir.glob("*.json")}
-    unexpected = completed_stems - expected_stems
+    tasks = targets
+    if PHASE == "structured":
+        tasks = [{**target, "map_start": start, "map_stop": min(start + 10, 101),
+                  "task_id": f"{target['target_id']}-{start:03d}"}
+                 for start in range(0, 101, 10) for target in targets]
+    expected_keys = {target.get("task_id", target["target_id"]) for target in tasks}
+    completed_keys = {path.stem for path in partial_dir.glob("*.json")}
+    unexpected = completed_keys - expected_keys
     if unexpected:
         raise ValueError(f"partial result directory contains unexpected targets: {sorted(unexpected)}")
-    pending = [target for target in targets if target["target_id"] not in completed_stems]
+    pending = [target for target in tasks if target.get("task_id", target["target_id"]) not in completed_keys]
     failures = []
     for result in Predictor().predict.map(pending, order_outputs=False, return_exceptions=True):
         if isinstance(result, Exception):
             failures.append(repr(result))
             continue
-        stem = result["stem"]
-        if stem not in expected_stems or (partial_dir / f"{stem}.json").exists():
-            raise ValueError(f"unexpected or duplicate target result: {stem}")
-        temp = partial_dir / f".{stem}.json.tmp"
+        key = result["task_id"]
+        if key not in expected_keys or (partial_dir / f"{key}.json").exists():
+            raise ValueError(f"unexpected or duplicate target result: {key}")
+        temp = partial_dir / f".{key}.json.tmp"
         temp.write_text(json.dumps(result, separators=(",", ":")))
-        temp.replace(partial_dir / f"{stem}.json")
+        temp.replace(partial_dir / f"{key}.json")
     if failures:
         raise RuntimeError(f"{len(failures)} Modal targets failed; partial results retained: {failures}")
-    results = [json.loads((partial_dir / f"{stem}.json").read_text()) for stem in sorted(expected_stems)]
+    results = [json.loads((partial_dir / f"{key}.json").read_text()) for key in sorted(expected_keys)]
     if {result["stem"] for result in results} != {target["target_id"] for target in targets}:
         raise ValueError("incomplete or duplicate target results")
     samples = [row for result in results for row in result["samples"]]
@@ -343,7 +365,7 @@ def run() -> None:
         "helico_checkpoint": CHECKPOINT, "helico_checkpoint_step": 6000,
         "helico_checkpoint_sha256": CHECKPOINT_SHA256,
         "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344" if PHASE == "folding" else None,
-        "conditioning_source": "MarinFold votes" if PHASE == "folding" else "ground-truth oracle and randomized three-state maps",
+        "conditioning_source": {"folding": "MarinFold votes", "confidence": "ground-truth oracle and randomized three-state maps", "structured": "ground-truth oracle and 100 seeded ESMFold2 full three-state maps per low-depth protein"}[PHASE],
         "n_targets": len(targets), "n_cuts": expected_cuts, "n_samples": len(samples),
         "n_diffusion_samples_per_cut": N_SAMPLES, "n_trunk_recycles": N_CYCLES,
         "seed_per_map": SEED, "phase": PHASE, "selection": "highest ranking_score among three diffusion samples per map", "max_tokens": MAX_TOKENS,

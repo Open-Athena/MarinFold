@@ -20,9 +20,13 @@ Helico does much better when we give it the answer: the ground-truth contact map
 
 {{plotly: 02_oracle.json | title="Helico with oracle contacts" | mobile="02_oracle-mobile.json"}}
 
-Aside: confidence recognized the oracle above every matched random map on 20 preselected proteins. These are weak negatives.
+Aside: among 100 ESMFold2-derived maps, Helico ranks the oracle first for three low-depth proteins and fifth for two.
 
-{{plotly: 02b_confidence.json | title="Oracle versus matched random contacts" | mobile="02b_confidence-mobile.json"}}
+{{plotly: 02b_confidence.json | title="Oracle versus ESMFold2 contact maps" | mobile="02b_confidence-mobile.json"}}
+
+Among the ESMFold2 candidates, confidence tracks original structure accuracy clearly for only one of these five proteins.
+
+{{plotly: 02c_accuracy_confidence.json | title="Structure accuracy versus Helico confidence" | mobile="02c_accuracy_confidence-mobile.json"}}
 
 This suggests generating candidate contact sets directly from sequence, trained on structures from existing predictors.
 

@@ -127,6 +127,59 @@ def test_prompt_length_is_distinct_from_resolved_msa_query_length() -> None:
     assert target.msa_query_length == 215
 
 
+def test_structured_decoys_keep_every_seed_and_equal_helico_budgets() -> None:
+    raw = pd.read_csv(DATA / "helico_structured_samples.csv", float_precision="round_trip")
+    maps = pd.read_csv(DATA / "structured_decoy_maps.csv")
+    selected = pd.read_csv(DATA / "structured_confidence_per_map.csv", float_precision="round_trip")
+    assert len(raw) == 1515 and len(maps) == len(selected) == 505
+    assert raw.groupby(["stem", "arm", "map_seed"]).sample_idx.apply(lambda x: set(x) == {0, 1, 2}).all()
+    assert set(selected.eval_set) == {"eval-test"}
+    assert selected.msa_depth.between(1, 9).all() and (selected.designed == 0).all()
+    for stem, group in maps.groupby("stem"):
+        assert len(group) == 101
+        assert set(group[group.arm == "esmfold2"].map_seed) == set(range(100))
+        assert group.n_unknown.nunique() == 1
+        oracle = group[group.arm == "oracle"].iloc[0]
+        assert oracle.contact_precision == oracle.contact_recall == oracle.contact_jaccard == 1
+    roundtrip = raw.iloc[selected.source_row.astype(int)]
+    assert roundtrip.stem.tolist() == selected.stem.tolist()
+    np.testing.assert_allclose(roundtrip.ranking_score, selected.ranking_score, rtol=0, atol=0)
+    maxima = raw.groupby(["stem", "arm", "map_seed"]).ranking_score.max()
+    np.testing.assert_allclose(selected.set_index(["stem", "arm", "map_seed"]).ranking_score.sort_index(), maxima.sort_index())
+
+
+def test_structured_oracle_rank_and_source_rows_match_sorted_pool() -> None:
+    maps = pd.read_csv(DATA / "structured_confidence_per_map.csv", float_precision="round_trip")
+    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv", float_precision="round_trip")
+    assert len(ranks) == 10
+    for rank in ranks.itertuples():
+        group = maps[maps.stem == rank.stem]
+        ordered = sorted(group[rank.confidence], reverse=True)
+        positions = [i + 1 for i, value in enumerate(ordered) if value == rank.oracle_confidence]
+        assert rank.rank_best == min(positions) and rank.rank_worst == max(positions)
+        assert rank.rank_mid == np.mean(positions)
+        decoys = group[group.arm == "esmfold2"]
+        assert rank.unique_decoy_maps == decoys.map_sha256.nunique()
+        assert set(map(int, rank.decoy_source_rows.split("|"))) == set(decoys.source_row)
+
+
+def test_scatter_uses_original_esmfold2_accuracy_and_explicit_oracle_reference() -> None:
+    joined = pd.read_csv(DATA / "structured_accuracy_confidence.csv", float_precision="round_trip")
+    raw = pd.read_csv(DATA / "esmfold2_decoy_structure_metrics.csv", float_precision="round_trip")
+    predictions = joined[joined.arm == "esmfold2"]
+    original = raw.iloc[predictions.accuracy_source_row.astype(int)]
+    assert len(predictions) == len(original) == 500
+    assert original.stem.tolist() == predictions.stem.tolist()
+    assert original.map_seed.tolist() == predictions.map_seed.tolist()
+    assert original.structure_sha256.tolist() == predictions.structure_sha256.tolist()
+    np.testing.assert_allclose(original.gdt_ts, predictions.source_structure_gdt_ts, rtol=0, atol=0)
+    np.testing.assert_allclose(original.lddt, predictions.source_structure_lddt, rtol=0, atol=0)
+    oracle = joined[joined.arm == "oracle"]
+    assert len(oracle) == 5 and oracle.accuracy_source_row.isna().all()
+    assert (oracle[["source_structure_gdt_ts", "source_structure_lddt"]] == 1).all().all()
+    assert (oracle.accuracy_rule == "experimental reference compared with itself").all()
+
+
 def test_test_folding_is_complete_and_selected_only_by_confidence() -> None:
     raw = pd.read_csv(DATA / "helico_folding_samples.csv")
     assert raw.stem.nunique() == 211

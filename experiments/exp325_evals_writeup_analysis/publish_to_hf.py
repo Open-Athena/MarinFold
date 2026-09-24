@@ -14,7 +14,7 @@ import tarfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DESTINATION = "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v3-boltz2"
+DESTINATION = "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys"
 
 
 def main() -> None:
@@ -44,6 +44,8 @@ def main() -> None:
     with tarfile.open(stage / "helico_inputs.tar.gz", "w:gz") as archive:
         archive.add(HERE / "scratch/helico", arcname="inputs")
     shutil.copyfile(HERE / "scratch/helico_coordinates.tar.gz", stage / "helico_coordinates.tar.gz")
+    for name in ("esmfold2_predictions.tar.gz", "helico_coordinates.tar.gz"):
+        shutil.copyfile(HERE / "scratch/structured_decoys" / name, stage / f"structured_{name}")
     for variant in ("af2", "af3", "boltz2"):
         raw = HERE / "scratch" / ("boltz2" if variant == "boltz2" else "alphafold")
         shutil.copyfile(raw / f"{variant}_predictions.tar.gz", stage / f"{variant}_predictions.tar.gz")
@@ -57,7 +59,7 @@ def main() -> None:
                 inventory[str(path.relative_to(stage))] = {
                     "bytes": path.stat().st_size, "sha256": hashlib.file_digest(stream, "sha256").hexdigest()}
     manifest = {"destination": DESTINATION, "files": inventory,
-                "raw_archives": "contact_rollouts.tar.gz: original completions, votes, timing, truth; helico_inputs.tar.gz: exact input CIFs, sequences, residue maps and ranked contact pairs; helico_coordinates.tar.gz: all diffusion coordinates, contact states, per-sample scores and timings; af2/af3/boltz2_predictions.tar.gz: all candidates, confidence selection and timings; alphafold_inputs.tar.gz: shared MSA queries/alignments, no weights"}
+                "raw_archives": "contact_rollouts.tar.gz: original completions, votes, timing, truth; helico_inputs.tar.gz: exact input CIFs, sequences, residue maps and ranked contact pairs; helico_coordinates.tar.gz: original diffusion coordinates, contact states, per-sample scores and timings; structured_esmfold2_predictions.tar.gz: all 500 seeded ESMFold2 structures and timings; structured_helico_coordinates.tar.gz: all 505 contact states, 1515 diffusion coordinates, scores and timings; af2/af3/boltz2_predictions.tar.gz: all candidates, confidence selection and timings; alphafold_inputs.tar.gz: shared MSA queries/alignments, no weights"}
     (stage / "publication_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     (HERE / "data/publication_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"{len(inventory)} files, {sum(r['bytes'] for r in inventory.values()) / 1e6:.1f} MB → {DESTINATION}")

@@ -1,0 +1,16 @@
+{
+  "n_targets": 5,
+  "n_structures": 500,
+  "metric_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "scorer_sha256": "a36a963db103e49c121c7abb3e8130959c14ebdbcf334387c033163de370f94f",
+  "shared_scorer_sha256": "a8846566707c9f7709475db021ecfe4a421c41f8d77c1cedf9986eee491694a1",
+  "map_metadata_sha256": "1aed3ab9b573460226e4b86c40cf1eb97047fc090dd2efb8ab80157db6815d50",
+  "metric": "GDT-TS/TM/RMSD on matched protein CA; lDDT on matched protein atoms",
+  "accuracy_object": "original ESMFold2 structure; distinct from downstream Helico accuracy",
+  "packages": {
+    "numpy": "2.4.4",
+    "gemmi": "0.7.5",
+    "tmtools": "0.3.0",
+    "scipy": "1.17.0"
+  }
+}

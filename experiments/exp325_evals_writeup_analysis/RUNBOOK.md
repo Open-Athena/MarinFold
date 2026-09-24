@@ -89,7 +89,7 @@ serialization. These figures make no speed comparisons.
 # Public artifacts
 
 Raw contact completions/votes and every new Helico diffusion sample are archived
-under `data/exp325-writeup-analysis/exp277-step266344/v3-boltz2` in the public
+under `data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys` in the public
 `open-athena/MarinFold` HF bucket. `data/publication_manifest.json` records file
 sizes and SHA256 digests. The package includes the offline preview, local font
 and Plotly bundle, figures, prepared tables and experiment scripts. Existing
@@ -99,11 +99,12 @@ To rebuild that package after an intentional analysis update:
 
 ```bash
 uv run --project generation modal run generation/archive_helico.py
+uv run --project generation modal run generation/archive_helico.py --structured
 uv run python publish_to_hf.py --upload
 ```
 
-The first command recovers already-computed coordinates from the durable volume;
-it does not run a predictor. The second publishes only this experiment's prefix.
+The archive commands recover already-computed coordinates from the durable volume;
+they do not run a predictor. The final command publishes only this experiment's prefix.
 
 # AlphaFold baseline extension
 
@@ -190,3 +191,56 @@ the figures make no speed comparison.
 The full Boltz-2 run uses up to sixteen resident GPU workers in `us-east`.
 Modal requests H100 GPUs; actual allocations (including H200 upgrades) are
 recorded per protein, along with hardware and model-load time.
+
+## Plausible contact-map decoys (Figure 02b)
+
+The population is fixed: `8ii8_A`, `8oxk_A`, `8qoh_A`, `8ux2_A`, `8wrx_A`.
+These are all five natural FoldBench monomers at archived query-inclusive MSA
+depth <10, all in the authorized test split. ESMFold2 receives the same resolved
+protein queries as the new AF2/AF3/Boltz-2 baselines, without MSAs or templates.
+Native ESM source `43b4548b86762edfa747b07d5f440aad3c33acee` loads the existing
+exp78 weight snapshot `1ebf0e3481a5184eb6171d40615c79e384b48796` from the
+`esmfold2-weights` Modal volume. The native implementation's documented LM
+dropout is explicitly 0.3; seeds 0–99, 20 loops and 100 diffusion steps are fixed.
+Every sample is retained. This new sampling run does not replace the archived
+ESMFold2 baseline scores used by the other panels.
+
+```bash
+uv run --project generation modal run generation/run_esmfold2_decoys.py --smoke
+uv run --project generation modal run generation/run_esmfold2_decoys.py
+uv run --project /home/bizon/git/helico --no-sync python generation/prepare_structured_decoys.py
+uv run --project /home/bizon/git/helico --no-sync --with scikit-learn python generation/score_esmfold2_decoys.py
+PYTHONPATH=. WRITEUP_PHASE=structured HELICO_DRY_RUN=1 uv run --project generation python generation/run_helico.py
+PYTHONPATH=. WRITEUP_PHASE=structured uv run --project generation modal run generation/run_helico.py
+uv run --project generation modal run generation/archive_helico.py --structured
+uv run python prepare.py
+uv run python render.py
+uv run python build_summary.py
+```
+
+Contact extraction uses Helico's existing `oracle_contact_state` for both
+predicted and experimental structures. Exact query identity is required before
+mapping. Pyconfind geometry, degree cutoff and sequence separation are identical.
+All maps share the oracle's eligible-pair mask; present/absent counts may vary.
+Full non-contact information is supplied for both sources. The mask uses
+experimental residue eligibility, so this is a controlled diagnostic, not an
+end-to-end deployable selection benchmark.
+
+Helico source, checkpoint and inference settings match the earlier control:
+three diffusion samples per map, six recycles, seed 42, no MSA. The 505 maps
+are dispatched in small disjoint blocks to eight resident H100 workers in
+`us-east`. Confidence selects the highest-ranking sample from each map before
+sorting maps. The secondary pLDDT view uses those same selected structures.
+Ties are reported as a rank interval and a midrank, with no random tie-break.
+CSV rows retain inference timings, seeds, source rows and structure/map hashes.
+Native ESMFold2 timings include input preparation and result decoding inside
+`builder.fold`; they are retained for audit and are not a speed comparison.
+Restyling only requires `render.py` and `build_summary.py`.
+
+Figure 02c joins each original ESMFold2 structure's GDT-TS/lDDT to Helico's
+confidence after using that structure's contacts. Its alternate views use the
+measured downstream Helico accuracy. The oracle source is the experimental
+structure, so its source accuracy is one by definition; its downstream Helico
+accuracy is scored normally. The scorer verifies all coordinate digests and
+requires full CA coverage, reusing `structure_scores` from the AF2/3/Boltz-2
+analysis without a different alignment or metric implementation.

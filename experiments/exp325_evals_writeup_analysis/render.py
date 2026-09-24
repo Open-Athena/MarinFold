@@ -59,6 +59,30 @@ def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "") -> None:
     plt.close(fig)
 
 
+def ranking_axis(scores: pd.Series) -> tuple[float, dict]:
+    """Compress only the empty gap above clash-penalized scores; retain every point.
+
+    Coordinates within either segment remain linear. Ticks and hover labels
+    report the original scores, and a // tick explicitly marks the axis break.
+    """
+    penalized = scores[scores < -1]
+    ordinary = scores[scores >= -1]
+    if penalized.empty:
+        return 0.0, dict(range=[0, 1.02], tickmode="auto")
+    shift = float(ordinary.min() - 0.15 - penalized.max())
+    negative_ticks = sorted(set([float(penalized.min()), float(penalized.max())]))
+    positive_ticks = np.arange(np.ceil(ordinary.min() * 10) / 10, 1.01, 0.1)
+    ticks = [v + shift for v in negative_ticks] + [float(ordinary.min() - 0.075)] + positive_ticks.tolist()
+    labels = [f"{v:.2f}".replace("-", "−") for v in negative_ticks] + ["//"] + [f"{v:.1f}" for v in positive_ticks]
+    return shift, dict(range=[float(penalized.min() + shift - 0.05), 1.02],
+                       tickmode="array", tickvals=ticks, ticktext=labels)
+
+
+def display_ranking(scores: pd.Series, shift: float) -> pd.Series:
+    """Map scores to the two linear display segments of the broken axis."""
+    return scores.where(scores >= -1, scores + shift)
+
+
 def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = "natural") -> None:
     """Draw the default matched-population view from summary rows."""
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
@@ -250,46 +274,143 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame) -> go.Figure:
 
 
 def confidence_figure() -> go.Figure:
-    """Show confidence discrimination and the quality of the matched controls."""
-    table = pd.read_csv(DATA / "confidence_summary.csv")
-    paired = pd.read_csv(DATA / "confidence_per_protein.csv")
-    scores = paired[paired.confidence == "ranking_score"]
-    fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.8), facecolor=PAPER)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.24, top=0.77, wspace=0.4)
-    fig.text(0.09, 0.945, TITLES["02b_confidence"], fontsize=19, weight="bold")
-    fig.text(0.09, 0.885, "20 natural proteins · equal map information and diffusion budgets", fontsize=11)
-    for ax in axes:
-        style_axes(ax)
-    interactive = make_subplots(rows=1, cols=2, horizontal_spacing=0.17)
-    arms = [("uniform", "Uniform random", PALETTE[1]), ("separation_matched", "Separation matched", PALETTE[3])]
-    for index, (arm, label, color) in enumerate(arms):
-        group = table[(table.arm == arm) & (table.confidence == "ranking_score")].set_index("tier").loc[TIERS]
-        x = np.arange(4) + (index - 0.5) * 0.12
-        axes[0].errorbar(x, group["mean"], yerr=[group["mean"] - group.ci_low, group.ci_high - group["mean"]],
-                        fmt="o", color=color, capsize=3, label=label)
-        interactive.add_trace(go.Scatter(x=x, y=group["mean"], mode="markers", name=label,
-                                         marker=dict(color=color), error_y=dict(type="data", array=group.ci_high-group["mean"], arrayminus=group["mean"]-group.ci_low),
-                                         customdata=TIERS, hovertemplate="%{fullData.name}<br>MSA depth %{customdata}<br>Oracle win rate %{y:.2f}<extra></extra>"), row=1, col=1)
-        group = scores[scores.arm == arm]
-        axes[1].scatter(group.random_mean_gdt_ts, group.oracle_gdt_ts, color=color, alpha=0.75, s=24)
-        interactive.add_trace(go.Scatter(x=group.random_mean_gdt_ts, y=group.oracle_gdt_ts, mode="markers", showlegend=False,
-                                         marker=dict(color=color), customdata=group.stem,
-                                         hovertemplate="%{customdata}<br>Random GDT-TS %{x:.3f}<br>Oracle GDT-TS %{y:.3f}<extra></extra>"), row=1, col=2)
-    axes[0].axhline(0.5, color=INK, ls="--", lw=1)
-    axes[0].set_xticks(range(4), TIERS)
-    axes[0].set(xlabel="MSA depth (5 proteins per tier)", ylabel="Oracle wins by confidence")
-    axes[1].plot([0, 1], [0, 1], color=INK, ls="--", lw=1)
-    axes[1].set(xlim=(0, 1), xlabel="Random-map mean GDT-TS", ylabel="Oracle-map GDT-TS")
-    fig.legend(*axes[0].get_legend_handles_labels(), loc="lower left", bbox_to_anchor=(0.07, 0.02), frameon=False, ncol=2)
+    """Plot every hard-decoy confidence and annotate the precomputed oracle rank."""
+    maps = pd.read_csv(DATA / "structured_confidence_per_map.csv")
+    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv")
+    stems = sorted(maps.stem.unique())
+    fig, ax = plt.subplots(figsize=(10.4, 6.2), facecolor=PAPER)
+    fig.subplots_adjust(left=0.16, right=0.82, bottom=0.2, top=0.78)
+    fig.text(0.08, 0.95, TITLES["02b_confidence"], fontsize=19, weight="bold")
+    fig.text(0.08, 0.885, "Five natural proteins · MSA depth <10 · 100 ESMFold2 maps per protein", fontsize=11)
+    style_axes(ax)
+    ax.grid(False)
+    ax.grid(axis="x", color=GRID, linewidth=0.7)
+    interactive = go.Figure()
+    buttons = []
+    shift, rank_axis = ranking_axis(maps.ranking_score)
+    for metric_index, (metric, label) in enumerate((("ranking_score", "Helico ranking score"), ("mean_plddt", "Helico pLDDT"))):
+        axis = rank_axis if metric_index == 0 else dict(range=None, tickmode="auto", tickvals=None, ticktext=None)
+        axis_label = label + (" (broken axis)" if metric_index == 0 and shift else "")
+        annotations = []
+        for index, stem in enumerate(stems):
+            group = maps[maps.stem == stem].sort_values(["arm", "map_seed"])
+            decoys = group[group.arm == "esmfold2"]
+            oracle = group[group.arm == "oracle"].iloc[0]
+            rank = ranks[(ranks.stem == stem) & (ranks.confidence == metric)].iloc[0]
+            jitter = 0.25 * np.sin(decoys.map_seed.to_numpy() * 2.3999632297)
+            y = index + jitter
+            decoy_x = display_ranking(decoys[metric], shift) if metric_index == 0 else decoys[metric]
+            rank_label = (f"{int(rank.rank_best)}" if rank.rank_best == rank.rank_worst
+                          else f"{int(rank.rank_best)}–{int(rank.rank_worst)}") + " / 101"
+            annotations.append(dict(x=1.02, y=index, xref="paper", yref="y", text=rank_label,
+                                    xanchor="left", showarrow=False, font=dict(color=PALETTE[3], size=12)))
+            if metric_index == 0:
+                ax.scatter(decoy_x, y, s=19, alpha=0.48, color=PALETTE[2], linewidths=0,
+                           label="ESMFold2-derived maps" if index == 0 else None)
+                ax.scatter([oracle[metric]], [index], s=85, color=PALETTE[3], marker="D",
+                           edgecolor=PAPER, linewidth=1.2, zorder=4, label="Oracle map" if index == 0 else None)
+                ax.text(1.03, index, rank_label, transform=ax.get_yaxis_transform(), va="center",
+                        color=PALETTE[3], weight="bold", fontsize=11)
+            custom = decoys[["stem", "map_seed", f"{metric}_rank", "gdt_ts", "contact_jaccard", "source_row", metric]].to_numpy()
+            interactive.add_trace(go.Scatter(x=decoy_x.tolist(), y=y.tolist(), mode="markers",
+                name="ESMFold2-derived maps", legendgroup="decoys", showlegend=index == 0,
+                visible=metric_index == 0, marker=dict(color=PALETTE[2], size=6, opacity=0.55), customdata=custom.tolist(),
+                hovertemplate="%{customdata[0]} · ESMFold2 seed %{customdata[1]}<br>Confidence %{customdata[6]:.4f}<br>Rank %{customdata[2]} / 101<br>Helico GDT-TS %{customdata[3]:.3f}<br>Contact Jaccard vs oracle %{customdata[4]:.3f}<br>Source row %{customdata[5]}<extra></extra>"))
+            interactive.add_trace(go.Scatter(x=[oracle[metric]], y=[index], mode="markers",
+                name="Oracle map", legendgroup="oracle", showlegend=index == 0, visible=metric_index == 0,
+                marker=dict(color=PALETTE[3], size=13, symbol="diamond", line=dict(color=PAPER,width=1)),
+                text=[f"{stem} · oracle<br>Rank {rank_label}<br>Helico GDT-TS {oracle.gdt_ts:.3f}<br>Source row {oracle.source_row}"],
+                hovertemplate="%{text}<br>Confidence %{x:.4f}<extra></extra>"))
+        annotations.append(dict(x=1.02, y=1.075, xref="paper", yref="paper", text="Oracle rank",
+                                showarrow=False, xanchor="left", font=dict(size=11)))
+        buttons.append(dict(label=label, method="update", args=[
+            {"visible": [i // 10 == metric_index for i in range(20)]},
+            {"xaxis": dict(title=axis_label, gridcolor=GRID, zeroline=False, **axis), "annotations": annotations}]))
+    labels = [f"{stem}  ·  MSA {int(maps.loc[maps.stem == stem, 'msa_depth'].iloc[0])}" for stem in stems]
+    ax.set_yticks(range(5), labels)
+    ax.set_ylim(4.65, -0.65)
+    ax.set_xlim(rank_axis["range"])
+    if shift:
+        ax.set_xticks(rank_axis["tickvals"], rank_axis["ticktext"])
+    ax.set_xlabel("Helico ranking score (broken axis; higher is better)" if shift else "Helico ranking score (higher is better)")
+    ax.text(1.03, 1.08, "Oracle rank", transform=ax.transAxes, fontsize=10)
+    fig.legend(*ax.get_legend_handles_labels(), loc="lower left", bbox_to_anchor=(0.12, 0.015), frameon=False, ncol=2)
     save(fig, "02b_confidence", CAPTIONS["02b_confidence"])
     interactive.update_layout(template="none", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                              font=dict(family=FONT, color=INK), height=510, margin=dict(l=60,r=20,t=35,b=120),
-                              legend=dict(orientation="h", y=-0.25))
-    interactive.update_yaxes(range=[0,1.02], gridcolor=GRID, zeroline=False)
-    interactive.update_xaxes(tickvals=list(range(4)), ticktext=TIERS, title="MSA depth", row=1,col=1)
-    interactive.update_yaxes(title="Oracle confidence win rate", row=1,col=1)
-    interactive.update_xaxes(range=[0,1], title="Random mean GDT-TS", row=1,col=2)
-    interactive.update_yaxes(title="Oracle GDT-TS", row=1,col=2)
+        font=dict(family=FONT, color=INK), height=530, margin=dict(l=145,r=105,t=80,b=100),
+        xaxis=buttons[0]["args"][1]["xaxis"],
+        yaxis=dict(tickvals=list(range(5)), ticktext=labels, range=[4.65,-0.65], showgrid=False, zeroline=False),
+        legend=dict(orientation="h", y=-0.22), annotations=buttons[0]["args"][1]["annotations"],
+        updatemenus=[dict(buttons=buttons, x=0, xanchor="left", y=1.19, yanchor="top", direction="down", font=dict(size=11))])
+    return interactive
+
+
+def accuracy_confidence_figure() -> go.Figure:
+    """Separate source-structure accuracy from the accuracy after Helico folding."""
+    table = pd.read_csv(DATA / "structured_accuracy_confidence.csv")
+    stems = sorted(table.stem.unique())
+    views = [("source_structure_gdt_ts", "Original ESMFold2 · GDT-TS", "Source-structure GDT-TS"),
+             ("source_structure_lddt", "Original ESMFold2 · lDDT", "Source-structure lDDT"),
+             ("gdt_ts", "After Helico · GDT-TS", "Helico structure GDT-TS"),
+             ("lddt", "After Helico · lDDT", "Helico structure lDDT")]
+    interactive = go.Figure()
+    buttons = []
+    shift, rank_axis = ranking_axis(table.ranking_score)
+    confidence_label = "Helico ranking score (broken axis)" if shift else "Helico ranking score"
+    for view_index, (metric, label, axis_label) in enumerate(views):
+        view_traces = []
+        fig, ax = plt.subplots(figsize=(8.8, 6.5), facecolor=PAPER)
+        fig.subplots_adjust(left=0.13, right=0.96, bottom=0.25, top=0.77)
+        fig.text(0.1, 0.95, TITLES["02c_accuracy_confidence"], fontsize=19, weight="bold")
+        fig.text(0.1, 0.89, "MSA depth <10 · 100 ESMFold2 maps per protein · diamonds = oracle", fontsize=11)
+        style_axes(ax)
+        ax.set_ylim(rank_axis["range"])
+        if shift:
+            ax.set_yticks(rank_axis["tickvals"], rank_axis["ticktext"])
+        for index, stem in enumerate(stems):
+            group = table[table.stem == stem]
+            color = PALETTE[index]
+            decoys, oracle = group[group.arm == "esmfold2"], group[group.arm == "oracle"]
+            ax.scatter(decoys[metric], display_ranking(decoys.ranking_score, shift), s=19, alpha=0.55, color=color, linewidths=0,
+                       label=stem)
+            ax.scatter(oracle[metric], oracle.ranking_score, s=100, marker="D", color=color,
+                       edgecolor=INK, linewidth=1.3, zorder=5,
+                       label="Oracle contacts" if index == 0 else None)
+            for is_oracle, points in ((False, decoys), (True, oracle)):
+                accuracy_row = "accuracy_source_row" if metric.startswith("source_structure_") else "source_row"
+                custom = points[["stem", "map_seed", "source_structure_gdt_ts", "gdt_ts", "source_row", accuracy_row, "ranking_score"]].fillna("reference").to_numpy().tolist()
+                view_traces.append(go.Scatter(x=points[metric].tolist(), y=display_ranking(points.ranking_score, shift).tolist(), mode="markers",
+                    name="Oracle contacts" if is_oracle else stem, legendgroup="oracle" if is_oracle else stem,
+                    showlegend=(index == 0 if is_oracle else True), visible=True,
+                    marker=dict(color=color, size=12 if is_oracle else 6, symbol="diamond" if is_oracle else "circle",
+                                opacity=1 if is_oracle else 0.55, line=dict(color=INK, width=1.2 if is_oracle else 0)),
+                    customdata=custom,
+                    hovertemplate=("%{customdata[0]} · " + ("oracle contacts" if is_oracle else "ESMFold2 seed %{customdata[1]}")
+                                   + "<br>Accuracy %{x:.4f}<br>Helico confidence %{customdata[6]:.4f}<br>Source GDT-TS %{customdata[2]:.3f}"
+                                     "<br>Helico GDT-TS %{customdata[3]:.3f}<br>Confidence source row %{customdata[4]}"
+                                     "<br>Accuracy source row %{customdata[5]}<extra></extra>")))
+        ax.set(xlim=(0, 1.035), xlabel=axis_label, ylabel=confidence_label)
+        handles, labels = ax.get_legend_handles_labels()
+        fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.53, 0.01), ncol=3, frameon=False)
+        suffix = "" if view_index == 0 else f"_{metric}"
+        save(fig, "02c_accuracy_confidence", CAPTIONS["02c_accuracy_confidence"], suffix=suffix)
+        if view_index == 0:
+            interactive.add_traces(view_traces)
+        buttons.append(dict(label=label, method="update", args=[
+            {"x": [list(trace.x) for trace in view_traces],
+             "customdata": [list(trace.customdata) for trace in view_traces]},
+            {"xaxis.title.text": axis_label}]))
+    protein_buttons = [dict(label="All five proteins", method="restyle", args=[{"visible": [True] * 10}])]
+    for protein_index, stem in enumerate(stems):
+        protein_buttons.append(dict(label=stem, method="restyle",
+                                    args=[{"visible": [i // 2 == protein_index for i in range(10)]}]))
+    interactive.update_layout(template="none", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family=FONT, color=INK), height=570, margin=dict(l=65,r=25,t=85,b=130),
+        xaxis=dict(title=views[0][2], range=[0,1.035], gridcolor=GRID, zeroline=False),
+        yaxis=dict(title=confidence_label, gridcolor=GRID, zeroline=False, **rank_axis),
+        legend=dict(orientation="h", y=-0.24),
+        updatemenus=[dict(buttons=buttons, x=0, xanchor="left", y=1.2, yanchor="top", font=dict(size=11)),
+                     dict(buttons=protein_buttons, x=0.62, xanchor="left", y=1.2, yanchor="top", font=dict(size=11))])
     return interactive
 
 
@@ -309,7 +430,7 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["legend"].update(y=-0.28, font=dict(size=10))
     if "updatemenus" in mobile["layout"]:
         mobile["layout"]["updatemenus"][0]["font"]["size"] = 10
-    if name in ("06_sampling", "02b_confidence"):
+    if name == "06_sampling":
         mobile["layout"].update(height=760, margin=dict(l=55, r=15, t=20, b=90))
         mobile["layout"]["xaxis"]["domain"] = [0, 1]
         mobile["layout"]["xaxis2"]["domain"] = [0, 1]
@@ -317,6 +438,21 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["yaxis2"]["domain"] = [0, 0.4]
         if "legend" in mobile["layout"]:
             mobile["layout"]["legend"]["y"] = -0.12
+    if name == "02b_confidence":
+        mobile["layout"].update(height=570, margin=dict(l=65, r=72, t=90, b=110))
+        mobile["layout"]["yaxis"]["ticktext"] = [label.replace("_A", "").replace("  ·  ", "<br>") for label in spec["layout"]["yaxis"]["ticktext"]]
+        mobile["layout"]["legend"].update(y=-0.25, x=0, font=dict(size=10))
+        for annotation in mobile["layout"]["annotations"]:
+            annotation["font"]["size"] = 10
+        for menu in mobile["layout"]["updatemenus"]:
+            for button in menu["buttons"]:
+                for annotation in button["args"][1]["annotations"]:
+                    annotation["font"]["size"] = 10
+    if name == "02c_accuracy_confidence":
+        mobile["layout"].update(height=685, margin=dict(l=55,r=14,t=125,b=185))
+        mobile["layout"]["legend"].update(y=-0.27, font=dict(size=10))
+        for index, menu in enumerate(mobile["layout"]["updatemenus"]):
+            menu.update(x=0, y=1.3 - index * 0.15, font=dict(size=10))
     if name == "03_method":
         steps = [a for a in spec["layout"]["annotations"] if "<b>" in a.get("text", "") and "<br>" in a["text"]]
         mobile["layout"].update(height=850, margin=dict(l=10,r=10,t=15,b=15),
@@ -341,12 +477,19 @@ def preview(names: list[str]) -> None:
     for name in names:
         specs[name] = json.loads((SITE / f"{name}.json").read_text())
         mobile_specs[name] = json.loads((SITE / f"{name}-mobile.json").read_text())
+        lineage = (f'Data: <a href="../data/summary.csv">summary.csv</a> filtered by figure = {name}; '
+                   'underlying proteins and original row IDs: <a href="../data/figure_rows.csv">figure_rows.csv</a>. ')
+        if name in ("02b_confidence", "02c_accuracy_confidence"):
+            lineage = ('Each dot: <a href="../data/structured_confidence_per_map.csv">selected map scores and source rows</a>. '
+                       'Accuracy/confidence join: <a href="../data/structured_accuracy_confidence.csv">paired measurements</a>. '
+                       'Oracle labels: <a href="../data/structured_confidence_ranks.csv">ranks and ties</a>. '
+                       'Contact extraction: <a href="../data/structured_decoy_maps.csv">seeds, map/structure hashes and contact counts</a>. ')
+        elif name == "03_method":
+            lineage = 'Training inventory: <a href="../data/training_sources.csv">training_sources.csv</a>. '
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
-                        f'<details><summary>Figure data and provenance</summary><p>Data: <a href="../data/summary.csv">summary.csv</a> '
-                        f'filtered by figure = {name}; underlying proteins and original row IDs: '
-                        '<a href="../data/figure_rows.csv">figure_rows.csv</a>. '
+                        f'<details><summary>Figure data and provenance</summary><p>{lineage}'
                         '<a href="../data/manifest.json">Input hashes and metric definitions</a>.</p>'
                         f'<p><a href="../plots/{name}.svg">SVG</a> · <a href="../plots/{name}.png">PNG</a> · '
                         f'<a href="{name}.json">Plotly JSON</a></p></details></section>')
@@ -355,7 +498,7 @@ def preview(names: list[str]) -> None:
 @font-face{font-family:Lato;src:url(../data/inputs/Lato-Regular.ttf)}@font-face{font-family:Lato;font-weight:700;src:url(../data/inputs/Lato-Bold.ttf)}*{box-sizing:border-box}body{margin:0;background:#F1E8DF;color:#1F1E1B;font-family:Lato,"DejaVu Sans",Arial,sans-serif;font-size:16px;line-height:1.55}
 main{max-width:1080px;margin:auto;padding:54px 28px}h1,h2{font-family:Georgia,serif;font-weight:400;line-height:1.2}h1{font-size:48px;max-width:800px}h2{font-size:30px;margin:6px 0 22px}a{color:#385C8F}section{margin:68px 0}.number{font-size:11px;letter-spacing:2px;color:#817970}.frame{background:#BDB1A5;padding:12px;border-radius:3px}.chart{background:#C4B9AE;min-height:470px}.caption{font-size:14px;max-width:930px}details{font-size:12px;border-top:1px solid #D2C8BC;padding-top:10px}nav{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}.note{border-left:3px solid #8F6B38;padding:4px 16px}.kicker{letter-spacing:2px;font-size:12px}@media(max-width:600px){main{padding:24px 14px}h1{font-size:36px}h2{font-size:25px}.frame{padding:5px}section{margin:44px 0}.chart{min-height:540px}}
 </style><main><p class="kicker">OPEN ATHENA / WORKING FIGURES / EXP325</p><h1>Sampling contacts from a single sequence</h1>
-<p>A figure-first draft. Natural proteins lead; designed proteins are a separate selectable view. Each plot menu switches between cached populations and metrics.</p>
+<p>A figure-first draft. Natural proteins lead; designed proteins are a separate selectable view. Plot menus switch among cached views and metrics.</p>
 <nav><a href="../DRAFT.md">Terse post outline</a><a href="../README.md">Analysis notes</a><a href="../plots/summary.pdf">Slide deck</a><a href="../data/paired_deltas.csv">Paired comparisons</a></nav>
 <p class="note">All MarinFold panels use the 248B-token model, exp277 step 266,344. Natural eval-val and eval-test are included; designed proteins remain separate. All plots read precomputed tables. Oracle comparisons use ground truth and are explicitly labeled.</p>
 <p class="caption">AlphaFold3-derived results carry the <a href="../data/af3_notice.txt">required notice</a> and <a href="../data/af3_output_terms.md">output terms</a>.</p>
@@ -389,10 +532,12 @@ def main() -> None:
     export_plotly(method_figure(pd.read_csv(DATA / "training_sources.csv")), "03_method")
     export_plotly(sampling_figure(summary, rows), "06_sampling")
     names = list(TITLES)
-    if (DATA / "confidence_summary.csv").exists():
+    if (DATA / "structured_confidence_ranks.csv").exists():
         export_plotly(confidence_figure(), "02b_confidence")
+        export_plotly(accuracy_confidence_figure(), "02c_accuracy_confidence")
     else:
         names.remove("02b_confidence")
+        names.remove("02c_accuracy_confidence")
     preview(names)
     print(f"Rendered {len(names)} figures, SVG/PNG, Plotly JSON, and {SITE / 'index.html'}")
 

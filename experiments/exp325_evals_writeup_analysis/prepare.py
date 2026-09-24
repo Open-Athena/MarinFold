@@ -61,11 +61,11 @@ class Sources:
     def __init__(self) -> None:
         self.records: dict[str, dict] = {}
 
-    def csv(self, path: Path) -> pd.DataFrame:
+    def csv(self, path: Path, *, round_trip: bool = False) -> pd.DataFrame:
         """Read a source table and retain the identity of every input row."""
         key = str(path.relative_to(REPO))
         self.records[key] = {"sha256": sha256(path), "bytes": path.stat().st_size}
-        frame = pd.read_csv(path)
+        frame = pd.read_csv(path, float_precision="round_trip" if round_trip else None)
         frame["source"] = key
         frame["source_row"] = np.arange(len(frame))
         return frame
@@ -364,6 +364,78 @@ def prepare_confidence(sources: Sources, targets: pd.DataFrame) -> dict[str, pd.
             "confidence_summary.csv": pd.DataFrame(records)}
 
 
+def prepare_structured_confidence(sources: Sources, targets: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """Rank the oracle against every seeded predictor map; retain exact row lineage."""
+    raw = sources.csv(DATA / "helico_structured_samples.csv", round_trip=True)
+    metadata = sources.csv(DATA / "structured_decoy_maps.csv")
+    keys = ["stem", "arm", "map_seed"]
+    wanted = set(targets.loc[(targets.designed == 0) & (targets.msa_depth < 10), "stem"])
+    if len(raw) != 1515 or set(raw.stem) != wanted or raw.duplicated(keys + ["sample_idx"]).any():
+        raise ValueError("Expected all five low-depth proteins × 101 maps × three samples")
+    if not (raw.groupby(keys).size() == 3).all():
+        raise ValueError("Different diffusion budgets")
+    if not (raw.groupby("stem").n_unknown.nunique() == 1).all():
+        raise ValueError("Different eligible-pair budgets")
+    selected = raw.sort_values(keys + ["ranking_score", "sample_idx"], ascending=[True, True, True, False, True]).drop_duplicates(keys)
+    selected = annotate(selected.drop(columns=["eval_set", "L"]), targets)
+    metadata = metadata.rename(columns={"source": "map_source", "source_row": "map_source_row"})
+    selected = selected.merge(metadata.drop(columns=["n_present", "n_absent", "n_unknown", "msa_depth"]), on=keys, validate="one_to_one")
+    if len(selected) != 505 or selected.mean_plddt.isna().any():
+        raise ValueError("Missing confidence or contact-map metadata")
+    for score in ("ranking_score", "mean_plddt"):
+        if not np.isfinite(selected[score]).all():
+            raise ValueError(f"Non-finite confidence: {score}")
+        selected[f"{score}_rank"] = selected.groupby("stem")[score].rank(method="average", ascending=False)
+    ranks = []
+    for stem, group in selected.groupby("stem"):
+        oracle = group[group.arm == "oracle"]
+        decoys = group[group.arm == "esmfold2"]
+        if len(oracle) != 1 or len(decoys) != 100 or set(decoys.map_seed) != set(range(100)):
+            raise ValueError(f"Incomplete contact-map pool: {stem}")
+        oracle = oracle.iloc[0]
+        for score in ("ranking_score", "mean_plddt"):
+            above = int((decoys[score] > oracle[score]).sum())
+            equal = int((decoys[score] == oracle[score]).sum())
+            ranks.append({"stem": stem, "msa_depth": oracle.msa_depth, "confidence": score,
+                          "oracle_confidence": oracle[score], "n_decoys": 100,
+                          "n_above_oracle": above, "n_tied_oracle": equal,
+                          "rank_best": 1 + above, "rank_worst": 1 + above + equal,
+                          "rank_mid": 1 + above + equal / 2,
+                          "fraction_decoys_below_oracle": (100 - above - equal / 2) / 100,
+                          "unique_decoy_maps": decoys.map_sha256.nunique(),
+                          "unique_decoy_structures": decoys.structure_sha256.nunique(),
+                          "decoy_confidence_median": decoys[score].median(),
+                          "decoy_gdt_ts_median": decoys.gdt_ts.median(),
+                          "oracle_gdt_ts": oracle.gdt_ts,
+                          "oracle_source_row": oracle.source_row,
+                          "decoy_source_rows": "|".join(decoys.source_row.astype(str))})
+    accuracy = sources.csv(DATA / "esmfold2_decoy_structure_metrics.csv", round_trip=True)
+    accuracy = accuracy.rename(columns={"source": "accuracy_source", "source_row": "accuracy_source_row",
+                                        "gdt_ts": "source_structure_gdt_ts", "lddt": "source_structure_lddt"})
+    joined = selected.merge(accuracy[[*keys, "structure_sha256", "source_structure_gdt_ts", "source_structure_lddt",
+                                      "accuracy_source", "accuracy_source_row"]],
+                            on=[*keys, "structure_sha256"], how="left", validate="one_to_one")
+    oracle_rows = joined.arm == "oracle"
+    if joined.loc[~oracle_rows, "accuracy_source_row"].isna().any() or joined.loc[oracle_rows, "accuracy_source_row"].notna().any():
+        raise ValueError("Incorrect source-structure accuracy join")
+    # The oracle's source is the experimental reference itself, so its source
+    # accuracy is exactly one by definition. Its downstream Helico accuracy is
+    # measured separately, just like every other conditioned Helico structure.
+    joined.loc[oracle_rows, ["source_structure_gdt_ts", "source_structure_lddt"]] = 1.0
+    joined["accuracy_rule"] = np.where(oracle_rows, "experimental reference compared with itself", "score_esmfold2_decoys.py: predicted structure versus experimental reference")
+    accuracy_summary = []
+    for stem, group in joined[~oracle_rows].groupby("stem"):
+        for metric in ("source_structure_gdt_ts", "source_structure_lddt", "gdt_ts", "lddt"):
+            values = group[metric]
+            accuracy_summary.append({"stem": stem, "metric": metric, "n_predictions": len(group),
+                                     "min": values.min(), "median": values.median(), "max": values.max(),
+                                     "spearman_vs_helico_confidence": values.rank().corr(group.ranking_score.rank())})
+    return {"structured_confidence_per_map.csv": selected,
+            "structured_confidence_ranks.csv": pd.DataFrame(ranks),
+            "structured_accuracy_confidence.csv": joined,
+            "structured_accuracy_summary.csv": pd.DataFrame(accuracy_summary)}
+
+
 def main() -> None:
     """Build compact tables and a digest manifest for offline rendering."""
     DATA.mkdir(exist_ok=True)
@@ -385,6 +457,7 @@ def main() -> None:
               "figure_rows.csv": rows, "summary.csv": summarize(rows),
               "paired_deltas.csv": paired_deltas(rows), "sampling_diagnostics.csv": diagnostics}
     tables.update(prepare_confidence(sources, targets))
+    tables.update(prepare_structured_confidence(sources, targets))
     # Training mix is a source-token inventory, not a measured exposure count.
     tables["training_sources.csv"] = sources.csv(REPO / EXP277 / "epoch_corpus_counts.csv")
     coverage = []
@@ -409,7 +482,7 @@ def main() -> None:
         "generation_provenance": {
             str(path.relative_to(HERE)): {"sha256": sha256(path)}
             for path in [HERE / "generation/checkpoint_manifest.json",
-                         DATA / "alphafold_inputs.json", DATA / "boltz2_inputs.json",
+                         DATA / "alphafold_inputs.json", DATA / "boltz2_inputs.json", DATA / "esmfold2_decoy_protocol.json",
                          *sorted(DATA.glob("*_run.json")),
                          *sorted(DATA.glob("helico_*_inputs.json"))]
         },
@@ -424,7 +497,7 @@ def main() -> None:
         "oracle_contacts": "Full ground-truth three-state map, including non-contacts; information upper bound, not a predictor",
         "sampling_oracle": "Max correct contacts among first R emitted pairs / R; short sets retain denominator R. Ground-truth selection.",
         "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
-        "confidence_control": {"status": "complete" if "confidence_summary.csv" in tables else "pending", "selection": "20 preselected natural proteins, five per MSA tier; 11 maps and 3 diffusion samples per map"},
+        "confidence_control": {"status": "complete", "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map, select highest ranking_score. Historical 20-protein random control retained separately."},
         "alphafold_protocol": json.loads((DATA / "alphafold_inputs.json").read_text()),
         "boltz2_protocol": json.loads((DATA / "boltz2_inputs.json").read_text()),
     }

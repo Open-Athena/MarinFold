@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "input_checkout": "cde50057d74b8f4cc84469efeb45ef8c345fdd1c",
-  "prepare_sha256": "71b31c0c6b6f969e487a648e18f8bed7c51efd2eb8916deaa8d26d7171ddc6cf",
+  "input_checkout": "c55fc20336b5cc53c4771227a2d0ae9033d7a4f2",
+  "prepare_sha256": "1af1812f420d7614b9213b348c4e606eb8aff24107e21603745024521f10d238",
   "lock_sha256": "336b85737590a471918dc33d92c816ef0a1178128d51fdf91a1f9840cc2c2d50",
   "inputs": {
     "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": {
@@ -80,6 +80,18 @@
       "sha256": "b592e77d817b389b28fb6fe95abb3cb609c451be110d94e0db6586025c519301",
       "bytes": 129479
     },
+    "experiments/exp325_evals_writeup_analysis/data/helico_structured_samples.csv": {
+      "sha256": "07cd851f8c9055c29d8c82fc051ae26f79389b657926afc4b8a8913895d131f4",
+      "bytes": 295972
+    },
+    "experiments/exp325_evals_writeup_analysis/data/structured_decoy_maps.csv": {
+      "sha256": "1aed3ab9b573460226e4b86c40cf1eb97047fc090dd2efb8ab80157db6815d50",
+      "bytes": 159296
+    },
+    "experiments/exp325_evals_writeup_analysis/data/esmfold2_decoy_structure_metrics.csv": {
+      "sha256": "13363cb4d3956f501389ae5b870e90903a54eddc8b226bf28290f124140fd851",
+      "bytes": 146186
+    },
     "experiments/exp277_models_single_mpnn_pilot/data/epoch_corpus_counts.csv": {
       "sha256": "08e317bc545543ebaa51d5b3f48e1eaaf18e856dad0e3c59e9b5e95e2643955a",
       "bytes": 295
@@ -119,6 +131,9 @@
     "data/boltz2_inputs.json": {
       "sha256": "d51bb580b0e025d8ec91f881da5ab34e8597b1b5ce1354371cdaa166806cde80"
     },
+    "data/esmfold2_decoy_protocol.json": {
+      "sha256": "bd713a42e3181f5a3eee00926adc7b6d97d210c41c7434fc605894c47c07c70a"
+    },
     "data/af2_run.json": {
       "sha256": "17c99395c240c259af37021a56b1b652c67a36ea1ab7a0d7362c06de0e3fab96"
     },
@@ -128,11 +143,20 @@
     "data/boltz2_run.json": {
       "sha256": "ae9c6b8df9cbaf6210b5254c628e6d662c1cff869efb20d00c88677b9a193e12"
     },
+    "data/esmfold2_decoy_run.json": {
+      "sha256": "6b7fe80147f930460f5eb7d34edfadc14c9e4be6bea44221f401e7b6f855851e"
+    },
+    "data/esmfold2_decoy_scores_run.json": {
+      "sha256": "3d45f201874be151f55fa7f66544f8beceae2ea9ac3b501b9cfd52420d13b86f"
+    },
     "data/helico_confidence_run.json": {
       "sha256": "7074100d0309347cf7863ecf276b874ec6f0bdd5ec0e891f38e4cf63bee1577b"
     },
     "data/helico_folding_run.json": {
       "sha256": "532daa6b752dbc6be46e050efed499183f54f4bf0eb6f502a05c00db7edcdcfe"
+    },
+    "data/helico_structured_run.json": {
+      "sha256": "d680b5ef00ddfb4f5038959e33e895d710cbfb4c7957730422ebf4ddaea00f12"
     },
     "data/test_contact_run.json": {
       "sha256": "bff2ffb1519ce8e0d82fbf5059f58c33f6db1b5788d15bc0514480c9ba7ae5ec"
@@ -142,6 +166,9 @@
     },
     "data/helico_folding_inputs.json": {
       "sha256": "035485c2560ff875f868970c39c46a91bccd1fd5d811b5b9d485ce2a481355d6"
+    },
+    "data/helico_structured_inputs.json": {
+      "sha256": "acd39cd83c4ee3bfb48c4b1682954fa1e051afdca77217974add6ccf9294cc7d"
     }
   },
   "outputs": {
@@ -181,6 +208,22 @@
       "sha256": "53f36113c289ed0d69ff02084a38616b1d52cd76842823cb9c67bd2cb3286741",
       "rows": 20
     },
+    "structured_confidence_per_map.csv": {
+      "sha256": "7ef691c2795296477dca2f1354130623949f27110788e026ce552ee56f5a4016",
+      "rows": 505
+    },
+    "structured_confidence_ranks.csv": {
+      "sha256": "3cbce9869ba5c652f09bed3ad07b43cebc0f21534f611f09d97de3974a2a9db6",
+      "rows": 10
+    },
+    "structured_accuracy_confidence.csv": {
+      "sha256": "204bf9c1023b11c8c0e765e6795b23345b751632dba5a40a1450eab2c00fccd3",
+      "rows": 505
+    },
+    "structured_accuracy_summary.csv": {
+      "sha256": "2c2bf499a7691a9fb782f9e5e84f9bf6ad60d2e57f26f062bac762344a2b1c33",
+      "rows": 20
+    },
     "training_sources.csv": {
       "sha256": "2639994d76a392e8ef4e37502bfeea2da11a1d3773a5bdaa8b6b3dee9927da74",
       "rows": 4
@@ -207,7 +250,7 @@
   "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
   "confidence_control": {
     "status": "complete",
-    "selection": "20 preselected natural proteins, five per MSA tier; 11 maps and 3 diffusion samples per map"
+    "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map, select highest ranking_score. Historical 20-protein random control retained separately."
   },
   "alphafold_protocol": {
     "status": "fixed_before_inference",

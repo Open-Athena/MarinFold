@@ -7,7 +7,8 @@ inference, joins, confidence selection, or resampling.
 |---|---|---|---|
 | 01_predictors | How do existing predictors fare across MSA depth? | `figure_rows.csv`, `summary.csv` (`figure=01_predictors`) | `prepare_structure`; exp250 archived per-target GDT-TS and lDDT plus new AF2/3 and Boltz-2 scores; natural proteins matched across methods |
 | 02_oracle | How well can Helico realize the true map? | Same, `figure=02_oracle` | `prepare_structure`; full three-state oracle and no-contact Helico, plus AF2/3, Boltz-2 and Protenix + MSA context |
-| 02b_confidence | Does confidence prefer the oracle to random maps? | `confidence_per_map.csv`, `confidence_per_protein.csv`, `confidence_summary.csv` | `prepare_confidence`; new Helico samples, equal known mask/contact counts and diffusion budgets |
+| 02b_confidence | Where does the oracle rank among 100 ESMFold2 maps on low-depth proteins? | `structured_confidence_per_map.csv`, `structured_confidence_ranks.csv` | `prepare_structured_confidence`; 505 full maps, same known mask and three Helico samples/map; positive counts may vary |
+| 02c_accuracy_confidence | Does Helico confidence track original ESMFold2 structure accuracy? | `structured_accuracy_confidence.csv` | `generation/score_esmfold2_decoys.py` scores all 500 original structures with the AF2/3/Boltz-2 scorer; `prepare_structured_confidence` joins by protein, seed, arm and structure hash |
 | 03_method | What was trained, and how does inference work? | `training_sources.csv`, `manifest.json` | Exp277 corpus inventory and fixed model identity; diagram arrows have no quantitative width |
 | 04_contacts | How accurate are the predicted contacts? | `figure_rows.csv`, `summary.csv` (`figure=04_contacts`) | `prepare_contacts`; exp277 validation/design results plus new exp325 test results; exp245 baseline scores and new AF2/3 and Boltz-2 pyconfind contacts |
 | 05_folding | Do predicted contacts improve structure accuracy? | Same, `figure=05_folding` | `prepare_folding`; exact top-L, select the highest-confidence of three diffusion samples; exp311 validation/design and new exp325 test results |
@@ -26,13 +27,37 @@ For Figure 06, each scatter dot is one protein's consensus/oracle pair in
 consensus estimate. Contact-map uniqueness, pairwise Jaccard and true-contact
 union recall are separate diagnostics, not evidence of distinct folds.
 
-For Figure 02b, `confidence_per_map.csv` identifies the confidence-selected
-diffusion sample and original row for each map. The per-protein table records
-the oracle row and all five random-map rows used in each comparison. Win rates
-give ties half credit; confidence ranks also retain ties. Intervals bootstrap
-proteins. The scatter compares oracle GDT-TS with the mean of the five random
-maps' confidence-selected structures. pLDDT is recorded for the structure
-selected by ranking_score, not maximized independently across diffusion samples.
+For Figure 02b, `structured_confidence_per_map.csv` identifies the selected
+Helico sample and its original row in `helico_structured_samples.csv`.
+`map_source_row` points into `structured_decoy_maps.csv`, which retains the
+ESMFold2 seed, structure digest, contact-state digest, contact counts and
+agreement with the oracle. `generation/prepare_structured_decoys.py` extracts
+all maps using the same Helico/pyconfind geometry and oracle eligible-pair mask.
+The rank table records all contributing source rows, counts above/equal to the
+oracle, its best/worst/mid rank, and the number of distinct decoy maps.
+Dots show the prepared confidence; diamonds identify the oracle. The ranking-score
+axis removes the empty gap between one clash-penalized score (−99.40625) and the
+ordinary scores. Both remaining segments are linear, the break is labeled //,
+and tick/hover labels retain the actual scores. No point is removed. The scatter
+uses the same display transform; it does not change the cached ranks or correlations.
+Vertical jitter is purely visual. pLDDT uses the same structure selected by
+ranking_score, without a second selection. The earlier random control remains
+in `confidence_*.csv` for audit and is superseded in this panel.
+
+For Figure 02c, x is `source_structure_gdt_ts` from the original ESMFold2
+prediction, y is the corresponding contact-conditioned Helico `ranking_score`.
+`accuracy_source_row` points to `esmfold2_decoy_structure_metrics.csv`, while
+`source_row` retains the selected Helico sample. Oracle source accuracy is one
+by definition (experimental structure against itself), explicitly marked by
+`accuracy_rule`; it does not assert perfect Helico reconstruction. Alternate
+views use measured Helico `gdt_ts`/`lddt` instead of source-structure accuracy.
+Colors identify proteins, circles identify predictions, and diamonds identify
+oracle maps. The menu can isolate each protein, including oracle diamonds that
+overlap in the combined view. Every prediction is retained in the scatter, with no filtering.
+`structured_accuracy_summary.csv` reports the 100-prediction accuracy range and
+median for each protein and view, plus descriptive within-protein Spearman
+correlation with Helico confidence. Oracle reference points are excluded from
+those correlations, and there is no correlation pooled across proteins.
 
 All main figures use natural proteins. Plot menus expose validation, test,
 viral/nonviral and designed cohorts where applicable; designs are never pooled

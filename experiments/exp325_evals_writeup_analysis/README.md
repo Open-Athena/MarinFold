@@ -69,8 +69,11 @@ GDT-TS and lDDT remain distinct metrics.
 
 The oracle supplies the **full ground-truth three-state map**, including true
 non-contacts. It is an information upper bound, not a deployable predictor or
-a matched-count comparison with MarinFold. The random-map control separately
-matches its known mask, positive/negative counts and diffusion budget.
+a matched-count comparison with MarinFold. Figure 02b compares it with all 100
+seeded ESMFold2 maps for each of the five low-depth natural proteins. Full
+predictor contact/non-contact maps share the oracle eligible-pair mask and
+three-sample Helico budget; their contact counts may vary. The earlier matched
+random controls remain archived in `confidence_*.csv`.
 
 The added AlphaFold2, AlphaFold3 and Boltz-2 arms use exactly the archived protein queries
 and MSAs behind the depth table, with **no templates**, protein-chain-only inputs,
@@ -106,11 +109,22 @@ can differ from arms that retain modified residues or non-protein entities.
   and 2,610 contributing rows.
 - **Contacts:** natural R-precision **0.5609** (validation 0.5537; test 0.5641).
   MSA-tier means are **0.3453, 0.3428, 0.4486, 0.6167**, with n=5/21/62/226.
-- **Confidence:** all **20/20 proteins** rank their oracle map above every
-  uniform and separation-matched random map, under both ranking_score and
-  pLDDT. This is 660 structures with equal per-map budgets. Selected oracle
-  GDT-TS averages **0.9189**, versus 0.1269/0.1406 for the controls. Random
-  maps are weak negatives; this does not establish ranking of plausible folds.
+- **Confidence among plausible maps:** for the five natural proteins at MSA
+  depth <10, oracle ranking_score ranks are **1, 5, 1, 5, 1 out of 101** for
+  8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A and 8wrx_A, respectively, with no oracle ties.
+  Each protein has 100 distinct ESMFold2 structures and contact maps. All 505
+  maps receive three Helico samples (1,515 total), selected by ranking_score.
+  pLDDT of those same selected structures ranks the oracle **1, 4, 1, 1, 1**.
+- **Original ESMFold2 accuracy:** median GDT-TS is **0.537, 0.718, 0.699,
+  0.315, 0.725**, in the same protein order. Within-protein Spearman correlations
+  with Helico confidence are **−0.041, −0.064, 0.078, −0.049, 0.556**.
+  Thus confidence puts the oracle near the top, but does not consistently rank
+  plausible candidates by their original structure accuracy. The scatter keeps
+  all 500 predictions, colors proteins separately, and marks oracle references
+  with diamonds. Its alternate view shows measured Helico reconstruction accuracy.
+  These are five biological examples, not 500 independent proteins. One selected
+  Helico sample has ranking_score −99.40625 after a clash penalty; it remains in
+  every analysis and plot, with an explicit axis break for legibility.
 - **Sampling:** mean individual R-precision **0.4009**, consensus **0.5605**,
   oracle best-of-100 **0.5285** on 314 natural proteins. Paired oracle minus
   consensus is **−0.0321**, 95% interval **[−0.0384, −0.0254]**.
@@ -124,9 +138,11 @@ can differ from arms that retain modified residues or non-protein entities.
   proteins). Six test proteins fail the frozen coordinate mapping; one further
   protein lacks the external comparison. All exclusions remain explicit.
 
-Confidence's observed 100% win rates yield degenerate nonparametric bootstrap
-intervals; they do not establish perfect population discrimination. pLDDT is
-measured on the ranking_score-selected structure, not independently maximized.
+No pooled confidence–accuracy correlation or population-level discrimination
+claim is made from these five proteins. pLDDT is measured on the
+ranking_score-selected structure, not independently maximized. Historical
+random controls remain archived (oracle above all random maps on 20/20 proteins),
+but Figure 02b now uses the stronger structure-derived candidates.
 
 ## Provenance
 
@@ -140,11 +156,32 @@ its “held-out” label does not mean the 217-protein test split.
 used eight Modal H100 shards in `us-east`, vLLM 0.9.2 and the exp277 document
 generator pinned at `d1bea417a64cc042ad931422200c3edeb873f2e0`.
 All 21,700 new rollouts terminated; raw completions reproduce every saved vote.
-[Confidence inference](https://modal.com/apps/open-athena/main/ap-Oqepg5fH2fUlnGdLMatCyK)
+[Historical random-control inference](https://modal.com/apps/open-athena/main/ap-Oqepg5fH2fUlnGdLMatCyK)
 uses Helico source `b10385d736673c81b10e70d1099962af6f2573c0`,
 `contacts-msafree-01-step-6000.pt`, and the exact weight SHA256 in its manifest.
 [Test folding](https://modal.com/apps/open-athena/main/ap-jdNvAAh1Pkw58kB09fTmt2)
 completed 1,266 structures: 211 proteins × two conditioning arms × three samples.
+
+[ESMFold2 decoy generation](https://modal.com/apps/open-athena/main/ap-qU0fdFnYiy2KVeR0N93zBl)
+retains all 500 predictions: 100 seeds for each of the five natural monomers at
+MSA depth <10. The [official native implementation](https://github.com/Biohub/esm/tree/43b4548b86762edfa747b07d5f440aad3c33acee)
+uses the existing folding snapshot `1ebf0e3` and ESMC-6B snapshot `45b0fa5`,
+20 loops, 100 diffusion steps and documented LM dropout 0.3, without an MSA.
+The complete revisions, weight checksums, dependency versions and per-input
+timings are in `esmfold2_decoy_{protocol,run}.json` and
+`esmfold2_decoy_timings.csv`. [Helico reconstruction](https://modal.com/apps/open-athena/main/ap-uLrFv88JMiTtIGZnZa0KVj)
+folds the oracle and all 100 derived maps with the same checkpoint and sampling
+settings as the earlier control.
+`structured_decoy_maps.csv` links the extracted maps to their structures;
+`structured_confidence_per_map.csv` links each point to its selected Helico
+sample, and `structured_confidence_ranks.csv` records the oracle ranks and ties.
+`esmfold2_decoy_structure_metrics.csv` scores the original ESMFold2 structures
+against ground truth; `structured_accuracy_confidence.csv` joins those accuracies
+to the matching Helico confidence by protein, seed and structure hash. The oracle
+source structure is the experimental reference, so its source accuracy is exactly
+one by definition. Its Helico reconstruction accuracy is measured separately.
+See [the runbook](RUNBOOK.md#plausible-contact-map-decoys-figure-02b) for the
+generation → extraction → inference → preprocessing → rendering commands.
 
 [AF2 inference](https://modal.com/apps/open-athena/main/ap-HYVGA8fxZMhaebBD8DHsMG)
 and [AF3 inference](https://modal.com/apps/open-athena/main/ap-jlKTXydPq6T7R2SlLB1x2V)
@@ -184,16 +221,17 @@ This distinction is explicit in the manifest and figure captions.
 
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
-for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v3-boltz2).
-Fifteen analysis checks pass, including source-row round trips and fixed
+for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys).
+Eighteen analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
-including the test-split menus; the PDF has three narrative and eleven plot pages.
+including the test-split menus; the PDF has three narrative and fifteen plot pages.
 
 ## Conclusion
 
 Low-depth proteins remain harder for the 248B-token model. Oracle maps show
-headroom, and confidence recognizes them against the matched random controls.
-Aggregation beats choosing a single contact map overall, even with oracle
+headroom: their confidence ranks in the top five of 101 maps for every low-depth
+protein. Within the plausible ESMFold2 candidates, confidence tracks source
+GDT-TS clearly for only one of five proteins. Aggregation beats choosing a single contact map overall, even with oracle
 selection. The evidence supports limited usefulness of individual samples,
 not an absence of contact-set diversity. Better whole-map candidates,
 inference-time search and post-training remain directions to investigate.
