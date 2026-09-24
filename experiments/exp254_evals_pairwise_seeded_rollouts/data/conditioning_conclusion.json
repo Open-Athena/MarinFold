@@ -1,0 +1,25 @@
+{
+  "plan_sha256": "843eb78ee9358e1451b1cf56717d382b2644aa255f77ec50d8707cb59f86aa9f",
+  "prediction_source": "archived_iid_100_consensus",
+  "source_votes_sha256": "195d8b43413c4c166c49e4507d19a9c2d058b3f37611f2927dc72e3d8e7aa5fa",
+  "n_targets": 97,
+  "n_repeats": 2,
+  "primary": {
+    "scope": "full_pipeline",
+    "arm": "pred_large",
+    "reference": "source_plus_iid200",
+    "role": "practical_primary",
+    "arm_mean": 0.5076699622556616,
+    "reference_mean": 0.5246731355354541,
+    "n_proteins": 97,
+    "mean_delta": -0.017003173279792533,
+    "ci_low": -0.024635686829079288,
+    "ci_high": -0.009888878192788454,
+    "proteins_improved": 29,
+    "proteins_tied": 4,
+    "practical_margin": 0.03,
+    "margin_status": "target_gain_ruled_out"
+  },
+  "interval_unit": "protein, after averaging context/sampling replicates",
+  "limitation": "Conditional on archived first-pass votes and saved runs. Pointwise intervals; secondary comparisons are exploratory. A 100+100 rollout budget is not a claim of identical measured compute or latency. Oracle-conditioned arms and withheld-universe effects are mechanistic diagnostics."
+}

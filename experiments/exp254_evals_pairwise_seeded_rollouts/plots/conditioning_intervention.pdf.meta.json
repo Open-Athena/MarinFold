@@ -1,0 +1,10 @@
+{
+  "script": "plot_conditioning.py",
+  "args": [
+    "--data",
+    "data",
+    "--out",
+    "plots"
+  ],
+  "caption": "Multi-contact conditioning on eval-val. Practical full-map effects compare predicted contexts with the shared archived source plus fresh iid rollout votes. Mechanistic effects and excess map turnover share the context-excluded universe. Replicates are averaged within protein before bootstrap; turnover does not measure accuracy."
+}
