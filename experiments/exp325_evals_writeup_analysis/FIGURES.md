@@ -59,6 +59,16 @@ median for each protein and view, plus descriptive within-protein Spearman
 correlation with Helico confidence. Oracle reference points are excluded from
 those correlations, and there is no correlation pooled across proteins.
 
+The PDF expands Figure 02c into `02c_accuracy_confidence_protein_<stem>`:
+one page per protein, original ESMFold2 at left and Helico reconstructions at
+right, GDT-TS above and lDDT below. All four panels use the same 100 predictions
+and oracle. The subtitle reads the oracle rank from `structured_confidence_ranks.csv`;
+correlation labels read `structured_accuracy_summary.csv`. Accuracy axes stay at
+0–1; confidence limits are tailored to each protein and shared by its four
+panels. Only 8ux2_A needs the marked clash-score axis break. The combined
+website scatter exports remain available but their sidecars exclude them from
+the PDF in favor of these individual pages.
+
 All main figures use natural proteins. Plot menus expose validation, test,
 viral/nonviral and designed cohorts where applicable; designs are never pooled
 with natural proteins. MSA depth is the query-inclusive alignment sequence

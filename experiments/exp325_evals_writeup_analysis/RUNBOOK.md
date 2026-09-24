@@ -18,6 +18,10 @@ Open `site/index.html` for an offline interactive preview. `plotly.min.js` is
 generated locally from the locked Plotly package and ignored by git.
 
 The static deliverables are `plots/*.svg`, `plots/*.png` and `plots/summary.pdf`.
+The PDF uses five `02c_accuracy_confidence_protein_<stem>.png` pages, one per
+protein with all four accuracy views. The combined website scatter exports have
+`include_in_summary: false` in their sidecars, so they are replaced by the
+individual pages in the PDF. `render.py` writes these sidecars automatically.
 Plotly assets are `site/*.json`, including mobile variants. The house palette and
 Lato font come from Open Athena's site at commit
 `0618887cbd74bc89d0e4575716d262cb1c6c179d`. The eventual integration is
@@ -89,7 +93,7 @@ serialization. These figures make no speed comparisons.
 # Public artifacts
 
 Raw contact completions/votes and every new Helico diffusion sample are archived
-under `data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys` in the public
+under `data/exp325-writeup-analysis/exp277-step266344/v5-per-protein-pdf` in the public
 `open-athena/MarinFold` HF bucket. `data/publication_manifest.json` records file
 sizes and SHA256 digests. The package includes the offline preview, local font
 and Plotly bundle, figures, prepared tables and experiment scripts. Existing

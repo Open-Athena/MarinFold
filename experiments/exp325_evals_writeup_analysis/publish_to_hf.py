@@ -14,7 +14,7 @@ import tarfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DESTINATION = "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys"
+DESTINATION = "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v5-per-protein-pdf"
 
 
 def main() -> None:

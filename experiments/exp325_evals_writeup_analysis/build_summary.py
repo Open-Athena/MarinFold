@@ -46,6 +46,7 @@ def save_plot_with_meta(
     caption: str,
     script: str | None = None,
     args: Sequence[str] | None = None,
+    include_in_summary: bool = True,
     **savefig_kwargs,
 ) -> Path:
     """Save ``fig`` to ``path`` plus a ``<path>.meta.json`` sidecar.
@@ -56,6 +57,8 @@ def save_plot_with_meta(
     on each plot page, exactly how to rerun the script.
 
     Defaults: ``script`` = ``sys.argv[0]``, ``args`` = ``sys.argv[1:]``.
+    Set ``include_in_summary=False`` for website figures replaced by more
+    detailed pages in the PDF.
     Any extra kwargs (``dpi``, ``transparent``, ...) pass through to
     ``fig.savefig``. ``bbox_inches="tight"`` is the default unless you
     override it.
@@ -69,10 +72,10 @@ def save_plot_with_meta(
     args = list(args) if args is not None else list(sys.argv[1:])
 
     sidecar = path.with_suffix(path.suffix + ".meta.json")
-    sidecar.write_text(json.dumps(
-        {"script": script, "args": args, "caption": caption},
-        indent=2,
-    ))
+    metadata = {"script": script, "args": args, "caption": caption}
+    if not include_in_summary:
+        metadata["include_in_summary"] = False
+    sidecar.write_text(json.dumps(metadata, indent=2))
     return path
 
 
@@ -165,6 +168,8 @@ def load_plots(plots_dir: Path) -> list[PlotEntry]:
         meta_path = img.with_suffix(img.suffix + ".meta.json")
         if meta_path.exists():
             meta = json.loads(meta_path.read_text())
+            if not meta.get("include_in_summary", True):
+                continue
             caption = str(meta.get("caption", ""))
             script = str(meta.get("script", "?"))
             args = [str(a) for a in meta.get("args", [])]

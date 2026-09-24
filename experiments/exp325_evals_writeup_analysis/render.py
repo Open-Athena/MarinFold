@@ -13,7 +13,7 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import patches, font_manager
+from matplotlib import patches, font_manager, ticker
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -50,11 +50,11 @@ def style_axes(ax: plt.Axes) -> None:
     ax.tick_params(colors=INK, length=0, pad=9)
 
 
-def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "") -> None:
+def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, include_in_summary: bool = True) -> None:
     """Save vector/raster artwork and its source-table metadata."""
     name = figure + suffix
     save_plot_with_meta(fig, PLOTS / f"{name}.png", caption=caption,
-                        script="render.py", args=[], dpi=180)
+                        script="render.py", args=[], include_in_summary=include_in_summary, dpi=180)
     fig.savefig(PLOTS / f"{name}.svg", bbox_inches="tight")
     plt.close(fig)
 
@@ -393,7 +393,8 @@ def accuracy_confidence_figure() -> go.Figure:
         handles, labels = ax.get_legend_handles_labels()
         fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.53, 0.01), ncol=3, frameon=False)
         suffix = "" if view_index == 0 else f"_{metric}"
-        save(fig, "02c_accuracy_confidence", CAPTIONS["02c_accuracy_confidence"], suffix=suffix)
+        save(fig, "02c_accuracy_confidence", CAPTIONS["02c_accuracy_confidence"], suffix=suffix,
+             include_in_summary=False)
         if view_index == 0:
             interactive.add_traces(view_traces)
         buttons.append(dict(label=label, method="update", args=[
@@ -412,6 +413,63 @@ def accuracy_confidence_figure() -> go.Figure:
         updatemenus=[dict(buttons=buttons, x=0, xanchor="left", y=1.2, yanchor="top", font=dict(size=11)),
                      dict(buttons=protein_buttons, x=0.62, xanchor="left", y=1.2, yanchor="top", font=dict(size=11))])
     return interactive
+
+
+def per_protein_accuracy_figures() -> None:
+    """Render one PDF page per protein from the cached measurements and summaries."""
+    table = pd.read_csv(DATA / "structured_accuracy_confidence.csv")
+    summaries = pd.read_csv(DATA / "structured_accuracy_summary.csv").set_index(["stem", "metric"])
+    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv").query("confidence == 'ranking_score'").set_index("stem")
+    views = [("source_structure_gdt_ts", "Original ESMFold2 · GDT-TS", "GDT-TS"),
+             ("gdt_ts", "After Helico · GDT-TS", "GDT-TS"),
+             ("source_structure_lddt", "Original ESMFold2 · lDDT", "lDDT"),
+             ("lddt", "After Helico · lDDT", "lDDT")]
+    for index, (stem, group) in enumerate(table.groupby("stem", sort=True)):
+        decoys, oracle = group[group.arm == "esmfold2"], group[group.arm == "oracle"]
+        rank = ranks.loc[stem]
+        rank_text = (str(int(rank.rank_best)) if rank.rank_best == rank.rank_worst
+                     else f"{int(rank.rank_best)}–{int(rank.rank_worst)}")
+        shift, rank_axis = ranking_axis(group.ranking_score)
+        displayed = display_ranking(group.ranking_score, shift)
+        ordinary = group.loc[group.ranking_score >= -1, "ranking_score"]
+        padding = max(0.006, float(ordinary.max() - ordinary.min()) * 0.08)
+        limits = (float(displayed.min()) - padding, float(displayed.max()) + padding)
+        fig, axes = plt.subplots(2, 2, figsize=(12, 7.4), sharey=True, facecolor=PAPER)
+        fig.subplots_adjust(left=0.095, right=0.98, bottom=0.13, top=0.79, hspace=0.53, wspace=0.16)
+        fig.text(0.095, 0.95, f"{stem} · accuracy versus confidence", fontsize=20, weight="bold")
+        fig.text(0.095, 0.89,
+                 f"MSA depth {int(rank.msa_depth)} · 100 ESMFold2 maps · oracle confidence rank {rank_text} / 101",
+                 fontsize=11)
+        for panel, (ax, (metric, title, xlabel)) in enumerate(zip(axes.flat, views, strict=True)):
+            style_axes(ax)
+            ax.scatter(decoys[metric], display_ranking(decoys.ranking_score, shift),
+                       s=23, alpha=0.62, color=PALETTE[index], linewidths=0, label="ESMFold2-derived map")
+            ax.scatter(oracle[metric], display_ranking(oracle.ranking_score, shift),
+                       s=95, marker="D", color=PALETTE[index], edgecolor=INK, linewidth=1.4,
+                       zorder=5, label="Oracle map")
+            if shift:
+                visible_ticks = [(value, label) for value, label in zip(rank_axis["tickvals"], rank_axis["ticktext"], strict=True)
+                                 if limits[0] <= value <= limits[1]]
+                ax.set_yticks([value for value, _ in visible_ticks], [label for _, label in visible_ticks])
+            else:
+                ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5))
+            ax.set(xlim=(0, 1.035), ylim=limits, xlabel=xlabel, title=title)
+            if panel % 2 == 0:
+                ax.set_ylabel("Helico ranking score" + (" (broken axis)" if shift else ""))
+            rho = summaries.loc[(stem, metric), "spearman_vs_helico_confidence"]
+            ax.text(0.025, 0.96, f"Spearman ρ = {rho:.2f}", transform=ax.transAxes,
+                    va="top", fontsize=10, bbox=dict(facecolor=PAPER, edgecolor="none", alpha=0.85, pad=2))
+        handles, labels = axes[0, 0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.54, 0.01), ncol=2, frameon=False)
+        caption = (
+            "Each of the 100 ESMFold2-derived maps and the oracle receives three Helico samples; "
+            "confidence selects one sample per map. Oracle source accuracy is 1 by definition; "
+            "its Helico accuracy is measured. Correlations exclude the oracle. Accuracy axes are shared; "
+            "confidence limits are tailored to each protein."
+        )
+        if shift:
+            caption += " The // axis break retains the clash-penalized score at −99.41."
+        save(fig, f"02c_accuracy_confidence_protein_{stem}", caption)
 
 
 def export_plotly(fig: go.Figure, name: str) -> None:
@@ -535,6 +593,7 @@ def main() -> None:
     if (DATA / "structured_confidence_ranks.csv").exists():
         export_plotly(confidence_figure(), "02b_confidence")
         export_plotly(accuracy_confidence_figure(), "02c_accuracy_confidence")
+        per_protein_accuracy_figures()
     else:
         names.remove("02b_confidence")
         names.remove("02c_accuracy_confidence")

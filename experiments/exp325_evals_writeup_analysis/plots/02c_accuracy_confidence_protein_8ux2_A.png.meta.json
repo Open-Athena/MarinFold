@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "Each of the 100 ESMFold2-derived maps and the oracle receives three Helico samples; confidence selects one sample per map. Oracle source accuracy is 1 by definition; its Helico accuracy is measured. Correlations exclude the oracle. Accuracy axes are shared; confidence limits are tailored to each protein. The // axis break retains the clash-penalized score at \u221299.41."
+}

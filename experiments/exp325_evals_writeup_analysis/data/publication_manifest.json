@@ -1,21 +1,21 @@
 {
-  "destination": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys",
+  "destination": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v5-per-protein-pdf",
   "files": {
     "DRAFT.md": {
       "bytes": 2583,
       "sha256": "6b490b89ff91603d839aba553717326697a0fb5e7a0956b07f22c01d7fc5f274"
     },
     "FIGURES.md": {
-      "bytes": 7569,
-      "sha256": "9f37504d82d49d12fe381309a994c9b22b6f1c1a7e5e9e2c4f3520a0043a0e3d"
+      "bytes": 8244,
+      "sha256": "082cdbf09ebcba49a9f31359f6549e1f8cc662695b669c217ed6cbc971c9abf9"
     },
     "README.md": {
-      "bytes": 15614,
-      "sha256": "06105f3731ac2a991eec94303913e00e5036889a5a45a36406a65528bc524a31"
+      "bytes": 15794,
+      "sha256": "a5ab38a2c56bd54f67ffe43e41ccb254368a4ffee6bdb3465071b4f9201c8320"
     },
     "RUNBOOK.md": {
-      "bytes": 14841,
-      "sha256": "3f2aea9d7fdb1ab810d20015a3ddbb597ae70b4721d09c4270908bc672a093f3"
+      "bytes": 15150,
+      "sha256": "c85c2bda84309f1e47816315cfb056e850938849b6f61a266f7f0b3f0db22917"
     },
     "af2_contacts.json": {
       "bytes": 6540714,
@@ -35,7 +35,7 @@
     },
     "alphafold_inputs.tar.gz": {
       "bytes": 191464424,
-      "sha256": "d634d6ffc1e31b32561c8fa3b0f2fd047f3ec85647034b2135a3be233ba23d81"
+      "sha256": "81adf88e961b7d7cc04e1358b669adcddf0a4eeacf715c15c43d02a5372752e8"
     },
     "boltz2_contacts.json": {
       "bytes": 6592700,
@@ -46,12 +46,12 @@
       "sha256": "f3db3abdc6da9ed20a8317ef8583dddbb5c894506ba9661bcd297fac2f7bf7c1"
     },
     "build_summary.py": {
-      "bytes": 8952,
-      "sha256": "23efa6c345f6ade128ceaf7f8256c3ef83a794f24fa6d819d1442ba013cc4a39"
+      "bytes": 9255,
+      "sha256": "5055eb71df1acb677fedd94092e8b0ebfddccd6193ca4e49acae04c4187c2eeb"
     },
     "contact_rollouts.tar.gz": {
       "bytes": 61923561,
-      "sha256": "534e85083b81040f55ae786c69b061235b020256b5f8cac5ad47e53fa40b55ed"
+      "sha256": "62bc4e286d966b32297bb76618c3f9b14004423025396333f0c5646cd5e1a39e"
     },
     "data/af2_contact_metrics.csv": {
       "bytes": 398323,
@@ -387,7 +387,7 @@
     },
     "helico_inputs.tar.gz": {
       "bytes": 27797115,
-      "sha256": "f339ac72b15240d51ee24d446afd53da258f9eccb19ef441fe90c520b52dbbe1"
+      "sha256": "e90f0079385b9e5084df47c5131103be8b4fc1e0e2a50925d649386279899b32"
     },
     "plan_missing.py": {
       "bytes": 7616,
@@ -458,8 +458,8 @@
       "sha256": "5ff50135b30fdfa35de04881f080575c15c386bee9ad72af9fab424d8d6ca233"
     },
     "plots/02c_accuracy_confidence.png.meta.json": {
-      "bytes": 931,
-      "sha256": "bc6041b99bf25ad3eda0f9fdf60753d8184e50144c84ca86d53697ab257817a9"
+      "bytes": 962,
+      "sha256": "f1fd4d1b0cef3bba040b50af5db61eab98c685c0b95492410ca2365246e7417b"
     },
     "plots/02c_accuracy_confidence.svg": {
       "bytes": 69947,
@@ -470,8 +470,8 @@
       "sha256": "3978c13dfb604ad35233aa6433ffc87fcd13acd1f736a9616abbda044e948052"
     },
     "plots/02c_accuracy_confidence_gdt_ts.png.meta.json": {
-      "bytes": 931,
-      "sha256": "bc6041b99bf25ad3eda0f9fdf60753d8184e50144c84ca86d53697ab257817a9"
+      "bytes": 962,
+      "sha256": "f1fd4d1b0cef3bba040b50af5db61eab98c685c0b95492410ca2365246e7417b"
     },
     "plots/02c_accuracy_confidence_gdt_ts.svg": {
       "bytes": 69957,
@@ -482,20 +482,80 @@
       "sha256": "a0cbfc1ac2d812e6b24a36e9883cfc6e9adc0ade5218e201d5103d4691ced4dd"
     },
     "plots/02c_accuracy_confidence_lddt.png.meta.json": {
-      "bytes": 931,
-      "sha256": "bc6041b99bf25ad3eda0f9fdf60753d8184e50144c84ca86d53697ab257817a9"
+      "bytes": 962,
+      "sha256": "f1fd4d1b0cef3bba040b50af5db61eab98c685c0b95492410ca2365246e7417b"
     },
     "plots/02c_accuracy_confidence_lddt.svg": {
       "bytes": 69944,
       "sha256": "361a333f0847a2cda0e4673a1e4a98c87aeb034f888bd605802387883dd9d501"
+    },
+    "plots/02c_accuracy_confidence_protein_8ii8_A.png": {
+      "bytes": 208987,
+      "sha256": "384bbbcfdcbe3de223c0035765b8b4098f897efd575897c99056f178af26036a"
+    },
+    "plots/02c_accuracy_confidence_protein_8ii8_A.png.meta.json": {
+      "bytes": 363,
+      "sha256": "125a172c27216368e69d6b11179583f23a93eed41bfd99a10779c1c7b195fee2"
+    },
+    "plots/02c_accuracy_confidence_protein_8ii8_A.svg": {
+      "bytes": 66441,
+      "sha256": "67d26826ca9cedb0960acb4429e842892908400b2e9e4b7ef6ebb50de35b1986"
+    },
+    "plots/02c_accuracy_confidence_protein_8oxk_A.png": {
+      "bytes": 216877,
+      "sha256": "f1aa7de297b906d009b0f219c03fb3553ee456821ab7a73267a72cce87acb84c"
+    },
+    "plots/02c_accuracy_confidence_protein_8oxk_A.png.meta.json": {
+      "bytes": 363,
+      "sha256": "125a172c27216368e69d6b11179583f23a93eed41bfd99a10779c1c7b195fee2"
+    },
+    "plots/02c_accuracy_confidence_protein_8oxk_A.svg": {
+      "bytes": 66450,
+      "sha256": "005a928d0d6a10449ec5dd5be35022b561924da7a04c2781eaba7f6e525e8f23"
+    },
+    "plots/02c_accuracy_confidence_protein_8qoh_A.png": {
+      "bytes": 191679,
+      "sha256": "d012e22cb511fa468a448b6184ec2734addf7775ccd468c2b4e36ead40bd56a1"
+    },
+    "plots/02c_accuracy_confidence_protein_8qoh_A.png.meta.json": {
+      "bytes": 363,
+      "sha256": "125a172c27216368e69d6b11179583f23a93eed41bfd99a10779c1c7b195fee2"
+    },
+    "plots/02c_accuracy_confidence_protein_8qoh_A.svg": {
+      "bytes": 66457,
+      "sha256": "46f831cdb5d210822084e45a93fa20a2cceb8fca72180daca855e976d9998397"
+    },
+    "plots/02c_accuracy_confidence_protein_8ux2_A.png": {
+      "bytes": 231295,
+      "sha256": "5e017e21c78bcd6a8a0fec60061289208bd8df967956547e42832afda7e498a2"
+    },
+    "plots/02c_accuracy_confidence_protein_8ux2_A.png.meta.json": {
+      "bytes": 431,
+      "sha256": "1efa11dda0b726bb52fd485eae42d5dbcd16a4ad358d3e33156b2f8b5be436d8"
+    },
+    "plots/02c_accuracy_confidence_protein_8ux2_A.svg": {
+      "bytes": 67984,
+      "sha256": "df12198cd215d479aa3181fbc810137aff4f344503ff3151e456963d0073aaef"
+    },
+    "plots/02c_accuracy_confidence_protein_8wrx_A.png": {
+      "bytes": 227612,
+      "sha256": "fd65a3592be0b915e8ada8133a728422d4db7c948af7587ef475062dd3a13bc5"
+    },
+    "plots/02c_accuracy_confidence_protein_8wrx_A.png.meta.json": {
+      "bytes": 363,
+      "sha256": "125a172c27216368e69d6b11179583f23a93eed41bfd99a10779c1c7b195fee2"
+    },
+    "plots/02c_accuracy_confidence_protein_8wrx_A.svg": {
+      "bytes": 67953,
+      "sha256": "ff767a30e4c8e0fcfae6831b11ad3a5e1919982f3e514b5fd1242f8d46e2800a"
     },
     "plots/02c_accuracy_confidence_source_structure_lddt.png": {
       "bytes": 140606,
       "sha256": "632a3a12b581a91667c57d251ad5825f9f1f63f2018e514a2fdbb937cc80cdd7"
     },
     "plots/02c_accuracy_confidence_source_structure_lddt.png.meta.json": {
-      "bytes": 931,
-      "sha256": "bc6041b99bf25ad3eda0f9fdf60753d8184e50144c84ca86d53697ab257817a9"
+      "bytes": 962,
+      "sha256": "f1fd4d1b0cef3bba040b50af5db61eab98c685c0b95492410ca2365246e7417b"
     },
     "plots/02c_accuracy_confidence_source_structure_lddt.svg": {
       "bytes": 69943,
@@ -574,24 +634,24 @@
       "sha256": "46bc157c2e9c6a6bd3b9fc1f505f04f7ec9282be3da94c038b07e757777bcf13"
     },
     "plots/summary.pdf": {
-      "bytes": 1039954,
-      "sha256": "61dbcb14d84399bd1f0761bede3ef47a8ce7fe5b6d3cc8d7d88ce5200cf71cee"
+      "bytes": 1233744,
+      "sha256": "bd1be027df97b750190dd7125b22a8362abeb448d9fcc6c32cb8e49e9f03c2a9"
     },
     "prepare.py": {
       "bytes": 31670,
       "sha256": "1af1812f420d7614b9213b348c4e606eb8aff24107e21603745024521f10d238"
     },
     "publish_to_hf.py": {
-      "bytes": 4327,
-      "sha256": "392e41e15918ca9a5e6932b0a9ff35e92928fe21f05772c9b26e95f13abba07d"
+      "bytes": 4325,
+      "sha256": "554da2bcfaec8ce21a88493031ac654167a3f5dca1ffc43557a569b58c771797"
     },
     "pyproject.toml": {
       "bytes": 272,
       "sha256": "5892361a81a9ab266f0cc1680a0e335c933e41b12d720a8ebe8771af764e48e6"
     },
     "render.py": {
-      "bytes": 37999,
-      "sha256": "058cc7a9a00d2ba64fd17d6e8bfd664ae12e2489dbf748bd0a7a58523c5e165b"
+      "bytes": 42230,
+      "sha256": "39a51d2b6b2f548ea1225e3da6b6e406b6bcf4d5b70d1a66e6ff30fbf58de2be"
     },
     "site/01_predictors-mobile.json": {
       "bytes": 103584,

@@ -221,10 +221,12 @@ This distinction is explicit in the manifest and figure captions.
 
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
-for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v4-structured-decoys).
+for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v5-per-protein-pdf).
 Eighteen analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
-including the test-split menus; the PDF has three narrative and fifteen plot pages.
+including the test-split menus; the PDF has three narrative and sixteen plot pages. The accuracy–confidence section has
+one page per protein, with original ESMFold2 and reconstructed Helico GDT-TS/lDDT,
+its oracle rank, and the cached within-protein correlations.
 
 ## Conclusion
 
