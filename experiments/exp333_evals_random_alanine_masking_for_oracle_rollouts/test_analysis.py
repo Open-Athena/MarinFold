@@ -2,7 +2,12 @@
 
 import pandas as pd
 
-from analyze_results import alternating_pool, rollout_r_precision, top_two_pool
+from analyze_results import (
+    alternating_pool,
+    consensus_r_precision,
+    rollout_r_precision,
+    top_two_pool,
+)
 
 
 def frame(prefix: str, count: int) -> pd.DataFrame:
@@ -19,6 +24,15 @@ def test_rollout_precision_uses_emission_order_and_fixed_denominator() -> None:
     truth = {(0, 10), (1, 11), (2, 12)}
     contacts = [(9, 19), (0, 10), (0, 10), (1, 11), (2, 12)]
     assert rollout_r_precision(contacts, truth) == 2 / 3
+
+
+def test_sparse_consensus_uses_fixed_r_denominator() -> None:
+    record = {
+        "L": 40,
+        "resolved": list(range(40)),
+        "contacts": [[0, 30, 1.0], [1, 31, 1.0], [2, 32, 1.0]],
+    }
+    assert consensus_r_precision([[(0, 30)]], record, "long") == 1 / 3
 
 
 def test_budget_matched_pool_construction() -> None:

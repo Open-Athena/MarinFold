@@ -107,6 +107,10 @@ def consensus_r_precision(
 ) -> float:
     """Score rollout votes with exp89's unchanged evaluator."""
     length = int(record["L"])
+    emitted = set().union(*(set(contacts) for contacts in maps))
+    true = ordered_true_pairs(record, region)
+    if len(emitted) < len(true):
+        return len(emitted & true) / len(true) if true else float("nan")
     resolved = np.asarray(record["resolved"], dtype=np.int64)
     rows = pd.DataFrame(
         metric_rows(
