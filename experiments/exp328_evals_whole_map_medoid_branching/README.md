@@ -110,8 +110,12 @@ than generic spread seeding.
 
 Generation produced 6,200 branch rollouts: all finished, with 18 rollouts
 containing at least one malformed contact token. Per-target timing and worker
-metadata are in `data/timings.csv`. Raw rollouts and timings comprise 248
-parquets (9,225,565 bytes) at
+metadata are in `data/timings.csv`; each row records the full measured model
+load (10.821 seconds for the natural launch and 10.848 seconds for the
+fold-switch launch), and `total_seconds` includes that full setup cost. The
+`timing_correction` column documents the exact expansion of the originally
+amortized load share. Raw rollouts and timings comprise 248 parquets (9,396,437
+bytes) at
 `hf://buckets/open-athena/MarinFold/data/exp328/whole-map-medoid-branching-v1/`.
 
 ![Development paired deltas](plots/01_dev_paired_deltas.png)

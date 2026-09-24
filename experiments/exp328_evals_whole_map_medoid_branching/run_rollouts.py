@@ -295,11 +295,11 @@ def main() -> None:
                     "n_pairs": int(target.L) * (int(target.L) - 1) // 2,
                     "mode": arm,
                     "elapsed_seconds": elapsed,
-                    "model_load_seconds": model_load_seconds / len(jobs),
-                    "total_seconds": written
-                    - job_started
-                    + model_load_seconds / len(jobs),
+                    "model_load_seconds": model_load_seconds,
+                    "total_seconds": written - job_started + model_load_seconds,
                     "total_seconds_reconstructed": False,
+                    "model_load_accounting": "full_invocation",
+                    "timing_correction": "none",
                     "n_rollouts": len(rows),
                     "n_finished": sum(bool(row["finished"]) for row in rows),
                     "n_malformed": sum(int(row["malformed_contacts"]) for row in rows),

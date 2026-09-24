@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -14,14 +15,15 @@ DESTINATION = (
 def bucket_cli() -> list[str]:
     """Use an installed bucket-capable CLI or an isolated current release."""
     executable = os.environ.get("HF_CLI", "hf")
-    probe = subprocess.run(
-        [executable, "buckets", "--help"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-    if probe.returncode == 0:
-        return [executable]
+    if shutil.which(executable) is not None:
+        probe = subprocess.run(
+            [executable, "buckets", "--help"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        if probe.returncode == 0:
+            return [executable]
     return [
         "uvx",
         "--from",
