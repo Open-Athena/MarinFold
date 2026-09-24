@@ -17,8 +17,9 @@ marinfold_run:
   - /zack/exp299-v2-exp277-mirror-cache-08a-a01
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a03
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a03/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
+  - /zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-08a-a04
+  - /zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-08a-a04/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 ---
-
 # 2026-09-22 · exp299_models_delta_stream_contacts · delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 
 **Launched:** 2026-09-22T20:21:26Z by zack  
@@ -63,3 +64,12 @@ checkpoint/evaluation overhead. The config-artifact YAML logger emitted a
 nonfatal warning because the custom packable format was not registered with
 Draccus; training and W&B metrics were unaffected, and commit `981f3781`
 registers it for future restarts.
+
+By step 19,960 the 4×4 gang had suffered 12 capacity preemptions and was again
+scheduling-gated, with no progress for several hours. It was cancelled and
+resubmitted as the planned 2×4 fallback under driver
+`/zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-08a-a04`, retaining the same
+run ID and output path. The smaller gang placed immediately, restored the full
+training state from temporary checkpoint step 19,784, and resumed at about 5.1
+seconds/update. The latest pre-fallback validation loss was 1.1501 at step
+19,026.
