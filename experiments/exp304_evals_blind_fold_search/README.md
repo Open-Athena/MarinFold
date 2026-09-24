@@ -69,6 +69,20 @@ A negative result is decisive if the oracle pool contains no coherent alternate 
 
 ## Results
 
+### One-figure summary
+
+![Fold-switching inference summary: cohort, search comparison, iid scaling, and structural example](plots/fold_switching_summary.png)
+
+The figure separates three different claims. The blind matched-budget search
+comparison shows no reliable advantage for branching over iid sampling. The
+reference-aware contact oracle finds both contact modes for 11/29 cases by
+1,000 draws, while the stricter individual-structure screen finds both modes
+for 2/29. `3j7wb_3j7vg` is the cleanest example because its two selected
+structures favor opposite references by whole-structure TM-score and its
+no-contact control matches neither fold. The structural count uses the
+post-hoc control-relative GDT/region screen defined below; the TM-score panel
+is a simpler continuous view of the strongest example.
+
 Before revealing any exp304 reference scores, the implemented first-pass
 comparison was frozen as follows. Each arm contributes 100 new rollouts after
 the shared 100-rollout root pool; `seal_shortlists.py` selects at most 16
