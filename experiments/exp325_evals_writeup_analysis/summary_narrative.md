@@ -17,10 +17,11 @@ At MSA depth <10: 0.196 / 0.332 / 0.239, with only five proteins.
 MarinFold contact R-precision: 0.561 overall; 0.345 at MSA depth <10 versus 0.617 at ≥1000.
 Only five natural proteins occupy the shallowest tier.
 
-Oracle confidence ranks 1, 5, 1, 5, 1 out of 101 maps for the five low-depth proteins.
+Oracle pTM ranks 1, 5, 1, 1, 1 out of 101 maps for the five low-depth proteins.
+Highest pTM selects each map’s Helico sample; no ipTM or clash penalty.
 100 ESMFold2 maps/protein, a shared eligible-pair mask, three Helico samples/map.
-Original ESMFold2 median GDT-TS: 0.537, 0.718, 0.699, 0.315, 0.725.
-Confidence–source GDT-TS Spearman: −0.041, −0.064, 0.078, −0.049, 0.556.
+Original ESMFold2 median TM-score: 0.848, 0.860, 0.881, 0.649, 0.839.
+pTM–source TM-score Spearman: 0.127, 0.083, 0.254, 0.288, 0.613.
 Protein order: 8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A, 8wrx_A. Only five biological examples.
 
 Top-L contacts raise Helico GDT-TS from 0.150 to 0.504 on 305 matched natural proteins.

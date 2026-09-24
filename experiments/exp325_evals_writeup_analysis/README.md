@@ -109,22 +109,22 @@ can differ from arms that retain modified residues or non-protein entities.
   and 2,610 contributing rows.
 - **Contacts:** natural R-precision **0.5609** (validation 0.5537; test 0.5641).
   MSA-tier means are **0.3453, 0.3428, 0.4486, 0.6167**, with n=5/21/62/226.
-- **Confidence among plausible maps:** for the five natural proteins at MSA
-  depth <10, oracle ranking_score ranks are **1, 5, 1, 5, 1 out of 101** for
-  8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A and 8wrx_A, respectively, with no oracle ties.
-  Each protein has 100 distinct ESMFold2 structures and contact maps. All 505
-  maps receive three Helico samples (1,515 total), selected by ranking_score.
-  pLDDT of those same selected structures ranks the oracle **1, 4, 1, 1, 1**.
-- **Original ESMFold2 accuracy:** median GDT-TS is **0.537, 0.718, 0.699,
-  0.315, 0.725**, in the same protein order. Within-protein Spearman correlations
-  with Helico confidence are **−0.041, −0.064, 0.078, −0.049, 0.556**.
-  Thus confidence puts the oracle near the top, but does not consistently rank
-  plausible candidates by their original structure accuracy. The scatter keeps
-  all 500 predictions, colors proteins separately, and marks oracle references
-  with diamonds. Its alternate view shows measured Helico reconstruction accuracy.
-  These are five biological examples, not 500 independent proteins. One selected
-  Helico sample has ranking_score −99.40625 after a clash penalty; it remains in
-  every analysis and plot, with an explicit axis break for legibility.
+- **Confidence among plausible maps:** highest pTM now selects one of three
+  Helico samples per map and ranks all 101 maps, without ipTM or clash penalties.
+  Oracle ranks are **1, 5, 1, 1, 1** for 8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A and
+  8wrx_A, respectively, with no oracle ties. Compared with the previous
+  ranking-score selection, **106/505** samples change and 8ux2_A moves from fifth
+  to first. All 100 ESMFold2 structures and contact maps per protein are retained.
+- **TM-score versus pTM:** median original ESMFold2 TM-scores are **0.848,
+  0.860, 0.881, 0.649, 0.839**, in the same protein order. Within-protein
+  Spearman correlations with Helico pTM are **0.127, 0.083, 0.254, 0.288, 0.613**.
+  After Helico reconstruction, correlations are **0.183, 0.198, 0.289, 0.209,
+  0.547**. Each PDF page contains two panels for one protein: original ESMFold2
+  and reconstructed Helico TM-score versus selected Helico pTM. Oracle maps
+  are diamonds; oracle source TM-score is one by definition. TM-score uses
+  matched protein CA atoms. pTM still includes all input tokens, including
+  retained nonprotein entities. Pure pTM selection retains 16 clash-flagged
+  samples; no sample is removed because of that flag.
 - **Sampling:** mean individual R-precision **0.4009**, consensus **0.5605**,
   oracle best-of-100 **0.5285** on 314 natural proteins. Paired oracle minus
   consensus is **−0.0321**, 95% interval **[−0.0384, −0.0254]**.
@@ -139,9 +139,10 @@ can differ from arms that retain modified residues or non-protein entities.
   protein lacks the external comparison. All exclusions remain explicit.
 
 No pooled confidence–accuracy correlation or population-level discrimination
-claim is made from these five proteins. pLDDT is measured on the
-ranking_score-selected structure, not independently maximized. Historical
-random controls remain archived (oracle above all random maps on 20/20 proteins),
+claim is made from these five proteins. This pTM reanalysis applies to Figures
+02b/02c; other structural benchmark panels retain their archived selection
+protocols. pLDDT is omitted because it was only saved for the previous
+ranking-score winner. Historical random controls remain archived (oracle above all random maps on 20/20 proteins),
 but Figure 02b now uses the stronger structure-derived candidates.
 
 ## Provenance
@@ -174,7 +175,8 @@ folds the oracle and all 100 derived maps with the same checkpoint and sampling
 settings as the earlier control.
 `structured_decoy_maps.csv` links the extracted maps to their structures;
 `structured_confidence_per_map.csv` links each point to its selected Helico
-sample, and `structured_confidence_ranks.csv` records the oracle ranks and ties.
+sample, and `structured_confidence_ranks.csv` records the oracle pTM ranks and ties.
+`structured_selection_comparison.csv` records sample changes and previous ranks.
 `esmfold2_decoy_structure_metrics.csv` scores the original ESMFold2 structures
 against ground truth; `structured_accuracy_confidence.csv` joins those accuracies
 to the matching Helico confidence by protein, seed and structure hash. The oracle
@@ -221,19 +223,19 @@ This distinction is explicit in the manifest and figure captions.
 
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
-for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v5-per-protein-pdf).
+for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking).
 Eighteen analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
 including the test-split menus; the PDF has three narrative and sixteen plot pages. The accuracy–confidence section has
-one page per protein, with original ESMFold2 and reconstructed Helico GDT-TS/lDDT,
+one page per protein, with original ESMFold2 and reconstructed Helico TM-score versus pTM,
 its oracle rank, and the cached within-protein correlations.
 
 ## Conclusion
 
 Low-depth proteins remain harder for the 248B-token model. Oracle maps show
 headroom: their confidence ranks in the top five of 101 maps for every low-depth
-protein. Within the plausible ESMFold2 candidates, confidence tracks source
-GDT-TS clearly for only one of five proteins. Aggregation beats choosing a single contact map overall, even with oracle
+protein. Within the plausible ESMFold2 candidates, pTM–source TM-score
+correlations are 0.08–0.29 for four proteins and 0.61 for the fifth. Aggregation beats choosing a single contact map overall, even with oracle
 selection. The evidence supports limited usefulness of individual samples,
 not an absence of contact-set diversity. Better whole-map candidates,
 inference-time search and post-training remain directions to investigate.

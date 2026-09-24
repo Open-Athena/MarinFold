@@ -1,5 +1,5 @@
 {
   "script": "render.py",
   "args": [],
-  "caption": "Each of the 100 ESMFold2-derived maps and the oracle receives three Helico samples; confidence selects one sample per map. Oracle source accuracy is 1 by definition; its Helico accuracy is measured. Correlations exclude the oracle. Accuracy axes are shared; confidence limits are tailored to each protein. The // axis break retains the clash-penalized score at \u221299.41."
+  "caption": "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty."
 }

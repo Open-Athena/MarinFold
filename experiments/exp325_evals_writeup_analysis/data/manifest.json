@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "input_checkout": "c55fc20336b5cc53c4771227a2d0ae9033d7a4f2",
-  "prepare_sha256": "1af1812f420d7614b9213b348c4e606eb8aff24107e21603745024521f10d238",
+  "input_checkout": "596972360b47210b9ec8fbd6e46f1758b9edb69a",
+  "prepare_sha256": "049ace304169c66606ae91161f20eef6548f29439b1a241fc0c6dcb81191cf9e",
   "lock_sha256": "336b85737590a471918dc33d92c816ef0a1178128d51fdf91a1f9840cc2c2d50",
   "inputs": {
     "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": {
@@ -209,20 +209,24 @@
       "rows": 20
     },
     "structured_confidence_per_map.csv": {
-      "sha256": "7ef691c2795296477dca2f1354130623949f27110788e026ce552ee56f5a4016",
+      "sha256": "3acbd278d92ce4ed889769d2bd2f4bbaa5b6c11b81e4ded84c309087e51cf470",
       "rows": 505
     },
     "structured_confidence_ranks.csv": {
-      "sha256": "3cbce9869ba5c652f09bed3ad07b43cebc0f21534f611f09d97de3974a2a9db6",
-      "rows": 10
+      "sha256": "dcda107db374d0d566b48e82a5a41eb46d6ba1a97a7c292845521235358a4be9",
+      "rows": 5
+    },
+    "structured_selection_comparison.csv": {
+      "sha256": "54c61714453b9543e843a1029fde6cc25b666e3157f70d7981f3a6fc675d3f8d",
+      "rows": 5
     },
     "structured_accuracy_confidence.csv": {
-      "sha256": "204bf9c1023b11c8c0e765e6795b23345b751632dba5a40a1450eab2c00fccd3",
+      "sha256": "537a77e9ae4793625e579ea2f6d92d0e25a33193d1fbad644de4371367ef6950",
       "rows": 505
     },
     "structured_accuracy_summary.csv": {
-      "sha256": "2c2bf499a7691a9fb782f9e5e84f9bf6ad60d2e57f26f062bac762344a2b1c33",
-      "rows": 20
+      "sha256": "5ae639556cae89cc23d92cdc8a1624b053384f0ff44d4b71e82de800677198f8",
+      "rows": 10
     },
     "training_sources.csv": {
       "sha256": "2639994d76a392e8ef4e37502bfeea2da11a1d3773a5bdaa8b6b3dee9927da74",
@@ -250,7 +254,8 @@
   "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
   "confidence_control": {
     "status": "complete",
-    "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map, select highest ranking_score. Historical 20-protein random control retained separately."
+    "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map; select and rank by highest pTM, with sample_idx breaking within-map ties. No ipTM or clash penalty. Historical random controls and other structural benchmark panels retain their original selection protocols.",
+    "scatter": "Measured protein CA TM-score versus selected Helico pTM; separate original ESMFold2 and reconstructed Helico views; oracle source TM-score is one by definition."
   },
   "alphafold_protocol": {
     "status": "fixed_before_inference",

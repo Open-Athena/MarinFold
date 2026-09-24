@@ -1,6 +1,0 @@
-{
-  "script": "render.py",
-  "args": [],
-  "caption": "Original ESMFold2 structure accuracy versus Helico confidence after conditioning on its extracted contact map. Colors identify the five natural proteins with MSA depth <10; each has 100 seeded ESMFold2 predictions. Diamonds mark oracle contacts. In the source-structure view, oracle accuracy is 1 by definition because its source is the experimental reference. The menu can isolate each protein and also shows the measured accuracy of the resulting Helico structures, including the oracle-conditioned ones; GDT-TS and lDDT are separate options. Confidence always comes from the highest-ranking of three Helico samples per map. No seed is filtered by accuracy or confidence, and the 500 predictions represent only five proteins. The confidence axis has an explicitly marked break; the clash-penalized point at \u221299.41 is retained, and hover reports the unmodified score.",
-  "include_in_summary": false
-}

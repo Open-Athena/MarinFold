@@ -35,39 +35,37 @@ agreement with the oracle. `generation/prepare_structured_decoys.py` extracts
 all maps using the same Helico/pyconfind geometry and oracle eligible-pair mask.
 The rank table records all contributing source rows, counts above/equal to the
 oracle, its best/worst/mid rank, and the number of distinct decoy maps.
-Dots show the prepared confidence; diamonds identify the oracle. The ranking-score
-axis removes the empty gap between one clash-penalized score (−99.40625) and the
-ordinary scores. Both remaining segments are linear, the break is labeled //,
-and tick/hover labels retain the actual scores. No point is removed. The scatter
-uses the same display transform; it does not change the cached ranks or correlations.
-Vertical jitter is purely visual. pLDDT uses the same structure selected by
-ranking_score, without a second selection. The earlier random control remains
-in `confidence_*.csv` for audit and is superseded in this panel.
+Dots show the highest pTM among each map's three Helico samples; diamonds
+identify the oracle. The same pTM selects samples and ranks maps. No ipTM term,
+clash penalty, or filtering enters this analysis. Within-map pTM ties use the
+lowest sample index; between-map ties retain their rank interval. Vertical jitter
+only separates points. `structured_selection_comparison.csv` records changed
+sample counts and the previous ranking-score oracle ranks. Historical random
+controls remain in `confidence_*.csv` under their original protocol.
 
-For Figure 02c, x is `source_structure_gdt_ts` from the original ESMFold2
-prediction, y is the corresponding contact-conditioned Helico `ranking_score`.
+For Figure 02c, x is selected Helico `ptm`; y is `source_structure_tm_score`
+from the original ESMFold2 prediction, or `tm_score` from its Helico reconstruction.
 `accuracy_source_row` points to `esmfold2_decoy_structure_metrics.csv`, while
-`source_row` retains the selected Helico sample. Oracle source accuracy is one
-by definition (experimental structure against itself), explicitly marked by
-`accuracy_rule`; it does not assert perfect Helico reconstruction. Alternate
-views use measured Helico `gdt_ts`/`lddt` instead of source-structure accuracy.
+`source_row` points to the exact selected sample in `helico_structured_samples.csv`.
+Oracle source TM-score is one by definition (experimental reference against
+itself), explicitly marked by `accuracy_rule`; its reconstruction TM-score is
+measured normally. Both scorers use Helico's pinned `compute_tm_score`, which
+calls TM-align on matched protein CA coordinates and uses reference-normalized
+`tm_norm_chain2`. pTM retains all input tokens, including nonprotein entities.
 Colors identify proteins, circles identify predictions, and diamonds identify
-oracle maps. The menu can isolate each protein, including oracle diamonds that
-overlap in the combined view. Every prediction is retained in the scatter, with no filtering.
-`structured_accuracy_summary.csv` reports the 100-prediction accuracy range and
-median for each protein and view, plus descriptive within-protein Spearman
-correlation with Helico confidence. Oracle reference points are excluded from
-those correlations, and there is no correlation pooled across proteins.
+oracle maps. Menus switch between the two accuracy objects and select a protein.
+Every map is retained, including maps whose selected structure has a clash flag.
+`structured_accuracy_summary.csv` caches the range, median and within-protein
+Spearman correlation with pTM. Correlations exclude the oracle; none pools proteins.
 
 The PDF expands Figure 02c into `02c_accuracy_confidence_protein_<stem>`:
-one page per protein, original ESMFold2 at left and Helico reconstructions at
-right, GDT-TS above and lDDT below. All four panels use the same 100 predictions
-and oracle. The subtitle reads the oracle rank from `structured_confidence_ranks.csv`;
-correlation labels read `structured_accuracy_summary.csv`. Accuracy axes stay at
-0–1; confidence limits are tailored to each protein and shared by its four
-panels. Only 8ux2_A needs the marked clash-score axis break. The combined
-website scatter exports remain available but their sidecars exclude them from
-the PDF in favor of these individual pages.
+one page per protein, original ESMFold2 at left and Helico reconstruction at
+right. Both panels contain 100 map points and an oracle diamond. Rank subtitles
+read `structured_confidence_ranks.csv`; correlations read the cached summary.
+TM-score axes stay at 0–1; pTM limits cover the observed range per protein and
+are shared by its two panels. Both axes are linear. The combined static views
+remain available but are excluded from the PDF in favor of these five pages.
+Other structural benchmark figures retain their archived selection protocols.
 
 All main figures use natural proteins. Plot menus expose validation, test,
 viral/nonviral and designed cohorts where applicable; designs are never pooled

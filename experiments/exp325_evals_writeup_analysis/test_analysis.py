@@ -143,15 +143,19 @@ def test_structured_decoys_keep_every_seed_and_equal_helico_budgets() -> None:
         assert oracle.contact_precision == oracle.contact_recall == oracle.contact_jaccard == 1
     roundtrip = raw.iloc[selected.source_row.astype(int)]
     assert roundtrip.stem.tolist() == selected.stem.tolist()
-    np.testing.assert_allclose(roundtrip.ranking_score, selected.ranking_score, rtol=0, atol=0)
-    maxima = raw.groupby(["stem", "arm", "map_seed"]).ranking_score.max()
-    np.testing.assert_allclose(selected.set_index(["stem", "arm", "map_seed"]).ranking_score.sort_index(), maxima.sort_index())
+    np.testing.assert_allclose(roundtrip.ptm, selected.ptm, rtol=0, atol=0)
+    np.testing.assert_allclose(roundtrip.tm_score, selected.tm_score, rtol=0, atol=0)
+    maxima = raw.groupby(["stem", "arm", "map_seed"]).ptm.max()
+    np.testing.assert_allclose(selected.set_index(["stem", "arm", "map_seed"]).ptm.sort_index(), maxima.sort_index())
+    assert set(selected.selection_metric) == {"ptm"}
+    # Keep clash-flagged candidates eligible: this comparison uses pure pTM.
+    assert len(selected[selected.has_clash == 1]) > 0
 
 
 def test_structured_oracle_rank_and_source_rows_match_sorted_pool() -> None:
     maps = pd.read_csv(DATA / "structured_confidence_per_map.csv", float_precision="round_trip")
     ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv", float_precision="round_trip")
-    assert len(ranks) == 10
+    assert len(ranks) == 5 and set(ranks.confidence) == {"ptm"}
     for rank in ranks.itertuples():
         group = maps[maps.stem == rank.stem]
         ordered = sorted(group[rank.confidence], reverse=True)
@@ -174,9 +178,10 @@ def test_scatter_uses_original_esmfold2_accuracy_and_explicit_oracle_reference()
     assert original.structure_sha256.tolist() == predictions.structure_sha256.tolist()
     np.testing.assert_allclose(original.gdt_ts, predictions.source_structure_gdt_ts, rtol=0, atol=0)
     np.testing.assert_allclose(original.lddt, predictions.source_structure_lddt, rtol=0, atol=0)
+    np.testing.assert_allclose(original.tm_score, predictions.source_structure_tm_score, rtol=0, atol=0)
     oracle = joined[joined.arm == "oracle"]
     assert len(oracle) == 5 and oracle.accuracy_source_row.isna().all()
-    assert (oracle[["source_structure_gdt_ts", "source_structure_lddt"]] == 1).all().all()
+    assert (oracle[["source_structure_gdt_ts", "source_structure_lddt", "source_structure_tm_score"]] == 1).all().all()
     assert (oracle.accuracy_rule == "experimental reference compared with itself").all()
 
 

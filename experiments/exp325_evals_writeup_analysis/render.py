@@ -59,30 +59,6 @@ def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, includ
     plt.close(fig)
 
 
-def ranking_axis(scores: pd.Series) -> tuple[float, dict]:
-    """Compress only the empty gap above clash-penalized scores; retain every point.
-
-    Coordinates within either segment remain linear. Ticks and hover labels
-    report the original scores, and a // tick explicitly marks the axis break.
-    """
-    penalized = scores[scores < -1]
-    ordinary = scores[scores >= -1]
-    if penalized.empty:
-        return 0.0, dict(range=[0, 1.02], tickmode="auto")
-    shift = float(ordinary.min() - 0.15 - penalized.max())
-    negative_ticks = sorted(set([float(penalized.min()), float(penalized.max())]))
-    positive_ticks = np.arange(np.ceil(ordinary.min() * 10) / 10, 1.01, 0.1)
-    ticks = [v + shift for v in negative_ticks] + [float(ordinary.min() - 0.075)] + positive_ticks.tolist()
-    labels = [f"{v:.2f}".replace("-", "−") for v in negative_ticks] + ["//"] + [f"{v:.1f}" for v in positive_ticks]
-    return shift, dict(range=[float(penalized.min() + shift - 0.05), 1.02],
-                       tickmode="array", tickvals=ticks, ticktext=labels)
-
-
-def display_ranking(scores: pd.Series, shift: float) -> pd.Series:
-    """Map scores to the two linear display segments of the broken axis."""
-    return scores.where(scores >= -1, scores + shift)
-
-
 def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = "natural") -> None:
     """Draw the default matched-population view from summary rows."""
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
@@ -274,9 +250,9 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame) -> go.Figure:
 
 
 def confidence_figure() -> go.Figure:
-    """Plot every hard-decoy confidence and annotate the precomputed oracle rank."""
+    """Show each map's maximum pTM and the cached oracle rank."""
     maps = pd.read_csv(DATA / "structured_confidence_per_map.csv")
-    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv")
+    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv").set_index("stem")
     stems = sorted(maps.stem.unique())
     fig, ax = plt.subplots(figsize=(10.4, 6.2), facecolor=PAPER)
     fig.subplots_adjust(left=0.16, right=0.82, bottom=0.2, top=0.78)
@@ -286,129 +262,115 @@ def confidence_figure() -> go.Figure:
     ax.grid(False)
     ax.grid(axis="x", color=GRID, linewidth=0.7)
     interactive = go.Figure()
-    buttons = []
-    shift, rank_axis = ranking_axis(maps.ranking_score)
-    for metric_index, (metric, label) in enumerate((("ranking_score", "Helico ranking score"), ("mean_plddt", "Helico pLDDT"))):
-        axis = rank_axis if metric_index == 0 else dict(range=None, tickmode="auto", tickvals=None, ticktext=None)
-        axis_label = label + (" (broken axis)" if metric_index == 0 and shift else "")
-        annotations = []
-        for index, stem in enumerate(stems):
-            group = maps[maps.stem == stem].sort_values(["arm", "map_seed"])
-            decoys = group[group.arm == "esmfold2"]
-            oracle = group[group.arm == "oracle"].iloc[0]
-            rank = ranks[(ranks.stem == stem) & (ranks.confidence == metric)].iloc[0]
-            jitter = 0.25 * np.sin(decoys.map_seed.to_numpy() * 2.3999632297)
-            y = index + jitter
-            decoy_x = display_ranking(decoys[metric], shift) if metric_index == 0 else decoys[metric]
-            rank_label = (f"{int(rank.rank_best)}" if rank.rank_best == rank.rank_worst
-                          else f"{int(rank.rank_best)}–{int(rank.rank_worst)}") + " / 101"
-            annotations.append(dict(x=1.02, y=index, xref="paper", yref="y", text=rank_label,
-                                    xanchor="left", showarrow=False, font=dict(color=PALETTE[3], size=12)))
-            if metric_index == 0:
-                ax.scatter(decoy_x, y, s=19, alpha=0.48, color=PALETTE[2], linewidths=0,
-                           label="ESMFold2-derived maps" if index == 0 else None)
-                ax.scatter([oracle[metric]], [index], s=85, color=PALETTE[3], marker="D",
-                           edgecolor=PAPER, linewidth=1.2, zorder=4, label="Oracle map" if index == 0 else None)
-                ax.text(1.03, index, rank_label, transform=ax.get_yaxis_transform(), va="center",
-                        color=PALETTE[3], weight="bold", fontsize=11)
-            custom = decoys[["stem", "map_seed", f"{metric}_rank", "gdt_ts", "contact_jaccard", "source_row", metric]].to_numpy()
-            interactive.add_trace(go.Scatter(x=decoy_x.tolist(), y=y.tolist(), mode="markers",
-                name="ESMFold2-derived maps", legendgroup="decoys", showlegend=index == 0,
-                visible=metric_index == 0, marker=dict(color=PALETTE[2], size=6, opacity=0.55), customdata=custom.tolist(),
-                hovertemplate="%{customdata[0]} · ESMFold2 seed %{customdata[1]}<br>Confidence %{customdata[6]:.4f}<br>Rank %{customdata[2]} / 101<br>Helico GDT-TS %{customdata[3]:.3f}<br>Contact Jaccard vs oracle %{customdata[4]:.3f}<br>Source row %{customdata[5]}<extra></extra>"))
-            interactive.add_trace(go.Scatter(x=[oracle[metric]], y=[index], mode="markers",
-                name="Oracle map", legendgroup="oracle", showlegend=index == 0, visible=metric_index == 0,
-                marker=dict(color=PALETTE[3], size=13, symbol="diamond", line=dict(color=PAPER,width=1)),
-                text=[f"{stem} · oracle<br>Rank {rank_label}<br>Helico GDT-TS {oracle.gdt_ts:.3f}<br>Source row {oracle.source_row}"],
-                hovertemplate="%{text}<br>Confidence %{x:.4f}<extra></extra>"))
-        annotations.append(dict(x=1.02, y=1.075, xref="paper", yref="paper", text="Oracle rank",
-                                showarrow=False, xanchor="left", font=dict(size=11)))
-        buttons.append(dict(label=label, method="update", args=[
-            {"visible": [i // 10 == metric_index for i in range(20)]},
-            {"xaxis": dict(title=axis_label, gridcolor=GRID, zeroline=False, **axis), "annotations": annotations}]))
+    annotations = []
+    for index, stem in enumerate(stems):
+        group = maps[maps.stem == stem].sort_values(["arm", "map_seed"])
+        decoys = group[group.arm == "esmfold2"]
+        oracle = group[group.arm == "oracle"].iloc[0]
+        rank = ranks.loc[stem]
+        y = index + 0.25 * np.sin(decoys.map_seed.to_numpy() * 2.3999632297)
+        rank_label = (f"{int(rank.rank_best)}" if rank.rank_best == rank.rank_worst
+                      else f"{int(rank.rank_best)}–{int(rank.rank_worst)}") + " / 101"
+        annotations.append(dict(x=1.02, y=index, xref="paper", yref="y", text=rank_label,
+                                xanchor="left", showarrow=False, font=dict(color=PALETTE[3], size=12)))
+        ax.scatter(decoys.ptm, y, s=19, alpha=0.48, color=PALETTE[2], linewidths=0,
+                   label="ESMFold2-derived maps" if index == 0 else None)
+        ax.scatter([oracle.ptm], [index], s=85, color=PALETTE[3], marker="D",
+                   edgecolor=PAPER, linewidth=1.2, zorder=4, label="Oracle map" if index == 0 else None)
+        ax.text(1.03, index, rank_label, transform=ax.get_yaxis_transform(), va="center",
+                color=PALETTE[3], weight="bold", fontsize=11)
+        custom = decoys[["stem", "map_seed", "ptm_rank", "tm_score", "contact_jaccard", "source_row", "sample_idx"]].to_numpy()
+        interactive.add_trace(go.Scatter(x=decoys.ptm.tolist(), y=y.tolist(), mode="markers",
+            name="ESMFold2-derived maps", legendgroup="decoys", showlegend=index == 0,
+            marker=dict(color=PALETTE[2], size=6, opacity=0.55), customdata=custom.tolist(),
+            hovertemplate="%{customdata[0]} · ESMFold2 seed %{customdata[1]}<br>Helico pTM %{x:.4f}<br>Rank %{customdata[2]} / 101<br>Helico TM-score %{customdata[3]:.3f}<br>Contact Jaccard vs oracle %{customdata[4]:.3f}<br>Source row %{customdata[5]} · sample %{customdata[6]}<extra></extra>"))
+        interactive.add_trace(go.Scatter(x=[oracle.ptm], y=[index], mode="markers",
+            name="Oracle map", legendgroup="oracle", showlegend=index == 0,
+            marker=dict(color=PALETTE[3], size=13, symbol="diamond", line=dict(color=PAPER, width=1)),
+            text=[f"{stem} · oracle<br>Rank {rank_label}<br>Helico TM-score {oracle.tm_score:.3f}<br>Source row {oracle.source_row}"],
+            hovertemplate="%{text}<br>Helico pTM %{x:.4f}<extra></extra>"))
+    annotations.append(dict(x=1.02, y=1.075, xref="paper", yref="paper", text="Oracle rank",
+                            showarrow=False, xanchor="left", font=dict(size=11)))
     labels = [f"{stem}  ·  MSA {int(maps.loc[maps.stem == stem, 'msa_depth'].iloc[0])}" for stem in stems]
     ax.set_yticks(range(5), labels)
     ax.set_ylim(4.65, -0.65)
-    ax.set_xlim(rank_axis["range"])
-    if shift:
-        ax.set_xticks(rank_axis["tickvals"], rank_axis["ticktext"])
-    ax.set_xlabel("Helico ranking score (broken axis; higher is better)" if shift else "Helico ranking score (higher is better)")
+    ax.set_xlim(0, 1.02)
+    ax.set_xlabel("Helico pTM (highest of three samples per map)")
     ax.text(1.03, 1.08, "Oracle rank", transform=ax.transAxes, fontsize=10)
     fig.legend(*ax.get_legend_handles_labels(), loc="lower left", bbox_to_anchor=(0.12, 0.015), frameon=False, ncol=2)
     save(fig, "02b_confidence", CAPTIONS["02b_confidence"])
     interactive.update_layout(template="none", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=FONT, color=INK), height=530, margin=dict(l=145,r=105,t=80,b=100),
-        xaxis=buttons[0]["args"][1]["xaxis"],
+        font=dict(family=FONT, color=INK), height=530, margin=dict(l=145,r=105,t=65,b=100),
+        xaxis=dict(title="Helico pTM (highest of three samples per map)", range=[0,1.02], gridcolor=GRID, zeroline=False),
         yaxis=dict(tickvals=list(range(5)), ticktext=labels, range=[4.65,-0.65], showgrid=False, zeroline=False),
-        legend=dict(orientation="h", y=-0.22), annotations=buttons[0]["args"][1]["annotations"],
-        updatemenus=[dict(buttons=buttons, x=0, xanchor="left", y=1.19, yanchor="top", direction="down", font=dict(size=11))])
+        legend=dict(orientation="h", y=-0.22), annotations=annotations)
     return interactive
 
 
+TM_VIEWS = [("source_structure_tm_score", "Original ESMFold2", "Original structure TM-score"),
+            ("tm_score", "After Helico", "Helico structure TM-score")]
+
+
+def ptm_limits(values: pd.Series) -> tuple[float, float]:
+    """Pad the observed pTM range without changing point coordinates."""
+    padding = max(0.006, float(values.max() - values.min()) * 0.08)
+    return max(0, float(values.min()) - padding), min(1.01, float(values.max()) + padding)
+
+
 def accuracy_confidence_figure() -> go.Figure:
-    """Separate source-structure accuracy from the accuracy after Helico folding."""
+    """Separate original and reconstructed TM-score against selected Helico pTM."""
     table = pd.read_csv(DATA / "structured_accuracy_confidence.csv")
     stems = sorted(table.stem.unique())
-    views = [("source_structure_gdt_ts", "Original ESMFold2 · GDT-TS", "Source-structure GDT-TS"),
-             ("source_structure_lddt", "Original ESMFold2 · lDDT", "Source-structure lDDT"),
-             ("gdt_ts", "After Helico · GDT-TS", "Helico structure GDT-TS"),
-             ("lddt", "After Helico · lDDT", "Helico structure lDDT")]
     interactive = go.Figure()
     buttons = []
-    shift, rank_axis = ranking_axis(table.ranking_score)
-    confidence_label = "Helico ranking score (broken axis)" if shift else "Helico ranking score"
-    for view_index, (metric, label, axis_label) in enumerate(views):
+    for view_index, (metric, label, axis_label) in enumerate(TM_VIEWS):
         view_traces = []
         fig, ax = plt.subplots(figsize=(8.8, 6.5), facecolor=PAPER)
         fig.subplots_adjust(left=0.13, right=0.96, bottom=0.25, top=0.77)
         fig.text(0.1, 0.95, TITLES["02c_accuracy_confidence"], fontsize=19, weight="bold")
         fig.text(0.1, 0.89, "MSA depth <10 · 100 ESMFold2 maps per protein · diamonds = oracle", fontsize=11)
         style_axes(ax)
-        ax.set_ylim(rank_axis["range"])
-        if shift:
-            ax.set_yticks(rank_axis["tickvals"], rank_axis["ticktext"])
         for index, stem in enumerate(stems):
             group = table[table.stem == stem]
             color = PALETTE[index]
             decoys, oracle = group[group.arm == "esmfold2"], group[group.arm == "oracle"]
-            ax.scatter(decoys[metric], display_ranking(decoys.ranking_score, shift), s=19, alpha=0.55, color=color, linewidths=0,
-                       label=stem)
-            ax.scatter(oracle[metric], oracle.ranking_score, s=100, marker="D", color=color,
-                       edgecolor=INK, linewidth=1.3, zorder=5,
-                       label="Oracle contacts" if index == 0 else None)
+            ax.scatter(decoys.ptm, decoys[metric], s=19, alpha=0.55, color=color, linewidths=0, label=stem)
+            ax.scatter(oracle.ptm, oracle[metric], s=100, marker="D", color=color,
+                       edgecolor=INK, linewidth=1.3, zorder=5, label="Oracle contacts" if index == 0 else None)
             for is_oracle, points in ((False, decoys), (True, oracle)):
                 accuracy_row = "accuracy_source_row" if metric.startswith("source_structure_") else "source_row"
-                custom = points[["stem", "map_seed", "source_structure_gdt_ts", "gdt_ts", "source_row", accuracy_row, "ranking_score"]].fillna("reference").to_numpy().tolist()
-                view_traces.append(go.Scatter(x=points[metric].tolist(), y=display_ranking(points.ranking_score, shift).tolist(), mode="markers",
+                custom = points[["stem", "map_seed", "source_structure_tm_score", "tm_score", "source_row", accuracy_row, "sample_idx"]].fillna("reference").to_numpy().tolist()
+                view_traces.append(go.Scatter(x=points.ptm.tolist(), y=points[metric].tolist(), mode="markers",
                     name="Oracle contacts" if is_oracle else stem, legendgroup="oracle" if is_oracle else stem,
-                    showlegend=(index == 0 if is_oracle else True), visible=True,
+                    showlegend=True, visible=index == 0,
                     marker=dict(color=color, size=12 if is_oracle else 6, symbol="diamond" if is_oracle else "circle",
                                 opacity=1 if is_oracle else 0.55, line=dict(color=INK, width=1.2 if is_oracle else 0)),
                     customdata=custom,
                     hovertemplate=("%{customdata[0]} · " + ("oracle contacts" if is_oracle else "ESMFold2 seed %{customdata[1]}")
-                                   + "<br>Accuracy %{x:.4f}<br>Helico confidence %{customdata[6]:.4f}<br>Source GDT-TS %{customdata[2]:.3f}"
-                                     "<br>Helico GDT-TS %{customdata[3]:.3f}<br>Confidence source row %{customdata[4]}"
+                                   + "<br>Helico pTM %{x:.4f}<br>TM-score %{y:.4f}<br>Original TM-score %{customdata[2]:.3f}"
+                                     "<br>Helico TM-score %{customdata[3]:.3f}<br>Helico source row %{customdata[4]} · sample %{customdata[6]}"
                                      "<br>Accuracy source row %{customdata[5]}<extra></extra>")))
-        ax.set(xlim=(0, 1.035), xlabel=axis_label, ylabel=confidence_label)
-        handles, labels = ax.get_legend_handles_labels()
-        fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.53, 0.01), ncol=3, frameon=False)
-        suffix = "" if view_index == 0 else f"_{metric}"
-        save(fig, "02c_accuracy_confidence", CAPTIONS["02c_accuracy_confidence"], suffix=suffix,
-             include_in_summary=False)
+        ax.set(xlim=ptm_limits(table.ptm), ylim=(0, 1.035), xlabel="Helico pTM", ylabel=axis_label)
+        fig.legend(*ax.get_legend_handles_labels(), loc="lower center", bbox_to_anchor=(0.53, 0.01), ncol=3, frameon=False)
+        save(fig, "02c_accuracy_confidence", CAPTIONS["02c_accuracy_confidence"],
+             suffix="" if view_index == 0 else "_tm_score", include_in_summary=False)
         if view_index == 0:
             interactive.add_traces(view_traces)
         buttons.append(dict(label=label, method="update", args=[
-            {"x": [list(trace.x) for trace in view_traces],
+            {"y": [list(trace.y) for trace in view_traces],
              "customdata": [list(trace.customdata) for trace in view_traces]},
-            {"xaxis.title.text": axis_label}]))
-    protein_buttons = [dict(label="All five proteins", method="restyle", args=[{"visible": [True] * 10}])]
+            {"yaxis.title.text": axis_label}]))
+    protein_buttons = []
     for protein_index, stem in enumerate(stems):
-        protein_buttons.append(dict(label=stem, method="restyle",
-                                    args=[{"visible": [i // 2 == protein_index for i in range(10)]}]))
+        protein_buttons.append(dict(label=stem, method="update", args=[
+            {"visible": [i // 2 == protein_index for i in range(10)]},
+            {"xaxis.range": list(ptm_limits(table.loc[table.stem == stem, "ptm"]))}]))
+    protein_buttons.append(dict(label="All five proteins", method="update", args=[
+        {"visible": [True] * 10}, {"xaxis.range": list(ptm_limits(table.ptm))}]))
     interactive.update_layout(template="none", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family=FONT, color=INK), height=570, margin=dict(l=65,r=25,t=85,b=130),
-        xaxis=dict(title=views[0][2], range=[0,1.035], gridcolor=GRID, zeroline=False),
-        yaxis=dict(title=confidence_label, gridcolor=GRID, zeroline=False, **rank_axis),
+        xaxis=dict(title="Helico pTM", range=list(ptm_limits(table.loc[table.stem == stems[0], "ptm"])), gridcolor=GRID, zeroline=False),
+        yaxis=dict(title=TM_VIEWS[0][2], range=[0,1.035], gridcolor=GRID, zeroline=False),
         legend=dict(orientation="h", y=-0.24),
         updatemenus=[dict(buttons=buttons, x=0, xanchor="left", y=1.2, yanchor="top", font=dict(size=11)),
                      dict(buttons=protein_buttons, x=0.62, xanchor="left", y=1.2, yanchor="top", font=dict(size=11))])
@@ -416,60 +378,39 @@ def accuracy_confidence_figure() -> go.Figure:
 
 
 def per_protein_accuracy_figures() -> None:
-    """Render one PDF page per protein from the cached measurements and summaries."""
+    """Render two TM-versus-pTM panels per protein from cached analysis tables."""
     table = pd.read_csv(DATA / "structured_accuracy_confidence.csv")
     summaries = pd.read_csv(DATA / "structured_accuracy_summary.csv").set_index(["stem", "metric"])
-    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv").query("confidence == 'ranking_score'").set_index("stem")
-    views = [("source_structure_gdt_ts", "Original ESMFold2 · GDT-TS", "GDT-TS"),
-             ("gdt_ts", "After Helico · GDT-TS", "GDT-TS"),
-             ("source_structure_lddt", "Original ESMFold2 · lDDT", "lDDT"),
-             ("lddt", "After Helico · lDDT", "lDDT")]
+    ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv").set_index("stem")
     for index, (stem, group) in enumerate(table.groupby("stem", sort=True)):
         decoys, oracle = group[group.arm == "esmfold2"], group[group.arm == "oracle"]
         rank = ranks.loc[stem]
         rank_text = (str(int(rank.rank_best)) if rank.rank_best == rank.rank_worst
                      else f"{int(rank.rank_best)}–{int(rank.rank_worst)}")
-        shift, rank_axis = ranking_axis(group.ranking_score)
-        displayed = display_ranking(group.ranking_score, shift)
-        ordinary = group.loc[group.ranking_score >= -1, "ranking_score"]
-        padding = max(0.006, float(ordinary.max() - ordinary.min()) * 0.08)
-        limits = (float(displayed.min()) - padding, float(displayed.max()) + padding)
-        fig, axes = plt.subplots(2, 2, figsize=(12, 7.4), sharey=True, facecolor=PAPER)
-        fig.subplots_adjust(left=0.095, right=0.98, bottom=0.13, top=0.79, hspace=0.53, wspace=0.16)
-        fig.text(0.095, 0.95, f"{stem} · accuracy versus confidence", fontsize=20, weight="bold")
-        fig.text(0.095, 0.89,
-                 f"MSA depth {int(rank.msa_depth)} · 100 ESMFold2 maps · oracle confidence rank {rank_text} / 101",
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6.1), sharex=True, sharey=True, facecolor=PAPER)
+        fig.subplots_adjust(left=0.075, right=0.985, bottom=0.2, top=0.73, wspace=0.17)
+        fig.text(0.075, 0.95, f"{stem} · TM-score versus pTM", fontsize=20, weight="bold")
+        fig.text(0.075, 0.875,
+                 f"MSA depth {int(rank.msa_depth)} · 100 ESMFold2 maps · oracle pTM rank {rank_text} / 101",
                  fontsize=11)
-        for panel, (ax, (metric, title, xlabel)) in enumerate(zip(axes.flat, views, strict=True)):
+        for ax, (metric, title, _) in zip(axes, TM_VIEWS, strict=True):
             style_axes(ax)
-            ax.scatter(decoys[metric], display_ranking(decoys.ranking_score, shift),
-                       s=23, alpha=0.62, color=PALETTE[index], linewidths=0, label="ESMFold2-derived map")
-            ax.scatter(oracle[metric], display_ranking(oracle.ranking_score, shift),
-                       s=95, marker="D", color=PALETTE[index], edgecolor=INK, linewidth=1.4,
-                       zorder=5, label="Oracle map")
-            if shift:
-                visible_ticks = [(value, label) for value, label in zip(rank_axis["tickvals"], rank_axis["ticktext"], strict=True)
-                                 if limits[0] <= value <= limits[1]]
-                ax.set_yticks([value for value, _ in visible_ticks], [label for _, label in visible_ticks])
-            else:
-                ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5))
-            ax.set(xlim=(0, 1.035), ylim=limits, xlabel=xlabel, title=title)
-            if panel % 2 == 0:
-                ax.set_ylabel("Helico ranking score" + (" (broken axis)" if shift else ""))
-            rho = summaries.loc[(stem, metric), "spearman_vs_helico_confidence"]
-            ax.text(0.025, 0.96, f"Spearman ρ = {rho:.2f}", transform=ax.transAxes,
-                    va="top", fontsize=10, bbox=dict(facecolor=PAPER, edgecolor="none", alpha=0.85, pad=2))
-        handles, labels = axes[0, 0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.54, 0.01), ncol=2, frameon=False)
-        caption = (
-            "Each of the 100 ESMFold2-derived maps and the oracle receives three Helico samples; "
-            "confidence selects one sample per map. Oracle source accuracy is 1 by definition; "
-            "its Helico accuracy is measured. Correlations exclude the oracle. Accuracy axes are shared; "
-            "confidence limits are tailored to each protein."
-        )
-        if shift:
-            caption += " The // axis break retains the clash-penalized score at −99.41."
-        save(fig, f"02c_accuracy_confidence_protein_{stem}", caption)
+            ax.scatter(decoys.ptm, decoys[metric], s=26, alpha=0.62, color=PALETTE[index],
+                       linewidths=0, label="ESMFold2-derived map")
+            ax.scatter(oracle.ptm, oracle[metric], s=100, marker="D", color=PALETTE[index],
+                       edgecolor=INK, linewidth=1.4, zorder=5, label="Oracle map")
+            ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=5))
+            ax.set(xlim=ptm_limits(group.ptm), ylim=(0, 1.035), xlabel="Helico pTM", title=title)
+            rho = summaries.loc[(stem, metric), "spearman_vs_helico_ptm"]
+            ax.text(0.025, 0.05, f"Spearman ρ = {rho:.2f}", transform=ax.transAxes,
+                    va="bottom", fontsize=10, bbox=dict(facecolor=PAPER, edgecolor="none", alpha=0.85, pad=2))
+        axes[0].set_ylabel("TM-score versus experimental structure")
+        fig.legend(*axes[0].get_legend_handles_labels(), loc="lower center", bbox_to_anchor=(0.54, 0.015), ncol=2, frameon=False)
+        save(fig, f"02c_accuracy_confidence_protein_{stem}",
+             "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. "
+             "Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. "
+             "Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. "
+             "TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.")
 
 
 def export_plotly(fig: go.Figure, name: str) -> None:
@@ -502,7 +443,7 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["legend"].update(y=-0.25, x=0, font=dict(size=10))
         for annotation in mobile["layout"]["annotations"]:
             annotation["font"]["size"] = 10
-        for menu in mobile["layout"]["updatemenus"]:
+        for menu in mobile["layout"].get("updatemenus", []):
             for button in menu["buttons"]:
                 for annotation in button["args"][1]["annotations"]:
                     annotation["font"]["size"] = 10

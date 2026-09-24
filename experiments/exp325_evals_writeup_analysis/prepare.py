@@ -376,16 +376,32 @@ def prepare_structured_confidence(sources: Sources, targets: pd.DataFrame) -> di
         raise ValueError("Different diffusion budgets")
     if not (raw.groupby("stem").n_unknown.nunique() == 1).all():
         raise ValueError("Different eligible-pair budgets")
-    selected = raw.sort_values(keys + ["ranking_score", "sample_idx"], ascending=[True, True, True, False, True]).drop_duplicates(keys)
+    if not np.isfinite(raw[["ptm", "tm_score"]]).all().all():
+        raise ValueError("Missing per-sample pTM or measured TM-score")
+    previous = raw.sort_values(keys + ["ranking_score", "sample_idx"], ascending=[True, True, True, False, True]).drop_duplicates(keys)
+    selected = raw.sort_values(keys + ["ptm", "sample_idx"], ascending=[True, True, True, False, True]).drop_duplicates(keys)
+    comparison = selected.merge(previous[keys + ["sample_idx", "ranking_score", "ptm", "source_row"]],
+                                on=keys, suffixes=("", "_previous"), validate="one_to_one")
+    selection_changes = []
+    for stem, group in comparison.groupby("stem"):
+        oracle = group[group.arm == "oracle"].iloc[0]
+        old_decoys = group[group.arm == "esmfold2"].ranking_score_previous
+        selection_changes.append({"stem": stem, "n_maps": len(group),
+                                  "changed_samples": int((group.sample_idx != group.sample_idx_previous).sum()),
+                                  "oracle_sample_previous": int(oracle.sample_idx_previous),
+                                  "oracle_sample_ptm": int(oracle.sample_idx),
+                                  "oracle_rank_previous_best": 1 + int((old_decoys > oracle.ranking_score_previous).sum()),
+                                  "oracle_rank_previous_worst": 1 + int((old_decoys >= oracle.ranking_score_previous).sum()),
+                                  "previous_selection": "ranking_score", "selection": "ptm"})
+    # Only the historical ranking-score winner has saved pLDDT. Do not attach
+    # that value to a different structure chosen by pTM.
+    selected = selected.drop(columns="mean_plddt").assign(selection_metric="ptm")
     selected = annotate(selected.drop(columns=["eval_set", "L"]), targets)
     metadata = metadata.rename(columns={"source": "map_source", "source_row": "map_source_row"})
     selected = selected.merge(metadata.drop(columns=["n_present", "n_absent", "n_unknown", "msa_depth"]), on=keys, validate="one_to_one")
-    if len(selected) != 505 or selected.mean_plddt.isna().any():
+    if len(selected) != 505 or selected.map_sha256.isna().any():
         raise ValueError("Missing confidence or contact-map metadata")
-    for score in ("ranking_score", "mean_plddt"):
-        if not np.isfinite(selected[score]).all():
-            raise ValueError(f"Non-finite confidence: {score}")
-        selected[f"{score}_rank"] = selected.groupby("stem")[score].rank(method="average", ascending=False)
+    selected["ptm_rank"] = selected.groupby("stem").ptm.rank(method="average", ascending=False)
     ranks = []
     for stem, group in selected.groupby("stem"):
         oracle = group[group.arm == "oracle"]
@@ -393,27 +409,29 @@ def prepare_structured_confidence(sources: Sources, targets: pd.DataFrame) -> di
         if len(oracle) != 1 or len(decoys) != 100 or set(decoys.map_seed) != set(range(100)):
             raise ValueError(f"Incomplete contact-map pool: {stem}")
         oracle = oracle.iloc[0]
-        for score in ("ranking_score", "mean_plddt"):
-            above = int((decoys[score] > oracle[score]).sum())
-            equal = int((decoys[score] == oracle[score]).sum())
-            ranks.append({"stem": stem, "msa_depth": oracle.msa_depth, "confidence": score,
-                          "oracle_confidence": oracle[score], "n_decoys": 100,
-                          "n_above_oracle": above, "n_tied_oracle": equal,
-                          "rank_best": 1 + above, "rank_worst": 1 + above + equal,
-                          "rank_mid": 1 + above + equal / 2,
-                          "fraction_decoys_below_oracle": (100 - above - equal / 2) / 100,
-                          "unique_decoy_maps": decoys.map_sha256.nunique(),
-                          "unique_decoy_structures": decoys.structure_sha256.nunique(),
-                          "decoy_confidence_median": decoys[score].median(),
-                          "decoy_gdt_ts_median": decoys.gdt_ts.median(),
-                          "oracle_gdt_ts": oracle.gdt_ts,
-                          "oracle_source_row": oracle.source_row,
-                          "decoy_source_rows": "|".join(decoys.source_row.astype(str))})
+        above = int((decoys.ptm > oracle.ptm).sum())
+        equal = int((decoys.ptm == oracle.ptm).sum())
+        ranks.append({"stem": stem, "msa_depth": oracle.msa_depth, "confidence": "ptm",
+                      "oracle_confidence": oracle.ptm, "n_decoys": 100,
+                      "n_above_oracle": above, "n_tied_oracle": equal,
+                      "rank_best": 1 + above, "rank_worst": 1 + above + equal,
+                      "rank_mid": 1 + above + equal / 2,
+                      "fraction_decoys_below_oracle": (100 - above - equal / 2) / 100,
+                      "unique_decoy_maps": decoys.map_sha256.nunique(),
+                      "unique_decoy_structures": decoys.structure_sha256.nunique(),
+                      "decoy_confidence_median": decoys.ptm.median(),
+                      "decoy_gdt_ts_median": decoys.gdt_ts.median(),
+                      "oracle_gdt_ts": oracle.gdt_ts,
+                      "decoy_tm_score_median": decoys.tm_score.median(),
+                      "oracle_tm_score": oracle.tm_score,
+                      "oracle_source_row": oracle.source_row,
+                      "decoy_source_rows": "|".join(decoys.source_row.astype(str))})
     accuracy = sources.csv(DATA / "esmfold2_decoy_structure_metrics.csv", round_trip=True)
     accuracy = accuracy.rename(columns={"source": "accuracy_source", "source_row": "accuracy_source_row",
-                                        "gdt_ts": "source_structure_gdt_ts", "lddt": "source_structure_lddt"})
+                                        "gdt_ts": "source_structure_gdt_ts", "lddt": "source_structure_lddt",
+                                        "tm_score": "source_structure_tm_score"})
     joined = selected.merge(accuracy[[*keys, "structure_sha256", "source_structure_gdt_ts", "source_structure_lddt",
-                                      "accuracy_source", "accuracy_source_row"]],
+                                      "source_structure_tm_score", "accuracy_source", "accuracy_source_row"]],
                             on=[*keys, "structure_sha256"], how="left", validate="one_to_one")
     oracle_rows = joined.arm == "oracle"
     if joined.loc[~oracle_rows, "accuracy_source_row"].isna().any() or joined.loc[oracle_rows, "accuracy_source_row"].notna().any():
@@ -421,17 +439,19 @@ def prepare_structured_confidence(sources: Sources, targets: pd.DataFrame) -> di
     # The oracle's source is the experimental reference itself, so its source
     # accuracy is exactly one by definition. Its downstream Helico accuracy is
     # measured separately, just like every other conditioned Helico structure.
-    joined.loc[oracle_rows, ["source_structure_gdt_ts", "source_structure_lddt"]] = 1.0
+    joined.loc[oracle_rows, ["source_structure_gdt_ts", "source_structure_lddt", "source_structure_tm_score"]] = 1.0
     joined["accuracy_rule"] = np.where(oracle_rows, "experimental reference compared with itself", "score_esmfold2_decoys.py: predicted structure versus experimental reference")
     accuracy_summary = []
     for stem, group in joined[~oracle_rows].groupby("stem"):
-        for metric in ("source_structure_gdt_ts", "source_structure_lddt", "gdt_ts", "lddt"):
+        for metric in ("source_structure_tm_score", "tm_score"):
             values = group[metric]
             accuracy_summary.append({"stem": stem, "metric": metric, "n_predictions": len(group),
                                      "min": values.min(), "median": values.median(), "max": values.max(),
-                                     "spearman_vs_helico_confidence": values.rank().corr(group.ranking_score.rank())})
+                                     "confidence": "ptm", "selection_metric": "ptm",
+                                     "spearman_vs_helico_ptm": values.rank().corr(group.ptm.rank())})
     return {"structured_confidence_per_map.csv": selected,
             "structured_confidence_ranks.csv": pd.DataFrame(ranks),
+            "structured_selection_comparison.csv": pd.DataFrame(selection_changes),
             "structured_accuracy_confidence.csv": joined,
             "structured_accuracy_summary.csv": pd.DataFrame(accuracy_summary)}
 
@@ -497,7 +517,7 @@ def main() -> None:
         "oracle_contacts": "Full ground-truth three-state map, including non-contacts; information upper bound, not a predictor",
         "sampling_oracle": "Max correct contacts among first R emitted pairs / R; short sets retain denominator R. Ground-truth selection.",
         "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
-        "confidence_control": {"status": "complete", "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map, select highest ranking_score. Historical 20-protein random control retained separately."},
+        "confidence_control": {"status": "complete", "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map; select and rank by highest pTM, with sample_idx breaking within-map ties. No ipTM or clash penalty. Historical random controls and other structural benchmark panels retain their original selection protocols.", "scatter": "Measured protein CA TM-score versus selected Helico pTM; separate original ESMFold2 and reconstructed Helico views; oracle source TM-score is one by definition."},
         "alphafold_protocol": json.loads((DATA / "alphafold_inputs.json").read_text()),
         "boltz2_protocol": json.loads((DATA / "boltz2_inputs.json").read_text()),
     }

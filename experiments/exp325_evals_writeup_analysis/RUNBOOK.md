@@ -93,7 +93,7 @@ serialization. These figures make no speed comparisons.
 # Public artifacts
 
 Raw contact completions/votes and every new Helico diffusion sample are archived
-under `data/exp325-writeup-analysis/exp277-step266344/v5-per-protein-pdf` in the public
+under `data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking` in the public
 `open-athena/MarinFold` HF bucket. `data/publication_manifest.json` records file
 sizes and SHA256 digests. The package includes the offline preview, local font
 and Plotly bundle, figures, prepared tables and experiment scripts. Existing
@@ -233,18 +233,28 @@ end-to-end deployable selection benchmark.
 Helico source, checkpoint and inference settings match the earlier control:
 three diffusion samples per map, six recycles, seed 42, no MSA. The 505 maps
 are dispatched in small disjoint blocks to eight resident H100 workers in
-`us-east`. Confidence selects the highest-ranking sample from each map before
-sorting maps. The secondary pLDDT view uses those same selected structures.
+`us-east`. In preprocessing, highest pTM selects one sample from each map
+before sorting maps by pTM. Neither ipTM nor the clash flag affects selection;
+within-map ties use the lowest sample index. The raw run manifest describes the
+original inference-time ranking_score selection; the prepared manifest records
+this later pTM reanalysis. Every sample already has pTM and measured TM-score,
+so no inference or structural rescoring is required. pLDDT is omitted because
+it was saved only for the original ranking_score winner.
 Ties are reported as a rank interval and a midrank, with no random tie-break.
 CSV rows retain inference timings, seeds, source rows and structure/map hashes.
 Native ESMFold2 timings include input preparation and result decoding inside
 `builder.fold`; they are retained for audit and are not a speed comparison.
 Restyling only requires `render.py` and `build_summary.py`.
 
-Figure 02c joins each original ESMFold2 structure's GDT-TS/lDDT to Helico's
-confidence after using that structure's contacts. Its alternate views use the
+Figure 02c joins each original ESMFold2 structure's TM-score to Helico's
+pTM after using that structure's contacts. Its alternate views use the
 measured downstream Helico accuracy. The oracle source is the experimental
 structure, so its source accuracy is one by definition; its downstream Helico
 accuracy is scored normally. The scorer verifies all coordinate digests and
 requires full CA coverage, reusing `structure_scores` from the AF2/3/Boltz-2
 analysis without a different alignment or metric implementation.
+
+The pTM selection comparison is cached in `structured_selection_comparison.csv`.
+Figure 02c uses pTM on x and measured TM-score on y. Each protein gets a PDF
+page with original ESMFold2 and reconstructed Helico panels. Other structural
+benchmark figures retain their archived selection protocols.

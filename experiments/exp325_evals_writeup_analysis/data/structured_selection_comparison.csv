@@ -1,0 +1,6 @@
+stem,n_maps,changed_samples,oracle_sample_previous,oracle_sample_ptm,oracle_rank_previous_best,oracle_rank_previous_worst,previous_selection,selection
+8ii8_A,101,19,0,2,1,1,ranking_score,ptm
+8oxk_A,101,0,2,2,5,5,ranking_score,ptm
+8qoh_A,101,0,2,2,1,1,ranking_score,ptm
+8ux2_A,101,21,1,1,5,5,ranking_score,ptm
+8wrx_A,101,66,1,1,1,1,ranking_score,ptm
