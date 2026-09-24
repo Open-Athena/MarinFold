@@ -8,6 +8,10 @@
 
 Can sequence-only inference return both observed folds of a fold-switching protein? We ran the exp277 contacts-v1 checkpoint on 67 non-capped pairs. The primary test set has 29 pairs with at least 98% identity, held apart by sequence group from 15 development pairs. Seventeen of those 29 are literally identical. Every method returned at most 16 ranked maps chosen without reference contacts or structures.
 
+## How the 29-pair test set was selected
+
+The source was 93 literature-curated pairs in the NCBI AF2 benchmark Table S1. The reference-defined funnel retained 68 premise-valid pairs, 65 with at least 98% sequence identity, 45 with at least 10 switching-region contacts unique to each fold, and 44 after excluding one context-capped pair. Sequence grouping followed by deterministic SHA-256 ordering assigned 15 pairs to development and 29 to the held-out test set. No model or Helico outcome entered selection. Of the final 29, 17 are exact-sequence pairs and 12 differ by 1–5 substitutions.
+
 ## The primary comparison is negative
 
 At 100 shared root plus 100 arm rollouts per protein, 10-contact clustered branching improved mean minority-fold enrichment by only 0.013 over independent sampling. The paired 95% interval is -0.014 to +0.043; mean minority recall was essentially unchanged. Blind dual-contact hits were 3/29 versus 2/29. The extra hit failed a 3D check. On the 17 exact-sequence test pairs, both methods had one contact hit and the paired interval still spans zero. We cannot claim a reliable search improvement.

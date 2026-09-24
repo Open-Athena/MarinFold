@@ -85,6 +85,38 @@ operational cutoffs, not a validated structural threshold. The 29 primary test
 pairs were held apart by sequence-group from the 15 primary development pairs.
 The pre-reveal source and cohort hashes are in `data/protocol.sha256`.
 
+### Cohort selection
+
+The 29 test proteins were not selected from MarinFold or Helico outcomes. The
+source was the 93 literature-curated reference pairs in the NCBI
+[`AF2_benchmark`](https://github.com/ncbi/AF2_benchmark) Table S1. The selection
+then applied reference-defined cohort
+eligibility rules: 68 pairs passed the global contact, coverage, and annotated
+region premise gate; 65 of those had at least 98% sequence identity between
+the two structures; 45 had at least 10 Fold1-only and 10 Fold2-only contacts
+touching the switching region; and one context-capped 1,338-residue pair was
+excluded, leaving 44 primary pairs.
+
+The 44 pairs formed 43 sequence groups using at least 30% identity and at
+least 50% coverage in either alignment direction. A deterministic SHA-256
+ordering assigned whole groups to development until it reached 15 pairs; the
+remaining 29 became the held-out test set. No sequence group crosses the
+boundary. Of the final 29, 17 structure pairs have exactly the same sequence
+and 12 differ by 1–5 substitutions. This is an algorithm-development holdout,
+not a decontaminated training-data holdout.
+
+![Selection funnel from 93 literature-curated pairs to the 29-pair held-out test set](plots/selection_funnel.png)
+
+The pair-level audit trail is in
+[`data/selection_funnel_membership.csv`](data/selection_funnel_membership.csv),
+and the stage definitions and counts are in
+[`data/selection_funnel_summary.csv`](data/selection_funnel_summary.csv).
+The 25 premise-gate exclusions have overlapping failure reasons: 17 lacked
+enough global fold-specific contacts on at least one side, 14 had less than
+50% common resolved-chain coverage, and 3 lacked a locatable switching-region
+annotation. No rollout, structure prediction, GDT, RMSD, or TM-score result
+entered the selection.
+
 ### What ran
 
 The exp277 step-266344 contacts-v1 checkpoint generated 100 unconditioned
