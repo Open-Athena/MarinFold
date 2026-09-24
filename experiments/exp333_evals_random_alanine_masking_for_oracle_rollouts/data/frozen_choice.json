@@ -1,0 +1,12 @@
+{
+  "status": "no_advance",
+  "validity_passed": false,
+  "policy_gate_passed": false,
+  "selected_mode": null,
+  "selected_raw_modes": [],
+  "heterogeneous_top_two": [
+    "mask_p0050",
+    "mask_p0100"
+  ],
+  "reason": "zero-mask control differed from the published iid pool by more than 0.005; no mutation policy cleared both development thresholds"
+}

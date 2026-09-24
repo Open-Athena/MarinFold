@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Paired protein-bootstrap mean deltas against the zero-mutation vLLM worker on the frozen 16-protein eval-val development set. Bars are 95% intervals. Even 5% masking significantly reduces all- and long-range oracle best@100."
+}

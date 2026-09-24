@@ -1,0 +1,30 @@
+[project]
+name = "exp333-evals-random-alanine-masking"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "aiobotocore==2.26.0",
+    "fsspec==2026.1.0",
+    "huggingface-hub[hf-xet]>=0.34,<2",
+    "httpx==0.28.1",
+    "marin-fray==0.2.111.dev34835957023",
+    # 0.2.124 was cut from a branch whose schema predates the cw-rno2a
+    # preempt_namespaces field. 0.2.111 is the known cluster-compatible CLI.
+    "marin-iris==0.2.111.dev34835957023",
+    "matplotlib>=3.10,<4",
+    "numpy>=2,<3",
+    "pandas>=3,<4",
+    "pyarrow>=23,<24",
+    "s3fs==2026.1.0",
+    "scikit-learn>=1.8,<2",
+    "scipy>=1.17,<2",
+]
+
+[dependency-groups]
+dev = ["pytest>=9,<10"]
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]

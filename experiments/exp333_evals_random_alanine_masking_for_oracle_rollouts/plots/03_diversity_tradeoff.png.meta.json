@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "All-range development means for 100 masked rollouts. Overlap falls through 40%, but true-contact union recall also falls. At 100% masking nearly every rollout ends immediately; its high empty-map Jaccard is a degenerate endpoint."
+}

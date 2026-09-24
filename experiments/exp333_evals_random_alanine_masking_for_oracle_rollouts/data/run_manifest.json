@@ -1,0 +1,42 @@
+{
+  "issue": 333,
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "checkpoint_source": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+  "marinfold_dependency_revision": "4c985f4f",
+  "experiment_branch": "exp/333-alanine-masking-rollouts",
+  "working_artifacts": "s3://marin-us-east-02a/MarinFold/exp333/alanine-masking-v1/main",
+  "public_artifacts": "hf://buckets/open-athena/MarinFold/data/exp333/alanine-masking-v1",
+  "cohort": {
+    "name": "eval-val development",
+    "proteins": 16,
+    "confirmation_proteins_read": 0,
+    "eval_test_proteins_read": 0
+  },
+  "mutation_fractions": [0.0, 0.05, 0.1, 0.2, 0.4, 1.0],
+  "rollouts_per_target_fraction": 100,
+  "total_rollouts": 9600,
+  "generated_tokens": 5571447,
+  "summed_inference_hours": 0.14292154316028852,
+  "summed_total_hours": 0.3057684513880829,
+  "iris_jobs": [
+    "/bizon/exp333-dev-v1-s0of8",
+    "/bizon/exp333-dev-v1-s1of8",
+    "/bizon/exp333-dev-v1-s2of8",
+    "/bizon/exp333-dev-v1-s3of8",
+    "/bizon/exp333-dev-v1-s4of8",
+    "/bizon/exp333-dev-v1-s5of8",
+    "/bizon/exp333-dev-v1-s6of8",
+    "/bizon/exp333-dev-v1-s7of8"
+  ],
+  "iris_outcome": "8 succeeded, 0 failed, 0 retried",
+  "sampling": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "max_new_tokens": "6L+128, bounded by 8192-token context",
+    "seed": "sha256(stem:r<rollout>:sample), 31-bit",
+    "fresh_document_realization_per_rollout": true
+  },
+  "decision": "no_advance",
+  "wandb": null
+}
