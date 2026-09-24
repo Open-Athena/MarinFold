@@ -1,0 +1,94 @@
+pair_id,passes_gate,reason,pair_identity,n_seq_mismatch,near_identical,region_contact_signal,uncapped_primary,split,final_test,development,literal_exact
+1eboe_5fhcj,False,"min(|A|,|B|)=0<10; coverage=0.35<0.5",0.8486842105263158,23,False,False,False,,False,False,False
+1h38d_1qlna,True,,1.0,0,True,False,False,test,False,False,True
+1iyta_2naof,False,"min(|A|,|B|)=2<10",1.0,0,False,False,False,,False,False,True
+1jfka_2nxqb,False,"min(|A|,|B|)=9<10; coverage=0.48<0.5",1.0,0,False,False,False,,False,False,True
+1k0na_1rk4b,True,,0.9956331877729258,1,True,True,True,test,True,False,False
+1kcta_3t1pa,True,,0.986737400530504,5,True,True,True,test,True,False,False
+1mnmc_1mnmd,False,"min(|A|,|B|)=3<10",1.0,0,False,False,False,,False,False,True
+1nqda_1nqjb,True,,1.0,0,True,False,False,test,False,False,True
+1nrjb_2gedb,True,,1.0,0,True,True,True,test,True,False,True
+1qomb_1noca,True,,1.0,0,True,True,True,test,True,False,True
+1qs8b_1miqb,True,,0.9902676399026764,4,True,True,True,test,True,False,False
+1repc_2z9ob,True,,0.9955947136563876,1,True,True,True,test,True,False,False
+1svfc_4wsgc,False,"min(|A|,|B|)=0<10; coverage=0.13<0.5",1.0,0,False,False,False,,False,False,True
+1uxmk_2nama,True,,0.9934640522875817,1,True,True,True,test,True,False,False
+1wyyb_5wrgc,False,coverage=0.14<0.5; fold-switching region not located,0.9846368715083799,11,False,False,False,,False,False,False
+1x0ga_1x0gd,False,"min(|A|,|B|)=8<10",1.0,0,False,False,False,,False,False,True
+1xjta_1xjub,True,,1.0,0,True,True,True,dev,False,True,True
+1xnta_3lqca,True,,1.0,0,True,True,True,test,True,False,True
+2a73b_3l5nb,True,,1.0,0,True,True,True,test,True,False,True
+2bzyb_2lqwa,False,"min(|A|,|B|)=9<10; coverage=0.21<0.5",1.0,0,False,False,False,,False,False,True
+2c1vb_2c1uc,True,,1.0,0,True,True,True,test,True,False,True
+2frha_1fzpd,True,,1.0,0,True,True,True,dev,False,True,True
+2grmb_2axza,True,,0.9968253968253968,1,True,True,True,dev,False,True,False
+2h44a_1rkpa,True,,0.9969325153374233,1,True,True,True,dev,False,True,False
+2hdma_2n54b,True,,0.9466666666666667,4,False,False,False,dev,False,False,False
+2k42a_1ceeb,True,,0.9753086419753086,2,False,False,False,test,False,False,False
+2kb8a_6vw2a,False,"min(|A|,|B|)=0<10",1.0,0,False,False,False,,False,False,True
+2kkwa_2n0ad,False,"min(|A|,|B|)=1<10",1.0,0,False,False,False,,False,False,True
+2kxoa_3r9jc,False,"min(|A|,|B|)=9<10; coverage=0.38<0.5",0.5979381443298969,39,False,False,False,,False,False,False
+2lela_2k0qa,True,,1.0,0,True,True,True,test,True,False,True
+2lepa_4hdda,False,"min(|A|,|B|)=5<10",0.9848484848484849,1,False,False,False,,False,False,False
+2lv1a_6lnia,False,"min(|A|,|B|)=8<10; coverage=0.40<0.5",0.9931972789115646,1,False,False,False,,False,False,False
+2mwfa_2nnta,False,"min(|A|,|B|)=0<10",0.9473684210526316,2,False,False,False,,False,False,False
+2p3vd_2p3va,True,,1.0,0,True,False,False,test,False,False,True
+2pbkb_3njqa,True,,1.0,0,True,True,True,test,True,False,True
+2qqja_4qdsa,True,,1.0,0,True,False,False,test,False,False,True
+2vfxl_3gmhl,True,,0.9852216748768473,3,True,True,True,test,True,False,False
+3ejha_3m7pa,False,coverage=0.26<0.5,0.9935483870967742,2,False,False,False,,False,False,False
+3g0ha_3ewsb,True,,1.0,0,True,True,True,test,True,False,True
+3hdea_3hdfa,True,,1.0,0,True,True,True,dev,False,True,True
+3ifaa_5et5a,True,,1.0,0,True,False,False,dev,False,False,True
+3j7wb_3j7vg,True,,1.0,0,True,True,True,test,True,False,True
+3j97m_1xtgb,False,"min(|A|,|B|)=1<10; coverage=0.45<0.5",1.0,0,False,False,False,,False,False,True
+3jv6a_1zk9a,True,,1.0,0,True,False,False,dev,False,False,True
+3kdsg_2ce7c,True,,0.9977011494252873,1,True,True,True,dev,False,True,False
+3kuya_5c3if,False,"min(|A|,|B|)=4<10",0.979381443298969,2,False,False,False,,False,False,False
+3l9qb_4rr2d,False,coverage=0.39<0.5,1.0,0,False,False,False,,False,False,True
+3m1bf_3lowa,True,,1.0,0,True,False,False,test,False,False,True
+3meea_4b3ob,True,,0.9945652173913043,3,True,True,True,test,True,False,False
+3o44a_1xeza,True,,1.0,0,True,False,False,test,False,False,True
+3qy2a_1qb3a,True,,0.9915254237288136,1,True,False,False,test,False,False,False
+3t5oa_4a5wb,True,,0.9988851727982163,1,True,True,True,dev,False,True,False
+3tp2a_5lj3m,True,,0.996031746031746,1,True,True,True,test,True,False,False
+3uyia_3v0ta,False,fold-switching region not located,0.9968051118210862,1,False,False,False,,False,False,False
+3zwgn_4tsyd,True,,1.0,0,True,False,False,test,False,False,True
+3zxgb_5ec5p,True,,0.9829351535836177,5,True,True,True,test,True,False,False
+4aana_4aala,True,,1.0,0,True,True,True,test,True,False,True
+4dxra_4dxta,True,,1.0,0,True,False,False,test,False,False,True
+4g0dz_4fu4c,False,"min(|A|,|B|)=0<10",1.0,0,False,False,False,,False,False,True
+4gqcc_4gqcb,True,,1.0,0,True,True,True,dev,False,True,True
+4h2aa_3j9ca,True,,1.0,0,True,True,True,dev,False,True,True
+4j3of_2jmra,True,,1.0,0,True,False,False,test,False,False,True
+4jphb_5hk5h,True,,1.0,0,True,False,False,test,False,False,True
+4nc9c_4n9wa,True,,1.0,0,True,True,True,dev,False,True,True
+4o0pa_4o01d,True,,0.9959100204498977,2,True,True,True,test,True,False,False
+4ow6b_4ae0a,True,,0.9980879541108987,1,True,True,True,dev,False,True,False
+4phqa_2wcdx,True,,0.9896907216494846,3,True,False,False,test,False,False,False
+4pyia_4pyja,True,,1.0,0,True,True,True,test,True,False,True
+4qhfa_4qhha,True,,1.0,0,True,True,True,dev,False,True,True
+4rmbb_4rmba,True,,1.0,0,True,False,False,test,False,False,True
+4rwna_4rwqb,True,,1.0,0,True,True,True,dev,False,True,True
+4uv2d_4q79f,True,,0.9957446808510638,1,True,False,False,dev,False,False,False
+4y0mj_4xwsd,True,,0.9952153110047847,1,True,True,True,test,True,False,False
+4ydqb_4twaa,True,,1.0,0,True,True,True,test,True,False,True
+4yhdg_7ahle,True,,0.9931740614334471,2,True,True,True,dev,False,True,False
+4zrbc_4zrbh,True,,1.0,0,True,False,False,test,False,False,True
+4zt0c_4cmqb,True,,0.9985052316890882,2,True,True,False,test,False,False,False
+5aoeb_5ly6b,True,,0.9877551020408163,6,True,True,True,dev,False,True,False
+5bmya_5b3za,False,fold-switching region not located,0.9974226804123711,1,False,False,False,,False,False,False
+5c1va_5c1vb,True,,1.0,0,True,True,True,test,True,False,True
+5ejbc_1wp8c,False,coverage=0.14<0.5,0.9977973568281938,1,False,False,False,,False,False,False
+5f5rb_5f3ka,True,,1.0,0,True,False,False,test,False,False,True
+5flue_2uy7d,True,,0.9938650306748467,1,True,False,False,test,False,False,False
+5hmga_3ztje,True,,1.0,0,True,True,True,test,True,False,True
+5i2ma_5i2sa,True,,1.0,0,True,True,True,test,True,False,True
+5inea_3mkoa,False,coverage=0.29<0.5,0.9971264367816092,1,False,False,False,,False,False,False
+5jyta_2qkee,True,,0.9056603773584906,10,False,False,False,test,False,False,False
+5jzha_5jztg,True,,0.9976415094339622,1,True,True,True,test,True,False,False
+5keqf_1dzla,True,,0.9915433403805497,4,True,False,False,dev,False,False,False
+5l35d_5l35g,True,,1.0,0,True,True,True,test,True,False,True
+5tpna_1g2cf,False,"min(|A|,|B|)=0<10; coverage=0.07<0.5",0.9346938775510204,32,False,False,False,,False,False,False
+6c6sd_2ougc,True,,1.0,0,True,True,True,test,True,False,True
+6z4ua_7kdtb,False,coverage=0.45<0.5,1.0,0,False,False,False,,False,False,True

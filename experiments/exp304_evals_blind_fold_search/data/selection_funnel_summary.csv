@@ -1,0 +1,8 @@
+stage,n_pairs,excluded_from_previous,definition
+source_table_s1,93,0,Literature-curated AF2_benchmark Table S1 pairs
+premise_valid,68,25,Global contact/coverage/region premise gate
+near_identical,65,3,At least 98% pairwise sequence identity
+region_contact_signal,45,20,At least 10 Fold1-only and 10 Fold2-only contacts touching the switch region
+uncapped_primary,44,1,Exclude context-capped 4zt0c_4cmqb
+development,15,0,Sequence-group development split
+held_out_test,29,0,Sequence-group held-out test split used here
