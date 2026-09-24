@@ -10,7 +10,7 @@ Can sequence-only inference return both observed folds of a fold-switching prote
 
 ## How the 29-pair test set was selected
 
-The source was 93 literature-curated pairs in the NCBI AF2 benchmark Table S1. The reference-defined funnel retained 68 premise-valid pairs, 65 with at least 98% sequence identity, 45 with at least 10 switching-region contacts unique to each fold, and 44 after excluding one context-capped pair. Sequence grouping followed by deterministic SHA-256 ordering assigned 15 pairs to development and 29 to the held-out test set. No model or Helico outcome entered selection. Of the final 29, 17 are exact-sequence pairs and 12 differ by 1–5 substitutions.
+The source was 93 literature-curated pairs in the NCBI AF2 benchmark Table S1. The reference-defined funnel retained 68 premise-valid pairs, 65 with at least 98% sequence identity, 45 with at least 10 switching-region contacts unique to each fold, and 44 after excluding one context-capped pair. Sequence grouping followed by deterministic SHA-256 ordering assigned 15 pairs to development and 29 to the held-out test set. The cap exclusion used completion feasibility; no fold-recovery quality outcome entered selection. Of the final 29, 17 are exact-sequence pairs and 12 differ by 1–5 substitutions.
 
 ## The primary comparison is negative
 
