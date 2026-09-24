@@ -1,0 +1,21 @@
+{
+  "choice": null,
+  "advance_to_heldout": false,
+  "selection_rule": "all-range oracle >= +0.005 versus iid100 and matched random; long-range oracle >= -0.005 versus both",
+  "diagnostics": {
+    "medoid_k8": {
+      "all_vs_iid": -0.0037655240428943,
+      "all_vs_random": -0.0038543018502401,
+      "long_vs_iid": -0.0096070022439461,
+      "long_vs_random": -0.0021924388743816,
+      "passed": false
+    },
+    "medoid_k16": {
+      "all_vs_iid": -0.0048792316777979,
+      "all_vs_random": -0.0010823322150795,
+      "long_vs_iid": -0.0274481536298736,
+      "long_vs_random": -0.0111114738515166,
+      "passed": false
+    }
+  }
+}

@@ -1,0 +1,27 @@
+[project]
+name = "exp328-evals-whole-map-medoid-branching"
+version = "0.1.0"
+description = "Geometry-aware whole-map medoid branching for contacts-v1 rollouts."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marinfold",
+    "matplotlib>=3.8",
+    "numpy>=2,<3",
+    "pandas>=3,<4",
+    "pyarrow>=23,<26",
+    "scikit-learn>=1.9,<2",
+    "scipy>=1.17,<2",
+    "transformers==5.15.0",
+    "vllm==0.19.1",
+]
+
+[dependency-groups]
+dev = ["pytest>=9,<10"]
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'linux'"]
+override-dependencies = ["transformers==5.15.0"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
