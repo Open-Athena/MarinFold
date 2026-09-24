@@ -29,9 +29,10 @@ import json
 import re
 import sys
 import textwrap
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Sequence
+
 
 # ---------------------------------------------------------------------------
 # Helper for plotting scripts to call when they save a plot.
