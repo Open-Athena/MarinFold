@@ -86,3 +86,76 @@ def test_end_to_end_drops_the_homolog_only(tmp_path: Path) -> None:
     assert "DECOY" not in dropped, "an unrelated sequence must survive"
     assert dropped["HOMOLOG"].startswith("eval_homolog:foldbench100__test_A")
     assert provenance["reference_version"] == "eval2-v1"
+
+
+def test_pinder_decontam_uses_structure_sequences_not_uniprot(tmp_path: Path) -> None:
+    """A PDB chain is a crystal construct, so UniProt is the wrong sequence.
+
+    The AFCDB arm could decontaminate on accessions because AlphaFold models
+    the UniProt sequence exactly. PINDER chains have tags, truncations and
+    unresolved loops, so the drop list has to run on what the structure
+    actually contains.
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    import pinder_decontam
+
+    docs = tmp_path / "documents"
+    docs.mkdir()
+    pq.write_table(
+        pa.table(
+            {
+                "system_id": ["sysA", "sysB"],
+                "sequence_R": [EVAL_SEQ[:60], "GGGGSSSS"],
+                "sequence_L": ["MKVLAA", None],
+            }
+        ),
+        docs / "batch-000000.parquet",
+    )
+    fasta = tmp_path / "chains.fasta"
+    systems, chains = pinder_decontam.write_chain_fasta(str(docs / "*.parquet"), fasta)
+
+    assert systems == 2
+    assert chains == 3, "a null chain is skipped, not emitted empty"
+    text = fasta.read_text()
+    assert ">sysA#R" in text and ">sysA#L" in text and ">sysB#R" in text
+    assert ">sysB#L" not in text
+    # The chain suffix must survive so a hit maps back to its document.
+    assert text.split(">sysA#R\n")[1].startswith(EVAL_SEQ[:60])
+
+
+@pytest.mark.skipif(not has_mmseqs, reason="mmseqs binary not available")
+def test_pinder_decontam_drops_a_system_on_either_chain(tmp_path: Path) -> None:
+    """Either contaminated chain condemns the document, as for AFCDB."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    import pinder_decontam
+
+    reference = tmp_path / "eval2.fasta"
+    reference.write_text(f">foldbench100__test_A\n{EVAL_SEQ}\n")
+    docs = tmp_path / "documents"
+    docs.mkdir()
+    homolog = EVAL_SEQ[:40] + "A" + EVAL_SEQ[41:]
+    pq.write_table(
+        pa.table(
+            {
+                "system_id": ["hit_on_L", "clean"],
+                "sequence_R": [DECOY_SEQ, DECOY_SEQ],
+                # NOT DECOY_SEQ[::-1] -- that reverses the reversal and hands
+                # back EVAL_SEQ itself, which the filter rightly drops.
+                "sequence_L": [homolog, "".join(sorted(DECOY_SEQ))],
+            }
+        ),
+        docs / "batch-000000.parquet",
+    )
+    out = tmp_path / "drop.parquet"
+    stats = pinder_decontam.build(
+        str(docs / "*.parquet"), reference, tmp_path / "work", out,
+        threads=2, split_memory_limit="4G",
+    )
+    dropped = set(pq.read_table(out).column("system_id").to_pylist())
+    assert "hit_on_L" in dropped, "a hit on the L chain must condemn the system"
+    assert "clean" not in dropped
+    assert stats["reference_version"] == "eval2-v1"
