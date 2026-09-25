@@ -77,6 +77,24 @@ Same provenance as PINDER and roughly an order of magnitude smaller, so its
 incremental contribution over PINDER is expected to be small. Not worth
 auditing further unless PINDER is rejected.
 
+## PINDER is also a far better-engineered source than AFCDB
+
+Sizing the download settled this, and it is worth recording because it inverts
+the cost model the AFCDB arm was built around.
+
+| | AFCDB | PINDER |
+| --- | --- | --- |
+| index | none — a tar carries no directory | **322 MB central directory, 2,729,359 members** |
+| locating one member | walk ~28,000 512-byte headers | **direct byte offset** |
+| host | EBI FTP | Cloudflare R2 |
+| measured | 23 s/read at worst; 3 h outage; 5 days degraded | 65 KB in 0.79 s; 322 MB index in <100 s |
+| **our slice** | 3.0M docs from 48.8 TB of tars | **449,835 heterodimers = 35.3 GB** |
+
+All 449,835 eligible heterodimers resolve in the zip (100%), averaging 76.7 KB
+each. The header-walk that consumed 88% of AFCDB's extraction cost has no
+analogue here: a zip has a real index, so the whole arm is one index read plus
+450k ranged fetches against a healthy CDN.
+
 ## Recommendation
 
 1. **Take PINDER.** Apache-2.0, disjoint from AFCDB, +34,690 pairs or +406,495
