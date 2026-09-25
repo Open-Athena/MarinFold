@@ -1,0 +1,3 @@
+source,available_shards,expected_shards,complete_source_coverage,total_candidate_removals,candidate_removals_in_available_shards,matched_removals,source_tokens_removed_in_available_shards
+afdb,2067,2067,True,667093,667093,667093,738657274
+esm_atlas,155,3338,False,4355743,211094,211094,232869643

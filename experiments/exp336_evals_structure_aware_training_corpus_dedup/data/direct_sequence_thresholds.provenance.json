@@ -1,0 +1,17 @@
+{
+  "status": "complete_sequence_only_candidate_limited",
+  "documents": 69516181,
+  "sequence_stars": 64270329,
+  "direct_alignment_pairs": 6388950,
+  "candidate_floor_identity": 0.5,
+  "min_bidirectional_coverage": 0.8,
+  "selection_order": "Linclust center, then ascending MMseqs database key",
+  "numeric_memberships": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0_numeric.tsv",
+  "numeric_alignments": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0_direct_align_numeric.tsv",
+  "numeric_removals_at_50": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0_selected_removals_numeric.tsv",
+  "timings": {
+    "identity_load_seconds": 6.501812520902604,
+    "selection_seconds": 305.52197242714465
+  },
+  "warning": "Results are direct-witness selections within the 50%-identity Linclust candidate neighborhoods, not an exhaustive all-pairs graph. They are sequence-only ceilings until structure/contact evidence is applied."
+}
