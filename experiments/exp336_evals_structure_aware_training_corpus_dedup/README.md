@@ -188,6 +188,9 @@ comparability:
 | 95% | 241,208 | 0.347% | 69,274,973 |
 | 100% | 176,767 | 0.254% | 69,339,414 |
 
+The 100% row means 100% identity over an alignment covering at least 80% of
+both proteins; it is not the exact-whole-sequence duplicate count.
+
 At 50%, the direct removals decompose as:
 
 | retained-witness source | removed source | documents removed |

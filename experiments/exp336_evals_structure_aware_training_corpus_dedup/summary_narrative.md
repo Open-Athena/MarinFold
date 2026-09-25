@@ -17,7 +17,9 @@ The answer will differ sharply by source. ESM-Atlas was already reduced to one r
 A full 69,516,181-document Linclust pass followed by direct Smith-Waterman
 verification and a no-chaining selector removes 5,022,836 documents (7.23%) at
 50% identity and 80% coverage of both chains. It removes 587,171 (0.84%) at
-70%, 276,929 (0.40%) at 90%, and 176,767 (0.25%) exact duplicates.
+70%, 276,929 (0.40%) at 90%, and 176,767 (0.25%) at 100% aligned identity.
+Because the common rule requires 80% rather than 100% coverage, that last cell
+is not the still-outstanding exact-whole-sequence duplicate count.
 
 At 50%, 667,093 AFDB rows (16.83%) and 4,355,743 ESM rows (6.64%) are removed.
 The full local AFDB ledger puts its exact loss at 738,657,274 source tokens
