@@ -116,20 +116,42 @@ def fetch_member(url: str, lho: int, csize: int, usize: int) -> str:
 
 
 def _one(row: dict[str, Any]) -> tuple[dict | None, dict]:
-    """Fetch, parse and generate one PINDER system."""
+    """Fetch, parse and generate one PINDER system.
+
+    A *transport* failure propagates, so the batch defers and is retried. A
+    *structure* defect does not: some deposits carry malformed fields (gemmi
+    rejects one with "Wrong format for charge: 1O"), and those never parse no
+    matter how often the batch is retried. Eight batches deferred on exactly
+    that before this distinction existed. A bad structure therefore becomes a
+    named ledger row, like every other designed-in rejection.
+    """
     gemmi, _zstd, generate = _generator()
     text = fetch_member(
         row["zip_url"], row["local_header_offset"],
         row["compressed_bytes"], row["uncompressed_bytes"],
     )
-    structure = gemmi.read_pdb_string(text)
-    structure.setup_entities()
-    result = generate(
-        structure,
-        entry_id=row["system_id"],
-        config=_GENERATOR["config"],
-        rotamer_library=_GENERATOR["rotamers"],
-    )
+    try:
+        structure = gemmi.read_pdb_string(text)
+        structure.setup_entities()
+    except Exception as error:  # noqa: BLE001 - a malformed deposit, not our bug
+        return None, {
+            "system_id": row["system_id"],
+            "status": "rejected",
+            "reason": f"unparseable_structure:{type(error).__name__}",
+        }
+    try:
+        result = generate(
+            structure,
+            entry_id=row["system_id"],
+            config=_GENERATOR["config"],
+            rotamer_library=_GENERATOR["rotamers"],
+        )
+    except Exception as error:  # noqa: BLE001 - see above; recorded, not swallowed
+        return None, {
+            "system_id": row["system_id"],
+            "status": "rejected",
+            "reason": f"ungeneratable_structure:{type(error).__name__}",
+        }
     sid = row["system_id"]
     if result is None:
         return None, {"system_id": sid, "status": "rejected", "reason": "unserializable"}

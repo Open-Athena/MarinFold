@@ -564,3 +564,38 @@ def test_a_finished_tar_clears_its_walk_checkpoint(tar_server, tmp_path: Path, m
     ]
     extract.extract_tar(url, rows, fetch_concurrency=1, checkpoint=cp)
     assert not Path(path).exists(), "a completed tar clears its cursor"
+
+
+def test_a_malformed_structure_is_a_rejection_not_a_batch_failure(tmp_path, monkeypatch) -> None:
+    """Some PDB deposits never parse; retrying the batch cannot fix that.
+
+    Eight PINDER batches deferred forever on gemmi's "Wrong format for charge:
+    1O" before transport failures and structure defects were separated. A
+    transport failure must still propagate so the batch retries.
+    """
+    import pinder_extract
+
+    row = {
+        "system_id": "bad_system", "zip_url": "http://x/y.zip",
+        "local_header_offset": 0, "compressed_bytes": 1, "uncompressed_bytes": 1,
+    }
+    monkeypatch.setattr(pinder_extract, "fetch_member", lambda *a, **k: "GARBAGE")
+
+    class _Gemmi:
+        @staticmethod
+        def read_pdb_string(text):
+            raise ValueError("Wrong format for charge: 1O")
+
+    monkeypatch.setattr(pinder_extract, "_generator", lambda: (_Gemmi, None, None))
+    doc, ledger = pinder_extract._one(row)
+    assert doc is None
+    assert ledger["status"] == "rejected"
+    assert ledger["reason"].startswith("unparseable_structure:ValueError")
+
+    # A transport failure is different: it must propagate so the batch defers.
+    def boom(*a, **k):
+        raise ConnectionResetError("network")
+
+    monkeypatch.setattr(pinder_extract, "fetch_member", boom)
+    with pytest.raises(ConnectionResetError):
+        pinder_extract._one(row)
