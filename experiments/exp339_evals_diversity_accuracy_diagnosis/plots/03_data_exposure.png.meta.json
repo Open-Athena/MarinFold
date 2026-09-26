@@ -1,5 +1,0 @@
-{
-  "script": "plot_results.py",
-  "args": [],
-  "caption": "Sources: exp277 epoch_corpus_counts.csv and exp336 direct_sequence_thresholds.csv at 9aaa1451."
-}
