@@ -1,0 +1,12 @@
+{
+  "script": "plots.py",
+  "args": [
+    "--input",
+    "/data/exp294_predicted_complexes/metadata/normalized_*.parquet",
+    "--selection-json",
+    "/data/exp294_predicted_complexes/selection/selection.json",
+    "--pilot-json",
+    "/data/exp294_predicted_complexes/pilot/pilot.json"
+  ],
+  "caption": "Hard-eligible AFCDB candidates vs the relaxed quality floor. The 3M target needs a floor at or below ~0.4; 500k heterodimers is unreachable at any floor."
+}
