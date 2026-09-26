@@ -1,0 +1,19 @@
+{
+  "status": "failed_during_environment_setup",
+  "iris_job": "/bizon/exp292-afdb-fetch-smoke100-v1",
+  "dashboard": "https://iris.oa.dev/#/job/%2Fbizon%2Fexp292-afdb-fetch-smoke100-v1",
+  "output": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/fetch-smoke100-v1/validated.parquet",
+  "input": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/plan/shard=*/*.parquet",
+  "num_docs": 100,
+  "zone": "us-central1-a",
+  "worker_region": "us-central1",
+  "worker_cpu": 1,
+  "worker_memory": "4g",
+  "worker_disk": "8g",
+  "max_workers": 1,
+  "fetch_concurrency": 32,
+  "root_priority": "batch",
+  "root_preemptible": true,
+  "failure": "Python 3.13 worker lacked Python.h while building tmtools 0.3.0; no data was read",
+  "resolution": "Restrict the frozen project to Python >=3.12,<3.13"
+}

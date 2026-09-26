@@ -1,0 +1,42 @@
+{
+  "source_sha256": {
+    "structure_audit.py": "f855c7d1b0f2379303005a2d3c68ed0df9a908506b67099995409a9be7e3b4cf",
+    "pyproject.toml": "4135a660dbc13b2cbcbe49f69127ca2657eb654bdc33e54cbcffafb991fbdf9e",
+    "uv.lock": "a3f93834c3ccd80aa00e1dad792790df349922e69dcb9c8191eb21e94c144540",
+    "run_afdb_audit.py": "6e300b54025ea32f380b1097634e31fd5f453a5e7f2cd449f020a15655581f97"
+  },
+  "output": "gs://marin-us-central1/protein-structure/MarinFold/exp292/afdb-audit-1008-v1",
+  "zone": "us-central1-a",
+  "workers": 32,
+  "clusters": 1008,
+  "anchors": 4845,
+  "candidates": 19201,
+  "sample_sha256": "2d3ccfe238387bb6cb61c76ad2a30483ffd64efc0016a664008fb187bcb1d493",
+  "iris_job": "/bizon/exp292-afdb-audit-1008-v1",
+  "dashboard": "https://iris.oa.dev/#/job/%2Fbizon%2Fexp292-afdb-audit-1008-v1",
+  "iris_client": "marin-iris[controller]==0.2.111.dev34835957023",
+  "client_httpx": "0.28.1",
+  "python": "3.12",
+  "cluster_config_sha256": "86b44e5077dca25c260b0947f0f6164fbaebdb9ff43066db0d9a92ade8236aa3",
+  "resources": {
+    "cpu": 32,
+    "memory": "96GB",
+    "disk": "64GB",
+    "priority": "batch",
+    "preemptible": true,
+    "max_retries": 1,
+    "timeout_seconds": 10800
+  },
+  "command": [
+    "uv",
+    "run",
+    "--frozen",
+    "--no-dev",
+    "python",
+    "run_afdb_audit.py",
+    "--output",
+    "gs://marin-us-central1/protein-structure/MarinFold/exp292/afdb-audit-1008-v1",
+    "--workers",
+    "32"
+  ]
+}

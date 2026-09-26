@@ -1,0 +1,4 @@
+protein_hash,cluster_id,seq_len,mean_plddt,ptm,plddt_std,cluster_size,length_bin,size_bin,reason
+c679e202d55f2e1760c772d4f7932708,c679e202d55f2e1760c772d4f7932708,519,0.8187676849365235,0.7161284685134888,0.1924004195769242,112,500-1000,100+,noncanonical_anchor; source/training residue mapping requires separate audit
+0794aac3a7abb3cb289236be816fd406,0794aac3a7abb3cb289236be816fd406,127,0.8686371803283691,0.752104640007019,0.1385545192034021,11,60-249,10-99,noncanonical_anchor; source/training residue mapping requires separate audit
+389340302695c73917c899c2d29c14b6,389340302695c73917c899c2d29c14b6,202,0.8889981905309164,0.9023853540420532,0.1006269754164885,2,60-249,2-9,noncanonical_anchor; source/training residue mapping requires separate audit

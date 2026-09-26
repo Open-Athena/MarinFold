@@ -1,0 +1,14 @@
+{
+  "script": "plot_esm_examples.py",
+  "args": [
+    "--sample-dir",
+    "experiments/exp292_models_structural_cluster_diversity/data/esm-gallery-v1",
+    "--data-dir",
+    "experiments/exp292_models_structural_cluster_diversity/data/esm-example-plots",
+    "--cache",
+    "/home/bizon/exp292_scratch/esm-results-v1/structures",
+    "--output",
+    "experiments/exp292_models_structural_cluster_diversity/plots/esm_examples.png"
+  ],
+  "caption": "Orange candidate / teal retained training anchor, aligned by TM-align. PAE matrices are block means of stored uint8 codes, not values in angstroms; their physical-unit decoding remains unverified and no PAE threshold is applied. Inspect domain-block patterns alongside the original confidence-colored gallery. Neither prediction disagreement nor low TM establishes a true alternative state."
+}
