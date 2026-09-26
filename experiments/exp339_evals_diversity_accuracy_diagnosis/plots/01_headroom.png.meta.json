@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "New raw-rollout reanalysis; distinct metric definitions must not be treated as interchangeable model scores."
+}
