@@ -1,0 +1,37 @@
+{
+  "af2rank_corrected_results": {
+    "bytes": 24695656,
+    "filename": "rosetta_gapseq.csv",
+    "rows": 180345,
+    "sha256": "ddb3b91c27561212fa9152df4a4a436b9d01990cfe801569d7adc7f925fb75c9"
+  },
+  "archive": {
+    "bytes": 5179742249,
+    "sha256": "098a3d813b74588bfe126cb1ac5c27b3123ff70e187d636ffdb66b5dc4a57733"
+  },
+  "benchmark": "AF2Rank Rosetta decoy set",
+  "candidate_key_sha256": "4ec8174d688ea51443ce2a75bdd0832fb56f595097098df5bf97998d3494bdb9",
+  "coverage": {
+    "benchmark_natives": 133,
+    "decoys": 180079,
+    "decoys_per_target_max": 2903,
+    "decoys_per_target_median": 1000,
+    "decoys_per_target_min": 794,
+    "native_residues_max": 223,
+    "native_residues_median": 105,
+    "native_residues_min": 53,
+    "no_template_controls": 133,
+    "targets": 133
+  },
+  "reference_tables": [
+    "tmscore.txt",
+    "rmsd.txt",
+    "rosettascore.txt"
+  ],
+  "sources": {
+    "archive": "https://files.ipd.uw.edu/pub/decoyset/decoys.zip",
+    "code": "https://github.com/jproney/AF2Rank",
+    "corrected_results_folder": "https://drive.google.com/drive/folders/1Q0aCR_lk4R67XlX9IHl6Jk0-dUI19rhA",
+    "paper": "https://doi.org/10.1103/PhysRevLett.129.238101"
+  }
+}

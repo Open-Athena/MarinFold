@@ -1,0 +1,5 @@
+{
+  "script": "plot_pilot.py",
+  "args": [],
+  "caption": "Mean target-wise Spearman correlation with reference TM-score; bars are 95% target-bootstrap intervals. Helico pTM is the primary score; the Helico composite additionally uses candidate/output TM-score."
+}
