@@ -1,0 +1,19 @@
+{
+  "status": "complete_calibration_not_prevalence",
+  "exp292_commit": "f57387118363c6dfdf4a5c617903408562937b2e",
+  "sources": {
+    "afdb": {
+      "path": "experiments/exp292_models_structural_cluster_diversity/data/afdb-gallery-v2/pairs.csv",
+      "sha256": "82c568d24f59ab41cbf4b14734e3778db4e7cd4a44b93ca2319ac6205de5fceb",
+      "pairs": 2387
+    },
+    "esm_atlas": {
+      "path": "experiments/exp292_models_structural_cluster_diversity/data/esm-gallery-v1/pairs.csv",
+      "sha256": "13e941c4f2e32b4a16346b9b013f53f9e526626e487c7b32172957c6d99512ed",
+      "pairs": 3408
+    }
+  },
+  "tm_semantics": "min(tm_normalized_by_a, tm_normalized_by_b)",
+  "coverage_semantics": "min(coverage_a, coverage_b) >= 0.8",
+  "warning": "The source galleries are curated curation examples, not random corpus samples. Use these results to understand threshold behavior, not to extrapolate loss."
+}

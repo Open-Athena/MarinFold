@@ -1,0 +1,5 @@
+{
+  "script": "plot_pilots.py",
+  "args": [],
+  "caption": "Fraction of 10,000 randomly sampled AFDB rows with at least one current ESM-Atlas match. Counts are lower bounds because the 1,000-candidate prefilter saturated."
+}

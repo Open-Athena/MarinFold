@@ -1,0 +1,5 @@
+representative_source,member_source,self_rows,candidate_removals
+afdb,afdb,3268222,577666
+afdb,esm_atlas,0,618589
+esm_atlas,afdb,0,117115
+esm_atlas,esm_atlas,61002107,3932482
