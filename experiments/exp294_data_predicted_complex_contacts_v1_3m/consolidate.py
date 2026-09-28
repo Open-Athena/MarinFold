@@ -39,6 +39,12 @@ DEFAULT_SHARD_ROWS = 20_000
 #: contaminate anyone who evaluates on PINDER. They are excluded here even
 #: though they survive the eval2 drop list, which only knows about our own eval.
 PINDER_EXCLUDED_SPLITS = ("val", "test")
+#: A document whose chains never touch is not an interface example, whatever its
+#: confidence scores say. The PINDER worker rejects these outright
+#: (``no_interface_contacts``); the AFCDB worker did not, because the gate there
+#: is ipSAE/pDockQ2 and a handful of models clear it without a single contact.
+#: Dropping them here makes the two arms agree.
+MIN_INTERFACE_CONTACTS = 1
 #: No single interface cluster may own more than this share of balanced
 #: sampling probability. The issue asks for 0.1%.
 DEFAULT_CLUSTER_CAP = 0.001
@@ -156,11 +162,16 @@ def build(
             f"{intake['pinder_documents_kept']:,} but "
             f"{intake['pinder_documents_in']:,} in minus drops is {expected:,}")
     con.execute(
-        """
+        f"""
         CREATE OR REPLACE TABLE corpus AS
-        SELECT * FROM afcdb_docs UNION ALL BY NAME SELECT * FROM pinder_docs
+        SELECT * FROM (
+            SELECT * FROM afcdb_docs UNION ALL BY NAME SELECT * FROM pinder_docs
+        ) WHERE contacts_emitted_inter_chain >= {int(MIN_INTERFACE_CONTACTS)}
         """
     )
+    merged = intake["afcdb_documents_in"] + intake["pinder_documents_kept"]
+    kept = con.execute("SELECT count(*) FROM corpus").fetchone()[0]
+    intake["dropped_no_interface_contacts"] = merged - kept
 
     # Cluster key: PINDER carries a real interface cluster; AFCDB has none, so
     # its sequence pair stands in. Labelled so the two are never conflated.
@@ -226,15 +237,20 @@ def build(
                 f"shard {index}: expected one part file, found {len(parts)}")
         parts[0].rename(train / f"shard-{index:05d}-of-{n_shards:05d}.parquet")
     shutil.rmtree(stage)
-    for name, order in (
-        ("natural", "hash(document_id), document_id"),
-        ("balanced", "sampling_weight DESC, document_id"),
+    # Each manifest is a self-contained sampling spec, so `sampling_weight`
+    # differs between them -- the natural mixture is uniform over documents, and
+    # only the balanced one carries the cluster weight. Two files that differed
+    # merely in row order would not give a reader anything to choose between.
+    for name, weight, order in (
+        ("natural", "1.0", "hash(document_id), document_id"),
+        ("balanced", "sampling_weight", "sampling_weight DESC, document_id"),
     ):
         con.execute(
             f"""
             COPY (
                 SELECT document_id, source_arm, complex_type, confidence_tier,
-                       cluster_key, cluster_size, sampling_weight, num_tokens,
+                       cluster_key, cluster_size,
+                       {weight}::DOUBLE AS sampling_weight, num_tokens,
                        seq_len, contacts_emitted_inter_chain
                 FROM sharded ORDER BY {order}
             ) TO {_sql_literal(out + f"/manifest_{name}.parquet")}
@@ -249,18 +265,29 @@ def build(
         FROM sharded GROUP BY 1, 2 ORDER BY 1, 2
         """
     ).fetchall()
-    # Rank explicitly: an ORDER BY inside a CTE is not preserved when the CTE is
-    # re-read under a LIMIT, which silently returns arbitrary clusters.
+    # Concentration of both documents and sampling probability, over the same
+    # cluster ranking. Ranked explicitly: an ORDER BY inside a CTE is not
+    # preserved when the CTE is re-read under a LIMIT, which silently returned
+    # arbitrary clusters and non-monotone shares.
+    #
+    # Clusters are ranked by sampling probability, and the document share is read
+    # off those same clusters -- the pair answers "do the clusters that dominate
+    # sampling also dominate the corpus", which two independent rankings would
+    # not.
+    n_clusters = int(con.execute(
+        "SELECT count(DISTINCT cluster_key) FROM sharded").fetchone()[0])
+    onepct = max(1, n_clusters // 100)
+    cuts = ", ".join(
+        f"sum(CASE WHEN rank <= {k} THEN {col} END) / max(t{col})"
+        for col in ("w", "n") for k in (1, 10, 100, onepct))
     top = con.execute(
-        """
-        WITH c AS (SELECT cluster_key, sum(sampling_weight) AS w FROM sharded
-                   GROUP BY 1),
-             ranked AS (SELECT w, row_number() OVER (ORDER BY w DESC) AS rank,
-                               sum(w) OVER () AS total FROM c)
-        SELECT sum(CASE WHEN rank <= 1 THEN w END) / max(total),
-               sum(CASE WHEN rank <= 10 THEN w END) / max(total),
-               sum(CASE WHEN rank <= 100 THEN w END) / max(total)
-        FROM ranked
+        f"""
+        WITH c AS (SELECT cluster_key, sum(sampling_weight) AS w, count(*) AS n
+                   FROM sharded GROUP BY 1),
+             ranked AS (SELECT w, n, row_number() OVER (ORDER BY w DESC, cluster_key)
+                               AS rank, sum(w) OVER () AS tw, sum(n) OVER () AS tn
+                        FROM c)
+        SELECT {cuts} FROM ranked
         """
     ).fetchone()
     totals = con.execute(
@@ -271,6 +298,7 @@ def build(
         "out_dir": out,
         **{k: int(v) for k, v in intake.items()},
         "pinder_excluded_splits": list(PINDER_EXCLUDED_SPLITS),
+        "min_interface_contacts": MIN_INTERFACE_CONTACTS,
         "shards": n_shards,
         "shard_rows": shard_rows,
         "documents": int(totals[0]),
@@ -278,9 +306,15 @@ def build(
         "clusters": int(totals[2]),
         "distinct_sha1": int(totals[3]),
         "cluster_cap": cluster_cap,
-        "balanced_share_top_1_cluster": round(float(top[0]), 6),
-        "balanced_share_top_10_clusters": round(float(top[1]), 6),
-        "balanced_share_top_100_clusters": round(float(top[2]), 6),
+        "balanced_share_top_1_cluster": round(float(top[0]), 8),
+        "balanced_share_top_10_clusters": round(float(top[1]), 8),
+        "balanced_share_top_100_clusters": round(float(top[2]), 8),
+        "balanced_share_top_1pct_clusters": round(float(top[3]), 8),
+        "clusters_in_top_1pct": onepct,
+        "document_share_top_1_cluster": round(float(top[4]), 8),
+        "document_share_top_10_clusters": round(float(top[5]), 8),
+        "document_share_top_100_clusters": round(float(top[6]), 8),
+        "document_share_top_1pct_clusters": round(float(top[7]), 8),
         "by_arm": [
             {"source_arm": a, "complex_type": c, "documents": int(n),
              "tokens": int(t), "clusters": int(k)}

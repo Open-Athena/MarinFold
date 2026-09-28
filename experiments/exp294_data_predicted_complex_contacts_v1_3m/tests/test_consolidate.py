@@ -15,10 +15,11 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from consolidate import PINDER_EXCLUDED_SPLITS, build
+from consolidate import MIN_INTERFACE_CONTACTS, PINDER_EXCLUDED_SPLITS, build
 
 
-def _afcdb_row(i: int, *, pair: tuple[str, str], ctype: str = "homodimer") -> dict:
+def _afcdb_row(i: int, *, pair: tuple[str, str], ctype: str = "homodimer",
+               inter_chain: int = 10) -> dict:
     return {
         "source_model_key": f"{ctype}|AF-{i:010d}",
         "model_id": f"AF-{i:010d}",
@@ -32,7 +33,7 @@ def _afcdb_row(i: int, *, pair: tuple[str, str], ctype: str = "homodimer") -> di
         "chain_lengths": [100, 100],
         "contacts_pre_filter": 50,
         "contacts_emitted": 40,
-        "contacts_emitted_inter_chain": 10,
+        "contacts_emitted_inter_chain": inter_chain,
         "contacts_pre_filter_inter_chain": 12,
         "truncated": False,
         "accession_a": pair[0],
@@ -48,7 +49,8 @@ def _afcdb_row(i: int, *, pair: tuple[str, str], ctype: str = "homodimer") -> di
     }
 
 
-def _pinder_row(i: int, *, cluster: str, split: str = "train") -> dict:
+def _pinder_row(i: int, *, cluster: str, split: str = "train",
+                inter_chain: int = 9) -> dict:
     return {
         "system_id": f"sys{i:05d}",
         "source_arm": "pinder",
@@ -61,7 +63,7 @@ def _pinder_row(i: int, *, cluster: str, split: str = "train") -> dict:
         "chain_lengths": [90, 90],
         "contacts_pre_filter": 40,
         "contacts_emitted": 30,
-        "contacts_emitted_inter_chain": 9,
+        "contacts_emitted_inter_chain": inter_chain,
         "contacts_pre_filter_inter_chain": 11,
         "truncated": False,
         "uniprot_R": f"U{i:05d}",
@@ -92,13 +94,16 @@ def _arm(root: Path, name: str, rows: list[dict]) -> Path:
 def _build(tmp_path: Path, *, cluster_cap: float) -> dict:
     """One AFCDB pair repeated 8x (a redundant cluster) plus 20 singletons, and a
     PINDER arm carrying a 5-member cluster, a val system, a test system, and one
-    on the eval drop list."""
+    on the eval drop list. Each arm also contributes one model whose chains never
+    touch."""
     afcdb = [_afcdb_row(i, pair=("P1", "P2")) for i in range(8)]
     afcdb += [_afcdb_row(100 + i, pair=(f"Q{i}", f"R{i}")) for i in range(20)]
+    afcdb += [_afcdb_row(200, pair=("Z1", "Z2"), inter_chain=0)]
     pinder = [_pinder_row(i, cluster="c-big") for i in range(5)]
     pinder += [_pinder_row(50 + i, cluster=f"c{i}") for i in range(10)]
     pinder += [_pinder_row(90, cluster="cv", split="val"),
-               _pinder_row(91, cluster="ct", split="test")]
+               _pinder_row(91, cluster="ct", split="test"),
+               _pinder_row(92, cluster="cz", inter_chain=0)]
     drop = tmp_path / "drop.parquet"
     pq.write_table(pa.Table.from_pylist([{"system_id": "sys00051"}]), drop)
     out = tmp_path / f"out_cap{cluster_cap}"
@@ -132,9 +137,9 @@ def test_benchmark_splits_and_droplist_are_both_applied(corpus: dict) -> None:
     assert tuple(stats["pinder_excluded_splits"]) == PINDER_EXCLUDED_SPLITS
     assert stats["pinder_dropped_benchmark_split"] == 2
     assert stats["pinder_dropped_eval_homolog"] == 1
-    assert stats["pinder_documents_in"] == 17
-    assert stats["pinder_documents_kept"] == 14
-    assert stats["documents"] == 28 + 14
+    assert stats["pinder_documents_in"] == 18
+    assert stats["pinder_documents_kept"] == 15
+    assert stats["documents"] == 29 + 15 - 2
 
 
 def test_shard_files_are_flat_and_carry_no_partition_column(corpus: dict) -> None:
@@ -159,10 +164,16 @@ def test_cluster_concentration_is_monotone(corpus: dict) -> None:
     `LIMIT`, which returned arbitrary clusters and non-monotone shares.
     """
     stats = corpus["stats"]
-    one = stats["balanced_share_top_1_cluster"]
-    ten = stats["balanced_share_top_10_clusters"]
-    hundred = stats["balanced_share_top_100_clusters"]
-    assert 0 < one <= ten <= hundred <= 1.0 + 1e-9
+    for kind in ("balanced_share", "document_share"):
+        shares = [stats[f"{kind}_top_{k}_clusters" if k != 1 else
+                        f"{kind}_top_1_cluster"] for k in (1, 10, 100)]
+        assert 0 < shares[0] <= shares[1] <= shares[2] <= 1.0 + 1e-9, kind
+        # The 1% tier of 31 clusters is the single top cluster.
+        assert stats[f"{kind}_top_1pct_clusters"] == pytest.approx(shares[0])
+    # Weighting only reshapes probability, so the redundant cluster must own a
+    # larger share of documents than of sampling mass.
+    assert (stats["document_share_top_1_cluster"]
+            > stats["balanced_share_top_1_cluster"])
 
 
 def test_redundant_clusters_are_downweighted_not_dropped(corpus: dict) -> None:
@@ -208,3 +219,39 @@ def test_cap_binds_only_on_over_represented_clusters(capped: dict, corpus: dict)
     assert limited[5] < uncapped[5]
     assert (capped["stats"]["balanced_share_top_1_cluster"]
             < corpus["stats"]["balanced_share_top_1_cluster"])
+
+
+def test_contactless_models_are_dropped_from_both_arms(corpus: dict) -> None:
+    """A complex whose chains never touch is not an interface example.
+
+    The PINDER worker already rejects these; AFCDB's ipSAE/pDockQ2 gate lets a
+    few through, so consolidation is where the two arms are made to agree.
+    """
+    stats = corpus["stats"]
+    assert stats["min_interface_contacts"] == MIN_INTERFACE_CONTACTS
+    assert stats["dropped_no_interface_contacts"] == 2
+    con = duckdb.connect()
+    assert con.execute(
+        f"""SELECT count(*) FROM read_parquet(
+                '{corpus["out"] / "train" / "*.parquet"}')
+            WHERE contacts_emitted_inter_chain < {MIN_INTERFACE_CONTACTS}"""
+    ).fetchone()[0] == 0
+
+
+def test_the_two_manifests_are_different_sampling_specs(corpus: dict) -> None:
+    """Natural is uniform over documents; only balanced carries cluster weight.
+
+    Both once carried the balanced weight and differed only in row order, which
+    left a reader nothing to choose between.
+    """
+    con = duckdb.connect()
+    out = corpus["out"]
+    natural = con.execute(
+        f"SELECT min(sampling_weight), max(sampling_weight), count(*) "
+        f"FROM read_parquet('{out / 'manifest_natural.parquet'}')").fetchone()
+    balanced = con.execute(
+        f"SELECT min(sampling_weight), max(sampling_weight), count(*) "
+        f"FROM read_parquet('{out / 'manifest_balanced.parquet'}')").fetchone()
+    assert natural[0] == natural[1] == 1.0
+    assert balanced[0] < balanced[1] == pytest.approx(1.0)
+    assert natural[2] == balanced[2] == corpus["stats"]["documents"]
