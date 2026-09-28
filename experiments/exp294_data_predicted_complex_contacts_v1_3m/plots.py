@@ -317,24 +317,27 @@ def plot_corpus_composition(stats_json: Path) -> None:
 
     # Targets: the 3M document floor is met by the corpus, the 500k heterodimer
     # floor only once PINDER is added -- which is the point of the second panel.
-    ax2.barh([1], [stats["documents"] / 1e6], color="#2e7d4f", height=0.45)
+    ax2.barh([1], [stats["documents"] / 1e6], color="#2e7d4f", height=0.4)
     ax2.axvline(TARGET_DOCS / 1e6, color="#333", linestyle="--", linewidth=1.2)
-    ax2.text(TARGET_DOCS / 1e6, 1.38, " 3M target", fontsize=8, color="#333")
+    ax2.text(TARGET_DOCS / 1e6, 1.26, " 3M target", fontsize=8, color="#333")
     ax2.barh([0], [arms[("afcdb", "heterodimer")]["documents"] / 1e6],
-             color=HET, height=0.45, label="AFCDB")
+             color=HET, height=0.4, label="AFCDB")
     ax2.barh([0], [arms[("pinder", "heterodimer")]["documents"] / 1e6],
              left=[arms[("afcdb", "heterodimer")]["documents"] / 1e6],
-             color="#8a5fa8", height=0.45, label="PINDER")
+             color="#8a5fa8", height=0.4, label="PINDER")
     ax2.axvline(HETERODIMER_FLOOR / 1e6, color="#333", linestyle="--", linewidth=1.2)
-    ax2.text(HETERODIMER_FLOOR / 1e6, 0.38, " 500k target", fontsize=8, color="#333")
+    ax2.text(HETERODIMER_FLOOR / 1e6, 0.26, " 500k target", fontsize=8, color="#333")
     ax2.text(stats["documents"] / 1e6 * 1.01, 1, f"{stats['documents'] / 1e6:.2f}M",
              va="center", fontsize=9)
     ax2.text(het / 1e6 + 0.06, 0, f"{het / 1e6:.2f}M", va="center", fontsize=9)
+    # Explicit, so the target annotations above each bar are never clipped.
+    ax2.set_ylim(-0.45, 1.55)
     ax2.set_yticks([0, 1])
     ax2.set_yticklabels(["heterodimers", "all documents"], fontsize=9)
     ax2.set_xlabel("documents (millions)")
     ax2.set_xlim(0, stats["documents"] / 1e6 * 1.15)
-    ax2.legend(frameon=False, fontsize=8, loc="center right")
+    ax2.legend(frameon=False, fontsize=8, loc="center left",
+               bbox_to_anchor=(0.30, 0.5))
     ax2.set_title("Both targets met; heterodimers only with PINDER", fontsize=11)
     _style(ax2)
     ax2.grid(axis="y", alpha=0)

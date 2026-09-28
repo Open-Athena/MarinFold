@@ -12,5 +12,5 @@
     "--balanced-manifest",
     "/data/exp294_release/corpus/manifest_balanced.parquet"
   ],
-  "caption": "Terminal status of every AFCDB source model. The two dominant rejections are the relaxed quality floor and backbone clashes; 3.0M are selected."
+  "caption": "The top clusters are PINDER's most-crystallised interfaces. They hold a visible share of documents and far less sampling mass, so the 0.1% per-cluster cap never has to bind."
 }

@@ -756,13 +756,18 @@ sequence pair for AFCDB (`afcdb_pair:<a>|<b>`), never conflated. AFCDB models ar
 one per distinct sequence pair, so every AFCDB cluster has size 1; PINDER averages
 18.7 structures per interface cluster, median 2, **max 15,274**.
 
-CONCENTRATION_TABLE
+| clusters, ranked by sampling mass | share of documents | share of sampling probability |
+| --- | --- | --- |
+| top 1 | 0.448% | **0.0041%** |
+| top 10 | 2.579% | 0.0299% |
+| top 100 | 5.268% | 0.1216% |
+| top 1% (30,054) | 12.764% | 2.020% |
 
-**Inverse-√ weighting alone brings the largest cluster to BALANCED_TOP1 of
+**Inverse-√ weighting alone brings the largest cluster to 0.0041% of
 sampling mass, far under the 0.1% the issue asks for**, so the per-cluster cap
 never binds on this corpus. The document column is the point of the comparison:
-the most redundant cluster owns DOC_TOP1 of the documents and only
-BALANCED_TOP1 of the sampling probability.
+the most redundant cluster owns 0.448% of the documents and only
+0.0041% of the sampling probability.
 
 This is deliberately not [#145](https://github.com/Open-Athena/MarinFold/issues/145)'s
 policy, which collapsed to one representative per coarse chain-pair cluster and

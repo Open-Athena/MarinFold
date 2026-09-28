@@ -6,5 +6,5 @@
     "--corpus-stats-json",
     "/data/exp294_release/corpus/corpus_stats.json"
   ],
-  "caption": "Hard-eligible AFCDB candidates vs the relaxed quality floor. The 3M target needs a floor at or below ~0.4; 500k heterodimers is unreachable at any floor."
+  "caption": "The finished corpus. AFCDB's heterodimer pool is exhausted at 183k, so the 500k heterodimer target is reached by adding PINDER."
 }
