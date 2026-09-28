@@ -61,7 +61,43 @@ Stages, one `launch.py` phase each:
 
 ## Results
 
-_(Fill in after the run completes.)_
+### Corpus preparation
+
+**The complex corpus fits the model's vocabulary.** The corpus publishes a
+2,848-token tokenizer beside the data; the 1.5B model has 2,845 embedding rows.
+The three extra ids are `<contacts-v1.sequence_only>` (2845), `<retract>` (2846)
+and `<contacts-v1.backtracking>` (2847) — appended by other document structures
+and unused here. Below 2845 the two vocabularies are *identical*, so tokenizing
+with the model's own tokenizer is not an approximation. On shard 00000, all
+20,000 documents re-encode to exactly their recorded `num_tokens`, reach token id
+2142 at most, and satisfy the contacts-v1 boundary contract. Recorded in
+[`data/tokenizer_contract.csv`](data/tokenizer_contract.csv); reproduce with
+`verify_tokenizer_contract.py --shard <shard>`. That sample is evidence, not the
+guarantee: `prepare.py` applies the same per-record check to every document of
+every shard while the caches are built, so a document reaching an out-of-contract
+id fails the build rather than indexing past the embedding table.
+
+**Truncation is statement-granular, which the issue's note had slightly wrong.**
+The published corpus flags 2.4% of documents `truncated`, and those land at
+8190–8192 tokens rather than exactly on the cap — #294 drops whole three-token
+contact statements. Only the documents landing exactly on 8192 lose their
+appended `<eos>` to the packer's clip: 178 of 20,000 on shard 00000, about 0.9%
+of the corpus rather than the 2.4% implied by the `truncated` flag. No document
+exceeds the cap.
+
+**Staging: 19.6 GB in about three minutes.** `/bizon/exp343-stage-a01` mirrored
+all 171 published shards from the public HF bucket into
+`s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/documents/`
+on one in-region CoreWeave CPU pod, splitting the held-out shard out on the way
+in. The staged footers reconcile exactly with the published corpus:
+**3,410,738 documents = 3,400,000 train across 170 shards + 10,738 validation in
+shard 00170**, matching the counts pinned in `config.py` before the job ran. Per
+shard size, row count and SHA256 are in `documents/stage-manifest.json`.
+
+All four exp277 token caches were confirmed present and complete in
+`marin-us-east-02a` before any of this started, so nothing is re-tokenized: the
+native AFDB/ESM caches from exp232 (`2026.08.14`) and the MPNN AFDB/ESM caches
+from exp277 (`2026.09.09.1`).
 
 ## Conclusion
 
