@@ -47,7 +47,34 @@ validated against that vocabulary as the caches are built, so a document
 reaching an out-of-contract id fails the build instead of indexing past the
 table.
 
+## The baseline, measured before the experiment exists
+
+exp277 scored on all 10,738 held-out complex documents: **3.697 nats/token**
+overall. Split by what each token encodes, it says where a complex-blind model
+actually fails.
+
+It pays **2.957** on intra-chain contacts and **3.452** on inter-chain — it
+handles the contacts that look like monomer contacts, and is half a nat worse on
+the ones that cross a chain boundary. Inter-chain is 12.5% of contact tokens, so
+a single fused loss would be dominated by the part it already knows. That is why
+the split exists.
+
+The chain-terminus statements cost **11.81 nats**. Uniform over the whole
+2,845-token vocabulary is 7.95, so exp277 is not uncertain there — it is
+confidently wrong. A monomer model has only ever seen one `<n-term>`/`<c-term>`
+pair per document; a complex has *k* of them at unpredictable ring positions.
+
+Homodimers are much easier than heterodimers (3.363 against 4.329 inter-chain): a
+homodimer interface is two copies of one sequence, so intra-chain knowledge partly
+transfers. PINDER's experimental crystallised fragments are hardest at 4.651.
+
 ## Status
 
-Corpus staged and tokenized; training pending. Results and figures land here as
-they arrive.
+Corpus staged, tokenized and audited. The scorer is validated on both exp277's
+and exp343's own export formats, and agrees with levanter's own complex
+validation loss to three significant figures. The monomer eval is ported with a
+byte-identical worker.
+
+Production training is submitted and waiting on a 128-H100 gang;
+`cw-us-east-02a` went to zero free GPUs shortly after submission. Results and the
+exp343 series on the figure below land here as they arrive.
