@@ -813,9 +813,20 @@ correct corpus as broken.
 
 `buckets/open-athena/MarinFold` →
 [`data/document_structures/contacts_v1_complex/`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_complex):
-171 ZSTD shards (19 GB), `manifest_natural.parquet`, `manifest_balanced.parquet`,
-`corpus_stats.json`, a README, and the **tokenizer co-located with the data**
-(2,848 tokens; verified by re-encoding — `num_tokens` matches exactly).
+**178 files, 19.60 GB** — 171 ZSTD shards, `manifest_natural.parquet`,
+`manifest_balanced.parquet`, `corpus_stats.json`, a README, and the **tokenizer
+co-located with the data** (2,848 tokens; verified by re-encoding — `num_tokens`
+matches exactly).
+
+Uploaded from the workstation in **117.6 min at 2.8 MB/s**, then verified by
+re-listing the bucket and checking every file against its local size. The two
+manifests read back as genuinely different specs: natural is uniform at 1.0,
+balanced spans 0.0081–1.0.
+
+The uplink is the lesson for next time. 19.6 GB is about the ceiling for
+publishing from here; past that, consolidation belongs on a pod, because once
+the only copy is local *every* route out costs the same uplink pass — staging
+back through GCS included.
 
 ## Conclusion
 
