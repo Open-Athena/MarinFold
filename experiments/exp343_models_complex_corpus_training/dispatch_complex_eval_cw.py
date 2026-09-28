@@ -132,19 +132,28 @@ def build_request(*, label: str, model: str, limit: int | None, suffix: str) -> 
 
 
 def submit(client, requests: list[JobRequest], *, must_wait: bool) -> None:
+    """Submit, and when waiting, fail the driver if any child failed.
+
+    `wait()` raises on a failed job, so waiting in a plain loop abandons every
+    remaining wait and reports only the first failure. Each is caught so the rest
+    still run -- and then re-raised together, because a driver that exits 0 while
+    a child died reports a result that does not exist.
+    """
     jobs = [client.submit(request) for request in requests]
     print(f"[complex-loss] submitted {len(jobs)} job(s)", flush=True)
     for request in requests:
         print(f"    {request.name}")
     if not must_wait:
         return
-    for job in jobs:
-        # wait() raises on a failed job, which would abandon the remaining waits
-        # and hide a second failure entirely.
+    failures = []
+    for request, job in zip(requests, jobs, strict=True):
         try:
             job.wait()
-        except Exception as error:  # noqa: BLE001 - reported per job, then continue
-            print(f"[complex-loss] {job}: {error}", flush=True)
+        except Exception as error:  # noqa: BLE001 - collected, then re-raised
+            print(f"[complex-loss] FAILED {request.name}: {error}", flush=True)
+            failures.append(request.name)
+    if failures:
+        raise RuntimeError(f"{len(failures)} of {len(jobs)} child job(s) failed: {failures}")
 
 
 def main() -> None:
