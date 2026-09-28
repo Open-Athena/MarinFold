@@ -774,6 +774,41 @@ policy, which collapsed to one representative per coarse chain-pair cluster and
 took 2.01M candidates down to 17,083. Several experimental structures of one
 interface are signal. The corpus keeps them and the weight decides.
 
+### Verified against the coordinates, and what that took calibrating
+
+The documents were checked against the structures they claim to describe, on a
+deterministic 40-system PINDER sample ([`verify_contacts.py`](verify_contacts.py),
+[`data/verify_contacts.json`](data/verify_contacts.json)):
+
+- **40/40 documents reproduce byte-identically** — re-fetched by byte offset,
+  regenerated, SHA1 compared against what was published. This is the check that
+  would catch a corpus built from a different structure, config or generator.
+- 1,099 inter-chain contacts re-measured as **minimum heavy-atom distance
+  straight from the coordinates**, with no pyconfind involved.
+- **Median 4.02 Å against a 40.94 Å control** of random cross-chain pairs from
+  the same structures — a 10.2x separation.
+
+The control is what makes this mean anything, and the first threshold was wrong.
+94.4% of contacts fall under 8 Å, but 5.6% run out to 13 Å, which an 8 Å cut
+reads as 61 errors. They are not errors: **contacts-v1's operator is pyconfind's
+contact degree, which rebuilds side chains from the Dunbrack rotamer library and
+measures occlusion.** A residue whose side chain *can reach* its partner counts
+even when the deposited conformer points away — and crystal structures routinely
+model long side chains in one of many accessible rotamers, or truncate them.
+
+That predicts something falsifiable, so it was measured rather than asserted: the
+far tail should be enriched in long, flexible side chains. It is, **1.43x**
+(60.7% vs 42.3% LYS/ARG/GLU/GLN/MET), and the residues beyond the ceiling are
+ARG (27), GLU (20), LYS (18), ASP (12), TYR (12), GLN (6) — the long, charged,
+flexible set, in order.
+
+The check now bounds at **14 Å**, which is where rotamer reach actually runs out
+(Arg and Lys extend ~7 Å from CA), and fails if the far tail is *not*
+long-side-chain enriched — because then the explanation would be wrong and the
+tail would be a real defect. **The general lesson: a distance cut is the wrong
+instrument for validating a contacts-v1 corpus**, and would report ~5% of a
+correct corpus as broken.
+
 ### Published
 
 `buckets/open-athena/MarinFold` →
