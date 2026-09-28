@@ -1,21 +1,53 @@
-# Summary slides — exp: train 1.5B on the exp277 corpus plus the predicted-complex corpus
+# exp343 — the exp277 corpus plus predicted complexes
 
-<!-- Feeds plots/summary.pdf via build_summary.py.
-     One `## ` heading per slide; body text becomes the slide.
-     Keep this current as the experiment progresses. -->
+MarinFold's default model, `contacts-v1-exp277-m2-p06-full-epoch-1.5B`, has
+never seen a protein complex. Every document it trained on is one chain.
 
-## What we're doing
+[#294](https://github.com/Open-Athena/MarinFold/issues/294) built 3,410,738
+multi-chain contacts-v1 documents — 11.15 B tokens, 262 M interface contacts,
+611,656 heterodimers — and published them. This experiment trains the same 1.5B
+model, on the same settings, over exp277's entire corpus **plus** those
+complexes, for one epoch.
 
-Does adding the [#294](https://github.com/Open-Athena/MarinFold/issues/294) predicted-complex corpus to the exp277 native + ProteinMPNN training mixture change contacts-v1 monomer contact accuracy, and does the resulting model actually learn multi-chain complexes?
+## What "matched settings" means here
 
-## Why
+Everything that defines the baseline is imported, not restated: exp232's
+m2-p06 model and optimizer contract, exp277's finite one-epoch data config, and
+exp277's pinned dependency lock. Scratch init, seq len 8192, global batch 128,
+LR 1e-3, weight decay 0.2, WSD 10%/20%/0.1, packed with blocked cross-document
+attention, scheduled amino-acid order augmentation, seeds 0 and 0.
 
-The complex corpus is 11.15 B tokens against exp277's 248.58 B — **4.3% of the mixture**. So:
+Two things differ, and only two: a fifth training corpus, and a second
+validation set.
 
-- **Monomer accuracy is a tie.** eval-val R-precision lands within the predeclared 0.005 threshold of exp277's 0.55375. A 4.3% mixture change, spent on a document type the eval does not contain, should not move a monomer benchmark either way. A loss of more than 0.005 would be the interesting result, not the expected one.
-- **Complex modelling is not a tie.** Held-out complex LM loss drops far below what exp277's checkpoint achieves on the same documents. exp277 has never seen a multi-chain document, so it must pay for the shared 2000-index ring, the interleaved chain runs, and inter-chain contacts at any index distance. This is the measurement the experiment exists for.
-- Designed-protein (eval-denovo) accuracy is the one monomer number with a plausible mechanism for moving: interface contacts are, geometrically, contacts between two pieces of chain that sequence separation does not explain, which is also what designed folds stress. No direction is predeclared.
+## Why a shard is held out
 
-## Results so far
+The monomer eval sets contain no complexes. A model that learned the multi-chain
+format and one that ignored it entirely would score the same on eval-val. So
+shard 00170 — 10,738 documents, 0.31% of the complex corpus — never enters
+training and becomes a complex validation set. Its loss, against exp277's on the
+same documents, is the measurement this experiment exists for.
 
-_(Fill in as results come in.)_
+## What the complex corpus is, in the mixture
+
+11.15 B tokens against exp277's 248.58 B: **4.3%**. That is the honest framing
+of the expected monomer result. A 4.3% mixture change spent on a document type
+the benchmark does not contain should leave eval-val where it was; the
+predeclared threshold is 0.005 and the expectation is a tie. The interesting
+outcomes are a complex loss that drops a long way, and any movement at all on
+designed proteins.
+
+## The tokenizer trap, checked rather than assumed
+
+The corpus ships a 2,848-token tokenizer. The model has 2,845 embedding rows.
+The three extra ids belong to other document structures and are unused here, and
+below 2,845 the two vocabularies are identical — so the corpus is tokenized with
+the model's tokenizer and the embedding table is untouched. Every record is
+validated against that vocabulary as the caches are built, so a document
+reaching an out-of-contract id fails the build instead of indexing past the
+table.
+
+## Status
+
+Corpus staged and tokenized; training pending. Results and figures land here as
+they arrive.
