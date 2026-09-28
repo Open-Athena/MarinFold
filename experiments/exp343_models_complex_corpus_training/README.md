@@ -83,6 +83,25 @@ submission, so the gang queues behind interactive holds first; batch priority is
 the standing rule for CoreWeave GPU work and queue time is not a reason to break
 it.
 
+The driver dispatched its gang immediately and all 16 tasks sit
+`building / SchedulingGated` on one Kueue workload
+(`iris-pg-7ab1faf9080d0602-0`), which is what a correctly formed gang waiting on
+capacity looks like — it admits as a unit, not task by task.
+
+**The gang is deliberately not resliced smaller.** Gang size is placement, not
+configuration: global batch, step count, seeds and shuffle are fixed, so only
+`per_device_parallelism` and wall clock change. But the arithmetic does not
+favour waiting less: 8 nodes needs 64 free (still more than were available) and
+doubles the run to ~134 h, and 2 nodes would fit inside current capacity while
+taking about **22 days**. 16 nodes is both the matched configuration and the
+fastest finish once admitted, and the fleet does swing — exp277 launched into 248
+free H100 on this same cluster.
+
+`cw-rno2a` had 82 free H100 during the wait, but the five token caches (260 GB)
+live in the `marin-us-east-02a` CoreWeave bucket, and exp277 chose US-EAST-02A
+over RNO2A for exactly that reason. Moving them would be a >10 GB cross-region
+copy, which needs explicit human sign-off under the root `AGENTS.md`.
+
 ## Success criteria
 
 - A healthy production run to the pinned step count, with a permanent native checkpoint and an HF export carrying its tokenizer.
