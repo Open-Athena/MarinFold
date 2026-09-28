@@ -117,9 +117,16 @@ def load_model(directory: Path):
         raise ValueError(
             f"Tokenizer has {len(tokenizer)} tokens, expected {EXPECTED_VOCAB_SIZE}"
         )
+    # `torch_dtype`, not `dtype`: the pinned image has transformers 4.53, where an
+    # unknown `dtype` kwarg lands on the config as a `torch.dtype` and the next
+    # config log line dies trying to JSON-serialize it. The load is asserted
+    # afterwards, so a silent float32 load fails rather than quietly doubling
+    # memory and changing the numbers.
     model = AutoModelForCausalLM.from_pretrained(
-        directory, dtype=torch.bfloat16, device_map="cuda"
+        directory, torch_dtype="bfloat16", device_map="cuda"
     )
+    if model.dtype != torch.bfloat16:
+        raise ValueError(f"Model loaded as {model.dtype}, expected bfloat16")
     if model.config.vocab_size != EXPECTED_VOCAB_SIZE:
         raise ValueError(f"Model vocabulary is {model.config.vocab_size}")
     model.eval()
