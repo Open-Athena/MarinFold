@@ -52,6 +52,37 @@ Stages, one `launch.py` phase each:
 1. *Monomers, for comparability.* The fixed exp82 rollout-and-resample recipe at exp277's settings, on legacy 554 + eval-val + eval-denovo, paired per-protein against exp277 with 10,000-resample protein bootstrap intervals. **eval-test stays unread.**
 2. *Complexes, for the actual question.* LM loss on the held-out complex shard for this checkpoint and, as the control, for the exp277 default — same documents, same tokenizer, same packing. Reported per arm (`afcdb` / `pinder`) and split by whether a contact crosses a chain boundary, because a model can score well on a complex document by predicting its intra-chain contacts alone.
 
+### Training smoke
+
+`/bizon/exp343-train-smoke-a01` (one node, 8 H100, batch priority) ran ten
+updates over the **full production caches** and succeeded. Final train loss
+7.46915 from scratch, 17.5% MFU, 101,421 tokens/s on 8 GPUs, and the HF export
+landed at `runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke/hf/step-9`.
+
+The two things it was there to prove both hold:
+
+- **Both validation sets are wired and reported separately** —
+  `eval/input/validation/*` (monomer, 6.92887) and
+  `eval/input/validation-complex/*` (held-out complexes, 6.91106). A single
+  fused number would have made the complex half of this experiment unmeasurable.
+- **The trainer's own count of the concatenated corpus equals the pinned
+  35,859,774.** `OneEpochDataConfig` raises on any disagreement, so the smoke
+  completing at all is that assertion passing.
+
+[Smoke W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke).
+
+### Production
+
+Submitted 2026-09-28 21:41 UTC as
+[`/bizon/exp343-train-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp343-train-a01),
+16 nodes x 8 H100 on `cw-us-east-02a` at batch priority, 280,155 steps, run
+[`contacts-v1-exp343-m2-p06-complex-1.5B`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B).
+At exp277's observed 0.858 s/step this is about 67 hours of compute plus
+validation and checkpoint overhead. `cw-us-east-02a` had 22 of 256 H100 free at
+submission, so the gang queues behind interactive holds first; batch priority is
+the standing rule for CoreWeave GPU work and queue time is not a reason to break
+it.
+
 ## Success criteria
 
 - A healthy production run to the pinned step count, with a permanent native checkpoint and an HF export carrying its tokenizer.
