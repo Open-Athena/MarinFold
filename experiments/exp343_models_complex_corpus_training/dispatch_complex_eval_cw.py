@@ -53,12 +53,23 @@ OUT_S3 = os.environ.get("EVAL_CW_OUT", f"{PREFIX}/evals/complex-loss")
 JOB_PREFIX = os.environ.get("EVAL_CW_JOB_PREFIX", "exp343-complex-loss")
 WORK_DIR = "/tmp/exp343_complex_eval"
 
-#: label -> HF export directory in CoreWeave S3. exp277 is the control: the
-#: current default model, which has never seen a multi-chain document.
+#: label -> HF export directory in CoreWeave S3.
+#:
+#: `exp277-step266344` is the control: the current default model, which has never
+#: seen a multi-chain document.
+#:
+#: `exp343-smoke-step9` is a ten-update scratch model and its *losses are
+#: meaningless*. It is here to prove the scorer can load an export written by
+#: **this** run's own pipeline -- the rope and tokenizer assertions in particular
+#: -- while the production run is still training, rather than discovering an
+#: export-format problem three days from now. Its numbers are never reported.
 ARMS = {
     "exp277-step266344": (
         "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/"
         "runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344"
+    ),
+    "exp343-smoke-step9": (
+        f"{PREFIX}/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke/hf/step-9"
     ),
 }
 
