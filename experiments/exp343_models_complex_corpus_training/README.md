@@ -102,6 +102,21 @@ live in the `marin-us-east-02a` CoreWeave bucket, and exp277 chose US-EAST-02A
 over RNO2A for exactly that reason. Moving them would be a >10 GB cross-region
 copy, which needs explicit human sign-off under the root `AGENTS.md`.
 
+### The scorer loads exp343's own export format
+
+`/bizon/exp343-complex-eval-smoke-a04` ran the scorer against **exp343's own**
+smoke export (`hf/step-9`), not exp277's. It loaded with
+`rope_theta=500000 rope_type=llama3 vocab=2845 params=1471374336` — identical to
+exp277's — so this run's export pipeline writes rope and tokenizer metadata the
+scorer can read, and the #163 silent-rope failure is excluded for the *production*
+checkpoint's format and not just the baseline's. Its loss (6.898 nats/token) is
+meaningless as a result: ten updates from scratch. It is a load check.
+
+It is also a cross-implementation agreement check. Levanter reported
+`eval/input/validation-complex/loss` = 6.91106 for that same checkpoint over two
+packed batches; this scorer, on 32 unpacked documents, reports 6.898. Different
+samples, independent implementations, same answer to three significant figures.
+
 ### The control: exp277 on the held-out complexes
 
 `/bizon/exp343-complex-eval-a01` scored the exp277 default on all **10,738**
