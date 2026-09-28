@@ -67,6 +67,45 @@ def _connect(threads: int, temp_dir: str | None) -> duckdb.DuckDBPyConnection:
     return con
 
 
+def flatten(
+    con: duckdb.DuckDBPyConnection, stage: Path, train: Path, n_shards: int
+) -> int:
+    """Turn duckdb's `shard=N/` tree into one flat file per shard.
+
+    ``PARTITION_BY`` is the only way to get duckdb to write many evenly sized
+    files, and it insists on those directories; the published corpora all use one
+    flat file per shard.
+
+    **A partition is not always one file.** duckdb flushes a partition whenever it
+    grows past its write threshold, so at higher thread counts some shards arrive
+    in several parts -- 48 threads split one shard of this corpus in two. Row
+    order within a shard is already arbitrary (the shard assignment randomised
+    it), so the parts are concatenated, and only the split shards pay for the
+    extra pass. Returns the number of part files that had to be merged.
+    """
+    train.mkdir(parents=True, exist_ok=True)
+    merged = 0
+    for index in range(n_shards):
+        parts = sorted((stage / f"shard={index}").glob("*.parquet"))
+        target = train / f"shard-{index:05d}-of-{n_shards:05d}.parquet"
+        if not parts:
+            raise RuntimeError(f"shard {index}: duckdb wrote no part file")
+        if len(parts) == 1:
+            parts[0].rename(target)
+            continue
+        merged += len(parts)
+        sources = ", ".join(_sql_literal(part) for part in parts)
+        con.execute(
+            f"COPY (SELECT * FROM read_parquet([{sources}])) "
+            f"TO {_sql_literal(target)} (FORMAT PARQUET, COMPRESSION ZSTD)"
+        )
+    shutil.rmtree(stage)
+    written = sum(1 for _ in train.glob("shard-*.parquet"))
+    if written != n_shards:
+        raise RuntimeError(f"wrote {written} shard files, expected {n_shards}")
+    return merged
+
+
 def build(
     afcdb: str,
     pinder: str,
@@ -225,18 +264,7 @@ def build(
          OVERWRITE_OR_IGNORE, FILENAME_PATTERN 'part_{{i}}')
         """
     )
-    # PARTITION_BY is the only way to get duckdb to write many evenly sized
-    # files, and it insists on `shard=N/` directories. The published corpora all
-    # use one flat file per shard, so rename into that.
-    train = Path(out) / "train"
-    train.mkdir(parents=True, exist_ok=True)
-    for index in range(n_shards):
-        parts = sorted((stage / f"shard={index}").glob("*.parquet"))
-        if len(parts) != 1:
-            raise RuntimeError(
-                f"shard {index}: expected one part file, found {len(parts)}")
-        parts[0].rename(train / f"shard-{index:05d}-of-{n_shards:05d}.parquet")
-    shutil.rmtree(stage)
+    merged_parts = flatten(con, stage, Path(out) / "train", n_shards)
     # Each manifest is a self-contained sampling spec, so `sampling_weight`
     # differs between them -- the natural mixture is uniform over documents, and
     # only the balanced one carries the cluster weight. Two files that differed
@@ -301,6 +329,7 @@ def build(
         "min_interface_contacts": MIN_INTERFACE_CONTACTS,
         "shards": n_shards,
         "shard_rows": shard_rows,
+        "merged_partition_parts": merged_parts,
         "documents": int(totals[0]),
         "tokens": int(totals[1]),
         "clusters": int(totals[2]),

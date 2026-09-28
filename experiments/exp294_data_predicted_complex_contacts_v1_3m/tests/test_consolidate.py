@@ -15,7 +15,12 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from consolidate import MIN_INTERFACE_CONTACTS, PINDER_EXCLUDED_SPLITS, build
+from consolidate import (
+    MIN_INTERFACE_CONTACTS,
+    PINDER_EXCLUDED_SPLITS,
+    build,
+    flatten,
+)
 
 
 def _afcdb_row(i: int, *, pair: tuple[str, str], ctype: str = "homodimer",
@@ -255,3 +260,40 @@ def test_the_two_manifests_are_different_sampling_specs(corpus: dict) -> None:
     assert natural[0] == natural[1] == 1.0
     assert balanced[0] < balanced[1] == pytest.approx(1.0)
     assert natural[2] == balanced[2] == corpus["stats"]["documents"]
+
+
+def test_flatten_merges_a_partition_duckdb_split(tmp_path: Path) -> None:
+    """One `shard=N/` directory may hold several part files.
+
+    duckdb flushes a partition once it passes its write threshold, so at 48
+    threads shard 165 of this corpus arrived as `part_0` + `part_1`. Assuming one
+    file per partition dropped half that shard.
+    """
+    stage, train = tmp_path / "_staged", tmp_path / "train"
+    (stage / "shard=0").mkdir(parents=True)
+    (stage / "shard=1").mkdir(parents=True)
+    pq.write_table(pa.Table.from_pylist([{"i": 0}, {"i": 1}]),
+                   stage / "shard=0" / "part_0.parquet")
+    pq.write_table(pa.Table.from_pylist([{"i": 2}]),
+                   stage / "shard=1" / "part_0.parquet")
+    pq.write_table(pa.Table.from_pylist([{"i": 3}, {"i": 4}]),
+                   stage / "shard=1" / "part_1.parquet")
+
+    merged = flatten(duckdb.connect(), stage, train, 2)
+
+    assert merged == 2
+    assert not stage.exists()
+    assert sorted(p.name for p in train.iterdir()) == [
+        "shard-00000-of-00002.parquet", "shard-00001-of-00002.parquet"]
+    con = duckdb.connect()
+    assert sorted(r[0] for r in con.execute(
+        f"SELECT i FROM read_parquet('{train / '*.parquet'}')").fetchall()) == [
+        0, 1, 2, 3, 4]
+
+
+def test_flatten_rejects_a_missing_partition(tmp_path: Path) -> None:
+    stage, train = tmp_path / "_staged", tmp_path / "train"
+    (stage / "shard=0").mkdir(parents=True)
+    pq.write_table(pa.Table.from_pylist([{"i": 0}]), stage / "shard=0" / "p.parquet")
+    with pytest.raises(RuntimeError, match="shard 1: duckdb wrote no part file"):
+        flatten(duckdb.connect(), stage, train, 2)

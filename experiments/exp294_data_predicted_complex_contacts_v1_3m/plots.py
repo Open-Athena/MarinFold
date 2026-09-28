@@ -293,11 +293,113 @@ def plot_pilot_composition(pilot_json: Path) -> None:
     plt.close(fig)
 
 
+def plot_corpus_composition(stats_json: Path) -> None:
+    """What the finished corpus is made of, against the two targets."""
+    stats = json.loads(stats_json.read_text())
+    arms = {(r["source_arm"], r["complex_type"]): r for r in stats["by_arm"]}
+    het = sum(r["documents"] for k, r in arms.items() if k[1] == "heterodimer")
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
+
+    bars = [
+        ("AFCDB\nhomodimer", arms[("afcdb", "homodimer")]["documents"], HOMO),
+        ("AFCDB\nheterodimer", arms[("afcdb", "heterodimer")]["documents"], HET),
+        ("PINDER\nheterodimer", arms[("pinder", "heterodimer")]["documents"], "#8a5fa8"),
+    ]
+    ax.bar([b[0] for b in bars], [b[1] / 1e6 for b in bars],
+           color=[b[2] for b in bars], width=0.6)
+    for i, b in enumerate(bars):
+        ax.text(i, b[1] / 1e6 + 0.06, f"{b[1] / 1e6:.2f}M", ha="center", fontsize=9)
+    ax.set_ylabel("documents (millions)")
+    ax.set_ylim(0, arms[("afcdb", "homodimer")]["documents"] / 1e6 * 1.18)
+    ax.set_title(f"{stats['documents']:,} documents / "
+                 f"{stats['tokens'] / 1e9:.2f} B tokens", fontsize=11)
+    _style(ax)
+
+    # Targets: the 3M document floor is met by the corpus, the 500k heterodimer
+    # floor only once PINDER is added -- which is the point of the second panel.
+    ax2.barh([1], [stats["documents"] / 1e6], color="#2e7d4f", height=0.45)
+    ax2.axvline(TARGET_DOCS / 1e6, color="#333", linestyle="--", linewidth=1.2)
+    ax2.text(TARGET_DOCS / 1e6, 1.38, " 3M target", fontsize=8, color="#333")
+    ax2.barh([0], [arms[("afcdb", "heterodimer")]["documents"] / 1e6],
+             color=HET, height=0.45, label="AFCDB")
+    ax2.barh([0], [arms[("pinder", "heterodimer")]["documents"] / 1e6],
+             left=[arms[("afcdb", "heterodimer")]["documents"] / 1e6],
+             color="#8a5fa8", height=0.45, label="PINDER")
+    ax2.axvline(HETERODIMER_FLOOR / 1e6, color="#333", linestyle="--", linewidth=1.2)
+    ax2.text(HETERODIMER_FLOOR / 1e6, 0.38, " 500k target", fontsize=8, color="#333")
+    ax2.text(stats["documents"] / 1e6 * 1.01, 1, f"{stats['documents'] / 1e6:.2f}M",
+             va="center", fontsize=9)
+    ax2.text(het / 1e6 + 0.06, 0, f"{het / 1e6:.2f}M", va="center", fontsize=9)
+    ax2.set_yticks([0, 1])
+    ax2.set_yticklabels(["heterodimers", "all documents"], fontsize=9)
+    ax2.set_xlabel("documents (millions)")
+    ax2.set_xlim(0, stats["documents"] / 1e6 * 1.15)
+    ax2.legend(frameon=False, fontsize=8, loc="center right")
+    ax2.set_title("Both targets met; heterodimers only with PINDER", fontsize=11)
+    _style(ax2)
+    ax2.grid(axis="y", alpha=0)
+    ax2.grid(axis="x", alpha=0.25, linewidth=0.6)
+
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, PLOTS / "corpus_composition.png", dpi=150,
+        caption=(
+            "The finished corpus. AFCDB's heterodimer pool is exhausted at "
+            "183k, so the 500k heterodimer target is reached by adding PINDER."
+        ),
+    )
+    plt.close(fig)
+
+
+def plot_cluster_concentration(manifest: Path) -> None:
+    """Whether the clusters that dominate sampling dominate the corpus."""
+    con = duckdb.connect()
+    con.execute("SET threads TO 8")
+    rows = con.execute(
+        f"""
+        WITH c AS (SELECT cluster_key, sum(sampling_weight) AS w, count(*) AS n
+                   FROM read_parquet({_sql_literal(manifest)}) GROUP BY 1),
+             r AS (SELECT w, n, row_number() OVER (ORDER BY w DESC, cluster_key)
+                          AS rank FROM c)
+        SELECT rank,
+               sum(w) OVER (ORDER BY rank) / sum(w) OVER () AS cum_w,
+               sum(n) OVER (ORDER BY rank) / sum(n) OVER () AS cum_n
+        FROM r QUALIFY rank <= 40000
+        """
+    ).fetchall()
+    rank = [r[0] for r in rows]
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    ax.plot(rank, [100 * r[2] for r in rows], color=HET, linewidth=1.8,
+            label="share of documents")
+    ax.plot(rank, [100 * r[1] for r in rows], color="#2e7d4f", linewidth=1.8,
+            label="share of balanced sampling probability")
+    ax.set_xscale("log")
+    ax.set_xlabel("clusters, ranked by sampling probability (log)")
+    ax.set_ylabel("cumulative share (%)")
+    ax.set_title(
+        "Inverse-sqrt weighting flattens the redundant tail without dropping it",
+        fontsize=11)
+    ax.legend(frameon=False, fontsize=9, loc="upper left")
+    _style(ax)
+    fig.tight_layout()
+    save_plot_with_meta(
+        fig, PLOTS / "cluster_concentration.png", dpi=150,
+        caption=(
+            "The top clusters are PINDER's most-crystallised interfaces. They "
+            "hold a visible share of documents and far less sampling mass, so "
+            "the 0.1% per-cluster cap never has to bind."
+        ),
+    )
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, help="Normalized Parquet file or glob.")
     parser.add_argument("--selection-json", type=Path, default=None)
     parser.add_argument("--pilot-json", type=Path, default=None)
+    parser.add_argument("--corpus-stats-json", type=Path, default=None)
+    parser.add_argument("--balanced-manifest", type=Path, default=None)
     args = parser.parse_args(argv)
     src = f"read_parquet({_sql_literal(args.input)}, union_by_name=true)"
     con = duckdb.connect()
@@ -308,6 +410,10 @@ def main(argv: list[str] | None = None) -> int:
         plot_selection_funnel(args.selection_json)
     if args.pilot_json:
         plot_pilot_composition(args.pilot_json)
+    if args.corpus_stats_json:
+        plot_corpus_composition(args.corpus_stats_json)
+    if args.balanced_manifest:
+        plot_cluster_concentration(args.balanced_manifest)
     print(f"wrote figures to {PLOTS}")
     return 0
 
