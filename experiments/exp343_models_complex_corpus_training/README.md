@@ -104,6 +104,68 @@ built both caches from one shard each and compared **every row against
 independent fresh tokenization** — 20,000 training rows and all 10,738 validation
 rows matched exactly.
 
+### The epoch, measured with the trainer's own packer
+
+`/bizon/exp343-audit-a01` packed every cache exactly as training will
+(`GreedyPrepackedDataset`, 8192, 64 segments, left slicing). **All four exp277
+corpora reproduced exp277's own audit to the example** — 616,320 + 9,554,637 +
+5,010,642 + 18,910,547 = 34,092,146 — which is the strongest available evidence
+that the adopted caches are the ones exp277 trained on and that the packer has not
+changed under us.
+
+| corpus | documents | raw tokens | packed examples | clipped |
+| --- | ---: | ---: | ---: | ---: |
+| native-afdb | 3,963,003 | 4,432,940,838 | 616,320 | 90 |
+| native-esm | 65,553,178 | 70,042,923,165 | 9,554,637 | 0 |
+| mpnn-afdb | 31,702,680 | 35,352,543,972 | 5,010,642 | 770 |
+| mpnn-esm | 130,872,044 | 138,755,354,859 | 18,910,547 | 2 |
+| **complex** | **3,400,000** | **11,120,116,172** | **1,767,628** | **27,917** |
+| total | 235,490,905 | 259,703,879,006 | **35,859,774** | 28,779 |
+| *complex-validation (held out)* | *10,738* | *34,766,590* | *5,513* | *75* |
+
+So **280,155 optimizer steps**, against exp277's 266,345: **+13,810 steps,
++5.2%**. The complex corpus is 4.3% of raw tokens and 4.9% of packed examples —
+it packs slightly less efficiently because its documents are longer (3,270 tokens
+mean against the mixture's 1,103). The 27,917 clipped documents are the ones
+sitting exactly on the 8192 cap, losing their appended `<eos>`: 0.82% of the
+corpus, in line with the 0.9% measured on shard 00000.
+
+Counts are committed in [`data/epoch_corpus_counts.csv`](data/epoch_corpus_counts.csv),
+and `train.py` refuses to launch unless the trainer's own count of the
+concatenated corpus equals the pinned 35,859,774.
+
+### The inter-chain split
+
+`complex_sections.py` derives each document's chain layout from its own
+`<n-term>`/`<c-term>` statements and labels every token as header, sequence,
+terminus, intra-chain contact or inter-chain contact. Verified against the
+published metadata — which comes from the source structures, not the document
+text — on all 20,000 documents of shard 00000: `num_chains`, per-chain lengths,
+total contacts and `contacts_emitted_inter_chain` **all match, 20,000/20,000**,
+with no unresolved contacts. Its 1,547,229 of 12,344,634 inter-chain contacts is
+**12.5%**, against the corpus's own reported 12.4%. See
+[`data/sections_check.csv`](data/sections_check.csv); reproduce with
+`verify_sections.py --shard <shard>`.
+
+One thing this caught: **the terminus statements are interleaved into the shuffled
+sequence section**, not placed in the statements section as the spec's wording
+suggests. Labelling them only in the statements section reported zero terminus
+tokens and silently charged their loss to `sequence`.
+
+### Complex-loss scorer, validated on the control before training started
+
+`/bizon/exp343-complex-eval-smoke-a03` scored exp277 on 32 held-out complex
+documents on one H100. The rope and tokenizer contracts held on load
+(`rope_theta=500000`, `rope_type=llama3`, vocab 2,845, 1,471,374,336 parameters),
+so the #163 silent-rope failure is excluded. 98,005 scored positions in 3.5 s,
+which puts the full 10,738-document control at about 20 minutes on one GPU.
+
+Two bugs this shook out before they could reach a result: transformers 4.53 in the
+pinned image accepts an unknown `dtype=` kwarg, parks it on the config as a
+`torch.dtype`, and then dies JSON-serializing its own log line; and the dispatcher
+was catching every child failure and exiting 0, so a driver could report success
+for a run that produced nothing.
+
 **Production tokenization reconciles to the published token count with no
 slack.** `/bizon/exp343-prepare-a01` built the training cache at **3,400,000
 documents / 11,120,116,172 tokens** and the validation cache at **10,738
