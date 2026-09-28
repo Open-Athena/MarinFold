@@ -77,7 +77,13 @@ def build_run(*, smoke: bool, nodes: int) -> ArtifactStep[LevanterCheckpoint]:
     if EPOCH_PACKED_EXAMPLES <= 0:
         raise ValueError("EPOCH_PACKED_EXAMPLES is unpinned; run audit_epoch.py first")
     per_device = min(8, GLOBAL_BATCH_SIZE // (8 * nodes))
-    run_id = f"{RUN_ID}-smoke" if smoke else RUN_ID
+    # A placement smoke needs its own identity. marin hash-caches step outputs, so
+    # a second smoke reusing the first one's run id resolves as already complete
+    # and silently does nothing -- which would read as "the gang bootstrapped".
+    # Production's identity never carries a tag: its W&B run and checkpoint path
+    # must not depend on where it happened to be placed.
+    tag = os.environ.get("SMOKE_TAG", "")
+    run_id = f"{RUN_ID}-smoke{tag}" if smoke else RUN_ID
     steps = 10 if smoke else EPOCH_TRAIN_STEPS
     env = {
         "MARIN_PREFIX": PREFIX,

@@ -38,8 +38,15 @@ from pathlib import Path
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training"
 DEFAULT_IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
 VERSION = "2026.09.28.1"
-#: exp277's four token caches and the #294 corpus both live in CoreWeave
-#: US-EAST-02A, so training and tokenization stay in that region.
+#: CoreWeave has **one** shared object-storage bucket: `cw-rno2a.yaml` sets
+#: `MARIN_PREFIX` to `s3://marin-us-east-02a/...` itself and notes that LOTA
+#: caches reads locally. So no data moves to run on another CoreWeave cluster,
+#: and nothing here triggers the root `AGENTS.md` cross-region copy rule.
+#:
+#: US-EAST-02A is still the default because it is where exp232 and exp277 ran
+#: 16-node gangs successfully. `AGENTS.md` records an 8-node JAX multi-host
+#: bootstrap failure on RNO2A as of 2026-07, so RNO2A above 4 nodes is unproven
+#: and has to be smoke-tested at the intended gang size before production.
 TARGET_CLUSTER = "cw-us-east-02a"
 PHASES = (
     "stage",
@@ -85,6 +92,17 @@ def entrypoint(phase: str, env: dict[str, str]) -> list[str]:
     return ["python", "-m", module + "train", "--version", VERSION, "--run"]
 
 
+def smoke_tag(target_cluster: str, nodes: int) -> str:
+    """A distinct identity per placement smoke.
+
+    marin hash-caches step outputs, so two smokes sharing a run id make the
+    second one resolve as already complete and do nothing -- which looks exactly
+    like a successful bootstrap. Production never gets a tag.
+    """
+    cluster = target_cluster.removeprefix("cw-").replace("-", "")
+    return f"-n{nodes}-{cluster}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=PHASES)
@@ -93,6 +111,12 @@ def main() -> None:
         "--labels", default=None, help="complex-eval: comma-separated checkpoint labels"
     )
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument(
+        "--target-cluster",
+        default=TARGET_CLUSTER,
+        help="CoreWeave cluster to place on. Storage is shared, so this is "
+        "placement only -- it does not change the experiment.",
+    )
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument(
         "--dry-run",
@@ -133,6 +157,8 @@ def main() -> None:
     if token_path.exists():
         env["HF_TOKEN"] = token_path.read_text().strip()
     entry = entrypoint(args.phase, env)
+    if args.phase == "train-smoke":
+        env["SMOKE_TAG"] = smoke_tag(args.target_cluster, args.nodes)
     if args.labels:
         if not args.phase.startswith("complex-eval"):
             raise ValueError("--labels only applies to the complex-eval phases")
@@ -152,7 +178,7 @@ def main() -> None:
         "job",
         "run",
         "--target-cluster",
-        TARGET_CLUSTER,
+        args.target_cluster,
         "--priority",
         "batch",
         "--job-name",
@@ -186,7 +212,7 @@ def main() -> None:
     else:
         gpus = ""
     print(
-        f"Submitting {args.phase}: {TARGET_CLUSTER}, batch{gpus}\n"
+        f"Submitting {args.phase}: {args.target_cluster}, batch{gpus}\n"
         f"bundle {bundle} ({len(sources)} sources)",
         flush=True,
     )
