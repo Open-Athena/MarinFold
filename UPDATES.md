@@ -1,5 +1,21 @@
 # MarinFold Updates
 
+## Week of September 28, 2026
+
+### Last week
+
+* **Training: the first delta-stream run finished with a gain over the matched contacts-v1 experiment.** Final legacy-554 R-precision was **0.576**, versus **0.511** for exp177 at nearly identical protein exposure. It remains below our current default (**0.621**), but the result is promising enough that Zack has launched a full-corpus version using the exp277 data. ([#299](https://github.com/Open-Athena/MarinFold/issues/299))
+* **Data: the complex corpus is curated and published.** It contains **3.41M documents / 11.15B tokens**, including **611,656 heterodimers** and **2.80M homodimers** from separately labelled AFCDB and PINDER arms. Every subunit was decontaminated against eval2. ([corpus](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_complex), [#294](https://github.com/Open-Athena/MarinFold/issues/294))
+* **Structure prediction: varying the number of MarinFold contacts slightly improves Helico results.** On eval-val, selecting among contact counts with Helico confidence improves mean GDT-TS from **0.502 to 0.528** versus always using top-L contacts. The oracle reaches **0.624**, so ranking the candidate structures is now a bottleneck. ([#311](https://github.com/Open-Athena/MarinFold/issues/311))
+* **Inference: several diversity-oriented inference-time search experiments were negative.** Branching from contact clusters, branching from whole-map medoids, and random alanine masking all failed their preregistered gates. Novel samples by themselves do not appear to be the missing ingredient. ([#326](https://github.com/Open-Athena/MarinFold/issues/326), [#328](https://github.com/Open-Athena/MarinFold/issues/328), [#333](https://github.com/Open-Athena/MarinFold/issues/333))
+
+### Upcoming
+
+* Tim: Launch and evaluate a training run on the new complex corpus. ([corpus](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/document_structures/contacts_v1_complex), [#294](https://github.com/Open-Athena/MarinFold/issues/294))
+* Zack: Complete and evaluate the full-corpus delta-stream run; finish the model-size sweep. ([#299](https://github.com/Open-Athena/MarinFold/issues/299), [#288](https://github.com/Open-Athena/MarinFold/issues/288))
+
+---
+
 ## Week of September 21, 2026
 
 ### Last week
