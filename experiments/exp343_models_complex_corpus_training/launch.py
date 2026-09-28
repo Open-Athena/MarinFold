@@ -77,7 +77,9 @@ def entrypoint(phase: str, env: dict[str, str]) -> list[str]:
         # old, while a pod-side driver's children are exempt from the gate.
         command = ["python", "-m", module + "dispatch_complex_eval_cw"]
         if phase == "complex-eval-smoke":
-            command.extend(["--limit", "32", "--name-suffix", "-smoke"])
+            # `=` and not a space: the value starts with `-`, which argparse
+            # would otherwise read as the next option.
+            command.extend(["--limit", "32", "--name-suffix=-smoke"])
         return command
     env["SMOKE"] = "1" if phase == "train-smoke" else "0"
     return ["python", "-m", module + "train", "--version", VERSION, "--run"]
@@ -134,7 +136,7 @@ def main() -> None:
     if args.labels:
         if not args.phase.startswith("complex-eval"):
             raise ValueError("--labels only applies to the complex-eval phases")
-        entry.extend(["--labels", args.labels])
+        entry.append(f"--labels={args.labels}")
     # `stage` downloads 19.6 GB through a temporary directory; the rest only read
     # parquet footers and cache ledgers.
     disk = "64GB" if args.phase == "stage" else "32GB"

@@ -99,6 +99,19 @@ All four exp277 token caches were confirmed present and complete in
 native AFDB/ESM caches from exp232 (`2026.08.14`) and the MPNN AFDB/ESM caches
 from exp277 (`2026.09.09.1`).
 
+**Tokenization smoke: exactly reproducible.** `/bizon/exp343-prepare-smoke-a01`
+built both caches from one shard each and compared **every row against
+independent fresh tokenization** — 20,000 training rows and all 10,738 validation
+rows matched exactly.
+
+**Production tokenization reconciles to the published token count with no
+slack.** `/bizon/exp343-prepare-a01` built the training cache at **3,400,000
+documents / 11,120,116,172 tokens** and the validation cache at **10,738
+documents / 34,766,590 tokens**. Each cache token total is its documents' tokens
+plus one appended `<eos>` per document, so subtracting the documents gives
+11,116,716,172 + 34,755,852 = **11,151,472,024** — the published corpus's
+`corpus_stats.json` token count, to the token.
+
 ## Conclusion
 
 _(Fill in after results are in.)_
