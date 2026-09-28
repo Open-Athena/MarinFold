@@ -1,0 +1,31 @@
+{
+  "label": "exp277-step266344",
+  "model": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+  "shard": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/documents/validation/shard-00170-of-00171.parquet",
+  "timing": {
+    "elapsed_seconds": 743.9626395329833,
+    "model_load_seconds": 18.215615371242166,
+    "total_seconds": 762.9263380672783,
+    "documents": 10738,
+    "scored_positions": 34755777
+  },
+  "worker": {
+    "gpu_name": "NVIDIA H100 80GB HBM3",
+    "gpu_total_memory_gb": 79.1806640625,
+    "gpu_compute_capability": "9.0",
+    "hostname": "g7387bc",
+    "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+    "torch_version": "2.7.0+cu128",
+    "python_version": "3.12.11",
+    "timestamp_utc": "2026-09-28T21:53:42Z"
+  },
+  "checkpoint_files": {
+    "config.json": 1726,
+    "model-00001-of-00002.safetensors": 4979485528,
+    "model-00002-of-00002.safetensors": 906042048,
+    "model.safetensors.index.json": 20882,
+    "tokenizer.json": 64407,
+    "tokenizer_config.json": 296
+  },
+  "iris_job": "/bizon/exp343-complex-eval-a01"
+}

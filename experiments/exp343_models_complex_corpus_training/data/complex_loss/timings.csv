@@ -1,0 +1,2 @@
+stem,n_residues,n_pairs,mode,elapsed_seconds,model_load_seconds,total_seconds,model_nickname,runner_tag,gpu_name,gpu_total_memory_gb,gpu_compute_capability,hostname,platform,torch_version,timestamp_utc,n_documents,scored_positions
+complex-validation-shard-00170,,,lm_loss,743.9626395329833,18.215615371242166,762.9263380672783,marinfold-exp277-step266344,iris,NVIDIA H100 80GB HBM3,79.18,9.0,g7387bc,Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35,2.7.0+cu128,2026-09-28T21:53:42Z,10738,34755777

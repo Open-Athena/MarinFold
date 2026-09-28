@@ -102,6 +102,50 @@ live in the `marin-us-east-02a` CoreWeave bucket, and exp277 chose US-EAST-02A
 over RNO2A for exactly that reason. Moving them would be a >10 GB cross-region
 copy, which needs explicit human sign-off under the root `AGENTS.md`.
 
+### The control: exp277 on the held-out complexes
+
+`/bizon/exp343-complex-eval-a01` scored the exp277 default on all **10,738**
+held-out complex documents (34,755,777 positions) in 12.4 minutes on one H100.
+This is the number exp343 has to beat, and it is banked before exp343 exists.
+
+| group | documents | nll/token | sequence | intra-chain | inter-chain | terminus |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **all** | 10,738 | **3.6970** | 4.5435 | **2.9573** | **3.4518** | **11.8137** |
+| `afcdb` | 9,383 | 3.6838 | 4.5441 | 2.9404 | 3.3893 | 11.8125 |
+| `pinder` | 1,355 | 3.8307 | 4.5374 | 3.1194 | 4.6512 | 11.8220 |
+| heterodimer | 1,973 | 3.8158 | 4.5391 | 3.0909 | 4.3286 | 11.7933 |
+| homodimer | 8,765 | 3.6772 | 4.5443 | 2.9343 | 3.3627 | 11.8183 |
+| tier A | 5,500 | 3.6576 | 4.5381 | 2.9448 | 3.5016 | 11.8711 |
+| tier B | 3,883 | 3.7287 | 4.5533 | 2.9316 | 3.2380 | 11.7295 |
+
+Three things stand out, and all three are hypotheses about what exp343 should
+fix:
+
+**The split was worth building.** exp277 pays **2.9573** nats on intra-chain
+contacts and **3.4518** on inter-chain — it handles the contacts that look like
+monomer contacts and is 0.50 nats worse on the ones that cross a chain boundary.
+A single fused number would have averaged that away, and the 12.5% inter-chain
+token share means the fused number is dominated by the part exp277 already knows.
+
+**The terminus loss is the format signature: 11.81 nats.** Uniform over the whole
+2,845-token vocabulary is 7.95, so exp277 is not merely uncertain here, it is
+*confidently wrong*. That is what format-blindness looks like — a monomer model
+has only ever seen one `<n-term>`/`<c-term>` pair per document, and a complex has
+*k* of them at unpredictable ring positions. Read with one caveat: this role
+bundles the marker token with the position token that follows it, and a 2,000-way
+ring position is about 7.6 nats under uniform on its own, so the 11.81 is an
+average over a cheap token and an expensive one. Splitting them would sharpen the
+claim; the direction does not depend on it.
+
+**Homodimers are much easier than heterodimers** — 3.3627 against 4.3286 on
+inter-chain contacts. A homodimer interface is between two copies of one
+sequence, so intra-chain knowledge partly transfers; a heterodimer interface has
+no such shortcut. PINDER, which is experimental crystallised fragments rather than
+predicted models, is hardest of all at 4.6512.
+
+Committed under [`data/complex_loss/`](data/complex_loss/) with its provenance and
+per-input timing.
+
 ## Success criteria
 
 - A healthy production run to the pinned step count, with a permanent native checkpoint and an HF export carrying its tokenizer.
