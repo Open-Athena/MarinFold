@@ -97,10 +97,31 @@ taking about **22 days**. 16 nodes is both the matched configuration and the
 fastest finish once admitted, and the fleet does swing — exp277 launched into 248
 free H100 on this same cluster.
 
-`cw-rno2a` had 82 free H100 during the wait, but the five token caches (260 GB)
-live in the `marin-us-east-02a` CoreWeave bucket, and exp277 chose US-EAST-02A
-over RNO2A for exactly that reason. Moving them would be a >10 GB cross-region
-copy, which needs explicit human sign-off under the root `AGENTS.md`.
+**RNO2A is a live option, and the two reasons to dismiss it both turned out to be
+wrong.**
+
+*There is nothing to move.* `cw-rno2a.yaml` sets `MARIN_PREFIX` to
+`s3://marin-us-east-02a/...` itself, with the comment "everything lives in
+marin-us-east-02a; LOTA caches reads locally". CoreWeave has **one** shared
+bucket, so placing on RNO2A copies no data and triggers no cross-region rule. The
+read volume is negligible anyway: 260 GB spread over a 67-hour compute-bound run
+is about 1.1 MB/s.
+
+*8-node gangs work there.* The root `AGENTS.md` records that on RNO2A "1/2/4-node
+gangs bootstrap and train; **8-node fails** — the JAX multi-host coordination
+bootstrap aborts". That is **stale as of 2026-09-28**.
+`/bizon/exp343-train-smoke-a02` ran a full 8-node / 64-H100 gang there to
+completion: ten updates, train loss 7.61668, 86.93 examples/s, 712,117 tokens/s,
+15.4% MFU, both validation sets reported
+([W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke-n8-rno2a)).
+Verified against W&B rather than the job's exit status — a gRPC teardown trace in
+the logs made "succeeded" worth not taking at face value. Scaling is 88% of the
+1-node rate.
+
+The cost is wall clock, not correctness: 1.47 s/step at 8 nodes against exp277's
+0.858 s/step at 16, so **114 h against 67 h** for the same 280,155 steps. The two
+placements cannot run at once — they would write the same checkpoint path under
+the same run id — so this is a choice, not a hedge.
 
 ### The scorer loads exp343's own export format
 
