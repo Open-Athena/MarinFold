@@ -46,7 +46,7 @@ HERE = Path(__file__).resolve().parent
 # numbers. It is stdlib-only, so it loads cleanly in this experiment's venv.
 sys.path.insert(0, str(HERE.parent / "exp225_data_decontaminate_training_corpora"))
 
-from decontam_lib import (  # pyrefly: ignore[missing-import]
+from decontam_lib import (  # pyrefly: ignore[missing-import]  # noqa: E402
     SEQ_MAX_EVALUE,
     SEQ_MIN_IDENTITY,
     SEQ_MIN_QCOV,
@@ -54,7 +54,7 @@ from decontam_lib import (  # pyrefly: ignore[missing-import]
     is_sequence_contaminant,
 )
 
-from build_eval_reference import REFERENCE_VERSION
+from build_eval_reference import REFERENCE_VERSION  # noqa: E402
 
 #: query, target, fractional identity, query coverage, e-value, bit score.
 FORMAT = "query,target,fident,qcov,evalue,bits"

@@ -17,7 +17,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from fetch_sequences import accession_from_token, fetch, verify
+from fetch_sequences import accession_from_token, fetch, verify  # noqa: E402
 
 
 class _RangeHandler(http.server.SimpleHTTPRequestHandler):

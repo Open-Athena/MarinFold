@@ -17,7 +17,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from extract import MEMBER_TEMPLATE, http_range, walk_members
+from extract import MEMBER_TEMPLATE, http_range, walk_members  # noqa: E402
 
 #: The member name of a real AFCDB model, checked by hand against
 #: heterodimers/shard_1003_batch_2.tar. `model_id` already carries the `AF-`

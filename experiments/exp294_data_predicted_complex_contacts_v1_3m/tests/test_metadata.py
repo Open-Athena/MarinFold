@@ -10,7 +10,7 @@ import duckdb
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from metadata import (
+from metadata import (  # noqa: E402
     HETERODIMER_COLUMNS,
     HOMODIMER_COLUMNS,
     normalize_all,

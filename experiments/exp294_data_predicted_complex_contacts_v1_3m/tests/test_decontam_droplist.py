@@ -14,7 +14,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from decontam_droplist import accession_from_header, build, build_droplist
+from decontam_droplist import accession_from_header, build, build_droplist  # noqa: E402
 
 CACHED_MMSEQS = Path.home() / ".cache/marinfold/mmseqs/mmseqs/bin/mmseqs"
 has_mmseqs = shutil.which("mmseqs") is not None or CACHED_MMSEQS.is_file()

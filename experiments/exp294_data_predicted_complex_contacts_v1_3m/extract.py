@@ -61,6 +61,9 @@ faulthandler.enable()
 for _var in ("NUMBA_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ.setdefault(_var, "1")
 
+# Ruff: every import below is deliberately after the environment preamble
+# above -- the thread caps must be set before numba or BLAS is imported.
+# ruff: noqa: E402
 import argparse
 import hashlib
 import http.client

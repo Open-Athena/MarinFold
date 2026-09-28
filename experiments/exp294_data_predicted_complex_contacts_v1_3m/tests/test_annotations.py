@@ -12,7 +12,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from annotations import accession_from_header, build_annotations, iter_fasta
+from annotations import accession_from_header, build_annotations, iter_fasta  # noqa: E402
 
 
 def test_accession_from_common_headers() -> None:

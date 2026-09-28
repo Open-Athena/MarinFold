@@ -13,7 +13,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from pilot import _allocate, build
+from pilot import _allocate, build  # noqa: E402
 
 
 def _selected(tmp_path: Path, rows: list[dict]) -> Path:

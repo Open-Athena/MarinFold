@@ -15,7 +15,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from consolidate import (
+from consolidate import (  # noqa: E402
     MIN_INTERFACE_CONTACTS,
     PINDER_EXCLUDED_SPLITS,
     build,
