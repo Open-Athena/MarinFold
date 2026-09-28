@@ -12,11 +12,23 @@ from experiments.exp343_models_complex_corpus_training.complex_sections import (
 )
 
 
-def document(sequence: list[tuple[int, str]], statements: list[str]) -> str:
-    body = " ".join(f"<p{index}> <{code}>" for index, code in sequence)
+def document(
+    sequence: list[tuple[int, str]],
+    statements: list[str],
+    *,
+    termini_in_sequence: list[str] | None = None,
+) -> str:
+    """Assemble a document, optionally with termini inside the sequence section.
+
+    The published corpus puts them there -- the section is shuffled and the
+    terminus statements shuffle with it -- so both placements are exercised.
+    """
+    parts = [f"<p{index}> <{code}>" for index, code in sequence]
+    if termini_in_sequence:
+        parts = termini_in_sequence + parts
     return " ".join(
-        ["<contacts-v1>", "<begin_sequence>", body, "<begin_statements>", *statements,
-         "<end>"]
+        ["<contacts-v1>", "<begin_sequence>", " ".join(parts), "<begin_statements>",
+         *statements, "<end>"]
     )
 
 
@@ -133,3 +145,22 @@ def test_an_unexpected_statement_token_is_rejected() -> None:
     )
     with pytest.raises(ValueError, match="Unexpected statement token"):
         label(text)
+
+
+def test_termini_inside_the_sequence_section_are_labelled_terminus() -> None:
+    # This is the published corpus's own layout: the sequence section is
+    # shuffled and the terminus statements travel inside it.
+    text = document(
+        [(100, "ALA"), (101, "GLY"), (102, "SER"), (500, "PHE"), (501, "LYS"),
+         (502, "THR")],
+        ["<contact> <p100> <p102>", "<contact> <p101> <p501>"],
+        termini_in_sequence=[
+            "<n-term> <p100>", "<c-term> <p102>", "<n-term> <p500>", "<c-term> <p502>",
+        ],
+    )
+    sections = label(text)
+    assert sections.num_chains == 2
+    assert (sections.contacts_intra, sections.contacts_inter) == (1, 1)
+    # Eight terminus tokens, and none of them charged to the sequence loss.
+    assert sections.roles.count(Role.TERMINUS) == 8
+    assert sections.roles.count(Role.SEQUENCE) == 12

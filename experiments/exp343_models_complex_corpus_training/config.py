@@ -109,7 +109,11 @@ CORPORA = tuple(
 
 VALIDATION_CACHE = MONOMER_VALIDATION_CACHE
 
-#: Pinned by `audit_epoch.py` before launch, using the trainer's own packer.
-EPOCH_PACKED_EXAMPLES = 0
+#: Pinned by `audit_epoch.py`, using the trainer's own packer (job
+#: `/bizon/exp343-audit-a01`). The four exp277 corpora reproduced exp277's own
+#: audit exactly -- 616,320 + 9,554,637 + 5,010,642 + 18,910,547 = 34,092,146 --
+#: and the complex corpus adds 1,767,628. `train.py` refuses to launch if the
+#: trainer's own count disagrees with this.
+EPOCH_PACKED_EXAMPLES = 35_859_774
 GLOBAL_BATCH_SIZE = 128
 EPOCH_TRAIN_STEPS = (EPOCH_PACKED_EXAMPLES + GLOBAL_BATCH_SIZE - 1) // GLOBAL_BATCH_SIZE

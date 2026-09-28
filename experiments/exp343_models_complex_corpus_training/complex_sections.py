@@ -166,6 +166,14 @@ def label(document: str) -> Sections:
     roles = [Role.HEADER] * len(tokens)
     for cursor in range(begin_sequence + 1, begin_statements):
         roles[cursor] = Role.SEQUENCE
+    # Termini are labelled wherever they sit. In the published corpus they are
+    # *interleaved into the sequence section* at arbitrary positions -- that
+    # section is shuffled, and the terminus statements shuffle with it -- so
+    # labelling them only in the statements section silently charged them to the
+    # sequence loss instead.
+    for cursor, token in enumerate(tokens):
+        if token in (N_TERM, C_TERM):
+            roles[cursor] = roles[cursor + 1] = Role.TERMINUS
     counts = {Role.CONTACT_INTRA: 0, Role.CONTACT_INTER: 0, Role.CONTACT_UNRESOLVED: 0}
     cursor = begin_statements + 1
     while cursor < len(tokens):
@@ -175,8 +183,7 @@ def label(document: str) -> Sections:
             cursor += 1
             continue
         if token in (N_TERM, C_TERM):
-            roles[cursor] = roles[cursor + 1] = Role.TERMINUS
-            cursor += 2
+            cursor += 2  # already labelled by the pass above
             continue
         if token != CONTACT:
             raise ValueError(f"Unexpected statement token {token!r} at {cursor}")
