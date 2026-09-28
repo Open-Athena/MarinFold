@@ -54,6 +54,11 @@ BATCH_DOCUMENTS = 8
 #: at the cap has its appended `<eos>` trimmed -- exactly what the training
 #: packer does to it -- rather than being scored one position past the context.
 MAX_SEQ_LEN = 8192
+#: Documents per durable output part. Batch priority is preemptible and this
+#: worker has no other state, so a restart replays at most one part -- about
+#: 90 seconds -- instead of the whole shard. A completed run's first attempt
+#: already wrote every part, so a retry is then almost free.
+DOCUMENTS_PER_PART = 512
 
 
 def log(message: str) -> None:
@@ -151,67 +156,60 @@ def read_documents(uri: str, limit: int | None) -> list[dict]:
     return rows
 
 
-def score(model, tokenizer, rows: list[dict], sections_module) -> list[dict]:
-    """Per-document NLL totals, overall and by token role.
+def score_batch(model, tokenizer, rows: list[dict], chunk: list[int],
+                sections_module) -> list[dict]:
+    """Score one batch of documents, one result row each.
 
     Every document is scored in full -- no truncation and no sliding window --
     because the corpus caps documents at 8192 tokens, which is the model's own
     context length.
     """
     role_enum = sections_module.Role
-    # Longest first: the batch's peak memory is set by its longest document, and
-    # a failure then happens in the first batch rather than three hours in.
-    order = sorted(range(len(rows)), key=lambda i: -rows[i]["num_tokens"])
-    results: list[dict | None] = [None] * len(rows)
     eos_id = tokenizer.convert_tokens_to_ids("<eos>")
     pad_id = tokenizer.convert_tokens_to_ids("<pad>")
-    started = time.perf_counter()
-    for start in range(0, len(order), BATCH_DOCUMENTS):
-        chunk = order[start : start + BATCH_DOCUMENTS]
-        labelled = [sections_module.label(rows[i]["document"]) for i in chunk]
-        # The training cache is the document's tokens plus a trailing `<eos>`,
-        # so the scored sequence must be too, or the last real token is never
-        # predicted from and the loss is not the training loss.
-        encoded = [
-            (tokenizer.convert_tokens_to_ids(list(section.tokens)) + [eos_id])[
-                :MAX_SEQ_LEN
-            ]
-            for section in labelled
-        ]
-        width = max(len(ids) for ids in encoded)
-        batch = torch.full((len(chunk), width), pad_id, dtype=torch.long)
-        for row, ids in enumerate(encoded):
-            batch[row, : len(ids)] = torch.tensor(ids, dtype=torch.long)
-        batch = batch.to("cuda")
-        mask = torch.zeros_like(batch, dtype=torch.long)
-        for row, ids in enumerate(encoded):
-            mask[row, : len(ids)] = 1
-        with torch.no_grad():
-            logits = model(input_ids=batch, attention_mask=mask).logits.float()
-        log_probs = torch.log_softmax(logits[:, :-1], dim=-1)
-        targets = batch[:, 1:]
-        nll = -log_probs.gather(2, targets.unsqueeze(-1)).squeeze(-1).cpu()
-        for row, (index, section, ids) in enumerate(
-            zip(chunk, labelled, encoded, strict=True)
-        ):
-            # Target t is predicted from position t-1, so target position k of
-            # `nll` is token k+1 of the sequence, whose role is roles[k+1]. The
-            # final target is the appended `<eos>`, scored under the END role.
-            totals: dict[str, float] = defaultdict(float)
-            counts: dict[str, int] = defaultdict(int)
-            roles = list(section.roles) + [role_enum.END]
-            for target in range(len(ids) - 1):
-                role = roles[target + 1].value
-                totals[role] += float(nll[row, target])
-                counts[role] += 1
-            total = sum(totals.values())
-            scored = sum(counts.values())
-            if scored != len(ids) - 1:
-                raise ValueError("role accounting lost a scored position")
-            if not math.isfinite(total):
-                raise ValueError(f"non-finite loss on {rows[index]['document_id']}")
-            source = rows[index]
-            results[index] = {
+    labelled = [sections_module.label(rows[index]["document"]) for index in chunk]
+    # The training cache is the document's tokens plus a trailing `<eos>`, so the
+    # scored sequence must be too, or the last real token is never predicted from
+    # and this is not the training loss.
+    encoded = [
+        (tokenizer.convert_tokens_to_ids(list(section.tokens)) + [eos_id])[:MAX_SEQ_LEN]
+        for section in labelled
+    ]
+    width = max(len(ids) for ids in encoded)
+    batch = torch.full((len(chunk), width), pad_id, dtype=torch.long)
+    mask = torch.zeros((len(chunk), width), dtype=torch.long)
+    for row, ids in enumerate(encoded):
+        batch[row, : len(ids)] = torch.tensor(ids, dtype=torch.long)
+        mask[row, : len(ids)] = 1
+    batch, mask = batch.to("cuda"), mask.to("cuda")
+    with torch.no_grad():
+        logits = model(input_ids=batch, attention_mask=mask).logits.float()
+    log_probs = torch.log_softmax(logits[:, :-1], dim=-1)
+    nll = -log_probs.gather(2, batch[:, 1:].unsqueeze(-1)).squeeze(-1).cpu()
+    scored_rows = []
+    for row, (index, section, ids) in enumerate(
+        zip(chunk, labelled, encoded, strict=True)
+    ):
+        # Target t is predicted from position t-1, so target position k of `nll`
+        # is token k+1 of the sequence and carries roles[k+1]. The final target
+        # is the appended `<eos>`, scored under the END role.
+        totals: dict[str, float] = defaultdict(float)
+        counts: dict[str, int] = defaultdict(int)
+        roles = list(section.roles) + [role_enum.END]
+        for target in range(len(ids) - 1):
+            role = roles[target + 1].value
+            totals[role] += float(nll[row, target])
+            counts[role] += 1
+        total = sum(totals.values())
+        scored = sum(counts.values())
+        if scored != len(ids) - 1:
+            raise ValueError("role accounting lost a scored position")
+        if not math.isfinite(total):
+            raise ValueError(f"non-finite loss on {rows[index]['document_id']}")
+        source = rows[index]
+        scored_rows.append(
+            {
+                "document_index": index,
                 "document_id": source["document_id"],
                 "source_arm": source["source_arm"],
                 "complex_type": source["complex_type"],
@@ -226,18 +224,84 @@ def score(model, tokenizer, rows: list[dict], sections_module) -> list[dict]:
                 "contacts_unresolved": section.contacts_unresolved,
                 "published_contacts": source["contacts_emitted"],
                 "published_contacts_inter": source["contacts_emitted_inter_chain"],
-                **{f"nll_{role}": totals.get(role, 0.0) for role in
-                   (member.value for member in role_enum)},
-                **{f"n_{role}": counts.get(role, 0) for role in
-                   (member.value for member in role_enum)},
+                **{
+                    f"nll_{member.value}": totals.get(member.value, 0.0)
+                    for member in role_enum
+                },
+                **{
+                    f"n_{member.value}": counts.get(member.value, 0)
+                    for member in role_enum
+                },
             }
-        if start % (BATCH_DOCUMENTS * 25) == 0:
-            done = start + len(chunk)
-            rate = done / (time.perf_counter() - started)
-            log(f"{done}/{len(order)} documents, {rate:.1f} docs/s")
-    if any(result is None for result in results):
-        raise ValueError("a document was not scored")
-    return [result for result in results if result is not None]
+        )
+    return scored_rows
+
+
+def part_order(rows: list[dict]) -> list[int]:
+    """Deterministic scoring order: longest documents first.
+
+    Longest-first makes the first batch the memory-heaviest, so an
+    out-of-memory failure happens in the first ninety seconds rather than three
+    hours in. `sorted` is stable, so ties keep the shard's own order and the
+    partition into parts is reproducible across restarts -- which is what makes
+    a completed part safe to skip.
+    """
+    return sorted(range(len(rows)), key=lambda index: -rows[index]["num_tokens"])
+
+
+def score(model, tokenizer, rows: list[dict], sections_module, *, parts_prefix: str
+          ) -> list[dict]:
+    """Score every document, writing durable parts and resuming from them.
+
+    Batch priority is preemptible and this worker holds no other state, so each
+    part is written as soon as it is complete and an already-present part is
+    read back instead of recomputed. A restart replays at most one part.
+    """
+    order = part_order(rows)
+    fs, root = fsspec.core.url_to_fs(parts_prefix)
+    existing = set()
+    if fs.exists(root):
+        existing = {path.rsplit("/", 1)[-1] for path in fs.ls(root, detail=False)}
+    scored: list[dict] = []
+    started = time.perf_counter()
+    computed = 0
+    for part, start in enumerate(range(0, len(order), DOCUMENTS_PER_PART)):
+        name = f"part-{part:05d}.parquet"
+        target = f"{parts_prefix.rstrip('/')}/{name}"
+        indices = order[start : start + DOCUMENTS_PER_PART]
+        if name in existing:
+            with fsspec.open(target, "rb") as handle:
+                recovered = pq.ParquetFile(handle).read().to_pylist()
+            if len(recovered) != len(indices):
+                raise ValueError(
+                    f"{name} holds {len(recovered)} rows, expected {len(indices)}"
+                )
+            scored.extend(recovered)
+            log(f"resumed {name} ({len(recovered)} documents)")
+            continue
+        part_rows: list[dict] = []
+        for batch_start in range(0, len(indices), BATCH_DOCUMENTS):
+            part_rows.extend(
+                score_batch(
+                    model,
+                    tokenizer,
+                    rows,
+                    indices[batch_start : batch_start + BATCH_DOCUMENTS],
+                    sections_module,
+                )
+            )
+            computed += min(BATCH_DOCUMENTS, len(indices) - batch_start)
+        with fsspec.open(target, "wb") as handle:
+            pq.write_table(pa.Table.from_pylist(part_rows), handle, compression="zstd")
+        scored.extend(part_rows)
+        rate = computed / max(time.perf_counter() - started, 1e-9)
+        log(f"wrote {name}; {len(scored)}/{len(order)} documents, {rate:.1f} docs/s")
+    if len(scored) != len(rows):
+        raise ValueError(f"scored {len(scored)} of {len(rows)} documents")
+    if len({row["document_index"] for row in scored}) != len(rows):
+        raise ValueError("the recovered parts do not cover every document exactly once")
+    scored.sort(key=lambda row: row["document_index"])
+    return scored
 
 
 def aggregate(rows: list[dict], role_values: list[str]) -> dict:
@@ -286,9 +350,16 @@ def main() -> None:
     model, tokenizer = load_model(directory)
     model_load_seconds = time.perf_counter() - load_started
 
+    prefix = args.out.rstrip("/")
     rows = read_documents(args.shard, args.limit)
     inference_started = time.perf_counter()
-    scored = score(model, tokenizer, rows, sections_module)
+    scored = score(
+        model,
+        tokenizer,
+        rows,
+        sections_module,
+        parts_prefix=f"{prefix}/{args.label}/parts",
+    )
     elapsed_seconds = time.perf_counter() - inference_started
 
     properties = torch.cuda.get_device_properties(0)
@@ -316,7 +387,6 @@ def main() -> None:
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         },
     }
-    prefix = args.out.rstrip("/")
     with fsspec.open(f"{prefix}/{args.label}/summary.json", "w") as handle:
         json.dump(summary, handle, indent=2)
     with fsspec.open(f"{prefix}/{args.label}/per_document.parquet", "wb") as handle:
