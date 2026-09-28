@@ -5,9 +5,14 @@
 
 Phases run in order: `stage` mirrors the published complex corpus into
 CoreWeave storage, `prepare-smoke` and `prepare` tokenize it, `audit` counts the
-epoch with the trainer's packer, and `train-smoke` / `train` do the training.
-Each is a single CPU driver job; the training phases dispatch their own
-batch-priority GPU gang from inside the cluster (see `runtime.py`).
+epoch with the trainer's packer, `train-smoke` / `train` do the training, and
+`complex-eval` scores checkpoints on the held-out complex shard.
+
+Every phase is a single CPU driver job, and the GPU phases dispatch their own
+batch-priority children from *inside* the cluster. That is not a stylistic
+choice: the experiment pins marin 0.2.86 (2026-08-19) so its runtime matches
+exp277's, and the controller rejects a submitting client that old. A pod-side
+driver's children are exempt, and the fresh CLI here is what submits the driver.
 
     python launch.py stage
     python launch.py prepare-smoke
@@ -15,6 +20,8 @@ batch-priority GPU gang from inside the cluster (see `runtime.py`).
     python launch.py audit
     python launch.py train-smoke --nodes 1
     python launch.py train --nodes 16
+    python launch.py complex-eval-smoke
+    python launch.py complex-eval
 """
 
 import argparse
@@ -34,7 +41,16 @@ VERSION = "2026.09.28.1"
 #: exp277's four token caches and the #294 corpus both live in CoreWeave
 #: US-EAST-02A, so training and tokenization stay in that region.
 TARGET_CLUSTER = "cw-us-east-02a"
-PHASES = ("stage", "prepare-smoke", "prepare", "audit", "train-smoke", "train")
+PHASES = (
+    "stage",
+    "prepare-smoke",
+    "prepare",
+    "audit",
+    "train-smoke",
+    "train",
+    "complex-eval-smoke",
+    "complex-eval",
+)
 #: Source files the workspace bundle needs beyond this experiment's own.
 IMPORTED_SOURCES = (
     "experiments/exp232_sweep_cv1_decontam/training_contract.py",
@@ -55,6 +71,14 @@ def entrypoint(phase: str, env: dict[str, str]) -> list[str]:
         return command
     if phase == "audit":
         return ["python", "-m", module + "audit_epoch"]
+    if phase.startswith("complex-eval"):
+        # Dispatched from inside the cluster, not the workstation: the experiment
+        # pins marin 0.2.86 (2026-08-19) and the controller rejects a client that
+        # old, while a pod-side driver's children are exempt from the gate.
+        command = ["python", "-m", module + "dispatch_complex_eval_cw"]
+        if phase == "complex-eval-smoke":
+            command.extend(["--limit", "32", "--name-suffix", "-smoke"])
+        return command
     env["SMOKE"] = "1" if phase == "train-smoke" else "0"
     return ["python", "-m", module + "train", "--version", VERSION, "--run"]
 
@@ -63,6 +87,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=PHASES)
     parser.add_argument("--nodes", type=int, default=16)
+    parser.add_argument(
+        "--labels", default=None, help="complex-eval: comma-separated checkpoint labels"
+    )
     parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument(
@@ -104,9 +131,16 @@ def main() -> None:
     if token_path.exists():
         env["HF_TOKEN"] = token_path.read_text().strip()
     entry = entrypoint(args.phase, env)
+    if args.labels:
+        if not args.phase.startswith("complex-eval"):
+            raise ValueError("--labels only applies to the complex-eval phases")
+        entry.extend(["--labels", args.labels])
     # `stage` downloads 19.6 GB through a temporary directory; the rest only read
     # parquet footers and cache ledgers.
     disk = "64GB" if args.phase == "stage" else "32GB"
+    # A driver that submits child gangs must outlive them -- iris finalizes a
+    # job's children when it exits -- so the GPU phases get a long timeout.
+    timeout = "345600" if args.phase.startswith("train") else "86400"
     # Credentials reach only the child process -- never a source file, a command
     # transcript, or a state artifact.
     command = [
@@ -129,6 +163,8 @@ def main() -> None:
         "16GB",
         "--disk",
         disk,
+        "--timeout",
+        timeout,
     ]
     for key, value in env.items():
         command.extend(["-e", key, value])
@@ -141,7 +177,12 @@ def main() -> None:
         destination = bundle / source.relative_to(root)
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
-    gpus = f", {args.nodes * 8} H100" if args.phase.startswith("train") else ""
+    if args.phase.startswith("train"):
+        gpus = f", {args.nodes * 8} H100"
+    elif args.phase.startswith("complex-eval"):
+        gpus = ", 1 H100 per checkpoint"
+    else:
+        gpus = ""
     print(
         f"Submitting {args.phase}: {TARGET_CLUSTER}, batch{gpus}\n"
         f"bundle {bundle} ({len(sources)} sources)",
