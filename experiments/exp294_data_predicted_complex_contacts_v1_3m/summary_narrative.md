@@ -132,9 +132,43 @@ stratified draw would overestimate per-document cost by ~46x. A separate
 throughput probe takes every selected model from 20 whole tars: 4,273 models at
 **213.7 per tar**, the density the run actually sees.
 
-## Still to come
+## Stage D: what the archive actually cost
 
-Stage D extraction, sized from the probe rather than assumed, then
-interface-aware cluster assignment and the balanced manifests. The
-reconnaissance already says range-addressed extraction moves ~1.5-2.5 TB
-against streaming's full 48.8 TB.
+16,640 of 16,640 tars walked. **2,982,771 documents of the 3,000,000 selected
+(99.43%)**, and the ledger closes exactly: 16,856 models whose member was not in
+the tar the metadata named, and 373 in 28 tars that 404. Range-addressed
+extraction moved ~19 GB of documents out of a 48.8 TB archive.
+
+The run cost more than the probe predicted, and every overrun came from the same
+shape of bug: a per-item defect killing the unit containing it. A shared
+`ZstdDecompressor` across 16 threads segfaulted three runs. One TCP handshake per
+512-byte read cost 9.5x. A missing tar killed 17 shards for two days over 373
+documents. Preemption without per-tar resume produced nothing in 24 hours.
+
+## Stage E: PINDER supplies what AFCDB cannot
+
+AFCDB's heterodimer pool is genuinely exhausted at **183,435** — no threshold
+produces more. PINDER 2024-02 was selected on indexability, not headline size:
+2,319,564 systems down to 449,835, fetched **by byte offset out of a 35 GB zip**
+rather than downloaded.
+
+**428,221 PINDER documents, 385,354 of them on 32,939 UniProt pairs absent from
+AFCDB.** With AFCDB's 183,435 that is **611,656 heterodimers** — the original
+500k target, met by adding a source rather than weakening a threshold.
+
+## The corpus, published
+
+**3,410,738 documents / 11.15 B tokens**, 171 shards, 19 GB, at
+`open-athena/MarinFold` → `data/document_structures/contacts_v1_complex/` with
+the tokenizer co-located.
+
+**261.8 M interface contacts, 12.4% of 2.11 B.** All `sha1` distinct. Tier A
+1,748,907, Tier B 1,233,610, PINDER `experimental` 428,221 — separately
+addressable, as the issue asks.
+
+Redundancy is preserved in the corpus and controlled in sampling: inverse-√
+cluster weighting brings the largest cluster (15,274 structures of one interface)
+to **0.004% of sampling mass**, so the 0.1% cap never binds. Interface-aware
+clustering exists only on the PINDER arm — AFCDB ships none and its
+Multimercluster data was not obtainable — so `cluster_key` labels which kind each
+key is, and nothing downstream can conflate them.

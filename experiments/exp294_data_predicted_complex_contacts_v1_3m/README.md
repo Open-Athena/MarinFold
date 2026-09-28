@@ -627,10 +627,12 @@ Separately, **28 of 4,273 requested members (0.66%) are absent from their tar**,
 all in homodimer `chunk_*` archives. An upstream metadata/archive inconsistency;
 each one is named in the ledger rather than silently dropped.
 
-### Stage D: what the archive reconnaissance implies
+### Stage D: what the archive reconnaissance implied (pre-launch)
 
-Not yet implemented, and not to be launched before the pilot reports. The
-reconnaissance already rules one design in and one out:
+Recorded as written, before the run. Both calls held up: range-addressed
+extraction moved ~19 GB of documents out of a 48.8 TB archive, and the
+aggregate-bandwidth reading of EBI was confirmed the hard way (see below). The
+reconnaissance ruled one design in and one out:
 
 - **Streaming whole tars is out.** That is the full 48.8 TB for ~10% of the
   members, and the homodimer `chunk_*` tars carry a redundant `.pdb.zst` per
@@ -693,6 +695,114 @@ uv run python selection.py \
   --out /data/exp294/selection
 ```
 
+### Stage D finished: 2,982,771 of 3,000,000, every model accounted for
+
+16,640 of 16,640 tars were walked. The ledger closes exactly on the selection:
+
+| terminal reason | models | share |
+| --- | --- | --- |
+| `generated` | 2,982,771 | 99.426% |
+| `member_not_in_tar` | 16,856 | 0.562% |
+| `tar_not_in_archive` | 373 | 0.012% |
+
+`member_not_in_tar` is the upstream inconsistency the probe first saw at 0.66%:
+the metadata names a tar that does not contain the member. 15,413 of them are
+recoverable by searching the sibling archives, which was priced at **1,204
+pod-hours (~71 h wall) for 0.51% more documents** and declined. `tar_not_in_archive`
+is 28 tars that 404 — these are named individually rather than stalling a shard.
+
+### Stage E: PINDER supplies the heterodimers AFCDB cannot
+
+The 500,000-heterodimer ambition was unreachable inside AFCDB — not rationed,
+exhausted. 183,435 usable heterodimers is what the source contains, and no
+threshold produces more (only 922,359 hard-eligible heterodimers have *any*
+nonzero ipSAE, and 353,774 reach 0.1). [`STAGE_E_AUDIT.md`](STAGE_E_AUDIT.md)
+compared the external options; PINDER won on indexability, not on headline size.
+
+2,319,564 PINDER systems reduced to 449,835 selected (heterodimers only,
+`invalid` honoured, same 1,998-residue ring budget, UniProt mapping required),
+fetched by byte offset out of a 35.32 GB zip rather than by downloading it.
+445,206 generated across 225/225 batches; 16,430 dropped on eval2 homology and
+555 because they are PINDER's *own* val/test splits.
+
+**428,221 PINDER documents, 385,354 of them on 32,939 UniProt pairs that appear
+nowhere in AFCDB.** With AFCDB's 183,435 that is **611,656 heterodimers**, so the
+original 500k target is met after all — by adding a source, not by weakening a
+threshold.
+
+### The corpus: 3,410,738 documents / 11.15 B tokens
+
+| arm | type | documents | tokens | clusters |
+| --- | --- | --- | --- | --- |
+| `afcdb` | homodimer | 2,799,082 | 9.62 B | 2,799,082 |
+| `afcdb` | heterodimer | 183,435 | 0.54 B | 183,435 |
+| `pinder` | heterodimer | 428,221 | 0.99 B | 22,912 |
+| **total** | | **3,410,738** | **11.15 B** | **3,005,429** |
+
+**261,833,754 interface contacts, 12.4% of 2,112,402,536.** Mean 700 residues,
+median 630. Mean 3,270 tokens; 82,756 documents (2.4%) hit the 8,192 cap. All
+3,410,738 `sha1` are distinct. `confidence_tier` is A for 1,748,907 (mean quality
+ratio 1.33), B for 1,233,610 (0.67), `experimental` for the PINDER arm.
+
+254 AFCDB models cleared the ipSAE/pDockQ2 gate with **zero** chain-chain
+contacts — one with no contacts at all. A complex whose chains never touch is not
+an interface example, and the PINDER worker already rejected these, so
+consolidation applies the same floor to both arms.
+
+### Redundancy control: the cap is a guard rail, not a constraint
+
+`cluster_key` is a real interface cluster for PINDER (`pinder:<id>`) and the
+sequence pair for AFCDB (`afcdb_pair:<a>|<b>`), never conflated. AFCDB models are
+one per distinct sequence pair, so every AFCDB cluster has size 1; PINDER averages
+18.7 structures per interface cluster, median 2, **max 15,274**.
+
+CONCENTRATION_TABLE
+
+**Inverse-√ weighting alone brings the largest cluster to BALANCED_TOP1 of
+sampling mass, far under the 0.1% the issue asks for**, so the per-cluster cap
+never binds on this corpus. The document column is the point of the comparison:
+the most redundant cluster owns DOC_TOP1 of the documents and only
+BALANCED_TOP1 of the sampling probability.
+
+This is deliberately not [#145](https://github.com/Open-Athena/MarinFold/issues/145)'s
+policy, which collapsed to one representative per coarse chain-pair cluster and
+took 2.01M candidates down to 17,083. Several experimental structures of one
+interface are signal. The corpus keeps them and the weight decides.
+
+### Published
+
+`buckets/open-athena/MarinFold` →
+[`data/document_structures/contacts_v1_complex/`](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/document_structures/contacts_v1_complex):
+171 ZSTD shards (19 GB), `manifest_natural.parquet`, `manifest_balanced.parquet`,
+`corpus_stats.json`, a README, and the **tokenizer co-located with the data**
+(2,848 tokens; verified by re-encoding — `num_tokens` matches exactly).
+
 ## Conclusion
 
-_(Fill in after results are in.)_
+**Yes, and the answer needed two sources rather than one.**
+
+3,410,738 documents clear the 3,000,000 target, and 611,656 heterodimers clear
+the 500,000 ambition — but only 183,435 of those heterodimers come from AFCDB,
+which is what the source actually contains. Reporting the measured frontier and
+then adding PINDER was the honest route; relaxing the confidence gate further
+would have bought homodimers, not heterodimers.
+
+Three findings worth carrying forward:
+
+1. **The 0.5 quality floor misses 3M on arithmetic alone** (2.95M pre-dedup,
+   pre-decontamination). Reaching the target needs ≈0.3 and a labelled Tier B,
+   which is 1,233,610 documents whose *monomers* are ~22% less compact — not
+   whose interfaces are worse. Tier B is kept and addressable so the training
+   experiment decides, rather than being silently included or silently dropped.
+2. **Interface-aware clustering only exists on one arm.** PINDER ships real
+   interface clusters; AFCDB ships none, and its published Multimercluster data
+   was not obtainable, so the sequence pair stands in. Because AFCDB is one model
+   per pair, its clusters are all size 1 — the balanced manifest therefore
+   reweights the PINDER arm and leaves AFCDB alone. That is a real limitation,
+   not a design choice, and it is labelled in `cluster_key` so nothing downstream
+   can conflate the two.
+3. **A per-item defect must never kill the unit containing it.** This experiment
+   hit that same shape four times — a missing tar member, a missing tar, a
+   malformed PDB deposit, an unreachable batch — and each cost real time until
+   the failure was scoped to the item. The general rule is now in the workers.
+
