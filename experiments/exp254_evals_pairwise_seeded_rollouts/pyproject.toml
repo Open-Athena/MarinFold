@@ -1,0 +1,37 @@
+[project]
+name = "exp254-evals-pairwise-seeded-rollouts"
+version = "0.1.0"
+description = "Seeded-vs-i.i.d. contacts-v1 rollouts on eval-val, for the decontaminated #232 m2-p06 checkpoint — issue #254."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # The GPU sampling stack, pinned to the versions already proven on this
+    # workstation's A5000 (driver 535.54.03 / CUDA 12.2, cu128 wheels via
+    # minor-version compatibility). vLLM pins torch itself.
+    "vllm==0.19.1",
+    # transformers 5.x is REQUIRED, not incidental: the published m2-p06 export
+    # declares `tokenizer_class: TokenizersBackend`, which 4.x cannot resolve.
+    "transformers==5.15.0",
+    "numpy",
+    "pyarrow",
+    "pandas>=3",
+    "scikit-learn>=1.9",
+    "matplotlib>=3.8",
+]
+
+# `marinfold` is NOT a dependency here even though the scripts import its
+# contacts-v1 document builder. Its base install pins `transformers>=4.40,<5`,
+# which would drag this environment below the version the checkpoint's tokenizer
+# needs. exp82's CoreWeave worker solves this the same way (`pip install
+# marinfold --no-deps` into a vLLM image); here the repo's `marinfold/` package
+# directory goes on PYTHONPATH instead, so the code that runs is the checked-out
+# revision rather than a separately-pinned copy. See the README's run commands.
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'linux'"]

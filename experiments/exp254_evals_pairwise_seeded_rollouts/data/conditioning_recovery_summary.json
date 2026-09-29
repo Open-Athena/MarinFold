@@ -1,0 +1,127 @@
+{
+  "plan_sha256": "843eb78ee9358e1451b1cf56717d382b2644aa255f77ec50d8707cb59f86aa9f",
+  "scope": "recovery_sensitivity_only; canonical all-protein primary remains unchanged",
+  "n_planned_proteins": 97,
+  "n_original_failure_groups": 5,
+  "observed_original_failure_group_rollouts": 500,
+  "original_caps_in_observed_failure_groups": 81,
+  "resumed_caps_in_same_groups": 80,
+  "n_resumed_worker_proteins": 21,
+  "original_worker_sha256": "843a79f0ab7c81c90b2965ab46b90bd46fb99f64ca0c17de3a3c84ca6283831b",
+  "resumed_worker_sha256": [
+    "01b2ffb79e307d451e7ea29fb91e02955ac2ae7e14a59b14691b0818da8a893a"
+  ],
+  "mechanism": [
+    {
+      "analysis": "canonical",
+      "scope": "withheld_continuation",
+      "arm": "false_large",
+      "reference": "iid",
+      "n_proteins": 97,
+      "mean_delta": -0.3189001507462188,
+      "ci_low": -0.35588937489872013,
+      "ci_high": -0.28155792238989724,
+      "proteins_improved": 3,
+      "proteins_tied": 1
+    },
+    {
+      "analysis": "canonical",
+      "scope": "withheld_continuation",
+      "arm": "true_large",
+      "reference": "false_large",
+      "n_proteins": 97,
+      "mean_delta": 0.5913406180542417,
+      "ci_low": 0.5781010481059817,
+      "ci_high": 0.605088031894442,
+      "proteins_improved": 97,
+      "proteins_tied": 0
+    },
+    {
+      "analysis": "original_failure_replay",
+      "scope": "withheld_continuation",
+      "arm": "false_large",
+      "reference": "iid",
+      "n_proteins": 97,
+      "mean_delta": -0.3189001507462188,
+      "ci_low": -0.35588937489872013,
+      "ci_high": -0.28155792238989724,
+      "proteins_improved": 3,
+      "proteins_tied": 1
+    },
+    {
+      "analysis": "original_failure_replay",
+      "scope": "withheld_continuation",
+      "arm": "true_large",
+      "reference": "false_large",
+      "n_proteins": 97,
+      "mean_delta": 0.5913406180542417,
+      "ci_low": 0.5781010481059817,
+      "ci_high": 0.605088031894442,
+      "proteins_improved": 97,
+      "proteins_tied": 0
+    },
+    {
+      "analysis": "replay_minus_canonical_effect",
+      "scope": "withheld_continuation",
+      "arm": "false_large_vs_iid",
+      "reference": "canonical_effect",
+      "n_proteins": 97,
+      "mean_delta": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "proteins_improved": 0,
+      "proteins_tied": 97
+    },
+    {
+      "analysis": "replay_minus_canonical_effect",
+      "scope": "withheld_continuation",
+      "arm": "true_large_vs_false_large",
+      "reference": "canonical_effect",
+      "n_proteins": 97,
+      "mean_delta": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "proteins_improved": 0,
+      "proteins_tied": 97
+    }
+  ],
+  "practical_cohort_diagnostic": [
+    {
+      "cohort": "canonical_all_proteins",
+      "arm": "pred_large",
+      "reference": "source_plus_iid200",
+      "n_proteins": 97,
+      "mean_delta": -0.017003173279792533,
+      "ci_low": -0.02463568682907929,
+      "ci_high": -0.009888878192788456,
+      "proteins_improved": 29,
+      "proteins_tied": 4,
+      "practical_margin": 0.03,
+      "margin_status": "target_gain_ruled_out",
+      "median_L": 245.0
+    },
+    {
+      "cohort": "diagnostic_excluding_resumed_workers",
+      "arm": "pred_large",
+      "reference": "source_plus_iid200",
+      "n_proteins": 76,
+      "mean_delta": -0.017036652490224645,
+      "ci_low": -0.026505727573976148,
+      "ci_high": -0.008149822595002005,
+      "proteins_improved": 25,
+      "proteins_tied": 4,
+      "practical_margin": 0.03,
+      "margin_status": "target_gain_ruled_out",
+      "median_L": 213.0
+    }
+  ],
+  "limitations": [
+    "Initial failure incidence is observed only in preserved trigger groups, not all first-attempt rollouts.",
+    "Original failure records lack embedded worker/plan/timing provenance; filenames, completion metadata, frozen-frame parsing, and recorded file/text hashes are checked, but historical execution identity cannot be independently recovered from those records.",
+    "Per-rollout text hashes identify every original trigger-group completion; full original texts remain in the referenced compressed input files.",
+    "Replay changes only false_large on the original shared withheld universe; all other arm scores remain canonical.",
+    "Other pre-abort original groups were not all retained, so replay is not a reconstruction of every initial attempt.",
+    "Excluding resumed-worker proteins selects a cohort through completion/recovery and may change its length/difficulty mix; it is not a replacement primary or an estimate of a worker-version effect.",
+    "Intervals average replicates within protein before bootstrapping proteins; secondary sensitivity comparisons are pointwise and conditional on saved draws."
+  ]
+}

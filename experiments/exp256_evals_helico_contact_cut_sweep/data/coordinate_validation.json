@@ -1,0 +1,23 @@
+{
+  "n_rows": 288,
+  "max_absolute_lddt_difference": 3.3224289511357696e-05,
+  "mean_absolute_lddt_difference": 6.168382498876488e-06,
+  "paired_comparisons": [
+    {
+      "arm": "mf_1p5L",
+      "n": 96,
+      "mean_delta": 0.001897102703052285,
+      "lo": -0.004802405525572508,
+      "hi": 0.00852229999733093,
+      "targets_better": 0.5208333333333334
+    },
+    {
+      "arm": "mf_union",
+      "n": 96,
+      "mean_delta": -0.024388010389256465,
+      "lo": -0.034562660016192674,
+      "hi": -0.01455697563848798,
+      "targets_better": 0.25
+    }
+  ]
+}

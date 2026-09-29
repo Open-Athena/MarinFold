@@ -1,0 +1,13 @@
+arm,seed_range,percent
+seeded top-100,short,20.938144329896907
+seeded top-100,medium,22.216494845360824
+seeded top-100,long,56.845360824742265
+seeded top-100,median_separation,28.0
+seeded long-range,short,0.0
+seeded long-range,medium,0.0
+seeded long-range,long,100.0
+seeded long-range,median_separation,45.0
+seeded 1/3 per range,short,33.0
+seeded 1/3 per range,medium,33.0
+seeded 1/3 per range,long,34.0
+seeded 1/3 per range,median_separation,17.0
