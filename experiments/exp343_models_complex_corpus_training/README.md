@@ -182,6 +182,32 @@ predicted models, is hardest of all at 4.6512.
 Committed under [`data/complex_loss/`](data/complex_loss/) with its provenance and
 per-input timing.
 
+### Production run history
+
+The run spans two Iris jobs, and the break was an operator error worth recording
+rather than smoothing over.
+
+`/bizon/exp343-train-a01` was submitted 2026-09-28 21:41 UTC and sat gang-queued
+while `cw-us-east-02a` ran at 0-22 free H100. The queue drained overnight, the
+gang admitted, and it trained for **11.8 hours to step 39,475** — train loss
+2.9115, monomer validation 3.1375, and a held-out complex validation loss of
+**3.3208**, already below exp277's 3.6970 control.
+
+On 2026-09-29 at 09:33 UTC it was **cancelled by mistake**. The intent was to
+free the queue slot before placing on RNO2A; the decision was made from a monitor
+reading of `tasks=0/16` that was ten hours stale, and the job's actual progress
+was never checked before acting. Scheduler state is not evidence about whether a
+job is doing work — W&B is, and it was one query away.
+
+Cost: the permanent checkpoint policy keeps every `EPOCH_TRAIN_STEPS // 10`
+steps, so `step-28015` survived and steps 28,015-39,475 were lost — about 11,460
+steps, ~4.7 hours of 128xH100. Nothing else was damaged; the corpus, caches and
+control are untouched.
+
+`/bizon/exp343-train-a02` resumed from `step-28015` at 09:35 UTC, 16 nodes on
+`cw-us-east-02a` (which by then had 248 free H100), same run id and checkpoint
+path, so the W&B run and the checkpoint trail continue unbroken.
+
 ## Success criteria
 
 - A healthy production run to the pinned step count, with a permanent native checkpoint and an HF export carrying its tokenizer.
