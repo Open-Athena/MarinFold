@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from build_metrics import seed_conditioning
+from build_metrics import RANGES, seed_conditioning
 from common import BEGIN, MIN_SEP, parse_rollout, realization, seed_statement
 from rank_pairwise import SEED_RANGES, select_seeds, stratum_quotas, top_pairs
 
@@ -105,8 +105,6 @@ def test_seed_ranges_match_the_metric_ranges():
     edited, so this is the direction the check has to run: the seed bins are
     asserted against it, not the other way round.
     """
-    from build_metrics import RANGES
-
     assert SEED_RANGES == {k: v for k, v in RANGES.items() if k != "all"}
 
 
