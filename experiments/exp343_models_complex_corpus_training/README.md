@@ -199,10 +199,20 @@ reading of `tasks=0/16` that was ten hours stale, and the job's actual progress
 was never checked before acting. Scheduler state is not evidence about whether a
 job is doing work — W&B is, and it was one query away.
 
-Cost: the permanent checkpoint policy keeps every `EPOCH_TRAIN_STEPS // 10`
-steps, so `step-28015` survived and steps 28,015-39,475 were lost — about 11,460
-steps, ~4.7 hours of 128xH100. Nothing else was damaged; the corpus, caches and
-control are untouched.
+Cost: **108 steps, about 90 seconds of compute.** Levanter writes its rolling
+15-minute checkpoints to `temporary_base_path` — a *separate* `tmp/ttl=14d/`
+prefix — and only the `keep` snapshots to `base_path`. Listing `base_path` alone
+shows just `step-28015` and makes the loss look like 4.7 hours; `step-39367` was
+sitting in the temp path, complete at 17.66 GB, written at 13:32:19 UTC, one
+minute before the cancellation. The resumed job searched both locations and
+restored the newer one.
+
+That temp checkpoint is also *deletable*: `delete_old_temp_checkpoints: true`
+means the next run removes it once it writes its own. It was copied server-side
+(8.7 s, byte-for-byte verified) to
+`{PREFIX}/rescued/step-39367/` before the resumed job could reach that point.
+
+Nothing else was damaged; the corpus, caches and control are untouched.
 
 `/bizon/exp343-train-a02` resumed from `step-28015` at 09:35 UTC, 16 nodes on
 `cw-us-east-02a` (which by then had 248 free H100), same run id and checkpoint
