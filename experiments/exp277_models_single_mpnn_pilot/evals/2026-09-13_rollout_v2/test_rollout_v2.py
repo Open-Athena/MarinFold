@@ -80,7 +80,7 @@ def test_worker_and_rollout_recipe_match_validated_path() -> None:
         "--accept-unfinished",
     ):
         assert expected in shell
-    assert "s.bind((\"\",0))" in shell
+    assert 's.bind(("",0))' in shell
 
 
 def test_output_root_is_experiment_scoped() -> None:
@@ -114,3 +114,36 @@ def test_smoke_accepts_fully_accounted_capped_rollout() -> None:
         json.dump(marker, handle)
 
     run_coreweave_eval._validate_smokes(root, (checkpoint,))
+
+
+def test_epoch_comparison_suite_pins_both_checkpoints() -> None:
+    """The paired suite must score two distinct sets of weights, once each."""
+    epoch1, epoch2 = checkpoint_specs.CHECKPOINT_SUITES["exp277-epochs"]
+    assert epoch1 is checkpoint_specs.EXP277_CHECKPOINT
+    assert epoch2.run_name == ("contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B")
+    assert epoch2.step == 479_417
+    assert epoch2.coreweave_uri.endswith(
+        "contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/hf/step-479417"
+    )
+    files = {file.name: file for file in epoch2.files}
+    assert set(files) == {file.name for file in epoch1.files}
+    assert sum(file.size for file in files.values()) == 5_885_614_887
+    assert all(file.digest_kind == "s3-etag" for file in files.values())
+    # Same architecture and tokenizer, different weights: only the two shards
+    # may differ, and they must differ, or the same checkpoint is scored twice.
+    epoch1_files = {file.name: file for file in epoch1.files}
+    for name in (
+        "config.json",
+        "model.safetensors.index.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+    ):
+        assert files[name].digest == epoch1_files[name].digest, name
+    assert epoch2.weight_shard_digests != epoch1.weight_shard_digests
+    assert set(epoch2.weight_shard_digests) == {
+        files["model-00001-of-00002.safetensors"].digest,
+        files["model-00002-of-00002.safetensors"].digest,
+    }
+    # Distinct labels keep the metric output's model identities separate.
+    assert len({epoch1.label, epoch2.label}) == 2
+    assert len({epoch1.job_label, epoch2.job_label}) == 2

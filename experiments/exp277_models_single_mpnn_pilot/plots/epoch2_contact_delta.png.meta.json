@@ -1,0 +1,5 @@
+{
+  "script": "plot_epochs.py",
+  "args": [],
+  "caption": "Paired per-protein R-precision change, second epoch minus first, with 95% bootstrap intervals (seed 277, 10,000 resamples). Both epochs were scored in one job. Natural-protein deltas sit inside the tie band."
+}
