@@ -19,6 +19,8 @@ marinfold_run:
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a03/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
   - /zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-08a-a04
   - /zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-08a-a04/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
+  - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a05
+  - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a05/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 ---
 # 2026-09-22 · exp299_models_delta_stream_contacts · delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 
@@ -73,3 +75,11 @@ run ID and output path. The smaller gang placed immediately, restored the full
 training state from temporary checkpoint step 19,784, and resumed at about 5.1
 seconds/update. The latest pre-fallback validation loss was 1.1501 at step
 19,026.
+
+On 2026-09-29, after the 2×4 run reached step 112,345, newly available GB200
+capacity justified retrying the 4×4 configuration. The 2×4 driver was stopped
+only after its step-112,345 temporary checkpoint committed. The replacement
+4×4 driver `/zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a05` was
+initially scheduling-gated, placed after about 35 minutes, restored the complete
+state from step 112,345, and resumed at approximately 2.6 seconds/update. It
+retains the same W&B run ID and output path.
