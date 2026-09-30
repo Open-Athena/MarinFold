@@ -1,0 +1,26 @@
+{
+  "source_readme": "https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda/README.txt",
+  "quality_gate_note": "The heterodimer pass flag is upstream-authored. The homodimer pass flag is the exp145-style proxy: min directional ipSAE >= 0.6 and max directional pDockQ2 >= 0.23. The AFCDB paper's pLDDT condition cannot be reproduced from the current metadata CSV alone.",
+  "sources": [
+    {
+      "source": "homodimer",
+      "source_url": "https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda/homodimer_metadata.csv",
+      "csv_path": "/data/exp294_predicted_complexes/source/homodimer_metadata.csv",
+      "csv_bytes": 5996430820,
+      "raw_parquet": "/data/exp294_predicted_complexes/metadata/raw_homodimer.parquet",
+      "normalized_parquet": "/data/exp294_predicted_complexes/metadata/normalized_homodimer.parquet",
+      "rows": 21430663,
+      "source_quality_pass": 1920563
+    },
+    {
+      "source": "heterodimer",
+      "source_url": "https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda/heterodimer_metadata.csv",
+      "csv_path": "/data/exp294_predicted_complexes/source/heterodimer_metadata.csv",
+      "csv_bytes": 2454028021,
+      "raw_parquet": "/data/exp294_predicted_complexes/metadata/raw_heterodimer.parquet",
+      "normalized_parquet": "/data/exp294_predicted_complexes/metadata/normalized_heterodimer.parquet",
+      "rows": 7594357,
+      "source_quality_pass": 80248
+    }
+  ]
+}

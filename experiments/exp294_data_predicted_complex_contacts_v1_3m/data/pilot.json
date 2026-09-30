@@ -1,0 +1,213 @@
+{
+  "selected_manifest": "/data/exp294_predicted_complexes/selection/selected.parquet",
+  "corpus_models": 3000000,
+  "corpus_tars": 16640,
+  "corpus_models_per_tar": 180.3,
+  "pilot_manifest": "/data/exp294_predicted_complexes/pilot/pilot_manifest.parquet",
+  "requested": 50000,
+  "drawn": 50000,
+  "strata": 24,
+  "distinct_source_tars": 12818,
+  "distinct_taxa": 1658,
+  "total_residues": 43899139,
+  "pilot_models_per_tar": 3.9,
+  "throughput_probe": "/data/exp294_predicted_complexes/pilot/throughput_probe.parquet",
+  "probe_tars": 20,
+  "probe_models": 4273,
+  "probe_models_per_tar": 213.7,
+  "probe_total_residues": 3116523,
+  "breakdown": [
+    {
+      "stratum": "heterodimer|A_ge_1.0|len_400_800",
+      "complex_type": "heterodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_400_800",
+      "available": 31064,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|A_ge_1.0|len_800_1400",
+      "complex_type": "heterodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_800_1400",
+      "available": 16439,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|A_ge_1.0|len_ge_1400",
+      "complex_type": "heterodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_ge_1400",
+      "available": 2435,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|A_ge_1.0|len_lt_400",
+      "complex_type": "heterodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_lt_400",
+      "available": 15428,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.3_0.5|len_400_800",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_400_800",
+      "available": 20651,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.3_0.5|len_800_1400",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_800_1400",
+      "available": 11099,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.3_0.5|len_ge_1400",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_ge_1400",
+      "available": 2075,
+      "drawn": 2075
+    },
+    {
+      "stratum": "heterodimer|B_0.3_0.5|len_lt_400",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_lt_400",
+      "available": 11855,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.5_1.0|len_400_800",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_400_800",
+      "available": 33041,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.5_1.0|len_800_1400",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_800_1400",
+      "available": 17544,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.5_1.0|len_ge_1400",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_ge_1400",
+      "available": 3051,
+      "drawn": 2084
+    },
+    {
+      "stratum": "heterodimer|B_0.5_1.0|len_lt_400",
+      "complex_type": "heterodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_lt_400",
+      "available": 19127,
+      "drawn": 2084
+    },
+    {
+      "stratum": "homodimer|A_ge_1.0|len_400_800",
+      "complex_type": "homodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_400_800",
+      "available": 718780,
+      "drawn": 2084
+    },
+    {
+      "stratum": "homodimer|A_ge_1.0|len_800_1400",
+      "complex_type": "homodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_800_1400",
+      "available": 563159,
+      "drawn": 2084
+    },
+    {
+      "stratum": "homodimer|A_ge_1.0|len_ge_1400",
+      "complex_type": "homodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_ge_1400",
+      "available": 103627,
+      "drawn": 2084
+    },
+    {
+      "stratum": "homodimer|A_ge_1.0|len_lt_400",
+      "complex_type": "homodimer",
+      "quality_bin": "A_ge_1.0",
+      "length_bin": "len_lt_400",
+      "available": 302638,
+      "drawn": 2084
+    },
+    {
+      "stratum": "homodimer|B_0.3_0.5|len_400_800",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_400_800",
+      "available": 96882,
+      "drawn": 2084
+    },
+    {
+      "stratum": "homodimer|B_0.3_0.5|len_800_1400",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_800_1400",
+      "available": 71748,
+      "drawn": 2083
+    },
+    {
+      "stratum": "homodimer|B_0.3_0.5|len_ge_1400",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_ge_1400",
+      "available": 27319,
+      "drawn": 2083
+    },
+    {
+      "stratum": "homodimer|B_0.3_0.5|len_lt_400",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.3_0.5",
+      "length_bin": "len_lt_400",
+      "available": 81897,
+      "drawn": 2083
+    },
+    {
+      "stratum": "homodimer|B_0.5_1.0|len_400_800",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_400_800",
+      "available": 312910,
+      "drawn": 2083
+    },
+    {
+      "stratum": "homodimer|B_0.5_1.0|len_800_1400",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_800_1400",
+      "available": 231954,
+      "drawn": 2083
+    },
+    {
+      "stratum": "homodimer|B_0.5_1.0|len_ge_1400",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_ge_1400",
+      "available": 68449,
+      "drawn": 2083
+    },
+    {
+      "stratum": "homodimer|B_0.5_1.0|len_lt_400",
+      "complex_type": "homodimer",
+      "quality_bin": "B_0.5_1.0",
+      "length_bin": "len_lt_400",
+      "available": 236828,
+      "drawn": 2083
+    }
+  ]
+}
