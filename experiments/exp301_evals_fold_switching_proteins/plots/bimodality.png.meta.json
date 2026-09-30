@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Per-rollout phi spread against a binomial null: the ensemble is one mode, not two."
+}
