@@ -1,0 +1,5 @@
+{
+  "script": "plot_pilot.py",
+  "args": [],
+  "caption": "Each circle is a TM-stratified Rosetta decoy; stars are native structures. Colors denote the nine length/count-stratified targets."
+}
