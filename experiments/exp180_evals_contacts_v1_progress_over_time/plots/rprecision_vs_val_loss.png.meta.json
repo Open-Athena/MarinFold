@@ -1,5 +1,5 @@
 {
-  "caption": "R-precision against val loss. Across generations the exchange rate is collapsing (2.06 -> 0.71 -> ~0.33 R per nat); inside one run it is flat (#117 early vs final).",
+  "caption": "August 15 historical snapshot: legacy-554 contact accuracy versus validation loss. Later decontaminated checkpoints are absent.",
   "script": "plot_progress.py",
   "args": [],
   "figure": "rprecision_vs_val_loss",
