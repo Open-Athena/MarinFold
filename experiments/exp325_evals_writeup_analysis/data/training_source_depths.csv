@@ -1,0 +1,21 @@
+stem,source,version,returned_hits,hits_e001,hits_e001_cov50,unique_aligned_e001_cov50,hits_e001_cov80,unique_aligned_e001_cov80
+8ii8_A,colabfold_uniref,2023_02 (server documentation),1,1,1,1,1,1
+8ii8_A,colabfold_environment,ColabFoldDB 202108 (mixed sources),0,0,0,0,0,0
+8ii8_A,hmmer_uniprot,2025_01,2,2,1,1,1,1
+8ii8_A,hmmer_mgnify30_c2,2026_07,1,1,0,0,0,0
+8oxk_A,colabfold_uniref,2023_02 (server documentation),4,4,4,4,2,2
+8oxk_A,colabfold_environment,ColabFoldDB 202108 (mixed sources),0,0,0,0,0,0
+8oxk_A,hmmer_uniprot,2025_01,9,9,6,6,4,4
+8oxk_A,hmmer_mgnify30_c2,2026_07,0,0,0,0,0,0
+8qoh_A,colabfold_uniref,2023_02 (server documentation),1,1,1,1,0,0
+8qoh_A,colabfold_environment,ColabFoldDB 202108 (mixed sources),0,0,0,0,0,0
+8qoh_A,hmmer_uniprot,2025_01,1,1,1,1,0,0
+8qoh_A,hmmer_mgnify30_c2,2026_07,2,2,0,0,0,0
+8ux2_A,colabfold_uniref,2023_02 (server documentation),16,16,15,15,15,15
+8ux2_A,colabfold_environment,ColabFoldDB 202108 (mixed sources),1,1,1,1,1,1
+8ux2_A,hmmer_uniprot,2025_01,4,4,2,2,2,2
+8ux2_A,hmmer_mgnify30_c2,2026_07,3,3,1,1,0,0
+8wrx_A,colabfold_uniref,2023_02 (server documentation),1,1,1,1,1,1
+8wrx_A,colabfold_environment,ColabFoldDB 202108 (mixed sources),1,1,1,1,0,0
+8wrx_A,hmmer_uniprot,2025_01,5,5,2,1,2,1
+8wrx_A,hmmer_mgnify30_c2,2026_07,0,0,0,0,0,0

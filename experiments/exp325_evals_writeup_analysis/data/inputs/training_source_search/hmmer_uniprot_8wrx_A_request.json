@@ -1,0 +1,10 @@
+{
+  "database": "uniprot",
+  "input": ">8wrx_A\nMKTIFTKKQTEELLNDISIEKQKELFNSMHDFRSQHAKEARIPGWSDKYNKLEKKMLSDFEEVTGIKYDTLESELIWDNLSNKFLY",
+  "E": 0.001,
+  "domE": 0.001,
+  "incE": 0.001,
+  "incdomE": 0.001,
+  "with_taxonomy": false,
+  "with_architecture": false
+}

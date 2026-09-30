@@ -60,6 +60,10 @@ low-depth proteins against their archived alignment hits and public accession
 histories. Four already have nearly identical matches that predate ESMC's
 documented training sources. Their homolog counts in ESMC's actual training
 corpus remain unverified; shallow retrieved MSAs do not establish training novelty.
+The [follow-up source searches](TRAINING_SOURCE_SEARCH.md) return 1, 4, 1, 15
+and 1 historical UniRef hits covering at least half of each query, respectively.
+Most extra 8ux2_A hits are nearly identical. Newer UniProt/MGnify subset searches
+are recorded separately; full historical MGnify and JGI remain unsearched.
 
 Contact metrics use exp89's unchanged resolved-pair universe and R-precision
 implementation. The KNN baseline indexes the native decontaminated corpus,

@@ -1,5 +1,8 @@
 # Low alignment depth versus ESMC training exposure
 
+Follow-up: [new source-database searches on 2026-09-30](TRAINING_SOURCE_SEARCH.md)
+measure historical UniRef hits and separate newer hosted-search results.
+
 Checked 2026-09-29. **We have not established that these five proteins have few
 homologs in ESMC's training corpus.** The depth strata describe the archived
 alignments supplied to the benchmark predictors.
