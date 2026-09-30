@@ -1,0 +1,9 @@
+subset,predictor,n,mean,ci_low,ci_high,source
+eval-val,Protenix-v2 + MSA,97,0.8460293840998714,0.8249798600124698,0.8622356416748361,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_summary.csv
+eval-val,ESMFold2,97,0.801503533926638,0.769485499021179,0.8294377062070679,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_summary.csv
+eval-val,ESMFold,97,0.7503759561708839,0.7129655258141842,0.7844639541418635,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_summary.csv
+eval-val,MarinFold exp277 epoch 2,97,0.557501676947125,,,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2_epochs/epoch_comparison.csv
+eval-val,MarinFold exp277 epoch 1,97,0.5551037062767215,,,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2_epochs/epoch_comparison.csv
+eval-val,MarinFold exp232,97,0.551707093687298,0.5091440484187851,0.5930833682961242,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_summary.csv
+eval-val,seq-KNN (decontaminated corpus),97,0.4071491506034931,0.3649065824508192,0.4473765815624672,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_summary.csv
+eval-val,Protenix-v2 single-seq,97,0.2631995259701145,0.2206935480460119,0.3092194560983716,experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/figure_summary.csv
