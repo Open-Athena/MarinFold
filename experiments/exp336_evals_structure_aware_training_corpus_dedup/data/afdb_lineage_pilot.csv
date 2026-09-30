@@ -1,0 +1,5 @@
+scope,rule,documents_before,documents_after,documents_removed,document_loss_fraction,source_tokens_before,source_tokens_after,source_tokens_removed,source_token_loss_fraction
+current_exp232_afdb,none,3963003,3963003,0,0.0,4432940838,4432940838,0,0.0
+current_exp232_afdb,one_per_afdb50_sequence_lineage,3963003,3963003,0,0.0,4432940838,4432940838,0,0.0
+current_exp232_afdb,one_per_sequence_and_foldseek_lineage_intersection,3963003,3963003,0,0.0,4432940838,4432940838,0,0.0
+current_exp232_afdb,one_per_foldseek_structure_lineage,3963003,928841,3034162,0.7656219286233192,4432940838,1037882915,3395057923,0.7658703436546969

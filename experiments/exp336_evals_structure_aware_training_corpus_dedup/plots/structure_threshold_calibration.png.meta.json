@@ -1,0 +1,5 @@
+{
+  "script": "plot_pilots.py",
+  "args": [],
+  "caption": "Share of >=50%-identity, >=80%-bidirectional-coverage measured pairs whose minimum directional TM-score falls below the active threshold."
+}

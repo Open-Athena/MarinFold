@@ -1,0 +1,19 @@
+{
+  "status": "complete_direct_sequence_verification_not_final_dedup",
+  "input": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0_direct_align.tsv",
+  "input_bytes": 986860509,
+  "linclust_memberships": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0.tsv",
+  "linclust_memberships_bytes": 7380195006,
+  "required_sequence_identity": 0.5,
+  "required_bidirectional_coverage": 0.8,
+  "alignment_rows": 6388950,
+  "distinct_pairs": 6388950,
+  "directly_verified_pairs": 6388950,
+  "linclust_central_candidates": 5245852,
+  "directly_verified_central_candidates": 5017956,
+  "failed_direct_central_candidates": 227896,
+  "minimum_sequence_identity": 0.5,
+  "minimum_query_coverage": 0.8,
+  "minimum_target_coverage": 0.8,
+  "warning": "Directly verified pairs are eligible for removal only after applying the structure/contact witness rule."
+}

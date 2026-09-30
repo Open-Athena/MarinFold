@@ -1,0 +1,28 @@
+{
+  "status": "partial_until_all_esm_shards_are_scanned",
+  "removals": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0_selected_removals.parquet",
+  "source_token_definition": "num_tokens + one EOS token",
+  "records": [
+    {
+      "source": "afdb",
+      "available_shards": 2067,
+      "expected_shards": 2067,
+      "complete_source_coverage": true,
+      "total_candidate_removals": 667093,
+      "candidate_removals_in_available_shards": 667093,
+      "matched_removals": 667093,
+      "source_tokens_removed_in_available_shards": 738657274
+    },
+    {
+      "source": "esm_atlas",
+      "available_shards": 155,
+      "expected_shards": 3338,
+      "complete_source_coverage": false,
+      "total_candidate_removals": 4355743,
+      "candidate_removals_in_available_shards": 211094,
+      "matched_removals": 211094,
+      "source_tokens_removed_in_available_shards": 232869643
+    }
+  ],
+  "warning": "AFDB is exact when all 2,067 shards are present. The local ESM directory is incomplete and is not extrapolated; run source-local over all 3,338 published shards for the exact pooled token result."
+}

@@ -1,0 +1,16 @@
+{
+  "status": "pilot_complete_lower_bound",
+  "input": "/data/exp336_dedup/cross_source_30id_80cov_pilot10000-seed336.tsv",
+  "input_sha256": "da808a1f1fe56f52b6cc64354480d11d3433bd6ee55f3028604314729f93ffe0",
+  "alignment_edges": 125601,
+  "sampled_afdb_queries": 10000,
+  "sample_seed": 336,
+  "afdb_population": 3963003,
+  "mmseqs_version": "4fe20e6bb0aa219a35f6190322a91ab19cb6898d",
+  "search_sensitivity": 7.5,
+  "max_seqs": 1000,
+  "prefilter_median_result_list_length": 1000,
+  "prefilter_overflows": 1202,
+  "prefilter_saturated": true,
+  "interpretation": "Because the prefilter cap saturated, counts are lower bounds. The AFDB query fraction is projected only to illustrate scale and is not a final estimate. Unique ESM targets are not extrapolated because target degree is unknown."
+}
