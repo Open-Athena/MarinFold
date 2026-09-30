@@ -1,0 +1,147 @@
+{
+  "dataset": "8_contact_ranking",
+  "notebook": "8_make_contact_ranking_data.py",
+  "generated_utc": "2026-09-22T18:54:07+00:00",
+  "parameters": {
+    "protein": "8ubs_A",
+    "model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "seed": 0,
+    "backend": "transformers",
+    "dtype": "auto",
+    "batch_size": 64
+  },
+  "git": {
+    "commit": "8614ed0903a4ef92f7abb8c00e41de85cd059298",
+    "branch": "claude/top7-heatmap-animated-gif-3ecdeb",
+    "dirty": true,
+    "dirty_files": [
+      "M experiments/exp250_evals_exploration_notebook/figures/7_make_rollout_animation_data.py",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/7_rollout_animation/metadata.json",
+      " M experiments/exp250_evals_exploration_notebook/figures/figlib.py",
+      "?? experiments/exp250_evals_exploration_notebook/figures/8_make_contact_ranking_data.py",
+      "?? experiments/exp250_evals_exploration_notebook/figures/data/8_contact_ranking/"
+    ]
+  },
+  "machine": {
+    "hostname": "ip1",
+    "hostname_overridden": false,
+    "user": "bizon",
+    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
+    "python": "3.12.12",
+    "gpu": {
+      "name": "NVIDIA RTX A5000",
+      "compute_capability": "8.6",
+      "memory_gib": 23.7,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.57.6",
+    "vllm": null,
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.2"
+  },
+  "inputs": [
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "bytes": 97519,
+      "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "bytes": 199548,
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    }
+  ],
+  "outputs": {
+    "completions.txt": {
+      "bytes": 382718,
+      "sha256": "cddd330c846f02d6ebe3a25f8dc5c24073c886b0b0bceb4491fd80f017b772f9"
+    },
+    "statements.csv": {
+      "bytes": 458645,
+      "sha256": "624f6a69867da660655af6b6717d2432263f6ea7dffddfa0695e1d3d480a8b75"
+    },
+    "rollouts.csv": {
+      "bytes": 2180,
+      "sha256": "224261943438087bc86313b467d8676f86cc75549894c5f79a87f12c3c887b8b"
+    },
+    "votes.npy": {
+      "bytes": 45730,
+      "sha256": "ff6ac27ffe925c27726c411fa0e2d647356b6ac786a2e10a87ee533f80bf823b"
+    },
+    "score.npy": {
+      "bytes": 91332,
+      "sha256": "2059b5ac137653b5ddd3acc186dfa1a07bc86ad347c6e5bfd4b454d81381a364"
+    },
+    "target.json": {
+      "bytes": 298,
+      "sha256": "0a379efb21b82640cef90e049b50b011a49b7e90856a59ae2609b97fe01d429d"
+    }
+  },
+  "model": {
+    "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+    "path": "/home/bizon/.cache/huggingface/hub/buckets/open-athena/MarinFold/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+    "files": [
+      "config.json",
+      "config.json.lock",
+      "model-00001-of-00002.safetensors",
+      "model-00001-of-00002.safetensors.lock",
+      "model-00002-of-00002.safetensors",
+      "model-00002-of-00002.safetensors.lock",
+      "model.safetensors.index.json",
+      "model.safetensors.index.json.lock",
+      "publication_manifest.json",
+      "publication_manifest.json.lock",
+      "tokenizer.json",
+      "tokenizer.json.lock",
+      "tokenizer_config.json",
+      "tokenizer_config.json.lock"
+    ],
+    "config_sha256": "03cd68867df12e95cb18cb689c0cbfc3adc96acd9b6eb8b344a28e7ab4e5fc0f",
+    "tokenizer_sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+    "rope_theta": 500000,
+    "rope_scaling": {
+      "factor": 8.0,
+      "low_freq_factor": 1.0,
+      "high_freq_factor": 4.0,
+      "original_max_position_embeddings": 8192,
+      "rope_type": "llama3"
+    },
+    "vocab_size": 2845,
+    "num_hidden_layers": 24,
+    "weight_bytes": 5885527576
+  },
+  "recipe": {
+    "method": "rollout+resample+tiebreak",
+    "backend": "transformers",
+    "dtype": "bfloat16",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "seed": 0,
+    "max_new_tokens": 668,
+    "min_seq_separation": 6
+  },
+  "protein": {
+    "stem": "8ubs_A",
+    "L": 151,
+    "sequence_sha256": "4eed18ee088a081aa9eccd7aafa3f449928db4323e69264a54c1cad9d701de72"
+  },
+  "rollouts": {
+    "n_statements": 15435,
+    "n_off_protein": 0,
+    "n_truncated": 0,
+    "statements_per_rollout_median": 155.0,
+    "max_votes": 100,
+    "note": "votes.npy / score.npy are in the #245 PROMPT's 0-based indexing (L=151 for 8ubs_A), not the deposited chain's. 8_make_titration_data.py re-seats them."
+  }
+}

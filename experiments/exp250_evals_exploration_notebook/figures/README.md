@@ -11,10 +11,115 @@ Same number, same figure. Nothing is recomputed at plot time.
 | 4 | [`4_make_contamination_contrast_data`](4_make_contamination_contrast_data.ipynb) | [`4_plot_contamination_contrast`](4_plot_contamination_contrast.ipynb) | CPU | `contamination_contrast`, `contamination_contrast_scatter` |
 | 5 | [`5_make_training_composition_data`](5_make_training_composition_data.ipynb) | [`5_plot_training_composition`](5_plot_training_composition.ipynb) | CPU | `training_composition` |
 | 6 | [`6_make_msa_depth_data`](6_make_msa_depth_data.ipynb) | [`6_plot_msa_depth`](6_plot_msa_depth.ipynb) | CPU | `msa_depth_gdt_ts`, `msa_depth_lddt` |
+| 7 | [`7_make_rollout_animation_data.py`](7_make_rollout_animation_data.py) | [`7_plot_rollout_animation.py`](7_plot_rollout_animation.py) | **GPU** | `top7_rollout_emission.gif`, `top7_rollout_consensus.gif` — figure 1's Top7 map, animated |
+| 8 | [`8_make_contact_ranking_data.py`](8_make_contact_ranking_data.py) + [`8_make_titration_data.py`](8_make_titration_data.py) | [`8_plot_contact_titration.py`](8_plot_contact_titration.py) | **GPU** ×2 | `contact_titration_8ubs{,_light,_rollout_order{,_light}}.gif` and `_lddt` — one contact at a time into Helico |
 
 Datasets land in `data/<n>_<name>/`, figures in `output/` as a 300 dpi PNG and a vector PDF. No
 titles and no panel letters are baked into a figure — captions and lettering belong to the
 document the panel goes into.
+
+## 7 is a pair of scripts, and it is animated
+
+Pair 7 breaks three of the rules above, each deliberately.
+
+**Scripts, not notebooks.** There is nothing to look at between the cells of an animation: the
+make step draws rollouts and the plot step rasterises 260 frames, and neither has an intermediate
+a notebook would be the right place to inspect. They are still a `make` / `plot` pair on the same
+dataset, with the same `figlib` provenance, and run the same way:
+
+```bash
+.venv/bin/python 7_make_rollout_animation_data.py   # GPU, ~2 min
+.venv/bin/python 7_plot_rollout_animation.py        # CPU, ~30 s
+```
+
+**GIF, not PNG + PDF.** A GIF is what a moving figure is; the last frame of each is written as a
+PNG beside it as a still. Nothing here goes into a manuscript figure — `assemble_figures.py` does
+not know about pair 7 — so the two GIFs carry their own header, labels and colour key, which a
+panel in a document would take from its caption instead.
+
+**What it stores that #1 does not.** The same protein, the same checkpoint's recipe and the same
+100 rollouts as figure 1 — but `statements.csv` keeps every `<contact> <pX> <pY>` in the order the
+model wrote it, and `completions.txt` keeps the decoded rollouts verbatim. Emission order cannot
+be recovered from a vote matrix, which is why
+[#98](https://github.com/Open-Athena/MarinFold/issues/98)'s published rollouts could not answer
+[#102](https://github.com/Open-Athena/MarinFold/issues/102) and #102 had to regenerate them. The
+vote matrix is still written, and is the matrix `predict` would have returned for these rollouts.
+
+## 8 spans two repositories
+
+Pair 8 picks up where 7 ends. 7 finishes on a contact map; 8 asks what the map is *for*, by
+handing Helico one more contact at a time and folding the protein again at every step — 151 folds
+of `8ubs_A`, from none to top-L, with the map, the structure and lDDT side by side.
+
+Its middle step runs in **Helico's** environment, not this one. Helico is a separate repository
+with its own torch pin and the MarinFold inference stack has no business in it, so the three steps
+are three commands in two environments, all writing into `data/`:
+
+```bash
+.venv/bin/python 8_make_contact_ranking_data.py                          # MarinFold, ~1 min
+cd ~/git/helico && .venv/bin/python <dir>/8_make_titration_data.py                   # ~30 min
+cd ~/git/helico && .venv/bin/python <dir>/8_make_titration_data.py --order rollout   # ~30 min
+.venv/bin/python 8_plot_contact_titration.py                             # no model, ~8 min
+```
+
+**Two orders, two datasets, two claims.** `--order confidence` (the default) adds contacts by vote
+count across the 100 rollouts — #82's ranking, and the order a deployment actually cuts its list
+in. `--order rollout` adds them in the order **one rollout wrote them**, which is not a ranking at
+all: the model is never asked to emit its best guess first, and whether it does anyway is what the
+second animation puts on screen. The rollout is the median one by F1 against the experimental
+contacts (`figlib.median_rollout`), so it is typical by rule rather than hand-picked.
+
+Each dataset is animated twice. The full cut has a frame per contact; the `_light` cut keeps every
+frame through the transition and then steps by `LIGHT_STRIDE`, which roughly halves the file for a
+README. What it drops is the plateau, whose whole content is that nothing more happens — and its
+lDDT curve is still drawn at every *k*, because the measurement was made at every *k*.
+
+**Why `8ubs_A`.** It is the case where contact conditioning is the whole story: Helico folds it to
+0.22 lDDT with no contacts and 0.87 with MarinFold's top-L, against an oracle ceiling of 0.87 —
+the contacts are worth the entire distance, and MarinFold's R-precision on it (0.821) is five
+times Protenix-v2 single-sequence's (0.160). It is in `eval-test`, the rarely-read held-out set,
+but every number above is already published (#245's per-protein table, helico exp14's per-target
+scores), so animating it reads nothing new.
+
+**Two indexings.** MarinFold is prompted with #245's 151-residue sequence; Helico folds the 150
+residues the deposited structure resolves, which is that sequence without its unresolved
+N-terminal serine. `8_make_titration_data.py` finds the offset by locating one sequence inside the
+other and fails if it is not an exact substring, rather than assuming the 1 that happens to be
+right here.
+
+**The fold is stored, not re-derived.** `pred_coords.npy` is every predicted structure, unaligned,
+in the atom order `atom_index.csv` lists; superposing and rendering are the plot step's job and
+both are things to iterate on. Re-running the plot never folds anything, and PyMOL renders are
+cached under `.cache/` on the coordinates' digest, so changing the matplotlib half is free.
+
+Three things pair 8 is careful about, each because the intuitive version is wrong:
+
+- **Superposition is a search, not least-squares, and not one round of trimming either.** Plain
+  Kabsch over all 150 Cα splits the difference when most of the chain is misplaced, so a correctly
+  folded core never visibly settles. Outlier rejection *seeded from that same fit* is no better —
+  nothing is within the cutoff, so the search stops before it starts, and the early frames report
+  no core for predictions that have one. The refinement therefore runs from several seeds (the
+  whole chain, and contiguous windows along it) and keeps the fit with the most Cα within 2 Å.
+  The count under the panel is how many end up within 2 Å, not the set the last cycle fitted over.
+- **The prediction is a tube, the deposited structure a cartoon.** Cartoon geometry re-derives
+  secondary structure per frame; a marginal helix flickering between helix and loop reads as the
+  model changing its mind when it is the renderer changing its mind. The deposited structure never
+  moves, so it can have real cartoon geometry.
+- **The crop box comes from the deposited structure alone.** With no contacts the prediction
+  sprawls over several times the fold's extent; a box drawn around the union of all frames would
+  shrink the fold to a speck in the 150 frames where it is right.
+
+## The two GIFs of pair 7
+
+The two GIFs are a pair of claims. `top7_rollout_emission` is one rollout, one statement per
+frame: **about half of what a single rollout writes is in the experimental structure** (0.51
+precision here; 0.27–0.76 across the 100). `top7_rollout_consensus` runs that rollout at speed and
+then adds the other 99, and is the argument for the recipe — R-precision **0.513 after one rollout,
+0.671 after a hundred**, with the running value drawn beside the map. The featured rollout is
+chosen by the plot script, not hard-coded: median F1 over the 100, ties broken by the statement
+count closest to median, printed when it runs. The model it uses is the current default from
+`MODELS.yaml`, which as of this writing is #277's, not the #232 checkpoint figure 1 draws — a GIF
+that ships in a README should be the model a reader gets from `contacts-v1 infer`.
 
 ## The manuscript figures
 
@@ -149,6 +254,12 @@ is bfloat16 on any GPU, because **float16 does not work with these weights** —
 in bfloat16 and fp16 overflows their residual stream, which surfaces as a CUDA device-side assert
 inside sampling. 2, 3 and 4 are CPU-only and read published tables from the public bucket
 anonymously, so they run anywhere with a network connection.
+
+7's make step needs the same GPU and checkpoint but pins `BACKEND="transformers"` rather than
+taking vLLM where it is available: its dataset is replayed frame by frame, so the rollout it draws
+has to come back the same on a regenerate, and the transformers backend seeds `torch` where vLLM's
+sampler is not seedable per request. Its plot step needs no dependency the list above does not
+already install — Pillow, which writes the GIF, comes with matplotlib.
 
 ## Editing them
 

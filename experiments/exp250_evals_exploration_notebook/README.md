@@ -283,7 +283,7 @@ Against the null that matters for it — a sequence-KNN predictor built from the
 trained on — m2-p06 clears by **+0.112** (0.532 against 0.420). It trails ESMFold2 by 0.263 and
 leads Protenix-v2 single-seq by 0.268 on the same 314 proteins.
 
-### 6. Manuscript figures — six make/plot notebook pairs
+### 6. Manuscript figures — seven make/plot pairs
 
 The publication panels live in [`figures/`](figures/), not in the
 exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes a dataset,
@@ -297,6 +297,7 @@ exploration notebook. Each figure is a pair: `<n>_make_<name>_data.ipynb` writes
 | 4 | decontamination contrast by homology stratum, plus the per-protein scatter | CPU |
 | 5 | training corpus by source — tokens per corpus, structures on the axis (no manuscript figure uses it) | CPU |
 | 6 | structure accuracy against MSA depth, natural monomers, GDT-TS and lDDT | CPU |
+| 7 | figure 1's Top7 map animated — one rollout's contacts in emission order, then the vote across 100 (two GIFs, and a pair of `.py` scripts rather than notebooks) | GPU |
 
 Every dataset carries a `metadata.json`: the checkout and whether it was dirty, the machine and
 GPU, package versions, the exact inference recipe as *resolved* (not as requested — `backend:
