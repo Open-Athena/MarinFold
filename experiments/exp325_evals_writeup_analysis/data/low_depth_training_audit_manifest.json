@@ -12,9 +12,9 @@
     "data/inputs/low_depth_training_audit/A0A4D6AQM2_history.json": "58aa6cb00f5a797b9f66cf0d86e859c501fe9001a843b768d29332f95770064d",
     "data/inputs/low_depth_training_audit/N1J9C5_history.json": "6e642a6c9390140b2e3fcbe672f8a84b687dbc8e856f9f5c21d385335b4e3697",
     "data/inputs/low_depth_training_audit/Q7NY09_history.json": "1f89690b4e463c3cc5859a6815d9b8e83f7313956c157964d6fb374a25cd7cbb",
-    "data/inputs/low_depth_training_audit/queries.csv": "59b7dce704d9fd14d7e08a0de6636c5c868a3073bbc0e9c1cd18c651647140b3"
+    "data/inputs/low_depth_training_audit/queries.csv": "a935a9eef300994d01fa883f0b707da7960170851649825b1c32865d20a91065"
   },
-  "script_sha256": "0d89a372684a73d8c76b8d894392002b640a8dd8a1b539fa27e50c986043ac61",
+  "script_sha256": "d7d1ced5cabc6ff4e75c6a56e25f8dbac0cdd16e027facd138aca502c0620230",
   "esmc_sources": {
     "paper": "https://www.biorxiv.org/content/10.64898/2026.06.03.729735",
     "model_card": "https://huggingface.co/biohub/ESMC-6B#training-data",

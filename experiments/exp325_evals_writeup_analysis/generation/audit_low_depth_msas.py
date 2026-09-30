@@ -42,7 +42,7 @@ def records(path: Path) -> list[tuple[str, str]]:
 def write_csv(path: Path, rows: list[dict]) -> None:
     """Write a nonempty, consistently ordered audit table."""
     with path.open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
