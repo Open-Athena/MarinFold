@@ -55,6 +55,12 @@ The target table distinguishes full prompt length `L` from resolved MSA query
 length. Intervals use 5,000 protein bootstraps, seed 325. These are descriptive
 strata, not the causal effect of changing an individual protein's MSA depth.
 
+The [ESMC training-source audit](LOW_DEPTH_TRAINING_AUDIT.md) checks the five
+low-depth proteins against their archived alignment hits and public accession
+histories. Four already have nearly identical matches that predate ESMC's
+documented training sources. Their homolog counts in ESMC's actual training
+corpus remain unverified; shallow retrieved MSAs do not establish training novelty.
+
 Contact metrics use exp89's unchanged resolved-pair universe and R-precision
 implementation. The KNN baseline indexes the native decontaminated corpus,
 not the additional redesign sequences. External predictors provide benchmark

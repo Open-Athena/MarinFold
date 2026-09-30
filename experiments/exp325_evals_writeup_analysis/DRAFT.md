@@ -10,7 +10,7 @@ tags: [MarinFold, proteins]
 summary: A figure-first look at contact prediction, structural accuracy, and useful sampling diversity.
 ---
 
-Accurate folding remains harder when a protein has few sequence relatives. Improving here could also help protein design.
+Accurate folding remains harder for proteins with shallow benchmark MSAs. Improving here could also help protein design. These depth counts do not establish how many homologs appeared in a predictor's training data.
 
 AlphaFold2, AlphaFold3 and Boltz-2 use the shared benchmark MSAs here, with templates disabled.
 

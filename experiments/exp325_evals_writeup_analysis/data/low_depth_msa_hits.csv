@@ -1,0 +1,13 @@
+stem,accession,header_identity,evalue,query_coverage,identity_over_covered_query_positions,source,source_record
+8ii8_A,UniRef100_A0A2Z5U5S2,1.0,6.107e-134,1.0,1.0,data/inputs/low_depth_training_audit/8ii8_A.a3m,1
+8oxk_A,UniRef100_N1J9C5,0.989,1.808e-56,0.9787234042553191,0.9891304347826086,data/inputs/low_depth_training_audit/8oxk_A.a3m,1
+8oxk_A,UniRef100_N1J9J7,0.51,5.148e-32,0.9361702127659575,0.5113636363636364,data/inputs/low_depth_training_audit/8oxk_A.a3m,2
+8oxk_A,UniRef100_A0A381LDA9,0.607,9.534e-17,0.5425531914893617,0.6078431372549019,data/inputs/low_depth_training_audit/8oxk_A.a3m,3
+8oxk_A,UniRef100_A0A381LC10,0.528,1.203e-15,0.5638297872340425,0.5283018867924528,data/inputs/low_depth_training_audit/8oxk_A.a3m,4
+8qoh_A,UniRef100_A0A0L1KJ08,0.278,9.074e-71,0.5875912408759124,0.32919254658385094,data/inputs/low_depth_training_audit/8qoh_A.a3m,1
+8ux2_A,UniRef100_UPI001C8CABF5,0.987,1.594e-156,1.0,0.9874476987447699,data/inputs/low_depth_training_audit/8ux2_A.a3m,1
+8ux2_A,UniRef100_UPI00075AC669,0.7,1.13e-126,0.9916317991631799,0.70042194092827,data/inputs/low_depth_training_audit/8ux2_A.a3m,2
+8ux2_A,UniRef100_A0A447T9R0,0.991,2.369e-69,0.4769874476987448,0.9912280701754386,data/inputs/low_depth_training_audit/8ux2_A.a3m,3
+8ux2_A,Q7NY09,1.0,9.658e-162,1.0,1.0,data/inputs/low_depth_training_audit/8ux2_A.a3m,5
+8wrx_A,UniRef100_A0A4D6AQM2,1.0,8.956e-50,1.0,1.0,data/inputs/low_depth_training_audit/8wrx_A.a3m,1
+8wrx_A,MGYP000544104655,0.426,4.829e-25,0.7093023255813954,0.47540983606557374,data/inputs/low_depth_training_audit/8wrx_A.a3m,3
