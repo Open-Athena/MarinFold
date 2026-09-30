@@ -1,0 +1,7 @@
+{
+  "script": "plot_update_slide.py",
+  "args": [],
+  "caption": "Historical 554-protein progress with a separate decontaminated-data lineage; natural eval-val comparisons use 97 matched proteins. Second epoch ties the current default.",
+  "as_of": "2026-09-30",
+  "source_data": "data/progress_slide_checkpoints.csv; data/progress_slide_natural.csv"
+}
