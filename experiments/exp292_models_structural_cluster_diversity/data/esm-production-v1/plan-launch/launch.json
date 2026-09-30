@@ -1,0 +1,59 @@
+{
+  "status": "launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/plan-build/launches/exp292-esm-plan-v1/source.tar.gz",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/plan-build",
+  "bundle_sha256": "b2d67f891e7c529c3648d7c728c91d5720ee76fa94158263daf7a93446b0410f",
+  "bundle_bytes": 31580620,
+  "config": {
+    "ImageId": "ami-04678417fc39d7171",
+    "InstanceType": "m7i.8xlarge",
+    "MinCount": 1,
+    "MaxCount": 1,
+    "SubnetId": "subnet-00caee8a9828c5c0c",
+    "Placement": {
+      "AvailabilityZone": "us-west-2a"
+    },
+    "IamInstanceProfile": {
+      "Name": "marinfold-exp91-instance-profile"
+    },
+    "InstanceInitiatedShutdownBehavior": "terminate",
+    "MetadataOptions": {
+      "HttpTokens": "required",
+      "HttpEndpoint": "enabled"
+    },
+    "BlockDeviceMappings": [
+      {
+        "DeviceName": "/dev/sda1",
+        "Ebs": {
+          "VolumeSize": 300,
+          "VolumeType": "gp3",
+          "Iops": 6000,
+          "Throughput": 500,
+          "DeleteOnTermination": true
+        }
+      }
+    ],
+    "TagSpecifications": [
+      {
+        "ResourceType": "instance",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "exp292-esm-plan-v1"
+          },
+          {
+            "Key": "Experiment",
+            "Value": "exp292"
+          },
+          {
+            "Key": "Stage",
+            "Value": "esm-plan"
+          }
+        ]
+      }
+    ],
+    "ClientToken": "de52577415b9d2853d4d1bb3b7e63b2b5df5cc13e5dab8c2bff78c26a26f40e6"
+  },
+  "instance_id": "i-0d4815d98eb1c8fee"
+}

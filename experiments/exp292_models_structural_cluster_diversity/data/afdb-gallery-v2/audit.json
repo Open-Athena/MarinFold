@@ -1,0 +1,17 @@
+{
+  "structures": 428,
+  "pairs": 2387,
+  "candidates": 254,
+  "provisional_diverse": 5,
+  "clusters_with_diverse": 5,
+  "elapsed_seconds": 10.343337672995403,
+  "hostname": "ip1",
+  "workers": 8,
+  "tmtools_version": "0.3.0",
+  "bytes_read_from_network": 2227384,
+  "command": "experiments/exp292_models_structural_cluster_diversity/structure_audit.py --sample experiments/exp292_models_structural_cluster_diversity/data/afdb-gallery-v2/sample.csv --cache /home/bizon/exp292_scratch/structures --output experiments/exp292_models_structural_cluster_diversity/data/afdb-gallery-v2 --reuse-audit experiments/exp292_models_structural_cluster_diversity/data/afdb-gallery-v1 --workers 8",
+  "reuse_audit": "experiments/exp292_models_structural_cluster_diversity/data/afdb-gallery-v1",
+  "reused_pairs": 2309,
+  "status": "visual curation; no candidate is cleared for training",
+  "source": "afdb"
+}
