@@ -1,0 +1,18 @@
+[
+  {
+    "job_id": "/bizon/exp345-bf16-inregion-a01",
+    "timestamp_utc": "2026-10-01T13:55:17.664761+00:00",
+    "cluster": "cw-us-east-02a",
+    "gpu_count": 0,
+    "status": "failed",
+    "note": "Container provides python3, not python. Failed before reading weights."
+  },
+  {
+    "job_id": "/bizon/exp345-bf16-inregion-a02",
+    "timestamp_utc": "2026-10-01T13:58:05.254615+00:00",
+    "cluster": "cw-us-east-02a",
+    "gpu_count": 0,
+    "status": "succeeded",
+    "note": "Converted and roundtrip-verified 267 tensors beside source checkpoint."
+  }
+]

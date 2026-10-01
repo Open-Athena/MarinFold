@@ -1,0 +1,17 @@
+{
+  "job_id": "/bizon/exp345-whole-full-a05-s0",
+  "n_proteins": 97,
+  "n_maps": 19400,
+  "unfinished_rollouts": 0,
+  "gpu": [
+    "NVIDIA H100 80GB HBM3"
+  ],
+  "workers": [
+    "gb95a60"
+  ],
+  "pure_inference_seconds": 1148.8351974515244,
+  "one_time_model_load_seconds": 65.07383306790143,
+  "one_time_model_stage_seconds": 42.9357045115903,
+  "generated_tokens": 15878567,
+  "raw_archive_bytes": 11927287
+}

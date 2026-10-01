@@ -2,3 +2,6 @@
 __pycache__/
 .cache/
 data/report_inputs.json.gz
+
+whole_map_report.html
+whole_map_raw.tar.gz

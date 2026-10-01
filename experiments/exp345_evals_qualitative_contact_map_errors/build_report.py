@@ -6,6 +6,7 @@ import json
 
 import numpy as np
 import pandas as pd
+
 from analyze import HERE, INPUTS, unpack
 
 
@@ -23,7 +24,7 @@ def main() -> None:
         supported = score[i, j] > 0
         assert np.sum(supported) >= rec["L"]
         pairs = np.column_stack((i[truth[i, j]], j[truth[i, j]])).tolist()
-        proteins.append({"stem": stem, "L": rec["L"], "resolved": rec["resolved"],
+        proteins.append({"stem": stem, "L": rec["L"], "resolved": rec["resolved"], "n_rollouts": 100,
                          "truth": pairs,
                          "votes": np.column_stack((i[supported], j[supported], score[i[supported], j[supported]])).astype(int).tolist(),
                          "metrics": {"stem": stem, **diagnostics.loc[stem].to_dict()},
@@ -33,7 +34,7 @@ def main() -> None:
     packed = base64.b64encode(gzip.compress(json.dumps(payload, separators=(",", ":"), allow_nan=False).encode(), mtime=0)).decode()
     template = (HERE / "report_template.html").read_text()
     assert template.count("__PAYLOAD__") == 1
-    report = template.replace("__PAYLOAD__", packed)
+    report = template.replace("__PAYLOAD__", packed).replace("__CANVAS_RENDERER__", (HERE / "map_renderer.js").read_text())
     (HERE / "report.html").write_text(report)
     print(f"Built report.html: {len(report):,} bytes, {len(proteins)} proteins")
 

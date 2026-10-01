@@ -2,10 +2,22 @@
 name = "exp345-contact-map-errors"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["numpy", "pandas", "scipy", "scikit-learn", "matplotlib", "s3fs", "huggingface-hub>=1.5"]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "scikit-learn",
+    "matplotlib",
+    "s3fs",
+    "huggingface-hub>=1.5",
+    "pyarrow>=23,<24",
+]
 
 [tool.uv]
 package = false
 
 [dependency-groups]
 dev = ["playwright", "ruff"]
+
+[tool.ruff]
+src = ["."]
