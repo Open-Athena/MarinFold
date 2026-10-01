@@ -76,6 +76,18 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
                 ],
             ),
             priority=3,
+            # `max_task_failures` defaults to 0: ONE failed task attempt ends the
+            # whole gang. exp343-train-a02 died that way at step 150,223 after
+            # 22 hours -- iris had absorbed six batch-priority preemptions
+            # (`max_retries_preemption` already defaults to 100) and then a single
+            # task failure in the churn was terminal. A multi-day run on a
+            # contended cluster has to outlive that.
+            #
+            # Deliberately not unbounded: the smoke validates the configuration
+            # before production, so a persistent failure here is a real defect and
+            # should still surface rather than retry forever.
+            max_task_failures=20,
+            max_retries_failure=5,
         )
     )
     handle.wait(raise_on_failure=True)
