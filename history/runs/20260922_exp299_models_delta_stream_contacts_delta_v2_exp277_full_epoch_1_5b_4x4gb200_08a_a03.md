@@ -83,3 +83,12 @@ only after its step-112,345 temporary checkpoint committed. The replacement
 initially scheduling-gated, placed after about 35 minutes, restored the complete
 state from step 112,345, and resumed at approximately 2.6 seconds/update. It
 retains the same W&B run ID and output path.
+
+Canonical 100-rollout evaluation of retained checkpoints 63,147, 84,196, and
+126,294 used the same 670 proteins and seeds. Step 126,294 reached `legacy_554`
+R/all 0.5742 and R/long 0.5166, `eval-val` 0.4428 and 0.4134, and
+`eval-denovo` 0.6283 and 0.5685. Relative to step 84,196, the paired all-670
+improvement was +0.01498 R/all (95% CI [0.00885, 0.02123]) and +0.01514 R/long
+([0.00785, 0.02262]). All 67,000 generations parsed successfully. Results are
+stored beneath `exp277_full_epoch_rollout_votes/results-2026-10-01-step126294/`
+in the 08a bucket and summarized in the experiment data CSVs.

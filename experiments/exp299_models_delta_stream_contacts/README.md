@@ -337,11 +337,32 @@ V2 conversion and cache creation run as a federated root job on
 job has no credentials for this private S3 store and must not be used for this
 pipeline.
 
+## Exp277-scale full-epoch rollout checks
+
+Canonical 100-rollout evaluation on the same 670 proteins shows continued
+improvement through the retained 60%-epoch checkpoint:
+
+| Step | `legacy_554` R/all · R/long | `eval-val` | `eval-denovo` |
+|---:|---:|---:|---:|
+| 63,147 | 0.5505 · 0.4907 | 0.4154 · 0.3799 | 0.5669 · 0.5378 |
+| 84,196 | 0.5603 · 0.5028 | 0.4219 · 0.3884 | 0.6137 · 0.5662 |
+| 126,294 | **0.5742 · 0.5166** | **0.4428 · 0.4134** | **0.6283 · 0.5685** |
+
+Across all 670 proteins, step 126,294 improves over step 84,196 by 0.01498
+R/all (95% paired-bootstrap CI [0.00885, 0.02123]) and 0.01514 R/long
+([0.00785, 0.02262]). The improvement is clear on `legacy_554` and `eval-val`;
+`eval-denovo` is nearly flat in long-range R-precision. All 67,000 step-126,294
+rollouts parsed without malformed generations. Notebook-ready values are in
+`data/exp277_full_epoch_rprecision_curve.csv` and
+`data/exp277_full_epoch_rprecision_step84196_to_step126294_bootstrap.csv`.
+Large row-level outputs and timings are under
+`s3://rhoarnet-us-east-08a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/eval/exp277_full_epoch_rollout_votes/`.
+
 ## Next steps
 
-1. Monitor the queued 2×4 GB200 full run and create its run-history entry once
-   workers start and W&B initializes.
-2. Evaluate retained checkpoints with the canonical rollout protocol.
+1. Continue the finite full-epoch run through step 210,492.
+2. Evaluate a retained checkpoint in the LR-decay phase and the final checkpoint
+   with the canonical rollout protocol.
 
 ## Files
 
