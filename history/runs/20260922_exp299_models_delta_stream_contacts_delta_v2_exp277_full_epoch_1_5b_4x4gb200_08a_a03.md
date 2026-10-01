@@ -21,6 +21,14 @@ marinfold_run:
   - /zack/exp299-v2-exp277-full-epoch-driver-2x4gb200-08a-a04/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a05
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a05/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
+  - /zack/exp299-s3-gcs-cv1-native-afdb-a01
+  - /zack/exp299-s3-gcs-cv1-native-esm-a01
+  - /zack/exp299-s3-gcs-cv1-mpnn-afdb-a01
+  - /zack/exp299-s3-gcs-cv1-mpnn-afdb-a02
+  - /zack/exp299-s3-gcs-cv1-mpnn-esm-a01
+  - /zack/exp299-s3-gcs-cv1-validation-a01
+  - /zack/exp299-s3-gcs-v2-cache-a01
+  - /zack/exp299-s3-gcs-v2-cache-a02
 ---
 # 2026-09-22 · exp299_models_delta_stream_contacts · delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 
@@ -92,3 +100,13 @@ improvement was +0.01498 R/all (95% CI [0.00885, 0.02123]) and +0.01514 R/long
 ([0.00785, 0.02262]). All 67,000 generations parsed successfully. Results are
 stored beneath `exp277_full_epoch_rollout_votes/results-2026-10-01-step126294/`
 in the 08a bucket and summarized in the experiment data CSVs.
+
+On 2026-10-01, both exp277-scale token-cache formats were mirrored to the
+TPU-local `marin-us-east5` GCS bucket in preparation for a possible
+`us-east5-a` v5p continuation. The contacts-v1 cache contains 32,622 objects
+and 351,901,003,059 bytes across the four train corpora plus validation. The
+contacts-v2 cache contains 32,146 objects and 159,232,199,956 bytes. GCS
+listings exactly matched both source object counts and aggregate byte totals;
+each uploaded object was also checked against its source size. Both tokenizers
+were staged alongside the caches. The common destination is
+`gs://marin-us-east5/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/exp277_full_epoch_tokenized_cache/2026.09.22.1/`.
