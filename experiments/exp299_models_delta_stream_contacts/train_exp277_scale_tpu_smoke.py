@@ -23,7 +23,7 @@ def tpu_resources(tpu_type: str, zone: str) -> ResourceConfig:
         slice_count=1,
         cpu=200,
         ram="400GB",
-        disk="100GB",
+        disk="50GB",
         zone=zone,
     )
 
